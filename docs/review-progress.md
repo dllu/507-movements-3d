@@ -4,6 +4,14 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
+## Movement 081 integration — 2026-09-11
+
+081 now uses the measured six-tooth gear and seven-tooth rack, with finite
+contact, spring return and a constant-section spring. All 3,100 numerical
+tests, the build and its desktop/mobile browser check pass. Thirteen final
+views are inspected. Details and reconstruction assumptions are in the
+[081 review](../artifacts/review/081-reconstruction-notes.md).
+
 ## Git checkpoint — 2026-09-11
 
 The workspace now tracks `git@github.com:dllu/507-movements-3d.git` on `main`.
@@ -17,7 +25,7 @@ identifies every whitespace edit. The full-507 review remains active.
 
 ## User correction pass — 2026-09-11
 
-The requested corrections are implemented: shark-fin teeth on 073/075, continuous overtravel and pawl drop with an ordinary swinging rod pin on 075, the complete default wheel on 076, and improved engagement with less take-up on 077. The user caught a second 075 defect in static contact selection; that version is explicitly superseded. Current evidence is in [the correction record](../artifacts/review/073-077-correction-notes.md). The broader spring reconstruction for 073 remains unresolved. The isolated 081 study remains saved; the full-507 goal is active.
+The requested corrections are implemented: shark-fin teeth on 073/075, continuous overtravel and pawl drop with an ordinary swinging rod pin on 075, the complete default wheel on 076, and improved engagement with less take-up on 077. The user caught a second 075 defect in static contact selection; that version is explicitly superseded. Current evidence is in [the correction record](../artifacts/review/073-077-correction-notes.md). The broader spring reconstruction for 073 remains unresolved. The saved 081 study has since been integrated; see its review below. The full-507 goal is active.
 
 ## Changes made on 2026-09-09
 
@@ -2410,33 +2418,36 @@ browser images were restored after fresh copies were preserved. Earlier
 mechanics failures and two corrected test/capture issues remain archived.
 See `080-integrated-checkpoint.json` and `080-reconstruction-notes.md`.
 
-Review continues at 081. An isolated 24-solid replacement now follows the
-measured six-tooth wheel, seven-tooth rack, spring and guide proportions.
-Real involute contact, inertia, gravity and a Hookean spring determine motion.
-The hollow rack, fixed internal mandrel and rear slot stop are explicit hidden
-construction assumptions. The mandrel retains at least 377 source pixels of
-engagement while the lower guide is vacated at high lift.
+081 is now rebuilt and verified. Its 24 closed solids follow the measured
+six-tooth wheel, seven-tooth rack, spring and guide proportions. Finite tooth
+contact, inertia, gravity and a Hookean spring determine motion. The hollow
+rack, fixed internal mandrel and rear slot stop are explicit reconstruction
+assumptions. The mandrel stays engaged while the lower guide is vacated at
+high lift. Playback preserves startup and repeats the settled cycle in four
+seconds.
 
-The finest study has 24,001 states. All 17,746 positive contact reactions pass
-independent rendered-surface checks. Energy checks pass, and the latest rack
-time-step comparison differs by at most 0.202189663 source pixels. All 183
-independent pairs pass 39,074,016 actual surface samples at 101 poses.
-Continuous hardware bounds cover 176 pairs; finite-profile projection handles
-the other seven at evaluated poses. Nonlocal spring turns retain clearance.
+All 17,746 positive contact reactions and energy checks pass. The loaded
+surface screen covers all 183 independent pairs, 101 poses and 39,074,016
+samples without intrusion beyond tolerance. Continuous hardware bounds cover
+176 pairs; the other seven use finite gear/rack contact. New continuous spring
+cell checks complete the earlier nonlocal-turn clearance bound. Projection of
+the compressed trajectory is bounded to 0.002 engraving pixels over every
+knot interval. Measured time-step agreement plus compression, projection and
+spring deformation sensitivity totals 0.205304784 pixels; this is not a
+continuum-error guarantee.
 
-The indexed spring preserves triangle geometry while reducing local update
-cost about twentyfold. A 1,589-knot preview retains startup and repeats at four
-display seconds per input revolution, running near 59 fps with stable framing.
-Forty-six candidate views are inspected. Earlier failures and superseded
-measurements remain archived. Continuous neighboring-spring-cell checks and
-the complete playback correction/mesh-displacement bound remain pending.
-Production 081 is unchanged, all 850 frozen inputs match, and 081 is not yet
-verified. See 081-loaded-study-checkpoint.json and
-081-reconstruction-notes.md.
+Production geometry and motion match the independent candidate. All 3,100
+numerical tests, the build and the targeted 081 desktop/mobile browser check
+pass. Thirteen final app/source/motion views are inspected; browser playback
+averaged 52.41 fps with 1.5 ms 95th-percentile model updates. The 25 saved study
+sources are unchanged, and the current map freezes 904 inputs. Earlier
+failures remain archived. No new all-507 browser pass is claimed: the last
+attempt timed out after movement 482. See [the 081 review](../artifacts/review/081-reconstruction-notes.md)
+and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
-068, 069, 070, 072, 074, 075, 076, 077, 078, 079 and 080 are verified. Review
-continues at 081; the complete 507-movement review remains active.**
+068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080 and 081 are verified.
+Review continues beyond 081; the complete 507-movement review remains active.**
 
 ## Completion requirements
 

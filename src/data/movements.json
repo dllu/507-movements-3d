@@ -845,7 +845,8 @@
       "category": "Rack & pinion",
       "archetype": "mutilated-spur-rack-spring-return",
       "fidelity": "authored",
-      "sourceUrl": "https://507movements.com/mm_081.html"
+      "sourceUrl": "https://507movements.com/mm_081.html",
+      "mechanicalNote": "Six involute teeth lift the seven-tooth rack. After release, the compression spring and gravity return it to a real travel stop. The spring keeps its wire thickness as it compresses. A hollow rack and concealed sliding mandrel reconstruct the guide arrangement. The four-second animation includes inertia and contact."
     },
     {
       "id": 82,
