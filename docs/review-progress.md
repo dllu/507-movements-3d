@@ -4,6 +4,18 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
+## Movement 082 reconstruction study — 2026-09-11
+
+082 is in reconstruction. Measurements support 26 teeth, curved pawls,
+separate rod joints and a small pulley C. A fixed-pin treadle/strap linkage
+closes across 1,025 sampled poses, and all 35 candidate meshes pass the
+topology screen. The candidate still fails finite pawl/tooth contact and has
+not been integrated. Sixteen baseline and candidate views are inspected;
+none is accepted as a final mechanical reconstruction. An initial oversized
+pulley interpretation was corrected and its evidence preserved. All 904
+frozen production inputs remain unchanged. Details and limits are in the
+[082 study](../artifacts/review/082-reconstruction-notes.md).
+
 ## Movement 081 integration — 2026-09-11
 
 081 now uses the measured six-tooth gear and seven-tooth rack, with finite
@@ -2447,7 +2459,8 @@ and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080 and 081 are verified.
-Review continues beyond 081; the complete 507-movement review remains active.**
+082 is under reconstruction; its candidate contact and dynamics remain
+unverified. The complete 507-movement review remains active.**
 
 ## Completion requirements
 
