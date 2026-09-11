@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import {makeTreadleRatchetCandidate} from './lib/treadle-ratchet-candidate.mjs';
 import {solidSurface,surfacePoints} from '../tests/helpers/solid-surface.mjs';
-const model=makeTreadleRatchetCandidate(),u=model.root.userData,solids=[],contacts=[];
+const input=process.env.PROBE_INPUT,data=input?JSON.parse(fs.readFileSync(input)):null,
+ model=makeTreadleRatchetCandidate(data?.geometry),u=model.root.userData,solids=[],contacts=[];
+if(data){const s=data.rows[0];model.setState({time:s.time,wheelAngle:s.x[0],pawlAngles:s.x.slice(1)});}
 for(const [name,mesh] of Object.entries(u.parts)){
  const g=mesh.geometry,p=g.attributes.position,edges=new Map();let volume=0,degenerate=0;
  for(let i=0;i<(g.index?.count??p.count);i+=3){
@@ -24,7 +26,7 @@ for(const name of ['lowerPawlBody','upperPawlBody']){
  }
  contacts.push(row);
 }
-const report={movement:82,status:'first-candidate-source-pose-screen',mechanicsPassed:false,
+const report={movement:82,status:'candidate-source-pose-screen',mechanicsPassed:false,input,geometry:u.geometry.options,
  topologyPassed:solids.every(s=>s.volume>0&&s.degenerate===0&&s.openOrInconsistentEdges===0),solids,contacts,
  qualification:'Topology of all 35 candidate solids and only the two pawl/wheel pairs at the source pose. No loaded motion or complete interference screen is claimed.'};
-fs.writeFileSync('artifacts/review/'+(process.argv[2]??'082-first-candidate')+'-surfaces.json',JSON.stringify(report,null,2)+'\n');console.log(report);
+fs.writeFileSync('artifacts/review/'+(process.argv[2]??'082-first-candidate')+'-surfaces.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log(report);

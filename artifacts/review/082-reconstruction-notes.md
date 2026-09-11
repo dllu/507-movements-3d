@@ -1,9 +1,97 @@
 # Movement 082 reconstruction study
 
-Status: **in progress; not integrated or mechanically verified**. The current
-study measures the engraving, constructs a fixed-pin treadle linkage, and
-builds a provisional 35-solid candidate. All 904 frozen production inputs
-remain identical to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
+Status: **in progress; not integrated or fully mechanically verified**. The
+candidate now has three free dynamic coordinates, a closer source pose and
+corrected hardware spacing. All 904 frozen production inputs remain identical
+to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
+
+## Finite-contact dynamics stage
+
+The wheel and both pawls now carry their angles and velocities through time.
+The treadle linkage supplies analytically differentiated moving hinges;
+finite mesh-profile contact, inertia, gravity, drag and an explicit lower-pawl
+hinge preload determine the free motion. Pawls are seated only at startup.
+There is no framewise return angle or teleport to another tooth.
+
+The first gravity-only trial let the lower pawl swing away: its curved mass
+lies mostly above the hinge. The current trial assumes an ideal constant
+closing torque of 2 in the study's normalized units at that hinge. Common
+density normalizes the lower pawl mass to 1; the upper pawl uses gravity with
+no added preload. The preload is an unshown spring assumption, not a measured
+feature of the engraving. Its physical implementation and the complete
+mechanism's energy and loading remain to be qualified.
+
+The first tooth face also allowed too much camming out. The current trial
+uses a short-face fraction of 0.06 rather than the preliminary 0.27, retaining
+26 pointed teeth and curved backs. This gives a steeper driving face, informed
+by the enlarged right-hand teeth. It is a mechanical regularization of the
+irregular engraving, not a newly measured exact fraction. Both pawls deliver
+positive driving impulses in the current trajectory. The resulting rotation
+is counterclockwise as viewed from the source side.
+
+Startup uses wheel angle 0.03 rad and pawl angles approximately -0.05545 and
+-0.05002 rad. The upper pawl starts in the admissible tooth valley nearest
+its engraved pose; a different outside branch rests on the previous tooth.
+This branch choice is an initial condition only. Relative to the provisional
+source profiles, the initial rotation displaces wheel tips by at most 8.384
+source pixels and pawl vertices by 6.369 / 6.718 pixels. These numbers do not
+include the original measurement and uniform-tooth fitting errors.
+
+The latest twelve-second run has 6,001 states at a 0.002-second step, with no
+rejected steps or nonlinear failures. It advances 8.012 tooth pitches through
+three four-second treadle cycles. A very small startup rollback remains;
+after four seconds the sampled wheel velocity stays positive, between
+0.07719 and 0.25120 rad/s. This establishes neither a settled repeating cycle
+nor time-step convergence. An earlier 0.004-second trial failed near a tooth
+handoff; its successful smaller-step continuation and the failure are both
+preserved.
+
+The all-parts screen found and corrected intersections at both strap eyes,
+the upper rod ends, and then the rear treadle pedestal. Treadles now sit
+inward of the strap tabs, rod eyes have greater axial stand-off, and the rear
+pedestal sits outside the moving treadle. Ordinary round pins remain at all
+these joints. The latest 49-pose screen covers 538 independent component
+pairs and 12,153,906 actual surface samples with no intrusion beyond 1e-6.
+Rigidly connected parts and bonded strap/eye joins are excluded. This sampled
+screen is not a continuous collision bound.
+
+At the source pose, all 35 current meshes pass closed-edge, nondegenerate-face
+and positive-volume checks. Both finite pawl/wheel pairs also pass its surface screen.
+Independent checks pass for 144 generalized forces, 4,737 contact-coordinate
+derivatives and 1,579 input derivatives. All 10,905 positive contact reactions
+lie on the two participating profile boundaries and within their normal
+cones (21,810 checks of each). Maximum force discrepancy is 4.43e-9 and maximum
+contact-coordinate derivative discrepancy is 2.13e-8 in study units.
+
+Thirteen new renders were inspected: the source pose and overlay, nine poses
+through the final displayed input cycle, and oblique/rear views. They show the
+fixed-pin links and direct curved-pawl engagement. These are accepted as
+candidate review evidence, **not as a final reconstruction**; no real-time
+playback performance or integrated desktop/mobile test is claimed.
+
+Current local evidence is `082-source-seat-dynamics.json`,
+`082-source-seat-forces.json`, `082-source-seat-motion-surfaces.json`,
+`082-source-seat-topology.json`, and `082-contact-motion-captures.json`.
+A report-name collision briefly replaced the first full-motion JSON with the
+topology report. The topology report was moved, the original motion log and
+archives retained, and the motion screen rerun to its distinct current name.
+The incident is recorded in `082-report-name-collision.json`.
+
+Before integration, qualify strap tension/traction and pulley rotation,
+preload and energy balance, numerical convergence, all surfaces continuously
+through motion, playback duration/repetition and speed, and final
+desktop/mobile rendering. The local `082-contact-dynamics-checkpoint.json`
+freezes this stage separately from the initial layout checkpoint.
+
+The latest trial can be reproduced with a fresh output prefix:
+
+```sh
+GEOMETRY_OPTIONS='{"shortFaceFraction":0.06}' \
+PHYSICS_OPTIONS='{"preload":[2,0],"theta":0.03,"seatLowerBounds":[-0.7,-0.08]}' \
+PROBE_DT=.002 PROBE_MIN_STEP=.000001953125 PROBE_DURATION=12 \
+PROBE_OUTPUT=artifacts/review/082-reproduced-dynamics.json \
+node scripts/study-treadle-ratchet-dynamics.mjs
+```
 
 ## Source and rejected baseline
 
@@ -70,7 +158,7 @@ not establish loads, strap traction, no-slip pulley rotation, or continuous
 clearance of the finite solids. The chosen 0.1-radian amplitude and four-second
 period are provisional.
 
-## Candidate checks and remaining work
+## Initial layout checks (superseded by the dynamics stage above)
 
 All 35 candidate meshes have positive signed volume, consistent closed edges,
 and no degenerate triangles in the topology screen. The source-pose finite

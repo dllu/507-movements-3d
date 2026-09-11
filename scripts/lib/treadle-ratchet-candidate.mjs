@@ -6,8 +6,8 @@ import {PALETTE,matte,markShadows} from '../../src/simulation/primitives.js';
 
 // Geometry and linkage candidate. Wheel and pawl motion are deliberately
 // supplied separately until the actual finite-contact dynamics are solved.
-export function makeTreadleRatchetCandidate(){
- const linkage=makeTreadleRatchetLinkage(),p=linkage.parameters,initial=linkage.atTime(0),
+export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.shortFaceFraction,treadleInset=.055,rodEndOffset=.12}={}){
+ const linkage=makeTreadleRatchetLinkage({treadleInset}),p=linkage.parameters,initial=linkage.atTime(0),
   root=new THREE.Group(),parts={},families={},blocks={},profiles={},scale=source.scale,
   attach=(name,g,family,color,position=[0,0,0])=>{
    blocks[family]??=new THREE.Group();if(!blocks[family].parent)root.add(blocks[family]);
@@ -17,7 +17,7 @@ export function makeTreadleRatchetCandidate(){
   rootRadius=source.ratchet.rootRadiusPixels/scale,outerRadius=source.ratchet.outerRadiusPixels/scale,
   pitch=2*Math.PI/source.ratchet.teeth,wheelPoints=[];
  for(let i=0;i<source.ratchet.teeth;i++){
-  const a=source.ratchet.tipPhase+i*pitch,span=(1-source.ratchet.shortFaceFraction)*pitch,
+  const a=source.ratchet.tipPhase+i*pitch,span=(1-shortFaceFraction)*pitch,
    tip=rotate([outerRadius,0],a),valley=rotate([rootRadius,0],a+span),
    middle=tip.map((v,k)=>(v+valley[k])/2),bulge=rotate([.018,0],a+span/2),control=middle.map((v,k)=>v+bulge[k]);
   for(let j=0;j<=24;j++){const t=j/24;wheelPoints.push(tip.map((v,k)=>v*(1-t)**2+2*t*(1-t)*control[k]+t*t*valley[k]));}
@@ -43,7 +43,7 @@ export function makeTreadleRatchetCandidate(){
     capsule([p.strapLocal[0],0],p.strapLocal,.028,32),poly(circle(p.strapLocal,.07,128))),
    treadleShape=bored(leverOutline,[[[0,0],.047],[a.rodLocal,.032],[p.strapLocal,.027]]);
   attach(name+'TreadleBody',plate(treadleShape,a.treadlePlane-.035,a.treadlePlane+.035),tf,PALETTE.driver);
-  const rodTopZ=a.armPlane+.07,rodBottomZ=a.treadlePlane+(i===0?.09:-.09),L=a.rodLength;
+  const rodTopZ=a.armPlane+rodEndOffset,rodBottomZ=a.treadlePlane+(i===0?rodEndOffset:-rodEndOffset),L=a.rodLength;
   attach(name+'RodUpperEye',ring(.034,.104,rodTopZ-.025,rodTopZ+.025,128),rf,PALETTE.brass);
   attach(name+'RodLowerEye',ring(.034,.104,rodBottomZ-.025,rodBottomZ+.025,128),rf,PALETTE.brass,[L,0,0]);
   // A rigid rod with parallel Z-axis eyes can have a fixed axial offset.
@@ -54,7 +54,7 @@ export function makeTreadleRatchetCandidate(){
   attach(name+'RodTopPin',disk(.031,a.armPlane-.032,rodTopZ+.028,128),af,PALETTE.muted,[...a.armRodLocal,0]);
   attach(name+'RodBottomPin',disk(.031,Math.min(a.treadlePlane-.038,rodBottomZ-.028),Math.max(a.treadlePlane+.038,rodBottomZ+.028),128),tf,PALETTE.muted,[...a.rodLocal,0]);
   const strapZ=i===0?p.radius:-p.radius;
-  attach(name+'StrapPin',disk(.026,strapZ-.05,strapZ+.05,128),tf,PALETTE.muted,[...p.strapLocal,0]);
+  attach(name+'StrapPin',disk(.026,Math.min(a.treadlePlane-.038,strapZ-.009),Math.max(a.treadlePlane+.038,strapZ+.009),128),tf,PALETTE.muted,[...p.strapLocal,0]);
   attach(name+'StrapEye',plate(bored(capsule([0,0],[0,.075],10/scale,32),[[[0,0],.028]]),strapZ-.006,strapZ+.006),name+'StrapEye',PALETTE.belt);
  }
  const width=(source.pulley.axialEdges[1]-source.pulley.axialEdges[0])/scale,
@@ -70,7 +70,7 @@ export function makeTreadleRatchetCandidate(){
  }
  attach('treadleAxle',disk(.044,-p.radius-.2,p.radius+.2,128),'fixed',PALETTE.muted,[...p.fulcrum,0]);
  const pedestal=poly([[192,1100],[192,1071],[240,1065],[272,1024],[269,995],[281,967],[308,955],[330,971],[343,1025],[374,1061],[400,1070],[400,1100]].map(point));
- for(const sign of [-1,1])attach('pedestal'+sign,plate(bored(pedestal,[[p.fulcrum,.047]]),sign*p.radius+.08,sign*p.radius+.16),'fixed',PALETTE.muted);
+ for(const sign of [-1,1])attach('pedestal'+sign,plate(bored(pedestal,[[p.fulcrum,.047]]),sign*p.radius+(sign>0?.08:-.16),sign*p.radius+(sign>0?.16:-.08)),'fixed',PALETTE.muted);
  const strapGeometry=new THREE.BufferGeometry(),strap=attach('strap',strapGeometry,'strap',PALETTE.belt);
  const setStrap=cable=>{
   const points=cable.points.map(v=>[...v]);points[0][1]+=.075;points.at(-1)[1]+=.075;
@@ -95,7 +95,7 @@ export function makeTreadleRatchetCandidate(){
   }
   setStrap(s.cable);root.updateMatrixWorld(true);root.userData.kinematics={...s,wheelAngle,pawlAngles};
  };
- root.userData={parts,families,blocks,profiles,linkage,geometry:{source,pulleyRadius,width},setState,
+ root.userData={parts,families,blocks,profiles,linkage,geometry:{source,pulleyRadius,width,options:{shortFaceFraction,treadleInset,rodEndOffset}},setState,
   mechanism:'isolated-treadle-ratchet-candidate',fidelity:'candidate',hideGround:true,cameraFov:8,
   qualification:'Source geometry and equalizer linkage only. Pawl/wheel motion, contact, all solid clearances, mesh winding and pulley traction remain unverified.'};
  setState();markShadows(root);return{root,setState,update:()=>setState(),cameraDirection:new THREE.Vector3(0,0,10)};

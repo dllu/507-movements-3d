@@ -4,7 +4,7 @@ const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),
  angle=v=>Math.atan2(v[1],v[0]),length=v=>Math.hypot(...v);
 export const treadleSourcePoint=p=>[(p[0]-source.center[0])/source.scale,(source.center[1]-p[1])/source.scale];
 
-export function makeTreadleRatchetLinkage({amplitude=.10,period=4}={}){
+export function makeTreadleRatchetLinkage({amplitude=.10,period=4,treadleInset=0}={}){
  const fulcrum=treadleSourcePoint(source.circles.treadleFulcrum.center),
   upperEnd=sub(treadleSourcePoint(source.upperStrapPin),fulcrum),lowerEnd=sub(treadleSourcePoint(source.lowerStrapPin),fulcrum),
   attachmentAngle=(angle(upperEnd)+angle(lowerEnd))/2,sourceAngle=(angle(upperEnd)-angle(lowerEnd))/2,
@@ -31,7 +31,7 @@ export function makeTreadleRatchetLinkage({amplitude=.10,period=4}={}){
     difference=a=>Math.atan2(Math.sin(a-sourceArmAngle),Math.cos(a-sourceArmAngle)),
     branch=candidates.sort((a,b)=>Math.abs(difference(a.beta))-Math.abs(difference(b.beta)))[0].sign;
    return{name,sourceTreadleAngle:phi,sourceArmAngle,pawlLocal:rotate(pawl,-sourceArmAngle),rodLocal,armRodLocal,
-    armRodRadius,armRodOffset,rodLength,branch,endpointAngle,armPlane:.18+i*.13,treadlePlane:i===0?radius:-radius};
+    armRodRadius,armRodOffset,rodLength,branch,endpointAngle,armPlane:.18+i*.13,treadlePlane:(i===0?1:-1)*(radius-treadleInset)};
   });
  const atAngle=frontAngle=>{
   let lo=-.18,hi=Math.asin((pulley[1]-fulcrum[1])/attachmentRadius)-attachmentAngle-1e-6;
