@@ -1,0 +1,27 @@
+{
+  "status": "inspected; awaiting user preference",
+  "date": "2026-09-10T23:33:53.484Z",
+  "sources": {
+    "index.html": "71fe5456ca7ee8e05a00c4a2064627f5048b3604ac0f0a0339edb7419eb1a5f2",
+    "style.css": "6dedd5793647028b9b7840aa2d2d7f9b7fc15bfb6d583eacbd137c391a8633bd",
+    "main.js": "1ce8d8891f925d79d9377966352f5afce8c36db608a71a3ede0094ad016f137c",
+    "fluid.js": "5b7190bac5da0cbb8029a7ab9e13620ef7bc8dcf57e082b6da0aa1e943b967cf",
+    "water-renderer.js": "1a8e3f30c38200670d50f8180d4a793c468519b68dba22edd48219fd80a01946"
+  },
+  "screenshots": {
+    "demo-open.png": "d47a1ca775e3c18b5b391c7cc0cfa1466e0f8c9cad60a56cd227a16bfdecf68e",
+    "demo-mobile.png": "fa519db9608ace7983d1dc12fb384b47d036a26d9c8a3b0cee4f0a929872685a"
+  },
+  "observations": [
+    "Desktop open-gate and mobile closed-gate images visually inspected after the final camera adjustment.",
+    "Final camera check projects all eight model-bound corners inside both viewports.",
+    "Desktop and mobile controls are readable; no horizontal page overflow.",
+    "Water rendering remains rounded and visibly coarse in Light mode."
+  ],
+  "evidence": {
+    "numerical": "verification.json",
+    "browser": "browser-verification.json",
+    "finalCamera": "camera-verification.json"
+  },
+  "qualification": "The full browser interaction run preceded the final initial-camera/floor-size adjustment; the targeted camera check covers those final changes. Other stored screenshots are from that earlier interaction run. Numerical solver code is unchanged after its verification."
+}

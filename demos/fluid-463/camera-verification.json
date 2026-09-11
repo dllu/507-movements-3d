@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "results": [
+    {
+      "name": "desktop",
+      "bounds": {
+        "maxX": 0.7793971798563852,
+        "maxY": 0.9545018966735193
+      },
+      "errors": []
+    },
+    {
+      "name": "mobile",
+      "bounds": {
+        "maxX": 0.8928571428571425,
+        "maxY": 0.5269436072598714
+      },
+      "errors": []
+    }
+  ]
+}

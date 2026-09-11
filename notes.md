@@ -1,0 +1,30 @@
+Notes from human review
+
+- Web design notes:
+  - Make the site way more minimalistic. Right now the header is huge and I need to scroll down to see the full animation and click the next/previous buttons. The huge title isn't necessary given that it is just a truncated version of the text description.
+  - I'm thinking a 3 x 2 layout with the animation occupying the left 2 x 2 region, and the right having a 1 x1 cell for the original engraving and a 1 x 1 cell for the text description and other info.
+  - On mobile it would be a 2 x 3 layout with the animation on top
+  - Catalog page needs more useful thumbnails, either rendered from the animation or the original drawing
+  - Pagination needs more than just "one next and one previous + first/last"
+  - Next/previous buttons should be bigger on both the catalog and the movement pages
+- General notes:
+  - Pulleys should have an indicator on the face where it's easier to see instead of just having an indicator where it contacts the belt. Right now only some cases like the conical pulleys have that
+  - Gears should be true involute gears
+  - Bevel gears would be better if the teeth terminate in a conical profile on both ends instead of flat
+  - Many animations have an unnecessary stationary bar somewhere
+  - Many animations are too slow by default. We should scale everything to be like 2 seconds per full animation.
+  - Worm gear helixes are missing their caps.
+- 002: Belt is self-intersecting
+- 004: Belt is self intersecting; the diagram shows the rope winding around the bottom horizontal pulley multiple times but the animation only has the rope tangentially touching the pulley
+- 006: self-intersecting belt. Belt should go all the way to the lever.
+- 007: Use real bevel gears
+- 014: The rope isn't taut. It goes straight up and then abruptly bends to the pulley above. Instead, it should be slightly diagonal as drawn in the engraving. Also it clips through the pulleys. Looks unnatural and physically implausible.
+- 016: Incorrect model. Orange pulley's tangent rope should be attached to the center of the blue pulley while the yellow pulley's tangent rope should be the same as the blue pulley's tangent rope.
+- 017: Incorrect model. The moving yellow pulley's tangent rope should be attached to the center of the blue pulley whereas the orange pulley's tangent rope should be the same as the blue pulley's tangent rope.
+- 018: Model looks topologically correct but the yellow rope endpoint is clipping another rope whereas the original diagram has the ropes slightly diagonal/offset to avoid this confusion. Technically, the tangent rope to the yellow pulley should be attached to the center of the blue pulley, at a slightly diagonal angle too, but right now you have it made to attach to an offset cantilever on top of the blue pulley.
+- 023: Incorrect model. There should only be one belt for the yellow, orange, and blue pulleys, not two separate belts for orange/yellow and yellow/blue. Furthermore, this belt passes on the same side (upper side) of pulley A. As the belt travels across pulley A in opposite directions on the same side, pulley A may in fact be two slightly offset pulleys going in opposite directions.
+- 029: The blue gear shouldn't be clipping into the orange one. It needs to be offset so that its teeth properly engage the spiral worm mechanism without clipping.
+- 040: Herringbone gears are missing some surfaces or have incorrectly oriented surfaces so the 3D rendering looks wrong. You can see through the teeth.
+- 041-42: Same as above
+- 048: Blue and yellow clutch are clipping. The angular gaps between the keys aren't sufficient for each other.
+- 050: It should be a double Cardan joint, but right now the animation only shows a single one.

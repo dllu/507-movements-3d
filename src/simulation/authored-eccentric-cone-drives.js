@@ -1,0 +1,920 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeDynamicLink,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+
+function positiveModulo(value, modulus) {
+  return ((value % modulus) + modulus) % modulus;
+}
+
+function wrappedAngle(unwrappedAngle) {
+  const turns = unwrappedAngle / FULL_TURN;
+  if (Math.abs(turns - Math.round(turns)) < 1e-12) return 0;
+  return positiveModulo(unwrappedAngle, FULL_TURN);
+}
+
+function cylinderAlongX(radius, length, material, segments = 52) {
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+  cylinder.rotation.z = Math.PI / 2;
+  return cylinder;
+}
+
+function annularCollarAlongX({
+  depth,
+  innerRadius,
+  material,
+  outerRadius,
+}) {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
+  shape.holes.push(bore);
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    curveSegments: 56,
+    depth,
+    steps: 1,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  const collar = new THREE.Mesh(geometry, material);
+  collar.rotation.y = Math.PI / 2;
+  return collar;
+}
+
+class ScrewHelixCurve extends THREE.Curve {
+  constructor({ hand, lead, radius, xEnd, xStart }) {
+    super();
+    this.hand = hand;
+    this.lead = lead;
+    this.radius = radius;
+    this.xEnd = xEnd;
+    this.xStart = xStart;
+  }
+
+  getPoint(progress, target = new THREE.Vector3()) {
+    const x = THREE.MathUtils.lerp(this.xStart, this.xEnd, progress);
+    const angle = this.hand * FULL_TURN * (x - this.xStart) / this.lead;
+    return target.set(
+      x,
+      this.radius * Math.cos(angle),
+      this.radius * Math.sin(angle),
+    );
+  }
+}
+
+class UnitVerticalSpringCurve extends THREE.Curve {
+  constructor({ coilCount, radius }) {
+    super();
+    this.coilCount = coilCount;
+    this.radius = radius;
+  }
+
+  getPoint(progress, target = new THREE.Vector3()) {
+    const angle = FULL_TURN * this.coilCount * progress;
+    return target.set(
+      this.radius * Math.cos(angle),
+      progress,
+      this.radius * Math.sin(angle),
+    );
+  }
+}
+
+const GAUSS_NODES = [
+  -0.906179845938664,
+  -0.5384693101056831,
+  0,
+  0.5384693101056831,
+  0.906179845938664,
+];
+const GAUSS_WEIGHTS = [
+  0.2369268850561891,
+  0.4786286704993665,
+  0.5688888888888889,
+  0.4786286704993665,
+  0.2369268850561891,
+];
+
+function integrateFivePoint(integrand, start, end) {
+  if (start === end) return 0;
+  const midpoint = (start + end) / 2;
+  const halfWidth = (end - start) / 2;
+  let sum = 0;
+  for (let index = 0; index < GAUSS_NODES.length; index += 1) {
+    sum += GAUSS_WEIGHTS[index] * integrand(
+      midpoint + halfWidth * GAUSS_NODES[index],
+    );
+  }
+  return halfWidth * sum;
+}
+
+function makeIntegralLookup(integrand, maximumAngle, intervalCount = 6144) {
+  const intervalWidth = maximumAngle / intervalCount;
+  const cumulative = new Float64Array(intervalCount + 1);
+  for (let index = 0; index < intervalCount; index += 1) {
+    const start = index * intervalWidth;
+    const end = start + intervalWidth;
+    cumulative[index + 1] = cumulative[index]
+      + integrateFivePoint(integrand, start, end);
+  }
+  return (angle) => {
+    const boundedAngle = THREE.MathUtils.clamp(angle, 0, maximumAngle);
+    if (boundedAngle === maximumAngle) return cumulative[intervalCount];
+    const index = Math.min(
+      intervalCount - 1,
+      Math.floor(boundedAngle / intervalWidth),
+    );
+    const start = index * intervalWidth;
+    return cumulative[index]
+      + integrateFivePoint(integrand, start, boundedAngle);
+  };
+}
+
+function eccentricConeFrictionReverser(movement) {
+  const root = new THREE.Group();
+  root.scale.setScalar(0.78);
+  const presentationView = movement.id === 262 ? 'end-view' : 'side-view';
+
+  const coneLength = 4.4;
+  const coneLargeRadius = 1.2;
+  const coneSmallRadius = 0.54;
+  const coneEccentricity = 0.68;
+  const rollerRadius = 0.36;
+  const rollerWidth = 0.16;
+  const screwLead = 0.19;
+  const screwCoreRadius = 0.12;
+  const screwThreadRadius = 0.17;
+  const screwThreadTubeRadius = 0.026;
+  const screwThreadHand = -1;
+  const screwThreadXStart = 2.38;
+  const screwThreadXEnd = 6.28;
+  const rightScrewCoreXStart = 2.24;
+  const rightScrewCoreXEnd = 6.46;
+  const leftInputJournalXStart = -3.24;
+  const leftInputJournalXEnd = -2.2;
+  const nutAxialPosition = 2.82;
+  const initialContactAxialFraction = 0.82;
+  const inputForwardTurns = 3;
+  const maximumInputAngle = inputForwardTurns * FULL_TURN;
+  const demonstrationPeriod = 12;
+  const rollerContactAxialPosition = -coneLength / 2
+    + initialContactAxialFraction * coneLength;
+  const rollerAxialCenter = rollerContactAxialPosition + rollerWidth / 2;
+  const radiusSlope = (
+    coneSmallRadius - coneLargeRadius
+  ) / coneLength;
+  const radiusDerivativePerInputRadian = radiusSlope
+    * screwLead / FULL_TURN;
+  const translationDerivativePerInputRadian = -screwLead / FULL_TURN;
+
+  const inputMaterial = matte(PALETTE.driver, {
+    metalness: 0.14,
+    roughness: 0.54,
+  });
+  const drivenMaterial = matte(PALETTE.driven, {
+    metalness: 0.15,
+    roughness: 0.52,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.28,
+    roughness: 0.43,
+  });
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.13,
+    roughness: 0.67,
+  });
+  const springMaterial = matte(PALETTE.accent, {
+    metalness: 0.18,
+    roughness: 0.5,
+  });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.4 });
+
+  const radiusAtLocalAxialPosition = (localAxialPosition) => (
+    coneLargeRadius + radiusSlope * (localAxialPosition + coneLength / 2)
+  );
+
+  const contactScalarsAtInputAngle = (inputAngle) => {
+    const screwTranslation = translationDerivativePerInputRadian
+      * inputAngle;
+    const localContactAxialPosition = rollerContactAxialPosition
+      - screwTranslation;
+    const contactAxialFraction = (
+      localContactAxialPosition + coneLength / 2
+    ) / coneLength;
+    const coneRadiusAtContact = radiusAtLocalAxialPosition(
+      localContactAxialPosition,
+    );
+    const centerY = coneEccentricity * Math.cos(inputAngle);
+    const centerZ = coneEccentricity * Math.sin(inputAngle);
+    const centerDistance = coneRadiusAtContact + rollerRadius;
+    const verticalGapSquared = centerDistance ** 2 - centerZ ** 2;
+    if (verticalGapSquared <= 0) {
+      throw new RangeError('The spring-guided roller lost cone contact.');
+    }
+    const verticalGap = Math.sqrt(verticalGapSquared);
+    const normalY = verticalGap / centerDistance;
+    const normalZ = -centerZ / centerDistance;
+    const contactNormalAngle = Math.atan2(normalZ, normalY);
+    const contactNormalDerivativePerInputRadian = (
+      -coneEccentricity * Math.cos(inputAngle)
+        + coneEccentricity * Math.sin(inputAngle)
+          * radiusDerivativePerInputRadian / centerDistance
+    ) / verticalGap;
+    const rollerAngularRatio = (
+      centerDistance * contactNormalDerivativePerInputRadian
+        - coneRadiusAtContact
+    ) / rollerRadius;
+    const rollerCenterY = centerY + verticalGap;
+    const rollerCenterDerivativePerInputRadian =
+      -coneEccentricity * Math.sin(inputAngle)
+      + (
+        centerDistance * radiusDerivativePerInputRadian
+          - centerZ * coneEccentricity * Math.cos(inputAngle)
+      ) / verticalGap;
+    const coneCenterNormalProjection =
+      centerY * normalY + centerZ * normalZ;
+    const coneContactTangentSpeedPerInputRadian =
+      coneCenterNormalProjection + coneRadiusAtContact;
+    const rollerCenterTangentSpeedPerInputRadian =
+      rollerCenterDerivativePerInputRadian * -normalZ;
+    const circumferentialNoSlipResidual =
+      rollerCenterTangentSpeedPerInputRadian
+        - rollerAngularRatio * rollerRadius
+        - coneContactTangentSpeedPerInputRadian;
+    return {
+      centerDistance,
+      centerY,
+      centerZ,
+      circumferentialNoSlipResidual,
+      coneContactTangentSpeedPerInputRadian,
+      coneRadiusAtContact,
+      contactAxialFraction,
+      contactNormalAngle,
+      contactNormalDerivativePerInputRadian,
+      localContactAxialPosition,
+      normalY,
+      normalZ,
+      rollerAngularRatio,
+      rollerCenterDerivativePerInputRadian,
+      rollerCenterTangentSpeedPerInputRadian,
+      rollerCenterY,
+      screwTranslation,
+      verticalGap,
+    };
+  };
+
+  const rollerAngularRatioAtInputAngle = (inputAngle) => (
+    contactScalarsAtInputAngle(inputAngle).rollerAngularRatio
+  );
+  const rollerAngleAtInputAngle = makeIntegralLookup(
+    rollerAngularRatioAtInputAngle,
+    maximumInputAngle,
+  );
+
+  const configurationAtInputAngle = (inputAngle) => {
+    if (inputAngle < -1e-12 || inputAngle > maximumInputAngle + 1e-12) {
+      throw new RangeError(
+        `Movement ${movement.id} input left its finite cone traverse.`,
+      );
+    }
+    const boundedAngle = THREE.MathUtils.clamp(
+      inputAngle,
+      0,
+      maximumInputAngle,
+    );
+    const scalars = contactScalarsAtInputAngle(boundedAngle);
+    const coneAxisCenterAtContact = new THREE.Vector3(
+      rollerContactAxialPosition,
+      scalars.centerY,
+      scalars.centerZ,
+    );
+    const contactNormal = new THREE.Vector3(
+      0,
+      scalars.normalY,
+      scalars.normalZ,
+    );
+    const coneContactPoint = coneAxisCenterAtContact.clone().addScaledVector(
+      contactNormal,
+      scalars.coneRadiusAtContact,
+    );
+    const rollerCenter = new THREE.Vector3(
+      rollerAxialCenter,
+      scalars.rollerCenterY,
+      0,
+    );
+    const rollerContactPoint = new THREE.Vector3(
+      rollerContactAxialPosition,
+      rollerCenter.y,
+      rollerCenter.z,
+    ).addScaledVector(contactNormal, -rollerRadius);
+    const bodyContactAngle = scalars.contactNormalAngle - boundedAngle;
+    const localConeContactPoint = new THREE.Vector3(
+      scalars.localContactAxialPosition,
+      coneEccentricity
+        + scalars.coneRadiusAtContact * Math.cos(bodyContactAngle),
+      scalars.coneRadiusAtContact * Math.sin(bodyContactAngle),
+    );
+    const transformedLocalContactPoint = localConeContactPoint.clone()
+      .applyAxisAngle(X_AXIS, boundedAngle);
+    transformedLocalContactPoint.x += scalars.screwTranslation;
+    const rollerAngleUnwrapped = rollerAngleAtInputAngle(boundedAngle);
+    const screwThreadPhaseAtNut = screwThreadHand * FULL_TURN * (
+      nutAxialPosition
+        - scalars.screwTranslation
+        - screwThreadXStart
+    ) / screwLead + boundedAngle;
+    return {
+      ...scalars,
+      bodyContactAngle,
+      coneAxisCenterAtContact,
+      coneContactPoint,
+      contactCoincidenceError: coneContactPoint.distanceTo(
+        rollerContactPoint,
+      ),
+      contactNormal,
+      localConeContactPoint,
+      rollerAngle: wrappedAngle(rollerAngleUnwrapped),
+      rollerAngleUnwrapped,
+      rollerCenter,
+      rollerContactPoint,
+      screwThreadPhaseAtNut,
+      transformedContactError: transformedLocalContactPoint.distanceTo(
+        coneContactPoint,
+      ),
+      transformedLocalContactPoint,
+    };
+  };
+
+  const directionChangeAngles = [];
+  const rootScanCount = 12288;
+  let previousAngle = 0;
+  let previousRatio = rollerAngularRatioAtInputAngle(0);
+  for (let sample = 1; sample <= rootScanCount; sample += 1) {
+    const inputAngle = maximumInputAngle * sample / rootScanCount;
+    const ratio = rollerAngularRatioAtInputAngle(inputAngle);
+    if (ratio * previousRatio < 0) {
+      let lower = previousAngle;
+      let upper = inputAngle;
+      let lowerRatio = previousRatio;
+      for (let iteration = 0; iteration < 60; iteration += 1) {
+        const midpoint = (lower + upper) / 2;
+        const midpointRatio = rollerAngularRatioAtInputAngle(midpoint);
+        if (midpointRatio * lowerRatio <= 0) upper = midpoint;
+        else {
+          lower = midpoint;
+          lowerRatio = midpointRatio;
+        }
+      }
+      directionChangeAngles.push((lower + upper) / 2);
+    }
+    previousAngle = inputAngle;
+    previousRatio = ratio;
+  }
+  const directionIntervals = [];
+  let shorterDirectionAngularTravel = 0;
+  let longerDirectionAngularTravel = 0;
+  const intervalBounds = [
+    0,
+    ...directionChangeAngles,
+    maximumInputAngle,
+  ];
+  for (let index = 0; index < intervalBounds.length - 1; index += 1) {
+    const start = intervalBounds[index];
+    const end = intervalBounds[index + 1];
+    const midpoint = (start + end) / 2;
+    const signedTravel = rollerAngleAtInputAngle(end)
+      - rollerAngleAtInputAngle(start);
+    const direction = Math.sign(
+      rollerAngularRatioAtInputAngle(midpoint),
+    );
+    directionIntervals.push({ direction, end, signedTravel, start });
+    if (direction > 0) shorterDirectionAngularTravel += signedTravel;
+    else longerDirectionAngularTravel -= signedTravel;
+  }
+
+  const frame = new THREE.Group();
+  frame.userData.role = 'fixed-nut-E-base-and-spring-loaded-roller-guide';
+  root.add(frame);
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(9.25, 0.18, 1.2),
+    frameMaterial,
+  );
+  base.position.set(1.1, -1.55, -0.28);
+  base.userData.role = 'fixed-machine-base';
+  frame.add(base);
+  const nutPost = new THREE.Mesh(
+    new THREE.BoxGeometry(0.24, 1.58, 0.66),
+    frameMaterial,
+  );
+  nutPost.position.set(nutAxialPosition, -0.78, -0.02);
+  nutPost.userData.role = 'fixed-standard-carrying-nut-E';
+  frame.add(nutPost);
+  const nut = annularCollarAlongX({
+    depth: 0.28,
+    innerRadius: screwCoreRadius + 0.012,
+    material: springMaterial,
+    outerRadius: 0.31,
+  });
+  nut.position.set(nutAxialPosition, 0, 0);
+  nut.userData.axiallyFixed = true;
+  nut.userData.role = 'fixed-threaded-nut-E';
+  frame.add(nut);
+
+  const guideRailXPositions = [
+    rollerAxialCenter - 0.46,
+    rollerAxialCenter + 0.46,
+  ];
+  const guideRails = guideRailXPositions.map((x, index) => {
+    const rail = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 3.85, 0.14),
+      frameMaterial,
+    );
+    rail.position.set(x, 0.48, -0.5);
+    rail.userData.role =
+      `${index === 0 ? 'large-end-side' : 'small-end-side'}-roller-guide-rail`;
+    frame.add(rail);
+    return rail;
+  });
+  const guideTop = new THREE.Mesh(
+    new THREE.BoxGeometry(1.04, 0.12, 0.22),
+    frameMaterial,
+  );
+  guideTop.position.set(rollerAxialCenter, 2.43, -0.5);
+  guideTop.userData.role = 'fixed-spring-abutment-over-roller-C';
+  frame.add(guideTop);
+
+  const screwConeAssembly = new THREE.Group();
+  screwConeAssembly.userData.axis = X_AXIS.clone();
+  screwConeAssembly.userData.role =
+    'rigid-rotating-and-translating-screw-D-with-eccentric-cone-B';
+  root.add(screwConeAssembly);
+  const screwCore = new THREE.Group();
+  screwCore.userData.role =
+    'end-supported-screw-D-core-leaving-cone-working-span-clear';
+  const leftInputJournal = cylinderAlongX(
+    screwCoreRadius,
+    leftInputJournalXEnd - leftInputJournalXStart,
+    darkMaterial,
+    42,
+  );
+  leftInputJournal.position.x = (
+    leftInputJournalXStart + leftInputJournalXEnd
+  ) / 2;
+  leftInputJournal.userData.role = 'left-input-journal-of-screw-D';
+  const rightScrewCore = cylinderAlongX(
+    screwCoreRadius,
+    rightScrewCoreXEnd - rightScrewCoreXStart,
+    darkMaterial,
+    42,
+  );
+  rightScrewCore.position.x = (
+    rightScrewCoreXStart + rightScrewCoreXEnd
+  ) / 2;
+  rightScrewCore.userData.role =
+    'right-core-of-screw-D-through-fixed-nut-E';
+  screwCore.add(leftInputJournal, rightScrewCore);
+  const threadCurve = new ScrewHelixCurve({
+    hand: screwThreadHand,
+    lead: screwLead,
+    radius: screwThreadRadius,
+    xEnd: screwThreadXEnd,
+    xStart: screwThreadXStart,
+  });
+  const screwThread = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      threadCurve,
+      960,
+      screwThreadTubeRadius,
+      7,
+      false,
+    ),
+    darkMaterial,
+  );
+  screwThread.userData.hand = screwThreadHand;
+  screwThread.userData.lead = screwLead;
+  screwThread.userData.role = 'single-start-helical-thread-on-screw-D';
+
+  const coneBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      coneLargeRadius,
+      coneSmallRadius,
+      coneLength,
+      96,
+      1,
+      false,
+    ),
+    inputMaterial,
+  );
+  coneBody.rotation.z = Math.PI / 2;
+  coneBody.position.y = coneEccentricity;
+  coneBody.userData.axisOffsetFromScrew = coneEccentricity;
+  coneBody.userData.radiusAtLocalAxialPosition =
+    radiusAtLocalAxialPosition;
+  coneBody.userData.role = 'eccentric-conical-friction-body-B';
+  const coneRims = [
+    { name: 'large', radius: coneLargeRadius, x: -coneLength / 2 },
+    { name: 'small', radius: coneSmallRadius, x: coneLength / 2 },
+  ].map(({ name, radius, x }) => {
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, 0.035, 10, 88),
+      darkMaterial,
+    );
+    rim.rotation.y = Math.PI / 2;
+    rim.position.set(x, coneEccentricity, 0);
+    rim.userData.role = `${name}-end-rim-of-eccentric-cone-B`;
+    return rim;
+  });
+  const coneGeneratorIndex = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.LineCurve3(
+        new THREE.Vector3(
+          -coneLength / 2,
+          coneEccentricity + coneLargeRadius + 0.018,
+          0,
+        ),
+        new THREE.Vector3(
+          coneLength / 2,
+          coneEccentricity + coneSmallRadius + 0.018,
+          0,
+        ),
+      ),
+      96,
+      0.026,
+      7,
+      false,
+    ),
+    whiteMaterial,
+  );
+  coneGeneratorIndex.userData.role =
+    'white-rigid-generator-index-on-cone-B';
+  const eccentricConnectors = [-1, 1].map((side) => {
+    const connector = makeDynamicLink({
+      color: PALETTE.driver,
+      depth: 0.1,
+      jointRadius: 0.08,
+      thickness: 0.1,
+    });
+    const x = side * (coneLength / 2 + 0.035);
+    connector.userData.setEndpoints(
+      new THREE.Vector3(x, 0, 0),
+      new THREE.Vector3(x, coneEccentricity, 0),
+    );
+    connector.userData.role =
+      `${side < 0 ? 'large' : 'small'}-end-eccentric-cone-carrier`;
+    return connector;
+  });
+  screwConeAssembly.add(
+    screwCore,
+    screwThread,
+    coneBody,
+    ...coneRims,
+    coneGeneratorIndex,
+    ...eccentricConnectors,
+  );
+
+  const rollerCarriage = new THREE.Group();
+  rollerCarriage.position.set(rollerAxialCenter, 0, 0);
+  rollerCarriage.userData.guideAxis = new THREE.Vector3(0, 1, 0);
+  rollerCarriage.userData.role =
+    'spring-loaded-vertical-carriage-for-friction-roller-C';
+  root.add(rollerCarriage);
+  const rollerRotor = new THREE.Group();
+  rollerRotor.userData.axis = X_AXIS.clone();
+  rollerRotor.userData.role = 'freely-rolling-friction-roller-C-rotor';
+  rollerCarriage.add(rollerRotor);
+  const rollerBody = cylinderAlongX(
+    rollerRadius,
+    rollerWidth,
+    drivenMaterial,
+    68,
+  );
+  rollerBody.userData.contactEdgeLocalX = -rollerWidth / 2;
+  rollerBody.userData.role =
+    'thin-roller-C-touching-cone-at-large-end-side-edge';
+  const rollerFaceRim = new THREE.Mesh(
+    new THREE.TorusGeometry(rollerRadius - 0.018, 0.025, 9, 64),
+    darkMaterial,
+  );
+  rollerFaceRim.rotation.y = Math.PI / 2;
+  rollerFaceRim.position.x = rollerWidth / 2 + 0.006;
+  rollerFaceRim.userData.role = 'front-rim-of-friction-roller-C';
+  const rollerIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.025, rollerRadius * 0.72, 0.038),
+    whiteMaterial,
+  );
+  rollerIndex.position.set(
+    rollerWidth / 2 + 0.035,
+    rollerRadius * 0.34,
+    0,
+  );
+  rollerIndex.userData.role =
+    'white-index-showing-variable-and-reversing-roller-C-spin';
+  rollerRotor.add(rollerBody, rollerFaceRim, rollerIndex);
+  const rollerAxle = cylinderAlongX(
+    0.075,
+    0.78,
+    darkMaterial,
+    30,
+  );
+  rollerAxle.userData.role = 'guided-axis-of-friction-roller-C';
+  rollerCarriage.add(rollerAxle);
+  const carriageBlocks = [-1, 1].map((side) => {
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.22, 0.24),
+      frameMaterial,
+    );
+    block.position.set(side * 0.36, 0, -0.4);
+    block.userData.role =
+      `${side < 0 ? 'large-end-side' : 'small-end-side'}-roller-slide-block`;
+    rollerCarriage.add(block);
+    return block;
+  });
+
+  const springCurve = new UnitVerticalSpringCurve({
+    coilCount: 8,
+    radius: 0.085,
+  });
+  const contactSpring = new THREE.Mesh(
+    new THREE.TubeGeometry(springCurve, 128, 0.024, 7, false),
+    springMaterial,
+  );
+  contactSpring.userData.role =
+    'source-permitted-spring-pressing-roller-C-against-cone-B';
+  contactSpring.userData.setEndpoints = (lowerY, upperY) => {
+    const length = Math.max(upperY - lowerY, 0.08);
+    contactSpring.position.set(rollerAxialCenter, lowerY, -0.5);
+    contactSpring.scale.set(1, length, 1);
+  };
+  root.add(contactSpring);
+
+  const contactMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.072, 20, 14),
+    whiteMaterial,
+  );
+  contactMarker.userData.role =
+    'moving-exact-edge-contact-between-cone-B-and-roller-C';
+  root.add(contactMarker);
+
+  const stateAtTime = (time) => {
+    const wrappedTime = positiveModulo(time, demonstrationPeriod);
+    const phase = FULL_TURN * wrappedTime / demonstrationPeriod;
+    const inputAngleUnwrapped = maximumInputAngle
+      * (1 - Math.cos(phase)) / 2;
+    const inputAngularSpeed = maximumInputAngle * Math.PI
+      / demonstrationPeriod * Math.sin(phase);
+    const inputAngularAcceleration = maximumInputAngle * 2 * Math.PI ** 2
+      / demonstrationPeriod ** 2 * Math.cos(phase);
+    const configuration = configurationAtInputAngle(inputAngleUnwrapped);
+    const derivativeStep = 1e-5;
+    const lowerAngle = Math.max(0, inputAngleUnwrapped - derivativeStep);
+    const upperAngle = Math.min(
+      maximumInputAngle,
+      inputAngleUnwrapped + derivativeStep,
+    );
+    const ratioDerivativePerInputRadian = upperAngle === lowerAngle
+      ? 0
+      : (
+        rollerAngularRatioAtInputAngle(upperAngle)
+          - rollerAngularRatioAtInputAngle(lowerAngle)
+      ) / (upperAngle - lowerAngle);
+    return {
+      configuration,
+      contactPoint: configuration.coneContactPoint.clone(),
+      inputAngle: wrappedAngle(inputAngleUnwrapped),
+      inputAngleUnwrapped,
+      inputAngularAcceleration,
+      inputAngularSpeed,
+      phase,
+      rollerAngle: configuration.rollerAngle,
+      rollerAngleUnwrapped: configuration.rollerAngleUnwrapped,
+      rollerAngularAcceleration:
+        ratioDerivativePerInputRadian * inputAngularSpeed ** 2
+          + configuration.rollerAngularRatio * inputAngularAcceleration,
+      rollerAngularRatio: configuration.rollerAngularRatio,
+      rollerAngularSpeed:
+        configuration.rollerAngularRatio * inputAngularSpeed,
+      rollerCenter: configuration.rollerCenter.clone(),
+      rollerVerticalSpeed:
+        configuration.rollerCenterDerivativePerInputRadian
+          * inputAngularSpeed,
+      screwTranslation: configuration.screwTranslation,
+      screwTranslationSpeed:
+        translationDerivativePerInputRadian * inputAngularSpeed,
+      wrappedTime,
+    };
+  };
+
+  root.userData.archetype =
+    'fixed-nut-screw-translated-eccentric-cone-edge-contact-friction-roller-reverser';
+  root.userData.blocks = {
+    base,
+    carriageBlocks,
+    coneBody,
+    coneGeneratorIndex,
+    coneRims,
+    contactMarker,
+    contactSpring,
+    eccentricConnectors,
+    frame,
+    guideRails,
+    guideTop,
+    leftInputJournal,
+    nut,
+    nutPost,
+    rollerAxle,
+    rollerBody,
+    rollerCarriage,
+    rollerFaceRim,
+    rollerIndex,
+    rollerRotor,
+    screwConeAssembly,
+    screwCore,
+    screwThread,
+    rightScrewCore,
+  };
+  root.userData.cameraDistanceScale = 1.02;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.25, -1.9, -1.85),
+    new THREE.Vector3(6.25, 2.85, 1.85),
+  );
+  root.userData.contactDefinition = {
+    axialContact:
+      'large-end-side-edge-of-thin-roller-C-at-one-fixed-world-axial-plane',
+    circumferentialRolling: 'ideal-no-slip',
+    coneAxialSliding:
+      'screw translation produces the source-described spiral trace',
+    contactLoadChoice: 'spring',
+    sourcePermits: 'spring-or-weight',
+  };
+  root.userData.driveSchedule = {
+    demonstration:
+      'three-turn-smooth-forward-cone-traverse-followed-by-exact-reverse-return',
+    demonstrationBeginsAtAxialFraction: initialContactAxialFraction,
+    purpose:
+      'show-three-successive-reversals-and-close-without-teleporting-the-screw',
+    reasonForLaterConeStation:
+      'the source-described direction reversals occur after the spiral reaches the small-radius end of the eccentric cone',
+    sourceIllustratedContactAxialFraction: (
+      207 - 166
+    ) / (330 - 166),
+    sourcePrescribesReturnReversal: false,
+    sourcePrescribesUniformForwardInput: true,
+  };
+  root.userData.geometry = {
+    coneEccentricity,
+    coneLargeRadius,
+    coneLength,
+    coneSmallRadius,
+    initialContactAxialFraction,
+    maximumInputAngle,
+    minimumRollerFaceClearance:
+      -radiusSlope * rollerWidth,
+    nutAxialPosition,
+    radiusDerivativePerInputRadian,
+    radiusSlope,
+    rollerAxialCenter,
+    rollerContactAxialPosition,
+    rollerRadius,
+    rollerWidth,
+    leftInputJournalXEnd,
+    leftInputJournalXStart,
+    minimumScrewCoreToRollerAxialClearance:
+      rightScrewCoreXStart
+        + translationDerivativePerInputRadian * maximumInputAngle
+        - (rollerContactAxialPosition + rollerWidth),
+    rightScrewCoreXEnd,
+    rightScrewCoreXStart,
+    screwCoreRadius,
+    screwLead,
+    screwThreadHand,
+    screwThreadRadius,
+    screwThreadXEnd,
+    screwThreadXStart,
+    minimumThreadToConeAxialGap:
+      screwThreadXStart - coneLength / 2,
+    translationDerivativePerInputRadian,
+  };
+  root.userData.mechanism =
+    'fixed-nut-E-converts-uniform-screw-D-rotation-to-one-lead-per-turn-translation-of-eccentric-cone-B-whose-changing-signed-contact-radius-friction-drives-and-reverses-roller-C';
+  root.userData.pairedMechanismKey =
+    'movements-262-263-eccentric-screw-cone-friction-reverser';
+  root.userData.presentationView = presentationView;
+  root.userData.sourceAnimation = {
+    available: false,
+    independentlyReconstructed: true,
+    reason: 'the official paired 262-263 page marks its animation unavailable',
+    sourceUrl: movement.sourceUrl,
+  };
+  root.userData.sourceReference = {
+    officialDescription: movement.description,
+    pairedViews: {
+      movement262: 'end-view',
+      movement263: 'side-view',
+    },
+    plate262263: {
+      imageHeight: 263,
+      imageWidth: 525,
+      identicalLocalAssetsForBothNumbers: true,
+      inferredTopology:
+        'one eccentric conical body rigid with one translating screw through fixed nut E and one spring-or-weight-loaded parallel-axis friction roller C',
+      measurementUncertaintyPixels: 6,
+      officialAnimationAvailable: false,
+      rasterEndView: {
+        coneCenterB: { x: 69, y: 146 },
+        coneOuterRadius: 55,
+        rollerCenterC: { x: 70, y: 95 },
+        rollerOuterRadius: 16,
+        screwCenterD: { x: 69, y: 176 },
+      },
+      rasterSideView: {
+        coneLargeEndX: 166,
+        coneLargeRadius: 43,
+        coneSmallEndX: 330,
+        coneSmallRadius: 20,
+        fixedNutCenterX: 383,
+        rollerCenterX: 207,
+        rollerOuterRadius: 13,
+        screwAxisY: 146,
+        screwThreadPitch: 7,
+      },
+      view:
+        'combined-end-view-262-and-side-view-263-of-one-three-dimensional-mechanism',
+    },
+    primaryScan: {
+      archiveIdentifier: 'fivehundredseven00browiala',
+      descriptionPage: 67,
+      edition: 21,
+      illustrationPage: 66,
+      publicationYear: 1908,
+    },
+    sourceUrl: movement.sourceUrl,
+  };
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.strokeAnalysis = {
+    directionChangeAngles,
+    directionIntervals,
+    longerDirectionAngularTravel,
+    shorterDirectionAngularTravel,
+    sourceRequiredInequality:
+      'roller-angular-travel-in-one-direction-is-shorter-than-in-the-other',
+  };
+  root.userData.timeline = {
+    cycleClosure: demonstrationPeriod,
+    demonstrationPeriod,
+    forwardTraverseEnd: demonstrationPeriod / 2,
+    reverseReturnEnd: demonstrationPeriod,
+  };
+  root.userData.transmission = {
+    configurationAtInputAngle,
+    coneRadiusAtLocalAxialPosition: radiusAtLocalAxialPosition,
+    contactSpiralPitch: screwLead,
+    rollerAngleAtInputAngle,
+    rollerAngularRatioAtInputAngle,
+    rollingLaw:
+      'd(roller-angle)/d(input-angle)=((cone-radius+roller-radius)*d(contact-normal-angle)/d(input-angle)-cone-radius)/roller-radius',
+    screwLaw:
+      'translation=-(lead/(2*pi))*input-angle',
+    sourceUniformInputLaw:
+      'input-angle=constant-angular-speed*time; all ratios are parameterized by input angle',
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    const { configuration } = state;
+    screwConeAssembly.position.x = state.screwTranslation;
+    screwConeAssembly.rotation.x = state.inputAngle;
+    rollerCarriage.position.y = configuration.rollerCenter.y;
+    rollerRotor.rotation.x = state.rollerAngle;
+    contactMarker.position.copy(configuration.coneContactPoint);
+    contactSpring.userData.setEndpoints(
+      configuration.rollerCenter.y + rollerRadius + 0.12,
+      guideTop.position.y - 0.08,
+    );
+    root.userData.kinematics = state;
+  };
+  update(0);
+  markShadows(root);
+  return {
+    root,
+    update,
+    cameraDirection: presentationView === 'end-view'
+      ? new THREE.Vector3(-8.5, 3.6, 7)
+      : new THREE.Vector3(2.8, 3.2, 12),
+  };
+}
+
+export function createAuthoredEccentricConeDriveMovement(movement) {
+  if (movement.id !== 262 && movement.id !== 263) return null;
+  const result = eccentricConeFrictionReverser(movement);
+  result.root.userData.fidelity = 'authored';
+  return result;
+}

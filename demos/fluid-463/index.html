@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eeeae2">
+  <title>Water study · Movement 463</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">507 <span>MECHANICAL MOVEMENTS</span></a>
+    <span class="edition">EXPERIMENT No. 01 <i></i> FLUID STUDY</span>
+  </header>
+  <main>
+    <div class="intro">
+      <div><p class="eyebrow">463 / HYDRAULICS</p><h1>Let the water move.</h1></div>
+      <p class="dek">A working water study of the two-leaf weir.<br>Raise the river. Release the gates. Watch the flow.</p>
+    </div>
+    <div class="workspace">
+      <section class="stage" aria-label="Interactive three-dimensional fluid simulation">
+        <div id="viewport"></div>
+        <div class="stage-top"><span class="live"><i></i><span id="status">FILLING THE CHANNEL</span></span><span class="badge">LIVE 3D WATER</span></div>
+        <div id="loading">Preparing the water…</div>
+        <div class="stage-bottom"><span>DRAG TO ORBIT <span class="dot">·</span> SCROLL TO ZOOM</span><div class="view-switch"><button id="perspective" class="selected">Perspective</button><button id="side">Side view</button></div></div>
+        <div class="measurements"><div><span id="head">—</span><small>UPSTREAM / m</small></div><div><span id="angle">—</span><small>GATE / °</small></div><div><span id="count">—</span><small>WATER PARTICLES</small></div></div>
+      </section>
+      <aside>
+        <div class="section-label">01 <span>CHANGE THE RIVER</span></div>
+        <h2>Follow the current.</h2>
+        <p>Water gathers behind the weir and spills through its notch. Open the leaves to release the water along the riverbed.</p>
+        <div class="presets"><button id="normal" class="selected">Steady river</button><button id="flood">Flood pulse <span>↗</span></button></div>
+        <label class="slider-label" for="inflow">Inflow <output id="inflow-value">0.28 m³/s</output></label>
+        <input type="range" id="inflow" min="0" max="1.8" step="0.02" value="0.28">
+        <div class="range-ends"><span>Still</span><span>Flood</span></div>
+        <div class="divider"></div>
+        <div class="section-label">02 <span>EXPLORE THE GATES</span></div>
+        <div class="toggle-row"><label for="automatic">Respond to water level</label><input id="automatic" type="checkbox" checked role="switch"></div>
+        <label class="slider-label" for="gate">Open the upper leaf <output id="gate-value">Automatic</output></label>
+        <input type="range" id="gate" min="0" max="40" step="1" value="0" aria-label="Manual gate opening; moving this disables automatic control">
+        <div class="range-ends"><span>Closed</span><span>40°</span></div>
+        <div class="divider"></div>
+        <div class="select-row"><label for="render-mode">Show water as</label><select id="render-mode"><option value="water">Smooth water</option><option value="particles">Fluid particles</option></select></div>
+        <div class="select-row"><label for="quality">Fluid detail</label><select id="quality"><option value="balanced">Balanced</option><option value="fine">Fine</option><option value="light">Light</option></select></div>
+        <div class="actions"><button id="pause">Ⅱ Pause</button><button id="reset">↺ Reset</button></div>
+        <div class="performance"><i></i><span id="performance">Starting simulation</span></div>
+      </aside>
+    </div>
+    <footer>
+      <div class="source"><img src="/engravings/mm_463.png" alt="Henry T. Brown's engraving of movement 463"><div><p class="eyebrow">THE ORIGINAL / 1868</p><h3>Self-acting weir & scouring sluice</h3><p>Two overlapping leaves turn in opposite directions, opening a passage at the bed.</p><a href="https://507movements.com/mm_463.html" target="_blank" rel="noreferrer">View the engraving ↗</a></div></div>
+      <details><summary>About this experiment <span>+</span></summary><p>Real 3D particles respond to gravity, neighboring water, and solid gate and channel surfaces. The visible surface is reconstructed from those particles. Automatic gates use an approximate hydrostatic torque model; this prototype is not a validated reconstruction or engineering fluid model. Inlet and outlet account for particles added and removed.</p><p>Runs in WebGL using the existing Three.js dependency. <a href="./README.md">Implementation and limitations ↗</a></p></details>
+    </footer>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "507-movements-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable, paginated Three.js simulations of Henry T. Brown's 507 Mechanical Movements.",
+  "scripts": {
+    "catalog": "node scripts/scrape-catalog.mjs",
+    "source-images": "node scripts/fetch-source-images.mjs",
+    "measure-display": "node scripts/measure-display-profiles.mjs",
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:e2e": "npm run build && playwright test"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "polygon-clipping": "0.15.7",
+    "vite": "6.4.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "overrides": {
+    "polygon-clipping": {
+      "splaytree": "3.1.2"
+    }
+  }
+}

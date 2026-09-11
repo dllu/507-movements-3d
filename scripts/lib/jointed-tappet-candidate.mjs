@@ -1,0 +1,95 @@
+import * as THREE from 'three';
+import{PALETTE,matte,markShadows}from'../../src/simulation/primitives.js';
+import{makeJointedTappetContactStudy}from'./jointed-tappet-contact-study.mjs';
+import{makeExtrudedSectionCaps}from'./extruded-section-caps.mjs';
+import{add,sub,rotate,poly,circle,capsule,sector,spline,plate,disk,ring,polygonClipping as clip,familyMass}from'./finite-plate-study.mjs';
+
+export function makeJointedTappetCandidate({motionParameters={}}={}){
+  const contact=makeJointedTappetContactStudy({rootRadius:.87,faceAngle:.045,nosePixels:[792,712],holdingNosePixels:[185,352],seatHolding:true,...motionParameters}),p=contact.parameters,
+    source=point=>[(point[0]-p.center[0])/p.scale,(p.center[1]-point[1])/p.scale],
+    root=new THREE.Group(),blocks={},parts={},families={};
+  for(const name of ['driver','wheel','tappet','dog','holding','fixed']){blocks[name]=new THREE.Group();root.add(blocks[name]);}
+  blocks.tappet.position.set(...p.C,0);blocks.holding.position.set(...p.PH,0);
+  const attach=(name,geometry,family,color,position=[0,0,0])=>{
+    const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.16,roughness:.61}));mesh.name=name;mesh.position.fromArray(position);
+    blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;
+  };
+  const bore=.106,axleRadius=.103,driverInner=744.8633730551632/p.scale,driverOuter=921.1339022024459/p.scale,
+    studVector=source([1187,358]),studRadius=24/p.scale,spokeAngle=Math.atan2(studVector[1],studVector[0]),
+    driverRing=clip.difference(poly(circle([0,0],driverOuter,1024)),poly(circle([0,0],driverInner,1024))),
+    driverSpokes=Array.from({length:4},(_,i)=>poly([[.12,-.081],[driverInner+.03,-.081],[driverInner+.03,.081],[.12,.081]]
+      .map(point=>rotate(point,spokeAngle+i*Math.PI/2)))),
+    driverBody=clip.difference(clip.union(driverRing,...driverSpokes,poly(circle([0,0],.19))),poly(circle([0,0],bore)));
+  attach('driverBody',plate(driverBody,-.30,-.20),'driver',PALETTE.driver);
+  attach('driverRearHub',ring(bore,.19,-.36,-.30),'driver',PALETTE.brass);
+  attach('driverStud',disk(studRadius,-.20,.172),'driver',PALETTE.brass,[...studVector,0]);
+  attach('wheelBody',plate(clip.difference(poly(contact.wheel.points),poly(circle([0,0],bore))),-.06,.06),'wheel',PALETTE.driven);
+  attach('wheelFrontHub',ring(bore,.200,.06,.068),'wheel',PALETTE.driven);
+  attach('wheelRearHub',ring(bore,.19,-.15,-.06),'wheel',PALETTE.brass);
+  attach('commonAxle',disk(axleRadius,-.46,.075),'fixed',PALETTE.muted);
+  attach('commonAxleFrontCap',disk(.13,.075,.089),'fixed',PALETTE.muted);
+  const end=sub(source([1282,589]),p.C),barRadius=41/p.scale,
+    barShape=clip.difference(capsule(p.B,end,barRadius),poly(circle([0,0],.056)),poly(circle(p.B,.032))),
+    restQ=.30,CstopRadius=.0105,CstopOrbit=.082,CstopAngle=restQ+Math.asin(CstopRadius/CstopOrbit),
+    Cstop=add(p.C,rotate([CstopOrbit,0],CstopAngle));
+  attach('tappetBody',plate(barShape,.095,.17),'tappet',PALETTE.brass);
+  attach('tappetRestSector',plate(sector(.065,.099,-Math.PI,0),.075,.095),'tappet',PALETTE.brass);
+  attach('fixedPivotC',disk(.053,.053,.253),'fixed',PALETTE.muted,[...p.C,0]);
+  attach('fixedPivotCap',disk(.064,.253,.266),'fixed',PALETTE.muted,[...p.C,0]);
+  attach('tappetRestPin',disk(CstopRadius,.053,.094),'fixed',PALETTE.muted,[...Cstop,0]);
+  attach('tappetRestMount',plate(capsule(p.C,Cstop,.014),.053,.074),'fixed',PALETTE.muted);
+  attach('dogPivotPin',disk(.029,.17,.253),'tappet',PALETTE.muted,[...p.B,0]);
+  attach('dogPivotCap',disk(.046,.253,.263),'tappet',PALETTE.muted,[...p.B,0]);
+  const dogNose=p.V,dogLocal=point=>sub(source(point),p.PB),
+    dogHead=spline([[944,645],[955,642],[993,629],[1035,665],[1009,708],[966,713]].map(dogLocal)),
+    dogWeight=spline([[966,713],[974,742],[970,771],[953,794],[925,803],[890,799],[854,783],[832,763],[813,734],p.nosePixels].map(dogLocal)),
+    dogOutline=[dogNose,dogLocal([805,680]),...dogHead,...dogWeight.slice(1,-1)],
+    dogShape=clip.difference(clip.union(poly(dogOutline),poly(circle([0,0],.112)),poly(circle(dogNose,p.noseRadius))),poly(circle([0,0],.032))),
+    dogStopRadius=.012,dogStopOrbit=.075,dogStopFace=Math.PI/2,
+    dogStop=add(p.B,rotate([dogStopOrbit,0],dogStopFace+Math.asin(dogStopRadius/dogStopOrbit)));
+  attach('dogBody',plate(dogShape,.19,.25),'dog',PALETTE.brass);
+  attach('dogNose',disk(p.noseRadius,-.061,.19),'dog',PALETTE.brass,[...dogNose,0]);
+  attach('dogStopSector',plate(sector(.042,.099,dogStopFace-Math.PI,dogStopFace),.174,.19),'dog',PALETTE.brass);
+  attach('dogStopPin',disk(dogStopRadius,.17,.189),'tappet',PALETTE.muted,[...dogStop,0]);
+  const H0=contact.closeH(p.wheelStart),holdingNose=sub(H0.center,p.PH),Hlocal=point=>sub(source(point),p.PH),
+    outer=spline([[224,172],[196,219],[177,269],[166,321]].map(Hlocal).concat([holdingNose])),
+    inner=spline([[271,210],[226,243],[200,281],[187,318]].map(Hlocal).concat([holdingNose])),
+    holdingShape=clip.difference(clip.union(poly([...outer,...inner.slice(0,-1).reverse()]),poly(circle([0,0],.106)),poly(circle(holdingNose,p.noseRadius))),poly(circle([0,0],.039)));
+  attach('holdingBody',plate(holdingShape,.19,.25),'holding',PALETTE.brass);
+  attach('holdingNose',disk(p.noseRadius,-.061,.19),'holding',PALETTE.brass,[...holdingNose,0]);
+  attach('holdingPivotPin',disk(.036,-.14,.253),'fixed',PALETTE.muted,[...p.PH,0]);
+  attach('holdingPivotCap',disk(.049,.253,.263),'fixed',PALETTE.muted,[...p.PH,0]);
+  const masses=Object.fromEntries(['driver','wheel','tappet','dog','holding'].map(family=>[family,familyMass(parts,families,family)]));
+  const setState=({q=0,alpha=0,theta=p.wheelStart,driverAngle=0,holdingAngle=contact.closeH(theta).angle-H0.angle}={})=>{
+    blocks.driver.rotation.z=driverAngle;blocks.wheel.rotation.z=theta;blocks.tappet.rotation.z=q;
+    blocks.dog.position.set(...add(p.C,rotate(p.B,q)),0);blocks.dog.rotation.z=q+alpha;blocks.holding.rotation.z=holdingAngle;
+    root.userData.kinematics={q,alpha,theta,driverAngle,holdingAngle};
+    for(const section of sections)section.update(driverAngle);root.updateMatrixWorld(true);
+  };
+  const upperA=source([1065,210]),upperB=source([1253,190]),lowerA=source([1030,1050]),lowerB=source([1183,1120]),
+    makePlane=(a,b,sign)=>{const d=sub(b,a),normal=new THREE.Vector3(sign*d[1],-sign*d[0],0).normalize();return new THREE.Plane(normal,-normal.x*a[0]-normal.y*a[1]);},
+    sectionPlanes=[makePlane(upperA,upperB,1),makePlane(lowerA,lowerB,-1),new THREE.Plane(new THREE.Vector3(1,0,0),0)],
+    sectionDefinitions=[{name:'driverBody',polygons:driverBody,low:-.30,high:-.20},
+      {name:'driverRearHub',polygons:clip.difference(poly(circle([0,0],.19)),poly(circle([0,0],bore))),low:-.36,high:-.30},
+      {name:'driverStud',polygons:poly(circle([0,0],studRadius)),low:-.20,high:.172,offset:studVector}],
+    sections=sectionDefinitions.map(d=>{const section=makeExtrudedSectionCaps({...d,planes:sectionPlanes,material:parts[d.name].material});
+      root.add(section.root);return section;}),
+    setConfiguration=id=>{
+      if(!['section','complete'].includes(id))throw new Error('Unknown candidate view');root.userData.configuration=id;
+      for(const[name,mesh]of Object.entries(parts))if(families[name]==='driver'){
+        mesh.material.clippingPlanes=id==='section'?sectionPlanes:[];mesh.material.clipShadows=true;mesh.material.needsUpdate=true;
+      }
+      for(const section of sections)section.root.visible=id==='section';
+      root.userData.cameraFitBounds=id==='section'?new THREE.Box3(new THREE.Vector3(-1.12,-1.43,-.46),new THREE.Vector3(2.45,1.22,.266)):
+        new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
+    };
+  root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,
+    geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
+      dogStopRadius,dogStopOrbit,dogStopFace,dogStop,H0Angle:H0.angle,holdingNose},
+    configurations:[{id:'section',label:'Engraving section'},{id:'complete',label:'Complete wheel'}],configurationLabel:'View',configuration:'section',
+    localClippingEnabled:true,hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
+    shadowBias:-.00005,shadowNormalBias:.005,mechanism:'isolated-finite-jointed-tappet-counter',fidelity:'candidate',
+    qualification:'Static finite candidate only. The full coaxial driver is physically modeled; an explicit optional section clips only its display. Pawl contacts, stops, meshes, masses and future gravity motion require verification. No dynamic trajectory is supplied.'};
+  setConfiguration('section');setState();markShadows(root);
+  return{root,update:()=>{},setState,contact,cameraDirection:new THREE.Vector3(0,0,10)};
+}

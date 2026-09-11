@@ -1,0 +1,2128 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+function positiveModulo(value, modulus) {
+  const remainder = value % modulus;
+  if (remainder === 0) return 0;
+  return remainder < 0 ? remainder + modulus : remainder;
+}
+
+function cylinderAlongZ(radius, length, material, segments = 32) {
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function centeredExtrusion(shape, depth, bevelSize = 0.01) {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: bevelSize > 0,
+    bevelSegments: 1,
+    bevelSize,
+    bevelThickness: bevelSize,
+    curveSegments: 24,
+    depth,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+
+function clockwiseVerticalCapsulePath(
+  centerX,
+  upperCenterY,
+  lowerCenterY,
+  radius,
+) {
+  const path = new THREE.Path();
+  path.moveTo(centerX - radius, lowerCenterY);
+  path.lineTo(centerX - radius, upperCenterY);
+  path.absarc(centerX, upperCenterY, radius, Math.PI, 0, true);
+  path.lineTo(centerX + radius, lowerCenterY);
+  path.absarc(centerX, lowerCenterY, radius, 0, -Math.PI, true);
+  path.closePath();
+  return path;
+}
+
+function verticalCapsuleCurve(
+  centerX,
+  upperCenterY,
+  lowerCenterY,
+  radius,
+  z,
+) {
+  const points = [];
+  const arcSamples = 24;
+  for (let index = 0; index <= arcSamples; index += 1) {
+    const angle = Math.PI - Math.PI * index / arcSamples;
+    points.push(new THREE.Vector3(
+      centerX + radius * Math.cos(angle),
+      upperCenterY + radius * Math.sin(angle),
+      z,
+    ));
+  }
+  for (let index = 0; index <= arcSamples; index += 1) {
+    const angle = -Math.PI * index / arcSamples;
+    points.push(new THREE.Vector3(
+      centerX + radius * Math.cos(angle),
+      lowerCenterY + radius * Math.sin(angle),
+      z,
+    ));
+  }
+  return new THREE.CatmullRomCurve3(points, true, 'centripetal');
+}
+
+function sourceFrameShape(scale) {
+  const s = (value) => value * scale;
+  const shape = new THREE.Shape();
+
+  // Brown's frame is a broad engine standard with a narrow crown beneath
+  // the crank bearing.  The numeric landmarks are those published by the
+  // official canvas model; the short curved shoulders are reconstructed as
+  // tangent quadratic spans between its published endpoints.
+  shape.moveTo(s(-7), s(-27.625));
+  shape.lineTo(s(7), s(-27.625));
+  shape.lineTo(s(7), s(-24.625));
+  shape.lineTo(s(6), s(-24.625));
+  shape.lineTo(s(3.004629), s(-6.353234));
+  shape.quadraticCurveTo(
+    s(3.28),
+    s(-3.75),
+    s(4.5),
+    s(-3.25),
+  );
+  shape.lineTo(s(4.5), s(-2.25));
+  shape.lineTo(s(-4.5), s(-2.25));
+  shape.lineTo(s(-4.5), s(-3.25));
+  shape.quadraticCurveTo(
+    s(-3.28),
+    s(-3.75),
+    s(-3.004629),
+    s(-6.353234),
+  );
+  shape.lineTo(s(-6), s(-24.625));
+  shape.lineTo(s(-7), s(-24.625));
+  shape.closePath();
+
+  shape.holes.push(clockwiseVerticalCapsulePath(
+    0,
+    s(-9.875),
+    s(-21.125),
+    s(1),
+  ));
+  return shape;
+}
+
+function annulusGeometry(outerRadius, innerRadius, depth) {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
+  hole.closePath();
+  shape.holes.push(hole);
+  return centeredExtrusion(shape, depth, 0.008);
+}
+
+function makeFlywheelCrankRotor({
+  crankDepth,
+  crankInitialAngle = 0,
+  crankPinRadius,
+  crankPlaneZ,
+  crankRadius,
+  darkMaterial,
+  driverMaterial,
+  flywheelDepth,
+  flywheelInnerRadius,
+  flywheelOuterRadius,
+  flywheelPlaneZ,
+  hubRadius,
+  scale,
+  whiteMaterial,
+}) {
+  const rotor = new THREE.Group();
+  rotor.userData.axis = Z_AXIS.clone();
+  rotor.userData.role = 'one-rigid-flywheel-crankshaft-and-crank-rotor';
+
+  const rim = new THREE.Mesh(
+    annulusGeometry(
+      flywheelOuterRadius,
+      flywheelInnerRadius,
+      flywheelDepth,
+    ),
+    driverMaterial,
+  );
+  rim.position.z = flywheelPlaneZ;
+  rim.userData.role = 'source-fifteen-unit-flywheel-rim';
+
+  const spokes = [];
+  const spokeInnerRadius = hubRadius * 0.72;
+  const spokeLength = flywheelInnerRadius - spokeInnerRadius + 0.10;
+  const spokeCenterRadius = (flywheelInnerRadius + spokeInnerRadius) / 2;
+  for (let index = 0; index < 4; index += 1) {
+    const angle = Math.PI / 4 + index * Math.PI / 2;
+    const spoke = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        spokeLength,
+        1.05 * scale,
+        flywheelDepth * 0.76,
+      ),
+      driverMaterial,
+    );
+    spoke.position.set(
+      Math.cos(angle) * spokeCenterRadius,
+      Math.sin(angle) * spokeCenterRadius,
+      flywheelPlaneZ,
+    );
+    spoke.rotation.z = angle;
+    spoke.userData.role = `flywheel-rigid-spoke-${index + 1}`;
+    spokes.push(spoke);
+  }
+
+  const rearHub = cylinderAlongZ(
+    hubRadius,
+    flywheelDepth * 1.32,
+    driverMaterial,
+    48,
+  );
+  rearHub.position.z = flywheelPlaneZ;
+  rearHub.userData.role = 'flywheel-hub-rigid-on-crankshaft';
+
+  const crankDisk = cylinderAlongZ(
+    1.75 * scale,
+    crankDepth,
+    driverMaterial,
+    48,
+  );
+  crankDisk.position.z = crankPlaneZ;
+  crankDisk.userData.role = 'front-crank-web-at-fixed-shaft-center';
+
+  const crankArm = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      crankRadius,
+      1.05 * scale,
+      crankDepth,
+    ),
+    driverMaterial,
+  );
+  crankArm.position.set(
+    Math.cos(crankInitialAngle) * crankRadius / 2,
+    Math.sin(crankInitialAngle) * crankRadius / 2,
+    crankPlaneZ,
+  );
+  crankArm.rotation.z = crankInitialAngle;
+  crankArm.userData.role = 'four-unit-crank-arm-rigid-with-flywheel';
+
+  const movingBoss = cylinderAlongZ(
+    crankPinRadius * 1.65,
+    crankDepth * 1.18,
+    driverMaterial,
+    36,
+  );
+  movingBoss.position.set(
+    Math.cos(crankInitialAngle) * crankRadius,
+    Math.sin(crankInitialAngle) * crankRadius,
+    crankPlaneZ,
+  );
+  movingBoss.userData.role = 'crank-pin-moving-boss';
+
+  const centerRing = new THREE.Mesh(
+    new THREE.TorusGeometry(1.02 * scale, 0.13 * scale, 10, 48),
+    darkMaterial,
+  );
+  centerRing.position.z = crankPlaneZ + crankDepth / 2 + 0.016;
+  centerRing.userData.role = 'crankshaft-front-bearing-index-ring';
+
+  const flywheelRotationIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.34 * scale,
+      (flywheelOuterRadius - flywheelInnerRadius) * 0.78,
+      0.035,
+    ),
+    whiteMaterial,
+  );
+  flywheelRotationIndex.position.set(
+    0,
+    (flywheelOuterRadius + flywheelInnerRadius) / 2,
+    flywheelPlaneZ + flywheelDepth / 2 + 0.026,
+  );
+  flywheelRotationIndex.userData.role =
+    'white-index-fixed-to-flywheel-rim';
+
+  const crankRotationIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(crankRadius * 0.58, 0.15 * scale, 0.035),
+    whiteMaterial,
+  );
+  crankRotationIndex.position.set(
+    Math.cos(crankInitialAngle) * crankRadius * 0.32,
+    Math.sin(crankInitialAngle) * crankRadius * 0.32,
+    crankPlaneZ + crankDepth / 2 + 0.030,
+  );
+  crankRotationIndex.rotation.z = crankInitialAngle;
+  crankRotationIndex.userData.role =
+    'white-index-fixed-to-four-unit-crank';
+
+  const crankCenterAnchor = new THREE.Object3D();
+  crankCenterAnchor.position.z = crankPlaneZ;
+  crankCenterAnchor.userData.role = 'analytic-fixed-crankshaft-center';
+  const crankPinAnchor = new THREE.Object3D();
+  crankPinAnchor.position.set(
+    Math.cos(crankInitialAngle) * crankRadius,
+    Math.sin(crankInitialAngle) * crankRadius,
+    crankPlaneZ,
+  );
+  crankPinAnchor.userData.role = 'analytic-four-unit-crank-pin-center';
+
+  rotor.add(
+    rim,
+    ...spokes,
+    rearHub,
+    crankDisk,
+    crankArm,
+    movingBoss,
+    centerRing,
+    flywheelRotationIndex,
+    crankRotationIndex,
+    crankCenterAnchor,
+    crankPinAnchor,
+  );
+  return {
+    crankArm,
+    crankCenterAnchor,
+    crankDisk,
+    crankPinAnchor,
+    crankRotationIndex,
+    flywheelRotationIndex,
+    movingBoss,
+    rearHub,
+    rim,
+    rotor,
+    spokes,
+  };
+}
+
+function makeConnectingRod({
+  darkMaterial,
+  depth,
+  drivenMaterial,
+  eyeRadius,
+  rodLength,
+}) {
+  const rod = new THREE.Group();
+  rod.userData.nominalLength = rodLength;
+  rod.userData.role =
+    'single-rigid-connecting-rod-from-crank-to-slide-A';
+
+  const bodyLength = rodLength - eyeRadius * 1.35;
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(bodyLength, eyeRadius * 0.72, depth),
+    drivenMaterial,
+  );
+  body.position.x = rodLength / 2;
+  body.userData.role = 'constant-length-connecting-rod-shank';
+
+  const crankEyeBody = cylinderAlongZ(
+    eyeRadius,
+    depth,
+    drivenMaterial,
+    36,
+  );
+  crankEyeBody.userData.role = 'connecting-rod-crank-eye-body';
+  const wristEyeBody = cylinderAlongZ(
+    eyeRadius * 0.82,
+    depth,
+    drivenMaterial,
+    36,
+  );
+  wristEyeBody.position.x = rodLength;
+  wristEyeBody.userData.role = 'connecting-rod-slide-eye-body';
+
+  const crankEye = new THREE.Mesh(
+    new THREE.TorusGeometry(
+      eyeRadius * 0.56,
+      eyeRadius * 0.15,
+      9,
+      36,
+    ),
+    darkMaterial,
+  );
+  crankEye.position.z = depth / 2 + 0.016;
+  crankEye.userData.role = 'connecting-rod-crank-pin-eye';
+  const wristEye = new THREE.Mesh(
+    new THREE.TorusGeometry(
+      eyeRadius * 0.45,
+      eyeRadius * 0.13,
+      9,
+      36,
+    ),
+    darkMaterial,
+  );
+  wristEye.position.set(rodLength, 0, depth / 2 + 0.016);
+  wristEye.userData.role = 'connecting-rod-slide-A-eye';
+
+  const crankEyeAnchor = new THREE.Object3D();
+  crankEyeAnchor.userData.role = 'analytic-connecting-rod-crank-eye';
+  const wristEyeAnchor = new THREE.Object3D();
+  wristEyeAnchor.position.x = rodLength;
+  wristEyeAnchor.userData.role = 'analytic-connecting-rod-slide-eye';
+
+  rod.add(
+    body,
+    crankEyeBody,
+    wristEyeBody,
+    crankEye,
+    wristEye,
+    crankEyeAnchor,
+    wristEyeAnchor,
+  );
+  return {
+    body,
+    crankEye,
+    crankEyeAnchor,
+    rod,
+    wristEye,
+    wristEyeAnchor,
+  };
+}
+
+function makeEdgeWrappingSlideShoe({
+  accentMaterial,
+  frameBackZ,
+  frameDepth,
+  frameFrontZ,
+  guideEdgeX,
+  height,
+  scale,
+  side,
+}) {
+  const shoe = new THREE.Group();
+  shoe.userData.contactSurfaceX = guideEdgeX;
+  shoe.userData.hasRoller = false;
+  shoe.userData.role = `${side}-plain-slide-shoe-A-wrapping-planed-edge`;
+
+  const cheekWidth = 0.50 * scale;
+  const cheekDepth = 0.16;
+  const frontCheek = new THREE.Mesh(
+    new THREE.BoxGeometry(cheekWidth, height, cheekDepth),
+    accentMaterial,
+  );
+  frontCheek.position.set(
+    guideEdgeX,
+    0,
+    frameFrontZ + cheekDepth / 2 + 0.015,
+  );
+  frontCheek.userData.role = `${side}-front-planed-slide-cheek`;
+  const rearCheek = new THREE.Mesh(
+    new THREE.BoxGeometry(cheekWidth, height, cheekDepth),
+    accentMaterial,
+  );
+  rearCheek.position.set(
+    guideEdgeX,
+    0,
+    frameBackZ - cheekDepth / 2 - 0.015,
+  );
+  rearCheek.userData.role = `${side}-rear-planed-slide-cheek`;
+
+  const webWidth = 0.25 * scale;
+  const inwardSign = side === 'left' ? 1 : -1;
+  const web = new THREE.Mesh(
+    new THREE.BoxGeometry(webWidth, height * 0.86, frameDepth * 0.92),
+    accentMaterial,
+  );
+  web.position.x = guideEdgeX + inwardSign * webWidth / 2;
+  web.userData.role = `${side}-shoe-web-inside-real-guide-slot`;
+  shoe.add(frontCheek, rearCheek, web);
+  shoe.userData.frontCheek = frontCheek;
+  shoe.userData.rearCheek = rearCheek;
+  shoe.userData.web = web;
+  return shoe;
+}
+
+function verticalPlanedSlotPistonGuide(movement) {
+  const root = new THREE.Group();
+
+  // Exact dimensioned coordinates from the official 525 px canvas model.
+  // A uniform scale converts them to a compact 3D study without changing
+  // any length ratio or the finite connecting-rod law.
+  const sourceScale = 0.22;
+  const sourceCrankRadius = 4;
+  const sourceConnectingRodLength = 15.5;
+  const sourceFlywheelOuterRadius = 15;
+  const sourceFlywheelInnerRadius = 13;
+  const sourceGuideSlotUpperCenterY = -9.875;
+  const sourceGuideSlotLowerCenterY = -21.125;
+  const sourceGuideSlotHalfWidth = 1;
+  const sourceSlideHeight = 2.75;
+  const sourcePistonRodTopLocalY = -1.536438;
+  const sourcePistonRodBottomLocalY = -17.75;
+  const sourceCyclesPerMinute = 15;
+  const cyclePeriod = 60 / sourceCyclesPerMinute;
+  const crankAngularSpeed = FULL_TURN / cyclePeriod;
+
+  const crankRadius = sourceCrankRadius * sourceScale;
+  const connectingRodLength = sourceConnectingRodLength * sourceScale;
+  const flywheelOuterRadius = sourceFlywheelOuterRadius * sourceScale;
+  const flywheelInnerRadius = sourceFlywheelInnerRadius * sourceScale;
+  const guideSlotUpperCenterY = sourceGuideSlotUpperCenterY * sourceScale;
+  const guideSlotLowerCenterY = sourceGuideSlotLowerCenterY * sourceScale;
+  const guideSlotHalfWidth = sourceGuideSlotHalfWidth * sourceScale;
+  const slideHeight = sourceSlideHeight * sourceScale;
+  const pistonRodTopLocalY = sourcePistonRodTopLocalY * sourceScale;
+  const pistonRodBottomLocalY = sourcePistonRodBottomLocalY * sourceScale;
+  const pistonStroke = 2 * crankRadius;
+  const frameBaseTopY = -24.625 * sourceScale;
+  const frameBaseBottomY = -27.625 * sourceScale;
+
+  const frameDepth = 0.36;
+  const frameCenterZ = 0;
+  const frameFrontZ = frameCenterZ + frameDepth / 2;
+  const frameBackZ = frameCenterZ - frameDepth / 2;
+  const flywheelDepth = 0.24;
+  const flywheelPlaneZ = -0.43;
+  const crankDepth = 0.20;
+  const crankPlaneZ = 0.46;
+  const connectingRodDepth = 0.15;
+  const connectingRodPlaneZ = 0.76;
+  const crankPinRadius = 0.3125 * sourceScale;
+  const wristPinRadius = 0.50 * sourceScale;
+  const hubRadius = 1.03 * sourceScale;
+
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.10,
+    roughness: 0.72,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.24,
+    roughness: 0.48,
+  });
+  const driverMaterial = matte(PALETTE.driver, {
+    metalness: 0.09,
+    roughness: 0.63,
+  });
+  const drivenMaterial = matte(PALETTE.driven, {
+    metalness: 0.09,
+    roughness: 0.62,
+  });
+  const accentMaterial = matte(PALETTE.accent, {
+    metalness: 0.10,
+    roughness: 0.60,
+  });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
+
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.fixed = true;
+  fixedFrame.userData.role =
+    'fixed-engine-frame-with-one-real-vertical-planed-slot';
+
+  const framePlate = new THREE.Mesh(
+    centeredExtrusion(
+      sourceFrameShape(sourceScale),
+      frameDepth,
+      0.012,
+    ),
+    frameMaterial,
+  );
+  framePlate.position.z = frameCenterZ;
+  framePlate.userData.fixed = true;
+  framePlate.userData.openingCount = 1;
+  framePlate.userData.role =
+    'source-proportioned-frame-solid-minus-real-guide-opening';
+
+  const foundationFoot = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      14 * sourceScale,
+      3 * sourceScale,
+      1.10,
+    ),
+    frameMaterial,
+  );
+  foundationFoot.position.set(
+    0,
+    (frameBaseTopY + frameBaseBottomY) / 2,
+    -0.13,
+  );
+  foundationFoot.userData.fixed = true;
+  foundationFoot.userData.role = 'deep-engine-standard-foundation-foot';
+
+  const guideOutline = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      verticalCapsuleCurve(
+        0,
+        guideSlotUpperCenterY,
+        guideSlotLowerCenterY,
+        guideSlotHalfWidth,
+        frameFrontZ + 0.026,
+      ),
+      144,
+      0.018,
+      6,
+      true,
+    ),
+    darkMaterial,
+  );
+  guideOutline.userData.fixed = true;
+  guideOutline.userData.role = 'real-vertical-guide-slot-outline';
+
+  const straightGuideLength = guideSlotUpperCenterY
+    - guideSlotLowerCenterY;
+  const guideCenterY = (guideSlotUpperCenterY
+    + guideSlotLowerCenterY) / 2;
+  const leftPlanedFace = new THREE.Mesh(
+    new THREE.BoxGeometry(0.024, straightGuideLength, 0.075),
+    darkMaterial,
+  );
+  leftPlanedFace.position.set(
+    -guideSlotHalfWidth,
+    guideCenterY,
+    frameFrontZ + 0.036,
+  );
+  leftPlanedFace.userData.fixed = true;
+  leftPlanedFace.userData.role = 'left-planed-true-guide-surface';
+  const rightPlanedFace = leftPlanedFace.clone();
+  rightPlanedFace.position.x = guideSlotHalfWidth;
+  rightPlanedFace.userData.fixed = true;
+  rightPlanedFace.userData.role = 'right-planed-true-guide-surface';
+
+  const bearingHousing = cylinderAlongZ(
+    1.75 * sourceScale,
+    0.54,
+    frameMaterial,
+    48,
+  );
+  bearingHousing.position.z = 0.04;
+  bearingHousing.userData.fixed = true;
+  bearingHousing.userData.role = 'fixed-crankshaft-bearing-housing';
+  const bearingBore = cylinderAlongZ(
+    1.02 * sourceScale,
+    0.565,
+    darkMaterial,
+    42,
+  );
+  bearingBore.position.z = 0.045;
+  bearingBore.userData.fixed = true;
+  bearingBore.userData.role = 'fixed-bearing-bore-around-live-shaft';
+
+  const bearingSupports = [-1, 1].map((side) => {
+    const support = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.62, frameDepth),
+      frameMaterial,
+    );
+    support.position.set(side * 0.31, -0.32, frameCenterZ);
+    support.rotation.z = side * -0.17;
+    support.userData.fixed = true;
+    support.userData.role =
+      `${side < 0 ? 'left' : 'right'}-bearing-pedestal-cheek`;
+    return support;
+  });
+
+  const guideAxisTopAnchor = new THREE.Object3D();
+  guideAxisTopAnchor.position.set(0, guideSlotUpperCenterY, 0);
+  guideAxisTopAnchor.userData.fixed = true;
+  guideAxisTopAnchor.userData.role = 'analytic-guide-axis-upper-center';
+  const guideAxisBottomAnchor = new THREE.Object3D();
+  guideAxisBottomAnchor.position.set(0, guideSlotLowerCenterY, 0);
+  guideAxisBottomAnchor.userData.fixed = true;
+  guideAxisBottomAnchor.userData.role = 'analytic-guide-axis-lower-center';
+
+  fixedFrame.add(
+    framePlate,
+    foundationFoot,
+    guideOutline,
+    leftPlanedFace,
+    rightPlanedFace,
+    ...bearingSupports,
+    bearingHousing,
+    bearingBore,
+    guideAxisTopAnchor,
+    guideAxisBottomAnchor,
+  );
+
+  const rotorParts = makeFlywheelCrankRotor({
+    crankDepth,
+    crankPinRadius,
+    crankPlaneZ,
+    crankRadius,
+    darkMaterial,
+    driverMaterial,
+    flywheelDepth,
+    flywheelInnerRadius,
+    flywheelOuterRadius,
+    flywheelPlaneZ,
+    hubRadius,
+    scale: sourceScale,
+    whiteMaterial,
+  });
+
+  const liveShaft = cylinderAlongZ(
+    0.72 * sourceScale,
+    connectingRodPlaneZ - flywheelPlaneZ + 0.54,
+    darkMaterial,
+    36,
+  );
+  liveShaft.position.z = (connectingRodPlaneZ + flywheelPlaneZ) / 2;
+  liveShaft.userData.axis = Z_AXIS.clone();
+  liveShaft.userData.role = 'live-crankshaft-through-flywheel-and-bearing';
+  rotorParts.rotor.add(liveShaft);
+
+  const rodParts = makeConnectingRod({
+    darkMaterial,
+    depth: connectingRodDepth,
+    drivenMaterial,
+    eyeRadius: 0.66 * sourceScale,
+    rodLength: connectingRodLength,
+  });
+
+  const slideA = new THREE.Group();
+  slideA.userData.hasRollers = false;
+  slideA.userData.role =
+    'slide-A-captured-by-two-planed-vertical-slot-edges';
+  slideA.userData.rotationDegreesOfFreedom = 0;
+  slideA.userData.translationAxis = Y_AXIS.clone();
+
+  const leftShoe = makeEdgeWrappingSlideShoe({
+    accentMaterial,
+    frameBackZ,
+    frameDepth,
+    frameFrontZ,
+    guideEdgeX: -guideSlotHalfWidth,
+    height: slideHeight,
+    scale: sourceScale,
+    side: 'left',
+  });
+  const rightShoe = makeEdgeWrappingSlideShoe({
+    accentMaterial,
+    frameBackZ,
+    frameDepth,
+    frameFrontZ,
+    guideEdgeX: guideSlotHalfWidth,
+    height: slideHeight,
+    scale: sourceScale,
+    side: 'right',
+  });
+
+  const crossheadBridge = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      1.55 * sourceScale,
+      0.70 * sourceScale,
+      0.16,
+    ),
+    accentMaterial,
+  );
+  crossheadBridge.position.z = frameFrontZ + 0.16;
+  crossheadBridge.userData.role =
+    'rigid-crosshead-bridge-between-the-two-slide-shoes';
+
+  const wristBoss = cylinderAlongZ(
+    wristPinRadius * 1.45,
+    0.20,
+    accentMaterial,
+    36,
+  );
+  wristBoss.position.z = frameFrontZ + 0.22;
+  wristBoss.userData.role = 'slide-A-central-wrist-boss';
+
+  const pistonRodLength = pistonRodTopLocalY - pistonRodBottomLocalY;
+  const pistonRod = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.75 * sourceScale,
+      pistonRodLength,
+      0.15,
+    ),
+    accentMaterial,
+  );
+  pistonRod.position.set(
+    0,
+    (pistonRodTopLocalY + pistonRodBottomLocalY) / 2,
+    frameFrontZ + 0.06,
+  );
+  pistonRod.userData.role = 'rigid-piston-rod-carried-by-slide-A';
+
+  const slideIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.10, 0.040, 0.030),
+    whiteMaterial,
+  );
+  slideIndex.position.z = frameFrontZ + 0.33;
+  slideIndex.userData.role = 'white-index-on-translating-slide-A';
+  const wristPinAnchor = new THREE.Object3D();
+  wristPinAnchor.position.z = connectingRodPlaneZ;
+  wristPinAnchor.userData.role = 'analytic-slide-A-wrist-pin-center';
+
+  slideA.add(
+    leftShoe,
+    rightShoe,
+    pistonRod,
+    crossheadBridge,
+    wristBoss,
+    slideIndex,
+    wristPinAnchor,
+  );
+
+  const crankPinShaft = cylinderAlongZ(
+    crankPinRadius,
+    connectingRodPlaneZ - crankPlaneZ + 0.26,
+    darkMaterial,
+    30,
+  );
+  crankPinShaft.position.z = (connectingRodPlaneZ + crankPlaneZ) / 2;
+  crankPinShaft.userData.role =
+    'crank-pin-joining-crank-web-to-connecting-rod';
+  const wristPinShaft = cylinderAlongZ(
+    wristPinRadius * 0.58,
+    connectingRodPlaneZ - frameBackZ + 0.22,
+    darkMaterial,
+    30,
+  );
+  wristPinShaft.position.z = (connectingRodPlaneZ + frameBackZ) / 2;
+  wristPinShaft.userData.role =
+    'wrist-pin-joining-connecting-rod-to-slide-A';
+
+  root.add(
+    rotorParts.rotor,
+    fixedFrame,
+    slideA,
+    crankPinShaft,
+    wristPinShaft,
+    rodParts.rod,
+  );
+
+  const cross2 = (left, right) => left.x * right.y
+    - left.y * right.x;
+
+  const stateAtCrankAngle = (
+    unwrappedCrankAngle,
+    angularVelocity = crankAngularSpeed,
+  ) => {
+    const crankAngle = positiveModulo(unwrappedCrankAngle, FULL_TURN);
+    const cosine = Math.cos(crankAngle);
+    const sine = Math.sin(crankAngle);
+    const crankPin = new THREE.Vector2(
+      crankRadius * cosine,
+      crankRadius * sine,
+    );
+    const crankPinVelocity = new THREE.Vector2(
+      -crankRadius * sine * angularVelocity,
+      crankRadius * cosine * angularVelocity,
+    );
+    const crankPinAcceleration = new THREE.Vector2(
+      -crankRadius * cosine * angularVelocity ** 2,
+      -crankRadius * sine * angularVelocity ** 2,
+    );
+
+    const circleLineRadicand = connectingRodLength ** 2
+      - crankPin.x ** 2;
+    const circleLineRoot = Math.sqrt(Math.max(0, circleLineRadicand));
+    const rootFirstByAngle = crankRadius ** 2
+      * cosine * sine / circleLineRoot;
+    const rootSecondByAngle = crankRadius ** 2
+      * (cosine ** 2 - sine ** 2) / circleLineRoot
+      - (crankRadius ** 2 * cosine * sine) ** 2
+        / circleLineRoot ** 3;
+    const sliderY = crankPin.y - circleLineRoot;
+    const sliderFirstByAngle = crankRadius * cosine
+      - rootFirstByAngle;
+    const sliderSecondByAngle = -crankRadius * sine
+      - rootSecondByAngle;
+    const sliderVelocityY = sliderFirstByAngle * angularVelocity;
+    const sliderAccelerationY = sliderSecondByAngle
+      * angularVelocity ** 2;
+    const wristPin = new THREE.Vector2(0, sliderY);
+    const wristPinVelocity = new THREE.Vector2(0, sliderVelocityY);
+    const wristPinAcceleration = new THREE.Vector2(
+      0,
+      sliderAccelerationY,
+    );
+    const rodVector = wristPin.clone().sub(crankPin);
+    const rodRelativeVelocity = wristPinVelocity.clone()
+      .sub(crankPinVelocity);
+    const rodRelativeAcceleration = wristPinAcceleration.clone()
+      .sub(crankPinAcceleration);
+    const rodLengthSquared = rodVector.lengthSq();
+    const rodAngularVelocity = cross2(
+      rodVector,
+      rodRelativeVelocity,
+    ) / rodLengthSquared;
+    const rodAngularAcceleration = (
+      cross2(rodVector, rodRelativeAcceleration) * rodLengthSquared
+        - cross2(rodVector, rodRelativeVelocity)
+          * 2 * rodVector.dot(rodRelativeVelocity)
+    ) / rodLengthSquared ** 2;
+    const phase = crankAngle / FULL_TURN;
+
+    return {
+      circleLineRadicand,
+      circleLineRoot,
+      crankAngle,
+      crankAngularAcceleration: 0,
+      crankAngularVelocity: angularVelocity,
+      crankPin,
+      crankPinAcceleration,
+      crankPinVelocity,
+      guide: {
+        axisResidual: wristPin.x,
+        leftContactResidual:
+          wristPin.x - guideSlotHalfWidth - (-guideSlotHalfWidth),
+        rightContactResidual:
+          wristPin.x + guideSlotHalfWidth - guideSlotHalfWidth,
+        rotation: 0,
+        rotationResidual: 0,
+      },
+      phase,
+      pistonRod: {
+        acceleration: new THREE.Vector2(0, sliderAccelerationY),
+        position: wristPin.clone(),
+        rotation: 0,
+        velocity: new THREE.Vector2(0, sliderVelocityY),
+      },
+      rodAngle: Math.atan2(rodVector.y, rodVector.x),
+      rodAngularAcceleration,
+      rodAngularVelocity,
+      rodLength: rodVector.length(),
+      rodLengthResidual: rodVector.length() - connectingRodLength,
+      rodVector,
+      slideA: {
+        acceleration: new THREE.Vector2(0, sliderAccelerationY),
+        position: wristPin.clone(),
+        rotation: 0,
+        velocity: new THREE.Vector2(0, sliderVelocityY),
+      },
+      sliderAccelerationY,
+      sliderFirstByAngle,
+      sliderSecondByAngle,
+      sliderVelocityY,
+      sliderY,
+      unwrappedCrankAngle,
+      wristPin,
+      wristPinAcceleration,
+      wristPinVelocity,
+    };
+  };
+
+  const stateAtTime = (time) => {
+    const elapsed = Number.isFinite(Number(time)) ? Number(time) : 0;
+    return stateAtCrankAngle(elapsed * crankAngularSpeed);
+  };
+
+  const canonicalTimes = {
+    bottomDeadCenter: cyclePeriod * 0.75,
+    cycleClosure: cyclePeriod,
+    oppositeQuadrature: cyclePeriod * 0.50,
+    sourceStart: 0,
+    topDeadCenter: cyclePeriod * 0.25,
+  };
+  const canonicalStates = Object.fromEntries(
+    Object.entries(canonicalTimes).map(([name, time]) => [
+      name,
+      stateAtTime(time),
+    ]),
+  );
+
+  const officialViewMinimum = new THREE.Vector2(-16.5, -27.875);
+  const officialViewWidth = 33;
+  const officialViewHeight = 33;
+  const officialCanvasWidth = 525;
+  const officialCanvasHeight = 525;
+  const modelPointToOfficialAnimationRaster = (point) => {
+    const rawX = point.x / sourceScale;
+    const rawY = point.y / sourceScale;
+    return new THREE.Vector2(
+      (rawX - officialViewMinimum.x)
+        * officialCanvasWidth / officialViewWidth,
+      officialCanvasHeight - (rawY - officialViewMinimum.y)
+        * officialCanvasHeight / officialViewHeight,
+    );
+  };
+
+  const sourceRasterCrankCenter = new THREE.Vector2(258, 89);
+  const sourceRasterCrankPin = new THREE.Vector2(313, 91);
+  const engravingScale = crankRadius
+    / sourceRasterCrankCenter.distanceTo(sourceRasterCrankPin);
+  const engravingPointToModelFront = (point) => new THREE.Vector3(
+    (point.x - sourceRasterCrankCenter.x) * engravingScale,
+    (sourceRasterCrankCenter.y - point.y) * engravingScale,
+    connectingRodPlaneZ + connectingRodDepth / 2,
+  );
+
+  const geometry = {
+    connectingRodDepth,
+    connectingRodLength,
+    connectingRodPlaneZ,
+    crankDepth,
+    crankPinRadius,
+    crankPlaneZ,
+    crankRadius,
+    crankToStrokeRatio: pistonStroke / crankRadius,
+    crankAngularSpeed,
+    cyclePeriod,
+    flywheelDepth,
+    flywheelInnerRadius,
+    flywheelOuterRadius,
+    flywheelPlaneZ,
+    frameBackZ,
+    frameBaseBottomY,
+    frameBaseTopY,
+    frameCenterZ,
+    frameDepth,
+    frameFrontZ,
+    guideSlotHalfWidth,
+    guideSlotLowerCenterY,
+    guideSlotUpperCenterY,
+    pistonRodBottomLocalY,
+    pistonRodTopLocalY,
+    pistonStroke,
+    slideHeight,
+    sourceConnectingRodLength,
+    sourceCrankRadius,
+    sourceCyclesPerMinute,
+    sourceFlywheelInnerRadius,
+    sourceFlywheelOuterRadius,
+    sourceGuideSlotHalfWidth,
+    sourceGuideSlotLowerCenterY,
+    sourceGuideSlotUpperCenterY,
+    sourcePistonRodBottomLocalY,
+    sourcePistonRodTopLocalY,
+    sourceScale,
+    wristPinRadius,
+  };
+
+  const contacts = {
+    leftPlanedSlidingPair: {
+      fixedMember: leftPlanedFace,
+      movingMember: leftShoe,
+      normal: new THREE.Vector3(1, 0, 0),
+      relativeSlidingSpeed: 0,
+      type: 'zero-clearance-planed-prismatic-contact',
+    },
+    rightPlanedSlidingPair: {
+      fixedMember: rightPlanedFace,
+      movingMember: rightShoe,
+      normal: new THREE.Vector3(-1, 0, 0),
+      relativeSlidingSpeed: 0,
+      type: 'zero-clearance-planed-prismatic-contact',
+    },
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    rotorParts.rotor.rotation.z = state.crankAngle;
+    slideA.position.set(0, state.sliderY, 0);
+    rodParts.rod.position.set(
+      state.crankPin.x,
+      state.crankPin.y,
+      connectingRodPlaneZ,
+    );
+    rodParts.rod.rotation.z = state.rodAngle;
+    crankPinShaft.position.x = state.crankPin.x;
+    crankPinShaft.position.y = state.crankPin.y;
+    wristPinShaft.position.x = 0;
+    wristPinShaft.position.y = state.sliderY;
+    contacts.leftPlanedSlidingPair.relativeSlidingSpeed =
+      state.sliderVelocityY;
+    contacts.rightPlanedSlidingPair.relativeSlidingSpeed =
+      state.sliderVelocityY;
+    root.userData.kinematics = state;
+  };
+
+  root.userData.archetype =
+    'vertical-planed-slot-crosshead-slider-crank';
+  root.userData.blocks = {
+    bearingBore,
+    bearingHousing,
+    bearingSupports,
+    connectingRod: rodParts.rod,
+    connectingRodBody: rodParts.body,
+    connectingRodCrankEyeAnchor: rodParts.crankEyeAnchor,
+    connectingRodWristEyeAnchor: rodParts.wristEyeAnchor,
+    crankArm: rotorParts.crankArm,
+    crankCenterAnchor: rotorParts.crankCenterAnchor,
+    crankDisk: rotorParts.crankDisk,
+    crankPinAnchor: rotorParts.crankPinAnchor,
+    crankPinShaft,
+    crankRotationIndex: rotorParts.crankRotationIndex,
+    fixedFrame,
+    flywheel: rotorParts.rotor,
+    flywheelHub: rotorParts.rearHub,
+    flywheelRim: rotorParts.rim,
+    flywheelRotationIndex: rotorParts.flywheelRotationIndex,
+    flywheelSpokes: rotorParts.spokes,
+    foundationFoot,
+    framePlate,
+    guideAxisBottomAnchor,
+    guideAxisTopAnchor,
+    guideOutline,
+    leftPlanedFace,
+    leftSlideShoe: leftShoe,
+    liveShaft,
+    pistonRod,
+    rightPlanedFace,
+    rightSlideShoe: rightShoe,
+    slideA,
+    slideBridge: crossheadBridge,
+    slideIndex,
+    wristBoss,
+    wristPinAnchor,
+    wristPinShaft,
+  };
+  root.userData.cameraDistanceScale = 1.06;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.55, frameBaseBottomY - 0.12, -0.72),
+    new THREE.Vector3(3.55, 3.48, 1.02),
+  );
+  root.userData.canonicalStates = canonicalStates;
+  root.userData.canonicalTimes = canonicalTimes;
+  root.userData.contacts = contacts;
+  root.userData.degreesOfFreedom = {
+    input: 'one continuous crankshaft rotation about the fixed z-axis',
+    mechanism: 1,
+    output: 'one vertical translation of slide A and its piston-rod',
+    slideRotation: 0,
+    slideTranslationAxes: 1,
+  };
+  root.userData.engravingPointToModelFront = engravingPointToModelFront;
+  root.userData.fidelity = 'authored';
+  root.userData.geometry = geometry;
+  root.userData.groundFloorY = frameBaseBottomY - 0.025;
+  root.userData.mechanism =
+    'one-rigid-flywheel-crank-finite-connecting-rod-slide-A-in-one-real-planed-vertical-slot';
+  root.userData.modelPointToOfficialAnimationRaster =
+    modelPointToOfficialAnimationRaster;
+  root.userData.sourceAnimation = {
+    available: true,
+    cyclesPerMinute: sourceCyclesPerMinute,
+    durationSeconds: cyclePeriod,
+    independentlyReconstructed: true,
+    officialCanvasModelPresent: true,
+    officialGeometry: {
+      connectingRodLength: sourceConnectingRodLength,
+      crankPinRadius: 0.3125,
+      crankRadius: sourceCrankRadius,
+      flywheelInnerRadius: sourceFlywheelInnerRadius,
+      flywheelOuterRadius: sourceFlywheelOuterRadius,
+      guideAxisX: 0,
+      guideSlotHalfWidth: sourceGuideSlotHalfWidth,
+      guideSlotLowerCenterY: sourceGuideSlotLowerCenterY,
+      guideSlotUpperCenterY: sourceGuideSlotUpperCenterY,
+      pistonRodBottomLocalY: sourcePistonRodBottomLocalY,
+      pistonRodTopLocalY: sourcePistonRodTopLocalY,
+      slideHeight: sourceSlideHeight,
+    },
+    officialKeyframes: [
+      {
+        crankPin: new THREE.Vector2(4, 0),
+        phase: 0,
+        slidePin: new THREE.Vector2(
+          0,
+          -Math.sqrt(15.5 ** 2 - 4 ** 2),
+        ),
+      },
+      {
+        crankPin: new THREE.Vector2(0, 4),
+        phase: 0.25,
+        slidePin: new THREE.Vector2(0, -11.5),
+      },
+      {
+        crankPin: new THREE.Vector2(-4, 0),
+        phase: 0.50,
+        slidePin: new THREE.Vector2(
+          0,
+          -Math.sqrt(15.5 ** 2 - 4 ** 2),
+        ),
+      },
+      {
+        crankPin: new THREE.Vector2(0, -4),
+        phase: 0.75,
+        slidePin: new THREE.Vector2(0, -19.5),
+      },
+      {
+        crankPin: new THREE.Vector2(4, 0),
+        phase: 1,
+        slidePin: new THREE.Vector2(
+          0,
+          -Math.sqrt(15.5 ** 2 - 4 ** 2),
+        ),
+      },
+    ],
+    officialPageAnimatedTabDisabled: false,
+    referenceScope:
+      'official flywheel, four-unit crank, 15.5-unit connecting rod, slide A, piston-rod, and true-surface vertical guide dimensions and timing',
+    sourceUrl: movement.sourceUrl,
+  };
+  root.userData.sourceReference = {
+    brownPlate326: {
+      imageHeight: 525,
+      imageWidth: 525,
+      inferredTopology:
+        'one flywheel and crankshaft, one connecting rod, one crosshead slide A without rollers, one piston-rod, and one vertical planed slot',
+      measurementUncertaintyPixels: 30,
+      rasterCrankCenter: sourceRasterCrankCenter,
+      rasterCrankPin: sourceRasterCrankPin,
+      rasterGuideAxisBottom: new THREE.Vector2(258, 444),
+      rasterGuideAxisTop: new THREE.Vector2(258, 258),
+      rasterSlidePin: new THREE.Vector2(258, 329),
+    },
+    officialAnimationView: {
+      canvasHeight: officialCanvasHeight,
+      canvasWidth: officialCanvasWidth,
+      minimum: officialViewMinimum,
+      viewHeight: officialViewHeight,
+      viewWidth: officialViewWidth,
+    },
+    officialDescription: movement.description,
+    primaryScan: {
+      archiveIdentifier: 'fivehundredseven00browiala',
+      edition: 21,
+      publicationYear: 1908,
+    },
+  };
+  root.userData.stateAtCrankAngle = stateAtCrankAngle;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.transmission = {
+    connectingRodConstraint:
+      'sqrt((0-crankX)^2 + (slideY-crankY)^2) = 15.5 source units',
+    input: 'one rigid flywheel and four-unit crank rotating at 15 rpm',
+    output:
+      'slide A and its piston-rod translate vertically through an eight-unit stroke with zero yaw',
+    sliderLaw:
+      'y = r*sin(theta) - sqrt(L^2 - r^2*cos(theta)^2)',
+    strokeToCrankRadiusRatio: 2,
+  };
+
+  update(0);
+  markShadows(root);
+  return {
+    cameraDirection: new THREE.Vector3(5.3, 3.5, 12.8),
+    root,
+    update,
+  };
+}
+
+function makeIndexedGuideRoller({
+  accentMaterial,
+  darkMaterial,
+  depth,
+  planeZ,
+  radius,
+  role,
+  whiteMaterial,
+}) {
+  const roller = new THREE.Group();
+  roller.userData.axis = Z_AXIS.clone();
+  roller.userData.radius = radius;
+  roller.userData.role = role;
+
+  const disk = cylinderAlongZ(radius * 0.91, depth, accentMaterial, 48);
+  disk.position.z = planeZ;
+  disk.userData.role = `${role}-solid-rolling-disk`;
+  const tread = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, radius * 0.075, 10, 56),
+    darkMaterial,
+  );
+  tread.position.z = planeZ;
+  tread.userData.role = `${role}-working-tread`;
+  const hub = cylinderAlongZ(radius * 0.31, depth * 1.18, darkMaterial, 32);
+  hub.position.z = planeZ;
+  hub.userData.role = `${role}-rotating-hub`;
+  const rotationIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(radius * 0.68, radius * 0.12, 0.032),
+    whiteMaterial,
+  );
+  rotationIndex.position.set(
+    radius * 0.58,
+    0,
+    planeZ + depth / 2 + 0.030,
+  );
+  rotationIndex.userData.role = `${role}-white-no-slip-index`;
+  roller.add(disk, tread, hub, rotationIndex);
+  roller.userData.disk = disk;
+  roller.userData.hub = hub;
+  roller.userData.rotationIndex = rotationIndex;
+  roller.userData.tread = tread;
+  return roller;
+}
+
+function rollerGuidedFrenchEngineCrosshead(movement) {
+  const root = new THREE.Group();
+
+  // The official animation publishes a second, independent engine layout.
+  // It is not Movement 326 with decorative wheels added: its crank is 3
+  // units, rod 19, stroke 6, roller centers +/-4.375, roller radii 1.5,
+  // and the guide-bar working faces +/-5.875 from the piston axis.
+  const sourceScale = 0.21;
+  const sourceCrankRadius = 3;
+  const sourceConnectingRodLength = 19;
+  const sourceFlywheelOuterRadius = 15;
+  const sourceFlywheelInnerRadius = 13;
+  const sourceRollerRadius = 1.5;
+  const sourceRollerCenterHalfSpacing = 4.375;
+  const sourceGuideBarCenterHalfSpacing = 6.25;
+  const sourceGuideBarHalfWidth = 0.375;
+  const sourceGuideContactHalfSpacing = 5.875;
+  const sourcePistonRodTopLocalY = -0.375;
+  const sourcePistonRodBottomLocalY = -14;
+  const sourceCyclesPerMinute = 15;
+  const cyclePeriod = 60 / sourceCyclesPerMinute;
+  const crankAngularSpeed = FULL_TURN / cyclePeriod;
+  const crankInitialAngle = Math.PI / 2;
+
+  const crankRadius = sourceCrankRadius * sourceScale;
+  const connectingRodLength = sourceConnectingRodLength * sourceScale;
+  const flywheelOuterRadius = sourceFlywheelOuterRadius * sourceScale;
+  const flywheelInnerRadius = sourceFlywheelInnerRadius * sourceScale;
+  const rollerRadius = sourceRollerRadius * sourceScale;
+  const rollerCenterHalfSpacing = sourceRollerCenterHalfSpacing
+    * sourceScale;
+  const guideBarCenterHalfSpacing = sourceGuideBarCenterHalfSpacing
+    * sourceScale;
+  const guideBarHalfWidth = sourceGuideBarHalfWidth * sourceScale;
+  const guideContactHalfSpacing = sourceGuideContactHalfSpacing
+    * sourceScale;
+  const pistonRodTopLocalY = sourcePistonRodTopLocalY * sourceScale;
+  const pistonRodBottomLocalY = sourcePistonRodBottomLocalY * sourceScale;
+  const pistonStroke = 2 * crankRadius;
+  const frameBottomY = -30 * sourceScale;
+
+  const flywheelPlaneZ = -0.46;
+  const flywheelDepth = 0.24;
+  const frameCenterZ = 0;
+  const frameDepth = 0.42;
+  const frameFrontZ = frameCenterZ + frameDepth / 2;
+  const crankPlaneZ = 0.47;
+  const crankDepth = 0.20;
+  const rollerPlaneZ = 0.30;
+  const rollerDepth = 0.22;
+  const crossheadPlaneZ = 0.25;
+  const connectingRodPlaneZ = 0.76;
+  const connectingRodDepth = 0.15;
+  const crankPinRadius = 0.3125 * sourceScale;
+  const wristPinRadius = 0.50 * sourceScale;
+  const hubRadius = 1.02 * sourceScale;
+
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.10,
+    roughness: 0.72,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.24,
+    roughness: 0.48,
+  });
+  const driverMaterial = matte(PALETTE.driver, {
+    metalness: 0.09,
+    roughness: 0.63,
+  });
+  const drivenMaterial = matte(PALETTE.driven, {
+    metalness: 0.09,
+    roughness: 0.62,
+  });
+  const accentMaterial = matte(PALETTE.accent, {
+    metalness: 0.10,
+    roughness: 0.60,
+  });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
+
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.fixed = true;
+  fixedFrame.userData.role =
+    'fixed-French-small-engine-frame-with-two-straight-guide-bars-A-A';
+
+  const topBeamTopY = -1.0625 * sourceScale;
+  const topBeamBottomY = -3.0625 * sourceScale;
+  const topBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      36 * sourceScale,
+      topBeamTopY - topBeamBottomY,
+      0.62,
+    ),
+    frameMaterial,
+  );
+  topBeam.position.set(
+    0,
+    (topBeamTopY + topBeamBottomY) / 2,
+    -0.04,
+  );
+  topBeam.userData.fixed = true;
+  topBeam.userData.role = 'wide-fixed-overhead-engine-crossbeam';
+  const topBeamBands = [-1.0625, -1.5625, -2.5625].map(
+    (sourceY, index) => {
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(36 * sourceScale, 0.026, 0.66),
+        darkMaterial,
+      );
+      band.position.set(0, sourceY * sourceScale, -0.04);
+      band.userData.fixed = true;
+      band.userData.role = `source-overhead-beam-line-${index + 1}`;
+      return band;
+    },
+  );
+
+  const guideBarTopY = -3.0625 * sourceScale;
+  const guideBarBottomY = frameBottomY;
+  const guideBarHeight = guideBarTopY - guideBarBottomY;
+  const guideBarCenterY = (guideBarTopY + guideBarBottomY) / 2;
+  const makeGuideBar = (side) => {
+    const group = new THREE.Group();
+    const centerX = side * guideBarCenterHalfSpacing;
+    const contactX = side * guideContactHalfSpacing;
+    group.userData.centerX = centerX;
+    group.userData.contactX = contactX;
+    group.userData.fixed = true;
+    group.userData.role =
+      `${side < 0 ? 'left' : 'right'}-straight-guide-bar-A`;
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        guideBarHalfWidth * 2,
+        guideBarHeight,
+        frameDepth,
+      ),
+      frameMaterial,
+    );
+    body.position.set(centerX, guideBarCenterY, frameCenterZ);
+    body.userData.fixed = true;
+    body.userData.role = `${group.userData.role}-solid-body`;
+    const contactFace = new THREE.Mesh(
+      new THREE.BoxGeometry(0.026, guideBarHeight * 0.82, 0.12),
+      darkMaterial,
+    );
+    contactFace.position.set(contactX, guideBarCenterY, frameFrontZ + 0.025);
+    contactFace.userData.fixed = true;
+    contactFace.userData.role = `${group.userData.role}-inner-working-face`;
+    const mountingPad = new THREE.Mesh(
+      new THREE.BoxGeometry(2 * sourceScale, 0.50 * sourceScale, 0.58),
+      frameMaterial,
+    );
+    mountingPad.position.set(centerX, -3.0625 * sourceScale, -0.03);
+    mountingPad.userData.fixed = true;
+    mountingPad.userData.role = `${group.userData.role}-top-mounting-pad`;
+    group.add(body, contactFace, mountingPad);
+    group.userData.body = body;
+    group.userData.contactFace = contactFace;
+    group.userData.mountingPad = mountingPad;
+    return group;
+  };
+  const leftGuideBarA = makeGuideBar(-1);
+  const rightGuideBarA = makeGuideBar(1);
+
+  const outerFramePosts = [-1, 1].map((side) => {
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, guideBarHeight, 0.52),
+      frameMaterial,
+    );
+    post.position.set(
+      side * 7.5 * sourceScale,
+      guideBarCenterY,
+      -0.18,
+    );
+    post.userData.fixed = true;
+    post.userData.role =
+      `${side < 0 ? 'left' : 'right'}-outer-engine-frame-post`;
+    return post;
+  });
+
+  const lowerCrossBase = new THREE.Mesh(
+    new THREE.BoxGeometry(8 * sourceScale, 0.50 * sourceScale, 1.12),
+    frameMaterial,
+  );
+  lowerCrossBase.position.set(0, -25.0 * sourceScale, -0.10);
+  lowerCrossBase.userData.fixed = true;
+  lowerCrossBase.userData.role = 'lower-cylinder-support-crossbase';
+  const cylinderBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.62 * sourceScale, 1.62 * sourceScale,
+      2.9, 48),
+    frameMaterial,
+  );
+  cylinderBody.position.set(0, -6.30, -0.02);
+  cylinderBody.userData.fixed = true;
+  cylinderBody.userData.role = 'fixed-upright-engine-cylinder-below-crosshead';
+  const cylinderTopCap = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.10 * sourceScale, 2.10 * sourceScale,
+      0.13, 48),
+    darkMaterial,
+  );
+  cylinderTopCap.position.set(0, -24 * sourceScale, -0.02);
+  cylinderTopCap.userData.fixed = true;
+  cylinderTopCap.userData.role = 'fixed-cylinder-top-and-piston-rod-gland';
+  const gland = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.72 * sourceScale, 0.72 * sourceScale,
+      0.19, 36),
+    accentMaterial,
+  );
+  gland.position.set(0, -23.45 * sourceScale, -0.02);
+  gland.userData.fixed = true;
+  gland.userData.role = 'fixed-piston-rod-stuffing-box';
+
+  const bearingHousing = cylinderAlongZ(
+    1.25 * sourceScale,
+    0.56,
+    frameMaterial,
+    48,
+  );
+  bearingHousing.position.z = 0.02;
+  bearingHousing.userData.fixed = true;
+  bearingHousing.userData.role = 'fixed-overhead-crankshaft-bearing';
+  const bearingBore = cylinderAlongZ(
+    0.72 * sourceScale,
+    0.59,
+    darkMaterial,
+    40,
+  );
+  bearingBore.position.z = 0.025;
+  bearingBore.userData.fixed = true;
+  bearingBore.userData.role = 'fixed-bearing-bore-around-live-shaft';
+  const bearingCheeks = [-1, 1].map((side) => {
+    const cheek = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.46, frameDepth),
+      frameMaterial,
+    );
+    cheek.position.set(side * 0.21, -0.24, frameCenterZ);
+    cheek.rotation.z = side * -0.18;
+    cheek.userData.fixed = true;
+    cheek.userData.role =
+      `${side < 0 ? 'left' : 'right'}-overhead-bearing-cheek`;
+    return cheek;
+  });
+
+  fixedFrame.add(
+    topBeam,
+    ...topBeamBands,
+    leftGuideBarA,
+    rightGuideBarA,
+    ...outerFramePosts,
+    lowerCrossBase,
+    cylinderBody,
+    cylinderTopCap,
+    gland,
+    ...bearingCheeks,
+    bearingHousing,
+    bearingBore,
+  );
+
+  const rotorParts = makeFlywheelCrankRotor({
+    crankDepth,
+    crankInitialAngle,
+    crankPinRadius,
+    crankPlaneZ,
+    crankRadius,
+    darkMaterial,
+    driverMaterial,
+    flywheelDepth,
+    flywheelInnerRadius,
+    flywheelOuterRadius,
+    flywheelPlaneZ,
+    hubRadius,
+    scale: sourceScale,
+    whiteMaterial,
+  });
+  rotorParts.crankArm.userData.role =
+    'three-unit-overhead-crank-arm-rigid-with-flywheel';
+  rotorParts.crankPinAnchor.userData.role =
+    'analytic-three-unit-overhead-crank-pin-center';
+
+  const liveShaft = cylinderAlongZ(
+    0.54 * sourceScale,
+    connectingRodPlaneZ - flywheelPlaneZ + 0.52,
+    darkMaterial,
+    36,
+  );
+  liveShaft.position.z = (connectingRodPlaneZ + flywheelPlaneZ) / 2;
+  liveShaft.userData.axis = Z_AXIS.clone();
+  liveShaft.userData.role = 'live-overhead-flywheel-crankshaft';
+  rotorParts.rotor.add(liveShaft);
+
+  const rodParts = makeConnectingRod({
+    darkMaterial,
+    depth: connectingRodDepth,
+    drivenMaterial,
+    eyeRadius: 0.68 * sourceScale,
+    rodLength: connectingRodLength,
+  });
+  rodParts.rod.userData.role =
+    'single-rigid-nineteen-unit-connecting-rod-to-roller-crosshead';
+
+  const crosshead = new THREE.Group();
+  crosshead.userData.role =
+    'rigid-crosshead-with-two-opposed-guide-rollers-and-piston-rod';
+  crosshead.userData.rotationDegreesOfFreedom = 0;
+  crosshead.userData.translationAxis = Y_AXIS.clone();
+
+  const crossheadBar = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      rollerCenterHalfSpacing * 2,
+      0.75 * sourceScale,
+      0.18,
+    ),
+    drivenMaterial,
+  );
+  crossheadBar.position.z = crossheadPlaneZ;
+  crossheadBar.userData.role = 'rigid-horizontal-roller-crosshead-bar';
+  const crossheadCenterBoss = cylinderAlongZ(
+    wristPinRadius * 1.38,
+    0.22,
+    drivenMaterial,
+    36,
+  );
+  crossheadCenterBoss.position.z = crossheadPlaneZ;
+  crossheadCenterBoss.userData.role = 'crosshead-center-wrist-boss';
+
+  const leftRoller = makeIndexedGuideRoller({
+    accentMaterial,
+    darkMaterial,
+    depth: rollerDepth,
+    planeZ: rollerPlaneZ,
+    radius: rollerRadius,
+    role: 'left-guide-roller',
+    whiteMaterial,
+  });
+  leftRoller.position.x = -rollerCenterHalfSpacing;
+  const rightRoller = makeIndexedGuideRoller({
+    accentMaterial,
+    darkMaterial,
+    depth: rollerDepth,
+    planeZ: rollerPlaneZ,
+    radius: rollerRadius,
+    role: 'right-guide-roller',
+    whiteMaterial,
+  });
+  rightRoller.position.x = rollerCenterHalfSpacing;
+
+  const rollerAxles = [-1, 1].map((side) => {
+    const axle = cylinderAlongZ(
+      0.50 * sourceScale,
+      connectingRodPlaneZ - frameFrontZ + 0.24,
+      darkMaterial,
+      32,
+    );
+    axle.position.set(
+      side * rollerCenterHalfSpacing,
+      0,
+      (connectingRodPlaneZ + frameFrontZ) / 2,
+    );
+    axle.userData.role =
+      `${side < 0 ? 'left' : 'right'}-roller-axle-fixed-in-crosshead`;
+    return axle;
+  });
+
+  const pistonRodLength = pistonRodTopLocalY - pistonRodBottomLocalY;
+  const pistonRod = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.75 * sourceScale,
+      pistonRodLength,
+      0.15,
+    ),
+    drivenMaterial,
+  );
+  pistonRod.position.set(
+    0,
+    (pistonRodTopLocalY + pistonRodBottomLocalY) / 2,
+    crossheadPlaneZ,
+  );
+  pistonRod.userData.role = 'piston-rod-rigid-with-roller-crosshead';
+  const crossheadIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.11, 0.038, 0.032),
+    whiteMaterial,
+  );
+  crossheadIndex.position.z = connectingRodPlaneZ + 0.13;
+  crossheadIndex.userData.role = 'white-index-on-roller-crosshead';
+  const wristPinAnchor = new THREE.Object3D();
+  wristPinAnchor.position.z = connectingRodPlaneZ;
+  wristPinAnchor.userData.role = 'analytic-roller-crosshead-wrist-pin';
+
+  crosshead.add(
+    pistonRod,
+    leftRoller,
+    rightRoller,
+    crossheadBar,
+    crossheadCenterBoss,
+    ...rollerAxles,
+    crossheadIndex,
+    wristPinAnchor,
+  );
+
+  const crankPinShaft = cylinderAlongZ(
+    crankPinRadius,
+    connectingRodPlaneZ - crankPlaneZ + 0.26,
+    darkMaterial,
+    30,
+  );
+  crankPinShaft.position.z = (connectingRodPlaneZ + crankPlaneZ) / 2;
+  crankPinShaft.userData.role =
+    'crank-pin-joining-overhead-crank-to-connecting-rod';
+  const wristPinShaft = cylinderAlongZ(
+    wristPinRadius * 0.58,
+    connectingRodPlaneZ - rollerPlaneZ + 0.25,
+    darkMaterial,
+    30,
+  );
+  wristPinShaft.position.z = (connectingRodPlaneZ + rollerPlaneZ) / 2;
+  wristPinShaft.userData.role =
+    'wrist-pin-joining-rod-to-roller-crosshead';
+
+  root.add(
+    rotorParts.rotor,
+    fixedFrame,
+    crosshead,
+    crankPinShaft,
+    wristPinShaft,
+    rodParts.rod,
+  );
+
+  const cross2 = (left, right) => left.x * right.y
+    - left.y * right.x;
+  const initialSliderY = (sourceCrankRadius
+    - sourceConnectingRodLength) * sourceScale;
+
+  const stateAtRotorAngle = (
+    unwrappedRotorAngle,
+    angularVelocity = crankAngularSpeed,
+  ) => {
+    const rotorAngle = positiveModulo(unwrappedRotorAngle, FULL_TURN);
+    const crankPinAngle = positiveModulo(
+      rotorAngle + crankInitialAngle,
+      FULL_TURN,
+    );
+    const cosine = Math.cos(crankPinAngle);
+    const sine = Math.sin(crankPinAngle);
+    const crankPin = new THREE.Vector2(
+      crankRadius * cosine,
+      crankRadius * sine,
+    );
+    const crankPinVelocity = new THREE.Vector2(
+      -crankRadius * sine * angularVelocity,
+      crankRadius * cosine * angularVelocity,
+    );
+    const crankPinAcceleration = new THREE.Vector2(
+      -crankRadius * cosine * angularVelocity ** 2,
+      -crankRadius * sine * angularVelocity ** 2,
+    );
+    const circleLineRadicand = connectingRodLength ** 2
+      - crankPin.x ** 2;
+    const circleLineRoot = Math.sqrt(Math.max(0, circleLineRadicand));
+    const rootFirstByAngle = crankRadius ** 2
+      * cosine * sine / circleLineRoot;
+    const rootSecondByAngle = crankRadius ** 2
+      * (cosine ** 2 - sine ** 2) / circleLineRoot
+      - (crankRadius ** 2 * cosine * sine) ** 2
+        / circleLineRoot ** 3;
+    const sliderY = crankPin.y - circleLineRoot;
+    const sliderFirstByAngle = crankRadius * cosine
+      - rootFirstByAngle;
+    const sliderSecondByAngle = -crankRadius * sine
+      - rootSecondByAngle;
+    const sliderVelocityY = sliderFirstByAngle * angularVelocity;
+    const sliderAccelerationY = sliderSecondByAngle
+      * angularVelocity ** 2;
+    const wristPin = new THREE.Vector2(0, sliderY);
+    const wristPinVelocity = new THREE.Vector2(0, sliderVelocityY);
+    const wristPinAcceleration = new THREE.Vector2(
+      0,
+      sliderAccelerationY,
+    );
+    const rodVector = wristPin.clone().sub(crankPin);
+    const rodRelativeVelocity = wristPinVelocity.clone()
+      .sub(crankPinVelocity);
+    const rodRelativeAcceleration = wristPinAcceleration.clone()
+      .sub(crankPinAcceleration);
+    const rodLengthSquared = rodVector.lengthSq();
+    const rodAngularVelocity = cross2(
+      rodVector,
+      rodRelativeVelocity,
+    ) / rodLengthSquared;
+    const rodAngularAcceleration = (
+      cross2(rodVector, rodRelativeAcceleration) * rodLengthSquared
+        - cross2(rodVector, rodRelativeVelocity)
+          * 2 * rodVector.dot(rodRelativeVelocity)
+    ) / rodLengthSquared ** 2;
+
+    const rollerTravel = sliderY - initialSliderY;
+    const leftRollerAngle = rollerTravel / rollerRadius;
+    const rightRollerAngle = -rollerTravel / rollerRadius;
+    const leftRollerAngularVelocity = sliderVelocityY / rollerRadius;
+    const rightRollerAngularVelocity = -sliderVelocityY / rollerRadius;
+    const leftRollerAngularAcceleration = sliderAccelerationY
+      / rollerRadius;
+    const rightRollerAngularAcceleration = -sliderAccelerationY
+      / rollerRadius;
+    const leftRollerCenter = new THREE.Vector2(
+      -rollerCenterHalfSpacing,
+      sliderY,
+    );
+    const rightRollerCenter = new THREE.Vector2(
+      rollerCenterHalfSpacing,
+      sliderY,
+    );
+    const leftContactPoint = new THREE.Vector2(
+      leftRollerCenter.x - rollerRadius,
+      sliderY,
+    );
+    const rightContactPoint = new THREE.Vector2(
+      rightRollerCenter.x + rollerRadius,
+      sliderY,
+    );
+
+    return {
+      circleLineRadicand,
+      circleLineRoot,
+      crankAngle: rotorAngle,
+      crankAngularAcceleration: 0,
+      crankAngularVelocity: angularVelocity,
+      crankPin,
+      crankPinAcceleration,
+      crankPinAngle,
+      crankPinVelocity,
+      guide: {
+        axisResidual: wristPin.x,
+        crossheadRotation: 0,
+        crossheadRotationResidual: 0,
+        leftContactPoint,
+        leftFaceResidual: leftContactPoint.x
+          - (-guideContactHalfSpacing),
+        leftNoSlipVelocityResidual: sliderVelocityY
+          - leftRollerAngularVelocity * rollerRadius,
+        rightContactPoint,
+        rightFaceResidual: rightContactPoint.x
+          - guideContactHalfSpacing,
+        rightNoSlipVelocityResidual: sliderVelocityY
+          + rightRollerAngularVelocity * rollerRadius,
+      },
+      leftRoller: {
+        angle: leftRollerAngle,
+        angularAcceleration: leftRollerAngularAcceleration,
+        angularVelocity: leftRollerAngularVelocity,
+        center: leftRollerCenter,
+        contactPoint: leftContactPoint,
+      },
+      phase: rotorAngle / FULL_TURN,
+      pistonRod: {
+        acceleration: new THREE.Vector2(0, sliderAccelerationY),
+        position: wristPin.clone(),
+        rotation: 0,
+        velocity: new THREE.Vector2(0, sliderVelocityY),
+      },
+      rightRoller: {
+        angle: rightRollerAngle,
+        angularAcceleration: rightRollerAngularAcceleration,
+        angularVelocity: rightRollerAngularVelocity,
+        center: rightRollerCenter,
+        contactPoint: rightContactPoint,
+      },
+      rodAngle: Math.atan2(rodVector.y, rodVector.x),
+      rodAngularAcceleration,
+      rodAngularVelocity,
+      rodLength: rodVector.length(),
+      rodLengthResidual: rodVector.length() - connectingRodLength,
+      rodVector,
+      rollerTravel,
+      sliderAccelerationY,
+      sliderFirstByAngle,
+      sliderSecondByAngle,
+      sliderVelocityY,
+      sliderY,
+      unwrappedRotorAngle,
+      wristPin,
+      wristPinAcceleration,
+      wristPinVelocity,
+    };
+  };
+
+  const stateAtTime = (time) => {
+    const elapsed = Number.isFinite(Number(time)) ? Number(time) : 0;
+    return stateAtRotorAngle(elapsed * crankAngularSpeed);
+  };
+  const canonicalTimes = {
+    bottomDeadCenter: cyclePeriod * 0.50,
+    cycleClosure: cyclePeriod,
+    leftQuadrature: cyclePeriod * 0.25,
+    rightQuadrature: cyclePeriod * 0.75,
+    sourceStartTopDeadCenter: 0,
+  };
+  const canonicalStates = Object.fromEntries(
+    Object.entries(canonicalTimes).map(([name, time]) => [
+      name,
+      stateAtTime(time),
+    ]),
+  );
+
+  const officialViewMinimum = new THREE.Vector2(-16, -26.734242);
+  const officialViewWidth = 32;
+  const officialViewHeight = 32;
+  const officialCanvasWidth = 525;
+  const officialCanvasHeight = 525;
+  const modelPointToOfficialAnimationRaster = (point) => {
+    const rawX = point.x / sourceScale;
+    const rawY = point.y / sourceScale;
+    return new THREE.Vector2(
+      (rawX - officialViewMinimum.x)
+        * officialCanvasWidth / officialViewWidth,
+      officialCanvasHeight - (rawY - officialViewMinimum.y)
+        * officialCanvasHeight / officialViewHeight,
+    );
+  };
+
+  const geometry = {
+    connectingRodDepth,
+    connectingRodLength,
+    connectingRodPlaneZ,
+    crankDepth,
+    crankInitialAngle,
+    crankPinRadius,
+    crankPlaneZ,
+    crankRadius,
+    crankAngularSpeed,
+    crossheadPlaneZ,
+    cyclePeriod,
+    flywheelDepth,
+    flywheelInnerRadius,
+    flywheelOuterRadius,
+    flywheelPlaneZ,
+    frameBottomY,
+    frameCenterZ,
+    frameDepth,
+    frameFrontZ,
+    guideBarCenterHalfSpacing,
+    guideBarHalfWidth,
+    guideContactHalfSpacing,
+    initialSliderY,
+    pistonRodBottomLocalY,
+    pistonRodTopLocalY,
+    pistonStroke,
+    rollerCenterHalfSpacing,
+    rollerDepth,
+    rollerPlaneZ,
+    rollerRadius,
+    sourceConnectingRodLength,
+    sourceCrankRadius,
+    sourceCyclesPerMinute,
+    sourceFlywheelInnerRadius,
+    sourceFlywheelOuterRadius,
+    sourceGuideBarCenterHalfSpacing,
+    sourceGuideBarHalfWidth,
+    sourceGuideContactHalfSpacing,
+    sourcePistonRodBottomLocalY,
+    sourcePistonRodTopLocalY,
+    sourceRollerCenterHalfSpacing,
+    sourceRollerRadius,
+    sourceScale,
+    wristPinRadius,
+  };
+
+  const contacts = {
+    leftRollerOnGuideBarA: {
+      fixedMember: leftGuideBarA,
+      movingMember: leftRoller,
+      normal: new THREE.Vector3(1, 0, 0),
+      relativeSlipSpeed: 0,
+      type: 'no-slip-roller-on-straight-fixed-guide-face',
+    },
+    rightRollerOnGuideBarA: {
+      fixedMember: rightGuideBarA,
+      movingMember: rightRoller,
+      normal: new THREE.Vector3(-1, 0, 0),
+      relativeSlipSpeed: 0,
+      type: 'no-slip-roller-on-straight-fixed-guide-face',
+    },
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    rotorParts.rotor.rotation.z = state.crankAngle;
+    crosshead.position.set(0, state.sliderY, 0);
+    leftRoller.rotation.z = state.leftRoller.angle;
+    rightRoller.rotation.z = state.rightRoller.angle;
+    rodParts.rod.position.set(
+      state.crankPin.x,
+      state.crankPin.y,
+      connectingRodPlaneZ,
+    );
+    rodParts.rod.rotation.z = state.rodAngle;
+    crankPinShaft.position.x = state.crankPin.x;
+    crankPinShaft.position.y = state.crankPin.y;
+    wristPinShaft.position.x = 0;
+    wristPinShaft.position.y = state.sliderY;
+    contacts.leftRollerOnGuideBarA.relativeSlipSpeed =
+      state.guide.leftNoSlipVelocityResidual;
+    contacts.rightRollerOnGuideBarA.relativeSlipSpeed =
+      state.guide.rightNoSlipVelocityResidual;
+    root.userData.kinematics = state;
+  };
+
+  root.userData.archetype =
+    'opposed-guide-roller-crosshead-slider-crank';
+  root.userData.blocks = {
+    bearingBore,
+    bearingCheeks,
+    bearingHousing,
+    connectingRod: rodParts.rod,
+    connectingRodCrankEyeAnchor: rodParts.crankEyeAnchor,
+    connectingRodWristEyeAnchor: rodParts.wristEyeAnchor,
+    crankArm: rotorParts.crankArm,
+    crankPinAnchor: rotorParts.crankPinAnchor,
+    crankPinShaft,
+    crankRotationIndex: rotorParts.crankRotationIndex,
+    crosshead,
+    crossheadBar,
+    crossheadCenterBoss,
+    crossheadIndex,
+    cylinderBody,
+    cylinderTopCap,
+    fixedFrame,
+    flywheel: rotorParts.rotor,
+    flywheelRim: rotorParts.rim,
+    flywheelRotationIndex: rotorParts.flywheelRotationIndex,
+    flywheelSpokes: rotorParts.spokes,
+    gland,
+    leftGuideBarA,
+    leftRoller,
+    liveShaft,
+    lowerCrossBase,
+    outerFramePosts,
+    pistonRod,
+    rightGuideBarA,
+    rightRoller,
+    rollerAxles,
+    topBeam,
+    topBeamBands,
+    wristPinAnchor,
+    wristPinShaft,
+  };
+  root.userData.cameraDistanceScale = 1.05;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.35, frameBottomY - 0.10, -0.74),
+    new THREE.Vector3(3.35, 3.32, 1.02),
+  );
+  root.userData.canonicalStates = canonicalStates;
+  root.userData.canonicalTimes = canonicalTimes;
+  root.userData.contacts = contacts;
+  root.userData.degreesOfFreedom = {
+    crossheadRotation: 0,
+    crossheadTranslationAxes: 1,
+    input: 'one continuous overhead crankshaft rotation',
+    mechanism: 1,
+    output:
+      'one vertical piston-rod translation constrained by two opposed rollers',
+  };
+  root.userData.fidelity = 'authored';
+  root.userData.geometry = geometry;
+  root.userData.groundFloorY = frameBottomY - 0.025;
+  root.userData.mechanism =
+    'three-unit-crank-nineteen-unit-rod-crosshead-with-two-counter-rotating-rollers-on-guide-bars-A-A';
+  root.userData.modelPointToOfficialAnimationRaster =
+    modelPointToOfficialAnimationRaster;
+  root.userData.sourceAnimation = {
+    available: true,
+    cyclesPerMinute: sourceCyclesPerMinute,
+    durationSeconds: cyclePeriod,
+    independentlyReconstructed: true,
+    officialCanvasModelPresent: true,
+    officialGeometry: {
+      connectingRodLength: sourceConnectingRodLength,
+      crankInitialAngle: Math.PI / 2,
+      crankRadius: sourceCrankRadius,
+      flywheelInnerRadius: sourceFlywheelInnerRadius,
+      flywheelOuterRadius: sourceFlywheelOuterRadius,
+      guideBarCenterHalfSpacing: sourceGuideBarCenterHalfSpacing,
+      guideBarHalfWidth: sourceGuideBarHalfWidth,
+      guideContactHalfSpacing: sourceGuideContactHalfSpacing,
+      pistonRodBottomLocalY: sourcePistonRodBottomLocalY,
+      pistonRodTopLocalY: sourcePistonRodTopLocalY,
+      rollerCenterHalfSpacing: sourceRollerCenterHalfSpacing,
+      rollerRadius: sourceRollerRadius,
+    },
+    officialKeyframes: [
+      {
+        crankPin: new THREE.Vector2(0, 3),
+        phase: 0,
+        crossheadPin: new THREE.Vector2(0, -16),
+      },
+      {
+        crankPin: new THREE.Vector2(-3, 0),
+        phase: 0.25,
+        crossheadPin: new THREE.Vector2(0, -Math.sqrt(19 ** 2 - 3 ** 2)),
+      },
+      {
+        crankPin: new THREE.Vector2(0, -3),
+        phase: 0.50,
+        crossheadPin: new THREE.Vector2(0, -22),
+      },
+      {
+        crankPin: new THREE.Vector2(3, 0),
+        phase: 0.75,
+        crossheadPin: new THREE.Vector2(0, -Math.sqrt(19 ** 2 - 3 ** 2)),
+      },
+      {
+        crankPin: new THREE.Vector2(0, 3),
+        phase: 1,
+        crossheadPin: new THREE.Vector2(0, -16),
+      },
+    ],
+    officialPageAnimatedTabDisabled: false,
+    referenceScope:
+      'official three-unit crank, nineteen-unit rod, opposed 1.5-unit rollers, straight guide-bars A A, crosshead, piston-rod, and 15 rpm timing',
+    sourceUrl: movement.sourceUrl,
+  };
+  root.userData.sourceReference = {
+    brownPlate327: {
+      imageHeight: 525,
+      imageWidth: 525,
+      inferredTopology:
+        'one overhead flywheel and crank, one connecting rod, one crosshead, two guide rollers, two straight fixed guide-bars A A, and one piston-rod',
+      measurementUncertaintyPixels: 24,
+      rasterCrankCenter: new THREE.Vector2(264, 56),
+      rasterCrankPin: new THREE.Vector2(263, 18),
+      rasterCrossheadPin: new THREE.Vector2(267, 330),
+      rasterLeftGuideRoller: new THREE.Vector2(216, 328),
+      rasterLeftGuideBarA: new THREE.Vector2(176, 402),
+      rasterRightGuideBarA: new THREE.Vector2(358, 401),
+      rasterRightGuideRoller: new THREE.Vector2(322, 328),
+    },
+    officialAnimationView: {
+      canvasHeight: officialCanvasHeight,
+      canvasWidth: officialCanvasWidth,
+      minimum: officialViewMinimum,
+      viewHeight: officialViewHeight,
+      viewWidth: officialViewWidth,
+    },
+    officialDescription: movement.description,
+    primaryScan: {
+      archiveIdentifier: 'fivehundredseven00browiala',
+      edition: 21,
+      publicationYear: 1908,
+    },
+  };
+  root.userData.stateAtRotorAngle = stateAtRotorAngle;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.transmission = {
+    connectingRodConstraint:
+      'sqrt((0-crankX)^2 + (crossheadY-crankY)^2) = 19 source units',
+    input: 'one rigid flywheel and three-unit crank rotating at 15 rpm',
+    leftRollerLaw: 'angle = crosshead travel / roller radius',
+    output:
+      'a six-unit vertical piston stroke with zero crosshead yaw',
+    rightRollerLaw: 'angle = -crosshead travel / roller radius',
+    rollerAngularVelocityRatioToCrosshead:
+      'left +1/R and right -1/R',
+    sliderLaw:
+      'y = r*sin(beta) - sqrt(L^2 - r^2*cos(beta)^2), beta = theta + pi/2',
+  };
+
+  update(0);
+  markShadows(root);
+  return {
+    cameraDirection: new THREE.Vector3(5.0, 3.3, 12.9),
+    root,
+    update,
+  };
+}
+
+export function createAuthoredSteamEngineGuideMovement(movement) {
+  switch (movement.id) {
+    case 326: return verticalPlanedSlotPistonGuide(movement);
+    case 327: return rollerGuidedFrenchEngineCrosshead(movement);
+    default: return null;
+  }
+}

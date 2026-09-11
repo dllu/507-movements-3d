@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import profile from '../src/data/opposed-arm-profile.js';
+const file='src/data/display-profiles.json',data=JSON.parse(fs.readFileSync(file)),prior=JSON.parse(fs.readFileSync('artifacts/review/079-preintegration-source-3.txt'));
+for(const [id,value]of Object.entries(prior.profiles))if(id!=='79')assert.deepEqual(data.profiles[id],value);
+data.profiles[79].motionBounds=profile.motionBounds;data.profiles[79].floorY=profile.motionBounds.min[1];
+data.profiles[79].motionBoundsMethod='Analytic whole-stroke bounds for every wheel/pawl rotation and exact fixed-length linkage; checked against 11944260 actual vertices.';
+fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');
+fs.writeFileSync('src/data/display-profiles.js','// Generated display measurements; 079 analytic bounds from scripts/finalize-opposed-arm-display.mjs.\nexport default '+JSON.stringify(data)+';\n');
+console.log({movement:79,otherProfilesUnchanged:506,profile:data.profiles[79]});

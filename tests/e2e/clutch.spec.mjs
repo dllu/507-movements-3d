@@ -1,0 +1,58 @@
+import { expect, test } from '@playwright/test';
+
+test('047 switches between its fixed section and complete clutch on desktop and mobile', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/#/movement/047');
+  const canvas = page.locator('.simulation-canvas');
+  const section = page.getByRole('button', { name: 'Section view', exact: true });
+  const play = page.locator('.play-control');
+  await expect(canvas).toBeVisible();
+  await expect(section).toHaveAttribute('aria-pressed', 'true');
+  await play.click();
+  await expect(play).toHaveAttribute('aria-pressed', 'false');
+  const sectionImage = await canvas.screenshot();
+  await section.click();
+  await expect(section).toHaveAttribute('aria-pressed', 'false');
+  const fullImage = await canvas.screenshot();
+  expect(fullImage.equals(sectionImage)).toBe(false);
+  await play.click();
+  await page.waitForTimeout(750);
+  await play.click();
+  expect((await canvas.screenshot()).equals(fullImage)).toBe(false);
+  await section.click();
+  await expect(section).toHaveAttribute('aria-pressed', 'true');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await section.scrollIntoViewIfNeeded();
+  const box = await section.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  await section.click();
+  await expect(section).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Reset view' }).click();
+  await expect(canvas).toBeVisible();
+  await page.goto('/#/movement/001');
+  await expect(page.getByRole('button', { name: 'Section view', exact: true })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('048 plays its rebuilt jaw clutch and keeps its controls usable on mobile', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/#/movement/048');
+  const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('Six tapered jaws, an 18:32 gear ratio', { exact: false })).toBeVisible();
+  await play.click();
+  const stopped = await canvas.screenshot();
+  await play.click(); await page.waitForTimeout(650); await play.click();
+  expect((await canvas.screenshot()).equals(stopped)).toBe(false);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await play.scrollIntoViewIfNeeded();
+  const box = await play.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(390);
+  await page.getByRole('button', { name: 'Reset view' }).click();
+  await expect(canvas).toBeVisible();
+  await play.click(); await page.waitForTimeout(450); await play.click();
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,19 @@
+import{test,expect}from'@playwright/test';
+import{visibleForegroundBounds,hasFrameMargin}from'../helpers/rendered-frame.mjs';
+test('072 shows its gravity hammer, plays and remains framed on mobile',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/#/movement/072');const canvas=page.locator('canvas');await expect(canvas).toBeVisible();
+  await expect(page.getByText('The cam lifts the hammer four times per revolution.',{exact:false})).toBeVisible();
+  const pause=page.getByRole('button',{name:'Pause',exact:true});await pause.click();
+  await page.getByRole('button',{name:'Reset view',exact:true}).click();
+  const stopped=await canvas.screenshot();await page.waitForTimeout(250);expect(await canvas.screenshot()).toEqual(stopped);
+  await page.getByRole('button',{name:'Play',exact:true}).click();
+  await expect.poll(async()=>(await canvas.screenshot()).equals(stopped)).toBe(false);await pause.click();
+  expect(hasFrameMargin(await visibleForegroundBounds(canvas))).toBe(true);
+  await page.screenshot({path:'artifacts/review/072-desktop-controls.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.getByRole('button',{name:'Reset view',exact:true}).click();
+  await expect.poll(async()=>hasFrameMargin(await visibleForegroundBounds(canvas))).toBe(true);
+  const mobile=await canvas.screenshot();await page.waitForTimeout(250);expect(await canvas.screenshot()).toEqual(mobile);
+  await page.screenshot({path:'artifacts/review/072-mobile-controls.png',fullPage:true});expect(errors).toEqual([]);
+});

@@ -1,0 +1,1416 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeBeam,
+  makeDynamicLink,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const FULL_TURN = Math.PI * 2;
+
+function cylinderAlongY(radius, length, material, segments = 28) {
+  return new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+}
+
+function cylinderAlongZ(radius, length, material, segments = 28) {
+  const cylinder = cylinderAlongY(radius, length, material, segments);
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function rotate2(angle, point) {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return new THREE.Vector2(
+    cosine * point.x - sine * point.y,
+    sine * point.x + cosine * point.y,
+  );
+}
+
+function rotationDerivative2(angle, point) {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return new THREE.Vector2(
+    -sine * point.x - cosine * point.y,
+    cosine * point.x - sine * point.y,
+  );
+}
+
+function pointInPose(position, angle, localPoint) {
+  return rotate2(angle, localPoint).add(position);
+}
+
+function wrapAngle(angle) {
+  return THREE.MathUtils.euclideanModulo(angle + Math.PI, FULL_TURN)
+    - Math.PI;
+}
+
+function solveLinear3(matrix, rightHandSide) {
+  const [a, b, c, d, e, f, g, h, i] = matrix;
+  const [u, v, w] = rightHandSide;
+  const determinant = a * (e * i - f * h)
+    - b * (d * i - f * g)
+    + c * (d * h - e * g);
+  if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) {
+    throw new RangeError(
+      'Movement 171 reached a singular Stephenson-link assembly.',
+    );
+  }
+  return new THREE.Vector3(
+    (
+      u * (e * i - f * h)
+        - b * (v * i - f * w)
+        + c * (v * h - e * w)
+    ) / determinant,
+    (
+      a * (v * i - f * w)
+        - u * (d * i - f * g)
+        + c * (d * w - v * g)
+    ) / determinant,
+    (
+      a * (e * w - v * h)
+        - b * (d * w - v * g)
+        + u * (d * h - e * g)
+    ) / determinant,
+  );
+}
+
+function linkSlotPoint(radius, angle) {
+  return new THREE.Vector2(
+    radius * Math.sin(angle),
+    radius * (1 - Math.cos(angle)),
+  );
+}
+
+function makeLinkArcCurve({
+  centerRadius,
+  railRadius,
+  halfAngle,
+  z = 0,
+}) {
+  const points = Array.from({ length: 65 }, (_, index) => {
+    const angle = -halfAngle + 2 * halfAngle * index / 64;
+    return new THREE.Vector3(
+      railRadius * Math.sin(angle),
+      centerRadius - railRadius * Math.cos(angle),
+      z,
+    );
+  });
+  return new THREE.CatmullRomCurve3(points, false, 'centripetal');
+}
+
+function makeTrunnionArcCurve({ radius, halfAngle, z = 0 }) {
+  const points = Array.from({ length: 73 }, (_, index) => {
+    const angle = -halfAngle + 2 * halfAngle * index / 72;
+    return new THREE.Vector3(
+      radius * Math.sin(angle),
+      radius * Math.cos(angle),
+      z,
+    );
+  });
+  return new THREE.CatmullRomCurve3(points, false, 'centripetal');
+}
+
+function makeArcRail(curve, radius, material) {
+  return new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 96, radius, 12, false),
+    material,
+  );
+}
+
+function setDynamicLinkEndpoints(link, start, end) {
+  link.userData.setEndpoints(
+    new THREE.Vector3(start.x, start.y, start.z ?? 0),
+    new THREE.Vector3(end.x, end.y, end.z ?? 0),
+  );
+}
+
+function makeEye(radius, tubeRadius, material, z = 0) {
+  const eye = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, tubeRadius, 12, 40),
+    material,
+  );
+  eye.position.z = z;
+  return eye;
+}
+
+function makeIndexedEccentricSheave({
+  material,
+  radius,
+  rimMaterial,
+  width,
+  z,
+}) {
+  const group = new THREE.Group();
+  const body = cylinderAlongZ(radius, width, material, 52);
+  body.position.z = z;
+  body.userData.role = 'eccentric-sheave-fast-on-common-crankshaft';
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(radius * 0.94, 0.055, 10, 56),
+    rimMaterial,
+  );
+  rim.position.z = z + width * 0.52;
+  rim.userData.role = 'working-rim-under-eccentric-strap';
+  const index = new THREE.Mesh(
+    new THREE.BoxGeometry(radius * 0.62, 0.075, 0.035),
+    matte(PALETTE.white, { roughness: 0.43 }),
+  );
+  index.position.set(radius * 0.34, 0, z + width * 0.57);
+  index.userData.role = 'white-index-on-eccentric-sheave';
+  group.add(body, rim, index);
+  group.userData.body = body;
+  group.userData.index = index;
+  group.userData.rim = rim;
+  return group;
+}
+
+function makeEccentricStrap({ radius, material, z }) {
+  const group = new THREE.Group();
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, 0.075, 12, 64),
+    material,
+  );
+  ring.position.z = z;
+  ring.userData.role = 'free-eccentric-strap-around-one-sheave';
+  const oilCup = cylinderAlongY(0.07, 0.25, material, 20);
+  oilCup.position.set(0, radius + 0.12, z);
+  oilCup.userData.role = 'oil-cup-fixed-to-eccentric-strap';
+  group.add(ring, oilCup);
+  group.userData.ring = ring;
+  group.userData.oilCup = oilCup;
+  return group;
+}
+
+function oscillatingMarineEngineStephensonValveGear() {
+  const root = new THREE.Group();
+
+  // Brown's engraving supplies a front elevation. These anchors are measured
+  // from the 263 x 525 public-domain raster. Its large upper circle is the
+  // crankshaft/eccentric center and the hatched lower circle is the cylinder
+  // trunnion; their separation establishes the scale used below.
+  const sourceImageWidth = 263;
+  const sourceImageHeight = 525;
+  const sourceRasterAxisX = 132;
+  const sourceRasterShaftCenter = new THREE.Vector2(132, 52);
+  const sourceRasterAheadLinkPin = new THREE.Vector2(76, 278);
+  const sourceRasterAsternLinkPin = new THREE.Vector2(167, 278);
+  const sourceRasterLinkDie = new THREE.Vector2(132, 300);
+  const sourceRasterSlideEye = new THREE.Vector2(133, 361);
+  const sourceRasterFollowerPin = new THREE.Vector2(132, 394);
+  const sourceRasterTrunnion = new THREE.Vector2(132, 468);
+
+  const shaftCenter = new THREE.Vector2(0, 4.7);
+  const trunnionCenter = new THREE.Vector2(0, -2.05);
+  const sourceUnitsPerPixel = (
+    shaftCenter.y - trunnionCenter.y
+  ) / (
+    sourceRasterTrunnion.y - sourceRasterShaftCenter.y
+  );
+  const sourcePointFromRaster = (point) => new THREE.Vector2(
+    (point.x - sourceRasterAxisX) * sourceUnitsPerPixel,
+    shaftCenter.y
+      - (point.y - sourceRasterShaftCenter.y) * sourceUnitsPerPixel,
+  );
+
+  // One crankshaft carries the two equal and exactly opposite eccentric
+  // throws. The launch-link pins sit behind the curved slot, as in Brown's
+  // marine form of the Stephenson gear. Prescribing which point of the rigid
+  // slot crosses the fixed valve-guide line is the reversing control: the two
+  // finite eccentric rods then determine the remaining link pose exactly.
+  const eccentricity = 0.24;
+  const sheaveRadius = 0.69;
+  const strapPitchRadius = sheaveRadius + 0.09;
+  const sheaveWidth = 0.24;
+  const aheadLayerZ = 0.27;
+  const asternLayerZ = -0.27;
+  const linkCenterAtSource = new THREE.Vector2(0, 0.68);
+  const linkPinHalfSpacing = 0.75;
+  const linkPinRise = 0.29;
+  const aheadLinkPinLocal = new THREE.Vector2(
+    -linkPinHalfSpacing,
+    linkPinRise,
+  );
+  const asternLinkPinLocal = new THREE.Vector2(
+    linkPinHalfSpacing,
+    linkPinRise,
+  );
+  const linkPinSpacing = 2 * linkPinHalfSpacing;
+  const linkSlotRadius = 2.8;
+  const selectorHalfAngle = 0.27;
+  const visibleLinkHalfAngle = 0.405;
+  const linkSlotHalfWidth = 0.105;
+  const dieGuideX = 0;
+  const sourceSelector = 0;
+  const sourceInputAngle = 0;
+
+  const eccentricCenterAt = (inputAngle, sign) => shaftCenter.clone().add(
+    rotate2(inputAngle, new THREE.Vector2(sign * eccentricity, 0)),
+  );
+  const sourceAheadEccentricCenter = eccentricCenterAt(
+    sourceInputAngle,
+    -1,
+  );
+  const sourceAsternEccentricCenter = eccentricCenterAt(
+    sourceInputAngle,
+    1,
+  );
+  const sourceAheadLinkPin = linkCenterAtSource.clone().add(
+    aheadLinkPinLocal,
+  );
+  const sourceAsternLinkPin = linkCenterAtSource.clone().add(
+    asternLinkPinLocal,
+  );
+  const aheadEccentricRodLength = sourceAheadEccentricCenter.distanceTo(
+    sourceAheadLinkPin,
+  );
+  const asternEccentricRodLength = sourceAsternEccentricCenter.distanceTo(
+    sourceAsternLinkPin,
+  );
+
+  const solveLinkPose = (inputAngle, selector) => {
+    const resolvedAngle = wrapAngle(inputAngle);
+    const resolvedSelector = THREE.MathUtils.clamp(selector, -1, 1);
+    const dieSlotAngle = resolvedSelector * selectorHalfAngle;
+    const dieLocalPoint = linkSlotPoint(linkSlotRadius, dieSlotAngle);
+    const aheadEccentricCenter = eccentricCenterAt(resolvedAngle, -1);
+    const asternEccentricCenter = eccentricCenterAt(resolvedAngle, 1);
+    const pose = new THREE.Vector3(
+      dieGuideX - dieLocalPoint.x,
+      linkCenterAtSource.y,
+      0,
+    );
+    let iterations = 0;
+    let maximumSquaredResidual = Infinity;
+
+    for (let iteration = 0; iteration < 18; iteration += 1) {
+      iterations = iteration + 1;
+      const position = new THREE.Vector2(pose.x, pose.y);
+      const aheadLinkPin = pointInPose(
+        position,
+        pose.z,
+        aheadLinkPinLocal,
+      );
+      const asternLinkPin = pointInPose(
+        position,
+        pose.z,
+        asternLinkPinLocal,
+      );
+      const diePoint = pointInPose(position, pose.z, dieLocalPoint);
+      const aheadDifference = aheadLinkPin.clone().sub(
+        aheadEccentricCenter,
+      );
+      const asternDifference = asternLinkPin.clone().sub(
+        asternEccentricCenter,
+      );
+      const residual = [
+        aheadDifference.lengthSq() - aheadEccentricRodLength ** 2,
+        asternDifference.lengthSq() - asternEccentricRodLength ** 2,
+        diePoint.x - dieGuideX,
+      ];
+      maximumSquaredResidual = Math.max(...residual.map(Math.abs));
+      if (maximumSquaredResidual < 1e-13) break;
+
+      const aheadAngularDerivative = rotationDerivative2(
+        pose.z,
+        aheadLinkPinLocal,
+      );
+      const asternAngularDerivative = rotationDerivative2(
+        pose.z,
+        asternLinkPinLocal,
+      );
+      const dieAngularDerivative = rotationDerivative2(
+        pose.z,
+        dieLocalPoint,
+      );
+      const correction = solveLinear3([
+        2 * aheadDifference.x,
+        2 * aheadDifference.y,
+        2 * aheadDifference.dot(aheadAngularDerivative),
+        2 * asternDifference.x,
+        2 * asternDifference.y,
+        2 * asternDifference.dot(asternAngularDerivative),
+        1,
+        0,
+        dieAngularDerivative.x,
+      ], residual.map((value) => -value));
+      const correctionLength = correction.length();
+      if (correctionLength > 0.72) correction.multiplyScalar(
+        0.72 / correctionLength,
+      );
+      pose.add(correction);
+    }
+
+    if (maximumSquaredResidual >= 1e-10) {
+      throw new RangeError(
+        'Movement 171 could not close both eccentric rods and its die guide.',
+      );
+    }
+
+    const position = new THREE.Vector2(pose.x, pose.y);
+    const aheadLinkPin = pointInPose(
+      position,
+      pose.z,
+      aheadLinkPinLocal,
+    );
+    const asternLinkPin = pointInPose(
+      position,
+      pose.z,
+      asternLinkPinLocal,
+    );
+    const diePoint = pointInPose(position, pose.z, dieLocalPoint);
+    return {
+      aheadEccentricCenter,
+      aheadLinkPin,
+      asternEccentricCenter,
+      asternLinkPin,
+      dieGuideError: Math.abs(diePoint.x - dieGuideX),
+      dieLocalPoint,
+      diePoint,
+      dieSlotAngle,
+      eccentricOppositionError: aheadEccentricCenter.clone()
+        .add(asternEccentricCenter)
+        .sub(shaftCenter.clone().multiplyScalar(2))
+        .length(),
+      aheadRodLengthError: Math.abs(
+        aheadEccentricCenter.distanceTo(aheadLinkPin)
+          - aheadEccentricRodLength
+      ),
+      asternRodLengthError: Math.abs(
+        asternEccentricCenter.distanceTo(asternLinkPin)
+          - asternEccentricRodLength
+      ),
+      inputAngle: resolvedAngle,
+      iterations,
+      linkAngle: pose.z,
+      linkPinSpacingError: Math.abs(
+        aheadLinkPin.distanceTo(asternLinkPin) - linkPinSpacing
+      ),
+      linkPosition: position,
+      selector: resolvedSelector,
+    };
+  };
+
+  // The rear crank is fast on the same shaft as both eccentrics. Its pin and
+  // the trunnion determine the instantaneous cylinder axis, so the cylinder's
+  // rocking is not an unrelated decorative sine wave.
+  const mainCrankRadius = 0.72;
+  const mainCrankPinLocal = new THREE.Vector2(0, -mainCrankRadius);
+  const slotRadius = 1.2;
+  const slideEyeRadius = 1.73;
+  const sourceSlideStroke = -0.05;
+  const rockshaftPivotLocal = new THREE.Vector2(-0.55, 0.62);
+  const sourceFollowerPinLocal = new THREE.Vector2(0, slotRadius);
+  const followerArmLocal = sourceFollowerPinLocal.clone().sub(
+    rockshaftPivotLocal,
+  );
+  const followerArmLength = followerArmLocal.length();
+  const sourceFollowerArmAngle = Math.atan2(
+    followerArmLocal.y,
+    followerArmLocal.x,
+  );
+  const valveArmLocal = new THREE.Vector2(-0.50, -0.30);
+  const valveGuideX = -1.36;
+  const valveLinkLength = 0.66;
+
+  const lowerStateAtSlideStroke = (slideStroke, cylinderAngle = 0) => {
+    const slotCenterLocal = new THREE.Vector2(0, slideStroke);
+    const centerDifference = slotCenterLocal.clone().sub(
+      rockshaftPivotLocal,
+    );
+    const centerDistance = centerDifference.length();
+    const minimumDistance = Math.abs(followerArmLength - slotRadius);
+    const maximumDistance = followerArmLength + slotRadius;
+    if (
+      centerDistance < minimumDistance - 1e-10
+        || centerDistance > maximumDistance + 1e-10
+    ) {
+      throw new RangeError(
+        'Movement 171 follower pin left its trunnion-centered slide.',
+      );
+    }
+    const alongCenters = (
+      followerArmLength ** 2
+        - slotRadius ** 2
+        + centerDistance ** 2
+    ) / (2 * centerDistance);
+    const perpendicularDistance = Math.sqrt(Math.max(
+      0,
+      followerArmLength ** 2 - alongCenters ** 2,
+    ));
+    const centerDirection = centerDifference.clone().multiplyScalar(
+      1 / centerDistance,
+    );
+    const perpendicularDirection = new THREE.Vector2(
+      -centerDirection.y,
+      centerDirection.x,
+    );
+    const intersectionMiddle = rockshaftPivotLocal.clone().addScaledVector(
+      centerDirection,
+      alongCenters,
+    );
+    const candidateA = intersectionMiddle.clone().addScaledVector(
+      perpendicularDirection,
+      perpendicularDistance,
+    );
+    const candidateB = intersectionMiddle.clone().addScaledVector(
+      perpendicularDirection,
+      -perpendicularDistance,
+    );
+    const followerPinLocal = candidateA.y > candidateB.y
+      ? candidateA
+      : candidateB;
+    const followerVector = followerPinLocal.clone().sub(
+      rockshaftPivotLocal,
+    );
+    const rockshaftAngle = wrapAngle(
+      Math.atan2(followerVector.y, followerVector.x)
+        - sourceFollowerArmAngle,
+    );
+    const slotParameterAngle = Math.atan2(
+      followerPinLocal.x - slotCenterLocal.x,
+      followerPinLocal.y - slotCenterLocal.y,
+    );
+
+    const valveArmPointLocal = rockshaftPivotLocal.clone().add(
+      rotate2(rockshaftAngle, valveArmLocal),
+    );
+    const valveHorizontalDifference = valveGuideX
+      - valveArmPointLocal.x;
+    const valveVerticalReachSquared = valveLinkLength ** 2
+      - valveHorizontalDifference ** 2;
+    if (valveVerticalReachSquared < 0) {
+      throw new RangeError(
+        'Movement 171 rockshaft-to-valve link left its guided branch.',
+      );
+    }
+    const valveStemPointLocal = new THREE.Vector2(
+      valveGuideX,
+      valveArmPointLocal.y - Math.sqrt(valveVerticalReachSquared),
+    );
+
+    const worldFromCylinder = (point) => trunnionCenter.clone().add(
+      rotate2(cylinderAngle, point),
+    );
+    const followerPinWorld = worldFromCylinder(followerPinLocal);
+    const rockshaftPivotWorld = worldFromCylinder(rockshaftPivotLocal);
+    const slotCenterWorld = worldFromCylinder(slotCenterLocal);
+    const valveArmPointWorld = worldFromCylinder(valveArmPointLocal);
+    const valveStemPointWorld = worldFromCylinder(valveStemPointLocal);
+
+    return {
+      absoluteRockshaftAngle: wrapAngle(cylinderAngle + rockshaftAngle),
+      cylinderAngle,
+      followerArmLengthError: Math.abs(
+        followerPinLocal.distanceTo(rockshaftPivotLocal)
+          - followerArmLength
+      ),
+      followerPinLocal,
+      followerPinWorld,
+      rockshaftAngle,
+      rockshaftPivotWorld,
+      slideStroke,
+      slotCenterLocal,
+      slotCenterWorld,
+      slotContactError: Math.abs(
+        followerPinLocal.distanceTo(slotCenterLocal) - slotRadius
+      ),
+      slotParameterAngle,
+      valveArmPointLocal,
+      valveArmPointWorld,
+      valveLinkLengthError: Math.abs(
+        valveArmPointLocal.distanceTo(valveStemPointLocal)
+          - valveLinkLength
+      ),
+      valveStemGuideError: Math.abs(
+        valveStemPointLocal.x - valveGuideX
+      ),
+      valveStemPointLocal,
+      valveStemPointWorld,
+    };
+  };
+
+  const sourceTopState = solveLinkPose(sourceInputAngle, sourceSelector);
+  const sourceCrankPin = shaftCenter.clone().add(
+    rotate2(sourceInputAngle, mainCrankPinLocal),
+  );
+  const sourceCylinderAxis = sourceCrankPin.clone().sub(
+    trunnionCenter,
+  ).normalize();
+  const sourceSlideEyeWorld = trunnionCenter.clone().addScaledVector(
+    sourceCylinderAxis,
+    slideEyeRadius + sourceSlideStroke,
+  );
+  const outputRodLength = sourceTopState.diePoint.distanceTo(
+    sourceSlideEyeWorld,
+  );
+
+  const stateAtInputAngle = (inputAngle, selector = 0) => {
+    const top = solveLinkPose(inputAngle, selector);
+    const crankPin = shaftCenter.clone().add(
+      rotate2(top.inputAngle, mainCrankPinLocal),
+    );
+    const cylinderAxisVector = crankPin.clone().sub(trunnionCenter);
+    const pistonDistance = cylinderAxisVector.length();
+    const cylinderAxis = cylinderAxisVector.clone().multiplyScalar(
+      1 / pistonDistance,
+    );
+    const cylinderAngle = Math.atan2(-cylinderAxis.x, cylinderAxis.y);
+    const dieFromTrunnion = top.diePoint.clone().sub(trunnionCenter);
+    const projectionOnCylinderAxis = dieFromTrunnion.dot(cylinderAxis);
+    const perpendicularDistanceSquared = Math.max(
+      0,
+      dieFromTrunnion.lengthSq() - projectionOnCylinderAxis ** 2,
+    );
+    const outputRodRadicand = outputRodLength ** 2
+      - perpendicularDistanceSquared;
+    if (outputRodRadicand < -1e-10) {
+      throw new RangeError(
+        'Movement 171 finite output rod cannot reach the cylinder slide.',
+      );
+    }
+    const slideEyeDistanceFromTrunnion = projectionOnCylinderAxis
+      - Math.sqrt(Math.max(0, outputRodRadicand));
+    const slideStroke = slideEyeDistanceFromTrunnion - slideEyeRadius;
+    const slideEyeWorld = trunnionCenter.clone().addScaledVector(
+      cylinderAxis,
+      slideEyeDistanceFromTrunnion,
+    );
+    const lower = lowerStateAtSlideStroke(slideStroke, cylinderAngle);
+    const crankRadialError = Math.abs(
+      crankPin.distanceTo(shaftCenter) - mainCrankRadius
+    );
+    const crankAxisCrossError = Math.abs(
+      cylinderAxis.x * cylinderAxisVector.y
+        - cylinderAxis.y * cylinderAxisVector.x
+    );
+    return {
+      ...top,
+      ...lower,
+      crankAxisCrossError,
+      crankPin,
+      crankRadialError,
+      cylinderAxis,
+      outputRodLengthError: Math.abs(
+        top.diePoint.distanceTo(slideEyeWorld) - outputRodLength
+      ),
+      pistonDistance,
+      slideEyeDistanceFromTrunnion,
+      slideEyeWorld,
+      stage: top.selector < -0.72
+        ? 'ahead-eccentric-in-full-gear'
+        : top.selector > 0.72
+          ? 'astern-eccentric-in-full-gear'
+          : Math.abs(top.selector) < 0.12
+            ? 'mid-gear-reduced-valve-travel'
+            : 'reversing-link-between-notches',
+    };
+  };
+
+  const inputAngularSpeed = 0.86;
+  const selectorPeriod = 18;
+  const selectorAtTime = (time) => Math.sin(
+    FULL_TURN * time / selectorPeriod,
+  );
+  const stateAtTime = (time) => {
+    const state = stateAtInputAngle(
+      inputAngularSpeed * time,
+      selectorAtTime(time),
+    );
+    state.inputAngularSpeed = inputAngularSpeed;
+    state.selectorRate = FULL_TURN / selectorPeriod * Math.cos(
+      FULL_TURN * time / selectorPeriod,
+    );
+    state.time = time;
+    return state;
+  };
+
+  const driverMaterial = matte(PALETTE.driver, {
+    metalness: 0.12,
+    roughness: 0.6,
+  });
+  const drivenMaterial = matte(PALETTE.driven, {
+    metalness: 0.14,
+    roughness: 0.59,
+  });
+  const accentMaterial = matte(PALETTE.accent, {
+    metalness: 0.17,
+    roughness: 0.54,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.26,
+    roughness: 0.45,
+  });
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.14,
+    roughness: 0.69,
+  });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  const brassMaterial = matte(PALETTE.brass, {
+    metalness: 0.2,
+    roughness: 0.5,
+  });
+
+  const inputRotor = new THREE.Group();
+  inputRotor.position.set(shaftCenter.x, shaftCenter.y, 0);
+  inputRotor.userData.axis = Z_AXIS.clone();
+  inputRotor.userData.role =
+    'one-crankshaft-carrying-both-eccentrics-and-main-crank';
+  const inputShaft = cylinderAlongZ(0.13, 3.05, darkMaterial, 38);
+  inputShaft.userData.role = 'common-crankshaft-through-both-eccentrics';
+  const inputShaftIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.10, 0.54, 0.055),
+    whiteMaterial,
+  );
+  inputShaftIndex.position.set(0.19, 0, 1.47);
+  inputShaftIndex.userData.role = 'white-index-on-common-crankshaft';
+  inputRotor.add(inputShaft, inputShaftIndex);
+
+  const aheadSheave = makeIndexedEccentricSheave({
+    material: driverMaterial,
+    radius: sheaveRadius,
+    rimMaterial: darkMaterial,
+    width: sheaveWidth,
+    z: aheadLayerZ,
+  });
+  aheadSheave.position.x = -eccentricity;
+  aheadSheave.userData.role = 'ahead-eccentric-sheave';
+  const asternSheave = makeIndexedEccentricSheave({
+    material: driverMaterial,
+    radius: sheaveRadius,
+    rimMaterial: darkMaterial,
+    width: sheaveWidth,
+    z: asternLayerZ,
+  });
+  asternSheave.position.x = eccentricity;
+  asternSheave.userData.role = 'astern-eccentric-sheave';
+  inputRotor.add(aheadSheave, asternSheave);
+
+  const mainCrankDisk = cylinderAlongZ(0.91, 0.19, driverMaterial, 52);
+  mainCrankDisk.position.z = -1.03;
+  mainCrankDisk.userData.role = 'rear-main-crank-fast-on-eccentric-shaft';
+  const mainCrankRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.88, 0.06, 10, 56),
+    darkMaterial,
+  );
+  mainCrankRim.position.z = -0.92;
+  const mainCrankPin = cylinderAlongZ(0.12, 0.42, darkMaterial, 30);
+  mainCrankPin.position.set(
+    mainCrankPinLocal.x,
+    mainCrankPinLocal.y,
+    -1.03,
+  );
+  mainCrankPin.userData.role =
+    'main-crankpin-determining-oscillating-cylinder-axis';
+  const mainCrankIndex = new THREE.Mesh(
+    new THREE.SphereGeometry(0.10, 22, 14),
+    whiteMaterial,
+  );
+  mainCrankIndex.position.set(
+    mainCrankPinLocal.x,
+    mainCrankPinLocal.y,
+    -0.78,
+  );
+  mainCrankIndex.userData.role = 'white-index-on-main-crankpin';
+  inputRotor.add(
+    mainCrankDisk,
+    mainCrankRim,
+    mainCrankPin,
+    mainCrankIndex,
+  );
+  root.add(inputRotor);
+
+  const aheadStrap = makeEccentricStrap({
+    material: brassMaterial,
+    radius: strapPitchRadius,
+    z: aheadLayerZ,
+  });
+  aheadStrap.userData.role = 'ahead-eccentric-strap';
+  const asternStrap = makeEccentricStrap({
+    material: brassMaterial,
+    radius: strapPitchRadius,
+    z: asternLayerZ,
+  });
+  asternStrap.userData.role = 'astern-eccentric-strap';
+  const aheadEccentricRod = makeDynamicLink({
+    color: PALETTE.driven,
+    depth: 0.13,
+    jointRadius: 0.001,
+    thickness: 0.13,
+  });
+  aheadEccentricRod.userData.role =
+    'finite-ahead-eccentric-rod-to-launch-link';
+  const asternEccentricRod = makeDynamicLink({
+    color: PALETTE.driven,
+    depth: 0.13,
+    jointRadius: 0.001,
+    thickness: 0.13,
+  });
+  asternEccentricRod.userData.role =
+    'finite-astern-eccentric-rod-to-launch-link';
+  root.add(
+    aheadStrap,
+    asternStrap,
+    aheadEccentricRod,
+    asternEccentricRod,
+  );
+
+  const linkGroup = new THREE.Group();
+  linkGroup.userData.role =
+    'single-rigid-curved-slotted-stephenson-launch-link';
+  const innerLinkCurve = makeLinkArcCurve({
+    centerRadius: linkSlotRadius,
+    halfAngle: visibleLinkHalfAngle,
+    railRadius: linkSlotRadius - linkSlotHalfWidth,
+  });
+  const outerLinkCurve = makeLinkArcCurve({
+    centerRadius: linkSlotRadius,
+    halfAngle: visibleLinkHalfAngle,
+    railRadius: linkSlotRadius + linkSlotHalfWidth,
+  });
+  const innerLinkRail = makeArcRail(
+    innerLinkCurve,
+    0.075,
+    accentMaterial,
+  );
+  innerLinkRail.userData.role = 'inner-edge-of-stephenson-link-slot';
+  const outerLinkRail = makeArcRail(
+    outerLinkCurve,
+    0.075,
+    accentMaterial,
+  );
+  outerLinkRail.userData.role = 'outer-edge-of-stephenson-link-slot';
+  linkGroup.add(innerLinkRail, outerLinkRail);
+  const linkEndBridges = [-1, 1].map((sign) => {
+    const angle = sign * visibleLinkHalfAngle;
+    const inner = new THREE.Vector3(
+      (linkSlotRadius - linkSlotHalfWidth) * Math.sin(angle),
+      linkSlotRadius
+        - (linkSlotRadius - linkSlotHalfWidth) * Math.cos(angle),
+      0,
+    );
+    const outer = new THREE.Vector3(
+      (linkSlotRadius + linkSlotHalfWidth) * Math.sin(angle),
+      linkSlotRadius
+        - (linkSlotRadius + linkSlotHalfWidth) * Math.cos(angle),
+      0,
+    );
+    const bridge = makeBeam(inner, outer, {
+      color: PALETTE.accent,
+      depth: 0.18,
+      jointRadius: 0.001,
+      thickness: 0.13,
+    });
+    bridge.userData.role = `${sign < 0 ? 'ahead' : 'astern'}-closed-slot-end`;
+    linkGroup.add(bridge);
+    return bridge;
+  });
+  const linkPinAssemblies = [
+    {
+      localPoint: aheadLinkPinLocal,
+      role: 'ahead-eccentric-rod-pin-behind-link-slot',
+      z: aheadLayerZ,
+    },
+    {
+      localPoint: asternLinkPinLocal,
+      role: 'astern-eccentric-rod-pin-behind-link-slot',
+      z: asternLayerZ,
+    },
+  ].map(({ localPoint, role, z }) => {
+    const group = new THREE.Group();
+    group.position.set(localPoint.x, localPoint.y, 0);
+    group.userData.role = role;
+    const eye = makeEye(0.13, 0.055, drivenMaterial, z);
+    const pin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
+    pin.position.z = z;
+    group.add(eye, pin);
+    linkGroup.add(group);
+    return group;
+  });
+  const reachLugLocal = new THREE.Vector2(-1.22, 0.16);
+  const reachLug = new THREE.Group();
+  reachLug.position.set(reachLugLocal.x, reachLugLocal.y, 0.32);
+  reachLug.userData.role = 'source-visible-link-lifting-reach-lug';
+  reachLug.add(
+    makeEye(0.13, 0.052, accentMaterial, 0),
+    cylinderAlongZ(0.07, 0.34, darkMaterial, 24),
+  );
+  linkGroup.add(reachLug);
+  root.add(linkGroup);
+
+  const reversingReachRod = makeDynamicLink({
+    color: PALETTE.driver,
+    depth: 0.10,
+    jointRadius: 0.055,
+    thickness: 0.09,
+  });
+  reversingReachRod.userData.kinematicConstraint =
+    'operator-prescribes-selected-die-point';
+  reversingReachRod.userData.role =
+    'source-visible-off-frame-reversing-reach-rod';
+  const reversingHandle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.11, 22, 14),
+    darkMaterial,
+  );
+  reversingHandle.userData.role = 'off-frame-reversing-reach-handle-end';
+  root.add(reversingReachRod, reversingHandle);
+
+  const dieBlock = new THREE.Group();
+  dieBlock.userData.role =
+    'guided-die-block-sliding-inside-stephenson-link-slot';
+  const dieBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.23, 0.31, 0.46),
+    darkMaterial,
+  );
+  dieBody.userData.role = 'rectangular-link-die';
+  const diePin = cylinderAlongZ(0.09, 0.88, brassMaterial, 28);
+  diePin.userData.role = 'die-pin-to-output-radius-rod';
+  const dieIndex = new THREE.Mesh(
+    new THREE.SphereGeometry(0.085, 20, 14),
+    whiteMaterial,
+  );
+  dieIndex.position.z = 0.49;
+  dieIndex.userData.role = 'white-index-on-link-die';
+  dieBlock.add(dieBody, diePin, dieIndex);
+  const dieGuide = new THREE.Group();
+  dieGuide.userData.role = 'fixed-vertical-guide-for-link-die-output';
+  for (const sign of [-1, 1]) {
+    const guide = new THREE.Mesh(
+      new THREE.BoxGeometry(0.045, 1.45, 0.10),
+      frameMaterial,
+    );
+    guide.position.set(sign * 0.19, 0.64, -0.35);
+    dieGuide.add(guide);
+  }
+  root.add(dieGuide, dieBlock);
+
+  const cylinderCarrier = new THREE.Group();
+  cylinderCarrier.position.set(trunnionCenter.x, trunnionCenter.y, 0);
+  cylinderCarrier.userData.axis = Z_AXIS.clone();
+  cylinderCarrier.userData.role =
+    'complete-cylinder-carried-slide-rockshaft-and-valve-assembly';
+
+  const cylinderBody = cylinderAlongY(0.57, 2.25, drivenMaterial, 44);
+  cylinderBody.position.set(0, -1.23, -0.90);
+  cylinderBody.userData.role = 'oscillating-marine-engine-cylinder';
+  const cylinderTopBand = new THREE.Mesh(
+    new THREE.TorusGeometry(0.59, 0.065, 10, 44),
+    darkMaterial,
+  );
+  cylinderTopBand.rotation.x = Math.PI / 2;
+  cylinderTopBand.position.set(0, -0.14, -0.90);
+  cylinderTopBand.userData.role = 'upper-cylinder-head-band';
+  const cylinderLowerBand = cylinderTopBand.clone();
+  cylinderLowerBand.position.y = -2.32;
+  cylinderLowerBand.userData.role = 'lower-cylinder-head-band';
+  const cylinderIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.10, 0.68, 0.045),
+    whiteMaterial,
+  );
+  cylinderIndex.position.set(0.45, -1.0, -0.30);
+  cylinderIndex.userData.role = 'white-index-showing-cylinder-rocking';
+  cylinderCarrier.add(
+    cylinderBody,
+    cylinderTopBand,
+    cylinderLowerBand,
+    cylinderIndex,
+  );
+
+  const lowerGuideHalfX = (
+    slotRadius + 0.13
+  ) * Math.sin(1.04);
+  const slideGuidePosts = [-1, 1].map((sign) => {
+    const post = cylinderAlongY(0.055, 2.25, darkMaterial, 22);
+    post.position.set(sign * lowerGuideHalfX, 0.20, 0.16);
+    post.userData.role = `${sign < 0 ? 'left' : 'right'}-cylinder-carried-slide-guide`;
+    cylinderCarrier.add(post);
+    return post;
+  });
+
+  const curvedSlide = new THREE.Group();
+  curvedSlide.userData.role =
+    'rigid-curved-slide-translating-in-cylinder-carried-guides';
+  const lowerHalfAngle = 1.04;
+  const lowerSlotHalfWidth = 0.13;
+  const lowerInnerCurve = makeTrunnionArcCurve({
+    halfAngle: lowerHalfAngle,
+    radius: slotRadius - lowerSlotHalfWidth,
+    z: 0.16,
+  });
+  const lowerOuterCurve = makeTrunnionArcCurve({
+    halfAngle: lowerHalfAngle,
+    radius: slotRadius + lowerSlotHalfWidth,
+    z: 0.16,
+  });
+  const lowerInnerRail = makeArcRail(
+    lowerInnerCurve,
+    0.075,
+    drivenMaterial,
+  );
+  lowerInnerRail.userData.role = 'inner-edge-of-trunnion-centered-slot';
+  const lowerOuterRail = makeArcRail(
+    lowerOuterCurve,
+    0.075,
+    drivenMaterial,
+  );
+  lowerOuterRail.userData.role = 'outer-edge-of-trunnion-centered-slot';
+  curvedSlide.add(lowerInnerRail, lowerOuterRail);
+  const slideBlocks = [-1, 1].map((sign) => {
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(0.29, 0.48, 0.42),
+      drivenMaterial,
+    );
+    block.position.set(
+      sign * lowerGuideHalfX,
+      slotRadius * Math.cos(lowerHalfAngle),
+      0.16,
+    );
+    block.userData.role = `${sign < 0 ? 'left' : 'right'}-moving-curved-slide-guide-block`;
+    curvedSlide.add(block);
+    return block;
+  });
+  const slideEye = new THREE.Group();
+  slideEye.position.set(0, slideEyeRadius, 0.50);
+  slideEye.userData.role = 'upper-eye-of-curved-slide';
+  const slideEyeRing = makeEye(0.15, 0.06, drivenMaterial);
+  const slideEyePin = cylinderAlongZ(0.075, 0.48, darkMaterial, 24);
+  slideEye.add(slideEyeRing, slideEyePin);
+  curvedSlide.add(slideEye);
+  cylinderCarrier.add(curvedSlide);
+
+  const rockshaftRotor = new THREE.Group();
+  rockshaftRotor.position.set(
+    rockshaftPivotLocal.x,
+    rockshaftPivotLocal.y,
+    0.34,
+  );
+  rockshaftRotor.userData.axis = Z_AXIS.clone();
+  rockshaftRotor.userData.role =
+    'valve-rockshaft-with-slot-follower-and-opposite-valve-arm';
+  const rockshaft = cylinderAlongZ(0.10, 1.12, darkMaterial, 30);
+  rockshaft.userData.role = 'cylinder-carried-valve-rockshaft';
+  const followerArm = makeBeam(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(followerArmLocal.x, followerArmLocal.y, 0),
+    {
+      color: PALETTE.accent,
+      depth: 0.16,
+      jointRadius: 0.001,
+      thickness: 0.12,
+    },
+  );
+  followerArm.userData.role = 'rockshaft-arm-to-curved-slot-follower';
+  const followerPin = cylinderAlongZ(0.095, 0.68, whiteMaterial, 28);
+  followerPin.position.set(followerArmLocal.x, followerArmLocal.y, 0);
+  followerPin.userData.role = 'white-pin-captured-within-curved-slide-slot';
+  const valveArm = makeBeam(
+    new THREE.Vector3(0, 0, -0.34),
+    new THREE.Vector3(valveArmLocal.x, valveArmLocal.y, -0.34),
+    {
+      color: PALETTE.accent,
+      depth: 0.14,
+      jointRadius: 0.001,
+      thickness: 0.11,
+    },
+  );
+  valveArm.userData.role = 'opposite-rockshaft-arm-driving-valve-link';
+  rockshaftRotor.add(rockshaft, followerArm, followerPin, valveArm);
+  cylinderCarrier.add(rockshaftRotor);
+
+  const valveLink = makeDynamicLink({
+    color: PALETTE.brass,
+    depth: 0.12,
+    jointRadius: 0.055,
+    thickness: 0.10,
+  });
+  valveLink.userData.role = 'finite-link-from-rockshaft-to-guided-valve-stem';
+  cylinderCarrier.add(valveLink);
+  const valveSlider = new THREE.Group();
+  valveSlider.userData.role = 'guided-slide-valve-output-moving-with-cylinder';
+  const valveStem = cylinderAlongY(0.055, 1.18, brassMaterial, 22);
+  valveStem.position.y = -0.36;
+  valveStem.userData.role = 'slide-valve-stem';
+  const valvePlate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 0.40, 0.25),
+    accentMaterial,
+  );
+  valvePlate.position.y = -0.92;
+  valvePlate.userData.role = 'oscillating-cylinder-slide-valve';
+  const valveIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.08, 0.035),
+    whiteMaterial,
+  );
+  valveIndex.position.set(0, -0.92, 0.16);
+  valveIndex.userData.role = 'white-index-on-moving-valve';
+  valveSlider.add(valveStem, valvePlate, valveIndex);
+  cylinderCarrier.add(valveSlider);
+  const valveGuideChest = new THREE.Mesh(
+    new THREE.BoxGeometry(0.48, 1.52, 0.38),
+    frameMaterial,
+  );
+  valveGuideChest.position.set(valveGuideX, -0.62, -0.26);
+  valveGuideChest.userData.role = 'cylinder-fixed-valve-stem-guide-and-chest';
+  cylinderCarrier.add(valveGuideChest);
+  root.add(cylinderCarrier);
+
+  const outputRadiusRod = makeDynamicLink({
+    color: PALETTE.driven,
+    depth: 0.13,
+    jointRadius: 0.075,
+    thickness: 0.12,
+  });
+  outputRadiusRod.userData.role =
+    'finite-die-output-rod-to-cylinder-carried-curved-slide';
+  const pistonRod = makeDynamicLink({
+    color: PALETTE.frame,
+    depth: 0.14,
+    jointRadius: 0.065,
+    thickness: 0.13,
+  });
+  pistonRod.userData.role =
+    'rear-main-crank-to-oscillating-cylinder-piston-rod';
+  root.add(outputRadiusRod, pistonRod);
+
+  const trunnionShaft = cylinderAlongZ(0.25, 3.12, darkMaterial, 38);
+  trunnionShaft.position.set(trunnionCenter.x, trunnionCenter.y, -0.05);
+  trunnionShaft.userData.role = 'fixed-axis-through-oscillating-cylinder-trunnion';
+  const trunnionFace = cylinderAlongZ(0.37, 0.18, frameMaterial, 42);
+  trunnionFace.position.set(trunnionCenter.x, trunnionCenter.y, 0.77);
+  trunnionFace.userData.role = 'front-trunnion-bearing-face';
+  const trunnionIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.07, 0.035),
+    whiteMaterial,
+  );
+  trunnionIndex.position.set(
+    trunnionCenter.x + 0.16,
+    trunnionCenter.y,
+    0.88,
+  );
+  trunnionIndex.userData.role = 'fixed-white-trunnion-center-reference';
+  root.add(trunnionShaft, trunnionFace, trunnionIndex);
+
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.role = 'rear-engine-frame-supporting-both-fixed-axes';
+  const frameBeams = [
+    [new THREE.Vector3(-2.35, -3.75, -1.48), new THREE.Vector3(2.35, -3.75, -1.48)],
+    [new THREE.Vector3(-2.12, -3.75, -1.48), new THREE.Vector3(-1.20, 4.70, -1.48)],
+    [new THREE.Vector3(2.12, -3.75, -1.48), new THREE.Vector3(1.20, 4.70, -1.48)],
+    [new THREE.Vector3(-1.20, 4.70, -1.48), new THREE.Vector3(1.20, 4.70, -1.48)],
+    [new THREE.Vector3(-1.88, -2.05, -1.48), new THREE.Vector3(1.88, -2.05, -1.48)],
+  ].map(([start, end], index) => {
+    const beam = makeBeam(start, end, {
+      color: PALETTE.frame,
+      depth: 0.24,
+      jointRadius: 0.001,
+      thickness: index === 0 ? 0.22 : 0.18,
+    });
+    beam.userData.role = `fixed-rear-frame-member-${index + 1}`;
+    fixedFrame.add(beam);
+    return beam;
+  });
+  const shaftBearings = [
+    { center: shaftCenter, z: -1.45, role: 'rear-crankshaft-bearing' },
+    { center: shaftCenter, z: 1.45, role: 'front-crankshaft-bearing' },
+    { center: trunnionCenter, z: -1.43, role: 'rear-trunnion-bearing' },
+    { center: trunnionCenter, z: 1.43, role: 'front-trunnion-bearing' },
+  ].map(({ center, role, z }) => {
+    const bearing = new THREE.Mesh(
+      new THREE.TorusGeometry(
+        role.includes('trunnion') ? 0.34 : 0.24,
+        0.09,
+        12,
+        40,
+      ),
+      frameMaterial,
+    );
+    bearing.position.set(center.x, center.y, z);
+    bearing.userData.role = role;
+    fixedFrame.add(bearing);
+    return bearing;
+  });
+  root.add(fixedFrame);
+
+  const cameraEnvelope = new THREE.Mesh(
+    new THREE.BoxGeometry(6.4, 9.4, 3.4),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      colorWrite: false,
+      depthWrite: false,
+      opacity: 0,
+      transparent: true,
+    }),
+  );
+  cameraEnvelope.position.set(0, 0.45, 0);
+  cameraEnvelope.userData.cameraFitGuide = true;
+  cameraEnvelope.userData.role = 'invisible-full-motion-camera-envelope';
+  root.add(cameraEnvelope);
+
+  const blocks = {
+    aheadEccentricRod,
+    aheadSheave,
+    aheadStrap,
+    asternEccentricRod,
+    asternSheave,
+    asternStrap,
+    cameraEnvelope,
+    curvedSlide,
+    cylinderBody,
+    cylinderCarrier,
+    dieBlock,
+    dieBody,
+    dieGuide,
+    dieIndex,
+    diePin,
+    fixedFrame,
+    followerArm,
+    followerPin,
+    frameBeams,
+    inputRotor,
+    inputShaft,
+    inputShaftIndex,
+    linkEndBridges,
+    linkGroup,
+    linkPinAssemblies,
+    lowerInnerRail,
+    lowerOuterRail,
+    mainCrankDisk,
+    mainCrankIndex,
+    mainCrankPin,
+    outputRadiusRod,
+    pistonRod,
+    reachLug,
+    reversingHandle,
+    reversingReachRod,
+    rockshaft,
+    rockshaftRotor,
+    shaftBearings,
+    slideBlocks,
+    slideEye,
+    slideEyePin,
+    slideEyeRing,
+    slideGuidePosts,
+    trunnionFace,
+    trunnionIndex,
+    trunnionShaft,
+    valveArm,
+    valveGuideChest,
+    valveIndex,
+    valveLink,
+    valvePlate,
+    valveSlider,
+    valveStem,
+  };
+
+  const geometry = {
+    aheadEccentricRodLength,
+    aheadLayerZ,
+    aheadLinkPinLocal: aheadLinkPinLocal.clone(),
+    asternEccentricRodLength,
+    asternLayerZ,
+    asternLinkPinLocal: asternLinkPinLocal.clone(),
+    dieGuideX,
+    eccentricity,
+    followerArmLength,
+    linkCenterAtSource: linkCenterAtSource.clone(),
+    linkPinSpacing,
+    linkSlotRadius,
+    mainCrankPinLocal: mainCrankPinLocal.clone(),
+    mainCrankRadius,
+    outputRodLength,
+    rockshaftPivotLocal: rockshaftPivotLocal.clone(),
+    selectorHalfAngle,
+    selectorPeriod,
+    shaftCenter: shaftCenter.clone(),
+    slideEyeRadius,
+    slotRadius,
+    sourceFollowerPinLocal: sourceFollowerPinLocal.clone(),
+    sourceImageHeight,
+    sourceImageWidth,
+    sourceInputAngle,
+    sourceRasterAheadLinkPin: sourceRasterAheadLinkPin.clone(),
+    sourceRasterAsternLinkPin: sourceRasterAsternLinkPin.clone(),
+    sourceRasterFollowerPin: sourceRasterFollowerPin.clone(),
+    sourceRasterLinkDie: sourceRasterLinkDie.clone(),
+    sourceRasterShaftCenter: sourceRasterShaftCenter.clone(),
+    sourceRasterSlideEye: sourceRasterSlideEye.clone(),
+    sourceRasterTrunnion: sourceRasterTrunnion.clone(),
+    sourceSelector,
+    sourceSlideStroke,
+    sourceUnitsPerPixel,
+    strapPitchRadius,
+    trunnionCenter: trunnionCenter.clone(),
+    valveArmLocal: valveArmLocal.clone(),
+    valveGuideX,
+    valveLinkLength,
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    inputRotor.rotation.z = state.inputAngle;
+    aheadStrap.position.set(
+      state.aheadEccentricCenter.x,
+      state.aheadEccentricCenter.y,
+      0,
+    );
+    asternStrap.position.set(
+      state.asternEccentricCenter.x,
+      state.asternEccentricCenter.y,
+      0,
+    );
+    setDynamicLinkEndpoints(
+      aheadEccentricRod,
+      new THREE.Vector3(
+        state.aheadEccentricCenter.x,
+        state.aheadEccentricCenter.y,
+        aheadLayerZ,
+      ),
+      new THREE.Vector3(
+        state.aheadLinkPin.x,
+        state.aheadLinkPin.y,
+        aheadLayerZ,
+      ),
+    );
+    setDynamicLinkEndpoints(
+      asternEccentricRod,
+      new THREE.Vector3(
+        state.asternEccentricCenter.x,
+        state.asternEccentricCenter.y,
+        asternLayerZ,
+      ),
+      new THREE.Vector3(
+        state.asternLinkPin.x,
+        state.asternLinkPin.y,
+        asternLayerZ,
+      ),
+    );
+    linkGroup.position.set(
+      state.linkPosition.x,
+      state.linkPosition.y,
+      0,
+    );
+    linkGroup.rotation.z = state.linkAngle;
+    dieBlock.position.set(state.diePoint.x, state.diePoint.y, 0.30);
+
+    const reachLugWorld = pointInPose(
+      state.linkPosition,
+      state.linkAngle,
+      reachLugLocal,
+    );
+    const reachHandleWorld = reachLugWorld.clone().add(
+      new THREE.Vector2(-1.48, 0),
+    );
+    reversingHandle.position.set(
+      reachHandleWorld.x,
+      reachHandleWorld.y,
+      0.32,
+    );
+    setDynamicLinkEndpoints(
+      reversingReachRod,
+      new THREE.Vector3(reachLugWorld.x, reachLugWorld.y, 0.32),
+      new THREE.Vector3(reachHandleWorld.x, reachHandleWorld.y, 0.32),
+    );
+
+    cylinderCarrier.rotation.z = state.cylinderAngle;
+    curvedSlide.position.set(0, state.slideStroke, 0);
+    rockshaftRotor.rotation.z = state.rockshaftAngle;
+    valveSlider.position.set(
+      state.valveStemPointLocal.x,
+      state.valveStemPointLocal.y,
+      0.02,
+    );
+    setDynamicLinkEndpoints(
+      valveLink,
+      new THREE.Vector3(
+        state.valveArmPointLocal.x,
+        state.valveArmPointLocal.y,
+        0,
+      ),
+      new THREE.Vector3(
+        state.valveStemPointLocal.x,
+        state.valveStemPointLocal.y,
+        0,
+      ),
+    );
+    setDynamicLinkEndpoints(
+      outputRadiusRod,
+      new THREE.Vector3(state.diePoint.x, state.diePoint.y, 0.50),
+      new THREE.Vector3(
+        state.slideEyeWorld.x,
+        state.slideEyeWorld.y,
+        0.50,
+      ),
+    );
+    const cylinderHeadWorld = trunnionCenter.clone().addScaledVector(
+      state.cylinderAxis,
+      -0.10,
+    );
+    setDynamicLinkEndpoints(
+      pistonRod,
+      new THREE.Vector3(state.crankPin.x, state.crankPin.y, -1.03),
+      new THREE.Vector3(
+        cylinderHeadWorld.x,
+        cylinderHeadWorld.y,
+        -1.03,
+      ),
+    );
+    root.userData.kinematics = state;
+  };
+
+  const canonicalTimes = {
+    sourceMidGear: 0,
+    aheadFullGear: selectorPeriod * 0.75,
+    nextSourceMidGear: selectorPeriod,
+    asternFullGear: selectorPeriod * 0.25,
+  };
+  const canonicalStates = {
+    aheadAtQuarterTurn: stateAtInputAngle(Math.PI / 2, -1),
+    asternAtQuarterTurn: stateAtInputAngle(Math.PI / 2, 1),
+    midGearAtQuarterTurn: stateAtInputAngle(Math.PI / 2, 0),
+    sourceMidGear: stateAtInputAngle(sourceInputAngle, sourceSelector),
+  };
+
+  root.userData.archetype =
+    'opposed-eccentric-stephenson-link-trunnion-centered-oscillating-cylinder-valve-gear';
+  root.userData.blocks = blocks;
+  root.userData.canonicalStates = canonicalStates;
+  root.userData.canonicalTimes = canonicalTimes;
+  root.userData.geometry = geometry;
+  root.userData.linkSlotPoint = linkSlotPoint;
+  root.userData.lowerStateAtSlideStroke = lowerStateAtSlideStroke;
+  root.userData.mechanism =
+    'opposed-eccentric-stephenson-link-trunnion-centered-oscillating-cylinder-valve-gear';
+  root.userData.selectorAtTime = selectorAtTime;
+  root.userData.sourcePointFromRaster = sourcePointFromRaster;
+  root.userData.stateAtInputAngle = stateAtInputAngle;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.cameraDistanceScale = 1.04;
+  root.userData.fidelity = 'authored';
+
+  update(0);
+  markShadows(root);
+  for (const object of [
+    cameraEnvelope,
+    dieIndex,
+    inputShaftIndex,
+    mainCrankIndex,
+    trunnionIndex,
+    valveIndex,
+  ]) {
+    object.castShadow = false;
+    object.receiveShadow = false;
+  }
+  return {
+    cameraDirection: new THREE.Vector3(7.8, 4.6, 13.2),
+    root,
+    update,
+  };
+}
+
+export function createAuthoredMarineValveGearMovement(movement) {
+  if (movement.id !== 171) return null;
+  return oscillatingMarineEngineStephensonValveGear();
+}

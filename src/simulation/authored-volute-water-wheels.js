@@ -1,0 +1,673 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+
+function horizontalRadial(angle) {
+  return new THREE.Vector3(Math.cos(angle), 0, -Math.sin(angle));
+}
+
+function horizontalTangent(angle) {
+  return new THREE.Vector3(-Math.sin(angle), 0, -Math.cos(angle));
+}
+
+function cylindricalPoint(radius, angle, height) {
+  return horizontalRadial(angle).multiplyScalar(radius)
+    .add(new THREE.Vector3(0, height, 0));
+}
+
+function makeTube(curve, radius, material, role) {
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 96, radius, 9, false),
+    material,
+  );
+  tube.userData.role = role;
+  return tube;
+}
+
+function boxBetween(start, end, width, height, material, role) {
+  const direction = end.clone().sub(start);
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(direction.length(), height, width),
+    material,
+  );
+  box.position.copy(start).add(end).multiplyScalar(0.5);
+  box.quaternion.setFromUnitVectors(
+    new THREE.Vector3(1, 0, 0),
+    direction.normalize(),
+  );
+  box.userData.role = role;
+  return box;
+}
+
+function horizontalBoxBetween(start, end, height, thickness, material) {
+  const direction = end.clone().sub(start);
+  const length = Math.hypot(direction.x, direction.z);
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(length, height, thickness),
+    material,
+  );
+  box.position.copy(start).add(end).multiplyScalar(0.5);
+  box.rotation.y = Math.atan2(-direction.z, direction.x);
+  return box;
+}
+
+function voluteWaterWheel(movement) {
+  const root = new THREE.Group();
+  const cycleDuration = 5.5;
+  const inputAngularSpeed = FULL_TURN / cycleDuration;
+  const radialVaneCount = 8;
+  const lowerBucketCount = 4;
+  const radialVanePitch = FULL_TURN / radialVaneCount;
+  const lowerBucketPitch = FULL_TURN / lowerBucketCount;
+  const runnerInnerRadius = 0.52;
+  const runnerOuterRadius = 2.25;
+  const radialVaneCenterRadius =
+    (runnerInnerRadius + runnerOuterRadius) / 2;
+  const lowerBucketCenterRadius = 1.42;
+  const radialVaneCenterY = 0.27;
+  const lowerBucketCenterY = -0.38;
+  const sourcePoseVaneOffset = 0;
+  const sourcePoseBucketOffset = Math.PI / 4;
+  const shaftRadius = 0.21;
+  const voluteStartAngle = THREE.MathUtils.degToRad(142);
+  const voluteSweepAngle = THREE.MathUtils.degToRad(326);
+  const voluteStartRadius = 3.42;
+  const voluteEndRadius = 2.50;
+  const voluteWallHalfGap = 0.30;
+  const upperEffectiveRadius = 2.10;
+  const upperTangentialForceNormalized = 8.4;
+  const upperVaneTorqueNormalized =
+    -upperEffectiveRadius * upperTangentialForceNormalized;
+  const lowerMassFlowNormalized = 1;
+  const lowerInletClockwiseWhirlSpeed = 2.05;
+  const lowerOutletClockwiseWhirlSpeed = 0.34;
+  const lowerInletAngularMomentumY =
+    -lowerBucketCenterRadius * lowerInletClockwiseWhirlSpeed;
+  const lowerOutletAngularMomentumY =
+    -lowerBucketCenterRadius * lowerOutletClockwiseWhirlSpeed;
+  const lowerBucketTorqueNormalized = lowerMassFlowNormalized
+    * (lowerInletAngularMomentumY - lowerOutletAngularMomentumY);
+  const totalTorqueNormalized = upperVaneTorqueNormalized
+    + lowerBucketTorqueNormalized;
+
+  const voluteRadiusAtProgress = (progress) => THREE.MathUtils.lerp(
+    voluteStartRadius,
+    voluteEndRadius,
+    THREE.MathUtils.clamp(progress, 0, 1),
+  );
+
+  const makeVoluteCurve = (radiusOffset = 0, height = 0.24) => {
+    const points = Array.from({ length: 97 }, (_, pointIndex) => {
+      const progress = pointIndex / 96;
+      const radius = voluteRadiusAtProgress(progress) + radiusOffset;
+      const angle = voluteStartAngle - voluteSweepAngle * progress;
+      return cylindricalPoint(radius, angle, height);
+    });
+    return new THREE.CatmullRomCurve3(
+      points,
+      false,
+      'centripetal',
+    );
+  };
+
+  const scrollFlowCurve = makeVoluteCurve(0, 0.26);
+  const scrollOuterWallCurve = makeVoluteCurve(voluteWallHalfGap, 0.34);
+  const scrollInnerWallCurve = makeVoluteCurve(-voluteWallHalfGap, 0.34);
+
+  const stateAtInputAngle = (
+    inputAngle,
+    inputSpeed = inputAngularSpeed,
+    inputAcceleration = 0,
+  ) => {
+    const runnerAngle = -inputAngle;
+    const runnerAngularSpeed = -inputSpeed;
+    const runnerAngularAcceleration = -inputAcceleration;
+    const radialVanes = [];
+    for (let vaneIndex = 0; vaneIndex < radialVaneCount;
+      vaneIndex += 1) {
+      const localAngle = sourcePoseVaneOffset
+        + vaneIndex * radialVanePitch;
+      const worldAngle = localAngle + runnerAngle;
+      const radial = horizontalRadial(worldAngle);
+      const tangent = horizontalTangent(worldAngle);
+      const center = radial.clone().multiplyScalar(radialVaneCenterRadius);
+      center.y = radialVaneCenterY;
+      const centerVelocity = tangent.clone().multiplyScalar(
+        radialVaneCenterRadius * runnerAngularSpeed,
+      );
+      const centerAcceleration = tangent.clone().multiplyScalar(
+        radialVaneCenterRadius * runnerAngularAcceleration,
+      ).addScaledVector(
+        radial,
+        -radialVaneCenterRadius * runnerAngularSpeed ** 2,
+      );
+      radialVanes.push({
+        center,
+        centerAcceleration,
+        centerVelocity,
+        index: vaneIndex,
+        localAngle,
+        radial,
+        tangent,
+        worldAngle,
+      });
+    }
+    const lowerBuckets = [];
+    for (let bucketIndex = 0; bucketIndex < lowerBucketCount;
+      bucketIndex += 1) {
+      const localAngle = sourcePoseBucketOffset
+        + bucketIndex * lowerBucketPitch;
+      const worldAngle = localAngle + runnerAngle;
+      const radial = horizontalRadial(worldAngle);
+      const tangent = horizontalTangent(worldAngle);
+      const center = radial.clone().multiplyScalar(lowerBucketCenterRadius);
+      center.y = lowerBucketCenterY;
+      const centerVelocity = tangent.clone().multiplyScalar(
+        lowerBucketCenterRadius * runnerAngularSpeed,
+      );
+      const centerAcceleration = tangent.clone().multiplyScalar(
+        lowerBucketCenterRadius * runnerAngularAcceleration,
+      ).addScaledVector(
+        radial,
+        -lowerBucketCenterRadius * runnerAngularSpeed ** 2,
+      );
+      lowerBuckets.push({
+        center,
+        centerAcceleration,
+        centerVelocity,
+        index: bucketIndex,
+        localAngle,
+        radial,
+        tangent,
+        worldAngle,
+      });
+    }
+    const rimReferenceRadial = horizontalRadial(runnerAngle);
+    const rimReferenceTangent = horizontalTangent(runnerAngle);
+    const rimReferencePoint = rimReferenceRadial.clone()
+      .multiplyScalar(runnerOuterRadius);
+    rimReferencePoint.y = radialVaneCenterY;
+    const rimReferenceVelocity = rimReferenceTangent.clone()
+      .multiplyScalar(runnerOuterRadius * runnerAngularSpeed);
+    const rimReferenceAcceleration = rimReferenceTangent.clone()
+      .multiplyScalar(runnerOuterRadius * runnerAngularAcceleration)
+      .addScaledVector(
+        rimReferenceRadial,
+        -runnerOuterRadius * runnerAngularSpeed ** 2,
+      );
+    return {
+      inputAcceleration,
+      inputAngle,
+      inputSpeed,
+      lowerBucketTorqueNormalized,
+      lowerBuckets,
+      lowerInletAngularMomentumY,
+      lowerOutletAngularMomentumY,
+      radialVanes,
+      rimReferenceAcceleration,
+      rimReferencePoint,
+      rimReferenceVelocity,
+      runnerAngle,
+      runnerAngularAcceleration,
+      runnerAngularSpeed,
+      totalTorqueNormalized,
+      upperVaneTorqueNormalized,
+    };
+  };
+
+  const stateAtTime = (time) => {
+    const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
+    return {
+      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
+      cycleTime,
+      phase: cycleTime / cycleDuration,
+    };
+  };
+
+  const geometry = {
+    cycleDuration,
+    inputAngularSpeed,
+    lowerBucketCenterRadius,
+    lowerBucketCenterY,
+    lowerBucketCount,
+    lowerBucketPitch,
+    lowerInletClockwiseWhirlSpeed,
+    lowerMassFlowNormalized,
+    lowerOutletClockwiseWhirlSpeed,
+    radialVaneCenterRadius,
+    radialVaneCenterY,
+    radialVaneCount,
+    radialVanePitch,
+    runnerInnerRadius,
+    runnerOuterRadius,
+    shaftRadius,
+    sourcePoseBucketOffset,
+    sourcePoseVaneOffset,
+    upperEffectiveRadius,
+    upperTangentialForceNormalized,
+    voluteEndRadius,
+    voluteStartAngle,
+    voluteStartRadius,
+    voluteSweepAngle,
+    voluteWallHalfGap,
+  };
+
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.20,
+    roughness: 0.59,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.31,
+    roughness: 0.46,
+  });
+  const runnerMaterial = matte(PALETTE.driven, {
+    metalness: 0.18,
+    roughness: 0.49,
+  });
+  const bucketMaterial = matte(PALETTE.driver, {
+    metalness: 0.15,
+    roughness: 0.52,
+  });
+  const waterMaterial = matte(PALETTE.fluid, {
+    opacity: 0.64,
+    roughness: 0.32,
+    side: THREE.DoubleSide,
+    transparent: true,
+  });
+  const paleWaterMaterial = matte(0x75c7d7, {
+    opacity: 0.50,
+    roughness: 0.30,
+    transparent: true,
+  });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
+
+  const runner = new THREE.Group();
+  runner.userData.role =
+    'clockwise-volute-wheel-with-upper-radial-vanes-a-and-lower-buckets-c';
+  root.add(runner);
+  const radialVanes = [];
+  for (let vaneIndex = 0; vaneIndex < radialVaneCount;
+    vaneIndex += 1) {
+    const angle = sourcePoseVaneOffset + vaneIndex * radialVanePitch;
+    const vaneGroup = new THREE.Group();
+    vaneGroup.rotation.y = angle;
+    vaneGroup.userData.role =
+      `upper-radial-vane-a-${vaneIndex + 1}-of-eight`;
+    const vane = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        runnerOuterRadius - runnerInnerRadius,
+        0.52,
+        0.10,
+      ),
+      runnerMaterial,
+    );
+    vane.position.set(radialVaneCenterRadius, radialVaneCenterY, 0);
+    vane.userData.role = `water-impingement-face-of-vane-a-${vaneIndex + 1}`;
+    vaneGroup.add(vane);
+    runner.add(vaneGroup);
+    radialVanes.push(vaneGroup);
+  }
+  for (const height of [0.02, 0.54]) {
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(runnerOuterRadius, 0.085, 9, 96),
+      runnerMaterial,
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = height;
+    rim.userData.role = 'rotating-outer-boundary-of-radial-vane-wheel';
+    runner.add(rim);
+  }
+
+  const lowerBuckets = [];
+  const lowerBucketProfiles = [];
+  for (let bucketIndex = 0; bucketIndex < lowerBucketCount;
+    bucketIndex += 1) {
+    const angle = sourcePoseBucketOffset + bucketIndex * lowerBucketPitch;
+    const bucketGroup = new THREE.Group();
+    bucketGroup.rotation.y = angle;
+    bucketGroup.userData.role =
+      `inclined-lower-escape-bucket-c-${bucketIndex + 1}-of-four`;
+    const points = Array.from({ length: 11 }, (_, pointIndex) => {
+      const progress = pointIndex / 10;
+      const radius = THREE.MathUtils.lerp(0.62, 2.05, progress);
+      const transverse = -0.46 * progress - 0.18 * progress ** 2;
+      return new THREE.Vector3(
+        radius,
+        lowerBucketCenterY,
+        transverse,
+      );
+    });
+    for (let segmentIndex = 0; segmentIndex < points.length - 1;
+      segmentIndex += 1) {
+      const segment = horizontalBoxBetween(
+        points[segmentIndex],
+        points[segmentIndex + 1],
+        0.42,
+        0.09,
+        bucketMaterial,
+      );
+      segment.userData.role =
+        `inclined-bucket-c-${bucketIndex + 1}-segment-${segmentIndex + 1}`;
+      bucketGroup.add(segment);
+    }
+    runner.add(bucketGroup);
+    lowerBuckets.push(bucketGroup);
+    lowerBucketProfiles.push(points.map((point) => point.clone()));
+  }
+  const runnerFloor = new THREE.Mesh(
+    new THREE.CylinderGeometry(runnerOuterRadius, runnerOuterRadius,
+      0.12, 72),
+    runnerMaterial,
+  );
+  runnerFloor.position.y = -0.67;
+  runnerFloor.userData.role = 'rotating-bottom-plate-with-escape-openings';
+  runner.add(runnerFloor);
+  const runnerHub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.42, 0.42, 0.58, 40),
+    runnerMaterial,
+  );
+  runnerHub.position.y = -0.05;
+  runnerHub.userData.role = 'volute-wheel-hub-fast-on-vertical-shaft';
+  runner.add(runnerHub);
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 3.64, 36),
+    darkMaterial,
+  );
+  shaft.position.y = 1.45;
+  shaft.userData.role = 'vertical-output-shaft-of-volute-wheel';
+  runner.add(shaft);
+  const rotationMarker = new THREE.Mesh(
+    new THREE.BoxGeometry(0.68, 0.10, 0.12),
+    whiteMaterial,
+  );
+  rotationMarker.position.set(1.76, 0.70, 0);
+  rotationMarker.userData.role =
+    'visible-clockwise-marker-on-volute-runner';
+  runner.add(rotationMarker);
+
+  const outerScrollWall = makeTube(
+    scrollOuterWallCurve,
+    0.15,
+    frameMaterial,
+    'fixed-outer-wall-of-scroll-casing-b',
+  );
+  const innerScrollWall = makeTube(
+    scrollInnerWallCurve,
+    0.15,
+    frameMaterial,
+    'fixed-inner-wall-of-scroll-casing-b',
+  );
+  const scrollWater = makeTube(
+    scrollFlowCurve,
+    0.17,
+    waterMaterial,
+    'clockwise-water-confined-around-runner-by-volute-b',
+  );
+  root.add(outerScrollWall, innerScrollWall, scrollWater);
+  const voluteStart = scrollFlowCurve.getPoint(0);
+  const voluteStartTangent = scrollFlowCurve.getTangent(0).normalize();
+  const inletUpstream = voluteStart.clone()
+    .addScaledVector(voluteStartTangent, -2.30)
+    .add(new THREE.Vector3(0, 0.26, 0));
+  const inletFlume = boxBetween(
+    inletUpstream,
+    voluteStart,
+    0.88,
+    0.22,
+    frameMaterial,
+    'fixed-tangential-inlet-to-volute-casing-b',
+  );
+  root.add(inletFlume);
+  const inletWater = boxBetween(
+    inletUpstream.clone().add(new THREE.Vector3(0, 0.15, 0)),
+    voluteStart.clone().add(new THREE.Vector3(0, 0.15, 0)),
+    0.54,
+    0.11,
+    paleWaterMaterial,
+    'water-entering-scroll-tangentially',
+  );
+  root.add(inletWater);
+
+  const scrollMarkers = [];
+  const scrollMarkerCount = 14;
+  for (let markerIndex = 0; markerIndex < scrollMarkerCount;
+    markerIndex += 1) {
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.088, 16, 11),
+      paleWaterMaterial,
+    );
+    marker.userData.role = `clockwise-volute-flow-marker-${markerIndex + 1}`;
+    root.add(marker);
+    scrollMarkers.push(marker);
+  }
+
+  const escapeFlowCurves = [];
+  const escapeFlowTubes = [];
+  const escapeMarkers = [];
+  for (let pathIndex = 0; pathIndex < lowerBucketCount;
+    pathIndex += 1) {
+    const angle = sourcePoseBucketOffset + pathIndex * lowerBucketPitch;
+    const curve = new THREE.CatmullRomCurve3([
+      cylindricalPoint(1.86, angle - 0.20, 0.08),
+      cylindricalPoint(1.68, angle - 0.28, -0.26),
+      cylindricalPoint(1.44, angle - 0.35, -0.64),
+      cylindricalPoint(1.22, angle - 0.38, -1.12),
+      cylindricalPoint(1.12, angle - 0.38, -1.54),
+    ], false, 'centripetal');
+    escapeFlowCurves.push(curve);
+    const tube = makeTube(
+      curve,
+      0.065,
+      waterMaterial,
+      `water-escaping-down-through-inclined-bucket-opening-${pathIndex + 1}`,
+    );
+    root.add(tube);
+    escapeFlowTubes.push(tube);
+    for (let markerIndex = 0; markerIndex < 3; markerIndex += 1) {
+      const marker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.080, 16, 11),
+        paleWaterMaterial,
+      );
+      marker.userData.role =
+        `lower-escape-flow-marker-path-${pathIndex + 1}-particle-${markerIndex + 1}`;
+      root.add(marker);
+      escapeMarkers.push({ marker, markerIndex, pathIndex });
+    }
+  }
+
+  const lowerBasin = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.76, 2.76, 0.22, 80),
+    waterMaterial,
+  );
+  lowerBasin.position.y = -1.56;
+  lowerBasin.userData.role = 'tailwater-basin-below-inclined-outlet-buckets';
+  root.add(lowerBasin);
+  const casingFloor = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.86, 3.86, 0.20, 88),
+    frameMaterial,
+  );
+  casingFloor.position.y = -1.76;
+  casingFloor.userData.role = 'fixed-foundation-under-volute-wheel';
+  root.add(casingFloor);
+  const upperBearing = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.38, 0.38, 0.40, 36),
+    frameMaterial,
+  );
+  upperBearing.position.y = 3.18;
+  upperBearing.userData.role = 'fixed-upper-bearing-of-volute-wheel-shaft';
+  root.add(upperBearing);
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    runner.rotation.y = state.runnerAngle;
+    const scrollPhase = THREE.MathUtils.euclideanModulo(time / 1.42, 1);
+    for (let markerIndex = 0; markerIndex < scrollMarkers.length;
+      markerIndex += 1) {
+      const progress = THREE.MathUtils.euclideanModulo(
+        scrollPhase + markerIndex / scrollMarkers.length,
+        1,
+      );
+      scrollMarkers[markerIndex].position.copy(
+        scrollFlowCurve.getPoint(progress),
+      );
+      const endpointFade = Math.sin(Math.PI * progress);
+      scrollMarkers[markerIndex].scale.setScalar(
+        Math.sqrt(Math.max(0, endpointFade)),
+      );
+    }
+    const escapePhase = THREE.MathUtils.euclideanModulo(time / 0.96, 1);
+    for (const entry of escapeMarkers) {
+      const progress = THREE.MathUtils.euclideanModulo(
+        escapePhase + entry.markerIndex / 3,
+        1,
+      );
+      entry.marker.position.copy(
+        escapeFlowCurves[entry.pathIndex].getPoint(progress),
+      );
+      const endpointFade = Math.sin(Math.PI * progress);
+      entry.marker.scale.setScalar(Math.sqrt(Math.max(0, endpointFade)));
+    }
+  };
+
+  const sourceState = stateAtInputAngle(0);
+  root.userData = {
+    animationTiming: {
+      authoredCyclePeriod: cycleDuration,
+      targetCycleDuration: 2,
+    },
+    archetype:
+      'volute-water-wheel-with-eight-radial-vanes-driven-around-fixed-scroll-and-four-lower-inclined-escape-buckets',
+    blocks: {
+      casingFloor,
+      escapeFlowTubes,
+      escapeMarkers: escapeMarkers.map(({ marker }) => marker),
+      inletFlume,
+      inletWater,
+      innerScrollWall,
+      lowerBasin,
+      lowerBuckets,
+      outerScrollWall,
+      radialVanes,
+      rotationMarker,
+      runner,
+      runnerFloor,
+      runnerHub,
+      scrollMarkers,
+      scrollWater,
+      shaft,
+      upperBearing,
+    },
+    degreesOfFreedom: {
+      independentPrescribedInputs: 1,
+      lowerBucketsAndUpperVanesIndependent: false,
+      operatingDegreesOfFreedom: 1,
+      voluteCasingRotates: false,
+    },
+    dynamics: {
+      fluidPressureViscosityTurbulenceLeakageCavitationDetailedBladeLoadingBearingFrictionRunnerInertiaGeneratorLoadAndSpeedResponseModeled:
+        false,
+      lowerBucketAngularMomentumDiagnostic:
+        'The additional lower-stage torque is mass flow times inlet-minus-outlet angular momentum as the inclined escape buckets reduce clockwise whirl. It is negative and adds to the clockwise upper-vane torque.',
+      markerContinuity:
+        'Scroll and lower-discharge markers each follow one centripetal Catmull-Rom path and fade to zero at their recycling endpoints.',
+      upperVaneImpulseDiagnostic:
+        'The casing-distributed upper-vane torque is normalized tangential water force times effective radius and is negative (clockwise).',
+    },
+    escapeFlowCurves,
+    fidelity: 'authored',
+    geometry,
+    lowerBucketProfiles,
+    mechanism:
+      'Water enters fixed scroll casing b tangentially and circulates clockwise around the rotor. Because the volute confines and distributes it around the circumference, water impinges on all eight upper radial vanes a and carries their wheel clockwise. Four inclined buckets c occupy a lower axial level on the same runner; as water escapes downward through their openings, its reduced whirl adds a second clockwise torque. Both vane sets, hub, floor, shaft, and marker are one rigid runner, while the volute walls, inlet, bearings, flow paths, and basin remain fixed.',
+    motion: {
+      cycleDuration,
+      inputAngularSpeed,
+      runnerDirectionViewedInBrownPlan: 'clockwise',
+      runnerRevolutionsPerCycle: 1,
+    },
+    scrollFlowCurve,
+    sourceAnimation: {
+      available: false,
+      officialCanvasModelPresent: false,
+      officialPageMarksAnimationUnavailable: true,
+      reason:
+        'The official Movement 437 page provides Brown’s static plan-view engraving and caption but contains no Canvas construction or source timing.',
+      sourcePrescribedAbsoluteTiming: false,
+    },
+    sourcePose: {
+      lowerBuckets: sourceState.lowerBuckets.map((bucket) => ({
+        center: bucket.center.clone(),
+        worldAngle: bucket.worldAngle,
+      })),
+      radialVanes: sourceState.radialVanes.map((vane) => ({
+        center: vane.center.clone(),
+        worldAngle: vane.worldAngle,
+      })),
+      runnerAngle: sourceState.runnerAngle,
+      voluteAngle: 0,
+    },
+    sourceReference: {
+      brownPlate437: {
+        approximateCasingOuterRadiusPixels: 229,
+        approximateInclinedLowerBucketCount: 4,
+        approximateRadialVaneCount: 8,
+        approximateRunnerRadiusPixels: 134,
+        centerApproximatePixels: [226, 285],
+        imageHeight: 525,
+        imageWidth: 525,
+        inletThroatApproximatePixels: [116, 128],
+        measurementUncertaintyPixels: 17,
+      },
+      constructionEvidence: {
+        explicitInBrownDescription: [
+          'the volute wheel has radial vanes a against which water impinges and carries the wheel around',
+          'fixed scroll or volute casing b confines water so it acts on vanes all around the wheel',
+          'inclined buckets c at the bottom add force as water escapes through their openings',
+        ],
+        engravingEvidence:
+          'Brown’s plan shows a tangential upper-left inlet into a clockwise scroll, eight radial vane positions on the inner wheel, four shaded inclined bucket sectors beneath them, a central shaft, and a narrowing fixed casing with external mounting lugs.',
+        reconstructionDisclosure:
+          'Brown gives no dimensions, exact vane or lower-bucket counts, scroll law, blade profiles, axial spacing, flow rate, head, velocities, shaft speed, materials, losses, leakage, efficiency, inertia, or load. Eight radial vanes, four lower buckets, Archimedean-like decreasing-radius scroll, flow paths, normalized two-stage torque, dimensions, colors, and a 5.5-second cycle are independently engineered; the fixed volute b, circumferential impingement on radial vanes a, lower inclined outlet buckets c, added escape force, and clockwise scroll flow are source-grounded.',
+      },
+      officialPage: movement.sourceUrl,
+      plate: 'Brown 1868, Movement 437',
+    },
+    stateAtInputAngle,
+    stateAtTime,
+    transmission: {
+      lowerEscapeStage:
+        'tau_lower=massFlow*(L_in-L_out)<0 and reinforces the upper-vane torque',
+      rigidRunner:
+        'all radial vanes a and inclined lower buckets c share runnerAngle',
+      upperScrollStage:
+        'tau_upper=-effectiveRadius*tangentialForce<0 around fixed volute b',
+    },
+    update,
+    voluteRadiusAtProgress,
+  };
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-4.36, -2.02, -4.18),
+    new THREE.Vector3(4.72, 3.48, 4.18),
+  );
+  root.userData.cameraDistanceScale = 1.04;
+  root.userData.cameraDirection = new THREE.Vector3(5.5, 7.8, 8.4);
+  root.userData.groundFloorY = -2.02;
+  markShadows(root);
+  casingFloor.receiveShadow = true;
+  update(0);
+  return {
+    cameraDirection: root.userData.cameraDirection,
+    root,
+    update,
+  };
+}
+
+export function createAuthoredVoluteWaterWheelMovement(movement) {
+  if (movement.id !== 437) return null;
+  return voluteWaterWheel(movement);
+}

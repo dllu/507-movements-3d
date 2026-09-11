@@ -1,0 +1,989 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeBeam,
+  makeGear,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+function positiveModulo(value, modulus) {
+  return ((value % modulus) + modulus) % modulus;
+}
+
+function smootherstep(value) {
+  return value ** 3 * (value * (value * 6 - 15) + 10);
+}
+
+function smootherstepFirst(value) {
+  return 30 * value ** 2 * (1 - value) ** 2;
+}
+
+function smootherstepSecond(value) {
+  return 60 * value * (1 - value) * (1 - 2 * value);
+}
+
+function cylinderAlongZ(radius, length, material, segments = 32) {
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function makeRatchetShape(outerRadius, innerRadius, toothCount) {
+  const shape = new THREE.Shape();
+  const pitch = FULL_TURN / toothCount;
+  let first = true;
+  for (let tooth = 0; tooth < toothCount; tooth += 1) {
+    for (const sample of [
+      { offset: -0.50, radius: outerRadius * 0.82 },
+      { offset: -0.35, radius: outerRadius },
+      { offset: 0.38, radius: outerRadius * 0.94 },
+      { offset: 0.50, radius: outerRadius * 0.82 },
+    ]) {
+      const angle = tooth * pitch + sample.offset * pitch;
+      const x = Math.cos(angle) * sample.radius;
+      const y = Math.sin(angle) * sample.radius;
+      if (first) {
+        shape.moveTo(x, y);
+        first = false;
+      } else shape.lineTo(x, y);
+    }
+  }
+  shape.closePath();
+  if (innerRadius > 0) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
+    shape.holes.push(hole);
+  }
+  return shape;
+}
+
+function makeRatchetMesh({
+  color,
+  depth,
+  innerRadius = 0,
+  outerRadius,
+  role,
+  toothCount,
+}) {
+  const geometry = new THREE.ExtrudeGeometry(
+    makeRatchetShape(outerRadius, innerRadius, toothCount),
+    { bevelEnabled: false, depth },
+  );
+  geometry.translate(0, 0, -depth / 2);
+  const mesh = new THREE.Mesh(
+    geometry,
+    matte(color, { metalness: 0.14, roughness: 0.60 }),
+  );
+  mesh.userData.role = role;
+  mesh.userData.toothCount = toothCount;
+  return mesh;
+}
+
+function makeRotor(role) {
+  const root = new THREE.Group();
+  const rotor = new THREE.Group();
+  root.add(rotor);
+  root.userData.axis = Z_AXIS.clone();
+  root.userData.role = role;
+  root.userData.rotor = rotor;
+  return root;
+}
+
+function setRotorAngle(root, angle) {
+  root.userData.rotor.rotation.z = angle;
+}
+
+function makePawl({ color, contact, pivot, role, z }) {
+  const root = new THREE.Group();
+  root.position.set(pivot.x, pivot.y, z);
+  root.userData.role = role;
+  const displacement = contact.clone().sub(pivot);
+  const length = displacement.length();
+  const baseAngle = Math.atan2(displacement.y, displacement.x);
+  const material = matte(color, { metalness: 0.16, roughness: 0.52 });
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(length, 0.14, 0.13),
+    material,
+  );
+  body.position.x = length / 2;
+  body.userData.role = `${role}-body`;
+  const tip = new THREE.Mesh(
+    new THREE.ConeGeometry(0.13, 0.30, 4),
+    material,
+  );
+  tip.position.x = length;
+  tip.rotation.z = -Math.PI / 2;
+  tip.userData.role = `${role}-tip`;
+  const pin = cylinderAlongZ(
+    0.14,
+    0.28,
+    matte(PALETTE.ink, { metalness: 0.24, roughness: 0.44 }),
+    24,
+  );
+  pin.userData.role = `${role}-pivot`;
+  root.add(body, tip, pin);
+  root.rotation.z = baseAngle;
+
+  const relative = displacement.clone();
+  const plus = relative.clone().rotateAround(
+    new THREE.Vector2(),
+    0.01,
+  ).add(pivot).length();
+  const minus = relative.clone().rotateAround(
+    new THREE.Vector2(),
+    -0.01,
+  ).add(pivot).length();
+  root.userData.baseAngle = baseAngle;
+  root.userData.contact = contact.clone();
+  root.userData.length = length;
+  root.userData.liftSign = plus >= minus ? 1 : -1;
+  root.userData.pivot = pivot.clone();
+  return markShadows(root);
+}
+
+function cubicBezierPoint(controlPoints, parameter,
+  target = new THREE.Vector3()) {
+  const complement = 1 - parameter;
+  return target.set(0, 0, 0)
+    .addScaledVector(controlPoints[0], complement ** 3)
+    .addScaledVector(controlPoints[1], 3 * complement ** 2 * parameter)
+    .addScaledVector(controlPoints[2], 3 * complement * parameter ** 2)
+    .addScaledVector(controlPoints[3], parameter ** 3);
+}
+
+function cubicBezierDerivative(controlPoints, parameter,
+  target = new THREE.Vector3()) {
+  const complement = 1 - parameter;
+  return target
+    .copy(controlPoints[1]).sub(controlPoints[0])
+    .multiplyScalar(3 * complement ** 2)
+    .addScaledVector(
+      controlPoints[2].clone().sub(controlPoints[1]),
+      6 * complement * parameter,
+    )
+    .addScaledVector(
+      controlPoints[3].clone().sub(controlPoints[2]),
+      3 * parameter ** 2,
+    );
+}
+
+function cubicBezierLength(controlPoints) {
+  const panels = 64;
+  let sum = cubicBezierDerivative(controlPoints, 0).length()
+    + cubicBezierDerivative(controlPoints, 1).length();
+  for (let index = 1; index < panels; index += 1) {
+    sum += (index % 2 === 0 ? 2 : 4)
+      * cubicBezierDerivative(controlPoints, index / panels).length();
+  }
+  return sum / (3 * panels);
+}
+
+function setBoxBetween(box, start, end) {
+  const displacement = end.clone().sub(start);
+  box.position.copy(start).add(end).multiplyScalar(0.5);
+  box.rotation.z = Math.atan2(displacement.y, displacement.x);
+  box.scale.x = displacement.length();
+}
+
+function setCylinderBetween(cylinder, start, end) {
+  const displacement = end.clone().sub(start);
+  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
+  cylinder.quaternion.setFromUnitVectors(
+    Y_AXIS,
+    displacement.clone().normalize(),
+  );
+  cylinder.scale.y = displacement.length();
+}
+
+function harrisonGoingBarrel(movement) {
+  const root = new THREE.Group();
+
+  const sourceImageWidth = 525;
+  const sourceImageHeight = 525;
+  const sourceRasterCenter = new THREE.Vector2(239, 242);
+  const sourceRasterFrameClickPivotT = new THREE.Vector2(479, 47);
+  const sourceRasterFrameClickContactT = new THREE.Vector2(181, 80);
+  const sourceRasterCarriedClickPivotR = new THREE.Vector2(369, 269);
+  const sourceRasterCarriedClickContactR = new THREE.Vector2(293, 320);
+  const sourceRasterOuterSpringAnchorSPrime = new THREE.Vector2(65, 208);
+  const sourceRasterInnerSpringAnchorS = new THREE.Vector2(162, 132);
+  const sourceRasterWeightCenter = new THREE.Vector2(173, 487);
+  const sourceScale = 0.0145;
+
+  const demonstrationPeriod = 8;
+  const windingStartPhase = 0.50;
+  const windingEndPhase = 0.75;
+  const greatWheelToothCount = 48;
+  const greatWheelPitchRadius = 2.95;
+  const largeRatchetToothCount = 24;
+  const largeRatchetPitchRadius = Math.hypot(
+    (sourceRasterFrameClickContactT.x - sourceRasterCenter.x) * sourceScale,
+    (sourceRasterFrameClickContactT.y - sourceRasterCenter.y) * sourceScale,
+  );
+  const largeRatchetOuterRadius = largeRatchetPitchRadius * 1.025;
+  const largeRatchetInnerRadius = 1.50;
+  const barrelRatchetToothCount = 12;
+  const barrelRatchetPitchRadius = Math.hypot(
+    (sourceRasterCarriedClickContactR.x - sourceRasterCenter.x) * sourceScale,
+    (sourceRasterCarriedClickContactR.y - sourceRasterCenter.y) * sourceScale,
+  );
+  const barrelFaceRadius = 1.02;
+  const ropeDrumPitchRadius = 0.34;
+  const referenceWeightY = -3.55;
+  const weightX = -ropeDrumPitchRadius;
+  const springOuterAnchorRadius = 2.60;
+  const springInnerAnchorRadius = 1.98;
+  const springOuterBaseAngle = Math.atan2(0.50, -2.55);
+  const springInnerBaseAngle = Math.atan2(1.65, -1.10);
+  const springOuterTangentOffset = -springOuterBaseAngle;
+  const springInnerTangentOffset = 2.40 - springInnerBaseAngle;
+  const referenceSpringHandle = 3.20;
+  const springSegmentCount = 80;
+  const springPreload = 2.20;
+  const springStiffness = 0.60;
+  const goingLoadTorque = 0.30;
+  const largeRatchetLagMaximum = Math.PI / 2;
+  const greatWheelAngularVelocity = FULL_TURN / demonstrationPeriod;
+  const largeRatchetToothPitch = FULL_TURN / largeRatchetToothCount;
+  const barrelRatchetToothPitch = FULL_TURN / barrelRatchetToothCount;
+
+  const springControlPoints = (greatWheelAngle, largeRatchetAngle,
+    handleLength) => {
+    const outerAngle = springOuterBaseAngle + greatWheelAngle;
+    const innerAngle = springInnerBaseAngle + largeRatchetAngle;
+    const outer = new THREE.Vector3(
+      Math.cos(outerAngle) * springOuterAnchorRadius,
+      Math.sin(outerAngle) * springOuterAnchorRadius,
+      1.16,
+    );
+    const inner = new THREE.Vector3(
+      Math.cos(innerAngle) * springInnerAnchorRadius,
+      Math.sin(innerAngle) * springInnerAnchorRadius,
+      1.16,
+    );
+    const outerTangentAngle = greatWheelAngle
+      + springOuterBaseAngle + springOuterTangentOffset;
+    const innerTangentAngle = largeRatchetAngle
+      + springInnerBaseAngle + springInnerTangentOffset;
+    const outerTangent = new THREE.Vector3(
+      Math.cos(outerTangentAngle),
+      Math.sin(outerTangentAngle),
+      0,
+    );
+    const innerTangent = new THREE.Vector3(
+      Math.cos(innerTangentAngle),
+      Math.sin(innerTangentAngle),
+      0,
+    );
+    return [
+      outer,
+      outer.clone().addScaledVector(outerTangent, handleLength),
+      inner.clone().addScaledVector(innerTangent, -handleLength),
+      inner,
+    ];
+  };
+  const referenceSpringControlPoints = springControlPoints(0, 0,
+    referenceSpringHandle);
+  const springMaterialLength = cubicBezierLength(
+    referenceSpringControlPoints,
+  );
+
+  const springGeometryAtAngles = (greatWheelAngle, largeRatchetAngle) => {
+    const lengthAt = (handleLength) => cubicBezierLength(
+      springControlPoints(
+        greatWheelAngle,
+        largeRatchetAngle,
+        handleLength,
+      ),
+    );
+    let low = 0;
+    let high = referenceSpringHandle;
+    while (lengthAt(high) < springMaterialLength && high < 20) high *= 1.5;
+    if (lengthAt(low) > springMaterialLength + 1e-10
+      || lengthAt(high) < springMaterialLength) {
+      throw new RangeError('The fixed-length maintaining spring cannot reach both anchors.');
+    }
+    for (let iteration = 0; iteration < 46; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (lengthAt(middle) < springMaterialLength) low = middle;
+      else high = middle;
+    }
+    const handleLength = (low + high) / 2;
+    const controlPoints = springControlPoints(
+      greatWheelAngle,
+      largeRatchetAngle,
+      handleLength,
+    );
+    const divisions = 192;
+    const parameters = new Float64Array(divisions + 1);
+    const cumulative = new Float64Array(divisions + 1);
+    let previous = cubicBezierPoint(controlPoints, 0);
+    let chordLength = 0;
+    for (let index = 1; index <= divisions; index += 1) {
+      const parameter = index / divisions;
+      const point = cubicBezierPoint(controlPoints, parameter);
+      chordLength += point.distanceTo(previous);
+      parameters[index] = parameter;
+      cumulative[index] = chordLength;
+      previous = point;
+    }
+    const correction = springMaterialLength / chordLength;
+    for (let index = 1; index <= divisions; index += 1) {
+      cumulative[index] *= correction;
+    }
+    const parameterAtMaterialFraction = (fraction) => {
+      const target = THREE.MathUtils.clamp(fraction, 0, 1)
+        * springMaterialLength;
+      let lower = 0;
+      let upper = divisions;
+      while (upper - lower > 1) {
+        const middle = Math.floor((lower + upper) / 2);
+        if (cumulative[middle] < target) lower = middle;
+        else upper = middle;
+      }
+      const interval = cumulative[upper] - cumulative[lower];
+      const local = interval > 1e-15
+        ? (target - cumulative[lower]) / interval
+        : 0;
+      return THREE.MathUtils.lerp(
+        parameters[lower],
+        parameters[upper],
+        local,
+      );
+    };
+    return {
+      controlPoints,
+      handleLength,
+      materialLength: springMaterialLength,
+      measuredLength: cubicBezierLength(controlPoints),
+      pointAtMaterialFraction: (fraction) => cubicBezierPoint(
+        controlPoints,
+        parameterAtMaterialFraction(fraction),
+      ),
+    };
+  };
+
+  const kinematicStateAtTime = (time) => {
+    const cycleIndex = Math.floor(time / demonstrationPeriod);
+    const localTime = time - cycleIndex * demonstrationPeriod;
+    const phase = localTime / demonstrationPeriod;
+    const greatWheelAngle = cycleIndex * FULL_TURN + FULL_TURN * phase;
+    let largeRatchetLocalAngle;
+    let largeRatchetPhaseRate;
+    let largeRatchetPhaseAcceleration;
+    let barrelAngle;
+    let barrelPhaseRate;
+    let barrelPhaseAcceleration;
+    let mode;
+
+    if (phase <= windingStartPhase) {
+      largeRatchetLocalAngle = FULL_TURN * phase;
+      largeRatchetPhaseRate = FULL_TURN;
+      largeRatchetPhaseAcceleration = 0;
+      barrelAngle = FULL_TURN * phase;
+      barrelPhaseRate = FULL_TURN;
+      barrelPhaseAcceleration = 0;
+      mode = 'going-weight-drives-B-through-R-spring-and-G';
+    } else if (phase <= windingEndPhase) {
+      const windingProgress = (
+        phase - windingStartPhase
+      ) / (windingEndPhase - windingStartPhase);
+      const shaped = smootherstep(windingProgress);
+      const shapedFirst = smootherstepFirst(windingProgress);
+      const shapedSecond = smootherstepSecond(windingProgress);
+      largeRatchetLocalAngle = Math.PI;
+      largeRatchetPhaseRate = 0;
+      largeRatchetPhaseAcceleration = 0;
+      barrelAngle = Math.PI - FULL_TURN * shaped;
+      barrelPhaseRate = -FULL_TURN * shapedFirst
+        / (windingEndPhase - windingStartPhase);
+      barrelPhaseAcceleration = -FULL_TURN * shapedSecond
+        / (windingEndPhase - windingStartPhase) ** 2;
+      mode = 'winding-B-backward-R-ratcheting-T-holds-spring-drives-G';
+    } else {
+      const recoveryProgress = (
+        phase - windingEndPhase
+      ) / (1 - windingEndPhase);
+      const shaped = smootherstep(recoveryProgress);
+      const shapedFirst = smootherstepFirst(recoveryProgress);
+      const shapedSecond = smootherstepSecond(recoveryProgress);
+      const greatLocalAngle = FULL_TURN * phase;
+      const lag = largeRatchetLagMaximum * (1 - shaped);
+      largeRatchetLocalAngle = greatLocalAngle - lag;
+      largeRatchetPhaseRate = FULL_TURN
+        + largeRatchetLagMaximum * shapedFirst
+          / (1 - windingEndPhase);
+      largeRatchetPhaseAcceleration = largeRatchetLagMaximum
+        * shapedSecond / (1 - windingEndPhase) ** 2;
+      barrelAngle = largeRatchetLocalAngle - FULL_TURN;
+      barrelPhaseRate = largeRatchetPhaseRate;
+      barrelPhaseAcceleration = largeRatchetPhaseAcceleration;
+      mode = 'post-winding-R-reengaged-weight-recharges-spring';
+    }
+    const largeRatchetAngle = cycleIndex * FULL_TURN
+      + largeRatchetLocalAngle;
+    const phaseRateToTime = 1 / demonstrationPeriod;
+    const largeRatchetAngularVelocity = largeRatchetPhaseRate
+      * phaseRateToTime;
+    const largeRatchetAngularAcceleration = largeRatchetPhaseAcceleration
+      * phaseRateToTime ** 2;
+    const barrelAngularVelocity = barrelPhaseRate * phaseRateToTime;
+    const barrelAngularAcceleration = barrelPhaseAcceleration
+      * phaseRateToTime ** 2;
+    const relativeSpringRotation = largeRatchetAngle - greatWheelAngle;
+    const springDeflection = springPreload + relativeSpringRotation;
+    const springTorque = springStiffness * springDeflection;
+    const springEnergy = 0.5 * springStiffness * springDeflection ** 2;
+    const isWinding = phase > windingStartPhase
+      && phase <= windingEndPhase;
+    const springGeometry = springGeometryAtAngles(
+      greatWheelAngle,
+      largeRatchetAngle,
+    );
+
+    const clickRToothProgress = positiveModulo(
+      (largeRatchetAngle - barrelAngle) / barrelRatchetToothPitch,
+      1,
+    );
+    const clickTToothProgress = positiveModulo(
+      largeRatchetAngle / largeRatchetToothPitch,
+      1,
+    );
+    const clickRLift = isWinding
+      ? 0.115 * Math.sin(Math.PI * clickRToothProgress) ** 4
+      : 0;
+    const clickTLift = isWinding
+      ? 0
+      : 0.095 * Math.sin(Math.PI * clickTToothProgress) ** 4;
+    return {
+      barrelAngle,
+      barrelAngularAcceleration,
+      barrelAngularVelocity,
+      clickRLift,
+      clickRMode: isWinding
+        ? 'ratcheting-over-reversing-barrel-teeth'
+        : 'engaged-transmitting-weight-torque',
+      clickRToothProgress,
+      clickTLift,
+      clickTMode: isWinding
+        ? 'engaged-holding-large-ratchet-against-fallback'
+        : 'ratcheting-forward-over-large-ratchet',
+      clickTToothProgress,
+      cycleIndex,
+      greatWheelAngle,
+      greatWheelAngularAcceleration: 0,
+      greatWheelAngularVelocity,
+      isWinding,
+      largeRatchetAngle,
+      largeRatchetAngularAcceleration,
+      largeRatchetAngularVelocity,
+      mode,
+      phase,
+      powerSource: isWinding
+        ? 'stored-maintaining-spring-S-S-prime'
+        : 'descending-weight-through-barrel-B-and-click-R',
+      relativeSpringRotation,
+      ropeTravel: ropeDrumPitchRadius * barrelAngle,
+      springDeflection,
+      springEnergy,
+      springGeometry,
+      springTorque,
+      weightAcceleration: -ropeDrumPitchRadius
+        * barrelAngularAcceleration,
+      weightPosition: new THREE.Vector3(
+        weightX,
+        referenceWeightY - ropeDrumPitchRadius * barrelAngle,
+        0.78,
+      ),
+      weightVelocity: -ropeDrumPitchRadius * barrelAngularVelocity,
+    };
+  };
+
+  const clickRPivot = new THREE.Vector2(
+    (sourceRasterCarriedClickPivotR.x - sourceRasterCenter.x) * sourceScale,
+    -(sourceRasterCarriedClickPivotR.y - sourceRasterCenter.y) * sourceScale,
+  );
+  const clickRContact = new THREE.Vector2(
+    (sourceRasterCarriedClickContactR.x - sourceRasterCenter.x) * sourceScale,
+    -(sourceRasterCarriedClickContactR.y - sourceRasterCenter.y) * sourceScale,
+  );
+  const clickTPivot = new THREE.Vector2(
+    (sourceRasterFrameClickPivotT.x - sourceRasterCenter.x) * sourceScale,
+    -(sourceRasterFrameClickPivotT.y - sourceRasterCenter.y) * sourceScale,
+  );
+  const clickTContact = new THREE.Vector2(
+    (sourceRasterFrameClickContactT.x - sourceRasterCenter.x) * sourceScale,
+    -(sourceRasterFrameClickContactT.y - sourceRasterCenter.y) * sourceScale,
+  );
+
+  const greatWheel = makeGear({
+    axis: Z_AXIS,
+    color: PALETTE.driven,
+    depth: 0.30,
+    radius: greatWheelPitchRadius,
+    teeth: greatWheelToothCount,
+    toothHeight: 0.18,
+  });
+  greatWheel.position.z = -0.28;
+  greatWheel.userData.role = 'great-going-wheel-G';
+  const greatIndexMaterial = matte(PALETTE.white, { roughness: 0.48 });
+  const greatWheelIndices = [];
+  for (let index = 0; index < 6; index += 1) {
+    const angle = index * FULL_TURN / 6;
+    const marker = cylinderAlongZ(0.075, 0.08, greatIndexMaterial, 14);
+    marker.position.set(
+      Math.cos(angle) * 2.62,
+      Math.sin(angle) * 2.62,
+      0.19,
+    );
+    marker.userData.role = 'great-wheel-G-symmetric-rotation-index';
+    greatWheel.userData.rotor.add(marker);
+    greatWheelIndices.push(marker);
+  }
+
+  const largeRatchet = makeRotor('larger-ratchet-wheel');
+  const largeRatchetMesh = makeRatchetMesh({
+    color: PALETTE.accent,
+    depth: 0.19,
+    innerRadius: largeRatchetInnerRadius,
+    outerRadius: largeRatchetOuterRadius,
+    role: 'larger-ratchet-wheel-held-by-T',
+    toothCount: largeRatchetToothCount,
+  });
+  largeRatchet.userData.rotor.add(largeRatchetMesh);
+  const ringRim = new THREE.Mesh(
+    new THREE.TorusGeometry(largeRatchetInnerRadius, 0.065, 9, 72),
+    matte(PALETTE.ink, { metalness: 0.16, roughness: 0.50 }),
+  );
+  ringRim.userData.role = 'larger-ratchet-inner-rim';
+  largeRatchet.userData.rotor.add(ringRim);
+
+  const barrel = makeRotor('weight-going-barrel-B');
+  barrel.position.z = 0.29;
+  const barrelBody = cylinderAlongZ(
+    barrelFaceRadius,
+    0.43,
+    matte(PALETTE.driver, { metalness: 0.11, roughness: 0.65 }),
+    56,
+  );
+  barrelBody.userData.role = 'barrel-B-face-and-weight-drum-flange';
+  const ropeDrum = cylinderAlongZ(
+    ropeDrumPitchRadius,
+    0.64,
+    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 }),
+    36,
+  );
+  ropeDrum.userData.role = 'narrow-weight-rope-drum-on-barrel-B';
+  const barrelRatchet = makeRatchetMesh({
+    color: PALETTE.driver,
+    depth: 0.16,
+    outerRadius: barrelRatchetPitchRadius * 1.04,
+    role: 'small-ratchet-fixed-to-barrel-B',
+    toothCount: barrelRatchetToothCount,
+  });
+  barrelRatchet.position.z = 0.50;
+  const barrelHub = cylinderAlongZ(
+    0.22,
+    1.10,
+    matte(PALETTE.ink, { metalness: 0.26, roughness: 0.42 }),
+    28,
+  );
+  barrelHub.userData.role = 'common-going-barrel-arbor';
+  barrel.userData.rotor.add(
+    barrelBody,
+    ropeDrum,
+    barrelRatchet,
+    barrelHub,
+  );
+  const barrelIndices = [];
+  for (let index = 0; index < 6; index += 1) {
+    const angle = index * FULL_TURN / 6;
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 12, 9),
+      greatIndexMaterial,
+    );
+    marker.position.set(
+      Math.cos(angle) * 0.72,
+      Math.sin(angle) * 0.72,
+      0.60,
+    );
+    marker.userData.role = 'barrel-B-symmetric-rotation-index';
+    barrel.userData.rotor.add(marker);
+    barrelIndices.push(marker);
+  }
+
+  const clickR = makePawl({
+    color: PALETTE.ink,
+    contact: clickRContact,
+    pivot: clickRPivot,
+    role: 'click-R-carried-by-larger-ratchet',
+    z: 1.30,
+  });
+  largeRatchet.userData.rotor.add(clickR);
+  const clickT = makePawl({
+    color: PALETTE.ink,
+    contact: clickTContact,
+    pivot: clickTPivot,
+    role: 'fixed-frame-click-T',
+    z: 0.26,
+  });
+
+  const springMaterial = matte(PALETTE.ink, {
+    metalness: 0.16,
+    roughness: 0.56,
+  });
+  const springSegments = Array.from(
+    { length: springSegmentCount },
+    (_, index) => {
+      const segment = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 0.075, 0.13),
+        springMaterial,
+      );
+      segment.userData.materialCoordinate = index / springSegmentCount;
+      segment.userData.role = 'fixed-length-maintaining-spring-S-S-prime-segment';
+      root.add(segment);
+      return segment;
+    },
+  );
+  const springMarkers = Array.from({ length: 5 }, (_, index) => {
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 12, 9),
+      matte(PALETTE.white, { roughness: 0.48 }),
+    );
+    marker.userData.materialCoordinate = (index + 1) / 6;
+    marker.userData.role = 'maintaining-spring-material-index';
+    root.add(marker);
+    return marker;
+  });
+  const springOuterAnchor = cylinderAlongZ(
+    0.11,
+    0.24,
+    matte(PALETTE.ink, { metalness: 0.20, roughness: 0.48 }),
+    20,
+  );
+  springOuterAnchor.position.set(
+    Math.cos(springOuterBaseAngle) * springOuterAnchorRadius,
+    Math.sin(springOuterBaseAngle) * springOuterAnchorRadius,
+    1.44,
+  );
+  springOuterAnchor.userData.role = 'spring-outer-anchor-S-prime-on-G';
+  greatWheel.userData.rotor.add(springOuterAnchor);
+  const springInnerAnchor = cylinderAlongZ(
+    0.11,
+    0.24,
+    springOuterAnchor.material,
+    20,
+  );
+  springInnerAnchor.position.set(
+    Math.cos(springInnerBaseAngle) * springInnerAnchorRadius,
+    Math.sin(springInnerBaseAngle) * springInnerAnchorRadius,
+    1.16,
+  );
+  springInnerAnchor.userData.role = 'spring-inner-anchor-S-on-larger-ratchet';
+  largeRatchet.userData.rotor.add(springInnerAnchor);
+
+  const weight = new THREE.Mesh(
+    new THREE.BoxGeometry(1.18, 0.90, 0.66),
+    matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
+  );
+  weight.userData.role = 'driving-weight-on-barrel-B';
+  const rope = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 1, 9),
+    matte(PALETTE.ink, { roughness: 0.75 }),
+  );
+  rope.userData.role = 'single-weight-rope-wound-on-barrel-B';
+  const ropeContact = new THREE.Vector3(
+    weightX,
+    -0.08,
+    0.78,
+  );
+
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.role = 'fixed-clock-frame-and-T-bearing';
+  fixedFrame.add(
+    makeBeam(
+      new THREE.Vector3(-3.75, 3.45, -0.60),
+      new THREE.Vector3(3.85, 3.45, -0.60),
+      { color: PALETTE.frame, depth: 0.28, thickness: 0.20 },
+    ),
+    makeBeam(
+      new THREE.Vector3(3.48, 3.45, -0.60),
+      new THREE.Vector3(3.48, 2.83, -0.60),
+      { color: PALETTE.frame, depth: 0.24, thickness: 0.16 },
+    ),
+  );
+  const rearBearing = cylinderAlongZ(
+    0.34,
+    0.35,
+    matte(PALETTE.frame, { metalness: 0.16, roughness: 0.58 }),
+    32,
+  );
+  rearBearing.position.z = -0.63;
+  rearBearing.userData.role = 'fixed-coaxial-going-barrel-bearing';
+  fixedFrame.add(rearBearing);
+
+  root.add(
+    fixedFrame,
+    greatWheel,
+    largeRatchet,
+    barrel,
+    clickT,
+    rope,
+    weight,
+  );
+
+  const pawlTipPosition = (pawl, parentAngle, lift) => {
+    const pivot = pawl.userData.pivot;
+    const displacement = pawl.userData.contact.clone().sub(pivot)
+      .rotateAround(
+        new THREE.Vector2(),
+        pawl.userData.liftSign * lift,
+      );
+    const local = pivot.clone().add(displacement);
+    return local.rotateAround(new THREE.Vector2(), parentAngle);
+  };
+
+  const stateAtTime = (time) => {
+    const state = kinematicStateAtTime(time);
+    const clickRTip2 = pawlTipPosition(
+      clickR,
+      state.largeRatchetAngle,
+      state.clickRLift,
+    );
+    const clickTTip2 = pawlTipPosition(clickT, 0, state.clickTLift);
+    return {
+      ...state,
+      contacts: {
+        R: {
+          active: !state.isWinding,
+          clearance: clickRTip2.length() - barrelRatchetPitchRadius,
+          point: new THREE.Vector3(clickRTip2.x, clickRTip2.y, 1.30),
+          ratcheting: state.isWinding,
+        },
+        T: {
+          activeHold: state.isWinding,
+          clearance: clickTTip2.length() - largeRatchetPitchRadius,
+          point: new THREE.Vector3(clickTTip2.x, clickTTip2.y, 0.26),
+          ratchetingForward: !state.isWinding,
+        },
+      },
+      rope: {
+        freeLength: ropeContact.y
+          - (state.weightPosition.y + 0.45),
+        pitchRadius: ropeDrumPitchRadius,
+        slipError: state.weightPosition.y - referenceWeightY
+          + ropeDrumPitchRadius * state.barrelAngle,
+        topContact: ropeContact.clone(),
+        weightAttachment: state.weightPosition.clone().add(
+          new THREE.Vector3(0, 0.45, 0),
+        ),
+      },
+    };
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    setRotorAngle(greatWheel, state.greatWheelAngle);
+    setRotorAngle(largeRatchet, state.largeRatchetAngle);
+    setRotorAngle(barrel, state.barrelAngle);
+    clickR.rotation.z = clickR.userData.baseAngle
+      + clickR.userData.liftSign * state.clickRLift;
+    clickT.rotation.z = clickT.userData.baseAngle
+      + clickT.userData.liftSign * state.clickTLift;
+    weight.position.copy(state.weightPosition);
+    setCylinderBetween(rope, state.rope.topContact,
+      state.rope.weightAttachment);
+    const springPoints = Array.from(
+      { length: springSegmentCount + 1 },
+      (_, index) => state.springGeometry.pointAtMaterialFraction(
+        index / springSegmentCount,
+      ),
+    );
+    for (let index = 0; index < springSegmentCount; index += 1) {
+      setBoxBetween(
+        springSegments[index],
+        springPoints[index],
+        springPoints[index + 1],
+      );
+    }
+    for (const marker of springMarkers) {
+      marker.position.copy(state.springGeometry.pointAtMaterialFraction(
+        marker.userData.materialCoordinate,
+      ));
+      marker.position.z += 0.03;
+    }
+    root.userData.contacts = state.contacts;
+    root.userData.renderState = state;
+  };
+
+  const sourcePointToReferenceFront = (point) => new THREE.Vector3(
+    (point.x - sourceRasterCenter.x) * sourceScale,
+    -(point.y - sourceRasterCenter.y) * sourceScale,
+    0,
+  );
+
+  root.userData.archetype =
+    'harrison-spring-maintaining-power-going-barrel';
+  root.userData.blocks = {
+    barrel,
+    barrelBody,
+    barrelHub,
+    barrelIndices,
+    barrelRatchet,
+    clickR,
+    clickT,
+    fixedFrame,
+    greatWheel,
+    greatWheelIndices,
+    largeRatchet,
+    largeRatchetMesh,
+    rope,
+    ropeDrum,
+    springInnerAnchor,
+    springMarkers,
+    springOuterAnchor,
+    springSegments,
+    weight,
+  };
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.85, -4.60, -1.05),
+    new THREE.Vector3(4.00, 3.60, 1.55),
+  );
+  root.userData.canonicalTimes = {
+    cycleClosure: demonstrationPeriod,
+    goingMidStroke: demonstrationPeriod * 0.25,
+    windingBegins: demonstrationPeriod * windingStartPhase,
+    windingMidStroke: demonstrationPeriod * 0.625,
+    windingEnds: demonstrationPeriod * windingEndPhase,
+    springRecoveryMidStroke: demonstrationPeriod * 0.875,
+  };
+  root.userData.geometry = {
+    barrelFaceRadius,
+    barrelRatchetPitchRadius,
+    barrelRatchetToothCount,
+    barrelRatchetToothPitch,
+    demonstrationPeriod,
+    goingLoadTorque,
+    greatWheelAngularVelocity,
+    greatWheelPitchRadius,
+    greatWheelToothCount,
+    largeRatchetInnerRadius,
+    largeRatchetLagMaximum,
+    largeRatchetOuterRadius,
+    largeRatchetPitchRadius,
+    largeRatchetToothCount,
+    largeRatchetToothPitch,
+    referenceSpringHandle,
+    referenceWeightY,
+    ropeDrumPitchRadius,
+    sourceImageHeight,
+    sourceImageWidth,
+    sourceScale,
+    springInnerAnchorRadius,
+    springMaterialLength,
+    springOuterAnchorRadius,
+    springPreload,
+    springSegmentCount,
+    springStiffness,
+    windingEndPhase,
+    windingStartPhase,
+  };
+  root.userData.kinematicStateAtTime = kinematicStateAtTime;
+  root.userData.mechanism =
+    'weight unwinds barrel B and its small ratchet drives carried click R, the larger ratchet, preloaded spring S–S′, and great wheel G; while B reverses to wind the weight, R clicks backward, fixed click T holds the larger ratchet, and the spring alone keeps G advancing';
+  root.userData.sourceAnimation = {
+    available: false,
+    independentlyReconstructed: true,
+    officialCanvasModelPresent: false,
+    officialPageAnimatedTabDisabled: true,
+    referenceScope: 'Brown supplies coaxial barrel B, its small ratchet, carried click R, the larger ratchet, fixed-frame click T, spring S–S′, outer great wheel G, and the weight cord. Tooth counts, spring stiffness and preload, drum depth, masses, and timing are not dimensioned.',
+    sourceUrl: 'https://507movements.com/mm_321.html',
+  };
+  root.userData.sourcePointToReferenceFront = sourcePointToReferenceFront;
+  root.userData.sourceReference = {
+    brownPlate321: {
+      imageHeight: sourceImageHeight,
+      imageWidth: sourceImageWidth,
+      inferredTopology: 'coaxial outer great wheel G, spring-coupled larger ratchet carrying R, small ratchet fixed to barrel B, fixed-frame holding click T, and one weight rope',
+      measurementUncertaintyPixels: 11,
+      rasterBarrelCenterB: sourceRasterCenter.clone(),
+      rasterCarriedClickContactR:
+        sourceRasterCarriedClickContactR.clone(),
+      rasterCarriedClickPivotR: sourceRasterCarriedClickPivotR.clone(),
+      rasterFrameClickContactT: sourceRasterFrameClickContactT.clone(),
+      rasterFrameClickPivotT: sourceRasterFrameClickPivotT.clone(),
+      rasterInnerSpringAnchorS: sourceRasterInnerSpringAnchorS.clone(),
+      rasterOuterSpringAnchorSPrime:
+        sourceRasterOuterSpringAnchorSPrime.clone(),
+      rasterWeightCenter: sourceRasterWeightCenter.clone(),
+    },
+    officialDescription: movement.description,
+    primaryScan: {
+      archiveIdentifier: 'fivehundredseven00browiala',
+      descriptionPage: 79,
+      edition: 21,
+      illustrationPage: 78,
+      publicationYear: 1908,
+    },
+  };
+  root.userData.springGeometryAtAngles = springGeometryAtAngles;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.timeline = {
+    demonstrationPeriod,
+    schedule: [
+      'weight-descends-and-B-drives-carried-click-R',
+      'larger-ratchet-loads-spring-S-S-prime-and-drives-G',
+      'winding-reverses-B-and-lifts-the-weight',
+      'R-ratchets-while-fixed-click-T-holds-the-larger-ratchet',
+      'stored-spring-energy-keeps-G-advancing',
+      'R-reengages-and-restores-the-spring-preload',
+    ],
+  };
+  root.userData.transmission = {
+    carriedClick: 'R is pivoted on the larger ratchet and engages the small ratchet fixed to B',
+    fixedClick: 'T is pivoted in the frame and prevents the larger ratchet falling back during winding',
+    goingPath: 'weight → barrel B → small ratchet → R → larger ratchet → spring S–S′ → great wheel G',
+    outputContinuity: 'G has strictly positive constant angular velocity through going, winding, and spring recovery',
+    ropeNoSlipLaw: 'weight displacement = -barrel angle × rope-drum pitch radius',
+    springLaw: 'torque = stiffness × (preload + larger-ratchet angle - G angle)',
+    windingPath: 'operator reverses B; R overruns, T holds the larger ratchet, and S–S′ alone supplies G',
+  };
+
+  update(0);
+  root.traverse((object) => {
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : object.material
+        ? [object.material]
+        : [];
+    for (const material of materials) material.fog = false;
+  });
+  root.userData.materialsIgnoreSceneFog = true;
+  markShadows(root);
+  for (const segment of springSegments) {
+    segment.castShadow = false;
+    segment.receiveShadow = false;
+  }
+  rope.castShadow = false;
+  rope.receiveShadow = false;
+  root.userData.fidelity = 'authored';
+
+  return {
+    cameraDirection: new THREE.Vector3(4.9, 3.4, 11.8),
+    root,
+    update,
+  };
+}
+
+export function createAuthoredGoingBarrelMovement(movement) {
+  if (movement.id !== 321) return null;
+  return harrisonGoingBarrel(movement);
+}

@@ -1,0 +1,1047 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeBeam,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+function positiveModulo(value, modulus) {
+  const remainder = value % modulus;
+  if (remainder === 0) return 0;
+  return remainder < 0 ? remainder + modulus : remainder;
+}
+
+function cylinderAlongZ(radius, depth, material, segments = 48) {
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, depth, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function centeredExtrusion(shape, depth, bevel = 0.01) {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: bevel > 0,
+    bevelSegments: bevel > 0 ? 2 : 1,
+    bevelSize: bevel,
+    bevelThickness: bevel,
+    curveSegments: 64,
+    depth,
+    steps: 1,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function horizontalCapsuleShape(radius, straightHalfLength) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-straightHalfLength, -radius);
+  shape.lineTo(straightHalfLength, -radius);
+  shape.absarc(
+    straightHalfLength,
+    0,
+    radius,
+    -Math.PI / 2,
+    Math.PI / 2,
+    false,
+  );
+  shape.lineTo(-straightHalfLength, radius);
+  shape.absarc(
+    -straightHalfLength,
+    0,
+    radius,
+    Math.PI / 2,
+    Math.PI * 1.5,
+    false,
+  );
+  shape.closePath();
+  return shape;
+}
+
+function horizontalCapsuleRingShape(
+  innerRadius,
+  outerRadius,
+  straightHalfLength,
+) {
+  const shape = horizontalCapsuleShape(outerRadius, straightHalfLength);
+  const hole = new THREE.Path();
+  hole.moveTo(straightHalfLength, -innerRadius);
+  hole.lineTo(-straightHalfLength, -innerRadius);
+  hole.absarc(
+    -straightHalfLength,
+    0,
+    innerRadius,
+    -Math.PI / 2,
+    Math.PI / 2,
+    true,
+  );
+  hole.lineTo(straightHalfLength, innerRadius);
+  hole.absarc(
+    straightHalfLength,
+    0,
+    innerRadius,
+    Math.PI / 2,
+    -Math.PI / 2,
+    true,
+  );
+  hole.closePath();
+  shape.holes.push(hole);
+  return shape;
+}
+
+function triangleDisplacementAtPhase(phase, halfStroke) {
+  const normalizedPhase = positiveModulo(phase, 1);
+  if (normalizedPhase < 0.5) {
+    return halfStroke * (1 - 4 * normalizedPhase);
+  }
+  return halfStroke * (4 * normalizedPhase - 3);
+}
+
+function triangleSlopeAtPhase(phase, halfStroke) {
+  return positiveModulo(phase, 1) < 0.5
+    ? -4 * halfStroke
+    : 4 * halfStroke;
+}
+
+function grooveCenterAtPhase(phase, crankRadius, outputHalfStroke) {
+  const normalizedPhase = positiveModulo(phase, 1);
+  const angle = normalizedPhase * Math.PI * 2;
+  return new THREE.Vector2(
+    -crankRadius * Math.sin(angle),
+    crankRadius * Math.cos(angle)
+      - triangleDisplacementAtPhase(normalizedPhase, outputHalfStroke),
+  );
+}
+
+function grooveDerivativeAtPhase(phase, crankRadius, outputHalfStroke) {
+  const normalizedPhase = positiveModulo(phase, 1);
+  const angle = normalizedPhase * Math.PI * 2;
+  return new THREE.Vector2(
+    -Math.PI * 2 * crankRadius * Math.cos(angle),
+    -Math.PI * 2 * crankRadius * Math.sin(angle)
+      - triangleSlopeAtPhase(normalizedPhase, outputHalfStroke),
+  );
+}
+
+function makeGrooveBandGeometry(
+  crankRadius,
+  outputHalfStroke,
+  grooveHalfWidth,
+  sampleCount = 384,
+) {
+  const positions = [];
+  const indices = [];
+  for (let index = 0; index < sampleCount; index += 1) {
+    const phase = index / sampleCount;
+    const center = grooveCenterAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    );
+    const tangent = grooveDerivativeAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    ).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    positions.push(
+      center.x + normal.x * grooveHalfWidth,
+      center.y + normal.y * grooveHalfWidth,
+      0,
+      center.x - normal.x * grooveHalfWidth,
+      center.y - normal.y * grooveHalfWidth,
+      0,
+    );
+    const next = (index + 1) % sampleCount;
+    indices.push(
+      index * 2,
+      next * 2,
+      index * 2 + 1,
+      index * 2 + 1,
+      next * 2,
+      next * 2 + 1,
+    );
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function sampledGrooveEdge(
+  crankRadius,
+  outputHalfStroke,
+  grooveHalfWidth,
+  side,
+  sampleCount = 384,
+) {
+  const points = [];
+  for (let index = 0; index < sampleCount; index += 1) {
+    const phase = index / sampleCount;
+    const center = grooveCenterAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    );
+    const tangent = grooveDerivativeAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    ).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    points.push(new THREE.Vector3(
+      center.x + side * normal.x * grooveHalfWidth,
+      center.y + side * normal.y * grooveHalfWidth,
+      0,
+    ));
+  }
+  return points;
+}
+
+function makeLineLoop(points, material, z) {
+  const geometry = new THREE.BufferGeometry().setFromPoints(
+    points.map((point) => new THREE.Vector3(point.x, point.y, z)),
+  );
+  const line = new THREE.LineLoop(geometry, material);
+  line.userData.noShadow = true;
+  return line;
+}
+
+function uniformVelocityEndlessGrooveCrosshead(movement) {
+  const root = new THREE.Group();
+  const fullTurn = Math.PI * 2;
+
+  // The dimensions below are the coordinates published by the site's canvas
+  // model.  They also agree with the 525 px engraving: a ten-unit disk drives
+  // a 9.7-unit wrist, while the crosshead moves 8.7 units either side of the
+  // shaft.  Keeping those two radii distinct is essential to the groove law.
+  const sourceScale = 0.255;
+  const sourceDiskRadius = 10;
+  const sourceCrankRadius = 9.7;
+  const sourceWristRadius = 0.3;
+  const sourceHubRadius = 0.8;
+  const sourceOutputHalfStroke = 8.7;
+  const sourceYokeEndCenter = 7.25;
+  const sourceYokeOuterHalfHeight = 3.5;
+  const sourceStemHalfWidth = 1;
+  const sourceStemEnd = 23;
+  const sourceGuideCenter = 13.25;
+  const sourceGuideHalfWidth = 2.5;
+  const sourceGuideHalfHeight = 0.75;
+
+  const diskRadius = sourceDiskRadius * sourceScale;
+  const crankRadius = sourceCrankRadius * sourceScale;
+  const wristRadius = sourceWristRadius * sourceScale;
+  const hubRadius = sourceHubRadius * sourceScale;
+  const outputHalfStroke = sourceOutputHalfStroke * sourceScale;
+  const outputStroke = outputHalfStroke * 2;
+  const yokeEndCenter = sourceYokeEndCenter * sourceScale;
+  const yokeOuterHalfHeight = sourceYokeOuterHalfHeight * sourceScale;
+  const stemHalfWidth = sourceStemHalfWidth * sourceScale;
+  const stemEnd = sourceStemEnd * sourceScale;
+  const guideCenter = sourceGuideCenter * sourceScale;
+  const guideHalfWidth = sourceGuideHalfWidth * sourceScale;
+  const guideHalfHeight = sourceGuideHalfHeight * sourceScale;
+  const grooveRunningClearance = 0.014;
+  const grooveHalfWidth = wristRadius + grooveRunningClearance;
+
+  // control.js drives the historical canvas at 15 coordinate cycles/minute,
+  // while movement 354 divides that coordinate by two.  Its physical crank
+  // therefore makes 7.5 rpm, or one revolution every eight seconds.
+  const sourceCoordinateCyclesPerMinute = 15;
+  const inputRevolutionsPerMinute = sourceCoordinateCyclesPerMinute / 2;
+  const inputAngularSpeed = fullTurn * inputRevolutionsPerMinute / 60;
+  const inputCyclePeriod = fullTurn / inputAngularSpeed;
+  const sourcePoseAngle = -0.274;
+  const sourcePosePhase = positiveModulo(sourcePoseAngle / fullTurn, 1);
+  const shaftCenter = new THREE.Vector3(0, -0.1, 0);
+
+  const diskDepth = 0.34;
+  const diskCenterZ = -0.23;
+  const diskFrontZ = diskCenterZ + diskDepth / 2;
+  const shaftRadius = hubRadius * 0.67;
+  const shaftLength = 1.48;
+  const shaftCenterZ = -0.47;
+  const wristLength = 0.95;
+  const wristCenterZ = 0.17;
+  const wristFrontZ = wristCenterZ + wristLength / 2;
+  const wristCapDepth = 0.08;
+  const yokeDepth = 0.3;
+  const yokePlaneZ = 0.23;
+  const yokeFrontZ = yokePlaneZ + yokeDepth / 2;
+  const grooveFaceZ = yokeFrontZ + 0.018;
+  const grooveCornerRadius = grooveHalfWidth;
+  const stemDepth = 0.24;
+  const stemPlaneZ = -0.43;
+  const guideRunningClearance = 0.018;
+  const guideInnerHalfWidth = stemHalfWidth + guideRunningClearance;
+  const frameZ = -0.78;
+  const frameHalfWidth = diskRadius + 0.48;
+
+  const driverMaterial = matte(PALETTE.driver, {
+    metalness: 0.16,
+    roughness: 0.59,
+  });
+  const drivenMaterial = matte(PALETTE.driven, {
+    metalness: 0.14,
+    roughness: 0.61,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.2,
+    roughness: 0.49,
+  });
+  const grooveMaterial = matte('#152f3b', {
+    metalness: 0.08,
+    roughness: 0.72,
+    side: THREE.DoubleSide,
+  });
+  const wristMaterial = matte(PALETTE.brass, {
+    metalness: 0.27,
+    roughness: 0.43,
+  });
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.13,
+    roughness: 0.69,
+  });
+  const indexMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  const grooveEdgeMaterial = new THREE.LineBasicMaterial({
+    color: PALETTE.ink,
+  });
+
+  const input = new THREE.Group();
+  input.position.copy(shaftCenter);
+  input.userData.role = 'uniformly-rotating-source-disk-and-crank-wrist';
+  const inputRotor = new THREE.Group();
+  inputRotor.userData.role = 'one-rigid-input-rotor';
+  input.add(inputRotor);
+
+  const diskBody = cylinderAlongZ(
+    diskRadius,
+    diskDepth,
+    driverMaterial,
+    128,
+  );
+  diskBody.position.z = diskCenterZ;
+  diskBody.userData.role = 'ten-source-unit-solid-crank-disk';
+  inputRotor.add(diskBody);
+
+  const diskRim = new THREE.Mesh(
+    new THREE.TorusGeometry(diskRadius - 0.034, 0.043, 10, 128),
+    darkMaterial,
+  );
+  diskRim.position.z = diskFrontZ + 0.014;
+  diskRim.userData.role = 'visible-outline-of-input-disk';
+  inputRotor.add(diskRim);
+
+  const inputShaft = cylinderAlongZ(
+    shaftRadius,
+    shaftLength,
+    darkMaterial,
+    48,
+  );
+  inputShaft.position.z = shaftCenterZ;
+  inputShaft.userData.role = 'fixed-axis-input-shaft';
+  inputRotor.add(inputShaft);
+
+  const shaftHub = cylinderAlongZ(
+    hubRadius,
+    diskDepth + 0.18,
+    darkMaterial,
+    48,
+  );
+  shaftHub.position.z = diskCenterZ + 0.035;
+  shaftHub.userData.role = 'central-input-hub';
+  inputRotor.add(shaftHub);
+
+  const hubFace = cylinderAlongZ(
+    hubRadius * 0.72,
+    0.055,
+    driverMaterial,
+    40,
+  );
+  hubFace.position.z = diskFrontZ + 0.12;
+  hubFace.userData.role = 'front-face-of-central-input-hub';
+  inputRotor.add(hubFace);
+
+  const diskRotationIndexes = Array.from({ length: 8 }, (_, index) => {
+    const angle = index * fullTurn / 8;
+    const sourceInnerRadius = 8.15;
+    const sourceOuterRadius = 8.55;
+    const length = (sourceOuterRadius - sourceInnerRadius) * sourceScale;
+    const radius = (sourceInnerRadius + sourceOuterRadius) * sourceScale / 2;
+    const marker = new THREE.Mesh(
+      new THREE.BoxGeometry(length, 0.035, 0.035),
+      indexMaterial,
+    );
+    marker.position.set(
+      radius * Math.cos(angle),
+      radius * Math.sin(angle),
+      diskFrontZ + 0.048,
+    );
+    marker.rotation.z = angle;
+    marker.userData.role = 'visible-radial-index-on-input-disk';
+    marker.userData.index = index;
+    inputRotor.add(marker);
+    return marker;
+  });
+
+  const crankWrist = cylinderAlongZ(
+    wristRadius,
+    wristLength,
+    wristMaterial,
+    48,
+  );
+  crankWrist.position.set(0, crankRadius, wristCenterZ);
+  crankWrist.userData.role =
+    'single-crank-wrist-running-in-the-shaped-endless-groove';
+  inputRotor.add(crankWrist);
+
+  const wristCap = cylinderAlongZ(
+    wristRadius * 1.22,
+    wristCapDepth,
+    indexMaterial,
+    48,
+  );
+  wristCap.position.set(
+    0,
+    crankRadius,
+    wristFrontZ + wristCapDepth / 2 + 0.012,
+  );
+  wristCap.userData.role = 'visible-cap-showing-the-crank-wrist-path';
+  inputRotor.add(wristCap);
+
+  const yoke = new THREE.Group();
+  yoke.userData.role =
+    'nonrotating-crosshead-with-one-shaped-endless-groove';
+
+  const yokeBody = new THREE.Mesh(
+    centeredExtrusion(
+      horizontalCapsuleShape(yokeOuterHalfHeight, yokeEndCenter),
+      yokeDepth,
+      0.014,
+    ),
+    drivenMaterial,
+  );
+  yokeBody.position.z = yokePlaneZ;
+  yokeBody.userData.role = 'source-proportioned-capsule-crosshead-plate';
+  yoke.add(yokeBody);
+
+  const yokeOutlineThickness = 0.055;
+  const yokeOutline = new THREE.Mesh(
+    centeredExtrusion(
+      horizontalCapsuleRingShape(
+        yokeOuterHalfHeight - yokeOutlineThickness,
+        yokeOuterHalfHeight,
+        yokeEndCenter,
+      ),
+      0.025,
+      0.003,
+    ),
+    darkMaterial,
+  );
+  yokeOutline.position.z = yokeFrontZ + 0.017;
+  yokeOutline.userData.role = 'front-outline-of-capsule-crosshead';
+  yoke.add(yokeOutline);
+
+  const grooveBand = new THREE.Mesh(
+    makeGrooveBandGeometry(
+      crankRadius,
+      outputHalfStroke,
+      grooveHalfWidth,
+    ),
+    grooveMaterial,
+  );
+  grooveBand.position.z = grooveFaceZ;
+  grooveBand.userData.role =
+    'recessed-endless-groove-derived-from-the-uniform-output-law';
+  yoke.add(grooveBand);
+
+  // The output reverses instantaneously at phase 0 and 1/2.  The centerline
+  // has a real corner at each reversal, so circular pockets of the wrist's
+  // running radius complete the two corner envelopes without visual cracks.
+  const grooveCornerPockets = [0, 0.5].map((phase, index) => {
+    const center = grooveCenterAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    );
+    const pocket = cylinderAlongZ(
+      grooveCornerRadius,
+      0.022,
+      grooveMaterial,
+      48,
+    );
+    pocket.position.set(center.x, center.y, grooveFaceZ + 0.002);
+    pocket.userData.role = 'rounded-groove-pocket-at-ideal-output-reversal';
+    pocket.userData.index = index;
+    pocket.userData.phase = phase;
+    yoke.add(pocket);
+    return pocket;
+  });
+
+  const grooveEdges = [-1, 1].map((side) => {
+    const edge = makeLineLoop(
+      sampledGrooveEdge(
+        crankRadius,
+        outputHalfStroke,
+        grooveHalfWidth,
+        side,
+      ),
+      grooveEdgeMaterial,
+      grooveFaceZ + 0.016,
+    );
+    edge.userData.role = 'front-edge-of-shaped-endless-groove';
+    edge.userData.side = side;
+    yoke.add(edge);
+    return edge;
+  });
+
+  const stemWidth = stemHalfWidth * 2;
+  const stemStart = yokeOuterHalfHeight - 0.035;
+  const stemLength = stemEnd - stemStart;
+  const upperStem = new THREE.Mesh(
+    new THREE.BoxGeometry(stemWidth, stemLength, stemDepth),
+    drivenMaterial,
+  );
+  upperStem.position.set(
+    0,
+    (stemStart + stemEnd) / 2,
+    stemPlaneZ,
+  );
+  upperStem.userData.role = 'upper-rectangular-output-stem-rigid-with-crosshead';
+  const lowerStem = new THREE.Mesh(
+    new THREE.BoxGeometry(stemWidth, stemLength, stemDepth),
+    drivenMaterial,
+  );
+  lowerStem.position.set(
+    0,
+    -(stemStart + stemEnd) / 2,
+    stemPlaneZ,
+  );
+  lowerStem.userData.role = 'lower-rectangular-output-stem-rigid-with-crosshead';
+  yoke.add(upperStem, lowerStem);
+
+  const stemIndexes = [-1, 1].map((side) => {
+    const marker = new THREE.Mesh(
+      new THREE.BoxGeometry(stemWidth * 0.88, 0.07, stemDepth + 0.035),
+      indexMaterial,
+    );
+    marker.position.set(
+      0,
+      side * (yokeOuterHalfHeight + 0.58),
+      stemPlaneZ + 0.018,
+    );
+    marker.userData.role = 'visible-linear-index-on-output-stem';
+    marker.userData.side = side;
+    yoke.add(marker);
+    return marker;
+  });
+
+  const guideCheeks = [];
+  for (const sideY of [-1, 1]) {
+    for (const sideX of [-1, 1]) {
+      const innerX = guideInnerHalfWidth;
+      const outerX = guideHalfWidth;
+      const cheekWidth = outerX - innerX;
+      const cheek = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          cheekWidth,
+          guideHalfHeight * 2,
+          0.42,
+        ),
+        frameMaterial,
+      );
+      cheek.position.set(
+        sideX * (innerX + outerX) / 2,
+        shaftCenter.y + sideY * guideCenter,
+        0.02,
+      );
+      cheek.userData.role = 'fixed-cheek-guiding-rectangular-output-stem';
+      cheek.userData.sideX = sideX;
+      cheek.userData.sideY = sideY;
+      guideCheeks.push(cheek);
+    }
+  }
+
+  const rearFrameRails = [
+    makeBeam(
+      new THREE.Vector3(
+        -frameHalfWidth,
+        shaftCenter.y - guideCenter - guideHalfHeight,
+        frameZ,
+      ),
+      new THREE.Vector3(
+        -frameHalfWidth,
+        shaftCenter.y + guideCenter + guideHalfHeight,
+        frameZ,
+      ),
+      { thickness: 0.13, depth: 0.2, color: PALETTE.frame },
+    ),
+    makeBeam(
+      new THREE.Vector3(
+        frameHalfWidth,
+        shaftCenter.y - guideCenter - guideHalfHeight,
+        frameZ,
+      ),
+      new THREE.Vector3(
+        frameHalfWidth,
+        shaftCenter.y + guideCenter + guideHalfHeight,
+        frameZ,
+      ),
+      { thickness: 0.13, depth: 0.2, color: PALETTE.frame },
+    ),
+  ];
+  rearFrameRails.forEach((rail, index) => {
+    rail.userData.role = 'fixed-rear-support-rail';
+    rail.userData.index = index;
+  });
+
+  const guideBrackets = [-1, 1].flatMap((sideY) => [-1, 1].map((sideX) => {
+    const bracket = makeBeam(
+      new THREE.Vector3(
+        sideX * frameHalfWidth,
+        shaftCenter.y + sideY * guideCenter,
+        frameZ,
+      ),
+      new THREE.Vector3(
+        sideX * guideHalfWidth,
+        shaftCenter.y + sideY * guideCenter,
+        -0.18,
+      ),
+      { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
+    );
+    bracket.userData.role = 'fixed-bracket-carrying-output-guide';
+    bracket.userData.sideX = sideX;
+    bracket.userData.sideY = sideY;
+    return bracket;
+  }));
+
+  const rearBearing = new THREE.Mesh(
+    new THREE.TorusGeometry(hubRadius + 0.075, 0.075, 10, 48),
+    frameMaterial,
+  );
+  rearBearing.position.set(shaftCenter.x, shaftCenter.y, -0.63);
+  rearBearing.userData.role = 'fixed-bearing-for-input-shaft';
+
+  const bearingBrackets = [-1, 1].map((sideX) => {
+    const bracket = makeBeam(
+      new THREE.Vector3(sideX * frameHalfWidth, shaftCenter.y, frameZ),
+      rearBearing.position,
+      { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
+    );
+    bracket.userData.role = 'fixed-input-bearing-bracket';
+    return bracket;
+  });
+
+  root.add(
+    ...rearFrameRails,
+    ...guideBrackets,
+    ...bearingBrackets,
+    rearBearing,
+    ...guideCheeks,
+    input,
+    yoke,
+  );
+
+  const stateAtDriverAngle = (driverAngle) => {
+    const phase = positiveModulo(driverAngle / fullTurn, 1);
+    const angle = phase * fullTurn;
+    const outputDisplacement = triangleDisplacementAtPhase(
+      phase,
+      outputHalfStroke,
+    );
+    const outputPhaseSlope = triangleSlopeAtPhase(phase, outputHalfStroke);
+    const outputAngleSlope = outputPhaseSlope / fullTurn;
+    const outputSpeed = outputAngleSlope * inputAngularSpeed;
+    const phaseRate = inputAngularSpeed / fullTurn;
+    const pinPosition = new THREE.Vector3(
+      shaftCenter.x - crankRadius * Math.sin(angle),
+      shaftCenter.y + crankRadius * Math.cos(angle),
+      wristCenterZ,
+    );
+    const pinVelocity = new THREE.Vector3(
+      -crankRadius * Math.cos(angle) * inputAngularSpeed,
+      -crankRadius * Math.sin(angle) * inputAngularSpeed,
+      0,
+    );
+    const pinAcceleration = new THREE.Vector3(
+      crankRadius * Math.sin(angle) * inputAngularSpeed ** 2,
+      -crankRadius * Math.cos(angle) * inputAngularSpeed ** 2,
+      0,
+    );
+    const outputPosition = new THREE.Vector3(
+      shaftCenter.x,
+      shaftCenter.y + outputDisplacement,
+      0,
+    );
+    const outputVelocity = new THREE.Vector3(0, outputSpeed, 0);
+    const relativePinPosition = new THREE.Vector2(
+      pinPosition.x - outputPosition.x,
+      pinPosition.y - outputPosition.y,
+    );
+    const relativePinVelocity = new THREE.Vector2(
+      pinVelocity.x,
+      pinVelocity.y - outputVelocity.y,
+    );
+    const grooveCenter = grooveCenterAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    );
+    const grooveDerivative = grooveDerivativeAtPhase(
+      phase,
+      crankRadius,
+      outputHalfStroke,
+    );
+    const grooveTangent = grooveDerivative.clone().normalize();
+    const grooveNormal = new THREE.Vector2(
+      -grooveTangent.y,
+      grooveTangent.x,
+    );
+    const grooveCenterWorld = new THREE.Vector3(
+      outputPosition.x + grooveCenter.x,
+      outputPosition.y + grooveCenter.y,
+      yokePlaneZ,
+    );
+    const leftWallPoint = grooveCenterWorld.clone().add(new THREE.Vector3(
+      grooveNormal.x * grooveHalfWidth,
+      grooveNormal.y * grooveHalfWidth,
+      0,
+    ));
+    const rightWallPoint = grooveCenterWorld.clone().add(new THREE.Vector3(
+      -grooveNormal.x * grooveHalfWidth,
+      -grooveNormal.y * grooveHalfWidth,
+      0,
+    ));
+    const leftPinPoint = grooveCenterWorld.clone().add(new THREE.Vector3(
+      grooveNormal.x * wristRadius,
+      grooveNormal.y * wristRadius,
+      0,
+    ));
+    const rightPinPoint = grooveCenterWorld.clone().add(new THREE.Vector3(
+      -grooveNormal.x * wristRadius,
+      -grooveNormal.y * wristRadius,
+      0,
+    ));
+    const upperReversalDistance = Math.min(phase, 1 - phase);
+    const lowerReversalDistance = Math.abs(phase - 0.5);
+    const reversalTolerance = 1e-12;
+    const atUpperReversal = upperReversalDistance < reversalTolerance;
+    const atLowerReversal = lowerReversalDistance < reversalTolerance;
+    const atReversal = atUpperReversal || atLowerReversal;
+    const constantOutputSpeedMagnitude = (
+      2 * outputHalfStroke * inputAngularSpeed / Math.PI
+    );
+    const incomingOutputVelocity = atUpperReversal
+      ? constantOutputSpeedMagnitude
+      : atLowerReversal
+        ? -constantOutputSpeedMagnitude
+        : outputSpeed;
+    const outgoingOutputVelocity = atUpperReversal
+      ? -constantOutputSpeedMagnitude
+      : atLowerReversal
+        ? constantOutputSpeedMagnitude
+        : outputSpeed;
+    const stage = atUpperReversal
+      ? 'upper-instantaneous-reversal'
+      : atLowerReversal
+        ? 'lower-instantaneous-reversal'
+        : outputSpeed < 0
+          ? 'uniform-downstroke'
+          : 'uniform-upstroke';
+    return {
+      atReversal,
+      atUpperReversal,
+      atLowerReversal,
+      constantOutputSpeedMagnitude,
+      driverAngle,
+      driverAngularSpeed: inputAngularSpeed,
+      driverPhase: phase,
+      grooveCenter,
+      grooveCenterError: relativePinPosition.distanceTo(grooveCenter),
+      grooveCenterWorld,
+      grooveDerivative,
+      grooveNormal,
+      grooveTangent,
+      guideCenterlineError: Math.abs(outputPosition.x - shaftCenter.x),
+      guideRunningClearance,
+      incomingOutputVelocity,
+      inputRevolutions: (driverAngle - sourcePoseAngle) / fullTurn,
+      leftPinPoint,
+      leftWallGap: leftPinPoint.distanceTo(leftWallPoint),
+      leftWallPoint,
+      normalizedDriverAngle: angle,
+      outgoingOutputVelocity,
+      outputAcceleration: new THREE.Vector3(0, 0, 0),
+      outputDisplacement,
+      outputPosition,
+      outputVelocity,
+      phaseRate,
+      pinAcceleration,
+      pinAxisPoint: pinPosition.clone(),
+      pinOrbitError: Math.abs(
+        Math.hypot(
+          pinPosition.x - shaftCenter.x,
+          pinPosition.y - shaftCenter.y,
+        ) - crankRadius,
+      ),
+      pinPosition,
+      pinVelocity,
+      relativePinPosition,
+      relativePinVelocity,
+      relativeVelocityConstraintError: relativePinVelocity.distanceTo(
+        grooveDerivative.clone().multiplyScalar(phaseRate),
+      ),
+      rightPinPoint,
+      rightWallGap: rightPinPoint.distanceTo(rightWallPoint),
+      rightWallPoint,
+      stage,
+      velocityJumpAtReversal: 2 * constantOutputSpeedMagnitude,
+      yokeAngularSpeed: 0,
+      yokeRotation: 0,
+    };
+  };
+
+  const stateAtPhase = (phase) => stateAtDriverAngle(phase * fullTurn);
+  const stateAtTime = (time) => stateAtDriverAngle(
+    sourcePoseAngle + inputAngularSpeed * time,
+  );
+
+  const contacts = {
+    crankWristGroove: {
+      axis: Z_AXIS.clone(),
+      centerError: 0,
+      grooveHalfWidth,
+      runningClearance: grooveRunningClearance,
+      wristRadius,
+    },
+    stemGuides: {
+      axis: Y_AXIS.clone(),
+      centerlineError: 0,
+      runningClearance: guideRunningClearance,
+    },
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    inputRotor.rotation.z = state.driverAngle;
+    input.userData.angularSpeed = state.driverAngularSpeed;
+    yoke.position.copy(state.outputPosition);
+    yoke.rotation.set(0, 0, 0);
+    yoke.userData.angularSpeed = 0;
+    yoke.userData.velocity = state.outputVelocity.clone();
+
+    contacts.crankWristGroove.centerError = state.grooveCenterError;
+    contacts.crankWristGroove.grooveCenter =
+      state.grooveCenterWorld.clone();
+    contacts.crankWristGroove.leftPinPoint = state.leftPinPoint.clone();
+    contacts.crankWristGroove.leftWallGap = state.leftWallGap;
+    contacts.crankWristGroove.leftWallPoint = state.leftWallPoint.clone();
+    contacts.crankWristGroove.pinAxisPoint = state.pinAxisPoint.clone();
+    contacts.crankWristGroove.rightPinPoint = state.rightPinPoint.clone();
+    contacts.crankWristGroove.rightWallGap = state.rightWallGap;
+    contacts.crankWristGroove.rightWallPoint = state.rightWallPoint.clone();
+    contacts.crankWristGroove.tangent = state.grooveTangent.clone();
+    contacts.crankWristGroove.velocityConstraintError =
+      state.relativeVelocityConstraintError;
+    contacts.stemGuides.centerlineError = state.guideCenterlineError;
+    contacts.stemGuides.outputPosition = state.outputPosition.clone();
+    contacts.stemGuides.rotationError = state.yokeRotation;
+    root.userData.kinematics = state;
+  };
+
+  root.userData.archetype =
+    'uniform-velocity-endless-groove-crosshead';
+  root.userData.blocks = {
+    bearingBrackets,
+    crankWrist,
+    diskBody,
+    diskRim,
+    diskRotationIndexes,
+    grooveBand,
+    grooveCornerPockets,
+    grooveEdges,
+    guideBrackets,
+    guideCheeks,
+    hubFace,
+    input,
+    inputRotor,
+    inputShaft,
+    lowerStem,
+    rearBearing,
+    rearFrameRails,
+    shaftHub,
+    stemIndexes,
+    upperStem,
+    wristCap,
+    yoke,
+    yokeBody,
+    yokeOutline,
+  };
+  root.userData.cameraDistanceScale = 1.06;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.25, -3.8, -0.92),
+    new THREE.Vector3(3.25, 3.65, 0.88),
+  );
+  root.userData.contacts = contacts;
+  root.userData.degreesOfFreedom = {
+    input: 'one uniformly rotating crank disk about its fixed z axis',
+    mechanism: 1,
+    output:
+      'one nonrotating crosshead constrained to pure vertical translation',
+  };
+  root.userData.fidelity = 'authored';
+  root.userData.geometry = {
+    axis: Z_AXIS.clone(),
+    crankRadius,
+    diskCenterZ,
+    diskDepth,
+    diskFrontZ,
+    diskRadius,
+    frameHalfWidth,
+    frameZ,
+    fullTurn,
+    grooveCornerRadius,
+    grooveFaceZ,
+    grooveHalfWidth,
+    grooveRunningClearance,
+    guideAxis: Y_AXIS.clone(),
+    guideCenter,
+    guideHalfHeight,
+    guideHalfWidth,
+    guideInnerHalfWidth,
+    guideRunningClearance,
+    hubRadius,
+    inputAngularSpeed,
+    inputCyclePeriod,
+    inputRevolutionsPerMinute,
+    outputHalfStroke,
+    outputMaximumY: shaftCenter.y + outputHalfStroke,
+    outputMinimumY: shaftCenter.y - outputHalfStroke,
+    outputStroke,
+    shaftCenter: shaftCenter.clone(),
+    shaftCenterZ,
+    shaftLength,
+    shaftRadius,
+    sourceCrankRadius,
+    sourceDiskRadius,
+    sourceGuideCenter,
+    sourceGuideHalfHeight,
+    sourceGuideHalfWidth,
+    sourceHubRadius,
+    sourceOutputHalfStroke,
+    sourcePoseAngle,
+    sourcePosePhase,
+    sourceScale,
+    sourceStemEnd,
+    sourceStemHalfWidth,
+    sourceWristRadius,
+    sourceYokeEndCenter,
+    sourceYokeOuterHalfHeight,
+    stemDepth,
+    stemEnd,
+    stemHalfWidth,
+    stemLength,
+    stemPlaneZ,
+    stemStart,
+    wristCenterZ,
+    wristFrontZ,
+    wristLength,
+    wristRadius,
+    yokeDepth,
+    yokeEndCenter,
+    yokeFrontZ,
+    yokeOuterHalfHeight,
+    yokePlaneZ,
+  };
+  root.userData.mechanism =
+    'one-uniformly-rotating-nine-point-seven-radius-crank-wrist-follows-one-continuous-shaped-endless-groove-in-a-nonrotating-vertical-crosshead-whose-triangular-displacement-law-gives-equal-constant-speed-up-and-down-strokes-with-instantaneous-end-reversals';
+  root.userData.sourceAnimation = {
+    available: true,
+    effectiveInputRevolutionsPerMinute: inputRevolutionsPerMinute,
+    officialCanvasModelPresent: true,
+    officialDurationSeconds: inputCyclePeriod,
+    sourceCoordinateCyclesPerMinute,
+    sourceUrl: movement.sourceUrl,
+  };
+  root.userData.sourceReference = {
+    brownPlate354: {
+      imageHeight: 525,
+      imageWidth: 525,
+      rasterCrankCenter: new THREE.Vector2(267, 294),
+      rasterCrankWrist: new THREE.Vector2(317, 108),
+      rasterMeasurementUncertaintyPixels: 7,
+    },
+    officialDescription: movement.description,
+    officialModelCoordinates: {
+      crankRadius: sourceCrankRadius,
+      diskRadius: sourceDiskRadius,
+      guideCenters: [-sourceGuideCenter, sourceGuideCenter],
+      outputHalfStroke: sourceOutputHalfStroke,
+      stemHalfWidth: sourceStemHalfWidth,
+      wristRadius: sourceWristRadius,
+      yokeEndCenter: sourceYokeEndCenter,
+      yokeOuterHalfHeight: sourceYokeOuterHalfHeight,
+    },
+    primaryScan: {
+      archiveIdentifier: 'fivehundredseven00browiala',
+      edition: 21,
+      publicationYear: 1908,
+    },
+    referenceMovement93: {
+      difference:
+        'movement 93 uses a straight transverse slot and therefore gives sinusoidal Scotch-yoke output instead of uniform rectilinear velocity',
+      sourceUrl: 'https://507movements.com/mm_093.html',
+    },
+  };
+  root.userData.stateAtDriverAngle = stateAtDriverAngle;
+  root.userData.stateAtPhase = stateAtPhase;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.transmission = {
+    construction:
+      'for crank phase p, the local groove center is the circular wrist position minus the prescribed triangular crosshead displacement',
+    grooveEquation:
+      'x=-r sin(2*pi*p); y=r cos(2*pi*p)-triangle(p, halfStroke)',
+    idealReversal:
+      'velocity is constant between endpoints and changes sign instantaneously at p=0 and p=1/2, as in the historical idealization',
+    outputLaw:
+      'the crosshead displacement is linear in crank phase on each half-turn, so equal crank-angle increments produce equal rectilinear increments',
+  };
+  root.userData.grooveCenterAtPhase = (phase) => grooveCenterAtPhase(
+    phase,
+    crankRadius,
+    outputHalfStroke,
+  );
+  root.userData.grooveDerivativeAtPhase = (phase) => grooveDerivativeAtPhase(
+    phase,
+    crankRadius,
+    outputHalfStroke,
+  );
+
+  update(0);
+  markShadows(root);
+  for (const line of grooveEdges) {
+    line.castShadow = false;
+    line.receiveShadow = false;
+  }
+  return {
+    cameraDirection: new THREE.Vector3(4.4, 2.8, 13.5),
+    root,
+    update,
+  };
+}
+
+export function createAuthoredUniformGrooveCrossheadMovement(movement) {
+  if (movement.id !== 354) return null;
+  return uniformVelocityEndlessGrooveCrosshead(movement);
+}

@@ -1,0 +1,93 @@
+// Source-fitted ten-stud index with a finite rounded tappet and a bored stop.
+import * as THREE from 'three';
+import { PALETTE, matte, markShadows } from './primitives.js';
+import { turnedClutchGeometry } from './clutch-section-geometry.js';
+import { makeTappetStudStopContact, TAU, add, sub, scale, norm, rotate, polar, closestSegment } from './tappet-stud-stop-contact.js';
+
+function simplify(points, tolerance=2e-7) {
+  if(points.length<3)return points;
+  let maximum=0,index=0;
+  for(let i=1;i+1<points.length;i++){
+    const distance=closestSegment(points[i],points[0],points.at(-1)).distance;
+    if(distance>maximum){maximum=distance;index=i;}
+  }
+  if(maximum<=tolerance)return [points[0],points.at(-1)];
+  return [...simplify(points.slice(0,index+1),tolerance).slice(0,-1),...simplify(points.slice(index),tolerance)];
+}
+
+export function makeTappetStudStop(options={}) {
+  const motion=makeTappetStudStopContact({toeRadius:0,leftExtension:.05,rightExtension:-.03,...options});
+  const {p}=motion, root=new THREE.Group(), input=new THREE.Group(), output=new THREE.Group(), stop=new THREE.Group();
+  root.add(input,output,stop);output.position.x=p.D;stop.position.set(...p.pivot,0);
+  const parts={},families={},paths={};
+  const attach=(name,geometry,color,parent,family)=>{
+    const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.15,roughness:.64}));
+    mesh.name=name;parts[name]=mesh;families[name]=family;parent.add(mesh);return mesh;
+  };
+  const extrusion=(shape,lo,hi,segments=96)=>{
+    const geometry=new THREE.ExtrudeGeometry(shape,{depth:hi-lo,bevelEnabled:false,curveSegments:segments});
+    geometry.translate(0,0,lo);return geometry;
+  };
+  const drum=(radius,bore,lo,hi,segments=512)=>turnedClutchGeometry([[lo,bore],[lo,radius],[hi,radius],[hi,bore]],{angularSegments:segments});
+  const polygon=points=>{const s=new THREE.Shape(points.map(q=>new THREE.Vector2(...q)));s.closePath();return s;};
+  const notch=[];
+  for(let i=0;i<=4096;i++){
+    const gamma=p.gammaStart+(p.gammaEnd-p.gammaStart)*i/4096;
+    const theta=motion.stopAt(motion.motion(gamma).beta).theta;
+    notch.push(rotate(add(p.pivot,rotate(p.toeCenter,theta)),-gamma));
+  }
+  const first=Math.atan2(notch[0][1],notch[0][0]),last=Math.atan2(notch.at(-1)[1],notch.at(-1)[0]);
+  const rim=Array.from({length:4096},(_,i)=>polar(p.driverRadius,TAU*i/4096)).filter(q=>{const a=Math.atan2(q[1],q[0]);return a<first||a>last;});
+  paths.cam=[...simplify(notch.map(q=>q.map(Math.fround))),...rim].sort((a,b)=>Math.atan2(a[1],a[0])-Math.atan2(b[1],b[0]));
+  attach('driverDisk',extrusion(polygon(paths.cam),-.10,.10),PALETTE.driver,input,'input');
+  attach('driverHub',drum(.26,0,-.15,.475),PALETTE.driver,input,'input');
+  attach('driverShaft',drum(.17,0,-.35,.49),PALETTE.ink,input,'input');
+  attach('drivenDisk',drum(1.26,0,-.10,.10),PALETTE.driven,output,'output');
+  attach('drivenHub',drum(.26,0,-.15,.475),PALETTE.driven,output,'output');
+  attach('drivenShaft',drum(.17,0,-.35,.49),PALETTE.ink,output,'output');
+  for(let i=0;i<10;i++){
+    const mesh=attach('stud'+i,drum(p.pinRadius,0,.085,.48,2048),PALETTE.ink,output,'output');
+    mesh.position.set(...polar(p.R,p.betaStart+i*p.pitch),0);
+  }
+  const upper=[.14,.15],v=sub(upper,p.tipCenter);
+  const tangentAngle=Math.atan2(v[1],v[0])-Math.acos(p.tipRadius/norm(v));
+  const tappet=new THREE.Shape();tappet.moveTo(.11,-p.h);tappet.lineTo(p.tipCenter[0],-p.h);
+  tappet.absarc(...p.tipCenter,p.tipRadius,-Math.PI/2,tangentAngle,false);
+  tappet.lineTo(...upper);tappet.quadraticCurveTo(-.11,.12,-.10,-.06);tappet.quadraticCurveTo(-.08,-.22,.11,-p.h);tappet.closePath();
+  paths.tappet=tappet.getPoints(512).map(q=>q.toArray());
+  attach('tappet',extrusion(tappet,.325,.435,512),PALETTE.accent,input,'input');
+  const localPixel=(x,y)=>sub([(x-352)/260,(415-y)/260],p.pivot);
+  const outline=new THREE.Shape();outline.moveTo(...p.toeCenter);
+  const quadratic=(cx,cy,x,y)=>outline.quadraticCurveTo(...localPixel(cx,cy),...localPixel(x,y));
+  const line=(x,y)=>outline.lineTo(...localPixel(x,y));
+  quadratic(512,782,615,736);quadratic(638,648,705,676);quadratic(735,686,745,706);
+  quadratic(805,735,844,725);outline.lineTo(...p.tooth[0]);outline.lineTo(...p.tooth[1]);outline.lineTo(...p.tooth[2]);
+  quadratic(1000,713,948,746);quadratic(832,793,763,814);quadratic(710,820,671,817);
+  quadratic(550,857,440,835);line(390,822);outline.closePath();
+  paths.stop=outline.getPoints(96).map(q=>q.toArray());
+  const bore=new THREE.Path();bore.absarc(0,0,.174,0,TAU,false);outline.holes.push(bore);
+  attach('stopBody',extrusion(outline,.145,.265,96),PALETTE.accent,stop,'stop');
+  paths.toe=[p.toeCenter,add(p.toeCenter,[.12,-.25]),add(p.toeCenter,[-.08,-.34])];
+  attach('stopToe',extrusion(polygon(paths.toe),-.07,.17),PALETTE.accent,stop,'stop');
+  const pivot=attach('fixedPivot',drum(.17,0,-.18,.30),PALETTE.ink,root,'fixed');pivot.position.set(...p.pivot,0);
+  for(const [name,lo,hi] of [['rearPivotHead',.115,.135],['frontPivotHead',.275,.295]]){
+    const head=attach(name,drum(.23,.17,lo,hi),PALETTE.ink,root,'fixed');head.position.set(...p.pivot,0);
+  }
+  p.inputSpeed=.65;p.period=TAU/p.inputSpeed;p.sourceGamma=16.15*Math.PI/180;
+  const stateAtTime=time=>{
+    const travel=p.gammaStart-p.sourceGamma+p.inputSpeed*time,cycle=Math.floor(travel/TAU),phase=travel-cycle*TAU;
+    const gamma=p.gammaStart-phase,s=motion.motion(gamma), q=motion.stopAt(s.beta);
+    return {...s,cycle,phase,gamma,driverAngle:p.sourceGamma-p.inputSpeed*time,
+      outputAngle:cycle*p.pitch+s.beta-p.betaStart,stopAngle:q.theta,stop:q,
+      stage:gamma>p.gammaEnd?'index-'+s.stage:'locked-dwell'};
+  };
+  root.userData={reconstructionStatus:'rebuilt',fidelity:'authored',hideGround:true,cameraFov:9,
+    mechanism:'single-tappet-ten-stud-index-with-alternating-notch-stop',
+    fullCameraDirection:new THREE.Vector3(-5,3,10),shadowCameraHalfExtent:4.7,shadowBias:-.00012,shadowNormalBias:.005,
+    blocks:{input,output,stop},parts,families,geometry:p,paths,stateAtTime,
+    animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:5,
+    idealConstraints:'The shafts have ideal grounded bearings. Rigid contact prescribes the index and locking; initial strike impulses, compliance and loaded inertia are not simulated.'};
+  markShadows(root);
+  const update=time=>{const state=stateAtTime(time);input.rotation.z=state.driverAngle;output.rotation.z=state.outputAngle;stop.rotation.z=state.stopAngle;root.userData.kinematics=state;};
+  update(0);return {root,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
+}

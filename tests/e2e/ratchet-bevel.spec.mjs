@@ -1,0 +1,38 @@
+import { expect, test } from '@playwright/test';
+
+test('049 plays both ratchet strokes, pauses cleanly and supports orbit and mobile controls', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/#/movement/049');
+  const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByText('Four ratchet teeth per half-stroke avoid lost motion', { exact: false })).toBeVisible();
+  await play.click();
+  await expect(play).toHaveAttribute('aria-pressed', 'false');
+  const before = await canvas.screenshot();
+  await play.click();
+  await page.waitForTimeout(2300);
+  await play.click();
+  const after = await canvas.screenshot();
+  expect(after.equals(before)).toBe(false);
+  await page.waitForTimeout(150);
+  expect((await canvas.screenshot()).equals(after)).toBe(true);
+  const desktop = await canvas.boundingBox();
+  await page.mouse.move(desktop.x + desktop.width / 2, desktop.y + desktop.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(desktop.x + desktop.width * 0.7, desktop.y + desktop.height * 0.6, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  expect((await canvas.screenshot()).equals(after)).toBe(false);
+  await page.getByRole('button', { name: 'Reset view' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await play.scrollIntoViewIfNeeded();
+  const mobile = await play.boundingBox();
+  expect(mobile.x).toBeGreaterThanOrEqual(0);
+  expect(mobile.x + mobile.width).toBeLessThanOrEqual(390);
+  await play.click();
+  await page.waitForTimeout(450);
+  await play.click();
+  await expect(canvas).toBeVisible();
+  expect(errors).toEqual([]);
+});

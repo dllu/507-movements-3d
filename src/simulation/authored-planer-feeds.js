@@ -1,0 +1,637 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeDynamicLink,
+  markShadows,
+  matte,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+
+function positiveModulo(value, modulus) {
+  return ((value % modulus) + modulus) % modulus;
+}
+
+function cylinderAlongZ(radius, length, material, segments = 40) {
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function makeFaceIndexes({
+  radius,
+  rollerWidth,
+  rotor,
+  whiteMaterial,
+}) {
+  const indexes = [];
+  for (const side of [-1, 1]) {
+    const index = new THREE.Mesh(
+      new THREE.BoxGeometry(radius * 0.70, 0.065, 0.035),
+      whiteMaterial,
+    );
+    index.position.set(
+      radius * 0.40,
+      0,
+      side * (rollerWidth / 2 + 0.024),
+    );
+    index.userData.role = 'white-roller-face-spin-index';
+    index.userData.side = side;
+    rotor.add(index);
+    indexes.push(index);
+  }
+  return indexes;
+}
+
+function makeSmoothSupportingRoller({
+  material,
+  pinMaterial,
+  radius,
+  rollerWidth,
+  whiteMaterial,
+}) {
+  const root = new THREE.Group();
+  root.userData.role = 'smooth-lower-supporting-feed-roller';
+  const rotor = new THREE.Group();
+  root.add(rotor);
+
+  const drum = cylinderAlongZ(radius, rollerWidth, material, 64);
+  drum.userData.role = 'smooth-cylindrical-workpiece-support-surface';
+  rotor.add(drum);
+
+  const shaft = cylinderAlongZ(0.16, rollerWidth + 0.86, pinMaterial, 28);
+  shaft.userData.role = 'lower-roller-shaft';
+  rotor.add(shaft);
+
+  const faceIndexes = makeFaceIndexes({
+    radius,
+    rollerWidth,
+    rotor,
+    whiteMaterial,
+  });
+  root.userData.drum = drum;
+  root.userData.faceIndexes = faceIndexes;
+  root.userData.rotor = rotor;
+  root.userData.shaft = shaft;
+  return markShadows(root);
+}
+
+function makeToothedFeedRoller({
+  material,
+  pinMaterial,
+  pitchRadius,
+  rollerWidth,
+  rootRadius,
+  toothCount,
+  toothTipRadius,
+  whiteMaterial,
+}) {
+  const root = new THREE.Group();
+  root.userData.role = 'toothed-upper-woodworth-feed-roller';
+  const rotor = new THREE.Group();
+  root.add(rotor);
+
+  const core = cylinderAlongZ(rootRadius, rollerWidth, material, 64);
+  core.userData.role = 'toothed-feed-roller-root-cylinder';
+  rotor.add(core);
+
+  const toothPitch = FULL_TURN / toothCount;
+  const toothHeight = toothTipRadius - rootRadius;
+  const toothTangentialWidth = pitchRadius * toothPitch * 0.43;
+  const teeth = [];
+  for (let index = 0; index < toothCount; index += 1) {
+    const baseAngle = -Math.PI / 2 + index * toothPitch;
+    const tooth = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toothTangentialWidth,
+        toothHeight,
+        rollerWidth * 0.96,
+      ),
+      material,
+    );
+    const centerRadius = (rootRadius + toothTipRadius) / 2;
+    tooth.position.set(
+      centerRadius * Math.cos(baseAngle),
+      centerRadius * Math.sin(baseAngle),
+      0,
+    );
+    tooth.rotation.z = baseAngle - Math.PI / 2;
+    tooth.userData.baseAngle = baseAngle;
+    tooth.userData.role = 'radial-work-gripping-feed-tooth';
+    tooth.userData.toothIndex = index;
+    rotor.add(tooth);
+    teeth.push(tooth);
+  }
+
+  const shaft = cylinderAlongZ(0.15, rollerWidth + 0.86, pinMaterial, 28);
+  shaft.userData.role = 'upper-roller-shaft';
+  rotor.add(shaft);
+
+  const faceIndexes = makeFaceIndexes({
+    radius: rootRadius,
+    rollerWidth,
+    rotor,
+    whiteMaterial,
+  });
+  root.userData.core = core;
+  root.userData.faceIndexes = faceIndexes;
+  root.userData.rotor = rotor;
+  root.userData.shaft = shaft;
+  root.userData.teeth = teeth;
+  return markShadows(root);
+}
+
+function makeRollerFrame({
+  lowerCenter,
+  material,
+  rollerWidth,
+  upperCenter,
+}) {
+  const group = new THREE.Group();
+  group.userData.role = 'fixed-planer-feed-roller-bearing-frame';
+  const bearingBlocks = [];
+  const bearingRings = [];
+  const standards = [];
+  const arms = [];
+  const bearingZ = rollerWidth / 2 + 0.20;
+  const standardX = 1.82;
+
+  for (const side of [-1, 1]) {
+    const z = side * bearingZ;
+    const standard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, upperCenter.y + 1.14, 0.25),
+      material,
+    );
+    standard.position.set(
+      standardX,
+      (upperCenter.y - 0.64) / 2,
+      z,
+    );
+    standard.userData.role = 'fixed-planer-feed-frame-standard';
+    group.add(standard);
+    standards.push(standard);
+
+    for (const center of [lowerCenter, upperCenter]) {
+      const arm = makeDynamicLink({
+        color: PALETTE.frame,
+        depth: 0.17,
+        jointRadius: 0.001,
+        thickness: 0.18,
+      });
+      arm.userData.setEndpoints(
+        new THREE.Vector3(standardX, center.y, z),
+        new THREE.Vector3(0, center.y, z),
+      );
+      arm.userData.role = 'fixed-bearing-support-arm';
+      group.add(arm);
+      arms.push(arm);
+
+      const block = new THREE.Mesh(
+        new THREE.BoxGeometry(0.48, 0.48, 0.20),
+        material,
+      );
+      block.position.set(0, center.y, z);
+      block.userData.role = 'roller-shaft-bearing-block';
+      group.add(block);
+      bearingBlocks.push(block);
+
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.20, 0.045, 10, 32),
+        matte(PALETTE.ink, { metalness: 0.26, roughness: 0.47 }),
+      );
+      ring.position.set(0, center.y, side * (bearingZ + 0.105));
+      ring.userData.role = 'roller-shaft-bearing-ring';
+      group.add(ring);
+      bearingRings.push(ring);
+    }
+  }
+
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(4.25, 0.24, rollerWidth + 1.03),
+    material,
+  );
+  base.position.set(0.32, -1.58, 0);
+  base.userData.role = 'planer-feed-frame-base';
+  group.add(base);
+
+  group.userData.arms = arms;
+  group.userData.base = base;
+  group.userData.bearingBlocks = bearingBlocks;
+  group.userData.bearingRings = bearingRings;
+  group.userData.standards = standards;
+  return markShadows(group);
+}
+
+function makePeriodicWorkpiece({
+  boardCenterY,
+  markerPitch,
+  material,
+  thickness,
+  width,
+  whiteMaterial,
+  workpieceLength,
+}) {
+  const group = new THREE.Group();
+  group.userData.role = 'continuously-fed-planer-workpiece-material-frame';
+
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(workpieceLength, thickness, width),
+    material,
+  );
+  board.position.y = boardCenterY;
+  board.userData.role = 'wood-plank-between-feed-rollers';
+  group.add(board);
+
+  const markers = [];
+  const markerCount = Math.ceil(workpieceLength / markerPitch) + 5;
+  for (let index = -markerCount; index <= markerCount; index += 1) {
+    const marker = new THREE.Mesh(
+      new THREE.BoxGeometry(0.055, 0.025, width * 0.64),
+      whiteMaterial,
+    );
+    marker.position.set(
+      index * markerPitch,
+      boardCenterY + thickness / 2 + 0.014,
+      0,
+    );
+    marker.userData.materialStation = index * markerPitch;
+    marker.userData.role = 'white-fed-workpiece-material-index';
+    group.add(marker);
+    markers.push(marker);
+  }
+  group.userData.board = board;
+  group.userData.markers = markers;
+  return markShadows(group);
+}
+
+function woodworthPlanerFeed(movement) {
+  const root = new THREE.Group();
+
+  // The official canvas puts the lower center at y=0, its smooth contact at
+  // y=4, the plank faces at y=4 and y=5, and the toothed-roller center at
+  // y=9.  Thus both working radii are exactly 4 and must turn at equal and
+  // opposite angular speeds for no-slip feed.
+  const sourceWorkingRadius = 4;
+  const sourcePlankThickness = 1;
+  const sourceCenterDistance = 9;
+  const sourceUpperRootRadius = 3;
+  const sourceToothCount = 20;
+  const sourceScale = 0.32;
+  const workingRadius = sourceWorkingRadius * sourceScale;
+  const plankThickness = sourcePlankThickness * sourceScale;
+  const centerDistance = sourceCenterDistance * sourceScale;
+  const upperRootRadius = sourceUpperRootRadius * sourceScale;
+  const toothCount = sourceToothCount;
+  const toothPitch = FULL_TURN / toothCount;
+  const toothTipRadius = workingRadius + 0.05;
+  const rollerWidth = 1.42;
+  const plankWidth = 0.94;
+  const lowerCenter = new THREE.Vector3(0, 0, 0);
+  const upperCenter = new THREE.Vector3(0, centerDistance, 0);
+  const boardBottomY = workingRadius;
+  const boardTopY = boardBottomY + plankThickness;
+  const boardCenterY = (boardBottomY + boardTopY) / 2;
+  const cycleDuration = 6.4;
+  const angularSpeed = FULL_TURN / cycleDuration;
+  const feedSpeed = workingRadius * angularSpeed;
+  const feedTravelPerCycle = FULL_TURN * workingRadius;
+  const markerRepeatsPerCycle = 5;
+  const markerPitch = feedTravelPerCycle / markerRepeatsPerCycle;
+  const workpieceLength = 24;
+
+  const upperMaterial = matte(PALETTE.driver, {
+    metalness: 0.12,
+    roughness: 0.60,
+  });
+  const lowerMaterial = matte(PALETTE.driven, {
+    metalness: 0.15,
+    roughness: 0.56,
+  });
+  const pinMaterial = matte(PALETTE.ink, {
+    metalness: 0.30,
+    roughness: 0.43,
+  });
+  const boardMaterial = matte(PALETTE.brass, {
+    metalness: 0.02,
+    roughness: 0.73,
+  });
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.12,
+    roughness: 0.69,
+  });
+  const whiteMaterial = matte(PALETTE.white, {
+    metalness: 0,
+    roughness: 0.43,
+  });
+
+  const lowerRoller = makeSmoothSupportingRoller({
+    material: lowerMaterial,
+    pinMaterial,
+    radius: workingRadius,
+    rollerWidth,
+    whiteMaterial,
+  });
+  lowerRoller.position.copy(lowerCenter);
+  root.add(lowerRoller);
+
+  const upperRoller = makeToothedFeedRoller({
+    material: upperMaterial,
+    pinMaterial,
+    pitchRadius: workingRadius,
+    rollerWidth,
+    rootRadius: upperRootRadius,
+    toothCount,
+    toothTipRadius,
+    whiteMaterial,
+  });
+  upperRoller.position.copy(upperCenter);
+  root.add(upperRoller);
+
+  const workpiece = makePeriodicWorkpiece({
+    boardCenterY,
+    markerPitch,
+    material: boardMaterial,
+    thickness: plankThickness,
+    whiteMaterial,
+    width: plankWidth,
+    workpieceLength,
+  });
+  root.add(workpiece);
+
+  const frame = makeRollerFrame({
+    lowerCenter,
+    material: frameMaterial,
+    rollerWidth,
+    upperCenter,
+  });
+  root.add(frame);
+
+  const lowerContactIndex = new THREE.Mesh(
+    new THREE.SphereGeometry(0.050, 16, 10),
+    whiteMaterial,
+  );
+  lowerContactIndex.position.set(0, boardBottomY, rollerWidth / 2 + 0.055);
+  lowerContactIndex.userData.role = 'white-lower-no-slip-contact-index';
+  root.add(lowerContactIndex);
+
+  const upperContactIndex = new THREE.Mesh(
+    new THREE.SphereGeometry(0.050, 16, 10),
+    whiteMaterial,
+  );
+  upperContactIndex.position.set(0, boardTopY, rollerWidth / 2 + 0.055);
+  upperContactIndex.userData.role = 'white-upper-pitch-contact-index';
+  root.add(upperContactIndex);
+
+  const stateAtTime = (time) => {
+    const wrappedTime = positiveModulo(time, cycleDuration);
+    const phase = wrappedTime / cycleDuration;
+    const upperAngle = FULL_TURN * phase;
+    const lowerAngle = -upperAngle;
+    const feedDisplacement = workingRadius * upperAngle;
+    const workpieceOffset = feedDisplacement - feedTravelPerCycle / 2;
+    const activeToothIndex = positiveModulo(
+      -Math.round(upperAngle / toothPitch),
+      toothCount,
+    );
+    const activeToothAngle = -Math.PI / 2
+      + activeToothIndex * toothPitch + upperAngle;
+    const toothAngleFromNip = Math.atan2(
+      Math.sin(activeToothAngle + Math.PI / 2),
+      Math.cos(activeToothAngle + Math.PI / 2),
+    );
+    const activeToothTip = upperCenter.clone().add(
+      new THREE.Vector3(
+        toothTipRadius * Math.sin(toothAngleFromNip),
+        -toothTipRadius * Math.cos(toothAngleFromNip),
+        0,
+      ),
+    );
+    const toothBiteDepth = boardTopY - activeToothTip.y;
+    const lowerContact = new THREE.Vector3(0, boardBottomY, 0);
+    const upperPitchContact = new THREE.Vector3(0, boardTopY, 0);
+    const feedVelocity = new THREE.Vector3(feedSpeed, 0, 0);
+    return {
+      activeToothAngle,
+      activeToothIndex,
+      activeToothTip,
+      boardBottomY,
+      boardTopY,
+      feedDisplacement,
+      feedSpeed,
+      feedVelocity,
+      lowerAngle,
+      lowerAngularSpeed: -angularSpeed,
+      lowerContact,
+      lowerSurfaceVelocity: feedVelocity.clone(),
+      phase,
+      toothAngleFromNip,
+      toothBiteDepth,
+      upperAngle,
+      upperAngularSpeed: angularSpeed,
+      upperPitchContact,
+      upperPitchSurfaceVelocity: feedVelocity.clone(),
+      workpieceOffset,
+    };
+  };
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    upperRoller.userData.rotor.rotation.z = state.upperAngle;
+    lowerRoller.userData.rotor.rotation.z = state.lowerAngle;
+    workpiece.position.x = state.workpieceOffset;
+    workpiece.userData.materialVelocity = state.feedVelocity.clone();
+    root.userData.contacts = {
+      lowerSmoothNip: {
+        boardPoint: state.lowerContact.clone(),
+        normalGap: state.boardBottomY
+          - (lowerCenter.y + workingRadius),
+        rollerPoint: state.lowerContact.clone(),
+        slipVelocity: state.lowerSurfaceVelocity.x - state.feedSpeed,
+      },
+      upperToothedNip: {
+        activeToothIndex: state.activeToothIndex,
+        pitchPoint: state.upperPitchContact.clone(),
+        pitchSlipVelocity:
+          state.upperPitchSurfaceVelocity.x - state.feedSpeed,
+        toothBiteDepth: state.toothBiteDepth,
+        toothTip: state.activeToothTip.clone(),
+      },
+    };
+    root.userData.kinematics = state;
+  };
+
+  const sourceToothCenterRadius = Math.hypot(0.740058, 4.672543);
+  root.userData = {
+    archetype:
+      'equal-working-radius-toothed-upper-feed-and-smooth-lower-support-roller-planer-nip',
+    blocks: {
+      frame,
+      frameArms: frame.userData.arms,
+      frameBearingBlocks: frame.userData.bearingBlocks,
+      frameBearingRings: frame.userData.bearingRings,
+      lowerContactIndex,
+      lowerFaceIndexes: lowerRoller.userData.faceIndexes,
+      lowerRoller,
+      lowerRotor: lowerRoller.userData.rotor,
+      upperContactIndex,
+      upperFaceIndexes: upperRoller.userData.faceIndexes,
+      upperRoller,
+      upperRotor: upperRoller.userData.rotor,
+      upperTeeth: upperRoller.userData.teeth,
+      workpiece,
+      workpieceBoard: workpiece.userData.board,
+      workpieceIndexes: workpiece.userData.markers,
+    },
+    constraintResiduals: {
+      centerStack:
+        workingRadius + plankThickness + workingRadius - centerDistance,
+      lowerBoardContact: boardBottomY - (lowerCenter.y + workingRadius),
+      noSlipSpeed: workingRadius * angularSpeed - feedSpeed,
+      sourceCenterStack:
+        sourceWorkingRadius * 2 + sourcePlankThickness
+          - sourceCenterDistance,
+      upperBoardPitchContact:
+        upperCenter.y - workingRadius - boardTopY,
+    },
+    degreesOfFreedom: {
+      independentPrescribedInputs: 1,
+      inputs: ['constant angular coordinate of the toothed upper feed roller'],
+      note:
+        'the plank feed and smooth lower-roller rotation are constrained by equal 4-unit working radii and zero slip at both faces of the nip',
+      storedEnergyStates: 0,
+    },
+    dynamics: {
+      idealizations: [
+        'both roller axes are fixed, parallel, and frictionless',
+        'the upper tooth tips grip the wood while its 4-unit pitch circle defines mean feed speed',
+        'the plank is rigid and moves without compression or slip on the smooth lower roller',
+        'the source does not specify torque, bearing load, timber properties, tooth penetration compliance, inertia, or absolute speed',
+        'absolute scale and period, slight tooth bite, axial widths, repeated long-stock representation, frame, materials, and camera are reconstruction decisions',
+      ],
+      sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
+      treatment:
+        'exact equal-pitch-radius no-slip feed kinematics with a periodic long-stock visualization and explicit tooth engagement',
+    },
+    fidelity: 'authored',
+    geometry: {
+      boardBottomY,
+      boardCenterY,
+      boardTopY,
+      centerDistance,
+      lowerCenter: lowerCenter.clone(),
+      markerPitch,
+      markerRepeatsPerCycle,
+      plankThickness,
+      plankWidth,
+      rollerWidth,
+      sourceCenterDistance,
+      sourcePlankThickness,
+      sourceScale,
+      sourceToothCenterRadius,
+      sourceToothCount,
+      sourceUpperRootRadius,
+      sourceWorkingRadius,
+      toothCount,
+      toothPitch,
+      toothTipRadius,
+      upperCenter: upperCenter.clone(),
+      upperRootRadius,
+      workingRadius,
+      workpieceLength,
+    },
+    mechanism:
+      'woodworth-planer-one-toothed-upper-feed-roller-one-smooth-lower-support-roller-rigid-plank-equal-opposed-no-slip-working-speeds',
+    sourceAnimation: {
+      available: true,
+      lowerRotationTurnsPerCycle: -1,
+      officialCanvasModelPresent: true,
+      sourceLowerCenter: [0, 0],
+      sourceLowerRadius: 4,
+      sourcePlankFacesY: [4, 5],
+      sourcePrescribedAbsoluteTiming: false,
+      sourceToothArcCount: 20,
+      sourceToothArcRadius: 1,
+      sourceToothCenterRadius,
+      sourceUpperCenter: [0, 9],
+      sourceUpperRootRadius: 3,
+      sourceViewBox: [-12.5, -8, 25, 25],
+      upperRotationTurnsPerCycle: 1,
+    },
+    sourceReference: {
+      brownPlate388: {
+        feedArrowPixels: {
+          end: [184, 310],
+          start: [83, 310],
+        },
+        imageHeight: 525,
+        imageWidth: 525,
+        lowerRollerCenterPixels: [263, 366],
+        lowerRollerRadiusPixels: 69,
+        measurementUncertaintyPixels: 6,
+        plankFacesYPixels: [272, 297],
+        upperRootRadiusPixels: 51,
+        upperRollerCenterPixels: [263, 202],
+        upperToothTipRadiusPixels: 69,
+      },
+      constructionEvidence: {
+        explicitInBrownDescription: [
+          'the mechanism is the feed motion of Woodworth\'s planing machine',
+          'the lower supporting roller is smooth',
+          'the top feed roller is toothed',
+        ],
+        officialAnimationEvidence:
+          'the official canvas places a 4-unit smooth roller below plank faces y=4 and y=5, a 20-tooth roller centered at y=9 with a 3-unit root, and commands exactly +1 and -1 turn per cycle',
+        reconstructionDisclosure:
+          'source centers, working radius ratio, plank thickness, tooth count, and opposed rotations are retained; the physically implied plank translation, tooth solids and slight bite, long-stock tiling, absolute period and scale, axial stack, bearings, materials, indexes, and camera are independently engineered rather than copied from the proprietary canvas',
+      },
+      officialPage: movement.sourceUrl,
+      primaryScan: {
+        archiveIdentifier: 'fivehundredseven00browiala',
+        publicationYear: 1908,
+      },
+    },
+    stateAtTime,
+    timeline: {
+      cycleDuration,
+      demonstrationPeriod: cycleDuration,
+      events: {
+        oneOpposedRollerRevolution: cycleDuration,
+        start: 0,
+      },
+      note:
+        'one source-normalized revolution is displayed at a chosen constant rate; repeated material indexes make the no-slip feed continuous across the visual cycle boundary',
+    },
+    transmission: {
+      angularRatio:
+        'lowerAngularSpeed/upperAngularSpeed=-workingRadius/workingRadius=-1',
+      feedLaw:
+        'feedSpeed=workingRadius*upperAngularSpeed=-workingRadius*lowerAngularSpeed',
+      nipStackLaw:
+        'centerDistance=lowerWorkingRadius+plankThickness+upperWorkingRadius=9 source units',
+      toothEngagementLaw:
+        'the nearest of 20 upper teeth maintains a small positive bite while the 4-unit pitch point is the no-slip velocity reference',
+    },
+  };
+
+  update(0);
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-5.55, -1.84, -1.62),
+    new THREE.Vector3(5.55, 4.43, 1.62),
+  );
+  root.userData.cameraDistanceScale = 1.16;
+  root.userData.groundFloorY = -1.69;
+  markShadows(root);
+  return {
+    cameraDirection: new THREE.Vector3(6.2, 3.9, 9.7),
+    root,
+    update,
+  };
+}
+
+export function createAuthoredPlanerFeedMovement(movement) {
+  if (movement.id !== 388) return null;
+  return woodworthPlanerFeed(movement);
+}

@@ -1,0 +1,1072 @@
+import * as THREE from 'three';
+import {
+  PALETTE,
+  makeGear,
+  makePulley,
+  makeScrew,
+  markShadows,
+  matte,
+  setSpin,
+} from './primitives.js';
+
+const FULL_TURN = Math.PI * 2;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+function addRole(object, role) {
+  object.userData.role = role;
+  return object;
+}
+
+function smootherStep(value) {
+  const x = THREE.MathUtils.clamp(value, 0, 1);
+  return x ** 3 * (10 + x * (-15 + 6 * x));
+}
+
+function smootherStepDerivative(value) {
+  const x = THREE.MathUtils.clamp(value, 0, 1);
+  return 30 * x ** 2 * (1 - x) ** 2;
+}
+
+function smootherStepSecondDerivative(value) {
+  const x = THREE.MathUtils.clamp(value, 0, 1);
+  return 60 * x * (1 - x) * (1 - 2 * x);
+}
+
+function fixedProfile(value) {
+  return {
+    firstDerivativeByPhase: 0,
+    secondDerivativeByPhase: 0,
+    value,
+  };
+}
+
+function transitionProfile(phase, startPhase, endPhase, startValue, endValue) {
+  const duration = endPhase - startPhase;
+  const normalized = (phase - startPhase) / duration;
+  const delta = endValue - startValue;
+  return {
+    firstDerivativeByPhase:
+      delta * smootherStepDerivative(normalized) / duration,
+    secondDerivativeByPhase:
+      delta * smootherStepSecondDerivative(normalized) / duration ** 2,
+    value: startValue + delta * smootherStep(normalized),
+  };
+}
+
+function profileRate(profile, phaseSpeed) {
+  return profile.firstDerivativeByPhase * phaseSpeed;
+}
+
+function profileAcceleration(profile, phaseSpeed, phaseAcceleration) {
+  return profile.secondDerivativeByPhase * phaseSpeed ** 2
+    + profile.firstDerivativeByPhase * phaseAcceleration;
+}
+
+function setVerticalExtent(mesh, bottom, top) {
+  const length = Math.max(0.001, top - bottom);
+  mesh.position.y = (bottom + top) / 2;
+  mesh.scale.y = length;
+  mesh.visible = top > bottom;
+}
+
+function setRodBetween(mesh, start, end) {
+  const delta = end.clone().sub(start);
+  const length = Math.max(0.001, delta.length());
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.scale.y = length;
+  mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
+}
+
+function reciprocatingWellLift(movement) {
+  const root = new THREE.Group();
+  const cycleDuration = 9.0;
+  const inputAngularSpeed = FULL_TURN / cycleDuration;
+  const exchangeLeftEndPhase = 0.10;
+  const rightLiftEndPhase = 0.50;
+  const exchangeRightEndPhase = 0.60;
+  const wheelTeeth = 12;
+  const wormStarts = 1;
+  const wheelPitchRadius = 0.68;
+  const wormPitchRadius = 0.19;
+  const axialPitch = FULL_TURN * wheelPitchRadius / wheelTeeth;
+  const wormLength = 1.12;
+  const pulleyRadius = 0.62;
+  const pulleyTravelAngle = Math.PI * 1.5;
+  const bucketStroke = pulleyRadius * pulleyTravelAngle;
+  const engagementShift = 0.075;
+  const wheelCenterX = wheelPitchRadius + wormPitchRadius
+    + engagementShift;
+  const carrierTop = new THREE.Vector3(0, 3.43, 0.03);
+  const carrierCenterDistance = 1.13;
+  const engagedCarrierAngle = Math.asin(
+    engagementShift / carrierCenterDistance,
+  );
+  const wheelCenterY = carrierTop.y
+    - Math.sqrt(carrierCenterDistance ** 2 - engagementShift ** 2);
+  const pulleyZ = -0.39;
+  const ropeZ = -0.57;
+  const pulleyCenters = {
+    left: new THREE.Vector3(-wheelCenterX, wheelCenterY, pulleyZ),
+    right: new THREE.Vector3(wheelCenterX, wheelCenterY, pulleyZ),
+  };
+  const gearCenters = {
+    left: new THREE.Vector3(-wheelCenterX, wheelCenterY, 0.03),
+    right: new THREE.Vector3(wheelCenterX, wheelCenterY, 0.03),
+  };
+  const leftRopeX = -wheelCenterX - pulleyRadius;
+  const rightRopeX = wheelCenterX + pulleyRadius;
+  const innerRopeSpan = 2 * (wheelCenterX - pulleyRadius);
+  const highBailY = 0.58;
+  const lowBailY = highBailY - bucketStroke;
+  const bucketHeight = 0.68;
+  const bucketRadius = 0.34;
+  const bucketHandleRise = 0.48;
+  const bucketCenterOffset = bucketHandleRise + bucketHeight / 2;
+  const maximumBucketTilt = THREE.MathUtils.degToRad(38);
+  const tappetHalfLength = Math.abs(leftRopeX);
+  const tappetPivot = new THREE.Vector3(0, 0.72, 0.07);
+  const tappetAngleMagnitude = Math.asin(
+    (tappetPivot.y - highBailY) / tappetHalfLength,
+  );
+  const fixedRopeLength = 2 * Math.PI * pulleyRadius + innerRopeSpan;
+  const totalRopeLength = wheelCenterY - highBailY
+    + fixedRopeLength + wheelCenterY - lowBailY;
+  const wormTravelPerLift = wheelTeeth * pulleyTravelAngle / wormStarts;
+  const wormTravelPerCycle = 2 * wormTravelPerLift;
+  const wormTurnsPerLift = wormTravelPerLift / FULL_TURN;
+  const wormTurnsPerCycle = wormTravelPerCycle / FULL_TURN;
+  const groundY = -3.72;
+
+  const stateAtInputAngle = (
+    inputAngle,
+    inputSpeed = inputAngularSpeed,
+    inputAcceleration = 0,
+  ) => {
+    const rawPhase = THREE.MathUtils.euclideanModulo(
+      inputAngle / FULL_TURN,
+      1,
+    );
+    const phase = [0, exchangeLeftEndPhase, rightLiftEndPhase,
+      exchangeRightEndPhase].find(
+      (boundary) => Math.abs(rawPhase - boundary) < 1e-12,
+    ) ?? rawPhase;
+    const phaseSpeed = inputSpeed / FULL_TURN;
+    const phaseAcceleration = inputAcceleration / FULL_TURN;
+    let ropeProfile;
+    let selectorProfile;
+    let leftWaterProfile;
+    let rightWaterProfile;
+    let leftTiltProfile = fixedProfile(0);
+    let rightTiltProfile = fixedProfile(0);
+    let mode;
+    let engagedWheel;
+    if (phase < exchangeLeftEndPhase) {
+      ropeProfile = fixedProfile(0);
+      selectorProfile = transitionProfile(
+        phase,
+        0,
+        exchangeLeftEndPhase,
+        -engagementShift,
+        engagementShift,
+      );
+      leftWaterProfile = transitionProfile(
+        phase,
+        0,
+        exchangeLeftEndPhase,
+        1,
+        0,
+      );
+      rightWaterProfile = transitionProfile(
+        phase,
+        0,
+        exchangeLeftEndPhase,
+        0,
+        1,
+      );
+      const middle = exchangeLeftEndPhase / 2;
+      leftTiltProfile = phase < middle
+        ? transitionProfile(phase, 0, middle, 0, -maximumBucketTilt)
+        : transitionProfile(
+          phase,
+          middle,
+          exchangeLeftEndPhase,
+          -maximumBucketTilt,
+          0,
+        );
+      mode = 'left-high-bucket-dumps-and-trips-worm-toward-right-wheel';
+      engagedWheel = null;
+    } else if (phase < rightLiftEndPhase) {
+      ropeProfile = transitionProfile(
+        phase,
+        exchangeLeftEndPhase,
+        rightLiftEndPhase,
+        0,
+        bucketStroke,
+      );
+      selectorProfile = fixedProfile(engagementShift);
+      leftWaterProfile = fixedProfile(0);
+      rightWaterProfile = fixedProfile(1);
+      mode = 'right-worm-wheel-raises-right-full-bucket-and-lowers-left-empty-bucket';
+      engagedWheel = 'right';
+    } else if (phase < exchangeRightEndPhase) {
+      ropeProfile = fixedProfile(bucketStroke);
+      selectorProfile = transitionProfile(
+        phase,
+        rightLiftEndPhase,
+        exchangeRightEndPhase,
+        engagementShift,
+        -engagementShift,
+      );
+      leftWaterProfile = transitionProfile(
+        phase,
+        rightLiftEndPhase,
+        exchangeRightEndPhase,
+        0,
+        1,
+      );
+      rightWaterProfile = transitionProfile(
+        phase,
+        rightLiftEndPhase,
+        exchangeRightEndPhase,
+        1,
+        0,
+      );
+      const middle = (rightLiftEndPhase + exchangeRightEndPhase) / 2;
+      rightTiltProfile = phase < middle
+        ? transitionProfile(
+          phase,
+          rightLiftEndPhase,
+          middle,
+          0,
+          maximumBucketTilt,
+        )
+        : transitionProfile(
+          phase,
+          middle,
+          exchangeRightEndPhase,
+          maximumBucketTilt,
+          0,
+        );
+      mode = 'right-high-bucket-dumps-and-trips-worm-toward-left-wheel';
+      engagedWheel = null;
+    } else {
+      ropeProfile = transitionProfile(
+        phase,
+        exchangeRightEndPhase,
+        1,
+        bucketStroke,
+        0,
+      );
+      selectorProfile = fixedProfile(-engagementShift);
+      leftWaterProfile = fixedProfile(1);
+      rightWaterProfile = fixedProfile(0);
+      mode = 'left-worm-wheel-raises-left-full-bucket-and-lowers-right-empty-bucket';
+      engagedWheel = 'left';
+    }
+
+    const ropeDisplacement = ropeProfile.value;
+    const ropeSpeed = profileRate(ropeProfile, phaseSpeed);
+    const ropeAcceleration = profileAcceleration(
+      ropeProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const pulleyAngle = ropeDisplacement / pulleyRadius;
+    const pulleyAngularSpeed = ropeSpeed / pulleyRadius;
+    const pulleyAngularAcceleration = ropeAcceleration / pulleyRadius;
+    let wormAngle;
+    let wormAngularSpeed;
+    let wormAngularAcceleration;
+    if (phase < exchangeLeftEndPhase) {
+      wormAngle = 0;
+      wormAngularSpeed = 0;
+      wormAngularAcceleration = 0;
+    } else if (phase < rightLiftEndPhase) {
+      wormAngle = wheelTeeth * pulleyAngle / wormStarts;
+      wormAngularSpeed = wheelTeeth * pulleyAngularSpeed / wormStarts;
+      wormAngularAcceleration =
+        wheelTeeth * pulleyAngularAcceleration / wormStarts;
+    } else if (phase < exchangeRightEndPhase) {
+      wormAngle = wormTravelPerLift;
+      wormAngularSpeed = 0;
+      wormAngularAcceleration = 0;
+    } else {
+      wormAngle = wormTravelPerLift
+        + wheelTeeth * (pulleyTravelAngle - pulleyAngle) / wormStarts;
+      wormAngularSpeed = -wheelTeeth * pulleyAngularSpeed / wormStarts;
+      wormAngularAcceleration =
+        -wheelTeeth * pulleyAngularAcceleration / wormStarts;
+    }
+
+    const selectorX = selectorProfile.value;
+    const selectorSpeed = profileRate(selectorProfile, phaseSpeed);
+    const selectorAcceleration = profileAcceleration(
+      selectorProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const carrierRadicand = carrierCenterDistance ** 2 - selectorX ** 2;
+    const carrierVerticalDistance = Math.sqrt(carrierRadicand);
+    const carrierAngle = Math.asin(selectorX / carrierCenterDistance);
+    const carrierAngularSpeed = selectorSpeed / carrierVerticalDistance;
+    const carrierAngularAcceleration =
+      selectorAcceleration / carrierVerticalDistance
+      + selectorX * selectorSpeed ** 2 / carrierRadicand ** 1.5;
+    const wormCenter = new THREE.Vector3(
+      selectorX,
+      carrierTop.y - carrierVerticalDistance,
+      carrierTop.z,
+    );
+    const carrierBottomDistance = carrierCenterDistance + wormLength / 2;
+    const lowerBearing = new THREE.Vector3(
+      Math.sin(carrierAngle) * carrierBottomDistance,
+      carrierTop.y - Math.cos(carrierAngle) * carrierBottomDistance,
+      carrierTop.z,
+    );
+    const tappetAngle = -selectorX / engagementShift
+      * tappetAngleMagnitude;
+    const tappetAngularSpeed = -selectorSpeed / engagementShift
+      * tappetAngleMagnitude;
+    const tappetAngularAcceleration = -selectorAcceleration
+      / engagementShift * tappetAngleMagnitude;
+    const tappetLeftTip = new THREE.Vector3(
+      tappetPivot.x - Math.cos(tappetAngle) * tappetHalfLength,
+      tappetPivot.y - Math.sin(tappetAngle) * tappetHalfLength,
+      tappetPivot.z,
+    );
+    const tappetRightTip = new THREE.Vector3(
+      tappetPivot.x + Math.cos(tappetAngle) * tappetHalfLength,
+      tappetPivot.y + Math.sin(tappetAngle) * tappetHalfLength,
+      tappetPivot.z,
+    );
+
+    const leftBailY = highBailY - ropeDisplacement;
+    const rightBailY = lowBailY + ropeDisplacement;
+    const leftBucketTilt = leftTiltProfile.value;
+    const rightBucketTilt = rightTiltProfile.value;
+    const leftBucketPivot = new THREE.Vector3(leftRopeX, leftBailY, ropeZ);
+    const rightBucketPivot = new THREE.Vector3(
+      rightRopeX,
+      rightBailY,
+      ropeZ,
+    );
+    const centerOffset = new THREE.Vector3(0, -bucketCenterOffset, 0);
+    const leftBucketCenter = centerOffset.clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), leftBucketTilt)
+      .add(leftBucketPivot);
+    const rightBucketCenter = centerOffset.clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), rightBucketTilt)
+      .add(rightBucketPivot);
+    const leftVerticalLength = wheelCenterY - leftBailY;
+    const rightVerticalLength = wheelCenterY - rightBailY;
+    const leftWaterFraction = leftWaterProfile.value;
+    const rightWaterFraction = rightWaterProfile.value;
+    const leftWaterFractionRate = profileRate(
+      leftWaterProfile,
+      phaseSpeed,
+    );
+    const rightWaterFractionRate = profileRate(
+      rightWaterProfile,
+      phaseSpeed,
+    );
+    const leftWaterFractionAcceleration = profileAcceleration(
+      leftWaterProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const rightWaterFractionAcceleration = profileAcceleration(
+      rightWaterProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const leftBucketTiltSpeed = profileRate(leftTiltProfile, phaseSpeed);
+    const rightBucketTiltSpeed = profileRate(rightTiltProfile, phaseSpeed);
+    const leftBucketTiltAcceleration = profileAcceleration(
+      leftTiltProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const rightBucketTiltAcceleration = profileAcceleration(
+      rightTiltProfile,
+      phaseSpeed,
+      phaseAcceleration,
+    );
+    const leftMeshCenterDistance = wormCenter.distanceTo(new THREE.Vector3(
+      gearCenters.left.x,
+      gearCenters.left.y,
+      wormCenter.z,
+    ));
+    const rightMeshCenterDistance = wormCenter.distanceTo(new THREE.Vector3(
+      gearCenters.right.x,
+      gearCenters.right.y,
+      wormCenter.z,
+    ));
+    const leftMeshClearance = leftMeshCenterDistance
+      - wheelPitchRadius - wormPitchRadius;
+    const rightMeshClearance = rightMeshCenterDistance
+      - wheelPitchRadius - wormPitchRadius;
+    const wormThreadAxialSpeed = -wormAngularSpeed * axialPitch / FULL_TURN;
+    const engagedWheelContactTangentialSpeed = engagedWheel === 'right'
+      ? -pulleyAngularSpeed * wheelPitchRadius
+      : engagedWheel === 'left'
+        ? pulleyAngularSpeed * wheelPitchRadius
+        : 0;
+    const meshPhaseInvariant = engagedWheel === 'right'
+      ? wormStarts * wormAngle - wheelTeeth * pulleyAngle
+      : engagedWheel === 'left'
+        ? wormStarts * wormAngle + wheelTeeth * pulleyAngle
+          - 2 * wheelTeeth * pulleyTravelAngle
+        : null;
+    return {
+      activeContactClearance: engagedWheel === 'left'
+        ? leftMeshClearance
+        : engagedWheel === 'right' ? rightMeshClearance : null,
+      carrierAngle,
+      carrierAngularAcceleration,
+      carrierAngularSpeed,
+      engagedWheel,
+      engagedWheelContactTangentialSpeed,
+      fixedRopeLength,
+      inputAcceleration,
+      inputAngle: FULL_TURN * phase,
+      inputSpeed,
+      leftBailY,
+      leftBucketCenter,
+      leftBucketPivot,
+      leftBucketTilt,
+      leftBucketTiltAcceleration,
+      leftBucketTiltSpeed,
+      leftBucketVelocityY: -ropeSpeed,
+      leftMeshClearance,
+      leftVerticalLength,
+      leftWaterFraction,
+      leftWaterFractionAcceleration,
+      leftWaterFractionRate,
+      lowerBearing,
+      meshPhaseInvariant,
+      mode,
+      phase,
+      pulleyAngle,
+      pulleyAngularAcceleration,
+      pulleyAngularSpeed,
+      rightBailY,
+      rightBucketCenter,
+      rightBucketPivot,
+      rightBucketTilt,
+      rightBucketTiltAcceleration,
+      rightBucketTiltSpeed,
+      rightBucketVelocityY: ropeSpeed,
+      rightMeshClearance,
+      rightVerticalLength,
+      rightWaterFraction,
+      rightWaterFractionAcceleration,
+      rightWaterFractionRate,
+      ropeAcceleration,
+      ropeDisplacement,
+      ropeSpeed,
+      selectorAcceleration,
+      selectorSpeed,
+      selectorX,
+      tappetAngle,
+      tappetAngularAcceleration,
+      tappetAngularSpeed,
+      tappetLeftTip,
+      tappetRightTip,
+      totalRopeLength:
+        leftVerticalLength + fixedRopeLength + rightVerticalLength,
+      wormAngle,
+      wormAngularAcceleration,
+      wormAngularSpeed,
+      wormCenter,
+      wormThreadAxialSpeed,
+    };
+  };
+
+  const stateAtTime = (time) => stateAtInputAngle(
+    inputAngularSpeed * time,
+    inputAngularSpeed,
+    0,
+  );
+
+  const frameMaterial = matte(PALETTE.frame, {
+    metalness: 0.20,
+    roughness: 0.64,
+  });
+  const darkMaterial = matte(PALETTE.ink, {
+    metalness: 0.20,
+    roughness: 0.50,
+  });
+  const ropeMaterial = matte(PALETTE.belt, { roughness: 0.64 });
+  const bucketMaterial = matte(PALETTE.brass, {
+    metalness: 0.12,
+    roughness: 0.57,
+  });
+  const waterMaterial = matte(PALETTE.fluid, {
+    opacity: 0.76,
+    roughness: 0.28,
+    side: THREE.DoubleSide,
+    transparent: true,
+  });
+  waterMaterial.depthWrite = false;
+  const wellMaterial = matte(PALETTE.muted, {
+    opacity: 0.27,
+    roughness: 0.76,
+    side: THREE.DoubleSide,
+    transparent: true,
+  });
+  wellMaterial.depthWrite = false;
+
+  const base = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(7.4, 0.14, 3.2),
+    frameMaterial,
+  ), 'fixed-foundation-of-reciprocating-well-lift');
+  base.position.set(0, groundY + 0.07, 0);
+  root.add(base);
+
+  const well = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(4.20, 3.48, 2.0),
+    wellMaterial,
+  ), 'transparent-well-shaft-beneath-opposed-buckets');
+  well.position.set(0, -1.93, ropeZ);
+  root.add(well);
+  const wellWater = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(3.92, 0.16, 1.72),
+    waterMaterial,
+  ), 'well-water-filling-the-low-bucket');
+  wellWater.position.set(0, -3.42, ropeZ);
+  root.add(wellWater);
+  for (const x of [-2.30, 2.30]) {
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 2.78, 2.35),
+      frameMaterial,
+    );
+    wall.position.set(x, -2.27, ropeZ);
+    root.add(wall);
+  }
+
+  const support = addRole(new THREE.Group(),
+    'fixed-frame-carrying-wind-shaft-two-wheel-axles-and-tappet-pivot');
+  root.add(support);
+  for (const x of [-2.42, 2.42]) {
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.20, 4.55, 0.28),
+      frameMaterial,
+    );
+    post.position.set(x, 1.24, 0.28);
+    support.add(post);
+  }
+  const topBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(5.30, 0.20, 0.34),
+    frameMaterial,
+  );
+  topBeam.position.set(0, 3.72, 0.28);
+  support.add(topBeam);
+  const gearBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(3.25, 0.15, 0.22),
+    frameMaterial,
+  );
+  gearBeam.position.set(0, wheelCenterY, -0.80);
+  support.add(gearBeam);
+  const tappetStand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 1.45, 0.22),
+    frameMaterial,
+  );
+  tappetStand.position.set(0, 0.10, 0.30);
+  support.add(tappetStand);
+
+  const windRotor = addRole(new THREE.Group(),
+    'horizontal-wind-wheel-continuously-coupled-to-spiral-shaft');
+  windRotor.position.set(0, 4.18, 0.03);
+  root.add(windRotor);
+  const windHub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.20, 0.20, 0.34, 28),
+    darkMaterial,
+  );
+  windRotor.add(windHub);
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index * FULL_TURN / 8;
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(1.28, 0.07, 0.25),
+      index % 2 === 0
+        ? matte(PALETTE.driver, { metalness: 0.08, roughness: 0.62 })
+        : matte(PALETTE.brass, { metalness: 0.08, roughness: 0.62 }),
+    );
+    blade.position.set(Math.cos(angle) * 0.91, 0, Math.sin(angle) * 0.91);
+    blade.rotation.y = -angle;
+    windRotor.add(blade);
+  }
+  const windIndex = new THREE.Mesh(
+    new THREE.BoxGeometry(1.30, 0.04, 0.06),
+    matte(PALETTE.white, { roughness: 0.50 }),
+  );
+  windIndex.position.set(0.88, 0.06, 0);
+  windRotor.add(windIndex);
+  const upperShaft = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.10, 0.10, 0.82, 24),
+    darkMaterial,
+  ), 'fixed-axis-upper-wind-wheel-shaft');
+  upperShaft.position.set(0, 3.76, 0.03);
+  root.add(upperShaft);
+
+  const flexibleCoupling = addRole(new THREE.Group(),
+    'flexible-coupling-permitting-small-lateral-worm-vibration');
+  flexibleCoupling.position.copy(carrierTop);
+  root.add(flexibleCoupling);
+  const couplingBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(0.30, 0.22, 0.30),
+    matte(PALETTE.accent, { metalness: 0.22, roughness: 0.48 }),
+  );
+  flexibleCoupling.add(couplingBlock);
+  const couplingPin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.055, 0.48, 18),
+    darkMaterial,
+  );
+  couplingPin.rotation.z = Math.PI / 2;
+  flexibleCoupling.add(couplingPin);
+
+  const wormCarrier = addRole(new THREE.Group(),
+    'laterally-rocking-lower-shaft-carrying-one-single-start-worm');
+  wormCarrier.position.copy(carrierTop);
+  root.add(wormCarrier);
+  const lowerShaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.075, 0.075, 1.72, 24),
+    darkMaterial,
+  );
+  lowerShaft.position.y = -0.86;
+  wormCarrier.add(lowerShaft);
+  const worm = addRole(makeScrew({
+    axis: Y_AXIS,
+    color: PALETTE.accent,
+    handedness: 1,
+    length: wormLength,
+    pitch: axialPitch,
+    radius: wormPitchRadius,
+    threadRadius: 0.045,
+  }), 'single-start-spiral-alternately-meshing-one-worm-wheel-at-a-time');
+  worm.position.set(0, -carrierCenterDistance, 0);
+  wormCarrier.add(worm);
+
+  const makeWheelAssembly = (side, color) => {
+    const center = gearCenters[side];
+    const gear = addRole(makeGear({
+      color,
+      depth: 0.28,
+      radius: wheelPitchRadius,
+      teeth: wheelTeeth,
+      toothHeight: 0.15,
+    }), `${side}-worm-wheel-on-common-axis-with-rope-pulley`);
+    gear.position.copy(center);
+    root.add(gear);
+    const pulley = addRole(makePulley({
+      color,
+      grooves: 1,
+      radius: pulleyRadius,
+      spokes: 6,
+      width: 0.27,
+    }), `${side}-rope-pulley-rigidly-coaxial-with-worm-wheel`);
+    pulley.position.copy(pulleyCenters[side]);
+    root.add(pulley);
+    const axle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.10, 1.05, 24),
+      darkMaterial,
+    );
+    axle.rotation.x = Math.PI / 2;
+    axle.position.set(center.x, center.y, -0.12);
+    root.add(axle);
+    return { axle, gear, pulley };
+  };
+  const leftAssembly = makeWheelAssembly('left', PALETTE.driver);
+  const rightAssembly = makeWheelAssembly('right', PALETTE.driven);
+
+  const continuousRope = addRole(new THREE.Group(),
+    'one-continuous-rope-over-two-coaxially-driven-pulleys-with-two-bucket-ends');
+  root.add(continuousRope);
+  const makeUpperArc = (center, side) => {
+    const points = Array.from({ length: 65 }, (_, index) => {
+      const angle = Math.PI - Math.PI * index / 64;
+      return new THREE.Vector3(
+        center.x + pulleyRadius * Math.cos(angle),
+        center.y + pulleyRadius * Math.sin(angle),
+        ropeZ,
+      );
+    });
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    return addRole(new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 128, 0.038, 12, false),
+      ropeMaterial,
+    ), `${side}-fixed-upper-rope-wrap-on-pulley`);
+  };
+  const leftUpperArc = makeUpperArc(pulleyCenters.left, 'left');
+  const rightUpperArc = makeUpperArc(pulleyCenters.right, 'right');
+  continuousRope.add(leftUpperArc, rightUpperArc);
+  const innerRope = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.038, 0.038, innerRopeSpan, 14),
+    ropeMaterial,
+  ), 'single-rope-inner-span-between-two-pulleys');
+  innerRope.rotation.z = Math.PI / 2;
+  innerRope.position.set(0, wheelCenterY, ropeZ);
+  continuousRope.add(innerRope);
+  const leftRopeLeg = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.038, 0.038, 1, 14),
+    ropeMaterial,
+  ), 'single-rope-left-outer-vertical-leg');
+  const rightRopeLeg = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.038, 0.038, 1, 14),
+    ropeMaterial,
+  ), 'single-rope-right-outer-vertical-leg');
+  continuousRope.add(leftRopeLeg, rightRopeLeg);
+
+  const makeBucket = (side) => {
+    const bucket = addRole(new THREE.Group(),
+      `${side}-bucket-pivoted-at-the-rope-end-for-top-dumping`);
+    root.add(bucket);
+    const bodyY = -bucketHandleRise - bucketHeight / 2;
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        bucketRadius,
+        bucketRadius * 0.76,
+        bucketHeight,
+        34,
+        1,
+        true,
+      ),
+      bucketMaterial,
+    );
+    body.position.y = bodyY;
+    bucket.add(body);
+    const bottom = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        bucketRadius * 0.76,
+        bucketRadius * 0.76,
+        0.07,
+        32,
+      ),
+      darkMaterial,
+    );
+    bottom.position.y = bodyY - bucketHeight / 2;
+    bucket.add(bottom);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(bucketRadius, 0.045, 10, 38),
+      darkMaterial,
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = -bucketHandleRise;
+    bucket.add(rim);
+    const handleCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.29, -bucketHandleRise, 0),
+      new THREE.Vector3(-0.20, -0.14, 0),
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0.20, -0.14, 0),
+      new THREE.Vector3(0.29, -bucketHandleRise, 0),
+    ], false, 'centripetal');
+    const handle = new THREE.Mesh(
+      new THREE.TubeGeometry(handleCurve, 40, 0.032, 10, false),
+      darkMaterial,
+    );
+    bucket.add(handle);
+    const water = addRole(new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        bucketRadius * 0.77,
+        bucketRadius * 0.70,
+        1,
+        30,
+      ),
+      waterMaterial,
+    ), `${side}-bucket-water-payload`);
+    bucket.add(water);
+    return { body, bucket, water };
+  };
+  const leftBucket = makeBucket('left');
+  const rightBucket = makeBucket('right');
+
+  const makeTrough = (side) => {
+    const sign = side === 'left' ? -1 : 1;
+    const trough = addRole(new THREE.Mesh(
+      new THREE.BoxGeometry(1.25, 0.20, 1.05),
+      matte(PALETTE.muted, { metalness: 0.12, roughness: 0.64 }),
+    ), `${side}-delivery-trough-receiving-the-tipped-high-bucket`);
+    trough.position.set(sign * 2.30, -0.22, ropeZ);
+    trough.rotation.z = sign * THREE.MathUtils.degToRad(8);
+    root.add(trough);
+    return trough;
+  };
+  const leftTrough = makeTrough('left');
+  const rightTrough = makeTrough('right');
+
+  const tappet = addRole(new THREE.Group(),
+    'central-vibrating-tappet-struck-by-each-ascending-bucket');
+  tappet.position.copy(tappetPivot);
+  root.add(tappet);
+  const tappetBar = new THREE.Mesh(
+    new THREE.BoxGeometry(2 * tappetHalfLength, 0.13, 0.22),
+    matte(PALETTE.accent, { metalness: 0.16, roughness: 0.54 }),
+  );
+  tappet.add(tappetBar);
+  for (const x of [-tappetHalfLength, tappetHalfLength]) {
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.28, 0.28),
+      darkMaterial,
+    );
+    pad.position.x = x;
+    tappet.add(pad);
+  }
+  const tappetPivotAxle = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, 0.56, 24),
+    darkMaterial,
+  ), 'fixed-tappet-pivot');
+  tappetPivotAxle.rotation.x = Math.PI / 2;
+  tappetPivotAxle.position.copy(tappetPivot);
+  root.add(tappetPivotAxle);
+
+  const selectorBearing = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.22, 0.38),
+    matte(PALETTE.accent, { metalness: 0.18, roughness: 0.52 }),
+  ), 'laterally-traversed-step-supporting-lower-spiral-shaft');
+  root.add(selectorBearing);
+  const selectorLink = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.045, 1, 16),
+    darkMaterial,
+  ), 'arm-linking-vibrating-tappet-to-traversing-worm-step');
+  root.add(selectorLink);
+
+  const updateBucketWater = (bucket, fraction, tilt) => {
+    const height = 0.52 * fraction;
+    bucket.water.visible = height > 1e-5;
+    bucket.water.scale.y = Math.max(0.001, height);
+    bucket.water.position.y = -bucketHandleRise - bucketHeight
+      + 0.07 + height / 2;
+    bucket.water.rotation.z = -tilt;
+  };
+
+  const wheelPhase = Math.PI / (2 * wheelTeeth);
+  const update = (time) => {
+    const state = stateAtTime(time);
+    windRotor.rotation.y = state.wormAngle;
+    wormCarrier.rotation.z = state.carrierAngle;
+    setSpin(worm, state.wormAngle);
+    setSpin(leftAssembly.gear, wheelPhase + state.pulleyAngle);
+    setSpin(rightAssembly.gear, wheelPhase + state.pulleyAngle);
+    setSpin(leftAssembly.pulley, state.pulleyAngle);
+    setSpin(rightAssembly.pulley, state.pulleyAngle);
+    setVerticalExtent(leftRopeLeg, state.leftBailY, wheelCenterY);
+    leftRopeLeg.position.x = leftRopeX;
+    leftRopeLeg.position.z = ropeZ;
+    setVerticalExtent(rightRopeLeg, state.rightBailY, wheelCenterY);
+    rightRopeLeg.position.x = rightRopeX;
+    rightRopeLeg.position.z = ropeZ;
+    leftBucket.bucket.position.copy(state.leftBucketPivot);
+    leftBucket.bucket.rotation.z = state.leftBucketTilt;
+    rightBucket.bucket.position.copy(state.rightBucketPivot);
+    rightBucket.bucket.rotation.z = state.rightBucketTilt;
+    updateBucketWater(
+      leftBucket,
+      state.leftWaterFraction,
+      state.leftBucketTilt,
+    );
+    updateBucketWater(
+      rightBucket,
+      state.rightWaterFraction,
+      state.rightBucketTilt,
+    );
+    tappet.rotation.z = state.tappetAngle;
+    selectorBearing.position.copy(state.lowerBearing);
+    const tappetCrank = new THREE.Vector3(
+      tappetPivot.x + Math.sin(state.tappetAngle) * 0.32,
+      tappetPivot.y - Math.cos(state.tappetAngle) * 0.32,
+      tappetPivot.z,
+    );
+    setRodBetween(selectorLink, tappetCrank, state.lowerBearing);
+  };
+
+  const sourceState = stateAtInputAngle(0);
+  const geometry = {
+    axialPitch,
+    bucketCenterOffset,
+    bucketHandleRise,
+    bucketHeight,
+    bucketRadius,
+    bucketStroke,
+    carrierCenterDistance,
+    carrierTop,
+    cycleDuration,
+    engagedCarrierAngle,
+    engagementShift,
+    exchangeLeftEndPhase,
+    exchangeRightEndPhase,
+    fixedRopeLength,
+    groundY,
+    highBailY,
+    innerRopeSpan,
+    inputAngularSpeed,
+    leftRopeX,
+    lowBailY,
+    maximumBucketTilt,
+    pulleyRadius,
+    pulleyTravelAngle,
+    pulleyCenters,
+    rightLiftEndPhase,
+    rightRopeX,
+    tappetAngleMagnitude,
+    tappetHalfLength,
+    tappetPivot,
+    totalRopeLength,
+    wheelCenterX,
+    wheelCenterY,
+    wheelPitchRadius,
+    wheelTeeth,
+    wormLength,
+    wormPitchRadius,
+    wormStarts,
+    wormTravelPerCycle,
+    wormTravelPerLift,
+    wormTurnsPerCycle,
+    wormTurnsPerLift,
+  };
+  root.userData = {
+    archetype:
+      'wind-wheel-rocking-worm-two-opposed-worm-wheels-one-rope-two-buckets-and-trip-tappet-reversal',
+    blocks: {
+      base,
+      continuousRope,
+      flexibleCoupling,
+      leftAssembly,
+      leftBucket,
+      leftRopeLeg,
+      leftTrough,
+      leftUpperArc,
+      rightAssembly,
+      rightBucket,
+      rightRopeLeg,
+      rightTrough,
+      rightUpperArc,
+      selectorBearing,
+      selectorLink,
+      support,
+      tappet,
+      tappetPivotAxle,
+      upperShaft,
+      well,
+      wellWater,
+      windRotor,
+      worm,
+      wormCarrier,
+    },
+    degreesOfFreedom: {
+      bucketMotionIndependent: false,
+      independentPrescribedInputs: 1,
+      operatingDegreesOfFreedom: 1,
+      pulleyRotationIndependent: false,
+      selectorIndependent: false,
+      tappetIndependent: false,
+      wormWheelRotationIndependent: false,
+    },
+    dynamics: {
+      aerodynamicWindTorqueBucketImpactGearToothComplianceBacklashRopeElasticityBearingFrictionAndWaterSloshModeled:
+        false,
+      driveModel:
+        'A C2 demonstration schedule starts and stops the wind wheel with the bucket travel. During each engaged lift the single-start worm and selected 12-tooth wheel obey the exact 12:1 angular ratio; during each stopped exchange the bucket-driven tappet traverses the worm through the disengaged gap.',
+      tripModel:
+        'The rising full bucket reaches the low end of the rocking tappet exactly at its high rope endpoint. The ensuing dwell tips and empties that bucket, fills the opposite low bucket, and moves the flexible lower worm shaft to the opposite wheel before motion resumes.',
+    },
+    fidelity: 'authored',
+    geometry,
+    mechanism:
+      'A horizontal wind wheel rotates a vertical single-start spiral through a flexible coupling. The lower spiral shaft rocks laterally and meshes with only one of two side-by-side worm wheels. Each worm wheel is rigidly coaxial with a rear rope pulley, and one continuous rope wraps over both pulleys with a bucket at each outer end. Because both pulleys share that rope, they always rotate together; engaging the wheel on the opposite side of the same-handed worm reverses their direction. Each ascending bucket strikes the low end of a central tappet, tips to discharge, and shifts the worm to the other wheel so the other now-full bucket rises.',
+    motion: {
+      cycleDuration,
+      inputAngularSpeed,
+      motionType:
+        'bucket-tripped-alternating-worm-selection-and-opposed-two-bucket-lift',
+    },
+    sourceAnimation: {
+      available: false,
+      officialCanvasModelPresent: false,
+      officialPageMarksAnimationUnavailable: true,
+      sourcePrescribedAbsoluteTiming: false,
+      sourcePrescribedNormalizedTiming: false,
+    },
+    sourcePose: {
+      engagedWheel: sourceState.engagedWheel,
+      leftBailY: sourceState.leftBailY,
+      leftWaterFraction: sourceState.leftWaterFraction,
+      mode: sourceState.mode,
+      rightBailY: sourceState.rightBailY,
+      rightWaterFraction: sourceState.rightWaterFraction,
+      selectorX: sourceState.selectorX,
+      tappetAngle: sourceState.tappetAngle,
+    },
+    sourceReference: {
+      brownPlate459: {
+        approximateLeftBucketCenterPixels: [214, 370],
+        approximateLeftWheelCenterPixels: [226, 190],
+        approximateRightRopeXPixel: 355,
+        approximateRightWheelCenterPixels: [319, 190],
+        approximateTappetPivotPixels: [274, 319],
+        approximateWindWheelCenterPixels: [273, 56],
+        imageHeight: 525,
+        imageWidth: 525,
+        measurementUncertaintyPixels: 18,
+      },
+      constructionEvidence: {
+        explicitInBrownDescription: [
+          'a horizontal wind-wheel drives a shaft carrying a spiral thread',
+          'the flexible coupling permits the spiral to vibrate onto one worm-wheel at a time',
+          'pulleys behind the worm-wheels carry one rope with a bucket at each extremity',
+          'each ascending bucket strikes a central vibrating tappet',
+          'the tappet arm traverses the spiral from one wheel to the other',
+          'selection reverses the buckets so the emptied bucket lowers while the other rises',
+        ],
+        engravingEvidence:
+          'Brown shows the horizontal wind rotor and vertical coupled spiral above two equal side-by-side toothed wheels, a rear hanging rope leg outside each wheel, an elevated left bucket dumping into a trough, a low right rope end, and a central rocking tappet linked upward to the spiral support.',
+        reconstructionDisclosure:
+          'Brown gives no tooth count, worm pitch or hand, pulley diameter, rope route behind the wheel faces, bucket stroke, shaft swing, impact law, fill time, wind speed or absolute timing. The exact single-rope topology follows the singular rope and its two bucket extremities; equal coaxial pulley radii, a 12:1 single-start worm ratio, symmetric discharge troughs, C2 stops and trips, water display, colors and 9-second cycle are independently engineered.',
+      },
+      officialPage: movement.sourceUrl,
+      plate: 'Brown 1868, Movement 459',
+    },
+    stateAtInputAngle,
+    stateAtTime,
+    timeline: {
+      exchangeLeftEndPhase,
+      exchangeRightEndPhase,
+      rightLiftEndPhase,
+      stages: [
+        'left high bucket dumps; tappet traverses worm right',
+        'right wheel selected; right full bucket rises',
+        'right high bucket dumps; tappet traverses worm left',
+        'left wheel selected; left full bucket rises',
+      ],
+    },
+    transmission: {
+      activeMesh:
+        'Right lift: theta_worm=N*theta_pulley. Left lift: theta_worm+N*theta_pulley=2*N*theta_travel. The opposite-side worm contacts therefore reverse a common positive worm input.',
+      contactVelocity:
+        'With axial pitch p=2*pi*R_wheel/N, worm axial thread speed and the selected wheel pitch-line speed are identical during either engaged lift.',
+      constantRopeLength:
+        'L_left+2*pi*R_pulley+L_inner+L_right is constant; therefore bucket vertical velocities are exactly opposite.',
+      pulleyNoSlip:
+        'Both equal rear pulleys are constrained by the same rope and use theta=s/R, omega=ds/dt/R and alpha=d2s/dt2/R.',
+    },
+    update,
+  };
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.65, groundY, -1.65),
+    new THREE.Vector3(3.65, 4.55, 1.65),
+  );
+  root.userData.cameraDistanceScale = 1.08;
+  root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
+  root.userData.groundFloorY = groundY;
+  markShadows(root);
+  base.receiveShadow = true;
+  update(0);
+  return {
+    cameraDirection: root.userData.cameraDirection,
+    root,
+    update,
+  };
+}
+
+export function createAuthoredReciprocatingWellLiftMovement(movement) {
+  if (movement.id !== 459) return null;
+  return reciprocatingWellLift(movement);
+}

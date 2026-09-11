@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import { createMovementModel } from '../src/simulation/registry.js';
+import { probeCrossedHelicalContact } from '../tests/helpers/crossed-helical-contact.mjs';
+const catalog = JSON.parse(fs.readFileSync(new URL('../src/data/movements.json', import.meta.url)));
+const model = createMovementModel(catalog.movements[41]);
+const poses = Number(process.env.PROBE_POSES ?? 64);
+if (!Number.isInteger(poses) || poses < 1) throw new RangeError('PROBE_POSES must be a positive integer.');
+const report = probeCrossedHelicalContact(model, poses);
+console.log(JSON.stringify(report, null, 2));
+fs.writeFileSync('artifacts/review/042-involute-contact.json', JSON.stringify(report, null, 2) + '\n');
+if (report.maxPenetration > 2e-6 || report.maxGap > 0.0015) process.exitCode = 1;

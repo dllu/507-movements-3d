@@ -1,0 +1,18 @@
+node_modules/
+.vite/
+playwright-report/
+test-results/
+*.log
+
+# Generated builds and local research outputs.
+dist/
+artifacts/*
+!artifacts/README.md
+!artifacts/review/
+artifacts/review/*
+!artifacts/review/*.md
+
+# Local credentials and machine-specific settings.
+.env
+.env.*
+!.env.example

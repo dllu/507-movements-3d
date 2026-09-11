@@ -1,0 +1,456 @@
+import { assertReadableTiming } from './helpers/display-timing.mjs';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import * as THREE from 'three';
+import { createMovementModel } from '../src/simulation/registry.js';
+
+const FULL_TURN = Math.PI * 2;
+const catalog = JSON.parse(await readFile(
+  new URL('../src/data/movements.json', import.meta.url),
+  'utf8',
+));
+
+function near(actual, expected, tolerance, message) {
+  assert.ok(
+    Math.abs(actual - expected) <= tolerance,
+    `${message}: expected ${expected}, received ${actual}`,
+  );
+}
+
+function vectorNear(actual, expected, tolerance, message) {
+  near(actual.distanceTo(expected), 0, tolerance, message);
+}
+
+function planarNear(actual, expected, tolerance, message) {
+  near(
+    Math.hypot(actual.x - expected.x, actual.y - expected.y),
+    0,
+    tolerance,
+    message,
+  );
+}
+
+function disposeModel(root) {
+  const geometries = new Set();
+  const materials = new Set();
+  root.traverse((object) => {
+    if (object.geometry) geometries.add(object.geometry);
+    if (Array.isArray(object.material)) {
+      object.material.forEach((material) => materials.add(material));
+    } else if (object.material) {
+      materials.add(object.material);
+    }
+  });
+  geometries.forEach((geometry) => geometry.dispose());
+  materials.forEach((material) => material.dispose());
+}
+
+test('movement 321 is Harrison’s complete spring maintaining-power barrel', () => {
+  const movement = catalog.movements[320];
+  const model = createMovementModel(movement);
+  const {
+    archetype,
+    blocks,
+    fidelity,
+    mechanism,
+    transmission,
+  } = model.root.userData;
+
+  assert.equal(movement.id, 321);
+  assert.equal(movement.number, '321');
+  assert.match(movement.title, /^Harrison’s “going-barrel/);
+  assert.equal(movement.category, 'Ratchets & intermittent motion');
+  assert.equal(movement.fidelity, 'authored');
+  assert.equal(fidelity, 'authored');
+  assert.equal(archetype,
+    'harrison-spring-maintaining-power-going-barrel');
+  assert.equal(archetype, movement.archetype);
+  assert.match(mechanism, /barrel B and its small ratchet/);
+  assert.match(mechanism, /carried click R/);
+  assert.match(mechanism, /fixed click T holds/);
+  assert.match(mechanism, /spring alone keeps G advancing/);
+  assert.match(transmission.goingPath,
+    /barrel B.*small ratchet.*R.*larger ratchet.*spring.*G/);
+  assert.match(transmission.windingPath,
+    /R overruns, T holds/);
+  assert.match(transmission.outputContinuity,
+    /strictly positive constant angular velocity/);
+
+  assert.equal(blocks.fixedFrame.parent, model.root);
+  assert.equal(blocks.greatWheel.parent, model.root);
+  assert.equal(blocks.largeRatchet.parent, model.root);
+  assert.equal(blocks.barrel.parent, model.root);
+  assert.equal(blocks.clickT.parent, model.root);
+  assert.equal(blocks.clickR.parent,
+    blocks.largeRatchet.userData.rotor);
+  assert.equal(blocks.springOuterAnchor.parent,
+    blocks.greatWheel.userData.rotor);
+  assert.equal(blocks.springInnerAnchor.parent,
+    blocks.largeRatchet.userData.rotor);
+  assert.equal(blocks.barrelRatchet.parent,
+    blocks.barrel.userData.rotor);
+  assert.equal(blocks.rope.parent, model.root);
+  assert.equal(blocks.weight.parent, model.root);
+  assert.equal(blocks.springSegments.length, 80);
+
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  assert.equal(roles.filter((role) => role === 'great-going-wheel-G').length, 1);
+  assert.equal(roles.filter((role) =>
+    role === 'larger-ratchet-wheel-held-by-T').length, 1);
+  assert.equal(roles.filter((role) =>
+    role === 'small-ratchet-fixed-to-barrel-B').length, 1);
+  assert.equal(roles.filter((role) =>
+    role === 'click-R-carried-by-larger-ratchet').length, 1);
+  assert.equal(roles.filter((role) => role === 'fixed-frame-click-T').length, 1);
+  assert.equal(roles.filter((role) =>
+    role === 'fixed-length-maintaining-spring-S-S-prime-segment').length,
+  80);
+  assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
+  disposeModel(model.root);
+});
+
+test('movement 321 preserves Brown’s G, B, R, T, S, and S-prime landmarks', () => {
+  const movement = catalog.movements[320];
+  const model = createMovementModel(movement);
+  const {
+    geometry,
+    sourceAnimation,
+    sourcePointToReferenceFront,
+    sourceReference,
+    stateAtTime,
+  } = model.root.userData;
+  const plate = sourceReference.brownPlate321;
+
+  assert.equal(sourceAnimation.available, false);
+  assert.equal(sourceAnimation.officialCanvasModelPresent, false);
+  assert.equal(sourceAnimation.officialPageAnimatedTabDisabled, true);
+  assert.equal(sourceAnimation.independentlyReconstructed, true);
+  assert.match(sourceAnimation.referenceScope, /coaxial barrel B/);
+  assert.match(sourceAnimation.referenceScope, /carried click R/);
+  assert.match(sourceAnimation.referenceScope, /fixed-frame click T/);
+  assert.match(sourceAnimation.referenceScope, /spring S–S′/);
+  assert.match(sourceAnimation.referenceScope, /not dimensioned/);
+  assert.equal(sourceAnimation.sourceUrl,
+    'https://507movements.com/mm_321.html');
+  assert.equal(sourceReference.officialDescription, movement.description);
+
+  assert.equal(plate.imageWidth, 525);
+  assert.equal(plate.imageHeight, 525);
+  assert.equal(plate.measurementUncertaintyPixels, 11);
+  assert.deepEqual(plate.rasterBarrelCenterB,
+    new THREE.Vector2(239, 242));
+  assert.deepEqual(plate.rasterFrameClickPivotT,
+    new THREE.Vector2(479, 47));
+  assert.deepEqual(plate.rasterFrameClickContactT,
+    new THREE.Vector2(181, 80));
+  assert.deepEqual(plate.rasterCarriedClickPivotR,
+    new THREE.Vector2(369, 269));
+  assert.deepEqual(plate.rasterCarriedClickContactR,
+    new THREE.Vector2(293, 320));
+  assert.deepEqual(plate.rasterOuterSpringAnchorSPrime,
+    new THREE.Vector2(65, 208));
+  assert.deepEqual(plate.rasterInnerSpringAnchorS,
+    new THREE.Vector2(162, 132));
+  assert.deepEqual(plate.rasterWeightCenter,
+    new THREE.Vector2(173, 487));
+  assert.match(plate.inferredTopology, /coaxial outer great wheel G/);
+  assert.match(plate.inferredTopology, /small ratchet fixed to barrel B/);
+
+  const reference = stateAtTime(0);
+  const tolerance = plate.measurementUncertaintyPixels
+    * geometry.sourceScale;
+  planarNear(sourcePointToReferenceFront(plate.rasterBarrelCenterB),
+    new THREE.Vector3(), 0, 'source B/G center');
+  planarNear(sourcePointToReferenceFront(plate.rasterFrameClickContactT),
+    reference.contacts.T.point, tolerance, 'source fixed-click T contact');
+  planarNear(sourcePointToReferenceFront(plate.rasterCarriedClickContactR),
+    reference.contacts.R.point, tolerance, 'source carried-click R contact');
+  planarNear(sourcePointToReferenceFront(plate.rasterOuterSpringAnchorSPrime),
+    reference.springGeometry.pointAtMaterialFraction(0),
+    tolerance, 'source outer spring anchor S-prime');
+  planarNear(sourcePointToReferenceFront(plate.rasterInnerSpringAnchorS),
+    reference.springGeometry.pointAtMaterialFraction(1),
+    tolerance, 'source inner spring anchor S');
+  near(sourcePointToReferenceFront(plate.rasterWeightCenter).y,
+    reference.weightPosition.y, tolerance,
+    'source weight vertical station');
+  assert.deepEqual(sourceReference.primaryScan, {
+    archiveIdentifier: 'fivehundredseven00browiala',
+    descriptionPage: 79,
+    edition: 21,
+    illustrationPage: 78,
+    publicationYear: 1908,
+  });
+  disposeModel(model.root);
+});
+
+test('movement 321 has the source three-member coaxial stack and two distinct clicks', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { blocks, geometry } = model.root.userData;
+
+  assert.deepEqual(blocks.greatWheel.userData.axis,
+    new THREE.Vector3(0, 0, 1));
+  assert.deepEqual(blocks.largeRatchet.userData.axis,
+    new THREE.Vector3(0, 0, 1));
+  assert.deepEqual(blocks.barrel.userData.axis,
+    new THREE.Vector3(0, 0, 1));
+  near(blocks.greatWheel.position.x, 0, 0, 'G coaxial x');
+  near(blocks.greatWheel.position.y, 0, 0, 'G coaxial y');
+  near(blocks.largeRatchet.position.x, 0, 0, 'large ratchet coaxial x');
+  near(blocks.largeRatchet.position.y, 0, 0, 'large ratchet coaxial y');
+  near(blocks.barrel.position.x, 0, 0, 'B coaxial x');
+  near(blocks.barrel.position.y, 0, 0, 'B coaxial y');
+  assert.ok(blocks.greatWheel.position.z < blocks.largeRatchet.position.z);
+  assert.ok(blocks.largeRatchet.position.z < blocks.barrel.position.z);
+  assert.equal(blocks.greatWheel.userData.teeth, geometry.greatWheelToothCount);
+  assert.equal(blocks.largeRatchetMesh.userData.toothCount,
+    geometry.largeRatchetToothCount);
+  assert.equal(blocks.barrelRatchet.userData.toothCount,
+    geometry.barrelRatchetToothCount);
+  assert.notEqual(blocks.clickR, blocks.clickT);
+  assert.notEqual(blocks.clickR.parent, blocks.clickT.parent);
+  assert.ok(geometry.largeRatchetInnerRadius
+    > geometry.barrelRatchetPitchRadius,
+  'annular large ratchet clears the small barrel ratchet');
+  disposeModel(model.root);
+});
+
+test('movement 321 transmits weight torque through R and a constant-preload spring while going', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let previousWeightY = Infinity;
+
+  for (let sample = 0; sample <= 256; sample += 1) {
+    const phase = geometry.windingStartPhase * sample / 256;
+    const state = stateAtTime(geometry.demonstrationPeriod * phase);
+    assert.equal(state.isWinding, false);
+    assert.match(state.mode, /weight-drives-B-through-R/);
+    assert.equal(state.clickRMode, 'engaged-transmitting-weight-torque');
+    assert.equal(state.clickTMode,
+      'ratcheting-forward-over-large-ratchet');
+    near(state.barrelAngle, state.largeRatchetAngle, 3e-15,
+      `B and larger ratchet locked by R at ${sample}`);
+    near(state.largeRatchetAngle, state.greatWheelAngle, 3e-15,
+      `spring preload constant at ${sample}`);
+    near(state.barrelAngularVelocity,
+      geometry.greatWheelAngularVelocity, 0,
+    `B going speed at ${sample}`);
+    near(state.largeRatchetAngularVelocity,
+      geometry.greatWheelAngularVelocity, 0,
+    `larger-ratchet going speed at ${sample}`);
+    near(state.springDeflection, geometry.springPreload, 3e-15,
+      `constant going preload at ${sample}`);
+    near(state.rope.slipError, 0, 8e-16,
+      `rope no-slip constraint at ${sample}`);
+    near(state.contacts.R.clearance, 0, 5e-15,
+      `R engaged on B at ${sample}`);
+    assert.ok(state.weightPosition.y <= previousWeightY + 2e-14,
+      `weight descends at ${sample}`);
+    previousWeightY = state.weightPosition.y;
+  }
+  disposeModel(model.root);
+});
+
+test('movement 321 holds the larger ratchet with T while B winds and the spring alone drives G', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let previousEnergy = Infinity;
+  let previousGreatAngle = -Infinity;
+  let previousWeightY = -Infinity;
+  let maximumRClearance = 0;
+
+  for (let sample = 1; sample <= 255; sample += 1) {
+    const phase = geometry.windingStartPhase
+      + (geometry.windingEndPhase - geometry.windingStartPhase)
+        * sample / 256;
+    const state = stateAtTime(geometry.demonstrationPeriod * phase);
+    assert.equal(state.isWinding, true);
+    assert.match(state.mode, /R-ratcheting-T-holds-spring-drives-G/);
+    assert.equal(state.powerSource,
+      'stored-maintaining-spring-S-S-prime');
+    assert.equal(state.clickRMode,
+      'ratcheting-over-reversing-barrel-teeth');
+    assert.equal(state.clickTMode,
+      'engaged-holding-large-ratchet-against-fallback');
+    near(state.largeRatchetAngle, Math.PI, 3e-15,
+      `T holds larger ratchet at ${sample}`);
+    near(state.largeRatchetAngularVelocity, 0, 0,
+      `held ratchet speed at ${sample}`);
+    near(state.contacts.T.clearance, 0, 5e-15,
+      `T remains seated at ${sample}`);
+    near(state.rope.slipError, 0, 8e-16,
+      `winding rope no-slip at ${sample}`);
+    assert.ok(state.springEnergy <= previousEnergy + 3e-12,
+      `spring supplies energy at ${sample}`);
+    assert.ok(state.greatWheelAngle > previousGreatAngle,
+      `G continues forward at ${sample}`);
+    assert.ok(state.weightPosition.y >= previousWeightY - 3e-12,
+      `winding lifts the weight at ${sample}`);
+    assert.ok(state.springTorque > geometry.goingLoadTorque,
+      `positive reserve torque at ${sample}`);
+    maximumRClearance = Math.max(maximumRClearance,
+      state.contacts.R.clearance);
+    previousEnergy = state.springEnergy;
+    previousGreatAngle = state.greatWheelAngle;
+    previousWeightY = state.weightPosition.y;
+  }
+  assert.ok(maximumRClearance > 0.02,
+    'carried click R visibly rides over the barrel teeth');
+  disposeModel(model.root);
+});
+
+test('movement 321 reengages R and restores spring preload without interrupting G', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let previousDeflection = -Infinity;
+  let previousGreatAngle = -Infinity;
+
+  for (let sample = 1; sample < 256; sample += 1) {
+    const phase = geometry.windingEndPhase
+      + (1 - geometry.windingEndPhase) * sample / 256;
+    const state = stateAtTime(geometry.demonstrationPeriod * phase);
+    assert.equal(state.isWinding, false);
+    assert.match(state.mode, /R-reengaged-weight-recharges-spring/);
+    assert.equal(state.clickRMode, 'engaged-transmitting-weight-torque');
+    assert.equal(state.clickTMode,
+      'ratcheting-forward-over-large-ratchet');
+    near(state.largeRatchetAngle - state.barrelAngle,
+      FULL_TURN, 4e-15,
+    `R engages the equivalent B tooth at ${sample}`);
+    near(state.largeRatchetAngularVelocity,
+      state.barrelAngularVelocity, 2e-15,
+    `B follows carried R at ${sample}`);
+    near(state.contacts.R.clearance, 0, 5e-15,
+      `R seated during recovery at ${sample}`);
+    assert.ok(state.springDeflection >= previousDeflection - 2e-13,
+      `spring preload recovers at ${sample}`);
+    assert.ok(state.greatWheelAngle > previousGreatAngle,
+      `G remains forward at ${sample}`);
+    previousDeflection = state.springDeflection;
+    previousGreatAngle = state.greatWheelAngle;
+  }
+  const closure = stateAtTime(geometry.demonstrationPeriod);
+  near(closure.springDeflection, geometry.springPreload, 2e-15,
+    'spring preload restored');
+  disposeModel(model.root);
+});
+
+test('movement 321 flexes one constant-material-length spring between live G and ratchet anchors', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let maximumLengthError = 0;
+  let minimumSegmentLength = Infinity;
+  let maximumSegmentLength = 0;
+
+  for (let sample = 0; sample <= 512; sample += 1) {
+    const state = stateAtTime(geometry.demonstrationPeriod * sample / 512);
+    const spring = state.springGeometry;
+    maximumLengthError = Math.max(maximumLengthError,
+      Math.abs(spring.measuredLength - geometry.springMaterialLength));
+    const expectedOuter = new THREE.Vector3(
+      Math.cos(state.greatWheelAngle
+        + Math.atan2(0.50, -2.55)) * geometry.springOuterAnchorRadius,
+      Math.sin(state.greatWheelAngle
+        + Math.atan2(0.50, -2.55)) * geometry.springOuterAnchorRadius,
+      1.16,
+    );
+    const expectedInner = new THREE.Vector3(
+      Math.cos(state.largeRatchetAngle
+        + Math.atan2(1.65, -1.10)) * geometry.springInnerAnchorRadius,
+      Math.sin(state.largeRatchetAngle
+        + Math.atan2(1.65, -1.10)) * geometry.springInnerAnchorRadius,
+      1.16,
+    );
+    vectorNear(spring.pointAtMaterialFraction(0), expectedOuter, 1e-14,
+      `outer S-prime anchor at ${sample}`);
+    vectorNear(spring.pointAtMaterialFraction(1), expectedInner, 1e-14,
+      `inner S anchor at ${sample}`);
+    near(state.springTorque,
+      geometry.springStiffness * state.springDeflection,
+      2e-15, `linear torsion law at ${sample}`);
+    if (sample % 64 === 0) {
+      for (let segment = 0; segment < geometry.springSegmentCount;
+        segment += 1) {
+        const length = spring.pointAtMaterialFraction(
+          (segment + 1) / geometry.springSegmentCount,
+        ).distanceTo(spring.pointAtMaterialFraction(
+          segment / geometry.springSegmentCount,
+        ));
+        minimumSegmentLength = Math.min(minimumSegmentLength, length);
+        maximumSegmentLength = Math.max(maximumSegmentLength, length);
+      }
+    }
+  }
+  assert.ok(maximumLengthError < 4e-13,
+    `maintaining spring material-length error ${maximumLengthError}`);
+  const nominalSegmentArcLength = geometry.springMaterialLength
+    / geometry.springSegmentCount;
+  assert.ok(maximumSegmentLength <= nominalSegmentArcLength * 1.003,
+    'no spring chord exceeds its assigned material arc length');
+  assert.ok(minimumSegmentLength >= nominalSegmentArcLength * 0.85,
+    'spring sampling remains fine enough through the tightest bend');
+  disposeModel(model.root);
+});
+
+test('movement 321 closes all asymmetric members and leaves movement 507 as the next draft', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const {
+    animationTiming,
+    blocks,
+    geometry,
+    stateAtTime,
+    timeline,
+  } = model.root.userData;
+  const start = stateAtTime(0);
+  const closure = stateAtTime(geometry.demonstrationPeriod);
+
+  near(closure.greatWheelAngle - start.greatWheelAngle,
+    FULL_TURN, 0, 'G makes one full uninterrupted turn');
+  near(closure.largeRatchetAngle - start.largeRatchetAngle,
+    FULL_TURN, 0, 'larger ratchet closes one turn');
+  near(closure.barrelAngle, start.barrelAngle, 0,
+    'barrel B and weight close after winding');
+  vectorNear(closure.weightPosition, start.weightPosition, 0,
+    'weight position closure');
+  for (let index = 0; index < 4; index += 1) {
+    vectorNear(closure.springGeometry.controlPoints[index],
+      start.springGeometry.controlPoints[index], 2e-14,
+    `spring control ${index} closure`);
+  }
+  assert.equal(animationTiming.authoredCyclePeriod, geometry.demonstrationPeriod);
+  assert.equal(animationTiming.targetCycleDuration, 2);
+  assertReadableTiming(animationTiming);
+  assert.equal(timeline.schedule.length, 6);
+
+  for (const time of [0, 2, 4, 4.7, 5.3, 6, 6.7, 7.4, 8]) {
+    const state = stateAtTime(time);
+    model.update(time);
+    near(blocks.greatWheel.userData.rotor.rotation.z,
+      state.greatWheelAngle, 0, `rendered G at ${time}`);
+    near(blocks.largeRatchet.userData.rotor.rotation.z,
+      state.largeRatchetAngle, 0, `rendered larger ratchet at ${time}`);
+    near(blocks.barrel.userData.rotor.rotation.z,
+      state.barrelAngle, 0, `rendered B at ${time}`);
+    vectorNear(blocks.weight.position, state.weightPosition, 0,
+      `rendered weight at ${time}`);
+    model.root.traverse((object) => {
+      for (const value of object.position.toArray()) {
+        assert.ok(Number.isFinite(value), `finite render position at ${time}`);
+      }
+      for (const value of object.quaternion.toArray()) {
+        assert.ok(Number.isFinite(value), `finite render quaternion at ${time}`);
+      }
+    });
+  }
+
+  const movement507 = catalog.movements[506];
+  const model507 = createMovementModel(movement507);
+  assert.equal(movement507.id, 507);
+  assert.equal(movement507.fidelity, 'authored');
+  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
+  assert.equal(model507.root.userData.fidelity, 'authored');
+  disposeModel(model507.root);
+  disposeModel(model.root);
+});
