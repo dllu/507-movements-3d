@@ -884,7 +884,7 @@
       "title": "Intermittent alternating rectilinear motion is given to the rod, A…",
       "description": "85. Intermittent alternating rectilinear motion is given to the rod, A, by the continuous rotation of the shaft carrying the two cams or wipers, which act upon the projection, B, of the rod, and thereby lift it. The rod drops by its own weight. Used for ore-stampers or pulverizers, and for hammers.",
       "category": "Ratchets & intermittent motion",
-      "archetype": "two-wiper-gravity-stamp",
+      "archetype": "flat-projection-wiper-stamp",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_085.html"
     },

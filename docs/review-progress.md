@@ -4,28 +4,40 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
-## Movement 085 reconstruction study — 2026-09-12
+## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical
 follower, wide rod spacing and straight support. Its prescribed late lift
 requires downward cam support, and a finite screen finds shaft/support and
 travel-marker/guide intersections.
 
-The isolated candidate follows the measured wipers, flat projection B, square
+The integrated replacement follows the measured wipers, flat projection B, square
 rod, curved standard and flared head. It has fifteen closed solids, a rotating
 input shaft and actual guide/bearing bores. Hidden depths and a striking bed
 that keeps both guides engaged are explicit reconstruction assumptions.
 Gravity and finite cam contact determine the rod motion at four seconds per
-shaft revolution. Corrected 0.25 and 0.125 ms runs agree within 0.193724 source
-pixels. All 54,699 contact reactions pass actual mesh boundary and normal-cone
+shaft revolution. Nine-second 0.25 and 0.125 ms runs agree within 0.193724 source
+pixels. All 60,551 contact reactions pass actual mesh boundary and normal-cone
 checks; momentum and energy audits pass with contact drift work reported.
 The refined surface screen covers all 68 independent pairs and 1,501,058
-samples without detected intrusion. Ten final candidate views are inspected.
+samples without detected intrusion.
 
-Continuous clearance, complete repeat playback, shadow cleanup and production
-integration remain pending. Earlier capture, normal, mesh-limit and time-step
-failures are preserved. All 944 production inputs remain unchanged. See the
-[085 study](../artifacts/review/085-reconstruction-notes.md).
+Playback preserves startup and repeats a complete four-second cycle from a
+resting stamp pose. Its 2,950 knots add at most 0.000099171 source pixels of
+compression error. Continuous triangle bounds limit runtime contact projection
+to 0.002 pixels over every interval. Together with observed time-step agreement,
+the total is 0.195823137 source pixels; this is not a continuum-error guarantee.
+Continuous finite hardware bounds cover all 68 independent pairs.
+
+Production matches all 43 geometry buffers and 13,981 poses exactly. All 3,108
+numerical tests, the build and the targeted desktop/mobile browser check pass.
+Eighteen integrated images are inspected and accepted; the actual engine's
+shadow settings resolve the earlier candidate-preview shadow issue. Live
+playback averages 56.36 fps with approximately 0.1 ms 95th-percentile model
+updates. The other 506 catalog and display-profile entries remain unchanged.
+Earlier capture, normal, mesh-limit and time-step failures are preserved.
+No new all-507 browser pass is claimed. See the
+[085 review](../artifacts/review/085-reconstruction-notes.md).
 
 ## Movement 082 reconstruction study — 2026-09-11
 
@@ -2786,7 +2798,7 @@ attempt timed out after movement 482. See [the 081 review](../artifacts/review/0
 and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
-068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081 and 084 are verified.
+068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
 The complete 507-movement review remains active.**
 

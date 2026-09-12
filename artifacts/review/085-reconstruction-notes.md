@@ -1,8 +1,7 @@
 # Movement 085: two-wiper gravity stamp
 
-Status: source-shaped reconstruction and refined dynamics study; **not yet
-integrated or mechanically qualified**. The all-507 review remains active.
-Production remains exactly at the 944-input movement 084 checkpoint.
+Status: **rebuilt, integrated and verified** under the reconstruction
+assumptions below. The all-507 review remains active.
 
 The [original description](https://507movements.com/mm_085.html) specifies two
 wipers on a continuously rotating shaft, lifting projection B on a rod that
@@ -44,7 +43,7 @@ The inspected measurement overlay supports a common reconstructed axis at
 the hub center. Visible contours use manual stroke-center traces at 240
 source pixels per world unit.
 
-The candidate has fifteen closed solids: the two independently traced wipers,
+The replacement has fifteen closed solids: the two independently traced wipers,
 bored hubs, rotating input shaft, curved standard and raised border, rear
 bearing arm, two bored guides and their brackets, square rod A, flat
 projection B, flared stamp head and striking bed. Cam, rod and bearing occupy
@@ -61,8 +60,10 @@ share matching bore surfaces; the rear bearing has separate clearance.
 Twenty candidate views are inspected, including two source overlays and
 front, oblique, rear, contact, release and impact views. The final ten are in
 `085-refined-candidate-captures.json`, with no errors or unexpected warnings.
-The silhouette closely follows the source. Small shadow stair steps on the
-hub and standard remain a rendering item before final acceptance.
+The silhouette closely follows the source. The candidate preview showed
+small shadow stair steps on the hub and standard. Final integrated renders
+apply the model's shadow settings through the actual engine and resolve that
+issue; the final head shading and shadows are accepted.
 
 ## Motion and evidence
 
@@ -104,16 +105,59 @@ poses, using 1,501,058 actual surface samples. All fifteen meshes are closed,
 and there is no detected intrusion beyond 1e-6 world units. This sampled
 screen does not establish continuous clearance.
 
-## Remaining work
+## Complete playback and continuous clearance
 
-Bound every independent pair continuously, including cam/B contact and the
-inferred guide/bed arrangement. Prepare compact playback with a verified
-startup and complete repeat seam, then qualify its interpolation clearance.
-Resolve the remaining shadow details, integrate the model and catalog timing,
-and run appropriate numerical, build and browser checks against the final
-production state. The current app still uses the rejected baseline.
+Nine-second runs extend both refined step sizes to 36,001 and 72,001 states.
+Their maximum difference remains 0.193723966 source pixels. The complete
+four-second repeat compares seconds 1–5 with 5–9 at 32,001 states: maximum
+displacement difference is 6.18e-11 pixels. Both endpoints rest on the bed with
+zero velocity, while the cam advances exactly one revolution. The extended
+spatial audit passes all 60,551 positive reactions and 121,102 boundary checks;
+momentum and energy checks also pass. See `085-nine-second-agreement.json`
+and `085-nine-second-reactions.json`.
 
-`085-first-study-checkpoint.json` freezes the current study and its evidence.
-All 944 production inputs, 71 current movement 083 sources and 43 current
-movement 082 sources remain unchanged. No new full-suite or app-integration
-pass is claimed for this isolated study.
+Playback retains the original startup, then repeats this resting-endpoint
+cycle. Compressing 40,001 states into 2,950 knots adds at most 0.000099171
+source pixels. Runtime projection uses the actual cam boundary and striking
+plane. An independent triangle-interval proof bounds its correction to
+**0.002 source pixels throughout every interval**, including between sampled
+poses. Time-step agreement, compression and the continuous projection bound
+total **0.195823137 source pixels**. This combines observed numerical agreement
+with bounded playback errors; it does not establish exact continuum dynamics.
+
+The continuous hardware checker covers all 68 independent pairs: 63 have
+whole-motion axis separation, one uses the complete cam/B triangle bound,
+one has a complete bearing-bore bound, two use the actual guide-cap openings,
+and one uses the nonpenetrating striking plane. The cam proof covers all 2,949
+playback intervals, using 1,564,046 triangle intervals and adaptive subdivision.
+The guide bounds include the entire rod travel and playback correction.
+See `085-first-playback.json`, `085-first-playback-bound.json` and
+`085-first-hardware-bound.json`.
+
+## Production verification
+
+The app now uses this reconstruction at four seconds per shaft revolution,
+with continuous playback, full-motion camera bounds, hidden ground and no fog.
+Production matches the independently verified candidate exactly: all 43
+geometry buffers, 13,981 poses and 88,485 world transforms agree with zero
+reported difference. The other 506 catalog and display-profile entries remain
+unchanged.
+
+All five focused tests, **all 3,108 numerical tests**, the production build
+and the targeted desktop/mobile browser check pass. The browser check covers
+paused startup, play/pause, continued animation beyond the first five seconds,
+mobile framing and resumed motion. The build contains 420 modules and retains
+the existing large-bundle warning.
+
+All eighteen integrated source, overlay, motion, contact, rear, oblique,
+desktop and mobile images are inspected and accepted. The live capture
+reports 481 frames in 8.5164 seconds, averaging 56.36 fps with approximately
+0.1 ms 95th-percentile model updates, without errors or unexpected warnings.
+
+`085-integrated-checkpoint.json` records the final evidence and
+`085-integrated-source-hashes.json` freezes the production inputs. The source
+transition archives all five intentional changes to the prior 944-input map;
+the other 939 inputs remain unchanged. All 23 prior movement 085 study sources,
+71 current movement 083 sources and 43 current movement 082 sources remain
+unchanged. Earlier failed studies and capture evidence remain preserved.
+No new all-507 browser pass or completion of the catalog review is claimed.
