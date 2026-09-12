@@ -503,6 +503,68 @@ negative controls and retained earlier failures. It verifies all 972 production
 inputs, the 23 original core sources and the current 082/083 studies unchanged.
 No new production build or full numerical/browser-suite pass is claimed.
 
+## Rope self-clearance, playback and event-timing study
+
+The display rope now has a continuous self-clearance argument. Section planes
+separate nonadjacent cells; positive closed-cell face determinants exclude
+local folding. The winding arc stays below pi. Both the large slack bow at
+the lower bed and tiny slack at every raised-pump height are covered, with
+horizontal joins separating the constituent pieces. The full Float32 rounding
+allowance is 8.259061849e-7 units, below the existing 1e-6 mesh tolerance.
+Controls reject a full-circle overlap, an inward-folded bow and an oversized
+section. `086-complete-rope-self-bounds.json` supersedes the first self-bound
+report, which omitted the separate raised-pump quiet-bow domain.
+
+The first full 3D rope agreement diagnostic finds a 3.106992478-pixel bound
+near bottom arrival at 6.5204375 seconds. At that instant the 0.125 ms run has
+already formed slack while the 0.0625 ms run remains taut. Compression adds
+only 0.008975387 pixels. Separate front-projection bounds at the same finest
+knots are 0.164431321 pixels for step agreement and 0.001700349 for compression.
+Those smaller projected errors do not turn the retained full 3D failure into
+a pass; nonlinear errors between time knots also remain to be bounded.
+
+An isolated playback wrapper preserves startup, repeats the measured settled
+interval at four display seconds per input revolution, and keeps the input
+angle continuous so the drive-band texture does not jump at the loop seam.
+The baseline browser run averages 20.85 fps with 6.1 ms p95 model updates.
+Reusable rope buffers match every position, normal, UV and index exactly at
+118 sampled motion/wrap poses, without reallocating the geometry. Exact tuple
+indexing also reduces the 41 rigid parts from 253,020 to 102,898 vertices;
+all 2,073,456 expanded attribute components match, including signed zero.
+The initial indexer's signed-zero mismatch is retained separately.
+
+The final optimized preview averages 22.64 fps with 1.5 ms p95 updates at
+pixel ratio 2. Its renderer reports Vulkan SwiftShader software rendering;
+no hardware-GPU performance claim follows from this measurement. Five baseline
+and five fully optimized source, lift, oblique-slack and loop-seam stills are
+inspected. Both captures span 12.2 seconds without browser errors or unexpected
+warnings. The intermediate reusable-rope preview is also retained, but its
+five stills are not counted as inspected.
+
+A separate hybrid solver trial addresses the timing sensitivity. RK4 handles
+free motion and the linear wrapped-rope, heel and bed constraints; the original
+unilateral impact solver handles nonlinear cam contacts and contact events.
+Independent elimination of the pump coordinate, then of the held heel,
+reproduces its three-coordinate accelerations within 1e-12. Incompatible
+initial velocities are rejected.
+
+The first 0.5/0.25 ms hybrid comparison still fails: 0.591887482 rigid pixels
+and 1.685172043 rope pixels, with the rope maximum now during cam take-up.
+Bottom-arrival times agree to numerical precision. The 0.25 ms force audit
+passes its endpoint reaction and stage momentum checks but finds an
+intermediate penetration of 5.311662536e-8 units against the 2e-8 stage target.
+Its signed/absolute work defects are 0.11177%/0.11595%, within the existing
+thresholds. These failed trials remain retained. The next version checks every
+RK stage against actual finite gaps and separately refines sliding-cam phases;
+it requires fresh complete-motion qualification before use in production.
+
+The first guarded runs are interrupted after demonstrating a refinement-mode
+classification error: optional corner-seed metadata can be absent even when
+two independent physical cam equations fix both angles. Four new controls
+check the actual constraint rank, including a duplicated parallel-face case.
+The interrupted logs and source snapshots are retained. Corrected full runs
+use the `086-ranked-hybrid-coarse` and `086-ranked-hybrid-fine` prefixes.
+
 ## Remaining work and checkpoints
 
 Qualify the combined input, winding, rope and guided pump hardware. Its
@@ -510,8 +572,10 @@ free-body masses have been recomputed; the rear belt interpretation and
 omitted output hardware remain reconstruction assumptions.
 
 The repeated capture, release and return now meet the observed step-agreement
-target, including cold-start seating. Establish display-rope self-clearance
-and deformation sensitivity, then measure readable playback and performance.
+target, including cold-start seating. Display-rope self-clearance and an
+isolated playback/performance baseline are now recorded. Resolve full 3D
+deformation sensitivity through refined contact-event timing, then renew the
+force, work, compression and continuous-clearance evidence for that trajectory.
 The omitted load, bearing-loss, hidden-depth and winding details remain
 explicit reconstruction assumptions. Integrate the qualified candidate and
 validate production; the combined candidate is not yet marked verified.

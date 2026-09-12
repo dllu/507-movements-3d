@@ -2896,8 +2896,13 @@ separate rope bounds cover all 41 surrounding parts, including the winding
 groove, clamp, guide openings and load ferrule. Deliberately blocked openings
 are rejected. Doubling only the display bow's tessellation also resolves the
 earlier rope-length screen failure. Five additional motion views are inspected.
-Earlier failed studies remain archived. Rope self-intersection, readable
-playback, performance and production integration remain pending. See the
+Earlier failed studies remain archived. Rope self-clearance now has continuous
+section-plane and cell-orientation bounds. An exact buffer/index optimization
+reduces p95 model updates from 6.1 to 1.5 ms; the isolated four-second preview
+runs at 22.6 fps on SwiftShader and has ten inspected baseline/final stills.
+Full 3D rope agreement exposes contact-timing sensitivity, so a separate hybrid
+solver trial is refining those events. Its initial failed convergence and
+intermediate-gap checks remain retained. Production integration is pending. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
