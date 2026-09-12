@@ -220,6 +220,23 @@ requested durations, and all four packed reports reproduce their producer
 byte counts and hashes when decoded. The 69 study sources are frozen, with
 904 production inputs unchanged; the full review remains active.
 
+The finer 0.0625 ms first-cycle spatial audit now passes all 243,476 reactions.
+Its completed second cycle passes guided clearance and energy checks, but
+the sixteen-second base-step comparison **fails at 6.992124 pixels**. A brief
+tooth-25 contact is present in the 0.125 ms history and absent in the finer one.
+Halving only the event window from the same saved second-cycle starting state
+passes at 0.202838 pixels.
+
+From an identical state at twelve seconds, the next 1.5 seconds at 0.0625 ms
+and 0.03125 ms agree within 0.000111698 pixels. Using different parent states
+with the same 0.03125 ms step preserves the different tooth catches and grows
+an initial 0.00343611-pixel position difference to 3.698066 pixels. This
+establishes sensitivity to accumulated state differences; it does not resolve
+the complete motion's accuracy. The finer cycle endpoints also fail the loop
+target at 1.406439 pixels. A complete 0.03125 ms first cycle continues running.
+The two diagnostics bring the frozen 083 source count to 71; playback,
+integration and the full review remain open.
+
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
 The later midpoint failure establishes the limits of that sampled evidence.

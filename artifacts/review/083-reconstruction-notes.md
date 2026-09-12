@@ -1027,3 +1027,75 @@ unchanged, and all nine added scripts pass syntax checks. See
 `083-packed-clock-bdf-checkpoint.json`. No browser, app build or production
 test rerun is claimed in this step. Longer motion accuracy, repeated playback,
 support presentation and the full 507 review remain open.
+
+## Grazing contact and sensitivity to carried states
+
+Both jobs pending at the packed-report checkpoint completed successfully. The
+0.0625 ms first-cycle spatial audit passes all 132,973 intervals, 243,476
+reactions and 486,952 boundary checks, with maximum momentum residual 6.283e-14.
+The second cycle has 133,135 accepted intervals and no failed steps. Its
+complete guided clearance and energy audit pass; normalized energy residual
+is 7.142e-11. Its full spatial reaction audit has not been performed.
+
+The 0.125 ms versus 0.0625 ms comparison over sixteen seconds **fails at
+6.992124 pixels**, across 404,046 union knots. The first target crossing is
+near 12.69975 seconds. In the coarser history the front arc catches tooth 25
+at 12.693914856 seconds and releases it at 12.693972717 seconds, about 57.86 us
+later. The finer history misses this brief contact and first reaches tooth 26
+at 12.702806030 seconds. The new segmented onset diagnostic preserves exact
+carried states and reproduces the earlier joined-input diagnostic's bins,
+threshold crossings, bracketing states and contact windows exactly. See
+`083-segmented-divergence-controls.json` and
+`083-packed-clock-tenth-us-sixteenth-divergence.json`.
+
+The controlled event comparison starts both second-cycle runs from the same
+saved 0.125 ms first-cycle state. Solver code and physical parameters agree;
+only the event window and its minimum step are halved, from 0.1 us to 0.05 us.
+These runs **pass at 0.202838 pixels** over 128,197 union knots. Complete guided
+clearance and energy checks pass for the new history; its normalized energy
+residual is 2.588e-10. This isolates the event setting for this interval and
+initial state, and does not establish convergence from the original startup.
+
+Two local runs carry the identical state at 12.000000000034154 seconds from
+the 0.0625 ms parent history. At base steps of 0.0625 ms and 0.03125 ms, both
+with 0.1 us events, their next 1.5 seconds **agree within 0.000111698 pixels**
+over 74,112 union knots. Both miss tooth 25. The finer local history passes
+complete guided clearance; energy audits pass both histories with normalized
+residuals 2.219e-10 and 6.293e-11. These local results do not qualify the
+complete startup trajectory.
+
+A third local run uses the same 0.03125 ms step and 0.1 us event setting, but
+carries the 0.125 ms parent's state near twelve seconds. It retains the brief
+tooth-25 catch. The two fine-step local runs begin with position differences
+of at most 0.00343611 pixels. The wheel-speed difference is 8.315e-5 radians
+per second; the plate-speed differences are 7.809e-5 and 6.210e-5 world units
+per second. Their maximum positional disagreement grows to 3.698066 pixels
+by 13.5 seconds. Both inputs retain their exact parent states;
+their represented start times differ by 2.265e-11 seconds. The diagnostic
+records analytic input-angle and input-velocity bounds for this clock offset,
+below 4e-12 radians and 3.1e-12 radians per second respectively. Solver code,
+time-step settings and physical parameters are identical. The coarse-seeded
+local history also passes guided clearance and energy checks. See
+`083-packed-clock-graze-seed-sensitivity.json`.
+
+This establishes sensitivity to the carried state around the brief contact.
+It explains why improving only the local step near the contact does not remove
+the disagreement inherited from earlier integration. It does not identify
+which complete history approximates the continuum solution or justify changing
+the physical parameters to force a preferred tooth catch.
+
+The finer complete cycles advance 8.108177 and 8.023727 teeth. Their final two
+endpoints differ by up to **1.406439 pixels** after subtracting the nearest
+eight-tooth advance. The largest reverse excursion in the second cycle is
+0.188589 tooth. Repeated playback and the intended nearly continuous output
+remain unqualified; `083-packed-clock-finer-cycle-motion.json` preserves these
+diagnostics and the earlier coarser endpoint failure.
+
+The complete 0.03125 ms / 0.1 us first cycle is running in session 52036, Node
+PID 124791, with prefix `083-packed-clock-tenth-us-full-thirtysecond-ms`. The
+two new diagnostics bring the frozen 083 study source count to 71. Production
+and the existing 082/083 sources remain unchanged. No browser or production
+build was run during this step. `083-grazing-state-checkpoint.json` verifies
+all five newly completed trajectories, 21 supporting reports, source archives
+and producer serialization hashes, and records the remaining live process.
+The full 507 review remains active.
