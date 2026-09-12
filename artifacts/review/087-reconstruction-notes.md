@@ -70,3 +70,9 @@ is not integrated. All 1,097 inputs frozen after the verified 086 integration
 are unchanged, as are the 082/083 study sources. No new production build,
 full-suite test or all-507 browser pass is claimed. The complete review remains
 active.
+
+A subsequent [slot-coupling study](087-lost-motion-notes.md) preserves this
+measured candidate and explores a separate 213-part operating hypothesis.
+It resolves sampled hardware collisions and identifies the return contact's
+force-direction constraint, but requires substantial rod-pin changes and
+still has no qualified reversal trajectory.

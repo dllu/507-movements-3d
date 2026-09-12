@@ -2936,6 +2936,24 @@ no reversal animation or continuous-clearance pass is claimed. Production and
 all 1,097 frozen inputs remain unchanged. See the
 [087 reconstruction review](../artifacts/review/087-reconstruction-notes.md).
 
+087 also has a separate 213-part lost-motion hypothesis informed by a period
+weighted-clutch analogue. A finite follower traverses the curved slot for
+76.31 degrees before shifting D; the full diagnostic swing is 83.93 degrees.
+The contact-direction study shows why mere stud reach is insufficient: within
+the tested equal-pin-adjustment family, 51 source pixels permit reach, but
+70 are needed for useful return torque. The current 75-pixel version is an
+explicit and visible departure from Brown's proportions, not an accepted
+source reconstruction.
+
+After correcting weight/shifter and spacer/rod collisions, all 213 solids and
+26 diagnostic forward/return poses pass 7,120,408 native surface samples.
+Fifteen final stills are inspected with no browser errors or unexpected
+warnings. Motor/output angles remain fixed during this screen; gravity,
+native stud-driven motion, loaded clutch contact and continuous clearance are
+still pending. The measured 207-part candidate, production and all 1,097
+frozen inputs remain unchanged. See the
+[087 lost-motion study](../artifacts/review/087-lost-motion-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
