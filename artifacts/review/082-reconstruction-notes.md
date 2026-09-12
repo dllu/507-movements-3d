@@ -2,8 +2,48 @@
 
 Status: **in progress; not integrated or fully mechanically verified**. The
 candidate now has three free dynamic coordinates, a closer source pose and
-corrected hardware spacing. All 904 frozen production inputs remain identical
-to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
+corrected hardware spacing. Its geometry and dynamics remain separate from
+production. The later framing-marker shadow fix changes only the shared
+shadow helper: 903 of the 904 frozen production files still match the verified
+081 state, and `083-shadow-source-hashes.json` records the updated map.
+
+## Finest reaction/loading audit and longer settling
+
+All **690,558 positive contact reactions** in the 0.03125 ms startup trajectory
+pass independent boundary and normal-cone checks on both bodies (1,381,116
+checks of each). The accompanying checks cover 144 generalized forces, 4,728
+contact-coordinate derivatives and 1,576 input derivatives, without a missing
+contact or failed feature. The maximum force discrepancy is 1.01337e-8 in
+normalized study units.
+
+The loading audit also passes all 384,000 finest-step intervals. Its maximum
+cumulative corrected energy residual decreases from 0.00268151 at 0.25 ms to
+0.000335278 at 0.03125 ms. The latter is **0.00143644%** of the work/loss scale,
+below the unchanged 0.1% threshold. Maximum momentum residual is 8.58e-11;
+there are no missing contacts. The constructive two-foot loading retains
+positive strap tension, with a minimum of 62.6801 normalized force units.
+Impact force peaks depend on the time step; these are not measured forces.
+The single-descending-foot alternative still needs pulling on roughly half
+the intervals, and one interval would require negative strap tension. It is
+not an accepted alternative to the explicit two-foot idealization.
+
+The 0.125 ms settling study now reaches 60 physical seconds with no failed or
+rejected steps. Eight-second adjacent-cycle differences persist and increase
+from 8.70986 to 9.41711 source pixels. Sixteen-second, ten-tooth cycles agree
+much more closely, at 0.258047 and 0.515741 pixels, but do not yet qualify a
+repeat. The largest discrepancy occurs near lower-pawl release and recontact;
+nearly matching endpoint states remain insufficient evidence. A 48-second
+continuation from the same twelve-second initial state is now running at
+0.0625 ms to test the sensitivity to time step.
+
+The new local records are `082-thirtysecond-ms-contact-reactions.json`,
+`082-thirtysecond-ms-linkage-loads.json`,
+`082-settling-continued-eighth-ms-dynamics.json`,
+`082-fine-eight-second-recurrence.json` and
+`082-fine-sixteen-second-recurrence.json`. The separate
+`082-finest-audit-checkpoint.json` records the completed audits and pending
+continuation. These results do not qualify a repeated playback seam, replace
+the stated pulley/strap idealizations, or integrate movement 082.
 
 ## Refined startup and complete finite-trajectory clearance
 
@@ -54,7 +94,8 @@ comparisons also fail. The recurrence tool now accepts longer candidate
 periods and contiguous trajectory chunks, enforcing exact carried boundary
 positions and velocities. Splitting and rejoining a real trajectory produces
 bitwise-identical comparisons, and a discontinuous boundary is rejected.
-A longer fine settling run and the newest reaction/loading audits are pending.
+The later stage above records the completed longer run and reaction/loading
+audits, and the next finer continuation.
 Final playback, its seam, repeated-motion clearance and integration remain open.
 
 Current local evidence includes `082-startup-thirtysecond-ms-refinement.json`,
@@ -394,7 +435,9 @@ the ten study sources and their evidence; `082-candidate-inspections.json`
 records the image reviews. Bulk evidence is local as described in
 [`artifacts/README.md`](../README.md).
 
-The last production result remains movement 081's 3,100 numerical tests,
-build, and targeted desktop/mobile browser pass. No new whole-app test or
+The later shared shadow fix passes all 3,100 numerical tests and the build,
+plus six targeted before/after renders. All 41 saved treadle study sources
+still match; its 35 meshes contain no framing marker and retain their shadow
+flags. Movement 081 retains its targeted desktop/mobile evidence. No new
 all-507 browser pass is claimed for this study. The full-507 review remains
 active, including unresolved 037, 063, 071 and 073.

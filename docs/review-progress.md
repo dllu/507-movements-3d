@@ -9,8 +9,8 @@ evidence that all models match the engravings or avoid interference.
 082 now has a finite-contact dynamics candidate with 26 steeper teeth,
 curved pawls, separate rod joints and a small pulley C. The fixed-pin linkage
 supplies both moving pawl hinges; gravity, inertia and an explicit lower-pawl
-preload determine free motion. A twelve-second run passes 10,905 independent
-contact-reaction checks. Corrected joint/support spacing passes 12,153,906
+preload determine free motion. The finest twelve-second run passes 690,558
+independent contact-reaction checks. Corrected joint/support spacing passes 12,153,906
 surface samples over 49 poses and 538 pairs. All 35 meshes pass topology
 checks, and 13 new source/motion views are inspected.
 
@@ -36,15 +36,42 @@ The finite browser preview keeps all 269 rendered frames inside the camera
 and above the ground. It averages 22.32 fps locally, with 0.400 ms model updates
 at the 95th percentile. This is diagnostic candidate evidence.
 
-082 has not been integrated. The finer settling study still rejects an
-eight-second loop despite near-matching endpoints; longer cycles are under
-investigation. Final playback and repeated-motion clearance remain pending,
-along with the newest reaction/loading checks. The pulley/strap idealizations
-remain explicit. Earlier gravity, contact,
+The finest loading audit also passes, with a corrected cumulative energy
+residual of 0.00143644% of its work/loss scale. It retains the explicit ideal
+two-foot loading and massless pulley/strap assumptions.
+
+082 has not been integrated. The settling study reaches 60 seconds without
+failed steps. It still rejects an eight-second loop; sixteen-second cycles
+agree more closely but differ by up to 0.515741 pixels. A finer continuation
+is running. Final playback and repeated-motion clearance remain pending.
+Earlier gravity, contact,
 hardware, step-size and recurrence failures remain archived, along with the
-rejected oversized-pulley interpretation. All 904 frozen production inputs
-remain unchanged. Details and limits are in the
+rejected oversized-pulley interpretation. The later framing-marker shadow
+fix changes only the shared shadow helper; 082 remains separate from
+production. Details and limits are in the
 [082 study](../artifacts/review/082-reconstruction-notes.md).
+
+## Movement 083 baseline review — 2026-09-11
+
+Six actual baseline views are inspected against the native engraving. The
+existing straight-bar sector and separate spring shoe do not reproduce the
+broad pierced source plate. The prescribed return lift also permits finite
+tooth interference: a 65-pose screen finds 4,632 penetrating samples among
+3,585,304 checks over 1,036 selected pairs, with maximum depth 0.062958 world
+units. This rejects the existing model; no replacement is yet integrated.
+Preliminary joint and plate-outline measurements are recorded in the
+[083 review](../artifacts/review/083-reconstruction-notes.md).
+
+## Invisible framing-marker shadows — 2026-09-11
+
+The shared shadow helper no longer enables shadows on invisible camera-framing
+guides. This removes the isolated shadow spots seen beyond 083's model.
+Constructing all 507 catalog entries confirms shadows are disabled on all
+66 marked guides in 53 movements. Six before/after renders are inspected;
+pose data and the source panel match, and only the former marker-shadow pixels
+change. The build and all 3,100 numerical tests pass. The updated
+904-input map is `artifacts/review/083-shadow-source-hashes.json`; only
+`src/simulation/primitives.js` differs from the prior production map.
 
 ## Movement 081 integration — 2026-09-11
 

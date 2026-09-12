@@ -30,8 +30,11 @@ export function matte(color, options = {}) {
 export function markShadows(object) {
   object.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
+      // Invisible framing markers contribute to camera bounds only. Their
+      // depth materials can still cast shadows despite zero visible opacity.
+      const physicalPart = !child.userData.cameraFitGuide;
+      child.castShadow = physicalPart;
+      child.receiveShadow = physicalPart;
     }
   });
   return object;
