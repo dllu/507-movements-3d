@@ -8,6 +8,12 @@ change remains visible in the overlay and is not accepted as a faithful final
 reconstruction. The original 207-part measured candidate and production remain
 unchanged.
 
+The later [native contact study](087-native-contact-notes.md) finds a 1.545-pixel
+stud/G edge overlap at this candidate's default source pose, missed by the
+sampled checks below. Its new lifting views use corrected E phases. Those
+exact contacts and rotating-hardware checks still do not qualify a full
+reversal.
+
 ## Source interpretation
 
 [Brown's description](https://507movements.com/mm_087.html) requires the stud on

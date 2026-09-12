@@ -6,6 +6,11 @@ in the same relative plane as E and the linkage. Production has a vertical
 input shaft and an upper edge-on cone. The earlier three-view production
 baseline remains in `087-inspected-baseline.json`.
 
+A later [native edge check](087-native-contact-notes.md) identifies a small
+stud/G overlap at the measured source pose that the sampled static screen
+below missed. The historical sampled results remain valid as samples, but
+they do not establish a collision-free source pose.
+
 The new native crop from Brown PDF page 30, printed page 26, preserves all
 pixels in the drawing. Fourteen circle fits retain their individual readings,
 rejections and missing samples. The crop and measurement overlay are inspected.

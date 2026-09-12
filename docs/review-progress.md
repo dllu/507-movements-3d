@@ -2954,6 +2954,22 @@ still pending. The measured 207-part candidate, production and all 1,097
 frozen inputs remain unchanged. See the
 [087 lost-motion study](../artifacts/review/087-lost-motion-notes.md).
 
+087's exact native stud/G edge check now exposes a 1.545-pixel overlap in the
+unchanged source pose that earlier surface samples missed. Corrected contact
+phases remove it in the new lifting poses. All 258 native contacts agree with
+full-solid 3D witnesses within 1.34e-14 world units. Independent gap derivatives
+confirm useful force transmission through the rod on both lifting strokes.
+The 213-part model passes 26,588,934 surrounding-hardware surface samples at
+18 rotating lifting poses, and all 13 new views are inspected. Other hardware
+pairs still have sampled, not continuous, clearance evidence.
+
+A broader pin-direction search only reduces the common displacement to
+73.5 pixels at the previous smooth-contact margin within its tested family;
+it does not resolve source fidelity. The existing geometry and production
+remain unchanged. Gravity fall, impact/release behavior and loaded clutch
+reversal still need to connect the two lifting branches. See the
+[087 native contact review](../artifacts/review/087-native-contact-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
