@@ -133,6 +133,18 @@ to earlier state error and does not qualify the complete motion. The approach
 to that landing, remaining reversal, support assumptions and final playback
 still need work; 083 remains outside production.
 
+An isolated BDF2 experiment now improves smooth-branch integration while
+retaining the old solver for contact changes. Analytic smooth and plastic-impact
+controls pass, and shared-state landing replays agree within 0.007862 pixels.
+The first 1 ms and 0.5 ms full cycles retain complete guided-candidate clearance
+but differ by **0.479747 pixels**, above the 0.25-pixel target. Their method-specific
+reaction audits are separate from the old energy audit. A supplemental
+immediate-release control exposes first-order backward-Euler startup error;
+the actual 083 start is a separately solved static equilibrium. A full 0.25 ms
+comparison is running. The new method has not passed full motion, energy or
+playback qualification. All 904 frozen app inputs and 43 treadle study sources
+remain unchanged; the original stepper and prior 083 evidence are preserved.
+
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
 The later midpoint failure establishes the limits of that sampled evidence.

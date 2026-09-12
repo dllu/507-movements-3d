@@ -555,3 +555,70 @@ the updated source map. The selected topology and contact results are
 bitwise unchanged by the shadow fix. `083-shadow-checkpoint.json` records
 these checks. No final mechanical acceptance of 083 or all-507 browser pass is claimed.
 The complete review remains active.
+
+## Isolated BDF2 accuracy experiment
+
+The first-order baseline and its archived failures remain intact. New study
+modules use BDF2 only while the active finite-contact branch stays unchanged.
+Position and velocity histories are both (4*current - previous)/3, with an
+endpoint force and velocity weight of 2*dt/3. New contacts, releases and
+supporting-feature changes fall back to the original backward-Euler projection
+and are recursively resolved to at most one microsecond. Two stable intervals
+rebuild history after a transition; pre-impact velocity must not manufacture a
+rebound in a later multistep update. Continuous primary-solid bounds still
+certify every accepted interpolated segment. No position is geometrically
+reseated, and geometry, springs, masses, gravity and damping are unchanged.
+
+The analytic controls in `083-bdf-controls.json` pass. Damped-oscillator position
+errors decrease from 0.01198295 to 0.00302524 to 0.00075789 under step halving.
+A quadratically moving support has less than 9e-14 final velocity error. A
+plastic falling-body control has no rebound above 1.3e-17, with landing-time
+errors of 0.00073014, 0.00019700 and 0.00004586 seconds. The original control's
+single coarse landing-time threshold failed; its source and trajectory remain
+in `083-bdf-control-failure*`. The clarification JSON corrects an initially
+mislabelled diagnostic field: the failed assertion concerned landing time,
+not rebound. The final control checks the measured refinement explicitly.
+
+Shared-state replays from the earlier 3.59-second finer state cover 0.23 seconds.
+The 1 ms and 0.5 ms BDF runs agree to 0.00786120 source pixels. The latter differs
+from the 0.03125 ms backward-Euler replay by 0.00360827 pixels. These comparisons
+are in `083-bdf-shared-impact-refinement.json`; they do not establish agreement
+from the static initial state. The half-millisecond replay contains 541 accepted
+intervals. All 817 positive reactions and 1,634 mesh-boundary checks pass, with
+maximum method-specific momentum residual 1.3182e-13. The new clearance checker
+uses the recorded BDF or backward-Euler position recurrence; the existing guide
+transfer completes all 1,384 independent pairs and the four coil self-surfaces.
+
+BDF equation impulses use a different force weight and history from the old
+solver. Separate reaction and position checkers account for those equations;
+the earlier backward-Euler input-work and energy audits are not qualifications
+of this experiment. Full-cycle time-step agreement, energy, repeated motion and
+integrated playback remain required.
+
+The first two full eight-second BDF runs now finish: 1 ms has 9,827 accepted
+intervals (7,610 BDF), and 0.5 ms has 17,760 (15,578 BDF). Both retain complete
+guided-candidate clearance across all 1,384 independent pairs and the coils.
+Their maximum difference is **0.479747 source pixels**, failing the 0.25-pixel
+target. The maximum occurs at the front-sector landing near 7.7674 seconds.
+The 1 ms run's 17,488 reactions and 34,976 mesh boundaries all pass, with
+maximum momentum residual 1.184e-12. These runs took 283 and 432 seconds while
+sharing CPU resources; no controlled performance benchmark is claimed.
+
+A supplementary immediate-release control remains a deliberate failure in
+`083-bdf-release-limit.json`. When a support initially accelerates downward
+faster than gravity, the first backward-Euler interval retains contact for one
+base step although the exact solution releases immediately. The resulting
+velocity error halves with the step size. This exposes a general startup
+limitation; the actual 083 initial state is separately solved static equilibrium.
+The negative control also directly demonstrates that inadmissible impact
+history produces a false rebound when passed to the smooth-branch stepper.
+Neither finding is hidden by the passing oscillator and plastic-impact tests.
+
+The 0.5 ms full run's **32,099 reactions and 64,198 boundaries** now also pass;
+its maximum method-specific momentum residual is 5.213e-12. A full 0.25 ms run
+is still active at this checkpoint (session 44116, Node PID 3947057,
+`083-bdf-full-quarter-ms.log`). Its frozen solver sources must remain unchanged
+until it terminates. There are no browser jobs from this study. The checkpoint
+`083-bdf-motion-checkpoint.json` records the completed evidence, both failed
+controls/comparisons and the outstanding run. Energy, motion refinement,
+startup/release treatment, remaining reversal and repeated playback remain open.
