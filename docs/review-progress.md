@@ -2921,12 +2921,20 @@ profiles are unchanged. The 082/083 studies remain intact. No new all-507 browse
 pass is claimed. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
-087's initial source review finds a definite driver-axis mismatch: the model's
-vertical input shaft produces an upper edge-on cone, while the engraving shows
-a face-on ring behind B and C. Three unchanged production views and the native
-Brown page are inspected. Source proportions, clutch engagement and reversal
-mechanics need reconstruction and qualification. No motion or clearance pass
-is claimed. See the [087 baseline review](../artifacts/review/087-reconstruction-notes.md).
+087 now has an isolated 207-part reconstruction with the face-on input ring,
+open wheels, source-measured joints, a real curved slot and a fixed-length
+connecting rod. All solids pass topology checks. The three bevel pairs pass
+2,362,308 surface samples, and all 17,740 independent pairs pass either mesh
+bounds or 1,259,886 surface samples at the source pose. Ten final browser views
+are inspected. Failed sphere, jaw and key-clearance studies remain archived.
+
+The measured linkage exposes a reversal problem: F passes vertical after
+42.15 degrees, but G is outside the stud's entire swept envelope after about
+47.41 degrees. A symmetric 84.30-degree flip is therefore unreachable with
+this geometry. The quadrant/shifter coupling needs further interpretation;
+no reversal animation or continuous-clearance pass is claimed. Production and
+all 1,097 frozen inputs remain unchanged. See the
+[087 reconstruction review](../artifacts/review/087-reconstruction-notes.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
