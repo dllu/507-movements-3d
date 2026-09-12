@@ -70,6 +70,26 @@ time-step agreement and complete clearance remain unresolved. See
 `086-rear-drive-study-checkpoint.json` and the linked study notes. Production
 and the original core geometry remain unchanged; the all-507 goal is active.
 
+A finite heel lug and wheel-mounted stop now prevent inward catch overtravel.
+With relative pin damping increased from 0.02 to 0.2, the 0.5 ms loaded trial
+repeats both lift/release/return cycles: each lifts 2.589426891 units, and
+corresponding states after initial capture agree within 9.15e-14. The hidden
+stop and damping are explicit assumptions, with actual finite contact and
+independent mass/moment controls.
+
+All 58,645 reactions, the work audit, 6,032,478 solid samples and 64,001
+primary knot/midpoint overlap checks pass. Nineteen additional source, stop
+detail and solved-motion images are inspected. A regression also fixes a
+contact-query crash on interior cap vertices. Conservative box filtering
+reproduces 727 complete feature lists and 81 saved impact steps exactly.
+The sixteen-second 0.25 ms refinement completes 64,001 states without
+subdivision. The 0.125 ms run reaches the end but fails during large-array
+summary construction; its retry is running with a verified bounded summary.
+Their agreement, complete
+rope/pump hardware and continuous clearance remain
+unqualified; no integration or all-507 completion is claimed. See
+`086-heel-reset-final-study-checkpoint.json` and the linked study notes.
+
 ## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical

@@ -5,7 +5,7 @@ import {makePumpCatchSlackDynamics} from './lib/pump-catch-slack-dynamics.mjs';
 import {surfaceTriangles} from '../tests/helpers/solid-surface.mjs';
 import {freezeStudySources} from './lib/study-report-io.mjs';
 
-const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-slack-energy-formulas',headBackDepth=Number(process.env.PROBE_HEAD_DEPTH??0),model=makePumpCatchWeightedCandidate({headBackDepth}),u=model.root.userData,dynamics=makePumpCatchSlackDynamics(model),tetra=[];
+const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-slack-energy-formulas',headBackDepth=Number(process.env.PROBE_HEAD_DEPTH??0),heelStop=process.env.PROBE_HEEL_STOP==='1',model=makePumpCatchWeightedCandidate({headBackDepth,heelStop}),u=model.root.userData,dynamics=makePumpCatchSlackDynamics(model),tetra=[];
 for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.families[name]))for(const t of surfaceTriangles(mesh.geometry)){
   const points=[t.a,t.b,t.c],mass=t.a.dot(t.b.clone().cross(t.c))/6;tetra.push({family:u.families[name],mesh,mass,points:[new THREE.Vector3(),...points]});}
 const errors={energy:0,momentum:0,eulerLagrange:0},rows=[],z=new THREE.Vector3(0,0,1),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);

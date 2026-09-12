@@ -7,7 +7,7 @@ import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study
 const input=process.env.PROBE_INPUT??'artifacts/review/086-finite-rope-dynamics.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-finite-rope-overlap',data=readStudyReport(input);
 verifyStudySources(data.sources);const sources=freezeStudySources([input,'scripts/check-pump-catch-overlap.mjs',...data.sources.map(s=>s.file)],prefix);
 const model=makePumpCatchWeightedCandidate(data.parameters.candidateOptions),u=model.root.userData,pivot=u.geometry.pivot;
-const names=['hookedCatchB','pointedCamC','inputShaft','fixedTripStop'],prisms=Object.fromEntries(names.map(name=>[name,renderedPrism(u.parts[name].geometry)]));
+const names=['hookedCatchB','pointedCamC','inputShaft','fixedTripStop',...(u.heelStop?['catchHeelLug','wheelHeelStop']:[])],prisms=Object.fromEntries(names.map(name=>[name,renderedPrism(u.parts[name].geometry)]));
 const cross=(a,b)=>a[0]*b[1]-a[1]*b[0],sub=(a,b)=>a.map((v,k)=>v-b[k]);
 const box=points=>({min:[0,1].map(k=>Math.min(...points.map(v=>v[k]))),max:[0,1].map(k=>Math.max(...points.map(v=>v[k])))});
 const intersects=(a,b)=>[0,1].every(k=>a.min[k]<=b.max[k]&&b.min[k]<=a.max[k]);
@@ -39,12 +39,12 @@ const unit=[[0,0],[1,0],[0,1]],controls=[
   {name:'contained',actual:triangleArea(unit,[[.1,.1],[.2,.1],[.1,.2]]),expected:.005}
 ];
 if(controls.some(c=>Math.abs(c.actual-c.expected)>1e-13))throw Error('Independent triangle clipping control failed');
-const trees=Object.fromEntries(names.slice(1).map(name=>[name,tree(prisms[name].triangles.slice())]));
-const pairs=names.slice(1).map(name=>({name,checks:0,maximumArea:0,worst:null,failed:0}));let poses=0;
+const pairs=['pointedCamC','inputShaft','fixedTripStop',...(u.heelStop?['wheelHeelStop']:[])].map(name=>({name,catchName:name==='wheelHeelStop'?'catchHeelLug':'hookedCatchB',checks:0,maximumArea:0,worst:null,failed:0}));
+const trees=Object.fromEntries(pairs.map(({name})=>[name,tree(prisms[name].triangles.slice())]));let poses=0;
 function check(time,q,label){
   const P=rotate(pivot,q[0]);poses++;
-  for(const p of pairs){const angle=p.name==='fixedTripStop'?0:data.angularSpeed*time,offset=rotate(P,-angle);let overlap=0;
-    for(const t of prisms.hookedCatchB.triangles){const points=t.points.map(v=>rotate(v,q[1]-angle).map((v,k)=>v+offset[k])),bounds=box(points);
+  for(const p of pairs){const heel=p.name==='wheelHeelStop',angle=heel?q[0]:p.name==='fixedTripStop'?0:data.angularSpeed*time,offset=heel?[0,0]:rotate(P,-angle);let overlap=0;
+    for(const t of prisms[p.catchName].triangles){const points=t.points.map(v=>rotate(v,q[1]-angle).map((v,k)=>v+offset[k])),bounds=box(points);
       const visit=node=>{if(!intersects(bounds,node))return;if(node.triangles){for(const other of node.triangles)if(intersects(bounds,other))overlap+=triangleArea(points,other.points);}else{visit(node.left);visit(node.right);}};
       visit(trees[p.name]);
     }p.checks++;

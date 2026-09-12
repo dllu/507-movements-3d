@@ -1,6 +1,6 @@
 # Movement 086: cam-released loose-wheel pump
 
-Status: **rear drive reconstructed; repeated pump motion unresolved**. The
+Status: **rear drive and catch reset reconstructed; refinement and full hardware pending**. The
 replacement is incomplete and unintegrated. Production remains at the 972-input
 movement 085 checkpoint; the all-507 review remains active.
 
@@ -292,7 +292,81 @@ hide the front bearing for contact inspection. The new head thickness follows
 the original front contour, but neither the resulting catch motion nor the
 unmodeled rope/pump hardware is accepted. The missing reset mechanism needs
 investigation, including whether finite wheel-mounted travel stops are a
-plausible hidden detail. No such stops have been implemented or qualified.
+plausible hidden detail. That investigation follows below.
+
+## Finite heel stop and repeated loaded motion
+
+The next candidate adds an actual cylindrical lug behind the catch head and
+a small stop on the wheel, near the catch pin. The lug radius is 0.012, at
+radius 0.11 from the pin. Both parts stay behind the existing front silhouette.
+Their physical side faces meet at relative catch angle -0.120001515 radians;
+the nominal design angle is -0.12. The solver uses these rendered faces and
+their equal/opposite pin moments. There is no imposed angle clamp or reset.
+The hidden stop remains an explicit reconstruction assumption.
+
+Boundary, normal-cone, moment and finite-difference gradient controls pass at
+101 rotated poses. Actual mesh checks place the lug within the head backing
+and the stop footprint on the wheel rim. The new sixteen-part mass model also
+passes the independent 7,344-tetrahedron energy/momentum check at 51 poses.
+
+The first heel trial, retaining hinge drag 0.02, still misses the second lift.
+The pump's bottom impact throws the catch outward despite the inward stop;
+the second-revolution lift is only 0.000398 units. This failed trial is retained.
+Increasing relative catch/wheel pin damping to 0.2 controls that overrun.
+The remaining trial parameters stay at head depth 0.1, hub drag 1.5, pump
+drag 12, lower pump stop zero and eight seconds per input revolution.
+
+The resulting 0.5 ms, sixteen-second run completes 32,001 states without
+subdivision. Both revolutions lift 2.589426891 units. Corresponding states
+from 0.5–8 seconds and 8.5–16 seconds agree within 9.15e-14 in coordinates and
+2.54e-14 in velocity. This establishes observed repetition over those two
+cycles; it is not a long-term stability or continuum-error guarantee.
+
+All 58,645 reactions pass common mesh-boundary, normal-cone, moment and
+momentum checks. Maximum boundary error is 2.39e-14, and maximum independently
+computed moment-arm error is 5.56e-16. All sixteen solids and 91 independent
+pairs pass 6,032,478 surface samples at 101 solved poses. All 64,001 primary
+cap-triangle knot/midpoint poses pass, including the new lug/stop pair;
+maximum cam/catch overlap area is 2.38e-13, below the 1e-10 screen threshold.
+Signed/absolute work defects are 0.26003%/0.26837%.
+
+Nineteen new images are inspected: eight geometry/source views, three improved
+oblique heel details and eight solved-motion views. The first two straight-on
+heel details hide the lug's outline against its backing; the later oblique
+views clearly show its opening and seating. The source overlay retains the
+principal contours, and the motion images show both lifts and releases.
+These remain candidate inspections; the rope and physical pump are absent.
+
+## Contact-query robustness and pending refinement
+
+A broad-phase regression exposed an existing crash at interior cap vertices.
+The shaft disk's triangulated center has no side boundary and therefore no
+planar contact normal. Such points remain in the raw penetration guard but
+are excluded from reaction features. The original failing script, normal
+helper and log are retained. The explicit interior-vertex regression now
+passes, together with the existing exact-face controls.
+
+A conservative box filter now skips distant closest-point calculations while
+retaining the established narrow contact computation. Across 727 solved and
+synthetic queries, complete feature lists and raw gaps agree exactly with
+the ordinary calculation. Eighty-one full impact steps also exactly reproduce
+the saved 0.5 ms trajectory. Measured query speedup is 2.59×; the filter does
+not change geometry or prescribe motion.
+
+The sixteen-second 0.25 ms study completes 64,001 states without subdivision
+using that filter; its force and work audits also pass. The first 0.125 ms
+run reaches sixteen seconds without subdivision, but summary construction
+then exceeds JavaScript's spread-call argument limit. Its complete trajectory
+was not published. The failed runner and log are preserved. A bounded summary
+passes a 300,001-state fixture with independently known extrema, and the
+0.125 ms run is being repeated with that reporting fix. The comparison verifier
+permits only this exact summary replacement; all other study code and physical
+inputs must remain identical. Time-step agreement and final independent audits
+remain pending. See `086-heel-reset-final-study-checkpoint.json`
+for the observed retry handle and retained evidence. The earlier
+`086-heel-reset-study-checkpoint.json` records the state before this reporting
+failure was observed. The all-507 goal
+remains active.
 
 ## Remaining work and checkpoints
 
@@ -301,11 +375,11 @@ limit. Combine the rear input assembly with the qualified load geometry and
 recompute mass/inertia if new parts attach to the free wheel or catch. The
 rear belt interpretation remains an inference from the engraving.
 
-Resolve reliable cam capture, winding/attachment assumptions, return and the
-repeated cycle with the corrected impact solver. The cold-start impulse and
-omitted load, bearing-loss and hidden-depth assumptions need assessment;
-simply choosing the coarse run that seats is not sufficient. Establish
-time-step agreement, continuous clearance and readable playback. Finish
+Establish refined agreement for the repeated capture, release and return,
+including cold-start impulses. The omitted load, bearing-loss, hidden-depth
+and winding assumptions still need qualification with the complete hardware;
+the repeating coarse run alone is insufficient. Establish time-step agreement,
+continuous clearance and readable playback. Finish
 the missing hardware and rendering, and integrate only after those checks,
 then validate production.
 

@@ -17,8 +17,13 @@ export function makePumpCatchNormalContact(model){
     const P=rotate2(pivot,q[0]),result=[];
     for(const c of base.query(q,camAngle,options)){
       if(c.kind==='pump-stop')continue;const f=c.feature,rotation=c.kind==='stop'?0:camAngle,
-        hook=(f.pointOn==='hook'?normals.hook.vertex(f.vertex):normals.hook.edge(f.edge,f.fraction)).map(n=>neg(rotate2(n,q[1]))),
-        obstacle=(f.pointOn==='hook'?normals[c.kind].edge(f.edge,f.fraction):normals[c.kind].vertex(f.vertex)).map(n=>rotate2(n,rotation));
+        hookFaces=f.pointOn==='hook'?normals.hook.vertex(f.vertex):normals.hook.edge(f.edge,f.fraction),
+        obstacleFaces=f.pointOn==='hook'?normals[c.kind].edge(f.edge,f.fraction):normals[c.kind].vertex(f.vertex);
+      // Cap triangulations can contain interior vertices, such as a disk's
+      // center. They have no side boundary or admissible contact normal.
+      // Raw penetration queries retain them; they cannot supply a reaction.
+      if(!hookFaces?.length||!obstacleFaces?.length)continue;
+      const hook=hookFaces.map(n=>neg(rotate2(n,q[1]))),obstacle=obstacleFaces.map(n=>rotate2(n,rotation));
       // At a face, use its exact normal instead of dividing a tiny separation
       // vector. At coincident corners, intersect both adjacent-face cones.
       const separation=sub(c.point,f.otherPoint),distance=Math.hypot(...separation);

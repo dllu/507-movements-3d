@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {makePumpCatchWeightedCandidate} from './lib/pump-catch-weighted-candidate.mjs';
 import {readStudyReport,verifyStudySources,freezeStudySources} from './lib/study-report-io.mjs';
+import {verifyPumpCatchStudySources} from './lib/pump-catch-study-sources.mjs';
 
 const coarseFile=process.env.PROBE_COARSE??'artifacts/review/086-finite-rope-dynamics.json.gz',fineFile=process.env.PROBE_FINE??'artifacts/review/086-finite-rope-half-ms-dynamics.json.gz',
   prefix=process.env.PROBE_PREFIX??'artifacts/review/086-finite-rope-step-agreement',coarse=readStudyReport(coarseFile),fine=readStudyReport(fineFile);
-verifyStudySources(coarse.sources);verifyStudySources(fine.sources);
+const reportingOnlyChanges=[...verifyPumpCatchStudySources(coarse.sources),...verifyPumpCatchStudySources(fine.sources)];
 assert.equal(coarse.angularSpeed,fine.angularSpeed,'Step comparison requires the same input speed');
 assert.deepEqual(coarse.parameters,fine.parameters,'Step comparison requires the same geometry and physical parameters');
+assert.deepEqual(coarse.rows[0],fine.rows[0],'Step comparison requires identical initial conditions');
 const model=makePumpCatchWeightedCandidate(coarse.parameters.candidateOptions),u=model.root.userData,P=u.geometry.pivot,radii={wheel:0,hook:0,pivot:Math.hypot(...P)},p=new THREE.Vector3();
 for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.families[name])){
   const positions=mesh.geometry.attributes.position;for(let i=0;i<positions.count;i++){
@@ -25,8 +27,8 @@ for(const row of fine.rows){
   for(const w of windows)if(row.time<=w.end){w.samples++;for(let k=0;k<3;k++)w.maximumCoordinates[k]=Math.max(w.maximumCoordinates[k],delta[k]);
     if(pixels>w.maximumPixels){w.maximumPixels=pixels;w.worst={time:row.time,coarse:q,fine:row.q,wheel,hook,pump};}}
 }
-const sources=freezeStudySources([coarseFile,fineFile,'scripts/compare-pump-catch-steps.mjs',...coarse.sources.map(s=>s.file),...fine.sources.map(s=>s.file)],prefix);
+const sources=freezeStudySources([coarseFile,fineFile,'scripts/compare-pump-catch-steps.mjs','scripts/lib/pump-catch-study-sources.mjs',...coarse.sources.map(s=>s.file),...fine.sources.map(s=>s.file)],prefix);verifyStudySources(sources);
 const report={movement:86,status:'finite-rope-observed-step-agreement',passed:coarse.passed&&fine.passed&&Math.abs(coarse.actualEnd-fine.actualEnd)<1e-12&&windows.every(w=>w.maximumPixels<.25),
-  mechanicsPassed:false,candidateIntegrated:false,coarseFile,fineFile,coarseStep:coarse.step,fineStep:fine.step,radii,windows,sources,
+  mechanicsPassed:false,candidateIntegrated:false,coarseFile,fineFile,coarseStep:coarse.step,fineStep:fine.step,radii,windows,reportingOnlyChanges,sources,
   qualification:'Fine knots compared with linearly interpolated coarse coordinates. Complete mesh radii bound rigid-body displacement; pump translation is included. Threshold is 0.25 engraving pixels. This is observed agreement between two discretizations, not a continuum-error guarantee or clearance proof.'};
 fs.writeFileSync(prefix+'.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log({...report,sources:undefined});if(!report.passed)process.exitCode=1;
