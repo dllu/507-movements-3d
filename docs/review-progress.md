@@ -2986,6 +2986,22 @@ fidelity and final playback speed remain unresolved. The existing factories
 and all 1,097 frozen production inputs remain unchanged. See the
 [087 inertia and first-flight review](../artifacts/review/087-first-flight-notes.md).
 
+087's next isolated stage now transfers momentum through native slot and fork
+contacts into D, with output rotation as a fourth independent coordinate. The
+first constant-output-speed controls missed gravity torque from E's eccentric
+stud; the corrected model includes it and changes the return contact flank.
+Three time-step levels reach 31,155 finest states with absolute energy defects
+of 0.005035% and 0.004355%. Both separately computed native jaw impacts reverse
+the shaft, with compressive impulses and balanced momentum/energy.
+
+Twelve final shift poses pass 18,237,132 surrounding-hardware surface samples,
+supplemented by exact native jaw, slot and fork checks. Twelve rendered views
+are inspected, and both slowed inspection previews finish without browser
+errors. Loaded seating, initial engaged-jaw preload, a repeating cycle, source
+fidelity and continuous clearance remain pending. Production and all 1,097
+frozen inputs remain unchanged. See the
+[087 clutch-transition review](../artifacts/review/087-clutch-transition-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.

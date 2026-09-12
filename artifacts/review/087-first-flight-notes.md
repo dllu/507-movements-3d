@@ -143,3 +143,9 @@ full-cycle speed and production integration remain pending. The original 087
 factories, all 1,097 frozen production inputs, and the 082/083 study inputs
 remain unchanged. No new production build, full-suite test or all-507 browser
 pass is claimed. The complete review remains active.
+
+The subsequent [clutch-transition study](087-clutch-transition-notes.md)
+now derives native slot/fork limits, includes eccentric output gravity, and
+follows four independent coordinates through neutral travel to first jaw
+contact. Both separately calculated jaw impacts reverse the shaft. Loaded
+seating and a repeating cycle remain pending.
