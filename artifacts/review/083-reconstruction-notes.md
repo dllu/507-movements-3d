@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **complete candidate clearance established; motion refinement and loading still pending**.
+Status: **complete candidate clearance and input-energy balance established; motion refinement and guide support still pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -390,11 +390,69 @@ supports or a future playback path.
 
 `083-complete-candidate-clearance.json` records that combined check.
 `083-hardware-clearance-checkpoint.json` freezes the completed evidence and
-records the next refinement and spatial-reaction audit. Numerical convergence,
-backlash, input/guide loads, energy, supports, repeated playback and final
-rendering still require qualification. All 904 production inputs and 43
+records the refinement and spatial-reaction audit that were then running.
+The input-loading audit below adds later evidence. Numerical convergence,
+backlash, guide reactions, supports, repeated playback and final rendering
+still require qualification. All 904 production inputs and 43
 current 082 study sources remain unchanged; no new browser/build pass is
 claimed for these isolated study checks.
+
+## Input loading and energy audit
+
+The finest completed 0.125 ms run now passes its complete spatial audit:
+**118,413 positive reactions**, 236,826 boundary/normal-cone checks and 64,000
+discrete momentum checks. None is missing and neither radial travel stop is
+loaded. Maximum boundary error is 2.425e-15 units and maximum momentum residual
+is 4.652e-12. This completes the audit previously recorded as running in
+`083-hardware-clearance-checkpoint.json`; the result is
+`083-continuous-eighth-ms-reactions.json`.
+
+`scripts/lib/spring-sector-loads.mjs` adds the prescribed shaft assembly and
+ordinary-pin input rod to the three free rigid families. It derives the rod's
+position, angular derivatives and input transmission from the line/circle
+closure. An analytic bound over the full shaft range retains a rod axial
+projection of at least 1.93254 units and an absolute input derivative of at
+least 0.621348; the input transmission cannot reach a toggle in that domain.
+Virtual work converts the required shaft impulse into a force along the
+remote rod guide, allowing both pushing and pulling and absorption of work.
+
+Direct integration of **18,092 signed tetrahedra** at 17 independently
+transformed poses checks kinetic energy, gravity/spring potential and input
+momentum. Maximum errors are 2.201e-11, 1.762e-12 and 7.872e-11 respectively.
+The rod position and angle match the ordinary-pin linkage; its derivative
+checks pass. Masses within the fixed shaft assembly are explicitly additive
+lumped masses, including concealed overlaps. Springs remain ideal massless
+Hookean elements. These are modeling assumptions, not original-machine mass
+or material measurements.
+
+`scripts/lib/spring-sector-saved-contact.mjs` reconstructs each recorded axis
+directly for the loading audit. It selects no new contact. Comparison against
+the full contact search at 256 states and 471 reactions gives exactly matching
+gaps and Jacobians. Across both complete trajectories, all 177,671 reconstructed
+impulses retain the free-coordinate momentum balance.
+
+The energy audit includes input work, damping, wheel load, endpoint contact
+work, backward-Euler velocity changes and spring-position losses. Its maximum
+cumulative residual decreases with the step size:
+
+| Integration step | Maximum residual, model units | Residual / work-and-loss scale |
+| --- | ---: | ---: |
+| 0.25 ms | 0.0000643878 | 0.000124274% |
+| 0.125 ms | 0.0000322017 | 0.0000638841% |
+
+Input-rod work matches generalized input work to 2.776e-17 units. Peak
+interval-averaged rod force grows as the step shrinks around rigid impacts;
+it is not a converged physical force or stress prediction. The fine run's
+rod impulses range from -2.44394 to 2.78650 normalized units. Event times and
+force/impulse extrema are retained in `083-bounded-input-loading-study.json`.
+This consistent energy balance does **not** resolve the failed trajectory
+comparison or establish a distribution of bearing/guide pressures.
+
+`083-input-loading-checkpoint.json` freezes the completed loading evidence,
+source hashes and the still-running 0.0625 ms trajectory. Individual guide
+reaction distributions, motion convergence, reversal/repeat behavior,
+external supports and final rendering/integration remain pending. All 904
+production inputs and 43 current 082 study sources remain unchanged.
 
 ## Shared framing-marker shadow correction
 

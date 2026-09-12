@@ -108,9 +108,16 @@ all 1,280 distinct-family pairs and spring self-clearance across the finest
 run's 64,000 intervals within 1e-6 world units. Sources, exhaustive pair counts
 and trajectory containment in the bounded domain match. This qualifies the
 current candidate's clearance, including its assumed hidden guides.
-Motion refinement, remaining reversal, loads, supports and final playback
-are still pending. The next finer run and finest spatial-reaction audit are
-in progress; 083 remains outside production.
+The finest spatial audit now passes all 118,413 impulses and 236,826 boundary
+checks. A new input-loading audit includes all five rigid families and the
+ordinary-pin rod's sideways motion. Direct mesh integration verifies its
+energy and input momentum; the rod transmission stays clear of a toggle
+throughout the shaft range. The normalized cumulative energy residual halves
+to 0.0000638841% with the finer step. Forces are interval averages under ideal
+rigid impacts; individual guide pressures and material loads are not qualified.
+Motion refinement, remaining reversal, guide reactions, supports and final
+playback are still pending. The next finer run is in progress; 083 remains
+outside production.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
