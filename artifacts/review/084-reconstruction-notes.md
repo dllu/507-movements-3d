@@ -1,6 +1,7 @@
 # Movement 084 reconstruction study
 
-Status: **finite candidate built and inspected; loaded motion and integration pending**.
+Status: **rebuilt, integrated and verified**. Earlier failed experiments and
+their qualification limits remain below as the reconstruction record.
 This review began while the finer 083 continuation was running.
 
 The [original description and engraving](https://507movements.com/mm_084.html)
@@ -267,3 +268,62 @@ sources and 26 prior 084 inputs retain their bytes. The reconstruction is
 not integrated. Remaining work includes continuous bounds for other hardware,
 playback settling/continuation, final fine-trajectory visual review and app
 integration with its relevant numerical, browser and build checks.
+
+## Integrated reconstruction
+
+All **99 pairs of independently moving meshes** now have continuous clearance
+evidence through the loaded motion. Eighty-seven use separating bounds over
+the full motion domain. Six use the primary contact certificate. The two
+frame/hub pairs transfer that certificate after the actual rendered hub cap
+unions are proved contained in the working cam's cap union. Four rotating
+parts clear the fixed shaft by their complete prism bore radii. The guide
+passage and pin checks include finite depth, rather than point markers.
+
+The 44,001-state fine trajectory is compressed to **13,525 knots**, bounding
+every frame vertex's interpolation change to **0.000009999553 engraving
+pixels**. Exact cam and governor inputs are retained. The compressed motion
+passes a fresh continuous check of all 13,524 intervals, using at most five
+subdivision levels, plus fresh bounds for all remaining hardware. Adding
+compression to the observed step-refinement bound gives **0.133444187 pixels**;
+this remains an observed agreement bound, not a continuum-error guarantee.
+Twelve compressed-trajectory browser views are inspected.
+
+Production replaces the old four-lobed cam with the measured single
+projection and complete curved-spoke wheel. It preserves the real suspension
+slots, retained pin shanks, free frame tilt and finite guide passages.
+The old factory and its test, which asserted the incorrect four-lobed model,
+are removed; their preintegration sources remain archived. Five new numerical
+tests cover source geometry, closed topology, candidate parity, both drive
+directions, finite clearances and replay. The catalog archetype is corrected.
+
+Playback keeps the four-second cam revolution and the full 5.5-second
+selection/release/settling demonstration. The existing app pauses at its end
+and offers **Replay**. This is explicitly an animation pause, not a modeled
+brake or a claim of a periodic rack trajectory. There is no automatic reset
+during motion. A declared camera envelope covers the complete demonstration,
+including the final rack drift beyond the display sampler's first revolution.
+
+Production knot data match the reviewed compressed data exactly. Across
+**27,049 knots and midpoints**, the largest center-coordinate difference is
+1.943e-16, angular difference 1.633e-17 and prescribed-input difference zero.
+The geometry buffers, topology and transforms match the independent candidate.
+All **3,104 numerical tests**, the production build and the targeted 084
+desktop/mobile browser check pass. Pause, completion, Replay, framing and
+mobile overflow checks pass. The build retains its existing large-bundle
+warning; no new full-catalog browser pass is claimed.
+
+Fourteen final integrated views are inspected, including the aligned source
+comparison, both drive/release sequences, rear and suspension details, and
+desktop/mobile app views. The measured six-second render run averages
+**59.84 fps**, with **0.2 ms** 95th-percentile model updates. Fog is absent,
+the ground is hidden, and there are no browser errors or unexpected warnings.
+Both browsers are closed.
+
+`084-integrated-checkpoint.json` and `084-integrated-source-hashes.json` record
+the final evidence and 944 current inputs. Of the earlier 904 production
+inputs, 899 are unchanged; the factory, catalog entry, display profiles and
+obsolete test account for the five changes. Thirty-four of the prior 36
+084 inputs retain their bytes; the other two are the factory and catalog,
+whose old snapshots are retained. All 71 current 083 and 43 current 082 study
+sources remain unchanged. Their unresolved mechanics and the rest of the
+507-movement review remain active.

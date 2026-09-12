@@ -285,9 +285,20 @@ A continuous bound now covers all 44,000 saved intervals for the frame
 against the cam, pin shanks, fixed axle and guide passages, to 1e-6 world
 units. It uses actual prisms, containing guide sections and analytic bounds
 between endpoints. Neutral and deliberately penetrating controls behave as
-expected. Twelve coarser loaded browser views are inspected, without errors
-or unexpected warnings. Remaining continuous hardware pairs, final playback
-and production integration are pending. The 904 production inputs are unchanged.
+expected. Whole-motion hardware bounds now complete all 99 independent pairs.
+The compressed 13,525-knot playback also passes continuous clearance checks;
+compression plus observed step refinement totals 0.133445 engraving pixels.
+
+084 is integrated with the single cam, full curved-spoke wheel, actual slots
+and finite pin joints. Its four-second cam revolution runs through a
+5.5-second demonstration, followed by an explicit animation pause and Replay.
+The declared camera envelope includes the final drift. Production matches the
+reviewed trajectory at 27,049 checked knots and midpoints. All 3,104 numerical
+tests, the build and the 084 desktop/mobile browser test pass. Fourteen final
+app/source/motion views are inspected, without errors or unexpected warnings;
+playback averages 59.84 fps with 0.2 ms 95th-percentile updates. The current
+checkpoint freezes 944 inputs and accounts for the five changed preexisting
+production files. No new all-507 browser pass is claimed.
 See [the 084 reconstruction record](../artifacts/review/084-reconstruction-notes.md).
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
@@ -2752,7 +2763,7 @@ attempt timed out after movement 482. See [the 081 review](../artifacts/review/0
 and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
-068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080 and 081 are verified.
+068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081 and 084 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
 The complete 507-movement review remains active.**
 

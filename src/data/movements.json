@@ -874,7 +874,7 @@
       "title": "double rack-frame, B, is suspended from the rod, A",
       "description": "84. The double rack-frame, B, is suspended from the rod, A. Continuous rotary motion is given to the cam, D. When the shaft of the cam is midway between the two racks, the cam acts upon neither of them; but by raising or lowering the rod, A, either the lower or upper rack is brought within range of the cam, and the rack-frame moved to the left or right. This movement has been used in connection with the governor of an engine, the rod, A, being connected with the governor, and the rack-frame with the throttle or regulating valve.",
       "category": "Rack & pinion",
-      "archetype": "selector-double-rack-four-lobed-cam",
+      "archetype": "single-cam-governor-selected-double-rack",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_084.html"
     },
