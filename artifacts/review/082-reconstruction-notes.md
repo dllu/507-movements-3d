@@ -5,7 +5,74 @@ candidate now has three free dynamic coordinates, a closer source pose and
 corrected hardware spacing. All 904 frozen production inputs remain identical
 to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
 
-## Pulley motion and continuous secondary clearance
+## Refined startup and complete finite-trajectory clearance
+
+The full twelve-second startup now passes the unchanged 0.25-pixel numerical
+agreement target. Halving the step from 0.0625 to 0.03125 ms reduces the maximum
+free-body displacement difference to **0.0345345 engraving pixels**, following
+the earlier 0.260788-pixel comparison. The newest run has 384,001 states,
+advances 8.01220619 teeth, and has no failed or rejected steps. This compares
+the union of both saved time grids; it is observed numerical agreement, not
+an error bound against the exact continuum solution.
+
+Compression retains 24,123 of those states with unchanged endpoints and a
+maximum additional displacement of 0.0000134321 pixels. Every raw knot is
+checked, bounding the difference everywhere between the linear interpolants.
+No repeated seam or state reset is introduced.
+
+Both finite pawl/ratchet pairs now have continuous bounds based on the actual
+mesh triangles: 778 projected wheel cells and 479/433 pawl cells. Whole-stroke
+arm acceleration bounds and each interval's free-angle slopes bound vertex
+curvature in the wheel frame. Fixed separating axes use endpoint gaps minus
+the maximum curvature excursion; radial and box exclusions include the full
+travel allowance. All **24,122 intervals** pass, with 12,597,402 triangle-pair
+certificates and 20,819 adaptive subdivisions. The minimum lower bound is
+-9.99962e-7 world units, within the existing 1e-6 tolerance.
+
+The secondary sweep also passes on the newest raw trajectory. Transferring
+its bounds to the compressed trajectory subtracts each participating solid's
+maximum compression displacement. Structural axial, bore and pulley bounds
+remain unchanged. This accounts for **all 538 independent component pairs**
+through the complete twelve-second compressed trajectory, excluding rigidly
+bonded families and bonded strap/eye joins. It does not cover a future repeated
+trajectory or other wheel pitch orientations introduced by such repetition.
+The earlier 0.0625 ms compressed trajectory also passed these checks; its
+separate reports remain archived.
+
+Thirteen new source, overlay, motion, oblique and rear stills were inspected.
+A separate live browser preview rendered the finite trajectory at one physical
+second per display second, with four seconds per input cycle. All 269 rendered
+frames stayed inside the fixed camera and above the ground; no browser errors
+occurred. It averaged 22.32 fps locally, with 0.400 ms model updates at the 95th
+percentile. The final preview image was also inspected. These are candidate
+checks, not final desktop/mobile or production performance results.
+
+The 0.125 ms settling continuation still rejects an eight-second repeating
+cycle: its whole-cycle difference reaches 8.70986 pixels even though its
+endpoint positions nearly match. Coarse sixteen- and twenty-four-second
+comparisons also fail. The recurrence tool now accepts longer candidate
+periods and contiguous trajectory chunks, enforcing exact carried boundary
+positions and velocities. Splitting and rejoining a real trajectory produces
+bitwise-identical comparisons, and a discontinuous boundary is rejected.
+A longer fine settling run and the newest reaction/loading audits are pending.
+Final playback, its seam, repeated-motion clearance and integration remain open.
+
+Current local evidence includes `082-startup-thirtysecond-ms-refinement.json`,
+`082-thirtysecond-ms-compressed-check.json`,
+`082-thirtysecond-ms-primary-continuous-bounds.json`,
+`082-thirtysecond-ms-secondary-continuous-bounds.json`,
+`082-thirtysecond-ms-complete-clearance.json`,
+`082-refined-contact-motion-inspections.json`, `082-refined-live-preview.json`
+and `082-recurrence-chunk-check.json`. The local
+`082-primary-clearance-checkpoint.json` freezes this stage separately from the
+earlier pulley checkpoint. Production remains unchanged.
+
+Nine additional identical immutable source-archive copies were consolidated,
+recovering 1,053,039,204 bytes. Paths and SHA-256 contents were preserved;
+original trajectories and live sources were untouched. The inventory is
+`082-primary-archive-consolidation.json`.
+
+## Earlier pulley motion and continuous secondary clearance stage
 
 The candidate now applies the studied rolling approximation to pulley C about
 its fixed world-X axle. Across 257 checked poses its center does not move,
@@ -35,8 +102,8 @@ Of these, 316 use fixed axial layers, 14 use concentric finite-mesh bores,
 seven use the pulley bounds, and 199 use swept convex enclosures. The sweep
 has 2,047 proof intervals and 18,765 pair checks with no unresolved secondary
 pair. The minimum swept-hull lower bound is positive, 9.13511e-6 world units.
-The two finite pawl/ratchet pairs are explicitly excluded and still require
-their own continuous contact check. This does not establish complete
+At this stage the two finite pawl/ratchet pairs were explicitly excluded;
+the later checks above cover them. This does not establish complete
 mechanical qualification or clearance of a different playback trajectory.
 
 The initial enclosure attempts are retained. One was stopped to avoid
@@ -50,8 +117,8 @@ The corrected source-pose screen and full secondary sweep pass.
 Full startup refinement improves to 0.461747 pixels at 0.25 versus 0.125 ms,
 then 0.260788 pixels at 0.125 versus 0.0625 ms. The latter has 192,001 states
 and advances 8.01220658 teeth without rejected steps or solver failure, but
-still misses the unchanged 0.25-pixel agreement target. A full 0.03125 ms run
-and a finer sixteen-second settling continuation are pending. No repeating
+still misses the unchanged 0.25-pixel agreement target. The later 0.03125 ms
+startup comparison above passes. No repeating
 playback has been introduced on the strength of nearly matching endpoints.
 
 Current evidence includes `082-rolling-pulley-check.json`,

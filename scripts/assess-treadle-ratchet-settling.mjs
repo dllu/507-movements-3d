@@ -5,9 +5,21 @@ import * as THREE from 'three';
 import {makeTreadleRatchetCandidate} from './lib/treadle-ratchet-candidate.mjs';
 
 const input = process.env.PROBE_INPUT ?? 'artifacts/review/082-settling-study.json';
+const inputs = JSON.parse(process.env.PROBE_INPUTS ?? JSON.stringify([input]));
 const output = process.env.PROBE_OUTPUT ?? 'artifacts/review/082-settling-recurrence.json';
-const data = JSON.parse(fs.readFileSync(input)), candidate = makeTreadleRatchetCandidate(data.geometry), u = candidate.root.userData;
-const period = 2 * u.linkage.parameters.period, teeth = 5, turn = teeth * 2 * Math.PI / u.geometry.source.ratchet.teeth;
+assert(inputs.length > 0);
+const chunks = inputs.map(file => JSON.parse(fs.readFileSync(file)));
+for (let i = 0; i < chunks.length; i++) {
+  const chunk = chunks[i]; assert.equal(chunk.failures.length, 0);
+  assert.deepEqual(chunk.geometry, chunks[0].geometry); assert.deepEqual(chunk.parameters, chunks[0].parameters);
+  assert.equal(chunk.dt, chunks[0].dt);
+  if (i) for (const field of ['time', 'x', 'v']) assert.deepEqual(chunk.rows[0][field], chunks[i - 1].rows.at(-1)[field], 'Continuation must carry the complete previous state');
+}
+const data = {...chunks[0], rows: chunks.flatMap((chunk, i) => i ? chunk.rows.slice(1) : chunk.rows)};
+const candidate = makeTreadleRatchetCandidate(data.geometry), u = candidate.root.userData;
+const inputCycles = Number(process.env.PROBE_INPUT_CYCLES ?? 2), teeth = 2.5 * inputCycles;
+assert(Number.isInteger(inputCycles) && inputCycles > 0 && Number.isInteger(teeth), 'The candidate recurrence must span an integral number of teeth and input cycles');
+const period = inputCycles * u.linkage.parameters.period, turn = teeth * 2 * Math.PI / u.geometry.source.ratchet.teeth;
 const families = ['wheel', 'lowerPawl', 'upperPawl'], radii = families.map(family => {
   let radius = 0;
   for (const [name, mesh] of Object.entries(u.parts)) if (u.families[name] === family) {
@@ -58,14 +70,14 @@ for (let start = Math.ceil((data.rows[0].time - 1e-8) / u.linkage.parameters.per
     seam: differences(a, b), advancedTeethAtSeam: (b.x[0] - a.x[0]) / (turn / teeth)});
 }
 assert(comparisons.length > 0, 'At least two complete candidate cycles are required');
-const files = [input, 'scripts/assess-treadle-ratchet-settling.mjs', 'scripts/lib/treadle-ratchet-candidate.mjs',
+const files = [...inputs, 'scripts/assess-treadle-ratchet-settling.mjs', 'scripts/lib/treadle-ratchet-candidate.mjs',
   'scripts/lib/treadle-ratchet-linkage.mjs', 'scripts/lib/treadle-ratchet-source.mjs'];
 const sources = files.map((file, i) => {
   const archive = output.replace(/\.json$/, '') + '-source-' + i + '.txt'; fs.copyFileSync(file, archive, fs.constants.COPYFILE_EXCL);
   return {file, archive, sha256: crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')};
 });
 const report = {movement: 82, status: 'candidate-cycle-recurrence-assessment', productionChanged: false, mechanicsPassed: false,
-  playbackQualified: false, period, teeth, dt: data.dt, comparisons, sources,
-  qualification: 'An eight-second, five-tooth recurrence is tested over whole adjacent cycles, subtracting exactly five pitches only from the wheel coordinate. Union knots bound differences between linearly interpolated free angles and stored velocities. The input linkage repeats exactly after two prescribed periods. These coarse-step comparisons do not qualify a playback seam or establish an exact periodic solution.'};
+  playbackQualified: false, inputs, period, teeth, inputCycles, dt: data.dt, comparisons, sources,
+  qualification: `A ${period}-second, ${teeth}-tooth recurrence is tested over whole adjacent cycles, subtracting exactly ${teeth} pitches only from the wheel coordinate. Union knots bound differences between linearly interpolated free angles and stored velocities. The input linkage repeats exactly after ${inputCycles} prescribed periods. These trajectory comparisons do not qualify a playback seam or establish an exact periodic solution.`};
 fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
 console.log({...report, sources: undefined});

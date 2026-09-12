@@ -24,17 +24,23 @@ an idealization without a traction proof. Conservative contact pruning gives ide
 and approximately 3.63 times faster local queries.
 
 The pulley stays on its fixed axle, and all other part transforms match the
-prior candidate at 257 checked poses. Thirteen new candidate renders are
-inspected. Whole-stroke linkage bounds now support continuous clearance of
-536 secondary pairs, including the strap/pulley/axle and four supports.
-The two primary pawl/ratchet pairs still need a separate continuous check.
+prior candidate at 257 checked poses. The newest twelve-second startup has
+384,001 states and passes time-step agreement at 0.0345345 engraving pixels.
+Compression to 24,123 knots adds at most 0.0000134321 pixels. Actual mesh
+triangle bounds cover both pawl/ratchet pairs through every interval, and
+the secondary bounds retain their margins after compression. Together they
+cover all 538 independent component pairs within 1e-6 world units.
 
-082 has not been integrated. Full startup refinement improves to 0.260788
-pixels, still outside the 0.25-pixel target. A finer run is pending. An
-eight-second repeating-loop hypothesis fails the coarse whole-cycle comparison
-despite near-matching endpoints; a finer settling study is underway. Primary
-clearance, the pulley/strap assumptions and final playback still need
-qualification. Earlier gravity, contact,
+Thirteen new candidate stills and the live preview's final image are inspected.
+The finite browser preview keeps all 269 rendered frames inside the camera
+and above the ground. It averages 22.32 fps locally, with 0.400 ms model updates
+at the 95th percentile. This is diagnostic candidate evidence.
+
+082 has not been integrated. The finer settling study still rejects an
+eight-second loop despite near-matching endpoints; longer cycles are under
+investigation. Final playback and repeated-motion clearance remain pending,
+along with the newest reaction/loading checks. The pulley/strap idealizations
+remain explicit. Earlier gravity, contact,
 hardware, step-size and recurrence failures remain archived, along with the
 rejected oversized-pulley interpretation. All 904 frozen production inputs
 remain unchanged. Details and limits are in the
