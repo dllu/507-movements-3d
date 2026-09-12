@@ -681,3 +681,43 @@ source archives are verified and must remain unchanged while they run. The
 quarter-millisecond original-BDF run and all short controls are terminal.
 All 904 production inputs, 43 treadle sources and 33 prior checkpoint sources
 remain unchanged. No browser or app build was run for these isolated studies.
+
+## Restart comparison and support-selection precision
+
+Both revised full cycles have now finished: 10,216 intervals at 1 ms and
+18,159 at 0.5 ms. Complete guided clearance and the BDF energy audit pass for
+both. Their **0.483124-pixel** difference still fails motion refinement. The
+bounded restart improves the isolated startup/impact controls but has not
+resolved sensitivity to the earlier approach history. No further full-cycle
+halving is started at this checkpoint.
+
+The original reaction checker reports one failure in the revised 1 ms run,
+at row 9,654 / 7.5359921875 seconds: its wheel Jacobian differs by 0.0621034.
+An initial progress message incorrectly called this complete audit passed;
+that statement was corrected after the terminal report was read. Its failed
+report remains `083-event-bdf-full-one-ms-reactions.json`.
+
+The failure is isolated to support selection in the checker. Its 1e-9 support
+threshold includes a third crown vertex **3.60043e-10** units off the supporting
+plane, enlarging a two-vertex edge into a triangular face. The resulting
+arbitrary reconstructed point has the wrong moment arm. At 1e-12, the two
+actual edges give the expected Jacobian. An independent closest-lines solution
+using 1e-13 support selection places both points at z=-1.55064297118, within
+their finite edge segments. Their 2.000001e-9 separation matches the contact
+padding, and the wheel Jacobian **-1.02321620468** equals the solver value
+exactly. `083-reaction-support-edge-proof.json` records all vertex projections,
+line parameters and points. The 1e-9 negative control reproduces the failure;
+`083-reaction-support-tight.json` passes without changing a mesh or motion state.
+
+Full revised-trajectory audits with the stricter selection now pass: 18,055
+reactions / 36,110 boundaries in the 1 ms run, and 32,676 / 65,352 in the 0.5 ms
+run. All states are covered at stride one. Maximum wheel-Jacobian errors are
+2.221e-15 and 2.665e-15; momentum residuals are 3.977e-13 and 1.332e-13.
+Sessions 9665 and 27114 both exited zero. The original checker and all its
+reports remain unchanged. The support-selection diagnosis does not explain
+or remove the separate full-history motion discrepancy.
+
+`083-event-bdf-completed-checkpoint.json` records the completed simulations,
+energy and clearance evidence, preserved failed comparison and support
+selection controls. No study solver, checker or browser remains running.
+Production and the full 507 review remain unchanged and active, respectively.

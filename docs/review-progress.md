@@ -146,9 +146,13 @@ five-family energy audit passes all three complete cycles, with a finest
 normalized residual of 3.44209e-8 and explicit signed history exchanges.
 A separate restart variant bounds the two post-impact intervals by the event
 resolution. Its analytic and short replay controls pass, but both restart
-variants already agree in the short shared-state replay. Full revised cycles
-are running to test the earlier approach history. Motion refinement and
-playback qualification remain open. All 904 frozen app inputs and 43 treadle
+variants already agree in the short shared-state replay. The revised full
+cycles pass clearance and energy but still fail motion agreement at 0.483124
+pixels. One reaction-check failure is traced to a nearby vertex incorrectly
+included in a supporting edge; an independent finite-edge solution recovers
+the solver torque exactly. Full audits with stricter support selection now
+pass. Motion refinement and playback qualification remain open. All 904 frozen
+app inputs and 43 treadle
 study sources remain unchanged; the prior steppers and evidence are preserved.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
