@@ -47,7 +47,10 @@ unchanged 0.25-pixel target. Sixteen-second recurrence differences are 0.420341
 and 0.386980 pixels; eight-second recurrence remains rejected. Final playback
 and repeated-motion clearance remain pending. A report-specific compact JSON
 serialization intervention preserved the long run without changing study
-sources; a bounded writer is still needed before another large output.
+sources. The runner now has a bounded writer, checked byte for byte against
+native JSON with real trajectory rows. Its three output-only edits are
+verified exactly against the archived runner; the other 40 study sources
+remain unchanged.
 Earlier gravity, contact,
 hardware, step-size and recurrence failures remain archived, along with the
 rejected oversized-pulley interpretation. The later framing-marker shadow
@@ -73,14 +76,24 @@ shaft/wheel poses, with matching unpruned comparisons and an independent
 penetrating negative control. Analytic contact derivatives and independent
 mesh-energy checks of the free force equations pass.
 
-Free contact dynamics now determine the wheel and sector lifts. A slower
-eight-second input cycle advances 15.877151 teeth over two cycles, but wheel
-retreat still reaches 0.323447 teeth. This is not accepted final playback.
-All 67 meshes pass topology checks at nine actual trajectory poses;
+Free contact dynamics now determine the wheel and sector lifts. The first
+slower run passes all 7,147 spatial reaction checks at saved states, but it
+fails midpoint clearance and differs by 194.416 source pixels when its time
+step is halved. An independent mesh check confirms the missed tooth intrusion.
+It is rejected for playback.
+
+Starting from a checked static gravity/spring equilibrium removes the large
+startup divergence. Two step sizes now advance about 8.12 teeth per cycle,
+but still differ by 4.19131 pixels and retain about 0.23 teeth of retreat.
+The completed 0.0005-second-step run reduces the refinement difference to
+1.703677 pixels; a 0.00025-second-step run is in progress. The corrected-start study also has
+twelve inspected source/motion renders, without browser errors or unexpected
+warnings. No final motion is accepted or integrated.
+
+For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
-Twelve trajectory views include the source overlay and guide detail. Contact
-reaction checks, refinement, guide loads, continuous clearance and final
-playback remain open.
+The later midpoint failure establishes the limits of that sampled evidence.
+Refinement, guide loads, continuous clearance and final playback remain open.
 The capture check passes without JavaScript errors or unexpected warnings.
 Production is unchanged.
 Measurements, preserved failures and qualification limits are recorded in the

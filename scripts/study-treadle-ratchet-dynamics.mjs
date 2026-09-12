@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import {writeStudyReport} from './lib/write-study-report.mjs';
 import {makeTreadleRatchetCandidate} from './lib/treadle-ratchet-candidate.mjs';
 import {makeTreadleRatchetDynamics, advanceTreadleRatchetStep} from './lib/treadle-ratchet-dynamics.mjs';
 const resumeFile = process.env.PROBE_RESUME;
@@ -10,7 +11,7 @@ const candidate = makeTreadleRatchetCandidate(geometry), physics = makeTreadleRa
 const dt = Number(process.env.PROBE_DT ?? .002), duration = Number(process.env.PROBE_DURATION ?? 8);
 const output = process.env.PROBE_OUTPUT ?? 'artifacts/review/082-gravity-dynamics.json';
 if (!(dt > 0 && duration > 0)) throw Error('Invalid study duration or time step');
-const files = ['scripts/study-treadle-ratchet-dynamics.mjs', 'scripts/lib/treadle-ratchet-dynamics.mjs',
+const files = ['scripts/study-treadle-ratchet-dynamics.mjs', 'scripts/lib/write-study-report.mjs', 'scripts/lib/treadle-ratchet-dynamics.mjs',
   'scripts/lib/treadle-ratchet-contact.mjs', 'scripts/lib/treadle-ratchet-input.mjs',
   'scripts/lib/treadle-ratchet-candidate.mjs', 'scripts/lib/treadle-ratchet-linkage.mjs', 'scripts/lib/treadle-ratchet-source.mjs',
   'src/simulation/finite-polygon-contact.js', 'src/simulation/finite-plate-geometry.js',
@@ -47,7 +48,7 @@ const report = {movement: 82, status: failures.length ? 'finite-dynamics-study-f
   productionChanged: false, mechanicsPassed: false, geometry: candidate.root.userData.geometry.options, parameters: physics.parameters,
   dt, duration, startTime, minimumStep, resumeFile, minimumGap, maximumResidual, maximumIterations, rows, failures, rejectedSteps, sources,
   qualification: 'Exploratory wheel and two free pawl angles with common-density gravity, moving-hinge inertia, damping and optional explicit ideal hinge preload. No framewise pawl seating. Complete solid clearance, physical reactions, energy, convergence and source alignment remain unverified.'};
-fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
+writeStudyReport(output, report);
 console.log({output, rows: rows.length, failures: failures.map(f => ({reason: f.reason, time: f.time})),
   finalTeeth: (state.x[0] - physics.initial.x[0]) / pitch, additionalTeeth: (state.x[0] - startTheta) / pitch,
   rejectedSteps: rejectedSteps.length});

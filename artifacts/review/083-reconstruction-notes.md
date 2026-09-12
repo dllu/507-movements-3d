@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **free contact dynamics studied; backlash and final qualification pending**.
+Status: **startup equilibrium corrected in the study; refinement and continuous clearance still fail**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -231,6 +231,66 @@ production inputs remain unchanged, retaining the previous build and 3,100-test
 result. The replacement is **not integrated**. Contact reactions and feature
 transitions, input/guide loads, trajectory energy, time-step refinement,
 continuous clearance, supports and final playback remain open.
+
+## Spatial reaction audit, interpolation failure and corrected startup
+
+The complete 0.004-second-step trajectory now passes an independent spatial
+reaction audit. All **7,147 positive impulses** have intersecting supporting
+features on the actual solids. The 14,294 boundary and normal-cone checks pass,
+including incident-face support halfspaces to reject an internal triangulation
+face masquerading as a physical boundary. Contact-point wheel and input
+Jacobians agree within 2.443e-15 and 3.886e-16 respectively. Discrete free-body
+momentum residual is at most 8.786e-12. No guide stop is loaded in this run.
+`083-slower-drive-reactions.json` preserves every reverse-motion interval's
+sampled torques; valid contact at stored states does not validate the whole path.
+
+Indeed, sampling the midpoint of all 4,000 intervals finds **54 contact-envelope
+intrusions**, with worst radial deficit 0.000198594 units. An independent
+complete-mesh screen at that witness confirms a front-sector/crown-tooth
+penetration of 0.0000434297 units. The failed reports are
+`083-slower-drive-midpoints.json` and `083-midpoint-witness-solids.json`.
+Halving the time step to 0.002 seconds also changes the two-cycle advance
+from 15.877151 to 12.887304 teeth; maximum trajectory discrepancy reaches
+194.416 engraving pixels. The earlier visually plausible run is rejected
+for playback, despite its passing node-level reactions and nine-pose screen.
+
+The initial wheel angle had been selected to seat the **upright** source pose
+and then reused with the shaft tilted to -0.22 radians. That preloads the
+sectors above a stable resting position and releases stored gravitational and
+spring energy as the drive starts. A one-pitch energy scan and bounded local
+minimizations at the actual initial shaft angle locate the lower-energy seat
+at wheel angle **0.033189177145424485 radians**. Both one-sided energy slopes
+point toward this minimum. Three nonnegative contact forces balance the static
+preload with residual free velocity below 6.107e-16; the first driven step
+retains the full prescribed input acceleration. The reproducible study and
+force check are `scripts/study-spring-sector-initial-seat.mjs` and
+`083-static-initial-equilibrium.json`.
+
+With that initial phase supplied explicitly, otherwise unchanged 0.002- and
+0.001-second-step runs advance 8.117590 and 8.127550 teeth over one eight-second
+cycle. This avoids the large startup divergence, but their maximum displacement
+difference is still **4.19131 pixels**, above the unchanged 0.25-pixel target.
+Wheel retreat remains 0.215674 and 0.231829 teeth. These runs are not qualified
+for final playback. The 0.0005-second-step run subsequently completed all
+16,001 states without failed or rejected steps, advancing 8.100822 teeth.
+Its comparison with 0.001 seconds reduces the maximum difference to
+**1.703677 pixels**, still above the unchanged target. A 0.00025-second-step
+run is now in progress; its source files are frozen while it runs.
+No default physics or geometry was changed to
+force the result, and the replacement remains separate from production.
+
+All twelve renders of the 0.001-second trajectory are inspected, including
+the registered overlay, both reversals, intermediate states, oblique/rear
+views and guide detail. The ordinary input pin stays connected and the full
+wheel is visible. The source proportions remain close; the unshown hub-cover
+lip, exposed guide fragments and missing external bearings still need work.
+No JavaScript errors or unexpected browser warnings occur. These stills do
+not overrule the refinement or continuous-path failures.
+
+`083-equilibrium-start-checkpoint.json` records the initial evidence;
+`083-equilibrium-refinement-checkpoint.json` records the completed 0.0005-second
+run and next refinement. Continuous clearance, converged motion, backlash, input/guide loads,
+trajectory energy, supporting bearings and final app playback remain open.
 
 ## Shared framing-marker shadow correction
 

@@ -7,6 +7,28 @@ production. The later framing-marker shadow fix changes only the shared
 shadow helper: 903 of the 904 frozen production files still match the verified
 081 state, and `083-shadow-source-hashes.json` records the updated map.
 
+## Bounded report output
+
+The runner now uses `scripts/lib/write-study-report.mjs` to serialize trajectory
+rows separately. It flushes bounded writes to an exclusive partial file and
+publishes the complete report atomically without replacing an existing output.
+Failures retain the partial for inspection. This removes the large-row-array
+single-string problem before another long study; individual rows and non-row
+metadata still use native JSON serialization.
+
+`082-bounded-report-writer.json` verifies 1,024 real trajectory rows plus JSON
+edge values against native compact serialization, byte for byte. The 559,424-byte
+report uses 146 writes, each below the configured 4,096-byte limit. Existing
+output survives a repeated write attempt, and an intentional cyclic-data
+failure leaves only its partial file. The earlier full reports are preserved.
+
+Of the 41 previously frozen study sources, **40 remain unchanged**. The runner
+diff consists exactly of the writer import, its archived dependency, and the
+serialization call; removing those three edits reproduces the archived source
+byte for byte. No solver, parameter, state update or trajectory value changed.
+The earlier 904 production inputs remain unchanged. This fixes output handling;
+it does not resolve the settling/refinement failures below.
+
 ## Completed finer settling: refinement and recurrence still fail
 
 The 0.0625 ms continuation has finished the full 12–60 second interval:
@@ -37,9 +59,9 @@ changed only this report's native JSON serialization to compact formatting.
 It ran exactly once and the process exited successfully with a 402,448,706-byte
 report. Solver state, data values and source files were unchanged. The exact
 action and guards are retained in `082-sixteenth-ms-compact-output-change.json`
-and `scripts/compact-treadle-study-output.mjs`. A bounded output writer is
-required before another large run; this one-process intervention is not a
-general writer fix. Three identical immutable archive copies now share storage
+and `scripts/compact-treadle-study-output.mjs`. The later bounded writer above
+replaces the need for this one-process intervention on future runs.
+Three identical immutable archive copies now share storage
 after SHA-256 verification; their paths and contents are preserved.
 
 `082-finer-settling-checkpoint.json` records completion, source verification,
