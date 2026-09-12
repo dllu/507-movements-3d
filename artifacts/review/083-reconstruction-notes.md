@@ -721,3 +721,95 @@ or remove the separate full-history motion discrepancy.
 energy and clearance evidence, preserved failed comparison and support
 selection controls. No study solver, checker or browser remains running.
 Production and the full 507 review remain unchanged and active, respectively.
+
+## Exact contact-kernel acceleration
+
+CPU profiling identifies SAT projections, temporary arrays and their collection
+as the main contact cost. The isolated fast kernel keeps the original axis
+order, arithmetic order, support ties, lift padding and gradients. It generates
+cross axes lazily and computes projection extrema without temporary arrays.
+Immutable sector/crown transforms are cached by their exact angles; every
+query still evaluates the same translation envelope and pruning decisions.
+The original contact helper and all prior studies remain unchanged.
+
+`083-fast-contact-parity.json` records exact equality for 1,204 constraint
+evaluations (including transitions and impacts), 230 seating queries, 5,580 raw
+SAT intervals and 64 complete implicit steps. Cache revisits, signed zero,
+changed bounds/padding/margins and unpruned scans are covered. The dynamics
+factory source differs only in its contact provider. Paired query timings give
+a 6.14-fold speed ratio in this process; this is not a controlled benchmark.
+
+Full 1 ms and 0.5 ms replays reproduce **every stored state, impulse, active
+feature, rejected trial and continuous-clearance statistic** exactly. Their
+10,217 and 18,160 states take 61.60 and 87.38 seconds, compared with the earlier
+284.12 and 494.60 seconds under their recorded workloads. The full 1 ms strict
+reaction audit also reproduces all counts, errors and totals exactly. See
+`083-fast-bdf-replay-parity.json` and `083-fast-reaction-parity.json`. These
+checks establish computational equivalence and preserve the known motion
+failure; they do not make it a passing trajectory.
+
+The accelerated 0.25 ms event-restart cycle completes in 169.60 seconds with
+33,980 accepted intervals, complete guided clearance and a passing energy
+audit. Its comparison with 0.5 ms remains a failure at 0.483380 pixels. The
+0.125 ms cycle finishes in 292.25 seconds with 65,860 intervals. This next
+adjacent comparison **passes at 0.0503433 engraving pixels**, measured over
+99,355 union knots. The largest difference is the front-sector lift near
+7.767406 seconds. This is observed agreement for one full input cycle, not a
+continuum-error bound or evidence of settled repetition.
+
+Complete guided clearance covers all 69 meshes, 1,384 independent pairs and
+four spring wires over the finer cycle. Its independent spatial audit passes
+all 120,852 reactions and 241,704 boundaries; maximum wheel-Jacobian error is
+3.109e-15 and momentum residual is 4.374e-14. The normalized energy residual
+decreases from 3.526e-8 at 0.25 ms to 9.499e-9 at 0.125 ms. These checks do not
+replace the remaining repeated-motion, support and presentation review.
+
+## Second-cycle disagreement
+
+Both step sizes now continue through sixteen seconds, carrying their own
+eight-second positions, velocities and active contacts exactly. The join
+utility checks all parameters, resume indices, complete source hashes and
+boundary states before omitting the duplicate boundary row. It records the
+bounded restart of numerical BDF history explicitly. The physical state is
+unchanged. Two negative controls reject unequal step sizes and discontinuous
+states; neither publishes an output report.
+
+The complete 0.25 ms and 0.125 ms histories contain 68,032 and 131,833 states.
+Their comparison **fails at 8.463231 pixels**, with the largest front-sector
+difference near 13.678896 seconds. The wheel differs by up to 6.619087 pixels
+and the rear sector by 6.776879 pixels. This failure supersedes the first-cycle
+pass for any sixteen-second playback claim; all earlier results remain intact.
+
+`083-fast-bdf-second-cycle-divergence.json` reproduces the comparison's full
+199,377-knot maximum and records threshold crossings with bracketing states
+and nearby contact transitions. Disagreement first exceeds 0.1 pixels at
+10.693 seconds, 0.25 at 11.315875, 1 at 11.717375 and 8 at 13.325. The increase
+is accumulated through several contact events, rather than appearing at the
+eight-second join. This locates the disagreement without claiming its cause.
+
+Complete guided clearance still passes through all 131,832 finer intervals,
+and the full five-family energy audit passes with a normalized residual of
+6.463e-9. The second-cycle spatial audit passes all 115,523 reactions and
+231,046 boundary checks, bringing the complete finer history to 236,375
+checked reactions. Maximum momentum residual is 7.594e-14.
+
+A separate 0.25 ms replay starts from the finer trajectory's exact eight-second
+state. It completes 34,113 intervals without failed steps. Its comparison
+with the existing 0.125 ms continuation still **fails at 0.738183 pixels**,
+but the difference is substantially smaller than the separate-start histories'
+8.463231 pixels. This supports sensitivity to carried first-cycle error while
+also exposing unresolved error introduced during the second cycle. It is not
+a physical-instability diagnosis or a decomposition of nonlinear error.
+`083-fast-bdf-shared-second-refinement.json` preserves this counterfactual.
+Neither clearance nor energy establishes motion accuracy, and 083 remains
+outside production.
+
+SHA-verified consolidation of immutable, identical TXT archive copies recovers
+about 1.42 GB in the first pass and 0.50 GB in a later pass. All original
+sources, JSON, images and logs retain their bytes. The 904 production inputs,
+43 treadle sources and 40 prior 083 checkpoint sources remain unchanged.
+No app build or browser capture was needed for this isolated study change.
+`083-fast-bdf-long-checkpoint.json` records the complete results and frozen
+sources. All study jobs are terminal at this checkpoint. The full 507 review
+remains active; longer motion accuracy, repeated playback and final support
+and rendering review remain open.

@@ -151,9 +151,29 @@ cycles pass clearance and energy but still fail motion agreement at 0.483124
 pixels. One reaction-check failure is traced to a nearby vertex incorrectly
 included in a supporting edge; an independent finite-edge solution recovers
 the solver torque exactly. Full audits with stricter support selection now
-pass. Motion refinement and playback qualification remain open. All 904 frozen
-app inputs and 43 treadle
-study sources remain unchanged; the prior steppers and evidence are preserved.
+pass.
+
+An isolated contact-kernel optimization reproduces every stored state,
+impulse, rejected trial and clearance statistic in both full reference runs
+exactly. Recorded runtimes improve by about 4.6 to 5.7 times; these are workload
+observations, not controlled benchmarks. The new 0.25 ms and 0.125 ms full
+cycles give the first passing adjacent comparison at **0.0503433 pixels**.
+The finer cycle passes complete guided clearance, 120,852 independent reaction
+checks and the method-specific energy audit.
+
+Continuing both trajectories through sixteen seconds exposes a new
+**8.463231-pixel failure** during the second cycle. The exact carried states
+and numerical-history restarts are checked at the join. Disagreement crosses
+0.25 pixels near 11.316 seconds, after several contact events; no cause is yet
+established. All 1,384 independent pairs remain clear through the 131,832
+finer intervals, and the full energy audit passes. Independent spatial audits
+pass all 236,375 reactions across both cycles. Replaying the second cycle from
+one shared state reduces the discrepancy to **0.738183 pixels**, still above
+target. Carried first-cycle error contributes to the longer disagreement;
+second-cycle integration error also remains unresolved.
+Motion refinement and playback qualification remain open. All 904 frozen
+app inputs, 43 treadle study sources and 40 prior 083 study sources remain
+unchanged; the prior steppers and evidence are preserved.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
