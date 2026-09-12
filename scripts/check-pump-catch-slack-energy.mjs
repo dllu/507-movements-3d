@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {makePumpCatchCandidate} from './lib/pump-catch-candidate.mjs';
+import {makePumpCatchWeightedCandidate} from './lib/pump-catch-weighted-candidate.mjs';
 import {makePumpCatchSlackDynamics} from './lib/pump-catch-slack-dynamics.mjs';
 import {surfaceTriangles} from '../tests/helpers/solid-surface.mjs';
 import {freezeStudySources} from './lib/study-report-io.mjs';
 
-const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-slack-energy-formulas',model=makePumpCatchCandidate(),u=model.root.userData,dynamics=makePumpCatchSlackDynamics(model),tetra=[];
+const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-slack-energy-formulas',headBackDepth=Number(process.env.PROBE_HEAD_DEPTH??0),model=makePumpCatchWeightedCandidate({headBackDepth}),u=model.root.userData,dynamics=makePumpCatchSlackDynamics(model),tetra=[];
 for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.families[name]))for(const t of surfaceTriangles(mesh.geometry)){
   const points=[t.a,t.b,t.c],mass=t.a.dot(t.b.clone().cross(t.c))/6;tetra.push({family:u.families[name],mesh,mass,points:[new THREE.Vector3(),...points]});}
 const errors={energy:0,momentum:0,eulerLagrange:0},rows=[],z=new THREE.Vector3(0,0,1),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
@@ -29,10 +29,10 @@ for(let i=0;i<51;i++){
   }
   rows.push({q,v,kinetic,potential,momentum});
 }
-const sources=freezeStudySources(['scripts/check-pump-catch-slack-energy.mjs','scripts/lib/pump-catch-rope.mjs','scripts/lib/pump-catch-candidate.mjs','scripts/lib/pump-catch-source.mjs','scripts/lib/pump-catch-dynamics.mjs','scripts/lib/pump-catch-slack-dynamics.mjs',
+const sources=freezeStudySources(['scripts/check-pump-catch-slack-energy.mjs','scripts/lib/pump-catch-weighted-candidate.mjs','scripts/lib/pump-catch-rope.mjs','scripts/lib/pump-catch-candidate.mjs','scripts/lib/pump-catch-source.mjs','scripts/lib/pump-catch-dynamics.mjs','scripts/lib/pump-catch-slack-dynamics.mjs',
   'scripts/lib/pump-catch-contact.mjs','scripts/lib/crossed-rack-mesh-prisms.mjs','src/simulation/finite-plate-geometry.js','src/simulation/conforming-plate-mesh.js',
   'src/simulation/clutch-section-geometry.js','src/simulation/primitives.js','tests/helpers/solid-surface.mjs','scripts/lib/study-report-io.mjs'],prefix);
 const report={movement:86,status:'full-mesh-energy-and-free-equations-check',passed:errors.energy<1e-9&&errors.momentum<1e-9&&errors.eulerLagrange<1e-7,
-  mechanicsPassed:false,candidateIntegrated:false,productionChanged:false,errors,poses:rows.length,tetrahedra:tetra.length,rows,sources,
+  mechanicsPassed:false,candidateIntegrated:false,productionChanged:false,candidateOptions:u.candidateOptions,errors,poses:rows.length,tetrahedra:tetra.length,rows,sources,
   qualification:'Independent signed-tetrahedron integration of actual world-space wheel and catch meshes checks kinetic/gravitational energy and all three generalized momenta. Finite differences of the mass matrix and potential check the Coriolis and gravity terms. The pump is an independent ideal point load with unilateral rope contact; this checks formulas, not trajectory accuracy or hardware loads.'};
 fs.writeFileSync(prefix+'.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log({...report,rows:undefined,sources:undefined});if(!report.passed)process.exitCode=1;

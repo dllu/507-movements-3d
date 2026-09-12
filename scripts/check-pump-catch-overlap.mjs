@@ -1,12 +1,12 @@
 import fs from 'node:fs';
-import {makePumpCatchCandidate} from './lib/pump-catch-candidate.mjs';
+import {makePumpCatchWeightedCandidate} from './lib/pump-catch-weighted-candidate.mjs';
 import {renderedPrism} from './lib/crossed-rack-mesh-prisms.mjs';
 import {rotate} from '../src/simulation/finite-plate-geometry.js';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
 const input=process.env.PROBE_INPUT??'artifacts/review/086-finite-rope-dynamics.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-finite-rope-overlap',data=readStudyReport(input);
 verifyStudySources(data.sources);const sources=freezeStudySources([input,'scripts/check-pump-catch-overlap.mjs',...data.sources.map(s=>s.file)],prefix);
-const model=makePumpCatchCandidate(),u=model.root.userData,pivot=u.geometry.pivot;
+const model=makePumpCatchWeightedCandidate(data.parameters.candidateOptions),u=model.root.userData,pivot=u.geometry.pivot;
 const names=['hookedCatchB','pointedCamC','inputShaft','fixedTripStop'],prisms=Object.fromEntries(names.map(name=>[name,renderedPrism(u.parts[name].geometry)]));
 const cross=(a,b)=>a[0]*b[1]-a[1]*b[0],sub=(a,b)=>a.map((v,k)=>v-b[k]);
 const box=points=>({min:[0,1].map(k=>Math.min(...points.map(v=>v[k]))),max:[0,1].map(k=>Math.max(...points.map(v=>v[k])))});

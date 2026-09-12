@@ -25,10 +25,11 @@ function projection(free,mass,constraints){
 // projected separately from the free momentum, so an impact cannot leave a
 // closing velocity at a seated face. Position transport is recorded explicitly;
 // it is not silently substituted for the post-impact velocity.
-export function pumpCatchImpactStep(dynamics,contact,before,time,h,angularSpeed){
-  const transport=pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed);if(transport.failed)return transport;
+export function pumpCatchImpactStep(dynamics,contact,before,time,h,angularSpeed,stepOptions={}){
+  const transport=pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed,null,stepOptions);if(transport.failed)return transport;
   const mass=dynamics.at(before.q,before.v),free=before.v.map((v,k)=>v+h*mass.acceleration[k]),q=transport.q,
-    {path,...rope}=pumpCatchRope(q,dynamics.parameters),candidates=[...contact.query(q,angularSpeed*time).map(c=>({...c,gradient:[...c.gradient,0]})),rope],
+    {path,...rope}=pumpCatchRope(q,dynamics.parameters),candidates=[...contact.query(q,angularSpeed*time).map(c=>({...c,gradient:[...c.gradient,0]})),rope,
+      ...(dynamics.parameters.pumpStopHeight===null?[]:[{kind:'pump-stop',gap:q[2]-dynamics.parameters.pumpStopHeight,gradient:[0,0,1],inputGradient:0}])],
     constraints=candidates.filter(c=>c.gap<=2e-8).map(c=>({...c,target:-c.inputGradient*angularSpeed})),result=projection(free,mass,constraints);
   if(!result)return{failed:'Infeasible final impact velocity',time,q};
   return{...transport,transportVelocity:transport.v,positionActive:transport.active,v:result.v,active:result.active,

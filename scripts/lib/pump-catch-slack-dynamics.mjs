@@ -10,14 +10,17 @@ function solve(M,b){
     for(let i=0;i<n;i++)if(i!==k){const f=a[i][k];for(let j=k;j<=n;j++)a[i][j]-=f*a[k][j];}}
   return a.map(row=>row[n]);
 }
-export function makePumpCatchSlackDynamics(model,{loadMass=1,gravity=9.81,drag=0,ropeLength=4.75}={}){
+export function makePumpCatchSlackDynamics(model,{loadMass=1,gravity=9.81,drag=0,ropeLength=4.75,hubDrag=0,hingeDrag=0,pumpDrag=0,pumpStopHeight=null,inputAngularSpeed=0}={}){
   const bare=makePumpCatchDynamics(model,{loadMass:0,gravity,drag}),radius=bare.parameters.radius;
   const at=(q,v)=>{
     const b=bare.at(q.slice(0,2),v.slice(0,2)),M=b.M.map(row=>[...row,0]);M.push([0,0,loadMass]);
-    const inverse=b.inverse.map(row=>[...row,0]);inverse.push([0,0,1/loadMass]);const force=[...b.force,-loadMass*gravity];
+    const inverse=b.inverse.map(row=>[...row,0]);inverse.push([0,0,1/loadMass]);const hinge=hingeDrag*(v[1]-v[0]),
+      force=[b.force[0]-hubDrag*(v[0]-inputAngularSpeed)+hinge,b.force[1]-hinge,-loadMass*gravity-pumpDrag*v[2]];
     return{M,inverse,force,acceleration:mul(inverse,force),energy:b.energy+.5*loadMass*v[2]**2+loadMass*gravity*q[2]};
   };
-  return{at,parameters:{...bare.parameters,loadMass,radius,ropeLength,rope:'Finite attached rope with winding, straight free span and unilateral tension; independent vertical pump coordinate. No assumed stroke stop.'}};
+  return{at,parameters:{...bare.parameters,loadMass,radius,ropeLength,hubDrag,hingeDrag,pumpDrag,pumpStopHeight,inputAngularSpeed,candidateOptions:model.root.userData.candidateOptions??{},
+    rope:'Finite attached rope with winding, straight free span and unilateral tension; independent vertical pump coordinate.',
+    losses:'Hub drag acts relative to the rotating input shaft; catch-pin drag acts between catch and wheel; pump drag opposes vertical travel. The optional lower pump stop acts on the load alone.'}};
 }
 function projection(free,mass,constraints){
   const valid=v=>constraints.every(c=>dot(c.gradient,v)>=c.target-1e-9);if(valid(free))return{v:free,active:[]};
@@ -30,12 +33,25 @@ function projection(free,mass,constraints){
   for(let i=0;i<constraints.length;i++){candidate([i]);for(let j=i+1;j<constraints.length;j++){candidate([i,j]);for(let k=j+1;k<constraints.length;k++)candidate([i,j,k]);}}
   return best;
 }
-export function pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed,trace=null){
+export function pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed,trace=null,{seedCorner=true}={}){
   const mass=dynamics.at(before.q,before.v),free=before.v.map((v,k)=>v+h*mass.acceleration[k]);
   const rope=q=>{const {path,...constraint}=pumpCatchRope(q,dynamics.parameters);return constraint;};
   const contacts=q=>[...contact.query(q,angularSpeed*time).map(c=>({...c,gradient:[...c.gradient,0]})),
-    rope(q)];
+    rope(q),...(dynamics.parameters.pumpStopHeight===null?[]:[{kind:'pump-stop',gap:q[2]-dynamics.parameters.pumpStopHeight,gradient:[0,0,1],inputGradient:0}])];
   const initial=before.q.map((v,k)=>v+h*free[k]);let q=initial.slice();
+  // A retained cam/hook corner rotates as one geometrically seated assembly.
+  // Use that exact closure only as the Newton initial guess. The same mass-
+  // metric unilateral solve must still accept it; release is never prescribed.
+  const corner=seedCorner&&before.cornerClosure?.kind==='cam'?before.cornerClosure:null;
+  if(corner){
+    q[0]=before.q[0]+angularSpeed*h;q[1]=before.q[1]+angularSpeed*h;
+    if(dynamics.parameters.pumpStopHeight!==null)q[2]=Math.max(q[2],dynamics.parameters.pumpStopHeight);
+    for(let i=0;i<12;i++){const c=rope(q);if(c.gap>=-1e-10||Math.abs(c.gradient[2])<1e-8)break;q[2]-=c.gap/c.gradient[2];}
+  }
+  const retainedCorner=q=>{
+    if(!corner)return{};const P=rotate2(dynamics.parameters.pivot,q[0]),arm=rotate2(contact.hook.points[corner.hookVertex],q[1]),target=rotate2(contact.cam.points[corner.obstacleVertex],angularSpeed*time);
+    return Math.hypot(...P.map((v,k)=>v+arm[k]-target[k]))<1e-9?{cornerClosure:corner}:{};
+  };
   for(let iteration=0;iteration<24;iteration++){
     const constraints=contacts(q).map(c=>({...c,target:(dot(c.gradient,q.map((v,k)=>v-before.q[k]))-c.gap)/h})),result=projection(free,mass,constraints);
     if(!result)return{failed:'Infeasible linear contacts',time,q};
@@ -45,7 +61,7 @@ export function pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed,t
     // a few 1e-10 radians. Require sub-nanounit pose convergence, then check
     // actual gaps separately; independent spatial reactions are audited too.
     if(change<1e-9){const final=contacts(q),gap=Math.min(contact.minimumRawGap(q,angularSpeed*time),...final.map(c=>c.gap));if(gap< -2e-8)return{failed:'Remaining finite penetration',time,q,gap};
-      return{time,q,v:result.v,active:result.active,iterations:iteration+1,minimumGap:gap,slack:rope(q).gap};}
+      return{time,q,v:result.v,active:result.active,iterations:iteration+1,minimumGap:gap,slack:rope(q).gap,...retainedCorner(q)};}
   }
   // At a cam vertex seated in the hook's reentrant corner, two active faces
   // determine the same material point. Solve that pin-to-point closure from
@@ -69,7 +85,7 @@ export function pumpCatchSlackStep(dynamics,contact,before,time,h,angularSpeed,t
           near=(angle,reference)=>reference+Math.atan2(Math.sin(angle-reference),Math.cos(angle-reference)),
           wheel=near(Math.atan2(P[1],P[0])-Math.atan2(pivot[1],pivot[0]),q[0]),hook=near(Math.atan2(arm[1],arm[0])-Math.atan2(local[1],local[0]),q[1]);
         if(Math.abs(wheel-q[0])>.02||Math.abs(hook-q[1])>.02)continue;
-        const pose=[wheel,hook,initial[2]];
+        const pose=[wheel,hook,dynamics.parameters.pumpStopHeight===null?initial[2]:Math.max(initial[2],dynamics.parameters.pumpStopHeight)];
         for(let i=0;i<12;i++){const c=rope(pose);if(c.gap>=-1e-10||Math.abs(c.gradient[2])<1e-8)break;pose[2]-=c.gap/c.gradient[2];}
         const all=contacts(pose);if(contact.minimumRawGap(pose,angularSpeed*time)<-2e-8||all.some(c=>c.gap< -2e-8))continue;
         const constraints=all.map(c=>({...c,target:dot(c.gradient,pose.map((v,k)=>(v-before.q[k])/h))-c.gap/h})),result=projection(free,mass,constraints);

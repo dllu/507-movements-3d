@@ -53,6 +53,23 @@ cam engagement. The finest startup passes force, energy and sampled overlap
 checks, which does not establish the required capture and repeated cycle.
 Production, the original core geometry and the 082/083 studies are unchanged.
 
+The rear input candidate now completes both pulleys, the band, shafts and
+rear supports. All 28 solids and 285 independent pairs pass 14,181,018 surface
+samples at 34 prescribed poses. Eight source/overlay/full-drive views are
+inspected. This remains separate from the loaded motion candidate.
+
+Slower input retains initial capture, but a 24-second run still fails to
+repeat the pump sequence. An optional weighted catch head and relative
+bearing/pump losses now have independent mass, force and power checks. The
+16-second loaded trial passes 64,587 reaction checks, its work audit,
+5,290,338 solid samples and all 64,001 primary knot/midpoint overlap checks.
+It is nevertheless rejected: first-revolution lift is 2.589774 units and
+second-revolution lift only 0.001119. Eight more motion views show the catch
+turning away from its ready position. Catch reset, rope/load hardware,
+time-step agreement and complete clearance remain unresolved. See
+`086-rear-drive-study-checkpoint.json` and the linked study notes. Production
+and the original core geometry remain unchanged; the all-507 goal is active.
+
 ## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical

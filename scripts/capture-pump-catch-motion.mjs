@@ -5,25 +5,29 @@ import {readStudyReport,hashStudyFile,freezeStudySources,verifyStudySources} fro
 
 const input=process.env.PROBE_INPUT??'artifacts/review/086-exact-face-half-ms-impact.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-impact-motion',data=readStudyReport(input);
 verifyStudySources(data.sources);const frozen=readStudyReport('artifacts/review/085-integrated-source-hashes.json'),verify=()=>{for(const[file,sha]of Object.entries(frozen))assert.equal(hashStudyFile(file),sha,file);};verify();
-const sources=freezeStudySources([input,'scripts/capture-pump-catch-motion.mjs',...data.sources.map(s=>s.file),'src/simulation/engine.js','artifacts/reference/brown-086-detail.png'],prefix);
+const sources=freezeStudySources([input,'scripts/capture-pump-catch-motion.mjs','scripts/lib/pump-catch-weighted-candidate.mjs',...data.sources.map(s=>s.file),'src/simulation/engine.js','artifacts/reference/brown-086-detail.png'],prefix);
 const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1500,height:800}}),errors=[],warnings=[],views=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(['warning','error'].includes(m.type()))warnings.push(m.text());});
 try{
   await page.goto('http://127.0.0.1:5174/#/about');
-  await page.evaluate(async()=>{
-    const{MovementEngine}=await import('/src/simulation/engine.js'),{default:catalog}=await import('/src/data/movements.json'),{makePumpCatchCandidate}=await import('/scripts/lib/pump-catch-candidate.mjs');
+  await page.evaluate(async options=>{
+    const{MovementEngine}=await import('/src/simulation/engine.js'),{default:catalog}=await import('/src/data/movements.json'),{makePumpCatchWeightedCandidate}=await import('/scripts/lib/pump-catch-weighted-candidate.mjs');
     document.body.innerHTML='<main style="padding:16px;background:#faf8f2;height:800px;box-sizing:border-box"><div id="title" style="font:20px system-ui;height:40px"></div><div style="display:flex;gap:16px;height:720px"><div id="stage" style="width:726px;height:720px;position:relative"></div><img src="/artifacts/reference/brown-086-detail.png" style="width:726px;height:720px;object-fit:contain" /></div></main>';
     await document.querySelector('img').decode();const e=new MovementEngine(document.querySelector('#stage'),catalog.movements[85],{playing:false});
     cancelAnimationFrame(e.animationFrame);e.animationFrame=0;e.scene.remove(e.model.root);
     e.model.root.traverse(o=>{o.geometry?.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material?.dispose();});
-    e.model=makePumpCatchCandidate();e.scene.add(e.model.root);e.updateGroundClearance();
+    e.model=makePumpCatchWeightedCandidate(options);e.scene.add(e.model.root);e.updateGroundClearance();
     e.scene.traverse(o=>{if(o.isDirectionalLight&&o.shadow){const u=e.model.root.userData,s=o.shadow;s.bias=u.shadowBias;s.normalBias=u.shadowNormalBias;
       Object.assign(s.camera,{left:-u.shadowCameraHalfExtent,right:u.shadowCameraHalfExtent,top:u.shadowCameraHalfExtent,bottom:-u.shadowCameraHalfExtent});s.camera.updateProjectionMatrix();}});
     window.pumpCandidate=e;
-  });
-  for(const[name,time,section,direction]of [['source',0,false,[0,0,10]],['first-contact',.036,true,[0,0,10]],['seating',.143,true,[0,0,10]],
+  },data.parameters.candidateOptions??{});
+  const poses=process.env.PROBE_TIMES?process.env.PROBE_TIMES.split(',').map((value,i,all)=>{
+    const time=Number(value);assert(Number.isFinite(time)&&time>=0&&time<=data.actualEnd);
+    return['pose-'+i,time,i>0&&i<all.length-1,i===all.length-1?[4,3,10]:[0,0,10]];
+  }):[['source',0,false,[0,0,10]],['first-contact',.036,true,[0,0,10]],['seating',.143,true,[0,0,10]],
     ['lift',.6,true,[0,0,10]],['trip',1.25,true,[0,0,10]],['released',1.8,true,[0,0,10]],['return',2.73,true,[0,0,10]],
-    ['late-return',2.918,true,[0,0,10]],['end',3,false,[4,3,10]]]){
+    ['late-return',2.918,true,[0,0,10]],['end',3,false,[4,3,10]]];
+  for(const[name,time,section,direction]of poses){
     let index=data.rows.findIndex(r=>r.time>=time);if(index<0)index=data.rows.length-1;const row=data.rows[index];
     await page.evaluate(async({name,row,section,direction,angularSpeed})=>{
       const{THREE:{Vector3}}=await import('/scripts/lib/pump-catch-candidate.mjs'),e=window.pumpCandidate;

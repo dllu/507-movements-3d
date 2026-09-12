@@ -1,12 +1,15 @@
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {makePumpCatchCandidate} from './lib/pump-catch-candidate.mjs';
+import {makePumpCatchWeightedCandidate} from './lib/pump-catch-weighted-candidate.mjs';
 import {readStudyReport,verifyStudySources,freezeStudySources} from './lib/study-report-io.mjs';
 
 const coarseFile=process.env.PROBE_COARSE??'artifacts/review/086-finite-rope-dynamics.json.gz',fineFile=process.env.PROBE_FINE??'artifacts/review/086-finite-rope-half-ms-dynamics.json.gz',
   prefix=process.env.PROBE_PREFIX??'artifacts/review/086-finite-rope-step-agreement',coarse=readStudyReport(coarseFile),fine=readStudyReport(fineFile);
 verifyStudySources(coarse.sources);verifyStudySources(fine.sources);
-const model=makePumpCatchCandidate(),u=model.root.userData,P=u.geometry.pivot,radii={wheel:0,hook:0,pivot:Math.hypot(...P)},p=new THREE.Vector3();
+assert.equal(coarse.angularSpeed,fine.angularSpeed,'Step comparison requires the same input speed');
+assert.deepEqual(coarse.parameters,fine.parameters,'Step comparison requires the same geometry and physical parameters');
+const model=makePumpCatchWeightedCandidate(coarse.parameters.candidateOptions),u=model.root.userData,P=u.geometry.pivot,radii={wheel:0,hook:0,pivot:Math.hypot(...P)},p=new THREE.Vector3();
 for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.families[name])){
   const positions=mesh.geometry.attributes.position;for(let i=0;i<positions.count;i++){
     p.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);

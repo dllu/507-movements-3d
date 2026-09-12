@@ -1,6 +1,6 @@
 # Movement 086: cam-released loose-wheel pump
 
-Status: **initial source reconstruction and finite-contact study**. The
+Status: **rear drive reconstructed; repeated pump motion unresolved**. The
 replacement is incomplete and unintegrated. Production remains at the 972-input
 movement 085 checkpoint; the all-507 review remains active.
 
@@ -220,14 +220,86 @@ These are diagnostic inspections. The pump rope, load and rear input hardware
 are still absent, and no final visual or repeated-cycle acceptance is claimed.
 See `086-first-impact-motion-captures.json`.
 
+## Rear input assembly and slower capture
+
+The rear input candidate adds fifteen solids to the unchanged thirteen-part
+core: two complete pulleys, a closed input band, shafts, rear bearings and
+bases. The band radius and width follow the two visible hatched source runs.
+The remote pulley, its spacing, hidden sections and supports are reconstruction
+assumptions. Its inner polygon circumscribes the pulley cylinder so rotating
+pulley facets cannot penetrate the band. Maximum radial rendering clearance
+is 1.164785e-5 model units. Band material coordinates move with the prescribed
+shaft; this is ideal no-slip kinematics, not a finite-traction calculation.
+
+All 28 meshes are closed. All 285 independent pairs pass 14,181,018 surface
+samples at 34 prescribed poses. The thirteen original meshes and wheel/catch
+mass properties remain identical. Eight source, overlay, full-drive and detail
+views are inspected, with no browser errors or unexpected warnings. The remote
+pulley is complete and visible when the full assembly is framed. Belt markings
+and final shadow styling remain cosmetic details for the integrated review.
+See `086-first-rear-drive-surfaces.json` and `086-first-rear-drive-captures.json`.
+This assembly is a separate candidate; it has not yet been combined with the
+loaded dynamics or rope/pump hardware.
+
+A retained cam/catch corner now seeds the next nonlinear position solve. It
+is only an initial guess: the same unilateral force and finite-gap conditions
+must accept the result. Ninety independent one-step controls cover capture,
+release and free motion. Seeded/unseeded position, physical velocity and
+transport agree below 1e-7, and the ordinary solve reproduces the retained
+pre-optimization states. Sixteen expensive corner fallbacks are avoided.
+The original and current controls are preserved separately.
+
+Eight- and sixteen-second input periods retain initial capture at 0.25 ms.
+The eight-second 0.25/0.125 ms startup comparison still misses the 0.25-pixel
+target, reaching 0.290949 engraving pixels. A 24-second, three-revolution
+eight-second-period run completes without subdivision, but the undamped wheel
+and catch do not repeat the intended pump sequence. This is a rejected motion
+candidate, even though its initial capture and overhead release look plausible.
+
+## Loaded return diagnostic
+
+Uniform catch thickness puts its center of mass on the tail side of the pin;
+gravity initially opens the hook. A separate candidate adds 0.1 model units
+of thickness behind the existing head silhouette, clear of the wheel. It
+reverses the initial gravity torque from +0.033059 to -0.028163. This hidden
+weight distribution is an assumption, not a detail stated in the source.
+Independent integration of 7,024 actual mesh tetrahedra at 51 poses checks
+the new energy and momentum formulas; maximum energy/momentum discrepancies
+are below 3.6e-14 and the free-equation residual is 1.57e-10.
+
+The load model now supports relative shaft/wheel bearing drag, relative
+catch/wheel hinge drag, vertical pump resistance and a lower pump stop. All
+are optional explicit assumptions. Hub friction exchanges work with the
+rotating input shaft; it is not treated as a bearing fixed to ground. The
+101-pose independent force/power control has maximum power residual 2.14e-14.
+
+The sixteen-second trial uses an eight-second shaft period, 0.5 ms steps,
+head depth 0.1, hub drag 1.5, hinge drag 0.02, pump drag 12 and lower stop at
+pump height zero. Its 32,001 states complete without subdivision. All 64,587
+reaction checks pass; the maximum common mesh-boundary error is 5.22e-14.
+The 14-solids/68-pairs screen passes 5,290,338 surface samples at 101 solved
+poses. All 64,001 primary cap-triangle knot/midpoint checks pass, with maximum
+cam/catch overlap area 1.68e-13, below the 1e-10 diagnostic threshold.
+Signed/absolute work defects are 0.36038%/0.37230%; contact drift work is
+5.42e-15 in absolute sum. These checks do not prove continuous clearance,
+time-step agreement or a working repeated cycle.
+
+The trial is **rejected for repeated operation**. Its first revolution lifts
+the load 2.589774 units; the second lifts only 0.001119. After return the catch
+rotates away from the ready position, eventually presenting its tail to the
+cam. Eight new motion images are inspected and preserve that failure; six
+hide the front bearing for contact inspection. The new head thickness follows
+the original front contour, but neither the resulting catch motion nor the
+unmodeled rope/pump hardware is accepted. The missing reset mechanism needs
+investigation, including whether finite wheel-mounted travel stops are a
+plausible hidden detail. No such stops have been implemented or qualified.
+
 ## Remaining work and checkpoints
 
-Complete the rope attachment, winding geometry, pump load and stroke limit.
-The two hatched horizontal runs behind the wheel appear to depict an input
-belt; this is an inference from the engraving, whose text does not describe
-their hidden pulley or return path. Those components and the rear bearing
-remain to be reconstructed. They must not be treated as fixed support beams
-without further justification.
+Complete the rope attachment, winding geometry, pump load and physical stroke
+limit. Combine the rear input assembly with the qualified load geometry and
+recompute mass/inertia if new parts attach to the free wheel or catch. The
+rear belt interpretation remains an inference from the engraving.
 
 Resolve reliable cam capture, winding/attachment assumptions, return and the
 repeated cycle with the corrected impact solver. The cold-start impulse and
@@ -257,3 +329,11 @@ adversarial controls, rejected refinements and nine inspected motion images.
 Historical sources are verified against their own snapshots. All 972
 production inputs, the 23 original core-study sources and the 082/083 studies
 remain unchanged. The owned browser and all study processes are terminal.
+
+`086-rear-drive-study-checkpoint.json` records the completed rear input
+geometry, corner-seed controls, slower capture studies, weighted/load trials
+and sixteen new inspected images. The latest force, work and sampled geometry
+checks pass, but repeated operation remains rejected. Historical sources are
+verified against their retained snapshots. The original 23 core-study inputs,
+all 972 production inputs and the 082/083 studies remain unchanged. No new
+production build or full-suite pass is claimed.
