@@ -90,7 +90,81 @@ hook, while a slightly withdrawn cam clears it; both controls pass. This is
 geometric seating evidence, not a force equilibrium or dynamic lift proof.
 See `086-first-cam-seating.json`.
 
-## Remaining work and checkpoint
+## Contact and pump dynamics diagnostics
+
+The new studies solve wheel angle, absolute catch angle and, in the latest
+model, independent pump height. Uniform mesh density supplies the wheel/catch
+mass and inertia; normalized pump mass 1, gravity 9.81, a four-second input
+revolution and zero drag are diagnostic assumptions. Signed tetrahedral
+integration of 6,608 actual mesh tetrahedra checks energy and all three
+momenta at 51 poses. Maximum energy/momentum errors are below 3.60e-14;
+finite-difference Euler–Lagrange residual is 1.50e-10. This verifies formulas,
+not the accuracy of a complete trajectory.
+
+The original two-coordinate taut-rope trial is rejected: it requires negative
+rope tension (-3.767439) and includes nine invalid reaction normals. Separating
+the pump coordinate permits slack and positive tension, but an unlimited-wrap
+rope plus a prescribed lower stop lets the wheel unwind indefinitely. These
+trials and the nonlinear corner failures remain archived.
+
+Two contact errors were isolated independently. First, using adjacent cone
+rays for separated vertices creates forces across empty space. The rejected
+eight-second corner trial contains 537 invalid reactions, with separation up
+to 0.005740088. Multiple normals are now restricted to coincident corners;
+separated points retain the actual closest-point direction. A two-circle
+closure proposes a shared cam/hook corner only when the same nonnegative
+mass-metric impulse solve reproduces that pose.
+
+Second, discarding a penetrating trial feature because its normal is
+inadmissible can hide a return collision. The current solver retains trial
+escape constraints and independently rejects a negative raw boundary gap.
+The historical bad return pose at 2.723 seconds has 0.008981260 penetration;
+the new guard detects it. All 508 guard/control poses pass, with no falsely
+clear penetrating poses. Final reaction normals still require independent
+mesh checks; an escape constraint is not itself a qualified contact force.
+
+## Finite attached rope and remaining motion failures
+
+The new ideal rope has finite length 4.75 model units, an assumed rim pin at
+the source pose's left tangent, and a vertical pump guide under that tangent.
+The winding radius is 1.273079700, measured from the source axis to the visible
+rope centerline. The rope can unwind, leave a straight free span, and wind
+onto the opposite side; complete turns retain their winding count. The
+source omits the attachment and bucket, so these details remain explicit
+reconstruction assumptions. There is no prescribed pump stroke stop.
+
+Independent polygonal length and finite-difference gradient checks pass at
+805 poses across all three winding modes. Maximum length difference is
+2.22e-8, and maximum derivative difference is 2.54e-9. Full turns consume rope
+instead of accumulating unlimited slack. Rope and pump meshes are not yet
+constructed.
+
+The first finite-rope eight-second run passes all 11,395 reaction checks and
+a 101-pose core screen with 6,119,084 samples. It is nevertheless **rejected**:
+complete cap-triangle intersections at 16,181 knots/midpoints find 118 cam/hook
+overlaps above the 1e-10 area threshold, with maximum area 0.000333301.
+The 1 ms and 0.5 ms solutions also disagree badly: the conservative projected
+mesh-displacement bound reaches 9.168 engraving pixels during engagement
+and 1,123.758 pixels over eight seconds. Passing sparse surface samples and
+individual forces did not establish working motion.
+
+With the raw-gap guard, the latest three-second run contains 3,061 states.
+All 5,264 reactions pass common mesh boundary, normal-cone and momentum checks;
+maximum boundary error is 8.42e-10. The thirteen core solids and all 56
+independent pairs pass 6,246,092 surface samples at 101 solved poses.
+The denser 6,121-pose triangle screen still fails its strict area threshold
+at 20 cam/hook poses. Maximum overlap area is 5.174001e-9, at an interpolated
+midpoint at 2.7275 seconds. Shaft/hook and stop/hook pass that screen. Continuous
+clearance and time-step agreement for the guarded solver remain unqualified.
+
+The first polygon-union overlap audit failed while stitching almost
+coincident output edges. Its exact script and log are preserved. The current
+audit clips individual rendered cap triangles, whose interiors do not overlap,
+and sums their intersection areas. Identical, clear, penetrating, shared-edge
+and contained-triangle controls pass. This avoids the ring-stitching failure
+without snapping or displacing the source geometry.
+
+## Remaining work and checkpoints
 
 Complete the rope attachment, winding geometry, pump load and stroke limit.
 The two hatched horizontal runs behind the wheel appear to depict an input
@@ -99,12 +173,23 @@ their hidden pulley or return path. Those components and the rear bearing
 remain to be reconstructed. They must not be treated as fixed support beams
 without further justification.
 
-Resolve wheel/catch motion from finite contact, gravity and pump loading;
-check the actual stop face, release and return. Establish force feasibility,
-time-step agreement, continuous clearance and readable playback. Finish the
-rendering and integrate only after those checks, then validate production.
+Resolve the return, winding/attachment assumptions and repeated cycle with
+the guarded finite-contact solver. Establish time-step agreement, energy
+balance through impacts, continuous clearance and readable playback. Finish
+the missing hardware and rendering, and integrate only after those checks,
+then validate production.
 
 `086-first-study-checkpoint.json` records the inspected evidence and frozen
 study sources. All 972 production inputs, 71 current movement 083 sources and
 43 current movement 082 sources remain unchanged. No production build,
 full numerical-suite pass or integration pass is claimed for this study.
+
+`086-dynamics-study-checkpoint.json` records current diagnostic sources and
+verifies historical studies against their retained source snapshots. Earlier
+solver versions are not represented as the current implementation. The 23
+original core-study sources, all 972 production inputs and the unfinished
+082/083 studies remain unchanged. No browser was launched for this dynamics
+checkpoint, and no new visual or integration acceptance is claimed.
+The initial `086-second-study-checkpoint.json` is superseded because it
+classified editable review Markdown as immutable evidence; the corrected
+checkpoint retains a separate Markdown snapshot.

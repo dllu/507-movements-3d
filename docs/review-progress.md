@@ -27,6 +27,20 @@ release dynamics, continuous clearance and integration remain pending.
 All 972 production inputs remain unchanged. See the
 [086 study](../artifacts/review/086-reconstruction-notes.md).
 
+The dynamics study now includes mesh-derived mass/inertia and an independent
+pump with a finite attached rope that can go slack. Length, gradient, energy
+and momentum formula checks pass. Independent checks rejected earlier
+negative tension, nonlocal corner forces and a return collision hidden by
+normal filtering. Those failures and their exact source snapshots are retained.
+
+The latest guarded three-second run passes all 5,264 reaction checks and
+6,246,092 core surface samples. Its denser cap-triangle screen still fails
+at 20 cam/hook poses, with maximum overlap area 5.174001e-9 at an interpolated
+midpoint. Earlier 1 ms/0.5 ms runs diverged substantially; step agreement for
+the guarded solver is pending. Full return/cycle behavior, continuous
+clearance, rope/load meshes and rear hardware remain unresolved. This is
+diagnostic progress only; production remains unchanged.
+
 ## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical
