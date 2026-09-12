@@ -115,9 +115,18 @@ energy and input momentum; the rod transmission stays clear of a toggle
 throughout the shaft range. The normalized cumulative energy residual halves
 to 0.0000638841% with the finer step. Forces are interval averages under ideal
 rigid impacts; individual guide pressures and material loads are not qualified.
-Motion refinement, remaining reversal, guide reactions, supports and final
-playback are still pending. The next finer run is in progress; 083 remains
-outside production.
+The guide construction now closes the former 0.003-unit rod/bore gaps with
+matching faceted profiles. Compressive surface normals span all five required
+ideal guide reactions. Circular hub faces replace the unshown lower lips;
+thin backing plates cover the shaft notches from behind. Free-body geometry,
+mass and springs remain identical. All 69 meshes pass topology checks, and
+the revised bounds cover all 1,384 independent pairs through the complete
+64,000-interval trajectory. Updated shaft loading still passes the energy
+audit. Twenty-four new diagnostic views are inspected, including twelve
+after the hub correction.
+Motion refinement, remaining reversal, support assumptions and final playback
+are still pending. The next finer run is in progress; 083 remains outside
+production.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.

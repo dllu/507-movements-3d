@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **complete candidate clearance and input-energy balance established; motion refinement and guide support still pending**.
+Status: **candidate clearance, conformal guides and input-energy balance established; motion refinement and repeated playback still pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -453,6 +453,59 @@ source hashes and the still-running 0.0625 ms trajectory. Individual guide
 reaction distributions, motion convergence, reversal/repeat behavior,
 external supports and final rendering/integration remain pending. All 904
 production inputs and 43 current 082 study sources remain unchanged.
+
+## Conformal guide surfaces and circular hub faces
+
+The former rods had radius 0.015 inside radius-0.018 slider bores. Surface
+checks expose the resulting 0.003-unit gap: those separated surfaces cannot
+realize the assumed guide constraint without lateral play. The isolated
+`spring-sector-guided-candidate.mjs` now uses matching 64-sided rod and bore
+profiles. All changes remain in the prescribed shaft family.
+
+The first twelve new renders also exposed an unshown teardrop-shaped lower
+lip on each hub cover. The visible faces are now circular, matching B in the
+source. Two thin backing plates behind the sectors cover their moving shaft
+notches. This preserves the existing free plates and tooth dynamics. The
+second set of twelve inspected source, overlay, front/rear/oblique, guide and
+motion views confirms the corrected outline. Small guide-frame fragments
+remain visible at the opening tops as part of the assumed hidden construction.
+No new timed-playback acceptance is claimed.
+
+`083-final-circular-guide-fit.json` verifies the new hardware. The original
+free meshes, three free-family mass integrals and all four spring recipes
+remain exactly identical. All unchanged part transforms and spring vertices
+match at 25 poses, and the inherited state-update function is unchanged.
+All **69 meshes** remain closed, outward oriented and nondegenerate.
+
+Actual projected polygon/triangle separation covers the conformal bores
+through axial travel. Separate triangle/envelope bounds keep the backing
+plates clear of the slider housings. The **1,302 secondary pairs** pass across
+the full guide travel; minimum margin is -2.077e-7 world units within 1e-6.
+At 288 cardinal contact points over nine extreme/interior poses, maximum
+rod and housing surface errors are 7.749e-10 and 6.605e-9 units. Both surfaces'
+compressive normal cones support the required directions, with maximum error
+8.882e-15.
+
+Four axial bearing stations provide eight signed transverse force components.
+Their contact matrix has rank five and a right inverse with residual
+1.421e-14. Opposite walls realize either sign as compressive normal forces.
+This spans every compatible ideal prismatic-guide force/moment combination
+while allowing free radial sliding. Bearing pressure, compliance, friction
+and material limits remain outside this idealization.
+
+`083-guided-complete-clearance.json` combines fresh hardware bounds with the
+unchanged primary and coil certificates, checking source hashes and exhaustive
+pair accounting. The revised candidate has clearance for **all 1,384
+distinct-family pairs and four spring self-surfaces across 64,000 intervals**.
+The changed shaft mass is included in a fresh input-loading audit; the finer
+normalized energy residual remains 0.0000638726% and decreases with the step.
+See `083-circular-hub-input-loading.json` and the inspected captures recorded
+in `083-circular-hub-motion-inspection.json`.
+
+`083-guided-hardware-checkpoint.json` freezes this version and its evidence.
+Motion convergence, reversal/repeat behavior, support assumptions in final
+playback and production integration remain pending. The model is still an
+isolated reconstruction study. Production and the 082 study are unchanged.
 
 ## Shared framing-marker shadow correction
 

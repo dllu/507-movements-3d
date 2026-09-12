@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {makeSpringSectorCandidate} from './lib/spring-sector-candidate.mjs';
+import {makeSpringSectorGuidedCandidate} from './lib/spring-sector-guided-candidate.mjs';
 import {makeSpringSectorDynamics} from './lib/spring-sector-dynamics.mjs';
 import {makeSpringSectorLoads} from './lib/spring-sector-loads.mjs';
 import {makeSpringSectorSavedContact} from './lib/spring-sector-saved-contact.mjs';
@@ -10,16 +11,18 @@ import {surfaceTriangles} from '../tests/helpers/solid-surface.mjs';
 
 const inputs = JSON.parse(process.env.PROBE_INPUTS ?? '["artifacts/review/083-continuous-quarter-ms-dynamics.json","artifacts/review/083-continuous-eighth-ms-dynamics.json"]');
 const prefix = process.env.PROBE_PREFIX ?? 'artifacts/review/083-input-loading-study';
+const guided = process.env.PROBE_GUIDED === '1';
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const data = inputs.map(file => JSON.parse(fs.readFileSync(file)));
 for (const d of data) {
   assert.equal(d.failures.length, 0); assert.deepEqual(d.parameters, data[0].parameters);
   for (const s of d.sources) assert.equal(hash(s.file), s.sha256, s.file);
 }
-const model = makeSpringSectorCandidate(), u = model.root.userData, physics = makeSpringSectorDynamics(model, data[0].parameters);
+const model = guided ? makeSpringSectorGuidedCandidate() : makeSpringSectorCandidate();
+const u = model.root.userData, physics = makeSpringSectorDynamics(model, data[0].parameters);
 const loads = makeSpringSectorLoads(model, physics), savedContact = makeSpringSectorSavedContact(model, physics);
 const files = [...new Set([...inputs, 'scripts/check-spring-sector-loads.mjs', 'scripts/lib/spring-sector-loads.mjs',
-  'scripts/lib/spring-sector-saved-contact.mjs', ...data.flatMap(d => d.sources.map(s => s.file))])];
+  'scripts/lib/spring-sector-saved-contact.mjs', 'scripts/lib/spring-sector-guided-candidate.mjs', ...data.flatMap(d => d.sources.map(s => s.file))])];
 const sources = files.map((file, i) => {
   const archive = prefix + '-source-' + i + '.txt'; fs.copyFileSync(file, archive, fs.constants.COPYFILE_EXCL);
   return {file, archive, sha256: hash(file)};
@@ -130,6 +133,7 @@ const refinement = runs.length < 2 ? null : runs.at(-1).maximumCumulativeResidua
 if (refinement === false || runs.at(-1).normalizedEnergyResidual > .001) issues.push({kind: 'energy-refinement', refinement});
 for (const s of sources) assert.equal(hash(s.file), s.sha256, s.file);
 const report = {movement: 83, status: 'rigid-family-input-loading-and-energy', productionChanged: false, mechanicsPassed: false,
+  candidate: guided ? 'conformal-guides' : 'original-guides',
   passed: issues.length === 0, formulas, contactsCheck, refinement, runs, masses: loads.masses,
   inputTransmissionBound: loads.inputTransmissionBound, issues, sources,
   qualification: loads.qualification + ' Signed input force permits both pushing and pulling, and the drive can absorb work. Energy accounting explicitly includes backward-Euler velocity and spring-position losses and endpoint contact work. Refinement of this balance does not establish trajectory convergence.'};
