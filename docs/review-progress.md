@@ -199,6 +199,27 @@ exact accepted-step comparisons. The corrected finer-event trial is running.
 The 60 current study sources are frozen, production is unchanged, and repeated
 playback and final support presentation remain unqualified.
 
+The corrected 0.1 us trial completes, and new clock-aware audits pass. Lossless
+compressed reports now preserve native JSON values while avoiding duplicated
+large evidence files. A segmented comparator checks exact resume joins and
+reproduces the prior comparison's maxima and failed result exactly.
+
+At 0.1 us event resolution, 0.25 ms and 0.125 ms base steps agree within
+**0.00103791 pixels** for the first cycle, but differ by **3.534342 pixels**
+through sixteen seconds. The separate fixed-base comparison with the earlier
+1 us variant differs by 0.268962 pixels through sixteen seconds; its recorded
+clock-guard change prevents attributing that difference solely to event timing.
+Complete guided clearance and energy audits pass for both finer segments, and
+all 245,480 reactions pass independent spatial checks. The final cycle endpoints
+still differ by 0.541790 pixels after removing eight teeth of rotation, rejecting
+a seamless loop of these states. The 0.0625 ms first cycle now completes and
+agrees with the 0.125 ms run within 0.00102219 pixels. Its guided clearance and
+energy checks pass; its spatial reaction audit and second cycle remain in
+progress. All five completed trajectories have finite states and their full
+requested durations, and all four packed reports reproduce their producer
+byte counts and hashes when decoded. The 69 study sources are frozen, with
+904 production inputs unchanged; the full review remains active.
+
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
 The later midpoint failure establishes the limits of that sampled evidence.

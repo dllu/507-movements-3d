@@ -935,3 +935,95 @@ motion or extend the previous auditors' fixed ratio tolerances to the finer
 event scale. `083-clock-bdf-checkpoint.json` records 60 frozen study sources,
 the preserved stopped prefix, controls and this pending run. The full 507 goal
 remains active.
+
+## Finer events and lossless segmented studies
+
+The preceding goal turn made progress on variable-step accuracy and repaired
+the clock-growth stall. The corrected 0.25 ms / 0.1 us first cycle now finishes
+in 169.04 seconds with 37,667 accepted intervals and no failed steps. Complete
+guided clearance passes. Its independent audit covers 67,403 reactions and
+134,806 boundaries; normalized energy residual is 8.185e-10.
+
+The new auditors account for time-stamp spacing when validating unequal-step
+growth and reconstructing its coefficients. Their allowance includes rounding
+of the new time stamp as well as the solver's growth comparison. A separate
+hard represented-ratio cap of 2.002 remains below the unstable history range.
+The physical momentum and energy equations, supporting-feature intersections,
+normal cones and continuous geometry certificates are unchanged. The new energy
+auditor exactly reproduces the earlier complete 0.25 ms variable-step audit.
+
+New study reports use lossless gzip with bounded input chunks and compressor
+backpressure. Controls reproduce native JSON bytes and parsed values, including
+real trajectory rows, Unicode, escapes, empty arrays and JSON omission/null
+behavior. They also check exclusive output publication. The packed runner
+normalizes exactly to the prior clock-aware runner after substituting only
+decoding, serialization, source storage and names; no integration operation
+changes. Each decoded input segment must still fit in a JavaScript string.
+No unbounded-reader claim is made.
+
+Editable code retains separate snapshots. Generated evidence keeps its existing
+exclusive output path and is referenced by its byte hash, avoiding additional
+large JSON copies. Earlier files and archives retain their bytes. The completed
+coarse continuation occupies 4,643,528 compressed bytes for 34,250,688 decoded
+bytes; the finer first cycle occupies 8,435,065 for 65,011,071 bytes.
+
+The new comparator accepts plain or compressed segments, checks exact carried
+states and resume provenance, and compares their logical concatenation without
+writing another full trajectory. It reproduces the earlier 7.399578-pixel
+failure, every body maximum and all 204,769 union knots exactly. A discontinuous
+join is rejected before publication. See `083-packed-report-controls.json` and
+`083-packed-analysis-parity.json`.
+
+The completed comparisons retain the same 0.25-pixel target:
+
+| Compared settings | Duration | Maximum difference | Result |
+| --- | ---: | ---: | --- |
+| 0.25 ms, earlier 1 us variant versus corrected 0.1 us variant | 8 s | 0.00131295 px | Pass |
+| The same settings, including the recorded clock-guard change | 16 s | 0.268962 px | Fail |
+| 0.25 ms versus 0.125 ms, both with 0.1 us events | 8 s | 0.00103791 px | Pass |
+| The same base-step comparison | 16 s | 3.534342 px | Fail |
+
+The finer sixteen-second history has 138,438 states. Its first target crossing
+is near 13.32625 seconds, and the largest front-sector difference is near
+14.697684 seconds. These comparisons record both source provenance and numerical
+settings; the first two do not isolate event resolution from the clock-guard
+change. None qualifies the longer motion for playback.
+
+Complete guided clearance covers all 138,437 finer intervals, 1,384 independent
+pairs and four spring wires across the two segments. Their normalized energy
+residuals are 2.077e-10 and 2.541e-10. Independent audits pass 125,950 and 119,530
+reactions, totaling **245,480 reactions and 490,960 boundary checks**. Maximum
+momentum residual is 1.396e-14. These checks retain the failed motion comparison.
+
+The finer cycles advance 8.108177 and 7.990860 teeth. After removing the nearest
+eight-tooth advance, the final two cycle endpoints differ by up to 0.541790
+pixels, using the exact wheel-radius chord and radial sector displacements.
+Their velocities also differ. This rejects a seamless repeat of those states;
+it does not exclude later settling or establish a whole-cycle recurrence.
+`083-packed-clock-tenth-us-endpoints.json` records the endpoint diagnostic.
+
+The 0.0625 ms / 0.1 us first cycle has now completed successfully: 132,973
+intervals in 599.96 seconds, with no failed steps. Its 124,699,808 decoded bytes
+occupy 15,762,702 compressed bytes. It agrees with the 0.125 ms first cycle
+within 0.00102219 pixels over 201,834 union knots. Complete guided clearance
+passes, and its normalized energy residual is 5.409e-11. The independent
+spatial reaction audit remains in progress; the energy audit does not replace
+that check.
+
+The finer continuation carries the exact final state into the second cycle
+in session 47440, Node PID 90854, with prefix
+`083-packed-clock-tenth-us-second-sixteenth-ms`. The first-cycle spatial audit
+is session 78659, Node PID 89512, with prefix
+`083-packed-clock-tenth-us-sixteenth-reactions`. Neither pending result is
+claimed as passed.
+
+The current study freezes 69 sources. All five completed trajectories have
+finite states, strictly increasing time and their full requested durations;
+continuations preserve exact carried states. Decoding all four packed reports
+reproduces their producer byte counts and SHA-256 hashes. Production's 904
+inputs, the 43 treadle sources and all 60 prior 083 study sources remain
+unchanged, and all nine added scripts pass syntax checks. See
+`083-packed-clock-bdf-checkpoint-validation.json` and
+`083-packed-clock-bdf-checkpoint.json`. No browser, app build or production
+test rerun is claimed in this step. Longer motion accuracy, repeated playback,
+support presentation and the full 507 review remain open.
