@@ -1,3 +1,4 @@
+import {readLargeRowStudyReport} from './lib/large-row-study-reader.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -6,7 +7,7 @@ import {readStudyReport,verifyStudySources,freezeStudySources} from './lib/study
 import {verifyPumpCatchStudySources} from './lib/pump-catch-study-sources.mjs';
 
 const coarseFile=process.env.PROBE_COARSE??'artifacts/review/086-first-complete-dynamics.json.gz',fineFile=process.env.PROBE_FINE??'artifacts/review/086-complete-eighth-ms.json.gz',
-  prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-complete-agreement',coarse=readStudyReport(coarseFile),fine=readStudyReport(fineFile);
+  prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-complete-agreement',coarse=readLargeRowStudyReport(coarseFile),fine=readLargeRowStudyReport(fineFile);
 const reportingOnlyChanges=[...verifyPumpCatchStudySources(coarse.sources),...verifyPumpCatchStudySources(fine.sources)];
 assert.equal(coarse.angularSpeed,fine.angularSpeed,'Step comparison requires the same input speed');
 assert.deepEqual(coarse.parameters,fine.parameters,'Step comparison requires the same geometry and physical parameters');
@@ -27,7 +28,7 @@ for(const row of fine.rows){
   for(const w of windows)if(row.time<=w.end){w.samples++;for(let k=0;k<3;k++)w.maximumCoordinates[k]=Math.max(w.maximumCoordinates[k],delta[k]);
     if(pixels>w.maximumPixels){w.maximumPixels=pixels;w.worst={time:row.time,coarse:q,fine:row.q,wheel,hook,pump};}}
 }
-const sources=freezeStudySources([coarseFile,fineFile,'scripts/compare-pump-catch-complete-steps.mjs','scripts/lib/pump-catch-study-sources.mjs',...coarse.sources.map(s=>s.file),...fine.sources.map(s=>s.file)],prefix);verifyStudySources(sources);
+const sources=freezeStudySources([coarseFile,fineFile,'scripts/lib/large-row-study-reader.mjs','scripts/compare-pump-catch-complete-steps.mjs','scripts/lib/pump-catch-study-sources.mjs',...coarse.sources.map(s=>s.file),...fine.sources.map(s=>s.file)],prefix);verifyStudySources(sources);
 const report={movement:86,status:'finite-rope-observed-step-agreement',passed:coarse.passed&&fine.passed&&Math.abs(coarse.actualEnd-fine.actualEnd)<1e-12&&windows.every(w=>w.maximumPixels<.25),
   mechanicsPassed:false,candidateIntegrated:false,coarseFile,fineFile,coarseStep:coarse.step,fineStep:fine.step,radii,windows,reportingOnlyChanges,sources,
   qualification:'Fine knots compared with linearly interpolated coarse coordinates. Complete mesh radii bound rigid-body displacement; deforming rope accuracy is checked separately; pump translation is included. Threshold is 0.25 engraving pixels. This is observed agreement between two discretizations, not a continuum-error guarantee or clearance proof.'};

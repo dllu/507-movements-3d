@@ -1,3 +1,4 @@
+import {readLargeRowStudyReport} from './lib/large-row-study-reader.mjs';
 import fs from 'node:fs';
 import {makePumpCatchBoundsContact} from './lib/pump-catch-bounds-contact.mjs';
 import {pumpCatchRope} from './lib/pump-catch-rope.mjs';
@@ -7,7 +8,7 @@ import {makePumpCatchSlackDynamics} from './lib/pump-catch-slack-dynamics.mjs';
 import {surfaceTriangles,solidSurface} from '../tests/helpers/solid-surface.mjs';
 import {readStudyReport,verifyStudySources,freezeStudySources} from './lib/study-report-io.mjs';
 
-const input=process.env.PROBE_INPUT??'artifacts/review/086-quarter-ms-hybrid.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-quarter-ms-hybrid-forces',data=readStudyReport(input);verifyStudySources(data.sources);
+const input=process.env.PROBE_INPUT??'artifacts/review/086-quarter-ms-hybrid.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-quarter-ms-hybrid-forces',data=readLargeRowStudyReport(input);verifyStudySources(data.sources);
 const model=makePumpCatchCompleteCandidate(),u=model.root.userData,dynamics=makePumpCatchSlackDynamics(model,data.parameters),cache=new Map(),issues=[],contact=makePumpCatchBoundsContact(model);
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),errors={boundary:0,cone:0,moment:0,momentum:0,position:0,stage:0,stageGap:0},counts={reactions:0,boundaries:0,failedReactions:0,smoothStages:0};
 function boundary(mesh,point,outward){
@@ -67,7 +68,7 @@ for(let i=1;i<data.rows.length;i++){
   if(r.slack<-1e-7||r.q[2]<(data.parameters.pumpStopHeight??-Infinity)-1e-7||r.active.some(c=>c.impulse<0)){counts.failedReactions++;if(issues.length<30)issues.push({kind:'unilateral-load',time:r.time,q:r.q,slack:r.slack});}
 
 }
-verifyStudySources(data.sources);const sources=freezeStudySources([input,'scripts/check-pump-catch-hybrid-forces.mjs','scripts/lib/pump-catch-weighted-candidate.mjs','tests/helpers/solid-surface.mjs',...data.sources.map(s=>s.file)],prefix);
+verifyStudySources(data.sources);const sources=freezeStudySources([input,'scripts/lib/large-row-study-reader.mjs','scripts/check-pump-catch-hybrid-forces.mjs','scripts/lib/pump-catch-weighted-candidate.mjs','tests/helpers/solid-surface.mjs',...data.sources.map(s=>s.file)],prefix);
 const report={movement:86,status:'independent-slack-rope-spatial-and-momentum-audit',passed:!counts.failedReactions&&errors.moment<1e-8&&errors.momentum<1e-7&&errors.position<1e-9&&minimumTension>=-1e-7&&errors.stage<1e-8&&errors.stageGap<2e-8,
   mechanicsPassed:false,candidateIntegrated:false,productionChanged:false,input,counts,errors,minimumTension,minimumTensionTime,maximumTension,issues,sources,
   qualification:'Every endpoint reaction is checked against both actual mesh triangle normal cones and boundaries. Momentum uses physical velocity; position uses the explicitly saved transport velocity when the impact solver separates them. Smooth stages additionally satisfy full three-coordinate force balance, zero velocity at their linear constraints, RK stage/endpoint reconstruction, nonnegative reactions and actual finite-gap checks. Impact rows retain the independent discrete momentum audit. Rope impulses and slack must be nonnegative. Force magnitudes are interval averages for rigid impacts; no finite material stress or continuous-clearance qualification is claimed.'};

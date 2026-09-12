@@ -565,6 +565,56 @@ check the actual constraint rank, including a duplicated parallel-face case.
 The interrupted logs and source snapshots are retained. Corrected full runs
 use the `086-ranked-hybrid-coarse` and `086-ranked-hybrid-fine` prefixes.
 
+## Completed fine hybrid study and geometric contact mode
+
+The ranked fine run completes 16 seconds with 371,396 states, 42,738 smooth
+steps and 328,657 impact steps, without solver failures. Its signed and absolute
+work defects are 0.0967646% and 0.0968039%, within the unchanged thresholds.
+All 728,394 endpoint reactions and 170,952 smooth stages pass the independent
+force audit, including 713,386 actual boundary checks. The maximum stage gap
+defect is 1.32943e-8, below 2e-8. The complete
+591,704,242-byte decoded trajectory exceeds V8's single-string limit. A separate
+reader parses complete row batches while retaining all data. It matches every
+value of the earlier 34,513-row report and passes unicode, escaping, nested
+members, tiny-batch, empty-array and malformed-input controls. This is an
+in-memory reader; it does not claim bounded total memory.
+
+The ranked coarse run exhibits repeated switching between cam contact and
+free integration near 15.923 seconds. A bounded reproduction from a retained
+earlier trajectory identifies the cause: the physical cam impulse can be zero
+at a tiny step while the finite surfaces remain within their existing 2e-8
+contact tolerance. The free integrator then repeatedly detects the same
+closing contact. Its first cam entry is at 7.922723701477052 seconds; the
+500-state diagnostic stops at 7.922735664367677 after 494 closing-contact
+subdivisions. All diagnostic states and source snapshots are retained.
+
+The coarse run is explicitly interrupted, with exit 130 and its log retained.
+It had advanced beyond the slow region to its last logged time of
+15.944203125000001 before the interrupt; this was a demonstrated mode-selection
+defect, not a permanently stalled process. It has no completed trajectory.
+
+A separate geometric mode now keeps nearby cam faces in impact integration
+even when their current reaction is zero. It changes neither the physical
+impulses nor their force audit. The actual active constraint rank still decides
+whether both angular velocities are fixed; proximity alone does not establish
+that rank. The same bounded return window now completes in 244 states with
+one cam entry and five closing-contact subdivisions. A separate initial-pose
+control also completes. The new full coarse run uses
+`086-geometric-hybrid-coarse`; convergence against the completed fine run
+remains pending. The old solver sources are unchanged and retained.
+
+The fine trajectory's raw repeat check fails its 1e-8 velocity threshold at
+an impact: adding the eight-second period lands 1.78e-15 seconds after the
+corresponding saved knot and interpolates a tiny fraction of the impact jump.
+The raw 3.192687054e-7 velocity difference remains reported. All 76,855 matching
+phase knots are within 3.553e-15 seconds of saved counterparts. Matching these
+knots directly, only within eight scaled machine epsilons, gives maximum
+coordinate/velocity differences of 2.8422e-13 and 8.7264e-14. The unchanged
+1e-8 thresholds then pass; no physically distinct event times are merged.
+The seam itself matches to 3.886e-16 in coordinates and 4.219e-15 in velocity.
+Compression now uses this timestamp matching, but has not yet run on the new
+trajectory. Its full clearance and rope-deformation checks remain required.
+
 ## Remaining work and checkpoints
 
 Qualify the combined input, winding, rope and guided pump hardware. Its

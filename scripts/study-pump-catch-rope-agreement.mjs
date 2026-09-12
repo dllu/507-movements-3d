@@ -1,3 +1,4 @@
+import {readLargeRowStudyReport} from './lib/large-row-study-reader.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {pumpCatchRopeCenterline} from './lib/pump-catch-rope-mesh.mjs';
@@ -6,7 +7,7 @@ import {verifyPumpCatchStudySources} from './lib/pump-catch-study-sources.mjs';
 
 const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-rope-agreement',coarseFile=process.env.PROBE_COARSE??'artifacts/review/086-complete-eighth-ms.json.gz',
   fineFile=process.env.PROBE_FINE??'artifacts/review/086-complete-sixteenth-ms.json.gz',compressedFile=process.env.PROBE_SKIP_COMPRESSION==='1'?null:'artifacts/review/086-first-compressed-motion.json',
-  coarse=readStudyReport(coarseFile),fine=readStudyReport(fineFile),compressed=compressedFile?readStudyReport(compressedFile):null,
+  coarse=readLargeRowStudyReport(coarseFile),fine=readLargeRowStudyReport(fineFile),compressed=compressedFile?readStudyReport(compressedFile):null,
   R=fine.parameters.radius,r=.0625,L=fine.parameters.ropeLength,weights=Array.from({length:257},(_,i)=>(i===0||i===256?1:i%2?4:2)/768),
   sin=weights.map((_,i)=>Math.sin(2*Math.PI*i/256)),thetaMax=.178,minimumLeadSpeed=.25*Math.cos(thetaMax),
   leadCoefficient=R+1/12+r*(3*R*Math.sin(thetaMax)+.25)/minimumLeadSpeed;
@@ -51,7 +52,7 @@ for(const comparison of comparisons){
   }
   delete comparison.data;
 }
-const sources=freezeStudySources([coarseFile,fineFile,...(compressedFile?[compressedFile]:[]),'scripts/study-pump-catch-rope-agreement.mjs',
+const sources=freezeStudySources([coarseFile,fineFile,'scripts/lib/large-row-study-reader.mjs',...(compressedFile?[compressedFile]:[]),'scripts/study-pump-catch-rope-agreement.mjs',
   'scripts/lib/pump-catch-rope-mesh.mjs','scripts/lib/pump-catch-rope.mjs','scripts/lib/pump-catch-study-sources.mjs','scripts/lib/study-report-io.mjs'],prefix);
 verifyStudySources(sources);const report={movement:86,passed:comparisons.every(c=>c.maximumPixels<.25),comparisons,reference,sources,leadCoefficient,
   qualification:'Diagnostic surface-displacement bounds at every finest trajectory knot. The pass flag retains the full 3D 0.25-pixel target; projected front-view errors are reported separately. Bow centers use height/amplitude differences and circular-section rotation uses the atan slope Lipschitz bound. Upper lead uses Bernstein control-point and tangent bounds. This does not yet bound nonlinear display differences between time knots, Float32 rounding or changes in arc tessellation.'};

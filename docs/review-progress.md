@@ -2905,6 +2905,13 @@ solver trial is refining those events. Its initial failed convergence and
 intermediate-gap checks remain retained. Production integration is pending. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
+The refined hybrid run now completes 371,396 states and passes its force, energy
+and repeat-state checks. All 728,394 reactions and 170,952 smooth stages pass.
+A bounded reproduction identifies repeated mode switching
+when a cam reaction becomes zero at an almost seated face. A geometric-contact
+guard resolves that local case without changing the forces. The new full coarse
+run is active; fresh motion agreement and clearance qualification remain pending.
+
 087's initial source review finds a definite driver-axis mismatch: the model's
 vertical input shaft produces an upper edge-on cone, while the engraving shows
 a face-on ring behind B and C. Three unchanged production views and the native

@@ -1,3 +1,4 @@
+import {readLargeRowStudyReport} from './lib/large-row-study-reader.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {makePumpCatchCompleteCandidate} from './lib/pump-catch-complete-candidate.mjs';
@@ -6,9 +7,9 @@ import {pumpCatchCompleteSources} from './lib/pump-catch-complete-sources.mjs';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 import {verifyPumpCatchStudySources} from './lib/pump-catch-study-sources.mjs';
 
-const input=process.env.PROBE_INPUT??'artifacts/review/086-ranked-hybrid-fine.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-hybrid-compressed-motion',data=readStudyReport(input),
+const input=process.env.PROBE_INPUT??'artifacts/review/086-ranked-hybrid-fine.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-hybrid-compressed-motion',data=readLargeRowStudyReport(input),
   nonmechanicalChanges=verifyPumpCatchStudySources(data.sources),pixelTolerance=Number(process.env.PROBE_PIXELS??.002),model=makePumpCatchCompleteCandidate(),u=model.root.userData,
-  bounds=makePumpCatchPrimaryBounds(model),radii={wheel:0,catch:0,pivot:Math.hypot(...u.geometry.pivot)},sources=freezeStudySources([input,'scripts/compress-pump-catch-hybrid.mjs',
+  bounds=makePumpCatchPrimaryBounds(model),radii={wheel:0,catch:0,pivot:Math.hypot(...u.geometry.pivot)},sources=freezeStudySources([input,'scripts/lib/large-row-study-reader.mjs','scripts/compress-pump-catch-hybrid.mjs',
     'scripts/lib/pump-catch-primary-bounds.mjs','scripts/lib/crossed-rack-mesh-prisms.mjs','scripts/lib/pump-catch-study-sources.mjs',...pumpCatchCompleteSources],prefix);
 assert(data.passed&&pixelTolerance>0&&pixelTolerance<.1);
 for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.families[name])){
@@ -35,15 +36,22 @@ while(stack.length){
   certified.push({lo,hi,maximumErrorPixels:maximum,stats:result.stats});
   if(certified.length%500===0)console.log({certified:certified.length,pending:stack.length,kept:kept.size,...stats});
 }
-const indices=[...kept].sort((a,b)=>a-b),rows=indices.map(i=>({time:data.rows[i].time,q:data.rows[i].q})),repeat={start:.5,period:8,coordinateError:0,velocityError:0};
+const indices=[...kept].sort((a,b)=>a-b),rows=indices.map(i=>({time:data.rows[i].time,q:data.rows[i].q})),
+  repeat={start:.5,period:8,coordinateError:0,velocityError:0,rawCoordinateError:0,rawVelocityError:0,maximumTimeSnap:0};
 let offset=1;
 for(const row of data.rows){
   const target=row.time+repeat.period;if(row.time<repeat.start||target>data.actualEnd)continue;
   while(offset<data.rows.length-1&&data.rows[offset].time<target)offset++;
-  const a=data.rows[offset-1],b=data.rows[offset],f=(target-a.time)/(b.time-a.time);
+  const a=data.rows[offset-1],b=data.rows[offset],f=(target-a.time)/(b.time-a.time),
+    nearest=Math.abs(a.time-target)<Math.abs(b.time-target)?a:b,timeError=Math.abs(nearest.time-target),
+    snap=timeError<=8*Number.EPSILON*Math.max(1,target);
+  if(snap)repeat.maximumTimeSnap=Math.max(repeat.maximumTimeSnap,timeError);
   for(let k=0;k<3;k++){
-    repeat.coordinateError=Math.max(repeat.coordinateError,Math.abs(row.q[k]-a.q[k]-f*(b.q[k]-a.q[k])));
-    repeat.velocityError=Math.max(repeat.velocityError,Math.abs(row.v[k]-a.v[k]-f*(b.v[k]-a.v[k])));
+    const q=a.q[k]+f*(b.q[k]-a.q[k]),v=a.v[k]+f*(b.v[k]-a.v[k]);
+    repeat.rawCoordinateError=Math.max(repeat.rawCoordinateError,Math.abs(row.q[k]-q));
+    repeat.rawVelocityError=Math.max(repeat.rawVelocityError,Math.abs(row.v[k]-v));
+    repeat.coordinateError=Math.max(repeat.coordinateError,Math.abs(row.q[k]-(snap?nearest.q[k]:q)));
+    repeat.velocityError=Math.max(repeat.velocityError,Math.abs(row.v[k]-(snap?nearest.v[k]:v)));
   }
 }
 assert(repeat.coordinateError<1e-8&&repeat.velocityError<1e-8,'Repeat requires observed matching states and velocities');
@@ -51,5 +59,5 @@ verifyStudySources(sources);const report={movement:86,status:'compressed-motion-
   input,pixelTolerance,radii,maximumErrorPixels:certified.reduce((s,c)=>Math.max(s,c.maximumErrorPixels),0),originalStates:data.rows.length,states:rows.length,
   duration:data.duration,actualEnd:data.actualEnd,angularSpeed:data.angularSpeed,parameters:data.parameters,repeat,rows,indices,stats,certified,failures,nonmechanicalChanges,sources,
   mechanicsPassed:false,productionChanged:false,candidateIntegrated:false,
-  qualification:'Each proposed linear playback span is bounded against every retained numerical knot using a weighted absolute-angle displacement bound. Convexity extends that error bound between source knots. Seven actual prism pairs additionally pass continuous triangle separation bounds on each accepted span. Failing spans split at an existing numerical knot. Startup is retained; observed matching states/velocities support repeating 0.5–8.5 seconds. Deforming rope and remaining hardware require their own clearance bounds.'};
+  qualification:'Each proposed linear playback span is bounded against every retained numerical knot using a weighted absolute-angle displacement bound. Convexity extends that error bound between source knots. Seven actual prism pairs additionally pass continuous triangle separation bounds on each accepted span. Failing spans split at an existing numerical knot. Startup is retained; observed matching states/velocities support repeating 0.5–8.5 seconds. Repeat timestamps within eight scaled machine epsilons of a stored knot are matched directly to avoid interpolating across a rigid impact due only to time-addition rounding; raw differences are retained. Deforming rope and remaining hardware require their own clearance bounds.'};
 fs.writeFileSync(prefix+'.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log({...report,rows:undefined,indices:undefined,certified:certified.length,sources:undefined});if(!report.passed)process.exitCode=1;

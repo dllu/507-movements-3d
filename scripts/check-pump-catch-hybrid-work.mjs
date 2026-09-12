@@ -1,10 +1,11 @@
+import {readLargeRowStudyReport} from './lib/large-row-study-reader.mjs';
 import fs from 'node:fs';
 import {makePumpCatchCompleteCandidate} from './lib/pump-catch-complete-candidate.mjs';
 import {makePumpCatchSlackDynamics} from './lib/pump-catch-slack-dynamics.mjs';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
 const input=process.env.PROBE_INPUT??'artifacts/review/086-quarter-ms-hybrid.json.gz',prefix=process.env.PROBE_PREFIX??'artifacts/review/086-quarter-ms-hybrid-work',
-  data=readStudyReport(input),model=makePumpCatchCompleteCandidate(),dynamics=makePumpCatchSlackDynamics(model,data.parameters),
+  data=readLargeRowStudyReport(input),model=makePumpCatchCompleteCandidate(),dynamics=makePumpCatchSlackDynamics(model,data.parameters),
   dot=(a,b)=>a.reduce((s,v,k)=>s+v*b[k],0),mul=(M,v)=>M.map(r=>dot(r,v)),p=data.parameters,
   initial=dynamics.at(data.rows[0].q,data.rows[0].v).energy,totals={driverWork:0,dragWork:0,projectionLoss:0,contactDriftWork:0,
     absoluteDriverWork:0,absoluteDriftWork:0,integrationResidual:0,absoluteIntegrationResidual:0},counts={smooth:0,impact:0},worst={value:0};
@@ -36,7 +37,7 @@ for(let i=1;i<data.rows.length;i++){
 }
 const scale=Math.max(1,Math.abs(final-initial),totals.absoluteDriverWork+totals.projectionLoss+Math.abs(totals.dragWork)),
   relativeResidual=Math.abs(totals.integrationResidual)/scale,relativeAbsoluteResidual=totals.absoluteIntegrationResidual/scale,relativeDrift=totals.absoluteDriftWork/scale,
-  sources=freezeStudySources([input,'scripts/check-pump-catch-hybrid-work.mjs',...data.sources.map(s=>s.file)],prefix);verifyStudySources(sources);
+  sources=freezeStudySources([input,'scripts/lib/large-row-study-reader.mjs','scripts/check-pump-catch-hybrid-work.mjs',...data.sources.map(s=>s.file)],prefix);verifyStudySources(sources);
 const report={movement:86,passed:relativeResidual<.005&&relativeAbsoluteResidual<.01&&relativeDrift<.005,input,counts,initialEnergy:initial,finalEnergy:final,
   totals,scale,relativeResidual,relativeAbsoluteResidual,relativeDrift,worst,sources,
   qualification:'Smooth intervals integrate driver power, viscous losses and constraint work at the saved RK quadrature stages. Impact intervals retain the original mass-metric loss and work accounting. Mechanical energy is evaluated independently from the actual mesh masses at both endpoints. The existing 0.5% signed/drift and 1% absolute diagnostic thresholds are unchanged.'};
