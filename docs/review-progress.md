@@ -3020,6 +3020,22 @@ continuous clearance and final whole-cycle speed still need work. Production
 and all 1,097 frozen inputs remain unchanged. See the
 [087 loaded seating and retention review](../artifacts/review/087-loaded-seating-notes.md).
 
+087's next retention study exposes the actual feather clearance by giving D
+and the shaft independent spin coordinates. Native key contacts and an explicit
+dry static/sliding friction hypothesis retain the clutch through both lifting
+strokes, then allow withdrawal when F reaches the far quadrant-slot end.
+Return motion crosses the key clearance twice as the load changes direction;
+those transients alter the lift and release timing and are not snapped away.
+
+The finer extended runs contain 43,768 states. Coarse/fine release times agree
+within 0.00075 model time units, with independent momentum, friction and native
+contact checks. Twelve hardware poses pass 18,516,688 surface samples, and all
+ten new still views are inspected. Both slowed previews finish without browser
+errors. Material identity, a connected full reversal, source pin proportions,
+continuous clearance and final display speed remain unresolved. Production
+and all 1,097 frozen inputs are unchanged. See the
+[087 key friction and release review](../artifacts/review/087-key-friction-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
