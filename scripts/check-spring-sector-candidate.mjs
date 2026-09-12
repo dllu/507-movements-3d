@@ -9,6 +9,8 @@ const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).d
 const freezeFile = 'artifacts/review/083-shadow-source-hashes.json', frozen = JSON.parse(fs.readFileSync(freezeFile));
 for (const [file, expected] of Object.entries(frozen)) assert.equal(hash(file), expected, file);
 const model = makeSpringSectorCandidate(), u = model.root.userData, topology = [];
+const pose = JSON.parse(process.env.PROBE_STATE ?? '{"shaftAngle":0,"wheelAngle":0,"lifts":[0,0]}');
+model.setState(pose);
 for (const [name, mesh] of Object.entries(u.parts)) {
   const edges = new Map(), triangles = surfaceTriangles(mesh.geometry); let volume = 0, degenerate = 0;
   for (const t of triangles) {
@@ -44,6 +46,7 @@ for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j
 }
 const sourceFiles = ['scripts/check-spring-sector-candidate.mjs', 'scripts/lib/spring-sector-candidate.mjs',
   'scripts/lib/spring-sector-source.mjs', 'src/simulation/finite-plate-geometry.js', 'src/simulation/clutch-section-geometry.js',
+  'scripts/lib/spring-sector-linkage.mjs', 'scripts/lib/spring-rack-coil.mjs',
   'src/simulation/primitives.js', 'tests/helpers/solid-surface.mjs'];
 const sources = sourceFiles.map((file, i) => {
   const archive = output.replace(/\.json$/, '') + '-source-' + i + '.txt'; fs.copyFileSync(file, archive, fs.constants.COPYFILE_EXCL);
@@ -51,9 +54,9 @@ const sources = sourceFiles.map((file, i) => {
 });
 for (const [file, expected] of Object.entries(frozen)) assert.equal(hash(file), expected, file);
 const report = {movement: 83, status: 'static-geometry-candidate-screen', productionChanged: false, mechanicsPassed: false,
-  topology, topologyPassed: topology.every(r => r.passed), pairs, checks, intrusions,
+  pose, topology, topologyPassed: topology.every(r => r.passed), pairs, checks, intrusions,
   maximumDepth: Math.max(...pairs.map(p => p.maximumDepth)), sources, freezeFile, frozenProductionInputsMatched: Object.keys(frozen).length,
-  qualification: 'One static pose of actual finite meshes, all distinct rigid-family pairs. Surface samples are a diagnostic; zero intrusions would not prove continuous clearance. The arbitrary initial crown phase and depth have not been seated by contact. Spring guides and input closure are absent.'};
+  qualification: 'One supplied static pose of actual finite meshes, all distinct rigid-family pairs including each spring as its own deforming family. Surface samples are a diagnostic; zero intrusions would not prove continuous clearance or exclude spring self-contact. Dynamics and guide loads remain open.'};
 fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
 console.log({...report, topology: topology.filter(r => !r.passed), pairs: pairs.filter(p => p.intrusions), sources: undefined});
 assert(report.topologyPassed, 'Closed outward nondegenerate solids required');

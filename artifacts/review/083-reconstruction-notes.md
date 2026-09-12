@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **existing mechanical baseline rejected; static replacement candidate under review**.
+Status: **replacement seating and guide geometry checked; contact dynamics pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -107,6 +107,70 @@ their inspection record and `083-static-candidate-checkpoint.json`. All 904
 production inputs still match the shadow-fix map; the prior build and 3,100-test
 result therefore apply to unchanged production. The finer 082 settling job
 continues independently. Neither candidate is integrated.
+
+## Finite seating, spring guides and input closure
+
+The latest candidate separates each moving sector from the hub fast on B.
+Two parallel radial rods guide each sector through bored slider housings;
+compression springs press those housings downward. The fixed hub cover hides
+shaft clearance in the moving plate. This paired-guide construction is an
+explicit reconstruction of the unshown spring support, not a detail established
+by the engraving. It preserves angular clocking on B while allowing radial
+rise. Guide travel is currently −0.06 to +0.18 world units. The existing capped
+coil generator changes pitch and radius while preserving its reference
+quadrature length and wire thickness; spring self-contact and load qualification
+remain open.
+
+The input rod now closes through its ordinary pin on the crank. Its remote
+end follows a straight line parallel to its source position; that remote guide
+is unshown. Constant rod length, pin coincidence and the remote endpoint's
+actual mesh transform are checked at 117 geometry poses. These prescribed
+shaft-angle poses do not establish a time law or driving load.
+
+`scripts/lib/spring-sector-contact.mjs` decomposes each rendered plate into
+**479 triangular prisms** and checks them against all **38 finite crown teeth**.
+It intersects the separating-axis overlap intervals for translation along
+the actual radial guide. Taking the highest exit determines where a plate
+approaching from above first clears the crown. The calculation uses the
+rendered Float32 faces, face normals and edge cross-products, with 2e-9 world
+padding. Convexity is checked; no nominal pitch circle substitutes for contact.
+Eighteen unpruned comparisons match the pruned results exactly. Tightening the
+direction deduplication and convexity tolerances preserves all 117 results.
+
+At the original wheel phase, the required rise is 0.083051 units. A phase scan
+finds a better source pose at wheel angle 0.0723393 rad and rise 0.0297244 units
+(6.539 engraving pixels). An independent edge/triangle intersection check
+finds no intrusion there. Lowering the sector by 0.0001 units produces a
+0.0000449601-unit penetration, confirming that the contact location is real.
+Across the separate 117-pose grid over shaft angles ±0.22 rad and one wheel
+tooth pitch, required lifts range from 0.030548 to 0.098203 units. The complete
+sector stays at least 0.055481 units above the wheel body's top plane on that
+grid. This is sampled angular evidence, not a continuous envelope or dynamics.
+
+The first guide placement collided with the shaft and crank: 6,805 penetrating
+samples are preserved in `083-first-guided-seat-solids.json`. Lowering the
+guide assembly removes those collisions. All **67 meshes** are closed,
+outward-wound and nondegenerate in nine seated geometry poses. An independent
+screen of all **1,320 distinct-family pairs**, including each deforming spring,
+finds **zero intrusions in 2,591,486 samples**. It does not check spring
+self-intersection or prove clearance between the sampled poses.
+
+Seven actual renders are inspected: source, registered overlay, oblique, rear,
+both shaft-angle limits and a close view of the guides. Hub B stays fixed,
+the rod stays connected, and the guides are visible behind the plates. Small
+portions of the guide frame show through the opening tops, and the hub cover
+adds a visible lower lip; those unshown details remain subject to final visual
+review. The complete wheel is visible in every full-model view. The close-up
+intentionally isolates the guides. Browser capture passes without JavaScript
+errors or unexpected warnings.
+
+Evidence is `083-strict-finite-seating.json`, `083-lowered-guided-seat-solids.json`,
+`083-first-guide-poses.json`, `083-guided-candidate-captures.json`, its inspection
+record and `083-guided-candidate-checkpoint.json`. Source and failure archives
+are retained. All 904 production inputs and the 41 saved 082 study sources
+remain unchanged. **083 still needs free-wheel/sector dynamics, force and energy
+checks, continuous clearance, supports, final rendering and playback before
+integration.** The finer 082 settling process remains active independently.
 
 ## Shared framing-marker shadow correction
 

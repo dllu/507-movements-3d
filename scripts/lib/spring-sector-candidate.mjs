@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import source from './spring-sector-source.mjs';
-import {plate, poly, circle, ring, disk, polygonClipping as clip} from '../../src/simulation/finite-plate-geometry.js';
+import {plate, poly, circle, capsule, ring, disk, polygonClipping as clip} from '../../src/simulation/finite-plate-geometry.js';
 import {PALETTE, matte, markShadows} from '../../src/simulation/primitives.js';
+import {makeSpringRackCoil} from './spring-rack-coil.mjs';
+import {makeSpringSectorLinkage} from './spring-sector-linkage.mjs';
 
 // Review cameras use the same Vite-resolved Three instance as the model.
 export {THREE};
 
-// Static reconstruction candidate. The source does not specify how each arc
-// rises while remaining angularly fast on B; no spring/guide or motion law is
-// invented here. Explicit state inputs keep the missing mechanics visible.
+// Isolated reconstruction candidate. Twin radial guides behind each plate
+// retain shaft clocking while allowing spring-supported rise. The engraving
+// specifies the function but leaves this guide construction unshown.
 export function makeSpringSectorCandidate() {
   const root = new THREE.Group(), parts = {}, families = {}, blocks = {}, profiles = {};
+  const linkage = makeSpringSectorLinkage(), springs = [];
   const scale = source.scale, p = source.profile, pitch = 2 * Math.PI / p.divisions;
   const point = q => [(q[0] - source.center[0]) / scale, (source.center[1] - q[1]) / scale];
   const polar = (radius, angle) => [radius * Math.cos(angle) / scale, radius * Math.sin(angle) / scale];
@@ -20,13 +23,14 @@ export function makeSpringSectorCandidate() {
     edge.push(polar(p.tipRadiusPixels, phase + i * pitch));
     if (i < last) edge.push(polar(p.rootRadiusPixels, phase + (i + p.shortFaceFraction) * pitch));
   }
-  const outline = clip.union(poly([point([562, 416]), ...edge, point([651, 414])]),
-    poly(circle([0, 0], source.circles.rockshaftEyeOuter.radius / scale, 128)));
+  const outline = poly([point([562, 416]), ...edge, point([651, 414])]);
   const holes = ['leftOpening', 'rightOpening'].map(name => {
     const curve = new THREE.CatmullRomCurve3(source.landmarks[name].map(q => new THREE.Vector3(...point(q), 0)), true, 'centripetal');
     return poly(curve.getPoints(192).slice(0, -1).map(q => [q.x, q.y]));
   });
-  const sectorProfile = clip.difference(outline, ...holes, poly(circle([0, 0], 25 / scale, 128)));
+  // Shaft clearance is hidden behind the fixed hub cover. This is a guide
+  // clearance in the sector, not a slot in the ordinary-pin input rod.
+  const sectorProfile = clip.difference(outline, ...holes, capsule([0, -.18], [0, .06], 25 / scale, 64));
   const attach = (name, geometry, family, color, position = [0, 0, 0]) => {
     blocks[family] ??= new THREE.Group(); if (!blocks[family].parent) root.add(blocks[family]);
     const mesh = new THREE.Mesh(geometry, matte(color, {metalness: .14, roughness: .62}));
@@ -40,11 +44,38 @@ export function makeSpringSectorCandidate() {
   const wheelOuterRadius = (source.landmarks.wheel.right - source.landmarks.wheel.left) / (2 * scale);
   const wheelInnerRadius = 2 * wheelPitchRadius - wheelOuterRadius;
   const wheelTop = (source.center[1] - 899) / scale, wheelBottom = (source.center[1] - 968) / scale;
-  const toothHeight = 27 / scale, depth = 24 / scale;
+  const toothHeight = 27 / scale, depth = 24 / scale, guideOffset = -.2;
   for (const [name, sign, color] of [['front', 1, PALETTE.brass], ['rear', -1, PALETTE.driver]]) {
     const shape = sectorProfile.map(polygon => polygon.map(contour => contour.map(([x, y]) => [sign * x, y])));
     profiles[name] = shape;
     attach(name + 'Sector', plate(shape, -depth / 2, depth / 2), name, color);
+    const plane = sign * wheelPitchRadius, guideZ = -sign * .17;
+    const cover = clip.difference(clip.union(poly(circle([0, 0], source.circles.rockshaftEyeOuter.radius / scale, 128)),
+      capsule([0, 0], [0, -.18], .12, 48)), poly(circle([0, 0], 25 / scale, 128)));
+    attach(name + 'HubCover', plate(cover, Math.min(sign * .065, sign * .125), Math.max(sign * .065, sign * .125)),
+      'shaft', color, [0, 0, plane]);
+    attach(name + 'CarrierHub', ring(25 / scale, .2, Math.min(-sign * .30, -sign * .25), Math.max(-sign * .30, -sign * .25), 128),
+      'shaft', PALETTE.muted, [0, 0, plane]);
+    const frame = clip.union(poly([[-.18, -.51], [.18, -.51], [.18, -.45], [-.18, -.45]]),
+      poly([[-.18, -.04], [.18, -.04], [.18, .02], [-.18, .02]]),
+      poly([[-.18, -.48], [-.14, -.48], [-.14, -.01], [-.18, -.01]]),
+      poly([[.14, -.48], [.18, -.48], [.18, -.01], [.14, -.01]]));
+    attach(name + 'GuideFrame', plate(frame, Math.min(-sign * .21, -sign * .12), Math.max(-sign * .21, -sign * .12)),
+      'shaft', PALETTE.muted, [0, guideOffset, plane]);
+    attach(name + 'CarrierBridge', new THREE.BoxGeometry(.30, .055, .18), 'shaft', PALETTE.muted, [0, -.008 + guideOffset, plane - sign * .21]);
+    for (const [i, x] of [-.09, .09].entries()) {
+      const localBack = -guideZ + sign * .038, localFront = sign * .05;
+      const boss = clip.difference(poly([[x - .045, localFront], [x + .045, localFront], [x + .045, localBack], [x - .045, localBack]]),
+        poly(circle([x, -guideZ], .018, 64)));
+      const housing = attach(name + 'SliderHousing' + i, plate(boss, -.39 + guideOffset, -.27 + guideOffset), name, color);
+      housing.rotation.x = -Math.PI / 2;
+      const rod = attach(name + 'GuideRod' + i, disk(.015, -.48 + guideOffset, -.02 + guideOffset, 64), 'shaft', PALETTE.muted, [x, 0, plane + guideZ]);
+      rod.rotation.x = -Math.PI / 2;
+      const coil = makeSpringRackCoil({turns: 4, radius: .024, wireRadius: .004, referenceSpan: .222, segments: 128, sides: 12});
+      const family = name + 'Spring' + i;
+      attach(family, coil.geometry, family, PALETTE.ink);
+      springs.push({name, side: sign === 1 ? 0 : 1, family, x, plane, guideZ, coil});
+    }
   }
   const pin = point(source.circles.rodEyeOuter.center), rodEnd = point([1020, 282]);
   const crankOutline = clip.union(poly([point([587, 209]), point([626, 209]), point([638, 358]), point([578, 358])]),
@@ -85,18 +116,23 @@ export function makeSpringSectorCandidate() {
   const axle = attach('outputAxle', disk(23 / scale, (source.center[1] - 1155) / scale, wheelTop - .005, 128), 'fixed', PALETTE.muted);
   axle.rotation.x = -Math.PI / 2;
   const setState = ({shaftAngle = 0, wheelAngle = 0, lifts = [0, 0]} = {}) => {
+    if (lifts.some(lift => lift < -.06 || lift > .18)) throw Error('Sector guide travel exceeded');
     blocks.wheel.rotation.y = wheelAngle; blocks.shaft.rotation.z = shaftAngle;
     for (const [i, name] of ['front', 'rear'].entries()) {
       blocks[name].rotation.z = shaftAngle;
-      blocks[name].position.set(0, lifts[i], (i === 0 ? 1 : -1) * wheelPitchRadius);
+      blocks[name].position.set(-Math.sin(shaftAngle) * lifts[i], Math.cos(shaftAngle) * lifts[i], (i === 0 ? 1 : -1) * wheelPitchRadius);
     }
-    // Nonzero shaft poses require solving the rectilinear input linkage and
-    // the lift guides before this construction can be used as an animation.
-    root.updateMatrixWorld(true); root.userData.state = {shaftAngle, wheelAngle, lifts: [...lifts]};
+    for (const spring of springs) {
+      spring.coil.update(-.27 + guideOffset + lifts[spring.side], -.04 + guideOffset, spring.x, spring.guideZ);
+      blocks[spring.family].position.set(0, 0, spring.plane); blocks[spring.family].rotation.z = shaftAngle;
+    }
+    const input = linkage.atAngle(shaftAngle);
+    blocks.rod.rotation.z = input.angleDelta; blocks.rod.position.set(...input.translation, 0);
+    root.updateMatrixWorld(true); root.userData.state = {shaftAngle, wheelAngle, lifts: [...lifts], input};
   };
-  root.userData = {parts, families, blocks, profiles, source, setState, geometry: {sectorPitchRadius,
-    wheelTeeth, wheelPitchRadius, wheelInnerRadius, wheelOuterRadius, wheelTop, wheelBottom, toothHeight, depth},
+  root.userData = {parts, families, blocks, profiles, source, setState, linkage, springs, geometry: {sectorPitchRadius,
+    wheelTeeth, wheelPitchRadius, wheelInnerRadius, wheelOuterRadius, wheelTop, wheelBottom, toothHeight, depth, guideOffset},
     mechanism: 'isolated-spring-sector-geometry-candidate', fidelity: 'candidate', hideGround: true, cameraFov: 8,
-    qualification: 'Static source-layout study. Crown count/depth, springs, guides, finite contact, ordinary-pin input kinematics and supporting bearings remain unqualified.'};
+    qualification: 'Reconstruction study with paired radial spring guides and ordinary-pin input closure. Hidden guide construction is an explicit assumption. Crown contact dynamics, guide loads, supporting bearings and final playback remain unqualified.'};
   setState(); markShadows(root); return {root, setState, update: () => setState(), cameraDirection: new THREE.Vector3(0, 0, 10)};
 }

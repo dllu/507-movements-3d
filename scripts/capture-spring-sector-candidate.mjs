@@ -3,12 +3,13 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 
-const prefix = process.env.PROBE_PREFIX ?? 'artifacts/review/083-reviewed-candidate';
+const prefix = process.env.PROBE_PREFIX ?? 'artifacts/review/083-guided-candidate';
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const freezeFile = 'artifacts/review/083-shadow-source-hashes.json', frozen = JSON.parse(fs.readFileSync(freezeFile));
 for (const [file, expected] of Object.entries(frozen)) assert.equal(hash(file), expected, file);
 const sources = ['scripts/capture-spring-sector-candidate.mjs', 'scripts/lib/spring-sector-candidate.mjs',
-  'scripts/lib/spring-sector-source.mjs', 'src/simulation/engine.js', 'src/simulation/finite-plate-geometry.js',
+  'scripts/lib/spring-sector-source.mjs', 'scripts/lib/spring-sector-contact.mjs', 'scripts/lib/spring-sector-linkage.mjs',
+  'scripts/lib/spring-rack-coil.mjs', 'tests/helpers/solid-surface.mjs', 'src/simulation/engine.js', 'src/simulation/finite-plate-geometry.js',
   'src/simulation/primitives.js', 'artifacts/reference/brown-083-detail.png'].map((file, i) => {
   const archive = prefix + '-source-' + i + '.txt'; fs.copyFileSync(file, archive, fs.constants.COPYFILE_EXCL);
   return {file, archive, sha256: hash(file)};
@@ -23,23 +24,33 @@ try {
     const {MovementEngine} = await import('/src/simulation/engine.js');
     const {default: catalog} = await import('/src/data/movements.json');
     const {makeSpringSectorCandidate} = await import('/scripts/lib/spring-sector-candidate.mjs');
+    const {makeSpringSectorContact} = await import('/scripts/lib/spring-sector-contact.mjs');
     document.body.innerHTML = '<main style="padding:16px;background:#faf8f2;height:800px;box-sizing:border-box"><div id="title" style="font:20px system-ui;height:40px"></div><div style="display:flex;gap:16px;height:720px"><div id="stage" style="width:726px;height:720px;position:relative"></div><img src="/artifacts/reference/brown-083-detail.png" style="width:726px;height:720px;object-fit:contain" /></div></main>';
     await document.querySelector('img').decode();
     const e = new MovementEngine(document.querySelector('#stage'), catalog.movements[82], {playing: false});
     cancelAnimationFrame(e.animationFrame); e.animationFrame = 0; e.scene.remove(e.model.root);
     e.model.root.traverse(o => {o.geometry?.dispose(); if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material?.dispose();});
-    e.model = makeSpringSectorCandidate(); e.scene.add(e.model.root); e.updateGroundClearance(); window.springSectorCandidate = e;
+    e.model = makeSpringSectorCandidate(); e.scene.add(e.model.root); e.updateGroundClearance();
+    window.springSectorCandidate = {engine: e, contact: makeSpringSectorContact(e.model)};
   });
-  for (const [name, direction] of [['source', [0, 0, 10]], ['source-overlay', [0, 0, 10]], ['oblique', [4, 3, 10]], ['rear', [-4, 3, -10]]]) {
-    const state = await page.evaluate(async ({name, direction}) => {
+  for (const [name, direction, shaftAngle] of [['source', [0, 0, 10], 0], ['source-overlay', [0, 0, 10], 0],
+    ['oblique', [4, 3, 10], 0], ['rear', [-4, 3, -10], 0], ['negative-angle', [0, 0, 10], -.22],
+    ['positive-angle', [0, 0, 10], .22], ['guide-detail', [1, 0, -1], 0]]) {
+    const state = await page.evaluate(async ({name, direction, shaftAngle}) => {
       const {THREE: {Vector3, OrthographicCamera}} = await import('/scripts/lib/spring-sector-candidate.mjs');
-      const e = window.springSectorCandidate; document.querySelector('#overlay')?.remove();
-      e.model.setState(); e.fitCamera(new Vector3(...direction)); let camera = e.camera;
+      const {engine: e, contact} = window.springSectorCandidate; document.querySelector('#overlay')?.remove();
+      const wheelAngle = .07233930452344918, lifts = [0, 1].map(side => contact.seat(shaftAngle, wheelAngle, side, {lower: -.06, upper: .18}).lift);
+      e.model.setState({shaftAngle, wheelAngle, lifts}); e.fitCamera(new Vector3(...direction)); let camera = e.camera;
       if (name.startsWith('source')) {
         const p = e.model.root.userData.source, h = Math.max(1250, 1120 * 720 / 726) / p.scale, w = h * 726 / 720;
         const cx = (560 - p.center[0]) / p.scale, cy = (p.center[1] - 625) / p.scale;
         camera = new OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, .01, 100);
         camera.position.set(cx, cy, 10); camera.lookAt(cx, cy, 0); camera.updateMatrixWorld();
+      }
+      if (name === 'guide-detail') {
+        const target = new Vector3(0, -.4, e.model.root.userData.geometry.wheelPitchRadius - .15);
+        camera = new OrthographicCamera(-.75, .75, .75 * 720 / 726, -.75 * 720 / 726, .01, 100);
+        camera.position.copy(target).add(new Vector3(-.9, .35, -1.5)); camera.lookAt(target); camera.updateMatrixWorld();
       }
       e.renderer.render(e.scene, camera);
       if (name === 'source-overlay') {
@@ -47,9 +58,9 @@ try {
         overlay.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.5;mix-blend-mode:multiply';
         document.querySelector('#stage').append(overlay); await overlay.decode();
       }
-      document.querySelector('#title').textContent = '083 · static geometry study · ' + name;
+      document.querySelector('#title').textContent = '083 · seated geometry study · ' + name;
       return e.model.root.userData.state;
-    }, {name, direction});
+    }, {name, direction, shaftAngle});
     const file = prefix + '-' + name + '.png'; assert(!fs.existsSync(file)); await page.screenshot({path: file});
     views.push({file, name, direction, state, sha256: hash(file), inspected: false});
   }

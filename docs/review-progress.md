@@ -62,11 +62,15 @@ units. This rejects the existing model; no replacement is yet integrated.
 The isolated replacement now has broad pierced plates, rounded openings,
 measured joints and a provisional 12-tooth arc. Source overlays exposed and
 rejected a wheel-edge reading and an extra central tooth in earlier fits.
-All 47 candidate meshes pass topology checks. Its unseated static pose still
-has 62 penetrating samples in 126,530 checks over 298 rigid-family pairs;
-finite contact, spring guides and input closure remain open. Four final
-source/overlay/oblique/rear renders are inspected. The capture check passes
-without JavaScript errors or unexpected warnings. Production is unchanged.
+The latest candidate has paired radial spring guides behind each plate and
+ordinary-pin input closure. Finite-mesh seating is checked at 117 shaft/wheel
+poses, with matching unpruned comparisons and an independent penetrating
+negative control. All 67 meshes pass topology checks at nine seated poses;
+2,591,486 surface samples across 1,320 distinct-family pairs find no intrusion.
+Seven final views include the source overlay and guide detail. Free contact
+dynamics, guide loads, continuous clearance and final playback remain open.
+The capture check passes without JavaScript errors or unexpected warnings.
+Production is unchanged.
 Measurements, preserved failures and qualification limits are recorded in the
 [083 review](../artifacts/review/083-reconstruction-notes.md).
 
