@@ -5,6 +5,92 @@ candidate now has three free dynamic coordinates, a closer source pose and
 corrected hardware spacing. All 904 frozen production inputs remain identical
 to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
 
+## Loading, strap motion and refinement stage
+
+The prescribed linkage now has an independent loading and energy study.
+It includes the wheel, both arms, treadles, rods and pawls, with component
+masses derived from their actual meshes. Overlapping welded components are
+treated as additive lumped masses. The strap, its bonded eyes and the pulley
+remain ideal massless elements. The ideal lower-pawl closing torque has
+potential energy `-preload * (pawl angle - arm angle)`, including its reaction
+on the moving arm. This does not specify a physical spring construction.
+
+An independent tetrahedral mesh integration checks the energy formulas at
+17 poses over 29,292 tetrahedra. Maximum kinetic-energy discrepancy is
+2.26e-10, potential discrepancy 7.11e-12 and analytic derivative discrepancy
+1.69e-7 in normalized study units. Reconstructed contact impulses also close
+the free-coordinate momentum balance. This audit currently supports zero
+Coulomb drag only and rejects other settings explicitly.
+
+The minimum strap tension compatible with downward forces at both feet stays
+positive in the studied trajectory. The rising foot sometimes absorbs work;
+assuming only the descending foot applies force instead requires upward
+pulling at nearly half the saved intervals. Thus the two-foot result is a
+constructive feasible ideal loading, not a unique foot-force prediction or
+evidence for the descending-foot-only interpretation. Force magnitudes are
+normalized study values, with impact peaks, rather than measured newtons.
+
+The energy audit includes backward-Euler velocity-change loss and endpoint
+contact work. Its maximum cumulative corrected residual decreases from
+0.0214527 to 0.0107126 to 0.00536171 to 0.00268151 at 2, 1, 0.5 and 0.25 ms
+steps. The last is 0.0116682% of the audit's work/loss scale, below its 0.1%
+threshold. `082-finer-linkage-loads.json` and `082-quarter-ms-linkage-loads.json`
+preserve these comparisons. The 0.25 ms check reconstructs all 48,000
+intervals with no missing contacts and a maximum momentum residual of
+8.23e-14. Passing this energy check does not establish trajectory convergence.
+
+The strap study follows fixed material labels along the geodesic wrap. It
+derives a periodic pulley rolling approximation from half the difference of
+the two leg lengths. Across 4,097 poses the maximum sampled axial material
+speed is 6.34410 engraving pixels/s; the maximum circumferential slip is
+0.00166554 pixels/s, integrating the sampled maximum to 0.00406246 pixels per
+input cycle. These are sampled kinematic results. They do not prove no-slip,
+traction, a friction law, or pulley inertia. The proposed pulley rotation is
+**not yet implemented in the candidate**. See `082-strap-kinematics.json`.
+
+Contact queries now skip distant pawl points using a conservative disk that
+contains the wheel polygon. The checked implementation produces bitwise
+identical contact rows and minimum gaps in 12,326 cases: both primary pairs
+at all 6,001 original saved states, plus 324 perturbed contact-margin cases.
+Those cases include 111,649 rows. The reusable script ran approximately 3.63
+times faster locally; this is diagnostic timing, not a browser performance
+claim. `082-contact-pruning-script-check.json` freezes that result and the
+archived implementation used for comparison.
+
+Full-trajectory refinement still needs qualification. Comparing 2 to 1 ms,
+1 to 0.5 ms, then 0.5 to 0.25 ms yields maximum free-body displacement
+differences of 1.67206, 0.550162 and 1.03430 source pixels. The last comparison
+is worse, despite nearly identical total wheel advance. These failed reports
+are retained; the target remains 0.25 pixels. The largest discrepancies occur
+around fast pawl drops and their accumulated timing differences.
+
+An isolated two-second trial starting from the same full state near four
+seconds reduces the difference to 0.0917308 pixels at 0.25 versus 0.125 ms,
+then 0.0162888 pixels at 0.125 versus 0.0625 ms. This local result does not
+qualify the full startup trajectory. The current comparator checks the union
+of both saved grids, bounding differences between linearly interpolated
+angles and converting them with the actual mesh radii. It checks matching
+initial position, velocity and time, identical model parameters and ordered
+step sizes. This remains observed numerical agreement, not a continuum-error
+bound. See `082-impact-window-union-refinement.json`.
+
+A 48-second continuation advances 30.0000482 teeth through twelve additional
+input cycles without solver failure. Its endpoint states suggest an
+eight-second, five-tooth recurrence. **Whole-cycle comparison rejects that
+as a qualified playback loop:** adjacent cycles differ by 3.958 to 11.524
+pixels inside the cycle, even where their endpoints nearly match. The final
+comparison differs by 6.72077 pixels. No state reset or repeating playback
+has been introduced. `082-settling-recurrence.json` records whole-cycle and
+endpoint position/velocity comparisons separately.
+
+This stage adds study code and evidence only. Production geometry, motion,
+tests and build inputs are unchanged. Full startup refinement, continuous
+solid clearance, the pulley/strap assumptions and final playback/rendering
+remain open before integration. No new production test or browser pass is
+claimed. `082-loading-refinement-checkpoint.json` freezes this stage's 30
+sources and completed evidence. Two further full startup trials, at 0.125 and
+0.0625 ms, are pending at that checkpoint and are not counted as passes.
+
 ## Finite-contact dynamics stage
 
 The wheel and both pawls now carry their angles and velocities through time.
@@ -18,8 +104,8 @@ lies mostly above the hinge. The current trial assumes an ideal constant
 closing torque of 2 in the study's normalized units at that hinge. Common
 density normalizes the lower pawl mass to 1; the upper pawl uses gravity with
 no added preload. The preload is an unshown spring assumption, not a measured
-feature of the engraving. Its physical implementation and the complete
-mechanism's energy and loading remain to be qualified.
+feature of the engraving. Its physical implementation remains unqualified;
+the later ideal loading and energy study is described above.
 
 The first tooth face also allowed too much camming out. The current trial
 uses a short-face fraction of 0.06 rather than the preliminary 0.27, retaining
@@ -37,7 +123,7 @@ source profiles, the initial rotation displaces wheel tips by at most 8.384
 source pixels and pawl vertices by 6.369 / 6.718 pixels. These numbers do not
 include the original measurement and uniform-tooth fitting errors.
 
-The latest twelve-second run has 6,001 states at a 0.002-second step, with no
+The initial twelve-second run has 6,001 states at a 0.002-second step, with no
 rejected steps or nonlinear failures. It advances 8.012 tooth pitches through
 three four-second treadle cycles. A very small startup rollback remains;
 after four seconds the sampled wheel velocity stays positive, between
@@ -77,16 +163,14 @@ topology report. The topology report was moved, the original motion log and
 archives retained, and the motion screen rerun to its distinct current name.
 The incident is recorded in `082-report-name-collision.json`.
 
-Before integration, qualify strap tension/traction and pulley rotation,
-preload and energy balance, numerical convergence, all surfaces continuously
-through motion, playback duration/repetition and speed, and final
-desktop/mobile rendering. The local `082-contact-dynamics-checkpoint.json`
-freezes this stage separately from the initial layout checkpoint.
+The local `082-contact-dynamics-checkpoint.json` freezes this earlier stage
+separately from the initial layout checkpoint. The later loading/refinement
+stage above records its additional evidence and remaining limitations.
 
-The latest trial can be reproduced with a fresh output prefix:
+The initial dynamics trial can be reproduced with a fresh output prefix:
 
 ```sh
-GEOMETRY_OPTIONS='{"shortFaceFraction":0.06}' \
+GEOMETRY_OPTIONS='{"shortFaceFraction":0.06,"treadleInset":0.055,"rodEndOffset":0.12}' \
 PHYSICS_OPTIONS='{"preload":[2,0],"theta":0.03,"seatLowerBounds":[-0.7,-0.08]}' \
 PROBE_DT=.002 PROBE_MIN_STEP=.000001953125 PROBE_DURATION=12 \
 PROBE_OUTPUT=artifacts/review/082-reproduced-dynamics.json \

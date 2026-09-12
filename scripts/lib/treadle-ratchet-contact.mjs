@@ -39,6 +39,7 @@ export function makeTreadleRatchetContact(candidate) {
 
   function pair(key, pivot, theta, alpha, padding = .003) {
     const wheel = profiles.wheel, pawl = profiles[key], rows = [];
+    const wheelCenter = rotate(wheel.center, theta), wheelRadius = wheel.radius + 1e-12;
     let minimumGap = Infinity;
     const keep = (id, feature, normal, W, H) => {
       minimumGap = Math.min(minimumGap, feature.gap);
@@ -49,6 +50,10 @@ export function makeTreadleRatchetContact(candidate) {
     };
     for (let i = 0; i < pawl.points.length; i++) {
       const H = add(pivot, rotate(pawl.points[i], alpha));
+      // The disk contains the complete wheel polygon. A point farther from
+      // that disk than both the current minimum and the contact margin
+      // cannot change either the minimum gap or the active-feature list.
+      if (Math.hypot(...sub(H, wheelCenter)) - wheelRadius > Math.max(padding, minimumGap)) continue;
       const local = rotate(H, -theta), near = wheel.closest(local);
       minimumGap = Math.min(minimumGap, near.gap);
       if (!pawl.convex[i]) continue;

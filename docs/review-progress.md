@@ -14,9 +14,21 @@ contact-reaction checks. Corrected joint/support spacing passes 12,153,906
 surface samples over 49 poses and 538 pairs. All 35 meshes pass topology
 checks, and 13 new source/motion views are inspected.
 
-082 has not been integrated. Strap and preload loading, energy, convergence,
-continuous clearance and playback still need qualification. Earlier gravity,
-contact, hardware and coarse-step failures remain archived, along with the
+An independent loading study now includes all nine rigid component families.
+It finds feasible positive strap tension with both feet pressing down,
+allowing the rising foot to absorb work. Mesh energy integration and momentum
+checks pass; corrected energy residual decreases with smaller steps. The
+strap/pulley remain ideal massless constraints. A rolling approximation has
+small measured circumferential slip but is not yet implemented or a traction
+proof. Conservative contact pruning gives identical results in 12,326 cases
+and approximately 3.63 times faster local queries.
+
+082 has not been integrated. Full startup refinement remains outside the
+0.25-pixel target, although an isolated pawl-drop window reaches 0.0163 pixels.
+An eight-second repeating-loop hypothesis fails whole-cycle comparison despite
+near-matching endpoints. Continuous clearance, the pulley/strap assumptions
+and final playback still need qualification. Earlier gravity, contact,
+hardware, step-size and recurrence failures remain archived, along with the
 rejected oversized-pulley interpretation. All 904 frozen production inputs
 remain unchanged. Details and limits are in the
 [082 study](../artifacts/review/082-reconstruction-notes.md).
