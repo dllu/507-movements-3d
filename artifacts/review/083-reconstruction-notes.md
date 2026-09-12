@@ -622,3 +622,62 @@ until it terminates. There are no browser jobs from this study. The checkpoint
 `083-bdf-motion-checkpoint.json` records the completed evidence, both failed
 controls/comparisons and the outstanding run. Energy, motion refinement,
 startup/release treatment, remaining reversal and repeated playback remain open.
+
+## BDF energy accounting and bounded impact restart
+
+The 0.25 ms full cycle finished with 33,612 accepted intervals and no failed
+steps. Complete guided-candidate clearance still passes. Its difference from
+0.5 ms is **0.479608 pixels**, failing the target again. Comparing 1 ms directly
+with 0.25 ms gives 0.042877 pixels, but that does not erase either failed
+adjacent comparison. Near 7.6196 seconds the half-millisecond run misses a brief
+contact with tooth 31 and reaches tooth 30 directly. The other two runs first
+touch tooth 31; the discrepancy subsequently grows toward the 7.7674-second
+front-sector landing. This is another sensitive grazing event, not evidence
+of full motion convergence. The detailed onset and contact histories are in
+`083-bdf-late-error-onset.json` and `083-bdf-late-landing-transitions.json`.
+
+The new five-family BDF energy audit uses the unchanged mesh-derived kinetic
+energy, potential energy and input momentum. For BDF intervals, the difference
+operator is `(current - 4*previous/3 + earlier/3)/(2*dt/3)`. Equation impulses
+are multiplied by `dt/(2*dt/3)` for endpoint work quadrature. Velocity and spring
+history terms use the same signed weights. A separate energy-history exchange
+converts the weighted energy difference back to the actual endpoint change;
+these signed numerical terms are not labelled physical damping. The residual
+therefore compares independently evaluated mesh energy and momentum-derived
+input work without silently reusing the old backward-Euler balance.
+
+`083-bdf-bounded-input-energy.json` passes for all three complete cycles. The
+maximum cumulative residual decreases from 2.50310e-5 to 6.70526e-6 to 1.83433e-6;
+the finest normalized residual is **3.44209e-8** (0.00000344209 percent).
+Oscillator and plastic-impact energy identities pass; every backward-Euler
+interval agrees exactly with the old audit. The unchanged 20,124-tetrahedron
+formula evidence and identical five-family masses are checked. Input rod
+impulses are reported separately from endpoint force estimates; rigid impact
+spikes are not finite material-force predictions. A first checker attempt used
+the wrong candidate metadata label and failed before the audit; its log and
+source are preserved. This energy evidence does not establish motion accuracy.
+
+A separate event-restart variant now limits startup and two stable intervals
+after each contact change to the event resolution, before allowing larger
+steps. The original solver and all its reports remain unchanged. At a 1 us
+event resolution, the immediate-release control's velocity error is bounded
+to 2.936e-6 across three base step sizes, instead of depending on the base step.
+Halving the event resolution halves that error. Its small initial false
+reaction remains explicit. Plastic-impact stopping completes within 0.611 us
+after first contact, without a history-induced rebound.
+
+Four short replays start from the same saved state at 7.60225 seconds and run
+for 0.2 seconds. The new 1 ms and 0.5 ms runs differ by 0.004047 pixels; the
+original restart also passes that local comparison (0.003625 pixels). This
+does not isolate the cause of the different full-cycle grazing histories.
+The revised half-millisecond replay passes complete guided clearance, spatial
+reactions and the new energy audit. Full revised cycles at 1 ms and 0.5 ms are
+running; their outcome is required before any claim of improved full motion.
+
+`083-bdf-energy-restart-checkpoint.json` records this state. The pending revised
+full runs are sessions 26516 and 92422 (Node PIDs 3990058 and 3990130), with logs
+`083-event-bdf-full-one-ms.log` and `083-event-bdf-full-half-ms.log`. Their 18
+source archives are verified and must remain unchanged while they run. The
+quarter-millisecond original-BDF run and all short controls are terminal.
+All 904 production inputs, 43 treadle sources and 33 prior checkpoint sources
+remain unchanged. No browser or app build was run for these isolated studies.

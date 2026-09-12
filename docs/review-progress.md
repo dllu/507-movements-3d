@@ -140,10 +140,16 @@ The first 1 ms and 0.5 ms full cycles retain complete guided-candidate clearance
 but differ by **0.479747 pixels**, above the 0.25-pixel target. Their method-specific
 reaction audits are separate from the old energy audit. A supplemental
 immediate-release control exposes first-order backward-Euler startup error;
-the actual 083 start is a separately solved static equilibrium. A full 0.25 ms
-comparison is running. The new method has not passed full motion, energy or
-playback qualification. All 904 frozen app inputs and 43 treadle study sources
-remain unchanged; the original stepper and prior 083 evidence are preserved.
+the actual 083 start is a separately solved static equilibrium. The full 0.25 ms
+run also fails the adjacent comparison at **0.479608 pixels**. A new BDF-specific
+five-family energy audit passes all three complete cycles, with a finest
+normalized residual of 3.44209e-8 and explicit signed history exchanges.
+A separate restart variant bounds the two post-impact intervals by the event
+resolution. Its analytic and short replay controls pass, but both restart
+variants already agree in the short shared-state replay. Full revised cycles
+are running to test the earlier approach history. Motion refinement and
+playback qualification remain open. All 904 frozen app inputs and 43 treadle
+study sources remain unchanged; the prior steppers and evidence are preserved.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
