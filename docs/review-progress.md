@@ -269,11 +269,25 @@ contour; its failed screen and controls are preserved.
 
 The actual mesh contact intervals agree with independent polygon intersections
 at 3,783 poses. A continuous neutral-domain bound clears the rack against the
-cam, hubs, axle and rear wheel across the full horizontal slot range. Selected
-motion remains unresolved: a full-turn lower input exhausts the slot travel,
-and simple nearest-position projection can jump between gaps. Those paths are
-rejected as animation. Governor handoff, frame vertical play, force validation,
-remaining continuous hardware checks and production integration are pending.
+cam, hubs, axle and rear wheel across the full horizontal slot range. Earlier
+full-turn selections exhausted slot travel, and nearest-position projections
+jumped between gaps. Those rejected paths are preserved.
+
+The new loaded study frees both rack translations and its planar angle.
+Gravity, inertia, drag and actual cam/pin contact resolve two smooth governor
+pulses, release and settling over 5.5 seconds. All four step sizes complete;
+the finest pair, 0.25 and 0.125 ms, agree within 0.133435 engraving pixels.
+The 0.125 ms run passes all 84,844 spatial reaction checks and the discrete
+momentum/energy identities. Its 132-pose surface screen covers 9,807,864
+samples over all 99 distinct-family pairs without intrusion beyond tolerance.
+
+A continuous bound now covers all 44,000 saved intervals for the frame
+against the cam, pin shanks, fixed axle and guide passages, to 1e-6 world
+units. It uses actual prisms, containing guide sections and analytic bounds
+between endpoints. Neutral and deliberately penetrating controls behave as
+expected. Twelve coarser loaded browser views are inspected, without errors
+or unexpected warnings. Remaining continuous hardware pairs, final playback
+and production integration are pending. The 904 production inputs are unchanged.
 See [the 084 reconstruction record](../artifacts/review/084-reconstruction-notes.md).
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;

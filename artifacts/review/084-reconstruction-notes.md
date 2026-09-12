@@ -183,3 +183,87 @@ The 904 production inputs, 71 existing 083 sources, 43 existing 082 sources
 and thirteen earlier 084 review inputs retain their bytes. No app build,
 production test rerun or production integration is claimed; the full review
 remains active.
+
+## Free planar dynamics and loaded clearance
+
+The independent free-frame wrapper preserves every mesh buffer and releases
+the rack's two planar translations and rotation. The center of mass and polar
+inertia come from the closed frame mesh. Uniform density is normalized to
+mass one; gravity is 9.81 and viscous drag is [8, 0.2, 0.2] for center motion
+and rotation. Out-of-plane motion remains ideally constrained. These loads,
+frictionless plastic contact and the governor input are reconstruction
+assumptions, rather than measurements from the engraving.
+
+The clockwise cam completes one turn in four seconds. Two quintic governor
+pulses select heights +16 and −28 source pixels, each returning to the neutral
+height −3 pixels. Actual finite contact determines the rack position and
+angle. Its only initial seating adjustment is approximately 1.83913e-8 world
+units, correcting floating-point pin geometry; no later pose is reseated.
+The rack can tilt slightly and move vertically within the suspension's play.
+The 1 ms run moves approximately −49.014 to +36.106 source pixels and tilts
+between −0.080754 and +0.117009 degrees. Selection, release, coasting and
+settling all occur within the 5.5-second study.
+
+Four runs at 1, 0.5, 0.25 and 0.125 ms complete with respectively 5,501,
+11,001, 22,001 and 44,001 states, without failed or rejected steps. Their
+successive whole-frame displacement bounds are 0.536748, 0.257230 and
+**0.133434187 engraving pixels**. The first two fail the 0.25-pixel target
+and remain archived. The last passes across 65,524 union knots and the
+piecewise-linear segments between them. This is observed step refinement,
+not a continuum-error guarantee. Small angular differences dominate the
+bound because the frame includes long rods.
+
+Independent audits of all positive reactions pass for the 1, 0.5 and
+0.125 ms runs. The finest audit checks **84,844 reactions and 169,688 complete
+mesh boundaries**. The generalized impulse must act at a common supporting
+feature location, with admissible boundary normals and the correct moment.
+Maximum boundary distance is 3.900e-13, momentum residual 1.482e-13 and
+discrete energy-identity residual 6.141e-14. Input work is 2.357165554,
+viscous dissipation 1.995887757, backward-Euler step loss 0.235502884 and
+contact drift work −0.125774933. The drift term is reported explicitly;
+it is not relabeled physical damping. None of these balance checks establishes
+material stresses or time-step accuracy on its own.
+
+The finest loaded surface screen samples 132 poses, including uniform times,
+extrema of all three free coordinates and each saved cam engagement/release.
+All 17 closed geometry buffers match the prior supported candidate exactly.
+Across all 99 distinct-family pairs, **9,807,864 bidirectional samples** find
+zero intrusions greater than 1e-6 world units. The earlier 1 ms loaded screen
+also passes 9,510,656 samples at 128 poses.
+
+`check-selector-rack-continuous-contact.mjs` additionally covers every one of
+the finest run's **44,000 intervals** for six pairs: frame versus working cam,
+each pin shank, fixed axle and each guide. Frame and cam cells match complete
+rendered prism caps; pin and shaft hulls contain their actual vertices. All
+guide boundary triangles within the frame's entire axial slab lie inside the
+two contact rectangles per guide. The proof uses fixed separating axes with
+endpoint projection bounds, allowing for rotational chord error and the
+quintic selector's bounded acceleration. It requires 54,596 subdivisions,
+at most four levels, and finds no failed pair. Its lowest certified separation
+bound is −9.999719e-7 world units, within the 1e-6 tolerance. A neutral control
+passes and a deliberately penetrating frame fails. These are continuous
+bounds on the saved interpolants, not a guarantee about an unsolved physical
+trajectory. The remaining hardware pairs still need continuous qualification.
+
+The first continuous-check attempt rounded translated pin vertices into a
+second Float32 buffer and failed the hull containment assertion. Its exact
+checker snapshot and log are retained. The corrected checker transforms
+extracted double-precision vertices without rewriting the mesh buffers.
+Earlier contact-check syntax and guide-section extraction failures are also
+preserved, with their exact sources.
+
+All twelve half-millisecond loaded captures are inspected: initial position,
+lower engagement/drive/release/stop, upper start/drive/release, final position,
+oblique, rear and suspension detail. The slots remain open and the retained
+pins stay aligned; the full wheel and finite depth ordering are visible.
+The guide front walls obscure a short rod length as expected from the model.
+These are candidate stills from the coarser run, not final production motion
+review. The browser reported zero errors and no unexpected warnings and was
+closed after capture. All nine new study/check scripts pass syntax checks.
+
+`084-planar-dynamics-checkpoint.json` records these results and the preserved
+failures. The 904 production inputs, 71 current 083 sources, 43 current 082
+sources and 26 prior 084 inputs retain their bytes. The reconstruction is
+not integrated. Remaining work includes continuous bounds for other hardware,
+playback settling/continuation, final fine-trajectory visual review and app
+integration with its relevant numerical, browser and build checks.
