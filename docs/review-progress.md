@@ -2905,6 +2905,13 @@ solver trial is refining those events. Its initial failed convergence and
 intermediate-gap checks remain retained. Production integration is pending. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
+087's initial source review finds a definite driver-axis mismatch: the model's
+vertical input shaft produces an upper edge-on cone, while the engraving shows
+a face-on ring behind B and C. Three unchanged production views and the native
+Brown page are inspected. Source proportions, clutch engagement and reversal
+mechanics need reconstruction and qualification. No motion or clearance pass
+is claimed. See the [087 baseline review](../artifacts/review/087-reconstruction-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
 082, 083 and 086 are under reconstruction; final mechanical qualification remains pending.
