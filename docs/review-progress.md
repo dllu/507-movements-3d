@@ -18,16 +18,23 @@ An independent loading study now includes all nine rigid component families.
 It finds feasible positive strap tension with both feet pressing down,
 allowing the rising foot to absorb work. Mesh energy integration and momentum
 checks pass; corrected energy residual decreases with smaller steps. The
-strap/pulley remain ideal massless constraints. A rolling approximation has
-small measured circumferential slip but is not yet implemented or a traction
-proof. Conservative contact pruning gives identical results in 12,326 cases
+strap/pulley remain ideal massless constraints. The candidate now applies a
+rolling approximation with small measured circumferential slip; it remains
+an idealization without a traction proof. Conservative contact pruning gives identical results in 12,326 cases
 and approximately 3.63 times faster local queries.
 
-082 has not been integrated. Full startup refinement remains outside the
-0.25-pixel target, although an isolated pawl-drop window reaches 0.0163 pixels.
-An eight-second repeating-loop hypothesis fails whole-cycle comparison despite
-near-matching endpoints. Continuous clearance, the pulley/strap assumptions
-and final playback still need qualification. Earlier gravity, contact,
+The pulley stays on its fixed axle, and all other part transforms match the
+prior candidate at 257 checked poses. Thirteen new candidate renders are
+inspected. Whole-stroke linkage bounds now support continuous clearance of
+536 secondary pairs, including the strap/pulley/axle and four supports.
+The two primary pawl/ratchet pairs still need a separate continuous check.
+
+082 has not been integrated. Full startup refinement improves to 0.260788
+pixels, still outside the 0.25-pixel target. A finer run is pending. An
+eight-second repeating-loop hypothesis fails the coarse whole-cycle comparison
+despite near-matching endpoints; a finer settling study is underway. Primary
+clearance, the pulley/strap assumptions and final playback still need
+qualification. Earlier gravity, contact,
 hardware, step-size and recurrence failures remain archived, along with the
 rejected oversized-pulley interpretation. All 904 frozen production inputs
 remain unchanged. Details and limits are in the

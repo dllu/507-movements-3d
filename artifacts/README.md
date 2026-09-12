@@ -11,3 +11,8 @@ Use the scripts in `scripts/` to reproduce individual studies. Some historical
 studies depend on earlier local artifacts; those scripts are preserved as
 research records. The runnable app and the numerical tests use checked-in
 source and data.
+
+Source snapshots are immutable. Some identical large archive copies share a
+hard link to save local disk space; live sources and original reports are not
+linked to them. Preserve snapshots in place and write new evidence under a
+fresh name. Consolidation inventories record the preserved paths and hashes.

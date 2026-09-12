@@ -86,6 +86,10 @@ export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.sh
  };
  const setState=({time=0,wheelAngle=0,pawlAngles=[0,0]}={})=>{
   const s=linkage.atTime(time);blocks.wheel.rotation.z=wheelAngle;
+  // Mean circumferential rolling speed of the two strap legs. Axial creep
+  // and a small circumferential slip remain in this broad-pulley model.
+  const pulleyAngle=(s.cable.frontLength-s.cable.rearLength-initial.cable.frontLength+initial.cable.rearLength)/(2*p.radius);
+  pulleyMesh.rotation.x=pulleyAngle;
   for(let i=0;i<2;i++){
    const a=p.arms[i],state=s.arms[i],name=a.name;blocks[name+'Arm'].rotation.z=state.armAngle;
    blocks[name+'Treadle'].position.set(...p.fulcrum,0);blocks[name+'Treadle'].rotation.z=state.treadleAngle;
@@ -93,10 +97,10 @@ export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.sh
    blocks[name+'Rod'].position.set(...state.top,0);blocks[name+'Rod'].rotation.z=Math.atan2(state.bottom[1]-state.top[1],state.bottom[0]-state.top[0]);
    blocks[name+'StrapEye'].position.set(...(i===0?s.cable.front:s.cable.rear),0);
   }
-  setStrap(s.cable);root.updateMatrixWorld(true);root.userData.kinematics={...s,wheelAngle,pawlAngles};
+  setStrap(s.cable);root.updateMatrixWorld(true);root.userData.kinematics={...s,wheelAngle,pawlAngles,pulleyAngle};
  };
  root.userData={parts,families,blocks,profiles,linkage,geometry:{source,pulleyRadius,width,options:{shortFaceFraction,treadleInset,rodEndOffset}},setState,
   mechanism:'isolated-treadle-ratchet-candidate',fidelity:'candidate',hideGround:true,cameraFov:8,
-  qualification:'Source geometry and equalizer linkage only. Pawl/wheel motion, contact, all solid clearances, mesh winding and pulley traction remain unverified.'};
+  qualification:'Candidate geometry and equalizer linkage with externally supplied free wheel/pawl motion. Pulley rotation is a rolling approximation with axial creep. Complete mechanical qualification and pulley traction remain pending.'};
  setState();markShadows(root);return{root,setState,update:()=>setState(),cameraDirection:new THREE.Vector3(0,0,10)};
 }

@@ -5,6 +5,68 @@ candidate now has three free dynamic coordinates, a closer source pose and
 corrected hardware spacing. All 904 frozen production inputs remain identical
 to commit `c13f7ec03ee2dd2d7c0ccb5b0b560373f14fa97e`.
 
+## Pulley motion and continuous secondary clearance
+
+The candidate now applies the studied rolling approximation to pulley C about
+its fixed world-X axle. Across 257 checked poses its center does not move,
+its axis error is below 4.58e-16, and its angle repeats after each input cycle.
+All 35 geometry buffers and the free-dynamics mass parameters match the prior
+candidate. Every other part has exactly the same checked world transforms.
+The new source, overlay, nine motion poses, oblique and rear views have all
+been inspected as candidate evidence. These checks do not establish traction.
+
+Whole-stroke interval bounds establish a unique rear-treadle angle for every
+front angle in `[-0.1, 0.1]`. The rear stays inside `[-0.11, 0.11]`; the
+strap-length derivatives remain strictly negative and both root brackets
+retain positive margins. Triangle-area bounds exclude rod toggles and bound
+arm, rod and strap speeds. The analytic bounds also pass sampled derivative
+cross-checks at 4,097 poses.
+
+The rolling pulley has continuous clearance from its axle, the strap and
+four fixed supports. The strap also clears the axle directly. The radial
+strap/pulley lower bound is 6.75390e-7 world units after accounting for
+Float32 vertex rounding. The strap remains within the pulley face with at
+least 0.0585950 world units of edge margin. These bounds hold throughout the
+input stroke and for every pulley spin angle.
+
+The complete secondary-pair check passes on the twelve-second, 0.0625 ms
+trajectory: **536 of 538 independent pairs are covered continuously**.
+Of these, 316 use fixed axial layers, 14 use concentric finite-mesh bores,
+seven use the pulley bounds, and 199 use swept convex enclosures. The sweep
+has 2,047 proof intervals and 18,765 pair checks with no unresolved secondary
+pair. The minimum swept-hull lower bound is positive, 9.13511e-6 world units.
+The two finite pawl/ratchet pairs are explicitly excluded and still require
+their own continuous contact check. This does not establish complete
+mechanical qualification or clearance of a different playback trajectory.
+
+The initial enclosure attempts are retained. One was stopped to avoid
+exhaustive axis searches where a coarse interval could not possibly pass.
+A source-pose diagnostic then identified two false enclosure overlaps: a
+square wheel bound against the lower pawl pin, and the filled upper-strap
+box against its axle. A circumscribed circular wheel polygon and the direct
+radial strap/axle bound resolve those cases without changing model geometry.
+The corrected source-pose screen and full secondary sweep pass.
+
+Full startup refinement improves to 0.461747 pixels at 0.25 versus 0.125 ms,
+then 0.260788 pixels at 0.125 versus 0.0625 ms. The latter has 192,001 states
+and advances 8.01220658 teeth without rejected steps or solver failure, but
+still misses the unchanged 0.25-pixel agreement target. A full 0.03125 ms run
+and a finer sixteen-second settling continuation are pending. No repeating
+playback has been introduced on the strength of nearly matching endpoints.
+
+Current evidence includes `082-rolling-pulley-check.json`,
+`082-rolling-pulley-motion-inspections.json`, `082-input-motion-bounds.json`,
+`082-pulley-shaft-strap-clearance.json`, `082-secondary-continuous-bounds.json`
+and `082-startup-sixteenth-ms-refinement.json`. The local
+`082-pulley-clearance-checkpoint.json` freezes this stage separately from
+the earlier loading checkpoint. Production remains unchanged.
+
+Forty-seven identical immutable source-archive copies from studies 080–082
+were consolidated as hard links, recovering 2,184,690,164 bytes. Their paths
+and SHA-256 contents are preserved; live sources and original reports,
+trajectories and images are not linked. The inventory and original file
+metadata are retained in `082-immutable-archive-consolidation.json`.
+
 ## Loading, strap motion and refinement stage
 
 The prescribed linkage now has an independent loading and energy study.
@@ -45,8 +107,9 @@ the two leg lengths. Across 4,097 poses the maximum sampled axial material
 speed is 6.34410 engraving pixels/s; the maximum circumferential slip is
 0.00166554 pixels/s, integrating the sampled maximum to 0.00406246 pixels per
 input cycle. These are sampled kinematic results. They do not prove no-slip,
-traction, a friction law, or pulley inertia. The proposed pulley rotation is
-**not yet implemented in the candidate**. See `082-strap-kinematics.json`.
+traction, a friction law, or pulley inertia. The candidate now applies this
+approximation, with the separate implementation checks described above. See
+`082-strap-kinematics.json` for the original kinematic study.
 
 Contact queries now skip distant pawl points using a conservative disk that
 contains the wheel polygon. The checked implementation produces bitwise
@@ -83,13 +146,11 @@ comparison differs by 6.72077 pixels. No state reset or repeating playback
 has been introduced. `082-settling-recurrence.json` records whole-cycle and
 endpoint position/velocity comparisons separately.
 
-This stage adds study code and evidence only. Production geometry, motion,
-tests and build inputs are unchanged. Full startup refinement, continuous
-solid clearance, the pulley/strap assumptions and final playback/rendering
-remain open before integration. No new production test or browser pass is
-claimed. `082-loading-refinement-checkpoint.json` freezes this stage's 30
-sources and completed evidence. Two further full startup trials, at 0.125 and
-0.0625 ms, are pending at that checkpoint and are not counted as passes.
+This earlier stage adds study code and evidence only. Its
+`082-loading-refinement-checkpoint.json` freezes 30 sources and completed
+evidence. The two full startup trials pending at that checkpoint are now
+complete; their comparisons and the remaining work are described above.
+No new production test or integrated browser pass is claimed.
 
 ## Finite-contact dynamics stage
 
