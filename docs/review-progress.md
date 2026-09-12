@@ -4,6 +4,29 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
+## Movement 085 reconstruction study — 2026-09-12
+
+085's baseline is rejected for its oversized fan-shaped cams, spherical
+follower, wide rod spacing and straight support. Its prescribed late lift
+requires downward cam support, and a finite screen finds shaft/support and
+travel-marker/guide intersections.
+
+The isolated candidate follows the measured wipers, flat projection B, square
+rod, curved standard and flared head. It has fifteen closed solids, a rotating
+input shaft and actual guide/bearing bores. Hidden depths and a striking bed
+that keeps both guides engaged are explicit reconstruction assumptions.
+Gravity and finite cam contact determine the rod motion at four seconds per
+shaft revolution. Corrected 0.25 and 0.125 ms runs agree within 0.193724 source
+pixels. All 54,699 contact reactions pass actual mesh boundary and normal-cone
+checks; momentum and energy audits pass with contact drift work reported.
+The refined surface screen covers all 68 independent pairs and 1,501,058
+samples without detected intrusion. Ten final candidate views are inspected.
+
+Continuous clearance, complete repeat playback, shadow cleanup and production
+integration remain pending. Earlier capture, normal, mesh-limit and time-step
+failures are preserved. All 944 production inputs remain unchanged. See the
+[085 study](../artifacts/review/085-reconstruction-notes.md).
+
 ## Movement 082 reconstruction study — 2026-09-11
 
 082 now has a finite-contact dynamics candidate with 26 steeper teeth,
