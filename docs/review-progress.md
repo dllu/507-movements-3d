@@ -3002,6 +3002,24 @@ fidelity and continuous clearance remain pending. Production and all 1,097
 frozen inputs remain unchanged. See the
 [087 clutch-transition review](../artifacts/review/087-clutch-transition-notes.md).
 
+087 now reaches loaded seating in both directions and checks holding through
+the next native stud contacts. Direct refinement of the jaw corners corrected
+a sub-microunit interpolation error that had produced a false holding-release
+diagnosis. The refined model supports the held states, but **both clutches cam
+out when the next lifting stroke starts**. Output speeds change from −0.120 to
+−0.002298 and +0.120 to +0.039550 at those impacts. Half-time-unit continuations
+confirm 0.018668 and 0.016784 units of withdrawal. The current frictionless jaw
+and lost-motion interpretation cannot be accepted as a complete reversal.
+
+The selected seating runs contain 136,700 states, with native jaw discrepancies
+below 1.98e-7. Their final settling times remain unresolved to five milliseconds.
+Fourteen hardware poses pass 21,135,730 surface checks plus native jaw, slot,
+fork and stud checks. Ten new still views are inspected; both slowed seating
+previews complete without browser errors. Retention, source proportions,
+continuous clearance and final whole-cycle speed still need work. Production
+and all 1,097 frozen inputs remain unchanged. See the
+[087 loaded seating and retention review](../artifacts/review/087-loaded-seating-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.

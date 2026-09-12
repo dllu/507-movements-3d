@@ -158,3 +158,9 @@ remain pending. Both earlier 087 factories, all 1,097 frozen production inputs,
 and the 082/083 study inputs remain unchanged. No production build, full-suite
 test or all-507 browser pass is added by this isolated study. The full goal
 remains active.
+
+The follow-up [loaded seating study](087-loaded-seating-notes.md) now reaches
+both seated states and the next stud contacts. Refined native corner normals
+permit holding, but both clutches cam out when lifting starts. The current
+frictionless triangular-jaw/lost-motion interpretation therefore cannot yet
+connect the lifting branches into a working reversal.
