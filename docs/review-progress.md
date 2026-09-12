@@ -124,9 +124,14 @@ the revised bounds cover all 1,384 independent pairs through the complete
 64,000-interval trajectory. Updated shaft loading still passes the energy
 audit. Twenty-four new diagnostic views are inspected, including twelve
 after the hub correction.
-Motion refinement, remaining reversal, support assumptions and final playback
-are still pending. The next finer run is in progress; 083 remains outside
-production.
+The 0.0625 ms run now finishes with 128,001 states and complete clearance,
+but differs by 3.133324 pixels from 0.125 ms and fails motion agreement.
+The first large discrepancy follows a rear-sector landing near 3.642 seconds.
+Short replays from one shared state agree within 0.008742 pixels; the same-step
+replay exactly reproduces the original segment. This points to sensitivity
+to earlier state error and does not qualify the complete motion. The approach
+to that landing, remaining reversal, support assumptions and final playback
+still need work; 083 remains outside production.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.

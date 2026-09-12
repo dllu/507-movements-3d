@@ -507,6 +507,38 @@ Motion convergence, reversal/repeat behavior, support assumptions in final
 playback and production integration remain pending. The model is still an
 isolated reconstruction study. Production and the 082 study are unchanged.
 
+## Finer-run completion and landing sensitivity
+
+The 0.0625 ms run has finished with **128,001 states**, no rejected trials and
+no failed steps. Both the original and revised-guide candidates retain
+continuous clearance across all 128,000 intervals; the revised candidate's
+certificate is `083-guided-sixteenth-clearance.json`. Minimum primary margin
+is -9.9999833e-7 units, within the unchanged 1e-6 tolerance.
+
+Its comparison with 0.125 ms is **3.133324 source pixels**, failing the
+0.25-pixel target and worsening the previous comparison. The first large
+disagreement occurs near the rear-sector landing at 3.642 seconds: the finer
+history contains a brief crown-face impact while the coarser history reaches
+an edge-cross contact. The first coarse-knot error above the target is at
+3.643875 seconds. Contact histories are retained in
+`083-sixteenth-contact-transitions.json`; error localization is in
+`083-sixteenth-refinement-localization.json`.
+
+Three short runs start from the same finer state at 3.59 seconds and continue
+for 0.23 seconds at 0.125, 0.0625 and 0.03125 ms. All retain continuous tooth
+clearance. Their adjacent step comparisons differ by only 0.00562243 and
+0.00874135 pixels. The same-step replay exactly reproduces all 3,681 original
+finer states in time, free position, velocity and active set. Before the
+landing, the two original histories already differ by up to 0.0184872 pixels
+and 0.001931 model velocity units. This points to sensitivity to earlier
+state error, without yet identifying a unique numerical cause.
+
+The shared-state agreement does not qualify the full trajectory. The next
+investigation must address accuracy of the approach to the crown edge and
+subsequent repeat behavior. `083-sixteenth-impact-checkpoint.json` records the
+completed runs, preserved failed comparison and replay control. No solver or
+browser jobs remain running at this checkpoint; 083 remains outside production.
+
 ## Shared framing-marker shadow correction
 
 The baseline renders showed isolated shadow spots beyond the visible model.
