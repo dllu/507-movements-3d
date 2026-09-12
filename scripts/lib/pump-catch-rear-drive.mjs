@@ -8,8 +8,8 @@ export {THREE};
 // The two hatched horizontal source runs are interpreted as a separate input
 // band behind the loose wheel. The second pulley, rear bearings and return
 // path are omitted in the engraving; their completion is explicit here.
-export function makePumpCatchRearDriveCandidate(){
-  const model=makePumpCatchCandidate(),u=model.root.userData,source=u.source,corePartNames=Object.keys(u.parts),scale=source.scale,
+export function makePumpCatchRearDriveCandidate({model=makePumpCatchCandidate()}={}){
+  const u=model.root.userData,source=u.source,corePartNames=Object.keys(u.parts),scale=source.scale,
     radius=((source.rearRuns.lower[0]+source.rearRuns.lower[1])-(source.rearRuns.upper[0]+source.rearRuns.upper[1]))/(4*scale),
     halfWidth=((source.rearRuns.upper[1]-source.rearRuns.upper[0])+(source.rearRuns.lower[1]-source.rearRuns.lower[0]))/(4*scale),
     contactRadius=radius-halfWidth,segments=1024,innerRadius=contactRadius/Math.cos(Math.PI/segments),outerRadius=innerRadius+2*halfWidth,

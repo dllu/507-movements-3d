@@ -2883,6 +2883,18 @@ failures remain archived. No new all-507 browser pass is claimed: the last
 attempt timed out after movement 482. See [the 081 review](../artifacts/review/081-reconstruction-notes.md)
 and its local integrated checkpoint.
 
+086 now has a 42-part candidate combining the rear input drive, winding rim,
+attached rope and guided pump rod. The added free-wheel mass is recomputed;
+independent mesh energy/momentum and the loaded coarse force/work checks pass.
+A twenty-pose screen including coordinate extrema covers 704 pairs and
+28,479,142 surface samples without intrusion. Thirty-one new source, section
+and motion images are inspected. The earlier heel-only refinement still
+misses its agreement target, and the rope mesh narrowly misses its centerline
+length target. The full-mass 0.125 ms run passes its force/work audits but
+still differs from the 0.25 ms run by up to 0.317148 engraving pixels against
+the 0.25-pixel target. Further refinement, continuous clearance and production
+integration remain pending. See the [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
 082, 083 and 086 are under reconstruction; final mechanical qualification remains pending.

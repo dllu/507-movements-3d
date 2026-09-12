@@ -368,19 +368,95 @@ for the observed retry handle and retained evidence. The earlier
 failure was observed. The all-507 goal
 remains active.
 
+## Completed heel refinement and its rejected agreement check
+
+The retained 0.125 ms retry completes 128,001 states through sixteen seconds
+without subdivision. All 233,332 reactions pass, together with the work audit
+(0.06501% signed and 0.06746% absolute defect). The four primary pairs pass
+256,001 cap-triangle knot/midpoint checks. Maximum cam overlap area is
+9.61e-16 square units.
+
+The 0.25/0.125 ms comparison nevertheless fails the 0.25-pixel agreement
+target: its maximum is 0.401907335 engraving pixels during initial catch
+seating at 0.3345 seconds. That failed report is retained. The completed
+physical assembly below requires its own recomputed masses and refinement.
+
+## Complete input, winding and pump hardware candidate
+
+The new candidate combines the weighted catch and heel with the rear input
+assembly. It adds a winding rim behind wheel A, a finite rope clamp, a closed
+round rope, a sliding pump crosshead, output rod, hollow ferrule, two guide
+rails, their supports and a lower bed. The crosshead passes through a real
+opening in the joined front/rear plinth. Both rope ends stay attached.
+
+Neutral winding radius 1.273079700 and rope diameter 0.125 follow the source's
+visible rope position and width. The rear groove, round section, attachment,
+guide frame and pump rod complete details omitted by the engraving. The
+crosshead is an ideal vertical slider with normalized mass 1; actual moving
+mesh volume determines its density. Pump internals are outside the source
+scope. The rope remains massless, with exact analytic length 4.75. A smooth
+forward bow displays otherwise undetermined slack while retaining that length
+and the end tangents. It is not a finite-mass catenary solution.
+
+The winding bed is relieved by 3e-6 units to accommodate the polygonal rope
+sweep. Its added rim and clamp increase free-wheel volume from 0.592055741
+to 0.748615615 and polar inertia from 0.655542600 to 0.888127665. Independent
+integration of 21,584 signed tetrahedra at 51 poses includes the actual wheel,
+catch and normalized translating pump meshes. Energy, momentum and free
+equations agree within 3.82e-13, 5.91e-14 and 1.37e-10 respectively.
+
+All 42 meshes are closed. The first prescribed screen passes 21,058,526
+surface samples at fifteen poses. The textured version retains the geometry
+and adds a continuous rope UV seam. A fresh 0.25 ms full-mass run completes
+64,001 states and two lifts of 2.595421696 units, without subdivision. The
+wheel overrun reaches 0.177111577 radians and maximum analytic slack is
+0.224256370, so earlier core clearances are not reused as loaded qualification.
+All 115,009 reactions pass actual boundary, normal-cone, moment and momentum
+checks. Signed/absolute work defects are 0.12647%/0.13181%. The new twenty-pose
+screen includes all coordinate extrema and passes 28,479,142 surface samples
+across 704 independent and moving-family internal pairs without intrusion.
+
+Thirty-one images are inspected: nine initial assembly views, ten textured
+source/assembly/section views and twelve solved full-mass motion stills. The
+first anchor detail is occluded by the rear input wheel; the later section
+shows the clamp and winding channel. Both lifts, releases, guide travel and
+slack phases are visible. Source framing preserves the measured main contours;
+the omitted return pulley and lower output apparatus are complete in the
+zoomable assembly. Ten motion frames hide the front bearing for inspection.
+
+The independent rope-buffer audit retains a failure at 204 sampled poses.
+Its worst polygonal centerline length is 4.749988352 instead of 4.75, a
+1.164773656e-5-unit deficit (0.002795457 engraving pixels), just above the
+1e-5-unit screen target. Section-radius error is 1.23e-7; clamp and crosshead
+endpoint errors are 1.34e-8 and 2.22e-7. This is a display tessellation issue;
+the analytic tension constraint still uses exact rope length. Refine the
+display curve and repeat this independent check without changing the target.
+
+The complete 0.125 ms study finishes 128,001 states without subdivision.
+All 229,596 reactions pass, with signed/absolute work defects of
+0.06407%/0.06633%. Its 0.25/0.125 ms comparison remains rejected:
+0.301908623 pixels during initial seating and 0.317147574 pixels during
+second-cycle engagement at 8.220125 seconds, against the unchanged 0.25-pixel
+target. The complete-mass reports are retained separately from the earlier
+heel-only study. Consult
+`086-complete-hardware-study-checkpoint.json` for terminal observations and
+the exact completed reports. No complete mechanical or production acceptance
+is claimed. The sixty-three pump/catch scripts pass syntax checks; all 972
+production inputs, the 23 original core inputs and current 082/083 study
+inputs remain unchanged. All owned studies and browser captures are terminal.
+
 ## Remaining work and checkpoints
 
-Complete the rope attachment, winding geometry, pump load and physical stroke
-limit. Combine the rear input assembly with the qualified load geometry and
-recompute mass/inertia if new parts attach to the free wheel or catch. The
-rear belt interpretation remains an inference from the engraving.
+Qualify the combined input, winding, rope and guided pump hardware. Its
+free-body masses have been recomputed; the rear belt interpretation and
+omitted output hardware remain reconstruction assumptions.
 
 Establish refined agreement for the repeated capture, release and return,
 including cold-start impulses. The omitted load, bearing-loss, hidden-depth
 and winding assumptions still need qualification with the complete hardware;
 the repeating coarse run alone is insufficient. Establish time-step agreement,
-continuous clearance and readable playback. Finish
-the missing hardware and rendering, and integrate only after those checks,
+continuous clearance and readable playback. Refine
+the rope tessellation, and integrate only after those checks,
 then validate production.
 
 `086-first-study-checkpoint.json` records the inspected evidence and frozen
