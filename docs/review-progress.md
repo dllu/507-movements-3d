@@ -2901,9 +2901,24 @@ error. Failed intermediate bounds and their sources remain archived.
 
 Ten refreshed views are inspected. With the numerical jobs stopped, the final
 preview measures 22.48 fps and 1.9 ms p95 model updates on SwiftShader, with no
-browser errors. The candidate is ready for production integration and its
-parity, regression and integrated rendering checks. All 972 frozen production
-inputs remain unchanged. See the
+browser errors. That qualified candidate is now integrated in production.
+All 9,975 knot/midpoint poses, 418,950 part transforms and 26,733,644 checked
+attribute values match exactly. The six focused tests cover finite contacts,
+closed solids, bored guides, rope attachments/length, buffer reuse and the
+repeat seam. All 3,113 numerical tests, the build and the targeted desktop/mobile
+browser test pass.
+
+Twenty-three integrated views are inspected, including a source overlay and
+front/oblique views of the actual overhead trip contact. Final production
+playback measures 23.13 fps and 1.5 ms p95 model updates on SwiftShader.
+Continuous camera bounds include the entire rear input and guided pump; the
+four-second cycle repeats indefinitely. The first capture's review script
+mistook the total playback limit for the cycle duration; its failed assertion
+and exact sources remain archived. The corrected capture passes without model
+changes. Of the previous 972 frozen inputs, 968 are unchanged; the four edited
+files replace only 086's factory, tests and display entry. All other 506 display
+profiles are unchanged. The 082/083 studies remain intact. No new all-507 browser
+pass is claimed. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
 087's initial source review finds a definite driver-axis mismatch: the model's
@@ -2914,8 +2929,8 @@ mechanics need reconstruction and qualification. No motion or clearance pass
 is claimed. See the [087 baseline review](../artifacts/review/087-reconstruction-notes.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
-068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
-082, 083 and 086 are under reconstruction; final mechanical qualification remains pending.
+068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
+082 and 083 are under reconstruction; final mechanical qualification remains pending.
 The complete 507-movement review remains active.**
 
 ## Completion requirements

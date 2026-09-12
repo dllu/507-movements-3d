@@ -1647,23 +1647,25 @@
       }
     },
     "86": {
-      "peakAngularSpeed": 1.5637005521789795,
-      "peakVisibleAngularSpeed": 1.5637005521739835,
-      "sustainedVisibleAngularSpeed": 0.7800000000020005,
-      "floorY": -3.520000001490116,
-      "fastestPart": "Mesh",
+      "peakAngularSpeed": 12.356316301869306,
+      "peakVisibleAngularSpeed": 12.356316301869306,
+      "sustainedVisibleAngularSpeed": 1.5707963267948966,
+      "floorY": -5.350001023841858,
+      "fastestPart": "hookedCatchB",
       "motionBounds": {
         "min": [
-          -2.4510000000474976,
-          -3.520000001490116,
-          -0.7899999952316284
+          -2.467177832303438,
+          -5.350001023841858,
+          -1.4300009475479125
         ],
         "max": [
-          2.4510000000474976,
-          2.7600000014901163,
-          0.7949999761581421
+          5.672923549196133,
+          2.2660074419706175,
+          0.6000010238418579
         ]
-      }
+      },
+      "motionBoundsMethod": "Union of continuous bounds for all 41 rigid bodies and 130 rope regions, padded by 1e-6. The completed rear input and guided output are included.",
+      "speedMethod": "Maximum world angular speed on every compressed interval, with duration-weighted 75th percentile over the complete retained trajectory. No small-part visibility discount."
     },
     "87": {
       "peakAngularSpeed": 1.6228403586625373,

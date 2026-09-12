@@ -673,13 +673,58 @@ motion, force/work/repeat evidence, continuous rigid and deforming-rope bounds,
 and inspected rendering. `086-qualified-motion-checkpoint.json` records the
 accepted reports and retained failures. Production integration remains pending.
 
-## Remaining work and checkpoints
+## Production integration
 
-Integrate the qualified complete candidate, establish exact geometry and motion
-parity in production, then run the focused and regression checks and inspect
-the integrated desktop/mobile rendering. The omitted load, bearing-loss,
-hidden-depth, rear input and winding details remain explicit reconstruction
-assumptions. Movement 086 is not yet marked verified in production.
+The qualified 42-part candidate now replaces the old production factory.
+Transferred modules differ only in import paths and factory names. Its 4,988
+poses and physical parameters are identical to the qualified profile. Exact
+execution comparisons cover 9,975 knot/midpoint poses, 26,281 state samples,
+418,950 part transforms and 26,733,644 attribute values. The live rope covers
+63 different section counts in this transfer audit. The continuous hardware
+and rope envelopes now set camera framing; the input revolution takes four
+display seconds and playback repeats indefinitely after preserving startup.
+
+Six new focused tests verify actual shaft/guide passages, closed and correctly
+shaded solids, candidate parity, finite contact clearance, startup/repeat,
+constant rope length and attached endpoints, reused buffers, and full model
+bounds. All 3,113 numerical tests, the build and the targeted desktop/mobile
+browser test pass. The other 506 display profiles are unchanged. Of the 972
+previously frozen production inputs, only the old factory/test containers and
+the two display-profile files change. Their exact transition is retained in
+`086-production-source-transition.json`.
+
+Nineteen integrated app/source/motion views are inspected. Four supplemental
+views center the actual overhead trip-stop corner, showing approach, contact,
+release and the depth relationship in an oblique view. The earlier frame
+named `trip-detail` centers the catch pivot after release; it does not establish
+overhead contact on its own. The full apparatus remains framed on desktop and
+mobile, while source-aligned comparisons and contact close-ups deliberately
+crop to their subjects. Pause, play and reset work without browser errors.
+Final production playback averages 23.13 fps with 1.5 ms p95 model updates over
+12.233 seconds on SwiftShader at pixel ratio two. This is software-rendering
+evidence, not a hardware GPU performance claim.
+
+The first integrated capture ends with a review-script assertion failure:
+`engine.playbackDuration` is the total playback limit and is correctly infinite
+for this repeating model. The review now checks
+`animationTiming.displayCycleDuration === 4` separately from indefinite
+playback. The first report, log and exact source snapshots are retained; the
+corrected capture passes with unchanged production geometry and motion.
+
+`086-integrated-verified-checkpoint.json` records production verification and
+inspected views. It supersedes the initial integration record, whose inspection
+manifest misclassified the pivot close-up by matching `trip` in its filename.
+The final manifest describes that image correctly; the four actual overhead
+contact views and all model/test evidence are unchanged.
+Omitted load, bearing-loss, hidden-depth, rear input, winding and
+massless slack-rope details remain explicit reconstruction assumptions.
+Numerical agreement does not establish exact continuum dynamics. Of the 23
+original core-study inputs, 22 are unchanged; the other is the old production
+factory, whose exact replacement and original bytes are retained. The unfinished
+082/083 study sources are unchanged.
+No new all-507 browser pass or completion of the full catalog review is claimed.
+
+## Earlier checkpoints
 
 `086-first-study-checkpoint.json` records the inspected evidence and frozen
 study sources. All 972 production inputs, 71 current movement 083 sources and
