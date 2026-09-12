@@ -1099,3 +1099,22 @@ build was run during this step. `083-grazing-state-checkpoint.json` verifies
 all five newly completed trajectories, 21 supporting reports, source archives
 and producer serialization hashes, and records the remaining live process.
 The full 507 review remains active.
+
+## Complete 0.03125 ms first cycle
+
+The pending 0.03125 ms / 0.1 us first cycle completed with 260,579 accepted
+intervals, no failed steps and 1,247.39 seconds of integration time. Its
+244,869,210 decoded bytes occupy 30,417,319 compressed bytes. Compared with
+the 0.0625 ms first cycle, the maximum difference is 0.00154025 pixels, below
+the unchanged 0.25-pixel target. Complete guided clearance and the energy
+audit pass; normalized energy residual is 1.267e-11. A complete independent
+spatial reaction audit has not yet been performed at this resolution.
+
+The second cycle carries this run's exact final state in session 23410, Node
+PID 190188, with prefix `083-packed-clock-tenth-us-second-thirtysecond-ms`.
+That continuation is still running. The passing first-cycle result does not
+override the earlier sixteen-second failures or establish repeated playback.
+The 71 existing 083 study sources and production inputs remain unchanged.
+The 084 engraving review has started independently while this run continues.
+`083-thirtysecond-start-checkpoint.json` records the verified first-cycle
+trajectory, four passing reports, unchanged sources and the live continuation.

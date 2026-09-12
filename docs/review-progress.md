@@ -237,6 +237,20 @@ target at 1.406439 pixels. A complete 0.03125 ms first cycle continues running.
 The two diagnostics bring the frozen 083 source count to 71; playback,
 integration and the full review remain open.
 
+The complete 0.03125 ms first cycle now finishes without failed steps and
+agrees with 0.0625 ms within 0.00154025 pixels. Its guided clearance and energy
+audits pass; its second cycle continues from its own exact final state.
+The first-cycle result does not resolve the earlier longer-motion failures.
+
+084's baseline is also rejected. The source has a single projecting cam in
+front of a large wheel with curved spokes; the baseline has a four-lobed cam and a
+small wheel with straight spokes. Its suspension slots are overlays on a solid
+housing. Eight baseline views are inspected, and 6,427,516 finite-surface
+checks find 27,333 penetrating samples, including both pins entering the
+housing. Preliminary source circles and contour targets are measured and
+inspected; working profiles and contact motion remain to be reconstructed.
+See [the 084 reconstruction record](../artifacts/review/084-reconstruction-notes.md).
+
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
 The later midpoint failure establishes the limits of that sampled evidence.
