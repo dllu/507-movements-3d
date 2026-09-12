@@ -26,7 +26,10 @@ export function makePumpCatchNormalContact(model){
       // despite a finite tangential separation. It would create a force
       // across empty space. Only coincident corners admit multiple normals;
       // elsewhere retain the actual closest-point separation direction.
-      const candidates=distance<1e-9?[...hook,...obstacle]:[c.normal];
+      // A projected edge-interior feature has one exact face normal. Dividing
+      // its tiny gap vector amplifies roundoff and can incorrectly remove the
+      // face from its own normal cone as the time step changes.
+      const candidates=hook.length===1?hook:obstacle.length===1?obstacle:distance<1e-9?[...hook,...obstacle]:[c.normal];
       const choices=candidates.filter(n=>inCone(n,hook)&&inCone(n,obstacle));
       // Penetrating trial poses still require an escape constraint even if
       // their nearest feature has no admissible final reaction. Dropping it

@@ -13,7 +13,8 @@ for(const[name,mesh]of Object.entries(u.parts))if(['wheel','catch'].includes(u.f
     const family=u.families[name]==='wheel'?'wheel':'hook',radius=family==='wheel'?Math.hypot(p.x,p.y):Math.hypot(p.x-P[0],p.y-P[1]);radii[family]=Math.max(radii[family],radius);
   }
 }
-const windows=[.6,1.5,3,8].map(end=>({end,maximumPixels:0,maximumCoordinates:[0,0,0],worst:null,samples:0}));let index=1;
+const commonEnd=Math.min(coarse.actualEnd,fine.actualEnd),windows=[...new Set([.6,1.5,3,8,commonEnd])].filter(end=>end<=commonEnd).sort((a,b)=>a-b)
+  .map(end=>({end,maximumPixels:0,maximumCoordinates:[0,0,0],worst:null,samples:0}));let index=1;
 for(const row of fine.rows){
   if(row.time>coarse.actualEnd+1e-12)break;while(index<coarse.rows.length-1&&coarse.rows[index].time<row.time)index++;
   const a=coarse.rows[index-1],b=coarse.rows[index],f=(row.time-a.time)/(b.time-a.time),q=a.q.map((v,k)=>v+f*(b.q[k]-v)),delta=q.map((v,k)=>Math.abs(v-row.q[k])),

@@ -27,7 +27,7 @@ for(let i=1;i<data.rows.length;i++){
     counts.boundaries+=2;for(const b of checks){errors.boundary=Math.max(errors.boundary,b.distance);errors.cone=Math.max(errors.cone,b.cone);}
     if(c.impulse<0||checks.some(b=>b.distance>1e-7||b.cone>2e-5)){counts.failedReactions++;if(issues.length<30)issues.push({time:r.time,c,checks});}
   }
-  for(let k=0;k<3;k++){errors.momentum=Math.max(errors.momentum,Math.abs(dot(m.M[k],delta)-h*m.force[k]-reaction[k]));errors.position=Math.max(errors.position,Math.abs(r.q[k]-before.q[k]-h*r.v[k]));}
+  for(let k=0;k<3;k++){errors.momentum=Math.max(errors.momentum,Math.abs(dot(m.M[k],delta)-h*m.force[k]-reaction[k]));errors.position=Math.max(errors.position,Math.abs(r.q[k]-before.q[k]-h*(r.transportVelocity??r.v)[k]));}
   const tension=(r.active.find(c=>c.kind==='rope')?.impulse??0)/h;
   if(tension<minimumTension){minimumTension=tension;minimumTensionTime=r.time;}maximumTension=Math.max(maximumTension,tension);
   if(r.slack<-1e-7||r.active.some(c=>c.impulse<0)){counts.failedReactions++;if(issues.length<30)issues.push({kind:'unilateral-load',time:r.time,q:r.q,slack:r.slack});}
@@ -36,5 +36,5 @@ for(let i=1;i<data.rows.length;i++){
 verifyStudySources(data.sources);const sources=freezeStudySources([input,'scripts/check-pump-catch-slack-forces.mjs','tests/helpers/solid-surface.mjs',...data.sources.map(s=>s.file)],prefix);
 const report={movement:86,status:'independent-slack-rope-spatial-and-momentum-audit',passed:!counts.failedReactions&&errors.momentum<1e-7&&errors.position<1e-9&&minimumTension>=-1e-7,
   mechanicsPassed:false,candidateIntegrated:false,productionChanged:false,input,counts,errors,minimumTension,minimumTensionTime,maximumTension,issues,sources,
-  qualification:'Every saved positive reaction is checked against both actual mesh triangle normal cones and boundaries. Momentum and sampled position are independently reconstructed. Three-coordinate momentum includes the independent pump. Rope impulses and slack must be nonnegative. Force magnitudes are interval averages for rigid impacts; no finite material stress or continuous-clearance qualification is claimed.'};
+  qualification:'Every saved positive reaction is checked against both actual mesh triangle normal cones and boundaries. Momentum uses physical velocity; position uses the explicitly saved transport velocity when the impact solver separates them. Three-coordinate momentum includes the independent pump. Rope impulses and slack must be nonnegative. Force magnitudes are interval averages for rigid impacts; no finite material stress or continuous-clearance qualification is claimed.'};
 fs.writeFileSync(prefix+'.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log({...report,sources:undefined,issues:issues.slice(0,3)});if(!report.passed)process.exitCode=1;

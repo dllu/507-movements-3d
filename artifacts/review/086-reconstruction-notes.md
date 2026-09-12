@@ -164,6 +164,62 @@ and sums their intersection areas. Identical, clear, penetrating, shared-edge
 and contained-triangle controls pass. This avoids the ring-stitching failure
 without snapping or displacing the source geometry.
 
+## Impact velocity and exact-face corrections
+
+The next review confirms the intended sequence in the [original description](https://507movements.com/mm_086.html):
+the rotating cam seizes the catch, the overhead stop releases it, and the
+bucket weight returns the loose wheel. The source image was inspected again.
+The previous diagnostic checkpoint was substantive progress, but it did not
+establish that this sequence repeats.
+
+A work audit exposes a defect in the position-only projection: a seated
+contact can retain a closing velocity. Absolute contact drift work is 13.918%
+of the work/loss scale in the guarded three-second 1 ms run. Refining the old
+solver to 0.25 ms for twelve seconds does not cure it: drift work is 21.640%,
+and the intended full lift is lost. Both are rejected.
+
+The new impact solver first locates the finite contact position and then
+projects free momentum onto the final unilateral velocity constraints.
+Position transport and physical post-impact velocity are stored separately;
+the force audit checks momentum with physical velocity and position with the
+recorded transport. The new three-second 0.5 ms run passes all 9,625 reactions,
+with maximum common-boundary error 3.87e-14. Absolute contact drift work falls
+to 1.24e-14. Signed and absolute integration defects are respectively 0.05894%
+and 0.13639% of the work/loss scale. These are numerical diagnostics, not a
+continuum-error guarantee.
+
+A separate feature-preservation regression identifies another error. Dividing
+a tiny point-separation vector amplifies roundoff enough to reject a valid
+face from its own normal cone. Interior-edge contacts now use the exact face
+normal. Across 1,460 rotated approach/penetration controls, the previous method
+loses 62 valid face contacts; the corrected method retains all of them, with
+zero normal error and maximum tangential residual 2.75e-16. Separated corner
+pairs still use their actual separation direction, and only coincident
+corners admit multiple face normals.
+
+Both 1 ms and 0.5 ms three-second impact runs complete without adaptive
+subdivision. They are still **not accepted playback**: their maximum observed
+mesh-displacement difference is 27.340 engraving pixels during startup.
+The 0.5 ms knot/midpoint screen covers 12,001 poses and fails at one cam/hook
+midpoint, with area 1.637367e-10 at 2.90075 seconds.
+
+Further 0.25 ms and 0.125 ms startup studies retain a different capture path.
+By 0.6 seconds their cams have lost contact, while the coarser runs are seated.
+The two refined startups still differ by 15.229 engraving pixels. The finest
+startup passes all 7,268 reaction checks and the 9,601-pose primary triangle
+screen. Its signed/absolute energy defects are 0.00954%/0.02797%. Thus improved
+energy and geometric contact checks do not establish the required hook
+capture or cycle. Resolve that behavior before treating the coarse run's
+apparent seating as correct.
+
+Nine new rendered motion views were captured and inspected against the
+engraving, with no browser errors or unexpected warnings. They show the
+coarse run's seating, overhead trip, release and large return excursion;
+seven views deliberately hide the front bearing to expose the contacts.
+These are diagnostic inspections. The pump rope, load and rear input hardware
+are still absent, and no final visual or repeated-cycle acceptance is claimed.
+See `086-first-impact-motion-captures.json`.
+
 ## Remaining work and checkpoints
 
 Complete the rope attachment, winding geometry, pump load and stroke limit.
@@ -173,9 +229,11 @@ their hidden pulley or return path. Those components and the rear bearing
 remain to be reconstructed. They must not be treated as fixed support beams
 without further justification.
 
-Resolve the return, winding/attachment assumptions and repeated cycle with
-the guarded finite-contact solver. Establish time-step agreement, energy
-balance through impacts, continuous clearance and readable playback. Finish
+Resolve reliable cam capture, winding/attachment assumptions, return and the
+repeated cycle with the corrected impact solver. The cold-start impulse and
+omitted load, bearing-loss and hidden-depth assumptions need assessment;
+simply choosing the coarse run that seats is not sufficient. Establish
+time-step agreement, continuous clearance and readable playback. Finish
 the missing hardware and rendering, and integrate only after those checks,
 then validate production.
 
@@ -193,3 +251,9 @@ checkpoint, and no new visual or integration acceptance is claimed.
 The initial `086-second-study-checkpoint.json` is superseded because it
 classified editable review Markdown as immutable evidence; the corrected
 checkpoint retains a separate Markdown snapshot.
+
+`086-impact-study-checkpoint.json` records the impact/face corrections,
+adversarial controls, rejected refinements and nine inspected motion images.
+Historical sources are verified against their own snapshots. All 972
+production inputs, the 23 original core-study sources and the 082/083 studies
+remain unchanged. The owned browser and all study processes are terminal.

@@ -41,6 +41,18 @@ the guarded solver is pending. Full return/cycle behavior, continuous
 clearance, rope/load meshes and rear hardware remain unresolved. This is
 diagnostic progress only; production remains unchanged.
 
+The subsequent impact study corrects closing velocity left at seated
+contacts and a roundoff error that removed valid faces near contact. All
+1,460 face controls now pass; the old method lost 62. The three-second 0.5 ms
+impact run passes 9,625 reactions, with contact drift work reduced to 1.24e-14.
+Nine new source/motion views are inspected as diagnostics.
+
+The motion remains rejected: 1 ms/0.5 ms startup differs by 27.340 engraving
+pixels, and 0.25 ms/0.125 ms startups still differ by 15.229 pixels and lose
+cam engagement. The finest startup passes force, energy and sampled overlap
+checks, which does not establish the required capture and repeated cycle.
+Production, the original core geometry and the 082/083 studies are unchanged.
+
 ## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical
