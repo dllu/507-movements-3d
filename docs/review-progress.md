@@ -40,10 +40,14 @@ The finest loading audit also passes, with a corrected cumulative energy
 residual of 0.00143644% of its work/loss scale. It retains the explicit ideal
 two-foot loading and massless pulley/strap assumptions.
 
-082 has not been integrated. The settling study reaches 60 seconds without
-failed steps. It still rejects an eight-second loop; sixteen-second cycles
-agree more closely but differ by up to 0.515741 pixels. A finer continuation
-is running. Final playback and repeated-motion clearance remain pending.
+082 has not been integrated. Both settling step sizes now reach 60 seconds
+without failed steps. The completed 0.0625 ms continuation has 768,001 states.
+Its comparison with 0.125 ms differs by 0.532806 engraving pixels, failing the
+unchanged 0.25-pixel target. Sixteen-second recurrence differences are 0.420341
+and 0.386980 pixels; eight-second recurrence remains rejected. Final playback
+and repeated-motion clearance remain pending. A report-specific compact JSON
+serialization intervention preserved the long run without changing study
+sources; a bounded writer is still needed before another large output.
 Earlier gravity, contact,
 hardware, step-size and recurrence failures remain archived, along with the
 rejected oversized-pulley interpretation. The later framing-marker shadow
@@ -63,12 +67,20 @@ The isolated replacement now has broad pierced plates, rounded openings,
 measured joints and a provisional 12-tooth arc. Source overlays exposed and
 rejected a wheel-edge reading and an extra central tooth in earlier fits.
 The latest candidate has paired radial spring guides behind each plate and
-ordinary-pin input closure. Finite-mesh seating is checked at 117 shaft/wheel
-poses, with matching unpruned comparisons and an independent penetrating
-negative control. All 67 meshes pass topology checks at nine seated poses;
-2,591,486 surface samples across 1,320 distinct-family pairs find no intrusion.
-Seven final views include the source overlay and guide detail. Free contact
-dynamics, guide loads, continuous clearance and final playback remain open.
+ordinary-pin input closure. The crown ramps now match the source direction;
+the output axle turns with the wheel. Finite-mesh seating is checked at 117
+shaft/wheel poses, with matching unpruned comparisons and an independent
+penetrating negative control. Analytic contact derivatives and independent
+mesh-energy checks of the free force equations pass.
+
+Free contact dynamics now determine the wheel and sector lifts. A slower
+eight-second input cycle advances 15.877151 teeth over two cycles, but wheel
+retreat still reaches 0.323447 teeth. This is not accepted final playback.
+All 67 meshes pass topology checks at nine actual trajectory poses;
+2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
+Twelve trajectory views include the source overlay and guide detail. Contact
+reaction checks, refinement, guide loads, continuous clearance and final
+playback remain open.
 The capture check passes without JavaScript errors or unexpected warnings.
 Production is unchanged.
 Measurements, preserved failures and qualification limits are recorded in the

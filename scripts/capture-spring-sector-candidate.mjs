@@ -4,13 +4,18 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 
 const prefix = process.env.PROBE_PREFIX ?? 'artifacts/review/083-guided-candidate';
+const input = process.env.PROBE_INPUT;
+const dynamics = input ? JSON.parse(fs.readFileSync(input)) : null;
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const freezeFile = 'artifacts/review/083-shadow-source-hashes.json', frozen = JSON.parse(fs.readFileSync(freezeFile));
 for (const [file, expected] of Object.entries(frozen)) assert.equal(hash(file), expected, file);
-const sources = ['scripts/capture-spring-sector-candidate.mjs', 'scripts/lib/spring-sector-candidate.mjs',
+const sourceFiles = [...(input ? [input, 'scripts/lib/spring-sector-dynamics.mjs', 'scripts/lib/spring-sector-mass.mjs'] : []),
+  'scripts/capture-spring-sector-candidate.mjs', 'scripts/lib/spring-sector-candidate.mjs',
   'scripts/lib/spring-sector-source.mjs', 'scripts/lib/spring-sector-contact.mjs', 'scripts/lib/spring-sector-linkage.mjs',
   'scripts/lib/spring-rack-coil.mjs', 'tests/helpers/solid-surface.mjs', 'src/simulation/engine.js', 'src/simulation/finite-plate-geometry.js',
-  'src/simulation/primitives.js', 'artifacts/reference/brown-083-detail.png'].map((file, i) => {
+  'src/simulation/primitives.js', 'artifacts/reference/brown-083-detail.png'];
+if (dynamics) {assert.equal(dynamics.failures.length, 0); for (const source of dynamics.sources) assert.equal(hash(source.file), source.sha256, source.file);}
+const sources = sourceFiles.map((file, i) => {
   const archive = prefix + '-source-' + i + '.txt'; fs.copyFileSync(file, archive, fs.constants.COPYFILE_EXCL);
   return {file, archive, sha256: hash(file)};
 });
@@ -20,7 +25,7 @@ page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => {if (['warning', 'error'].includes(m.type())) warnings.push(m.text());});
 try {
   await page.goto('http://127.0.0.1:5174/#/about');
-  await page.evaluate(async () => {
+  await page.evaluate(async ({input}) => {
     const {MovementEngine} = await import('/src/simulation/engine.js');
     const {default: catalog} = await import('/src/data/movements.json');
     const {makeSpringSectorCandidate} = await import('/scripts/lib/spring-sector-candidate.mjs');
@@ -31,16 +36,28 @@ try {
     cancelAnimationFrame(e.animationFrame); e.animationFrame = 0; e.scene.remove(e.model.root);
     e.model.root.traverse(o => {o.geometry?.dispose(); if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material?.dispose();});
     e.model = makeSpringSectorCandidate(); e.scene.add(e.model.root); e.updateGroundClearance();
-    window.springSectorCandidate = {engine: e, contact: makeSpringSectorContact(e.model)};
-  });
-  for (const [name, direction, shaftAngle] of [['source', [0, 0, 10], 0], ['source-overlay', [0, 0, 10], 0],
-    ['oblique', [4, 3, 10], 0], ['rear', [-4, 3, -10], 0], ['negative-angle', [0, 0, 10], -.22],
-    ['positive-angle', [0, 0, 10], .22], ['guide-detail', [1, 0, -1], 0]]) {
-    const state = await page.evaluate(async ({name, direction, shaftAngle}) => {
+    const data = input ? await (await fetch('/' + input)).json() : null;
+    const physics = data ? (await import('/scripts/lib/spring-sector-dynamics.mjs')).makeSpringSectorDynamics(e.model, data.parameters) : null;
+    window.springSectorCandidate = {engine: e, contact: makeSpringSectorContact(e.model), data, physics};
+  }, {input});
+  const frames = [['source', [0, 0, 10], 0, .25], ['source-overlay', [0, 0, 10], 0, .25],
+    ['oblique', [4, 3, 10], 0, .25], ['rear', [-4, 3, -10], 0, .75], ['negative-angle', [0, 0, 10], -.22, 0],
+    ['positive-angle', [0, 0, 10], .22, .5], ['guide-detail', [1, 0, -1], 0, .25],
+    ...(input ? [.125, .375, .625, .875, 1].map(phase => ['cycle-' + phase, [0, 0, 10], 0, phase]) : [])];
+  for (const [name, direction, shaftAngle, phase] of frames) {
+    const state = await page.evaluate(async ({name, direction, shaftAngle, phase}) => {
       const {THREE: {Vector3, OrthographicCamera}} = await import('/scripts/lib/spring-sector-candidate.mjs');
-      const {engine: e, contact} = window.springSectorCandidate; document.querySelector('#overlay')?.remove();
-      const wheelAngle = .07233930452344918, lifts = [0, 1].map(side => contact.seat(shaftAngle, wheelAngle, side, {lower: -.06, upper: .18}).lift);
-      e.model.setState({shaftAngle, wheelAngle, lifts}); e.fitCamera(new Vector3(...direction)); let camera = e.camera;
+      const {engine: e, contact, data, physics} = window.springSectorCandidate; document.querySelector('#overlay')?.remove();
+      let supplied, row;
+      if (data) {
+        const time = data.rows.at(-1).time - data.parameters.period + phase * data.parameters.period;
+        row = data.rows.reduce((a, b) => Math.abs(a.time - time) < Math.abs(b.time - time) ? a : b);
+        supplied = {shaftAngle: physics.input(row.time).q, wheelAngle: row.x[0], lifts: row.x.slice(1)};
+      } else {
+        const wheelAngle = .07233930452344918;
+        supplied = {shaftAngle, wheelAngle, lifts: [0, 1].map(side => contact.seat(shaftAngle, wheelAngle, side, {lower: -.06, upper: .18}).lift)};
+      }
+      e.model.setState(supplied); e.fitCamera(new Vector3(...direction)); let camera = e.camera;
       if (name.startsWith('source')) {
         const p = e.model.root.userData.source, h = Math.max(1250, 1120 * 720 / 726) / p.scale, w = h * 726 / 720;
         const cx = (560 - p.center[0]) / p.scale, cy = (p.center[1] - 625) / p.scale;
@@ -58,9 +75,9 @@ try {
         overlay.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.5;mix-blend-mode:multiply';
         document.querySelector('#stage').append(overlay); await overlay.decode();
       }
-      document.querySelector('#title').textContent = '083 · seated geometry study · ' + name;
-      return e.model.root.userData.state;
-    }, {name, direction, shaftAngle});
+      document.querySelector('#title').textContent = '083 · ' + (data ? 'contact dynamics' : 'seated geometry') + ' study · ' + name;
+      return {...e.model.root.userData.state, ...(row ? {time: row.time, x: row.x, v: row.v} : {})};
+    }, {name, direction, shaftAngle, phase});
     const file = prefix + '-' + name + '.png'; assert(!fs.existsSync(file)); await page.screenshot({path: file});
     views.push({file, name, direction, state, sha256: hash(file), inspected: false});
   }
@@ -74,7 +91,7 @@ try {
   const classifiedWarnings = warnings.map(text => ({text, reason: knownWarnings.find(w => w.pattern.test(text))?.reason ?? null}));
   const unexpectedWarnings = classifiedWarnings.filter(w => !w.reason);
   fs.writeFileSync(prefix + '-captures.json', JSON.stringify({movement: 83, productionChanged: false, mechanicsPassed: false,
-    sources, freezeFile, frozenProductionInputsMatched: Object.keys(frozen).length, views, errors, classifiedWarnings, unexpectedWarnings}, null, 2) + '\n', {flag: 'wx'});
+    input, sources, freezeFile, frozenProductionInputsMatched: Object.keys(frozen).length, views, errors, classifiedWarnings, unexpectedWarnings}, null, 2) + '\n', {flag: 'wx'});
   console.log({views: views.length, errors, classifiedWarnings, unexpectedWarnings});
   assert.equal(errors.length, 0); assert.equal(unexpectedWarnings.length, 0);
 } finally {await browser.close();}

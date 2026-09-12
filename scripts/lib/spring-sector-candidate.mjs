@@ -64,7 +64,7 @@ export function makeSpringSectorCandidate() {
       'shaft', PALETTE.muted, [0, guideOffset, plane]);
     attach(name + 'CarrierBridge', new THREE.BoxGeometry(.30, .055, .18), 'shaft', PALETTE.muted, [0, -.008 + guideOffset, plane - sign * .21]);
     for (const [i, x] of [-.09, .09].entries()) {
-      const localBack = -guideZ + sign * .038, localFront = sign * .05;
+      const localBack = -guideZ + sign * .038, localFront = sign * depth / 2;
       const boss = clip.difference(poly([[x - .045, localFront], [x + .045, localFront], [x + .045, localBack], [x - .045, localBack]]),
         poly(circle([x, -guideZ], .018, 64)));
       const housing = attach(name + 'SliderHousing' + i, plate(boss, -.39 + guideOffset, -.27 + guideOffset), name, color);
@@ -98,14 +98,17 @@ export function makeSpringSectorCandidate() {
   // Flat normals on individual faces preserve the wedge corners. Each tooth
   // is a closed six-vertex prism; there are no bevels enlarging contact faces.
   for (let i = 0; i < wheelTeeth; i++) {
-    const a = crownPhase + i * wheelPitch, b = a + wheelPitch * .94;
+    // On the visible front half, the high edge is on the left and the long
+    // ramp descends toward +X, as in D in the engraving. This lets the front
+    // sector's steep face drive the wheel during the positive shaft stroke.
+    const a = crownPhase - i * wheelPitch, b = a - wheelPitch * .94;
     const q = (r, angle, y) => [r * Math.cos(angle), y, r * Math.sin(angle)];
     const vertices = [q(wheelInnerRadius, a, wheelTop), q(wheelOuterRadius, a, wheelTop),
       q(wheelInnerRadius, b, wheelTop), q(wheelOuterRadius, b, wheelTop),
       q(wheelInnerRadius, a, wheelTop + toothHeight), q(wheelOuterRadius, a, wheelTop + toothHeight)];
     const indices = [0, 2, 3, 0, 3, 1, 4, 5, 3, 4, 3, 2, 0, 1, 5, 0, 5, 4, 0, 4, 2, 1, 3, 5];
-    // Swapping the original axial-Z and radial-Y coordinates reverses handedness.
-    for (let j = 0; j < indices.length; j += 3) [indices[j + 1], indices[j + 2]] = [indices[j + 2], indices[j + 1]];
+    // The descending angular order and the Y-axis mapping reverse handedness
+    // twice, so these faces are already outward-wound.
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices.flat(), 3)); geometry.setIndex(indices);
     const flat = geometry.toNonIndexed(); geometry.dispose(); flat.computeVertexNormals();
@@ -113,7 +116,9 @@ export function makeSpringSectorCandidate() {
   }
   const hub = attach('wheelHub', ring(24 / scale, 88 / scale, (source.center[1] - 1012) / scale, wheelBottom, 128), 'wheel', PALETTE.driven);
   hub.rotation.x = -Math.PI / 2;
-  const axle = attach('outputAxle', disk(23 / scale, (source.center[1] - 1155) / scale, wheelTop - .005, 128), 'fixed', PALETTE.muted);
+  // The output axle turns with D. Its matching 128-sided hub bore provides
+  // the fixed joint; the wheel body's finer bore has a small chord clearance.
+  const axle = attach('outputAxle', disk(24 / scale, (source.center[1] - 1155) / scale, wheelTop - .005, 128), 'wheel', PALETTE.muted);
   axle.rotation.x = -Math.PI / 2;
   const setState = ({shaftAngle = 0, wheelAngle = 0, lifts = [0, 0]} = {}) => {
     if (lifts.some(lift => lift < -.06 || lift > .18)) throw Error('Sector guide travel exceeded');

@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **replacement seating and guide geometry checked; contact dynamics pending**.
+Status: **free contact dynamics studied; backlash and final qualification pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -108,7 +108,7 @@ production inputs still match the shadow-fix map; the prior build and 3,100-test
 result therefore apply to unchanged production. The finer 082 settling job
 continues independently. Neither candidate is integrated.
 
-## Finite seating, spring guides and input closure
+## Prior finite seating, spring guides and input closure
 
 The latest candidate separates each moving sector from the hub fast on B.
 Two parallel radial rods guide each sector through bored slider housings;
@@ -168,9 +168,69 @@ Evidence is `083-strict-finite-seating.json`, `083-lowered-guided-seat-solids.js
 `083-first-guide-poses.json`, `083-guided-candidate-captures.json`, its inspection
 record and `083-guided-candidate-checkpoint.json`. Source and failure archives
 are retained. All 904 production inputs and the 41 saved 082 study sources
-remain unchanged. **083 still needs free-wheel/sector dynamics, force and energy
-checks, continuous clearance, supports, final rendering and playback before
-integration.** The finer 082 settling process remains active independently.
+remained unchanged at that checkpoint. The following dynamics stage supersedes
+the crown direction, axle-family assignment and sampled seating values here.
+The finer 082 settling process was still active at this earlier checkpoint.
+
+## Free wheel and radial sector dynamics
+
+The candidate now integrates the output wheel angle and both sector lifts.
+Only shaft input is prescribed. Actual mesh mass and inertia, gravity,
+ideal massless compression springs and bearing damping determine free motion;
+unilateral finite-tooth contact supplies impulses. Startup is seated once.
+Later sector positions are not reset to a static seating solution.
+
+The first dynamic run exposed the crown ramps facing opposite to the engraving
+and produced backward net motion. Reversing the crown ramps corrects that
+geometry; all 38 teeth remain closed and outward-wound. The output axle now
+turns with wheel D and fits its matching hub bore. Guide housings meet their
+plates at faces, removing a small overlapping volume before deriving mass.
+
+The finite-contact routine now supplies analytic shaft and wheel derivatives
+from its actual separating-axis features. All **256 derivative comparisons**
+at 128 nonuniform poses agree with central differences within 5.024e-10.
+An early height exclusion preserves the prior algorithm's lifts, body bounds
+and pair counts exactly on the same current geometry. These checks do not yet
+qualify feature transitions or the contact normal cone.
+
+Independent integration of the actual tetrahedron vertex velocities and
+heights checks both radial force equations at 32 free states. Maximum force
+discrepancy is 4.318e-9; wheel inertia agrees within 1.422e-13. This checks free
+forces and inertia, not contact reactions, guide loads or whole-trajectory
+energy balance. Common material density is normalized to one unit of moving
+sector mass; stiffness and damping remain reconstruction choices.
+
+The corrected crown with a four-second input period still slips substantially,
+advancing only 0.852182 teeth in two cycles. With the same parameters and an
+eight-second period, a 0.004-second-step run advances **15.877151 teeth** in two
+cycles. Its 4,001 states have no rejected or failed steps, with minimum reported
+gap -1.411e-15 world units. However, the wheel still retreats by as much as
+**0.323447 teeth** from a preceding maximum. This remains an exploratory result;
+it does not establish acceptable backlash or a final animation speed. Both
+earlier unsatisfactory dynamic runs are preserved.
+
+For the corrected crown, 117 independent seating poses pass; required lift
+ranges from 0.0124541 to 0.0982033 units, with at least 0.0372785 units above the
+wheel-body plane. Lowering a seated plate by 0.0001 units creates a detected
+penetration, preserving the independent negative control. Nine actual poses
+from the slower trajectory pass the complete distinct-family screen:
+**67 parts, 1,280 pairs, 2,632,342 samples, zero intrusions**. Reassigning the
+output axle to the wheel family accounts for the smaller pair count. These
+samples do not prove continuous clearance or spring self-clearance.
+
+All twelve trajectory renders are inspected, including the registered source
+overlay, both reversals, intermediate states, oblique/rear views and a guide
+close-up. The ordinary input pin stays connected and full-model views retain
+the complete wheel. The unshown guide frame and hub-cover lip still need
+visual refinement; external supporting bearings are absent. The browser
+reports no JavaScript errors or unexpected warnings.
+
+`083-dynamics-checkpoint.json` freezes 20 study dependencies and records the
+force, derivative, seating, dynamics, surface and image evidence. All 904
+production inputs remain unchanged, retaining the previous build and 3,100-test
+result. The replacement is **not integrated**. Contact reactions and feature
+transitions, input/guide loads, trajectory energy, time-step refinement,
+continuous clearance, supports and final playback remain open.
 
 ## Shared framing-marker shadow correction
 

@@ -7,7 +7,49 @@ production. The later framing-marker shadow fix changes only the shared
 shadow helper: 903 of the 904 frozen production files still match the verified
 081 state, and `083-shadow-source-hashes.json` records the updated map.
 
-## Finest reaction/loading audit and longer settling
+## Completed finer settling: refinement and recurrence still fail
+
+The 0.0625 ms continuation has finished the full 12–60 second interval:
+**768,001 states**, zero failed or rejected steps, and an exactly matching
+starting position and velocity from the twelve-second startup. Every stored
+state is finite and all 768,000 time increments match the requested step.
+The 41 previously frozen study sources and all 904 current production inputs
+are unchanged.
+
+The earlier 0.125 ms chunks are joined only after exact boundary-state
+agreement, retaining positions and velocities without their bulky contact
+diagnostics. Comparing both complete trajectories over their union of knots
+finds **0.532806 engraving pixels** maximum displacement difference, on the
+lower pawl near 43.4095 seconds. The wheel and upper-pawl differences are
+0.0864294 and 0.175819 pixels respectively. This **fails the unchanged
+0.25-pixel agreement target**; the successful startup refinement does not
+extend automatically to this longer interval.
+
+Adjacent sixteen-second intervals of the finer run differ by 0.420341 and
+0.386980 pixels. Their near-matching endpoints still do not qualify a repeated
+playback seam. Eight-second recurrence remains rejected, with whole-cycle
+differences increasing from 9.04286 to 9.81822 pixels. No periodic trajectory
+has been exported or integrated.
+
+The long report would exceed V8's single-string limit with the runner's
+original indentation. Before completion, a narrowly guarded inspector action
+changed only this report's native JSON serialization to compact formatting.
+It ran exactly once and the process exited successfully with a 402,448,706-byte
+report. Solver state, data values and source files were unchanged. The exact
+action and guards are retained in `082-sixteenth-ms-compact-output-change.json`
+and `scripts/compact-treadle-study-output.mjs`. A bounded output writer is
+required before another large run; this one-process intervention is not a
+general writer fix. Three identical immutable archive copies now share storage
+after SHA-256 verification; their paths and contents are preserved.
+
+`082-finer-settling-checkpoint.json` records completion, source verification,
+the refinement failure and both recurrence assessments. The new comparison
+utility is `scripts/join-treadle-ratchet-comparison-view.mjs`. Full original
+reports, failed comparisons and earlier evidence remain available locally.
+Final convergence, repeated-motion clearance, playback and integration remain
+open.
+
+## Prior finest reaction/loading audit and longer settling
 
 All **690,558 positive contact reactions** in the 0.03125 ms startup trajectory
 pass independent boundary and normal-cone checks on both bodies (1,381,116
@@ -33,8 +75,8 @@ from 8.70986 to 9.41711 source pixels. Sixteen-second, ten-tooth cycles agree
 much more closely, at 0.258047 and 0.515741 pixels, but do not yet qualify a
 repeat. The largest discrepancy occurs near lower-pawl release and recontact;
 nearly matching endpoint states remain insufficient evidence. A 48-second
-continuation from the same twelve-second initial state is now running at
-0.0625 ms to test the sensitivity to time step.
+continuation from the same twelve-second initial state was launched at
+0.0625 ms to test the sensitivity to time step; its completed result is above.
 
 The new local records are `082-thirtysecond-ms-contact-reactions.json`,
 `082-thirtysecond-ms-linkage-loads.json`,
