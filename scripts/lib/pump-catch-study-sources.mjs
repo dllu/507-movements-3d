@@ -10,6 +10,13 @@ export function verifyPumpCatchStudySources(sources){
   for(const s of sources){
     if(s.archive)assert.equal(hashStudyFile(s.archive),s.sha256,'Retained source: '+s.file);
     const currentSha256=hashStudyFile(s.file);if(currentSha256===s.sha256)continue;
+    if(s.file==='scripts/lib/pump-catch-rope-mesh.mjs'&&s.archive){
+      const before=fs.readFileSync(s.archive,'utf8'),after=fs.readFileSync(s.file,'utf8');
+      assert.equal(after,before.replace('for(let i=1;i<=256;i++){const s=i/256;',
+        'for(let i=1;i<=512;i++){const s=i/512;'),'Only the known massless-rope bow tessellation may differ');
+      reportingChanges.push({file:s.file,archive:s.archive,oldSha256:s.sha256,currentSha256,
+        qualification:'Only the massless display bow changes from 256 to 512 chords. The complete analytic curve, rope force, rigid geometry and physics code are identical.'});continue;
+    }
     assert(s.file==='scripts/study-pump-catch-bounded.mjs'&&s.archive,'Changed physical study input: '+s.file);
     const normalized=file=>{
       return fs.readFileSync(file,'utf8')

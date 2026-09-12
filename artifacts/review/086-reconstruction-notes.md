@@ -445,19 +445,76 @@ is claimed. The sixty-three pump/catch scripts pass syntax checks; all 972
 production inputs, the 23 original core inputs and current 082/083 study
 inputs remain unchanged. All owned studies and browser captures are terminal.
 
+## Refined complete motion and continuous hardware bounds
+
+The full-mass 0.0625 ms run completes sixteen seconds and 256,001 states
+without subdivisions, rejected trials or solver failure. Its comparison with
+the 0.125 ms run passes the unchanged 0.25-pixel target: the maximum observed
+rigid displacement bound is 0.224245599 engraving pixels at 0.346 seconds.
+All 458,526 reactions and 402,798 boundary checks pass. Signed and absolute
+work defects fall to 0.0317165% and 0.0330815%. The failed 0.25/0.125 ms and
+earlier heel-only comparisons remain retained.
+
+Only the massless display bow changes from 256 to 512 chords. An exact source
+comparison permits that one-line change while rejecting altered analytic
+length, winding resolution, bow shape, clamp tangent and unrelated text.
+The repeated 204-pose buffer audit on the 0.125 ms trajectory now measures a
+maximum centerline deficit of 3.613487363e-6 units, below the unchanged
+1e-5 target. Both endpoints remain attached within 1e-6. Analytic rope length,
+force law and rigid geometry are unchanged.
+
+Compression retains 2,596 states and 2,595 linear playback spans. A weighted
+absolute-angle displacement bound limits error against every original knot
+to 0.001999018 pixels; convexity covers the original intervals between knots.
+Each proposed span also passes actual prism-triangle bounds for catch/cam,
+catch/shaft, catch/trip stop, heel, head/shaft, head/trip stop and lug/shaft.
+Sixty-five otherwise accurate spans are split for clearance. The certificate
+contains 6,209,818 certified triangle pairs. Observed step agreement plus
+compression totals 0.226244618 engraving pixels. That total concerns rigid
+coordinates and is not an exact continuum-error or rope-deformation bound.
+Startup is retained; matching states and velocities support repeating the
+settled 0.5–8.5-second interval with an eight-second physical period.
+
+Whole-motion bounds certify the other 629 independent rigid pairs: 597 use
+Cartesian separation, 29 invariant radial ranges, one the actual XZ triangle
+projections and two the winding-band depth slabs. The seven prism pairs above
+complete all 636 independent rigid pairs. Same-family relationships are fixed
+and retain their earlier surface screen. Primary controls reject a collision
+between clear endpoint poses; hardware controls reject closed bearing/guide
+holes, an enlarged band bed and a displaced plinth passage.
+
+Continuous display-rope bounds use linear available-length limits, a monotone
+upper bound for the actual amplitude solve, and 128 slabs aligned with the
+512 bow sections. Actual hardware triangles retain the guide holes and base
+passage. Separate winding-depth, clamp-tangent and ferrule-bore checks cover
+the attachments. All 41 other parts pass. An unmodified rerun passes; isolated
+fixtures filling the plinth passage, crossbar slot and ferrule bore each fail
+on the altered part. These bounds concern the supplied interpolated playback
+and its ideal massless rope, with the documented 1e-6 mesh tolerance.
+
+Five additional rendered views are inspected at 0, 2.69, 7.305, 10.69 and
+16 seconds, covering the initial assembly, both lifts, slack and the oblique
+ending. The three interior frames hide the front bearing for inspection.
+There are no browser errors or unexpected warnings. These are candidate
+stills; interactive playback and production acceptance remain pending.
+
+`086-continuous-hardware-study-checkpoint.json` records the refined reports,
+negative controls and retained earlier failures. It verifies all 972 production
+inputs, the 23 original core sources and the current 082/083 studies unchanged.
+No new production build or full numerical/browser-suite pass is claimed.
+
 ## Remaining work and checkpoints
 
 Qualify the combined input, winding, rope and guided pump hardware. Its
 free-body masses have been recomputed; the rear belt interpretation and
 omitted output hardware remain reconstruction assumptions.
 
-Establish refined agreement for the repeated capture, release and return,
-including cold-start impulses. The omitted load, bearing-loss, hidden-depth
-and winding assumptions still need qualification with the complete hardware;
-the repeating coarse run alone is insufficient. Establish time-step agreement,
-continuous clearance and readable playback. Refine
-the rope tessellation, and integrate only after those checks,
-then validate production.
+The repeated capture, release and return now meet the observed step-agreement
+target, including cold-start seating. Establish display-rope self-clearance
+and deformation sensitivity, then measure readable playback and performance.
+The omitted load, bearing-loss, hidden-depth and winding details remain
+explicit reconstruction assumptions. Integrate the qualified candidate and
+validate production; the combined candidate is not yet marked verified.
 
 `086-first-study-checkpoint.json` records the inspected evidence and frozen
 study sources. All 972 production inputs, 71 current movement 083 sources and

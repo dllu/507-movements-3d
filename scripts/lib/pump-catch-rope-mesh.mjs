@@ -39,7 +39,7 @@ export function pumpCatchRopeCenterline(q,{radius,ropeLength=4.75,z=-.49,arcStep
   // through the hollow ferrule on the crosshead.
   append([B[0],B[1],z],[0,-1,0]);
   append([-radius,cut,z],[0,-1,0]);
-  for(let i=1;i<=256;i++){const s=i/256;append([-radius,cut-bowSpan*s,z+amplitude*Math.sin(Math.PI*s)**2],
+  for(let i=1;i<=512;i++){const s=i/512;append([-radius,cut-bowSpan*s,z+amplitude*Math.sin(Math.PI*s)**2],
     [0,-bowSpan,amplitude*Math.PI*Math.sin(2*Math.PI*s)]);}
   append([...p.pump,z],[0,-1,0]);
   return {points,tangents,amplitude,arcLength,leadLength,verticalLength,

@@ -2883,17 +2883,22 @@ failures remain archived. No new all-507 browser pass is claimed: the last
 attempt timed out after movement 482. See [the 081 review](../artifacts/review/081-reconstruction-notes.md)
 and its local integrated checkpoint.
 
-086 now has a 42-part candidate combining the rear input drive, winding rim,
-attached rope and guided pump rod. The added free-wheel mass is recomputed;
-independent mesh energy/momentum and the loaded coarse force/work checks pass.
-A twenty-pose screen including coordinate extrema covers 704 pairs and
-28,479,142 surface samples without intrusion. Thirty-one new source, section
-and motion images are inspected. The earlier heel-only refinement still
-misses its agreement target, and the rope mesh narrowly misses its centerline
-length target. The full-mass 0.125 ms run passes its force/work audits but
-still differs from the 0.25 ms run by up to 0.317148 engraving pixels against
-the 0.25-pixel target. Further refinement, continuous clearance and production
-integration remain pending. See the [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
+086's complete 42-part candidate now passes its refined dynamics and hardware
+clearance checks. The 0.0625 ms study has 256,001 states; all 458,526 contact
+reactions pass, and its signed/absolute work defects are 0.03172%/0.03308%.
+Observed time-step agreement plus compression totals 0.226244618 engraving
+pixels, within the 0.25-pixel target. This measures rigid-body agreement,
+not exact continuum error or deforming-rope accuracy.
+
+All 2,595 compressed playback spans pass continuous checks for seven prism
+pairs. Whole-motion bounds cover the other 629 independent rigid pairs;
+separate rope bounds cover all 41 surrounding parts, including the winding
+groove, clamp, guide openings and load ferrule. Deliberately blocked openings
+are rejected. Doubling only the display bow's tessellation also resolves the
+earlier rope-length screen failure. Five additional motion views are inspected.
+Earlier failed studies remain archived. Rope self-intersection, readable
+playback, performance and production integration remain pending. See the
+[086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
