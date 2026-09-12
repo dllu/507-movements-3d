@@ -51,7 +51,7 @@ fix changes only the shared shadow helper; 082 remains separate from
 production. Details and limits are in the
 [082 study](../artifacts/review/082-reconstruction-notes.md).
 
-## Movement 083 baseline review — 2026-09-11
+## Movement 083 reconstruction study — 2026-09-11
 
 Six actual baseline views are inspected against the native engraving. The
 existing straight-bar sector and separate spring shoe do not reproduce the
@@ -59,7 +59,15 @@ broad pierced source plate. The prescribed return lift also permits finite
 tooth interference: a 65-pose screen finds 4,632 penetrating samples among
 3,585,304 checks over 1,036 selected pairs, with maximum depth 0.062958 world
 units. This rejects the existing model; no replacement is yet integrated.
-Preliminary joint and plate-outline measurements are recorded in the
+The isolated replacement now has broad pierced plates, rounded openings,
+measured joints and a provisional 12-tooth arc. Source overlays exposed and
+rejected a wheel-edge reading and an extra central tooth in earlier fits.
+All 47 candidate meshes pass topology checks. Its unseated static pose still
+has 62 penetrating samples in 126,530 checks over 298 rigid-family pairs;
+finite contact, spring guides and input closure remain open. Four final
+source/overlay/oblique/rear renders are inspected. The capture check passes
+without JavaScript errors or unexpected warnings. Production is unchanged.
+Measurements, preserved failures and qualification limits are recorded in the
 [083 review](../artifacts/review/083-reconstruction-notes.md).
 
 ## Invisible framing-marker shadows — 2026-09-11

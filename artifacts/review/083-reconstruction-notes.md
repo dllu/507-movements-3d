@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **existing mechanical baseline rejected; reconstruction pending**.
+Status: **existing mechanical baseline rejected; static replacement candidate under review**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -51,6 +51,62 @@ inspection record. The local `083-baseline-checkpoint.json` freezes this
 study against the original 904-input production state. The shared shadow
 correction is the only subsequent production-source change; its updated map
 is `083-shadow-source-hashes.json`.
+
+## Counted sector profile and static candidate
+
+The first radial tooth trace accidentally selected wheel ink at −108° and
+suppressed the adjacent real sector tip. Its overlay is preserved and rejected.
+The corrected mask and bounded stroke widths recover eight clear tips. A
+nearest-pitch fit to those tips alone favors 63 full-circle divisions, but its
+full overlay adds an extra tooth in the obscured center. Inspection of an
+enlarged central crop identifies four intervening sector tips, giving a
+12-tooth arc. Assigning the visible tips ordinals `[0,1,2,7,8,9,10,11]` favors
+57 full-circle divisions. This is a reconstruction choice from the drawing,
+not an original specified tooth count or manufacturing dimension.
+
+A uniform straight-flanked profile fitted to 299 visible radial readings has
+tip/root radii 509.483/487.825 pixels and a short-face angular fraction of
+0.333950. Its radial RMS residual is 5.231 pixels; the maximum is 23.015 pixels.
+The drawing's rounded, uneven strokes and overlap are not reproduced exactly.
+Both the rejected 13-tooth overlay and the revised 12-tooth overlay are inspected
+and preserved. These measurements support a provisional layout, not contact
+qualification.
+
+`scripts/lib/spring-sector-candidate.mjs` builds an isolated static model with
+broad pierced plates, rounded openings, asymmetric teeth, the measured crank
+and ordinary rod eye, and a complete horizontal crown wheel. The hidden rear
+plate has reversed teeth. The 38-tooth crown and its depth follow a provisional
+equal-circular-pitch layout; they remain to be established by finite contact.
+The crown teeth have flat face normals and no enlarging bevels. An initial
+inward-winding error was caught before rendering and corrected; its source
+and diagnostic remain archived.
+
+All **47 finite meshes** are closed, outward-wound and nondegenerate. A static
+screen of all **298 distinct rigid-family pairs** checks **126,530 surface
+samples** and finds **62 intrusions** across ten sector/crown tooth pairs, with
+maximum depth **0.040880 world units**. The arbitrary initial crown phase is
+not seated. No clearance or mechanical pass is claimed. Moving a whole plate
+upward would also require replacing the current circular hub/shaft construction
+with a justified spring guide; the candidate deliberately contains no such
+unqualified animation. Rectilinear input closure and supporting bearings remain
+open as well.
+
+Four candidate renders and four subsequent renders are actually inspected:
+front source comparison, registered overlay, oblique and rear. The broad plate,
+openings, rod slope, wheel envelope and shaft length now follow the source
+closely. Tooth seating, the central outline and rear-plate visibility remain
+unfinished. The initial capture assertion rejected library/driver warnings;
+the final harness removes its duplicate Three import and records the existing
+clock/shadow deprecations and screenshot readback notices explicitly. It passes
+with no JavaScript errors or unexpected warnings.
+
+Local evidence includes `083-corrected-tooth-measurements.json`,
+`083-counted-uniform-profile.json`, `083-tooth-profile-inspections.json`,
+`083-reviewed-candidate-solids.json`, `083-reviewed-candidate-captures.json`,
+their inspection record and `083-static-candidate-checkpoint.json`. All 904
+production inputs still match the shadow-fix map; the prior build and 3,100-test
+result therefore apply to unchanged production. The finer 082 settling job
+continues independently. Neither candidate is integrated.
 
 ## Shared framing-marker shadow correction
 
