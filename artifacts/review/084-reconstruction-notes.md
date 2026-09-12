@@ -1,6 +1,6 @@
 # Movement 084 reconstruction study
 
-Status: **baseline rejected; source layout inspected; reconstruction pending**.
+Status: **finite candidate built and inspected; loaded motion and integration pending**.
 This review began while the finer 083 continuation was running.
 
 The [original description and engraving](https://507movements.com/mm_084.html)
@@ -100,3 +100,86 @@ See `084-rack-face-measurements.json`, `084-rack-face-inspections.json` and
 `084-rack-face-checkpoint.json`. The twelve earlier baseline inputs retain
 their bytes. A source-shaped cam, rack, suspension and wheel, followed by
 contact-derived motion and production integration, remain to be built.
+
+The first finite candidate is now built in `selector-rack-candidate.mjs`,
+outside production. Its seventeen closed solids include the single working
+cam, a complete rear wheel with curved spoke openings, a rack frame with real
+slots, a bored governor yoke with retained pins, two guides with through
+passages, and a connected rear bearing standard. The common axis is set at
+source pixel `[908, 590]`, with 240 pixels per world unit. This is an explicit
+approximation of the independently fitted source circles. The thirteen upper
+faces retain their measured positions. Fourteen lower contours are included;
+faces 10 and 11 use explicit manual estimates where wheel strokes obscure them.
+These provisional profiles have not been accepted for loaded motion.
+
+Both pin shanks have radius 13 source pixels and share source y=389. The real
+slot openings use their white-area edges, with upper boundaries at y=376,
+so the hanging frame meets the tops of the shanks. Their common horizontal
+travel is **−49 to +77 source pixels**. Retaining heads, pin bores, finite
+depths, the rear support and guide passages are reconstruction assumptions.
+The selector's reported vertical limits describe the guide openings only;
+they are not a certified operating range for the cam. The full rear wheel is
+visible through the open suspension slots where the engraving omits hidden
+wheel detail. The front guide walls also obscure short portions of the rod;
+their presentation still needs final review.
+
+The first rack extrusion had eight unmatched mesh edges at the bridges between
+aligned rectangular slots. `conforming-plate-mesh.mjs` splits the two affected
+cap triangles at existing boundary vertices, preserving the contour. The
+control check reproduces this issue with a second aligned-slot fixture and
+leaves a plain rectangle unsplit. The corrected frame has 1,352 triangles,
+the same measured volume, and zero unmatched edges. Its old/new surface
+samples differ by at most 1.098e-9 world units. The original failed topology
+screen and exact input snapshots remain preserved.
+
+The supported candidate passes **2,526,268 bidirectional surface samples**
+over all **99 distinct-family pairs**, at the source pose and 33 neutral cam
+angles. All seventeen meshes are closed and consistently wound, and no
+intrusions exceed 1e-6. This is a sampled screen, not continuous qualification
+of every pair. The six latest browser views, including source overlay,
+oblique, rear and suspension detail, were inspected. The corrected capture
+has no browser errors or unexpected warnings. An earlier capture imported
+Three.js twice and failed its warning check; it is preserved, and the capture
+now uses the candidate's existing Three.js instance.
+
+`selector-rack-contact.mjs` extracts 341 rack and 355 cam cap triangles from
+the actual meshes. Convex separation intervals and their union describe the
+forbidden horizontal rack positions. An independent polygon-intersection
+check agrees at all 3,783 sampled poses: 3,319 clear and 464 overlapping, with
+no excluded near-boundary classifications. At 177 interval endpoints the
+largest polygon intersection area is 7.404e-15 square world units. These
+checks verify sampled geometry, not an inertial contact model.
+
+A separate continuous bound covers the rack against the working cam, both
+hubs, the fixed axle and the rear wheel. Across the entire −49 to +77 pixel
+horizontal range, with the frame between two and four pixels below its source
+position, all 1,352 translated triangle boxes remain outside the rotating
+cam's bounding cylinder. The minimum cam margin, after a 1e-7 allowance, is
+0.00468165 world units (1.12360 source pixels). The rear wheel has a separate
+axial gap. This proves these five pairs clear in that neutral domain for all
+cam angles; it does not certify the remaining hardware pairs through travel.
+The first bound-check attempt used an unavailable Euler conversion method;
+its source and log remain archived, and the completed check reads the three
+rotation components directly.
+
+The first geometric path experiments are **not accepted animation**. Starting
+the lower selection at the drawn rack position exhausts all allowed slot
+positions at cam angle −2.65290 radians, after approximately 48.304 pixels of
+leftward motion. A nearest-allowed-position rule also jumps 49.534 pixels in
+the upper experiment. Moving the lower starting position does not cure the
+failure and introduces larger jumps. Starting the upper case 30 pixels left
+does produce 721 sampled positions over one revolution, advancing 61.119
+pixels, with maximum per-sample correction 0.726 pixels. This remains a
+geometric projection experiment, without inertia, force admissibility,
+continuous contact or governor handoff verification. None of these paths is
+connected to production playback.
+
+The next step is to resolve the governor selection and release using the
+actual slot/pin and cam contacts, including the frame's available vertical
+play. Holding a selection through a complete turn is not a valid universal
+input for this finite travel. `084-finite-candidate-checkpoint.json` records
+the current source hashes, preserved failures and all new evidence.
+The 904 production inputs, 71 existing 083 sources, 43 existing 082 sources
+and thirteen earlier 084 review inputs retain their bytes. No app build,
+production test rerun or production integration is claimed; the full review
+remains active.

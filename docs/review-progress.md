@@ -257,8 +257,23 @@ housing. Preliminary source circles and contour targets are measured and
 inspected. A labeled tooth overlay fits thirteen upper working faces and
 thirteen of fourteen lower candidates; the obscured lower face remains
 unmeasured. The visibly irregular spacing is quantified, and all three new
-source views are inspected. Working profiles and contact motion remain to be
-reconstructed.
+source views are inspected.
+
+084 now has an independent candidate with seventeen closed solids, including
+the single cam, full rear wheel, real suspension slots and retained pins,
+through guides and rear bearing standard. The source pose and 33 neutral
+angles pass 2,526,268 surface samples over all 99 distinct-family pairs.
+Six latest browser views are inspected, with no errors or unexpected warnings.
+An aligned-slot cap triangulation defect was repaired without moving the
+contour; its failed screen and controls are preserved.
+
+The actual mesh contact intervals agree with independent polygon intersections
+at 3,783 poses. A continuous neutral-domain bound clears the rack against the
+cam, hubs, axle and rear wheel across the full horizontal slot range. Selected
+motion remains unresolved: a full-turn lower input exhausts the slot travel,
+and simple nearest-position projection can jump between gaps. Those paths are
+rejected as animation. Governor handoff, frame vertical play, force validation,
+remaining continuous hardware checks and production integration are pending.
 See [the 084 reconstruction record](../artifacts/review/084-reconstruction-notes.md).
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
