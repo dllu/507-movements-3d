@@ -2970,6 +2970,22 @@ remain unchanged. Gravity fall, impact/release behavior and loaded clutch
 reversal still need to connect the two lifting branches. See the
 [087 native contact review](../artifacts/review/087-native-contact-notes.md).
 
+087 now has timed unilateral lift/release/gravity-flight trajectories in both
+directions, ending just before the opposite slot end transfers momentum to the
+fixed shifter. Native component masses provide variable linkage inertia and
+gravity; independent rendered-transform checks verify those quantities. Five
+time-step levels reach 175,251 finest states, with absolute energy defects of
+0.06061% forward and 0.02893% on return. A separate finer study resolves the
+initial return release and recontact instead of smoothing away its facet event.
+
+All sixteen selected hardware poses pass 24,409,000 native surface samples,
+and the active stud/G pair receives independent exact polygon checks. Twelve
+new still views are inspected; both partial timed previews finish without
+browser errors. The full clutch transition, continuous clearance, source
+fidelity and final playback speed remain unresolved. The existing factories
+and all 1,097 frozen production inputs remain unchanged. See the
+[087 inertia and first-flight review](../artifacts/review/087-first-flight-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.

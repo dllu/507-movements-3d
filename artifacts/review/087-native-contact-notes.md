@@ -107,7 +107,7 @@ Local evidence is indexed by `087-native-contact-checkpoint.json`:
 - `087-native-lifting-captures.json` and `087-native-lifting-inspections.json`
   preserve the thirteen rendered views and their assessments.
 
-The next mechanical work is to connect these lifting branches through
+The next mechanical work at this checkpoint was to connect these lifting branches through
 unilateral contact, inertia, gravity, the free slot travel and loaded clutch
 reversal. Contact release and impact behavior must follow that solution;
 positive geometric leverage alone cannot prescribe a valid timed motion.
@@ -116,3 +116,8 @@ remain pending. The original 087 factories, all 1,097 frozen production inputs
 and the 082/083 study sources remain unchanged. No new production build,
 full-suite test or all-507 browser pass is claimed. The complete review remains
 active.
+
+The subsequent [inertia and first-flight study](087-first-flight-notes.md)
+now supplies unilateral lift, release and gravity flight in both directions,
+ending just before each opposite slot-end impact. Loaded shifter/clutch
+reversal and source fidelity remain unresolved.
