@@ -5,13 +5,13 @@ import {pumpCatchRopeCenterline} from './lib/pump-catch-rope-mesh.mjs';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 import {verifyPumpCatchStudySources} from './lib/pump-catch-study-sources.mjs';
 
-const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-rope-agreement',coarseFile=process.env.PROBE_COARSE??'artifacts/review/086-complete-eighth-ms.json.gz',
-  fineFile=process.env.PROBE_FINE??'artifacts/review/086-complete-sixteenth-ms.json.gz',compressedFile=process.env.PROBE_SKIP_COMPRESSION==='1'?null:'artifacts/review/086-first-compressed-motion.json',
-  coarse=readLargeRowStudyReport(coarseFile),fine=readLargeRowStudyReport(fineFile),compressed=compressedFile?readStudyReport(compressedFile):null,
+const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-rope-agreement',coarseFile=process.env.PROBE_SKIP_STEP==='1'?null:(process.env.PROBE_COARSE??'artifacts/review/086-complete-eighth-ms.json.gz'),
+  fineFile=process.env.PROBE_FINE??'artifacts/review/086-complete-sixteenth-ms.json.gz',compressedFile=process.env.PROBE_SKIP_COMPRESSION==='1'?null:(process.env.PROBE_COMPRESSED??'artifacts/review/086-first-compressed-motion.json'),
+  coarse=coarseFile?readLargeRowStudyReport(coarseFile):null,fine=readLargeRowStudyReport(fineFile),compressed=compressedFile?readStudyReport(compressedFile):null,
   R=fine.parameters.radius,r=.0625,L=fine.parameters.ropeLength,weights=Array.from({length:257},(_,i)=>(i===0||i===256?1:i%2?4:2)/768),
   sin=weights.map((_,i)=>Math.sin(2*Math.PI*i/256)),thetaMax=.178,minimumLeadSpeed=.25*Math.cos(thetaMax),
   leadCoefficient=R+1/12+r*(3*R*Math.sin(thetaMax)+.25)/minimumLeadSpeed;
-verifyPumpCatchStudySources(coarse.sources);verifyStudySources(fine.sources);if(compressed)verifyStudySources(compressed.sources);
+if(coarse)verifyPumpCatchStudySources(coarse.sources);verifyStudySources(fine.sources);if(compressed)verifyStudySources(compressed.sources);
 // Independent scalar evaluation of the same positive-weight quadratures.
 // The reference mesh routine below checks this evaluator at selected poses.
 function fields(q){
@@ -36,8 +36,9 @@ for(let i=0;i<fine.rows.length;i+=2048){
   const row=fine.rows[i],f=fields(row.q),m=pumpCatchRopeCenterline(row.q,{radius:R,ropeLength:L}),error=Math.abs(f.A-m.amplitude);
   assert(error<2e-7,'Independent quadrature amplitude agreement');reference.push({time:row.time,amplitudeError:error,leadError:Math.abs(f.lead-m.leadLength)});
 }
-const comparisons=[{name:'time-step',data:coarse,maximumPixels:0,worst:null,maximumFrontPixels:0,frontWorst:null},
+const comparisons=[...(coarse?[{name:'time-step',data:coarse,maximumPixels:0,worst:null,maximumFrontPixels:0,frontWorst:null}]:[]),
   ...(compressed?[{name:'compression',data:compressed,maximumPixels:0,worst:null,maximumFrontPixels:0,frontWorst:null}]:[])];
+assert(comparisons.length,'At least one comparison is required');
 for(const comparison of comparisons){
   const rows=comparison.data.rows;let index=1;
   for(let i=0;i<fine.rows.length;i++){
@@ -52,7 +53,7 @@ for(const comparison of comparisons){
   }
   delete comparison.data;
 }
-const sources=freezeStudySources([coarseFile,fineFile,'scripts/lib/large-row-study-reader.mjs',...(compressedFile?[compressedFile]:[]),'scripts/study-pump-catch-rope-agreement.mjs',
+const sources=freezeStudySources([...(coarseFile?[coarseFile]:[]),fineFile,'scripts/lib/large-row-study-reader.mjs',...(compressedFile?[compressedFile]:[]),'scripts/study-pump-catch-rope-agreement.mjs',
   'scripts/lib/pump-catch-rope-mesh.mjs','scripts/lib/pump-catch-rope.mjs','scripts/lib/pump-catch-study-sources.mjs','scripts/lib/study-report-io.mjs'],prefix);
 verifyStudySources(sources);const report={movement:86,passed:comparisons.every(c=>c.maximumPixels<.25),comparisons,reference,sources,leadCoefficient,
   qualification:'Diagnostic surface-displacement bounds at every finest trajectory knot. The pass flag retains the full 3D 0.25-pixel target; projected front-view errors are reported separately. Bow centers use height/amplitude differences and circular-section rotation uses the atan slope Lipschitz bound. Upper lead uses Bernstein control-point and tangent bounds. This does not yet bound nonlinear display differences between time knots, Float32 rounding or changes in arc tessellation.'};

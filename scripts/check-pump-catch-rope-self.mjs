@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {pumpCatchRopeSelfBounds} from './lib/pump-catch-rope-self-bounds.mjs';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
-const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-complete-rope-self-bounds',input='artifacts/review/086-first-rope-controls-baseline.json',
+const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-complete-rope-self-bounds',input=process.env.PROBE_INPUT??'artifacts/review/086-first-rope-controls-baseline.json',
   data=readStudyReport(input),R=1.2730796995674873,r=.0625,
   parameters={R,r,thetaMin:data.qRange[0][0],thetaMax:data.qRange[0][1],Dmin:data.Dmin,Dmax:data.Dmax,amplitudeMax:data.amplitudeMax,
     quietDmin:3.7-data.qRange[2][1]-1e-10,quietAmplitudeMax:data.quietAmplitudeMax};

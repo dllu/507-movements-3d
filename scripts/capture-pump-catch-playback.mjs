@@ -4,8 +4,8 @@ import {chromium} from 'playwright';
 import {readStudyReport,freezeStudySources,verifyStudySources,hashStudyFile} from './lib/study-report-io.mjs';
 import {pumpCatchCompleteSources} from './lib/pump-catch-complete-sources.mjs';
 
-const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-playback',input='artifacts/review/086-first-compressed-motion.json',data=readStudyReport(input),
-  hardwareFile='artifacts/review/086-refined-hardware-bounds.json',ropeFile='artifacts/review/086-first-rope-controls-baseline.json',
+const prefix=process.env.PROBE_PREFIX??'artifacts/review/086-first-playback',input=process.env.PROBE_INPUT??'artifacts/review/086-first-compressed-motion.json',data=readStudyReport(input),
+  hardwareFile=process.env.PROBE_HARDWARE??'artifacts/review/086-refined-hardware-bounds.json',ropeFile=process.env.PROBE_ROPE??'artifacts/review/086-first-rope-controls-baseline.json',
   hardware=readStudyReport(hardwareFile),rope=readStudyReport(ropeFile),sources=freezeStudySources([input,hardwareFile,ropeFile,
     'scripts/capture-pump-catch-playback.mjs','scripts/lib/pump-catch-playback.mjs','scripts/lib/pump-catch-live-rope.mjs',
     'scripts/lib/pump-catch-indexed-hardware.mjs',...pumpCatchCompleteSources,'src/simulation/engine.js'],prefix),live=process.env.PROBE_LIVE==='1',indexed=process.env.PROBE_INDEXED==='1';

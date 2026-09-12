@@ -2883,34 +2883,28 @@ failures remain archived. No new all-507 browser pass is claimed: the last
 attempt timed out after movement 482. See [the 081 review](../artifacts/review/081-reconstruction-notes.md)
 and its local integrated checkpoint.
 
-086's complete 42-part candidate now passes its refined dynamics and hardware
-clearance checks. The 0.0625 ms study has 256,001 states; all 458,526 contact
-reactions pass, and its signed/absolute work defects are 0.03172%/0.03308%.
-Observed time-step agreement plus compression totals 0.226244618 engraving
-pixels, within the 0.25-pixel target. This measures rigid-body agreement,
-not exact continuum error or deforming-rope accuracy.
+086's complete 42-part candidate now passes its motion, force, energy,
+repeat-state and continuous-clearance checks. The fine study has 371,396 states;
+all 728,394 reactions and 170,952 smooth stages pass, with signed/absolute work
+defects of 0.09676%/0.09680%. The corrected coarse study also completes. The
+final display profile contains 4,988 poses and retains startup before repeating
+the settled cycle at four display seconds per input revolution.
 
-All 2,595 compressed playback spans pass continuous checks for seven prism
-pairs. Whole-motion bounds cover the other 629 independent rigid pairs;
-separate rope bounds cover all 41 surrounding parts, including the winding
-groove, clamp, guide openings and load ferrule. Deliberately blocked openings
-are rejected. Doubling only the display bow's tessellation also resolves the
-earlier rope-length screen failure. Five additional motion views are inspected.
-Earlier failed studies remain archived. Rope self-clearance now has continuous
-section-plane and cell-orientation bounds. An exact buffer/index optimization
-reduces p95 model updates from 6.1 to 1.5 ms; the isolated four-second preview
-runs at 22.6 fps on SwiftShader and has ten inspected baseline/final stills.
-Full 3D rope agreement exposes contact-timing sensitivity, so a separate hybrid
-solver trial is refining those events. Its initial failed convergence and
-intermediate-gap checks remain retained. Production integration is pending. See the
+All 4,987 playback intervals pass the seven primary contact-pair bounds.
+Whole-motion bounds cover the other 629 independent rigid pairs, and separate
+rope bounds cover all 41 surrounding parts plus self-clearance. Across all
+392,236 common numerical/display intervals, combined step/compression bounds
+stay below 0.25 engraving pixels: 0.018694353 for rigid parts and 0.249935584
+for the actual polygonal rope, including mesh and Float32 allowances. These
+compare supplied numerical profiles; they do not establish exact continuum
+error. Failed intermediate bounds and their sources remain archived.
+
+Ten refreshed views are inspected. With the numerical jobs stopped, the final
+preview measures 22.48 fps and 1.9 ms p95 model updates on SwiftShader, with no
+browser errors. The candidate is ready for production integration and its
+parity, regression and integrated rendering checks. All 972 frozen production
+inputs remain unchanged. See the
 [086 reconstruction review](../artifacts/review/086-reconstruction-notes.md).
-
-The refined hybrid run now completes 371,396 states and passes its force, energy
-and repeat-state checks. All 728,394 reactions and 170,952 smooth stages pass.
-A bounded reproduction identifies repeated mode switching
-when a cam reaction becomes zero at an almost seated face. A geometric-contact
-guard resolves that local case without changing the forces. The new full coarse
-run is active; fresh motion agreement and clearance qualification remain pending.
 
 087's initial source review finds a definite driver-axis mismatch: the model's
 vertical input shaft produces an upper edge-on cone, while the engraving shows

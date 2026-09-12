@@ -615,20 +615,71 @@ The seam itself matches to 3.886e-16 in coordinates and 4.219e-15 in velocity.
 Compression now uses this timestamp matching, but has not yet run on the new
 trajectory. Its full clearance and rope-deformation checks remain required.
 
+## Combined continuous motion qualification
+
+The geometric-mode coarse study finishes all 16 seconds with 187,668 states
+and no solver failures. The completed fine trajectory remains the display
+reference. Their finest-knot displacement bounds are 0.018609346 pixels for
+the rigid apparatus and 0.175018238 pixels for the full 3D rope. Both pass;
+the different integration-mode selectors retain the same physical geometry,
+forces, loads and unilateral contact solver.
+
+The first hybrid compression retains 2,582 poses. Its rope comparison exposes
+0.030239400 pixels near take-up, so the final compression tightens the rigid
+tolerance to 0.0005 pixels and retains 4,988 poses. All 4,987 playback intervals
+pass continuous separation for the seven primary prism pairs. Renewed bounds
+cover the other 629 independent rigid pairs and all 41 rope/hardware pairs.
+The renewed self-clearance bound includes both the large slack bow and the
+raised quiet bow. Actual mesh checks at 204 poses give a maximum polygonal
+rope-length deficit of 3.61436e-6, below 1e-5.
+
+The new deformation bound covers the actual polygonal tube between time knots.
+On wrapped intervals the available slack is linear in the pose coordinates.
+A bound on the second derivative of the unwound lead quadrature covers
+unwrapped and crossing intervals. Monotone extra-length solves bound amplitude
+and section orientation. Fixed lead/bow connectivity extends vertex bounds to
+triangle interiors; a separate arc interpolation and triangulation allowance
+covers changing winding-section counts. Small suppressed arcs and Float32
+rounding are included. Controls compare independent amplitudes and 7,392,025
+actual mesh vertices at 305 poses, and reject invalid domains.
+
+The first interval attempt fails because its quiet-bow lower bound is always
+zero, even at an almost constant positive amplitude. Independent quadratic
+upper/lower bounds resolve that excessive width. A second attempt retains a
+separate 0.025-pixel compression allocation and fails near take-up. Both failed
+reports, traces and their exact source snapshots remain preserved. The final
+check sums step-agreement and compression bounds on each common interval and
+applies the original combined 0.25-pixel target. This accounts for the fact
+that their largest differences occur at different instants; it changes neither
+the target nor the supplied motion.
+
+All 392,236 common intervals pass. The rope proof uses 393,481 accepted
+subintervals, with maximum summed displacement 0.249935584 pixels. A separate
+convex weighted-angle/translation proof covers the entire rigid motion, with
+maximum summed displacement 0.018694353 pixels. These bounds compare the
+supplied numerical/display profiles; they are not exact continuum-error
+guarantees. The full rope trace is retained.
+
+Ten additional source, lift, oblique-slack and loop-seam views are inspected
+across two captures of the final profile. The first capture overlaps numerical
+jobs and measures 12.67 fps with 3.4 ms p95 updates. Once those jobs finish,
+the final capture measures 22.48 fps and 1.9 ms p95 updates over 12.233 seconds.
+Both use SwiftShader at pixel ratio two and have no browser errors or unexpected
+warnings. The input revolution still takes four display seconds. No hardware
+GPU measurement or new production browser acceptance is implied.
+
+The complete candidate now has qualified source geometry, finite-contact
+motion, force/work/repeat evidence, continuous rigid and deforming-rope bounds,
+and inspected rendering. `086-qualified-motion-checkpoint.json` records the
+accepted reports and retained failures. Production integration remains pending.
+
 ## Remaining work and checkpoints
 
-Qualify the combined input, winding, rope and guided pump hardware. Its
-free-body masses have been recomputed; the rear belt interpretation and
-omitted output hardware remain reconstruction assumptions.
-
-The repeated capture, release and return now meet the observed step-agreement
-target, including cold-start seating. Display-rope self-clearance and an
-isolated playback/performance baseline are now recorded. Resolve full 3D
-deformation sensitivity through refined contact-event timing, then renew the
-force, work, compression and continuous-clearance evidence for that trajectory.
-The omitted load, bearing-loss, hidden-depth and winding details remain
-explicit reconstruction assumptions. Integrate the qualified candidate and
-validate production; the combined candidate is not yet marked verified.
+Integrate the qualified complete candidate, establish exact geometry and motion
+parity in production, then run the focused and regression checks and inspect
+the integrated desktop/mobile rendering. The omitted load, bearing-loss,
+hidden-depth, rear input and winding details remain explicit reconstruction
+assumptions. Movement 086 is not yet marked verified in production.
 
 `086-first-study-checkpoint.json` records the inspected evidence and frozen
 study sources. All 972 production inputs, 71 current movement 083 sources and
