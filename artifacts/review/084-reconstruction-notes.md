@@ -74,3 +74,29 @@ full 507 review remain open.
 scripts and their dependencies. It records the five evidence reports and
 confirms that all 904 production inputs, 71 current 083 study sources and 43
 current 082 study sources retain their bytes.
+
+The next source pass labels the short working faces individually. All thirteen
+upper faces have enough isolated ink readings for a line fit. Fourteen lower
+face candidates are labeled; thirteen can be fitted, while lower face 10 is
+obscured and has too few isolated readings. Lower faces 7 and 11 also border
+rear-wheel strokes and remain flagged for reconstruction review. The full
+overlay and both native-resolution row crops were inspected. These observations
+do not establish a fourteen-tooth repeating lower-rack design.
+
+Uniform-spacing fits give 62.5096 pixels for the upper row and 52.7524 pixels
+for the lower row. Their RMS residuals are 10.9315 and 5.3180 pixels,
+respectively, so neither row should be treated as a precision uniform rack
+traced directly from this drawing. Individual working-face line fits have RMS
+residuals below 0.786 pixels. Mean tooth depths from manual endpoint heights
+are 36.3846 pixels above and 29.7143 pixels below. These are source measurements,
+not adopted contact profiles or mechanical tolerances.
+
+`scripts/measure-selector-rack-teeth.mjs` records the seeds, bounded stroke
+readings, missing rows, line fits and spacing residuals. Its initial attempt
+asserted that every face had enough readings and stopped before writing a
+report; that exact source and failure are preserved. The completed script
+leaves an obscured face unfitted instead of supplying a guessed measurement.
+See `084-rack-face-measurements.json`, `084-rack-face-inspections.json` and
+`084-rack-face-checkpoint.json`. The twelve earlier baseline inputs retain
+their bytes. A source-shaped cam, rack, suspension and wheel, followed by
+contact-derived motion and production integration, remain to be built.

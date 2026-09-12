@@ -1118,3 +1118,40 @@ The 71 existing 083 study sources and production inputs remain unchanged.
 The 084 engraving review has started independently while this run continues.
 `083-thirtysecond-start-checkpoint.json` records the verified first-cycle
 trajectory, four passing reports, unchanged sources and the live continuation.
+
+## Complete 0.03125 ms second cycle
+
+The continuation recorded above has now completed successfully. It has 260,288
+accepted intervals, no failed steps, 4,423 rejected trials and 1,348.63 seconds
+of integration time. Its 239,447,984 decoded bytes occupy 30,393,195 compressed
+bytes. The exact carried state joins the first cycle into 520,868 states over
+sixteen seconds. Complete guided clearance and energy checks pass; the
+normalized energy residual is 2.102e-11.
+
+The 0.0625 ms versus 0.03125 ms comparison over both complete cycles **fails
+at 6.925184 pixels**, across 786,477 union knots. The first 0.25-pixel crossing
+is at 12.69978125 seconds. The finer run catches front tooth 25 from
+12.693915649 to 12.693930664 seconds, about **15.015 microseconds**. The
+0.0625 ms run misses that contact. The finer run next reaches tooth 26 at
+12.723107666 seconds. This reproduces the earlier pattern of a small state
+difference preceding a different brief contact; simply halving the base step
+has not established agreement of the complete history.
+
+A focused independent spatial audit covers all 2,292 consecutive intervals
+from approximately 12.67 to 12.74 seconds, including that catch and the next
+tooth engagement. All **2,864 reactions and 5,728 boundary checks pass**.
+Maximum point-force Jacobian error is 1.111e-15 and discrete momentum residual
+is 1.336e-14. This validates those recorded reactions, not the complete
+trajectory's accuracy or its transitions between saved states. A full spatial
+audit at this resolution remains unperformed.
+
+The failure, onset diagnostic and focused audit are preserved in
+`083-packed-clock-tenth-us-sixteen-thirtysecond-refinement.json`,
+`083-packed-clock-tenth-us-thirtysecond-divergence.json` and
+`083-packed-clock-thirtysecond-graze-reactions.json`.
+`083-thirtysecond-complete-checkpoint.json` verifies the producer's decoded
+byte count and hash, all supporting reports and unchanged inputs. All jobs
+started for this continuation and its checks have finished. The 71 existing
+083 study sources, 43 current 082 sources and 904 production inputs retain
+their bytes. No production integration, repeated-playback qualification or
+new app/browser test pass is claimed. The full review remains active.

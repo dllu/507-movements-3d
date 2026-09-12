@@ -239,8 +239,14 @@ integration and the full review remain open.
 
 The complete 0.03125 ms first cycle now finishes without failed steps and
 agrees with 0.0625 ms within 0.00154025 pixels. Its guided clearance and energy
-audits pass; its second cycle continues from its own exact final state.
-The first-cycle result does not resolve the earlier longer-motion failures.
+audits pass. Its second cycle has also completed, with guided clearance and
+energy checks passing. The complete sixteen-second comparison still fails at
+6.925184 pixels. The finer history catches tooth 25 for about 15 microseconds;
+the 0.0625 ms history misses that catch. All 2,864 reactions in a focused audit
+around this event pass independent boundary, normal and moment checks. These
+results do not resolve motion refinement or qualify production integration.
+All continuation and checker jobs have finished; the 71 existing 083 sources
+and 904 production inputs remain unchanged.
 
 084's baseline is also rejected. The source has a single projecting cam in
 front of a large wheel with curved spokes; the baseline has a four-lobed cam and a
@@ -248,7 +254,11 @@ small wheel with straight spokes. Its suspension slots are overlays on a solid
 housing. Eight baseline views are inspected, and 6,427,516 finite-surface
 checks find 27,333 penetrating samples, including both pins entering the
 housing. Preliminary source circles and contour targets are measured and
-inspected; working profiles and contact motion remain to be reconstructed.
+inspected. A labeled tooth overlay fits thirteen upper working faces and
+thirteen of fourteen lower candidates; the obscured lower face remains
+unmeasured. The visibly irregular spacing is quantified, and all three new
+source views are inspected. Working profiles and contact motion remain to be
+reconstructed.
 See [the 084 reconstruction record](../artifacts/review/084-reconstruction-notes.md).
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
