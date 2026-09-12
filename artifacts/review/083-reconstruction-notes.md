@@ -813,3 +813,125 @@ No app build or browser capture was needed for this isolated study change.
 sources. All study jobs are terminal at this checkpoint. The full 507 review
 remains active; longer motion accuracy, repeated playback and final support
 and rendering review remain open.
+
+## Variable-step second-order history
+
+The preceding turn made progress: it established exact contact-kernel parity,
+first-cycle agreement and a separate failure during the second cycle. Current
+source hashes and terminal process handles were checked before continuing.
+
+The equal-step solver's finer sixteen-second schedule contains 3,106
+backward-Euler intervals larger than the 1 us event window. Those intervals
+total 0.135338 seconds and arise while rebuilding equal-step history after
+events. An isolated variable-step variant now retains quadratic history as
+the interval changes, with growth bounded by two. For the ratio `r = dt/oldDt`,
+the history increment is `r*r/(1+2*r)` times the previous state difference,
+and the force/velocity weight is `dt*(1+r)/(1+2*r)`. Contact changes and two
+stable small intervals still use backward Euler. Meshes, physical parameters,
+contact constraints and continuous-solid certificates are unchanged.
+
+Analytic controls check unequal-step quadratic motion and moving-contact
+reactions at four ratios, reject excessive growth, and recover second-order
+oscillator refinement. On a deliberately uneven one-second free-fall schedule,
+position error decreases from 0.0343912 to 1.069e-11 world units. Plastic
+stopping completes within 0.611 us without a rebound. Immediate-release error
+still depends on finite event resolution and halves when that resolution
+halves. These controls do not establish the actual mechanism's accuracy.
+
+The new 0.25 ms full cycle has 35,336 intervals, including 711 backward-Euler
+intervals, all at or below the event resolution. The 0.125 ms cycle has 67,058
+intervals. Their comparison **passes at 0.00136539 engraving pixels** over
+101,902 union knots. Complete guided clearance passes for both. Independent
+spatial audits pass 64,012 reactions at 0.25 ms and 122,630 at 0.125 ms.
+
+The energy and reaction checkers now reconstruct the unequal-step weights.
+The signed velocity, spring and energy-history exchanges retain their original
+interpretation. Uneven-step oscillator and impact energy identities pass, and
+every backward-Euler interval matches the old energy audit exactly. Normalized
+energy residual decreases from 8.004e-10 to 1.988e-10 with the finer base step.
+
+The original equal-step 0.0625 ms cycle also finishes, preserving that separate
+experiment. It has 129,678 states and agrees with 0.125 ms within 0.0510740
+pixels. This is another first-cycle comparison; it does not qualify its longer
+motion or replace the new variant's evidence.
+
+## Longer variable-step motion and remaining grazing sensitivity
+
+Both new trajectories continue through sixteen seconds with exact carried
+states and explicit small numerical-history restarts at eight seconds. The
+joined histories have 70,575 and 134,689 states. Their comparison still
+**fails at 7.399579 pixels**, over 204,769 union knots. The largest difference
+is the front-sector lift near 13.682968 seconds; the wheel and rear-sector
+bounds reach 4.317025 and 4.655317 pixels. First-cycle improvement therefore
+does not qualify the longer motion.
+
+The new onset diagnostic places the first 0.1-pixel crossing near 12.69625
+seconds and the 0.25-pixel crossing near 12.69975. The coarser trajectory briefly
+catches front tooth 25 from 12.693913 to 12.694130 seconds, before reaching tooth
+26 at 12.722846. The finer trajectory misses that brief contact and reaches
+tooth 26 at 12.702802. This identifies the first large separation as a grazing
+contact-history difference; it does not establish whether event timing, earlier
+integration error or another solver tolerance dominates the approach error.
+
+Complete guided clearance covers all 134,688 finer intervals, 1,384 independent
+pairs and four spring wires across the two segments. The second segment's
+energy audit passes with a normalized residual of 2.658e-10. Its 117,543
+reactions and 235,086 boundary checks also pass, bringing the finer sixteen-
+second history to **240,173 independently checked reactions**. These audits
+retain the failed motion comparison and do not claim periodicity.
+
+Twelve new diagnostic source, overlay, oblique, rear, guide and phase renders
+are inspected. The measured outlines and ordinary-pin closure remain aligned,
+and the full wheel and separated spring-guided sectors are visible. Small gray
+guide-frame fragments remain visible at the opening tops; support presentation
+and timed playback are still unfinished. The capture has no page errors or
+unexpected warnings. Its single browser is closed. The capture and separate
+inspection records are `083-variable-bdf-motion-captures.json` and
+`083-variable-bdf-motion-inspections.json`.
+
+A 0.25 ms first-cycle trial with a 0.1 us event window exposed the step-growth
+stall described below. `083-variable-bdf-checkpoint.json` records the earlier
+state with 56 frozen study sources. All 904 production inputs and
+43 treadle study sources remain unchanged. Completed immutable TXT archive
+copies were consolidated after SHA verification, including small 082/083
+copies. Original files, JSON, images and logs retain their bytes.
+No app build or production test rerun is claimed for these isolated changes.
+The full 507 review and 083's remaining mechanical and visual work stay active.
+
+## Clock round-off in the growth check
+
+The 0.1 us trial continued consuming CPU after its log stopped advancing near
+two seconds. Inspection of the owned process found stable contact history,
+not a failed physical step: 190,658 stable intervals had accumulated at a
+61.03515625 ns requested step. Subtraction of adjacent stored times represents
+that step as 61.0351560404 ns. A proposed double step consequently has ratio
+2.00000000687, beyond the integrator's purely relative growth allowance. Each
+attempt to grow was split again, indefinitely retaining the tiny step.
+
+Before stopping the diagnosed run, all 303,989 accepted states, rejected
+trials, continuous certificates and source metadata were copied while it was
+paused. The complete prefix reaches 2.022250427 seconds. Its lossless gzip
+snapshot is 38,039,165 bytes, representing 304,717,641 uncompressed bytes;
+streamed decompression reproduces the byte count and SHA exactly. Only after
+that verification was the owned process terminated (session 12607, exit 143).
+No saved state or source was edited. See
+`083-variable-bdf-tenth-us-live-inspection.json`,
+`083-variable-bdf-tenth-us-stall-snapshot.json` and the referenced compressed
+prefix. This incomplete trace is preserved as failed study evidence.
+
+A separate clock-aware variant adds an absolute allowance based on the spacing
+of the time stamps to the nominal growth limit of two. An independent hard
+ratio cap of 2.001 keeps the homogeneous history multiplier below 0.801.
+The actual unequal-step equations are unchanged. The saved blocking predicate
+is reproduced; translated-clock free-fall controls at 2, 4, 8 and 16 seconds
+now need 16 intervals instead of 8,193–16,384. Twelve accepted-step comparisons
+are exactly equal to the previous variant. The original variant and all its
+completed evidence remain unchanged.
+
+The corrected 0.25 ms / 0.1 us first-cycle trial is running in session 92271,
+Node PID 6179, with output/log prefix `083-clock-bdf-tenth-us-full-quarter-ms`.
+Its 21 source archives are verified. This does not yet qualify the trial's
+motion or extend the previous auditors' fixed ratio tolerances to the finer
+event scale. `083-clock-bdf-checkpoint.json` records 60 frozen study sources,
+the preserved stopped prefix, controls and this pending run. The full 507 goal
+remains active.

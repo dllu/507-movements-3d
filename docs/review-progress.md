@@ -58,7 +58,7 @@ fix changes only the shared shadow helper; 082 remains separate from
 production. Details and limits are in the
 [082 study](../artifacts/review/082-reconstruction-notes.md).
 
-## Movement 083 reconstruction study — 2026-09-11
+## Movement 083 reconstruction study — updated 2026-09-12
 
 Six actual baseline views are inspected against the native engraving. The
 existing straight-bar sector and separate spring shoe do not reproduce the
@@ -174,6 +174,30 @@ second-cycle integration error also remains unresolved.
 Motion refinement and playback qualification remain open. All 904 frozen
 app inputs, 43 treadle study sources and 40 prior 083 study sources remain
 unchanged; the prior steppers and evidence are preserved.
+
+The next isolated variant retains second-order history when the time step
+changes, with growth bounded by two. Analytic uneven-step motion, contact and
+energy controls pass. First-cycle agreement improves to **0.00136539 pixels**
+between 0.25 ms and 0.125 ms. Both cycles pass complete guided clearance,
+spatial reactions and the updated energy audit. The separate original 0.0625 ms
+cycle also passes its first-cycle comparison at 0.0510740 pixels.
+
+The new sixteen-second comparison still **fails at 7.399579 pixels**. Near
+12.694 seconds one trajectory briefly catches tooth 25 while the other misses
+it and reaches tooth 26. Both finer segments retain complete clearance and
+passing energy audits; all 240,173 reactions pass independent spatial checks.
+Twelve new source/motion stills are inspected without page errors or unexpected
+warnings.
+
+Ten times finer event timing exposes a round-off bug in the variable-step
+growth guard: a nominal double step is repeatedly halved because nearby stored
+time stamps lose subtraction precision. The complete 303,989-state prefix is
+preserved in a verified lossless snapshot before the diagnosed run is stopped.
+A separate corrected guard accounts for clock spacing and retains a hard
+growth cap. Analytic controls reduce 8,193–16,384 intervals to 16, with twelve
+exact accepted-step comparisons. The corrected finer-event trial is running.
+The 60 current study sources are frozen, production is unchanged, and repeated
+playback and final support presentation remain unqualified.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
