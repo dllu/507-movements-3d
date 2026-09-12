@@ -4,6 +4,29 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
+## Movement 086 reconstruction study — 2026-09-12
+
+086's baseline is rejected. Its rounded cam and circular contact pads have
+essentially zero shaft-axis torque arm, despite reporting near-zero contact
+error. Its finite screen finds 588,297 penetrating samples among 18,820,946
+checks over 136 poses and 1,162 independent pairs. The source proportions and
+front bearing standard also differ substantially from the existing model.
+
+The initial replacement follows measured wheel and pin circles, a manually
+traced hooked catch, pointed cam and pierced front standard. Thirteen core
+solids pass topology checks. All 56 independent core pairs pass a diagnostic
+34-pose surface screen; this prescribed sweep is not solved dynamics. Ten
+baseline views, seven candidate views, both source images and a measurement
+overlay are inspected. The candidate's principal contours closely overlay
+the source.
+
+Actual finite cam/hook contact seats after 3.146 degrees of clockwise cam
+rotation and has a usable clockwise torque arm. Both boundary normal cones
+and clear/penetrating controls pass. Rope, pump loading, rear input apparatus,
+release dynamics, continuous clearance and integration remain pending.
+All 972 production inputs remain unchanged. See the
+[086 study](../artifacts/review/086-reconstruction-notes.md).
+
 ## Movement 085 rebuilt and verified — 2026-09-12
 
 085's baseline is rejected for its oversized fan-shaped cams, spherical
@@ -2799,7 +2822,7 @@ and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084 and 085 are verified.
-082 and 083 are under reconstruction; final mechanical qualification remains pending.
+082, 083 and 086 are under reconstruction; final mechanical qualification remains pending.
 The complete 507-movement review remains active.**
 
 ## Completion requirements
