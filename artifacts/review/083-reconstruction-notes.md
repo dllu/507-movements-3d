@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **continuous tooth clearance established in the study; refinement and remaining hardware still pending**.
+Status: **complete candidate clearance established; motion refinement and loading still pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -340,12 +340,61 @@ Its comparison with the finer fixed-step reference differs by 3.05519 source
 pixels. Continuous clearance is therefore established separately from
 numerical accuracy; this is not accepted final playback.
 
-Two finer runs, at maximum steps of 0.00025 and 0.000125 seconds, are underway
-with the same continuous check enabled. `083-continuous-contact-checkpoint.json`
-records the completed evidence, frozen study sources and live process handles.
-The candidate remains outside production. Whole-hardware clearance, spring
-self-contact, numerical convergence, backlash, input/guide loads, energy,
-supports, repeated playback and final rendering still require qualification.
+The finer runs at maximum steps of 0.00025 and 0.000125 seconds have now
+finished with 32,001 and 64,001 states, no rejected trials and no failed steps.
+Both pass continuous tooth clearance. Their free-coordinate disagreement is
+**0.947596 source pixels**, failing the unchanged 0.25-pixel target. The wheel
+advances 8.105902 and 8.090721 teeth respectively. The failure is retained in
+`083-continuous-eighth-ms-refinement.json`. Clearance does not establish motion
+accuracy; the candidate remains outside production.
+
+## Complete candidate hardware and spring clearance
+
+`scripts/check-spring-sector-hardware.mjs` bounds all **1,198 secondary pairs**
+over the full guide travel `[-0.06, 0.18]`, shaft angles `[-0.22, 0.22]` and
+arbitrary wheel rotation. Most parts separate by bounds in the common shaft
+frame or by height above the wheel. The remaining checks use actual projected
+triangles for the shaft's swept notch, four round slider bores, input pin bore
+and eight guide-window pairs. The rod's ordinary-pin linkage supplies its
+angular bound. Correlated spring/slider motion retains the moving seat plane;
+the wire stays outside the guide rod's cylinder.
+
+The minimum hardware bound is **-2.012e-7 world units**, within the 1e-6
+tolerance and its explicit rounding allowance. The near-zero values are the
+intended spring-seat contacts. A guide rod deliberately shifted by 0.02 units
+fails its housing-bore check. Independently transforming the rendered vertices
+at 45 extreme/interior poses confirms the enclosing bounds. The verified
+report is `083-hardware-verified-travel-bounds.json`.
+
+`scripts/check-spring-sector-coils.mjs` covers self-clearance of all four
+identical finite wires over the same full travel. Their centerline spans
+range from 0.042 to 0.282 units. Polar-angle bounds separate nearby cells;
+neighboring cells stay on opposite sides of their shared section plane.
+Interval determinants preserve local surface orientation, including Float32
+rounding. The proof coordinates and side-face winding match the actual indexed
+wire; maximum coordinate discrepancy is 1.482e-8 units. Separate-turn tube
+bounds examine 400,960 parameter-interval pairs and retain a **0.0006693-unit
+margin** at maximum compression. All 52 sampled wire states remain closed,
+outward oriented and nondegenerate. See `083-coil-verified-travel-bounds.json`.
+
+`scripts/check-spring-sector-clearance.mjs` verifies source hashes, exhaustive
+pair accounting, trajectory containment in the hardware domain, and complete
+primary interval accounting. It combines the 1,198 secondary bounds with
+76 sector/crown and six sector/body-plane pairs. The current 0.125 ms study
+therefore has continuous clearance for **all 1,280 distinct-family pairs and
+four spring self-surfaces through all 64,000 intervals**. The minimum primary
+bound is -9.99993e-7 units; the plate/body margin is 0.0355393 units. This applies
+to the current candidate and its exact interpolation law, including its
+explicit hidden-guide construction assumption. It does not qualify missing
+supports or a future playback path.
+
+`083-complete-candidate-clearance.json` records that combined check.
+`083-hardware-clearance-checkpoint.json` freezes the completed evidence and
+records the next refinement and spatial-reaction audit. Numerical convergence,
+backlash, input/guide loads, energy, supports, repeated playback and final
+rendering still require qualification. All 904 production inputs and 43
+current 082 study sources remain unchanged; no new browser/build pass is
+claimed for these isolated study checks.
 
 ## Shared framing-marker shadow correction
 

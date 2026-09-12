@@ -96,13 +96,26 @@ recomputes both half steps without reseating a sector. The known failure
 passes independent repaired-motion surface and reaction checks. A full
 eight-second run now bounds both complete sector/crown pairs across 8,048
 accepted intervals, and all 14,981 recorded reactions pass the spatial audit.
-Other hardware, convergence and the remaining reversal are still unqualified.
-Two finer runs with this continuous check are in progress.
+The finer 0.25 ms and 0.125 ms runs also finish without crossings, but differ
+by 0.947596 source pixels and fail the 0.25-pixel motion-agreement target.
+
+New full-travel bounds cover all 1,198 secondary hardware pairs, including
+the round pin/slider bores, guide windows and spring seats. A deliberately
+misaligned guide rod is rejected. Continuous local-cell and separate-turn
+bounds establish self-clearance for all four finite spring wires; 52 sampled
+wire states remain closed and outward oriented. The combined checker verifies
+all 1,280 distinct-family pairs and spring self-clearance across the finest
+run's 64,000 intervals within 1e-6 world units. Sources, exhaustive pair counts
+and trajectory containment in the bounded domain match. This qualifies the
+current candidate's clearance, including its assumed hidden guides.
+Motion refinement, remaining reversal, loads, supports and final playback
+are still pending. The next finer run and finest spatial-reaction audit are
+in progress; 083 remains outside production.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.
 The later midpoint failure establishes the limits of that sampled evidence.
-Refinement, guide loads, continuous clearance and final playback remain open.
+Refinement, guide loads and final playback remain open.
 The capture check passes without JavaScript errors or unexpected warnings.
 Production is unchanged.
 Measurements, preserved failures and qualification limits are recorded in the
@@ -2562,7 +2575,7 @@ and its local integrated checkpoint.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080 and 081 are verified.
-082 is under reconstruction; final mechanical qualification remains pending.
+082 and 083 are under reconstruction; final mechanical qualification remains pending.
 The complete 507-movement review remains active.**
 
 ## Completion requirements
