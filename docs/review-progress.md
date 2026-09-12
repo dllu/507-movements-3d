@@ -85,10 +85,19 @@ It is rejected for playback.
 Starting from a checked static gravity/spring equilibrium removes the large
 startup divergence. Two step sizes now advance about 8.12 teeth per cycle,
 but still differ by 4.19131 pixels and retain about 0.23 teeth of retreat.
-The completed 0.0005-second-step run reduces the refinement difference to
-1.703677 pixels; a 0.00025-second-step run is in progress. The corrected-start study also has
+The completed 0.0005- and 0.00025-second-step runs reduce the refinement
+differences to 1.703677 and 0.451570 pixels, still above the target. The corrected-start study also has
 twelve inspected source/motion renders, without browser errors or unexpected
 warnings. No final motion is accepted or integrated.
+
+A new continuous finite-solid bound finds 21 missed crossings in the previous
+0.0005-second trajectory. The integrator now rejects crossing trials and
+recomputes both half steps without reseating a sector. The known failure
+passes independent repaired-motion surface and reaction checks. A full
+eight-second run now bounds both complete sector/crown pairs across 8,048
+accepted intervals, and all 14,981 recorded reactions pass the spatial audit.
+Other hardware, convergence and the remaining reversal are still unqualified.
+Two finer runs with this continuous check are in progress.
 
 For the earlier sampled trajectory, all 67 meshes pass topology checks at nine poses;
 2,632,342 surface samples across 1,280 distinct-family pairs find no intrusion.

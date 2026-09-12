@@ -1,6 +1,6 @@
 # Movement 083 reconstruction study
 
-Status: **startup equilibrium corrected in the study; refinement and continuous clearance still fail**.
+Status: **continuous tooth clearance established in the study; refinement and remaining hardware still pending**.
 The separate shared shadow correction below changes rendering only. This
 study began while the finer movement 082 settling run continued.
 
@@ -274,8 +274,11 @@ Wheel retreat remains 0.215674 and 0.231829 teeth. These runs are not qualified
 for final playback. The 0.0005-second-step run subsequently completed all
 16,001 states without failed or rejected steps, advancing 8.100822 teeth.
 Its comparison with 0.001 seconds reduces the maximum difference to
-**1.703677 pixels**, still above the unchanged target. A 0.00025-second-step
-run is now in progress; its source files are frozen while it runs.
+**1.703677 pixels**, still above the unchanged target. The subsequent
+0.00025-second-step run completed 32,001 states, advancing 8.105902 teeth with
+no failed or rejected solver steps. Its comparison with 0.0005 seconds reduces
+the discrepancy to **0.451570 pixels**, which still fails the target. These
+fixed-step runs do not have the continuous contact protection introduced below.
 No default physics or geometry was changed to
 force the result, and the replacement remains separate from production.
 
@@ -289,8 +292,60 @@ not overrule the refinement or continuous-path failures.
 
 `083-equilibrium-start-checkpoint.json` records the initial evidence;
 `083-equilibrium-refinement-checkpoint.json` records the completed 0.0005-second
-run and next refinement. Continuous clearance, converged motion, backlash, input/guide loads,
+run and the then-pending refinement. Converged motion, backlash, input/guide loads,
 trajectory energy, supporting bearings and final app playback remain open.
+
+## Continuous primary clearance and step rejection
+
+`scripts/lib/spring-sector-sweep.mjs` now bounds both complete sector/crown
+pairs throughout each interpolation interval. It uses the actual 479 convex
+plate cells per side and 38 crown wedges. Fixed-axis endpoint separations are
+reduced by analytic second-derivative chord bounds for wheel rotation, exact
+sinusoidal shaft input and linear radial lift. A separate height bound keeps
+each plate above the wheel body. The world-space tolerance remains 1e-6, with
+an additional 1e-10 arithmetic allowance. Other hardware and spring
+self-contact are outside this certificate.
+
+The check reproduces the independently confirmed coarse intrusion and rejects
+a whole-turn rotation whose endpoints appear identical. Finite-state guards
+reject invalid input. Applying it to the complete previous 0.0005-second run
+finds **21 penetrating intervals**. That failure is preserved in
+`083-equilibrium-half-ms-continuous-sweep.json`; clearer endpoint poses and
+smaller fixed steps alone did not remove all crossings.
+
+The new `scripts/study-spring-sector-continuous-dynamics.mjs` rejects a trial
+when the continuous bound fails, then integrates both halves from their
+carried states using the unchanged implicit contact equations. It never
+replaces a state with a geometric seat. The known coarse failure is repaired
+with five accepted steps instead of one: 0.002, 0.0005, 0.00025, 0.00025 and
+0.001 seconds. Their primary geometry is continuously bounded. Independent
+mesh checks at all ten endpoints/midpoints total **3,188,220 samples with no
+intrusion above tolerance**. All eight contact reactions and the discrete
+momentum check also pass.
+
+A complete eight-second cycle with maximum step 0.001 seconds now has
+**8,048 accepted intervals**, 48 clearance-driven rejections and no failed
+steps. All **292,979,392** sector-cell/crown-wedge interval pairs are accounted
+for by the bounds and exclusions. The minimum certified separation is
+-9.99995e-7 units, within tolerance; the plate remains at least 0.0355550 units
+above the wheel-body plane. The geometry path uses linear free-coordinate
+interpolation and the exact prescribed shaft law; this certificate must be
+re-established if a future playback changes that path.
+
+All **14,981 positive reactions** in that full run pass the independent spatial
+audit, including 29,962 boundary/normal-cone checks. No contact is missing and
+no guide stop is loaded. The maximum discrete momentum residual is 7.846e-12.
+The run advances 8.103779 teeth and still retreats by up to 0.226850 teeth.
+Its comparison with the finer fixed-step reference differs by 3.05519 source
+pixels. Continuous clearance is therefore established separately from
+numerical accuracy; this is not accepted final playback.
+
+Two finer runs, at maximum steps of 0.00025 and 0.000125 seconds, are underway
+with the same continuous check enabled. `083-continuous-contact-checkpoint.json`
+records the completed evidence, frozen study sources and live process handles.
+The candidate remains outside production. Whole-hardware clearance, spring
+self-contact, numerical convergence, backlash, input/guide loads, energy,
+supports, repeated playback and final rendering still require qualification.
 
 ## Shared framing-marker shadow correction
 
