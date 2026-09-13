@@ -3328,6 +3328,22 @@ averages 37.58 fps. See the [094 reconstruction](mujoco-094-variable-crank.md).
 ideal radial guide and soft-contact tolerances; clamping and subsequent crank
 operation are not simulated.
 
+095 now uses MuJoCo contact between the inclined disk and a passive fork-held
+roller, with the rod constrained by an ideal vertical guide. The input shaft
+alone is actuated. Fitted disk faces have 0.4392/0.5289-pixel line RMS; measured
+shaft and rod outlines replace the previous proportions. The disk's broken
+left edge is completed, and a radial axle with real fork/wheel bores replaces
+the detached spherical shoe. The roller interpretation, source corrections,
+hidden hub, upper guide and wall depth are disclosed.
+Fifteen selected tests, eleven production browser tests and the build pass.
+Ten turns have at most 0.00388 source pixel of native soft penetration; timestep
+differences remain below 0.024 pixel in rod height and 0.384 pixel at the roller
+rim. Thirty-three poses pass 1,324,642 independent surface samples with only
+bounded roller/disk contact. Fourteen final views are inspected and live playback
+averages 59.69 fps. See the [095 reconstruction](mujoco-095-inclined-disk.md).
+095 is verified within its stated roller interpretation, ideal bearing/guide
+constraints and soft-contact tolerances.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3335,6 +3351,7 @@ operation are not simulated.
 092 is verified as a MuJoCo reconstruction with ideal pins and guides.
 093 is verified as a MuJoCo reconstruction with ideal guides and stated slot clearance.
 094 is verified for radius adjustment with an ideal guide and stated bolt/slot fits.
+095 is verified with a reconstructed roller, ideal bearings/guide and stated contact limits.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

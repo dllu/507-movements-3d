@@ -10,6 +10,7 @@ const physicsFactories = {
   92: () => import('./mujoco-crank-slider/visual.js').then(module => module.makeMujocoCrankSlider),
   93: () => import('./mujoco-scotch-yoke/visual.js').then(module => module.makeMujocoScotchYoke),
   94: () => import('./mujoco-variable-crank/visual.js').then(module => module.makeMujocoVariableCrank),
+  95: () => import('./mujoco-inclined-disk/visual.js').then(module => module.makeMujocoInclinedDisk),
 };
 
 export async function loadMovementModel(movement) {
