@@ -9,6 +9,7 @@ const options = JSON.parse(process.env.PROBE_OPTIONS ?? '{}'), seconds = Number(
 const started = performance.now(), v = makeMujocoSpringRatchet(await loadMujoco(),options), {model,data,joints} = v.physics;
 const initial = v.sync(), rows = [], counts = {'B-A':0,'C-A':0,'B-C':0};
 const sourceHashes = Object.fromEntries(['scripts/lib/mujoco-spring-ratchet-candidate.mjs',
+  'scripts/lib/spring-ratchet-traced-profile.mjs',
   'scripts/lib/spring-pressed-ratchet-source.mjs','scripts/lib/spring-pressed-ratchet-elastic.mjs',
   'src/simulation/finite-plate-geometry.js','src/simulation/mujoco-treadle/collision.js',
   'src/simulation/mujoco/simulation.js','scripts/probe-mujoco-spring-ratchet.mjs','package-lock.json']

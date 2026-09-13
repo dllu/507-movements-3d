@@ -3201,6 +3201,17 @@ obliquely cut end. Nine candidate views are inspected. Source end reconstruction
 complete hardware, refinement and acceptable indexing remain open; production
 073 is unchanged. See the [073 dynamic study](mujoco-073-spring-study.md).
 
+The next 073 checkpoint replaces the ideal repeated ratchet in the isolated
+candidate with ten separately traced cubic flanks (0.6542-pixel pooled RMS on
+800 reserved readings), and gives C an obliquely cut finite end without its
+added round tab. The source overlay and nine dynamic views are inspected.
+Three cycles advance 3.03253 nominal teeth, but rollback still reaches 0.65645
+tooth. Six poses have 51 closed solids and no topology errors across 2,310,564
+surface samples; six directed contact findings reach 0.02782 source pixels
+of overlap. The cut location and axial construction remain assumptions. B's end,
+complete hardware, refinement and acceptable indexing remain open; this is
+source-reconstruction progress, not a finished 073 migration.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
