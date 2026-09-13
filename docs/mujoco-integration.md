@@ -45,6 +45,10 @@ cover the measured axis offset, full lever, ideal sliding contact and quick-retu
 Movement 101 uses a hanging slotted lever to drive a passive horizontal bar.
 Its [source fit and contact checks](mujoco-101-slotted-bar.md) cover the completed
 handle, bored guides, small slot correction and extended bar end.
+Movement 102 uses matching helical threads to drive the axial travel of a
+rotating nut on a fixed bolt. Its [source reconstruction and contact checks](mujoco-102-screw.md)
+cover the corrected helix slope, complete square threads, conical hexagon
+chamfers, running clearance and nut section view.
 
 ## Shared runtime
 
@@ -228,3 +232,17 @@ differences below 0.03574 pixel. All sixteen final views are inspected and
 playback averages 60.00 fps. The small slot widening, extended bar, completed
 handle, symmetric drive and ideal frictionless bearings are explicit assumptions.
 The production build and all seventeen MuJoCo browser checks pass.
+
+The 102 migration passes 22 selected mechanism/runtime/camera/catalog tests.
+Complete helical thread contact drives a passive axial nut slide, with a
+150.3503-pixel stroke over five turns in each direction. The engraving's
+exaggerated thread slope is corrected while retaining pitch and diameter.
+Ten cycles retain the nut, with native penetration below 0.04170 pixel and
+31 poses passing 5,629,476 independent finite-surface checks without
+intersections. Compiled contact-sector error is below 0.04687 pixel; timestep
+and sector refinements change travel by less than 0.11256 and 0.07867 pixel.
+All eighteen final views are inspected and real-time headless playback
+averages 28.37 fps. The build and all eighteen MuJoCo browser checks pass;
+102 passes again after the final shadow-map adjustment. The fixed bolt,
+ideal coaxial alignment, 0.3-pixel running clearance, frictionless contact
+and reversing input are explicit reconstruction assumptions.

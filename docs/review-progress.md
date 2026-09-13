@@ -3430,6 +3430,24 @@ ideal bearings remain reconstructed; see the
 [101 reconstruction](mujoco-101-slotted-bar.md).
 The production build and all seventeen MuJoCo browser checks pass.
 
+102 now uses matching solid helical threads in MuJoCo: rotation of the nut
+drives its passive axial slide on a fixed bolt. The head and nut match sampled
+source edges within 1.145 and 1.462 pixels RMS. The engraving's exaggerated
+diagonal slope is corrected to a single-start helix while retaining pitch,
+diameter and drawn direction; the corresponding crest edges differ by
+5.863 pixels RMS and 11.726 pixels maximum. Complete square threads, true
+conical hexagon chamfers and a nut section view replace the earlier tube
+threads and added guide frame. Twenty-two selected tests pass. Ten complete
+cycles retain the nut and keep native soft penetration below 0.04170 pixel;
+31 poses pass 5,629,476 finite-surface checks without intersections. Contact
+sector error remains below 0.04687 pixel and timestep travel differences below
+0.11256 pixel. All eighteen final views are inspected and real-time headless
+playback averages 28.37 fps. The production build and all eighteen MuJoCo
+browser checks pass, with the 102 check repeated after the final shadow
+adjustment. The fixed bolt, ideal coaxial alignment, zero friction,
+0.3-pixel clearance and twelve-second reversing drive are explicit
+assumptions; see the [102 reconstruction](mujoco-102-screw.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3444,6 +3462,7 @@ The production build and all seventeen MuJoCo browser checks pass.
 099 is verified with a corrected spiral, passive free roller and inferred reversing drive.
 100 is verified with measured crank/lever geometry, frictionless wrist contact and ideal bearings.
 101 is verified with a corrected slot, passive guided bar and an inferred symmetric lever swing.
+102 is verified with matching square threads, ideal coaxial alignment and stated clearance and friction limits.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

@@ -17,6 +17,7 @@ const physicsFactories = {
   99: () => import('./mujoco-spiral-feed/visual.js').then(module => module.makeMujocoSpiralFeed),
   100: () => import('./mujoco-quick-return/visual.js').then(module => module.makeMujocoQuickReturn),
   101: () => import('./mujoco-slotted-bar/visual.js').then(module => module.makeMujocoSlottedBar),
+  102: () => import('./mujoco-screw/visual.js').then(module => module.makeMujocoScrew),
 };
 
 export async function loadMovementModel(movement) {

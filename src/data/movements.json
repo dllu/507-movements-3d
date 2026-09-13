@@ -1054,7 +1054,7 @@
       "title": "Common Screw Bolt and Traveling Nut",
       "description": "102. Common screw bolt and nut; rectilinear motion obtained from circular motion.",
       "category": "Screws & threads",
-      "archetype": "single-start-right-hand-screw-nonrotating-traveling-nut",
+      "archetype": "single-start-screw-rotating-traveling-nut",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_102.html"
     },
