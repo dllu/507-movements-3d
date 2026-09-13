@@ -13,7 +13,7 @@ const sourceHashes = Object.fromEntries(['scripts/lib/mujoco-spring-ratchet-cand
   'scripts/lib/spring-pressed-ratchet-source.mjs','scripts/lib/spring-pressed-ratchet-elastic.mjs',
   'src/simulation/finite-plate-geometry.js','src/simulation/mujoco-treadle/collision.js',
   'src/simulation/mujoco/simulation.js','src/simulation/mujoco/beam.js',
-  'src/simulation/mujoco/beam-surface.js',
+  'src/simulation/mujoco/beam-surface.js','src/simulation/mujoco/plate-contact.js',
   'scripts/probe-mujoco-spring-ratchet.mjs','package-lock.json']
   .map(path=>[path,createHash('sha256').update(fs.readFileSync(path)).digest('hex')]));
 let minimumGap = 0, maximumStep = 0, previous = Array.from(data.qpos), maximumContacts = 0;
@@ -29,7 +29,7 @@ try {
     for (let j = 0; j < contacts.size(); j++) {
       const c = contacts.get(j), names = [0,1].map(side=>mujocoName(c.geom[side],c.flex[side])); minimumGap = Math.min(minimumGap,c.dist);
       const has = p => names.some(n=>n.startsWith(p));
-      const kind = has('toothCell') ? (has('B') ? 'B-A' : 'C-A') : 'B-C';
+      const kind = (has('toothCell') || names.includes('A')) ? (has('B') ? 'B-A' : 'C-A') : 'B-C';
       counts[kind]++;active.push({kind,names,gap:c.dist});c.delete();
     }
     contacts.delete();rows.push({...state,contacts:active});

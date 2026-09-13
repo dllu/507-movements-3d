@@ -3238,6 +3238,15 @@ from 5.59340 to 4.64735 teeth at 24 versus 36 cells. Halving timestep changes br
 wheel-rim positions by up to 8.90992 source pixels. Geometry is improved, but
 resolution, complete hardware and real-time qualification still prevent migration.
 
+The 073 study can now also use a rigid MuJoCo volume preserving the ratchet's
+concavity and bore. An assembly preload holds its source phase while the leaves
+settle, then releases A before playback; reset and release are regression-tested.
+Seven focused tests, nine inspected views and six native solid poses pass their
+structural checks. Small contact overlaps remain, and 24 versus 36 beam cells
+still advance 5.59449 versus 4.64691 teeth over three cycles. The ratchet collision
+representation therefore does not explain the main resolution sensitivity.
+The 24-cell run takes 165.39 seconds for 18 simulated seconds; 073 remains isolated.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.

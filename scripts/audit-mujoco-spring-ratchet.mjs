@@ -13,9 +13,17 @@ const v = makeMujocoSpringRatchet(await loadMujoco(),report.parameters), u = v.r
 try {
   assert.equal(v.physics.model.nu,1);
   assert.equal(v.physics.model.actuator_trnid[0],v.physics.id('mjOBJ_JOINT','driver'));
+  if (v.physics.model.neq) {
+    const {mujoco} = v.physics;
+    const flags = new mujoco.DoubleBuffer(v.physics.model.neq);
+    try {
+      mujoco.mj_getState(v.physics.model,v.physics.data,flags.GetView(),mujoco.mjtState.mjSTATE_EQ_ACTIVE.value);
+      assert(Array.from(flags.GetView()).every(active=>!active),'Assembly fixtures must be inactive during playback');
+    } finally {flags.delete();}
+  }
   assert.equal(v.physics.model.nq,2 + 4 * (report.parameters.segments - (report.parameters.elasticClamp ? 0 : 1)));
   if (report.parameters.continuousLeaves) {
-    assert.equal(v.physics.model.nflex,2);
+    assert.equal(v.physics.model.nflex,report.parameters.rigidWheel ? 3 : 2);
     assert.deepEqual(Object.keys(u.parts).sort(),['Bleaf','Cleaf','driver','ratchet']);
     assert(report.minimumFlexVolumeRatio > 0);
   }

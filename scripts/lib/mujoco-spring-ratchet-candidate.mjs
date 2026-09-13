@@ -8,6 +8,7 @@ import {convexPlatePieces} from '../../src/simulation/mujoco-treadle/collision.j
 import {createMujocoSimulation, createPhysicsPlayback} from '../../src/simulation/mujoco/simulation.js';
 import {beamBendingStiffness} from '../../src/simulation/mujoco/beam.js';
 import {makeBeamSurface} from '../../src/simulation/mujoco/beam-surface.js';
+import {makeRigidPlateContact} from '../../src/simulation/mujoco/plate-contact.js';
 import {disposeObject3D} from '../../src/simulation/dispose-model.js';
 
 export {THREE};
@@ -26,6 +27,8 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   frictionImpedance = 1, noSlipIterations = 0,
   elasticClamp = false,
   continuousLeaves = false,
+  rigidWheel = false,
+  preloadWheel = false,
   catchRootPlane = -.20, catchRiseStart = .6, contactTime = .002, contactImpedance = .999,
   settlingTime = 1, motorStiffness = 10000, motorDamping = 100} = {}) {
   if (continuousLeaves && !(flatCatchEnd && flatStopEnd)) throw new RangeError('Continuous leaves require both measured flat ends');
@@ -75,12 +78,14 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   };
   attach('ratchet', plate(clip.difference(poly(ratchet.points), poly(circle([0,0], .17, 128))), -.1, .06), 'wheel', PALETTE.driven);
   attach('driver', disk(source.driverRadius / source.scale, -.45, -.33, 256), 'driver', PALETTE.driver);
-  const shape = convexPlatePieces(parts.ratchet.geometry, .00005);
-  const wheelGeoms = shape.cells.map((cell, i) => {
+  const wheelContact = rigidWheel ? makeRigidPlateContact({name:'A',body:'wheel',geometry:parts.ratchet.geometry,
+    contact:{mask:1,other:6,friction,time:contactTime,impedance:contactImpedance}}) : null;
+  const shape = rigidWheel ? null : convexPlatePieces(parts.ratchet.geometry, .00005);
+  const wheelGeoms = shape?.cells.map((cell, i) => {
     const name = 'toothCell' + i;
     assets.push(`<mesh name="${name}" vertex="${vec([-.1,.06].flatMap(z => cell.flatMap(p => [...p,z])))}"/>`);
     return `<geom name="${name}" type="mesh" mesh="${name}" contype="1" conaffinity="6"/>`;
-  }).join('');
+  }).join('') ?? '';
   const chains = rods.map((rod, side) => {
     const name = side ? 'C' : 'B', color = side ? PALETTE.muted : PALETTE.brass;
     const stiffness = side ? strongStiffness : catchStiffness, mask = side ? 4 : 2, other = side ? 2 : 4;
@@ -153,7 +158,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     return xml + '</body>'.repeat(segments);
   });
   const p = {segments, timestep, period, catchStiffness, strongStiffness, dampingTime, wheelMass, wheelDamping,
-    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, continuousLeaves, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
+    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, continuousLeaves, rigidWheel, preloadWheel, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
   const xml = `<mujoco model="073 elastic leaf study"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic" impratio="${frictionImpedance}" noslip_iterations="${noSlipIterations}"/>
     <default><joint limited="false"/><geom friction="${friction} .001 .001" condim="3" margin=".00001" solref="${contactTime} 1" solimp="${contactImpedance} ${1-(1-contactImpedance)/10} .0001"/></default>
@@ -162,7 +167,9 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         <inertial pos="0 0 0" mass="${wheelMass}" diaginertia="${wheelMass * .2} ${wheelMass * .2} ${wheelMass * .4}"/>${wheelGeoms}</body>
       <body name="driver"><joint name="driver" type="hinge" axis="0 0 1"/>
         <inertial pos="0 0 -.39" mass="1" diaginertia=".6 .6 1.2"/>${chains[0]}</body>
-      ${chains[1]}</worldbody><deformable>${surfaces.map(s=>s.xml).join('')}</deformable>
+      ${chains[1]}</worldbody><deformable>${wheelContact?.xml ?? ''}${surfaces.map(s=>s.xml).join('')}</deformable>
+      ${preloadWheel ? `<equality><joint name="assemblyWheel" joint1="wheel" polycoef="${initialWheelAngle} 0 0 0 0"
+        solref="${contactTime} 1" solimp=".9999 .99999 .0001"/></equality>` : ''}
       <actuator><position name="input" joint="driver" kp="${motorStiffness}" kv="${motorDamping}"/></actuator></mujoco>`;
   let physics;
   try {
@@ -171,6 +178,10 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         data.qpos[model.jnt_qposadr[id('mjOBJ_JOINT','wheel')]] = initialWheelAngle;
         data.qfrc_applied[model.jnt_dofadr[id('mjOBJ_JOINT','wheel')]] = load;
         for (let i = 0; i < Math.round(settlingTime / timestep); i++) mujoco.mj_step(model,data);
+        // Assemble the initially contacting leaves against a held wheel, then
+        // remove the assembly fixture before any playback or saved state.
+        // The WASM bool-array accessor is unavailable; set the native state.
+        if (preloadWheel) mujoco.mj_setState(model,data,[0],mujoco.mjtState.mjSTATE_EQ_ACTIVE.value);
         data.time = 0;
       },
       beforeStep: ({data,time}) => {
@@ -202,7 +213,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
       minimumFlexVolumeRatio:surfaces.length ? Math.min(...surfaces.map(s=>s.minimumVolumeRatio)) : null};
   };
   const playback = createPhysicsPlayback(physics,sync);
-  root.userData = {parts,families,blocks,source,rods,ratchet,physics,p,beams,surfaces,collision:shape,mechanism:'mujoco-spring-ratchet-study',
+  root.userData = {parts,families,blocks,source,rods,ratchet,physics,p,beams,surfaces,wheelContact,collision:shape,mechanism:'mujoco-spring-ratchet-study',
     fidelity:'candidate',reconstructionStatus:'under-review',hideGround:true,cameraFov:8,
     cameraFitBounds:new THREE.Box3(new THREE.Vector3(-2.2,-2.3,-.6),new THREE.Vector3(1.7,1.7,.7)),
     animationTiming:{authoredCyclePeriod:period,displayCycleDuration:period,playbackTimeScale:1}};

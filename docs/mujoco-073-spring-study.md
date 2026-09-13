@@ -242,6 +242,73 @@ representation to examine is A's convex decomposition: its internal cell faces
 are not part of the visible ratchet boundary. They are a possible source of
 contact artifacts, not an established explanation of the refinement failure.
 
+## Rigid ratchet volume and assembly preload
+
+The optional `rigidWheel` representation builds one 3D flex from the actual
+extruded plate, with every vertex attached to A's rigid body. Each cap triangle
+becomes three consistently connected tetrahedra, preserving the concave outline
+and shaft bore. The current ratchet has 2,830 vertices and 4,245 tetrahedra; its
+0.3998031377661 volume agrees with the visible solid within 3e-15. The bore
+dimension is still an inherited placeholder, not accepted source reconstruction.
+
+A separate notched, pierced plate test checks native shell topology, volume,
+rigid transforms, probes in both empty regions, and contact normals on the face,
+hole and notch walls. It passes. This representation avoids hand-built convex
+mesh assets, but does not eliminate element-level collision behavior: MuJoCo
+checks tetrahedral pairs. `internal="false"` disables the extra inversion
+contacts; it is not a guarantee against artificial contact directions at element
+boundaries. See the [flex contact definitions](https://mujoco.readthedocs.io/en/stable/XMLreference.html#flex-contact)
+and [native element-pair collision code](https://github.com/google-deepmind/mujoco/blob/main/src/engine/engine_collision_flex.c).
+
+An unrestrained initialization from zero leaf deflection starts with about two
+source pixels of C–A overlap. The rigid-volume trial rebounds by 1.59669 radians
+during its one-second settling interval. Its subsequent 2.14940-tooth first cycle
+therefore starts from the wrong source phase and is rejected. A diagnostic using
+the previous 24-cell run's settled coordinates instead advances 1.58099 teeth,
+close to the original 1.57054; this identifies initialization as a separate issue
+without qualifying the new collision representation.
+
+The optional `preloadWheel` assembly procedure holds A at the engraved phase
+while the leaves settle, then disables that equality before playback. It adds no
+running actuator: only D is driven. A regression test verifies the release,
+response to applied wheel torque, and repeatable release after reset. The audit
+also checks that all assembly equalities are inactive. The WASM boolean-array
+accessor is unavailable in the installed package, so this uses the native
+equality-state API and explicitly owned output buffers.
+
+The independent plate, preload, beam and runtime suite passes seven tests.
+At rest, the largest sampled leaf-boundary vertex distances between 24 and 36
+cells are 0.18778 / 0.13848 source pixels for B/C; between 36 and 48 they decrease
+to 0.07372 / 0.07097 pixels. These small geometric differences alone do not
+establish dynamic convergence.
+
+The preloaded rigid-volume runs all start within 1.9e-11 radians of the engraved
+wheel phase. Their three-cycle results are:
+
+| Check | Observed result |
+| --- | --- |
+| 24 cells, 0.125 ms | 5.59449 nominal teeth; 0.04559 tooth maximum rollback |
+| 36 cells, 0.125 ms | 4.64691 nominal teeth; 0.13092 tooth maximum rollback |
+| 24 cells, 0.0625 ms | 5.60292 nominal teeth; 0.02556 tooth maximum rollback |
+| Maximum coarse/fine wheel-rim difference | 5.90342 source pixels |
+| Maximum coarse/fine B/C node difference | 8.17322 / 3.65056 source pixels |
+| Sampled engine penetration, 24 / 36 / finer timestep | 0.24927 / 0.24143 / 0.10201 source pixels |
+| Minimum sampled tetrahedral volume/rest-volume ratio | 0.97476 / 0.97427 / 0.97460 |
+| Wall seconds for 18 simulated seconds | 165.39 / 281.14 / 317.27 |
+
+All nine views of the 24-cell run are inspected without browser errors. Six
+native poses have four closed solids, zero topology errors and 215,800 surface
+samples; five directed overlap findings reach 0.12914 source pixels. The largest
+sampled dwell drift is 0.01565 tooth. The assembly constraint is confirmed inactive.
+
+The nearly unchanged 24-versus-36 discrepancy rejects the ratchet's convex
+decomposition as a sufficient explanation of the spatial refinement failure.
+The new rigid-volume representation preserves more geometry and the preload
+avoids the large startup rebound, but neither qualifies 073 for migration.
+The running leaf contact/beam discretization still needs investigation, and
+the increased solver cost also prevents a real-time claim. All owned runs and
+the browser are terminal at this checkpoint.
+
 ## Reproduction
 
 ```sh
@@ -264,6 +331,11 @@ node --test tests/mujoco-beam-surface.test.mjs tests/mujoco-beam.test.mjs tests/
 Add `"elasticClamp":true` to the flat-end probe options to reproduce the corrected
 boundary trial. Use `"segments":36` for its resolution comparison. Source hashes
 include the shared beam-stiffness implementation.
+
+Add `"rigidWheel":true,"preloadWheel":true` to the continuous-leaf options to
+reproduce the rigid-volume assembly study. The two new regression tests are
+`tests/mujoco-plate-contact.test.mjs` and
+`tests/mujoco-spring-ratchet-preload.test.mjs`.
 
 The browser capture requires the development server (default port 5174) and the
 local enlarged Brown reference image. Reports refuse overwrites and record source
