@@ -5,6 +5,7 @@ import {createMovementModel} from './registry.js';
 const physicsFactories = {
   82: () => import('./mujoco-treadle/visual.js').then(module => module.makeMujocoTreadle),
   83: () => import('./mujoco-spring-sector/visual.js').then(module => module.makeMujocoSpringSector),
+  90: () => import('./mujoco-eccentric-yoke/visual.js').then(module => module.makeMujocoEccentricYoke),
 };
 
 export async function loadMovementModel(movement) {

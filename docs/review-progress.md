@@ -3256,9 +3256,23 @@ outline, so similar final advance does not establish acceptable dynamics.
 A separate softer-contact trial also fails spatial refinement. Production 073
 remains unresolved, including its constrained beam torsion and incomplete hardware.
 
+090 now uses live MuJoCo in the catalog. The shaft alone is actuated; the passive
+yoke moves through contact with straight bearing faces. Measured eccentric and
+shaft circles, the traced rounded yoke ends, complete rods and bored guide
+hardware replace the old oversized prescribed-cosine model. Rectifying the
+working opening changes the traced contour by up to about 5.7 source pixels;
+the viewer and [reconstruction report](mujoco-090-eccentric-yoke.md) disclose
+this correction and the inferred supports, rod extensions and ideal guides.
+Eighteen focused tests and seven production browser tests pass. Ten turns at
+1/0.5/0.25 ms stay within 0.118 pixels of the eccentric's horizontal position;
+the 1/0.5 ms comparison stays within 0.226 pixels at every coarse tick. Twelve
+views are inspected, the full stroke fits the camera, and the final browser
+run averages 60 fps. 090 is verified within its stated reconstruction assumptions.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
+090 is verified as a MuJoCo reconstruction with ideal guides and stated clearance.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

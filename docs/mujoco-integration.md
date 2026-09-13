@@ -7,6 +7,10 @@ through live dynamics. The isolated `mujoco-082.html` preview remains available.
 Movement 083 also runs live physics through the shared runtime: a pinned input
 rod rocks two passive spring-guided sectors against a complete crown wheel.
 See its [reconstruction and numerical limits](mujoco-083-spring-sectors.md).
+Movement 090 uses the same runtime for an eccentric driving a passive yoke:
+two joints, one motor and three primitive collision geometries. Its
+[source reconstruction and checks](mujoco-090-eccentric-yoke.md) document the
+straight bearing faces, inferred guides and finite running clearance.
 
 ## Shared runtime
 
@@ -59,7 +63,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -84,3 +88,9 @@ Adding 083 brings the focused suite to 17 passing tests and six passing browser
 tests. Both migrated movements now have fifteen-cycle native contact and pin
 checks. The 083 report includes separate timestep refinement and the remaining
 sensitivity in brief sector drops; it is integrated with those limits explicit.
+
+The 090 migration passes 18 focused tests and seven browser tests, with twelve
+inspected views. Ten-turn checks bound timestep sensitivity below a quarter
+source pixel; a live browser capture averages 60 fps. Its bearing faces use
+primitive colliders coincident with the visible solid. The rest of the opening
+is independently checked against the complete circular sweep.
