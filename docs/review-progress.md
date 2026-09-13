@@ -3500,6 +3500,23 @@ averages 39.10 fps. Ideal screw/swivel/guide constraints, omitted thread
 friction and self-locking, and the inferred lower frame and hidden hardware
 are documented in the [105 reconstruction](mujoco-105-screw-press.md).
 
+106 now uses MuJoCo groove-wall contact to drive a passive rectangular rod
+through measured hanging guides. A complete recessed groove replaces the
+old raised black tube; the corrected travel law has uniform working strokes
+and short smooth reversals. The groove matches 161 independent ink readings
+within 3.74299 pixels RMS, with a stated maximum correction of 13.59085 pixels.
+Four mechanism and eleven shared tests pass. Ten revolutions complete every
+stroke, with position error below 0.019514 pixel and speed variation below
+1.40215% over 100 ms intervals on the uniform flanks. Thirty-three poses pass
+5,935,008 finite-surface samples, with only intended pin/land overlap below
+0.001688 pixel. Both guides remain engaged by at least 5.50248 pixels.
+Timestep and mesh refinement change travel by less than 0.031875 pixel.
+All sixteen final views are inspected, including groove and joint details
+and desktop/mobile controls. The production build and all 22 MuJoCo browser
+tests pass; live headless playback averages 36.32 fps. The inferred rounded
+pin, rigid attachment, depths, ideal bearings and guides, and uncalibrated
+contact parameters are documented in the [106 reconstruction](mujoco-106-barrel-cam.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3518,6 +3535,7 @@ are documented in the [105 reconstruction](mujoco-105-screw-press.md).
 103 is verified with matching square threads, ideal bearings and guide, reconstructed friction and stated clearance.
 104 is verified as an ideal MuJoCo gear transmission with generated matching teeth and both input modes.
 105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
+106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

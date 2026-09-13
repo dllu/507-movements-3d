@@ -63,6 +63,10 @@ guided ram onto a rigid blank, with native contact at the working faces.
 Its [source reconstruction and limits](mujoco-105-screw-press.md) cover corrected
 thread handedness and shape, a surrounding guide, inferred lower frame,
 finite hardware clearances and section views of the threads and swivel.
+Movement 106 uses native groove-wall contact to drive a passive guided rod
+from a rotating barrel. Its [source reconstruction and contact checks](mujoco-106-barrel-cam.md)
+cover the corrected uniform stroke, rounded working pin, complete recessed
+groove, measured hanging guides and inferred rigid follower attachment.
 
 ## Shared runtime
 
@@ -298,3 +302,17 @@ All nineteen final views are inspected and headless playback averages
 use ideal constraints; thread contact, friction and self-locking are omitted.
 The hidden bearing, key, depths, completed lower frame, anvil, rigid blank
 and reversing drive are explicit reconstruction assumptions.
+
+The 106 migration passes four mechanism tests, eleven runtime/engine/camera
+tests, the production build and all 22 MuJoCo browser tests. Its corrected
+groove matches 161 independent ink readings within 3.74299 pixels RMS.
+Ten revolutions retain both guides and complete every stroke, with position
+error below 0.019514 source pixel and speed variation below 1.40215% over
+100 ms intervals on the uniform flanks. Thirty-three poses pass 5,935,008
+finite-surface samples, with only intended pin/land overlap below 0.001688
+pixel. Native penetration stays below 0.004653 pixel. Timestep and mesh
+refinement change travel by less than 0.031875 pixel. All sixteen final
+views are inspected; live headless playback averages 36.32 fps at physical
+speed. The rounded pin, rigid head attachment, depths and ideal bearings
+and guides are stated reconstruction assumptions. Output motion comes
+from contact, with no output actuator, spring or equality.

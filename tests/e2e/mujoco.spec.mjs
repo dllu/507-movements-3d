@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -28,7 +28,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '102': /The nut climbs by thread contact/,
     '103': /The rotating screw drives the slide through matching threads/,
     '104': /An ideal gear coupling drives the wheel or slide/,
-    '105': /Turning the weighted handle lowers the guided ram/}[id];
+    '105': /Turning the weighted handle lowers the guided ram/,
+    '106': /A pin in the rotating groove drives the guided rod/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
