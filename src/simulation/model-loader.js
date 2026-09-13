@@ -11,6 +11,7 @@ const physicsFactories = {
   93: () => import('./mujoco-scotch-yoke/visual.js').then(module => module.makeMujocoScotchYoke),
   94: () => import('./mujoco-variable-crank/visual.js').then(module => module.makeMujocoVariableCrank),
   95: () => import('./mujoco-inclined-disk/visual.js').then(module => module.makeMujocoInclinedDisk),
+  96: () => import('./mujoco-heart-cam/visual.js').then(module => module.makeMujocoHeartCam),
 };
 
 export async function loadMovementModel(movement) {

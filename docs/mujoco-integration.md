@@ -26,6 +26,9 @@ document the measured spiral, reconstructed stepped bolt and corrected slot fit.
 Movement 095 uses an inclined disk to lift a passive rod and turn its fork-held
 roller. Its [source reconstruction and contact checks](mujoco-095-inclined-disk.md)
 cover measured disk faces, the radial axle interpretation and complete supports.
+Movement 096 uses a heart cam to drive a passive horizontal bar and roller
+against an added return spring. Its [source corrections and contact checks](mujoco-096-heart-cam.md)
+cover the finite roller envelope, smooth reversals and inferred guides.
 
 ## Shared runtime
 
@@ -78,7 +81,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -146,3 +149,11 @@ over 1.32 million independent surface samples with only bounded roller/disk soft
 contact. Fourteen final views are inspected and live playback averages 59.69 fps.
 The finite working face has a continuous envelope bound; the roller's radial
 axle, ideal guides, fixed supports and friction remain reconstruction assumptions.
+
+The 096 migration passes 15 selected mechanism/runtime/camera tests and twelve
+production browser tests. Ten turns keep timestep sensitivity below 0.020 source
+pixel in bar position and 0.304 pixel at the roller rim. Thirty-three poses pass
+over 2.26 million independent surface samples with only bounded cam/roller soft
+contact. Fourteen final views are inspected and live playback averages 59.94 fps.
+The roughly 11-pixel cam correction, 6-pixel bar alignment shift, smooth reversals
+and inferred return spring are explicit in the reconstruction and viewer note.

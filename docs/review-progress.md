@@ -3344,6 +3344,22 @@ averages 59.69 fps. See the [095 reconstruction](mujoco-095-inclined-disk.md).
 095 is verified within its stated roller interpretation, ideal bearing/guide
 constraints and soft-contact tolerances.
 
+096 now uses MuJoCo cam contact to move a passive horizontal bar and turn its
+roller against an added return spring. Only the shaft is actuated. Measured hub,
+shaft and roller circles replace the old proportions; the completed bar runs
+through two bored guides. The finite-roller cam preserves uniform travel over
+94.907% of the cycle with short smooth reversals. Its 124 independent source
+outline samples differ by 5.3714 pixels RMS and 10.8898 pixels maximum. That
+correction, a 6.4159-pixel bar alignment shift and the inferred spring are
+explicitly disclosed. Fifteen selected tests, twelve production browser tests
+and the build pass. Ten turns keep native soft penetration below 0.01370 source
+pixel, timestep position differences below 0.020 pixel and roller-rim differences
+below 0.304 pixel. Thirty-three poses pass 2,269,142 independent surface samples
+with only bounded cam/roller contact. Fourteen final views are inspected and
+playback averages 59.94 fps. See the [096 reconstruction](mujoco-096-heart-cam.md).
+096 is verified within its stated source corrections, ideal spring/guide model,
+finite reversal intervals and soft-contact tolerances.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3352,6 +3368,7 @@ constraints and soft-contact tolerances.
 093 is verified as a MuJoCo reconstruction with ideal guides and stated slot clearance.
 094 is verified for radius adjustment with an ideal guide and stated bolt/slot fits.
 095 is verified with a reconstructed roller, ideal bearings/guide and stated contact limits.
+096 is verified with a corrected cam, smooth reversals, ideal guides and an inferred spring.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
