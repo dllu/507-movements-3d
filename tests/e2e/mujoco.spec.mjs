@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -10,7 +10,10 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   expect(await page.evaluate(() => performance.getEntriesByType('resource').some(r => r.name.endsWith('.wasm')))).toBe(false);
   await page.evaluate(id => { location.hash = '/movement/' + id; }, id);
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
+  // The complete 099 spiral compiles thousands of convex contact cells;
+  // measured production initialization takes about nine seconds in headless Chrome.
+  const startupTimeout = id === '099' ? 15000 : 5000;
+  await expect(canvas).toBeVisible({timeout: startupTimeout});
   await expect(page.getByRole('button', {name: 'Restart', exact: true})).toBeVisible();
   const note = {'082': /The lower pawl uses an inferred torsion spring/, '083': /The springs are described in Brown/,
     '090': /The guides, rod extensions and depth are reconstructed/, '091': /The cam is fitted as a constant-width profile/,
@@ -18,7 +21,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '094': /The radial plate is held during adjustment/, '095': /The fork holds a freely turning roller/,
     '096': /The cam outline is corrected by up to 11 engraving pixels/,
     '097': /The groove follows the drawing, with varying traverse speed/,
-    '098': /Section view removes the arm’s front cover/}[id];
+    '098': /Section view removes the arm’s front cover/,
+    '099': /Section view exposes the roller/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
@@ -33,11 +37,12 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   expect((await canvas.screenshot()).equals(advanced)).toBe(true);
   await page.getByRole('button', {name: 'Restart', exact: true}).click();
   expect((await canvas.screenshot()).equals(initial)).toBe(true);
-  if (id === '098') {
+  if (id === '098' || id === '099') {
     const section = page.getByRole('button', {name: 'Section view', exact: true});
-    await expect(section).toHaveAttribute('aria-pressed', 'true');
+    const initiallySectioned = id === '098';
+    await expect(section).toHaveAttribute('aria-pressed', String(initiallySectioned));
     await section.click();
-    await expect(section).toHaveAttribute('aria-pressed', 'false');
+    await expect(section).toHaveAttribute('aria-pressed', String(!initiallySectioned));
     expect((await canvas.screenshot()).equals(initial)).toBe(false);
     await section.click();
     expect((await canvas.screenshot()).equals(initial)).toBe(true);
@@ -53,7 +58,7 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   await page.evaluate(() => { location.hash = '/movement/089'; });
   await expect(page.locator('canvas[aria-label*="movement 89:"]')).toBeVisible();
   await page.evaluate(id => { location.hash = '/movement/' + id; }, id);
-  await expect(restart).toBeVisible();
+  await expect(restart).toBeVisible({timeout: startupTimeout});
   await play.click();
   await page.waitForTimeout(300);
   await play.click();

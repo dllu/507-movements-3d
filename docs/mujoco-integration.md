@@ -36,6 +36,10 @@ Movement 098 uses a disk-mounted crank pin to drive a passive hinged arm.
 Its [source fit and contact checks](mujoco-098-endless-groove.md) document the
 rear groove, section control and the pin's return along one branch at the
 engraved crank radius.
+Movement 099 uses a reversing disk to drive a passive feed rod and free roller
+between adjacent turns of a spiral rail. Its
+[source fit and contact checks](mujoco-099-spiral-feed.md) describe the corrected
+pitch, completed rod, bored guide and section view exposing the roller.
 
 ## Shared runtime
 
@@ -88,7 +92,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/mujoco-spiral-feed.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -182,3 +186,14 @@ poses pass over 2.65 million independent surface samples. Sixteen views are
 inspected and playback averages 35.48 fps. The measured crank radius produces
 a return along the lower groove branch. The rear groove, removable cover,
 larger working pin and ideal bearings are explicit reconstruction assumptions.
+
+The 099 migration passes 15 selected mechanism/runtime/camera tests and fifteen
+production browser tests. Its 487 measured spiral points match the finite
+centerline within 2.5316 pixels RMS. Ten feed-and-return cycles keep native
+soft penetration below 0.00381 pixel, timestep feed differences below 0.012
+pixel and roller-rim differences below 0.573 pixel. Thirty-three poses pass
+over 9.19 million independent surface samples. Sixteen final views are
+inspected and playback averages 28.16 fps. The corrected spiral pitch, lowered
+guide, extended rod and reversing motor are explicit reconstruction assumptions;
+only the disk is actuated. The complete spiral takes about nine seconds to assemble in
+headless Chrome, with its loading indicator visible during compilation.

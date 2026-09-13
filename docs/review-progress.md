@@ -3390,6 +3390,23 @@ are inspected and playback averages 35.48 fps. See the
 [098 reconstruction](mujoco-098-endless-groove.md). 098 is verified within this
 source-based branch interpretation, inferred pin and ideal bearing model.
 
+099 now uses MuJoCo contact with adjacent turns of a spiral rail to drive a
+passive feed rod and free roller. Only the disk is actuated. Its 487 measured
+spiral points match the finite centerline within 2.5316 pixels RMS and 7.2014
+pixels maximum. The roughly eight-pixel spiral correction, 5.5-pixel guide
+lowering, completed rod, inferred roller journal and reversing drive are
+disclosed. The normal view retains the engraved eye and head; half section
+reveals the working roller while keeping the connection to the rod visible.
+Fifteen selected tests, fifteen production browser tests and the build pass.
+Ten feed-and-return cycles keep native soft penetration below 0.00381 pixel,
+timestep feed differences below 0.012 pixel and roller-rim differences below
+0.573 pixel. Thirty-three poses pass 9,192,492 independent surface samples
+without unintended intersections. Sixteen views are inspected and playback
+averages 28.16 fps. See the
+[099 reconstruction](mujoco-099-spiral-feed.md). 099 is verified within its
+corrected spiral pitch, inferred reversing drive, ideal guide/journal and
+stated running-clearance model.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3401,6 +3418,7 @@ source-based branch interpretation, inferred pin and ideal bearing model.
 096 is verified with a corrected cam, smooth reversals, ideal guides and an inferred spring.
 097 is verified with a source-fitted groove, varying traverse and an inferred pin and guides.
 098 is verified with a measured rear groove, lower-branch return and an inferred working pin.
+099 is verified with a corrected spiral, passive free roller and inferred reversing drive.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
