@@ -1689,23 +1689,25 @@
       "motionBoundsMethod": "Rendered vertices at 97 complete-cycle poses; additional camera tests cover three aspect ratios and both transfers."
     },
     "88": {
-      "peakAngularSpeed": 0.9797483882590049,
-      "peakVisibleAngularSpeed": 0.9797483882589355,
-      "sustainedVisibleAngularSpeed": 0.8600000000055359,
-      "floorY": -3.140000001490116,
-      "fastestPart": "Mesh",
+      "peakAngularSpeed": 1.6399576122546626,
+      "peakVisibleAngularSpeed": 1.6399576122546626,
+      "sustainedVisibleAngularSpeed": 1.5707963267948966,
+      "floorY": -2.083668429387453,
+      "fastestPart": "eccentric cam driven stop",
       "motionBounds": {
         "min": [
-          -2.6210000000474976,
-          -3.140000001490116,
-          -1.289999997317791
+          -2.0786684293874527,
+          -2.083668429387453,
+          -0.5699999928474426
         ],
         "max": [
-          2.9410000000474974,
-          2.5200095941887186,
-          1.3699999737739563
+          2.228668429387453,
+          2.2236684293874527,
+          0.5199999809265137
         ]
-      }
+      },
+      "motionBoundsMethod": "Full-rotation radial and axial envelope of every native rigid mesh about its actual shaft, including the finite stop blocks.",
+      "speedMethod": "Maximum angular speed on every retained playback interval; duration-weighted 75th percentile. No small-part visibility discount."
     },
     "89": {
       "peakAngularSpeed": 0.9200000000056291,

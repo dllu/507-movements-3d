@@ -3145,9 +3145,19 @@ differences and continuous solid clearance keep 087 under review. The old
 changed existing inputs and the added 087 modules. See the
 [087 integration review](../artifacts/review/087-integrated-playback-notes.md).
 
+088 now uses the traced cam, broad stepped stop feet and contact-integrated
+indexing in the application. The centered wheel repeats exact half-turn stops
+and an eight-second two-index display cycle, with continuous input/output
+angles. Step-halving, impulse/energy, seven solid poses, all playback-interval
+midpoint contacts, the build and 178 selected tests pass. Fourteen rendered
+views and a complete browser run are inspected. The inferred hidden axle
+requires an approximately 11-pixel rear-rim shift, and the stepped-foot
+construction remains a reconstruction choice; 088 is integrated and under
+review. See the [088 integration review](../artifacts/review/088-integrated-playback-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
-082 and 083 are under reconstruction; 087 is integrated and under review.
+082 and 083 are under reconstruction; 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 
