@@ -3535,6 +3535,16 @@ averages 19.84 fps at physical speed. Reconstructed depths, rigid attachment,
 bent stem, ideal bearings/guide and contact limits are documented in the
 [107 reconstruction](mujoco-107-serpentine-cam.md).
 
+108 has a measured, contact-driven candidate under development. Its historical
+animation still uses raised groove tubes and prescribed reversals. Independent
+source readings expose a mismatch between the drawn groove diagonals and a
+circular cylinder's projection. A curved swiveling shoe and complete intersecting
+cuts now have passing geometry/passivity tests, including compiled contact
+vertices and convex-volume comparisons. Short shoes can choose the wrong branch;
+the longer candidate completes a native cycle but still has excessive travel
+deviation. [Current evidence and remaining work](mujoco-108-reverse-thread-candidate.md)
+are explicit. 108 is not yet qualified or integrated into the MuJoCo catalog loader.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
