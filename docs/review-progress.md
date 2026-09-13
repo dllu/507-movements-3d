@@ -3036,6 +3036,27 @@ continuous clearance and final display speed remain unresolved. Production
 and all 1,097 frozen inputs are unchanged. See the
 [087 key friction and release review](../artifacts/review/087-key-friction-notes.md).
 
+087 now continues each key-friction branch through neutral travel, a native
+opposite-jaw impact, loaded seating, held rotation and the following lift
+without reassigning its state or motor phase. The first right-jaw impact does
+not immediately reverse the shaft; that reversal develops during seating.
+Native-cusp event refinement resolves a retained Newton iteration failure.
+The finer neutral/seating runs contain 80,390 states, and the held/lift runs
+contain another 102,752. Key preload changes during held rotation and is no
+longer independently assigned when the next stud arrives.
+
+One coarse following-lift transient fails its convergence check despite
+matching the final lever position. Two finer local continuations from the
+same held state reduce successive lever differences to 0.0017 degrees; the
+failed report is retained. Independent free-shaft gravity integration,
+momentum, friction and native contact checks pass. Sixteen hardware poses
+pass 24,169,044 surface samples, ten stills are inspected and four slowed
+previews complete without browser errors. Source pin proportions, material
+identity, repeated full cycles, continuous clearance, final rendering/speed
+and integration remain unresolved. Production and all 1,097 frozen inputs
+remain unchanged. See the
+[087 connected reversal review](../artifacts/review/087-connected-reversal-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
