@@ -16,6 +16,11 @@ try {
   assert.equal(v.physics.model.nq,2 + 4 * (report.parameters.segments - 1));
   let maximumLengthError = 0;
   const pitch = u.ratchet.pitch, cycles = [];
+  let furthestAngle = report.initial.wheelAngle, maximumRollbackTeeth = 0;
+  for (const row of report.rows) {
+    furthestAngle = Math.min(furthestAngle,row.wheelAngle);
+    maximumRollbackTeeth = Math.max(maximumRollbackTeeth,(row.wheelAngle-furthestAngle)/pitch);
+  }
   for (const row of [report.initial,...report.rows]) for (let side = 0; side < 2; side++) {
     const points = row.points[side];
     for (let i = 0; i < points.length - 1; i++)
@@ -27,7 +32,9 @@ try {
     const initial = i ? report.rows.reduce((a,b)=>Math.abs(a.time-i*report.parameters.period)<Math.abs(b.time-i*report.parameters.period)?a:b) : report.initial;
     let furthest = initial.wheelAngle, rollback = 0;
     for (const row of rows) { furthest = Math.min(furthest,row.wheelAngle);rollback = Math.max(rollback,row.wheelAngle-furthest); }
-    cycles.push({cycle:i+1,advanceTeeth:(initial.wheelAngle-rows.at(-1).wheelAngle)/pitch,maximumRollbackTeeth:rollback/pitch});
+    const dwell = rows.filter(r=>r.time >= i * report.parameters.period + 1.2 && r.time <= i * report.parameters.period + 3);
+    cycles.push({cycle:i+1,advanceTeeth:(initial.wheelAngle-rows.at(-1).wheelAngle)/pitch,maximumRollbackTeeth:rollback/pitch,
+      settledDwellDriftTeeth:dwell.length ? (Math.max(...dwell.map(r=>r.wheelAngle))-Math.min(...dwell.map(r=>r.wheelAngle)))/pitch : null});
   }
   // Adjacent rigid beam cells overlap to represent one deforming leaf. This
   // screen groups each complete leaf; it does not certify leaf self-contact.
@@ -39,9 +46,9 @@ try {
     const {topology,topologyIssues,checks,issues} = auditClutchSourceSolids(v);
     poses.push({time:state.time,solids:topology.length,topologyIssues,checks,issues});
   }
-  const output = {input:file,sourceHashes:report.sourceHashes,maximumLengthError,cycles,poses,
-    qualification:'Diagnostic of an isolated candidate. Whole-leaf pairs and wheel pairs are screened at six poses; overlapping cells within a leaf are excluded. Large rollback, incomplete supports, unverified beam refinement and source end geometry prevent acceptance.'};
+  const output = {input:file,sourceHashes:report.sourceHashes,maximumLengthError,maximumRollbackTeeth,cycles,poses,
+    qualification:'Diagnostic of an isolated candidate. Whole-leaf pairs and wheel pairs are screened at six poses; overlapping cells within a leaf are excluded. Dwell measurements use 1.2–3 seconds after each nominal cycle start. Incomplete supports, unverified beam refinement and source depth assumptions prevent assembly acceptance; rollback and drift are reported independently.'};
   fs.writeFileSync(file.replace(/\.json$/,'-audit.json'),JSON.stringify(output,null,2)+'\n',{flag:'wx'});
   console.log({maximumLengthError,cycles,poses:poses.map(({issues,topologyIssues,...p})=>({...p,issues:issues.length,topologyIssues:topologyIssues.length})),
-    maximumRollbackTeeth:Math.max(...cycles.map(c=>c.maximumRollbackTeeth))});
+    maximumRollbackTeeth});
 } finally {v.dispose();}

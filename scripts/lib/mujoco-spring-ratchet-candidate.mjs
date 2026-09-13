@@ -19,7 +19,9 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   wheelMass = .15, wheelDamping = .2, load = .002, friction = .15,
   leafDensity = .5, leafDepth = .18, strongDepth = .36, leafPlane = .26,
   strongPlane = leafPlane, flatStopEnd = false, stopEndSourceY = 461,
+  flatCatchEnd = false,
   tracedWheel = false, initialWheelAngle = -.0075,
+  frictionImpedance = 1, noSlipIterations = 0,
   catchRootPlane = -.20, catchRiseStart = .6, contactTime = .002, contactImpedance = .999,
   settlingTime = 1, motorStiffness = 10000, motorDamping = 100} = {}) {
   const source = springRatchetSource, study = makeElasticRatchetStudy({segments,
@@ -33,6 +35,15 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
       return [(p[0]-source.center[0])/source.scale,(source.center[1]-p[1])/source.scale];
     })),
   } : study.ratchet;
+  if (flatCatchEnd) {
+    // Midpoint and normal of the two visible front-edge ends. The rear edge
+    // in the engraving depicts depth; its projection is not another XY edge.
+    const readings = source.catchCenterline.map(p => [...p]);
+    readings[readings.length - 1] = [1054.625,540.625];
+    const curve = new THREE.CatmullRomCurve3(readings.map(p => new THREE.Vector3(
+      (p[0]-source.center[0])/source.scale,(source.center[1]-p[1])/source.scale,0)),false,'centripetal');
+    rods[0].points = curve.getSpacedPoints(segments).map(p => [p.x,p.y]);
+  }
   if (flatStopEnd) {
     // The visible edges of C terminate on an approximately horizontal cut.
     // Extend the measured centerline to that cut, then retain its measured width.
@@ -84,9 +95,11 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         jointXml += `<joint name="${family + suffix}" type="hinge" axis="${axis}" stiffness="${k}" damping="${k * dampingTime}"/>`;
       }
       let profile = capsule([0,0], [length,0], width / 2, 12);
-      if (side && flatStopEnd && i === segments - 1) {
+      const flatEnd = side ? flatStopEnd : flatCatchEnd;
+      if (flatEnd && i === segments - 1) {
         const x = new THREE.Vector3(1,0,0).applyQuaternion(quaternion), y = new THREE.Vector3(0,1,0).applyQuaternion(quaternion);
-        const slope = -y.y / x.y, left = -2 * (length + width);
+        const normal = side ? new THREE.Vector3(0,1,0) : new THREE.Vector3(8.75,-17.75,0);
+        const slope = -normal.dot(y) / normal.dot(x), left = -2 * (length + width);
         // Extend the strip before cutting it. Clipping its old rounded cap
         // would leave the forward corner short of the engraved tooth root.
         profile = capsule([0,0], [length + (Math.abs(slope) + 1) * width,0], width / 2,12);
@@ -102,9 +115,9 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         ${jointXml}<geom name="${family}" type="mesh" mesh="${family}" contype="${mask}" conaffinity="${other}"/>`;
       attach(family, geometry, family, color);
       bodyNames.push(family);
-      if (i === segments - 1 && !(side && flatStopEnd)) {
+      if (i === segments - 1 && !flatEnd) {
         // A finite axial tab reaches A; the rest of the leaf clears its face.
-        const low = (-.03 - leafPlane) / frames[i].normal.z, high = depth / 2;
+        const low = (-.03 - (side ? strongPlane : leafPlane)) / frames[i].normal.z, high = depth / 2;
         xml += `<geom name="${name}tip" type="cylinder" pos="${length} 0 ${(low + high) / 2}" size="${width / 2} ${(high - low) / 2}" contype="${mask}" conaffinity="${other | 1}"/>`;
         const tip = disk(width / 2, low, high, 64); tip.translate(length,0,0);
         attach(name + 'tip', tip, family, color);
@@ -113,9 +126,9 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     return xml + '</body>'.repeat(segments);
   });
   const p = {segments, timestep, period, catchStiffness, strongStiffness, dampingTime, wheelMass, wheelDamping,
-    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, tracedWheel, initialWheelAngle, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
+    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
   const xml = `<mujoco model="073 elastic leaf study"><compiler angle="radian" inertiafromgeom="false"/>
-    <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic"/>
+    <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic" impratio="${frictionImpedance}" noslip_iterations="${noSlipIterations}"/>
     <default><joint limited="false"/><geom friction="${friction} .001 .001" condim="3" margin=".00001" solref="${contactTime} 1" solimp="${contactImpedance} ${1-(1-contactImpedance)/10} .0001"/></default>
     <asset>${assets.join('')}</asset><worldbody>
       <body name="wheel"><joint name="wheel" type="hinge" axis="0 0 1" damping="${wheelDamping}"/>

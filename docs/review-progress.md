@@ -3212,6 +3212,14 @@ of overlap. The cut location and axial construction remain assumptions. B's end,
 complete hardware, refinement and acceptable indexing remain open; this is
 source-reconstruction progress, not a finished 073 migration.
 
+073's isolated candidate now also uses B's measured flat end without a contact
+tab. A planar rest arrangement and MuJoCo NoSlip improve the first three cycles,
+but the ten-cycle run still has 0.35696 tooth rollback, and both timestep and
+beam-resolution checks fail to establish convergence. Nine candidate views and
+six native solid poses are inspected. The entire first beam cell is currently
+fixed, so its effective clamped length changes with resolution; correcting that
+boundary is the next concrete solver change. Production 073 remains unresolved.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.

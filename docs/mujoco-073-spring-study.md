@@ -115,6 +115,51 @@ refinement/performance qualification still prevent catalog integration. The
 Node probe took 37.7 seconds for 18 simulated seconds; real-time playback has not
 been established for this candidate.
 
+## Flat B end and friction sensitivity
+
+B now also has an optional finite flat end, with no added contact tab. Its front
+edge endpoints are read near (1045.75, 545) and (1063.5, 536.25); their midpoint
+replaces the approximate centerline endpoint before resampling. The oblique cut
+follows their connecting line. The source depicts an additional rear edge, so
+depth remains an inferred quantity rather than another traced XY boundary.
+
+With B's root at Z=-0.20 and end at 0.02, the flat-ended spring drives A briefly
+but releases before retaining a tooth. Increasing C/B stiffness from 6.75 to 24
+does not fix this. Removing the inferred axial bend, with both ends of B at
+Z=0.02 and C at 0.21, retains an increment but still permits large rollback.
+
+The contact trace gives a friction coefficient of about 0.32–0.36 for a radial
+resultant on the sampled return flanks, before allowing for the applied load.
+The nominal 0.15 coefficient cannot hold these poses. Increasing it to 0.5
+improves retention but introduces slow drift. Increasing `impratio` to 100 does
+not resolve that drift. Three NoSlip iterations improve the first three cycles,
+but longer and finer runs still reject this as a finished reconstruction.
+These are explicit contact assumptions, not a measurement of the materials.
+See MuJoCo's [soft-contact slip guidance](https://mujoco.readthedocs.io/en/latest/modeling.html#slow-slippage).
+
+The 24-cell, 0.125 ms, friction-0.5, three-NoSlip-iteration run has these limits:
+
+| Check | Observed result |
+| --- | --- |
+| First three cycles | 5.53450 nominal teeth; 0.02669 maximum rollback |
+| Ten cycles / 60 seconds | 17.40755 nominal teeth; 0.35696 maximum rollback |
+| Largest sampled dwell drift, 1.2–3 s into each cycle | 0.12243 tooth |
+| Sampled engine penetration over ten cycles | 0.14015 source pixels |
+| Halving timestep, first three cycles | 17.319-pixel maximum wheel-rim difference; B/C node differences 22.303/18.670 pixels |
+| Increasing to 36 cells, first three cycles | 3.66199 nominal teeth; refinement fails |
+
+All nine views of the three-cycle candidate are inspected without browser errors.
+Six poses have 50 closed solids, 3,059,204 native surface samples and no topology
+errors; small contact overlaps remain. B's tab is removed and source outlines
+are improved, but the candidate is still isolated. The longer rollback and
+refinement failures supersede the encouraging three-cycle result.
+
+The beam construction fixes its entire first cell, making the effective clamp
+length depend on resolution. Correct that boundary discretization before further
+material or contact tuning. Complete mounting hardware, mass properties, leaf
+surface finish and real-time playback remain pending. The ten-cycle Node run
+takes 116.8 wall seconds for 60 simulated seconds.
+
 ## Reproduction
 
 ```sh
@@ -125,6 +170,8 @@ PROBE_REPORT=/dev/shm/073-spatial.json node scripts/capture-mujoco-spring-ratche
 PROBE_PREFIX=/dev/shm/073-traced PROBE_OPTIONS='{"timestep":0.000125,"contactTime":0.0005,"contactImpedance":0.9999,"catchStiffness":4,"strongStiffness":27,"catchRiseStart":0.4,"flatStopEnd":true,"strongPlane":0.21,"tracedWheel":true,"initialWheelAngle":0,"stopEndSourceY":465}' node scripts/probe-mujoco-spring-ratchet.mjs
 node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-traced.json
 TMPDIR=/dev/shm PROBE_REPORT=/dev/shm/073-traced.json node scripts/capture-mujoco-spring-ratchet.mjs
+PROBE_PREFIX=/dev/shm/073-flat PROBE_SECONDS=60 PROBE_OPTIONS='{"timestep":0.000125,"contactTime":0.0005,"contactImpedance":0.9999,"catchStiffness":4,"strongStiffness":27,"flatStopEnd":true,"strongPlane":0.21,"tracedWheel":true,"initialWheelAngle":0,"stopEndSourceY":465,"flatCatchEnd":true,"leafPlane":0.02,"catchRootPlane":0.02,"friction":0.5,"noSlipIterations":3}' node scripts/probe-mujoco-spring-ratchet.mjs
+node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-flat.json
 ```
 
 The browser capture requires the development server (default port 5174) and the
