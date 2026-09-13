@@ -9,14 +9,12 @@ const turn = 2 * Math.PI;
  * The section is integral with the root cylinder, not a round wire coil.
  * See KHK's technical reference, Calculation of Gear Dimensions, section 4.6.
  */
-export function cylindricalWormGeometry({ pitchRadius, module, length, pressureAngle, angularSteps = 160 }) {
+export function cylindricalWormGeometry({ pitchRadius, module, length, pressureAngle, angularSteps = 160,
+  rootRadius = pitchRadius - 1.25 * module, tipRadius = pitchRadius + module,
+  rootHalfWidth = Math.PI * module / 4 + 1.25 * module * Math.tan(pressureAngle),
+  tipHalfWidth = Math.PI * module / 4 - module * Math.tan(pressureAngle), phase = 0 }) {
   const pitch = Math.PI * module;
   const leadPerRadian = pitch / turn;
-  const rootRadius = pitchRadius - 1.25 * module;
-  const tipRadius = pitchRadius + module;
-  const tangent = Math.tan(pressureAngle);
-  const rootHalfWidth = pitch / 4 + 1.25 * module * tangent;
-  const tipHalfWidth = pitch / 4 - module * tangent;
   const section = [
     [-pitch / 2, rootRadius], [-rootHalfWidth, rootRadius],
     [-tipHalfWidth, tipRadius], [tipHalfWidth, tipRadius],
@@ -76,7 +74,7 @@ export function cylindricalWormGeometry({ pitchRadius, module, length, pressureA
           const c = Math.cos(angle);
           const sn = Math.sin(angle);
           return {
-            point: new THREE.Vector3(radius * c, radius * sn, copy * pitch + z + leadPerRadian * angle),
+            point: new THREE.Vector3(radius * c, radius * sn, copy * pitch + z + leadPerRadian * angle + phase),
             normal: new THREE.Vector3(c - slope * leadPerRadian / radius * sn,
               sn + slope * leadPerRadian / radius * c, -slope).normalize(),
           };
@@ -94,7 +92,7 @@ export function cylindricalWormGeometry({ pitchRadius, module, length, pressureA
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geometry.userData = { pitchRadius, module, length, pressureAngle, pitch, rootRadius, tipRadius,
-    rootHalfWidth, tipHalfWidth, angularSteps, profile: 'axial-straight-flanked-worm' };
+    rootHalfWidth, tipHalfWidth, angularSteps, phase, profile: 'axial-straight-flanked-worm' };
   return geometry;
 }
 

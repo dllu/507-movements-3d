@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -26,7 +26,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '100': /The wrist slides without friction in the measured slot/,
     '101': /The hanging lever drives the bar through its slot/,
     '102': /The nut climbs by thread contact/,
-    '103': /The rotating screw drives the slide through matching threads/}[id];
+    '103': /The rotating screw drives the slide through matching threads/,
+    '104': /An ideal gear coupling drives the wheel or slide/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
@@ -41,6 +42,16 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   expect((await canvas.screenshot()).equals(advanced)).toBe(true);
   await page.getByRole('button', {name: 'Restart', exact: true}).click();
   expect((await canvas.screenshot()).equals(initial)).toBe(true);
+  if (id === '104') {
+    const input = page.getByRole('combobox', {name: 'Input', exact: true});
+    await input.selectOption('wheel');
+    expect((await canvas.screenshot()).equals(initial)).toBe(true);
+    await play.click(); await page.waitForTimeout(2200); await play.click();
+    expect((await canvas.screenshot()).equals(initial)).toBe(false);
+    await page.getByRole('button', {name: 'Restart', exact: true}).click();
+    expect((await canvas.screenshot()).equals(initial)).toBe(true);
+    await input.selectOption('worm');
+  }
   if (id === '098' || id === '099' || id === '102' || id === '103') {
     const section = page.getByRole('button', {name: 'Section view', exact: true});
     const initiallySectioned = id === '098';

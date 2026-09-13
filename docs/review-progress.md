@@ -3465,6 +3465,24 @@ checks pass. The ideal bearings and guide, open-bay bed interpretation, complete
 ends, friction values and eight-second reversing drive are explicit assumptions;
 see the [103 reconstruction](mujoco-103-leadscrew-slide.md).
 
+104 now uses an ideal MuJoCo gear constraint with matching helical geometry
+and both source-described input arrangements. The front pedestal, bored
+journal, rib and foot replace the old rear support. A generated 18-tooth wheel
+corrects the former 23.2% pitch mismatch. The pedestal matches 181 ink readings
+within 1.4050 pixels RMS; the true helix differs from the drawn diagonals by
+2.4286 pixels RMS. The regularized wheel has a larger, explicit source correction.
+Four mechanism tests, eleven runtime/engine/camera tests and all four existing
+031 worm-drive tests pass. Ten cycles in each mode retain the guide; eighteen
+poses pass 33,097,524 finite-surface samples with intended mesh overlap below
+0.008249 pixel. Timestep travel differences stay below 0.035751 pixel.
+All seventeen final views are inspected. The production build and all twenty
+MuJoCo browser checks pass, with 104 repeated after the final shadow adjustment.
+Headless playback averages 13.87 fps; mean physics/update time is 0.220 ms,
+so rendering is the measured performance limitation. This is an ideal
+transmission: tooth contact, friction, backlash and self-locking are omitted.
+Its inferred tooth count, pressure angle, depth, guide, bearings and reversing
+drive are documented in the [104 reconstruction](mujoco-104-worm-saddle.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3481,6 +3499,7 @@ see the [103 reconstruction](mujoco-103-leadscrew-slide.md).
 101 is verified with a corrected slot, passive guided bar and an inferred symmetric lever swing.
 102 is verified with matching square threads, ideal coaxial alignment and stated clearance and friction limits.
 103 is verified with matching square threads, ideal bearings and guide, reconstructed friction and stated clearance.
+104 is verified as an ideal MuJoCo gear transmission with generated matching teeth and both input modes.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

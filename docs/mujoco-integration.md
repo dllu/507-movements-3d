@@ -53,6 +53,11 @@ Movement 103 uses a rotating leadscrew to drive a passive horizontal carriage
 through matching threads. Its [source reconstruction and contact checks](mujoco-103-leadscrew-slide.md)
 cover the integral curved carriage, completed bed, inferred retaining guide,
 thread clearance, guide friction and section view.
+Movement 104 uses an ideal MuJoCo gear constraint with a generated matching
+worm wheel. Either the screw turns the held carriage's wheel, or the wheel
+moves the carriage along a held screw. Its [reconstruction and limits](mujoco-104-worm-saddle.md)
+distinguish ideal transmission reactions from tooth contact dynamics, which
+are omitted along with backlash and tooth friction.
 
 ## Shared runtime
 
@@ -262,3 +267,15 @@ All eighteen final views are inspected, and headless playback averages
 23.98 fps at the full eight-second physical period. The build passes.
 The ideal bearings and guide, open-bay bed interpretation, completed ends,
 friction values and reversing drive are explicit reconstruction assumptions.
+
+The 104 migration passes four mechanism tests, eleven runtime/engine/camera
+tests and the four existing 031 worm-drive tests. Its ideal gear constraint
+transmits motion and static loads in both input arrangements; removing that
+constraint stops the passive output. Ten cycles per mode retain the guide.
+Eighteen native poses pass 33,097,524 finite-surface samples, with intended
+worm/wheel overlap below 0.008249 pixel. The build and all twenty MuJoCo
+browser checks pass, including the input selector and final shadow adjustment.
+All seventeen final views are inspected. Headless playback averages 13.87 fps,
+with 0.220 ms mean physics/update time; rendering is the measured limit.
+The matching visible surfaces do not imply native tooth contact simulation:
+tooth friction, backlash, impacts and self-locking remain omitted.
