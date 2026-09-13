@@ -11,6 +11,9 @@ Movement 090 uses the same runtime for an eccentric driving a passive yoke:
 two joints, one motor and three primitive collision geometries. Its
 [source reconstruction and checks](mujoco-090-eccentric-yoke.md) document the
 straight bearing faces, inferred guides and finite running clearance.
+Movement 091 adds a constant-width triangular cam driving a passive vertical
+yoke, including both end dwells. Its [source fit and checks](mujoco-091-triangular-eccentric.md)
+document the corrected sweep opening and the inferred mounting hardware.
 
 ## Shared runtime
 
@@ -63,7 +66,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -94,3 +97,9 @@ inspected views. Ten-turn checks bound timestep sensitivity below a quarter
 source pixel; a live browser capture averages 60 fps. Its bearing faces use
 primitive colliders coincident with the visible solid. The rest of the opening
 is independently checked against the complete circular sweep.
+
+The 091 migration passes 22 selected mechanism/geometry/runtime/camera tests
+and eight production browser tests. Its ten-turn timestep and cam-mesh
+refinement checks stay within a tenth source pixel. Twelve views are inspected;
+live browser playback averages 60 fps. The cam/yoke opening has a conservative
+continuous sweep bound, and the output depends only on native contact and loads.

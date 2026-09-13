@@ -3269,10 +3269,24 @@ the 1/0.5 ms comparison stays within 0.226 pixels at every coarse tick. Twelve
 views are inspected, the full stroke fits the camera, and the final browser
 run averages 60 fps. 090 is verified within its stated reconstruction assumptions.
 
+091 now uses live MuJoCo contact between a fitted constant-width triangular cam
+and the passive yoke's two bearing liners. Its two dwells last about 0.796 seconds
+each in a four-second revolution. The source overlay follows the cam, bowed yoke
+and collar; clearing the continuous sweep changes the traced opening by up to
+about 3.36 source pixels. Guides, rod extensions, rear hardware, axial dimensions
+and the hidden small arc remain explicit reconstruction assumptions.
+Twenty-two focused tests, eight production browser tests and the build pass.
+Ten turns have at most 0.03069 source pixel of native soft penetration and
+0.03490 pixel of interior dwell motion. Timestep and cam-chord refinement stay
+within 0.1 pixel at every coarse tick; seventeen native solid poses, the
+continuous opening bound and twelve inspected views pass. Live playback averages
+60 fps. See the [091 reconstruction](mujoco-091-triangular-eccentric.md).
+091 is verified within these stated reconstruction assumptions.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
-090 is verified as a MuJoCo reconstruction with ideal guides and stated clearance.
+090 and 091 are verified as MuJoCo reconstructions with ideal guides and stated clearance.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
