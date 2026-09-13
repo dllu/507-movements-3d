@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-test('082 loads MuJoCo on demand beneath a static subdirectory and supports playback and restart', async ({page}) => {
+for (const id of ['082', '083']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -8,11 +8,12 @@ test('082 loads MuJoCo on demand beneath a static subdirectory and supports play
   await page.goto('/portable/#/catalog');
   await expect(page.locator('.movement-card')).toHaveCount(12);
   expect(await page.evaluate(() => performance.getEntriesByType('resource').some(r => r.name.endsWith('.wasm')))).toBe(false);
-  await page.evaluate(() => { location.hash = '/movement/082'; });
+  await page.evaluate(id => { location.hash = '/movement/' + id; }, id);
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
   await expect(canvas).toBeVisible();
   await expect(page.getByRole('button', {name: 'Restart', exact: true})).toBeVisible();
-  await expect(page.getByText(/The lower pawl uses an inferred torsion spring/)).toBeVisible();
+  const note = id === '082' ? /The lower pawl uses an inferred torsion spring/ : /The springs are described in Brown/;
+  await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
   expect(wasm[0]).toMatch(/^\/portable\/assets\//);
@@ -36,7 +37,7 @@ test('082 loads MuJoCo on demand beneath a static subdirectory and supports play
   await page.getByRole('button', {name: 'Reset view', exact: true}).click();
   await page.evaluate(() => { location.hash = '/movement/089'; });
   await expect(page.locator('canvas[aria-label*="movement 89:"]')).toBeVisible();
-  await page.evaluate(() => { location.hash = '/movement/082'; });
+  await page.evaluate(id => { location.hash = '/movement/' + id; }, id);
   await expect(restart).toBeVisible();
   await play.click();
   await page.waitForTimeout(300);

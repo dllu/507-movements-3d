@@ -3180,10 +3180,22 @@ releasing. The inferred lower-pawl spring and approximate belt traction remain
 explicit reconstruction assumptions. Other entries retain their current models
 until migrated and checked. See the [MuJoCo integration](mujoco-integration.md).
 
+083 now runs live MuJoCo contacts in the catalog. The traced pierced sectors,
+complete crown wheel, ordinary-pin rod, radial spring guides and completed
+supports replace the old prescribed bars and lifts. Fifteen cycles advance
+118.8944 teeth with at most 0.01553 tooth retreat; 600 native contact poses have
+at most 0.20824 source pixels of penetration and 0.00849 pixels of pin error.
+Five poses pass 1,739,316 native hardware surface samples across 84 closed solids.
+The build, 17 focused tests, six browser tests and fourteen inspected rendered
+views pass. Hidden construction and contact parameters remain assumptions;
+step-halving still changes brief sector-drop positions by up to 4.623 source
+pixels. 083 is integrated and remains under mechanical review. See the
+[083 MuJoCo reconstruction](mujoco-083-spring-sectors.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
-083 is under reconstruction; 082, 087 and 088 are integrated and under review.
+082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

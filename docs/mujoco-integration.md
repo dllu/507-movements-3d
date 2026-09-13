@@ -4,6 +4,9 @@ MuJoCo is the default engine for future reconstruction work. Movement 082 is
 the first production integration, imported from `codex/082-mujoco-pilot`.
 Its ordinary `#/movement/082` route now advances the passive pawls and wheel
 through live dynamics. The isolated `mujoco-082.html` preview remains available.
+Movement 083 also runs live physics through the shared runtime: a pinned input
+rod rocks two passive spring-guided sectors against a complete crown wheel.
+See its [reconstruction and numerical limits](mujoco-083-spring-sectors.md).
 
 ## Shared runtime
 
@@ -36,7 +39,7 @@ the collision approximation, so both boundaries need verification.
 ## What to migrate next
 
 Prioritize the contact-sensitive ratchets, catches and clutches, including the
-remaining 073 and 083 reconstructions and the bespoke 075/077/087 solvers.
+remaining 073 reconstruction and the bespoke 075/077/087 solvers.
 Keep their traced source geometry, replace passive trajectory logic with joints,
 contacts and loads, then compare engagement and clearances through repeated cycles.
 Ordinary rigid linkages such as 089 can use hinges, sliders and loop constraints.
@@ -56,7 +59,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -68,7 +71,7 @@ demand, nested static hosting, pause/restart, navigation during loading and mobi
 controls. The [pilot report](mujoco-082-pilot.md) records the mechanical assumptions
 and bounded contact evidence; migration of the whole collection remains ongoing.
 
-The integrated build passes all 13 focused tests above and five browser tests,
+The initial 082 integration passed 13 focused tests and five browser tests,
 including recovery from an unavailable WASM asset and cleanup in the standalone
 preview. Seven production catalog views are inspected: desktop, four advancing
 strokes, oblique and mobile. An 8.216-second run averages 23.7 fps in headless
@@ -76,3 +79,8 @@ Chrome on this machine. These captures precede only the final material-allocatio
 and preview-cleanup changes; the final build and browser suite include both.
 The production build retains the existing large-application-chunk warning and
 MuJoCo's browser-guarded Node `module` import warning.
+
+Adding 083 brings the focused suite to 17 passing tests and six passing browser
+tests. Both migrated movements now have fifteen-cycle native contact and pin
+checks. The 083 report includes separate timestep refinement and the remaining
+sensitivity in brief sector drops; it is integrated with those limits explicit.

@@ -4,6 +4,7 @@ import {createMovementModel} from './registry.js';
 // remain available while each replacement's geometry and contacts are checked.
 const physicsFactories = {
   82: () => import('./mujoco-treadle/visual.js').then(module => module.makeMujocoTreadle),
+  83: () => import('./mujoco-spring-sector/visual.js').then(module => module.makeMujocoSpringSector),
 };
 
 export async function loadMovementModel(movement) {
