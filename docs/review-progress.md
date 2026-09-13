@@ -3192,6 +3192,15 @@ step-halving still changes brief sector-drop positions by up to 4.623 source
 pixels. 083 is integrated and remains under mechanical review. See the
 [083 MuJoCo reconstruction](mujoco-083-spring-sectors.md).
 
+073 has a new isolated MuJoCo experiment with spatially bending leaves. It
+demonstrates dynamic recovery of C after both wheel contacts are briefly lost,
+resolving the stopping point of the older quasi-static study. Three cycles and
+six native solid poses run successfully, but rollback reaches 0.73186 tooth.
+The enlarged source also exposes an inherited rounded-tip mismatch at C's
+obliquely cut end. Nine candidate views are inspected. Source end reconstruction,
+complete hardware, refinement and acceptable indexing remain open; production
+073 is unchanged. See the [073 dynamic study](mujoco-073-spring-study.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
