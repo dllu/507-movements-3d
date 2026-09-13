@@ -3283,10 +3283,25 @@ continuous opening bound and twelve inspected views pass. Live playback averages
 60 fps. See the [091 reconstruction](mujoco-091-triangular-eccentric.md).
 091 is verified within these stated reconstruction assumptions.
 
+092 now uses MuJoCo hinges, a slider and a wrist closure. The shaft alone is
+actuated; the rod and crosshead move through the native joint constraints.
+Measured wheel, hub and pin circles replace the old proportions, and fitting
+58 upper-opening readings gives 0.2512-pixel RMS for the curved spoke sides.
+The measured 4.8664-pixel slider offset is preserved. Added guide shoes, pin
+heads, rear support and depth remain explicit reconstruction assumptions.
+Twenty-one selected tests, nine browser tests and the build pass. Ten turns
+have at most 0.001857 pixel of wrist error, and 1/0.5 ms output differences
+stay below 0.042 pixel. Thirty-three native poses pass 1,016,930 independent
+surface samples without detected intersections. Twelve final views are
+inspected and live playback averages 60 fps. See the
+[092 reconstruction](mujoco-092-crank-slider.md). 092 is verified within its
+stated source interpretation and ideal bearing constraints.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
 090 and 091 are verified as MuJoCo reconstructions with ideal guides and stated clearance.
+092 is verified as a MuJoCo reconstruction with ideal pins and guides.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

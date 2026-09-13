@@ -14,6 +14,9 @@ straight bearing faces, inferred guides and finite running clearance.
 Movement 091 adds a constant-width triangular cam driving a passive vertical
 yoke, including both end dwells. Its [source fit and checks](mujoco-091-triangular-eccentric.md)
 document the corrected sweep opening and the inferred mounting hardware.
+Movement 092 uses the same runtime for an ordinary crank and passive crosshead.
+Its [measured geometry and joint checks](mujoco-092-crank-slider.md) cover curved
+cast spokes, the small source offset and a wrist constraint closing the linkage.
 
 ## Shared runtime
 
@@ -66,7 +69,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -103,3 +106,10 @@ and eight production browser tests. Its ten-turn timestep and cam-mesh
 refinement checks stay within a tenth source pixel. Twelve views are inspected;
 live browser playback averages 60 fps. The cam/yoke opening has a conservative
 continuous sweep bound, and the output depends only on native contact and loads.
+
+The 092 migration passes 21 selected numerical/geometry/runtime/camera tests
+and nine production browser tests. Thirty-three native poses pass over a million
+independent solid-surface checks. Ten-turn timestep refinement stays within
+0.042 source pixel, twelve final views are inspected and live playback averages
+60 fps. The pin and guide constraints are ideal joints; the visible hardware
+and source fit are documented separately from their dynamics.
