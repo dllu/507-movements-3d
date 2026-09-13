@@ -3172,10 +3172,18 @@ Depths, bearings and the completed output/support arrangement remain explicit
 reconstruction choices. See the
 [089 source reconstruction](../artifacts/review/089-source-reconstruction-notes.md).
 
+MuJoCo is now the default engine for continued reconstruction. The 082 pilot
+is integrated into the normal catalog with shared lazy loading, fixed physics
+steps, restart and allocation cleanup. Fifteen simulated cycles pass the
+native pawl/tooth and strap checks, with both pawls repeatedly engaging and
+releasing. The inferred lower-pawl spring and approximate belt traction remain
+explicit reconstruction assumptions. Other entries retain their current models
+until migrated and checked. See the [MuJoCo integration](mujoco-integration.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
-082 and 083 are under reconstruction; 087 and 088 are integrated and under review.
+083 is under reconstruction; 082, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

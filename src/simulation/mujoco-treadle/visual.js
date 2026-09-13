@@ -1,11 +1,16 @@
 import * as THREE from 'three';
 import {makeTreadleRatchetCandidate} from './geometry.js';
 import {makeTreadlePhysics} from './physics.js';
+import {createPhysicsPlayback} from '../mujoco/simulation.js';
+import {disposeObject3D} from '../dispose-model.js';
 
 export function makeMujocoTreadle(mujoco,options={}) {
  const visual=makeTreadleRatchetCandidate({shortFaceFraction:.06}),u=visual.root.userData,p=u.linkage.parameters;
- u.parts.ratchetFace.material=u.parts.ratchetFace.material.clone();u.parts.ratchetFace.material.color.set(0x47738a);
- const physics=makeTreadlePhysics(mujoco,visual,options),{model,data}=physics;
+ u.parts.ratchetFace.material.color.set(0x47738a);
+ let physics;
+ try {physics=makeTreadlePhysics(mujoco,visual,options);}
+ catch(error){disposeObject3D(visual.root);throw error;}
+ const {model,data}=physics;
  const sourceCable=u.linkage.atTime(0).cable;
  const spring=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({color:0x555a5d,metalness:.45,roughness:.45}));
  spring.name='passive-lower-pawl-torsion-spring';spring.position.set(...p.arms[0].pawlLocal,0);u.blocks.lowerArm.add(spring);
@@ -37,19 +42,15 @@ export function makeMujocoTreadle(mujoco,options={}) {
   u.kinematics={time:data.time,wheelAngle:data.qpos[physics.joints.wheel.q],treadleAngles:angles,cable,pulleyAngle};visual.root.updateMatrixWorld(true);
   return u.kinematics;
  }
- let accumulator=0;
- const advance=seconds=>{if(!Number.isFinite(seconds)||seconds<0)throw Error('Invalid duration');accumulator+=seconds;let steps=0;
-  while(accumulator>=physics.timestep){physics.step();accumulator-=physics.timestep;steps++;}sync();return steps;};
- const reset=()=>{accumulator=0;physics.reset();sync();};
- const update=time=>{
-  if(!Number.isFinite(time)||time<0)throw Error('Invalid simulation time');
-  if(time<data.time+accumulator-1e-10)reset();
-  advance(Math.max(0,time-data.time-accumulator));
- };
- const dispose=()=>{physics.dispose();const geometries=new Set(),materials=new Set();visual.root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());};
- Object.assign(u,{mechanism:'mujoco-passive-treadle-ratchet',fidelity:'authored',reconstructionStatus:'pilot',physics,hideGround:true,
+ const {advance,reset,update}=createPhysicsPlayback(physics,sync);
+ let disposed=false;
+ const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
+ Object.assign(u,{mechanism:'mujoco-passive-treadle-ratchet',fidelity:'authored',reconstructionStatus:'integrated',physics,hideGround:true,
+  simulationBackend:'mujoco',supportsRestart:true,
+  reconstructionNote:'The lower pawl uses an inferred torsion spring to hold it against the ratchet. The engraving does not establish this spring. Belt traction is approximated.',
   animationTiming:{authoredCyclePeriod:4,displayCycleDuration:4,playbackTimeScale:1},
   cameraFitBounds:new THREE.Box3(new THREE.Vector3(-1.28,-2.83,-.6),new THREE.Vector3(3.6,1.4,.7)),
+  sampledMotionBounds:{min:[-1.28,-2.83,-.6],max:[3.6,1.4,.7]},
   qualification:'MuJoCo advances the passive wheel and hinged pawls. A visible passive torsion spring closes the lower pawl; its presence and stiffness are reconstruction assumptions. One motor drives the treadle; rods and the equalizer transmit that input.'});
  sync();return {...visual,physics,sync,advance,update,reset,dispose};
 }

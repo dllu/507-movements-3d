@@ -257,7 +257,7 @@ function catalogView(parameters) {
   });
 }
 
-function detailView(movement) {
+async function detailView(movement) {
   const previous = movementById.get(movement.id - 1);
   const next = movementById.get(movement.id + 1);
   const status = movementStatus(movement);
@@ -338,17 +338,40 @@ function detailView(movement) {
   document.title = `${movement.number} · ${movement.title} — 507 Movements`;
   app.innerHTML = appShell(content, 'catalog');
   const stage = document.querySelector('#simulation-stage');
+  const toolbar = document.querySelector('.simulation-toolbar');
+  const abortController = new AbortController();
   let engine;
+  const onCanvasKeyDown = (event) => {
+    if (event.code === 'Space') {
+      event.preventDefault();
+      engine?.togglePlaying();
+    }
+    if (event.key.toLowerCase() === 'r') engine?.resetView();
+  };
+  activeCleanup = () => {
+    abortController.abort();
+    engine?.renderer.domElement.removeEventListener('keydown', onCanvasKeyDown);
+    engine?.dispose();
+  };
+  toolbar.querySelectorAll('button, select').forEach(control => { control.disabled = true; });
+  stage.setAttribute('aria-busy', 'true');
   try {
-    engine = new MovementEngine(stage, movement, { playing: !prefersReducedMotion.matches });
+    engine = await MovementEngine.create(stage, movement, {
+      playing: !prefersReducedMotion.matches, signal: abortController.signal,
+    });
   } catch (error) {
+    if (abortController.signal.aborted) return;
     console.error(error);
     stage.innerHTML = `
       <div class="simulation-error" role="alert">
         <strong>The 3D view could not start.</strong>
-        <p>Your browser may have WebGL disabled. Try enabling hardware acceleration or opening this page in a current browser.</p>
+        <p>Reload to try again. If the problem continues, check that your browser supports WebGL and WebAssembly.</p>
       </div>`;
+    stage.setAttribute('aria-busy', 'false');
+    return;
   }
+  stage.setAttribute('aria-busy', 'false');
+  toolbar.querySelectorAll('button, select').forEach(control => { control.disabled = false; });
 
   const playButton = document.querySelector('.play-control');
   const updatePlayButton = (playing) => {
@@ -361,6 +384,21 @@ function detailView(movement) {
   playButton?.addEventListener('click', () => updatePlayButton(engine?.togglePlaying() ?? false));
   document.querySelector('.speed-control select')?.addEventListener('change', (event) => engine?.setSpeed(event.target.value));
   document.querySelector('.reset-control')?.addEventListener('click', () => engine?.resetView());
+  if (engine.model.root.userData.supportsRestart) {
+    const restart = document.createElement('button');
+    restart.className = 'restart-control';
+    restart.type = 'button';
+    restart.textContent = 'Restart';
+    restart.addEventListener('click', () => engine.restart());
+    document.querySelector('.reset-control').before(restart);
+    toolbar.classList.add('has-configuration');
+  }
+  const reconstructionNote = engine.model.root.userData.reconstructionNote;
+  if (reconstructionNote) {
+    const note = document.createElement('p');
+    note.textContent = reconstructionNote;
+    document.querySelector('.movement-notes .fidelity-note.is-authored > div').append(note);
+  }
   if (engine?.model.root.userData.setConfiguration && engine.model.root.userData.configurations?.length) {
     const data = engine.model.root.userData;
     const label = document.createElement('label');
@@ -399,18 +437,7 @@ function detailView(movement) {
     if (!document.fullscreenElement) await stage.requestFullscreen?.();
     else await document.exitFullscreen?.();
   });
-  const onCanvasKeyDown = (event) => {
-    if (event.code === 'Space') {
-      event.preventDefault();
-      updatePlayButton(engine?.togglePlaying() ?? false);
-    }
-    if (event.key.toLowerCase() === 'r') engine?.resetView();
-  };
   engine?.renderer.domElement.addEventListener('keydown', onCanvasKeyDown);
-  activeCleanup = () => {
-    engine?.renderer.domElement.removeEventListener('keydown', onCanvasKeyDown);
-    engine?.dispose();
-  };
 }
 
 function aboutView() {

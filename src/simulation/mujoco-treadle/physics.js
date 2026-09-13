@@ -1,5 +1,6 @@
 import {familyMass} from '../finite-plate-geometry.js';
 import {convexPlatePieces} from './collision.js';
+import {createMujocoSimulation} from '../mujoco/simulation.js';
 
 const vec = values => values.map(v=>Number(v.toPrecision(12))).join(' ');
 const quat = a => [Math.cos(a/2),0,0,Math.sin(a/2)];
@@ -48,16 +49,21 @@ export function buildTreadleMjcf(visual,{timestep=.0005,lowerSpring=4,friction=.
 }
 
 export function makeTreadlePhysics(mujoco,visual,options={}) {
- const description=buildTreadleMjcf(visual,options),model=mujoco.MjModel.from_xml_string(description.xml),data=new mujoco.MjData(model),p=visual.root.userData.linkage.parameters;
- const id=(type,name)=>mujoco.mj_name2id(model,mujoco.mjtObj[type].value,name);
+ const description=buildTreadleMjcf(visual,options),p=visual.root.userData.linkage.parameters;
+ const simulation=createMujocoSimulation(mujoco,{
+  xml:description.xml,
+  initialize:({model,data,id})=>{
+   const set=(name,value)=>{data.qpos[model.jnt_qposadr[id('mjOBJ_JOINT',name)]]=value;};
+   set('wheel',.03);set('lowerPawl',-.05545);set('upperPawl',-.05002);
+  },
+  beforeStep:({data,time})=>{data.ctrl[0]=p.amplitude*Math.cos(time*2*Math.PI/p.period+p.sourcePhase)+p.sourceAngle;},
+ });
+ const {model,data,id}=simulation;
  const joints=Object.fromEntries(description.bodyNames.map(name=>{const j=id('mjOBJ_JOINT',name);return [name,{q:model.jnt_qposadr[j],v:model.jnt_dofadr[j]}];}));
  const bodies=Object.fromEntries(description.bodyNames.map(name=>[name,id('mjOBJ_BODY',name)]));
- const reset=()=>{mujoco.mj_resetData(model,data);data.qpos[joints.wheel.q]=.03;data.qpos[joints.lowerPawl.q]=-.05545;data.qpos[joints.upperPawl.q]=-.05002;mujoco.mj_forward(model,data);};
- const timestep=description.options.timestep;
- const step=()=>{data.ctrl[0]=p.amplitude*Math.cos((data.time+timestep)*2*Math.PI/p.period+p.sourcePhase)+p.sourceAngle;mujoco.mj_step(model,data);};
  const state=()=>{mujoco.mj_forward(model,data);return {time:data.time,wheelAngle:data.qpos[joints.wheel.q],wheelSpeed:data.qvel[joints.wheel.v],
   pawlAngles:['lower','upper'].map(name=>{const b=bodies[name+'Pawl'],q=data.xquat;return 2*Math.atan2(q[4*b+3],q[4*b]);}),
   pawlRelativeAngles:['lower','upper'].map(name=>data.qpos[joints[name+'Pawl'].q]),
   qpos:Array.from(data.qpos),qvel:Array.from(data.qvel),contacts:data.ncon};};
- reset();return {mujoco,model,data,description,joints,bodies,timestep,reset,step,state,dispose:()=>{data.delete();model.delete();}};
+ return Object.assign(simulation,{description,joints,bodies,state});
 }

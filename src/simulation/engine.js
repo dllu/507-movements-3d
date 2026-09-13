@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PALETTE } from './primitives.js';
 import { createMovementModel } from './registry.js';
+import { loadMovementModel } from './model-loader.js';
+import { disposeMovementModel, disposeObject3D } from './dispose-model.js';
 
 const CAMERA_FIT_MARGIN = 1.08;
 const GROUND_CLEARANCE = 0.14;
@@ -119,6 +121,18 @@ export function perspectiveObjectFitDistance(
 }
 
 export class MovementEngine {
+  static async create(container, movement, options = {}) {
+    options.signal?.throwIfAborted();
+    const model = await loadMovementModel(movement);
+    try {
+      options.signal?.throwIfAborted();
+      return new MovementEngine(container, movement, {...options, model});
+    } catch (error) {
+      disposeMovementModel(model);
+      throw error;
+    }
+  }
+
   constructor(container, movement, options = {}) {
     this.container = container;
     this.movement = movement;
@@ -164,7 +178,7 @@ export class MovementEngine {
     this.controls.maxPolarAngle = Math.PI * 0.94;
 
     this.addLighting();
-    this.model = createMovementModel(movement);
+    this.model = options.model ?? createMovementModel(movement);
     const playbackDuration = this.model.root.userData.playbackDuration;
     this.playbackDuration = Number.isFinite(playbackDuration) && playbackDuration > 0
       ? playbackDuration : Infinity;
@@ -414,6 +428,16 @@ export class MovementEngine {
     this.fitCamera(this.cameraFitDirection);
   }
 
+  restart() {
+    this.elapsed = 0;
+    this.playbackEnded = false;
+    if (this.model.reset) this.model.reset();
+    else this.model.update?.(0, 0);
+    this.clock.getDelta();
+    this.updateGroundClearance();
+    this.onPlaybackChange?.({playing: this.playing, ended: false, elapsed: 0});
+  }
+
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
@@ -422,15 +446,9 @@ export class MovementEngine {
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.renderer.domElement.removeEventListener('dblclick', this.onDoubleClick);
     this.controls.dispose();
-    const geometries = new Set();
-    const materials = new Set();
-    this.scene.traverse((object) => {
-      if (object.geometry) geometries.add(object.geometry);
-      if (Array.isArray(object.material)) object.material.forEach((material) => materials.add(material));
-      else if (object.material) materials.add(object.material);
-    });
-    geometries.forEach((geometry) => geometry.dispose());
-    materials.forEach((material) => material.dispose());
+    this.scene.remove(this.model.root);
+    disposeMovementModel(this.model);
+    disposeObject3D(this.scene);
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

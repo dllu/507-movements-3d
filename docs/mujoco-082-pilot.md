@@ -1,8 +1,9 @@
 # Movement 082: MuJoCo pilot
 
-This branch provides a working, isolated replacement preview at
-`mujoco-082.html`. The existing catalog route and the main agent's checkout
-are unchanged. It reuses the 082 candidate's traced curved pawls, 26-tooth
+This pilot originated as an isolated replacement preview at
+`mujoco-082.html`. It is now integrated into the ordinary `#/movement/082`
+catalog route; see [shared runtime integration](mujoco-integration.md).
+It reuses the 082 candidate's traced curved pawls, 26-tooth
 ratchet, round-pin linkage and corrected small pulley. Both pawls contact
 the wheel directly; there are no thin contact extensions.
 
@@ -15,7 +16,7 @@ npm run dev
 
 Open `/mujoco-082.html`. The preview has play/pause, restart, speed, orbit and
 zoom controls. `npm run build` includes both the original application and
-this preview. MuJoCo is loaded only by the separate preview entry.
+this preview. MuJoCo loads on demand in the catalog and in the preview.
 
 ```sh
 node --test tests/mujoco-treadle.test.mjs
@@ -85,10 +86,10 @@ were rejected; the final capture waits for settled frames and checks context los
 ## Integration boundary
 
 `makeMujocoTreadle(mujoco)` returns the retained Three.js model, `advance(seconds)`,
-`update(time)`, `reset()` and `dispose()`. The ordinary application can adopt it
-after asynchronously loading MuJoCo for movement 082. Its engine must call the
-model's `dispose()` to free the WASM model/data as well as the Three.js resources.
-The standalone preview already handles that lifecycle.
+`update(time)`, `reset()` and `dispose()`. The ordinary application now loads it
+asynchronously through `MovementEngine.create`. Both entries share the runtime
+loader and fixed-step playback code, and free the model/data and Three.js
+resources on disposal.
 
 This pilot demonstrates an engine-based alternative to the bespoke 082 solver.
 It does not qualify the inferred spring or automatically migrate other movements.

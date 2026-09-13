@@ -9,6 +9,9 @@ copy or convert the proprietary canvas animations on 507movements.com.
 ## Current model coverage
 
 - Movements 001–507 have individually authored geometry and kinematics.
+- MuJoCo is the default engine for ongoing reconstruction. Movement 082 now
+  runs live joint and contact dynamics in the catalog; other entries are being
+  migrated incrementally. See [simulation architecture](docs/mujoco-integration.md).
 - Source fidelity, interference, and visual quality are being rechecked across
   the collection. Authored coverage and passing numerical tests do not certify
   the correctness of every reconstruction. See [review progress](docs/review-progress.md).
@@ -37,6 +40,8 @@ npm run build
 Copy the resulting `dist/` directory to any static file server. The app uses
 hash routing and relative assets, so it works from a domain root or subfolder
 without rewrite rules.
+Serve `.wasm` files as `application/wasm`; the physics engine is bundled locally
+and loaded when opening a movement that uses it.
 
 ## Verification
 
