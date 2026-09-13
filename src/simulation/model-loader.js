@@ -8,6 +8,7 @@ const physicsFactories = {
   90: () => import('./mujoco-eccentric-yoke/visual.js').then(module => module.makeMujocoEccentricYoke),
   91: () => import('./mujoco-triangular-eccentric/visual.js').then(module => module.makeMujocoTriangularEccentric),
   92: () => import('./mujoco-crank-slider/visual.js').then(module => module.makeMujocoCrankSlider),
+  93: () => import('./mujoco-scotch-yoke/visual.js').then(module => module.makeMujocoScotchYoke),
 };
 
 export async function loadMovementModel(movement) {

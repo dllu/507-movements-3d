@@ -3297,11 +3297,27 @@ inspected and live playback averages 60 fps. See the
 [092 reconstruction](mujoco-092-crank-slider.md). 092 is verified within its
 stated source interpretation and ideal bearing constraints.
 
+093 now uses a native wrist cylinder contacting the two straight faces of a
+passive Scotch yoke. Measured disk, hub, shaft and wrist circles replace the
+extra crank arm and old proportions. The slot is widened to contain the
+measured wrist; completing the stems lets them stay within reconstructed fixed
+guides throughout the stroke. These changes and all depths are disclosed.
+Fifteen selected tests, nine production browser tests and the build pass.
+Ten turns have at most 0.004657 source pixel of native soft penetration, and
+1/0.5 ms output differences stay below 0.089 pixel. Thirty-three poses pass
+1,155,696 independent surface samples with only bounded wrist/yoke contact.
+Removing contact lets the output fall; reversing gravity engages the other
+working face. Twelve final views and an additional scrolled mobile note view
+are inspected, and live playback averages 60 fps. See the
+[093 reconstruction](mujoco-093-scotch-yoke.md). 093 is verified within its
+stated source corrections, ideal guides and soft-contact tolerances.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
 090 and 091 are verified as MuJoCo reconstructions with ideal guides and stated clearance.
 092 is verified as a MuJoCo reconstruction with ideal pins and guides.
+093 is verified as a MuJoCo reconstruction with ideal guides and stated slot clearance.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

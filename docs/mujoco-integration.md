@@ -17,6 +17,9 @@ document the corrected sweep opening and the inferred mounting hardware.
 Movement 092 uses the same runtime for an ordinary crank and passive crosshead.
 Its [measured geometry and joint checks](mujoco-092-crank-slider.md) cover curved
 cast spokes, the small source offset and a wrist constraint closing the linkage.
+Movement 093 uses a disk-mounted wrist contacting the straight faces of a
+passive Scotch yoke. Its [source fit and contact checks](mujoco-093-scotch-yoke.md)
+document the small slot correction, extended stems and reconstructed guides.
 
 ## Shared runtime
 
@@ -69,7 +72,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -113,3 +116,11 @@ independent solid-surface checks. Ten-turn timestep refinement stays within
 0.042 source pixel, twelve final views are inspected and live playback averages
 60 fps. The pin and guide constraints are ideal joints; the visible hardware
 and source fit are documented separately from their dynamics.
+
+The 093 migration passes 15 selected mechanism/runtime/camera tests and nine
+production browser tests. Ten-turn timestep refinement stays below 0.09 source
+pixel. Thirty-three poses pass over 1.15 million independent surface checks
+with only bounded wrist/yoke soft contact. Twelve final mechanism/application
+views and an additional scrolled mobile note view are inspected; live playback
+averages 60 fps. Removing contact and reversing the load confirm passive output
+and operation of both working faces.
