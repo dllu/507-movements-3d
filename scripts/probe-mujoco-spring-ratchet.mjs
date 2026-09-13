@@ -14,6 +14,7 @@ const sourceHashes = Object.fromEntries(['scripts/lib/mujoco-spring-ratchet-cand
   'src/simulation/finite-plate-geometry.js','src/simulation/mujoco-treadle/collision.js',
   'src/simulation/mujoco/simulation.js','src/simulation/mujoco/beam.js',
   'src/simulation/mujoco/beam-surface.js','src/simulation/mujoco/plate-contact.js',
+  'src/simulation/cubic-polyline.js',
   'scripts/probe-mujoco-spring-ratchet.mjs','package-lock.json']
   .map(path=>[path,createHash('sha256').update(fs.readFileSync(path)).digest('hex')]));
 let minimumGap = 0, maximumStep = 0, previous = Array.from(data.qpos), maximumContacts = 0;

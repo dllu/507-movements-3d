@@ -3247,6 +3247,15 @@ still advance 5.59449 versus 4.64691 teeth over three cycles. The ratchet collis
 representation therefore does not explain the main resolution sensitivity.
 The 24-cell run takes 165.39 seconds for 18 simulated seconds; 073 remains isolated.
 
+073's isolated study now supports a bounded adaptive ratchet outline: 225 points
+replace 1,290 while the cubic chord error stays below 0.1 source pixel. Nine
+focused tests and nine inspected views pass their structural checks. The probe
+cost falls from 165.39 to 92.11 seconds for 18 simulated seconds. However,
+transient wheel positions differ by up to 22.30344 source pixels from the dense
+outline, so similar final advance does not establish acceptable dynamics.
+A separate softer-contact trial also fails spatial refinement. Production 073
+remains unresolved, including its constrained beam torsion and incomplete hardware.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.

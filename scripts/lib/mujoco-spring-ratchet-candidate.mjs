@@ -9,6 +9,7 @@ import {createMujocoSimulation, createPhysicsPlayback} from '../../src/simulatio
 import {beamBendingStiffness} from '../../src/simulation/mujoco/beam.js';
 import {makeBeamSurface} from '../../src/simulation/mujoco/beam-surface.js';
 import {makeRigidPlateContact} from '../../src/simulation/mujoco/plate-contact.js';
+import {cubicPolyline} from '../../src/simulation/cubic-polyline.js';
 import {disposeObject3D} from '../../src/simulation/dispose-model.js';
 
 export {THREE};
@@ -24,6 +25,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   strongPlane = leafPlane, flatStopEnd = false, stopEndSourceY = 461,
   flatCatchEnd = false,
   tracedWheel = false, initialWheelAngle = -.0075,
+  wheelChordTolerancePixels = 0,
   frictionImpedance = 1, noSlipIterations = 0,
   elasticClamp = false,
   continuousLeaves = false,
@@ -32,17 +34,26 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   catchRootPlane = -.20, catchRiseStart = .6, contactTime = .002, contactImpedance = .999,
   settlingTime = 1, motorStiffness = 10000, motorDamping = 100} = {}) {
   if (continuousLeaves && !(flatCatchEnd && flatStopEnd)) throw new RangeError('Continuous leaves require both measured flat ends');
+  if (!(Number.isFinite(wheelChordTolerancePixels) && wheelChordTolerancePixels>=0))
+    throw new RangeError('Wheel chord tolerance must be finite and nonnegative');
   const source = springRatchetSource, study = makeElasticRatchetStudy({segments,
     strongRootPixels: 30.682, strongTipPixels: 28.054}), {rods} = study;
+  let maximumChordErrorPixels = 0;
   const ratchet = tracedWheel ? {
     // Pitch is a reporting unit only: the ten measured faces are not evenly spaced.
     pitch: 2 * Math.PI / 10,
-    points: tracedRatchetProfile.flanks.flatMap(curve => Array.from({length:129},(_,i) => {
-      const t = i / 128, p = [0,1].map(k => (1-t)**3*curve[0][k] +
-        3*(1-t)**2*t*curve[1][k] + 3*(1-t)*t*t*curve[2][k] + t**3*curve[3][k]);
-      return [(p[0]-source.center[0])/source.scale,(source.center[1]-p[1])/source.scale];
-    })),
+    points: tracedRatchetProfile.flanks.flatMap(curve => {
+      let points;
+      if (wheelChordTolerancePixels>0) {
+        const result=cubicPolyline(curve,wheelChordTolerancePixels);
+        maximumChordErrorPixels=Math.max(maximumChordErrorPixels,result.maximumErrorBound);points=result.points;
+      } else points=Array.from({length:129},(_,i)=>{
+        const t=i/128;return [0,1].map(k=>(1-t)**3*curve[0][k]+3*(1-t)**2*t*curve[1][k]+3*(1-t)*t*t*curve[2][k]+t**3*curve[3][k]);
+      });
+      return points.map(p=>[(p[0]-source.center[0])/source.scale,(source.center[1]-p[1])/source.scale]);
+    }),
   } : study.ratchet;
+  if (tracedWheel) ratchet.maximumChordErrorPixels=wheelChordTolerancePixels>0 ? maximumChordErrorPixels : null;
   if (flatCatchEnd) {
     // Midpoint and normal of the two visible front-edge ends. The rear edge
     // in the engraving depicts depth; its projection is not another XY edge.
@@ -158,7 +169,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     return xml + '</body>'.repeat(segments);
   });
   const p = {segments, timestep, period, catchStiffness, strongStiffness, dampingTime, wheelMass, wheelDamping,
-    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, continuousLeaves, rigidWheel, preloadWheel, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
+    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, wheelChordTolerancePixels, frictionImpedance, noSlipIterations, elasticClamp, continuousLeaves, rigidWheel, preloadWheel, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
   const xml = `<mujoco model="073 elastic leaf study"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic" impratio="${frictionImpedance}" noslip_iterations="${noSlipIterations}"/>
     <default><joint limited="false"/><geom friction="${friction} .001 .001" condim="3" margin=".00001" solref="${contactTime} 1" solimp="${contactImpedance} ${1-(1-contactImpedance)/10} .0001"/></default>

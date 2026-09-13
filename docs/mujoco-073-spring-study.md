@@ -309,6 +309,40 @@ The running leaf contact/beam discretization still needs investigation, and
 the increased solver cost also prevents a real-time claim. All owned runs and
 the browser are terminal at this checkpoint.
 
+## Contact-response check and bounded outline simplification
+
+The saved traces agree closely during the first drive, then diverge during
+release and the next catch. Increasing the contact response time from 0.5 to
+2 ms, with the other parameters unchanged, reduces but does not remove the
+24/36-cell discrepancy: two cycles advance 3.02702 / 2.79841 teeth. Sampled
+penetration increases to 0.52035 / 0.45822 source pixels. This is another failed
+convergence check, not a selected production parameter change.
+
+The `wheelChordTolerancePixels` option now adaptively subdivides the traced
+cubic flanks using a control-hull distance bound. At 0.1 source pixel it retains
+every measured tip and root while reducing the outline from 1,290 to 225 points.
+The maximum accepted subcurve bound is 0.099849 pixels; an independent dense
+curve check measures 0.073191 pixels. A degenerate-loop test also confirms that
+coincident endpoints do not incorrectly flatten an excursion. The resulting
+rigid contact plate has 706 vertices and 1,059 tetrahedra, preserving its bore.
+The option defaults to zero, retaining uniform sampling for existing comparisons.
+
+With the original 0.5 ms contact response, the adaptive 24-cell run takes 92.11
+wall seconds for 18 simulated seconds, versus 165.39 for the dense outline.
+It advances 5.59224 nominal teeth, with 0.03357 tooth maximum rollback and
+0.14016-pixel sampled penetration. Nine focused tests pass. All nine saved views
+are inspected without browser errors; six native poses have four closed solids,
+zero topology errors and 62,872 surface samples. One directed overlap finding
+reaches 0.002461 source pixels.
+
+Despite the similar total advance, the transient motion remains sensitive:
+the dense/adaptive comparison reaches 22.30344 pixels at the nominal wheel rim
+and 32.75094 / 23.08716 pixels at B/C nodes. The smaller mesh is useful geometry
+and performance infrastructure, but these results do not qualify its contact
+dynamics. 073 remains an isolated study. Its contact and beam approximations,
+including constrained torsion, still need examination; complete hardware and
+real-time operation remain open. All owned processes are terminal.
+
 ## Reproduction
 
 ```sh
@@ -336,6 +370,11 @@ Add `"rigidWheel":true,"preloadWheel":true` to the continuous-leaf options to
 reproduce the rigid-volume assembly study. The two new regression tests are
 `tests/mujoco-plate-contact.test.mjs` and
 `tests/mujoco-spring-ratchet-preload.test.mjs`.
+
+Add `"wheelChordTolerancePixels":0.1` to the rigid-volume assembly options for
+the adaptive outline; use `tests/cubic-polyline.test.mjs` for its independent
+geometric checks. Set `"contactTime":0.002` and `PROBE_SECONDS=12` for the
+separate contact-response comparison, leaving the outline tolerance at zero.
 
 The browser capture requires the development server (default port 5174) and the
 local enlarged Brown reference image. Reports refuse overwrites and record source
