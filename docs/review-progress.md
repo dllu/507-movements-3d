@@ -3073,6 +3073,23 @@ before repeating dynamics and clearance qualification. Production and all
 1,097 frozen inputs remain unchanged. See the
 [087 distributed source-fit review](../artifacts/review/087-distributed-source-fit-notes.md).
 
+087 now has a fixed-orbit fit that restores the stud's measured margin inside
+E while limiting actual landmark shifts to 32 pixels. Registered native
+contours improve in RMS over both earlier candidates, but mean contour error
+still exceeds the 75-pixel candidate, so source fidelity remains unresolved.
+All 213 solids, 258 native stud contacts and fresh rendered mass/gravity checks
+pass. A retained initialization error confused preceding and outgoing stroke
+directions; the corrected version explicitly checks incoming stud motion.
+
+Two independent initial lifts retain the clutch under the existing friction
+hypothesis through half a model time unit. Their 4,002 fine states pass balance
+and contact checks, with coarse/fine position differences below 7.84e-5 radians.
+Four endpoint poses pass 6,053,388 hardware surface samples; all 17 new stills
+are inspected. Full release, connected reversal, repeated cycles, continuous
+clearance, final rendering/speed and integration still need qualification for
+this changed geometry. Production and all 1,097 frozen inputs remain unchanged.
+See the [087 fixed-orbit review](../artifacts/review/087-fixed-orbit-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
