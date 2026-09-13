@@ -49,6 +49,10 @@ Movement 102 uses matching helical threads to drive the axial travel of a
 rotating nut on a fixed bolt. Its [source reconstruction and contact checks](mujoco-102-screw.md)
 cover the corrected helix slope, complete square threads, conical hexagon
 chamfers, running clearance and nut section view.
+Movement 103 uses a rotating leadscrew to drive a passive horizontal carriage
+through matching threads. Its [source reconstruction and contact checks](mujoco-103-leadscrew-slide.md)
+cover the integral curved carriage, completed bed, inferred retaining guide,
+thread clearance, guide friction and section view.
 
 ## Shared runtime
 
@@ -246,3 +250,15 @@ averages 28.37 fps. The build and all eighteen MuJoCo browser checks pass;
 102 passes again after the final shadow-map adjustment. The fixed bolt,
 ideal coaxial alignment, 0.3-pixel running clearance, frictionless contact
 and reversing input are explicit reconstruction assumptions.
+
+The 103 migration passes 16 selected mechanism/runtime/camera tests and all
+nineteen MuJoCo browser checks. Its carriage haunch matches 61 independent ink
+readings within 1.7198 pixels RMS; the physical helix corrects the drawn slope
+while retaining pitch, diameter and direction. Ten cycles retain the carriage
+and guide. Two-cycle 2 ms/1 ms travel differences stay below 0.132625 pixel.
+Thirty-three poses over the first cycle pass 5,162,448 finite-surface samples,
+with only intended thread penetration below 0.002350 source pixel.
+All eighteen final views are inspected, and headless playback averages
+23.98 fps at the full eight-second physical period. The build passes.
+The ideal bearings and guide, open-bay bed interpretation, completed ends,
+friction values and reversing drive are explicit reconstruction assumptions.

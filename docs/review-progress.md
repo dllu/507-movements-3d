@@ -3448,6 +3448,23 @@ adjustment. The fixed bolt, ideal coaxial alignment, zero friction,
 0.3-pixel clearance and twelve-second reversing drive are explicit
 assumptions; see the [102 reconstruction](mujoco-102-screw.md).
 
+103 now uses matching MuJoCo threads to drive a passive horizontal carriage
+from an axially fixed rotating screw. The single curved carriage replaces
+separate braces, with a bored headstock, complete bed and hidden retaining
+guide. Its haunch matches 61 independent ink readings within 1.7198 pixels RMS.
+The helix corrects the drawn diagonal slope while retaining pitch, diameter
+and direction; corresponding crest edges differ by 2.6682 pixels RMS.
+Sixteen selected tests pass. Ten complete cycles give an 88.843-pixel stroke,
+and retain both thread and guide. Thirty-three poses over the first cycle
+pass 5,162,448 finite-surface samples, with only intended thread penetration
+below 0.002350 pixel. Timestep and sector refinement change
+travel by less than 0.132625 and 0.115218 pixel respectively. All eighteen final
+views are inspected, including the moving carriage and guide section; real-time
+headless playback averages 23.98 fps. The build and all nineteen MuJoCo browser
+checks pass. The ideal bearings and guide, open-bay bed interpretation, completed
+ends, friction values and eight-second reversing drive are explicit assumptions;
+see the [103 reconstruction](mujoco-103-leadscrew-slide.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3463,6 +3480,7 @@ assumptions; see the [102 reconstruction](mujoco-102-screw.md).
 100 is verified with measured crank/lever geometry, frictionless wrist contact and ideal bearings.
 101 is verified with a corrected slot, passive guided bar and an inferred symmetric lever swing.
 102 is verified with matching square threads, ideal coaxial alignment and stated clearance and friction limits.
+103 is verified with matching square threads, ideal bearings and guide, reconstructed friction and stated clearance.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
