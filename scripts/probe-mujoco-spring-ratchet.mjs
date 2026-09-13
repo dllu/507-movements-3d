@@ -13,6 +13,7 @@ const sourceHashes = Object.fromEntries(['scripts/lib/mujoco-spring-ratchet-cand
   'scripts/lib/spring-pressed-ratchet-source.mjs','scripts/lib/spring-pressed-ratchet-elastic.mjs',
   'src/simulation/finite-plate-geometry.js','src/simulation/mujoco-treadle/collision.js',
   'src/simulation/mujoco/simulation.js','src/simulation/mujoco/beam.js',
+  'src/simulation/mujoco/beam-surface.js',
   'scripts/probe-mujoco-spring-ratchet.mjs','package-lock.json']
   .map(path=>[path,createHash('sha256').update(fs.readFileSync(path)).digest('hex')]));
 let minimumGap = 0, maximumStep = 0, previous = Array.from(data.qpos), maximumContacts = 0;
@@ -24,8 +25,9 @@ try {
     maximumContacts = Math.max(maximumContacts,data.ncon);
     if (i % Math.round(.025 / v.physics.timestep)) continue;
     const state = v.sync(), contacts = data.contact, active = [];
+    if (state.minimumFlexVolumeRatio !== null) assert(state.minimumFlexVolumeRatio > 0,'A contact tetrahedron inverted');
     for (let j = 0; j < contacts.size(); j++) {
-      const c = contacts.get(j), names = [c.geom1,c.geom2].map(id=>mujocoName(id)); minimumGap = Math.min(minimumGap,c.dist);
+      const c = contacts.get(j), names = [0,1].map(side=>mujocoName(c.geom[side],c.flex[side])); minimumGap = Math.min(minimumGap,c.dist);
       const has = p => names.some(n=>n.startsWith(p));
       const kind = has('toothCell') ? (has('B') ? 'B-A' : 'C-A') : 'B-C';
       counts[kind]++;active.push({kind,names,gap:c.dist});c.delete();
@@ -35,9 +37,14 @@ try {
   const final=v.sync();
   const report={sourceHashes,parameters:v.root.userData.p,seconds:data.time,wallSeconds:(performance.now()-started)/1000,
     initial,final,advanceTeeth:(initial.wheelAngle-final.wheelAngle)/v.root.userData.ratchet.pitch,
-    minimumGapPixels:minimumGap*v.root.userData.source.scale,maximumStep,maximumContacts,counts,rows};
+    minimumGapPixels:minimumGap*v.root.userData.source.scale,maximumStep,maximumContacts,counts,
+    minimumFlexVolumeRatio:options.continuousLeaves ? Math.min(initial.minimumFlexVolumeRatio,...rows.map(r=>r.minimumFlexVolumeRatio)) : null,rows};
   fs.writeFileSync(prefix+'.json',JSON.stringify(report)+'\n',{flag:'wx'});
   const {rows:_,...summary}=report;console.log({...summary,initial:{wheelAngle:initial.wheelAngle},final:{wheelAngle:final.wheelAngle},rows:rows.length});
 } finally {v.dispose();}
 
-function mujocoName(id) {return v.physics.mujoco.mj_id2name(model,v.physics.mujoco.mjtObj.mjOBJ_GEOM.value,id);}
+function mujocoName(geom,flex) {
+  const {mujoco} = v.physics, name = geom >= 0 ? mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_GEOM.value,geom) :
+    mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_FLEX.value,flex);
+  assert(name,'Contact must identify its geom or flex');return name;
+}

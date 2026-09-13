@@ -198,6 +198,50 @@ allow the validated beam dynamics to drive that contact volume. Its source
 fit, deformation, contact forces and refinement still need implementation
 and validation.
 
+## Continuous contact leaves
+
+The `continuousLeaves` option replaces the overlapping cell meshes with two
+closed MuJoCo 3D flex volumes carried by the existing beam bodies. The verified
+hinge model still supplies bending elasticity; the contact surfaces add no
+coordinates. Three.js uses the native flex boundary vertices and triangles.
+Normals are shared along each leaf face, preserving sharp thickness edges.
+Both source-derived flat ends are retained. An oblique cut can extend behind
+several short cells, so its cap spans a fixed physical length rather than
+inverting the terminal contact elements as the beam is refined.
+
+An independent test at 8, 24 and 48 cells compares every native boundary triangle
+with the rendered boundary, checks the end plane, and bends the beam before
+checking transformed vertices, positive tetrahedral volumes and closed-solid
+topology. It passes alongside the cantilever and shared runtime tests (five
+tests total). The candidate now has four visible solids instead of fifty.
+
+The same three-cycle experiment, with corrected clamps, gives:
+
+| Check | Observed result |
+| --- | --- |
+| 24 cells, 0.125 ms | 5.59340 nominal teeth; 0.04136 tooth maximum rollback |
+| 36 cells, 0.125 ms | 4.64735 nominal teeth; spatial refinement still fails |
+| 24 cells, 0.0625 ms | 5.60590 nominal teeth; 0.01146 tooth maximum rollback |
+| Maximum coarse/fine wheel-rim difference | 8.90992 source pixels |
+| Maximum coarse/fine B/C node difference | 13.13052 / 5.38015 source pixels |
+| Sampled engine penetration, 24 / 36 / finer timestep | 0.14584 / 0.24113 / 0.06203 source pixels |
+| Minimum sampled tetrahedral volume/rest-volume ratio | 0.97474 / 0.97421 / 0.97474 |
+
+Six native poses of the 24-cell run pass topology checks across four solids and
+215,800 surface samples. Four directed overlap findings remain, reaching
+0.14317 source pixels. All nine browser views are inspected without browser
+errors; the leaves have continuous shading and finite ends. Positive local
+tetrahedral volumes do not establish clearance between distant portions of the
+same leaf, whose self-contact is disabled. The 24-cell probe takes 57.55 wall
+seconds for 18 simulated seconds, so real-time performance remains unqualified.
+
+This is a contact-geometry checkpoint, not a production migration. Substantial
+resolution sensitivity, small soft-contact overlaps, inferred depths/materials,
+incomplete supports and hub, and long-run behavior remain open. The next contact
+representation to examine is A's convex decomposition: its internal cell faces
+are not part of the visible ratchet boundary. They are a possible source of
+contact artifacts, not an established explanation of the refinement failure.
+
 ## Reproduction
 
 ```sh
@@ -211,6 +255,10 @@ TMPDIR=/dev/shm PROBE_REPORT=/dev/shm/073-traced.json node scripts/capture-mujoc
 PROBE_PREFIX=/dev/shm/073-flat PROBE_SECONDS=60 PROBE_OPTIONS='{"timestep":0.000125,"contactTime":0.0005,"contactImpedance":0.9999,"catchStiffness":4,"strongStiffness":27,"flatStopEnd":true,"strongPlane":0.21,"tracedWheel":true,"initialWheelAngle":0,"stopEndSourceY":465,"flatCatchEnd":true,"leafPlane":0.02,"catchRootPlane":0.02,"friction":0.5,"noSlipIterations":3}' node scripts/probe-mujoco-spring-ratchet.mjs
 node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-flat.json
 node --test tests/mujoco-beam.test.mjs tests/mujoco-runtime.test.mjs
+PROBE_PREFIX=/dev/shm/073-flex PROBE_SECONDS=18 PROBE_OPTIONS='{"timestep":0.000125,"contactTime":0.0005,"contactImpedance":0.9999,"catchStiffness":4,"strongStiffness":27,"flatStopEnd":true,"strongPlane":0.21,"tracedWheel":true,"initialWheelAngle":0,"stopEndSourceY":465,"flatCatchEnd":true,"leafPlane":0.02,"catchRootPlane":0.02,"friction":0.5,"noSlipIterations":3,"elasticClamp":true,"continuousLeaves":true}' node scripts/probe-mujoco-spring-ratchet.mjs
+node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-flex.json
+TMPDIR=/dev/shm PROBE_REPORT=/dev/shm/073-flex.json node scripts/capture-mujoco-spring-ratchet.mjs
+node --test tests/mujoco-beam-surface.test.mjs tests/mujoco-beam.test.mjs tests/mujoco-runtime.test.mjs
 ```
 
 Add `"elasticClamp":true` to the flat-end probe options to reproduce the corrected

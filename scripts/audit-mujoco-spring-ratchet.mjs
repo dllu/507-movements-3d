@@ -14,6 +14,11 @@ try {
   assert.equal(v.physics.model.nu,1);
   assert.equal(v.physics.model.actuator_trnid[0],v.physics.id('mjOBJ_JOINT','driver'));
   assert.equal(v.physics.model.nq,2 + 4 * (report.parameters.segments - (report.parameters.elasticClamp ? 0 : 1)));
+  if (report.parameters.continuousLeaves) {
+    assert.equal(v.physics.model.nflex,2);
+    assert.deepEqual(Object.keys(u.parts).sort(),['Bleaf','Cleaf','driver','ratchet']);
+    assert(report.minimumFlexVolumeRatio > 0);
+  }
   let maximumLengthError = 0;
   const pitch = u.ratchet.pitch, cycles = [];
   let furthestAngle = report.initial.wheelAngle, maximumRollbackTeeth = 0;
@@ -44,10 +49,11 @@ try {
     const state = time === 0 ? report.initial : report.rows.reduce((a,b)=>Math.abs(a.time-time)<Math.abs(b.time-time)?a:b);
     const data = v.physics.data;data.qpos.set(state.qpos);data.qvel.set(state.qvel);data.time=state.time;v.sync();
     const {topology,topologyIssues,checks,issues} = auditClutchSourceSolids(v);
-    poses.push({time:state.time,solids:topology.length,topologyIssues,checks,issues});
+    poses.push({time:state.time,solids:topology.length,topologyIssues,checks,issues,
+      minimumFlexVolumeRatio:u.state.minimumFlexVolumeRatio});
   }
   const output = {input:file,sourceHashes:report.sourceHashes,maximumLengthError,maximumRollbackTeeth,cycles,poses,
-    qualification:'Diagnostic of an isolated candidate. Whole-leaf pairs and wheel pairs are screened at six poses; overlapping cells within a leaf are excluded. Dwell measurements use 1.2–3 seconds after each nominal cycle start. Incomplete supports, unverified beam refinement and source depth assumptions prevent assembly acceptance; rollback and drift are reported independently.'};
+    qualification:'Diagnostic of an isolated candidate. Whole-leaf pairs and wheel pairs are screened at six poses; within-leaf self-contact is not certified. Positive tetrahedral volumes rule out local element inversion at saved samples, not distant self-intersection. Dwell measurements use 1.2–3 seconds after each nominal cycle start. Incomplete supports, unverified beam refinement and source depth assumptions prevent assembly acceptance; rollback and drift are reported independently.'};
   fs.writeFileSync(file.replace(/\.json$/,'-audit.json'),JSON.stringify(output,null,2)+'\n',{flag:'wx'});
   console.log({maximumLengthError,cycles,poses:poses.map(({issues,topologyIssues,...p})=>({...p,issues:issues.length,topologyIssues:topologyIssues.length})),
     maximumRollbackTeeth});

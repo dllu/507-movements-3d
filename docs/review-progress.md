@@ -3229,6 +3229,15 @@ the advance from 5.62068 to 3.68447 teeth. The overlap between rigid contact cel
 is the next geometry issue to replace and check; the complete 073 migration
 remains unqualified.
 
+073 now has continuous finite contact leaves driven by its existing MuJoCo beam
+bodies. The native contact boundary and rendered triangles match in independent
+8/24/48-cell tests, and all five beam/runtime tests pass. Nine rendered views and
+six native poses are inspected; four closed solids replace fifty overlapping
+cell meshes. Small contact overlaps remain, and the three-cycle advance changes
+from 5.59340 to 4.64735 teeth at 24 versus 36 cells. Halving timestep changes brief
+wheel-rim positions by up to 8.90992 source pixels. Geometry is improved, but
+resolution, complete hardware and real-time qualification still prevent migration.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.

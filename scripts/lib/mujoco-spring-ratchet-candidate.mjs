@@ -7,6 +7,7 @@ import {PALETTE, matte, markShadows} from '../../src/simulation/primitives.js';
 import {convexPlatePieces} from '../../src/simulation/mujoco-treadle/collision.js';
 import {createMujocoSimulation, createPhysicsPlayback} from '../../src/simulation/mujoco/simulation.js';
 import {beamBendingStiffness} from '../../src/simulation/mujoco/beam.js';
+import {makeBeamSurface} from '../../src/simulation/mujoco/beam-surface.js';
 import {disposeObject3D} from '../../src/simulation/dispose-model.js';
 
 export {THREE};
@@ -24,8 +25,10 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   tracedWheel = false, initialWheelAngle = -.0075,
   frictionImpedance = 1, noSlipIterations = 0,
   elasticClamp = false,
+  continuousLeaves = false,
   catchRootPlane = -.20, catchRiseStart = .6, contactTime = .002, contactImpedance = .999,
   settlingTime = 1, motorStiffness = 10000, motorDamping = 100} = {}) {
+  if (continuousLeaves && !(flatCatchEnd && flatStopEnd)) throw new RangeError('Continuous leaves require both measured flat ends');
   const source = springRatchetSource, study = makeElasticRatchetStudy({segments,
     strongRootPixels: 30.682, strongTipPixels: 28.054}), {rods} = study;
   const ratchet = tracedWheel ? {
@@ -60,11 +63,14 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     rod.angles = edges.map(e=>Math.atan2(e[1],e[0]));
     rod.length = rod.lengths.reduce((sum,length)=>sum+length,0);
   }
-  const root = new THREE.Group(), parts = {}, families = {}, blocks = {}, bodyNames = [], jointNames = [], assets = [], beams = [];
+  const root = new THREE.Group(), parts = {}, families = {}, blocks = {}, bodyNames = [], jointNames = [], assets = [], beams = [], surfaces = [];
+  const block = name => {
+    if (!blocks[name]) {blocks[name] = new THREE.Group();root.add(blocks[name]);}
+    return blocks[name];
+  };
   const attach = (name, geometry, family, color) => {
-    if (!blocks[family]) { blocks[family] = new THREE.Group(); root.add(blocks[family]); }
     const mesh = new THREE.Mesh(geometry, matte(color, {metalness: .18, roughness: .55}));
-    mesh.name = name; blocks[family].add(mesh); parts[name] = mesh; families[name] = family;
+    mesh.name = name; block(family).add(mesh); parts[name] = mesh; families[name] = family;
     return mesh;
   };
   attach('ratchet', plate(clip.difference(poly(ratchet.points), poly(circle([0,0], .17, 128))), -.1, .06), 'wheel', PALETTE.driven);
@@ -90,6 +96,12 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
       return {length, quaternion:new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z)), normal:z};
     });
     beams.push(frames);
+    if (continuousLeaves) {
+      const surface = makeBeamSurface({name,points,frames,widths:rod.widths,depth,
+        endNormal:side ? new THREE.Vector3(0,1,0) : new THREE.Vector3(8.75,-17.75,0),
+        contact:{mask,other,friction,time:contactTime,impedance:contactImpedance}});
+      surfaces.push(surface);attach(name+'leaf',surface.geometry,name,color);
+    }
     let xml = '';
     for (let i = 0; i < segments; i++) {
       const {length,quaternion} = frames[i], width = (rod.widths[i] + rod.widths[i + 1]) / 2, family = name + i;
@@ -104,26 +116,31 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         jointNames.push(family + suffix);
         jointXml += `<joint name="${family + suffix}" type="hinge" axis="${axis}" stiffness="${k}" damping="${k * dampingTime}"/>`;
       }
-      let profile = capsule([0,0], [length,0], width / 2, 12);
       const flatEnd = side ? flatStopEnd : flatCatchEnd;
-      if (flatEnd && i === segments - 1) {
-        const x = new THREE.Vector3(1,0,0).applyQuaternion(quaternion), y = new THREE.Vector3(0,1,0).applyQuaternion(quaternion);
-        const normal = side ? new THREE.Vector3(0,1,0) : new THREE.Vector3(8.75,-17.75,0);
-        const slope = -normal.dot(y) / normal.dot(x), left = -2 * (length + width);
-        // Extend the strip before cutting it. Clipping its old rounded cap
-        // would leave the forward corner short of the engraved tooth root.
-        profile = capsule([0,0], [length + (Math.abs(slope) + 1) * width,0], width / 2,12);
-        profile = clip.intersection(profile,poly([[left,-width],[length-slope*width,-width],
-          [length+slope*width,width],[left,width]]));
+      let geomXml = '';
+      block(family);
+      if (!continuousLeaves) {
+        let profile = capsule([0,0], [length,0], width / 2, 12);
+        if (flatEnd && i === segments - 1) {
+          const x = new THREE.Vector3(1,0,0).applyQuaternion(quaternion), y = new THREE.Vector3(0,1,0).applyQuaternion(quaternion);
+          const normal = side ? new THREE.Vector3(0,1,0) : new THREE.Vector3(8.75,-17.75,0);
+          const slope = -normal.dot(y) / normal.dot(x), left = -2 * (length + width);
+          // Extend the strip before cutting it. Clipping its old rounded cap
+          // would leave the forward corner short of the engraved tooth root.
+          profile = capsule([0,0], [length + (Math.abs(slope) + 1) * width,0], width / 2,12);
+          profile = clip.intersection(profile,poly([[left,-width],[length-slope*width,-width],
+            [length+slope*width,width],[left,width]]));
+        }
+        const geometry = plate(profile, -depth / 2, depth / 2);
+        const positions = geometry.attributes.position, vertices = new Map();
+        for (let k = 0; k < positions.count; k++) { const v = [positions.getX(k),positions.getY(k),positions.getZ(k)];vertices.set(v.join(','),v); }
+        assets.push(`<mesh name="${family}" vertex="${vec([...vertices.values()].flat())}"/>`);
+        geomXml = `<geom name="${family}" type="mesh" mesh="${family}" contype="${mask}" conaffinity="${other}"/>`;
+        attach(family, geometry, family, color);
       }
-      const geometry = plate(profile, -depth / 2, depth / 2);
-      const positions = geometry.attributes.position, vertices = new Map();
-      for (let k = 0; k < positions.count; k++) { const v = [positions.getX(k),positions.getY(k),positions.getZ(k)];vertices.set(v.join(','),v); }
-      assets.push(`<mesh name="${family}" vertex="${vec([...vertices.values()].flat())}"/>`);
       xml += `<body name="${family}" pos="${vec(position)}" quat="${vec([relative.w,relative.x,relative.y,relative.z])}">
         <inertial pos="${length / 2} 0 0" mass="${mass}" diaginertia="${vec(inertia)}"/>
-        ${jointXml}<geom name="${family}" type="mesh" mesh="${family}" contype="${mask}" conaffinity="${other}"/>`;
-      attach(family, geometry, family, color);
+        ${jointXml}${geomXml}`;
       bodyNames.push(family);
       if (i === segments - 1 && !flatEnd) {
         // A finite axial tab reaches A; the rest of the leaf clears its face.
@@ -136,7 +153,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     return xml + '</body>'.repeat(segments);
   });
   const p = {segments, timestep, period, catchStiffness, strongStiffness, dampingTime, wheelMass, wheelDamping,
-    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
+    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, continuousLeaves, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
   const xml = `<mujoco model="073 elastic leaf study"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic" impratio="${frictionImpedance}" noslip_iterations="${noSlipIterations}"/>
     <default><joint limited="false"/><geom friction="${friction} .001 .001" condim="3" margin=".00001" solref="${contactTime} 1" solimp="${contactImpedance} ${1-(1-contactImpedance)/10} .0001"/></default>
@@ -145,7 +162,8 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         <inertial pos="0 0 0" mass="${wheelMass}" diaginertia="${wheelMass * .2} ${wheelMass * .2} ${wheelMass * .4}"/>${wheelGeoms}</body>
       <body name="driver"><joint name="driver" type="hinge" axis="0 0 1"/>
         <inertial pos="0 0 -.39" mass="1" diaginertia=".6 .6 1.2"/>${chains[0]}</body>
-      ${chains[1]}</worldbody><actuator><position name="input" joint="driver" kp="${motorStiffness}" kv="${motorDamping}"/></actuator></mujoco>`;
+      ${chains[1]}</worldbody><deformable>${surfaces.map(s=>s.xml).join('')}</deformable>
+      <actuator><position name="input" joint="driver" kp="${motorStiffness}" kv="${motorDamping}"/></actuator></mujoco>`;
   let physics;
   try {
     physics = createMujocoSimulation(mujoco, {xml,
@@ -162,6 +180,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     });
   } catch (error) { disposeObject3D(root); throw error; }
   const {model,data} = physics, bodies = Object.fromEntries(['wheel','driver',...bodyNames].map(name => [name,physics.id('mjOBJ_BODY',name)]));
+  for (const surface of surfaces) surface.offset = model.flex_vertadr[physics.id('mjOBJ_FLEX',surface.name)];
   const joints = Object.fromEntries(['wheel','driver',...jointNames].map(name => {
     const id = physics.id('mjOBJ_JOINT',name); return [name,{q:model.jnt_qposadr[id],v:model.jnt_dofadr[id]}];
   }));
@@ -171,6 +190,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
       blocks[name].position.fromArray(data.xpos,3*id);
       blocks[name].quaternion.set(data.xquat[4*id+1],data.xquat[4*id+2],data.xquat[4*id+3],data.xquat[4*id]);
     }
+    for (const surface of surfaces) surface.update(data.flexvert_xpos,surface.offset);
     root.updateMatrixWorld(true);
     const points = rods.map((rod,side) => {
       const name = side ? 'C' : 'B';
@@ -178,10 +198,11 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
         new THREE.Vector3(beams[side].at(-1).length,0,0).applyMatrix4(blocks[name+(segments-1)].matrixWorld).toArray()];
     });
     return root.userData.state = {time:data.time,wheelAngle:data.qpos[joints.wheel.q],driverAngle:data.qpos[joints.driver.q],
-      wheelSpeed:data.qvel[joints.wheel.v],qpos:Array.from(data.qpos),qvel:Array.from(data.qvel),points};
+      wheelSpeed:data.qvel[joints.wheel.v],qpos:Array.from(data.qpos),qvel:Array.from(data.qvel),points,
+      minimumFlexVolumeRatio:surfaces.length ? Math.min(...surfaces.map(s=>s.minimumVolumeRatio)) : null};
   };
   const playback = createPhysicsPlayback(physics,sync);
-  root.userData = {parts,families,blocks,source,rods,ratchet,physics,p,beams,collision:shape,mechanism:'mujoco-spring-ratchet-study',
+  root.userData = {parts,families,blocks,source,rods,ratchet,physics,p,beams,surfaces,collision:shape,mechanism:'mujoco-spring-ratchet-study',
     fidelity:'candidate',reconstructionStatus:'under-review',hideGround:true,cameraFov:8,
     cameraFitBounds:new THREE.Box3(new THREE.Vector3(-2.2,-2.3,-.6),new THREE.Vector3(1.7,1.7,.7)),
     animationTiming:{authoredCyclePeriod:period,displayCycleDuration:period,playbackTimeScale:1}};
