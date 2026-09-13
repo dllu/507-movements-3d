@@ -13,7 +13,7 @@ const v = makeMujocoSpringRatchet(await loadMujoco(),report.parameters), u = v.r
 try {
   assert.equal(v.physics.model.nu,1);
   assert.equal(v.physics.model.actuator_trnid[0],v.physics.id('mjOBJ_JOINT','driver'));
-  assert.equal(v.physics.model.nq,2 + 4 * (report.parameters.segments - 1));
+  assert.equal(v.physics.model.nq,2 + 4 * (report.parameters.segments - (report.parameters.elasticClamp ? 0 : 1)));
   let maximumLengthError = 0;
   const pitch = u.ratchet.pitch, cycles = [];
   let furthestAngle = report.initial.wheelAngle, maximumRollbackTeeth = 0;

@@ -160,6 +160,44 @@ material or contact tuning. Complete mounting hardware, mass properties, leaf
 surface finish and real-time playback remain pending. The ten-cycle Node run
 takes 116.8 wall seconds for 60 simulated seconds.
 
+## Clamp boundary correction
+
+The `elasticClamp` option now adds the missing half-cell bending compliance at
+each fixed root. Interior rotational stiffness is EI divided by the distance
+between cell centers; root stiffness is 2EI divided by the first cell length.
+Root positions stay attached to D and the fixed support. The first rigid cell's
+angle represents the average orientation across its bending span, rather than
+an extra length of perfectly rigid clamping. This gives 98 coordinates at 24
+cells. The former 94-coordinate setup remains available for comparison.
+
+An independent MuJoCo cantilever test applies a transverse force at the actual
+free tip and compares static deflection and slope with Euler–Bernoulli theory.
+The corrected relative deflection errors at 8/16/32 cells are
+0.78124% / 0.19530% / 0.04882%, decreasing by a factor of four with each doubling.
+Fixing the whole first cell at eight cells gives a 17.96876% error. This verifies
+the boundary correction, not the complete ratchet or its friction behavior.
+
+The corrected 24-cell ratchet completes three cycles with 5.62068 nominal teeth
+of advance, 0.01594 tooth maximum rollback and 0.11545-pixel sampled engine
+penetration. Six native poses have 50 closed solids, 3,040,714 surface samples,
+no topology errors, and six directed overlap findings reaching 0.04306 pixels.
+All nine rendered views are inspected without browser errors. The undeformed
+flat B end is within 0.186 pixels of its two construction corner readings.
+However, the corrected 36-cell run advances only 3.68447 teeth over the same
+three cycles. Thus the boundary correction is necessary but does not resolve
+the mechanism's large sensitivity to beam resolution. Neither run is accepted
+as the production replacement.
+
+The next reconstruction step is to replace overlapping rigid-cell contact
+shapes with a continuous finite leaf surface. A minimal WASM capability check
+confirms that a zero-radius 3D flex with eight vertices and six tetrahedra can
+follow existing body frames without extra degrees of freedom; transformed
+vertices agree to 1.12e-16. This only confirms the API, not loaded contact
+behavior. MuJoCo's [flex body and vertex definitions](https://mujoco.readthedocs.io/en/stable/XMLreference.html#deformable-flex)
+allow the validated beam dynamics to drive that contact volume. Its source
+fit, deformation, contact forces and refinement still need implementation
+and validation.
+
 ## Reproduction
 
 ```sh
@@ -172,7 +210,12 @@ node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-traced.json
 TMPDIR=/dev/shm PROBE_REPORT=/dev/shm/073-traced.json node scripts/capture-mujoco-spring-ratchet.mjs
 PROBE_PREFIX=/dev/shm/073-flat PROBE_SECONDS=60 PROBE_OPTIONS='{"timestep":0.000125,"contactTime":0.0005,"contactImpedance":0.9999,"catchStiffness":4,"strongStiffness":27,"flatStopEnd":true,"strongPlane":0.21,"tracedWheel":true,"initialWheelAngle":0,"stopEndSourceY":465,"flatCatchEnd":true,"leafPlane":0.02,"catchRootPlane":0.02,"friction":0.5,"noSlipIterations":3}' node scripts/probe-mujoco-spring-ratchet.mjs
 node scripts/audit-mujoco-spring-ratchet.mjs /dev/shm/073-flat.json
+node --test tests/mujoco-beam.test.mjs tests/mujoco-runtime.test.mjs
 ```
+
+Add `"elasticClamp":true` to the flat-end probe options to reproduce the corrected
+boundary trial. Use `"segments":36` for its resolution comparison. Source hashes
+include the shared beam-stiffness implementation.
 
 The browser capture requires the development server (default port 5174) and the
 local enlarged Brown reference image. Reports refuse overwrites and record source

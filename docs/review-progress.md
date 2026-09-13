@@ -3220,6 +3220,15 @@ six native solid poses are inspected. The entire first beam cell is currently
 fixed, so its effective clamped length changes with resolution; correcting that
 boundary is the next concrete solver change. Production 073 remains unresolved.
 
+The 073 clamp boundary is now corrected using half-cell bending compliance.
+An independent MuJoCo cantilever test converges to the analytical deflection
+with 0.78124%, 0.19530% and 0.04882% error at 8, 16 and 32 cells; the former
+eight-cell boundary gives 17.96876% error. Three corrected ratchet cycles and
+nine rendered views are checked, but changing from 24 to 36 cells still changes
+the advance from 5.62068 to 3.68447 teeth. The overlap between rigid contact cells
+is the next geometry issue to replace and check; the complete 073 migration
+remains unqualified.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.

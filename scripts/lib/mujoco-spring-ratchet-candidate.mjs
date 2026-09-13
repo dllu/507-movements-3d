@@ -6,6 +6,7 @@ import {plate, poly, circle, capsule, disk, polygonClipping as clip} from '../..
 import {PALETTE, matte, markShadows} from '../../src/simulation/primitives.js';
 import {convexPlatePieces} from '../../src/simulation/mujoco-treadle/collision.js';
 import {createMujocoSimulation, createPhysicsPlayback} from '../../src/simulation/mujoco/simulation.js';
+import {beamBendingStiffness} from '../../src/simulation/mujoco/beam.js';
 import {disposeObject3D} from '../../src/simulation/dispose-model.js';
 
 export {THREE};
@@ -22,6 +23,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
   flatCatchEnd = false,
   tracedWheel = false, initialWheelAngle = -.0075,
   frictionImpedance = 1, noSlipIterations = 0,
+  elasticClamp = false,
   catchRootPlane = -.20, catchRiseStart = .6, contactTime = .002, contactImpedance = .999,
   settlingTime = 1, motorStiffness = 10000, motorDamping = 100} = {}) {
   const source = springRatchetSource, study = makeElasticRatchetStudy({segments,
@@ -50,6 +52,13 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     const points = rods[1].points, end = points.at(-1), previous = points.at(-2);
     const y = (source.center[1] - stopEndSourceY) / source.scale;
     points[points.length - 1] = [end[0] + (y-end[1]) * (end[0]-previous[0]) / (end[1]-previous[1]), y];
+  }
+  // Keep the exposed centerline metadata consistent with the changed ends.
+  for (const rod of rods) {
+    const edges = rod.points.slice(1).map((p,i)=>p.map((v,k)=>v-rod.points[i][k]));
+    rod.lengths = edges.map(e=>Math.hypot(...e));
+    rod.angles = edges.map(e=>Math.atan2(e[1],e[0]));
+    rod.length = rod.lengths.reduce((sum,length)=>sum+length,0);
   }
   const root = new THREE.Group(), parts = {}, families = {}, blocks = {}, bodyNames = [], jointNames = [], assets = [], beams = [];
   const attach = (name, geometry, family, color) => {
@@ -88,9 +97,10 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
       const position = i ? [frames[i-1].length,0,0] : points[0].toArray();
       const mass = leafDensity * length * width * depth;
       const inertia = [width * width + depth * depth, length * length + depth * depth, length * length + width * width].map(v => mass * v / 12);
-      const jointStiffness = stiffness * (width / rod.width) ** 3 / (i ? (length + frames[i-1].length) / 2 : length);
+      const jointStiffness = beamBendingStiffness(stiffness * (width / rod.width) ** 3,
+        length,i ? frames[i-1].length : null);
       let jointXml = '';
-      if (i) for (const [suffix,axis,k] of [['bend','0 0 1',jointStiffness],['lift','0 1 0',jointStiffness * (depth / width) ** 2]]) {
+      if (i || elasticClamp) for (const [suffix,axis,k] of [['bend','0 0 1',jointStiffness],['lift','0 1 0',jointStiffness * (depth / width) ** 2]]) {
         jointNames.push(family + suffix);
         jointXml += `<joint name="${family + suffix}" type="hinge" axis="${axis}" stiffness="${k}" damping="${k * dampingTime}"/>`;
       }
@@ -126,7 +136,7 @@ export function makeMujocoSpringRatchet(mujoco, {segments = 24, timestep = .0005
     return xml + '</body>'.repeat(segments);
   });
   const p = {segments, timestep, period, catchStiffness, strongStiffness, dampingTime, wheelMass, wheelDamping,
-    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
+    load, friction, leafDensity, leafDepth, strongDepth, leafPlane, strongPlane, flatStopEnd, stopEndSourceY, flatCatchEnd, tracedWheel, initialWheelAngle, frictionImpedance, noSlipIterations, elasticClamp, catchRootPlane, catchRiseStart, contactTime, contactImpedance, settlingTime, motorStiffness, motorDamping};
   const xml = `<mujoco model="073 elastic leaf study"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="80" tolerance="1e-9" cone="elliptic" impratio="${frictionImpedance}" noslip_iterations="${noSlipIterations}"/>
     <default><joint limited="false"/><geom friction="${friction} .001 .001" condim="3" margin=".00001" solref="${contactTime} 1" solimp="${contactImpedance} ${1-(1-contactImpedance)/10} .0001"/></default>
