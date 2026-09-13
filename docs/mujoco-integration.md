@@ -58,6 +58,11 @@ worm wheel. Either the screw turns the held carriage's wheel, or the wheel
 moves the carriage along a held screw. Its [reconstruction and limits](mujoco-104-worm-saddle.md)
 distinguish ideal transmission reactions from tooth contact dynamics, which
 are omitted along with backlash and tooth friction.
+Movement 105 uses an ideal screw coupling and captured swivel to lower a
+guided ram onto a rigid blank, with native contact at the working faces.
+Its [source reconstruction and limits](mujoco-105-screw-press.md) cover corrected
+thread handedness and shape, a surrounding guide, inferred lower frame,
+finite hardware clearances and section views of the threads and swivel.
 
 ## Shared runtime
 
@@ -279,3 +284,17 @@ All seventeen final views are inspected. Headless playback averages 13.87 fps,
 with 0.220 ms mean physics/update time; rendering is the measured limit.
 The matching visible surfaces do not imply native tooth contact simulation:
 tooth friction, backlash, impacts and self-locking remain omitted.
+
+The 105 migration passes four mechanism tests, eleven runtime/engine/camera
+tests, the production build and all 21 MuJoCo browser tests. Its C frame
+matches 139 ink readings within 1.48018 pixels RMS; matching square helices
+retain source pitch and correct the previous thread handedness. Ten strokes
+reach the rigid blank and return, with native penetration below 0.002225 pixel.
+Seventeen poses pass 3,949,752 finite-surface samples with only intended
+ram/blank contact. Minimum key engagement remains 11.08320 source pixels.
+Halving the timestep changes travel by less than 0.011155 pixel.
+All nineteen final views are inspected and headless playback averages
+39.10 fps, with mean physics/update time 0.150 ms. The screw, swivel and guide
+use ideal constraints; thread contact, friction and self-locking are omitted.
+The hidden bearing, key, depths, completed lower frame, anvil, rigid blank
+and reversing drive are explicit reconstruction assumptions.

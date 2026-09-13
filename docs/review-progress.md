@@ -3483,6 +3483,23 @@ transmission: tooth contact, friction, backlash and self-locking are omitted.
 Its inferred tooth count, pressure angle, depth, guide, bearings and reversing
 drive are documented in the [104 reconstruction](mujoco-104-worm-saddle.md).
 
+105 now uses a MuJoCo screw coupling and captured swivel with native contact
+between the ram and a rigid blank. The reconstruction corrects reversed,
+round-wire threads, ball-shaped weights, the added side guide and frame/ram
+proportions. Matching square helices, oblate bored weights and a surrounding
+keyed guide replace them. The frame matches 139 independent ink readings
+within 1.48018 pixels RMS; source registration records coaxial and perspective
+corrections. Four mechanism and eleven shared playback/camera tests pass.
+Ten full strokes retain the guides and thread engagement. Seventeen poses
+pass 3,949,752 finite-surface samples, with only intended ram/blank overlap
+below 0.000113 pixel. Native penetration stays below 0.002225 pixel and
+timestep travel differences below 0.011155 pixel. All nineteen final views
+are inspected, including section views and desktop/mobile catalog controls.
+The production build and all 21 MuJoCo browser tests pass. Headless playback
+averages 39.10 fps. Ideal screw/swivel/guide constraints, omitted thread
+friction and self-locking, and the inferred lower frame and hidden hardware
+are documented in the [105 reconstruction](mujoco-105-screw-press.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3500,6 +3517,7 @@ drive are documented in the [104 reconstruction](mujoco-104-worm-saddle.md).
 102 is verified with matching square threads, ideal coaxial alignment and stated clearance and friction limits.
 103 is verified with matching square threads, ideal bearings and guide, reconstructed friction and stated clearance.
 104 is verified as an ideal MuJoCo gear transmission with generated matching teeth and both input modes.
+105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
