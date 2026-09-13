@@ -3127,6 +3127,8 @@ playback and production integration remain pending. All 1,097 frozen
 production inputs are unchanged. See the
 [087 second-transfer review](../artifacts/review/087-second-transfer-notes.md).
 
+088's current production model now has a measured source diagnosis. One outer-disk registration leaves a mean cam-contour discrepancy of 24.14 source pixels and an input-axis displacement of 22.93 pixels, beyond the approximate 3-pixel tracing uncertainty. The actual point noses do reach a cam edge with a usable driving normal; an initial axial-only contact hypothesis was rejected and retained. Finite stop construction and prescribed drive/dwell velocity jumps still need mechanical review. Four corrected stills and one registered overlay are inspected, with no errors or unexpected warnings in the final capture. Production is unchanged; 088 is not qualified. See the [088 production diagnosis](../artifacts/review/088-production-review-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
