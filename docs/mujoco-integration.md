@@ -67,6 +67,10 @@ Movement 106 uses native groove-wall contact to drive a passive guided rod
 from a rotating barrel. Its [source reconstruction and contact checks](mujoco-106-barrel-cam.md)
 cover the corrected uniform stroke, rounded working pin, complete recessed
 groove, measured hanging guides and inferred rigid follower attachment.
+Movement 107 extends the same contact model to a repeating serpentine groove.
+Its [source reconstruction and checks](mujoco-107-serpentine-cam.md) describe
+the inferred eleven repetitions, uniform working flanks, smooth reversals,
+narrower working pin needed to avoid undercut, and short rod's guide engagement.
 
 ## Shared runtime
 
@@ -316,3 +320,14 @@ views are inspected; live headless playback averages 36.32 fps at physical
 speed. The rounded pin, rigid head attachment, depths and ideal bearings
 and guides are stated reconstruction assumptions. Output motion comes
 from contact, with no output actuator, spring or equality.
+
+The 107 migration passes four new mechanism tests, all four 106 regressions,
+eleven shared tests, the production build and all 23 MuJoCo browser tests.
+Ten full barrel turns complete 220 half-strokes, with follower error below
+0.103872 source pixel and guide engagement above 8.03050 pixels. Forty-three
+poses pass 13,327,862 surface samples with only intended pin/land contact.
+The final narrower working pin avoids pitch-curve undercut under either load.
+Its eleven repetitions are inferred from the source fit; the caption does not
+specify a count. All sixteen final views are inspected, and headless playback
+averages 19.84 fps at the physical two-second output cycle. The native model
+has only an input actuator; output motion comes from groove-wall contact.

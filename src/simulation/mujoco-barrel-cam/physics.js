@@ -2,14 +2,22 @@ import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 const vec=v=>v.map(x=>Math.abs(x)<1e-12?0:Number(x.toPrecision(12))).join(' ');
 
-export function makeBarrelCamPhysics(mujoco,visual,{timestep=.0005,period=4,kp=10000,kv=200,friction=.03,contactTime=.004,load=0}={}) {
+export function makeBarrelCamPhysics(mujoco,visual,{timestep=.0005,period=4,kp=10000,kv=200,friction=.03,contactTime=.004,load=0,movement=106}={}) {
   const u=visual.root.userData,f=u.profile,mass=Object.fromEntries(['input','follower'].map(name=>[name,rigidFamilyInertia(u.parts,u.families,name)])),density=1/mass.input.volume;
   const inertia=name=>{const m=mass[name];return`<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(x=>x*density))}"/>`;};
   const assets=[],geoms=[];
-  for(const [part,cells] of Object.entries(u.collision))cells.forEach((cell,i)=>{
-    const name=part+i;assets.push(`<mesh name="${name}" vertex="${vec(cell.flat())}"/>`);geoms.push(`<geom name="${name}" type="mesh" mesh="${name}" contype="1" conaffinity="2"/>`);
-  });
-  const xml=`<mujoco model="106 reversing groove barrel cam"><compiler angle="radian" inertiafromgeom="false"/>
+  const repetitions=u.collisionRepetitions??1;
+  for(const [part,cells] of Object.entries(u.collision)) {
+    const unique=cells.length/repetitions;
+    if(!Number.isInteger(unique))throw Error('Incomplete repeated contact geometry');
+    cells.forEach((cell,i)=>{
+      const name=part+i,asset=part+(i%unique),angle=Math.floor(i/unique)*2*Math.PI/repetitions;
+      if(i<unique)assets.push(`<mesh name="${asset}" vertex="${vec(cell.flat())}"/>`);
+      const rotation=angle?` quat="${vec([Math.cos(angle/2),Math.sin(angle/2),0,0])}"`:'';
+      geoms.push(`<geom name="${name}" type="mesh" mesh="${asset}"${rotation} contype="1" conaffinity="2"/>`);
+    });
+  }
+  const xml=`<mujoco model="${movement} reversing groove barrel cam"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="40" tolerance="1e-10"/>
     <default><geom friction="${friction} 0 0" condim="3" solref="${contactTime} 1" solimp=".99 .9999 .0001"/></default>
     <asset>${assets.join('')}</asset><worldbody>

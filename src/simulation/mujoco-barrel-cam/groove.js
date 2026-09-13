@@ -5,11 +5,13 @@ import * as THREE from 'three';
 // of the rendered solid, without a hull protruding across a warped quad.
 export function barrelLand(f,side) {
   const cells=[],positions=[],normals=[],wall=f.walls[side<0?0:1],end=side<0?f.left:f.right;
-  const point=(j,i,x)=>{const a=i===f.segments?0:2*Math.PI*i/f.segments;return[x,f.radii[j]*Math.cos(a),f.radii[j]*Math.sin(a)];};
+  const angle=i=>i===f.segments?(f.angles?.[0]??0):f.angles?.[i]??2*Math.PI*i/f.segments;
+  const point=(j,i,x)=>{const a=angle(i);return[x,f.radii[j]*Math.cos(a),f.radii[j]*Math.sin(a)];};
   const normal=(j,i)=>{
-    const a=i===f.segments?0:2*Math.PI*i/f.segments,r=f.radii[j],lo=Math.max(0,j-1),hi=Math.min(f.radii.length-1,j+1),k=i%f.segments;
+    const a=angle(i),r=f.radii[j],lo=Math.max(0,j-1),hi=Math.min(f.radii.length-1,j+1),k=i%f.segments;
     const dr=(wall[hi][i]-wall[lo][i])/(f.radii[hi]-f.radii[lo]);
-    const da=(wall[j][(k+1)%f.segments]-wall[j][(k+f.segments-1)%f.segments])/(4*Math.PI/f.segments);
+    const span=f.angles?((angle((k+1)%f.segments)-angle((k+f.segments-1)%f.segments)+2*Math.PI)%(2*Math.PI)):4*Math.PI/f.segments;
+    const da=(wall[j][(k+1)%f.segments]-wall[j][(k+f.segments-1)%f.segments])/span;
     return new THREE.Vector3(-side*r,side*(r*dr*Math.cos(a)-da*Math.sin(a)),side*(r*dr*Math.sin(a)+da*Math.cos(a))).normalize().toArray();
   };
   const triangle=(p,n)=>{
@@ -27,7 +29,7 @@ export function barrelLand(f,side) {
     }
   }
   for(const [j,sign] of [[0,-1],[f.radii.length-1,1]])for(let i=0;i<f.segments;i++) {
-    const radial=k=>{const a=k===f.segments?0:2*Math.PI*k/f.segments;return[0,sign*Math.cos(a),sign*Math.sin(a)];};
+    const radial=k=>{const a=angle(k);return[0,sign*Math.cos(a),sign*Math.sin(a)];};
     quad([point(j,i,end),point(j,i,wall[j][i]),point(j,i+1,wall[j][i+1]),point(j,i+1,end)],[radial(i),radial(i),radial(i+1),radial(i+1)]);
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));

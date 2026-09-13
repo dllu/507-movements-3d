@@ -1101,10 +1101,10 @@
     {
       "id": 107,
       "number": "107",
-      "title": "Six-Stroke Serpentine-Groove Barrel Cam",
+      "title": "Serpentine-Groove Barrel Cam",
       "description": "106 and 107. Uniform reciprocating rectilinear motion, produced by rotary motion of grooved cams.",
       "category": "Cranks & reciprocation",
-      "archetype": "six-reciprocation-serpentine-groove-barrel-cam",
+      "archetype": "repeating-serpentine-groove-barrel-cam",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_107.html"
     },

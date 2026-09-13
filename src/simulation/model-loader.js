@@ -22,6 +22,7 @@ const physicsFactories = {
   104: () => import('./mujoco-worm-saddle/visual.js').then(module => module.makeMujocoWormSaddle),
   105: () => import('./mujoco-screw-press/visual.js').then(module => module.makeMujocoScrewPress),
   106: () => import('./mujoco-barrel-cam/visual.js').then(module => module.makeMujocoBarrelCam),
+  107: () => import('./mujoco-serpentine-cam/visual.js').then(module => module.makeMujocoSerpentineCam),
 };
 
 export async function loadMovementModel(movement) {

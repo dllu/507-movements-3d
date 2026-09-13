@@ -1,19 +1,21 @@
-import source from './source.js';
+import defaultSource from './source.js';
 
 // The tool path specifies the machined surface, not the simulated output.
-export function makeBarrelCamProfile({segments=384,clearance=.0001,reversalAngle=.08}={}) {
+export function makeBarrelCamProfile({segments=384,clearance=.0001,reversalAngle=.08,source=defaultSource,repetitions=1,angles,pinLowPixel=243,pinHighInset=.04,cutterRadius:toolRadius}={}) {
   const e=source.edges,axis=[(e.barrelLeft+e.barrelRight)/2,(e.barrelTop+e.barrelBottom)/2];
   const x=v=>(v-axis[0])/100,y=v=>(axis[1]-v)/100;
   const radius=(e.barrelBottom-e.barrelTop)/200,left=x(e.barrelLeft),right=x(e.barrelRight),stroke=source.uniformFit.stroke/100;
-  const minimum=x(source.uniformFit.minimum),d=reversalAngle,slope=stroke/(Math.PI-d),phase=source.uniformFit.phase;
+  const halfAngle=Math.PI/repetitions,turn=2*halfAngle;
+  const minimum=x(source.uniformFit.minimum),d=reversalAngle,slope=stroke/(halfAngle-d),phase=source.uniformFit.phase;
+  if(angles)segments=angles.length-1;
   const half=a=>{
     if(a<d){const t=a/d;return[minimum+slope*d*(t**3-t**4/2),slope*(3*t*t-2*t**3)];}
-    if(a>Math.PI-d){const t=(Math.PI-a)/d;return[minimum+stroke-slope*d*(t**3-t**4/2),slope*(3*t*t-2*t**3)];}
+    if(a>halfAngle-d){const t=(halfAngle-a)/d;return[minimum+stroke-slope*d*(t**3-t**4/2),slope*(3*t*t-2*t**3)];}
     return[minimum+slope*(a-d/2),slope];
   };
-  const law=angle=>{const a=((angle+phase)%(2*Math.PI)+2*Math.PI)%(2*Math.PI),[position,velocity]=half(Math.min(a,2*Math.PI-a));return{x:position,derivative:a>Math.PI?-velocity:velocity};};
-  const cutterRadius=source.uniformFit.width/200/Math.hypot(1,slope/radius),pinRadius=cutterRadius-clearance;
-  const pinLow=y(243),pinHigh=radius-.04,floor=pinLow-cutterRadius-.01;
+  const law=angle=>{const a=((angle+phase)%turn+turn)%turn,[position,velocity]=half(Math.min(a,turn-a));return{x:position,derivative:a>halfAngle?-velocity:velocity};};
+  const cutterRadius=toolRadius??source.uniformFit.width/200/Math.hypot(1,slope/radius),pinRadius=cutterRadius-clearance;
+  const pinLow=y(pinLowPixel),pinHigh=radius-pinHighInset,floor=pinLow-cutterRadius-.01;
   // The groove walls are ruled along radial rays. Sweep the complete pin's
   // angular footprint: the nearest point on a ray lies at r*cos(delta),
   // at distance r*sin(delta) from the pin's lower end. The relieved floor
@@ -34,10 +36,10 @@ export function makeBarrelCamProfile({segments=384,clearance=.0001,reversalAngle
   };
   const radii=[floor,radius];
   const walls=[-1,1].map(side=>{
-    const edge=Array.from({length:segments+1},(_,i)=>extent(pinLow,i===segments?0:2*Math.PI*i/segments,side));
+    const edge=Array.from({length:segments+1},(_,i)=>extent(pinLow,i===segments?(angles?.[0]??0):angles?.[i]??2*Math.PI*i/segments,side));
     return radii.map(()=>edge);
   });
-  return{axis,x,y,radius,left,right,stroke,minimum,slope,phase,law,segments,clearance,reversalAngle,
+  return{axis,x,y,radius,left,right,stroke,minimum,slope,phase,law,segments,clearance,reversalAngle,repetitions,angles,
     cutterRadius,pinRadius,pinLow,pinHigh,floor,radii,walls,initialTip:law(0).x,
     shaftRadius:(e.shaftBottom-e.shaftTop)/200,rodHalfHeight:(e.rodBottom-e.rodTop)/200,rodY:y(source.pin.center[1]),rodHalfDepth:.06};
 }
