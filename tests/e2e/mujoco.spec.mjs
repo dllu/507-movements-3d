@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -14,7 +14,8 @@ for (const id of ['082', '083', '090', '091', '092', '093']) test(`${id} loads M
   await expect(page.getByRole('button', {name: 'Restart', exact: true})).toBeVisible();
   const note = {'082': /The lower pawl uses an inferred torsion spring/, '083': /The springs are described in Brown/,
     '090': /The guides, rod extensions and depth are reconstructed/, '091': /The cam is fitted as a constant-width profile/,
-    '092': /The curved spokes follow the engraving/, '093': /The slot is widened to fit the measured wrist/}[id];
+    '092': /The curved spokes follow the engraving/, '093': /The slot is widened to fit the measured wrist/,
+    '094': /The radial plate is held during adjustment/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);

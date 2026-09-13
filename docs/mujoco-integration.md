@@ -20,6 +20,9 @@ cast spokes, the small source offset and a wrist constraint closing the linkage.
 Movement 093 uses a disk-mounted wrist contacting the straight faces of a
 passive Scotch yoke. Its [source fit and contact checks](mujoco-093-scotch-yoke.md)
 document the small slot correction, extended stems and reconstructed guides.
+Movement 094 uses a powered spiral plate to move a passive bolt in a held
+radial plate. Its [source fit and contact checks](mujoco-094-variable-crank.md)
+document the measured spiral, reconstructed stepped bolt and corrected slot fit.
 
 ## Shared runtime
 
@@ -72,7 +75,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -124,3 +127,11 @@ with only bounded wrist/yoke soft contact. Twelve final mechanism/application
 views and an additional scrolled mobile note view are inspected; live playback
 averages 60 fps. Removing contact and reversing the load confirm passive output
 and operation of both working faces.
+
+The 094 migration passes 15 selected mechanism/runtime/camera tests and ten
+production browser tests. Ten adjustments keep timestep and spiral-mesh
+refinement differences below 0.09 source pixel. Thirty-three poses pass over
+2.77 million independent surface samples with only bounded bolt/groove soft
+contact. Fourteen views are inspected and live playback averages 37.58 fps.
+The radial guide is ideal, and the demonstration covers radius adjustment;
+clamping and subsequent crank operation remain outside this model.

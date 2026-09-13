@@ -3312,12 +3312,29 @@ are inspected, and live playback averages 60 fps. See the
 [093 reconstruction](mujoco-093-scotch-yoke.md). 093 is verified within its
 stated source corrections, ideal guides and soft-contact tolerances.
 
+094 now uses a powered MuJoCo spiral plate and a passive bolt in a held radial
+guide. A fit to 107 paired groove readings gives 1.2286-pixel centerline RMS;
+individual radial-slot angles and the inner terminal circle follow the source.
+A reconstructed stepped bolt preserves the narrow spiral, while slightly
+widened radial slots accommodate its measured front end. These corrections,
+the held translucent plate, supports and axial dimensions are disclosed.
+Fifteen selected tests, ten production browser tests and the build pass.
+Ten uninterrupted adjustments have at most 0.03043 source pixel of native
+soft penetration; timestep and spiral-mesh refinement stay below 0.09 pixel.
+Thirty-three poses pass 2,773,362 independent surface samples with only bounded
+bolt/groove contact. Fourteen final views are inspected and live playback
+averages 37.58 fps. See the [094 reconstruction](mujoco-094-variable-crank.md).
+094 is verified for radius adjustment within its stated source corrections,
+ideal radial guide and soft-contact tolerances; clamping and subsequent crank
+operation are not simulated.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
 090 and 091 are verified as MuJoCo reconstructions with ideal guides and stated clearance.
 092 is verified as a MuJoCo reconstruction with ideal pins and guides.
 093 is verified as a MuJoCo reconstruction with ideal guides and stated slot clearance.
+094 is verified for radius adjustment with an ideal guide and stated bolt/slot fits.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
