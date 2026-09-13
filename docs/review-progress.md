@@ -3112,6 +3112,21 @@ acceptance, material identity, continuous clearance, final speed and production
 integration remain unresolved. All 1,097 frozen production inputs are unchanged.
 See the [087 fixed-orbit connected reversal review](../artifacts/review/087-fixed-orbit-transfer-notes.md).
 
+087 now completes a second connected transfer on each initialized branch,
+returning to the original engaged side without resetting any physical state
+or motor phase. Both initial coarse runs stop at unmeasured next-tooth phases;
+16,768 new native queries supply those actual tooth profiles. Their exact
+stopped prefixes are preserved in the completed coarse continuations.
+
+The 26,487 fine states pass balance, friction, contact, independent free-fall
+and step-size checks. Seating times differ by at most 0.000561 model time
+units. Twelve hardware poses pass 18,137,424 surface samples; all twelve
+stills are inspected and two slowed previews finish without browser errors.
+Longer repeat sequences, source acceptance, continuous clearance, final
+playback and production integration remain pending. All 1,097 frozen
+production inputs are unchanged. See the
+[087 second-transfer review](../artifacts/review/087-second-transfer-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
