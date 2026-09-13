@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -22,7 +22,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '096': /The cam outline is corrected by up to 11 engraving pixels/,
     '097': /Two Archimedean spiral flanks give uniform travel/,
     '098': /Section view removes the arm’s front cover/,
-    '099': /Section view exposes the roller/}[id];
+    '099': /Section view exposes the roller/,
+    '100': /The wrist slides without friction in the measured slot/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);

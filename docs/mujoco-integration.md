@@ -39,6 +39,9 @@ Movement 099 uses a reversing disk to drive a passive feed rod and free roller
 between adjacent turns of a spiral rail. Its
 [source fit and contact checks](mujoco-099-spiral-feed.md) describe the corrected
 pitch, completed rod, bored guide and section view exposing the roller.
+Movement 100 uses crank-wrist contact with the straight slot faces of a passive
+lever. Its [source reconstruction and contact checks](mujoco-100-quick-return.md)
+cover the measured axis offset, full lever, ideal sliding contact and quick-return timing.
 
 ## Shared runtime
 
@@ -91,7 +94,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/mujoco-spiral-feed.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/mujoco-spiral-feed.test.mjs tests/mujoco-quick-return.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -199,3 +202,15 @@ inspected and playback averages 28.16 fps. The corrected spiral pitch, lowered
 guide, extended rod and reversing motor are explicit reconstruction assumptions;
 only the disk is actuated. The complete spiral takes about nine seconds to assemble in
 headless Chrome, with its loading indicator visible during compilation.
+
+The 100 migration passes 15 selected mechanism/runtime/camera tests. Its native
+lever gives a quick-return ratio of approximately 2.113:1, matching the measured
+crank and pivot geometry. The settled slot and lever match independent source
+readings within 2.454 and 2.800 pixels RMS respectively. Ten cycles keep soft
+penetration below 0.05151 source pixel and timestep differences below 0.043°.
+Thirty-three poses pass 1,039,962 independent surface samples without unintended
+intersections. The complete rear wheel, measured shaft offset and full output
+extension are retained; the frictionless wrist, flat output section and bearings
+are explicit reconstruction assumptions.
+All fifteen final views were inspected, playback averages 60.00 fps, and the
+production build and all sixteen MuJoCo browser checks pass.

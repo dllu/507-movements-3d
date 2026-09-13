@@ -3404,6 +3404,19 @@ averages 28.16 fps. See the
 corrected spiral pitch, inferred reversing drive, ideal guide/journal and
 stated running-clearance model.
 
+100 now uses MuJoCo contact between a crank wrist and a passive slotted lever.
+It retains the measured 21.7463-pixel shaft-height offset, 102.5729-pixel crank
+radius, complete rear disk and full lever. The settled slot and lever match
+independent source readings within 2.454 and 2.800 pixels RMS. Fifteen selected
+tests pass: ten cycles give approximately 2.113:1 quick-return timing, soft
+penetration below 0.05151 source pixel and timestep differences below 0.043°.
+Thirty-three poses pass 1,039,962 independent surface samples without unintended
+intersections. The wrist slides without friction; plate depths, the flat output
+section and bearings remain reconstructed. See the
+[100 reconstruction](mujoco-100-quick-return.md) for geometry and operating limits.
+All fifteen final views were inspected; playback averages 60.00 fps. The
+production build and all sixteen MuJoCo browser checks pass.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3416,6 +3429,7 @@ stated running-clearance model.
 097 is verified with Archimedean spiral flanks, short reversals and an inferred pin and guides.
 098 is verified with full groove circulation at the corrected crank radius and physical speed.
 099 is verified with a corrected spiral, passive free roller and inferred reversing drive.
+100 is verified with measured crank/lever geometry, frictionless wrist contact and ideal bearings.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
