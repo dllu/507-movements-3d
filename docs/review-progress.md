@@ -3155,9 +3155,18 @@ requires an approximately 11-pixel rear-rim shift, and the stepped-foot
 construction remains a reconstruction choice; 088 is integrated and under
 review. See the [088 integration review](../artifacts/review/088-integrated-playback-notes.md).
 
+089's flange, wrist and crosshead hardware now implements the intended joints.
+Two through-bolts join bored, abutting flanges; the rod eye swings between
+bored fork cheeks, and channel guides retain the crosshead. The motion stays
+continuous on the existing exact linkage equations, with a four-second
+cycle. Focused native-geometry and analytic sweep checks cover the changed
+joints. Source proportions and the remaining strap/shaft hardware still
+need reconstruction and clearance review. See the
+[089 joint correction](../artifacts/review/089-joints-review-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
-082 and 083 are under reconstruction; 087 and 088 are integrated and under review.
+082 and 083 are under reconstruction; 087, 088 and 089 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

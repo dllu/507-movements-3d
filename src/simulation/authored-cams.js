@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {makeEccentricStrapJoints} from './eccentric-strap-joints.js';
 import {
   PALETTE,
   makeBeam,
@@ -492,8 +493,8 @@ function eccentricSheaveSplitStrapSlider() {
 
   const couplingNeckShape = new THREE.Shape();
   couplingNeckShape.moveTo(strapOuterRadius - 0.06, -0.22);
-  couplingNeckShape.lineTo(strapOuterRadius + 0.46, -0.31);
-  couplingNeckShape.lineTo(strapOuterRadius + 0.46, 0.31);
+  couplingNeckShape.lineTo(strapOuterRadius + 0.345, -0.22);
+  couplingNeckShape.lineTo(strapOuterRadius + 0.345, 0.22);
   couplingNeckShape.lineTo(strapOuterRadius - 0.06, 0.22);
   couplingNeckShape.closePath();
   const couplingNeck = new THREE.Mesh(
@@ -504,65 +505,18 @@ function eccentricSheaveSplitStrapSlider() {
   strap.add(couplingNeck);
 
   const innerCouplingX = strapOuterRadius + 0.43;
-  const outerCouplingX = strapOuterRadius + 0.75;
-  const innerCouplingPlate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.17, 0.92, 0.56),
-    drivenMaterial,
-  );
-  innerCouplingPlate.position.x = innerCouplingX;
-  innerCouplingPlate.userData.role = 'inner-bolted-eccentric-rod-flange';
-  const outerCouplingPlate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.17, 0.92, 0.56),
-    drivenMaterial,
-  );
-  outerCouplingPlate.position.x = outerCouplingX;
-  outerCouplingPlate.userData.role = 'outer-bolted-eccentric-rod-flange';
-  strap.add(innerCouplingPlate, outerCouplingPlate);
-
-  const couplingBolts = [];
-  for (const plateX of [innerCouplingX, outerCouplingX]) {
-    for (const signY of [-1, 1]) {
-      const bolt = cylinderAlongZ(0.085, 0.68, fastenerMaterial, 8);
-      bolt.position.set(plateX, signY * 0.31, 0);
-      bolt.userData.role = 'front-visible-eccentric-rod-flange-bolt';
-      couplingBolts.push(bolt);
-      strap.add(bolt);
-    }
-  }
-
-  const rodStartX = outerCouplingX + 0.08;
-  const eccentricRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      eccentricRodLength - rodStartX,
-      0.24,
-      0.3,
-    ),
-    drivenMaterial,
-  );
-  eccentricRod.position.x = (rodStartX + eccentricRodLength) / 2;
-  eccentricRod.userData.role = 'rigid-eccentric-rod-from-strap-to-crosshead';
-  strap.add(eccentricRod);
-
-  const rodEndEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.245, 0.075, 10, 42),
-    drivenMaterial,
-  );
-  rodEndEye.position.set(eccentricRodLength, 0, 0.04);
-  rodEndEye.userData.role = 'eccentric-rod-eye-at-line-constrained-wrist';
-  strap.add(rodEndEye);
+  const joints = makeEccentricStrapJoints({
+    rodLength: eccentricRodLength, innerCouplingX, drivenMaterial, fastenerMaterial,
+  });
+  const {innerCouplingPlate, outerCouplingPlate, couplingBolts, eccentricRod,
+    rodEndEye, crosshead, wristPin} = joints;
+  strap.add(innerCouplingPlate, outerCouplingPlate, ...couplingBolts, eccentricRod, rodEndEye);
 
   const outputSlide = new THREE.Group();
   outputSlide.userData.role = 'rectilinear-crosshead-and-valve-stem';
-  const crosshead = new THREE.Mesh(
-    new THREE.BoxGeometry(0.54, 0.72, 0.5),
-    drivenMaterial,
-  );
-  crosshead.userData.role = 'line-constrained-output-crosshead';
-  const wristPin = cylinderAlongZ(0.13, 0.78, fastenerMaterial);
-  wristPin.userData.role = 'wrist-pin-joining-eccentric-rod-to-crosshead';
   const outputStemLength = 2.25;
   const outputStem = cylinderAlongX(0.115, outputStemLength, darkMaterial);
-  outputStem.position.x = outputStemLength / 2;
+  outputStem.position.x = joints.dimensions.outputStemStartX + outputStemLength / 2;
   outputStem.userData.role = 'reciprocating-rectilinear-valve-or-pump-rod';
   const outputIndicator = new THREE.Mesh(
     new THREE.BoxGeometry(0.08, 0.3, 0.04),
@@ -573,31 +527,12 @@ function eccentricSheaveSplitStrapSlider() {
   outputSlide.add(crosshead, wristPin, outputStem, outputIndicator);
 
   const guideMinimumX = outputMinimumX - 0.46;
-  const guideMaximumX = outputMaximumX + outputStemLength + 0.22;
-  const guideOffsetY = 0.52;
-  const guideZ = -0.38;
-  const guideRails = [-1, 1].map((signY) => {
-    const guide = makeBeam(
-      new THREE.Vector3(
-        guideMinimumX,
-        sliderY + signY * guideOffsetY,
-        guideZ,
-      ),
-      new THREE.Vector3(
-        guideMaximumX,
-        sliderY + signY * guideOffsetY,
-        guideZ,
-      ),
-      {
-        thickness: 0.13,
-        depth: 0.2,
-        color: PALETTE.frame,
-      },
-    );
-    guide.userData.role = 'fixed-horizontal-crosshead-guide';
-    guide.userData.side = signY < 0 ? 'lower' : 'upper';
-    return guide;
-  });
+  const guideMaximumX = outputMaximumX + joints.dimensions.outputStemStartX + outputStemLength + 0.22;
+  const guideOffsetY = joints.dimensions.crossheadHalfHeight + joints.dimensions.guideClearance + .065;
+  const guideZ = 0;
+  const guideRails = [-1, 1].map(sign => joints.makeGuide(
+    guideMinimumX, guideMaximumX, sliderY, sign, frameMaterial,
+  ));
 
   const baseY = -2.3;
   const baseZ = -0.78;
@@ -631,7 +566,7 @@ function eccentricSheaveSplitStrapSlider() {
     support.userData.role = 'rear-A-frame-crankshaft-support';
   }
 
-  const guideSupports = [guideMinimumX + 0.22, guideMaximumX - 0.22]
+  const guideSupports = [guideMinimumX + 0.22, Math.min(guideMaximumX - 0.22, 5.48)]
     .map((x) => {
       const support = makeBeam(
         new THREE.Vector3(x, baseY, baseZ),
@@ -781,6 +716,11 @@ function eccentricSheaveSplitStrapSlider() {
     strapOuterRadius,
   };
   root.userData.stateAtTime = stateAtTime;
+  root.userData.joints = joints;
+  root.userData.reconstructionStatus = 'under-review';
+  root.userData.minimumDisplayCycleSeconds = 4;
+  root.userData.hideGround = true;
+  root.userData.qualification = 'The eccentric linkage uses exact rigid-link closure. The flange has two through-bolts; the rod eye pivots in a bored fork and the crosshead runs in retaining channels. Source proportions and the remaining strap/shaft hardware are still under review. The crosshead and frame complete the unseen rod beyond the engraving.';
 
   const update = (time) => {
     const state = stateAtTime(time);

@@ -1713,20 +1713,21 @@
       "peakAngularSpeed": 0.9200000000056291,
       "peakVisibleAngularSpeed": 0.9200000000056291,
       "sustainedVisibleAngularSpeed": 0.9200000000000778,
-      "floorY": -2.3850000008940695,
+      "floorY": -2.395309351466819,
       "fastestPart": "crankshaft-through-eccentric-sheave",
       "motionBounds": {
         "min": [
-          -4.7940018090109575,
-          -2.3850000008940695,
-          -1.100000023841858
+          -4.804311168275997,
+          -2.395309351466819,
+          -1.1103093744146075
         ],
         "max": [
-          5.701000000047498,
-          2.869609121935571,
-          1.2500000017881394
+          6.000309121690914,
+          2.879918481415678,
+          1.260309352360889
         ]
-      }
+      },
+      "motionBoundsMethod": "512 full-cycle samples, expanded by an analytic maximum vertex speed times half the sample interval, plus 1e-6 for rounding. Includes the extended output stem and retaining channels."
     },
     "90": {
       "peakAngularSpeed": 0.9600000000054468,
