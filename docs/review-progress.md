@@ -3090,6 +3090,28 @@ clearance, final rendering/speed and integration still need qualification for
 this changed geometry. Production and all 1,097 frozen inputs remain unchanged.
 See the [087 fixed-orbit review](../artifacts/review/087-fixed-orbit-notes.md).
 
+087's fixed-orbit candidate now continues through full lifting, free fall,
+clutch withdrawal, native opposite-jaw impact, seating, held rotation and
+the following stud encounter. The integrated positions and input clock are
+preserved throughout; neither subsequent key preload nor stud phase is reset.
+Independent free-fall and free-shaft integrations, step comparisons and native
+contact checks qualify these bounded continuations.
+
+A retained following-lift failure exposed a premature stud impulse at a tiny
+positive gap. Restricting stud velocity activation to the jaw contact tolerance
+and refining the local steps reduces its complementarity residual from
+1.41e-8 to 6.21e-14. The unchanged held prefix and earlier independent hold-step
+comparison remain explicit. An exact triangle-query optimization also matches
+142 reference queries while reducing this local query time by about fourfold.
+
+The qualified transfer, seating and following studies contain 76,004 stored
+states, including shared boundaries. Twenty-eight hardware poses pass
+43,124,924 surface samples; 26 new stills are inspected and six slowed preview
+executions finish without browser errors. Repeating full cycles, source
+acceptance, material identity, continuous clearance, final speed and production
+integration remain unresolved. All 1,097 frozen production inputs are unchanged.
+See the [087 fixed-orbit connected reversal review](../artifacts/review/087-fixed-orbit-transfer-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
