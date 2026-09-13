@@ -31,11 +31,10 @@ against an added return spring. Its [source corrections and contact checks](mujo
 cover the finite roller envelope, smooth reversals and inferred guides.
 Movement 097 uses both faces of a measured heart-shaped groove to drive a
 passive bar through a cylindrical pin. Its [source fit and contact checks](mujoco-097-grooved-heart.md)
-document the varying traverse speed, completed rim and inferred guides.
+document the Archimedean spiral flanks, short reversals, completed rim and inferred guides.
 Movement 098 uses a disk-mounted crank pin to drive a passive hinged arm.
 Its [source fit and contact checks](mujoco-098-endless-groove.md) document the
-rear groove, section control and the pin's return along one branch at the
-engraved crank radius.
+rear groove, section control and corrected crank orbit for full groove circulation.
 Movement 099 uses a reversing disk to drive a passive feed rod and free roller
 between adjacent turns of a spiral rail. Its
 [source fit and contact checks](mujoco-099-spiral-feed.md) describe the corrected
@@ -169,23 +168,26 @@ contact. Fourteen final views are inspected and live playback averages 59.94 fps
 The roughly 11-pixel cam correction, 6-pixel bar alignment shift, smooth reversals
 and inferred return spring are explicit in the reconstruction and viewer note.
 
-The 097 migration passes 15 selected mechanism/runtime/camera tests and thirteen
-production browser tests. Its 270 measured groove-face points have 2.1721-pixel
-RMS distance from the fitted profile. Ten turns keep timestep and mesh position
-differences below 0.15 source pixel and native soft penetration below 0.00618
-pixel. Thirty-three poses pass over 2.08 million independent surface samples.
-Fourteen final views are inspected and live playback averages 30.22 fps.
-The source fit gives varying traverse speed; the cylindrical pin, ideal guides,
-raised bar axis and enlarged retaining rim remain explicit reconstruction choices.
+The corrected 097 uses two Archimedean spiral flanks with short smooth reversals.
+Its earlier varying-speed harmonic fit was incorrect and is superseded. Fifteen
+selected tests pass; ten turns keep native follower error on the flanks below
+0.067 source pixel and travel-speed error over 100 ms below 1.218%. The corrected
+walls differ from 270 measured ink points by 8.3850 pixels RMS. Fourteen corrected
+views are inspected. See the movement document for finite-pin reversal relief,
+source corrections and timestep sensitivity.
 
-The 098 migration passes 15 selected mechanism/runtime/camera tests and fourteen
-production browser tests. Its settled groove matches 261 measured face points
-within 1.2170 pixels RMS. Ten turns keep native soft penetration below 0.00463
-pixel and timestep/mesh differences below 0.022° of arm rotation. Thirty-three
-poses pass over 2.65 million independent surface samples. Sixteen views are
-inspected and playback averages 35.48 fps. The measured crank radius produces
-a return along the lower groove branch. The rear groove, removable cover,
-larger working pin and ideal bearings are explicit reconstruction assumptions.
+The corrected 098 crank pin completes one lap of the oblong groove per revolution.
+Its earlier lower-branch return was incorrect and is superseded. The crank radius
+is corrected to 123.1877 source pixels and its axis shifted 0.7826 pixel to reach
+both radial ends. Four mechanism tests pass, including ten complete laps at
+three timesteps and two mesh resolutions. Native penetration stays below 0.03027
+pixel; maximum timestep/mesh angular sensitivity is 0.362° near the dead centers.
+The two-second physical period preserves circulation under gravity and friction.
+The measured rear groove, section cover, finite working pin and bearings remain.
+
+Both corrected movements pass the production build and all 15 MuJoCo browser
+tests. Fourteen 097 views and eighteen 098 views are inspected; frozen source
+and image hashes are verified in the separate correction inspection reports.
 
 The 099 migration passes 15 selected mechanism/runtime/camera tests and fifteen
 production browser tests. Its 487 measured spiral points match the finite

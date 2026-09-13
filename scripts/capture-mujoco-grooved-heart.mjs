@@ -10,7 +10,7 @@ paths.push('scripts/capture-mujoco-grooved-heart.mjs','scripts/lib/study-report-
   'src/simulation/finite-plate-geometry.js','src/simulation/clutch-section-geometry.js',
   'src/simulation/engine.js','src/simulation/model-loader.js',
   'src/simulation/dispose-model.js','src/simulation/primitives.js','public/engravings/mm_097.png','package-lock.json',
-  'src/main.js','src/styles.css','tests/mujoco-grooved-heart.test.mjs','scripts/measure-grooved-heart-source.mjs','scripts/lib/grooved-heart-source-fit.mjs');
+  'src/main.js','src/styles.css','tests/mujoco-grooved-heart.test.mjs','scripts/measure-grooved-heart-source.mjs');
 const sources = freezeStudySources(paths,prefix), errors = [], warnings = [], views = [];
 const browser = await chromium.launch({channel:'chrome',headless:true});
 try {
@@ -85,7 +85,7 @@ try {
     await page.waitForTimeout(200);const file=prefix+'-'+name+'.png';assert(!fs.existsSync(file));
     await page.screenshot({path:file,fullPage:true});views.push({name,file,sha256:hashStudyFile(file),inspected:false});
   }
-  const note=page.getByText('The groove follows the drawing, with varying traverse speed. The bar is raised 5 engraving pixels and the rim enlarged by 5 pixels. Guides, the cylindrical pin and hidden depths are reconstructed.',{exact:true});
+  const note=page.getByText('Two Archimedean spiral flanks give uniform travel, with short rounded reversals. The bar is raised 5 engraving pixels and the rim enlarged by 5 pixels. The pin, guides and hidden depths are reconstructed.',{exact:true});
   await note.evaluate(el=>el.scrollIntoView({block:'center'}));
   assert(await note.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.movement-notes').getBoundingClientRect();return a.top>=b.top&&a.bottom<=b.bottom;}));
   const noteFile=prefix+'-mobile-notes.png';assert(!fs.existsSync(noteFile));

@@ -4,7 +4,6 @@ import {circleFit} from './lib/source-circle-fit.mjs';
 import {hashStudyFile} from './lib/study-report-io.mjs';
 import {makeGroovedHeartGeometry} from '../src/simulation/mujoco-grooved-heart/geometry.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
-import {fitGroovedHeart} from './lib/grooved-heart-source-fit.mjs';
 const file='public/engravings/mm_097.png',bytes=execFileSync('convert',[file,'-colorspace','Gray','-depth','8','gray:-']);
 const pixel=(x,y)=>bytes[Math.round(y)*525+Math.round(x)]??255;
 function runsAt(center,angle,range,threshold=110) {
@@ -39,17 +38,17 @@ const flank=points.filter(p=>Math.min(p.angle,2*Math.PI-p.angle)>.4),mx=flank.re
 const slope=flank.reduce((s,p)=>{const x=Math.min(p.angle,2*Math.PI-p.angle);return s+(x-mx)*(p.radius-my);},0)/flank.reduce((s,p)=>s+(Math.min(p.angle,2*Math.PI-p.angle)-mx)**2,0),intercept=my-slope*mx;
 const normalWidths=points.map(p=>p.width/Math.hypot(1,slope/p.radius)).sort((a,b)=>a-b),normalWidth=normalWidths[Math.floor(normalWidths.length/2)];
 const result={file,sha256:hashStudyFile(file),circles,groove:{points,excluded,intercept,slope,normalWidth,radialRms:Math.sqrt(flank.reduce((s,p)=>s+(p.radius-intercept-slope*Math.min(p.angle,2*Math.PI-p.angle))**2,0)/flank.length)},manual:{barTop:274,barBottom:299,barEnd:480,nose:[52,287]},qualification:'Complete radial ink runs. Both groove faces are paired before fitting a symmetric linear radial centerline, excluding the concealed inner reversal and the outer nose. Normal width compensates the fitted centerline slope. Depth, running fits and reversal blends remain reconstruction choices.'};
-result.fitted=fitGroovedHeart(points,circles.eye.center[0]-axis[0],axis[0]-result.manual.nose[0]);
-result.qualification='Complete radial ink runs from paired groove faces, excluding the concealed inner reversal and outer nose. A smooth symmetric radial harmonic fit preserves the measured stroke endpoints. Normal width uses the fitted slope. The engraved curve gives varying traverse speed; a separate straight radial fit records its departure from uniform travel. Depth, running fits and hidden supports remain reconstruction choices.';
+result.qualification='Paired ink-run midpoints independently measure both groove faces, excluding concealed reversals. The reconstructed pitch curve uses two Archimedean spiral flanks for uniform travel, with short smooth reversals. Measured stroke endpoints and groove width are retained; departures from the drawn faces are reported without fitting their irregularities into the motion law.';
 const visual=makeGroovedHeartGeometry(),u=visual.root.userData;
 const outlines=['inner','outer'].map(n=>u.profile[n].map(p=>[u.source.axis[0]+100*p[0],u.source.axis[1]-100*p[1]]));
 const distances=points.flatMap(s=>s.facePoints.map((p,n)=>Math.min(...outlines[n].map((a,i)=>{
   const b=outlines[n][(i+1)%outlines[n].length],dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy)));
   return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
 }))));
-result.reconstruction={faceDistancesPixels:distances,faceRmsPixels:Math.sqrt(distances.reduce((s,d)=>s+d*d,0)/distances.length),faceMaximumPixels:Math.max(...distances),barAxisShiftUpPixels:circles.eye.center[1]-axis[1],diskRadiusIncreasePixels:u.geometry.diskRadius*100-circles.disk.radius};
+result.reconstruction={faceDistancesPixels:distances,faceRmsPixels:Math.sqrt(distances.reduce((s,d)=>s+d*d,0)/distances.length),faceMaximumPixels:Math.max(...distances),barAxisShiftUpPixels:circles.eye.center[1]-axis[1],diskRadiusIncreasePixels:u.geometry.diskRadius*100-circles.disk.radius,
+  uniformTravelFraction:1-2*u.profile.reversalAngle/Math.PI,reversalHalfAngle:u.profile.reversalAngle,
+  spiralSlopePixelsPerRadian:100*u.profile.slope,grooveWidthPixels:200*u.profile.halfWidth};
 disposeObject3D(visual.root);
 fs.writeFileSync((process.env.PROBE_PREFIX??'/dev/shm/097-source')+'.json',JSON.stringify(result,null,2)+'\n',{flag:'wx'});
 console.log(Object.fromEntries(Object.entries(circles).map(([name,c])=>[name,{center:c.center,radius:c.radius,rms:c.rmsResidual,count:c.points.length}])));console.log({...result.groove,points:points.length,excluded:excluded.length});
 console.log({...result.reconstruction,faceDistancesPixels:undefined});
-console.log({...result.fitted,residuals:undefined});

@@ -88,7 +88,7 @@ const result={file,sha256:hashStudyFile(file),circles,groove,body,
 assert.deepEqual(source.axis,circles.hub.center);assert.deepEqual(source.pivot,circles.pivot.center);assert.deepEqual(source.pin,circles.pin.center);
 assert.deepEqual(source.groove,{center:groove.center,angle:groove.angle,halfLength:groove.halfLength,radii:groove.radii});
 assert.deepEqual(source.body,{center:body.center,angle:body.angle,halfLength:body.halfLength,radius:body.radii[0]});
-const f=makeEndlessGrooveProfile(),angle=f.reference(f.phase),c=Math.cos(angle),s=Math.sin(angle);
+const f=makeEndlessGrooveProfile(),angle=f.initialAngle,c=Math.cos(angle),s=Math.sin(angle);
 const faceDistances=groove.points.map(({p,face})=>{
   const [x,y]=f.world(p).map((v,i)=>v-f.pivot[i]);
   return Math.abs(f.distance([c*x+s*y,-s*x+c*y])*100-groove.radii[face]);
@@ -97,6 +97,10 @@ result.reconstruction={grooveFaceRmsPixels:Math.sqrt(faceDistances.reduce((s,d)=
   grooveFaceMaximumPixels:Math.max(...faceDistances),faceDistances,
   initialAngleAdjustmentDegrees:(angle-f.sourceAngle)*180/Math.PI,
   diskRecenteringPixels:Math.hypot(...source.axis.map((v,i)=>v-source.diskCenter[i])),
+  inputAxisCorrectionPixels:f.inputCenter.map((v,i)=>100*v*(i===1?-1:1)),
+  drawnCrankRadiusPixels:Math.hypot(...source.pin.map((v,i)=>v-source.axis[i])),
+  initialPinCorrectionPixels:f.initialPin.map((v,i)=>source.axis[i]+100*v*(i===1?-1:1)-source.pin[i]),
+  grooveRadialExtremaPixels:[f.minimumRadius,f.maximumRadius].map(v=>100*v),
   crankRadiusPixels:f.crankRadius*100,workingPinRadiusPixels:f.pinRadius*100,halfWidthPixels:f.halfWidth*100};
 fs.writeFileSync((process.env.PROBE_PREFIX??'/dev/shm/098-source')+'.json',JSON.stringify(result,null,2)+'\n',{flag:'wx'});
 console.log(Object.fromEntries(Object.entries(circles).map(([name,c])=>[name,{center:c.center,radius:c.radius,rms:c.rmsResidual,count:c.points.length}])));

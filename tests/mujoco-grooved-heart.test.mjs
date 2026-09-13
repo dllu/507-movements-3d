@@ -33,10 +33,9 @@ test('097 compiled cam preserves the complete groove and both finite working fac
     assert.equal(p.model.geom_type[pin],mujoco.mjtGeom.mjGEOM_CAPSULE.value);assert.ok(Math.abs(r-f.pinRadius)<1e-12);
     u.parts.pin.geometry.computeBoundingBox();const box=u.parts.pin.geometry.boundingBox;
     assert.ok(z-h-r>box.min.z&&z+h+r<box.max.z);assert.ok(box.min.z>-.18);
-    let maxCurvature=0,minGap=Infinity,maxGap=0;
+    let minGap=Infinity,maxGap=0,pocketAngle=0;
     for(let i=0;i<720;i++) {
-      const a=i*2*Math.PI/720,{r,derivative:d,secondDerivative:dd}=f.law(a),center=f.at(a);
-      maxCurvature=Math.max(maxCurvature,Math.abs((r*r+2*d*d-r*dd)/(r*r+d*d)**1.5));
+      const a=i*2*Math.PI/720,center=f.at(a);
       for(const points of [f.inner,f.outer]) {
         let nearest=Infinity;
         for(let j=0;j<points.length;j++) {
@@ -44,13 +43,20 @@ test('097 compiled cam preserves the complete groove and both finite working fac
           nearest=Math.min(nearest,Math.hypot(center[0]-x[0]-t*dx,center[1]-x[1]-t*dy));
         }
         minGap=Math.min(minGap,nearest-f.pinRadius);maxGap=Math.max(maxGap,nearest-f.pinRadius);
+        if(nearest-f.pinRadius>f.clearance+.0001)pocketAngle=Math.max(pocketAngle,Math.min(a,2*Math.PI-a));
       }
     }
-    assert.ok(maxCurvature*f.halfWidth<.9,'offset groove would undercut itself');
-    t.diagnostic(JSON.stringify({minimumNominalGapPixels:minGap*100,maximumNominalGapPixels:maxGap*100,curvatureTimesHalfWidth:maxCurvature*f.halfWidth}));
-    assert.ok(minGap>0);assert.ok(minGap>f.clearance-.0001&&maxGap<f.clearance+.0001,'faceting exceeds 0.01 source pixel');
+    t.diagnostic(JSON.stringify({minimumNominalGapPixels:minGap*100,maximumNominalGapPixels:maxGap*100,reversalPocketAngle:pocketAngle}));
+    assert.ok(minGap>f.clearance-.0001,'the groove cuts into its finite pin');
+    assert.ok(pocketAngle<.15,'reversal relief reaches a working spiral flank');
     for(const a of [0,Math.PI])assert.ok(Math.abs(f.law(a).derivative)<1e-12);
     for(let i=0;i<=1000;i++)assert.ok(f.law(i*Math.PI/1000).derivative>=-1e-10,'fitted groove reverses before the stroke endpoint');
+    for(let a=f.reversalAngle;a<Math.PI-f.reversalAngle;a+=.01) {
+      assert.ok(Math.abs(f.law(a).derivative-f.slope)<1e-12,'advance is not an Archimedean spiral');
+      assert.ok(Math.abs(f.law(2*Math.PI-a).derivative+f.slope)<1e-12,'return is not an Archimedean spiral');
+      assert.equal(f.law(a).secondDerivative,0);
+    }
+    assert.ok(1-2*f.reversalAngle/Math.PI>.94);
     assert.ok(f.minimum-f.halfWidth>g.hubRadius+.01);
     assert.ok(f.maximum+f.halfWidth<g.diskRadius-.02);
     assert.ok(f.minimum+g.barEnd>g.guideCenters.at(-1)+g.guideHalfLength+.04);
@@ -69,7 +75,12 @@ test('097 output is passive, drives against either load and restarts independent
   assert.ok(p.model.isDeleted()&&p.data.isDeleted());
   for(const load of [-1,1]) {
     const v=makeMujocoGroovedHeart(mujoco,{load});try {
-      for(const t of [1,2,3,4]){v.update(t);const p=v.physics;assert.ok(Math.abs(p.data.qpos[1]-v.root.userData.profile.law(-p.data.qpos[0]).r)*100<.15);}
+      for(let i=1;i<=80;i++) {
+        v.update(i/20);const p=v.physics,f=v.root.userData.profile,a=((-p.data.qpos[0]%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+        // The finite pin sweeps a small relief pocket at the concave reversal.
+        // An outward load can cross that pocket; the spiral flanks stay tight.
+        assert.ok(Math.abs(p.data.qpos[1]-f.law(a).r)*100<(Math.min(a,2*Math.PI-a)<.15?1.4:.15));
+      }
     }finally{v.dispose();}
   }
 });
@@ -78,11 +89,24 @@ test('097 ten turns use both groove faces and keep all hardware within the camer
   const v=makeMujocoGroovedHeart(mujoco),p=v.physics,u=v.root.userData,f=u.profile;
   const names=new Map();for(const [name,c] of Object.entries(p.description.collision))for(let i=0;i<c.cells.length;i++)names.set(p.id('mjOBJ_GEOM',name+i),name);
   const surfaces=Object.fromEntries(['inner','outer'].map(n=>[n,solidSurface(u.parts[n].geometry)]));
-  let error=0,penetration=0,solidPenetration=0,checks=0,poses=0,contactSurfaceError=0;const contacts={inner:0,outer:0};
+  let error=0,penetration=0,solidPenetration=0,checks=0,poses=0,contactSurfaceError=0,flankError=0,speedError=0,previous;
+  const contacts={inner:0,outer:0};
   try {
     for(let i=0;i<=80000;i++) {
       if(i)p.step();mujoco.mj_forward(p.model,p.data);assert.ok([...p.data.qpos,...p.data.qvel].every(Number.isFinite));
       error=Math.max(error,Math.abs(p.data.qpos[1]-f.law(-p.data.qpos[0]).r));
+      const a=((-p.data.qpos[0]%(2*Math.PI))+2*Math.PI)%(2*Math.PI),sign=a<Math.PI?1:-1;
+      if(a>.16&&a<Math.PI-.16||a>Math.PI+.16&&a<2*Math.PI-.16)
+        flankError=Math.max(flankError,Math.abs(p.data.qpos[1]-f.law(a).r));
+      if(i%200===0) {
+        // Measure actual native travel over 100 ms, away from either reversal.
+        const onFlank=a>.3&&a<Math.PI-.3||a>Math.PI+.3&&a<2*Math.PI-.3;
+        if(previous&&previous.sign===sign&&onFlank) {
+          const expected=sign*f.slope*Math.PI/2;
+          speedError=Math.max(speedError,Math.abs((p.data.qpos[1]-previous.x)/.1-expected)/Math.abs(expected));
+        }
+        previous={x:p.data.qpos[1],sign};
+      }
       const cs=p.data.contact;
       for(let j=0;j<cs.size();j++) {
         const c=cs.get(j),part=names.get(c.geom1)??names.get(c.geom2);assert.ok(part);contacts[part]++;penetration=Math.max(penetration,-c.dist);
@@ -99,13 +123,14 @@ test('097 ten turns use both groove faces and keep all hardware within the camer
         for(const mesh of Object.values(u.parts)){const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
       }
     }
-    t.diagnostic(JSON.stringify({maximumTraverseErrorPixels:error*100,maximumNativePenetrationPixels:penetration*100,maximumSampledPenetrationPixels:solidPenetration*100,contactSurfaceErrorPixels:contactSurfaceError*100,contacts,poses,surfaceChecks:checks}));
-    assert.ok(error*100<.1);assert.ok(penetration*100<.05);assert.ok(solidPenetration*100<.05);assert.ok(contactSurfaceError*100<.05);assert.ok(contacts.inner>1000&&contacts.outer>1000);
+    t.diagnostic(JSON.stringify({maximumTraverseErrorPixels:error*100,maximumSpiralFlankErrorPixels:flankError*100,maximumFlankSpeedErrorPercent:speedError*100,maximumNativePenetrationPixels:penetration*100,maximumSampledPenetrationPixels:solidPenetration*100,contactSurfaceErrorPixels:contactSurfaceError*100,contacts,poses,surfaceChecks:checks}));
+    assert.ok(error*100<.15);assert.ok(flankError*100<.075);assert.ok(speedError<.015,'native follower does not travel uniformly along the spiral flanks');
+    assert.ok(penetration*100<.05);assert.ok(solidPenetration*100<.05);assert.ok(contactSurfaceError*100<.05);assert.ok(contacts.inner>1000&&contacts.outer>1000);
   }finally{v.dispose();}
 });
 
 test('097 timestep and complete groove-mesh refinement stay within the running-fit scale',t=>{
-  const a=makeMujocoGroovedHeart(mujoco),b=makeMujocoGroovedHeart(mujoco,{timestep:.00025}),c=makeMujocoGroovedHeart(mujoco,{timestep:.000125}),d=makeMujocoGroovedHeart(mujoco,{segments:1536});
+  const a=makeMujocoGroovedHeart(mujoco),b=makeMujocoGroovedHeart(mujoco,{timestep:.00025}),c=makeMujocoGroovedHeart(mujoco,{timestep:.000125}),d=makeMujocoGroovedHeart(mujoco,{segments:3072});
   let first=0,second=0,mesh=0;
   try {
     for(let i=0;i<80000;i++){a.physics.step();for(let j=0;j<2;j++)b.physics.step();for(let j=0;j<4;j++)c.physics.step();d.physics.step();const [x,y,z,w]=[a,b,c,d].map(v=>v.physics.data.qpos[1]);first=Math.max(first,Math.abs(x-y));second=Math.max(second,Math.abs(y-z));mesh=Math.max(mesh,Math.abs(x-w));}

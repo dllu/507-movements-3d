@@ -27,10 +27,10 @@ export function makeEndlessGrooveGeometry(options={}) {
   attach('inner',plate(f.inner,-.12,.14),'rocker',PALETTE.driven);
   attach('cover',plate(outline,.14,.24),'rocker',PALETTE.driven);
   attach('pivotShaft',disk(pivotShaftRadius,-.98,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
-  const rearOutline=clip.union(capsule([0,0],f.pivot,.085,32),poly(circle([0,0],.26,96)),poly(circle(f.pivot,.32,96)));
-  const rear=clip.difference(rearOutline,poly(circle([0,0],shaftRadius+.003,128)),poly(circle(f.pivot,pivotShaftRadius+.003,128)));
+  const rearOutline=clip.union(capsule(f.inputCenter,f.pivot,.085,32),poly(circle(f.inputCenter,.26,96)),poly(circle(f.pivot,.32,96)));
+  const rear=clip.difference(rearOutline,poly(circle(f.inputCenter,shaftRadius+.003,128)),poly(circle(f.pivot,pivotShaftRadius+.003,128)));
   attach('rearFrame',plate(rear,-.85,-.70),'frame',PALETTE.muted);
-  blocks.rocker.position.set(...f.pivot,0);blocks.rocker.rotation.z=f.reference(f.phase);blocks.input.rotation.z=f.phase;
+  blocks.rocker.position.set(...f.pivot,0);blocks.rocker.rotation.z=f.initialAngle;blocks.input.rotation.z=f.phase;blocks.input.position.set(...f.inputCenter,0);
   const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.cover.visible=!enabled;};
   Object.assign(root.userData,{parts,families,blocks,source,profile,hideGround:true,setSectionView,
     geometry:{shaftRadius,pivotShaftRadius,outline,bodyCenter,bodyAngle}});

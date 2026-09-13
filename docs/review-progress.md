@@ -3360,35 +3360,32 @@ playback averages 59.94 fps. See the [096 reconstruction](mujoco-096-heart-cam.m
 096 is verified within its stated source corrections, ideal spring/guide model,
 finite reversal intervals and soft-contact tolerances.
 
-097 now uses MuJoCo contact with both sides of a measured heart-shaped groove
-to drive a passive horizontal bar. Only the shaft is actuated; the fixed pin
-slides in the groove without a return spring. The source fit uses 270 paired
-face points, with 2.1721-pixel RMS and 7.1173-pixel maximum distance to the
-finite profile. It preserves the measured bar length and gives varying traverse
-speed, which is explicit in the viewer. The bar axis is raised 4.7648 pixels and
-the disk radius enlarged 4.9221 pixels to retain a complete outer groove wall.
-Fifteen selected tests, thirteen production browser tests and the build pass.
-Ten turns keep native soft penetration below 0.00618 source pixel and timestep
-and mesh differences below 0.15 pixel. Thirty-three poses pass 2,081,580 independent
-surface samples without unintended intersections. Fourteen final views are
-inspected and playback averages 30.22 fps. See the [097 reconstruction](mujoco-097-grooved-heart.md).
-097 is verified as a source-fitted positive groove drive with varying traverse,
-an inferred cylindrical pin, ideal guides and stated running-clearance limits.
+097 now uses two Archimedean spiral flanks with short smooth reversals to drive
+its passive bar through MuJoCo contact. The user's correction supersedes the
+earlier varying-speed harmonic fit. The corrected walls differ from 270 source
+face readings by 8.3850 pixels RMS and 15.6413 pixels maximum, preserving the
+measured stroke endpoints. Fifteen selected tests pass; ten turns keep native
+follower error on the working flanks below 0.067 source pixel and 100 ms
+travel-speed error below 1.218%. Thirty-three poses pass 2,980,012 independent
+surface samples without unintended intersections. Fourteen corrected views
+are inspected. See the [097 reconstruction](mujoco-097-grooved-heart.md) for the
+short reversal blends, finite-pin relief pocket, source corrections and fits.
 
-098 now uses MuJoCo contact between a disk-mounted crank pin and a passive
-hinged arm. Both faces of the rear groove are measured from 261 source points;
-the settled assembly matches them within 1.2170 pixels RMS and 4.7511 pixels
-maximum. The engraved crank radius cannot traverse the whole loop, so the pin
-reverses along its lower branch without an imposed branch switch. Section view
-reveals the groove by hiding the connecting front cover. The larger working
-pin, hidden depths and bearings are explicitly reconstructed.
-Fifteen selected tests, fourteen production browser tests and the build pass.
-Ten turns keep native soft penetration below 0.00463 pixel and timestep/mesh
-differences below 0.022° of arm rotation. Thirty-three poses pass 2,657,490
-independent surface samples without unintended intersections. Sixteen views
-are inspected and playback averages 35.48 fps. See the
-[098 reconstruction](mujoco-098-endless-groove.md). 098 is verified within this
-source-based branch interpretation, inferred pin and ideal bearing model.
+098 now completes one circuit of its oblong groove per crank revolution. The
+user's correction supersedes the earlier lower-branch-return interpretation.
+The corrected 123.1877-pixel crank radius and 0.7826-pixel axis shift match both
+radial ends of the measured groove. Only the input is actuated; contact and
+inertia carry the passive arm through both ends at a two-second physical period.
+Four mechanism tests pass, including ten full laps at three timesteps and two
+mesh resolutions. Native soft penetration remains below 0.03027 source pixel;
+dead-center timestep/mesh sensitivity remains below 0.362°. Thirty-three poses
+pass 2,660,506 independent surface samples with no unintended intersections.
+See the [098 reconstruction](mujoco-098-endless-groove.md) for the corrected
+initial pin position, section cover, inferred bearings and operating limits.
+
+Both corrected movements pass the production build and all 15 MuJoCo browser
+tests. Fourteen 097 views and eighteen 098 views are inspected; frozen source
+and image hashes are verified in the separate correction inspection reports.
 
 099 now uses MuJoCo contact with adjacent turns of a spiral rail to drive a
 passive feed rod and free roller. Only the disk is actuated. Its 487 measured
@@ -3416,8 +3413,8 @@ stated running-clearance model.
 094 is verified for radius adjustment with an ideal guide and stated bolt/slot fits.
 095 is verified with a reconstructed roller, ideal bearings/guide and stated contact limits.
 096 is verified with a corrected cam, smooth reversals, ideal guides and an inferred spring.
-097 is verified with a source-fitted groove, varying traverse and an inferred pin and guides.
-098 is verified with a measured rear groove, lower-branch return and an inferred working pin.
+097 is verified with Archimedean spiral flanks, short reversals and an inferred pin and guides.
+098 is verified with full groove circulation at the corrected crank radius and physical speed.
 099 is verified with a corrected spiral, passive free roller and inferred reversing drive.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.

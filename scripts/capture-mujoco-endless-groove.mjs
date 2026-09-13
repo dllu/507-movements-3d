@@ -30,11 +30,11 @@ try {
   });
   for(const spec of [
     {name:'source-front',time:0},{name:'source-overlay',time:0},{name:'source-full',time:0,section:false},{name:'front',time:0},
-    {name:'quarter',time:1},{name:'outer',time:2},{name:'return',time:3},
-    {name:'oblique',time:.5,direction:[3,2,8]},{name:'rear',time:2,direction:[-3,2,-8],section:false},
-    {name:'pin',time:1,detail:'pin',direction:[1,-4,8]},{name:'pivot',time:0,detail:'pivot'},
-    {name:'pin-side',time:1,detail:'pin',direction:[5,-6,2]},
-    {name:'covered-pin-side',time:1,detail:'pin',direction:[5,-6,2],section:false},
+    {name:'far-cap',time:.3125},{name:'near-cap',time:1.3125},{name:'quarter',time:.5},{name:'outer',time:1},{name:'return',time:1.5},
+    {name:'oblique',time:.25,direction:[3,2,8]},{name:'rear',time:1,direction:[-3,2,-8],section:false},
+    {name:'pin',time:.5,detail:'pin',direction:[1,-4,8]},{name:'pivot',time:0,detail:'pivot'},
+    {name:'pin-side',time:.5,detail:'pin',direction:[5,-6,2]},
+    {name:'covered-pin-side',time:.5,detail:'pin',direction:[5,-6,2],section:false},
   ]) {
     const state=await page.evaluate(async spec=>{
       const {THREE:{Vector3,OrthographicCamera}}=await import('/src/simulation/mujoco-endless-groove/visual.js');
@@ -86,7 +86,7 @@ try {
     await page.waitForTimeout(200);const file=prefix+'-'+name+'.png';assert(!fs.existsSync(file));
     await page.screenshot({path:file,fullPage:true});views.push({name,file,sha256:hashStudyFile(file),inspected:false});
   }
-  const note=page.getByText('Section view removes the arm’s front cover to reveal its rear groove. With the drawn crank radius, the pin reverses along one side of the loop. The larger working pin, bearing support and hidden depths are reconstructed.',{exact:true});
+  const note=page.getByText('Section view removes the arm’s front cover to reveal its rear groove. The crank radius is corrected so the pin travels around the entire groove. The working pin, bearings and hidden depths are reconstructed.',{exact:true});
   await note.evaluate(el=>el.scrollIntoView({block:'center'}));
   assert(await note.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.movement-notes').getBoundingClientRect();return a.top>=b.top&&a.bottom<=b.bottom;}));
   const noteFile=prefix+'-mobile-notes.png';assert(!fs.existsSync(noteFile));

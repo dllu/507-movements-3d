@@ -16,7 +16,7 @@ export function makeMujocoEndlessGroove(mujoco,options={}) {
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   const bounds=new THREE.Box3(new THREE.Vector3(-1.75,-1.75,-1.02),new THREE.Vector3(2.9,2.95,.3));
   Object.assign(u,{mechanism:'mujoco-endless-groove',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'Section view removes the arm’s front cover to reveal its rear groove. With the drawn crank radius, the pin reverses along one side of the loop. The larger working pin, bearing support and hidden depths are reconstructed.',
+    reconstructionNote:'Section view removes the arm’s front cover to reveal its rear groove. The crank radius is corrected so the pin travels around the entire groove. The working pin, bearings and hidden depths are reconstructed.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the circular disk is actuated. Native pin contact with both groove faces drives the passive hinged arm. No branch changes or arm trajectory are prescribed.'});

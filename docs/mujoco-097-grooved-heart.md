@@ -1,163 +1,124 @@
 # 097 — grooved heart cam
 
-The catalog's `#/movement/097` route uses MuJoCo contact between a rotating
-grooved cam and a cylindrical follower pin. Both groove faces drive the passive
-horizontal bar. Only the shaft is actuated; there is no return spring or
-prescribed output trajectory. A revolution takes four seconds. The old
-synchronous registry model remains available to historical studies.
+The catalog's `#/movement/097` route uses two Archimedean spiral flanks to
+produce uniform advance and return, with short smooth reversals. MuJoCo contact
+between the rotating groove and a cylindrical pin drives the passive horizontal
+bar. Only the shaft is actuated; there is no output motor or return spring.
+One revolution takes four seconds.
 
-## Source reconstruction and interpretation
+The previous harmonic fit reproduced irregularities in the engraving and gave
+nonuniform travel. That interpretation was incorrect and is superseded here.
+Brown's [097 caption](https://507movements.com/mm_097.html) identifies this as
+the grooved version of 096; its reconstruction needs the corresponding uniform
+travel law.
 
-Brown's [movement 097](https://507movements.com/mm_097.html) describes a heart
-cam similar to 096, except grooved. Its short caption does not specify exact
-dimensions, the pin's construction or hidden supports. The old implementation
-prescribed follower motion, added a large floor frame and rotation markers,
-and used different shaft, bar and groove proportions. Four baseline views
-are inspected, including the complete rear assembly.
+## Pitch law and finite pin
 
-This reconstruction follows the **engraved groove, with varying traverse
-speed**. It does not claim an exactly uniform stroke. A constant radial-speed
-construction differs visibly from the drawing's long faces. The measured
-curve is regularized as a smooth symmetric radial fit, with zero velocity at
-both reversals and positive radial progression between them. The source-fit
-choice and varying traverse speed are explicit in the catalog note.
+The measured inner and outer follower radii are 44.2760 and 174.9810 source
+pixels. One model unit represents 100 source pixels. On each working flank,
+pitch radius changes linearly with angle at 42.6918 pixels/radian. The two
+flanks have opposite slopes. Their combined extent is 94.907% of a revolution.
 
-`scripts/measure-grooved-heart-source.mjs` records complete radial ink runs in
-`public/engravings/mm_097.png`. One model unit represents 100 source pixels.
-The disk, hub, shaft, follower eye and pin head have fitted radii 183.0646,
-31.9074, 15.8028, 11.5095 and 4.5235 pixels. Their 113/107/119/60/75 readings
-have 0.9532/0.8223/0.3237/0.4304/0.3066-pixel RMS circle residuals. The hub's
-center, (226.9810, 282.4742), becomes the common shaft axis; the slightly
-different drawn circle centers are regularized.
+As in 096, each reversal is rounded over ±0.08 radian rather than requiring an
+instantaneous reversal of a massive follower. With `d = 0.08`, slope
+`k = stroke / (π - d)` and `t = angle / d`, the inner blend is
+`r = minimum + k*d*(t³ - t⁴/2)`. It joins the straight radial law with continuous
+velocity and acceleration. The outer blend and return are mirrored copies.
+The short blends are explicit exceptions to the Archimedean flanks.
 
-Both groove faces are paired at 135 angles, excluding the concealed inner
-reversal and the outer nose. The resulting 270 face points remain independent
-of the reconstructed profile. A six-coefficient radial cosine fit through
-mode seven preserves the measured follower-eye radius and the manually read
-outer reversal. It has a 2.2359-pixel radial centerline RMS. The finite groove
-is obtained by offsetting that pitch curve along its normals. The median
-normal width is 20.0117 pixels, accounting for the fitted slope.
+Both groove walls are normal offsets from the pitch curve. At the concave
+inner reversal, the outer offset folds over itself because the pin has finite
+radius. Polygon union removes the fold, leaving the swept reversal pocket.
+The complete groove has 1536 angular samples. Searching both complete wall
+polygons at 720 positions finds minimum pin clearance 0.04434 pixel. The relief
+pocket reaches 1.33755 pixels of clearance and remains within 0.11345 radian
+of the inner reversal. It does not alter the working spiral flanks.
 
-The final 768-segment groove differs from the 270 face samples by **2.1721
-pixels RMS and 7.1173 pixels maximum**. Circle fits and groove fits have
-different evidence scopes; neither claims an exact match to every ink edge.
-The source overlay exposes the residual differences and the reconstructed
-outer nose. Seven-mode regularization also removes small drawing asymmetries
-and joins both branches smoothly at the reversals.
+The groove retains its 20.0117-pixel width and a 19.9117-pixel working pin
+diameter, with nominal 0.05-pixel clearance on each side. An outward applied
+load can move the follower across the enlarged inner reversal pocket; ±1 load
+checks bound that error below 1.4 pixels locally and 0.15 pixel elsewhere.
+The default unloaded trajectory differs from the pitch law by at most
+0.13188 pixel over ten revolutions.
 
-The follower begins 44.2760 pixels from the shaft and reaches 174.9810 pixels,
-for 130.7050 pixels of traverse. Its axis is raised **4.7648 pixels**, based
-on the fitted eye center, to align with the shaft. The bar retains its measured
-25-pixel diameter and 208.7431-pixel length from the eye to the drawn end.
-Two compact bored guides accommodate the whole stroke without extending it.
-The rounded eye's diameter is regularized to the bar's diameter.
+## Source reconstruction and solids
 
-The drawing brings the groove to the disk perimeter. The reconstructed disk
-radius is enlarged **4.9221 pixels** to retain a 3-pixel outer wall beyond the
-pin envelope. This completes the groove through the outer reversal. The floor,
-inner island and outer land are separate closed solids with abutting depth
-layers. A shaft bore passes through the floor and island; front and rear hubs
-join the shaft assembly. The rear bearing frame has its own shaft bore.
+`scripts/measure-grooved-heart-source.mjs` independently samples 270 groove-face
+points from `public/engravings/mm_097.png`. The corrected spiral walls differ
+from those ink readings by **8.3850 pixels RMS and 15.6413 pixels maximum**.
+Those differences are required corrections to the drawn groove, not evidence
+of an exact tracing. The source measurement no longer supplies harmonic
+coefficients to the motion law.
 
-The cylindrical pin is fixed to the bar and slides along the groove. Its
-19.9117-pixel diameter leaves 0.05 pixel nominal clearance at each face. A
-smaller ordinary stem passes through the bored bar eye and terminates in the
-measured pin head. The pin's rear end clears the groove floor by one source
-pixel. Pin construction, groove depth, wall thickness, bearing depth and guide
-brackets are inferred; Brown does not establish a freely rotating roller.
+The disk, hub, shaft, eye and pin-head measurements are retained. The bar axis
+is raised 4.7648 pixels to pass through the shaft axis, and the disk radius is
+enlarged 4.9221 pixels to retain a complete outer groove wall. The bar preserves
+its measured 25-pixel diameter and 208.7431-pixel length. Both bored guides
+accommodate its full 130.7050-pixel stroke. The fixed cylindrical pin has an
+ordinary smaller stem through the bar's eye. Its rear end clears the groove
+floor by one source pixel.
 
-All 14 visible parts are closed solids. Orange identifies the input, blue the
-bar, brass the pin and gray the fixed supports. A darker groove floor shows
-its depth. Shared matte materials preserve the complete surfaces. Fog and the
-ground are disabled, and the camera contains the full traverse and rear frame.
+All 14 parts are closed solids. The floor, island and outer land occupy
+abutting depth layers; shaft and guide bores remain open. The pin, guides,
+bearings and hidden depths are reconstructed. Fog and ground are disabled.
+The camera includes the full stroke, disk and rear support.
 
-## Native contact model
+## Native dynamics and validation
 
-Two coordinates represent the shaft hinge and the follower slide. Both groove
-faces are native collision surfaces. The pin and bar remain one rigid body,
-so tangential contact slides and the ideal guide reacts the pin's moment.
-No rolling constraint, spring, output motor or periodic state reset is used.
-An ideal joint supplies the guide constraint; its finite hardware and running
-clearance are checked separately.
+The only coordinates are the input hinge and passive follower slide. Convex
+contact cells are merged from the rendered plate triangles, preserving both
+complete groove walls and the shaft bore. Compiled native vertices and
+independently integrated plate volumes verify that collision geometry agrees
+with the visible solids. The native pin capsule has the visible cylinder's
+working radius, with its rounded ends contained inside the finite pin.
 
-The reusable `mujoco/convex-plate.js` starts with the actual rendered cap
-triangles and merges only convex neighboring cells. It preserves both the
-shaft bore and the complete groove, without simplifying their boundaries.
-Compiled native vertices are checked after MuJoCo's recentering and rotations,
-and decomposition volumes agree with the independently integrated visible
-plates. The collision representation cannot fill the groove with a hull.
+Defaults are a 0.5 ms timestep, gravity, implicit integration, friction 0.03,
+4 ms soft-contact response and motor gains 10000/200. Mass and full inertia
+come from the visible hardware at uniform density. Playback uses shared fixed
+steps; seeking and restart reproduce the same state across frame partitions.
+Disabling pin contact leaves the stationary follower still while the shaft turns.
 
-The pin's native capsule has the same working circular radius as its visible
-cylinder. Its short middle overlaps the working axial layer, and its rounded remote ends
-remain within the finite pin, clear of the floor. The ideal planar joint
-excludes pin tilt. The visible floor remains a complete solid; the pin cannot
-reach it under that joint. Input and follower mass and full inertia tensors
-come from the closed visible hardware at uniform density, normalized to unit
-input mass.
+Fifteen selected mechanism, runtime, engine and camera tests pass. Over ten
+revolutions, checked at every step:
 
-Defaults are a 0.5 ms timestep, implicit integration, gravity, motor gains
-10000/200, friction 0.03, follower damping 0.02 and a 4 ms soft-contact response.
-Initial settling lasts 0.5 second. Playback starts with the shaft already
-turning and the follower at its inner reversal. Subsequent output is determined
-by contact. Restart is deterministic across different render-frame partitions.
-Disabling contact leaves the initially stationary bar still while the shaft
-turns. Separate positive and negative load checks confirm positive drive in
-both directions.
+| Measurement | Maximum |
+| --- | ---: |
+| Follower error on the spiral flanks | 0.06615 pixel |
+| Follower error including reversals | 0.13189 pixel |
+| Native travel-speed error over 100 ms on the flanks | 1.218% |
+| Native soft penetration | 0.02813 pixel |
+| Contact-center distance from the rendered wall, sampled every 10 ms | 0.00822 pixel |
 
-The finite running clearance permits small free motion when the working face
-changes. Faceting and soft contact add small differences to the analytical
-pitch curve. Friction, material density, guide compliance, strength and wear
-are uncalibrated; this reconstructs the described grooved motion and its
-engraved geometry, not a particular built machine.
+Both walls participate: 12,644 inner and 5,341 outer contact records. Thirty-three
+poses pass topology, camera and hardware checks with 2,980,012 independent
+surface samples and no sampled unintended intersections. These are sampled
+clearance checks, not a proof over every possible configuration.
 
-## Validation
+Halving the timestep from 0.5 to 0.25 ms changes position by at most 0.11836 pixel;
+0.25 versus 0.125 ms gives 0.08961 pixel. Doubling the complete groove resolution
+to 3072 samples changes it by 0.14356 pixel. These establish position sensitivity
+at the running-clearance scale, not converged impact forces.
 
-Fifteen selected mechanism, runtime, engine and camera tests pass. Ten
-uninterrupted revolutions (40 seconds) are checked at every 0.5 ms step.
-Maximum traverse difference from the fitted pitch envelope is 0.07732 source
-pixel; maximum native soft penetration is 0.00618 pixel. The inner and outer
-faces both participate, with 24,136 and 12,325 recorded contacts respectively.
-Contact centers sampled every 10 ms remain within 0.00265 pixel of the actual
-rendered working surfaces.
+Fourteen corrected views are inspected: source front and overlay, the stroke
+and return, rear and oblique assemblies, pin and guides, and desktop/mobile
+catalog views. The source overlay exposes the geometric correction. The pin
+remains inside the groove, the complete disk is visible, and the bar stays in
+both guides at the inner limit. Friction, density and compliance are uncalibrated.
 
-Thirty-three poses pass topology and camera checks across all 14 closed parts.
-Their 2,081,580 independent surface samples find no unintended intersections.
-These sampled checks supplement the explicit floor, hub, rim and guide fits;
-they do not prove continuous clearance between every pair of hardware surfaces.
-Searching both complete profile polygons at 720 pitch positions gives nominal
-pin/face gaps of 0.04394–0.05407 pixel. The sampled curvature times groove
-half-width stays below 0.227, away from the unit undercut limit. The fitted
-stroke is monotonic between its two smooth reversals.
+Live headless playback averages 28.86 fps over 16.216 seconds, with mean
+update time 6.017 ms and 95th-percentile update time 9.100 ms. There are no
+page errors or unexpected warnings. Existing Three.js deprecation/readback
+notices remain.
 
-Over ten turns, 0.5 versus 0.25 ms changes bar position by at most 0.14762 pixel;
-0.25 versus 0.125 ms changes it by 0.13121 pixel. Doubling the complete groove
-resolution to 1536 segments changes it by 0.14305 pixel. These maxima are
-comparable to the gap's full radial play: they establish a position bound at
-the tested resolutions, not converged impact forces. The 384-segment trial
-reached 0.15982 pixel in the first timestep comparison and was not retained.
+The final production build and all 15 MuJoCo browser tests pass, covering
+nested hosting, lazy loading, play/pause/restart, section controls, mobile
+controls, navigation races, asset retry and allocation disposal. The build
+retains its existing large-chunk and guarded Node-import warnings.
 
-The production build and all thirteen browser tests pass, covering lazy loading,
-nested static hosting, playback, pause, restart, mobile controls, navigation
-races, asset retry and runtime disposal. Fourteen final views are inspected:
-source front and overlay, four front poses, oblique, rear, pin from two
-directions, guides, desktop, mobile and the scrolled mobile reconstruction note.
-The complete disk, groove, ordinary pin and rear supports are visible. The bar
-remains in both guides at its inner limit and fits the full camera at its outer
-limit. The normal source view and fitted overlay are recorded separately.
-
-Live playback averages 30.22 fps over 16.216 seconds in headless Chrome on this
-machine. Mean physics/update time is 4.004 ms, with 6.400 ms at the 95th
-percentile. There are no page errors or unexpected warnings. Existing Three.js
-deprecation/readback notices and the build's large-chunk and guarded Node-import
-warnings remain.
-
-Local evidence is `/dev/shm/097-source-qualified.json`, `097-tests-final.txt`,
-`097-build-final.txt`, `097-browser-final.txt` and `097-final.json`. The separate
-`097-final-inspection.json` records all inspected image hashes and verifies the
-27 frozen source files and their archives. The earlier constant-speed candidate
-is superseded; its source-front, overlay and pin images were inspected before
-the groove fit changed. All executable source and test files remain unchanged
-after the final numerical, build and browser checks.
+Local evidence: `/dev/shm/097-corrected-source.json`,
+`097-correction-tests-b.txt`, `097-corrected-views.json` and `097-corrected-inspection.json`. Old varying-speed qualification artifacts are superseded.
+The shared production-build and browser evidence for this correction is
+`/dev/shm/097-098-corrected-build.txt` and `097-098-corrected-e2e.txt`.
 
 ## Reproduction
 
@@ -170,6 +131,5 @@ TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/097-new-views node scripts/capture-mujoco-
 ```
 
 The capture uses an existing Vite server on port 5174 and exclusive source
-snapshots. Use fresh prefixes for repeated studies. Only one owned browser runs
-at a time, and source/build files remain unchanged until it exits. Bulk evidence
-stays outside Git.
+snapshots. Use fresh prefixes and one owned browser at a time. Source and
+build files remain unchanged during capture; bulk evidence stays outside Git.

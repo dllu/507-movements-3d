@@ -16,7 +16,7 @@ export function makeMujocoGroovedHeart(mujoco,options={}) {
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   const bounds=new THREE.Box3(new THREE.Vector3(-1.95,-1.95,-.84),new THREE.Vector3(3.92,1.95,.56));
   Object.assign(u,{mechanism:'mujoco-grooved-heart',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The groove follows the drawing, with varying traverse speed. The bar is raised 5 engraving pixels and the rim enlarged by 5 pixels. Guides, the cylindrical pin and hidden depths are reconstructed.',
+    reconstructionNote:'Two Archimedean spiral flanks give uniform travel, with short rounded reversals. The bar is raised 5 engraving pixels and the rim enlarged by 5 pixels. The pin, guides and hidden depths are reconstructed.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the shaft is actuated. Native contact with both groove faces drives the passive bar without a spring. The fixed cylindrical pin slides in the groove; its construction and the ideal guide are inferred.'});

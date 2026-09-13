@@ -20,7 +20,7 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '092': /The curved spokes follow the engraving/, '093': /The slot is widened to fit the measured wrist/,
     '094': /The radial plate is held during adjustment/, '095': /The fork holds a freely turning roller/,
     '096': /The cam outline is corrected by up to 11 engraving pixels/,
-    '097': /The groove follows the drawing, with varying traverse speed/,
+    '097': /Two Archimedean spiral flanks give uniform travel/,
     '098': /Section view removes the arm’s front cover/,
     '099': /Section view exposes the roller/}[id];
   await expect(page.getByText(note)).toBeVisible();
