@@ -1668,23 +1668,25 @@
       "speedMethod": "Maximum world angular speed on every compressed interval, with duration-weighted 75th percentile over the complete retained trajectory. No small-part visibility discount."
     },
     "87": {
-      "peakAngularSpeed": 1.6228403586625373,
-      "peakVisibleAngularSpeed": 1.6228403586625373,
-      "sustainedVisibleAngularSpeed": 0.9200000000045536,
-      "floorY": -2.520000001490116,
-      "fastestPart": "over-center-weighted-lever-F",
+      "peakAngularSpeed": 9.007089878594325,
+      "peakVisibleAngularSpeed": 9.007089878594325,
+      "sustainedVisibleAngularSpeed": 0.5890486230093211,
+      "floorY": -2.525217204203985,
+      "fastestPart": "weighted clutch transfer",
       "motionBounds": {
         "min": [
-          -4.051000000047497,
-          -2.520000001490116,
-          -1.0862919107198918
+          -2.2445461750030518,
+          -2.525217204203985,
+          -1.850000023841858
         ],
         "max": [
-          4.351000000047497,
-          3.3500000476837153,
-          1.7399999988079071
+          6.634295807392098,
+          1.3501381948044073,
+          1.8738746905326844
         ]
-      }
+      },
+      "speedMethod": "All reduced trajectory intervals, including short contact impulses; analytic linkage derivatives at each endpoint and midpoint. Duration-weighted 75th percentile, without a small-part visibility discount.",
+      "motionBoundsMethod": "Rendered vertices at 97 complete-cycle poses; additional camera tests cover three aspect ratios and both transfers."
     },
     "88": {
       "peakAngularSpeed": 0.9797483882590049,

@@ -3131,9 +3131,24 @@ production inputs are unchanged. See the
 
 088's current production model now has a measured source diagnosis. One outer-disk registration leaves a mean cam-contour discrepancy of 24.14 source pixels and an input-axis displacement of 22.93 pixels, beyond the approximate 3-pixel tracing uncertainty. The actual point noses do reach a cam edge with a usable driving normal; an initial axial-only contact hypothesis was rejected and retained. Finite stop construction and prescribed drive/dwell velocity jumps still need mechanical review. Four corrected stills and one registered overlay are inspected, with no errors or unexpected warnings in the final capture. Production is unchanged; 088 is not qualified. See the [088 production diagnosis](../artifacts/review/088-production-review-notes.md).
 
+087's contact-integrated reconstruction is now in the application. Two reversals
+repeat over a 24-second display cycle while the motor keeps its accumulated
+angle. Matching settled endpoints close within 1.8e-13, with no substituted
+endpoint. The promoted geometry matches all 213 candidate solids; rigid pin
+closure and 268 native-contact poses pass through four playback periods.
+The build and all 174 selected tests pass, including camera checks for all 507
+models. A complete browser cycle and 13 inspected captures cover both transfers,
+the seam, the source overlay and desktop/mobile views. The fifth connected
+reversal also passes on both initialized numerical branches. Source-proportion
+differences and continuous solid clearance keep 087 under review. The old
+086 source baseline is preserved; a new integration snapshot records the four
+changed existing inputs and the added 087 modules. See the
+[087 integration review](../artifacts/review/087-integrated-playback-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
-082 and 083 are under reconstruction; final mechanical qualification remains pending.
+082 and 083 are under reconstruction; 087 is integrated and under review.
+Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 
 ## Completion requirements
