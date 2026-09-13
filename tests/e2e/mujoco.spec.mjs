@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -17,7 +17,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '092': /The curved spokes follow the engraving/, '093': /The slot is widened to fit the measured wrist/,
     '094': /The radial plate is held during adjustment/, '095': /The fork holds a freely turning roller/,
     '096': /The cam outline is corrected by up to 11 engraving pixels/,
-    '097': /The groove follows the drawing, with varying traverse speed/}[id];
+    '097': /The groove follows the drawing, with varying traverse speed/,
+    '098': /Section view removes the arm’s front cover/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
@@ -32,6 +33,15 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   expect((await canvas.screenshot()).equals(advanced)).toBe(true);
   await page.getByRole('button', {name: 'Restart', exact: true}).click();
   expect((await canvas.screenshot()).equals(initial)).toBe(true);
+  if (id === '098') {
+    const section = page.getByRole('button', {name: 'Section view', exact: true});
+    await expect(section).toHaveAttribute('aria-pressed', 'true');
+    await section.click();
+    await expect(section).toHaveAttribute('aria-pressed', 'false');
+    expect((await canvas.screenshot()).equals(initial)).toBe(false);
+    await section.click();
+    expect((await canvas.screenshot()).equals(initial)).toBe(true);
+  }
   await page.getByLabel('Animation speed').selectOption('0.5');
   await page.setViewportSize({width: 390, height: 844});
   const restart = page.getByRole('button', {name: 'Restart', exact: true});

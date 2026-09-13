@@ -3375,6 +3375,21 @@ inspected and playback averages 30.22 fps. See the [097 reconstruction](mujoco-0
 097 is verified as a source-fitted positive groove drive with varying traverse,
 an inferred cylindrical pin, ideal guides and stated running-clearance limits.
 
+098 now uses MuJoCo contact between a disk-mounted crank pin and a passive
+hinged arm. Both faces of the rear groove are measured from 261 source points;
+the settled assembly matches them within 1.2170 pixels RMS and 4.7511 pixels
+maximum. The engraved crank radius cannot traverse the whole loop, so the pin
+reverses along its lower branch without an imposed branch switch. Section view
+reveals the groove by hiding the connecting front cover. The larger working
+pin, hidden depths and bearings are explicitly reconstructed.
+Fifteen selected tests, fourteen production browser tests and the build pass.
+Ten turns keep native soft penetration below 0.00463 pixel and timestep/mesh
+differences below 0.022° of arm rotation. Thirty-three poses pass 2,657,490
+independent surface samples without unintended intersections. Sixteen views
+are inspected and playback averages 35.48 fps. See the
+[098 reconstruction](mujoco-098-endless-groove.md). 098 is verified within this
+source-based branch interpretation, inferred pin and ideal bearing model.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3385,6 +3400,7 @@ an inferred cylindrical pin, ideal guides and stated running-clearance limits.
 095 is verified with a reconstructed roller, ideal bearings/guide and stated contact limits.
 096 is verified with a corrected cam, smooth reversals, ideal guides and an inferred spring.
 097 is verified with a source-fitted groove, varying traverse and an inferred pin and guides.
+098 is verified with a measured rear groove, lower-branch return and an inferred working pin.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

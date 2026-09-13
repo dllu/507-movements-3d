@@ -13,6 +13,7 @@ const physicsFactories = {
   95: () => import('./mujoco-inclined-disk/visual.js').then(module => module.makeMujocoInclinedDisk),
   96: () => import('./mujoco-heart-cam/visual.js').then(module => module.makeMujocoHeartCam),
   97: () => import('./mujoco-grooved-heart/visual.js').then(module => module.makeMujocoGroovedHeart),
+  98: () => import('./mujoco-endless-groove/visual.js').then(module => module.makeMujocoEndlessGroove),
 };
 
 export async function loadMovementModel(movement) {

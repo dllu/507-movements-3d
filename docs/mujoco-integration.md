@@ -32,6 +32,10 @@ cover the finite roller envelope, smooth reversals and inferred guides.
 Movement 097 uses both faces of a measured heart-shaped groove to drive a
 passive bar through a cylindrical pin. Its [source fit and contact checks](mujoco-097-grooved-heart.md)
 document the varying traverse speed, completed rim and inferred guides.
+Movement 098 uses a disk-mounted crank pin to drive a passive hinged arm.
+Its [source fit and contact checks](mujoco-098-endless-groove.md) document the
+rear groove, section control and the pin's return along one branch at the
+engraved crank radius.
 
 ## Shared runtime
 
@@ -84,7 +88,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -169,3 +173,12 @@ pixel. Thirty-three poses pass over 2.08 million independent surface samples.
 Fourteen final views are inspected and live playback averages 30.22 fps.
 The source fit gives varying traverse speed; the cylindrical pin, ideal guides,
 raised bar axis and enlarged retaining rim remain explicit reconstruction choices.
+
+The 098 migration passes 15 selected mechanism/runtime/camera tests and fourteen
+production browser tests. Its settled groove matches 261 measured face points
+within 1.2170 pixels RMS. Ten turns keep native soft penetration below 0.00463
+pixel and timestep/mesh differences below 0.022° of arm rotation. Thirty-three
+poses pass over 2.65 million independent surface samples. Sixteen views are
+inspected and playback averages 35.48 fps. The measured crank radius produces
+a return along the lower groove branch. The rear groove, removable cover,
+larger working pin and ideal bearings are explicit reconstruction assumptions.
