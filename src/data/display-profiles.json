@@ -1710,24 +1710,25 @@
       "speedMethod": "Maximum angular speed on every retained playback interval; duration-weighted 75th percentile. No small-part visibility discount."
     },
     "89": {
-      "peakAngularSpeed": 0.9200000000056291,
-      "peakVisibleAngularSpeed": 0.9200000000056291,
-      "sustainedVisibleAngularSpeed": 0.9200000000000778,
-      "floorY": -2.395309351466819,
-      "fastestPart": "crankshaft-through-eccentric-sheave",
+      "peakAngularSpeed": 1.5707963267948966,
+      "peakVisibleAngularSpeed": 1.5707963267948966,
+      "sustainedVisibleAngularSpeed": 1.5707963267948966,
+      "floorY": -2.7605464113272813,
+      "fastestPart": "input-shaft",
       "motionBounds": {
         "min": [
-          -4.804311168275997,
-          -2.395309351466819,
-          -1.1103093744146075
+          -1.9212021482504993,
+          -2.7605464113272813,
+          -0.7505464208640247
         ],
         "max": [
-          6.000309121690914,
-          2.879918481415678,
-          1.260309352360889
+          5.975582326702037,
+          2.2742420000205366,
+          0.49054640059844545
         ]
       },
-      "motionBoundsMethod": "512 full-cycle samples, expanded by an analytic maximum vertex speed times half the sample interval, plus 1e-6 for rounding. Includes the extended output stem and retaining channels."
+      "motionBoundsMethod": "512 cycle samples expanded by a conservative maximum material-point speed times half the sample interval, plus 1e-6 for rounding. Offset-rod vertical travel is included.",
+      "speedMethod": "Prescribed shaft angular speed exceeds the exact strap swing rate over the full cycle."
     },
     "90": {
       "peakAngularSpeed": 0.9600000000054468,

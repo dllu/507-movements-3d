@@ -3164,9 +3164,18 @@ joints. Source proportions and the remaining strap/shaft hardware still
 need reconstruction and clearance review. See the
 [089 joint correction](../artifacts/review/089-joints-review-notes.md).
 
+089 now follows the traced circular outlines, bored split lugs, stepped sheave,
+flange and rod. Exact offset-slider closure, 43 closed solids, 302 source ink
+points and continuous running-clearance bounds pass. The build, 173 selected
+tests, six final focused tests and 13 inspected browser views are recorded.
+Depths, bearings and the completed output/support arrangement remain explicit
+reconstruction choices. See the
+[089 source reconstruction](../artifacts/review/089-source-reconstruction-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
-082 and 083 are under reconstruction; 087, 088 and 089 are integrated and under review.
+089 is verified as an ideal kinematic reconstruction.
+082 and 083 are under reconstruction; 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

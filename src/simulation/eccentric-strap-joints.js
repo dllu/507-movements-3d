@@ -8,8 +8,10 @@ const hole = (x, y, radius) => poly(circle([x, y], radius, 128));
 
 // These fittings complete the rod beyond the engraving's broken-off end.
 // All sliding/hinged joints have actual bores and small running clearances.
-export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMaterial, fastenerMaterial}) {
-  const flangeThickness = .17, outerCouplingX = innerCouplingX + flangeThickness;
+export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMaterial, fastenerMaterial,
+  flangeThickness = .17, flangeHalfHeight = .46, flangeBoltY = .31, flangeY = 0,
+  flangeHeadRadius = .105, rodOutline, rodY = 0}) {
+  const outerCouplingX = innerCouplingX + flangeThickness;
   const flangeBoltRadius = .065, flangeBoreRadius = .067;
   const pinRadius = .13, wristBoreRadius = .132, eyeRadius = .25;
   const eyeHalfDepth = .15, forkInnerZ = .155, forkOuterZ = .39;
@@ -17,8 +19,8 @@ export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMater
   const mesh = (geometry, material, role) => {
     const result = new THREE.Mesh(geometry, material); result.userData.role = role; return result;
   };
-  const flangeShape = polygonClipping.difference(rectangle(-.28, -.46, .28, .46),
-    hole(0, -.31, flangeBoreRadius), hole(0, .31, flangeBoreRadius));
+  const flangeShape = polygonClipping.difference(rectangle(-.28, flangeY - flangeHalfHeight, .28, flangeY + flangeHalfHeight),
+    hole(0, flangeY - flangeBoltY, flangeBoreRadius), hole(0, flangeY + flangeBoltY, flangeBoreRadius));
   const flange = (x, role) => {
     const geometry = plate(flangeShape, -flangeThickness / 2, flangeThickness / 2);
     geometry.rotateY(Math.PI / 2);
@@ -28,13 +30,13 @@ export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMater
   const outerCouplingPlate = flange(outerCouplingX, 'outer-bolted-eccentric-rod-flange');
   const left = innerCouplingX - flangeThickness / 2, right = outerCouplingX + flangeThickness / 2;
   const couplingBolts = [-1, 1].map(sign => {
-    const bolt = new THREE.Group(); bolt.position.set((left + right) / 2, sign * .31, 0);
+    const bolt = new THREE.Group(); bolt.position.set((left + right) / 2, flangeY + sign * flangeBoltY, 0);
     bolt.userData.role = 'through-bolt-clamping-both-eccentric-rod-flanges';
     const shank = disk(flangeBoltRadius, -(right - left) / 2, (right - left) / 2, 128);
     shank.rotateY(Math.PI / 2);
     bolt.add(mesh(shank, fastenerMaterial, 'flange-bolt-shank'));
     for (const side of [-1, 1]) {
-      const cap = disk(.105, 0, .10, 6); cap.rotateY(side * Math.PI / 2);
+      const cap = disk(flangeHeadRadius, 0, .10, 6); cap.rotateY(side * Math.PI / 2);
       const part = mesh(cap, fastenerMaterial, side < 0 ? 'flange-bolt-head' : 'flange-bolt-nut');
       part.position.x = side * (right - left) / 2; bolt.add(part);
     }
@@ -43,11 +45,11 @@ export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMater
 
   const rodStartX = right;
   const rodShape = polygonClipping.difference(polygonClipping.union(
-    rectangle(rodStartX, -.12, rodLength, .12), hole(rodLength, 0, eyeRadius)),
-  hole(rodLength, 0, wristBoreRadius));
+    rodOutline ? poly(rodOutline) : rectangle(rodStartX, rodY - .12, rodLength, rodY + .12),
+    hole(rodLength, rodY, eyeRadius)), hole(rodLength, rodY, wristBoreRadius));
   const eccentricRod = mesh(plate(rodShape, -eyeHalfDepth, eyeHalfDepth), drivenMaterial,
     'rigid-eccentric-rod-with-bored-wrist-eye');
-  const rodEndEye = new THREE.Group(); rodEndEye.position.x = rodLength;
+  const rodEndEye = new THREE.Group(); rodEndEye.position.set(rodLength, rodY, 0);
   rodEndEye.userData.role = 'wrist-eye-center-on-solid-eccentric-rod';
 
   const crosshead = new THREE.Group(); crosshead.userData.role = 'forked-line-constrained-output-crosshead';
@@ -80,7 +82,8 @@ export function makeEccentricStrapJoints({rodLength, innerCouplingX, drivenMater
   };
   return {innerCouplingPlate, outerCouplingPlate, couplingBolts, eccentricRod, rodEndEye,
     crosshead, wristPin, makeGuide, cheeks, bridge, pinShank,
-    dimensions: {outerCouplingX, rodStartX, flangeThickness, flangeBoltRadius, flangeBoreRadius,
+    dimensions: {outerCouplingX, rodStartX, flangeThickness, flangeHalfHeight, flangeY, flangeBoltY,
+      flangeHeadRadius, flangeBoltRadius, flangeBoreRadius, rodY,
       pinRadius, wristBoreRadius, eyeRadius, eyeHalfDepth, forkInnerZ, forkOuterZ,
       guideClearance, crossheadHalfHeight, outputStemStartX: .42}};
 }
