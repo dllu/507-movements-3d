@@ -3057,6 +3057,22 @@ and integration remain unresolved. Production and all 1,097 frozen inputs
 remain unchanged. See the
 [087 connected reversal review](../artifacts/review/087-connected-reversal-notes.md).
 
+087's source fit now has a separate distributed-adjustment candidate. Its
+maximum rendered landmark error falls from 75 to 26.67 source pixels, and
+E's pinion is exactly coaxial with the output shaft. All 213 solids and the
+source pose pass 1,466,392 surface samples. Both lifting branches retain
+useful force direction at 258 native contacts; smaller stencils resolve one
+retained derivative-check failure caused by crossing a polygon feature.
+
+The nine inspected views expose a source-contour tradeoff: the stud now
+protrudes 15.82 pixels beyond E's rim, where the engraving puts it inside.
+Mean landmark error also increases as more points move. This candidate is
+therefore retained as a comparison, not accepted as the final reconstruction.
+The next fit must constrain the stud/rim relationship and broader outlines
+before repeating dynamics and clearance qualification. Production and all
+1,097 frozen inputs remain unchanged. See the
+[087 distributed source-fit review](../artifacts/review/087-distributed-source-fit-notes.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 082 and 083 are under reconstruction; final mechanical qualification remains pending.
