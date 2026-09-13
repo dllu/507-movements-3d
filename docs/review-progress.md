@@ -3360,6 +3360,21 @@ playback averages 59.94 fps. See the [096 reconstruction](mujoco-096-heart-cam.m
 096 is verified within its stated source corrections, ideal spring/guide model,
 finite reversal intervals and soft-contact tolerances.
 
+097 now uses MuJoCo contact with both sides of a measured heart-shaped groove
+to drive a passive horizontal bar. Only the shaft is actuated; the fixed pin
+slides in the groove without a return spring. The source fit uses 270 paired
+face points, with 2.1721-pixel RMS and 7.1173-pixel maximum distance to the
+finite profile. It preserves the measured bar length and gives varying traverse
+speed, which is explicit in the viewer. The bar axis is raised 4.7648 pixels and
+the disk radius enlarged 4.9221 pixels to retain a complete outer groove wall.
+Fifteen selected tests, thirteen production browser tests and the build pass.
+Ten turns keep native soft penetration below 0.00618 source pixel and timestep
+and mesh differences below 0.15 pixel. Thirty-three poses pass 2,081,580 independent
+surface samples without unintended intersections. Fourteen final views are
+inspected and playback averages 30.22 fps. See the [097 reconstruction](mujoco-097-grooved-heart.md).
+097 is verified as a source-fitted positive groove drive with varying traverse,
+an inferred cylindrical pin, ideal guides and stated running-clearance limits.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3369,6 +3384,7 @@ finite reversal intervals and soft-contact tolerances.
 094 is verified for radius adjustment with an ideal guide and stated bolt/slot fits.
 095 is verified with a reconstructed roller, ideal bearings/guide and stated contact limits.
 096 is verified with a corrected cam, smooth reversals, ideal guides and an inferred spring.
+097 is verified with a source-fitted groove, varying traverse and an inferred pin and guides.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

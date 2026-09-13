@@ -29,6 +29,9 @@ cover measured disk faces, the radial axle interpretation and complete supports.
 Movement 096 uses a heart cam to drive a passive horizontal bar and roller
 against an added return spring. Its [source corrections and contact checks](mujoco-096-heart-cam.md)
 cover the finite roller envelope, smooth reversals and inferred guides.
+Movement 097 uses both faces of a measured heart-shaped groove to drive a
+passive bar through a cylindrical pin. Its [source fit and contact checks](mujoco-097-grooved-heart.md)
+document the varying traverse speed, completed rim and inferred guides.
 
 ## Shared runtime
 
@@ -81,7 +84,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -157,3 +160,12 @@ over 2.26 million independent surface samples with only bounded cam/roller soft
 contact. Fourteen final views are inspected and live playback averages 59.94 fps.
 The roughly 11-pixel cam correction, 6-pixel bar alignment shift, smooth reversals
 and inferred return spring are explicit in the reconstruction and viewer note.
+
+The 097 migration passes 15 selected mechanism/runtime/camera tests and thirteen
+production browser tests. Its 270 measured groove-face points have 2.1721-pixel
+RMS distance from the fitted profile. Ten turns keep timestep and mesh position
+differences below 0.15 source pixel and native soft penetration below 0.00618
+pixel. Thirty-three poses pass over 2.08 million independent surface samples.
+Fourteen final views are inspected and live playback averages 30.22 fps.
+The source fit gives varying traverse speed; the cylindrical pin, ideal guides,
+raised bar axis and enlarged retaining rim remain explicit reconstruction choices.
