@@ -42,6 +42,9 @@ pitch, completed rod, bored guide and section view exposing the roller.
 Movement 100 uses crank-wrist contact with the straight slot faces of a passive
 lever. Its [source reconstruction and contact checks](mujoco-100-quick-return.md)
 cover the measured axis offset, full lever, ideal sliding contact and quick-return timing.
+Movement 101 uses a hanging slotted lever to drive a passive horizontal bar.
+Its [source fit and contact checks](mujoco-101-slotted-bar.md) cover the completed
+handle, bored guides, small slot correction and extended bar end.
 
 ## Shared runtime
 
@@ -94,7 +97,7 @@ approximation. Preserve those distinctions when migrating the collection.
 ## Validation
 
 ```sh
-node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/mujoco-spiral-feed.test.mjs tests/mujoco-quick-return.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
+node --test tests/mujoco-runtime.test.mjs tests/mujoco-treadle.test.mjs tests/mujoco-spring-sector.test.mjs tests/mujoco-eccentric-yoke.test.mjs tests/mujoco-triangular-eccentric.test.mjs tests/mujoco-crank-slider.test.mjs tests/mujoco-scotch-yoke.test.mjs tests/mujoco-variable-crank.test.mjs tests/mujoco-inclined-disk.test.mjs tests/mujoco-heart-cam.test.mjs tests/mujoco-grooved-heart.test.mjs tests/mujoco-endless-groove.test.mjs tests/mujoco-spiral-feed.test.mjs tests/mujoco-quick-return.test.mjs tests/mujoco-slotted-bar.test.mjs tests/engine.test.mjs tests/camera-resize.test.mjs
 npm run build
 npx playwright test tests/e2e/mujoco.spec.mjs tests/e2e/camera-resize.spec.mjs
 ```
@@ -214,3 +217,14 @@ extension are retained; the frictionless wrist, flat output section and bearings
 are explicit reconstruction assumptions.
 All fifteen final views were inspected, playback averages 60.00 fps, and the
 production build and all sixteen MuJoCo browser checks pass.
+
+The 101 migration passes 15 selected mechanism/runtime/camera tests. Independent
+source readings match its corrected slot and outer lever body within 0.746 and
+0.365 pixels RMS. Native contact drives a 148.7134-pixel horizontal stroke with
+no measured backtracking over ten swings. Both bored guides retain the bar;
+31 poses pass 935,316 independent surface samples without unintended
+intersections. Soft penetration stays below 0.00594 pixel and timestep
+differences below 0.03574 pixel. All sixteen final views are inspected and
+playback averages 60.00 fps. The small slot widening, extended bar, completed
+handle, symmetric drive and ideal frictionless bearings are explicit assumptions.
+The production build and all seventeen MuJoCo browser checks pass.

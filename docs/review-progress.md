@@ -3417,6 +3417,19 @@ section and bearings remain reconstructed. See the
 All fifteen final views were inspected; playback averages 60.00 fps. The
 production build and all sixteen MuJoCo browser checks pass.
 
+101 now uses a driven hanging lever and passive horizontal bar in MuJoCo.
+Its corrected slot and outer lever body match independent ink readings within
+0.746 and 0.365 pixels RMS. Fifteen selected tests pass: ten swings retain both
+bored guides and give a 148.7134-pixel stroke with no measured backtracking.
+Soft penetration stays below 0.00594 pixel and timestep differences below
+0.03574 pixel. Thirty-one poses pass 935,316 independent surface samples without
+unintended intersections. All sixteen final views are inspected and playback
+averages 60.00 fps. The slot is widened by 0.5896 pixel per side and the bar's
+right end extended 47.7569 pixels. The full handle, symmetric input swing and
+ideal bearings remain reconstructed; see the
+[101 reconstruction](mujoco-101-slotted-bar.md).
+The production build and all seventeen MuJoCo browser checks pass.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3430,6 +3443,7 @@ production build and all sixteen MuJoCo browser checks pass.
 098 is verified with full groove circulation at the corrected crank radius and physical speed.
 099 is verified with a corrected spiral, passive free roller and inferred reversing drive.
 100 is verified with measured crank/lever geometry, frictionless wrist contact and ideal bearings.
+101 is verified with a corrected slot, passive guided bar and an inferred symmetric lever swing.
 082, 083, 087 and 088 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
