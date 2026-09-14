@@ -6694,7 +6694,7 @@ function reuleauxCarrierDiskValveMotion() {
   const sourceOuterHalfWidthPixels = 215;
   const sourceOuterHalfHeightPixels = 124;
   const sourcePivotPixels = new THREE.Vector2(258, 221);
-  const sourceFastenerCenterPixels = new THREE.Vector2(258, 327);
+  const sourceFastenerCenterPixels = new THREE.Vector2(258, 317);
   const profileWidth = 2.9;
   const sourceScale = profileWidth / sourceProfileWidthPixels;
   const carrierDiskRadius = sourceCarrierDiskRadiusPixels * sourceScale;
@@ -6714,6 +6714,7 @@ function reuleauxCarrierDiskValveMotion() {
     -equilateralAltitude,
   );
   const camCentroid = new THREE.Vector2(0, -camCentroidOffset);
+  const fastenerOffset = new THREE.Vector2(0, -96 * sourceScale);
   const dwellHalfAngle = Math.PI / 6;
   const dwellAngularSpan = dwellHalfAngle * 2;
   const transferAngularSpan = Math.PI - dwellAngularSpan;
@@ -6866,8 +6867,8 @@ function reuleauxCarrierDiskValveMotion() {
     driverMaterial,
     40,
   );
-  fastenerBoss.position.set(camCentroid.x, camCentroid.y, .0025);
-  fastenerBoss.userData.role = 'round-tappet-fastener-at-reuleaux-centroid';
+  fastenerBoss.position.set(fastenerOffset.x, fastenerOffset.y, .0025);
+  fastenerBoss.userData.role = 'round-tappet-fastener-at-engraved-position';
   inputRotor.add(fastenerBoss);
 
   const fastenerSquare = new THREE.Mesh(
@@ -6879,8 +6880,8 @@ function reuleauxCarrierDiskValveMotion() {
     darkMaterial,
   );
   fastenerSquare.position.set(
-    camCentroid.x,
-    camCentroid.y,
+    fastenerOffset.x,
+    fastenerOffset.y,
     camDepth / 2 + 0.065,
   );
   fastenerSquare.userData.role = 'square-fastener-index-rigid-with-tappet';
@@ -6990,7 +6991,7 @@ function reuleauxCarrierDiskValveMotion() {
 
   const guideRails = [-1, 1].map((signX) => {
     const rail = makeBeam(
-      new THREE.Vector3(signX * guideRailX, guideMinimumY, rearFrameZ),
+      new THREE.Vector3(signX * guideRailX, guideMinimumY - .06, rearFrameZ),
       new THREE.Vector3(signX * guideRailX, guideMaximumY, rearFrameZ),
       { thickness: 0.14, depth: 0.2, color: PALETTE.frame },
     );
@@ -7016,8 +7017,13 @@ function reuleauxCarrierDiskValveMotion() {
   ));
   follower.add(...guideShoes, ...guideArms);
 
+  const bearingShape = new THREE.Shape();
+  bearingShape.absarc(0, 0, .385, 0, fullTurn, false);
+  const bearingBore = new THREE.Path();
+  bearingBore.absarc(0, 0, shaftRadius + .003, 0, fullTurn, true);
+  bearingShape.holes.push(bearingBore);
   const rearBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.31, 0.075, 10, 40),
+    new THREE.ExtrudeGeometry(bearingShape, {depth: .28, bevelEnabled: false, curveSegments: 64}).translate(0, 0, -.14),
     frameMaterial,
   );
   rearBearing.position.set(shaftCenter.x, shaftCenter.y, rearFrameZ);
@@ -7033,7 +7039,7 @@ function reuleauxCarrierDiskValveMotion() {
   const bearingSupports = [-1, 1].map((signX) => {
     const support = makeBeam(
       new THREE.Vector3(signX * 1.15, baseY, rearFrameZ),
-      rearBearing.position,
+      rearBearing.position.clone().add(new THREE.Vector3(0, -.26, 0)),
       { thickness: 0.14, depth: 0.2, color: PALETTE.frame },
     );
     support.userData.role = 'rear-A-frame-support-of-carrier-bearing';
@@ -7215,6 +7221,7 @@ function reuleauxCarrierDiskValveMotion() {
         lower: lowerExtreme.segment,
         upper: upperExtreme.segment,
       },
+      fastenerWorld: localToWorld(fastenerOffset, driverAngle),
       camCentroidWorld,
       carrierCenter: shaftCenter.clone(),
       constantWidthError: Math.abs(supportWidth - profileWidth),
@@ -7298,6 +7305,7 @@ function reuleauxCarrierDiskValveMotion() {
     dwellFractionPerStop: dwellAngularSpan / fullTurn,
     dwellHalfAngle,
     equilateralAltitude,
+    fastenerOffset: fastenerOffset.clone(),
     fastenerBossRadius,
     fastenerSquareHalfSize,
     followerDepth,
@@ -7365,8 +7373,8 @@ function reuleauxCarrierDiskValveMotion() {
     root.userData.contacts = {
       carrierAndTappet: {
         carrierCenter: state.carrierCenter.clone(),
-        fastenerCenter: state.camCentroidWorld.clone(),
-        rigidOffset: state.camCentroidWorld.distanceTo(
+        fastenerCenter: state.fastenerWorld.clone(),
+        rigidOffset: state.fastenerWorld.distanceTo(
           state.carrierCenter,
         ),
       },

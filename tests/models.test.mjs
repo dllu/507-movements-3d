@@ -32131,7 +32131,7 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
   );
   assert.equal(
     fastenerBoss.userData.role,
-    'round-tappet-fastener-at-reuleaux-centroid',
+    'round-tappet-fastener-at-engraved-position',
   );
   assert.equal(
     inputShaft.userData.role,
@@ -32199,13 +32199,13 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
     new THREE.Vector2(258, 221)
   ) < 1e-12);
   assert.ok(geometry.sourceFastenerCenterPixels.distanceTo(
-    new THREE.Vector2(258, 327)
+    new THREE.Vector2(258, 317)
   ) < 1e-12);
   assert.equal(
     geometry.sourceFastenerCenterPixels.distanceTo(
       geometry.sourcePivotPixels
     ),
-    106,
+    96,
   );
   assert.equal(
     geometry.sourceScale,
@@ -32230,7 +32230,7 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
   assert.ok(Math.abs(
     geometry.camCentroidOffset / geometry.sourceScale - 106
   ) < 0.35,
-  'the derived equilateral centroid matches the engraved fastener location');
+  'the mathematical centroid remains distinct from the engraved fastener');
   assert.equal(carrierDisk.geometry.parameters.radiusTop,
     geometry.carrierDiskRadius);
   assert.equal(carrierDisk.geometry.parameters.height,
@@ -32308,10 +32308,10 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
   ]) assert.ok(Math.abs(
     first.distanceTo(second) - geometry.profileWidth
   ) < 1e-12, 'all three construction sides equal the constant width');
-  assert.equal(fastenerBoss.position.x, geometry.camCentroid.x);
-  assert.equal(fastenerBoss.position.y, geometry.camCentroid.y);
-  assert.equal(fastenerSquare.position.x, geometry.camCentroid.x);
-  assert.equal(fastenerSquare.position.y, geometry.camCentroid.y);
+  assert.equal(fastenerBoss.position.x, geometry.fastenerOffset.x);
+  assert.equal(fastenerBoss.position.y, geometry.fastenerOffset.y);
+  assert.equal(fastenerSquare.position.x, geometry.fastenerOffset.x);
+  assert.equal(fastenerSquare.position.y, geometry.fastenerOffset.y);
   assert.ok(Math.hypot(carrierDisk.position.x, carrierDisk.position.y)
     < 1e-12);
   assert.ok(Math.hypot(inputShaft.position.x, inputShaft.position.y)
@@ -32528,7 +32528,7 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
       state.camCentroidWorld.distanceTo(state.carrierCenter)
         - geometry.camCentroidOffset
     ) < 2e-12,
-    'the tappet fastener follows a rigid circle about the true disk axis');
+    'the mathematical cam centroid follows a rigid circle about the disk axis');
     assert.ok(Math.abs(state.supportWidth - geometry.profileWidth) < 2e-12,
       'the three-arc tappet has exact constant width at every orientation');
     assert.ok(Math.abs(
@@ -32613,8 +32613,8 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
       fastenerWorld.x,
       fastenerWorld.y,
     ).distanceTo(new THREE.Vector2(
-      state.camCentroidWorld.x,
-      state.camCentroidWorld.y,
+      state.fastenerWorld.x,
+      state.fastenerWorld.y,
     )) < 2e-12);
     guideShoes.forEach((shoe, index) => {
       const position = worldPosition(shoe);
@@ -32631,7 +32631,7 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
     );
     assert.ok(Math.abs(
       model.root.userData.contacts.carrierAndTappet.rigidOffset
-        - geometry.camCentroidOffset
+        - geometry.fastenerOffset.length()
     ) < 2e-12);
     assert.equal(
       model.root.userData.contacts.fixedGuides.followerRotationError,

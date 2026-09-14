@@ -26,7 +26,7 @@ are disabled. Packaged desktop/mobile checks cover play, pause, exact restart,
 JavaScript errors and absence of a WASM request.
 
 ```sh
-node --test tests/reuleaux-valve-clearance.test.mjs tests/reuleaux-yoke-hardware.test.mjs
+node --test tests/reuleaux-valve-clearance.test.mjs tests/reuleaux-yoke-hardware.test.mjs tests/reuleaux-bearing-support.test.mjs
 node --test --test-name-pattern='movement 135 uses' tests/models.test.mjs
 ```
 
@@ -42,5 +42,17 @@ yoke. Full-stroke checks verify rail containment, arm connections and clearance
 from the carrier, and rod/collar connections. The external guides remain an
 inferred support system, not part of the engraving.
 
-The rear bearing, remaining support details and final engraving comparison
-still need review. Continue with 135.
+The rear bearing now has a 0.173-radius bore around the 0.17-radius shaft.
+The shaft spans its 0.28 depth, with clearance ahead of the bearing to the
+carrier disk. The A-frame legs terminate below the shaft and meet the bearing;
+the guide rails extend into the base instead of ending above it. These hidden
+support dimensions are inferred.
+
+The engraved fastener centre is (258,317), 96 pixels below the carrier axis,
+not the equilateral centroid approximately 106 pixels below it. The boss,
+square head and fastener diagnostics now use that measured position while the
+mathematical centroid remains available independently.
+
+Focused clearance/connection and analytical motion checks pass. The regularized
+bowed frame, external support system, bearing depths, small running clearance
+and omitted axial-retention hardware remain explicit idealizations. Packaged desktop/mobile playback and visual review pass. Continue to 136.

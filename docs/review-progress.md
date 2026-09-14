@@ -5,7 +5,8 @@ mesh now matches that profile, with a measured maximum liner gap of 0.001007.
 The shaft stays behind the working plane and the fastener reaches the carrier.
 Four-second playback and restart are enabled. Bowed yoke sides, wider measured
 rods and connected guide shoes with real passages now pass full-stroke checks.
-Rear bearing/support details and final silhouette remain under review; see [movement 135](movement-135.md).
+Fitted rear bearing, connected base supports and the measured fastener location
+now pass their checks. Packaged playback and visual review pass. Continue to 136; see [movement 135](movement-135.md).
 
 # Current review: 134 rope drum
 
