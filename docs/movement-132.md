@@ -45,6 +45,16 @@ and does not simulate bearing loads or elastic contact. The visible seats suppor
 compression; positive retention during retraction is supplied by ideal spherical
 joints, without a detailed retaining lip.
 
+The bell is now a curved surface of revolution instead of a straight cone.
+Its neck has the measured 41-pixel radius and spans source Y=115–157. The flare
+runs from Y=157 to 209.5, within 1.5 pixels of the drawn base, with a 77.5-pixel
+base radius. Its slight base extension joins the already corrected disk;
+tests check that neither the bell nor neck floats above the adjoining part.
+The intermediate flare curvature is reconstructed between these measured ends.
+The added workpiece, black platen strip and raised outline rings are hidden to
+match the source's uncluttered view. The analytical lower travel limit remains
+unchanged; no visible workpiece contact is claimed.
+
 The display cycle has an explicit four-second minimum (the native analytical
 cycle remains ten seconds and the existing display timing applies a 2.5x
 scale). Restart restores the open configuration. The camera is nearly frontal,
@@ -54,11 +64,10 @@ the disk/platen are hidden. Packaged browser checks cover desktop/mobile
 animation, pause, exact restart and absence of a WASM request.
 
 ```sh
-node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs tests/toggle-press-sockets.test.mjs
+node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs tests/toggle-press-sockets.test.mjs tests/toggle-press-silhouette.test.mjs
 node --test --test-name-pattern='movement 132 straightens' tests/models.test.mjs
 ```
 
-This is not a full geometry sign-off. Other collision pairs, the bell silhouette
-and platen/frame proportions remain under review. The workpiece and hidden
-depth are reconstructed. No dynamic pressure, material deformation or bearing
+This is not a full geometry sign-off. Other collision pairs and platen/frame proportions remain
+under review. Retention, thrust-bearing details and hidden depth are reconstructed. No dynamic pressure, material deformation or bearing
 loads are simulated.

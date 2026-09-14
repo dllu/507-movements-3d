@@ -6691,15 +6691,11 @@ function twinObliqueRodTogglePressMotion() {
   const upperShaftCenterY = (
     upperShaftTopY + upperShaftBottomY
   ) / 2;
-  const upperBellHeight = 1.18;
-  const upperBellCenterY = upperLinkY + upperDiskDepth / 2
-    + upperBellHeight / 2 - 0.02;
-  const upperNeckRadius = 0.39;
-  const upperNeckHeight = Math.max(
-    0.46,
-    handleY - (upperBellCenterY + upperBellHeight / 2) + 0.22,
-  );
-  const upperNeckCenterY = handleY - upperNeckHeight / 2 + 0.08;
+  const upperBellHeight = (209.5 - 157) * sourceScale;
+  const upperBellCenterY = upperLinkY + (235 - (209.5 + 157) / 2) * sourceScale;
+  const upperNeckRadius = 41 * sourceScale;
+  const upperNeckHeight = 42 * sourceScale;
+  const upperNeckCenterY = upperLinkY + (235 - 136) * sourceScale;
   const handleInnerRadius = 0.22;
   const handleGripLength = 0.72;
   const handleLocalAngle = -sourceOpenRelativeAngle;
@@ -6778,13 +6774,17 @@ function twinObliqueRodTogglePressMotion() {
     return rim;
   });
 
+  const bellPoint = (radiusPixels, rasterY) => new THREE.Vector2(
+    radiusPixels * sourceScale,
+    upperLinkY + (235 - rasterY) * sourceScale - upperBellCenterY,
+  );
+  const bellCurve = new THREE.CubicBezierCurve(
+    bellPoint(77.5, 209.5), bellPoint(55.5, 201),
+    bellPoint(42.5, 176), bellPoint(38, 157),
+  );
+  const bellProfile = [bellPoint(0, 209.5), ...bellCurve.getPoints(48), bellPoint(0, 157)];
   const upperBell = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      upperNeckRadius,
-      upperDiskRadius * 0.82,
-      upperBellHeight,
-      72,
-    ),
+    new THREE.LatheGeometry(bellProfile, 128),
     driverMaterial,
   );
   upperBell.position.y = upperBellCenterY;
@@ -7392,6 +7392,8 @@ function twinObliqueRodTogglePressMotion() {
   root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod};
   upperRotationIndex.visible = false;
   platenMotionIndex.visible = false;
+  for (const detail of [workpiece, platenFrontBand, upperBellRim, ...upperDiskRims, ...lowerDiskRims]) detail.visible = false;
+  root.userData.reconstructionNote = 'The upper disk stays at a fixed height while the two rods straighten and lower the platen. Joint details and depth are reconstructed.';
   root.userData.blocks = {
     bed,
     cameraFitGuides,
