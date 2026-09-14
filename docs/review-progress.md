@@ -1,12 +1,12 @@
-# Current review: 141 band-saw proportions and contact
+# Current review: 141 reconstructed band saw
 
-141's old wheel radius is 46.71 pixels when registered to both engraved centres,
-versus 50 measured. Its finite teeth penetrate the tread at all 64 checked phases;
-the rim bevel also extends beyond the blade's inner radius. A measured analytic
-path now passes speed/tangent checks, with a twelve-second blade circuit and
-tooth roots placed ahead of the tread. Visible hardware and browser replacement
-remain pending; the old model still loads. See [movement 141](movement-141.md).
-Do not advance to 142.
+141 now uses measured wheel spacing, a curved casting, six-spoke wheels, slotted
+table and curved support. Its analytic twelve-second blade circuit replaces the
+old tooth/tread intersections with overhanging teeth and an unbeveled tread.
+Actual ribbon chords clear the rotating wheel envelope; tooth/table passages,
+hub bores, supports, framing and restart checks pass. Packaged desktop/mobile
+playback and visual review pass without WASM. Blade dimensions and hidden depths
+remain reconstructed. See [movement 141](movement-141.md). Continue to 142.
 
 # Current review: 140 reconstructed toggle punch
 

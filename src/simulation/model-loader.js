@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 141) {
+    const {makeBandSaw} = await import('./band-saw.js');
+    const model = makeBandSaw();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 140) {
     const {makeTogglePunch} = await import('./toggle-punch.js');
     const model = makeTogglePunch();
