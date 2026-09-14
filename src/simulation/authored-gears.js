@@ -1,3 +1,4 @@
+import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
 import { makeWeightedClutch } from './weighted-clutch.js';
 import { makeMutilatedBevelAlternator } from './mutilated-bevel.js';
@@ -14466,16 +14467,14 @@ function handCrankPinionSectorRodPress() {
   sectorPin.userData.role = 'rod-pin-fixed-at-three-unit-sector-radius';
   const sectorPinBody = zCylinder(
     sectorPinBodyRadius,
-    0.5,
+    0.72,
     darkMaterial,
     32,
   );
-  sectorPinBody.position.z = -0.18;
+  sectorPinBody.position.z = -0.08;
   sectorPinBody.userData.role = 'sector-to-connecting-rod-pin';
-  const sectorPinCap = new THREE.Mesh(
-    new THREE.SphereGeometry(sectorPinBodyRadius * 1.08, 20, 14),
-    drivenMaterial,
-  );
+  const sectorPinCap = zCylinder(.20,.045,drivenMaterial,64);
+  sectorPinCap.position.z = .2925;
   sectorPinCap.userData.role = 'front-cap-of-sector-rod-pin';
   sectorPin.add(sectorPinBody, sectorPinCap);
   sectorRotor.add(
@@ -14527,7 +14526,7 @@ function handCrankPinionSectorRodPress() {
   platenBracketRight.userData.role = 'right-web-from-wrist-pin-to-platen';
   const platenWristPin = zCylinder(
     0.15,
-    0.28,
+    0.60,
     darkMaterial,
     34,
   );
@@ -14551,11 +14550,11 @@ function handCrankPinionSectorRodPress() {
     platenMotionIndex,
   );
 
-  const connectingRod = makeDynamicLink({
-    color: rodMaterialColor,
-    depth: connectingRodDepth,
-    jointRadius: 0.13,
-    thickness: connectingRodThickness,
+  const wristCap = zCylinder(.205,.045,darkMaterial,64);
+  wristCap.position.set(0,0,connectingRodPlaneZ+.3125);platen.add(wristCap);
+  const connectingRod = makePinnedEyeRod({
+    length:connectingRodLength,width:connectingRodThickness,depth:connectingRodDepth,
+    bores:[sectorPinBodyRadius+.003,.153],color:rodMaterialColor,
   });
   connectingRod.userData.nominalLength = connectingRodLength;
   connectingRod.userData.role =
@@ -14935,6 +14934,7 @@ function handCrankPinionSectorRodPress() {
     baseRail,
     cameraEnvelope,
     connectingRod,
+    wristCap,
     crankArm,
     crankGrip,
     crankGripTip,

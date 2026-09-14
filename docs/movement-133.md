@@ -38,6 +38,19 @@ gap and anvil depth, and checks the platen assembly against fixed supports
 through 721 positions. The original closed-position vertical clearance remains;
 no workpiece deformation or pressing load is simulated.
 
+The connecting rod is now one rigid solid with two through-bored eyes, replacing
+the solid spherical ends. Bore radii are 0.118 and 0.153 around 0.115 and 0.15
+pins. The finite polygonal holes retain over 0.0029 units of radial clearance.
+The rod is 0.20 units farther forward than the reference joint planes, leaving
+0.07 units behind it at the platen brackets. Both pins span its full thickness;
+retaining heads clear the eye faces by at least 0.01 units and exceed the bore
+radii. These axial dimensions are reconstructed.
+
+A dedicated rod test checks both axes, radial clearance, pin depth and head
+clearance at 721 positions. The linkage test's transformed endpoint tolerance
+is 3e-15 units to accommodate roundoff from the new rigid-body transform.
+The analytical rod length and platen trajectory are unchanged.
+
 The display cycle has a six-second minimum, retaining the existing 40% lift,
 10% dwell, 40% return and 10% dwell schedule with smooth easing. Restart,
 a nearly frontal camera, no ground plane and hidden diagnostic indices improve
@@ -46,11 +59,11 @@ pause, exact restart, JavaScript errors and absence of a WASM request.
 
 ```sh
 node scripts/generate-sector-press-teeth.mjs
-node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs
+node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs
 node --test --test-name-pattern='movement 133 raises' tests/models.test.mjs
 ```
 
-This is not a complete engraving or hardware review. The web openings, rod joints, crank dimensions and remaining axial stack still
+This is not a complete engraving or hardware review. The web openings, crank dimensions and remaining shaft-bearing geometry still
 use the preceding model.
 The animation's proportions and tooth counts need comparison with the engraving;
 this pass validates the retained gear pair, not literal raster agreement.

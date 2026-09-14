@@ -31523,7 +31523,7 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
     ) < 3e-16);
     assert.ok(worldPosition(connectingRod.children[2]).distanceTo(
       state.platenPinPoint
-    ) < 3e-16);
+    ) < 3e-15);
     assert.ok(worldPosition(crankGripTip).distanceTo(
       state.crankHandleEndPoint
     ) < 9e-16);
