@@ -7,14 +7,15 @@ const outlineCache = new Map();
 export function roundedRackGear({ teeth, module, depth, boreRadius,
   samples = 512, cutterSteps = 8192, backlash = module * 0.008,
   radialClearance = module * 0.0002, pressureAngle = Math.PI / 9,
-  tipRadius = module * Math.min(0.38, 0.95 * (Math.PI / 4 - 1.25 * Math.tan(pressureAngle))
+  addendum = 1, dedendum = 1.25,
+  tipRadius = module * Math.min(0.38, 0.95 * (Math.PI / 4 - dedendum * Math.tan(pressureAngle))
     / (1 / Math.cos(pressureAngle) - Math.tan(pressureAngle))) }) {
   const radius = teeth * module / 2, pitch = Math.PI * module;
-  const cacheKey = [teeth, module, samples, cutterSteps, backlash, radialClearance, pressureAngle, tipRadius].join(',');
+  const cacheKey = [teeth, module, samples, cutterSteps, backlash, radialClearance, pressureAngle, tipRadius, addendum, dedendum].join(',');
   let outline = outlineCache.get(cacheKey);
   const tangent = Math.tan(pressureAngle);
-  const bottom = radius - 1.25 * module, circleN = bottom + tipRadius;
-  const bottomHalf = pitch / 4 + backlash / 2 - 1.25 * module * tangent;
+  const bottom = radius - dedendum * module, circleN = bottom + tipRadius;
+  const bottomHalf = pitch / 4 + backlash / 2 - dedendum * module * tangent;
   const circleT = bottomHalf - tipRadius * (1 / Math.cos(pressureAngle) - tangent);
   const tangentN = circleN - tipRadius * Math.sin(pressureAngle);
   if (circleT <= 0) throw new RangeError('Cutter tips overlap');
@@ -22,7 +23,7 @@ export function roundedRackGear({ teeth, module, depth, boreRadius,
     const tooth = [];
     for (let sample = 0; sample < samples; sample += 1) {
       const angle = (sample / samples - 0.5) * 2 * Math.PI / teeth;
-      let limit = radius + module;
+      let limit = radius + addendum * module;
       for (let step = 0; step <= cutterSteps; step += 1) {
         const cutterAngle = angle - 0.8 + 1.6 * step / cutterSteps;
         const un = Math.cos(angle - cutterAngle), ut = Math.sin(angle - cutterAngle);
@@ -65,9 +66,9 @@ export function roundedRackGear({ teeth, module, depth, boreRadius,
   const shape = new THREE.Shape(outline), hole = new THREE.Path();
   hole.absarc(0, 0, boreRadius, 0, 2 * Math.PI, true); shape.holes.push(hole);
   const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 64 }).translate(0, 0, -depth / 2);
-  geometry.userData = { teeth, module, pitchRadius: radius, outerRadius: radius + module - radialClearance,
+  geometry.userData = { teeth, module, pitchRadius: radius, outerRadius: radius + addendum * module - radialClearance,
     rootRadius: bottom - radialClearance, boreRadius, depth, outline, pressureAngle,
-    cutterTipRadius: tipRadius, backlash, radialClearance, samples, cutterSteps,
+    cutterTipRadius: tipRadius, backlash, radialClearance, samples, cutterSteps, addendum, dedendum,
     toothProfile: 'rounded-rack-generated-involute-with-root-transition' };
   return geometry;
 }

@@ -3639,6 +3639,23 @@ all 28 MuJoCo browser regressions pass. Ideal head/hand constraints, hidden
 dimensions and numerical limits are recorded in the
 [112 reconstruction](mujoco-112-persian-drill.md).
 
+113 now loads a MuJoCo rack and pinion with either member selectable as input.
+Matching shallow involute teeth replace the previous tooth forms, and a
+measured fourteen-tooth rack mates with a fifteen-tooth pinion inferred from
+the visible contour. Actual pinion edges differ from 114 ink readings by
+2.54432 pixels RMS; uniform rack centers differ from 34 readings by 3.37370
+pixels RMS. The invented frame/posts and index dots are removed. Gravity
+loads passive rollers, and the rack passes behind them with a 3-pixel axial
+gap. Ten cycles in each mode retain mesh within 0.07850 pixel and penetration
+within 0.01072 pixel. Refined meshes/timesteps, reversed loads and tooth
+friction 0.1 retain engagement. Two surface audits total 1,066,702 queries
+over 37 poses with no unintended intersections. Nineteen mechanism, runtime,
+engine and shared gear tests pass. All thirteen integrated views are inspected;
+playback runs at 60.07 fps and 99.9764% physical speed. The isolated production
+build and all 29 production MuJoCo browser regressions pass. Source corrections, ideal orientation/bearing constraints,
+inferred depths and contact limits are recorded in the
+[113 reconstruction](mujoco-113-rack-pinion.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3660,6 +3677,7 @@ dimensions and numerical limits are recorded in the
 106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
 112 is verified for alternating contact-driven rotation with six inferred starts, ideal head/hand constraints and stated clearance/friction limits.
+113 is verified for contact-driven transmission in both directions, with inferred shallow involute teeth, passive rollers and stated guide/depth assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
