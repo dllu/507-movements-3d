@@ -6,7 +6,7 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
 const prefix=process.env.PROBE_PREFIX??'/dev/shm/124-flex';
-const options=JSON.parse(process.env.SIM_OPTIONS??'{}'),duration=Number(process.env.DURATION??12.25);
+const options={...JSON.parse(process.env.SIM_OPTIONS??'{}'),cordModel:'flex'},duration=Number(process.env.DURATION??12.25);
 const sources=freezeStudySources(['scripts/probe-bow-drill-flex.mjs',
   ...fs.readdirSync('src/simulation/mujoco-bow-drill').filter(n=>n.endsWith('.js')).map(n=>'src/simulation/mujoco-bow-drill/'+n),
   'src/simulation/mujoco/mass.js','src/simulation/mujoco/simulation.js','src/simulation/dispose-model.js',

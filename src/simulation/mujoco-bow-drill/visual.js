@@ -26,7 +26,7 @@ export function makeMujocoBowDrill(mujoco,options={}) {
     for(const name of ['lowerBinding','lowerBindingLead'])u.parts[name].position.copy(direction).multiplyScalar(-tension);
     for(let i=0;i<weights.length;i++)for(let k=0;k<3;k++)stock.attributes.position.array[3*i+k]=rest[3*i+k]-direction.getComponent(k)*tension*weights[i];
     stock.attributes.position.needsUpdate=true;stock.computeVertexNormals();stock.computeBoundingSphere();
-    const points=Array.from({length:f.cordSegments+1},(_,i)=>Array.from(data.flexvert_xpos.slice(3*i,3*i+3)));
+    const points=physics.getCordPoints();
     const geometry=bowDrillTube(points,points.map(()=>f.cordRadius));u.parts.initialCord.geometry.dispose();u.parts.initialCord.geometry=geometry;
     visual.root.updateMatrixWorld(true);
     return u.state={time:data.time,qpos:Object.fromEntries(Object.entries(joints).map(([n,j])=>[n,data.qpos[j.q]])),qvel:Object.fromEntries(Object.entries(joints).map(([n,j])=>[n,data.qvel[j.v]])),contacts:data.ncon};

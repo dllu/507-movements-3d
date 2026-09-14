@@ -3847,11 +3847,14 @@ playback, restart, navigation and loading beneath a static subdirectory.
 
 124 now has an unregistered native-cord reconstruction candidate. Its measured
 bow and pulley replace the old oversized scripted geometry in the review
-factory. A finite MuJoCo flex cord drives the passive spindle through friction;
-three cycles, a finer trial and friction removal checks pass. Six targeted
-tests pass, and development-browser playback averages 49.90 fps at physical
-speed. The candidate remains under review: cord width and finite-radius
-transmission, binding details, complete moving hardware clearance and default
+factory. Native rotating cord sections now replace the translational flex
+prototype, correcting finite-cord transmission. The string width is measured
+from 91 source stations, and the lower binding is repositioned. Three cycles,
+separate time/spatial refinements and friction removal complete without resets;
+spindle travel is within 0.13% of the pitch-radius estimate. Six targeted tests
+pass, all 16 motion views are inspected, and development-browser playback
+averages 29.63 fps at physical speed. The candidate remains under review:
+binding details, complete moving hardware clearance, loaded trials and default
 rotation readability still need work. See the
 [124 candidate report](mujoco-124-bow-drill.md). The public 124 loader has not
 been switched.

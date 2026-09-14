@@ -3,8 +3,9 @@ import {makeBowDrillGeometry,THREE} from '../src/simulation/mujoco-bow-drill/geo
 import {freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
 const input=process.env.SOURCE_REPORT??'/dev/shm/124-source.json';
+const widthInput=process.env.WIDTH_REPORT;
 const prefix=process.env.PROBE_PREFIX??'/dev/shm/124-source-comparison';
-const sources=freezeStudySources([input,'scripts/compare-bow-drill-source.mjs',
+const sources=freezeStudySources([input,...(widthInput?[widthInput]:[]),'scripts/compare-bow-drill-source.mjs',
   ...fs.readdirSync('src/simulation/mujoco-bow-drill').filter(n=>n.endsWith('.js')).map(n=>'src/simulation/mujoco-bow-drill/'+n),
   'src/simulation/finite-plate-geometry.js','src/simulation/clutch-section-geometry.js',
   'src/simulation/primitives.js','scripts/lib/study-report-io.mjs','package-lock.json'],prefix);
@@ -27,6 +28,7 @@ const stock=outline(u.parts.stock);
 const circles=Object.fromEntries([['outer','frontFlange'],['rim','frontLand'],['hub','frontHub'],['shaft','shaft']].map(([sourceName,part])=>[sourceName,compare(source.circles[sourceName].points,outline(u.parts[part]))]));
 const cord=u.profile.cordPath.points.map(toPixels),cordSegments=cord.slice(1).map((p,i)=>[cord[i],p]);
 const results={bow:compare(source.bow.flatMap(b=>[b.outer,b.inner]),stock),tips:Object.fromEntries(Object.entries(source.tipContour).map(([name,points])=>[name,compare(points,stock)])),circles,freeCord:compare(source.string,cordSegments)};
+if(widthInput)results.freeCordContours=compare(JSON.parse(fs.readFileSync(widthInput)).readings.flatMap(r=>r.contours),outline(u.parts.initialCord));
 verifyStudySources(sources);fs.writeFileSync(prefix+'.json',JSON.stringify({sources,results,qualification:'Distances from independently measured source ink to projected visible triangle silhouettes (cord: projected centerline). Tips use sparse manual contour points. No motion or finite contact qualification.'},null,2)+'\n',{flag:'wx'});
 console.log(JSON.stringify(results,(key,value)=>key==='errors'?undefined:value,2));
 model.root.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});

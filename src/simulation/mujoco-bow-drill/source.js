@@ -1,5 +1,6 @@
 // Independent source measurements and fitted bowed-stock profile; see the study scripts.
 export default {
+  "cordWidthPixels": 4.3,
   "axis": [
     305.76440506017656,
     306.5059709026578
