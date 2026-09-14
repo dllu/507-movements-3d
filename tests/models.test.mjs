@@ -31094,6 +31094,7 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   assert.equal(connectingRod.parent, model.root);
   assert.equal(frame.parent, model.root);
 
+  const engravingUnits = pixels => pixels * geometry.engravingScale / .42;
   assert.equal(geometry.sourceScale, 0.42);
   assert.equal(geometry.sourcePinionCenter.x, 3.973768);
   assert.equal(geometry.sourcePinionCenter.y, 5.762739);
@@ -31115,15 +31116,15 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   assert.equal(geometry.sourceStrokeLineEnd.y, 18.412382);
   assert.equal(geometry.sourceSectorPitchRadius, 6);
   assert.equal(geometry.sourcePinionPitchRadius, 1);
-  assert.equal(geometry.sourceSectorPinRadius, 3);
-  assert.equal(geometry.sourcePlatenHalfWidth, 3);
-  assert.equal(geometry.sourcePlatenBodyBottom, 0.75);
-  assert.equal(geometry.sourcePlatenBodyTop, 1.5);
-  assert.equal(geometry.sourceFixedAnvilBottomY, 13.75);
-  assert.equal(geometry.sourceFrameColumnInnerX, 2.5);
-  assert.equal(geometry.sourceFrameColumnOuterX, 3.5);
-  assert.equal(geometry.sourceTopCapHalfWidth, 4.75);
-  assert.equal(geometry.sourceBaseHalfWidth, 5);
+  assert.equal(geometry.sourceSectorPinRadius, engravingUnits(77));
+  assert.equal(geometry.sourcePlatenHalfWidth, engravingUnits(84.5));
+  assert.equal(geometry.sourcePlatenBodyBottom, engravingUnits(20));
+  assert.equal(geometry.sourcePlatenBodyTop, engravingUnits(38));
+  assert.equal(geometry.sourceFixedAnvilBottomY, engravingUnits(381));
+  assert.equal(geometry.sourceFrameColumnInnerX, engravingUnits(70));
+  assert.equal(geometry.sourceFrameColumnOuterX, engravingUnits(99));
+  assert.equal(geometry.sourceTopCapHalfWidth, engravingUnits(127));
+  assert.equal(geometry.sourceBaseHalfWidth, engravingUnits(145));
 
   assert.equal(geometry.pinionTeeth, 8);
   assert.equal(geometry.sectorEquivalentTeeth, 48);
@@ -31151,7 +31152,7 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   );
   assert.equal(
     geometry.connectingRodLength,
-    9.558199 * geometry.sourceScale,
+    engravingUnits(Math.hypot(77, 244)) * geometry.sourceScale,
   );
   assert.equal(
     geometry.pinionAngularTravel,

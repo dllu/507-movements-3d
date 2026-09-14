@@ -14000,12 +14000,15 @@ function handCrankPinionSectorRodPress() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
 
-  // Dimensions and endpoint directions are reconstructed from the vector
-  // animation published with mm_133.html.  Its rounded direction vectors
+  // Gear dimensions and endpoint directions follow the vector animation;
+  // frame and linkage proportions follow the engraving.  Its rounded direction vectors
   // disagree by less than 8e-8 in the nominal 6:1 ratio, so the rendered
   // motion uses the exact tooth-count ratio while retaining both raw source
   // measurements below for traceability.
   const sourceScale = 0.42;
+  // Engraving mm_133.png: sector axle (231,466), pinion axle (360,279).
+  const engravingScale = 2.94 / Math.hypot(129, 187);
+  const engravingUnits = pixels => pixels * engravingScale / sourceScale;
   const sourcePinionCenter = new THREE.Vector2(3.973768, 5.762739);
   const sourceSectorStartVector = new THREE.Vector2(6.889117, 0);
   const sourceSectorEndVector = new THREE.Vector2(2.488859, 3.609331);
@@ -14026,22 +14029,22 @@ function handCrankPinionSectorRodPress() {
   const sourceSectorBodyInnerRadius = 4.83477;
   const sourcePinionRootRadius = 0.6459656860360309;
   const sourcePinionOuterRadius = 1.2250004625044024;
-  const sourceSectorPinRadius = 3;
-  const sourceConnectingRodLength = 9.558199;
-  const sourcePlatenHalfWidth = 3;
-  const sourcePlatenBodyBottom = 0.75;
-  const sourcePlatenBodyTop = 1.5;
+  const sourceSectorPinRadius = engravingUnits(77);
+  const sourceConnectingRodLength = engravingUnits(Math.hypot(77, 244));
+  const sourcePlatenHalfWidth = engravingUnits(84.5);
+  const sourcePlatenBodyBottom = engravingUnits(20);
+  const sourcePlatenBodyTop = engravingUnits(38);
   const sourceFrameBottomY = -1;
   const sourceFrameColumnBottomY = -0.25;
-  const sourceFrameColumnTopY = 13.75;
-  const sourceFrameColumnInnerX = 2.5;
-  const sourceFrameColumnOuterX = 3.5;
-  const sourceFixedAnvilBottomY = 13.75;
-  const sourceFixedAnvilTopY = 14.125;
-  const sourceTopCapBottomY = 15.125;
-  const sourceTopCapTopY = 15.5;
-  const sourceTopCapHalfWidth = 4.75;
-  const sourceBaseHalfWidth = 5;
+  const sourceFrameColumnTopY = engravingUnits(381);
+  const sourceFrameColumnInnerX = engravingUnits(70);
+  const sourceFrameColumnOuterX = engravingUnits(99);
+  const sourceFixedAnvilBottomY = engravingUnits(381);
+  const sourceFixedAnvilTopY = engravingUnits(392);
+  const sourceTopCapBottomY = engravingUnits(422);
+  const sourceTopCapTopY = engravingUnits(436);
+  const sourceTopCapHalfWidth = engravingUnits(127);
+  const sourceBaseHalfWidth = engravingUnits(145);
 
   const pinionTeeth = 8;
   const sectorEquivalentTeeth = 48;
@@ -14183,10 +14186,10 @@ function handCrankPinionSectorRodPress() {
   const sectorPinBodyRadius = 0.115;
   const connectingRodThickness = 0.13;
   const connectingRodDepth = 0.12;
-  const crankRadius = 2 * sourceScale;
+  const crankRadius = 99 * engravingScale;
   const crankArmThickness = 0.13;
   const crankGripRadius = 0.085;
-  const crankGripLength = 0.52;
+  const crankGripLength = 0.22;
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.14,
@@ -14572,7 +14575,7 @@ function handCrankPinionSectorRodPress() {
   baseRail.userData.role = 'fixed-wide-base-of-press-frame';
   const fixedAnvil = new THREE.Mesh(
     new THREE.BoxGeometry(
-      7.5 * sourceScale,
+      212 * engravingScale,
       (sourceFixedAnvilTopY - sourceFixedAnvilBottomY) * sourceScale,
       platenPlaneZ + .24 - (rearFrameZ - frameDepth / 2),
     ),
@@ -14600,12 +14603,12 @@ function handCrankPinionSectorRodPress() {
   topCap.userData.role = 'fixed-wide-top-cap-of-press-frame';
   const topBlocks = [-1, 1].map((sideSign) => {
     const block = new THREE.Mesh(
-      new THREE.BoxGeometry(0.5, 0.44, frameDepth + 0.08),
+      new THREE.BoxGeometry(29 * engravingScale, 30 * engravingScale + .004, frameDepth + 0.08),
       frameMaterial,
     );
     block.position.set(
-      sideSign * 1.24,
-      14.62 * sourceScale,
+      sideSign * 84.5 * engravingScale,
+      407 * engravingScale,
       rearFrameZ,
     );
     block.userData.side = sideSign < 0 ? 'left' : 'right';
@@ -14613,9 +14616,9 @@ function handCrankPinionSectorRodPress() {
     return block;
   });
   const headerPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(2, .44, frameDepth + .08), frameMaterial,
+    new THREE.BoxGeometry(169 * engravingScale, 30 * engravingScale + .004, frameDepth + .08), frameMaterial,
   );
-  headerPanel.position.set(0, 14.62 * sourceScale, rearFrameZ);
+  headerPanel.position.set(0, 407 * engravingScale, rearFrameZ);
   headerPanel.userData.role = 'solid-header-between-top-spacers';
   const sectorPedestal = new THREE.Mesh(
     new THREE.BoxGeometry(0.82, 0.21, frameDepth + 0.08),
@@ -14926,6 +14929,7 @@ function handCrankPinionSectorRodPress() {
     headerPanel,
   };
   root.userData.geometry = {
+    engravingScale,
     centerDistance,
     closedPressClearance,
     connectingRodDepth,

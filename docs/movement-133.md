@@ -2,7 +2,7 @@
 
 The [engraving and source animation](https://507movements.com/mm_133.html) show
 a hand crank driving a pinion, sector and connecting rod to raise the platen.
-The existing analytical six-to-one transmission and rod closure are retained.
+The analytical six-to-one transmission and constant-length rod closure are retained.
 This pass replaces its straight-sided teeth with rack-generated involute
 profiles, including the small pinion's undercut root geometry.
 
@@ -35,7 +35,7 @@ depths and connections reconstruct unspecified support details.
 
 A dedicated frame test verifies these connections, rejects the original column
 gap and anvil depth, and checks the platen assembly against fixed supports
-through 721 positions. The original closed-position vertical clearance remains;
+through 721 positions. A positive closed-position vertical clearance remains;
 no workpiece deformation or pressing load is simulated.
 
 The connecting rod is now one rigid solid with two through-bored eyes, replacing
@@ -49,13 +49,13 @@ radii. These axial dimensions are reconstructed.
 A dedicated rod test checks both axes, radial clearance, pin depth and head
 clearance at 721 positions. The linkage test's transformed endpoint tolerance
 is 3e-15 units to accommodate roundoff from the new rigid-body transform.
-The analytical rod length and platen trajectory are unchanged.
+The rod remains rigid; the engraved dimensions now determine its length and the
+platen trajectory.
 
 The sector now has a single continuous web with two rounded openings traced
 from the engraving, replacing three disconnected-looking narrow spokes. The
 184-pixel source root radius is normalized to the retained gear radius. A local
-boss preserves a complete seat around the animation's farther-out rod pin;
-this is an explicit accommodation pending the overall proportion review.
+boss preserves a complete seat around the rod pin.
 The web test checks that full pin seat, connection to every tooth, and zero
 web/pinion overlap at 721 angles. The traced openings are sampled once when
 constructing the mesh; playback only rotates the rigid mesh.
@@ -68,6 +68,21 @@ brackets terminate below the shaft envelopes. These hidden bearing dimensions
 are reconstructed, rather than measured from the frontal engraving. Axial
 retention and press-load bearing behavior remain idealized.
 
+The overall proportions now use shaft centres (231,466) and (360,279) in the
+525-pixel engraving, with scale 2.94 / hypot(129,187). The sector pin radius is
+77 pixels and its open-position platen height is 244 pixels; their right
+triangle fixes the rod length. The frame, platen and 99-pixel crank follow
+measured raster landmarks. Eight projected landmarks are within four pixels
+of the engraving. The largest residual is the drawn rod pin lying four pixels
+below the axle, while the analytical open pose retains a horizontal radius.
+The formerly longer rod misses the measured length by over 50 pixels.
+
+The longer crank uses a shorter 0.22-unit axial grip so its tip clears the rod's
+back face. The grip's hidden depth is reconstructed. Frame and linkage tests
+cover the revised dimensions through a full stroke. The source animation's
+gear ratio and angular travel are preserved; its different overall proportions
+are deliberately superseded by the engraving measurements.
+
 The display cycle has a six-second minimum, retaining the existing 40% lift,
 10% dwell, 40% return and 10% dwell schedule with smooth easing. Restart,
 a nearly frontal camera, no ground plane and hidden diagnostic indices improve
@@ -76,11 +91,11 @@ pause, exact restart, JavaScript errors and absence of a WASM request.
 
 ```sh
 node scripts/generate-sector-press-teeth.mjs
-node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs tests/sector-press-web.test.mjs tests/sector-press-bearings.test.mjs
+node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs tests/sector-press-web.test.mjs tests/sector-press-bearings.test.mjs tests/sector-press-proportions.test.mjs
 node --test --test-name-pattern='movement 133 raises' tests/models.test.mjs
 ```
 
-This is not a complete engraving or hardware review. The crank dimensions still use the preceding model.
-The animation's proportions and tooth counts need comparison with the engraving;
-this pass validates the retained gear pair, not literal raster agreement.
-Continue reviewing 133 before moving on.
+The landmark check does not certify every contour: the reconstructed base,
+small hub sizes, symmetric frame and hidden axial details remain approximations.
+The eight-tooth pinion and thirteen installed sector teeth retain the source
+animation counts. Continue with a final silhouette comparison before moving on.

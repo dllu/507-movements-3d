@@ -15,12 +15,14 @@ test('133 bored rod eyes stay on their pins with axial clearance and retention',
     const pb=box(pin),cb=box(cap);assert(pb.min.z<rb.min.z&&pb.max.z>rb.max.z);assert(cb.min.z-rb.max.z>.009,'head must clear eye face');
     assert(cap.geometry.parameters.radiusTop>q.bores[index],'head must retain the eye');
    }
+   if(box(b.crankGripTip).max.z >= rb.min.z){
    const grip = b.crankGrip.getWorldPosition(new THREE.Vector3());
    r.worldToLocal(grip);
    const nearestX = Math.max(0, Math.min(q.length, grip.x));
    const gripRadius = d.crankGripRadius * 1.08;
    assert(Math.hypot(grip.x-nearestX, grip.y)>q.width/2+gripRadius,'crank grip must clear rod shank');
    for(const x of [0,q.length])assert(Math.hypot(grip.x-x,grip.y)>q.eyeRadius+gripRadius,'crank grip must clear rod eyes');
+   }
    for(const part of [b.platenBracketLeft,b.platenBracketRight,b.sectorRim,b.pinionBody])assert(box(part).max.z<rb.min.z,'rod must pass in front of adjacent bodies');
   }
  }finally{disposeObject3D(v.root);}
