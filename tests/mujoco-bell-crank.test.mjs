@@ -10,7 +10,7 @@ const mujoco=await loadMujoco();
 test('126 retains measured pins and constructs closed curved lever and pulley hardware',()=>{
  const v=makeBellCrankGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,15);assert(u.hideGround);
+  assert.equal(Object.keys(u.parts).length,17);assert(u.hideGround);
   for(const name of ['input','output']){
    const p=u.profile[name+'Pin'],s=u.source.circles[name+'Pin'].center;
    assert(Math.hypot(p[0]-(s[0]-u.source.axis[0])/100,p[1]-(u.source.axis[1]-s[1])/100)<1e-12);
@@ -31,8 +31,17 @@ test('126 initializes both finite cords at their actual visible endpoints with o
    for(let i=0;i<actual.length;i++)assert(Math.hypot(...actual[i].map((v,k)=>v-expected[i][k]))<1e-10);
   }
   for(const[a,b]of p.connections)assert(Math.hypot(...[0,1,2].map(k=>p.data.site_xpos[3*a+k]-p.data.site_xpos[3*b+k]))<1e-10);
-  assert.equal(p.model.nv,4+6*(u.profile.cordSegments+u.profile.outputSegments));
+  assert.equal(p.model.nv,6+6*(u.profile.cordSegments+u.profile.outputSegments));
   assert.equal(p.model.neq,u.profile.cordSegments+u.profile.outputSegments+2);
+  for(const name of ['input','output']){
+   const grip=p.id('mjOBJ_BODY',name+'Grip'),pin=p.id('mjOBJ_SITE',name+'Pin');
+   assert.equal(p.model.body_parentid[grip],p.bodies.bell);
+   assert(Math.hypot(...[0,1,2].map(k=>p.data.xpos[3*grip+k]-p.data.site_xpos[3*pin+k]))<1e-10);
+   const g=u.profile.grips[name],end=name==='input'?p.getCordPoints(name).at(-1):p.getCordPoints(name)[0];
+   assert(Math.abs(Math.hypot(...end.map((v,k)=>v-g.pin[k]))-g.offset)<1e-10);
+   assert(g.offset>u.source.circles[name+'Pin'].radius/100);
+   assert.equal(p.model.eq_type[p.id('mjOBJ_EQUALITY',name+'Clamp')],mujoco.mjtEq.mjEQ_WELD.value);
+  }
  }finally{v.dispose();}
 });
 
@@ -49,6 +58,7 @@ test('126 cord force redirects through the passive lever and pulley torque requi
    }
    const q=Object.fromEntries(Object.entries(p.joints).map(([n,j])=>[n,p.data.qpos[j.q]]));
    assert(q.drive>.4);assert(q.bell<-.2);assert(q.output<-.25);
+   assert(Math.abs(q.inputGrip)>.1);assert(Math.abs(q.outputGrip)>.1);
    if(friction)assert(q.spin>.5);else assert(Math.abs(q.spin)<.02);
    assert(maximumConnection<.2);observed.push({friction,q,maximumConnectionPixels:maximumConnection});
   }finally{v.dispose();}

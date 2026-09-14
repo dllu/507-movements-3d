@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {bellCrankCordPath} from './cord-path.js';
-import {bowDrillTube} from '../mujoco-bow-drill/geometry.js';
+import {bellCrankCordGeometry,applyBellCrankCordFinish,applyBellCrankShaftFinish} from './finish.js';
 import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
@@ -26,7 +26,7 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
  const pivot=xy(source.circles.pivotPin.center),inset=xy(source.circles.pivotInset.center);
  add('pivotBoss',plate(clip.difference(poly(circle(xy(source.circles.pivotEye.center),source.circles.pivotEye.radius/100,192)),poly(circle(inset,source.circles.pivotInset.radius/100,128))),.30,.35),'bell',PALETTE.brass);
  for(const n of ['input','output'])add(n+'Eye',plate(clip.difference(poly(circle(xy(source.circles[n+'Eye'].center),source.circles[n+'Eye'].radius/100,192)),poly(circle(xy(source.circles[n+'Pin'].center),source.circles[n+'Pin'].radius/100,128))),.30,.35),'bell',PALETTE.brass);
- for(const n of ['input','output'])add(n+'Pin',translated(disk(source.circles[n+'Pin'].radius/100,-.09,n==='output'?.56:.37,128),local(source.circles[n+'Pin'].center)), 'bell',PALETTE.ink);
+ for(const n of ['input','output'])add(n+'Pin',translated(disk(source.circles[n+'Pin'].radius/100,-.12,.37,128),local(source.circles[n+'Pin'].center)), 'bell',PALETTE.ink);
  add('pivotPin',translated(disk(source.circles.pivotPin.radius/100,-.18,.37,128),[...pivot,0]),'fixed',PALETTE.ink);
  const outer=source.circles.pulleyRim.radius/100,insetRadius=source.circles.pulleyInset.radius/100,shaft=source.circles.pulleyShaft.radius/100,hub=source.circles.pulleyHub.radius/100;
  const pitchRadius=source.cord.pitchRadiusPixels/100,drumRadius=pitchRadius-cordRadius;
@@ -37,19 +37,39 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
  add('frontFace',ring(shaft+.0015,insetRadius,.10,.125,256),'pulley',PALETTE.driven);
  add('pulleyHub',ring(shaft+.0015,hub,.125,.17,192),'pulley',PALETTE.driven);
  add('pulleyShaft',translated(disk(shaft,-.24,.19,128),centers.pulley),'fixed',PALETTE.ink);
- const inputPin=local(source.circles.inputPin.center),outputPin=local(source.circles.outputPin.center,.47),inputEnd=local(source.cord.inputEnd),outputEnd=local(source.cord.outputEnd,.47);
+ applyBellCrankShaftFinish(parts.pulleyShaft.material);
+ const inputPin=local(source.circles.inputPin.center),outputPin=local(source.circles.outputPin.center),inputEnd=local(source.cord.inputEnd),outputEnd=local(source.cord.outputEnd);
+ const gripOffset=.14,gripLength=.025,gripClearance=.0015;
+ const toward=(a,b)=>new THREE.Vector3(...b).sub(new THREE.Vector3(...a)).normalize().toArray();
+ const advance=(p,d,length)=>p.map((v,k)=>v+length*d[k]);
  const preliminary=bellCrankCordPath(inputEnd,inputPin,centers.pulley,pitchRadius,cordSegments);
  // Lift the chordal discretization by its worst circular sagitta, plus 0.02 px.
- const sectionLength=preliminary.length/cordSegments,initialLift=sectionLength**2/(8*pitchRadius)+.0002;
- const inputPath=bellCrankCordPath(inputEnd,inputPin,centers.pulley,pitchRadius+initialLift,cordSegments);
- const outputPoints=Array.from({length:outputSegments+1},(_,i)=>outputPin.map((v,k)=>v+i/outputSegments*(outputEnd[k]-v)));
- add('inputCord',bowDrillTube(inputPath.points,inputPath.points.map(()=>cordRadius)),'cord',PALETTE.driver);
- add('outputCord',bowDrillTube(outputPoints,outputPoints.map(()=>cordRadius)),'cord',PALETTE.driven);
- const outputDirection=new THREE.Vector3(...outputEnd).sub(new THREE.Vector3(...outputPin)).normalize().toArray();
- const profile={amplitude,cordSegments,outputSegments,cordRadius,pitchRadius,drumRadius,initialLift,centers,inputPin,outputPin,inputEnd,outputEnd,inputPath,outputPoints,outputDirection};
+ const sectionLength=(preliminary.length-gripOffset)/cordSegments,initialLift=sectionLength**2/(8*pitchRadius)+.0002;
+ const pinPath=bellCrankCordPath(inputEnd,inputPin,centers.pulley,pitchRadius+initialLift,cordSegments);
+ const inputDirection=toward(inputPin,pinPath.points.at(-2)),outputDirection=toward(outputPin,outputEnd);
+ const inputStart=advance(inputPin,inputDirection,gripOffset),outputStart=advance(outputPin,outputDirection,gripOffset);
+ const inputPath=bellCrankCordPath(inputEnd,inputStart,centers.pulley,pitchRadius+initialLift,cordSegments);
+ const outputPoints=Array.from({length:outputSegments+1},(_,i)=>outputStart.map((v,k)=>v+i/outputSegments*(outputEnd[k]-v)));
+ const grips={};
+ for(const[name,pin,direction]of [['input',inputPin,inputDirection],['output',outputPin,outputDirection]]){
+  const family=name+'Grip',bore=source.circles[name+'Pin'].radius/100+gripClearance,halfWidth=cordRadius+.021;
+  blocks[family]=new THREE.Group();blocks[family].position.fromArray(pin);blocks[family].rotation.z=Math.atan2(direction[1],direction[0])-Math.PI/2;root.add(blocks[family]);
+  const rectangle=(x0,y0,x1,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
+  const outline=clip.union(poly(circle([0,0],.13,128)),rectangle(-halfWidth,0,halfWidth,gripOffset+gripLength));
+  const shape=clip.difference(outline,poly(circle([0,0],bore,128)),rectangle(-cordRadius-gripClearance,gripOffset,cordRadius+gripClearance,gripOffset+gripLength+.01));
+  add(family,plate(shape,-.10,.10),family,PALETTE.ink);
+  grips[name]={pin,direction,angle:blocks[family].rotation.z,bore,halfWidth,offset:gripOffset,length:gripLength,clearance:gripClearance};
+ }
+ const cordLengths={};
+ for(const[name,points,color]of [['input',inputPath.points,PALETTE.driver],['output',outputPoints,PALETTE.driven]]){
+  cordLengths[name]=points.slice(1).map((p,i)=>Math.hypot(...p.map((v,k)=>v-points[i][k])));
+  add(name+'Cord',bellCrankCordGeometry(points,cordRadius,cordLengths[name]),'cord',color);
+  applyBellCrankCordFinish(parts[name+'Cord'].material);
+ }
+ const profile={amplitude,cordSegments,outputSegments,cordRadius,pitchRadius,drumRadius,initialLift,centers,inputPin,outputPin,inputEnd,outputEnd,inputPath,outputPoints,outputDirection,grips,cordLengths};
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);for(const n of ['frontFlange','frontFace','pulleyHub'])parts[n].visible=!enabled;};
  const bounds=new THREE.Box3(new THREE.Vector3(-3.5,-2.1,-.4),new THREE.Vector3(2,3.05,.7));
- Object.assign(root.userData,{source,profile,blocks,parts,families,hideGround:true,setSectionView,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.001});
+ Object.assign(root.userData,{source,profile,blocks,parts,families,hideGround:true,setSectionView,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:3.6,shadowBias:-.0004,shadowNormalBias:.001});
  setSectionView(false);markShadows(root);root.updateMatrixWorld(true);
  return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(1,1,10)};
 }

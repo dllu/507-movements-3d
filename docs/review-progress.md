@@ -3880,15 +3880,17 @@ headless playback averages 32.24 fps at 99.84% physical speed. Source
 ambiguities, the earlier failed contact approximation and guide/depth assumptions are documented in the
 [125 reconstruction](mujoco-125-cascaded-traverse.md).
 
-126 now has an unregistered MuJoCo candidate with a solid pulley, measured
-curved lever arms and two finite cords. Rendered arm-edge RMS errors are
-0.2148–0.3413 source pixel; measured pin and eye positions are retained.
-Four mechanism tests pass, including passive force transfer and pulley-friction
-ablation. The initial heavy-rope candidate had excessive sag and poor playback;
-lighter-rope and planar trials are recorded. Larger-timestep and CG trials
-reset. Finished attachment geometry, source-rim/cord consistency, all-hardware
-clearance and readable playback remain open before catalog integration; see
-the [126 reconstruction record](mujoco-126-bell-crank.md).
+126 is integrated with a solid pulley, measured curved lever arms, two native
+flexible cords and freely hinged pin attachments. Rendered arm-edge RMS errors
+are 0.2148–0.3413 source pixel. Ten cycles finish without resets or passive
+actuation; timestep and section refinement change sampled output motion by
+0.072011 and 0.483253 pixel. The surface audits find no unintended hardware
+penetration, and nonlocal cord spans remain separate. Single-point cord/drum
+contacts retain full 3D coordinates while bringing playback to approximately
+32 fps and 99% of real time. Cord texture and fixed-shaft hatching follow the
+source; arm-face shadow artifacts are corrected. Source-rim/cord inconsistency,
+local grip-angle sensitivity and inferred bearings, cord seats, endpoint guides
+and loads remain explicit limits. See the [126 reconstruction record](mujoco-126-bell-crank.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
@@ -3924,6 +3926,7 @@ the [126 reconstruction record](mujoco-126-bell-crank.md).
 123 is verified for native double-rack sector handoff with regular equal spur gears, relieved ends, raised flanges, a rephased working cam and stated ideal support/depth/drive assumptions.
 124 is verified for native finite-cord friction transmission with corrected bound ties, ideal hand/bearing constraints, lumped bow compliance and stated material/depth and sampled-clearance limits.
 125 is verified for native geared cascaded-link motion across the full 19:23:29 pattern, with measured crank radii, ideal pins and vertical guides, bounded collision approximation and stated source/depth assumptions.
+126 is verified for native pulley/cord force redirection with ordinary hinged pin attachments, sampled hardware and cord clearances, and stated source, guide, load and local cord-angle assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

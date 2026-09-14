@@ -36,6 +36,7 @@ try {
    const {THREE:{Vector3,OrthographicCamera}}=await import('/src/simulation/mujoco-bell-crank/visual.js');
    const e=window.review126,u=e.model.root.userData,f=u.source;
    if(u.setSectionView)u.setSectionView(spec.section??false);
+   for(const light of e.scene.children.filter(o=>o.isDirectionalLight&&o.castShadow))light.shadow.bias=spec.shadowBias??u.shadowBias;
    document.querySelector('#overlay')?.remove();
    e.model.update(spec.time);
    e.fitCamera(new Vector3(...(spec.direction??[0,0,10])));let camera=e.camera;
@@ -44,7 +45,7 @@ try {
     camera=new OrthographicCamera(-half,half,half,-half,.01,100);camera.position.set(x,y,10);camera.lookAt(x,y,0);camera.updateMatrixWorld();
    }
    if(spec.detail!==undefined) {
-    const center=new Vector3(...spec.center),half=spec.name==='groove'?.95:.38;
+    const center=spec.centerBody?u.blocks[spec.centerBody].getWorldPosition(new Vector3()):new Vector3(...spec.center),half=spec.name==='groove'?.95:.38;
     camera=new OrthographicCamera(-half,half,half,-half,.01,100);camera.position.copy(center).add(new Vector3(...spec.direction));camera.lookAt(center);camera.updateMatrixWorld();
    }
    e.renderer.render(e.scene,camera);

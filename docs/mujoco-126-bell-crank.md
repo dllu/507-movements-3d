@@ -1,7 +1,9 @@
-# 126 — Pulley and bell crank: native candidate
+# 126 — Pulley and bell crank
 
-The public model still uses the authored kinematic implementation. A native
-candidate now exists in `src/simulation/mujoco-bell-crank/`. Seven inspected baseline views show a
+The catalog now uses `src/simulation/mujoco-bell-crank/`: a native MuJoCo
+pulley, bell crank and two flexible cords with ordinary hinged pin attachments.
+Source proportions, passive force transmission, sampled clearances and playback
+are checked with the reconstruction limits below. Seven inspected baseline views showed a
 spoked pulley where Brown draws a solid face, narrow straight lever arms in
 place of the curved source outline, oversized pulley proportions and an added
 support frame, guide rails and handles.
@@ -9,7 +11,7 @@ support frame, guide rails and handles.
 The [original caption](https://507movements.com/mm_126.html) describes a
 bell-crank lever changing force direction. It does not specify a driving
 stroke, return load, rope properties, axial depths or the hidden bearings.
-Those will require explicit reconstruction assumptions. The pulley, two cord
+Those require explicit reconstruction assumptions. The pulley, two cord
 attachments and fixed bell-crank pivot provide the visible topology.
 
 Preliminary bounded ink-band circle fits use the 525-square local engraving.
@@ -41,8 +43,8 @@ measurements. Use `TMPDIR=/dev/shm` and exclusive `PROBE_PREFIX` paths.
 The initial retained records are `/dev/shm/126-baseline-a.json` with seven PNGs,
 and `/dev/shm/126-source-a.json` with its measured-circle overlay. All eight
 images were inspected. Scripts freeze inputs and verify their hashes; generated
-images and measurements remain outside Git. Native motion, contact, rendered
-clearance, source comparison and integration checks are pending.
+images and measurements remain outside Git. Subsequent native motion, rendered
+clearance, source comparison and integration checks are recorded below.
 
 A separate edge study, `scripts/measure-bell-crank-edges.mjs`, records 68 paired
 input-arm and 58 paired output-arm contour stations. Its inspected overlay
@@ -82,14 +84,21 @@ errors in `/dev/shm/126-comparison-b.json`:
 | Four arm edges | 0.2148–0.3413 | 0.7722 |
 | Left / right cord ink envelopes | 1.4044 / 2.5900 | 2.9109 / 6.6712 |
 
-The pin clamps, raised eyes, axial layers, bearing clearances and metal/rope
+The cord grips, raised eyes, axial layers, bearing clearances and metal/rope
 materials are reconstruction assumptions. The first flat-ended candidate
 missed the full eye circles where they overlap the arms; raised bosses correct
-that mismatch. All fifteen current visible parts have positive volume and
-closed, oriented, nondegenerate surfaces. Dynamic surface clearances and the
-provisional pin clamps still need review.
+that mismatch. All seventeen final visible parts have positive volume and
+closed, oriented, nondegenerate surfaces. Each cord now ends in an open grip
+behind the lever. The grip has a bored eye around its measured pin and turns
+on a native hinge. Its 14-pixel offset keeps the rope end outside the solid
+pin; a 2.5-pixel seat holds the terminal cord section through an ideal weld.
+Both cords occupy the pulley-groove plane. Pin/eye radial clearance is 0.15
+source pixel. These hidden fittings are inferred, not measured source details.
 
-## Native model and current limits
+## Native model and earlier trials
+
+This section retains the earlier trials and rejected settings. The finished
+model's measurements follow in the qualification section.
 
 The native candidate has one actuated input endpoint, a passive pulley hinge,
 a passive bell-crank hinge and a loaded output endpoint. Both cords consist
@@ -162,4 +171,100 @@ reset. `capture-bell-crank-candidate.mjs` runs the complete native state against
 Vite; reduced joint snapshots are deliberately unsupported for flexible cords.
 All study inputs are frozen and checked at completion. Final native timestep
 and section refinement, all-hardware clearance, finished attachment geometry,
-readable playback and production integration remain pending.
+readable playback and production integration were subsequently addressed below.
+
+## Qualification of the hinged-cord reconstruction
+
+The final model retains all six coordinates of every cord section: 64 input
+and 12 output sections, plus two passive grip hinges. The input endpoint is
+the only actuator. The two terminal sections are welded to their grips;
+interior sections retain ball connections. Pulley torque comes from native
+cord friction. The four-second cycle and 1 ms timestep remain unchanged.
+
+Multiple convex contact points are disabled for this rounded capsule/drum
+contact. MuJoCo's default can return several points for a capsule/cylinder
+pair; see its [collision documentation](https://mujoco.readthedocs.io/en/latest/computation/#multiple-contacts).
+The serial four-second profile `126-contact-profile-a.json` measured 6.451
+seconds with multiple contacts and 2.112 seconds with one contact per pair,
+including contact auditing. Mean active contacts fell from 85.19 to 23.70.
+This preserves full 3D coordinates; the planar reduction remains optional.
+
+Trial n advances ten cycles (40 seconds) with no reset, nonfinite state or
+passive actuator force. Maximum native contact penetration is 0.031135 source
+pixel; maximum endpoint-connection error is 0.103541 pixel. Bell travel is
+−0.298157 to 0.302338 radians, and output travel −0.423894 to 0.419725 world
+unit. Separate eight-second trials at output loads 1 and 4, around the default
+2, also finish without resets or passive actuation; maximum penetration is
+0.032341 pixel and connection error 0.104179 pixel. Loads and material values
+remain illustrative. The friction-zero mechanism test keeps pulley rotation
+below 1e−9 radian while the cord still moves the lever.
+
+Trials j/k/l/m compare the same hinged geometry over eight seconds:
+
+| Change from default | Maximum output difference, source pixels | Bell-tip difference | Pulley pitch-line difference |
+| --- | ---: | ---: | ---: |
+| 0.5 ms timestep | 0.072011 | 0.082765 | 0.132833 |
+| 96 input / 20 output sections | 0.483253 | 0.225373 | 0.152416 |
+| Multiple contact points enabled | 0.126484 | 0.156796 | 1.347155 |
+
+These are same-time comparisons with linear interpolation of 20 ms samples,
+not force-convergence claims. Local grip rotations are more sensitive to
+section count: the output grip differs by up to 0.175916 radian, corresponding
+to 2.462825 pixels at its 14-pixel offset. The ideal cord has no bending
+stiffness; this local angular difference is retained as a limitation.
+
+The rendered-surface audit checks both directions of each moving hardware
+pair, using vertices, edge midpoints and triangle centroids. The 65-pose
+eight-second audit performs 1,136,791 queries with zero unintended penetration.
+Maximum pulley/rope surface penetration is 0.005865 pixel; cord/grip overlap
+is below 0.000089 pixel. A further 29 poses through 40 seconds perform 494,542
+queries, again with no unintended penetration. Only the named pulley contacts
+and cord seats allow 0.1 pixel of native compliance. Pin bores receive no
+special allowance. Every sampled part stays inside the camera envelope.
+
+Nonlocal cord-span capsule bounds over 2,000 native samples through 40 seconds
+remain separated by at least 1.940296 pixels on the input cord and 9.963596
+pixels on the output. Local neighbors within 2.2 rope radii of intervening
+arclength are excluded. The minimum three-point bend radius is 67.957731
+pixels, compared with the 8.430556-pixel rope radius. These finite pose and
+surface samples do not prove continuous clearance or local tube injectivity.
+
+Cord strand shading follows material coordinates attached to the native
+sections. The shaft's section hatching remains fixed while the pulley turns.
+A tighter shadow camera and −0.0004 bias remove the arm-face shadow artifacts;
+the more aggressive −0.001 trial detached the pin shadow and was rejected.
+Section view removes the front pulley face and hub to reveal the groove.
+The source-rim/rope discrepancy remains visible and stated in the viewer note.
+
+The fifteen-view candidate c inspection includes source overlay, groove,
+pins, both travel directions, rear and axial views. It records 388 frames in
+12.0395 seconds, advancing 11.966 physical seconds: 32.23 fps and 99.39% of
+real time. Seven finish views and five shadow/grip views are also inspected;
+the material pass retains the same playback rate. These are headless-browser
+measurements on this machine, not a cross-device performance guarantee.
+
+The final source comparison is `126-comparison-c.json`; rigid contours retain
+the errors above, and the left/right cord RMS values are 1.402146/2.592287
+pixels. Native trials j–p, timestep/section/contact comparisons, clearance
+reports a/b and cord-clearance reports a/b are retained under `/dev/shm/126-*`.
+The final selected mechanism, engine and shared-runtime run passes 13 tests
+(`126-tests-d.log`); the private production build also passes. Six packaged
+browser tests pass (`126-e2e-b.log`): 126 loading, playback, pause, restart,
+section view and mobile controls; catalog search/filtering; generic controls;
+the complete model-loading sweep; mobile layouts; and static-subdirectory
+hosting. The loading sweep takes nine minutes; it is a rendering regression
+check, not mechanical qualification of the other movements.
+
+All eighteen final integrated views in `126-integrated-a.json` are inspected,
+including source overlay, close pins/groove, native motion, rear/axial views,
+desktop and mobile catalog layouts. Mobile notes scroll fully (421-pixel
+viewport, 1,000-pixel contents). Final playback records 392 frames in 12.0344
+wall seconds and advances 11.966 physical seconds: 32.57 fps and 99.43% physical
+speed. There are no page errors. Existing Three.js deprecation notices and
+screenshot-readback warnings are retained. Close pin shadows still show the
+finite shadow map's edge aliasing; arm-face acne is absent.
+
+Local durable evidence is retained as verified gzip objects under
+`artifacts/review/126-completion-20260914/manifest.json`. The prior candidate
+archive remains available separately. Generated measurements, captures and
+build output stay outside Git.
