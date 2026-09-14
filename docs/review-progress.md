@@ -1,11 +1,14 @@
 # Current review: 139 internal-rack reconstruction
 
-The old trapezoidal pinion/rack teeth intersect at all 360 checked poses. The
-engraving has nine pinion teeth, the source animation eight and the browser
-twelve. A nine-tooth involute/swept-opening prototype has no intersection at 720
-independently offset poses. Its dimensions and 2:1 end-radius ratio are still
-provisional; source measurements, passive contact simulation and browser
-replacement remain. See [movement 139](movement-139.md). Do not advance to 140.
+The old teeth intersect at all 360 checked poses. The replacement now uses nine
+pinion teeth and measured proportions, with a 16:9 end-radius ratio. Its generated
+opening passes 720 between-sample clearance checks; fitted unequal suspension
+arms match eight source joints within 2.5 pixels and close throughout the stroke.
+A native candidate stays within 1.089 pixels of the pitch path, with maximum
+penetration 0.0375 pixels over 12 seconds. It depends on an inferred coupler mass
+ratio and combined timestep/contact refinement; separate convergence checks,
+hardware, baking and browser replacement remain. See [movement 139](movement-139.md).
+Do not advance to 140.
 
 # Current review: 138 traced cam and baked pointed follower
 

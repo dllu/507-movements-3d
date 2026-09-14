@@ -1,0 +1,147 @@
+{
+  "dimensions": {
+    "module": 0.059,
+    "teeth": 9,
+    "radius": 0.26549999999999996,
+    "endRadius": 0.472,
+    "orbit": 0.20650000000000002,
+    "span": 1.4828317324943823,
+    "halfSpan": 0.7414158662471911,
+    "length": 4.263141230921349,
+    "sourcePhase": 0.662184602572447,
+    "rotationPerCycle": 16.05702911834783
+  },
+  "sourcePose": {
+    "x": -0.05000000000000038,
+    "y": 0.20650000000000002,
+    "angle": -1.5707963267948966
+  },
+  "pinionOuterRadiusPixels": 32.449999999999996,
+  "measuredPinionOuterRadiusPixels": 32,
+  "predictedRootBounds": {
+    "left": 125.75841337528087,
+    "right": 380.24158662471905,
+    "top": 202.25,
+    "bottom": 308.45
+  },
+  "measuredRootBounds": {
+    "left": 127,
+    "right": 380,
+    "top": 207,
+    "bottom": 313
+  },
+  "landmarks": [
+    {
+      "side": "left",
+      "key": "pivot",
+      "engraved": [
+        93,
+        177
+      ],
+      "rendered": [
+        92.99999999999997,
+        175
+      ],
+      "errorPixels": 2
+    },
+    {
+      "side": "left",
+      "key": "rackPin",
+      "engraved": [
+        131,
+        209
+      ],
+      "rendered": [
+        130.99999999999994,
+        208.5
+      ],
+      "errorPixels": 0.5
+    },
+    {
+      "side": "left",
+      "key": "wrist",
+      "engraved": [
+        132,
+        152
+      ],
+      "rendered": [
+        129.99999999999997,
+        151
+      ],
+      "errorPixels": 2.236067977499815
+    },
+    {
+      "side": "left",
+      "key": "top",
+      "engraved": [
+        83,
+        117
+      ],
+      "rendered": [
+        85.49999999999994,
+        117
+      ],
+      "errorPixels": 2.499999999999943
+    },
+    {
+      "side": "right",
+      "key": "pivot",
+      "engraved": [
+        347,
+        173
+      ],
+      "rendered": [
+        346.99999999999994,
+        175
+      ],
+      "errorPixels": 2
+    },
+    {
+      "side": "right",
+      "key": "rackPin",
+      "engraved": [
+        385,
+        208
+      ],
+      "rendered": [
+        384.99999999999994,
+        208.5
+      ],
+      "errorPixels": 0.5
+    },
+    {
+      "side": "right",
+      "key": "wrist",
+      "engraved": [
+        382,
+        150
+      ],
+      "rendered": [
+        384,
+        151
+      ],
+      "errorPixels": 2.23606797749979
+    },
+    {
+      "side": "right",
+      "key": "top",
+      "engraved": [
+        342,
+        117
+      ],
+      "rendered": [
+        339.49999999999994,
+        117
+      ],
+      "errorPixels": 2.500000000000057
+    }
+  ],
+  "maximumLandmarkErrorPixels": 2.500000000000057,
+  "maximumRodLengthError": 3.3306690738754696e-16,
+  "maximumCouplerLengthError": 0,
+  "angleRange": [
+    -0.9797008566415204,
+    -1.1102230246251565e-16
+  ],
+  "caveat": "The opening is shifted upward to obtain conjugate engagement. Parallel suspension arms reconcile left/right drawing discrepancies. Physical preload/contact dynamics are not yet validated."
+}
