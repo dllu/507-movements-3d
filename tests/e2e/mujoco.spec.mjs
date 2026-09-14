@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113', '114', '115', '116', '117']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113', '114', '115', '116', '117', '118']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   if (id === '107' || id === '108') test.setTimeout(90000);
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -41,7 +41,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '114': /The half-toothed pinion drives alternate racks through contact/,
     '115': /Equal, opposite shaft torques drive both sides of the frame through tooth contact/,
     '116': /The two loose pinions carry pawls that alternately drive the common shaft through ratchet contact/,
-    '117': /The cam drives the guided yoke through two freely turning rollers/}[id];
+    '117': /The cam drives the guided yoke through two freely turning rollers/,
+    '118': /The pitman carries a loose pinion between a fixed rack and a sliding rack/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);

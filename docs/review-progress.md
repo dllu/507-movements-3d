@@ -3724,6 +3724,26 @@ production MuJoCo browser regressions pass. Source measurements, ideal
 bearings and guide, inferred depth and stem continuation, and contact limits
 are recorded in the [117 reconstruction](mujoco-117-roller-yoke.md).
 
+118 now loads a loose MuJoCo pinion carried by the pitman between a fixed
+lower rack and a passive upper rack. Native contact produces the doubled
+stroke. Fourteen generated involute pinion teeth and nineteen/twenty rack
+teeth preserve the source counts; the measured pitman, raised eye, compact
+upper rail and rounded base replace the old proportions and invented posts.
+Actual pinion edges fit within 1.90085 source pixels RMS; regularizing the
+uneven rack spacing requires larger tooth-center corrections, documented
+explicitly. Ten cycles retain the doubled stroke with maximum error 0.144231
+pixel and native penetration 0.009691 pixel. Finer timestep and mesh trials,
+and loaded friction trials at 0.1 and 0.3, retain the motion. The independent
+21-pose audit makes 1,517,922 surface queries and finds no unintended
+intersections. All fifteen targeted numerical and runtime tests pass.
+All thirteen final rendered views pass inspection, with fixed framing through
+the complete stroke and corrected front-face shadow specks. Playback averages
+60.07 fps at 99.97% physical speed. The production build and all 34 MuJoCo
+browser checks pass; a final rebuild and targeted 118 check also pass after
+the display-only shadow adjustment. Construction assumptions,
+the interpretation of the three static support webs, and evidence are in
+the [118 reconstruction](mujoco-118-stroke-doubler.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3750,6 +3770,7 @@ are recorded in the [117 reconstruction](mujoco-117-roller-yoke.md).
 115 is verified for contact-driven double-rack motion with equal input torques, shifted involute teeth and stated bearing/guide assumptions.
 116 is verified for alternating ratchet contact with shifted involute pinions, inferred pawl springs and stated friction/guide limits.
 117 is verified for native cam-driven yoke motion with passive rollers, an inferred stem continuation and stated bearing/guide and roller-slip limits.
+118 is verified for native doubled-stroke transmission with regular involute teeth, ideal bearings and guides, and stated input/support reconstruction assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
