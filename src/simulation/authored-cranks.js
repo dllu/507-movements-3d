@@ -1,3 +1,4 @@
+import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
 import * as THREE from 'three';
 import {
   CircularArcCurve3,
@@ -5549,8 +5550,8 @@ function crankPinSlottedSectorRackMotion() {
   const sourceGuideCenterX = 10.909426;
   const sourceRackReferenceY = -6.5;
   const sourceRackBodyBottom = -0.5;
-  const sourceRackToothRootY = 1;
-  const sourceRackToothTipY = 2.044;
+  const sourceRackToothRootY = 1.5 - 1.25 * (10 / 23);
+  const sourceRackToothTipY = 1.5 + 10 / 23;
   const sourceEquivalentSectorTeeth = 23;
 
   const driverDiskRadius = sourceDriverDiskRadius * sourceScale;
@@ -5576,7 +5577,7 @@ function crankPinSlottedSectorRackMotion() {
   const sectorToothCount = 11;
   const rackToothCount = 10;
   const sectorRootRadius = 2.08;
-  const sectorOuterRadius = 2.72;
+  const sectorOuterRadius = sectorPitchRadius + 2 * sectorPitchRadius / sectorEquivalentTeeth;
   const sectorWebInnerRadius = 1.02;
   const sectorStartAngle = -Math.PI / 2 - sectorAngularPitch * 5.25;
   const sectorEndAngle = -Math.PI / 2 + sectorAngularPitch * 5.25;
@@ -5604,7 +5605,7 @@ function crankPinSlottedSectorRackMotion() {
     crankRadius,
   ) - Math.PI / 2;
   const sourcePoseRackX = sectorPitchRadius * sourcePoseRockerAngle;
-  const inputAngularSpeed = -0.72;
+  const inputAngularSpeed = -fullTurn / 4;
   const cyclePeriod = fullTurn / Math.abs(inputAngularSpeed);
 
   const diskDepth = 0.3;
@@ -5902,19 +5903,9 @@ function crankPinSlottedSectorRackMotion() {
   });
   rocker.add(...sectorSpokes);
 
-  const sectorToothRootHalfWidth = rackLinearPitch * 0.31;
-  const sectorToothTipHalfWidth = rackLinearPitch * 0.17;
-  const sectorToothShape = new THREE.Shape();
-  sectorToothShape.moveTo(sectorRootRadius, -sectorToothRootHalfWidth);
-  sectorToothShape.lineTo(sectorOuterRadius, -sectorToothTipHalfWidth);
-  sectorToothShape.lineTo(sectorOuterRadius, sectorToothTipHalfWidth);
-  sectorToothShape.lineTo(sectorRootRadius, sectorToothRootHalfWidth);
-  sectorToothShape.closePath();
-  const sectorToothGeometry = centeredExtrusion(
-    sectorToothShape,
-    rockerDepth,
-    0.008,
-  );
+  const toothProfiles = slottedSectorToothProfiles();
+  const sectorToothShape = new THREE.Shape(toothProfiles.tooth);
+  const sectorToothGeometry = centeredExtrusion(sectorToothShape, rockerDepth, 0);
   const sectorTeeth = Array.from(
     { length: sectorToothCount },
     (_, toothIndex) => {
@@ -5999,19 +5990,10 @@ function crankPinSlottedSectorRackMotion() {
     return cap;
   });
 
-  const rackToothRootHalfWidth = rackLinearPitch * 0.31;
-  const rackToothTipHalfWidth = rackLinearPitch * 0.17;
-  const rackToothShape = new THREE.Shape();
-  rackToothShape.moveTo(-rackToothRootHalfWidth, rackToothRootY);
-  rackToothShape.lineTo(-rackToothTipHalfWidth, rackToothTipY);
-  rackToothShape.lineTo(rackToothTipHalfWidth, rackToothTipY);
-  rackToothShape.lineTo(rackToothRootHalfWidth, rackToothRootY);
-  rackToothShape.closePath();
-  const rackToothGeometry = centeredExtrusion(
-    rackToothShape,
-    rackDepth,
-    0.008,
-  );
+  const rackPitchLocalY = -sectorPitchRadius - rackReferenceY;
+  const rackToothShape = new THREE.Shape(toothProfiles.rack.map(p =>
+    new THREE.Vector2(p.x, p.y + rackPitchLocalY)));
+  const rackToothGeometry = centeredExtrusion(rackToothShape, rackDepth, 0);
   const rackTeeth = Array.from({ length: rackToothCount }, (_, toothIndex) => {
     const tooth = new THREE.Mesh(rackToothGeometry.clone(), drivenMaterial);
     const centeredIndex = toothIndex - (rackToothCount - 1) / 2;
@@ -6426,6 +6408,11 @@ function crankPinSlottedSectorRackMotion() {
 
   root.userData.mechanism = 'crank-pin-slotted-sector-horizontal-rack';
   root.userData.cameraDistanceScale = 1.03;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {authoredCyclePeriod: cyclePeriod};
+  root.userData.minimumDisplayCycleSeconds = cyclePeriod;
+  root.userData.toothProfiles = toothProfiles;
   root.userData.blocks = {
     armNeck,
     cameraFitGuides,
@@ -6623,7 +6610,8 @@ function crankPinSlottedSectorRackMotion() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
-  const model = finish(root, update, new THREE.Vector3(7.2, 4.5, 15.8));
+  const model = finish(root, update, new THREE.Vector3(.2, .15, 15.8));
+  model.reset = () => update(0);
   pitchContactMarker.castShadow = false;
   pitchContactMarker.receiveShadow = false;
   return model;

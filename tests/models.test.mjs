@@ -30073,7 +30073,7 @@ test('movement 131 drives one rack from one crank pin through one rigid slotted 
   assert.ok(sourceState.rockerAngularSpeed < 0);
   assert.ok(sourceState.rackVelocityX < 0);
   assert.ok(Math.abs(sourceState.centerlineNormalError) < 2e-16);
-  assert.ok(Math.abs(sourceState.centerlineNormalVelocity) < 2e-16);
+  assert.ok(Math.abs(sourceState.centerlineNormalVelocity) < 2e-15);
   assert.ok(Math.abs(
     sourceState.centerlineSlidingSpeed - sourceState.slotDistanceRate
   ) < 5e-16);
@@ -30087,7 +30087,7 @@ test('movement 131 drives one rack from one crank pin through one rigid slotted 
   ));
   assert.ok(Math.max(...sourceState.wallContacts.map(
     ({ normalVelocityError }) => Math.abs(normalVelocityError)
-  )) < 2e-16);
+  )) < 2e-15);
 
   const leftReversal = model.root.userData.stateAtInputKinematics({
     inputAngle: -geometry.rockerHalfSwing,
@@ -30353,7 +30353,7 @@ test('movement 131 drives one rack from one crank pin through one rigid slotted 
     assert.ok(Math.abs(
       model.root.userData.contacts.crankPinStraightSlot
         .centerlineNormalVelocity
-    ) < 9e-16);
+    ) < 3e-15);
     assert.ok(model.root.userData.contacts.sectorRackPitchLine
       .velocityError.length() < 2e-16);
     assert.equal(

@@ -6,6 +6,12 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+131's sector now has involute teeth and a conjugate rack, with finite-profile
+clearance and wrong-phase checks. Its analytical travel matches the source
+animation; playback has an explicit four-second cycle, Restart and a nearly
+frontal camera. The pin/slot contact and engraving contour reconstruction still
+need work; see [131's partial review](movement-131.md).
+
 130 now uses source-traced shear profiles and a passive gravity-driven jaw, with
 only its eccentric cam actuated in MuJoCo. Its motion is baked into a 264 KB
 asset; browser playback needs no WASM. Native timestep refinement differs by
