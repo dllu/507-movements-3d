@@ -1,4 +1,4 @@
-# 140: toggle punching machine review
+# 140: reconstructed toggle punching machine
 
 The [caption and animation](https://507movements.com/mm_140.html) describe a
 hand lever driving a punching toggle through a connecting link. This is a
@@ -28,18 +28,33 @@ poses, all three link lengths close within 7e-16 world units and the ram descend
 monotonically without branch jumps. A six-second motion schedule preserves the
 source animation's closing, closed dwell, return and open dwell proportions.
 
-## Remaining work
+## Visible hardware and validation
 
-The browser still uses the previous model. Rebuild the casting, handle, bored
-links and ram guide to match the engraving. The guide starts at pixel 305 while
-the ram joint descends from 290 to 319.65, so it must admit the lower link as well
-as the ram; a capped solid guide would collide. The tip descends from 397 to
-426.65, requiring a through-opening at the shelf near 400. Hidden depths and the
-die passage need explicit reconstruction and full-stroke clearance review.
-Then check rendering, camera bounds, speed, restart and packaged playback before
-advancing to 141.
+The browser now loads the reconstructed casting, correctly sized handle, bored
+links and open ram guide. The rear support plate and curved front pedestal follow
+the drawing's stepped and curved outlines. Hidden depths and the die passage are
+inferred. The guide starts at pixel 305 while the ram joint descends from 290 to
+319.65, so it admits the lower link as well as the ram. The tip descends from 397
+to 426.65 through a bored shelf at 400, staying above the base at 447. No solid
+workpiece or material deformation is simulated.
+
+The connecting link lies in front of the lever shaft: the first reconstruction
+placed it behind the lever and collided with that shaft near full closure.
+The corrected axial layers pass 721 finite-polygon intersection checks, including
+the link and pin bores at their overlapping depths. See
+[the clearance report](validation/140-clearance.json). Same rigid-body pieces are
+excluded from that check. The round shaft stops below the transverse ram-joint
+bore and joins the bottom of its eye rather than filling the passage.
+
+Separate mesh checks cover the full punch cross-section, guide walls and lips,
+lower-link axial clearance, die passage and base clearance through 801 poses.
+Motion bounds contain the complete handle swing. Fog is disabled and the model
+uses its own base without a ground plane. Six-second playback preserves the
+source animation's closing/dwell/return/dwell schedule. Four focused tests and
+packaged desktop/mobile playback, restart and visual checks pass without WASM.
 
 ```sh
 node scripts/review-toggle-punch.mjs
-node --test tests/toggle-punch-kinematics.test.mjs
+node scripts/review-toggle-punch-clearance.mjs
+node --test tests/toggle-punch-kinematics.test.mjs tests/toggle-punch-geometry.test.mjs
 ```

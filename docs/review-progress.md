@@ -1,13 +1,13 @@
-# Current review: 140 measured toggle linkage
+# Current review: 140 reconstructed toggle punch
 
-140's old model follows animation proportions that differ from the engraving.
-Registering both fixed pivots leaves an 82-pixel handle-tip error. The fitted
-unequal-link mechanism closes analytically with a 29.65-pixel ram stroke and
-123.53-degree lever swing; full-stroke closure and branch-continuity checks pass.
-The larger swing is an explicit difference from the source animation. Visible
-casting, guide/link passage, die clearance and browser replacement remain;
-the browser still loads the previous model. See [movement 140](movement-140.md).
-Do not advance to 141.
+140 now loads an analytic reconstruction with engraving-fitted unequal links,
+handle, curved casting, open guide and bored die shelf. It corrects the old
+82-pixel handle-tip mismatch. Its 29.65-pixel stroke needs a 123.53-degree lever
+swing, an explicit difference from the source animation. Full-stroke linkage,
+finite plate/pin clearance, round punch passage, framing and restart checks pass.
+Packaged desktop/mobile playback and visual review pass without WASM. Hidden
+depths and the die passage are reconstructed; material cutting is not simulated.
+See [movement 140](movement-140.md). Continue to 141.
 
 # Current review: 139 baked internal rack
 

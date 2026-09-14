@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 140) {
+    const {makeTogglePunch} = await import('./toggle-punch.js');
+    const model = makeTogglePunch();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 139) {
     const {makeBakedInternalRack} = await import('./baked/internal-rack.js');
     const model = await makeBakedInternalRack();

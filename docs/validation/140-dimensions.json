@@ -84,7 +84,7 @@
     "maximumClosureError": 6.661338147750939e-16,
     "maximumRamReversal": 0
   },
-  "caveat": "Engraving-fitted unequal links close analytically but require a larger lever swing than the source animation. No force or material-cutting simulation is claimed. Browser replacement, guide/die clearance and source-shaped hardware remain pending.",
+  "caveat": "Engraving-fitted unequal links close analytically but require a larger lever swing than the source animation. No force or material-cutting simulation is claimed. This dimensional report does not test rendered hardware; see the separate clearance report.",
   "sources": [
     {
       "file": "src/data/toggle-punch-dimensions.js",
@@ -100,7 +100,7 @@
     },
     {
       "file": "scripts/review-toggle-punch.mjs",
-      "sha256": "f9594d5179a6c657c04833018b5c0848be05e6fd02df7ecb853408da5999fe3a"
+      "sha256": "6990dee8e7f5c005e2855d93bd162e83b4f3e35dce25207208f5b4602fbbe634"
     }
   ]
 }

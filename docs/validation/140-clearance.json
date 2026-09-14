@@ -1,0 +1,19 @@
+{
+  "samples": 721,
+  "overlaps": {},
+  "note": "Finite extruded plates at overlapping axial depths; same rigid-body pieces excluded. Round shaft and vertical die passage require separate checks.",
+  "sources": [
+    {
+      "file": "src/simulation/toggle-punch.js",
+      "sha256": "13feb59a75e3b1f68858efd8489905691ee8e506731aa4b83321ba6ce3a30459"
+    },
+    {
+      "file": "src/simulation/toggle-punch-kinematics.js",
+      "sha256": "8cf70e8d28080062d002089beddbc07d8013832a7a3c78d3a6408b30f3174414"
+    },
+    {
+      "file": "scripts/review-toggle-punch-clearance.mjs",
+      "sha256": "3422906b772612d65d34b9e4ddd25d0576296308b44c659af04a0cbac0e83bb9"
+    }
+  ]
+}
