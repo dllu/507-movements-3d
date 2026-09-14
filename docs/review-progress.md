@@ -3845,6 +3845,17 @@ Headless playback averages 25.51 fps at 99.38% physical speed. The production
 build and all 39 MuJoCo browser checks pass, including 123 section controls,
 playback, restart, navigation and loading beneath a static subdirectory.
 
+124 now has an unregistered native-cord reconstruction candidate. Its measured
+bow and pulley replace the old oversized scripted geometry in the review
+factory. A finite MuJoCo flex cord drives the passive spindle through friction;
+three cycles, a finer trial and friction removal checks pass. Six targeted
+tests pass, and development-browser playback averages 49.90 fps at physical
+speed. The candidate remains under review: cord width and finite-radius
+transmission, binding details, complete moving hardware clearance and default
+rotation readability still need work. See the
+[124 candidate report](mujoco-124-bow-drill.md). The public 124 loader has not
+been switched.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
