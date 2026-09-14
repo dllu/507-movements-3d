@@ -1,3 +1,5 @@
+import {cordSelfClearance} from './bow-drill-cord-distance.mjs';
+
 /** Read native connection errors and contact-surface velocities, without driving anything. */
 export function makeBowDrillContactAudit(p) {
   const {mujoco:mj,model:m,data:d}=p;
@@ -6,6 +8,7 @@ export function makeBowDrillContactAudit(p) {
     [p.id('mjOBJ_SITE','upperEnd'),p.ends.at(-1)[1]]];
   const joins=p.ends.slice(1).map(([a],i)=>[p.ends[i][1],a]);
   const drum=p.id('mjOBJ_GEOM','drum');
+  const cordRadius=m.geom_size[3*p.id('mjOBJ_GEOM','cordg0')];
   const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
   const gap=([a,b])=>Math.hypot(...[0,1,2].map(k=>d.site_xpos[3*a+k]-d.site_xpos[3*b+k]));
@@ -50,9 +53,13 @@ export function makeBowDrillContactAudit(p) {
           centerSlipSquared+=force[0]*dot(centerSlip,tangent)**2;
         }finally{c.delete();}
       }}finally{contacts.delete();}
-      return {penetration,closure:Math.max(...joins.map(gap)),pinError:Math.max(...pins.map(gap)),
+      let resistanceTorque=0;
+      for(let i=0;i<d.nefc;i++)if(d.efc_type[i]===mj.mjtConstraint.mjCNSTR_FRICTION_DOF.value&&d.efc_id[i]===p.joints.spin.v)resistanceTorque+=d.efc_force[i];
+      const sections=p.ends.map(ends=>ends.map(id=>Array.from(d.site_xpos.slice(3*id,3*id+3))));
+      const self=cordSelfClearance(sections,cordRadius);
+      return {penetration,closure:Math.max(...joins.map(gap)),pinError:Math.max(...pins.map(gap)),self,
         drumContacts,normalForce,slipSquared,centerSlipSquared,spindleTorque,
-        torqueResidual:spindleTorque-d.qfrc_constraint[p.joints.spin.v]};
+        resistanceTorque,torqueResidual:spindleTorque+resistanceTorque-d.qfrc_constraint[p.joints.spin.v]};
     },
     dispose(){if(disposed)return;disposed=true;velocityBuffer.delete();forceBuffer.delete();},
   };

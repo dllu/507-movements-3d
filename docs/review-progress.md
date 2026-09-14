@@ -3845,19 +3845,28 @@ Headless playback averages 25.51 fps at 99.38% physical speed. The production
 build and all 39 MuJoCo browser checks pass, including 123 section controls,
 playback, restart, navigation and loading beneath a static subdirectory.
 
-124 now has an unregistered native-cord reconstruction candidate. Its measured
-bow and pulley replace the old oversized scripted geometry in the review
-factory. Native rotating cord sections now replace the translational flex
-prototype, correcting finite-cord transmission. The string width is measured
-from 91 source stations, and the lower binding is repositioned. Three cycles,
-separate time/spatial refinements and friction removal complete without resets;
-spindle travel is within 0.13% of the pitch-radius estimate. Six targeted tests
-pass, all 16 motion views are inspected, and development-browser playback
-averages 29.63 fps at physical speed. The candidate remains under review:
-binding details, complete moving hardware clearance, loaded trials and default
-rotation readability still need work. See the
-[124 candidate report](mujoco-124-bow-drill.md). The public 124 loader has not
-been switched.
+124 now uses native MuJoCo cord friction in the public catalog. Ninety-six
+rotating finite sections, joined by native ball connections, turn the passive
+spindle from a single bow input. The measured bow and pulley replace the old
+oversized scripted geometry. The string width comes from 91 source stations;
+51 partial binding-contour readings qualify the corrected coil handedness and
+loose ends. The lower cord enters behind the stock without crossing a winding.
+Its tied geometry, hidden depths, ideal supports and lumped bow compliance are
+stated assumptions in the [124 reconstruction report](mujoco-124-bow-drill.md).
+
+Three native cycles, time/spatial refinements, friction removal and a resisting
+load complete without resets or output actuation. Default spindle travel is
+within 0.125% of the pitch-radius estimate; changed mean angle remains a stated
+refinement limitation. All 19 selected tests pass. A 51-pose rendered-hardware
+audit makes 8,826,664 surface queries with zero unintended intersections;
+nonadjacent default cord sections retain at least 3.048012 source pixels.
+All 18 integrated views are inspected, including section details and mobile
+controls. Shaft-end hatching makes native rotation visible. Headless playback
+averages 28.34 fps at 96.53% physical speed using the viewer's normal frame cap.
+The production build and 39 of 40 browser cases pass on the full sweep; 123
+hits its five-second startup deadline. After a measured startup allowance
+correction, all six focused 123/124 checks pass (three each). The original
+failure and isolated checks are preserved in the reconstruction report.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
@@ -3891,6 +3900,7 @@ been switched.
 121 is verified for native tooth-driven feed in both click positions after initial seating, with ideal pins/guide, inferred damping and resisting load, and stated cog/nose reconstruction assumptions.
 122 is verified for native geared variable traverse across the full 29:23 pattern, with 15% reduced crank radii, ideal pins/guide, bounded collision approximation and stated source/depth assumptions.
 123 is verified for native double-rack sector handoff with regular equal spur gears, relieved ends, raised flanges, a rephased working cam and stated ideal support/depth/drive assumptions.
+124 is verified for native finite-cord friction transmission with corrected bound ties, ideal hand/bearing constraints, lumped bow compliance and stated material/depth and sampled-clearance limits.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

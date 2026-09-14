@@ -9,7 +9,7 @@ import {freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 const prefix=process.env.PROBE_PREFIX??'/dev/shm/124-links';
 const options=JSON.parse(process.env.SIM_OPTIONS??'{}'),duration=Number(process.env.DURATION??12.25);
 if(!(Number.isFinite(duration)&&duration>0))throw Error('Invalid study duration');
-const sources=freezeStudySources(['scripts/probe-bow-drill-links.mjs','scripts/lib/bow-drill-contact-audit.mjs',
+const sources=freezeStudySources(['scripts/probe-bow-drill-links.mjs','scripts/lib/bow-drill-contact-audit.mjs','scripts/lib/bow-drill-cord-distance.mjs',
   ...fs.readdirSync('src/simulation/mujoco-bow-drill').filter(n=>n.endsWith('.js')).map(n=>'src/simulation/mujoco-bow-drill/'+n),
   'src/simulation/mujoco/mass.js','src/simulation/mujoco/simulation.js','src/simulation/finite-plate-geometry.js',
   'src/simulation/clutch-section-geometry.js','src/simulation/primitives.js','src/simulation/dispose-model.js',
@@ -21,7 +21,7 @@ try {
   audit=makeBowDrillContactAudit(p);
   const {joints:j,data:d}=p,rows=[],range=[Infinity,-Infinity],start=performance.now();
   let logTime=start,penetration=0,closure=0,pinError=0,resets=0,previous=0,inputError=0,torqueResidual=0;
-  let forceSum=0,slipSum=0,centerSlipSum=0,maximumSpindleActuation=0,completedSteps=0;
+  let forceSum=0,slipSum=0,centerSlipSum=0,maximumSpindleActuation=0,completedSteps=0,minimumSelfGap=Infinity,resistanceWork=0,maximumResistancePower=-Infinity;
   fs.writeFileSync(prefix+'.xml',p.description.xml,{flag:'wx'});
   console.log({compiled:true,nv:p.model.nv,neq:p.model.neq});
   for(let i=0;i<Math.ceil(duration/p.timestep);i++) {
@@ -38,6 +38,8 @@ try {
       const a=audit.sample();
       penetration=Math.max(penetration,a.penetration);closure=Math.max(closure,a.closure);pinError=Math.max(pinError,a.pinError);
       torqueResidual=Math.max(torqueResidual,Math.abs(a.torqueResidual));
+      minimumSelfGap=Math.min(minimumSelfGap,a.self.gap);
+      const power=a.resistanceTorque*d.qvel[j.spin.v];resistanceWork+=power*.01;maximumResistancePower=Math.max(maximumResistancePower,power);
       if(d.time>=1){forceSum+=a.normalForce;slipSum+=a.slipSquared;centerSlipSum+=a.centerSlipSquared;}
       rows.push({time:d.time,spin,drive:d.qpos[j.drive.q],tension:d.qpos[j.tension.q],
         spinVelocity:d.qvel[j.spin.v],driveVelocity:d.qvel[j.drive.v],contacts:d.ncon,audit:a,
@@ -49,6 +51,7 @@ try {
   const report={sources,options:p.description.options,geometryOptions:options,duration,achievedTime:d.time,completedSteps,range,
     maximumPenetrationPixels:100*penetration,maximumClosurePixels:100*closure,maximumPinErrorPixels:100*pinError,
     maximumInputErrorPixels:100*inputError,maximumSpindleActuation,maximumContactTorqueResidual:torqueResidual,
+    minimumSelfGapPixels:100*minimumSelfGap,resistanceWork,maximumResistancePower,
     forceWeightedCircumferentialSlip:forceSum?Math.sqrt(slipSum/forceSum):null,
     forceWeightedSlipWithoutSectionRotation:forceSum?Math.sqrt(centerSlipSum/forceSum):null,
     timeResets:resets,wallSeconds:(performance.now()-start)/1000,rows,

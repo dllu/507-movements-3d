@@ -7,11 +7,11 @@ const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
 
 /** Experimental contact-driven cord; not registered for production playback. */
 export function makeBowDrillPhysics(mujoco,visual,{timestep=.001,period=4,
-  friction=.8,preload=.03,stiffness=200,ropeDensity=null,load=0,gravity=9.81,
+  friction=.8,preload=.03,stiffness=200,ropeDensity=null,load=0,resistance=0,gravity=9.81,
   contactTime=.004,edgeTime=.004,impedance=.99999,iterations=60,ccdTolerance=1e-10,
   cordModel='linked',integrator='implicitfast',multiccd=false}={}) {
   if(![timestep,period,stiffness,contactTime,edgeTime,ccdTolerance].every(x=>Number.isFinite(x)&&x>0)
-    || ![friction,preload].every(x=>Number.isFinite(x)&&x>=0)
+    || ![friction,preload,resistance].every(x=>Number.isFinite(x)&&x>=0)
     || ![load,gravity].every(Number.isFinite) || !(impedance>0&&impedance<1)
     || !Number.isInteger(iterations)||iterations<1
     || (ropeDensity!==null&&!(Number.isFinite(ropeDensity)&&ropeDensity>0))
@@ -48,7 +48,7 @@ export function makeBowDrillPhysics(mujoco,visual,{timestep=.001,period=4,
   const contact=`contype="1" conaffinity="2" friction="${friction} .001 .001" condim="${friction?3:1}" solref="${contactTime} 1" solimp=".99 .999 .001"`;
   const xml=`<mujoco model="124 native ${cordModel} cord"><compiler angle="radian" inertiafromgeom="false"/>
 <option timestep="${timestep}" gravity="0 ${-gravity} 0" integrator="${integrator}" solver="Newton" iterations="${iterations}" tolerance="1e-9" ccd_tolerance="${ccdTolerance}" cone="elliptic"><flag multiccd="${multiccd?'enable':'disable'}"/></option><size memory="64M"/>
-<worldbody><body name="spindle"><joint name="spin" axis="0 0 1" damping=".005"/>${inertial('spindle')}
+<worldbody><body name="spindle"><joint name="spin" axis="0 0 1" damping=".005" frictionloss="${resistance}"/>${inertial('spindle')}
 <geom name="drum" type="cylinder" size="${drumRadius} .16" ${contact}/>
 <geom name="front" type="cylinder" size="${u.source.circles.outer.radius/100} .02" pos="0 0 .18" ${contact}/>
 <geom name="back" type="cylinder" size="${u.source.circles.outer.radius/100} .02" pos="0 0 -.18" ${contact}/></body>
@@ -64,6 +64,6 @@ ${cordModel==='linked'?sections.join('\n'):particles}</worldbody>${constraints}
   const site=id=>Array.from(p.data.site_xpos.slice(3*id,3*id+3));
   const getCordPoints=()=>ends?[site(ends[0][0]),...ends.slice(1).map(([a],i)=>site(a).map((v,k)=>(v+p.data.site_xpos[3*ends[i][1]+k])/2)),site(ends.at(-1)[1])]:Array.from({length:segments+1},(_,i)=>Array.from(p.data.flexvert_xpos.slice(3*i,3*i+3)));
   return Object.assign(p,{joints,ends,getCordPoints,bodies:Object.fromEntries(['bow','spindle','lowerTip'].map(n=>[n,p.id('mjOBJ_BODY',n)])),description:{xml,input,direction,lengths,masses,density,cordDensity,
-    options:{timestep,period,friction,preload,stiffness,ropeDensity,load,gravity,contactTime,edgeTime,impedance,iterations,ccdTolerance,cordModel,integrator,multiccd},
-    assumptions:'One actuated bow slide; passive spindle and lumped elastic lower tip. Default cord: rigid material sections with full rotation, native ball connections and finite friction/self contact. Optional flex ablation omits section rotation. No bending stiffness. Uniform visible rigid density normalized to unit bow mass, same cord density by default; section inertia partitions cylindrical material rather than overlapping collision caps. Shaft support, depths, pretension and material values are reconstructed. Visible stock follows tip displacement by an approximate smooth deformation. Tube joins average native section endpoints within the measured connection tolerance. Final source, convergence and hardware checks remain pending.'}});
+    options:{timestep,period,friction,preload,stiffness,ropeDensity,load,resistance,gravity,contactTime,edgeTime,impedance,iterations,ccdTolerance,cordModel,integrator,multiccd},
+    assumptions:'One actuated bow slide; passive spindle and lumped elastic lower tip. Default cord: rigid material sections with full rotation, native ball connections and finite friction/self contact. Optional flex ablation omits section rotation. No bending stiffness. Uniform visible rigid density normalized to unit bow mass, same cord density by default; section inertia partitions cylindrical material rather than overlapping collision caps. Shaft support, depths, pretension and material values are reconstructed. Visible stock follows tip displacement by an approximate smooth deformation. Tube joins average native section endpoints within the measured connection tolerance. The lower tie enters behind the stock. Native dry spindle resistance is optional and defaults to zero. Source fit, travel sensitivity and sampled finite hardware clearances are documented; material calibration, continuous clearance and arbitrary drilling loads are not established.'}});
 }

@@ -79,6 +79,12 @@ Movement 123 uses native rack/sector, spur and stop/cam contact to turn three
 passive rotors from one rack input. Its [reconstruction and checks](mujoco-123-sector-handoff.md)
 document the regular equal spur gears, relieved sector ends, raised rack flanges,
 rephased working transfer piece and section view exposing the hidden stops.
+Movement 124 uses 96 rotating finite cord sections with native ball connections
+and friction to drive a passive spindle. Its [reconstruction and checks](mujoco-124-bow-drill.md)
+document the measured bow and string, corrected bindings, inferred bow compliance
+and hidden depths, transmission refinements, loaded trial and sampled hardware
+clearances. Section view reveals the wrap; shaft-end hatching makes rotation
+readable at the four-second default cycle.
 
 ## Shared runtime
 

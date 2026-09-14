@@ -5,7 +5,7 @@ import {createPhysicsPlayback} from '../mujoco/simulation.js';
 import {disposeObject3D} from '../dispose-model.js';
 export {THREE};
 
-/** Review candidate only; production registration waits for qualification. */
+/** Native finite-cord friction drives the passive spindle. */
 export function makeMujocoBowDrill(mujoco,options={}) {
   const visual=makeBowDrillGeometry(options),u=visual.root.userData,f=u.profile;
   let physics;
@@ -34,8 +34,8 @@ export function makeMujocoBowDrill(mujoco,options={}) {
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   Object.assign(u,{mechanism:'mujoco-bow-drill',simulationBackend:'mujoco',physics,
-    fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,
-    reconstructionNote:'Experimental reconstruction: a finite cord turns the spindle through friction. Bow compliance, cord material and depths are inferred; moving clearance and transmission accuracy remain under review.',
+    fidelity:'authored',reconstructionStatus:'verified',supportsRestart:true,
+    reconstructionNote:'The bow’s string turns the drill through friction. Section view exposes the wrap. Bow compliance, bearings and hidden depths are reconstructed.',
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
   try {sync();}catch(error){dispose();throw error;}
   return {...visual,physics,sync,...playback,dispose};

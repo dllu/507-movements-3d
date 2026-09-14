@@ -5,11 +5,12 @@ import loadMujoco from '@mujoco/mujoco';
 import {makeBowDrillGeometry} from '../src/simulation/mujoco-bow-drill/geometry.js';
 import {makeMujocoBowDrill} from '../src/simulation/mujoco-bow-drill/visual.js';
 import {makeBowDrillContactAudit} from '../scripts/lib/bow-drill-contact-audit.mjs';
+import {cordSegmentDistance,cordSelfClearance} from '../scripts/lib/bow-drill-cord-distance.mjs';
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 const mujoco=await loadMujoco();
 
-test('124 candidate has closed finite parts, a clear full wrap and attached bindings',()=>{
+test('124 has closed finite parts, a clear full wrap and attached bindings',()=>{
   const v=makeBowDrillGeometry(),u=v.root.userData,f=u.profile;
   try {
     assert.equal(Object.keys(u.parts).length,13);assert(u.hideGround);
@@ -31,6 +32,10 @@ test('124 candidate has closed finite parts, a clear full wrap and attached bind
     }
     assert(Math.abs(f.pitchRadius-.3792138517)<1e-8);
     assert.equal(200*f.cordRadius,4.3);
+    for(const points of Object.values(f.bindingPoints)) {
+      const clearance=cordSelfClearance(points.slice(1).map((p,i)=>[points[i],p]),f.cordRadius,{excludedArc:.07});
+      assert(clearance.gap>.01,'separate binding turns and loose ends');
+    }
   }finally{disposeObject3D(v.root);}
 });
 
@@ -41,13 +46,13 @@ test('124 uses native rotating cord sections and only a bow actuator',()=>{
     assert.equal(p.model.nv,579);assert.equal(p.model.actuator_trnid[0],p.id('mjOBJ_JOINT','drive'));
     assert.equal(p.description.cordDensity,p.description.density);
     assert(Math.abs(p.model.body_mass[p.bodies.spindle]-p.description.masses.spindle.volume*p.description.density)<1e-10);
-    assert.equal(v.root.userData.reconstructionStatus,'under-review');
+    assert.equal(v.root.userData.reconstructionStatus,'verified');
   }finally{v.dispose();}
 });
 
 test('124 transmits three cycles at the cord pitch radius through native friction',t=>{
   const v=makeMujocoBowDrill(mujoco),p=v.physics,j=p.joints,audit=makeBowDrillContactAudit(p);
-  let penetration=0,closure=0,pinError=0,inputError=0,force=0,slip=0,centerSlip=0,torqueResidual=0;
+  let penetration=0,closure=0,pinError=0,inputError=0,force=0,slip=0,centerSlip=0,torqueResidual=0,selfGap=Infinity;
   const reversals=[];
   try {
     const steps=Math.round(12.25/p.timestep),second=Math.round(1/p.timestep);
@@ -59,6 +64,7 @@ test('124 transmits three cycles at the cord pitch radius through native frictio
         mujoco.mj_forward(p.model,p.data);const a=audit.sample();
         penetration=Math.max(penetration,a.penetration);closure=Math.max(closure,a.closure);pinError=Math.max(pinError,a.pinError);
         torqueResidual=Math.max(torqueResidual,Math.abs(a.torqueResidual));
+        selfGap=Math.min(selfGap,a.self.gap);
         if(i>=second){force+=a.normalForce;slip+=a.slipSquared;centerSlip+=a.centerSlipSquared;}
       }
       if(i%second===0&&(i/second)%2===1)reversals.push(p.data.qpos[j.spin.q]);
@@ -66,11 +72,11 @@ test('124 transmits three cycles at the cord pitch radius through native frictio
     assert.equal(reversals.length,6);reversals.forEach((q,i)=>assert(i%2?q>2.2:q< -2.2));
     const expectedTravel=2*v.root.userData.profile.amplitude/v.root.userData.profile.pitchRadius;
     for(let i=1;i<reversals.length;i++)assert(Math.abs(Math.abs(reversals[i]-reversals[i-1])/expectedTravel-1)<.01);
-    assert(penetration<.0008);assert(closure<.0001);assert(pinError<.0001);assert(inputError<.005);
+    assert(penetration<.0008);assert(closure<.0001);assert(pinError<.0001);assert(inputError<.005);assert(selfGap>.005);
     const surfaceSlip=Math.sqrt(slip/force),translationOnlySlip=Math.sqrt(centerSlip/force);
     assert(surfaceSlip<.01);assert(translationOnlySlip>3*surfaceSlip);assert(torqueResidual<1e-10);
     t.diagnostic(JSON.stringify({reversals,penetrationPixels:100*penetration,closurePixels:100*closure,
-      pinErrorPixels:100*pinError,inputErrorPixels:100*inputError,surfaceSlip,translationOnlySlip,torqueResidual}));
+      pinErrorPixels:100*pinError,inputErrorPixels:100*inputError,selfGapPixels:100*selfGap,surfaceSlip,translationOnlySlip,torqueResidual}));
   }finally{audit.dispose();v.dispose();}
 });
 
@@ -105,4 +111,31 @@ test('124 visible cord attachments follow native pins, seeking and restart',()=>
 
 test('124 rejects a cord mesh whose nonadjacent finite sections start overlapped',()=>{
   assert.throws(()=>makeMujocoBowDrill(mujoco,{cordSegments:256}),/too short/);
+});
+
+test('124 native dry resistance dissipates work while the cord still reverses the spindle',t=>{
+  const v=makeMujocoBowDrill(mujoco,{resistance:.25}),p=v.physics,audit=makeBowDrillContactAudit(p);
+  let work=0,minimum=0,maximum=0,residual=0;
+  try {
+    assert.equal(p.model.dof_frictionloss[p.joints.spin.v],.25);
+    for(let i=1;i<=4250;i++) {
+      p.step();assert(Math.abs(p.data.time-i*p.timestep)<1e-8);
+      const q=p.data.qpos[p.joints.spin.q];minimum=Math.min(minimum,q);maximum=Math.max(maximum,q);
+      if(i%10===0){mujoco.mj_forward(p.model,p.data);const a=audit.sample();
+        assert(Math.abs(a.resistanceTorque)<=.25+1e-10);residual=Math.max(residual,Math.abs(a.torqueResidual));
+        work+=a.resistanceTorque*p.data.qvel[p.joints.spin.v]*.01;
+      }
+    }
+    assert(minimum< -2.2&&maximum>2.2);assert(work< -2);assert(residual<1e-10);
+    t.diagnostic(JSON.stringify({minimum,maximum,sampledResistanceWork:work,torqueResidual:residual}));
+  }finally{audit.dispose();v.dispose();}
+});
+
+test('124 clearance audit resolves crossing, skew, parallel and degenerate segments',()=>{
+  assert.equal(cordSegmentDistance([0,0,0],[1,0,0],[.5,-1,0],[.5,1,0]),0);
+  assert.equal(cordSegmentDistance([0,0,0],[1,0,0],[.5,-1,1],[.5,1,1]),1);
+  assert.equal(cordSegmentDistance([0,0,0],[1,0,0],[0,1,0],[1,1,0]),1);
+  assert.equal(cordSegmentDistance([0,0,0],[1,0,0],[2,0,0],[3,0,0]),1);
+  assert.equal(cordSegmentDistance([0,0,0],[0,0,0],[1,-1,0],[1,1,0]),1);
+  assert.equal(cordSegmentDistance([0,0,0],[0,0,0],[1,0,0],[1,0,0]),1);
 });
