@@ -1,0 +1,20 @@
+{
+  "samples": 1600,
+  "maximumOverlapSquarePixels": 0.005571331159748283,
+  "maximumAt": 9.9927931125,
+  "note": "Intersection area of finite rendered tooth contours at between-recording times; native soft-contact penetration is separately recorded. Area is not a penetration-depth bound.",
+  "sources": [
+    {
+      "file": "src/simulation/baked/assets/139.json.gz",
+      "sha256": "9ad68a7cee4b5b7f0387a184a9e719cd88018cd4e4069fd52066a950e4734208"
+    },
+    {
+      "file": "src/simulation/mujoco-internal-rack/geometry.js",
+      "sha256": "efec1e0da4ba831e2ccc0c471ff6a97228768725fb9e729d5bbae92d0e63c651"
+    },
+    {
+      "file": "scripts/review-internal-rack-playback.mjs",
+      "sha256": "96110750a057e8db14f76b9c68e9dc4b2b971c32db291cd2b4eacf6baa57f959"
+    }
+  ]
+}

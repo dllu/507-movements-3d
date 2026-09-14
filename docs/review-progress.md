@@ -1,14 +1,15 @@
-# Current review: 139 internal-rack reconstruction
+# Current review: 139 baked internal rack
 
-The old teeth intersect at all 360 checked poses. The replacement now uses nine
-pinion teeth and measured proportions, with a 16:9 end-radius ratio. Its generated
-opening passes 720 between-sample clearance checks; fitted unequal suspension
-arms match eight source joints within 2.5 pixels and close throughout the stroke.
-A native candidate stays within 1.089 pixels of the pitch path, with maximum
-penetration 0.0375 pixels over 12 seconds. It depends on an inferred coupler mass
-ratio and combined timestep/contact refinement; separate convergence checks,
-hardware, baking and browser replacement remain. See [movement 139](movement-139.md).
-Do not advance to 140.
+139 now replaces the colliding legacy teeth with a nine-tooth involute pinion,
+conjugate opening and measured unequal suspension arms. The passive contact
+simulation is baked into a 1.03 MB asset with an eight-second cycle. Separate
+timestep/contact checks differ by at most 0.252 pixels; a 32-second run has no
+resets and maximum penetration 0.0375 pixels. Interpolated tooth overlap, pin/bore
+alignment, roller support, motion bounds, loop/restart and packaged desktop/mobile
+checks pass. No WASM is requested. The coupler weight, physical scale, depths and
+lumped inertias remain explicit reconstruction assumptions, not exact historical
+measurements or mesh-derived inertias. See [movement 139](movement-139.md).
+Continue to 140.
 
 # Current review: 138 traced cam and baked pointed follower
 

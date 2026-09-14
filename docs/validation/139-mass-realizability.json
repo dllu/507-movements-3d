@@ -1,0 +1,49 @@
+{
+  "purpose": "Illustrative mass-ratio realizability; not yet the visible model or a strength/inertia validation.",
+  "rack": {
+    "steelRim": {
+      "areaM2": 0.008457235404512637,
+      "thicknessM": 0.0006,
+      "density": 7850,
+      "massKg": 0.03983357875525452
+    },
+    "aluminiumBacking": {
+      "areaM2": 0.020042273136788497,
+      "thicknessM": 0.00025,
+      "density": 2700,
+      "massKg": 0.013528534367332236
+    },
+    "massKg": 0.053362113122586756
+  },
+  "coupler": {
+    "material": "brass",
+    "density": 8500,
+    "frontWidthM": 0.008,
+    "pinSpanM": 0.254,
+    "massKg": 0.42689690498069405,
+    "depthM": 0.024621719383987384,
+    "massRatio": 8
+  },
+  "frame": {
+    "material": "light wood",
+    "thicknessM": 0.005,
+    "density": 450,
+    "massKg": 0.11082375000000005,
+    "massRatio": 2.0768246142241193
+  },
+  "pairedRods": {
+    "material": "aluminium",
+    "depthM": 0.0042242798314876965,
+    "massRatio": 0.2
+  },
+  "pinion": {
+    "material": "aluminium",
+    "depthM": 0.01039297899247535,
+    "massRatio": 1
+  },
+  "limitations": [
+    "The engraving specifies neither masses nor hidden depths.",
+    "This example justifies feasibility of the tested mass ratio; it does not derive the probe inertias.",
+    "Full hardware clearance, actual mesh mass properties and native convergence still require verification."
+  ]
+}

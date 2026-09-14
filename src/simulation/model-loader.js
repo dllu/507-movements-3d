@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 139) {
+    const {makeBakedInternalRack} = await import('./baked/internal-rack.js');
+    const model = await makeBakedInternalRack();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 138) {
     const {makeBakedVariableCam} = await import('./baked/variable-cam.js');
     const model = await makeBakedVariableCam();
