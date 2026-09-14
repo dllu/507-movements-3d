@@ -30555,14 +30555,12 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
     Math.PI * 2 / geometry.cycleAngularSpeed,
   );
 
-  assert.equal(upperDisk.geometry.parameters.radiusTop,
+  assert.equal(upperDisk.geometry.userData.outerRadius,
     geometry.upperDiskRadius);
-  assert.equal(upperDisk.geometry.parameters.radiusBottom,
+  assert.equal(upperDisk.geometry.userData.depth, geometry.upperDiskDepth);
+  assert.equal(lowerDisk.geometry.userData.outerRadius,
     geometry.upperDiskRadius);
-  assert.equal(lowerDisk.geometry.parameters.radiusTop,
-    geometry.upperDiskRadius);
-  assert.equal(lowerDisk.geometry.parameters.radiusBottom,
-    geometry.upperDiskRadius);
+  assert.equal(lowerDisk.geometry.userData.depth, geometry.lowerDiskDepth);
   assert.equal(platen.geometry.parameters.width,
     geometry.platenHalfWidth * 2);
   assert.equal(platen.geometry.parameters.height, geometry.platenHeight);

@@ -11,7 +11,9 @@ with the right column. Finite lever/column checks reject the former handedness;
 rod-length and linkage regression checks pass. Playback has a four-second
 display cycle, Restart and a nearly frontal view. The collar and three overhead
 frame layers now have coaxial shaft bores, checked against their actual triangles;
-the shaft stub emerges above the frame. Disk sockets remain under review; see [132's partial review](movement-132.md).
+the shaft stub emerges above the frame. Both disks now contain spherical seats
+and flared rod entrances, with finite clearance and source disk-height checks.
+The bell silhouette and remaining hardware still need review; see [132's partial review](movement-132.md).
 
 131 now has an engraving-based analytical assembly: one connected slotted
 sector with two traced web openings, measured disk/shaft/guide positions,

@@ -1,3 +1,4 @@
+import {toggleSocketDisk} from './toggle-socket-disk.js';
 import {boredHorizontalPlate} from './bored-horizontal-plate.js';
 import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
 import * as THREE from 'three';
@@ -6676,9 +6677,11 @@ function twinObliqueRodTogglePressMotion() {
   const cyclePeriod = 10;
   const cycleAngularSpeed = fullTurn / cyclePeriod;
   const rodThickness = 0.17;
-  const rodJointRadius = 0.15;
-  const upperDiskDepth = 0.28;
-  const lowerDiskDepth = 0.24;
+  const rodJointRadius = 0.18;
+  const upperDiskDepth = 0.48;
+  const lowerDiskDepth = 0.352;
+  const upperDiskOffset = .17;
+  const lowerDiskOffset = -.048;
   const platenHeight = 0.58;
   const platenDepth = 2.28;
   const upperShaftRadius = 0.19;
@@ -6745,12 +6748,7 @@ function twinObliqueRodTogglePressMotion() {
   upperInput.userData.rotor = upperRotor;
 
   const upperDisk = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      upperDiskRadius,
-      upperDiskRadius,
-      upperDiskDepth,
-      80,
-    ),
+    toggleSocketDisk({radius:upperDiskRadius,depth:upperDiskDepth,offset:linkHoleRadius,ballRadius:rodJointRadius,openingRadius:.25,sign:1,offsetY:upperDiskOffset}),
     driverMaterial,
   );
   upperDisk.position.y = upperLinkY;
@@ -6773,7 +6771,7 @@ function twinObliqueRodTogglePressMotion() {
       darkMaterial,
       80,
     );
-    rim.position.y = upperLinkY + sideSign * upperDiskDepth / 2;
+    rim.position.y = upperLinkY + upperDiskOffset + sideSign * upperDiskDepth / 2;
     rim.userData.role = 'edge-outline-of-upper-rotating-disk';
     rim.userData.side = sideSign < 0 ? 'lower' : 'upper';
     upperRotor.add(rim);
@@ -6884,19 +6882,8 @@ function twinObliqueRodTogglePressMotion() {
   const makeHorizontalSocket = (role) => {
     const socket = new THREE.Group();
     socket.userData.role = role;
-    const ring = horizontalTorus(rodJointRadius + 0.035, 0.045, darkMaterial, 36);
-    ring.userData.role = 'dark-rim-of-link-rod-hole';
-    const liner = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        rodJointRadius * 0.66,
-        rodJointRadius * 0.66,
-        0.08,
-        30,
-      ),
-      pinMaterial,
-    );
-    liner.userData.role = 'brass-liner-in-link-rod-hole';
-    socket.add(ring, liner);
+    // The load-bearing seat is part of the disk mesh; this group only tracks
+    // the joint centre for kinematics and inspection.
     return socket;
   };
 
@@ -6916,12 +6903,7 @@ function twinObliqueRodTogglePressMotion() {
     'guided-nonrotating-lower-disk-and-platen';
 
   const lowerDisk = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      upperDiskRadius,
-      upperDiskRadius,
-      lowerDiskDepth,
-      80,
-    ),
+    toggleSocketDisk({radius:upperDiskRadius,depth:lowerDiskDepth,offset:linkHoleRadius,ballRadius:rodJointRadius,openingRadius:.30,sign:-1,offsetY:-lowerDiskOffset}),
     drivenMaterial,
   );
   lowerDisk.userData.role = 'lower-nonrotating-link-hole-disk';
@@ -6934,7 +6916,7 @@ function twinObliqueRodTogglePressMotion() {
       darkMaterial,
       80,
     );
-    rim.position.y = sideSign * lowerDiskDepth / 2;
+    rim.position.y = lowerDiskOffset + sideSign * lowerDiskDepth / 2;
     rim.userData.role = 'edge-outline-of-lower-nonrotating-disk';
     rim.userData.side = sideSign < 0 ? 'lower' : 'upper';
     lowerAssembly.add(rim);
@@ -6955,13 +6937,13 @@ function twinObliqueRodTogglePressMotion() {
     new THREE.CylinderGeometry(
       upperDiskRadius * 0.72,
       upperDiskRadius * 0.92,
-      Math.max(0.18, lowerDiskToPlatenCenter - platenHeight / 2),
+      Math.max(0.02, lowerDiskToPlatenCenter - platenHeight / 2 + lowerDiskOffset - lowerDiskDepth / 2 + .02),
       64,
     ),
     drivenMaterial,
   );
   lowerDiskPedestal.position.y = (
-    lowerPlatenTopLocalY - lowerDiskDepth / 2
+    lowerPlatenTopLocalY + lowerDiskOffset - lowerDiskDepth / 2
   ) / 2;
   lowerDiskPedestal.userData.role =
     'rigid-pedestal-between-lower-disk-and-platen';

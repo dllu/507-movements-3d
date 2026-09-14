@@ -27,6 +27,24 @@ extends 0.55 units above the top frame instead of ending inside it, restoring
 the stub visible in the engraving. The shaft's axial restraint remains an
 ideal revolute constraint; the bores alone do not model thrust-bearing loads.
 
+The disks now contain two closed spherical seats with flared rod entrances,
+instead of decorative rings on solid cylinders. Rod-end balls have radius 0.18;
+the seat radius is 0.182. The upper disk is 0.48 units thick and offset upward
+relative to its joint centres; the lower is 0.352 units thick and offset downward.
+Their projected top/bottom edges match raster Y=208/240 to within 1.5 pixels
+and Y=338/360 to within 0.01 pixels, respectively. The shortened lower pedestal
+joins the lower disk and platen while clearing the ball ends.
+
+A dedicated socket test checks closed mesh topology, cavity containment with a
+solid-disk failure control, triangle-to-ball clearance
+above 0.0018 units, and an enclosing oblique cylinder for each square rod through
+721 phases. The polygonal flared mouths retain more than 0.01 units of clearance
+against that bound. The bell and pedestal also clear the complete ball envelopes.
+These sockets reconstruct the unspecified joint detail; motion remains analytical
+and does not simulate bearing loads or elastic contact. The visible seats support
+compression; positive retention during retraction is supplied by ideal spherical
+joints, without a detailed retaining lip.
+
 The display cycle has an explicit four-second minimum (the native analytical
 cycle remains ten seconds and the existing display timing applies a 2.5x
 scale). Restart restores the open configuration. The camera is nearly frontal,
@@ -36,13 +54,11 @@ the disk/platen are hidden. Packaged browser checks cover desktop/mobile
 animation, pause, exact restart and absence of a WASM request.
 
 ```sh
-node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs
+node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs tests/toggle-press-sockets.test.mjs
 node --test --test-name-pattern='movement 132 straightens' tests/models.test.mjs
 ```
 
-This is not a full geometry sign-off. The retained disk sockets are decorative
-rings on solid disks. Their joint geometry, other collision pairs, the bell
-silhouette and
-platen/frame proportions remain under review. The workpiece and hidden depth
-are reconstructed. No dynamic pressure, material deformation or bearing loads
-are simulated.
+This is not a full geometry sign-off. Other collision pairs, the bell silhouette
+and platen/frame proportions remain under review. The workpiece and hidden
+depth are reconstructed. No dynamic pressure, material deformation or bearing
+loads are simulated.
