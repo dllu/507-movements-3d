@@ -1,3 +1,11 @@
+# Current review: 134 rope drum
+
+134 now uses a seated helical wrap with separate tangent entry/exit spans.
+Finite rope and flange checks pass; prescribed uniform material speed includes
+explicit axial creep rather than a false zero-slip assertion. Four-second
+playback, restart and ground/fog cleanup are in place. Remaining drum silhouette
+and supports need review. See [movement 134](movement-134.md).
+
 # Fidelity and rendering review
 
 The active task remains the review and correction of **all 507 movements**.

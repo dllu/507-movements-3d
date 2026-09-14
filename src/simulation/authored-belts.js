@@ -1,3 +1,4 @@
+import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
 import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
@@ -5814,7 +5815,7 @@ function singleWrappedRopeDrumDrive() {
   // from the 525 px public-domain engraving; the caption supplies the
   // authoritative topology: one rope or band, wound one or more complete
   // turns around one drum, converts uniform rotation into uniform material
-  // travel along the two collinear free spans.
+  // travel along two free spans that appear collinear in the engraving.
   const sourceScale = 0.01;
   const sourceRasterDrumCenter = new THREE.Vector2(253, 231);
   const sourceRasterDrumOuterRadius = 181;
@@ -5840,16 +5841,18 @@ function singleWrappedRopeDrumDrive() {
   const rightRopeEndX = (
     sourceRasterRopeRightX - sourceRasterDrumCenter.x
   ) * sourceScale;
-  const leftFreeSpanLength = -leftRopeEndX;
-  const rightFreeSpanLength = rightRopeEndX;
+  const axialLead = .14;
+  const axialSlope = axialLead / (2 * Math.PI * ropePitchRadius);
+  const leftFreeSpanLength = -leftRopeEndX * Math.hypot(1, axialSlope);
+  const rightFreeSpanLength = rightRopeEndX * Math.hypot(1, axialSlope);
   const hubOuterRadius = sourceRasterHubOuterRadius * sourceScale;
   const shaftHoleRadius = sourceRasterShaftHoleRadius * sourceScale;
   const ropeRadius = 0.045;
   const drumContactBedRadius = ropePitchRadius - ropeRadius;
   const drumWidth = 0.5;
   const flangeDepth = 0.07;
-  const ropePlaneZ = drumWidth / 2 + ropeRadius * 1.78;
-  const wrappedLength = wrapSweep * ropePitchRadius;
+  const ropePlaneZ = 0;
+  const wrappedLength = Math.hypot(wrapSweep * ropePitchRadius, axialLead);
   const nominalVisibleRopeLength = leftFreeSpanLength
     + wrappedLength + rightFreeSpanLength;
   const ropeMarkerCount = 13;
@@ -5916,24 +5919,14 @@ function singleWrappedRopeDrumDrive() {
   class SegmentedWrappedRopeCurve extends THREE.Curve {
     constructor() {
       super();
-      const bottomPoint = new THREE.Vector3(
-        0,
-        -ropePitchRadius,
-        ropePlaneZ,
-      );
+      this.wrap = new HelicalDrumWrap(ropePitchRadius, wrapSweep, axialLead);
       this.leftSpan = new THREE.LineCurve3(
-        new THREE.Vector3(leftRopeEndX, -ropePitchRadius, ropePlaneZ),
-        bottomPoint,
-      );
-      this.wrap = new CircularArcCurve3(
-        new THREE.Vector3(0, 0, ropePlaneZ),
-        new THREE.Vector3(0, -ropePitchRadius, 0),
-        Z_AXIS,
-        wrapSweep,
+        new THREE.Vector3(leftRopeEndX, -ropePitchRadius, -axialLead / 2 + leftRopeEndX * axialSlope),
+        this.wrap.getPoint(0),
       );
       this.rightSpan = new THREE.LineCurve3(
-        bottomPoint,
-        new THREE.Vector3(rightRopeEndX, -ropePitchRadius, ropePlaneZ),
+        this.wrap.getPoint(1),
+        new THREE.Vector3(rightRopeEndX, -ropePitchRadius, axialLead / 2 + rightRopeEndX * axialSlope),
       );
       this.curves = [this.leftSpan, this.wrap, this.rightSpan];
       this.segmentLengths = [
@@ -6053,7 +6046,7 @@ function singleWrappedRopeDrumDrive() {
     centeredExtrusion(
       annulusShape(drumRimInnerRadius, drumContactBedRadius),
       drumWidth,
-      0.008,
+      0,
     ),
     driverMaterial,
   );
@@ -6209,11 +6202,7 @@ function singleWrappedRopeDrumDrive() {
   rearBearing.userData.axis = Z_AXIS.clone();
   rearBearing.userData.role = 'fixed-bearing-behind-drum-hub';
 
-  const bottomContactPoint = new THREE.Vector3(
-    0,
-    -ropePitchRadius,
-    ropePlaneZ,
-  );
+  const bottomContactPoint = ropeCurve.wrap.getPoint(0);
   const pitchContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 18, 12),
     indexMaterial,
@@ -6269,8 +6258,8 @@ function singleWrappedRopeDrumDrive() {
         contactRadius,
       ),
     ));
-    const freeRopeVelocity = X_AXIS.clone().multiplyScalar(linearSpeed);
-    const freeRopeAcceleration = X_AXIS.clone().multiplyScalar(
+    const freeRopeVelocity = new THREE.Vector3(1, 0, axialSlope).normalize().multiplyScalar(linearSpeed);
+    const freeRopeAcceleration = new THREE.Vector3(1, 0, axialSlope).normalize().multiplyScalar(
       linearAcceleration
     );
     const noSlipVelocityError = drumSurfaceVelocity.clone().sub(
@@ -6340,7 +6329,7 @@ function singleWrappedRopeDrumDrive() {
       Z_AXIS.clone().multiplyScalar(angularSpeed),
       radial,
     );
-    const ropeVelocity = surfaceVelocity.clone();
+    const ropeVelocity = ropeCurve.wrap.getTangent(angle / wrapSweep).multiplyScalar(ropePitchRadius * angularSpeed);
     return {
       angle,
       noSlipVelocityError: surfaceVelocity.clone().sub(ropeVelocity),
@@ -6377,6 +6366,8 @@ function singleWrappedRopeDrumDrive() {
     spokes,
   };
   root.userData.geometry = {
+    axialLead,
+    axialSlope,
     drumAngularSpeed,
     drumContactBedRadius,
     drumFlangeOuterRadius,
@@ -6481,10 +6472,18 @@ function singleWrappedRopeDrumDrive() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.minimumDisplayCycleSeconds = 4;
+  root.userData.animationTiming = { authoredCyclePeriod: drumRotationPeriod };
+  root.userData.tractionAssumption = 'Prescribed mean rope speed R omega; helical axial creep is reported, not dynamically solved.';
+  drumRotationIndex.visible = false;
+  pitchContactMarker.visible = false;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(4.8, 3.3, 13.5),
+    reset: () => update(0),
+    cameraDirection: new THREE.Vector3(.4, .2, 13.5),
   };
 }
 
