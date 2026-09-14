@@ -1,3 +1,12 @@
+# Current review: 139 internal-rack reconstruction
+
+The old trapezoidal pinion/rack teeth intersect at all 360 checked poses. The
+engraving has nine pinion teeth, the source animation eight and the browser
+twelve. A nine-tooth involute/swept-opening prototype has no intersection at 720
+independently offset poses. Its dimensions and 2:1 end-radius ratio are still
+provisional; source measurements, passive contact simulation and browser
+replacement remain. See [movement 139](movement-139.md). Do not advance to 140.
+
 # Current review: 138 traced cam and baked pointed follower
 
 138 now uses the engraving's traced outline, correcting the old animation-based

@@ -1,0 +1,1836 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "ca3f3e123ba00fce28c2b6db22ca99ae7710613ad86b9f2383bfd13e6d555e75"
+    },
+    {
+      "file": "scripts/review-internal-rack-carriage.mjs",
+      "sha256": "c6e58e6e330a92b76b1e8d6f012a75fe9700ec143cdb6ad13c8de9353edf146d"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+    }
+  ],
+  "method": "Planar intersection of un-beveled nominal pinion/rack contours, with rendered object transforms; working depths overlap. This underestimates bevel interference.",
+  "poses": 360,
+  "interferingPoses": 360,
+  "worst": {
+    "area": 0.113641507085285,
+    "time": 5.466666666666667,
+    "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+    "overlapArea": 0.113641507085285
+  },
+  "dimensions": {
+    "pinionTeeth": 12,
+    "pinionPitchRadius": 0.64,
+    "pinionOuterRadius": 0.7936,
+    "rackStraightSpan": 4.0212385965949355,
+    "rackPitchRadius": 1.28,
+    "frameOuterHalfWidth": 5.28,
+    "frameOuterHalfHeight": 3.84
+  },
+  "samples": [
+    {
+      "time": 0,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530934028
+    },
+    {
+      "time": 0.022222222222222223,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530833
+    },
+    {
+      "time": 0.044444444444444446,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282416
+    },
+    {
+      "time": 0.06666666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201137
+    },
+    {
+      "time": 0.08888888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276899
+    },
+    {
+      "time": 0.1111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881896
+    },
+    {
+      "time": 0.13333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776012
+    },
+    {
+      "time": 0.15555555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403748
+    },
+    {
+      "time": 0.17777777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302205
+    },
+    {
+      "time": 0.2,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545502
+    },
+    {
+      "time": 0.2222222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0760702753093402
+    },
+    {
+      "time": 0.24444444444444444,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530823
+    },
+    {
+      "time": 0.26666666666666666,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282406
+    },
+    {
+      "time": 0.28888888888888886,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201124
+    },
+    {
+      "time": 0.3111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276899
+    },
+    {
+      "time": 0.3333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881896
+    },
+    {
+      "time": 0.35555555555555557,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776008
+    },
+    {
+      "time": 0.37777777777777777,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403747
+    },
+    {
+      "time": 0.4,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302203
+    },
+    {
+      "time": 0.4222222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557515308383131
+    },
+    {
+      "time": 0.4444444444444444,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07647423312077196
+    },
+    {
+      "time": 0.4666666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07819989100699498
+    },
+    {
+      "time": 0.4888888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0799256183735319
+    },
+    {
+      "time": 0.5111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08135102661226905
+    },
+    {
+      "time": 0.5333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08121522687936242
+    },
+    {
+      "time": 0.5555555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07963878238596996
+    },
+    {
+      "time": 0.5777777777777777,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0778015730372977
+    },
+    {
+      "time": 0.6,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07620096548805219
+    },
+    {
+      "time": 0.6222222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07758716149854336
+    },
+    {
+      "time": 0.6444444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08127675548750121
+    },
+    {
+      "time": 0.6666666666666666,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08586255895750601
+    },
+    {
+      "time": 0.6888888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08955271377905118
+    },
+    {
+      "time": 0.7111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.09178404090693584
+    },
+    {
+      "time": 0.7333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.09320833868738229
+    },
+    {
+      "time": 0.7555555555555555,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.09609756746791714
+    },
+    {
+      "time": 0.7777777777777778,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.09884083281637367
+    },
+    {
+      "time": 0.8,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10146650347033707
+    },
+    {
+      "time": 0.8222222222222222,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10249512206833228
+    },
+    {
+      "time": 0.8444444444444444,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10440697236000568
+    },
+    {
+      "time": 0.8666666666666667,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10779342918130252
+    },
+    {
+      "time": 0.8888888888888888,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11109889044088254
+    },
+    {
+      "time": 0.9111111111111111,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11288516891391533
+    },
+    {
+      "time": 0.9333333333333333,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11117692016831802
+    },
+    {
+      "time": 0.9555555555555556,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10847760029930908
+    },
+    {
+      "time": 0.9777777777777777,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10841176339162349
+    },
+    {
+      "time": 1,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11150878938439529
+    },
+    {
+      "time": 1.0222222222222221,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11364150708528413
+    },
+    {
+      "time": 1.0444444444444445,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11218455104824848
+    },
+    {
+      "time": 1.0666666666666667,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10925092387881435
+    },
+    {
+      "time": 1.0888888888888888,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10903001433232022
+    },
+    {
+      "time": 1.1111111111111112,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11150878938439533
+    },
+    {
+      "time": 1.1333333333333333,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11364150708528431
+    },
+    {
+      "time": 1.1555555555555554,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11218455104824832
+    },
+    {
+      "time": 1.1777777777777778,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10925092387881441
+    },
+    {
+      "time": 1.2,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10903001433232001
+    },
+    {
+      "time": 1.2222222222222223,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11150878938439562
+    },
+    {
+      "time": 1.2444444444444445,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11364150708528417
+    },
+    {
+      "time": 1.2666666666666666,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11218455104824841
+    },
+    {
+      "time": 1.288888888888889,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10925092387881472
+    },
+    {
+      "time": 1.3111111111111111,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10903001433232047
+    },
+    {
+      "time": 1.3333333333333333,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11150878938439582
+    },
+    {
+      "time": 1.3555555555555556,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11364150708528496
+    },
+    {
+      "time": 1.3777777777777778,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.11218455104824873
+    },
+    {
+      "time": 1.4,
+      "stage": "right-end-roll-lifts-rack-and-completes-left-travel",
+      "overlapArea": 0.10925092387881498
+    },
+    {
+      "time": 1.4222222222222223,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10903001433232082
+    },
+    {
+      "time": 1.4444444444444444,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11150878938439539
+    },
+    {
+      "time": 1.4666666666666666,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.1136415070852846
+    },
+    {
+      "time": 1.488888888888889,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11218455104824877
+    },
+    {
+      "time": 1.511111111111111,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.1092509238788147
+    },
+    {
+      "time": 1.5333333333333334,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.1090300143323204
+    },
+    {
+      "time": 1.5555555555555556,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11150878938439568
+    },
+    {
+      "time": 1.5777777777777777,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11364150708528487
+    },
+    {
+      "time": 1.6,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11218455104824888
+    },
+    {
+      "time": 1.6222222222222222,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10925092387881476
+    },
+    {
+      "time": 1.6444444444444444,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10903001433232058
+    },
+    {
+      "time": 1.6666666666666667,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11150878938439557
+    },
+    {
+      "time": 1.6888888888888889,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11364150708528446
+    },
+    {
+      "time": 1.711111111111111,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11218455104824882
+    },
+    {
+      "time": 1.7333333333333334,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10925092387881473
+    },
+    {
+      "time": 1.7555555555555555,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10903001433232064
+    },
+    {
+      "time": 1.7777777777777777,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11150878938439551
+    },
+    {
+      "time": 1.8,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11364150708528449
+    },
+    {
+      "time": 1.8222222222222222,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11218455104824866
+    },
+    {
+      "time": 1.8444444444444446,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10880499704055602
+    },
+    {
+      "time": 1.8666666666666667,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10828647658762393
+    },
+    {
+      "time": 1.8888888888888888,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.1105063448975214
+    },
+    {
+      "time": 1.9111111111111112,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.1128301695663739
+    },
+    {
+      "time": 1.9333333333333333,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.11169960854366169
+    },
+    {
+      "time": 1.9555555555555555,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10847415615758205
+    },
+    {
+      "time": 1.9777777777777779,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10507845525065213
+    },
+    {
+      "time": 2,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10270722943210403
+    },
+    {
+      "time": 2.022222222222222,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.10178748264621149
+    },
+    {
+      "time": 2.0444444444444443,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.099473050665218
+    },
+    {
+      "time": 2.066666666666667,
+      "stage": "right-end-roll-lifts-rack-and-starts-right-travel",
+      "overlapArea": 0.09666593005698067
+    },
+    {
+      "time": 2.088888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.09371290723375697
+    },
+    {
+      "time": 2.111111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0920586612366478
+    },
+    {
+      "time": 2.1333333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.09011484974076917
+    },
+    {
+      "time": 2.1555555555555554,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08671645026853456
+    },
+    {
+      "time": 2.1777777777777776,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0821364085249306
+    },
+    {
+      "time": 2.2,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07820990984936307
+    },
+    {
+      "time": 2.2222222222222223,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07611328005356827
+    },
+    {
+      "time": 2.2444444444444445,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07744095869694752
+    },
+    {
+      "time": 2.2666666666666666,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07926535416375655
+    },
+    {
+      "time": 2.2888888888888888,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08102521782528548
+    },
+    {
+      "time": 2.311111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08143282865643392
+    },
+    {
+      "time": 2.3333333333333335,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08027216550160729
+    },
+    {
+      "time": 2.3555555555555556,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07854598358384987
+    },
+    {
+      "time": 2.3777777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07681383556058397
+    },
+    {
+      "time": 2.4,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559462460789387
+    },
+    {
+      "time": 2.422222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545473
+    },
+    {
+      "time": 2.4444444444444446,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530933992
+    },
+    {
+      "time": 2.466666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.077571230305308
+    },
+    {
+      "time": 2.488888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282386
+    },
+    {
+      "time": 2.511111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201102
+    },
+    {
+      "time": 2.533333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276866
+    },
+    {
+      "time": 2.5555555555555554,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0794678824588187
+    },
+    {
+      "time": 2.577777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0778838359577598
+    },
+    {
+      "time": 2.6,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403735
+    },
+    {
+      "time": 2.6222222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302187
+    },
+    {
+      "time": 2.6444444444444444,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545478
+    },
+    {
+      "time": 2.6666666666666665,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530933999
+    },
+    {
+      "time": 2.688888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530798
+    },
+    {
+      "time": 2.7111111111111112,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0791465941428238
+    },
+    {
+      "time": 2.7333333333333334,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0806405689520111
+    },
+    {
+      "time": 2.7555555555555555,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276884
+    },
+    {
+      "time": 2.7777777777777777,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881883
+    },
+    {
+      "time": 2.8,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595775988
+    },
+    {
+      "time": 2.8222222222222224,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403729
+    },
+    {
+      "time": 2.8444444444444446,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302178
+    },
+    {
+      "time": 2.8666666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545478
+    },
+    {
+      "time": 2.888888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934005
+    },
+    {
+      "time": 2.911111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530805
+    },
+    {
+      "time": 2.933333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282402
+    },
+    {
+      "time": 2.9555555555555557,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201113
+    },
+    {
+      "time": 2.977777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0807762800927689
+    },
+    {
+      "time": 3,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881894
+    },
+    {
+      "time": 3.022222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776005
+    },
+    {
+      "time": 3.0444444444444443,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403754
+    },
+    {
+      "time": 3.066666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302213
+    },
+    {
+      "time": 3.088888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545502
+    },
+    {
+      "time": 3.111111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934028
+    },
+    {
+      "time": 3.1333333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530833
+    },
+    {
+      "time": 3.1555555555555554,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282418
+    },
+    {
+      "time": 3.1777777777777776,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201145
+    },
+    {
+      "time": 3.2,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276919
+    },
+    {
+      "time": 3.2222222222222223,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881913
+    },
+    {
+      "time": 3.2444444444444445,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776019
+    },
+    {
+      "time": 3.2666666666666666,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403773
+    },
+    {
+      "time": 3.2888888888888888,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302237
+    },
+    {
+      "time": 3.311111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545521
+    },
+    {
+      "time": 3.3333333333333335,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934046
+    },
+    {
+      "time": 3.3555555555555556,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530846
+    },
+    {
+      "time": 3.3777777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0791465941428243
+    },
+    {
+      "time": 3.4,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201134
+    },
+    {
+      "time": 3.422222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276915
+    },
+    {
+      "time": 3.4444444444444446,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881903
+    },
+    {
+      "time": 3.466666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776031
+    },
+    {
+      "time": 3.488888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403779
+    },
+    {
+      "time": 3.511111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302218
+    },
+    {
+      "time": 3.533333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545515
+    },
+    {
+      "time": 3.5555555555555554,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934027
+    },
+    {
+      "time": 3.577777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530838
+    },
+    {
+      "time": 3.6,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282425
+    },
+    {
+      "time": 3.6222222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201155
+    },
+    {
+      "time": 3.6444444444444444,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276913
+    },
+    {
+      "time": 3.6666666666666665,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881907
+    },
+    {
+      "time": 3.688888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776
+    },
+    {
+      "time": 3.7111111111111112,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403748
+    },
+    {
+      "time": 3.7333333333333334,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302221
+    },
+    {
+      "time": 3.7555555555555555,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545509
+    },
+    {
+      "time": 3.7777777777777777,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934023
+    },
+    {
+      "time": 3.8,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530838
+    },
+    {
+      "time": 3.8222222222222224,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282402
+    },
+    {
+      "time": 3.8444444444444446,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201123
+    },
+    {
+      "time": 3.8666666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276902
+    },
+    {
+      "time": 3.888888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881903
+    },
+    {
+      "time": 3.911111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776022
+    },
+    {
+      "time": 3.933333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403757
+    },
+    {
+      "time": 3.9555555555555557,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.0755915560130222
+    },
+    {
+      "time": 3.977777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545503
+    },
+    {
+      "time": 4,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934031
+    },
+    {
+      "time": 4.022222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530831
+    },
+    {
+      "time": 4.044444444444444,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282417
+    },
+    {
+      "time": 4.066666666666666,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201131
+    },
+    {
+      "time": 4.088888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276895
+    },
+    {
+      "time": 4.111111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881879
+    },
+    {
+      "time": 4.133333333333334,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776006
+    },
+    {
+      "time": 4.155555555555556,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403748
+    },
+    {
+      "time": 4.177777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302196
+    },
+    {
+      "time": 4.2,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557469212545505
+    },
+    {
+      "time": 4.222222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07607027530934028
+    },
+    {
+      "time": 4.2444444444444445,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07757123030530803
+    },
+    {
+      "time": 4.266666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07914659414282407
+    },
+    {
+      "time": 4.288888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08064056895201116
+    },
+    {
+      "time": 4.311111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08077628009276912
+    },
+    {
+      "time": 4.333333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07946788245881901
+    },
+    {
+      "time": 4.355555555555555,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07788383595776004
+    },
+    {
+      "time": 4.377777777777778,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07635453757403762
+    },
+    {
+      "time": 4.4,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07559155601302214
+    },
+    {
+      "time": 4.4222222222222225,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07557515308383156
+    },
+    {
+      "time": 4.444444444444445,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07647423312077216
+    },
+    {
+      "time": 4.466666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07819989100699518
+    },
+    {
+      "time": 4.488888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07992561837353199
+    },
+    {
+      "time": 4.511111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08135102661226917
+    },
+    {
+      "time": 4.533333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08121522687936251
+    },
+    {
+      "time": 4.555555555555555,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07963878238596994
+    },
+    {
+      "time": 4.5777777777777775,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07780157303729768
+    },
+    {
+      "time": 4.6,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07620096548805244
+    },
+    {
+      "time": 4.622222222222222,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.07758716149854364
+    },
+    {
+      "time": 4.644444444444445,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08127675548750123
+    },
+    {
+      "time": 4.666666666666667,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08586255895750616
+    },
+    {
+      "time": 4.688888888888889,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.08955271377905145
+    },
+    {
+      "time": 4.711111111111111,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.09178404090693607
+    },
+    {
+      "time": 4.733333333333333,
+      "stage": "lower-internal-rack-drives-carriage-right",
+      "overlapArea": 0.09320833868738265
+    },
+    {
+      "time": 4.7555555555555555,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.0960975674679173
+    },
+    {
+      "time": 4.777777777777778,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.09884083281637393
+    },
+    {
+      "time": 4.8,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10146650347033734
+    },
+    {
+      "time": 4.822222222222222,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10249512206833242
+    },
+    {
+      "time": 4.844444444444444,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10440697236000555
+    },
+    {
+      "time": 4.866666666666666,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10779342918130227
+    },
+    {
+      "time": 4.888888888888889,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11109889044088259
+    },
+    {
+      "time": 4.911111111111111,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11288516891391545
+    },
+    {
+      "time": 4.933333333333334,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11117692016831784
+    },
+    {
+      "time": 4.955555555555556,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10847760029930903
+    },
+    {
+      "time": 4.977777777777778,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.1084117633916238
+    },
+    {
+      "time": 5,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11150878938439526
+    },
+    {
+      "time": 5.022222222222222,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11364150708528419
+    },
+    {
+      "time": 5.044444444444444,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.1121845510482482
+    },
+    {
+      "time": 5.066666666666666,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10925092387881455
+    },
+    {
+      "time": 5.088888888888889,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10903001433232008
+    },
+    {
+      "time": 5.111111111111111,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11150878938439529
+    },
+    {
+      "time": 5.133333333333334,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11364150708528412
+    },
+    {
+      "time": 5.155555555555556,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11218455104824807
+    },
+    {
+      "time": 5.177777777777778,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.1092509238788144
+    },
+    {
+      "time": 5.2,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10903001433232032
+    },
+    {
+      "time": 5.222222222222222,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11150878938439554
+    },
+    {
+      "time": 5.2444444444444445,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11364150708528423
+    },
+    {
+      "time": 5.266666666666667,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11218455104824865
+    },
+    {
+      "time": 5.288888888888889,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10925092387881474
+    },
+    {
+      "time": 5.311111111111111,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10903001433232049
+    },
+    {
+      "time": 5.333333333333333,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11150878938439579
+    },
+    {
+      "time": 5.355555555555555,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11364150708528489
+    },
+    {
+      "time": 5.377777777777778,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.11218455104824883
+    },
+    {
+      "time": 5.4,
+      "stage": "left-end-roll-lowers-rack-and-completes-right-travel",
+      "overlapArea": 0.10925092387881492
+    },
+    {
+      "time": 5.4222222222222225,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10903001433232075
+    },
+    {
+      "time": 5.444444444444445,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.1115087893843957
+    },
+    {
+      "time": 5.466666666666667,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.113641507085285
+    },
+    {
+      "time": 5.488888888888889,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11218455104824868
+    },
+    {
+      "time": 5.511111111111111,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10925092387881524
+    },
+    {
+      "time": 5.533333333333333,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10903001433232051
+    },
+    {
+      "time": 5.555555555555555,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11150878938439597
+    },
+    {
+      "time": 5.5777777777777775,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11364150708528489
+    },
+    {
+      "time": 5.6,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11218455104824857
+    },
+    {
+      "time": 5.622222222222222,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10925092387881484
+    },
+    {
+      "time": 5.644444444444445,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10903001433232064
+    },
+    {
+      "time": 5.666666666666667,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11150878938439554
+    },
+    {
+      "time": 5.688888888888889,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11364150708528477
+    },
+    {
+      "time": 5.711111111111111,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11218455104824858
+    },
+    {
+      "time": 5.733333333333333,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10925092387881483
+    },
+    {
+      "time": 5.7555555555555555,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10903001433232062
+    },
+    {
+      "time": 5.777777777777778,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11150878938439565
+    },
+    {
+      "time": 5.8,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11364150708528473
+    },
+    {
+      "time": 5.822222222222222,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11218455104824902
+    },
+    {
+      "time": 5.844444444444444,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10880499704055649
+    },
+    {
+      "time": 5.866666666666666,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10828647658762426
+    },
+    {
+      "time": 5.888888888888889,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.1105063448975214
+    },
+    {
+      "time": 5.911111111111111,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11283016956637393
+    },
+    {
+      "time": 5.933333333333334,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.11169960854366216
+    },
+    {
+      "time": 5.955555555555556,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10847415615758232
+    },
+    {
+      "time": 5.977777777777778,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10507845525065242
+    },
+    {
+      "time": 6,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.102707229432104
+    },
+    {
+      "time": 6.022222222222222,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.10178748264621174
+    },
+    {
+      "time": 6.044444444444444,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.09947305066521825
+    },
+    {
+      "time": 6.066666666666666,
+      "stage": "left-end-roll-lowers-rack-and-starts-left-travel",
+      "overlapArea": 0.09666593005698076
+    },
+    {
+      "time": 6.088888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.09371290723375696
+    },
+    {
+      "time": 6.111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.09205866123664791
+    },
+    {
+      "time": 6.133333333333334,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.09011484974076897
+    },
+    {
+      "time": 6.155555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08671645026853411
+    },
+    {
+      "time": 6.177777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08213640852493032
+    },
+    {
+      "time": 6.2,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07820990984936321
+    },
+    {
+      "time": 6.222222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07611328005356845
+    },
+    {
+      "time": 6.2444444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07744095869694761
+    },
+    {
+      "time": 6.266666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07926535416375674
+    },
+    {
+      "time": 6.288888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08102521782528566
+    },
+    {
+      "time": 6.311111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08143282865643388
+    },
+    {
+      "time": 6.333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08027216550160736
+    },
+    {
+      "time": 6.355555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07854598358384984
+    },
+    {
+      "time": 6.377777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07681383556058372
+    },
+    {
+      "time": 6.4,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559462460789382
+    },
+    {
+      "time": 6.4222222222222225,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0755746921254549
+    },
+    {
+      "time": 6.444444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530933981
+    },
+    {
+      "time": 6.466666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530806
+    },
+    {
+      "time": 6.488888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282395
+    },
+    {
+      "time": 6.511111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201109
+    },
+    {
+      "time": 6.533333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276884
+    },
+    {
+      "time": 6.555555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881875
+    },
+    {
+      "time": 6.5777777777777775,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595775998
+    },
+    {
+      "time": 6.6,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0763545375740374
+    },
+    {
+      "time": 6.622222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302199
+    },
+    {
+      "time": 6.644444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545478
+    },
+    {
+      "time": 6.666666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530933988
+    },
+    {
+      "time": 6.688888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530796
+    },
+    {
+      "time": 6.711111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282368
+    },
+    {
+      "time": 6.733333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201101
+    },
+    {
+      "time": 6.7555555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276869
+    },
+    {
+      "time": 6.777777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0794678824588188
+    },
+    {
+      "time": 6.8,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595775988
+    },
+    {
+      "time": 6.822222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403723
+    },
+    {
+      "time": 6.844444444444444,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302167
+    },
+    {
+      "time": 6.866666666666666,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545469
+    },
+    {
+      "time": 6.888888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530933996
+    },
+    {
+      "time": 6.911111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530806
+    },
+    {
+      "time": 6.933333333333334,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282375
+    },
+    {
+      "time": 6.955555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201112
+    },
+    {
+      "time": 6.977777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276878
+    },
+    {
+      "time": 7,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881875
+    },
+    {
+      "time": 7.022222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595775986
+    },
+    {
+      "time": 7.044444444444444,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403735
+    },
+    {
+      "time": 7.066666666666666,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302202
+    },
+    {
+      "time": 7.088888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545506
+    },
+    {
+      "time": 7.111111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530934024
+    },
+    {
+      "time": 7.133333333333334,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530819
+    },
+    {
+      "time": 7.155555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282423
+    },
+    {
+      "time": 7.177777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201156
+    },
+    {
+      "time": 7.2,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276909
+    },
+    {
+      "time": 7.222222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881917
+    },
+    {
+      "time": 7.2444444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776031
+    },
+    {
+      "time": 7.266666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0763545375740378
+    },
+    {
+      "time": 7.288888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302217
+    },
+    {
+      "time": 7.311111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545519
+    },
+    {
+      "time": 7.333333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530934031
+    },
+    {
+      "time": 7.355555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530852
+    },
+    {
+      "time": 7.377777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282421
+    },
+    {
+      "time": 7.4,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201152
+    },
+    {
+      "time": 7.4222222222222225,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276917
+    },
+    {
+      "time": 7.444444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881907
+    },
+    {
+      "time": 7.466666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776041
+    },
+    {
+      "time": 7.488888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0763545375740377
+    },
+    {
+      "time": 7.511111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302221
+    },
+    {
+      "time": 7.533333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545517
+    },
+    {
+      "time": 7.555555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530934013
+    },
+    {
+      "time": 7.5777777777777775,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530835
+    },
+    {
+      "time": 7.6,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282418
+    },
+    {
+      "time": 7.622222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201141
+    },
+    {
+      "time": 7.644444444444445,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276913
+    },
+    {
+      "time": 7.666666666666667,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881914
+    },
+    {
+      "time": 7.688888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776022
+    },
+    {
+      "time": 7.711111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403761
+    },
+    {
+      "time": 7.733333333333333,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07559155601302224
+    },
+    {
+      "time": 7.7555555555555555,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545516
+    },
+    {
+      "time": 7.777777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07607027530934019
+    },
+    {
+      "time": 7.8,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07757123030530823
+    },
+    {
+      "time": 7.822222222222222,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07914659414282413
+    },
+    {
+      "time": 7.844444444444444,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08064056895201135
+    },
+    {
+      "time": 7.866666666666666,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.08077628009276905
+    },
+    {
+      "time": 7.888888888888889,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07946788245881907
+    },
+    {
+      "time": 7.911111111111111,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07788383595776027
+    },
+    {
+      "time": 7.933333333333334,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07635453757403762
+    },
+    {
+      "time": 7.955555555555556,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.0755915560130222
+    },
+    {
+      "time": 7.977777777777778,
+      "stage": "upper-internal-rack-drives-carriage-left",
+      "overlapArea": 0.07557469212545509
+    }
+  ]
+}
