@@ -1,5 +1,10 @@
 # 123 — double-rack sector handoff
 
+As of 2026-09-14, browser playback uses cached geometry and baked motion from
+this native model, avoiding live MuJoCo and collision-mesh construction.
+The physics descriptions below refer to the retained offline model. See the
+[baking workflow](baked-motion.md) for reproduction, accuracy and load measurements.
+
 Movement 123 uses a reciprocating double rack, two toothed sectors, three
 meshing spur gears and a curved transfer piece that catches two stops behind
 the rack. MuJoCo drives only the rack; tooth and stop contact determine all

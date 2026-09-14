@@ -4,6 +4,17 @@ The active task remains the review and correction of **all 507 movements**.
 The previous implementation's `authored` labels and regression tests are not
 evidence that all models match the engravings or avoid interference.
 
+## Faster playback and source references — 2026-09-14
+
+Use scripted analytical motion for simple mechanisms and MuJoCo where needed
+for correctness, with offline baking for expensive browser simulations.
+Movement 123 is the first baked conversion: cached visible geometry, no browser
+MuJoCo download, preserved startup and a continuous six-second settled loop.
+Fresh native comparison bounds interpolation error to 0.07114 source pixels
+through startup and a full cycle. The source-animation index finds 150 original
+animations (104 among 127–507), ready to guide subsequent reviews. This does
+not mark the remaining movements verified. See [workflow details](baked-motion.md).
+
 ## Movement 086 reconstruction study — 2026-09-12
 
 086's baseline is rejected. Its rounded cam and circular contact pads have

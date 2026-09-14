@@ -2,8 +2,13 @@ this project aims to create a full 3D simulation and animation of all the 507 mo
 
 ## Simulation engine
 
-Use MuJoCo as the default physics engine for new and reconstructed mechanisms,
+Use scripted motion for straightforward gears, racks and analytically determined
+linkages. Use MuJoCo where contact, constraints or dynamics need it for correctness,
 retaining Three.js for the source-faithful visible geometry and interaction.
+Prefer baking validated simulation motion and expensive geometry offline over
+running physics or generating collision meshes in the browser. Keep live physics
+available for validation. Use the original site's 2D animations, where available,
+as motion references alongside the engraving and caption; record discrepancies.
 Movement 082 establishes the integration in `src/simulation/mujoco-treadle/`;
 reuse `src/simulation/mujoco/` for loading, stepping and allocation ownership.
 Migrate existing mechanisms incrementally and validate their joints, contacts,

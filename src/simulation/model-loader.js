@@ -38,13 +38,18 @@ const physicsFactories = {
   120: () => import('./mujoco-segment-clamp/visual.js').then(module => module.makeMujocoSegmentClamp),
   121: () => import('./mujoco-reversible-click/visual.js').then(module => module.makeMujocoReversibleClick),
   122: () => import('./mujoco-variable-traverse/visual.js').then(module => module.makeMujocoVariableTraverse),
-  123: () => import('./mujoco-sector-handoff/visual.js').then(module => module.makeMujocoSectorHandoff),
   124: () => import('./mujoco-bow-drill/visual.js').then(module => module.makeMujocoBowDrill),
   125: () => import('./mujoco-cascaded-traverse/visual.js').then(module => module.makeMujocoCascadedTraverse),
   126: () => import('./mujoco-bell-crank/visual.js').then(module => module.makeMujocoBellCrank),
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 123) {
+    const {makeBakedSectorHandoff} = await import('./baked/sector-handoff.js');
+    const model = await makeBakedSectorHandoff();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   const loadFactory = physicsFactories[movement.id];
   if (!loadFactory) return createMovementModel(movement);
   const [mujoco, factory] = await Promise.all([

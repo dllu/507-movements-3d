@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "names": [
+    "left",
+    "center",
+    "right",
+    "rack"
+  ],
+  "period": 6,
+  "loopStart": 28.101,
+  "loopEnd": 34.101,
+  "turns": [
+    -6.283185307179586,
+    6.283185307179586,
+    -6.283185307179586,
+    0
+  ],
+  "source": {
+    "reportSha256": "3c13e7a32507a0db6a61a9782c05b9877f2168c718c44b39ccd04c8e08be8382",
+    "simulationSources": [
+      {
+        "file": "scripts/probe-sector-handoff-dynamics.mjs",
+        "sha256": "d50fd1f023f3428f47b0ee4b237838f619ea625ab8d445647a0ac2246cd55e70"
+      },
+      {
+        "file": "scripts/lib/sector-handoff-study-sources.mjs",
+        "sha256": "4894011631907629954cc37c1ce4a86a70fd47beea4b10133af39435ad3a4290"
+      },
+      {
+        "file": "scripts/lib/study-report-io.mjs",
+        "sha256": "b0e160455ca0121d89745a2609b2ee22016ca3cbda5cc5c65a33012b204faaee"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/cam-outline.js",
+        "sha256": "121f4d1fa0d52d2585712086554886bd61330a0dfd4b61fa40508ff262267246"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/end-relief.js",
+        "sha256": "a9f7c263c95e664944b41dab9e0995eec3722c4748ea96baf2c1d074f577f2a0"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/geometry.js",
+        "sha256": "a439e44713a9aa125ee48df7bde035b32f1b4b4374024469ed178f0a299388eb"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/physics.js",
+        "sha256": "b1b38c5e9422389bce0568432b83d85d7a9de95eeab059173404749130cec752"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/profile.js",
+        "sha256": "a33f10df3568b33025429d82123af0e514c98cf87ca93a3f725c4f6502b56602"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/source.js",
+        "sha256": "0d3746c75c9520ab823357b0604b07ff11be4ff8456df02e75650fa251a4b574"
+      },
+      {
+        "file": "src/simulation/mujoco-sector-handoff/visual.js",
+        "sha256": "7e46988dc605decfb28f51df76ca0fc849c2fa5ba65344e1f5c1f5e25d562dc3"
+      },
+      {
+        "file": "src/simulation/mujoco/beam-surface.js",
+        "sha256": "dbb301229bfd08d39564020996e9d89f601fa615ca747d75fcb0aa503ffc940b"
+      },
+      {
+        "file": "src/simulation/mujoco/beam.js",
+        "sha256": "c418d951492ad8b9874c5bc05dd4d0358a46f323ea50b90b8fdcbf9f5f13f1c1"
+      },
+      {
+        "file": "src/simulation/mujoco/convex-plate.js",
+        "sha256": "d33687d19aa90c0ec89379a0b0f72c4eab9d31bcf30d96ae5ee43b3270163ffa"
+      },
+      {
+        "file": "src/simulation/mujoco/load.js",
+        "sha256": "192a0e959ee547ddfa5b28b6c1984ad8a85e9207e1467b01de7db844a9793731"
+      },
+      {
+        "file": "src/simulation/mujoco/mass.js",
+        "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+      },
+      {
+        "file": "src/simulation/mujoco/plate-contact.js",
+        "sha256": "211127f3530bfdc5224f5a362d6c1df85ac41bbd8df07143fe62063fc5006e28"
+      },
+      {
+        "file": "src/simulation/mujoco/simulation.js",
+        "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+      },
+      {
+        "file": "src/simulation/mujoco-segment-clamp/contact.js",
+        "sha256": "6b630574d0eb314f4f473acdf850c84016b9a3981d4c9007362806e4f21ce9a4"
+      },
+      {
+        "file": "src/simulation/coaxial-gear-geometry.js",
+        "sha256": "5ee01dceec0686477a7fa65b492f8582053ce3b7f606314b9af08a9ca091fdbd"
+      },
+      {
+        "file": "src/simulation/finite-plate-geometry.js",
+        "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+      },
+      {
+        "file": "src/simulation/clutch-section-geometry.js",
+        "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      },
+      {
+        "file": "src/simulation/primitives.js",
+        "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      },
+      {
+        "file": "src/simulation/bevel-geometry.js",
+        "sha256": "5332c354964d2ebc3e389a36b91727c02623bcf3a22ba0d0c9d90d7996930910"
+      },
+      {
+        "file": "src/simulation/belt-geometry.js",
+        "sha256": "b3c39745c78894f9a591a2546899d276917058e465ea6549cb0b999e6ebf02d2"
+      },
+      {
+        "file": "src/simulation/dispose-model.js",
+        "sha256": "a460a81bdd704410f6f0987f3fb3b1e5c3fcb016d33a143ae65fef1b46c9bee1"
+      },
+      {
+        "file": "public/engravings/mm_123.png",
+        "sha256": "a8c786ce274c70b55f361d2de01224ae3216547e56389c0cbe2fb79181b2d16c"
+      },
+      {
+        "file": "package-lock.json",
+        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+      }
+    ],
+    "maximumLoopSeamPixels": 1.2789769243681803e-11
+  },
+  "focus": [
+    0,
+    -0.07500000000000018,
+    0.25
+  ],
+  "cameraDirection": [
+    1.3,
+    1,
+    10
+  ],
+  "bounds": {
+    "min": [
+      -2.9,
+      -4.5,
+      -0.15
+    ],
+    "max": [
+      2.9,
+      4.35,
+      0.65
+    ]
+  },
+  "samples": 3412,
+  "bytes": 2572783,
+  "assetSha256": "46977bf2b6298141b5bad312ffe1743173b61b7ea918f4a529871a0d877d4012"
+}
