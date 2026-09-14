@@ -26,6 +26,7 @@ const physicsFactories = {
   108: () => import('./mujoco-reverse-thread/visual.js').then(module => module.makeMujocoReverseThread),
   109: () => import('./mujoco-thread-cutting/visual.js').then(module => module.makeMujocoThreadCutting),
   110: () => import('./mujoco-half-nut/visual.js').then(module => module.makeMujocoHalfNut),
+  111: () => import('./mujoco-micrometer/visual.js').then(module => module.makeMujocoMicrometer),
 };
 
 export async function loadMovementModel(movement) {

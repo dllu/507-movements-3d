@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
   if (id === '107' || id === '108') test.setTimeout(90000);
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -34,7 +34,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '107': /The repeating groove drives uniform strokes with smooth reversals/,
     '108': /A swiveling shoe follows the intersecting grooves through each return/,
     '109': /Change gears set the pitch cut by the guided tool/,
-    '110': /Opposite-hand screw threads drive the rod through alternate half-nuts/}[id];
+    '110': /Opposite-hand screw threads drive the rod through alternate half-nuts/,
+    '111': /Matching nested threads give the difference between the two pitches/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);
@@ -59,7 +60,7 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     expect((await canvas.screenshot()).equals(initial)).toBe(true);
     await input.selectOption('worm');
   }
-  if (id === '098' || id === '099' || id === '102' || id === '103' || id === '105') {
+  if (id === '098' || id === '099' || id === '102' || id === '103' || id === '105' || id === '111') {
     const section = page.getByRole('button', {name: 'Section view', exact: true});
     const initiallySectioned = id === '098';
     await expect(section).toHaveAttribute('aria-pressed', String(initiallySectioned));

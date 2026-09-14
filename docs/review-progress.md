@@ -3601,6 +3601,26 @@ support, stops, hidden depths and thread relief are reconstructed. Speed ripple,
 contact convergence, longer loaded runs, friction and source interpretation
 remain open in the [110 reconstruction record](mujoco-110-half-nut-candidate.md).
 
+111 now loads a nested MuJoCo differential micrometer with matching square
+threads and a section control. The inner hand is corrected to obtain
+pitch-difference travel, and the sleeve root is widened by 1.84825 pixels in
+radius to contain the inner crest and a wall. These changes resolve the
+previous model's inconsistent mating hands, while source interpretation
+remains open. Actual outlines differ from 229 ink readings by 1.15978 pixels
+RMS; outer and inner projected thread flanks differ by 2.98996 and 6.84331
+pixels RMS. Ideal native screw joints replace prescribed output poses and
+permit 50.25 fps at 99.96% physical speed. A separate contact model follows
+the same three-turn stroke, but its 6.535 ms step cost is too high for live
+playback. Ten ideal-joint cycles retain pitch-difference travel within
+0.000146 pixel. Thirteen mechanism/runtime/engine tests pass, including
+reversed loads, native constraint removal, contact progress and restart.
+A 65-pose audit makes 12,106,120 independent surface queries with no sampled
+penetration, retaining 37.18386 pixels of thread engagement. All thirteen
+integrated views are inspected, and the build and all 27 production MuJoCo
+browser tests pass. Omitted
+supports, hidden dimensions, source corrections, ideal joints and contact
+limitations are recorded in the [111 reconstruction](mujoco-111-micrometer.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3621,7 +3641,7 @@ remain open in the [110 reconstruction record](mujoco-110-half-nut-candidate.md)
 105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
 106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
-082, 083, 087, 088, 108, 109 and 110 are integrated and under review.
+082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 
