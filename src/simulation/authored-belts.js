@@ -1,5 +1,6 @@
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
+import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
 import { makeMiterGear } from './authored-gears.js';
 import { whitePulleys } from './authored-white-pulleys.js';
 import { twoFixedOneMovable } from './authored-fixed-tackle.js';
@@ -4815,7 +4816,7 @@ function chineseDifferentialWindlass() {
     }
 
     getPoint(t, target = new THREE.Vector3()) {
-      const smooth = t * t * (3 - 2 * t);
+      const smooth = windingAdvance(t, this.wrapSweep / fullTurn).position;
       const x = this.reverseAxial
         ? this.exitX + this.axialSpan * smooth
         : this.exitX - this.axialSpan * (1 - smooth);
@@ -4830,7 +4831,7 @@ function chineseDifferentialWindlass() {
     }
 
     getTangent(t, target = new THREE.Vector3()) {
-      const smoothDerivative = 6 * t * (1 - t);
+      const smoothDerivative = windingAdvance(t, this.wrapSweep / fullTurn).derivative;
       const xDerivative = this.axialSpan * smoothDerivative;
       const phase = this.reversePhase
         ? this.exitPhase - this.wrapSweep * t
@@ -4949,7 +4950,7 @@ function chineseDifferentialWindlass() {
     const largeWrapSweep = largeWoundLength / largeBarrelPitchRadius;
     const smallWrapSweep = smallWoundLength / smallBarrelPitchRadius;
     const largeHelix = new WoundHelixCurve3({
-      axialSpan: ropeAxialPitch * largeWrapSweep / fullTurn,
+      axialSpan: ropeAxialPitch * baseLargeWrapTurns,
       exitPhase: -Math.PI / 2,
       exitX: largeRopeExit.x,
       radius: largeBarrelPitchRadius,
@@ -4972,7 +4973,7 @@ function chineseDifferentialWindlass() {
       smallRopeExit.clone(),
     );
     const smallHelix = new WoundHelixCurve3({
-      axialSpan: ropeAxialPitch * smallWrapSweep / fullTurn,
+      axialSpan: ropeAxialPitch * baseSmallWrapTurns,
       exitPhase: Math.PI / 2,
       exitX: smallRopeExit.x,
       radius: smallBarrelPitchRadius,
@@ -5234,19 +5235,24 @@ function chineseDifferentialWindlass() {
   lowerPulleyContactTread.userData.role = (
     'central-groove-bed-touching-the-single-windlass-rope'
   );
+  // Keep the old primitive parts available to diagnostics, but render one solid.
+  lowerPulleyRotor.children.forEach(part => { part.visible = false; });
+  lowerPulleyContactTread.geometry.dispose();
+  lowerPulleyContactTread.geometry = windlassSheaveGeometry(lowerPulleyPitchRadius, ropeRadius);
+  lowerPulleyContactTread.rotation.set(0, 0, 0);
   lowerPulleyRotor.add(lowerPulleyContactTread);
   const movingBlock = new THREE.Group();
   movingBlock.position.set(0, sourcePulleyCenterY, pulleyCenterZ);
   movingBlock.userData.axis = Y_AXIS.clone();
   movingBlock.userData.role = 'vertically-translating-pulley-block-and-hook';
-  const hangerLength = 1.95;
-  const hangerFrontOffset = 0.34;
+  const hangerLength = 1.4;
+  const hangerFrontOffset = 0.36;
   const hangerOrientation = new THREE.Quaternion().setFromUnitVectors(
     Z_AXIS,
     lowerPulleyAxis,
   );
   const loadHangerOutline = new THREE.Mesh(
-    new THREE.BoxGeometry(0.39, hangerLength + 0.1, 0.12),
+    new THREE.BoxGeometry(0.68, hangerLength + 0.02, 0.12),
     inkMaterial,
   );
   loadHangerOutline.quaternion.copy(hangerOrientation);
@@ -5258,7 +5264,7 @@ function chineseDifferentialWindlass() {
     'dark-outline-behind-front-mounted-load-hanger'
   );
   const loadHanger = new THREE.Mesh(
-    new THREE.BoxGeometry(0.27, hangerLength, 0.16),
+    new THREE.BoxGeometry(0.64, hangerLength, 0.16),
     drivenMaterial,
   );
   loadHanger.quaternion.copy(hangerOrientation);
@@ -5275,27 +5281,37 @@ function chineseDifferentialWindlass() {
   });
   lowerAxle.userData.role = 'axle-of-tilted-load-pulley';
   const loadHook = new THREE.Mesh(
-    new THREE.TorusGeometry(0.43, 0.105, 12, 52, Math.PI * 1.56),
+    windlassHookGeometry(),
     drivenMaterial,
   );
   loadHook.quaternion.copy(hangerOrientation);
-  loadHook.rotateZ(Math.PI * 0.15);
+
   loadHook.position.copy(lowerPulleyAxis).multiplyScalar(
     hangerFrontOffset,
   );
-  loadHook.position.x += 0.12;
-  loadHook.position.y = -2.53;
+
+  loadHook.position.y = 0;
   loadHook.userData.role = 'load-hook-fixed-to-movable-pulley-block';
   const hookNeck = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.46, 0.18),
+    new THREE.BoxGeometry(0.22, 0.2, 0.18),
     drivenMaterial,
   );
   hookNeck.quaternion.copy(hangerOrientation);
   hookNeck.position.copy(lowerPulleyAxis).multiplyScalar(
     hangerFrontOffset,
   );
-  hookNeck.position.y = -2.08;
+  hookNeck.position.y = -1.42;
   hookNeck.userData.role = 'neck-joining-load-hook-to-pulley-block';
+  const hangerBoss = new THREE.Mesh(new THREE.CylinderGeometry(.40, .40, .10, 64), drivenMaterial);
+  hangerBoss.geometry.rotateX(Math.PI / 2);
+  hangerBoss.quaternion.copy(hangerOrientation);
+  hangerBoss.position.copy(lowerPulleyAxis).multiplyScalar(.45);
+  movingBlock.add(hangerBoss);
+  const axleEnd = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 48), inkMaterial);
+  axleEnd.geometry.rotateX(Math.PI / 2);
+  axleEnd.quaternion.copy(hangerOrientation);
+  axleEnd.position.copy(lowerPulleyAxis).multiplyScalar(.515);
+  movingBlock.add(axleEnd);
   movingBlock.add(
     lowerPulley,
     lowerAxle,
@@ -5576,6 +5592,9 @@ function chineseDifferentialWindlass() {
   );
 
   root.userData.mechanism = 'single-rope-differential-chinese-windlass';
+  root.userData.shadowCameraHalfExtent = 6;
+  root.userData.shadowBias = -.00003;
+  root.userData.shadowNormalBias = .005;
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = cyclePeriod;
   root.userData.reconstructionNote = 'The larger barrel takes up more rope than the smaller one releases. Bare barrel separates the rope exits from the central flange. The tilted sheave and winding helix are idealized reconstructions.';

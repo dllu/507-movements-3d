@@ -9,8 +9,12 @@ evidence that all models match the engravings or avoid interference.
 129's rope exits no longer intersect the barrel flanges: the source's central
 flange and bare barrel replace two flanges at the exits. A finite rope/flange
 distance test passes across 121 poses and rejects the former placement.
-Playback has a six-second full cycle and no scene ground. Winding geometry,
-lower-sheave rendering and remaining source proportions are still under review;
+Playback has a six-second full cycle and no scene ground. Its lower sheave is
+now one bored, grooved solid with a traced J-hook and shorter hanger. Rope
+anchors stay fixed on the shaft, and neighbouring windings pass finite
+clearance checks. A refined arc-length audit bounds the ideal lift law's
+omitted winding correction to 0.0184 source pixels. Remaining upper-barrel,
+frame and projection proportions are still under review;
 see [129's partial review](movement-129.md).
 
 128 now has a source-traced frame and cam faces with contact-driven MuJoCo
