@@ -6,6 +6,13 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+127 now uses a compact analytical rack-and-pinion reconstruction, with measured
+engraving proportions, pierced spokes, conjugate involute/rack teeth and no
+invented frame. Finite profiles pass 721 sampled poses with a wrong-phase
+failure control; engagement gaps remain below 0.3 source pixels at 121 poses.
+Its full stroke takes four seconds. Source-animation timing differences and
+reconstruction assumptions are recorded in [the 127 review](movement-127.md).
+
 Use scripted analytical motion for simple mechanisms and MuJoCo where needed
 for correctness, with offline baking for expensive browser simulations.
 Movement 123 is the first baked conversion: cached visible geometry, no browser
