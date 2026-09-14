@@ -5,8 +5,10 @@ The old trajectory penetrated the rendered cam by about 0.123 units. Actual
 mesh clearance, envelope derivatives and normal contact velocity are checked.
 Playback allows one tooth stroke per second. The spring now preserves wire
 thickness and centreline length between connected bored seats; the guide post
-clears the rod. A side-on camera follows the engraving. Shaft bearing and final
-dimensional comparison remain under review; see [movement 136](movement-136.md).
+clears the rod. A side-on camera follows the engraving. The guide, collar and
+rod endpoint now match measured source positions, and a fitted shaft bearing
+replaces the decorative ring. Focused checks pass on the revised dimensions.
+Packaged playback and visual review pass. Continue to 137; see [movement 136](movement-136.md).
 
 # Current review: 135 Reuleaux valve cam
 

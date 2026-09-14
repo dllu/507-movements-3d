@@ -7466,17 +7466,17 @@ function toothedAxialFaceCamSpringFollower() {
   const contactRadius = (rimInnerRadius + wheelOuterRadius) / 2;
   const runningClearance = 0.001;
 
-  const shaftRadius = 0.18;
-  const shaftLength = 2.8;
-  const shaftCenterOffsetX = -1.2;
-  const hubRadius = 0.46;
-  const hubLength = 0.68;
+  const shaftRadius = 23.5 * sourceScale;
+  const shaftLength = 87 * sourceScale + .05;
+  const shaftCenterOffsetX = -60.5 * sourceScale;
+  const hubRadius = 50 * sourceScale;
+  const hubLength = 18 * sourceScale + .02;
   const followerTipRadius = 0.16;
   const followerRodRadius = 0.11;
-  const followerRodLength = 4.72;
-  const movingSpringAnchorOffset = 0.78;
-  const fixedSpringAnchorX = 2.95;
-  const fixedGuideX = 3.35;
+  const followerRodLength = 310 * sourceScale - followerTipRadius;
+  const movingSpringAnchorOffset = 84 * sourceScale;
+  const fixedGuideX = wheelCenter.x + baseBackX + (sourceFixedGuideX - sourceBaseBackX) * sourceScale;
+  const fixedSpringAnchorX = fixedGuideX - .20;
   const springRadius = 0.27;
   const springWireRadius = 0.045;
   const springTurnCount = 7;
@@ -7743,7 +7743,7 @@ function toothedAxialFaceCamSpringFollower() {
     driverMaterial,
     40,
   );
-  wheelHub.position.x = -0.1;
+  wheelHub.position.x = baseBackX - hubLength / 2 + .01;
   wheelHub.userData.role = 'hub-rigid-with-axial-cam-wheel';
   inputRotor.add(wheelHub);
 
@@ -7859,22 +7859,27 @@ function toothedAxialFaceCamSpringFollower() {
   );
   baseRail.userData.role = 'fixed-base-of-axial-face-cam-drive';
   const shaftPedestal = makeBeam(
-    new THREE.Vector3(wheelCenter.x - 1.55, baseY, 0),
+    new THREE.Vector3(wheelCenter.x - 1.10, baseY, 0),
     new THREE.Vector3(
-      wheelCenter.x - 1.55,
-      wheelCenter.y,
+      wheelCenter.x - 1.10,
+      wheelCenter.y - shaftRadius - .06,
       0,
     ),
     { thickness: 0.16, depth: 0.24, color: PALETTE.frame },
   );
   shaftPedestal.userData.role = 'fixed-pedestal-of-cam-wheel-shaft';
+  const shaftBearingShape = new THREE.Shape();
+  shaftBearingShape.absarc(0, 0, shaftRadius + .14, 0, fullTurn, false);
+  const shaftBore = new THREE.Path();
+  shaftBore.absarc(0, 0, shaftRadius + .003, 0, fullTurn, true);
+  shaftBearingShape.holes.push(shaftBore);
   const shaftBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.3, 0.075, 9, 36),
+    new THREE.ExtrudeGeometry(shaftBearingShape, {depth: .30, bevelEnabled: false, curveSegments: 64}).translate(0, 0, -.15),
     frameMaterial,
   );
   shaftBearing.rotation.y = Math.PI / 2;
   shaftBearing.position.set(
-    wheelCenter.x - 1.55,
+    wheelCenter.x - 1.10,
     wheelCenter.y,
     wheelCenter.z,
   );

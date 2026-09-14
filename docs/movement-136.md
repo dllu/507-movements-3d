@@ -36,7 +36,7 @@ Packaged desktop/mobile checks cover play, pause, restart, errors and absence
 of a WASM request.
 
 ```sh
-node --test tests/spherical-face-follower.test.mjs tests/axial-cam-spring-hardware.test.mjs
+node --test tests/spherical-face-follower.test.mjs tests/axial-cam-spring-hardware.test.mjs tests/axial-cam-proportions.test.mjs
 node --test --test-name-pattern='movement 136 drives' tests/models.test.mjs
 ```
 
@@ -50,5 +50,15 @@ the rod, and a front base member connects the previously unsupported brace.
 Diagnostics distinguish positive preload from dynamically maintained contact:
 `hasPreload` and `trajectoryPrescribed` replace the misleading contact guarantee.
 The default camera is nearly side-on, matching the engraving's view direction.
-The shaft bearing and final dimensional comparison still need review.
-Continue with 136.
+The guide now projects to engraving x=414, the moving collar face to x=284,
+and the rod endpoint to x=510 in the starting pose. Previously the guide sat
+over 80 pixels too far right. The shaft and hub radii are 23.5 and 50 pixels;
+their axial lengths also follow the drawing. The inferred rear bearing has
+a real bore with 0.003 radial clearance, the pedestal stops below the shaft,
+and the hub joins the wheel. Full-stroke tests verify the rod remains inside
+the guide, while spring and cam clearance tests cover the revised layout.
+
+The drawn tooth silhouette is regularized into smooth unequal flanks; the
+caption explicitly permits different profiles. The source's slight follower
+height offset, hidden support geometry, axial shaft retention and follower
+dynamics remain approximations. Packaged desktop/mobile playback and visual review pass. Continue to 137.
