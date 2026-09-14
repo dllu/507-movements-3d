@@ -51,6 +51,15 @@ clearance at 721 positions. The linkage test's transformed endpoint tolerance
 is 3e-15 units to accommodate roundoff from the new rigid-body transform.
 The analytical rod length and platen trajectory are unchanged.
 
+The sector now has a single continuous web with two rounded openings traced
+from the engraving, replacing three disconnected-looking narrow spokes. The
+184-pixel source root radius is normalized to the retained gear radius. A local
+boss preserves a complete seat around the animation's farther-out rod pin;
+this is an explicit accommodation pending the overall proportion review.
+The web test checks that full pin seat, connection to every tooth, and zero
+web/pinion overlap at 721 angles. The traced openings are sampled once when
+constructing the mesh; playback only rotates the rigid mesh.
+
 The display cycle has a six-second minimum, retaining the existing 40% lift,
 10% dwell, 40% return and 10% dwell schedule with smooth easing. Restart,
 a nearly frontal camera, no ground plane and hidden diagnostic indices improve
@@ -59,11 +68,11 @@ pause, exact restart, JavaScript errors and absence of a WASM request.
 
 ```sh
 node scripts/generate-sector-press-teeth.mjs
-node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs
+node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs tests/sector-press-web.test.mjs
 node --test --test-name-pattern='movement 133 raises' tests/models.test.mjs
 ```
 
-This is not a complete engraving or hardware review. The web openings, crank dimensions and remaining shaft-bearing geometry still
+This is not a complete engraving or hardware review. The crank dimensions and remaining shaft-bearing geometry still
 use the preceding model.
 The animation's proportions and tooth counts need comparison with the engraving;
 this pass validates the retained gear pair, not literal raster agreement.

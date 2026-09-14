@@ -1,3 +1,4 @@
+import { sectorPressWebShape } from './sector-press-web.js';
 import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
 import { makeWeightedClutch } from './weighted-clutch.js';
@@ -14228,29 +14229,6 @@ function handCrankPinionSectorRodPress() {
     cylinder.rotation.x = Math.PI / 2;
     return cylinder;
   };
-  const radialPoint = (radius, angle) => new THREE.Vector2(
-    Math.cos(angle) * radius,
-    Math.sin(angle) * radius,
-  );
-  const annularSectorShape = (
-    innerRadius,
-    outerRadius,
-    startAngle,
-    endAngle,
-  ) => {
-    const shape = new THREE.Shape();
-    const innerStart = radialPoint(innerRadius, startAngle);
-    const outerStart = radialPoint(outerRadius, startAngle);
-    const innerEnd = radialPoint(innerRadius, endAngle);
-    shape.moveTo(innerStart.x, innerStart.y);
-    shape.lineTo(outerStart.x, outerStart.y);
-    shape.absarc(0, 0, outerRadius, startAngle, endAngle, false);
-    shape.lineTo(innerEnd.x, innerEnd.y);
-    shape.absarc(0, 0, innerRadius, endAngle, startAngle, true);
-    shape.closePath();
-    return shape;
-  };
-
   const pinionAssembly = new THREE.Group();
   const pinionRotor = new THREE.Group();
   pinionAssembly.add(pinionRotor);
@@ -14376,12 +14354,12 @@ function handCrankPinionSectorRodPress() {
   const sectorBodyStartAngle = -sectorAngularPitch * 0.58;
   const sectorBodyEndAngle = Math.PI / 2 + sectorAngularPitch * 0.58;
   const sectorRim = new THREE.Mesh(
-    centeredExtrusion(annularSectorShape(
-      sectorBodyInnerRadius,
-      sectorRootRadius,
-      sectorBodyStartAngle,
-      sectorBodyEndAngle,
-    ), gearDepth),
+    centeredExtrusion(sectorPressWebShape({
+      radius: sectorRootRadius,
+      startAngle: sectorBodyStartAngle,
+      endAngle: sectorBodyEndAngle,
+      pinRadius: sectorPinRadius,
+    }), gearDepth, 0),
     drivenMaterial,
   );
   sectorRim.position.z = gearPlaneZ;
@@ -14423,33 +14401,7 @@ function handCrankPinionSectorRodPress() {
   );
   sectorFaceRing.position.z = gearDepth / 2 + 0.032;
   sectorFaceRing.userData.role = 'dark-sector-pivot-face-ring';
-  const sectorSpokeAngles = [
-    THREE.MathUtils.degToRad(8),
-    THREE.MathUtils.degToRad(45),
-    THREE.MathUtils.degToRad(82),
-  ];
-  const sectorSpokes = sectorSpokeAngles.map((angle, index) => {
-    const spoke = makeBeam(
-      new THREE.Vector3(
-        Math.cos(angle) * 0.22,
-        Math.sin(angle) * 0.22,
-        gearPlaneZ,
-      ),
-      new THREE.Vector3(
-        Math.cos(angle) * (sectorBodyInnerRadius + 0.04),
-        Math.sin(angle) * (sectorBodyInnerRadius + 0.04),
-        gearPlaneZ,
-      ),
-      {
-        color: PALETTE.driven,
-        depth: gearDepth * 0.86,
-        thickness: 0.15,
-      },
-    );
-    spoke.userData.index = index;
-    spoke.userData.role = 'open-web-spoke-rigid-with-toothed-sector';
-    return spoke;
-  });
+  const sectorSpokes = []; // The openings now belong to one continuous sector web.
   const sectorRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.34, 0.06, 0.029),
     indexMaterial,

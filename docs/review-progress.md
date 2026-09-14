@@ -11,7 +11,9 @@ full-stroke overlap checks and a wrong-phase failure control. Its six-to-one
 analytical linkage is retained, with a six-second display cycle and Restart.
 The frame and guide rails now connect, and the anvil covers the platen in depth;
 full-stroke support-clearance checks pass. The connecting rod now has bored eyes
-and retaining heads, with pin/eye and axial clearance checks. Engraving proportions and remaining
+and retaining heads, with pin/eye and axial clearance checks. A continuous
+two-opening sector web follows the engraving and fully seats the rod pin;
+full-stroke web/pinion interference checks pass. Engraving proportions and remaining
 hardware still need review; see
 [133's partial review](movement-133.md).
 
