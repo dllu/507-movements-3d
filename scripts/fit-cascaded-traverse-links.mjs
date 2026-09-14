@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import {freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
+const prefix=process.env.PROBE_PREFIX??'/dev/shm/125-link-fit',input=process.env.SOURCE_REPORT??'/dev/shm/125-source-c.json';
+const sources=freezeStudySources([input,'scripts/fit-cascaded-traverse-links.mjs','scripts/lib/study-report-io.mjs'],prefix),points=JSON.parse(fs.readFileSync(input)).links.upperLink.right;
+const xs=[275,235,156,109],ys=[114,120,118,110],bezier=(v,t)=>v[0]*(1-t)**3+3*v[1]*t*(1-t)**2+3*v[2]*t*t*(1-t)+v[3]*t**3;
+let aa=0,ab=0,bb=0,ac=0,bc=0;
+const samples=points.map(([x,y])=>{let lo=0,hi=1;for(let i=0;i<40;i++){const t=(lo+hi)/2;if(bezier(xs,t)>x)lo=t;else hi=t;}const t=(lo+hi)/2,a=3*t*(1-t)**2,b=3*t*t*(1-t),c=y-ys[0]*(1-t)**3-ys[3]*t**3;aa+=a*a;ab+=a*b;bb+=b*b;ac+=a*c;bc+=b*c;return{t,x,y};});
+const det=aa*bb-ab*ab;ys[1]=(bb*ac-ab*bc)/det;ys[2]=(aa*bc-ab*ac)/det;
+const residuals=samples.map(({t,y})=>bezier(ys,t)-y),report={sources,controlPoints:xs.map((x,i)=>[x,ys[i]]),rms:Math.sqrt(residuals.reduce((s,r)=>s+r*r,0)/points.length),maximum:Math.max(...residuals.map(Math.abs)),samples,residuals,qualification:'Least-squares vertical control ordinates for the upper-link bottom contour. Endpoints and horizontal controls are independently traced assumptions. Actual rendered nearest-edge distances are measured separately.'};
+verifyStudySources(sources);fs.writeFileSync(prefix+'.json',JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log({controlPoints:report.controlPoints,rms:report.rms,maximum:report.maximum});

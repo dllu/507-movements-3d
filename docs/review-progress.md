@@ -3868,6 +3868,15 @@ hits its five-second startup deadline. After a measured startup allowance
 correction, all six focused 123/124 checks pass (three each). The original
 failure and isolated checks are preserved in the reconstruction report.
 
+125 has a MuJoCo candidate with measured crank pins, unequal rods, broad curved
+links and the short output stem. The retained 19:23:29 interpretation completes
+437 turns in independent linkage continuation without shortening any crank.
+Five targeted tests pass, and 34 sampled poses show zero unintended hardware
+penetration. The full native pattern and final integration checks remain
+pending; the public catalog still uses the previous implementation. Source
+ambiguities and guide/depth assumptions are documented in the
+[125 reconstruction](mujoco-125-cascaded-traverse.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
