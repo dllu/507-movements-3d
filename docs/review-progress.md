@@ -3802,6 +3802,28 @@ All eighteen final catalog views are inspected. The production build and
 all 37 MuJoCo browser checks pass, including the reversal selector. Default
 headless playback averages 27.25 fps at 99.82% physical speed.
 
+122 now uses one MuJoCo gear input with native involute tooth contact and two
+ideal rod-pin closures. The unequal rods, broad curved floating link, ordinary
+pin eyes and output silhouette restore the source proportions. Compatible
+29/23 shifted involutes regularize the drawing's nonconcentric gear outlines;
+actual-edge RMS is 2.90247 / 2.41503 source pixels. Both crank radii are reduced
+by 15%, moving the pins inward by at most 10.04555 pixels, because the measured
+source assembly branch encounters a toggle. Independent full-pattern continuation
+and the unreduced native stall support this explicit correction.
+
+Two complete 29:23 patterns retain the variable alternating traverse. Maximum
+native penetration is 0.010935 pixel, pin-closure error 0.000422 pixel and rolling
+error 0.139371 pixel. Finer timestep/collision geometry and opposed loaded
+friction trials complete full patterns. Shortening the shaft fronts removes
+rod interference; the final 466-pose, 46,332,516-query surface audit finds no
+unintended intersections. All 15 targeted tests and all 19 final view inspections
+pass. Default headless playback averages 42.16 fps at 99.92% physical speed,
+with a readable four-second input revolution. Source corrections, ideal guides,
+depth assumptions and finite qualification limits are documented in the
+[122 reconstruction](mujoco-122-variable-traverse.md).
+The production build and all 38 MuJoCo browser checks pass, including 122
+playback, restart, navigation and loading beneath a static subdirectory.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3832,6 +3854,7 @@ headless playback averages 27.25 fps at 99.82% physical speed.
 119 is verified for contact-driven endless-rack circulation with additional ideal normal engagement support and stated tooth-count, guide and depth assumptions.
 120 is verified for native gear-driven jaw closure and reopening with ideal bearings, bounded collision approximation and stated frame/depth/drive reconstruction assumptions.
 121 is verified for native tooth-driven feed in both click positions after initial seating, with ideal pins/guide, inferred damping and resisting load, and stated cog/nose reconstruction assumptions.
+122 is verified for native geared variable traverse across the full 29:23 pattern, with 15% reduced crank radii, ideal pins/guide, bounded collision approximation and stated source/depth assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
