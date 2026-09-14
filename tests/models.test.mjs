@@ -31735,7 +31735,7 @@ test('movement 134 carries one rope smoothly through one full drum wrap at presc
   assert.equal(rearFlange.geometry.parameters.options.depth,
     geometry.flangeDepth);
   assert.equal(inputShaft.geometry.parameters.radiusTop,
-    geometry.shaftHoleRadius * 0.68);
+    geometry.shaftHoleRadius);
   assert.equal(spokes.length, geometry.sourceRasterSpokeCount);
   assert.equal(rimSeparators.length,
     geometry.sourceRasterRimSeparatorCount);

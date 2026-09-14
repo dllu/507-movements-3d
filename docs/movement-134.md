@@ -30,9 +30,19 @@ JavaScript errors and absence of a WASM request. One drum turn takes four
 seconds at default display speed; fog and the ground plane are disabled.
 
 ```sh
-node --test tests/single-wrap-drum.test.mjs
+node --test tests/single-wrap-drum.test.mjs tests/rope-drum-hardware.test.mjs
 node --test --test-name-pattern='movement 134 carries' tests/models.test.mjs
 ```
 
-The drum spokes, decorative outlines, shaft supports and remaining silhouette
-still need review against the engraving. Continue with 134.
+The upper-right spoke is now traced from the engraving and repeated by quarter
+turns. Its ends overlap the hub and rim rather than stopping at isolated tips.
+Raised black torus outlines are hidden and the eight divider plates sit flush
+in the front rim. The shaft now uses the engraved 25-pixel radius. A real hub
+bore and fitted rear sleeve replace the solid hub/decorative bearing; the
+pedestal stops below the shaft and joins the sleeve and foot. Hidden bearing
+and support depths remain reconstructed. Casting-contact and shaft-clearance
+checks pass.
+
+The tracing regularizes the engraving's small asymmetries, and the unseen
+support is an inferred mounting rather than part of the drawing. Axial shaft
+retention and rope traction remain idealized as described above. Packaged desktop/mobile playback and silhouette checks pass. Continue to 135.

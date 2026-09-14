@@ -1,3 +1,4 @@
+import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
@@ -6066,26 +6067,21 @@ function singleWrappedRopeDrumDrive() {
   rearFlange.position.z = -drumWidth / 2 - flangeDepth / 2;
   rearFlange.userData.role = 'rear-retaining-flange-of-rope-drum';
 
-  const spokeShape = new THREE.Shape();
-  spokeShape.moveTo(hubOuterRadius * 0.72, -0.15);
-  spokeShape.bezierCurveTo(0.78, -0.17, 1.1, -0.34, 1.49, -0.24);
-  spokeShape.lineTo(1.49, 0.055);
-  spokeShape.bezierCurveTo(1.12, 0.02, 0.78, 0.22, hubOuterRadius * 0.72, 0.15);
-  spokeShape.closePath();
+  const spokeShape = ropeDrumSpokeShape();
   const spokeGeometry = centeredExtrusion(spokeShape, 0.2, 0.007);
   const spokes = Array.from(
     { length: sourceRasterSpokeCount },
     (_, index) => {
       const spoke = new THREE.Mesh(spokeGeometry.clone(), driverMaterial);
       spoke.position.z = 0.08;
-      spoke.rotation.z = Math.PI / 4 + index * Math.PI / 2;
+      spoke.rotation.z = index * Math.PI / 2;
       spoke.userData.index = index;
       spoke.userData.role = 'one-of-four-curved-drum-spokes';
       return spoke;
     },
   );
-  const hub = cylinderAlongZ(hubOuterRadius, drumWidth + 0.12, driverMaterial, 52);
-  hub.userData.role = 'solid-hub-rigid-with-rope-drum';
+  const hub = new THREE.Mesh(centeredExtrusion(annulusShape(shaftHoleRadius + .001, hubOuterRadius), drumWidth + .12, 0), driverMaterial);
+  hub.userData.role = 'bored-hub-rigid-with-rope-drum';
   const hubFaceRing = new THREE.Mesh(
     new THREE.TorusGeometry(hubOuterRadius * 0.8, 0.035, 9, 48),
     inkMaterial,
@@ -6093,18 +6089,19 @@ function singleWrappedRopeDrumDrive() {
   hubFaceRing.position.z = drumWidth / 2 + 0.07;
   hubFaceRing.userData.role = 'dark-front-outline-of-drum-hub';
   const inputShaft = cylinderAlongZ(
-    shaftHoleRadius * 0.68,
+    shaftHoleRadius,
     1.18,
     inkMaterial,
     38,
   );
+  inputShaft.position.z = -.10;
   inputShaft.userData.axis = Z_AXIS.clone();
   inputShaft.userData.role = 'input-shaft-fast-to-single-rope-drum';
   const shaftFace = new THREE.Mesh(
-    new THREE.CircleGeometry(shaftHoleRadius * 0.68, 38),
+    new THREE.CircleGeometry(shaftHoleRadius, 38),
     inkMaterial,
   );
-  shaftFace.position.z = 0.602;
+  shaftFace.position.z = .491;
   shaftFace.userData.role = 'front-face-of-input-shaft';
   const frontOuterOutline = new THREE.Mesh(
     new THREE.TorusGeometry(
@@ -6133,9 +6130,9 @@ function singleWrappedRopeDrumDrive() {
     (_, index) => {
       const separator = new THREE.Mesh(
         new THREE.BoxGeometry(
-          drumFlangeOuterRadius - drumRimInnerRadius + 0.04,
-          0.075,
-          0.045,
+          drumFlangeOuterRadius - drumRimInnerRadius,
+          0.14,
+          0.012,
         ),
         inkMaterial,
       );
@@ -6146,7 +6143,7 @@ function singleWrappedRopeDrumDrive() {
       separator.position.set(
         Math.cos(angle) * radius,
         Math.sin(angle) * radius,
-        frontOuterOutline.position.z + 0.008,
+        drumWidth / 2 + flangeDepth + .001,
       );
       separator.rotation.z = angle;
       separator.userData.index = index;
@@ -6183,10 +6180,10 @@ function singleWrappedRopeDrumDrive() {
   const rearFrameZ = -0.52;
   const pedestalBottomY = -2.18;
   const pedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 2.2, 0.38),
+    new THREE.BoxGeometry(0.34, 1.92, 0.38),
     frameMaterial,
   );
-  pedestal.position.set(0, -1.1, rearFrameZ);
+  pedestal.position.set(0, -1.24, rearFrameZ);
   pedestal.userData.role = 'rear-fixed-pedestal-supporting-drum-axis';
   const pedestalFoot = new THREE.Mesh(
     new THREE.BoxGeometry(1.75, 0.16, 0.68),
@@ -6195,10 +6192,10 @@ function singleWrappedRopeDrumDrive() {
   pedestalFoot.position.set(0, pedestalBottomY, rearFrameZ);
   pedestalFoot.userData.role = 'fixed-foot-of-drum-bearing-pedestal';
   const rearBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(hubOuterRadius * 0.7, 0.075, 10, 48),
+    centeredExtrusion(annulusShape(shaftHoleRadius + .003, hubOuterRadius * .7 + .075), .30, 0),
     frameMaterial,
   );
-  rearBearing.position.z = rearFrameZ + 0.19;
+  rearBearing.position.z = -.51;
   rearBearing.userData.axis = Z_AXIS.clone();
   rearBearing.userData.role = 'fixed-bearing-behind-drum-hub';
 
@@ -6477,6 +6474,7 @@ function singleWrappedRopeDrumDrive() {
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.animationTiming = { authoredCyclePeriod: drumRotationPeriod };
   root.userData.tractionAssumption = 'Prescribed mean rope speed R omega; helical axial creep is reported, not dynamically solved.';
+  for (const outline of [frontOuterOutline, frontInnerOutline, hubFaceRing]) outline.visible = false;
   drumRotationIndex.visible = false;
   pitchContactMarker.visible = false;
   return {
