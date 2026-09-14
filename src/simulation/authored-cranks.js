@@ -5541,7 +5541,7 @@ function crankPinSlottedSectorRackMotion() {
   const sourceCrankRadius = 4;
   const sourceCenterDistance = 6.5;
   const sourceSectorPitchRadius = 5;
-  const sourceCrankPinRadius = 0.5;
+  const sourceCrankPinRadius = 0.748;
   const sourceSlotHalfWidth = 0.75;
   const sourceSlotNearCapDistance = 2.25;
   const sourceSlotFarCapDistance = 10.75;
@@ -5780,7 +5780,7 @@ function crankPinSlottedSectorRackMotion() {
     slotStraightHalfLength,
   );
   const slottedArm = new THREE.Mesh(
-    centeredExtrusion(slotBodyShape, rockerDepth, 0.016),
+    centeredExtrusion(slotBodyShape, rockerDepth, 0),
     drivenMaterial,
   );
   slottedArm.position.set(0, slotCenterY, rockerCenterZ);
@@ -6410,6 +6410,13 @@ function crankPinSlottedSectorRackMotion() {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.hideGround = true;
   root.userData.supportsRestart = true;
+  // The engraved pin almost fills the slot. A 0.001-unit radial running gap
+  // bounds the ideal centreline constraint error to about 0.045 source pixels.
+  // These old overlays narrowed the actual opening and crossed the pin.
+  for (const detail of [slotOutline, slotFace, crankArm, diskRotationIndex,
+    crankPinIndex, sectorRotationIndex, rackIndex, pitchContactMarker]) {
+    detail.visible = false;
+  }
   root.userData.animationTiming = {authoredCyclePeriod: cyclePeriod};
   root.userData.minimumDisplayCycleSeconds = cyclePeriod;
   root.userData.toothProfiles = toothProfiles;
