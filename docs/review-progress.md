@@ -3673,6 +3673,22 @@ is explicitly the default frictionless reconstruction with ideal shaft and
 slide constraints. The source corrections, end-tooth construction and limits
 are recorded in the [114 reconstruction](mujoco-114-double-rack.md).
 
+115 now loads a MuJoCo double rack driven through native tooth contact by two
+equal pinions receiving equal opposite shaft torques. The measured frame,
+shaft circles, ten upper teeth and nine lower teeth replace the old oversized
+frame and extra hardware. Profile-shifted involute teeth reconcile the shaft
+spacing with the rack pitch; actual gear contours differ from the engraving
+by 2.21015 and 1.84603 pixels RMS. The inner frame curves fit within 0.511
+pixel RMS. Ten cycles retain both rack contacts with maximum penetration
+0.009762 pixel. Timestep, mesh-resolution and loaded friction trials pass.
+The independent 25-pose surface audit makes 3,055,300 queries and finds no
+unintended intersections. All 29 targeted numerical and runtime tests pass;
+all twelve integrated views are inspected. Playback records 51.43 fps at
+99.86536% physical speed. The production build and all 31 production MuJoCo
+browser regressions pass. Equal input torque is idealized; instantaneous
+rack forces are not prescribed. Source corrections, construction assumptions
+and qualification limits are recorded in the [115 reconstruction](mujoco-115-equal-racks.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3696,6 +3712,7 @@ are recorded in the [114 reconstruction](mujoco-114-double-rack.md).
 112 is verified for alternating contact-driven rotation with six inferred starts, ideal head/hand constraints and stated clearance/friction limits.
 113 is verified for contact-driven transmission in both directions, with inferred shallow involute teeth, passive rollers and stated guide/depth assumptions.
 114 is verified for frictionless contact-driven rack transfer with relieved end teeth, a corrected initial phase and stated guide/depth assumptions.
+115 is verified for contact-driven double-rack motion with equal input torques, shifted involute teeth and stated bearing/guide assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
