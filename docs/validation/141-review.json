@@ -1,0 +1,43 @@
+{
+  "registration": "Both wheel centres matched to engraving; uniform scale, no perspective.",
+  "pixelsPerUnit": 81.24223602484471,
+  "legacyWheelPitchRadiusPixels": 46.714285714285715,
+  "measuredWheelRadiusPixels": 50,
+  "legacyTable": {
+    "left": 263.6142857142857,
+    "right": 497.1857142857143,
+    "top": 343.9428571428571
+  },
+  "measuredTable": {
+    "left": 247,
+    "right": 515,
+    "top": 334,
+    "bottom": 341
+  },
+  "contact": {
+    "samples": 64,
+    "interferingPoses": 64,
+    "maximumToothVertexDepth": 0.005759367952957617,
+    "maximumToothVertexDepthPixels": 0.4679039305881095,
+    "actualMaximumRimRadius": 0.5640038858633126,
+    "bladeInnerRadius": 0.559,
+    "rimRadialExcess": 0.005003885863312574,
+    "wheelFront": 0.14,
+    "toothRootZ": 0.1
+  },
+  "caveat": "Finite tooth vertices inside the nominal wheel annulus prove interference; this is not an exhaustive triangle collision audit. The rim also exceeds the nominal blade inner radius. Browser geometry remains unchanged pending reconstruction.",
+  "sources": [
+    {
+      "file": "src/simulation/authored-belts.js",
+      "sha256": "6afe42ffb345546f09393cbbe70ae80eeb3d2e17b02a4f5fed6d79f3985d490f"
+    },
+    {
+      "file": "src/data/band-saw-dimensions.js",
+      "sha256": "c5e5325f815f1042983f4d3b0b240c42a4f86fea479e6e84d87f722cb2ce9993"
+    },
+    {
+      "file": "scripts/review-band-saw.mjs",
+      "sha256": "d836a441db1dcba67b6ee2f94790f5b6b47eaec447807969d1bc4757289ea2e4"
+    }
+  ]
+}
