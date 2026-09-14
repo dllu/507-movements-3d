@@ -71,6 +71,10 @@ Movement 107 extends the same contact model to a repeating serpentine groove.
 Its [source reconstruction and checks](mujoco-107-serpentine-cam.md) describe
 the inferred eleven repetitions, uniform working flanks, smooth reversals,
 narrower working pin needed to avoid undercut, and short rod's guide engagement.
+Movement 108 now uses a passive swiveling shoe in intersecting reverse-thread
+grooves. It is integrated under review: the [reconstruction record](mujoco-108-reverse-thread-candidate.md)
+documents improved stroke uniformity alongside unresolved contact peaks,
+mesh/timestep sensitivity and the projected groove/source discrepancy.
 
 ## Shared runtime
 
@@ -331,3 +335,13 @@ Its eleven repetitions are inferred from the source fit; the caption does not
 specify a count. All sixteen final views are inspected, and headless playback
 averages 19.84 fps at the physical two-second output cycle. The native model
 has only an input actuator; output motion comes from groove-wall contact.
+
+The 108 integration passes four mechanism and three shared-runtime tests, the
+build and all 24 MuJoCo browser regressions. Nineteen integrated views are
+inspected, including desktop/mobile controls and notes. Playback averages
+20.88 fps at 99.00% physical speed over 22 seconds. Six native output cycles
+retain the chosen groove; contoured shoe sides reduce p95 stroke-speed error
+from 9.05% to 1.47844%. The longer run nevertheless reaches 0.36499 source pixel
+of contact penetration, and mesh/timestep studies fail the 0.1-pixel bound.
+The projected groove pattern also differs from the engraving. This mechanism
+is available for review, with final mechanical qualification still open.

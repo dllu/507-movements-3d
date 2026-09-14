@@ -7,7 +7,7 @@ const prefix=process.env.PROBE_PREFIX??'/dev/shm/108-native',sources=freezeStudy
 const mujoco=await loadMujoco(),options=JSON.parse(process.env.SIM_OPTIONS??'{}'),start=performance.now(),v=makeMujocoReverseThread(mujoco,options),p=v.physics,f=v.root.userData.profile,rows=[];
 console.log({compileMilliseconds:performance.now()-start,geoms:p.model.ngeom,nq:p.model.nq,angles:v.root.userData.angles.length});
 try {
- const n=Math.round(Number(process.env.DURATION??10)/p.timestep);let error=0,penetration=0,contacts=0,speedError=0,inputError=0,previous,maximumError,maximumPenetration,maximumSpeedWindow;const speedWindows=[],window=Math.round(.1/p.timestep);const start=performance.now();
+ const n=Math.round(Number(process.env.DURATION??2*p.description.options.period)/p.timestep);let error=0,penetration=0,contacts=0,speedError=0,inputError=0,previous,maximumError,maximumPenetration,maximumSpeedWindow;const speedWindows=[],window=Math.round(.1/p.timestep);const start=performance.now();
  for(let i=0;i<=n;i++) {
   // mj_step leaves contacts from the pre-integration pose. Keep that pose with
   // any penetration peak instead of pairing the distance with the next pose.

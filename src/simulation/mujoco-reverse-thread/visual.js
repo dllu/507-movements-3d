@@ -12,7 +12,7 @@ export function makeMujocoReverseThread(mujoco,options={}) {
  const playback=createPhysicsPlayback(physics,sync);let disposed=false;
  const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
  const bounds=new THREE.Box3(new THREE.Vector3(-1.8,-1.95,-.9),new THREE.Vector3(.9,1.85,.9));
- Object.assign(u,{mechanism:'mujoco-reverse-thread',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'candidate',supportsRestart:true,cameraFitBounds:bounds,
-  sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'Candidate: a swiveling shoe follows the intersecting grooves. Groove shape, end joins, shoe, bearings and guide are reconstructed.',animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
+ Object.assign(u,{mechanism:'mujoco-reverse-thread',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,cameraFitBounds:bounds,
+  sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'A swiveling shoe follows the intersecting grooves through each return. The circular barrel, five turns per traverse, shoe, depths and ideal bearings are reconstructed.',animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
  try{sync();}catch(error){dispose();throw error;}return{...visual,physics,sync,...playback,dispose};
 }

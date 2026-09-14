@@ -1,5 +1,5 @@
 import source from './source.js';
-export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength=.12,shoeRadius=.022,reversalAngle=.5,workingInset=.065,workingThickness=.09,curvedShoe=false,shoeSegments=24,optimizeTilt=false,optimizeReversalTilt=false,coreRadius,convexStrips=false,roundReversals=false}={}) {
+export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=.36,shoeRadius=.05,reversalAngle=3,workingInset=.065,workingThickness=.025,curvedShoe=true,shoeSegments=24,optimizeTilt=true,optimizeReversalTilt=true,coreRadius=.4338,convexStrips=true,roundReversals=true,conformalShoe=true}={}) {
  const e=source.edges,axis=[(e.barrelLeft+e.barrelRight)/2,(e.barrelTop+e.barrelBottom)/2],radius=(e.barrelRight-e.barrelLeft)/200;
  const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=pitch/(2*Math.PI),half=source.turns*2*Math.PI,period=half*2,d=reversalAngle;
  const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),top=y(source.fit.firstCrossing)+lead*(Math.PI-endOffset),phase=Math.PI;
@@ -16,26 +16,52 @@ export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength
  const contactAngle=-Math.PI/2;
  const initialParameter=Array.from({length:source.turns*2},(_,k)=>contactAngle-phase+2*Math.PI*k).sort((a,b)=>Math.abs(law(a).y-y(source.tip[1]))-Math.abs(law(b).y-y(source.tip[1])))[0];
  const initialY=law(initialParameter).y;
- const contour=(length=shoeLength,r=shoeRadius)=>Array.from({length:34},(_,i)=>{
+ let contour=(length=shoeLength,r=shoeRadius)=>Array.from({length:34},(_,i)=>{
   const right=i<17,a=right?-Math.PI/2+Math.PI*i/16:Math.PI/2+Math.PI*(i-17)/16;
   return[(right?length:-length)+r*Math.cos(a),r*Math.sin(a)];});
  // The straight sides in the tangent plane become curved after wrapping around
  // the barrel. Include their interior points before cylindrical projection;
  // joining just the nose endpoints cuts into the middle of the actual shoe.
- const outline=contour(shoeLength,shoeRadius+clearance);
- const cutter=outline.flatMap((p,i)=>{
+ const makeCutter=(r=shoeRadius+clearance)=>{const outline=contour(shoeLength,r);return outline.flatMap((p,i)=>{
   const q=outline[(i+1)%outline.length],n=Math.max(1,Math.ceil(Math.abs(q[0]-p[0])/(2*(shoeLength+shoeRadius)/shoeSegments/4)));
   return Array.from({length:n},(_,j)=>p.map((v,k)=>v+(q[k]-v)*j/n));
- }),lanes=source.turns*2,cache=new Map();
+ });};
+ let cutter=makeCutter();const lanes=source.turns*2,cache=new Map();
  // A long shoe follows a finite arc. Its best flank orientation differs from
  // the tangent at its midpoint. Minimize the swept groove width at constant lead
  // so the two ends constrain yaw instead of removing excess material.
- const support=(tilt,derivative)=>{let low=Infinity,high=-Infinity;const c=Math.cos(tilt),sn=Math.sin(tilt);for(const side of [0,1])for(const [u,v] of cutter){const b=sn*u+c*v-derivative*Math.atan2(c*u-sn*v,shoeZ(u,side));low=Math.min(low,b);high=Math.max(high,b);}return[low,high];};
+ const support=(tilt,derivative,points=cutter)=>{let low=Infinity,high=-Infinity;const c=Math.cos(tilt),sn=Math.sin(tilt);for(const side of [0,1])for(const [u,v] of points){const b=sn*u+c*v-derivative*Math.atan2(c*u-sn*v,shoeZ(u,side));low=Math.min(low,b);high=Math.max(high,b);}return[low,high];};
  if(optimizeTilt) {
   const width=tilt=>{const [low,high]=support(tilt,lead);return high-low;};
   let low=0,high=.45;const ratio=(Math.sqrt(5)-1)/2;let a=high-ratio*(high-low),b=low+ratio*(high-low),wa=width(a),wb=width(b);
   for(let i=0;i<60;i++){if(wa<wb){high=b;b=a;wb=wa;a=high-ratio*(high-low);wa=width(a);}else{low=a;a=b;wa=wb;b=low+ratio*(high-low);wb=width(b);}}
   tiltRadius=lead/Math.tan((low+high)/2);
+ }
+ if(conformalShoe) {
+  // Intersect the two opposite-handed helical channels in shoe coordinates.
+  // Contoured sides provide distributed flank support while the radial joint
+  // remains free to swivel. The rounded ends retain a finite full-width nose.
+  const alpha=Math.atan2(lead,tiltRadius),c=Math.cos(alpha),sn=Math.sin(alpha);
+  // Preserve the previous shoe's required channel width rather than widening
+  // the entire groove to obtain more flank contact.
+  const [low,high]=support(alpha,lead,makeCutter(shoeRadius)),referenceHalfWidth=(high-low)/2;
+  contour=(length=shoeLength,r=shoeRadius)=>{
+   const end=length+r,width=referenceHalfWidth+r-shoeRadius;
+   // Keep the rounded noses resolved independently of the radial strip grid.
+   const coordinates=[...Array.from({length:shoeSegments+1},(_,i)=>-end+2*end*i/shoeSegments),
+    ...[-1,1].flatMap(sign=>Array.from({length:9},(_,i)=>sign*(length+r*Math.sin(Math.PI*i/16))))];
+   const upper=[...new Map(coordinates.map(u=>[u.toFixed(10),u])).values()].sort((a,b)=>a-b).map(u=>{
+    let height=width/r*Math.sqrt(Math.max(0,r*r-Math.max(0,Math.abs(u)-length)**2));
+    for(const hand of [-1,1])for(const side of [0,1]) {
+     const offset=v=>hand*sn*u+c*v-hand*lead*Math.atan2(c*u-hand*sn*v,shoeZ(u,side));
+     if(offset(height)<=width)continue;
+     let lo=0,hi=height;for(let j=0;j<40;j++){const mid=(lo+hi)/2;if(offset(mid)>width)hi=mid;else lo=mid;}height=(lo+hi)/2;
+    }
+    return[u,height];
+   });
+   return [...upper,...upper.slice(1,-1).reverse().map(([u,v])=>[u,-v])];
+  };
+  cutter=makeCutter();
  }
  const flankBounds=new Map([-lead,lead].map(d=>[d,support(Math.atan2(d,tiltRadius),d)]));
  const span=Math.atan2(shoeLength+shoeRadius+clearance,shoeZ(shoeLength+shoeRadius+clearance,0))*1.1;
@@ -84,7 +110,7 @@ export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength
   cache.set(angle,result);return result;
  }
  return{source,axis,x,y,radius,pitch,lead,half,period,stroke,top,phase,law,segments,clearance,shoeLength,shoeRadius,contour,
-  workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
+  workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,conformalShoe,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
   bottom:y(e.barrelBottom),ceiling:y(e.barrelTop),shaftRadius:(e.shaftRight-e.shaftLeft)/200,
   guideX:x((e.guideLeft+e.guideRight)/2),guideRadius:(e.guideRight-e.guideLeft)/200};
 }

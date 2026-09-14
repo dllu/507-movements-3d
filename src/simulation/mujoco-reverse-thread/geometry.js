@@ -11,7 +11,8 @@ export function makeReverseThreadGeometry(options={}) {
  const f=makeReverseThreadProfile(options),e=f.source.edges,root=new THREE.Group(),parts={},families={},blocks={};
  const add=(name,g,family,color)=>{if(!blocks[family]){blocks[family]=new THREE.Group();root.add(blocks[family]);}const m=new THREE.Mesh(g,matte(color,{metalness:.12,roughness:.62}));m.name=name;blocks[family].add(m);parts[name]=m;families[name]=family;return m;};
  const lands=reverseThreadLands(f);add('lands',lands.geometry,'input',PALETTE.driver);
- add('floor',alongY(ring(f.shaftRadius,f.floor,f.bottom,f.ceiling,256)),'input',PALETTE.driver);
+ // Distinguish the recessed finish so both branches remain legible at a crossing.
+ add('floor',alongY(ring(f.shaftRadius,f.floor,f.bottom,f.ceiling,256)),'input',new THREE.Color(PALETTE.driver).multiplyScalar(.45));
  add('shaft',alongY(disk(f.shaftRadius,f.y(f.source.shaftEnds[1]),f.y(f.source.shaftEnds[0]),128)),'input',PALETTE.driver);
  const gearOuter=(e.gearRight-e.gearLeft)/200,teeth=76,module=gearOuter/(teeth/2+1),gear=roundedRackGear({teeth,module,depth:(e.gearBottom-e.gearTop)/100,boreRadius:f.shaftRadius,samples:64,cutterSteps:1024});
  add('gear',alongY(gear).translate(0,f.y((e.gearTop+e.gearBottom)/2),0),'input',PALETTE.driver);

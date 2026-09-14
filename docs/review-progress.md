@@ -3535,30 +3535,27 @@ averages 19.84 fps at physical speed. Reconstructed depths, rigid attachment,
 bent stem, ideal bearings/guide and contact limits are documented in the
 [107 reconstruction](mujoco-107-serpentine-cam.md).
 
-108 has a measured, contact-driven candidate under development. Its historical
-animation still uses raised groove tubes and prescribed reversals. Independent
-source readings expose a mismatch between the drawn groove diagonals and a
-circular cylinder's projection. A curved swiveling shoe and complete intersecting
-cuts now have passing geometry/passivity tests, including compiled contact
-vertices and convex-volume comparisons. Short shoes can choose the wrong branch;
-the longer candidate still needs contact and performance work. The cutter now
-includes its curved side interiors, the barrel core participates in collision,
-and a seam audit removes 52 artificial radial cap faces. Expanded geometry and
-passivity checks pass. Rounded returns and passive swivel damping now retain the
-selected groove under reversed loads, timestep/mesh refinement and six complete
-output cycles. The long run stays within 0.82480 engraving pixel of travel, with
-0.07116-pixel peak penetration; 100 ms speed variation still reaches 22.7593%.
-Convex strip lands and exact interior shoe merges reduce native geoms from 1,283
-to 661. A 485-pose finite audit checks 37,787,522 surface samples, finding only
-intended shoe/land penetration below 0.07096 pixel. Guides, bearings and socket
-retain clearance and engagement. Four candidate and three shared tests and the
-production build pass. All thirteen current browser views are inspected;
-playback runs at 20.56 fps and 98.56% physical speed. Actual groove shoulders
-have 6.62872-pixel RMS nearest-outline error against 164 ink readings, but the
-source overlay still shows a substantial pattern mismatch. Uniformity and the
-groove/source interpretation remain unresolved.
-[Current evidence and remaining work](mujoco-108-reverse-thread-candidate.md)
-are explicit. 108 is not yet qualified or integrated into the MuJoCo catalog loader.
+108 now loads a contact-driven reconstruction in the catalog, under review.
+A passive swiveling shoe follows complete intersecting grooves, replacing the
+old raised tubes and prescribed reversals. Contoured shoe sides provide more
+flank support; long-run p95 speed error over 100 ms intervals falls from 9.05%
+to 1.47844%, with a 10.7819% peak near an end transition. The darker recessed
+core makes both grooves visible. Six complete output cycles retain the selected
+path within 0.87419 source pixel, but peak penetration worsens from 0.07116 to
+0.36499 pixel. The refined mesh and half timestep also exceed the unchanged
+0.1-pixel penetration regression bound. Current two-cycle reversed-load checks
+retain the path with penetration below 0.07569 pixel; longer-load robustness is
+not established. A 485-pose audit makes 38,522,534 independent surface queries,
+confirming shoe/land penetration up to 0.36663 pixel and clear guides, bearings
+and socket. All 5,328 compiled contact vertices match the visible solids.
+Four mechanism and three shared tests and the integrated build pass. Nineteen
+integrated views are inspected; playback runs at 20.88 fps and 99.00% physical
+speed over 22 seconds. All 24 MuJoCo production browser regressions pass. Actual
+groove shoulders have 6.62320-pixel RMS nearest-outline error against 164 ink
+readings, and the source overlay still shows a substantial pattern mismatch.
+[The reconstruction record](mujoco-108-reverse-thread-candidate.md) keeps the
+source interpretation, contact convergence and visual shadow work open.
+Integration makes progress reviewable; 108 is not mechanically qualified.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
@@ -3580,7 +3577,7 @@ are explicit. 108 is not yet qualified or integrated into the MuJoCo catalog loa
 105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
 106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
-082, 083, 087 and 088 are integrated and under review.
+082, 083, 087, 088 and 108 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

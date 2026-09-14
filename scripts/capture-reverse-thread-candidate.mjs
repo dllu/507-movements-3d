@@ -11,7 +11,7 @@ paths.push('scripts/capture-reverse-thread-candidate.mjs','scripts/lib/study-rep
   'src/simulation/engine.js','src/simulation/model-loader.js',
   'src/simulation/dispose-model.js','src/simulation/primitives.js','public/engravings/mm_108.png','package-lock.json',
   'tests/e2e/mujoco.spec.mjs','src/main.js','src/styles.css','src/data/movements.json','scripts/measure-reverse-thread-source.mjs','src/simulation/coaxial-gear-geometry.js');
-const options=JSON.parse(process.env.SIM_OPTIONS??'{}'),period=options.period??10;
+const options=JSON.parse(process.env.SIM_OPTIONS??'{}'),period=options.period??20;
 const sources = freezeStudySources(paths,prefix), errors = [], warnings = [], views = [];
 const browser = await chromium.launch({channel:'chrome',headless:true});
 try {
@@ -26,9 +26,15 @@ try {
     const {default:catalog}=await import('/src/data/movements.json');
     document.body.innerHTML='<main style="padding:16px;background:#faf8f2"><div id="title" style="font:20px system-ui;height:32px"></div><div style="display:flex;gap:16px"><div id="stage" style="width:700px;height:700px;position:relative"></div><img src="/engravings/mm_108.png" style="width:700px;height:700px;object-fit:contain"></div></main>';
     await document.querySelector('img').decode();
-    const {getMujoco}=await import('/src/simulation/mujoco/load.js');
-    const {makeMujocoReverseThread}=await import('/src/simulation/mujoco-reverse-thread/visual.js');
-    const model=makeMujocoReverseThread(await getMujoco(),options);
+    let model;
+    if(Object.keys(options).length) {
+      const {getMujoco}=await import('/src/simulation/mujoco/load.js');
+      const {makeMujocoReverseThread}=await import('/src/simulation/mujoco-reverse-thread/visual.js');
+      model=makeMujocoReverseThread(await getMujoco(),options);
+    } else {
+      const {loadMovementModel}=await import('/src/simulation/model-loader.js');
+      model=await loadMovementModel(catalog.movements[107]);
+    }
     const e=new MovementEngine(document.querySelector('#stage'),catalog.movements[107],{playing:false,model});
     cancelAnimationFrame(e.animationFrame);e.animationFrame=0;window.review108=e;
   },options);
@@ -36,6 +42,7 @@ try {
     {name:'source-front',time:0},{name:'source-overlay',time:0},{name:'front',time:0},
     {name:'lower',time:2.25},{name:'upper',time:7.25},{name:'quarter',time:2.5},{name:'half',time:5},
     {name:'oblique',time:.5,direction:[3,2,8]},{name:'rear',time:2.5,direction:[-3,2,-8]},
+    {name:'upper-exit',time:8},{name:'cycle',time:10},{name:'second-cycle',time:20},
     {name:'groove',time:1,detail:'groove',direction:[2,1,8]},
     {name:'follower',time:0,detail:'follower',direction:[2,2,8]},
     {name:'guide',time:1.416666667,detail:'guide',direction:[2,1,8]},
@@ -78,18 +85,32 @@ try {
       e.advance(Math.min(last===undefined?0:(now-last)/1000,.05));const updateMs=performance.now()-start;
       const u=e.model.root.userData;
       e.renderer.render(e.scene,e.camera);frames.push({time,simulationTime:u.state.time,updateMs,intervalMs:last===undefined?0:now-last,inputErrorRadians:u.state.qpos[0]-u.physics.description.omega*u.state.time,errorPixels:100*(u.state.qpos[1]-(u.profile.law(u.profile.initialParameter-u.state.qpos[0]).y-u.profile.initialY))});last=now;
-      if(time<8.2)requestAnimationFrame(frame);
+      if(time<Math.max(8.2,e.model.root.userData.animationTiming.authoredCyclePeriod+2))requestAnimationFrame(frame);
       else resolve({frames,wallSeconds:(performance.now()-first)/1000,simulationTime:e.model.root.userData.state.time,timeScale:e.playbackTimeScale,fog:e.scene.fog,hideGround:e.model.root.userData.hideGround,
         backend:e.model.root.userData.simulationBackend,state:e.model.root.userData.state});
     }requestAnimationFrame(frame);
   }));
   await page.evaluate(()=>window.review108.dispose());
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('http://127.0.0.1:5174/?review=108#/movement/108',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:'Play',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Restart',exact:true}).waitFor();
+  for(const [name,viewport] of [['desktop',{width:1440,height:1000}],['mobile',{width:390,height:844}]]) {
+    await page.setViewportSize(viewport);await page.getByRole('button',{name:'Reset view',exact:true}).click();
+    await page.waitForTimeout(200);const file=prefix+'-'+name+'.png';assert(!fs.existsSync(file));
+    await page.screenshot({path:file,fullPage:true});views.push({name,file,sha256:hashStudyFile(file),inspected:false});
+  }
+  const note=page.getByText('A swiveling shoe follows the intersecting grooves through each return. The circular barrel, five turns per traverse, shoe, depths and ideal bearings are reconstructed.',{exact:true});
+  await note.evaluate(el=>el.scrollIntoView({block:'center'}));
+  assert(await note.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.movement-notes').getBoundingClientRect();return a.top>=b.top&&a.bottom<=b.bottom;}));
+  const noteFile=prefix+'-mobile-notes.png';assert(!fs.existsSync(noteFile));
+  await page.screenshot({path:noteFile,fullPage:true});views.push({name:'mobile-notes',file:noteFile,sha256:hashStudyFile(noteFile),inspected:false});
   const known=[/^THREE.Clock: This module has been deprecated\./,/^THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated\./,/^\[.WebGL-.*GPU stall due to ReadPixels/];
   const unexpectedWarnings=warnings.filter(w=>!known.some(r=>r.test(w)));
   verifyStudySources(sources);
-  const maximumInputErrorRadians=Math.max(...views.map(v=>Math.abs(v.state.inputErrorRadians)),...runtime.frames.map(v=>Math.abs(v.inputErrorRadians)));
-  const maximumTravelErrorPixels=Math.max(...views.map(v=>Math.abs(v.state.errorPixels)),...runtime.frames.map(v=>Math.abs(v.errorPixels)));
+  const maximumInputErrorRadians=Math.max(...views.filter(v=>v.state).map(v=>Math.abs(v.state.inputErrorRadians)),...runtime.frames.map(v=>Math.abs(v.inputErrorRadians)));
+  const maximumTravelErrorPixels=Math.max(...views.filter(v=>v.state).map(v=>Math.abs(v.state.errorPixels)),...runtime.frames.map(v=>Math.abs(v.errorPixels)));
   const passed=maximumTravelErrorPixels<1&&maximumInputErrorRadians<.01&&!errors.length&&!unexpectedWarnings.length&&runtime.backend==='mujoco';
-  fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,qualification:'Candidate playback checks only; contact penetration, load robustness and real-time performance require separate qualification.',maximumTravelErrorPixels,maximumInputErrorRadians,views,runtime,errors,warnings,unexpectedWarnings,passed},null,2)+'\n',{flag:'wx'});
+  fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,catalogFactory:!Object.keys(options).length,qualification:'Integrated playback checks only; source fit, contact penetration and load robustness remain under review.',maximumTravelErrorPixels,maximumInputErrorRadians,views,runtime,errors,warnings,unexpectedWarnings,passed},null,2)+'\n',{flag:'wx'});
   console.log({passed,maximumTravelErrorPixels,maximumInputErrorRadians,views:views.length,frames:runtime.frames.length,errors,unexpectedWarnings});assert(passed);
 } finally {await browser.close();}

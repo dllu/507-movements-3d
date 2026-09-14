@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 
-for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
-  if (id === '107') test.setTimeout(90000);
+for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096', '097', '098', '099', '100', '101', '102', '103', '104', '105', '106', '107', '108']) test(`${id} loads MuJoCo on demand beneath a static subdirectory and supports playback and restart`, async ({page}) => {
+  if (id === '107' || id === '108') test.setTimeout(90000);
   const errors = [], failedResponses = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
@@ -13,7 +13,7 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
   // The complete 099 spiral compiles thousands of convex contact cells;
   // measured production initialization takes about nine seconds in headless Chrome.
-  const startupTimeout = id === '099' ? 15000 : id === '107' ? 20000 : 5000;
+  const startupTimeout = id === '099' ? 15000 : id === '107' || id === '108' ? 20000 : 5000;
   await expect(canvas).toBeVisible({timeout: startupTimeout});
   await expect(page.getByRole('button', {name: 'Restart', exact: true})).toBeVisible();
   const note = {'082': /The lower pawl uses an inferred torsion spring/, '083': /The springs are described in Brown/,
@@ -31,7 +31,8 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
     '104': /An ideal gear coupling drives the wheel or slide/,
     '105': /Turning the weighted handle lowers the guided ram/,
     '106': /A pin in the rotating groove drives the guided rod/,
-    '107': /The repeating groove drives uniform strokes with smooth reversals/}[id];
+    '107': /The repeating groove drives uniform strokes with smooth reversals/,
+    '108': /A swiveling shoe follows the intersecting grooves through each return/}[id];
   await expect(page.getByText(note)).toBeVisible();
   const wasm = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.endsWith('.wasm')).map(r => new URL(r.name).pathname));
   expect(wasm).toHaveLength(1);

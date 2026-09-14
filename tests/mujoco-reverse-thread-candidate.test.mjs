@@ -9,7 +9,7 @@ import {solidSurface} from './helpers/solid-surface.mjs';
 const mujoco=await loadMujoco();
 // Regression evidence for the longer-shoe candidate. These tests do not
 // qualify its source fit or uniformity through crossings and end transitions.
-const options={shoeLength:.36,shoeRadius:.05,workingThickness:.025,curvedShoe:true,reversalAngle:2,timestep:.0005,contactTime:.002,period:20,segments:64,optimizeTilt:true,optimizeReversalTilt:true,coreRadius:.434,convexStrips:true,swivelDamping:.001,roundReversals:true};
+const options={};
 test('108 candidate preserves closed crossing lands and a finite curved shoe in compiled contact geometry',t=>{
  const v=makeMujocoReverseThread(mujoco,options),p=v.physics,u=v.root.userData;let vertices=0;
  try {
@@ -20,7 +20,7 @@ test('108 candidate preserves closed crossing lands and a finite curved shoe in 
   }
   // Curvature translates both radial surfaces together. The exact shoe volume
   // is its tangent-plane polygon area times thickness, including the noses.
-  const expectedShoeVolume=Math.abs(THREE.ShapeUtils.area(u.profile.contour().map(p=>new THREE.Vector2(...p))))*options.workingThickness;
+  const expectedShoeVolume=Math.abs(THREE.ShapeUtils.area(u.profile.contour().map(p=>new THREE.Vector2(...p))))*(u.profile.shoeZ(0,1)-u.profile.shoeZ(0,0));
   assert.ok(Math.abs(inspectWeightedClutchSolid(u.parts.shoe.geometry).volume-expectedShoeVolume)<2e-8,'shoe decomposition changes its material volume');
   // A full barrel has no radial end caps at tessellation seams. Separate
   // closed patches alone did not catch the old microscopic gaps at 0 and pi.
@@ -74,18 +74,21 @@ test('108 candidate output is passive and releases its native allocations',()=>{
 });
 test('108 rounded candidate retains the selected groove through two complete output cycles',t=>{
  const v=makeMujocoReverseThread(mujoco,options),p=v.physics,f=v.root.userData.profile;
- let deviation=0,penetration=0,inputError=0,contacts=0;
+ let deviation=0,penetration=0,inputError=0,contacts=0,previous;const speedErrors=[];
  try {
-  const cycle=Math.round(options.period/p.timestep);
+  const cycle=Math.round(p.description.options.period/p.timestep),window=Math.round(.1/p.timestep);
   for(let i=1;i<=2*cycle;i++) {
    p.step();assert.ok([...p.data.qpos,...p.data.qvel].every(Number.isFinite));
    deviation=Math.max(deviation,Math.abs(p.data.qpos[1]-(f.law(f.initialParameter-p.data.qpos[0]).y-f.initialY)));
    inputError=Math.max(inputError,Math.abs(p.data.qpos[0]-p.description.omega*p.data.time));
+   if(i%window===0){const derivative=f.law(f.initialParameter-p.data.qpos[0]).derivative,onFlank=Math.abs(Math.abs(derivative)-f.lead)<1e-9;if(onFlank&&previous?.derivative===derivative)speedErrors.push(Math.abs((p.data.qpos[1]-previous.q)/.1+p.description.omega*derivative)/(p.description.omega*f.lead));previous=onFlank?{q:p.data.qpos[1],derivative}:undefined;}
    const cs=p.data.contact;for(let j=0;j<cs.size();j++){const c=cs.get(j);penetration=Math.max(penetration,-c.dist);contacts++;c.delete();}cs.delete();
    if(i%cycle===0){assert.ok(Math.abs(p.data.qpos[0]-i/cycle*f.period)<.01,'input stalled');assert.ok(Math.abs(p.data.qpos[1])<.01,'follower did not return');}
   }
-  t.diagnostic(JSON.stringify({travelErrorPixels:100*deviation,penetrationPixels:100*penetration,inputErrorRadians:inputError,contacts}));
+  speedErrors.sort((a,b)=>a-b);const p95=speedErrors[Math.floor(.95*speedErrors.length)],maximum=speedErrors.at(-1);
+  t.diagnostic(JSON.stringify({travelErrorPixels:100*deviation,penetrationPixels:100*penetration,inputErrorRadians:inputError,p95SpeedErrorPercent:100*p95,maximumSpeedErrorPercent:100*maximum,contacts}));
   assert.ok(100*deviation<1);assert.ok(100*penetration<.1);assert.ok(inputError<.01);assert.ok(contacts>1000);
+  assert.ok(speedErrors.length>300);assert.ok(p95<.03);assert.ok(maximum<.15);
  }finally{v.dispose();}
 });
 test('108 candidate replay is deterministic across reset, frame partition and backward seeking',()=>{
