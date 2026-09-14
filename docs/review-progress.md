@@ -6,12 +6,12 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
-131's sector now has involute teeth and a conjugate rack, with finite-profile
-clearance and wrong-phase checks. Its analytical travel matches the source
-animation; playback has an explicit four-second cycle, Restart and a nearly
-frontal camera. The pin now nearly fills its unbevelled slot, with finite-mesh
-clearance checked through the full cycle; intrusive slot overlays and diagnostic
-indices are hidden. Engraving contours and other hardware still need work; see [131's partial review](movement-131.md).
+131 now has an engraving-based analytical assembly: one connected slotted
+sector with two traced web openings, measured disk/shaft/guide positions,
+involute teeth and a close-fitting pin. It has no invented rear frame or
+indices. Full-cycle finite clearance tests cover the pin, gear/rack and guides.
+The source animation's proportions differ slightly; tooth regularization,
+extended bar ends and hidden depths are documented in [131's review](movement-131.md).
 
 130 now uses source-traced shear profiles and a passive gravity-driven jaw, with
 only its eccentric cam actuated in MuJoCo. Its motion is baked into a 264 KB

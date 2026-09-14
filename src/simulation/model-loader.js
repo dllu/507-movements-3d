@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 131) {
+    const {makeSlottedSector} = await import('./slotted-sector.js');
+    const model = makeSlottedSector();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 130) {
     const {makeBakedPlateShears} = await import('./baked/plate-shears.js');
     const model = await makeBakedPlateShears();
