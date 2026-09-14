@@ -9,7 +9,9 @@ evidence that all models match the engravings or avoid interference.
 133 now uses offline-generated involute pinion/sector teeth, with finite
 full-stroke overlap checks and a wrong-phase failure control. Its six-to-one
 analytical linkage is retained, with a six-second display cycle and Restart.
-Engraving proportions and remaining hardware still need review; see
+The frame and guide rails now connect, and the anvil covers the platen in depth;
+full-stroke support-clearance checks pass. Engraving proportions and remaining
+hardware still need review; see
 [133's partial review](movement-133.md).
 
 132's handle now sweeps in front of the frame, avoiding a verified collision

@@ -14593,7 +14593,7 @@ function handCrankPinionSectorRodPress() {
     const innerX = sourceFrameColumnInnerX * sourceScale;
     const outerX = sourceFrameColumnOuterX * sourceScale;
     const width = outerX - innerX;
-    const bottomY = sourceFrameColumnBottomY * sourceScale;
+    const bottomY = Math.min(sourceFrameColumnBottomY * sourceScale, sourceFrameBottomY * sourceScale + .08);
     const topY = sourceFrameColumnTopY * sourceScale;
     const column = new THREE.Mesh(
       new THREE.BoxGeometry(width, topY - bottomY, frameDepth),
@@ -14626,14 +14626,14 @@ function handCrankPinionSectorRodPress() {
     new THREE.BoxGeometry(
       7.5 * sourceScale,
       (sourceFixedAnvilTopY - sourceFixedAnvilBottomY) * sourceScale,
-      frameDepth + 0.18,
+      platenPlaneZ + .24 - (rearFrameZ - frameDepth / 2),
     ),
     frameMaterial,
   );
   fixedAnvil.position.set(
     0,
     (sourceFixedAnvilBottomY + sourceFixedAnvilTopY) * sourceScale / 2,
-    rearFrameZ + 0.04,
+    (platenPlaneZ + .24 + rearFrameZ - frameDepth / 2) / 2,
   );
   fixedAnvil.userData.role = 'fixed-upper-anvil-opposed-to-rising-platen';
   const topCap = new THREE.Mesh(
@@ -14664,6 +14664,11 @@ function handCrankPinionSectorRodPress() {
     block.userData.role = 'fixed-spacer-between-anvil-and-top-cap';
     return block;
   });
+  const headerPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(2, .44, frameDepth + .08), frameMaterial,
+  );
+  headerPanel.position.set(0, 14.62 * sourceScale, rearFrameZ);
+  headerPanel.userData.role = 'solid-header-between-top-spacers';
   const sectorPedestal = new THREE.Mesh(
     new THREE.BoxGeometry(0.82, 0.28, frameDepth + 0.08),
     frameMaterial,
@@ -14690,19 +14695,20 @@ function handCrankPinionSectorRodPress() {
     fixedAnvil,
     topCap,
     ...topBlocks,
+    headerPanel,
     sectorPedestal,
     pinionBracket,
   );
 
   const platenGuideRails = [-1, 1].map((sideSign) => {
     const guide = new THREE.Mesh(
-      new THREE.BoxGeometry(0.075, 2.02, 0.13),
+      new THREE.BoxGeometry(0.075, 2.02, platenPlaneZ - .015 - (rearFrameZ + frameDepth / 2 - .04)),
       frameMaterial,
     );
     guide.position.set(
       sideSign * (platenHalfWidth + 0.075),
       (platenOpenY + platenPressedY) / 2 + platenBodyBottom,
-      platenPlaneZ - 0.08,
+      (platenPlaneZ - .015 + rearFrameZ + frameDepth / 2 - .04) / 2,
     );
     guide.userData.axis = Y_AXIS.clone();
     guide.userData.side = sideSign < 0 ? 'left' : 'right';
@@ -14967,6 +14973,7 @@ function handCrankPinionSectorRodPress() {
     sectorTeeth,
     topBlocks,
     topCap,
+    headerPanel,
   };
   root.userData.geometry = {
     centerDistance,

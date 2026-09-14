@@ -26,6 +26,18 @@ scale). A half-tooth wrong-phase control intersects and fails. Tests check the
 generator/source hashes, preserving reproducibility of the baked profiles.
 The existing linkage regression still passes.
 
+The columns now extend down into the base instead of stopping above it. The
+platen guide rails extend back to the uprights while preserving their side
+clearance. A solid header fills the unsupported opening between the two top
+spacers. The upper anvil is deeper so that its pressing face covers the platen
+in X and Z; previously their depth ranges did not overlap at all. These added
+depths and connections reconstruct unspecified support details.
+
+A dedicated frame test verifies these connections, rejects the original column
+gap and anvil depth, and checks the platen assembly against fixed supports
+through 721 positions. The original closed-position vertical clearance remains;
+no workpiece deformation or pressing load is simulated.
+
 The display cycle has a six-second minimum, retaining the existing 40% lift,
 10% dwell, 40% return and 10% dwell schedule with smooth easing. Restart,
 a nearly frontal camera, no ground plane and hidden diagnostic indices improve
@@ -34,12 +46,12 @@ pause, exact restart, JavaScript errors and absence of a WASM request.
 
 ```sh
 node scripts/generate-sector-press-teeth.mjs
-node --test tests/sector-press-teeth.test.mjs
+node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs
 node --test --test-name-pattern='movement 133 raises' tests/models.test.mjs
 ```
 
-This is not a complete engraving or hardware review. The frame, web openings,
-rod joints, crank dimensions and axial stack still use the preceding model.
+This is not a complete engraving or hardware review. The web openings, rod joints, crank dimensions and remaining axial stack still
+use the preceding model.
 The animation's proportions and tooth counts need comparison with the engraving;
 this pass validates the retained gear pair, not literal raster agreement.
 Continue reviewing 133 before moving on.
