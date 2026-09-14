@@ -6718,7 +6718,7 @@ function reuleauxCarrierDiskValveMotion() {
   const transferAngularSpan = Math.PI - dwellAngularSpan;
   const outputAmplitude = profileWidth / 2;
   const outputStroke = profileWidth;
-  const runningClearance = 0.025;
+  const runningClearance = 0.001;
   const railHalfSpacing = profileWidth / 2 + runningClearance;
 
   const carrierDiskDepth = 0.24;
@@ -6731,7 +6731,7 @@ function reuleauxCarrierDiskValveMotion() {
   const bodyHoleHalfHeight = railHalfSpacing + linerThickness;
   const linerStraightHalfWidth = innerHalfWidth - innerCornerRadius;
   const shaftRadius = 0.17;
-  const shaftLength = 2.05;
+  const shaftLength = .90;
   const fastenerBossRadius = 0.48;
   const fastenerSquareHalfSize = 0.17;
   const rodRadius = 0.13;
@@ -6841,7 +6841,7 @@ function reuleauxCarrierDiskValveMotion() {
   inputRotor.add(carrierFaceIndex);
 
   const camBody = new THREE.Mesh(
-    centeredExtrusion(profileShape, camDepth, 0.008),
+    new THREE.ExtrudeGeometry(profileShape, {depth: camDepth, bevelEnabled: false, curveSegments: 96}).translate(0, 0, -camDepth / 2),
     driverMaterial,
   );
   camBody.position.z = -0.02;
@@ -6861,11 +6861,11 @@ function reuleauxCarrierDiskValveMotion() {
 
   const fastenerBoss = cylinderAlongZ(
     fastenerBossRadius,
-    camDepth + 0.1,
+    .485,
     driverMaterial,
     40,
   );
-  fastenerBoss.position.set(camCentroid.x, camCentroid.y, 0.015);
+  fastenerBoss.position.set(camCentroid.x, camCentroid.y, .0025);
   fastenerBoss.userData.role = 'round-tappet-fastener-at-reuleaux-centroid';
   inputRotor.add(fastenerBoss);
 
@@ -6890,6 +6890,7 @@ function reuleauxCarrierDiskValveMotion() {
     shaftLength,
     darkMaterial,
   );
+  inputShaft.position.z = -.68;
   inputShaft.userData.role = 'fixed-axis-through-carrier-disk-center';
   inputRotor.add(inputShaft);
 
@@ -7244,6 +7245,11 @@ function reuleauxCarrierDiskValveMotion() {
 
   root.userData.mechanism = 'vertex-pivoted-reuleaux-carrier-positive-return-valve';
   root.userData.cameraDistanceScale = 1.08;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.minimumDisplayCycleSeconds = 4;
+  root.userData.animationTiming = {authoredCyclePeriod: cyclePeriod};
+  for (const marker of [carrierFaceIndex, translationIndex, lowerContactMarker, upperContactMarker]) marker.visible = false;
   root.userData.blocks = {
     attachmentLugs,
     baseRail,
@@ -7384,7 +7390,7 @@ function reuleauxCarrierDiskValveMotion() {
     root.userData.kinematics = state;
   };
   update(0);
-  const model = finish(root, update, new THREE.Vector3(5.6, 2.8, 13.6));
+  const model = finish(root, update, new THREE.Vector3(.4, .2, 13.6));
   for (const object of [
     cameraEnvelope,
     lowerContactMarker,
@@ -7401,6 +7407,7 @@ function reuleauxCarrierDiskValveMotion() {
         : [];
     for (const material of materials) material.fog = false;
   });
+  model.reset = () => update(0);
   root.userData.materialsIgnoreSceneFog = true;
   return model;
 }

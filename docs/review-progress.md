@@ -1,3 +1,11 @@
+# Current review: 135 Reuleaux valve cam
+
+135 retains its exact analytic constant-width motion. The un-beveled working
+mesh now matches that profile, with a measured maximum liner gap of 0.001007.
+The shaft stays behind the working plane and the fastener reaches the carrier.
+Four-second playback and restart are enabled. External guides, rod hardware
+and silhouette remain under review; see [movement 135](movement-135.md).
+
 # Current review: 134 rope drum
 
 134 now uses a seated helical wrap with separate tangent entry/exit spans.
