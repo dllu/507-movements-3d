@@ -26,9 +26,21 @@ are disabled. Packaged desktop/mobile checks cover play, pause, exact restart,
 JavaScript errors and absence of a WASM request.
 
 ```sh
-node --test tests/reuleaux-valve-clearance.test.mjs
+node --test tests/reuleaux-valve-clearance.test.mjs tests/reuleaux-yoke-hardware.test.mjs
 node --test --test-name-pattern='movement 135 uses' tests/models.test.mjs
 ```
 
-The added external guide frame, solid guide shoes, rear bearing, rod details
-and engraving silhouette still need review. Continue with 135.
+The yoke now has bowed sides with straight working rails, following the
+engraving's outline rather than a rounded rectangle. Valve rods use a 27-pixel
+radius and outer endpoints measured 293/197 pixels above/below the yoke centre.
+Their collars are enlarged to match the three-lobed attachments. Rods and
+collars sit farther forward to clear the carrier disk.
+
+Both guide shoes now have rectangular through-passages, giving 0.005 nominal
+clearance per side around their rails. Connecting arms join the shoes to the
+yoke. Full-stroke checks verify rail containment, arm connections and clearance
+from the carrier, and rod/collar connections. The external guides remain an
+inferred support system, not part of the engraving.
+
+The rear bearing, remaining support details and final engraving comparison
+still need review. Continue with 135.

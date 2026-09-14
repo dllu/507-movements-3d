@@ -1,3 +1,4 @@
+import { bowedValveYoke, rectangularGuideShoe } from './reuleaux-yoke-hardware.js';
 import * as THREE from 'three';
 import {makeEccentricStrap} from './eccentric-strap.js';
 import {
@@ -6734,10 +6735,10 @@ function reuleauxCarrierDiskValveMotion() {
   const shaftLength = .90;
   const fastenerBossRadius = 0.48;
   const fastenerSquareHalfSize = 0.17;
-  const rodRadius = 0.13;
+  const rodRadius = 27 * sourceScale;
   const rodAttachmentCoordinate = outerHalfHeight + 0.16;
-  const upperRodOuterCoordinate = 4;
-  const lowerRodOuterCoordinate = 3.35;
+  const upperRodOuterCoordinate = 293 * sourceScale;
+  const lowerRodOuterCoordinate = 197 * sourceScale;
   const guideRailX = outerHalfWidth + 0.2;
   const guideMinimumY = shaftCenter.y
     - outputAmplitude - outerHalfHeight - 0.18;
@@ -6898,7 +6899,7 @@ function reuleauxCarrierDiskValveMotion() {
   follower.userData.role = 'nonrotating-positive-return-valve-yoke';
   const followerBody = new THREE.Mesh(
     centeredExtrusion(
-      roundedRectangleRingShape({
+      bowedValveYoke({
         innerCornerRadius,
         innerHalfHeight: bodyHoleHalfHeight,
         innerHalfWidth,
@@ -6944,7 +6945,7 @@ function reuleauxCarrierDiskValveMotion() {
   upperRod.position.set(
     0,
     (rodAttachmentCoordinate + upperRodOuterCoordinate) / 2,
-    0.2,
+    0.4,
   );
   upperRod.userData.role = 'upper-valve-rod-rigid-with-yoke';
   const lowerRodLength = lowerRodOuterCoordinate - rodAttachmentCoordinate;
@@ -6955,7 +6956,7 @@ function reuleauxCarrierDiskValveMotion() {
   lowerRod.position.set(
     0,
     -(rodAttachmentCoordinate + lowerRodOuterCoordinate) / 2,
-    0.2,
+    0.4,
   );
   lowerRod.userData.role = 'lower-valve-rod-rigid-with-yoke';
   follower.add(upperRod, lowerRod);
@@ -6964,13 +6965,13 @@ function reuleauxCarrierDiskValveMotion() {
   for (const signY of [-1, 1]) {
     for (const signX of [-1, 0, 1]) {
       const lug = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.12, 0.25, 6, 14),
+        new THREE.CapsuleGeometry(0.17, 0.52, 6, 14),
         drivenMaterial,
       );
       lug.position.set(
-        signX * 0.23,
-        signY * (outerHalfHeight + 0.09),
-        0.24,
+        signX * 0.44,
+        signY * (outerHalfHeight + 0.40),
+        0.40,
       );
       lug.userData.role = 'three-lobed-valve-rod-yoke-attachment';
       lug.userData.side = signY < 0 ? 'lower' : 'upper';
@@ -7000,15 +7001,20 @@ function reuleauxCarrierDiskValveMotion() {
 
   const guideShoes = [-1, 1].map((signX) => {
     const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 0.62, 0.38),
+      rectangularGuideShoe(),
       drivenMaterial,
     );
-    shoe.position.set(signX * guideRailX, 0, rearFrameZ + 0.08);
+    shoe.position.set(signX * guideRailX, 0, rearFrameZ);
     shoe.userData.role = 'sliding-shoe-on-fixed-vertical-guide';
     shoe.userData.side = signX < 0 ? 'left' : 'right';
     return shoe;
   });
-  follower.add(...guideShoes);
+  const guideArms = [-1, 1].map(sign => makeBeam(
+    new THREE.Vector3(sign * guideRailX, 0, rearFrameZ + .13),
+    new THREE.Vector3(sign * (outerHalfWidth + .12), 0, .20),
+    {thickness: .14, depth: .14, color: PALETTE.driven},
+  ));
+  follower.add(...guideShoes, ...guideArms);
 
   const rearBearing = new THREE.Mesh(
     new THREE.TorusGeometry(0.31, 0.075, 10, 40),
@@ -7266,6 +7272,7 @@ function reuleauxCarrierDiskValveMotion() {
     followerBody,
     guideRails,
     guideShoes,
+    guideArms,
     input,
     inputShaft,
     lowerContactMarker,
