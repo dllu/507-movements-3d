@@ -1,0 +1,55 @@
+{
+  "sources": [
+    {
+      "file": "src/data/expansion-eccentric-outline.js",
+      "sha256": "fc7a3a03a57d7d64e35a949f8f19191236b59471bc98b5203c36579054bb5e02"
+    },
+    {
+      "file": "src/simulation/expansion-eccentric-profile.js",
+      "sha256": "61796123c63d6a7fcc1d16570ca5a23973525be1b9758183f4656ffe842b0951"
+    },
+    {
+      "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
+      "sha256": "6b3096026eee42f548026d2b877fb76c25a57e2b1c69d86e8d4b0cb5adb6a02a"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+    }
+  ],
+  "coarse": {
+    "options": {
+      "timestep": 0.0005,
+      "period": 8,
+      "spread": 12,
+      "samples": 192
+    },
+    "penetration": 0.0006033748686626317,
+    "min": -0.021598364403016837,
+    "max": 0.08714566693453646,
+    "resets": 0
+  },
+  "fine": {
+    "options": {
+      "timestep": 0.00025,
+      "period": 8,
+      "spread": 12,
+      "samples": 384
+    },
+    "penetration": 0.0007100685146698704,
+    "min": -0.021603492845915083,
+    "max": 0.08714972160681096,
+    "resets": 0
+  },
+  "maximumForkAngleDifference": 0.0003828730467099436,
+  "maximumRollerPositionDifferencePixels": 0.14051440814254929,
+  "settledComparisonSeconds": [
+    8,
+    19.99
+  ],
+  "caveat": "Timestep and cam tessellation were refined together; this is a combined sensitivity check, not separate convergence certification."
+}

@@ -38,5 +38,41 @@ branch equations and fixed-angle handoff assumptions when implementing the
 new contact model. Use offline contact simulation if the resulting fork
 motion depends on preload or free travel between the rollers.
 
-No browser mechanism changes are included in this measurement pass. 137 remains
-incorrect and must not be marked reviewed or advanced to 138.
+## Shaped-cam physics prototype
+
+The reconstruction now interpolates the visible landmarks with a closed
+centripetal spline, using explicitly inferred arcs behind the rollers. Tests
+keep the visible-edge error below 0.15 pixels and verify that radial fan cells
+form a valid star-shaped cam for collision geometry.
+
+The measured roller centres and approximate 31/32-pixel radii are incompatible
+with this cam through a full turn. A geometric fork-limit sweep finds about
+23.5 pixels of interfering travel at the worst orientation. Moving each roller
+12 pixels farther from the fork centreline restores a nonempty clearance
+interval at all tested angles. This adjustment is a reconstruction compromise;
+it is not a measured dimension. There is variable free travel between contacts.
+
+The MuJoCo prototype drives only the cam. A passive fork with freely hinged
+rollers follows under gravity from an assumed hanging fork/rod mass. It uses
+triangular-prism cam cells and spherical roller contact proxies in the mechanism
+plane. Mass, inertia, friction and the spacing adjustment are inferred. There
+is no programmed fork-angle handoff or forced roller engagement.
+
+Two 20-second probes, at 0.0005/0.00025-second timesteps and 192/384 cam cells,
+run without resets. Maximum penetration is below 0.000711 world units (0.0711
+engraving pixels). Comparing their settled fork motion from 8–19.99 seconds
+gives a maximum roller-position difference of 0.141 pixels. Because timestep
+and tessellation changed together, this is a combined sensitivity check, not
+separate convergence certification. Source hashes and results are recorded in
+[the prototype report](validation/137-physics-prototype.json).
+
+```sh
+node --test tests/expansion-eccentric-profile.test.mjs
+PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-coarse.json node scripts/probe-expansion-eccentric.mjs
+SIM_OPTIONS='{"timestep":0.00025,"samples":384}' PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-fine.json node scripts/probe-expansion-eccentric.mjs
+node scripts/compare-expansion-eccentric-prototype.mjs
+```
+
+Next: separate refinement checks, bake the validated motion and replace the
+browser's circular-cam geometry/contact implementation. Browser 137 remains
+incorrect; do not advance to 138 yet.

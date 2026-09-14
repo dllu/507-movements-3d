@@ -2,9 +2,11 @@
 
 The circular cam assumption fails the engraving: 25 visible-edge landmarks
 give a 23.94-pixel maximum error; even a fitted circle leaves 14.50 pixels.
-A reproducible overlay/report and corrected roller-centre measurements are
-committed. The browser mechanism remains incorrect; replace the circular
-contact branches before proceeding. See [movement 137](movement-137.md).
+A traced shaped cam and passive MuJoCo fork prototype now run through 20-second
+probes without resets. Combined timestep/mesh refinement changes settled roller
+positions by at most 0.141 pixels. The drawing needs an explicit 12-pixel outward
+adjustment at each roller to avoid interference. Refinement, baking and browser
+integration remain; see [movement 137](movement-137.md).
 
 # Current review: 136 axial face cam
 
