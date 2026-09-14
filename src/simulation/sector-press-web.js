@@ -3,7 +3,7 @@ import clip from 'polygon-clipping';
 
 // Opening coordinates traced from public/engravings/mm_133.png (525 × 525).
 // Normalize the engraving's approximately 184 px root radius to the retained gear.
-export function sectorPressWebShape({ radius, startAngle, endAngle, pinRadius }) {
+export function sectorPressWebShape({ radius, startAngle, endAngle, pinRadius, boreRadius = 0 }) {
   const scale = radius / 184;
   const upper = new THREE.Path();
   upper.moveTo(245, 322);
@@ -43,6 +43,11 @@ export function sectorPressWebShape({ radius, startAngle, endAngle, pinRadius })
   const shape = new THREE.Shape(web[0][0].map(p => new THREE.Vector2(...p)));
   for (const ring of web[0].slice(1)) {
     shape.holes.push(new THREE.Path(ring.map(p => new THREE.Vector2(...p))));
+  }
+  if (boreRadius > 0) {
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, boreRadius, 0, 2 * Math.PI, true);
+    shape.holes.push(bore);
   }
   return shape;
 }

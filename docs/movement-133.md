@@ -60,6 +60,14 @@ The web test checks that full pin seat, connection to every tooth, and zero
 web/pinion overlap at 721 angles. The traced openings are sampled once when
 constructing the mesh; playback only rotates the rigid mesh.
 
+The shaft supports now use cylindrical sleeves with 0.003 radial clearance,
+replacing torus decorations whose openings did not fit the shafts. Both shafts
+span their sleeves. The sector hub and web have a matching through-bore around
+the fixed axle. Bearing fronts remain behind the rotating hubs, and the support
+brackets terminate below the shaft envelopes. These hidden bearing dimensions
+are reconstructed, rather than measured from the frontal engraving. Axial
+retention and press-load bearing behavior remain idealized.
+
 The display cycle has a six-second minimum, retaining the existing 40% lift,
 10% dwell, 40% return and 10% dwell schedule with smooth easing. Restart,
 a nearly frontal camera, no ground plane and hidden diagnostic indices improve
@@ -68,12 +76,11 @@ pause, exact restart, JavaScript errors and absence of a WASM request.
 
 ```sh
 node scripts/generate-sector-press-teeth.mjs
-node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs tests/sector-press-web.test.mjs
+node --test tests/sector-press-teeth.test.mjs tests/sector-press-frame.test.mjs tests/sector-press-rod.test.mjs tests/sector-press-web.test.mjs tests/sector-press-bearings.test.mjs
 node --test --test-name-pattern='movement 133 raises' tests/models.test.mjs
 ```
 
-This is not a complete engraving or hardware review. The crank dimensions and remaining shaft-bearing geometry still
-use the preceding model.
+This is not a complete engraving or hardware review. The crank dimensions still use the preceding model.
 The animation's proportions and tooth counts need comparison with the engraving;
 this pass validates the retained gear pair, not literal raster agreement.
 Continue reviewing 133 before moving on.

@@ -14229,6 +14229,17 @@ function handCrankPinionSectorRodPress() {
     cylinder.rotation.x = Math.PI / 2;
     return cylinder;
   };
+  const boredSleeve = (outerRadius, boreRadius, depth, material) => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, outerRadius, 0, fullTurn, false);
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, boreRadius, 0, fullTurn, true);
+    shape.holes.push(bore);
+    const mesh = new THREE.Mesh(centeredExtrusion(shape, depth, 0), material);
+    mesh.userData.boreRadius = boreRadius;
+    return mesh;
+  };
+
   const pinionAssembly = new THREE.Group();
   const pinionRotor = new THREE.Group();
   pinionAssembly.add(pinionRotor);
@@ -14322,7 +14333,7 @@ function handCrankPinionSectorRodPress() {
   crankGripTip.userData.role = 'white-tip-tracing-hand-crank-path';
   const inputShaft = zCylinder(
     shaftRadius,
-    shaftLength,
+    shaftLength + .26,
     darkMaterial,
     32,
   );
@@ -14359,6 +14370,7 @@ function handCrankPinionSectorRodPress() {
       startAngle: sectorBodyStartAngle,
       endAngle: sectorBodyEndAngle,
       pinRadius: sectorPinRadius,
+      boreRadius: shaftRadius * 1.18 + .003,
     }), gearDepth, 0),
     drivenMaterial,
   );
@@ -14382,12 +14394,7 @@ function handCrankPinionSectorRodPress() {
     },
   );
 
-  const sectorHub = zCylinder(
-    0.625 * sourceScale,
-    gearDepth + 0.18,
-    drivenMaterial,
-    44,
-  );
+  const sectorHub = boredSleeve(0.625 * sourceScale, shaftRadius * 1.18 + .003, gearDepth + .18, drivenMaterial);
   sectorHub.position.z = 0.025;
   sectorHub.userData.role = 'toothed-sector-pivot-hub';
   const sectorFaceRing = new THREE.Mesh(
@@ -14521,21 +14528,11 @@ function handCrankPinionSectorRodPress() {
   sectorPivotShaft.position.z = -0.06;
   sectorPivotShaft.userData.axis = Z_AXIS.clone();
   sectorPivotShaft.userData.role = 'fixed-shaft-through-sector-pivot';
-  const sectorBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.34, 0.065, 9, 42),
-    frameMaterial,
-  );
-  sectorBearing.position.z = rearFrameZ + frameDepth / 2 + 0.035;
+  const sectorBearing = boredSleeve(.405, shaftRadius * 1.18 + .003, .32, frameMaterial);
+  sectorBearing.position.z = -.39;
   sectorBearing.userData.role = 'fixed-sector-pivot-bearing-on-frame';
-  const pinionBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(pinionPitchRadius * 0.42, 0.06, 9, 36),
-    frameMaterial,
-  );
-  pinionBearing.position.set(
-    pinionCenter.x,
-    pinionCenter.y,
-    rearFrameZ + frameDepth / 2 + 0.035,
-  );
+  const pinionBearing = boredSleeve(pinionPitchRadius * .42 + .06, shaftRadius + .003, .32, frameMaterial);
+  pinionBearing.position.set(pinionCenter.x, pinionCenter.y, -.39);
   pinionBearing.userData.role = 'fixed-pinion-shaft-bearing-on-frame';
 
   const frame = new THREE.Group();
@@ -14621,10 +14618,10 @@ function handCrankPinionSectorRodPress() {
   headerPanel.position.set(0, 14.62 * sourceScale, rearFrameZ);
   headerPanel.userData.role = 'solid-header-between-top-spacers';
   const sectorPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.82, 0.28, frameDepth + 0.08),
+    new THREE.BoxGeometry(0.82, 0.21, frameDepth + 0.08),
     frameMaterial,
   );
-  sectorPedestal.position.set(0, -0.19, rearFrameZ);
+  sectorPedestal.position.set(0, -0.225, rearFrameZ);
   sectorPedestal.userData.role = 'fixed-pedestal-under-sector-pivot';
   const pinionBracket = makeBeam(
     new THREE.Vector3(
@@ -14632,7 +14629,7 @@ function handCrankPinionSectorRodPress() {
       pinionCenter.y - 0.44,
       rearFrameZ,
     ),
-    new THREE.Vector3(pinionCenter.x, pinionCenter.y, rearFrameZ),
+    new THREE.Vector3(pinionCenter.x, pinionCenter.y - .20, rearFrameZ),
     {
       color: PALETTE.frame,
       depth: frameDepth,
@@ -14896,6 +14893,7 @@ function handCrankPinionSectorRodPress() {
     inputShaft,
     pinionAssembly,
     pinionBearing,
+    pinionBracket,
     pinionBody,
     pinionFaceRing,
     pinionHub,

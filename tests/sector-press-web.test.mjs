@@ -22,7 +22,7 @@ test('133 continuous two-opening web seats its pin and clears the pinion', () =>
   const { geometry: d, blocks: b, toothProfiles } = model.root.userData;
   try {
     const shape = b.sectorRim.geometry.parameters.shapes;
-    assert.equal(shape.holes.length, 2);
+    assert.equal(shape.holes.length, 3);
     const extracted = shape.extractPoints(32);
     const web = [extracted.shape, ...extracted.holes].map(r => r.map(p => [p.x, p.y]));
     const seat = Array.from({ length: 129 }, (_, i) => [
