@@ -1,12 +1,13 @@
 import source from './source.js';
-export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength=.12,shoeRadius=.022,reversalAngle=.5,workingInset=.065,workingThickness=.09,curvedShoe=false,shoeSegments=24,optimizeTilt=false,optimizeReversalTilt=false,coreRadius}={}) {
+export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength=.12,shoeRadius=.022,reversalAngle=.5,workingInset=.065,workingThickness=.09,curvedShoe=false,shoeSegments=24,optimizeTilt=false,optimizeReversalTilt=false,coreRadius,convexStrips=false,roundReversals=false}={}) {
  const e=source.edges,axis=[(e.barrelLeft+e.barrelRight)/2,(e.barrelTop+e.barrelBottom)/2],radius=(e.barrelRight-e.barrelLeft)/200;
  const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=pitch/(2*Math.PI),half=source.turns*2*Math.PI,period=half*2,d=reversalAngle;
- const stroke=lead*(half-d),top=y(source.fit.firstCrossing-source.fit.pitch/2+source.fit.pitch*d/(4*Math.PI)),phase=Math.PI;
+ const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),top=y(source.fit.firstCrossing)+lead*(Math.PI-endOffset),phase=Math.PI;
+ const end=t=>{const u=t/d;return roundReversals?{s:2*lead*d/Math.PI*(1-Math.cos(Math.PI*u/2)),derivative:lead*Math.sin(Math.PI*u/2)}:{s:lead*d*(u**3-u**4/2),derivative:lead*(3*u*u-2*u**3)};};
  const law=a=>{const b=((a%period)+period)%period,t=Math.min(b,period-b);let s,derivative;
-  if(t<d){const u=t/d;s=lead*d*(u**3-u**4/2);derivative=lead*(3*u*u-2*u**3);}
-  else if(t>half-d){const u=(half-t)/d;s=stroke-lead*d*(u**3-u**4/2);derivative=lead*(3*u*u-2*u**3);}
-  else{s=lead*(t-d/2);derivative=lead;}
+  if(t<d){({s,derivative}=end(t));}
+  else if(t>half-d){const turn=end(half-t);s=stroke-turn.s;derivative=turn.derivative;}
+  else{s=lead*(t-endOffset);derivative=lead;}
   return {y:top-s,derivative:b>half?derivative:-derivative};};
  const workingLow=radius-workingInset,workingHigh=workingLow+workingThickness,floor=coreRadius??(curvedShoe?radius-.01-workingThickness-.01:workingLow-.01);
  let tiltRadius=curvedShoe?radius-.01-workingThickness/2:workingLow;
@@ -83,7 +84,7 @@ export function makeReverseThreadProfile({segments=128,clearance=.001,shoeLength
   cache.set(angle,result);return result;
  }
  return{source,axis,x,y,radius,pitch,lead,half,period,stroke,top,phase,law,segments,clearance,shoeLength,shoeRadius,contour,
-  workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
+  workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
   bottom:y(e.barrelBottom),ceiling:y(e.barrelTop),shaftRadius:(e.shaftRight-e.shaftLeft)/200,
   guideX:x((e.guideLeft+e.guideRight)/2),guideRadius:(e.guideRight-e.guideLeft)/200};
 }

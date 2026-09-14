@@ -3544,10 +3544,19 @@ vertices and convex-volume comparisons. Short shoes can choose the wrong branch;
 the longer candidate still needs contact and performance work. The cutter now
 includes its curved side interiors, the barrel core participates in collision,
 and a seam audit removes 52 artificial radial cap faces. Expanded geometry and
-passivity checks pass. A two-cycle study retains the intended traverse within
-0.75382 engraving pixel, but penetration still reaches 0.55868 pixel. All thirteen
-latest browser views are inspected; playback checks pass within 0.75085 pixel,
-while actual app playback runs at only 10.30 fps and 50.72% physical speed.
+passivity checks pass. Rounded returns and passive swivel damping now retain the
+selected groove under reversed loads, timestep/mesh refinement and six complete
+output cycles. The long run stays within 0.82480 engraving pixel of travel, with
+0.07116-pixel peak penetration; 100 ms speed variation still reaches 22.7593%.
+Convex strip lands and exact interior shoe merges reduce native geoms from 1,283
+to 661. A 485-pose finite audit checks 37,787,522 surface samples, finding only
+intended shoe/land penetration below 0.07096 pixel. Guides, bearings and socket
+retain clearance and engagement. Four candidate and three shared tests and the
+production build pass. All thirteen current browser views are inspected;
+playback runs at 20.56 fps and 98.56% physical speed. Actual groove shoulders
+have 6.62872-pixel RMS nearest-outline error against 164 ink readings, but the
+source overlay still shows a substantial pattern mismatch. Uniformity and the
+groove/source interpretation remain unresolved.
 [Current evidence and remaining work](mujoco-108-reverse-thread-candidate.md)
 are explicit. 108 is not yet qualified or integrated into the MuJoCo catalog loader.
 

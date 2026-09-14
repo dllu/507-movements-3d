@@ -7,9 +7,9 @@ import {makeMujocoReverseThread} from '../src/simulation/mujoco-reverse-thread/v
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 import {solidSurface} from './helpers/solid-surface.mjs';
 const mujoco=await loadMujoco();
-// Geometry/passivity evidence for the longer-shoe candidate. These tests do
-// not qualify its still-imperfect travel, penetration or browser performance.
-const options={shoeLength:.36,shoeRadius:.05,workingThickness:.025,curvedShoe:true,reversalAngle:2,timestep:.00025,contactTime:.002,period:20,segments:64,optimizeTilt:true,optimizeReversalTilt:true,coreRadius:.434};
+// Regression evidence for the longer-shoe candidate. These tests do not
+// qualify its source fit or uniformity through crossings and end transitions.
+const options={shoeLength:.36,shoeRadius:.05,workingThickness:.025,curvedShoe:true,reversalAngle:2,timestep:.0005,contactTime:.002,period:20,segments:64,optimizeTilt:true,optimizeReversalTilt:true,coreRadius:.434,convexStrips:true,swivelDamping:.001,roundReversals:true};
 test('108 candidate preserves closed crossing lands and a finite curved shoe in compiled contact geometry',t=>{
  const v=makeMujocoReverseThread(mujoco,options),p=v.physics,u=v.root.userData;let vertices=0;
  try {
@@ -18,6 +18,10 @@ test('108 candidate preserves closed crossing lands and a finite curved shoe in 
    const a=inspectWeightedClutchSolid(m.geometry);assert.ok(a.volume>0);if(name==='lands')assert.ok(a.components>1,'crossing cuts must retain separate land patches');else assert.equal(a.components,1,name);
    for(const key of ['degenerate','wrongNormals','nonfinite','unmatchedEdges'])assert.equal(a[key],0,name+' '+key);
   }
+  // Curvature translates both radial surfaces together. The exact shoe volume
+  // is its tangent-plane polygon area times thickness, including the noses.
+  const expectedShoeVolume=Math.abs(THREE.ShapeUtils.area(u.profile.contour().map(p=>new THREE.Vector2(...p))))*options.workingThickness;
+  assert.ok(Math.abs(inspectWeightedClutchSolid(u.parts.shoe.geometry).volume-expectedShoeVolume)<2e-8,'shoe decomposition changes its material volume');
   // A full barrel has no radial end caps at tessellation seams. Separate
   // closed patches alone did not catch the old microscopic gaps at 0 and pi.
   const landPositions=u.parts.lands.geometry.attributes.position;
@@ -67,4 +71,28 @@ test('108 candidate output is passive and releases its native allocations',()=>{
   v.update(1);assert.ok(p.data.qpos[0]>3);assert.ok(Math.abs(p.data.qpos[1])<1e-10);
  }finally{v.dispose();v.dispose();}
  assert.ok(p.model.isDeleted()&&p.data.isDeleted());
+});
+test('108 rounded candidate retains the selected groove through two complete output cycles',t=>{
+ const v=makeMujocoReverseThread(mujoco,options),p=v.physics,f=v.root.userData.profile;
+ let deviation=0,penetration=0,inputError=0,contacts=0;
+ try {
+  const cycle=Math.round(options.period/p.timestep);
+  for(let i=1;i<=2*cycle;i++) {
+   p.step();assert.ok([...p.data.qpos,...p.data.qvel].every(Number.isFinite));
+   deviation=Math.max(deviation,Math.abs(p.data.qpos[1]-(f.law(f.initialParameter-p.data.qpos[0]).y-f.initialY)));
+   inputError=Math.max(inputError,Math.abs(p.data.qpos[0]-p.description.omega*p.data.time));
+   const cs=p.data.contact;for(let j=0;j<cs.size();j++){const c=cs.get(j);penetration=Math.max(penetration,-c.dist);contacts++;c.delete();}cs.delete();
+   if(i%cycle===0){assert.ok(Math.abs(p.data.qpos[0]-i/cycle*f.period)<.01,'input stalled');assert.ok(Math.abs(p.data.qpos[1])<.01,'follower did not return');}
+  }
+  t.diagnostic(JSON.stringify({travelErrorPixels:100*deviation,penetrationPixels:100*penetration,inputErrorRadians:inputError,contacts}));
+  assert.ok(100*deviation<1);assert.ok(100*penetration<.1);assert.ok(inputError<.01);assert.ok(contacts>1000);
+ }finally{v.dispose();}
+});
+test('108 candidate replay is deterministic across reset, frame partition and backward seeking',()=>{
+ const v=makeMujocoReverseThread(mujoco,options),p=v.physics;
+ try {
+  v.update(2);const state=[...p.data.qpos,...p.data.qvel];
+  v.reset();for(let i=1;i<=120;i++)v.update(i/60);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
+  v.update(.5);v.update(2);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
+ }finally{v.dispose();}
 });

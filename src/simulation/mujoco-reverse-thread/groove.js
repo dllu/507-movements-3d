@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ConvexGeometry} from 'three/addons/geometries/ConvexGeometry.js';
 import {smoothPrismNormals} from './normals.js';
 const tau=2*Math.PI;
 export function reverseThreadLands(f) {
@@ -40,6 +41,17 @@ export function reverseThreadLands(f) {
    else if(points.length===4){const k=points.map(vertexKey),order=k[0]<k[1]&&k[0]<k[2]&&k[0]<k[3]?0:k.indexOf([...k].sort()[0]),p=points.map((_,i)=>points[(i+order)%4]);addTriangle([p[0],p[1],p[2]],center);addTriangle([p[0],p[2],p[3]],center);}
   }
  };
+ const addStrip=c=>{
+  const unique=[...new Map(c.map(p=>[vertexKey(p),p])).values()];if(unique.length<4)return;
+  cells.push(unique);const center=[0,1,2].map(j=>unique.reduce((s,p)=>s+p[j],0)/unique.length);
+  const ends=[[0,1,5,4],[2,3,7,6]].map(ids=>[...new Map(ids.map(i=>[vertexKey(c[i]),c[i]])).values()]);
+  const endKeys=ends.map(points=>new Set(points.map(vertexKey))),hull=new ConvexGeometry(unique.map(p=>new THREE.Vector3(...p))),p=hull.attributes.position;
+  for(let i=0;i<p.count;i+=3){const tri=[0,1,2].map(j=>[p.getX(i+j),p.getY(i+j),p.getZ(i+j)]);if(!endKeys.some(keys=>tri.every(p=>keys.has(vertexKey(p)))))addTriangle(tri,center);}
+  hull.dispose();
+  // Canonical diagonals make adjacent strip caps cancel, independently of the
+  // hull triangulator. Only the exterior hull facets survive in the rendering.
+  for(const points of ends){if(points.length===3)addTriangle(points,center);else if(points.length===4){const keys=points.map(vertexKey),start=keys.indexOf([...keys].sort()[0]),q=points.map((_,i)=>points[(i+start)%4]);addTriangle([q[0],q[1],q[2]],center);addTriangle([q[0],q[2],q[3]],center);}}
+ };
  for(let i=0;i<angles.length-1;i++) {
   const a=angles[i],b=angles[i+1];if(b-a<1e-8)continue;
   const bounds=f.boundaries((a+b)/2),atA=canonical(f.boundaries(a)),atB=canonical(f.boundaries(b)),intervals=Array.from({length:f.lanes},(_,k)=>[2*k,2*k+1]).sort((p,q)=>bounds[p[0]]-bounds[q[0]]),merged=[];
@@ -51,7 +63,8 @@ export function reverseThreadLands(f) {
    if(ys.every(([l,h])=>h-l<1e-10))continue;
    if(ys.some(([l,h])=>h-l< -1e-7))throw Error('Missing groove boundary intersection '+JSON.stringify({a,b,lo,hi,ys,bottom:f.bottom,ceiling:f.ceiling}));
    const nodes=[[f.floor,a,0],[f.radius,a,0],[f.radius,b,1],[f.floor,b,1]];
-   for(const ids of [[0,1,2],[0,2,3]])addCell([0,1].flatMap(side=>ids.map(k=>{const [r,angle,end]=nodes[k];return point(r,angle,ys[end][side]);})));
+   if(f.convexStrips)addStrip([0,1].flatMap(side=>nodes.map(([r,angle,end])=>point(r,angle,ys[end][side]))));
+   else for(const ids of [[0,1,2],[0,2,3]])addCell([0,1].flatMap(side=>ids.map(k=>{const [r,angle,end]=nodes[k];return point(r,angle,ys[end][side]);})));
   }
  }
  for(const tri of faces.values())out.push(...tri.flat());
