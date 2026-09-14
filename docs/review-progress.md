@@ -3582,6 +3582,20 @@ The [109 reconstruction record](mujoco-109-thread-cutting.md) documents these
 limits and the validation evidence. This is an integrated improvement, not
 final mechanical qualification.
 
+110 now has an isolated MuJoCo candidate with measured fine opposite-hand
+threads, rocking half-nuts and the full selector lever. Its actual outlines
+differ from 1,100 ink readings by 0.79919 pixel RMS. Relieved female thread
+tips permit withdrawal; contact drives the passive rod through three selections
+in 21 seconds without position resets. Maximum native penetration is 0.12672
+pixel. Seven candidate/runtime tests and the production build pass. A 21-pose
+audit makes 5,960,312 independent surface queries with no unintended sampled
+intersections. Sixteen final views are inspected, including exposed thread
+contacts. Playback remains slow at 12.82 fps and 62.86% physical speed, so 110
+is not integrated. Automatic selection, weight support, stops, hidden depths
+and thread relief are reconstructed. Performance, refinement, loads, longer
+runs and source interpretation remain open in the
+[110 candidate record](mujoco-110-half-nut-candidate.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
