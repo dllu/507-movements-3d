@@ -3780,6 +3780,28 @@ browser checks pass. Playback averages 37.09 fps at 99.92%
 physical speed. Source differences, collision approximation and evidence
 are documented in the [120 reconstruction](mujoco-120-segment-clamp.md).
 
+121 now uses a rod-driven MuJoCo disk carrying a freely hinged reversible
+click. Native contact advances the cog, and selecting the thrown-over click
+uses its opposite end to reverse the feed. The visible working surfaces
+share a plane. Measured hub, shaft, pin and rod-eye sizes replace the old
+altered proportions and invented supports. A 24-tooth cog with almost radial
+faces is used because the tested involute faces cammed the reversed click
+outward; its actual-edge RMS is 4.61360 source pixels. The source's imperfect
+concentricity is regularized, and the click nose is narrowed to fit the solid
+tooth spaces.
+
+Ten cycles in each direction retain the one-tooth feed after initial seating.
+Maximum retreat is 0.006402 tooth forward and 0.001187 in reverse; maximum
+native penetration is 0.028992 / 0.062903 source pixel. Finer geometry/timestep
+and tooth-friction 0.1 trials retain both feeds. Each full-hardware audit
+makes 646,350 surface queries over 21 poses with no unintended intersections.
+All fourteen targeted tests pass. Ideal guides/pins, inferred hinge damping,
+the finite resisting shaft load, source differences and failed load/geometry
+trials are documented in the [121 reconstruction](mujoco-121-reversible-click.md).
+All eighteen final catalog views are inspected. The production build and
+all 37 MuJoCo browser checks pass, including the reversal selector. Default
+headless playback averages 27.25 fps at 99.82% physical speed.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3809,6 +3831,7 @@ are documented in the [120 reconstruction](mujoco-120-segment-clamp.md).
 118 is verified for native doubled-stroke transmission with regular involute teeth, ideal bearings and guides, and stated input/support reconstruction assumptions.
 119 is verified for contact-driven endless-rack circulation with additional ideal normal engagement support and stated tooth-count, guide and depth assumptions.
 120 is verified for native gear-driven jaw closure and reopening with ideal bearings, bounded collision approximation and stated frame/depth/drive reconstruction assumptions.
+121 is verified for native tooth-driven feed in both click positions after initial seating, with ideal pins/guide, inferred damping and resisting load, and stated cog/nose reconstruction assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
