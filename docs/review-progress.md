@@ -3689,6 +3689,24 @@ browser regressions pass. Equal input torque is idealized; instantaneous
 rack forces are not prescribed. Source corrections, construction assumptions
 and qualification limits are recorded in the [115 reconstruction](mujoco-115-equal-racks.md).
 
+116 now uses two separate pinions with hinged pawls and six-tooth ratchets
+on a common shaft. Only the reciprocating frame is actuated; native contacts
+produce the clockwise output. The measured frame, thirteen-tooth involute
+pinions and twelve teeth per rack replace the old proportions and prescribed
+pawl motion. Pinion and ratchet contours fit within 2.21611 and 1.15299 source
+pixels RMS. Ten cycles retain one-way motion after startup, with maximum
+native penetration 0.15825 pixel. Speed over 20 ms intervals remains within
+4.4% of ideal; brief individual-step contact impulses are documented. The
+independent 25-pose audit makes 5,162,318 surface queries and finds no
+unintended intersections. All sixteen targeted mechanism and shared tests
+pass, and all fourteen integrated views are inspected. Headless playback
+records 23.44 fps at 99.23% physical speed. The production build and all 32
+production MuJoCo browser regressions pass.
+The verified scope uses frictionless contact, inferred weak pawl springs and
+ideal bearings and guide; nonzero friction and applied loads remain outside
+qualification. Construction and evidence are recorded in the
+[116 reconstruction](mujoco-116-rack-rectifier.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3713,6 +3731,7 @@ and qualification limits are recorded in the [115 reconstruction](mujoco-115-equ
 113 is verified for contact-driven transmission in both directions, with inferred shallow involute teeth, passive rollers and stated guide/depth assumptions.
 114 is verified for frictionless contact-driven rack transfer with relieved end teeth, a corrected initial phase and stated guide/depth assumptions.
 115 is verified for contact-driven double-rack motion with equal input torques, shifted involute teeth and stated bearing/guide assumptions.
+116 is verified for alternating ratchet contact with shifted involute pinions, inferred pawl springs and stated friction/guide limits.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
