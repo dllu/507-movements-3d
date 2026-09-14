@@ -5,7 +5,8 @@ import {freezeStudySources,verifyStudySources,hashStudyFile} from './lib/study-r
 import {cascadedTraverseStudySources} from './lib/cascaded-traverse-study-sources.mjs';
 const prefix=process.env.PROBE_PREFIX??'/dev/shm/125-candidate',options=JSON.parse(process.env.SIM_OPTIONS??'{}'),integrated=process.env.INTEGRATED==='1',baseUrl=process.env.PROBE_BASE_URL??'http://127.0.0.1:43934';
 assert(!integrated||!Object.keys(options).length,'Catalog capture uses the registered defaults');
-const sources=freezeStudySources([...cascadedTraverseStudySources('scripts/capture-cascaded-traverse-candidate.mjs'),'src/simulation/engine.js','src/simulation/model-loader.js','src/data/movements.json'],prefix);
+const trajectoryFile=process.env.DYNAMICS_REPORT,trajectory=trajectoryFile?JSON.parse(fs.readFileSync(trajectoryFile)):null;
+const sources=freezeStudySources([...(trajectoryFile?[trajectoryFile]:[]),...cascadedTraverseStudySources('scripts/capture-cascaded-traverse-candidate.mjs'),'src/simulation/engine.js','src/simulation/model-loader.js','src/data/movements.json'],prefix);
 const browser=await chromium.launch({channel:'chrome',headless:true}),views=[],errors=[],warnings=[];
 try {
  const page=await browser.newPage({viewport:{width:1450,height:760}});
@@ -33,12 +34,19 @@ try {
   {name:'axial',time:2.25,direction:[10,2,2]},
   {name:'oblique',time:0,direction:[3,2,8]},{name:'rear',time:2.25,direction:[-3,2,-8]},
  ];
+ if(trajectory){
+  assert.equal(trajectory.timeResets,0);assert.equal(trajectory.maximumPassiveActuation,0);
+  for(const name of ['lowerSlide','slider'])for(const sign of [-1,1]){const row=trajectory.rows.reduce((a,b)=>sign*b.qpos[name]>sign*a.qpos[name]?b:a);specs.push({name:name+(sign<0?'-minimum':'-maximum'),time:row.time,qpos:row.qpos,qvel:row.qvel});}
+  const row=trajectory.rows.at(-1);specs.push({name:'full-pattern',time:row.time,qpos:row.qpos,qvel:row.qvel});
+ }
  for(const spec of specs.sort((a,b)=>a.time-b.time)) {
   const state=await page.evaluate(async spec=>{
    const {THREE:{Vector3,OrthographicCamera}}=await import('/src/simulation/mujoco-cascaded-traverse/visual.js');
    const e=window.review125,u=e.model.root.userData,f=u.source;
    if(u.setSectionView)u.setSectionView(spec.section??true);
-   document.querySelector('#overlay')?.remove();e.model.update(spec.time);e.fitCamera(new Vector3(...(spec.direction??[0,0,10])));let camera=e.camera;
+   document.querySelector('#overlay')?.remove();
+   if(spec.qpos){const p=e.model.physics;for(const[n,j]of Object.entries(p.joints)){p.data.qpos[j.q]=spec.qpos[n];p.data.qvel[j.v]=spec.qvel[n];}p.data.time=spec.time;e.model.sync();e.snapshotPose=true;}else {if(e.snapshotPose){e.model.reset();e.snapshotPose=false;}e.model.update(spec.time);}
+   e.fitCamera(new Vector3(...(spec.direction??[0,0,10])));let camera=e.camera;
    if(spec.name.startsWith('source-')) {
     const half=525/200,x=(525/2-f.axis[0])/100,y=(f.axis[1]-525/2)/100;
     camera=new OrthographicCamera(-half,half,half,-half,.01,100);camera.position.set(x,y,10);camera.lookAt(x,y,0);camera.updateMatrixWorld();
@@ -55,12 +63,25 @@ try {
  }
  const runtime=await page.evaluate(()=>new Promise(resolve=>{
   const e=window.review125,frames=[];let first,last;e.model.reset();e.elapsed=0;e.playing=true;e.fitCamera(e.model.cameraDirection);
+  document.querySelector('#title').textContent='125 · '+e.model.root.userData.reconstructionStatus+' · native playback';
   function frame(now){first??=now;const time=(now-first)/1000,start=performance.now();e.advance(Math.min(last===undefined?0:(now-last)/1000,.05));const updateMs=performance.now()-start;e.renderer.render(e.scene,e.camera);const u=e.model.root.userData;
    frames.push({time,simulationTime:u.state.time,updateMs,intervalMs:last===undefined?0:now-last});last=now;
    if(time<12)requestAnimationFrame(frame);else resolve({frames,wallSeconds:(performance.now()-first)/1000,simulationTime:u.state.time,backend:u.simulationBackend,mechanism:u.mechanism,reconstructionStatus:u.reconstructionStatus,fog:e.scene.fog,hideGround:u.hideGround});
   }requestAnimationFrame(frame);
  }));
- await page.evaluate(()=>window.review125.dispose());verifyStudySources(sources);assert.deepEqual(errors,[]);
- fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,integrated,baseUrl,views,runtime,errors,warnings,qualification:(integrated?'Registered catalog factory. ':'Direct factory. ')+'Source interpretation, finite clearance and dynamics require separate validation.'},null,2)+'\n',{flag:'wx'});
+ const file=prefix+'-playback.png';assert(!fs.existsSync(file));await page.screenshot({path:file});views.push({name:'playback',file,sha256:hashStudyFile(file),inspected:false});
+ await page.evaluate(()=>window.review125.dispose());
+ let mobileNotes;
+ if(integrated){
+  await page.emulateMedia({reducedMotion:'reduce'});await page.goto(baseUrl+'/#/movement/125',{waitUntil:'domcontentloaded'});await page.locator('.simulation-canvas').waitFor({state:'visible',timeout:15000});
+  for(const spec of [{name:'catalog-desktop',width:1450,height:1000},{name:'catalog-mobile',width:390,height:844}]){
+   await page.setViewportSize({width:spec.width,height:spec.height});await page.waitForTimeout(200);const file=prefix+'-'+spec.name+'.png';assert(!fs.existsSync(file));await page.screenshot({path:file,fullPage:true});views.push({...spec,file,sha256:hashStudyFile(file),inspected:false});
+  }
+  mobileNotes=await page.locator('.movement-notes').evaluate(el=>{el.scrollTop=el.scrollHeight;return{height:el.clientHeight,scrollHeight:el.scrollHeight,scrollTop:el.scrollTop,overflowY:getComputedStyle(el).overflowY};});
+  assert.equal(mobileNotes.overflowY,'auto');assert(Math.abs(mobileNotes.scrollHeight-mobileNotes.height-mobileNotes.scrollTop)<=1);
+  const file=prefix+'-catalog-mobile-notes.png';assert(!fs.existsSync(file));await page.screenshot({path:file,fullPage:true});views.push({name:'catalog-mobile-notes',file,sha256:hashStudyFile(file),inspected:false});
+ }
+ verifyStudySources(sources);assert.deepEqual(errors,[]);
+ fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,integrated,baseUrl,trajectoryFile,views,runtime,mobileNotes,errors,warnings,qualification:(integrated?'Registered catalog factory. ':'Direct factory. ')+'Source interpretation, finite clearance and dynamics require separate validation.'},null,2)+'\n',{flag:'wx'});
  console.log({views:views.length,errors,runtime:{frames:runtime.frames.length,wallSeconds:runtime.wallSeconds,simulationTime:runtime.simulationTime}});
 }finally{await browser.close();}

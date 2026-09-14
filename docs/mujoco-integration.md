@@ -85,6 +85,12 @@ document the measured bow and string, corrected bindings, inferred bow complianc
 and hidden depths, transmission refinements, loaded trial and sampled hardware
 clearances. Section view reveals the wrap; shaft-end hatching makes rotation
 readable at the four-second default cycle.
+Movement 125 uses native involute-tooth contact and four pin connections to
+drive two cascaded links and a passive output stem. Its [reconstruction and
+checks](mujoco-125-cascaded-traverse.md) retain measured unequal crank radii and
+rod lengths, curved links and the short stem. The complete 437-input-turn
+pattern passes at 1 ms and 0.5 ms timesteps, with stated gear-count, vertical
+guide and depth assumptions and sampled hardware-clearance limits.
 
 ## Shared runtime
 

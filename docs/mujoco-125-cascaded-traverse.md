@@ -1,10 +1,10 @@
 # 125 — Three geared cranks and two cascaded links
 
-The candidate in `src/simulation/mujoco-cascaded-traverse/` restores the measured
+The reconstruction in `src/simulation/mujoco-cascaded-traverse/` restores the measured
 crank pins, unequal rods, broad curved links and short output stem. One native
 actuator turns the right gear; MuJoCo tooth contacts and four ideal pin
-connections drive all other coordinates. Catalog integration and final
-mechanical qualification are pending.
+connections drive all other coordinates. The catalog now loads this factory
+through the shared MuJoCo runtime.
 
 ## Source interpretation
 
@@ -97,7 +97,7 @@ measurement is retained. The source overlay provides the corresponding visual
 comparison. Depths and hidden hardware cannot be inferred uniquely from this
 front elevation.
 
-## Native model and current validation
+## Native model and validation
 
 There are eleven native coordinates: three gear hinges, four rod hinges, lower
 link rotation and vertical travel, upper link rotation and output-stem travel.
@@ -116,25 +116,72 @@ Drive timing, damping, material density and load are inferred.
 
 Thirty visible parts have positive volume and closed, oriented, nondegenerate
 surfaces. Compiled collision-cell vertices agree with their intended geometry
-within 0.00000283 source pixel. The maximum collision-boundary approximation
-is 0.049826 pixel. Only gear teeth have native collision geometry; ideal pins
+within 0.00000296 source pixel across 10,012 vertices. The maximum collision-boundary approximation
+is 0.024536 pixel. Only gear teeth have native collision geometry; ideal pins
 and guides supply the other constraints.
 
-All five targeted tests pass: source pins/solid topology, native coordinates and
-collision geometry, passive motion, isolated tooth transmission, and playback
-ownership/determinism. A 34-pose actual-hardware audit makes 6,424,776 surface
-queries with zero unintended penetration. Working gear overlap reaches
-0.075631 source pixel against a 0.1-pixel soft-contact allowance. Same-family
-attachments are excluded, other surfaces permit only 1e−6 world-unit numerical
-tolerance, and every sampled vertex lies inside the camera envelope. Sampling
-does not certify continuous clearance.
+All sixteen selected tests pass: five mechanism tests covering source pins and
+solid topology, native coordinates and collision geometry, passive motion,
+isolated tooth transmission and playback ownership; plus eleven shared
+runtime, engine and camera checks.
 
-The first candidate's 15 views were inspected. The corrected candidate has a
-second 15-view capture. Its 12.0483-second headless playback produced 406 frames
-and advanced 12.032 physical seconds, about 33.70 fps and 99.86% physical speed.
-The full native pattern, refined and loaded trials, broader hardware sampling,
-final view inspection, production build and catalog browser checks remain
-pending before public integration and verification.
+The default 1 ms native run completes the entire 437-input-turn pattern
+(1,748.25 seconds), with zero time resets or passive actuation. Maximum pin
+closure error is 0.000665 source pixel, native tooth penetration 0.082175 pixel,
+pitch-line rolling error 0.248558 pixel and input tracking error 0.252075 pixel.
+The lower central pin travels from −0.368236 to 0.397775 world unit and the
+output stem from −0.348307 to 0.310230, relative to the source pose.
+
+A 495-pose actual-hardware audit replays recorded native states across the
+whole pattern, including early poses and every sampled joint position/velocity
+extremum. It makes 93,537,180 surface queries with zero unintended penetration.
+Working gear overlap reaches 0.036413 source pixel against a 0.1-pixel
+soft-contact allowance. Same-family attachments are excluded, other surfaces
+permit only 1e−6 world-unit numerical tolerance, and every sampled vertex lies
+inside the camera envelope. Sampling does not certify continuous clearance.
+
+The preceding 0.0005-world-unit collision tolerance completed the full native
+pattern, but its rendered-hardware audit failed at 1,140.161 seconds with
+0.100865 pixel of working tooth overlap. That failure is retained. Tightening
+the default collision tolerance to 0.00025 produces the qualified run above.
+
+Three additional 12.25-second trials halve the timestep, double tooth/cutter
+resolution, and apply a −1 output load with 0.1 friction. All retain passive
+motion and zero resets; their native penetration maxima are 0.017152, 0.019834
+and 0.020042 source pixel. Full-pattern timestep comparison is recorded below.
+These checks do not establish force convergence or cover arbitrary loads.
+
+The 0.5 ms run also completes all 1,748.25 seconds, with zero resets or passive
+actuation. Maximum native penetration is 0.040244 pixel and pin closure error
+0.000302 pixel. Comparing 174,824 common-time snapshots against the 1 ms run
+gives output-stem differences of 0.046827 pixel maximum and 0.002707 pixel RMS;
+the lower central guide differs by 0.083211 pixel maximum and 0.003731 pixel
+RMS. Sampled travel-span changes are below 0.000229 pixel. The comparison
+linearly interpolates 10 ms baseline snapshots onto refined timestamps.
+
+Over the shorter three-turn trials, doubling tooth/cutter resolution changes
+the output position by at most 0.020228 pixel and the sampled travel span by
+0.006333 pixel. The loaded trial differs by at most 0.051541 pixel in output
+position. These are measured position sensitivities, not force convergence.
+
+All 23 integrated views are inspected, including four native travel extrema,
+the last full-pattern sample, rear and axial views, and desktop/mobile controls.
+Eight static images are byte-identical to the already inspected corrected
+candidate; the remaining fifteen received direct inspection. No fog, ground
+intrusion or camera clipping is observed. Mobile notes intentionally scroll
+within their panel. Headless playback produces 388 frames in 12.0349 seconds
+and advances 12.016 physical seconds: 32.24 fps and 99.84% physical speed.
+
+The production build and all 41 MuJoCo browser cases pass. These cover lazy
+loading beneath a static subdirectory, native playback, pause, deterministic
+restart, mobile controls, navigation, retry and disposal. After changing only
+125's reconstruction status and explanatory note, a second production build
+and the focused 125 browser case pass. An initial focused invocation selected
+zero cases because its regular expression was anchored before the test-file
+prefix; its unsuccessful log is retained and is not counted as a test pass.
+Twelve final registered-factory views are also directly inspected, including
+the updated source overlay, native extrema, playback and scrolled mobile notes.
+This final capture averages 32.82 fps at 99.83% physical speed.
 
 ## Reproduction and retained evidence
 
@@ -151,16 +198,36 @@ Git. Measurements are reproducible from the tracked engraving and scripts.
   `/dev/shm/125-reach-c.json` retains all 437-turn continuation trials.
 - `fit-cascaded-traverse-links.mjs` produced `/dev/shm/125-link-fit-a.json`.
 - `compare-cascaded-traverse-source.mjs` produced
-  `/dev/shm/125-comparison-b.json` from the corrected geometry.
+  `/dev/shm/125-comparison-c.json` from the final collision geometry.
 - `capture-cascaded-traverse-baseline.mjs` and
   `capture-cascaded-traverse-candidate.mjs` produced the baseline-a,
-  candidate-a and candidate-b records and PNGs.
+  candidate-a and candidate-b records and PNGs, followed by
+  `/dev/shm/125-integrated-motion-a.json` and its 23-view inspection record.
 - `audit-cascaded-traverse-clearances.mjs` produced
-  `/dev/shm/125-clearances-a.json` and its successful terminal log.
+  `/dev/shm/125-clearances-c.json` from `DYNAMICS_REPORT=/dev/shm/125-dynamics-e.json`.
+  Earlier a is the short candidate audit; b retains the full-pattern failure.
 - `probe-cascaded-traverse-dynamics.mjs` retains each native trial's exact
   options, source snapshots, contacts and trajectory. Trials a–c compare
-  initial profiles; d is the complete-pattern run.
-- `/dev/shm/125-tests-a.log` records all five passing native tests.
+  initial profiles; d is the first complete-pattern run, e the tightened
+  default, and f its full-pattern timestep refinement. Set `DURATION=1748.25`
+  and, for f, `SIM_OPTIONS='{"timestep":0.0005}'`.
+  `125-dynamics-time-b`, `125-dynamics-space-b` and `125-dynamics-load-b`
+  retain the final shorter refinement/load trials.
+- `compare-cascaded-traverse-dynamics.mjs` produced `/dev/shm/125-refinement-a.json`
+  using `BASELINE_REPORT=/dev/shm/125-dynamics-e.json` and a JSON array of
+  trial report paths in `TRIAL_REPORTS`.
+- `/dev/shm/125-tests-b.log` records all sixteen passing selected tests.
+- `/dev/shm/125-integrated-build-a` and `125-integrated-build-b` are the
+  production builds; `/dev/shm/125-e2e-a.log` records 41 passing cases and
+  `125-e2e-c.log` the passing focused final-build check. `125-e2e-b.log`
+  retains the zero-selected-tests invocation.
+- `/dev/shm/125-integrated-motion-b.json` and its inspection record retain the
+  twelve final views. `/dev/shm/125-integration-evidence-a.json` verifies numerical
+  archives against the final source and records source, artifact and build
+  hashes. Post-study implementation differences are restricted to the
+  reconstruction status and explanatory note; geometry and native physics
+  are byte-identical. Bulk trajectories and images remain local review
+  artifacts outside Git, reproducible from the tracked source and scripts.
 
 Reports retain frozen source hashes and verify them at completion. Discarded
 exploratory reports are evidence of those attempts, not current qualification.

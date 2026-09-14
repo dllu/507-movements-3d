@@ -3868,14 +3868,22 @@ hits its five-second startup deadline. After a measured startup allowance
 correction, all six focused 123/124 checks pass (three each). The original
 failure and isolated checks are preserved in the reconstruction report.
 
-125 has a MuJoCo candidate with measured crank pins, unequal rods, broad curved
+125 is integrated with MuJoCo, measured crank pins, unequal rods, broad curved
 links and the short output stem. The retained 19:23:29 interpretation completes
-437 turns in independent linkage continuation without shortening any crank.
-Five targeted tests pass, and 34 sampled poses show zero unintended hardware
-penetration. The full native pattern and final integration checks remain
-pending; the public catalog still uses the previous implementation. Source
-ambiguities and guide/depth assumptions are documented in the
+437 turns in independent linkage continuation and native runs at both 1 ms
+and 0.5 ms without shortening any crank. All sixteen selected tests and all
+41 production browser cases pass. A 495-pose hardware audit makes 93,537,180
+surface queries with zero unintended penetration and working tooth overlap
+below 0.036413 source pixel. Full-pattern timestep refinement changes the output
+position by at most 0.046827 pixel. All 23 integrated views are inspected;
+headless playback averages 32.24 fps at 99.84% physical speed. Source
+ambiguities, the earlier failed contact approximation and guide/depth assumptions are documented in the
 [125 reconstruction](mujoco-125-cascaded-traverse.md).
+
+126 has source circle, lever-edge and cord-envelope measurements plus an
+inspected seven-view baseline. Its existing oversized spoked pulley and extra
+frame/handles disagree with the engraving. Reconstruction and native contact
+qualification remain pending; see the [126 source review](mujoco-126-bell-crank.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
@@ -3910,6 +3918,7 @@ ambiguities and guide/depth assumptions are documented in the
 122 is verified for native geared variable traverse across the full 29:23 pattern, with 15% reduced crank radii, ideal pins/guide, bounded collision approximation and stated source/depth assumptions.
 123 is verified for native double-rack sector handoff with regular equal spur gears, relieved ends, raised flanges, a rephased working cam and stated ideal support/depth/drive assumptions.
 124 is verified for native finite-cord friction transmission with corrected bound ties, ideal hand/bearing constraints, lumped bow compliance and stated material/depth and sampled-clearance limits.
+125 is verified for native geared cascaded-link motion across the full 19:23:29 pattern, with measured crank radii, ideal pins and vertical guides, bounded collision approximation and stated source/depth assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

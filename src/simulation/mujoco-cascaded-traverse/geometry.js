@@ -6,7 +6,7 @@ import {segmentClampContactCells} from '../mujoco-segment-clamp/contact.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
 
-export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendum=1.5,pressureAngle=Math.PI/9,leftPhase=.16147166188269907,samples=96,cutterSteps=2048,collisionTolerance=.0005}={}){
+export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendum=1.5,pressureAngle=Math.PI/9,leftPhase=.16147166188269907,samples=96,cutterSteps=2048,collisionTolerance=.00025}={}){
  if(![middleShift,leftPhase].every(Number.isFinite)||![addendum,dedendum,pressureAngle].every(v=>Number.isFinite(v)&&v>0)||pressureAngle>=Math.PI/3||![samples,cutterSteps].every(Number.isInteger)||samples<32||cutterSteps<128||!Number.isFinite(collisionTolerance)||collisionTolerance<0)throw new RangeError('Invalid 125 geometry options');
  const root=new THREE.Group(),blocks={},parts={},families={},cells={},contactApproximation={};
  const local=([x,y])=>[(x-source.axis[0])/100,(source.axis[1]-y)/100],sub=(a,b)=>a.map((v,i)=>v-b[i]);

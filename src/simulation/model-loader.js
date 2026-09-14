@@ -40,6 +40,7 @@ const physicsFactories = {
   122: () => import('./mujoco-variable-traverse/visual.js').then(module => module.makeMujocoVariableTraverse),
   123: () => import('./mujoco-sector-handoff/visual.js').then(module => module.makeMujocoSectorHandoff),
   124: () => import('./mujoco-bow-drill/visual.js').then(module => module.makeMujocoBowDrill),
+  125: () => import('./mujoco-cascaded-traverse/visual.js').then(module => module.makeMujocoCascadedTraverse),
 };
 
 export async function loadMovementModel(movement) {
