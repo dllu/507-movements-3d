@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "names": [
+    "cam",
+    "follower"
+  ],
+  "period": 8,
+  "loopStart": 10.6,
+  "loopEnd": 18.6,
+  "turns": [
+    -6.283185307179586,
+    0
+  ],
+  "bounds": {
+    "min": [
+      -3.4541125844950087,
+      -3.904112584495009,
+      -0.9800000002980231
+    ],
+    "max": [
+      3.4541125844950087,
+      8.061860399918288,
+      0.8349999761581421
+    ]
+  },
+  "focus": [
+    0,
+    2.07887390771164,
+    -0.0725000120699405
+  ],
+  "cameraDirection": [
+    0.1,
+    0.05,
+    15
+  ],
+  "source": {
+    "reportSha256": "a595f565554fcaf95577e2fddc06f8f27b16f3eca39df99c080ac0d3ba55ba14",
+    "simulationSources": [
+      {
+        "file": "src/data/variable-cam-outline.js",
+        "sha256": "26a8b64db24893bfd452d433e32d7f650bc27a5b57d195a32b07b1cf2fd374c7"
+      },
+      {
+        "file": "src/simulation/mujoco-variable-cam/profile.js",
+        "sha256": "0e3f354ac25fa85df209c14335bc6c365c03af95d5a6066b61136b3b320339a4"
+      },
+      {
+        "file": "src/simulation/mujoco-variable-cam/physics.js",
+        "sha256": "f2e947edcedb3d29bc5d23fa043a40b80ca46227c79f6566423c9a3636724fab"
+      },
+      {
+        "file": "src/simulation/mujoco/simulation.js",
+        "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+      },
+      {
+        "file": "scripts/probe-variable-cam.mjs",
+        "sha256": "4e855e465224db13fd72ebc5aebd7259df0c59ef2ea091ab668989652350f066"
+      },
+      {
+        "file": "package-lock.json",
+        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+      }
+    ],
+    "geometrySources": [
+      {
+        "file": "src/simulation/authored-cams.js",
+        "sha256": "a9aea943a0c5b14558060087f1fd30d1e0cf6a0c44e892ed59405533245e2b9d"
+      },
+      {
+        "file": "src/simulation/mujoco-variable-cam/geometry.js",
+        "sha256": "83f6d5f173ce4c96907b9f5688dc3f01fde6ac8b599a31e7fb7fc1da7bb0d33e"
+      },
+      {
+        "file": "scripts/bake-variable-cam.mjs",
+        "sha256": "5b6dfc5e1da76a1fb6826d7f4fe032246d88d74cbf1fe8838f4d0533e32c8fcb"
+      }
+    ],
+    "options": {
+      "timestep": 0.00025,
+      "period": 8,
+      "samplesPerArc": 128
+    },
+    "metersPerWorldUnit": 0.05125,
+    "maximumLoopSeamPixels": 2.993338910073362e-11,
+    "maximumLoopVelocitySeamPixelsPerSecond": 3.823608096809039e-10,
+    "maximumPenetrationPixels": 0.06265592250778432
+  },
+  "samples": 9301,
+  "bytes": 420150,
+  "assetSha256": "4e78fb0782c7c227bb4e2be2a0699318fe500d13644432ed90ca7757524e1eef"
+}

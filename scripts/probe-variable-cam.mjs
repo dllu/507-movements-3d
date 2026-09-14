@@ -11,7 +11,7 @@ try{
   try{for(let j=0;j<contacts.size();j++){const c=contacts.get(j);try{penetration=Math.max(penetration,-c.dist);}finally{c.delete();}}}finally{contacts.delete();}
   if((i+1)%Math.round(.002/p.timestep)===0)rows.push([p.data.time,...p.data.qpos]);
  }
- const sources=['src/simulation/authored-cams.js','src/simulation/mujoco-variable-cam/profile.js','src/simulation/mujoco-variable-cam/physics.js','src/simulation/mujoco/simulation.js','scripts/probe-variable-cam.mjs','package-lock.json'].map(file=>({file,sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));
+ const sources=['src/data/variable-cam-outline.js','src/simulation/mujoco-variable-cam/profile.js','src/simulation/mujoco-variable-cam/physics.js','src/simulation/mujoco/simulation.js','scripts/probe-variable-cam.mjs','package-lock.json'].map(file=>({file,sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));
  const result={sources,options:p.description.options,penetration,resets,rows};
  fs.writeFileSync(process.env.PROBE_REPORT??'/dev/shm/138-coarse.json',JSON.stringify(result));console.log({options:result.options,penetration,resets,rows:rows.length});
 }finally{p.dispose();}

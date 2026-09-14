@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {variableCamOutline as trace} from '../src/data/variable-cam-outline.js';
+import {variableCamProfile} from '../src/simulation/mujoco-variable-cam/profile.js';
+const points=variableCamProfile(128).points.map(([x,y])=>[259+x*51.25,381-y*51.25]);
+const distance=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);};
+const landmarks=trace.landmarks.map(p=>({point:p,errorPixels:Math.min(...points.map((a,i)=>distance(p,a,points[(i+1)%points.length])))}));
+const result={registration:{shaft:trace.shaft,pixelsPerUnit:trace.pixelsPerUnit},landmarks,maximumErrorPixels:Math.max(...landmarks.map(p=>p.errorPixels))};
+fs.writeFileSync('docs/validation/138-outline-review.json',JSON.stringify(result,null,2)+'\n');
+const png=fs.readFileSync('public/engravings/mm_138.png').toString('base64');
+const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="525" height="555" viewBox="0 0 525 555"><rect width="525" height="555" fill="white"/><image href="data:image/png;base64,${png}" width="525" height="525"/><polygon points="${points.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#e34b35" stroke-width="1.2"/>${trace.landmarks.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="#008b66"/>`).join('')}<text x="12" y="543" font-size="12">138: traced profile (red), measured landmarks (green)</text></svg>`;
+fs.writeFileSync('docs/validation/138-outline-review.svg',svg);console.log(result);

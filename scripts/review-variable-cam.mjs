@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 import {createAuthoredCamMovement} from '../src/simulation/authored-cams.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {variableCamProfile} from '../src/simulation/mujoco-variable-cam/profile.js';
-const {points}=variableCamProfile(256),model=createAuthoredCamMovement({id:138});
+const {points:tracedPoints}=variableCamProfile(256),model=createAuthoredCamMovement({id:138});
+const points=model.root.userData.blocks.camPlate.geometry.parameters.shapes.extractPoints(256).shape.map(p=>[p.x,p.y]);
 const pixelScale=123/2.4;
-function envelope(angle,width,slope){
- const c=Math.cos(angle),s=Math.sin(angle),p=points.map(([x,y])=>[c*x-s*y,s*x+c*y]);let top=-Infinity;
+function envelope(angle,width,slope,outline=points){
+ const c=Math.cos(angle),s=Math.sin(angle),p=outline.map(([x,y])=>[c*x-s*y,s*x+c*y]);let top=-Infinity;
  for(let i=0;i<p.length;i++){
   const a=p[i],b=p[(i+1)%p.length];
   const candidates=[a,b];for(const x of [-width,0,width])if((x-a[0])*(x-b[0])<0){const f=(x-a[0])/(b[0]-a[0]);candidates.push([x,a[1]+f*(b[1]-a[1])]);}
@@ -38,7 +39,7 @@ try{
  }
  let minimumGap=Infinity,maximumLiftOff=0,maximumOracleDifference=0;
  for(let i=4000;i<runs.fine.rows.length;i+=5){
-  const [,angle,y]=runs.fine.rows[i],gap=y-envelope(angle,.12,2);
+  const [,angle,y]=runs.fine.rows[i],gap=y-envelope(angle,.12,2,tracedPoints);
   minimumGap=Math.min(minimumGap,gap);maximumLiftOff=Math.max(maximumLiftOff,gap);
   const t=-angle/.5;maximumOracleDifference=Math.max(maximumOracleDifference,Math.abs(y-model.root.userData.stateAtTime(t).profile.radius));
  }

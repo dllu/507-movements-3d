@@ -1411,7 +1411,7 @@
     {
       "id": 138,
       "number": "138",
-      "title": "Seven-Arc Variable-Motion Cam with Guided Point Follower",
+      "title": "Variable-Motion Cam with Guided Point Follower",
       "description": "138. On turning the cam at the bottom a variable alternating rectilinear motion is imparted to the rod resting on it.",
       "category": "Cams & followers",
       "archetype": "seven-arc-variable-motion-plate-cam-gravity-point-follower",

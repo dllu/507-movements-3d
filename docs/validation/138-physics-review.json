@@ -1,12 +1,12 @@
 {
   "sources": [
     {
-      "file": "src/simulation/authored-cams.js",
-      "sha256": "a9aea943a0c5b14558060087f1fd30d1e0cf6a0c44e892ed59405533245e2b9d"
+      "file": "src/data/variable-cam-outline.js",
+      "sha256": "26a8b64db24893bfd452d433e32d7f650bc27a5b57d195a32b07b1cf2fd374c7"
     },
     {
       "file": "src/simulation/mujoco-variable-cam/profile.js",
-      "sha256": "980f56d8a54328975f4923dc4a853912d9f9b812b6a30c1be347a8757e77a0f8"
+      "sha256": "0e3f354ac25fa85df209c14335bc6c365c03af95d5a6066b61136b3b320339a4"
     },
     {
       "file": "src/simulation/mujoco-variable-cam/physics.js",
@@ -18,7 +18,7 @@
     },
     {
       "file": "scripts/probe-variable-cam.mjs",
-      "sha256": "4cf5c4b337678dc64c0daff9748198778be838038e14985e96eb5effdd554b0a"
+      "sha256": "4e855e465224db13fd72ebc5aebd7259df0c59ef2ea091ab668989652350f066"
     },
     {
       "file": "package-lock.json",
@@ -76,17 +76,17 @@
       "errorPixels": 7.5845361441441845
     }
   ],
-  "oldTipInterferencePixels": 5.266187197586983,
-  "correctedTipEnvelopeDifferencePixels": 0.0004011699860673179,
+  "oldTipInterferencePixels": 5.266375313974496,
+  "correctedTipEnvelopeDifferencePixels": 0.00010035356356657976,
   "maximumDownwardVelocityJumpAtLegacySpeed": 1.2674228009342898,
   "sensitivityPixels": {
-    "time-refined": 0.20504569265849176,
-    "mesh-refined": 0.2180651760191682,
-    "fine": 0.20108969095680024
+    "time-refined": 0.4440417801363081,
+    "mesh-refined": 0.4631980553895279,
+    "fine": 0.44044946552036585
   },
-  "minimumGapPixels": -0.012985620616658144,
-  "maximumLiftOffPixels": 0.508783431187535,
-  "maximumIdealPointOracleDifferencePixels": 0.5085862978582756,
+  "minimumGapPixels": -0.041142710836773455,
+  "maximumLiftOffPixels": 0.794257395401175,
+  "maximumIdealPointOracleDifferencePixels": 14.453537597451199,
   "runs": {
     "coarse": {
       "options": {
@@ -94,7 +94,7 @@
         "period": 8,
         "samplesPerArc": 64
       },
-      "penetration": 0.000688999633804975,
+      "penetration": 0.0011817150720289191,
       "resets": 0
     },
     "time-refined": {
@@ -103,7 +103,7 @@
         "period": 8,
         "samplesPerArc": 64
       },
-      "penetration": 0.0008741036072244723,
+      "penetration": 0.0011586291393515266,
       "resets": 0
     },
     "mesh-refined": {
@@ -112,7 +112,7 @@
         "period": 8,
         "samplesPerArc": 128
       },
-      "penetration": 0.001073121960748764,
+      "penetration": 0.0011856188264680633,
       "resets": 0
     },
     "fine": {
@@ -121,7 +121,7 @@
         "period": 8,
         "samplesPerArc": 128
       },
-      "penetration": 0.0007078843892042768,
+      "penetration": 0.0012225545855177428,
       "resets": 0
     }
   }

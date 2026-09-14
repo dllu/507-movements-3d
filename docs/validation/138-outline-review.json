@@ -1,0 +1,152 @@
+{
+  "registration": {
+    "shaft": [
+      259,
+      381
+    ],
+    "pixelsPerUnit": 51.25
+  },
+  "landmarks": [
+    {
+      "point": [
+        138,
+        378
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        160,
+        401
+      ],
+      "errorPixels": 1.4052505679150415
+    },
+    {
+      "point": [
+        184,
+        417
+      ],
+      "errorPixels": 1.736827236206676
+    },
+    {
+      "point": [
+        212,
+        427
+      ],
+      "errorPixels": 0.11564160042153866
+    },
+    {
+      "point": [
+        235,
+        432
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        259,
+        454
+      ],
+      "errorPixels": 1.2652962827226926
+    },
+    {
+      "point": [
+        289,
+        467
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        307,
+        447
+      ],
+      "errorPixels": 0.2442847666303974
+    },
+    {
+      "point": [
+        318,
+        419
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        344,
+        396
+      ],
+      "errorPixels": 1.4115670029061163
+    },
+    {
+      "point": [
+        360,
+        364
+      ],
+      "errorPixels": 1.5708441684809082
+    },
+    {
+      "point": [
+        367,
+        320
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        343,
+        312
+      ],
+      "errorPixels": 0.6029474301090172
+    },
+    {
+      "point": [
+        320,
+        310
+      ],
+      "errorPixels": 0.05097691925125782
+    },
+    {
+      "point": [
+        295,
+        318
+      ],
+      "errorPixels": 2.4847162039446458
+    },
+    {
+      "point": [
+        260,
+        333
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        236,
+        330
+      ],
+      "errorPixels": 1.6540309076186959
+    },
+    {
+      "point": [
+        210,
+        329
+      ],
+      "errorPixels": 1.4582548933722905
+    },
+    {
+      "point": [
+        183,
+        335
+      ],
+      "errorPixels": 0
+    },
+    {
+      "point": [
+        158,
+        353
+      ],
+      "errorPixels": 1.2859636853582916
+    }
+  ],
+  "maximumErrorPixels": 2.4847162039446458
+}
