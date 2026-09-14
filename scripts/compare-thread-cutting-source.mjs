@@ -27,7 +27,7 @@ try {
   }));
   const groups = {
     top: 'topRail', bottom: 'bottomRail', carriage: 'carriage', arm: 'arm',
-    leadCrest: 'leadThread', workCrest: 'workThread', workBlank: 'uncutStock',
+    leadCrest: 'leadThread', workCrest: 'workpiece', workBlank: 'workpiece',
     leadShaft: 'leadUpperShaft', workShaft: 'workUpperShaft',
   };
   const edges = {};
@@ -67,7 +67,7 @@ try {
   }
   const threads = {};
   for (const name of ['lead', 'work']) {
-    const segments = crestEdges(parts[name + 'Thread'], name === 'lead' ? f.crestRadius : f.workRadius);
+    const segments = crestEdges(parts[name === 'lead' ? 'leadThread' : 'workpiece'], name === 'lead' ? f.crestRadius : f.workRadius);
     const rows = measured.threads[name].points.map(reading => {
       const [x, y] = reading.point;
       const hits = segments.filter(s => s.face === reading.face && x >= Math.min(s.a[0], s.b[0]) && x <= Math.max(s.a[0], s.b[0]))
@@ -83,7 +83,7 @@ try {
   }
   const report = {sources, edges, threads,
     allEdges: stats(Object.values(edges).flatMap(e => e.residuals)),
-    qualification: 'Orthographic mesh projection in the initial source pose. Frame/shaft edges use actual extents. Lead shoulders retain manually assigned turns; work shoulders use nearest edges because the gear ratio requires a different hand and pitch. Thread metrics do not account for occlusion by the carriage or uncut stock. They do not qualify an exact source overlay.'};
+    qualification: 'Orthographic mesh projection in the initial source pose. Frame/shaft edges use actual extents. Lead shoulders retain manually assigned turns; exposed work shoulders use nearest edges because the gear ratio requires a different hand and pitch. Thread metrics do not account for occlusion by the carriage. They do not qualify an exact source overlay.'};
   verifyStudySources(sources);
   fs.writeFileSync(prefix + '.json', JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
   console.log({allEdges: report.allEdges, threads: Object.fromEntries(Object.entries(threads).map(([k, v]) => [k, {count: v.count, rms: v.rms, maximum: v.maximum}]))});

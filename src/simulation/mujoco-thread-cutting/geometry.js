@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {makeThreadCuttingProfile} from './profile.js';
-import {makeUncutStock,threadTool} from './stock.js';
+import {threadTool} from './stock.js';
+import {makeCutWorkpiece} from './workpiece.js';
 import {threadAngles,helicalThread,polygonCylinder} from '../mujoco-screw/thread-geometry.js';
 import {plate,poly,circle,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {roundedRackGear} from '../coaxial-gear-geometry.js';
@@ -16,12 +17,10 @@ export function makeThreadCuttingGeometry(options={}) {
  const workAngles=threadAngles(f.workThread,f.segments,threadAngles(f.stock,f.segments).slice(0,-1));
  add('leadCore',alongY(polygonCylinder(f.coreRadius,f.external.low,f.external.high,leadAngles)),'lead',PALETTE.driver);
  add('leadThread',alongY(helicalThread(f.external,leadAngles)),'lead',PALETTE.driver);
- add('workCore',alongY(polygonCylinder(f.workCoreRadius,f.workThread.low,f.workThread.high,workAngles)),'work',PALETTE.driven);
- add('workThread',alongY(helicalThread(f.workThread,workAngles)),'work',PALETTE.driven);
- const toolHalfAngle=.055,stock=makeUncutStock(f.stock,workAngles);
+ const toolHalfAngle=.055,workpiece=makeCutWorkpiece(f.stock,workAngles);
  let lastCut=f.contactAngle-toolHalfAngle;
- add('uncutStock',alongY(stock.geometry(lastCut)),'work',PALETTE.driven);
- const setCutAngle=angle=>{if(angle===lastCut)return;lastCut=angle;const g=alongY(stock.geometry(angle)),m=parts.uncutStock;m.geometry.dispose();m.geometry=g;m.visible=g.attributes.position.count>0;};
+ add('workpiece',alongY(workpiece.geometry(lastCut)),'work',PALETTE.driven);
+ const setCutAngle=angle=>{if(angle===lastCut)return;lastCut=angle;const g=alongY(workpiece.geometry(angle)),m=parts.workpiece;m.geometry.dispose();m.geometry=g;};
  for(const [i,name]of ['lead','work'].entries()) {
   const r=f.shaftRadii[i],thread=name==='lead'?f.external:f.workThread,color=name==='lead'?PALETTE.driver:PALETTE.driven;
   add(name+'LowerShaft',alongY(disk(r,f.y(f.source.shaftEnds[1]),thread.low,128)),name,color);
@@ -53,7 +52,7 @@ export function makeThreadCuttingGeometry(options={}) {
  add('arm',alongY(plate(armSection,f.armY-f.armHeight/2,f.armY+f.armHeight/2)),'carriage',PALETTE.accent);
  const blade=threadTool({...f.stock,inner:f.workCoreRadius+f.clearance,outer,width:f.grooveWidth-2*f.clearance},f.contactAngle,toolHalfAngle);
  add('cutter',alongY(blade).translate(f.dx,0,-f.dz),'carriage',PALETTE.accent);
- Object.assign(root.userData,{source:f.source,profile:f,parts,families,blocks,leadAngles,nutAngles,workAngles,stock,setCutAngle,toolHalfAngle,guideSection,keySection,
+ Object.assign(root.userData,{source:f.source,profile:f,parts,families,blocks,leadAngles,nutAngles,workAngles,workpiece,setCutAngle,toolHalfAngle,guideSection,keySection,
   hideGround:true,shadowCameraHalfExtent:3,shadowBias:-.00002,shadowNormalBias:.001});
  markShadows(root);root.updateMatrixWorld(true);
  return {root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(1,1,10)};

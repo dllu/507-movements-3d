@@ -1,9 +1,8 @@
 import * as THREE from 'three';
-import {threadStations} from '../mujoco-screw/thread-geometry.js';
 const tau=2*Math.PI,mod=a=>{const r=((a%tau)+tau)%tau;return r<1e-12||tau-r<1e-12?0:r;};
 const point=(r,a,z)=>[r*Math.cos(mod(a)),r*Math.sin(mod(a)),z];
 const unit=(x,y,z)=>{const d=Math.hypot(x,y,z);return[x/d,y/d,z/d];};
-function builder() {
+export function surfaceBuilder() {
  const positions=[],normals=[];
  const triangle=(points,ns)=>{
   points=points.map(p=>p.map(Math.fround));
@@ -32,30 +31,8 @@ function cap(mesh,p,s,sign) {
  const n=[-sign*Math.sin(mod(s.angle)),sign*Math.cos(mod(s.angle)),0];
  mesh.quad([point(p.inner,s.angle,s.low),point(p.outer,s.angle,s.low),point(p.outer,s.angle,s.high),point(p.inner,s.angle,s.high)],Array(4).fill(n));
 }
-// The finished ridge and core are permanent material. This complementary helix
-// fills the uncut groove. Limit it by material angle, sealing the tool's actual
-// radial cutting face rather than revealing whole rings at an axial plane.
-export function makeUncutStock(p,angles) {
- const stations=threadStations(p,angles),mesh=builder(),ends=[0];
- cap(mesh,p,stations[0],-1);ends[0]=mesh.positions.length;
- for(let i=0;i+1<stations.length;i++){cell(mesh,p,stations[i],stations[i+1]);ends.push(mesh.positions.length);}
- const positions=Float32Array.from(mesh.positions),normals=Float32Array.from(mesh.normals);
- return {stations,geometry(cutAngle) {
-  const g=new THREE.BufferGeometry();
-  if(cutAngle<=stations[0].angle){g.setAttribute('position',new THREE.Float32BufferAttribute([],3));g.setAttribute('normal',new THREE.Float32BufferAttribute([],3));return g;}
-  const limit=Math.min(cutAngle,stations.at(-1).angle);let lo=0,hi=stations.length-1;
-  while(hi-lo>1){const mid=(lo+hi)>>1;if(stations[mid].angle<=limit)lo=mid;else hi=mid;}
-  if(limit===stations.at(-1).angle)lo=stations.length-1;
-  const tail=builder(),a=stations[lo],b={angle:limit,low:Math.max(p.low,p.phase+p.lead*limit-p.width/2),high:Math.min(p.high,p.phase+p.lead*limit+p.width/2)};
-  if(limit>a.angle+1e-12)cell(tail,p,a,b);cap(tail,p,b,1);
-  const n=ends[lo],pa=new Float32Array(n+tail.positions.length),na=new Float32Array(n+tail.normals.length);
-  pa.set(positions.subarray(0,n));pa.set(tail.positions,n);na.set(normals.subarray(0,n));na.set(tail.normals,n);
-  g.setAttribute('position',new THREE.BufferAttribute(pa,3));g.setAttribute('normal',new THREE.BufferAttribute(na,3));g.computeBoundingBox();g.computeBoundingSphere();return g;
- }};
-}
-
 export function threadTool(p,center,halfAngle) {
- const mesh=builder(),station=angle=>({angle,low:p.phase+p.lead*angle-p.width/2,high:p.phase+p.lead*angle+p.width/2});
+ const mesh=surfaceBuilder(),station=angle=>({angle,low:p.phase+p.lead*angle-p.width/2,high:p.phase+p.lead*angle+p.width/2});
  const first=station(center-halfAngle),last=station(center+halfAngle);
  const full={...p,low:-Infinity,high:Infinity};
  cap(mesh,p,first,-1);

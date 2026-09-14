@@ -4,7 +4,8 @@ Movement 109 now loads a MuJoCo reconstruction in the catalog, **under review**.
 The lead screw drives a guided cutter while a pair of involute gears turns the
 workpiece. Connected square threads replace the old detached round tubes.
 Material disappears at the cutter's angular position and stays removed on
-return strokes. The source interpretation and close-up shading still need work.
+return strokes. The source interpretation remains under review. The uncut
+blank now renders as one continuous solid without the former helical seams.
 
 Brown's [109 caption](https://507movements.com/mm_109.html) describes uniform
 cutter travel and changing the cut pitch by changing the end wheels. It does
@@ -43,35 +44,40 @@ orthographic source pose, gives:
 | --- | ---: | ---: | ---: |
 | Frame, carriage, arm, shaft, crest and gear extents | 805 | 0.8028 px | 4.2808 px |
 | Lead thread shoulders, retaining assigned source turns | 236 | 3.9837 px | 10.4300 px |
-| Work thread shoulders, nearest edge of the corresponding face | 146 | 9.3854 px | 20.3523 px |
+| Exposed work thread shoulders, nearest edge of the corresponding face | 146 | 9.8506 px | 23.9247 px |
 
 The work metric cannot establish turn correspondence because the turn count
-and hand differ. Shoulder metrics do not account for occlusion by the nut or
-uncut stock. These are geometric comparison measurements, not qualification of
-an exact overlay. The actual source overlay exposes the corrections.
+and hand differ. The work metric now uses only exposed shoulders; it no longer
+includes buried faces inside the blank. Shoulder metrics do not account for
+occlusion by the nut. These are geometric comparison measurements, not
+qualification of an exact overlay. The actual source overlay exposes the
+corrections.
 
 ## Hardware and material removal
 
-Nineteen closed solids form the frame, screws, gears, carriage and tool.
+Seventeen closed solids form the frame, screws, gears, carriage and tool.
 The carriage has a matching internal square thread and a retained key in a
 rear T-slot. The hidden guide sits behind the complete input gear; an earlier
 candidate intersected its rim and was corrected. Bearings, guide depth,
 cutter form, attachment rigidity and 0.2-pixel nominal clearance are inferred.
 Gear flanks and root transitions are generated from an involute rack cutter.
 
-The workpiece consists of a permanent core and finished ridge, plus a
-complementary helical volume filling the uncut groove. Their full volumes sum
-to the original cylindrical blank. A closed radial cap follows the finite
-tool's leading face. The maximum reached work angle controls removal, so
+The workpiece is one closed exterior boundary. It exposes the core and thread
+flanks where the groove has been cut, and retains a continuous cylindrical
+surface elsewhere. A closed radial face follows the finite tool's leading
+face. The angular mesh splits through every axial band at that face so all
+adjoining edges meet; cached sectors keep playback inexpensive. The maximum
+reached work angle controls removal, so
 reversing the shafts cannot regrow material. Restart restores the initial
 partially cut source pose. A short unthreaded end remains above the gears,
 where carriage clearance limits the cutting stroke. This is a geometric
 illustration of a single cut; chip formation, successive depth passes and
 tool withdrawal are omitted.
 
-There are faint helical shadow seams on the nominally smooth uncut blank,
-visible in close-ups where complementary solids meet. Removing those rendering
-artifacts remains open. Fog and ground are disabled. The camera bounds include
+The previous separate core, ridge and groove-fill meshes left buried thread
+flanks beneath the blank. Those internal faces produced helical shadow seams.
+The single exterior eliminates them while retaining the exposed thread shadows.
+Fog and ground are disabled. The camera bounds include
 the complete assembly and both carriage limits.
 
 ## Native motion and checks
@@ -97,7 +103,11 @@ about 0.835 revolution per second. The return retraces the cut groove.
 Four mechanism tests and three shared runtime tests pass. They check solid
 topology, complete blank volume, monotonic removal, native coupling under
 opposite diagnostic loads, passivity, disposal, restart and deterministic
-playback. There are 66,368 triangles in the initial assembly. The diagnostic
+playback. Twenty-six workpiece states cover the complete blank, complete thread,
+partial cuts and angular wraps. Each partial-cut mesh is one closed component;
+its volume agrees with independent circular-groove integration within the
+0.05% polygon approximation bound. A separate check rejects buried thread
+flanks. There are 59,892 triangles in the initial assembly. The diagnostic
 loads are uncalibrated, not established operating limits.
 
 Ten complete cycles (240 seconds), checked at every native step, give:
@@ -110,12 +120,18 @@ Ten complete cycles (240 seconds), checked at every native step, give:
 | Carriage error from the intended travel law | 0.019868 px |
 | Travel-speed error over 100 ms on uniform flanks | 0.6361% |
 
-Halving the timestep lowers the maximum travel-law error to 0.013700 pixel.
+With the preceding three-part workpiece, halving the timestep lowered the
+maximum travel-law error to 0.013700 pixel.
 Comparing 481 matched half-second samples changes carriage position by at most
 0.008763 pixel. This is a sampled position sensitivity check, not convergence
 of cutting forces.
 
-Seventy-three native poses pass 28,082,266 independent surface queries, using
+The single exterior retains the same ideal native couplings. Its new ten-cycle
+run reproduces the travel bounds in the table above; the separate motion
+comparison records a maximum carriage change of 5.43×10⁻¹¹ source pixel from
+the preceding geometry at 481 matched poses.
+
+Seventy-three native poses pass 26,856,574 independent surface queries, using
 vertices, triangle centroids and edge midpoints of the transformed solids.
 There are no sampled unintended intersections above the 0.0001-pixel reporting
 threshold. The rear guide retains at least 23.6827 pixels of engagement; the
@@ -123,15 +139,16 @@ nut overlaps at least 24.5995 pixels of thread. All vertices remain inside the
 camera bounds. Rigidly attached parts are excluded from cross-family checks.
 This is a finite sampled audit, not a continuous interference proof.
 
-Eight additional engine/camera tests pass. Twenty integrated browser images
-are inspected, including desktop, mobile and the scrolled mobile notes panel.
-The seventeen mechanism images have identical hashes to the previously
-inspected candidate images. Live playback averages 32.41 fps at 99.96% of
-physical speed over 26.044 seconds. Mean update time is 0.343 ms and p95 update
-time is 1.100 ms. There are no page errors or unexpected warnings. The build
-passes with its existing large-chunk and guarded Node-import warnings.
-All 25 production MuJoCo browser tests pass, covering nested hosting, lazy
-loading, playback/restart, controls, navigation races, asset retry and disposal.
+The original integration passed eight additional engine/camera tests and all
+25 production MuJoCo browser tests. The exterior change passes the four
+mechanism and three shared runtime tests, plus the focused production 109
+playback/restart regression. Twenty updated integrated browser images are
+inspected, including desktop, mobile and the scrolled mobile notes panel.
+Three unaffected detail/notes images reuse prior inspection by identical hash.
+Live playback averages 33.77 fps at 99.94% of physical speed over 26.030 seconds.
+Mean update time is 0.567 ms and p95 update time is 2.100 ms. There are no page
+errors or unexpected warnings. The build passes with its existing large-chunk
+and guarded Node-import warnings.
 
 ## Reproduction and local evidence
 
@@ -151,11 +168,11 @@ one owned browser at a time; leave source and build files unchanged during
 capture. Reports preserve source hashes. Bulk evidence stays outside Git.
 
 Current local evidence includes `/dev/shm/109-source-c.json`,
-`109-comparison-a.json`, `109-tests-final.txt`, `109-dynamics-final.json`,
-`109-dynamics-half.json` and `109-refinement.json`. Five baseline images and
-seventeen initial candidate images have separate hash-verified inspection
-records. They retain the source and shading limitations described above.
-Final clearance and integrated browser evidence is in `109-clearances-final.json`,
-`109-browser-final.json` and `109-browser-final-inspection.json`; shared test and
-build logs are `109-engine-tests.txt` and `109-build-final.txt`.
-The production browser log is `109-e2e-final.txt` (25 passed in 5.1 minutes).
+`109-exterior-comparison.json`, `109-exterior-tests-b.txt`,
+`109-exterior-dynamics.json`, `109-exterior-motion-comparison.json`,
+`109-exterior-clearances.json`, `109-exterior-browser-a.json`,
+`109-exterior-inspection.json`, `109-exterior-build.txt` and
+`109-exterior-e2e-b.txt`. Original integration/refinement evidence remains in
+`109-dynamics-half.json`, `109-refinement.json`, `109-engine-tests.txt` and
+`109-e2e-final.txt`. The earlier three-part workpiece images are historical;
+their shadow seams are superseded by the exterior reconstruction.

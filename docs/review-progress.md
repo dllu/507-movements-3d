@@ -3563,15 +3563,21 @@ The new blank stays cut on return strokes; a 24-second cycle supplies smooth
 reversals. The fitted 52:76 gear pair requires an inferred shaft depth stagger
 and an opposite-handed, coarser cut than the source depicts. Actual mesh extent
 differences are 0.8028 pixel RMS against 805 edge readings; lead and work thread
-shoulders differ by 3.9837 and 9.3854 pixels RMS respectively. Source interpretation
-and faint helical shading seams on the uncut blank remain under review.
+shoulders differ by 3.9837 and 9.8506 pixels RMS respectively. The latter metric
+now includes only exposed workpiece shoulders. Source interpretation remains
+under review. A single closed workpiece exterior eliminates the blank's former
+helical shadow seams and reduces the initial assembly to 17 solids and 59,892
+triangles. Twenty-six workpiece states check solid topology, volume and the
+absence of buried thread flanks.
 Ten cycles keep native carriage error below 0.019868 pixel and uniform travel
 speed error below 0.6361%. The gears and screw feed use explicit ideal native
 constraints, with geometric cutting and fixed initial workpiece inertia.
-Fifteen mechanism/shared/engine checks and all 25 production MuJoCo browser
-tests pass. A 73-pose audit passes 28,082,266 surface queries with no sampled
-unintended interference. Twenty integrated images are inspected, and live
-playback averages 32.41 fps at 99.96% of physical speed. The build passes.
+The original integration passed fifteen mechanism/shared/engine checks and all
+25 production MuJoCo browser tests. The exterior change passes seven updated
+mechanism/runtime tests and the focused production 109 playback/restart test.
+A 73-pose audit passes 26,856,574 surface queries with no sampled unintended
+interference. Twenty updated integrated images are inspected, and live playback
+averages 33.77 fps at 99.94% of physical speed. The build passes.
 The [109 reconstruction record](mujoco-109-thread-cutting.md) documents these
 limits and the validation evidence. This is an integrated improvement, not
 final mechanical qualification.

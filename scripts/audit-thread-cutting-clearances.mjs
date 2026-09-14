@@ -29,7 +29,7 @@ try {
   }
   const q=p.data.qpos[2];retention=Math.min(retention,Math.min(f.y(u.source.edges.topBottom),f.internal.high-.035+q)-Math.max(f.y(u.source.edges.bottomTop),f.internal.low+.035+q));
   threadEngagement=Math.min(threadEngagement,Math.min(f.external.high,f.internal.high+q)-Math.max(f.external.low,f.internal.low+q));
-  rows.push({time,state:u.state,issues,stockVolume:prepare(u.parts.uncutStock.geometry).topology.volume});
+  rows.push({time,state:u.state,issues,workpieceVolume:prepare(u.parts.workpiece.geometry).topology.volume});
   console.log({time,checks,issues:issues.map(r=>({from:r.from,to:r.to,penetrationPixels:-100*r.gap}))});
  }
  verifyStudySources(sources);
