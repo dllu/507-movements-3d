@@ -6,6 +6,13 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+130 now uses source-traced shear profiles and a passive gravity-driven jaw, with
+only its eccentric cam actuated in MuJoCo. Its motion is baked into a 264 KB
+asset; browser playback needs no WASM. Native timestep refinement differs by
+less than 0.03 source pixels. The blades pass with axial clearance and cut
+progressively from the throat rather than forcing the far tips together.
+See [130's reconstruction and validation](movement-130.md).
+
 129's rope exits no longer intersect the barrel flanges: the source's central
 flange and bare barrel replace two flanges at the exits. A finite rope/flange
 distance test passes across 121 poses and rejects the former placement.

@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "names": [
+    "cam",
+    "jaw"
+  ],
+  "period": 4,
+  "loopStart": 6.4195,
+  "loopEnd": 10.4195,
+  "turns": [
+    -6.283185307179586,
+    0
+  ],
+  "bounds": {
+    "min": [
+      -3.45,
+      -1.65,
+      -0.3
+    ],
+    "max": [
+      2,
+      1.5,
+      0.3
+    ]
+  },
+  "focus": [
+    -0.65,
+    -0.3,
+    0
+  ],
+  "cameraDirection": [
+    0.2,
+    0.15,
+    10
+  ],
+  "source": {
+    "reportSha256": "c4ab281f9867770a44ed5de9ee3c9fc4db9436fdcb04e4646a5f54f2ce2940df",
+    "simulationSources": [
+      {
+        "file": "src/simulation/mujoco-plate-shears/geometry.js",
+        "sha256": "6299a66240e2aca2c9b7bab415718c6247ef3038fc2b4a400215d34ebfe50c25"
+      },
+      {
+        "file": "src/simulation/mujoco-plate-shears/physics.js",
+        "sha256": "60e024eaf2647096b80f1ee6a0e06de41f2a5f5ec94f9c3db1439860e4f80972"
+      },
+      {
+        "file": "src/simulation/mujoco/mass.js",
+        "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+      },
+      {
+        "file": "src/simulation/mujoco/simulation.js",
+        "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+      },
+      {
+        "file": "src/simulation/primitives.js",
+        "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      },
+      {
+        "file": "package-lock.json",
+        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+      }
+    ],
+    "options": {
+      "timestep": 0.0005,
+      "period": 4
+    },
+    "mass": {
+      "jaw": {
+        "volume": 0.3376115039450479,
+        "centroid": [
+          -0.30159526277170845,
+          0.128408761500782,
+          0.07947642663403609
+        ],
+        "inertia": [
+          0.04567095780450908,
+          0.44874959980057866,
+          0.4929840379770294,
+          -0.11578184459408489,
+          0.00005331112103376147,
+          -0.000022698019071157663
+        ]
+      },
+      "cam": {
+        "volume": 0.1300040850763186,
+        "centroid": [
+          4.59663820515409e-18,
+          -0.23977638496081655,
+          0.07999999821186064
+        ],
+        "inertia": [
+          0.009093109940437452,
+          0.009397858451519152,
+          0.017936284320427286,
+          6.021939930872312e-19,
+          6.802945009016968e-20,
+          8.673617379884035e-19
+        ]
+      }
+    },
+    "maximumLoopSeamPixels": 3.623767952376511e-11,
+    "maximumPenetrationPixels": 0.00021767707832909267
+  },
+  "samples": 10421,
+  "bytes": 264049,
+  "assetSha256": "fc9498dbd9ea85995e83a5d7d8df85d98e849cbc88d6bff7e503a2e3d0a1a290"
+}

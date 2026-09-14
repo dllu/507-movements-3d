@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 130) {
+    const {makeBakedPlateShears} = await import('./baked/plate-shears.js');
+    const model = await makeBakedPlateShears();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 128) {
     const {makeBakedThreeWiper} = await import('./baked/three-wiper.js');
     const model = await makeBakedThreeWiper();
