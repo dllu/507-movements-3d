@@ -3707,6 +3707,23 @@ ideal bearings and guide; nonzero friction and applied loads remain outside
 qualification. Construction and evidence are recorded in the
 [116 reconstruction](mujoco-116-rack-rectifier.md).
 
+117 now loads a MuJoCo cam between two independently rotating rollers in a
+passive guided yoke. A measured cam with a conjugate pitch curve replaces the
+old animation-derived shape and prescribed motion. The 27-solid construction
+connects both stems to their crossbars and continues the lower stem beyond
+the engraving's break to keep it inside its guide. Actual cam edges fit
+within 1.57099 source pixels RMS. Ten cycles retain the full stroke with
+maximum motion error 0.004732 pixel and native penetration 0.004205 pixel.
+Finer timestep, finer cam mesh and friction trials from 0.05 to 0.6 retain
+the motion; the lightly loaded lower roller can slip or coast, so its exact
+rotation is not qualified. The independent 21-pose audit makes 1,080,198
+surface queries and finds no unintended intersections. All fifteen targeted
+tests pass, and all thirteen integrated views are inspected. Playback records
+60.07 fps at 99.97421% physical speed. The production build and all 33
+production MuJoCo browser regressions pass. Source measurements, ideal
+bearings and guide, inferred depth and stem continuation, and contact limits
+are recorded in the [117 reconstruction](mujoco-117-roller-yoke.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3732,6 +3749,7 @@ qualification. Construction and evidence are recorded in the
 114 is verified for frictionless contact-driven rack transfer with relieved end teeth, a corrected initial phase and stated guide/depth assumptions.
 115 is verified for contact-driven double-rack motion with equal input torques, shifted involute teeth and stated bearing/guide assumptions.
 116 is verified for alternating ratchet contact with shifted involute pinions, inferred pawl springs and stated friction/guide limits.
+117 is verified for native cam-driven yoke motion with passive rollers, an inferred stem continuation and stated bearing/guide and roller-slip limits.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
