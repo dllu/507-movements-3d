@@ -3880,10 +3880,15 @@ headless playback averages 32.24 fps at 99.84% physical speed. Source
 ambiguities, the earlier failed contact approximation and guide/depth assumptions are documented in the
 [125 reconstruction](mujoco-125-cascaded-traverse.md).
 
-126 has source circle, lever-edge and cord-envelope measurements plus an
-inspected seven-view baseline. Its existing oversized spoked pulley and extra
-frame/handles disagree with the engraving. Reconstruction and native contact
-qualification remain pending; see the [126 source review](mujoco-126-bell-crank.md).
+126 now has an unregistered MuJoCo candidate with a solid pulley, measured
+curved lever arms and two finite cords. Rendered arm-edge RMS errors are
+0.2148–0.3413 source pixel; measured pin and eye positions are retained.
+Four mechanism tests pass, including passive force transfer and pulley-friction
+ablation. The initial heavy-rope candidate had excessive sag and poor playback;
+lighter-rope and planar trials are recorded. Larger-timestep and CG trials
+reset. Finished attachment geometry, source-rim/cord consistency, all-hardware
+clearance and readable playback remain open before catalog integration; see
+the [126 reconstruction record](mujoco-126-bell-crank.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
