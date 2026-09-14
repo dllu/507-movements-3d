@@ -58,15 +58,39 @@ prisms fill the remaining lands, and the curved shoe is also divided into
 prisms. A hull of an entire curved strip would add material below its concave
 inner surface; dividing it into triangular prisms removes that discrepancy.
 
+The cutter now includes the interiors of the shoe's curved longitudinal sides.
+Projecting only the nose endpoints omitted material in the middle of the shoe;
+a narrower groove built from that incomplete footprint jammed immediately.
+Optional minimax fitting chooses the finite shoe's machining angle on straight
+flanks and through the end curves. It supplies no swivel setpoint to MuJoCo.
+The affine portions use an analytical support calculation, avoiding repeated
+numerical sweeps along equivalent parts of each helix.
+
+The barrel core now participates in contact. Its native cylinder fills the union
+of the visible annular core and coaxial shaft within the barrel's axial extent.
+The 256-sided visible circumference differs from the analytic cylinder by less
+than 0.004 engraving pixel. Core depth remains an inferred reconstruction
+parameter; making it shallower does not by itself establish stable dynamics.
+
 The geometry checks exposed and corrected a missing socket bore, small seam
 inconsistencies, and cap winding that corrupted the thin-shoe inertia. The
 current geometry/passivity tests pass. Twelve visible parts are closed and
-have positive volume and consistent normals; the land mesh comprises multiple
-closed patches resting on the barrel core. All 13,734 compiled contact vertices
+have positive volume and consistent normals. A further seam audit found 52
+artificial radial cap faces: nearly coincident intersection angles were being
+handled by skipping a narrow strip, leaving microscopic gaps. Coalescing those
+angles before meshing, and reusing periodic boundary values, removes all those
+caps. The corrected lands have eleven closed patches resting on the core.
+Coincident facet normals are smoothed without joining opposing groove walls.
+
+At the current 64-segment study resolution, all 7,638 compiled prism vertices
 agree with the rendered surfaces within 0.00003 source pixel. Independent convex
 hull volumes agree with the visible contact solids within 0.000001 model-unit
-cubed. Removing shoe contact leaves the output stationary with gravity and
-initial output velocity disabled. Both native allocations are released.
+cubed. The native model has 1,283 geoms, including the analytic core. The expanded
+checks also sweep 481 prescribed shoe poses for interference, reject artificial
+radial seam caps, and verify that an over-rotated shoe contacts the core.
+Prescribed poses test machining clearance, not passive motion. Removing shoe
+contact leaves the output stationary with gravity and initial output velocity
+disabled. Both native allocations are released.
 
 ## Dynamics evidence and outstanding work
 
@@ -89,17 +113,41 @@ These are prototype studies, not a completed mechanical qualification:
   contact response is 2 ms. This establishes useful progress, but does not yet
   establish sufficiently uniform travel or robust crossing selection under load.
 
-The browser study against that corrected geometry also retains the intended
-traverse, but fails its one-pixel travel tolerance at 1.55345 pixels. There are
-no page errors or unexpected warnings. Playback averages only 9.38 fps over
-8.316 seconds, with 69.13 ms mean update time, so performance remains unresolved.
-The current source overlay, both reversal views and socket detail were inspected;
-this is not a completed inspection of all final views.
+Further studies exposed failures that a single cycle did not reveal. With the
+sealed mesh, a 0.5 ms step and 0.433-unit core, the second upper reversal reaches
+3.54808 pixels of travel error and 3.05157 pixels of native penetration. A 1 ms
+step jams. These settings are rejected, despite some earlier single-cycle runs
+completing their intended traverse. Thinner shoes, longer shoes, frictionless
+contact and increased swivel damping also did not establish stable operation.
+
+The latest 40-second study uses a 0.25 ms step, 2 ms contact response, 64 barrel
+segments, optimized machining swivel angles and a 0.434-unit core radius. It
+completes two output cycles (twenty barrel turns) with maximum travel deviation
+of 0.75382 engraving pixel and input-angle error of 0.005106 radian. However,
+native penetration reaches 0.55868 pixel and speed variation over 100 ms uniform
+flank intervals reaches 15.7798%. This is progress in branch retention, not an
+accepted contact or uniformity result.
+
+The latest browser study passes its stated playback checks: travel error is
+below 0.75085 pixel, input-angle error is below 0.000784 radian, and there are
+no page errors or unexpected warnings. All thirteen current views were
+inspected, including the source overlay, both reversals, rear, guide, groove
+and spindle/socket details. The artificial barrel seam is gone. The broad
+projected groove openings still differ substantially from the drawn diamonds;
+that source interpretation remains unresolved.
+
+The capture now uses the application's actual `advance()` path and 50 ms frame
+clamp, and includes the final frame's processing time in its wall clock. Playback
+averages 10.30 fps with 63.18 ms mean and 74.10 ms p95 update time. Only 4.23325
+simulation seconds elapse in 8.34660 wall seconds: about 50.72% of physical
+speed. A browser playback `passed` flag does not qualify this performance or
+the separate native penetration result. Failed input-progress checks also now
+retain their report instead of throwing before it is written.
 
 The remaining work includes tighter control of shoe yaw and groove clearance,
 signed-load and long-cycle checks, timestep and mesh refinement, sampled visible
 clearances through motion, a direct comparison of the final machined outlines
-with the ink readings, smoother shading and acceptable live browser performance.
+with the ink readings and acceptable live browser performance.
 The final mechanism then needs catalog integration, production build, browser
 regressions and inspection of the integrated desktop/mobile views. The current
 two tests cover geometry and passivity only; they do not prove these remaining
@@ -109,7 +157,12 @@ Local evidence includes `/dev/shm/108-source-b.json`, `108-baseline.json`,
 `108-native-a.json` through selected later studies, `108-candidate-a.json`,
 `108-candidate-b.json`, `108-geometry-fixed-a.txt`, `108-native-o.json` and
 `108-candidate-tests-e.txt`, `108-candidate-c.json` and
-`108-checkpoint-inspection.json`. Bulk reports and images remain outside Git.
+`108-checkpoint-inspection.json`. Current evidence includes
+`108-sealed-a.json`, `108-sealed-fast.json`, `108-sealed-close.json`,
+`108-candidate-tests-h.txt`, `108-candidate-e.json` and
+`108-checkpoint-inspection-b.json`. The envelope probe separately records
+prescribed-pose interference, without claiming a dynamics result. Bulk reports
+and images remain outside Git.
 
 ## Reproduction
 
@@ -119,8 +172,8 @@ which are explicitly supplied rather than relying on experimental defaults:
 ```sh
 PROBE_PREFIX=/dev/shm/108-measured node scripts/measure-reverse-thread-source.mjs
 TMPDIR=/dev/shm node --test tests/mujoco-reverse-thread-candidate.test.mjs
-TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/108-study DURATION=20 SIM_OPTIONS='{"shoeLength":0.36,"shoeRadius":0.05,"workingThickness":0.025,"curvedShoe":true,"reversalAngle":2,"timestep":0.0005,"contactTime":0.002,"period":20}' node scripts/probe-reverse-thread-dynamics.mjs
-TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/108-browser-study SIM_OPTIONS='{"shoeLength":0.36,"shoeRadius":0.05,"workingThickness":0.025,"curvedShoe":true,"reversalAngle":2,"timestep":0.0005,"contactTime":0.002,"period":20}' node scripts/capture-reverse-thread-candidate.mjs
+TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/108-study DURATION=40 SIM_OPTIONS='{"shoeLength":0.36,"shoeRadius":0.05,"workingThickness":0.025,"curvedShoe":true,"reversalAngle":2,"timestep":0.00025,"contactTime":0.002,"period":20,"segments":64,"optimizeTilt":true,"optimizeReversalTilt":true,"coreRadius":0.434}' node scripts/probe-reverse-thread-dynamics.mjs
+TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/108-browser-study SIM_OPTIONS='{"shoeLength":0.36,"shoeRadius":0.05,"workingThickness":0.025,"curvedShoe":true,"reversalAngle":2,"timestep":0.00025,"contactTime":0.002,"period":20,"segments":64,"optimizeTilt":true,"optimizeReversalTilt":true,"coreRadius":0.434}' node scripts/capture-reverse-thread-candidate.mjs
 ```
 
 The browser study uses an existing Vite server on port 5174. Run one owned

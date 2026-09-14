@@ -65,20 +65,21 @@ try {
         document.querySelector('#stage').append(img);await img.decode();
       }
       document.querySelector('#title').textContent='108 · '+spec.name;
-      return {...u.state,errorPixels:100*(u.state.qpos[1]-(u.profile.law(u.profile.initialParameter-u.state.qpos[0]).y-u.profile.initialY))};
+      return {...u.state,inputErrorRadians:u.state.qpos[0]-u.physics.description.omega*u.state.time,errorPixels:100*(u.state.qpos[1]-(u.profile.law(u.profile.initialParameter-u.state.qpos[0]).y-u.profile.initialY))};
     },spec);
     const file=prefix+'-'+spec.name+'.png';assert(!fs.existsSync(file));
     await page.screenshot({path:file});views.push({...spec,state,file,sha256:hashStudyFile(file),inspected:false});
   }
   const runtime=await page.evaluate(()=>new Promise(resolve=>{
     const e=window.review108,frames=[];let first,last;
-    e.model.reset();e.fitCamera(e.model.cameraDirection);
+    e.model.reset();e.elapsed=0;e.playbackEnded=false;e.playing=true;e.fitCamera(e.model.cameraDirection);
     function frame(now) {
       first??=now;const time=(now-first)/1000,start=performance.now();
-      e.model.update(time);const updateMs=performance.now()-start;
-      e.renderer.render(e.scene,e.camera);frames.push({time,updateMs,intervalMs:last===undefined?0:now-last,errorPixels:100*(e.model.root.userData.state.qpos[1]-(e.model.root.userData.profile.law(e.model.root.userData.profile.initialParameter-e.model.root.userData.state.qpos[0]).y-e.model.root.userData.profile.initialY))});last=now;
+      e.advance(Math.min(last===undefined?0:(now-last)/1000,.05));const updateMs=performance.now()-start;
+      const u=e.model.root.userData;
+      e.renderer.render(e.scene,e.camera);frames.push({time,simulationTime:u.state.time,updateMs,intervalMs:last===undefined?0:now-last,inputErrorRadians:u.state.qpos[0]-u.physics.description.omega*u.state.time,errorPixels:100*(u.state.qpos[1]-(u.profile.law(u.profile.initialParameter-u.state.qpos[0]).y-u.profile.initialY))});last=now;
       if(time<8.2)requestAnimationFrame(frame);
-      else resolve({frames,wallSeconds:(now-first)/1000,timeScale:e.playbackTimeScale,fog:e.scene.fog,hideGround:e.model.root.userData.hideGround,
+      else resolve({frames,wallSeconds:(performance.now()-first)/1000,simulationTime:e.model.root.userData.state.time,timeScale:e.playbackTimeScale,fog:e.scene.fog,hideGround:e.model.root.userData.hideGround,
         backend:e.model.root.userData.simulationBackend,state:e.model.root.userData.state});
     }requestAnimationFrame(frame);
   }));
@@ -86,9 +87,9 @@ try {
   const known=[/^THREE.Clock: This module has been deprecated\./,/^THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated\./,/^\[.WebGL-.*GPU stall due to ReadPixels/];
   const unexpectedWarnings=warnings.filter(w=>!known.some(r=>r.test(w)));
   verifyStudySources(sources);
-  assert.ok(Math.abs(runtime.state.qpos[0]-20*Math.PI*runtime.state.time/(options.period??10))<.01,'input did not complete the requested rotation');
+  const maximumInputErrorRadians=Math.max(...views.map(v=>Math.abs(v.state.inputErrorRadians)),...runtime.frames.map(v=>Math.abs(v.inputErrorRadians)));
   const maximumTravelErrorPixels=Math.max(...views.map(v=>Math.abs(v.state.errorPixels)),...runtime.frames.map(v=>Math.abs(v.errorPixels)));
-  const passed=maximumTravelErrorPixels<1&&!errors.length&&!unexpectedWarnings.length&&runtime.backend==='mujoco';
-  fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,maximumTravelErrorPixels,views,runtime,errors,warnings,unexpectedWarnings,passed},null,2)+'\n',{flag:'wx'});
-  console.log({passed,maximumTravelErrorPixels,views:views.length,frames:runtime.frames.length,errors,unexpectedWarnings});assert(passed);
+  const passed=maximumTravelErrorPixels<1&&maximumInputErrorRadians<.01&&!errors.length&&!unexpectedWarnings.length&&runtime.backend==='mujoco';
+  fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,qualification:'Candidate playback checks only; contact penetration, load robustness and real-time performance require separate qualification.',maximumTravelErrorPixels,maximumInputErrorRadians,views,runtime,errors,warnings,unexpectedWarnings,passed},null,2)+'\n',{flag:'wx'});
+  console.log({passed,maximumTravelErrorPixels,maximumInputErrorRadians,views:views.length,frames:runtime.frames.length,errors,unexpectedWarnings});assert(passed);
 } finally {await browser.close();}

@@ -3541,8 +3541,14 @@ source readings expose a mismatch between the drawn groove diagonals and a
 circular cylinder's projection. A curved swiveling shoe and complete intersecting
 cuts now have passing geometry/passivity tests, including compiled contact
 vertices and convex-volume comparisons. Short shoes can choose the wrong branch;
-the longer candidate completes a native cycle but still has excessive travel
-deviation. [Current evidence and remaining work](mujoco-108-reverse-thread-candidate.md)
+the longer candidate still needs contact and performance work. The cutter now
+includes its curved side interiors, the barrel core participates in collision,
+and a seam audit removes 52 artificial radial cap faces. Expanded geometry and
+passivity checks pass. A two-cycle study retains the intended traverse within
+0.75382 engraving pixel, but penetration still reaches 0.55868 pixel. All thirteen
+latest browser views are inspected; playback checks pass within 0.75085 pixel,
+while actual app playback runs at only 10.30 fps and 50.72% physical speed.
+[Current evidence and remaining work](mujoco-108-reverse-thread-candidate.md)
 are explicit. 108 is not yet qualified or integrated into the MuJoCo catalog loader.
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,

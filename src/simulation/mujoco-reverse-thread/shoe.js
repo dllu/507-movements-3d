@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {poly,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {smoothPrismNormals} from './normals.js';
 export function reverseThreadShoe(f) {
  const cells=[],faces=new Map(),key=p=>p.map(v=>v.toFixed(9)).join(',');
  const addTriangle=(p,c,axis)=>{if(new Set(p.map(key)).size<3)return;const v=p.map(p=>new THREE.Vector3(...p)),normal=v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0]));if(normal.length()<1e-12)return;if(normal.dot(axis??new THREE.Vector3(v[0].x-c.x,v[0].y-c.y,0))<0)p=[p[0],p[2],p[1]];const k=p.map(key).sort().join('/');if(faces.has(k))faces.delete(k);else faces.set(k,p);};
@@ -23,5 +24,5 @@ export function reverseThreadShoe(f) {
    }
   }
  }
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([...faces.values()].flat(2),3));g.computeVertexNormals();return{geometry:g,cells};
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([...faces.values()].flat(2),3));g.computeVertexNormals();return{geometry:smoothPrismNormals(g),cells};
 }

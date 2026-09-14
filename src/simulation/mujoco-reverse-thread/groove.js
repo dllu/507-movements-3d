@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {smoothPrismNormals} from './normals.js';
 const tau=2*Math.PI;
 export function reverseThreadLands(f) {
  const values=Array.from({length:f.segments+1},(_,i)=>tau*i/f.segments),n=2*f.lanes+2;
@@ -12,7 +13,13 @@ export function reverseThreadLands(f) {
   let lo=values[i],hi=values[i+1];for(let q=0;q<25;q++){const mid=(lo+hi)/2,b=allBounds(mid);if((b[j]-b[k])*left>0)lo=mid;else hi=mid;}
   values.push((lo+hi)/2);
  }
- const angles=[...new Set(values.map(a=>Number(a.toFixed(9))))].sort((a,b)=>a-b);angles[0]=0;angles[angles.length-1]=tau;
+ // Root finding may rediscover a grid angle a few nanoradians away. Dropping
+ // the resulting tiny strip leaves two closed radial caps with a microscopic
+ // gap. Coalesce the angles first, retaining exact original grid positions.
+ const clusters=[];
+ for(const a of values.sort((a,b)=>a-b)){const last=clusters.at(-1);if(last&&a-last.at(-1)<1e-7)last.push(a);else clusters.push([a]);}
+ const angles=clusters.map(group=>{const a=group.reduce((sum,v)=>sum+v,0)/group.length,grid=tau*Math.round(a*f.segments/tau)/f.segments;return Math.abs(a-grid)<1e-7?grid:Number(a.toFixed(9));});
+ angles[0]=0;angles[angles.length-1]=tau;
  const canonical=values=>{const a=[...values],ids=a.map((_,i)=>i).sort((i,j)=>a[i]-a[j]);let first=0;while(first<ids.length){let end=first+1;while(end<ids.length&&a[ids[end]]-a[ids[first]]<1e-7)end++;const y=Math.fround(a[ids[first]]);for(let k=first;k<end;k++)a[ids[k]]=y;first=end;}return a;};
  const cells=[],faces=new Map(),vertexKey=p=>p.map(v=>v.toFixed(9)).join(','),out=[];
  const point=(r,a,y)=>[Math.abs(Math.sin(a))<1e-10?0:r*Math.sin(a),y,Math.abs(Math.cos(a))<1e-10?0:r*Math.cos(a)].map(v=>Math.fround(Number(v.toFixed(9))));
@@ -49,5 +56,5 @@ export function reverseThreadLands(f) {
  }
  for(const tri of faces.values())out.push(...tri.flat());
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(out,3));geometry.computeVertexNormals();
- return {geometry,cells,angles};
+ return {geometry:smoothPrismNormals(geometry),cells,angles};
 }
