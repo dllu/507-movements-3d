@@ -3582,19 +3582,24 @@ The [109 reconstruction record](mujoco-109-thread-cutting.md) documents these
 limits and the validation evidence. This is an integrated improvement, not
 final mechanical qualification.
 
-110 now has an isolated MuJoCo candidate with measured fine opposite-hand
-threads, rocking half-nuts and the full selector lever. Its actual outlines
-differ from 1,100 ink readings by 0.79919 pixel RMS. Relieved female thread
-tips permit withdrawal; contact drives the passive rod through three selections
-in 21 seconds without position resets. Maximum native penetration is 0.12672
-pixel. Seven candidate/runtime tests and the production build pass. A 21-pose
-audit makes 5,960,312 independent surface queries with no unintended sampled
-intersections. Sixteen final views are inspected, including exposed thread
-contacts. Playback remains slow at 12.82 fps and 62.86% physical speed, so 110
-is not integrated. Automatic selection, weight support, stops, hidden depths
-and thread relief are reconstructed. Performance, refinement, loads, longer
-runs and source interpretation remain open in the
-[110 candidate record](mujoco-110-half-nut-candidate.md).
+110 now loads the MuJoCo half-nut traverse in the catalog. Reducing the thread
+mesh from 64 to 32 angular divisions cuts collision geoms from 3,388 to 1,812
+and allows 22.44 fps at 98.87% physical speed in the final integrated capture.
+Measured outlines still differ from 1,100 ink readings by 0.79919 pixel RMS.
+Native contact drives the passive rod through nine selections in 68 seconds,
+with maximum penetration 0.10285 pixel and a cycle near 16 seconds. Both
+21-second reversed-load trials retain engagement. Half-timestep and finer-mesh
+comparisons differ from the default sampled axial trajectory by at most
+0.20287 and 0.29984 pixel, but contact penetration does not converge
+monotonically. Working-stroke speed still varies: p95 error over 100 ms is
+14.8561%, and the largest sampled deviation from an ideal screw line is
+0.25604 pixel. Thirteen mechanism/runtime/engine checks and the integrated
+build pass. A 27-pose audit makes 4,414,170 independent surface queries with no
+unintended sampled intersections; all sixteen integrated views are inspected.
+All 26 production MuJoCo browser regressions pass. Automatic selection, weight
+support, stops, hidden depths and thread relief are reconstructed. Speed ripple,
+contact convergence, longer loaded runs, friction and source interpretation
+remain open in the [110 reconstruction record](mujoco-110-half-nut-candidate.md).
 
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
@@ -3616,7 +3621,7 @@ runs and source interpretation remain open in the
 105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
 106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
-082, 083, 087, 088, 108 and 109 are integrated and under review.
+082, 083, 087, 088, 108, 109 and 110 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
 

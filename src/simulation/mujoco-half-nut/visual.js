@@ -13,9 +13,9 @@ export function makeMujocoHalfNut(mujoco,options={}) {
  const playback=createPhysicsPlayback(physics,sync);let disposed=false;
  const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
  const bounds=new THREE.Box3(new THREE.Vector3(-2.1,-1.55,-.8),new THREE.Vector3(3,1.9,.8));
- Object.assign(u,{mechanism:'mujoco-half-nut',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'candidate',supportsRestart:true,cameraFitBounds:bounds,
+ Object.assign(u,{mechanism:'mujoco-half-nut',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,cameraFitBounds:bounds,
   sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'Opposite-hand screw threads drive the rod through alternate half-nuts. The selector is operated automatically for the demonstration. Bearings, depth and travel limits are reconstructed.',
-  animationTiming:{authoredCyclePeriod:18,displayCycleDuration:18,playbackTimeScale:1}});
+  animationTiming:{authoredCyclePeriod:16,displayCycleDuration:16,playbackTimeScale:1}});
  try{sync();}catch(error){dispose();throw error;}
  return {...visual,physics,sync,...playback,dispose};
 }

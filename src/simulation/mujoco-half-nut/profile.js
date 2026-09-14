@@ -1,6 +1,6 @@
 import source from './source.js';
 
-export function makeHalfNutProfile({segments=64,clearance=.001,selectorAngle=.10,travel=.20,tipRelief=.008}={}) {
+export function makeHalfNutProfile({segments=32,clearance=.001,selectorAngle=.10,travel=.20,tipRelief=.008}={}) {
  const e=source.edges,axis=[(e.leftFrameLeft+e.rightFrameRight)/2,source.axes.rodY];
  const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100;
  const spacing=(source.axes.rodY-source.axes.rollerY)/100;
