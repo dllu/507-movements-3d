@@ -35,6 +35,7 @@ const physicsFactories = {
   117: () => import('./mujoco-roller-yoke/visual.js').then(module => module.makeMujocoRollerYoke),
   118: () => import('./mujoco-stroke-doubler/visual.js').then(module => module.makeMujocoStrokeDoubler),
   119: () => import('./mujoco-endless-rack/visual.js').then(module => module.makeMujocoEndlessRack),
+  120: () => import('./mujoco-segment-clamp/visual.js').then(module => module.makeMujocoSegmentClamp),
 };
 
 export async function loadMovementModel(movement) {

@@ -3764,6 +3764,22 @@ the opaque guide remains available. Playback averages 57.57 fps at 99.97%
 physical speed. Evidence and the scope of ideal engagement support are in
 the [119 reconstruction](mujoco-119-endless-rack.md).
 
+120 now closes and reopens through native external/internal gear contact
+and physical jaw contact. Compatible 13/51 and 23/79 tooth pairs replace
+the old equal 1:3 ratios and triangular teeth. Measured shaft positions,
+curved jaws and enclosing frame restore the source silhouette. Recessed
+frame arms and complete end tooth spaces remove two early closing jams;
+hidden depths, widened jaw edges, ideal bearings and the reversing drive
+are explicit reconstruction assumptions. Ten cycles retain both meshes,
+with maximum rolling error 0.121431 pixel and native penetration 0.031468
+pixel. Finer solver/geometry and opposed loaded friction trials preserve
+closure. The twelve-solid audit makes 4,219,514 sampled surface queries
+without unintended intersections. All fifteen targeted tests pass and all
+fourteen final views are inspected. The production build and all 36 MuJoCo
+browser checks pass. Playback averages 37.09 fps at 99.92%
+physical speed. Source differences, collision approximation and evidence
+are documented in the [120 reconstruction](mujoco-120-segment-clamp.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3792,6 +3808,7 @@ the [119 reconstruction](mujoco-119-endless-rack.md).
 117 is verified for native cam-driven yoke motion with passive rollers, an inferred stem continuation and stated bearing/guide and roller-slip limits.
 118 is verified for native doubled-stroke transmission with regular involute teeth, ideal bearings and guides, and stated input/support reconstruction assumptions.
 119 is verified for contact-driven endless-rack circulation with additional ideal normal engagement support and stated tooth-count, guide and depth assumptions.
+120 is verified for native gear-driven jaw closure and reopening with ideal bearings, bounded collision approximation and stated frame/depth/drive reconstruction assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
