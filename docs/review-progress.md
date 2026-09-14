@@ -3744,6 +3744,26 @@ the display-only shadow adjustment. Construction assumptions,
 the interpretation of the three static support webs, and evidence are in
 the [118 reconstruction](mujoco-118-stroke-doubler.md).
 
+119 now uses a uniformly driven MuJoCo pinion, a passive vertical carrier
+and a passive horizontal endless rack. Tooth contact determines travel
+along the rack, with explicit ideal normal support retaining engagement.
+The bare construction loses mesh at its first end, so the additional support
+is a stated reconstruction assumption. Generated eight-tooth pinion and
+six-tooth rounded ends preserve the interpreted source counts; the corrected
+initial phase, thick rear rod, four bores, broad slotted guide and complete
+beams replace the old proportions. Actual pinion edges fit within 2.49613
+source pixels RMS and the regularized rack within 4.80993 pixels RMS.
+Ten circuits retain the full stroke with maximum transmission error 0.473889
+pixel and native penetration 0.020343 pixel. Finer timestep and mesh trials,
+opposed loaded friction trials and doubled retention stiffness preserve the
+motion. The 33-pose surface audit makes 1,583,474 queries and finds no
+unintended intersections. All thirteen targeted tests pass, all fifteen final
+views are inspected, and the production build and all 35 MuJoCo browser
+checks pass. Section view outlines the front guide to expose the pinion;
+the opaque guide remains available. Playback averages 57.57 fps at 99.97%
+physical speed. Evidence and the scope of ideal engagement support are in
+the [119 reconstruction](mujoco-119-endless-rack.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3771,6 +3791,7 @@ the [118 reconstruction](mujoco-118-stroke-doubler.md).
 116 is verified for alternating ratchet contact with shifted involute pinions, inferred pawl springs and stated friction/guide limits.
 117 is verified for native cam-driven yoke motion with passive rollers, an inferred stem continuation and stated bearing/guide and roller-slip limits.
 118 is verified for native doubled-stroke transmission with regular involute teeth, ideal bearings and guides, and stated input/support reconstruction assumptions.
+119 is verified for contact-driven endless-rack circulation with additional ideal normal engagement support and stated tooth-count, guide and depth assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
