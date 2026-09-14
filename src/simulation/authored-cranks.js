@@ -1,3 +1,4 @@
+import {boredHorizontalPlate} from './bored-horizontal-plate.js';
 import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
 import * as THREE from 'three';
 import {
@@ -6681,7 +6682,7 @@ function twinObliqueRodTogglePressMotion() {
   const platenHeight = 0.58;
   const platenDepth = 2.28;
   const upperShaftRadius = 0.19;
-  const upperShaftTopY = topFrameY + 0.35;
+  const upperShaftTopY = topFrameY + 0.95;
   const upperShaftBottomY = upperLinkY - 0.18;
   const upperShaftLength = upperShaftTopY - upperShaftBottomY;
   const upperShaftCenterY = (
@@ -7052,11 +7053,16 @@ function twinObliqueRodTogglePressMotion() {
 
   const topFrameRails = [-0.18, 0.07, 0.31].map((offsetY, index) => {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        columnHalfSpan * 2 + 0.62 - index * 0.18,
-        0.18,
-        frameDepth - index * 0.18,
-      ),
+      boredHorizontalPlate({
+        outline: [
+          [-(columnHalfSpan + .31 - index * .09), -(frameDepth - index * .18) / 2],
+          [columnHalfSpan + .31 - index * .09, -(frameDepth - index * .18) / 2],
+          [columnHalfSpan + .31 - index * .09, (frameDepth - index * .18) / 2],
+          [-(columnHalfSpan + .31 - index * .09), (frameDepth - index * .18) / 2],
+        ],
+        holes: [{x:0, z:-frameBackZ * .52, radius:upperShaftRadius + .02}],
+        depth:.18,
+      }),
       frameMaterial,
     );
     rail.position.set(0, topFrameY + offsetY, frameBackZ * 0.52);
@@ -7076,7 +7082,10 @@ function twinObliqueRodTogglePressMotion() {
     'fixed-thrust-bearing-capturing-upper-disk-axially';
 
   const upperBearingCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.55, 0.25, 56),
+    boredHorizontalPlate({
+      outline:Array.from({length:128},(_,i)=>[.55*Math.cos(i*Math.PI/64),.55*Math.sin(i*Math.PI/64)]),
+      holes:[{x:0,z:0,radius:upperShaftRadius+.02}],depth:.25,
+    }),
     frameMaterial,
   );
   upperBearingCollar.position.y = topFrameY - 0.31;
@@ -7396,7 +7405,7 @@ function twinObliqueRodTogglePressMotion() {
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4, bedTopY - .6, -2.5),
-    new THREE.Vector3(4, topFrameY + .6, 4),
+    new THREE.Vector3(4, topFrameY + 1, 4),
   );
   root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod};
   upperRotationIndex.visible = false;

@@ -9,8 +9,9 @@ evidence that all models match the engravings or avoid interference.
 132's handle now sweeps in front of the frame, avoiding a verified collision
 with the right column. Finite lever/column checks reject the former handedness;
 rod-length and linkage regression checks pass. Playback has a four-second
-display cycle, Restart and a nearly frontal view. Disk sockets and shaft bores
-remain under review; see [132's partial review](movement-132.md).
+display cycle, Restart and a nearly frontal view. The collar and three overhead
+frame layers now have coaxial shaft bores, checked against their actual triangles;
+the shaft stub emerges above the frame. Disk sockets remain under review; see [132's partial review](movement-132.md).
 
 131 now has an engraving-based analytical assembly: one connected slotted
 sector with two traced web openings, measured disk/shaft/guide positions,

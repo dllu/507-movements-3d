@@ -18,6 +18,15 @@ its former sweep produces a collision, providing a failure control. The
 existing full linkage regression still passes, including rod length and
 kinematic derivative checks.
 
+The fixed collar and all three overhead frame layers now have actual shaft
+bores, with radius 0.21 around the 0.19-radius shaft. Their triangulated surfaces
+have at least 0.0198 world units of radial clearance. The frame holes account
+for each member's Z offset, so all four openings share the same world axis.
+A triangle-level distance test rejects solid replacements. The shaft now
+extends 0.55 units above the top frame instead of ending inside it, restoring
+the stub visible in the engraving. The shaft's axial restraint remains an
+ideal revolute constraint; the bores alone do not model thrust-bearing loads.
+
 The display cycle has an explicit four-second minimum (the native analytical
 cycle remains ten seconds and the existing display timing applies a 2.5x
 scale). Restart restores the open configuration. The camera is nearly frontal,
@@ -27,13 +36,13 @@ the disk/platen are hidden. Packaged browser checks cover desktop/mobile
 animation, pause, exact restart and absence of a WASM request.
 
 ```sh
-node --test tests/toggle-press-clearance.test.mjs
+node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs
 node --test --test-name-pattern='movement 132 straightens' tests/models.test.mjs
 ```
 
 This is not a full geometry sign-off. The retained disk sockets are decorative
-rings on solid disks, and the collar/top-frame shaft passages require actual
-bores. Their joint geometry, other collision pairs, the bell silhouette and
+rings on solid disks. Their joint geometry, other collision pairs, the bell
+silhouette and
 platen/frame proportions remain under review. The workpiece and hidden depth
 are reconstructed. No dynamic pressure, material deformation or bearing loads
 are simulated.
