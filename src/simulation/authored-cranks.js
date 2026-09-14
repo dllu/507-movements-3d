@@ -6832,12 +6832,12 @@ function twinObliqueRodTogglePressMotion() {
   const handleStart = new THREE.Vector3(
     Math.cos(handleLocalAngle) * handleInnerRadius,
     handleY,
-    Math.sin(handleLocalAngle) * handleInnerRadius,
+    -Math.sin(handleLocalAngle) * handleInnerRadius,
   );
   const handleEnd = new THREE.Vector3(
     Math.cos(handleLocalAngle) * handleOuterRadius,
     handleY,
-    Math.sin(handleLocalAngle) * handleOuterRadius,
+    -Math.sin(handleLocalAngle) * handleOuterRadius,
   );
   const handLever = makeBeam(handleStart, handleEnd, {
     color: PALETTE.driver,
@@ -6854,7 +6854,7 @@ function twinObliqueRodTogglePressMotion() {
     new THREE.Vector3(
       Math.cos(handleLocalAngle) * handleGripStartRadius,
       handleY,
-      Math.sin(handleLocalAngle) * handleGripStartRadius,
+      -Math.sin(handleLocalAngle) * handleGripStartRadius,
     ),
     handleEnd,
     {
@@ -7016,7 +7016,7 @@ function twinObliqueRodTogglePressMotion() {
       new THREE.Vector3(
         Math.cos(upperAngle) * linkHoleRadius,
         upperLinkY,
-        Math.sin(upperAngle) * linkHoleRadius,
+        -Math.sin(upperAngle) * linkHoleRadius,
       ),
       new THREE.Vector3(lowerX, openLowerDiskY, 0),
       {
@@ -7191,7 +7191,7 @@ function twinObliqueRodTogglePressMotion() {
     new THREE.Vector3(
       radius * Math.cos(angle),
       y,
-      radius * Math.sin(angle),
+      -radius * Math.sin(angle),
     )
   );
 
@@ -7250,7 +7250,7 @@ function twinObliqueRodTogglePressMotion() {
       const upperVelocity = new THREE.Vector3(
         -linkHoleRadius * Math.sin(upperAngle) * upperPhaseVelocity,
         0,
-        linkHoleRadius * Math.cos(upperAngle) * upperPhaseVelocity,
+        -linkHoleRadius * Math.cos(upperAngle) * upperPhaseVelocity,
       );
       const lowerVelocity = new THREE.Vector3(
         0,
@@ -7262,8 +7262,8 @@ function twinObliqueRodTogglePressMotion() {
           - linkHoleRadius * Math.sin(upperAngle)
             * upperPhaseAcceleration,
         0,
-        -linkHoleRadius * Math.sin(upperAngle) * upperPhaseVelocity ** 2
-          + linkHoleRadius * Math.cos(upperAngle)
+        linkHoleRadius * Math.sin(upperAngle) * upperPhaseVelocity ** 2
+          - linkHoleRadius * Math.cos(upperAngle)
             * upperPhaseAcceleration,
       );
       const lowerAcceleration = new THREE.Vector3(
@@ -7391,6 +7391,16 @@ function twinObliqueRodTogglePressMotion() {
 
   root.userData.mechanism = 'fixed-upper-rotor-two-oblique-rod-toggle-press';
   root.userData.cameraDistanceScale = 1.04;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.minimumDisplayCycleSeconds = 4;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-4, bedTopY - .6, -2.5),
+    new THREE.Vector3(4, topFrameY + .6, 4),
+  );
+  root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod};
+  upperRotationIndex.visible = false;
+  platenMotionIndex.visible = false;
   root.userData.blocks = {
     bed,
     cameraFitGuides,
@@ -7494,7 +7504,7 @@ function twinObliqueRodTogglePressMotion() {
 
   const update = (time) => {
     const state = stateAtTime(time);
-    upperRotor.rotation.set(0, -state.upperPhase, 0);
+    upperRotor.rotation.set(0, state.upperPhase, 0);
     upperInput.userData.angularSpeed = state.upperPhaseVelocity;
     upperInput.userData.axialVelocity = 0;
     lowerAssembly.position.set(0, state.lowerDiskY, 0);
@@ -7560,7 +7570,9 @@ function twinObliqueRodTogglePressMotion() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
-  return finish(root, update, new THREE.Vector3(10, 4.4, 10));
+  const model = finish(root, update, new THREE.Vector3(.2, .35, 12));
+  model.reset = () => update(0);
+  return model;
 }
 
 function leverDrivenTogglePunchPressMotion() {

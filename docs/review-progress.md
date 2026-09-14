@@ -6,6 +6,12 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+132's handle now sweeps in front of the frame, avoiding a verified collision
+with the right column. Finite lever/column checks reject the former handedness;
+rod-length and linkage regression checks pass. Playback has a four-second
+display cycle, Restart and a nearly frontal view. Disk sockets and shaft bores
+remain under review; see [132's partial review](movement-132.md).
+
 131 now has an engraving-based analytical assembly: one connected slotted
 sector with two traced web openings, measured disk/shaft/guide positions,
 involute teeth and a close-fitting pin. It has no invented rear frame or

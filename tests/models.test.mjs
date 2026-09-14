@@ -30900,7 +30900,7 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
     model.update(time, 0.016);
     model.root.updateMatrixWorld(true);
     assert.equal(upperRotor.rotation.x, 0);
-    assert.equal(upperRotor.rotation.y, -state.upperPhase);
+    assert.equal(upperRotor.rotation.y, state.upperPhase);
     assert.equal(upperRotor.rotation.z, 0);
     assert.equal(upperInput.userData.angularSpeed,
       state.upperPhaseVelocity);
