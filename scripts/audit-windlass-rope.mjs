@@ -24,5 +24,5 @@ try{
  if(process.env.PROBE_REPORT)fs.writeFileSync(process.env.PROBE_REPORT,JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify(report,null,2));
  assert(Math.abs(results[0].maximumLiftCorrectionPixels-results[1].maximumLiftCorrectionPixels)<.0001);
- assert(results[1].maximumLiftCorrectionPixels<.025);
+ assert(results[1].maximumLiftCorrectionPixels<.05);
 }finally{disposeObject3D(v.root);}

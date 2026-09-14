@@ -13,8 +13,9 @@ export function windingAdvance(t,turns){
 /** A single sheave solid: smooth circumference, flat faces, open rope groove. */
 export function windlassSheaveGeometry(radius,ropeRadius,width=.46){
  const bed=radius-ropeRadius,rim=radius+ropeRadius+.02;
+ const bedHalfWidth=ropeRadius*1.6,lip=bedHalfWidth+.035;
  const profile=[[.105,-width/2],[rim-.015,-width/2],[rim,-width/2+.015],
-  [rim,-.09],[bed,-.055],[bed,.055],[rim,.09],
+  [rim,-lip],[bed,-bedHalfWidth],[bed,bedHalfWidth],[rim,lip],
   [rim,width/2-.015],[rim-.015,width/2],[.105,width/2],[.105,-width/2]];
  const positions=[],normals=[],indices=[],segments=128;
  for(let j=0;j<profile.length-1;j++){

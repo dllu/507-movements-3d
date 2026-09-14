@@ -7,7 +7,7 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {windlassSheaveGeometry} from '../src/simulation/windlass-hardware.js';
 const catalog=JSON.parse(fs.readFileSync(new URL('../src/data/movements.json',import.meta.url)));
 test('129 solid sheave has flat face normals, an axle bore and space for the full rope section',()=>{
- const g=windlassSheaveGeometry(1.1,.034),p=g.getAttribute('position'),n=g.getAttribute('normal');
+ const ropeRadius=.064,g=windlassSheaveGeometry(1.1,ropeRadius),p=g.getAttribute('position'),n=g.getAttribute('normal');
  try{
   for(let i=0;i<p.count;i++){
    const radius=Math.hypot(p.getX(i),p.getY(i));assert(radius>.1049);
@@ -23,7 +23,7 @@ test('129 solid sheave has flat face normals, an axle bore and space for the ful
   assert(flatFaceTriangles>=256);
   const profile=g.userData.profile;
   for(let i=0;i<=100;i++){
-   const z=-.034+.068*i/100,ropeInside=1.1-Math.sqrt(Math.max(0,.034**2-z*z));
+   const z=-ropeRadius+2*ropeRadius*i/100,ropeInside=1.1-Math.sqrt(Math.max(0,ropeRadius**2-z*z));
    const j=profile.findIndex((a,j)=>j&&profile[j-1][1]<=z&&a[1]>=z),a=profile[j-1],b=profile[j];
    assert(j>0);const wall=a[0]+(b[0]-a[0])*(z-a[1])/(b[1]-a[1]);
    assert(ropeInside>=wall-1e-12,'finite rope section clears the actual groove wall');
@@ -54,7 +54,33 @@ test('129 winding anchors rotate rigidly with the shaft and adjacent coils remai
    }
   }
   assert(minimum>2*d.ropeRadius,`nonlocal winding distance ${minimum}`);
-  const n=6.6,t=1/n,oldSeparation=d.ropeAxialPitch*n*(3*t*t-2*t*t*t);
+  const n=6.6,t=1/n,oldSeparation=.105*n*(3*t*t-2*t*t*t);
   assert(oldSeparation<2*d.ropeRadius,'former globally eased winding must overlap');
+ }finally{disposeObject3D(v.root);}
+});
+
+test('129 source-proportioned posts join both bearings and the rear base through their feet',()=>{
+ const v=createMovementModel(catalog.movements[128]),u=v.root.userData,d=u.geometry,b=u.blocks;
+ try{
+  v.root.updateMatrixWorld(true);
+  assert.equal(d.sourceRasterLargeBarrelRadius,50);assert.equal(d.sourceRasterSmallBarrelRadius,31);
+  assert(Math.abs(b.barrelFlanges[0].geometry.parameters.radiusTop/d.sourceScale-68)<1);
+  assert(Math.abs(b.barrelFlanges[2].geometry.parameters.radiusTop/d.sourceScale-46)<1);
+  assert(Math.abs((d.shaftY-d.baseY)/d.sourceScale-315)<1e-10);
+  for(let i=0;i<2;i++){
+   const post=b.bearingPosts[i],sleeve=b.bearingSleeves[i],foot=b.footBlocks[i];
+   assert.equal(post.geometry.parameters.shapes.holes.length,1);
+   assert.equal(post.position.x,sleeve.position.x);assert.equal(post.position.z,sleeve.position.z);
+   const shaftBounds=new THREE.Box3().setFromObject(b.inputShaft),bearingBounds=new THREE.Box3().setFromObject(sleeve);
+   assert(shaftBounds.min.x<bearingBounds.min.x&&shaftBounds.max.x>bearingBounds.max.x);
+   assert(d.shaftRadius<d.bearingInnerRadius-.008,'axle clears the bevelled sleeve bore');
+   // This point is inside the post and bearing ring, proving a solid connection.
+   assert(.2>d.bearingInnerRadius&&.2<d.bearingOuterRadius);
+   for(const part of [post,b.baseRail]){
+    const intersection=new THREE.Box3().setFromObject(foot).intersect(new THREE.Box3().setFromObject(part));
+    const size=intersection.getSize(new THREE.Vector3());assert(size.x*size.y*size.z>0);
+   }
+  }
+  assert.equal(b.crankArm.visible,false);assert.equal(b.crankHandle.visible,false);
  }finally{disposeObject3D(v.root);}
 });

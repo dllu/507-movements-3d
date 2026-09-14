@@ -13,8 +13,11 @@ Playback has a six-second full cycle and no scene ground. Its lower sheave is
 now one bored, grooved solid with a traced J-hook and shorter hanger. Rope
 anchors stay fixed on the shaft, and neighbouring windings pass finite
 clearance checks. A refined arc-length audit bounds the ideal lift law's
-omitted winding correction to 0.0184 source pixels. Remaining upper-barrel,
-frame and projection proportions are still under review;
+omitted winding correction to 0.0369 source pixels after correcting the barrel
+and rope dimensions. Bored posts now join the shaft bearings, with feet linking
+them to the base; shaft/base heights follow the engraving. The unengraved crank
+and diagnostic markers are hidden, and the camera is nearly frontal. The lower
+sheave's projection remains a documented reconstruction qualification;
 see [129's partial review](movement-129.md).
 
 128 now has a source-traced frame and cam faces with contact-driven MuJoCo

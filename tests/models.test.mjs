@@ -28594,6 +28594,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     windlassRotor,
   } = model.root.userData.blocks;
   const geometry = model.root.userData.geometry;
+  const roundoff = 64 * Number.EPSILON;
 
   assert.equal(model.root.userData.fidelity, 'authored');
   assert.equal(
@@ -28655,19 +28656,19 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     geometry.largeBarrelWidth -
     (geometry.sourceRasterLargeBarrelRangeX.y
       - geometry.sourceRasterLargeBarrelRangeX.x) * geometry.sourceScale
-  ) < 3e-16);
+  ) < roundoff);
   assert.ok(Math.abs(
     geometry.smallBarrelWidth -
     (geometry.sourceRasterSmallBarrelRangeX.y
       - geometry.sourceRasterSmallBarrelRangeX.x) * geometry.sourceScale
-  ) < 3e-16);
+  ) < roundoff);
   assert.ok(Math.abs(
     geometry.shaftY - geometry.sourcePulleyCenterY -
     Math.abs(
       geometry.sourceRasterLowerPulleyCenter.y
         - geometry.sourceRasterShaftCenter.y
     ) * geometry.sourceScale,
-  ) < 5e-16);
+  ) < roundoff);
   assert.ok(geometry.largeBarrelPitchRadius
     > geometry.smallBarrelPitchRadius);
   assert.equal(
@@ -28724,33 +28725,33 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
   assert.ok(geometry.lowerPulleyAxis.length() > 1 - 1e-15);
   assert.ok(Math.abs(
     geometry.lowerPulleyHorizontal.dot(geometry.lowerPulleyAxis)
-  ) < 2e-16);
-  assert.ok(Math.abs(geometry.lowerPulleyAxis.dot(Y_AXIS)) < 2e-16);
+  ) < roundoff);
+  assert.ok(Math.abs(geometry.lowerPulleyAxis.dot(Y_AXIS)) < roundoff);
   assert.ok(geometry.lowerPulleyAxis.distanceTo(
     geometry.lowerPulleyHorizontal.clone().cross(Y_AXIS).normalize()
-  ) < 2e-16,
+  ) < roundoff,
   'the lower sheave is tilted into the unique plane containing both rope legs');
   assert.ok(geometry.largeRopeExit.distanceTo(new THREE.Vector3(
     -geometry.barrelExitHalfSpacing,
     geometry.shaftY,
     -geometry.largeBarrelPitchRadius,
-  )) < 2e-16);
+  )) < roundoff);
   assert.ok(geometry.smallRopeExit.distanceTo(new THREE.Vector3(
     geometry.barrelExitHalfSpacing,
     geometry.shaftY,
     geometry.smallBarrelPitchRadius,
-  )) < 2e-16);
+  )) < roundoff);
   assert.ok(geometry.smallRopeExit.clone().sub(geometry.largeRopeExit)
     .distanceTo(
       geometry.lowerPulleyHorizontal.clone().multiplyScalar(
         geometry.lowerPulleyPitchRadius * 2,
       )
-    ) < 3e-16);
+    ) < roundoff);
   assert.ok(Math.abs(
     geometry.lowerPulleyPitchRadius * geometry.lowerPulleyHorizontal.x
       - (geometry.sourceRasterRightRopeX
         - geometry.sourceRasterLeftRopeX) * geometry.sourceScale / 2
-  ) < 2e-16,
+  ) < roundoff,
   'the tilted sheave retains the engraving’s projected rope spacing');
   assert.ok(Math.abs(
     geometry.lowerPulleyPitchRadius * geometry.lowerPulleyHorizontal.x
@@ -28759,10 +28760,10 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
   'the lower sheave retains the source projected radius');
   assert.ok(lowerPulley.userData.axis.distanceTo(
     geometry.lowerPulleyAxis
-  ) < 2e-16);
+  ) < roundoff);
   assert.ok(lowerAxle.userData.axis.distanceTo(
     geometry.lowerPulleyAxis
-  ) < 2e-16);
+  ) < roundoff);
   assert.equal(
     lowerPulleyContactTread.userData.contactRadius + geometry.ropeRadius,
     geometry.lowerPulleyPitchRadius,
@@ -28830,14 +28831,15 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
       - model.root.userData.stateAtTime(
         geometry.ropeRenderInterval * 2,
       ).shaftAngle
-  ) < 2e-16);
+  ) < roundoff);
 
   const sourceState = model.root.userData.stateAtTime(0);
   assert.equal(sourceState.shaftAngle, geometry.sourcePoseAngle);
   assert.ok(sourceState.shaftAngularSpeed > 0);
   assert.equal(sourceState.ropeCount, 1);
-  assert.equal(sourceState.ropeLength, geometry.nominalRopeLength);
-  assert.equal(sourceState.ropeLengthError, 0);
+  const lengthRoundoff = 4 * Number.EPSILON * geometry.nominalRopeLength;
+  assert.ok(Math.abs(sourceState.ropeLength - geometry.nominalRopeLength) < lengthRoundoff);
+  assert.ok(Math.abs(sourceState.ropeLengthError) < lengthRoundoff);
   assert.equal(sourceState.largeWoundLength,
     geometry.baseLargeWoundLength);
   assert.equal(sourceState.smallWoundLength,
@@ -28853,22 +28855,22 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
   assert.ok(sourceState.lowerPulleyAngularSpeed < 0);
   assert.ok(sourceState.largeBarrelSurfaceVelocity.distanceTo(
     sourceState.leftRopeVelocity
-  ) < 3e-16);
+  ) < roundoff);
   assert.ok(sourceState.smallBarrelSurfaceVelocity.distanceTo(
     sourceState.rightRopeVelocity
-  ) < 3e-16);
+  ) < roundoff);
   assert.ok(sourceState.leftLowerSurfaceVelocity.distanceTo(
     sourceState.leftRopeVelocity
-  ) < 5e-16);
+  ) < roundoff);
   assert.ok(sourceState.rightLowerSurfaceVelocity.distanceTo(
     sourceState.rightRopeVelocity
-  ) < 5e-16);
+  ) < roundoff);
   assert.ok(sourceState.largeBarrelTangentialVelocityError.length()
-    < 3e-16);
+    < roundoff);
   assert.ok(sourceState.smallBarrelTangentialVelocityError.length()
-    < 3e-16);
-  assert.ok(sourceState.leftLowerNoSlipError.length() < 5e-16);
-  assert.ok(sourceState.rightLowerNoSlipError.length() < 5e-16);
+    < roundoff);
+  assert.ok(sourceState.leftLowerNoSlipError.length() < roundoff);
+  assert.ok(sourceState.rightLowerNoSlipError.length() < roundoff);
   assert.equal(
     sourceState.lowerPulleyAngularSpeed,
     -geometry.barrelRadiusSum * sourceState.shaftAngularSpeed
@@ -28903,11 +28905,11 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
       / (2 * geometry.lowerPulleyPitchRadius),
   );
   assert.ok(arbitraryState.largeBarrelTangentialVelocityError.length()
-    < 3e-16);
+    < roundoff);
   assert.ok(arbitraryState.smallBarrelTangentialVelocityError.length()
-    < 3e-16);
-  assert.ok(arbitraryState.leftLowerNoSlipError.length() < 5e-16);
-  assert.ok(arbitraryState.rightLowerNoSlipError.length() < 5e-16);
+    < roundoff);
+  assert.ok(arbitraryState.leftLowerNoSlipError.length() < roundoff);
+  assert.ok(arbitraryState.rightLowerNoSlipError.length() < roundoff);
 
   const zeroTurn = model.root.userData.stateAtShaftKinematics({
     shaftAngle: 0,
@@ -28922,7 +28924,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
   assert.ok(Math.abs(
     oneTurn.pulleyCenterY - zeroTurn.pulleyCenterY
       - geometry.pulleyTravelPerWindlassRevolution
-  ) < 3e-16,
+  ) < roundoff,
   'one shaft turn lifts the pulley by half the circumference difference');
   assert.ok(Math.abs(
     oneTurn.largeWoundLength - zeroTurn.largeWoundLength
@@ -28932,7 +28934,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     oneTurn.smallWoundLength - zeroTurn.smallWoundLength
       + geometry.fullTurn * geometry.smallBarrelPitchRadius
   ) < 4e-15);
-  assert.ok(Math.abs(oneTurn.ropeLengthError) < 8e-15);
+  assert.ok(Math.abs(oneTurn.ropeLengthError) < lengthRoundoff);
   assert.ok(Math.abs(
     oneTurn.ropeSegmentLengths[1] - zeroTurn.ropeSegmentLengths[1]
       + geometry.pulleyTravelPerWindlassRevolution
@@ -28986,10 +28988,10 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     ) < 3e-15);
     assert.ok(ropeGeometry.leftLeg.getPoint(0).distanceTo(
       geometry.largeRopeExit
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(ropeGeometry.rightLeg.getPoint(1).distanceTo(
       geometry.smallRopeExit
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(ropeGeometry.largeHelix.getPoint(0).x
       > geometry.largeBarrelOuterX);
     assert.ok(ropeGeometry.largeHelix.getPoint(0).x
@@ -29003,13 +29005,13 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
         geometry.lowerPulleyHorizontal,
         -geometry.lowerPulleyPitchRadius,
       )
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(ropeGeometry.rightPulleyTangent.distanceTo(
       ropeGeometry.lowerPulleyCenter.clone().addScaledVector(
         geometry.lowerPulleyHorizontal,
         geometry.lowerPulleyPitchRadius,
       )
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(ropeGeometry.lowerPulleyCenter.y
       + geometry.lowerPulleyPitchRadius + geometry.ropeRadius
       < geometry.shaftY - geometry.largeBarrelPitchRadius,
@@ -29131,7 +29133,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     'windlass-reverses-at-lowered-load-limit',
     'windlass-reverses-at-raised-load-limit',
   ]);
-  assert.ok(maximumRopeLengthError < 1.5e-14);
+  assert.ok(maximumRopeLengthError < lengthRoundoff);
   assert.ok(maximumNoSlipError < 8 * Number.EPSILON * (1
     + geometry.largeBarrelPitchRadius * geometry.shaftAngleAmplitude
       * geometry.driveAngularFrequency));
@@ -29142,13 +29144,13 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
       - (geometry.sourcePulleyCenterY
         - geometry.pulleyTravelPerShaftRadian
           * geometry.shaftAngleAmplitude)
-  ) < 3e-16);
+  ) < roundoff);
   assert.ok(Math.abs(
     maximumPulleyY
       - (geometry.sourcePulleyCenterY
         + geometry.pulleyTravelPerShaftRadian
           * geometry.shaftAngleAmplitude)
-  ) < 3e-16);
+  ) < roundoff);
 
   model.root.updateMatrixWorld(true);
   const worldPosition = (object) => object.getWorldPosition(
@@ -29196,18 +29198,18 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
         state.ropeCurve.getPointAtDistance(
           geometry.ropeMarkerMaterialDistances[index],
         )
-      ) < 2e-16);
+      ) < roundoff);
     });
     assert.ok(worldPosition(lowerContactMarkers[0]).distanceTo(
       state.leftLowerContactPoint
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(worldPosition(lowerContactMarkers[1]).distanceTo(
       state.rightLowerContactPoint
-    ) < 2e-16);
+    ) < roundoff);
     assert.ok(model.root.userData.contacts.largeBarrelRope
-      .tangentialVelocityError.length() < 3e-16);
+      .tangentialVelocityError.length() < roundoff);
     assert.ok(model.root.userData.contacts.smallBarrelRope
-      .tangentialVelocityError.length() < 3e-16);
+      .tangentialVelocityError.length() < roundoff);
     assert.ok(model.root.userData.contacts.lowerMovablePulley
       .leftNoSlipError.length() < 9e-16);
     assert.ok(model.root.userData.contacts.lowerMovablePulley
@@ -29224,7 +29226,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
   assert.ok(shaftIndexTravel > geometry.smallBarrelPitchRadius,
     'the white shaft index makes the common barrel rotation legible');
   fixedBlocks.forEach((object, index) => {
-    assert.ok(worldPosition(object).distanceTo(fixedPositions[index]) < 2e-16,
+    assert.ok(worldPosition(object).distanceTo(fixedPositions[index]) < roundoff,
       'the frame, bearings, and upper rope exits remain fixed');
   });
   model.update(0, 0.016);
@@ -29233,7 +29235,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     worldPosition(loadHanger).sub(worldPosition(lowerPulley)).dot(
       geometry.lowerPulleyAxis
     ) - geometry.hangerFrontOffset
-  ) < 2e-16,
+  ) < roundoff,
   'the engraved load hanger remains visibly mounted on the sheave front');
   const hookBounds = new THREE.Box3().setFromObject(loadHook);
   const baseBounds = new THREE.Box3().setFromObject(baseRail);

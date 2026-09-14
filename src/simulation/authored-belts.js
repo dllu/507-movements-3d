@@ -4690,14 +4690,14 @@ function chineseDifferentialWindlass() {
   // leave opposite sides of the coaxial barrels. Their vertical legs define
   // a unique tilted plane for the one lower pulley, avoiding any unengraved
   // guide sheaves while keeping every rope contact spatially tangent.
-  const sourceRasterShaftCenter = new THREE.Vector2(255, -98);
-  const sourceRasterLargeBarrelRadius = 42;
-  const sourceRasterSmallBarrelRadius = 29;
+  const sourceRasterShaftCenter = new THREE.Vector2(255, -115);
+  const sourceRasterLargeBarrelRadius = 50;
+  const sourceRasterSmallBarrelRadius = 31;
   const sourceRasterLargeBarrelRangeX = new THREE.Vector2(122, 202);
   const sourceRasterSmallBarrelRangeX = new THREE.Vector2(318, 390);
   const sourceRasterLeftRopeX = 201;
   const sourceRasterRightRopeX = 316;
-  const sourceRasterLowerPulleyCenter = new THREE.Vector2(254, -311);
+  const sourceRasterLowerPulleyCenter = new THREE.Vector2(254, -319);
   const sourceRasterLowerPulleyRadius = 59;
   const sourceRasterFramePostsX = new THREE.Vector2(94, 430);
   const sourceScale = 0.016;
@@ -4749,8 +4749,7 @@ function chineseDifferentialWindlass() {
     * fullTurn * baseLargeWrapTurns;
   const baseSmallWoundLength = smallBarrelPitchRadius
     * fullTurn * baseSmallWrapTurns;
-  const ropeAxialPitch = 0.105;
-  const ropeRadius = 0.034;
+  const ropeRadius = 0.064;
   const ropeMarkerCount = 9;
   const ropeRenderAngleThreshold = 0.06;
   const ropeRenderInterval = 1 / 30;
@@ -4781,15 +4780,17 @@ function chineseDifferentialWindlass() {
   const largeBarrelBodyRadius = largeBarrelPitchRadius - ropeRadius * 1.15;
   const smallBarrelBodyRadius = smallBarrelPitchRadius - ropeRadius * 1.15;
   const barrelFlangeThickness = 0.1;
-  const barrelFlangeExtraRadius = 0.13;
+  const barrelFlangeExtraRadius = 0.28;
+  const largeWindingAxialSpan = largeBarrelWidth - barrelFlangeThickness / 2 - ropeRadius - .02;
+  const smallWindingAxialSpan = smallBarrelWidth - barrelFlangeThickness / 2 - ropeRadius - .02;
   const shaftRadius = 0.105;
-  const shaftLength = 5.65;
+  const shaftLength = 5.75;
   const crankRadius = 0.82;
   const crankHandleLength = 0.48;
   const idealForceRatio = crankRadius / pulleyTravelPerShaftRadian;
   const rearFrameZ = -0.82;
-  const baseY = -3.45;
-  const framePostXs = [-2.62, 2.62];
+  const baseY = shaftY - (430 - 115) * sourceScale;
+  const framePostXs = [94, 430].map(x => (x - sourceRasterShaftCenter.x) * sourceScale);
   const bearingInnerRadius = shaftRadius + 0.027;
   const bearingOuterRadius = 0.29;
   const bearingLength = 0.32;
@@ -4950,7 +4951,7 @@ function chineseDifferentialWindlass() {
     const largeWrapSweep = largeWoundLength / largeBarrelPitchRadius;
     const smallWrapSweep = smallWoundLength / smallBarrelPitchRadius;
     const largeHelix = new WoundHelixCurve3({
-      axialSpan: ropeAxialPitch * baseLargeWrapTurns,
+      axialSpan: largeWindingAxialSpan,
       exitPhase: -Math.PI / 2,
       exitX: largeRopeExit.x,
       radius: largeBarrelPitchRadius,
@@ -4973,7 +4974,7 @@ function chineseDifferentialWindlass() {
       smallRopeExit.clone(),
     );
     const smallHelix = new WoundHelixCurve3({
-      axialSpan: ropeAxialPitch * baseSmallWrapTurns,
+      axialSpan: smallWindingAxialSpan,
       exitPhase: Math.PI / 2,
       exitX: smallRopeExit.x,
       radius: smallBarrelPitchRadius,
@@ -5098,6 +5099,7 @@ function chineseDifferentialWindlass() {
     inkMaterial,
     30,
   );
+  inputShaft.position.x = .115;
   inputShaft.userData.axis = X_AXIS.clone();
   inputShaft.userData.role = 'common-shaft-fast-to-both-windlass-barrels';
   const largeBarrel = cylinderAlongX(
@@ -5138,7 +5140,7 @@ function chineseDifferentialWindlass() {
     [smallBarrelOuterX, smallBarrelPitchRadius, 'small-outer'],
   ]) {
     const flange = cylinderAlongX(
-      radius + barrelFlangeExtraRadius,
+      radius + (side.startsWith('small') ? .24 : barrelFlangeExtraRadius),
       barrelFlangeThickness,
       driverMaterial,
       52,
@@ -5197,6 +5199,8 @@ function chineseDifferentialWindlass() {
     0,
   );
   crankHandle.userData.role = 'free-hand-grip-on-windlass-crank';
+  crankArm.visible = false;
+  crankHandle.visible = false;
   windlassRotor.add(
     inputShaft,
     largeBarrel,
@@ -5335,18 +5339,18 @@ function chineseDifferentialWindlass() {
     sleeve.position.set(x, shaftY, 0);
     sleeve.userData.axis = X_AXIS.clone();
     sleeve.userData.role = `${side}-fixed-windlass-shaft-bearing`;
-    const postHeight = shaftY - baseY;
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.27, postHeight, 0.3),
-      frameMaterial,
-    );
-    post.position.set(x, (shaftY + baseY) / 2, rearFrameZ);
+    const postTop = shaftY + (115 - 62) * sourceScale;
+    const shape = new THREE.Shape();
+    shape.moveTo(-.15, baseY);shape.lineTo(.15, baseY);
+    shape.lineTo(.15, postTop);shape.lineTo(-.15, postTop);shape.closePath();
+    const bore = new THREE.Path();bore.absarc(0, shaftY, bearingInnerRadius, 0, fullTurn, true);shape.holes.push(bore);
+    const postGeometry = new THREE.ExtrudeGeometry(shape, {depth:.27, bevelEnabled:false, curveSegments:32});
+    postGeometry.translate(0,0,-.135);postGeometry.rotateY(Math.PI/2);
+    const post = new THREE.Mesh(postGeometry, frameMaterial);
+    post.position.x = x;
     post.userData.role = `${side}-windlass-bearing-support-post`;
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.16, 0.72),
-      frameMaterial,
-    );
-    foot.position.set(x, baseY + 0.08, rearFrameZ);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(.9,.16,1.2), frameMaterial);
+    foot.position.set(x,baseY+.08,-.35);
     foot.userData.role = `${side}-windlass-frame-foot`;
     bearingSleeves.push(sleeve);
     bearingPosts.push(post);
@@ -5592,6 +5596,8 @@ function chineseDifferentialWindlass() {
   );
 
   root.userData.mechanism = 'single-rope-differential-chinese-windlass';
+  for (const marker of [...ropeMarkers, ...lowerContactMarkers,
+    largeDrumContactMarker, smallDrumContactMarker, shaftRotationIndex]) marker.visible = false;
   root.userData.shadowCameraHalfExtent = 6;
   root.userData.shadowBias = -.00003;
   root.userData.shadowNormalBias = .005;
@@ -5671,7 +5677,8 @@ function chineseDifferentialWindlass() {
     pulleyTravelPerShaftRadian,
     pulleyTravelPerWindlassRevolution,
     rearFrameZ,
-    ropeAxialPitch,
+    largeWindingAxialSpan,
+    smallWindingAxialSpan,
     ropeMarkerCount,
     ropeMarkerMaterialDistances,
     ropeRadius,
@@ -5795,7 +5802,7 @@ function chineseDifferentialWindlass() {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(-7.0, 4.3, 11.3),
+    cameraDirection: new THREE.Vector3(-.8, .5, 12),
   };
 }
 
