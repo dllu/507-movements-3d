@@ -1,0 +1,128 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-cams.js",
+      "sha256": "a9aea943a0c5b14558060087f1fd30d1e0cf6a0c44e892ed59405533245e2b9d"
+    },
+    {
+      "file": "src/simulation/mujoco-variable-cam/profile.js",
+      "sha256": "980f56d8a54328975f4923dc4a853912d9f9b812b6a30c1be347a8757e77a0f8"
+    },
+    {
+      "file": "src/simulation/mujoco-variable-cam/physics.js",
+      "sha256": "f2e947edcedb3d29bc5d23fa043a40b80ca46227c79f6566423c9a3636724fab"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "scripts/probe-variable-cam.mjs",
+      "sha256": "4cf5c4b337678dc64c0daff9748198778be838038e14985e96eb5effdd554b0a"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+    }
+  ],
+  "metersPerWorldUnit": 0.05125,
+  "landmarks": [
+    {
+      "name": "outer-right-corner",
+      "engraved": [
+        367,
+        320
+      ],
+      "rendered": [
+        367.24373555000057,
+        335.9790379370049
+      ],
+      "errorPixels": 15.980896733618394
+    },
+    {
+      "name": "outer-left-point",
+      "engraved": [
+        138,
+        378
+      ],
+      "rendered": [
+        136.59374199003088,
+        368.9290334370638
+      ],
+      "errorPixels": 9.179324374729791
+    },
+    {
+      "name": "bottom-corner",
+      "engraved": [
+        289,
+        466
+      ],
+      "rendered": [
+        286.05073783952906,
+        471.16937571302094
+      ],
+      "errorPixels": 5.951520188452397
+    },
+    {
+      "name": "upper-left-corner",
+      "engraved": [
+        257,
+        333
+      ],
+      "rendered": [
+        256.6786357202987,
+        325.4222751751227
+      ],
+      "errorPixels": 7.5845361441441845
+    }
+  ],
+  "oldTipInterferencePixels": 5.266187197586983,
+  "correctedTipEnvelopeDifferencePixels": 0.0004011699860673179,
+  "maximumDownwardVelocityJumpAtLegacySpeed": 1.2674228009342898,
+  "sensitivityPixels": {
+    "time-refined": 0.20504569265849176,
+    "mesh-refined": 0.2180651760191682,
+    "fine": 0.20108969095680024
+  },
+  "minimumGapPixels": -0.012985620616658144,
+  "maximumLiftOffPixels": 0.508783431187535,
+  "maximumIdealPointOracleDifferencePixels": 0.5085862978582756,
+  "runs": {
+    "coarse": {
+      "options": {
+        "timestep": 0.0005,
+        "period": 8,
+        "samplesPerArc": 64
+      },
+      "penetration": 0.000688999633804975,
+      "resets": 0
+    },
+    "time-refined": {
+      "options": {
+        "timestep": 0.00025,
+        "period": 8,
+        "samplesPerArc": 64
+      },
+      "penetration": 0.0008741036072244723,
+      "resets": 0
+    },
+    "mesh-refined": {
+      "options": {
+        "timestep": 0.0005,
+        "period": 8,
+        "samplesPerArc": 128
+      },
+      "penetration": 0.001073121960748764,
+      "resets": 0
+    },
+    "fine": {
+      "options": {
+        "timestep": 0.00025,
+        "period": 8,
+        "samplesPerArc": 128
+      },
+      "penetration": 0.0007078843892042768,
+      "resets": 0
+    }
+  }
+}

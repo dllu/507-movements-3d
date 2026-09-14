@@ -1,3 +1,13 @@
+# Current review: 138 requires contour and contact corrections
+
+The legacy tip has transposed dimensions and overlaps the cam by up to 5.27
+engraving pixels. A corrected passive MuJoCo follower prototype passes separate
+timestep/mesh checks, with less than 0.219 pixels of sensitivity. However, the
+existing profile follows the source animation and misses the engraving's
+upper-right corner by about 16 pixels. The experimental bake is not wired into
+the browser. Trace the engraving and rerun validation before shipping 138;
+see [movement 138](movement-138.md). Do not advance to 139 yet.
+
 # Current review: 137 shaped expansion eccentric
 
 137 now loads baked MuJoCo motion and a traced shaped cam, with passive fork,
