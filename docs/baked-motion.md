@@ -16,7 +16,7 @@ the animation as well as the engraving and caption; record discrepancies.
 The browser loads precomputed visible BufferGeometry and sampled joint motion
 from a 2,572,783-byte gzip asset. It does not load MuJoCo, generate collision
 meshes or step physics. The native contact model remains unchanged and runnable.
-The shared playback helper currently supports Z hinges and Y slides; other
+The shared playback helper currently supports Z hinges and X/Y slides; other
 joint types and flexible bodies require additional bindings.
 
 The recording retains startup, then repeats the settled six-second cycle

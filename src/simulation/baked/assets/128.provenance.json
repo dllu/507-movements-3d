@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "names": [
+    "rotor",
+    "frame"
+  ],
+  "period": 6,
+  "loopStart": 11.98925,
+  "loopEnd": 17.98925,
+  "turns": [
+    -6.283185307179586,
+    0
+  ],
+  "bounds": {
+    "min": [
+      -3.15,
+      -2.05,
+      -0.3
+    ],
+    "max": [
+      2.95,
+      2.05,
+      0.3
+    ]
+  },
+  "focus": [
+    -0.1,
+    0,
+    0
+  ],
+  "cameraDirection": [
+    0.3,
+    0.2,
+    10
+  ],
+  "source": {
+    "reportSha256": "551d367d1e6d31a0a16a4c1366bf674382d835b1842f95c3559f066c39283bef",
+    "simulationSources": [
+      {
+        "file": "src/simulation/mujoco-three-wiper/geometry.js",
+        "sha256": "9a7f5efd58519c127bcb925809e19339af22cba232897d772fccac4f3ebc7044"
+      },
+      {
+        "file": "src/simulation/mujoco-three-wiper/physics.js",
+        "sha256": "699fcacee59b7b83f09a3c1321e3b332e722cdc9af6735c51bc4396a2d6db1f4"
+      },
+      {
+        "file": "src/simulation/mujoco/simulation.js",
+        "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+      },
+      {
+        "file": "src/simulation/primitives.js",
+        "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      },
+      {
+        "file": "package-lock.json",
+        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+      }
+    ],
+    "options": {
+      "timestep": 0.00025,
+      "period": 6,
+      "damping": 0.05,
+      "guideFriction": 5
+    },
+    "maximumLoopSeamPixels": 6.714628852932947e-13,
+    "maximumPenetrationPixels": 0.06596195776944758
+  },
+  "samples": 17991,
+  "bytes": 413116,
+  "assetSha256": "c5df6d1805a4efd8fdefb3e235b5bc75294c12e161096fbab5e9b69ccabc79ae"
+}

@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 128) {
+    const {makeBakedThreeWiper} = await import('./baked/three-wiper.js');
+    const model = await makeBakedThreeWiper();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 123) {
     const {makeBakedSectorHandoff} = await import('./baked/sector-handoff.js');
     const model = await makeBakedSectorHandoff();

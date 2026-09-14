@@ -24,7 +24,7 @@ export function sampleBakedMotion(bundle,time){
  return bundle.names.map((_,i)=>a[i+1]+t*(b[i+1]-a[i+1])+loops*turns[i]);
 }
 
-export function makeBakedRigidMovement(bundle,{mechanism,note,slideBodies=[]}={}){
+export function makeBakedRigidMovement(bundle,{mechanism,note,slideBodies=[],slideAxes={}}={}){
  const root=new THREE.ObjectLoader().parse(bundle.object),blocks=Object.fromEntries(bundle.names.map(n=>[n,root.getObjectByName('body:'+n)]));
  const origins=Object.fromEntries(Object.entries(blocks).map(([n,b])=>[n,b.position.clone()]));
  const bounds=new THREE.Box3(new THREE.Vector3(...bundle.bounds.min),new THREE.Vector3(...bundle.bounds.max));
@@ -32,7 +32,7 @@ export function makeBakedRigidMovement(bundle,{mechanism,note,slideBodies=[]}={}
  const update=time=>{
   if(disposed)throw new Error('Movement has been disposed');
   const q=sampleBakedMotion(bundle,time);
-  bundle.names.forEach((n,i)=>{if(slideBodies.includes(n))blocks[n].position.y=origins[n].y+q[i];else blocks[n].rotation.z=q[i];});
+  bundle.names.forEach((n,i)=>{const axis=slideAxes[n]??(slideBodies.includes(n)?'y':null);if(axis)blocks[n].position[axis]=origins[n][axis]+q[i];else blocks[n].rotation.z=q[i];});
   root.updateMatrixWorld(true);root.userData.state={time,qpos:Object.fromEntries(bundle.names.map((n,i)=>[n,q[i]]))};
  };
  Object.assign(root.userData,{blocks,mechanism,simulationBackend:'baked-mujoco',fidelity:'authored',reconstructionStatus:'verified',supportsRestart:true,reconstructionNote:note,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:bundle.bounds,shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.002,animationTiming:{authoredCyclePeriod:bundle.period,displayCycleDuration:bundle.period,playbackTimeScale:1}});

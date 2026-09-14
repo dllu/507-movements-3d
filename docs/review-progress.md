@@ -6,6 +6,13 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+128 now has a source-traced frame and cam faces with contact-driven MuJoCo
+motion baked for browser playback. Only the rotor is actuated; explicit guide
+friction prevents the rejected near-frictionless trial's outer-rim impacts.
+The final 18-second recording has no resets or outer-wall contacts and less
+than 0.066 source pixels of penetration. Each output stroke takes two seconds.
+See [128's assumptions, validation and reproduction](movement-128.md).
+
 127 now uses a compact analytical rack-and-pinion reconstruction, with measured
 engraving proportions, pierced spokes, conjugate involute/rack teeth and no
 invented frame. Finite profiles pass 721 sampled poses with a wrong-phase
