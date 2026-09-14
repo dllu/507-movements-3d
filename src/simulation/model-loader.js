@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 137) {
+    const {makeBakedExpansionEccentric} = await import('./baked/expansion-eccentric.js');
+    const model = await makeBakedExpansionEccentric();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 131) {
     const {makeSlottedSector} = await import('./slotted-sector.js');
     const model = makeSlottedSector();

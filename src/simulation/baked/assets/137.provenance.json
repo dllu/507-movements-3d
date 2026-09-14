@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "names": [
+    "cam",
+    "fork",
+    "upper",
+    "lower",
+    "rod"
+  ],
+  "period": 8,
+  "loopStart": 23.748,
+  "loopEnd": 31.748,
+  "turns": [
+    6.283185307179586,
+    0,
+    -16.53920144901207,
+    -0.0010939776528261988,
+    0
+  ],
+  "bounds": {
+    "min": [
+      -1.333687878750618,
+      -3.4066743267215984,
+      -0.6899999952316285
+    ],
+    "max": [
+      4.474204714286234,
+      1.9954786497613335,
+      0.48000001668930053
+    ]
+  },
+  "focus": [
+    1.570258417767808,
+    -0.7055978384801325,
+    -0.10499998927116397
+  ],
+  "cameraDirection": [
+    0.12,
+    0.08,
+    15
+  ],
+  "source": {
+    "reportSha256": "50780e8e9457a435ad51782b1866f8a05f713824bd9a3a69752558b1578b0804",
+    "simulationSources": [
+      {
+        "file": "src/data/expansion-eccentric-outline.js",
+        "sha256": "fc7a3a03a57d7d64e35a949f8f19191236b59471bc98b5203c36579054bb5e02"
+      },
+      {
+        "file": "src/simulation/expansion-eccentric-profile.js",
+        "sha256": "61796123c63d6a7fcc1d16570ca5a23973525be1b9758183f4656ffe842b0951"
+      },
+      {
+        "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
+        "sha256": "251c5095f4752e7a79a3acaf8ff5e884cbb73887a0f24224f5e5e1fb76276991"
+      },
+      {
+        "file": "src/simulation/mujoco/simulation.js",
+        "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+      },
+      {
+        "file": "scripts/probe-expansion-eccentric.mjs",
+        "sha256": "66ec930fd437630f090d0d9f37c30a8823593091d7b0dcb6a5531917b45e97b3"
+      },
+      {
+        "file": "package-lock.json",
+        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+      }
+    ],
+    "geometrySources": [
+      {
+        "file": "src/simulation/mujoco-expansion-eccentric/geometry.js",
+        "sha256": "52353d1c505ba49f27cfa4b8162686c18438c0e7c5d50e325fae9ac01d8020c7"
+      },
+      {
+        "file": "scripts/bake-expansion-eccentric.mjs",
+        "sha256": "f93729869eb0e5ea0237da684d9ff82c4d554472e47e7c6e7354e589d59014d4"
+      }
+    ],
+    "options": {
+      "timestep": 0.00025,
+      "period": 8,
+      "spread": 12,
+      "samples": 384
+    },
+    "maximumLoopSeamPixels": 0.0016659767381480353,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.016929171946064754,
+    "maximumPenetrationPixels": 0.07254944064269964
+  },
+  "samples": 15875,
+  "bytes": 1023991,
+  "assetSha256": "1bc95bf21291178d17250948cc32b22d873812fd803a2d90eb1ad9f13c024136"
+}

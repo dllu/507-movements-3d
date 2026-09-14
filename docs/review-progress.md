@@ -1,12 +1,12 @@
-# Current review: 137 requires a shaped-cam reconstruction
+# Current review: 137 shaped expansion eccentric
 
-The circular cam assumption fails the engraving: 25 visible-edge landmarks
-give a 23.94-pixel maximum error; even a fitted circle leaves 14.50 pixels.
-A traced shaped cam and passive MuJoCo fork prototype now run through 20-second
-probes without resets. Combined timestep/mesh refinement changes settled roller
-positions by at most 0.141 pixels. The drawing needs an explicit 12-pixel outward
-adjustment at each roller to avoid interference. Refinement, baking and browser
-integration remain; see [movement 137](movement-137.md).
+137 now loads baked MuJoCo motion and a traced shaped cam, with passive fork,
+rollers and a separately hinged valve rod. No browser physics or circular cam
+branch equations are used. Separate timestep/mesh sensitivity, interpolated
+contact clearance, pin alignment, loop seams, restart and packaged playback
+pass. The drawing needs an explicit 12-pixel outward adjustment at each roller
+to avoid interference; hidden contour arcs and mounting remain inferred.
+Continue to 138; see [movement 137](movement-137.md).
 
 # Current review: 136 axial face cam
 

@@ -17,7 +17,8 @@ export function makeExpansionEccentricPhysics(mujoco, {timestep=.0005,period=8,s
 <default><geom condim="3" friction=".5 .001 .0001" solref=".003 1" solimp=".99 .999 .001"/></default>
 <asset>${assets}</asset><worldbody>
 <body name="cam"><joint name="cam" type="hinge" axis="0 0 1"/><inertial pos="0 0 0" mass="1" diaginertia=".2 .2 .3"/>${geoms}</body>
-<body name="fork" pos="3.67 -.04 0"><joint name="fork" type="hinge" axis="0 0 1" damping=".1"/><inertial pos="-2.5 -.5 0" mass="1" diaginertia="1 1 2"/>${rollers}</body>
+<body name="fork" pos="3.67 -.04 0"><joint name="fork" type="hinge" axis="0 0 1" damping=".1"/><inertial pos="-2.5 0 0" mass=".75" diaginertia="1 1 2"/>${rollers}
+<body name="rod" pos="-3.69 ${-1.02-spread*scale} 0"><joint type="hinge" axis="0 0 1" damping=".15"/><inertial pos="0 -.9 0" mass=".25" diaginertia=".07 .001 .07"/></body></body>
 </worldbody><actuator><position joint="cam" kp="10000" kv="200"/></actuator></mujoco>`;
   const omega=2*Math.PI/period;
   const initial=expansionForkLimits(profile,0,{spread});

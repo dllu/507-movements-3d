@@ -1,78 +1,70 @@
-# 137: expansion eccentric — reconstruction required
+# 137: baked shaped expansion eccentric
 
-The [source engraving and caption](https://507movements.com/mm_137.html) show
-a shaped expansion eccentric driving a forked arm with the valve rod attached
-at its lower end. The current implementation incorrectly assumes a circular
-cam and derives both roller-contact branches from that circle. Its green
-kinematic tests consequently do not establish agreement with the source.
+Browser 137 now uses a shaped cam and passive fork/roller/valve-rod motion
+recorded from MuJoCo. It no longer loads the preceding circular-cam model or
+runs physics in the browser. The gzip bundle is approximately 1.03 MB, including
+geometry and 15,875 trajectory samples. Playback preserves the simulated startup,
+then repeats an eight-second settled cycle. Restart restores the initial state.
 
-The contour review records 25 visible edge landmarks in the 525-pixel engraving.
-It excludes the edge hidden behind either roller. The rendered model's circle
-has centre (96,226), radius 85 pixels; its maximum radial error at these
-landmarks is 23.94 pixels, with RMS error 9.40 pixels. An algebraic least-squares
-circle fit still has maximum error 14.50 pixels and RMS error 5.75 pixels.
-These discrepancies exceed the drawing's line width; changing only the circle
-radius cannot reconstruct the illustrated profile.
+The [engraving and caption](https://507movements.com/mm_137.html) show a shaped
+expansion eccentric driving a forked arm, with the valve rod pinned to its lower
+end. The reconstruction interpolates 25 visible-edge landmarks with a closed
+centripetal spline. Visible-edge error is below 0.15 engraving pixels. The arcs
+hidden behind the rollers are inferred, not measured.
 
-- [Measured landmarks](../src/data/expansion-eccentric-outline.js)
-- [Overlay](validation/137-outline-review.svg)
-- [Numerical report](validation/137-outline-review.json)
+The preceding circular model missed the visible contour by as much as 23.94
+pixels. Even a best-fit circle left 14.50 pixels of error. That diagnosis is
+preserved in the [legacy circular-model overlay](validation/137-outline-review.svg)
+and [measurement report](validation/137-outline-review.json); the review script
+still reads the legacy registry factory, not the new browser loader.
 
-Regenerate with:
+## Contact reconstruction and assumptions
 
-```sh
-node scripts/review-expansion-eccentric-outline.mjs
-```
+The measured roller centres and approximate 31/32-pixel radii interfere with
+the traced cam during a complete turn. A geometric sweep finds about 23.5 pixels
+of incompatible travel at the worst orientation. Each roller is therefore moved
+12 pixels outward from the fork centreline. This is an explicit reconstruction
+compromise, not agreement with those measured dimensions. The fork casting is
+adapted at its ends to meet the displaced axles.
 
-The script reads the current model dimensions, fits an independent circle to
-the measured landmarks and emits the report and self-contained overlay.
-The overlay has been rendered and visually checked against the engraving.
-Landmarks remain manual measurements, not claims of subpixel accuracy.
+Only the cam is actuated. The fork and both rollers have passive hinges; a
+separately hinged valve rod hangs from the lower axle. Gravity takes up the
+variable free travel between contacts. No fork-angle handoff is scripted.
+Fork/rod masses, inertia, damping, friction, axial depths and the connected rear
+bearing mount are inferred. The valve rod is unloaded; no downstream steam-valve
+mechanism is modeled. Cam collision uses 384 triangular prisms and spherical
+roller proxies for contact in the mechanism plane; visible rollers are cylinders
+with the same working radius. The fork sits behind the cam/rollers, the rod
+in front, and axles pass through real bores.
 
-Next, reconstruct the shaped cam and check the complete roller/fork contact
-cycle. The measured roller centres are approximately (82,120) and (80,332),
-rather than the preceding model's (81,116) and (80,336). Roller radii and the
-occluded cam arcs must be reconciled mechanically; directly extruding a guessed
-closed outline would not prove capture or clearance. Replace the circular
-branch equations and fixed-angle handoff assumptions when implementing the
-new contact model. Use offline contact simulation if the resulting fork
-motion depends on preload or free travel between the rollers.
+## Validation and reproduction
 
-## Shaped-cam physics prototype
+Separate timestep and tessellation checks, plus their combined refinement,
+compare motion from 8–19.99 seconds. Maximum roller-position sensitivity is
+0.0323 pixels for the timestep, 0.1542 pixels for the mesh and 0.1410 pixels for
+both. All runs finish without resets. The selected 0.00025-second, 384-cell run
+has maximum contact penetration of 0.0726 engraving pixels. Source hashes and
+results are in the [physics report](validation/137-physics-prototype.json).
 
-The reconstruction now interpolates the visible landmarks with a closed
-centripetal spline, using explicitly inferred arcs behind the rollers. Tests
-keep the visible-edge error below 0.15 pixels and verify that radial fan cells
-form a valid star-shaped cam for collision geometry.
-
-The measured roller centres and approximate 31/32-pixel radii are incompatible
-with this cam through a full turn. A geometric fork-limit sweep finds about
-23.5 pixels of interfering travel at the worst orientation. Moving each roller
-12 pixels farther from the fork centreline restores a nonempty clearance
-interval at all tested angles. This adjustment is a reconstruction compromise;
-it is not a measured dimension. There is variable free travel between contacts.
-
-The MuJoCo prototype drives only the cam. A passive fork with freely hinged
-rollers follows under gravity from an assumed hanging fork/rod mass. It uses
-triangular-prism cam cells and spherical roller contact proxies in the mechanism
-plane. Mass, inertia, friction and the spacing adjustment are inferred. There
-is no programmed fork-angle handoff or forced roller engagement.
-
-Two 20-second probes, at 0.0005/0.00025-second timesteps and 192/384 cam cells,
-run without resets. Maximum penetration is below 0.000711 world units (0.0711
-engraving pixels). Comparing their settled fork motion from 8–19.99 seconds
-gives a maximum roller-position difference of 0.141 pixels. Because timestep
-and tessellation changed together, this is a combined sensitivity check, not
-separate convergence certification. Source hashes and results are recorded in
-[the prototype report](validation/137-physics-prototype.json).
+The baked loop starts at 23.748 seconds. Its maximum position seam is 0.00167
+pixels and velocity seam is 0.01693 pixels/second for the cam, fork and rod.
+Roller angle winding is preserved across loops; roller faces are rotationally
+symmetric. Tests independently check interpolated cam/roller clearance, rod-pin
+alignment, motion bounds, restart, serialization and source provenance. The
+packaged desktop/mobile test checks play/pause/restart and absence of WASM
+requests. No ground plane or fog intersects the mechanism.
 
 ```sh
-node --test tests/expansion-eccentric-profile.test.mjs
-PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-coarse.json node scripts/probe-expansion-eccentric.mjs
-SIM_OPTIONS='{"timestep":0.00025,"samples":384}' PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-fine.json node scripts/probe-expansion-eccentric.mjs
+PROBE_SECONDS=32 PROBE_REPORT=/dev/shm/137-coarse.json node scripts/probe-expansion-eccentric.mjs
+SIM_OPTIONS='{"timestep":0.00025,"samples":192}' PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-time-refined.json node scripts/probe-expansion-eccentric.mjs
+SIM_OPTIONS='{"timestep":0.0005,"samples":384}' PROBE_SECONDS=20 PROBE_REPORT=/dev/shm/137-mesh-refined.json node scripts/probe-expansion-eccentric.mjs
+SIM_OPTIONS='{"timestep":0.00025,"samples":384}' PROBE_SECONDS=32 PROBE_REPORT=/dev/shm/137-fine.json node scripts/probe-expansion-eccentric.mjs
 node scripts/compare-expansion-eccentric-prototype.mjs
+node scripts/bake-expansion-eccentric.mjs
+node --test tests/expansion-eccentric-profile.test.mjs tests/expansion-eccentric-bake.test.mjs
 ```
 
-Next: separate refinement checks, bake the validated motion and replace the
-browser's circular-cam geometry/contact implementation. Browser 137 remains
-incorrect; do not advance to 138 yet.
+The earlier circular factory remains in the legacy registry for its historical
+measurement script. Browser loading routes 137 directly to the baked model.
+Continue the review at 138, retaining the spacing/hidden-contour qualifications
+above rather than claiming an exact reconstruction of the drawing.

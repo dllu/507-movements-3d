@@ -10,46 +10,91 @@
     },
     {
       "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
-      "sha256": "6b3096026eee42f548026d2b877fb76c25a57e2b1c69d86e8d4b0cb5adb6a02a"
+      "sha256": "251c5095f4752e7a79a3acaf8ff5e884cbb73887a0f24224f5e5e1fb76276991"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",
       "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
     },
     {
+      "file": "scripts/probe-expansion-eccentric.mjs",
+      "sha256": "66ec930fd437630f090d0d9f37c30a8823593091d7b0dcb6a5531917b45e97b3"
+    },
+    {
       "file": "package-lock.json",
       "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
     }
   ],
-  "coarse": {
-    "options": {
-      "timestep": 0.0005,
-      "period": 8,
-      "spread": 12,
-      "samples": 192
+  "runs": {
+    "coarse": {
+      "options": {
+        "timestep": 0.0005,
+        "period": 8,
+        "spread": 12,
+        "samples": 192
+      },
+      "penetration": 0.0006219250384216779,
+      "min": -0.021598640485371447,
+      "max": 0.08714734722472259,
+      "resets": 0
     },
-    "penetration": 0.0006033748686626317,
-    "min": -0.021598364403016837,
-    "max": 0.08714566693453646,
-    "resets": 0
-  },
-  "fine": {
-    "options": {
-      "timestep": 0.00025,
-      "period": 8,
-      "spread": 12,
-      "samples": 384
+    "time-refined": {
+      "options": {
+        "timestep": 0.00025,
+        "period": 8,
+        "spread": 12,
+        "samples": 192
+      },
+      "penetration": 0.000661283920920408,
+      "min": -0.0215985515339916,
+      "max": 0.08715198829172054,
+      "resets": 0
     },
-    "penetration": 0.0007100685146698704,
-    "min": -0.021603492845915083,
-    "max": 0.08714972160681096,
-    "resets": 0
+    "mesh-refined": {
+      "options": {
+        "timestep": 0.0005,
+        "period": 8,
+        "spread": 12,
+        "samples": 384
+      },
+      "penetration": 0.0008045463223044225,
+      "min": -0.02160350111672084,
+      "max": 0.08715700311836477,
+      "resets": 0
+    },
+    "fine": {
+      "options": {
+        "timestep": 0.00025,
+        "period": 8,
+        "spread": 12,
+        "samples": 384
+      },
+      "penetration": 0.0007254944064269964,
+      "min": -0.02160362462723751,
+      "max": 0.08715161599921965,
+      "resets": 0
+    }
   },
-  "maximumForkAngleDifference": 0.0003828730467099436,
-  "maximumRollerPositionDifferencePixels": 0.14051440814254929,
+  "comparisons": {
+    "time-refined": {
+      "maximumForkAngleDifference": 0.00008799255626416869,
+      "maximumRollerPositionDifferencePixels": 0.03229326814894991,
+      "maximumRodAngleDifference": 0.00016278985085944192
+    },
+    "mesh-refined": {
+      "maximumForkAngleDifference": 0.0004200458979617661,
+      "maximumRollerPositionDifferencePixels": 0.15415684455196815,
+      "maximumRodAngleDifference": 0.0007732180315640005
+    },
+    "fine": {
+      "maximumForkAngleDifference": 0.00038399992555297486,
+      "maximumRollerPositionDifferencePixels": 0.14092797267794177,
+      "maximumRodAngleDifference": 0.0007323819585709282
+    }
+  },
   "settledComparisonSeconds": [
     8,
     19.99
   ],
-  "caveat": "Timestep and cam tessellation were refined together; this is a combined sensitivity check, not separate convergence certification."
+  "caveat": "Separate timestep and tessellation sensitivity checks; inferred contour closure, roller spacing and inertial properties remain reconstruction assumptions."
 }
