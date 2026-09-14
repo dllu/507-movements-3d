@@ -3621,6 +3621,24 @@ browser tests pass. Omitted
 supports, hidden dimensions, source corrections, ideal joints and contact
 limitations are recorded in the [111 reconstruction](mujoco-111-micrometer.md).
 
+112 now loads a MuJoCo Persian drill whose hand grip turns the stock through
+native thread contact. Six starts are inferred from the engraving; seven also
+fit closely, so the count remains a documented reconstruction choice. Solid
+grooved stock, a fitted bored grip and head, and a flat bit replace floating
+thread ridges and invented details. Actual extents differ from 703 source
+readings by 0.71278 pixel RMS, and projected grooves from 125 readings by
+1.02473 pixels RMS. Playback runs at 25.24 fps and 99.74% physical speed on a
+six-second cycle. Ten cycles retain the screw relation within 0.05244 pixel
+and native penetration within 0.02810 pixel. Timestep/mesh refinement,
+reversed torque and friction 0.05 with elliptic cones retain motion; coarse
+meshes and pyramidal friction at 4 ms are rejected. A 26-pose surface audit
+makes 22,209,252 queries, and nine friction poses add 7,687,818, finding no
+unintended hardware intersections. All thirteen integrated views are
+inspected; fourteen mechanism/runtime/engine tests, the production build and
+all 28 MuJoCo browser regressions pass. Ideal head/hand constraints, hidden
+dimensions and numerical limits are recorded in the
+[112 reconstruction](mujoco-112-persian-drill.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3641,6 +3659,7 @@ limitations are recorded in the [111 reconstruction](mujoco-111-micrometer.md).
 105 is verified with an ideal screw and swivel, native ram/blank contact, a keyed guide and stated reconstruction assumptions.
 106 is verified with native groove contact, uniform working strokes, smooth reversals and stated pin/guide reconstruction assumptions.
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
+112 is verified for alternating contact-driven rotation with six inferred starts, ideal head/hand constraints and stated clearance/friction limits.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**
