@@ -55,6 +55,14 @@ The added workpiece, black platen strip and raised outline rings are hidden to
 match the source's uncluttered view. The analytical lower travel limit remains
 unchanged; no visible workpiece contact is claimed.
 
+The columns now meet their feet with a small overlap, and the three overhead
+layers meet rather than floating with gaps between them. Each pair of platen
+shoes is joined by an outer web, connecting the front shoe to the column through
+the rear shoe. The webs sit outside the platen path. A dedicated frame test
+checks these solid connections and the full lower assembly against the fixed
+frame over 721 phases, including continued vertical overlap with its guides.
+The source does not specify these guide webs or depth; they are reconstructed.
+
 The display cycle has an explicit four-second minimum (the native analytical
 cycle remains ten seconds and the existing display timing applies a 2.5x
 scale). Restart restores the open configuration. The camera is nearly frontal,
@@ -64,10 +72,12 @@ the disk/platen are hidden. Packaged browser checks cover desktop/mobile
 animation, pause, exact restart and absence of a WASM request.
 
 ```sh
-node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs tests/toggle-press-sockets.test.mjs tests/toggle-press-silhouette.test.mjs
+node --test tests/toggle-press-clearance.test.mjs tests/toggle-press-bores.test.mjs tests/toggle-press-sockets.test.mjs tests/toggle-press-silhouette.test.mjs tests/toggle-press-frame.test.mjs
 node --test --test-name-pattern='movement 132 straightens' tests/models.test.mjs
 ```
 
-This is not a full geometry sign-off. Other collision pairs and platen/frame proportions remain
-under review. Retention, thrust-bearing details and hidden depth are reconstructed. No dynamic pressure, material deformation or bearing
-loads are simulated.
+This review retains qualifications for positive rod retention, thrust-bearing
+construction, guide details and hidden depth. The tests cover the named moving
+and fixed pairs, not a general dynamic contact simulation. No pressure,
+material deformation or bearing loads are simulated. The all-507 review remains
+active; continue with movement 133 while retaining these qualifications.

@@ -14,7 +14,9 @@ frame layers now have coaxial shaft bores, checked against their actual triangle
 the shaft stub emerges above the frame. Both disks now contain spherical seats
 and flared rod entrances, with finite clearance and source disk-height checks.
 The bell now has a curved flare and measured neck dimensions; the unengraved
-workpiece and raised trim are hidden. Remaining hardware still needs review; see [132's partial review](movement-132.md).
+workpiece and raised trim are hidden. Columns, feet, overhead layers and guide
+webs now connect, with full-stroke platen/frame clearance checks. Joint retention
+and hidden construction remain qualified; continue with 133. See [132's review and qualifications](movement-132.md).
 
 131 now has an engraving-based analytical assembly: one connected slotted
 sector with two traced web openings, measured disk/shaft/guide positions,

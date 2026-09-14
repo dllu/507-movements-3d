@@ -7015,7 +7015,7 @@ function twinObliqueRodTogglePressMotion() {
     return rod;
   });
 
-  const columnBottomY = bedTopY - 0.12;
+  const columnBottomY = bedTopY - 0.34;
   const columnTopY = topFrameY - 0.1;
   const columnHeight = columnTopY - columnBottomY;
   const frameColumns = [-1, 1].map((sideSign) => {
@@ -7033,7 +7033,7 @@ function twinObliqueRodTogglePressMotion() {
     return column;
   });
 
-  const topFrameRails = [-0.18, 0.07, 0.31].map((offsetY, index) => {
+  const topFrameRails = [-0.14, 0.105, 0.31].map((offsetY, index) => {
     const rail = new THREE.Mesh(
       boredHorizontalPlate({
         outline: [
@@ -7043,7 +7043,7 @@ function twinObliqueRodTogglePressMotion() {
           [-(columnHalfSpan + .31 - index * .09), (frameDepth - index * .18) / 2],
         ],
         holes: [{x:0, z:-frameBackZ * .52, radius:upperShaftRadius + .02}],
-        depth:.18,
+        depth:[.26,.25,.18][index],
       }),
       frameMaterial,
     );
@@ -7132,6 +7132,13 @@ function twinObliqueRodTogglePressMotion() {
       shoe.userData.role = 'fixed-wear-shoe-constraining-platen';
       guide.add(shoe);
     }
+    const web = new THREE.Mesh(
+      new THREE.BoxGeometry(.12, platenHeight * 1.75, platenDepth + .34),
+      frameMaterial,
+    );
+    web.position.x = Math.sign(x) * .14;
+    web.userData.role = 'outer-web-joining-guide-shoes-to-column';
+    guide.add(web);
     return guide;
   });
 
