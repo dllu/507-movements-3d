@@ -3,8 +3,10 @@
 136 now follows a finite spherical-tip envelope instead of point contact.
 The old trajectory penetrated the rendered cam by about 0.123 units. Actual
 mesh clearance, envelope derivatives and normal contact velocity are checked.
-Playback allows one tooth stroke per second. Supports, spring geometry and
-final silhouette remain under review; see [movement 136](movement-136.md).
+Playback allows one tooth stroke per second. The spring now preserves wire
+thickness and centreline length between connected bored seats; the guide post
+clears the rod. A side-on camera follows the engraving. Shaft bearing and final
+dimensional comparison remain under review; see [movement 136](movement-136.md).
 
 # Current review: 135 Reuleaux valve cam
 

@@ -36,9 +36,19 @@ Packaged desktop/mobile checks cover play, pause, restart, errors and absence
 of a WASM request.
 
 ```sh
-node --test tests/spherical-face-follower.test.mjs
+node --test tests/spherical-face-follower.test.mjs tests/axial-cam-spring-hardware.test.mjs
 node --test --test-name-pattern='movement 136 drives' tests/models.test.mjs
 ```
 
-The guide post, spring seats, spring wire deformation, bearings and final
-engraving/camera comparison still need review. Continue with 136.
+The spring now preserves wire thickness and integrated centreline length while
+its pitch and coil radius change. Its end pitch eases to zero against the flat
+seats. Tests verify wire radius, centreline length, seat contact, rod clearance
+and buffer reuse. The fixed spring seat is a bored sleeve connected to the rod
+guide; both bores have 0.005 nominal radial clearance. The guide post stops below
+the rod, and a front base member connects the previously unsupported brace.
+
+Diagnostics distinguish positive preload from dynamically maintained contact:
+`hasPreload` and `trajectoryPrescribed` replace the misleading contact guarantee.
+The default camera is nearly side-on, matching the engraving's view direction.
+The shaft bearing and final dimensional comparison still need review.
+Continue with 136.

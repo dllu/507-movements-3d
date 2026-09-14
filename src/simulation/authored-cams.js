@@ -1,3 +1,4 @@
+import { makeSpringRackCoil } from './spring-rack-coil.js';
 import { sphericalFaceFollower } from './spherical-face-follower.js';
 import { bowedValveYoke, rectangularGuideShoe } from './reuleaux-yoke-hardware.js';
 import * as THREE from 'three';
@@ -7798,54 +7799,37 @@ function toothedAxialFaceCamSpringFollower() {
     followerIndex,
   );
 
-  const springPoints = Array.from({ length: 181 }, (_, index) => {
-    const fraction = index / 180;
-    const coilAngle = fullTurn * springTurnCount * fraction;
-    return new THREE.Vector3(
-      fraction,
-      springRadius * Math.cos(coilAngle),
-      springRadius * Math.sin(coilAngle),
-    );
+  const coil = makeSpringRackCoil({
+    turns: springTurnCount, radius: springRadius, wireRadius: springWireRadius,
+    referenceSpan: freeSpringLength - 2 * springWireRadius, segments: 256, sides: 12,
   });
-  const springCurve = new THREE.CatmullRomCurve3(springPoints);
-  const compressionSpring = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      springCurve,
-      180,
-      springWireRadius,
-      8,
-      false,
-    ),
-    darkMaterial,
-  );
+  const compressionSpring = new THREE.Mesh(coil.geometry, darkMaterial);
+  compressionSpring.rotation.z = -Math.PI / 2;
   compressionSpring.userData.role = 'compression-spring-maintaining-cam-contact';
   compressionSpring.userData.springConstant = springConstant;
 
-  const fixedGuideSleeve = annularSleeveAlongX({
-    innerRadius: followerRodRadius + 0.035,
-    length: 0.34,
-    material: frameMaterial,
-    outerRadius: 0.31,
-  });
+  const boredFollowerSleeve = (outerRadius, length) => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, outerRadius, 0, fullTurn, false);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, followerRodRadius + .005, 0, fullTurn, true);
+    shape.holes.push(hole);
+    const sleeve = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, {
+      depth: length, bevelEnabled: false, curveSegments: 64,
+    }).translate(0, 0, -length / 2), frameMaterial);
+    sleeve.rotation.y = Math.PI / 2;
+    return sleeve;
+  };
+  const fixedGuideSleeve = boredFollowerSleeve(.31, .34);
   fixedGuideSleeve.position.set(fixedGuideX, contactY, contactZ);
   fixedGuideSleeve.userData.role = 'fixed-guide-coaxial-with-follower-rod';
-
-  const fixedSpringSeat = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      springRadius + 0.02,
-      0.05,
-      9,
-      36,
-    ),
-    frameMaterial,
-  );
-  fixedSpringSeat.rotation.y = Math.PI / 2;
-  fixedSpringSeat.position.set(fixedSpringAnchorX, contactY, contactZ);
+  const fixedSpringSeat = boredFollowerSleeve(springRadius + .075, fixedGuideX - fixedSpringAnchorX);
+  fixedSpringSeat.position.set((fixedSpringAnchorX + fixedGuideX) / 2, contactY, contactZ);
   fixedSpringSeat.userData.role = 'fixed-seat-of-compression-spring';
 
   const guidePost = makeBeam(
     new THREE.Vector3(fixedGuideX, baseY, contactZ),
-    new THREE.Vector3(fixedGuideX, contactY, contactZ),
+    new THREE.Vector3(fixedGuideX, contactY - .20, contactZ),
     { thickness: 0.16, depth: 0.24, color: PALETTE.frame },
   );
   guidePost.userData.role = 'fixed-upright-supporting-rod-guide';
@@ -7861,6 +7845,12 @@ function toothedAxialFaceCamSpringFollower() {
     { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
   );
   guideBrace.userData.role = 'diagonal-brace-of-follower-guide';
+  const guideFrontFoot = makeBeam(
+    new THREE.Vector3(fixedGuideX - 1.45, baseY, contactZ),
+    new THREE.Vector3(fixedGuideX, baseY, contactZ),
+    {thickness: .16, depth: .24, color: PALETTE.frame},
+  );
+  root.add(guideFrontFoot);
 
   const baseRail = makeBeam(
     new THREE.Vector3(wheelCenter.x - 3.15, baseY, 0),
@@ -8043,6 +8033,7 @@ function toothedAxialFaceCamSpringFollower() {
     followerRod,
     followerTip,
     guideBaseFoot,
+    guideFrontFoot,
     guideBrace,
     guidePost,
     input,
@@ -8128,7 +8119,7 @@ function toothedAxialFaceCamSpringFollower() {
       contactY,
       contactZ,
     );
-    compressionSpring.scale.set(state.springLength, 1, 1);
+    coil.update(0, state.springLength, 0, 0);
     compressionSpring.userData.length = state.springLength;
     compressionSpring.userData.compression = state.springCompression;
     compressionSpring.userData.force = state.springForce;
@@ -8149,7 +8140,8 @@ function toothedAxialFaceCamSpringFollower() {
         compression: state.springCompression,
         force: state.springForce,
         length: state.springLength,
-        maintainsContact: state.springForce > 0,
+        hasPreload: state.springForce > 0,
+        trajectoryPrescribed: true,
       },
       fixedRodGuide: {
         axis: X_AXIS.clone(),
@@ -8164,7 +8156,7 @@ function toothedAxialFaceCamSpringFollower() {
     root.userData.kinematics = state;
   };
   update(0);
-  const model = finish(root, update, new THREE.Vector3(9.5, 5.2, 12.8));
+  const model = finish(root, update, new THREE.Vector3(.3, .2, 15));
   for (const object of [cameraEnvelope, contactMarker]) {
     object.castShadow = false;
     object.receiveShadow = false;
