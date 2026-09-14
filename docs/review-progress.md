@@ -1,3 +1,14 @@
+# Current review: 140 measured toggle linkage
+
+140's old model follows animation proportions that differ from the engraving.
+Registering both fixed pivots leaves an 82-pixel handle-tip error. The fitted
+unequal-link mechanism closes analytically with a 29.65-pixel ram stroke and
+123.53-degree lever swing; full-stroke closure and branch-continuity checks pass.
+The larger swing is an explicit difference from the source animation. Visible
+casting, guide/link passage, die clearance and browser replacement remain;
+the browser still loads the previous model. See [movement 140](movement-140.md).
+Do not advance to 141.
+
 # Current review: 139 baked internal rack
 
 139 now replaces the colliding legacy teeth with a nine-tooth involute pinion,

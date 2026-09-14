@@ -1,0 +1,106 @@
+{
+  "legacyLandmarks": [
+    {
+      "key": "topPivot",
+      "predicted": [
+        203,
+        96
+      ],
+      "measured": [
+        203,
+        96
+      ],
+      "errorPixels": 0
+    },
+    {
+      "key": "knee",
+      "predicted": [
+        159.37066601378393,
+        195.5601656365439
+      ],
+      "measured": [
+        150,
+        198
+      ],
+      "errorPixels": 9.683086969710976
+    },
+    {
+      "key": "ramPin",
+      "predicted": [
+        207.5937856764992,
+        292.9782137367408
+      ],
+      "measured": [
+        208,
+        290
+      ],
+      "errorPixels": 3.005788937754773
+    },
+    {
+      "key": "leverPin",
+      "predicted": [
+        254.26529451675972,
+        193.34711292806904
+      ],
+      "measured": [
+        253,
+        196
+      ],
+      "errorPixels": 2.93918016299795
+    },
+    {
+      "key": "handleEnd",
+      "predicted": [
+        489.4419313533328,
+        60.47600082888283
+      ],
+      "measured": [
+        460,
+        137
+      ],
+      "errorPixels": 81.99237629777235
+    },
+    {
+      "key": "ramTip",
+      "predicted": [
+        209.87617941346252,
+        390.84560960828065
+      ],
+      "measured": [
+        208,
+        397
+      ],
+      "errorPixels": 6.434016652542017
+    }
+  ],
+  "legacyHandleLengthPixels": 262.479341382527,
+  "measuredHandleLengthPixels": 198.40614909825754,
+  "fitted": {
+    "upperLinkPixels": 114.94781424629178,
+    "lowerLinkPixels": 108.75660899458019,
+    "connectorPixels": 103.01941564578978,
+    "leverSwingDegrees": 123.5268345002702,
+    "ramStrokePixels": 29.64853895684446,
+    "maximumClosureError": 6.661338147750939e-16,
+    "maximumRamReversal": 0
+  },
+  "caveat": "Engraving-fitted unequal links close analytically but require a larger lever swing than the source animation. No force or material-cutting simulation is claimed. Browser replacement, guide/die clearance and source-shaped hardware remain pending.",
+  "sources": [
+    {
+      "file": "src/data/toggle-punch-dimensions.js",
+      "sha256": "2534e666b7ab06aaf447b8b43f0f23d68f0dc3f907213165236f9b45f8542f71"
+    },
+    {
+      "file": "src/simulation/toggle-punch-kinematics.js",
+      "sha256": "8cf70e8d28080062d002089beddbc07d8013832a7a3c78d3a6408b30f3174414"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "scripts/review-toggle-punch.mjs",
+      "sha256": "f9594d5179a6c657c04833018b5c0848be05e6fd02df7ecb853408da5999fe3a"
+    }
+  ]
+}
