@@ -1,0 +1,17 @@
+import {rigidFamilyInertia} from '../mujoco/mass.js';
+import {createMujocoSimulation} from '../mujoco/simulation.js';
+import {sectorHandoffTravel} from './profile.js';
+const vec=a=>a.map(v=>Number(v.toPrecision(12))).join(' ');
+export function makeSectorHandoffPhysics(mujoco,visual,{timestep=.001,period=6,contactTime=.002,friction=0,load=-.02,gravity=9.81}={}){
+ if(![timestep,period,contactTime].every(v=>Number.isFinite(v)&&v>0)||!Number.isFinite(friction)||friction<0||![load,gravity].every(Number.isFinite))throw new RangeError('Invalid 123 physics options');
+ const u=visual.root.userData,f=u.profile,names=Object.keys(f.positions),mass=Object.fromEntries(names.map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.left.volume,assets=[],groups={};
+ const inertia=n=>{const m=mass[n];return `<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(v=>v*density))}"/>`;};
+ const geoms=(n,mask,other)=>u.cells[n].map((cell,i)=>{const id=n+i;groups[id]=n;assets.push(`<mesh name="${id}" vertex="${vec(cell.flat())}"/>`);return `<geom name="${id}" type="mesh" mesh="${id}" contype="${mask}" conaffinity="${other}"/>`;}).join('');
+ const body=(n,g)=>`<body name="${n}" pos="${vec(f.positions[n])}"><joint name="${n}" type="${n==='rack'?'slide':'hinge'}" axis="${n==='rack'?'0 1 0':'0 0 1'}" damping=".001"/>${inertia(n)}${g}</body>`;
+ const bodies=body('left',geoms('leftSpur',1,2)+geoms('leftSector',4,8))+body('right',geoms('rightSpur',1,2)+geoms('rightSector',4,8))+body('center',geoms('centerSpur',2,1)+geoms('transferCam',16,32))+body('rack',geoms('rack',8,4)+geoms('upperStop',32,16)+geoms('lowerStop',32,16));
+ const xml=`<mujoco model="123 sector transfer"><compiler angle="radian" inertiafromgeom="false"/><option timestep="${timestep}" gravity="0 ${-gravity} 0" integrator="discrete" solver="Newton" iterations="100" tolerance="1e-10" cone="elliptic"><flag multiccd="disable" diagexact="enable"/></option><default><geom condim="${friction?3:1}" friction="${friction} .001 .001" solref="${contactTime} 1" solimp=".99 .999 .001"/></default><asset>${assets.join('')}</asset><worldbody>${bodies}</worldbody><actuator><position name="input" joint="rack" kp="10000" kv="200"/></actuator></mujoco>`;
+ const omega=2*Math.PI/period,input=time=>{const theta=omega*(time-.25*(1-Math.exp(-time/.25))),speed=omega*(1-Math.exp(-time/.25)),q=sectorHandoffTravel(theta,f.R,f.halfSpan);return{position:q.position,velocity:q.derivative*speed,theta};};
+ const p=createMujocoSimulation(mujoco,{xml,initialize:({model,data,id})=>{data.qfrc_applied[model.jnt_dofadr[id('mjOBJ_JOINT','center')]]=load;},beforeStep:({data,time})=>{const q=input(time);data.ctrl[0]=q.position+.02*q.velocity;}});
+ const joints=Object.fromEntries(names.map(n=>{const id=p.id('mjOBJ_JOINT',n);return[n,{q:p.model.jnt_qposadr[id],v:p.model.jnt_dofadr[id]}];}));
+ return Object.assign(p,{joints,bodies:Object.fromEntries(names.map(n=>[n,p.id('mjOBJ_BODY',n)])),geomGroups:Object.fromEntries(Object.entries(groups).map(([id,n])=>[p.id('mjOBJ_GEOM',id),n])),description:{xml,input,options:{timestep,period,contactTime,friction,load,gravity},assumptions:'Only the rack is actuated. Three passive hinged rotors transmit through tooth and stop/cam contact. Equal spur counts, regular rack/sector teeth, relieved sector ends, raised rack flanges, stop centers/radii, rephased transfer cam, axial depths, ideal bearings/guide, mass, damping and input timing are reconstruction assumptions; contact and clearance checks are documented separately.'}});
+}

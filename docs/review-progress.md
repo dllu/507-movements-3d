@@ -3824,6 +3824,27 @@ depth assumptions and finite qualification limits are documented in the
 The production build and all 38 MuJoCo browser checks pass, including 122
 playback, restart, navigation and loading beneath a static subdirectory.
 
+123 now uses MuJoCo tooth and stop/cam contact to turn three passive rotors
+from one reciprocating rack input. Measured shaft, hub, rack and sector
+proportions replace the old scripted drive and invented supports. Equal
+36-tooth spurs and matching 38-tooth-reference sectors regularize the
+inconsistent engraved teeth. End relief, raised rack flanges and a transfer
+piece rephased 180° permit the native handoff. These source corrections and
+the ideal bearings/guide are documented in the
+[123 reconstruction](mujoco-123-sector-handoff.md).
+
+Ten default cycles maintain forward output without retreat. Maximum native
+penetration is 0.0287113 pixel, rack input error 0.442466 pixel and spur
+rolling error 0.101741 pixel. Finer timestep/geometry and a stronger resisting
+load with friction complete both reversals. Removing the cam contact or
+restoring its engraved phase prevents the handoff. All 18 selected tests
+pass. The 51-pose hardware audit makes 13,060,170 surface queries with zero
+unintended penetration. All 19 integrated views are inspected, including
+section views of both hidden stop contacts and desktop/mobile controls.
+Headless playback averages 25.51 fps at 99.38% physical speed. The production
+build and all 39 MuJoCo browser checks pass, including 123 section controls,
+playback, restart, navigation and loading beneath a static subdirectory.
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3855,6 +3876,7 @@ playback, restart, navigation and loading beneath a static subdirectory.
 120 is verified for native gear-driven jaw closure and reopening with ideal bearings, bounded collision approximation and stated frame/depth/drive reconstruction assumptions.
 121 is verified for native tooth-driven feed in both click positions after initial seating, with ideal pins/guide, inferred damping and resisting load, and stated cog/nose reconstruction assumptions.
 122 is verified for native geared variable traverse across the full 29:23 pattern, with 15% reduced crank radii, ideal pins/guide, bounded collision approximation and stated source/depth assumptions.
+123 is verified for native double-rack sector handoff with regular equal spur gears, relieved ends, raised flanges, a rephased working cam and stated ideal support/depth/drive assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

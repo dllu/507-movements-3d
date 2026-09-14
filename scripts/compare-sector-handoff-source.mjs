@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import * as THREE from 'three';
+import {makeSectorHandoffGeometry} from '../src/simulation/mujoco-sector-handoff/geometry.js';
+import {disposeObject3D} from '../src/simulation/dispose-model.js';
+import {freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
+import {sectorHandoffStudySources} from './lib/sector-handoff-study-sources.mjs';
+const prefix=process.env.PROBE_PREFIX??'/dev/shm/123-comparison',input=process.env.SOURCE_REPORT??'/dev/shm/123-source-a.json',options=JSON.parse(process.env.SIM_OPTIONS??'{}');
+const sources=freezeStudySources([...sectorHandoffStudySources('scripts/compare-sector-handoff-source.mjs'),input],prefix),s=JSON.parse(fs.readFileSync(input)),v=makeSectorHandoffGeometry(options),u=v.root.userData;
+function slice(mesh,z){const g=mesh.geometry,p=g.attributes.position,ix=g.index,segments=[];for(let i=0;i<(ix?.count??p.count);i+=3){const points=[0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,ix?ix.getX(i+j):i+j).applyMatrix4(mesh.matrixWorld)),cross=[];for(let j=0;j<3;j++){const a=points[j],b=points[(j+1)%3];if((a.z-z)*(b.z-z)<0){const t=(z-a.z)/(b.z-a.z);cross.push([a.x+t*(b.x-a.x),a.y+t*(b.y-a.y)]);}}if(cross.length===2)segments.push(cross);}return segments;}
+const cache=new Map();
+function measure(part,points,z){const key=part+'/'+z;if(!cache.has(key))cache.set(key,slice(u.parts[part],z));const segments=cache.get(key),residuals=points.map(p=>{const x=(p[0]-u.source.axis[0])/100,y=(u.source.axis[1]-p[1])/100;let best=Infinity;for(const[a,b]of segments){const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;if(!den)continue;const t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/den));best=Math.min(best,Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy));}return 100*best;});return{part,count:points.length,rms:Math.sqrt(residuals.reduce((s,r)=>s+r*r,0)/residuals.length),maximum:Math.max(...residuals),residuals};}
+try{
+ const groups={};for(const[n,g]of Object.entries(s.gears))groups[n]=measure(n,g.points,n.endsWith('Sector')?.39:.1);
+ const mapping={leftHub:['leftHub',.475],rightHub:['rightHub',.475],leftShaft:['leftShaft',.5],rightShaft:['rightShaft',.5]};
+ for(const[n,[part,z]]of Object.entries(mapping))groups[n]=measure(part,s.circles[n].points,z);
+ for(const[n,points]of Object.entries(s.rack))groups[n+'Rack']=measure('rack',points,.39);
+ for(const n of ['camInner','camOuter'])groups[n]=measure('transferCam',s.circles[n].points,.25);
+ for(const g of Object.values(groups))if(!g.residuals.every(Number.isFinite))throw Error('Missing rendered slice');
+ verifyStudySources(sources);fs.writeFileSync(prefix+'.json',JSON.stringify({sources,options,groups,endRelief:u.profile.endRelief,camPocketRadius:u.profile.camPocketRadius,halfStroke:u.profile.halfStroke,qualification:'Independent ink points compared with actual rendered triangle slices. Equal spurs and matching rack/sector teeth regularize the irregular drawing. The transfer piece is rephased to the opposite side, so its source-pose residual is intentionally large. Raised end flanges, end relief and hidden stop placement require separate motion/clearance qualification.'},null,2)+'\n',{flag:'wx'});
+ console.log(Object.fromEntries(Object.entries(groups).map(([n,g])=>[n,{count:g.count,rms:g.rms,maximum:g.maximum}])));
+}finally{disposeObject3D(v.root);}

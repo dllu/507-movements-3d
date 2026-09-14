@@ -75,6 +75,10 @@ Movement 108 now uses a passive swiveling shoe in intersecting reverse-thread
 grooves. It is integrated under review: the [reconstruction record](mujoco-108-reverse-thread-candidate.md)
 documents improved stroke uniformity alongside unresolved contact peaks,
 mesh/timestep sensitivity and the projected groove/source discrepancy.
+Movement 123 uses native rack/sector, spur and stop/cam contact to turn three
+passive rotors from one rack input. Its [reconstruction and checks](mujoco-123-sector-handoff.md)
+document the regular equal spur gears, relieved sector ends, raised rack flanges,
+rephased working transfer piece and section view exposing the hidden stops.
 
 ## Shared runtime
 
