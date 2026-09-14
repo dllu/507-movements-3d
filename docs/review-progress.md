@@ -1,3 +1,11 @@
+# Current review: 137 requires a shaped-cam reconstruction
+
+The circular cam assumption fails the engraving: 25 visible-edge landmarks
+give a 23.94-pixel maximum error; even a fitted circle leaves 14.50 pixels.
+A reproducible overlay/report and corrected roller-centre measurements are
+committed. The browser mechanism remains incorrect; replace the circular
+contact branches before proceeding. See [movement 137](movement-137.md).
+
 # Current review: 136 axial face cam
 
 136 now follows a finite spherical-tip envelope instead of point contact.

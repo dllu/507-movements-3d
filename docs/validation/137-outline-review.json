@@ -1,0 +1,23 @@
+{
+  "landmarks": 25,
+  "source": "public/engravings/mm_137.png",
+  "currentCircle": {
+    "center": [
+      96,
+      226
+    ],
+    "radius": 84.99999999999999,
+    "rmsPixels": 9.403275525435328,
+    "maximumAbsolutePixels": 23.94264991010499
+  },
+  "fittedCircle": {
+    "center": [
+      95.2503150630225,
+      221.5265356301051
+    ],
+    "radius": 78.63060495354934,
+    "rmsPixels": 5.752851965344853,
+    "maximumAbsolutePixels": 14.499155070575497
+  },
+  "status": "The circular-cam assumption fails visible-edge agreement; hidden edges and roller capture remain unresolved."
+}
