@@ -1,3 +1,4 @@
+import { sphericalFaceFollower } from './spherical-face-follower.js';
 import { bowedValveYoke, rectangularGuideShoe } from './reuleaux-yoke-hardware.js';
 import * as THREE from 'three';
 import {makeEccentricStrap} from './eccentric-strap.js';
@@ -7462,7 +7463,7 @@ function toothedAxialFaceCamSpringFollower() {
   const baseFrontX = baseThickness / 2;
   const rimInnerRadius = 2.22;
   const contactRadius = (rimInnerRadius + wheelOuterRadius) / 2;
-  const runningClearance = 0.018;
+  const runningClearance = 0.001;
 
   const shaftRadius = 0.18;
   const shaftLength = 2.8;
@@ -7580,7 +7581,7 @@ function toothedAxialFaceCamSpringFollower() {
 
   const variableFaceRimGeometry = () => {
     const positions = [];
-    const angularSegments = toothCount * 24;
+    const angularSegments = toothCount * 128;
     const point = (axialCoordinate, radius, angle) => new THREE.Vector3(
       axialCoordinate,
       radius * Math.sin(angle),
@@ -7926,9 +7927,10 @@ function toothedAxialFaceCamSpringFollower() {
 
   const stateAtTime = (time) => {
     const driverAngle = sourcePoseAngle + inputAngularSpeed * time;
-    const profile = toothProfileAtAngle(driverAngle);
+    const envelope = sphericalFaceFollower(toothProfileAtAngle, driverAngle, contactRadius, followerTipRadius);
+    const profile = envelope.p;
     const faceWorldX = wheelCenter.x + profile.faceCoordinate;
-    const followerTipPlaneX = faceWorldX + runningClearance;
+    const followerTipPlaneX = wheelCenter.x + envelope.value - followerTipRadius + runningClearance;
     const movingSpringAnchorX = (
       followerTipPlaneX + movingSpringAnchorOffset
     );
@@ -7936,10 +7938,10 @@ function toothedAxialFaceCamSpringFollower() {
     const springCompression = freeSpringLength - springLength;
     const springForce = springConstant * springCompression;
     const axialVelocity = (
-      profile.liftDerivativeByAngle * inputAngularSpeed
+      envelope.derivative * inputAngularSpeed
     );
     const axialAcceleration = (
-      profile.liftSecondDerivativeByAngle * inputAngularSpeed ** 2
+      envelope.secondDerivative * inputAngularSpeed ** 2
     );
     const followerVelocity = new THREE.Vector3(axialVelocity, 0, 0);
     const followerAcceleration = new THREE.Vector3(
@@ -7949,34 +7951,23 @@ function toothedAxialFaceCamSpringFollower() {
     );
     const camMaterialVelocity = new THREE.Vector3(
       0,
-      -inputAngularSpeed * contactRadius,
-      0,
+      -inputAngularSpeed * envelope.contactZ,
+      inputAngularSpeed * envelope.contactY,
     );
     const relativeContactVelocity = followerVelocity.clone().sub(
       camMaterialVelocity
     );
-    const faceTangent = new THREE.Vector3(
-      profile.liftDerivativeByAngle,
-      contactRadius,
-      0,
-    ).normalize();
-    const faceNormal = new THREE.Vector3(
-      contactRadius,
-      -profile.liftDerivativeByAngle,
-      0,
-    ).normalize();
+    const faceNormal = new THREE.Vector3(envelope.q, -envelope.contactY, contactRadius - envelope.contactZ).normalize();
+    const faceTangent = relativeContactVelocity.clone().normalize();
     const normalVelocityError = relativeContactVelocity.dot(faceNormal);
     const tangentialSlidingSpeed = relativeContactVelocity.dot(faceTangent);
     const camSurfacePoint = new THREE.Vector3(
       faceWorldX,
-      contactY,
-      contactZ,
+      wheelCenter.y + envelope.contactY,
+      wheelCenter.z + envelope.contactZ,
     );
-    const followerTipPoint = new THREE.Vector3(
-      followerTipPlaneX,
-      contactY,
-      contactZ,
-    );
+    const followerTipPoint = new THREE.Vector3(followerTipPlaneX + followerTipRadius, contactY, contactZ)
+      .addScaledVector(faceNormal, -followerTipRadius);
     const contactWitnessPoint = camSurfacePoint.clone().lerp(
       followerTipPoint,
       0.5,
@@ -7991,14 +7982,15 @@ function toothedAxialFaceCamSpringFollower() {
           : 'spring-returns-rod-on-long-flank';
     return {
       axialAcceleration,
-      axialDisplacement: profile.lift,
+      envelope,
+      axialDisplacement: envelope.value - followerTipRadius - baseFrontX,
       axialVelocity,
       camMaterialVelocity,
       camSurfacePoint,
       completedFollowerCycles: (
         driverAngle - sourcePoseAngle
       ) / toothPitch,
-      contactGap: followerTipPlaneX - faceWorldX,
+      contactGap: followerTipPoint.distanceTo(camSurfacePoint),
       contactWitnessPoint,
       driverAngle,
       driverAngularSpeed: inputAngularSpeed,
@@ -8034,6 +8026,11 @@ function toothedAxialFaceCamSpringFollower() {
 
   root.userData.mechanism = 'sixteen-tooth-axial-face-cam-spring-follower';
   root.userData.cameraDistanceScale = 1.03;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.minimumDisplayCycleSeconds = toothCount;
+  root.userData.animationTiming = {authoredCyclePeriod: wheelRotationPeriod};
+  for (const marker of [wheelFaceIndex, followerIndex, contactMarker]) marker.visible = false;
   root.userData.blocks = {
     baseRail,
     cameraEnvelope,
@@ -8180,6 +8177,7 @@ function toothedAxialFaceCamSpringFollower() {
         : [];
     for (const material of materials) material.fog = false;
   });
+  model.reset = () => update(0);
   root.userData.materialsIgnoreSceneFog = true;
   return model;
 }
