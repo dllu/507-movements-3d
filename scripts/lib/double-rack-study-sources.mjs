@@ -1,0 +1,2 @@
+import fs from 'node:fs';
+export function doubleRackStudySources(script){return [script,'scripts/lib/double-rack-study-sources.mjs','scripts/lib/study-report-io.mjs',...['src/simulation/mujoco-double-rack','src/simulation/mujoco'].flatMap(dir=>fs.readdirSync(dir).filter(n=>n.endsWith('.js')).map(n=>dir+'/'+n)),'src/simulation/coaxial-gear-geometry.js','src/simulation/finite-plate-geometry.js','src/simulation/clutch-section-geometry.js','src/simulation/primitives.js','src/simulation/dispose-model.js','public/engravings/mm_114.png','package-lock.json'];}

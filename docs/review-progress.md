@@ -3656,6 +3656,23 @@ build and all 29 production MuJoCo browser regressions pass. Source corrections,
 inferred depths and contact limits are recorded in the
 [113 reconstruction](mujoco-113-rack-pinion.md).
 
+114 now loads a MuJoCo double rack with a passive sliding frame and a
+continuously driven half-pinion. Measured frame curves and rod junctions replace
+the old proportions and invented supports. Generated involute working teeth
+and relieved end teeth permit contact-driven transfer; a 27-degree source
+phase correction leaves clearance through the complete stroke. Frame edge
+errors are mostly below two pixels RMS; the corrected pinion differs by
+6.41805 pixels RMS and regular rack centers by 4.29011 pixels RMS.
+Ten cycles retain engagement with at most 0.07185 pixel native penetration.
+The 28-pose independent surface audit makes 1,629,656 queries and finds no
+unintended intersections, including at the frame ends. Thirteen mechanism,
+runtime and engine tests pass. All twelve integrated views are inspected;
+playback runs at 59.46 fps and 99.92765% physical speed. The production build
+and all 30 production MuJoCo browser regressions pass. Tooth friction 0.05 and 0.1 fail qualification, so the verified scope
+is explicitly the default frictionless reconstruction with ideal shaft and
+slide constraints. The source corrections, end-tooth construction and limits
+are recorded in the [114 reconstruction](mujoco-114-double-rack.md).
+
 **037, 063, 071 and 073 remain mechanically unresolved. 031, 064, 065, 066, 067,
 068, 069, 070, 072, 074, 075, 076, 077, 078, 079, 080, 081, 084, 085 and 086 are verified.
 089 is verified as an ideal kinematic reconstruction.
@@ -3678,6 +3695,7 @@ inferred depths and contact limits are recorded in the
 107 is verified with repeated native groove contact, a narrowed working pin, inferred repetition count and stated guide/attachment assumptions.
 112 is verified for alternating contact-driven rotation with six inferred starts, ideal head/hand constraints and stated clearance/friction limits.
 113 is verified for contact-driven transmission in both directions, with inferred shallow involute teeth, passive rollers and stated guide/depth assumptions.
+114 is verified for frictionless contact-driven rack transfer with relieved end teeth, a corrected initial phase and stated guide/depth assumptions.
 082, 083, 087, 088, 108, 109, 110 and 111 are integrated and under review.
 Final mechanical qualification for these movements remains pending.
 The complete 507-movement review remains active.**

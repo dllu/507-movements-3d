@@ -29,6 +29,7 @@ const physicsFactories = {
   111: () => import('./mujoco-micrometer/visual.js').then(module => module.makeMujocoMicrometer),
   112: () => import('./mujoco-persian-drill/visual.js').then(module => module.makeMujocoPersianDrill),
   113: () => import('./mujoco-rack-pinion/visual.js').then(module => module.makeMujocoRackPinion),
+  114: () => import('./mujoco-double-rack/visual.js').then(module => module.makeMujocoDoubleRack),
 };
 
 export async function loadMovementModel(movement) {
