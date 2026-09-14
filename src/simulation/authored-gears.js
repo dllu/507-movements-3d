@@ -1,3 +1,4 @@
+import sectorPressTeeth from '../data/sector-press-teeth.js';
 import { makeWeightedClutch } from './weighted-clutch.js';
 import { makeMutilatedBevelAlternator } from './mutilated-bevel.js';
 import { makeDualInputDifferential } from './dual-input-differential.js';
@@ -14259,27 +14260,12 @@ function handCrankPinionSectorRodPress() {
   pinionAssembly.userData.pitchRadius = pinionPitchRadius;
   pinionAssembly.userData.teeth = pinionTeeth;
 
-  const pinionShape = new THREE.Shape();
-  for (let toothIndex = 0; toothIndex < pinionTeeth; toothIndex += 1) {
-    const centerAngle = sourcePinionToothMountPhase
-      + toothIndex * pinionAngularPitch;
-    const points = [
-      radialPoint(pinionRootRadius, centerAngle - pinionAngularPitch / 2),
-      radialPoint(pinionOuterRadius, centerAngle - pinionToothTipHalfAngle),
-      radialPoint(pinionOuterRadius, centerAngle + pinionToothTipHalfAngle),
-      radialPoint(pinionRootRadius, centerAngle + pinionAngularPitch / 2),
-    ];
-    for (const point of points) {
-      if (toothIndex === 0 && point === points[0]) {
-        pinionShape.moveTo(point.x, point.y);
-      } else {
-        pinionShape.lineTo(point.x, point.y);
-      }
-    }
-  }
-  pinionShape.closePath();
+  const pinionMountPhase = ((sectorEquivalentTeeth + pinionTeeth) * meshLineAngle + pinionTeeth * Math.PI - Math.PI) / pinionTeeth;
+  const rotateProfile = (points, angle) => points.map(([x,y]) => new THREE.Vector2(x*Math.cos(angle)-y*Math.sin(angle),x*Math.sin(angle)+y*Math.cos(angle)));
+  const pinionShape = new THREE.Shape(rotateProfile(sectorPressTeeth.pinion, pinionMountPhase));
+  const pinionBore = new THREE.Path();pinionBore.absarc(0,0,shaftRadius,0,fullTurn,true);pinionShape.holes.push(pinionBore);
   const pinionBody = new THREE.Mesh(
-    centeredExtrusion(pinionShape, gearDepth),
+    centeredExtrusion(pinionShape, gearDepth, 0),
     driverMaterial,
   );
   pinionBody.position.z = gearPlaneZ;
@@ -14404,32 +14390,9 @@ function handCrankPinionSectorRodPress() {
     { length: installedSectorTeeth },
     (_, toothIndex) => {
       const centerAngle = toothIndex * sectorAngularPitch;
-      const shape = new THREE.Shape();
-      const points = [
-        radialPoint(
-          sectorRootRadius,
-          centerAngle - sectorToothRootHalfAngle,
-        ),
-        radialPoint(
-          sectorOuterRadius,
-          centerAngle - sectorToothTipHalfAngle,
-        ),
-        radialPoint(
-          sectorOuterRadius,
-          centerAngle + sectorToothTipHalfAngle,
-        ),
-        radialPoint(
-          sectorRootRadius,
-          centerAngle + sectorToothRootHalfAngle,
-        ),
-      ];
-      points.forEach((point, index) => {
-        if (index === 0) shape.moveTo(point.x, point.y);
-        else shape.lineTo(point.x, point.y);
-      });
-      shape.closePath();
+      const shape = new THREE.Shape(rotateProfile(sectorPressTeeth.sectorTooth, centerAngle));
       const tooth = new THREE.Mesh(
-        centeredExtrusion(shape, gearDepth, 0.005),
+        centeredExtrusion(shape, gearDepth, 0),
         drivenMaterial,
       );
       tooth.position.z = gearPlaneZ;
@@ -14956,6 +14919,12 @@ function handCrankPinionSectorRodPress() {
   root.userData.mechanism =
     'hand-crank-pinion-six-to-one-sector-rod-uplift-press';
   root.userData.cameraDistanceScale = 1.09;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.minimumDisplayCycleSeconds = 6;
+  root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod};
+  for (const marker of [pinionRotationIndex, sectorRotationIndex, platenMotionIndex, pitchContactMarker]) marker.visible = false;
+  root.userData.toothProfiles = {pinion:sectorPressTeeth.pinion,sector:sectorPressTeeth.sectorTooth,pinionMountPhase};
   root.userData.blocks = {
     baseRail,
     cameraEnvelope,
@@ -15147,7 +15116,8 @@ function handCrankPinionSectorRodPress() {
   };
   update(0);
 
-  const model = finish(root, update, new THREE.Vector3(5.6, 3.7, 13.8));
+  const model = finish(root, update, new THREE.Vector3(.2, .15, 13.8));
+  model.reset = () => update(0);
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   crankGripTip.castShadow = false;

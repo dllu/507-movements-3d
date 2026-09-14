@@ -6,6 +6,12 @@ evidence that all models match the engravings or avoid interference.
 
 ## Faster playback and source references — 2026-09-14
 
+133 now uses offline-generated involute pinion/sector teeth, with finite
+full-stroke overlap checks and a wrong-phase failure control. Its six-to-one
+analytical linkage is retained, with a six-second display cycle and Restart.
+Engraving proportions and remaining hardware still need review; see
+[133's partial review](movement-133.md).
+
 132's handle now sweeps in front of the frame, avoiding a verified collision
 with the right column. Finite lever/column checks reject the former handedness;
 rod-length and linkage regression checks pass. Playback has a four-second
