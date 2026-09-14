@@ -43,3 +43,10 @@ and `/dev/shm/126-source-a.json` with its measured-circle overlay. All eight
 images were inspected. Scripts freeze inputs and verify their hashes; generated
 images and measurements remain outside Git. Native motion, contact, rendered
 clearance, source comparison and integration checks are pending.
+
+A separate edge study, `scripts/measure-bell-crank-edges.mjs`, records 68 paired
+input-arm and 58 paired output-arm contour stations. Its inspected overlay
+tracks the curved sides. The left and right cord ink envelopes average
+15.377 and 18.168 pixels across 59 and 67 stations. These include stroke and
+hatch thickness and are not yet physical rope diameters. The retained report
+and overlay are `/dev/shm/126-edges-a.json` and `126-edges-a.png`.
