@@ -29045,7 +29045,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     sourceState.rightRopeVelocity,
     sourceState.rightRopeVelocity,
   ];
-  const transitionStep = 0.000001;
+  const transitionStep = 0.0000001;
   sourceState.ropeTransitionDistances.forEach((distance, index) => {
     const before = model.root.userData.ropeMaterialPointAtTime(
       -transitionStep,
@@ -29132,7 +29132,9 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
     'windlass-reverses-at-raised-load-limit',
   ]);
   assert.ok(maximumRopeLengthError < 1.5e-14);
-  assert.ok(maximumNoSlipError < 9e-16);
+  assert.ok(maximumNoSlipError < 8 * Number.EPSILON * (1
+    + geometry.largeBarrelPitchRadius * geometry.shaftAngleAmplitude
+      * geometry.driveAngularFrequency));
   assert.ok(maximumMarkerStep < 0.0012,
     'all nine fixed-material white rope markers move without a visible jump');
   assert.ok(Math.abs(

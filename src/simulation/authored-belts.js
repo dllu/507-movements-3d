@@ -4739,7 +4739,7 @@ function chineseDifferentialWindlass() {
   const pulleyTravelPerWindlassRevolution = circumferenceDifference / 2;
 
   const shaftAngleAmplitude = Math.PI * 1.2;
-  const cyclePeriod = 9.2;
+  const cyclePeriod = 6;
   const driveAngularFrequency = fullTurn / cyclePeriod;
   const sourcePoseAngle = 0;
   const baseLargeWrapTurns = 6;
@@ -5122,11 +5122,18 @@ function chineseDifferentialWindlass() {
   smallBarrel.userData.pitchRadius = smallBarrelPitchRadius;
   smallBarrel.userData.role = 'smaller-rope-unwinding-barrel';
 
+  // The engraving's central flange is separated from both rope exits by
+  // bare barrel. A flange at either exit cuts directly through the rope.
+  const largeBareBarrel = cylinderAlongX(largeBarrelBodyRadius, -largeBarrelInnerX, driverMaterial, 56);
+  largeBareBarrel.position.x = largeBarrelInnerX / 2;
+  const smallBareBarrel = cylinderAlongX(smallBarrelBodyRadius * .72, smallBarrelInnerX, driverMaterial, 48);
+  smallBareBarrel.position.x = smallBarrelInnerX / 2;
+  windlassRotor.add(largeBareBarrel, smallBareBarrel);
+
   const barrelFlanges = [];
   for (const [x, radius, side] of [
     [largeBarrelOuterX, largeBarrelPitchRadius, 'large-outer'],
-    [largeBarrelInnerX, largeBarrelPitchRadius, 'large-inner'],
-    [smallBarrelInnerX, smallBarrelPitchRadius, 'small-inner'],
+    [0, largeBarrelPitchRadius, 'central'],
     [smallBarrelOuterX, smallBarrelPitchRadius, 'small-outer'],
   ]) {
     const flange = cylinderAlongX(
@@ -5569,6 +5576,9 @@ function chineseDifferentialWindlass() {
   );
 
   root.userData.mechanism = 'single-rope-differential-chinese-windlass';
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cyclePeriod;
+  root.userData.reconstructionNote = 'The larger barrel takes up more rope than the smaller one releases. Bare barrel separates the rope exits from the central flange. The tilted sheave and winding helix are idealized reconstructions.';
   root.userData.cameraDistanceScale = 1.04;
   root.userData.blocks = {
     barrelFaceRings,
