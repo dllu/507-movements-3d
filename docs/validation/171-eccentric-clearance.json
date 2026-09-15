@@ -1,0 +1,121 @@
+{
+  "movement": 171,
+  "status": "repaired-eccentric-interface-diagnostic",
+  "poses": 97,
+  "pairs": [
+    [
+      "aheadRod",
+      "asternRod"
+    ],
+    [
+      "aheadRod",
+      "aheadSheave"
+    ],
+    [
+      "aheadRod",
+      "asternSheave"
+    ],
+    [
+      "aheadRod",
+      "aheadRim"
+    ],
+    [
+      "aheadRod",
+      "asternRim"
+    ],
+    [
+      "aheadRod",
+      "aheadPin"
+    ],
+    [
+      "aheadRod",
+      "asternPin"
+    ],
+    [
+      "aheadRod",
+      "aheadCap"
+    ],
+    [
+      "aheadRod",
+      "asternCap"
+    ],
+    [
+      "aheadRod",
+      "plate"
+    ],
+    [
+      "aheadRod",
+      "outputRod"
+    ],
+    [
+      "asternRod",
+      "aheadSheave"
+    ],
+    [
+      "asternRod",
+      "asternSheave"
+    ],
+    [
+      "asternRod",
+      "aheadRim"
+    ],
+    [
+      "asternRod",
+      "asternRim"
+    ],
+    [
+      "asternRod",
+      "aheadPin"
+    ],
+    [
+      "asternRod",
+      "asternPin"
+    ],
+    [
+      "asternRod",
+      "aheadCap"
+    ],
+    [
+      "asternRod",
+      "asternCap"
+    ],
+    [
+      "asternRod",
+      "plate"
+    ],
+    [
+      "asternRod",
+      "outputRod"
+    ]
+  ],
+  "queries": 2723760,
+  "intersections": {},
+  "sampledDuration": 18,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected eccentric rods, sheaves, rims, rod-end pins/caps, upper plate and output rod only; not whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-eccentric-solids.mjs",
+      "sha256": "b3b1fd6ae7b3377c89f4b4ef6a954eb61562f578298683673f5fed181cfd4186"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "8bdda195de2c1a70aa15b28006eb636d88a2be7e0b8084c0a13a34ab747f2e3c"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

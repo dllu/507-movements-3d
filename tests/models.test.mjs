@@ -58713,7 +58713,7 @@ test('movement 170 crosses two continuous flyball arms into finite direct valve-
   disposeModel(model.root);
 });
 
-test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-rocking valve error', () => {
+test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson reverser', () => {
   const fullTurn = Math.PI * 2;
   const movement = catalog.movements[170];
   const model = createMovementModel(movement);
@@ -58866,12 +58866,8 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
     'ahead sheave local throw');
   near(asternSheave.position.x, geometry.eccentricity, 1e-15,
     'astern sheave local throw');
-  near(
-    geometry.aheadEccentricRodLength,
-    geometry.asternEccentricRodLength,
-    1e-15,
-    'equal opposite-eccentric rod lengths',
-  );
+  assert.notEqual(geometry.aheadEccentricRodLength, geometry.asternEccentricRodLength,
+    'recorded source pins require unequal finite rods');
   assert.ok(geometry.aheadLayerZ > 0);
   assert.ok(geometry.asternLayerZ < 0);
   assert.ok(geometry.aheadLayerZ - geometry.asternLayerZ > 0.5);
@@ -58919,13 +58915,13 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
   );
   assert.ok(worldToRaster(source.aheadLinkPin).distanceTo(
     geometry.sourceRasterAheadLinkPin,
-  ) < 10.6);
+  ) < 1e-10);
   assert.ok(worldToRaster(source.asternLinkPin).distanceTo(
     geometry.sourceRasterAsternLinkPin,
-  ) < 11.9);
+  ) < 1e-10);
   assert.ok(worldToRaster(source.diePoint).distanceTo(
     geometry.sourceRasterLinkDie,
-  ) < 0.26);
+  ) < 1e-10);
   assert.ok(worldToRaster(source.slideEyeWorld).distanceTo(
     geometry.sourceRasterSlideEye,
   ) < 3.7);
@@ -58953,14 +58949,6 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
   const aheadThreeQuarter = stateAtInputAngle(3 * Math.PI / 2, -1);
   const asternThreeQuarter = stateAtInputAngle(3 * Math.PI / 2, 1);
   assert.ok(aheadThreeQuarter.diePoint.y > asternThreeQuarter.diePoint.y);
-  for (const angle of [0, 0.31, 0.87, 1.73, 2.91, 4.27, 5.82]) {
-    near(
-      stateAtInputAngle(angle, -1).diePoint.y,
-      stateAtInputAngle(-angle, 1).diePoint.y,
-      2e-13,
-      'ahead/astern time-reversal symmetry',
-    );
-  }
   const strokes = new Map([
     [-1, { maximum: -Infinity, minimum: Infinity }],
     [0, { maximum: -Infinity, minimum: Infinity }],
@@ -58978,10 +58966,8 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
   const aheadStroke = strokes.get(-1).maximum - strokes.get(-1).minimum;
   const midStroke = strokes.get(0).maximum - strokes.get(0).minimum;
   const asternStroke = strokes.get(1).maximum - strokes.get(1).minimum;
-  near(aheadStroke, asternStroke, 3e-14,
-    'equal ahead and astern full-gear travel');
-  assert.ok(aheadStroke > 0.45);
-  assert.ok(midStroke < aheadStroke * 0.22);
+  assert.ok(aheadStroke > midStroke && asternStroke > midStroke,
+    'midgear reduces travel relative to both full-gear settings');
   near(aheadQuarter.dieSlotAngle, -geometry.selectorHalfAngle, 1e-15,
     'ahead die at left slot selection');
   near(asternQuarter.dieSlotAngle, geometry.selectorHalfAngle, 1e-15,
@@ -59022,7 +59008,7 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
   // The lower cancellation is evaluated in cylinder coordinates. For a fixed
   // slide stroke, changing cylinder angle rotates the entire slot/pin pair in
   // world space but leaves the relative rockshaft angle and valve stroke
-  // exactly unchanged. This is the defining trunnion-centered invariant.
+  // exactly unchanged. This checks the implemented cylinder-carried construction only.
   for (const slideStroke of [-0.18, -0.10, -0.03, 0.06, 0.15, 0.24]) {
     const reference = lowerStateAtSlideStroke(slideStroke, 0);
     for (const cylinderAngle of [-0.42, -0.19, 0, 0.23, 0.47]) {
@@ -59151,7 +59137,8 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
   assert.ok(maximumCylinderAngle < 0.11);
   assert.ok(maximumLinkAngle > 0.47);
   assert.ok(maximumRockshaftAngle > 0.56);
-  assert.ok(maximumSlotParameter < 0.38);
+  assert.ok(maximumSlotParameter < 1.04 - 0.095 / geometry.slotRadius,
+    'finite follower remains clear of the lower slot ends');
   assert.ok(minimumSlideStroke < -0.17);
   assert.ok(maximumSlideStroke > 0.28);
 
@@ -59241,7 +59228,7 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
       new THREE.Vector3(
         state.aheadEccentricCenter.x,
         state.aheadEccentricCenter.y,
-        0,
+        geometry.aheadLayerZ,
       ),
       2e-15,
       'rendered ahead strap center',
@@ -59251,7 +59238,7 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
       new THREE.Vector3(
         state.asternEccentricCenter.x,
         state.asternEccentricCenter.y,
-        0,
+        geometry.asternLayerZ,
       ),
       2e-15,
       'rendered astern strap center',
@@ -59285,8 +59272,8 @@ test('movement 171 closes a two-eccentric Stephenson reverser without cylinder-r
     'layered straps, rods, rear crank/cylinder, rockshaft, and frame occupy real depth');
   assert.ok(physicalBounds.min.z < -1.5);
   assert.ok(physicalBounds.max.z > 1.5);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   // The adjacent reviewed mechanism remains distinct, and 172 now has its

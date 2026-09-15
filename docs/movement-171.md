@@ -39,7 +39,7 @@ not historical valve-timing measurements.
 
 The selector varies continuously over 18 seconds, with three six-second crank
 turns in the same interval. The [cycle check](validation/171-cycle.json) checks
-all 92 visible mesh transforms: maximum seam difference is 1.67e-15, and
+all 84 visible mesh transforms: maximum seam difference is 4.45e-16, and
 one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
 0.86-radian/second crank did not close with the selector period.
 
@@ -47,7 +47,8 @@ The initial upper rod pins and die coincide with the recorded source anchors,
 replacing the previous 10.52- and 11.87-pixel rod-pin errors. This is an anchor
 fit using the shaft/trunnion scale, not a whole-contour qualification. The slide
 eye remains within 3.61 pixels and lower follower within 4.41 of their recorded
-anchors. The eccentric straps and tapered rods still need visible-shape review.
+anchors. The eccentric straps and rods now have integral tapered outlines and real
+bearing bores; their whole-contour source fit still needs review.
 
 ## Finite interfaces
 
@@ -96,12 +97,30 @@ the plate. It finds no sampled penetration above 1e-6 and checks that every
 pin overlaps the plate axially by more than 0.15 world units. This does not
 qualify the eccentric straps or the rest of the assembly.
 
+Each eccentric strap and rod is now one rigid plate: a broad ring joins a
+neck that tapers down to a bored pin eye. The 1.392-diameter strap opening fits
+the 1.38-diameter sheave, leaving 0.006 radial clearance. Rod-end bores are
+0.148 in diameter around 0.14-diameter pins. The straps rotate with their
+finite rods rather than remaining upright while a separate bar passes through
+the sheave. The unillustrated oil cups were removed. Flat annular sheave rims
+and axially offset pin caps avoid interference with the new rod faces.
+These thicknesses and running clearances are reconstruction assumptions.
+
+The [eccentric-interface sweep](validation/171-eccentric-clearance.json) checks
+21 pairs at 97 poses, including both rods against sheaves, rims, pin hardware,
+the upper plate and output rod, plus each other. Its 2,723,760 surface queries
+find no sampled penetration above 1e-6. This remains a selected-interface
+qualification, not a whole-assembly or whole-contour fidelity claim.
+
 ## Current change and next work
 
-All 92 material instances examined in the existing scene have fog disabled,
+All 84 material instances examined in the existing scene have fog disabled,
 and `hideGround` is true. The default camera now faces the engraving plane.
 These rendering flags and the upper/lower interface repairs are shipped while the complete mechanical reconstruction remains open.
 
+The [scoped model test](validation/171-unit.json) passes after replacing stale
+symmetry and oblique-camera assumptions with the recorded asymmetric anchors
+and current front view. Closure and rendered-position assertions are retained.
 The production build and [packaged browser check](validation/171-browser.json)
 pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
 with no page errors or WASM requests. Restart explicitly restores the initial
@@ -119,6 +138,7 @@ node scripts/review-marine-valve-cycle.mjs
 node scripts/review-marine-valve-closure.mjs
 node scripts/review-marine-valve-lower-solids.mjs
 node scripts/review-marine-valve-upper-solids.mjs
+node scripts/review-marine-valve-eccentric-solids.mjs
 ```
 
 Movement 171 remains open. The full 507-movement review remains active.

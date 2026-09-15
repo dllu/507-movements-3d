@@ -148,7 +148,8 @@ function makeIndexedEccentricSheave({
   body.position.z = z;
   body.userData.role = 'eccentric-sheave-fast-on-common-crankshaft';
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(radius * 0.94, 0.055, 10, 56),
+    plate(clip.difference(poly(circle([0, 0], radius, 192)),
+      poly(circle([0, 0], radius - .055, 192))), 0, .02),
     rimMaterial,
   );
   rim.position.z = z + width * 0.52;
@@ -166,20 +167,24 @@ function makeIndexedEccentricSheave({
   return group;
 }
 
-function makeEccentricStrap({ radius, material, z }) {
+function makeEccentricStrap({ radius, sheaveRadius, length, material, z }) {
   const group = new THREE.Group();
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.075, 12, 64),
-    material,
-  );
-  ring.position.z = z;
-  ring.userData.role = 'free-eccentric-strap-around-one-sheave';
-  const oilCup = cylinderAlongY(0.07, 0.25, material, 20);
-  oilCup.position.set(0, radius + 0.12, z);
-  oilCup.userData.role = 'oil-cup-fixed-to-eccentric-strap';
-  group.add(ring, oilCup);
-  group.userData.ring = ring;
-  group.userData.oilCup = oilCup;
+  // A single rigid outline joins the bored strap to the tapered rod and eye.
+  const outline = clip.union(poly(circle([0, 0], radius + .075, 192)),
+    poly([[.50, -.37], [.94, -.18], [length, -.075],
+      [length, .075], [.94, .18], [.50, .37]]),
+    poly(circle([length, 0], .13, 96)));
+  const shape = clip.difference(outline,
+    poly(circle([0, 0], sheaveRadius + .006, 192)),
+    poly(circle([length, 0], .074, 96)));
+  const body = new THREE.Mesh(plate(shape, -.08, .08), material);
+  body.userData.role = 'integral-bored-eccentric-strap-tapered-rod-and-pin-eye';
+  group.add(body);
+  group.userData.ring = body;
+  group.userData.setEndpoints = (start, end) => {
+    group.position.set(start.x, start.y, z);
+    group.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
+  };
   return group;
 }
 
@@ -720,37 +725,22 @@ function oscillatingMarineEngineStephensonValveGear() {
   const aheadStrap = makeEccentricStrap({
     material: brassMaterial,
     radius: strapPitchRadius,
+    sheaveRadius,
+    length: aheadEccentricRodLength,
     z: aheadLayerZ,
   });
   aheadStrap.userData.role = 'ahead-eccentric-strap';
   const asternStrap = makeEccentricStrap({
     material: brassMaterial,
     radius: strapPitchRadius,
+    sheaveRadius,
+    length: asternEccentricRodLength,
     z: asternLayerZ,
   });
   asternStrap.userData.role = 'astern-eccentric-strap';
-  const aheadEccentricRod = makeDynamicLink({
-    color: PALETTE.driven,
-    depth: 0.13,
-    jointRadius: 0.001,
-    thickness: 0.13,
-  });
-  aheadEccentricRod.userData.role =
-    'finite-ahead-eccentric-rod-to-launch-link';
-  const asternEccentricRod = makeDynamicLink({
-    color: PALETTE.driven,
-    depth: 0.13,
-    jointRadius: 0.001,
-    thickness: 0.13,
-  });
-  asternEccentricRod.userData.role =
-    'finite-astern-eccentric-rod-to-launch-link';
-  root.add(
-    aheadStrap,
-    asternStrap,
-    aheadEccentricRod,
-    asternEccentricRod,
-  );
+  const aheadEccentricRod = aheadStrap;
+  const asternEccentricRod = asternStrap;
+  root.add(aheadStrap, asternStrap);
 
   const linkGroup = new THREE.Group();
   linkGroup.userData.role =
@@ -785,7 +775,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     const group = new THREE.Group();
     group.position.set(localPoint.x, localPoint.y, 0);
     group.userData.role = role;
-    const eye = makeEye(0.13, 0.055, drivenMaterial, z);
+    const eye = makeEye(0.13, 0.055, drivenMaterial, z + Math.sign(z) * .16);
     const pin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
     pin.position.z = z;
     group.add(eye, pin);

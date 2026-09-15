@@ -1,0 +1,18 @@
+{
+  "movement": 171,
+  "status": "scoped-model-test-passed",
+  "command": "node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs",
+  "passed": 1,
+  "skipped": 164,
+  "scope": "Reconstructed linkage closure, asymmetric source anchors, cylinder-local invariance and rendered transforms; not historical topology qualification.",
+  "sources": [
+    {
+      "file": "tests/models.test.mjs",
+      "sha256": "82c12a3097340f025c0b7aeea7895bf888b222ae9c35dbc2fa6364dc8944c1cf"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "8bdda195de2c1a70aa15b28006eb636d88a2be7e0b8084c0a13a34ab747f2e3c"
+    }
+  ]
+}
