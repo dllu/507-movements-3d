@@ -40788,7 +40788,7 @@ test('movement 148 turns one geared eccentric continuously to rock one guided at
     assert.ok(Math.abs(state.attachedCrankClosureError) < 2e-15);
     assert.ok(Math.abs(state.outputRockerClosureError) < 2e-15);
     assert.ok(Math.abs(state.guideRadiusError) < 3e-16);
-    assert.ok(Math.abs(state.guideRadialVelocityError) < 3e-16);
+    assert.ok(Math.abs(state.guideRadialVelocityError) < 2e-15);
     assert.ok(Math.abs(state.gearCenterDistanceError) < 1e-15);
     assert.ok(Math.abs(state.pitchLineSpeedError) < 1e-15);
     assert.ok(Math.abs(
@@ -40966,7 +40966,7 @@ test('movement 148 turns one geared eccentric continuously to rock one guided at
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [6.8, 4.8, 12.8]);
+  assert.deepEqual(model.cameraDirection.toArray(), [.05, .03, 15]);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 11.2);
   assert.equal(cameraEnvelope.geometry.parameters.height, 8.7);

@@ -1,0 +1,44 @@
+{
+  "movement": 148,
+  "status": "four-bar-interpretation-needs-review",
+  "landmarks": {
+    "gear": [
+      263,
+      288
+    ],
+    "eccentric": [
+      212,
+      264
+    ],
+    "joint": [
+      247,
+      228
+    ],
+    "rockerPivot": [
+      469,
+      258
+    ]
+  },
+  "lengths": {
+    "input": 56.3648826841678,
+    "coupler": 50.20956084253277,
+    "output": 224.01785643113365,
+    "ground": 208.17300497422812
+  },
+  "interpretation": "Treat the left small circular pin as an eccentric fixed to the gear, the upper pin as the coupler/rocker joint, and the right pin as the fixed rocker pivot. This is the existing model interpretation, not a verified reading of the oblong guide.",
+  "summary": {
+    "sampledInputAngles": 360,
+    "inaccessibleInputAngles": 92,
+    "maximumClosureDeficitPixels": 21.999211739671495
+  },
+  "sources": [
+    {
+      "file": "public/engravings/mm_148.png",
+      "sha256": "dd3293693859d73cbcad26ca68807c2bbb2e9dd7c2742df5900233c12dcd4f36"
+    },
+    {
+      "file": "scripts/measure-geared-crank.mjs",
+      "sha256": "99ec530cb8b40aca5ba41ba132394eeffef1c8a04a317dfe19cc1715f2f82450"
+    }
+  ]
+}

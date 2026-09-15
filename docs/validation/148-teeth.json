@@ -1,0 +1,23 @@
+{
+  "movement": 148,
+  "method": "Intersection of actual central tooth outlines through one full large-gear revolution (four pinion turns). Inset chamfers cannot extend beyond these outlines. Gear teeth only; hub, bearing and linkage clearance are not covered.",
+  "summary": {
+    "poses": 257,
+    "maximumOverlapArea": 0,
+    "period": 8
+  },
+  "sources": [
+    {
+      "file": "scripts/review-geared-crank-teeth.mjs",
+      "sha256": "6bd507e03a76adf0673972e37aedabea69e68866c459feba25dc8b1ca890ad09"
+    },
+    {
+      "file": "src/simulation/authored-gear-linkages.js",
+      "sha256": "0798e053ba89797b1b4910222ddf736995475db8a22c7f5aee33898ebd34f638"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    }
+  ]
+}

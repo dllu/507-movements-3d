@@ -1,3 +1,13 @@
+# Current review: 148 geared alternating crank
+
+148 now has involute teeth with tip/root clearance, an eight-second large-gear
+cycle, frontal view and no ground plane. The 257-pose tooth-outline check and
+existing analytic linkage test pass, along with the production build and
+desktop/mobile playback and restart. Its circular guide differs from the source
+oblong, and the source pin centers do not close through a full revolution under
+the current four-bar interpretation. Resolve the guide and linkage before
+claiming source fidelity or whole-assembly clearance; see [movement 148](movement-148.md).
+
 # Shipped improvement: 147 air-drag governor; refinement follow-up open
 
 147 now uses passive MuJoCo lift baked into a 1.83 MB, nine-mesh bundle. The

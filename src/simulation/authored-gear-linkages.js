@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import {
   PALETTE,
   makeBeam,
+  makeGear,
   makeShaft,
   markShadows,
   matte,
   setSpin,
 } from './primitives.js';
+import {disposeObject3D} from './dispose-model.js';
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -51,24 +53,12 @@ function makeSpokedSpurGear({
   root.userData.rotor = rotor;
 
   const toothPitch = Math.PI * 2 / teeth;
-  const rootRadius = pitchRadius - toothHeight * 0.45;
+  const rootRadius = pitchRadius - toothHeight * 0.65;
   const outerRadius = pitchRadius + toothHeight * 0.55;
-  const profile = new THREE.Shape();
-  for (let tooth = 0; tooth < teeth; tooth += 1) {
-    for (const [phase, radius] of [
-      [-0.50, rootRadius],
-      [-0.29, outerRadius],
-      [0.29, outerRadius],
-      [0.50, rootRadius],
-    ]) {
-      const angle = (tooth + phase) * toothPitch;
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      if (tooth === 0 && phase === -0.50) profile.moveTo(x, y);
-      else profile.lineTo(x, y);
-    }
-  }
-  profile.closePath();
+  const template = makeGear({teeth,radius:pitchRadius,depth,
+    addendum:outerRadius-pitchRadius,dedendum:pitchRadius-rootRadius});
+  const profile = template.userData.rotor.children[0].geometry.parameters.shapes.clone();
+  disposeObject3D(template);
   if (webInnerRadius > 0) {
     const opening = new THREE.Path();
     opening.absarc(0, 0, webInnerRadius, 0, Math.PI * 2, true);
@@ -80,10 +70,10 @@ function makeSpokedSpurGear({
     metalness: 0.24,
     roughness: 0.48,
   });
-  const rim = new THREE.Mesh(
-    centeredExtrusion(profile, depth, 0.009),
-    gearMaterial,
-  );
+  const rimGeometry = new THREE.ExtrudeGeometry(profile,{depth,bevelEnabled:true,
+    bevelSize:.009,bevelOffset:-.009,bevelThickness:.009,bevelSegments:1,curveSegments:64});
+  rimGeometry.translate(0,0,-depth/2);
+  const rim = new THREE.Mesh(rimGeometry,gearMaterial);
   rim.userData.role = webInnerRadius > 0
     ? 'thin-toothed-open-web-spur-gear-rim'
     : 'solid-small-driving-spur-pinion';
@@ -157,8 +147,11 @@ function makeSpokedSpurGear({
   root.userData.spokeStart = spokeCount > 0 ? hubRadius * 0.72 : 0;
   root.userData.spokes = spokes;
   root.userData.teeth = teeth;
-  root.userData.toothHeight = toothHeight;
+  root.userData.toothHeight = outerRadius - rootRadius;
+  root.userData.addendum = outerRadius - pitchRadius;
+  root.userData.dedendum = pitchRadius - rootRadius;
   root.userData.toothPitch = toothPitch;
+  root.userData.toothProfile = 'true-involute';
   root.userData.rotationIndex = rotationIndex;
   root.userData.webInnerRadius = webInnerRadius;
   return markShadows(root);
@@ -506,7 +499,7 @@ function gearedAlternatingCrank() {
     guideFollowerFace,
   );
 
-  const pinionAngularSpeed = 1.20;
+  const pinionAngularSpeed = Math.PI;
   const largeGearAngularSpeed = -pinionAngularSpeed
     * pinionTeeth / largeGearTeeth;
   const cyclePeriod = fullTurn / Math.abs(largeGearAngularSpeed);
@@ -799,6 +792,9 @@ function gearedAlternatingCrank() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod,displayCycleDuration:cyclePeriod,playbackTimeScale:1};
   root.userData.fidelity = 'authored';
   markShadows(root);
   root.traverse((object) => {
@@ -819,9 +815,10 @@ function gearedAlternatingCrank() {
   }
 
   return {
-    cameraDirection: new THREE.Vector3(6.8, 4.8, 12.8),
+    cameraDirection: new THREE.Vector3(.05, .03, 15),
     root,
     update,
+    reset: () => update(0),
   };
 }
 
