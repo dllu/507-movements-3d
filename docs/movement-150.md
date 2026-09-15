@@ -176,3 +176,11 @@ above. The frame/supports remain engineering interpretations, and source
 projection still needs review. The local constructor takes about 178 ms, including roller-spin
 precomputation; decide on offline baking after the geometry and mechanics are
 settled. Do not mark 150 complete from the contact check alone.
+
+The source-fit investigation now has a reproducible annotated partial-arc
+survey (`scripts/fit-selectable-cam-source-arcs.mjs`,
+`docs/validation/150-source-arcs.svg`). The large left arc fits a circle within
+1.34px RMS, but the five distinct surveyed strokes cannot yet be assigned to
+four cam faces. This does not justify replacing the production profiles with
+circular eccentrics; see `movement-150-source-fit.md` for the unresolved
+occlusion and depth interpretation.

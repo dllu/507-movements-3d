@@ -36,3 +36,26 @@ Next: trace visible arcs, fit circle/ellipse candidates, fit depth-aware source
 landmarks, then test contact and full-turn closure. Compare against the actual
 render before changing production geometry or regenerating mass/physics/bakes.
 Retain the existing physical clearances and explicitly record hidden geometry.
+
+## Visible-arc measurements
+
+`node scripts/fit-selectable-cam-source-arcs.mjs` now records manual stroke
+center-line readings and fits in `docs/validation/150-source-arcs.json`.
+The accompanying SVG overlays both the readings and candidate circles on the
+original image. These are partial arcs, not traced complete cam boundaries.
+
+The left contour fits a circle centered at (157.9,272.6), radius 67.8px,
+with 1.34px RMS radial residual. Four visible right-hand strokes fit radii
+56.8, 48.9, 42.4 and 38.4px at progressively leftward centers; their residuals
+are 1.12–2.92px. Readings have approximately 2px uncertainty. In particular,
+the inner circles deviate visibly from the lower-left strokes in the overlay.
+
+This supports the earlier reading of the large left arc but does **not**
+establish a family of four circular cams. There are five measured strokes,
+and assigning each to a separate cam would be wrong for the current four-cam
+interpretation. Some may be opposite faces, shaft edges, or separate portions
+of a noncircular profile. The proposed equal-pitch, common-heel circle model
+also needs to explain the left contour's center as well as the ordered right
+contours. Do not promote that hypothesis to production from these fits alone.
+The next reconstruction must trace connected boundaries and establish which
+arcs belong to each face before solving depth and eccentricity.
