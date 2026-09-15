@@ -1,13 +1,13 @@
-# Review open: 173 tappet-indexed silk traverse
+# Shipped reconstruction: 173 tappet-indexed silk traverse
 
-The browser now plays a 42 KB MuJoCo contact bake through a reconstructed
-42-mesh assembly. Source wrist and rod-end centers fit within 1.03 pixels.
-All 521 cross-body pairs pass the 129-pose sweep, and the dense tappet audit,
-four tests, build and desktop/mobile checks pass. The original oversized base,
-coarse screw and prescribed indexing curve have been replaced. The wheel
-silhouette remains undersized and must be corrected in the native and visible
-geometry together. See [movement 173](movement-173.md). Continue with 173;
-the full review remains active.
+A 42-mesh source reconstruction uses a 51 KB MuJoCo contact bake. The enlarged
+wheel bounds fit within 2.1 source pixels; wrist and rod-end centers fit within
+1.03 pixels. The passive wheel advances one tooth per turn at two timesteps;
+contact-disabled control, dense baked contact sweep, all 521 cross-body pairs,
+four tests, build and desktop/mobile checks pass. A tall flanged guide and
+near-orthographic front view preserve the source proportions. Native contact,
+ideal nut/guide constraints and inferred depths are documented in
+[movement 173](movement-173.md). Next source review: 174; the full review remains active.
 
 # Shipped reconstruction: 172 slider-crank egg curve
 

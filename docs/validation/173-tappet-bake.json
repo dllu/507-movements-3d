@@ -1,12 +1,15 @@
 {
   "version": 1,
   "movement": 173,
-  "status": "unregistered-contact-motion",
+  "status": "baked-contact-motion",
   "duration": 72,
   "parameters": {
+    "radialScale": 1.3,
+    "axialScale": 1.55,
+    "pinRadius": 0.0325,
     "timestep": 0.000025,
-    "height": 0.485,
-    "phase": 0.17234,
+    "height": 0.6305,
+    "phase": 0.171058,
     "friction": 0.002,
     "damping": 0.3,
     "enabled": true,
@@ -16,24 +19,24 @@
     "pitch": 0.3490658503988659,
     "start": -0.3
   },
-  "maximumError": 4.711163735134083e-7,
-  "nativeHash": "1648e7cb5fd68dbec336ea6704455ea6ebd8b28817259184a4053438bcfd8d91",
+  "maximumError": 4.985473908580708e-7,
+  "nativeHash": "9fb349078eb1e46b1fd39ccd6698e47a23a48adc85208abe0033b6f881345900",
   "sources": [
     {
       "file": "scripts/bake-silk-tappet.mjs",
-      "sha256": "4869cfbdd6fae44b811dc67300f94be81dccd1cfc54d231e263dd0613b68ff63"
+      "sha256": "ed703c1f2e84f9aab5cdc92353609639d726c43121e1aced2a0162f91b0fa8c1"
     },
     {
       "file": "scripts/qualify-silk-tappet.mjs",
-      "sha256": "a53a5a377b5dc0cb262eaf855c6a5936de2233ad044ef453b1d935d594bd6c58"
+      "sha256": "7d70da4487a446604a2cffbacb7d333cdad358495c9225c8fa5536e576b3e0d0"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/physics.js",
-      "sha256": "37395bee42b886c4c050db0230a87e7e92a3310f9695a82450efe5a87c3e252c"
+      "sha256": "ce02bb386f4a4695878eb25f972390eaf28d0ee4ee26177b9edcd3914e86c767"
     }
   ],
-  "samples": 2090,
+  "samples": 2558,
   "nativeSamples": 144001,
-  "bytes": 42116,
-  "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
+  "bytes": 51130,
+  "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
 }

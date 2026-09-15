@@ -1,5 +1,5 @@
 import {expect,test} from '@playwright/test';
-test('173 plays its provisional silk traverse and restarts on desktop and mobile',async({page})=>{
+test('173 plays its baked silk traverse and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/173');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/173-packaged-source.png'});

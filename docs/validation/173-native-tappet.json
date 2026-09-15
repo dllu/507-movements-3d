@@ -1,16 +1,19 @@
 {
   "movement": 173,
-  "status": "unregistered-passive-tappet-contact-study",
+  "status": "passive-tappet-contact-qualified",
   "duration": 72,
-  "scope": "Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly is not yet reconstructed or baked.",
-  "assumptions": "Tooth dimensions, pin height, phase, inertia and screw friction are inferred. Small soft-contact penetration remains; native results are not a rendered-solid clearance certificate.",
-  "maximumTimestepAngleDifference": 0.000044842591556903955,
+  "scope": "Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly has separate visible-solid audits.",
+  "assumptions": "Tooth dimensions, pin height, phase, inertia and screw friction are inferred. A contact margin prevents penetration; native results are not a rendered-solid clearance certificate.",
+  "maximumTimestepAngleDifference": 0.0000663445077146536,
   "runs": [
     {
       "parameters": {
+        "radialScale": 1.3,
+        "axialScale": 1.55,
+        "pinRadius": 0.0325,
         "timestep": 0.00005,
-        "height": 0.485,
-        "phase": 0.17234,
+        "height": 0.6305,
+        "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
         "enabled": true,
@@ -23,123 +26,126 @@
       "turns": [
         {
           "turn": 1,
-          "wheel": 0.3490366595658084,
-          "advance": 0.3490366595658084,
-          "dwellSpeed": 8.35394184484383e-12
+          "wheel": 0.3490659475527264,
+          "advance": 0.3490659475527264,
+          "dwellSpeed": 1.0709054710610803e-11
         },
         {
           "turn": 2,
-          "wheel": 0.6981025099337547,
-          "advance": 0.34906585036794624,
-          "dwellSpeed": 1.3900710572155787e-11
+          "wheel": 0.6981317979791071,
+          "advance": 0.34906585042638066,
+          "dwellSpeed": 1.890448797757664e-11
         },
         {
           "turn": 3,
-          "wheel": 1.0471683603561486,
-          "advance": 0.3490658504223939,
-          "dwellSpeed": 2.7567327617288537e-11
+          "wheel": 1.0471976484115118,
+          "advance": 0.3490658504324047,
+          "dwellSpeed": 2.6359563188737173e-11
         },
         {
           "turn": 4,
-          "wheel": 1.3962342108041732,
-          "advance": 0.34906585044802463,
-          "dwellSpeed": 6.07838531311072e-11
+          "wheel": 1.3962634988664446,
+          "advance": 0.3490658504549329,
+          "dwellSpeed": 4.6669313078210576e-11
         },
         {
           "turn": 5,
-          "wheel": 1.7453000612292615,
-          "advance": 0.3490658504250883,
-          "dwellSpeed": 3.7086422754724994e-11
+          "wheel": 1.7453293492965327,
+          "advance": 0.3490658504300881,
+          "dwellSpeed": 4.630958493344635e-11
         },
         {
           "turn": 6,
-          "wheel": 2.09436591171598,
-          "advance": 0.34906585048671834,
-          "dwellSpeed": 3.4451402563533507e-11
+          "wheel": 2.0943951997544867,
+          "advance": 0.349065850457954,
+          "dwellSpeed": 4.380363343856327e-11
         },
         {
           "turn": 7,
-          "wheel": 2.443431762217868,
-          "advance": 0.349065850501888,
-          "dwellSpeed": 6.620453761880626e-11
+          "wheel": 2.4434610502185734,
+          "advance": 0.34906585046408667,
+          "dwellSpeed": 4.918218254605227e-11
         },
         {
           "turn": 8,
-          "wheel": 2.792497612739046,
-          "advance": 0.34906585052117833,
-          "dwellSpeed": 5.0241187697502435e-11
+          "wheel": 2.7925269006872555,
+          "advance": 0.3490658504686821,
+          "dwellSpeed": 5.327068926872165e-11
         },
         {
           "turn": 9,
-          "wheel": 3.1415634632235205,
-          "advance": 0.34906585048447436,
-          "dwellSpeed": 4.267020452442887e-11
+          "wheel": 3.1415927511450983,
+          "advance": 0.3490658504578428,
+          "dwellSpeed": 6.665535855478519e-11
         },
         {
           "turn": 10,
-          "wheel": 3.490629313709394,
-          "advance": 0.3490658504858737,
-          "dwellSpeed": 6.746589485992154e-11
+          "wheel": 3.4906586016043994,
+          "advance": 0.34906585045930116,
+          "dwellSpeed": 5.002445257006493e-11
         },
         {
           "turn": 11,
-          "wheel": 3.8396951641972645,
-          "advance": 0.3490658504878703,
-          "dwellSpeed": 4.558114289618211e-11
+          "wheel": 3.8397244520816387,
+          "advance": 0.34906585047723926,
+          "dwellSpeed": 4.7595715336016104e-11
         },
         {
           "turn": 12,
-          "wheel": 4.188761014679614,
-          "advance": 0.34906585048234984,
-          "dwellSpeed": 5.8003304673657126e-11
+          "wheel": 4.188790302545823,
+          "advance": 0.34906585046418437,
+          "dwellSpeed": 5.1838802173249624e-11
         },
         {
           "turn": 13,
-          "wheel": 4.537826865171186,
-          "advance": 0.3490658504915718,
-          "dwellSpeed": 6.209410378593777e-11
+          "wheel": 4.5378561530063815,
+          "advance": 0.3490658504605584,
+          "dwellSpeed": 5.7230255886220135e-11
         },
         {
           "turn": 14,
-          "wheel": 4.8868927156672,
-          "advance": 0.3490658504960136,
-          "dwellSpeed": 1.5907198118946068e-10
+          "wheel": 4.886922003462064,
+          "advance": 0.3490658504556823,
+          "dwellSpeed": 4.5901363405610685e-11
         },
         {
           "turn": 15,
-          "wheel": 5.23595856616514,
-          "advance": 0.34906585049794003,
-          "dwellSpeed": 4.758863730957394e-11
+          "wheel": 5.235987853919499,
+          "advance": 0.34906585045743554,
+          "dwellSpeed": 5.418912812512004e-11
         },
         {
           "turn": 16,
-          "wheel": 5.585024416658329,
-          "advance": 0.34906585049318917,
-          "dwellSpeed": 6.380676920084858e-11
+          "wheel": 5.585053704382372,
+          "advance": 0.349065850462873,
+          "dwellSpeed": 4.542170231635278e-11
         },
         {
           "turn": 17,
-          "wheel": 5.934090267145334,
-          "advance": 0.3490658504870048,
-          "dwellSpeed": 7.527309303778788e-11
+          "wheel": 5.9341195548422405,
+          "advance": 0.34906585045986827,
+          "dwellSpeed": 5.4405356148521485e-11
         },
         {
           "turn": 18,
-          "wheel": 6.283156117626176,
-          "advance": 0.3490658504808426,
-          "dwellSpeed": 6.309110407062926e-11
+          "wheel": 6.283185405295571,
+          "advance": 0.3490658504533304,
+          "dwellSpeed": 4.7346373847813544e-11
         }
       ],
       "minimumGap": 0,
-      "contactSteps": 16182,
-      "maximumCarrierError": 0.00005800088442242668,
+      "contactSteps": 20862,
+      "maximumCarrierError": 0.00003562397469361253,
       "maximumRollback": 0
     },
     {
       "parameters": {
+        "radialScale": 1.3,
+        "axialScale": 1.55,
+        "pinRadius": 0.0325,
         "timestep": 0.000025,
-        "height": 0.485,
-        "phase": 0.17234,
+        "height": 0.6305,
+        "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
         "enabled": true,
@@ -152,123 +158,126 @@
       "turns": [
         {
           "turn": 1,
-          "wheel": 0.34904411199408025,
-          "advance": 0.34904411199408025,
-          "dwellSpeed": 7.454430329523377e-12
+          "wheel": 0.3490261153300355,
+          "advance": 0.3490261153300355,
+          "dwellSpeed": 1.2022412877617245e-11
         },
         {
           "turn": 2,
-          "wheel": 0.6981099623876189,
-          "advance": 0.34906585039353866,
-          "dwellSpeed": 2.0614146250030268e-11
+          "wheel": 0.6980919657588556,
+          "advance": 0.34906585042882005,
+          "dwellSpeed": 2.7942472963909824e-11
         },
         {
           "turn": 3,
-          "wheel": 1.047175812827586,
-          "advance": 0.3490658504399672,
-          "dwellSpeed": 2.5514100442881327e-11
+          "wheel": 1.0471578162147572,
+          "advance": 0.34906585045590166,
+          "dwellSpeed": 3.549940114436561e-11
         },
         {
           "turn": 4,
-          "wheel": 1.3962416633165162,
-          "advance": 0.34906585048893013,
-          "dwellSpeed": 3.05310161111157e-11
+          "wheel": 1.3962236667009362,
+          "advance": 0.349065850486179,
+          "dwellSpeed": 3.497966022496379e-11
         },
         {
           "turn": 5,
-          "wheel": 1.7453075138016567,
-          "advance": 0.3490658504851405,
-          "dwellSpeed": 2.9090114656148265e-11
+          "wheel": 1.7452895171811564,
+          "advance": 0.3490658504802202,
+          "dwellSpeed": 4.325682005744292e-11
         },
         {
           "turn": 6,
-          "wheel": 2.0943733643020077,
-          "advance": 0.349065850500351,
-          "dwellSpeed": 4.385731346432843e-11
+          "wheel": 2.094355367661376,
+          "advance": 0.34906585048021976,
+          "dwellSpeed": 5.280566020947798e-11
         },
         {
           "turn": 7,
-          "wheel": 2.4434392147880364,
-          "advance": 0.3490658504860287,
-          "dwellSpeed": 8.306235119551103e-11
+          "wheel": 2.443421218130634,
+          "advance": 0.34906585046925764,
+          "dwellSpeed": 5.0056766485278186e-11
         },
         {
           "turn": 8,
-          "wheel": 2.7925050652869525,
-          "advance": 0.34906585049891614,
-          "dwellSpeed": 3.906576192762091e-11
+          "wheel": 2.792487068606856,
+          "advance": 0.3490658504762223,
+          "dwellSpeed": 4.59659203923214e-11
         },
         {
           "turn": 9,
-          "wheel": 3.1415709157613314,
-          "advance": 0.3490658504743789,
-          "dwellSpeed": 5.292974352289124e-11
+          "wheel": 3.1415529190712714,
+          "advance": 0.3490658504644153,
+          "dwellSpeed": 4.766089714964681e-11
         },
         {
           "turn": 10,
-          "wheel": 3.4906367662318276,
-          "advance": 0.3490658504704962,
-          "dwellSpeed": 4.0601831940446826e-11
+          "wheel": 3.490618769534354,
+          "advance": 0.3490658504630826,
+          "dwellSpeed": 4.888844028556435e-11
         },
         {
           "turn": 11,
-          "wheel": 3.8397026167308717,
-          "advance": 0.34906585049904404,
-          "dwellSpeed": 4.2735788031505724e-11
+          "wheel": 3.8396846200097934,
+          "advance": 0.34906585047543937,
+          "dwellSpeed": 6.681038107795055e-11
         },
         {
           "turn": 12,
-          "wheel": 4.188768467194185,
-          "advance": 0.3490658504633135,
-          "dwellSpeed": 6.634908009443168e-11
+          "wheel": 4.188750470454436,
+          "advance": 0.34906585044464267,
+          "dwellSpeed": 6.368942650898727e-11
         },
         {
           "turn": 13,
-          "wheel": 4.537834317669472,
-          "advance": 0.34906585047528704,
-          "dwellSpeed": 3.8823733090777894e-11
+          "wheel": 4.537816320919923,
+          "advance": 0.3490658504654869,
+          "dwellSpeed": 4.550663762387408e-11
         },
         {
           "turn": 14,
-          "wheel": 4.886900168141107,
-          "advance": 0.34906585047163485,
-          "dwellSpeed": 5.1215037508504955e-11
+          "wheel": 4.886882171380531,
+          "advance": 0.3490658504606081,
+          "dwellSpeed": 7.000082825622989e-11
         },
         {
           "turn": 15,
-          "wheel": 5.235966018612982,
-          "advance": 0.34906585047187466,
-          "dwellSpeed": 4.556207108444935e-11
+          "wheel": 5.23594802184354,
+          "advance": 0.34906585046300886,
+          "dwellSpeed": 5.3568236171144934e-11
         },
         {
           "turn": 16,
-          "wheel": 5.585031869085988,
-          "advance": 0.3490658504730062,
-          "dwellSpeed": 6.969065169200961e-11
+          "wheel": 5.585013872310209,
+          "advance": 0.34906585046666905,
+          "dwellSpeed": 5.390397422943313e-11
         },
         {
           "turn": 17,
-          "wheel": 5.934097719531541,
-          "advance": 0.3490658504455535,
-          "dwellSpeed": 4.4866165523468616e-11
+          "wheel": 5.934079722745991,
+          "advance": 0.34906585043578175,
+          "dwellSpeed": 5.1547241864651845e-11
         },
         {
           "turn": 18,
-          "wheel": 6.283163569366136,
-          "advance": 0.3490658498345942,
-          "dwellSpeed": 4.809410421125015e-11
+          "wheel": 6.283145572654021,
+          "advance": 0.3490658499080306,
+          "dwellSpeed": 5.2586343934639735e-11
         }
       ],
       "minimumGap": 0,
-      "contactSteps": 32868,
-      "maximumCarrierError": 0.000057987639319634354,
+      "contactSteps": 42335,
+      "maximumCarrierError": 0.000035616157685325334,
       "maximumRollback": 0
     },
     {
       "parameters": {
+        "radialScale": 1.3,
+        "axialScale": 1.55,
+        "pinRadius": 0.0325,
         "timestep": 0.00005,
-        "height": 0.485,
-        "phase": 0.17234,
+        "height": 0.6305,
+        "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
         "enabled": false,
@@ -397,11 +406,11 @@
   "sources": [
     {
       "file": "scripts/qualify-silk-tappet.mjs",
-      "sha256": "a53a5a377b5dc0cb262eaf855c6a5936de2233ad044ef453b1d935d594bd6c58"
+      "sha256": "7d70da4487a446604a2cffbacb7d333cdad358495c9225c8fa5536e576b3e0d0"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/physics.js",
-      "sha256": "37395bee42b886c4c050db0230a87e7e92a3310f9695a82450efe5a87c3e252c"
+      "sha256": "ce02bb386f4a4695878eb25f972390eaf28d0ee4ee26177b9edcd3914e86c767"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",

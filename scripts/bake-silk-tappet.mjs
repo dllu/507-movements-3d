@@ -18,7 +18,7 @@ for(let k=1;k<indices.length;k++)for(let i=indices[k-1];i<=indices[k];i++){
 }
 assert.ok(maximumError<=tolerance+1e-10);
 const sources=['scripts/bake-silk-tappet.mjs','scripts/qualify-silk-tappet.mjs','src/simulation/mujoco-silk-tappet/physics.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));
-const bundle={version:1,movement:173,status:'unregistered-contact-motion',duration:72,parameters:run.parameters,motion,maximumError,
+const bundle={version:1,movement:173,status:'baked-contact-motion',duration:72,parameters:run.parameters,motion,maximumError,
  nativeHash:createHash('sha256').update(fs.readFileSync(nativeFile)).digest('hex'),sources};
 const bytes=gzipSync(JSON.stringify(bundle),{level:9});
 fs.writeFileSync('src/simulation/baked/assets/173-tappet.json.gz',bytes);

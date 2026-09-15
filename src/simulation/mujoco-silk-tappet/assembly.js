@@ -5,7 +5,7 @@ import {plate,poly,circle,capsule,polygonClipping as clip} from '../finite-plate
 import {PALETTE,matte,makeScrew,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
 
-// Engraving reconstruction candidate. The source omits bearing depths and the
+// Engraving reconstruction. The source omits bearing depths and the
 // nut's internal thread; their constraints are ideal, with explicit clearances.
 export function makeSilkTraverseAssembly(bundle) {
  const root=new THREE.Group(),parts={},families={},contact=makeSilkTappetSolids(bundle.parameters);
@@ -42,25 +42,25 @@ export function makeSilkTraverseAssembly(bundle) {
  const nut=new THREE.Group();carrier.add(nut);
  const nutOutline=poly([[-.18,-.153],[.18,-.153],[.18,.153],[-.18,.153]]);
  add('nut',alongX(plate(clip.difference(nutOutline,round(.125)),-.16,.16)),PALETTE.brass,'nut',nut);
- add('wrist',plate(round(.12),.15,.82),PALETTE.ink,'nut',nut);
+ add('wrist',plate(round(.12),.15,1.53),PALETTE.ink,'nut',nut);
  const yoke=new THREE.Group();root.add(yoke);
  const outer=capsule([0,(283-179)*scale],[0,(283-400)*scale],20*scale);
  const inner=capsule([0,(283-180)*scale],[0,(283-399)*scale],9.2*scale);
- add('yoke',plate(clip.difference(outer,inner),.82,1.0),PALETTE.driven,'yoke',yoke);
+ add('yoke',plate(clip.difference(outer,inner),1.51,1.69),PALETTE.driven,'yoke',yoke);
  const rodLength=340*scale;
- const rod=add('guideRod',alongX(plate(round(.085),.24,rodLength)),PALETTE.driven,'yoke',yoke);rod.position.z=.91;
+ const rod=add('guideRod',alongX(plate(round(.085),.24,rodLength)),PALETTE.driven,'yoke',yoke);rod.position.z=1.6;
  const guideCenter=raster([367,283]);
- const guide=add('guideBearing',alongX(plate(clip.difference(round(.26),round(.091)),-.11,.11)),PALETTE.frame,'fixed');guide.position.set(guideCenter[0],0,.91);
+ const guide=add('guideBearing',alongX(plate(clip.difference(round(.58),round(.091)),-.11,.11)),PALETTE.frame,'fixed');guide.position.set(guideCenter[0],0,1.6);
  const bracketShape=new THREE.Shape();
  const move=(x,y)=>bracketShape.moveTo(...raster([x,y]));
  const line=(x,y)=>bracketShape.lineTo(...raster([x,y]));
  const curve=(a,b,c)=>bracketShape.bezierCurveTo(...raster(a),...raster(b),...raster(c));
  move(363,289);line(382,289);curve([407,291],[416,308],[422,340]);line(496,340);line(496,328);line(441,328);
  curve([432,291],[418,275],[382,274]);line(363,274);bracketShape.closePath();
- add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),1.11,1.25),PALETTE.frame,'fixed');
- add('guideFoot',plate(sourcePoly([[390,346],[512,346],[500,360],[511,373],[501,391],[385,391],[391,378],[386,365]]),1.05,1.32),PALETTE.frame,'fixed');
+ add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),1.8,1.94),PALETTE.frame,'fixed');
+ add('guideFoot',plate(sourcePoly([[390,346],[512,346],[500,360],[511,373],[501,391],[385,391],[391,378],[386,365]]),1.74,2.01),PALETTE.frame,'fixed');
  // Join the source foot and curved support without inventing an overall base.
- add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),1.11,1.25),PALETTE.frame,'fixed');
+ add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),1.8,1.94),PALETTE.frame,'fixed');
  root.updateMatrixWorld(true);const tip=contact.parts.tappet.getWorldPosition(new THREE.Vector3());
  const stem=add('tappetStem',plate(round(.02),tip.z,1.13),PALETTE.ink,'fixed');stem.position.set(tip.x,tip.y,0);
  const supportEnd=raster([406,179]);
@@ -73,8 +73,8 @@ export function makeSilkTraverseAssembly(bundle) {
  };
  const update=time=>{const s=stateAtTime(time);contact.update(s);screw.userData.rotor.rotation.z=s.wheel;
   nut.position.x=s.nutStation;yoke.position.x=s.wrist[0];root.userData.kinematics=s;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{parts,families,geometry:g,stateAtTime,hideGround:true,supportsRestart:true,materialsIgnoreSceneFog:true,
-  mechanism:'tappet-indexed-silk-traverse',fidelity:'authored',simulationBackend:'baked-mujoco',reconstructionStatus:'candidate'});
+ Object.assign(root.userData,{parts,families,geometry:g,stateAtTime,cameraFov:8,hideGround:true,supportsRestart:true,materialsIgnoreSceneFog:true,
+  mechanism:'tappet-indexed-silk-traverse',fidelity:'authored',simulationBackend:'baked-mujoco',reconstructionStatus:'reconstructed'});
  update(0);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.duration*i/128);bounds.union(new THREE.Box3().setFromObject(root));}update(0);
  root.userData.cameraFitBounds=bounds.clone().expandByScalar(.08);markShadows(root);
  return {root,update,reset:()=>update(0),cameraDirection:new THREE.Vector3(0,0,1),dispose:()=>disposeObject3D(root)};

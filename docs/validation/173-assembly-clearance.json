@@ -2088,7 +2088,7 @@
       "tappetSupport"
     ]
   ],
-  "queries": 239760232,
+  "queries": 239749964,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All physical meshes classified; standalone contact has a separate dense audit. Sampled clearance only.",
   "sources": [
@@ -2098,11 +2098,11 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "b6885fa3182389074bdd6677d0e3405362efcd5d0abf6d42647832386e739a98"
+      "sha256": "d87d39887275c5895f296f0348cfb0ee603f17b8cbb4367d492a2b878cbd28c4"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
-      "sha256": "52ad12e7406fff3679a2f28ba40f41520bcc1a3e8bb3f2619f46991e20c7ea17"
+      "sha256": "96c52ee7d2837db6883d9b5853c35ee915d6aea665b22d4713ac6d2f76931c31"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/playback.js",
@@ -2110,7 +2110,7 @@
     },
     {
       "file": "src/simulation/baked/assets/173-tappet.json.gz",
-      "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
+      "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

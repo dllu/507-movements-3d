@@ -23,9 +23,9 @@ for(const options of [{},{timestep:.000025},{enabled:false}]) {
 fs.writeFileSync('/dev/shm/173-native-tappet.json',JSON.stringify(runs));
 let maximumTimestepAngleDifference=0;
 runs[0].samples.forEach((s,i)=>maximumTimestepAngleDifference=Math.max(maximumTimestepAngleDifference,Math.abs(s.wheel-runs[1].samples[i].wheel)));
-const report={movement:173,status:'unregistered-passive-tappet-contact-study',duration:72,
-  scope:'Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly is not yet reconstructed or baked.',
-  assumptions:'Tooth dimensions, pin height, phase, inertia and screw friction are inferred. Small soft-contact penetration remains; native results are not a rendered-solid clearance certificate.',
+const report={movement:173,status:'passive-tappet-contact-qualified',duration:72,
+  scope:'Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly has separate visible-solid audits.',
+  assumptions:'Tooth dimensions, pin height, phase, inertia and screw friction are inferred. A contact margin prevents penetration; native results are not a rendered-solid clearance certificate.',
   maximumTimestepAngleDifference,runs:runs.map(({samples,...run})=>run),
   sources:['scripts/qualify-silk-tappet.mjs','src/simulation/mujoco-silk-tappet/physics.js','src/simulation/mujoco/simulation.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
 fs.writeFileSync('docs/validation/173-native-tappet.json',JSON.stringify(report,null,2)+'\n');

@@ -1,6 +1,6 @@
 {
   "movement": 173,
-  "status": "packaged-desktop-mobile-passed-source-fit-open",
+  "status": "packaged-desktop-mobile-passed",
   "checks": [
     "baked playback",
     "exact restart",
@@ -9,19 +9,18 @@
     "no WASM request",
     "no page errors"
   ],
-  "limitations": "Wheel silhouette remains undersized; see source-fit report.",
   "sources": [
     {
       "file": "tests/e2e/tappet-silk-traverse.spec.mjs",
-      "sha256": "d386d5304b40ad77b5f0ec4ba72a0597510bd389b19be858d020032a89943d07"
+      "sha256": "2f8bff678edcea8a7685a4b7937af38266b1e4a95296a15ce024362543228c98"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "b6885fa3182389074bdd6677d0e3405362efcd5d0abf6d42647832386e739a98"
+      "sha256": "d87d39887275c5895f296f0348cfb0ee603f17b8cbb4367d492a2b878cbd28c4"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
-      "sha256": "52ad12e7406fff3679a2f28ba40f41520bcc1a3e8bb3f2619f46991e20c7ea17"
+      "sha256": "96c52ee7d2837db6883d9b5853c35ee915d6aea665b22d4713ac6d2f76931c31"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/playback.js",
@@ -33,11 +32,12 @@
     },
     {
       "file": "src/simulation/baked/assets/173-tappet.json.gz",
-      "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
+      "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
     },
     {
       "file": "src/simulation/model-loader.js",
       "sha256": "c380cefaf0f677633d6a2f61440524f5195dbfff05272899040dd333f9069e27"
     }
-  ]
+  ],
+  "scope": "42-mesh source reconstruction with enlarged tappet wheel, tall guide flange, near-orthographic view and baked passive contact."
 }

@@ -1,19 +1,19 @@
 {
   "movement": 173,
   "status": "standalone-baked-contact-clearance",
-  "poses": 16712,
-  "queries": 20141,
-  "minimumGap": 0.00074621587301291,
-  "worstTime": 64.179,
-  "method": "Eight subinterval samples per adaptive key interval across 18 turns. Exact finite wheel mesh triangles versus the circumscribing sphere of the visible tappet; conservative for its tessellated surface. AABB rejection beyond 0.03 model units. All 19 wheel meshes tested against the pin; whole silk assembly excluded.",
+  "poses": 20456,
+  "queries": 24972,
+  "minimumGap": 0.0008595089420578295,
+  "worstTime": 0.17550000000000002,
+  "method": "Eight subinterval samples per adaptive key interval across 18 turns. Exact finite wheel mesh triangles versus the circumscribing sphere of the visible tappet; conservative for its tessellated surface. AABB rejection beyond the pin radius plus 0.005 model units. All 19 wheel meshes tested against the pin; whole silk assembly excluded.",
   "sources": [
     {
       "file": "scripts/review-silk-tappet-bake.mjs",
-      "sha256": "52f5802a3788e3e9a603f3d026f036236fbc893175ccccce77f108ed6aa1695b"
+      "sha256": "7f374b29c7b84e1f89b5cd546cefe0c7b9b5cdd0f5790fb144512307c5b47db5"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
-      "sha256": "52ad12e7406fff3679a2f28ba40f41520bcc1a3e8bb3f2619f46991e20c7ea17"
+      "sha256": "96c52ee7d2837db6883d9b5853c35ee915d6aea665b22d4713ac6d2f76931c31"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/playback.js",
@@ -21,7 +21,7 @@
     },
     {
       "file": "src/simulation/baked/assets/173-tappet.json.gz",
-      "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
+      "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
     }
   ]
 }
