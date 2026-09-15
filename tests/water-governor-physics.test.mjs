@@ -6,10 +6,14 @@ const m=await loadMujoco();
 function run(options){
  const p=makeWaterGovernorPhysics(m,options);
  try{
-  const result={firstForward:null,firstReverse:null,minimumSpeed:0,maximumSpeed:0,maximumClosure:0,maximumPenetration:0,maximumSpreadDrift:0,finalOutput:0};
+  const result={firstForward:null,firstReverse:null,minimumSpeed:0,maximumSpeed:0,maximumClosure:0,maximumPenetration:0,maximumSpreadDrift:0,finalOutput:0,maximumSelector:-Infinity,minimumSelector:Infinity};
   assert.equal(p.model.nu,1,'only the spindle has an actuator');
   for(let tick=0;tick<=16000;tick++){
    const s=p.state();
+   assert.ok(Math.abs(s.time-tick*p.timestep)<1e-7,'native clock must not reset');
+   const selector=s.selectorY-p.description.apex;
+   result.maximumSelector=Math.max(result.maximumSelector,selector);
+   result.minimumSelector=Math.min(result.minimumSelector,selector);
    if(result.firstForward===null&&s.outputSpeed>.1)result.firstForward=s.time;
    if(result.firstReverse===null&&s.outputSpeed<-.1)result.firstReverse=s.time;
    result.minimumSpeed=Math.min(result.minimumSpeed,s.outputSpeed);
@@ -36,4 +40,11 @@ test('162 removing contact eliminates output motion, and stud phase changes pick
 });
 test('162 nominal spindle speed holds the neutral governor with loose gears at rest',()=>{
  const r=run({speedAmplitude:0});assert.equal(r.finalOutput,0);assert.equal(r.maximumPenetration,0);assert.ok(r.maximumSpreadDrift<1e-7);
+});
+
+test('162 gear backing prevents an over-speed pin from passing through the stud roots',()=>{
+ const backed=run({speedAmplitude:.5}),open=run({speedAmplitude:.5,backingContact:false});
+ assert.ok(backed.maximumSelector<.425,'pin top stays below the upper backing face');
+ assert.ok(backed.minimumSelector>-.335,'pin bottom stays above the lower backing face');
+ assert.ok(open.maximumSelector>.50,'removed backing exposes the former pass-through defect');
 });

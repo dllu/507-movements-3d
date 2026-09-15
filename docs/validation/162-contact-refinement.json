@@ -1,0 +1,80 @@
+{
+  "movement": 162,
+  "status": "native-contact-refinement",
+  "duration": 8,
+  "samplingInterval": 0.002,
+  "runs": [
+    {
+      "timestep": 0.0005,
+      "maxDepth": 0.0009793496312125987,
+      "firstForward": 1.1324999999999308,
+      "firstReverse": 5.439499999999705,
+      "finalOutput": 6.623715716572177
+    },
+    {
+      "timestep": 0.00025,
+      "maxDepth": 0.0013486130409602146,
+      "firstForward": 1.1322499999999618,
+      "firstReverse": 5.437000000000899,
+      "finalOutput": 6.602594915698222
+    },
+    {
+      "timestep": 0.000125,
+      "maxDepth": 0.001366438447866162,
+      "firstForward": 1.1320000000000525,
+      "firstReverse": 5.4377499999986645,
+      "finalOutput": 6.602166212570842
+    },
+    {
+      "timestep": 0.0000625,
+      "maxDepth": 0.0014169574608404161,
+      "firstForward": 1.131937499999947,
+      "firstReverse": 5.439062500003217,
+      "finalOutput": 6.611541623572407
+    }
+  ],
+  "differences": [
+    {
+      "coarse": 0.0005,
+      "fine": 0.00025,
+      "spindle": 0.000053262098656858825,
+      "leftSpread": 0.0007434323147282873,
+      "sleeveY": 0.0016286467690800333,
+      "output": 0.021120800873955403
+    },
+    {
+      "coarse": 0.00025,
+      "fine": 0.000125,
+      "spindle": 0.00002562755482671264,
+      "leftSpread": 0.00022344802544499442,
+      "sleeveY": 0.0004723038775760191,
+      "output": 0.004827886504894963
+    },
+    {
+      "coarse": 0.000125,
+      "fine": 0.0000625,
+      "spindle": 0.0000306122130560027,
+      "leftSpread": 0.0001317000704458282,
+      "sleeveY": 0.00027834593823450327,
+      "output": 0.009375411001592227
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/refine-water-governor.mjs",
+      "sha256": "85b599610ff2109c49177c07b50e7d3d18dc19cf8561a4c4bb9a165ac5a8224b"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/physics.js",
+      "sha256": "32ea3928f07ed6fba275b3cdde054dff7c315464a7e651282cf048fda944b5f4"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
