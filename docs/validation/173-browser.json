@@ -1,27 +1,43 @@
 {
   "movement": 173,
-  "status": "packaged-desktop-mobile-passed-mechanical-review-open",
+  "status": "packaged-desktop-mobile-passed-source-fit-open",
   "checks": [
-    "playback",
+    "baked playback",
     "exact restart",
     "orbit and reset",
     "390x844 viewport without horizontal overflow",
     "no WASM request",
     "no page errors"
   ],
-  "limitations": "Tappet contact fails separate finite-mesh audit; inherited frame and joint geometry still require reconstruction.",
+  "limitations": "Wheel silhouette remains undersized; see source-fit report.",
   "sources": [
     {
       "file": "tests/e2e/tappet-silk-traverse.spec.mjs",
       "sha256": "d386d5304b40ad77b5f0ec4ba72a0597510bd389b19be858d020032a89943d07"
     },
     {
-      "file": "src/simulation/authored-silk-traverses.js",
-      "sha256": "b65733be04875cb3f99f592eef52a07e4ce0e31ad920e09fd4ea47e94e3957e0"
+      "file": "src/simulation/mujoco-silk-tappet/assembly.js",
+      "sha256": "b6885fa3182389074bdd6677d0e3405362efcd5d0abf6d42647832386e739a98"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/solids.js",
+      "sha256": "52ad12e7406fff3679a2f28ba40f41520bcc1a3e8bb3f2619f46991e20c7ea17"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/playback.js",
+      "sha256": "00054aeb2203bdea3f40a50e60237cb50149dae65002983813c9bc3287a74ae3"
+    },
+    {
+      "file": "src/simulation/baked/tappet-silk-traverse.js",
+      "sha256": "698026bebb8ca1dd8d57bbbcb614612e9c2599e5aae2bb918412093fd1cf1252"
+    },
+    {
+      "file": "src/simulation/baked/assets/173-tappet.json.gz",
+      "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "146011e92e471c85b9e5c1b117c65da5babc954e0fa5ae3dcf9c7326294cf1f4"
+      "sha256": "c380cefaf0f677633d6a2f61440524f5195dbfff05272899040dd333f9069e27"
     }
   ]
 }

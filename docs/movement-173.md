@@ -1,104 +1,69 @@
-# Movement 173: tappet-indexed silk traverse — review open
+# Movement 173: tappet-indexed silk traverse — source review open
 
-The [original page](https://507movements.com/mm_173.html) has no enabled animation
-or mechanism animation script. Its caption describes a disk-carried screw,
-a fixed tappet indexing the wheel once per disk revolution, and a traveling
-nut driving a slotted silk-guide rod. The current implementation prescribes
-a quintic indexing curve; it does not solve this contact.
+The browser now uses a 42-mesh reconstruction driven by a 42,116-byte MuJoCo
+motion bake. The visible screw, traveling nut and slotted guide replace the
+legacy prescribed indexing curve and oversized frame. A four-second disk turn
+indexes the passive wheel by one tooth. The finite adjustment lasts 71.825
+seconds from the source pose and stops without wrapping the nut back.
 
-## Verified defects
+The [original page](https://507movements.com/mm_173.html) has no enabled 2D
+animation. Its engraving and caption are the source reference.
 
-The first-event finite-mesh audit samples 257 poses. Distance from the rendered
-spherical tappet to the actual wheel meshes is negative in 185 poses and positive
-in 72. The minimum signed gap is -0.1501 model units and the maximum is +0.0332.
-The previous tests compared the tappet center to a nominal outer radius, which
-neither accounts for tappet radius nor proves tooth engagement. Passing those
-kinematic tests therefore does not establish a correct mechanism.
+## Reconstruction and assumptions
 
-Initial selected source landmarks also differ: the nut wrist is 6.91 pixels
-from its measured center and the tappet wheel 8.32 pixels away. The horizontal
-rod was drawn 24 pixels below its source ordinate. Correcting that ordinate
-reduces the selected rod-center discrepancy from 24.17 to 2.86 pixels. These
-are selected landmarks, not a whole-contour fit.
+The disk, diagonal screw channel, rounded vertical yoke, horizontal guide and
+separate upper/lower supports follow the engraving. Initial wrist and rod-end
+centers fit within 1.03 pixels; the selected wheel center fits exactly. The
+screw uses a finer, inferred 0.12 lead, consistent with the closely spaced
+thread marks. The nut follows the corresponding ideal right-hand helix law.
+Its internal thread, bearings and guide constraints are ideal; the modeled
+screw resistance is inferred rather than derived from a silk load.
 
-## Current increment
+Only the disk carrier is actuated in MuJoCo. Normal contact with the fixed
+spherical tappet drives the 18 straight wheel teeth; there is no output
+actuator, angle clamp or prescribed indexing curve. Tooth geometry, pin height,
+initial phase, inertia and resistance remain reconstruction assumptions.
+A small contact margin initiates the response before finite surfaces overlap.
 
-The guide rod now uses source Y=283 instead of 307. The default camera faces
-the engraving plane; fog and the scene ground are disabled, and Restart resets
-the mechanism to its source pose. The inherited period remains 4.17 seconds per
-disk turn, with an explicit stop after the 18-step adjustment. This finite
-adjustment and its screw lead are assumptions, not source-specified dimensions.
+Depths are inferred where the engraving omits them. The guide lies in front of
+the wheel's swept volume, with real bores through the screw bearings, nut and
+horizontal guide bearing. The fixed tappet has a forward stem and supporting
+arm. The overall base and rear A-frame from the old model have been removed.
+Fog and ground are disabled; Restart restores the exact source pose.
 
-The scoped legacy model test passes, including the corrected ordinate, front
-view, disabled fog/ground and reset. The production build passes. The packaged desktop/mobile browser test passes playback, exact Restart,
-orbit/reset view and mobile overflow checks without page errors or WASM.
-See the [browser report](validation/173-browser.json). These checks do not resolve the mechanical
-contact defects.
+## Evidence
 
-## Remaining work
+- [Native qualification](validation/173-native-tappet.json): 18 turns at 50 and
+  25 microsecond timesteps, one tooth per turn, no backward motion, and zero
+  wheel rotation when tappet contact is disabled.
+- [Bake](validation/173-tappet-bake.json): 144,001 recorded samples reduced to
+  2,090 adaptive keys, with maximum angle error below 4.72e-7 radians at those
+  samples. No MuJoCo/WASM is loaded for browser playback.
+- [Dense contact clearance](validation/173-tappet-baked-clearance.json): 16,712
+  interpolated poses have positive finite wheel-to-tappet clearance. The common
+  rigid transformation used to place that component preserves this clearance.
+- [Assembly clearance](validation/173-assembly-clearance.json): all 42 physical
+  meshes classified; 521 cross-body pairs at 129 adjustment poses, with
+  239,760,232 surface queries and no sampled intersections. This is a sampled
+  sweep, not a continuous collision proof.
+- Four tests pass: native/visible tooth centers, axes and dimensions; finite
+  monotone playback; source landmarks; and complete-assembly nut lead, guide
+  constraint, finite transforms and reset.
+- Production build and [desktop/mobile browser checks](validation/173-browser.json)
+  pass playback, exact Restart, orbit/reset view, viewport overflow, no WASM
+  requests and no page errors. Front and oblique views were inspected.
 
-Reconstruct the finite tappet/tooth encounter and validate indexing from actual
-contact, preferably with an offline MuJoCo solve. Recheck the screw and nut
-constraints, source offsets and slot clearance. Replace unsupported frame and
-joint geometry with an engraving-based assembly, then audit all distinct-body
-mesh pairs and the full adjustment playback. Do not mark 173 reviewed yet.
+## Remaining source-fit work
 
-The historical [baseline](validation/173-existing-contact.json) hashes the
-model at commit 9d95f53. The [current audit](validation/173-current-contact.json)
-records the rendering/alignment increment. Both deliberately report failures;
-the audit script is diagnostic and does not assert clearance.
+The wheel silhouette is still too small. Its projected bounds are approximately
+[340.43, 154.77, 383.57, 219.23], versus manually measured engraving bounds
+[331, 146, 393, 229]. See [source fit](validation/173-source-fit.json). Revise its
+native and visible dimensions together, then regenerate and requalify the bake
+and full-assembly clearance. Do not mark 173 reviewed until that discrepancy
+and the final visual comparison are resolved.
 
-## Passive contact reconstruction
-
-A standalone [MuJoCo study](../src/simulation/mujoco-silk-tappet/physics.js)
-now models a carrier, a wheel with 18 straight tappet teeth, and a fixed spherical
-pin. Only the carrier has an actuator. The wheel's angle comes from finite
-normal contact and inferred screw resistance; no prescribed indexing curve,
-angle clamp or output actuator drives it. Straight teeth are an explicit
-reconstruction choice for this pin-indexed wheel, not a meshing gear pair.
-
-The [qualification script](../scripts/qualify-silk-tappet.mjs) runs 18 revolutions
-at two timesteps, plus a control with the tappet's collisions disabled. It
-checks one-tooth advances, dwell speed, finite states, input tracking, rollback,
-contact penetration and agreement between timesteps. Detailed results are in
-[the native report](validation/173-native-tappet.json); bulk trajectories remain
-in `/dev/shm/173-native-tappet.json`.
-
-The timestep, tooth dimensions, axial thickness, pin height, initial tooth
-phase, inertia and resistance are recorded assumptions. MuJoCo's compliant
-contact permits a small negative gap; see its
-[contact model documentation](https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters).
-This study is not yet connected to the visible model. Next: reconstruct matching
-visible solids, fit them to the engraving, and validate interpolated playback
-and the remaining assembly before replacing the existing animation.
-
-The current qualification passes at 50 and 25 microsecond timesteps. Maximum
-wheel-angle disagreement is 4.484e-5 radians. Neither active run shows backward
-motion; disabling contact produces zero wheel rotation over 18 revolutions.
-A 0.0005 contact margin on each geom now initiates contact before the surfaces
-intersect; the recorded minimum gap is zero (the audit initializes its minimum
-at zero), with no negative contact distances. This replaces the earlier
-zero-margin study's small penetrations.
-
-## Matching solids and contact bake
-
-The standalone visible component has 20 meshes: 18 straight teeth, a hub and
-a spherical tappet. Native/visible checks agree on all centers and tooth axes
-and dimensions at five poses. No visual geometry is eroded to hide overlap.
-
-The fine run's 144,001 recorded samples compress to 2,090 adaptive keys in a
-42,116-byte gzip asset. Maximum angle error at the recorded samples is below
-4.72e-7 radians. The finite 72-second adjustment clamps at its last key; it
-does not wrap the screw nut back to its initial position.
-
-The [baked clearance audit](validation/173-tappet-baked-clearance.json) checks
-16,712 poses, including eight samples per key interval, against the actual
-wheel mesh triangles. Its minimum conservative sphere-to-wheel gap is
-0.0007462 model units. This remains a sampled check of the standalone contact
-component, not a continuous or whole-assembly clearance proof.
-
-Two [contact tests](../tests/movement-173-contact.test.mjs) pass, covering
-native/visible transforms and dimensions, monotone playback and finite stopping.
-The [bake report](validation/173-tappet-bake.json) records provenance and size.
-The browser still uses the old complete assembly: source-fit reconstruction,
-full-assembly clearance and integration of this bake remain the next work.
+The original incorrect model remains in the synchronous legacy registry.
+The historical [baseline](validation/173-existing-contact.json) and
+[post-render-fix audit](validation/173-current-contact.json) describe that model,
+not the current browser implementation. They exposed tappet overlap in 185 of
+257 poses, which its former nominal-radius tests missed.

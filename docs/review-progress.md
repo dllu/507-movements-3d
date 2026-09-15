@@ -1,14 +1,13 @@
 # Review open: 173 tappet-indexed silk traverse
 
-Corrected the guide-rod ordinate by 24 source pixels, restored the front view,
-disabled fog/ground and added exact Restart. The finite first-contact audit
-finds tappet/wheel overlap in 185 of 257 poses; the prescribed indexing curve
-is not mechanically validated. The model test and build pass, but contact,
-source geometry and whole-assembly clearance remain open. See
-[movement 173](movement-173.md). A standalone passive MuJoCo tappet study now checks 18 turns at two timesteps
-and a disabled-contact control. Its matching 20-mesh component and 42 KB bake
-pass native/visible geometry tests and a 16,712-pose contact-clearance sweep.
-Full source-fit assembly reconstruction and browser integration remain open. Continue with 173; the full review remains active.
+The browser now plays a 42 KB MuJoCo contact bake through a reconstructed
+42-mesh assembly. Source wrist and rod-end centers fit within 1.03 pixels.
+All 521 cross-body pairs pass the 129-pose sweep, and the dense tappet audit,
+four tests, build and desktop/mobile checks pass. The original oversized base,
+coarse screw and prescribed indexing curve have been replaced. The wheel
+silhouette remains undersized and must be corrected in the native and visible
+geometry together. See [movement 173](movement-173.md). Continue with 173;
+the full review remains active.
 
 # Shipped reconstruction: 172 slider-crank egg curve
 

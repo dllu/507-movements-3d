@@ -1,0 +1,73 @@
+{
+  "movement": 173,
+  "status": "source-fit-open",
+  "landmarks": [
+    {
+      "name": "wrist",
+      "source": [
+        159,
+        310
+      ],
+      "projected": [
+        158.47058823529412,
+        309.11764705882354
+      ],
+      "errorPixels": 1.028991510855048
+    },
+    {
+      "name": "wheel center",
+      "source": [
+        362,
+        187
+      ],
+      "projected": [
+        362,
+        187
+      ],
+      "errorPixels": 0
+    },
+    {
+      "name": "rod end",
+      "source": [
+        499,
+        283
+      ],
+      "projected": [
+        498.4705882352941,
+        283
+      ],
+      "errorPixels": 0.5294117647059124
+    }
+  ],
+  "projectedWheelBounds": [
+    340.43495558322195,
+    154.76840421280235,
+    383.56504441677805,
+    219.23159578719765
+  ],
+  "approximateSourceWheelBounds": [
+    331,
+    146,
+    393,
+    229
+  ],
+  "limitation": "Wheel silhouette remains undersized. Raster bounds are approximate manual measurements, not an automated contour registration. Native contact dimensions must be revised and requalified with the visible geometry.",
+  "sources": [
+    {
+      "file": "scripts/review-silk-traverse-source-fit.mjs",
+      "sha256": "28182334f0433592c84cb7b6bebf60360e6b84b53c466c59e4905d0927333ea7"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/assembly.js",
+      "sha256": "b6885fa3182389074bdd6677d0e3405362efcd5d0abf6d42647832386e739a98"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/solids.js",
+      "sha256": "52ad12e7406fff3679a2f28ba40f41520bcc1a3e8bb3f2619f46991e20c7ea17"
+    },
+    {
+      "file": "public/engravings/mm_173.png",
+      "sha256": "d57deaf04c00912885da326f92812619f1d22b4d2478daa65006775cc3b9610d"
+    }
+  ]
+}
