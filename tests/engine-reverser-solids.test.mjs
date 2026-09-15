@@ -26,3 +26,22 @@ test('179 has open guide/link bores and finite lug clearance at both drive stops
   assert.equal(directions.size,2,'both forward and reverse stop configurations checked');
  }finally{disposeObject3D(m.root);}
 });
+
+test('179 lifting grip follows the engraved side, gab opens downward, and link pins have heads',()=>{
+ const m=createAuthoredEngineReverserMovement({id:179}),u=m.root.userData,b=u.blocks;
+ try{
+  m.update(0);m.root.updateMatrixWorld(true);
+  const grip=b.liftingHandleGrip.getWorldPosition(new THREE.Vector3());
+  const raster=u.modelPointToSourceRaster(new THREE.Vector2(grip.x,grip.y));
+  assert.ok(raster.distanceTo(new THREE.Vector2(84,198))<1e-10);
+  const gab=solidSurface(b.gabBridge.geometry),length=u.geometry.eccentricRodLength;
+  assert.equal(gab.inside(new THREE.Vector3(length,.10,0)),false,'open mouth');
+  assert.equal(gab.inside(new THREE.Vector3(length,-.30,0)),true,'solid rounded crown');
+  for(const [pin,head,eye]of [[b.leverLinkHub,b['lever-link-pin-head'],b.reversingLink.children[1]],
+   [b.spindleLinkPin,b['spindle-link-pin-head'],b.reversingLink.children[2]]]){
+   const pb=new THREE.Box3().setFromObject(pin),hb=new THREE.Box3().setFromObject(head),eb=new THREE.Box3().setFromObject(eye);
+   assert.ok(Math.abs(pb.max.z-hb.min.z)<1e-7,'head touches pin');
+   assert.ok(hb.min.z>eb.max.z&&pb.min.z<eb.min.z,'retained eye lies on pin');
+  }
+ }finally{disposeObject3D(m.root);}
+});

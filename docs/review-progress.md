@@ -1,3 +1,9 @@
+# Movement 179: native stop study and wheel source fit open
+
+Corrected the lifting handle to the left of the gab, replaced the square gab with its rounded source profile, added link-pin heads and switched to front full-motion framing. Grip/gab bounds fit within about one pixel; the 61-mesh sampled sweep and browser checks pass. Strap/sheave outlines still differ by 11–12 pixels. A shaft-only MuJoCo stop-contact study becomes unstable shortly after contact at both tested timesteps; this is recorded as a failed diagnostic, not qualification. Continue investigating 179. See [movement 179](movement-179.md).
+
+## Earlier checkpoints
+
 # Movement 179: source and sequence review open
 
 The first assembly repair replaces solid guide sleeves and rod eyes with bores, accounts for finite lug width at the stop ends, and separates the spindle and supports. The 63-mesh, 129-pose audit reports no sampled intersections, down from 34 interfering pairs. Motion, finite-bore/stop-gap and desktop/mobile checks pass. Continue with 179's source contours, pin retention and reversal-sequence review. See [movement 179](movement-179.md). The full 507-movement goal remains active.

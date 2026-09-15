@@ -1,0 +1,89 @@
+{
+  "movement": 179,
+  "status": "source-fit-open",
+  "method": "Initial front projection. Manually selected raster bounds include hand-drawn perspective; this diagnostic does not assume all source circles are exactly concentric.",
+  "features": [
+    {
+      "name": "lifting grip",
+      "actual": [
+        73.04027900569008,
+        193.55226327195874,
+        94.95972099431003,
+        202.44773672804132
+      ],
+      "expected": [
+        73,
+        193,
+        96,
+        203
+      ],
+      "maximumErrorPixels": 1.0402790056899676
+    },
+    {
+      "name": "gab",
+      "actual": [
+        161.72424609647402,
+        270.8194696857892,
+        198.18052428866002,
+        297.21586793643985
+      ],
+      "expected": [
+        162,
+        271,
+        198,
+        298
+      ],
+      "maximumErrorPixels": 0.7841320635601505
+    },
+    {
+      "name": "strap",
+      "actual": [
+        355.18701464789984,
+        215.18701464789984,
+        508.81298535210016,
+        368.81298535210016
+      ],
+      "expected": [
+        345,
+        213,
+        498,
+        366
+      ],
+      "maximumErrorPixels": 10.812985352100156
+    },
+    {
+      "name": "eccentric disk",
+      "actual": [
+        369.18840182285777,
+        229.18839689184966,
+        494.8116028704752,
+        354.8116032377913
+      ],
+      "expected": [
+        371,
+        234,
+        483,
+        346
+      ],
+      "maximumErrorPixels": 11.811602870475213
+    }
+  ],
+  "sourceHandleTip": [
+    84.00000000000006,
+    198.00000000000003
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-engine-reverser-source.mjs",
+      "sha256": "9cbae5ddde6c21f87c2e89c177b72aa19ceb9dd7300bf4d68879a5324a64b5e6"
+    },
+    {
+      "file": "src/simulation/authored-engine-reversers.js",
+      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+    },
+    {
+      "file": "public/engravings/mm_179.png",
+      "sha256": "16e9f08ab2c1ffa666c3a896802ed7bc7167890f6f4ee9c355e43902e7c970ee"
+    }
+  ]
+}

@@ -1423,13 +1423,49 @@ function sourceScaledSingleEngineReverser() {
   root.userData.stateAtCyclePhase = stateAtCyclePhase;
   root.userData.stateAtTime = stateAtTime;
 
-  for (const decoration of [eccentricCenterMark, stopContactMarker, gabContactMarker, ...stopEndPads]) {
+  // Reconstruct the rounded, downward-opening gab and the lifting handle
+  // from the initial engraving. Convert raster points into the rod's frame.
+  const rodPoint = (x,y) => sourceRasterPointToModel(new THREE.Vector2(x,y))
+    .sub(sourcePose.eccentricCenter).rotateAround(new THREE.Vector2(), -sourcePose.rodAngle);
+  const gab = new THREE.Shape(), outer=.40, inner=gabHalfGap, bottom=.176;
+  gab.moveTo(eccentricRodLength-outer,bottom);
+  gab.lineTo(eccentricRodLength-outer,0);
+  gab.absarc(eccentricRodLength,0,outer,Math.PI,2*Math.PI,false);
+  gab.lineTo(eccentricRodLength+outer,bottom);
+  gab.lineTo(eccentricRodLength+inner,bottom);
+  gab.lineTo(eccentricRodLength+inner,0);
+  gab.absarc(eccentricRodLength,0,inner,0,-Math.PI,true);
+  gab.lineTo(eccentricRodLength-inner,bottom);gab.closePath();
+  gabBridge.geometry.dispose();gabBridge.geometry=centeredExtrusion(gab,.50,0);
+  gabBridge.position.set(0,0,0);gabBridge.userData.role='rounded-open-bottom-gab';
+  const handle = new THREE.Shape();
+  const move=(x,y)=>handle.moveTo(...rodPoint(x,y).toArray());
+  const line=(x,y)=>handle.lineTo(...rodPoint(x,y).toArray());
+  const curve=(a,b,c)=>handle.bezierCurveTo(...rodPoint(...a).toArray(),...rodPoint(...b).toArray(),...rodPoint(...c).toArray());
+  move(166,282);curve([149,286],[146,271],[141,252]);
+  curve([135,219],[119,201],[95,197]);line(94,203);
+  curve([118,208],[126,227],[131,254]);curve([135,280],[142,292],[165,291]);handle.closePath();
+  liftingHandle.geometry.dispose();liftingHandle.geometry=centeredExtrusion(handle,.22,0);
+  liftingHandleGrip.geometry.dispose();liftingHandleGrip.geometry=new THREE.CylinderGeometry(.095,.095,.48,32);
+  const grip=rodPoint(84,198);liftingHandleGrip.position.set(grip.x,grip.y,.09);liftingHandle.position.z=.09;
+  for (const [parent,x,z,radius,name] of [[manualLever,leverJointRadius,.51,.28,'lever-link-pin-head'],
+    [valveSpindle,-spindleLinkOffset,.67,.21,'spindle-link-pin-head']]) {
+    const head=cylinderAlongZ(radius,.04,darkMaterial,64);head.position.set(x,0,z);
+    head.userData.role=name;parent.add(head);root.userData.blocks[name]=head;
+  }
+  for (const decoration of [eccentricCenterMark, stopContactMarker, gabContactMarker, ...stopEndPads,
+    ...gabJaws, ...gabContactShoes]) {
     decoration.removeFromParent();decoration.geometry.dispose();
   }
   Object.assign(root.userData, {hideGround:true, supportsRestart:true,
     minimumDisplayCycleSeconds:24, animationTiming:{authoredCyclePeriod:cyclePeriod},
     reconstructionStatus:'under-review',
     reconstructionNote:'The rod is lifted, the valve is worked by hand, and the shaft takes up the half-turn clearance before the rod is lowered. This is an ideal operator-driven sequence; stop, joint and source-fit verification is in progress.'});
+  const motionBounds=new THREE.Box3();
+  for(let i=0;i<=192;i++){update(cyclePeriod*i/192);root.updateMatrixWorld(true);
+    motionBounds.union(new THREE.Box3().setFromObject(root,true));}
+  root.userData.cameraFitBounds=motionBounds.expandByScalar(.06);
+  root.userData.cameraFov=8;
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1445,7 +1481,7 @@ function sourceScaledSingleEngineReverser() {
   gabContactMarker.castShadow = false;
 
   return {
-    cameraDirection: new THREE.Vector3(7.1, 4.6, 15.8),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
     root,
     update,
     reset: () => update(0),

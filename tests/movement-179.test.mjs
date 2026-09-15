@@ -711,8 +711,8 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
   assert.ok(bounds.max.z > 1.27);
   near(model.root.userData.cameraDistanceScale, 0.96, 0,
     'source-complete camera scale');
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2);
 
   // The next sequential mechanism is now independently authored as 180.

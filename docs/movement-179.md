@@ -30,17 +30,18 @@ the whole operator sequence retains its 24-second display duration.
 
 - [Historical baseline](validation/179-existing-solids.json): 62 meshes,
   1,460 cross-body pairs, 129 poses and 34 intersecting pairs.
-- [Current assembly](validation/179-current-solids.json): 63 meshes,
-  1,439 cross-body pairs, 129 poses and 23,297,716 finite-surface queries,
+- [Current assembly](validation/179-current-solids.json): 61 meshes,
+  1,366 cross-body pairs, 129 poses and 24,337,144 finite-surface queries,
   with no sampled intersections. Same rigid-family joins are excluded.
   This is sampled evidence, not continuous collision proof.
 - Existing full-sequence motion tests and the new actual-bore/stop-gap test pass.
 - Production build and packaged desktop/mobile playback checks pass, including
   Restart, orbit/reset, no overflow, no WASM request and no page errors.
 
-Movement 179 is still under review. The default view is oblique and includes
-substantial inferred framework. The gab and lifting handle need quantitative
-source-contour comparison, and pin retention/attachment needs a complete review.
-The programmed release, manual valve motion and stop take-up also need review
-against the caption before deciding whether native contact validation is needed.
-Continue with those items before advancing to 180.
+The lifting handle previously extended to the wrong side of the gab. It now follows the source's leftward profile, with a 0.09-unit forward offset to clear the upright lever during lifting. The gab has a rounded crown and open mouth. Actual rendered grip and gab bounds fit the selected raster measurements within 1.05 and 0.79 pixels respectively. Both reversing-link pins now have retaining heads. Front framing uses sampled full-motion bounds.
+
+[Source diagnostics](validation/179-source-fit.json) still show 10.81-pixel strap and 11.82-pixel eccentric-disk outline differences. The plate depicts perspective and different apparent circle centers, so those features need further reconstruction. The inferred overall framework also needs source review.
+
+The new [native stop study](validation/179-native-stop.json) is **not qualified**. It actuates only the shaft against 64 convex cells approximating the sector, with ideal fixed axes and inferred inertia/resistance. Both 0.2 ms and 0.1 ms runs become unstable around 0.15 seconds, shortly after contact starts. The no-contact control remains stationary. The script detects excessive speed/reset, records the failure and exits nonzero; these results do not validate contact-driven reversal. They are an open solver/model investigation, not browser playback. Production remains the explicitly scripted ideal operator sequence.
+
+Continue with the native contact instability, wheel source contours and remaining attachment review before advancing to 180.
