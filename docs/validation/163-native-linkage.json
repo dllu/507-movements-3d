@@ -1,0 +1,649 @@
+{
+  "zeroSpreadReach": {
+    "minimumSleeveY": 0.6934196402278285,
+    "bellAngle": 0.15360530849502751,
+    "followerX": -0.18218246308562053,
+    "outputX": 3.7009917742073735,
+    "outputY": -0.48502379808702745,
+    "rodAngle": 0.01093994953663085,
+    "forkY": -2.770887002358601,
+    "upperPulleyY": -2.717999999999999
+  },
+  "movement": 163,
+  "status": "unregistered-native-linkage-study",
+  "duration": 20,
+  "geometry": {
+    "scale": 0.018,
+    "topY": 4.5,
+    "pivotRadius": 0.26999999999999996,
+    "initialSpread": 0.3501235726418676,
+    "ballArm": 3.4109406327287486,
+    "elbowArm": 2.0268991094773314,
+    "sleeveRadius": 0.27899999999999997,
+    "lowerLink": 1.7797040070334744,
+    "ballRadius": 0.594,
+    "gravity": 98.1,
+    "ballMass": 1,
+    "upperMass": 0.02,
+    "lowerMass": 0.02,
+    "sleeveMass": 0.1,
+    "upperRadius": 0.035,
+    "lowerRadius": 0.03,
+    "sleeveY": 0.9540000000000002,
+    "grooveDrop": 0.44999999999999996,
+    "bellX": 1.6019999999999999,
+    "bellY": -0.8099999999999996,
+    "outputArm": 2.1239999999999997,
+    "rodLength": 2.286,
+    "upperPulleyY": -2.717999999999999,
+    "middlePulleyY": -3.095999999999999,
+    "lowerPulleyY": -3.491999999999999,
+    "pulleyRadius": 0.846,
+    "collarMass": 0.01,
+    "followerMass": 0.005,
+    "bellArmMass": 0.02,
+    "rodMass": 0.02,
+    "forkMass": 0.02
+  },
+  "runs": [
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.15,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 2.1997528958789097e-7,
+      "maximumCollarError": 1.4168768633360251e-7,
+      "minimumFork": -3.2983127036111473,
+      "maximumFork": -2.9609827104278836,
+      "maximumFollower": 0.13245741485787466,
+      "maximumSpreadDrift": 0.08757086201773734,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 102.46630843354575,
+        "speed": 5.12233521628735,
+        "leftSpread": 0.33775352862480895,
+        "rightSpread": 0.33775352862480895,
+        "sleeveY": 0.9358789546718622,
+        "bellAngle": 0.011259560795824703,
+        "rodAngle": 0.000058897297985891633,
+        "followerX": -0.014693200285626285,
+        "forkY": -3.072085250555689,
+        "collarError": 1.2209350499711724e-7,
+        "connectionErrors": [
+          1.60580204987286e-8,
+          1.60580204987286e-8,
+          1.959058553697758e-7,
+          5.639840230608571e-8
+        ],
+        "qpos": [
+          102.46630843354575,
+          -0.012370044017058672,
+          0.02670229930655296,
+          -0.012370044017058672,
+          0.02670229930655296,
+          -0.018121045328137925,
+          -0.018120923234632928,
+          -0.014693200285626285,
+          0.011259560795824703,
+          -0.011200663497838811,
+          0.02391474944431059
+        ],
+        "qvel": [
+          5.12233521628735,
+          0.041231966553069835,
+          -0.08897025967335558,
+          0.041231966553069835,
+          -0.08897025967335558,
+          0.05932553442316277,
+          0.05932553991734895,
+          0.04755220695517386,
+          -0.03669534749320672,
+          0.03631115569897627,
+          -0.07793602097101028
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.00025,
+        "period": 10,
+        "speedAmplitude": 0.15,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 2.1777826365374274e-7,
+      "maximumCollarError": 1.4195390790616713e-7,
+      "minimumFork": -3.2983290426689265,
+      "maximumFork": -2.9609770082019287,
+      "maximumFollower": 0.13246870710262526,
+      "maximumSpreadDrift": 0.08757697909606238,
+      "finalState": {
+        "time": 20.000000000004484,
+        "spindle": 102.46630833145001,
+        "speed": 5.122346188453212,
+        "leftSpread": 0.33774957920746235,
+        "rightSpread": 0.33774957920746235,
+        "sleeveY": 0.9358732686781355,
+        "bellAngle": 0.011263078456098488,
+        "rodAngle": 0.00005893350800875892,
+        "followerX": -0.014697759806367266,
+        "forkY": -3.0720777796854373,
+        "collarError": 1.2194173324223123e-7,
+        "connectionErrors": [
+          1.858828409648156e-8,
+          1.858828409648156e-8,
+          1.95057273728021e-7,
+          5.652044477156046e-8
+        ],
+        "qpos": [
+          102.46630833145001,
+          -0.01237399343440525,
+          0.026710821262303914,
+          -0.01237399343440525,
+          0.026710821262303914,
+          -0.018126731321864726,
+          -0.018126609380131484,
+          -0.014697759806367266,
+          0.011263078456098488,
+          -0.01120414494808973,
+          0.023922220314562422
+        ],
+        "qvel": [
+          5.122346188453212,
+          0.04125652625610452,
+          -0.08902326053420023,
+          0.04125652625610452,
+          -0.08902326053420022,
+          0.05936106331105574,
+          0.05936106873581066,
+          0.04758077989328091,
+          -0.03671735219840664,
+          0.036332963239876274,
+          -0.07798275702468095
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 1.9696195441287756e-7,
+      "maximumCollarError": 1.2422329163392497e-7,
+      "minimumFork": -3.096000485877251,
+      "maximumFork": -3.0959999999999996,
+      "maximumFollower": 2.654233679005503e-7,
+      "maximumSpreadDrift": 1.6893356213909527e-8,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 102.4667239408605,
+        "speed": 5.123336196756212,
+        "leftSpread": 0.35012357684085665,
+        "rightSpread": 0.35012357684085665,
+        "sleeveY": 0.9539999834864524,
+        "bellAngle": -1.9018209541083954e-7,
+        "rodAngle": 1.6855029525711873e-14,
+        "followerX": 2.498993024708843e-7,
+        "forkY": -3.096000460783561,
+        "collarError": 1.2422328943391137e-7,
+        "connectionErrors": [
+          2.124850344386252e-8,
+          2.1248503507893208e-8,
+          1.969619513042531e-7,
+          5.683679127344021e-8
+        ],
+        "qpos": [
+          102.4667239408605,
+          4.1989890544878576e-9,
+          -2.3598207178463407e-9,
+          4.1989890386586655e-9,
+          -2.3598206769389408e-9,
+          -1.6513547738054677e-8,
+          1.0770974169585671e-7,
+          2.498993024708843e-7,
+          -1.9018209541083954e-7,
+          1.9018211226586907e-7,
+          -4.607835613331385e-7
+        ],
+        "qvel": [
+          5.123336196756212,
+          1.768506870920813e-8,
+          -3.819034039344334e-8,
+          1.768507503510044e-8,
+          -3.8190340240905516e-8,
+          2.6367497286577067e-8,
+          2.6367500242468188e-8,
+          2.1627267759781114e-8,
+          -1.6459112821023902e-8,
+          1.645911375367254e-8,
+          -3.49591188248387e-8
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.15,
+        "spindleDrive": false,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 0.000009805573990141286,
+      "maximumCollarError": 1.6532560900839322e-7,
+      "minimumFork": -3.0959999999999996,
+      "maximumFork": -2.9000497796360536,
+      "maximumFollower": 0.11438017994854174,
+      "maximumSpreadDrift": 0.1250717893600635,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 3.6489392513167836e-24,
+        "speed": 1.8447498045442418e-25,
+        "leftSpread": 0.22564833738955503,
+        "rightSpread": 0.22564833738955503,
+        "sleeveY": 0.8011820826015131,
+        "bellAngle": 0.09204925569726484,
+        "rodAngle": 0.00393353740817827,
+        "followerX": -0.11399985298600634,
+        "forkY": -2.9007457340342624,
+        "collarError": 1.1022638421454012e-7,
+        "connectionErrors": [
+          1.3129178808982213e-7,
+          1.3129178808982213e-7,
+          1.8068282947591996e-7,
+          5.6837780621985463e-8
+        ],
+        "qpos": [
+          3.6489392513167836e-24,
+          -0.12447523525231259,
+          0.267903459434612,
+          -0.12447523525231259,
+          0.267903459434612,
+          -0.15281791739848702,
+          -0.1528178071721028,
+          -0.11399985298600634,
+          0.09204925569726484,
+          -0.08811571828908657,
+          0.1952542659657374
+        ],
+        "qvel": [
+          1.8447498045442418e-25,
+          1.1714694229010137e-15,
+          2.970930449146677e-14,
+          1.1703185652951489e-15,
+          3.013855069978732e-14,
+          1.5609296892385406e-14,
+          1.3230602431259899e-14,
+          9.39199333925196e-16,
+          6.258178910946044e-16,
+          -1.5896899819261964e-15,
+          1.400672947164846e-15
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.15,
+        "spindleDrive": true,
+        "linkage": false,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.18616895883282,
+        "extraPotentialSlope": 0,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 3.697912262266722e-8,
+      "maximumCollarError": 0,
+      "minimumFork": null,
+      "maximumFork": null,
+      "maximumFollower": 0,
+      "maximumSpreadDrift": 0.07920272984126775,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 103.72261954239923,
+        "speed": 5.1863675478477695,
+        "leftSpread": 0.35414315172787564,
+        "rightSpread": 0.35414315172787564,
+        "sleeveY": 0.9600269268588255,
+        "connectionErrors": [
+          1.7558607921211446e-8,
+          1.7558607921211446e-8
+        ],
+        "qpos": [
+          103.72261954239923,
+          0.004019579086008045,
+          -0.008681262341968024,
+          0.004019579086008048,
+          -0.008681262341968024,
+          0.006026926858825277
+        ],
+        "qvel": [
+          5.1863675478477695,
+          0.07311471068916664,
+          -0.1579296247932569,
+          0.07311471068916639,
+          -0.15792962479325687,
+          0.1102401857802206
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.15,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 4,
+        "ballContact": true,
+        "nominalSpeed": 4.930035470805122,
+        "extraPotentialSlope": -24.157811695246775,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 2.3396591123660305e-7,
+      "maximumCollarError": 2.0691267360595234e-7,
+      "minimumFork": -3.36965451311574,
+      "maximumFork": -2.9441395711353398,
+      "maximumFollower": 0.1826957483303976,
+      "maximumSpreadDrift": 0.11314805308587006,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 98.6004319963828,
+        "speed": 4.929285004929514,
+        "leftSpread": 0.3377341182157463,
+        "rightSpread": 0.33773411821574634,
+        "sleeveY": 0.9358510663601413,
+        "bellAngle": 0.011276781771887422,
+        "rodAngle": 0.00005907692459303053,
+        "followerX": -0.014715517559682026,
+        "forkY": -3.0720486758482544,
+        "collarError": 1.699329995261123e-7,
+        "connectionErrors": [
+          2.252161533639251e-8,
+          2.2521615731976708e-8,
+          1.9514167644997604e-7,
+          5.669324665444146e-8
+        ],
+        "qpos": [
+          98.6004319963828,
+          -0.012389454426121313,
+          0.02674417390510346,
+          -0.012389454426121294,
+          0.026744173905103405,
+          -0.018148933639858943,
+          -0.018148763706859417,
+          -0.014715517559682026,
+          0.011276781771887422,
+          -0.011217704847294391,
+          0.02395132415174524
+        ],
+        "qvel": [
+          4.929285004929514,
+          0.027240296872980758,
+          -0.058779004777768894,
+          0.02724029687298822,
+          -0.05877900477776899,
+          0.03919215773347606,
+          0.03919216234195684,
+          0.03141344774485537,
+          -0.024241729362652273,
+          0.023987605369704686,
+          -0.05148618987847924
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.25,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 2.6416864720934856e-7,
+      "maximumCollarError": 1.595314909619283e-7,
+      "minimumFork": -3.4703294901073454,
+      "maximumFork": -2.90128897868117,
+      "maximumFollower": 0.2568345397767445,
+      "maximumSpreadDrift": 0.14584837750331575,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 102.46574116545047,
+        "speed": 5.121639253411867,
+        "leftSpread": 0.33102649614512636,
+        "rightSpread": 0.33102649614512636,
+        "sleeveY": 0.9262950531630892,
+        "bellAngle": 0.01717366334831729,
+        "rodAngle": 0.0001370205488737987,
+        "followerX": -0.022328835166984223,
+        "forkY": -3.05952496676345,
+        "collarError": 1.2085671191597314e-7,
+        "connectionErrors": [
+          2.4887895077934552e-8,
+          2.4887895077934552e-8,
+          2.0269209081925538e-7,
+          5.838931420622188e-8
+        ],
+        "qpos": [
+          102.46574116545047,
+          -0.01909707649674127,
+          0.04121494697629046,
+          -0.01909707649674127,
+          0.04121494697629046,
+          -0.02770494683691094,
+          -0.027704825980199025,
+          -0.022328835166984223,
+          0.01717366334831729,
+          -0.01703664279944349,
+          0.036475033236549985
+        ],
+        "qvel": [
+          5.121639253411867,
+          0.10132639238228869,
+          -0.21855362710091533,
+          0.10132639238228869,
+          -0.21855362710091533,
+          0.14291115468527327,
+          0.1429111682048587,
+          0.11316539218764936,
+          -0.08798017301716424,
+          0.08657460374064933,
+          -0.18684270147675455
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.4,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": true,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 5.570371809603767e-7,
+      "maximumCollarError": 1.9546574514528459e-7,
+      "minimumFork": -3.7312973677590264,
+      "maximumFork": -2.9006472664739333,
+      "maximumFollower": 0.46815574025847767,
+      "maximumSpreadDrift": 0.21634032494336414,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 102.46513832897365,
+        "speed": 5.123216146771422,
+        "leftSpread": 0.35576131889734647,
+        "rightSpread": 0.35576131889734647,
+        "sleeveY": 0.9624724697842516,
+        "bellAngle": -0.005300447699839148,
+        "rodAngle": 0.000013071161844380695,
+        "followerX": 0.006987292678429918,
+        "forkY": -3.107258154316316,
+        "collarError": 1.2461165174032507e-7,
+        "connectionErrors": [
+          7.69972269249182e-8,
+          7.69972269249182e-8,
+          2.2728833195712113e-7,
+          7.154176934316659e-8
+        ],
+        "qpos": [
+          102.46513832897365,
+          0.005637746255478877,
+          -0.01217673928434502,
+          0.005637746255478877,
+          -0.012176739284345022,
+          0.008472469784251391,
+          0.008472594395903131,
+          0.006987292678429918,
+          -0.005300447699839148,
+          0.005313518861683529,
+          -0.011258154316316372
+        ],
+        "qvel": [
+          5.123216146771422,
+          0.1520083421529107,
+          -0.3283762095560629,
+          0.1520083421529008,
+          -0.3283762095560635,
+          0.23021505832035055,
+          0.23021508278217157,
+          0.19086424721260098,
+          -0.1443300325462712,
+          0.14503599825840754,
+          -0.306552715689776
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "movement": 163,
+        "timestep": 0.0005,
+        "period": 10,
+        "speedAmplitude": 0.4,
+        "spindleDrive": true,
+        "linkage": true,
+        "loadScale": 1,
+        "ballContact": false,
+        "nominalSpeed": 5.123336197051682,
+        "extraPotentialSlope": -6.039452923811694,
+        "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Belt friction, remote pulley/gearing, water gate and hydraulic feedback not yet modeled."
+      },
+      "maximumClosure": 4.4938966827406676e-7,
+      "maximumCollarError": 2.0157597557801665e-7,
+      "minimumFork": -3.772567635630891,
+      "maximumFork": -2.845023523600698,
+      "maximumFollower": 0.5043774099401155,
+      "maximumSpreadDrift": 0.22594177510573815,
+      "finalState": {
+        "time": 19.99999999999874,
+        "spindle": 102.4647686417544,
+        "speed": 5.122209376645203,
+        "leftSpread": 0.34711360551743,
+        "rightSpread": 0.34711360551743,
+        "sleeveY": 0.949531502134409,
+        "bellAngle": 0.0027859205332391055,
+        "rodAngle": 0.000003635252394980446,
+        "followerX": -0.0036544267722912536,
+        "forkY": -3.0900827685557357,
+        "collarError": 1.229207501843993e-7,
+        "connectionErrors": [
+          1.3725692879471815e-7,
+          1.3725692879471815e-7,
+          2.422965482979415e-7,
+          8.789193177570083e-8
+        ],
+        "qpos": [
+          102.4647686417544,
+          -0.0030099671244376374,
+          0.0064993006555688505,
+          -0.0030099671244376374,
+          0.0064993006555688505,
+          -0.004468497865591224,
+          -0.004468374944841039,
+          -0.0036544267722912536,
+          0.0027859205332391055,
+          -0.002782285280844125,
+          0.005917231444263801
+        ],
+        "qvel": [
+          5.122209376645203,
+          0.1947835881234452,
+          -0.42054672124393383,
+          0.1947835881234452,
+          -0.4205467212439338,
+          0.28790476381096153,
+          0.2879047934699572,
+          0.23478666546634389,
+          -0.17930033161200817,
+          0.17882879399680027,
+          -0.38083237337707526
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-belt-governor.mjs",
+      "sha256": "377ff6d45cbbef69fd8d6dfcdae9e231fec69ed3fa70275d2bb873ad5bdaf650"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/geometry.js",
+      "sha256": "fe4d5166c4f8972782043293726b0ead07bbb5389ebb794db5a92e1c7b4e3c77"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/physics.js",
+      "sha256": "04ec055e394fead93613f6f9b3968e4094c8e1c8a72752fde2d69fe853da27fc"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

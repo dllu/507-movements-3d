@@ -1,7 +1,11 @@
 # Active reconstruction: 163
 
-Continue the source and motion review at 163. The full 507-movement review remains
-active; 147's mesh refinement and 150's source fit remain open.
+163 now has an unregistered passive native linkage study with five passing tests.
+It exposes insufficient upper-pulley travel in the centerline crank-tip assumption
+and a ball/lower-link depth conflict. Resolve the fork/groove contact location and
+solid geometry before completing belt contact and baking. See [movement 163](movement-163.md).
+The full 507-movement review remains active; 147's mesh refinement and 150's source
+fit remain open.
 
 # Shipped reconstruction: 162 water-wheel governor
 
