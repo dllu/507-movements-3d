@@ -1,0 +1,23 @@
+{
+  "movement": 178,
+  "status": "packaged-desktop-mobile-passed",
+  "scope": "Partial slot/render repair. Physical clearance and source registration remain open.",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset view",
+    "390x844 viewport without overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/variable-shaper.spec.mjs",
+      "sha256": "a8261c1a0953cb0eda692be902b59497f1c399f5d54f0667788bef093a13cf6b"
+    },
+    {
+      "file": "src/simulation/authored-variable-cranks.js",
+      "sha256": "44fe71df95e4751d6a7ed22a76a270e6795e7148e88a6a11971ad3a9e7059918"
+    }
+  ]
+}

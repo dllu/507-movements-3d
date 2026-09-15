@@ -1,0 +1,56 @@
+{
+  "movement": 178,
+  "poses": 129,
+  "meshes": 35,
+  "pairs": 456,
+  "queries": 25147730,
+  "intersections": {
+    "fixed-outer-disk-surrounding-circular-guide-slot/rear-circular-shoe-fitting-between-both-annular-groove-walls": 0.010099173640098845,
+    "fixed-inner-disk-with-eccentric-shaft-opening/rear-circular-shoe-fitting-between-both-annular-groove-walls": 0.006014479799120175,
+    "fixed-outer-contact-wall-of-annular-groove/rear-circular-shoe-fitting-between-both-annular-groove-walls": 0.03358515292005977,
+    "fixed-outer-contact-wall-of-annular-groove/coaxial-pin-fitting-between-both-radial-crank-slot-walls": 0.031713991272293365,
+    "fixed-inner-contact-wall-of-annular-groove/rear-circular-shoe-fitting-between-both-annular-groove-walls": 0.03289825908509931,
+    "fixed-inner-contact-wall-of-annular-groove/coaxial-pin-fitting-between-both-radial-crank-slot-walls": 0.030758421628445335,
+    "centerline-witness-of-fixed-circular-slider-path/rear-circular-shoe-fitting-between-both-annular-groove-walls": 0.10911901113390929,
+    "centerline-witness-of-fixed-circular-slider-path/coaxial-pin-fitting-between-both-radial-crank-slot-walls": 0.015119018882513102,
+    "fixed-bearing-around-eccentric-input-shaft/input-hub-covering-near-end-of-crank-slot": 0.03632923066616067,
+    "one-rigid-radially-slotted-variable-length-crank/coaxial-pin-fitting-between-both-radial-crank-slot-walls": 0.008000001311303961,
+    "one-rigid-radially-slotted-variable-length-crank/rectangular-body-of-dual-constrained-slide": 0.040000011920928946,
+    "dark-outline-of-open-radial-crank-slot/rectangular-body-of-dual-constrained-slide": 0.067499999627471,
+    "rectangular-body-of-dual-constrained-slide/connecting-rod-eye-on-circular-guide-slide": 0.055594255328178466,
+    "front-wrist-boss-for-connecting-rod/rigid-beam-of-finite-connecting-rod": 0.030000002086162852,
+    "front-wrist-boss-for-connecting-rod/connecting-rod-eye-on-circular-guide-slide": 0.2138047447734842,
+    "front-outline-of-moving-slider-wrist/rigid-beam-of-finite-connecting-rod": 0.01909677383597652,
+    "front-outline-of-moving-slider-wrist/connecting-rod-eye-on-circular-guide-slide": 0.054999047107598134,
+    "white-index-on-slide-body-aligned-with-radial-crank/rigid-beam-of-finite-connecting-rod": 0.013564634761727368,
+    "white-index-on-slide-body-aligned-with-radial-crank/connecting-rod-eye-on-circular-guide-slide": 0.2752901213511517,
+    "rigid-beam-of-finite-connecting-rod/revolute-pin-between-rod-and-output-slide": 0.13999999433755878,
+    "rigid-beam-of-finite-connecting-rod/front-outline-of-output-slide-pin": 0.016580632523338412,
+    "connecting-rod-eye-on-horizontal-output-slide/guided-crosshead-body-of-cutting-slide": 0.09559425890445711,
+    "connecting-rod-eye-on-horizontal-output-slide/revolute-pin-between-rod-and-output-slide": 0.24936302524867518,
+    "connecting-rod-eye-on-horizontal-output-slide/front-outline-of-output-slide-pin": 0.0896683779856447,
+    "connecting-rod-eye-on-horizontal-output-slide/white-index-showing-pure-output-translation": 0.14537746997495718,
+    "continuous-clockwise-eccentric-driving-shaft/rigid-beam-of-finite-connecting-rod": 0.08000001102685939,
+    "fixed-end-stop-of-horizontal-output-guide/left-facing-cutting-tool-tip": 0.0562438101007956,
+    "fixed-end-stop-of-horizontal-output-guide/short-cutting-tool-carried-by-output-slide": 0.06000000774860381
+  },
+  "sources": [
+    {
+      "file": "scripts/review-variable-shaper-solids.mjs",
+      "sha256": "0280a4794adbd197313dcc89a62342130dee3e98da0c81b7a63d0966d7a2b2fa"
+    },
+    {
+      "file": "src/simulation/authored-variable-cranks.js",
+      "sha256": "55688f458778c4db242d5d9741e82a62114c47a61456d1c9b92abad31af3358e"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers; same rigid families excluded. Sampled evidence, not continuous proof."
+}

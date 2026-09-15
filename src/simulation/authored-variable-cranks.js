@@ -19,7 +19,7 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
 
 function centeredExtrusion(shape, depth, bevel = 0.012) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevel > 0,
     bevelSegments: 1,
     bevelSize: bevel,
     bevelThickness: bevel,
@@ -2734,7 +2734,7 @@ function eccentricCircularGuideVariableSpeedShaper() {
     centeredExtrusion(
       circularRingShape(grooveOuterRadius, outerDiskRadius),
       plateDepth,
-      0.018,
+      0,
     ),
     translucentPlateMaterial,
   );
@@ -2750,7 +2750,7 @@ function eccentricCircularGuideVariableSpeedShaper() {
         shaftOpeningRadius,
       ),
       plateDepth,
-      0.018,
+      0,
     ),
     translucentPlateMaterial,
   );
@@ -2846,7 +2846,7 @@ function eccentricCircularGuideVariableSpeedShaper() {
     crankSlotFarRadius,
   );
   const crankBody = new THREE.Mesh(
-    centeredExtrusion(crankShape, crankDepth, 0.020),
+    centeredExtrusion(crankShape, crankDepth, 0),
     driverMaterial,
   );
   crankBody.position.z = crankPlaneZ;
@@ -3680,6 +3680,23 @@ function eccentricCircularGuideVariableSpeedShaper() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
 
+  // Decorative round wires entered the actual slide paths. The finite plate
+  // and crank slot edges already provide their physical contact boundaries.
+  for (const decoration of [grooveInnerWall, grooveOuterWall,
+    grooveCenterlineWitness, crankSlotOutline, sliderFrontOutline,
+    sliderRotationIndex, outputPinOutline, outputSlideIndex]) {
+    decoration.removeFromParent();
+    decoration.geometry.dispose();
+  }
+  for (const disk of [outerPlate, innerPlate]) {
+    disk.material.transparent = false;
+    disk.material.opacity = 1;
+    disk.material.depthWrite = true;
+  }
+  Object.assign(root.userData, {hideGround:true, supportsRestart:true,
+    minimumDisplayCycleSeconds:4, animationTiming:{authoredCyclePeriod:cyclePeriod},
+    reconstructionStatus:'under-review',
+    reconstructionNote:'A slide follows the eccentric circular groove while moving along the rotating crank. The remote tool guide and full connecting rod follow the 2D reference; bearing depths and guide hardware are inferred. Assembly clearance and engraving proportions remain under review.'});
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -3705,6 +3722,7 @@ function eccentricCircularGuideVariableSpeedShaper() {
     cameraDirection: new THREE.Vector3(5.2, 4.0, 16.0),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

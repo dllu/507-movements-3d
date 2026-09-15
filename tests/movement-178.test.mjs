@@ -218,10 +218,10 @@ test('movement 178 closes one rotating radial slot through a fixed eccentric cir
   assert.equal(inputShaft.parent, inputCrank);
   assert.equal(crankBody.parent, inputCrank);
   assert.equal(outputPin.parent, outputSlide);
-  assert.equal(outerPlate.material.transparent, true);
-  assert.equal(innerPlate.material.transparent, true);
-  assert.equal(outerPlate.material.depthWrite, false);
-  assert.equal(innerPlate.material.depthWrite, false);
+  assert.equal(outerPlate.material.transparent, false);
+  assert.equal(innerPlate.material.transparent, false);
+  assert.equal(outerPlate.material.depthWrite, true);
+  assert.equal(innerPlate.material.depthWrite, true);
   assert.equal(grooveInnerWall.userData.contactSurface, true);
   assert.equal(grooveOuterWall.userData.contactSurface, true);
   assert.equal(crankSlotOutline.userData.contactSurface, true);

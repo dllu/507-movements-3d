@@ -1,0 +1,39 @@
+{
+  "movement": 178,
+  "poses": 129,
+  "meshes": 27,
+  "pairs": 271,
+  "queries": 10443250,
+  "intersections": {
+    "fixed-bearing-around-eccentric-input-shaft/input-hub-covering-near-end-of-crank-slot": 0.03632923066616067,
+    "one-rigid-radially-slotted-variable-length-crank/rectangular-body-of-dual-constrained-slide": 0.020000001192092887,
+    "rectangular-body-of-dual-constrained-slide/connecting-rod-eye-on-circular-guide-slide": 0.055594255328178466,
+    "front-wrist-boss-for-connecting-rod/rigid-beam-of-finite-connecting-rod": 0.030000002086162852,
+    "front-wrist-boss-for-connecting-rod/connecting-rod-eye-on-circular-guide-slide": 0.2138047447734842,
+    "rigid-beam-of-finite-connecting-rod/revolute-pin-between-rod-and-output-slide": 0.13999999433755878,
+    "connecting-rod-eye-on-horizontal-output-slide/guided-crosshead-body-of-cutting-slide": 0.09559425890445711,
+    "connecting-rod-eye-on-horizontal-output-slide/revolute-pin-between-rod-and-output-slide": 0.24936302524867518,
+    "continuous-clockwise-eccentric-driving-shaft/rigid-beam-of-finite-connecting-rod": 0.08000001102685939,
+    "fixed-end-stop-of-horizontal-output-guide/left-facing-cutting-tool-tip": 0.0562438101007956,
+    "fixed-end-stop-of-horizontal-output-guide/short-cutting-tool-carried-by-output-slide": 0.06000000774860381
+  },
+  "sources": [
+    {
+      "file": "scripts/review-variable-shaper-solids.mjs",
+      "sha256": "0280a4794adbd197313dcc89a62342130dee3e98da0c81b7a63d0966d7a2b2fa"
+    },
+    {
+      "file": "src/simulation/authored-variable-cranks.js",
+      "sha256": "44fe71df95e4751d6a7ed22a76a270e6795e7148e88a6a11971ad3a9e7059918"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers; same rigid families excluded. Sampled evidence, not continuous proof."
+}

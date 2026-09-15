@@ -1,3 +1,9 @@
+# Review open: 178 joints and source fit
+
+177's shaft attachment and source fit were completed in 436dbff. The user's corrections to 151, 165, 171 and 173 were pushed in b808131. The review now proceeds through 178: its first solid audit found 28 interfering pairs; slot bevel and decorative-wire corrections reduce that to 11. Remaining joint geometry and source registration are open. See [movement 178](movement-178.md).
+
+## Earlier checkpoints
+
 # Review open: 177 final assembly and source fit
 
 The shared selector inconsistency is resolved. All seven physical solids now
