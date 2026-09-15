@@ -8169,8 +8169,9 @@ function keyedSlidingWormTraversingFrame() {
     return standoff;
   });
 
-  const fixedPivotPin = cylinderAlongZ(0.085, 0.86, darkMaterial, 34);
-  fixedPivotPin.position.set(fixedRodPivot.x, fixedRodPivot.y, 0.16);
+  // Seat the pin in the right post and carry it through the front rod eye.
+  const fixedPivotPin = cylinderAlongZ(0.085, 1.14, darkMaterial, 34);
+  fixedPivotPin.position.set(fixedRodPivot.x, fixedRodPivot.y, 0.05);
   fixedPivotPin.userData.axis = Z_AXIS.clone();
   fixedPivotPin.userData.role = 'fixed-right-hand-connecting-rod-pivot';
   const fixedPivotRing = new THREE.Mesh(
@@ -8309,7 +8310,9 @@ function keyedSlidingWormTraversingFrame() {
     new THREE.BoxGeometry(carriageFrameWidth, carriageBackplateHeight, 0.2),
     drivenMaterial,
   );
-  carriageBackplate.position.set(0, guideBarCenterY, rearFrameZ + 0.27);
+  // The plate runs in front of the bar: its back face needs clearance,
+  // not merely a center lying in front of the guide's center.
+  carriageBackplate.position.set(0, guideBarCenterY, rearFrameZ + 0.34);
   carriageBackplate.userData.role = 'source-rectangular-slide-behind-wheel';
   const guideClearance = 0.025;
   const guideShoeHeight = 0.11;
@@ -8587,6 +8590,7 @@ function keyedSlidingWormTraversingFrame() {
 
   root.userData.mechanism =
     'keyed-axially-sliding-worm-carried-wheel-fixed-rod-traverse';
+  root.userData.supportsRestart = true;
   root.userData.cameraDistanceScale = 1.02;
   root.userData.blocks = {
     base,

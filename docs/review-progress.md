@@ -1,3 +1,12 @@
+# Current review: 143 sliding worm carriage, in progress
+
+The carriage front plate now clears its guide, and the fixed rod pin reaches
+the right post and front eye. Two regressions fail on the old geometry and
+pass after repair, including 721 traverse positions; the existing analytic
+linkage test also passes. The source has no animation. Finite worm tooth
+contact, bores and remaining supports are still unverified; continue 143
+before moving to 144. See [movement 143](movement-143.md).
+
 # Current review: 142 reconstructed variable traverse
 
 142 now loads the corrected six/eighteen-tooth gearing, measured carrier and
