@@ -1,8 +1,8 @@
 # Movement 171 — oscillating marine valve gear (review open)
 
-Fog and the ground plane are now disabled for the existing model. Finite
-slots, guide bores and source proportions still need reconstruction. No new
-mechanical model or browser bake is registered.
+The lower slot walls, guide bores and connecting-rod eyes are repaired in the
+existing model. Fog and ground remain disabled. Upper geometry, source
+proportions and the complete reconstruction remain open; no bake is registered.
 
 ## Source
 
@@ -46,7 +46,7 @@ straps and tapered rods also need visible-shape review.
 ## Finite interfaces
 
 The [97-pose selected-interface audit](validation/171-existing-contact.json)
-samples the current 18-second selector traversal with 1,501,948 bidirectional
+samples the pre-repair 18-second selector traversal with 1,501,948 bidirectional
 surface queries. It finds the following maximum sampled penetration depths:
 
 | Interface | Depth (world units) |
@@ -56,16 +56,37 @@ surface queries. It finds the following maximum sampled penetration depths:
 | Each guide post / solid guide block | 0.139835 |
 | Slide-eye pin / connecting rod | 0.074358 |
 
-The tubular rails leave insufficient room for the finite follower, and the
-slider blocks have no actual guide bores. Replace these with explicit slot
-walls and openings. This audit covers selected lower interfaces, not the
-upper eccentric bearings or the complete assembly.
+This historical audit describes commit c821b18, before the lower repairs.
+The tubular rails left insufficient room for the finite follower, and the
+slider blocks had no actual guide bores. It covers selected lower interfaces,
+not the upper eccentric bearings or complete assembly.
+
+The replacement uses explicit annular slot walls with a 0.202-wide opening
+around the 0.19-diameter follower. Actual 0.118-diameter bores surround the
+0.11-diameter guide posts. The posts sit behind the slot plate, retaining their
+frontal positions; block depth and post offsets are inferred. The rigid
+connecting rod has real end eyes, with separate hole sizes for the die and
+slide pins. It stays in a single plane between the pins' ends without scaling
+or deforming its length.
+
+The [expanded lower-interface sweep](validation/171-lower-clearance.json)
+checks ten pairs at 97 poses over the current 18-second traversal, with
+2,151,628 bidirectional surface queries. It finds no sampled penetration above
+1e-6 world units. The added pairs cover both rod eyes and guide-post/slot-wall
+clearance. This is deliberately a lower-interface qualification, not a
+whole-assembly clearance claim. The ideal closure audit is unchanged apart
+from its source hash.
 
 ## Current change and next work
 
-All 101 material instances examined in the existing scene have fog disabled,
-and `hideGround` is true. This removes those two rendering problems while the
-mechanical reconstruction remains open. It does not fix part intersections.
+All 99 material instances examined in the existing scene have fog disabled,
+and `hideGround` is true. These rendering flags and the lower-interface repairs
+are shipped while the complete mechanical reconstruction remains open.
+
+The production build and [packaged browser check](validation/171-browser.json)
+pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
+with no page errors or WASM requests. Restart explicitly restores the initial
+pose. These checks validate this repair, not the complete reconstruction.
 
 Next, rebuild the source-visible solids and resolve the lower compensation
 construction. Use analytic linkage closure where determined; use MuJoCo if
@@ -76,6 +97,7 @@ check finite surfaces, source fit, restart and desktop/mobile rendering.
 ```sh
 node scripts/review-marine-valve-existing.mjs
 node scripts/review-marine-valve-closure.mjs
+node scripts/review-marine-valve-lower-solids.mjs
 ```
 
 Movement 171 remains open. The full 507-movement review remains active.

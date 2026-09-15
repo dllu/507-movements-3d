@@ -1,8 +1,10 @@
 # Open review: 171 oscillating marine valve gear
 
-Fog and ground are disabled. Ideal lengths close across five reversing
-settings, but the finite audit finds follower/rail, guide/block and pin/rod
-interference. Upper link pins miss the source by about 11 pixels, and the
+Fog and ground are disabled. New annular slot walls, bored guide blocks and
+connecting-rod eyes pass a ten-pair lower-interface sweep over 97 poses. Ideal
+lengths still close across five reversing settings. Build and packaged desktop/mobile
+playback, including exact Restart, pass without WASM. Upper link pins miss the
+source by about 11 pixels, and the
 18-second selector period is not a complete mechanism loop. Source solids,
 trunnion compensation and playback reconstruction remain open; see
 [movement 171](movement-171.md).

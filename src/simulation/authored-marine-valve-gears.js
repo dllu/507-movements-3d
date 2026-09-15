@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate, poly, circle, capsule, sector, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -21,6 +22,19 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   const cylinder = cylinderAlongY(radius, length, material, segments);
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
+}
+
+function finiteMarineOutputRod(length) {
+  const root = new THREE.Group();
+  const hole = (center, radius) => poly(circle(center, radius, 96));
+  const shape = clip.difference(clip.union(capsule([0, 0], [length, 0], .045),
+    hole([0, 0], .13), hole([length, 0], .12)), hole([0, 0], .094), hole([length, 0], .079));
+  root.add(new THREE.Mesh(plate(shape, -.05, .05), matte(PALETTE.driven)));
+  root.userData.setEndpoints = (start, end) => {
+    root.position.set(start.x, start.y, .40);
+    root.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
+  };
+  return root;
 }
 
 function rotate2(angle, point) {
@@ -925,7 +939,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   ) * Math.sin(1.04);
   const slideGuidePosts = [-1, 1].map((sign) => {
     const post = cylinderAlongY(0.055, 2.25, darkMaterial, 22);
-    post.position.set(sign * lowerGuideHalfX, 0.20, 0.16);
+    post.position.set(sign * lowerGuideHalfX, 0.20, -0.05);
     post.userData.role = `${sign < 0 ? 'left' : 'right'}-cylinder-carried-slide-guide`;
     cylinderCarrier.add(post);
     return post;
@@ -946,28 +960,23 @@ function oscillatingMarineEngineStephensonValveGear() {
     radius: slotRadius + lowerSlotHalfWidth,
     z: 0.16,
   });
-  const lowerInnerRail = makeArcRail(
-    lowerInnerCurve,
-    0.075,
-    drivenMaterial,
-  );
+  const lowerInnerRail = new THREE.Mesh(plate(sector(slotRadius - .205, slotRadius - .101,
+    Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerInnerRail.userData.role = 'inner-edge-of-trunnion-centered-slot';
-  const lowerOuterRail = makeArcRail(
-    lowerOuterCurve,
-    0.075,
-    drivenMaterial,
-  );
+  const lowerOuterRail = new THREE.Mesh(plate(sector(slotRadius + .101, slotRadius + .205,
+    Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerOuterRail.userData.role = 'outer-edge-of-trunnion-centered-slot';
   curvedSlide.add(lowerInnerRail, lowerOuterRail);
   const slideBlocks = [-1, 1].map((sign) => {
     const block = new THREE.Mesh(
-      new THREE.BoxGeometry(0.29, 0.48, 0.42),
+      plate(clip.difference(poly([[-.145, -.25], [.145, -.25], [.145, .25], [-.145, .25]]),
+        poly(circle([0, -.03], .059, 96))), -.24, .24).rotateX(Math.PI / 2),
       drivenMaterial,
     );
     block.position.set(
       sign * lowerGuideHalfX,
       slotRadius * Math.cos(lowerHalfAngle),
-      0.16,
+      -0.02,
     );
     block.userData.role = `${sign < 0 ? 'left' : 'right'}-moving-curved-slide-guide-block`;
     curvedSlide.add(block);
@@ -1057,12 +1066,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   cylinderCarrier.add(valveGuideChest);
   root.add(cylinderCarrier);
 
-  const outputRadiusRod = makeDynamicLink({
-    color: PALETTE.driven,
-    depth: 0.13,
-    jointRadius: 0.075,
-    thickness: 0.12,
-  });
+  const outputRadiusRod = finiteMarineOutputRod(outputRodLength);
   outputRadiusRod.userData.role =
     'finite-die-output-rod-to-cylinder-carried-curved-slide';
   const pistonRod = makeDynamicLink({
@@ -1390,6 +1394,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.fidelity = 'authored';
   root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
   root.userData.materialsIgnoreSceneFog = true;
 
   update(0);
@@ -1413,6 +1418,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     cameraDirection: new THREE.Vector3(7.8, 4.6, 13.2),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

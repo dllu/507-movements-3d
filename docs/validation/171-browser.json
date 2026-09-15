@@ -1,0 +1,31 @@
+{
+  "movement": 171,
+  "status": "packaged-lower-repair-desktop-mobile-passed",
+  "scope": "Partial lower-interface repair; full source and mechanical reconstruction remain open.",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 viewport without horizontal overflow",
+    "no WASM request",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/marine-valve-lower.spec.mjs",
+      "sha256": "526a4e86c6d37b3029bbe2bf328962c2f47b3fbcefdd1a9945f919f123d1de75"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "d73178a7120e7b4ce6f17cfc60bdc4fe9bc6d60c63c4228245c6bc33c590dc7e"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "146011e92e471c85b9e5c1b117c65da5babc954e0fa5ae3dcf9c7326294cf1f4"
+    }
+  ]
+}
