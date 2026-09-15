@@ -7,6 +7,13 @@ linkage test also passes. The source has no animation. Finite worm tooth
 contact, bores and remaining supports are still unverified; continue 143
 before moving to 144. See [movement 143](movement-143.md).
 
+The subsequent finite-surface diagnostic proves the runtime wire worm cuts
+into the wheel at all 129 sampled poses, by up to 4.795 engraving pixels.
+A lower-arc raster scan supports retaining 22 teeth and reducing the nominal
+outside radius from 60 to 56 pixels. A generated worm/wheel candidate and
+source overlay now exist, but the candidate is not installed: resolve its
+contact-force check and complete the shaft/key bores and assembly review first.
+
 # Current review: 142 reconstructed variable traverse
 
 142 now loads the corrected six/eighteen-tooth gearing, measured carrier and

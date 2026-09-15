@@ -1,0 +1,319 @@
+{
+  "movement": 143,
+  "status": "isolated-generated-surface-candidate",
+  "parameters": {
+    "teeth": 22,
+    "pitchRadius": 0.77,
+    "wormPitchRadius": 0.20875,
+    "wormLength": 0.8796459430051422,
+    "depth": 0.3,
+    "pressureAngle": 0.3490658503988659
+  },
+  "options": {
+    "angularSteps": 256,
+    "axialSteps": 32,
+    "phaseSteps": 1600,
+    "radialSteps": 80,
+    "clearance": 0.0006
+  },
+  "sources": [
+    {
+      "file": "scripts/prototype-sliding-worm.mjs",
+      "sha256": "c17a44493df26a0cbe3da6931171edef1d564b93d09b6a1586f954063eb7ce44"
+    },
+    {
+      "file": "src/simulation/worm-wheel-profile.js",
+      "sha256": "edb8bb0348f7d31ba88180450a489dc608a8cd7f7b54b3e23227597efa928127"
+    },
+    {
+      "file": "src/simulation/worm-gear-geometry.js",
+      "sha256": "efda9da5b65dc16734d15718a91a9fd1000150e240b3f5da0ecc83ee7ce3079a"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "scripts/lib/star-mangle-pair-distance.mjs",
+      "sha256": "02d8ae6e129112af031f52c4de13148eaa4a09419c17c969f3da49120da0ce30"
+    }
+  ],
+  "summary": {
+    "poses": 33,
+    "inside": 1,
+    "maximumDepth": 0.000012251650136339063,
+    "minimumGap": 0,
+    "maximumGap": 0.00010054880486026593,
+    "minimumOutputTorque": null,
+    "maximumPowerResidual": null,
+    "wheelRoot": 0.6819,
+    "wormRoot": 0.12124999999999998
+  },
+  "limitations": "Isolated surfaces only. Includes sampled containment and nearest working-flank triangle separation with normalized normal-force power residual. Further refinement, source fitting and actual shaft/key bores remain to be checked; not installed in the runtime model.",
+  "rows": [
+    {
+      "input": 0.06035665885987663,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00008731193179158481,
+      "outputTorque": 0.7158030106398358,
+      "powerResidual": 0.0033285325614878926
+    },
+    {
+      "input": 0.2507562136228944,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00008456046983148968,
+      "outputTorque": 0.7159360402796298,
+      "powerResidual": 0.001606646053856943
+    },
+    {
+      "input": 0.4411557683859122,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00008269185085002257,
+      "outputTorque": 0.7161274828780563,
+      "powerResidual": 0.0006987962829652258
+    },
+    {
+      "input": 0.6315553231489299,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00008063979773436825,
+      "outputTorque": 0.7157942058490436,
+      "powerResidual": 0.0492643605984805
+    },
+    {
+      "input": 0.8219548779119477,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.0000787763808160223,
+      "outputTorque": 0.7160040376360237,
+      "powerResidual": 0.002291609457751335
+    },
+    {
+      "input": 1.0123544326749654,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00007775743447271744,
+      "outputTorque": 0.7167110041423951,
+      "powerResidual": 0.002042813479302621
+    },
+    {
+      "input": 1.2027539874379833,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00007576283032120881,
+      "outputTorque": 0.7171049681183324,
+      "powerResidual": 0.03404388896810328
+    },
+    {
+      "input": 1.393153542201001,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00007340258313155946,
+      "outputTorque": 0.7183188100460023,
+      "powerResidual": 0.07357852490091385
+    },
+    {
+      "input": 1.5835530969640188,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00007147362728753558,
+      "outputTorque": 0.7155457431219227,
+      "powerResidual": 0.06795710136140878
+    },
+    {
+      "input": 1.7739526517270365,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00007063511894882123,
+      "outputTorque": 0.7116675167186546,
+      "powerResidual": 0.2105394693204758
+    },
+    {
+      "input": 1.9643522064900545,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00006704956448366135,
+      "outputTorque": 0.7173495998763509,
+      "powerResidual": 0.02674049939598961
+    },
+    {
+      "input": 2.154751761253072,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.0000676482171869068,
+      "outputTorque": 0.7173890419700883,
+      "powerResidual": 0.009217488598506548
+    },
+    {
+      "input": 2.34515131601609,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00006013465504013066,
+      "outputTorque": 0.7182262173829028,
+      "powerResidual": 0.01922365938301668
+    },
+    {
+      "input": 2.5355508707791077,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.000056658792098520284,
+      "outputTorque": 0.7107233847546418,
+      "powerResidual": 0.26027415323490205
+    },
+    {
+      "input": 2.7259504255421256,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00005209125153582266,
+      "outputTorque": 0.7165399386438471,
+      "powerResidual": 0.007082966107960738
+    },
+    {
+      "input": 2.916349980305143,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00005191192233168389,
+      "outputTorque": 0.7173391940367257,
+      "powerResidual": 0.008609807533346602
+    },
+    {
+      "input": 3.106749535068161,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00003180789294776124,
+      "outputTorque": 0.715284320109885,
+      "powerResidual": 0.007585369441570151
+    },
+    {
+      "input": 3.2971490898311786,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.000034882470945189756,
+      "outputTorque": 0.7149939928671093,
+      "powerResidual": 0.0061928500740534255
+    },
+    {
+      "input": 3.4875486445941966,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.000021099682188317133,
+      "outputTorque": 0.7148803681904772,
+      "powerResidual": 0.013565152382949535
+    },
+    {
+      "input": 3.677948199357214,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00003074396773935339,
+      "outputTorque": 0.7149310795068194,
+      "powerResidual": 0.01266671811688149
+    },
+    {
+      "input": 3.868347754120232,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00000634307233770905,
+      "outputTorque": 0.7123055752224747,
+      "powerResidual": 0.002035995353404972
+    },
+    {
+      "input": 4.05874730888325,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0,
+      "outputTorque": null,
+      "powerResidual": null
+    },
+    {
+      "input": 4.249146863646267,
+      "inside": 1,
+      "maximumDepth": 0.000012251650136339063,
+      "gap": 0,
+      "outputTorque": null,
+      "powerResidual": null
+    },
+    {
+      "input": 4.439546418409285,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0,
+      "outputTorque": null,
+      "powerResidual": null
+    },
+    {
+      "input": 4.629945973172303,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00001157383472045142,
+      "outputTorque": 0.7149627871378139,
+      "powerResidual": 0.010164106099139017
+    },
+    {
+      "input": 4.820345527935321,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.000046195746652220094,
+      "outputTorque": 0.7186407113141116,
+      "powerResidual": 0.010785157780914347
+    },
+    {
+      "input": 5.010745082698338,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.0000865459722246272,
+      "outputTorque": 0.7179506999266105,
+      "powerResidual": 0.005156397178774788
+    },
+    {
+      "input": 5.201144637461356,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00010054880486026593,
+      "outputTorque": 0.7150726358671964,
+      "powerResidual": 0.003855365787201429
+    },
+    {
+      "input": 5.391544192224374,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00009753643072487673,
+      "outputTorque": 0.715685051078888,
+      "powerResidual": 0.0025537722545050635
+    },
+    {
+      "input": 5.581943746987392,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00009557684365143553,
+      "outputTorque": 0.7149276247160035,
+      "powerResidual": 0.009194817463519144
+    },
+    {
+      "input": 5.77234330175041,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00009413094450144744,
+      "outputTorque": 0.715152485516063,
+      "powerResidual": 0.012815793233410228
+    },
+    {
+      "input": 5.962742856513428,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.00009076907589302003,
+      "outputTorque": 0.7158002137363839,
+      "powerResidual": 0.0025478674174419457
+    },
+    {
+      "input": 6.153142411276446,
+      "inside": 0,
+      "maximumDepth": 0,
+      "gap": 0.0000886812709277982,
+      "outputTorque": 0.7155113883668708,
+      "powerResidual": 0.003605909903906249
+    }
+  ]
+}

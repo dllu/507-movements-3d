@@ -1,0 +1,9 @@
+{
+  "movement": 143,
+  "wheelPhase": 1.6540961320037169,
+  "wormPhase": 0.26179938779915,
+  "rms": 4.014968224435167,
+  "sourceSha256": "a05569053b2c5d2f96ac84b67f23ae9c96b2257935415b45c66cc263cb6fee52",
+  "profileSha256": "6799754bed00cef855be8f6c2ea2acb32bcc4650ec10d722873a398908373059",
+  "method": "720 candidate phases over one tooth pitch; least squares radial error on the exposed 35–145 degree lower arc, with a one-pixel raster ink allowance. Other wheel regions are visually checked in the overlay, not part of this fit."
+}
