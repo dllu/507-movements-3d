@@ -6,57 +6,57 @@
   "runs": [
     {
       "timestep": 0.0005,
-      "maxDepth": 0.0013243275603083624,
+      "maxDepth": 0.0010304099968368816,
       "firstForward": 1.1374999999999302,
-      "firstReverse": 6.703499999999004,
-      "finalOutput": 12.852930640709848
+      "firstReverse": 6.698499999999007,
+      "finalOutput": 12.845043582429787
     },
     {
       "timestep": 0.00025,
-      "maxDepth": 0.0011706864847123542,
+      "maxDepth": 0.0011827226941931602,
       "firstForward": 1.1372499999999635,
-      "firstReverse": 6.704250000002448,
-      "finalOutput": 12.85436231557618
+      "firstReverse": 6.703250000002447,
+      "finalOutput": 12.850247215695697
     },
     {
       "timestep": 0.000125,
-      "maxDepth": 0.001369617442852699,
+      "maxDepth": 0.0013490536827726815,
       "firstForward": 1.1371250000000497,
-      "firstReverse": 6.704999999995711,
-      "finalOutput": 12.860585159764918
+      "firstReverse": 6.70537499999571,
+      "finalOutput": 12.858590582506983
     },
     {
       "timestep": 0.0000625,
-      "maxDepth": 0.0014379243981848238,
+      "maxDepth": 0.0014380449507990258,
       "firstForward": 1.1370624999999532,
-      "firstReverse": 6.703625000009255,
-      "finalOutput": 12.869277865329897
+      "firstReverse": 6.7034375000092545,
+      "finalOutput": 12.86142399456724
     }
   ],
   "differences": [
     {
       "coarse": 0.0005,
       "fine": 0.00025,
-      "spindle": 0.000025138024071225118,
-      "leftSpread": 0.00031245406714108803,
-      "sleeveY": 0.0006439326165508241,
-      "output": 0.010187096944621388
+      "spindle": 0.00008740117016969862,
+      "leftSpread": 0.000318313185882213,
+      "sleeveY": 0.0006502106420379627,
+      "output": 0.025575985164943305
     },
     {
       "coarse": 0.00025,
       "fine": 0.000125,
-      "spindle": 0.00002775986162539823,
-      "leftSpread": 0.0004331030625451815,
-      "sleeveY": 0.0009123016441717757,
-      "output": 0.008639469412878853
+      "spindle": 0.00003556134954152412,
+      "leftSpread": 0.0004372331463821655,
+      "sleeveY": 0.0009210948098634653,
+      "output": 0.011508857742946077
     },
     {
       "coarse": 0.000125,
       "fine": 0.0000625,
-      "spindle": 0.00002313516104379687,
-      "leftSpread": 0.00007205462290121867,
-      "sleeveY": 0.00015187647489789402,
-      "output": 0.00869270556504631
+      "spindle": 0.00003427863864402525,
+      "leftSpread": 0.00006636181826052967,
+      "sleeveY": 0.0001378933500891799,
+      "output": 0.009549146812869225
     }
   ],
   "sources": [
@@ -66,7 +66,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/physics.js",
-      "sha256": "5bf4c1dbbf7bc97ab6995e7f74b037f6d082a7f7de7009209b9bcb2984181baf"
+      "sha256": "9c5b090104c14d6b318c9ecd5ce33736123097684e31109a80e0644f092e4d69"
     },
     {
       "file": "src/simulation/mujoco-water-governor/backing-contact.js",

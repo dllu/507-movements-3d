@@ -6,7 +6,7 @@ const m=await loadMujoco();
 function run(options){
  const p=makeWaterGovernorPhysics(m,options);
  try{
-  const result={firstForward:null,firstReverse:null,minimumSpeed:0,maximumSpeed:0,maximumClosure:0,maximumPenetration:0,maximumSpreadDrift:0,finalOutput:0,maximumSelector:-Infinity,minimumSelector:Infinity};
+  const result={firstForward:null,firstReverse:null,minimumSpeed:0,maximumSpeed:0,maximumClosure:0,maximumGearError:0,maximumPenetration:0,maximumSpreadDrift:0,finalOutput:0,maximumSelector:-Infinity,minimumSelector:Infinity};
   assert.equal(p.model.nu,1,'only the spindle has an actuator');
   for(let tick=0;tick<=16000;tick++){
    const s=p.state();
@@ -18,6 +18,7 @@ function run(options){
    if(result.firstReverse===null&&s.outputSpeed<-.1)result.firstReverse=s.time;
    result.minimumSpeed=Math.min(result.minimumSpeed,s.outputSpeed);
    result.maximumSpeed=Math.max(result.maximumSpeed,s.outputSpeed);
+   result.maximumGearError=Math.max(result.maximumGearError,Math.abs(s.upper-s.output),Math.abs(s.lower+s.output));
    result.maximumClosure=Math.max(result.maximumClosure,...s.connectionErrors);
    result.maximumPenetration=Math.max(result.maximumPenetration,...s.contacts.map(c=>-c.distance));
    result.maximumSpreadDrift=Math.max(result.maximumSpreadDrift,Math.abs(s.leftSpread-p.geometry.initialSpread));
@@ -67,4 +68,10 @@ test('162 ball contact prevents the lower link stem entering its own ball',()=>{
  };
  assert.ok(minimumGap(true)>-.001,'sphere and visible-width stem remain separated within contact compliance');
  assert.ok(minimumGap(false)<-.005,'removed contact reproduces the missing-collision defect');
+});
+
+test('162 stiff ideal gear constraints retain equal ratios through selector impacts',()=>{
+ const current=run({}),soft=run({stiffGears:false});
+ assert.ok(current.maximumGearError<1e-4);
+ assert.ok(soft.maximumGearError>20*current.maximumGearError,'constraint stiffness must reduce the measured gear phase error');
 });

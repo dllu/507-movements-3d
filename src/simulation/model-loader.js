@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 162) {
+    const {makeBakedWaterGovernor} = await import('./baked/water-governor.js');
+    const model = await makeBakedWaterGovernor();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 161) {
     const {makeBakedBallGovernor} = await import('./baked/ball-governor.js');
     const model = await makeBakedBallGovernor();

@@ -1,12 +1,16 @@
-# Active reconstruction: 162 water-wheel governor
+# Active reconstruction: 163
 
-162 now has a complete 183-mesh source assembly driven by native joint poses.
-The full sweep found and fixed selector/gear, shaft and ball/link collisions;
-native tooth and ball/link contacts now prevent pass-through. Eight tests pass,
-and the final sweep has only microscopic intended stud-contact overlap. Repeated
-motion is closer to closing, but gear constraints and baking still need
-qualification. Production remains unchanged.
-See [movement 162](movement-162.md). The full 507-movement review remains active.
+Continue the source and motion review at 163. The full 507-movement review remains
+active; 147's mesh refinement and 150's source fit remain open.
+
+# Shipped reconstruction: 162 water-wheel governor
+
+162 now plays a 452 KB offline MuJoCo bake with 1,490 keys and 38 rendered mesh
+objects. Passive selector contacts reverse the output; the native loop retains
+two net output turns. The qualified seam uses a documented subpixel numerical
+correction. Native and interpolated clearances, twelve tests, production build
+and desktop/mobile Chrome checks pass, with no browser physics loading.
+See [movement 162](movement-162.md) for inferred parameters and numerical limits.
 
 # Shipped reconstruction: 161 centrifugal governor
 
@@ -16,7 +20,7 @@ output fork replace the old equilibrium-driven assembly and invented valve.
 The passive dynamics, interpolation, unwrapped rotation seam, 99-mesh clearance
 sweep, bounds, restart, private build and desktop/mobile Chrome checks pass.
 Inferred masses, depths and the unloaded remote valve connection remain explicit
-in [movement 161](movement-161.md). Continue at 162; 147's mesh refinement and
+in [movement 161](movement-161.md). Continue at 163; 147's mesh refinement and
 150's source fit remain open. The full 507-movement review remains active.
 
 # Shipped reconstruction: 160 spring-return treadle

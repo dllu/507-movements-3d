@@ -1,0 +1,122 @@
+{
+  "movement": 162,
+  "status": "loop-candidate-within-numerical-tolerance",
+  "period": 8.434225403040136,
+  "timestep": 0.00012869606633056848,
+  "stride": 32,
+  "samplesPerCycle": 2048,
+  "positionTolerance": 0.0001,
+  "velocityTolerance": 0.001,
+  "method": "Two final cycles after 62 warmup cycles. Compare all coordinates and velocities at corresponding phases; choose a driving-contact seam by conservative visible-displacement bounds. Angular advances are measured integer turns, never forced equal forward/reverse travel.",
+  "best": {
+    "index": 563,
+    "phase": 2.318588331011522,
+    "sourceTime": 525.2405633055208,
+    "turns": [
+      43.982297150257104,
+      0,
+      0,
+      0,
+      0,
+      0,
+      12.566370614359172,
+      -12.566370614359172,
+      12.566370614359172
+    ],
+    "positionBound": 0.00005716061299769479,
+    "velocityBound": 0.0004270943588852653,
+    "residual": [
+      3.4231251078153946e-7,
+      0.000005321197703564429,
+      -0.00001171290434581751,
+      0.000005321197703536673,
+      -0.000011712904345984043,
+      0.000011460508507116218,
+      5.204035034012122e-7,
+      -5.203196025149737e-7,
+      5.201615778105406e-7
+    ],
+    "velocityResidual": [
+      0.0000010874059910293,
+      -0.00002660188885869781,
+      0.000058574112498068626,
+      -0.000026601888841976812,
+      0.000058574112582445576,
+      -0.00005754623166664974,
+      -0.00021842534445593031,
+      0.00021810230854946155,
+      -0.00021749536392245972
+    ],
+    "score": 0.5716061299769478
+  },
+  "initialState": {
+    "time": 522.9219749745829,
+    "spindle": 2726.901367001635,
+    "speed": 5.214498779809072,
+    "leftSpread": 0.3746211590055756,
+    "rightSpread": 0.3746211590055756,
+    "sleeveY": 0.7900473822688382,
+    "selectorY": -2.054621021337915,
+    "upper": 765.1532867734603,
+    "lower": -765.1532867734603,
+    "output": 765.1532867734603,
+    "outputSpeed": -1.1047159190902886e-13,
+    "contacts": [],
+    "connectionErrors": [
+      2.8179558513922487e-8,
+      2.8179558443874632e-8
+    ],
+    "qpos": [
+      2726.901367001635,
+      -0.000378840994424436,
+      0.0008228227582696847,
+      -0.00037884099442443323,
+      0.0008228227582696811,
+      -0.000621021337915311,
+      765.1532867734603,
+      -765.1532867734603,
+      765.1532867734603
+    ],
+    "qvel": [
+      5.214498779809072,
+      0.09312210287944342,
+      -0.20225020248296285,
+      0.09312210287944529,
+      -0.20225020248296222,
+      0.15256705065880402,
+      -1.0354547019940053e-13,
+      1.0354547019940053e-13,
+      -1.1047159190902886e-13
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/qualify-water-governor-loop.mjs",
+      "sha256": "9b75a53a17b50f9636ce92abc85752b03e6e9e567445b26d7036f3a3029e5bdf"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/physics.js",
+      "sha256": "9c5b090104c14d6b318c9ecd5ce33736123097684e31109a80e0644f092e4d69"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/backing-contact.js",
+      "sha256": "f3a2d2619db5647f2ebb71f70414597fd90067638d8fdb0ea38b5db39cbe93f2"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/bevel-train.js",
+      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

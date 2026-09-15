@@ -5,13 +5,13 @@
     {
       "options": {},
       "firstForward": 1.1374999999999302,
-      "firstReverse": 6.703499999999004,
-      "maxDepth": 0.0013243275603083624,
-      "maxConnection": 4.6047341155238743e-7,
-      "maxGearError": 0.001510530361090924,
-      "minSpeed": -5.843472820871836,
-      "maxSpeed": 6.113743266209292,
-      "finalOutput": 12.852930640709848,
+      "firstReverse": 6.698499999999007,
+      "maxDepth": 0.0010304099968368816,
+      "maxConnection": 4.5845089568040616e-7,
+      "maxGearError": 0.00003393638201197591,
+      "minSpeed": -5.533587817813673,
+      "maxSpeed": 5.915102792956271,
+      "finalOutput": 12.845043582429787,
       "actuators": 1
     },
     {
@@ -19,13 +19,13 @@
         "timestep": 0.00025
       },
       "firstForward": 1.1372499999999635,
-      "firstReverse": 6.704250000002448,
-      "maxDepth": 0.0011706864847123542,
-      "maxConnection": 4.7304897549798804e-7,
-      "maxGearError": 0.0014869804736354752,
-      "minSpeed": -5.732240492998703,
-      "maxSpeed": 6.257949978794892,
-      "finalOutput": 12.85436231557618,
+      "firstReverse": 6.703250000002447,
+      "maxDepth": 0.0011827226941931602,
+      "maxConnection": 4.7285392106324063e-7,
+      "maxGearError": 0.000017759553798211286,
+      "minSpeed": -5.5916431067236285,
+      "maxSpeed": 6.075463633396997,
+      "finalOutput": 12.850247215695697,
       "actuators": 1
     },
     {
@@ -47,13 +47,13 @@
         "studPhase": 1
       },
       "firstForward": 1.32199999999991,
-      "firstReverse": 5.841499999999482,
-      "maxDepth": 0.0014651697216939187,
-      "maxConnection": 4.786967594786252e-7,
-      "maxGearError": 0.0016008331187697452,
-      "minSpeed": -5.569911516554543,
-      "maxSpeed": 6.407741605555867,
-      "finalOutput": 7.597470400996797,
+      "firstReverse": 5.839499999999483,
+      "maxDepth": 0.0014652856761350839,
+      "maxConnection": 4.972155561303505e-7,
+      "maxGearError": 0.00003616912715660725,
+      "minSpeed": -5.703347479389928,
+      "maxSpeed": 6.243036437353538,
+      "finalOutput": 7.613669786403614,
       "actuators": 1
     },
     {
@@ -72,9 +72,9 @@
     }
   ],
   "refinement": {
-    "maximumSpindleDifference": 0.000020331988046962124,
-    "maximumSpreadDifference": 0.00031242814392029583,
-    "maximumOutputDifference": 0.010187096944621388
+    "maximumSpindleDifference": 0.0000626973592332547,
+    "maximumSpreadDifference": 0.00031831104987545267,
+    "maximumOutputDifference": 0.025575985164943305
   },
   "sources": [
     {
@@ -83,7 +83,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/physics.js",
-      "sha256": "5bf4c1dbbf7bc97ab6995e7f74b037f6d082a7f7de7009209b9bcb2984181baf"
+      "sha256": "9c5b090104c14d6b318c9ecd5ce33736123097684e31109a80e0644f092e4d69"
     },
     {
       "file": "src/simulation/mujoco-water-governor/backing-contact.js",

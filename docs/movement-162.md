@@ -1,7 +1,9 @@
-# Movement 162 — water-wheel governor review in progress
+# Movement 162 — baked water-wheel governor
 
-162 remains unregistered. Production still uses the authored threshold-based
-animation; the reconstructed assembly and native dynamics are candidates.
+162 now uses an offline MuJoCo bake of the reconstructed governor and passive
+selector contacts. The 451,713-byte asset has 1,490 adaptive motion keys. Five
+instanced tooth sets reduce the 183 source meshes to 38 rendered mesh objects.
+Playback loads no MuJoCo/WASM and performs no collision solving in the browser.
 
 ## Source and reconstruction
 
@@ -26,7 +28,7 @@ Tooth ends have conical profiles and analytic cap normals. The gate gear's
 shorter face now clears the sweeping selector and stud roots. Horizontal shafts
 stop inside their hubs, and the output bearing clears the conical backplate.
 
-The complete 183-mesh candidate includes head cheeks, bored arm eyes and pins,
+The complete 183-mesh assembly includes head cheeks, bored arm eyes and pins,
 balls, the long bored sleeve, selector shoulder, studs and both horizontal
 shafts. Native hinge coordinates drive all moving parts. The visible pin and
 stud working faces coincide with their native counterparts throughout a cycle.
@@ -58,37 +60,63 @@ ball contact reproduces sphere/stem overlap in a disconnected-output stress run.
 Normal speed variation is now 0.26 rad/s. The 0.32 and 0.5 stress cases retain
 all required physical contacts rather than imposing sleeve travel clamps.
 
-## Verification and remaining work
+## Loop and numerical qualification
 
-Eight tests cover the source gear envelopes, bores, pitch velocities, native
-bidirectional pickup, removed-contact and shifted-stud counterfactuals, neutral
-equilibrium, overspeed backing protection, ball/link contact, native clock
-continuity and visible joint/contact-face alignment. Front and oblique Chrome
-views of the full assembly were inspected; fog and the unrelated ground plane
-are disabled.
+The ideal gear constraints now use high impedance. At the default diagnostic
+step, maximum gear-ratio error is 0.00003394 radians, more than 20 times smaller
+than the former setting. No additional actuator is introduced.
 
-At exact gear ratios, a 65-pose bevel sweep clears 3,844 mesh pairs. The full
-assembly sweep uses 65 poses over eight native seconds with 0.32 rad/s speed
-variation, above the normal setting. It checks 14,216 cross-family pairs and
-34,306,988 surface samples, including native gear-constraint error. The only
-sampled overlap is at the intended pin/stud contacts, below 0.000003 world units
-(0.00017 source pixels). All other intersections fail the checker. Same-family
-rigid joins, such as arm stems in balls and stud roots in gear bodies, are
-intentional.
+The drive period is 8.4342254 seconds, seven nominal spindle turns. A cold native
+run of 64 cycles at period/65536 finds a repeat seam during sustained engagement,
+with nonzero output velocity and contacts on both sides. The selected native
+position and velocity bounds are 0.00005717 world units and 0.0004271 world
+units/s. The loop advances the output by two complete turns; its forward and
+reverse travel are not artificially balanced.
 
-Four-timestep refinement gives successive maximum output-angle differences of
-0.01019, 0.00864 and 0.00869 radians. The final pair changes sleeve height by
-0.000152 world units (0.0085 source pixels). Repeated-cycle checks use an
-8.4342254-second period and 64 cycles at each of two timesteps. Both runs retain
-reversal in their final eight cycles. At the finer timestep, internal-coordinate
-closure is below 0.000041 and output phase closure below 0.00382 radians, but
-these are not exact seams. Impact refinement and a mechanically valid bake
-remain open; no phase snapping or false repeating trajectory is registered.
+The bake restores the qualified native checkpoint, recomputes constraints and
+replays the final cycle and lead-in. It independently recovers the same closure.
+A smooth C1 correction over the last 0.1 second removes the small numerical
+position/velocity residual. This is an explicit approximation, not an exact
+periodic solution. Adaptive linear interpolation plus this correction stays
+within a conservative 0.00007318-world-unit bound of every native integration
+sample (0.0041 engraving pixels). The initial 2.3186-second lead-in preserves a
+near-engraving starting pose; subsequent cycles use the qualified driving seam.
 
-Evidence and source hashes are in `docs/validation/162-native-selector.json`,
-`162-contact-refinement.json`, `162-repeated-selector.json`,
-`162-bevel-clearance.json` and `162-solid-clearance.json`. Raw trajectories and
-screenshots remain outside Git. Reproduce with:
+## Verification
+
+Twelve tests cover source gear envelopes, bores and pitch velocities; passive
+bidirectional pickup; removed-contact and shifted-stud counterfactuals; neutral
+equilibrium; overspeed backing and ball/link protection; gear-constraint error;
+visible joint/contact alignment; native-to-baked positions; instanced geometry;
+repeat phase, bounds and exact restart. Measured serialized ball/pin positions
+stay within 0.00002244 world units of the native replay, including the seam.
+
+At exact gear ratios, a 65-pose bevel sweep clears 3,844 mesh pairs. A full
+183-mesh native sweep at a stressed 0.32 rad/s speed variation checks 14,216
+cross-family pairs and 34,324,512 surface samples. Its only overlap is intended
+selector/stud contact, below 0.00000188 world units. The baked sweep checks 129
+off-key interpolated times plus four seam poses, with 65,134,128 surface queries
+and no detected intersections above 0.000001 world units. These finite sweeps
+sample vertices, edge midpoints and triangle centers; they are not a continuous
+collision proof. Same-family rigid joins are intentionally excluded. A separate
+test verifies that serialized instanced teeth preserve the audited geometry and
+transforms within Float32 rounding.
+
+Four-timestep impact refinement gives successive maximum output-angle differences
+of 0.02558, 0.01151 and 0.00955 radians. The final pair changes sleeve height by
+0.0001379 world units (0.0077 source pixels). Contact response remains a numerical
+approximation, and the documented masses, depths and output friction are inferred.
+
+The production build and desktop/mobile Chrome playback test pass. Front,
+oblique and mobile screenshots were inspected. Restart is exact, orbit controls
+work, the model fits the viewport, and fog and the unrelated ground are disabled.
+The build retains the pre-existing large-main-chunk warning.
+
+Evidence and source hashes are in the 162 reports under docs/validation:
+native-selector, contact-refinement, repeated-selector, loop-qualification,
+bevel-clearance, solid-clearance and baked-clearance. The compressed asset has a
+provenance sidecar. Raw trajectories, screenshots and private builds stay outside
+Git. Reproduce with:
 
 ```sh
 node --test tests/water-governor-*.test.mjs
@@ -97,7 +125,7 @@ node scripts/review-water-governor-solids.mjs
 node scripts/probe-water-governor.mjs
 node scripts/refine-water-governor.mjs
 node scripts/settle-water-governor.mjs
+node scripts/qualify-water-governor-loop.mjs
+node scripts/bake-water-governor.mjs
+node scripts/review-water-governor-baked-solids.mjs
 ```
-
-Next work is tightening/qualifying the ideal gear constraints and repeated
-contact response, then baking, registering and testing browser playback.

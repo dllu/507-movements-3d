@@ -1,3 +1,4 @@
+import {makeWaterGovernorUpdater} from './update-solids.js';
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
@@ -55,17 +56,7 @@ export function makeWaterGovernorSolids(){
   add(name,xGeometry(disk(.10,-reach,-.58,96)),name,PALETTE.ink);
   add(name+'Bearing',xGeometry(ring(.106,.18,-1.03,-.91,96)),'fixed',PALETTE.frame,[0,apexY,0]);
  }
- const update=state=>{
-  rotor.rotation.y=state.spindle;sleeve.position.y=state.sleeveY;
-  for(const sign of [-1,1]){
-   const name=sign<0?'left':'right',theta=state[name+'Spread'];blocks[name+'Upper'].rotation.z=sign*theta;
-   blocks[name+'Lower'].position.set(sign*(g.pivotRadius+g.elbowArm*Math.sin(theta)),g.topY-g.elbowArm*Math.cos(theta),0);
-   blocks[name+'Lower'].rotation.z=sign*(initial.lowerAngle+state.qpos[sign<0?2:4]+theta-g.initialSpread);
-  }
-  blocks.upperStud.rotation.y=state.upper;blocks.lowerStud.rotation.y=state.lower;
-  blocks.inputShaft.rotation.x=state.spindle;blocks.outputShaft.rotation.x=state.output;
-  bevel.update(state);root.updateMatrixWorld(true);
- };
+ const update=makeWaterGovernorUpdater(root,g);
  Object.assign(root.userData,{parts,blocks,families,geometry:g,selectorOffset,hideGround:true,sourceScale:.018,reconstructionNote:'Unregistered source assembly driven by native hinge coordinates. Depths, rear cheeks, shaft bearings and stud-root extensions are inferred. The water gate and remote shaft supports are outside the engraving.'});
  update({spindle:0,leftSpread:g.initialSpread,rightSpread:g.initialSpread,sleeveY:initial.sleeveY,upper:0,lower:0,output:0,qpos:Array(9).fill(0)});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};

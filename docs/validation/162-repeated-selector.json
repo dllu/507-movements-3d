@@ -7,88 +7,88 @@
       "stepsPerCycle": 32768,
       "timestep": 0.00025739213266113696,
       "period": 8.434225403040136,
-      "minimumSelector": -0.07285859960530262,
-      "maximumSelector": 0.3751502891246308,
+      "minimumSelector": -0.0728600378465546,
+      "maximumSelector": 0.37514873154980355,
       "lastCycles": [
         {
           "cycle": 57,
-          "minimumSpeed": -5.691745607572621,
-          "maximumSpeed": 6.236886785681751,
-          "internalClosure": 0.00011362870532131563,
-          "velocityClosure": 0.0002841042564886709,
-          "spindlePhaseClosure": -0.0000015010540809704422,
-          "outputPhaseClosure": -0.0024027028834301867,
-          "outputAdvance": 12.563967911475743
+          "minimumSpeed": -5.502205314789953,
+          "maximumSpeed": 5.979225481156605,
+          "internalClosure": 0.0000642956358455698,
+          "velocityClosure": 0.00023427223676014686,
+          "spindlePhaseClosure": 0.0000011956913877405726,
+          "outputPhaseClosure": 0.0004916751705219088,
+          "outputAdvance": 12.566862289529695
         },
         {
           "cycle": 58,
-          "minimumSpeed": -5.702628496008035,
-          "maximumSpeed": 6.179346705504463,
-          "internalClosure": 0.000016316123879495797,
-          "velocityClosure": 0.00017698395645301956,
-          "spindlePhaseClosure": -8.624023539119832e-7,
-          "outputPhaseClosure": 0.0005766974284848278,
-          "outputAdvance": 12.566947311787658
+          "minimumSpeed": -5.42077646364517,
+          "maximumSpeed": 6.107751336550665,
+          "internalClosure": 0.00007736235936468892,
+          "velocityClosure": 0.000052907687808523285,
+          "spindlePhaseClosure": -1.4837625344409278e-7,
+          "outputPhaseClosure": 0.005577153656488541,
+          "outputAdvance": 12.571947768015661
         },
         {
           "cycle": 59,
-          "minimumSpeed": -5.638389791451659,
-          "maximumSpeed": 6.107192245859059,
-          "internalClosure": 0.00016087355865619668,
-          "velocityClosure": 0.000348448620144326,
-          "spindlePhaseClosure": 0.0000014341413444093463,
-          "outputPhaseClosure": -0.011778398029193716,
-          "outputAdvance": 12.55459221632998
+          "minimumSpeed": -5.404298102832693,
+          "maximumSpeed": 5.979454514071844,
+          "internalClosure": 0.000013311688226111309,
+          "velocityClosure": 0.00006811477460352822,
+          "spindlePhaseClosure": -3.4219230287600905e-7,
+          "outputPhaseClosure": -0.0025954354651252414,
+          "outputAdvance": 12.563775178894048
         },
         {
           "cycle": 60,
-          "minimumSpeed": -5.653141768688363,
-          "maximumSpeed": 6.153824649061925,
-          "internalClosure": 0.000005542517024827013,
-          "velocityClosure": 0.0004691401775984705,
-          "spindlePhaseClosure": 0.0000022304467020625285,
-          "outputPhaseClosure": -0.006439370529890232,
-          "outputAdvance": 12.559931243829283
+          "minimumSpeed": -5.548904524824672,
+          "maximumSpeed": 6.047546588336515,
+          "internalClosure": 0.00003245317729438631,
+          "velocityClosure": 0.00014424192003092973,
+          "spindlePhaseClosure": -6.416429786873947e-7,
+          "outputPhaseClosure": 0.009231571245507062,
+          "outputAdvance": 12.57560218560468
         },
         {
           "cycle": 61,
-          "minimumSpeed": -5.6893639752557075,
-          "maximumSpeed": 6.06965598515409,
-          "internalClosure": 0.00022454041897911406,
-          "velocityClosure": 0.00023843631291753375,
-          "spindlePhaseClosure": -8.300825501897804e-7,
-          "outputPhaseClosure": 0.011696005905676054,
-          "outputAdvance": 12.578066620264849
+          "minimumSpeed": -5.474918666610897,
+          "maximumSpeed": 6.040792015016167,
+          "internalClosure": 0.000029878217070201333,
+          "velocityClosure": 0.00010911556149512114,
+          "spindlePhaseClosure": -5.588380335644786e-7,
+          "outputPhaseClosure": -0.003578627095337118,
+          "outputAdvance": 12.562791987263836
         },
         {
           "cycle": 62,
-          "minimumSpeed": -5.673431907075627,
-          "maximumSpeed": 6.208989004557503,
-          "internalClosure": 0.000054521791099587506,
-          "velocityClosure": 0.00021741525918458904,
-          "spindlePhaseClosure": -0.0000011054043315631303,
-          "outputPhaseClosure": 0.0032232994053198005,
-          "outputAdvance": 12.569593913764493
+          "minimumSpeed": -5.455875044646694,
+          "maximumSpeed": 5.947444148421355,
+          "internalClosure": 0.000042994340075864254,
+          "velocityClosure": 0.000046309353560619604,
+          "spindlePhaseClosure": 1.6038901235550043e-7,
+          "outputPhaseClosure": -0.0026011180736281074,
+          "outputAdvance": 12.563769496285545
         },
         {
           "cycle": 63,
-          "minimumSpeed": -5.622246263764523,
-          "maximumSpeed": 6.162363344173952,
-          "internalClosure": 0.00008174649016804835,
-          "velocityClosure": 0.00006243509844930384,
-          "spindlePhaseClosure": 1.8466024271436368e-7,
-          "outputPhaseClosure": -0.004498543037968751,
-          "outputAdvance": 12.561872071321204
+          "minimumSpeed": -5.412883738749447,
+          "maximumSpeed": 5.9156022787836315,
+          "internalClosure": 0.0000667734976116845,
+          "velocityClosure": 0.0003173338523534408,
+          "spindlePhaseClosure": 0.0000014134635276171878,
+          "outputPhaseClosure": -0.0041684271599682805,
+          "outputAdvance": 12.562202187199205
         },
         {
           "cycle": 64,
-          "minimumSpeed": -5.668283049882136,
-          "maximumSpeed": 6.190245129187845,
-          "internalClosure": 0.000019727420848333487,
-          "velocityClosure": 0.00019846729997724522,
-          "spindlePhaseClosure": 9.130395338182836e-7,
-          "outputPhaseClosure": -0.0032740389818149323,
-          "outputAdvance": 12.563096575377358
+          "minimumSpeed": -5.541501427054857,
+          "maximumSpeed": 6.030569083257578,
+          "internalClosure": 0.00011716988609329322,
+          "velocityClosure": 0.00002655872189119557,
+          "spindlePhaseClosure": 1.93018044276306e-7,
+          "outputPhaseClosure": 0.002045010798794998,
+          "outputAdvance": 12.568415625157968
         }
       ]
     },
@@ -96,88 +96,88 @@
       "stepsPerCycle": 65536,
       "timestep": 0.00012869606633056848,
       "period": 8.434225403040136,
-      "minimumSelector": -0.07286335473385668,
-      "maximumSelector": 0.3751531332857043,
+      "minimumSelector": -0.07286574242576487,
+      "maximumSelector": 0.37515154771998804,
       "lastCycles": [
         {
           "cycle": 57,
-          "minimumSpeed": -5.726963989760392,
-          "maximumSpeed": 6.246739558948621,
-          "internalClosure": 0.000003732294802346811,
-          "velocityClosure": 0.00004613779343853874,
-          "spindlePhaseClosure": 2.1232661679494527e-7,
-          "outputPhaseClosure": 0.0006072729321000101,
-          "outputAdvance": 12.566977887291273
+          "minimumSpeed": -5.567985794838846,
+          "maximumSpeed": 6.078711869961815,
+          "internalClosure": 0.00003081349507458753,
+          "velocityClosure": 0.00003174724758664427,
+          "spindlePhaseClosure": -1.9331666039544757e-7,
+          "outputPhaseClosure": -0.001907640897613795,
+          "outputAdvance": 12.56446297346156
         },
         {
           "cycle": 58,
-          "minimumSpeed": -5.764008581915035,
-          "maximumSpeed": 6.259547311314814,
-          "internalClosure": 0.00001587793491091775,
-          "velocityClosure": 0.0000047684938661585186,
-          "spindlePhaseClosure": -2.6583765680868544e-9,
-          "outputPhaseClosure": -0.0009553410645116071,
-          "outputAdvance": 12.565415273294661
+          "minimumSpeed": -5.575615744143801,
+          "maximumSpeed": 6.0493692480657755,
+          "internalClosure": 0.000024218814369303117,
+          "velocityClosure": 0.0000647035863312051,
+          "spindlePhaseClosure": 2.7282165688337156e-7,
+          "outputPhaseClosure": -0.00126278958593722,
+          "outputAdvance": 12.565107824773236
         },
         {
           "cycle": 59,
-          "minimumSpeed": -5.7151854607096,
-          "maximumSpeed": 6.202110036900886,
-          "internalClosure": 0.00003244005042710727,
-          "velocityClosure": 0.00008964821912307852,
-          "spindlePhaseClosure": 3.800306185916099e-7,
-          "outputPhaseClosure": -0.002017501753855334,
-          "outputAdvance": 12.564353112605318
+          "minimumSpeed": -5.610532294429076,
+          "maximumSpeed": 6.028568970656098,
+          "internalClosure": 0.00007063228099533122,
+          "velocityClosure": 0.00014322636005023592,
+          "spindlePhaseClosure": -5.855085109466188e-7,
+          "outputPhaseClosure": 0.005715668856239596,
+          "outputAdvance": 12.572086283215413
         },
         {
           "cycle": 60,
-          "minimumSpeed": -5.757906422753419,
-          "maximumSpeed": 6.274738739399908,
-          "internalClosure": 0.00004091813666344914,
-          "velocityClosure": 0.0000053852093248318855,
-          "spindlePhaseClosure": 2.8057987994890252e-8,
-          "outputPhaseClosure": 0.003818803023662064,
-          "outputAdvance": 12.570189417382835
+          "minimumSpeed": -5.5394562608130835,
+          "maximumSpeed": 6.021551440963655,
+          "internalClosure": 0.00012015254498723145,
+          "velocityClosure": 0.0001949171333947286,
+          "spindlePhaseClosure": 7.612612389970138e-7,
+          "outputPhaseClosure": -0.0078078352157012094,
+          "outputAdvance": 12.558562779143472
         },
         {
           "cycle": 61,
-          "minimumSpeed": -5.730638473523519,
-          "maximumSpeed": 6.242976922097962,
-          "internalClosure": 0.0000144628716585365,
-          "velocityClosure": 0.00009490004260032103,
-          "spindlePhaseClosure": -4.3186711622876717e-7,
-          "outputPhaseClosure": 0.0001985155425496363,
-          "outputAdvance": 12.566569129901723
+          "minimumSpeed": -5.547851537321571,
+          "maximumSpeed": 6.024349595270335,
+          "internalClosure": 0.00004256295609232977,
+          "velocityClosure": 0.0001529029036849705,
+          "spindlePhaseClosure": 7.807230613729018e-7,
+          "outputPhaseClosure": 0.0006118164886425679,
+          "outputAdvance": 12.566982430847816
         },
         {
           "cycle": 62,
-          "minimumSpeed": -5.763729855803513,
-          "maximumSpeed": 6.2186606024519016,
-          "internalClosure": 0.000012261980356855439,
-          "velocityClosure": 0.00006485418460919212,
-          "spindlePhaseClosure": -3.2535346322003417e-7,
-          "outputPhaseClosure": 0.001251846727157123,
-          "outputAdvance": 12.56762246108633
+          "minimumSpeed": -5.534148108959383,
+          "maximumSpeed": 6.037283957204237,
+          "internalClosure": 0.00005561381421842395,
+          "velocityClosure": 0.000051326528412082295,
+          "spindlePhaseClosure": -1.7005224067144695e-7,
+          "outputPhaseClosure": 0.0018828958322524944,
+          "outputAdvance": 12.568253510191425
         },
         {
           "cycle": 63,
-          "minimumSpeed": -5.7525132837480655,
-          "maximumSpeed": 6.239288770321978,
-          "internalClosure": 0.000021280950988962965,
-          "velocityClosure": 0.000009171537257435247,
-          "spindlePhaseClosure": 1.3474240451961348e-8,
-          "outputPhaseClosure": -0.0006482630248432666,
-          "outputAdvance": 12.56572235133433
+          "minimumSpeed": -5.535310114197987,
+          "maximumSpeed": 6.069987124931087,
+          "internalClosure": 0.00002299352856378195,
+          "velocityClosure": 0.000014254589345258362,
+          "spindlePhaseClosure": -9.636770841790962e-8,
+          "outputPhaseClosure": -0.00017269937272650497,
+          "outputAdvance": 12.566197914986446
         },
         {
           "cycle": 64,
-          "minimumSpeed": -5.723195929255333,
-          "maximumSpeed": 6.231793167736026,
-          "internalClosure": 0.000012085904210987772,
-          "velocityClosure": 0.000057610558436699266,
-          "spindlePhaseClosure": 2.5549169008843935e-7,
-          "outputPhaseClosure": -0.0023942079205175226,
-          "outputAdvance": 12.563976406438655
+          "minimumSpeed": -5.599177809828809,
+          "maximumSpeed": 6.09351095508884,
+          "internalClosure": 0.00008066626225579853,
+          "velocityClosure": 0.0002659640551593567,
+          "spindlePhaseClosure": -0.0000011539167789556983,
+          "outputPhaseClosure": 0.007305017385831512,
+          "outputAdvance": 12.573675631745004
         }
       ]
     }
@@ -189,7 +189,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/physics.js",
-      "sha256": "5bf4c1dbbf7bc97ab6995e7f74b037f6d082a7f7de7009209b9bcb2984181baf"
+      "sha256": "9c5b090104c14d6b318c9ecd5ce33736123097684e31109a80e0644f092e4d69"
     },
     {
       "file": "src/simulation/mujoco-water-governor/backing-contact.js",

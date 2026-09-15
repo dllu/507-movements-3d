@@ -1,11 +1,11 @@
 {
   "movement": 162,
-  "status": "native-solid-clearance",
+  "status": "baked-solid-clearance",
   "parameters": {
     "movement": 162,
-    "timestep": 0.0005,
-    "period": 8,
-    "speedAmplitude": 0.32,
+    "timestep": 0.00012869606633056848,
+    "period": 8.434225403040136,
+    "speedAmplitude": 0.26,
     "studPhase": 0,
     "contact": true,
     "backingContact": true,
@@ -17,23 +17,29 @@
     "apex": -2.162,
     "assumptions": "Source-proportioned ideal governor hinges, inferred effective masses and selector/stud depths. Passive finite pin/stud and gear-backing contact; ideal equal-ratio bevel constraints and inferred output friction. No water-wheel, gate inertia or hydraulic feedback."
   },
-  "poses": 65,
+  "poses": 133,
   "meshes": 183,
   "pairs": 14216,
-  "queries": 34324512,
-  "intersections": {
-    "selectorPin/upperStud": {
-      "maximumDepth": 0.000001874001488690047,
-      "firstTime": 1.374999999999904,
-      "samples": 2
-    }
-  },
+  "queries": 65134128,
+  "intersections": {},
   "unexpected": {},
-  "method": "Bidirectional visible vertices, edge midpoints and triangle centers during eight native seconds with 0.32 rad/s speed variation (above the normal 0.26 setting). Same rigid-family joins excluded. Includes soft-contact penetration and native gear-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers at 129 off-key interpolated times and four seam poses, using the original visible solids and baked joint motion. Same rigid-family joins excluded. Includes soft-contact penetration and native gear-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
   "sources": [
     {
-      "file": "scripts/review-water-governor-solids.mjs",
-      "sha256": "4903262e88e487f5dd15fa2be2a846a5ebf514bfce1af541c0a760b42d5ba440"
+      "file": "scripts/review-water-governor-baked-solids.mjs",
+      "sha256": "f988920accb17de2c99f11a9cd2c5e282554299b02bdc21302b8b40285b8dd89"
+    },
+    {
+      "file": "src/simulation/baked/assets/162.json.gz",
+      "sha256": "91da7a9c66f18edc28d26622ae7826f5a3f1289f59ac0aec80e1d44a017a0700"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/kinematics.js",
+      "sha256": "215e57fbf5fc2dff5f2f39939607a7d15213b115fbce55691e65779dbfbccb43"
     },
     {
       "file": "src/simulation/mujoco-water-governor/solids.js",

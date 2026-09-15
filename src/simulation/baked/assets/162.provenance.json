@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "movement": 162,
+  "geometry": {
+    "topY": 4.3,
+    "pivotRadius": 0.288,
+    "ballArm": 3.414,
+    "elbowArm": 2.035,
+    "lowerLink": 1.787,
+    "sleeveRadius": 0.27,
+    "ballRadius": 0.612,
+    "initialSpread": 0.375,
+    "gravity": 98.1,
+    "ballMass": 1,
+    "upperMass": 0.02,
+    "lowerMass": 0.02,
+    "sleeveMass": 0.1,
+    "upperRadius": 0.035,
+    "lowerRadius": 0.03
+  },
+  "names": [
+    "spindle",
+    "leftSpread",
+    "leftLink",
+    "rightSpread",
+    "rightLink",
+    "sleeve",
+    "upper",
+    "lower",
+    "output"
+  ],
+  "turns": [
+    43.982297150257104,
+    0,
+    0,
+    0,
+    0,
+    0,
+    12.566370614359172,
+    -12.566370614359172,
+    12.566370614359172
+  ],
+  "period": 8.434225403040136,
+  "loopStart": 2.318588331011522,
+  "loopEnd": 10.752813734051658,
+  "bounds": {
+    "min": [
+      -2.564545213692528,
+      -3.480000057220459,
+      -2.566739368417774
+    ],
+    "max": [
+      2.564545213692528,
+      4.888999998688697,
+      2.566739368417774
+    ]
+  },
+  "focus": [
+    0,
+    0.7044999707341191,
+    0
+  ],
+  "cameraDirection": [
+    0.01,
+    0.01,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-water-governor.mjs",
+      "sha256": "4651017a79a302403bb000f621b24e436a90fb2102403496bebc7316af9efeb3"
+    },
+    {
+      "file": "docs/validation/162-loop-qualification.json",
+      "sha256": "0ebb37f0b3dfaa44129d1d03f16dd13f1c290413de75a2b60b54f7fc537ebc43"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/physics.js",
+      "sha256": "9c5b090104c14d6b318c9ecd5ce33736123097684e31109a80e0644f092e4d69"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/solids.js",
+      "sha256": "e91fbb0d4b8e586e62b0eec2b51382b5871b22361a06abde17646c2880395867"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/update-solids.js",
+      "sha256": "05574cc635896ad25a85e9833af7640ce20dd6dd4fee5061096956d0f8926ef3"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/kinematics.js",
+      "sha256": "215e57fbf5fc2dff5f2f39939607a7d15213b115fbce55691e65779dbfbccb43"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/backing-contact.js",
+      "sha256": "f3a2d2619db5647f2ebb71f70414597fd90067638d8fdb0ea38b5db39cbe93f2"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/bevel-train.js",
+      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ],
+  "parameters": {
+    "movement": 162,
+    "timestep": 0.00012869606633056848,
+    "period": 8.434225403040136,
+    "speedAmplitude": 0.26,
+    "studPhase": 0,
+    "contact": true,
+    "backingContact": true,
+    "toothContact": true,
+    "ballContact": true,
+    "stiffGears": true,
+    "nominalSpeed": 5.214740542077946,
+    "selectorOffset": -2.8446684036067533,
+    "apex": -2.162,
+    "assumptions": "Source-proportioned ideal governor hinges, inferred effective masses and selector/stud depths. Passive finite pin/stud and gear-backing contact; ideal equal-ratio bevel constraints and inferred output friction. No water-wheel, gate inertia or hydraulic feedback."
+  },
+  "initialState": {
+    "time": 522.9219749745829,
+    "spindle": 2726.901367001635,
+    "speed": 5.214498779809072,
+    "leftSpread": 0.3746211590055756,
+    "rightSpread": 0.3746211590055756,
+    "sleeveY": 0.7900473822688382,
+    "selectorY": -2.054621021337915,
+    "upper": 765.1532867734603,
+    "lower": -765.1532867734603,
+    "output": 765.1532867734603,
+    "outputSpeed": -1.1047159190902886e-13,
+    "contacts": [],
+    "connectionErrors": [
+      2.8179558513922487e-8,
+      2.8179558443874632e-8
+    ],
+    "qpos": [
+      2726.901367001635,
+      -0.000378840994424436,
+      0.0008228227582696847,
+      -0.00037884099442443323,
+      0.0008228227582696811,
+      -0.000621021337915311,
+      765.1532867734603,
+      -765.1532867734603,
+      765.1532867734603
+    ],
+    "qvel": [
+      5.214498779809072,
+      0.09312210287944342,
+      -0.20225020248296285,
+      0.09312210287944529,
+      -0.20225020248296222,
+      0.15256705065880402,
+      -1.0354547019940053e-13,
+      1.0354547019940053e-13,
+      -1.1047159190902886e-13
+    ]
+  },
+  "offsets": [
+    2726.9024233159403,
+    0,
+    0,
+    0,
+    0,
+    0,
+    766.5486074759095,
+    -766.5486074759095,
+    766.5486074759095
+  ],
+  "positionClosure": 0.000057160596063360516,
+  "velocityClosure": 0.0004270944442451949,
+  "blendDuration": 0.1,
+  "maximumNativeError": 0.00007317514991340812,
+  "nativeSamples": 83553,
+  "samples": 1490,
+  "bytes": 451713,
+  "sha256": "91da7a9c66f18edc28d26622ae7826f5a3f1289f59ac0aec80e1d44a017a0700"
+}
