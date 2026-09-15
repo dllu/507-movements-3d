@@ -1,0 +1,62 @@
+{
+  "movement": 159,
+  "method": "Ideal frictionless massless cord with same rigid masses, scale, driven disk and floor contact. Compare cycles three/four at .005 s samples, refine timestep on cycle four, and compare first cycle to the finest finite-rope diagnostic. This isolates load-path dynamics; it does not qualify a slack-cord rendering or impact impulses.",
+  "repeat": [
+    {
+      "file": "/dev/shm/159-ideal-scaled-coarse.json",
+      "maximumCycle3To4AngleDifference": 5.246247714030261e-9,
+      "maximumCycle3To4VelocityDifference": 8.802253983336561e-7
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-fine.json",
+      "maximumCycle3To4AngleDifference": 2.7313422079622285e-9,
+      "maximumCycle3To4VelocityDifference": 4.4720520508967354e-8
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-finer.json",
+      "maximumCycle3To4AngleDifference": 2.6791555085559082e-9,
+      "maximumCycle3To4VelocityDifference": 1.2779436537463384e-7
+    }
+  ],
+  "refinement": [
+    {
+      "timesteps": [
+        0.0005,
+        0.00025
+      ],
+      "maximumTreadleAngleDifference": 0.0003251317424859401,
+      "maximumTreadleVelocityDifference": 0.016363982891936454
+    },
+    {
+      "timesteps": [
+        0.00025,
+        0.000125
+      ],
+      "maximumTreadleAngleDifference": 0.0001643284280359314,
+      "maximumTreadleVelocityDifference": 0.012860787505433346
+    }
+  ],
+  "maximumFirstCycleAngleDifferenceFromFiniteRope": 0.009647572179571018,
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-ideal-scaled.mjs",
+      "sha256": "8c09983c6d489f70b7eaaea9e8293a510fbb75e9f299240fe4d448a591d4bb32"
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-coarse.json",
+      "sha256": "71fb6724d3914d8285986f7df79b6d0c84f0e31268e4765728575e1fca3c725f"
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-fine.json",
+      "sha256": "4cefc61819dba07f70cc8e734b3987f32f1e58f8c521d5a1c54bed8b0ea81f34"
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-finer.json",
+      "sha256": "2cd1b02fc80cb1be7be81eb41bb3b6e7f7b29575b2ef1b842bb03d84e8ef1cf4"
+    },
+    {
+      "file": "/dev/shm/159-stud-finer.json",
+      "sha256": "5b1fb219769edc0413ddba25493d980ce74fc6c5a2f4de8c6291fea486926698"
+    }
+  ]
+}

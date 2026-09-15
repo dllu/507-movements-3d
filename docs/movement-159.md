@@ -582,6 +582,51 @@ LOCAL_BOW=1 node scripts/review-cord-treadle-initial-clearance.mjs
 node --test tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-initial-clearance.test.mjs tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-bending.test.mjs
 ```
 
+## Scaled ideal-cord comparison
+
+The engraving does not specify a fixed cord-exit angle at either attachment.
+No artificial clamped-angle boundary condition has been added. Instead, the
+existing ideal-cord diagnostic can now use the same measured geometry, physical
+scale, integrated rigid masses and stud/beam contact as the finite-rope model.
+Its native unilateral spatial tendon represents a frictionless massless cord:
+the treadle falls under gravity, rests on the floor when the cord is slack, and
+is lifted when the driven crank takes up that slack. The treadle has no actuator.
+Pulley inertia, cord inertia/bending and the actual slack-cord shape are omitted
+in this comparison; these omissions are not claims about the physical original.
+
+At all three timesteps, cycles three/four agree within 5.25e−9 rad in treadle
+angle and 8.81e−7 rad/s in velocity at matching samples. Refining 0.5 → 0.25 ms
+reduces the cycle-four angle difference to 0.000325 rad; 0.25 → 0.125 ms gives
+0.000164 rad. The first-cycle angle differs from the finest earlier finite-rope
+run by up to 0.00965 rad (0.553°). Thus the ideal load path is repeatable and
+shows a refinement trend, while it is not dynamically identical to the finite
+rope. Pickup impulses and transient floor penetration remain separate accuracy
+questions. The finest run reports 0.00294 units maximum sampled floor penetration
+and 0.00140 units tendon-length excess; it is not an exact rigid-impact solution.
+
+A new test checks the actual compiled gravity/mass, unactuated treadle, floor
+clearance, slack, native clock and repeated cycle. All five ideal-cord tests pass.
+The 21-part rigid geometry also passes its 129-pose sampled audit over four
+cycles. This is useful evidence for separating the ideal load path from detailed
+rope dynamics. It is **not yet a production replacement**: a mechanically
+consistent, nonintersecting slack-cord reconstruction and full playback checks
+are still required before any bake can be registered.
+
+Reports: [comparison](validation/159-ideal-scaled-comparison.json),
+[rigid audit](validation/159-ideal-scaled-clearance.json),
+[native coarse](validation/159-ideal-scaled-coarse-native.json),
+[native fine](validation/159-ideal-scaled-fine-native.json),
+[native finer](validation/159-ideal-scaled-finer-native.json).
+
+```sh
+RIGID_CORE=1 FLOOR=1 DT=.0005 REPORT=/dev/shm/159-ideal-scaled-coarse-report.json SAMPLES=/dev/shm/159-ideal-scaled-coarse.json node scripts/probe-cord-treadle.mjs
+RIGID_CORE=1 FLOOR=1 DT=.00025 REPORT=/dev/shm/159-ideal-scaled-fine-report.json SAMPLES=/dev/shm/159-ideal-scaled-fine.json node scripts/probe-cord-treadle.mjs
+RIGID_CORE=1 FLOOR=1 DT=.000125 REPORT=/dev/shm/159-ideal-scaled-finer-report.json SAMPLES=/dev/shm/159-ideal-scaled-finer.json node scripts/probe-cord-treadle.mjs
+node scripts/review-cord-treadle-ideal-scaled.mjs
+SAMPLES=/dev/shm/159-ideal-scaled-finer.json REPORT=docs/validation/159-ideal-scaled-clearance.json node scripts/review-cord-treadle-core.mjs
+node --test tests/cord-treadle.test.mjs
+```
+
 ## Remaining work
 
 Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify

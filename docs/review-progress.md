@@ -23,7 +23,10 @@ agree in treadle angle within 0.0015 rad, but slack-rope positions still differ
 by 19.5 pixels. Initial pulley penetration is now removed with a subpixel
 radial lift, but short-run endpoint buckling sensitivity persists. Neither a
 localized starting bow nor 25× bending rigidity resolves it. Review the tied-end
-boundary condition and contact model next; repeatability remains open.
+boundary condition and contact model next. A scaled ideal massless-cord
+comparison now has a repeatable, passive treadle cycle and passes the rigid
+audit; it still needs a mechanically consistent slack-cord shape before it can
+be considered for production. No clamped exit angle has been invented.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 

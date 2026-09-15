@@ -12,7 +12,8 @@ try{
  const pairs=parts.flatMap((a,i)=>parts.slice(i+1).filter(b=>a.family!==b.family||a.family!=='fixed').map(b=>[a,b]));
  const failures={},workingContacts={};let checks=0;
  for(let pose=0;pose<=128;pose++){
-  v.update(samples[Math.round((samples.length-1)*pose/128)]);
+  const state=samples[Math.round((samples.length-1)*pose/128)];
+  v.update(state.qpos?{disk:state.qpos[0],treadle:state.qpos[1],pulley:0}:state);
   for(const p of parts){p.box=new THREE.Box3().setFromObject(p.mesh);p.inverse=p.mesh.matrixWorld.clone().invert();}
   for(const [a,b]of pairs){if(pose&&a.family===b.family||!a.box.intersectsBox(b.box))continue;
    const name=a.name+'/'+b.name,target=[a.name,b.name].includes('treadle')&&['floor','crankCordAnchor'].some(name=>[a.name,b.name].includes(name))?workingContacts:failures;

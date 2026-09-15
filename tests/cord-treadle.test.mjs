@@ -36,3 +36,21 @@ test('159 floor contact stops the treadle while the cord goes slack and picks up
   assert.ok(slack>1);assert.ok(contacts>100);assert.ok(taut>100);assert.ok(clearance>-.003);
  }finally{p.dispose();}
 });
+test('scaled ideal cord settles into a passive floor-rest and pickup cycle',async()=>{
+ const {cordTreadleRigidProperties}=await import('../src/simulation/mujoco-cord-treadle/inertia.js');
+ const mujoco=await loadMujoco(),rigidProperties=cordTreadleRigidProperties(),p=makeCordTreadlePhysics(mujoco,{rigidProperties,floor:true,timestep:.00025});
+ const cycle3=[];let repeat=0,slack=0,minimum=Infinity;
+ try{
+  assert.equal(p.model.nu,1);assert.ok(Math.abs(p.model.opt.gravity[1]+98.1)<1e-12);
+  assert.ok(Math.abs(p.model.body_mass[p.id('mjOBJ_BODY','treadle')]-rigidProperties.bodies.treadle.mass)<1e-12);
+  for(let i=0;i<=64000;i++){
+   assert.ok(Math.abs(p.data.time-i*p.timestep)<1e-7);
+   if(i%80===0){mujoco.mj_forward(p.model,p.data);const s=p.state();assert.equal(s.actuatorTorque,0);minimum=Math.min(minimum,s.footBottom-p.description.groundY);slack=Math.max(slack,p.description.cordLength-s.cordLength);
+    if(i>=32000&&i<=48000)cycle3.push(s.qpos[1]);
+    if(i>=48000)repeat=Math.max(repeat,Math.abs(s.qpos[1]-cycle3[(i-48000)/80]));
+   }
+   if(i<64000)p.step();
+  }
+  assert.ok(slack>1);assert.ok(minimum>-.005);assert.ok(repeat<1e-6,`Repeat error ${repeat}`);
+ }finally{p.dispose();}
+});

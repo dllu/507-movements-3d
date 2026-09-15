@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+const files=['coarse','fine','finer'].map(n=>`/dev/shm/159-ideal-scaled-${n}.json`),rows=files.map(file=>JSON.parse(fs.readFileSync(file)));
+const cycleStride=800;
+const repeat=rows.map((r,k)=>({file:files[k],maximumCycle3To4AngleDifference:Math.max(...r.slice(3*cycleStride).map((s,i)=>Math.abs(s.qpos[1]-r[2*cycleStride+i].qpos[1]))),maximumCycle3To4VelocityDifference:Math.max(...r.slice(3*cycleStride).map((s,i)=>Math.abs(s.qvel[1]-r[2*cycleStride+i].qvel[1])))}));
+const refinement=[0,1].map(k=>{let angle=0,velocity=0;for(let i=3*cycleStride;i<rows[k].length;i++){const a=rows[k][i],b=rows[k+1][i];if(Math.abs(a.time-b.time)>1e-7)throw Error('Mismatched clocks');angle=Math.max(angle,Math.abs(a.qpos[1]-b.qpos[1]));velocity=Math.max(velocity,Math.abs(a.qvel[1]-b.qvel[1]));}return {timesteps:k===0?[.0005,.00025]:[.00025,.000125],maximumTreadleAngleDifference:angle,maximumTreadleVelocityDifference:velocity};});
+const finiteFile='/dev/shm/159-stud-finer.json',finite=JSON.parse(fs.readFileSync(finiteFile));
+const finiteComparison=Math.max(...finite.map((s,i)=>{if(Math.abs(s.time-rows[2][4*i].time)>1e-7)throw Error('Mismatched clocks');return Math.abs(s.treadle-rows[2][4*i].qpos[1]);}));
+const sources=['scripts/review-cord-treadle-ideal-scaled.mjs',...files,finiteFile];
+const report={movement:159,method:'Ideal frictionless massless cord with same rigid masses, scale, driven disk and floor contact. Compare cycles three/four at .005 s samples, refine timestep on cycle four, and compare first cycle to the finest finite-rope diagnostic. This isolates load-path dynamics; it does not qualify a slack-cord rendering or impact impulses.',repeat,refinement,maximumFirstCycleAngleDifferenceFromFiniteRope:finiteComparison,sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+fs.writeFileSync('docs/validation/159-ideal-scaled-comparison.json',JSON.stringify(report,null,2)+'\n');console.log(report);
