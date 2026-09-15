@@ -1,0 +1,41 @@
+{
+  "movement": 147,
+  "status": "candidate-assembly",
+  "method": "Bidirectional vertices, edge midpoints and face centers against actual visible mesh solids. Excludes only same rigid family joins. Crown/track contacts allow 0.0002 penetration for solver compliance and crown discretization; other pairs allow 0.000001. Sampled check, not a continuous swept-volume proof.",
+  "sources": [
+    {
+      "file": "scripts/review-fan-governor-assembly.mjs",
+      "sha256": "9f1d4141803b19f419d85ee3296e9fa51c9ba60b0e785b99c524de024a6c6cd1"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/geometry.js",
+      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/source.js",
+      "sha256": "c187cfee81fa8bdc27319df82fb4e5b1bf363c7ed35d9b3844ec6b6771b3676e"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "docs/validation/147-speed-cycle-fine.json",
+      "sha256": "f800fdeffb5c19e3fcd6505eff1463cfe88b531dc993f8165bf0ea13286bc8d0"
+    }
+  ],
+  "sampleHash": "2035e92b68fb32a61e7fb7bd07e552795132f770d08330d68abe2e8dd2798e8a",
+  "summary": {
+    "poses": 65,
+    "parts": 346,
+    "pairs": 6325,
+    "checks": 371112950,
+    "maximumWorkingPenetration": 0,
+    "failingPairs": 0
+  },
+  "failures": {}
+}

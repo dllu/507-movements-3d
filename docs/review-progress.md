@@ -11,8 +11,10 @@ Unused ramp ends are shortened. A repeated acceleration/deceleration probe
 checks track-end margins and measures negligible temporary contact gaps, but
 exposes a carrier pose mismatch at the coarse loop boundary. Doubling track
 resolution and halving the timestep gives numerical carrier closure; independent
-transient convergence is still unchecked. The speed cycle, output
-lever and complete assembly still need validation before baking and registration;
+transient convergence is still unchecked. The candidate now has a nonrotating
+collar, a real lever slot and a bored right pivot. Joint clearance checks and a
+65-pose full-assembly check pass; the output is an unloaded analytic follower.
+Refinement checks and baked playback remain before registration;
 see [movement 147](movement-147.md). This review remains incomplete.
 
 # Completed review: 146 measured framed yoke

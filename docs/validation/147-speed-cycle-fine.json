@@ -14,31 +14,31 @@
     "samples": 601
   },
   "summary": {
-    "minimumLift": -0.31179751838204844,
-    "maximumLift": 0.11504819834188255,
-    "minimumLag": 0.206267066878695,
-    "maximumLag": 0.8343205139038048,
-    "minimumContactAngle": -0.9041838206760229,
-    "maximumContactAngle": -0.22412029339719375,
-    "minimumTrackEndMargin": 0.39581617932397717,
+    "minimumLift": -0.31177576904623017,
+    "maximumLift": 0.11512979597293638,
+    "minimumLag": 0.20635527117445918,
+    "maximumLag": 0.8343954905190571,
+    "minimumContactAngle": -0.9041839673747223,
+    "maximumContactAngle": -0.22412031522859088,
+    "minimumTrackEndMargin": 0.39581603262527776,
     "minimumContactCount": 0,
-    "samplesWithoutContact": 26,
-    "maximumSeparation": 0.0000011427714914080678,
-    "maximumPenetration": 0.00003679562329422792,
+    "samplesWithoutContact": 14,
+    "maximumSeparation": 4.645269537084662e-7,
+    "maximumPenetration": 0.00003895360098962741,
     "closure": {
       "position": [
-        4.1026737562788185e-11,
-        7.156564230115237e-11,
-        -2.206235194535111e-10,
-        0.11080201553510705,
-        -0.11079508551562878
+        -2.1641710645781131e-10,
+        -5.7111815277011146e-11,
+        -4.6853187996021006e-11,
+        0.11060088583770167,
+        -0.11056693193469602
       ],
       "velocity": [
-        -8.704023946037864e-9,
-        -8.101139149705141e-9,
-        2.2400108434794674e-8,
-        2.502835160493438e-7,
-        -2.502835160569637e-7
+        1.715244946076666e-8,
+        7.0798913955977395e-9,
+        -4.7768515809565315e-9,
+        -1.659650375992147e-7,
+        1.659650375810018e-7
       ]
     }
   },
@@ -57,7 +57,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
-      "sha256": "0aff9f7a0e0a5b3e507d1413464eaeb3dfbc9bfa5df2e40fe65c49da4e4161e6"
+      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/source.js",

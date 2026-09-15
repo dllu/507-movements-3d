@@ -65,10 +65,9 @@ The separate `mujoco-fan-governor/geometry.js` candidate now has approximately
 84-by-196-pixel fan panels, a smoothed bored weight, stepped roller journals,
 bored crowned rollers and a track foundation connected to the shaft. A shared
 track-cell generator supplies both the visible convex solids and the physics
-meshes. The candidate is not registered in the application and does not yet
-include the regulating lever. The track endpoints and the complete assembly
-still need source and clearance review; the current high track ends extend
-above the operating rollers in the candidate view.
+meshes. The candidate is not registered in the application. It now includes a
+regulating lever and collar, described below. The high ramp end still partially
+occludes the rear roller in the candidate front view.
 
 Mass properties are integrated from the candidate weight, sleeves, arms, panels
 and rollers. An optional physics input uses these tensors and centers, normalizing
@@ -77,13 +76,16 @@ density, plate thicknesses, hollowing and small overlaps at rigid joins are
 approximations; this is not a measured material or mass calibration.
 
 [Working-surface evidence](validation/147-candidate-surfaces.json) compares all
-1,280 compiled track vertices with the visible cells (maximum error about
-`3.3e-8`). During the six-second startup it checks 278 native contacts against
+2,560 compiled track vertices with the visible cells (maximum error about
+`3.3e-8`). During the six-second startup it checks 274 native contacts against
 the visible crowns and tracks. Contact positions stay more than 0.10 units from
 the crown ends. The spherical proxy extends beyond the bored crown at its poles,
 but those regions do not contact the track in this run. Crown discretization
 error is below 0.00015 units; the maximum native penetration after two seconds
-is below 0.0001. These are sampled working-contact checks, not full-assembly
+is below 0.0001. This check now uses 320 cells and a 0.0005-second timestep:
+the updated neck inertia caused the 160-cell run to exceed that penetration
+threshold (0.000163 even after halving the timestep). These are sampled
+working-contact checks, not full-assembly
 collision validation. Contact copies are released explicitly, following the
 [WASM binding ownership guidance](https://github.com/google-deepmind/mujoco/blob/main/wasm/README.md).
 
@@ -98,13 +100,13 @@ The candidate ramps now span -1.3 to +0.3 radians each instead of a full half
 turn, removing unused high ends. These endpoints are operating-range assumptions,
 not source measurements. The steady-speed controls and surface checks still pass.
 Front and oblique views were inspected; the remaining high end still partially
-occludes the rear roller, and the lever remains absent.
+occludes the rear roller.
 
 The optional shaft drive now accepts a periodic speed command. The new probe
 varies shaft speed from 1.3 to 2.7 rad/s over six shaft turns, discards six warmup
 cycles, and samples the following cycle at 601 poses. Carrier lift, yaw and roller
 spin remain unconstrained. [Cycle evidence](validation/147-speed-cycle.json)
-records contact angles, actual sphere-to-visible-track separation, penetration,
+records the pre-output-joint candidate's contact angles, actual sphere-to-visible-track separation, penetration,
 and position/velocity closure. The sampled contacts stay over 0.4 radians from
 the ramp ends. Brief contact losses have gaps below 0.000004 world units.
 
@@ -117,8 +119,33 @@ its final pose to force a loop.
 [A refined run](validation/147-speed-cycle-fine.json), with 320 cells and 48,000
 ticks per cycle, closes carrier height and yaw within `3e-10` and their velocities
 within `3e-8`, without modifying the endpoint. Its maximum sampled separation is
-about `1.2e-6`, penetration below `0.000037`, and track-end margin above 0.39
+below `5e-7`, penetration below `0.000039`, and track-end margin above 0.39
 radians. This is a promising offline bake candidate, but jointly changing mesh
 and timestep does not independently establish transient convergence. Separate
-refinement checks, the completed assembly and output lever remain before
-playback registration.
+refinement checks and baked playback remain before registration. This refined
+report has been regenerated with the retaining-flange mass included.
+
+## Regulating lever and assembly clearance
+
+The candidate has a bored, nonrotating collar captured between retaining flanges
+on the rotating neck. Its pin slides in a short, genuinely open slot in a tapered
+lever. A bored pivot at the lever's right end accommodates the vertical collar
+motion. The pivot location, slot, collar groove, clearances and small rear support
+are reconstruction assumptions: the engraving does not specify these details.
+The collar and lever follow simulated lift analytically, with no prescribed
+crosshead motion. Valve load, collar friction and output inertia are omitted;
+the rotating neck's new flanges are included in the crosshead inertia.
+
+`tests/fan-governor-output.test.mjs` checks 65 lifts from -0.34 to +0.50 while
+rotating the crosshead. Actual collar mesh points clear the grooved neck by more
+than 0.0045 units; pin cross sections clear the slot by more than 0.0045 and the
+pivot bore by more than 0.0028. The four passive-physics tests also pass.
+
+[Assembly evidence](validation/147-candidate-assembly.json) checks all 346
+visible parts at 65 sampled poses from the refined speed cycle, excluding only
+joins within the same rigid family. The 6,325 moving-body pairs produce no
+penetrations exceeding tolerance in 371,112,950 point/solid checks. Working
+crown/track pairs allow 0.0002 for contact compliance and crown discretization;
+other pairs allow 0.000001. Surface sampling can miss contact between samples,
+so native working-contact checks remain necessary. This is not a continuous
+swept-volume proof. Front and oblique views with the new lever were inspected.
