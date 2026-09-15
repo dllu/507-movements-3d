@@ -1,0 +1,73 @@
+{
+  "movement": 179,
+  "status": "unstable-native-study",
+  "scope": "Native shaft/stop contact only; neither manual valve motion nor lifted-rod dynamics is simulated. Only the shaft is actuated. Inertia, bearing resistance and the ideal fixed-axis bearings are reconstruction assumptions.",
+  "cells": 64,
+  "results": [
+    {
+      "timestep": 0.0002,
+      "enabled": true,
+      "failure": {
+        "reason": "native state reset or excessive angular speed",
+        "previousTime": 0.15420000000000236,
+        "time": 0.15440000000000237,
+        "qpos": [
+          -1709527.7142275204,
+          5465029.5784826875
+        ],
+        "qvel": [
+          -8547647493.933502,
+          27325146833.97806
+        ]
+      },
+      "maximumError": 0.0021250803503956306,
+      "maximumPenetration": 0.00005868406691945611,
+      "maxMotion": 0.0005937418880271605,
+      "finalEccentric": 5465029.5784826875
+    },
+    {
+      "timestep": 0.0001,
+      "enabled": true,
+      "failure": {
+        "reason": "native state reset or excessive angular speed",
+        "previousTime": 0.157199999999999,
+        "time": 0.157299999999999,
+        "qpos": [
+          -734008.8883209213,
+          2274296.150252824
+        ],
+        "qvel": [
+          -7340106730.331169,
+          22742959384.564518
+        ]
+      },
+      "maximumError": 0.002190855667476621,
+      "maximumPenetration": 0.00009984185154273793,
+      "maxMotion": 0.0007030388374236751,
+      "finalEccentric": 2274296.150252824
+    },
+    {
+      "timestep": 0.0002,
+      "enabled": false,
+      "failure": null,
+      "maximumError": 6.283185307179586,
+      "maximumPenetration": 0,
+      "maxMotion": 0,
+      "finalEccentric": 0.21109333322274715
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-engine-reverser-native-stop.mjs",
+      "sha256": "814b55c9a342d9e19e16dd8112940f736773611ae0b4c80978eaab6da144709f"
+    },
+    {
+      "file": "src/simulation/authored-engine-reversers.js",
+      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

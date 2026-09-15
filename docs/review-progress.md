@@ -1,3 +1,9 @@
+# Movement 179: native stop contact checked; wheel source fit open
+
+The shaft-only MuJoCo study now uses PGS and completes the full 24-second reversal sequence. Both timesteps and two bearing-resistance settings pass; the no-contact control remains stationary. Passive eccentric error stays below 0.133 degrees and sampled timestep disagreement below 0.016 degrees. Historical Newton failures remain recorded. Production stays scripted; wheel contours and attachment review remain open. See [movement 179](movement-179.md).
+
+## Earlier checkpoints
+
 # Movement 179: native stop study and wheel source fit open
 
 Corrected the lifting handle to the left of the gab, replaced the square gab with its rounded source profile, added link-pin heads and switched to front full-motion framing. Grip/gab bounds fit within about one pixel; the 61-mesh sampled sweep and browser checks pass. Strap/sheave outlines still differ by 11–12 pixels. A shaft-only MuJoCo stop-contact study becomes unstable shortly after contact at both tested timesteps; this is recorded as a failed diagnostic, not qualification. Continue investigating 179. See [movement 179](movement-179.md).
