@@ -196,7 +196,7 @@ function twoStudEllipsograph() {
   const pencilShaftTopY = barTopY + 0.24;
   const pencilShaftBottomY = pencilTipY + pencilConeHeight;
   const pencilShaftLength = pencilShaftTopY - pencilShaftBottomY;
-  const cyclePeriod = 12;
+  const cyclePeriod = 6;
   const cycleAngularSpeed = FULL_TURN / cyclePeriod;
 
   const frameMaterial = matte(PALETTE.frame, {

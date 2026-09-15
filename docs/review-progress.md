@@ -1,3 +1,12 @@
+# Shipped improvement: 152 two-stud trammel
+
+152 retains its exact ellipse geometry and now has close-fitting bar bushings,
+finite crossed-guide shoes, a source-oriented view and a six-second turn.
+Two focused tests, the dense legacy kinematic test, a 34-part full-turn surface
+audit, production build and packaged desktop/mobile playback pass. Hidden
+hardware and ideal guide/clearance assumptions remain explicit in
+[movement 152](movement-152.md). Continue the catalog review at 153.
+
 # Shipped reconstruction: 151 worm-driven opposite-hand screw
 
 151 now uses a source-oriented edge-on wheel, an end-on upper worm shaft,

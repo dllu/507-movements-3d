@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 152) {
+    const {makeTrammelEllipsograph} = await import('./trammel-ellipsograph.js');
+    const model = makeTrammelEllipsograph();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 151) {
     const {makeOpposedScrewNuts} = await import('./opposed-screw-nuts.js');
     const model = makeOpposedScrewNuts();
