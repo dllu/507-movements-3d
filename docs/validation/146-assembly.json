@@ -1,0 +1,30 @@
+{
+  "movement": 146,
+  "method": "Bidirectional actual vertices, edge midpoints and face centers against oriented mesh solids. All visible parts, excluding same rigid body joins. Full cycle covers one crank revolution. This is a sampled check, not a continuous swept-volume proof.",
+  "sources": [
+    {
+      "file": "scripts/review-framed-yoke-assembly.mjs",
+      "sha256": "2b9e7b3b603f02dbd30b9a77cd90d2dcd71a9123a437c479d7c25c8c6b75ab26"
+    },
+    {
+      "file": "src/simulation/framed-yoke.js",
+      "sha256": "891035515cc623ac3b4e528982db19955e490d2052ce589e6f132475f008b2b9"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "summary": {
+    "poses": 129,
+    "parts": 7,
+    "pairs": 15,
+    "checks": 2323290,
+    "failingPairs": 0
+  },
+  "failures": {}
+}

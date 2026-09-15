@@ -1,10 +1,11 @@
-# Current review: 146 source proportions
+# Completed review: 146 measured framed yoke
 
-146's crank and broad yoke are substantially undersized relative to the
-engraving. The corrected stroke also invalidates the existing upper guide
-coverage. A reproducible measurement report records both discrepancies and
-the need for inferred stem/support geometry. Continue reconstructing 146;
-see [movement 146](movement-146.md). No source animation is available.
+146 now uses the measured crank, traced broad frame and corrected stroke.
+Extended stems remain guided throughout the cycle; a front-supported shaft
+clears the rear yoke. Actual groove clearance, 129 assembly poses, 257 framing
+and guide poses, restart and fog checks pass. Mounting structure is omitted and
+support/hidden-groove assumptions are explicit in [movement 146](movement-146.md).
+No source animation is available. Continue to 147.
 
 # Completed review: 145 rocking beam and tied rod
 

@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 146) {
+    const {makeFramedYoke} = await import('./framed-yoke.js');
+    const model = makeFramedYoke();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 143) {
     const {makeBakedSlidingWorm} = await import('./baked/sliding-worm.js');
     const model = await makeBakedSlidingWorm();
