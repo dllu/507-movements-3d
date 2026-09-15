@@ -1,0 +1,79 @@
+{
+  "movement": 147,
+  "status": "candidate-speed-cycle-not-baked",
+  "cycle": {
+    "period": 18.84955592153876,
+    "meanSpeed": 2,
+    "amplitude": 0.7,
+    "phase": 0.55
+  },
+  "sampling": {
+    "warmupCycles": 6,
+    "ticksPerCycle": 24000,
+    "segments": 160,
+    "samples": 601
+  },
+  "summary": {
+    "minimumLift": -0.31268860198900184,
+    "maximumLift": 0.09867028546199544,
+    "minimumLag": 0.2027262806024055,
+    "maximumLag": 0.8182405609481123,
+    "minimumContactAngle": -0.888356248720763,
+    "maximumContactAngle": -0.226805932796319,
+    "minimumTrackEndMargin": 0.411643751279237,
+    "minimumContactCount": 0,
+    "samplesWithoutContact": 29,
+    "maximumSeparation": 0.0000031635783790673333,
+    "maximumPenetration": 0.00007359844741017252,
+    "closure": {
+      "position": [
+        -0.000006456711886926314,
+        -0.009598096294947567,
+        0.03366927104606532,
+        0.4207327874799658,
+        -0.420747966807844
+      ],
+      "velocity": [
+        -0.00041099132151578566,
+        -0.020693596940815382,
+        0.06419793745225677,
+        0.5338754174334195,
+        -0.5338754174334195
+      ]
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-fan-governor-cycle.mjs",
+      "sha256": "9df7e36286cc590d19f129b4ad9a395dbd379f52f2e6ef492500cfaeaaeb6d5d"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/cycle.js",
+      "sha256": "104d7a1e1715afcaf22bd9bc1571cb63a534eab621c52bce93cd031245f77e78"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/physics.js",
+      "sha256": "83545baf70da0726fdcb8010fccb72bf48c03e2c956f25e830b05b88ac9caaa7"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/geometry.js",
+      "sha256": "0aff9f7a0e0a5b3e507d1413464eaeb3dfbc9bfa5df2e40fe65c49da4e4161e6"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/source.js",
+      "sha256": "c187cfee81fa8bdc27319df82fb4e5b1bf363c7ed35d9b3844ec6b6771b3676e"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

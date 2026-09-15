@@ -49,7 +49,7 @@ cells; the shipped cylinders have not yet been replaced with matching crowns.
 runs. At 3 rad/s shaft speed, crosshead center height settles near -0.335 without
 air drag and +0.341 with drag. At 1.5 rad/s with drag it settles near -0.286.
 Halving the 0.001-second timestep changes the final height by less than `1e-5`;
-doubling the 160 track cells changes it by about `0.00004`. These are steady-state
+doubling the 160 track cells changes it by less than `0.001`. These are steady-state
 comparisons, not convergence of every transient sample. Three tests cover these
 responses and show that the crosshead remains stationary when contact and
 gravity are disabled while the driven shaft still turns.
@@ -78,12 +78,12 @@ approximations; this is not a measured material or mass calibration.
 
 [Working-surface evidence](validation/147-candidate-surfaces.json) compares all
 1,280 compiled track vertices with the visible cells (maximum error about
-`3.3e-8`). During the six-second startup it checks 288 native contacts against
+`3.3e-8`). During the six-second startup it checks 278 native contacts against
 the visible crowns and tracks. Contact positions stay more than 0.10 units from
 the crown ends. The spherical proxy extends beyond the bored crown at its poles,
 but those regions do not contact the track in this run. Crown discretization
 error is below 0.00015 units; the maximum native penetration after two seconds
-is below 0.00006. These are sampled working-contact checks, not full-assembly
+is below 0.0001. These are sampled working-contact checks, not full-assembly
 collision validation. Contact copies are released explicitly, following the
 [WASM binding ownership guidance](https://github.com/google-deepmind/mujoco/blob/main/wasm/README.md).
 
@@ -91,3 +91,34 @@ Four physics tests now pass, including compiled geometry-based mass and fan
 aspect ratio. Candidate front and oblique views were inspected. Next: finish
 the source-faithful assembly and output lever, validate acceleration and
 deceleration with track-end margins, then bake and register playback.
+
+## Repeated speed-cycle probe
+
+The candidate ramps now span -1.3 to +0.3 radians each instead of a full half
+turn, removing unused high ends. These endpoints are operating-range assumptions,
+not source measurements. The steady-speed controls and surface checks still pass.
+Front and oblique views were inspected; the remaining high end still partially
+occludes the rear roller, and the lever remains absent.
+
+The optional shaft drive now accepts a periodic speed command. The new probe
+varies shaft speed from 1.3 to 2.7 rad/s over six shaft turns, discards six warmup
+cycles, and samples the following cycle at 601 poses. Carrier lift, yaw and roller
+spin remain unconstrained. [Cycle evidence](validation/147-speed-cycle.json)
+records contact angles, actual sphere-to-visible-track separation, penetration,
+and position/velocity closure. The sampled contacts stay over 0.4 radians from
+the ramp ends. Brief contact losses have gaps below 0.000004 world units.
+
+The coarse run is **not a seamless bake**: the carrier height differs by about 0.0096 units
+and yaw by 0.034 radians between cycle endpoints. Roller spin need not repeat
+because the crowns are rotationally symmetric, but carrier motion must repeat
+smoothly. The probe deliberately records this failure rather than overwriting
+its final pose to force a loop.
+
+[A refined run](validation/147-speed-cycle-fine.json), with 320 cells and 48,000
+ticks per cycle, closes carrier height and yaw within `3e-10` and their velocities
+within `3e-8`, without modifying the endpoint. Its maximum sampled separation is
+about `1.2e-6`, penetration below `0.000037`, and track-end margin above 0.39
+radians. This is a promising offline bake candidate, but jointly changing mesh
+and timestep does not independently establish transient convergence. Separate
+refinement checks, the completed assembly and output lever remain before
+playback registration.

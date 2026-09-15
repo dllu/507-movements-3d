@@ -7,8 +7,12 @@ by drag and contact. A separate MuJoCo prototype now produces passive lift from
 drag and contact, with speed/drag controls and timestep/mesh convergence tests.
 Candidate fan/weight geometry now supplies mass properties; visible crowned
 rollers and shared convex tracks pass sampled compiled-surface/contact checks.
-The track ends, output lever and complete assembly still need validation before
-baking and registration;
+Unused ramp ends are shortened. A repeated acceleration/deceleration probe
+checks track-end margins and measures negligible temporary contact gaps, but
+exposes a carrier pose mismatch at the coarse loop boundary. Doubling track
+resolution and halving the timestep gives numerical carrier closure; independent
+transient convergence is still unchecked. The speed cycle, output
+lever and complete assembly still need validation before baking and registration;
 see [movement 147](movement-147.md). This review remains incomplete.
 
 # Completed review: 146 measured framed yoke

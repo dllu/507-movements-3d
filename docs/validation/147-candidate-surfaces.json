@@ -4,13 +4,13 @@
   "method": "Compiled track vertices compared with visible convex cells. Native contact points on both surfaces compared with visible track and bored crown meshes during a six-second startup. Spherical proxy poles extend outside the crowns; contact points must remain inside the visible crown width. Contact copies are explicitly released.",
   "summary": {
     "compiledVertices": 1280,
-    "maximumCompiledError": 3.242059984486973e-8,
-    "contactsChecked": 288,
-    "maximumCrownError": 0.00014048526019793889,
-    "maximumTrackError": 1.603399287931206e-8,
-    "minimumCrownEndMargin": 0.1006935338845273,
-    "maximumPenetration": 0.00026413626186319594,
-    "maximumLatePenetration": 0.000057794811401501445
+    "maximumCompiledError": 2.9981787910242554e-8,
+    "contactsChecked": 278,
+    "maximumCrownError": 0.0001307801934567539,
+    "maximumTrackError": 1.4895939893246891e-8,
+    "minimumCrownEndMargin": 0.10075078786662374,
+    "maximumPenetration": 0.00022660210041275386,
+    "maximumLatePenetration": 0.00009759349757959557
   },
   "mass": {
     "crosshead": {
@@ -65,12 +65,12 @@
   "final": {
     "time": 6.000000000000338,
     "shaft": 15.552864700001006,
-    "lift": 0.34054951041482034,
-    "yaw": 14.530879582034242,
-    "lag": 1.0219851179667643,
-    "speed": 3.0000000000011697,
-    "roll0": -4.025528925992311,
-    "roll1": 4.025528198338025,
+    "lift": 0.3410721310730988,
+    "yaw": 14.530404241556115,
+    "lag": 1.0224604584448915,
+    "speed": 3.000000000001081,
+    "roll0": -4.022090508286042,
+    "roll1": 4.022088704698156,
     "contacts": 4
   },
   "sources": [
@@ -80,7 +80,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/source.js",
-      "sha256": "1cd5ed9d60d609802c83269c5df040f13d172611f07e19122026ee3514482c56"
+      "sha256": "c187cfee81fa8bdc27319df82fb4e5b1bf363c7ed35d9b3844ec6b6771b3676e"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
@@ -88,7 +88,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/physics.js",
-      "sha256": "8c846a8abd3741d36388738e59a22134cf36b534f33e3c836c8ef8386fd1c8db"
+      "sha256": "83545baf70da0726fdcb8010fccb72bf48c03e2c956f25e830b05b88ac9caaa7"
     },
     {
       "file": "src/simulation/mujoco/mass.js",

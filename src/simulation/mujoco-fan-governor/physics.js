@@ -3,7 +3,7 @@ import {fanGovernorTrack,fanGovernorTrackCells} from './source.js';
 
 // Contact prototype, not yet the visible 147 model. Two crowned rollers run
 // on convex cells of the rotating tracks. Crosshead lift and lag are free.
-export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1.5,speed=3,gravity=9.81,massProperties}={}){
+export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1.5,speed=3,gravity=9.81,massProperties,drive}={}){
  const {radius,rollerRadius,base,curvature}=fanGovernorTrack;
  // Increasing slope supplies increasing gravitational restoring torque.
  // This profile is inferred, not dimensioned by the source engraving.
@@ -32,11 +32,11 @@ export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1
  <joint name="yaw" type="hinge" axis="0 1 0" damping=".01"/>
  ${inertial('crosshead','<inertial pos="0 1.2 0" mass="1" diaginertia="2 1 2"/>')}${rollers}</body>
  </worldbody><actuator><position name="motor" joint="shaft" kp="100000" kv="1000"/></actuator></mujoco>`;
- const driveAt=time=>{
+ const driveAt=drive??(time=>{
   const ramp=2,u=Math.min(time/ramp,1);
   return {angle:.55+(time<ramp?speed*ramp*(u**3-.5*u**4):speed*(time-ramp/2)),
     velocity:speed*(3*u*u-2*u*u*u)};
- };
+ });
  const physics=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{
   data.qpos.set([.55,.5,0,0,0]);data.ctrl[0]=.55;
  },beforeStep:({data,time})=>{
