@@ -27,9 +27,9 @@ load. Retaining depths, bearing supports and the angular lock are assumptions.
 
 ## Checks and remaining work
 
-The [current sweep](validation/177-assembly.json) checks 22 meshes at 386 poses:
+The [current sweep](validation/177-assembly.json) checks 23 meshes at 386 poses:
 129 full-turn samples plus 257 concentrated entry/passage/exit samples. It
-performs 22,780,162 finite-surface queries with no sampled cross-body
+performs 22,088,450 finite-surface queries with no sampled cross-body
 intersections. This is not continuous proof.
 
 Both 176/177 motion tests pass. Production build and packaged
@@ -42,6 +42,4 @@ The [historical baseline](validation/177-existing-solids.json), using geometry
 at fadeb59, records eight interfering pairs from decorative tubes, markers and
 the front bearing. Those interferences are removed.
 
-Continue with 177's output-shaft attachment and quantitative source fit. The
-shared-selector inconsistency is resolved; the remaining assembly review and
-the full 507-movement goal are still active.
+The shouldered output shaft and integral bosses now pass the complete attachment audit (validation/177-selector-mount.json). Ten measured source features fit within 3.93 pixels (validation/177-source-fit.json). Both coupling tests and packaged desktop/mobile checks pass. The full 507-movement review remains active; next are the user's corrections to 165, 171, 173 and 151.

@@ -1,7 +1,7 @@
 {
   "movement": 177,
   "status": "sampled-passage-clearance-passed-mounting-open",
-  "meshes": 22,
+  "meshes": 23,
   "poses": 386,
   "pairs": [
     [
@@ -42,10 +42,6 @@
     ],
     [
       "fixed-front-output-bearing-solid",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -83,6 +79,14 @@
     [
       "fixed-front-output-bearing-solid",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "output-bottom-boss"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "output-top-boss"
     ],
     [
       "fixed-rear-input-bearing-solid",
@@ -122,10 +126,6 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -163,6 +163,14 @@
     [
       "fixed-rear-input-bearing-solid",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "output-bottom-boss"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-arm",
@@ -170,10 +178,6 @@
     ],
     [
       "rear-input-crank-arm",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-arm",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -211,6 +215,14 @@
     [
       "rear-input-crank-arm",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-arm",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-arm",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-shaft-boss",
@@ -218,10 +230,6 @@
     ],
     [
       "rear-input-crank-shaft-boss",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -259,6 +267,14 @@
     [
       "rear-input-crank-shaft-boss",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-wrist-boss",
@@ -266,10 +282,6 @@
     ],
     [
       "rear-input-crank-wrist-boss",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -307,6 +319,14 @@
     [
       "rear-input-crank-wrist-boss",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "output-top-boss"
     ],
     [
       "rear-input-shaft-outline",
@@ -314,10 +334,6 @@
     ],
     [
       "rear-input-shaft-outline",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-shaft-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -355,6 +371,14 @@
     [
       "rear-input-shaft-outline",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "output-top-boss"
     ],
     [
       "rear-input-wrist-outline",
@@ -362,10 +386,6 @@
     ],
     [
       "rear-input-wrist-outline",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-wrist-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -403,6 +423,14 @@
     [
       "rear-input-wrist-outline",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "output-top-boss"
     ],
     [
       "rear-independent-input-shaft",
@@ -410,10 +438,6 @@
     ],
     [
       "rear-independent-input-shaft",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-independent-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -451,6 +475,14 @@
     [
       "rear-independent-input-shaft",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "output-top-boss"
     ],
     [
       "white-index-on-rear-input-shaft",
@@ -458,10 +490,6 @@
     ],
     [
       "white-index-on-rear-input-shaft",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -499,6 +527,14 @@
     [
       "white-index-on-rear-input-shaft",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "output-bottom-boss"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "output-top-boss"
     ],
     [
       "input-wrist-pin",
@@ -506,10 +542,6 @@
     ],
     [
       "input-wrist-pin",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "input-wrist-pin",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -547,6 +579,14 @@
     [
       "input-wrist-pin",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "input-wrist-pin",
+      "output-bottom-boss"
+    ],
+    [
+      "input-wrist-pin",
+      "output-top-boss"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
@@ -574,34 +614,6 @@
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "shared-selector-rear"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-left"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-right"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-leftFace"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-rightFace"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-sleeve"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "shared-selector-front"
-    ],
-    [
-      "front-output-shaft-bore-outline",
       "shared-selector-rear"
     ],
     [
@@ -641,12 +653,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "shared-selector-left",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-left",
+      "output-top-boss"
+    ],
+    [
       "shared-selector-right",
       "front-independent-output-shaft"
     ],
     [
       "shared-selector-right",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "shared-selector-right",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-right",
+      "output-top-boss"
     ],
     [
       "shared-selector-leftFace",
@@ -657,12 +685,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "shared-selector-leftFace",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-leftFace",
+      "output-top-boss"
+    ],
+    [
       "shared-selector-rightFace",
       "front-independent-output-shaft"
     ],
     [
       "shared-selector-rightFace",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "shared-selector-rightFace",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-rightFace",
+      "output-top-boss"
     ],
     [
       "shared-selector-sleeve",
@@ -673,6 +717,14 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "shared-selector-sleeve",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-sleeve",
+      "output-top-boss"
+    ],
+    [
       "shared-selector-front",
       "front-independent-output-shaft"
     ],
@@ -681,15 +733,31 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "shared-selector-front",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-front",
+      "output-top-boss"
+    ],
+    [
       "shared-selector-rear",
       "front-independent-output-shaft"
     ],
     [
       "shared-selector-rear",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "shared-selector-rear",
+      "output-bottom-boss"
+    ],
+    [
+      "shared-selector-rear",
+      "output-top-boss"
     ]
   ],
-  "queries": 22780162,
+  "queries": 22088450,
   "intersections": {},
   "method": "All cross-family pairs, including selector versus output cheek despite their locked relative angle, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Includes 257 concentrated passage poses in addition to 129 full-turn poses. Shared selector geometry is checked separately; output-shaft attachment and final source fit remain open.",
   "sources": [
@@ -699,7 +767,7 @@
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "6a0d52a71a57adf0f79de720229bfc6ea065f1ab3378684f5d6d1148616ad849"
+      "sha256": "935b2e5796533d60def9cb11a9c64a95cb49b8573d8423a3c24c8fcb14ed5eea"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

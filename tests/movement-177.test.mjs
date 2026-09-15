@@ -255,23 +255,23 @@ test('movement 177 lets the rear wrist clear a quarter-turned curved slot while 
   assert.equal(geometry.sourceImageHeight, 525);
   near(geometry.sourceScale, 0.010, 0, 'source raster scale');
   vectorNear(geometry.sourceMainShaftCenter,
-    new THREE.Vector2(263, 429), 0,
+    new THREE.Vector2(258, 426), 0,
     'source output-shaft center');
   vectorNear(geometry.sourceRingCenter,
-    new THREE.Vector2(263, 99), 0,
+    new THREE.Vector2(258, 96), 0,
     'source released-ring center');
   vectorNear(geometry.sourceWristCenter,
-    new THREE.Vector2(263, 99), 0,
+    new THREE.Vector2(258, 96), 0,
     'source passing wrist center');
   assert.equal(geometry.sourceBottomOuterRadius, 80);
-  assert.equal(geometry.sourceTopOuterRadius, 81);
+  assert.equal(geometry.sourceTopOuterRadius, 76);
   assert.equal(geometry.sourceWristRadius, 28);
   assert.equal(geometry.sourceSlotHalfWidth, 29);
   near(geometry.crankRadius, 3.30, 5e-16,
     'source crank throw');
   near(geometry.bottomOuterRadius, 0.80, 0,
     'source lower-hub radius');
-  near(geometry.topOuterRadius, 0.81, 0,
+  near(geometry.topOuterRadius, 0.76, 0,
     'source selector-head radius');
   near(geometry.wristPinRadius, 0.28, 0,
     'source wrist radius');
@@ -585,8 +585,8 @@ test('movement 177 lets the rear wrist clear a quarter-turned curved slot while 
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.23);
-  assert.ok(size.y > 8.23,
+  assert.ok(size.x >= 2 * (geometry.crankRadius + geometry.topOuterRadius));
+  assert.ok(size.y >= 2 * (geometry.crankRadius + geometry.topOuterRadius),
     'motion witness contains the running rear crank at every phase');
   assert.ok(size.z > 2.37,
     'rear input, recessed passage, front output, and bearings occupy real depth');
