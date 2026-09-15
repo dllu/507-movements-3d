@@ -1,7 +1,15 @@
-# Active reconstruction: 164
+# Active reconstruction: 165
 
-Continue the source and motion review at 164. The full 507-movement review remains
+Continue the source and motion review at 165. The full 507-movement review remains
 active; 147's mesh refinement and 150's source fit remain open.
+
+# Shipped reconstruction: 164 knee press
+
+164 now uses ten source-shaped meshes with analytic pinned-linkage motion and a
+rounded foot seated in its cup. The added reaction frame and workpiece are removed.
+The solver matches the source 2D oracle with its dimensions; source contours,
+full-solid clearances, restart and packaged desktop/mobile playback are checked.
+See [movement 164](movement-164.md) for the ideal bearing and load assumptions.
 
 # Shipped reconstruction: 163 belt-shifting governor
 

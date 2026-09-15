@@ -1,0 +1,158 @@
+{
+  "movement": 164,
+  "url": "https://507movements.com/mm_164.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "method": "Execute the original animation with its library at 721 phases. Compare the independent circle/vertical-guide solution using oracle link dimensions and measured lever angle. Rendering contours come from our measurements of the public-domain engraving, not the oracle drawing.",
+  "maximumOracleCoordinateError": 4.970205287335716e-7,
+  "sourceGeometry": {
+    "scale": 0.018,
+    "top": [
+      0,
+      4
+    ],
+    "foot": [
+      0.036,
+      -2.8939999999999992
+    ],
+    "upper": [
+      -0.46799999999999997,
+      -1.3319999999999999
+    ],
+    "lowerLength": 5.584788268144101,
+    "handle": [
+      4.643999999999999,
+      -1.944
+    ],
+    "straightAngle": 0.3430235579792664,
+    "closedAngle": 0.3310235579792664,
+    "period": 4
+  },
+  "samples": [
+    {
+      "phase": 0,
+      "top": [
+        0,
+        9.999756
+      ],
+      "knee": [
+        -0.06248365533396369,
+        7.999755489296039
+      ],
+      "angle": 0.000008172331974698466
+    },
+    {
+      "phase": 0.125,
+      "top": [
+        0,
+        9.921631
+      ],
+      "knee": [
+        -0.5007111151707673,
+        7.984314652795845
+      ],
+      "angle": -0.2216814869243926
+    },
+    {
+      "phase": 0.25,
+      "top": [
+        0,
+        9.843506
+      ],
+      "knee": [
+        -0.7007610831441773,
+        7.969248772629488
+      ],
+      "angle": -0.32655501332368075
+    },
+    {
+      "phase": 0.375,
+      "top": [
+        0,
+        9.765381
+      ],
+      "knee": [
+        -0.851386138495181,
+        7.954566847973828
+      ],
+      "angle": -0.40825831833092985
+    },
+    {
+      "phase": 0.5,
+      "top": [
+        0,
+        9.749756
+      ],
+      "knee": [
+        -0.8779632214340216,
+        7.951677349937885
+      ],
+      "angle": -0.42298671507582397
+    },
+    {
+      "phase": 0.625,
+      "top": [
+        0,
+        9.827881
+      ],
+      "knee": [
+        -0.7337254924638764,
+        7.96628137824761
+      ],
+      "angle": -0.3442021315956154
+    },
+    {
+      "phase": 0.75,
+      "top": [
+        0,
+        9.906006
+      ],
+      "knee": [
+        -0.5470851722505352,
+        7.981271196370263
+      ],
+      "angle": -0.2456955803050871
+    },
+    {
+      "phase": 0.875,
+      "top": [
+        0,
+        9.984131
+      ],
+      "knee": [
+        -0.23189830356718463,
+        7.996637747985628
+      ],
+      "angle": -0.08491375187986439
+    },
+    {
+      "phase": 1,
+      "top": [
+        0,
+        9.999756
+      ],
+      "knee": [
+        -0.06248365533396369,
+        7.999755489296039
+      ],
+      "angle": 0.000008172331974698466
+    }
+  ],
+  "sourceHashes": {
+    "html": "96852509fd57313851b5494fa40cf5f5e26b385603f1d13f42a992ade0426520",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-knee-press-oracle.mjs",
+      "sha256": "8ae6826d37cb74c9e6adbb80544cddcafaddb94a5c08b1427e07cd986230a41a"
+    },
+    {
+      "file": "src/simulation/knee-press-motion.js",
+      "sha256": "a6bbd25c1d4b5f64278d5613d30488b334646a134d066b42ef99c74a27cefd68"
+    },
+    {
+      "file": "public/engravings/mm_164.png",
+      "sha256": "d954a67eb69507410333cf36a99a3216b84e2fd4bd4a0ff03994416f684733c6"
+    }
+  ]
+}

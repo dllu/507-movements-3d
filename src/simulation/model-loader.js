@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 164) {
+    const {makeKneePress} = await import('./knee-press.js');
+    const model = makeKneePress();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 163) {
     const {makeBakedBeltGovernor} = await import('./baked/belt-governor.js');
     const model = await makeBakedBeltGovernor();

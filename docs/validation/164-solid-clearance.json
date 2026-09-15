@@ -1,0 +1,64 @@
+{
+  "movement": 164,
+  "status": "unregistered-solid-diagnostic",
+  "parameters": {
+    "scale": 0.018,
+    "top": [
+      0,
+      4
+    ],
+    "foot": [
+      0.036,
+      -2.8939999999999992
+    ],
+    "upper": [
+      -0.46799999999999997,
+      -1.3319999999999999
+    ],
+    "lowerLength": 5.584788268144101,
+    "handle": [
+      4.643999999999999,
+      -1.944
+    ],
+    "straightAngle": 0.3430235579792664,
+    "closedAngle": 0.3310235579792664,
+    "period": 4
+  },
+  "poses": 129,
+  "meshes": 10,
+  "pairs": 35,
+  "queries": 2397984,
+  "intersections": {},
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
+  "sources": [
+    {
+      "file": "scripts/review-knee-press-solids.mjs",
+      "sha256": "efaced8d73b04668a6960a43c9ba6afbe6d9de5e694cec23a379f7289874f084"
+    },
+    {
+      "file": "src/simulation/knee-press.js",
+      "sha256": "a431b88a125d3e6f0f491589a6fc23ab96babb9c28964a6eb0949143222ee9c9"
+    },
+    {
+      "file": "src/simulation/knee-press-motion.js",
+      "sha256": "a6bbd25c1d4b5f64278d5613d30488b334646a134d066b42ef99c74a27cefd68"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
