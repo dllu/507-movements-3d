@@ -1,6 +1,8 @@
 export function disposeObject3D(root) {
   const geometries = new Set(), materials = new Set();
   root.traverse(object => {
+    // Instance attributes belong to the mesh, not its shared geometry.
+    if (object.isInstancedMesh) object.dispose();
     if (object.geometry) geometries.add(object.geometry);
     for (const material of [object.material].flat()) if (material) materials.add(material);
   });

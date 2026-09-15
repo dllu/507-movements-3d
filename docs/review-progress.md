@@ -1,25 +1,14 @@
-# Current review: 143 sliding worm carriage, in progress
+# Current review: 143 generated keyed-worm traverse
 
-The carriage front plate now clears its guide, and the fixed rod pin reaches
-the right post and front eye. Two regressions fail on the old geometry and
-pass after repair, including 721 traverse positions; the existing analytic
-linkage test also passes. The source has no animation. Finite worm tooth
-contact, bores and remaining supports are still unverified; continue 143
-before moving to 144. See [movement 143](movement-143.md).
-
-The subsequent finite-surface diagnostic proves the runtime wire worm cuts
-into the wheel at all 129 sampled poses, by up to 4.795 engraving pixels.
-A lower-arc raster scan supports retaining 22 teeth and reducing the nominal
-outside radius from 60 to 56 pixels. A generated worm/wheel candidate and
-source overlay now exist, but the candidate is not installed: resolve its
-contact-force check and complete the shaft/key bores and assembly review first.
-
-The finer pair now clears the three targeted intersections. Five targeted
-poses still show up to 3.816% normal-force power residual; doubling the worm
-alone reduces the two worst force cases only to 3.475%. Continue the
-wheel-surface/clearance investigation and full-pose validation. A new worm
-through-bore helper passes shaft/key clearance and closed-surface tests and
-preserves the external flanks; it is ready for the replacement assembly.
+143 now loads a prebuilt generated worm/wheel assembly with a keyed bore,
+bored guide and bearings, direct wrist attachment, and twelve-second analytic
+playback. The wheel's nominal outside radius is corrected from 60 to 56
+engraving pixels. The regular generating envelope satisfies the 22:1 relation;
+the actual simplified drive skins and assembly pass their respective 65-pose
+checks. Closed surfaces, normals, measured linkage closure, serialized pin
+alignment and complete motion bounds are checked. The 1.16 MB asset replaces
+browser construction of the dense geometry. Display relief and inferred depths
+remain explicit in [movement 143](movement-143.md). Continue to 144.
 
 # Current review: 142 reconstructed variable traverse
 

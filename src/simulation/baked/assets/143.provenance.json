@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "assetSha256": "f6e0c69b5a0c81498ae31a6ab36a2c5eacf1ce11b06f2fba7af8fbcadcca6944",
+  "bytes": 1158769,
+  "sources": [
+    {
+      "file": "src/simulation/sliding-worm-geometry.js",
+      "sha256": "12178ded3707b3478e5e79be3a29ef11398f32849fde74a61286820894e7feb4"
+    },
+    {
+      "file": "src/simulation/sliding-worm-kinematics.js",
+      "sha256": "a3dc3e07c267695f6691ade60bb552bd9db12f45f534ce794d3c55fdf4c15922"
+    },
+    {
+      "file": "src/simulation/instanced-worm-wheel.js",
+      "sha256": "3e9aa121b9c54d976244ad643f3581225253df45a7f3ead102a76d19270ceee6"
+    },
+    {
+      "file": "src/simulation/bored-worm-geometry.js",
+      "sha256": "9d545d8bcbd3583c1df25f9e490e6deb7b8a971f2f96bd76146c50ffa0e9fbcb"
+    },
+    {
+      "file": "src/simulation/worm-gear-geometry.js",
+      "sha256": "efda9da5b65dc16734d15718a91a9fd1000150e240b3f5da0ecc83ee7ce3079a"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "scripts/bake-sliding-worm-candidate.mjs",
+      "sha256": "7a272f72304c720d6fe5bcae1779a83c6b47bac254c6d54e5c9266e63c5d41f0"
+    },
+    {
+      "file": "scripts/lib/simplify-worm-wheel.mjs",
+      "sha256": "12817089b9f82c68c626e91276d388afd1fb7a9cd399c877e093f77a8e06b455"
+    },
+    {
+      "file": "scripts/lib/relieve-worm-wheel.mjs",
+      "sha256": "0d6e48d79f4f4ab2bf5d9b9882849e0786c953b637d1db1bd385ea03bd0236a6"
+    }
+  ],
+  "generatingProfile": {
+    "sha256": "9f4b0376b10b70b7f153966eef1e7beec169a636b3172b29664ef4a8df460480",
+    "parameters": {
+      "teeth": 22,
+      "pitchRadius": 0.77,
+      "wormPitchRadius": 0.20875,
+      "wormLength": 0.8796459430051422,
+      "depth": 0.3,
+      "pressureAngle": 0.3490658503988659
+    },
+    "angularSteps": 512,
+    "axialSteps": 64,
+    "phaseSteps": 1600,
+    "radialSteps": 160,
+    "clearance": 0.0004
+  },
+  "simplification": {
+    "sourceTriangles": 70014,
+    "triangles": 2850,
+    "error": 0.0009772904450073838,
+    "radialRelief": 0.003,
+    "lockedVertices": 528,
+    "repair": {
+      "history": [
+        {
+          "pass": 0,
+          "violations": 497,
+          "maximumViolation": 0.012264101069398974
+        },
+        {
+          "pass": 1,
+          "violations": 0,
+          "maximumViolation": 0
+        }
+      ],
+      "rayMisses": 27,
+      "maximumAdditionalRelief": 0.01410374074331655
+    },
+    "correctedFaceNormals": 6
+  },
+  "validation": [
+    {
+      "file": "docs/validation/143-render-contact.json",
+      "sha256": "64bd98c3064861e2ad32c8a12cf66decfa4436fbcd3a9fc2e13ed086e7b8b13b"
+    },
+    {
+      "file": "docs/validation/143-assembly.json",
+      "sha256": "4fe5aed0c70c6348e0d3e711252ec5cdfd0acc5eb975ce35fd360629057ed81b"
+    },
+    {
+      "file": "docs/validation/143-envelope.json",
+      "sha256": "91653007dcaa95489b6bc1f9f15ad5cfa07318cc9733e7e7e10c0ef19f205d65"
+    }
+  ]
+}

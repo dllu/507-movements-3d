@@ -1,0 +1,35 @@
+{
+  "movement": 143,
+  "status": "candidate-assembly-sample-check",
+  "method": "Bidirectional actual vertices, edge midpoints and triangle centers against each oriented solid, with conservative transformed boxes for pruning. Instanced sectors are tested with their actual transforms. Same-body joins and the separately checked worm/wheel working surfaces are excluded. Sampling is not continuous swept-volume proof.",
+  "sources": [
+    {
+      "file": "/dev/shm/143-candidate.json.gz",
+      "sha256": "f6e0c69b5a0c81498ae31a6ab36a2c5eacf1ce11b06f2fba7af8fbcadcca6944"
+    },
+    {
+      "file": "scripts/review-sliding-worm-assembly.mjs",
+      "sha256": "217180b3e734b8826f810540970e18dcb8c6aadb2b608a3d55df88821bd8cf4f"
+    },
+    {
+      "file": "src/simulation/baked/sliding-worm.js",
+      "sha256": "c1d56a3b97bfb065b82b323dcb1569421f702839ddee1908965f254c25560449"
+    },
+    {
+      "file": "src/simulation/sliding-worm-kinematics.js",
+      "sha256": "a3dc3e07c267695f6691ade60bb552bd9db12f45f534ce794d3c55fdf4c15922"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "summary": {
+    "poses": 65,
+    "pairs": 666,
+    "checks": 34598925,
+    "maximumDepth": 0,
+    "failingPairs": 0
+  },
+  "failures": {}
+}

@@ -42,17 +42,22 @@ export function meshPairDistance(aTree, bTree, transform, maximum = 0.01) {
   let best = maximum, witness = null, testedTriangles = 0;
   const boxes = new Map(), triangles = new Map();
   const boxAt = (node) => { if (!boxes.has(node)) boxes.set(node, node.box.clone().applyMatrix4(transform)); return boxes.get(node); };
-  const visit = (a, b) => {
+  const lowerBound = (a, b) => {
     const box = boxAt(a), other = b.box;
     const dx = Math.max(0, box.min.x - other.max.x, other.min.x - box.max.x);
     const dy = Math.max(0, box.min.y - other.max.y, other.min.y - box.max.y);
     const dz = Math.max(0, box.min.z - other.max.z, other.min.z - box.max.z);
-    if (dx * dx + dy * dy + dz * dz >= best * best) return;
+    return dx * dx + dy * dy + dz * dz;
+  };
+  const visit = (a, b) => {
+    if (lowerBound(a, b) >= best * best) return;
+    const box = boxAt(a), other = b.box;
     if (a.items && b.items) {
       for (const af of a.items) {
         if (!triangles.has(af)) triangles.set(af, new THREE.Triangle(...[af.triangle.a, af.triangle.b, af.triangle.c].map((v) => v.clone().applyMatrix4(transform))));
         const at = triangles.get(af);
         for (const bf of b.items) {
+          if (lowerBound(af, bf) >= best * best) continue;
           testedTriangles += 1;
           trianglePair(at, bf.triangle, (pa, pb) => {
             const distance = pa.distanceTo(pb);
@@ -62,8 +67,12 @@ export function meshPairDistance(aTree, bTree, transform, maximum = 0.01) {
         }
       }
     } else if (a.items || (!b.items && box.getSize(new THREE.Vector3()).lengthSq() < other.getSize(new THREE.Vector3()).lengthSq())) {
-      visit(a, b.left); visit(a, b.right);
-    } else { visit(a.left, b); visit(a.right, b); }
+      const children = lowerBound(a, b.left) <= lowerBound(a, b.right) ? [b.left, b.right] : [b.right, b.left];
+      for (const child of children) visit(a, child);
+    } else {
+      const children = lowerBound(a.left, b) <= lowerBound(a.right, b) ? [a.left, a.right] : [a.right, a.left];
+      for (const child of children) visit(child, b);
+    }
   };
   visit(aTree, bTree); return { distance: best, witness, testedTriangles };
 }

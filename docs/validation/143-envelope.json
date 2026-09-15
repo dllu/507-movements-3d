@@ -1,0 +1,187 @@
+{
+  "movement": 143,
+  "method": "Analytic axial-worm flank normal at each stored generating phase and unrelieved generating radius. Compares input/output normal-force power at the nominal 22:1 ratio. Excludes cutter-tip/root/end boundaries and uncut blank. This checks regular generating-envelope points, not every triangle or loaded backlash motion.",
+  "sources": [
+    {
+      "file": "/dev/shm/143-refined-profile.json",
+      "sha256": "9f4b0376b10b70b7f153966eef1e7beec169a636b3172b29664ef4a8df460480"
+    },
+    {
+      "file": "scripts/check-sliding-worm-envelope.mjs",
+      "sha256": "4629ecf73c33c8952d09977a7ad89092baeb5bfec9a48a07874721b1a9ddcbeb"
+    },
+    {
+      "file": "src/simulation/worm-wheel-profile.js",
+      "sha256": "edb8bb0348f7d31ba88180450a489dc608a8cd7f7b54b3e23227597efa928127"
+    }
+  ],
+  "summary": {
+    "samples": 12130,
+    "excluded": 21150,
+    "maximumEquationError": 1.1102230246251565e-16,
+    "maximumPowerResidual": 1.7260963033565235e-8,
+    "overTwoPercent": 0
+  },
+  "worst": [
+    {
+      "axial": 8,
+      "angular": 37,
+      "phase": 0.2866635699365042,
+      "equationError": 0,
+      "residual": 1.7260963033565235e-8,
+      "output": -0.7130080896222273
+    },
+    {
+      "axial": 58,
+      "angular": 467,
+      "phase": -0.2743123252730729,
+      "equationError": 3.469446951953614e-17,
+      "residual": 1.664488165682591e-8,
+      "output": 0.7138910292686198
+    },
+    {
+      "axial": 48,
+      "angular": 458,
+      "phase": -0.24476369126886022,
+      "equationError": 6.938893903907228e-18,
+      "residual": 1.6625560392129785e-8,
+      "output": 0.7118455443436557
+    },
+    {
+      "axial": 54,
+      "angular": 473,
+      "phase": -0.2792919725915625,
+      "equationError": 0,
+      "residual": 1.6458290870277276e-8,
+      "output": 0.7125544199102686
+    },
+    {
+      "axial": 28,
+      "angular": 66,
+      "phase": 0.24597764446795684,
+      "equationError": 0,
+      "residual": 1.6391417924807858e-8,
+      "output": -0.7096977815612304
+    },
+    {
+      "axial": 46,
+      "angular": 442,
+      "phase": -0.20947744164458298,
+      "equationError": 1.3877787807814457e-17,
+      "residual": 1.6382974928417663e-8,
+      "output": 0.7125053328089025
+    },
+    {
+      "axial": 6,
+      "angular": 38,
+      "phase": 0.2889467693497705,
+      "equationError": 0,
+      "residual": 1.628965792355524e-8,
+      "output": -0.7135894424371558
+    },
+    {
+      "axial": 24,
+      "angular": 50,
+      "phase": 0.26609796718823603,
+      "equationError": 0,
+      "residual": 1.603566387930646e-8,
+      "output": -0.7092111059292616
+    },
+    {
+      "axial": 46,
+      "angular": 457,
+      "phase": -0.24393875092962122,
+      "equationError": 0,
+      "residual": 1.5909577507378644e-8,
+      "output": 0.7113795463881458
+    },
+    {
+      "axial": 43,
+      "angular": 458,
+      "phase": -0.2504096909213119,
+      "equationError": 0,
+      "residual": 1.5861800259195003e-8,
+      "output": 0.7104593496337545
+    },
+    {
+      "axial": 18,
+      "angular": 43,
+      "phase": 0.26893701234165185,
+      "equationError": 2.7755575615628914e-17,
+      "residual": 1.5669698097041984e-8,
+      "output": -0.7104390974743462
+    },
+    {
+      "axial": 15,
+      "angular": 30,
+      "phase": 0.292955966367196,
+      "equationError": 0,
+      "residual": 1.566163622624389e-8,
+      "output": -0.7104275946392979
+    },
+    {
+      "axial": 52,
+      "angular": 461,
+      "phase": -0.25206423618674006,
+      "equationError": 6.938893903907228e-18,
+      "residual": 1.5632756038652112e-8,
+      "output": 0.712698418547766
+    },
+    {
+      "axial": 44,
+      "angular": 474,
+      "phase": -0.2811504156180214,
+      "equationError": 6.938893903907228e-18,
+      "residual": 1.5612182505994834e-8,
+      "output": 0.7093666289423154
+    },
+    {
+      "axial": 35,
+      "angular": 465,
+      "phase": -0.29208795698889073,
+      "equationError": 0,
+      "residual": 1.5600680771716467e-8,
+      "output": 0.7074500495738346
+    },
+    {
+      "axial": 30,
+      "angular": 53,
+      "phase": 0.2847485883476444,
+      "equationError": 1.3877787807814457e-17,
+      "residual": 1.5589378460939103e-8,
+      "output": -0.7078537269664322
+    },
+    {
+      "axial": 0,
+      "angular": 52,
+      "phase": 0.276866244307741,
+      "equationError": 0,
+      "residual": 1.5573123743652476e-8,
+      "output": -0.7154660112457776
+    },
+    {
+      "axial": 18,
+      "angular": 57,
+      "phase": 0.23956775734593164,
+      "equationError": 4.163336342344337e-17,
+      "residual": 1.5568888312788822e-8,
+      "output": -0.7115325146001242
+    },
+    {
+      "axial": 23,
+      "angular": 71,
+      "phase": 0.2163847703456466,
+      "equationError": 2.0816681711721685e-17,
+      "residual": 1.555685015043523e-8,
+      "output": -0.7114016636586502
+    },
+    {
+      "axial": 12,
+      "angular": 38,
+      "phase": 0.2790120646847827,
+      "equationError": 3.469446951953614e-17,
+      "residual": 1.5284101640694228e-8,
+      "output": -0.7119190056498642
+    }
+  ]
+}
