@@ -1,9 +1,35 @@
-# Movement 147: air-drag governor (review in progress)
+# Movement 147: baked air-drag governor (transient refinement open)
+
+147 now loads baked MuJoCo motion and prebuilt geometry through
+`baked/fan-governor.js`. The browser does not load MuJoCo or generate track cells.
+The 1.83 MB compressed bundle contains 601 poses and nine merged meshes. It
+starts in a raised configuration with the fans facing forward, then repeats a
+six-turn speed cycle lasting 18.85 seconds. The collar and regulating lever are
+unloaded analytic followers of the simulated lift.
+
+Seven focused physics, joint and playback tests pass. Baked interpolation is
+checked at 1,201 poses, including between recorded samples, with sphere/track
+separation and penetration below 0.0005 units. Framing, fog removal, loop seam
+and deterministic restart pass. The production build and packaged desktop/mobile
+test pass, including orbit controls and no WASM request. Front, moving, oblique
+and mobile renders were inspected. The high ramp end still partially occludes
+the rear roller, particularly at low lift; exact ramp curvature remains inferred.
+
+[Independent refinement evidence](validation/147-refinement.json) compares the
+320-cell, 48,000-tick bake source with a halved timestep and, separately, 640
+cells. Maximum lift differences are respectively 0.000568 and 0.04267 units;
+maximum lag differences are 0.00114 and 0.04118 radians. The cycle closes, but
+the transient response is **not fully mesh-converged**. This remains an open
+follow-up. The replacement is shipped for its improved geometry, real joints,
+passive lift and sampled contact clearance; it is not an aerodynamic calibration
+or proof of an exact transient response.
+
+## Legacy findings
 
 The [source](https://507movements.com/mm_147.html) describes a heavy, loose
 crosshead driven by two inclined circular planes on the shaft. Air resistance
 retards its fans, so its rollers climb the planes and lift a regulating lever.
-The current implementation instead assigns lag and lift directly from the
+The previous implementation instead assigned lag and lift directly from the
 prescribed shaft-speed fraction. It does not calculate fan drag, gravity,
 crosshead inertia or passive roller response.
 
@@ -21,11 +47,7 @@ pin has 0.003 units of radial clearance. A triangle-surface test at 129 poses
 checks the 0.12-radius pin around its circumference; clearance exceeds 0.0027.
 The existing 147 test and production build pass with that joint correction.
 
-Continue with a passive contact/drag model, preferably validated in MuJoCo and
-baked for browser playback. Do not retain the speed-to-lag prescription as proof
-of governor behavior. Also remeasure the source proportions: the engraved fan
-panels are substantially taller relative to their width than the current panels.
-The governor as a whole remains unverified.
+These findings motivated the passive model and remeasured fan proportions below.
 
 ## Passive physics prototype
 
@@ -54,10 +76,8 @@ comparisons, not convergence of every transient sample. Three tests cover these
 responses and show that the crosshead remains stationary when contact and
 gravity are disabled while the driven shaft still turns.
 
-The prototype is not registered in the application. Next: match source geometry
-and mass properties, check actual working surfaces and track-end margins during
-speed increases and decreases, then bake the validated motion. The original
-browser motion remains provisional until that replacement is ready.
+The live prototype remains available offline. Its matched geometry and refined
+speed cycle now supply the registered bake described above.
 
 ## Candidate geometry and working surfaces
 
@@ -65,7 +85,7 @@ The separate `mujoco-fan-governor/geometry.js` candidate now has approximately
 84-by-196-pixel fan panels, a smoothed bored weight, stepped roller journals,
 bored crowned rollers and a track foundation connected to the shaft. A shared
 track-cell generator supplies both the visible convex solids and the physics
-meshes. The candidate is not registered in the application. It now includes a
+meshes. The candidate supplies the registered baked application model. It includes a
 regulating lever and collar, described below. The high ramp end still partially
 occludes the rear roller in the candidate front view.
 
@@ -89,10 +109,8 @@ working-contact checks, not full-assembly
 collision validation. Contact copies are released explicitly, following the
 [WASM binding ownership guidance](https://github.com/google-deepmind/mujoco/blob/main/wasm/README.md).
 
-Four physics tests now pass, including compiled geometry-based mass and fan
-aspect ratio. Candidate front and oblique views were inspected. Next: finish
-the source-faithful assembly and output lever, validate acceleration and
-deceleration with track-end margins, then bake and register playback.
+Four physics tests pass, including compiled geometry-based mass and fan
+aspect ratio. Candidate front and oblique views were inspected.
 
 ## Repeated speed-cycle probe
 
@@ -122,8 +140,8 @@ within `3e-8`, without modifying the endpoint. Its maximum sampled separation is
 below `5e-7`, penetration below `0.000039`, and track-end margin above 0.39
 radians. This is a promising offline bake candidate, but jointly changing mesh
 and timestep does not independently establish transient convergence. Separate
-refinement checks and baked playback remain before registration. This refined
-report has been regenerated with the retaining-flange mass included.
+refinement checks are documented above. This refined report has been regenerated
+with the retaining-flange mass included.
 
 ## Regulating lever and assembly clearance
 
@@ -149,3 +167,16 @@ crown/track pairs allow 0.0002 for contact compliance and crown discretization;
 other pairs allow 0.000001. Surface sampling can miss contact between samples,
 so native working-contact checks remain necessary. This is not a continuous
 swept-volume proof. Front and oblique views with the new lever were inspected.
+
+## Rebuilding the bake
+
+Run the speed-cycle probe with `TRACK_SEGMENTS=320`, `CYCLE_TICKS=48000` and
+`CYCLE_REPORT=docs/validation/147-speed-cycle-fine.json`. Preserve its private
+samples as `/dev/shm/147-cycle-baseline.json` before running other probes. Run
+the assembly check against those same samples, then `scripts/bake-fan-governor.mjs`.
+The bake verifies assembly/source hashes and cycle closure. Geometry is merged
+only within each rigid body and material; normals and vertex positions are
+preserved. The phase is shifted to maximum recorded lift, retaining the periodic
+motion and its measured sub-`1e-7` carrier seam. Roller spin can accumulate because
+the crowns are rotationally symmetric. Provenance accompanies the compressed
+asset in `src/simulation/baked/assets/147.provenance.json`.

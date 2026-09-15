@@ -1,0 +1,194 @@
+{
+  "movement": 147,
+  "status": "transient-mesh-refinement-unresolved",
+  "method": "Compare corresponding samples after six warmup speed cycles. Baseline 320 cells / 48000 ticks; halve timestep independently, then double cell count independently. Pose closure is not a convergence test.",
+  "baselineSampleHash": "2035e92b68fb32a61e7fb7bd07e552795132f770d08330d68abe2e8dd2798e8a",
+  "comparisons": [
+    {
+      "kind": "timestep",
+      "sampleHash": "2019cabce056f188843a451e442c81d118d655ee5eccd321d6f207c1530c345c",
+      "run": {
+        "movement": 147,
+        "status": "candidate-speed-cycle-not-baked",
+        "cycle": {
+          "period": 18.84955592153876,
+          "meanSpeed": 2,
+          "amplitude": 0.7,
+          "phase": 0.55
+        },
+        "sampling": {
+          "warmupCycles": 6,
+          "ticksPerCycle": 96000,
+          "segments": 320,
+          "samples": 601
+        },
+        "summary": {
+          "minimumLift": -0.31177943373154854,
+          "maximumLift": 0.1151504281347523,
+          "minimumLag": 0.2063403669986883,
+          "maximumLag": 0.8344092324846315,
+          "minimumContactAngle": -0.904181577641479,
+          "maximumContactAngle": -0.22412031141154465,
+          "minimumTrackEndMargin": 0.39581842235852105,
+          "minimumContactCount": 0,
+          "samplesWithoutContact": 13,
+          "maximumSeparation": 3.105906695166638e-7,
+          "maximumPenetration": 0.00003644789998136222,
+          "closure": {
+            "position": [
+              3.0639029091616976e-9,
+              -5.647807166386798e-9,
+              2.6745240688796912e-8,
+              0.0900049319969618,
+              -0.09000754857672533
+            ],
+            "velocity": [
+              -0.000002095071023111572,
+              8.869578511785635e-7,
+              -0.0000051541857235548605,
+              -0.000029042091507290932,
+              0.000036758525104428516
+            ]
+          }
+        },
+        "sources": [
+          {
+            "file": "scripts/probe-fan-governor-cycle.mjs",
+            "sha256": "9df7e36286cc590d19f129b4ad9a395dbd379f52f2e6ef492500cfaeaaeb6d5d"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/cycle.js",
+            "sha256": "104d7a1e1715afcaf22bd9bc1571cb63a534eab621c52bce93cd031245f77e78"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/physics.js",
+            "sha256": "83545baf70da0726fdcb8010fccb72bf48c03e2c956f25e830b05b88ac9caaa7"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/geometry.js",
+            "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/source.js",
+            "sha256": "c187cfee81fa8bdc27319df82fb4e5b1bf363c7ed35d9b3844ec6b6771b3676e"
+          },
+          {
+            "file": "src/simulation/mujoco/simulation.js",
+            "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+          },
+          {
+            "file": "src/simulation/mujoco/mass.js",
+            "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+          },
+          {
+            "file": "tests/helpers/solid-surface.mjs",
+            "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+          }
+        ]
+      },
+      "maximumDifference": {
+        "lift": 0.0005681571736984165,
+        "lag": 0.001141251875708349,
+        "speed": 0.02036363778720407
+      }
+    },
+    {
+      "kind": "track-mesh",
+      "sampleHash": "6bc132823206b3665fa1eec93f9630cecbe587a8eda17df1d01e05b73f6cd196",
+      "run": {
+        "movement": 147,
+        "status": "candidate-speed-cycle-not-baked",
+        "cycle": {
+          "period": 18.84955592153876,
+          "meanSpeed": 2,
+          "amplitude": 0.7,
+          "phase": 0.55
+        },
+        "sampling": {
+          "warmupCycles": 6,
+          "ticksPerCycle": 48000,
+          "segments": 640,
+          "samples": 601
+        },
+        "summary": {
+          "minimumLift": -0.312689907370649,
+          "maximumLift": 0.11439701047941862,
+          "minimumLag": 0.20337799582097205,
+          "maximumLag": 0.8340975455063244,
+          "minimumContactAngle": -0.9020921471732084,
+          "maximumContactAngle": -0.22205975389306865,
+          "minimumTrackEndMargin": 0.39790785282679164,
+          "minimumContactCount": 0,
+          "samplesWithoutContact": 22,
+          "maximumSeparation": 5.793923212593644e-7,
+          "maximumPenetration": 0.00001712019093419448,
+          "closure": {
+            "position": [
+              -1.0331291377951857e-11,
+              0.0000016167569727443265,
+              -0.000006263542090323426,
+              0.11080991532003903,
+              -0.11088408759303281
+            ],
+            "velocity": [
+              -4.3447023756471026e-11,
+              3.246282673390755e-7,
+              -0.0000012562247655445447,
+              -0.000010246765795156037,
+              0.00001024676579514365
+            ]
+          }
+        },
+        "sources": [
+          {
+            "file": "scripts/probe-fan-governor-cycle.mjs",
+            "sha256": "9df7e36286cc590d19f129b4ad9a395dbd379f52f2e6ef492500cfaeaaeb6d5d"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/cycle.js",
+            "sha256": "104d7a1e1715afcaf22bd9bc1571cb63a534eab621c52bce93cd031245f77e78"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/physics.js",
+            "sha256": "83545baf70da0726fdcb8010fccb72bf48c03e2c956f25e830b05b88ac9caaa7"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/geometry.js",
+            "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+          },
+          {
+            "file": "src/simulation/mujoco-fan-governor/source.js",
+            "sha256": "c187cfee81fa8bdc27319df82fb4e5b1bf363c7ed35d9b3844ec6b6771b3676e"
+          },
+          {
+            "file": "src/simulation/mujoco/simulation.js",
+            "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+          },
+          {
+            "file": "src/simulation/mujoco/mass.js",
+            "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+          },
+          {
+            "file": "tests/helpers/solid-surface.mjs",
+            "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+          }
+        ]
+      },
+      "maximumDifference": {
+        "lift": 0.042669030601435044,
+        "lag": 0.041184284695475526,
+        "speed": 0.09027893419143007
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-fan-governor-refinement.mjs",
+      "sha256": "343af99ab87bdb4dd45b9be928766bb153c34ed33e4d662fedf0ced10e6b7357"
+    },
+    {
+      "file": "docs/validation/147-speed-cycle-fine.json",
+      "sha256": "f800fdeffb5c19e3fcd6505eff1463cfe88b531dc993f8165bf0ea13286bc8d0"
+    }
+  ]
+}

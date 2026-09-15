@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "names": [
+    "shaft",
+    "lift",
+    "yaw",
+    "roll0",
+    "roll1"
+  ],
+  "period": 18.84955592153876,
+  "loopStart": 0,
+  "loopEnd": 18.84955592153876,
+  "startSample": 309,
+  "turns": [
+    37.69911184307752,
+    0,
+    37.69911184307752,
+    0.11060088583770167,
+    -0.11056693193469602
+  ],
+  "bounds": {
+    "min": [
+      -3.2760609819664195,
+      -2.8499999046325684,
+      -3.2760582824418987
+    ],
+    "max": [
+      3.2760609819664195,
+      3.5,
+      3.2760582824418987
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/bake-fan-governor.mjs",
+      "sha256": "31038938dd40ca9f5864c3ee8c89f6ae12e7fbc40fb3e98b4776b4612495676e"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/geometry.js",
+      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/cycle.js",
+      "sha256": "104d7a1e1715afcaf22bd9bc1571cb63a534eab621c52bce93cd031245f77e78"
+    },
+    {
+      "file": "docs/validation/147-speed-cycle-fine.json",
+      "sha256": "f800fdeffb5c19e3fcd6505eff1463cfe88b531dc993f8165bf0ea13286bc8d0"
+    },
+    {
+      "file": "docs/validation/147-candidate-assembly.json",
+      "sha256": "836eb3a0701428b394313bb4104517124c595c5d3f04b242c543e9e26b88cb3e"
+    }
+  ],
+  "sampleHash": "2035e92b68fb32a61e7fb7bd07e552795132f770d08330d68abe2e8dd2798e8a",
+  "bytes": 1834140,
+  "sha256": "5e0597254dcdaba122f8c3816f5e200df7ebe1433e239267f5d5e913e1af2443",
+  "samples": 601,
+  "meshes": 9
+}

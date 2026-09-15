@@ -1,21 +1,13 @@
-# Current review: 147 air-drag governor
+# Shipped improvement: 147 air-drag governor; refinement follow-up open
 
-147's lever now has a real slot and pivot bore. Its actual rollers penetrate
-the inclined planes in 64 of 65 tested poses, despite the old zero-error contact
-metadata. Lag and lift are currently prescribed from speed rather than produced
-by drag and contact. A separate MuJoCo prototype now produces passive lift from
-drag and contact, with speed/drag controls and timestep/mesh convergence tests.
-Candidate fan/weight geometry now supplies mass properties; visible crowned
-rollers and shared convex tracks pass sampled compiled-surface/contact checks.
-Unused ramp ends are shortened. A repeated acceleration/deceleration probe
-checks track-end margins and measures negligible temporary contact gaps, but
-exposes a carrier pose mismatch at the coarse loop boundary. Doubling track
-resolution and halving the timestep gives numerical carrier closure; independent
-transient convergence is still unchecked. The candidate now has a nonrotating
-collar, a real lever slot and a bored right pivot. Joint clearance checks and a
-65-pose full-assembly check pass; the output is an unloaded analytic follower.
-Refinement checks and baked playback remain before registration;
-see [movement 147](movement-147.md). This review remains incomplete.
+147 now uses passive MuJoCo lift baked into a 1.83 MB, nine-mesh bundle. The
+remeasured fans, bored weight, crowned rollers, collar and slotted lever pass
+joint and sampled assembly checks. Seven focused tests, the production build
+and desktop/mobile playback/restart pass, with no browser WASM. Independent
+timestep refinement changes lift by 0.000568 units, but mesh refinement changes
+the transient by up to 0.04267 units. Keep that numerical follow-up and inferred
+ramp profile open; cycle closure alone is not convergence. The output lever is
+unloaded. See [movement 147](movement-147.md). Continue the catalog review at 148.
 
 # Completed review: 146 measured framed yoke
 
