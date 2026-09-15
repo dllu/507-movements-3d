@@ -41,6 +41,53 @@ Cam contact and return are still prescribed analytically. Passive loading,
 source cam-stack projection and exposed shaft length remain under review before
 settling the full reconstruction and any offline bake.
 
+## Passive contact prototype
+
+`src/simulation/mujoco-selectable-cam/physics.js` now reproduces the current
+geometry as six MuJoCo coordinates. Only shaft rotation and axial carrier
+selection are driven. Gravity and contact move the lever and roller; an ordinary
+pinned rod connects the lever to a free vertical slider. Moving-body mass tensors
+are integrated from the visible meshes at common density, normalized to lever
+mass 1. The source does not establish density, damping, friction or valve load;
+these remain assumptions. Only cam/roller collision is enabled in this prototype.
+
+The first [native multiple-contact run](validation/150-passive-multicontact.json)
+produced a large axial selection lag (0.4902 world units). In a diagnostic at
+3.3 seconds, the carrier actuator and contact constraint opposed each other at
+roughly 52,500 force units. Disabling multiple contacts removed that lock, but
+[halving the timestep with native collision detection](validation/150-passive-native-fine.json)
+still produced a 0.0164-unit sampled follower gap. These findings are specific to
+this overlapping cam/core collision representation, not a general comparison of
+MuJoCo backends. The geometry was not chamfered to conceal the issue.
+
+The prototype therefore defaults to `nativeccd=disable` and
+`multiccd=disable`, using MuJoCo's alternate libccd convex collision path.
+See the [MuJoCo collision documentation](https://mujoco.readthedocs.io/en/latest/computation/#convex-collisions).
+The [60,000-tick run](validation/150-passive-libccd.json) and
+[120,000-tick run](validation/150-passive-libccd-fine.json) each simulate three
+27.255-second demonstrations and sample the final one at 1,201 times. Halving
+the timestep changes lever angle by at most 0.000125 rad, output position by
+0.000250 units, and axial carrier position by 0.000547 units. Accumulated roller
+angle differs by up to 0.00727 rad; exact no-slip rolling is not established.
+
+At the finer timestep, output position differs from the analytic reference by
+at most 0.000266 units, pin mismatch is below 0.000000010 units, and sampled
+profile gap ranges from -0.000045 to 0.000390 units. There are 175 samples without
+an active contact. Lever, rod and slider position closure is within 4e-12, while
+carrier closure is within 1e-9 units. These are sampled measurements, not proof
+of continuous contact or collision convergence with mesh refinement.
+
+Three tests check native source joints/masses, freedom from the observed
+selection lock, and stationary followers when both gravity and contact are
+removed. Run `node --test tests/selectable-cam-physics.test.mjs`. Reproduce the
+chosen reports with `REPORT=docs/validation/150-passive-libccd.json node scripts/probe-selectable-cam-physics.mjs`
+and `TICKS=120000 REPORT=docs/validation/150-passive-libccd-fine.json node scripts/probe-selectable-cam-physics.mjs`.
+`NATIVE_CCD=1` and `MULTI_CONTACT=1` reproduce the backend comparisons.
+
+Production playback remains analytical. The passive trajectory still needs
+rendered assembly and interpolation checks before an offline bake replaces it;
+source cam-stack projection and shaft exposure also remain open.
+
 ## Working-contact correction
 
 The existing analytical model stops at the common heel, shifts the entire cam

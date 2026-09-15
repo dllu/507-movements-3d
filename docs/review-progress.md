@@ -1,10 +1,12 @@
 # Current review: 150 selectable valve cams
 
-150 now uses an ordinary pinned rod and reconstructed lower output slide. The
-lever fits between neighboring cams, with a short bored roller axle. A 53-part,
-934-pair sampled assembly check and pin/velocity tests pass. This follows the
-source-sized shaft and bored carrier correction. Source cam-stack projection,
-exposed shaft length and passive return remain open. See [movement 150](movement-150.md).
+150's passive MuJoCo prototype now drives only shaft rotation and cam selection.
+Its free lever, roller, pinned rod and slider agree closely with the analytic
+motion at two timesteps using libccd with multiple contacts disabled. Native
+collision comparisons exposed selection locking and timestep-sensitive gaps;
+these are documented rather than treated as validated motion. Three physics
+tests pass. Source projection, shaft exposure, passive-trajectory assembly and
+bake validation remain open. See [movement 150](movement-150.md).
 
 # Shipped reconstruction: 149 twin cam followers
 

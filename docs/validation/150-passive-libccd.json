@@ -1,0 +1,65 @@
+{
+  "movement": 150,
+  "status": "passive-selectable-cam-prototype",
+  "assumptions": "Moving mesh mass tensors at common density normalized to lever mass 1. Only shaft rotation and axial selection are driven. Free lever, roller, pinned rod and vertical slider; assumed damping, friction, gravity and no external valve load. Convex collision cam cores fill inaccessible shaft bores; only cam/roller contact is enabled.",
+  "options": {
+    "multiContact": false,
+    "nativeCCD": false,
+    "period": 27.254557590189872,
+    "ticksPerPeriod": 60000,
+    "timestep": 0.00045424262650316455,
+    "cycles": 3
+  },
+  "summary": {
+    "samples": 1201,
+    "minProfileGap": -0.00004169743298015893,
+    "maxProfileGap": 0.00022520652676616404,
+    "maxPinError": 1.8283823788770282e-8,
+    "maxPenetration": 0.00004165360533754993,
+    "missingContact": 180,
+    "maxLeverError": 0.0001538850552429416,
+    "maxSliderError": 0.00030626660332999656,
+    "maxShaftError": 0.0015153093478375013,
+    "maxSelectorError": 0.0025333603904597046,
+    "closure": {
+      "carrier": 1.1442231051539409e-9,
+      "lever": -1.3526957332032907e-12,
+      "rod": 1.0453859999870474e-12,
+      "slider": 2.658069064638178e-12
+    },
+    "velocityClosure": [
+      -3.684795335523461e-8,
+      -4.455736131937024e-11,
+      9.568173779325728e-10,
+      1.4960209782088896e-7,
+      -7.395186633202266e-10,
+      -1.879525870877863e-9
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-selectable-cam-physics.mjs",
+      "sha256": "765f8d30632e4db1ce7def3ec4345806db2c662b4eaa2ebc5ca1e136649577fb"
+    },
+    {
+      "file": "src/simulation/mujoco-selectable-cam/physics.js",
+      "sha256": "5bc972ae9e85755ac63e0a469b40fad9d53601f15aa7811eb6c842ab57b3c0df"
+    },
+    {
+      "file": "src/simulation/selectable-cam-valve.js",
+      "sha256": "264d306e29ec033485f81395d2029ecd9bc616c08bb5ffe438d1e9f2235dd63a"
+    },
+    {
+      "file": "src/simulation/authored-selectable-cams.js",
+      "sha256": "8ae138e078f5ba7f03f59be35c98256550ae477fbe3e542973b67f5b0c1f95e9"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
