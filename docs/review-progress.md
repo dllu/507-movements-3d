@@ -6,8 +6,9 @@ finds tappet/wheel overlap in 185 of 257 poses; the prescribed indexing curve
 is not mechanically validated. The model test and build pass, but contact,
 source geometry and whole-assembly clearance remain open. See
 [movement 173](movement-173.md). A standalone passive MuJoCo tappet study now checks 18 turns at two timesteps
-and a disabled-contact control; matching visible geometry and bake integration
-remain open. Continue with 173; the full review remains active.
+and a disabled-contact control. Its matching 20-mesh component and 42 KB bake
+pass native/visible geometry tests and a 16,712-pose contact-clearance sweep.
+Full source-fit assembly reconstruction and browser integration remain open. Continue with 173; the full review remains active.
 
 # Shipped reconstruction: 172 slider-crank egg curve
 

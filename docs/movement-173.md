@@ -72,8 +72,33 @@ This study is not yet connected to the visible model. Next: reconstruct matching
 visible solids, fit them to the engraving, and validate interpolated playback
 and the remaining assembly before replacing the existing animation.
 
-The final qualification passes at 50 and 25 microsecond timesteps. Maximum
-wheel-angle disagreement is 5.440e-5 radians; worst contact gap is
--2.580e-4 model units. Neither active run shows backward motion.
-Disabling tappet contact produces zero wheel rotation over all 18 revolutions.
-These are standalone solver results, not completion of movement 173.
+The current qualification passes at 50 and 25 microsecond timesteps. Maximum
+wheel-angle disagreement is 4.484e-5 radians. Neither active run shows backward
+motion; disabling contact produces zero wheel rotation over 18 revolutions.
+A 0.0005 contact margin on each geom now initiates contact before the surfaces
+intersect; the recorded minimum gap is zero (the audit initializes its minimum
+at zero), with no negative contact distances. This replaces the earlier
+zero-margin study's small penetrations.
+
+## Matching solids and contact bake
+
+The standalone visible component has 20 meshes: 18 straight teeth, a hub and
+a spherical tappet. Native/visible checks agree on all centers and tooth axes
+and dimensions at five poses. No visual geometry is eroded to hide overlap.
+
+The fine run's 144,001 recorded samples compress to 2,090 adaptive keys in a
+42,116-byte gzip asset. Maximum angle error at the recorded samples is below
+4.72e-7 radians. The finite 72-second adjustment clamps at its last key; it
+does not wrap the screw nut back to its initial position.
+
+The [baked clearance audit](validation/173-tappet-baked-clearance.json) checks
+16,712 poses, including eight samples per key interval, against the actual
+wheel mesh triangles. Its minimum conservative sphere-to-wheel gap is
+0.0007462 model units. This remains a sampled check of the standalone contact
+component, not a continuous or whole-assembly clearance proof.
+
+Two [contact tests](../tests/movement-173-contact.test.mjs) pass, covering
+native/visible transforms and dimensions, monotone playback and finite stopping.
+The [bake report](validation/173-tappet-bake.json) records provenance and size.
+The browser still uses the old complete assembly: source-fit reconstruction,
+full-assembly clearance and integration of this bake remain the next work.

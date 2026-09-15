@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "movement": 173,
+  "status": "unregistered-contact-motion",
+  "duration": 72,
+  "parameters": {
+    "timestep": 0.000025,
+    "height": 0.485,
+    "phase": 0.17234,
+    "friction": 0.002,
+    "damping": 0.3,
+    "enabled": true,
+    "speed": 1.5707963267948966,
+    "station": 2.53,
+    "teeth": 18,
+    "pitch": 0.3490658503988659,
+    "start": -0.3
+  },
+  "maximumError": 4.711163735134083e-7,
+  "nativeHash": "1648e7cb5fd68dbec336ea6704455ea6ebd8b28817259184a4053438bcfd8d91",
+  "sources": [
+    {
+      "file": "scripts/bake-silk-tappet.mjs",
+      "sha256": "4869cfbdd6fae44b811dc67300f94be81dccd1cfc54d231e263dd0613b68ff63"
+    },
+    {
+      "file": "scripts/qualify-silk-tappet.mjs",
+      "sha256": "a53a5a377b5dc0cb262eaf855c6a5936de2233ad044ef453b1d935d594bd6c58"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/physics.js",
+      "sha256": "37395bee42b886c4c050db0230a87e7e92a3310f9695a82450efe5a87c3e252c"
+    }
+  ],
+  "samples": 2090,
+  "nativeSamples": 144001,
+  "bytes": 42116,
+  "sha256": "6ab3e25b5a5c11758e5257c807092f04ebd54e78e24061162de41d7d9c0e3167"
+}

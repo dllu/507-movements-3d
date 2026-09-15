@@ -7,7 +7,7 @@ const mujoco=await loadMujoco(), runs=[];
 for(const options of [{},{timestep:.000025},{enabled:false}]) {
   const p=makeSilkTappetPhysics(mujoco,options), turns=[], samples=[];
   let minimumGap=0,contactSteps=0,maximumCarrierError=0,previousWheel=0, maximumWheel=0, maximumRollback=0;
-  const perTurn=Math.round(4/p.timestep),stride=Math.round(.002/p.timestep);
+  const perTurn=Math.round(4/p.timestep),stride=Math.round(.0005/p.timestep);
   try {
     for(let i=0;i<=18*perTurn;i++) {
       const s=p.state();maximumWheel=Math.max(maximumWheel,s.wheel);maximumRollback=Math.max(maximumRollback,maximumWheel-s.wheel);assert.ok(Object.values(s).every(Number.isFinite));
