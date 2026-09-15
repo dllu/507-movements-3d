@@ -1,3 +1,4 @@
+import {ring} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -183,6 +184,7 @@ function sourceScaledSingleEngineReverser() {
   const forwardStopLocalAngle = Math.PI / 2;
   const reverseStopLocalAngle = -Math.PI / 2;
   const permittedRelativeTravel = HALF_TURN;
+  const stopEndRelief = Math.asin(.095 / stopInnerRadius) + .002;
   const rodLiftAngle = 0.25;
   const manualValveStroke = 0.62;
   const gabPinRadius = 0.17;
@@ -712,18 +714,18 @@ function sourceScaledSingleEngineReverser() {
       annularSectorShape(
         stopInnerRadius,
         stopOuterRadius,
-        forwardStopLocalAngle,
-        forwardStopLocalAngle + HALF_TURN,
+        forwardStopLocalAngle + stopEndRelief,
+        forwardStopLocalAngle + HALF_TURN - stopEndRelief,
       ),
       stopDepth,
-      0.01,
+      0,
     ),
     brassMaterial,
   );
   semicircularStop.position.z = stopPlaneZ;
   semicircularStop.userData.role =
     'nearly-semicircular-projection-on-side-of-loose-eccentric';
-  semicircularStop.userData.angularSpan = permittedRelativeTravel;
+  semicircularStop.userData.angularSpan = permittedRelativeTravel - 2*stopEndRelief;
   const stopEndPads = [
     ['forward', forwardStopLocalAngle],
     ['reverse', reverseStopLocalAngle],
@@ -979,9 +981,10 @@ function sourceScaledSingleEngineReverser() {
     24,
   );
   spindleStem.position.x = (spindleRightReach - spindleLeftReach) / 2;
+  spindleStem.position.z = .48;
   spindleStem.userData.role = 'sliding-valve-spindle';
-  const spindleLinkPin = cylinderAlongZ(0.16, 0.82, brassMaterial, 24);
-  spindleLinkPin.position.set(-spindleLinkOffset, 0, -0.08);
+  const spindleLinkPin = cylinderAlongZ(0.16, 1.14, brassMaterial, 24);
+  spindleLinkPin.position.set(-spindleLinkOffset, 0, .08);
   spindleLinkPin.userData.role = 'pin-joining-hand-lever-link-to-spindle';
   const gabPin = cylinderAlongZ(gabPinRadius, 1.08, brassMaterial, 32);
   gabPin.position.set(0, 0, 0.07);
@@ -1007,12 +1010,12 @@ function sourceScaledSingleEngineReverser() {
   );
 
   const stuffingBox = new THREE.Group();
-  stuffingBox.position.set(stuffingBoxCenter.x, valveGuideY, 0);
+  stuffingBox.position.set(stuffingBoxCenter.x, valveGuideY, .48);
   stuffingBox.userData.role = 'fixed-stuffing-box-guiding-valve-spindle';
-  const stuffingSleeve = cylinderAlongX(0.24, 0.46, frameMaterial, 36);
+  const stuffingSleeve = new THREE.Mesh(ring(.105, .24, -.23, .23, 96).rotateY(Math.PI/2), frameMaterial);
   stuffingSleeve.userData.role = 'fixed-valve-spindle-guide-sleeve';
   const stuffingCollars = [-0.29, 0.29].map((x) => {
-    const collar = cylinderAlongX(0.34, 0.13, frameMaterial, 36);
+    const collar = new THREE.Mesh(ring(.105, .34, -.065, .065, 96).rotateY(Math.PI/2), frameMaterial);
     collar.position.x = x;
     collar.userData.role = 'fixed-stuffing-box-collar';
     return collar;
@@ -1028,8 +1031,8 @@ function sourceScaledSingleEngineReverser() {
   );
   manualLeverBar.position.x = manualLeverLength / 2;
   manualLeverBar.userData.role = 'long-upright-reversing-lever';
-  const leverBaseHub = cylinderAlongZ(0.25, 0.58, darkMaterial, 30);
-  leverBaseHub.position.z = 0.22;
+  const leverBaseHub = cylinderAlongZ(0.25, .94, darkMaterial, 30);
+  leverBaseHub.position.z = .04;
   leverBaseHub.userData.role = 'fixed-base-pivot-of-reversing-lever';
   const leverLinkHub = cylinderAlongZ(0.22, 0.66, darkMaterial, 30);
   leverLinkHub.position.set(leverJointRadius, 0, 0.16);
@@ -1058,8 +1061,15 @@ function sourceScaledSingleEngineReverser() {
     color: PALETTE.brass,
     jointRadius: 0.18,
   });
-  reversingLink.userData.role =
-    'finite-link-from-upright-lever-to-valve-spindle';
+  reversingLink.userData.role = 'finite-link-from-upright-lever-to-valve-spindle';
+  const [linkBeam, leverEye, spindleEye] = reversingLink.children;
+  linkBeam.geometry.dispose();
+  linkBeam.geometry = new THREE.BoxGeometry(1-.50/reversingLinkLength, .16, .16);
+  const oldEye = leverEye.geometry;
+  leverEye.geometry = ring(.23,.32,-.08,.08,96);
+  spindleEye.geometry = ring(.17,.32,-.08,.08,96);oldEye.dispose();
+  linkBeam.userData.role='reversing-link-beam';
+  leverEye.userData.role='bored-lever-link-eye';spindleEye.userData.role='bored-spindle-link-eye';
 
   const baseY = -2.08;
   const baseZ = -0.9;
@@ -1070,21 +1080,21 @@ function sourceScaledSingleEngineReverser() {
   );
   baseRail.userData.role = 'fixed-foundation-rail';
   const leverPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.72, 0.54, 0.7),
+    ring(.26,.36,-.10,.10,96),
     frameMaterial,
   );
   leverPedestal.position.set(
     leverBasePivot.x,
-    leverBasePivot.y - 0.27,
-    -0.34,
+    leverBasePivot.y,
+    -.51,
   );
   leverPedestal.userData.role = 'fixed-pedestal-under-upright-lever';
   const leverSupport = makeBeam(
     new THREE.Vector3(leverBasePivot.x, baseY, baseZ),
     new THREE.Vector3(
       leverBasePivot.x,
-      leverBasePivot.y - 0.18,
-      -0.45,
+      leverBasePivot.y - .38,
+      -.51,
     ),
     { thickness: 0.16, depth: 0.25, color: PALETTE.frame },
   );
@@ -1094,15 +1104,15 @@ function sourceScaledSingleEngineReverser() {
   shaftBearing.position.set(shaftCenter.x, shaftCenter.y, -0.68);
   shaftBearing.userData.role = 'fixed-rear-bearing-for-reversible-shaft';
   const bearingRing = new THREE.Mesh(
-    new THREE.TorusGeometry(shaftRadius + 0.08, 0.13, 12, 42),
+    ring(shaftRadius+.01, .63, -.13, .13, 96),
     frameMaterial,
   );
   bearingRing.userData.role = 'fixed-shaft-bearing-ring';
   const bearingPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, shaftCenter.y - baseY, 0.5),
+    new THREE.BoxGeometry(0.52, shaftCenter.y - baseY - .60, 0.5),
     frameMaterial,
   );
-  bearingPost.position.y = -(shaftCenter.y - baseY) / 2;
+  bearingPost.position.y = -(shaftCenter.y - baseY + .60) / 2;
   bearingPost.userData.role = 'fixed-bearing-pedestal-post';
   shaftBearing.add(bearingRing, bearingPost);
   const shaftBearingBraces = [-1, 1].map((signX) => {
@@ -1116,11 +1126,17 @@ function sourceScaledSingleEngineReverser() {
   });
 
   const valveGuideSupport = makeBeam(
-    new THREE.Vector3(stuffingBoxCenter.x, baseY, baseZ),
-    new THREE.Vector3(stuffingBoxCenter.x, valveGuideY - 0.38, -0.45),
+    new THREE.Vector3(stuffingBoxCenter.x, baseY, .85),
+    new THREE.Vector3(stuffingBoxCenter.x, valveGuideY - .30, .85),
     { thickness: 0.14, depth: 0.22, color: PALETTE.frame },
   );
   valveGuideSupport.userData.role = 'fixed-support-for-valve-stuffing-box';
+  const guideElbow = makeBeam(new THREE.Vector3(stuffingBoxCenter.x,valveGuideY-.30,.85),
+    new THREE.Vector3(stuffingBoxCenter.x,valveGuideY-.30,.48),{thickness:.14,depth:.14,color:PALETTE.frame});
+  const guideFoot = makeBeam(new THREE.Vector3(stuffingBoxCenter.x,baseY,baseZ),
+    new THREE.Vector3(stuffingBoxCenter.x,baseY,.85),{thickness:.14,depth:.14,color:PALETTE.frame});
+  guideElbow.userData.role='fixed-guide-support-elbow';guideFoot.userData.role='fixed-guide-support-foot';
+  root.add(guideElbow,guideFoot);
 
   const stopContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.115, 20, 14),
@@ -1168,7 +1184,7 @@ function sourceScaledSingleEngineReverser() {
       new THREE.Vector3(
         state.leverJointPoint.x,
         state.leverJointPoint.y,
-        -0.04,
+        .18,
       ),
       new THREE.Vector3(
         state.spindleLinkPoint.x,
@@ -1386,6 +1402,7 @@ function sourceScaledSingleEngineReverser() {
     sourceShaftAngle,
     spindleLinkOffset,
     stopDepth,
+    stopEndRelief,
     stopInnerRadius,
     stopMeanRadius,
     stopOuterRadius,
@@ -1406,6 +1423,13 @@ function sourceScaledSingleEngineReverser() {
   root.userData.stateAtCyclePhase = stateAtCyclePhase;
   root.userData.stateAtTime = stateAtTime;
 
+  for (const decoration of [eccentricCenterMark, stopContactMarker, gabContactMarker, ...stopEndPads]) {
+    decoration.removeFromParent();decoration.geometry.dispose();
+  }
+  Object.assign(root.userData, {hideGround:true, supportsRestart:true,
+    minimumDisplayCycleSeconds:24, animationTiming:{authoredCyclePeriod:cyclePeriod},
+    reconstructionStatus:'under-review',
+    reconstructionNote:'The rod is lifted, the valve is worked by hand, and the shaft takes up the half-turn clearance before the rod is lowered. This is an ideal operator-driven sequence; stop, joint and source-fit verification is in progress.'});
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1424,6 +1448,7 @@ function sourceScaledSingleEngineReverser() {
     cameraDirection: new THREE.Vector3(7.1, 4.6, 15.8),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

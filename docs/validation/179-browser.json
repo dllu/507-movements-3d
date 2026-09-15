@@ -1,0 +1,23 @@
+{
+  "movement": 179,
+  "status": "packaged-desktop-mobile-passed",
+  "scope": "First physical assembly repair; source contour, attachment and reversal-sequence review remain open.",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 layout without horizontal overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/engine-reverser.spec.mjs",
+      "sha256": "5cc92351d46665e204d3840a606d25773acff83f3575c326811351169860c1d7"
+    },
+    {
+      "file": "src/simulation/authored-engine-reversers.js",
+      "sha256": "7e8bfdebe475d5300a95ad69eae9d69d69b4ac86eaf485d0fd5c81e91d6c78df"
+    }
+  ]
+}

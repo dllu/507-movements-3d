@@ -1,3 +1,9 @@
+# Movement 179: source and sequence review open
+
+The first assembly repair replaces solid guide sleeves and rod eyes with bores, accounts for finite lug width at the stop ends, and separates the spindle and supports. The 63-mesh, 129-pose audit reports no sampled intersections, down from 34 interfering pairs. Motion, finite-bore/stop-gap and desktop/mobile checks pass. Continue with 179's source contours, pin retention and reversal-sequence review. See [movement 179](movement-179.md). The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movement 178 source fit and assembly checked; next 179
 
 178 now matches selected engraving boundaries within 4.33 pixels, uses a backed guide disk and retained bored joints, and passes its 30-mesh sampled clearance sweep. The fitted motion and original 2D-reference variant both have regression checks. Production build and desktop/mobile checks pass. See [movement 178](movement-178.md) for reconstruction assumptions and evidence. Continue with 179; the full review remains active.

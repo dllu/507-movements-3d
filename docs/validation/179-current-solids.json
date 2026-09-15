@@ -1,0 +1,27 @@
+{
+  "movement": 179,
+  "poses": 129,
+  "meshes": 63,
+  "pairs": 1439,
+  "queries": 23297716,
+  "intersections": {},
+  "sources": [
+    {
+      "file": "scripts/review-engine-reverser-solids.mjs",
+      "sha256": "02bf6824ff232a766f43ffb38802f426cc31f743900ca8e3083e9bd3594300ec"
+    },
+    {
+      "file": "src/simulation/authored-engine-reversers.js",
+      "sha256": "7e8bfdebe475d5300a95ad69eae9d69d69b4ac86eaf485d0fd5c81e91d6c78df"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers; same rigid families excluded. Sampled evidence, not continuous proof."
+}

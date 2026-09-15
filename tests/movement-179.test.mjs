@@ -333,7 +333,7 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
     0,
     'stop-end angular separation',
   );
-  near(semicircularStop.userData.angularSpan, Math.PI, 0,
+  near(semicircularStop.userData.angularSpan, Math.PI - 2*geometry.stopEndRelief, 0,
     'rendered stop sector span');
   assert.ok(geometry.stopInnerRadius > geometry.shaftFaceRadius);
   assert.ok(geometry.stopOuterRadius < geometry.sheaveRadius);

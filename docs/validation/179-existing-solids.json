@@ -1,0 +1,62 @@
+{
+  "movement": 179,
+  "poses": 129,
+  "meshes": 62,
+  "pairs": 1460,
+  "queries": 30960670,
+  "intersections": {
+    "fixed-pedestal-under-upright-lever#3/long-upright-reversing-lever#53": 0.05426499799055717,
+    "fixed-pedestal-under-upright-lever#3/fixed-base-pivot-of-reversing-lever#54": 0.2499998610050934,
+    "fixed-shaft-bearing-ring#7/reversible-engine-crankshaft#28": 0.050925310916182305,
+    "fixed-bearing-pedestal-post#8/reversible-engine-crankshaft#28": 0.4191007061037938,
+    "fixed-valve-spindle-guide-sleeve#18/sliding-valve-spindle#49": 0.20242695299675173,
+    "fixed-stuffing-box-collar#19/sliding-valve-spindle#49": 0.09418725924840615,
+    "fixed-stuffing-box-collar#20/sliding-valve-spindle#49": 0.09418725924840625,
+    "visible-center-of-loose-eccentric#23/reversible-engine-crankshaft#28": 0.2694298259847415,
+    "nearly-semicircular-projection-on-side-of-loose-eccentric#25/radial-shaft-projection-driving-eccentric-stop-ends#30": 0.09455790682042682,
+    "forward-drive-stop-end-on-eccentric#26/radial-shaft-projection-driving-eccentric-stop-ends#30": 0.11213555092674865,
+    "forward-drive-stop-end-on-eccentric#26/visible-active-shaft-stop-contact#60": 0.024999997317791123,
+    "radial-shaft-projection-driving-eccentric-stop-ends#30/visible-active-shaft-stop-contact#60": 0.04908142529100438,
+    "white-index-at-shaft-lug-contact-radius#31/visible-active-shaft-stop-contact#60": 0.08870201356953988,
+    "one-continuous-rigid-rod-across-engraving-break#41/sliding-valve-spindle#49": 0.12495849611859886,
+    "open-bottom-gab-jaw-around-valve-pin#43/sliding-valve-spindle#49": 0.09377486986784964,
+    "open-bottom-gab-jaw-around-valve-pin#44/sliding-valve-spindle#49": 0.09377486986784905,
+    "replaceable-gab-contact-shoe#45/sliding-valve-spindle#49": 0.09105783834165024,
+    "replaceable-gab-contact-shoe#46/sliding-valve-spindle#49": 0.07808299491447494,
+    "sliding-valve-spindle#49/long-upright-reversing-lever#53": 0.03392097979784012,
+    "sliding-valve-spindle#49/mesh#57": 0.07386455875598834,
+    "sliding-valve-spindle#49/mesh#59": 0.08504793661697564,
+    "pin-joining-hand-lever-link-to-spindle#50/mesh#57": 0.1586311748601784,
+    "pin-joining-hand-lever-link-to-spindle#50/mesh#59": 0.15863117486017836,
+    "valve-spindle-pin-captured-by-lowered-gab#51/visible-engaged-gab-contact#61": 0.10000002086162563,
+    "visible-valve-spindle-gab-pin-index#52/visible-engaged-gab-contact#61": 0.025328221191273044,
+    "long-upright-reversing-lever#53/mesh#57": 0.09000000357627863,
+    "long-upright-reversing-lever#53/mesh#58": 0.09000000357627869,
+    "reversing-link-pin-on-upright-lever#55/mesh#57": 0.21879481375100604,
+    "reversing-link-pin-on-upright-lever#55/mesh#58": 0.17676140288511916,
+    "reverse-drive-stop-end-on-eccentric#27/radial-shaft-projection-driving-eccentric-stop-ends#30": 0.12499999612569807,
+    "reverse-drive-stop-end-on-eccentric#27/visible-active-shaft-stop-contact#60": 0.024999997317791123,
+    "fixed-stuffing-box-collar#20/long-upright-reversing-lever#53": 0.08998032892192241,
+    "fixed-valve-spindle-guide-sleeve#18/long-upright-reversing-lever#53": 0.0894035639843564,
+    "fixed-stuffing-box-collar#19/long-upright-reversing-lever#53": 0.08960116367615234
+  },
+  "sources": [
+    {
+      "file": "scripts/review-engine-reverser-solids.mjs",
+      "sha256": "02bf6824ff232a766f43ffb38802f426cc31f743900ca8e3083e9bd3594300ec"
+    },
+    {
+      "file": "src/simulation/authored-engine-reversers.js",
+      "sha256": "5de17170a78ee0a320f0f92dea9447a2ffa7855ccd21b3ea91326929e47086f8"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers; same rigid families excluded. Sampled evidence, not continuous proof."
+}
