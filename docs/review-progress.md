@@ -1,9 +1,10 @@
 # Active reconstruction: 163
 
-163 now has an unregistered passive native linkage study with five passing tests.
-It exposes insufficient upper-pulley travel in the centerline crank-tip assumption
-and a ball/lower-link depth conflict. Resolve the fork/groove contact location and
-solid geometry before completing belt contact and baking. See [movement 163](movement-163.md).
+163 now has a 43-mesh source assembly and passive native linkage with finite-width
+belt traction. Partial belt engagement reaches both fast pulleys without moving
+the source planes. Eight tests and a 65-pose full-solid sweep pass; front and
+oblique previews were inspected. Belt motion cues, repeated-motion qualification,
+baking and packaged playback remain. See [movement 163](movement-163.md).
 The full 507-movement review remains active; 147's mesh refinement and 150's source
 fit remain open.
 

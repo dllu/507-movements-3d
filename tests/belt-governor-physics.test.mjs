@@ -41,3 +41,18 @@ test('163 timestep refinement preserves the passive fork trajectory',()=>{
  const a=sample(),b=sample({timestep:.00025});assert.equal(a.states.length,b.states.length);
  assert.ok(Math.max(...a.states.map((s,i)=>Math.abs(s.forkY-b.states[i].forkY)))<.0002);
 });
+
+test('163 finite belt width reaches both fast pulleys without simultaneous opposite selection',async()=>{
+ const {beltPulleyOverlap}=await import('../src/simulation/mujoco-belt-governor/belt-contact.js'),g=beltGovernorGeometry();
+ const neutral=beltPulleyOverlap(g.middlePulleyY,g);assert.equal(neutral.upper,0);assert.equal(neutral.lower,0);
+ const r=sample({speedAmplitude:.25},20);let upper=0,lower=0,maximumSpeed=0;
+ for(const s of r.states){const o=s.beltForces.overlap;upper=Math.max(upper,o.upper);lower=Math.max(lower,o.lower);assert.ok(o.upper===0||o.lower===0);maximumSpeed=Math.max(maximumSpeed,s.beltSpeed);
+  const fastSlip=g.pulleyRadius*s.speed-s.beltSpeed,looseSlip=g.pulleyRadius*s.looseSpeed-s.beltSpeed;
+  assert.ok(s.beltForces.fast*fastSlip+s.beltForces.loose*looseSlip>=-1e-12,'traction dissipates relative motion');
+ }
+ assert.ok(upper>.1&&lower>.25,'finite contact bands reach both source fast faces');assert.ok(maximumSpeed>3,'passive belt is driven by fast-pulley traction');
+});
+test('163 removing belt friction eliminates transport while the governor still shifts',()=>{
+ const r=sample({speedAmplitude:.25,beltFriction:0},20);assert.ok(r.states.every(s=>s.beltSpeed===0&&s.beltDistance===0&&s.looseSpeed===0));
+ assert.ok(Math.max(...r.states.map(s=>s.forkY))-Math.min(...r.states.map(s=>s.forkY))>.5);
+});

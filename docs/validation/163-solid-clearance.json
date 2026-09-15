@@ -1,0 +1,74 @@
+{
+  "movement": 163,
+  "status": "unregistered-solid-diagnostic",
+  "parameters": {
+    "movement": 163,
+    "timestep": 0.0005,
+    "period": 10,
+    "speedAmplitude": 0.25,
+    "spindleDrive": true,
+    "linkage": true,
+    "loadScale": 1,
+    "ballContact": true,
+    "belt": true,
+    "beltFriction": 0.35,
+    "beltNormalForce": 10,
+    "beltLoad": 0.1,
+    "nominalSpeed": 5.123336197051682,
+    "extraPotentialSlope": -6.039452923811694,
+    "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Reduced finite-width belt contact: regularized Coulomb traction with equal opposite pulley reactions, inferred tension and load. Belt axial shape follows the fork; belt bending, axial friction, remote gearing and hydraulic feedback are not modeled."
+  },
+  "poses": 65,
+  "meshes": 43,
+  "pairs": 809,
+  "queries": 20183242,
+  "intersections": {},
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers during twenty native seconds with 0.25 rad/s speed variation. Same rigid-family joins excluded. Includes soft-contact penetration and native joint-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
+  "sources": [
+    {
+      "file": "scripts/review-belt-governor-solids.mjs",
+      "sha256": "2a228f9b9e663c5f1b6c7c355d17d35bc9a4748dd42a78bad6de68854a5efe47"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/solids.js",
+      "sha256": "385c58fd7d934f9d8b3e88857f2bf33983ce20d7660bf371dfaefe7d4dddf7ba"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/geometry.js",
+      "sha256": "fe4d5166c4f8972782043293726b0ead07bbb5389ebb794db5a92e1c7b4e3c77"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/belt-contact.js",
+      "sha256": "32895cb3231bbb326190bc1c75f286b415e57d4255e4a17a47255a2e48b8f8ad"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/physics.js",
+      "sha256": "b2c49b886defedcf9b87d07ced5156f555091de0a533c0363d7c7b8110422cbb"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
