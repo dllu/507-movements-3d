@@ -1,3 +1,17 @@
+# Movements 181–182: passive catch prototype; return transfer still fails
+
+Added a traced catch/finger contact model and reproducible isolated/coupled
+MuJoCo experiments. Registered seats and a catch stop pass isolated holding,
+friction-free holding, external release and disabled-contact controls. The first
+coupled upward transfer passes at two timesteps, but the return fails and the
+second ascent jams. The qualification command intentionally exits nonzero.
+Source overlays identify the upper tripping finger/catch contour as unfinished.
+Production remains the previous fitted-handle implementation with six latch
+intersections. Continue the upper tripping-face reconstruction; see
+[181–182 review](movement-181.md). The full goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: fitted handles and finite tappet contact; latch still open
 
 Fitted the working tips and weight pins jointly against both engravings, narrowed

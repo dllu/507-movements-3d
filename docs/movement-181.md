@@ -93,9 +93,56 @@ Reproduce with:
 - `node scripts/probe-diagonal-catch-tappet.mjs`
 - `node scripts/review-diagonal-catch-solids.mjs` (expected failure on the six unresolved latch pairs)
 
+## Offline catch reconstruction experiment
+
+The [coupled contact study](validation/181-transfer-study.json) now contains a
+candidate continuous catch outline and finite finger surfaces, including the
+lower finger's pointed tripping nose. This is an offline prototype; it has not
+replaced the six-intersection scripted latch in production.
+
+The candidate exposes an important distinction between holding and transferring:
+
+- Both handles hold passively in isolated tests at 0.00025- and 0.000125-second
+  timesteps. They also hold with all friction coefficients zero. A brief external
+  torque on the catch releases either handle; disabling contact prevents holding.
+- Registering the upper holding face 3 source pixels higher and the lower heel
+  6 pixels right/5 up, with a one-sided catch stop at zero, lets the first coupled
+  upward stroke complete at both tested timesteps (0.0005 and 0.00025 seconds).
+  Only the piston is actuated in this test. Both weighted handles and the catch
+  move passively. The top-stage handle errors are below 0.000172 radians and the
+  piston error is 0.004905 model units.
+- The return transfer **fails** at both timesteps. The upper finger does not
+  lift the catch enough to release the lower handle; the upper handle then falls
+  open again. The following upward stroke stalls about 1.426 model units short.
+  The two-cycle qualification command therefore exits nonzero.
+
+The lower isolated fixture starts with the catch at +0.033 radians, just clear
+of the holding face reached during the coupled ascent. Starting that fixture
+at zero creates an initial overlap and a separation impulse; that is not a
+valid retention test. The catch stop, masses, inertias and axial contact layers
+are reconstruction assumptions. Connecting hardware and the full visible
+assembly are not included in this contact model. Successful isolated controls
+do not qualify the complete mechanism or its source fit.
+
+The source overlay was inspected in both stages. The upper tripping finger
+still falls short of the horn visible in 182, and the catch's upper contour
+does not overlay both drawings well. Adding a separate opposite-side nose
+jammed the first transfer in exploratory tests. Changes to physical cycle
+period alone (6, 9 and 12 seconds) did not fix the unregistered reconstruction.
+The next geometry change should address the upper finger and catch together,
+using the assembled closed pose and both source views, rather than accepting
+a one-stroke success as a working cycle.
+
+Reproduce the prototype with `node scripts/probe-diagonal-catch-transfer.mjs`
+(expected nonzero exit while transfer fails). It writes the compact report above
+and full traces to `/dev/shm/181-transfer-probe.json`.
+`node scripts/preview-diagonal-catch-profiles.mjs` writes a source-overlay HTML
+and PNG to `/dev/shm/181-candidate-profiles.*`. The source site's 181 page marks
+its animation unavailable; the engraving and caption remain the reference.
+
 ## Next work
 
-Reconstruct the actual hook/finger surfaces from both engravings. The current
+Finish reconstructing the actual hook/finger surfaces from both engravings. The current
 nearly closed circular pockets and cylindrical latch rollers are not faithful
 and still intersect. Then validate passive catch retention and release with
 both weighted handles and the piston together before baking that motion.

@@ -1,0 +1,1168 @@
+{
+  "movements": [
+    181,
+    182
+  ],
+  "status": "contact-reconstruction-not-qualified",
+  "scope": "Offline candidate catch/finger contact geometry. Production still uses the previous scripted latch. Isolated retention and external release do not establish complete transfer.",
+  "assumptions": [
+    "Catch outline traced from plate 181; terminal finger surfaces inferred from both plates.",
+    "Upper holding face lifted 3 source pixels; lower heel moved 6 pixels right and 5 up to register with the fitted handle axes.",
+    "Registered model has a one-sided catch stop at zero radians; unregistered control permits -0.3 radians.",
+    "Catch mass 0.25, handle masses 0.1, inertias, friction and stops are diagnostic assumptions.",
+    "Contact layers separate the working arms from the catching fingers; connecting hardware and full visible-solid validation are not included.",
+    "The isolated release control applies a 6-unit torque pulse directly to the catch for 0.2 seconds; the coupled model actuates only the piston."
+  ],
+  "controls": {
+    "stable": true,
+    "passiveRetention": true,
+    "externalCatchLiftReleases": true,
+    "disabledContactDoesNotHold": true
+  },
+  "retention": [
+    {
+      "parameters": {
+        "side": "upper",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": 0,
+        "initialCatch": 0,
+        "raster": [
+          [
+            218,
+            119
+          ],
+          [
+            229,
+            124
+          ],
+          [
+            233,
+            140
+          ],
+          [
+            222,
+            145
+          ],
+          [
+            213,
+            124
+          ]
+        ],
+        "closedAngle": -0.995
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": 0.00009509546269535266,
+        "catch": 0.0007523622141243774,
+        "handleSpeed": 6.977333266080887e-7,
+        "catchSpeed": -5.4408136760886e-7,
+        "contacts": 4
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": 0.00007119350891376135,
+        "catch": 0.0007796774433587294,
+        "handleSpeed": 0.00010237336660545933,
+        "catchSpeed": 0.000006151333478611718,
+        "contacts": 4
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "contacts": true,
+        "timestep": 0.000125,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": 0,
+        "initialCatch": 0,
+        "raster": [
+          [
+            218,
+            119
+          ],
+          [
+            229,
+            124
+          ],
+          [
+            233,
+            140
+          ],
+          [
+            222,
+            145
+          ],
+          [
+            213,
+            124
+          ]
+        ],
+        "closedAngle": -0.995
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.0000000000007936,
+        "handle": 0.00009987389421447643,
+        "catch": 0.0007464989958843582,
+        "handleSpeed": 3.1457175422148403e-7,
+        "catchSpeed": -3.860124472016496e-7,
+        "contacts": 4
+      },
+      "held": {
+        "time": 1.0000000000001257,
+        "handle": 0.00009348598037998488,
+        "catch": 0.0007542846517399842,
+        "handleSpeed": 0.000010599969644114577,
+        "catchSpeed": 0.0000032446083183894074,
+        "contacts": 4
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": 0,
+        "initialCatch": 0,
+        "raster": [
+          [
+            218,
+            119
+          ],
+          [
+            229,
+            124
+          ],
+          [
+            233,
+            140
+          ],
+          [
+            222,
+            145
+          ],
+          [
+            213,
+            124
+          ]
+        ],
+        "closedAngle": -0.995
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": 0.00015743261959514659,
+        "catch": 0.0006755340264491598,
+        "handleSpeed": 0.00005088402029589688,
+        "catchSpeed": 0.00002249434662131822,
+        "contacts": 4
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": 0.00016559611966171075,
+        "catch": 0.0006657045687868948,
+        "handleSpeed": 0.00002434793212108391,
+        "catchSpeed": 0.000005530417437903425,
+        "contacts": 4
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0,
+        "catchMass": 0.25,
+        "release": true,
+        "registered": true,
+        "initial": 0,
+        "initialCatch": 0,
+        "raster": [
+          [
+            218,
+            119
+          ],
+          [
+            229,
+            124
+          ],
+          [
+            233,
+            140
+          ],
+          [
+            222,
+            145
+          ],
+          [
+            213,
+            124
+          ]
+        ],
+        "closedAngle": -0.995
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": -0.9951711034543951,
+        "catch": -0.00012921509684958327,
+        "handleSpeed": 1.0032963147799727e-13,
+        "catchSpeed": 2.3395290816734063e-17,
+        "contacts": 0
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": 0.00016559611966171075,
+        "catch": 0.0006657045687868948,
+        "handleSpeed": 0.00002434793212108391,
+        "catchSpeed": 0.000005530417437903425,
+        "contacts": 4
+      },
+      "holds": true,
+      "released": true
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "contacts": false,
+        "timestep": 0.00025,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": 0,
+        "initialCatch": 0,
+        "raster": [
+          [
+            218,
+            119
+          ],
+          [
+            229,
+            124
+          ],
+          [
+            233,
+            140
+          ],
+          [
+            222,
+            145
+          ],
+          [
+            213,
+            124
+          ]
+        ],
+        "closedAngle": -0.995
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": -0.9951711034543951,
+        "catch": -0.00012921509684958292,
+        "handleSpeed": 1.0032986115791753e-13,
+        "catchSpeed": 1.4974991507906968e-17,
+        "contacts": 0
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": -0.9952232784888098,
+        "catch": -0.00012921509684958292,
+        "handleSpeed": 0.0026244690965717206,
+        "catchSpeed": 1.4974991507906968e-17,
+        "contacts": 0
+      },
+      "holds": false,
+      "released": true
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": -0.9446,
+        "initialCatch": 0.033,
+        "raster": [
+          [
+            326,
+            296
+          ],
+          [
+            329,
+            288
+          ],
+          [
+            332,
+            307
+          ],
+          [
+            331,
+            320
+          ],
+          [
+            323,
+            321
+          ],
+          [
+            320,
+            312
+          ]
+        ],
+        "closedAngle": -0.9446
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": -0.9446897506830882,
+        "catch": 0.031541497647468726,
+        "handleSpeed": 0.0000012139180515386148,
+        "catchSpeed": 0.0000010088756039637387,
+        "contacts": 3
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": -0.9446890425932272,
+        "catch": 0.031542083863646535,
+        "handleSpeed": -6.687164881130695e-7,
+        "catchSpeed": -5.531907031816155e-7,
+        "contacts": 3
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "contacts": true,
+        "timestep": 0.000125,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": -0.9446,
+        "initialCatch": 0.033,
+        "raster": [
+          [
+            326,
+            296
+          ],
+          [
+            329,
+            288
+          ],
+          [
+            332,
+            307
+          ],
+          [
+            331,
+            320
+          ],
+          [
+            323,
+            321
+          ],
+          [
+            320,
+            312
+          ]
+        ],
+        "closedAngle": -0.9446
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.0000000000007936,
+        "handle": -0.9446978807910662,
+        "catch": 0.03153476796305295,
+        "handleSpeed": -1.1162865958882232e-7,
+        "catchSpeed": -9.485802434413148e-8,
+        "contacts": 3
+      },
+      "held": {
+        "time": 1.0000000000001257,
+        "handle": -0.9446977980996614,
+        "catch": 0.031534836418559066,
+        "handleSpeed": -6.520138093921482e-7,
+        "catchSpeed": -5.392655736732901e-7,
+        "contacts": 3
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": -0.9446,
+        "initialCatch": 0.033,
+        "raster": [
+          [
+            326,
+            296
+          ],
+          [
+            329,
+            288
+          ],
+          [
+            332,
+            307
+          ],
+          [
+            331,
+            320
+          ],
+          [
+            323,
+            321
+          ],
+          [
+            320,
+            312
+          ]
+        ],
+        "closedAngle": -0.9446
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": -0.9446879863144787,
+        "catch": 0.03154295773561561,
+        "handleSpeed": -0.00008797254801359452,
+        "catchSpeed": -0.00007273228141349488,
+        "contacts": 3
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": -0.9446840783544134,
+        "catch": 0.03154607165836985,
+        "handleSpeed": 0.00008388459618895413,
+        "catchSpeed": 0.00010005387973348044,
+        "contacts": 3
+      },
+      "holds": true,
+      "released": false
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "contacts": true,
+        "timestep": 0.00025,
+        "friction": 0,
+        "catchMass": 0.25,
+        "release": true,
+        "registered": true,
+        "initial": -0.9446,
+        "initialCatch": 0.033,
+        "raster": [
+          [
+            326,
+            296
+          ],
+          [
+            329,
+            288
+          ],
+          [
+            332,
+            307
+          ],
+          [
+            331,
+            320
+          ],
+          [
+            323,
+            321
+          ],
+          [
+            320,
+            312
+          ]
+        ],
+        "closedAngle": -0.9446
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": 0.0001560287236746685,
+        "catch": -0.00012921509684958325,
+        "handleSpeed": -2.0257115217820138e-17,
+        "catchSpeed": 2.2898049915051954e-17,
+        "contacts": 0
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": -0.9446840783544134,
+        "catch": 0.03154607165836985,
+        "handleSpeed": 0.00008388459618895413,
+        "catchSpeed": 0.00010005387973348044,
+        "contacts": 3
+      },
+      "holds": true,
+      "released": true
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "contacts": false,
+        "timestep": 0.00025,
+        "friction": 0.1,
+        "catchMass": 0.25,
+        "release": false,
+        "registered": true,
+        "initial": -0.9446,
+        "initialCatch": 0.033,
+        "raster": [
+          [
+            326,
+            296
+          ],
+          [
+            329,
+            288
+          ],
+          [
+            332,
+            307
+          ],
+          [
+            331,
+            320
+          ],
+          [
+            323,
+            321
+          ],
+          [
+            320,
+            312
+          ]
+        ],
+        "closedAngle": -0.9446
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 2.999999999999697,
+        "handle": 0.0001560287236746685,
+        "catch": -0.00012921509684958327,
+        "handleSpeed": -2.026394765932402e-17,
+        "catchSpeed": 2.3396756415871336e-17,
+        "contacts": 0
+      },
+      "held": {
+        "time": 0.9999999999999176,
+        "handle": 0.00019118400390627773,
+        "catch": -0.00012921509684958327,
+        "handleSpeed": -0.0017725179438212516,
+        "catchSpeed": 2.3396756415871336e-17,
+        "contacts": 0
+      },
+      "holds": false,
+      "released": true
+    }
+  ],
+  "coupled": [
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "catchMass": 0.25,
+        "contacts": true,
+        "period": 18,
+        "registered": false,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "closedAngles": {
+          "upper": -0.995,
+          "lower": -0.9446
+        }
+      },
+      "minimumGap": -0.0006159222859767177,
+      "failure": null,
+      "final": {
+        "time": 35.99999999998987,
+        "upper": -0.9951711034543931,
+        "lower": -0.9446225928329376,
+        "catch": -0.029735257574070067,
+        "piston": -1.642404999999994,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "speed": [
+          4.9381096214444875e-14,
+          -0.000021214094805729623,
+          0.0004282071592626967,
+          -1.6757962654786436e-13
+        ],
+        "contacts": 3
+      },
+      "stages": [
+        {
+          "cycle": 0,
+          "stage": "top",
+          "time": 8.099999999998408,
+          "upper": -1.0076626688567716,
+          "lower": -0.94462530848109,
+          "catch": -0.02973534628676238,
+          "piston": 0.536675930022932,
+          "target": 1.9625000000000004,
+          "force": 200,
+          "speed": [
+            0.000176317464895725,
+            -0.00027902673296288145,
+            -0.00016852163126504198,
+            -0.00023409354106105522
+          ],
+          "contacts": 6,
+          "errors": {
+            "upper": 0.012662668856771586,
+            "lower": 0.000025308481090058343,
+            "piston": 1.4258240699770681
+          },
+          "passed": false
+        },
+        {
+          "cycle": 0,
+          "stage": "bottom",
+          "time": 17.100000000005497,
+          "upper": -0.9951711034543931,
+          "lower": -0.9446236687734862,
+          "catch": -0.029734647314338822,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.8100000000004,
+          "speed": [
+            4.9381275255470545e-14,
+            -0.00024977782275605195,
+            -0.000015052265931189586,
+            -1.6750934019086466e-13
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543931,
+            "lower": 0.9446236687734862,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "top",
+          "time": 26.099999999984522,
+          "upper": -1.0076625185365236,
+          "lower": -0.944622610693271,
+          "catch": -0.029735720241015423,
+          "piston": 0.5366757304740977,
+          "target": 1.9625000000000004,
+          "force": 200,
+          "speed": [
+            0.00011760135490317384,
+            0.0001471939796077635,
+            0.0005539360902493054,
+            -0.00015612387769996374
+          ],
+          "contacts": 6,
+          "errors": {
+            "upper": 0.01266251853652356,
+            "lower": 0.000022610693271030158,
+            "piston": 1.4258242695259025
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "bottom",
+          "time": 35.09999999998557,
+          "upper": -0.9951711034543931,
+          "lower": -0.9446255525212784,
+          "catch": -0.029735494190264507,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            4.9381096214444875e-14,
+            -0.0002829369122612245,
+            -0.00018198969591972551,
+            -1.6758645868956608e-13
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543931,
+            "lower": 0.9446255525212784,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        }
+      ],
+      "completedTwoCycles": false
+    },
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "catchMass": 0.25,
+        "contacts": true,
+        "period": 18,
+        "registered": true,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "closedAngles": {
+          "upper": -0.995,
+          "lower": -0.9446
+        }
+      },
+      "minimumGap": -0.0001686138346188222,
+      "failure": null,
+      "final": {
+        "time": 35.99999999998987,
+        "upper": -0.9951711034543931,
+        "lower": -0.944645306234505,
+        "catch": 0.03157671741436025,
+        "piston": -1.642404999999994,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "speed": [
+          4.938120862664126e-14,
+          -0.00022699455631702576,
+          0.0001652301075112001,
+          -1.6757962654786436e-13
+        ],
+        "contacts": 3
+      },
+      "stages": [
+        {
+          "cycle": 0,
+          "stage": "top",
+          "time": 8.099999999998408,
+          "upper": -0.9951711034543931,
+          "lower": -0.9446833421459708,
+          "catch": 0.031546802540239824,
+          "piston": 1.957594999999994,
+          "target": 1.9625000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            4.938129103136111e-14,
+            -6.151615184318149e-7,
+            -5.272575566736803e-7,
+            1.6208146144635326e-13
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.0001711034543930845,
+            "lower": 0.00008334214597083278,
+            "piston": 0.0049050000000061544
+          },
+          "passed": true
+        },
+        {
+          "cycle": 0,
+          "stage": "bottom",
+          "time": 17.100000000005497,
+          "upper": -0.9951711034543931,
+          "lower": -0.9446453333120634,
+          "catch": 0.03157486584308924,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.8100000000004,
+          "speed": [
+            4.937340019067786e-14,
+            0.00048014649371760877,
+            0.0005157833993262413,
+            -1.6751627908476857e-13
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543931,
+            "lower": 0.9446453333120634,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "top",
+          "time": 26.099999999984522,
+          "upper": -1.0076636423147998,
+          "lower": -0.9446467844726525,
+          "catch": 0.03157670030501385,
+          "piston": 0.536677221546699,
+          "target": 1.9625000000000004,
+          "force": 200,
+          "speed": [
+            -0.0001205033566348214,
+            -0.0002503947857770447,
+            -0.00009640612377153488,
+            0.00015998075667858898
+          ],
+          "contacts": 6,
+          "errors": {
+            "upper": 0.012663642314799772,
+            "lower": 0.000046784472652494635,
+            "piston": 1.425822778453301
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "bottom",
+          "time": 35.09999999998557,
+          "upper": -0.9951711034543931,
+          "lower": -0.9446449576270847,
+          "catch": 0.03157574273853566,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            4.938120862664126e-14,
+            0.00013860384121711818,
+            0.0005621383714106453,
+            -1.6758645868956608e-13
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543931,
+            "lower": 0.9446449576270847,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        }
+      ],
+      "completedTwoCycles": false
+    },
+    {
+      "parameters": {
+        "timestep": 0.00025,
+        "catchMass": 0.25,
+        "contacts": true,
+        "period": 18,
+        "registered": true,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "closedAngles": {
+          "upper": -0.995,
+          "lower": -0.9446
+        }
+      },
+      "minimumGap": -0.00008749939885354199,
+      "failure": null,
+      "final": {
+        "time": 36.00000000008088,
+        "upper": -0.9951711034543944,
+        "lower": -0.9446859072747186,
+        "catch": 0.03154467919394845,
+        "piston": -1.642404999999999,
+        "target": -1.6375000000000002,
+        "force": 9.810000000000855,
+        "speed": [
+          8.335755643190365e-14,
+          -0.0000027407935026710394,
+          -0.0000022641585445788054,
+          -3.674133754678051e-14
+        ],
+        "contacts": 3
+      },
+      "stages": [
+        {
+          "cycle": 0,
+          "stage": "top",
+          "time": 8.100000000003797,
+          "upper": -0.9951711034543945,
+          "lower": -0.9447143772354528,
+          "catch": 0.03152111107937782,
+          "piston": 1.9575949999999989,
+          "target": 1.9625000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            8.617705592243539e-14,
+            1.3378729396541823e-7,
+            1.1071564174687434e-7,
+            3.693549714258245e-14
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.0001711034543945278,
+            "lower": 0.00011437723545282275,
+            "piston": 0.0049050000000012695
+          },
+          "passed": true
+        },
+        {
+          "cycle": 0,
+          "stage": "bottom",
+          "time": 17.099999999990636,
+          "upper": -0.9951711034543952,
+          "lower": -0.9446788505510496,
+          "catch": 0.03155051773858108,
+          "piston": -1.642404999999999,
+          "target": -1.6375000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            1.0317802960195678e-13,
+            -7.988750302578762e-7,
+            -6.416774967460184e-7,
+            -3.69149641673109e-14
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543952,
+            "lower": 0.9446788505510496,
+            "piston": 0.004904999999998827
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "top",
+          "time": 26.10000000003361,
+          "upper": -1.007627260425329,
+          "lower": -0.9446796146044079,
+          "catch": 0.031549887197638626,
+          "piston": 0.536628919093504,
+          "target": 1.9625000000000004,
+          "force": 200,
+          "speed": [
+            -0.00033728394951308775,
+            8.656033879614123e-7,
+            7.165651151157083e-7,
+            0.0004478078901393132
+          ],
+          "contacts": 6,
+          "errors": {
+            "upper": 0.012627260425328912,
+            "lower": 0.00007961460440786272,
+            "piston": 1.425871080906496
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "bottom",
+          "time": 35.100000000076584,
+          "upper": -0.9951711034543944,
+          "lower": -0.9446838791683846,
+          "catch": 0.03154635704470364,
+          "piston": -1.642404999999999,
+          "target": -1.6375000000000004,
+          "force": 9.8100000000004,
+          "speed": [
+            8.335741843757184e-14,
+            -0.0000019495299211585965,
+            -0.00000161428388963054,
+            -3.685976133607244e-14
+          ],
+          "contacts": 3,
+          "errors": {
+            "upper": 0.9951711034543944,
+            "lower": 0.9446838791683846,
+            "piston": 0.004904999999998827
+          },
+          "passed": false
+        }
+      ],
+      "completedTwoCycles": false
+    },
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "catchMass": 0.25,
+        "contacts": false,
+        "period": 18,
+        "registered": true,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "closedAngles": {
+          "upper": -0.995,
+          "lower": -0.9446
+        }
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 35.99999999998987,
+        "upper": -0.9951711034543937,
+        "lower": 0.00015602872367466753,
+        "catch": -0.0001292150968495828,
+        "piston": -1.642404999999994,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "speed": [
+          6.634560271811687e-14,
+          2.944812398831625e-18,
+          1.2806219080276603e-17,
+          -1.6757962654786436e-13
+        ],
+        "contacts": 0
+      },
+      "stages": [
+        {
+          "cycle": 0,
+          "stage": "top",
+          "time": 8.099999999998408,
+          "upper": -0.9951711034543937,
+          "lower": 0.00015602872367466753,
+          "catch": -0.0001292150968495828,
+          "piston": 1.957594999999994,
+          "target": 1.9625000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            6.634560271811687e-14,
+            2.944812398831625e-18,
+            1.2806219080276603e-17,
+            1.621439114437188e-13
+          ],
+          "contacts": 0,
+          "errors": {
+            "upper": 0.00017110345439375063,
+            "lower": 0.9447560287236747,
+            "piston": 0.0049050000000061544
+          },
+          "passed": false
+        },
+        {
+          "cycle": 0,
+          "stage": "bottom",
+          "time": 17.100000000005497,
+          "upper": -0.9951711034543937,
+          "lower": 0.00015602872367466753,
+          "catch": -0.0001292150968495828,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.8100000000004,
+          "speed": [
+            6.634560271811687e-14,
+            2.944812398831625e-18,
+            1.2806219080276603e-17,
+            -1.6750934019086466e-13
+          ],
+          "contacts": 0,
+          "errors": {
+            "upper": 0.9951711034543937,
+            "lower": 0.00015602872367466753,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "top",
+          "time": 26.099999999984522,
+          "upper": -0.9951711034543937,
+          "lower": 0.00015602872367466753,
+          "catch": -0.0001292150968495828,
+          "piston": 1.957594999999994,
+          "target": 1.9625000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            6.634560271811687e-14,
+            2.944812398831625e-18,
+            1.2806219080276603e-17,
+            1.62065881997679e-13
+          ],
+          "contacts": 0,
+          "errors": {
+            "upper": 0.00017110345439375063,
+            "lower": 0.9447560287236747,
+            "piston": 0.0049050000000061544
+          },
+          "passed": false
+        },
+        {
+          "cycle": 1,
+          "stage": "bottom",
+          "time": 35.09999999998557,
+          "upper": -0.9951711034543937,
+          "lower": 0.00015602872367466753,
+          "catch": -0.0001292150968495828,
+          "piston": -1.642404999999994,
+          "target": -1.6375000000000004,
+          "force": 9.809999999999945,
+          "speed": [
+            6.634560271811687e-14,
+            2.944812398831625e-18,
+            1.2806219080276603e-17,
+            -1.6758645868956608e-13
+          ],
+          "contacts": 0,
+          "errors": {
+            "upper": 0.9951711034543937,
+            "lower": 0.00015602872367466753,
+            "piston": 0.00490499999999372
+          },
+          "passed": false
+        }
+      ],
+      "completedTwoCycles": false
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-diagonal-catch-transfer.mjs",
+      "sha256": "0fa1f58f82cda70d685a8098a2fa4fcdd333ad5b0bc6378401fe97a39550da7b"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
+      "sha256": "82b210c149a3cda77c6871fb7873bf1ce91602ebdc273830221a1afb2d730650"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/latch-study.js",
+      "sha256": "030217d1a91436b4dee413d0ed56a9e4311af51482501fdbe94a7a347fc928db"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/contact-study.js",
+      "sha256": "ee5f036e1f796d5efe39f192de75466be810a97812e26a6c03abe4db80795a5a"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
+      "sha256": "ae0ca0d3ae60d616330e233ac7bb879777c2c713b8dd34a8bf285ca49b4b6644"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "9b790471a2502345f88f099e6aac45ee4365fc56d5e4c743914d9fbd3cefb122"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
