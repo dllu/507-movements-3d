@@ -242,3 +242,47 @@ node --test tests/spring-treadle-solids.test.mjs
 ```
 
 The report with source hashes is `docs/validation/160-band-hardware.json`.
+
+## Refined coupled motion and complete part-pair audit
+
+`refine-spring-treadle.mjs` compares four 16-second native runs: 32 versus 64
+loaded-span leaf links, band stiffness 20000 versus 40000, then timestep
+0.000125 versus 0.0000625 seconds. All retain the explicit ideal massless pulley.
+The final cycles are compared at matching 0.01-second phases. Refining the leaf
+changes the upper attachment by at most 0.008905 world units (0.495 pixels) and
+the foot by 0.012733 (0.707 pixels). Doubling band stiffness changes the foot by
+0.0003592 world units (0.020 pixels); halving timestep changes it by 0.00005112
+(0.00284 pixels). The finest configuration's maximum band extension is 0.001131
+world units (0.063 pixels), including prestretch. Its cycle-end joint-angle
+closure is below 2.6e-15 radians. This configuration is selected for baking.
+
+`review-spring-treadle-solids.mjs` checks bidirectional visible vertices, edge
+midpoints and triangle centers for 117 part pairs at 129 settled-cycle poses.
+The dynamic spring surface is rebuilt at every pose. Fixed-frame unions are
+excluded; only the named clamp and fastening unions are intentional overlaps.
+The refined assembly passes 3,156,082 checks with no unintended penetration.
+The band/hardware audit also passes on the refined motion. These are finite
+sampled checks, not a continuous collision proof. Both scripts now accept
+explicit trajectory and leaf-resolution inputs and hash the actual raw input.
+
+The visible band now uses `makeCurveTubeBuffer`: fixed position/normal/index
+storage updated along the curve, with no per-frame geometry construction.
+Its frame uses an XY normal and orthogonal binormal to avoid flips at straight/
+curved joins. A regression test checks tube radius, outward normal direction,
+normal/tangent orthogonality, stable storage and bounds through motion. Together
+with the native visible-assembly test, both checks pass. A 1,000-frame warmed
+Node measurement gives 0.216 ms median and 0.234 ms p95 for complete visible
+updates, excluding rendering. Updated front/loaded/oblique previews were
+inspected in `/dev/shm/160-refined-solids-*.png`.
+
+```sh
+node scripts/refine-spring-treadle.mjs
+SEGMENTS=64 TAIL_SEGMENTS=12 SAMPLES=/dev/shm/160-refined-3.json REPORT=docs/validation/160-refined-solid-clearance.json node scripts/review-spring-treadle-solids.mjs
+SEGMENTS=64 TAIL_SEGMENTS=12 SAMPLES=/dev/shm/160-refined-3.json REPORT=docs/validation/160-refined-band-hardware.json node scripts/review-spring-treadle-hardware.mjs
+node --test tests/curve-tube-buffer.test.mjs tests/spring-treadle-solids.test.mjs
+```
+
+The refinement report is `docs/validation/160-coupled-refinement.json`.
+Production remains unchanged until the selected motion is baked, its
+interpolation/loop seam and framing are checked, and desktop/mobile playback
+passes without loading MuJoCo or generating rigid geometry in the browser.

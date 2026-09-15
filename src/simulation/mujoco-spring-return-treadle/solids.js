@@ -4,6 +4,7 @@ import {PALETTE,matte,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {sourceLeaf} from './source.js';
 import {ReturnBandRoute} from './band-route.js';
+import {makeCurveTubeBuffer} from '../curve-tube-buffer.js';
 import {AxiallySeparatedBand} from '../axially-separated-band.js';
 
 // Visible reconstruction candidate. Native dynamics are supplied by the caller;
@@ -47,7 +48,8 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  const springGeometry=new THREE.BufferGeometry();springGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));springGeometry.setIndex(indices);
  const spring=add('leaf',springGeometry,'spring',PALETTE.driver);spring.material=spring.material.clone();spring.material.flatShading=true;
  const widths=leaf.points.map(p=>{const x=319+p.x/scale;return (x<120?25.5:x<280?25.5-(x-120)*5.5/160:20-(x-280)*5.5/135)*scale;});
- const band=add('band',new THREE.BufferGeometry(),'fixed',PALETTE.ink);
+ const tube=makeCurveTubeBuffer();
+ const band=add('band',tube.geometry,'fixed',PALETTE.ink);
  const update=s=>{
   if(s.leafPoints.length!==n)throw new RangeError('Spring state resolution differs from visible geometry');
   blocks.treadle.position.set(...pivot,0);blocks.treadle.rotation.z=s.treadle;
@@ -58,7 +60,7 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
    positions.set([p[0]+nx*h,p[1]+ny*h,.03,p[0]-nx*h,p[1]-ny*h,.03,p[0]+nx*h,p[1]+ny*h,-.15,p[0]-nx*h,p[1]-ny*h,-.15],i*12);
   }
   springGeometry.attributes.position.needsUpdate=true;springGeometry.computeVertexNormals();springGeometry.computeBoundingBox();springGeometry.computeBoundingSphere();
-  const curve=new AxiallySeparatedBand(new ReturnBandRoute(s.upper,s.lower),{startZ:.24,endZ:.72});band.geometry.dispose();band.geometry=new THREE.TubeGeometry(curve,384,.048,8,false);
+  const curve=new AxiallySeparatedBand(new ReturnBandRoute(s.upper,s.lower),{startZ:.24,endZ:.72});tube.update(curve);
   root.userData.state=s;root.userData.bandCurve=curve;root.updateMatrixWorld(true);
  };
  Object.assign(root.userData,{parts,families,blocks,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, rear mounts, bearings and cord fastenings are inferred. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});

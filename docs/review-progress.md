@@ -1,13 +1,13 @@
 # Active reconstruction: 160 spring-return treadle
 
-160 now has a source-shaped visible candidate around its coupled native spring
-and treadle: solid pulley, explicit bored supports, traced pedestal, tapered
-strip and separated band ends. Front/loaded/oblique previews are inspected. A
-101-pose actual-mesh band clearance audit passes, as do native attachment,
-connected-casting, spring-winding and actual-vertex floor checks. Gravity and
-inferred prestress support repeatable passive return. Production is unchanged
-pending coupled refinement, complete rigid-pair checks and baked playback.
-See [movement 160](movement-160.md) for the explicit physical/visual assumptions.
+160’s refined source-shaped candidate passes 117 part-pair checks across 129
+poses (3.16 million queries) and the separate band/hardware audit. Leaf, band
+stiffness and timestep studies select 64 loaded-span links and 0.0000625-second
+steps for baking. Stable band/spring buffers update in about 0.22 ms locally,
+excluding rendering. Updated previews are inspected. Production remains
+unchanged pending bake interpolation, loop seam and desktop/mobile playback
+checks. The ideal massless pulley and inferred material/prestress assumptions
+remain explicit in [movement 160](movement-160.md).
 The full 507-movement review remains active.
 
 # Shipped reconstruction: 159 cord treadle

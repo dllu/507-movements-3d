@@ -1,0 +1,135 @@
+{
+  "movement": 160,
+  "method": "Four native 16-second runs; compare the final cycle at matching 0.01-second phases. Refine leaf discretization, band compliance, then timestep. This checks the stated massless-pulley idealization, not unknown real material properties.",
+  "runs": [
+    {
+      "configuration": {
+        "segments": 32,
+        "tailSegments": 6,
+        "timestep": 0.000125,
+        "EI": 2000,
+        "viscosity": 200,
+        "bandStiffness": 20000,
+        "bandDamping": 20,
+        "footLoad": 6,
+        "band": true,
+        "period": 4,
+        "gravity": 98.1,
+        "preload": true,
+        "initialTension": 36.02305695387312,
+        "assumptions": "Diagnostic only: inextensible elastic leaf, force-driven treadle, compliant tension-only full-wrap band, massless frictionless pulley, gravity. Stress-free joint angles and band rest length are inferred to balance gravity in the source pose. Real material parameters, drum inertia and visible hardware/contact remain unqualified."
+      },
+      "maximumBandExtension": 0.0022603826528602156,
+      "cycleAngleClosure": 2.3980485294988058e-15
+    },
+    {
+      "configuration": {
+        "segments": 64,
+        "tailSegments": 12,
+        "timestep": 0.000125,
+        "EI": 2000,
+        "viscosity": 200,
+        "bandStiffness": 20000,
+        "bandDamping": 20,
+        "footLoad": 6,
+        "band": true,
+        "period": 4,
+        "gravity": 98.1,
+        "preload": true,
+        "initialTension": 36.02305695387312,
+        "assumptions": "Diagnostic only: inextensible elastic leaf, force-driven treadle, compliant tension-only full-wrap band, massless frictionless pulley, gravity. Stress-free joint angles and band rest length are inferred to balance gravity in the source pose. Real material parameters, drum inertia and visible hardware/contact remain unqualified."
+      },
+      "maximumBandExtension": 0.0022611612861584973,
+      "cycleAngleClosure": 2.561766445675906e-15
+    },
+    {
+      "configuration": {
+        "segments": 64,
+        "tailSegments": 12,
+        "timestep": 0.000125,
+        "EI": 2000,
+        "viscosity": 200,
+        "bandStiffness": 40000,
+        "bandDamping": 20,
+        "footLoad": 6,
+        "band": true,
+        "period": 4,
+        "gravity": 98.1,
+        "preload": true,
+        "initialTension": 36.02305695387312,
+        "assumptions": "Diagnostic only: inextensible elastic leaf, force-driven treadle, compliant tension-only full-wrap band, massless frictionless pulley, gravity. Stress-free joint angles and band rest length are inferred to balance gravity in the source pose. Real material parameters, drum inertia and visible hardware/contact remain unqualified."
+      },
+      "maximumBandExtension": 0.0011305701337693819,
+      "cycleAngleClosure": 2.5449714763977477e-15
+    },
+    {
+      "configuration": {
+        "segments": 64,
+        "tailSegments": 12,
+        "timestep": 0.0000625,
+        "EI": 2000,
+        "viscosity": 200,
+        "bandStiffness": 40000,
+        "bandDamping": 20,
+        "footLoad": 6,
+        "band": true,
+        "period": 4,
+        "gravity": 98.1,
+        "preload": true,
+        "initialTension": 36.02305695387312,
+        "assumptions": "Diagnostic only: inextensible elastic leaf, force-driven treadle, compliant tension-only full-wrap band, massless frictionless pulley, gravity. Stress-free joint angles and band rest length are inferred to balance gravity in the source pose. Real material parameters, drum inertia and visible hardware/contact remain unqualified."
+      },
+      "maximumBandExtension": 0.0011305691599261536,
+      "cycleAngleClosure": 2.5624745652198105e-15
+    }
+  ],
+  "comparisons": [
+    {
+      "from": 0,
+      "to": 1,
+      "maximumTreadleAngleDifference": 0.0023952479800763704,
+      "maximumUpperDifference": 0.008904934568920473,
+      "maximumFootDifference": 0.012732859464406528
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "maximumTreadleAngleDifference": 0.00006757098637531767,
+      "maximumUpperDifference": 0.00001818184728724945,
+      "maximumFootDifference": 0.0003591995843655517
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "maximumTreadleAngleDifference": 0.00000961564872520998,
+      "maximumUpperDifference": 0.00003505072918627282,
+      "maximumFootDifference": 0.00005111568161753227
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/refine-spring-treadle.mjs",
+      "sha256": "791051532118741348525613c4d51f7a5193c19dc75fc5554a1e16522e4460bb"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/coupled-physics.js",
+      "sha256": "6377237c8af0de74100be831140829ed75d2bc3a8ce1a9ce56f9a2606afef32e"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/leaf-assembly.js",
+      "sha256": "c27140d24f1cd4260fa0523fc2d0ce930bc1aae8a968dd2ca5f6ddd877477cfb"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/source.js",
+      "sha256": "6b5a60855bc60af2829a0c75d6adf927ace7b387f30f333c9a7ea42e86a2606b"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/band-route.js",
+      "sha256": "4d681d014b7632d32da03d6b8cc35e38dbd89893d57f5aca65e1b9b1fc81c07d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
