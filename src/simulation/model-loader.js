@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 160) {
+    const {makeBakedSpringTreadle} = await import('./baked/spring-treadle.js');
+    const model = await makeBakedSpringTreadle();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 159) {
     const {makeBakedCordTreadle} = await import('./baked/cord-treadle.js');
     const model = await makeBakedCordTreadle();

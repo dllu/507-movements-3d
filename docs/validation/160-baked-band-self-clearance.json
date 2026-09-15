@@ -1,0 +1,34 @@
+{
+  "movement": 160,
+  "poses": 129,
+  "segments": 1024,
+  "minimumNonlocalClearanceLowerBound": 0.057719983157221294,
+  "worstTime": 2.0270077519379845,
+  "method": "Interpolated baked motion at off-keyframe phases. Nonlocal band portions separated by at least four radii: all sampled point pairs, subtract two arclength spacings and two band radii to bound intervening curve clearance. Local line/helix curvature radius exceeds band radius. Sampled-time check, not continuous-time proof.",
+  "sources": [
+    {
+      "file": "src/simulation/baked/assets/160.json.gz",
+      "sha256": "aa2419560f7053a151d9d1ded275352ebd5f6644b70ea6f3389565830fa18f67"
+    },
+    {
+      "file": "scripts/review-baked-spring-band.mjs",
+      "sha256": "711c91a64e4c5b731e316a3cdb877fbc24f3694989e5fdffde99f97c96c8dce3"
+    },
+    {
+      "file": "src/simulation/baked/spring-treadle.js",
+      "sha256": "bf936a0b1a7f1b66c400168093a08ef90b4b7e928cdc718b6a66a263c9fa6b0f"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/kinematics.js",
+      "sha256": "86b482c6ae85b15cd79641b32a35915e7e6b565303a01de2254a3880b2a6662f"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/band-route.js",
+      "sha256": "4d681d014b7632d32da03d6b8cc35e38dbd89893d57f5aca65e1b9b1fc81c07d"
+    },
+    {
+      "file": "src/simulation/axially-separated-band.js",
+      "sha256": "b999fb71cd4c5af87e0d83663abc4999f1472aebf6271a202f70bba4e051b2ef"
+    }
+  ]
+}

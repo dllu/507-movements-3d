@@ -4,14 +4,13 @@ import {PALETTE,matte,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {sourceLeaf} from './source.js';
 import {ReturnBandRoute} from './band-route.js';
-import {makeCurveTubeBuffer} from '../curve-tube-buffer.js';
-import {AxiallySeparatedBand} from '../axially-separated-band.js';
+import {makeSpringTreadleUpdater} from './update-solids.js';
 
 // Visible reconstruction candidate. Native dynamics are supplied by the caller;
 // no simulation or motion clock is hidden in this geometry factory.
 export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  const root=new THREE.Group(),parts={},families={},blocks={},materials=new Map(),leaf=sourceLeaf({segments,tailSegments}),pivot=[-2.862,-2.898],scale=.018;
- for(const name of ['fixed','treadle','pulley','spring']){blocks[name]=new THREE.Group();root.add(blocks[name]);}
+ for(const name of ['fixed','treadle','pulley','spring']){blocks[name]=new THREE.Group();blocks[name].name="body:"+name;root.add(blocks[name]);}
  const material=color=>{if(!materials.has(color)){const m=matte(color,{roughness:.65,metalness:.12});m.fog=false;materials.set(color,m);}return materials.get(color);};
  const add=(name,geometry,family,color,point=[0,0])=>{const mesh=new THREE.Mesh(geometry,material(color));mesh.name=name;mesh.position.set(...point,0);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;};
  const pixel=([x,y])=>[(x-319)*scale,(252-y)*scale],imagePoly=p=>poly(p.map(pixel));
@@ -48,22 +47,10 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  const springGeometry=new THREE.BufferGeometry();springGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));springGeometry.setIndex(indices);
  const spring=add('leaf',springGeometry,'spring',PALETTE.driver);spring.material=spring.material.clone();spring.material.flatShading=true;
  const widths=leaf.points.map(p=>{const x=319+p.x/scale;return (x<120?25.5:x<280?25.5-(x-120)*5.5/160:20-(x-280)*5.5/135)*scale;});
- const tube=makeCurveTubeBuffer();
- const band=add('band',tube.geometry,'fixed',PALETTE.ink);
- const update=s=>{
-  if(s.leafPoints.length!==n)throw new RangeError('Spring state resolution differs from visible geometry');
-  blocks.treadle.position.set(...pivot,0);blocks.treadle.rotation.z=s.treadle;
-  blocks.pulley.rotation.z=s.rotorPhase;
-  for(const m of [upperAnchor.stem,upperAnchor.head]){m.position.x=s.upper[0];m.position.y=s.upper[1];}
-  for(let i=0;i<n;i++){
-   const before=s.leafPoints[Math.max(0,i-1)],after=s.leafPoints[Math.min(n-1,i+1)],dx=after[0]-before[0],dy=after[1]-before[1],l=Math.hypot(dx,dy),nx=-dy/l,ny=dx/l,p=s.leafPoints[i],h=widths[i]/2;
-   positions.set([p[0]+nx*h,p[1]+ny*h,.03,p[0]-nx*h,p[1]-ny*h,.03,p[0]+nx*h,p[1]+ny*h,-.15,p[0]-nx*h,p[1]-ny*h,-.15],i*12);
-  }
-  springGeometry.attributes.position.needsUpdate=true;springGeometry.computeVertexNormals();springGeometry.computeBoundingBox();springGeometry.computeBoundingSphere();
-  const curve=new AxiallySeparatedBand(new ReturnBandRoute(s.upper,s.lower),{startZ:.24,endZ:.72});tube.update(curve);
-  root.userData.state=s;root.userData.bandCurve=curve;root.updateMatrixWorld(true);
- };
- Object.assign(root.userData,{parts,families,blocks,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, rear mounts, bearings and cord fastenings are inferred. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
+ const band=add('band',new THREE.BufferGeometry(),'fixed',PALETTE.ink);
+ const update=makeSpringTreadleUpdater(root,{widths,pivot});
+
+ Object.assign(root.userData,{parts,families,blocks,leafWidths:widths,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, rear mounts, bearings and cord fastenings are inferred. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
  const route=new ReturnBandRoute([.774,2.664],[.738,-2.322]);update({treadle:0,rotorPhase:route.rotorPhase,upper:[.774,2.664,0],lower:[.738,-2.322,0],leafPoints:leaf.points.map(p=>p.toArray())});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};
 }

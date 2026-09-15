@@ -1,7 +1,12 @@
-# Movement 160 — spring-return treadle, review in progress
+# Movement 160 — baked spring-return treadle
 
-160 remains open. The production animation is still the authored model; the
-spatial band helper is a tested candidate for its replacement.
+160 now plays a baked native spring/treadle cycle in a source-shaped assembly.
+The spring preserves its length, the full-wrap band separates in depth, and
+foot pressure and stored spring energy drive the motion under gravity.
+The browser loads prebuilt geometry and joint tracks, with no live MuJoCo.
+The ideal massless pulley and inferred material/prestress assumptions remain
+explicit. The development records below retain earlier findings and prototype
+limitations; the final shipping validation is recorded at the end.
 
 ## Source
 
@@ -286,3 +291,48 @@ The refinement report is `docs/validation/160-coupled-refinement.json`.
 Production remains unchanged until the selected motion is baked, its
 interpolation/loop seam and framing are checked, and desktop/mobile playback
 passes without loading MuJoCo or generating rigid geometry in the browser.
+
+## Shipped bake and playback
+
+160 is registered through `baked/spring-treadle.js`. The four-second settled
+cycle is sampled at 0.002-second intervals (2,001 keys), beginning at native
+time 12 seconds. The 64-link loaded span plus 12-link tail uses band stiffness
+40000 and a 0.0000625-second native timestep. Joint coordinates are rounded to
+1e-8 radians. Raw cycle position/velocity closure is below 2.6e-15 radians and
+1.6e-14 radians/second before the final key is closed. Rounding and independent
+forward kinematics move the measured attachment/foot points by at most
+3.09e-7 world units at stored keys.
+
+The gzip asset is approximately 609 KB and includes prebuilt rigid geometry.
+Browser playback does not load MuJoCo or construct the rigid parts. It
+interpolates joint angles, then reconstructs fixed-length leaf links with
+forward kinematics. Shared spring/band buffers update the flexible geometry.
+This keeps the strip inextensible between keys and maintains ordinary pin
+attachments instead of interpolating disconnected endpoint positions.
+
+At 2,000 intermediate keyframe midpoints, native simulation and baked playback
+agree within 1.381e-6 world units at the upper attachment, lower attachment and
+foot. Every reconstructed leaf link retains its length to 1e-12. Bounds enclose
+257 intermediate poses. Stable geometry, fog settings, the loop seam and exact
+restart pass. An independent interpolated-band self-clearance check at 129
+phases gives a nonlocal clearance lower bound of 0.05772 world units (3.21
+engraving pixels). The report records its finite-sampling scope.
+
+The private production build and desktop/mobile Chrome test pass. Playback
+changes the image, restart reproduces it exactly, orbit/reset work, mobile has
+no horizontal overflow, there are no page errors and no MuJoCo WASM requests.
+Packaged source and mobile views were inspected. Ten mechanical/geometry
+regressions and two baked-player tests pass; the earlier axial-band test also
+remains applicable. Production notes explicitly retain the ideal massless
+pulley, slight band compliance and inferred spring properties, assembly
+prestress and mounting depths. This is an idealized reconstruction rather than
+an identification of unknown historical material parameters.
+
+```sh
+node scripts/bake-spring-treadle.mjs
+node --test tests/spring-treadle-baked.test.mjs
+node scripts/review-baked-spring-band.mjs
+```
+
+Bake source hashes are in `src/simulation/baked/assets/160.provenance.json`;
+self-clearance evidence is in `docs/validation/160-baked-band-self-clearance.json`.

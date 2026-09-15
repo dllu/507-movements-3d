@@ -1,14 +1,13 @@
-# Active reconstruction: 160 spring-return treadle
+# Shipped reconstruction: 160 spring-return treadle
 
-160’s refined source-shaped candidate passes 117 part-pair checks across 129
-poses (3.16 million queries) and the separate band/hardware audit. Leaf, band
-stiffness and timestep studies select 64 loaded-span links and 0.0000625-second
-steps for baking. Stable band/spring buffers update in about 0.22 ms locally,
-excluding rendering. Updated previews are inspected. Production remains
-unchanged pending bake interpolation, loop seam and desktop/mobile playback
-checks. The ideal massless pulley and inferred material/prestress assumptions
-remain explicit in [movement 160](movement-160.md).
-The full 507-movement review remains active.
+160 now plays a four-second baked native cycle from a roughly 609 KB asset.
+The source-shaped spring, solid pulley and treadle preserve ordinary attachment
+motion, with a spatial full wrap and no live browser physics. Refined mechanical
+and mesh-clearance checks, native-versus-interpolated playback, inextensible
+leaf lengths, loop/restart, private production build and desktop/mobile Chrome
+checks pass. The massless-pulley and inferred material/prestress assumptions
+remain explicit in [movement 160](movement-160.md). Continue at 161; 147’s
+refinement and 150’s source fit remain open. The full review remains active.
 
 # Shipped reconstruction: 159 cord treadle
 
