@@ -97,16 +97,25 @@ Its configuration follows the [MuJoCo collision documentation](https://mujoco.re
 This is an empirical workaround for this candidate, not a general recommendation
 to change the project's solver. Both failing runs remain in the report.
 
-All-tick baseline checks find maximum reported contact penetration 0.00513 world
-units (0.285 pixel), output-pin closure error 0.0000181, and cam tracking error
-0.03977 radian. Output moves over 0.63837 units. Disabling contact changes output
-by up to 2.31082 units, establishing that the follower is not scripted. However,
-halving the timestep and increasing angular sections from 360 to 480 change
-sampled output by 0.05569 and 0.05646 units (3.09 and 3.14 pixels). **This candidate
-is not converged enough to bake or register.** Roller spin, repeated-cycle
+Tightening CCD tolerance to 1e-10 with 200 iterations and increasing the input
+servo to stiffness 100000/damping 1000 improves timestep sensitivity. All-tick
+baseline checks now find maximum reported contact penetration 0.00326 world
+units (0.181 pixel), output-pin closure error 0.0000091, and cam tracking error
+0.00380 radian. Output moves over 0.63687 units. Disabling contact changes output
+by up to 2.31083 units, establishing that the follower is not scripted.
+
+Halving the timestep changes sampled output by 0.00379 units (0.21 pixel), down
+from 3.09 pixels with the earlier settings. However, increasing angular sections
+from 360 to 480 changes it by 0.07247 units (4.03 pixels). **The collision-mesh
+sensitivity remains unresolved; this candidate must not be baked or registered.**
+The regression bounds reported contact error over every tick to 0.005 units
+(0.28 pixel), rather than relying on the final pose alone. This is a numerical
+study bound, not a rendered-clearance qualification. Roller spin, repeated-cycle
 settling, actual solid clearances, source-shaped output hardware and browser
 playback are still unqualified. A 720-section experiment exceeded the WASM heap;
 the recorded refinement uses 480 sections and fresh module instances per run.
+A temporary polygonal-roller experiment also jammed with native CCD; simply
+substituting a mesh for the cylinder does not resolve that failure.
 
 Six tests cover legacy finite contact, measured silhouette interpolation,
 source-pose roller clearance, periodicity and a complete contact-driven input

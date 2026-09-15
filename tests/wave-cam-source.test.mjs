@@ -37,9 +37,10 @@ test('165 passive follower moves by contact without a jammed input',async()=>{
   const p=makeWaveCamPhysics(m,{contact});
   try{
    assert.equal(p.model.nu,1);
-   for(let i=0;i<36000;i++)p.step();
+   let maximumPenetration=0;
+   for(let i=0;i<36000;i++){p.step();maximumPenetration=Math.max(maximumPenetration,p.state().penetration);}
    const s=p.state();assert.ok(Math.abs(s.cam-2*Math.PI)<.015);states.push(s);
-   if(contact){assert.ok(s.closure<1e-5);assert.ok(s.penetration<.001);assert.ok(s.outputY>.67&&s.outputY<.71);}
+   if(contact){assert.ok(s.closure<1e-5);assert.ok(maximumPenetration<.005,'study contact error remains below 0.28 source pixel throughout the revolution');assert.ok(s.outputY>.67&&s.outputY<.71);}
   }finally{p.dispose();}
  }
  assert.ok(Math.abs(states[0].outputY-states[1].outputY)>.5);

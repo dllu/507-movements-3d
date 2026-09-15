@@ -4,8 +4,8 @@ import load from '@mujoco/mujoco';
 import {makeWaveCamPhysics} from '../src/simulation/mujoco-wave-cam/physics.js';
 const runs=[],trajectories={};
 for(const [name,options,duration] of [
- ['native-multi',{collision:'native-multi'},1],
- ['native-single',{collision:'native-single'},18],
+ ['native-multi',{collision:'native-multi',ccdTolerance:1e-6,ccdIterations:50,driveStiffness:10000,driveDamping:100},1],
+ ['native-single',{collision:'native-single',ccdTolerance:1e-6,ccdIterations:50,driveStiffness:10000,driveDamping:100},18],
  ['baseline',{},18],
  ['half-step',{timestep:.00025},18],
  ['refined-mesh',{segments:480},18],

@@ -3,8 +3,9 @@
 165's legacy finite-roller overlap is confirmed. A source-traced profile now
 clears the source roller with a sampled visible-outline change below 0.17 pixel.
 An unregistered MuJoCo study completes a contact-driven input revolution using
-MPR, while native CCD variants jam. Timestep and mesh refinement still change
-output by about three source pixels, so baking and registration remain pending.
+MPR, while native CCD variants jam. Tighter tolerances and input drive reduce timestep sensitivity to 0.21 pixel,
+but mesh refinement changes output by 4.03 pixels. Baking and registration
+remain pending.
 See [movement 165](movement-165.md) for evidence and reconstruction assumptions.
 The full 507-movement review remains active.
 
