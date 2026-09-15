@@ -2,6 +2,7 @@ import {expect,test} from '@playwright/test';
 test('150 plays its selectable cam follower and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/150');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
+ await expect(page.getByText('The lever uses ordinary pin joints.',{exact:false})).toBeVisible();
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/150-packaged-source.png'});
  await page.locator('.play-control').click();await page.waitForTimeout(2380);await page.locator('.play-control').click();
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/150-packaged-moving.png'});

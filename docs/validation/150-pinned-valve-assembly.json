@@ -1,0 +1,34 @@
+{
+  "movement": 150,
+  "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 poses spanning all selections. Same-body mating interfaces excluded. No continuous collision proof.",
+  "summary": {
+    "parts": 53,
+    "pairs": 934,
+    "poses": 65,
+    "checks": 21961090,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "sources": [
+    {
+      "file": "scripts/review-selectable-cam-valve.mjs",
+      "sha256": "decf4b5e144026f9bbb2a3bb6e0c8299e8cd60ae302423af3d40bfe3acb931b7"
+    },
+    {
+      "file": "src/simulation/selectable-cam-valve.js",
+      "sha256": "264d306e29ec033485f81395d2029ecd9bc616c08bb5ffe438d1e9f2235dd63a"
+    },
+    {
+      "file": "src/simulation/authored-selectable-cams.js",
+      "sha256": "8ae138e078f5ba7f03f59be35c98256550ae477fbe3e542973b67f5b0c1f95e9"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

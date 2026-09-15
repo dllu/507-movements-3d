@@ -1,10 +1,10 @@
 # Current review: 150 selectable valve cams
 
-150 now has a source-sized shaft, keyed bored hub, annular sleeve/collars and
-relocated bored bearings. Shaft/carrier/support checks pass for 164 pairs at
-97 poses, as does the cam working-contact check. Cam-stack projection, exposed
-shaft length, valve connection, remaining assembly and passive return still
-need review. See [movement 150](movement-150.md).
+150 now uses an ordinary pinned rod and reconstructed lower output slide. The
+lever fits between neighboring cams, with a short bored roller axle. A 53-part,
+934-pair sampled assembly check and pin/velocity tests pass. This follows the
+source-sized shaft and bored carrier correction. Source cam-stack projection,
+exposed shaft length and passive return remain open. See [movement 150](movement-150.md).
 
 # Shipped reconstruction: 149 twin cam followers
 

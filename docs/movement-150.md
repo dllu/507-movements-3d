@@ -4,6 +4,43 @@ The [source](https://507movements.com/mm_150.html) describes cams of different
 throw sliding lengthwise along a shaft to change valve travel. The source HTML
 marks the animation tab unavailable, so there is no 2D motion oracle for 150.
 
+## Pinned valve connection and adjacent-cam clearance
+
+The app now loads `makeSelectableCamValve`, which retains the analytic cam
+selection schedule and replaces the slotted valve head with an ordinary pin.
+The rod reaches the engraved lower endpoint near Y=354 pixels. A second pin
+connects it to an inferred vertical output slide. The rod tilts to accommodate
+the lever arc; its lower pin follows a straight vertical path. The guide and
+its supporting base member are reconstructed and disclosed in the model note.
+
+The new lever, follower roller and rod heads have actual bores. The right pivot
+shaft and retainer now fit the source-sized lever boss. A complete moving-body
+check exposed a problem missed by the earlier working-pair tests: larger
+unselected cams could strike the old lever and long roller axle when a smaller
+throw was selected. The lever now occupies the 0.06-unit gap beside the selected
+cam, with a 0.03-unit plate depth. Its axle and retainer stop before the next cam.
+This hidden depth is an engineering choice, not a measured engraving dimension.
+
+[Assembly evidence](validation/150-pinned-valve-assembly.json) compares all
+visible meshes on different rigid bodies: 53 parts, 934 pairs, 65 poses across
+all selections and 21,961,090 bidirectional point/solid checks, with no
+penetration above 1e-6. Same-body mating interfaces are excluded. This is sampled
+clearance evidence, not continuous collision proof.
+
+The new focused test checks both rendered pin centers, constant output X, the
+source endpoint, restart and analytic output velocity against finite differences
+at 2,049 demonstration times. The original large mechanism test continues to
+exercise the underlying cam solver; it describes the retained legacy constructor,
+not the new valve geometry. Reproduce current checks with
+`node --test tests/selectable-cam-valve.test.mjs` and
+`node scripts/review-selectable-cam-valve.mjs`.
+The production build and packaged desktop/mobile test pass, including the new
+model note, animation, exact restart, orbit/reset and absence of WASM requests.
+
+Cam contact and return are still prescribed analytically. Passive loading,
+source cam-stack projection and exposed shaft length remain under review before
+settling the full reconstruction and any offline bake.
+
 ## Working-contact correction
 
 The existing analytical model stops at the common heel, shifts the entire cam
@@ -54,9 +91,8 @@ need tracing rather than assuming the current polar profiles and camera
 reproduce the engraving. The enlarged bore is a dimensional correction, not
 proof that the axial arrangement matches the source.
 
-The rectangular slotted output head replaces an ordinary-looking source pin,
-and the large frame/supports are invented. Review the valve connection and
-whole assembly together. The working-pair correction does not validate those
-features. The local constructor takes about 178 ms, including roller-spin
+The earlier rectangular slotted output head has been replaced as described
+above. The frame/supports remain engineering interpretations, and source
+projection still needs review. The local constructor takes about 178 ms, including roller-spin
 precomputation; decide on offline baking after the geometry and mechanics are
 settled. Do not mark 150 complete from the contact check alone.
