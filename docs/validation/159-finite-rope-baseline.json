@@ -1,0 +1,47 @@
+{
+  "movement": 159,
+  "description": {
+    "segments": 96,
+    "timestep": 0.0001,
+    "period": 4,
+    "ropeMass": 0.08,
+    "ropeRadius": 0.045,
+    "friction": 0.5,
+    "totalLength": 11.181392308922025,
+    "nominalLength": 11.18344383731753,
+    "groundY": -3.3955555555555557,
+    "pulleyRadius": 0.755,
+    "assumptions": "Experimental planar articulated rope with finite capsule self-contact, gravity, passive pulley friction and floor contact. Uniform beam and provisional rope/pulley masses; driven disk only. Attachment compliance and resolution remain unqualified."
+  },
+  "duration": 4.000000000004016,
+  "samples": 201,
+  "maximumLengthError": 1.0658141036401503e-14,
+  "maximumAttachmentError": 0.0023994144430302808,
+  "minimumFootClearance": -8.481256275061355e-7,
+  "treadleRange": [
+    -0.2505816155910489,
+    0.3452019548408353
+  ],
+  "pulleyRange": [
+    -1.7864691076311885,
+    1.4044392684876033
+  ],
+  "sources": [
+    {
+      "file": "tests/finite-cord-treadle.test.mjs",
+      "sha256": "cce8fa785e4f614c5ac26708331edf66a2cd9067511a0f096a090a81243be9a3"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/rope-physics.js",
+      "sha256": "f35cdf860a9abdad11b3ba77f3fce93bcabe3b6a76d4925c68a70822cecd6fda"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

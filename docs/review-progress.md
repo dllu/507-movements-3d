@@ -1,13 +1,13 @@
 # Active source reconstruction: 159 cord treadle
 
-159 can preserve its source joints and floor by allowing the treadle to rest on
-the floor while the cord goes slack. A contact-enabled MuJoCo prototype now
-shows rest, slack and pickup without a treadle actuator. Coarse/fine runs and
-four tests pass their diagnostic checks. The shortest tendon path is not a
-valid visible slack rope, and the ideal pickup impulse still needs refinement.
-Build and qualify a finite rope and source-shaped assembly before baking;
-production is unchanged. See [movement 159](movement-159.md). 150's source fit
-also remains open.
+159 now has a finite, self-contacting MuJoCo rope prototype with passive pulley
+rotation, floor rest, slack and pickup. A full-cycle regression test rejects
+solver resets and verifies rope length, endpoint connection and floor clearance.
+At 0.0001s it completes a turn, but timestep and segment refinement change slack
+rope positions by 18–26 source pixels. Refine bending/damping and pickup contact,
+then validate longer runs and the source-shaped assembly before baking.
+Production remains unchanged; see [movement 159](movement-159.md). 150's source
+fit also remains open.
 
 # Shipped reconstruction: 158 treadle and disk
 

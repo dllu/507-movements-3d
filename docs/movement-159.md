@@ -91,11 +91,51 @@ further qualification. A spatial tendon's reported path is the shortest wrapped
 path; it does **not** provide the visible slack rope shape. Rendering that path
 as a taut line would be incorrect during the floor-rest interval.
 
+## Finite rope prototype
+
+A separate native prototype now replaces the spatial tendon with a planar chain
+of freely hinged finite capsules. It has rope self-contact, floor contact, a
+passive rotating pulley driven by friction, and a connected treadle endpoint.
+Only the disk is actuated. The rope has provisional total mass 0.08 and radius
+0.045, with a unit-mass treadle and 0.05-mass pulley. Adjacent capsule overlap is
+excluded by the articulated parent relationship; nonadjacent capsules collide.
+The current chain has no bending stiffness and only small joint damping.
+
+A 96-segment run at 0.0005s became unstable during pickup and MuJoCo reset its
+state. The probe and regression test now explicitly reject any time reset.
+At 0.0001s, the full first revolution completes without a reset. Source-space
+panels show slack forming at the lower attachment while the foot rests, followed
+by take-up and lifting. These panels are diagnostic views, not the final 3D
+assembly.
+
+The full-cycle regression test checks constant polygonal rope length, planar
+motion, finite coordinates, endpoint closure, floor clearance, passive pulley
+motion and exact reset. It passes with maximum endpoint error 0.00240 world
+units (about 0.14 source pixels), foot penetration below 1e-6 world units, and
+rope polygon-length error below 1e-9. A second timestep and a segment-count
+comparison also complete the first turn:
+
+| Comparison | Max treadle-angle difference | Max corresponding rope-point difference |
+| --- | ---: | ---: |
+| 96 segments, 0.0001s vs 0.00005s | 0.01707rad | 0.46261 world units (26.0px) |
+| 96 vs 64 segments, 0.0001s | 0.02750rad | 0.32433 world units (18.2px) |
+
+The rope-point comparison samples equal material fractions along each chain.
+Chord-sum rest lengths differ slightly between resolutions. Independent capsule
+distance checks at 0.02s intervals find maximum soft self-contact penetration
+below 0.001 world units, pulley penetration below 0.0063, and no rope/floor
+penetration. This finite sampling does not prove continuous clearance.
+
+The motion and slack shape are therefore **not converged or production-qualified**.
+Only the first revolution has been checked. The unstable coarse timestep is not
+an acceptable default; the prototype now defaults to 0.0001s. Bending stiffness,
+damping, contact compliance and longer-run behavior need investigation before
+choosing a bake. Raw rope trajectories remain in /dev/shm.
+
 ## Remaining work
 
-Reconstruct the slack cord, preferably with a finite rope model that can be
-baked along with the rigid motion, and assess pickup compliance and timestep/
-rope-resolution convergence. Preserve the measured joints and floor. Assess
+Refine the finite rope, especially its bending/damping and pickup compliance,
+and establish timestep/rope-resolution convergence and longer-run behavior. Preserve the measured joints and floor. Assess
 the attachment loop around the treadle, then build source-shaped supports,
 bored pivots, a finite pulley groove and connected cord terminations. Qualify
 clearances and passive dynamics with final inertias before registering a bake.
@@ -112,6 +152,10 @@ FLOOR=1 REPORT=docs/validation/159-floor-passive-coarse.json SAMPLES=/dev/shm/15
 FLOOR=1 DT=.00025 REPORT=docs/validation/159-floor-passive-fine.json SAMPLES=/dev/shm/159-floor-fine-samples.json node scripts/probe-cord-treadle.mjs
 FLOOR=1 node scripts/compare-cord-treadle-native.mjs
 node --test tests/cord-treadle.test.mjs
+node --test tests/finite-cord-treadle.test.mjs
+DT=.00005 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-rope-96-fine.json REPORT=/dev/shm/159-rope-96-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+SEGMENTS=64 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-rope-64.json REPORT=/dev/shm/159-rope-64-report.json node scripts/probe-finite-cord-treadle.mjs
+node scripts/review-finite-cord-treadle.mjs
 ```
 
 Small reports and provenance hashes are under `docs/validation/159-*.json`.

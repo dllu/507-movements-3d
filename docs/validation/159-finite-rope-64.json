@@ -1,0 +1,45 @@
+{
+  "sources": [
+    {
+      "file": "scripts/probe-finite-cord-treadle.mjs",
+      "sha256": "41836525c1a75b7ff42e5a77bacb37fa4af5ff77aa1a38d39d17d79eea1442d0"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/rope-physics.js",
+      "sha256": "f35cdf860a9abdad11b3ba77f3fce93bcabe3b6a76d4925c68a70822cecd6fda"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ],
+  "duration": 4.000000000004016,
+  "samples": 201,
+  "description": {
+    "segments": 64,
+    "timestep": 0.0001,
+    "period": 4,
+    "ropeMass": 0.08,
+    "ropeRadius": 0.045,
+    "friction": 0.5,
+    "totalLength": 11.178910842553838,
+    "nominalLength": 11.18344383731753,
+    "groundY": -3.3955555555555557,
+    "pulleyRadius": 0.755,
+    "assumptions": "Experimental planar articulated rope with finite capsule self-contact, gravity, passive pulley friction and floor contact. Uniform beam and provisional rope/pulley masses; driven disk only. Attachment compliance and resolution remain unqualified."
+  },
+  "maximumAttachmentError": 0.0029084105853431305,
+  "minimumFootClearance": -0.0016089329164206134,
+  "treadleRange": [
+    -0.25299374964137783,
+    0.3455275142684783
+  ],
+  "pulleyRange": [
+    -1.819754813211197,
+    1.2828524761113627
+  ]
+}

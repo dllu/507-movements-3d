@@ -1,0 +1,68 @@
+{
+  "movement": 159,
+  "method": "First-cycle native samples at .02s. Compare equal material fractions along the polygonal rope; segment counts have slightly different chord-sum rest lengths. Independently check capsule centerline distances to nonadjacent segments, pulley and floor. Negative clearance is soft-contact penetration. Finite sampling, not continuous collision proof.",
+  "comparisons": [
+    {
+      "comparison": "96 segments: .0001 vs .00005s",
+      "maximumAngleDifferences": {
+        "disk": 0.005701044980946257,
+        "treadle": 0.01706727508168343,
+        "pulley": 0.04454136412523346
+      },
+      "maximumMaterialPointDifference": 0.4626092291297627
+    },
+    {
+      "comparison": "96 vs 64 segments: .0001s",
+      "maximumAngleDifferences": {
+        "disk": 0.006409197172821533,
+        "treadle": 0.027500123435939272,
+        "pulley": 0.17880886703857252
+      },
+      "maximumMaterialPointDifference": 0.32433172923011255
+    }
+  ],
+  "clearances": [
+    {
+      "file": "/dev/shm/159-rope-96-coarse.json",
+      "minimumCapsuleClearances": {
+        "self": -0.00036778942058042496,
+        "pulley": -0.004241508889315959,
+        "floor": 0.4435408990018419
+      }
+    },
+    {
+      "file": "/dev/shm/159-rope-96-fine.json",
+      "minimumCapsuleClearances": {
+        "self": -0.000985052445608356,
+        "pulley": -0.006290271637508615,
+        "floor": 0.4610602299827611
+      }
+    },
+    {
+      "file": "/dev/shm/159-rope-64.json",
+      "minimumCapsuleClearances": {
+        "self": -0.00077417924143032,
+        "pulley": -0.005016810707703323,
+        "floor": 0.4809777790828038
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-finite-cord-treadle.mjs",
+      "sha256": "c34b811721e5d776ed9ca4bc99c486bc7d044370e3d06dfd47449c205d0d630c"
+    },
+    {
+      "file": "/dev/shm/159-rope-96-coarse.json",
+      "sha256": "77b830e16d63a06e98ab2f8467c2bee17ab5b58790702635be41ed7beb2becda"
+    },
+    {
+      "file": "/dev/shm/159-rope-96-fine.json",
+      "sha256": "1bac6bd19fd57d713ac60b318e3870a21c2f36534e3731f6e3c42b8f9fe27655"
+    },
+    {
+      "file": "/dev/shm/159-rope-64.json",
+      "sha256": "1abf8e3542bde5f8fa2f2d76c27612fcbb58820234cd094777b3f65740319351"
+    }
+  ]
+}
