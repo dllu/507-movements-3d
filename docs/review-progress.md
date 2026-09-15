@@ -1,3 +1,12 @@
+# Open review: 170 crossed-arm governor
+
+The selected finite-joint audit finds interference at all seven checked
+interfaces. An unregistered MuJoCo study now drives only the spindle, leaving
+crossed arms, upper links and axial output passive. Eight load/drive/timestep
+cases identify branch failures at excessive speed and a promising smaller
+drive range with timestep agreement. Source solids, bevel contact, a settled
+cycle and browser bake remain open; see [movement 170](movement-170.md).
+
 # Shipped reconstruction: 169 link-connected crank
 
 Eleven finite meshes replace the inherited shaft spacing and solid joint ends

@@ -1,0 +1,89 @@
+{
+  "movement": 170,
+  "status": "existing-contact-defects-confirmed",
+  "poses": 97,
+  "pairs": [
+    [
+      "crossPin",
+      "leftArm"
+    ],
+    [
+      "crossPin",
+      "rightArm"
+    ],
+    [
+      "leftWrist",
+      "leftLink"
+    ],
+    [
+      "rightWrist",
+      "rightLink"
+    ],
+    [
+      "outputPin",
+      "leftLink"
+    ],
+    [
+      "outputPin",
+      "rightLink"
+    ],
+    [
+      "collar",
+      "clevis"
+    ]
+  ],
+  "queries": 323980,
+  "intersections": {
+    "crossPin/leftArm": {
+      "firstTime": 0,
+      "maximumDepth": 0.055000002632538625,
+      "samples": 962
+    },
+    "crossPin/rightArm": {
+      "firstTime": 0,
+      "maximumDepth": 0.0550000026325386,
+      "samples": 962
+    },
+    "leftWrist/leftLink": {
+      "firstTime": 0,
+      "maximumDepth": 0.1292878450263731,
+      "samples": 2746
+    },
+    "rightWrist/rightLink": {
+      "firstTime": 0,
+      "maximumDepth": 0.12928784502637314,
+      "samples": 2746
+    },
+    "outputPin/leftLink": {
+      "firstTime": 0,
+      "maximumDepth": 0.12937401071997012,
+      "samples": 1506
+    },
+    "outputPin/rightLink": {
+      "firstTime": 0,
+      "maximumDepth": 0.12937401071997012,
+      "samples": 1506
+    },
+    "collar/clevis": {
+      "firstTime": 0,
+      "maximumDepth": 0.11649187503261756,
+      "samples": 30948
+    }
+  },
+  "period": 8,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected crossed-arm pin and rotating output interfaces only; not whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-crossed-governor-existing.mjs",
+      "sha256": "f22bcd994cba673b909c6e8998352f34747d56a729d4172fef4cd395f43a61a7"
+    },
+    {
+      "file": "src/simulation/authored-governors.js",
+      "sha256": "24e0ed4d2cc3af45eabe876dbd1167b4afa538b8c4aaab7270d112a8a01ab68f"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "timestepComparisons": [
+    {
+      "coarseRun": 0,
+      "fineRun": 1,
+      "maximumSpreadDifference": 0.0005381670951416506,
+      "maximumOutputDifference": 0.0002979644746958776
+    },
+    {
+      "coarseRun": 5,
+      "fineRun": 6,
+      "maximumSpreadDifference": 0.0000579431304923439,
+      "maximumOutputDifference": 0.00008499730202382594
+    }
+  ],
+  "movement": 170,
+  "status": "unregistered-passive-dynamics-study",
+  "duration": 16,
+  "assumptions": "Inferred masses/damping and ideal hinge/connect/slide constraints. Passive arms, links and axial output. Finite collision geometry, bevel gear contact, nonrotating output bearing and steam feedback are not modeled.",
+  "runs": [
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0.08,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 0.12,
+        "spindleDrive": true
+      },
+      "maximumClosure": 0.000010046746764007844,
+      "minimumSpread": 0.5126880123245573,
+      "maximumSpread": 1.0481801748040667,
+      "minimumOutput": 0.16563010411718704,
+      "maximumOutput": 1.6320000000000001,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 32.91967434856209,
+        "speed": 1.9054284015084542,
+        "leftSpread": 0.6208842192315378,
+        "rightSpread": 0.6208842192315378,
+        "outputY": 0.17615365498836,
+        "closureErrors": [
+          2.5574270855872065e-9,
+          2.5574270855872065e-9
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "speedAmplitude": 0.08,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 0.12,
+        "spindleDrive": true
+      },
+      "maximumClosure": 0.000003499583568546231,
+      "minimumSpread": 0.5126880123245573,
+      "maximumSpread": 1.0481900973946532,
+      "minimumOutput": 0.165612984054758,
+      "maximumOutput": 1.6320000000000001,
+      "final": {
+        "time": 16.00000000000806,
+        "spindle": 32.91967332292798,
+        "speed": 1.9054263660448738,
+        "leftSpread": 0.6204217032125042,
+        "rightSpread": 0.6204217032125042,
+        "outputY": 0.17607990872371126,
+        "closureErrors": [
+          2.6466252223251044e-9,
+          2.6466252223251044e-9
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 0.12,
+        "spindleDrive": true
+      },
+      "maximumClosure": 3.5215233478531295e-9,
+      "minimumSpread": 0.5126880123245573,
+      "maximumSpread": 0.5521979017433711,
+      "minimumOutput": 1.5860328681225837,
+      "maximumOutput": 1.6320000000000001,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 30.481133778354266,
+        "speed": 1.9051198426954592,
+        "leftSpread": 0.548247252624795,
+        "rightSpread": 0.548247252624795,
+        "outputY": 1.590781421168591,
+        "closureErrors": [
+          2.700780202674286e-9,
+          2.700780202674286e-9
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0.08,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 0.12,
+        "spindleDrive": false
+      },
+      "maximumClosure": 0.0000036093024326389553,
+      "minimumSpread": -0.5053808199460789,
+      "maximumSpread": 0.5126880123245573,
+      "minimumOutput": 1.6320000000000001,
+      "maximumOutput": 1.9209617357043178,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 0.5137070709536673,
+        "speed": 0.06045927287046246,
+        "leftSpread": -0.40263058018335407,
+        "rightSpread": -0.40263058018335407,
+        "outputY": 1.7422776883315156,
+        "closureErrors": [
+          5.386378567945282e-7,
+          5.386378567945282e-7
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0.08,
+        "period": 8,
+        "outputMass": 0.2,
+        "armMass": 0.02,
+        "damping": 0.12,
+        "spindleDrive": true
+      },
+      "maximumClosure": 0.0000576393248726375,
+      "minimumSpread": -1.048097018273761,
+      "maximumSpread": 1.048183512287201,
+      "minimumOutput": 0.13736958182638048,
+      "maximumOutput": 1.6320000000000001,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 32.921174938974566,
+        "speed": 1.9062199443011159,
+        "leftSpread": -0.8247400704990843,
+        "rightSpread": -0.8247400704990843,
+        "outputY": 1.1719179585107993,
+        "closureErrors": [
+          7.070695020408965e-7,
+          7.070695020408965e-7
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0.03,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 1,
+        "spindleDrive": true
+      },
+      "maximumClosure": 1.1977986844802048e-7,
+      "minimumSpread": 0.4307071746095138,
+      "maximumSpread": 0.8109037354514845,
+      "minimumOutput": 1.1975116960739784,
+      "maximumOutput": 1.7166268096313595,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 31.39559249183975,
+        "speed": 1.9048709522028398,
+        "leftSpread": 0.4385225036528885,
+        "rightSpread": 0.4385225036528885,
+        "outputY": 1.709184008912901,
+        "closureErrors": [
+          1.5192168342464545e-9,
+          1.5192168342464545e-9
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "speedAmplitude": 0.03,
+        "period": 8,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 1,
+        "spindleDrive": true
+      },
+      "maximumClosure": 6.085845863044548e-8,
+      "minimumSpread": 0.4307135643174485,
+      "maximumSpread": 0.8108941272010981,
+      "minimumOutput": 1.19752926747002,
+      "maximumOutput": 1.71662077791821,
+      "final": {
+        "time": 16.00000000000806,
+        "spindle": 31.395592383163745,
+        "speed": 1.90487107291243,
+        "leftSpread": 0.4385455475057451,
+        "rightSpread": 0.4385455475057451,
+        "outputY": 1.7091618684551015,
+        "closureErrors": [
+          1.7569336242568648e-9,
+          1.7569336242568648e-9
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.001,
+        "speedAmplitude": 0.03,
+        "period": 8,
+        "outputMass": 0.2,
+        "armMass": 0.02,
+        "damping": 1,
+        "spindleDrive": true
+      },
+      "maximumClosure": 1.060442153784389e-7,
+      "minimumSpread": 0.5126880123245573,
+      "maximumSpread": 0.8586226301043862,
+      "minimumOutput": 1.1066250093073464,
+      "maximumOutput": 1.6320000000000001,
+      "final": {
+        "time": 15.999999999996572,
+        "spindle": 31.39557676520613,
+        "speed": 1.904803759493369,
+        "leftSpread": 0.5680446932740116,
+        "rightSpread": 0.5680446932740116,
+        "outputY": 1.5666443873936804,
+        "closureErrors": [
+          1.300500222537228e-8,
+          1.300500222537228e-8
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-crossed-governor.mjs",
+      "sha256": "7508e1b62a5f6760eb9c135abd5546399cebd57530626d6da855df36d1a1b8e8"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/physics.js",
+      "sha256": "dcee5a948a2f6ad37747872ad72c5aa1a48d96c23484e33b80654ed77189ea03"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
