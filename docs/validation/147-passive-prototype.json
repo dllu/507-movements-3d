@@ -1,0 +1,131 @@
+{
+  "movement": 147,
+  "status": "passive-contact-prototype-only",
+  "assumptions": "Quadratic track rise, spherical crowned-roller contact, assumed inertias, quadratic air torque. No force is applied to lift and no crosshead coordinate is prescribed. Visible geometry is not yet matched to these surfaces.",
+  "runs": [
+    {
+      "options": {
+        "timestep": 0.001,
+        "segments": 160,
+        "drag": 0,
+        "speed": 3,
+        "gravity": 9.81
+      },
+      "final": {
+        "time": 6.000000000000338,
+        "shaft": 15.552986239378388,
+        "lift": -0.3352235370571763,
+        "yaw": 15.47216619946165,
+        "lag": 0.08082003991673758,
+        "speed": 3.0069002925314865,
+        "contacts": 2
+      },
+      "lateHeightRange": [
+        -0.34001483847437414,
+        -0.3352235370571763
+      ]
+    },
+    {
+      "options": {
+        "timestep": 0.001,
+        "segments": 160,
+        "drag": 1.5,
+        "speed": 1.5,
+        "gravity": 9.81
+      },
+      "final": {
+        "time": 6.000000000000338,
+        "shaft": 8.0514661000005,
+        "lift": -0.28592256200931215,
+        "yaw": 7.765329343977244,
+        "lag": 0.2861367560232555,
+        "speed": 1.5000000000005949,
+        "contacts": 4
+      },
+      "lateHeightRange": [
+        -0.28592256200931215,
+        -0.2859225620093117
+      ]
+    },
+    {
+      "options": {
+        "timestep": 0.001,
+        "segments": 160,
+        "drag": 1.5,
+        "speed": 3,
+        "gravity": 9.81
+      },
+      "final": {
+        "time": 6.000000000000338,
+        "shaft": 15.552864700001006,
+        "lift": 0.34054936770394695,
+        "yaw": 14.530879701957375,
+        "lag": 1.0219849980436315,
+        "speed": 3.000000000000891,
+        "contacts": 4
+      },
+      "lateHeightRange": [
+        0.3405493335940128,
+        0.34135229150785995
+      ]
+    },
+    {
+      "options": {
+        "timestep": 0.0005,
+        "segments": 160,
+        "drag": 1.5,
+        "speed": 3,
+        "gravity": 9.81
+      },
+      "final": {
+        "time": 5.999999999999394,
+        "shaft": 15.551364699998201,
+        "lift": 0.34054936770394684,
+        "yaw": 14.52937970195457,
+        "lag": 1.0219849980436315,
+        "speed": 2.999999999998403,
+        "contacts": 4
+      },
+      "lateHeightRange": [
+        0.3405493676146425,
+        0.3414503828526134
+      ]
+    },
+    {
+      "options": {
+        "timestep": 0.001,
+        "segments": 320,
+        "drag": 1.5,
+        "speed": 3,
+        "gravity": 9.81
+      },
+      "final": {
+        "time": 6.000000000000338,
+        "shaft": 15.552864541166112,
+        "lift": 0.3405129296649184,
+        "yaw": 14.530826563543199,
+        "lag": 1.0220379776229134,
+        "speed": 3.0001433375064614,
+        "contacts": 4
+      },
+      "lateHeightRange": [
+        0.3402832466844418,
+        0.3405129297707548
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-fan-governor-physics.mjs",
+      "sha256": "1821298fdd8150b11fcb0477771f1e3b062a00530a38353ec3b47a0d3a778005"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/physics.js",
+      "sha256": "7b2f6569f26cbc260312281a2cbea8b7ba35e5e26879dbea1bb8fa432c78259e"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

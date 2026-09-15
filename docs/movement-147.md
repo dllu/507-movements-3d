@@ -26,3 +26,35 @@ baked for browser playback. Do not retain the speed-to-lag prescription as proof
 of governor behavior. Also remeasure the source proportions: the engraved fan
 panels are substantially taller relative to their width than the current panels.
 The governor as a whole remains unverified.
+
+## Passive physics prototype
+
+`mujoco-fan-governor/physics.js` now provides a separate offline prototype.
+Only the shaft has an actuator. The crosshead has free axial and yaw joints;
+both crowned rollers have free radial-axis hinges. Gravity and roller/track
+contact produce lift, while a quadratic resisting torque `-D ω |ω|` acts on
+the actual crosshead speed. No crosshead position or lift force is prescribed.
+It uses the shared MuJoCo allocation/stepping owner and explicit body inertias;
+see the [MJCF reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html).
+
+The assumed tracks rise quadratically with lag. An initial constant-pitch
+experiment ran over the track ends under sufficient drag: its gravitational
+restoring torque does not increase with lift. Increasing slope gives a stable
+operating point in the tested range. This profile, lumped inertia, drag
+coefficient and crowned-roller contact are assumptions, not recovered dimensions
+or an aerodynamic calibration. The rotating track is decomposed into convex
+cells; the visible cylinders have not yet been replaced with matching crowns.
+
+[Prototype evidence](validation/147-passive-prototype.json) records six-second
+runs. At 3 rad/s shaft speed, crosshead center height settles near -0.335 without
+air drag and +0.341 with drag. At 1.5 rad/s with drag it settles near -0.286.
+Halving the 0.001-second timestep changes the final height by less than `1e-5`;
+doubling the 160 track cells changes it by about `0.00004`. These are steady-state
+comparisons, not convergence of every transient sample. Three tests cover these
+responses and show that the crosshead remains stationary when contact and
+gravity are disabled while the driven shaft still turns.
+
+The prototype is not registered in the application. Next: match source geometry
+and mass properties, check actual working surfaces and track-end margins during
+speed increases and decreases, then bake the validated motion. The original
+browser motion remains provisional until that replacement is ready.
