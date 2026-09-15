@@ -1,7 +1,11 @@
 # Active reconstruction: 165
 
-Continue the source and motion review at 165. The full 507-movement review remains
-active; 147's mesh refinement and 150's source fit remain open.
+165's existing top-point contact equation allows cam/roller overlap of nearly
+16 source pixels at sampled mesh points. A tested finite-roller solver shows that
+the legacy sinusoidal profile cannot retain the engraved pose without interference.
+Reconstruct the profile and inferred depth before native contact/baking. See
+[movement 165](movement-165.md). Production is unchanged. The full 507-movement
+review remains active; 147's mesh refinement and 150's source fit remain open.
 
 # Shipped reconstruction: 164 knee press
 

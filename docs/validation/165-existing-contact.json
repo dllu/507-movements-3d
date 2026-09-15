@@ -1,0 +1,711 @@
+{
+  "movement": 165,
+  "status": "existing-model-contact-defect",
+  "maximumPenetration": 0.27540765112114995,
+  "maximumPenetrationPixels": 15.900894574164505,
+  "queries": 1112784,
+  "method": "Transform actual waved-skirt vertices, edge midpoints and triangle centers into the actual closed 64-sided roller mesh. Test inclusion and distance to its surface. The cam skirt need not be closed for these surface points to prove intersection with the roller.",
+  "geometry": {
+    "camOuterRadius": 2.65,
+    "innerRadius": 0.66,
+    "waves": 6,
+    "rollerRadius": 0.8486928104575164,
+    "rollerDepth": 1.2,
+    "sourceScale": 0.017320261437908498
+  },
+  "samples": [
+    {
+      "phase": 0,
+      "reportedGap": 0,
+      "penetration": 0.15518681945777352,
+      "penetrationPixels": 8.959842783788433,
+      "insideSamples": 214
+    },
+    {
+      "phase": 0.010416666666666666,
+      "reportedGap": 0,
+      "penetration": 0.17038168931428388,
+      "penetrationPixels": 9.837131496258653,
+      "insideSamples": 207
+    },
+    {
+      "phase": 0.020833333333333332,
+      "reportedGap": 0,
+      "penetration": 0.1842486884468946,
+      "penetrationPixels": 10.637754465047122,
+      "insideSamples": 198
+    },
+    {
+      "phase": 0.03125,
+      "reportedGap": 0,
+      "penetration": 0.1972985718542596,
+      "penetrationPixels": 11.391200563661027,
+      "insideSamples": 177
+    },
+    {
+      "phase": 0.041666666666666664,
+      "reportedGap": 0,
+      "penetration": 0.20905760215956892,
+      "penetrationPixels": 12.070118162420394,
+      "insideSamples": 180
+    },
+    {
+      "phase": 0.052083333333333336,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.21923781816990323,
+      "penetrationPixels": 12.657881577356676,
+      "insideSamples": 179
+    },
+    {
+      "phase": 0.0625,
+      "reportedGap": 0,
+      "penetration": 0.22797665626866412,
+      "penetrationPixels": 13.162425814756833,
+      "insideSamples": 176
+    },
+    {
+      "phase": 0.07291666666666667,
+      "reportedGap": 0,
+      "penetration": 0.23640803031375215,
+      "penetrationPixels": 13.649218353963803,
+      "insideSamples": 170
+    },
+    {
+      "phase": 0.08333333333333333,
+      "reportedGap": 0,
+      "penetration": 0.24387622007203738,
+      "penetrationPixels": 14.080400630574234,
+      "insideSamples": 163
+    },
+    {
+      "phase": 0.09375,
+      "reportedGap": 0,
+      "penetration": 0.2498879278530916,
+      "penetrationPixels": 14.42749168359359,
+      "insideSamples": 155
+    },
+    {
+      "phase": 0.10416666666666667,
+      "reportedGap": 0,
+      "penetration": 0.25537235036259115,
+      "penetrationPixels": 14.744139473764696,
+      "insideSamples": 153
+    },
+    {
+      "phase": 0.11458333333333333,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.25991151688883996,
+      "penetrationPixels": 15.006212107166986,
+      "insideSamples": 149
+    },
+    {
+      "phase": 0.125,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2634067521023622,
+      "penetrationPixels": 15.208012479872231,
+      "insideSamples": 149
+    },
+    {
+      "phase": 0.13541666666666666,
+      "reportedGap": 0,
+      "penetration": 0.26656863128298786,
+      "penetrationPixels": 15.390566258980053,
+      "insideSamples": 144
+    },
+    {
+      "phase": 0.14583333333333334,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.268525722109928,
+      "penetrationPixels": 15.503560559554332,
+      "insideSamples": 137
+    },
+    {
+      "phase": 0.15625,
+      "reportedGap": -4.440892098500626e-16,
+      "penetration": 0.26978380766251303,
+      "penetrationPixels": 15.576197197118676,
+      "insideSamples": 134
+    },
+    {
+      "phase": 0.16666666666666666,
+      "reportedGap": 0,
+      "penetration": 0.27063249215474755,
+      "penetrationPixels": 15.625196716859008,
+      "insideSamples": 131
+    },
+    {
+      "phase": 0.17708333333333334,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.26978754408509836,
+      "penetrationPixels": 15.576412922649075,
+      "insideSamples": 130
+    },
+    {
+      "phase": 0.1875,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2689448748770161,
+      "penetrationPixels": 15.52776070044659,
+      "insideSamples": 129
+    },
+    {
+      "phase": 0.19791666666666666,
+      "reportedGap": 0,
+      "penetration": 0.2668573067527729,
+      "penetrationPixels": 15.407233182329907,
+      "insideSamples": 127
+    },
+    {
+      "phase": 0.20833333333333334,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.2642288501825924,
+      "penetrationPixels": 15.255477010542126,
+      "insideSamples": 126
+    },
+    {
+      "phase": 0.21875,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2609491138338481,
+      "penetrationPixels": 15.066118647765569,
+      "insideSamples": 125
+    },
+    {
+      "phase": 0.22916666666666666,
+      "reportedGap": -4.440892098500626e-16,
+      "penetration": 0.25694137783790555,
+      "penetrationPixels": 14.834728607245111,
+      "insideSamples": 122
+    },
+    {
+      "phase": 0.23958333333333334,
+      "reportedGap": 0,
+      "penetration": 0.2520692655141526,
+      "penetrationPixels": 14.553433065534092,
+      "insideSamples": 120
+    },
+    {
+      "phase": 0.25,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.24675188859313005,
+      "penetrationPixels": 14.246429794244866,
+      "insideSamples": 118
+    },
+    {
+      "phase": 0.2604166666666667,
+      "reportedGap": 0,
+      "penetration": 0.2402828899503827,
+      "penetrationPixels": 13.87293666505983,
+      "insideSamples": 113
+    },
+    {
+      "phase": 0.2708333333333333,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.2336574816109263,
+      "penetrationPixels": 13.490413089234613,
+      "insideSamples": 106
+    },
+    {
+      "phase": 0.28125,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.22572459251055274,
+      "penetrationPixels": 13.032401001552667,
+      "insideSamples": 105
+    },
+    {
+      "phase": 0.2916666666666667,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.21783536350950652,
+      "penetrationPixels": 12.57690966677528,
+      "insideSamples": 103
+    },
+    {
+      "phase": 0.3020833333333333,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.20861153151836084,
+      "penetrationPixels": 12.044363895211022,
+      "insideSamples": 101
+    },
+    {
+      "phase": 0.3125,
+      "reportedGap": 0,
+      "penetration": 0.19941353292184053,
+      "penetrationPixels": 11.513309636619471,
+      "insideSamples": 98
+    },
+    {
+      "phase": 0.3229166666666667,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.1892569105477619,
+      "penetrationPixels": 10.926908420304743,
+      "insideSamples": 98
+    },
+    {
+      "phase": 0.3333333333333333,
+      "reportedGap": 0,
+      "penetration": 0.17859747241982485,
+      "penetrationPixels": 10.311476709521962,
+      "insideSamples": 95
+    },
+    {
+      "phase": 0.34375,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.1680823118214313,
+      "penetrationPixels": 9.704374984407165,
+      "insideSamples": 93
+    },
+    {
+      "phase": 0.3541666666666667,
+      "reportedGap": 4.440892098500626e-16,
+      "penetration": 0.1564019490663188,
+      "penetrationPixels": 9.029999323451612,
+      "insideSamples": 91
+    },
+    {
+      "phase": 0.3645833333333333,
+      "reportedGap": 0,
+      "penetration": 0.14518477588369694,
+      "penetrationPixels": 8.382366305737973,
+      "insideSamples": 88
+    },
+    {
+      "phase": 0.375,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.1336529984686188,
+      "penetrationPixels": 7.71656934554667,
+      "insideSamples": 86
+    },
+    {
+      "phase": 0.3854166666666667,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.12137859534894628,
+      "penetrationPixels": 7.007896259769351,
+      "insideSamples": 83
+    },
+    {
+      "phase": 0.3958333333333333,
+      "reportedGap": 0,
+      "penetration": 0.10979821433601601,
+      "penetrationPixels": 6.339293129588849,
+      "insideSamples": 81
+    },
+    {
+      "phase": 0.40625,
+      "reportedGap": 0,
+      "penetration": 0.09829885722582381,
+      "penetrationPixels": 5.675367983226808,
+      "insideSamples": 78
+    },
+    {
+      "phase": 0.4166666666666667,
+      "reportedGap": 0,
+      "penetration": 0.08674630248164357,
+      "penetrationPixels": 5.008371426298666,
+      "insideSamples": 73
+    },
+    {
+      "phase": 0.4270833333333333,
+      "reportedGap": 0,
+      "penetration": 0.07513212367333798,
+      "penetrationPixels": 4.337816951705928,
+      "insideSamples": 70
+    },
+    {
+      "phase": 0.4375,
+      "reportedGap": 0,
+      "penetration": 0.06443271239815744,
+      "penetrationPixels": 3.7200773573275803,
+      "insideSamples": 67
+    },
+    {
+      "phase": 0.4479166666666667,
+      "reportedGap": 0,
+      "penetration": 0.05402883933244477,
+      "penetrationPixels": 3.119400912401528,
+      "insideSamples": 64
+    },
+    {
+      "phase": 0.4583333333333333,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.044218504361621724,
+      "penetrationPixels": 2.5529928933313673,
+      "insideSamples": 61
+    },
+    {
+      "phase": 0.46875,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.035362289950261486,
+      "penetrationPixels": 2.0416718348641534,
+      "insideSamples": 57
+    },
+    {
+      "phase": 0.4791666666666667,
+      "reportedGap": 0,
+      "penetration": 0.027227048233594914,
+      "penetrationPixels": 1.5719767470717063,
+      "insideSamples": 51
+    },
+    {
+      "phase": 0.4895833333333333,
+      "reportedGap": 0,
+      "penetration": 0.020692809881495015,
+      "penetrationPixels": 1.1947169478749953,
+      "insideSamples": 42
+    },
+    {
+      "phase": 0.5,
+      "reportedGap": 0,
+      "penetration": 0.014703501585300255,
+      "penetrationPixels": 0.8489191481324297,
+      "insideSamples": 36
+    },
+    {
+      "phase": 0.5104166666666666,
+      "reportedGap": 0,
+      "penetration": 0.009919925274343369,
+      "penetrationPixels": 0.5727353082922775,
+      "insideSamples": 27
+    },
+    {
+      "phase": 0.5208333333333334,
+      "reportedGap": 0,
+      "penetration": 0.005776777344164001,
+      "penetrationPixels": 0.3335271447762612,
+      "insideSamples": 20
+    },
+    {
+      "phase": 0.53125,
+      "reportedGap": 0,
+      "penetration": 0.002986482721325385,
+      "penetrationPixels": 0.1724271156085977,
+      "insideSamples": 10
+    },
+    {
+      "phase": 0.5416666666666666,
+      "reportedGap": 0,
+      "penetration": 0.0008978838117511316,
+      "penetrationPixels": 0.05184008422563137,
+      "insideSamples": 3
+    },
+    {
+      "phase": 0.5520833333333334,
+      "reportedGap": 0,
+      "penetration": 0,
+      "penetrationPixels": 0,
+      "insideSamples": 0
+    },
+    {
+      "phase": 0.5625,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0,
+      "penetrationPixels": 0,
+      "insideSamples": 0
+    },
+    {
+      "phase": 0.5729166666666666,
+      "reportedGap": 0,
+      "penetration": 0.0010969009702743965,
+      "penetrationPixels": 0.06333050884980478,
+      "insideSamples": 6
+    },
+    {
+      "phase": 0.5833333333333334,
+      "reportedGap": 0,
+      "penetration": 0.004030258582343743,
+      "penetrationPixels": 0.23269040116928022,
+      "insideSamples": 11
+    },
+    {
+      "phase": 0.59375,
+      "reportedGap": 0,
+      "penetration": 0.008252658799813857,
+      "penetrationPixels": 0.4764742627817057,
+      "insideSamples": 17
+    },
+    {
+      "phase": 0.6041666666666666,
+      "reportedGap": 0,
+      "penetration": 0.013849301342459848,
+      "penetrationPixels": 0.7996011718476818,
+      "insideSamples": 21
+    },
+    {
+      "phase": 0.6145833333333334,
+      "reportedGap": 0,
+      "penetration": 0.020755436367544837,
+      "penetrationPixels": 1.1983327412205131,
+      "insideSamples": 26
+    },
+    {
+      "phase": 0.625,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.028612338149236072,
+      "penetrationPixels": 1.6519576365407995,
+      "insideSamples": 30
+    },
+    {
+      "phase": 0.6354166666666666,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.03735395129470915,
+      "penetrationPixels": 2.1566620936190564,
+      "insideSamples": 34
+    },
+    {
+      "phase": 0.6458333333333334,
+      "reportedGap": 0,
+      "penetration": 0.0469024358444224,
+      "penetrationPixels": 2.707951956300614,
+      "insideSamples": 38
+    },
+    {
+      "phase": 0.65625,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.05762713852478866,
+      "penetrationPixels": 3.3271517714311942,
+      "insideSamples": 41
+    },
+    {
+      "phase": 0.6666666666666666,
+      "reportedGap": 4.440892098500626e-16,
+      "penetration": 0.06933677532633359,
+      "penetrationPixels": 4.0032175943128445,
+      "insideSamples": 46
+    },
+    {
+      "phase": 0.6770833333333334,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.08164876749473265,
+      "penetrationPixels": 4.714060915733621,
+      "insideSamples": 49
+    },
+    {
+      "phase": 0.6875,
+      "reportedGap": 0,
+      "penetration": 0.09465069370573685,
+      "penetrationPixels": 5.464738164897259,
+      "insideSamples": 54
+    },
+    {
+      "phase": 0.6979166666666666,
+      "reportedGap": 0,
+      "penetration": 0.10846330474073798,
+      "penetrationPixels": 6.262220990691664,
+      "insideSamples": 58
+    },
+    {
+      "phase": 0.7083333333333334,
+      "reportedGap": 0,
+      "penetration": 0.12253299734811571,
+      "penetrationPixels": 7.074546639344039,
+      "insideSamples": 61
+    },
+    {
+      "phase": 0.71875,
+      "reportedGap": 0,
+      "penetration": 0.13727369634896258,
+      "penetrationPixels": 7.925613411845764,
+      "insideSamples": 64
+    },
+    {
+      "phase": 0.7291666666666666,
+      "reportedGap": 0,
+      "penetration": 0.1518873241336324,
+      "penetrationPixels": 8.76934361979085,
+      "insideSamples": 68
+    },
+    {
+      "phase": 0.7395833333333334,
+      "reportedGap": 0,
+      "penetration": 0.16685649233134106,
+      "penetrationPixels": 9.633601255356671,
+      "insideSamples": 73
+    },
+    {
+      "phase": 0.75,
+      "reportedGap": 0,
+      "penetration": 0.18138008596489658,
+      "penetrationPixels": 10.472133265143086,
+      "insideSamples": 77
+    },
+    {
+      "phase": 0.7604166666666666,
+      "reportedGap": 0,
+      "penetration": 0.19574166253181755,
+      "penetrationPixels": 11.301311082025691,
+      "insideSamples": 79
+    },
+    {
+      "phase": 0.7708333333333334,
+      "reportedGap": 0,
+      "penetration": 0.2094271533789414,
+      "penetrationPixels": 12.091454515840768,
+      "insideSamples": 82
+    },
+    {
+      "phase": 0.78125,
+      "reportedGap": 0,
+      "penetration": 0.22221748657352755,
+      "penetrationPixels": 12.829915262547061,
+      "insideSamples": 86
+    },
+    {
+      "phase": 0.7916666666666666,
+      "reportedGap": 0,
+      "penetration": 0.23422411669018536,
+      "penetrationPixels": 13.52312824664089,
+      "insideSamples": 88
+    },
+    {
+      "phase": 0.8020833333333334,
+      "reportedGap": 0,
+      "penetration": 0.24494354172064936,
+      "penetrationPixels": 14.14202335217334,
+      "insideSamples": 92
+    },
+    {
+      "phase": 0.8125,
+      "reportedGap": 0,
+      "penetration": 0.2542600621232963,
+      "penetrationPixels": 14.679920567873335,
+      "insideSamples": 101
+    },
+    {
+      "phase": 0.8229166666666666,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.26207917413019527,
+      "penetrationPixels": 15.13136363846033,
+      "insideSamples": 108
+    },
+    {
+      "phase": 0.8333333333333334,
+      "reportedGap": -4.440892098500626e-16,
+      "penetration": 0.26788804334152916,
+      "penetrationPixels": 15.466743634435456,
+      "insideSamples": 111
+    },
+    {
+      "phase": 0.84375,
+      "reportedGap": 2.220446049250313e-16,
+      "penetration": 0.2723591891247758,
+      "penetrationPixels": 15.724889032487054,
+      "insideSamples": 116
+    },
+    {
+      "phase": 0.8541666666666666,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2751570043162354,
+      "penetrationPixels": 15.88642326806944,
+      "insideSamples": 119
+    },
+    {
+      "phase": 0.8645833333333334,
+      "reportedGap": 0,
+      "penetration": 0.27540765112114995,
+      "penetrationPixels": 15.900894574164505,
+      "insideSamples": 123
+    },
+    {
+      "phase": 0.875,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2738542407425851,
+      "penetrationPixels": 15.811207107024723,
+      "insideSamples": 124
+    },
+    {
+      "phase": 0.8854166666666666,
+      "reportedGap": 0,
+      "penetration": 0.27087022559525603,
+      "penetrationPixels": 15.638922458895914,
+      "insideSamples": 134
+    },
+    {
+      "phase": 0.8958333333333334,
+      "reportedGap": 0,
+      "penetration": 0.2666321970493288,
+      "penetrationPixels": 15.394236282470679,
+      "insideSamples": 144
+    },
+    {
+      "phase": 0.90625,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.2602461802761931,
+      "penetrationPixels": 15.025534181983978,
+      "insideSamples": 151
+    },
+    {
+      "phase": 0.9166666666666666,
+      "reportedGap": -2.220446049250313e-16,
+      "penetration": 0.252736599306962,
+      "penetrationPixels": 14.591962148666108,
+      "insideSamples": 154
+    },
+    {
+      "phase": 0.9270833333333334,
+      "reportedGap": 0,
+      "penetration": 0.24350066035995463,
+      "penetrationPixels": 14.058717371725681,
+      "insideSamples": 162
+    },
+    {
+      "phase": 0.9375,
+      "reportedGap": 0,
+      "penetration": 0.23357430981515925,
+      "penetrationPixels": 13.485611094988439,
+      "insideSamples": 173
+    },
+    {
+      "phase": 0.9479166666666666,
+      "reportedGap": 0,
+      "penetration": 0.22245293813802958,
+      "penetrationPixels": 12.843509258535292,
+      "insideSamples": 180
+    },
+    {
+      "phase": 0.9583333333333334,
+      "reportedGap": 0,
+      "penetration": 0.20967418188440776,
+      "penetrationPixels": 12.10571691634505,
+      "insideSamples": 182
+    },
+    {
+      "phase": 0.96875,
+      "reportedGap": 0,
+      "penetration": 0.1962485467923351,
+      "penetrationPixels": 11.330576475180102,
+      "insideSamples": 184
+    },
+    {
+      "phase": 0.9791666666666666,
+      "reportedGap": 0,
+      "penetration": 0.1826776688543129,
+      "penetrationPixels": 10.547050314984858,
+      "insideSamples": 205
+    },
+    {
+      "phase": 0.9895833333333334,
+      "reportedGap": 0,
+      "penetration": 0.16771795503927794,
+      "penetrationPixels": 9.683338536230009,
+      "insideSamples": 223
+    },
+    {
+      "phase": 1,
+      "reportedGap": 0,
+      "penetration": 0.15558422967756438,
+      "penetrationPixels": 8.98278760025183,
+      "insideSamples": 214
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-wave-cam-contact.mjs",
+      "sha256": "c4e1148e0f452d07dd748334c39208dca49d3d6b47e5088bfe3961cd07bad729"
+    },
+    {
+      "file": "src/simulation/authored-wave-cams.js",
+      "sha256": "83afb4ad261a3d9638b07e56fb6bc6d274237bd7dd3be0c8ab19147b2b9eb2dd"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
