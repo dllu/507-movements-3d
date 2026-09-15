@@ -1,0 +1,72 @@
+{
+  "movement": 167,
+  "status": "existing-contact-defects-confirmed",
+  "poses": 97,
+  "pairs": [
+    [
+      "studTip",
+      "drum"
+    ],
+    [
+      "studTip",
+      "grooveTrack"
+    ],
+    [
+      "guideSleeve",
+      "guideRail"
+    ],
+    [
+      "shaft",
+      "lowerBearing"
+    ],
+    [
+      "shaft",
+      "upperBearing"
+    ]
+  ],
+  "queries": 4890546,
+  "intersections": {
+    "studTip/drum": {
+      "firstTime": 0,
+      "maximumDepth": 0.07340830089678445,
+      "samples": 85686
+    },
+    "studTip/grooveTrack": {
+      "firstTime": 0,
+      "maximumDepth": 0.10004835980831349,
+      "samples": 176721
+    },
+    "guideSleeve/guideRail": {
+      "firstTime": 0,
+      "maximumDepth": 0.1299218401785007,
+      "samples": 1314
+    },
+    "shaft/lowerBearing": {
+      "firstTime": 0,
+      "maximumDepth": 0.08393764189152678,
+      "samples": 2910
+    },
+    "shaft/upperBearing": {
+      "firstTime": 0,
+      "maximumDepth": 0.08393764189152678,
+      "samples": 2910
+    }
+  },
+  "maximumReportedCenterError": 6.661624809295982e-16,
+  "period": 9.519977738150887,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected follower, guide and shaft interfaces only; not whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-groove-drum-existing.mjs",
+      "sha256": "7dde9b037186a0b37020dceda0e35077eb8213bbfa641d6cee8c5f384cd7985b"
+    },
+    {
+      "file": "src/simulation/authored-groove-drums.js",
+      "sha256": "26f7bc7c904e434350db3214b6e94dcc6be3869514672288555ede5d592de600"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

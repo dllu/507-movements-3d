@@ -1,3 +1,11 @@
+# Open review: 167 reversing spiral drum
+
+The 97-pose selected-interface audit confirms finite-mesh interference at
+the stud/drum, stud/raised track, guide sleeve and both shaft bearings,
+despite negligible reported centerline error. The source page has no working
+2D animation. Replacement contact geometry and source framing remain open;
+see [movement 167](movement-167.md) for evidence and implementation requirements.
+
 # Shipped reconstruction: 166 slotted brick-press drive
 
 166 now uses twelve meshes with real pin bores and a single capsule slot.
