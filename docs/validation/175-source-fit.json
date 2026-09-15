@@ -1,0 +1,135 @@
+{
+  "movement": 175,
+  "status": "measured-frame-fit-with-explicit-crank-departure",
+  "features": [
+    {
+      "name": "base left",
+      "source": [
+        132,
+        490
+      ],
+      "projected": [
+        131.99999833106995,
+        489.9999952316284
+      ],
+      "errorPixels": 0.000005051999116043351
+    },
+    {
+      "name": "base right",
+      "source": [
+        448,
+        490
+      ],
+      "projected": [
+        447.9999930063883,
+        489.9999952316284
+      ],
+      "errorPixels": 0.000008464512510262384
+    },
+    {
+      "name": "tower crest",
+      "source": [
+        354,
+        9
+      ],
+      "projected": [
+        352.74450882275903,
+        11.432712872823089
+      ],
+      "errorPixels": 2.737581052266596
+    },
+    {
+      "name": "tower right",
+      "source": [
+        388,
+        47
+      ],
+      "projected": [
+        387.9999906222025,
+        46.99999650319418
+      ],
+      "errorPixels": 0.00001000853318664127
+    },
+    {
+      "name": "left shaft support",
+      "source": [
+        164,
+        235
+      ],
+      "projected": [
+        164.00000109275183,
+        235
+      ],
+      "errorPixels": 0.0000010927518303560646
+    },
+    {
+      "name": "right foot shoulder",
+      "source": [
+        408,
+        407
+      ],
+      "projected": [
+        407.99999141693115,
+        406.999990940094
+      ],
+      "errorPixels": 0.000012480022743513489
+    },
+    {
+      "name": "guide top",
+      "source": [
+        354,
+        38
+      ],
+      "projected": [
+        354.0000011920929,
+        37.999993165334075
+      ],
+      "errorPixels": 0.0000069378486416716036
+    },
+    {
+      "name": "guide bottom",
+      "source": [
+        354,
+        452
+      ],
+      "projected": [
+        354.0000011920929,
+        452.00000762939453
+      ],
+      "errorPixels": 0.000007721965189314673
+    }
+  ],
+  "pins": {
+    "shaft": [
+      199,
+      235
+    ],
+    "crank": [
+      226.11330764463085,
+      270.46273426645104
+    ],
+    "slider": [
+      354,
+      423.7636034500779
+    ]
+  },
+  "method": "Nearest projected actual frame-mesh vertex to eight manually measured source features. Sparse feature checks, not full contour registration. Pin locations are constrained by the independently recorded fit.",
+  "sources": [
+    {
+      "file": "scripts/review-stroke-crank-source-fit.mjs",
+      "sha256": "b9f7aca26276d4c3f4794626de78867b9055af58b65d5b15a506811b90ae24ce"
+    },
+    {
+      "file": "scripts/fit-stroke-crank-source.mjs",
+      "sha256": "c5e3c9b488a1d808c795ff3eb71991a30f7b2c368b9dde5e15e1762564874ce9"
+    },
+    {
+      "file": "src/simulation/authored-stroke-cranks.js",
+      "sha256": "1b6d5c928e9eec7fcef0598f0d5ded99c0cb07dfd6123b87f82fb4dd5daf9dbc"
+    },
+    {
+      "file": "public/engravings/mm_175.png",
+      "sha256": "8a3c0806e1d7e880785ed1e3066b910a0ebb80476580262f300c90e33a469d87"
+    }
+  ]
+}

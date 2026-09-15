@@ -1,12 +1,12 @@
-# Review open: 175 branch-transfer crank
+# Shipped constrained reconstruction: 175 branch-transfer crank
 
-Rebuilt bored links, retained pins and a shorter guide shoe replace the eleven
-interfering pairs. All cross-body pairs among 12 meshes pass 525 sampled poses,
-including exact branch transfers. Original animation agreement, build and
-desktop/mobile checks pass; catalog playback now preserves eight seconds.
-The 69.87-pixel source mismatch remains: engraving and animation proportions
-are incompatible and require a constrained fit. See [movement 175](movement-175.md).
-Continue with 175; the full review remains active.
+The engraved frame and guide now fit eight measured features within 2.74 pixels.
+Rigid branch transfer within that guide requires a smaller crank: its pin differs
+by 32.37 pixels and the slider by 4.77. This explicit source compromise replaces
+the tall, narrow animation-derived frame. Twelve finite meshes clear 525 sampled
+poses; oracle comparison, two production tests, build and desktop/mobile checks
+pass. The cycle remains eight seconds. See [movement 175](movement-175.md).
+Next: 176; the full review remains active.
 
 # Shipped reconstruction: 174 twin-jaw bench clamp
 

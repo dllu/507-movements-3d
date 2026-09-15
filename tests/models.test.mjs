@@ -60686,7 +60686,7 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
   assert.equal(movement175.root.userData.fidelity, 'authored');
   assert.equal(
     movement175.root.userData.mechanism,
-    'tangent-branch-transfer-radius-five-guide-seven-rod-twelve-two-crank-turn-piston-cycle',
+    'tangent-branch-transfer-engraving-fit-two-crank-turn-piston-cycle',
   );
   assert.notEqual(
     movement175.root.userData.mechanism,

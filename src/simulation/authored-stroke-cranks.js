@@ -194,6 +194,21 @@ function makeSourceProportionedFrameShape(sourceScale) {
   return shape;
 }
 
+function makeEngravedStrokeFrame() {
+  const raster=new THREE.Shape();raster.moveTo(132,490);raster.lineTo(448,490);raster.lineTo(448,472);
+  raster.bezierCurveTo(413,467,410,439,408,407);raster.lineTo(388,47);
+  raster.bezierCurveTo(386,2,327,2,319,34);raster.lineTo(291,229);
+  raster.bezierCurveTo(289,242,252,240,241,237);raster.bezierCurveTo(231,234,235,208,214,204);
+  raster.bezierCurveTo(186,192,164,214,164,235);raster.lineTo(165,433);
+  raster.bezierCurveTo(167,460,151,468,132,474);raster.closePath();
+  const local=p=>new THREE.Vector2((p.x-199)*.012,(235-p.y)*.012);
+  const shape=new THREE.Shape(raster.getPoints(32).map(local));
+  const bore=new THREE.Path();bore.absarc(0,0,.2,0,FULL_TURN,true);
+  const guide=makeClockwiseVerticalCapsulePath(155*.012,(235-442)*.012,(235-48)*.012,.12);
+  const window=makeClockwiseRoundedRectanglePath((218-199)*.012,(235-440)*.012,(295-199)*.012,(235-282)*.012,15*.012);
+  shape.holes.push(bore,guide,window);return shape;
+}
+
 function makeCrankAssembly({
   crankPlaneZ,
   crankRadius,
@@ -273,7 +288,7 @@ function makeConnectingRod({
   };
 }
 
-function oneRevolutionPerPistonStrokeCrank() {
+function oneRevolutionPerPistonStrokeCrank(reference = false) {
   const root = new THREE.Group();
 
   // Executable dimensions from the reference construction.  The equality
@@ -285,21 +300,19 @@ function oneRevolutionPerPistonStrokeCrank() {
   const sourceAnimationGuideOffset = 7;
   const sourceAnimationRodLength = 12;
   const sourceAnimationGuideHalfLength = 16;
-  const crankRadius = sourceAnimationCrankRadius * sourceAnimationScale;
-  const guideOffset = sourceAnimationGuideOffset * sourceAnimationScale;
-  const rodLength = sourceAnimationRodLength * sourceAnimationScale;
-  const guideHalfLength = sourceAnimationGuideHalfLength
-    * sourceAnimationScale;
-  const guideSlotRadius = 0.5 * sourceAnimationScale;
+  const crankRadius = reference ? sourceAnimationCrankRadius * sourceAnimationScale : 44.640082583764524 * .012;
+  const guideOffset = reference ? sourceAnimationGuideOffset * sourceAnimationScale : 155 * .012;
+  const rodLength = guideOffset + crankRadius;
+  const guideHalfLength = reference ? sourceAnimationGuideHalfLength * sourceAnimationScale : 188.806247497998 * .012;
+  const guideSlotRadius = reference ? 0.5 * sourceAnimationScale : .12;
   const crankTurnsPerSecond = 0.25;
   const crankRevolutionsPerPistonCycle = 2;
   const pistonStrokesPerCycle = 2;
   const cyclePeriod = crankRevolutionsPerPistonCycle
     / crankTurnsPerSecond;
 
-  // Raster landmarks in Brown's engraving establish the initial visible
-  // phase only; the executable closure comes from the dimensioned geometry
-  // above because the engraving itself is not drawn to that construction.
+  // Reference mode reproduces the original animation. Production uses a
+  // constrained pin fit within the engraved guide; see 175-constrained-fit.json.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
   const sourceRasterCrankCenter = new THREE.Vector2(199, 235);
@@ -309,10 +322,10 @@ function oneRevolutionPerPistonStrokeCrank() {
     sourceRasterCrankPin.x - sourceRasterCrankCenter.x,
     sourceRasterCrankCenter.y - sourceRasterCrankPin.y,
   ).normalize();
-  const sourcePoseCrankPinAngle = Math.atan2(
+  const sourcePoseCrankPinAngle = reference ? Math.atan2(
     sourcePoseCrankDirection.y,
     sourcePoseCrankDirection.x,
-  );
+  ) : -0.9180431865490174;
   const sourcePoseTurn = positiveModulo(
     (sourcePoseCrankPinAngle - Math.PI) / FULL_TURN,
     1,
@@ -367,11 +380,9 @@ function oneRevolutionPerPistonStrokeCrank() {
   const frame = new THREE.Group();
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-slotted-engine-frame';
-  const frameShape = makeSourceProportionedFrameShape(
-    sourceAnimationScale,
-  );
+  const frameShape = reference ? makeSourceProportionedFrameShape(sourceAnimationScale) : makeEngravedStrokeFrame();
   const framePlate = new THREE.Mesh(
-    centeredExtrusion(frameShape, frameDepth, 0.014),
+    centeredExtrusion(frameShape, frameDepth, reference ? 0.014 : 0),
     frameMaterial,
   );
   framePlate.position.z = frameCenterZ;
@@ -385,11 +396,11 @@ function oneRevolutionPerPistonStrokeCrank() {
   crankCenterAnchor.userData.fixed = true;
   crankCenterAnchor.userData.role = 'analytic-fixed-crank-center';
   const guideTopAnchor = new THREE.Object3D();
-  guideTopAnchor.position.set(guideOffset, guideHalfLength, 0);
+  guideTopAnchor.position.set(guideOffset, reference ? guideHalfLength : (235-48)*.012, 0);
   guideTopAnchor.userData.fixed = true;
   guideTopAnchor.userData.role = 'analytic-fixed-guide-top';
   const guideBottomAnchor = new THREE.Object3D();
-  guideBottomAnchor.position.set(guideOffset, -guideHalfLength, 0);
+  guideBottomAnchor.position.set(guideOffset, reference ? -guideHalfLength : (235-442)*.012, 0);
   guideBottomAnchor.userData.fixed = true;
   guideBottomAnchor.userData.role = 'analytic-fixed-guide-bottom';
   frame.add(
@@ -733,6 +744,7 @@ function oneRevolutionPerPistonStrokeCrank() {
     root.userData.kinematics = state;
   };
 
+  root.userData.sourceFit = reference ? null : { scale: .012, origin: [199,235], crankPinErrorPixels: 32.36715115642697, sliderPinErrorPixels: 4.763603450077937 };
   root.userData.archetype =
     'tangent-branch-transfer-slider-crank-one-revolution-per-piston-stroke';
   root.userData.blocks = {
@@ -769,15 +781,16 @@ function oneRevolutionPerPistonStrokeCrank() {
   root.userData.cameraFov = 8;
   root.userData.hideGround = true;
   root.userData.materialsIgnoreSceneFog = true;
-  root.userData.reconstructionStatus = 'candidate';
+  root.userData.reconstructionStatus = 'reconstructed';
+  root.userData.reconstructionNote = 'The engraved frame and guide are traced directly. A smaller crank is necessary for full-stroke branch transfer within the guide: the initial crank pin differs by 32.4 source pixels and slider by 4.8. The rod remains rigid. Branch selection and constant crank speed are kinematic assumptions.';
   root.userData.supportsRestart = true;
   root.userData.animationTiming = { authoredCyclePeriod: cyclePeriod };
   root.userData.minimumDisplayCycleSeconds = cyclePeriod;
   root.userData.canonicalStates = canonicalStates;
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;
-  root.userData.mechanism =
-    'tangent-branch-transfer-radius-five-guide-seven-rod-twelve-two-crank-turn-piston-cycle';
+  root.userData.mechanism = reference ?
+    'tangent-branch-transfer-radius-five-guide-seven-rod-twelve-two-crank-turn-piston-cycle' : 'tangent-branch-transfer-engraving-fit-two-crank-turn-piston-cycle';
   root.userData.modelPointToAnimationRaster =
     modelPointToAnimationRaster;
   root.userData.pistonPositionAndDerivatives =
@@ -801,7 +814,7 @@ function oneRevolutionPerPistonStrokeCrank() {
   };
 }
 
-export function createAuthoredStrokeCrankMovement(movement) {
+export function createAuthoredStrokeCrankMovement(movement, {reference = false} = {}) {
   if (movement.id !== 175) return null;
-  return oneRevolutionPerPistonStrokeCrank();
+  return oneRevolutionPerPistonStrokeCrank(reference);
 }

@@ -1,69 +1,60 @@
-# Movement 175: branch-transfer crank — reconstruction open
+# Movement 175: branch-transfer crank — constrained reconstruction
 
-The existing analytic motion agrees with the executable animation on the
-[original page](https://507movements.com/mm_175.html), but its proportions still
-need a constrained fit to the engraving. The front view now uses a nearly orthographic camera, ignores
-scene fog, hides the scene ground and supports exact Restart. The catalog timing now explicitly preserves an eight-second
-two-turn cycle (playback time scale 1).
+The frame now follows the engraving, with real bores, rigid links, retained pins
+and a guide shoe that clears its full stroke. The catalog preserves an
+eight-second two-turn cycle. Fog and scene ground are disabled; the initial
+view is nearly orthographic, and Restart restores the fitted source pose.
 
-## Independent source evidence
+## Source discrepancy and chosen fit
 
-The [oracle audit](validation/175-oracle.json) executes the original animation
-library and movement callbacks at 1,441 phases across two crank turns. Maximum
-coordinate disagreement with the existing analytic solver is 2.53e-14 in model
-units. No live physics is needed to reproduce this reference motion. Choosing
-the continuing branch at the tangent configuration is an explicit kinematic
-assumption, not a demonstrated passive dynamic transition.
+The [original page](https://507movements.com/mm_175.html) supplies an executable
+animation with crank radius 5, guide offset 7 and rod length 12. Its tangent
+branch transfer requires L = offset + radius. Measured engraving landmarks give
+radius 77.01 pixels, offset 155 and rod length 163.69, whereas that topology
+would require a 232.01-pixel rod. The engraving and animation are inconsistent.
 
-The original animation uses crank radius 5, guide offset 7 and rod length 12.
-The equality L = offset + radius permits the two guide/circle intersections to
-coalesce at the leftmost crank position. Measured engraving landmarks instead
-give radius 77.01 pixels, offset 155 and rod length 163.69; the corresponding
-branch-transfer rod would need to be 232.01 pixels. Registering the current
-model to the engraved shaft and crank radius leaves its slider pin 69.87 pixels
-from the engraved pin. This is a source discrepancy, not a numerical solver
-error. The current tall, narrow frame also differs visibly from the engraving.
+The [constrained fit](validation/175-constrained-fit.json) holds the engraved
+shaft, guide position and slot ends fixed. It enforces rigid-link closure and
+full-stroke clearance for the finite shoe, including a one-pixel end margin.
+A grid search minimizes squared initial pin errors under those constraints.
+The resulting radius is 44.64 pixels: the crank pin differs by 32.37 pixels,
+and the slider by 4.77. This is a substantial, explicit departure from the
+engraved crank and dashed circle, necessary under these fixed-frame constraints.
+The rod never stretches or changes branches discontinuously to hide it.
 
-The caption's “one complete revolution” per stroke is not literally reproduced
-by the original animation: successive piston reversals enclose 1.36491 and
-0.63509 crank turns. Their sum is two turns per full piston cycle. Preserve
-this distinction when describing or changing the reconstruction.
+Eight independently measured frame features are within 2.74 pixels in the
+[mesh projection check](validation/175-source-fit.json). This is a sparse
+nearest-vertex audit, supplemented by visual comparison of the packaged front
+view, not a whole-image registration. The fixed shaft and guide retain their
+measured source coordinates. Unillustrated depths and bearing clearances are
+reconstruction assumptions.
 
-## Rebuilt joints and clearance
+## Motion and validation
 
-The crank and connecting rod are each one finite bored plate. The shorter
-fixed shaft and its retaining head remain behind the rod even at exact
-branch-transfer poses. Two retained link pins pass through actual bores; the
-shorter guide shoe stays within the rounded slot throughout its stroke.
-Decorative bore tubes, overlapping eye meshes and white indices are removed.
-The orbit witness is a dashed line. Axial dimensions and bearing clearances
-are reconstruction assumptions.
+- The [oracle comparison](validation/175-oracle.json) executes the original
+  library and callbacks at 1,441 phases. The analytic implementation, using
+  the original dimensions through its explicit reference option, agrees to
+  2.53e-14 model units. Production uses the separately fitted dimensions.
+- Two production tests check rigid closure, pin alignment, velocity continuity
+  at both tangencies, measured pose departures and intended cycle timing.
+  Branch continuation and constant crank speed are supplied kinematically;
+  a passive dynamic transition is not claimed.
+- The original animation's reversals enclose 1.36491 and 0.63509 crank turns,
+  rather than literally one turn each as the caption suggests. The complete
+  cycle totals two turns. These reference values change with fitted dimensions.
+- The [finite clearance sweep](validation/175-assembly-clearance.json) checks
+  all cross-body pairs among 12 physical meshes at 525 poses, including exact
+  branch transfers, piston reversals and nearby poses. There are 12,068,700
+  surface queries and no sampled intersections. This is not continuous proof.
+- Production build and [desktop/mobile browser checks](validation/175-browser.json)
+  pass playback, exact Restart, orbit/reset, no overflow, no WASM requests and
+  no page errors. MuJoCo is unnecessary for this explicitly kinematic model.
 
-The [current clearance audit](validation/175-assembly-clearance.json) checks
-12 physical meshes at 513 uniform poses plus both exact branch transfers,
-piston reversals and nearby poses: 525 total, 20,216,700 surface queries, no
-sampled cross-body intersections. It includes every cross-rigid-family pair.
-This is a finite-surface sampling check, not continuous collision proof.
+The [historical solid baseline](validation/175-existing-solids.json), against
+757dafc, records eleven interfering pairs in the previous assembly. Those
+parts were replaced; the source-animation reference option is for the oracle
+comparison, not the shipped geometry.
 
-## Historical solid interference
-
-The [finite-solid baseline](validation/175-existing-solids.json) against commit 757dafc checks 21 meshes,
-all cross-rigid-family pairs and 129 poses. It performs 6,178,026 surface queries
-and finds 11 interfering pairs. The shaft passes through the unbored crank,
-link pins pass through unbored rods, and the slider shoe hits the rounded guide
-end and its decorative outline. This report deliberately records failures;
-it is not clearance certification. Same-family decorative overlaps are outside
-its scope.
-
-The production build and packaged Chrome desktop/mobile checks pass playback,
-exact Restart, orbit/reset, no horizontal overflow, no WASM requests and no
-page errors. These checks establish rendering behavior only. The front image
-was inspected beside the engraving and confirms the geometry mismatch.
-
-## Next work
-
-Fit the frame independently and choose/document a constrained source fit
-that preserves the branch-transfer mechanism despite inconsistent engraving
-dimensions. The branch choice remains prescribed by the verified source oracle;
-no passive dynamic transition is claimed. Requalify clearance after geometry
-changes. Keep 175 open; the full 507-movement review remains active.
+Continue with 176. The full 507-movement review remains active, including known
+open reviews elsewhere; this reconstruction retains the documented source
+compromise above.

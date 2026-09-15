@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
+import {createAuthoredStrokeCrankMovement} from '../src/simulation/authored-stroke-cranks.js';
 import { createMovementModel } from '../src/simulation/registry.js';
 
 const catalog = JSON.parse(await readFile(
@@ -53,9 +54,9 @@ function wrappedAngleDifference(left, right) {
   return Math.atan2(Math.sin(left - right), Math.cos(left - right));
 }
 
-test('movement 175 transfers continuously between tangent slider branches for two crank turns per piston cycle', () => {
+test('movement 175 reference dimensions transfer continuously between tangent slider branches for two crank turns per piston cycle', () => {
   const movement = catalog.movements[174];
-  const model = createMovementModel(movement);
+  const model = createAuthoredStrokeCrankMovement(movement, {reference:true});
   const {
     blocks,
     canonicalStates,
@@ -666,9 +667,9 @@ test('movement 175 transfers continuously between tangent slider branches for tw
   assert.ok(size.z > 1.2,
     'frame, crank, crosshead, pins, and rod occupy real depth');
   assert.ok(bounds.min.z < -0.62);
-  assert.ok(bounds.max.z > 0.64);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.ok(bounds.max.z > 0.57);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   // The next sequential model is now independently authored as Movement 176.

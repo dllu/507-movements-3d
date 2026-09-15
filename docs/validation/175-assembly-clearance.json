@@ -209,7 +209,7 @@
       "bored-piston-connecting-rod"
     ]
   ],
-  "queries": 20216700,
+  "queries": 12068700,
   "intersections": {},
   "method": "All cross-rigid-family pairs at 513 uniform poses plus exact branch transfers, piston reversals and nearby poses. Finite mesh vertices, edge midpoints and face centers; excludes the nonphysical dashed orbit. Sampled clearance, not continuous proof.",
   "sources": [
@@ -219,7 +219,7 @@
     },
     {
       "file": "src/simulation/authored-stroke-cranks.js",
-      "sha256": "f514728ce32bf2efa2c31bd8b0aef944b8a01671070eaa6cd5130f9a10e037b6"
+      "sha256": "1b6d5c928e9eec7fcef0598f0d5ded99c0cb07dfd6123b87f82fb4dd5daf9dbc"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

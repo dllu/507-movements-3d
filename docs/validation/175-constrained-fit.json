@@ -1,0 +1,38 @@
+{
+  "movement": 175,
+  "status": "constrained-engraving-fit",
+  "center": [
+    199,
+    235
+  ],
+  "guideX": 354,
+  "slot": {
+    "top": 48,
+    "bottom": 442,
+    "radius": 10
+  },
+  "shoe": {
+    "halfWidth": 6.25,
+    "halfHeight": 5
+  },
+  "maximumStroke": 188.806247497998,
+  "maximumRadius": 44.640082583764524,
+  "solution": {
+    "p": [
+      226.11330764463085,
+      270.46273426645104
+    ],
+    "slider": [
+      354,
+      423.76360345007794
+    ],
+    "error": 1070.324391812586,
+    "radius": 44.640082583764524,
+    "angle": 0.9180431865490174
+  },
+  "errors": {
+    "crank": 32.36715115642697,
+    "slider": 4.763603450077937
+  },
+  "method": "Grid minimum of squared initial pin errors with shaft and guide fixed, rigid tangent-transfer closure, and full-stroke finite shoe clearance in the engraved slot. One-pixel end margin. This cannot preserve the inconsistent engraved crank radius."
+}

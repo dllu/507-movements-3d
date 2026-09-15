@@ -1,0 +1,9 @@
+import fs from 'node:fs';import {createHash} from 'node:crypto';import * as THREE from 'three';
+import {createAuthoredStrokeCrankMovement} from '../src/simulation/authored-stroke-cranks.js';import {disposeObject3D} from '../src/simulation/dispose-model.js';
+const m=createAuthoredStrokeCrankMovement({id:175});try{
+ m.root.updateMatrixWorld(true);const mesh=m.root.userData.blocks.framePlate,p=mesh.geometry.attributes.position;
+ const references=[['base left',[132,490]],['base right',[448,490]],['tower crest',[354,9]],['tower right',[388,47]],['left shaft support',[164,235]],['right foot shoulder',[408,407]],['guide top',[354,38]],['guide bottom',[354,452]]];
+ const features=references.map(([name,source])=>{let errorPixels=Infinity,projected;for(let i=0;i<p.count;i++){const v=mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(p,i)),q=[199+v.x/.012,235-v.y/.012],d=Math.hypot(q[0]-source[0],q[1]-source[1]);if(d<errorPixels){errorPixels=d;projected=q;}}return{name,source,projected,errorPixels};});
+ const state=m.root.userData.stateAtTime(0),project=v=>[199+v.x/.012,235-v.y/.012];
+ const report={movement:175,status:'measured-frame-fit-with-explicit-crank-departure',features,pins:{shaft:[199,235],crank:project(state.crankPin),slider:project(state.sliderPin)},method:'Nearest projected actual frame-mesh vertex to eight manually measured source features. Sparse feature checks, not full contour registration. Pin locations are constrained by the independently recorded fit.',sources:['scripts/review-stroke-crank-source-fit.mjs','scripts/fit-stroke-crank-source.mjs','src/simulation/authored-stroke-cranks.js','public/engravings/mm_175.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};fs.writeFileSync('docs/validation/175-source-fit.json',JSON.stringify(report,null,2)+'\n');console.log(features);
+}finally{disposeObject3D(m.root);}
