@@ -1,5 +1,5 @@
 import {expect,test} from '@playwright/test';
-test('174 renders and restarts its provisional bench clamp and restarts on desktop and mobile',async({page})=>{
+test('174 plays its baked bench clamp and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/174');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/174-packaged-source.png'});

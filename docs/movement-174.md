@@ -1,6 +1,6 @@
-# Movement 174: twin-jaw bench clamp — source review open
+# Movement 174: twin-jaw bench clamp — reviewed reconstruction
 
-The browser now uses a 16-mesh reconstruction and a 278,000-byte geometry-and-
+The browser now uses a 16-mesh reconstruction and a 278,171-byte geometry-and-
 motion bake. Both jaws respond passively to board contact. A six-second cycle
 withdraws and reinserts the board; the old forced jaw angles, decorative
 outlines, white indices and floating contact markers have been replaced.
@@ -23,7 +23,7 @@ jaws retain their initial angles. Masses, damping, force, axial layers and
 board orientation are reconstruction assumptions.
 
 Adjacent collision triangles are merged only where their union is convex.
-This reduces 316 prisms to 75 while preserving area within 9e-16 per jaw and
+This reduces 316 prisms to 78 while preserving area within 9e-16 per jaw and
 retaining the traced boundary. It removes the recurring jitter caused by
 redundant contacts. Pivot holes are omitted from these collision solids because
 the board does not approach the pivots; the displayed holes and screw hardware
@@ -32,8 +32,8 @@ are checked separately.
 The [cycle qualification](validation/174-native-cycle.json) simulates three
 withdrawal/reinsertion cycles at 0.0005 and 0.00025 seconds. The final cycle
 repeats in position and velocity to numerical precision. Maximum transient
-coarse/fine differences are 0.00104 radians at the upper jaw, 0.00210 at the
-lower jaw, 0.000962 in board X and 0.000312 in board Y. No negative native
+coarse/fine differences are 0.00266 radians at the upper jaw, 0.000552 at the
+lower jaw, 0.00107 in board X and 0.00106 in board Y. No negative native
 contact distances were recorded, with a small contact margin enabled.
 
 ## Visible assembly and checks
@@ -60,14 +60,17 @@ scene ground are disabled, and Restart restores the closed source pose.
   pass playback, Restart, orbit/reset view, mobile overflow, no WASM requests
   and no page errors. The front view was inspected against the engraving.
 
-## Remaining source-fit work
+## Source fit
 
-The [sparse source-feature audit](validation/174-source-fit.json) finds the
-upper inner hook and both noses within 1.2 pixels, but the upper crest differs
-by 5.15 pixels, lower crest by 10.25 and lower inner hook by 4.58. The lower
-outline is still an approximate reflection. Refine those contours independently,
-then rerun native/bake qualification, clearance and the final visual comparison.
-Do not mark 174 reviewed yet. Continue with 174; the full review remains active.
+The upper and lower jaws now have independent outlines. The
+[sparse source-feature audit](validation/174-source-fit.json) puts the upper
+crest within 1.82 pixels, lower crest within 3.48, and both inner hooks and
+noses within 1.18. These are nearest-vertex checks at six manually measured
+features, not a full contour registration. The packaged front view was also
+inspected alongside the engraving. The source does not specify depths or the
+operator's withdrawal motion; those remain reconstruction assumptions.
+
+Next source review: 175. The full 507-movement review remains active.
 
 The [historical baseline](validation/174-existing-contact.json), against commit
 f748df7, records seven interfering pairs and 46 poses with prescribed jaw motion

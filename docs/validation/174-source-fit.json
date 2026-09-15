@@ -1,6 +1,6 @@
 {
   "movement": 174,
-  "status": "lower-jaw-source-fit-open",
+  "status": "sparse-source-features-within-3.5-pixels",
   "features": [
     {
       "name": "upper crest",
@@ -9,10 +9,10 @@
         112
       ],
       "projected": [
-        316.2266606059532,
-        107.16862857264877
+        316.2392147371289,
+        111.56314189362317
       ],
-      "errorPixels": 5.146540826176751
+      "errorPixels": 1.814169161641531
     },
     {
       "name": "upper inner hook",
@@ -21,10 +21,10 @@
         190
       ],
       "projected": [
-        366.0681622995785,
-        189.7199384066608
+        366.06816229806145,
+        189.71993841293317
       ],
-      "errorPixels": 0.28823704679920314
+      "errorPixels": 0.2882370403459749
     },
     {
       "name": "upper nose",
@@ -33,10 +33,10 @@
         234
       ],
       "projected": [
-        408.82448568003446,
-        233.57649000117334
+        408.8244856757123,
+        233.57649001018035
       ],
-      "errorPixels": 0.9268966262146159
+      "errorPixels": 0.9268966182546057
     },
     {
       "name": "lower inner hook",
@@ -45,10 +45,10 @@
         325
       ],
       "projected": [
-        370.30951959620523,
-        326.53944881190813
+        366.9310236149035,
+        324.81190735375543
       ],
-      "errorPixels": 4.576227900199276
+      "errorPixels": 0.949833572305831
     },
     {
       "name": "lower crest",
@@ -57,10 +57,10 @@
         411
       ],
       "projected": [
-        306.396952942019,
-        420.25610976782013
+        298.68203073971483,
+        409.96896558579886
       ],
-      "errorPixels": 10.247378357817434
+      "errorPixels": 3.4744714670672425
     },
     {
       "name": "lower nose",
@@ -69,25 +69,25 @@
         294
       ],
       "projected": [
-        406.83256614975573,
-        293.8475672630554
+        406.83256613868883,
+        293.84756724049214
       ],
-      "errorPixels": 1.1773434222810997
+      "errorPixels": 1.1773434361761577
     }
   ],
   "method": "Nearest projected jaw mesh vertex to selected manually measured engraving boundary points. These are sparse feature checks, not a whole-contour registration.",
   "sources": [
     {
       "file": "scripts/review-bench-clamp-source-fit.mjs",
-      "sha256": "f8835a6dd96c369241de1341b811ebcc45210e1b9a99207ec128035e7a61898b"
+      "sha256": "9ca6061b1e5dd476e089587ded5f27e7f93ee97f2f492f01f211455f02ed16d0"
     },
     {
       "file": "src/simulation/baked/bench-clamp.js",
-      "sha256": "01468b355aae93b72211505dadbb7a1d52b12024a0d6fdeb86f5cfedd5c75f87"
+      "sha256": "2c0ef681e82439bead2cb34b8251acbccf0278512541a9278dd3cf9c2ee39498"
     },
     {
       "file": "src/simulation/baked/assets/174.json.gz",
-      "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+      "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
     },
     {
       "file": "public/engravings/mm_174.png",

@@ -14,7 +14,7 @@ const v=makeBenchClampSolids();try{
  const sources=['scripts/bake-bench-clamp.mjs','scripts/qualify-bench-clamp-cycle.mjs','src/simulation/mujoco-bench-clamp/physics.js','src/simulation/mujoco-bench-clamp/profile.js','src/simulation/mujoco-bench-clamp/solids.js','src/simulation/mujoco-bench-clamp/update-solids.js','src/simulation/finite-plate-geometry.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));
  const bundle={version:1,movement:174,object:v.root.toJSON(),motion,names,period:6,loopStart:0,loopEnd:6,turns:[0,0,0,0],maximumError,
  bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},focus:bounds.getCenter(new THREE.Vector3()).toArray(),sources,nativeHash:createHash('sha256').update(fs.readFileSync(nativeFile)).digest('hex'),
- assumptions:'Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Approximate reflected lower outline.'};
+ assumptions:'Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Independently traced jaw outlines.'};
  const bytes=gzipSync(JSON.stringify(bundle),{level:9});fs.writeFileSync('src/simulation/baked/assets/174.json.gz',bytes);
  fs.writeFileSync('docs/validation/174-bake.json',JSON.stringify({...bundle,object:undefined,motion:undefined,samples:motion.length,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')},null,2)+'\n');console.log({samples:motion.length,bytes:bytes.length,maximumError});
 }finally{v.dispose();}

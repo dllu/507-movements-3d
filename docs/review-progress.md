@@ -1,12 +1,12 @@
-# Review open: 174 twin-jaw bench clamp
+# Shipped reconstruction: 174 twin-jaw bench clamp
 
-The browser now uses a 16-mesh reconstruction and 278 KB MuJoCo bake. Both jaws
-respond passively; the six-second withdrawal/reinsertion cycle repeats cleanly
-at two timesteps. Real pivot bores and hardware replace intersecting geometry.
-All 42 cross-body pairs, the dense jaw/board sweep, two tests, build and browser
-checks pass. Sparse source checks still find crest/hook discrepancies up to
-10.25 pixels, so independent contour refinement remains open. See
-[movement 174](movement-174.md). Continue with 174; the full review remains active.
+The browser uses a 16-mesh reconstruction and 278 KB MuJoCo bake. Both jaws
+respond passively; the six-second withdrawal/reinsertion cycle passes two
+timesteps. Independently traced outlines bring six measured source features
+within 3.48 pixels. All 42 cross-body pairs, dense jaw/board sweep, two tests,
+build and desktop/mobile checks pass. Guidance, depths and operator motion
+remain explicit assumptions in [movement 174](movement-174.md).
+Next source review: 175; the full review remains active.
 
 # Shipped reconstruction: 173 tappet-indexed silk traverse
 

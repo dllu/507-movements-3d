@@ -1,6 +1,6 @@
 {
   "movement": 174,
-  "status": "packaged-desktop-mobile-passed-source-fit-open",
+  "status": "packaged-desktop-mobile-passed",
   "checks": [
     "baked playback",
     "exact restart",
@@ -9,19 +9,19 @@
     "no WASM request",
     "no page errors"
   ],
-  "limitations": "Upper and lower contour refinements remain; see source-fit report.",
+  "limitations": "Sparse source-feature checks and visual comparison; inferred depths, board orientation guidance and withdrawal drive.",
   "sources": [
     {
       "file": "tests/e2e/twin-bench-clamp.spec.mjs",
-      "sha256": "f0944fd3514d6ca1c734ace60ed0fa9e6322da1774c8ee89d445f9684b3c170b"
+      "sha256": "ff60a80fa3017b37b8ed8b49860cf780a3064467623688c4336c5797e58285da"
     },
     {
       "file": "src/simulation/baked/bench-clamp.js",
-      "sha256": "01468b355aae93b72211505dadbb7a1d52b12024a0d6fdeb86f5cfedd5c75f87"
+      "sha256": "2c0ef681e82439bead2cb34b8251acbccf0278512541a9278dd3cf9c2ee39498"
     },
     {
       "file": "src/simulation/baked/assets/174.json.gz",
-      "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+      "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/update-solids.js",

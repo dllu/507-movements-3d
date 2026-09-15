@@ -37,7 +37,7 @@
   "sources": [
     {
       "file": "scripts/bake-bench-clamp.mjs",
-      "sha256": "57716d1d3097aa07e3d82cf036bd9c25ececf131a4bd8f6d6a4ac3b97d7c7d2a"
+      "sha256": "6994007d62438d53bb2d2159e52f5e95ee94af834975ea2d73cbfce4815fea85"
     },
     {
       "file": "scripts/qualify-bench-clamp-cycle.mjs",
@@ -49,7 +49,7 @@
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",
-      "sha256": "d2c6273abccc8d56e8a7c79a2794cffb22473bf0c218170fd5e57370cef6fd5e"
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/solids.js",
@@ -64,9 +64,9 @@
       "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
     }
   ],
-  "nativeHash": "e725717c107fe9145c345972cb3a21b2b1857e736fdaaa43122e66008683a72b",
-  "assumptions": "Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Approximate reflected lower outline.",
+  "nativeHash": "354073e683c888c080b4e83a631288b0bf574c5bf20cde90d119cbf8e9154b1d",
+  "assumptions": "Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Independently traced jaw outlines.",
   "samples": 982,
-  "bytes": 278000,
-  "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+  "bytes": 278171,
+  "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
 }
