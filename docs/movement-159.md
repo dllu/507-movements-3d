@@ -311,9 +311,53 @@ SAMPLES=/dev/shm/159-anchor-contact.json node scripts/review-cord-treadle-rope-h
 SAMPLES=/dev/shm/159-anchor-contact.json REPORT=docs/validation/159-anchor-clearance.json node scripts/review-cord-treadle-core.mjs
 ```
 
+## Lower treadle eye
+
+The visible lower eye is now restored at engraving pixel (322, 408), with outer
+radius 13 px and bore radius 7 px. Its local center is derived from the measured
+initial treadle pose, independently of the upper cord endpoint (319, 389).
+The eye, neck, and treadle form one non-overlapping closed solid, so the new mass
+and inertia are included automatically. Its hidden neck, rigid construction and
+connection to the upper fastening remain inferred; the engraving does not resolve
+those details. The cord endpoint and nominal cord length remain unchanged.
+The front Chrome preview now includes the under-treadle silhouette and open bore.
+All five inertia/bending tests pass after this change.
+
+The updated 21-part rigid assembly passes 132-pair checks at 129 native poses
+(4,798,604 point queries). The only measured rigid penetration is intended
+foot/floor contact, 0.00000923 display units. The full-cycle rope/hardware audit
+also passes its sampled checks; minimum remote treadle-head clearance is
+0.0000719 units and pulley soft penetration is 0.00541 units. These retain the
+sampling limitations described above. See
+[rigid audit](validation/159-lower-eye-clearance.json) and
+[rope/hardware audit](validation/159-lower-eye-hardware.json).
+
+Three new 4 s runs use this same geometry, scale, mass integration, bending,
+and anchor contact. All complete without a native reset. Halving timestep
+from 0.1 to 0.05 ms changes treadle angle by at most 0.00263 rad, but rope
+material-point positions by 0.41569 display units (23.38 source pixels).
+Changing 96 to 64 segments changes treadle angle by 0.02733 rad and rope
+positions by 0.39813 units (22.39 pixels). Independent capsule checks report
+positive nonadjacent self-clearance in all three runs; resolving self-contact
+alone is therefore insufficient to explain this first-cycle disagreement.
+The scaled rope still fails convergence qualification. Reports:
+[96 segments](validation/159-lower-eye-native.json),
+[finer timestep](validation/159-lower-eye-fine.json),
+[64 segments](validation/159-lower-eye-64.json),
+[comparison](validation/159-scaled-rope-comparison.json).
+
+```sh
+RIGID_CORE=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-lower-eye.json REPORT=/dev/shm/159-lower-eye-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.00005 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-lower-eye-fine.json REPORT=/dev/shm/159-lower-eye-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 SEGMENTS=64 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-lower-eye-64.json REPORT=/dev/shm/159-lower-eye-64-report.json node scripts/probe-finite-cord-treadle.mjs
+CORD_STUDY=scaled node scripts/review-finite-cord-treadle.mjs
+SAMPLES=/dev/shm/159-lower-eye.json REPORT=docs/validation/159-lower-eye-clearance.json node scripts/review-cord-treadle-core.mjs
+SAMPLES=/dev/shm/159-lower-eye.json REPORT=docs/validation/159-lower-eye-hardware.json node scripts/review-cord-treadle-rope-hardware.mjs
+```
+
 ## Remaining work
 
-Resolve the under-treadle loop source detail and qualify the rope/anchor fastening.
+Qualify the inferred rope/anchor fastening and final moving assembly.
 Refine the finite rope at the explicit physical scale and qualify
 timestep/rope-resolution convergence and longer-run behavior. Preserve the
 measured joints and floor. Qualify

@@ -18,7 +18,12 @@ export function makeCordTreadleSolids(){
  add('diskBearing',ring(.144,.26,-.55,-.49,128),'fixed',PALETTE.frame);
  const stand=new THREE.Shape();stand.moveTo(45,444);stand.bezierCurveTo(76,438,84,426,84,399);stand.lineTo(84,266);stand.bezierCurveTo(84,227,143,227,143,266);stand.lineTo(145,416);stand.bezierCurveTo(148,436,157,443,174,444);stand.lineTo(174,457);stand.lineTo(45,457);stand.closePath();
  add('diskStand',plate(clip.difference(fromShape(stand),poly(circle([0,0],.144,128))),-.95,-.55),'fixed',PALETTE.frame);
- const treadle=clip.difference(clip.union(poly([[-g.footLength,-.085],[0,-.085],[0,.085],[-g.footLength,.085]]),poly(circle([0,0],.25,128))),poly(circle([0,0],.184,128)));
+ // Lower attachment eye measured independently from the cord's upper endpoint.
+ // Its hidden neck and union with the treadle are reconstruction assumptions.
+ const eyeImage=[322,408],eyeDelta=pixel(eyeImage).map((v,i)=>v-g.pivot[i]),cs=Math.cos(g.initialTreadle),sn=Math.sin(g.initialTreadle);
+ const lowerEye=[eyeDelta[0]*cs+eyeDelta[1]*sn,-eyeDelta[0]*sn+eyeDelta[1]*cs],eyeOuter=13*source.scale,eyeInner=7*source.scale;
+ const eyeNeck=poly([[lowerEye[0]-.065,-.07],[lowerEye[0]+.065,-.07],[lowerEye[0]+.065,lowerEye[1]+eyeOuter*.65],[lowerEye[0]-.065,lowerEye[1]+eyeOuter*.65]]);
+ const treadle=clip.difference(clip.union(poly([[-g.footLength,-.085],[0,-.085],[0,.085],[-g.footLength,.085]]),poly(circle([0,0],.25,128)),poly(circle(lowerEye,eyeOuter,128)),eyeNeck),poly(circle([0,0],.184,128)),poly(circle(lowerEye,eyeInner,128)));
  add('treadle',plate(treadle,.05,.29),'treadle',PALETTE.driven);
  const support=new THREE.Shape();support.moveTo(403,444);support.bezierCurveTo(432,430,433,389,434,354);support.bezierCurveTo(434,322,477,322,479,352);support.bezierCurveTo(480,391,484,421,508,444);support.lineTo(508,457);support.lineTo(403,457);support.closePath();
  const bearing=clip.difference(fromShape(support),poly(circle(g.pivot,.184,128)));
@@ -53,6 +58,6 @@ export function makeCordTreadleSolids(){
  add('crankCordAnchor',anchor(-.13),'disk',PALETTE.ink,g.pin);
  add('treadleCordAnchor',anchor(.29),'treadle',PALETTE.ink,[-g.armLength,0]);
  const update=state=>{blocks.disk.rotation.z=state.disk;blocks.treadle.position.set(...g.pivot,0);blocks.treadle.rotation.z=state.treadle;blocks.pulley.position.set(...g.guide,0);blocks.pulley.rotation.z=state.pulley;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{parts,families,blocks,geometry:g,source,hideGround:true,attachmentSites:{crank:[...g.pin,.64],treadle:[-g.armLength,0,.64]},reconstructionNote:'Unregistered rigid-core prototype. Pedestals follow the engraving; shaft depths, bearings, pulley groove and rear mounting pad are inferred. Shouldered rounded cord-anchor studs are inferred; cord ends are secured inside the heads. Full rope/anchor clearance and attachment behavior remain unqualified.'});
+ Object.assign(root.userData,{parts,families,blocks,geometry:g,source,lowerEye:{local:lowerEye,image:eyeImage,outerRadius:eyeOuter,innerRadius:eyeInner},hideGround:true,attachmentSites:{crank:[...g.pin,.64],treadle:[-g.armLength,0,.64]},reconstructionNote:'Unregistered rigid-core prototype. Pedestals follow the engraving; shaft depths, bearings, pulley groove and rear mounting pad are inferred. Lower treadle eye follows the engraving; its hidden neck and rigid attachment are inferred. Shouldered rounded cord-anchor studs are inferred; cord ends are secured inside the heads. Full rope/anchor clearance and attachment behavior remain unqualified.'});
  update({disk:0,treadle:g.initialTreadle,pulley:0});markShadows(root);return{root,update,dispose:()=>disposeObject3D(root)};
 }

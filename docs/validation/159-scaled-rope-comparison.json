@@ -1,0 +1,69 @@
+{
+  "movement": 159,
+  "study": "scaled",
+  "method": "First-cycle native samples at .02s. Compare equal material fractions along the polygonal rope; segment counts have slightly different chord-sum rest lengths. Independently check capsule centerline distances to nonadjacent segments, pulley and floor. Negative clearance is soft-contact penetration. Finite sampling, not continuous collision proof.",
+  "comparisons": [
+    {
+      "comparison": "96 segments: .0001 vs .00005s",
+      "maximumAngleDifferences": {
+        "disk": 0.001737827025625971,
+        "treadle": 0.0026250869299133672,
+        "pulley": 0.07495941809885154
+      },
+      "maximumMaterialPointDifference": 0.4156914980162731
+    },
+    {
+      "comparison": "96 vs 64 segments: .0001s",
+      "maximumAngleDifferences": {
+        "disk": 0.013494921735757504,
+        "treadle": 0.02733228701723961,
+        "pulley": 0.45357850766299945
+      },
+      "maximumMaterialPointDifference": 0.3981257818573529
+    }
+  ],
+  "clearances": [
+    {
+      "file": "/dev/shm/159-lower-eye.json",
+      "minimumCapsuleClearances": {
+        "self": 0.020134823266670446,
+        "pulley": -0.005502632569760135,
+        "floor": 0.38947190083118866
+      }
+    },
+    {
+      "file": "/dev/shm/159-lower-eye-fine.json",
+      "minimumCapsuleClearances": {
+        "self": 0.016127602711689865,
+        "pulley": -0.005409746696838802,
+        "floor": 0.38553640173999293
+      }
+    },
+    {
+      "file": "/dev/shm/159-lower-eye-64.json",
+      "minimumCapsuleClearances": {
+        "self": 0.027939896195503244,
+        "pulley": -0.011091303653947504,
+        "floor": 0.4388238590461748
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-finite-cord-treadle.mjs",
+      "sha256": "cdb7cfecc10651fb7a47980bc3982cfb2a93c5d7aeae187afa7debe48ef964a3"
+    },
+    {
+      "file": "/dev/shm/159-lower-eye.json",
+      "sha256": "b3e2935e250eb614fdfdd16b32461228f335b86fd9e5f85811aa415b57290ff1"
+    },
+    {
+      "file": "/dev/shm/159-lower-eye-fine.json",
+      "sha256": "5dd7e82624b8a0e558e0cfeafc9900ce5f1fcadc917ec0990f450a98331b2e63"
+    },
+    {
+      "file": "/dev/shm/159-lower-eye-64.json",
+      "sha256": "d2efe9b04992bd04e77d2b4c3ac8f96a5d4bd6cbabdd191f7d8144239ed2765d"
+    }
+  ]
+}

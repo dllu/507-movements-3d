@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 const study=process.env.CORD_STUDY??'free';
-if(!['free','bend','damped'].includes(study))throw Error('Unknown cord study');
-const files=study!=='free'?[`/dev/shm/159-${study}-96.json`,`/dev/shm/159-${study}-96-fine.json`,`/dev/shm/159-${study}-64.json`]:['/dev/shm/159-rope-96-coarse.json','/dev/shm/159-rope-96-fine.json','/dev/shm/159-rope-64.json'],rows=files.map(f=>JSON.parse(fs.readFileSync(f)));
+if(!['free','bend','damped','scaled'].includes(study))throw Error('Unknown cord study');
+const files=study==='scaled'?['/dev/shm/159-lower-eye.json','/dev/shm/159-lower-eye-fine.json','/dev/shm/159-lower-eye-64.json']:study!=='free'?[`/dev/shm/159-${study}-96.json`,`/dev/shm/159-${study}-96-fine.json`,`/dev/shm/159-${study}-64.json`]:['/dev/shm/159-rope-96-coarse.json','/dev/shm/159-rope-96-fine.json','/dev/shm/159-rope-64.json'],rows=files.map(f=>JSON.parse(fs.readFileSync(f)));
 const distance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
 function along(points,f){const lengths=points.slice(1).map((p,i)=>distance(p,points[i]));let d=f*lengths.reduce((a,b)=>a+b,0);for(let i=0;i<lengths.length;i++){if(d<=lengths[i]||i===lengths.length-1){const t=d/lengths[i];return points[i].map((v,k)=>v+(points[i+1][k]-v)*t);}d-=lengths[i];}}
 function pointSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy)));return distance(p,[a[0]+t*dx,a[1]+t*dy]);}

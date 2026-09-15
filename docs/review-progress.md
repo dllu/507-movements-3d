@@ -7,9 +7,11 @@ Native head contact fixes a measured slack-rope penetration; updated one-cycle
 rope/hardware and rigid-part audits pass their sampled checks. An explicit 0.1 m per
 display unit reconstruction and mesh-integrated rigid-core inertias are now
 available in the native probe, with independent formula and compiled-model
-tests. The rounded studs preserve measured endpoints but still differ from the
-engraving’s under-treadle loop. Qualify the finite rope and resolve that source
-detail next.
+tests. The lower treadle eye now follows the engraving’s measured center and
+diameter, with inferred hidden fastening geometry. Qualify the finite rope and
+final assembly next. The updated scaled model still differs by 23.4 source
+pixels when timestep is halved and 22.4 pixels across rope resolutions, despite
+small endpoint errors. The finite rope is not converged.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 
