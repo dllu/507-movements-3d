@@ -1,10 +1,19 @@
-# Movement 176: engaged engine coupling — reviewed reconstruction
+# Movement 176: engaged engine coupling — shared selector review reopened
 
 The wrist engages a radial slot in the selector carried by the output crank.
 Both coaxial cranks have equal throw and turn together under an ideal steady
 engaged load. The reconstructed selector has connecting and retaining geometry;
 the output shaft has an integral shoulder fitted to the crank cheek. Circular
 bosses and recessed arc details replace missing edges and decorative tubes.
+
+## Shared-selector consistency remains open
+
+The subsequent 177 review found different slot profiles in the two factories:
+straight when engaged, curved when released. Their shared-selector consistency
+is therefore not established. See [movement 177](movement-177.md) and the
+[comparison](validation/176-177-slot-consistency.json). The checks below apply
+to the individual steady engaged reconstruction at fadeb59; they do not prove
+that a quarter-turn of its ring yields the released assembly.
 
 ## Source and assumptions
 

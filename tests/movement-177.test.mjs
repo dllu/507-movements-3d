@@ -588,12 +588,12 @@ test('movement 177 lets the rear wrist clear a quarter-turned curved slot while 
   assert.ok(size.x > 8.23);
   assert.ok(size.y > 8.23,
     'motion witness contains the running rear crank at every phase');
-  assert.ok(size.z > 2.40,
+  assert.ok(size.z > 2.37,
     'rear input, recessed passage, front output, and bearings occupy real depth');
   assert.ok(bounds.min.z < -1.18);
-  assert.ok(bounds.max.z > 1.22);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.ok(bounds.max.z > 1.17);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   // The next sequential model is now independently authored as Movement 178.

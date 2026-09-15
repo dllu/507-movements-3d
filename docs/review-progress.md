@@ -1,3 +1,11 @@
+# Review open: 176/177 shared selector
+
+177's decorative wrist/slot and front-bearing interferences are removed.
+The 386-pose clearance sweep, both motion tests, build and desktop/mobile
+checks pass. However, the two factories use different physical slot profiles.
+Unify the geometry and requalify both orientations before closing their shared
+mechanism review. See [movement 177](movement-177.md).
+
 # Shipped reconstruction: 176 engaged engine coupling
 
 A shouldered shaft now attaches to the cheek, and full circular bosses restore

@@ -1,0 +1,56 @@
+{
+  "status": "shared-physical-slot-inconsistency-open",
+  "movements": [
+    176,
+    177
+  ],
+  "samples": [
+    {
+      "x": 0,
+      "releasedCenterline": 0,
+      "straightWalls": [
+        -0.29,
+        0.29
+      ],
+      "releasedWalls": [
+        -0.29000000000000004,
+        0.29000000000000004
+      ]
+    },
+    {
+      "x": 0.3,
+      "releasedCenterline": -0.013664654969003376,
+      "straightWalls": [
+        -0.29,
+        0.29
+      ],
+      "releasedWalls": [
+        -0.3049874791580587,
+        0.2774432210728377
+      ]
+    },
+    {
+      "x": 0.5,
+      "releasedCenterline": -0.03809871393998199,
+      "straightWalls": [
+        -0.29,
+        0.29
+      ],
+      "releasedWalls": [
+        -0.33181873868862244,
+        0.25501054850755667
+      ]
+    }
+  ],
+  "meaning": "At equal local half-width, the released annular passage is curved while a quarter-turn of the engaged straight passage stays straight. These are not the same physical selector. Both renderings must be revised and requalified against a shared profile.",
+  "sources": [
+    {
+      "file": "scripts/compare-coupling-slot-shapes.mjs",
+      "sha256": "da45b7fef95e7627f3c698a033ea5dfd383ce56cf8431d9f81239831101a427e"
+    },
+    {
+      "file": "src/simulation/authored-engine-couplings.js",
+      "sha256": "13407e4c21fc4d545caf360460514a6828204ad37c07b311a2dfd2f6676e0139"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "movement": 177,
+  "status": "packaged-rendering-passed-shared-selector-open",
+  "checks": [
+    "playback",
+    "exact Restart",
+    "orbit/reset",
+    "390x844 without overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "limitations": "Shared physical slot with 176, selector retention, shaft attachments and final source detail remain open. Motion is prescribed.",
+  "sources": [
+    {
+      "file": "tests/e2e/released-engine-coupling.spec.mjs",
+      "sha256": "584bee1ce3f8e90f34cde0a1da7c87fdeebae5906fcb3e388d6c6ae9d5906744"
+    },
+    {
+      "file": "src/simulation/authored-engine-couplings.js",
+      "sha256": "13407e4c21fc4d545caf360460514a6828204ad37c07b311a2dfd2f6676e0139"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ]
+}

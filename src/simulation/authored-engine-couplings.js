@@ -1270,8 +1270,22 @@ function qualifyEngagedGeometry(model) {
   model.cameraDirection=new THREE.Vector3(0,0,1);model.reset=()=>model.update(0);return model;
 }
 
+function qualifyReleasedGeometry(model) {
+  const {root}=model,{blocks:b,geometry:g}=root.userData;
+  const profiles=makeTangentialPassageProfiles({crankRadius:g.crankRadius,outerRadius:g.selectorOuterRadius,slotHalfWidth:g.slotHalfWidth});
+  for(const [mesh,shape]of [[b.selectorUpperLobe,profiles.upperShape],[b.selectorLowerLobe,profiles.lowerShape]]){
+    mesh.geometry.dispose();mesh.geometry=centeredExtrusion(shape,g.selectorDepth,0);mesh.geometry.rotateZ(Math.PI/2);
+  }
+  for(const mesh of [b.selectorUpperWall,b.selectorLowerWall,b.selectorTopGroove,b.selectorBottomGroove,b.wristFaceOutline,b.wristFaceIndex]){mesh.removeFromParent();mesh.geometry.dispose();}
+  b.fixedFrontBearingRing.geometry.dispose();b.fixedFrontBearingRing.geometry=ring(.425,.555,-.075,.075,96);b.fixedFrontBearing.position.z=.82;
+  for(const mesh of [b.motionEnvelope,b.inputShaftIndex,b.outputRotationIndex,b.selectorIndex])mesh.visible=false;
+  root.traverse(o=>{if(o.material)for(const material of [].concat(o.material))material.fog=false;});
+  Object.assign(root.userData,{hideGround:true,cameraFov:8,materialsIgnoreSceneFog:true,supportsRestart:true,reconstructionStatus:'candidate',animationTiming:{authoredCyclePeriod:g.cyclePeriod},minimumDisplayCycleSeconds:4});
+  model.cameraDirection=new THREE.Vector3(0,0,1);model.reset=()=>model.update(0);return model;
+}
+
 export function createAuthoredEngineCouplingMovement(movement) {
   if (movement.id === 176) return qualifyEngagedGeometry(engagedSlottedRingEngineCoupling());
-  if (movement.id === 177) return disengagedSlottedRingEngineCoupling();
+  if (movement.id === 177) return qualifyReleasedGeometry(disengagedSlottedRingEngineCoupling());
   return null;
 }
