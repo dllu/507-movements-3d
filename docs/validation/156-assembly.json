@@ -1,0 +1,27 @@
+{
+  "movement": 156,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 full-cycle poses; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Finite sampling, not a continuous collision proof.",
+  "parts": 31,
+  "pairs": 312,
+  "poses": 129,
+  "checks": 6214504,
+  "failures": {},
+  "sources": [
+    {
+      "file": "scripts/review-slotted-elbow-assembly.mjs",
+      "sha256": "0f2c68e48710df51548779d367e3850c01b298e9d08e3d400a0e94dd011dc002"
+    },
+    {
+      "file": "src/simulation/slotted-elbow.js",
+      "sha256": "85720822c061a4567309a12a8a723e3e0e9e00609ca44ac0a2fdfd952c4fdc7f"
+    },
+    {
+      "file": "src/simulation/slotted-elbow-motion.js",
+      "sha256": "70b87ede25a9501217ad7cd7bb4b4b19dff677ef137c677c8bbc7282b42960c1"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-# Movement 156 — slotted elbow review in progress
+# Movement 156 — engraving-based slotted elbow
 
-156's existing trajectory is correct for the official 2D animation's dimensions.
-The remaining work is to reconstruct and qualify its visible solids against the
-engraving. Production registration is unchanged at this checkpoint.
+156 now uses a lightweight analytic assembly with engraving-based proportions,
+a finite slot, bored pin joints, retained shafts and a guided output. The
+previous trajectory was correct for the official animation's different dimensions.
 
 ## Oracle verification
 
@@ -14,7 +14,7 @@ important points, rather than reimplementing its kinematics as the reference.
 Source scripts are downloaded or read from temporary files; they are not copied
 into the repository.
 
-Across 721 equal crank phases, maximum position differences for the current
+Across 721 equal crank phases, maximum position differences for the previous
 model are below 4.8e-15 world units. The new reusable analytic constraint solver,
 when configured with the oracle's dimensions, agrees below 5.5e-15. This checks
 trajectory agreement, not rendered geometry, forces or wall-clock animation
@@ -32,20 +32,20 @@ still gives the following initial landmark errors:
 | Output joint | 20.93px |
 
 These are differences between the drawing and the animation's geometry, not
-errors in the current analytic equations. They justify changing the visible
+errors in the previous analytic equations. They justify changing the visible
 proportions rather than replacing a determined linkage with live dynamics.
 Measurements are approximate center readings, with roughly 2px uncertainty.
 
-The candidate source parameters use disk center (214,209), radius 118, crank pin
+The production source parameters use disk center (214,209), radius 118, crank pin
 (140,157), fixed pivot (280,388), and output joint (438,289), all in the original
 525px image. The near/far slot-cap center readings are projected onto the ideal
 straight slot axis, since the hand-drawn centerline is not exact.
 
-The lower rod is cropped in the source. Its provisional complete length of
+The lower rod is cropped in the source. Its reconstructed complete length of
 270px and vertical guide x=438 are explicit reconstruction choices, not measured
 hidden geometry. This is shorter than the 2D animation's inferred full rod and
-will change the output displacement curve slightly. Retain that distinction
-when documenting the final visual model.
+changes the output displacement curve slightly. The oracle agreement above
+applies to the solver configured with oracle dimensions, not these new dimensions.
 
 ## Analytic constraint model
 
@@ -55,23 +55,35 @@ with the vertical guide. It does not prescribe follower easing curves or
 simulate force/friction. Invalid rod reach or a pin at the fixed pivot throws
 instead of silently clamping a square root.
 
-Two tests check the measured initial landmarks and 4,097 full-turn poses:
+Three tests check the measured initial landmarks and 4,097 full-turn poses:
 constant crank radius, pin on the slot centerline, finite slot-end clearance,
 constant rod length, vertical guidance and periodic closure. With the oracle
 parameters, the same solver also reproduces the actual source library.
 
-## Remaining work
+## Visible assembly and validation
 
-Build source-proportioned, bored and connected visible parts around these
-constraints; qualify pin/slot contact or any inferred shoe, output pins and
-support clearances. Inspect full-sweep framing, source and oblique views, fog,
-ground visibility, timing and packaged restart/mobile playback. The analytic
-model is currently unregistered and is not evidence that the visible assembly
-has already been corrected.
+The crank pin has the same nominal radius as the slot half-width; its center
+follows the straight slot exactly. The elbow and output rod use ordinary bored
+pin joints and axial retainers. The rod is free to swing as the crosshead moves
+vertically. Hidden rear supports and the complete lower guide are reconstructed.
+The assembly uses 31 static meshes; playback updates four rigid transforms.
+
+The visible-solid audit checks 312 part pairs over 129 full-cycle poses, including
+same-moving-body interfaces once and excluding intentional fixed-frame unions.
+It found no unintended intersections in 6,214,504 bidirectional surface queries.
+This finite sampling is not a continuous collision proof. Geometry tests also
+check rendered joint closure, unchanged mesh geometry, full-sweep bounds, disabled
+fog, hidden ground and exact restart. No forces or friction are simulated.
+
+The production build and packaged Chrome desktop/mobile test pass: play/pause,
+restart, orbit, reset view, 390px layout, no page errors and no WASM requests.
+Source, oblique and mobile views were inspected. The full rod and support frame
+remain visible; a four-second input revolution keeps the motion readable.
 
 ```sh
 node scripts/compare-slotted-elbow-oracle.mjs
 node --test tests/slotted-elbow-motion.test.mjs
+node scripts/review-slotted-elbow-assembly.mjs
 ```
 
 Optional `SOURCE_HTML` and `SOURCE_LIBRARY` environment variables point to local

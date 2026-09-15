@@ -1,12 +1,13 @@
-# Active source reconstruction: 156 slotted elbow
+# Shipped reconstruction: 156 slotted elbow
 
-156's current analytic trajectory agrees with the real source animation library
-to numerical precision at 721 phases. The drawing and animation dimensions differ:
-a disk-aligned comparison leaves about 22px bell-pivot and 21px output-joint error.
-A reusable analytic constraint model now preserves measured engraving landmarks
-and passes full-turn linkage tests; no live physics is needed for this determined
-motion. Build and qualify the visible assembly next. Production is unchanged;
-see [movement 156](movement-156.md). 150's source fit remains open.
+156 now uses engraving-based proportions, a finite slot, bored pin joints and
+complete output guidance. Its exact analytic linkage needs no browser physics
+and changes only rigid transforms during playback. Three focused tests, the
+129-pose visible assembly audit, production build and packaged desktop/mobile
+playback pass. The source animation agrees with the solver using its own
+parameters; its dimensions differ from the engraving. The cropped rod length,
+guide and rear supports remain explicit reconstruction assumptions in
+[movement 156](movement-156.md). Continue at 157; 150's source fit remains open.
 
 # Shipped reconstruction: 155 reversible elbow-pawl feed
 

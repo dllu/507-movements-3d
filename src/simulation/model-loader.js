@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 156) {
+    const {makeSlottedElbow} = await import('./slotted-elbow.js');
+    const model = makeSlottedElbow();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 155) {
     const {makeBakedElbowPawl} = await import('./baked/elbow-pawl.js');
     const model = await makeBakedElbowPawl();
