@@ -2,73 +2,73 @@
   "movement": 171,
   "status": "existing-ideal-closure-diagnostic",
   "poses": 3605,
-  "maximumLengthError": 1.2878587085651816e-14,
-  "maximumDieGuideError": 8.104628079763643e-15,
-  "maximumSlotAngle": 0.36865891309833004,
+  "maximumLengthError": 1.3322676295501878e-14,
+  "maximumDieGuideError": 6.661338147750939e-15,
+  "maximumSlotAngle": 0.4475070225225129,
   "runs": [
     {
       "selector": -1,
-      "minimumValve": -0.3229663723692128,
-      "maximumValve": -0.13335791224193871,
-      "valveStroke": 0.18960846012727406,
-      "minimumSlide": -0.17796688400094385,
-      "maximumSlide": 0.2912456910015728,
+      "minimumValve": -0.3229660642541735,
+      "maximumValve": -0.18058335405094317,
+      "valveStroke": 0.14238271020323034,
+      "minimumSlide": -0.11704887845406842,
+      "maximumSlide": 0.24748493122718318,
       "valveFirstHarmonic": {
-        "sine": 0.07589453148939443,
-        "cosine": 0.0029375655610369804,
-        "amplitude": 0.07595136076081897
+        "sine": 0.06663298615652039,
+        "cosine": 0.009900333241995435,
+        "amplitude": 0.06736446720963209
       }
     },
     {
       "selector": -0.5,
-      "minimumValve": -0.32273144085317984,
-      "maximumValve": -0.19771797648165568,
-      "valveStroke": 0.12501346437152416,
-      "minimumSlide": -0.09423949061043047,
-      "maximumSlide": 0.15394358888637827,
+      "minimumValve": -0.3141537276925665,
+      "maximumValve": -0.22709973724112698,
+      "valveStroke": 0.08705399045143952,
+      "minimumSlide": -0.05361793360631717,
+      "maximumSlide": 0.1072018311608276,
       "valveFirstHarmonic": {
-        "sine": 0.06234281040780949,
-        "cosine": 0.02038553281120521,
-        "amplitude": 0.06559112712509829
+        "sine": 0.034003775417914286,
+        "cosine": 0.025178457501012025,
+        "amplitude": 0.04231089061698206
       }
     },
     {
       "selector": 0,
-      "minimumValve": -0.2897541162076057,
-      "maximumValve": -0.22962975010709374,
-      "valveStroke": 0.06012436610051197,
-      "minimumSlide": -0.04999999999999982,
-      "maximumSlide": 0.047796811850960186,
+      "minimumValve": -0.30762034510680336,
+      "maximumValve": -0.2201593672186573,
+      "valveStroke": 0.08746097788814605,
+      "minimumSlide": -0.06343069715882854,
+      "maximumSlide": 0.08790166412472256,
       "valveFirstHarmonic": {
-        "sine": -5.226193284559033e-19,
-        "cosine": 0.028444663164012375,
-        "amplitude": 0.028444663164012375
+        "sine": -0.03172442654284588,
+        "cosine": 0.026886378587456045,
+        "amplitude": 0.04158505251914971
       }
     },
     {
       "selector": 0.5,
-      "minimumValve": -0.32273144085317984,
-      "maximumValve": -0.19771797648165568,
-      "valveStroke": 0.12501346437152416,
-      "minimumSlide": -0.09423949061043047,
-      "maximumSlide": 0.15394358888637916,
+      "minimumValve": -0.32296625601886964,
+      "maximumValve": -0.1580662492393884,
+      "valveStroke": 0.16490000677948125,
+      "minimumSlide": -0.14637288939685877,
+      "maximumSlide": 0.20371726509089116,
       "valveFirstHarmonic": {
-        "sine": -0.06234281040780939,
-        "cosine": 0.020385532811205167,
-        "amplitude": 0.06559112712509818
+        "sine": -0.08589725330102677,
+        "cosine": 0.013483284443148929,
+        "amplitude": 0.08694904878166072
       }
     },
     {
       "selector": 1,
-      "minimumValve": -0.3229663723692128,
-      "maximumValve": -0.13335791224193871,
-      "valveStroke": 0.18960846012727406,
-      "minimumSlide": -0.17796688400094385,
-      "maximumSlide": 0.29124569100157327,
+      "minimumValve": -0.3229637126882061,
+      "maximumValve": -0.08681035612661037,
+      "valveStroke": 0.23615335656159575,
+      "minimumSlide": -0.2365562371073333,
+      "maximumSlide": 0.33688661607375847,
       "valveFirstHarmonic": {
-        "sine": -0.07589453148939439,
-        "cosine": 0.002937565561036871,
-        "amplitude": 0.07595136076081893
+        "sine": -0.06882431548232795,
+        "cosine": -0.0014318432389296052,
+        "amplitude": 0.06883920813513092
       }
     }
   ],
@@ -80,10 +80,10 @@
         278
       ],
       "projected": [
-        85.77777777777777,
-        281.8785185185185
+        76,
+        278
       ],
-      "pixelError": 10.518927900223277
+      "pixelError": 0
     },
     {
       "name": "asternLinkPin",
@@ -92,10 +92,10 @@
         278
       ],
       "projected": [
-        178.22222222222223,
-        281.8785185185185
+        167,
+        278
       ],
-      "pixelError": 11.873549490503219
+      "pixelError": 0
     },
     {
       "name": "diePoint",
@@ -105,9 +105,9 @@
       ],
       "projected": [
         132,
-        299.75111111111113
+        300
       ],
-      "pixelError": 0.24888888888887095
+      "pixelError": 0
     },
     {
       "name": "slideEyeWorld",
@@ -136,8 +136,8 @@
   ],
   "selectorCycle": {
     "duration": 18,
-    "inputAngleDifference": 2.913629385640828,
-    "valveLocalDifference": -0.05996917636015647
+    "inputAngleDifference": 0,
+    "valveLocalDifference": 0
   },
   "method": "Recompute distances from exported world positions for five fixed reversing settings over 721 crank phases each. Approximate initial source projection uses the existing source anchors. Centerline consistency is not finite contact, source fidelity or dynamics qualification.",
   "sources": [
@@ -147,7 +147,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "d73178a7120e7b4ce6f17cfc60bdc4fe9bc6d60c63c4228245c6bc33c590dc7e"
+      "sha256": "af27444411bd74cf8b24a5bea87ab63fbc57b832c73e07afade2425fd4a9d474"
     },
     {
       "file": "public/engravings/mm_171.png",

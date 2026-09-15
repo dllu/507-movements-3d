@@ -44,7 +44,7 @@
       "outerRail"
     ]
   ],
-  "queries": 2151628,
+  "queries": 2146668,
   "intersections": {},
   "sampledDuration": 18,
   "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot, slide guide and connecting-pin interfaces only; not whole-assembly qualification.",
@@ -55,7 +55,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "d73178a7120e7b4ce6f17cfc60bdc4fe9bc6d60c63c4228245c6bc33c590dc7e"
+      "sha256": "af27444411bd74cf8b24a5bea87ab63fbc57b832c73e07afade2425fd4a9d474"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

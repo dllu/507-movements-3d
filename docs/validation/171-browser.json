@@ -1,7 +1,7 @@
 {
   "movement": 171,
   "status": "packaged-lower-repair-desktop-mobile-passed",
-  "scope": "Partial lower-interface repair; full source and mechanical reconstruction remain open.",
+  "scope": "Upper source-anchor alignment and synchronized playback added to the partial lower-interface repair; full source and mechanical reconstruction remain open.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "d73178a7120e7b4ce6f17cfc60bdc4fe9bc6d60c63c4228245c6bc33c590dc7e"
+      "sha256": "af27444411bd74cf8b24a5bea87ab63fbc57b832c73e07afade2425fd4a9d474"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

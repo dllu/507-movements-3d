@@ -242,18 +242,14 @@ function oscillatingMarineEngineStephensonValveGear() {
   const sheaveWidth = 0.24;
   const aheadLayerZ = 0.27;
   const asternLayerZ = -0.27;
-  const linkCenterAtSource = new THREE.Vector2(0, 0.68);
-  const linkPinHalfSpacing = 0.75;
-  const linkPinRise = 0.29;
-  const aheadLinkPinLocal = new THREE.Vector2(
-    -linkPinHalfSpacing,
-    linkPinRise,
-  );
-  const asternLinkPinLocal = new THREE.Vector2(
-    linkPinHalfSpacing,
-    linkPinRise,
-  );
-  const linkPinSpacing = 2 * linkPinHalfSpacing;
+  // The engraving's rod pins are asymmetric about the die guide. Preserve
+  // those measured positions instead of centering an arbitrary equal span.
+  const linkCenterAtSource = sourcePointFromRaster(sourceRasterLinkDie);
+  const aheadLinkPinLocal = sourcePointFromRaster(sourceRasterAheadLinkPin)
+    .sub(linkCenterAtSource);
+  const asternLinkPinLocal = sourcePointFromRaster(sourceRasterAsternLinkPin)
+    .sub(linkCenterAtSource);
+  const linkPinSpacing = aheadLinkPinLocal.distanceTo(asternLinkPinLocal);
   const linkSlotRadius = 2.8;
   const selectorHalfAngle = 0.27;
   const visibleLinkHalfAngle = 0.405;
@@ -625,8 +621,9 @@ function oscillatingMarineEngineStephensonValveGear() {
     };
   };
 
-  const inputAngularSpeed = 0.86;
   const selectorPeriod = 18;
+  // Three six-second crank revolutions close with one reversing traversal.
+  const inputAngularSpeed = 3 * FULL_TURN / selectorPeriod;
   const selectorAtTime = (time) => Math.sin(
     FULL_TURN * time / selectorPeriod,
   );

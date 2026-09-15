@@ -1,8 +1,9 @@
 # Movement 171 — oscillating marine valve gear (review open)
 
 The lower slot walls, guide bores and connecting-rod eyes are repaired in the
-existing model. Fog and ground remain disabled. Upper geometry, source
-proportions and the complete reconstruction remain open; no bake is registered.
+existing model. Fog and ground remain disabled. The upper rod pins and die now use their
+recorded source coordinates. Whole-contour proportions and the complete
+reconstruction remain open; no bake is registered.
 
 ## Source
 
@@ -24,24 +25,28 @@ with the cylinder when reconstructing the trunnion-centered compensation.
 
 The [closure audit](validation/171-existing-closure.json) recomputes distances
 from exported positions at 721 crank phases for each of five fixed reversing
-settings. Maximum length error is 1.29e-14 world units and die-guide error is
-8.11e-15. The maximum absolute lower-slot parameter angle is 0.368659 radians.
+settings. Maximum length error is 1.34e-14 world units and die-guide error is
+6.67e-15. The maximum absolute lower-slot parameter angle is 0.447508 radians.
 These checks establish consistency of the implemented ideal construction;
 they do not establish source fidelity or finite pin contact.
 
-Full ahead and astern each give a valve stroke of 0.189608 world units. Midgear
-retains 0.060124 stroke, so it is reduced travel rather than an exact stop.
-The current selector varies continuously over 18 seconds while the crank runs
-at 0.86 radians/second. Eighteen seconds therefore does not close the complete
-mechanism: crank phase differs by 2.913629 radians and local valve position by
-about -0.059969 world units. Do not treat the selector period as a seamless
-animation loop when designing playback.
+Full ahead and astern now give valve strokes of 0.142383 and 0.236153 world
+units; midgear retains 0.087461. The asymmetric source pin positions change
+these excursions; the previously equal strokes resulted from an assumed
+symmetric pin layout. These are properties of the current ideal reconstruction,
+not historical valve-timing measurements.
 
-The initial projected upper link pins miss the recorded engraving centers by
-10.52 and 11.87 pixels. The die is within 0.25 pixel, the slide eye within 3.61,
-and lower follower within 4.41. This approximate projection uses the existing
-shaft/trunnion anchors, not a fitted whole-contour comparison. The eccentric
-straps and tapered rods also need visible-shape review.
+The selector varies continuously over 18 seconds, with three six-second crank
+turns in the same interval. The [cycle check](validation/171-cycle.json) checks
+all 99 visible mesh transforms: maximum seam difference is 1.67e-15, and
+one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
+0.86-radian/second crank did not close with the selector period.
+
+The initial upper rod pins and die coincide with the recorded source anchors,
+replacing the previous 10.52- and 11.87-pixel rod-pin errors. This is an anchor
+fit using the shaft/trunnion scale, not a whole-contour qualification. The slide
+eye remains within 3.61 pixels and lower follower within 4.41 of their recorded
+anchors. The eccentric straps and tapered rods still need visible-shape review.
 
 ## Finite interfaces
 
@@ -71,11 +76,10 @@ or deforming its length.
 
 The [expanded lower-interface sweep](validation/171-lower-clearance.json)
 checks ten pairs at 97 poses over the current 18-second traversal, with
-2,151,628 bidirectional surface queries. It finds no sampled penetration above
+2,146,668 bidirectional surface queries. It finds no sampled penetration above
 1e-6 world units. The added pairs cover both rod eyes and guide-post/slot-wall
 clearance. This is deliberately a lower-interface qualification, not a
-whole-assembly clearance claim. The ideal closure audit is unchanged apart
-from its source hash.
+whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
 
 ## Current change and next work
 
@@ -96,6 +100,7 @@ check finite surfaces, source fit, restart and desktop/mobile rendering.
 
 ```sh
 node scripts/review-marine-valve-existing.mjs
+node scripts/review-marine-valve-cycle.mjs
 node scripts/review-marine-valve-closure.mjs
 node scripts/review-marine-valve-lower-solids.mjs
 ```

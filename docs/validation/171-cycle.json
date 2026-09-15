@@ -1,0 +1,34 @@
+{
+  "movement": 171,
+  "period": 18,
+  "crankPeriod": 6,
+  "meshes": 99,
+  "maximumPoseSeam": 1.6653345369377348e-15,
+  "maximumVelocitySeam": 0.00010966227037556564,
+  "epsilon": 0.0001,
+  "sourcePinErrors": [
+    {
+      "name": "aheadLinkPin",
+      "error": 0
+    },
+    {
+      "name": "asternLinkPin",
+      "error": 0
+    },
+    {
+      "name": "diePoint",
+      "error": 0
+    }
+  ],
+  "scope": "All visible mesh transforms at the cycle seam and three recorded initial source anchors. This does not qualify whole-contour fidelity or finite whole-assembly contact.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-cycle.mjs",
+      "sha256": "4caa605a541acf0fb97ebdcedb57b9328d6015b861733ea31856615f6d99e8b0"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "af27444411bd74cf8b24a5bea87ab63fbc57b832c73e07afade2425fd4a9d474"
+    }
+  ]
+}
