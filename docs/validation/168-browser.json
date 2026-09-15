@@ -1,0 +1,30 @@
+{
+  "movement": 168,
+  "status": "packaged-desktop-mobile-passed",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 viewport without horizontal overflow",
+    "no WASM request",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/variable-radius-crank.spec.mjs",
+      "sha256": "04864485793f82c9a31f35344ab3a31fcad6586f4189fbc9d45bbcfcaa994b7f"
+    },
+    {
+      "file": "src/simulation/variable-radius-crank.js",
+      "sha256": "006cc9e5a48305c2f4691f3e6f5f7fd15484736fd428533fff97e4e0bff33ae6"
+    },
+    {
+      "file": "src/simulation/variable-radius-crank-motion.js",
+      "sha256": "50a759f29481f201a478f41f2ce3156fe8f09071d2682a821123689d80d4b460"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "f8db32af65264c839c755363b20a330643a9ee3127ebe0b8068d6166336e5d41"
+    }
+  ]
+}

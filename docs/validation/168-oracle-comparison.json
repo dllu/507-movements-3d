@@ -1,4 +1,59 @@
 {
+  "productionGeometry": {
+    "scale": 0.012,
+    "phase": 1.0986743443911198,
+    "radius": 0.6332771904940205,
+    "leftSpan": 2.342460245126905,
+    "rightSpan": 2.032397598896437,
+    "rockerLength": 7.776,
+    "rockerPivot": [
+      3.539787891144597,
+      7.661823832681735
+    ],
+    "mainPivot": [
+      -2.592,
+      -0.036000000000000004
+    ],
+    "period": 4
+  },
+  "productionPoseComparison": [
+    {
+      "name": "auxiliaryPin",
+      "engraving": [
+        310,
+        217
+      ],
+      "projected": [
+        310,
+        217
+      ],
+      "pixelError": 0
+    },
+    {
+      "name": "slotPin",
+      "engraving": [
+        123,
+        161
+      ],
+      "projected": [
+        122.59119073810734,
+        162.38371844367717
+      ],
+      "pixelError": 1.4428450173118328
+    },
+    {
+      "name": "wrist",
+      "engraving": [
+        473,
+        263
+      ],
+      "projected": [
+        472.6022105383803,
+        264.38692992832785
+      ],
+      "pixelError": 1.4428482532363476
+    }
+  ],
   "movement": 168,
   "url": "https://507movements.com/mm_168.html",
   "libraryUrl": "https://507movements.com/js/anilib.js",
@@ -186,11 +241,11 @@
   "sources": [
     {
       "file": "scripts/compare-variable-crank-oracle.mjs",
-      "sha256": "9ee7e2226ce21050d5d1c60215f734e60c40832bd41dbeaa9a1afd3fecd7380b"
+      "sha256": "e3e82637a0fc94be64ac89413e02f3314f666827f88d1a5f8a2a9a497eb810e6"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",
-      "sha256": "818070a13affb3b4c7f4d1b56f38d6a377c46bbd1ce7ce3334d0538872fa1b41"
+      "sha256": "50a759f29481f201a478f41f2ce3156fe8f09071d2682a821123689d80d4b460"
     },
     {
       "file": "public/engravings/mm_168.png",

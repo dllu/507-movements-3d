@@ -1,68 +1,77 @@
-# Movement 168 — variable-radius slotted crank (review open)
+# Movement 168 — variable-radius slotted crank
 
-The existing model needs source-proportion and finite-joint corrections.
-Its centerline construction is consistent with the later source animation,
-but that animation's dimensions do not closely reproduce the engraved pose.
-No replacement is registered yet.
+168 now uses nine meshes with a broad tapered pitman, a through-slot, and
+finite pins passing through real openings. The added base, solid slot backing,
+index decorations and invisible framing box are removed. Dashed construction
+paths show the auxiliary circle and actual slot-pin orbit. The near-frontal
+view fits the complete visible motion, with no fog or ground. Playback is
+analytic and takes four seconds per auxiliary revolution; no WASM is required.
 
-## Executed source reference
+## Source proportions and hidden closure
 
-The [source page](https://507movements.com/mm_168.html) has a working animation.
-It uses a radius-2 auxiliary crank, two length-10 pitman halves, main and
-auxiliary shafts 10 units apart, and a length-30 power rocker whose fixed pivot
-is (10,30). The visible right-hand power member continues beyond the drawing.
+The [source page](https://507movements.com/mm_168.html) provides a working
+animation. It uses equal length-10 pitman halves, a radius-2 auxiliary crank,
+10-unit shaft spacing, and a length-30 power rocker with pivot (10,30).
+Those ratios validate the mechanism but differ from the engraving.
 
-`src/simulation/variable-radius-crank-motion.js` independently closes those
-links using angular circle intersection. Executing the original animation
-and its library at 721 phases gives maximum wrist/slot-pin coordinate error
-1.155e-14 drawing units. The [oracle report](validation/168-oracle-comparison.json)
-records source hashes and sample poses. Downloaded source code stays in
-`/dev/shm`; it is not incorporated into the model.
+The production geometry uses 0.012 world units per pixel. Main and auxiliary
+shafts follow (70,267) and (286,264). The auxiliary pin follows (310,217), giving
+radius 0.633277 and initial angle 1.098674 radians. The left and right pitman
+spans measure 2.342460 and 2.032398 world units. A single rigid pitman direction
+follows the line from the engraved slot pin to the power wrist; the small
+remaining noncollinearity in the drawing is not animated as rod deformation.
 
-The finite rocker produces a nearly elliptical slot-pin path. An exact ellipse
-is not imposed, nor is the power wrist forced to move on a straight line.
-Two tests check rigid lengths and continuous selection of the right-hand
-assembly branch over 1,441 poses, and rejection of impossible closure.
-
-## Engraving mismatch
-
-The approximate raster comparison anchors the auxiliary shaft at (286,264),
-uses 216 pixels between the shafts, and keeps axes parallel to the image.
-The source shaft centers differ vertically by three pixels, so this is an
-approximate diagnostic rather than a fitted projection certificate.
-
-| Initial joint | Engraving position | Animation projection error |
+| Initial joint | Engraving | Rebuilt projection error |
 | --- | --- | ---: |
-| Auxiliary pin | (310,217) | 12.18 px |
-| Main slot pin | (123,161) | 41.38 px |
-| Power wrist | (473,263) | 38.43 px |
+| Auxiliary pin | (310,217) | 0 px |
+| Slot pin | (123,161) | 1.443 px |
+| Power wrist | (473,263) | 1.443 px |
 
-Thus matching the animation alone is insufficient for source fidelity. The
-replacement needs independently measured crank radius and pitman spans, with
-an explicit assumption for the unseen power pivot. The drawing's main slot
-pin, auxiliary pin and wrist are approximately collinear but its two visible
-pitman halves are unequal. Preserve rigid linkage closure while fitting those
-measurements; document any residual inconsistency instead of deforming the rod.
+These are planar joint-position checks, not whole-contour or screenshot
+registration claims. The previous animation-proportioned model missed the
+slot pin and wrist by approximately 41 and 38 pixels after shaft alignment.
 
-## Actual-solid defects
+The power rocker is shown only for the approximately 1.36-world-unit length
+visible in the engraving. Its inferred full length is 7.776, retaining the
+source animation's ratio to shaft spacing. The initial direction follows the
+engraved upper continuation, placing its hidden pivot at approximately
+(3.539788,7.661824), relative to the auxiliary shaft. Depths, pin clearances,
+shaft support outside the picture and absolute timing are inferred.
 
-The [97-pose selected-interface sweep](validation/168-existing-contact.json)
-performs 1,075,342 bidirectional surface queries. It finds up to 0.114251 world
-units of main-pin penetration into the solid slot backing, and 0.114562 into
-the auxiliary crank's undrilled end. No sampled main-pin/slot-frame penetration
-is found. These are cross-body interfaces; rigid pin/pitman joins are excluded.
-The audit does not qualify all other parts or the complete assembly.
+The auxiliary crank is prescribed at uniform speed. Circle intersection closes
+the right pitman span and rocker; the rigid left span determines the slot pin,
+which sets the main crank's angle and changing radius. The finite rocker gives
+an approximately elliptical orbit, not an imposed exact ellipse. This is an
+ideal kinematic reconstruction, without load, inertia or impact calculations.
 
-Replace those interfaces with finite pins and real openings. Also reconstruct
-the broad tapered pitman visible in the engraving, remove the added base and
-index decorations, use dashed construction paths, and review the existing
-10.13-second period. Preserve the visible continuation of the power member
-while documenting its hidden pivot. Browser validation follows replacement.
+## Validation
+
+The [executed oracle comparison](validation/168-oracle-comparison.json) checks
+721 phases using the animation's own dimensions. Independent angular closure
+agrees within 1.155e-14 drawing units. The production dimensions intentionally
+differ; the report records both parameter sets and initial source-position
+errors. Raw downloaded animation code remains in `/dev/shm`.
+
+The [legacy selected-contact audit](validation/168-existing-contact.json)
+found pin penetration into the solid slot backing and auxiliary crank end.
+The replacement [solid sweep](validation/168-solid-clearance.json) checks
+129 poses, 29 cross-body pairs and 4,494,102 bidirectional surface queries,
+with no sampled penetration above 1e-6 world units. Rigid-body joins and dashed
+construction lines are excluded. Axial separation keeps the two shafts clear
+of the moving pitman throughout the cycle.
+
+Three tests check oracle-dimension closure, invalid configurations, the
+engraving's initial joint positions, and production closure/radius limits over
+1,441 poses. The production build and packaged Chrome desktop/mobile test pass,
+including playback, exact restart, orbit/reset, no WASM request, no page errors,
+and no horizontal mobile overflow. Front and oblique screenshots were inspected;
+temporary artifacts remain in `/dev/shm/168-*`. The
+[browser record](validation/168-browser.json) identifies the checked sources.
 
 ```sh
-node scripts/compare-variable-crank-oracle.mjs
-node scripts/review-variable-crank-existing.mjs
 node --test tests/variable-radius-crank-motion.test.mjs
+node scripts/compare-variable-crank-oracle.mjs
+node scripts/review-variable-crank-solids.mjs
 ```
 
-Movement 168 remains open. The full 507-movement review remains active.
+The full 507-movement review remains active. Next source review: 169.

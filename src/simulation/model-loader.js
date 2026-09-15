@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 168) {
+    const {makeVariableRadiusCrank} = await import('./variable-radius-crank.js');
+    const model = makeVariableRadiusCrank();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 167) {
     const {makeReversingGrooveDrum} = await import('./reversing-groove-drum.js');
     const model = makeReversingGrooveDrum();
