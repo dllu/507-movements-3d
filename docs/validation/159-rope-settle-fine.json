@@ -1,0 +1,47 @@
+{
+  "sources": [
+    {
+      "file": "scripts/probe-finite-cord-treadle.mjs",
+      "sha256": "2be2ae52a7335c432ef72e9697a81c222f062e7358ccbc7b63bc6827fe704d6d"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/rope-physics.js",
+      "sha256": "1bca99fbbbc47a178c63a7a4c457bf454e5512dc8ec2e7ccd79f62a2e5d72eba"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ],
+  "duration": 15.999999999969381,
+  "samples": 801,
+  "description": {
+    "segments": 96,
+    "timestep": 0.00005,
+    "period": 4,
+    "ropeMass": 0.08,
+    "ropeRadius": 0.045,
+    "friction": 0.5,
+    "bendingRigidity": 0.0002,
+    "bendingRelaxation": 0.4,
+    "totalLength": 11.181392308922025,
+    "nominalLength": 11.18344383731753,
+    "groundY": -3.3955555555555557,
+    "pulleyRadius": 0.755,
+    "assumptions": "Experimental planar articulated rope with optional straight-rest bending stiffness scaled by inverse segment length, Kelvin-Voigt bending relaxation, finite capsule self-contact, gravity, passive pulley friction and floor contact. Uniform beam and provisional rope/pulley masses; driven disk only. Attachment compliance and resolution remain unqualified."
+  },
+  "maximumAttachmentError": 0.00014221316315986572,
+  "minimumFootClearance": -0.00032165999413269475,
+  "treadleRange": [
+    -0.308586479606188,
+    0.34526690053532677
+  ],
+  "pulleyRange": [
+    -2.1778288133253887,
+    1.6508857447377727
+  ]
+}

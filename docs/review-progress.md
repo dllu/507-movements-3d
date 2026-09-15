@@ -1,11 +1,12 @@
 # Active source reconstruction: 159 cord treadle
 
-159's finite rope now has an optional resolution-scaled bending/damping law,
-with a native rest-shape and dissipation test. Two material studies reduce
-attachment/contact error but leave first-cycle rope differences of 20–38 source
-pixels. Neither is production-qualified. Test longer-run settling and repeated
-cycles next, then finish the source-shaped assembly and bake only validated
-motion. Source geometry is preserved; production remains unchanged. See
+Four-cycle finite-rope runs do not establish a seamless repeat: fourth-cycle
+rope seams still differ by 7.6–11.1 source pixels, with large velocity mismatches.
+A source-shaped 19-mesh rigid core now passes a four-cycle clearance audit,
+excluding the cord and unfinished termination hardware. Next establish physical
+scale (the current gravity treats the treadle as 5.28 metres), derive moving
+inertias from the solids, and finish fittings before further dynamic refinement.
+No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 
 # Shipped reconstruction: 158 treadle and disk

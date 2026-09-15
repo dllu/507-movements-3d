@@ -1,0 +1,38 @@
+{
+  "movement": 159,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 poses across four native cycles; rigid core only, no cord or terminations; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Finite sampling, not a continuous collision proof.",
+  "parts": 19,
+  "pairs": 93,
+  "poses": 129,
+  "checks": 3903080,
+  "failures": {},
+  "workingContacts": {
+    "treadle/floor": {
+      "firstPose": 33,
+      "maximumDepth": 0.0022460760290528015,
+      "points": 9
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-core.mjs",
+      "sha256": "2f8232ea88878fce6b992b6f9327b0b2f7532cc23d574aa38ad91c5e586282b6"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/solids.js",
+      "sha256": "b48ecb9448eff24e852de9ed6d8e2f4b8b3b2a0e7a3b5a1279b0c964079a042a"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "/dev/shm/159-settle-coarse.json",
+      "sha256": "13c3cb7f04b7948d3d7954205efc7d2a2a61ab8d213769d8b4f55367ab2396a6"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

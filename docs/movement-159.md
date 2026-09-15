@@ -180,12 +180,53 @@ bend filenames with damped filenames, and use CORD_STUDY=damped for the review.
 All small reports and provenance are preserved under 159-bend-* and
 159-damped-* in docs/validation; raw trajectories remain outside Git.
 
+## Longer-run settling and rigid core
+
+The stronger-damping candidate (rigidity 0.0002, relaxation 0.4s) was run for
+16 seconds at both 0.0001s and 0.00005s, with 96 segments. Both runs completed
+without resetting, but neither establishes a periodic rope motion. Maximum
+corresponding-vertex differences between cycles 3 and 4 are 1.1283 world units
+in the coarse run and 0.7297 in the fine run. Differences between timesteps are
+also substantial in later cycles; this is not merely a first-cycle startup issue.
+
+At the proposed fourth-cycle loop boundary, maximum rope-position mismatches
+are 0.1342 and 0.1973 world units (7.55 and 11.10 source pixels). One-sided
+finite-difference seam velocity mismatches reach 5.57 and 8.05 world units/s.
+These do not justify a seamless repeating bake. Pulley angle was omitted from
+the seam requirement because an unmarked round pulley can rotate cumulatively.
+
+A separate, unregistered 19-mesh rigid core is now authored in
+mujoco-cord-treadle/solids.js. It includes the engraving's pedestals, bored disk
+and treadle joints, pulley core and flanges, a floor, and an inferred rear pulley
+mount. The core deliberately omits cord termination hardware. A 129-pose audit
+across the coarse four-cycle trajectory checks 93 part pairs: no unintended
+intersections in 3,903,080 point queries. Intended treadle/floor soft contact
+reaches 0.00225 world units. This audit excludes the cord and unfinished fittings;
+it is not a full assembly qualification. Source, resting and oblique diagnostic
+views were inspected with the finite rope overlaid, making the missing
+terminations visible rather than hiding them.
+
+Before more material tuning, establish dimensional scale and consistent moving
+inertias. The current prototype uses gravity 9.81 in display units, effectively
+treating the 5.28-unit treadle as 5.28 metres. The engraving supplies no physical
+dimensions. An explicit, plausible human-scale reconstruction is needed, together
+with masses/inertias derived from the authored solids, before interpreting the
+four-second timing and rope material constants physically. These are unresolved
+model assumptions; no alternative scale or density has been selected yet.
+
+```sh
+CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=16 SAMPLES=/dev/shm/159-settle-coarse.json REPORT=/dev/shm/159-settle-coarse-report.json node scripts/probe-finite-cord-treadle.mjs
+CORD_BENDING=.0002 CORD_RELAXATION=.4 DT=.00005 CORD_DURATION_SECONDS=16 SAMPLES=/dev/shm/159-settle-fine.json REPORT=/dev/shm/159-settle-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+node scripts/review-cord-treadle-settling.mjs
+node scripts/review-cord-treadle-core.mjs
+```
+
 ## Remaining work
 
-Refine the finite rope, especially its bending/damping and pickup compliance,
-and establish timestep/rope-resolution convergence and longer-run behavior. Preserve the measured joints and floor. Assess
-the attachment loop around the treadle, then build source-shaped supports,
-bored pivots, a finite pulley groove and connected cord terminations. Qualify
+Set the physical scale and derive consistent inertias from the rigid core.
+Complete the cord termination hardware, then refine the finite rope and qualify
+timestep/rope-resolution convergence and longer-run behavior. Preserve the
+measured joints and floor. Qualify
 clearances and passive dynamics with final inertias before registering a bake.
 Ground rendering, camera, speed, restart and mobile checks remain outstanding
 for that replacement.

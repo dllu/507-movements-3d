@@ -1,0 +1,41 @@
+import * as THREE from 'three';
+import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {PALETTE,matte,markShadows} from '../primitives.js';
+import {disposeObject3D} from '../dispose-model.js';
+import {cordTreadleSource as source,cordTreadleParameters} from '../cord-treadle-motion.js';
+// Source-shaped rigid core only. Cord terminations and full assembly validation
+// are still outstanding; this factory is deliberately not registered in the app.
+export function makeCordTreadleSolids(){
+ const root=new THREE.Group(),g=cordTreadleParameters(),blocks={},parts={},families={},materials=new Map();
+ for(const name of ['disk','treadle','pulley','fixed']){blocks[name]=new THREE.Group();root.add(blocks[name]);}
+ const add=(name,geometry,family,color,point=[0,0])=>{if(!materials.has(color)){const m=matte(color,{metalness:.15,roughness:.6});m.fog=false;materials.set(color,m);}const mesh=new THREE.Mesh(geometry,materials.get(color));mesh.name=name;mesh.position.set(...point,0);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;};
+ const pixel=p=>[(p[0]-source.diskCenter[0])*source.scale,(source.diskCenter[1]-p[1])*source.scale];
+ const imagePoly=points=>poly(points.map(pixel));
+ const fromShape=s=>imagePoly(s.getPoints(48).map(p=>[p.x,p.y]));
+ add('disk',ring(.144,source.diskRadius*source.scale,-.47,-.13,128),'disk',PALETTE.driver);
+ add('diskHub',ring(.144,.22,-.13,-.02,128),'disk',PALETTE.ink);
+ add('diskAxle',disk(.14,-.95,.02,128),'fixed',PALETTE.ink);
+ add('diskBearing',ring(.144,.26,-.55,-.49,128),'fixed',PALETTE.frame);
+ const stand=new THREE.Shape();stand.moveTo(45,444);stand.bezierCurveTo(76,438,84,426,84,399);stand.lineTo(84,266);stand.bezierCurveTo(84,227,143,227,143,266);stand.lineTo(145,416);stand.bezierCurveTo(148,436,157,443,174,444);stand.lineTo(174,457);stand.lineTo(45,457);stand.closePath();
+ add('diskStand',plate(clip.difference(fromShape(stand),poly(circle([0,0],.144,128))),-.95,-.55),'fixed',PALETTE.frame);
+ const treadle=clip.difference(clip.union(poly([[-g.footLength,-.085],[0,-.085],[0,.085],[-g.footLength,.085]]),poly(circle([0,0],.25,128))),poly(circle([0,0],.184,128)));
+ add('treadle',plate(treadle,.05,.29),'treadle',PALETTE.driven);
+ const support=new THREE.Shape();support.moveTo(403,444);support.bezierCurveTo(432,430,433,389,434,354);support.bezierCurveTo(434,322,477,322,479,352);support.bezierCurveTo(480,391,484,421,508,444);support.lineTo(508,457);support.lineTo(403,457);support.closePath();
+ const bearing=clip.difference(fromShape(support),poly(circle(g.pivot,.184,128)));
+ add('treadleFrontBearing',plate(bearing,.34,.48),'fixed',PALETTE.frame);
+ add('treadleRearBearing',plate(bearing,-.95,-.55),'fixed',PALETTE.frame);
+ add('treadleBase',plate(imagePoly([[403,444],[508,444],[508,457],[403,457]]),-.55,.34),'fixed',PALETTE.frame);
+ add('treadleAxle',disk(.18,-.95,.54,128),'fixed',PALETTE.ink,g.pivot);
+ add('treadleRetainer',ring(.18,.24,.484,.53,128),'fixed',PALETTE.ink,g.pivot);
+ add('pulleyCore',ring(.144,g.guideRadius-.045,.56,.72,128),'pulley',PALETTE.brass);
+ add('pulleyRearFlange',ring(.144,g.guideRadius,.50,.56,128),'pulley',PALETTE.brass);
+ add('pulleyFrontFlange',ring(.144,g.guideRadius,.72,.78,128),'pulley',PALETTE.brass);
+ add('pulleyAxle',disk(.14,-1.10,.84,128),'fixed',PALETTE.ink,g.guide);
+ add('pulleyRetainer',ring(.14,.22,.784,.83,128),'fixed',PALETTE.ink,g.guide);
+ add('pulleyBearing',ring(.144,.28,-.96,.494,128),'fixed',PALETTE.frame,g.guide);
+ add('pulleyMount',plate(poly([[-.35,-.45],[.35,-.45],[.35,.45],[-.35,.45]]),-1.10,-.96),'fixed',PALETTE.frame,g.guide);
+ add('floor',plate(imagePoly([[22,457],[512,457],[512,464],[22,464]]),-1.15,.90),'fixed',PALETTE.frame);
+ const update=state=>{blocks.disk.rotation.z=state.disk;blocks.treadle.position.set(...g.pivot,0);blocks.treadle.rotation.z=state.treadle;blocks.pulley.position.set(...g.guide,0);blocks.pulley.rotation.z=state.pulley;root.updateMatrixWorld(true);};
+ Object.assign(root.userData,{parts,families,blocks,geometry:g,source,hideGround:true,attachmentSites:{crank:[...g.pin,.64],treadle:[-g.armLength,0,.64]},reconstructionNote:'Unregistered rigid-core prototype. Pedestals follow the engraving; shaft depths, bearings, pulley groove and rear mounting pad are inferred. Cord terminations are not yet built.'});
+ update({disk:0,treadle:g.initialTreadle,pulley:0});markShadows(root);return{root,update,dispose:()=>disposeObject3D(root)};
+}

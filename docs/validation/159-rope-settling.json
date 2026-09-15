@@ -1,0 +1,206 @@
+{
+  "movement": 159,
+  "method": "Four four-second cycles with 96 material segments; .0001s and .00005s native timesteps. Compare corresponding material vertices at .02s samples, consecutive full cycles and each potential loop seam. Seam velocities are one-sided finite differences, not exact native velocities. Pulley rotation omitted because a round unmarked pulley need not return to its original orientation.",
+  "cycleComparisons": [
+    {
+      "file": "/dev/shm/159-settle-coarse.json",
+      "cycles": [
+        {
+          "cycles": [
+            1,
+            2
+          ],
+          "maximumDifference": {
+            "disk": 0.004986984192581367,
+            "treadle": 0.025156324765873816,
+            "rope": 0.8809771027117175
+          }
+        },
+        {
+          "cycles": [
+            2,
+            3
+          ],
+          "maximumDifference": {
+            "disk": 0.009339894030260254,
+            "treadle": 0.07749095317185312,
+            "rope": 0.9289756252443135
+          }
+        },
+        {
+          "cycles": [
+            3,
+            4
+          ],
+          "maximumDifference": {
+            "disk": 0.009560356666778347,
+            "treadle": 0.0899846035068767,
+            "rope": 1.1283244163568409
+          }
+        }
+      ],
+      "seams": [
+        {
+          "cycle": 1,
+          "positionDifference": {
+            "disk": 0.00024421989851308723,
+            "treadle": 0.025156324765873816,
+            "rope": 0.23806751767334877
+          },
+          "maximumRopeSeamVelocityDifference": 3.511528794988798
+        },
+        {
+          "cycle": 2,
+          "positionDifference": {
+            "disk": 0.00004354402115769318,
+            "treadle": 0.003264168076316909,
+            "rope": 0.19386753086261754
+          },
+          "maximumRopeSeamVelocityDifference": 2.97854404776189
+        },
+        {
+          "cycle": 3,
+          "positionDifference": {
+            "disk": 0.0016418133701030513,
+            "treadle": 0.012410822912257258,
+            "rope": 0.21961526068896303
+          },
+          "maximumRopeSeamVelocityDifference": 5.571690364404886
+        },
+        {
+          "cycle": 4,
+          "positionDifference": {
+            "disk": 0.0012256766043563516,
+            "treadle": 0.0035012882781042254,
+            "rope": 0.1342357077316874
+          },
+          "maximumRopeSeamVelocityDifference": 5.568773781864494
+        }
+      ]
+    },
+    {
+      "file": "/dev/shm/159-settle-fine.json",
+      "cycles": [
+        {
+          "cycles": [
+            1,
+            2
+          ],
+          "maximumDifference": {
+            "disk": 0.008055913020279526,
+            "treadle": 0.08010735641979816,
+            "rope": 1.7088137351071275
+          }
+        },
+        {
+          "cycles": [
+            2,
+            3
+          ],
+          "maximumDifference": {
+            "disk": 0.005440592367250474,
+            "treadle": 0.039545987410421285,
+            "rope": 2.13331517852353
+          }
+        },
+        {
+          "cycles": [
+            3,
+            4
+          ],
+          "maximumDifference": {
+            "disk": 0.007339548292417675,
+            "treadle": 0.05065383944743278,
+            "rope": 0.7296971372623482
+          }
+        }
+      ],
+      "seams": [
+        {
+          "cycle": 1,
+          "positionDifference": {
+            "disk": 0.0001925348249551817,
+            "treadle": 0.018889038021881466,
+            "rope": 0.2412156381006105
+          },
+          "maximumRopeSeamVelocityDifference": 2.4053737161977495
+        },
+        {
+          "cycle": 2,
+          "positionDifference": {
+            "disk": 0.00074617057228199,
+            "treadle": 0.012960333807251978,
+            "rope": 0.22650189052495695
+          },
+          "maximumRopeSeamVelocityDifference": 3.0714626337731663
+        },
+        {
+          "cycle": 3,
+          "positionDifference": {
+            "disk": 0.0004706052137510852,
+            "treadle": 0.008472395949026601,
+            "rope": 0.2381014912742176
+          },
+          "maximumRopeSeamVelocityDifference": 6.89404277430918
+        },
+        {
+          "cycle": 4,
+          "positionDifference": {
+            "disk": 0.001263207745335393,
+            "treadle": 0.010875695597554802,
+            "rope": 0.19729836915347654
+          },
+          "maximumRopeSeamVelocityDifference": 8.046622096384318
+        }
+      ]
+    }
+  ],
+  "refinement": [
+    {
+      "cycle": 1,
+      "maximumDifference": {
+        "disk": 0.010097476065190847,
+        "treadle": 0.02369557282423062,
+        "rope": 0.44881872077853285
+      }
+    },
+    {
+      "cycle": 2,
+      "maximumDifference": {
+        "disk": 0.009392226880391874,
+        "treadle": 0.08940577908257719,
+        "rope": 2.2876242697322895
+      }
+    },
+    {
+      "cycle": 3,
+      "maximumDifference": {
+        "disk": 0.005746518201590334,
+        "treadle": 0.029769619987217832,
+        "rope": 1.0379711291061744
+      }
+    },
+    {
+      "cycle": 4,
+      "maximumDifference": {
+        "disk": 0.0095038938755998,
+        "treadle": 0.06410157389873536,
+        "rope": 0.7330660151462548
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-settling.mjs",
+      "sha256": "94b42b6a8c609e9c81f0c9a9fcb179eaf7e27573316e5dda8745d96dce9b044d"
+    },
+    {
+      "file": "/dev/shm/159-settle-coarse.json",
+      "sha256": "13c3cb7f04b7948d3d7954205efc7d2a2a61ab8d213769d8b4f55367ab2396a6"
+    },
+    {
+      "file": "/dev/shm/159-settle-fine.json",
+      "sha256": "0f5342c173404fe795c0da6849e17b94ad25211b0731f8bd07534be6f951bac1"
+    }
+  ]
+}
