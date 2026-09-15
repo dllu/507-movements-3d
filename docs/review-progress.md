@@ -1,13 +1,13 @@
 # Active source reconstruction: 159 cord treadle
 
-159's existing taut-cord trajectory takes the foot center 133px below the
-engraving's floor. A tension-only MuJoCo tendon with a passive treadle agrees
-with that motion, so baking it would preserve the clearance failure. Coarse/fine
-native runs, cord-removal control and three tests establish the diagnostic.
-Crank-radius sensitivity also rules out a small cosmetic fix. Resolve the source
-geometry/ground conflict before replacing the visible assembly or registering
-a bake. Production is unchanged; see [movement 159](movement-159.md).
-150's source fit also remains open.
+159 can preserve its source joints and floor by allowing the treadle to rest on
+the floor while the cord goes slack. A contact-enabled MuJoCo prototype now
+shows rest, slack and pickup without a treadle actuator. Coarse/fine runs and
+four tests pass their diagnostic checks. The shortest tendon path is not a
+valid visible slack rope, and the ideal pickup impulse still needs refinement.
+Build and qualify a finite rope and source-shaped assembly before baking;
+production is unchanged. See [movement 159](movement-159.md). 150's source fit
+also remains open.
 
 # Shipped reconstruction: 158 treadle and disk
 

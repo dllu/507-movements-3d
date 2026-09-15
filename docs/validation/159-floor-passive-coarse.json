@@ -5,7 +5,7 @@
     "period": 4,
     "timestep": 0.0005,
     "cord": true,
-    "floor": false,
+    "floor": true,
     "groundY": -3.3955555555555557,
     "footLength": 5.28,
     "armLength": 2.5399834742341767,
@@ -31,15 +31,15 @@
     "assumptions": "Diagnostic only. Legacy source-center geometry, uniform unit-mass treadle, driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia, human foot force, remaining visible-support contact and final assembly inertias are unqualified. Optional floor contact uses a box matching the provisional treadle dimensions."
   },
   "summary": {
-    "minimumFootClearance": -2.418534737099677,
-    "floorContactSamples": 0,
-    "maximumTautAngleDifference": 0.000008344657244196974,
+    "minimumFootClearance": -0.0016484541479275805,
+    "floorContactSamples": 1271,
+    "maximumTautAngleDifference": 0.5853830198096961,
     "treadleRange": [
-      -0.22572784379193686,
-      0.9305935003996648
+      -0.22572784379193941,
+      0.34553551591183435
     ],
     "constraintTorqueRange": [
-      -48.20824467175391,
+      -229.60723845300296,
       0
     ],
     "actuatorTorqueRange": [
@@ -47,8 +47,8 @@
       0
     ],
     "cordErrorRange": [
-      -0.00001649352835286777,
-      0.000014763170637976941
+      -1.2328655656504424,
+      0.0013000201780002385
     ],
     "cycleEnds": [
       {
@@ -92,11 +92,11 @@
           0.2629419461276984
         ],
         "qvel": [
-          1.57227993321295,
-          0.8299502353664062
+          1.5722799332129491,
+          0.8299502353664058
         ],
         "cordLength": 11.183447502025889,
-        "passiveConstraintTorque": -31.197203236439858,
+        "passiveConstraintTorque": -31.197203236439723,
         "actuatorTorque": 0
       },
       {

@@ -26,3 +26,13 @@ test('159 removing the cord releases the treadle instead of retaining scripted m
  const mujoco=await loadMujoco(),p=makeCordTreadlePhysics(mujoco,{cord:false});
  try{for(let i=0;i<2000;i++)p.step();mujoco.mj_forward(p.model,p.data);const s=p.state();assert.equal(s.passiveConstraintTorque,0);assert.equal(s.actuatorTorque,0);assert.ok(s.qpos[1]>1);assert.equal(p.model.ntendon,0);}finally{p.dispose();}
 });
+test('159 floor contact stops the treadle while the cord goes slack and picks up again',async()=>{
+ const mujoco=await loadMujoco(),p=makeCordTreadlePhysics(mujoco,{floor:true,timestep:.00025});let slack=0,contacts=0,taut=0,clearance=Infinity;
+ try{
+  for(let i=0;i<=32000;i++){
+   if(i%40===0){mujoco.mj_forward(p.model,p.data);const s=p.state();slack=Math.max(slack,p.description.cordLength-s.cordLength);contacts+=s.floorContacts>0;taut+=Math.abs(s.cordLength-p.description.cordLength)<.0001;clearance=Math.min(clearance,s.footBottom-p.description.groundY);assert.equal(s.actuatorTorque,0);}
+   if(i<32000)p.step();
+  }
+  assert.ok(slack>1);assert.ok(contacts>100);assert.ok(taut>100);assert.ok(clearance>-.003);
+ }finally{p.dispose();}
+});

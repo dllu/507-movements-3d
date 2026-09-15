@@ -1,9 +1,9 @@
 # Movement 159 — cord treadle review in progress
 
-159 remains **open**. The existing taut-cord trajectory is mechanically plausible
-under a driven disk, but takes the foot through the engraving's floor. Production
-registration and visible geometry are unchanged at this diagnostic checkpoint.
-Baking the old trajectory would preserve that error.
+159 remains **open**, with a source-preserving route now established: let the
+treadle contact the floor and the cord go slack. The old always-taut assumption
+caused the floor penetration. Production registration and visible geometry are
+unchanged while the slack cord and pickup dynamics are reconstructed.
 
 ## Source and clearance conflict
 
@@ -60,16 +60,47 @@ follows the coupled motion. Three tests check exact tangent geometry and the
 floor conflict, independent MuJoCo tendon length, zero treadle actuation,
 pulling-only constraint torque on the tested branch, and cord removal.
 
+## Floor contact and slack-cord prototype
+
+Adding the drawn floor as an actual contact surface resolves the foot conflict
+without changing joint centers, crank radius or cord length. A box with the
+provisional beam's dimensions contacts the floor; the unilateral tendon is free
+to shorten its geometric path while the treadle rests. When the disk takes up
+the slack, cord tension lifts the treadle again. This is a physically different
+trajectory from forcing the cord to remain taut through the floor.
+
+Four-cycle runs at 0.0005s and 0.00025s steps give:
+
+| Quantity | Coarse | Fine |
+| --- | ---: | ---: |
+| Maximum treadle angle | 0.34554rad | 0.34560rad |
+| Maximum slack length | 1.23287 | 1.23286 |
+| Maximum soft floor penetration | 0.00165 | 0.00208 |
+| Maximum soft cord extension | 0.00130 | 0.00138 |
+
+Lengths above are world units. The fine floor penetration is about 0.12 source
+pixels, compared with the original 133px floor conflict. The treadle still has
+zero actuator torque. A fourth test verifies floor contact, significant slack,
+subsequent taut phases and bounded floor penetration over two cycles.
+
+This establishes the needed behavior, not a finished simulation. Across
+synchronized coarse/fine samples, maximum treadle-angle difference is 0.00387rad.
+Peak constraint torque rises from about 230 to 434 as the step is halved at the
+ideal massless-cord pickup. The pickup impulse and final inertias therefore need
+further qualification. A spatial tendon's reported path is the shortest wrapped
+path; it does **not** provide the visible slack rope shape. Rendering that path
+as a taut line would be incorrect during the floor-rest interval.
+
 ## Remaining work
 
-Resolve the conflict between full disk rotation, the drawn foot/cord geometry
-and floor level before authoring a replacement assembly. Assess the attachment
-loop around the treadle, source-reading uncertainty and geometric alternatives;
-record any necessary departures explicitly. Then build source-shaped supports,
-bored pivots, finite pulley groove and connected cord terminations, qualify
-clearances and passive dynamics with final inertias, and bake validated motion
-for browser playback. Ground, camera, speed, restart and mobile checks remain
-outstanding for that replacement.
+Reconstruct the slack cord, preferably with a finite rope model that can be
+baked along with the rigid motion, and assess pickup compliance and timestep/
+rope-resolution convergence. Preserve the measured joints and floor. Assess
+the attachment loop around the treadle, then build source-shaped supports,
+bored pivots, a finite pulley groove and connected cord terminations. Qualify
+clearances and passive dynamics with final inertias before registering a bake.
+Ground rendering, camera, speed, restart and mobile checks remain outstanding
+for that replacement.
 
 ```sh
 node scripts/review-cord-treadle-clearance.mjs
@@ -77,6 +108,9 @@ node scripts/probe-cord-treadle.mjs
 DT=.00025 REPORT=docs/validation/159-passive-fine.json SAMPLES=/dev/shm/159-passive-fine-samples.json node scripts/probe-cord-treadle.mjs
 CORD=0 REPORT=/dev/shm/159-no-cord.json SAMPLES=/dev/shm/159-no-cord-samples.json node scripts/probe-cord-treadle.mjs
 node scripts/compare-cord-treadle-native.mjs
+FLOOR=1 REPORT=docs/validation/159-floor-passive-coarse.json SAMPLES=/dev/shm/159-floor-coarse-samples.json node scripts/probe-cord-treadle.mjs
+FLOOR=1 DT=.00025 REPORT=docs/validation/159-floor-passive-fine.json SAMPLES=/dev/shm/159-floor-fine-samples.json node scripts/probe-cord-treadle.mjs
+FLOOR=1 node scripts/compare-cord-treadle-native.mjs
 node --test tests/cord-treadle.test.mjs
 ```
 

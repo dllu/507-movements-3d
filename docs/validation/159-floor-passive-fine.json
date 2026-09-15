@@ -3,9 +3,9 @@
   "description": {
     "movement": 159,
     "period": 4,
-    "timestep": 0.0005,
+    "timestep": 0.00025,
     "cord": true,
-    "floor": false,
+    "floor": true,
     "groundY": -3.3955555555555557,
     "footLength": 5.28,
     "armLength": 2.5399834742341767,
@@ -31,15 +31,15 @@
     "assumptions": "Diagnostic only. Legacy source-center geometry, uniform unit-mass treadle, driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia, human foot force, remaining visible-support contact and final assembly inertias are unqualified. Optional floor contact uses a box matching the provisional treadle dimensions."
   },
   "summary": {
-    "minimumFootClearance": -2.418534737099677,
-    "floorContactSamples": 0,
-    "maximumTautAngleDifference": 0.000008344657244196974,
+    "minimumFootClearance": -0.0020753623282732114,
+    "floorContactSamples": 1266,
+    "maximumTautAngleDifference": 0.5853818472400236,
     "treadleRange": [
-      -0.22572784379193686,
-      0.9305935003996648
+      -0.2257278396457397,
+      0.3456009853117769
     ],
     "constraintTorqueRange": [
-      -48.20824467175391,
+      -433.8164510115548,
       0
     ],
     "actuatorTorqueRange": [
@@ -47,8 +47,8 @@
       0
     ],
     "cordErrorRange": [
-      -0.00001649352835286777,
-      0.000014763170637976941
+      -1.2328634911599625,
+      0.0013764383973580152
     ],
     "cycleEnds": [
       {
@@ -68,67 +68,67 @@
         "actuatorTorque": 0
       },
       {
-        "time": 4.000000000000503,
-        "footBottom": -2.9833582080249537,
+        "time": 3.999999999999143,
+        "footBottom": -2.9822995111823647,
         "floorContacts": 0,
         "qpos": [
-          6.285051386000139,
-          0.26294194612953287
+          6.284659463780962,
+          0.2627334009173265
         ],
         "qvel": [
-          1.5722799332146877,
-          0.8299502353681523
+          1.5721125534997262,
+          0.829912909645605
         ],
-        "cordLength": 11.183447502025892,
-        "passiveConstraintTorque": -31.197203236935607,
+        "cordLength": 11.183443806116276,
+        "passiveConstraintTorque": 0,
         "actuatorTorque": 0
       },
       {
-        "time": 7.999999999998286,
-        "footBottom": -2.983358208015641,
+        "time": 8.00000000000403,
+        "footBottom": -2.9822995112028945,
         "floorContacts": 0,
         "qpos": [
-          12.568236693176255,
-          0.2629419461276984
+          12.567844770968206,
+          0.2627334009213703
         ],
         "qvel": [
-          1.57227993321295,
-          0.8299502353664062
+          1.572112553502268,
+          0.8299129096494086
         ],
-        "cordLength": 11.183447502025889,
-        "passiveConstraintTorque": -31.197203236439858,
+        "cordLength": 11.183443806116273,
+        "passiveConstraintTorque": 0,
         "actuatorTorque": 0
       },
       {
-        "time": 12.000000000003174,
-        "footBottom": -2.983358208036184,
+        "time": 11.999999999994708,
+        "footBottom": -2.982299511163759,
         "floorContacts": 0,
         "qpos": [
-          18.8514220003635,
-          0.26294194613174504
+          18.8510300781332,
+          0.26273340091366165
         ],
         "qvel": [
-          1.5722799332158692,
-          0.8299502353700411
+          1.572112553496978,
+          0.829912909642023
         ],
-        "cordLength": 11.183447502025892,
-        "passiveConstraintTorque": -31.19720323693661,
+        "cordLength": 11.183443806116273,
+        "passiveConstraintTorque": 0,
         "actuatorTorque": 0
       },
       {
-        "time": 16.00000000000806,
-        "footBottom": -2.9833582080567798,
+        "time": 15.999999999985386,
+        "footBottom": -2.982299511124479,
         "floorContacts": 0,
         "qpos": [
-          25.134607307550766,
-          0.2629419461358022
+          25.134215385298138,
+          0.26273340090592423
         ],
         "qvel": [
-          1.5722799332158348,
-          0.8299502353723477
+          1.5721125534967926,
+          0.8299129096376533
         ],
-        "cordLength": 11.183447502025892,
-        "passiveConstraintTorque": -31.197203236936602,
+        "cordLength": 11.183443806116271,
+        "passiveConstraintTorque": 0,
         "actuatorTorque": 0
       }
     ]

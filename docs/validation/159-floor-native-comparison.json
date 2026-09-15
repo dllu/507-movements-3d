@@ -1,0 +1,23 @@
+{
+  "movement": 159,
+  "floor": true,
+  "method": "Compare synchronized .005s samples over four four-second cycles at .0005s and .00025s native timesteps. Diagnostic uniform-beam inertia and tension-only tendon; full visible assembly not qualified.",
+  "maximumCoordinateDifferences": {
+    "disk": 0.0005667842587970817,
+    "treadle": 0.0038654566521985623
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-cord-treadle-native.mjs",
+      "sha256": "d1a2c45ab5c1722dcce0c73abd09e2b590c94c117938dac125d457981b3e3d5e"
+    },
+    {
+      "file": "/dev/shm/159-floor-coarse-samples.json",
+      "sha256": "9506695bcb666be045f39d50efb3f92edbcfb10a75f021008e1c4aa707dd4eb4"
+    },
+    {
+      "file": "/dev/shm/159-floor-fine-samples.json",
+      "sha256": "bd98ff8dbd5d2c93d5b67d77f57bc26c73418a1dbba14586782fc8f2a6c61003"
+    }
+  ]
+}

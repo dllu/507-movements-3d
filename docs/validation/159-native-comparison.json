@@ -1,11 +1,14 @@
 {
   "movement": 159,
+  "floor": false,
   "method": "Compare synchronized .005s samples over four four-second cycles at .0005s and .00025s native timesteps. Diagnostic uniform-beam inertia and tension-only tendon; full visible assembly not qualified.",
   "maximumCoordinateDifferences": {
     "disk": 0.0005667842587970817,
     "treadle": 0.00031094404193221514
   },
   "noCordSummary": {
+    "minimumFootClearance": -3.4140171598764364,
+    "floorContactSamples": 0,
     "maximumTautAngleDifference": null,
     "treadleRange": [
       0.15804907448272096,
@@ -23,6 +26,8 @@
     "cycleEnds": [
       {
         "time": 0,
+        "footBottom": -2.9783471382619595,
+        "floorContacts": 0,
         "qpos": [
           0,
           0.26195496080530156
@@ -37,6 +42,8 @@
       },
       {
         "time": 4.000000000000503,
+        "footBottom": -2.367213195090375,
+        "floorContacts": 0,
         "qpos": [
           6.283970705343775,
           0.14333038532934084
@@ -51,6 +58,8 @@
       },
       {
         "time": 7.999999999998286,
+        "footBottom": -3.0997854792090203,
+        "floorContacts": 0,
         "qpos": [
           12.567156012519884,
           0.2859547117847786
@@ -65,6 +74,8 @@
       },
       {
         "time": 12.000000000003174,
+        "footBottom": -4.847977689062364,
+        "floorContacts": 0,
         "qpos": [
           18.850341319707105,
           0.6635696550455535
@@ -79,6 +90,8 @@
       },
       {
         "time": 16.00000000000806,
+        "footBottom": -6.509498942325627,
+        "floorContacts": 0,
         "qpos": [
           25.133526626894366,
           1.215962357702049
@@ -96,23 +109,23 @@
   "sources": [
     {
       "file": "scripts/compare-cord-treadle-native.mjs",
-      "sha256": "a6929d4e3508ebf0314484c90de5f89fa64b6711c924dbb61a4d3ddde5b88f07"
+      "sha256": "d1a2c45ab5c1722dcce0c73abd09e2b590c94c117938dac125d457981b3e3d5e"
     },
     {
       "file": "/dev/shm/159-passive-samples.json",
-      "sha256": "d37b6c5a60965a51dd13c8bcf53a23700373290fbd8c3a76b5ebd36467689d92"
+      "sha256": "ceff7e3d2f2f95cc1f268b71630752f5be300f260c805793d461b01e98929ee8"
     },
     {
       "file": "/dev/shm/159-passive-fine-samples.json",
-      "sha256": "83e5f7861f3f4be5293c50f2241b9949eba9c57be940a46dea549ad378af5659"
+      "sha256": "9d141d99f2ac3dca461d2bccfe0eb92db618afe3f8b740bad5ea36f1eca5faaf"
     },
     {
       "file": "/dev/shm/159-no-cord-samples.json",
-      "sha256": "108507a84a5c13723b41c9c52e2d89e1a1033f1bba474da514d979a495c914ab"
+      "sha256": "a3ddffe8a98dfe8333aa7e8c73d11e0469128408d55754713d9380006adf5c06"
     },
     {
       "file": "/dev/shm/159-no-cord.json",
-      "sha256": "3b47b237ddf4da7614aac5df5ce56c81517c9cbb00b4a87e392fc965b7682e2c"
+      "sha256": "d9983eab0f672932492fd10db9591506daba4ddcead27bfd776c0cdf342612d7"
     }
   ]
 }

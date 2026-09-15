@@ -5,6 +5,8 @@
     "period": 4,
     "timestep": 0.00025,
     "cord": true,
+    "floor": false,
+    "groundY": -3.3955555555555557,
     "footLength": 5.28,
     "armLength": 2.5399834742341767,
     "pivot": [
@@ -26,9 +28,11 @@
     "guideRadius": 0.8,
     "initialTreadle": 0.26195496080530156,
     "mass": 1,
-    "assumptions": "Diagnostic only. Legacy source-center geometry, uniform unit-mass treadle, driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia, human foot force, visible-support contact and final assembly inertias are unqualified."
+    "assumptions": "Diagnostic only. Legacy source-center geometry, uniform unit-mass treadle, driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia, human foot force, remaining visible-support contact and final assembly inertias are unqualified. Optional floor contact uses a box matching the provisional treadle dimensions."
   },
   "summary": {
+    "minimumFootClearance": -2.4185339637289647,
+    "floorContactSamples": 0,
     "maximumTautAngleDifference": 0.000009717349465310221,
     "treadleRange": [
       -0.2257277398554508,
@@ -49,6 +53,8 @@
     "cycleEnds": [
       {
         "time": 0,
+        "footBottom": -2.9783471382619595,
+        "floorContacts": 0,
         "qpos": [
           0,
           0.26195496080530156
@@ -63,6 +69,8 @@
       },
       {
         "time": 3.999999999999143,
+        "footBottom": -2.982300653630078,
+        "floorContacts": 0,
         "qpos": [
           6.284658599919462,
           0.2627336259533187
@@ -77,6 +85,8 @@
       },
       {
         "time": 8.00000000000403,
+        "footBottom": -2.982300653650599,
+        "floorContacts": 0,
         "qpos": [
           12.567843907106699,
           0.26273362595736083
@@ -91,6 +101,8 @@
       },
       {
         "time": 11.999999999994708,
+        "footBottom": -2.98230065361145,
+        "floorContacts": 0,
         "qpos": [
           18.85102921427169,
           0.2627336259496494
@@ -105,6 +117,8 @@
       },
       {
         "time": 15.999999999985386,
+        "footBottom": -2.9823006535721635,
+        "floorContacts": 0,
         "qpos": [
           25.134214521436625,
           0.26273362594191085
@@ -122,11 +136,11 @@
   "sources": [
     {
       "file": "scripts/probe-cord-treadle.mjs",
-      "sha256": "d2c77671ddb976d9caa640fb44dc9be74551a1f6ef76582718a97871a265db66"
+      "sha256": "ead6fadaac258a599fadfc212ff6a24d127a81bfbfeda6d1d49f1bda75616e66"
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/physics.js",
-      "sha256": "75075676975d42bc7582f5326b00520991eb633df38872aaa92c85899fb327e8"
+      "sha256": "ac80db3bf619dcf11e77323086585ce69108afb5daaf507b539fc0d1e1e41f92"
     },
     {
       "file": "src/simulation/cord-treadle-motion.js",
