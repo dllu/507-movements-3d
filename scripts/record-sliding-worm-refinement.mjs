@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+const read=file=>JSON.parse(fs.readFileSync(file));
+const original=read('/dev/shm/143-contact-witness.json');
+const refined=read('/dev/shm/143-refined-witness.json');
+const fineWorm=read('/dev/shm/143-fine-worm-witness.json');
+const profile=read('/dev/shm/143-refined-profile.json');
+const files=['scripts/refine-sliding-worm-profile.mjs','scripts/probe-sliding-worm-witness.mjs','scripts/record-sliding-worm-refinement.mjs','src/simulation/worm-gear-geometry.js','src/simulation/worm-wheel-profile.js','scripts/lib/star-mangle-pair-distance.mjs','src/simulation/bored-worm-geometry.js','tests/bored-worm.test.mjs'];
+const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const summarize=data=>({poses:data.rows.length,intersections:data.rows.filter(r=>r.gap===0).length,minimumGap:Math.min(...data.rows.map(r=>r.gap)),maximumPowerResidual:Math.max(...data.rows.map(r=>r.distancePower?.residual??Infinity))});
+const report={movement:143,status:'targeted-refinement-study',parameters:profile.parameters,wheelSampling:{angularSteps:profile.profile.angularSteps,axialSteps:profile.profile.axialSteps,phaseSteps:profile.profile.phaseSteps,radialSteps:profile.profile.radialSteps,clearance:profile.profile.clearance},profileSha256:hash('/dev/shm/143-refined-profile.json'),sources:files.map(file=>({file,sha256:hash(file)})),summary:{original:summarize(original),refined:summarize(refined),fineWorm:summarize(fineWorm)},original,refined,fineWorm,limitations:'Targeted rechecks of the three previous intersections and two largest finite power residuals only. Not a full-revolution acceptance test or integrated assembly validation. distancePower uses the separating closest-point direction. wheelNormalPower is an additional diagnostic of one adjacent face at vertex/edge contacts, not the resultant contact direction. Null original aggregate power denotes an undefined force at intersection.'};
+fs.writeFileSync('docs/validation/143-refinement.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary);

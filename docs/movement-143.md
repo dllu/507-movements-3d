@@ -84,3 +84,32 @@ Refine and recheck the actual surfaces before using them in the application;
 do not merely relax the point-containment threshold. The earlier 0.0004
 clearance candidate also had two sampled penetrations; increasing clearance
 to 0.0006 alone did not resolve the exact contact check.
+
+## Targeted refinement and through-bore
+
+The next study increases the wheel grid to 512 angular samples per tooth and
+64 axial intervals, uses 160 cutter radial steps, and restores radial
+clearance to 0.0004. With a 1,280-step worm, all three previously intersecting
+poses have positive exact working-flank separation. Five targeted poses,
+including the two largest prior finite power residuals, have a minimum gap
+of 0.00002318 units and a maximum power residual of 3.816%. Doubling only the
+worm to 2,560 steps gives 3.475% over the two force-error poses. Thus worm
+tessellation alone does not eliminate the remaining discrepancy. These are
+targeted rechecks, **not full-revolution acceptance**. See the complete
+[refinement witnesses](validation/143-refinement.json).
+
+Reproduce with `scripts/refine-sliding-worm-profile.mjs`, then
+`scripts/probe-sliding-worm-witness.mjs` using the `PROFILE`, `SEGMENTS`,
+`INPUTS` and `OUTPUT` settings recorded by the study's pose lists. The finer
+profile stays in `/dev/shm/143-refined-profile.json`; its hash is recorded.
+Investigate the remaining wheel-surface/clearance effect before adopting a
+more expensive worm mesh. A full pose sweep and browser performance checks
+are still required for whichever visible mesh is selected.
+
+`src/simulation/bored-worm-geometry.js` now replaces the worm's solid end
+caps with annular caps and an inner shaft/key wall. It preserves the working
+flank vertices and normals. `tests/bored-worm.test.mjs` passes for the 143
+dimensions: shaft and rectangular key clearance at 25 axial stations,
+unchanged flank triangles, outward normals, positive material volume and a
+closed oriented surface at Float32 seam tolerance. The bore helper is ready
+for the replacement assembly; it is not yet used by the runtime model.

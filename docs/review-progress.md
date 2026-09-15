@@ -14,6 +14,13 @@ outside radius from 60 to 56 pixels. A generated worm/wheel candidate and
 source overlay now exist, but the candidate is not installed: resolve its
 contact-force check and complete the shaft/key bores and assembly review first.
 
+The finer pair now clears the three targeted intersections. Five targeted
+poses still show up to 3.816% normal-force power residual; doubling the worm
+alone reduces the two worst force cases only to 3.475%. Continue the
+wheel-surface/clearance investigation and full-pose validation. A new worm
+through-bore helper passes shaft/key clearance and closed-surface tests and
+preserves the external flanks; it is ready for the replacement assembly.
+
 # Current review: 142 reconstructed variable traverse
 
 142 now loads the corrected six/eighteen-tooth gearing, measured carrier and
