@@ -1,0 +1,91 @@
+{
+  "movement": 159,
+  "method": "Exact tangent-span plus upper clockwise arc length, solved on the existing taut branch. 2049 full-cycle poses compare with production; 513 poses for each one-parameter crank-radius sensitivity case. Foot center clearance only, not a visible-solid audit.",
+  "source": {
+    "diskCenter": [
+      113,
+      266
+    ],
+    "diskRadius": 90,
+    "pin": [
+      178,
+      303
+    ],
+    "guide": [
+      279,
+      106
+    ],
+    "guideRadius": 45,
+    "pivot": [
+      457,
+      352
+    ],
+    "eye": [
+      319,
+      389
+    ],
+    "footLength": 297,
+    "ground": 457,
+    "scale": 0.017777777777777778,
+    "period": 4
+  },
+  "maximumLegacyAngleError": 1.7763568394002505e-15,
+  "maximumCordLengthError": 3.552713678800501e-15,
+  "lowestFootPixels": 590.1861210174961,
+  "groundPixels": 457,
+  "maximumCenterFloorPenetrationPixels": 133.18612101749613,
+  "lowestPhase": 0.23583984375,
+  "lowestTreadleAngle": 0.9305915870630952,
+  "belowFloorSamples": 849,
+  "samples": 2049,
+  "radiusStudies": [
+    {
+      "radiusPixels": 75,
+      "pinShiftPixels": 0.20695219473938664,
+      "lowestFootPixels": 590.6441085605043,
+      "centerClearancePixels": -133.6441085605043
+    },
+    {
+      "radiusPixels": 60,
+      "pinShiftPixels": 14.793047805260613,
+      "lowestFootPixels": 556.7405404575545,
+      "centerClearancePixels": -99.74054045755457
+    },
+    {
+      "radiusPixels": 45,
+      "pinShiftPixels": 29.793047805260613,
+      "lowestFootPixels": 522.7677165516586,
+      "centerClearancePixels": -65.76771655165858
+    },
+    {
+      "radiusPixels": 30,
+      "pinShiftPixels": 44.79304780526061,
+      "lowestFootPixels": 489.80495648543695,
+      "centerClearancePixels": -32.804956485436904
+    },
+    {
+      "radiusPixels": 20,
+      "pinShiftPixels": 54.79304780526061,
+      "lowestFootPixels": 468.6858942110414,
+      "centerClearancePixels": -11.685894211041376
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-clearance.mjs",
+      "sha256": "c8b6f5070a050b9ebbc76e425c25546d8216cbbfe8fc4bbd5e308b2df9459924"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "public/engravings/mm_159.png",
+      "sha256": "b81cbe037576f272a42010097c2cbcdf351c3d74094a5f9e23a0300dbf6b0645"
+    }
+  ]
+}

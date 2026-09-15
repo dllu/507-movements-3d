@@ -1,0 +1,140 @@
+{
+  "movement": 159,
+  "description": {
+    "movement": 159,
+    "period": 4,
+    "timestep": 0.0005,
+    "cord": true,
+    "footLength": 5.28,
+    "armLength": 2.5399834742341767,
+    "pivot": [
+      6.115555555555556,
+      -1.528888888888889,
+      0
+    ],
+    "guide": [
+      2.951111111111111,
+      2.8444444444444446,
+      0.64
+    ],
+    "pin": [
+      1.1555555555555554,
+      -0.6577777777777778,
+      0.64
+    ],
+    "cordLength": 11.18344383731753,
+    "guideRadius": 0.8,
+    "initialTreadle": 0.26195496080530156,
+    "mass": 1,
+    "assumptions": "Diagnostic only. Legacy source-center geometry, uniform unit-mass treadle, driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia, human foot force, visible-support contact and final assembly inertias are unqualified."
+  },
+  "summary": {
+    "maximumTautAngleDifference": 0.000008344657244196974,
+    "treadleRange": [
+      -0.22572784379193686,
+      0.9305935003996648
+    ],
+    "constraintTorqueRange": [
+      -48.20824467175391,
+      0
+    ],
+    "actuatorTorqueRange": [
+      0,
+      0
+    ],
+    "cordErrorRange": [
+      -0.00001649352835286777,
+      0.000014763170637976941
+    ],
+    "cycleEnds": [
+      {
+        "time": 0,
+        "qpos": [
+          0,
+          0.26195496080530156
+        ],
+        "qvel": [
+          1.5707963267948966,
+          0.8292636234522033
+        ],
+        "cordLength": 11.18344383731753,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 4.000000000000503,
+        "qpos": [
+          6.285051386000139,
+          0.26294194612953287
+        ],
+        "qvel": [
+          1.5722799332146877,
+          0.8299502353681523
+        ],
+        "cordLength": 11.183447502025892,
+        "passiveConstraintTorque": -31.197203236935607,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 7.999999999998286,
+        "qpos": [
+          12.568236693176255,
+          0.2629419461276984
+        ],
+        "qvel": [
+          1.57227993321295,
+          0.8299502353664062
+        ],
+        "cordLength": 11.183447502025889,
+        "passiveConstraintTorque": -31.197203236439858,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 12.000000000003174,
+        "qpos": [
+          18.8514220003635,
+          0.26294194613174504
+        ],
+        "qvel": [
+          1.5722799332158692,
+          0.8299502353700411
+        ],
+        "cordLength": 11.183447502025892,
+        "passiveConstraintTorque": -31.19720323693661,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 16.00000000000806,
+        "qpos": [
+          25.134607307550766,
+          0.2629419461358022
+        ],
+        "qvel": [
+          1.5722799332158348,
+          0.8299502353723477
+        ],
+        "cordLength": 11.183447502025892,
+        "passiveConstraintTorque": -31.197203236936602,
+        "actuatorTorque": 0
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-cord-treadle.mjs",
+      "sha256": "d2c77671ddb976d9caa640fb44dc9be74551a1f6ef76582718a97871a265db66"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/physics.js",
+      "sha256": "75075676975d42bc7582f5326b00520991eb633df38872aaa92c85899fb327e8"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

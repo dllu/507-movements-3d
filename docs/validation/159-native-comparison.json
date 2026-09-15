@@ -1,0 +1,118 @@
+{
+  "movement": 159,
+  "method": "Compare synchronized .005s samples over four four-second cycles at .0005s and .00025s native timesteps. Diagnostic uniform-beam inertia and tension-only tendon; full visible assembly not qualified.",
+  "maximumCoordinateDifferences": {
+    "disk": 0.0005667842587970817,
+    "treadle": 0.00031094404193221514
+  },
+  "noCordSummary": {
+    "maximumTautAngleDifference": null,
+    "treadleRange": [
+      0.15804907448272096,
+      2.9798825077778384
+    ],
+    "constraintTorqueRange": [
+      0,
+      0
+    ],
+    "actuatorTorqueRange": [
+      0,
+      0
+    ],
+    "cordErrorRange": null,
+    "cycleEnds": [
+      {
+        "time": 0,
+        "qpos": [
+          0,
+          0.26195496080530156
+        ],
+        "qvel": [
+          1.5707963267948966,
+          0.8292636234522033
+        ],
+        "cordLength": null,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 4.000000000000503,
+        "qpos": [
+          6.283970705343775,
+          0.14333038532934084
+        ],
+        "qvel": [
+          1.570796326794793,
+          -0.024867370364641764
+        ],
+        "cordLength": null,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 7.999999999998286,
+        "qpos": [
+          12.567156012519884,
+          0.2859547117847786
+        ],
+        "qvel": [
+          1.5707963267938752,
+          -0.8584428448422022
+        ],
+        "cordLength": null,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 12.000000000003174,
+        "qpos": [
+          18.850341319707105,
+          0.6635696550455535
+        ],
+        "qvel": [
+          1.5707963267992242,
+          -1.599794333946795
+        ],
+        "cordLength": null,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      },
+      {
+        "time": 16.00000000000806,
+        "qpos": [
+          25.133526626894366,
+          1.215962357702049
+        ],
+        "qvel": [
+          1.5707963267991927,
+          -2.07744560860286
+        ],
+        "cordLength": null,
+        "passiveConstraintTorque": 0,
+        "actuatorTorque": 0
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-cord-treadle-native.mjs",
+      "sha256": "a6929d4e3508ebf0314484c90de5f89fa64b6711c924dbb61a4d3ddde5b88f07"
+    },
+    {
+      "file": "/dev/shm/159-passive-samples.json",
+      "sha256": "d37b6c5a60965a51dd13c8bcf53a23700373290fbd8c3a76b5ebd36467689d92"
+    },
+    {
+      "file": "/dev/shm/159-passive-fine-samples.json",
+      "sha256": "83e5f7861f3f4be5293c50f2241b9949eba9c57be940a46dea549ad378af5659"
+    },
+    {
+      "file": "/dev/shm/159-no-cord-samples.json",
+      "sha256": "108507a84a5c13723b41c9c52e2d89e1a1033f1bba474da514d979a495c914ab"
+    },
+    {
+      "file": "/dev/shm/159-no-cord.json",
+      "sha256": "3b47b237ddf4da7614aac5df5ce56c81517c9cbb00b4a87e392fc965b7682e2c"
+    }
+  ]
+}
