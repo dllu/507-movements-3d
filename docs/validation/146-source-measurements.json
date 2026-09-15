@@ -1,0 +1,73 @@
+{
+  "movement": 146,
+  "status": "source-proportion-discrepancies-confirmed",
+  "source": {
+    "image": "public/engravings/mm_146.png",
+    "diskCenter": [
+      267,
+      307
+    ],
+    "diskRadius": 119,
+    "wristCenter": [
+      259,
+      214
+    ],
+    "wristRadius": 11,
+    "yokeOuterBounds": {
+      "left": 113,
+      "right": 440,
+      "top": 174,
+      "bottom": 332
+    },
+    "upperStem": {
+      "top": 50,
+      "bottom": 174
+    },
+    "lowerStem": {
+      "top": 332,
+      "bottom": 484
+    }
+  },
+  "comparison": {
+    "crankToDiskRadius": {
+      "measured": 0.7843987548946767,
+      "current": 0.56
+    },
+    "yokeToDiskWidth": {
+      "measured": 1.3739495798319328,
+      "current": 1.06
+    },
+    "strokeInEngravingPixels": {
+      "measured": 186.68690366493306,
+      "current": 133.28
+    },
+    "poseAngle": {
+      "measured": 1.6566065914913988,
+      "current": 1.752
+    }
+  },
+  "upperGuideAtCorrectedStroke": {
+    "currentGuideTop": 2.53,
+    "lowestCurrentStemTip": 2.03416292599751,
+    "missingLength": 0.4958370740024898
+  },
+  "sourceStemSpanVersusStrokePixels": {
+    "drawnUpperSpan": 124,
+    "requiredStroke": 186.68690366493306,
+    "note": "Even a zero-height fixed guide cannot remain on the drawn upper stem through this stroke. Stem extension or a different inferred support is needed; the engraving does not specify guides."
+  },
+  "inputs": [
+    {
+      "file": "scripts/measure-framed-yoke.mjs",
+      "sha256": "b1dbf03edea757286ecd136221db0fcde11fb8bb8a460ce25de14c676680b79b"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "public/engravings/mm_146.png",
+      "sha256": "35fe666d84bed568529e15b1f9eebe764d78f73e0c52230fd8bd3c6439b9c674"
+    }
+  ]
+}

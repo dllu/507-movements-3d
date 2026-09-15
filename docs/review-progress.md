@@ -1,3 +1,11 @@
+# Current review: 146 source proportions
+
+146's crank and broad yoke are substantially undersized relative to the
+engraving. The corrected stroke also invalidates the existing upper guide
+coverage. A reproducible measurement report records both discrepancies and
+the need for inferred stem/support geometry. Continue reconstructing 146;
+see [movement 146](movement-146.md). No source animation is available.
+
 # Completed review: 145 rocking beam and tied rod
 
 145 retains the source animation's exact analytic linkage and complete beam.
