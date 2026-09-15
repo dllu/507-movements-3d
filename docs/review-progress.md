@@ -1,3 +1,15 @@
+# Shipped reconstruction: 157 pinned bell crank
+
+157 now uses source-proportioned bored links and an analytic full-turn assembly.
+The exact drawing dimensions cannot assemble through about 24% of a turn;
+three joint centers are adjusted by 9–12px to permit continuous rotation. This
+is substantially closer to the engraving than the source animation's 39px pivot
+and 74px output-joint differences. The solver reproduces that animation when
+configured with its dimensions. Three tests, a 129-pose assembly audit, production
+build and packaged desktop/mobile playback pass. Source corrections and hidden
+supports are explicit in [movement 157](movement-157.md). Continue at 158;
+150's source fit remains open.
+
 # Shipped reconstruction: 156 slotted elbow
 
 156 now uses engraving-based proportions, a finite slot, bored pin joints and

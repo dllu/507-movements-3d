@@ -1,0 +1,103 @@
+{
+  "movement": 157,
+  "method": "Read engraving centers; ideal rigid four-bar reach inequality. Local constrained least-squares correction of crank pin, upper bell joint and fixed bell pivot, with equal weights, disk and output centers fixed, and 10px inner full-turn reach margin. Not a claim of uniquely intended hidden geometry.",
+  "rawLengthsPixels": {
+    "r": 95.13148795220225,
+    "d": 207.1545316907163,
+    "l": 284.3184833949421,
+    "a": 131.85598204101322
+  },
+  "rawInnerReachMarginPixels": -40.43945761541485,
+  "invalidSampleCount": 984,
+  "totalSamples": 4097,
+  "firstInvalidPhase": 0.480224609375,
+  "lastInvalidPhase": 0.72021484375,
+  "fittedLengthsPixels": {
+    "r": 84.15594081815271,
+    "d": 215.55940426937477,
+    "l": 267.1429456019686,
+    "a": 145.7394821507465
+  },
+  "fittedInnerReachMarginPixels": 9.999999999999943,
+  "minimumIntersectionHeightWorld": 1.0483902372027385,
+  "iterations": 12,
+  "adjustments": [
+    {
+      "name": "crankPin",
+      "measured": [
+        57,
+        220
+      ],
+      "fitted": [
+        69.17676688759641,
+        221.84457124220546
+      ],
+      "distancePixels": 12.31568491406125
+    },
+    {
+      "name": "input",
+      "measured": [
+        328,
+        134
+      ],
+      "fitted": [
+        319.87633209957085,
+        129.56737260991412
+      ],
+      "distancePixels": 9.254305254085939
+    },
+    {
+      "name": "pivot",
+      "measured": [
+        343,
+        265
+      ],
+      "fitted": [
+        351.5561855351868,
+        271.82201592205934
+      ],
+      "distancePixels": 10.942952625017192
+    }
+  ],
+  "fittedSource": {
+    "diskCenter": [
+      136,
+      273
+    ],
+    "diskRadius": 117,
+    "crankPin": [
+      69.17676688759641,
+      221.84457124220546
+    ],
+    "pivot": [
+      351.5561855351868,
+      271.82201592205934
+    ],
+    "input": [
+      319.87633209957085,
+      129.56737260991412
+    ],
+    "output": [
+      468,
+      265
+    ],
+    "rodLength": 250,
+    "guideX": 468,
+    "scale": 0.014,
+    "period": 4
+  },
+  "sources": [
+    {
+      "file": "scripts/fit-pinned-elbow-source.mjs",
+      "sha256": "80179ab86776d95e8ea1e8dd9968fcf83f07f2c7f5d64d8508349ace15e84a91"
+    },
+    {
+      "file": "src/simulation/pinned-elbow-motion.js",
+      "sha256": "674a1382082beb627c1449842073952c69a8aa29430b3ec9ae35db9159506bd9"
+    },
+    {
+      "file": "public/engravings/mm_157.png",
+      "sha256": "734072bb3bf878a779c34718338d429b651fbe800aa66d30ed917a88d1532afc"
+    }
+  ]
+}
