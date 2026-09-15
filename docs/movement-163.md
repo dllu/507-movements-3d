@@ -1,8 +1,9 @@
-# Movement 163 — belt-shifting governor review in progress
+# Movement 163 — baked belt-shifting governor
 
-163 has a 43-mesh source assembly, passive native linkage and a reduced belt
-traction model. It is not registered in production yet; repeated-motion
-qualification, belt motion cues and a browser bake remain to be completed.
+163 now plays a 675,832-byte offline MuJoCo bake with 1,761 adaptive motion keys.
+The 43 physical meshes and seven subtle belt seam marks load without browser
+physics or collision-mesh generation. The native linkage and reduced belt
+traction model remain available for validation.
 
 ## Source and reconstruction
 
@@ -45,14 +46,14 @@ active; no joint or sleeve travel is clamped to manufacture selection.
 The equilibrium speed includes the rotating linkage and gravity load of the
 collar, crank, rod and fork. With inferred light link masses it is 5.1233362
 rad/s. A sinusoidal speed variation produces the motion; sleeve, crank and fork
-coordinates are not prescribed. A 10-second cycle with 0.25 rad/s variation is
-the current assembly-check setting. Its final playback timing needs qualification.
+coordinates are not prescribed. The diagnostic assembly checks use a 10-second cycle and 0.25 rad/s variation.
+The final bake uses 9.811084 seconds, eight nominal spindle revolutions, with
+the same speed variation. Each spindle revolution takes about 1.23 seconds.
 
 The first study treated reaching the upper pulley center as necessary for
-selection. Finite belt width makes that condition too strict. At the native
-upper travel limit, belt and upper fast pulley overlap by 0.12274 world units
-(6.82 source pixels), while part of the belt also contacts the loose pulley.
-At the lower limit, the lower fast overlap is 0.28435 (15.80 pixels). At the
+selection. Finite belt width makes that condition too strict. In the settled baked cycle, the maximum upper fast-pulley overlap is 0.09824
+world units (5.46 source pixels), while part of the belt also contacts the loose
+pulley. The maximum lower fast overlap is 0.22304 (12.39 pixels). At the
 engraved neutral pose only the middle pulley contacts the belt. The belt never
 overlaps both fast pulleys at once. Thus partial engagement supports the source
 function without moving its pulley planes or bypassing ball/link contacts.
@@ -72,33 +73,66 @@ shifter. The visible belt has a 0.0002 radial clearance from the polygonal pulle
 surfaces (0.011 source pixels). Traction is supplied by the explicit reduced law,
 not by triangle collisions. Remote gearing and hydraulic feedback remain absent.
 
-## Verification and remaining work
+## Settling, interpolation and playback
 
-Eight tests cover neutral source geometry, passive crank/rod closure, full-load
-equilibrium, removed spindle actuation, timestep refinement, finite-width pulley
-selection, removed belt friction and visible/native joint alignment. The
-20-second 0.25-rad/s probe has maximum connection error 0.000000264 world units
-and maximum belt speed 4.54574 world units/s. A four-times-heavier output linkage
-needs a lower equilibrium speed, confirming participation of its gravity load.
+The native governor still had residual oscillation after 32 cycles. After 128,
+corresponding states across the final two cycles agree within 3.23e-8 in joint
+position and 9.05e-8 in velocity. The selected start is within 0.000222 radians
+of the engraved neutral spread. An arbitrary constant spindle phase aligns the
+initial front view; the native mechanism and its loads are invariant under this
+rotation about the vertical axis.
 
-The visible-solid sweep checks 809 cross-family mesh pairs at 65 native poses
-over 20 seconds: 20,183,242 vertex, edge-midpoint and triangle-center queries,
-with no detected intersections above 0.000001 world units. Same-family rigid
-joins are excluded. This is a finite sampled audit, not a continuous collision
-proof. Front, driven and oblique Chrome snapshots were inspected; fog and the
-unrelated ground plane are disabled. The private diagnostic is not a packaged
-browser integration test.
+The baker restores the native checkpoint, advances to the selected phase and
+replays one complete cycle. Its conservative visible-position closure bound is
+1.51e-7 world units and velocity closure bound is 3.94e-8 world units/s. Native
+samples are unchanged: there is no seam blending, endpoint snapping or forced
+travel balance. The loose pulley advances by 43.95998 radians and the belt by
+37.23668 world units per cycle, retaining their measured motion.
 
-Next: add a restrained cue for longitudinal belt motion, qualify repeated native
-motion and interpolation, bake the visible assembly, and test desktop/mobile
-playback before registering it. The full 507-movement review remains active.
+Adaptive linear interpolation stays within a 0.00001961-world-unit displacement
+bound of all 65,537 native ticks (0.0011 engraving pixels). The bound includes
+tessellated loose-pulley rotation and belt marks. The repeated seam marks are a
+visual aid with spacing chosen from measured cycle travel; belt speed is not
+changed to make the pattern repeat. Marks enter and leave at the cut ends of
+the depicted runs, where the unseen remote belt path would continue.
 
-Evidence: [native probe](validation/163-native-linkage.json) and
-[visible clearance](validation/163-solid-clearance.json), with source hashes.
-Raw trajectories and preview snapshots remain in /dev/shm. Reproduce with:
+## Verification
+
+Eleven tests cover source geometry, passive linkage closure, full-load equilibrium,
+removed spindle actuation, timestep refinement, finite-width selection, removed
+belt friction, visible/native joint alignment, serialized geometry, interpolated
+native positions, bounds, repeated phases, seam continuity and exact restart.
+The serialized balls and fork stay within 0.00000372 world units of native replay.
+The JSON round-trip test caught and fixed a full-Euler-rotation reset needed for
+belt marks restored from serialized quaternions.
+
+The cold native visible-solid sweep checks 1,061 cross-family pairs at 65 poses
+over 20 seconds: 20,710,192 surface queries, with no detected intersections above
+0.000001 world units. The final baked sweep checks 1,103 pairs at 129 off-key
+times plus four endpoint/seam poses: 40,079,650 queries, also clear. Same-family
+rigid joins are excluded. These finite vertex, edge-midpoint and triangle-center
+sweeps are not continuous collision proofs. Serialized positions, triangle indices
+and transforms match the audited source solids, with signed zero normalized by JSON.
+
+The production build and packaged desktop/mobile Chrome test pass. The latter
+checks visible playback, restart, orbit controls, responsive layout, absence of
+browser errors and no WASM loading. Source, moving, oblique and mobile screenshots
+were inspected. Fog and the unrelated ground are disabled. Thin belt and pulley faces do not
+receive shadows, avoiding shadow-map acne; belt seam marks do not cast shadows.
+The build retains the
+pre-existing large-main-chunk warning.
+
+Evidence: native-linkage, loop-qualification, solid-clearance and baked-clearance
+reports under docs/validation, plus the compressed asset's provenance sidecar.
+Raw trajectories, previews and private builds remain in /dev/shm. Reproduce with:
 
 ```sh
 node --test tests/belt-governor-*.test.mjs
 node scripts/probe-belt-governor.mjs
 node scripts/review-belt-governor-solids.mjs
+node scripts/qualify-belt-governor-loop.mjs
+node scripts/bake-belt-governor.mjs
+node scripts/review-belt-governor-baked-solids.mjs
 ```
+
+Continue at 164; the full 507-movement review remains active.

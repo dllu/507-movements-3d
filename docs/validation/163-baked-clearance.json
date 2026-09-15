@@ -1,10 +1,10 @@
 {
   "movement": 163,
-  "status": "unregistered-solid-diagnostic",
+  "status": "baked-solid-clearance",
   "parameters": {
     "movement": 163,
-    "timestep": 0.0005,
-    "period": 10,
+    "timestep": 0.00014970526321973548,
+    "period": 9.811084130368585,
     "speedAmplitude": 0.25,
     "spindleDrive": true,
     "linkage": true,
@@ -18,17 +18,29 @@
     "extraPotentialSlope": -6.039452923811694,
     "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Reduced finite-width belt contact: regularized Coulomb traction with equal opposite pulley reactions, inferred tension and load. Belt axial shape follows the fork; belt bending, axial friction, remote gearing and hydraulic feedback are not modeled."
   },
-  "poses": 65,
-  "meshes": 49,
-  "pairs": 1061,
-  "queries": 20710192,
+  "poses": 133,
+  "meshes": 50,
+  "pairs": 1103,
+  "queries": 40079650,
   "intersections": {},
   "unexpected": {},
-  "method": "Bidirectional visible vertices, edge midpoints and triangle centers during twenty native seconds with 0.25 rad/s speed variation. Same rigid-family joins excluded. Includes soft-contact penetration and native joint-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers at 129 off-key interpolated times plus four endpoint/seam poses, using the original visible solids and baked native motion. Same rigid-family joins excluded. Includes soft-contact penetration and native joint-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
   "sources": [
     {
-      "file": "scripts/review-belt-governor-solids.mjs",
-      "sha256": "ef59b8dc52049735a8926366e444acc623a84332c2e5a284a46418416f4f56f1"
+      "file": "scripts/review-belt-governor-baked-solids.mjs",
+      "sha256": "3e4f8a11f56742035cd499135c01c9a2ebecd7da213ef96a513645d2097fa00b"
+    },
+    {
+      "file": "src/simulation/baked/assets/163.json.gz",
+      "sha256": "43b3d87169909c5322b91d4b07568b0560f9bad2a49627f01c93d016668d4807"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/kinematics.js",
+      "sha256": "71714bbedea619152fe2520927df6ccbd797327999b393de64ab9edf200f4718"
     },
     {
       "file": "src/simulation/mujoco-belt-governor/solids.js",

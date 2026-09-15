@@ -1,3 +1,4 @@
+import {makeBeltGovernorUpdater} from './update-solids.js';
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
@@ -7,7 +8,7 @@ import {governorEquilibrium} from '../mujoco-ball-governor/equilibrium.js';
 
 // Unregistered source assembly. Native hinge coordinates drive every moving
 // part; the remote water gate and its support are outside the engraving.
-export function makeBeltGovernorSolids(){
+export function makeBeltGovernorSolids({beltSeamSpacing=2.4}={}){
  const g=beltGovernorGeometry(),initial=governorEquilibrium(g.initialSpread,g),root=new THREE.Group();
  const parts={},families={},blocks={},materials=new Map();
  const group=(name,parent=root)=>{const b=new THREE.Group();b.name='body:'+name;parent.add(b);blocks[name]=b;return b;};
@@ -75,12 +76,9 @@ export function makeBeltGovernorSolids(){
  const beltPath=[...Array.from({length:97},(_,i)=>{const a=Math.PI/2+Math.PI*i/96;return[(g.pulleyRadius+.0002)*Math.cos(a),(g.pulleyRadius+.0002)*Math.sin(a)];}),[4.48,-(g.pulleyRadius+.0002)],[4.48,-(g.pulleyRadius+.0002)-.025],...Array.from({length:97},(_,i)=>{const a=3*Math.PI/2-Math.PI*i/96;return[((g.pulleyRadius+.0002)+.025)*Math.cos(a),((g.pulleyRadius+.0002)+.025)*Math.sin(a)];}),[4.48,(g.pulleyRadius+.0002)+.025],[4.48,(g.pulleyRadius+.0002)]];
  const beltGeometry=plate(poly(beltPath),-.162,.162);beltGeometry.rotateX(Math.PI/2);
  add('flatBelt',beltGeometry,'belt',PALETTE.ink);
- const update=state=>{
-  rotor.rotation.y=state.spindle;sleeve.position.y=state.sleeveY;
-  for(const sign of [-1,1]){const name=sign<0?'left':'right',theta=state[name+'Spread'];blocks[name+'Upper'].rotation.z=sign*theta;blocks[name+'Lower'].position.set(sign*(g.pivotRadius+g.elbowArm*Math.sin(theta)),g.topY-g.elbowArm*Math.cos(theta),0);blocks[name+'Lower'].rotation.z=sign*(initial.lowerAngle+state.qpos[sign<0?2:4]+theta-g.initialSpread);}
-  shoe.position.set(state.followerX??0,state.sleeveY-g.grooveDrop,0);bell.rotation.z=state.bellAngle;rod.position.set(g.bellX+g.outputArm*Math.cos(state.bellAngle),g.bellY+g.outputArm*Math.sin(state.bellAngle),0);rod.rotation.z=state.rodAngle;
-  fork.position.set(g.bellX+g.outputArm,state.forkY,0);belt.position.y=state.forkY;blocks.loose.rotation.y=state.looseAngle??0;root.updateMatrixWorld(true);
- };
+ const seamCount=Math.ceil((8.96+Math.PI*(g.pulleyRadius+.026))/beltSeamSpacing)+1;
+ for(let i=0;i<seamCount;i++)add('beltSeam'+i,new THREE.BoxGeometry(.018,.324,.0015),'belt',PALETTE.muted);
+ const update=makeBeltGovernorUpdater(root,g,{beltSeamSpacing});
  Object.assign(root.userData,{parts,blocks,families,geometry:g,hideGround:true,sourceScale:.018,reconstructionNote:'Unregistered source assembly. Flat-belt shape follows the native fork; sleeve groove width, fork depths and rear cheeks are inferred. The remote transmission is outside the engraving.'});
  update({spindle:0,leftSpread:g.initialSpread,rightSpread:g.initialSpread,sleeveY:g.sleeveY,bellAngle:0,rodAngle:0,forkY:g.middlePulleyY,qpos:Array(13).fill(0)});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};

@@ -8,7 +8,7 @@ import {makeBeltGovernorSolids} from '../src/simulation/mujoco-belt-governor/sol
 test('163 visible fork, rod, groove shoes and balls follow the native joints',async()=>{
  const p=makeBeltGovernorPhysics(await loadMujoco(),{speedAmplitude:.25}),v=makeBeltGovernorSolids(),g=p.geometry;
  try{
-  const parts=v.root.userData.parts;assert.equal(Object.keys(parts).length,43);
+  const parts=v.root.userData.parts;assert.equal(Object.keys(parts).length,49);
   v.root.traverse(o=>{if(o.isMesh)assert.equal(o.material.fog,false);});assert.equal(v.root.userData.hideGround,true);
   const sites=['bell-follower','rod-end','fork-end'].map(n=>p.id('mjOBJ_SITE',n));
   for(let tick=0;tick<=40000;tick++){

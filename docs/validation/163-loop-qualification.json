@@ -1,0 +1,171 @@
+{
+  "movement": 163,
+  "status": "native-loop-qualified",
+  "period": 9.811084130368585,
+  "timestep": 0.00014970526321973548,
+  "cycles": 128,
+  "stride": 64,
+  "parameters": {
+    "movement": 163,
+    "timestep": 0.00014970526321973548,
+    "period": 9.811084130368585,
+    "speedAmplitude": 0.25,
+    "spindleDrive": true,
+    "linkage": true,
+    "loadScale": 1,
+    "ballContact": true,
+    "belt": true,
+    "beltFriction": 0.35,
+    "beltNormalForce": 10,
+    "beltLoad": 0.1,
+    "nominalSpeed": 5.123336197051682,
+    "extraPotentialSlope": -6.039452923811694,
+    "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Reduced finite-width belt contact: regularized Coulomb traction with equal opposite pulley reactions, inferred tension and load. Belt axial shape follows the fork; belt bending, axial friction, remote gearing and hydraulic feedback are not modeled."
+  },
+  "maximumCyclePositionError": 3.2252330584015e-8,
+  "maximumCycleVelocityError": 9.049153337770122e-8,
+  "best": {
+    "index": 510,
+    "phase": 4.886379791492166,
+    "sourceTime": 1241.0829802446835,
+    "advance": [
+      50.26548245743669,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      43.95997849948708,
+      37.236679395290594
+    ],
+    "residual": [
+      3.07471168525808e-8,
+      -9.212443032274691e-10,
+      1.9894245171050463e-9,
+      -9.212443292212161e-10,
+      1.9894245641052105e-9,
+      -1.3743811126069178e-9,
+      -1.3743812698162328e-9,
+      -1.1277760040401784e-9,
+      8.58061226211666e-10,
+      -8.582256942331161e-10,
+      1.8225220152490174e-9,
+      0,
+      0
+    ],
+    "velocityResidual": [
+      -1.0049125975797324e-9,
+      1.0242559578266253e-10,
+      -2.311157931700336e-10,
+      1.0242882930722175e-10,
+      -2.3112756153409464e-10,
+      4.541156201076646e-10,
+      4.5411556459651337e-10,
+      5.391538743237945e-10,
+      -3.3450427150416573e-10,
+      3.9228449655315245e-10,
+      -7.104441479555135e-10,
+      -1.6312624584458035e-8,
+      -1.3800263154450931e-8
+    ],
+    "maximumPositionError": 3.07471168525808e-8,
+    "maximumVelocityError": 1.6312624584458035e-8,
+    "sourceSpreadError": 0.00022132973068011985
+  },
+  "initialState": {
+    "time": 1236.196600450204,
+    "spindle": 6333.449985960691,
+    "speed": 5.123054846289338,
+    "leftSpread": 0.34831048184761537,
+    "rightSpread": 0.34831048184761537,
+    "sleeveY": 0.9513036827479978,
+    "bellAngle": 0.0016817343998967935,
+    "rodAngle": 0.0000013153058361365776,
+    "followerX": -0.0022075301223860614,
+    "forkY": -3.092428054497252,
+    "collarError": 1.2362373013555944e-7,
+    "beltDistance": 4687.760875738117,
+    "beltSpeed": 2.8162771420479116,
+    "looseAngle": 5534.05640880974,
+    "looseSpeed": 3.3292181478294265,
+    "beltForces": {
+      "overlap": {
+        "upper": 0,
+        "middle": 0.28800000000000026,
+        "lower": 0,
+        "beltWidth": 0.324,
+        "pulleyWidth": 0.288
+      },
+      "fast": 0,
+      "loose": 0.015021013149289967
+    },
+    "connectionErrors": [
+      1.5284126950721857e-8,
+      1.5284126950721857e-8,
+      1.9825735206506783e-7,
+      5.6771633112790106e-8
+    ],
+    "qpos": [
+      6333.449985960691,
+      -0.001813090794252257,
+      0.003915088493830391,
+      -0.001813090794252257,
+      0.003915088493830391,
+      -0.002696317252002382,
+      -0.0026961936282722462,
+      -0.0022075301223860614,
+      0.0016817343998967935,
+      -0.0016804190940606569,
+      0.0035719455027476833,
+      5534.05640880974,
+      4687.760875738117
+    ],
+    "qvel": [
+      5.123054846289338,
+      0.07711955499910966,
+      -0.16651775822950457,
+      0.07711955499910966,
+      -0.16651775822950457,
+      0.11439080622044837,
+      0.11439081783135306,
+      0.09350381665427045,
+      -0.07130644374203667,
+      0.07119467106378835,
+      -0.15145467109418106,
+      3.3292181478294265,
+      2.8162771420479116
+    ]
+  },
+  "method": "Compare corresponding states throughout the final two of 128 native cycles. Spindle advances eight complete turns. Loose-pulley angle is an axisymmetric free phase; belt travel is an unconstrained translation. Preserve their measured advances, not rounded or balanced travel. Choose a qualified seam near the engraved neutral spread.",
+  "sources": [
+    {
+      "file": "scripts/qualify-belt-governor-loop.mjs",
+      "sha256": "5368fe053ccc16fc63ecc594a1144747eae17633952e262f3e44c3e1bad4abbc"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/physics.js",
+      "sha256": "b2c49b886defedcf9b87d07ced5156f555091de0a533c0363d7c7b8110422cbb"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/geometry.js",
+      "sha256": "fe4d5166c4f8972782043293726b0ead07bbb5389ebb794db5a92e1c7b4e3c77"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/belt-contact.js",
+      "sha256": "32895cb3231bbb326190bc1c75f286b415e57d4255e4a17a47255a2e48b8f8ad"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

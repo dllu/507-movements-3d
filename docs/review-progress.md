@@ -1,12 +1,16 @@
-# Active reconstruction: 163
+# Active reconstruction: 164
 
-163 now has a 43-mesh source assembly and passive native linkage with finite-width
-belt traction. Partial belt engagement reaches both fast pulleys without moving
-the source planes. Eight tests and a 65-pose full-solid sweep pass; front and
-oblique previews were inspected. Belt motion cues, repeated-motion qualification,
-baking and packaged playback remain. See [movement 163](movement-163.md).
-The full 507-movement review remains active; 147's mesh refinement and 150's source
-fit remain open.
+Continue the source and motion review at 164. The full 507-movement review remains
+active; 147's mesh refinement and 150's source fit remain open.
+
+# Shipped reconstruction: 163 belt-shifting governor
+
+163 now plays a 676 KB offline bake with 1,761 motion keys, 43 physical meshes
+and seven belt seam marks. Passive governor motion and finite-width belt traction
+replace the prescribed spread and invented remote gearing. The settled cycle needs
+no numerical seam correction. Eleven tests, native/interpolated clearance sweeps,
+production build and desktop/mobile Chrome checks pass, with no browser WASM.
+See [movement 163](movement-163.md) for the reduced belt-model assumptions.
 
 # Shipped reconstruction: 162 water-wheel governor
 

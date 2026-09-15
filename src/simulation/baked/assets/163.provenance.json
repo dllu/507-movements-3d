@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "movement": 163,
+  "geometry": {
+    "scale": 0.018,
+    "topY": 4.5,
+    "pivotRadius": 0.26999999999999996,
+    "initialSpread": 0.3501235726418676,
+    "ballArm": 3.4109406327287486,
+    "elbowArm": 2.0268991094773314,
+    "sleeveRadius": 0.27899999999999997,
+    "lowerLink": 1.7797040070334744,
+    "ballRadius": 0.594,
+    "gravity": 98.1,
+    "ballMass": 1,
+    "upperMass": 0.02,
+    "lowerMass": 0.02,
+    "sleeveMass": 0.1,
+    "upperRadius": 0.035,
+    "lowerRadius": 0.03,
+    "sleeveY": 0.9540000000000002,
+    "grooveDrop": 0.44999999999999996,
+    "bellX": 1.6019999999999999,
+    "bellY": -0.8099999999999996,
+    "outputArm": 2.1239999999999997,
+    "rodLength": 2.286,
+    "upperPulleyY": -2.717999999999999,
+    "middlePulleyY": -3.095999999999999,
+    "lowerPulleyY": -3.491999999999999,
+    "pulleyRadius": 0.846,
+    "collarMass": 0.01,
+    "followerMass": 0.005,
+    "bellArmMass": 0.02,
+    "rodMass": 0.02,
+    "forkMass": 0.02
+  },
+  "names": [
+    "spindle",
+    "leftSpread",
+    "leftLink",
+    "rightSpread",
+    "rightLink",
+    "sleeve",
+    "collar",
+    "radialSlide",
+    "bell",
+    "rod",
+    "fork",
+    "loose",
+    "beltTravel"
+  ],
+  "turns": [
+    50.26548245743669,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    43.95997849946616,
+    37.23667939502957
+  ],
+  "period": 9.811084130368585,
+  "loopStart": 0,
+  "loopEnd": 9.811084130368585,
+  "beltSeamSpacing": 2.327292462189348,
+  "parameters": {
+    "movement": 163,
+    "timestep": 0.00014970526321973548,
+    "period": 9.811084130368585,
+    "speedAmplitude": 0.25,
+    "spindleDrive": true,
+    "linkage": true,
+    "loadScale": 1,
+    "ballContact": true,
+    "belt": true,
+    "beltFriction": 0.35,
+    "beltNormalForce": 10,
+    "beltLoad": 0.1,
+    "nominalSpeed": 5.123336197051682,
+    "extraPotentialSlope": -6.039452923811694,
+    "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Reduced finite-width belt contact: regularized Coulomb traction with equal opposite pulley reactions, inferred tension and load. Belt axial shape follows the fork; belt bending, axial friction, remote gearing and hydraulic feedback are not modeled."
+  },
+  "initialState": {
+    "time": 1241.0829802446835,
+    "spindle": 6359.26688682254,
+    "speed": 5.12616163122753,
+    "leftSpread": 0.3503449023725486,
+    "rightSpread": 0.3503449023725486,
+    "sleeveY": 0.9543300780557206,
+    "bellAngle": -0.00020626057011540234,
+    "rodAngle": 2.122811980603649e-8,
+    "followerX": 0.00027106298143405704,
+    "forkY": -3.096438154299276,
+    "collarError": 1.2430446181806252e-7,
+    "beltDistance": 4706.977965266299,
+    "beltSpeed": 2.9783715651719893,
+    "looseAngle": 5556.716909109357,
+    "looseSpeed": 3.5208221407946545,
+    "beltForces": {
+      "overlap": {
+        "upper": 0,
+        "middle": 0.28800000000000026,
+        "lower": 0,
+        "beltWidth": 0.324,
+        "pulleyWidth": 0.288
+      },
+      "fast": 0,
+      "loose": 0.015179982484384234
+    },
+    "connectionErrors": [
+      1.5081689336607425e-8,
+      1.5081689336607425e-8,
+      1.9913567787985294e-7,
+      5.694985973793383e-8
+    ],
+    "qpos": [
+      6359.26688682254,
+      0.00022132973068098616,
+      -0.00047795108033957517,
+      0.00022132973068098616,
+      -0.00047795108033957517,
+      0.00033007805572038526,
+      0.0003302023601822033,
+      0.00027106298143405704,
+      -0.00020626057011540234,
+      0.00020628179823520837,
+      -0.0004381542992765472,
+      5556.716909109357,
+      4706.977965266299
+    ],
+    "qvel": [
+      5.12616163122753,
+      -0.07773091003430879,
+      0.16785974631106895,
+      -0.07773091003430879,
+      0.16785974631106895,
+      -0.11596668513700342,
+      -0.11596669716682849,
+      -0.09515983658869144,
+      0.07240128209217207,
+      -0.0724155231290418,
+      0.1537803195644472,
+      3.5208221407946545,
+      2.9783715651719893
+    ]
+  },
+  "offsets": [
+    6359.26688682254,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    5556.716909109357,
+    4706.977965266299
+  ],
+  "positionClosure": 1.5058202868738435e-7,
+  "velocityClosure": 3.9391144286190865e-8,
+  "maximumNativeError": 0.000019609614107234528,
+  "nativeSamples": 65537,
+  "bounds": {
+    "min": [
+      -2.468134611684837,
+      -4.036000051498413,
+      -2.464034193361882
+    ],
+    "max": [
+      4.52899999961257,
+      5.088999998688698,
+      2.464034193361882
+    ]
+  },
+  "focus": [
+    1.0304326939638666,
+    0.5264999735951426,
+    0
+  ],
+  "cameraDirection": [
+    0.01,
+    0.01,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-belt-governor.mjs",
+      "sha256": "799c7176018adfe9a10f253cd254676df9d1a450a0b355697773206b44baaac8"
+    },
+    {
+      "file": "docs/validation/163-loop-qualification.json",
+      "sha256": "2bd38e6f5f5da5be9b47dea3269e53ef037f495c41aaabcb1d6590bc6d9558b9"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/physics.js",
+      "sha256": "b2c49b886defedcf9b87d07ced5156f555091de0a533c0363d7c7b8110422cbb"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/geometry.js",
+      "sha256": "fe4d5166c4f8972782043293726b0ead07bbb5389ebb794db5a92e1c7b4e3c77"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/belt-contact.js",
+      "sha256": "32895cb3231bbb326190bc1c75f286b415e57d4255e4a17a47255a2e48b8f8ad"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/solids.js",
+      "sha256": "5d53ff25212485a0b3827e6d4df4cf6e74351329e41f19d5e9853935f1c33d2d"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/update-solids.js",
+      "sha256": "d3dab094f79ee27a133418faa36da57542cd3a57dfd4cb92108a1fa9e7da3af3"
+    },
+    {
+      "file": "src/simulation/mujoco-belt-governor/kinematics.js",
+      "sha256": "71714bbedea619152fe2520927df6ccbd797327999b393de64ab9edf200f4718"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ],
+  "samples": 1761,
+  "bytes": 675832,
+  "sha256": "43b3d87169909c5322b91d4b07568b0560f9bad2a49627f01c93d016668d4807"
+}

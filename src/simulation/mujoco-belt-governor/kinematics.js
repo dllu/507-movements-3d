@@ -1,0 +1,4 @@
+export function beltGovernorState(q,g){return{qpos:q,spindle:q[0],leftSpread:g.initialSpread+q[1],rightSpread:g.initialSpread+q[3],sleeveY:g.sleeveY+q[5],followerX:q[7],bellAngle:q[8],rodAngle:q[8]+q[9],forkY:g.middlePulleyY+q[10],looseAngle:q[11],beltDistance:q[12]};}
+// Conservative displacement bound for the governor, lever/rod, groove shoes,
+// translating belt, its longitudinal seam marks and tessellated loose pulley.
+export function beltGovernorMotionBound(d,g){return(g.pivotRadius+g.ballArm+g.ballRadius)*Math.abs(d[0])+(g.ballArm+g.ballRadius)*Math.max(Math.abs(d[1]),Math.abs(d[3]))+(g.lowerLink+.13)*Math.max(Math.abs(d[2]),Math.abs(d[4]))+Math.abs(d[5])+Math.abs(d[6])+Math.abs(d[7])+(g.outputArm+g.rodLength+.3)*Math.abs(d[8])+(g.rodLength+.2)*Math.abs(d[9])+Math.abs(d[10])+g.pulleyRadius*Math.abs(d[11])+1.02*Math.abs(d[12]);}
