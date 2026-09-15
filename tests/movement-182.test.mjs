@@ -573,7 +573,7 @@ test('movement 182 starts at the top pose and the descending tappet restores mov
     new THREE.Vector3(
       geometry.upperPivot.x + expectedUpperFreeVector.x,
       geometry.upperPivot.y + expectedUpperFreeVector.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'initial rendered upper free tip matches source 182',
@@ -583,7 +583,7 @@ test('movement 182 starts at the top pose and the descending tappet restores mov
     new THREE.Vector3(
       source182.upperHandleContactPoint.x,
       source182.upperHandleContactPoint.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'initial upper tappet contact anchor matches source 182',
@@ -593,7 +593,7 @@ test('movement 182 starts at the top pose and the descending tappet restores mov
     new THREE.Vector3(
       source182.upperWeightPin.x,
       source182.upperWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-12,
     'initial upper weight pin matches source 182',
@@ -603,7 +603,7 @@ test('movement 182 starts at the top pose and the descending tappet restores mov
     new THREE.Vector3(
       source182.lowerWeightPin.x,
       source182.lowerWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     ),
     1e-12,
     'initial lower weight pin matches source 182',
@@ -684,24 +684,24 @@ test('movement 182 starts at the top pose and the descending tappet restores mov
   assert.equal(lowerLatchMarker.visible, true);
   assert.equal(tappetContactMarker.visible, false);
 
-  const frameFrontZ = geometry.frameCenterZ + geometry.frameDepth / 2;
-  const handleBottomZ = geometry.handlePlaneZ - geometry.handleDepth / 2;
-  const handleTopZ = geometry.handlePlaneZ + geometry.handleDepth / 2;
+  const upperTopZ = geometry.upperHandlePlaneZ + geometry.handleDepth / 2;
+  const handleBottomZ = geometry.lowerHandlePlaneZ - geometry.handleDepth / 2;
+  const handleTopZ = geometry.lowerHandlePlaneZ + geometry.handleDepth / 2;
   const catchBottomZ = geometry.catchPlaneZ - geometry.catchDepth / 2;
-  assert.ok(handleBottomZ > frameFrontZ);
+  assert.ok(handleBottomZ > upperTopZ);
   assert.ok(handleTopZ < catchBottomZ,
     'diagonal catch remains in front of both handles without interpenetration');
   assert.ok(tappet.geometry.parameters.depth > geometry.handleDepth,
     'projecting tappet spans the handle contact plane');
-  const bounds = new THREE.Box3().setFromObject(model.root);
+  const bounds = new THREE.Box3().setFromObject(model.root,true);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.37);
-  assert.ok(size.y > 7.84);
+  assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).x > 4.37);
+  assert.ok(model.root.userData.cameraFitBounds.containsBox(bounds), 'motion framing contains the displayed assembly');
   assert.ok(size.z > 1.35);
   near(model.root.userData.cameraDistanceScale, 1.18, 0,
     'source-complete portrait camera scale');
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3);
 
   // Movement 183 now independently replaces this diagonal catch with two

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate as finitePlate, poly, circle, ring, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -128,7 +129,7 @@ function variableWidthPlate({
   const group = new THREE.Group();
   group.userData.role = role;
   const plate = new THREE.Mesh(
-    centeredExtrusion(shape, depth),
+    finitePlate(clip.difference(poly(perimeter.map(p=>[p.x,p.y])),poly(circle([0,0],.12,96))),-depth/2,depth/2),
     material,
   );
   plate.userData.role = `${role}-plate`;
@@ -152,7 +153,8 @@ function variableWidthPlate({
     outlineMaterial,
   );
   outline.userData.role = `${role}-dark-outline`;
-  group.add(plate, outline);
+  group.add(plate);
+  outline.geometry.dispose();
   return { group, outline, plate };
 }
 
@@ -373,8 +375,10 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   const latchRollerRadius = 0.105;
   const handleDepth = 0.20;
   const handlePlaneZ = 0.00;
+  const upperHandlePlaneZ = -.12;
+  const lowerHandlePlaneZ = .12;
   const catchDepth = 0.22;
-  const catchPlaneZ = 0.26;
+  const catchPlaneZ = 0.40;
   const frameCenterZ = -0.48;
   const frameDepth = 0.52;
   const cyclePeriod = 18;
@@ -828,12 +832,13 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     contactLocal,
     latchLocal,
     pivot,
+    planeZ,
     role,
     workingCenterline,
     weightLocal,
   }) => {
     const group = new THREE.Group();
-    group.position.set(pivot.x, pivot.y, handlePlaneZ);
+    group.position.set(pivot.x, pivot.y, planeZ);
     group.userData.axis = Z_AXIS.clone();
     group.userData.role = role;
     const working = variableWidthPlate({
@@ -874,7 +879,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       sampleCount: 48,
       widths: [0.18, 0.13, 0.075],
     });
-    const hub = cylinderAlongZ(0.43, handleDepth * 1.12, handleMaterial, 44);
+    const hub = new THREE.Mesh(ring(.12,.43,-handleDepth*.56,handleDepth*.56,96),handleMaterial);
     hub.userData.role = `${role}-source-scale-rocking-hub`;
     const hubRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.34, 0.055, 10, 48),
@@ -900,7 +905,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     contactRoller.position.set(contactLocal.x, contactLocal.y, 0);
     contactRoller.userData.role = `${role}-piston-tappet-contact-roller`;
-    const latchRollerLength = catchPlaneZ - handlePlaneZ + catchDepth * 0.62;
+    const latchRollerLength = catchPlaneZ - planeZ + catchDepth * 0.62;
     const latchRoller = cylinderAlongZ(
       latchRollerRadius,
       latchRollerLength,
@@ -974,6 +979,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     contactLocal: upperContactLocal,
     latchLocal: upperLatchLocal,
     pivot: upperPivot,
+    planeZ: upperHandlePlaneZ,
     role: 'upper-backweighted-steam-eduction-valve-handle',
     workingCenterline: upperWorkingCenterline,
     weightLocal: upperWeightLocal,
@@ -982,6 +988,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     contactLocal: lowerContactLocal,
     latchLocal: lowerLatchLocal,
     pivot: lowerPivot,
+    planeZ: lowerHandlePlaneZ,
     role: 'lower-backweighted-steam-eduction-valve-handle',
     workingCenterline: lowerWorkingCenterline,
     weightLocal: lowerWeightLocal,
@@ -1063,7 +1070,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     0,
   );
   lowerHook.userData.role = 'lower-hook-pocket-holding-lower-valve-handle';
-  const catchHub = cylinderAlongZ(0.36, catchDepth * 1.10, catchMaterial, 40);
+  const catchHub = new THREE.Mesh(ring(.12,.36,-catchDepth*.55,catchDepth*.55,96),catchMaterial);
   catchHub.userData.role = 'central-diagonal-catch-pivot-boss';
   const catchEye = new THREE.Mesh(
     new THREE.TorusGeometry(0.16, 0.052, 10, 36),
@@ -1120,6 +1127,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     pistonMaterial,
   );
   pistonRod.position.x = pistonRodX;
+  pistonRod.position.z = -.39;
   pistonRod.userData.role = 'moving-piston-rod';
   const tappetShoeRightX = -0.40;
   const tappetShoeLeftX = pistonRodX - 0.13;
@@ -1127,7 +1135,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     new THREE.BoxGeometry(
       tappetShoeRightX - tappetShoeLeftX,
       tappetHalfHeight * 2,
-      0.30,
+      0.56,
     ),
     pistonMaterial,
   );
@@ -1184,16 +1192,15 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     'fixed-lower-valve-handle-pivot',
   );
 
-  const makeHangingWeight = (role, z) => {
+  const makeHangingWeight = (role, z, rodLength) => {
     const group = new THREE.Group();
-    group.position.z = z;
+    group.position.z = z + .24;
     group.userData.role = role;
-    const rodLength = 1.02;
     const rod = new THREE.Mesh(
-      new THREE.BoxGeometry(0.055, rodLength, 0.07),
+      new THREE.BoxGeometry(0.055, rodLength-.12, 0.07),
       darkMaterial,
     );
-    rod.position.y = -rodLength / 2;
+    rod.position.y = -(rodLength+.12) / 2;
     rod.userData.role = `${role}-vertical-rod`;
     const weight = new THREE.Mesh(
       new THREE.BoxGeometry(0.30, 0.46, 0.24),
@@ -1201,21 +1208,31 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     weight.position.y = -rodLength - 0.23;
     weight.userData.role = `${role}-gravity-weight`;
-    group.add(rod, weight);
+    const eye=new THREE.Mesh(ring(.105,.14,-.035,.035,64),darkMaterial);
+    eye.userData.role=`${role}-bored-rod-eye`;group.add(rod,weight,eye);
     return { group, rod, weight };
   };
   const upperWeightParts = makeHangingWeight(
     'upper-handle-hanging-back-weight',
-    handlePlaneZ,
+    upperHandlePlaneZ,
+    (500-source181UpperWeightPin.y)*sourceScale,
   );
   const lowerWeightParts = makeHangingWeight(
     'lower-handle-hanging-back-weight',
-    handlePlaneZ,
+    lowerHandlePlaneZ,
+    (500-source181LowerWeightPin.y)*sourceScale,
   );
   const catchWeightParts = makeHangingWeight(
     'diagonal-catch-hanging-back-weight',
     catchPlaneZ,
+    (500-source181CatchWeightPin.y)*sourceScale,
   );
+  for(const[parent,point]of [[upperHandleParts.group,upperWeightLocal],
+    [lowerHandleParts.group,lowerWeightLocal],[catchGroup,catchWeightLocal]]){
+    const pin=cylinderAlongZ(.10,.33,darkMaterial,48),head=cylinderAlongZ(.135,.035,darkMaterial,48);
+    pin.position.set(point.x,point.y,.135);head.position.set(point.x,point.y,.3175);
+    pin.userData.role='back-weight-rod-hinge-pin';head.userData.role='back-weight-rod-retaining-head';parent.add(pin,head);
+  }
 
   const tappetContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.10, 20, 14),
@@ -1261,17 +1278,17 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     upperWeightParts.group.position.set(
       state.upperWeightPin.x,
       state.upperWeightPin.y,
-      handlePlaneZ,
+      upperHandlePlaneZ+.24,
     );
     lowerWeightParts.group.position.set(
       state.lowerWeightPin.x,
       state.lowerWeightPin.y,
-      handlePlaneZ,
+      lowerHandlePlaneZ+.24,
     );
     catchWeightParts.group.position.set(
       state.catchWeightPin.x,
       state.catchWeightPin.y,
-      catchPlaneZ,
+      catchPlaneZ+.24,
     );
     tappetContactMarker.visible = Boolean(state.activeContactPoint);
     if (state.activeContactPoint) {
@@ -1517,6 +1534,19 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     ? 'source-182-top-of-cylinder-initial-pose'
     : 'source-181-ascending-stroke-initial-pose';
 
+  Object.assign(geometry,{upperHandlePlaneZ,lowerHandlePlaneZ});
+  // Source cutaway: the engine casing and column are outside this mechanism.
+  for(const part of [frameSpine,pistonGuide,upperCrossbar,lowerCrossbar,tappetContactMarker,
+    upperLatchMarker,lowerLatchMarker,upperHandleParts.index,lowerHandleParts.index,catchIndex,tappetIndex]){
+    part.removeFromParent();part.geometry.dispose();
+  }
+  Object.assign(root.userData,{hideGround:true,supportsRestart:true,minimumDisplayCycleSeconds:18,
+    animationTiming:{authoredCyclePeriod:cyclePeriod},cameraFov:8,reconstructionStatus:'under-review',
+    reconstructionNote:'Pivot bores and axial layers are repaired. Tappet and latch geometry and the prescribed switching sequence are still under review.'});
+  const motionBounds=new THREE.Box3();
+  for(let i=0;i<=128;i++){update(cyclePeriod*i/128);root.updateMatrixWorld(true);motionBounds.union(new THREE.Box3().setFromObject(root,true));}
+  root.userData.cameraFitBounds=motionBounds.expandByScalar(.06);
+
   update(0);
   markShadows(root);
   for (const marker of [
@@ -1537,9 +1567,10 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   root.userData.materialsIgnoreSceneFog = true;
 
   return {
-    cameraDirection: new THREE.Vector3(5.0, 4.0, 15.5),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

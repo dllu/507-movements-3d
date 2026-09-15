@@ -1,0 +1,26 @@
+{
+  "movements": [
+    181,
+    182
+  ],
+  "status": "packaged-desktop-mobile-passed",
+  "scope": "Shared pivot/weight-joint and framing repair. Tappet/latch contact and source contours remain unqualified.",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit/reset",
+    "390x844 layout without horizontal overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/diagonal-catch.spec.mjs",
+      "sha256": "5e41f776261f13149cda1163d42a6a3bd890a8663348342357e31c2a3b11aa9e"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "ea04bec2ef356db8c1c3403ce8709a5f73a5e7ff735444e5399cf46f62a6f5c0"
+    }
+  ]
+}

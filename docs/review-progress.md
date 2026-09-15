@@ -1,3 +1,9 @@
+# Movements 181–182: pivots and weight joints repaired; contact reconstruction open
+
+Added actual pivot bores, separated the handle layers, fitted retained weight-rod joints, removed intersecting decorations and the unillustrated frame, and restored front framing and Restart. The sampled interference count falls from 68 to 16 pairs. Four targeted tests and both packaged browser checks pass, but the tappet and latch still intersect and their motion remains prescribed. Continue with the contact surfaces and passive native motion; see [181–182 review](movement-181.md). The full goal remains active.
+
+## Earlier checkpoints
+
 # Movement 180 reconstructed and checked; next 181
 
 Replaced independent jaw animation with a passive-jaw MuJoCo bake driven by board contact. Corrected the upper contour, added bored hardware and recessed slots, removed intersecting decorations, and restored front framing. Eleven source features fit within 3.25 pixels. The 16-mesh assembly and dense contact sweeps pass, as do native controls, timestep comparison, two production tests and desktop/mobile checks. Playback uses a 291 KB bake without live physics. Friction and operator guidance remain explicit assumptions; see [movement 180](movement-180.md). Continue with 181; the full review remains active.

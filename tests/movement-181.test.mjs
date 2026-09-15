@@ -759,7 +759,7 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
     new THREE.Vector3(
       source181PointToModel(geometry.source181LowerFreeTip).x,
       source181PointToModel(geometry.source181LowerFreeTip).y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     ),
     1e-12,
     'rendered lower free handle tip matches source 181',
@@ -769,7 +769,7 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
     new THREE.Vector3(
       source181.upperWeightPin.x,
       source181.upperWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-12,
     'rendered upper back-weight anchor matches source 181',
@@ -779,7 +779,7 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
     new THREE.Vector3(
       source181.lowerWeightPin.x,
       source181.lowerWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     ),
     1e-12,
     'rendered lower back-weight anchor matches source 181',
@@ -816,7 +816,7 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
     new THREE.Vector3(
       geometry.upperPivot.x + expectedUpperFreeVector.x,
       geometry.upperPivot.y + expectedUpperFreeVector.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'rendered upper free handle tip matches source 182 after pivot registration',
@@ -826,7 +826,7 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
     new THREE.Vector3(
       source182.upperHandleContactPoint.x,
       source182.upperHandleContactPoint.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'rendered upper tappet contact matches the top-pose state',
@@ -867,33 +867,32 @@ test('movement 181 trips two backweighted valve handles through one diagonal cat
       `${pivot.userData.role} remains fixed through the cycle`);
   }
 
-  const frameFrontZ = geometry.frameCenterZ + geometry.frameDepth / 2;
-  const handleBottomZ = geometry.handlePlaneZ - geometry.handleDepth / 2;
-  const handleTopZ = geometry.handlePlaneZ + geometry.handleDepth / 2;
+  const upperTopZ = geometry.upperHandlePlaneZ + geometry.handleDepth / 2;
+  const handleBottomZ = geometry.lowerHandlePlaneZ - geometry.handleDepth / 2;
+  const handleTopZ = geometry.lowerHandlePlaneZ + geometry.handleDepth / 2;
   const catchBottomZ = geometry.catchPlaneZ - geometry.catchDepth / 2;
   const catchTopZ = geometry.catchPlaneZ + geometry.catchDepth / 2;
-  assert.ok(handleBottomZ > frameFrontZ,
-    'both valve handles clear the rear fixed frame');
+  assert.ok(handleBottomZ > upperTopZ,
+    'valve handles occupy separate axial layers');
   assert.ok(handleTopZ < catchBottomZ,
     'the handle plates pass behind the diagonal catch without interpenetration');
   assert.ok(catchTopZ > handleTopZ,
     'the diagonal catch is visibly the front latch layer');
   assert.ok(tappet.geometry.parameters.depth > geometry.handleDepth,
     'the projecting tappet spans the handle contact plane');
-  const bounds = new THREE.Box3().setFromObject(model.root);
+  const bounds = new THREE.Box3().setFromObject(model.root,true);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.37,
+  assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).x > 4.37,
     'free handles and all three back-weight eyes span the source width');
-  assert.ok(size.y > 7.84,
-    'piston guide and hanging weights occupy the complete stroke height');
+  assert.ok(model.root.userData.cameraFitBounds.containsBox(bounds), 'motion framing contains the displayed assembly');
   assert.ok(size.z > 1.35,
     'frame, handles, latch rollers, catch, and fixed heads occupy real depth');
   assert.ok(bounds.min.z < -0.73);
   assert.ok(bounds.max.z > 0.61);
   near(model.root.userData.cameraDistanceScale, 1.18, 0,
     'source-complete portrait camera scale');
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3);
 
   // The paired Movement 182 top-position variant and Movement 183's

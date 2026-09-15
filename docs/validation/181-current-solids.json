@@ -1,0 +1,123 @@
+{
+  "movement": 181,
+  "poses": 129,
+  "meshes": 50,
+  "pairs": 1041,
+  "queries": 10772814,
+  "intersections": {
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#7/source-fitted-s-shaped-diagonal-catch-backbone-plate#22": 0.10050211918577018,
+    "lower-backweighted-steam-eduction-valve-handle-curved-tappet-arm-plate#11/source-projecting-piston-rod-tappet-shoe#31": 0.24987725722962661,
+    "lower-backweighted-steam-eduction-valve-handle-back-weight-arm-plate#13/source-projecting-piston-rod-tappet-shoe#31": 0.23545113503932957,
+    "lower-backweighted-steam-eduction-valve-handle-source-scale-rocking-hub#14/source-projecting-piston-rod-tappet-shoe#31": 0.004999992847442569,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#18/source-fitted-s-shaped-diagonal-catch-backbone-plate#22": 0.0947226721598473,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#18/diagonal-catch-back-weight-arm-plate#23": 0.09798625916937764,
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#7/upper-hook-pocket-holding-upper-valve-handle#24": 0.10091888716512615,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#18/lower-hook-pocket-holding-lower-valve-handle#25": 0.1019943896641118,
+    "lower-backweighted-steam-eduction-valve-handle-piston-tappet-contact-roller#17/source-projecting-piston-rod-tappet-shoe#31": 0.2388477945759997,
+    "lower-backweighted-steam-eduction-valve-handle-rounded-working-handle-tip#19/source-projecting-piston-rod-tappet-shoe#31": 0.1271651737880864,
+    "upper-backweighted-steam-eduction-valve-handle-curved-tappet-arm-plate#0/source-projecting-piston-rod-tappet-shoe#31": 0.2493885752858116,
+    "upper-backweighted-steam-eduction-valve-handle-piston-tappet-contact-roller#6/source-projecting-piston-rod-tappet-shoe#31": 0.23234709157108738,
+    "upper-hook-pocket-holding-upper-valve-handle#24/source-projecting-piston-rod-tappet-shoe#31": 0.002000002562999703,
+    "upper-backweighted-steam-eduction-valve-handle-catch-engaging-finger-plate#1/source-projecting-piston-rod-tappet-shoe#31": 0.24945876342111073,
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#7/source-projecting-piston-rod-tappet-shoe#31": 0.24958211455010368,
+    "upper-backweighted-steam-eduction-valve-handle-rounded-working-handle-tip#8/source-projecting-piston-rod-tappet-shoe#31": 0.10753695849096423
+  },
+  "samples": [
+    {
+      "time": 0,
+      "stage": "source-181-ascending-stroke-pose-hold",
+      "upper": 0,
+      "lower": 0,
+      "catch": 0,
+      "upperGap": 0,
+      "lowerGap": 0.7838974843509473
+    },
+    {
+      "time": 2.25,
+      "stage": "ascending-tappet-approaches-lower-handle",
+      "upper": 0,
+      "lower": 0,
+      "catch": 0,
+      "upperGap": 0,
+      "lowerGap": 0.7838974843509473
+    },
+    {
+      "time": 4.5,
+      "stage": "ascending-tappet-trips-lower-handle-and-releases-upper",
+      "upper": -0.20849619818162185,
+      "lower": -0.19571449036139943,
+      "catch": 0.0658367261940178,
+      "upperGap": 0.25908087103383537,
+      "lowerGap": 0.5711146622298838
+    },
+    {
+      "time": 6.75,
+      "stage": "ascending-after-valve-reversal-to-top",
+      "upper": -0.846296296534586,
+      "lower": -0.7944147174651272,
+      "catch": 0,
+      "upperGap": 0.7650622255707548,
+      "lowerGap": 2.220446049250313e-16
+    },
+    {
+      "time": 9,
+      "stage": "source-182-top-of-cylinder-pose-hold",
+      "upper": -0.846296296534586,
+      "lower": -0.7944147174651272,
+      "catch": 0,
+      "upperGap": 0.7650622255707548,
+      "lowerGap": 2.220446049250313e-16
+    },
+    {
+      "time": 11.25,
+      "stage": "descending-tappet-approaches-upper-handle",
+      "upper": -0.846296296534586,
+      "lower": -0.7944147174651272,
+      "catch": 0,
+      "upperGap": 0.7650622255707548,
+      "lowerGap": 2.220446049250313e-16
+    },
+    {
+      "time": 13.5,
+      "stage": "descending-tappet-trips-upper-handle-and-releases-lower",
+      "upper": -0.05880064855585552,
+      "lower": -0.0551959175533946,
+      "catch": -0.0259640540931075,
+      "upperGap": 0.05215467126981812,
+      "lowerGap": 0.7429120757956226
+    },
+    {
+      "time": 15.75,
+      "stage": "descending-after-valve-reversal-to-bottom",
+      "upper": 0,
+      "lower": 0,
+      "catch": 0,
+      "upperGap": 0,
+      "lowerGap": 0.7838974843509473
+    },
+    {
+      "time": 18,
+      "stage": "source-181-ascending-stroke-pose-hold",
+      "upper": 0,
+      "lower": 0,
+      "catch": 0,
+      "upperGap": 0,
+      "lowerGap": 0.7838974843509473
+    }
+  ],
+  "method": "Visible finite meshes across different moving/fixed families, including decorative outlines and markers when visible. Bidirectional vertices, edge midpoints and triangle centers. Sampled evidence, not continuous proof.",
+  "sources": [
+    {
+      "file": "scripts/review-diagonal-catch-solids.mjs",
+      "sha256": "935adf0883169947092de6021fd80f0af1c21659765123cb523b331856c63361"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "ea04bec2ef356db8c1c3403ce8709a5f73a5e7ff735444e5399cf46f62a6f5c0"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
