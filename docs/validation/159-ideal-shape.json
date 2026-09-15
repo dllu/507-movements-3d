@@ -1,0 +1,26 @@
+{
+  "movement": 159,
+  "samples": 201,
+  "maximumLengthError": 4.405364961712621e-13,
+  "maximumSlack": 1.2328315823281528,
+  "maximumTendonExtension": 0.0003169793885628991,
+  "maximumAmplitude": 1.2863740711886438,
+  "sources": [
+    {
+      "file": "scripts/probe-cord-treadle-ideal-shape.mjs",
+      "sha256": "450faa783c3cbc91e30aec6baf00fbc48444b6f6bfffb97f9de02ad696713694"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/ideal-cord-shape.js",
+      "sha256": "6aaf4c65f1bb71d3dd8a062ed17328d930493bc0ddb8802bf61260fc8e25a1f8"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "/dev/shm/159-ideal-scaled-finer.json",
+      "sha256": "2cd1b02fc80cb1be7be81eb41bb3b6e7f7b29575b2ef1b842bb03d84e8ef1cf4"
+    }
+  ]
+}

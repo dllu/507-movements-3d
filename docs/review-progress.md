@@ -1,34 +1,17 @@
 # Active source reconstruction: 159 cord treadle
 
-Four-cycle finite-rope runs do not establish a seamless repeat: fourth-cycle
-rope seams still differ by 7.6–11.1 source pixels, with large velocity mismatches.
-The source-shaped rigid assembly now includes inferred cord-anchor studs.
-Native head contact fixes a measured slack-rope penetration; updated one-cycle
-rope/hardware and rigid-part audits pass their sampled checks. An explicit 0.1 m per
-display unit reconstruction and mesh-integrated rigid-core inertias are now
-available in the native probe, with independent formula and compiled-model
-tests. The lower treadle eye now follows the engraving’s measured center and
-diameter, with inferred hidden fastening geometry. Qualify the finite rope and
-final assembly next. The updated scaled model still differs by 23.4 source
-pixels when timestep is halved and 22.4 pixels across rope resolutions, despite
-small endpoint errors. The finite rope is not converged.
-A 1.125 px initial bow reduces early buckling-branch sensitivity but leaves
-8.6 px full-cycle disagreement. The bowed trajectory exposes a too-broad native
-endpoint contact exclusion, now fixed with material-clipped geom pairs and a
-regression that fails on the old code. Full-cycle qualification still fails:
-the coarse trajectory has larger swing, later head penetration and a treadle/
-crank-stud collision. Native stud/beam contact now limits that overlap to
-0.0134 source pixels. The two finer runs pass sampled hardware checks and
-agree in treadle angle within 0.0015 rad, but slack-rope positions still differ
-by 19.5 pixels. Initial pulley penetration is now removed with a subpixel
-radial lift, but short-run endpoint buckling sensitivity persists. Neither a
-localized starting bow nor 25× bending rigidity resolves it. Review the tied-end
-boundary condition and contact model next. A scaled ideal massless-cord
-comparison now has a repeatable, passive treadle cycle and passes the rigid
-audit; it still needs a mechanically consistent slack-cord shape before it can
-be considered for production. No clamped exit angle has been invented.
-No bake is qualified; production remains unchanged. See
-[movement 159](movement-159.md). 150's source fit also remains open.
+The scaled ideal-cord model produces a repeatable passive treadle cycle. Its
+length-preserving geometric slack illustration now passes sampled hardware,
+self-clearance and curvature checks, and front/oblique previews are inspected.
+This explicitly illustrates the underdetermined massless slack shape; it does
+not claim to reproduce finite-rope vibration. Native rigid geometry follows the
+engraving, including the lower treadle eye and supported shafts.
+
+Next phase-align and bake the settled motion and geometric profile, then check
+interpolation, source framing and desktop/mobile playback before registration.
+Production remains unchanged. The finite-rope prototype remains unqualified;
+its timestep and buckling studies are retained in [movement 159](movement-159.md).
+150's source fit also remains open.
 
 # Shipped reconstruction: 158 treadle and disk
 

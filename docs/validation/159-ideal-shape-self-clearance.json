@@ -1,0 +1,46 @@
+{
+  "movement": 159,
+  "samples": 201,
+  "method": "Finite polyline capsule-distance checks, excluding local neighbors with less than four rope radii of material gap. Discrete curvature plus 1025 analytic Bezier-curvature samples per pose check local tubular folding. Not a continuous-time proof.",
+  "minimumNonlocalSelfClearance": 0.08469865693049516,
+  "witness": {
+    "time": 12.800000000015611,
+    "i": 237,
+    "j": 243,
+    "points": [
+      [
+        4.277317347200633,
+        -2.7091453192818014,
+        0.64
+      ],
+      [
+        4.26775278149412,
+        -2.7517475762212342,
+        0.64
+      ],
+      [
+        4.102867764031788,
+        -2.809475834031126,
+        0.64
+      ],
+      [
+        4.067422335083256,
+        -2.7839739545996904,
+        0.64
+      ]
+    ]
+  },
+  "maximumRadiusTimesCurvature": 0.6412101279701725,
+  "maximumRadiusTimesAnalyticCurvature": 0.7118171301952612,
+  "minimumFloorClearance": 0.4910624151453251,
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-ideal-shape.mjs",
+      "sha256": "1f703f2583df6c7d80f2842920789111c2bf2ebcac785298ba65dfa9086fb110"
+    },
+    {
+      "file": "/dev/shm/159-ideal-shaped.json",
+      "sha256": "cbef2066508ddbb4f3908a6b6e98bfe155587d6057ad4f8288a04575f364d59d"
+    }
+  ]
+}

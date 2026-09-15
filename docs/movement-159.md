@@ -627,6 +627,51 @@ SAMPLES=/dev/shm/159-ideal-scaled-finer.json REPORT=docs/validation/159-ideal-sc
 node --test tests/cord-treadle.test.mjs
 ```
 
+## Length-preserving ideal slack illustration
+
+The ideal massless, untensioned cord does not determine a unique slack shape.
+An unregistered geometric illustration now uses the measured incoming tangent
+and pulley wrap, followed by a smooth cubic hanging loop near the treadle.
+A scalar solve matches its integrated arc length to the available cord length.
+The guide-exit tangent and both attachment centers remain fixed. A small native
+tendon-length excess is reported explicitly rather than concealed. Pulley angle
+comes from cord material travel past the top of the guide, under a massless,
+no-slip rolling convention; pulley inertia remains outside this ideal model.
+
+This is deliberately an **illustration of slack in the ideal-cord model**, not
+a claim to predict equilibrium shape, finite-rope vibration, stiffness or knot
+behavior. It places released length in the outgoing leg, with a consistent loop
+side and a drop below the treadle attachment. The finite-rope prototype remains
+available as a separate diagnostic. This explicit model choice preserves native
+passive treadle motion and cord length without asserting convergence of the
+unresolved finite-rope trajectories.
+
+Across 201 samples of the settled fourth cycle, integrated length residual is
+below 4.5e−13 display units. Hardware and self-clearance audits pass: minimum
+nonlocal rope clearance is 0.08470 units, floor clearance is 0.49106 units, and
+rope radius times sampled analytic cubic curvature stays below 0.712 (below one,
+so the checked local tube sections do not fold). The actual hardware audit
+reports 0.02621 units clearance from the free rope to the treadle head and
+0.000265 units of pulley penetration from polyline tessellation. Tests also check
+length using an independent dense chord sum, pulley tangency, phase repetition,
+fixed endpoints and explicit tendon extension. Front and oblique Chrome previews
+were inspected without page errors. These are finite checks, not continuous
+collision proofs.
+
+Reports: [shape/length](validation/159-ideal-shape.json),
+[hardware](validation/159-ideal-shape-hardware.json),
+[self-clearance and curvature](validation/159-ideal-shape-self-clearance.json).
+The next work is to phase-align and bake the settled motion, avoid the length
+solve during browser playback, and validate interpolated poses, source framing,
+restart, speed and mobile performance before registration.
+
+```sh
+node scripts/probe-cord-treadle-ideal-shape.mjs
+node scripts/review-cord-treadle-ideal-shape.mjs
+SAMPLES=/dev/shm/159-ideal-shaped.json REPORT=docs/validation/159-ideal-shape-hardware.json node scripts/review-cord-treadle-rope-hardware.mjs
+node --test tests/cord-treadle-ideal-shape.test.mjs
+```
+
 ## Remaining work
 
 Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify
