@@ -1,3 +1,17 @@
+# Movements 181–182: restore the lower finger's crescent edge
+
+Replaced the lower rear plate's broad convex fill with the engraved concave
+crescent and a narrow bridge to the working heel. Both rear plates remain
+connected solids. The contact faces and baked motion are unchanged. The shared
+asset is 549,087 bytes; all 50 meshes pass the 129-pose sweep (1,025 pairs,
+8,898,074 surface queries, no detected intersections). Seven scoped tests, the
+build and both packaged desktop/mobile browser checks pass.
+The holding heel still extends outside the source outline, and the upper
+catch's fit to both drawings remains open. Continue source review without
+marking either movement complete. See [review](movement-181.md).
+
+## Earlier checkpoints
+
 # Movements 181–182: passive bake published; source contours still open
 
 Replaced the browser's old circular latch pockets and rollers with the traced

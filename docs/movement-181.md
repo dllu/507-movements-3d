@@ -1,6 +1,6 @@
 # Movements 181–182 — baked passive catch; source contours under review
 
-The browser now loads a 50-mesh reconstruction driven by a 520,876-byte motion
+The browser now loads a 50-mesh reconstruction driven by a 549,087-byte motion
 and geometry bake. The old circular latch pockets and cylindrical latch rollers
 are removed. A continuous S-shaped catch, finite fingers, bored rear supports
 and axial webs replace them. Both engravings show stages of the same mechanism;
@@ -37,7 +37,10 @@ native contact geometry.
 The catch outline is traced from 181. The upper holding face is registered
 three source pixels higher, with its toe extended two pixels along the ledge.
 The lower holding heel moves six pixels right and five up. Its tripping nose
-and holding heel share a continuous rear support rather than separate prongs.
+and holding heel share a continuous rear support. That support follows the
+concave inner edge and convex outer rim of the crescent in 181. A narrow curved
+bridge connects the registered heel, which extends beyond the drawn crescent;
+the bridge is an inferred support, not an engraved feature.
 The upper rear plate includes the horn visible in 182. At the opposite stage,
 its extra length lies behind the piston rod; an inferred rear offset and bored
 sleeve connect it to the hub. Axial webs connect both handles to their front
@@ -58,7 +61,7 @@ as surface marks so its travel remains legible from the front. The rod's 0.17-un
 Fog, ground, the former added frame and floating contact markers are disabled.
 
 The front and oblique views are improved, but source review is **not complete**.
-The lower finger's broad support still differs from the engraved crescent, and
+The lower finger's holding heel still extends outside the engraved crescent, and
 the catch's upper contour does not superimpose on both drawings. The upper horn's
 rear offset is an interpretation of the two views, not a measured depth.
 These contours need further work before either movement is marked fully reviewed.
@@ -95,7 +98,7 @@ trajectory. These are sampled checks, not continuous collision proof.
 
 The [serialized assembly sweep](validation/181-baked-assembly-clearance.json)
 checks all 50 meshes across 1,025 different-body pairs at 129 poses, with
-8,676,710 finite-surface queries and no detected intersections. This includes
+8,898,074 finite-surface queries and no detected intersections. This includes
 the rear plates, axial webs, shafts, weight joints and sectioned rod. It uses
 rendered triangle surfaces rather than nominal contact radii. The earlier six
 latch intersections are absent from this reconstruction.

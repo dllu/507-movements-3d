@@ -1,21 +1,30 @@
 import * as THREE from 'three';
 import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
-import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {plate,poly,circle,ring,capsule,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {makeDiagonalCatchUpdater} from './update-solids.js';
 
-function hull(points){
- const sorted=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
- const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
- const half=points=>{const result=[];for(const p of points){while(result.length>1&&cross(result.at(-2),result.at(-1),p)<=0)result.pop();result.push(p);}return result.slice(0,-1);};
- return [...half(sorted),...half(sorted.reverse())];
+function lowerBacking(finger){
+ const local=([x,y])=>[(x-271)*.0125-finger.fit.pivot[0],(234-y)*.0125-finger.fit.pivot[1]];
+ // Concave inner edge and convex outer rim traced from the crescent in 181.
+ // The registered holding heel lies beyond that tracing. A narrow rear bridge
+ // connects it to the crescent without filling the source's open inner curve.
+ const crescent=new THREE.Shape();crescent.moveTo(295,323);
+ crescent.bezierCurveTo(312,319,326,315,329,288);
+ crescent.bezierCurveTo(340,319,338,343,317,365);
+ crescent.quadraticCurveTo(306,376,289,375);crescent.lineTo(285,351);crescent.closePath();
+ const heel=finger.heelRaster.map(local),heldCenter=heel.reduce((s,p)=>[s[0]+p[0]/heel.length,s[1]+p[1]/heel.length],[0,0]);
+ const a=-finger.fit.angle,center=[heldCenter[0]*Math.cos(a)-heldCenter[1]*Math.sin(a),heldCenter[0]*Math.sin(a)+heldCenter[1]*Math.cos(a)];
+ const bridge=new THREE.QuadraticBezierCurve(new THREE.Vector2(...center),new THREE.Vector2(...local([321,273])),new THREE.Vector2(...local([328,301]))).getPoints(24).map(p=>p.toArray());
+ return clip.union(poly(circle([0,0],.38,96)),poly(crescent.getPoints(16).map(p=>local(p.toArray()))),finger.polygons,
+  ...bridge.slice(1).map((p,i)=>capsule(bridge[i],p,.06,12)));
 }
 
-// Complete visible candidate around the qualified planar contact profiles.
+// Complete visible assembly around the qualified planar contact profiles.
 // Back plates and axial webs connect the contact fingers to their bored hubs.
-// Their depths are inferred; the full assembly must be checked separately from
-// the isolated contact trajectory before this replaces the production model.
+// Their depths are inferred; audit the serialized assembly separately from
+// the isolated contact trajectory whenever this geometry changes.
 export function createDiagonalCatchAssembly(){
  const legacy=createAuthoredDiagonalCatchMovement({id:181}),root=legacy.root,b=root.userData.blocks,g=root.userData.geometry;
  const catchMaterial=b.catchHub.material,handleMaterial=b.upperHandleHub.material;
@@ -40,7 +49,7 @@ export function createDiagonalCatchAssembly(){
   }):[];
   const backingOutline=side==='upper'
    ?clip.union(poly(circle([0,0],.38,96)),poly(horn),finger.polygons)
-   :poly(hull([...circle([0,0],.38,96),...finger.polygons.flat(2)]));
+   :lowerBacking(finger);
   const backing=clip.difference(backingOutline,poly(circle([0,0],.12,96)));
   const backLow=side==='upper'?-.46:-.09,backHigh=side==='upper'?-.34:.09;
   const support=new THREE.Mesh(plate(backing,backLow,backHigh),handleMaterial);

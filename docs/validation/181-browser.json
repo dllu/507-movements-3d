@@ -4,7 +4,7 @@
     182
   ],
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Baked passive catch with continuous rear supports, offset upper horn, sectioned rod and hatched tappet. Remaining source-contour differences are not qualified by this browser check.",
+  "scope": "Baked passive catch with connected rear supports, crescent lower plate, offset upper horn, sectioned rod and hatched tappet. Remaining source-contour differences are not qualified by this browser check.",
   "checks": [
     "baked playback",
     "exact restart",
@@ -37,7 +37,7 @@
     },
     {
       "file": "src/simulation/baked/assets/181.json.gz",
-      "sha256": "ec66dbedf433a5c10380fa2181be6ea9b3972b0810d585910efdea03728077b7"
+      "sha256": "cc4b92b409db709bc5436c8e565ccd43a4deab2fb0c86bb264078452ee66af96"
     }
   ]
 }
