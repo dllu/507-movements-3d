@@ -1,0 +1,69 @@
+{
+  "movement": 159,
+  "study": "damped",
+  "method": "First-cycle native samples at .02s. Compare equal material fractions along the polygonal rope; segment counts have slightly different chord-sum rest lengths. Independently check capsule centerline distances to nonadjacent segments, pulley and floor. Negative clearance is soft-contact penetration. Finite sampling, not continuous collision proof.",
+  "comparisons": [
+    {
+      "comparison": "96 segments: .0001 vs .00005s",
+      "maximumAngleDifferences": {
+        "disk": 0.010097476065190847,
+        "treadle": 0.02369557282423062,
+        "pulley": 0.0940244872302538
+      },
+      "maximumMaterialPointDifference": 0.4484190453593621
+    },
+    {
+      "comparison": "96 vs 64 segments: .0001s",
+      "maximumAngleDifferences": {
+        "disk": 0.009454630206076509,
+        "treadle": 0.027497720661524172,
+        "pulley": 0.09686077414837113
+      },
+      "maximumMaterialPointDifference": 0.6718740658895661
+    }
+  ],
+  "clearances": [
+    {
+      "file": "/dev/shm/159-damped-96.json",
+      "minimumCapsuleClearances": {
+        "self": -0.00002537810655459105,
+        "pulley": -0.0027551380761685618,
+        "floor": 0.7519443294355659
+      }
+    },
+    {
+      "file": "/dev/shm/159-damped-96-fine.json",
+      "minimumCapsuleClearances": {
+        "self": -0.00014136323129647355,
+        "pulley": -0.0021195165850335096,
+        "floor": 0.7477081147212417
+      }
+    },
+    {
+      "file": "/dev/shm/159-damped-64.json",
+      "minimumCapsuleClearances": {
+        "self": -0.0000031874582661767237,
+        "pulley": -0.004766279265538076,
+        "floor": 0.5779851701321124
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-finite-cord-treadle.mjs",
+      "sha256": "f56852165d5cb97bfb9d7d4496aae25dbf8acfbade9e61f98dd5bbc5bcd1f30d"
+    },
+    {
+      "file": "/dev/shm/159-damped-96.json",
+      "sha256": "024369b2542fd5d8b8d31dc2c534045b860a8ea8b135b693caa23afbb5ff104e"
+    },
+    {
+      "file": "/dev/shm/159-damped-96-fine.json",
+      "sha256": "885803a39cfd190ca0508a0ba2236fa32d1f445420b76b35f9e54924cf21ca40"
+    },
+    {
+      "file": "/dev/shm/159-damped-64.json",
+      "sha256": "7d687828f40ea1dec6cb0345be27aa4263d5d3fcc4afbde60956d57c7fa7dcd5"
+    }
+  ]
+}

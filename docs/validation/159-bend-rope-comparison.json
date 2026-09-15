@@ -1,0 +1,69 @@
+{
+  "movement": 159,
+  "study": "bend",
+  "method": "First-cycle native samples at .02s. Compare equal material fractions along the polygonal rope; segment counts have slightly different chord-sum rest lengths. Independently check capsule centerline distances to nonadjacent segments, pulley and floor. Negative clearance is soft-contact penetration. Finite sampling, not continuous collision proof.",
+  "comparisons": [
+    {
+      "comparison": "96 segments: .0001 vs .00005s",
+      "maximumAngleDifferences": {
+        "disk": 0.006749045653578811,
+        "treadle": 0.026158043061141584,
+        "pulley": 0.07408578470504912
+      },
+      "maximumMaterialPointDifference": 0.3636473437982688
+    },
+    {
+      "comparison": "96 vs 64 segments: .0001s",
+      "maximumAngleDifferences": {
+        "disk": 0.008576520109803809,
+        "treadle": 0.05337281573982595,
+        "pulley": 0.1147828816203389
+      },
+      "maximumMaterialPointDifference": 0.5060434493560628
+    }
+  ],
+  "clearances": [
+    {
+      "file": "/dev/shm/159-bend-96.json",
+      "minimumCapsuleClearances": {
+        "self": -0.00021429257492033837,
+        "pulley": -0.0022355756097957036,
+        "floor": 0.6305510803963443
+      }
+    },
+    {
+      "file": "/dev/shm/159-bend-96-fine.json",
+      "minimumCapsuleClearances": {
+        "self": -0.000022240454910463225,
+        "pulley": -0.0021195165850335096,
+        "floor": 0.6239694879011388
+      }
+    },
+    {
+      "file": "/dev/shm/159-bend-64.json",
+      "minimumCapsuleClearances": {
+        "self": -0.0003747499526508963,
+        "pulley": -0.004766279265538076,
+        "floor": 0.6887100267295763
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-finite-cord-treadle.mjs",
+      "sha256": "f56852165d5cb97bfb9d7d4496aae25dbf8acfbade9e61f98dd5bbc5bcd1f30d"
+    },
+    {
+      "file": "/dev/shm/159-bend-96.json",
+      "sha256": "1f7551cd8963be1dd72eea754b4be7cacb0a64e9e0a88efc56f300c210651d27"
+    },
+    {
+      "file": "/dev/shm/159-bend-96-fine.json",
+      "sha256": "49262ac31e21720318907fd84aa9c9820b225f8408c2a1633e49b375be37542f"
+    },
+    {
+      "file": "/dev/shm/159-bend-64.json",
+      "sha256": "dd6b7862724e254cb93f9335a07db0cbcd29d4d1880129fa173413513a36b5c8"
+    }
+  ]
+}

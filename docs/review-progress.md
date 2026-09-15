@@ -1,13 +1,12 @@
 # Active source reconstruction: 159 cord treadle
 
-159 now has a finite, self-contacting MuJoCo rope prototype with passive pulley
-rotation, floor rest, slack and pickup. A full-cycle regression test rejects
-solver resets and verifies rope length, endpoint connection and floor clearance.
-At 0.0001s it completes a turn, but timestep and segment refinement change slack
-rope positions by 18–26 source pixels. Refine bending/damping and pickup contact,
-then validate longer runs and the source-shaped assembly before baking.
-Production remains unchanged; see [movement 159](movement-159.md). 150's source
-fit also remains open.
+159's finite rope now has an optional resolution-scaled bending/damping law,
+with a native rest-shape and dissipation test. Two material studies reduce
+attachment/contact error but leave first-cycle rope differences of 20–38 source
+pixels. Neither is production-qualified. Test longer-run settling and repeated
+cycles next, then finish the source-shaped assembly and bake only validated
+motion. Source geometry is preserved; production remains unchanged. See
+[movement 159](movement-159.md). 150's source fit also remains open.
 
 # Shipped reconstruction: 158 treadle and disk
 

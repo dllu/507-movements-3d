@@ -132,6 +132,54 @@ an acceptable default; the prototype now defaults to 0.0001s. Bending stiffness,
 damping, contact compliance and longer-run behavior need investigation before
 choosing a bake. Raw rope trajectories remain in /dev/shm.
 
+## Bending and damping studies
+
+The finite rope now optionally supports a straight-rest bending law. At each
+internal hinge, stiffness is bending rigidity divided by the mean neighboring
+link length; damping adds stiffness times a relaxation time. The attachment
+hinge remains free. This scaling preserves the material law when segment count
+changes. A native test verifies the straight rest shape at 32 and 64 segments,
+length-scaled stiffness, and strictly dissipative damping. Zero bending remains
+the default; the original freely hinged results above are the historical
+baseline from commit d704f5f.
+
+Two candidate material settings were tested for the first four-second turn.
+Both use inferred bending rigidity 0.0002; relaxation times are 0.04s and 0.4s.
+These are sensitivity studies, not measurements of the original cord.
+
+| Relaxation | Timestep-refinement rope difference | 64/96-segment rope difference | Fine-run max attachment error |
+| --- | ---: | ---: | ---: |
+| 0.04s | 20.5px | 28.5px | 0.000128 world units |
+| 0.4s | 25.2px | 37.8px | 0.0000923 world units |
+
+Each row compares 0.0001s with 0.00005s at 96 segments, and 64 with 96 segments
+at 0.0001s. All six runs completed without resets. Attachment and contact errors
+improve, but rope-shape agreement does not consistently improve. The stronger
+damping also changes the treadle's raised excursion, so it must not be treated
+as an innocuous numerical adjustment. Diagnostic panels for the first candidate
+were inspected; no material setting has been selected for production.
+
+Only startup has been compared so far. Test longer runs and cycle-to-cycle
+settling before deciding whether transient behavior or persistent sensitivity
+is responsible. Do not infer a repeatable animation loop from first-cycle
+success. The existing source-center, floor-contact and tension-only tests still
+pass, but they do not qualify the finite rope's dynamics.
+
+Reproduction for the two candidate studies (in addition to the earlier tests):
+
+```sh
+node --test tests/cord-treadle-bending.test.mjs
+CORD_BENDING=.0002 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-bend-96.json REPORT=/dev/shm/159-bend-96-report.json node scripts/probe-finite-cord-treadle.mjs
+CORD_BENDING=.0002 DT=.00005 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-bend-96-fine.json REPORT=/dev/shm/159-bend-96-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+CORD_BENDING=.0002 SEGMENTS=64 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-bend-64.json REPORT=/dev/shm/159-bend-64-report.json node scripts/probe-finite-cord-treadle.mjs
+CORD_STUDY=bend node scripts/review-finite-cord-treadle.mjs
+```
+
+For the stronger damping study, add CORD_RELAXATION=.4, replace the temporary
+bend filenames with damped filenames, and use CORD_STUDY=damped for the review.
+All small reports and provenance are preserved under 159-bend-* and
+159-damped-* in docs/validation; raw trajectories remain outside Git.
+
 ## Remaining work
 
 Refine the finite rope, especially its bending/damping and pickup compliance,
