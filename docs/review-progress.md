@@ -1,3 +1,12 @@
+# Open review: 171 oscillating marine valve gear
+
+Fog and ground are disabled. Ideal lengths close across five reversing
+settings, but the finite audit finds follower/rail, guide/block and pin/rod
+interference. Upper link pins miss the source by about 11 pixels, and the
+18-second selector period is not a complete mechanism loop. Source solids,
+trunnion compensation and playback reconstruction remain open; see
+[movement 171](movement-171.md).
+
 # Shipped reconstruction: 170 crossed-arm governor
 
 An 88-mesh source reconstruction plays passive MuJoCo motion from a 408,398-byte

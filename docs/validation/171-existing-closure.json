@@ -1,0 +1,157 @@
+{
+  "movement": 171,
+  "status": "existing-ideal-closure-diagnostic",
+  "poses": 3605,
+  "maximumLengthError": 1.2878587085651816e-14,
+  "maximumDieGuideError": 8.104628079763643e-15,
+  "maximumSlotAngle": 0.36865891309833004,
+  "runs": [
+    {
+      "selector": -1,
+      "minimumValve": -0.3229663723692128,
+      "maximumValve": -0.13335791224193871,
+      "valveStroke": 0.18960846012727406,
+      "minimumSlide": -0.17796688400094385,
+      "maximumSlide": 0.2912456910015728,
+      "valveFirstHarmonic": {
+        "sine": 0.07589453148939443,
+        "cosine": 0.0029375655610369804,
+        "amplitude": 0.07595136076081897
+      }
+    },
+    {
+      "selector": -0.5,
+      "minimumValve": -0.32273144085317984,
+      "maximumValve": -0.19771797648165568,
+      "valveStroke": 0.12501346437152416,
+      "minimumSlide": -0.09423949061043047,
+      "maximumSlide": 0.15394358888637827,
+      "valveFirstHarmonic": {
+        "sine": 0.06234281040780949,
+        "cosine": 0.02038553281120521,
+        "amplitude": 0.06559112712509829
+      }
+    },
+    {
+      "selector": 0,
+      "minimumValve": -0.2897541162076057,
+      "maximumValve": -0.22962975010709374,
+      "valveStroke": 0.06012436610051197,
+      "minimumSlide": -0.04999999999999982,
+      "maximumSlide": 0.047796811850960186,
+      "valveFirstHarmonic": {
+        "sine": -5.226193284559033e-19,
+        "cosine": 0.028444663164012375,
+        "amplitude": 0.028444663164012375
+      }
+    },
+    {
+      "selector": 0.5,
+      "minimumValve": -0.32273144085317984,
+      "maximumValve": -0.19771797648165568,
+      "valveStroke": 0.12501346437152416,
+      "minimumSlide": -0.09423949061043047,
+      "maximumSlide": 0.15394358888637916,
+      "valveFirstHarmonic": {
+        "sine": -0.06234281040780939,
+        "cosine": 0.020385532811205167,
+        "amplitude": 0.06559112712509818
+      }
+    },
+    {
+      "selector": 1,
+      "minimumValve": -0.3229663723692128,
+      "maximumValve": -0.13335791224193871,
+      "valveStroke": 0.18960846012727406,
+      "minimumSlide": -0.17796688400094385,
+      "maximumSlide": 0.29124569100157327,
+      "valveFirstHarmonic": {
+        "sine": -0.07589453148939439,
+        "cosine": 0.002937565561036871,
+        "amplitude": 0.07595136076081893
+      }
+    }
+  ],
+  "sourcePose": [
+    {
+      "name": "aheadLinkPin",
+      "engraving": [
+        76,
+        278
+      ],
+      "projected": [
+        85.77777777777777,
+        281.8785185185185
+      ],
+      "pixelError": 10.518927900223277
+    },
+    {
+      "name": "asternLinkPin",
+      "engraving": [
+        167,
+        278
+      ],
+      "projected": [
+        178.22222222222223,
+        281.8785185185185
+      ],
+      "pixelError": 11.873549490503219
+    },
+    {
+      "name": "diePoint",
+      "engraving": [
+        132,
+        300
+      ],
+      "projected": [
+        132,
+        299.75111111111113
+      ],
+      "pixelError": 0.24888888888887095
+    },
+    {
+      "name": "slideEyeWorld",
+      "engraving": [
+        133,
+        361
+      ],
+      "projected": [
+        132,
+        364.46222222222224
+      ],
+      "pixelError": 3.603745650854051
+    },
+    {
+      "name": "followerPinWorld",
+      "engraving": [
+        132,
+        394
+      ],
+      "projected": [
+        135.03366689636402,
+        397.18817283521247
+      ],
+      "pixelError": 4.400861377648886
+    }
+  ],
+  "selectorCycle": {
+    "duration": 18,
+    "inputAngleDifference": 2.913629385640828,
+    "valveLocalDifference": -0.05996917636015647
+  },
+  "method": "Recompute distances from exported world positions for five fixed reversing settings over 721 crank phases each. Approximate initial source projection uses the existing source anchors. Centerline consistency is not finite contact, source fidelity or dynamics qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-closure.mjs",
+      "sha256": "68f62343e3e4b7e3d02f88462dfe1da7d5199db9b096ff61b277ba370bc9af73"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "f910a7b637f5ae8b6cd97a933659724f743da6914586493eb23d933d9727f941"
+    },
+    {
+      "file": "public/engravings/mm_171.png",
+      "sha256": "52579c4d524db81f2b1f00c6e2d415dffd2021b26104ad5fda9fa882bfb6a3a9"
+    }
+  ]
+}

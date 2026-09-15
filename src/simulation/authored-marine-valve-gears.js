@@ -1389,8 +1389,14 @@ function oscillatingMarineEngineStephensonValveGear() {
   root.userData.stateAtTime = stateAtTime;
   root.userData.cameraDistanceScale = 1.04;
   root.userData.fidelity = 'authored';
+  root.userData.hideGround = true;
+  root.userData.materialsIgnoreSceneFog = true;
 
   update(0);
+  root.traverse(object => {
+    const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
+    for (const material of materials) material.fog = false;
+  });
   markShadows(root);
   for (const object of [
     cameraEnvelope,

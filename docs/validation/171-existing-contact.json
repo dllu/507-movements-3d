@@ -1,0 +1,71 @@
+{
+  "movement": 171,
+  "status": "existing-contact-defects-confirmed",
+  "poses": 97,
+  "pairs": [
+    [
+      "follower",
+      "innerRail"
+    ],
+    [
+      "follower",
+      "outerRail"
+    ],
+    [
+      "leftGuide",
+      "leftBlock"
+    ],
+    [
+      "rightGuide",
+      "rightBlock"
+    ],
+    [
+      "slidePin",
+      "outputRod"
+    ]
+  ],
+  "queries": 1501948,
+  "intersections": {
+    "follower/innerRail": {
+      "firstTime": 0,
+      "maximumDepth": 0.03971974599392437,
+      "samples": 11578
+    },
+    "follower/outerRail": {
+      "firstTime": 0,
+      "maximumDepth": 0.03979511902937183,
+      "samples": 10960
+    },
+    "leftGuide/leftBlock": {
+      "firstTime": 0,
+      "maximumDepth": 0.13983489883442754,
+      "samples": 2174
+    },
+    "rightGuide/rightBlock": {
+      "firstTime": 0,
+      "maximumDepth": 0.13983489883442765,
+      "samples": 2174
+    },
+    "slidePin/outputRod": {
+      "firstTime": 0,
+      "maximumDepth": 0.07435836500252609,
+      "samples": 2460
+    }
+  },
+  "sampledDuration": 18,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot, slide guide and connecting-pin interfaces only; not whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-existing.mjs",
+      "sha256": "c9aa38ce3e24a7e96371230a5cd6492766a9e249741ba0ffebe4cbcfd1a836aa"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "f910a7b637f5ae8b6cd97a933659724f743da6914586493eb23d933d9727f941"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
