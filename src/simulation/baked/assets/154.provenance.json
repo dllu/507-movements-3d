@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "cordGeometry": {
+    "axis": {
+      "x": 0,
+      "y": 0,
+      "z": 1
+    },
+    "contactMarkerZ": 0.7,
+    "cordPlaneZ": 0.72,
+    "cordRadius": 0.036,
+    "derivativeStep": 0.0001,
+    "diskDepth": 0.3,
+    "diskPeriod": 12,
+    "diskPlaneZ": -0.02,
+    "diskRadius": 1.68,
+    "diskScreenAngularSpeed": 0.5235987755982988,
+    "hubRadius": 0.35000000000000003,
+    "inputArmHalfWidth": 0.098,
+    "inputArmLength": 1.837416664776936,
+    "leverDepth": 0.2,
+    "leverIncludedAngle": 1.5850584341936322,
+    "leverPivot": {
+      "x": 2.716,
+      "y": -0.49,
+      "z": 0.46
+    },
+    "leverPivotRadius": 0.28,
+    "outputArmHalfWidth": 0.098,
+    "outputArmLength": 1.6829141392239833,
+    "pulleyCenter": {
+      "x": 3.962,
+      "y": 3.43,
+      "z": 0.72
+    },
+    "pulleyHubRadius": 0.182,
+    "pulleyOuterRadius": 0.462,
+    "pulleyPitchRadius": 0.392,
+    "sourceBaseY": 457,
+    "sourceContactOffset": 18,
+    "sourceContactStartAngle": 0.4700974810850246,
+    "sourceCordTotalLength": 523.2216811773121,
+    "sourceDiskCenter": {
+      "x": 151,
+      "y": 315
+    },
+    "sourceDiskRadius": 120,
+    "sourceDriveEndAngle": 0.8903171012150954,
+    "sourceDrivenCord": {
+      "centerDistance": 224.78927072768124,
+      "incomingLength": 223.03859808177322,
+      "incomingTangent": {
+        "x": 410.4001002352906,
+        "y": 54.93199644625504
+      },
+      "incomingTangentAngle": 3.70982496072991,
+      "leverAttachment": {
+        "x": 290.3734435024888,
+        "y": 242.92087353165314
+      },
+      "outputAngle": 4.240653343171282,
+      "rightTangent": {
+        "x": 462,
+        "y": 70
+      },
+      "variableLength": 295.0926877823641,
+      "wrapAngle": 2.573360346449676,
+      "wrapLength": 72.05408970059094,
+      "lengthError": 0,
+      "totalLength": 523.2216811773121,
+      "verticalLength": 228.128993394948,
+      "weightAttachment": {
+        "x": 462,
+        "y": 298.128993394948
+      },
+      "weightCenter": {
+        "x": 462,
+        "y": 338.128993394948
+      }
+    },
+    "sourceImageHeight": 525,
+    "sourceImageWidth": 525,
+    "sourceInputArmHalfWidth": 7,
+    "sourceInputArmLength": 131.24404748406687,
+    "sourceLeverDrivenAngle": 2.65559490897765,
+    "sourceLeverIncludedAngle": 1.5850584341936322,
+    "sourceLeverInputEnd": {
+      "x": 220,
+      "y": 390
+    },
+    "sourceLeverOutputEnd": {
+      "x": 310,
+      "y": 235
+    },
+    "sourceLeverPivot": {
+      "x": 345,
+      "y": 350
+    },
+    "sourceLeverPivotRadius": 20,
+    "sourceLeverRestAngle": 2.831889709047337,
+    "sourceMappedInputEnd": {
+      "x": 220,
+      "y": 390
+    },
+    "sourceMappedOutputEnd": {
+      "x": 309.9999999999999,
+      "y": 235.00000000000003
+    },
+    "sourceMappedStudCenters": [
+      {
+        "x": 145.33698602560708,
+        "y": 209.25284479969292
+      },
+      {
+        "x": 245.4112297685981,
+        "y": 362.969263636343
+      },
+      {
+        "x": 62.25178420579485,
+        "y": 372.7778915639641
+      }
+    ],
+    "sourceNextContactAngle": 2.56449258347822,
+    "sourceOutputArmHalfWidth": 7,
+    "sourceOutputArmLength": 120.20815280171308,
+    "sourcePinBaseAngle": -1.6242976213081706,
+    "sourcePulleyCenter": {
+      "x": 434,
+      "y": 70
+    },
+    "sourcePulleyHubRadius": 13,
+    "sourcePulleyOuterRadius": 33,
+    "sourcePulleyPitchRadius": 28,
+    "sourceRestCord": {
+      "centerDistance": 206.40009689920217,
+      "incomingLength": 204.4920536353431,
+      "incomingTangent": {
+        "x": 409.5412011972657,
+        "y": 56.370357263399654
+      },
+      "incomingTangentAngle": 3.6499843235378364,
+      "leverAttachment": {
+        "x": 309.9999999999999,
+        "y": 235.00000000000003
+      },
+      "outputAngle": 4.416948143240969,
+      "rightTangent": {
+        "x": 462,
+        "y": 70
+      },
+      "variableLength": 278.2216811773121,
+      "wrapAngle": 2.63320098364175,
+      "wrapLength": 73.729627541969,
+      "lengthError": 0,
+      "totalLength": 523.2216811773121,
+      "verticalLength": 245,
+      "weightAttachment": {
+        "x": 462,
+        "y": 315
+      },
+      "weightCenter": {
+        "x": 462,
+        "y": 355
+      }
+    },
+    "sourceReturnEndAngle": 1.7103171012150953,
+    "sourceReturnStartAngle": 0.9903171012150954,
+    "sourceScale": 0.014,
+    "sourceStudCenters": [
+      {
+        "x": 156,
+        "y": 207
+      },
+      {
+        "x": 244,
+        "y": 363
+      },
+      {
+        "x": 54,
+        "y": 355
+      }
+    ],
+    "sourceStudOrbitRadius": 105.89868063499186,
+    "sourceStudRadius": 11,
+    "sourceTipTransitionAngle": 0.8561541744454095,
+    "sourceWeightCenter": {
+      "x": 454,
+      "y": 355
+    },
+    "sourceWeightRadius": 36,
+    "sourceWeightRopeAttachmentY": 315,
+    "strokePeriod": 4,
+    "studDepth": 0.77,
+    "studFrontZ": 0.63,
+    "studOrbitRadius": 1.482581528889886,
+    "studPitchAngle": 2.0943951023931953,
+    "studRadius": 0.154,
+    "studRearZ": -0.14,
+    "weightRadius": 0.504
+  },
+  "names": [
+    "disk",
+    "lever",
+    "weight",
+    "pulley"
+  ],
+  "turns": [
+    -6.283185307179586,
+    0,
+    0,
+    0
+  ],
+  "period": 12,
+  "loopStart": 0,
+  "loopEnd": 12,
+  "bounds": {
+    "min": [
+      -1.8539999809265135,
+      -2.0980000035762787,
+      -0.6200000005960464
+    ],
+    "max": [
+      4.981000002980233,
+      3.9120000142184193,
+      1.2440000081062317
+    ]
+  },
+  "focus": [
+    1.5635000110268598,
+    0.9070000053210703,
+    0.3120000037550926
+  ],
+  "cameraDirection": [
+    0.02,
+    0.03,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-weighted-bell-crank.mjs",
+      "sha256": "980dc97dfe1445b8ab167d0ee51605473a63b736300e20a9a9be3f9d4873976b"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/geometry.js",
+      "sha256": "7e1ba0982ccd71ab091ccdb43ddba311e9e230ccba9699a6338d5a67bfae5aa8"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/physics.js",
+      "sha256": "370a9a7ab4fbf315b8c7e684db7571f46544419583f66b55d089ea78aaa46725"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/sync.js",
+      "sha256": "821799be1360786e4bd471218b62d3efe19411ea4fd359f0834fc36c05e2c4b3"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "docs/validation/154-supported-fine.json",
+      "sha256": "e8acd1917a03319fd578c14ab7d03912c0eb891ad04b4c9b91e8f8fd8649f88f"
+    },
+    {
+      "file": "docs/validation/154-assembly.json",
+      "sha256": "eb3c6529095cd61e25c90cc1b8e9aba44340703301923b5f80a03803103d02fe"
+    },
+    {
+      "file": "docs/validation/154-moving-volumes.json",
+      "sha256": "9ef6d579413ac3e0d743f51b2c9c20caef2459e5adec179a7eb84d4c99ae791b"
+    }
+  ],
+  "closure": [
+    1.4854606433800654e-10,
+    0,
+    -1.2400562347802957e-18,
+    -3.164515090942066e-18
+  ],
+  "sourceTime": 60,
+  "bytes": 351364,
+  "sha256": "c3c82194c9d789355114b8b06d1a2d77e76e2eb4a6930748abb83521962e0eb4",
+  "samples": 6001,
+  "meshes": 13
+}

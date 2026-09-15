@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 154) {
+    const {makeBakedWeightedBellCrank} = await import('./baked/weighted-bell-crank.js');
+    const model = await makeBakedWeightedBellCrank();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 153) {
     const {makeBakedStudReverser} = await import('./baked/stud-reverser.js');
     const model = await makeBakedStudReverser();

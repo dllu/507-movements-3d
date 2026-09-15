@@ -1,0 +1,66 @@
+{
+  "movement": 154,
+  "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native poses from the sixth full disk cycle. Contact markers are excluded; intended soft working contacts and rope attachment joins are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
+  "summary": {
+    "parts": 34,
+    "pairs": 440,
+    "poses": 65,
+    "checks": 5603352,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "softContacts": {
+    "part-17/part-21": {
+      "firstPose": 4,
+      "points": 1,
+      "maximumDepth": 0.000020084245003678566
+    },
+    "part-19/part-21": {
+      "firstPose": 45,
+      "points": 3,
+      "maximumDepth": 0.000007701028630102418
+    }
+  },
+  "attachmentJoins": {
+    "moving-cord-attachment-eye-22/one-continuous-inextensible-weighted-cord-33": {
+      "firstPose": 0,
+      "points": 3773,
+      "maximumDepth": 0.0449457862704274
+    },
+    "weight-cord-shackle-32/one-continuous-inextensible-weighted-cord-33": {
+      "firstPose": 0,
+      "points": 26000,
+      "maximumDepth": 0.03423800888375879
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-weighted-bell-crank-assembly.mjs",
+      "sha256": "ef59425525d49c577d463248ff5f002c206fa196f24eb151d67f94763f22cd7f"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/geometry.js",
+      "sha256": "7e1ba0982ccd71ab091ccdb43ddba311e9e230ccba9699a6338d5a67bfae5aa8"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/sync.js",
+      "sha256": "821799be1360786e4bd471218b62d3efe19411ea4fd359f0834fc36c05e2c4b3"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "/dev/shm/154-supported-fine-samples.json",
+      "sha256": "a4ea2300b9855d814b86dd8c7111bfcbf7ee11d4653d9635a6cbe29af8988947"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

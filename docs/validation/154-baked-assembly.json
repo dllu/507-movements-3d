@@ -1,0 +1,71 @@
+{
+  "movement": 154,
+  "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 interpolated baked poses between recorded frames; authored constituent solids use the same body coordinates as merged baked geometry. Contact markers are excluded; intended soft working contacts and rope attachment joins are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
+  "summary": {
+    "parts": 34,
+    "pairs": 440,
+    "poses": 65,
+    "checks": 5596352,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "softContacts": {
+    "part-17/part-21": {
+      "firstPose": 0,
+      "points": 4,
+      "maximumDepth": 0.0000023311458328274206
+    },
+    "part-15/part-21": {
+      "firstPose": 24,
+      "points": 1,
+      "maximumDepth": 0.0000012511519271451998
+    },
+    "part-19/part-21": {
+      "firstPose": 45,
+      "points": 7,
+      "maximumDepth": 0.000016439334335585028
+    }
+  },
+  "attachmentJoins": {
+    "moving-cord-attachment-eye-22/one-continuous-inextensible-weighted-cord-33": {
+      "firstPose": 0,
+      "points": 3928,
+      "maximumDepth": 0.0449457862704274
+    },
+    "weight-cord-shackle-32/one-continuous-inextensible-weighted-cord-33": {
+      "firstPose": 0,
+      "points": 26000,
+      "maximumDepth": 0.03423800888375879
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-weighted-bell-crank-baked-assembly.mjs",
+      "sha256": "1ea458c2ff476aa5b5c49788ad1b2062c2e61d9adf3074d899469a78bf7427bf"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/geometry.js",
+      "sha256": "7e1ba0982ccd71ab091ccdb43ddba311e9e230ccba9699a6338d5a67bfae5aa8"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/sync.js",
+      "sha256": "821799be1360786e4bd471218b62d3efe19411ea4fd359f0834fc36c05e2c4b3"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "src/simulation/baked/assets/154.json.gz",
+      "sha256": "c3c82194c9d789355114b8b06d1a2d77e76e2eb4a6930748abb83521962e0eb4"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

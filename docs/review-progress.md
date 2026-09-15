@@ -1,3 +1,15 @@
+# Shipped reconstruction: 154 passive weighted bell-crank
+
+154 now loads a 351 KB, 6,001-pose MuJoCo bake without browser physics.
+The engraving's three stud centers drive the passive elbow and tension-only
+wrapped cord; a physical stop replaces the prescribed reset. Bored hardware,
+connected rope fittings and a reusable rope vertex buffer complete playback.
+Four focused tests, native and between-bake-frame assembly checks, production
+build and packaged desktop/mobile playback pass. The inferred stop and ideal
+guide, eight-pixel weight offset, impact refinement limits and attachment joins
+are explicit in [movement 154](movement-154.md). Continue at 155; 150's source
+fit remains open.
+
 # Shipped reconstruction: 153 passive stud-driven reverser
 
 153 now loads a 299 KB, 6,001-pose MuJoCo bake with 15 meshes and no browser

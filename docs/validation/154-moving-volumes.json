@@ -1,0 +1,44 @@
+{
+  "movement": 154,
+  "method": "Moving meshes within each rigid body at one pose; relative transforms are constant through motion. Bidirectional vertices, edge midpoints and face centers. Fixed-frame overlaps excluded; moving mating interfaces are checked. No exact CSG volume proof.",
+  "summary": {
+    "parts": 34,
+    "pairs": 66,
+    "poses": 1,
+    "checks": 90450,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "softContacts": {},
+  "attachmentJoins": {},
+  "sources": [
+    {
+      "file": "scripts/review-weighted-bell-crank-moving-volumes.mjs",
+      "sha256": "4b323876ff78fb49ae6f0524e914ddb7f173ed4bee593329dff7715e271398e5"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/geometry.js",
+      "sha256": "7e1ba0982ccd71ab091ccdb43ddba311e9e230ccba9699a6338d5a67bfae5aa8"
+    },
+    {
+      "file": "src/simulation/mujoco-weighted-bell-crank/sync.js",
+      "sha256": "821799be1360786e4bd471218b62d3efe19411ea4fd359f0834fc36c05e2c4b3"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "/dev/shm/154-supported-fine-samples.json",
+      "sha256": "a4ea2300b9855d814b86dd8c7111bfcbf7ee11d4653d9635a6cbe29af8988947"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

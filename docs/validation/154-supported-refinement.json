@@ -1,0 +1,28 @@
+{
+  "movement": 154,
+  "method": "Matched 0.01-second samples from the sixth disk cycle, dt=.00025 versus .000125, retaining the source stud centers and native return stop.",
+  "maximumCoordinateDifferences": [
+    {
+      "name": "disk",
+      "maximum": 0.00012396455328911316
+    },
+    {
+      "name": "lever",
+      "maximum": 0.0035072297358125226
+    },
+    {
+      "name": "weight",
+      "maximum": 0.004321826654327485
+    }
+  ],
+  "sources": [
+    {
+      "file": "/dev/shm/154-supported-samples.json",
+      "sha256": "676b9d3c3422d60b864804eab7ec2189c69f73d079cd667b1e53462b606d45d7"
+    },
+    {
+      "file": "/dev/shm/154-supported-fine-samples.json",
+      "sha256": "a4ea2300b9855d814b86dd8c7111bfcbf7ee11d4653d9635a6cbe29af8988947"
+    }
+  ]
+}
