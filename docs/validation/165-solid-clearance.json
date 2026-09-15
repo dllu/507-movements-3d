@@ -1,0 +1,106 @@
+{
+  "movement": 165,
+  "status": "unregistered-solid-diagnostic",
+  "parameters": {
+    "scale": 0.018,
+    "axisPixelX": 341,
+    "outerRadius": 2.754,
+    "innerRadius": 0.55,
+    "topY": 4,
+    "rollerX": -0.09,
+    "rollerY": 2.326,
+    "rollerRadius": 0.882,
+    "rollerZ": 2.754,
+    "rollerDepth": 0.12,
+    "pivot": [
+      -3.114,
+      1.39,
+      2.9
+    ],
+    "outputPin": [
+      -5.382,
+      0.67,
+      2.9
+    ],
+    "arm": 3.1655445029252074,
+    "theta": 0.30017117083011213,
+    "leftLength": 2.3795428132311467,
+    "left": [
+      -5.387143675775706,
+      0.6864079098789478
+    ]
+  },
+  "poses": 150,
+  "meshes": 13,
+  "pairs": 61,
+  "queries": 25260106,
+  "intersections": {
+    "wavedCam/rollerWheel": {
+      "maximumDepth": 0.005445223287940723,
+      "firstTime": 45.15050000003356,
+      "samples": 570
+    }
+  },
+  "unexpected": {
+    "wavedCam/rollerWheel": {
+      "maximumDepth": 0.005445223287940723,
+      "firstTime": 45.15050000003356,
+      "samples": 570
+    }
+  },
+  "method": "Uniform 129 poses augmented with every 10 ms pose whose independent sampled continuous gap is below -0.005. Bidirectional visible vertices, edge midpoints and triangle centers over the third native input revolution at 18 seconds per revolution, using adaptive contact cells and a -0.006 collision-face offset. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
+  "sources": [
+    {
+      "file": "scripts/review-wave-cam-solids.mjs",
+      "sha256": "310ea483d62e502f67742997a4d2f0b5bf78a22133da1e1b56474711407aab1d"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/solids.js",
+      "sha256": "642fd88f01d3f207a22b271030e2650f53d5eee64f3b2afffab8bf74c4b92f8f"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/profile.js",
+      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/adaptive-profile.js",
+      "sha256": "5abc32cc9ac486759fc275028dbaeae1a8e6b1e56049b5b57b62ef0c1db0b109"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/projected-profile.js",
+      "sha256": "e14fc083b1b6f3e8b8b187e4e507b1425cc737c1a6401b7863e456c165370b48"
+    },
+    {
+      "file": "docs/validation/165-projected-physics.json",
+      "sha256": "20254c74f3f9f8d3d4314f045f53b2a958f0a69cacd9930a80619fa56d92ad05"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/clearance.js",
+      "sha256": "4e3b0586b96545553e4d34cce707dd9fd89023437318981883d494e0e270b312"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/physics.js",
+      "sha256": "c97a5cd651846b6f665b9bce465523e848aafe119a0c7f161290e5e9d03b49fc"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/contact-mesh.js",
+      "sha256": "bab83081296ffe21b1f67166f7d7aaf71a83f521ee77cc83ecf1d08704b74142"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

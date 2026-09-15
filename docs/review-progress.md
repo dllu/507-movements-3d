@@ -1,13 +1,12 @@
 # Active reconstruction: 165
 
-165's legacy finite-roller overlap is confirmed. The source-traced replacement
-has a narrow relief transition that uniform collision meshes missed. Adaptive
-subdivision reduces profile-refinement sensitivity to 0.21 pixel and timestep
-sensitivity to 0.07 pixel. Independent continuous-face checks still expose small
-intrusion and brief follower separation; a conservative contact-margin experiment
-clears the sampled face but is not yet qualified for playback. Settling, visible
-solids, output hardware and baking remain pending. See
-[movement 165](movement-165.md) for evidence and reconstruction assumptions.
+165 now has an unregistered 13-mesh source assembly. Whole-solid projection
+exposed a 23-pixel error hidden by the earlier front-rim-only metric; a profile
+cut across the cam's depth reduces the sampled cam/roller outline error to
+0.062 pixel. Native motion still has a large rebound and a brief actual
+cam/roller intersection (0.303 pixel in an augmented 150-pose sweep). The moving
+solid audit deliberately fails. Contact representation, convergence, baking and
+packaged playback remain pending. See [movement 165](movement-165.md).
 The full 507-movement review remains active.
 
 # Shipped reconstruction: 164 knee press

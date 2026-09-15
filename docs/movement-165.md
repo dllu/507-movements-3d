@@ -176,3 +176,72 @@ node scripts/probe-wave-cam-separation.mjs
 node scripts/probe-wave-cam-adaptive.mjs
 node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
 ```
+
+## Whole-solid source reconstruction
+
+A 13-mesh visible assembly now includes the waved rim and top web, shaft and grip,
+bored roller, oscillating rod, pins and upright bar. It omits the legacy added
+weight and support frame. The caption calls for rectilinear output; the required
+small transverse pin travel is housed inside the round output eye, with an ideal
+unpictured vertical guide. Depths, thin-rim construction, hidden eye clearance
+and fixed fulcrum support remain reconstruction assumptions.
+
+The first complete render exposed a flaw in the earlier profile-only source
+metric. A radially deep cam fills the drawn arches, and even a thin rim with the
+previous repeated rear profile changes the full projected outline by as much as
+23.11 pixels. The earlier 0.17-pixel number describes only a front-rim relief
+comparison; **it does not establish source fidelity of the whole solid**.
+
+The new `projected` profile cuts the traced lower height across local X at every
+depth. The rear consequently matches the front at the same projected X. An
+inverse cylindrical relief clears the source roller without changing the union
+outline. Unlike the old radial profile, the new profile need not repeat after a
+half-turn. It is available explicitly in the native study; the default radial
+mode remains available to reproduce earlier diagnostics.
+
+Projection of the actual rim, web and roller triangles now agrees with the
+traced cam-and-roller union silhouette within 0.06166 source pixel (RMS 0.00744)
+at 609 half-pixel columns. Two columns within 0.012 source pixel of ideal roller
+circle tangencies are excluded from this vertical-height metric: a polygonal
+circle can miss the exact tangent column despite tiny horizontal error. This
+check includes hidden/rear surfaces and is separate from source alignment of
+other parts. A Chrome front-view inspection is recorded temporarily in
+`/dev/shm/165-source-projected.png`. The shaft's drawn top ellipse is represented
+by a flat circular shaft end in this orthographic inspection.
+
+### Motion is still unqualified
+
+The matching projected-profile native study runs three revolutions with adaptive
+cells and a -0.006 collision-face offset. Second/third output endpoints differ
+by only 0.0000071 world units, but the full trajectory contradicts a claim of
+settled, acceptable playback: the third revolution has sampled continuous-face
+intrusion of 0.02815 and separation of 1.02193 world units. Maximum reported
+MuJoCo penetration is 0.01456. Endpoint agreement therefore does not qualify a
+bake. A temporary frictionless run and a sub-pixel nonconformal-relief experiment
+did not remove the rebound; neither change is retained.
+
+The uniformly spaced 129-pose actual-solid sweep initially found no overlap.
+Augmenting it with all 10 ms poses whose independent continuous-face gap is below
+-0.005 catches a real cam/roller intersection. The resulting 150-pose,
+25,260,106-query sweep finds maximum actual sampled penetration of 0.005445
+(0.303 source pixel). The clearance script deliberately fails until that issue
+is resolved. No other cross-body solid pair intersects in this sweep.
+
+Nine unit tests pass, including source projection constraints and outward-facing
+closed-rim checks. These are not substitutes for the currently failing moving
+solid audit. The next work is a better contact representation for the projected
+cam, followed by motion/refinement checks, conservative margin qualification,
+bake-seam validation and packaged playback. **The new assembly remains
+unregistered; the complete 507-movement review is still active.** Earlier radial
+reports remain historical diagnostics with their original source hashes.
+
+Evidence: [whole-solid projection](validation/165-projection.json),
+[projected native study](validation/165-projected-physics.json), and
+[actual moving solids](validation/165-solid-clearance.json).
+
+```sh
+node scripts/probe-wave-cam-projected-physics.mjs
+node scripts/probe-wave-cam-projection.mjs
+node scripts/review-wave-cam-solids.mjs # currently fails on the cam/roller pair
+node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs tests/wave-cam-projected.test.mjs
+```
