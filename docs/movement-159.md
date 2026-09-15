@@ -221,10 +221,54 @@ node scripts/review-cord-treadle-settling.mjs
 node scripts/review-cord-treadle-core.mjs
 ```
 
+## Explicit scale and rigid-body inertia
+
+The next diagnostic uses **0.1 metre per display unit**: the treadle is
+0.528 m long and the main disk is 0.32 m in diameter. The engraving gives no
+physical dimensions or material specification. Uniform density 7200 kg/m³ is
+an explicit reconstruction assumption, shared by the three moving rigid cores.
+Signed tetrahedron integration of the closed visible meshes gives masses of
+19.589 kg (disk and hub), 1.635 kg (treadle), and 3.667 kg (pulley and flanges).
+Full inertia tensors include bores, flanges, and the treadle pivot boss; fixed
+shafts and bearings do not contribute to moving mass. Cord fittings are still
+missing, so these are core properties rather than final assembly properties.
+
+The solver retains display coordinates and kilograms. Gravity is consequently
+98.1 display units/s², and inertia is expressed in kg·display-unit². Multiply
+reported inertia or joint torque by 0.01 to obtain SI values. The diagnostic
+retains the earlier rope parameters rather than claiming a measured rope:
+0.08 kg total mass, 4.5 mm physical radius, and, when enabled, bending rigidity
+0.0002 in display units (0.0000002 N·m² at this scale). Bending relaxation remains
+0.4 s. These material choices, friction, drive tracking and convergence still
+need qualification. Previous runs remain useful as historical diagnostics,
+but do not establish behavior at this physical scale.
+
+`RIGID_CORE=1` on the finite-rope probe enables these properties. Omitting it
+retains the historical diagnostic parameters for reproducibility. Three new
+tests check translated-box volume/moments, annular-disk inertia and scale laws,
+and the actual compiled MuJoCo body masses, centers, inertia traces and gravity.
+
+The first scaled-core diagnostic completes 4 s at 0.1 ms steps without a native
+reset. Maximum endpoint error is 0.000295 display units (0.017 source pixels),
+and maximum foot penetration is 0.000328 units (0.018 pixels). The treadle spans
+−0.2282 to 0.3453 radians. Disk phase differs from the commanded uniform angle
+by up to 0.0409 radians (2.34°), so the retained drive gains also need review.
+The first-cycle rope position seam is 0.0335 units (1.88 pixels); endpoint
+closeness alone does not establish a repeatable orbit or velocity continuity.
+This is a one-cycle diagnostic, not convergence or
+repeatability qualification; see [report](validation/159-scaled-core.json).
+
+Reproduce with:
+
+```sh
+RIGID_CORE=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-scaled-core.json REPORT=/dev/shm/159-scaled-core-report.json node scripts/probe-finite-cord-treadle.mjs
+node --test tests/cord-treadle-inertia.test.mjs tests/cord-treadle-bending.test.mjs
+```
+
 ## Remaining work
 
-Set the physical scale and derive consistent inertias from the rigid core.
-Complete the cord termination hardware, then refine the finite rope and qualify
+Complete the cord termination hardware and include it in the new core inertias.
+Then refine the finite rope at the explicit physical scale and qualify
 timestep/rope-resolution convergence and longer-run behavior. Preserve the
 measured joints and floor. Qualify
 clearances and passive dynamics with final inertias before registering a bake.
