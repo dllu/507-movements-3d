@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import load from '@mujoco/mujoco';
 import {waveCamGeometry,waveCamHeight,waveCamTrace,waveCamTraceY} from '../src/simulation/mujoco-wave-cam/profile.js';
+import {waveCamProfileAngles} from '../src/simulation/mujoco-wave-cam/adaptive-profile.js';
 import {makeWaveCamPhysics} from '../src/simulation/mujoco-wave-cam/physics.js';
 
 test('165 source silhouette interpolates its measurements without overshoot',()=>{
@@ -34,7 +35,7 @@ test('165 relieved cam clears the finite source roller and repeats continuously'
 test('165 passive follower moves by contact without a jammed input',async()=>{
  const m=await load(),states=[];
  for(const contact of [true,false]){
-  const p=makeWaveCamPhysics(m,{contact});
+  const p=makeWaveCamPhysics(m,{contact,segments:90,profileTolerance:.001});
   try{
    assert.equal(p.model.nu,1);
    let maximumPenetration=0;
@@ -44,4 +45,19 @@ test('165 passive follower moves by contact without a jammed input',async()=>{
   }finally{p.dispose();}
  }
  assert.ok(Math.abs(states[0].outputY-states[1].outputY)>.5);
+});
+
+test('165 adaptive cells resolve the narrow relief edge within the profile tolerance',()=>{
+ for(const tolerance of [.001,.0005]){
+  const angles=waveCamProfileAngles({tolerance});
+  assert.equal(angles[0],0);assert.equal(angles.at(-1),2*Math.PI);
+  assert.ok(angles.length<700,'target the sharp transitions without a uniformly huge mesh');
+  for(let i=1;i<angles.length;i++){
+   const a=angles[i-1],b=angles[i];assert.ok(b>a);
+   for(let j=0;j<=128;j++){
+    const u=j/128,chord=(1-u)*waveCamHeight(a)+u*waveCamHeight(b);
+    assert.ok(Math.abs(waveCamHeight(a+(b-a)*u)-chord)<tolerance);
+   }
+  }
+ }
 });

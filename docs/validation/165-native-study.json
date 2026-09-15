@@ -10,6 +10,7 @@
         "timestep": 0.0005,
         "segments": 360,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": true,
@@ -68,6 +69,7 @@
         "timestep": 0.0005,
         "segments": 360,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": true,
@@ -126,6 +128,7 @@
         "timestep": 0.0005,
         "segments": 360,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": true,
@@ -184,6 +187,7 @@
         "timestep": 0.00025,
         "segments": 360,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": true,
@@ -242,6 +246,7 @@
         "timestep": 0.0005,
         "segments": 480,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": true,
@@ -300,6 +305,7 @@
         "timestep": 0.0005,
         "segments": 360,
         "clearance": 0.001,
+        "profileTolerance": null,
         "camSpeed": 0.3490658503988659,
         "outputMass": 1,
         "contact": false,
@@ -373,11 +379,11 @@
     },
     {
       "file": "src/simulation/mujoco-wave-cam/physics.js",
-      "sha256": "892adfa867b719e8c2b6b297dceedf7de4af372941e5a2764b7496e88af50e8d"
+      "sha256": "591c57f442a2aa5ce6460eeba82dc37146110e5d6123067664491217ac320df1"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/contact-mesh.js",
-      "sha256": "89dbcae7f3fadfc40330e8d12a9e6d9cfe8e07103602a3c02fe695b1ebe9539d"
+      "sha256": "6d24589d0309bc8ec687ad344cbebe17b0b14f855560c9779419be9e7e1b895f"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/profile.js",

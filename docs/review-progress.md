@@ -1,12 +1,13 @@
 # Active reconstruction: 165
 
-165's legacy finite-roller overlap is confirmed. A source-traced profile now
-clears the source roller with a sampled visible-outline change below 0.17 pixel.
-An unregistered MuJoCo study completes a contact-driven input revolution using
-MPR, while native CCD variants jam. Tighter tolerances and input drive reduce timestep sensitivity to 0.21 pixel,
-but mesh refinement changes output by 4.03 pixels. Baking and registration
-remain pending.
-See [movement 165](movement-165.md) for evidence and reconstruction assumptions.
+165's legacy finite-roller overlap is confirmed. The source-traced replacement
+has a narrow relief transition that uniform collision meshes missed. Adaptive
+subdivision reduces profile-refinement sensitivity to 0.21 pixel and timestep
+sensitivity to 0.07 pixel. Independent continuous-face checks still expose small
+intrusion and brief follower separation; a conservative contact-margin experiment
+clears the sampled face but is not yet qualified for playback. Settling, visible
+solids, output hardware and baking remain pending. See
+[movement 165](movement-165.md) for evidence and reconstruction assumptions.
 The full 507-movement review remains active.
 
 # Shipped reconstruction: 164 knee press

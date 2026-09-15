@@ -131,3 +131,48 @@ node scripts/probe-wave-cam-source-profile.mjs
 node scripts/probe-wave-cam-physics.mjs
 node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
 ```
+
+## Adaptive profile refinement
+
+An independent continuous-face sweep identified a geometric cause for the uniform
+mesh sensitivity. At 8.78 seconds, the 360-section model reports no contact while
+a sampled point of the ideal cam enters the roller by 0.05271 world units
+(2.93 pixels). At the largest output discrepancy, both trajectories have left
+contact, with independently sampled gaps of 0.01132 and 0.08040. Therefore small
+MuJoCo penetration alone did not qualify the approximation. Slowing the uniform
+mesh drive also failed to remove its resolution sensitivity.
+
+The finite-roller relief has a narrow transition near its lateral end. Adaptive
+angular subdivision now checks fifteen interior heights against each chord,
+with a tolerance reserve. This concentrates collision cells at that transition.
+The new study uses 418 angular cells at tolerance 0.001, and 584 at 0.0005.
+Independent 65-point-per-cell checks find maximum height errors 0.0008981 and
+0.0004528. Over one revolution, halving the timestep changes output by 0.001215
+world units (0.0675 pixel); refining the profile changes it by 0.003716
+(0.2065 pixel). The formerly four-pixel mesh discrepancy is substantially reduced.
+
+The independent continuous-face check still finds sampled intrusion up to 0.00713
+world units (0.396 pixel) and separation up to 0.10860 (6.03 pixels). These are
+not hidden by the smaller reported MuJoCo penetration. A temporary denser base
+rim (360 initial sections with adaptive refinement) reduces the sampled intrusion
+to 0.00634. Adding a conservative collision-face offset of -0.006 yields a
+positive minimum sampled gap of 0.000162 over the revolution; that experiment is
+not yet the default or a qualified rendered assembly. Its raw states are in
+`/dev/shm/165-adaptive-offset.json`. The original positive collision offset remains
+the default so that the earlier diagnostics remain reproducible.
+
+Seven tests pass, including an independent 129-point-per-cell check of the
+adaptive interpolation error and a full adaptive contact-driven revolution.
+Next: qualify the conservative contact margin and repeated-cycle settling,
+construct the actual source-shaped solids and output connection, then audit and
+bake playback. No new browser model is registered by this study.
+
+Evidence: [continuous separation diagnostic](validation/165-separation.json) and
+[adaptive convergence study](validation/165-adaptive-study.json).
+
+```sh
+node scripts/probe-wave-cam-physics.mjs
+node scripts/probe-wave-cam-separation.mjs
+node scripts/probe-wave-cam-adaptive.mjs
+node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
+```
