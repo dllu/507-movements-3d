@@ -27,7 +27,7 @@ try{
  }
  const report={movement:181,poses:129,meshes:parts.length,pairs:pairs.length,queries,intersections,samples,
  method:'Visible finite meshes across different moving/fixed families, including decorative outlines and markers when visible. Bidirectional vertices, edge midpoints and triangle centers. Sampled evidence, not continuous proof.',
- sources:['scripts/review-diagonal-catch-solids.mjs','src/simulation/authored-diagonal-catches.js','tests/helpers/solid-surface.mjs'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+ sources:['scripts/review-diagonal-catch-solids.mjs','src/simulation/authored-diagonal-catches.js','src/simulation/mujoco-diagonal-catch/handle-fit.js','src/simulation/mujoco-diagonal-catch/tappet-envelope.js','tests/helpers/solid-surface.mjs'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
  const baseline=process.argv.includes('--baseline');
  fs.writeFileSync(`docs/validation/181-${baseline?'existing':'current'}-solids.json`,JSON.stringify(report,null,2)+'\n');console.log(report);
  if(!baseline)assert.equal(Object.keys(intersections).length,0);

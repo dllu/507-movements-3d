@@ -14,7 +14,7 @@ export function makeTappetStudy(m,{side='lower',timestep=.00025,contacts=true,ex
  const visual=createAuthoredDiagonalCatchMovement({id:181}),u=visual.root.userData,g=u.geometry,b=u.blocks;
  const lower=side==='lower',prefix=lower?'lower':'upper';
  const working=b[prefix+'HandleWorkingArm'].children[0],tip=b[prefix+'HandleWorkingTip'];
- const shape=clip.union(working.geometry.userData.plate.polygons,poly(circle([tip.position.x,tip.position.y],.15,64)));
+ const shape=clip.union(working.geometry.userData.plate.polygons,poly(circle([tip.position.x,tip.position.y],.10,64)));
  const pivot=g[prefix+'Pivot'].toArray(),weight=g[prefix+'WeightLocal'].toArray(),limit=g[lower?'source182LowerAngle':'source182UpperAngle'];
  const start=lower?g.source181PistonY:g.source182PistonY,end=lower?g.source182PistonY:g.source181PistonY;
  const initial=lower?0:limit,sourceScale=g.sourceScale,shaftX=g.pistonRodX;

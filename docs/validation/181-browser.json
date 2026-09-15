@@ -4,7 +4,7 @@
     182
   ],
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Shared pivot/weight-joint and framing repair. Tappet/latch contact and source contours remain unqualified.",
+  "scope": "Fitted handles and finite-surface tappet drive/return, plus joint/framing repair. Complete latch motion and source contours remain unqualified.",
   "checks": [
     "playback",
     "exact restart",
@@ -20,7 +20,15 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "ea04bec2ef356db8c1c3403ce8709a5f73a5e7ff735444e5399cf46f62a6f5c0"
+      "sha256": "9b790471a2502345f88f099e6aac45ee4365fc56d5e4c743914d9fbd3cefb122"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
+      "sha256": "ae0ca0d3ae60d616330e233ac7bb879777c2c713b8dd34a8bf285ca49b4b6644"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/tappet-envelope.js",
+      "sha256": "74e0503b0b58d88bdaa284fa2cb2bc485e1b116d5f0873e0d8b9a9e9335eaa4f"
     }
   ]
 }

@@ -1,3 +1,17 @@
+# Movements 181–182: fitted handles and finite tappet contact; latch still open
+
+Fitted the working tips and weight pins jointly against both engravings, narrowed
+the shoe, removed invented contact rollers, and replaced fixed-marker/simultaneous
+motion with finite-surface drive and separately constrained return. The fitted
+passive handles complete both MuJoCo test strokes at two timesteps. Four tests,
+including 1,201-pose working-arm contact sweeps for each variant, and both packaged
+browser checks pass. Six full-assembly intersections remain, all involving the
+old latch. Source fit has an explicit 6–16 pixel compromise. Continue with the
+catch surfaces and passive transfer; see [181–182 review](movement-181.md).
+The full goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: tappet jam isolated; contact reconstruction open
 
 A passive-handle MuJoCo study shows that a source-width shoe stalls against the

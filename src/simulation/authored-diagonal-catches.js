@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {plate as finitePlate, poly, circle, ring, polygonClipping as clip} from './finite-plate-geometry.js';
+import {fitDiagonalHandle,fitWorkingPoint} from './mujoco-diagonal-catch/handle-fit.js';
+import {tappetEnvelope} from './mujoco-diagonal-catch/tappet-envelope.js';
 import {
   PALETTE,
   markShadows,
@@ -187,6 +189,11 @@ function rigidPointPhaseState(pivot, localPoint, angleState) {
   };
 }
 
+function surfacePointPhaseState(envelope,angleState) {
+  const s=envelope.pointState(angleState);
+  return {point:new THREE.Vector2(...s.point),phaseVelocity:new THREE.Vector2(...s.first),phaseAcceleration:new THREE.Vector2(...s.second)};
+}
+
 function sourceScaledDiagonalCatchHandGear({ movementId }) {
   const root = new THREE.Group();
   const isSource182Variant = movementId === 182;
@@ -277,11 +284,11 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   );
   const source181UpperAngle = 0;
   const source181LowerAngle = 0;
-  const source182UpperAngle = signedAngleBetween(
+  let source182UpperAngle = signedAngleBetween(
     upperWeightLocal,
     source182UpperWeightVector,
   );
-  const source182LowerAngle = signedAngleBetween(
+  let source182LowerAngle = signedAngleBetween(
     lowerWeightLocal,
     source182LowerWeightVector,
   );
@@ -324,6 +331,14 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     source181LowerContact,
     source181LowerPivot,
   );
+  const upperFit=fitDiagonalHandle('upper'),lowerFit=fitDiagonalHandle('lower');
+  for(const [points,contact,weight,fit] of [[upperWorkingCenterline,upperContactLocal,upperWeightLocal,upperFit],[lowerWorkingCenterline,lowerContactLocal,lowerWeightLocal,lowerFit]]){
+    const oldTip=points.at(-1).toArray();
+    for(const p of [...points,contact])p.fromArray(fitWorkingPoint(p.toArray(),oldTip,fit));
+    weight.fromArray(fit.weight);
+  }
+  source182UpperAngle=upperFit.angle;
+  source182LowerAngle=lowerFit.angle;
   const upperLatchSeat = source181PointToModel(source181UpperLatchSeat);
   const lowerLatchSeat = source181PointToModel(source181LowerLatchSeat);
   const upperLatchLocal = upperLatchSeat.clone().sub(upperPivot);
@@ -332,25 +347,24 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     -source182LowerAngle,
   );
 
-  const upperSource182WeightResidual = Math.abs(
-    upperWeightLocal.length() - source182UpperWeightVector.length(),
-  ) / sourceScale;
-  const lowerSource182WeightResidual = Math.abs(
-    lowerWeightLocal.length() - source182LowerWeightVector.length(),
-  ) / sourceScale;
+  const upperSource182WeightResidual = rotateVector2(upperWeightLocal,source182UpperAngle).distanceTo(source182UpperWeightVector)/sourceScale;
+  const lowerSource182WeightResidual = rotateVector2(lowerWeightLocal,source182LowerAngle).distanceTo(source182LowerWeightVector)/sourceScale;
   const catchSource182WeightResidual = Math.abs(
     catchWeightLocal.length() - source182CatchWeightVector.length(),
   ) / sourceScale;
 
   const tappetHalfHeight = 0.25;
+  const tappetShoeLeftX = (170-271)*sourceScale;
+  const tappetShoeRightX = (193-271)*sourceScale;
   const contactRollerRadius = 0.10;
   const latchRollerRadius = 0.105;
   const handleDepth = 0.20;
   const handlePlaneZ = 0.00;
   const upperHandlePlaneZ = -.12;
   const lowerHandlePlaneZ = .12;
+  const lowerWeightPlaneZ = -.68;
   const catchDepth = 0.22;
-  const catchPlaneZ = 0.40;
+  const catchPlaneZ = 0.43;
   const frameCenterZ = -0.48;
   const frameDepth = 0.52;
   const cyclePeriod = 18;
@@ -432,22 +446,23 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   const stablePoint = (pivot, localPoint, angle) => pivot.clone().add(
     rotateVector2(localPoint, angle),
   );
-  const lowerStrikePistonY = stablePoint(
+  let lowerEnvelope,upperEnvelope;
+  let lowerStrikePistonY = stablePoint(
     lowerPivot,
     lowerContactLocal,
     source181LowerAngle,
   ).y - contactRollerRadius - tappetHalfHeight;
-  const lowerReleasePistonY = stablePoint(
+  let lowerReleasePistonY = stablePoint(
     lowerPivot,
     lowerContactLocal,
     source182LowerAngle,
   ).y - contactRollerRadius - tappetHalfHeight;
-  const upperStrikePistonY = stablePoint(
+  let upperStrikePistonY = stablePoint(
     upperPivot,
     upperContactLocal,
     source182UpperAngle,
   ).y + contactRollerRadius + tappetHalfHeight;
-  const upperReleasePistonY = stablePoint(
+  let upperReleasePistonY = stablePoint(
     upperPivot,
     upperContactLocal,
     source181UpperAngle,
@@ -481,38 +496,110 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     return 'source-181-returned-pose-hold';
   };
 
+  const drivenAngle=(phase,start,end,envelope,open,closed)=>{
+    const seating=start+(end-start)*.92;
+    const releaseAngle=open+(closed-open)*envelope.releaseFraction;
+    const valueAt=p=>{
+      if(p<=start)return open;
+      if(p>=seating)return scalarTransition(p,seating,end,releaseAngle,closed).value;
+      const y=scalarTransition(p,start,seating,envelope.strike,envelope.release).value;
+      let lo=0,hi=envelope.releaseFraction;
+      for(let i=0;i<38;i++){
+        const mid=(lo+hi)/2,surface=envelope.sample(open+(closed-open)*mid);
+        const clears=!surface.engaged||(closed<open?surface.value>=y:surface.value<=y);
+        if(clears)hi=mid;else lo=mid;
+      }
+      return open+(closed-open)*hi;
+    };
+    const h=1e-5,value=valueAt(phase),minus=valueAt(phase-h),plus=valueAt(phase+h);
+    return {value,first:(plus-minus)/(2*h),second:(plus-2*value+minus)/(h*h)};
+  };
+  const rawAngles = phase => ({
+    upperAngleState: phase < sequenceBreaks.downwardApproachEnd
+      ? scalarTransition(phase,sequenceBreaks.lowerTripEnd,sequenceBreaks.upwardOvertravelEnd,0,source182UpperAngle)
+      : drivenAngle(phase,sequenceBreaks.downwardApproachEnd,sequenceBreaks.upperTripEnd,upperEnvelope,source182UpperAngle,0),
+    lowerAngleState: phase < sequenceBreaks.upperTripEnd
+      ? drivenAngle(phase,sequenceBreaks.upwardApproachEnd,sequenceBreaks.lowerTripEnd,lowerEnvelope,0,source182LowerAngle)
+      : scalarTransition(phase,sequenceBreaks.upperTripEnd,sequenceBreaks.downwardOvertravelEnd,source182LowerAngle,0),
+  });
+  const pistonLaw = (phase,{upperAngleState,lowerAngleState}) => {
+    let pistonState;
+    if (phase < sequenceBreaks.source181HoldEnd) {
+      pistonState = { first: 0, second: 0, value: source181PistonY };
+    } else if (phase < sequenceBreaks.upwardApproachEnd) {
+      pistonState = scalarTransition(
+        phase,
+        sequenceBreaks.source181HoldEnd,
+        sequenceBreaks.upwardApproachEnd,
+        source181PistonY,
+        lowerStrikePistonY,
+      );
+    } else if (phase < sequenceBreaks.lowerTripEnd) {
+      pistonState = scalarTransition(phase,sequenceBreaks.upwardApproachEnd,sequenceBreaks.upwardApproachEnd+.92*(sequenceBreaks.lowerTripEnd-sequenceBreaks.upwardApproachEnd),lowerStrikePistonY,lowerReleasePistonY);
+    } else if (phase < sequenceBreaks.upwardOvertravelEnd) {
+      pistonState = scalarTransition(
+        phase,
+        sequenceBreaks.lowerTripEnd,
+        sequenceBreaks.upwardOvertravelEnd,
+        lowerReleasePistonY,
+        source182PistonY,
+      );
+    } else if (phase < sequenceBreaks.source182HoldEnd) {
+      pistonState = { first: 0, second: 0, value: source182PistonY };
+    } else if (phase < sequenceBreaks.downwardApproachEnd) {
+      pistonState = scalarTransition(
+        phase,
+        sequenceBreaks.source182HoldEnd,
+        sequenceBreaks.downwardApproachEnd,
+        source182PistonY,
+        upperStrikePistonY,
+      );
+    } else if (phase < sequenceBreaks.upperTripEnd) {
+      pistonState = scalarTransition(phase,sequenceBreaks.downwardApproachEnd,sequenceBreaks.downwardApproachEnd+.92*(sequenceBreaks.upperTripEnd-sequenceBreaks.downwardApproachEnd),upperStrikePistonY,upperReleasePistonY);
+    } else if (phase < sequenceBreaks.downwardOvertravelEnd) {
+      pistonState = scalarTransition(
+        phase,
+        sequenceBreaks.upperTripEnd,
+        sequenceBreaks.downwardOvertravelEnd,
+        upperReleasePistonY,
+        source181PistonY,
+      );
+    } else {
+      pistonState = { first: 0, second: 0, value: source181PistonY };
+    }
+
+    return pistonState;
+  };
+  // The backweight return can touch the opposite shoe face after release.
+  // Limit its prescribed return by finite contact, pending a complete latch bake.
+  const releasedAngle = (phase,side) => {
+    const raw=rawAngles(phase),piston=pistonLaw(phase,raw).value;
+    const upper=side==='upper',desired=raw[upper?'upperAngleState':'lowerAngleState'].value;
+    const closed=upper?0:source182LowerAngle,envelope=upper?upperEnvelope:lowerEnvelope;
+    const clears=angle=>{const surface=envelope.sample(angle);return !surface.engaged||(upper?surface.value<=piston-.001:surface.value>=piston+.001);};
+    if(clears(desired))return desired;
+    let lo=0,hi=1;
+    for(let i=0;i<36;i++){const mid=(lo+hi)/2;if(clears(closed+(desired-closed)*mid))lo=mid;else hi=mid;}
+    return closed+(desired-closed)*lo;
+  };
+  const mechanicalState = phase => {
+    const angles=rawAngles(phase),pistonState=pistonLaw(phase,angles);
+    const side=phase>sequenceBreaks.lowerTripEnd&&phase<sequenceBreaks.upwardOvertravelEnd?'upper'
+      :phase>sequenceBreaks.upperTripEnd&&phase<sequenceBreaks.downwardOvertravelEnd?'lower':null;
+    if(side){
+      const h=1e-5,value=releasedAngle(phase,side),minus=releasedAngle(phase-h,side),plus=releasedAngle(phase+h,side);
+      angles[side+'AngleState']={value,first:(plus-minus)/(2*h),second:(plus-2*value+minus)/(h*h)};
+    }
+    return {...angles,pistonState};
+  };
+
   const baseStateAtCyclePhase = (phaseValue) => {
     const phase = THREE.MathUtils.clamp(phaseValue, 0, 1);
     const topState = baseTopStateLawAtCyclePhase(phase);
-    const upperAngleState = {
-      first: (source182UpperAngle - source181UpperAngle) * topState.first,
-      second: (source182UpperAngle - source181UpperAngle) * topState.second,
-      value: THREE.MathUtils.lerp(
-        source181UpperAngle,
-        source182UpperAngle,
-        topState.value,
-      ),
-    };
-    const lowerAngleState = {
-      first: (source182LowerAngle - source181LowerAngle) * topState.first,
-      second: (source182LowerAngle - source181LowerAngle) * topState.second,
-      value: THREE.MathUtils.lerp(
-        source181LowerAngle,
-        source182LowerAngle,
-        topState.value,
-      ),
-    };
+    const {upperAngleState,lowerAngleState,pistonState}=mechanicalState(phase);
     const catchAngleState = baseCatchLawAtCyclePhase(phase);
-    const upperContact = rigidPointPhaseState(
-      upperPivot,
-      upperContactLocal,
-      upperAngleState,
-    );
-    const lowerContact = rigidPointPhaseState(
-      lowerPivot,
-      lowerContactLocal,
-      lowerAngleState,
-    );
+    const upperContact = surfacePointPhaseState(upperEnvelope,upperAngleState);
+    const lowerContact = surfacePointPhaseState(lowerEnvelope,lowerAngleState);
     const upperLatch = rigidPointPhaseState(
       upperPivot,
       upperLatchLocal,
@@ -549,61 +636,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       catchAngleState,
     );
 
-    let pistonState;
-    if (phase < sequenceBreaks.source181HoldEnd) {
-      pistonState = { first: 0, second: 0, value: source181PistonY };
-    } else if (phase < sequenceBreaks.upwardApproachEnd) {
-      pistonState = scalarTransition(
-        phase,
-        sequenceBreaks.source181HoldEnd,
-        sequenceBreaks.upwardApproachEnd,
-        source181PistonY,
-        lowerStrikePistonY,
-      );
-    } else if (phase < sequenceBreaks.lowerTripEnd) {
-      pistonState = {
-        first: lowerContact.phaseVelocity.y,
-        second: lowerContact.phaseAcceleration.y,
-        value: lowerContact.point.y
-          - contactRollerRadius - tappetHalfHeight,
-      };
-    } else if (phase < sequenceBreaks.upwardOvertravelEnd) {
-      pistonState = scalarTransition(
-        phase,
-        sequenceBreaks.lowerTripEnd,
-        sequenceBreaks.upwardOvertravelEnd,
-        lowerReleasePistonY,
-        source182PistonY,
-      );
-    } else if (phase < sequenceBreaks.source182HoldEnd) {
-      pistonState = { first: 0, second: 0, value: source182PistonY };
-    } else if (phase < sequenceBreaks.downwardApproachEnd) {
-      pistonState = scalarTransition(
-        phase,
-        sequenceBreaks.source182HoldEnd,
-        sequenceBreaks.downwardApproachEnd,
-        source182PistonY,
-        upperStrikePistonY,
-      );
-    } else if (phase < sequenceBreaks.upperTripEnd) {
-      pistonState = {
-        first: upperContact.phaseVelocity.y,
-        second: upperContact.phaseAcceleration.y,
-        value: upperContact.point.y
-          + contactRollerRadius + tappetHalfHeight,
-      };
-    } else if (phase < sequenceBreaks.downwardOvertravelEnd) {
-      pistonState = scalarTransition(
-        phase,
-        sequenceBreaks.upperTripEnd,
-        sequenceBreaks.downwardOvertravelEnd,
-        upperReleasePistonY,
-        source181PistonY,
-      );
-    } else {
-      pistonState = { first: 0, second: 0, value: source181PistonY };
-    }
-
     const phaseRate = 1 / cyclePeriod;
     const phaseAccelerationRate = phaseRate ** 2;
     const timeVector = (vector) => vector.clone().multiplyScalar(phaseRate);
@@ -612,27 +644,26 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     const tappetTopY = pistonState.value + tappetHalfHeight;
     const tappetBottomY = pistonState.value - tappetHalfHeight;
-    const lowerContactError = tappetTopY
-      - (lowerContact.point.y - contactRollerRadius);
-    const upperContactError = tappetBottomY
-      - (upperContact.point.y + contactRollerRadius);
+    const lowerSurface=lowerEnvelope.sample(lowerAngleState.value);
+    const upperSurface=upperEnvelope.sample(upperAngleState.value);
+    const lowerContactError = lowerSurface.engaged ? tappetTopY-lowerSurface.point[1] : null;
+    const upperContactError = upperSurface.engaged ? tappetBottomY-upperSurface.point[1] : null;
     const stage = stageAtCyclePhase(phase);
     const lowerTripActive = stage
-      === 'ascending-tappet-trips-lower-handle-and-releases-upper';
+      === 'ascending-tappet-trips-lower-handle-and-releases-upper' && Math.abs(lowerContactError??Infinity)<1e-7;
     const upperTripActive = stage
-      === 'descending-tappet-trips-upper-handle-and-releases-lower';
-    const activeContactPoint = lowerTripActive
-      ? lowerContact.point.clone()
-      : upperTripActive
-        ? upperContact.point.clone()
-        : null;
+      === 'descending-tappet-trips-upper-handle-and-releases-lower' && Math.abs(upperContactError??Infinity)<1e-7;
+    const activeContactPoint = lowerTripActive&&lowerSurface.engaged
+      ? new THREE.Vector2(...lowerSurface.point)
+      : upperTripActive&&upperSurface.engaged
+        ? new THREE.Vector2(...upperSurface.point) : null;
     const pistonVelocity = pistonState.first * phaseRate;
 
     return {
-      activeCatch: topState.value < 0.5 ? 'upper-handle' : 'lower-handle',
-      activeContact: lowerTripActive
+      activeCatch: phase>=sequenceBreaks.lowerTripEnd&&phase<sequenceBreaks.upperTripEnd?'lower-handle':'upper-handle',
+      activeContact: lowerTripActive&&lowerSurface.engaged
         ? 'lower-handle'
-        : upperTripActive
+        : upperTripActive&&upperSurface.engaged
           ? 'upper-handle'
           : null,
       activeContactPoint,
@@ -645,7 +676,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       ),
       catchWeightPin: catchWeight.point,
       catchWeightVelocity: timeVector(catchWeight.phaseVelocity),
-      lowerEductionOpenFraction: topState.value,
+      lowerEductionOpenFraction: upperAngleState.value/source182UpperAngle,
       lowerHandleAngle: lowerAngleState.value,
       lowerHandleAngularAcceleration: lowerAngleState.second
         * phaseAccelerationRate,
@@ -655,11 +686,11 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       ),
       lowerHandleContactPoint: lowerContact.point,
       lowerHandleContactVelocity: timeVector(lowerContact.phaseVelocity),
-      lowerLatchEngagement: topState.value,
+      lowerLatchEngagement: phase>=sequenceBreaks.lowerTripEnd&&phase<sequenceBreaks.upperTripEnd?1:0,
       lowerLatchGap: lowerLatch.point.distanceTo(lowerSeat.point),
       lowerLatchPoint: lowerLatch.point,
       lowerLatchSeat: lowerSeat.point,
-      lowerSteamOpenFraction: 1 - topState.value,
+      lowerSteamOpenFraction: 1-lowerAngleState.value/source182LowerAngle,
       lowerTappetContactError: lowerContactError,
       lowerWeightAcceleration: timeAccelerationVector(
         lowerWeight.phaseAcceleration,
@@ -683,7 +714,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       topStateAcceleration: topState.second * phaseAccelerationRate,
       topStateBlend: topState.value,
       topStateVelocity: topState.first * phaseRate,
-      upperEductionOpenFraction: 1 - topState.value,
+      upperEductionOpenFraction: 1-lowerAngleState.value/source182LowerAngle,
       upperHandleAngle: upperAngleState.value,
       upperHandleAngularAcceleration: upperAngleState.second
         * phaseAccelerationRate,
@@ -693,11 +724,11 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       ),
       upperHandleContactPoint: upperContact.point,
       upperHandleContactVelocity: timeVector(upperContact.phaseVelocity),
-      upperLatchEngagement: 1 - topState.value,
+      upperLatchEngagement: phase>=sequenceBreaks.lowerTripEnd&&phase<sequenceBreaks.upperTripEnd?0:1,
       upperLatchGap: upperLatch.point.distanceTo(upperSeat.point),
       upperLatchPoint: upperLatch.point,
       upperLatchSeat: upperSeat.point,
-      upperSteamOpenFraction: topState.value,
+      upperSteamOpenFraction: upperAngleState.value/source182UpperAngle,
       upperTappetContactError: upperContactError,
       upperWeightAcceleration: timeAccelerationVector(
         upperWeight.phaseAcceleration,
@@ -808,6 +839,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     role,
     workingCenterline,
     weightLocal,
+    weightPlaneZ=planeZ,
   }) => {
     const group = new THREE.Group();
     group.position.set(pivot.x, pivot.y, planeZ);
@@ -848,6 +880,11 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       sampleCount: 48,
       widths: [0.18, 0.13, 0.075],
     });
+    weightArm.group.position.z=weightPlaneZ-planeZ;
+    if(weightPlaneZ!==planeZ){
+      const sleeve=new THREE.Mesh(ring(.12,.19,weightPlaneZ-planeZ-handleDepth*.43,0,96),handleMaterial);
+      sleeve.userData.role=`${role}-bored-backweight-shaft-sleeve`;group.add(sleeve);
+    }
     const hub = new THREE.Mesh(ring(.12,.43,-handleDepth*.56,handleDepth*.56,96),handleMaterial);
     hub.userData.role = `${role}-source-scale-rocking-hub`;
     const hubRing = new THREE.Mesh(
@@ -866,6 +903,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       handleDepth / 2 + 0.032,
     );
     weightEye.userData.role = `${role}-back-weight-eye`;
+    weightEye.position.z+=weightPlaneZ-planeZ;
     const contactRoller = cylinderAlongZ(
       contactRollerRadius,
       handleDepth * 1.18,
@@ -888,7 +926,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     latchRoller.userData.role = `${role}-roller-entering-diagonal-catch-pocket`;
     const workingTip = cylinderAlongZ(
-      0.15,
+      0.10,
       handleDepth * 1.04,
       handleMaterial,
       30,
@@ -903,7 +941,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     index.position.set(0.27, 0, handleDepth / 2 + 0.06);
     index.userData.role = `${role}-white-rocking-angle-index`;
     const weightAnchor = new THREE.Object3D();
-    weightAnchor.position.set(weightLocal.x, weightLocal.y, 0);
+    weightAnchor.position.set(weightLocal.x, weightLocal.y, weightPlaneZ-planeZ);
     weightAnchor.userData.role = `${role}-exact-back-weight-pin-anchor`;
     const contactAnchor = new THREE.Object3D();
     contactAnchor.position.set(contactLocal.x, contactLocal.y, 0);
@@ -961,7 +999,24 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     role: 'lower-backweighted-steam-eduction-valve-handle',
     workingCenterline: lowerWorkingCenterline,
     weightLocal: lowerWeightLocal,
+    weightPlaneZ: lowerWeightPlaneZ,
   });
+
+  const makeEnvelope=(parts,pivot,startAngle,endAngle,rising)=>tappetEnvelope({
+    // Circumscribe the round tip so rotation of its polygonal render mesh
+    // cannot protrude through an inscribed contact approximation.
+    rings:[...parts.workingArm.children[0].geometry.userData.plate.polygons.map(p=>p[0]),circle([parts.workingTip.position.x,parts.workingTip.position.y],.10/Math.cos(Math.PI/96),96)],
+    pivot:pivot.toArray(),startAngle,endAngle,left:tappetShoeLeftX,right:tappetShoeRightX,rising,halfHeight:tappetHalfHeight,
+  });
+  lowerEnvelope=makeEnvelope(lowerHandleParts,lowerPivot,0,source182LowerAngle,true);
+  upperEnvelope=makeEnvelope(upperHandleParts,upperPivot,source182UpperAngle,0,false);
+  lowerStrikePistonY=lowerEnvelope.strike;lowerReleasePistonY=lowerEnvelope.release;
+  upperStrikePistonY=upperEnvelope.strike;upperReleasePistonY=upperEnvelope.release;
+  // These old nominal rollers were not present in the source and falsely
+  // implied that contact remained at one material point on each curved arm.
+  for(const parts of [upperHandleParts,lowerHandleParts]){
+    parts.contactRoller.removeFromParent();parts.contactRoller.geometry.dispose();
+  }
 
   const catchGroup = new THREE.Group();
   catchGroup.position.set(catchPivot.x, catchPivot.y, catchPlaneZ);
@@ -1096,8 +1151,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   pistonRod.position.x = pistonRodX;
   pistonRod.position.z = -.39;
   pistonRod.userData.role = 'moving-piston-rod';
-  const tappetShoeRightX = -0.40;
-  const tappetShoeLeftX = pistonRodX - 0.13;
   const tappet = new THREE.Mesh(
     new THREE.BoxGeometry(
       tappetShoeRightX - tappetShoeLeftX,
@@ -1123,12 +1176,12 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   tappetAnchor.userData.role = 'exact-source-tappet-center-anchor';
   pistonGroup.add(pistonRod, tappet, tappetIndex, tappetAnchor);
 
-  const makePivotHardware = (pivot, role) => {
+  const makePivotHardware = (pivot, role, bottom=frameCenterZ-frameDepth/2) => {
     const group = new THREE.Group();
     group.position.set(pivot.x, pivot.y, 0);
     group.userData.fixed = true;
     group.userData.role = role;
-    const shaftBottom = frameCenterZ - frameDepth / 2;
+    const shaftBottom = bottom;
     const shaftTop = catchPlaneZ + catchDepth / 2 + 0.14;
     const shaft = cylinderAlongZ(0.11, shaftTop - shaftBottom, darkMaterial, 28);
     shaft.position.z = (shaftTop + shaftBottom) / 2;
@@ -1153,6 +1206,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   const catchPivotParts = makePivotHardware(
     catchPivot,
     'fixed-central-diagonal-catch-pivot',
+    catchPlaneZ-catchDepth/2,
   );
   const lowerPivotParts = makePivotHardware(
     lowerPivot,
@@ -1186,7 +1240,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   );
   const lowerWeightParts = makeHangingWeight(
     'lower-handle-hanging-back-weight',
-    lowerHandlePlaneZ,
+    lowerWeightPlaneZ,
     (500-source181LowerWeightPin.y)*sourceScale,
   );
   const catchWeightParts = makeHangingWeight(
@@ -1194,10 +1248,10 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     catchPlaneZ,
     (500-source181CatchWeightPin.y)*sourceScale,
   );
-  for(const[parent,point]of [[upperHandleParts.group,upperWeightLocal],
-    [lowerHandleParts.group,lowerWeightLocal],[catchGroup,catchWeightLocal]]){
+  for(const[parent,point,z]of [[upperHandleParts.group,upperWeightLocal,0],
+    [lowerHandleParts.group,lowerWeightLocal,lowerWeightPlaneZ-lowerHandlePlaneZ],[catchGroup,catchWeightLocal,0]]){
     const pin=cylinderAlongZ(.10,.33,darkMaterial,48),head=cylinderAlongZ(.135,.035,darkMaterial,48);
-    pin.position.set(point.x,point.y,.135);head.position.set(point.x,point.y,.3175);
+    pin.position.set(point.x,point.y,z+.135);head.position.set(point.x,point.y,z+.3175);
     pin.userData.role='back-weight-rod-hinge-pin';head.userData.role='back-weight-rod-retaining-head';parent.add(pin,head);
   }
 
@@ -1250,7 +1304,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     lowerWeightParts.group.position.set(
       state.lowerWeightPin.x,
       state.lowerWeightPin.y,
-      lowerHandlePlaneZ+.24,
+      lowerWeightPlaneZ+.24,
     );
     catchWeightParts.group.position.set(
       state.catchWeightPin.x,
@@ -1338,6 +1392,9 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   };
 
   const geometry = {
+    upperFit,lowerFit,
+    lowerContactReleaseFraction:lowerEnvelope.releaseFraction,
+    upperContactReleaseFraction:upperEnvelope.releaseFraction,
     axis: Z_AXIS.clone(),
     catchDepth,
     catchPlaneZ,
@@ -1501,7 +1558,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     ? 'source-182-top-of-cylinder-initial-pose'
     : 'source-181-ascending-stroke-initial-pose';
 
-  Object.assign(geometry,{upperHandlePlaneZ,lowerHandlePlaneZ});
+  Object.assign(geometry,{upperHandlePlaneZ,lowerHandlePlaneZ,lowerWeightPlaneZ});
   // Source cutaway: the engine casing and column are outside this mechanism.
   for(const part of [frameSpine,pistonGuide,upperCrossbar,lowerCrossbar,tappetContactMarker,
     upperLatchMarker,lowerLatchMarker,upperHandleParts.index,lowerHandleParts.index,catchIndex,tappetIndex]){
@@ -1509,7 +1566,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   }
   Object.assign(root.userData,{hideGround:true,supportsRestart:true,minimumDisplayCycleSeconds:18,
     animationTiming:{authoredCyclePeriod:cyclePeriod},cameraFov:8,reconstructionStatus:'under-review',
-    reconstructionNote:'Pivot bores and axial layers are repaired. Tappet and latch geometry and the prescribed switching sequence are still under review.'});
+    reconstructionNote:'Handles use a joint fit to both drawings with finite-surface tappet contact. Return timing remains prescribed and the diagonal latch still needs reconstruction and passive validation.'});
   const motionBounds=new THREE.Box3();
   for(let i=0;i<=128;i++){update(cyclePeriod*i/128);root.updateMatrixWorld(true);motionBounds.union(new THREE.Box3().setFromObject(root,true));}
   root.userData.cameraFitBounds=motionBounds.expandByScalar(.06);

@@ -1,98 +1,104 @@
-# Movements 181–182 — diagonal catch: review in progress
+# Movements 181–182 — fitted tappet motion; latch reconstruction open
 
-These two engravings show opposite stages of one mechanism. The
-[source description](https://507movements.com/mm_181.html) says that the piston
-tappet raises one valve handle, the diagonal catch transfers engagement, and
-the opposite backweight opens the other valve pair. Both variants use the same
-factory with different starting phases.
+These engravings show opposite stages of one mechanism. The
+[source description](https://507movements.com/mm_181.html) says the piston tappet
+closes one valve handle, the diagonal catch transfers engagement, and the other
+backweight opens its valve pair. Both variants share geometry and motion;
+182 starts at the opposite end of the 18-second cycle.
 
-## Assembly repair completed
+## Handle fit and finite contact
 
-The [baseline sweep](validation/181-existing-solids.json), before this repair,
-found 68 interfering mesh pairs among 60 meshes over 129 poses. Pivot shafts
-passed through solid hubs and arm plates; both handles crossed each other in
-the same axial plane. Outline tubes and contact markers added further overlaps.
+The old model inferred handle travel from the weight pins alone. Its working
+arms did not clear a narrow tappet. The [isolated baseline](validation/181-tappet-baseline.json)
+stalled in both directions at both timesteps; widening the travel limits let
+it pass. That ruled out merely narrowing the oversized shoe as a repair.
 
-The arm plates and hubs now have real 0.12-radius pivot bores around the
-0.11-radius shafts. The upper and lower handles occupy separate inferred axial
-layers at -0.12 and +0.12, with the catch at +0.40. The piston rod passes behind
-them. Decorative outline tubes and floating motion/contact markers are removed.
+Each handle now uses one rigid fit to its working tip and weight pin in both
+engravings, registered at its pivot. The fit also requires the held tip to clear
+the shoe's right edge. Tip radii are 0.10 model units (eight source pixels).
+The working-arm tracing receives one fixed similarity transform; it does not
+change shape while moving. Angles are -0.995 radians for the upper handle and
+-0.9446 for the lower. The fit is an explicit compromise between inconsistent
+hand-drawn positions:
 
-The hanging rods now use bored eyes, hinge pins and retaining heads instead of
-intersecting the weight arms. Their lengths follow the source rods down to the
-bottom of the 181 plate, with the unillustrated weights beyond that cut. The
-added engine frame and ground plane are removed. Fog remains disabled. Both
-variants have front full-motion framing and exact Restart; the existing
-18-second operator sequence is preserved explicitly.
+| Handle | Tip error in 181 | Tip error in 182 | Weight-pin error in each plate |
+| --- | ---: | ---: | ---: |
+| Upper | 10.37 px | 15.50 px | 10.70 px |
+| Lower | 14.30 px | 6.43 px | 11.54 px |
 
-The [current sweep](validation/181-current-solids.json) checks 50 meshes,
-1,041 cross-body pairs and 10,772,814 finite-surface queries at 129 poses. It
-finds **16 remaining intersecting pairs**, all associated with the tappet or
-latch geometry. Pivot, separate-handle and hanging-rod interference has been
-removed. The audit intentionally exits nonzero while these contacts remain.
-This is sampled evidence, not a clearance certificate.
+The shoe spans registered source X pixels 170–193. The invented contact rollers
+are removed. Contact now comes from the finite working-arm outline over the
+whole shoe width, with a circumscribed approximation to the rounded tip.
+The tappet moves continuously; its position determines the driven handle angle.
+Contact progresses along the arm rather than following one material point.
+A short prescribed seating interval finishes the handle's last approximately
+1.2% of travel after the working surface clears the shoe.
 
-Four targeted tests pass: the two existing sequence tests and two new tests for
-real bores, axial layers and retained weight-rod joints. The sequence tests
-check the existing scripted equations; they do not prove the physical latch
-works. Production build and [desktop/mobile checks](validation/181-browser.json)
-pass for both variants, including playback, exact Restart, orbit/reset, no
-horizontal overflow, no WASM request and no page errors.
+The opposite handle stays caught during the drive, then returns separately.
+Its return is constrained against the opposite shoe face until the tappet has
+passed. This replaces the old simultaneous motion, which made the released
+handle cross the tappet during overtravel. Valve fractions follow their own
+handles. Return timing, seating and catch switching remain prescribed; they
+are not yet a fully passive valve-gear simulation.
 
-## Isolated tappet experiment
+## Assembly and rendering
 
-The [native contact study](validation/181-tappet-study.json), reproduced with
-`node scripts/probe-diagonal-catch-tappet.mjs`, uses the current curved working
-arms and a narrow shoe following source pixels 170–193. Only the piston is
-actuated. Each weighted handle responds passively, with the existing end angles
-used as inferred valve stops. The catch and the other handle are omitted to
-isolate the drive contact; masses, friction and actuator force are assumptions.
+The previous repair added 0.12-radius bores around 0.11-radius shafts and
+retained, bored weight-rod joints. The handle planes remain at -0.12 and +0.12.
+The catch is now at +0.43, clear of the shoe thickness. Its exposed fixed shaft
+ends at the back of the catch, an inferred cutaway of the unillustrated support.
+The lower backweight arm runs behind the piston rod at -0.68, with a bored
+sleeve connecting it to its handle; the engraving shows this arm obscured by
+the rod. Depths are reconstruction assumptions.
 
-Both handles jam before completing the stroke at timesteps 0.00025 and
-0.000125 seconds. The lower test stops about 2.037 model units short; the upper
-test stops about 1.592 units short. Halving the timestep changes the final
-piston position by less than 0.000066 units. Thus merely narrowing the shoe
-does not fix the existing handle contours and travel limits.
+No ground, fog, added engine frame or floating contact markers are shown.
+Both variants retain front full-motion framing, orbit controls and exact
+Restart. The earlier unused-outline cleanup remains in place.
 
-Two controls distinguish this from an input/solver problem. With contact
-disabled, the shoe completes its stroke while each handle remains at its
-gravity stop. Allowing 0.4 radians of extra driven handle travel also lets the
-shoe pass at both timesteps. This extra travel is a diagnostic intervention,
-not a source-fitted motion proposal. Without a catch, the handle then falls
-back under its weight. All ten runs remain numerically stable; the control
-assertions pass, while the original travel limits still fail the stroke check.
+## Evidence and limits
 
-The next reconstruction must fit the working tips and weight arms jointly
-against both engravings, with enough clearance for the finite shoe. Matching
-the weight-arm angles alone has proved insufficient. Catch retention/release
-must then be added to the passive study before considering a production bake.
+The [updated native study](validation/181-tappet-study.json) drives only the
+piston against one passive weighted handle at a time. Both fitted handles
+complete their strokes at 0.00025- and 0.000125-second timesteps, without extra
+travel. Disabled-contact controls and extra-travel controls also pass; all ten
+runs remain stable. Final input error is 0.004905 model units, the expected
+static gravity/servo offset. The largest measured soft-contact penetration is
+0.000943 units. The study omits the catch and opposite handle; its masses,
+friction, damping and valve stops are assumptions. It qualifies only the
+isolated drive contact, not the complete mechanism.
 
-Removed generation of unused outline tubes and an unused intermediate shape
-from the production plate builder. Visible mesh geometry, indices, roles and
-world transforms have identical SHA-256 fingerprints before and after this
-cleanup. An alternating local [construction benchmark](validation/181-construction-cleanup.json)
-measures median construction time of 112.36 ms before and 105.54 ms after;
-this does not measure browser load time or frame rate.
-The four targeted tests and production build pass. This cleanup does
-not change the existing scripted contacts or resolve the 16 interfering pairs.
+Four targeted production tests pass. The two motion tests each check 1,201
+poses, including finite polygon overlap between the shoe and both working arms,
+source-feature residuals, continuous monotone piston strokes, handle continuity,
+separate drive/return timing, contact migration and restart. They replace old
+tests that asserted the incorrect weight-only angles and fixed-marker motion.
+The two joint tests retain checks for bores, layers and retained weight eyes.
 
-## Remaining reconstruction work
+The [full assembly sweep](validation/181-current-solids.json) checks 49 meshes,
+1,002 cross-body pairs and 8,690,134 finite-surface samples at 129 poses. It
+finds **six remaining interfering pairs**, down from 16 before this repair
+(and 68 before the initial joint repair). All six involve the old latch rollers
+against catch surfaces or the catch's weight pin. The full audit deliberately
+still exits nonzero. These sampled checks are not continuous collision proofs.
 
-- The tappet is oversized in X to follow a nominal roller point that moves
-  sideways as each handle rotates. Actual contact must move along the curved
-  handle profile. The current tappet penetrates several handle parts. The
-  isolated study now also shows that the current handle travel cannot clear
-  a narrow shoe.
-- The nearly closed circular latch pockets and their rollers collide with each
-  other and with the catch backbone during transfer. Reconstruct the actual
-  hook/handle contact surfaces from both engravings before validating release.
-- The handle and catch angles remain prescribed. A native study should actuate
-  the piston and let the weighted handles and catch respond to contact. The
-  current analytic contact markers are insufficient evidence.
-- The finite piston rod does not reproduce the engraved rod's sectioned extent.
-  Source contour registration, rod representation and remaining hardware
-  attachment need review. The new front view makes these differences clearer.
+The production build and [desktop/mobile browser checks](validation/181-browser.json)
+pass for both variants: playback, exact Restart, orbit/reset, no horizontal
+overflow, no live WASM request and no page errors. The front screenshots were
+inspected; the catch profile and short moving rod still visibly differ from
+the engraving.
 
-Continue with 181's tappet and latch reconstruction, then verify 182 with the
-same geometry. Do not advance to 183 or mark either mechanism fully reviewed.
-The full 507-movement goal remains active.
+Reproduce with:
+
+- `node --test tests/movement-181.test.mjs tests/movement-182.test.mjs tests/diagonal-catch-assembly.test.mjs`
+- `node scripts/probe-diagonal-catch-tappet.mjs`
+- `node scripts/review-diagonal-catch-solids.mjs` (expected failure on the six unresolved latch pairs)
+
+## Next work
+
+Reconstruct the actual hook/finger surfaces from both engravings. The current
+nearly closed circular pockets and cylindrical latch rollers are not faithful
+and still intersect. Then validate passive catch retention and release with
+both weighted handles and the piston together before baking that motion.
+The finite piston rod also needs the source's sectioned extent, and the full
+catch/handle silhouettes need further comparison. Do not mark either movement
+fully reviewed or advance to 183 yet. The complete 507-movement goal remains active.
