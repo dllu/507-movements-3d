@@ -1,3 +1,4 @@
+import {createAuthoredVariableCrankMovement} from '../src/simulation/authored-variable-cranks.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -55,7 +56,7 @@ function modulo(value, modulus) {
 
 test('movement 178 closes one rotating radial slot through a fixed eccentric circular groove and finite shaper rod', () => {
   const movement = catalog.movements[177];
-  const model = createMovementModel(movement);
+  const model = createAuthoredVariableCrankMovement(movement, {reference:true});
   const {
     animationPointToModel,
     blocks,

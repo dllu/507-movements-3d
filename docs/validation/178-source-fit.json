@@ -1,6 +1,6 @@
 {
   "movement": 178,
-  "status": "source-registration-open",
+  "status": "selected-source-features-checked",
   "source": "https://507movements.com/mm_178.html",
   "method": "Initial-pose landmarks under the existing disk-center/radius raster registration. These are diagnostic measurements, not a full contour fit.",
   "samples": [
@@ -8,60 +8,127 @@
       "name": "shaft center",
       "actual": [
         295,
-        310.6
+        321
       ],
       "expected": [
         295,
         321
       ],
-      "errorPixels": 10.399999999999977
+      "errorPixels": 0
     },
     {
       "name": "slider center",
       "actual": [
         295,
-        72.80000000000001
+        76.99999999999997
       ],
       "expected": [
         295,
         77
       ],
-      "errorPixels": 4.199999999999989
+      "errorPixels": 2.842170943040401e-14
     },
     {
       "name": "rod at engraved crop",
       "actual": [
         39,
-        127.78611413980278
+        154
       ],
       "expected": [
         39,
         154
       ],
-      "errorPixels": 26.213885860197223
+      "errorPixels": 0
     },
     {
       "name": "crank upper tip",
       "actual": [
         295.00000000000006,
-        23.599999999999994
+        6.999999999999972
       ],
       "expected": [
         295,
         7
       ],
-      "errorPixels": 16.599999999999994
+      "errorPixels": 6.355287432313019e-14
     }
   ],
-  "maximumErrorPixels": 26.213885860197223,
+  "boundaries": [
+    {
+      "name": "crank",
+      "actual": [
+        270.00000019227303,
+        7.000009352161072,
+        319.999999807727,
+        345.99999980772697
+      ],
+      "expected": [
+        270,
+        7,
+        320,
+        346
+      ],
+      "maximumErrorPixels": 0.000009352161072229137
+    },
+    {
+      "name": "outer disk outline",
+      "actual": [
+        88.67741430959393,
+        38.677414309593956,
+        501.32258569040596,
+        451.3225856904061
+      ],
+      "expected": [
+        93,
+        40,
+        500,
+        449
+      ],
+      "maximumErrorPixels": 4.322585690406072
+    },
+    {
+      "name": "inner boss outer outline",
+      "actual": [
+        183.09548716391288,
+        133.09548716391288,
+        406.9045128360871,
+        356.9045128360871
+      ],
+      "expected": [
+        183,
+        134,
+        407,
+        357
+      ],
+      "maximumErrorPixels": 0.9045128360871217
+    },
+    {
+      "name": "inner boss inner outline",
+      "actual": [
+        191.51871250521754,
+        141.51871250521754,
+        398.48128749478246,
+        348.48128749478246
+      ],
+      "expected": [
+        193,
+        143,
+        397,
+        348
+      ],
+      "maximumErrorPixels": 1.481287494782464
+    }
+  ],
+  "maximumBoundaryErrorPixels": 4.322585690406072,
+  "maximumErrorPixels": 6.355287432313019e-14,
   "sources": [
     {
       "file": "scripts/review-variable-shaper-source.mjs",
-      "sha256": "65194d7bef4a4c380f88a0e7c2589a247fc36e7e34e6329149976486d0716964"
+      "sha256": "cbbec2717b55a86b6072e4542b0d973cb735d7e03350d2f17c4f710a751d6819"
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "d0636016e4ddcdd7e5f05e675fe1f4dd8e425ac47f3b4b29d6eee9d3caebef8f"
+      "sha256": "0895004edc3bbd1f96cd2f657b01f0797a155ef9d21e346dd0215deb47e8a5b3"
     },
     {
       "file": "public/engravings/mm_178.png",

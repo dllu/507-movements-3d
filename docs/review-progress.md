@@ -1,3 +1,9 @@
+# Movement 178 source fit and assembly checked; next 179
+
+178 now matches selected engraving boundaries within 4.33 pixels, uses a backed guide disk and retained bored joints, and passes its 30-mesh sampled clearance sweep. The fitted motion and original 2D-reference variant both have regression checks. Production build and desktop/mobile checks pass. See [movement 178](movement-178.md) for reconstruction assumptions and evidence. Continue with 179; the full review remains active.
+
+## Earlier checkpoints
+
 # Movement 178: joint repair checked; source fit remains open
 
 The 29-mesh assembly now passes its 129-pose cross-body clearance sweep after fitting bored rod eyes, retained full-depth pins, a shorter shaft and revised slider/cutter depths. Motion, joint and desktop/mobile checks pass. Four source landmarks still differ by 4–26 pixels. Continue with 178's source proportions and framing; the full review remains active.

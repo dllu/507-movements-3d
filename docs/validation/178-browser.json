@@ -1,7 +1,7 @@
 {
   "movement": 178,
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Bored and retained rod joints, cleared shaft/slider/cutter. Source proportions and default framing remain open.",
+  "scope": "Engraving-fitted 30-mesh assembly with recessed backed track, retained bored joints and front full-motion framing. Ideal kinematic constraints and hidden dimensions are documented.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "d0636016e4ddcdd7e5f05e675fe1f4dd8e425ac47f3b4b29d6eee9d3caebef8f"
+      "sha256": "0895004edc3bbd1f96cd2f657b01f0797a155ef9d21e346dd0215deb47e8a5b3"
     }
   ]
 }

@@ -2445,32 +2445,29 @@ function linkedEllipticalPinMainCrankDrive() {
   };
 }
 
-function eccentricCircularGuideVariableSpeedShaper() {
+function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
 
-  // The reference animation supplies an unambiguous ideal construction for
-  // Brown's hand-drawn plate. The fixed annular groove has radii 5 and 5.5,
-  // the slider shoe therefore travels at radius 5.25, the crankshaft is 2
-  // below the groove center, and the finite connecting rod is 25 long. The
-  // engraving is the source for the visible pose and component proportions;
-  // the ideal construction is the source for the closed kinematic equations.
+  // Preserve the original 2D dimensions for regression comparisons. Production
+  // fits the engraving: 32.8 raster pixels per reference unit. The same analytic
+  // circle/ray and rod/guide constraints apply to both dimension sets.
   const sourceAnimationViewMinimum = new THREE.Vector2(-9, -9);
   const sourceAnimationViewSize = new THREE.Vector2(18, 18);
-  const sourceAnimationGrooveInnerRadius = 5;
-  const sourceAnimationGrooveOuterRadius = 5.5;
-  const sourceAnimationGrooveCenterRadius = 5.25;
+  const sourceAnimationGrooveInnerRadius = reference ? 5 : 157.5 / 32.8;
+  const sourceAnimationGrooveOuterRadius = reference ? 5.5 : 178.5 / 32.8;
+  const sourceAnimationGrooveCenterRadius = reference ? 5.25 : 168 / 32.8;
   const sourceAnimationOuterDiskRadius = 6.25;
-  const sourceAnimationInnerBossOuterRadius = 3;
-  const sourceAnimationInnerBossInnerRadius = 2.75;
-  const sourceAnimationShaftCenter = new THREE.Vector2(0, -2);
-  const sourceAnimationCrankReach = 8;
-  const sourceAnimationCrankBodyHalfWidth = 0.75;
-  const sourceAnimationCrankSlotHalfWidth = 0.25;
+  const sourceAnimationInnerBossOuterRadius = reference ? 3 : 110 / 32.8;
+  const sourceAnimationInnerBossInnerRadius = reference ? 2.75 : 102 / 32.8;
+  const sourceAnimationShaftCenter = new THREE.Vector2(0, reference ? -2 : -76 / 32.8);
+  const sourceAnimationCrankReach = reference ? 8 : 289 / 32.8;
+  const sourceAnimationCrankBodyHalfWidth = reference ? .75 : 25 / 32.8;
+  const sourceAnimationCrankSlotHalfWidth = reference ? .25 : 7 / 32.8;
   const sourceAnimationSliderShoeRadius = 0.25;
-  const sourceAnimationConnectingRodLength = 25;
-  const sourceAnimationOutputGuideStart = new THREE.Vector2(-17.5, 0);
-  const sourceAnimationOutputGuideEnd = new THREE.Vector2(-31.5, 0);
+  const sourceAnimationConnectingRodLength = reference ? 25 : Math.hypot(168, 256 * 168 / 77) / 32.8;
+  const sourceAnimationOutputGuideStart = new THREE.Vector2(reference ? -17.5 : -sourceAnimationConnectingRodLength + 6.2, 0);
+  const sourceAnimationOutputGuideEnd = new THREE.Vector2(reference ? -31.5 : -sourceAnimationConnectingRodLength - 7.3, 0);
   const sourceAnimationSourceCycle = 0;
   const sourceAnimationInputTurnsPerCycle = -1;
 
@@ -2561,8 +2558,8 @@ function eccentricCircularGuideVariableSpeedShaper() {
   const idealTopBottomSpeedRatio = maximumCrankRadius
     / minimumCrankRadius;
 
-  const plateDepth = 0.32;
-  const plateCenterZ = -0.34;
+  const plateDepth = reference ? .32 : .48;
+  const plateCenterZ = reference ? -.34 : -.42;
   const plateFrontZ = plateCenterZ + plateDepth / 2;
   const plateOutlineZ = plateFrontZ + 0.018;
   const shaftOpeningRadius = 0.39;
@@ -2572,16 +2569,16 @@ function eccentricCircularGuideVariableSpeedShaper() {
   const crankPlaneZ = 0.13;
   const crankDepth = 0.28;
   const crankFrontZ = crankPlaneZ + crankDepth / 2;
-  const crankSlotNearRadius = 0.68;
-  const crankSlotFarRadius = crankReach - 0.29;
+  const crankSlotNearRadius = reference ? .68 : 40 * sourceScale / 32.8;
+  const crankSlotFarRadius = reference ? crankReach - .29 : 287 * sourceScale / 32.8;
   const crankSlotOutlineWidth = 0.045;
-  const crankHubRadius = 0.82;
+  const crankHubRadius = reference ? .82 : 26 * sourceScale / 32.8;
   const crankHubDepth = 0.48;
   const sliderFitClearance = 0.012;
   const radialSlotShoeRadius = crankSlotHalfWidth - sliderFitClearance;
   const circularGrooveShoeRadius = grooveHalfWidth - sliderFitClearance;
-  const grooveShoeCenterZ = plateCenterZ + 0.03;
-  const grooveShoeDepth = plateDepth + 0.16;
+  const grooveShoeCenterZ = reference ? plateCenterZ + .03 : -.31;
+  const grooveShoeDepth = reference ? plateDepth + .16 : .48;
   const radialShoeCenterZ = 0.15;
   const radialShoeDepth = 0.62;
   const sliderBlockCenterZ = 0.42;
@@ -2769,7 +2766,7 @@ function eccentricCircularGuideVariableSpeedShaper() {
   };
   const outerDiskOutline = fixedRing(
     outerDiskRadius,
-    0.055,
+    reference ? .055 : .025,
     'outer-outline-of-fixed-eccentric-guide-disk',
     darkMaterial,
   );
@@ -3716,6 +3713,29 @@ function eccentricCircularGuideVariableSpeedShaper() {
     minimumDisplayCycleSeconds:4, animationTiming:{authoredCyclePeriod:cyclePeriod},
     reconstructionStatus:'under-review',
     reconstructionNote:'A slide follows the eccentric circular groove while moving along the rotating crank. The remote tool guide and full connecting rod follow the 2D reference; bearing depths and guide hardware are inferred. Assembly clearance and engraving proportions remain under review.'});
+  if (!reference) {
+    // Recess the track into a single backed disk. The unseen rear web joins
+    // the inner and outer lands without crossing the circular shoe's path.
+    const backing = new THREE.Mesh(centeredExtrusion(
+      diskWithOffsetHoleShape(outerDiskRadius, shaftOffset, shaftOpeningRadius), .10, 0),
+      matte(PALETTE.ink));
+    backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.61);
+    backing.userData.role = 'integral-rear-web-of-fixed-guide';
+    root.add(backing);root.userData.blocks.guideBacking = backing;
+    root.remove(cameraEnvelope);
+    cameraEnvelope.geometry.dispose();
+    cameraEnvelope.material.dispose();
+    const bounds = new THREE.Box3();
+    for (let i = 0; i <= 180; i++) {
+      update(cyclePeriod*i/180);root.updateMatrixWorld(true);
+      bounds.union(new THREE.Box3().setFromObject(root, true));
+    }
+    root.userData.cameraFitBounds = bounds.expandByScalar(.08);
+    root.userData.cameraFov = 8;
+    root.userData.sourceFit = 'engraving';
+    root.userData.reconstructionStatus = 'reconstructed';
+    root.userData.reconstructionNote = 'The eccentric circular guide varies the crank reach. Dimensions follow the engraving; the full connecting rod and remote tool guide are inferred from its visible direction. Pins, guide fits and steady input speed are ideal constraints.';
+  }
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -3738,18 +3758,18 @@ function eccentricCircularGuideVariableSpeedShaper() {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(5.2, 4.0, 16.0),
+    cameraDirection: reference ? new THREE.Vector3(5.2, 4.0, 16.0) : new THREE.Vector3(0, 0, 1),
     root,
     update,
     reset: () => update(0),
   };
 }
 
-export function createAuthoredVariableCrankMovement(movement) {
+export function createAuthoredVariableCrankMovement(movement, options = {}) {
   switch (movement.id) {
     case 168: return variableRadiusEllipticalCrankDrive();
     case 169: return linkedEllipticalPinMainCrankDrive();
-    case 178: return eccentricCircularGuideVariableSpeedShaper();
+    case 178: return eccentricCircularGuideVariableSpeedShaper(options);
     default: return null;
   }
 }

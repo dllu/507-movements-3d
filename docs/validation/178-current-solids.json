@@ -1,9 +1,9 @@
 {
   "movement": 178,
   "poses": 129,
-  "meshes": 29,
-  "pairs": 318,
-  "queries": 9076970,
+  "meshes": 30,
+  "pairs": 336,
+  "queries": 8352038,
   "intersections": {},
   "sources": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "d0636016e4ddcdd7e5f05e675fe1f4dd8e425ac47f3b4b29d6eee9d3caebef8f"
+      "sha256": "0895004edc3bbd1f96cd2f657b01f0797a155ef9d21e346dd0215deb47e8a5b3"
     },
     {
       "file": "src/simulation/primitives.js",

@@ -22,6 +22,15 @@ test('178 rod has through bores, fully engaged pins and retaining heads',()=>{
     assert.ok(Math.hypot(pc.x-ec.x,pc.y-ec.y)<1e-10,'pin and eye stay concentric');
    }
   }
+  const web=solidSurface(b.guideBacking.geometry);
+  for(const [land,radius] of [[b.innerPlate,m.root.userData.geometry.grooveInnerRadius*.9],
+    [b.outerPlate,(m.root.userData.geometry.grooveOuterRadius+m.root.userData.geometry.outerDiskRadius)/2]]){
+    const world=b.guideBacking.localToWorld(new THREE.Vector3(radius,0,0));
+    assert.ok(web.inside(new THREE.Vector3(radius,0,0)));
+    assert.ok(solidSurface(land.geometry).inside(land.worldToLocal(world.clone())), 'rear web joins each fixed land');
+  }
+  assert.ok(new THREE.Box3().setFromObject(b.guideBacking).max.z < new THREE.Box3().setFromObject(b.circularGrooveShoe).min.z,
+    'shoe clears groove floor');
   const shaft=new THREE.Box3().setFromObject(b.inputShaft),rod=new THREE.Box3().setFromObject(b.connectingRodBeam);
   assert.ok(shaft.max.z<rod.min.z,'shaft stays behind rod sweep');
  }finally{disposeObject3D(m.root);}
