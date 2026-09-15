@@ -1,0 +1,160 @@
+{
+  "movement": 168,
+  "status": "legacy-contact-diagnostic",
+  "poses": 97,
+  "pairs": [
+    [
+      "mainSlotPin",
+      "slotFrame"
+    ],
+    [
+      "mainSlotPin",
+      "slotRecess"
+    ],
+    [
+      "auxiliaryCrankPin",
+      "auxiliaryEnd"
+    ]
+  ],
+  "queries": 1075342,
+  "intersections": {
+    "mainSlotPin/slotRecess": {
+      "firstTime": 0,
+      "maximumDepth": 0.11425090023674998,
+      "samples": 478
+    },
+    "auxiliaryCrankPin/auxiliaryEnd": {
+      "firstTime": 0,
+      "maximumDepth": 0.11456239080757699,
+      "samples": 17654
+    }
+  },
+  "geometry": {
+    "auxiliaryAngularSpeed": 0.62,
+    "auxiliaryArmDepth": 0.3,
+    "auxiliaryArmHalfHeight": 0.13,
+    "auxiliaryCrankRadius": 0.52,
+    "auxiliaryHubRadius": 0.26,
+    "auxiliaryPlaneZ": 0.26,
+    "auxiliaryPivot": {
+      "x": 0,
+      "y": 0
+    },
+    "baseCenterX": 0.04999999999999982,
+    "baseMaximumX": 3.42,
+    "baseMinimumX": -3.3200000000000003,
+    "baseRailDepth": 0.66,
+    "baseRailHeight": 0.2,
+    "baseWidth": 6.74,
+    "baseY": -1.5,
+    "bearingDepth": 0.26,
+    "bearingInnerRadius": 0.13,
+    "bearingOuterRadius": 0.31,
+    "cyclePeriod": 10.134169850289656,
+    "framePlaneZ": -0.74,
+    "fullTurn": 6.283185307179586,
+    "mainPivot": {
+      "x": -2.6,
+      "y": 0
+    },
+    "nominalPowerWrist": {
+      "x": 2.6,
+      "y": 0
+    },
+    "outputHubDepth": 0.34,
+    "outputHubRadius": 0.31,
+    "outputPlaneZ": 0.08,
+    "pitmanDepth": 0.28,
+    "pitmanEyeRadius": 0.23,
+    "pitmanEyeTubeRadius": 0.065,
+    "pitmanHalfSpan": 2.6,
+    "pitmanPlaneZ": 0.58,
+    "pitmanThickness": 0.18,
+    "powerLinkDepth": 0.24,
+    "powerLinkBreakMarkHeight": 0.055,
+    "powerLinkBreakMarkWidth": 0.34,
+    "powerLinkLength": 7.800000000000001,
+    "powerLinkPlaneZ": 0.82,
+    "powerLinkThickness": 0.17,
+    "rawMainAngleAtZero": -0.03334693655089682,
+    "remotePivotRadius": 0.2,
+    "remotePowerPivot": {
+      "x": 2.6,
+      "y": 7.800000000000001
+    },
+    "shaftLength": 1.88,
+    "shaftRadius": 0.105,
+    "shaftSpacing": 2.6,
+    "slotCenterDistance": 0.7904,
+    "slotFrameDepth": 0.3,
+    "slotInnerEndDistance": 0.3796,
+    "slotInnerHalfWidth": 0.14,
+    "slotOuterEndDistance": 1.2012,
+    "slotOuterHalfWidth": 0.27,
+    "slotPinLength": 1.28,
+    "slotPinRadius": 0.115,
+    "slotRecessDepth": 0.12,
+    "slotStraightHalfLength": 0.41080000000000005,
+    "sourceAnimationAuxiliaryCrankRadius": 2,
+    "sourceAnimationAuxiliaryPivot": {
+      "x": 0,
+      "y": 0
+    },
+    "sourceAnimationMainPivot": {
+      "x": -10,
+      "y": 0
+    },
+    "sourceAnimationPitmanHalfSpan": 10,
+    "sourceAnimationPoseCycle": 0.2,
+    "sourceAnimationPowerLinkLength": 30,
+    "sourceAnimationRemotePowerPivot": {
+      "x": 10,
+      "y": 30
+    },
+    "sourceAnimationViewHalfSize": 13.5,
+    "sourceImageHeight": 525,
+    "sourceImageWidth": 525,
+    "sourcePoseAngle": 1.2566370614359172,
+    "sourceRasterAuxiliaryPinCenter": {
+      "x": 310,
+      "y": 217
+    },
+    "sourceRasterAuxiliaryShaftCenter": {
+      "x": 286,
+      "y": 264
+    },
+    "sourceRasterEllipseBottomY": 399,
+    "sourceRasterEllipseLeftX": 25,
+    "sourceRasterEllipseRightX": 117,
+    "sourceRasterEllipseTopY": 145,
+    "sourceRasterMainShaftCenter": {
+      "x": 70,
+      "y": 267
+    },
+    "sourceRasterMainSlotPinCenter": {
+      "x": 123,
+      "y": 161
+    },
+    "sourceRasterPowerWristCenter": {
+      "x": 473,
+      "y": 263
+    },
+    "sourceScale": 0.26,
+    "visiblePowerLinkLength": 1.86
+  },
+  "method": "Bidirectional actual visible vertices, edge midpoints and triangle centers. Selected moving pin/rod interfaces, not a whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-variable-crank-existing.mjs",
+      "sha256": "d78c5158d4c9e33975fd9625c21ac1320cfaa80f5d43b203d72953e67e3a006f"
+    },
+    {
+      "file": "src/simulation/authored-variable-cranks.js",
+      "sha256": "55688f458778c4db242d5d9741e82a62114c47a61456d1c9b92abad31af3358e"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

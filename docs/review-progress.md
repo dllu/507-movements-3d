@@ -1,3 +1,12 @@
+# Open review: 168 variable-radius slotted crank
+
+Independent closure agrees with the executed source animation at 721 phases,
+but the animation-based initial slot pin misses the engraving by about 41 px
+after approximate shaft alignment. The finite-mesh audit also confirms pin
+penetration into the slot backing and auxiliary crank end. Two closure tests
+pass. Source proportions and replacement solids remain open; see
+[movement 168](movement-168.md).
+
 # Shipped reconstruction: 167 reversing spiral drum
 
 Eight meshes replace the raised track and added frame with a recessed channel

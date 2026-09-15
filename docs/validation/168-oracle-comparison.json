@@ -1,0 +1,200 @@
+{
+  "movement": 168,
+  "url": "https://507movements.com/mm_168.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "method": "Execute the source animation at 721 phases and compare independent angular circle-intersection closure. Approximate source-pose comparison anchors auxiliary shaft at (286,264), uses 216-pixel shaft spacing, and keeps axes parallel to the raster. Source shafts differ in height by three pixels.",
+  "maximumOracleCoordinateError": 1.1546319456101628e-14,
+  "sourcePoseComparison": [
+    {
+      "name": "auxiliaryPin",
+      "engraving": [
+        310,
+        217
+      ],
+      "oracleProjected": [
+        299.3495341569977,
+        222.91435849604937
+      ],
+      "pixelError": 12.182448813467254
+    },
+    {
+      "name": "slotPin",
+      "engraving": [
+        123,
+        161
+      ],
+      "oracleProjected": [
+        87.27975537270547,
+        181.89718006577027
+      ],
+      "pixelError": 41.383910048894485
+    },
+    {
+      "name": "wrist",
+      "engraving": [
+        473,
+        263
+      ],
+      "oracleProjected": [
+        511.41931294128995,
+        263.9315369263285
+      ],
+      "pixelError": 38.430604574035556
+    }
+  ],
+  "samples": [
+    {
+      "phase": 0,
+      "pin": [
+        0.6180339887498949,
+        1.902113032590307
+      ],
+      "wrist": [
+        10.4360793028375,
+        0.003169586744058428
+      ],
+      "slotPin": [
+        -9.20001132533771,
+        3.8010564784365557
+      ]
+    },
+    {
+      "phase": 0.125,
+      "pin": [
+        -0.9079809994790935,
+        1.7820130483767358
+      ],
+      "wrist": [
+        8.935363003192467,
+        0.018896817077780348
+      ],
+      "slotPin": [
+        -10.751325002150654,
+        3.5451292796756912
+      ]
+    },
+    {
+      "phase": 0.25,
+      "pin": [
+        -1.902113032590307,
+        0.618033988749895
+      ],
+      "wrist": [
+        8.082380118859716,
+        0.06135049820289962
+      ],
+      "slotPin": [
+        -11.88660618404033,
+        1.1747174792968904
+      ]
+    },
+    {
+      "phase": 0.375,
+      "pin": [
+        -1.7820130483767362,
+        -0.9079809994790925
+      ],
+      "wrist": [
+        8.171436916578392,
+        0.055779237890532074
+      ],
+      "slotPin": [
+        -11.735463013331865,
+        -1.8717412368487172
+      ]
+    },
+    {
+      "phase": 0.5,
+      "pin": [
+        -0.6180339887498951,
+        -1.902113032590307
+      ],
+      "wrist": [
+        9.197310714992982,
+        0.010740424082905209
+      ],
+      "slotPin": [
+        -10.433378692492772,
+        -3.8149664892635196
+      ]
+    },
+    {
+      "phase": 0.625,
+      "pin": [
+        0.9079809994790933,
+        -1.782013048376736
+      ],
+      "wrist": [
+        10.746235926352947,
+        0.009282570398219558
+      ],
+      "slotPin": [
+        -8.93027392739476,
+        -3.5733086671516916
+      ]
+    },
+    {
+      "phase": 0.75,
+      "pin": [
+        1.902113032590307,
+        -0.6180339887498952
+      ],
+      "wrist": [
+        11.879173877796019,
+        0.058912752924134115
+      ],
+      "slotPin": [
+        -8.074947812615404,
+        -1.2949807304239247
+      ]
+    },
+    {
+      "phase": 0.875,
+      "pin": [
+        1.782013048376736,
+        0.907980999479093
+      ],
+      "wrist": [
+        11.745207827550054,
+        0.05080552604697841
+      ],
+      "slotPin": [
+        -8.181181730796581,
+        1.7651564729112077
+      ]
+    },
+    {
+      "phase": 1,
+      "pin": [
+        0.6180339887498953,
+        1.902113032590307
+      ],
+      "wrist": [
+        10.4360793028375,
+        0.003169586744058428
+      ],
+      "slotPin": [
+        -9.20001132533771,
+        3.8010564784365557
+      ]
+    }
+  ],
+  "sourceHashes": {
+    "html": "58f5f22245ad7a012caca49553d6719c8dbf4f772cb4768d111012b13ef19ef4",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-variable-crank-oracle.mjs",
+      "sha256": "9ee7e2226ce21050d5d1c60215f734e60c40832bd41dbeaa9a1afd3fecd7380b"
+    },
+    {
+      "file": "src/simulation/variable-radius-crank-motion.js",
+      "sha256": "818070a13affb3b4c7f4d1b56f38d6a377c46bbd1ce7ce3334d0538872fa1b41"
+    },
+    {
+      "file": "public/engravings/mm_168.png",
+      "sha256": "607858fe10470187961f48704d56f2bc0601dd518a5802e24bac531ab4b92b69"
+    }
+  ]
+}
