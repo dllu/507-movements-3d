@@ -120,3 +120,59 @@ finite lower-stop and bar restraint hardware, recompute nonoverlapping masses,
 and inspect all body pairs through the passive trajectory. Then test the
 revised dynamics and bake a converged cycle. Production remains unchanged
 until those checks and packaged playback pass.
+
+## Bored hardware, physical stop and supported bar
+
+The candidate now replaces the solid disk, elbow and guide-roller hubs with
+bored solids. The return arm is moved 0.05 forward so its rear face clears the
+bar by 0.03 while still engaging the projecting bar pin. The initial assembly
+check had found eleven interfering pairs; the revised assembly clears them.
+
+Hubs, stud ends, collars and the disk rim now begin at their host faces rather
+than overlapping them. The return and raised input arms meet the elbow hub
+at its outer perimeter. The moving-volume check finds no penetration above
+1e-6 in 46 same-body mesh pairs (43,896 surface queries). These designed
+interfaces and finite checks support the revised mesh-integrated masses;
+they are not an exact CSG union-volume proof. Decorative floating indexes
+were removed.
+
+A cylindrical fixed stop now contacts the raised input arm at its rest angle.
+The relieved model has no angular joint limit: gravity reset is stopped by
+that finite collision geometry. A rear bracket supports the stop. Two C-shaped
+bar guides remain engaged over the whole stroke and prevent lift or movement
+out of plane. The original left support roller alone loses engagement near
+the right end of travel, so it cannot provide the complete guide constraint.
+The added hardware is inferred and explicitly visible in the 3D view.
+
+With the updated masses and physical stop, the fine-step sixth-cycle bar range
+is 0.04069–1.02452. Its left position is 2.91 source pixels right of the drawn
+pose. Consecutive settled cycle endpoints differ by 2.41e-10 in bar position
+and have effectively zero follower velocity. Timestep halving changes sampled
+bar position by at most 0.0005053 (0.0361 source pixel), disk angle by
+0.0001805 rad, and elbow angle by 0.0022624 rad near impact. Three native tests
+pass, including sustained passive reciprocation and the compiled absence of
+a lever joint range in the relieved model.
+
+`review-stud-reverser-assembly.mjs` now checks 43 parts and 626 distinct-body
+pairs through 65 native full-cycle poses: 3,843,468 bidirectional queries,
+zero unintended interfering pairs. Working stud/lug, stud/arm, return-pin
+and physical-stop contacts are reported separately as soft contacts. The
+largest detected working penetration in this sampling is 0.0000541. This
+coarser full-assembly sample set does not supersede denser working-contact
+checks or prove continuous clearance. Source and oblique native renders were
+inspected after the hardware changes.
+
+Current reports are `153-supported-prototype.json`, `153-supported-fine.json`,
+`153-supported-refinement.json`, `153-assembly.json` and
+`153-moving-volumes.json`. Older `153-relieved-*` reports describe the preceding
+geometry at commit `8a5acef`. Regenerate the current trajectories using the
+same `INPUT_MIN=1.4 FRICTION=2` settings, with `REPORT` pointing to the supported
+report names, and preserve raw trajectories as
+`/dev/shm/153-supported-samples.json` and
+`/dev/shm/153-supported-fine-samples.json`. The two assembly scripts consume the
+latter. Run `node scripts/review-stud-reverser-moving-volumes.mjs` for the
+within-body volume check.
+
+Next: bake the settled fine-step trajectory, validate interpolation and the
+complete between-frame motion, then run production build and packaged playback
+before switching the loader. Production is still unchanged.

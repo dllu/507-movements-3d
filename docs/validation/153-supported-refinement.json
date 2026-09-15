@@ -1,0 +1,28 @@
+{
+  "movement": 153,
+  "method": "Matched 0.01-second sixth-cycle samples at dt=0.00025 and dt=0.000125, including bored hardware and native stop contact.",
+  "maximumCoordinateDifferences": [
+    {
+      "name": "disk",
+      "maximum": 0.0001804955681805609
+    },
+    {
+      "name": "bar",
+      "maximum": 0.0005052670932802344
+    },
+    {
+      "name": "lever",
+      "maximum": 0.0022623262338842265
+    }
+  ],
+  "sources": [
+    {
+      "file": "/dev/shm/153-supported-samples.json",
+      "sha256": "8298947775e6282513bfd9ef1a61e9c281ddfea546eee680efd087b6dbeca328"
+    },
+    {
+      "file": "/dev/shm/153-supported-fine-samples.json",
+      "sha256": "5992cf585421387ab99cd1676324a0b86fef0697e0c49362211578edaa87ae89"
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 # Current review: 153 stud-driven bar reverser
 
-An inferred stepped input arm now lets studs release without the old scripted
-reset. The rendered solids produce sustained passive MuJoCo strokes, with
-under 0.04 source-pixel bar change on timestep halving. Three native tests pass;
-a 601-pose working-arm audit finds no stud penetration into the raised portion
-and only small soft contact at the driving tip. Full bearings, bar restraints,
-nonoverlapping mass, assembly clearance and baking remain open. Production is
-unchanged. See [movement 153](movement-153.md); 150's source fit also remains open.
+153 now has bored moving hardware, disjoint moving solids, a contact-driven
+physical elbow stop and bar guides that remain engaged across the stroke.
+The supported passive trajectory passes a 43-part, 626-pair assembly check;
+three native tests pass and timestep halving changes bar motion by 0.0361
+source pixel. The inferred depth relief and hardware remain explicit limits.
+Baking, interpolation and packaged playback are next; production is unchanged.
+See [movement 153](movement-153.md). The 150 source fit remains open.
 
 # Shipped improvement: 152 two-stud trammel
 
