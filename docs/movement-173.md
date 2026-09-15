@@ -47,3 +47,33 @@ The historical [baseline](validation/173-existing-contact.json) hashes the
 model at commit 9d95f53. The [current audit](validation/173-current-contact.json)
 records the rendering/alignment increment. Both deliberately report failures;
 the audit script is diagnostic and does not assert clearance.
+
+## Passive contact reconstruction
+
+A standalone [MuJoCo study](../src/simulation/mujoco-silk-tappet/physics.js)
+now models a carrier, a wheel with 18 straight tappet teeth, and a fixed spherical
+pin. Only the carrier has an actuator. The wheel's angle comes from finite
+normal contact and inferred screw resistance; no prescribed indexing curve,
+angle clamp or output actuator drives it. Straight teeth are an explicit
+reconstruction choice for this pin-indexed wheel, not a meshing gear pair.
+
+The [qualification script](../scripts/qualify-silk-tappet.mjs) runs 18 revolutions
+at two timesteps, plus a control with the tappet's collisions disabled. It
+checks one-tooth advances, dwell speed, finite states, input tracking, rollback,
+contact penetration and agreement between timesteps. Detailed results are in
+[the native report](validation/173-native-tappet.json); bulk trajectories remain
+in `/dev/shm/173-native-tappet.json`.
+
+The timestep, tooth dimensions, axial thickness, pin height, initial tooth
+phase, inertia and resistance are recorded assumptions. MuJoCo's compliant
+contact permits a small negative gap; see its
+[contact model documentation](https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters).
+This study is not yet connected to the visible model. Next: reconstruct matching
+visible solids, fit them to the engraving, and validate interpolated playback
+and the remaining assembly before replacing the existing animation.
+
+The final qualification passes at 50 and 25 microsecond timesteps. Maximum
+wheel-angle disagreement is 5.440e-5 radians; worst contact gap is
+-2.580e-4 model units. Neither active run shows backward motion.
+Disabling tappet contact produces zero wheel rotation over all 18 revolutions.
+These are standalone solver results, not completion of movement 173.

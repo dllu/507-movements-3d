@@ -1,0 +1,411 @@
+{
+  "movement": 173,
+  "status": "unregistered-passive-tappet-contact-study",
+  "duration": 72,
+  "scope": "Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly is not yet reconstructed or baked.",
+  "assumptions": "Tooth dimensions, pin height, phase, inertia and screw friction are inferred. Small soft-contact penetration remains; native results are not a rendered-solid clearance certificate.",
+  "maximumTimestepAngleDifference": 0.000054402306858158944,
+  "runs": [
+    {
+      "parameters": {
+        "timestep": 0.00005,
+        "height": 0.485,
+        "phase": 0.1652,
+        "friction": 0.002,
+        "damping": 0.3,
+        "enabled": true,
+        "speed": 1.5707963267948966,
+        "station": 2.53,
+        "teeth": 18,
+        "pitch": 0.3490658503988659,
+        "start": -0.3
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "wheel": 0.3491062703720696,
+          "advance": 0.3491062703720696,
+          "dwellSpeed": 8.67720108276121e-12
+        },
+        {
+          "turn": 2,
+          "wheel": 0.6981721207929787,
+          "advance": 0.34906585042090915,
+          "dwellSpeed": 9.459451239770248e-12
+        },
+        {
+          "turn": 3,
+          "wheel": 1.0472379712205073,
+          "advance": 0.3490658504275286,
+          "dwellSpeed": 3.05204148213659e-11
+        },
+        {
+          "turn": 4,
+          "wheel": 1.3963038216723234,
+          "advance": 0.34906585045181604,
+          "dwellSpeed": 5.98591843279049e-11
+        },
+        {
+          "turn": 5,
+          "wheel": 1.7453696720924634,
+          "advance": 0.34906585042014004,
+          "dwellSpeed": 4.4253757760390553e-11
+        },
+        {
+          "turn": 6,
+          "wheel": 2.094435522518219,
+          "advance": 0.3490658504257558,
+          "dwellSpeed": 3.490764122109624e-11
+        },
+        {
+          "turn": 7,
+          "wheel": 2.443501372951017,
+          "advance": 0.3490658504327979,
+          "dwellSpeed": 8.102586659706244e-11
+        },
+        {
+          "turn": 8,
+          "wheel": 2.7925672234054097,
+          "advance": 0.34906585045439265,
+          "dwellSpeed": 4.7009897634895416e-11
+        },
+        {
+          "turn": 9,
+          "wheel": 3.1416330738219096,
+          "advance": 0.34906585041649985,
+          "dwellSpeed": 7.210337451446875e-11
+        },
+        {
+          "turn": 10,
+          "wheel": 3.4906989242393824,
+          "advance": 0.34906585041747284,
+          "dwellSpeed": 4.788366192244496e-11
+        },
+        {
+          "turn": 11,
+          "wheel": 3.839764774662893,
+          "advance": 0.3490658504235107,
+          "dwellSpeed": 4.136698434141754e-11
+        },
+        {
+          "turn": 12,
+          "wheel": 4.188830625075698,
+          "advance": 0.349065850412805,
+          "dwellSpeed": 5.811327356040876e-11
+        },
+        {
+          "turn": 13,
+          "wheel": 4.537896475493772,
+          "advance": 0.34906585041807414,
+          "dwellSpeed": 5.858943633787618e-11
+        },
+        {
+          "turn": 14,
+          "wheel": 4.886962325929982,
+          "advance": 0.34906585043620986,
+          "dwellSpeed": 6.816431603175293e-11
+        },
+        {
+          "turn": 15,
+          "wheel": 5.236028176358779,
+          "advance": 0.3490658504287971,
+          "dwellSpeed": 7.12679738755501e-11
+        },
+        {
+          "turn": 16,
+          "wheel": 5.585094026781118,
+          "advance": 0.3490658504223392,
+          "dwellSpeed": 1.406492372477502e-10
+        },
+        {
+          "turn": 17,
+          "wheel": 5.934159877196471,
+          "advance": 0.34906585041535276,
+          "dwellSpeed": 7.499055202868064e-11
+        },
+        {
+          "turn": 18,
+          "wheel": 6.283225727612209,
+          "advance": 0.34906585041573823,
+          "dwellSpeed": 7.681655901660225e-11
+        }
+      ],
+      "minimumGap": -0.00025797441357437376,
+      "contactSteps": 16128,
+      "maximumCarrierError": 0.00005820825967531654,
+      "maximumRollback": 0
+    },
+    {
+      "parameters": {
+        "timestep": 0.000025,
+        "height": 0.485,
+        "phase": 0.1652,
+        "friction": 0.002,
+        "damping": 0.3,
+        "enabled": true,
+        "speed": 1.5707963267948966,
+        "station": 2.53,
+        "teeth": 18,
+        "pitch": 0.3490658503988659,
+        "start": -0.3
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "wheel": 0.34905186810265276,
+          "advance": 0.34905186810265276,
+          "dwellSpeed": 5.948976535214743e-12
+        },
+        {
+          "turn": 2,
+          "wheel": 0.6981177184951712,
+          "advance": 0.3490658503925185,
+          "dwellSpeed": 1.6590141014580562e-11
+        },
+        {
+          "turn": 3,
+          "wheel": 1.0471835689344005,
+          "advance": 0.3490658504392292,
+          "dwellSpeed": 2.5094860755239272e-11
+        },
+        {
+          "turn": 4,
+          "wheel": 1.3962494194510198,
+          "advance": 0.3490658505166193,
+          "dwellSpeed": 3.051837525861629e-11
+        },
+        {
+          "turn": 5,
+          "wheel": 1.745315269964264,
+          "advance": 0.34906585051324424,
+          "dwellSpeed": 2.7306385142524232e-11
+        },
+        {
+          "turn": 6,
+          "wheel": 2.09438112049122,
+          "advance": 0.34906585052695593,
+          "dwellSpeed": 4.389911250139345e-11
+        },
+        {
+          "turn": 7,
+          "wheel": 2.4434469710045565,
+          "advance": 0.3490658505133366,
+          "dwellSpeed": 8.303708138482844e-11
+        },
+        {
+          "turn": 8,
+          "wheel": 2.7925128215305763,
+          "advance": 0.3490658505260198,
+          "dwellSpeed": 4.9946688459100414e-11
+        },
+        {
+          "turn": 9,
+          "wheel": 3.141578672029693,
+          "advance": 0.34906585049911687,
+          "dwellSpeed": 3.784687730853579e-11
+        },
+        {
+          "turn": 10,
+          "wheel": 3.490644522529689,
+          "advance": 0.3490658504999957,
+          "dwellSpeed": 4.843854099244544e-11
+        },
+        {
+          "turn": 11,
+          "wheel": 3.839710373055661,
+          "advance": 0.3490658505259723,
+          "dwellSpeed": 4.273561857028343e-11
+        },
+        {
+          "turn": 12,
+          "wheel": 4.188776223545197,
+          "advance": 0.3490658504895361,
+          "dwellSpeed": 6.635956704874072e-11
+        },
+        {
+          "turn": 13,
+          "wheel": 4.537842074048964,
+          "advance": 0.3490658505037665,
+          "dwellSpeed": 3.8892552813202495e-11
+        },
+        {
+          "turn": 14,
+          "wheel": 4.886907924547497,
+          "advance": 0.34906585049853334,
+          "dwellSpeed": 4.7910482554673404e-11
+        },
+        {
+          "turn": 15,
+          "wheel": 5.235973775044893,
+          "advance": 0.3490658504973956,
+          "dwellSpeed": 4.555969048996218e-11
+        },
+        {
+          "turn": 16,
+          "wheel": 5.5850396255504435,
+          "advance": 0.34906585050555083,
+          "dwellSpeed": 5.673487903642082e-11
+        },
+        {
+          "turn": 17,
+          "wheel": 5.934105476007754,
+          "advance": 0.3490658504573103,
+          "dwellSpeed": 8.511183770847903e-11
+        },
+        {
+          "turn": 18,
+          "wheel": 6.28317132563732,
+          "advance": 0.3490658496295662,
+          "dwellSpeed": 5.468169291974071e-11
+        }
+      ],
+      "minimumGap": -0.00024660490735006063,
+      "contactSteps": 32706,
+      "maximumCarrierError": 0.00005819333766687862,
+      "maximumRollback": 0
+    },
+    {
+      "parameters": {
+        "timestep": 0.00005,
+        "height": 0.485,
+        "phase": 0.1652,
+        "friction": 0.002,
+        "damping": 0.3,
+        "enabled": false,
+        "speed": 1.5707963267948966,
+        "station": 2.53,
+        "teeth": 18,
+        "pitch": 0.3490658503988659,
+        "start": -0.3
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 2,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 3,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 4,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 5,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 6,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 7,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 8,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 9,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 10,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 11,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 12,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 13,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 14,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 15,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 16,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 17,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        },
+        {
+          "turn": 18,
+          "wheel": 0,
+          "advance": 0,
+          "dwellSpeed": 0
+        }
+      ],
+      "minimumGap": 0,
+      "contactSteps": 0,
+      "maximumCarrierError": 7.815970093361102e-13,
+      "maximumRollback": 0
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/qualify-silk-tappet.mjs",
+      "sha256": "a5ff6f4f70e89525e5278ff9bbc243a1871509f192405a3805410a694a7b82bc"
+    },
+    {
+      "file": "src/simulation/mujoco-silk-tappet/physics.js",
+      "sha256": "226c5ba8ca4da47b001b8767c07108c744daa71011e7e91cb7ec5e31c629b1e1"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
