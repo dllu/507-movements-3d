@@ -1,20 +1,17 @@
-# Current review: 149 twin cam followers
+# Current review: 150 selectable valve cams
 
-149's MuJoCo candidate now uses ordinary pinned rods connected to inferred
-vertical output sliders. The 33-part reconstruction includes rear guide channels
-and shaft bearings; sampled assembly checks and five physics tests pass. The
-finer timestep agrees within 0.006 degrees for lever positions. Source-length
-rods and traced cam silhouettes are retained. Supports and output guidance are
-explicit engineering interpretations. Position closure is small, but velocity
-residuals and interpolated contacts need bake validation before production
-playback is switched. See [movement 149](movement-149.md).
+Continue at movement 150. Its four axially selectable cam throws must be checked
+against the engraving and any available source animation.
 
-149's cam bevels and outline tubes no longer protrude into the rollers. A
-65-pose actual-surface check passes, as do the focused analytic test, build and
-desktop/mobile playback/restart. The cycle is now six seconds, with frontal
-view and no ground plane. The cam silhouettes remain unlike the source, both
-rods are too short, and bores, supports and return dynamics still need review.
-See [movement 149](movement-149.md); working-contact clearance is not completion.
+# Shipped reconstruction: 149 twin cam followers
+
+149 now uses a 453 KB, 601-pose offline MuJoCo bake with traced cams, source-length
+rods, inferred vertical output guides and rear bearings. Five physics tests,
+two bake tests, a 33-part between-frame assembly check, production build and
+packaged desktop/mobile playback pass. Restart, full-sweep framing and no WASM
+request are verified. Guides and obscured cam geometry remain explicit
+engineering interpretations; small soft-contact and velocity residuals are
+recorded in [movement 149](movement-149.md).
 
 # Shipped reconstruction: 148 oblong-frame crank-rocker
 

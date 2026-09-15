@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "names": [
+    "shaft",
+    "upper",
+    "upperRoll",
+    "upperRod",
+    "lower",
+    "lowerRoll",
+    "lowerRod",
+    "upperSlide",
+    "lowerSlide"
+  ],
+  "turns": [
+    6.283185307179586,
+    0,
+    -14.357827652555443,
+    0,
+    0,
+    -15.777234882127203,
+    0,
+    0,
+    0
+  ],
+  "period": 6,
+  "loopStart": 0,
+  "loopEnd": 6,
+  "bounds": {
+    "min": [
+      -0.3612738591918063,
+      -2.98799991607666,
+      -0.9800000190734863
+    ],
+    "max": [
+      5.846186662865579,
+      1.4172738591918066,
+      0.9899999964237214
+    ]
+  },
+  "focus": [
+    2.742456401836886,
+    -0.7853630284424268,
+    0.004999988675117528
+  ],
+  "cameraDirection": [
+    0.05,
+    0.03,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-twin-cam.mjs",
+      "sha256": "921d3f82f606de0f77354abdb433ee0d5621ce2b3aac2d0aad8d402b696db26a"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "2ecb1b14078f791d8a201491234d6cc36657563c7ceeb111d7996a0ead381b48"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "docs/validation/149-guided-fine.json",
+      "sha256": "31cab625e64d157ac30ec3dcfa603e18a31b41bce0c8963384385b47246f994a"
+    },
+    {
+      "file": "docs/validation/149-guided-assembly.json",
+      "sha256": "791fcff6530ca0cdccae0dbe0e572c9ffdf00de3a7dcfe26c5d784a08758ae03"
+    }
+  ],
+  "closure": {
+    "shaft": -0.000002340747315088265,
+    "upper": -0.0000012329132803579057,
+    "upperRoll": 0,
+    "upperRod": 9.212826147242392e-7,
+    "lower": -7.346235756516828e-8,
+    "lowerRoll": 0,
+    "lowerRod": 7.663763975859772e-8,
+    "upperSlide": -0.0000034182954236775323,
+    "lowerSlide": -2.1507023542297055e-7
+  },
+  "bytes": 452628,
+  "sha256": "191193c16da3227860dae3c5ca122a0c603f5a2bff6ae40dbd5dfce75c34ca0f",
+  "samples": 601
+}

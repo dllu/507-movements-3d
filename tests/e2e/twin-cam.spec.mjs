@@ -7,6 +7,7 @@ test('149 plays its two cam followers and restarts on desktop and mobile',async(
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/149-packaged-moving.png'});
  await page.getByRole('button',{name:'Restart',exact:true}).click();expect((await canvas.screenshot()).equals(initial)).toBe(true);
  expect(await page.evaluate(()=>performance.getEntriesByType('resource').some(r=>/\.wasm(?:\?|$)/.test(r.name)))).toBe(false);
+ expect(await page.evaluate(()=>performance.getEntriesByType('resource').some(r=>/\/149\.json-.*\.gz(?:\?|$)/.test(r.name)))).toBe(true);
  const box=await canvas.boundingBox();await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);await page.mouse.down();await page.mouse.move(box.x+box.width*.5+100,box.y+box.height*.5+10,{steps:12});await page.mouse.up();await page.screenshot({path:'/dev/shm/149-packaged-oblique.png'});
  await page.getByRole('button',{name:'Reset view',exact:true}).click();
  await page.setViewportSize({width:390,height:844});await expect(canvas).toBeVisible();await page.screenshot({path:'/dev/shm/149-packaged-mobile.png'});expect(errors).toEqual([]);

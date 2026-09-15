@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 149) {
+    const {makeBakedTwinCam} = await import('./baked/twin-cam.js');
+    const model = await makeBakedTwinCam();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 148) {
     const {makeGearedCrank} = await import('./geared-crank.js');
     const model = makeGearedCrank();

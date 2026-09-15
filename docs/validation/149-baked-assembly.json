@@ -1,0 +1,62 @@
+{
+  "movement": 149,
+  "status": "baked-guided-output-rods",
+  "method": "All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 playback poses from 0.005 to 6.005 seconds (halfway between saved poses, with one repeated loop pose). Cam/roller soft contact reported separately. Inferred output channels and rear shaft bearing frame included. No continuous collision proof.",
+  "summary": {
+    "poses": 61,
+    "parts": 33,
+    "checks": 7765012,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "workingContacts": {
+    "cam0/roller0": {
+      "firstTime": 0.005,
+      "points": 53,
+      "maximumDepth": 0.0003436768153924176
+    },
+    "cam1/roller1": {
+      "firstTime": 0.10500000000000001,
+      "points": 55,
+      "maximumDepth": 0.00032674963807380856
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-twin-cam-bake.mjs",
+      "sha256": "870b32a5b4bd6a5442fc2802aeb1ed280e214931ff99b429aa065ddd028ebfe1"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "2ecb1b14078f791d8a201491234d6cc36657563c7ceeb111d7996a0ead381b48"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "src/simulation/baked/assets/149.json.gz",
+      "sha256": "191193c16da3227860dae3c5ca122a0c603f5a2bff6ae40dbd5dfce75c34ca0f"
+    },
+    {
+      "file": "src/simulation/baked/twin-cam.js",
+      "sha256": "cd0a421ac9883bfc6111a0de2904bf0c7e28f63b45440b5d73110cf434db13e5"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    }
+  ]
+}

@@ -1,4 +1,43 @@
-# Movement 149: twin cam followers (review in progress)
+# Movement 149: baked twin cam followers
+
+## Shipped reconstruction
+
+Movement 149 now loads a 452,628-byte bundle containing the traced geometry and
+601 recorded poses over six seconds. It uses passive MuJoCo contact and guided
+output dynamics baked offline; the browser loads no MuJoCo WASM for this model
+and does not construct the cam profiles or integrate roller spin on entry.
+The near-frontal view fits the complete cam sweep, fog and ground are disabled,
+and Restart restores the initial state exactly.
+
+The lower output sliders and rear bearing structure are engineering
+interpretations, explicitly disclosed in the model note. They preserve ordinary
+upper rod pins and provide straight-line output at the lower pins. The hidden
+rear cam profile, depth, uniform density, damping and absence of external load
+remain reconstruction assumptions. This is not a historical dimensional plan.
+
+Two bake tests compare interpolation with native physics at 2.5 ms intervals,
+check pin alignment, framing, fog, restart and loop continuity. Maximum output
+pin mismatch is 0.00000707 world units; maximum generalized-coordinate error is
+0.001409 (the check includes roller angles). [The baked assembly check](validation/149-baked-assembly.json)
+tests 61 poses halfway between saved frames, including one repeated loop pose:
+33 meshes, 7,765,012 bidirectional point/solid checks, no unintended penetration.
+Soft working-contact mesh depth is at most 0.000344 units. These are sampled
+checks, not continuous collision proof.
+
+The bake closes position residuals smaller than 0.00000342 units/radians at the
+last frame; accumulated roller spin remains unwrapped. The measured native
+velocity residuals documented below are not removed by this correction. Visual
+loop position continuity is tested; exact dynamic periodicity is not claimed.
+
+The production build and packaged Chrome desktop/mobile playback test pass,
+including play/pause, exact restart, orbit/reset, the baked resource request and
+absence of WASM. Continue the catalog review at 150.
+
+Rebuild with `node scripts/bake-twin-cam.mjs`, validate with
+`node --test tests/twin-cam-physics.test.mjs tests/twin-cam-baked.test.mjs`,
+and run `node scripts/review-twin-cam-bake.mjs` for interpolated assembly checks.
+
+## Earlier analytic implementation
 
 The [source](https://507movements.com/mm_149.html) describes cams converting
 uniform rotation into alternating rectilinear motion of two rods. Its animation
@@ -33,7 +72,7 @@ no WASM request. The test uses matching time inputs for exact state comparisons;
 velocity-error tolerances were adjusted for floating-point rounding at the
 higher speed. These tolerances are not physical contact tolerances.
 
-## Remaining reconstruction work
+## Earlier reconstruction findings (superseded below)
 
 The frontal render shows that the rear cam is substantially broader than the
 engraved upright profile, and the front cam also needs silhouette review. The
@@ -97,8 +136,8 @@ Reproduce current evidence with `node --test tests/twin-cam-physics.test.mjs`,
 `node scripts/review-twin-cam-candidate.mjs`, and
 `DURATION=60 node scripts/probe-twin-cam-physics.mjs`; use `TIMESTEP=.00025`
 and `REPORT=docs/validation/149-guided-fine.json` for refinement.
-The application still uses the older analytic version. Offline baking,
-interpolation checks and packaged playback validation are next.
+The subsequent bake and packaged validation are described in the shipped
+reconstruction above.
 
 ## Historical freely suspended rod candidate (d181801)
 
@@ -147,6 +186,5 @@ The earlier [0.5 ms](validation/149-gravity-prototype.json) and
 commit f2e9598's unloaded-rod prototype. Their timestep agreement does not
 validate the changed mass model and freely suspended rods.
 
-The application remains on the analytic implementation. Resolve output guidance,
-complete supports, repeat contact/assembly and timestep checks, then validate an
-offline bake before switching production playback.
+These were open findings at d181801. The guided reconstruction and shipped bake
+above supersede this freely suspended rod candidate.
