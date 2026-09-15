@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeBoredScissorLink } from './bored-scissor-link.js';
+import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -624,6 +625,18 @@ function lazyTongsRectilinearAmplifier() {
   );
   fixedCenterPin.userData.fixed = true;
   fixedFrame.add(fixedCenterPin);
+  // Seat the stationary pin in the pedestal instead of ending in the air
+  // ahead of it. Only this pin is fixed; the two crossing links turn on it.
+  const fixedShaft = fixedCenterPin.userData.blocks.shaft;
+  fixedShaft.geometry.dispose();
+  fixedShaft.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, 1.45, 28);
+  fixedShaft.position.z = pinSpan / 2 - 1.45 / 2;
+
+  // The engraving has one plain, narrow pedestal, without lateral braces.
+  for (const extra of [leftGusset, rightGusset, bearingBlock, fixedBearingRing]) extra.visible = false;
+  baseFoot.geometry.dispose();
+  baseFoot.geometry = new THREE.BoxGeometry(pedestalWidth, 0.10, pedestalDepth);
+  baseFoot.position.y = fixedBaseY + .05;
 
   const linkageGroup = new THREE.Group();
   linkageGroup.userData.role = 'ten-member-four-bay-lazy-tongs-linkage';
@@ -684,11 +697,21 @@ function lazyTongsRectilinearAmplifier() {
     const material = color === PALETTE.driver
       ? driverMaterial
       : drivenMaterial;
-    const hub = new THREE.Mesh(
-      new THREE.SphereGeometry(0.19, 28, 18),
-      material,
-    );
-    hub.scale.z = 0.72;
+    const hub = new THREE.Group();
+    const rectangle = (a, b, c, d) => poly([[a,b],[c,b],[c,d],[a,d]]);
+    const outer = clip.union(poly(circle([0, 0], .27, 64)),
+      rectangle(Math.min(0, direction * .62), -.12, Math.max(0, direction * .62), .12));
+    const cheek = clip.difference(outer, poly(circle([0, 0], pinRadius + .003, 64)));
+    for (const [low, high] of [[-.43, -.37], [.50, .56]]) {
+      const mesh = new THREE.Mesh(plate(cheek, low, high), material);
+      mesh.userData.role = `${role}-bored-clevis-cheek-${low}`;
+      hub.add(mesh);
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(.22, .24, .99), material);
+    bridge.position.x = direction * .51;
+    bridge.position.z = .065;
+    bridge.userData.role = `${role}-clevis-bridge`;
+    hub.add(bridge);
     hub.userData.role = `${role}-clevis-hub`;
     const hubRing = new THREE.Mesh(
       new THREE.TorusGeometry(
@@ -699,24 +722,33 @@ function lazyTongsRectilinearAmplifier() {
       ),
       accentMaterial,
     );
-    hubRing.position.z = 0.25;
+    hubRing.position.z = 0.58;
     hubRing.userData.role = `${role}-front-clevis-ring`;
-    const rodLength = 1.20;
-    const rod = cylinderAlongX(0.105, rodLength, material, 28);
-    rod.position.x = direction * rodLength / 2;
+    // Visible rod ends measured from the engraving; the left stub is shorter.
+    const rodLength = (direction < 0 ? 57 : 101) * sourceScale;
+    const rod = cylinderAlongX(0.105, rodLength - .5, material, 28);
+    rod.position.x = direction * (rodLength + .5) / 2;
     rod.userData.role = `${role}-rectilinear-rod`;
     const grip = cylinderAlongX(0.15, 0.34, darkMaterial, 28);
     grip.position.x = direction * (rodLength + 0.10);
+    grip.visible = false;
     grip.userData.role = `${role}-outer-grip`;
     const endpointPin = makePinAssembly(
       `${role}-terminal-through-pin`,
       accentMaterial,
     );
+    const { shaft, frontRing, frontCap } = endpointPin.userData.blocks;
+    shaft.geometry.dispose();
+    shaft.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, 1.05, 28);
+    shaft.position.z = .085;
+    frontRing.position.z = .628;
+    frontCap.position.z = .635;
     const motionIndex = new THREE.Mesh(
       new THREE.SphereGeometry(0.09, 18, 12),
       whiteMaterial,
     );
     motionIndex.position.set(direction * 0.72, 0.15, 0.13);
+    motionIndex.visible = false;
     motionIndex.userData.role = `${role}-white-rectilinear-motion-index`;
     assembly.add(endpointPin, grip, hub, hubRing, motionIndex, rod);
     assembly.userData.blocks = {

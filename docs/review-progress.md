@@ -1,10 +1,11 @@
-# Current review: 144 lazy-tongs joints
+# Completed review: 144 lazy-tongs joints
 
-144's existing analytic 3:1 linkage agrees with the source mechanism. Its ten
-links now have flat plates and actual pin bores; a 65-orientation surface test
-and the existing kinematic test pass. Frontal view and restart are added.
-Continue with handle clevises, pedestal support and full-assembly clearance;
-see [movement 144](movement-144.md). This review is not complete.
+144's analytic 3:1 linkage now uses bored flat links and handle clevises, a
+seated fixed pin, source-length rod ends and a plain pedestal. Frontal view,
+fog removal, eight-second playback and restart are checked. Bore tests and the
+existing kinematic test pass; the visible assembly clears 65 sampled
+configurations including both stroke limits. Depths remain reconstructed;
+see [movement 144](movement-144.md). Continue to 145.
 
 # Completed review: 143 generated keyed-worm traverse
 

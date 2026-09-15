@@ -1,0 +1,34 @@
+{
+  "movement": 144,
+  "method": "Bidirectional actual vertices, edge midpoints and face centers against oriented mesh solids. All visible parts, excluding same rigid body joins. Half-cycle covers every configuration of the reversible linkage, including both stroke limits. This is a sampled check, not a continuous swept-volume proof.",
+  "sources": [
+    {
+      "file": "scripts/review-lazy-tongs-assembly.mjs",
+      "sha256": "f052544f5d57e99c082cd82508feef7d7955ef127af39eec64ed68fa032b7e0c"
+    },
+    {
+      "file": "src/simulation/authored-linkages.js",
+      "sha256": "c825fdeedfd216d204ab74b4c68d5911f08db86df60cbced262229ac5007ef01"
+    },
+    {
+      "file": "src/simulation/bored-scissor-link.js",
+      "sha256": "c3f9e5d8f281f4819d5c2491ba021b0a46bf040e1535bacb377509ef8b705bc1"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "summary": {
+    "poses": 65,
+    "parts": 61,
+    "pairs": 1734,
+    "checks": 11959364,
+    "failingPairs": 0
+  },
+  "failures": {}
+}

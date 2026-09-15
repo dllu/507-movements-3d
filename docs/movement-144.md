@@ -1,4 +1,4 @@
-# Movement 144: lazy tongs (review in progress)
+# Movement 144: lazy tongs
 
 The [engraving and animated reference](https://507movements.com/mm_144.html)
 show four rhombi, with the third crossing fixed to a pedestal. Equal rigid
@@ -25,6 +25,19 @@ disabled, and restart restores the source pose.
 The production build and packaged desktop/mobile playback, orbit and exact
 restart checks pass without loading WASM. The packaged frontal view was reviewed.
 
-Still to review: the handle clevises currently contain solid hubs, the pedestal
-and fixed-pin support need closer source matching, and all independent moving
-parts need a full-cycle clearance check. Do not treat 144 as fully validated yet.
+The handles use bored front and rear clevis cheeks joined outside the sweep of
+the links. Their pins span both cheeks. The front cheek is offset outward to
+clear adjacent pin retainers at maximum folding. The stationary pin extends
+into the pedestal, and the extra braces, bearing block and intersecting ring
+have been removed from the visible assembly. Rod ends use the engraving's
+unequal 57- and 101-pixel lengths; the invented grips and floating motion markers
+are hidden. Axial spacing, clevis construction and bearing depths are inferred
+from a planar engraving.
+
+The [assembled mesh check](validation/144-assembly.json) covers every visible
+part in 65 configurations, including both stroke limits. It tests actual
+vertices, edge midpoints and triangle centers in both directions against the
+other solid. Same-body joins are excluded. No penetrations are detected. The
+closing half-cycle retraces the same configurations, so the check covers both
+directions; it is still sampling, not a continuous swept-volume proof. Focused
+tests also verify bore clearance, pin spans and seating of the fixed pin.
