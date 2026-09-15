@@ -1,6 +1,6 @@
 {
   "movement": 176,
-  "status": "packaged-rendering-passed-source-mounting-review-open",
+  "status": "packaged-desktop-mobile-passed",
   "checks": [
     "playback",
     "exact Restart",
@@ -9,7 +9,7 @@
     "no WASM requests",
     "no page errors"
   ],
-  "limitations": "Ideal prescribed one-to-one coupling and selector angle lock. Selector retention is checked separately; output-shaft attachment and quantitative source fit remain open.",
+  "limitations": "Ideal prescribed engaged motion, fitted shaft seat and selector angle lock. Depths and fixed bearing supports inferred. Sparse source-edge audit and finite clearance checks are documented separately.",
   "sources": [
     {
       "file": "tests/e2e/engaged-engine-coupling.spec.mjs",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
+      "sha256": "30c37558609f13ed4fb3ea0699c91213b9471566777ff20286f09fac58817298"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

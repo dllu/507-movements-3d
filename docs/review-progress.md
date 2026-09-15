@@ -1,11 +1,11 @@
-# Review open: 176 engaged engine coupling
+# Shipped reconstruction: 176 engaged engine coupling
 
-The selector halves now connect through a sleeve with retaining lips and
-recessed arc details. Independent attachment samples pass; selector-versus-cheek
-clearance is included in the 129-pose sweep with no intersections. Both 176/177
-tests, build and desktop/mobile checks pass. Inferred depths and ideal angular
-locking are documented. Output-shaft attachment and source measurements remain
-open. See [movement 176](movement-176.md). Continue with 176.
+A shouldered shaft now attaches to the cheek, and full circular bosses restore
+the engraved eye outlines. Ten measured source features fit within 5.98 pixels.
+Selector and crank attachment checks, 129-pose clearance, 176/177 tests, build
+and desktop/mobile checks pass. Equal-throw motion, selected ring angle and
+fitted joints are ideal constraints; unillustrated depths/supports are inferred.
+See [movement 176](movement-176.md). Next: 177; the full review remains active.
 
 # Shipped constrained reconstruction: 175 branch-transfer crank
 

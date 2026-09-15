@@ -1,63 +1,111 @@
 {
   "movement": 176,
-  "status": "selector-attachment-and-retention-checked",
+  "status": "selector-and-crank-attachments-checked",
   "links": [
     {
       "from": "left",
       "to": "sleeve",
-      "attachmentSamples": 264,
+      "attachmentSamples": 659,
       "noncollinear": true
     },
     {
       "from": "right",
       "to": "sleeve",
-      "attachmentSamples": 264,
+      "attachmentSamples": 659,
       "noncollinear": true
     },
     {
       "from": "leftFace",
       "to": "left",
-      "attachmentSamples": 676,
+      "attachmentSamples": 818,
       "noncollinear": true
     },
     {
       "from": "rightFace",
       "to": "right",
-      "attachmentSamples": 676,
+      "attachmentSamples": 818,
       "noncollinear": true
     },
     {
       "from": "rear",
       "to": "left",
-      "attachmentSamples": 369,
+      "attachmentSamples": 482,
       "noncollinear": true
     },
     {
       "from": "rear",
       "to": "right",
-      "attachmentSamples": 367,
+      "attachmentSamples": 480,
       "noncollinear": true
     },
     {
       "from": "front",
       "to": "sleeve",
-      "attachmentSamples": 512,
+      "attachmentSamples": 1536,
+      "noncollinear": true
+    },
+    {
+      "from": "shaft",
+      "to": "cheek",
+      "attachmentSamples": 256,
+      "noncollinear": true
+    },
+    {
+      "from": "cap",
+      "to": "shaft",
+      "attachmentSamples": 386,
+      "noncollinear": true
+    },
+    {
+      "from": "inputBoss",
+      "to": "inputShaft",
+      "attachmentSamples": 258,
+      "noncollinear": true
+    },
+    {
+      "from": "inputArm",
+      "to": "inputBoss",
+      "attachmentSamples": 104,
+      "noncollinear": true
+    },
+    {
+      "from": "wristBoss",
+      "to": "inputArm",
+      "attachmentSamples": 150,
+      "noncollinear": true
+    },
+    {
+      "from": "wrist",
+      "to": "wristBoss",
+      "attachmentSamples": 162,
+      "noncollinear": true
+    },
+    {
+      "from": "bottomBoss",
+      "to": "cheek",
+      "attachmentSamples": 1188,
+      "noncollinear": true
+    },
+    {
+      "from": "topBoss",
+      "to": "cheek",
+      "attachmentSamples": 1032,
       "noncollinear": true
     }
   ],
   "frontClearance": 0.016000000000000014,
   "rearClearance": 0.015999999999999986,
   "wristTipToSleeve": 0.014999999999999986,
-  "method": "Actual finite-surface attachment samples for both lobes to the connecting sleeve, each recessed face, both rear lips and the front lip. Noncollinear samples establish an area connection. Separate cross-family audit checks cheek/selector interference.",
-  "assumptions": "Axial construction inferred from the front engraving. Selected angular position is held by an ideal lock; no locking hardware is inferred. Other same-body shaft and crank attachments remain outside this check.",
+  "method": "Actual finite-surface attachment samples for both lobes to the connecting sleeve, each recessed face, both rear lips the front lip, fitted output shaft and rear input/wrist chain. Noncollinear samples establish an area connection. Separate cross-family audit checks cheek/selector interference.",
+  "assumptions": "Axial construction inferred from the front engraving. Selected angular position is held by an ideal lock; no locking hardware is inferred. Output seat is treated as a rigid fit; axial shafts and fixed bearing supports are inferred.",
   "sources": [
     {
       "file": "scripts/review-engine-coupling-mount.mjs",
-      "sha256": "af95130b4df6875e86524faea69ad0a4c16e9e80612e1241632be4e9677cfdb5"
+      "sha256": "51952fa60568e74730622764095c8c534d8a7e088b72444b613e8918ced222f5"
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
+      "sha256": "30c37558609f13ed4fb3ea0699c91213b9471566777ff20286f09fac58817298"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

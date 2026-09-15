@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring,plate,poly,circle,sector,polygonClipping} from './finite-plate-geometry.js';
+import {ring,turned,plate,poly,circle,sector,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1249,9 +1249,24 @@ function qualifyEngagedGeometry(model) {
   b.selectorRightWall.position.x=g.slotHalfWidth+.013;
   b.fixedFrontBearingRing.geometry.dispose();b.fixedFrontBearingRing.geometry=ring(.425,.555,-.075,.075,96);
   b.fixedFrontBearing.position.z=.82;
+  // A shouldered shaft fills the cheek bore; the journal remains narrower
+  // where it runs in the front bearing. Treat the fitted seat as rigid.
+  b.outputCrankPlate.geometry.dispose();
+  b.outputCrankPlate.geometry=centeredExtrusion(makeOutputCrankShape(g).shape,g.outputCrankDepth,0);
+  b.outputShaft.geometry.dispose();
+  b.outputShaft.geometry=turned([[-.41,0],[-.41,.55],[-.26,.55],[-.24,.42],[.41,.42],[.41,0]],48);
+  b.outputShaft.geometry.rotateX(-Math.PI/2);
+  b.outputShaftCap.geometry.dispose();b.outputShaftCap.geometry=new THREE.CylinderGeometry(.55,.55,.10,96);
+  b.outputShaftOutline.removeFromParent();b.outputShaftOutline.geometry.dispose();
+  for(const [name,inner,outer,y]of [['output-bottom-boss',.55,.79,0],['output-top-boss',.705,.76,g.crankRadius]]){
+    const mesh=new THREE.Mesh(ring(inner,outer,.10,.13,128),b.outputCrankPlate.material);mesh.position.y=y;mesh.userData.role=name;b.outputCrank.add(mesh);b[name]=mesh;
+  }
+  for(const mesh of [b.selectorLeftLobe,b.selectorRightLobe]){mesh.material=mesh.material.clone();mesh.material.color.multiplyScalar(.8);}
+  for(const name of ['output-bottom-boss','output-top-boss']){b[name].material=b[name].material.clone();b[name].material.color.multiplyScalar(.88);}
+  root.userData.outputShaftMount={seatRadius:.55,seatWorldZ:[.31,.46],journalRadius:.42,assumption:'Integral shouldered shaft with an ideal rigid fitted seat; interference, keys and fasteners are not simulated.'};
   for(const mesh of [b.contactMarker,b.motionEnvelope,b.inputShaftIndex,b.outputRotationIndex,b.selectorIndex,b.wristFaceIndex])mesh.visible=false;
   root.traverse(object=>{if(object.material)for(const material of [].concat(object.material))material.fog=false;});
-  Object.assign(root.userData,{hideGround:true,cameraFov:8,materialsIgnoreSceneFog:true,supportsRestart:true,reconstructionStatus:'candidate',animationTiming:{authoredCyclePeriod:g.cyclePeriod},minimumDisplayCycleSeconds:4});
+  Object.assign(root.userData,{hideGround:true,cameraFov:8,materialsIgnoreSceneFog:true,supportsRestart:true,reconstructionStatus:'reconstructed',reconstructionNote:'Equal-throw cranks shown under steady engaged load. One-to-one motion and the selected ring angle are ideal constraints. Retaining depths, fitted shaft seat and bearing supports are inferred from the front engraving.',animationTiming:{authoredCyclePeriod:g.cyclePeriod},minimumDisplayCycleSeconds:4});
   model.cameraDirection=new THREE.Vector3(0,0,1);model.reset=()=>model.update(0);return model;
 }
 

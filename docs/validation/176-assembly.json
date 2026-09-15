@@ -1,7 +1,7 @@
 {
   "movement": 176,
-  "status": "sampled-clearance-passed-attachments-unreviewed",
-  "meshes": 26,
+  "status": "sampled-clearance-passed",
+  "meshes": 27,
   "poses": 129,
   "pairs": [
     [
@@ -46,10 +46,6 @@
     ],
     [
       "fixed-front-output-bearing-solid",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -99,6 +95,14 @@
     [
       "fixed-front-output-bearing-solid",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "output-bottom-boss"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "output-top-boss"
     ],
     [
       "fixed-rear-input-bearing-solid",
@@ -142,10 +146,6 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -195,6 +195,14 @@
     [
       "fixed-rear-input-bearing-solid",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "output-bottom-boss"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-arm",
@@ -202,10 +210,6 @@
     ],
     [
       "rear-input-crank-arm",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-arm",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -255,6 +259,14 @@
     [
       "rear-input-crank-arm",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-arm",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-arm",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-shaft-boss",
@@ -262,10 +274,6 @@
     ],
     [
       "rear-input-crank-shaft-boss",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -315,6 +323,14 @@
     [
       "rear-input-crank-shaft-boss",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "output-top-boss"
     ],
     [
       "rear-input-crank-wrist-boss",
@@ -322,10 +338,6 @@
     ],
     [
       "rear-input-crank-wrist-boss",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -375,6 +387,14 @@
     [
       "rear-input-crank-wrist-boss",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "output-top-boss"
     ],
     [
       "rear-input-shaft-outline",
@@ -382,10 +402,6 @@
     ],
     [
       "rear-input-shaft-outline",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-shaft-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -435,6 +451,14 @@
     [
       "rear-input-shaft-outline",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "output-top-boss"
     ],
     [
       "rear-input-wrist-outline",
@@ -442,10 +466,6 @@
     ],
     [
       "rear-input-wrist-outline",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-input-wrist-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -495,6 +515,14 @@
     [
       "rear-input-wrist-outline",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "output-top-boss"
     ],
     [
       "rear-independent-input-shaft",
@@ -502,10 +530,6 @@
     ],
     [
       "rear-independent-input-shaft",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "rear-independent-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -555,6 +579,14 @@
     [
       "rear-independent-input-shaft",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "output-bottom-boss"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "output-top-boss"
     ],
     [
       "white-index-on-rear-input-shaft",
@@ -562,10 +594,6 @@
     ],
     [
       "white-index-on-rear-input-shaft",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -615,6 +643,14 @@
     [
       "white-index-on-rear-input-shaft",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "output-bottom-boss"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "output-top-boss"
     ],
     [
       "input-wrist-pin",
@@ -622,10 +658,6 @@
     ],
     [
       "input-wrist-pin",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "input-wrist-pin",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -675,6 +707,14 @@
     [
       "input-wrist-pin",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "input-wrist-pin",
+      "output-bottom-boss"
+    ],
+    [
+      "input-wrist-pin",
+      "output-top-boss"
     ],
     [
       "white-index-on-input-wrist",
@@ -682,10 +722,6 @@
     ],
     [
       "white-index-on-input-wrist",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "white-index-on-input-wrist",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -737,6 +773,14 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "white-index-on-input-wrist",
+      "output-bottom-boss"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "output-top-boss"
+    ],
+    [
       "front-output-crank-cheek-with-two-real-bores",
       "engaged-selector-left-slot-lobe"
     ],
@@ -774,46 +818,6 @@
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "selector-rear-retaining-lips"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "engaged-selector-left-slot-lobe"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "engaged-selector-right-slot-lobe"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "engaged-left-tangential-slot-wall"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "engaged-right-tangential-slot-wall"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "white-index-fixed-to-radial-selector-ring"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "selector-left-recessed-face"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "selector-right-recessed-face"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "front-output-shaft-bore-outline",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "front-output-shaft-bore-outline",
       "selector-rear-retaining-lips"
     ],
     [
@@ -865,12 +869,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "engaged-selector-left-slot-lobe",
+      "output-bottom-boss"
+    ],
+    [
+      "engaged-selector-left-slot-lobe",
+      "output-top-boss"
+    ],
+    [
       "engaged-selector-right-slot-lobe",
       "front-independent-output-shaft"
     ],
     [
       "engaged-selector-right-slot-lobe",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "engaged-selector-right-slot-lobe",
+      "output-bottom-boss"
+    ],
+    [
+      "engaged-selector-right-slot-lobe",
+      "output-top-boss"
     ],
     [
       "engaged-left-tangential-slot-wall",
@@ -881,12 +901,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "engaged-left-tangential-slot-wall",
+      "output-bottom-boss"
+    ],
+    [
+      "engaged-left-tangential-slot-wall",
+      "output-top-boss"
+    ],
+    [
       "engaged-right-tangential-slot-wall",
       "front-independent-output-shaft"
     ],
     [
       "engaged-right-tangential-slot-wall",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "engaged-right-tangential-slot-wall",
+      "output-bottom-boss"
+    ],
+    [
+      "engaged-right-tangential-slot-wall",
+      "output-top-boss"
     ],
     [
       "white-index-fixed-to-radial-selector-ring",
@@ -897,12 +933,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "white-index-fixed-to-radial-selector-ring",
+      "output-bottom-boss"
+    ],
+    [
+      "white-index-fixed-to-radial-selector-ring",
+      "output-top-boss"
+    ],
+    [
       "selector-left-recessed-face",
       "front-independent-output-shaft"
     ],
     [
       "selector-left-recessed-face",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-left-recessed-face",
+      "output-bottom-boss"
+    ],
+    [
+      "selector-left-recessed-face",
+      "output-top-boss"
     ],
     [
       "selector-right-recessed-face",
@@ -913,12 +965,28 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "selector-right-recessed-face",
+      "output-bottom-boss"
+    ],
+    [
+      "selector-right-recessed-face",
+      "output-top-boss"
+    ],
+    [
       "selector-connecting-sleeve",
       "front-independent-output-shaft"
     ],
     [
       "selector-connecting-sleeve",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-connecting-sleeve",
+      "output-bottom-boss"
+    ],
+    [
+      "selector-connecting-sleeve",
+      "output-top-boss"
     ],
     [
       "selector-front-retaining-lip",
@@ -929,25 +997,41 @@
       "front-output-shaft-end-cap"
     ],
     [
+      "selector-front-retaining-lip",
+      "output-bottom-boss"
+    ],
+    [
+      "selector-front-retaining-lip",
+      "output-top-boss"
+    ],
+    [
       "selector-rear-retaining-lips",
       "front-independent-output-shaft"
     ],
     [
       "selector-rear-retaining-lips",
       "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-rear-retaining-lips",
+      "output-bottom-boss"
+    ],
+    [
+      "selector-rear-retaining-lips",
+      "output-top-boss"
     ]
   ],
-  "queries": 8849736,
+  "queries": 7986984,
   "intersections": {},
-  "method": "All cross-family pairs, including selector versus output cheek despite their locked relative angle, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Other same-family attachment defects are outside this diagnostic.",
+  "method": "All cross-family pairs, including selector versus output cheek despite their locked relative angle, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Rigid attachments are checked separately by review-engine-coupling-mount.mjs.",
   "sources": [
     {
       "file": "scripts/review-engine-coupling-solids.mjs",
-      "sha256": "a37ae39ef87d50b3d43d78b9a2f73d71ac033ebc1a19e1f9370f102af4986547"
+      "sha256": "5ce868b93d8c0bae41024c4e2cd1633af89b2478951bebdfc2895bd1efa925b9"
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
+      "sha256": "30c37558609f13ed4fb3ea0699c91213b9471566777ff20286f09fac58817298"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

@@ -1,0 +1,165 @@
+{
+  "movement": 176,
+  "status": "sparse-source-edge-fit",
+  "features": [
+    {
+      "name": "top left",
+      "part": "output-top-boss",
+      "source": [
+        208,
+        90
+      ],
+      "projected": [
+        202.02814892162414,
+        89.85339697436898
+      ],
+      "errorPixels": 5.9736502868366115
+    },
+    {
+      "name": "top right",
+      "part": "output-top-boss",
+      "source": [
+        358,
+        90
+      ],
+      "projected": [
+        353.977873987056,
+        90.09873920753014
+      ],
+      "errorPixels": 4.02333780524386
+    },
+    {
+      "name": "top crest",
+      "part": "output-top-boss",
+      "source": [
+        282,
+        16
+      ],
+      "projected": [
+        282.0651826366759,
+        15.116335326701252
+      ],
+      "errorPixels": 0.8860654778063555
+    },
+    {
+      "name": "top bottom",
+      "part": "output-top-boss",
+      "source": [
+        282,
+        165
+      ],
+      "projected": [
+        282.13854744459064,
+        166.87825299196345
+      ],
+      "errorPixels": 1.8833559664126822
+    },
+    {
+      "name": "bottom left",
+      "part": "output-bottom-boss",
+      "source": [
+        199,
+        433
+      ],
+      "projected": [
+        199.0735992539812,
+        432.9981932425046
+      ],
+      "errorPixels": 0.07362142731050765
+    },
+    {
+      "name": "bottom right",
+      "part": "output-bottom-boss",
+      "source": [
+        357,
+        433
+      ],
+      "projected": [
+        356.92640074601877,
+        432.9981932425046
+      ],
+      "errorPixels": 0.07362142731053606
+    },
+    {
+      "name": "bottom crest",
+      "part": "output-bottom-boss",
+      "source": [
+        278,
+        354
+      ],
+      "projected": [
+        278.07360145109993,
+        351.00180466566434
+      ],
+      "errorPixels": 2.999098603986896
+    },
+    {
+      "name": "bottom foot",
+      "part": "output-bottom-boss",
+      "source": [
+        278,
+        511
+      ],
+      "projected": [
+        278,
+        509.0000021457672
+      ],
+      "errorPixels": 1.999997854232788
+    },
+    {
+      "name": "left neck",
+      "part": "outputCrankPlate",
+      "source": [
+        214,
+        300
+      ],
+      "projected": [
+        214.32998737962646,
+        300.00132796293565
+      ],
+      "errorPixels": 0.32999005166564543
+    },
+    {
+      "name": "right neck",
+      "part": "outputCrankPlate",
+      "source": [
+        338,
+        300
+      ],
+      "projected": [
+        341.6699478419754,
+        299.98523108757854
+      ],
+      "errorPixels": 3.669977559004129
+    }
+  ],
+  "centers": {
+    "shaft": [
+      278,
+      430
+    ],
+    "ring": [
+      278,
+      91
+    ],
+    "wrist": [
+      277,
+      91.00147492946223
+    ]
+  },
+  "method": "Nearest projected actual crease/boundary edge to ten manually measured engraving features, with each feature assigned to its corresponding boss outer circumference or cheek. Inner boss edges are excluded. Long straight neck edges are measured as segments, not sparse endpoints. This is not a full silhouette registration.",
+  "sources": [
+    {
+      "file": "scripts/review-engine-coupling-source.mjs",
+      "sha256": "72d301700e123f605512ae6491103652d547d67c9a8f5a5347e99d54d12f2d8d"
+    },
+    {
+      "file": "src/simulation/authored-engine-couplings.js",
+      "sha256": "30c37558609f13ed4fb3ea0699c91213b9471566777ff20286f09fac58817298"
+    },
+    {
+      "file": "public/engravings/mm_176.png",
+      "sha256": "80a3a5237879d6be370afd30c14e9c05a27f66f7e67f3b5b3639800b184da6cb"
+    }
+  ]
+}
