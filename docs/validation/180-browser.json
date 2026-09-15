@@ -1,0 +1,31 @@
+{
+  "movement": 180,
+  "status": "packaged-desktop-mobile-passed",
+  "scope": "Final baked passive-jaw reconstruction with corrected upper contour, real bores/slots and front framing.",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 layout without horizontal overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/single-clamp.spec.mjs",
+      "sha256": "e4994c22585c70e3bf1fd60e4239ecac87a5256253edbc685e969df458cf5c13"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "30fb09296b4950b09abf117c1a8c97abc64bf8a8245f45c8de596dd07cb75f13"
+    },
+    {
+      "file": "src/simulation/baked/single-clamp.js",
+      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+    },
+    {
+      "file": "src/simulation/baked/assets/180.json.gz",
+      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+    }
+  ]
+}

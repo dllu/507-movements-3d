@@ -1,0 +1,159 @@
+{
+  "movement": 180,
+  "status": "native-push-controls-checked",
+  "scope": "Board-only push against a passive jaw and fixed side. Smooth source profile without display bevels, ideal hinges and held board orientation. Friction is an inferred model parameter. Frictionless and higher-friction controls also clamp; the separately qualified settled cycle is used for playback.",
+  "timestepDifference": {
+    "jaw": 0.0002797932179100628,
+    "boardX": 0.00017368654583710158,
+    "boardY": 0.0000874528416414666
+  },
+  "runs": [
+    {
+      "parameters": {
+        "timestep": 0.000125,
+        "friction": 0.2,
+        "contacts": true,
+        "opening": 0.16,
+        "force": 10,
+        "solver": "Newton",
+        "cyclic": false,
+        "cells": 51
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "jaw": 0.001977215488423985,
+        "boardX": 0.0009999344107553872,
+        "boardY": 0.025027588026390844,
+        "jawSpeed": 0.00005910805019533113,
+        "boardXSpeed": 0.0000017362849788121809,
+        "boardYSpeed": -0.00019054062642689636,
+        "contacts": 16,
+        "appliedForce": 10
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.0000625,
+        "friction": 0.2,
+        "contacts": true,
+        "opening": 0.16,
+        "force": 10,
+        "solver": "Newton",
+        "cyclic": false,
+        "cells": 51
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.9999999999963465,
+        "jaw": 0.0019774663759287653,
+        "boardX": 0.00099999903104972,
+        "boardY": 0.02502662604297512,
+        "jawSpeed": -9.62490084834431e-16,
+        "boardXSpeed": 9.126250014573098e-16,
+        "boardYSpeed": 1.7375841000390046e-15,
+        "contacts": 10,
+        "appliedForce": 10
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.000125,
+        "friction": 0,
+        "contacts": true,
+        "opening": 0.16,
+        "force": 10,
+        "solver": "Newton",
+        "cyclic": false,
+        "cells": 51
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "jaw": 0.00197743463916099,
+        "boardX": 0.0009999534158398398,
+        "boardY": 0.025026886763086148,
+        "jawSpeed": 1.1336971249207365e-11,
+        "boardXSpeed": -7.943554609295411e-14,
+        "boardYSpeed": -3.669294499394751e-11,
+        "contacts": 16,
+        "appliedForce": 10
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.000125,
+        "friction": 0.5,
+        "contacts": true,
+        "opening": 0.16,
+        "force": 10,
+        "solver": "Newton",
+        "cyclic": false,
+        "cells": 51
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "jaw": 0.0019774614502397177,
+        "boardX": 0.0009999927213028429,
+        "boardY": 0.02502665802523606,
+        "jawSpeed": -3.0837516842199097e-10,
+        "boardXSpeed": 2.686588221725375e-10,
+        "boardYSpeed": 3.317427496493259e-10,
+        "contacts": 16,
+        "appliedForce": 10
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.000125,
+        "friction": 0.2,
+        "contacts": false,
+        "opening": 0.16,
+        "force": 10,
+        "solver": "Newton",
+        "cyclic": false,
+        "cells": 51
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "jaw": 0.16,
+        "boardX": 0.001,
+        "boardY": 0.10000000000000035,
+        "jawSpeed": 0,
+        "boardXSpeed": 0,
+        "boardYSpeed": -7.815894421400524e-15,
+        "contacts": 0,
+        "appliedForce": 0
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-single-clamp.mjs",
+      "sha256": "b8a2dbead7891557eff9c2d64fd05d515bbd28d1b0119670e2cf916679234e6f"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/physics.js",
+      "sha256": "08ad8d3a3dc75ba0f02d3dcd77059e310c8d0f685be33c628a8cadf4aab64b6d"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/profile.js",
+      "sha256": "016cedecbb25ca4c6c3b71ac5c24a41adae8d79b4cdee3353edb6a670af8234a"
+    },
+    {
+      "file": "src/simulation/authored-clamps.js",
+      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
+    }
+  ]
+}

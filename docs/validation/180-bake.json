@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "movement": 180,
+  "names": [
+    "jaw",
+    "boardX",
+    "boardY"
+  ],
+  "period": 6,
+  "loopStart": 0,
+  "loopEnd": 6,
+  "turns": [
+    0,
+    0,
+    0
+  ],
+  "maximumError": 0.000004993882446124864,
+  "bounds": {
+    "min": [
+      -1.500000057220459,
+      -1.4160905420596899,
+      -0.31
+    ],
+    "max": [
+      1.6973033063365919,
+      5.363999900817871,
+      0.8299999809265137
+    ]
+  },
+  "focus": [
+    0.09865162455806642,
+    1.9739546793790903,
+    0.25999999046325684
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-single-clamp.mjs",
+      "sha256": "d2f7267785900b0a51446eb046ed6a4a30294094fc0adce8516efa775335e7c7"
+    },
+    {
+      "file": "scripts/qualify-single-clamp-cycle.mjs",
+      "sha256": "0de9b063ef34521c19912c43fce988af3545f8009511e9e5cf80301d39257a83"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/physics.js",
+      "sha256": "08ad8d3a3dc75ba0f02d3dcd77059e310c8d0f685be33c628a8cadf4aab64b6d"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/profile.js",
+      "sha256": "016cedecbb25ca4c6c3b71ac5c24a41adae8d79b4cdee3353edb6a670af8234a"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/solids.js",
+      "sha256": "c5a67405c2414a3453c92aeb8e02c4362633fe0eaef54c645e301e47df0187d3"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/update-solids.js",
+      "sha256": "9d583566976d30662dce63f9a39ccbc09e47c45ad12aadbbcc8c9134c7654bba"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/authored-clamps.js",
+      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
+    }
+  ],
+  "nativeHash": "0992323c189d3eb233c54842c3e9b306e0424b875d7a72f18a974be3f30fa826",
+  "assumptions": "Passive jaw hinge and free board X against a fixed side; orientation held and Y push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Unillustrated bench supports are sectioned away.",
+  "samples": 661,
+  "bytes": 291030,
+  "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+}

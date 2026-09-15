@@ -1,0 +1,169 @@
+{
+  "movement": 180,
+  "status": "selected-source-features-checked",
+  "method": "Nearest actual rendered vertices in initial front projection to eleven manually selected engraving features. Sparse feature check, not full contour registration.",
+  "maximumErrorPixels": 3.2491619368858773,
+  "features": [
+    {
+      "name": "upper outer tip",
+      "part": "jaw",
+      "target": [
+        250,
+        62
+      ],
+      "nearest": [
+        251.89205309565875,
+        63.53258739589944
+      ],
+      "errorPixels": 2.4348899447124297
+    },
+    {
+      "name": "upper outer arc",
+      "part": "jaw",
+      "target": [
+        294,
+        91.5
+      ],
+      "nearest": [
+        291.8951278964029,
+        90.27627666161453
+      ],
+      "errorPixels": 2.434745444889557
+    },
+    {
+      "name": "upper shoulder",
+      "part": "jaw",
+      "target": [
+        316,
+        111
+      ],
+      "nearest": [
+        314.56149617505395,
+        110.03639717717618
+      ],
+      "errorPixels": 1.7314224367665025
+    },
+    {
+      "name": "outer cheek",
+      "part": "jaw",
+      "target": [
+        416,
+        333
+      ],
+      "nearest": [
+        416.1030374189919,
+        333.4929643535737
+      ],
+      "errorPixels": 0.50361747746366
+    },
+    {
+      "name": "lower nose",
+      "part": "jaw",
+      "target": [
+        330,
+        499
+      ],
+      "nearest": [
+        332.31462767585793,
+        498.052989990538
+      ],
+      "errorPixels": 2.500865697287393
+    },
+    {
+      "name": "inner hook",
+      "part": "jaw",
+      "target": [
+        329,
+        398
+      ],
+      "nearest": [
+        328.49445630481927,
+        395.911542027661
+      ],
+      "errorPixels": 2.148774332023538
+    },
+    {
+      "name": "board contact lobe",
+      "part": "jaw",
+      "target": [
+        280,
+        452
+      ],
+      "nearest": [
+        280.16660612043273,
+        453.1502837261192
+      ],
+      "errorPixels": 1.1622866470627258
+    },
+    {
+      "name": "upper inner edge",
+      "part": "jaw",
+      "target": [
+        309,
+        232
+      ],
+      "nearest": [
+        311.1774041306211,
+        229.58836890382003
+      ],
+      "errorPixels": 3.2491619368858773
+    },
+    {
+      "name": "fixed upper left",
+      "part": "fixed-side",
+      "target": [
+        160,
+        10
+      ],
+      "nearest": [
+        159.99999523162842,
+        10.000008265177428
+      ],
+      "errorPixels": 0.000009542039900218947
+    },
+    {
+      "name": "fixed upper right",
+      "part": "fixed-side",
+      "target": [
+        226,
+        10
+      ],
+      "nearest": [
+        225.9999998410543,
+        10.000008265177428
+      ],
+      "errorPixels": 0.00000826670561056528
+    },
+    {
+      "name": "board upper right",
+      "part": "board",
+      "target": [
+        280,
+        154
+      ],
+      "nearest": [
+        280.0833132372257,
+        151.91430374279986
+      ],
+      "errorPixels": 2.087359569598803
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-single-clamp-source.mjs",
+      "sha256": "ec993c2c83dbe26276a594c29770db023e6294d1fcdf748faad295241291b4ac"
+    },
+    {
+      "file": "src/simulation/baked/single-clamp.js",
+      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+    },
+    {
+      "file": "src/simulation/baked/assets/180.json.gz",
+      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+    },
+    {
+      "file": "public/engravings/mm_180.png",
+      "sha256": "c576daac6e01d1b418bbd0738a6e4fea227e5f9874a5e7bbeeeacc5faa57bef9"
+    }
+  ]
+}

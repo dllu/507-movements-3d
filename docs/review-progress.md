@@ -1,3 +1,9 @@
+# Movement 180 reconstructed and checked; next 181
+
+Replaced independent jaw animation with a passive-jaw MuJoCo bake driven by board contact. Corrected the upper contour, added bored hardware and recessed slots, removed intersecting decorations, and restored front framing. Eleven source features fit within 3.25 pixels. The 16-mesh assembly and dense contact sweeps pass, as do native controls, timestep comparison, two production tests and desktop/mobile checks. Playback uses a 291 KB bake without live physics. Friction and operator guidance remain explicit assumptions; see [movement 180](movement-180.md). Continue with 181; the full review remains active.
+
+## Earlier checkpoints
+
 # Movement 179 reconstructed and checked; next 180
 
 Fitted the concentric sheave/strap assembly and shaft within 4.03 pixels of six selected source bounds, preserving full hand-link reach. Restored the curved rod neck and short engraved foundation, closed stop/mark attachment gaps, and aligned the link eyes clear of the lever. The 42-mesh, 129-pose sweep finds no intersections. Full-sequence motion, native contact, production build and desktop/mobile checks pass. See [movement 179](movement-179.md) for source compromises and simulation limits. Continue with 180; the full review remains active.

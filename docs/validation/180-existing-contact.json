@@ -1,0 +1,91 @@
+{
+  "movement": 180,
+  "status": "baseline-contact-reconstruction-open",
+  "poses": 129,
+  "meshes": 24,
+  "pairs": 131,
+  "queries": 8817378,
+  "intersections": {
+    "fixed-bench-bed-under-single-jaw-clamp#0/source-fitted-curved-clamp-jaw-plate#1": 0.007999990582466088,
+    "source-fitted-curved-clamp-jaw-plate#1/single-board-whose-upward-push-self-energizes-clamp#4": 0.030722519651055324,
+    "source-fitted-curved-clamp-jaw-plate#1/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02199997901916506,
+    "source-fitted-curved-clamp-jaw-plate#1/fixed-screw-shank-through-jaw-and-bench#11": 0.08704254141980457,
+    "dark-exposed-source-outline-of-single-moving-jaw#3/single-board-whose-upward-push-self-energizes-clamp#4": 0.030868729844689358,
+    "dark-exposed-source-outline-of-single-moving-jaw#3/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.04900000393390658,
+    "single-board-whose-upward-push-self-energizes-clamp#4/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02399998903274536,
+    "dark-source-outline-of-sliding-board#5/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02958846092224121,
+    "visible-board-contact-with-fixed-side-piece#7/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.09899999755620958
+  },
+  "movingWithoutNominalContact": 51,
+  "samples": [
+    {
+      "time": 0,
+      "jawAngle": 0,
+      "boardY": 0,
+      "gap": 0
+    },
+    {
+      "time": 1.225,
+      "jawAngle": 0,
+      "boardY": 0,
+      "gap": 0
+    },
+    {
+      "time": 2.45,
+      "jawAngle": 0.08831620243357202,
+      "boardY": -0.4305414868636636,
+      "gap": 0.1088542585610145
+    },
+    {
+      "time": 3.6750000000000003,
+      "jawAngle": 0.16,
+      "boardY": -0.78,
+      "gap": 0.20737689925724012
+    },
+    {
+      "time": 4.9,
+      "jawAngle": 0.15743164062499998,
+      "boardY": -0.767479248046875,
+      "gap": 0.2073780107253549
+    },
+    {
+      "time": 6.125,
+      "jawAngle": 0.04131786617231956,
+      "boardY": -0.20142459759005787,
+      "gap": 0.07610022055066312
+    },
+    {
+      "time": 7.3500000000000005,
+      "jawAngle": 0,
+      "boardY": 0,
+      "gap": 0
+    },
+    {
+      "time": 8.575000000000001,
+      "jawAngle": 0,
+      "boardY": 0,
+      "gap": 0
+    },
+    {
+      "time": 9.8,
+      "jawAngle": 0,
+      "boardY": 0,
+      "gap": 0
+    }
+  ],
+  "method": "All visible meshes across distinct rigid families, including decorative outlines and contact markers. Bidirectional vertices, edge midpoints and triangle centers. Nominal contact gap is from the old model; it checks profile vertices only, not complete edges or bevels.",
+  "sources": [
+    {
+      "file": "scripts/review-single-clamp-existing.mjs",
+      "sha256": "0a226459b0912a2cd7b602f40a7195a59b5698d95b052db151d597e96f74c79a"
+    },
+    {
+      "file": "src/simulation/authored-clamps.js",
+      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

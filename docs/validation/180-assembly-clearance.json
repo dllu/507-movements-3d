@@ -1,0 +1,152 @@
+{
+  "movement": 180,
+  "poses": 129,
+  "meshes": 16,
+  "pairs": [
+    [
+      "fixed-side",
+      "jaw"
+    ],
+    [
+      "fixed-side",
+      "board"
+    ],
+    [
+      "pivot-shaft",
+      "jaw"
+    ],
+    [
+      "pivot-shaft",
+      "board"
+    ],
+    [
+      "pivot-washer",
+      "jaw"
+    ],
+    [
+      "pivot-washer",
+      "board"
+    ],
+    [
+      "pivot-head-base",
+      "jaw"
+    ],
+    [
+      "pivot-head-base",
+      "board"
+    ],
+    [
+      "pivot-head-cap",
+      "jaw"
+    ],
+    [
+      "pivot-head-cap",
+      "board"
+    ],
+    [
+      "fixed0-shaft",
+      "jaw"
+    ],
+    [
+      "fixed0-shaft",
+      "board"
+    ],
+    [
+      "fixed0-washer",
+      "jaw"
+    ],
+    [
+      "fixed0-washer",
+      "board"
+    ],
+    [
+      "fixed0-head-base",
+      "jaw"
+    ],
+    [
+      "fixed0-head-base",
+      "board"
+    ],
+    [
+      "fixed0-head-cap",
+      "jaw"
+    ],
+    [
+      "fixed0-head-cap",
+      "board"
+    ],
+    [
+      "fixed1-shaft",
+      "jaw"
+    ],
+    [
+      "fixed1-shaft",
+      "board"
+    ],
+    [
+      "fixed1-washer",
+      "jaw"
+    ],
+    [
+      "fixed1-washer",
+      "board"
+    ],
+    [
+      "fixed1-head-base",
+      "jaw"
+    ],
+    [
+      "fixed1-head-base",
+      "board"
+    ],
+    [
+      "fixed1-head-cap",
+      "jaw"
+    ],
+    [
+      "fixed1-head-cap",
+      "board"
+    ],
+    [
+      "pivot-back-washer",
+      "jaw"
+    ],
+    [
+      "pivot-back-washer",
+      "board"
+    ],
+    [
+      "jaw",
+      "board"
+    ]
+  ],
+  "queries": 2587740,
+  "intersections": {},
+  "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All 16 meshes are physical. Sampled clearance only.",
+  "sources": [
+    {
+      "file": "scripts/review-single-clamp-assembly.mjs",
+      "sha256": "e13a38de9bbe18415a406e04dafbd1746d5c6a8e32f1a6bcf821f857af1b0c6b"
+    },
+    {
+      "file": "src/simulation/baked/single-clamp.js",
+      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+    },
+    {
+      "file": "src/simulation/mujoco-single-clamp/update-solids.js",
+      "sha256": "9d583566976d30662dce63f9a39ccbc09e47c45ad12aadbbcc8c9134c7654bba"
+    },
+    {
+      "file": "src/simulation/baked/assets/180.json.gz",
+      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
