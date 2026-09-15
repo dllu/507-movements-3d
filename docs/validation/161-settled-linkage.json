@@ -1,0 +1,152 @@
+{
+  "movement": 161,
+  "method": "Calibrated full-linkage equilibrium speed endpoints and current-time spindle control, unchanged low damping. Two 1600-second runs; final two cycles sampled at 0.01 seconds. No damping increase or prescribed arm/sleeve trajectory.",
+  "runs": [
+    {
+      "description": {
+        "movement": 161,
+        "timestep": 0.0005,
+        "period": 8,
+        "variableSpeed": true,
+        "spindleDrive": true,
+        "equilibriumCalibration": true,
+        "lowSpeed": 4.7733934017120685,
+        "highSpeed": 5.305040709875139,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints optionally include the full linkage gravity and rotational-inertia derivatives; the native transient remains passive."
+      },
+      "positionClosure": 5.3691802739952443e-11,
+      "velocityClosure": 4.84890886123801e-10,
+      "rotationIncrement": 40.31373645412623,
+      "maxConnection": 4.269544431672149e-8,
+      "cycleEndSpreads": [
+        {
+          "time": 0,
+          "spread": 0.365
+        },
+        {
+          "time": 159.99999999967244,
+          "spread": 0.3602479130014134
+        },
+        {
+          "time": 319.99999999588897,
+          "spread": 0.3599406641182012
+        },
+        {
+          "time": 479.9999999921055,
+          "spread": 0.3599211418434828
+        },
+        {
+          "time": 639.999999988322,
+          "spread": 0.35991992091373814
+        },
+        {
+          "time": 799.9999999845385,
+          "spread": 0.35991984586424525
+        },
+        {
+          "time": 959.999999980755,
+          "spread": 0.3599198412783214
+        },
+        {
+          "time": 1119.9999999987992,
+          "spread": 0.3599198414317856
+        },
+        {
+          "time": 1280.0000000313955,
+          "spread": 0.3599198417052368
+        },
+        {
+          "time": 1440.0000000639918,
+          "spread": 0.35991984159973434
+        },
+        {
+          "time": 1600.000000096588,
+          "spread": 0.3599198416113762
+        }
+      ]
+    },
+    {
+      "description": {
+        "movement": 161,
+        "timestep": 0.00025,
+        "period": 8,
+        "variableSpeed": true,
+        "spindleDrive": true,
+        "equilibriumCalibration": true,
+        "lowSpeed": 4.7733934017120685,
+        "highSpeed": 5.305040709875139,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints optionally include the full linkage gravity and rotational-inertia derivatives; the native transient remains passive."
+      },
+      "positionClosure": 8.083201642750115e-11,
+      "velocityClosure": 1.2741492496498585e-10,
+      "rotationIncrement": 40.31373645412714,
+      "maxConnection": 4.293713703624916e-8,
+      "cycleEndSpreads": [
+        {
+          "time": 0,
+          "spread": 0.365
+        },
+        {
+          "time": 159.99999999794449,
+          "spread": 0.36025465557711095
+        },
+        {
+          "time": 319.999999994161,
+          "spread": 0.35994320335028385
+        },
+        {
+          "time": 479.9999999903775,
+          "spread": 0.3599231106159562
+        },
+        {
+          "time": 640.0000000156978,
+          "spread": 0.35992183497734154
+        },
+        {
+          "time": 800.000000048294,
+          "spread": 0.3599217553049295
+        },
+        {
+          "time": 960.0000000808903,
+          "spread": 0.35992175045324437
+        },
+        {
+          "time": 1120.0000001134865,
+          "spread": 0.3599217503449158
+        },
+        {
+          "time": 1280.0000001460828,
+          "spread": 0.35992175026400336
+        },
+        {
+          "time": 1440.000000178679,
+          "spread": 0.359921750357433
+        },
+        {
+          "time": 1600.0000002112754,
+          "spread": 0.3599217502441797
+        }
+      ]
+    }
+  ],
+  "finalCycleMaximumSpreadDifference": 0.000017958475996393553,
+  "finalCycleMaximumSleeveDifference": 0.000040402849138532204,
+  "sources": [
+    {
+      "file": "scripts/settle-ball-governor.mjs",
+      "sha256": "ff636b08609b724b2ae81ecbc30fe5edd9caef4a87253ec6fb2792de28393aa8"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/physics.js",
+      "sha256": "ef6db804186848035ec1d72bc0a907af9a21fb46215ca046ca01aa08f30ebd0e"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

@@ -1,11 +1,12 @@
 # Active reconstruction: 161 centrifugal governor
 
-161 has no original 2D animation. The old instantaneous-equilibrium animation
-omits dynamic lag and finite sleeve/link effects; its input bevel pitch radius
-alone exceeds the drawn outer radius. A native passive-arm/sleeve linkage now
-responds to spindle actuation and passes pin-closure and drive-removal tests.
-Under-damped transients have not settled, so it is not ready to bake. Source
-solids, bevel fit/contact and speed/load calibration remain open. See
+161’s native arms and sleeve now have calibrated speed endpoints accounting
+for full linkage gravity and inertia. The engraved spread holds at constant
+speed; long runs settle without increasing damping. Paired timestep sleeve
+differences are below 0.0023 pixels, and five mechanical/equilibrium tests pass.
+The settled response still differs from instantaneous equilibrium, validating
+the need for passive dynamics. Source-shaped solids, the oversized bevel pair
+and output-fork interpretation remain open. Production is unchanged. See
 [movement 161](movement-161.md). The complete review remains active.
 
 # Shipped reconstruction: 160 spring-return treadle

@@ -1,0 +1,30 @@
+{
+  "movement": 161,
+  "method": "Final settled native cycle compared to independent full-linkage equilibrium at the measured instantaneous spindle speed. Diagnostic comparison, not a replacement motion law.",
+  "samples": 801,
+  "maximumTransientSpreadDifference": 0.009640327502141444,
+  "maximumTransientSleeveDifference": 0.021444459763710677,
+  "maximumTransientSleeveDifferencePixels": 1.1913588757617044,
+  "nativeSpreadRange": [
+    0.35987039869548026,
+    0.608290529890173
+  ],
+  "sources": [
+    {
+      "file": "/dev/shm/161-settled-0.00025.json",
+      "sha256": "b451f1ef52a03c2881b41c5bf1336aee06a57d8063dd8aa76646ebe0988533de"
+    },
+    {
+      "file": "scripts/review-governor-response.mjs",
+      "sha256": "7fabb3edef141e89025dd73b4ceadc743a6c2cd883cc6c9f0da7675d3057fb13"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "docs/validation/161-settled-linkage.json",
+      "sha256": "8b580541127f81027814277f36613d7f06edf6a5ecb1d3ebcda493fb0e99d731"
+    }
+  ]
+}

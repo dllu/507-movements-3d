@@ -74,3 +74,59 @@ longer-run behavior, timestep convergence and the drive/gear phase before choosi
 an offline bake. Retain explicit assumptions about valve loading and engine
 feedback. Then verify the source view, reasonable playback speed and browser
 rendering before registration.
+
+## Full-linkage calibration and settled response
+
+The equilibrium speed now accounts for the masses of both upper rods, lower
+links and sleeve. `equilibrium.js` differentiates gravitational potential U and
+spindle-axis rotational inertia I along the closed linkage coordinate theta.
+Steady speed satisfies omega² = 2 U′ / I′. Uniform-capsule moments include the
+cylinder, hemispherical ends and their first/second moments; ball intrinsic
+inertia is independent of theta and drops out of I′. This is a calibration of
+the speed endpoints, not a prescribed dynamic arm trajectory.
+
+The inferred masses raise low/high equilibrium speeds from 4.586/5.097 to
+4.77339/5.30504 radians/s, about four percent. An independent virtual-work test
+projects native generalized bias forces onto the closed linkage tangent at 12
+spreads and finds residuals below 1e-6. Analytic capsule moments match compiled
+native bodies to 1e-12. With link and sleeve masses removed analytically, the
+formula reduces to the familiar point-ball equilibrium. The native spindle
+controller now evaluates its reference at the current configuration time;
+the old next-step reference gave an unnecessary initial acceleration even for
+constant requested speed. At calibrated constant speed the native governor
+holds the engraved spread within 1e-7 radians over 32 seconds, with only the
+spindle actuated.
+
+Two 1,600-second runs retain the original low joint damping and compare the
+final cycles at 0.01-second phases. No damping increase or forced arm/sleeve
+motion is introduced to obtain a loop. The final internal-coordinate closure
+is below 8.1e-11 radians and velocity closure below 4.9e-10 radians/s. Maximum
+connection error is 4.3e-8 world units. Halving timestep from 0.0005 to 0.00025
+seconds changes spread by at most 1.796e-5 radians and sleeve height by
+0.00004041 world units (0.00225 engraving pixels). This establishes a settled
+passive-motion candidate under the stated ideal-joint and mass assumptions.
+
+Spindle rotation advances 40.31373645 radians per eight-second speed cycle,
+which is not an integer number of turns. Future playback must retain that
+unwrapped increment rather than snapping the rotor to zero at the cycle seam.
+The bevel input angle must retain its corresponding transmission ratio.
+
+Even after settling, the instantaneous-equilibrium replacement is measurably
+wrong: at the actual native spindle speed it differs by up to 0.009641 radians
+in spread and 0.021445 world units in sleeve height (1.19 pixels). The native
+settled spread range is 0.35987–0.60829 radians. Thus calibration removes the
+incorrect initial force balance while retaining the physical transient response.
+
+Five native/equilibrium tests pass. Reproduce the new evidence with:
+
+```sh
+node --test tests/ball-governor-equilibrium.test.mjs tests/ball-governor-physics.test.mjs
+node scripts/settle-ball-governor.mjs
+node scripts/review-governor-response.mjs
+```
+
+Reports are `docs/validation/161-settled-linkage.json` and
+`docs/validation/161-equilibrium-response.json`. Earlier 32-second results above
+record the original uncalibrated study. Production remains unchanged. Source
+solids, the oversized bevel pair, real contact clearances and the interpretation
+of the lower output forks/collars are now the next work before baking.
