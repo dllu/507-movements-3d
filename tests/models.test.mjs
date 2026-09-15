@@ -60666,9 +60666,13 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
     'bench slab, board, crossing jaws, shafts, and screw heads occupy real depth');
   assert.ok(bounds.min.z < -0.70);
   assert.ok(bounds.max.z > 0.66);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x);
+  assert.deepEqual(model.cameraDirection.toArray(), [0, 0, 1]);
+  assert.equal(model.root.userData.hideGround, true);
+  model.root.traverse(object => {
+    for (const material of [object.material].flat().filter(Boolean)) assert.equal(material.fog, false);
+  });
+  model.update(3); model.reset();
+  assert.equal(model.root.userData.kinematics.time, 0);
 
   // The next sequential model is now independently authored as Movement 175.
   const movement173 = createMovementModel(catalog.movements[172]);

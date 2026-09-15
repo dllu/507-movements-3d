@@ -793,6 +793,10 @@ function twinPivotedBenchClamp() {
   root.userData.canonicalStates = canonicalStates;
   root.userData.closureLawAtCycleTime = closureLawAtCycleTime;
   root.userData.fidelity = 'authored';
+  root.userData.hideGround = true;
+  root.userData.cameraFov = 8;
+  root.userData.supportsRestart = true;
+  root.userData.materialsIgnoreSceneFog = true;
   root.userData.geometry = geometry;
   root.userData.mechanism =
     'fixed-vertical-screw-pivots-opposed-eccentric-jaws-friction-self-clamping-board';
@@ -814,9 +818,13 @@ function twinPivotedBenchClamp() {
   };
   update(0);
 
+  root.traverse(object => {
+    for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
+  });
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(7.2, 5.8, 12.6),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
+    reset: () => update(0),
     root,
     update,
   };

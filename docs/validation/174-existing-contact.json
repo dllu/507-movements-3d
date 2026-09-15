@@ -1,0 +1,219 @@
+{
+  "movement": 174,
+  "status": "contact-reconstruction-open",
+  "poses": 129,
+  "meshes": 12,
+  "pairs": [
+    [
+      "upperJawPlate",
+      "lowerJawPlate"
+    ],
+    [
+      "upperJawPlate",
+      "workpieceBody"
+    ],
+    [
+      "upperJawPlate",
+      "upperPivotScrewShaft"
+    ],
+    [
+      "upperJawPlate",
+      "upperPivotWasher"
+    ],
+    [
+      "upperJawPlate",
+      "upperPivotScrewHead"
+    ],
+    [
+      "upperJawPlate",
+      "lowerPivotScrewShaft"
+    ],
+    [
+      "upperJawPlate",
+      "lowerPivotWasher"
+    ],
+    [
+      "upperJawPlate",
+      "lowerPivotScrewHead"
+    ],
+    [
+      "upperJawPlate",
+      "bench0"
+    ],
+    [
+      "upperJawPlate",
+      "bench1"
+    ],
+    [
+      "upperJawPlate",
+      "bench2"
+    ],
+    [
+      "lowerJawPlate",
+      "workpieceBody"
+    ],
+    [
+      "lowerJawPlate",
+      "upperPivotScrewShaft"
+    ],
+    [
+      "lowerJawPlate",
+      "upperPivotWasher"
+    ],
+    [
+      "lowerJawPlate",
+      "upperPivotScrewHead"
+    ],
+    [
+      "lowerJawPlate",
+      "lowerPivotScrewShaft"
+    ],
+    [
+      "lowerJawPlate",
+      "lowerPivotWasher"
+    ],
+    [
+      "lowerJawPlate",
+      "lowerPivotScrewHead"
+    ],
+    [
+      "lowerJawPlate",
+      "bench0"
+    ],
+    [
+      "lowerJawPlate",
+      "bench1"
+    ],
+    [
+      "lowerJawPlate",
+      "bench2"
+    ],
+    [
+      "workpieceBody",
+      "upperPivotScrewShaft"
+    ],
+    [
+      "workpieceBody",
+      "upperPivotWasher"
+    ],
+    [
+      "workpieceBody",
+      "upperPivotScrewHead"
+    ],
+    [
+      "workpieceBody",
+      "lowerPivotScrewShaft"
+    ],
+    [
+      "workpieceBody",
+      "lowerPivotWasher"
+    ],
+    [
+      "workpieceBody",
+      "lowerPivotScrewHead"
+    ],
+    [
+      "workpieceBody",
+      "bench0"
+    ],
+    [
+      "workpieceBody",
+      "bench1"
+    ],
+    [
+      "workpieceBody",
+      "bench2"
+    ]
+  ],
+  "queries": 6320226,
+  "intersections": {
+    "upperJawPlate/lowerJawPlate": 0.0059999781846999944,
+    "upperJawPlate/workpieceBody": 0.020398724079132124,
+    "upperJawPlate/upperPivotWasher": 0.06652848258614535,
+    "upperJawPlate/upperPivotScrewHead": 0.012999984622001665,
+    "lowerJawPlate/workpieceBody": 0.020398724079132124,
+    "lowerJawPlate/lowerPivotScrewShaft": 0.06014261039575405,
+    "lowerJawPlate/lowerPivotWasher": 0.00652848258614544
+  },
+  "movingWithoutNominalContact": 46,
+  "samples": [
+    {
+      "time": 0,
+      "upperAngle": 0,
+      "lowerAngle": 0,
+      "nominalGap": 0,
+      "boardTranslation": 0
+    },
+    {
+      "time": 1.175,
+      "upperAngle": 0,
+      "lowerAngle": 0,
+      "nominalGap": 0,
+      "boardTranslation": 0
+    },
+    {
+      "time": 2.35,
+      "upperAngle": 0.12090686917304987,
+      "lowerAngle": -0.12090686917304987,
+      "nominalGap": 0.20516952603630412,
+      "boardTranslation": 0.48362747669219947
+    },
+    {
+      "time": 3.5250000000000004,
+      "upperAngle": 0.18,
+      "lowerAngle": -0.18,
+      "nominalGap": 0.3063920782651183,
+      "boardTranslation": 0.72
+    },
+    {
+      "time": 4.7,
+      "upperAngle": 0.17520986249999995,
+      "lowerAngle": -0.17520986249999995,
+      "nominalGap": 0.29817673626348895,
+      "boardTranslation": 0.7008394499999998
+    },
+    {
+      "time": 5.875,
+      "upperAngle": 0.021084488854980512,
+      "lowerAngle": -0.021084488854980512,
+      "nominalGap": 0.03549666665160167,
+      "boardTranslation": 0.08433795541992205
+    },
+    {
+      "time": 7.050000000000001,
+      "upperAngle": 0,
+      "lowerAngle": 0,
+      "nominalGap": 0,
+      "boardTranslation": 0
+    },
+    {
+      "time": 8.225,
+      "upperAngle": 0,
+      "lowerAngle": 0,
+      "nominalGap": 0,
+      "boardTranslation": 0
+    },
+    {
+      "time": 9.4,
+      "upperAngle": 0,
+      "lowerAngle": 0,
+      "nominalGap": 0,
+      "boardTranslation": 0
+    }
+  ],
+  "method": "Physical bench, jaw plates, board and pivot hardware, across distinct rigid families. Decorative outlines/indices/contact markers excluded. Finite vertices, edge midpoints and triangle centers; sampled baseline, not a clearance certificate. Moving-without-contact count uses the legacy model own nominal gap.",
+  "sources": [
+    {
+      "file": "scripts/review-bench-clamp-existing.mjs",
+      "sha256": "c4c6ff98413f2645c3369cabc645e124d2cb2d1c4fa683ab36567fc7ef436a13"
+    },
+    {
+      "file": "src/simulation/authored-clamps.js",
+      "sha256": "87675bee8eca4663226b5d5fc8e84d76e8bbb7fa026f9f686958f29f3dbd7c90"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

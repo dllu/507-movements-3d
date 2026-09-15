@@ -1,0 +1,27 @@
+{
+  "movement": 174,
+  "status": "packaged-desktop-mobile-passed-mechanical-review-open",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 viewport without horizontal overflow",
+    "no WASM request",
+    "no page errors"
+  ],
+  "limitations": "Browser still uses the inherited forced jaw angles and interfering geometry; the separate native study is not registered.",
+  "sources": [
+    {
+      "file": "tests/e2e/twin-bench-clamp.spec.mjs",
+      "sha256": "f0944fd3514d6ca1c734ace60ed0fa9e6322da1774c8ee89d445f9684b3c170b"
+    },
+    {
+      "file": "src/simulation/authored-clamps.js",
+      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "c380cefaf0f677633d6a2f61440524f5195dbfff05272899040dd333f9069e27"
+    }
+  ]
+}
