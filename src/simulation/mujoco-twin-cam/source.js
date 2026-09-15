@@ -22,5 +22,9 @@ export function twinCamContours(){
 }
 export const twinCamLevers=twinCamSource.rollers.map(([x,y],i)=>{
  const dx=(x-twinCamSource.pivot[0])*twinCamSource.scale,dy=(twinCamSource.pivot[1]-y)*twinCamSource.scale;
- return {length:Math.hypot(dx,dy),angle:Math.atan2(dy,dx),radius:twinCamSource.rollerRadii[i]*twinCamSource.scale,z:twinCamSource.planes[i]};
+ const length=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
+ const rodX=[277,290][i],attachment=length*(rodX-twinCamSource.pivot[0])/(x-twinCamSource.pivot[0]);
+ const headY=twinCamSource.pivot[1]-attachment*Math.sin(angle)/twinCamSource.scale;
+ return {length,angle,radius:twinCamSource.rollerRadii[i]*twinCamSource.scale,z:twinCamSource.planes[i],
+  attachment,rodLength:([414,430][i]-headY)*twinCamSource.scale,rodZ:.43};
 });

@@ -1,0 +1,50 @@
+{
+  "movement": 149,
+  "status": "pinned-output-rod-candidate",
+  "method": "All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 simulated poses from 12 to 18 seconds. Cam/roller soft contact reported separately. Fixed support structure not yet modeled. No continuous collision proof.",
+  "summary": {
+    "poses": 61,
+    "parts": 18,
+    "checks": 5283754,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "workingContacts": {
+    "cam0/roller0": {
+      "firstTime": 12.000000000003174,
+      "points": 45,
+      "maximumDepth": 0.0003227569910820086
+    },
+    "cam1/roller1": {
+      "firstTime": 12.000000000003174,
+      "points": 54,
+      "maximumDepth": 0.00018641761499815527
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-twin-cam-candidate.mjs",
+      "sha256": "961e73d5ca3751251dfffdd66119bf66cb1378077c13f28c62f2e55b44f92221"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "ef1dc80c6b6d687880f10e5ed8b8015e674b99af86fe6baebb90ddeb19d5bcae"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "d3b10a0032c9438132981d3fb0e644a765b18e0f1a052b1318208d8a454e8f6c"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "7c1cfa9c7daa94663da9456b529d4fc5c968356c7cbde6508d086681974a42dc"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

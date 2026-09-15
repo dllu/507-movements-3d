@@ -1,0 +1,66 @@
+{
+  "movement": 149,
+  "status": "traced-profile-pinned-output-rods",
+  "assumptions": "Visible moving geometry integrated at common density, normalized to upper lever mass 1. Output rods hang on free pins with assumed hinge damping; no external output load or guide. Only the cam shaft is driven.",
+  "options": {
+    "timestep": 0.0005,
+    "period": 6,
+    "gravity": 9.81,
+    "rodDamping": 0.002,
+    "duration": 60
+  },
+  "summary": {
+    "samples": 301,
+    "maximumPenetration": 0.000887681052297022,
+    "missingUpper": 15,
+    "missingLower": 8,
+    "minimumProfileGap": -0.0008791043989847536,
+    "maximumProfileGap": 0.0018637504624532397,
+    "closure": {
+      "upper": 0.0000015600966328244148,
+      "lower": -3.6294471039699516e-8,
+      "upperRod": -0.0003636542028422063,
+      "lowerRod": -0.05324466342699921
+    },
+    "angleRanges": {
+      "upper": [
+        -0.05816421462743101,
+        0.23319583832522686
+      ],
+      "lower": [
+        -0.03823300498659273,
+        0.1622942673106898
+      ]
+    },
+    "rodTilt": {
+      "upper": 0.03984222303177486,
+      "lower": 0.04787373785247918
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-twin-cam-physics.mjs",
+      "sha256": "34cf3986fb4494f3814e3b4af31894136543db77b30f86cc2173332581a5f82a"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "7c1cfa9c7daa94663da9456b529d4fc5c968356c7cbde6508d086681974a42dc"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "d3b10a0032c9438132981d3fb0e644a765b18e0f1a052b1318208d8a454e8f6c"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "ef1dc80c6b6d687880f10e5ed8b8015e674b99af86fe6baebb90ddeb19d5bcae"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

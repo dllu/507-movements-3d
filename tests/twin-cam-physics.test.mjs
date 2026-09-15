@@ -3,7 +3,33 @@ import assert from 'node:assert/strict';
 import loadMujoco from '@mujoco/mujoco';
 import {makeTwinCamPhysics} from '../src/simulation/mujoco-twin-cam/physics.js';
 import {twinCamContours} from '../src/simulation/mujoco-twin-cam/source.js';
+import {twinCamSource,twinCamLevers} from '../src/simulation/mujoco-twin-cam/source.js';
+import {makeTwinCamGeometry} from '../src/simulation/mujoco-twin-cam/geometry.js';
+import * as THREE from 'three';
 const mujoco=await loadMujoco();
+test('149 output rods reach engraved endpoints with ordinary coaxial pins',()=>{
+ const v=makeTwinCamGeometry();
+ try{
+  for(let i=0;i<2;i++){
+   const rod=v.root.userData.parts['rod'+i],box=new THREE.Box3().setFromObject(rod);
+   assert.ok(Math.abs(twinCamSource.pivot[1]-box.min.y/twinCamSource.scale-[414,430][i])<.001);
+   const rodPin=rod.parent.localToWorld(new THREE.Vector3(0,0,.05));
+   const leverPin=v.root.userData.blocks.levers[i].localToWorld(new THREE.Vector3(twinCamLevers[i].attachment,0,twinCamLevers[i].rodZ+.05));
+   assert.ok(rodPin.distanceTo(leverPin)<1e-12);
+  }
+ }finally{v.dispose();}
+});
+test('149 compiled moving bodies use common-density visible mesh masses',()=>{
+ const p=makeTwinCamPhysics(mujoco);
+ try{
+  assert.equal(p.model.nq,7);
+  for(const [name,m] of Object.entries(p.description.mass)){
+   const id=p.id('mjOBJ_BODY',name);
+   assert.ok(Math.abs(p.model.body_mass[id]-m.volume*p.description.density)<1e-12);
+   for(let k=0;k<3;k++)assert.ok(Math.abs(p.model.body_ipos[id*3+k]-m.centroid[k])<1e-12);
+  }
+ }finally{p.dispose();}
+});
 test('149 traced cam controls produce convex outlines',()=>{
  for(const p of twinCamContours()){
   let sign=0;
@@ -20,8 +46,8 @@ test('149 traced cams drive free gravity-return levers through repeated turns',(
  try{
   assert.equal(p.model.nu,1);assert.equal(p.model.neq,0);
   for(let i=0;i<36000;i++){
-   p.step();assert.equal(p.data.qfrc_applied[1],0);assert.equal(p.data.qfrc_applied[3],0);
-   if(i>=24000)for(const [k,j] of [1,3].entries()){low[k]=Math.min(low[k],p.data.qpos[j]);high[k]=Math.max(high[k],p.data.qpos[j]);}
+   p.step();assert.equal(p.data.qfrc_applied[1],0);assert.equal(p.data.qfrc_applied[4],0);
+   if(i>=24000)for(const [k,j] of [1,4].entries()){low[k]=Math.min(low[k],p.data.qpos[j]);high[k]=Math.max(high[k],p.data.qpos[j]);}
   }
   assert.ok(p.data.qpos[0]>6*Math.PI-.01);
   assert.ok(high[0]-low[0]>.25&&high[1]-low[1]>.18);
@@ -33,6 +59,6 @@ test('149 lever coordinates are not prescribed when contact and gravity are remo
   p.model.geom_contype.fill(0);p.model.geom_conaffinity.fill(0);const initial=Array.from(p.data.qpos);
   for(let i=0;i<12000;i++)p.step();
   assert.ok(p.data.qpos[0]>6);
-  for(const j of [1,2,3,4])assert.equal(p.data.qpos[j],initial[j]);
+  for(const j of [1,2,3,4,5,6])assert.equal(p.data.qpos[j],initial[j]);
  }finally{p.dispose();}
 });
