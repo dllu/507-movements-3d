@@ -868,7 +868,13 @@ function oneRevolutionPerPistonStrokeCrank() {
     sliderPinAnchor,
     sliderPinShaft,
   };
-  root.userData.cameraDistanceScale = 1.23;
+  root.userData.cameraDistanceScale = 1.1;
+  root.userData.cameraFov = 8;
+  root.userData.hideGround = true;
+  root.userData.materialsIgnoreSceneFog = true;
+  root.userData.reconstructionStatus = 'candidate';
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = { period: cyclePeriod };
   root.userData.canonicalStates = canonicalStates;
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;
@@ -882,12 +888,16 @@ function oneRevolutionPerPistonStrokeCrank() {
     stateAtCrankTurnCoordinate;
   root.userData.stateAtTime = stateAtTime;
 
+  root.traverse(object => {
+    if (object.material) for (const material of [].concat(object.material)) material.fog = false;
+  });
   update(0);
   markShadows(root);
   crankOrbitWitness.castShadow = false;
   crankOrbitWitness.receiveShadow = false;
   return {
-    cameraDirection: new THREE.Vector3(6.4, 4.8, 11.8),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
+    reset: () => update(0),
     root,
     update,
   };

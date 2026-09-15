@@ -1,0 +1,169 @@
+{
+  "movement": 175,
+  "status": "oracle-motion-agrees-engraving-fit-open",
+  "url": "https://507movements.com/mm_175.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "maximumError": 2.523675712851059e-14,
+  "samples": [
+    {
+      "phase": 0,
+      "crank": [
+        -5,
+        0
+      ],
+      "slider": [
+        7,
+        0
+      ]
+    },
+    {
+      "phase": 0.25,
+      "crank": [
+        -3.061616997868383e-16,
+        -5
+      ],
+      "slider": [
+        7,
+        -14.746794344808963
+      ]
+    },
+    {
+      "phase": 0.5,
+      "crank": [
+        5,
+        -6.123233995736766e-16
+      ],
+      "slider": [
+        6.999999999999992,
+        -11.832159566199234
+      ]
+    },
+    {
+      "phase": 0.75,
+      "crank": [
+        9.184850993605148e-16,
+        5
+      ],
+      "slider": [
+        7.000000000000001,
+        -4.746794344808963
+      ]
+    },
+    {
+      "phase": 1,
+      "crank": [
+        -5,
+        0
+      ],
+      "slider": [
+        7,
+        0
+      ]
+    },
+    {
+      "phase": 1.25,
+      "crank": [
+        -3.061616997868383e-16,
+        -5
+      ],
+      "slider": [
+        7,
+        4.746794344808963
+      ]
+    },
+    {
+      "phase": 1.5,
+      "crank": [
+        5,
+        -6.123233995736766e-16
+      ],
+      "slider": [
+        7,
+        11.832159566199232
+      ]
+    },
+    {
+      "phase": 1.75,
+      "crank": [
+        9.184850993605148e-16,
+        5
+      ],
+      "slider": [
+        7,
+        14.746794344808965
+      ]
+    },
+    {
+      "phase": 2,
+      "crank": [
+        -5,
+        0
+      ],
+      "slider": [
+        7,
+        0
+      ]
+    }
+  ],
+  "features": [
+    {
+      "name": "crank pin",
+      "source": [
+        246,
+        296
+      ],
+      "projected": [
+        246,
+        296
+      ],
+      "errorPixels": 0
+    },
+    {
+      "name": "slider pin",
+      "source": [
+        354,
+        419
+      ],
+      "projected": [
+        306.8090905257994,
+        470.5252259973473
+      ],
+      "errorPixels": 69.87009983590917
+    }
+  ],
+  "engraving": {
+    "crankRadius": 77.00649323271382,
+    "guideOffset": 155,
+    "rodLength": 163.68567438844488,
+    "requiredBranchTransferRodLength": 232.0064932327138
+  },
+  "oracle": {
+    "crankRadius": 5,
+    "guideOffset": 7,
+    "rodLength": 12
+  },
+  "crankTurnsBetweenPistonReversals": [
+    1.3649125601601306,
+    0.6350874398398694
+  ],
+  "method": "Execute original anilib at 1441 phases over two crank turns. Compare crank and rod endpoint with the existing analytic implementation. Engraving projection registers fixed shaft and crank radius; it is not a free best-fit registration.",
+  "limitation": "The engraving dimensions do not satisfy L = guide offset + crank radius. A faithful outline and branch-transfer mechanism cannot simultaneously preserve all three measured pin centers.",
+  "sourceHashes": {
+    "html": "ac0449965897ce3bd47c0231acfd4ca37b050656686f4dddc82b901ada09181a",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "sources": [
+    {
+      "file": "scripts/review-stroke-crank-oracle.mjs",
+      "sha256": "ffcfc943b23ec9187fd1b2e8c80ee1508b2fe9642c9543127cef76095d2403cb"
+    },
+    {
+      "file": "src/simulation/authored-stroke-cranks.js",
+      "sha256": "615bcc47a5932ea82770a9e4e924dd6f0631bf1c58af8ba8749fa01406cad599"
+    },
+    {
+      "file": "public/engravings/mm_175.png",
+      "sha256": "8a3c0806e1d7e880785ed1e3066b910a0ebb80476580262f300c90e33a469d87"
+    }
+  ]
+}

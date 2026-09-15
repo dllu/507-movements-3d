@@ -1,0 +1,23 @@
+{
+  "movement": 175,
+  "status": "rendering-passed-reconstruction-open",
+  "checks": [
+    "playback",
+    "exact Restart",
+    "orbit and reset",
+    "390x844 without horizontal overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "limitations": "Known source-fit mismatch and eleven interfering solid pairs; this is not geometry or mechanism certification.",
+  "sources": [
+    {
+      "file": "tests/e2e/stroke-crank.spec.mjs",
+      "sha256": "771bb7cb93ad6c9036c470aaaed90750561cd2dbda67a8f4c22bcf8aff88ef1e"
+    },
+    {
+      "file": "src/simulation/authored-stroke-cranks.js",
+      "sha256": "615bcc47a5932ea82770a9e4e924dd6f0631bf1c58af8ba8749fa01406cad599"
+    }
+  ]
+}
