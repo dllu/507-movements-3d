@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "names": [
+    "disk",
+    "bar",
+    "lever",
+    "leftGuide",
+    "rightGuide"
+  ],
+  "turns": [
+    -6.283185307179586,
+    0,
+    0,
+    0,
+    0
+  ],
+  "period": 12,
+  "loopStart": 0,
+  "loopEnd": 12,
+  "bounds": {
+    "min": [
+      -4.245000190734863,
+      -2.0500000035762787,
+      -0.5900000059604644
+    ],
+    "max": [
+      4.208604413940576,
+      2.6020000171661377,
+      1.0780000042915345
+    ]
+  },
+  "focus": [
+    -0.018197888397143203,
+    0.27600000679492953,
+    0.24399999916553505
+  ],
+  "cameraDirection": [
+    0.02,
+    0.03,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-stud-reverser.mjs",
+      "sha256": "aad1c246ee0613e55edd3cc248134191ccf82684c217705fe4083efb224536a2"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/geometry.js",
+      "sha256": "290771ca52b327d32237412b765dce2c86ea85799e2ff2a887d7cc8630ebee6b"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/physics.js",
+      "sha256": "dcc520d098838e2a346078dec20e790e10457c4d6507b9aa569a0ca713a0cce3"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/sync.js",
+      "sha256": "2673bdf3033089947b40519cc9a4e1018aba8e2a7159b1585bd38043f2e90731"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "docs/validation/153-supported-fine.json",
+      "sha256": "1a1d333ff5bb19fd9cdae4c9bafca3088503377f6e84b1bc56191c5a6edd05af"
+    },
+    {
+      "file": "docs/validation/153-assembly.json",
+      "sha256": "36a3edb0175c5920e5688b65cb39103fdfbd624c09ef00fa2c8137bd8604dec6"
+    },
+    {
+      "file": "docs/validation/153-moving-volumes.json",
+      "sha256": "669f68339fa1c00dcbe86080f6489056a511f3b0779cfa9173df0feb9f73e9be"
+    }
+  ],
+  "closure": [
+    1.4846435192339413e-10,
+    2.4069298637519054e-10,
+    0,
+    -6.876942487687998e-10,
+    -6.876942487687998e-10
+  ],
+  "sourceTime": 60,
+  "bytes": 298839,
+  "sha256": "9ead2f5ba4866101e2dbe2202fd87c528bc053d32d7aa1f3a41e694b5d8ac1e2",
+  "samples": 6001,
+  "meshes": 15
+}

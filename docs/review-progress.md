@@ -1,12 +1,12 @@
-# Current review: 153 stud-driven bar reverser
+# Shipped reconstruction: 153 passive stud-driven reverser
 
-153 now has bored moving hardware, disjoint moving solids, a contact-driven
-physical elbow stop and bar guides that remain engaged across the stroke.
-The supported passive trajectory passes a 43-part, 626-pair assembly check;
-three native tests pass and timestep halving changes bar motion by 0.0361
-source pixel. The inferred depth relief and hardware remain explicit limits.
-Baking, interpolation and packaged playback are next; production is unchanged.
-See [movement 153](movement-153.md). The 150 source fit remains open.
+153 now loads a 299 KB, 6,001-pose MuJoCo bake with 15 meshes and no browser
+physics. The inferred stepped arm releases the disk stud; gravity resets the
+elbow onto a physical stop. Bored bearings and full-stroke bar guides pass the
+assembly check. Three physics tests, two bake tests, the between-sample assembly
+check, production build and packaged desktop/mobile playback pass. Hidden
+relief, guide resistance, ideal constraints and finite sampling remain explicit
+in [movement 153](movement-153.md). Continue at 154; 150's source fit remains open.
 
 # Shipped improvement: 152 two-stud trammel
 

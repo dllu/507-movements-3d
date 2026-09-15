@@ -1,0 +1,68 @@
+{
+  "movement": 153,
+  "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 interpolated baked poses across the full cycle, offset between recorded samples. Uses the authored constituent solids with the baked generalized coordinates; the bundle merges these same solids by body and material. Contact markers are excluded; intended soft working contacts are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
+  "summary": {
+    "parts": 43,
+    "pairs": 626,
+    "poses": 65,
+    "checks": 3848628,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "softContacts": {
+    "part-30/bar-fixed-underside-direct-drive-projection-35": {
+      "firstPose": 0,
+      "points": 3,
+      "maximumDepth": 0.00001311936333450725
+    },
+    "part-32/distal-input-driving-face-38": {
+      "firstPose": 12,
+      "points": 3,
+      "maximumDepth": 0.0000021453649849401124
+    },
+    "part-30/distal-input-driving-face-38": {
+      "firstPose": 42,
+      "points": 12,
+      "maximumDepth": 0.00032534732708291617
+    },
+    "bar-fixed-front-return-stud-36/bored-return-arm-40": {
+      "firstPose": 42,
+      "points": 4,
+      "maximumDepth": 0.00008693518713487336
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-stud-reverser-baked-assembly.mjs",
+      "sha256": "1c46973973812fb8a689a2e05faa0ae39a7920a2b51e62e89b5690773b1f4a53"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/geometry.js",
+      "sha256": "290771ca52b327d32237412b765dce2c86ea85799e2ff2a887d7cc8630ebee6b"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/sync.js",
+      "sha256": "2673bdf3033089947b40519cc9a4e1018aba8e2a7159b1585bd38043f2e90731"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "src/simulation/baked/assets/153.json.gz",
+      "sha256": "9ead2f5ba4866101e2dbe2202fd87c528bc053d32d7aa1f3a41e694b5d8ac1e2"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

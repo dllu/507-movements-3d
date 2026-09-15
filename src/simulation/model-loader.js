@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 153) {
+    const {makeBakedStudReverser} = await import('./baked/stud-reverser.js');
+    const model = await makeBakedStudReverser();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 152) {
     const {makeTrammelEllipsograph} = await import('./trammel-ellipsograph.js');
     const model = makeTrammelEllipsograph();
