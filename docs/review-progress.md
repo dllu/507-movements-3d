@@ -1,3 +1,13 @@
+# Current review: 142 corrected fixed-pinion count
+
+142's engraving has six central pinion teeth, not the old model's eight. With
+eighteen planet teeth, modulation and the complete pattern take three carrier
+turns. Measured centres and a profile-shifted involute pair now fit the tooth-tip
+radii; 720 contact poses and a finer independent 180-pose check clear. The
+registered overlay has been inspected. Visible hardware, stud-cap separation,
+rod/guide assumptions and browser replacement remain. See
+[movement 142](movement-142.md). Do not advance to 143.
+
 # Current review: 141 reconstructed band saw
 
 141 now uses measured wheel spacing, a curved casting, six-spoke wheels, slotted

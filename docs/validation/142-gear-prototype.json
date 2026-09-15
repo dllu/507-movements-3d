@@ -1,0 +1,48 @@
+{
+  "sunTeeth": 6,
+  "planetTeeth": 18,
+  "module": 0.07751791907538398,
+  "orbit": [
+    0.02,
+    -0.93
+  ],
+  "profileShifts": [
+    0.6,
+    -0.6
+  ],
+  "dedenda": [
+    1.02,
+    1
+  ],
+  "cutterTipRadiusInModules": 0.05,
+  "sunOuterRadiusPixels": 34.75579644171892,
+  "planetOuterRadiusPixels": 72.8590921389534,
+  "sunRootRadiusPixels": 19.99187132954153,
+  "measuredOuterRadii": [
+    35,
+    73
+  ],
+  "relativePlanetTurnsPerCarrierTurn": 0.3333333333333333,
+  "carrierTurnsPerModulation": 3,
+  "samples": 720,
+  "interferingPoses": 0,
+  "maximumIntersectionArea": 0,
+  "sources": [
+    {
+      "file": "src/data/silk-traverse-dimensions.js",
+      "sha256": "b22925132d0a1ba4090e48e801157324969be06031502553cf76edcce0fa2aa2"
+    },
+    {
+      "file": "src/simulation/silk-traverse-gears.js",
+      "sha256": "4b4eacec3b1f5ecab93369e3857e8c5d4eff1f0d294d87d4c7209929b764c5a7"
+    },
+    {
+      "file": "src/simulation/coaxial-gear-geometry.js",
+      "sha256": "5ee01dceec0686477a7fa65b492f8582053ce3b7f606314b9af08a9ca091fdbd"
+    },
+    {
+      "file": "scripts/prototype-silk-traverse-gears.mjs",
+      "sha256": "3c8d7289d997181e9bac8596dc4d6e16f6b4e55f6cd33971ec89d87b19080bc8"
+    }
+  ]
+}
