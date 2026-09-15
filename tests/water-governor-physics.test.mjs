@@ -43,8 +43,28 @@ test('162 nominal spindle speed holds the neutral governor with loose gears at r
 });
 
 test('162 gear backing prevents an over-speed pin from passing through the stud roots',()=>{
- const backed=run({speedAmplitude:.5}),open=run({speedAmplitude:.5,backingContact:false});
+ const backed=run({speedAmplitude:.5}),open=run({speedAmplitude:.5,backingContact:false,toothContact:false});
  assert.ok(backed.maximumSelector<.425,'pin top stays below the upper backing face');
  assert.ok(backed.minimumSelector>-.335,'pin bottom stays above the lower backing face');
  assert.ok(open.maximumSelector>.50,'removed backing exposes the former pass-through defect');
+});
+
+test('162 ball contact prevents the lower link stem entering its own ball',()=>{
+ const minimumGap=ballContact=>{
+  const p=makeWaterGovernorPhysics(m,{speedAmplitude:.5,contact:false,ballContact});let gap=Infinity;
+  try{
+   const ball=p.id('mjOBJ_GEOM','left-ball'),link=p.id('mjOBJ_GEOM','left-link-collision');
+   for(let tick=0;tick<=16000;tick++){
+    if(tick%20===0){
+     p.state();const d=[0,1,2].map(i=>p.data.geom_xpos[3*ball+i]-p.data.geom_xpos[3*link+i]);
+     const excess=[0,1,2].map(i=>Math.max(0,Math.abs(d.reduce((sum,x,j)=>sum+x*p.data.geom_xmat[9*link+3*j+i],0))-p.model.geom_size[3*link+i]));
+     gap=Math.min(gap,Math.hypot(...excess)-p.geometry.ballRadius);
+    }
+    if(tick<16000)p.step();
+   }
+   return gap;
+  }finally{p.dispose();}
+ };
+ assert.ok(minimumGap(true)>-.001,'sphere and visible-width stem remain separated within contact compliance');
+ assert.ok(minimumGap(false)<-.005,'removed contact reproduces the missing-collision defect');
 });

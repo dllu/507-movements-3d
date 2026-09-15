@@ -15,7 +15,7 @@ export function makeWaterGovernorBevels(){
   ['spindleDrive',parameters.topApex,[0,1,0],.80,.10,PALETTE.brass],
   ['upperLoose',parameters.lowerApex,[0,1,0],.468/rootDistance,.21,PALETTE.driven],
   ['lowerLoose',parameters.lowerApex,[0,-1,0],.378/rootDistance,.15,PALETTE.driven],
-  ['gateOutput',parameters.lowerApex,[-1,0,0],.70,.19,PALETTE.accent],
+  ['gateOutput',parameters.lowerApex,[-1,0,0],.80,.19,PALETTE.accent],
  ];
  for(const [name,apex,axis,innerScale,backRise,color]of specs){
   const gear=new THREE.Group(),rotor=new THREE.Group();gear.position.set(...apex);

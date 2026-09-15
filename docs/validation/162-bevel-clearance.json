@@ -21,7 +21,7 @@
   },
   "poses": 65,
   "pairs": 3844,
-  "queries": 16802554,
+  "queries": 15230562,
   "failures": {},
   "method": "Bidirectional vertices, edge midpoints and triangle centers over one tooth pitch at exact ideal ratios. Tooth/body solids, including opposed loose gears. Finite sampled clearance; native soft gear-constraint errors and pin/body contacts not yet included.",
   "sources": [
@@ -31,7 +31,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/bevel-train.js",
-      "sha256": "5ccccce52af0b2ac985ed2495735b08f621b42db051cee104cb509d54fc5bdf0"
+      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
     },
     {
       "file": "src/simulation/bevel-geometry.js",

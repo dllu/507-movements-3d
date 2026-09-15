@@ -1,132 +1,103 @@
 # Movement 162 — water-wheel governor review in progress
 
-162 remains open. Production still uses the authored animation; the new native
-selector study is not registered. Movement 161's completed bake remains intact.
+162 remains unregistered. Production still uses the authored threshold-based
+animation; the reconstructed assembly and native dynamics are candidates.
 
-## Source and existing behavior
+## Source and reconstruction
 
-The [original page](https://507movements.com/mm_162.html) has no available 2D
-animation. Its caption describes a flyball governor driven by the upper bevel
-pair. A pin on the sliding sleeve picks up a stud on either lower loose bevel:
-the upper gear closes the water gate when speed increases, and the lower gear
-reverses the gate shaft when speed falls. At proper speed neither is engaged.
-The water wheel, gate and remote transmission are outside the engraving.
+The [original page](https://507movements.com/mm_162.html) has no 2D animation.
+The upper bevel pair drives the flyball spindle. A pin on the sliding sleeve
+picks up either lower loose bevel's stud, reversing the horizontal gate shaft.
+At proper speed neither stud is engaged. The water wheel, gate and remote
+transmission are outside the drawing. The old authored code instead switches
+output speed at preset thresholds and adjusts them to force balanced travel.
 
-The current authored code uses instantaneous point-ball equilibrium and switches
-the output directly between zero and spindle speed at predetermined thresholds.
-It also solves the upper engagement threshold specifically to balance forward
-and reverse output travel in one cycle. This guarantees a loop, but does not
-establish finite pin/stud pickup or the governor's transient dynamics. Its
-invented remote rack/gate assembly and bevel proportions also need source review.
+Source measurements use 0.018 world units per pixel: spindle x=263; head pivots
+(247,55)/(279,55); elbows (205,160)/(320,160); balls near (178,232)/(347,231),
+radius 34 pixels; sleeve pins (248,250)/(278,250); lower gear apex (263,414).
+Symmetric inferred lengths are 3.414 to the ball, 2.035 to the elbow and 1.787
+for the lower link. Stud roots/tips follow rows 388/401 and 418/435. Relative to
+the lower apex their working spans are +0.234…+0.468 and −0.378…−0.072. The
+neutral pin center is +0.108, with axial half-height 0.045.
 
-Source measurements retained for the native study use 0.018 world units per
-pixel: spindle x=263; head pivots near (247,55)/(279,55); elbows near
-(205,160)/(320,160); balls near (178,232)/(347,231), radius 34 pixels; sleeve
-pins (248,250)/(278,250); lower bevel apex (263,414). Symmetric inferred link
-lengths are 3.414 to each ball, 2.035 to the elbow and 1.787 for each lower link.
+The five equal-ratio bevels use inferred 30-tooth counts, 37-pixel outer radii,
+conical backplates, actual bores and the shared back-cone involute approximation.
+Tooth ends have conical profiles and analytic cap normals. The gate gear's
+shorter face now clears the sweeping selector and stud roots. Horizontal shafts
+stop inside their hubs, and the output bearing clears the conical backplate.
 
-## Coupled native selector study
+The complete 183-mesh candidate includes head cheeks, bored arm eyes and pins,
+balls, the long bored sleeve, selector shoulder, studs and both horizontal
+shafts. Native hinge coordinates drive all moving parts. The visible pin and
+stud working faces coincide with their native counterparts throughout a cycle.
+Depths, rear cheeks, bearings and stud-root extensions are inferred. The remote
+gate and its support are omitted rather than replaced by invented geometry.
 
-`mujoco-water-governor/physics.js` has one actuated spindle and passive arm,
-lower-link, sleeve, loose-gear and output joints. Site constraints close the
-flyball linkage. The sleeve carries a finite rectangular pin; physical contact
-with upper or lower finite studs accelerates the output. Two ideal equal-ratio
-joint constraints represent the opposed bevel meshes. Neither output angle nor
-engagement state is prescribed, and neither is reset at a speed-cycle boundary.
+## Native contacts and assumptions
 
-The full-linkage equilibrium helper from 161 sets nominal speed. Effective
-masses are 1 kg per ball, 0.02 kg per upper/lower arm and 0.1 kg for the sleeve;
-gravity is 98.1 world units/s². Gear inertias, output friction, contact softness
-and the 0.32 rad/s sinusoidal speed variation are diagnostic assumptions. No
-hydraulic load, water-wheel feedback or complete visible-solid collisions are
-represented yet.
+Only the spindle is actuated. Arms, lower links, sleeve, loose gears and output
+are passive; site constraints close the linkage and ideal equal-ratio joint
+constraints represent the bevel meshes. Output angle and engagement are not
+prescribed or reset to force a loop. Full-linkage equilibrium sets nominal speed.
+Effective masses remain 1 kg per ball, 0.02 kg per link and 0.1 kg for the sleeve,
+with gravity 98.1 world units/s². Gear inertias, output friction and damping are
+inferred. There is no hydraulic load or water-wheel feedback.
 
-## Stud dimensions and missing backing surfaces
+The native collision model now includes the actual gear body hulls and convex
+hulls of the individual loose-gear teeth. Filling the 0.155 body bore in a convex
+hull is harmless for the selector, whose minimum radius is 0.16. Tooth hulls are
+approximations; the separate visible-surface sweep checks their resulting motion.
+Explicit sphere/link-stem contact pairs prevent a ball entering its own lower
+link at low speed. The collision stem matches the visible width and depth;
+effective link mass remains defined by the original lightweight capsule.
 
-Closer raster inspection places the upper stud root/tip near rows 388/401 and
-the lower stud tip/root at 418/435, with the pin between about rows 405 and 411.
-The revised upper stud spans +0.234 to +0.468 world units relative to the lower
-train apex; the lower spans −0.378 to −0.072. The pin center starts at +0.108
-with axial half-height 0.045. Depths and radial dimensions remain inferred.
+These additions address real intersections found in the complete assembly,
+including pin/tooth interference and ball/link overlap. Removing the gear
+backing and tooth contacts reproduces the former overspeed pass-through; removing
+ball contact reproduces sphere/stem overlap in a disconnected-output stress run.
+Normal speed variation is now 0.26 rad/s. The 0.32 and 0.5 stress cases retain
+all required physical contacts rather than imposing sleeve travel clamps.
 
-A long run exposed a defect in the first native study: with the gear bodies
-omitted from collision, the pin could pass through the upper backing and settle
-on top of the upper stud. It then stayed coupled through the whole speed cycle.
-The diagnostic now derives backing collision hulls from the actual visible
-conical gear bodies. Only the pin collides with these hulls; its minimum radius
-of 0.16 lies outside the 0.155 bore. Filling the bore in the convex collision
-hull therefore preserves the pin's accessible contact surface. The previous
-flat-cylinder proxies overextended the inner face beyond the conical body.
+## Verification and remaining work
 
-The overspeed regression proves that removing the backing permits the former
-pass-through, while the backed pin stays within the physical selector gap.
-This is a contact model correction, not an imposed sleeve travel limit.
+Eight tests cover the source gear envelopes, bores, pitch velocities, native
+bidirectional pickup, removed-contact and shifted-stud counterfactuals, neutral
+equilibrium, overspeed backing protection, ball/link contact, native clock
+continuity and visible joint/contact-face alignment. Front and oblique Chrome
+views of the full assembly were inspected; fog and the unrelated ground plane
+are disabled.
 
-## Native evidence and remaining limits
+At exact gear ratios, a 65-pose bevel sweep clears 3,844 mesh pairs. The full
+assembly sweep uses 65 poses over eight native seconds with 0.32 rad/s speed
+variation, above the normal setting. It checks 14,216 cross-family pairs and
+34,306,988 surface samples, including native gear-constraint error. The only
+sampled overlap is at the intended pin/stud contacts, below 0.000003 world units
+(0.00017 source pixels). All other intersections fail the checker. Same-family
+rigid joins, such as arm stems in balls and stud roots in gear bodies, are
+intentional.
 
-The corrected eight-second run picks up forward drive at 1.1325 s and reverse
-drive at 5.4395 s. Turning contact off leaves the output stationary despite
-spindle rotation and sleeve motion. Shifting the studs one radian delays these
-pickups to 1.3100 and 5.8575 s. Constant nominal speed holds neutral without
-output motion. Relative stud azimuth determines pickup alongside speed and lift.
+Four-timestep refinement gives successive maximum output-angle differences of
+0.01019, 0.00864 and 0.00869 radians. The final pair changes sleeve height by
+0.000152 world units (0.0085 source pixels). Repeated-cycle checks use an
+8.4342254-second period and 64 cycles at each of two timesteps. Both runs retain
+reversal in their final eight cycles. At the finer timestep, internal-coordinate
+closure is below 0.000041 and output phase closure below 0.00382 radians, but
+these are not exact seams. Impact refinement and a mechanically valid bake
+remain open; no phase snapping or false repeating trajectory is registered.
 
-At the original 0.0005-second timestep, maximum linkage closure error is
-9.07e-7 world units, penetration 0.000980 world units (0.055 source pixels),
-and soft bevel-constraint error 0.00155 radians. Final output advance is
-6.624 radians, not a forced zero. Four native tests cover bidirectional pickup,
-removed-contact and shifted-stud counterfactuals, neutral equilibrium, clock
-continuity, pin closure and the added backing surfaces.
-
-Four-timestep refinement samples the first eight seconds every 0.002 seconds.
-Successive maximum output-angle differences are 0.02401, 0.01271 and 0.00755
-radians for 0.0005 → 0.00025 → 0.000125 → 0.0000625-second steps. The final
-pair changes sleeve height by 0.000278 world units, about 0.0155 source pixels.
-The output differences now decrease with timestep, but impact accuracy and
-repeated playback are not yet qualified. See
-`docs/validation/162-contact-refinement.json`.
-
-A separate repeated-cycle study uses an 8.4342254-second input period (seven
-nominal spindle revolutions), with 64 cycles at each of two timesteps. Both
-runs retain forward and reverse output during all final eight cycles. The pin
-never passes the backing faces: observed offsets span −0.1431 to +0.4234 world
-units. However, last-cycle output phase closure errors range from roughly
-0.0023 to 3.01 radians, and internal coordinates also fail to close. Merely
-making spindle travel an integer number of turns does not produce a valid
-baked loop. See `docs/validation/162-repeated-selector.json`.
-
-Reproduce the evidence with:
+Evidence and source hashes are in `docs/validation/162-native-selector.json`,
+`162-contact-refinement.json`, `162-repeated-selector.json`,
+`162-bevel-clearance.json` and `162-solid-clearance.json`. Raw trajectories and
+screenshots remain outside Git. Reproduce with:
 
 ```sh
-node --test tests/water-governor-physics.test.mjs
+node --test tests/water-governor-*.test.mjs
+node scripts/review-water-governor-bevels.mjs
+node scripts/review-water-governor-solids.mjs
 node scripts/probe-water-governor.mjs
 node scripts/refine-water-governor.mjs
 node scripts/settle-water-governor.mjs
 ```
 
-Reports include source hashes; raw trajectories remain outside Git. Next work
-is resolving impact/repeated-cycle behavior, building the source-visible gears
-and selector, checking actual mesh clearance and baking validated playback.
-Production 162 remains unchanged.
-
-## Visible bevel train candidate
-
-`mujoco-water-governor/bevel-train.js` reconstructs all five bevels at the two
-source shaft intersections. The inferred equal 30-tooth gears have a 37-pixel
-outer radius and 0.635660-world-unit pitch radius. Separate face widths put the
-upper/lower loose-gear inner body faces at the measured stud roots. Their
-shallow conical backplates follow the raised centers visible behind the teeth.
-Every body has a real 0.155-radius bore, and all materials disable fog.
-
-The shared back-cone involute approximation supplies conical tooth ends and
-analytic cap normals. A 65-pose tooth-pitch sweep checks 3,844 cross-gear pairs
-with 16,802,554 bidirectional surface queries and finds no unintended sampled
-penetration above 1e-6 world units. This covers exact ideal gear ratios; native
-soft-constraint phase errors and pin/stud visible-solid clearances still need
-checking. See `docs/validation/162-bevel-clearance.json`.
-
-Two geometry tests verify outer envelopes, bores, inner face positions and
-matching pitch velocities at all three meshes. Front and oblique Chrome views
-were inspected. The visible reconstruction remains unregistered and still needs
-the governor linkage, shafts, selector and support hardware. Native backing
-assets are generated from these same visible bodies, retaining their conical
-contact profiles rather than a separately dimensioned flat collision disk.
+Next work is tightening/qualifying the ideal gear constraints and repeated
+contact response, then baking, registering and testing browser playback.

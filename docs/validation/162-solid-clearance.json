@@ -1,0 +1,67 @@
+{
+  "movement": 162,
+  "status": "unregistered-solid-diagnostic",
+  "parameters": {
+    "movement": 162,
+    "timestep": 0.0005,
+    "period": 8,
+    "speedAmplitude": 0.32,
+    "studPhase": 0,
+    "contact": true,
+    "backingContact": true,
+    "toothContact": true,
+    "ballContact": true,
+    "nominalSpeed": 5.214740542077946,
+    "selectorOffset": -2.8446684036067533,
+    "apex": -2.162,
+    "assumptions": "Source-proportioned ideal governor hinges, inferred effective masses and selector/stud depths. Passive finite pin/stud and gear-backing contact; ideal equal-ratio bevel constraints and inferred output friction. No water-wheel, gate inertia or hydraulic feedback."
+  },
+  "poses": 65,
+  "meshes": 183,
+  "pairs": 14216,
+  "queries": 34306988,
+  "intersections": {
+    "selectorPin/upperStud": {
+      "maximumDepth": 0.000002984203976201527,
+      "firstTime": 1.7499999999998628,
+      "samples": 3
+    },
+    "selectorPin/lowerStud": {
+      "maximumDepth": 0.0000027388544596163023,
+      "firstTime": 6.499999999999117,
+      "samples": 1
+    }
+  },
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers during eight native seconds with 0.32 rad/s speed variation (above the normal 0.26 setting). Same rigid-family joins excluded. Includes soft-contact penetration and native gear-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
+  "sources": [
+    {
+      "file": "scripts/review-water-governor-solids.mjs",
+      "sha256": "d56ee914f665e042f239a994c6570c9827469b7f629b683e5adaee64e20461e2"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/solids.js",
+      "sha256": "b3389d5c9e1e05a698ac4c833d60f3ba65566ba185c83f760a259f27412e755c"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/physics.js",
+      "sha256": "5bf4c1dbbf7bc97ab6995e7f74b037f6d082a7f7de7009209b9bcb2984181baf"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/backing-contact.js",
+      "sha256": "f3a2d2619db5647f2ebb71f70414597fd90067638d8fdb0ea38b5db39cbe93f2"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/bevel-train.js",
+      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

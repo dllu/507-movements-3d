@@ -8,10 +8,10 @@ export function waterGovernorBackingAssets(){
  const v=makeWaterGovernorBevels();
  try{
   const apex=new THREE.Vector3(...v.root.userData.parameters.lowerApex);
-  return ['upper','lower'].map(name=>{
-   const mesh=v.root.userData.parts[name+'LooseBody'],p=mesh.geometry.attributes.position,vertices=[];
+  return ['upper','lower'].flatMap(name=>['Body','Tooth0'].map(kind=>{
+   const mesh=v.root.userData.parts[name+'Loose'+kind],p=mesh.geometry.attributes.position,vertices=[];
    for(let i=0;i<p.count;i++)vertices.push(...new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld).sub(apex).toArray());
-   return `<mesh name="${name}-backing-mesh" vertex="${vertices.join(' ')}"/>`;
-  }).join('');
+   return `<mesh name="${name}-${kind==='Body'?'backing':'tooth'}-mesh" vertex="${vertices.join(' ')}"/>`;
+  })).join('');
  }finally{v.dispose();}
 }

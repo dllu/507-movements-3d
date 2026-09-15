@@ -1,10 +1,11 @@
 # Active reconstruction: 162 water-wheel governor
 
-162 now has a source-sized five-bevel candidate with real bores and conical
-backplates/teeth. A 65-pose gear sweep clears, and native backing contact uses
-the visible body shapes. Six geometry and mechanical tests pass. Timestep
-refinement improves, but repeated motion is not yet a qualified loop. The
-remaining source solids and baked playback stay open. Production is unchanged.
+162 now has a complete 183-mesh source assembly driven by native joint poses.
+The full sweep found and fixed selector/gear, shaft and ball/link collisions;
+native tooth and ball/link contacts now prevent pass-through. Eight tests pass,
+and the final sweep has only microscopic intended stud-contact overlap. Repeated
+motion is closer to closing, but gear constraints and baking still need
+qualification. Production remains unchanged.
 See [movement 162](movement-162.md). The full 507-movement review remains active.
 
 # Shipped reconstruction: 161 centrifugal governor
