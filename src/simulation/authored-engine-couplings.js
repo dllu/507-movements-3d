@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring} from './finite-plate-geometry.js';
+import {ring,plate,poly,circle,sector,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1227,8 +1227,23 @@ function disengagedSlottedRingEngineCoupling() {
 function qualifyEngagedGeometry(model) {
   const {root}=model,{blocks:b,geometry:g}=root.userData;
   for(const [mesh,side]of [[b.selectorLeftLobe,'left'],[b.selectorRightLobe,'right']]){
-    mesh.geometry.dispose();mesh.geometry=centeredExtrusion(makeVerticalSlotLobeShape(g.selectorOuterRadius,g.slotHalfWidth,side).shape,g.selectorDepth,0);
+    mesh.geometry.dispose();mesh.geometry=centeredExtrusion(makeVerticalSlotLobeShape(g.selectorOuterRadius,g.slotHalfWidth,side).shape,.48,0);mesh.geometry.translate(0,0,.15);
   }
+  // Inferred axial retention: the two slotted halves join a sleeve in front
+  // of the wrist tip; lips capture the cheek without crossing its material.
+  const addSelector=(name,geometry)=>{const mesh=new THREE.Mesh(geometry,b.selectorLeftLobe.material);mesh.userData.role=name;b.selectorRing.add(mesh);b[name]=mesh;return mesh;};
+  for(const [side,start]of [['left',Math.PI-.85],['right',-.85]]){
+    const outline=poly(makeVerticalSlotLobeShape(g.selectorOuterRadius,g.slotHalfWidth,side).shape.getPoints(24).map(p=>p.toArray()));
+    const face=polygonClipping.difference(outline,sector(.51,.58,start,start+1.7,64));
+    addSelector('selector-'+side+'-recessed-face',plate(face,.39,.41));
+  }
+  addSelector('selector-connecting-sleeve',ring(.60,.634,.165,.42,128));
+  addSelector('selector-front-retaining-lip',ring(.60,.70,.41,.44,128));
+  const rearLip=polygonClipping.difference(poly(circle([0,0],.70,128)),poly(circle([0,0],.60,128)),poly([[-.29,-1],[.29,-1],[.29,1],[-.29,1]]));
+  addSelector('selector-rear-retaining-lips',plate(rearLip,.12,.15));
+  // Retention geometry replaces the decorative bearing rim and groove tubes.
+  for(const mesh of [b.selectorBearingOutline,b.selectorLeftGroove,b.selectorRightGroove,b.wristFaceOutline]){mesh.removeFromParent();mesh.geometry.dispose();}
+  root.userData.selectorMount={sleeveRadii:[.60,.634],cheekBoreRadius:g.topHoleRadius,frontLipZ:[.49,.52],rearLipZ:[.20,.23],wristFrontZ:g.wristPinFrontZ,assumption:'Axial depths and retaining lips inferred; selected ring angle held by an ideal lock.'};
   // Keep the visible wall strip wholly outside the analytically clear slot.
   b.selectorLeftWall.position.x=-g.slotHalfWidth-.013;
   b.selectorRightWall.position.x=g.slotHalfWidth+.013;

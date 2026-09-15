@@ -1,10 +1,11 @@
 # Review open: 176 engaged engine coupling
 
-The wrist/slot and front bearing no longer interfere in the 129-pose finite
-sweep. Fog, ground, markers and the initial camera are corrected. Both 176/177
-tests, build and desktop/mobile checks pass. Selector mounting, retention and
-source fit remain open; cross-body clearance alone does not validate them.
-See [movement 176](movement-176.md). Continue with 176.
+The selector halves now connect through a sleeve with retaining lips and
+recessed arc details. Independent attachment samples pass; selector-versus-cheek
+clearance is included in the 129-pose sweep with no intersections. Both 176/177
+tests, build and desktop/mobile checks pass. Inferred depths and ideal angular
+locking are documented. Output-shaft attachment and source measurements remain
+open. See [movement 176](movement-176.md). Continue with 176.
 
 # Shipped constrained reconstruction: 175 branch-transfer crank
 

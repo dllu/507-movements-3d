@@ -1,0 +1,71 @@
+{
+  "movement": 176,
+  "status": "selector-attachment-and-retention-checked",
+  "links": [
+    {
+      "from": "left",
+      "to": "sleeve",
+      "attachmentSamples": 264,
+      "noncollinear": true
+    },
+    {
+      "from": "right",
+      "to": "sleeve",
+      "attachmentSamples": 264,
+      "noncollinear": true
+    },
+    {
+      "from": "leftFace",
+      "to": "left",
+      "attachmentSamples": 676,
+      "noncollinear": true
+    },
+    {
+      "from": "rightFace",
+      "to": "right",
+      "attachmentSamples": 676,
+      "noncollinear": true
+    },
+    {
+      "from": "rear",
+      "to": "left",
+      "attachmentSamples": 369,
+      "noncollinear": true
+    },
+    {
+      "from": "rear",
+      "to": "right",
+      "attachmentSamples": 367,
+      "noncollinear": true
+    },
+    {
+      "from": "front",
+      "to": "sleeve",
+      "attachmentSamples": 512,
+      "noncollinear": true
+    }
+  ],
+  "frontClearance": 0.016000000000000014,
+  "rearClearance": 0.015999999999999986,
+  "wristTipToSleeve": 0.014999999999999986,
+  "method": "Actual finite-surface attachment samples for both lobes to the connecting sleeve, each recessed face, both rear lips and the front lip. Noncollinear samples establish an area connection. Separate cross-family audit checks cheek/selector interference.",
+  "assumptions": "Axial construction inferred from the front engraving. Selected angular position is held by an ideal lock; no locking hardware is inferred. Other same-body shaft and crank attachments remain outside this check.",
+  "sources": [
+    {
+      "file": "scripts/review-engine-coupling-mount.mjs",
+      "sha256": "af95130b4df6875e86524faea69ad0a4c16e9e80612e1241632be4e9677cfdb5"
+    },
+    {
+      "file": "src/simulation/authored-engine-couplings.js",
+      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

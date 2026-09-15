@@ -9,7 +9,7 @@
     "no WASM requests",
     "no page errors"
   ],
-  "limitations": "Ideal prescribed one-to-one coupling; source fit and selector attachment remain unreviewed.",
+  "limitations": "Ideal prescribed one-to-one coupling and selector angle lock. Selector retention is checked separately; output-shaft attachment and quantitative source fit remain open.",
   "sources": [
     {
       "file": "tests/e2e/engaged-engine-coupling.spec.mjs",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "950eb989063a222bf33e95c3d3b0396c35aa06f6b960d581154d7de50d422ddf"
+      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

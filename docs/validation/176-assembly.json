@@ -1,7 +1,7 @@
 {
   "movement": 176,
   "status": "sampled-clearance-passed-attachments-unreviewed",
-  "meshes": 25,
+  "meshes": 26,
   "poses": 129,
   "pairs": [
     [
@@ -38,10 +38,6 @@
     ],
     [
       "fixed-front-output-bearing-solid",
-      "input-wrist-front-outline"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
       "white-index-on-input-wrist"
     ],
     [
@@ -51,10 +47,6 @@
     [
       "fixed-front-output-bearing-solid",
       "front-output-shaft-bore-outline"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
-      "front-selector-ring-bearing-outline"
     ],
     [
       "fixed-front-output-bearing-solid",
@@ -78,15 +70,27 @@
     ],
     [
       "fixed-front-output-bearing-solid",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "selector-left-recessed-face"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "selector-right-recessed-face"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "fixed-front-output-bearing-solid",
+      "selector-rear-retaining-lips"
     ],
     [
       "fixed-front-output-bearing-solid",
@@ -130,10 +134,6 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "input-wrist-front-outline"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
       "white-index-on-input-wrist"
     ],
     [
@@ -146,10 +146,6 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -170,18 +166,30 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
       "white-index-fixed-to-radial-selector-ring"
     ],
     [
       "fixed-rear-input-bearing-solid",
+      "selector-left-recessed-face"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "selector-right-recessed-face"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
+      "selector-rear-retaining-lips"
+    ],
+    [
+      "fixed-rear-input-bearing-solid",
       "front-independent-output-shaft"
     ],
     [
@@ -198,10 +206,6 @@
     ],
     [
       "rear-input-crank-arm",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-input-crank-arm",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -222,15 +226,27 @@
     ],
     [
       "rear-input-crank-arm",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-arm",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-arm",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-input-crank-arm",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-input-crank-arm",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-input-crank-arm",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-input-crank-arm",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-input-crank-arm",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-input-crank-arm",
@@ -250,10 +266,6 @@
     ],
     [
       "rear-input-crank-shaft-boss",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -274,15 +286,27 @@
     ],
     [
       "rear-input-crank-shaft-boss",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-input-crank-shaft-boss",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-input-crank-shaft-boss",
@@ -302,10 +326,6 @@
     ],
     [
       "rear-input-crank-wrist-boss",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -326,15 +346,27 @@
     ],
     [
       "rear-input-crank-wrist-boss",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-input-crank-wrist-boss",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-input-crank-wrist-boss",
@@ -354,10 +386,6 @@
     ],
     [
       "rear-input-shaft-outline",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-input-shaft-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -378,15 +406,27 @@
     ],
     [
       "rear-input-shaft-outline",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-shaft-outline",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-shaft-outline",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-input-shaft-outline",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-input-shaft-outline",
@@ -406,10 +446,6 @@
     ],
     [
       "rear-input-wrist-outline",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-input-wrist-outline",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -430,15 +466,27 @@
     ],
     [
       "rear-input-wrist-outline",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-wrist-outline",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-input-wrist-outline",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-input-wrist-outline",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-input-wrist-outline",
@@ -458,10 +506,6 @@
     ],
     [
       "rear-independent-input-shaft",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "rear-independent-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -482,15 +526,27 @@
     ],
     [
       "rear-independent-input-shaft",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "rear-independent-input-shaft",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "rear-independent-input-shaft",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "selector-left-recessed-face"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "selector-right-recessed-face"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "rear-independent-input-shaft",
+      "selector-rear-retaining-lips"
     ],
     [
       "rear-independent-input-shaft",
@@ -510,10 +566,6 @@
     ],
     [
       "white-index-on-rear-input-shaft",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -534,15 +586,27 @@
     ],
     [
       "white-index-on-rear-input-shaft",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "selector-left-recessed-face"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "selector-right-recessed-face"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "white-index-on-rear-input-shaft",
+      "selector-rear-retaining-lips"
     ],
     [
       "white-index-on-rear-input-shaft",
@@ -562,10 +626,6 @@
     ],
     [
       "input-wrist-pin",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "input-wrist-pin",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -586,15 +646,27 @@
     ],
     [
       "input-wrist-pin",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "input-wrist-pin",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "input-wrist-pin",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "input-wrist-pin",
+      "selector-left-recessed-face"
+    ],
+    [
+      "input-wrist-pin",
+      "selector-right-recessed-face"
+    ],
+    [
+      "input-wrist-pin",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "input-wrist-pin",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "input-wrist-pin",
+      "selector-rear-retaining-lips"
     ],
     [
       "input-wrist-pin",
@@ -602,58 +674,6 @@
     ],
     [
       "input-wrist-pin",
-      "front-output-shaft-end-cap"
-    ],
-    [
-      "input-wrist-front-outline",
-      "front-output-crank-cheek-with-two-real-bores"
-    ],
-    [
-      "input-wrist-front-outline",
-      "front-output-shaft-bore-outline"
-    ],
-    [
-      "input-wrist-front-outline",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "input-wrist-front-outline",
-      "white-index-fixed-to-output-crank"
-    ],
-    [
-      "input-wrist-front-outline",
-      "engaged-selector-left-slot-lobe"
-    ],
-    [
-      "input-wrist-front-outline",
-      "engaged-selector-right-slot-lobe"
-    ],
-    [
-      "input-wrist-front-outline",
-      "engaged-left-tangential-slot-wall"
-    ],
-    [
-      "input-wrist-front-outline",
-      "engaged-right-tangential-slot-wall"
-    ],
-    [
-      "input-wrist-front-outline",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "input-wrist-front-outline",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "input-wrist-front-outline",
-      "white-index-fixed-to-radial-selector-ring"
-    ],
-    [
-      "input-wrist-front-outline",
-      "front-independent-output-shaft"
-    ],
-    [
-      "input-wrist-front-outline",
       "front-output-shaft-end-cap"
     ],
     [
@@ -666,10 +686,6 @@
     ],
     [
       "white-index-on-input-wrist",
-      "front-selector-ring-bearing-outline"
-    ],
-    [
-      "white-index-on-input-wrist",
       "white-index-fixed-to-output-crank"
     ],
     [
@@ -690,15 +706,27 @@
     ],
     [
       "white-index-on-input-wrist",
-      "left-selector-ring-arc-detail"
-    ],
-    [
-      "white-index-on-input-wrist",
-      "right-selector-ring-arc-detail"
-    ],
-    [
-      "white-index-on-input-wrist",
       "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "selector-left-recessed-face"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "selector-right-recessed-face"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "white-index-on-input-wrist",
+      "selector-rear-retaining-lips"
     ],
     [
       "white-index-on-input-wrist",
@@ -706,20 +734,220 @@
     ],
     [
       "white-index-on-input-wrist",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "engaged-selector-left-slot-lobe"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "engaged-selector-right-slot-lobe"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "engaged-left-tangential-slot-wall"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "engaged-right-tangential-slot-wall"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "selector-left-recessed-face"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "selector-right-recessed-face"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "front-output-crank-cheek-with-two-real-bores",
+      "selector-rear-retaining-lips"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "engaged-selector-left-slot-lobe"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "engaged-selector-right-slot-lobe"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "engaged-left-tangential-slot-wall"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "engaged-right-tangential-slot-wall"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "selector-left-recessed-face"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "selector-right-recessed-face"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "front-output-shaft-bore-outline",
+      "selector-rear-retaining-lips"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "engaged-selector-left-slot-lobe"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "engaged-selector-right-slot-lobe"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "engaged-left-tangential-slot-wall"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "engaged-right-tangential-slot-wall"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "white-index-fixed-to-radial-selector-ring"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "selector-left-recessed-face"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "selector-right-recessed-face"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "selector-connecting-sleeve"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "selector-front-retaining-lip"
+    ],
+    [
+      "white-index-fixed-to-output-crank",
+      "selector-rear-retaining-lips"
+    ],
+    [
+      "engaged-selector-left-slot-lobe",
+      "front-independent-output-shaft"
+    ],
+    [
+      "engaged-selector-left-slot-lobe",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "engaged-selector-right-slot-lobe",
+      "front-independent-output-shaft"
+    ],
+    [
+      "engaged-selector-right-slot-lobe",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "engaged-left-tangential-slot-wall",
+      "front-independent-output-shaft"
+    ],
+    [
+      "engaged-left-tangential-slot-wall",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "engaged-right-tangential-slot-wall",
+      "front-independent-output-shaft"
+    ],
+    [
+      "engaged-right-tangential-slot-wall",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "white-index-fixed-to-radial-selector-ring",
+      "front-independent-output-shaft"
+    ],
+    [
+      "white-index-fixed-to-radial-selector-ring",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-left-recessed-face",
+      "front-independent-output-shaft"
+    ],
+    [
+      "selector-left-recessed-face",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-right-recessed-face",
+      "front-independent-output-shaft"
+    ],
+    [
+      "selector-right-recessed-face",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-connecting-sleeve",
+      "front-independent-output-shaft"
+    ],
+    [
+      "selector-connecting-sleeve",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-front-retaining-lip",
+      "front-independent-output-shaft"
+    ],
+    [
+      "selector-front-retaining-lip",
+      "front-output-shaft-end-cap"
+    ],
+    [
+      "selector-rear-retaining-lips",
+      "front-independent-output-shaft"
+    ],
+    [
+      "selector-rear-retaining-lips",
       "front-output-shaft-end-cap"
     ]
   ],
-  "queries": 5867716,
+  "queries": 8849736,
   "intersections": {},
-  "method": "All cross-rigid-family pairs, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Same-family attachment defects are outside this diagnostic.",
+  "method": "All cross-family pairs, including selector versus output cheek despite their locked relative angle, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Other same-family attachment defects are outside this diagnostic.",
   "sources": [
     {
       "file": "scripts/review-engine-coupling-solids.mjs",
-      "sha256": "16e5c267ac5bdfee1e24779ea800d03222178c776471098fb56e619fa30c762c"
+      "sha256": "a37ae39ef87d50b3d43d78b9a2f73d71ac033ebc1a19e1f9370f102af4986547"
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "950eb989063a222bf33e95c3d3b0396c35aa06f6b960d581154d7de50d422ddf"
+      "sha256": "6a5b02bfb0e3e41dc498155f97bd1866c38e3301b0b7f7378dc40745897ff4dd"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
