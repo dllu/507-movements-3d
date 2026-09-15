@@ -1,10 +1,33 @@
-# Movement 148: geared alternating crank (review in progress)
+# Movement 148: reconstructed oblong-frame crank-rocker
+
+The browser now uses `geared-crank.js`: a traced oblong rocking frame, bored short
+crank, eccentric mounting arm, 12/48 involute gears, bored hubs and rear supports.
+Motion is analytic, with an eight-second large-gear turn and a two-second pinion
+turn. No physics runtime or bake is necessary for this closed four-bar geometry.
+The upper joint is shifted 14 pixels right to permit continuous input rotation.
+Treating the oblong as part of the long rocker and placing the supports behind
+it are explicit engineering assumptions, not a definitive reading of Brown's
+brief caption. Exact historical topology remains uncertain.
+
+The complete 27-part assembly passes 65 sampled configurations: 241 pairs from
+different rigid families and 9,109,060 point/solid checks, with no penetration
+above `1e-6`. [Assembly evidence](validation/148-assembly.json) includes both
+gears, shafts, hubs, frame, cranks, pins and retainers. A separate
+[257-pose tooth check](validation/148-complete-teeth.json) finds no overlap.
+Four focused tests cover full-turn closure, real pin and axle bores, framing,
+fog removal and restart. These sampled checks do not establish continuous
+swept-volume clearance or prove the historical interpretation.
+The production build and packaged desktop/mobile test pass, including exact
+restart, orbit/reset-view controls and no WASM request. Final front, moving,
+oblique and mobile renders were inspected.
+
+## Original drawing and legacy reconstruction
 
 The [source](https://507movements.com/mm_148.html) says the continuously rotating
 spur gears produce alternating crank rotation. The page marks its animation
-unavailable. The engraving shows a long oblong guide; the existing reconstruction
-uses circular rails attached to a short four-bar coupler. That interpretation and
-the complete linkage geometry remain under review.
+unavailable. The engraving shows a long oblong member; the old reconstruction
+used circular rails attached to a short four-bar coupler. That implementation is
+retained for diagnostics but is no longer registered for browser playback.
 
 ## Gear and display improvements
 
@@ -41,9 +64,9 @@ This is evidence against directly copying those landmarks into the existing
 four-bar model, not proof that Brown's mechanism cannot work. The roles of the
 pins and oblong guide need to be resolved before reconstructing its shape.
 Actual bores, pin attachment and whole-assembly interference are also unchecked.
-Keep 148's review open after this gear/display checkpoint.
+These findings motivated the reconstructed arrangement below.
 
-## Candidate oblong rocking frame
+## Oblong frame interpretation and depth arrangement
 
 A separate candidate in `geared-crank-frame.js` traces the outer and inner
 boundaries of the oblong and treats it as a structural part of the long rocker.
@@ -71,15 +94,22 @@ explicit reconstruction assumptions.
 
 [Candidate assembly evidence](validation/148-frame-assembly.json) checks ten
 parts and 36 pairs from different rigid families at 65 poses: the frame, short
-crank, eccentric mounting arm, pins, retainers and stub shaft. All 1,332,500
+crank, eccentric mounting arm, pins, retainers and stub shaft. All 1,307,540
 sampled point/solid checks clear a `1e-6` penetration tolerance. This does not
 include complete gears, their bearings or the fixed supporting frame. Two
 focused tests verify the continuous full-turn closure and actual joint bores,
 with pin clearance above 0.0027 units.
 
 Source, quarter-turn and half-turn candidate renders were inspected with the
-existing gears as a visual reference. The source silhouette is substantially
-closer, but the candidate is not registered. Next: integrate proper bored gear
-hubs and supports, check the complete assembly, and decide whether this inferred
-frame arrangement is sufficiently supported for replacement. The browser still
-uses the circular-guide reconstruction pending that work.
+existing gears as a visual reference. The complete replacement now has a thinner
+gear rim, a source-sized central hub, rear frame panels and rail, and actual hub
+bores. Its frame-joint pin starts at Z=0.195 to clear the central shaft retainer
+ending at Z=0.185. Pin shafts terminate within their retainers so duplicate
+coplanar faces do not flicker. The short crank has a narrow shank and bored eyes.
+
+The full check is reproducible with `FULL_ASSEMBLY=1` for
+`scripts/review-geared-crank-frame-assembly.mjs` and
+`scripts/review-geared-crank-teeth.mjs`. The original through-shaft rejection and
+smaller prototype check remain separate evidence. The new motion follows the
+caption and the traced outline substantially more closely than the circular
+guide, with the topology, joint shift and depth assumptions disclosed above.

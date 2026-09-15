@@ -1,12 +1,12 @@
 {
   "movement": 148,
-  "status": "candidate-frame-assembly",
-  "method": "Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. Includes the traced rocker, short crank, eccentric mounting arm, pins and rear-supported stub shaft. Does not include either complete gear, their bearings or the fixed frame.",
+  "status": "candidate-complete-assembly",
+  "method": "Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. Includes both complete gears, hubs, shafts, rear frame, oblong rocker, short crank and pins.",
   "summary": {
     "poses": 65,
-    "parts": 10,
-    "pairs": 36,
-    "checks": 1307540,
+    "parts": 27,
+    "pairs": 241,
+    "checks": 9109060,
     "failingPairs": 0
   },
   "failures": {},
@@ -30,6 +30,14 @@
     {
       "file": "tests/helpers/solid-surface.mjs",
       "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "src/simulation/geared-crank.js",
+      "sha256": "fe69172e0f93d07c80b3ad89c843083dce729656290a8c2dd8e932d12b1dc398"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
     }
   ]
 }

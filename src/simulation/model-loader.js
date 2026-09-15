@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 148) {
+    const {makeGearedCrank} = await import('./geared-crank.js');
+    const model = makeGearedCrank();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 147) {
     const {makeBakedFanGovernor} = await import('./baked/fan-governor.js');
     const model = await makeBakedFanGovernor();

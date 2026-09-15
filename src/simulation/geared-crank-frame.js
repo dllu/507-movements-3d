@@ -19,7 +19,8 @@ export function makeGearedCrankFrame(){
  const shape=clip.difference(outline,poly(circle(b,.123,64)),poly(circle(p,.163,64)));
  add('oblong-rocking-frame',plate(shape,.40,.55).translate(-p[0],-p[1],0),frame);frame.position.set(...p,0);
  const end=[gearedCrankLengths.coupler,0];
- add('bored-short-crank',plate(clip.difference(capsule([0,0],end,.23,64),poly(circle([0,0],.123,64)),poly(circle(end,.123,64))),.20,.34),coupler);
+ const crankOutline=clip.union(capsule([0,0],end,.105,48),poly(circle([0,0],.23,64)),poly(circle(end,.23,64)));
+ add('bored-short-crank',plate(clip.difference(crankOutline,poly(circle([0,0],.123,64)),poly(circle(end,.123,64))),.20,.34),coupler);
  const source=gearedCrankState(0);
  add('rear-supported-gear-shaft',disk(.18,-.8,.18,64),fixed);
  add('eccentric-arm',plate(clip.difference(capsule([0,0],source.wrist.toArray(),.22,64),poly(circle([0,0],.183,64))),-.04,.16),drive);

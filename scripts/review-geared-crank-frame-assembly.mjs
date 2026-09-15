@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {makeGearedCrankFrame} from '../src/simulation/geared-crank-frame.js';
+import {makeGearedCrank} from '../src/simulation/geared-crank.js';
 import {solidSurface,surfacePoints} from '../tests/helpers/solid-surface.mjs';
-const v=makeGearedCrankFrame();
+const full=process.env.FULL_ASSEMBLY==='1',v=full?makeGearedCrank():makeGearedCrankFrame();
 try{
  const {parts:meshes,families}=v.root.userData;
  const parts=Object.entries(meshes).map(([name,mesh])=>({name,mesh,family:families[name],solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
@@ -26,9 +27,9 @@ try{
    }
   }
  }
- const report={movement:148,status:'candidate-frame-assembly',method:'Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Includes the traced rocker, short crank, eccentric mounting arm, pins and rear-supported stub shaft. Excludes same rigid family joins. Does not include either complete gear, their bearings or the fixed frame. Sampled check, not swept-volume proof.',
+ const report={movement:148,status:full?'candidate-complete-assembly':'candidate-frame-assembly',method:'Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. '+(full?'Includes both complete gears, hubs, shafts, rear frame, oblong rocker, short crank and pins.':'Includes the traced rocker, short crank, eccentric mounting arm, pins and rear-supported stub shaft. Does not include either complete gear, their bearings or the fixed frame.'),
   summary:{poses:65,parts:parts.length,pairs:pairs.length,checks,failingPairs:Object.keys(failures).length},failures,
-  sources:['scripts/review-geared-crank-frame-assembly.mjs','src/simulation/geared-crank-frame.js','src/simulation/geared-crank-source.js','src/simulation/finite-plate-geometry.js','tests/helpers/solid-surface.mjs'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
- fs.writeFileSync('docs/validation/148-frame-assembly.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary);
+  sources:['scripts/review-geared-crank-frame-assembly.mjs','src/simulation/geared-crank-frame.js','src/simulation/geared-crank-source.js','src/simulation/finite-plate-geometry.js','tests/helpers/solid-surface.mjs',...(full?['src/simulation/geared-crank.js','src/simulation/primitives.js']:[])].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+ fs.writeFileSync(full?'docs/validation/148-assembly.json':'docs/validation/148-frame-assembly.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary);
  assert.equal(Object.keys(failures).length,0);
 }finally{v.dispose();}
