@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 151) {
+    const {makeOpposedScrewNuts} = await import('./opposed-screw-nuts.js');
+    const model = makeOpposedScrewNuts();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 150) {
     const {makeSelectableCamValve} = await import('./selectable-cam-valve.js');
     const model = makeSelectableCamValve();

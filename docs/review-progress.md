@@ -1,9 +1,13 @@
-# Current review: 151 worm-driven opposite-hand screw
+# Shipped reconstruction: 151 worm-driven opposite-hand screw
 
-A source-oriented candidate now has an edge-on wheel, an end-on upper worm
-shaft and matching solid square screw/nut threads. Three tests and a rendered
-preview pass. Generated mesh contact and finite supports remain open; the
-candidate is not yet in production. See [movement 151](movement-151.md).
+151 now uses a source-oriented edge-on wheel, an end-on upper worm shaft,
+matching solid square threads, bored bearings and rear antirotation guides.
+The refined worm clears all 65 sampled tooth phases; a 53-part assembly audit
+passes 10,153,736 point queries across 17 poses. Three focused tests and packaged
+desktop/mobile playback pass. The ideal 18:1 transmission preserves readable
+input speed. Tooth count, supports, a 6.8px upper-axis source offset and finite
+sampling remain explicit limits. See [movement 151](movement-151.md).
+Continue at 152 while retaining the open 150 source-fit review below.
 
 # Open source-fit review: 150 selectable valve cams
 

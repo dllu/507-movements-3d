@@ -18,8 +18,7 @@ export function opposedScrewState(time){
  return {wheelAngle,wormAngle:18*wheelAngle,nutX:g.sourceNutX.map((x,i)=>x-(i===0?1:-1)*g.pitch/tau*wheelAngle)};
 }
 
-// Source reconstruction candidate. Kept separate from the production loader
-// until generated tooth contact and complete assembly clearances are reviewed.
+// Ideal gear and screw constraints with generated, independently checked solids.
 export function makeOpposedScrewNuts(){
  const root=new THREE.Group(),parts={},blocks={};
  const materials=Object.fromEntries(['driver','driven','accent','frame','ink','white'].map(k=>[k,matte(PALETTE[k],{metalness:.15,roughness:.6})]));
@@ -33,12 +32,13 @@ export function makeOpposedScrewNuts(){
  const wheelMesh=makeInstancedWormWheel(f,saddleWheelCut,.135/scale,materials.driven);
  wheelMesh.name='generated-worm-wheel';wheelMesh.rotation.z=Math.PI/2+(f.lead*Math.PI/2-f.phase)/f.pitchRadius;wheel.add(wheelMesh);parts.wheel=wheelMesh;
  const length=.9/scale;
- add('horizontal-input-worm',cylindricalWormGeometry({pitchRadius:f.wormPitchRadius,module:f.pitch/Math.PI,length,pressureAngle:f.pressureAngle,rootRadius:f.wormRoot,tipRadius:f.wormTip,rootHalfWidth:f.rootHalfWidth,tipHalfWidth:f.tipHalfWidth,phase:f.phase,angularSteps:192}).rotateY(Math.PI/2),worm,'driver');
+ add('horizontal-input-worm',cylindricalWormGeometry({pitchRadius:f.wormPitchRadius,module:f.pitch/Math.PI,length,pressureAngle:f.pressureAngle,rootRadius:f.wormRoot,tipRadius:f.wormTip,rootHalfWidth:f.rootHalfWidth,tipHalfWidth:f.tipHalfWidth,phase:f.phase,angularSteps:768}).rotateY(Math.PI/2),worm,'driver');
  // Local X becomes world -Z: the input shaft is viewed end-on in Brown's plate.
- add('input-shaft',disk(f.wormRoot,-1.05/scale,.75/scale,96).rotateY(Math.PI/2),worm,'ink');
+ add('input-shaft',disk(f.wormRoot*.95,-1.42/scale,.75/scale,96).rotateY(Math.PI/2),worm,'ink');
+ for(const [name,low,high] of [['front-input-journal',-1.42,-.45],['rear-input-journal',.45,.75]])add(name,disk(f.wormRoot,low/scale,high/scale,192).rotateY(Math.PI/2),worm,'ink');
  const frame=body('frame'),inputY=f.distance*scale;
- add('upper-bearing',ring(.237,.535,.79,.95).translate(0,inputY,0),frame,'frame');
- add('upper-bearing-sleeve',ring(f.wormRoot*scale+.004,.235,.76,.97).translate(0,inputY,0),frame,'accent');
+ add('upper-bearing',ring(.237,.535,1.18,1.34).translate(0,inputY,0),frame,'frame');
+ add('upper-bearing-sleeve',ring(f.wormRoot*scale+.004,.235,1.15,1.36).translate(0,inputY,0),frame,'accent');
  const screw=body('screw');screw.rotation.y=Math.PI/2;
  add('continuous-screw-core',disk(.135,-3.60,3.49,96),screw,'driven');
  const pitch=opposedScrewDimensions.pitch;
@@ -50,10 +50,30 @@ export function makeOpposedScrewNuts(){
   const n={inner:.143,outer:.272,low:-.28,high:.28,lead:p.lead,phase:-opposedScrewDimensions.sourceNutX[i]+pitch/2,width:.096};
   add(`internal-thread-${i}`,helicalThread(n,threadAngles(n,96)),nut,'accent');
  }
+ // Rear supports and nut guides are inferred hardware, kept off the wheel plane.
+ const box=(name,x0,x1,y0,y1,z0,z1,parent=frame,color='frame')=>add(name,plate(rect(x0,y0,x1,y1),z0,z1),parent,color);
+ for(const [i,x0,x1] of [[0,-3.60,-1.04],[1,1.00,3.49]]){
+  const nut=blocks[`nut-${i}`];
+  // Nut local +X points toward world -Z; the tongue slides in the rear channel.
+  box(`nut-guide-tongue-${i}`,.32,.64,-.12,.12,-.22,.22,nut,'accent');
+  box(`guide-back-${i}`,x0,x1,-.22,.22,-.72,-.65);
+  box(`guide-upper-${i}`,x0,x1,.15,.22,-.65,-.34);
+  box(`guide-lower-${i}`,x0,x1,-.22,-.15,-.65,-.34);
+  for(const x of [x0+.12,x1-.12])box(`guide-post-${i}-${x}`,x-.06,x+.06,-1.50,-.22,-.72,-.60);
+ }
+ for(const x of [-.55,.55]){
+  add(`screw-bearing-${x}`,ring(.139,.25,x-.075,x+.075,96).rotateY(Math.PI/2),frame,'frame');
+  box(`bearing-post-${x}`,x-.075,x+.075,-1.50,-.245,-.12,.12);
+  box(`bearing-foot-${x}`,x-.15,x+.15,-1.58,-1.50,-1.68,.15);
+ }
+ box('rear-base',-3.65,3.55,-1.58,-1.50,-1.68,-.59);
+ box('upper-bearing-arm',.45,.69,inputY-.07,inputY+.07,1.21,1.31);
+ box('upper-bearing-rear-tie',.59,.69,inputY-.07,inputY+.07,-1.68,1.31);
+ box('upper-bearing-post',.59,.69,-1.50,inputY-.07,-1.68,-1.56);
  const update=time=>{const state=opposedScrewState(time);wheel.rotation.z=state.wheelAngle;worm.rotation.x=state.wormAngle;screw.rotation.z=state.wheelAngle;state.nutX.forEach((x,i)=>blocks[`nut-${i}`].position.x=x);root.userData.kinematics=state;root.updateMatrixWorld(true);};
  update(0);markShadows(root);Object.values(materials).forEach(m=>m.fog=false);
- Object.assign(root.userData,{parts,blocks,geometry:{...opposedScrewDimensions,wormAxisY:inputY,wheelRadius:1.302,wormScale:scale},hideGround:true,cameraFov:18,materialsIgnoreSceneFog:true,supportsRestart:true,fidelity:'authored',reconstructionStatus:'prototype',
-  reconstructionNote:'The upper worm drives an edge-on wheel on the opposite-hand screw. Nuts are constrained against rotation. Tooth count, bearing depth and reversing drive are reconstructed; support and tooth-contact review is in progress.',
+ Object.assign(root.userData,{parts,blocks,geometry:{...opposedScrewDimensions,wormAxisY:inputY,wheelRadius:1.302,wormScale:scale},hideGround:true,cameraFov:18,materialsIgnoreSceneFog:true,supportsRestart:true,fidelity:'authored',reconstructionStatus:'reviewed-ideal-constraints',
+  reconstructionNote:'The upper worm drives the wheel on the opposite-hand screw. Rear guides prevent the nuts from turning. The 18:1 reduction makes their travel slow; the drive reverses after one screw turn. Tooth count, bearings and guides are reconstructed. Backlash and friction are omitted.',
   animationTiming:{authoredCyclePeriod:60,displayCycleDuration:60,playbackTimeScale:1}});
  return {root,update,reset:()=>update(0),cameraDirection:new THREE.Vector3(.2,.05,15),dispose:()=>disposeObject3D(root)};
 }
