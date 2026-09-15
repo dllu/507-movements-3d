@@ -1,0 +1,62 @@
+{
+  "movement": 150,
+  "method": "Actual roller tread versus all four plates, outline tubes and common sleeve. Bidirectional vertices, edge midpoints and triangle centers at 97 poses through the full selection demonstration. Working pairs only; not whole assembly or continuous collision proof.",
+  "summary": {
+    "constructionMilliseconds": 140.82070207595825,
+    "period": 27.254557590189872,
+    "poses": 97,
+    "checks": 720292,
+    "failingPairs": 7
+  },
+  "failures": {
+    "cam3-plate": {
+      "firstPose": 0,
+      "points": 1282,
+      "maximumDepth": 0.011995518927973705
+    },
+    "cam2-plate": {
+      "firstPose": 11,
+      "points": 1364,
+      "maximumDepth": 0.011968658010574245
+    },
+    "cam2-outline": {
+      "firstPose": 11,
+      "points": 326,
+      "maximumDepth": 0.02311432425726635
+    },
+    "cam0-plate": {
+      "firstPose": 12,
+      "points": 1290,
+      "maximumDepth": 0.01196622069252664
+    },
+    "cam0-outline": {
+      "firstPose": 12,
+      "points": 373,
+      "maximumDepth": 0.02320505152437707
+    },
+    "cam1-plate": {
+      "firstPose": 12,
+      "points": 1395,
+      "maximumDepth": 0.011963444014945795
+    },
+    "cam1-outline": {
+      "firstPose": 59,
+      "points": 228,
+      "maximumDepth": 0.023156232090343138
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-selectable-cam-contact.mjs",
+      "sha256": "df095b9a819cf548d230c1dbd289c28f1c6407b045facc4bb8a29c4751722f3c"
+    },
+    {
+      "file": "src/simulation/authored-selectable-cams.js",
+      "sha256": "59ccf5302833a9ec8e42061fc3653bb81f26bbe2ef8bb2c053fba02eb498a4fe"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "movement": 150,
+  "method": "Actual roller tread versus all four plates, outline tubes and common sleeve. Bidirectional vertices, edge midpoints and triangle centers at 97 poses through the full selection demonstration. Working pairs only; not whole assembly or continuous collision proof.",
+  "summary": {
+    "constructionMilliseconds": 134.88482570648193,
+    "period": 27.254557590189872,
+    "poses": 97,
+    "checks": 720292,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "sources": [
+    {
+      "file": "scripts/review-selectable-cam-contact.mjs",
+      "sha256": "df095b9a819cf548d230c1dbd289c28f1c6407b045facc4bb8a29c4751722f3c"
+    },
+    {
+      "file": "src/simulation/authored-selectable-cams.js",
+      "sha256": "ab48c5a28dde5c91d1fa923757189d9289ba95b4a5a0142e80662ea4efe933c7"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

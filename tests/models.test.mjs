@@ -42319,7 +42319,7 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [11.0, 5.8, 8.5]);
+  assert.deepEqual(model.cameraDirection.toArray(), [8, 0.2, 15]);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 7.4);
   assert.equal(cameraEnvelope.geometry.parameters.height, 5.0);

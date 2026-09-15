@@ -15,6 +15,7 @@ function centeredExtrusion(shape, depth, bevel = 0.012) {
     bevelEnabled: bevel > 0,
     bevelSegments: 1,
     bevelSize: bevel,
+    bevelOffset: -bevel,
     bevelThickness: bevel,
     curveSegments: 64,
     depth,
@@ -361,13 +362,14 @@ function makeCamAssembly(
   const profileSamples = 192;
   for (let index = 0; index < profileSamples; index += 1) {
     const angle = index / profileSamples * FULL_TURN;
-    const point = profileGeometryAt(config, angle).boundary;
+    const profile = profileGeometryAt(config, angle);
+    const point = profile.boundary;
     if (index === 0) shape.moveTo(point.x, point.y);
     else shape.lineTo(point.x, point.y);
     outlinePoints.push(new THREE.Vector3(
-      point.x,
-      point.y,
-      config.camDepth / 2 + 0.022,
+      point.x - profile.normal.x * 0.04,
+      point.y - profile.normal.y * 0.04,
+      config.camDepth / 2 + 0.012,
     ));
   }
   shape.closePath();
@@ -382,7 +384,7 @@ function makeCamAssembly(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(outlinePoints, true, 'centripetal'),
       profileSamples,
-      0.024,
+      0.012,
       7,
       true,
     ),
@@ -1589,6 +1591,13 @@ function slidingFourThrowCamValveGear() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {
+    authoredCyclePeriod: demonstrationPeriod,
+    displayCycleDuration: demonstrationPeriod,
+    playbackTimeScale: 1,
+  };
   root.userData.fidelity = 'authored';
   markShadows(root);
   root.traverse((object) => {
@@ -1611,9 +1620,10 @@ function slidingFourThrowCamValveGear() {
   }
 
   return {
-    cameraDirection: new THREE.Vector3(11.0, 5.8, 8.5),
+    cameraDirection: new THREE.Vector3(8, 0.2, 15),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

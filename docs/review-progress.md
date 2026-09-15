@@ -1,7 +1,10 @@
 # Current review: 150 selectable valve cams
 
-Continue at movement 150. Its four axially selectable cam throws must be checked
-against the engraving and any available source animation.
+150's rendered cam bevels and outline tubes now clear the follower tread across
+97 sampled demonstration poses. The lower camera angle, hidden ground and
+Restart are enabled. Source animation is unavailable. The shaft is substantially
+undersized, and cam-stack projection, bores, output connection, supports and
+passive return remain open. See [movement 150](movement-150.md).
 
 # Shipped reconstruction: 149 twin cam followers
 
