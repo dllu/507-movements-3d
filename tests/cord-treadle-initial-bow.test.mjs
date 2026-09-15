@@ -15,3 +15,10 @@ test('initial rope bow preserves endpoints and bounds source displacement withou
   const before=JSON.stringify(b.points);bowed.step();bowed.reset();mujoco.mj_forward(bowed.model,bowed.data);assert.equal(JSON.stringify(bowed.state().points),before);
  }finally{straight.dispose();bowed.dispose();}
 });
+test('localized bow leaves the rest of the initial rope unchanged',async()=>{
+ const mujoco=await loadMujoco(),straight=makeFiniteCordTreadlePhysics(mujoco),bowed=makeFiniteCordTreadlePhysics(mujoco,{initialBow:.02,initialBowLength:1});
+ try{const a=straight.state().points,b=bowed.state().points;let remaining=0,changed=0;
+  for(let i=a.length-1;i>=0;i--){if(i<a.length-1)remaining+=Math.hypot(...a[i].map((v,j)=>v-a[i+1][j]));const delta=Math.hypot(...a[i].map((v,j)=>v-b[i][j]));assert.ok(delta<=.020001);if(remaining>1||i===a.length-1)assert.ok(delta<1e-12);else if(delta>.001)changed++;}
+  assert.ok(changed>=5,'Bow must affect the local end shape');assert.equal(bowed.model.nu,1);
+ }finally{straight.dispose();bowed.dispose();}
+});

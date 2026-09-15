@@ -540,6 +540,48 @@ node scripts/review-cord-treadle-initial-clearance.mjs
 node --test tests/cord-treadle-initial-clearance.test.mjs tests/cord-treadle-anchor-contact.test.mjs tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-bending.test.mjs
 ```
 
+## Local end-shape and bending sensitivity
+
+An optional `initialBowLength` now limits the existing sine-squared initial bow
+to a chosen length next to the treadle end. The default remains the full outgoing
+leg. A one-unit support length represents 10 cm at the assumed scale; the tested
+0.02-unit amplitude remains 2 mm (1.125 source pixels). This is an initial-shape
+assumption only. A test verifies that the rest of the cord and both secured
+endpoints remain unchanged and that no actuator is added. Nine focused tests
+pass in this change; the earlier anchor regression is unchanged.
+
+Short 0.4 s comparisons at 0.05/0.025 ms, all with cleared initial pulley geometry:
+
+| Initial shape / rigidity | Maximum rope difference | Maximum treadle difference |
+| --- | ---: | ---: |
+| Full-leg bow, EI = 0.0002 | 0.36364 units | 0.0001252 rad |
+| Last-unit bow, EI = 0.0002 | 0.39791 units | 0.0001228 rad |
+| Full-leg bow, EI = 0.005 | 0.42234 units | 0.0000651 rad |
+
+All four new runs complete without native reset. Localizing the initial bow does
+not resolve the divergence. Increasing bending rigidity by 25 reduces maximum
+discrete curvature from roughly 11–13 to 6–7 inverse display units, but still
+does not establish timestep convergence. The higher EI corresponds to 0.000005
+N·m² at the assumed scale; it is a sensitivity trial, not an inferred source
+material. Neither trial is adopted as a production parameter choice. The next
+review should examine the tied-end boundary condition and contact model, not
+continue selecting initial curves for a better score.
+
+Reports: [comparison](validation/159-local-bow-study.json),
+[local bow fine](validation/159-local-bow-fine-native.json),
+[local bow finer](validation/159-local-bow-finer-native.json),
+[higher EI fine](validation/159-stiffer-fine-native.json),
+[higher EI finer](validation/159-stiffer-finer-native.json).
+
+```sh
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BOW_LENGTH=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-local-bow-fine.json REPORT=/dev/shm/159-local-bow-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.000025 CORD_INITIAL_BOW=.02 CORD_BOW_LENGTH=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-local-bow-finer.json REPORT=/dev/shm/159-local-bow-finer-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BENDING=.005 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-stiffer-fine.json REPORT=/dev/shm/159-stiffer-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.000025 CORD_INITIAL_BOW=.02 CORD_BENDING=.005 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-stiffer-finer.json REPORT=/dev/shm/159-stiffer-finer-report.json node scripts/probe-finite-cord-treadle.mjs
+LOCAL_BOW=1 node scripts/review-cord-treadle-initial-clearance.mjs
+node --test tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-initial-clearance.test.mjs tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-bending.test.mjs
+```
+
 ## Remaining work
 
 Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify

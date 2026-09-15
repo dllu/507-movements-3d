@@ -21,8 +21,9 @@ crank-stud collision. Native stud/beam contact now limits that overlap to
 0.0134 source pixels. The two finer runs pass sampled hardware checks and
 agree in treadle angle within 0.0015 rad, but slack-rope positions still differ
 by 19.5 pixels. Initial pulley penetration is now removed with a subpixel
-radial lift, but short-run endpoint buckling sensitivity persists. Inspect the
-local end-shape model before further long runs; repeatability remains open.
+radial lift, but short-run endpoint buckling sensitivity persists. Neither a
+localized starting bow nor 25× bending rigidity resolves it. Review the tied-end
+boundary condition and contact model next; repeatability remains open.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 
