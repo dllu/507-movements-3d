@@ -1,27 +1,35 @@
 {
   "movement": 174,
-  "status": "packaged-desktop-mobile-passed-mechanical-review-open",
+  "status": "packaged-desktop-mobile-passed-source-fit-open",
   "checks": [
-    "playback",
+    "baked playback",
     "exact restart",
     "orbit and reset",
     "390x844 viewport without horizontal overflow",
     "no WASM request",
     "no page errors"
   ],
-  "limitations": "Browser still uses the inherited forced jaw angles and interfering geometry; the separate native study is not registered.",
+  "limitations": "Upper and lower contour refinements remain; see source-fit report.",
   "sources": [
     {
       "file": "tests/e2e/twin-bench-clamp.spec.mjs",
       "sha256": "f0944fd3514d6ca1c734ace60ed0fa9e6322da1774c8ee89d445f9684b3c170b"
     },
     {
-      "file": "src/simulation/authored-clamps.js",
-      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+      "file": "src/simulation/baked/bench-clamp.js",
+      "sha256": "01468b355aae93b72211505dadbb7a1d52b12024a0d6fdeb86f5cfedd5c75f87"
+    },
+    {
+      "file": "src/simulation/baked/assets/174.json.gz",
+      "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/update-solids.js",
+      "sha256": "1cd74df649cf7a1baf69fdcc35afead972fc77a6a85fa7c36a27562d6b3189bd"
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "c380cefaf0f677633d6a2f61440524f5195dbfff05272899040dd333f9069e27"
+      "sha256": "937eccd1678fd320d9cafbb2ff00d5c09457236a34f7939ab9ac99cc6eeff3ba"
     }
   ]
 }

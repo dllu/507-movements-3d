@@ -1,0 +1,204 @@
+{
+  "movement": 174,
+  "poses": 129,
+  "meshes": 16,
+  "pairs": [
+    [
+      "bench0",
+      "jaw0"
+    ],
+    [
+      "bench0",
+      "jaw1"
+    ],
+    [
+      "bench0",
+      "board"
+    ],
+    [
+      "bench1",
+      "jaw0"
+    ],
+    [
+      "bench1",
+      "jaw1"
+    ],
+    [
+      "bench1",
+      "board"
+    ],
+    [
+      "bench2",
+      "jaw0"
+    ],
+    [
+      "bench2",
+      "jaw1"
+    ],
+    [
+      "bench2",
+      "board"
+    ],
+    [
+      "shaft0",
+      "jaw0"
+    ],
+    [
+      "shaft0",
+      "jaw1"
+    ],
+    [
+      "shaft0",
+      "board"
+    ],
+    [
+      "sleeve0",
+      "jaw0"
+    ],
+    [
+      "sleeve0",
+      "jaw1"
+    ],
+    [
+      "sleeve0",
+      "board"
+    ],
+    [
+      "washer0",
+      "jaw0"
+    ],
+    [
+      "washer0",
+      "jaw1"
+    ],
+    [
+      "washer0",
+      "board"
+    ],
+    [
+      "headBase0",
+      "jaw0"
+    ],
+    [
+      "headBase0",
+      "jaw1"
+    ],
+    [
+      "headBase0",
+      "board"
+    ],
+    [
+      "headCap0",
+      "jaw0"
+    ],
+    [
+      "headCap0",
+      "jaw1"
+    ],
+    [
+      "headCap0",
+      "board"
+    ],
+    [
+      "shaft1",
+      "jaw0"
+    ],
+    [
+      "shaft1",
+      "jaw1"
+    ],
+    [
+      "shaft1",
+      "board"
+    ],
+    [
+      "sleeve1",
+      "jaw0"
+    ],
+    [
+      "sleeve1",
+      "jaw1"
+    ],
+    [
+      "sleeve1",
+      "board"
+    ],
+    [
+      "washer1",
+      "jaw0"
+    ],
+    [
+      "washer1",
+      "jaw1"
+    ],
+    [
+      "washer1",
+      "board"
+    ],
+    [
+      "headBase1",
+      "jaw0"
+    ],
+    [
+      "headBase1",
+      "jaw1"
+    ],
+    [
+      "headBase1",
+      "board"
+    ],
+    [
+      "headCap1",
+      "jaw0"
+    ],
+    [
+      "headCap1",
+      "jaw1"
+    ],
+    [
+      "headCap1",
+      "board"
+    ],
+    [
+      "jaw0",
+      "jaw1"
+    ],
+    [
+      "jaw0",
+      "board"
+    ],
+    [
+      "jaw1",
+      "board"
+    ]
+  ],
+  "queries": 2186808,
+  "intersections": {},
+  "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All 16 meshes are physical. Sampled clearance only.",
+  "sources": [
+    {
+      "file": "scripts/review-bench-clamp-assembly.mjs",
+      "sha256": "d7bd3d2da2ff37aaf1b096450072ea9adfa6b4d58e5a9f583cd969aff91e824e"
+    },
+    {
+      "file": "src/simulation/baked/bench-clamp.js",
+      "sha256": "01468b355aae93b72211505dadbb7a1d52b12024a0d6fdeb86f5cfedd5c75f87"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/update-solids.js",
+      "sha256": "1cd74df649cf7a1baf69fdcc35afead972fc77a6a85fa7c36a27562d6b3189bd"
+    },
+    {
+      "file": "src/simulation/baked/assets/174.json.gz",
+      "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

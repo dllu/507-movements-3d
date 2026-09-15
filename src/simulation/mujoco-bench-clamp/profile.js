@@ -19,3 +19,22 @@ export function benchClampProfile(side) {
  const triangles=THREE.ShapeUtils.triangulateShape(points,[]);
  return {pivot:[(pivot[0]-123)*scale,(264-pivot[1])*scale],points,triangles,raster};
 }
+
+// Merge adjacent triangles only when their union is convex. This preserves the
+// traced boundary while avoiding duplicate contacts along a fan of prisms.
+export function convexProfilePieces(points,triangles) {
+ const pieces=triangles.map(t=>[...t]);
+ const convex=indices=>{let sign=0;for(let i=0;i<indices.length;i++){
+  const a=points[indices[i]],b=points[indices[(i+1)%indices.length]],c=points[indices[(i+2)%indices.length]];
+  const cross=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
+  if(Math.abs(cross)<1e-12)continue;if(sign&&cross*sign<0)return false;sign=Math.sign(cross);
+ }return !!sign;};
+ let changed=true;
+ while(changed){changed=false;outer:for(let i=0;i<pieces.length;i++)for(let j=i+1;j<pieces.length;j++){
+  const a=pieces[i],b=pieces[j];let merged=null;
+  for(let x=0;x<a.length&&!merged;x++)for(let y=0;y<b.length;y++)if(a[x]===b[(y+1)%b.length]&&a[(x+1)%a.length]===b[y]){
+   merged=[...Array.from({length:a.length},(_,k)=>a[(x+1+k)%a.length]),...Array.from({length:b.length-2},(_,k)=>b[(y+2+k)%b.length])];break;
+  }
+  if(merged&&convex(merged)){pieces[i]=merged;pieces.splice(j,1);changed=true;break outer;}
+ }}return pieces;
+}

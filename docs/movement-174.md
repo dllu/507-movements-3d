@@ -1,59 +1,75 @@
-# Movement 174: twin-jaw bench clamp — review open
+# Movement 174: twin-jaw bench clamp — source review open
 
-The [original engraving](https://507movements.com/mm_174.html) shows a board
-pushed between two jaws turning on fixed screws. The original page has no
-enabled animation. The current browser model still prescribes both jaw angles;
-its mechanical reconstruction is unfinished.
+The browser now uses a 16-mesh reconstruction and a 278,000-byte geometry-and-
+motion bake. Both jaws respond passively to board contact. A six-second cycle
+withdraws and reinserts the board; the old forced jaw angles, decorative
+outlines, white indices and floating contact markers have been replaced.
 
-## Baseline defects and rendering increment
+The [original page](https://507movements.com/mm_174.html) has no enabled animation.
+The engraving and caption are the source reference.
 
-The [baseline audit](validation/174-existing-contact.json), against commit
-f748df7, samples 129 poses of the physical bench, jaws, board and screw hardware.
-It finds seven interfering pairs, including both jaws against the board,
-jaw-to-jaw overlap and pivot hardware penetrating the jaw plates. In 46 poses,
-the upper jaw moves despite the legacy model's own positive nominal contact
-gap. Its circle-based contact calculation does not describe the visible outline.
-The jaw outlines and pivot openings also require a fresh source reconstruction.
-Decorative outlines, white indices and contact markers were excluded from this
-physical audit and are not proposed for the replacement.
+## Contact and cycle
 
-The browser now uses a near-orthographic top view, ignores scene fog, hides the
-scene ground and supports exact Restart. The scoped legacy model test, build
-and desktop/mobile browser checks pass. These rendering checks do not resolve
-the baseline contact defects or validate its inherited 9.4-second motion law.
+Only board X is actuated, with an inferred force limit of 10. The jaws turn on
+ideal fixed hinges. Board Y is free, while board orientation is held to represent
+the operator guiding it. Allowing sideways motion is essential: a fixed Y guide
+in the first study let the lower jaw carry the clamp alone. The current model
+establishes contact with both jaws.
 
-## Passive contact study
+The [push study](validation/174-native-study.json) includes two timesteps,
+frictionless normal contact and disabled contact. Geometric contact holds the
+board even without friction; disabling contact lets it pass through while the
+jaws retain their initial angles. Masses, damping, force, axial layers and
+board orientation are reconstruction assumptions.
 
-The [new jaw trace](../src/simulation/mujoco-bench-clamp/profile.js) is decomposed
-into finite triangular prisms for an offline MuJoCo study. Only the board's X
-translation is actuated. Both jaw hinges are passive, and the board can shift
-in Y while its orientation is held. A sideways guide in the first study
-incorrectly allowed the lower jaw to carry the clamp alone; removing that
-constraint establishes contact with both jaws.
+Adjacent collision triangles are merged only where their union is convex.
+This reduces 316 prisms to 75 while preserving area within 9e-16 per jaw and
+retaining the traced boundary. It removes the recurring jitter caused by
+redundant contacts. Pivot holes are omitted from these collision solids because
+the board does not approach the pivots; the displayed holes and screw hardware
+are checked separately.
 
-A four-second push with an inferred 10-unit force limit settles with the board
-at X=0.035193 and Y=0.004082 model units. Both jaws contact the board, and the
-board's forward speed tends to zero while the push remains applied. Runs at
-0.0005 and 0.00025 seconds reach the same final configuration. Their maximum
-sampled transient differences are 0.00273 radians at the upper jaw, 0.00369 at
-the lower jaw, 0.000331 in board X and 0.000485 in board Y.
+The [cycle qualification](validation/174-native-cycle.json) simulates three
+withdrawal/reinsertion cycles at 0.0005 and 0.00025 seconds. The final cycle
+repeats in position and velocity to numerical precision. Maximum transient
+coarse/fine differences are 0.00104 radians at the upper jaw, 0.00210 at the
+lower jaw, 0.000962 in board X and 0.000312 in board Y. No negative native
+contact distances were recorded, with a small contact margin enabled.
 
-The frictionless, normal-contact-only control also holds the board. The source
-jaw shape can therefore form a geometric stop; friction at the front lobes
-alone is not an adequate model of this mechanism. Disabling contact leaves both
-jaws at their initial angles and lets the board reach its commanded X=-0.2.
-No negative contact distances were recorded in the current four runs, with a
-small contact margin enabled.
+## Visible assembly and checks
 
-See [native results](validation/174-native-study.json). The lower outline is an
-approximate reflection with a separately measured pivot. Masses, damping, force,
-board orientation and axial layers are assumptions. The study omits the bench,
-finite screw hardware and jaw pivot bores. It is not yet a qualified motion bake.
+The replacement has real pivot bores, support sleeves, washers and recessed
+screw-head slots. The board and bench have finite thickness; their unillustrated
+ends and bearing depths are inferred. The view is nearly orthographic, fog and
+scene ground are disabled, and Restart restores the closed source pose.
 
-## Next work
+- [Bake](validation/174-bake.json): 982 adaptive keys for a six-second cycle;
+  maximum error at the recorded samples is below 9.91e-7. The final key is made
+  exactly equal to the first after verifying the native seam. Browser playback
+  loads no MuJoCo/WASM or live physics.
+- [Assembly clearance](validation/174-assembly-clearance.json): all 16 physical
+  meshes and 42 cross-body pairs, 129 poses, 2,186,808 surface queries and no
+  sampled intersections.
+- [Dense jaw contact](validation/174-dense-contact.json): four subinterval
+  samples per adaptive key interval, 3,925 poses and 27,427,900 surface queries,
+  with no sampled jaw/board intersections. These are sampled checks, not a
+  continuous collision proof.
+- Two tests pass for measured screw centers, board position, finite transforms,
+  fog settings, cycle continuity and exact Restart.
+- Production build and [desktop/mobile checks](validation/174-browser.json)
+  pass playback, Restart, orbit/reset view, mobile overflow, no WASM requests
+  and no page errors. The front view was inspected against the engraving.
 
-Refine the lower-jaw asymmetry and validate release/reinsertion, timestep
-convergence and the contact locations. Build matching visible jaws with proper
-bores and hardware clearances, remove decorative stand-ins, and validate the
-whole assembly and its source fit before registering baked playback. Continue
-with 174; the full review remains active.
+## Remaining source-fit work
+
+The [sparse source-feature audit](validation/174-source-fit.json) finds the
+upper inner hook and both noses within 1.2 pixels, but the upper crest differs
+by 5.15 pixels, lower crest by 10.25 and lower inner hook by 4.58. The lower
+outline is still an approximate reflection. Refine those contours independently,
+then rerun native/bake qualification, clearance and the final visual comparison.
+Do not mark 174 reviewed yet. Continue with 174; the full review remains active.
+
+The [historical baseline](validation/174-existing-contact.json), against commit
+f748df7, records seven interfering pairs and 46 poses with prescribed jaw motion
+despite positive nominal contact gap. It describes the retained legacy factory,
+not the current browser implementation.

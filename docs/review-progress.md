@@ -1,13 +1,12 @@
 # Review open: 174 twin-jaw bench clamp
 
-Corrected the top view, fog/ground settings and Restart. A finite baseline audit
-finds seven interfering pairs and prescribed jaw motion without contact. A new
-MuJoCo study with traced jaw profiles lets the board move sideways and establishes
-contact with both passive jaws. Two timesteps, frictionless contact and disabled
-contact controls distinguish geometric clamping from the old friction-only
-animation. Matched visible geometry, release motion and bake qualification
-remain open. See [movement 174](movement-174.md). Continue with 174; the full
-review remains active.
+The browser now uses a 16-mesh reconstruction and 278 KB MuJoCo bake. Both jaws
+respond passively; the six-second withdrawal/reinsertion cycle repeats cleanly
+at two timesteps. Real pivot bores and hardware replace intersecting geometry.
+All 42 cross-body pairs, the dense jaw/board sweep, two tests, build and browser
+checks pass. Sparse source checks still find crest/hook discrepancies up to
+10.25 pixels, so independent contour refinement remains open. See
+[movement 174](movement-174.md). Continue with 174; the full review remains active.
 
 # Shipped reconstruction: 173 tappet-indexed silk traverse
 

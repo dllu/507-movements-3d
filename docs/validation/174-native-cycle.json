@@ -1,0 +1,157 @@
+{
+  "movement": 174,
+  "status": "passive-release-reinsertion-study",
+  "period": 6,
+  "cycleStart": 16,
+  "decompositions": [
+    {
+      "side": 0,
+      "triangles": 158,
+      "pieces": 37,
+      "areaError": 8.881784197001252e-16
+    },
+    {
+      "side": 1,
+      "triangles": 158,
+      "pieces": 38,
+      "areaError": 8.881784197001252e-16
+    }
+  ],
+  "timestepDifference": {
+    "upper": 0.0010390105009891112,
+    "lower": 0.0020947392325225684,
+    "board": 0.0009610476973280907,
+    "boardY": 0.00031106479828156217
+  },
+  "scope": "Only board X is actuated. Passive jaw hinges and free board Y; orientation held. Native collision pieces preserve the source trace. Finite display hardware and bake interpolation remain unqualified.",
+  "runs": [
+    {
+      "parameters": {
+        "timestep": 0.0005,
+        "friction": 0.5,
+        "opening": 0.06,
+        "force": 10,
+        "contacts": true,
+        "cyclic": true
+      },
+      "minimumGap": 0,
+      "seam": {
+        "upper": 4.336808689942018e-19,
+        "lower": 4.336808689942018e-19,
+        "board": 6.938893903907228e-18,
+        "boardY": 3.469446951953614e-18,
+        "upperSpeed": 1.7563399486172373e-15,
+        "lowerSpeed": 1.1806199277166698e-15,
+        "boardSpeed": 3.8471218639812585e-15,
+        "boardYSpeed": 1.197959017515939e-17
+      },
+      "cycleDifference": {
+        "upper": 2.3903612925840756e-9,
+        "lower": 4.093049033385143e-11,
+        "board": 6.904502664051293e-11,
+        "boardY": 1.5128411544329534e-10
+      },
+      "contactJaws": [
+        "jaw0",
+        "jaw1"
+      ],
+      "first": {
+        "time": 16.00000000000806,
+        "upper": 0.002856765387646843,
+        "lower": 0.002023257804655598,
+        "board": 0.03519322953654831,
+        "boardY": 0.004082130771464215,
+        "boardSpeed": 6.446770067613924e-15,
+        "boardYSpeed": -2.0302015947412862e-17,
+        "upperSpeed": 1.1456687337073908e-15,
+        "lowerSpeed": 7.312938902311939e-16,
+        "contacts": 12,
+        "appliedForce": -10
+      },
+      "last": {
+        "time": 21.999999999994078,
+        "upper": 0.0028567653876468424,
+        "lower": 0.0020232578046555975,
+        "board": 0.03519322953654832,
+        "boardY": 0.004082130771464219,
+        "boardSpeed": 2.5996482036326657e-15,
+        "boardYSpeed": -8.322425772253472e-18,
+        "upperSpeed": -6.106712149098464e-16,
+        "lowerSpeed": -4.493260374854759e-16,
+        "contacts": 12,
+        "appliedForce": -10
+      }
+    },
+    {
+      "parameters": {
+        "timestep": 0.00025,
+        "friction": 0.5,
+        "opening": 0.06,
+        "force": 10,
+        "contacts": true,
+        "cyclic": true
+      },
+      "minimumGap": 0,
+      "seam": {
+        "upper": 0,
+        "lower": 0,
+        "board": 0,
+        "boardY": 8.673617379884035e-19,
+        "upperSpeed": 1.4123869342530444e-15,
+        "lowerSpeed": 1.107928552285986e-15,
+        "boardSpeed": 1.0969199976488865e-15,
+        "boardYSpeed": 2.1639748268293797e-15
+      },
+      "cycleDifference": {
+        "upper": 1.4809509521485076e-11,
+        "lower": 6.100554957033655e-12,
+        "board": 8.553630026497672e-12,
+        "boardY": 2.2866847304570115e-12
+      },
+      "contactJaws": [
+        "jaw0",
+        "jaw1"
+      ],
+      "first": {
+        "time": 15.999999999985386,
+        "upper": 0.0028567653876468424,
+        "lower": 0.002023257804655598,
+        "board": 0.035193229536548305,
+        "boardY": 0.004082130771464215,
+        "boardSpeed": 2.9487628191180966e-15,
+        "boardYSpeed": 8.94917296040581e-16,
+        "upperSpeed": -9.748888511702158e-16,
+        "lowerSpeed": 3.3170915565620036e-16,
+        "contacts": 12,
+        "appliedForce": -10
+      },
+      "last": {
+        "time": 22.000000000014033,
+        "upper": 0.0028567653876468424,
+        "lower": 0.002023257804655598,
+        "board": 0.035193229536548305,
+        "boardY": 0.004082130771464216,
+        "boardSpeed": 4.045682816766983e-15,
+        "boardYSpeed": -1.2690575307887988e-15,
+        "upperSpeed": 4.3749808308282874e-16,
+        "lowerSpeed": -7.762193966297857e-16,
+        "contacts": 12,
+        "appliedForce": -10
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/qualify-bench-clamp-cycle.mjs",
+      "sha256": "4051564d7d92144b8872ddfd98f183c8fb299aca6d1bdf53ca78aaa9d0d4e294"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/physics.js",
+      "sha256": "013f7b319cceff3da7c709c4794e9d79ea3b5e88d1f8e68512c20f78b8310b21"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "d2c6273abccc8d56e8a7c79a2794cffb22473bf0c218170fd5e57370cef6fd5e"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "movement": 174,
+  "names": [
+    "upper",
+    "lower",
+    "board",
+    "boardY"
+  ],
+  "period": 6,
+  "loopStart": 0,
+  "loopEnd": 6,
+  "turns": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "maximumError": 9.900845405225612e-7,
+  "bounds": {
+    "min": [
+      -1.344000039100647,
+      -2.2200000858306885,
+      -0.5500000095367432
+    ],
+    "max": [
+      5.424084595827036,
+      2.2800000286102295,
+      0.3749999976158142
+    ]
+  },
+  "focus": [
+    2.0400422783631944,
+    0.029999971389770508,
+    -0.0875000059604645
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-bench-clamp.mjs",
+      "sha256": "57716d1d3097aa07e3d82cf036bd9c25ececf131a4bd8f6d6a4ac3b97d7c7d2a"
+    },
+    {
+      "file": "scripts/qualify-bench-clamp-cycle.mjs",
+      "sha256": "4051564d7d92144b8872ddfd98f183c8fb299aca6d1bdf53ca78aaa9d0d4e294"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/physics.js",
+      "sha256": "013f7b319cceff3da7c709c4794e9d79ea3b5e88d1f8e68512c20f78b8310b21"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "d2c6273abccc8d56e8a7c79a2794cffb22473bf0c218170fd5e57370cef6fd5e"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/solids.js",
+      "sha256": "09b1532f22d05585910f2849e85b4e169879f7fc04122ae47e6aa1a3f10e1ce2"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/update-solids.js",
+      "sha256": "1cd74df649cf7a1baf69fdcc35afead972fc77a6a85fa7c36a27562d6b3189bd"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ],
+  "nativeHash": "e725717c107fe9145c345972cb3a21b2b1857e736fdaaa43122e66008683a72b",
+  "assumptions": "Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Approximate reflected lower outline.",
+  "samples": 982,
+  "bytes": 278000,
+  "sha256": "58c191cb1453066abbb2556156c8fa5be0c0d7be8dc5f420da1a351984b0130a"
+}

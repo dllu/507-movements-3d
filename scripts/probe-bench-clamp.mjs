@@ -13,6 +13,6 @@ for(const options of [{},{timestep:.00025},{friction:0},{contacts:false}]){
 fs.writeFileSync('/dev/shm/174-native-probe.json',JSON.stringify(runs));
 const timestepDifference=Object.fromEntries(['upper','lower','board','boardY'].map(key=>[key,Math.max(...runs[0].samples.map((s,i)=>Math.abs(s[key]-runs[1].samples[i][key])))]));
 const report={timestepDifference,movement:174,status:'unregistered-passive-jaw-study',duration:4,
- scope:'Source-traced triangular-prism jaw colliders and a board free to translate in X and Y with its orientation held. Only the board is actuated; jaw angles are passive. Hidden hardware, bench contact, exact lower-jaw asymmetry, release motion and finite display geometry are not qualified.',
+ scope:'Source-traced convex-prism jaw colliders and a board free to translate in X and Y with its orientation held. Only the board is actuated; jaw angles are passive. Hidden hardware, bench contact, exact lower-jaw asymmetry, release motion and finite display geometry are not qualified.',
  runs:runs.map(({samples,...r})=>r),sources:['scripts/probe-bench-clamp.mjs','src/simulation/mujoco-bench-clamp/physics.js','src/simulation/mujoco-bench-clamp/profile.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
 fs.writeFileSync('docs/validation/174-native-study.json',JSON.stringify(report,null,2)+'\n');console.log(report);

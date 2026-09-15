@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 174) {
+    const {makeBakedBenchClamp} = await import('./baked/bench-clamp.js');
+    const model = await makeBakedBenchClamp();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 173) {
     const {makeBakedTappetSilkTraverse} = await import('./baked/tappet-silk-traverse.js');
     const model = await makeBakedTappetSilkTraverse();
