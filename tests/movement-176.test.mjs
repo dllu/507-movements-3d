@@ -580,12 +580,12 @@ test('movement 176 keeps one rear wrist engaged with the radial slot of one coax
   assert.ok(size.x > 8.31);
   assert.ok(size.y > 8.31,
     'full crank witness keeps every rotated pose in the camera envelope');
-  assert.ok(size.z > 2.40,
+  assert.ok(size.z > 2.37,
     'rear input, selector, front output, shafts, and bearings occupy real depth');
   assert.ok(bounds.min.z < -1.18);
-  assert.ok(bounds.max.z > 1.22);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.ok(bounds.max.z > 1.17);
+  assert.equal(model.cameraDirection.x, 0);
+  assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   // The paired next model is now independently authored as Movement 177.
@@ -594,7 +594,7 @@ test('movement 176 keeps one rear wrist engaged with the radial slot of one coax
   assert.equal(movement175.root.userData.fidelity, 'authored');
   assert.equal(
     movement175.root.userData.mechanism,
-    'tangent-branch-transfer-radius-five-guide-seven-rod-twelve-two-crank-turn-piston-cycle',
+    'tangent-branch-transfer-engraving-fit-two-crank-turn-piston-cycle',
   );
   assert.equal(catalog.movements[176].fidelity, 'authored');
   assert.equal(movement177.root.userData.fidelity, 'authored');

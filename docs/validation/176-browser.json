@@ -1,0 +1,27 @@
+{
+  "movement": 176,
+  "status": "packaged-rendering-passed-source-mounting-review-open",
+  "checks": [
+    "playback",
+    "exact Restart",
+    "orbit and reset",
+    "390x844 without overflow",
+    "no WASM requests",
+    "no page errors"
+  ],
+  "limitations": "Ideal prescribed one-to-one coupling; source fit and selector attachment remain unreviewed.",
+  "sources": [
+    {
+      "file": "tests/e2e/engaged-engine-coupling.spec.mjs",
+      "sha256": "0a61ecfdcdb648d4e6fe4bfb302243eba40fdd14e11e7c7ee0950c058b6031f0"
+    },
+    {
+      "file": "src/simulation/authored-engine-couplings.js",
+      "sha256": "950eb989063a222bf33e95c3d3b0396c35aa06f6b960d581154d7de50d422ddf"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ]
+}

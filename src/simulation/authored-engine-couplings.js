@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1223,8 +1224,24 @@ function disengagedSlottedRingEngineCoupling() {
   return model;
 }
 
+function qualifyEngagedGeometry(model) {
+  const {root}=model,{blocks:b,geometry:g}=root.userData;
+  for(const [mesh,side]of [[b.selectorLeftLobe,'left'],[b.selectorRightLobe,'right']]){
+    mesh.geometry.dispose();mesh.geometry=centeredExtrusion(makeVerticalSlotLobeShape(g.selectorOuterRadius,g.slotHalfWidth,side).shape,g.selectorDepth,0);
+  }
+  // Keep the visible wall strip wholly outside the analytically clear slot.
+  b.selectorLeftWall.position.x=-g.slotHalfWidth-.013;
+  b.selectorRightWall.position.x=g.slotHalfWidth+.013;
+  b.fixedFrontBearingRing.geometry.dispose();b.fixedFrontBearingRing.geometry=ring(.425,.555,-.075,.075,96);
+  b.fixedFrontBearing.position.z=.82;
+  for(const mesh of [b.contactMarker,b.motionEnvelope,b.inputShaftIndex,b.outputRotationIndex,b.selectorIndex,b.wristFaceIndex])mesh.visible=false;
+  root.traverse(object=>{if(object.material)for(const material of [].concat(object.material))material.fog=false;});
+  Object.assign(root.userData,{hideGround:true,cameraFov:8,materialsIgnoreSceneFog:true,supportsRestart:true,reconstructionStatus:'candidate',animationTiming:{authoredCyclePeriod:g.cyclePeriod},minimumDisplayCycleSeconds:4});
+  model.cameraDirection=new THREE.Vector3(0,0,1);model.reset=()=>model.update(0);return model;
+}
+
 export function createAuthoredEngineCouplingMovement(movement) {
-  if (movement.id === 176) return engagedSlottedRingEngineCoupling();
+  if (movement.id === 176) return qualifyEngagedGeometry(engagedSlottedRingEngineCoupling());
   if (movement.id === 177) return disengagedSlottedRingEngineCoupling();
   return null;
 }
