@@ -7,6 +7,11 @@ desktop/mobile playback and restart. Its circular guide differs from the source
 oblong, and the source pin centers do not close through a full revolution under
 the current four-bar interpretation. Resolve the guide and linkage before
 claiming source fidelity or whole-assembly clearance; see [movement 148](movement-148.md).
+An unregistered candidate now carries the traced oblong on the long rocker,
+with the upper joint shifted 14px right for full-turn closure. A rear-supported
+stub shaft clears the frame; the through-shaft alternative fails. Two joint and
+closure tests and a ten-part sampled assembly check pass. Complete gears,
+bearings and supports still need integration; the topology remains inferred.
 
 # Shipped improvement: 147 air-drag governor; refinement follow-up open
 

@@ -1,0 +1,40 @@
+{
+  "movement": 148,
+  "status": "through-shaft-arrangement-rejected",
+  "interpretation": "Test a hypothetical gear shaft extending through the oblong frame plane. It collides; the separate assembly candidate instead terminates a rear-supported shaft behind that plane. The oblong is interpreted as a structural part of the long rocker, and the upper joint is shifted 14px right. Neither detail is a verified reading of the engraving.",
+  "summary": {
+    "poses": 257,
+    "lengths": {
+      "input": 1.5782167151566986,
+      "coupler": 1.702482892718749,
+      "output": 5.884265119791936,
+      "ground": 5.828844139278386
+    },
+    "minimumClosureHeight": 0.5633098597481516,
+    "minimumShaftClearance": -0.0749999940395355,
+    "minimumJointClearance": 0.002851650159187458,
+    "failingShaftPoses": 153
+  },
+  "sources": [
+    {
+      "file": "scripts/review-geared-crank-frame.mjs",
+      "sha256": "8d7722ac57a7bd6614fd9de2a7e591d43c8706c233eb9bce2d088c723582d327"
+    },
+    {
+      "file": "src/simulation/geared-crank-source.js",
+      "sha256": "7b7794214728115a42c81591ba88dca96135cd3671d29da612db3d2436a01098"
+    },
+    {
+      "file": "src/simulation/geared-crank-frame.js",
+      "sha256": "4e3e1fc4298b7648ab236f0062a3bd3dd7370c81608c1659e30173c4d857b1e9"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ]
+}

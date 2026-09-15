@@ -42,3 +42,44 @@ four-bar model, not proof that Brown's mechanism cannot work. The roles of the
 pins and oblong guide need to be resolved before reconstructing its shape.
 Actual bores, pin attachment and whole-assembly interference are also unchecked.
 Keep 148's review open after this gear/display checkpoint.
+
+## Candidate oblong rocking frame
+
+A separate candidate in `geared-crank-frame.js` traces the outer and inner
+boundaries of the oblong and treats it as a structural part of the long rocker.
+The short crank joins the eccentric pin to the upper frame joint. This topology
+is an engineering interpretation, not established by the brief caption. The
+[Cornell scan of Brown's original plate](https://ecommons.cornell.edu/server/api/core/bitstreams/4cfb6186-33d5-423a-86d9-7c02924f3130/content)
+was also inspected; it repeats the same arrangement without further explanation.
+No animation reference for 148 was found on the original site or in YesYen's
+page-17 animation metadata.
+
+The candidate retains the measured gear center, eccentric pin and right pivot,
+but shifts the upper joint 14 pixels right, from `(247,228)` to `(261,228)`.
+That gives a complete analytic crank-rocker cycle, with no change of closure
+branch or angle discontinuity. The oblong is carried by the long rocker rather
+than by the short crank as in the current browser model. Its boundary is traced
+independently of the joint adjustment.
+
+[A through-shaft check](validation/148-rocking-frame.json) rejects a gear shaft
+extending through this frame: a 0.2-radius section collides at 153 of 257 poses.
+The candidate therefore has a rear-supported stub shaft ending at Z=0.18;
+the oblong plate starts at Z=0.40. The short crank lies between them, with real
+bores receiving the eccentric and frame-joint pins. Pins have retainers clear of
+the moving plates. The depth arrangement and unloaded prescribed input are
+explicit reconstruction assumptions.
+
+[Candidate assembly evidence](validation/148-frame-assembly.json) checks ten
+parts and 36 pairs from different rigid families at 65 poses: the frame, short
+crank, eccentric mounting arm, pins, retainers and stub shaft. All 1,332,500
+sampled point/solid checks clear a `1e-6` penetration tolerance. This does not
+include complete gears, their bearings or the fixed supporting frame. Two
+focused tests verify the continuous full-turn closure and actual joint bores,
+with pin clearance above 0.0027 units.
+
+Source, quarter-turn and half-turn candidate renders were inspected with the
+existing gears as a visual reference. The source silhouette is substantially
+closer, but the candidate is not registered. Next: integrate proper bored gear
+hubs and supports, check the complete assembly, and decide whether this inferred
+frame arrangement is sufficiently supported for replacement. The browser still
+uses the circular-guide reconstruction pending that work.
