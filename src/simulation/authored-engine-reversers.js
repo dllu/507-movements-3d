@@ -96,9 +96,13 @@ function sourceScaledSingleEngineReverser() {
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
   const sourceScale = 0.022;
-  const sourceRasterShaftCenter = new THREE.Vector2(446, 289);
+  // A four-pixel shaft-center compromise keeps the engraved short hand-lever
+  // link reachable through the full eccentric stroke.
+  const sourceRasterShaftCenter = new THREE.Vector2(442, 289);
   const shaftCenter = new THREE.Vector2(4.3, 0);
-  const sourceRasterEccentricCenter = new THREE.Vector2(432, 292);
+  // Shared bearing center fitted between the engraving's slightly different
+  // apparent strap and sheave centers. Keep the actual bearing concentric.
+  const sourceRasterEccentricCenter = new THREE.Vector2(425, 290);
   const sourceRasterValvePin = new THREE.Vector2(180, 289);
   const sourceRasterSpindleLinkPin = new THREE.Vector2(123, 289);
   const sourceRasterLeverBasePivot = new THREE.Vector2(91, 361);
@@ -108,7 +112,7 @@ function sourceScaledSingleEngineReverser() {
   const sourceRasterLeftRodBreak = new THREE.Vector2(248, 289);
   const sourceRasterRightRodBreak = new THREE.Vector2(274, 289);
   const sourceRasterStrapOuterRadius = 76;
-  const sourceRasterEccentricRadius = 62;
+  const sourceRasterEccentricRadius = 56;
   const sourceRasterShaftRadius = 29;
   const sourceRasterStopMeanRadius = 36;
 
@@ -180,7 +184,7 @@ function sourceScaledSingleEngineReverser() {
   const stopInnerRadius = stopMeanRadius - stopRadialThickness / 2;
   const stopOuterRadius = stopMeanRadius + stopRadialThickness / 2;
   const stopDepth = 0.18;
-  const stopPlaneZ = sheaveDepth / 2 + stopDepth / 2 + 0.025;
+  const stopPlaneZ = sheaveDepth / 2 + stopDepth / 2 + 0.015;
   const forwardStopLocalAngle = Math.PI / 2;
   const reverseStopLocalAngle = -Math.PI / 2;
   const permittedRelativeTravel = HALF_TURN;
@@ -680,11 +684,11 @@ function sourceScaledSingleEngineReverser() {
   );
   eccentricDisk.userData.role = 'loose-circular-eccentric-with-shaft-bore';
   const eccentricOuterRim = new THREE.Mesh(
-    new THREE.TorusGeometry(sheaveRadius * 0.94, 0.045, 10, 80),
+    ring(sheaveRadius * 0.94 - .025, sheaveRadius * 0.94 + .025, 0, .001, 128),
     darkMaterial,
   );
-  eccentricOuterRim.position.set(-eccentricity, 0, sheaveDepth / 2 + 0.025);
-  eccentricOuterRim.userData.role = 'working-rim-of-loose-eccentric';
+  eccentricOuterRim.position.set(-eccentricity, 0, sheaveDepth / 2 + 0.018);
+  eccentricOuterRim.userData.role = 'painted-face-outline-of-loose-eccentric';
   const eccentricCenterMark = new THREE.Mesh(
     new THREE.TorusGeometry(0.13, 0.035, 8, 36),
     whiteMaterial,
@@ -702,7 +706,7 @@ function sourceScaledSingleEngineReverser() {
   eccentricPhaseIndex.position.set(
     -eccentricity - sheaveRadius * 0.46,
     0,
-    sheaveDepth / 2 + 0.06,
+    sheaveDepth / 2 + 0.018 + 0.035 / 2,
   );
   eccentricPhaseIndex.userData.role = 'loose-eccentric-rotation-index';
   const eccentricCenterAnchor = new THREE.Group();
@@ -808,7 +812,7 @@ function sourceScaledSingleEngineReverser() {
   shaftLugIndex.position.set(
     stopMeanRadius - 0.05,
     0,
-    stopPlaneZ + 0.18,
+    stopPlaneZ + 0.035 + 0.24 / 2 + 0.035 / 2,
   );
   shaftLugIndex.userData.role = 'white-index-at-shaft-lug-contact-radius';
   const shaftLugContactAnchor = new THREE.Group();
@@ -1073,12 +1077,10 @@ function sourceScaledSingleEngineReverser() {
 
   const baseY = -2.08;
   const baseZ = -0.9;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-5.35, baseY, baseZ),
-    new THREE.Vector3(6.15, baseY, baseZ),
-    { thickness: 0.18, depth: 0.28, color: PALETTE.frame },
-  );
-  baseRail.userData.role = 'fixed-foundation-rail';
+  const baseRail = new THREE.Mesh(new THREE.BoxGeometry(170*sourceScale,21*sourceScale,.50),frameMaterial);
+  const foundationCenter=sourceRasterPointToModel(new THREE.Vector2(105,380.5));
+  baseRail.position.set(foundationCenter.x,foundationCenter.y,baseZ);
+  baseRail.userData.role = 'engraved-foundation-under-hand-lever';
   const leverPedestal = new THREE.Mesh(
     ring(.26,.36,-.10,.10,96),
     frameMaterial,
@@ -1189,7 +1191,7 @@ function sourceScaledSingleEngineReverser() {
       new THREE.Vector3(
         state.spindleLinkPoint.x,
         state.spindleLinkPoint.y,
-        -0.04,
+        .18,
       ),
     );
     stopContactMarker.visible = state.activeStopPoint !== null;
@@ -1427,6 +1429,14 @@ function sourceScaledSingleEngineReverser() {
   // from the initial engraving. Convert raster points into the rod's frame.
   const rodPoint = (x,y) => sourceRasterPointToModel(new THREE.Vector2(x,y))
     .sub(sourcePose.eccentricCenter).rotateAround(new THREE.Vector2(), -sourcePose.rodAngle);
+  const neck=new THREE.Shape();
+  const neckLine=(x,y)=>neck.lineTo(...rodPoint(x,y).toArray());
+  const neckCurve=(a,b,c)=>neck.bezierCurveTo(...rodPoint(...a).toArray(),...rodPoint(...b).toArray(),...rodPoint(...c).toArray());
+  neck.moveTo(...rodPoint(274,276).toArray());neckLine(310,275);
+  neckCurve([327,274],[327,267],[336,250]);neckCurve([345,239],[357,236],[369,240]);neckLine(375,252);
+  neckCurve([351,276],[351,302],[375,328]);neckLine(369,340);neckCurve([357,344],[345,340],[338,328]);
+  neckCurve([332,311],[331,304],[315,303]);neckLine(274,302);neck.closePath();
+  rodNeck.geometry.dispose();rodNeck.geometry=centeredExtrusion(neck,.44,0);
   const gab = new THREE.Shape(), outer=.40, inner=gabHalfGap, bottom=.176;
   gab.moveTo(eccentricRodLength-outer,bottom);
   gab.lineTo(eccentricRodLength-outer,0);
@@ -1457,10 +1467,15 @@ function sourceScaledSingleEngineReverser() {
     ...gabJaws, ...gabContactShoes]) {
     decoration.removeFromParent();decoration.geometry.dispose();
   }
+  // The source sections the engine away at the shaft and valve guide. Preserve
+  // that cutaway instead of adding an unillustrated full-width bed and braces.
+  for(const omitted of [shaftBearing,...shaftBearingBraces,valveGuideSupport,guideElbow,guideFoot]){
+    omitted.removeFromParent();omitted.traverse(part=>part.geometry?.dispose());
+  }
   Object.assign(root.userData, {hideGround:true, supportsRestart:true,
     minimumDisplayCycleSeconds:24, animationTiming:{authoredCyclePeriod:cyclePeriod},
-    reconstructionStatus:'under-review',
-    reconstructionNote:'The rod is lifted, the valve is worked by hand, and the shaft takes up the half-turn clearance before the rod is lowered. This is an ideal operator-driven sequence; stop, joint and source-fit verification is in progress.'});
+    reconstructionStatus:'reconstructed',
+    reconstructionNote:'Ideal operator sequence: lift the rod, work the valve by hand, take up the half-turn shaft clearance, and lower the rod. Bearing geometry and shaft position reconcile the hand-drawn outlines with full linkage reach; unillustrated engine supports are sectioned away.'});
   const motionBounds=new THREE.Box3();
   for(let i=0;i<=192;i++){update(cyclePeriod*i/192);root.updateMatrixWorld(true);
     motionBounds.union(new THREE.Box3().setFromObject(root,true));}

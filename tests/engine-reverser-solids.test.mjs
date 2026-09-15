@@ -43,5 +43,16 @@ test('179 lifting grip follows the engraved side, gab opens downward, and link p
    assert.ok(Math.abs(pb.max.z-hb.min.z)<1e-7,'head touches pin');
    assert.ok(hb.min.z>eb.max.z&&pb.min.z<eb.min.z,'retained eye lies on pin');
   }
+  const disk=solidSurface(b.eccentricDisk.geometry),g=u.geometry;
+  assert.equal(disk.inside(new THREE.Vector3(-g.stopMeanRadius,0,g.stopPlaneZ-g.stopDepth/2)),true,
+   'stop base is attached to the sheave');
+  for(const [mark,parent]of [[b.eccentricPhaseIndex,b.eccentricDisk],[b.eccentricOuterRim,b.eccentricDisk],[b.shaftLugIndex,b.shaftLug]]){
+   const mb=new THREE.Box3().setFromObject(mark),pb=new THREE.Box3().setFromObject(parent);
+   assert.ok(Math.abs(mb.min.z-pb.max.z)<1e-7,'rotation marking touches its face');
+  }
+  for(const eye of b.reversingLink.children.slice(1)){
+   assert.ok(new THREE.Box3().setFromObject(eye).min.z>new THREE.Box3().setFromObject(b.manualLeverBar).max.z,
+    'link eyes clear the upright lever in depth');
+  }
  }finally{disposeObject3D(m.root);}
 });

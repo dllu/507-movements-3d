@@ -12,30 +12,30 @@
       "enabled": true,
       "frictionloss": 0.02,
       "failure": null,
-      "maximumError": 0.0022938095504869693,
-      "maximumPenetration": 0.00015498100485772726,
-      "maxMotion": 6.281188082644487,
-      "finalEccentric": 0.2130905577578382
+      "maximumError": 0.002293809550485193,
+      "maximumPenetration": 0.00015498100485595431,
+      "maxMotion": 6.281188082644485,
+      "finalEccentric": 0.06075304725081332
     },
     {
       "timestep": 0.0001,
       "enabled": true,
       "frictionloss": 0.02,
       "failure": null,
-      "maximumError": 0.0023063106787839516,
-      "maximumPenetration": 0.00015845275306481497,
-      "maxMotion": 6.28118850295133,
-      "finalEccentric": 0.2130901374509624
+      "maximumError": 0.0023063106787848398,
+      "maximumPenetration": 0.0001584527530653495,
+      "maxMotion": 6.2811885029513315,
+      "finalEccentric": 0.06075262694393685
     },
     {
       "timestep": 0.0002,
       "enabled": true,
       "frictionloss": 0.05,
       "failure": null,
-      "maximumError": 0.002312528466575259,
-      "maximumPenetration": 0.00015548670204526056,
-      "maxMotion": 6.28118849155023,
-      "finalEccentric": 0.21309014885209135
+      "maximumError": 0.0023125284665779233,
+      "maximumPenetration": 0.00015548670204714674,
+      "maxMotion": 6.281188491550234,
+      "finalEccentric": 0.06075263834506665
     },
     {
       "timestep": 0.0002,
@@ -45,7 +45,7 @@
       "maximumError": 6.283185307179586,
       "maximumPenetration": 0,
       "maxMotion": 0,
-      "finalEccentric": 0.21109333322274715
+      "finalEccentric": 0.05875582271572277
     }
   ],
   "sources": [
@@ -55,7 +55,7 @@
     },
     {
       "file": "src/simulation/authored-engine-reversers.js",
-      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+      "sha256": "1835ad1654efe831d0cffb092dad6d77f0df713a7662252ace9fc191ba922f05"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",

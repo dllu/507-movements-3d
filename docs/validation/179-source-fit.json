@@ -1,15 +1,15 @@
 {
   "movement": 179,
-  "status": "source-fit-open",
-  "method": "Initial front projection. Manually selected raster bounds include hand-drawn perspective; this diagnostic does not assume all source circles are exactly concentric.",
+  "status": "selected-source-features-checked",
+  "method": "Initial front projection of actual geometry vertices. Manually selected raster bounds include hand-drawn perspective. The shared bearing center and four-pixel shaft-center adjustment preserve concentric bearing surfaces and full hand-link reach. Unillustrated engine supports are sectioned away.",
   "features": [
     {
       "name": "lifting grip",
       "actual": [
-        73.04027900569008,
-        193.55226327195874,
-        94.95972099431003,
-        202.44773672804132
+        73.07337511996093,
+        193.6373276756392,
+        94.92662488003918,
+        202.3626723243608
       ],
       "expected": [
         73,
@@ -17,15 +17,15 @@
         96,
         203
       ],
-      "maximumErrorPixels": 1.0402790056899676
+      "maximumErrorPixels": 1.073375119960815
     },
     {
       "name": "gab",
       "actual": [
-        161.72424609647402,
-        270.8194696857892,
-        198.18052428866002,
-        297.21586793643985
+        161.78568562588725,
+        270.81833303610784,
+        198.18165887372922,
+        297.07414417112955
       ],
       "expected": [
         162,
@@ -33,15 +33,15 @@
         198,
         298
       ],
-      "maximumErrorPixels": 0.7841320635601505
+      "maximumErrorPixels": 0.9258558288704535
     },
     {
       "name": "strap",
       "actual": [
-        355.18701464789984,
-        215.18701464789984,
-        508.81298535210016,
-        368.81298535210016
+        348.18221162265917,
+        213.18221162265917,
+        501.81778837734083,
+        366.81778837734083
       ],
       "expected": [
         345,
@@ -49,15 +49,15 @@
         498,
         366
       ],
-      "maximumErrorPixels": 10.812985352100156
+      "maximumErrorPixels": 3.8177883773408325
     },
     {
       "name": "eccentric disk",
       "actual": [
-        369.18840182285777,
-        229.18839689184966,
-        494.8116028704752,
-        354.8116032377913
+        368.1842246486537,
+        233.1842266528925,
+        481.815774026021,
+        346.81577334552
       ],
       "expected": [
         371,
@@ -65,21 +65,53 @@
         483,
         346
       ],
-      "maximumErrorPixels": 11.811602870475213
+      "maximumErrorPixels": 2.8157753513463035
+    },
+    {
+      "name": "shaft face",
+      "actual": [
+        413.02252735673534,
+        260.02252735673534,
+        470.97747264326466,
+        317.97747264326466
+      ],
+      "expected": [
+        417,
+        260,
+        475,
+        318
+      ],
+      "maximumErrorPixels": 4.022527356735338
+    },
+    {
+      "name": "foundation",
+      "actual": [
+        19.999999783255817,
+        369.9999997182326,
+        190.00000021674416,
+        391.0000002817674
+      ],
+      "expected": [
+        20,
+        370,
+        190,
+        391
+      ],
+      "maximumErrorPixels": 2.8176742716823355e-7
     }
   ],
   "sourceHandleTip": [
     84.00000000000006,
-    198.00000000000003
+    198
   ],
   "sources": [
     {
       "file": "scripts/review-engine-reverser-source.mjs",
-      "sha256": "9cbae5ddde6c21f87c2e89c177b72aa19ceb9dd7300bf4d68879a5324a64b5e6"
+      "sha256": "3259e2a1c6860954e444e99f455d5457e61cf8ff1924fe1cca7ea3053b30b476"
     },
     {
       "file": "src/simulation/authored-engine-reversers.js",
-      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+      "sha256": "1835ad1654efe831d0cffb092dad6d77f0df713a7662252ace9fc191ba922f05"
     },
     {
       "file": "public/engravings/mm_179.png",

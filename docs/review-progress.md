@@ -1,3 +1,9 @@
+# Movement 179 reconstructed and checked; next 180
+
+Fitted the concentric sheave/strap assembly and shaft within 4.03 pixels of six selected source bounds, preserving full hand-link reach. Restored the curved rod neck and short engraved foundation, closed stop/mark attachment gaps, and aligned the link eyes clear of the lever. The 42-mesh, 129-pose sweep finds no intersections. Full-sequence motion, native contact, production build and desktop/mobile checks pass. See [movement 179](movement-179.md) for source compromises and simulation limits. Continue with 180; the full review remains active.
+
+## Earlier checkpoints
+
 # Movement 179: native stop contact checked; wheel source fit open
 
 The shaft-only MuJoCo study now uses PGS and completes the full 24-second reversal sequence. Both timesteps and two bearing-resistance settings pass; the no-contact control remains stationary. Passive eccentric error stays below 0.133 degrees and sampled timestep disagreement below 0.016 degrees. Historical Newton failures remain recorded. Production stays scripted; wheel contours and attachment review remain open. See [movement 179](movement-179.md).

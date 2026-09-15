@@ -1,9 +1,9 @@
 {
   "movement": 179,
   "poses": 129,
-  "meshes": 61,
-  "pairs": 1366,
-  "queries": 24337144,
+  "meshes": 42,
+  "pairs": 720,
+  "queries": 16157732,
   "intersections": {},
   "sources": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "file": "src/simulation/authored-engine-reversers.js",
-      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+      "sha256": "1835ad1654efe831d0cffb092dad6d77f0df713a7662252ace9fc191ba922f05"
     },
     {
       "file": "src/simulation/primitives.js",

@@ -1,7 +1,7 @@
 {
   "movement": 179,
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Rounded gab, corrected leftward lifting handle, pin heads and front framing. Native stop-contact stability and wheel-outline fit remain open.",
+  "scope": "Fitted wheel assembly, source foundation and curved neck, attached stop/marks, aligned link eyes and front framing. Checked packaged desktop/mobile playback after the final geometry changes.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-engine-reversers.js",
-      "sha256": "f51ea85b74fd6ed9e2196632638e56f4bf9e8fb4e34497686e62c3c8780f4cde"
+      "sha256": "1835ad1654efe831d0cffb092dad6d77f0df713a7662252ace9fc191ba922f05"
     }
   ]
 }

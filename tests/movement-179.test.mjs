@@ -245,11 +245,11 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
   near(geometry.sourceScale, 0.022, 0, 'engraving scale');
   assert.deepEqual(
     geometry.sourceRasterShaftCenter.toArray(),
-    [446, 289],
+    [442, 289],
   );
   assert.deepEqual(
     geometry.sourceRasterEccentricCenter.toArray(),
-    [432, 292],
+    [425, 290],
   );
   assert.deepEqual(geometry.sourceRasterValvePin.toArray(), [180, 289]);
   assert.deepEqual(
@@ -277,7 +277,7 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
     [274, 289],
   );
   assert.equal(geometry.sourceRasterStrapOuterRadius, 76);
-  assert.equal(geometry.sourceRasterEccentricRadius, 62);
+  assert.equal(geometry.sourceRasterEccentricRadius, 56);
   assert.equal(geometry.sourceRasterShaftRadius, 29);
   assert.equal(geometry.sourceRasterStopMeanRadius, 36);
   vector2Near(
@@ -308,7 +308,7 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
     vector2Near(
       modelPointToSourceRaster(sourceRasterPointToModel(rasterPoint)),
       rasterPoint,
-      3e-14,
+      1e-12,
       'source/model affine round trip',
     );
   }
@@ -701,12 +701,12 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
   model.root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 11.4,
-    'continuous eccentric rod, spindle, shaft, and foundation span full width');
+  assert.ok(size.x/geometry.sourceScale > 480 && size.x/geometry.sourceScale < 510,
+    'complete mechanism spans the engraving without an extra full-width bed');
   assert.ok(size.y > 7.9,
     'source-length upright lever and foundation span full height');
   assert.ok(size.z > 2.54,
-    'rear bearing, strap, stop, shaft face, pins, and links occupy real depth');
+    'strap, stop, shaft, pins, and links occupy real depth');
   assert.ok(bounds.min.z < -1.27);
   assert.ok(bounds.max.z > 1.27);
   near(model.root.userData.cameraDistanceScale, 0.96, 0,

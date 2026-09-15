@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {createAuthoredEngineReverserMovement} from '../src/simulation/authored-engine-reversers.js';
@@ -15,9 +16,12 @@ try{
   return bounds;
  };
  const features=[['lifting grip',b.liftingHandleGrip,[73,193,96,203]],['gab',b.gabBridge,[162,271,198,298]],
-  ['strap',b.strapBody,[345,213,498,366]],['eccentric disk',b.eccentricDisk,[371,234,483,346]]]
+  ['strap',b.strapBody,[345,213,498,366]],['eccentric disk',b.eccentricDisk,[371,234,483,346]],
+  ['shaft face',b.shaftFace,[417,260,475,318]],['foundation',b.baseRail,[20,370,190,391]]]
   .map(([name,mesh,expected])=>{const actual=extent(mesh);return{name,actual,expected,maximumErrorPixels:Math.max(...actual.map((v,i)=>Math.abs(v-expected[i])))};});
  const sourceHandleTip=project(b.liftingHandleGrip.getWorldPosition(new THREE.Vector3()));
- const report={movement:179,status:'source-fit-open',method:'Initial front projection. Manually selected raster bounds include hand-drawn perspective; this diagnostic does not assume all source circles are exactly concentric.',features,sourceHandleTip:sourceHandleTip.toArray(),sources:['scripts/review-engine-reverser-source.mjs','src/simulation/authored-engine-reversers.js','public/engravings/mm_179.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+ const qualified=features.every(f=>f.maximumErrorPixels<5);
+ const report={movement:179,status:qualified?'selected-source-features-checked':'source-fit-open',method:'Initial front projection of actual geometry vertices. Manually selected raster bounds include hand-drawn perspective. The shared bearing center and four-pixel shaft-center adjustment preserve concentric bearing surfaces and full hand-link reach. Unillustrated engine supports are sectioned away.',features,sourceHandleTip:sourceHandleTip.toArray(),sources:['scripts/review-engine-reverser-source.mjs','src/simulation/authored-engine-reversers.js','public/engravings/mm_179.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
  fs.writeFileSync('docs/validation/179-source-fit.json',JSON.stringify(report,null,2)+'\n');console.log(report);
+ assert.ok(qualified,'selected source boundaries fit within five pixels');
 }finally{disposeObject3D(model.root);}
