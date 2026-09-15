@@ -59469,7 +59469,7 @@ test('movement 173 uses one tappet-indexed screw to vary a slotted silk-guide st
     'source vertical slot half-length');
   near(geometry.guideRodLength, 339 * expectedScale, 1e-15,
     'source visible guide-rod length');
-  near(geometry.guideY, -21 * expectedScale, 1e-15,
+  near(geometry.guideY, 3 * expectedScale, 1e-15,
     'source guide-rod ordinate');
   near(geometry.screwLead, 0.45, 1e-15,
     'single-start screw lead');
@@ -59919,9 +59919,14 @@ test('movement 173 uses one tappet-indexed screw to vary a slotted silk-guide st
     'rear screw, rotating disk, front slotted yoke, and fixed frame occupy real depth');
   assert.ok(bounds.min.z < -1.1);
   assert.ok(bounds.max.z > 0.7);
-  assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x);
+  vectorNear(model.cameraDirection, Z_AXIS, 0, 'front engraving view');
+  assert.equal(model.root.userData.hideGround, true);
+  model.root.traverse(object => {
+    for (const material of [object.material].flat().filter(Boolean)) assert.equal(material.fog, false);
+  });
+  model.update(7);
+  model.reset();
+  assert.equal(model.root.userData.kinematics.time, 0);
 
   // The next sequential model is now independently authored as Movement 174.
   const movement172 = createMovementModel(catalog.movements[171]);

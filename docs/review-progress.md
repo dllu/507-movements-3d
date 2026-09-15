@@ -1,3 +1,12 @@
+# Review open: 173 tappet-indexed silk traverse
+
+Corrected the guide-rod ordinate by 24 source pixels, restored the front view,
+disabled fog/ground and added exact Restart. The finite first-contact audit
+finds tappet/wheel overlap in 185 of 257 poses; the prescribed indexing curve
+is not mechanically validated. The model test and build pass, but contact,
+source geometry and whole-assembly clearance remain open. See
+[movement 173](movement-173.md). Continue with 173; the full review remains active.
+
 # Shipped reconstruction: 172 slider-crank egg curve
 
 Seven physical meshes and a dashed trajectory replace the oversized scene.

@@ -83,8 +83,8 @@ function tappetIndexedSilkTraverse() {
   const sourceNutWrist = new THREE.Vector2(159, 310);
   const sourceSlotTop = new THREE.Vector2(160, 169);
   const sourceSlotBottom = new THREE.Vector2(160, 407);
-  const sourceVisibleGuideEnd = new THREE.Vector2(499, 307);
-  const sourceGuideY = 307;
+  const sourceVisibleGuideEnd = new THREE.Vector2(499, 283);
+  const sourceGuideY = 283;
   const diskOuterRadius = 2.2;
   const sourceScale = diskOuterRadius / sourceDiskOuterRadius;
   const sourceVector = (from, to) => new THREE.Vector2(
@@ -897,6 +897,9 @@ function tappetIndexedSilkTraverse() {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.canonicalStates = canonicalStates;
   root.userData.fidelity = 'authored';
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.materialsIgnoreSceneFog = true;
   root.userData.geometry = geometry;
   root.userData.indexLawAtCarrierTurn = indexLawAtCarrierTurn;
   root.userData.mechanism =
@@ -918,11 +921,15 @@ function tappetIndexedSilkTraverse() {
   };
   update(0);
 
+  root.traverse((object) => {
+    for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
+  });
   markShadows(root);
   diskFace.castShadow = false;
   diskFace.receiveShadow = false;
   return {
-    cameraDirection: new THREE.Vector3(7.6, 5.2, 12.8),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
+    reset: () => update(0),
     root,
     update,
   };

@@ -1,0 +1,108 @@
+{
+  "movement": 173,
+  "status": "contact-reconstruction-open",
+  "method": "First indexing encounter, 257 poses. Signed nearest distance from rendered spherical tappet center to every finite wheel mesh minus actual sphere radius; negative means overlap. Uniform unscaled mesh transforms. Selected engraving landmarks measured separately from model constants.",
+  "minimumSphereToWheelGap": -0.15006449484154244,
+  "maximumSphereToWheelGap": 0.03312777847928601,
+  "penetratingSamples": 185,
+  "separatedSamples": 72,
+  "landmarks": [
+    {
+      "name": "nut wrist",
+      "source": [
+        159,
+        310
+      ],
+      "projected": [
+        162.85787965616043,
+        315.72836676217764
+      ],
+      "errorPixels": 6.906331964468413
+    },
+    {
+      "name": "tappet wheel",
+      "source": [
+        351,
+        179
+      ],
+      "projected": [
+        355.8024642014894,
+        185.78609553777247
+      ],
+      "errorPixels": 8.313528435890653
+    },
+    {
+      "name": "guide rod center",
+      "source": [
+        329.5,
+        283
+      ],
+      "projected": [
+        332.35787965616043,
+        283
+      ],
+      "errorPixels": 2.857879656160435
+    }
+  ],
+  "samples": [
+    {
+      "fraction": 0,
+      "screwAngle": 0,
+      "sphereToWheelGap": 0.03312777847928601
+    },
+    {
+      "fraction": 0.125,
+      "screwAngle": -0.005603290933526721,
+      "sphereToWheelGap": 0.010196492047300526
+    },
+    {
+      "fraction": 0.25,
+      "screwAngle": -0.036133769670195104,
+      "sphereToWheelGap": -0.11706039627181139
+    },
+    {
+      "fraction": 0.375,
+      "screwAngle": -0.09606554684133828,
+      "sphereToWheelGap": -0.05228827709352206
+    },
+    {
+      "fraction": 0.5,
+      "screwAngle": -0.17453292519943295,
+      "sphereToWheelGap": -0.011486942738940853
+    },
+    {
+      "fraction": 0.625,
+      "screwAngle": -0.2530003035575276,
+      "sphereToWheelGap": -0.052288279303758775
+    },
+    {
+      "fraction": 0.75,
+      "screwAngle": -0.3129320807286708,
+      "sphereToWheelGap": -0.11706040224690648
+    },
+    {
+      "fraction": 0.875,
+      "screwAngle": -0.3434625594653395,
+      "sphereToWheelGap": 0.010196506372449218
+    },
+    {
+      "fraction": 1,
+      "screwAngle": -0.3490658503988659,
+      "sphereToWheelGap": 0.033127777681252024
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-silk-traverse-existing.mjs",
+      "sha256": "295972cb9f89e4661c83a8bce37b6b17a73ddd0ad2ab252d3ac1d2d0e66df885"
+    },
+    {
+      "file": "src/simulation/authored-silk-traverses.js",
+      "sha256": "b65733be04875cb3f99f592eef52a07e4ce0e31ad920e09fd4ea47e94e3957e0"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
