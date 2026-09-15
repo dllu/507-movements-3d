@@ -1,11 +1,12 @@
 # Review open: 175 branch-transfer crank
 
-Original animation callbacks agree with the analytic motion at 1,441 phases,
-but source registration leaves a 69.87-pixel slider mismatch. The engraving
-and animation have incompatible link proportions. The finite-solid baseline
-finds 11 interfering pairs. Fog, ground and initial camera are fixed; build
-and desktop/mobile rendering checks pass. Geometry and source fit remain open.
-See [movement 175](movement-175.md). Continue with 175.
+Rebuilt bored links, retained pins and a shorter guide shoe replace the eleven
+interfering pairs. All cross-body pairs among 12 meshes pass 525 sampled poses,
+including exact branch transfers. Original animation agreement, build and
+desktop/mobile checks pass; catalog playback now preserves eight seconds.
+The 69.87-pixel source mismatch remains: engraving and animation proportions
+are incompatible and require a constrained fit. See [movement 175](movement-175.md).
+Continue with 175; the full review remains active.
 
 # Shipped reconstruction: 174 twin-jaw bench clamp
 

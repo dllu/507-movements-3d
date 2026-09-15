@@ -6,11 +6,13 @@ for(const [group,family]of groups)group.traverse(o=>{if(o.isMesh){const name=o.u
 const names=Object.keys(meshes),parts=Object.fromEntries(names.map(n=>[n,{surface:solidSurface(meshes[n].geometry),points:surfacePoints(meshes[n].geometry)}]));
 const pairs=[];for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(families[names[i]]!==families[names[j]])pairs.push([names[i],names[j]]);
 let queries=0;const intersections={};
-try{for(let i=0;i<=128;i++){m.update(8*i/128);m.root.updateMatrixWorld(true);
+const g=m.root.userData.geometry;
+const times=[...Array.from({length:513},(_,i)=>8*i/512),...[1,2,g.lowerDeadCenterTurn+2,g.upperDeadCenterTurn].flatMap(turn=>[-1e-7,0,1e-7].map(offset=>(turn-g.sourcePoseTurn+offset)/g.crankTurnsPerSecond))];
+try{for(const time of times){m.update(time);m.root.updateMatrixWorld(true);
  for(const [a,b]of pairs)for(const [from,to]of[[a,b],[b,a]]){
   if(!new THREE.Box3().setFromObject(meshes[from]).intersectsBox(new THREE.Box3().setFromObject(meshes[to])))continue;
   const matrix=meshes[to].matrixWorld.clone().invert().multiply(meshes[from].matrixWorld);
   for(const p of parts[from].points){queries++;const q=p.clone().applyMatrix4(matrix);if(!parts[to].surface.inside(q))continue;const depth=parts[to].surface.distance(q);if(depth>1e-6)intersections[a+'/'+b]=Math.max(intersections[a+'/'+b]??0,depth);}
  }}
- const report={movement:175,status:'existing-assembly-baseline',poses:129,meshes:names.length,pairs,queries,intersections,method:'All cross-rigid-family pairs at 129 poses; finite mesh vertices, edge midpoints and face centers. Includes decorative bore and eye rims; excludes the explicitly nonphysical orbit witness. Sampled diagnostic, not a passing clearance certification.',sources:['scripts/review-stroke-crank-solids.mjs','src/simulation/authored-stroke-cranks.js','tests/helpers/solid-surface.mjs'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};fs.writeFileSync('docs/validation/175-existing-solids.json',JSON.stringify(report,null,2)+'\n');console.log({meshes:names.length,queries,intersections});
+ const report={movement:175,status:'rebuilt-assembly-sampled-clearance-passed',poses:times.length,meshes:names.length,pairs,queries,intersections,method:'All cross-rigid-family pairs at 513 uniform poses plus exact branch transfers, piston reversals and nearby poses. Finite mesh vertices, edge midpoints and face centers; excludes the nonphysical dashed orbit. Sampled clearance, not continuous proof.',sources:['scripts/review-stroke-crank-solids.mjs','src/simulation/authored-stroke-cranks.js','tests/helpers/solid-surface.mjs','src/simulation/finite-plate-geometry.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};fs.writeFileSync('docs/validation/175-assembly-clearance.json',JSON.stringify(report,null,2)+'\n');console.log({meshes:names.length,queries,intersections});assert.equal(Object.keys(intersections).length,0);
 }finally{disposeObject3D(m.root);}

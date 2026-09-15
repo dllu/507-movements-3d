@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate,poly,circle,capsule,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -193,34 +194,6 @@ function makeSourceProportionedFrameShape(sourceScale) {
   return shape;
 }
 
-function makeCapsuleOutlineCurve(
-  centerX,
-  lowerCenterY,
-  upperCenterY,
-  radius,
-  z,
-) {
-  const points = [];
-  const arcSegments = 24;
-  for (let index = 0; index <= arcSegments; index += 1) {
-    const angle = Math.PI - Math.PI * index / arcSegments;
-    points.push(new THREE.Vector3(
-      centerX + radius * Math.cos(angle),
-      upperCenterY + radius * Math.sin(angle),
-      z,
-    ));
-  }
-  for (let index = 0; index <= arcSegments; index += 1) {
-    const angle = -Math.PI * index / arcSegments;
-    points.push(new THREE.Vector3(
-      centerX + radius * Math.cos(angle),
-      lowerCenterY + radius * Math.sin(angle),
-      z,
-    ));
-  }
-  return new THREE.CatmullRomCurve3(points, true, 'centripetal');
-}
-
 function makeCrankAssembly({
   crankPlaneZ,
   crankRadius,
@@ -234,35 +207,13 @@ function makeCrankAssembly({
   crank.userData.axis = Z_AXIS.clone();
   crank.userData.role = 'single-output-crank-rotor';
 
-  const arm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.30, depth),
-    drivenMaterial,
-  );
-  arm.position.x = -crankRadius / 2;
-  arm.userData.role = 'output-crank-arm';
-  const fixedBoss = cylinderAlongZ(0.275, depth, drivenMaterial, 40);
-  fixedBoss.userData.role = 'output-crank-fixed-center-boss';
-  const movingBoss = cylinderAlongZ(0.14, depth, drivenMaterial, 32);
-  movingBoss.position.x = -crankRadius;
-  movingBoss.userData.role = 'output-crank-pin-boss';
-  const fixedEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.038, 8, 40),
-    darkMaterial,
-  );
-  fixedEye.position.z = depth / 2 + 0.012;
-  fixedEye.userData.role = 'output-crank-center-eye';
-  const movingEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.09, 0.025, 8, 32),
-    darkMaterial,
-  );
-  movingEye.position.set(-crankRadius, 0, depth / 2 + 0.012);
-  movingEye.userData.role = 'output-crank-pin-eye';
-  const rotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 0.052, 0.034),
-    whiteMaterial,
-  );
-  rotationIndex.position.set(-0.19, 0, depth / 2 + 0.045);
-  rotationIndex.userData.role = 'white-index-fixed-to-output-crank';
+  const outline=polygonClipping.union(capsule([-crankRadius,0],[0,0],.14,48),poly(circle([0,0],.275,96)));
+  const bored=polygonClipping.difference(outline,poly(circle([0,0],.165,96)),poly(circle([-crankRadius,0],.080,64)));
+  const arm=new THREE.Mesh(plate(bored,-depth/2,depth/2),drivenMaterial);
+  arm.userData.role='bored-output-crank';
+  // Retain named reference anchors without decorative intersecting geometry.
+  const fixedBoss=new THREE.Object3D(),movingBoss=new THREE.Object3D(),rotationIndex=new THREE.Object3D();
+  movingBoss.position.x=-crankRadius;
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.x = -crankRadius;
   crankPinAnchor.userData.role = 'analytic-output-crank-pin-anchor';
@@ -270,8 +221,6 @@ function makeCrankAssembly({
     arm,
     fixedBoss,
     movingBoss,
-    fixedEye,
-    movingEye,
     rotationIndex,
     crankPinAnchor,
   );
@@ -297,29 +246,11 @@ function makeConnectingRod({
   rod.userData.role = 'single-rigid-piston-connecting-rod';
   rod.userData.length = rodLength;
 
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(rodLength, 0.15, depth),
-    driverMaterial,
-  );
-  body.position.x = rodLength / 2;
-  body.userData.role = 'piston-connecting-rod-shank';
-  const crankEyeBody = cylinderAlongZ(0.20, depth, driverMaterial, 36);
-  crankEyeBody.userData.role = 'connecting-rod-crank-eye-body';
-  const sliderEyeBody = cylinderAlongZ(0.12, depth, driverMaterial, 32);
-  sliderEyeBody.position.x = rodLength;
-  sliderEyeBody.userData.role = 'connecting-rod-slider-eye-body';
-  const crankEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.145, 0.030, 8, 36),
-    darkMaterial,
-  );
-  crankEye.position.z = depth / 2 + 0.012;
-  crankEye.userData.role = 'connecting-rod-crank-eye';
-  const sliderEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.082, 0.022, 8, 32),
-    darkMaterial,
-  );
-  sliderEye.position.set(rodLength, 0, depth / 2 + 0.012);
-  sliderEye.userData.role = 'connecting-rod-slider-eye';
+  const outline=polygonClipping.union(capsule([0,0],[rodLength,0],.075,48),poly(circle([0,0],.18,96)),poly(circle([rodLength,0],.12,96)));
+  const bored=polygonClipping.difference(outline,poly(circle([0,0],.080,64)),poly(circle([rodLength,0],.075,64)));
+  const body=new THREE.Mesh(plate(bored,-depth/2,depth/2),driverMaterial);
+  body.userData.role='bored-piston-connecting-rod';
+  const crankEye=new THREE.Object3D(),sliderEye=new THREE.Object3D();sliderEye.position.x=rodLength;
   const rodCrankEyeAnchor = new THREE.Object3D();
   rodCrankEyeAnchor.userData.role = 'analytic-rod-crank-eye-anchor';
   const rodSliderEyeAnchor = new THREE.Object3D();
@@ -327,8 +258,6 @@ function makeConnectingRod({
   rodSliderEyeAnchor.userData.role = 'analytic-rod-slider-eye-anchor';
   rod.add(
     body,
-    crankEyeBody,
-    sliderEyeBody,
     crankEye,
     sliderEye,
     rodCrankEyeAnchor,
@@ -450,36 +379,8 @@ function oneRevolutionPerPistonStrokeCrank() {
   framePlate.userData.openingCount = 3;
   framePlate.userData.role = 'fixed-frame-with-three-real-openings';
   const frameFrontZ = frameCenterZ + frameDepth / 2 + 0.018;
-  const guideOutline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      makeCapsuleOutlineCurve(
-        guideOffset,
-        -guideHalfLength,
-        guideHalfLength,
-        guideSlotRadius,
-        frameFrontZ,
-      ),
-      144,
-      0.018,
-      6,
-      true,
-    ),
-    darkMaterial,
-  );
-  guideOutline.userData.fixed = true;
-  guideOutline.userData.role = 'fixed-piston-guide-slot-outline';
-  const shaftBoreOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      sourceAnimationScale,
-      0.022,
-      8,
-      48,
-    ),
-    darkMaterial,
-  );
-  shaftBoreOutline.position.z = frameFrontZ;
-  shaftBoreOutline.userData.fixed = true;
-  shaftBoreOutline.userData.role = 'fixed-crank-shaft-bore-outline';
+  // The guide and shaft bore are actual openings in the frame plate.
+  const guideOutline=new THREE.Object3D(),shaftBoreOutline=new THREE.Object3D();
   const crankCenterAnchor = new THREE.Object3D();
   crankCenterAnchor.userData.fixed = true;
   crankCenterAnchor.userData.role = 'analytic-fixed-crank-center';
@@ -500,8 +401,10 @@ function oneRevolutionPerPistonStrokeCrank() {
     guideBottomAnchor,
   );
 
-  const fixedShaft = cylinderAlongZ(0.16, 1.28, darkMaterial, 36);
-  fixedShaft.position.z = 0.01;
+  const fixedShaft = cylinderAlongZ(0.16, 0.86, darkMaterial, 64);
+  fixedShaft.position.z = -0.205;
+  const shaftHead=new THREE.Mesh(new THREE.CylinderGeometry(.21,.21,.04,64),darkMaterial);
+  shaftHead.position.y=.435;shaftHead.userData.role='fixed-shaft-retaining-head';fixedShaft.add(shaftHead);
   fixedShaft.userData.axis = Z_AXIS.clone();
   fixedShaft.userData.fixed = true;
   fixedShaft.userData.role = 'fixed-crank-shaft-through-frame';
@@ -530,7 +433,7 @@ function oneRevolutionPerPistonStrokeCrank() {
   slider.userData.role = 'piston-crosshead-constrained-to-vertical-slot';
   slider.userData.translationAxis = Y_AXIS.clone();
   const sliderBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 0.48, sliderBodyDepth),
+    new THREE.BoxGeometry(0.15, 0.12, sliderBodyDepth),
     driverMaterial,
   );
   sliderBody.position.z = sliderBodyCenterZ;
@@ -538,12 +441,7 @@ function oneRevolutionPerPistonStrokeCrank() {
   const sliderFace = cylinderAlongZ(0.13, 0.13, driverMaterial, 32);
   sliderFace.position.z = crankPlaneZ + 0.08;
   sliderFace.userData.role = 'piston-crosshead-front-boss';
-  const sliderIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.052, 0.18, 0.032),
-    whiteMaterial,
-  );
-  sliderIndex.position.z = crankPlaneZ + 0.16;
-  sliderIndex.userData.role = 'white-index-on-piston-crosshead';
+  const sliderIndex = new THREE.Object3D();
   const sliderPinAnchor = new THREE.Object3D();
   sliderPinAnchor.position.z = rodPlaneZ;
   sliderPinAnchor.userData.role = 'analytic-piston-slider-pin-anchor';
@@ -565,17 +463,16 @@ function oneRevolutionPerPistonStrokeCrank() {
   );
   sliderPinShaft.position.z = (rodPlaneZ + sliderBodyCenterZ) / 2;
   sliderPinShaft.userData.role = 'crosshead-pin-joining-rod-to-guide-shoe';
+  for(const [shaft,name] of [[crankPinShaft,'crank-pin-retaining-head'],[sliderPinShaft,'slider-pin-retaining-head']]){
+    const head=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.04,64),darkMaterial);
+    head.position.y=.56-shaft.position.z;head.userData.role=name;shaft.add(head);
+  }
 
   // A faint orbit circle corresponds to the dashed construction circle in
   // the engraving.  It is explicitly a witness, never a physical member.
-  const crankOrbitWitness = new THREE.Mesh(
-    new THREE.TorusGeometry(crankRadius, 0.012, 5, 80),
-    matte(PALETTE.muted, {
-      opacity: 0.34,
-      roughness: 0.9,
-      transparent: true,
-    }),
-  );
+  const orbitPoints=Array.from({length:129},(_,i)=>new THREE.Vector3(crankRadius*Math.cos(FULL_TURN*i/128),crankRadius*Math.sin(FULL_TURN*i/128),0));
+  const crankOrbitWitness=new THREE.Line(new THREE.BufferGeometry().setFromPoints(orbitPoints),new THREE.LineDashedMaterial({color:PALETTE.muted,dashSize:.08,gapSize:.06,fog:false}));
+  crankOrbitWitness.computeLineDistances();
   crankOrbitWitness.position.z = frameFrontZ + 0.015;
   crankOrbitWitness.userData.role = 'nonphysical-crank-orbit-witness';
   crankOrbitWitness.userData.witnessOnly = true;
@@ -874,7 +771,8 @@ function oneRevolutionPerPistonStrokeCrank() {
   root.userData.materialsIgnoreSceneFog = true;
   root.userData.reconstructionStatus = 'candidate';
   root.userData.supportsRestart = true;
-  root.userData.animationTiming = { period: cyclePeriod };
+  root.userData.animationTiming = { authoredCyclePeriod: cyclePeriod };
+  root.userData.minimumDisplayCycleSeconds = cyclePeriod;
   root.userData.canonicalStates = canonicalStates;
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;

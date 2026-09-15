@@ -1,10 +1,10 @@
 # Movement 175: branch-transfer crank — reconstruction open
 
 The existing analytic motion agrees with the executable animation on the
-[original page](https://507movements.com/mm_175.html), but its visible assembly
-needs rebuilding. The front view now uses a nearly orthographic camera, ignores
-scene fog, hides the scene ground and supports exact Restart. The eight-second
-two-turn cycle is retained while geometry is reviewed.
+[original page](https://507movements.com/mm_175.html), but its proportions still
+need a constrained fit to the engraving. The front view now uses a nearly orthographic camera, ignores
+scene fog, hides the scene ground and supports exact Restart. The catalog timing now explicitly preserves an eight-second
+two-turn cycle (playback time scale 1).
 
 ## Independent source evidence
 
@@ -29,9 +29,25 @@ by the original animation: successive piston reversals enclose 1.36491 and
 0.63509 crank turns. Their sum is two turns per full piston cycle. Preserve
 this distinction when describing or changing the reconstruction.
 
-## Existing solid interference
+## Rebuilt joints and clearance
 
-The [finite-solid baseline](validation/175-existing-solids.json) checks 21 meshes,
+The crank and connecting rod are each one finite bored plate. The shorter
+fixed shaft and its retaining head remain behind the rod even at exact
+branch-transfer poses. Two retained link pins pass through actual bores; the
+shorter guide shoe stays within the rounded slot throughout its stroke.
+Decorative bore tubes, overlapping eye meshes and white indices are removed.
+The orbit witness is a dashed line. Axial dimensions and bearing clearances
+are reconstruction assumptions.
+
+The [current clearance audit](validation/175-assembly-clearance.json) checks
+12 physical meshes at 513 uniform poses plus both exact branch transfers,
+piston reversals and nearby poses: 525 total, 20,216,700 surface queries, no
+sampled cross-body intersections. It includes every cross-rigid-family pair.
+This is a finite-surface sampling check, not continuous collision proof.
+
+## Historical solid interference
+
+The [finite-solid baseline](validation/175-existing-solids.json) against commit 757dafc checks 21 meshes,
 all cross-rigid-family pairs and 129 poses. It performs 6,178,026 surface queries
 and finds 11 interfering pairs. The shaft passes through the unbored crank,
 link pins pass through unbored rods, and the slider shoe hits the rounded guide
@@ -46,8 +62,8 @@ was inspected beside the engraving and confirms the geometry mismatch.
 
 ## Next work
 
-Rebuild finite bored links and supported pins, replace decorative outlines with
-real edges, fit the frame independently, and choose/document a constrained
-source fit that preserves the branch-transfer mechanism despite inconsistent
-engraving dimensions. Qualify full-cycle guide clearance and the tangent branch
-transition. Keep 175 open; the full 507-movement review remains active.
+Fit the frame independently and choose/document a constrained source fit
+that preserves the branch-transfer mechanism despite inconsistent engraving
+dimensions. The branch choice remains prescribed by the verified source oracle;
+no passive dynamic transition is claimed. Requalify clearance after geometry
+changes. Keep 175 open; the full 507-movement review remains active.
