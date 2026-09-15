@@ -1,24 +1,25 @@
 import {createMujocoSimulation} from '../mujoco/simulation.js';
+import {fanGovernorTrack,fanGovernorTrackCells} from './source.js';
 
 // Contact prototype, not yet the visible 147 model. Two crowned rollers run
 // on convex cells of the rotating tracks. Crosshead lift and lag are free.
-export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1.5,speed=3,gravity=9.81}={}){
- const radius=1.694,rollerRadius=.21,base=-.55,curvature=.6;
+export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1.5,speed=3,gravity=9.81,massProperties}={}){
+ const {radius,rollerRadius,base,curvature}=fanGovernorTrack;
  // Increasing slope supplies increasing gravitational restoring torque.
  // This profile is inferred, not dimensioned by the source engraving.
- const height=angle=>base+curvature*Math.max(0,-angle)**2;
  const assets=[],geoms=[];
- for(let side=0;side<2;side++)for(let i=0;i<segments/2;i++){
-  const start=-Math.PI/2+i*Math.PI/(segments/2),end=start+Math.PI/(segments/2),vertices=[];
-  for(const a of [start,end])for(const r of [radius-.30,radius+.30])for(const y of [base-.15,height(a)])
-   vertices.push(r*Math.cos(a+side*Math.PI),y,-r*Math.sin(a+side*Math.PI));
-  const name=`track_${side}_${i}`;
-  assets.push(`<mesh name="${name}" vertex="${vertices.join(' ')}"/>`);
-  geoms.push(`<geom type="mesh" mesh="${name}" contype="1" conaffinity="2"/>`);
+ const inertial=(name,fallback)=>{
+  if(!massProperties)return fallback;
+  const m=massProperties[name],density=1/massProperties.crosshead.volume;
+  return `<inertial pos="${m.centroid.join(' ')}" mass="${m.volume*density}" fullinertia="${m.inertia.map(v=>v*density).join(' ')}"/>`;
+ };
+ for(const {name,vertices} of fanGovernorTrackCells(segments)){
+  assets.push(`<mesh name="${name}" vertex="${vertices.flat().join(' ')}"/>`);
+  geoms.push(`<geom name="${name}" type="mesh" mesh="${name}" contype="1" conaffinity="2"/>`);
  }
  const rollers=[-1,1].map((side,i)=>`<body name="roller${i}" pos="${side*radius} 0 0">
   <joint name="roll${i}" type="hinge" axis="1 0 0" damping=".000001"/>
-  <inertial pos="0 0 0" mass=".015" diaginertia=".000265 .000265 .000265"/>
+  ${inertial('roller'+i,'<inertial pos="0 0 0" mass=".015" diaginertia=".000265 .000265 .000265"/>')}
   <geom name="roller${i}" type="sphere" size="${rollerRadius}" contype="2" conaffinity="1"/>
  </body>`).join('');
  const xml=`<mujoco model="147 passive fan governor prototype"><compiler angle="radian" inertiafromgeom="false"/>
@@ -29,7 +30,7 @@ export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1
  <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>${geoms.join('')}</body>
  <body name="crosshead"><joint name="lift" type="slide" axis="0 1 0" damping=".03"/>
  <joint name="yaw" type="hinge" axis="0 1 0" damping=".01"/>
- <inertial pos="0 1.2 0" mass="1" diaginertia="2 1 2"/>${rollers}</body>
+ ${inertial('crosshead','<inertial pos="0 1.2 0" mass="1" diaginertia="2 1 2"/>')}${rollers}</body>
  </worldbody><actuator><position name="motor" joint="shaft" kp="100000" kv="1000"/></actuator></mujoco>`;
  const driveAt=time=>{
   const ramp=2,u=Math.min(time/ramp,1);
@@ -42,7 +43,7 @@ export function makeFanGovernorPhysics(mujoco,{timestep=.001,segments=160,drag=1
   const d=driveAt(time),w=data.qvel[2];data.ctrl[0]=d.angle+.01*d.velocity;
   data.qfrc_applied[2]=-drag*w*Math.abs(w);
  }});
- return Object.assign(physics,{description:{xml,options:{timestep,segments,drag,speed,gravity},radius,rollerRadius,base,curvature,driveAt},
+ return Object.assign(physics,{description:{xml,options:{timestep,segments,drag,speed,gravity},massProperties,radius,rollerRadius,base,curvature,driveAt},
   state:()=>({time:physics.data.time,shaft:physics.data.qpos[0],lift:physics.data.qpos[1],yaw:physics.data.qpos[2],
-    lag:physics.data.qpos[0]-physics.data.qpos[2],speed:physics.data.qvel[2],contacts:physics.data.ncon})});
+    lag:physics.data.qpos[0]-physics.data.qpos[2],speed:physics.data.qvel[2],roll0:physics.data.qpos[3],roll1:physics.data.qpos[4],contacts:physics.data.ncon})});
 }

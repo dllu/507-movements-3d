@@ -5,8 +5,10 @@ the inclined planes in 64 of 65 tested poses, despite the old zero-error contact
 metadata. Lag and lift are currently prescribed from speed rather than produced
 by drag and contact. A separate MuJoCo prototype now produces passive lift from
 drag and contact, with speed/drag controls and timestep/mesh convergence tests.
-Its assumed crowned rollers, increasing-slope tracks and lumped inertias still
-need source geometry and surface validation before baking and registration;
+Candidate fan/weight geometry now supplies mass properties; visible crowned
+rollers and shared convex tracks pass sampled compiled-surface/contact checks.
+The track ends, output lever and complete assembly still need validation before
+baking and registration;
 see [movement 147](movement-147.md). This review remains incomplete.
 
 # Completed review: 146 measured framed yoke

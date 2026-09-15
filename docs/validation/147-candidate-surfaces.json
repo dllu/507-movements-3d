@@ -1,0 +1,102 @@
+{
+  "movement": 147,
+  "status": "candidate-working-surfaces",
+  "method": "Compiled track vertices compared with visible convex cells. Native contact points on both surfaces compared with visible track and bored crown meshes during a six-second startup. Spherical proxy poles extend outside the crowns; contact points must remain inside the visible crown width. Contact copies are explicitly released.",
+  "summary": {
+    "compiledVertices": 1280,
+    "maximumCompiledError": 3.242059984486973e-8,
+    "contactsChecked": 288,
+    "maximumCrownError": 0.00014048526019793889,
+    "maximumTrackError": 1.603399287931206e-8,
+    "minimumCrownEndMargin": 0.1006935338845273,
+    "maximumPenetration": 0.00026413626186319594,
+    "maximumLatePenetration": 0.000057794811401501445
+  },
+  "mass": {
+    "crosshead": {
+      "volume": 6.889987912206013,
+      "centroid": [
+        -2.336467648737934e-16,
+        1.2652754025734967,
+        -8.20234214644833e-18
+      ],
+      "inertia": [
+        4.675481161988404,
+        5.758774876279425,
+        6.936447593130279,
+        -1.2311637080632621e-14,
+        -1.1174329690721851e-15,
+        8.646921030852507e-17
+      ]
+    },
+    "roller0": {
+      "volume": 0.02593775603636664,
+      "centroid": [
+        1.5817929016336523e-19,
+        -2.0872331374802604e-18,
+        3.000303955356734e-18
+      ],
+      "inertia": [
+        0.0005613324229317401,
+        0.0003792824929918888,
+        0.00037928249299188906,
+        -2.3910689581610956e-22,
+        5.856438736875436e-22,
+        4.378783970126021e-21
+      ]
+    },
+    "roller1": {
+      "volume": 0.02593775603636664,
+      "centroid": [
+        1.5817929016336523e-19,
+        -2.0872331374802604e-18,
+        3.000303955356734e-18
+      ],
+      "inertia": [
+        0.0005613324229317401,
+        0.0003792824929918888,
+        0.00037928249299188906,
+        -2.3910689581610956e-22,
+        5.856438736875436e-22,
+        4.378783970126021e-21
+      ]
+    }
+  },
+  "final": {
+    "time": 6.000000000000338,
+    "shaft": 15.552864700001006,
+    "lift": 0.34054951041482034,
+    "yaw": 14.530879582034242,
+    "lag": 1.0219851179667643,
+    "speed": 3.0000000000011697,
+    "roll0": -4.025528925992311,
+    "roll1": 4.025528198338025,
+    "contacts": 4
+  },
+  "sources": [
+    {
+      "file": "scripts/review-fan-governor-surfaces.mjs",
+      "sha256": "d4620e694c4b5d07173dc8646c49f8f1851f37baee21de1d454723271130d912"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/source.js",
+      "sha256": "1cd5ed9d60d609802c83269c5df040f13d172611f07e19122026ee3514482c56"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/geometry.js",
+      "sha256": "0aff9f7a0e0a5b3e507d1413464eaeb3dfbc9bfa5df2e40fe65c49da4e4161e6"
+    },
+    {
+      "file": "src/simulation/mujoco-fan-governor/physics.js",
+      "sha256": "8c846a8abd3741d36388738e59a22134cf36b534f33e3c836c8ef8386fd1c8db"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

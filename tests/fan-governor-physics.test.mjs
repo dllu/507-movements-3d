@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import loadMujoco from '@mujoco/mujoco';
 import {makeFanGovernorPhysics} from '../src/simulation/mujoco-fan-governor/physics.js';
+import {makeFanGovernorGeometry} from '../src/simulation/mujoco-fan-governor/geometry.js';
 const mujoco=await loadMujoco();
 const run=options=>{
  const p=makeFanGovernorPhysics(mujoco,options);
@@ -34,4 +35,19 @@ test('147 crosshead stays free when contact and gravity are removed',()=>{
   assert.ok(p.data.qpos[0]>initial[0]+1);
   for(let i=1;i<5;i++)assert.equal(p.data.qpos[i],initial[i]);
  }finally{p.dispose();p.dispose();}
+});
+test('147 candidate mass uses its visible bored weight, fans and crowned rollers',()=>{
+ const visual=makeFanGovernorGeometry(),mass=visual.root.userData.mass;
+ const p=makeFanGovernorPhysics(mujoco,{massProperties:mass});
+ try{
+  const body=p.id('mjOBJ_BODY','crosshead');
+  assert.ok(Math.abs(p.model.body_mass[body]-1)<1e-12);
+  assert.ok(Math.abs(p.model.body_ipos[3*body+1]-mass.crosshead.centroid[1])<1e-12);
+  const roller=p.id('mjOBJ_BODY','roller0');
+  assert.ok(Math.abs(p.model.body_mass[roller]-mass.roller0.volume/mass.crosshead.volume)<1e-12);
+  const panel=visual.root.userData.parts['fan-panel-1'];panel.geometry.computeBoundingBox();
+  const box=panel.geometry.boundingBox;
+  assert.ok(Math.abs((box.max.y-box.min.y)/(box.max.x-box.min.x)-196/84)<1e-6);
+  for(let i=0;i<6000;i++)p.step();assert.ok(p.state().lift>.25&&p.state().lift<.45);
+ }finally{p.dispose();visual.dispose();}
 });

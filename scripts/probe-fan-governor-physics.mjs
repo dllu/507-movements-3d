@@ -16,5 +16,5 @@ fs.writeFileSync('/dev/shm/147-physics-probe.json',JSON.stringify(runs,null,2)+'
 const report={movement:147,status:'passive-contact-prototype-only',
  assumptions:'Quadratic track rise, spherical crowned-roller contact, assumed inertias, quadratic air torque. No force is applied to lift and no crosshead coordinate is prescribed. Visible geometry is not yet matched to these surfaces.',
  runs:runs.map(r=>({options:r.options,final:r.samples.at(-1),lateHeightRange:[Math.min(...r.samples.filter(s=>s.time>4).map(s=>s.lift)),Math.max(...r.samples.filter(s=>s.time>4).map(s=>s.lift))]})),
- sources:['scripts/probe-fan-governor-physics.mjs','src/simulation/mujoco-fan-governor/physics.js','src/simulation/mujoco/simulation.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+ sources:['scripts/probe-fan-governor-physics.mjs','src/simulation/mujoco-fan-governor/physics.js','src/simulation/mujoco-fan-governor/source.js','src/simulation/mujoco/simulation.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
 fs.writeFileSync('docs/validation/147-passive-prototype.json',JSON.stringify(report,null,2)+'\n');

@@ -43,7 +43,7 @@ restoring torque does not increase with lift. Increasing slope gives a stable
 operating point in the tested range. This profile, lumped inertia, drag
 coefficient and crowned-roller contact are assumptions, not recovered dimensions
 or an aerodynamic calibration. The rotating track is decomposed into convex
-cells; the visible cylinders have not yet been replaced with matching crowns.
+cells; the shipped cylinders have not yet been replaced with matching crowns.
 
 [Prototype evidence](validation/147-passive-prototype.json) records six-second
 runs. At 3 rad/s shaft speed, crosshead center height settles near -0.335 without
@@ -58,3 +58,36 @@ The prototype is not registered in the application. Next: match source geometry
 and mass properties, check actual working surfaces and track-end margins during
 speed increases and decreases, then bake the validated motion. The original
 browser motion remains provisional until that replacement is ready.
+
+## Candidate geometry and working surfaces
+
+The separate `mujoco-fan-governor/geometry.js` candidate now has approximately
+84-by-196-pixel fan panels, a smoothed bored weight, stepped roller journals,
+bored crowned rollers and a track foundation connected to the shaft. A shared
+track-cell generator supplies both the visible convex solids and the physics
+meshes. The candidate is not registered in the application and does not yet
+include the regulating lever. The track endpoints and the complete assembly
+still need source and clearance review; the current high track ends extend
+above the operating rollers in the candidate view.
+
+Mass properties are integrated from the candidate weight, sleeves, arms, panels
+and rollers. An optional physics input uses these tensors and centers, normalizing
+the crosshead to one mass unit with a common density for its rollers. Uniform
+density, plate thicknesses, hollowing and small overlaps at rigid joins are
+approximations; this is not a measured material or mass calibration.
+
+[Working-surface evidence](validation/147-candidate-surfaces.json) compares all
+1,280 compiled track vertices with the visible cells (maximum error about
+`3.3e-8`). During the six-second startup it checks 288 native contacts against
+the visible crowns and tracks. Contact positions stay more than 0.10 units from
+the crown ends. The spherical proxy extends beyond the bored crown at its poles,
+but those regions do not contact the track in this run. Crown discretization
+error is below 0.00015 units; the maximum native penetration after two seconds
+is below 0.00006. These are sampled working-contact checks, not full-assembly
+collision validation. Contact copies are released explicitly, following the
+[WASM binding ownership guidance](https://github.com/google-deepmind/mujoco/blob/main/wasm/README.md).
+
+Four physics tests now pass, including compiled geometry-based mass and fan
+aspect ratio. Candidate front and oblique views were inspected. Next: finish
+the source-faithful assembly and output lever, validate acceleration and
+deceleration with track-end margins, then bake and register playback.
