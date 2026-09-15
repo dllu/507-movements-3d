@@ -1,0 +1,28 @@
+{
+  "movement": 153,
+  "method": "Matched 0.01-second samples in the sixth full disk revolution, native timesteps 0.00025 and 0.000125. Geometry and drive unchanged.",
+  "maximumCoordinateDifferences": [
+    {
+      "name": "disk",
+      "maximum": 0.00018403664078192605
+    },
+    {
+      "name": "bar",
+      "maximum": 0.000545127698417594
+    },
+    {
+      "name": "lever",
+      "maximum": 0.0013583229253162354
+    }
+  ],
+  "sources": [
+    {
+      "file": "/dev/shm/153-relieved-samples.json",
+      "sha256": "5db09c2499f171b9664715ea6e5fbcaf34ee8b7b3c51fe2e916f1e7e280929c6"
+    },
+    {
+      "file": "/dev/shm/153-relieved-fine-samples.json",
+      "sha256": "55aea8b9f518f9ec7ec499fbbc19296bbc777df8fd41aab6fc682d353f65c521"
+    }
+  ]
+}

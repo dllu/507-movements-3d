@@ -68,3 +68,55 @@ Next: reconstruct a mechanically possible elbow/stud release and handoff,
 checking finite arm-end contact against the source before changing production.
 A shorter output arm alone is rejected. Then validate passive cycles, physical
 supports, full rendered clearances and timestep sensitivity before baking.
+
+## Stepped input-arm candidate
+
+A subsequent depth-relief trial now produces repeated passive strokes. The
+new `mujoco-stud-reverser/geometry.js` keeps the original input-arm plan outline
+but raises its inner 100 source pixels above the disk stud ends. Only the
+remaining distal 19.08 pixels and rounded tip stay at working depth. The
+raised arm's rear face is Z=0.80; disk studs end at Z=0.73, leaving 0.07 axial
+clearance. The distal part extends forward to join the raised portion. This
+is an **inferred hidden step**, not a feature established by Brown's engraving.
+Both pieces exist as rendered solids and native collision meshes; the relief
+is not implemented by turning contacts off during part of the cycle.
+
+With guide frictionloss 2 and damping 1 (bar mass normalized to one), gravity
+returns the elbow against its lower stop and both followers remain passive.
+The original-length output arm is retained. The bar range in the sixth cycle
+is 0.04763–1.02468 at dt=0.00025, and 0.04708–1.02471 at dt=0.000125. Its held
+left position is about 3.4 source pixels to the right of the original pose.
+The drive takes 12 seconds per disk revolution, giving two six-second strokes.
+Guide resistance is a reconstruction assumption, not a measured source load.
+
+Halving the timestep changes matched sixth-cycle bar samples by at most
+0.0005452 (0.039 source pixels), disk angle by 0.0001841 rad, and elbow angle by
+0.0013584 rad. The third physics test checks sustained reciprocation and cycle
+closure. These tests do not yet qualify the full mechanism or its inferred
+friction model. The earlier rejected reports remain historical results for
+commit `ca75fc5`; they are not source-hash snapshots of this revised factory.
+
+Reproduction:
+
+    INPUT_MIN=1.4 FRICTION=2 REPORT=docs/validation/153-relieved-prototype.json node scripts/probe-stud-reverser.mjs
+    cp /dev/shm/153-passive-samples.json /dev/shm/153-relieved-samples.json
+    INPUT_MIN=1.4 FRICTION=2 DT=.000125 REPORT=docs/validation/153-relieved-fine.json node scripts/probe-stud-reverser.mjs
+    cp /dev/shm/153-passive-samples.json /dev/shm/153-relieved-fine-samples.json
+    node scripts/review-stud-reverser-relief.mjs
+    node --test tests/stud-reverser-physics.test.mjs
+
+The rendered relief audit covers 601 native poses and 1,812,616 bidirectional
+surface queries. The raised inner arm has no sampled penetration with either
+stud. Ten poses have soft contact on the distal driving face, maximum depth
+0.0005337 (0.0382 source pixels), rather than the old reset penetration of
+0.03722. This is a working-arm/stud audit only. Reports are
+`153-relieved-prototype.json`, `153-relieved-fine.json`,
+`153-relieved-refinement.json` and `153-relief-contact.json` under
+`docs/validation`. Source, right-stroke, return, release and oblique renders
+were captured from the actual engine; private screenshots are `/dev/shm/153-*`.
+
+Next: replace overlapping legacy bearing/axle solids with real bores, construct
+finite lower-stop and bar restraint hardware, recompute nonoverlapping masses,
+and inspect all body pairs through the passive trajectory. Then test the
+revised dynamics and bake a converged cycle. Production remains unchanged
+until those checks and packaged playback pass.

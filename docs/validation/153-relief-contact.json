@@ -1,0 +1,42 @@
+{
+  "movement": 153,
+  "method": "Bidirectional actual pin and stepped input-arm vertices, edge midpoints and triangle centers at 601 native poses from the sixth full cycle. Reports soft working contact separately from raised-arm clearance. Not a complete assembly or continuous collision proof.",
+  "summary": {
+    "poses": 601,
+    "checks": 1812616,
+    "penetratingPoses": 10,
+    "maxDepth": 0.0005336652439941425,
+    "raisedMaximumDepth": 0,
+    "witness": {
+      "time": 61.819999999402135,
+      "part": "distal-input-driving-face",
+      "depth": 0.0005336652439941425
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-stud-reverser-relief.mjs",
+      "sha256": "9a1c9b8d2a55bb04bfe874a8240269742f9faebede8e2c38d69e28400d8867a0"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/geometry.js",
+      "sha256": "2e6afc80c81840e623813a1eab73d99a918c3847011da33ad66281e34246d00e"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/sync.js",
+      "sha256": "2673bdf3033089947b40519cc9a4e1018aba8e2a7159b1585bd38043f2e90731"
+    },
+    {
+      "file": "/dev/shm/153-relieved-fine-samples.json",
+      "sha256": "55aea8b9f518f9ec7ec499fbbc19296bbc777df8fd41aab6fc682d353f65c521"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

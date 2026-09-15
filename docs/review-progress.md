@@ -1,12 +1,12 @@
 # Current review: 153 stud-driven bar reverser
 
-The old scripted elbow reset clips a disk stud: an independent rendered-mesh
-check finds 26 failing poses and 0.03722 maximum penetration. A new three-coordinate
-MuJoCo prototype confirms that the bar reaching its chosen left position does
-not release the stud. Both original and shortened-output-arm trials lose the
-operating cycle; neither is enabled in production. Two native independence
-tests pass. See [movement 153](movement-153.md). Contact release reconstruction
-is the next step; the catalog review and the separate 150 source fit remain open.
+An inferred stepped input arm now lets studs release without the old scripted
+reset. The rendered solids produce sustained passive MuJoCo strokes, with
+under 0.04 source-pixel bar change on timestep halving. Three native tests pass;
+a 601-pose working-arm audit finds no stud penetration into the raised portion
+and only small soft contact at the driving tip. Full bearings, bar restraints,
+nonoverlapping mass, assembly clearance and baking remain open. Production is
+unchanged. See [movement 153](movement-153.md); 150's source fit also remains open.
 
 # Shipped improvement: 152 two-stud trammel
 

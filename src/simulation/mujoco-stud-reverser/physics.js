@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {makeRelievedStudReverser} from './geometry.js';
 import {createAuthoredStudDriveMovement} from '../authored-stud-drives.js';
 import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 import {disposeObject3D} from '../dispose-model.js';
 
-export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,barFriction=.5,barDamping=1,leverDamping=.02,outputLengthScale=1,contact=true}={}){
- const visual=createAuthoredStudDriveMovement({id:153}),u=visual.root.userData,b=u.blocks,g=u.geometry,initial=u.stateAtTime(0);
+export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,barFriction=.5,barDamping=1,leverDamping=.02,outputLengthScale=1,inputContactMinimum=0,contact=true}={}){
+ const visual=inputContactMinimum?makeRelievedStudReverser({inputContactMinimum}):createAuthoredStudDriveMovement({id:153}),u=visual.root.userData,b=u.blocks,g=u.geometry,initial=u.stateAtTime(0);
  b.outputArm.userData.blocks.beam.scale.x=outputLengthScale;
  b.outputArm.userData.blocks.beam.position.x*=outputLengthScale;
  b.outputArm.userData.blocks.endCap.position.x*=outputLengthScale;
@@ -24,7 +25,8 @@ export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,bar
  b.pinAssemblies.forEach((a,i)=>add('disk-pin-'+i,a.userData.blocks.pin,b.diskRotor,'disk',1,6));
  add('bar-lug',b.undersideLug,b.slidingBar,'bar',2,1);
  add('bar-pin',b.barFrontStud,b.slidingBar,'bar',16,8);
- add('lever-input',b.inputArm,b.lever,'lever',4,1);
+ if(inputContactMinimum){add('lever-input',b.inputArm.userData.blocks.working,b.lever,'lever',4,1);add('raised-input',b.inputArm.userData.blocks.raised,b.lever,'lever',4,1);}
+ else add('lever-input',b.inputArm,b.lever,'lever',4,1);
  add('lever-output',b.outputArm,b.lever,'lever',8,16);
  const angle=initial.lever.worldAngle,period=g.diskPeriod,speed=-g.diskScreenAngularSpeed;
  const xml=`<mujoco model="153 passive impact prototype"><compiler angle="radian" inertiafromgeom="false"/><option timestep="${timestep}" gravity="0 -${gravity} 0" integrator="implicitfast" iterations="100" tolerance="1e-10"><flag multiccd="disable"/></option>
@@ -36,5 +38,5 @@ export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,bar
  const initialDisk=-initial.driverScreenAngle;
  const physics=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{data.qpos.set([initialDisk,0,angle]);data.qvel[0]=speed;},beforeStep:({data,time})=>{data.ctrl[0]=initialDisk+speed*time+.01*speed;}});
  disposeObject3D(visual.root);
- return Object.assign(physics,{description:{period,timestep,gravity,barFriction,barDamping,leverDamping,outputLengthScale,contact,mass,density,initialDisk,initialLever:angle,speed,assumptions:'Only disk is driven. Bar and lever move through frictionless finite contact. Gravity resets the lever against an inferred lower stop; bar guide friction and damping are inferred. Legacy overlapping decorative mesh volumes are provisional mass estimates. Finite bearings and nonworking collision pairs are not qualified.'},state:()=>({time:physics.data.time,qpos:Array.from(physics.data.qpos),qvel:Array.from(physics.data.qvel)})});
+ return Object.assign(physics,{description:{period,timestep,gravity,barFriction,barDamping,leverDamping,outputLengthScale,inputContactMinimum,contact,mass,density,initialDisk,initialLever:angle,speed,assumptions:'Only disk is driven. Bar and lever move through frictionless finite contact. Gravity resets the lever against an inferred lower stop; bar guide friction and damping are inferred. Legacy overlapping decorative mesh volumes are provisional mass estimates. Finite bearings and nonworking collision pairs are not qualified.'},state:()=>({time:physics.data.time,qpos:Array.from(physics.data.qpos),qvel:Array.from(physics.data.qvel)})});
 }
