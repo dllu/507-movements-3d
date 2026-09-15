@@ -1,11 +1,12 @@
 # Active reconstruction: 165
 
-165's existing top-point contact equation allows cam/roller overlap of nearly
-16 source pixels at sampled mesh points. A tested finite-roller solver shows that
-the legacy sinusoidal profile cannot retain the engraved pose without interference.
-Reconstruct the profile and inferred depth before native contact/baking. See
-[movement 165](movement-165.md). Production is unchanged. The full 507-movement
-review remains active; 147's mesh refinement and 150's source fit remain open.
+165's legacy finite-roller overlap is confirmed. A source-traced profile now
+clears the source roller with a sampled visible-outline change below 0.17 pixel.
+An unregistered MuJoCo study completes a contact-driven input revolution using
+MPR, while native CCD variants jam. Timestep and mesh refinement still change
+output by about three source pixels, so baking and registration remain pending.
+See [movement 165](movement-165.md) for evidence and reconstruction assumptions.
+The full 507-movement review remains active.
 
 # Shipped reconstruction: 164 knee press
 

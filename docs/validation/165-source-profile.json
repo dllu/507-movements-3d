@@ -1,0 +1,147 @@
+{
+  "movement": 165,
+  "status": "unregistered-source-profile-candidate",
+  "geometry": {
+    "scale": 0.018,
+    "axisPixelX": 341,
+    "outerRadius": 2.754,
+    "innerRadius": 0.55,
+    "topY": 4,
+    "rollerX": -0.09,
+    "rollerY": 2.326,
+    "rollerRadius": 0.882,
+    "rollerZ": 2.754,
+    "rollerDepth": 0.12,
+    "pivot": [
+      -3.114,
+      1.39,
+      2.9
+    ],
+    "outputPin": [
+      -5.382,
+      0.67,
+      2.9
+    ]
+  },
+  "trace": [
+    [
+      188,
+      268
+    ],
+    [
+      200,
+      263
+    ],
+    [
+      209,
+      242
+    ],
+    [
+      214,
+      228
+    ],
+    [
+      222,
+      223
+    ],
+    [
+      231,
+      229
+    ],
+    [
+      245,
+      254
+    ],
+    [
+      257,
+      263
+    ],
+    [
+      269,
+      266
+    ],
+    [
+      281,
+      262
+    ],
+    [
+      299,
+      239
+    ],
+    [
+      314,
+      226
+    ],
+    [
+      333,
+      222
+    ],
+    [
+      347,
+      224
+    ],
+    [
+      363,
+      239
+    ],
+    [
+      378,
+      263
+    ],
+    [
+      395,
+      268
+    ],
+    [
+      411,
+      264
+    ],
+    [
+      429,
+      248
+    ],
+    [
+      442,
+      225
+    ],
+    [
+      451,
+      223
+    ],
+    [
+      461,
+      229
+    ],
+    [
+      472,
+      251
+    ],
+    [
+      482,
+      264
+    ],
+    [
+      494,
+      268
+    ]
+  ],
+  "maximumRelief": 0.3534258552145455,
+  "maximumReliefPixels": 19.63476973414142,
+  "maximumVisibleChangePixels": 0.16779496589000886,
+  "minimumSampledRollerGap": -1.7763568394002505e-15,
+  "method": "Shape-preserving cubic interpolation of independently measured engraving silhouette. Map front projection onto a circular cam and repeat the front half on the rear. Raise the face to a conservative finite-cylinder envelope in the engraved pose, extended along angular rays beyond the outer-radius footprint to keep the relief continuous. No follower motion or force is prescribed. The inferred narrow roller depth and rear-half repetition remain assumptions.",
+  "sources": [
+    {
+      "file": "scripts/probe-wave-cam-source-profile.mjs",
+      "sha256": "4dd353f5d23874fcc75db942fdecec18e0d68b0f24626e48adb7ec2b93716a7c"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/profile.js",
+      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+    },
+    {
+      "file": "public/engravings/mm_165.png",
+      "sha256": "a247109bfc39ca36f8eb846b73d02a0160c2c90384014f7e38fabe814e527fda"
+    }
+  ]
+}

@@ -1,0 +1,371 @@
+{
+  "movement": 165,
+  "status": "unregistered-native-contact-study",
+  "method": "Full input revolution at 18 seconds. All-tick MuJoCo penetration and output-pin closure checks; 10 ms trajectory comparisons. Only cam actuated. No rendered-solid audit or settled playback qualification yet.",
+  "runs": [
+    {
+      "name": "native-multi",
+      "description": {
+        "movement": 165,
+        "timestep": 0.0005,
+        "segments": 360,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": true,
+        "collision": "native-multi",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 1,
+      "steps": 2000,
+      "maximumPenetration": 0.000497283739448733,
+      "maximumClosureError": 0.000002783311471371222,
+      "maximumCamTrackingError": 0.34889758957823824,
+      "outputRange": [
+        0.6859246950284079,
+        0.6863954977002011
+      ],
+      "final": {
+        "time": 0.9999999999999453,
+        "cam": 0.00016826082060857582,
+        "rocker": 0.30036829749411387,
+        "rollerAngle": 0.0028585439372229068,
+        "rollerSpeed": 0.000040318143321799106,
+        "rollerCenter": [
+          -0.09018456931100038,
+          2.326596092842105,
+          2.754
+        ],
+        "outputY": 0.6859571831631573,
+        "shoeX": 0.00013874092677321965,
+        "contacts": 7,
+        "penetration": 0.00018523481291531449,
+        "closure": 0.0000026431595052667285,
+        "qpos": [
+          0.00016826082060857582,
+          0.00019712666400171995,
+          0.0028585439372229068,
+          -0.00045072671579044166,
+          0.00013874092677321965
+        ],
+        "qvel": [
+          0.000026338587889068912,
+          0.00006155255523065408,
+          0.000040318143321799106,
+          -0.00013784345557875345,
+          0.000043332699013303984
+        ]
+      }
+    },
+    {
+      "name": "native-single",
+      "description": {
+        "movement": 165,
+        "timestep": 0.0005,
+        "segments": 360,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": true,
+        "collision": "native-single",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 18,
+      "steps": 36000,
+      "maximumPenetration": 0.03944526401857118,
+      "maximumClosureError": 0.00008154939710505937,
+      "maximumCamTrackingError": 5.392480191607825,
+      "outputRange": [
+        0.6862952873768253,
+        1.2945187393726263
+      ],
+      "final": {
+        "time": 18.0000000000034,
+        "cam": 0.9402070112774799,
+        "rocker": 0.17926852372869012,
+        "rollerAngle": 49.28876267684295,
+        "rollerSpeed": 45.85565032137006,
+        "rollerCenter": [
+          0.0008147068956132486,
+          1.9544478201807445,
+          2.754
+        ],
+        "outputY": 0.9657520926853603,
+        "shoeX": -0.06826814510076724,
+        "contacts": 9,
+        "penetration": 0.03944526401857118,
+        "closure": 0.00004812855264299167,
+        "qpos": [
+          0.9402070112774799,
+          -0.12090264710142201,
+          49.28876267684295,
+          0.2793441828064125,
+          -0.06826814510076724
+        ],
+        "qvel": [
+          -4.381836833602488,
+          4.291254107167862,
+          45.85565032137006,
+          -10.01447777053216,
+          1.806274474366961
+        ]
+      }
+    },
+    {
+      "name": "baseline",
+      "description": {
+        "movement": 165,
+        "timestep": 0.0005,
+        "segments": 360,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": true,
+        "collision": "mpr",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 18,
+      "steps": 36000,
+      "maximumPenetration": 0.00513342699882941,
+      "maximumClosureError": 0.000018064902238144942,
+      "maximumCamTrackingError": 0.03976664937098473,
+      "outputRange": [
+        0.6832251768043113,
+        1.3215949440727464
+      ],
+      "final": {
+        "time": 18.0000000000034,
+        "cam": 6.283326125907815,
+        "rocker": 0.3003142073024103,
+        "rollerAngle": -21.37258248244485,
+        "rollerSpeed": 0.013163505606461408,
+        "rollerCenter": [
+          -0.0901339130722767,
+          2.3264325327157405,
+          2.754
+        ],
+        "outputY": 0.686080267577901,
+        "shoeX": 0.00010066548470955799,
+        "contacts": 6,
+        "penetration": 0.000053101269651577155,
+        "closure": 0.000002507048971447311,
+        "qpos": [
+          6.283326125907815,
+          0.0001430364722982129,
+          -21.37258248244485,
+          -0.0003276423010468487,
+          0.00010066548470955799
+        ],
+        "qvel": [
+          -0.004032832432746652,
+          -0.002858332953513653,
+          0.013163505606461408,
+          0.006486813614995847,
+          -0.002013086672384735
+        ]
+      }
+    },
+    {
+      "name": "half-step",
+      "description": {
+        "movement": 165,
+        "timestep": 0.00025,
+        "segments": 360,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": true,
+        "collision": "mpr",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 18,
+      "steps": 72000,
+      "maximumPenetration": 0.006946491846741132,
+      "maximumClosureError": 0.00001833498756640785,
+      "maximumCamTrackingError": 0.04778473522001869,
+      "outputRange": [
+        0.6829581485126219,
+        1.321593071099418
+      ],
+      "final": {
+        "time": 17.999999999994934,
+        "cam": 6.283324994586221,
+        "rocker": 0.30031453710012107,
+        "rollerAngle": -21.285147888746575,
+        "rollerSpeed": 0.015677895442971383,
+        "rollerCenter": [
+          -0.0901342219057466,
+          2.326433529979803,
+          2.754
+        ],
+        "outputY": 0.686079541961874,
+        "shoeX": 0.00010089580857523154,
+        "contacts": 6,
+        "penetration": 0.000050107802595480534,
+        "closure": 0.0000024830192084237,
+        "qpos": [
+          6.283324994586221,
+          0.00014336627000895237,
+          -21.285147888746575,
+          -0.00032836791707378614,
+          0.00010089580857523154
+        ],
+        "qvel": [
+          -0.005087636567410819,
+          -0.002923036386675771,
+          0.015677895442971383,
+          0.006633686304438204,
+          -0.0020580317560870746
+        ]
+      }
+    },
+    {
+      "name": "refined-mesh",
+      "description": {
+        "movement": 165,
+        "timestep": 0.0005,
+        "segments": 480,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": true,
+        "collision": "mpr",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 18,
+      "steps": 36000,
+      "maximumPenetration": 0.005909596946321164,
+      "maximumClosureError": 0.00002123341075629971,
+      "maximumCamTrackingError": 0.039512039726311204,
+      "outputRange": [
+        0.6823695856837471,
+        1.3215948555059307
+      ],
+      "final": {
+        "time": 18.0000000000034,
+        "cam": 6.283205986822976,
+        "rocker": 0.3003746494555545,
+        "rollerAngle": -21.209793064745742,
+        "rollerSpeed": -0.000791179580157218,
+        "rollerCenter": [
+          -0.09019051859426863,
+          2.32661529998223,
+          2.754
+        ],
+        "outputY": 0.6859427535247283,
+        "shoeX": 0.00014321301051295848,
+        "contacts": 6,
+        "penetration": 0.0000030183432037239744,
+        "closure": 0.000002634772436783337,
+        "qpos": [
+          6.283205986822976,
+          0.0002034786254423476,
+          -21.209793064745742,
+          -0.0004651563542195521,
+          0.00014321301051295848
+        ],
+        "qvel": [
+          0.00048353074253175556,
+          -0.00034463826003042544,
+          -0.000791179580157218,
+          0.0007841541979639288,
+          -0.00024264953691650873
+        ]
+      }
+    },
+    {
+      "name": "no-contact",
+      "description": {
+        "movement": 165,
+        "timestep": 0.0005,
+        "segments": 360,
+        "clearance": 0.001,
+        "camSpeed": 0.3490658503988659,
+        "outputMass": 1,
+        "contact": false,
+        "collision": "mpr",
+        "assumptions": "Traced nonuniform wave profile with finite-roller relief, inferred narrow roller and outer-lip contact. Passive rocker/roller and gravity-loaded output bar; ideal horizontal crosshead freedom at the output pin. One cam actuator. Unregistered native study."
+      },
+      "duration": 18,
+      "steps": 36000,
+      "maximumPenetration": 0,
+      "maximumClosureError": 0.00024064420441026617,
+      "maximumCamTrackingError": 1.3322676295501878e-14,
+      "outputRange": [
+        -0.9893429296165569,
+        0.6863954977002011
+      ],
+      "final": {
+        "time": 18.0000000000034,
+        "cam": 6.283185307180781,
+        "rocker": 1.452085277029333,
+        "rollerAngle": -1.123143639583536,
+        "rollerSpeed": -9.116508616404968,
+        "rollerCenter": [
+          -2.7390968808720193,
+          4.53326576211241,
+          2.754
+        ],
+        "outputY": -0.9726160181731595,
+        "shoeX": 1.9913579483475674,
+        "contacts": 0,
+        "penetration": 0,
+        "closure": 0.00018221613165207327,
+        "qpos": [
+          6.283185307180781,
+          1.151914106199221,
+          -1.123143639583536,
+          -1.6590239280521073,
+          1.9913579483475674
+        ],
+        "qvel": [
+          0.3490658503979674,
+          9.117952386798523,
+          -9.116508616404968,
+          -2.616744385451982,
+          21.53654067476625
+        ]
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "name": "half-step",
+      "maximumOutputDifference": 0.05569330879892487
+    },
+    {
+      "name": "refined-mesh",
+      "maximumOutputDifference": 0.05646467157537971
+    },
+    {
+      "name": "no-contact",
+      "maximumOutputDifference": 2.310815160769035
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-wave-cam-physics.mjs",
+      "sha256": "cf45ad2719f63e39e05354274e3cd13306e73708572ddf399d39170f8c61f46d"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/physics.js",
+      "sha256": "859e71a4784301bdf58c1d9b5cb9de689a01d9fef05af03d8dd5796874a0ad2c"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/contact-mesh.js",
+      "sha256": "89dbcae7f3fadfc40330e8d12a9e6d9cfe8e07103602a3c02fe695b1ebe9539d"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/profile.js",
+      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+    }
+  ]
+}

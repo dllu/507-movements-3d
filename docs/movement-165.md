@@ -66,3 +66,59 @@ node scripts/review-wave-cam-contact.mjs
 node scripts/probe-wave-cam-envelope.mjs
 node --test tests/wave-cam-contact.test.mjs
 ```
+
+## Source-shaped native contact study
+
+A separate, unregistered candidate now traces 25 measured points on the lower
+silhouette with shape-preserving cubic interpolation. Projection onto a circular
+cam gives unequal angular lobes; repeating the front half on the unseen rear is
+an explicit assumption. The inferred 0.12-unit roller depth straddles the outer
+lip, replacing the legacy 1.2-unit depth. Its source radius and front center stay
+at 49 pixels and (336,270).
+
+The raw outline intersects this finite roller where the engraving hides the face.
+A conservative cylindrical envelope relieves that region and extends along
+angular rays beyond the roller footprint to avoid an abrupt radial-edge step.
+Maximum relief is 19.63 source pixels, mostly behind the roller; the maximum
+change to the sampled composite front outline is 0.1678 pixel. Independent
+finite-cylinder samples clear the continuous face within floating-point error.
+This measures the source pose only, not the moving rendered assembly.
+
+The native study has one actuated cam, passive rocker and roller, and a passive
+gravity-loaded output bar with horizontal crosshead freedom at its connection.
+The crosshead, mass, damping, depth and rear profile remain reconstruction
+assumptions. A narrow outer contact band is decomposed into 720 convex wedges;
+it is collision geometry, not a complete visible model.
+
+MuJoCo's default native multicontact method jams immediately for these wedge/
+cylinder edge contacts. Native single contact passes the first second but jams
+later. The alternative MPR pipeline completes an 18-second input revolution.
+Its configuration follows the [MuJoCo collision documentation](https://mujoco.readthedocs.io/en/stable/computation/index.html#convex-collisions).
+This is an empirical workaround for this candidate, not a general recommendation
+to change the project's solver. Both failing runs remain in the report.
+
+All-tick baseline checks find maximum reported contact penetration 0.00513 world
+units (0.285 pixel), output-pin closure error 0.0000181, and cam tracking error
+0.03977 radian. Output moves over 0.63837 units. Disabling contact changes output
+by up to 2.31082 units, establishing that the follower is not scripted. However,
+halving the timestep and increasing angular sections from 360 to 480 change
+sampled output by 0.05569 and 0.05646 units (3.09 and 3.14 pixels). **This candidate
+is not converged enough to bake or register.** Roller spin, repeated-cycle
+settling, actual solid clearances, source-shaped output hardware and browser
+playback are still unqualified. A 720-section experiment exceeded the WASM heap;
+the recorded refinement uses 480 sections and fresh module instances per run.
+
+Six tests cover legacy finite contact, measured silhouette interpolation,
+source-pose roller clearance, periodicity and a complete contact-driven input
+revolution with a contact-disabled counterfactual. The native regression guards
+against the jam; it does not assert the remaining convergence issue is solved.
+
+Evidence: [source profile](validation/165-source-profile.json) and
+[native comparison](validation/165-native-study.json). Full trajectories stay in
+`/dev/shm/165-native-trajectories.json`.
+
+```sh
+node scripts/probe-wave-cam-source-profile.mjs
+node scripts/probe-wave-cam-physics.mjs
+node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
+```
