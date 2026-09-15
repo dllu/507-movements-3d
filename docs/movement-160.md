@@ -135,3 +135,60 @@ All four tests pass. Reports and provenance are in
 This prototype is not registered in production. Next couple the spring to the
 band and treadle, qualify preload and passive return, and reconstruct the
 source-shaped visible assembly.
+
+## Coupled spring, band and treadle diagnostic
+
+`band-route.js` computes both moving-end tangencies and retains one complete
+clockwise winding through entry/exit angular-order changes. It reproduces the
+old vertical-end route to numerical precision while allowing lateral motion of
+the spring tie. Its four endpoint length derivatives agree with independent
+central differences within 2e-9; the span/wrap tangencies remain continuous.
+Those derivatives transmit band tension to every ancestor leaf hinge and the
+treadle hinge through virtual work.
+
+`coupled-physics.js` adds a 0.5 kg treadle, gravity and downward foot pressure.
+There are no actuators. A tension-only compliant ideal band has stiffness 20000
+and damping 20; it cannot push when slack. The pulley remains ideal and massless.
+World gravity 98.1 corresponds to an inferred 0.1 m per world unit and ordinary
+9.81 m/s² gravity. Existing leaf properties are consistent with that scale;
+they remain effective assumptions rather than a measured material specification.
+
+The source shape must be a **loaded** equilibrium rather than a stress-free
+leaf. Initialization computes the band tension needed to support the treadle's
+weight, then infers spring reference angles that balance that tension and leaf
+gravity in the engraved pose. The band rest length includes the corresponding
+small elastic extension. Initial planar tension is 36.0231 world-force units
+(3.60231 N at the inferred scale). This calibrates unknown assembly prestress;
+it does not prescribe the subsequent joint trajectory. A no-foot-pressure test
+holds the source pose within 1e-10 radians. Removing the band releases the
+otherwise passive treadle under gravity.
+
+Foot pressure follows a smooth squared-sine pulse during the first half of each
+four-second cycle and is absent during the second half. Peak pressure is six
+world-force units (0.6 N). During the last of four simulated cycles, the treadle
+ranges from -0.094853 to +0.005429 radians relative to the source pose. It moves
+under the combined input force, gravity and stored spring energy. The last two
+cycle-end joint configurations differ by less than 2.4e-15 radians. The peak
+band extension is 0.002261 world units, or 0.126 engraving pixels, including
+prestretch. This finite compliance is explicit; the candidate does not claim
+an exactly rigid no-slip transmission at finite stiffness.
+
+Halving native timestep from 0.00025 to 0.000125 seconds changes the final-cycle
+treadle angle by at most 1.874e-5 radians and the upper attachment position by
+0.00006823 world units (0.0038 pixels), measured at matching 0.01-second samples.
+Nine route, leaf and coupling tests pass. The earlier zero-gravity coupling
+trial let the returning treadle coast upward after losing tension; it is not
+the default candidate. Gravity and inferred source-pose prestress address that
+missing load rather than imposing an artificial return trajectory.
+
+```sh
+node scripts/probe-spring-treadle.mjs
+node --test tests/spring-treadle-coupled.test.mjs tests/return-band-route.test.mjs tests/return-leaf.test.mjs tests/axially-separated-band.test.mjs
+```
+
+The coupled report is `docs/validation/160-coupled.json`. Leaf XML construction
+is shared by the isolated and coupled models in `leaf-assembly.js`; isolated
+validation was rerun after extraction. Production remains unchanged. Before
+registration, refine the coupled leaf and band stiffness, reconstruct and check
+the visible source-shaped spring/drum/attachments/supports, evaluate drum inertia
+and contact assumptions, then bake and inspect desktop/mobile playback.

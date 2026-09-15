@@ -107,15 +107,19 @@
   "sources": [
     {
       "file": "scripts/probe-return-leaf.mjs",
-      "sha256": "7adee534b63199d6280b59a5eba0bbd1da9f2d4c68aa849fa91f09b1329eb631"
+      "sha256": "1c17fd36527696648a009c15022fea264274f9d79ed7673354205945a0996669"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/leaf-physics.js",
-      "sha256": "beeb88c924ec6151dd4ff898832ea1c25595b685f0e27c5aafc1e4e4250bfb1a"
+      "sha256": "9cdd2702e6b3672e7dc8372e830aa5c299cbbdf033032aedd0dcc2075cff2a42"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/source.js",
       "sha256": "6b5a60855bc60af2829a0c75d6adf927ace7b387f30f333c9a7ea42e86a2606b"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/leaf-assembly.js",
+      "sha256": "c27140d24f1cd4260fa0523fc2d0ce930bc1aae8a968dd2ca5f6ddd877477cfb"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",
