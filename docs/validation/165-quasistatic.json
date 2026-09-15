@@ -1,0 +1,55 @@
+{
+  "movement": 165,
+  "status": "quasistatic-contact-checked",
+  "assumptions": "Ideal massless/quasistatic follower held against the cam by the weighted output bar. Pin and vertical-guide constraints are ideal. No inertia, friction, bounce or load-capacity claim. Margin 0.006 world units. Twelve-second display revolution is illustrative, not a specified physical operating speed.",
+  "poses": 721,
+  "refinementPoses": 361,
+  "maximumOutputRefinementDifference": 0,
+  "minimumIndependentSampledGap": 0.0059999999858235675,
+  "maximumIndependentSeatedGap": 0.00628358112123184,
+  "maximumRootResidual": 1.4266365866433262e-11,
+  "outputEndpointDifference": 0,
+  "initial": {
+    "cam": 0,
+    "rocker": 0.297131037652798,
+    "rollerAngle": 0,
+    "rollerCenter": [
+      -0.08716841424210209,
+      2.3168023259888417,
+      2.754
+    ],
+    "outputY": 0.6933218101799767,
+    "shoeX": -0.0021285057070059565,
+    "contactPoint": [
+      0.5717342039794366,
+      2.9091224942357323,
+      2.694
+    ],
+    "residual": 6.5996097475817805e-12,
+    "margin": 0.006,
+    "method": "quasistatic finite-surface contact",
+    "time": 0
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-wave-cam-quasistatic.mjs",
+      "sha256": "7ee6489f53378e76b1ae4512cec529de7e0e2a3ae4ae7c065c4f28bafd605331"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/quasistatic.js",
+      "sha256": "82eb373fad25076d9bab236f8b1a475a038863a695f37a6988e6ed432ad987f4"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/projected-profile.js",
+      "sha256": "e14fc083b1b6f3e8b8b187e4e507b1425cc737c1a6401b7863e456c165370b48"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/profile.js",
+      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/clearance.js",
+      "sha256": "4e3b0586b96545553e4d34cce707dd9fd89023437318981883d494e0e270b312"
+    }
+  ]
+}

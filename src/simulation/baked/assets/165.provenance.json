@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "movement": 165,
+  "geometry": {
+    "scale": 0.018,
+    "axisPixelX": 341,
+    "outerRadius": 2.754,
+    "innerRadius": 0.55,
+    "topY": 4,
+    "rollerX": -0.09,
+    "rollerY": 2.326,
+    "rollerRadius": 0.882,
+    "rollerZ": 2.754,
+    "rollerDepth": 0.12,
+    "pivot": [
+      -3.114,
+      1.39,
+      2.9
+    ],
+    "outputPin": [
+      -5.382,
+      0.67,
+      2.9
+    ],
+    "arm": 3.1655445029252074,
+    "theta": 0.30017117083011213,
+    "leftLength": 2.3795428132311467,
+    "left": [
+      -5.387143675775706,
+      0.6864079098789478
+    ]
+  },
+  "names": [
+    "cam",
+    "rocker",
+    "rollerAbsoluteAngle"
+  ],
+  "turns": [
+    6.283185307179586,
+    0,
+    -22.081244029080214
+  ],
+  "period": 12,
+  "loopStart": 0,
+  "loopEnd": 12,
+  "bounds": {
+    "min": [
+      -5.85659048663947,
+      -1.7787108908048208,
+      -2.7940000985922215
+    ],
+    "max": [
+      2.7940000985922215,
+      5.929999866485596,
+      3.095000066757202
+    ]
+  },
+  "focus": [
+    -1.5312951940236241,
+    2.0756444878403872,
+    0.15049998408249032
+  ],
+  "cameraDirection": [
+    0.01,
+    0.01,
+    15
+  ],
+  "maximumAcceptedProbeError": 0.0000019995317416046654,
+  "solverStates": 14535,
+  "assumptions": "Quasistatic finite-surface cam contact; ideal pins and vertical guide; 0.006 world-unit contact clearance. Illustrative tangential rolling with axial slip, not a friction/inertia simulation. Display speed is illustrative.",
+  "sources": [
+    {
+      "file": "scripts/bake-wave-cam.mjs",
+      "sha256": "6a90c08eb4f1e20d12ab931a0bef551fff3388735f03e78ff73b992d5b3e0eaa"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/quasistatic.js",
+      "sha256": "82eb373fad25076d9bab236f8b1a475a038863a695f37a6988e6ed432ad987f4"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/solids.js",
+      "sha256": "cb9ba13860810966a80774da51cb93134d58d9c3778b4b0b658a78efa4bf2df1"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/adaptive-profile.js",
+      "sha256": "5abc32cc9ac486759fc275028dbaeae1a8e6b1e56049b5b57b62ef0c1db0b109"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/update-solids.js",
+      "sha256": "6ccb4af751f32bb0da89aecf77a83dbc90901607eea325fd6e975348314d590b"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/projected-profile.js",
+      "sha256": "e14fc083b1b6f3e8b8b187e4e507b1425cc737c1a6401b7863e456c165370b48"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/profile.js",
+      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    }
+  ],
+  "samples": 3507,
+  "bytes": 666304,
+  "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+}

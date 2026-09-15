@@ -1,22 +1,26 @@
 {
   "movement": 165,
-  "status": "unregistered-whole-solid-front-projection",
+  "status": "whole-solid-front-projection",
   "method": "Project actual cam rim, top web and roller triangles along Z. Compare their union lower silhouette against the independently traced engraving cam and circular source roller, every half source pixel, excluding columns within 0.012 source pixel of an ideal circle tangent (a polygonal silhouette is not a single-valued height there). Includes rear/inner faces; this is separate from the earlier outer-rim profile-only metric.",
   "samples": 609,
-  "maximumErrorPixels": 0.06165758207201913,
-  "rmsErrorPixels": 0.0074366626593557646,
+  "maximumErrorPixels": 0.13780465360180294,
+  "rmsErrorPixels": 0.017611511336560613,
   "worst": {
     "pixelX": 213.5,
-    "errorPixels": -0.06165758207201913
+    "errorPixels": -0.13780465360180294
   },
   "sources": [
     {
       "file": "scripts/probe-wave-cam-projection.mjs",
-      "sha256": "bbc6979d7425f9298013b8f1b5d0285cccab83d62659759d40f8ccb54e765307"
+      "sha256": "3140fac3ee06109f83fa4f44bf8ac191a6f1c6e8e967cae41bc46d71d67f93bf"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/solids.js",
-      "sha256": "642fd88f01d3f207a22b271030e2650f53d5eee64f3b2afffab8bf74c4b92f8f"
+      "sha256": "cb9ba13860810966a80774da51cb93134d58d9c3778b4b0b658a78efa4bf2df1"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/adaptive-profile.js",
+      "sha256": "5abc32cc9ac486759fc275028dbaeae1a8e6b1e56049b5b57b62ef0c1db0b109"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/profile.js",

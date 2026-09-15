@@ -1,247 +1,120 @@
-# Movement 165 — waved cam contact review in progress
+# Movement 165 — waved face cam
 
-165 remains on its existing browser model. The review has confirmed a large
-cam/roller intersection and added an independent finite-roller contact solver
-for evaluating a replacement profile. No replacement is registered yet.
+165 now plays a baked, source-shaped cam and follower with 13 visible meshes.
+The finite roller stays seated under a quasi-static assumption; the browser
+loads a 666,304-byte asset and interpolates three coordinates. It does not load
+MuJoCo or generate cam/contact geometry at runtime. One revolution takes twelve
+illustrative seconds, giving roughly two seconds per rise/fall of the six lobes.
+The full 507-movement review remains active; the next source review is 166.
 
-## Source and defect
+## Source reconstruction
 
 The [original page](https://507movements.com/mm_165.html) has no available 2D
-animation. The waved cam on a vertical shaft moves a roller on an oscillating
-rod, which drives the upright output bar. The engraving shows the roller fitting
-beneath the middle arch of the wave, a roughly 49-pixel roller radius, a rocker
-pivot near (168,322), and output joint near (44,362).
+animation. Its caption describes circular-to-rectilinear motion through the
+waved wheel, oscillating rod and upright bar. The reconstruction uses 25 measured
+points on the lower cam silhouette, a 49-pixel roller radius, the fulcrum near
+(168,322), and the roller center at (336,270).
 
-The current model assumes six waves around the cam, a sinusoidal lower face,
-and an inferred roller depth of 1.2 world units. Its closure equation puts only
-the roller's vertical top point on the wave. A zero value from that equation
-does not establish contact or clearance for the rest of the roller.
+A shape-preserving cubic traces the cam. Its lower surface is cut across local X
+at every depth, so hidden rear faces cannot fill the engraved arches. The cam
+has a thin waved rim and a top web connecting it to the shaft. The roller has a
+real axle bore; the lever eyes, pins and output connection have finite geometry.
+The added legacy weight and support frame have been removed, and the ground and
+fog are disabled.
 
-The audit transforms actual cam-skirt vertices, edge midpoints and triangle
-centers into the actual closed 64-sided roller mesh at 97 phases. Cam surface
-points lie inside the roller by 0.15519 world units (8.96 source pixels) in the
-initial pose. The largest sampled intrusion is 0.27541 (15.90 pixels), even
-though the existing contact calculation reports zero gap. The skirt itself is
-open at its upper edge, so the audit deliberately tests inclusion in the closed
-roller, avoiding a winding test on an open cam mesh.
+The caption requires rectilinear output. The lever-end pin's small transverse
+travel is accommodated inside the round output eye, with an ideal unpictured
+vertical guide. Rim/roller depths, the top web, hidden eye clearance, fixed
+fulcrum support and finite displayed bar length are reconstruction assumptions.
+The shaft's drawn top ellipse corresponds to a flat circular shaft end; the
+front projection check is orthographic and does not reproduce that stylized
+ellipse.
 
-The current model also adds an output slot, weight and extensive support frame
-that are not established by the engraving. Their geometry, the input-shaft grip,
-actual roller depth and output-joint construction still need source review.
+The actual rim, web and source-pose roller triangles agree with the traced union
+outline within **0.13781 source pixel**, RMS 0.01762, at 609 half-pixel columns.
+This includes hidden/rear faces. Two columns within 0.012 source pixel of ideal
+roller tangencies are excluded from the vertical-height metric because an
+inscribed polygon can miss the exact tangent column despite negligible horizontal
+error. The 0.006-unit working clearance shifts the playback's initial roller
+center by about half a source pixel from its zero-clearance source pose.
 
-## Independent contact diagnostic
+## Motion and scope
 
-The new solver treats a finite cylindrical roller under a continuous annular
-wave face. For each lateral position it finds the lowest face height across the
-roller's axial width, including interior wave minima. It then brackets/refines
-lateral minima and solves the rocker angle at which the whole roller is seated.
-Contact generally occurs away from the roller's vertical top point, and can
-occur at the axial edge. No contact force or inertial response is claimed by
-this geometric diagnostic.
+Only one follower configuration is needed for each input angle, so production
+uses a quasi-static finite-surface contact solve. It assumes that the weighted
+upright bar holds a negligible-inertia follower against the cam. **It does not
+predict inertia, friction, free flight or load capacity.** This is an ideal cam
+animation, with an illustrative operating speed.
 
-On the legacy sinusoidal profile, doubling the lateral bracketing resolution
-from 128 to 256 agrees within 1e-15 world units at 49 phases. The resulting
-roller center differs from the legacy point-contact pose by as much as 0.49781
-world units (28.74 pixels). At the initial phase it drops about 24 pixels. Thus
-correcting only the follower position would destroy the engraved alignment;
-the source-shaped cam profile and inferred radial/axial geometry must be rebuilt.
-The continuous profile calculation is explicitly separate from the legacy
-triangulated skirt and is not presented as a qualified replacement for it.
+The solver minimizes the cam height across the roller's full axial width and
+circular cross-section. It includes measured-profile boundaries, cubic/circle
+crossings and annulus-edge cases, then solves the engraved rocker branch. It
+uses a 0.006-world-unit clearance (one-third source pixel). A regression covers
+an interior minimum immediately beside the annulus edge that ordinary sampled
+local-minimum detection missed.
 
-Three tests verify the exact flat-face limit, clearance of independently sampled
-finite roller surfaces, seated contact and monotonic behavior when roller width
-increases. The current browser model is unchanged while reconstruction proceeds.
+The lever, roller center and output bar are reconstructed from the interpolated
+rocker angle at every frame, preserving the pin constraints. Roller spin
+illustrates tangential rolling while allowing axial slip; it is not a friction
+simulation. Cam and roller rotation accumulate across loops, while the rocker
+position closes exactly. No motion seam blending or endpoint snapping is used.
 
-Next: reconstruct the wave/profile and roller depth from the engraving, evaluate
-their finite contact, then use passive native contact dynamics where needed and
-bake the result. Inspect the rocker/output connection and remove unsupported
-support geometry before packaged playback validation.
+MuJoCo remains useful for mechanisms whose dynamics determine their motion, but
+its wedge-contact trials for this particular cam produced large rebound and
+brief penetration. A height-field experiment was also unstable; slower drive,
+frictionless contact and a small nonconformal relief did not resolve the problem.
+These experiments do not justify presenting a dynamic trajectory as correct.
+The quasi-static reconstruction instead derives the required contact geometry
+directly, under the explicit assumptions above.
 
-Evidence: [existing mesh contact](validation/165-existing-contact.json) and
-[continuous envelope diagnostic](validation/165-envelope-diagnostic.json), both
-with source hashes. Temporary source downloads remain in /dev/shm.
+## Validation
 
-```sh
-node scripts/review-wave-cam-contact.mjs
-node scripts/probe-wave-cam-envelope.mjs
-node --test tests/wave-cam-contact.test.mjs
-```
+- 721 continuous-contact poses, with 361 search-refinement comparisons. Doubling
+  the lateral resolution agrees to the root solver's precision. Independent
+  finite-cylinder samples give gaps from 0.006000 to 0.006284 world units;
+  maximum root residual is 1.43e-11.
+- The bake contains 3,507 keys, selected from 14,535 solved input angles using
+  quarter/mid/three-quarter interpolation probes. Maximum accepted rocker-angle
+  error is below 2e-6 radians. Independent 512-sample contact solves also check
+  irregular playback times.
+- Actual baked solids: 721 poses, 13 meshes, 61 cross-body pairs and 47,632,034
+  vertex/edge-midpoint/triangle-center queries find no sampled intersection above
+  1e-6 world units. Same rigid-body joins are excluded. This is sampled evidence,
+  not a proof covering every point and time.
+- Fourteen targeted tests pass, including pin alignment, output-eye travel,
+  framing bounds, loop closure, restart and disposal. Production build and
+  packaged desktop/mobile Chrome checks pass, including no WASM request.
 
-## Source-shaped native contact study
+The adaptive visible mesh reduces the compressed asset from 1.6 MB to 666 KB
+while keeping source-projection error below 0.14 pixel. Screenshots, raw states,
+builds and browser artifacts remain in `/dev/shm`.
 
-A separate, unregistered candidate now traces 25 measured points on the lower
-silhouette with shape-preserving cubic interpolation. Projection onto a circular
-cam gives unequal angular lobes; repeating the front half on the unseen rear is
-an explicit assumption. The inferred 0.12-unit roller depth straddles the outer
-lip, replacing the legacy 1.2-unit depth. Its source radius and front center stay
-at 49 pixels and (336,270).
-
-The raw outline intersects this finite roller where the engraving hides the face.
-A conservative cylindrical envelope relieves that region and extends along
-angular rays beyond the roller footprint to avoid an abrupt radial-edge step.
-Maximum relief is 19.63 source pixels, mostly behind the roller; the maximum
-change to the sampled composite front outline is 0.1678 pixel. Independent
-finite-cylinder samples clear the continuous face within floating-point error.
-This measures the source pose only, not the moving rendered assembly.
-
-The native study has one actuated cam, passive rocker and roller, and a passive
-gravity-loaded output bar with horizontal crosshead freedom at its connection.
-The crosshead, mass, damping, depth and rear profile remain reconstruction
-assumptions. A narrow outer contact band is decomposed into 720 convex wedges;
-it is collision geometry, not a complete visible model.
-
-MuJoCo's default native multicontact method jams immediately for these wedge/
-cylinder edge contacts. Native single contact passes the first second but jams
-later. The alternative MPR pipeline completes an 18-second input revolution.
-Its configuration follows the [MuJoCo collision documentation](https://mujoco.readthedocs.io/en/stable/computation/index.html#convex-collisions).
-This is an empirical workaround for this candidate, not a general recommendation
-to change the project's solver. Both failing runs remain in the report.
-
-Tightening CCD tolerance to 1e-10 with 200 iterations and increasing the input
-servo to stiffness 100000/damping 1000 improves timestep sensitivity. All-tick
-baseline checks now find maximum reported contact penetration 0.00326 world
-units (0.181 pixel), output-pin closure error 0.0000091, and cam tracking error
-0.00380 radian. Output moves over 0.63687 units. Disabling contact changes output
-by up to 2.31083 units, establishing that the follower is not scripted.
-
-Halving the timestep changes sampled output by 0.00379 units (0.21 pixel), down
-from 3.09 pixels with the earlier settings. However, increasing angular sections
-from 360 to 480 changes it by 0.07247 units (4.03 pixels). **The collision-mesh
-sensitivity remains unresolved; this candidate must not be baked or registered.**
-The regression bounds reported contact error over every tick to 0.005 units
-(0.28 pixel), rather than relying on the final pose alone. This is a numerical
-study bound, not a rendered-clearance qualification. Roller spin, repeated-cycle
-settling, actual solid clearances, source-shaped output hardware and browser
-playback are still unqualified. A 720-section experiment exceeded the WASM heap;
-the recorded refinement uses 480 sections and fresh module instances per run.
-A temporary polygonal-roller experiment also jammed with native CCD; simply
-substituting a mesh for the cylinder does not resolve that failure.
-
-Six tests cover legacy finite contact, measured silhouette interpolation,
-source-pose roller clearance, periodicity and a complete contact-driven input
-revolution with a contact-disabled counterfactual. The native regression guards
-against the jam; it does not assert the remaining convergence issue is solved.
-
-Evidence: [source profile](validation/165-source-profile.json) and
-[native comparison](validation/165-native-study.json). Full trajectories stay in
-`/dev/shm/165-native-trajectories.json`.
+Evidence: [source projection](validation/165-projection.json),
+[continuous contact](validation/165-quasistatic.json),
+[baked-solid clearance](validation/165-baked-clearance.json), and
+[bake provenance](../src/simulation/baked/assets/165.provenance.json), and
+[packaged browser checks](validation/165-browser.json).
 
 ```sh
-node scripts/probe-wave-cam-source-profile.mjs
-node scripts/probe-wave-cam-physics.mjs
-node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
-```
-
-## Adaptive profile refinement
-
-An independent continuous-face sweep identified a geometric cause for the uniform
-mesh sensitivity. At 8.78 seconds, the 360-section model reports no contact while
-a sampled point of the ideal cam enters the roller by 0.05271 world units
-(2.93 pixels). At the largest output discrepancy, both trajectories have left
-contact, with independently sampled gaps of 0.01132 and 0.08040. Therefore small
-MuJoCo penetration alone did not qualify the approximation. Slowing the uniform
-mesh drive also failed to remove its resolution sensitivity.
-
-The finite-roller relief has a narrow transition near its lateral end. Adaptive
-angular subdivision now checks fifteen interior heights against each chord,
-with a tolerance reserve. This concentrates collision cells at that transition.
-The new study uses 418 angular cells at tolerance 0.001, and 584 at 0.0005.
-Independent 65-point-per-cell checks find maximum height errors 0.0008981 and
-0.0004528. Over one revolution, halving the timestep changes output by 0.001215
-world units (0.0675 pixel); refining the profile changes it by 0.003716
-(0.2065 pixel). The formerly four-pixel mesh discrepancy is substantially reduced.
-
-The independent continuous-face check still finds sampled intrusion up to 0.00713
-world units (0.396 pixel) and separation up to 0.10860 (6.03 pixels). These are
-not hidden by the smaller reported MuJoCo penetration. A temporary denser base
-rim (360 initial sections with adaptive refinement) reduces the sampled intrusion
-to 0.00634. Adding a conservative collision-face offset of -0.006 yields a
-positive minimum sampled gap of 0.000162 over the revolution; that experiment is
-not yet the default or a qualified rendered assembly. Its raw states are in
-`/dev/shm/165-adaptive-offset.json`. The original positive collision offset remains
-the default so that the earlier diagnostics remain reproducible.
-
-Seven tests pass, including an independent 129-point-per-cell check of the
-adaptive interpolation error and a full adaptive contact-driven revolution.
-Next: qualify the conservative contact margin and repeated-cycle settling,
-construct the actual source-shaped solids and output connection, then audit and
-bake playback. No new browser model is registered by this study.
-
-Evidence: [continuous separation diagnostic](validation/165-separation.json) and
-[adaptive convergence study](validation/165-adaptive-study.json).
-
-```sh
-node scripts/probe-wave-cam-physics.mjs
-node scripts/probe-wave-cam-separation.mjs
-node scripts/probe-wave-cam-adaptive.mjs
-node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs
-```
-
-## Whole-solid source reconstruction
-
-A 13-mesh visible assembly now includes the waved rim and top web, shaft and grip,
-bored roller, oscillating rod, pins and upright bar. It omits the legacy added
-weight and support frame. The caption calls for rectilinear output; the required
-small transverse pin travel is housed inside the round output eye, with an ideal
-unpictured vertical guide. Depths, thin-rim construction, hidden eye clearance
-and fixed fulcrum support remain reconstruction assumptions.
-
-The first complete render exposed a flaw in the earlier profile-only source
-metric. A radially deep cam fills the drawn arches, and even a thin rim with the
-previous repeated rear profile changes the full projected outline by as much as
-23.11 pixels. The earlier 0.17-pixel number describes only a front-rim relief
-comparison; **it does not establish source fidelity of the whole solid**.
-
-The new `projected` profile cuts the traced lower height across local X at every
-depth. The rear consequently matches the front at the same projected X. An
-inverse cylindrical relief clears the source roller without changing the union
-outline. Unlike the old radial profile, the new profile need not repeat after a
-half-turn. It is available explicitly in the native study; the default radial
-mode remains available to reproduce earlier diagnostics.
-
-Projection of the actual rim, web and roller triangles now agrees with the
-traced cam-and-roller union silhouette within 0.06166 source pixel (RMS 0.00744)
-at 609 half-pixel columns. Two columns within 0.012 source pixel of ideal roller
-circle tangencies are excluded from this vertical-height metric: a polygonal
-circle can miss the exact tangent column despite tiny horizontal error. This
-check includes hidden/rear surfaces and is separate from source alignment of
-other parts. A Chrome front-view inspection is recorded temporarily in
-`/dev/shm/165-source-projected.png`. The shaft's drawn top ellipse is represented
-by a flat circular shaft end in this orthographic inspection.
-
-### Motion is still unqualified
-
-The matching projected-profile native study runs three revolutions with adaptive
-cells and a -0.006 collision-face offset. Second/third output endpoints differ
-by only 0.0000071 world units, but the full trajectory contradicts a claim of
-settled, acceptable playback: the third revolution has sampled continuous-face
-intrusion of 0.02815 and separation of 1.02193 world units. Maximum reported
-MuJoCo penetration is 0.01456. Endpoint agreement therefore does not qualify a
-bake. A temporary frictionless run and a sub-pixel nonconformal-relief experiment
-did not remove the rebound; neither change is retained.
-
-The uniformly spaced 129-pose actual-solid sweep initially found no overlap.
-Augmenting it with all 10 ms poses whose independent continuous-face gap is below
--0.005 catches a real cam/roller intersection. The resulting 150-pose,
-25,260,106-query sweep finds maximum actual sampled penetration of 0.005445
-(0.303 source pixel). The clearance script deliberately fails until that issue
-is resolved. No other cross-body solid pair intersects in this sweep.
-
-Nine unit tests pass, including source projection constraints and outward-facing
-closed-rim checks. These are not substitutes for the currently failing moving
-solid audit. The next work is a better contact representation for the projected
-cam, followed by motion/refinement checks, conservative margin qualification,
-bake-seam validation and packaged playback. **The new assembly remains
-unregistered; the complete 507-movement review is still active.** Earlier radial
-reports remain historical diagnostics with their original source hashes.
-
-Evidence: [whole-solid projection](validation/165-projection.json),
-[projected native study](validation/165-projected-physics.json), and
-[actual moving solids](validation/165-solid-clearance.json).
-
-```sh
-node scripts/probe-wave-cam-projected-physics.mjs
+node scripts/probe-wave-cam-quasistatic.mjs
 node scripts/probe-wave-cam-projection.mjs
-node scripts/review-wave-cam-solids.mjs # currently fails on the cam/roller pair
-node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs tests/wave-cam-projected.test.mjs
+node scripts/bake-wave-cam.mjs
+node scripts/review-wave-cam-baked-solids.mjs
+node --test tests/wave-cam-contact.test.mjs tests/wave-cam-source.test.mjs tests/wave-cam-projected.test.mjs tests/wave-cam-quasistatic.test.mjs tests/wave-cam-baked.test.mjs
 ```
+
+## Historical diagnostics
+
+The legacy point-contact model intersected its roller by up to 15.9 source
+pixels. The first reconstructed radial cam also failed whole-solid projection:
+its rear faces altered the outline by 23 pixels, despite a small front-rim-only
+metric. The projected native prototype's evenly spaced 129-pose solid sweep
+missed a transient; adding suspicious continuous-gap poses exposed 0.303 pixel
+of actual mesh penetration. These are unregistered counterexamples, not the
+production animation. Their reports retain the hashes of the versions examined:
+[legacy mesh](validation/165-existing-contact.json),
+[legacy finite envelope](validation/165-envelope-diagnostic.json),
+[radial native study](validation/165-native-study.json),
+[adaptive radial study](validation/165-adaptive-study.json),
+[projected native study](validation/165-projected-physics.json), and
+[failed native-solid audit](validation/165-solid-clearance.json).

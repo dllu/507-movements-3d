@@ -1,3 +1,5 @@
+import {waveCamProfileAngles} from './adaptive-profile.js';
+import {makeWaveCamUpdater} from './update-solids.js';
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
@@ -8,7 +10,7 @@ import {waveCamProjectedHeight} from './projected-profile.js';
 // Closed annular face cam. Separate normal domains retain the sharp top/rim
 // boundaries; the lower face and cylindrical walls shade smoothly within each.
 export function waveCamVisibleGeometry(g=waveCamGeometry()){
- const angles=Array.from({length:2049},(_,i)=>2*Math.PI*i/2048),radii=Array.from({length:9},(_,i)=>2.69+(g.outerRadius-2.69)*i/8),positions=[],indices=[];
+ const radii=Array.from({length:5},(_,i)=>2.69+(g.outerRadius-2.69)*i/4),angles=waveCamProfileAngles({segments:180,tolerance:.0003,heightFunctions:radii.map(r=>a=>waveCamProjectedHeight(r*Math.sin(a),g))}),positions=[],indices=[];
  function grid(rows,columns,point,reverse=false){
   const offset=positions.length/3;
   for(let i=0;i<rows;i++)for(let j=0;j<columns;j++)positions.push(...point(i,j));
@@ -54,13 +56,7 @@ export function makeWaveCamSolids(){
  // hidden inside the round eye; the unpictured vertical guide remains ideal.
  const output=clip.difference(clip.union(poly(circle([0,0],eyeRadius,96)),capsule([0,-.20],[0,-2.304],.126,32)),capsule([-.12,0],[.015,0],bore,64));
  add('uprightBar',plate(output,2.68,2.80),'output',PALETTE.driven);
- const sync=s=>{
-  blocks.cam.rotation.y=s.cam;
-  blocks.rocker.position.set(g.pivot[0],g.pivot[1],0);blocks.rocker.rotation.z=s.rocker;
-  blocks.roller.position.set(...s.rollerCenter);blocks.roller.rotation.z=s.rocker+s.rollerAngle;
-  blocks.output.position.set(left[0],s.outputY,0);
-  root.updateMatrixWorld(true);root.userData.state=s;
- };
+ const sync=makeWaveCamUpdater(root,{...g,left});
  const initial={cam:0,rocker:theta,rollerAngle:0,rollerCenter:[g.rollerX,g.rollerY,g.rollerZ],outputY:left[1]};sync(initial);markShadows(root);
  Object.assign(root.userData,{parts,families,blocks,geometry:{...g,arm,theta,leftLength,left},hideGround:true,reconstructionStatus:'unregistered-source-assembly',reconstructionNote:'Source-shaped waved cam, finite roller and oscillating rod. The output eye hides inferred transverse pin travel; its vertical guide and the fulcrum support are ideal and unpictured.'});
  return{root,sync,dispose:()=>disposeObject3D(root)};

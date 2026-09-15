@@ -1,0 +1,78 @@
+{
+  "movement": 165,
+  "status": "baked-quasistatic-solid-diagnostic",
+  "parameters": {
+    "scale": 0.018,
+    "axisPixelX": 341,
+    "outerRadius": 2.754,
+    "innerRadius": 0.55,
+    "topY": 4,
+    "rollerX": -0.09,
+    "rollerY": 2.326,
+    "rollerRadius": 0.882,
+    "rollerZ": 2.754,
+    "rollerDepth": 0.12,
+    "pivot": [
+      -3.114,
+      1.39,
+      2.9
+    ],
+    "outputPin": [
+      -5.382,
+      0.67,
+      2.9
+    ],
+    "arm": 3.1655445029252074,
+    "theta": 0.30017117083011213,
+    "leftLength": 2.3795428132311467,
+    "left": [
+      -5.387143675775706,
+      0.6864079098789478
+    ]
+  },
+  "poses": 721,
+  "meshes": 13,
+  "pairs": 61,
+  "queries": 47632034,
+  "intersections": {},
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the twelve-second baked quasi-static cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
+  "sources": [
+    {
+      "file": "scripts/review-wave-cam-baked-solids.mjs",
+      "sha256": "8cee4d0403d63d7f2b21f2ff78ad927c199fa8cd026f5516e6fc2a3b5df0f746"
+    },
+    {
+      "file": "src/simulation/baked/assets/165.json.gz",
+      "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+    },
+    {
+      "file": "src/simulation/baked/wave-cam.js",
+      "sha256": "c033540e456c0a7974482874cbbf904c1ae1756d050bedf691e424719e9625df"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/update-solids.js",
+      "sha256": "6ccb4af751f32bb0da89aecf77a83dbc90901607eea325fd6e975348314d590b"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

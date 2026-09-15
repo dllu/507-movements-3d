@@ -1,0 +1,48 @@
+{
+  "movement": 165,
+  "status": "packaged-desktop-mobile-passed",
+  "environment": "Local headless Chrome; requestAnimationFrame cadence while playing, not a hardware-independent performance guarantee.",
+  "readyCheckMilliseconds": 2376.6,
+  "frameSample": {
+    "frames": 54,
+    "elapsedMilliseconds": 1809.4,
+    "framesPerSecond": 29.8441
+  },
+  "checks": [
+    "packaged portable-subdirectory route",
+    "reconstruction note visible",
+    "motion changes canvas",
+    "restart restores exact initial canvas",
+    "no WASM request",
+    "orbit and reset view",
+    "390 by 844 mobile layout without horizontal overflow",
+    "no page errors",
+    "packaged asset hash matches source asset"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/wave-cam.spec.mjs",
+      "sha256": "73eddb8ae0fa8fc11c89ea7ac60079fb62298be25195ed24ff1a9764783b2352"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "931d9e6c462d75c936cb4c2befb6f9496f7621b06d938f30d720de7705218b72"
+    },
+    {
+      "file": "src/simulation/baked/wave-cam.js",
+      "sha256": "c033540e456c0a7974482874cbbf904c1ae1756d050bedf691e424719e9625df"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/mujoco-wave-cam/update-solids.js",
+      "sha256": "6ccb4af751f32bb0da89aecf77a83dbc90901607eea325fd6e975348314d590b"
+    },
+    {
+      "file": "src/simulation/baked/assets/165.json.gz",
+      "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+    }
+  ]
+}

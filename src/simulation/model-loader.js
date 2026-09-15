@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 165) {
+    const {makeBakedWaveCam} = await import('./baked/wave-cam.js');
+    const model = await makeBakedWaveCam();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 164) {
     const {makeKneePress} = await import('./knee-press.js');
     const model = makeKneePress();

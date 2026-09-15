@@ -1,13 +1,13 @@
-# Active reconstruction: 165
+# Shipped reconstruction: 165 waved face cam
 
-165 now has an unregistered 13-mesh source assembly. Whole-solid projection
-exposed a 23-pixel error hidden by the earlier front-rim-only metric; a profile
-cut across the cam's depth reduces the sampled cam/roller outline error to
-0.062 pixel. Native motion still has a large rebound and a brief actual
-cam/roller intersection (0.303 pixel in an augmented 150-pose sweep). The moving
-solid audit deliberately fails. Contact representation, convergence, baking and
-packaged playback remain pending. See [movement 165](movement-165.md).
-The full 507-movement review remains active.
+165 now uses 13 source-shaped meshes and a 666 KB offline contact bake. Its
+quasi-static finite-roller solve replaces the legacy point-contact overlap;
+whole-solid source projection is within 0.14 pixel. The 721-pose baked-solid
+sweep finds no sampled intersection. Fourteen targeted tests, the build and
+packaged desktop/mobile checks pass without loading WASM. Ideal loading,
+guides, depth and rolling assumptions are explicit in
+[movement 165](movement-165.md). Next source review: 166. The full 507-movement
+review remains active.
 
 # Shipped reconstruction: 164 knee press
 
