@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 167) {
+    const {makeReversingGrooveDrum} = await import('./reversing-groove-drum.js');
+    const model = makeReversingGrooveDrum();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 166) {
     const {makeLostMotionBrickPress} = await import('./lost-motion-brick-press.js');
     const model = makeLostMotionBrickPress();

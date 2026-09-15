@@ -1,10 +1,12 @@
-# Open review: 167 reversing spiral drum
+# Shipped reconstruction: 167 reversing spiral drum
 
-The 97-pose selected-interface audit confirms finite-mesh interference at
-the stud/drum, stud/raised track, guide sleeve and both shaft bearings,
-despite negligible reported centerline error. The source page has no working
-2D animation. Replacement contact geometry and source framing remain open;
-see [movement 167](movement-167.md) for evidence and implementation requirements.
+Eight meshes replace the raised track and added frame with a recessed channel
+and the source drum/shaft/rod silhouette. The 129-pose solid sweep finds no
+sampled cross-body overlap. Three motion/clearance tests and packaged browser
+checks pass. Playback is analytic, four seconds per full cycle, with explicit
+dead-center and clearance assumptions. The source page has no working 2D oracle.
+See [movement 167](movement-167.md). Next source review: 168; the full review
+remains active.
 
 # Shipped reconstruction: 166 slotted brick-press drive
 

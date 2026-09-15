@@ -1,0 +1,26 @@
+{
+  "movement": 167,
+  "status": "packaged-desktop-mobile-passed",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 viewport without horizontal overflow",
+    "no WASM request",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/reversing-groove-drum.spec.mjs",
+      "sha256": "c5f852c993d35d57553667b9bdd8ef6070b3b9a3697ca9155b2e247ed52774cf"
+    },
+    {
+      "file": "src/simulation/reversing-groove-drum.js",
+      "sha256": "e18846d149e430de6b614be580214b111f415f64293d601452616c6054dc0f90"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "7dd8b26d7fd37ca5fef474adde6201b37d503fdc4d29be3e3a7efd5dfb5a06d4"
+    }
+  ]
+}
