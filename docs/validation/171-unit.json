@@ -4,15 +4,15 @@
   "command": "node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs",
   "passed": 1,
   "skipped": 164,
-  "scope": "Reconstructed linkage closure, fixed-guide compensation and source-visible transforms after guide-tail and reversing-eye repairs.",
+  "scope": "Reconstructed linkage closure, fixed-guide compensation, source-visible transforms and asymmetric reversing travel.",
   "sources": [
     {
       "file": "tests/models.test.mjs",
-      "sha256": "e6e0188a87eedd5ebedc3f0002e0762ac87c48ee2f75f78e02a590ed8f62ecef"
+      "sha256": "2648c51985b8823dc97c9de824fd9436bb53d02fec6ff331f2c7072f80f5358f"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
+      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
     }
   ]
 }

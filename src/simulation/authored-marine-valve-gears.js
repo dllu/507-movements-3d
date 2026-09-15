@@ -170,9 +170,21 @@ function makeIndexedEccentricSheave({
 function makeEccentricStrap({ radius, sheaveRadius, length, material, z }) {
   const group = new THREE.Group();
   // A single rigid outline joins the bored strap to the tapered rod and eye.
-  const outline = clip.union(poly(circle([0, 0], radius + .075, 192)),
-    poly([[.50, -.37], [.94, -.18], [length, -.075],
-      [length, .075], [.94, .18], [.50, .37]]),
+  const outerRadius = radius + .075;
+  const shoulder = outerRadius / Math.sqrt(2);
+  const shank = new THREE.Shape();
+  shank.moveTo(shoulder, -shoulder);
+  shank.bezierCurveTo(shoulder + .15, -shoulder + .15, .78, -.14, .95, -.14);
+  shank.lineTo(length, -.06);
+  shank.lineTo(length, .06);
+  shank.lineTo(.95, .14);
+  shank.bezierCurveTo(.78, .14, shoulder + .15, shoulder - .15, shoulder, shoulder);
+  shank.closePath();
+  const outline = clip.union(poly(circle([0, 0], outerRadius, 192)),
+    poly(shank.getPoints(64).map(point => point.toArray())),
+    ...[-1, 1].map(sign => poly([[-.07, sign * (outerRadius - .08)],
+      [.07, sign * (outerRadius - .08)], [.07, sign * (outerRadius + .23)],
+      [-.07, sign * (outerRadius + .23)]])),
     poly(circle([length, 0], .13, 96)));
   const shape = clip.difference(outline,
     poly(circle([0, 0], sheaveRadius + .006, 192)),
@@ -224,12 +236,12 @@ function oscillatingMarineEngineStephensonValveGear() {
   // marine form of the Stephenson gear. Prescribing which point of the rigid
   // slot crosses the fixed valve-guide line is the reversing control: the two
   // finite eccentric rods then determine the remaining link pose exactly.
-  const eccentricity = 0.24;
-  const sheaveRadius = 0.69;
+  const eccentricity = 0.13;
+  const sheaveRadius = 0.57;
   const strapPitchRadius = sheaveRadius + 0.09;
   const sheaveWidth = 0.24;
-  const aheadLayerZ = 0.27;
-  const asternLayerZ = -0.27;
+  const aheadLayerZ = -0.27;
+  const asternLayerZ = 0.27;
   // The engraving's rod pins are asymmetric about the die guide. Preserve
   // those measured positions instead of centering an arbitrary equal span.
   const linkCenterAtSource = sourcePointFromRaster(sourceRasterLinkDie);
@@ -239,8 +251,10 @@ function oscillatingMarineEngineStephensonValveGear() {
     .sub(linkCenterAtSource);
   const linkPinSpacing = aheadLinkPinLocal.distanceTo(asternLinkPinLocal);
   const linkSlotRadius = 2.8;
-  const selectorHalfAngle = 0.27;
+  const selectorHalfAngle = 0.25;
+  const selectorAsymmetry = 0.06;
   const visibleLinkHalfAngle = 0.405;
+  const visibleLinkRightAngle = 0.27;
   const dieGuideX = 0;
   const sourceSelector = 0;
   const sourceInputAngle = 0;
@@ -272,7 +286,8 @@ function oscillatingMarineEngineStephensonValveGear() {
   const solveLinkPose = (inputAngle, selector) => {
     const resolvedAngle = wrapAngle(inputAngle);
     const resolvedSelector = THREE.MathUtils.clamp(selector, -1, 1);
-    const dieSlotAngle = resolvedSelector * selectorHalfAngle;
+    const dieSlotAngle = resolvedSelector * selectorHalfAngle
+      - selectorAsymmetry * resolvedSelector ** 2;
     const dieLocalPoint = linkSlotPoint(linkSlotRadius, dieSlotAngle);
     const aheadEccentricCenter = eccentricCenterAt(resolvedAngle, -1);
     const asternEccentricCenter = eccentricCenterAt(resolvedAngle, 1);
@@ -704,15 +719,15 @@ function oscillatingMarineEngineStephensonValveGear() {
     'single-rigid-curved-slotted-stephenson-launch-link';
   const translateProfile = (shape, x, y) => shape.map(polygon =>
     polygon.map(ring => ring.map(point => [point[0] + x, point[1] + y])));
-  const upperArc = (halfWidth, halfAngle) => translateProfile(
+  const upperArc = (halfWidth, halfAngle, rightAngle = halfAngle) => translateProfile(
     sector(linkSlotRadius - halfWidth, linkSlotRadius + halfWidth,
-      -Math.PI / 2 - halfAngle, -Math.PI / 2 + halfAngle, 192), 0, linkSlotRadius);
+      -Math.PI / 2 - halfAngle, -Math.PI / 2 + rightAngle, 192), 0, linkSlotRadius);
   const reachLugLocal = sourcePointFromRaster(new THREE.Vector2(60, 298)).sub(linkCenterAtSource);
   const upperPinPoints = [aheadLinkPinLocal, asternLinkPinLocal, reachLugLocal];
-  const upperOutline = clip.union(upperArc(.17, visibleLinkHalfAngle),
+  const upperOutline = clip.union(upperArc(.17, visibleLinkHalfAngle, visibleLinkRightAngle),
     ...upperPinPoints.map(point => poly(circle(point.toArray(), .13, 96))));
   const upperLinkPlate = new THREE.Mesh(plate(clip.difference(upperOutline,
-    upperArc(.06, visibleLinkHalfAngle - .035),
+    upperArc(.06, visibleLinkHalfAngle - .035, visibleLinkRightAngle - .035),
     ...upperPinPoints.map(point => poly(circle(point.toArray(), .074, 96)))), -.10, .10), accentMaterial);
   upperLinkPlate.userData.role = 'finite-stephenson-link-with-through-slot-and-pin-bores';
   linkGroup.add(upperLinkPlate);
@@ -732,7 +747,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     const group = new THREE.Group();
     group.position.set(localPoint.x, localPoint.y, 0);
     group.userData.role = role;
-    const eye = makeEye(0.13, 0.055, drivenMaterial, z + Math.sign(z) * .16);
+    const eye = makeEye(0.13, 0.055, drivenMaterial, z + Math.sign(z) * .14);
     const pin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
     pin.position.z = z;
     group.add(eye, pin);
@@ -963,6 +978,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     outputRodLength,
     rockshaftPivotLocal: rockshaftPivotLocal.clone(),
     selectorHalfAngle,
+    selectorAsymmetry,
     selectorPeriod,
     shaftCenter: shaftCenter.clone(),
     slideEyeRadius,

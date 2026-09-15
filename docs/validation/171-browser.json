@@ -1,7 +1,7 @@
 {
   "movement": 171,
-  "status": "packaged-lower-repair-desktop-mobile-passed",
-  "scope": "Source guide tail and upper bearing, bored reversing eye, shortened reach rod and 36-mesh scene; upper eccentric outlines remain open.",
+  "status": "packaged-desktop-mobile-passed",
+  "scope": "Reconstructed 36-mesh marine valve gear with corrected eccentric layers, rounded strap shoulders/lugs and asymmetric upper slot. Hidden dimensions and operator selection remain documented assumptions.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
+      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

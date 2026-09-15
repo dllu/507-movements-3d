@@ -1,13 +1,15 @@
-# Open review: 171 oscillating marine valve gear
+# Shipped reconstruction: 171 oscillating marine valve gear
 
-A whole-assembly sweep found and resolved eight interfering pairs at the
-reversing joint and added upper guide bars. The model now has a bored reversing
-rod, the source's long central guide tail and one bored upper bearing. All 35
-physical meshes pass the 512-pair, 129-pose sweep; guide engagement is checked.
-Sixteen source landmarks fit within 0.5 pixel. The scene has 36 meshes including
-the invisible camera envelope. Fixed-column compensation, closure and cycle
-continuity pass. Upper eccentric contours remain under review, with hidden
-rocker/output dimensions documented as assumptions; see [movement 171](movement-171.md).
+Thirty-six meshes reconstruct the source-visible gear with corrected eccentric
+layering and proportions, rounded strap shoulders, side lugs, an asymmetric
+upper slot and a long guided central tail. A frame-fixed translating lower
+sector replaces the former cylinder-carried guides. Sixteen source landmarks
+fit within 0.5 pixel and three upper circular features within 4.12 pixels.
+The 512-pair whole-assembly sweep, compensation and closure audits, cycle seam,
+model test, build and desktop/mobile checks pass. Playback is analytic, with
+six-second crank turns and an 18-second complete cycle. Hidden dimensions and
+control assumptions are documented in [movement 171](movement-171.md).
+Next source review: 172; the full review remains active.
 
 # Shipped reconstruction: 170 crossed-arm governor
 

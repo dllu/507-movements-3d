@@ -47,7 +47,16 @@ try {
   assert.ok(Number.isFinite(innerEdge));
   add('inner arc apex',new THREE.Vector3(0,innerEdge,0),[134,390]);
   const maximumError=Math.max(...points.map(p=>p.error));
-  const report={movement:171,points,maximumError,scope:'Initial orthographic lower-slide and central/reversing-rod landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.',sources:['scripts/review-marine-valve-source-fit.mjs','src/simulation/authored-marine-valve-gears.js','public/engravings/mm_171.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+  const upperFeatures=[];
+  const addUpper=(name,world,source)=>{const projected=project(world);upperFeatures.push({name,source,projected,error:Math.hypot(projected[0]-source[0],projected[1]-source[1])});};
+  addUpper('front sheave center',b.asternSheave.getWorldPosition(new THREE.Vector3()),[146,51]);
+  addUpper('rear sheave center',b.aheadSheave.getWorldPosition(new THREE.Vector3()),[129,51]);
+  const frontBounds=new THREE.Box3().setFromObject(b.asternSheave.userData.body);
+  addUpper('front sheave top',new THREE.Vector3(frontBounds.getCenter(new THREE.Vector3()).x,frontBounds.max.y,0),[146,16]);
+  const maximumUpperError=Math.max(...upperFeatures.map(p=>p.error));
+  assert.ok(maximumUpperError<5,'approximate upper circular features must fit within five pixels');
+  assert.ok(g.asternLayerZ>g.aheadLayerZ,'right-hand eccentric is in front in the engraving');
+  const report={movement:171,points,maximumError,upperFeatures,maximumUpperError,scope:'Initial orthographic lower-slide, central/reversing-rod and approximate upper circular landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.',sources:['scripts/review-marine-valve-source-fit.mjs','src/simulation/authored-marine-valve-gears.js','public/engravings/mm_171.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
   fs.writeFileSync('docs/validation/171-source-fit.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
   assert.ok(maximumError<4,'selected source contours must fit within four source pixels');
 } finally {disposeObject3D(model.root);}

@@ -195,15 +195,54 @@
     }
   ],
   "maximumError": 0.5000000000028745,
-  "scope": "Initial orthographic lower-slide and central/reversing-rod landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.",
+  "upperFeatures": [
+    {
+      "name": "front sheave center",
+      "source": [
+        146,
+        51
+      ],
+      "projected": [
+        142.01185185185184,
+        52
+      ],
+      "error": 4.111608645235775
+    },
+    {
+      "name": "rear sheave center",
+      "source": [
+        129,
+        51
+      ],
+      "projected": [
+        125.98814814814816,
+        52
+      ],
+      "error": 3.173523527170294
+    },
+    {
+      "name": "front sheave top",
+      "source": [
+        146,
+        16
+      ],
+      "projected": [
+        142.01185185185184,
+        16.871111551920578
+      ],
+      "error": 4.082176011328645
+    }
+  ],
+  "maximumUpperError": 4.111608645235775,
+  "scope": "Initial orthographic lower-slide, central/reversing-rod and approximate upper circular landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.",
   "sources": [
     {
       "file": "scripts/review-marine-valve-source-fit.mjs",
-      "sha256": "cd579e1b2f1c08360623f1b035bf683da20d2b9d2187e4191107c3c9aeb1a037"
+      "sha256": "eebdc2475976770db488ae97209c468cd734ec3cfc63e6a0832e46eded5b87d6"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
+      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
     },
     {
       "file": "public/engravings/mm_171.png",
