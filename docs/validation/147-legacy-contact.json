@@ -1,0 +1,351 @@
+{
+  "movement": 147,
+  "status": "legacy-contact-failure",
+  "method": "Actual cylinder vertices, edge midpoints and face centers tested against both oriented ramp meshes. Decorations excluded. Prescribed center height equals ramp height plus roller radius; this does not offset a roller along the ramp normal.",
+  "summary": {
+    "poses": 65,
+    "failingPoses": 64,
+    "maximumDepth": 0.07066008948573964
+  },
+  "poses": [
+    {
+      "time": 0,
+      "penetrations": 146,
+      "maximumDepth": 0.07064834960007442
+    },
+    {
+      "time": 0.15625,
+      "penetrations": 146,
+      "maximumDepth": 0.07025635729080736
+    },
+    {
+      "time": 0.3125,
+      "penetrations": 146,
+      "maximumDepth": 0.07038914760913
+    },
+    {
+      "time": 0.46875,
+      "penetrations": 146,
+      "maximumDepth": 0.07057527670416261
+    },
+    {
+      "time": 0.625,
+      "penetrations": 146,
+      "maximumDepth": 0.07023363164853491
+    },
+    {
+      "time": 0.78125,
+      "penetrations": 142,
+      "maximumDepth": 0.07066008948573917
+    },
+    {
+      "time": 0.9375,
+      "penetrations": 138,
+      "maximumDepth": 0.06983846605141864
+    },
+    {
+      "time": 1.09375,
+      "penetrations": 114,
+      "maximumDepth": 0.06728206296874535
+    },
+    {
+      "time": 1.25,
+      "penetrations": 90,
+      "maximumDepth": 0.058590390758829554
+    },
+    {
+      "time": 1.40625,
+      "penetrations": 64,
+      "maximumDepth": 0.04806214796508673
+    },
+    {
+      "time": 1.5625,
+      "penetrations": 50,
+      "maximumDepth": 0.036753275396260894
+    },
+    {
+      "time": 1.71875,
+      "penetrations": 34,
+      "maximumDepth": 0.02754856036920997
+    },
+    {
+      "time": 1.875,
+      "penetrations": 20,
+      "maximumDepth": 0.01816414515902881
+    },
+    {
+      "time": 2.03125,
+      "penetrations": 10,
+      "maximumDepth": 0.010989414339276856
+    },
+    {
+      "time": 2.1875,
+      "penetrations": 6,
+      "maximumDepth": 0.0006521329358832047
+    },
+    {
+      "time": 2.34375,
+      "penetrations": 2,
+      "maximumDepth": 0.0005517604971892903
+    },
+    {
+      "time": 2.5,
+      "penetrations": 0,
+      "maximumDepth": 0
+    },
+    {
+      "time": 2.65625,
+      "penetrations": 2,
+      "maximumDepth": 0.0005517604971892006
+    },
+    {
+      "time": 2.8125,
+      "penetrations": 6,
+      "maximumDepth": 0.000652132935883432
+    },
+    {
+      "time": 2.96875,
+      "penetrations": 10,
+      "maximumDepth": 0.010989414339274736
+    },
+    {
+      "time": 3.125,
+      "penetrations": 20,
+      "maximumDepth": 0.018164145159029473
+    },
+    {
+      "time": 3.28125,
+      "penetrations": 34,
+      "maximumDepth": 0.027548560369210204
+    },
+    {
+      "time": 3.4375,
+      "penetrations": 50,
+      "maximumDepth": 0.03675327539626108
+    },
+    {
+      "time": 3.59375,
+      "penetrations": 64,
+      "maximumDepth": 0.048062147965086954
+    },
+    {
+      "time": 3.75,
+      "penetrations": 90,
+      "maximumDepth": 0.05859039075882895
+    },
+    {
+      "time": 3.90625,
+      "penetrations": 114,
+      "maximumDepth": 0.06728206296874499
+    },
+    {
+      "time": 4.0625,
+      "penetrations": 138,
+      "maximumDepth": 0.0698384660514192
+    },
+    {
+      "time": 4.21875,
+      "penetrations": 142,
+      "maximumDepth": 0.07066008948573964
+    },
+    {
+      "time": 4.375,
+      "penetrations": 146,
+      "maximumDepth": 0.07023363164853431
+    },
+    {
+      "time": 4.53125,
+      "penetrations": 146,
+      "maximumDepth": 0.07057527670416328
+    },
+    {
+      "time": 4.6875,
+      "penetrations": 146,
+      "maximumDepth": 0.07038914760913002
+    },
+    {
+      "time": 4.84375,
+      "penetrations": 146,
+      "maximumDepth": 0.07025635729080645
+    },
+    {
+      "time": 5,
+      "penetrations": 146,
+      "maximumDepth": 0.07064834960007403
+    },
+    {
+      "time": 5.15625,
+      "penetrations": 146,
+      "maximumDepth": 0.07009431470094461
+    },
+    {
+      "time": 5.3125,
+      "penetrations": 148,
+      "maximumDepth": 0.07064444964474932
+    },
+    {
+      "time": 5.46875,
+      "penetrations": 148,
+      "maximumDepth": 0.06993271715067165
+    },
+    {
+      "time": 5.625,
+      "penetrations": 148,
+      "maximumDepth": 0.06993160035035687
+    },
+    {
+      "time": 5.78125,
+      "penetrations": 142,
+      "maximumDepth": 0.07035107037816013
+    },
+    {
+      "time": 5.9375,
+      "penetrations": 148,
+      "maximumDepth": 0.07022838293990531
+    },
+    {
+      "time": 6.09375,
+      "penetrations": 146,
+      "maximumDepth": 0.07031142487291263
+    },
+    {
+      "time": 6.25,
+      "penetrations": 148,
+      "maximumDepth": 0.07051167724414704
+    },
+    {
+      "time": 6.40625,
+      "penetrations": 144,
+      "maximumDepth": 0.06971128002444288
+    },
+    {
+      "time": 6.5625,
+      "penetrations": 146,
+      "maximumDepth": 0.07004798766396024
+    },
+    {
+      "time": 6.71875,
+      "penetrations": 146,
+      "maximumDepth": 0.07046082201233099
+    },
+    {
+      "time": 6.875,
+      "penetrations": 144,
+      "maximumDepth": 0.07007841281734044
+    },
+    {
+      "time": 7.03125,
+      "penetrations": 144,
+      "maximumDepth": 0.07030989359006991
+    },
+    {
+      "time": 7.1875,
+      "penetrations": 146,
+      "maximumDepth": 0.06980063056801591
+    },
+    {
+      "time": 7.34375,
+      "penetrations": 146,
+      "maximumDepth": 0.07019731566234767
+    },
+    {
+      "time": 7.5,
+      "penetrations": 144,
+      "maximumDepth": 0.07022247432413087
+    },
+    {
+      "time": 7.65625,
+      "penetrations": 146,
+      "maximumDepth": 0.07019731566234771
+    },
+    {
+      "time": 7.8125,
+      "penetrations": 146,
+      "maximumDepth": 0.0698006305680158
+    },
+    {
+      "time": 7.96875,
+      "penetrations": 144,
+      "maximumDepth": 0.07030989359007003
+    },
+    {
+      "time": 8.125,
+      "penetrations": 144,
+      "maximumDepth": 0.07007841281734054
+    },
+    {
+      "time": 8.28125,
+      "penetrations": 146,
+      "maximumDepth": 0.07046082201233107
+    },
+    {
+      "time": 8.4375,
+      "penetrations": 146,
+      "maximumDepth": 0.07004798766396027
+    },
+    {
+      "time": 8.59375,
+      "penetrations": 144,
+      "maximumDepth": 0.06971128002444289
+    },
+    {
+      "time": 8.75,
+      "penetrations": 148,
+      "maximumDepth": 0.07051167724414704
+    },
+    {
+      "time": 8.90625,
+      "penetrations": 146,
+      "maximumDepth": 0.07031142487291313
+    },
+    {
+      "time": 9.0625,
+      "penetrations": 148,
+      "maximumDepth": 0.07022838293990563
+    },
+    {
+      "time": 9.21875,
+      "penetrations": 142,
+      "maximumDepth": 0.07035107037816019
+    },
+    {
+      "time": 9.375,
+      "penetrations": 148,
+      "maximumDepth": 0.06993160035035713
+    },
+    {
+      "time": 9.53125,
+      "penetrations": 148,
+      "maximumDepth": 0.06993271715067208
+    },
+    {
+      "time": 9.6875,
+      "penetrations": 148,
+      "maximumDepth": 0.07064444964474924
+    },
+    {
+      "time": 9.84375,
+      "penetrations": 146,
+      "maximumDepth": 0.07009431470094463
+    },
+    {
+      "time": 10,
+      "penetrations": 146,
+      "maximumDepth": 0.07064834960007393
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-fan-governor-contact.mjs",
+      "sha256": "a5467272c6fcabd3d008bce73b92d713f4d0392547f81f67860eed55f7d0eb44"
+    },
+    {
+      "file": "src/simulation/authored-governors.js",
+      "sha256": "24e0ed4d2cc3af45eabe876dbd1167b4afa538b8c4aaab7270d112a8a01ab68f"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import { bevelBodyGeometry, bevelToothGeometry } from './bevel-geometry.js';
 import {
   PALETTE,
@@ -738,10 +739,13 @@ function dragFanInclinedPlaneGovernorMotion() {
   valveLever.add(valveLeverRotor);
   valveLever.userData.rotor = valveLeverRotor;
   const valveLeverBody = new THREE.Mesh(
-    new THREE.BoxGeometry(leverLength, leverThickness, leverDepth),
+    plate(clip.difference(clip.union(
+      capsule([0,0],[leverLength,0],leverThickness/2,24),
+      capsule([.45,0],[1.15,0],.20,32),poly(circle([0,0],.21,64))),
+      capsule([.45,0],[1.15,0],.123,48),poly(circle([0,0],.163,64))),
+    -leverDepth/2,leverDepth/2),
     drivenMaterial,
   );
-  valveLeverBody.position.x = leverLength / 2;
   valveLeverBody.userData.role = 'long-output-arm-of-regulating-valve-lever';
   const valveLeverSlot = new THREE.Mesh(
     new THREE.BoxGeometry(0.95, 0.065, leverDepth + 0.025),
@@ -749,6 +753,7 @@ function dragFanInclinedPlaneGovernorMotion() {
   );
   valveLeverSlot.position.x = leverPivotToFollowerX;
   valveLeverSlot.userData.role = 'straight-slot-receiving-thrust-collar-pin';
+  valveLeverSlot.visible = false;
   const valveLeverEnd = cylinderAlongZ(
     leverThickness * 0.72,
     leverDepth + 0.04,

@@ -1,3 +1,11 @@
+# Current review: 147 air-drag governor
+
+147's lever now has a real slot and pivot bore. Its actual rollers penetrate
+the inclined planes in 64 of 65 tested poses, despite the old zero-error contact
+metadata. Lag and lift are currently prescribed from speed rather than produced
+by drag and contact. Continue with source proportions and a passive physics
+model; see [movement 147](movement-147.md). This review remains incomplete.
+
 # Completed review: 146 measured framed yoke
 
 146 now uses the measured crank, traced broad frame and corrected stroke.
