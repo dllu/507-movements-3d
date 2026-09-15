@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 169) {
+    const {makeLinkedVariableCrank} = await import('./linked-variable-crank.js');
+    const model = makeLinkedVariableCrank();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 168) {
     const {makeVariableRadiusCrank} = await import('./variable-radius-crank.js');
     const model = makeVariableRadiusCrank();

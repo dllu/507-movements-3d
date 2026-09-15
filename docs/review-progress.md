@@ -1,3 +1,14 @@
+# Shipped reconstruction: 169 link-connected crank
+
+Eleven finite meshes replace the inherited shaft spacing and solid joint ends
+with measured proportions, bored link eyes and a rear connecting-link plane.
+Initial moving joints fit within 2.9 pixels. Three tests, the 129-pose solid
+sweep, production build and packaged desktop/mobile checks pass. Playback uses
+analytic rigid closure with a four-second cycle and an explicitly inferred
+hidden power pivot; no direct source animation exists for 169.
+See [movement 169](movement-169.md). Next source review: 170; the full review
+remains active.
+
 # Shipped reconstruction: 168 variable-radius slotted crank
 
 Nine meshes provide a tapered pitman, through-slot and real pin openings.

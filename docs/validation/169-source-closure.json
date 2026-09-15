@@ -1,0 +1,95 @@
+{
+  "movement": 169,
+  "source": "https://507movements.com/mm_169.html",
+  "method": "Planar joint projection from manually read engraving centers; not whole-contour registration. No source 2D animation is available.",
+  "geometry": {
+    "scale": 0.012,
+    "phase": 1.9124118174427038,
+    "radius": 0.5731177889404585,
+    "rightSpan": 2.376969499173265,
+    "leftSpan": 2.2351268420382766,
+    "rockerLength": 7.776,
+    "rockerPivot": [
+      -4.185302820325981,
+      -7.7477485949321325
+    ],
+    "mainPivot": [
+      1.9080000000000001,
+      -0.012
+    ],
+    "mainRadius": 1.0275952510594821,
+    "linkLength": 0.9168031413558746,
+    "period": 4
+  },
+  "joints": [
+    {
+      "name": "auxiliaryPin",
+      "engraving": [
+        251,
+        230
+      ],
+      "projected": [
+        251,
+        230
+      ],
+      "pixelError": 0
+    },
+    {
+      "name": "wrist",
+      "engraving": [
+        61,
+        286
+      ],
+      "projected": [
+        61.83524009848628,
+        288.7596256914786
+      ],
+      "pixelError": 2.88325510130273
+    },
+    {
+      "name": "slotPin",
+      "engraving": [
+        428,
+        172
+      ],
+      "projected": [
+        428.87659142056975,
+        174.7467808666348
+      ],
+      "pixelError": 2.883265101916139
+    },
+    {
+      "name": "mainPin",
+      "engraving": [
+        489,
+        218
+      ],
+      "projected": [
+        490.5936121441997,
+        219.78020570862338
+      ],
+      "pixelError": 2.3892953001159323
+    }
+  ],
+  "poses": 1441,
+  "minimumInnerCircleMargin": 0.1337110376930884,
+  "minimumOuterCircleMargin": 0.5702166735544532,
+  "sources": [
+    {
+      "file": "scripts/measure-linked-variable-crank.mjs",
+      "sha256": "0f35f8056ab5dbd541a0c27d9e8eefdb74c392deee723664abef412c6ce57648"
+    },
+    {
+      "file": "src/simulation/linked-variable-crank-motion.js",
+      "sha256": "0347cdbe2af34819b76ce5268f05cb0c784f2ca2d9bd16b50f3ba91727c29357"
+    },
+    {
+      "file": "src/simulation/variable-radius-crank-motion.js",
+      "sha256": "50a759f29481f201a478f41f2ce3156fe8f09071d2682a821123689d80d4b460"
+    },
+    {
+      "file": "public/engravings/mm_169.png",
+      "sha256": "028ca27e43d6331b479a05ab2cb2491b42e81c96d5ebb2eb581083550672f321"
+    }
+  ]
+}
