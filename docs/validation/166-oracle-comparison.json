@@ -1,0 +1,161 @@
+{
+  "movement": 166,
+  "url": "https://507movements.com/mm_166.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "method": "Execute the original animation with its library at 721 phases. Compare independent two-end slider-crank closure and held-output dwells using oracle dimensions and measured crank angle. Rendering contours come from our measurements of the public-domain engraving, not the oracle drawing.",
+  "maximumOracleCoordinateError": 7.105427357601002e-15,
+  "sourceGeometry": {
+    "scale": 0.015,
+    "center": [
+      0,
+      1.5
+    ],
+    "diskRadius": 3.045,
+    "crankRadius": 1.5280870394058057,
+    "pinRadius": 0.315,
+    "clearance": 0.004,
+    "outer": 7.779352200611374,
+    "inner": 7.111352200611374,
+    "phase": 2.59443924837109,
+    "period": 4
+  },
+  "sourceDwellFraction": 0.3133376929623234,
+  "oracleDwellFraction": 0.35363222672491323,
+  "samples": [
+    {
+      "phase": 0,
+      "pin": [
+        -4.4495934690622105,
+        3.232818887608603
+      ],
+      "slide": [
+        23.363153285617038,
+        0
+      ],
+      "angle": 2.5132741228718345,
+      "stage": "retract"
+    },
+    {
+      "phase": 0.125,
+      "pin": [
+        -5.4322858732732575,
+        -0.860389557721269
+      ],
+      "slide": [
+        22.5,
+        0
+      ],
+      "angle": -2.9845130209103035,
+      "stage": "left-dwell"
+    },
+    {
+      "phase": 0.25,
+      "pin": [
+        -3.232818887608603,
+        -4.4495934690622105
+      ],
+      "slide": [
+        22.5,
+        0
+      ],
+      "angle": -2.199114857512855,
+      "stage": "left-dwell"
+    },
+    {
+      "phase": 0.375,
+      "pin": [
+        0.8603895577212687,
+        -5.4322858732732575
+      ],
+      "slide": [
+        25.263058882838877,
+        0
+      ],
+      "angle": -1.4137166941154071,
+      "stage": "advance"
+    },
+    {
+      "phase": 0.5,
+      "pin": [
+        4.4495934690622105,
+        -3.2328188876086035
+      ],
+      "slide": [
+        29.23968991986129,
+        0
+      ],
+      "angle": -0.6283185307179588,
+      "stage": "advance"
+    },
+    {
+      "phase": 0.625,
+      "pin": [
+        5.4322858732732575,
+        0.8603895577212667
+      ],
+      "slide": [
+        30.5,
+        0
+      ],
+      "angle": 0.1570796326794891,
+      "stage": "right-dwell"
+    },
+    {
+      "phase": 0.75,
+      "pin": [
+        3.232818887608605,
+        4.449593469062209
+      ],
+      "slide": [
+        30.5,
+        0
+      ],
+      "angle": 0.9424777960769374,
+      "stage": "right-dwell"
+    },
+    {
+      "phase": 0.875,
+      "pin": [
+        -0.8603895577212658,
+        5.432285873273258
+      ],
+      "slide": [
+        26.607596720690843,
+        0
+      ],
+      "angle": 1.7278759594743855,
+      "stage": "retract"
+    },
+    {
+      "phase": 1,
+      "pin": [
+        -4.449593469062209,
+        3.232818887608605
+      ],
+      "slide": [
+        23.36315328561704,
+        0
+      ],
+      "angle": 2.513274122871834,
+      "stage": "retract"
+    }
+  ],
+  "sourceHashes": {
+    "html": "5967e035cc42d2d2da7b5557afeea1cafff995471438a0840b89ffd5f3a823fd",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-lost-motion-oracle.mjs",
+      "sha256": "20a4999457e0215e3e5ceedcefdcf0e5bdd9138edc6845eff4d4d1946f22b615"
+    },
+    {
+      "file": "src/simulation/lost-motion-brick-press-motion.js",
+      "sha256": "f95adce84c0e645628837c5a8f99e31e7484dd55155183f4d2d5b97718a115e5"
+    },
+    {
+      "file": "public/engravings/mm_166.png",
+      "sha256": "814e3cad05babe52f4e5e486b1ca98cf969e0249a255e94cceaa6e2cb3bbab77"
+    }
+  ]
+}

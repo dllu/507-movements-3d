@@ -1,0 +1,56 @@
+{
+  "movement": 166,
+  "status": "registered-solid-diagnostic",
+  "parameters": {
+    "scale": 0.015,
+    "center": [
+      0,
+      1.5
+    ],
+    "diskRadius": 3.045,
+    "crankRadius": 1.5280870394058057,
+    "pinRadius": 0.315,
+    "clearance": 0.004,
+    "outer": 7.779352200611374,
+    "inner": 7.111352200611374,
+    "phase": 2.59443924837109,
+    "period": 4
+  },
+  "poses": 129,
+  "meshes": 12,
+  "pairs": 50,
+  "queries": 4437342,
+  "intersections": {},
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
+  "sources": [
+    {
+      "file": "scripts/review-lost-motion-solids.mjs",
+      "sha256": "2f9254792da3b831e5eeeca4d8c5c5627d1867e1f71cfa8682dcef9e93c142f4"
+    },
+    {
+      "file": "src/simulation/lost-motion-brick-press.js",
+      "sha256": "7461dcc3b5cc16a380b3a0dafc0f81e2c4a010fed7ce16576c52090a2820996a"
+    },
+    {
+      "file": "src/simulation/lost-motion-brick-press-motion.js",
+      "sha256": "f95adce84c0e645628837c5a8f99e31e7484dd55155183f4d2d5b97718a115e5"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

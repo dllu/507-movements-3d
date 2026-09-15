@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 166) {
+    const {makeLostMotionBrickPress} = await import('./lost-motion-brick-press.js');
+    const model = makeLostMotionBrickPress();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 165) {
     const {makeBakedWaveCam} = await import('./baked/wave-cam.js');
     const model = await makeBakedWaveCam();

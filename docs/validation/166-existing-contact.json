@@ -1,0 +1,153 @@
+{
+  "movement": 166,
+  "status": "legacy-contact-diagnostic",
+  "poses": 97,
+  "pairs": [
+    [
+      "crankPinBody",
+      "slotFrame"
+    ],
+    [
+      "crankPinBody",
+      "slotOutline"
+    ],
+    [
+      "crankPinBody",
+      "rodBeam"
+    ],
+    [
+      "outputPin",
+      "rodBeam"
+    ],
+    [
+      "outputPin",
+      "outputEye"
+    ]
+  ],
+  "queries": 1606126,
+  "intersections": {
+    "crankPinBody/slotFrame": {
+      "firstTime": 0,
+      "maximumDepth": 0.014020154916577727,
+      "samples": 73020
+    },
+    "crankPinBody/slotOutline": {
+      "firstTime": 0,
+      "maximumDepth": 0.014020154916577727,
+      "samples": 73020
+    },
+    "outputPin/rodBeam": {
+      "firstTime": 0,
+      "maximumDepth": 0.14299999652759093,
+      "samples": 4443
+    }
+  },
+  "geometry": {
+    "activeInnerEngagementVelocity": 0.7321416238839298,
+    "activeOuterEngagementVelocity": -0.8009824360983414,
+    "baseY": -1.7275,
+    "crankPinCenterZ": 0.42,
+    "crankPinLength": 1.78,
+    "crankPinRadius": 0.25,
+    "crankRadius": 1.375,
+    "cyclePeriod": 10.134169850289656,
+    "diskDepth": 0.44,
+    "diskInnerRadius": 2.5,
+    "diskOuterRadius": 2.6875,
+    "driverCenter": {
+      "x": 0,
+      "y": 1.38,
+      "z": 0
+    },
+    "dwellFraction": 0.35363222672491323,
+    "framePlaneZ": -0.62,
+    "fullTurn": 6.283185307179586,
+    "guideClearance": 0.07,
+    "guideEndX": 8.625,
+    "guideRailCenterOffset": 0.4625,
+    "guideRailDepth": 1.16,
+    "guideRailThickness": 0.16,
+    "guideStartX": 4.625,
+    "hubRadius": 0.5,
+    "innerEngagementAngle": 4.346718251875835,
+    "inputAngularSpeed": 0.62,
+    "leftDwellAngle": 1.2051255982860418,
+    "leftDwellX": 5.625,
+    "outerEngagementAngle": 1.0168112128171334,
+    "outputEyeRadius": 0.25,
+    "outputPinLength": 1.12,
+    "outputPinRadius": 0.125,
+    "outputStroke": 2,
+    "rightDwellAngle": 1.0168112128171334,
+    "rightDwellX": 7.625,
+    "rodDepth": 0.32,
+    "rodPlaneZ": 0.72,
+    "slideDepth": 0.68,
+    "slideHalfHeight": 0.3125,
+    "slideHalfWidth": 0.75,
+    "slotCenterDistance": 6.625,
+    "slotFreeTravel": 0.75,
+    "slotInnerEndDistance": 6.25,
+    "slotInnerRadius": 0.25,
+    "slotOuterEndDistance": 7,
+    "slotOuterRadius": 0.5,
+    "slotStraightHalfLength": 0.375,
+    "sourceAnimationCrankPinRadius": 1,
+    "sourceAnimationCrankRadius": 5.5,
+    "sourceAnimationDiskInnerRadius": 10,
+    "sourceAnimationDiskOuterRadius": 10.75,
+    "sourceAnimationGuideEndX": 34.5,
+    "sourceAnimationGuideStartX": 18.5,
+    "sourceAnimationHubRadius": 2,
+    "sourceAnimationInnerEngagementCycle": 0.6918,
+    "sourceAnimationOuterEngagementCycle": 0.16183,
+    "sourceAnimationOutputEyeRadius": 1,
+    "sourceAnimationOutputPinRadius": 0.5,
+    "sourceAnimationPoseCycle": 0.4,
+    "sourceAnimationSlideHalfHeight": 1.25,
+    "sourceAnimationSlideHalfWidth": 3,
+    "sourceAnimationSlotInnerEndDistance": 25,
+    "sourceAnimationSlotInnerRadius": 1,
+    "sourceAnimationSlotOuterEndDistance": 28,
+    "sourceAnimationSlotOuterRadius": 2,
+    "sourceAnimationViewBox": {
+      "height": 46,
+      "width": 46,
+      "x": -11.125,
+      "y": -23
+    },
+    "sourceImageHeight": 525,
+    "sourceImageWidth": 525,
+    "sourcePixelsPerAnimationUnit": 18.88372093023256,
+    "sourcePoseAngle": 2.5132741228718345,
+    "sourceRasterCrankPinCenter": {
+      "x": 141,
+      "y": 221
+    },
+    "sourceRasterDiskBottomY": 478,
+    "sourceRasterDiskCenter": {
+      "x": 228,
+      "y": 274
+    },
+    "sourceRasterDiskLeftX": 27,
+    "sourceRasterDiskRadius": 203,
+    "sourceRasterDiskRightX": 433,
+    "sourceRasterDiskTopY": 72,
+    "sourceScale": 0.25
+  },
+  "method": "Bidirectional actual visible vertices, edge midpoints and triangle centers. Selected moving pin/rod interfaces, not a whole-assembly qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-lost-motion-existing.mjs",
+      "sha256": "cd27f71ad33f91a61e3d4c370c7bd6d93e4ec61b5acedd2891feb36a55099c87"
+    },
+    {
+      "file": "src/simulation/authored-lost-motion.js",
+      "sha256": "bb406eb6fc5b11a74bae0fe1d8b7a26934e923135b62e7c06bf7bba6813d84df"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

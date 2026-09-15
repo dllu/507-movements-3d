@@ -5,7 +5,7 @@ The finite roller stays seated under a quasi-static assumption; the browser
 loads a 666,304-byte asset and interpolates three coordinates. It does not load
 MuJoCo or generate cam/contact geometry at runtime. One revolution takes twelve
 illustrative seconds, giving roughly two seconds per rise/fall of the six lobes.
-The full 507-movement review remains active; the next source review is 166.
+The full 507-movement review remains active; see the review progress record.
 
 ## Source reconstruction
 

@@ -1,3 +1,13 @@
+# Shipped reconstruction: 166 slotted brick-press drive
+
+166 now uses twelve meshes with real pin bores and a single capsule slot.
+The 129-pose clearance sweep finds no sampled intersections. Independent
+lost-motion closure matches the executed 2D oracle at 721 phases with oracle
+dimensions; the engraving-based narrower slot has a documented shorter dwell.
+Three tests, the build and packaged desktop/mobile checks pass without WASM.
+See [movement 166](movement-166.md). Next source review: 167; the full review
+remains active.
+
 # Shipped reconstruction: 165 waved face cam
 
 165 now uses 13 source-shaped meshes and a 666 KB offline contact bake. Its
@@ -6,7 +16,7 @@ whole-solid source projection is within 0.14 pixel. The 721-pose baked-solid
 sweep finds no sampled intersection. Fourteen targeted tests, the build and
 packaged desktop/mobile checks pass without loading WASM. Ideal loading,
 guides, depth and rolling assumptions are explicit in
-[movement 165](movement-165.md). Next source review: 166. The full 507-movement
+[movement 165](movement-165.md). The full 507-movement
 review remains active.
 
 # Shipped reconstruction: 164 knee press
