@@ -1,3 +1,14 @@
+# Working native candidate: 155 reversible elbow pawl
+
+155 now has an unregistered MuJoCo candidate with a source-shaped elbow,
+shallower 23-tooth wheel and ordinary pinned input rod. Only the vertical
+input slide is actuated. Right and left pawl installations each feed one tooth
+per settled cycle in opposite directions. Three tests cover passive feeding,
+contact removal, native/rendered body positions and reset. Reversal requires a
+separate turned-over installation; the invalid in-plane swing was rejected.
+Full support/assembly qualification, impact refinement, backlash, rendering and
+baking remain open in [movement 155](movement-155.md). Continue there.
+
 # Open reconstruction: 155 reversible elbow pawl
 
 155's production pawl never physically meets the wheel: all 129 claimed

@@ -1,0 +1,252 @@
+{
+  "movement": 155,
+  "side": "left",
+  "description": {
+    "mass": {
+      "carrier": {
+        "volume": 1.1791112622695699,
+        "centroid": [
+          0.7060769493737917,
+          0.6722061421441937,
+          0.34707268948687986
+        ],
+        "inertia": [
+          1.1965399710269404,
+          1.1144658142965176,
+          2.2890129514865754,
+          0.5365087240483304,
+          -0.023682801562403932,
+          0.030898956542369682
+        ]
+      },
+      "rod": {
+        "volume": 0.2812205680894844,
+        "centroid": [
+          -1.714875308714195e-17,
+          1.629008694701977,
+          0.5999999940395349
+        ],
+        "inertia": [
+          0.4677564020969582,
+          0.0063824277856688915,
+          0.47226402631885706,
+          -1.4597033979297284e-17,
+          -1.6854155417899338e-18,
+          -5.551115123125783e-17
+        ]
+      },
+      "pawl": {
+        "volume": 0.16856847409990858,
+        "centroid": [
+          -0.7678358588635275,
+          -0.18562049811480225,
+          -7.683010617894226e-18
+        ],
+        "inertia": [
+          0.015658267081535452,
+          0.02493431504948775,
+          0.03897432485200582,
+          -0.0022745315410257518,
+          5.750473036474612e-19,
+          7.772001029110816e-19
+        ]
+      },
+      "output": {
+        "volume": 4.322163892243624,
+        "centroid": [
+          -4.320016270315876e-9,
+          2.4401636455261845e-9,
+          0.02916417006526193
+        ],
+        "inertia": [
+          3.965281708326153,
+          3.9652819253445157,
+          7.6966962574386475,
+          -6.881870410731222e-8,
+          -5.445480855570089e-10,
+          3.075882968068193e-10
+        ]
+      }
+    },
+    "density": 0.23136559023006012,
+    "options": {
+      "timestep": 0.0005,
+      "period": 4.4,
+      "stroke": 0.78,
+      "outputFriction": 3,
+      "bearingTime": 0.001,
+      "bearingImpedance": 0.999,
+      "outputDamping": 0.005,
+      "pawlDamping": 0.02,
+      "pawlSpring": 0,
+      "pawlRest": -0.1,
+      "friction": 0,
+      "gravity": -9.81,
+      "contactTime": 0.001,
+      "side": "left",
+      "pawlInitial": 0
+    },
+    "assumptions": "Candidate only; full rendered assembly is not yet qualified. Pawl side is a separate physical installation, turned over about the radial axis; no in-plane reversal is simulated. Only an ideal vertical input slide is actuated. An ideal top pin closes the rod linkage. Gravity seats the freely hinged click with inferred hinge damping. Output bearing friction represents an inferred resisting tool load. No output angle or click angle is prescribed."
+  },
+  "contactApproximation": {
+    "cog": {
+      "maximumError": 0,
+      "originalVertices": 220,
+      "vertices": 220
+    },
+    "click": {
+      "maximumError": 0.0001913324331362531,
+      "originalVertices": 293,
+      "vertices": 232
+    }
+  },
+  "summary": {
+    "initialContacts": 0,
+    "maximumPenetration": 0.00019494469325232424,
+    "maximumLinkClosure": 5.994047305789574e-7,
+    "settledToothSteps": [
+      0.9999999803716337,
+      1.0000000080001106,
+      1.0000000552691075,
+      1.0000000113438938,
+      0.9999999021334132,
+      1.0000000649667173,
+      0.9999999773547188
+    ]
+  },
+  "cycleEnds": [
+    {
+      "time": 0,
+      "qpos": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "outputTeeth": 0
+    },
+    {
+      "time": 4.400000000000281,
+      "qpos": [
+        -0.00008772132318386076,
+        0.00008771871462333565,
+        0.025878096499376935,
+        0.26701020543465104,
+        -0.00022007083693831918
+      ],
+      "outputTeeth": 0.9774078631708649
+    },
+    {
+      "time": 8.799999999999264,
+      "qpos": [
+        -0.00008772132318108681,
+        0.00008771871462056576,
+        0.025878106437223204,
+        0.5401921699499086,
+        -0.000220070836931243
+      ],
+      "outputTeeth": 1.9774078435424987
+    },
+    {
+      "time": 13.200000000004641,
+      "qpos": [
+        -0.00008772132311693659,
+        0.0000877187145564124,
+        0.02587805812276486,
+        0.8133741420127678,
+        -0.00022007083677039288
+      ],
+      "outputTeeth": 2.9774078515426092
+    },
+    {
+      "time": 17.600000000004332,
+      "qpos": [
+        -0.00008772132324447788,
+        0.00008771871468394866,
+        0.025878077632242237,
+        1.0865561269886648,
+        -0.0002200708370904233
+      ],
+      "outputTeeth": 3.9774079068117167
+    },
+    {
+      "time": 21.999999999994078,
+      "qpos": [
+        -0.00008772132337965096,
+        0.00008771871481911425,
+        0.025878076394785184,
+        1.3597380999649853,
+        -0.00022007083742948375
+      ],
+      "outputTeeth": 4.977407918155611
+    },
+    {
+      "time": 26.399999999983823,
+      "qpos": [
+        -0.00008772132357660928,
+        0.00008771871501605688,
+        0.025878086260659208,
+        1.6329200431069717,
+        -0.00022007083792343056
+      ],
+      "outputTeeth": 5.977407820289024
+    },
+    {
+      "time": 30.79999999997357,
+      "qpos": [
+        -0.00008772132374681403,
+        0.00008771871518624827,
+        0.025878071656984775,
+        1.9061020307320808,
+        -0.00022007083835048644
+      ],
+      "outputTeeth": 6.977407885255741
+    },
+    {
+      "time": 35.19999999998605,
+      "qpos": [
+        -0.00008772132397118913,
+        0.00008771871541061804,
+        0.025878078696228036,
+        2.1792839944231717,
+        -0.0002200708389134115
+      ],
+      "outputTeeth": 7.97740786261046
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-elbow-pawl.mjs",
+      "sha256": "5af0bef2ff0034cfd24758a363041c5eb057d3ce541013a0f9c103c5e5dc899e"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/geometry.js",
+      "sha256": "a1aebd5f348b3041e934b93a21fee189fd7ea2855bad97ac4bf1fc42982eb9b6"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/physics.js",
+      "sha256": "c6bfd78742ce6ab814f25978f28fe06d01b77d3ede685b0b8d4a4f7d0324d5cd"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "src/simulation/mujoco-segment-clamp/contact.js",
+      "sha256": "6b630574d0eb314f4f473acdf850c84016b9a3981d4c9007362806e4f21ce9a4"
+    },
+    {
+      "file": "src/simulation/mujoco/convex-plate.js",
+      "sha256": "d33687d19aa90c0ec89379a0b0f72c4eab9d31bcf30d96ae5ee43b3270163ffa"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ]
+}
