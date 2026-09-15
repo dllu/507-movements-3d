@@ -1,0 +1,50 @@
+{
+  "movement": 170,
+  "status": "bevel-candidate-not-registered",
+  "parameters": {
+    "inputTeeth": 30,
+    "outputTeeth": 30,
+    "module": 0.04002304508877768,
+    "inputRadius": 0.6003456763316652,
+    "outputRadius": 0.6003456763316652,
+    "outerRadius": 0.629,
+    "inputInnerScale": 0.65,
+    "outputInnerScale": 0.65,
+    "toothThicknessFactor": 0.94,
+    "meshPhaseOffset": 0,
+    "apex": [
+      0,
+      -5.032,
+      0
+    ]
+  },
+  "poses": 65,
+  "pairs": 961,
+  "queries": 6414422,
+  "maximumSampledPenetration": 0,
+  "nearestFlankDistanceRange": [
+    0.0023052662062580972,
+    0.0023100160987074565
+  ],
+  "maximumSampledPenetrationPixels": 0,
+  "intersections": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers across one tooth pitch. Cross-gear bodies/teeth only. Finite sampling, not exact contact or continuous collision proof.",
+  "sources": [
+    {
+      "file": "scripts/review-crossed-governor-bevels.mjs",
+      "sha256": "1a250cb1874047eee7b85a2ae079761dc7c1c2ab39c930f645df4eadd3488cb6"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/bevel-pair.js",
+      "sha256": "8041e7e1d154157822c93d4d30b8e5570138c06b881024a6e8e8673639511234"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -55,18 +55,46 @@ by at most 5.80e-5 radians and output by 8.50e-5 world units. This is a promisin
 operating case, not yet a settled periodic or finite-contact qualification.
 With heavier output under the same drive, peak spread increases to 0.858623.
 
+## Settled cycle and replacement bevel candidate
+
+The [settled-cycle qualification](validation/170-native-cycle.json) drives three
+complete spindle turns in a 9.606218-second speed cycle. At both timesteps,
+all corresponding generalized positions and velocities repeat through the
+last two of forty cycles: maximum position error is below 8.84e-10 and velocity
+error below 2.43e-10. The fine-step maximum connection error is 2.24e-8.
+Halving the timestep changes sampled spread by 2.57e-5 radians and output
+travel by 3.83e-5 world units. This qualifies periodicity of the ideal native
+linkage, not finite meshes or the unmodeled output bearing.
+
+The settled spread range is 0.517094–0.760822 radians and output range is
+1.285516–1.627041. The best source-pose seam is sample 65 of 960, differing
+from the measured spread by approximately 0.004406 radians. Full native states
+and the last two cycles are retained temporarily in
+`/dev/shm/170-settled-cycles.json`; no interpolated browser bake is registered.
+
+A separate equal 30-tooth bevel candidate uses the shared Tredgold back-cone
+involute approximation, with conical tooth ends and an inferred 0.629 outer
+radius. It is not an exact generated octoid gear. The
+[65-pose tooth-pitch sweep](validation/170-bevel-clearance.json) checks 961
+cross-gear pairs and 6,414,422 surface queries. No sampled interference is found;
+nearest sampled flank distance stays between 0.002305 and 0.002310 world units.
+Counts, face widths and clearance are inferred; source fit and shaft interfaces
+still require assembly review. This pair is unregistered and does not yet
+constitute a loaded contact simulation.
+
 ## Remaining work
 
 Fit the source silhouette and actual bored joints, reconstruct the rotating
-to nonrotating output connection, and validate the bevel teeth. Qualify a
-settled dynamic cycle with explicit load and drive assumptions, check all
-visible solids through it, then bake the motion for browser playback. Runtime
+to nonrotating output connection, and integrate the candidate bevel pair. Check
+all visible solids through the settled cycle, then bake the motion for browser playback. Runtime
 MuJoCo is not necessary for the final viewer. Build, restart, full framing,
 desktop/mobile and rendering checks follow registration.
 
 ```sh
 node scripts/review-crossed-governor-existing.mjs
 node scripts/probe-crossed-governor.mjs
+node scripts/settle-crossed-governor.mjs
+node scripts/review-crossed-governor-bevels.mjs
 ```
 
 Movement 170 remains open. The full 507-movement review remains active.

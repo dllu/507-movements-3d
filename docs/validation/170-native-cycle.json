@@ -1,0 +1,86 @@
+{
+  "movement": 170,
+  "status": "unregistered-native-cycle-qualified",
+  "period": 9.60621754427926,
+  "turns": 3,
+  "maximumSpreadDifference": 0.000025634060255241842,
+  "maximumOutputDifference": 0.00003825967718551482,
+  "maximumSpindleDifference": 2.473583435858018e-7,
+  "method": "Corresponding states throughout the final two of forty driven cycles, with three complete spindle turns per cycle. Compare all generalized positions and velocities, then halve timestep. No mesh-clearance or bearing-contact qualification.",
+  "runs": [
+    {
+      "steps": 9600,
+      "cycles": 40,
+      "parameters": {
+        "timestep": 0.001000647660862423,
+        "speedAmplitude": 0.03,
+        "period": 9.60621754427926,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 1,
+        "spindleDrive": true
+      },
+      "best": {
+        "index": 65,
+        "maximumPositionError": 2.07073469482566e-10,
+        "maximumVelocityError": 2.1289873435427573e-11,
+        "sourceSpreadError": 0.004402519884438849
+      },
+      "maximumCyclePositionError": 2.1901058744333568e-10,
+      "maximumCycleVelocityError": 7.543386748576353e-11,
+      "maximumClosureError": 4.255757107051604e-8,
+      "spreadRange": [
+        0.5170905322089961,
+        0.7608219586290499
+      ],
+      "outputRange": [
+        1.2855153591338961,
+        1.6270451956199348
+      ]
+    },
+    {
+      "steps": 19200,
+      "cycles": 40,
+      "parameters": {
+        "timestep": 0.0005003238304312115,
+        "speedAmplitude": 0.03,
+        "period": 9.60621754427926,
+        "outputMass": 0.02,
+        "armMass": 0.02,
+        "damping": 1,
+        "spindleDrive": true
+      },
+      "best": {
+        "index": 65,
+        "maximumPositionError": 8.35434832424653e-10,
+        "maximumVelocityError": 4.56652406318446e-11,
+        "sourceSpreadError": 0.0044059501158819625
+      },
+      "maximumCyclePositionError": 8.836380516186182e-10,
+      "maximumCycleVelocityError": 2.4291905639794997e-10,
+      "maximumClosureError": 2.2320237360431207e-8,
+      "spreadRange": [
+        0.5170939624404393,
+        0.7608216444044729
+      ],
+      "outputRange": [
+        1.2855158907779856,
+        1.6270413186152317
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/settle-crossed-governor.mjs",
+      "sha256": "a27a41c4f645eaef4960590efbaa4d71c04d3072e55a78e966404cd82cf9db0a"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/physics.js",
+      "sha256": "dcee5a948a2f6ad37747872ad72c5aa1a48d96c23484e33b80654ed77189ea03"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

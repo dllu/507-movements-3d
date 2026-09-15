@@ -4,8 +4,10 @@ The selected finite-joint audit finds interference at all seven checked
 interfaces. An unregistered MuJoCo study now drives only the spindle, leaving
 crossed arms, upper links and axial output passive. Eight load/drive/timestep
 cases identify branch failures at excessive speed and a promising smaller
-drive range with timestep agreement. Source solids, bevel contact, a settled
-cycle and browser bake remain open; see [movement 170](movement-170.md).
+drive range. Forty-cycle runs now qualify periodicity at two timesteps, and
+an unregistered conical involute bevel pair passes its finite-surface sweep.
+Source solids, the output bearing, assembly clearance and browser bake remain
+open; see [movement 170](movement-170.md).
 
 # Shipped reconstruction: 169 link-connected crank
 
