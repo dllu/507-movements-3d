@@ -1,3 +1,17 @@
+# Movements 181–182: both passive transfers now work; clearance remains open
+
+A two-pixel upper-toe extension and a lighter inferred catch weight let the
+candidate complete three full cycles at three native timesteps. Isolated
+friction-free holding, catch-lift release and disabled-contact controls pass;
+the previous heavier catch remains a failed return control. The probe now
+checks contact distance at every solver step. Contact penetration and the
+complete source-fitted visible assembly remain open, so production still has
+its old scripted latch and six known intersections. Continue with finite
+clearance and the catch/finger assembly; see [181–182 review](movement-181.md).
+The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: passive catch prototype; return transfer still fails
 
 Added a traced catch/finger contact model and reproducible isolated/coupled

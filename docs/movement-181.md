@@ -100,21 +100,37 @@ candidate continuous catch outline and finite finger surfaces, including the
 lower finger's pointed tripping nose. This is an offline prototype; it has not
 replaced the six-intersection scripted latch in production.
 
-The candidate exposes an important distinction between holding and transferring:
+The candidate now completes both transfers instead of only the upward stroke.
+The upper finger's toe extends two source pixels left and down along its existing
+holding face. That lets the returning upper handle lift the catch and release
+the lower heel. With the previous catch mass of 0.25, the lower handle then
+caught again on its pointed nose. Reducing the inferred catch mass to 0.17 lets
+the weighted lower handle clear that second contact and return fully.
 
-- Both handles hold passively in isolated tests at 0.00025- and 0.000125-second
-  timesteps. They also hold with all friction coefficients zero. A brief external
-  torque on the catch releases either handle; disabling contact prevents holding.
-- Registering the upper holding face 3 source pixels higher and the lower heel
-  6 pixels right/5 up, with a one-sided catch stop at zero, lets the first coupled
-  upward stroke complete at both tested timesteps (0.0005 and 0.00025 seconds).
-  Only the piston is actuated in this test. Both weighted handles and the catch
-  move passively. The top-stage handle errors are below 0.000172 radians and the
-  piston error is 0.004905 model units.
-- The return transfer **fails** at both timesteps. The upper finger does not
-  lift the catch enough to release the lower handle; the upper handle then falls
-  open again. The following upward stroke stalls about 1.426 model units short.
-  The two-cycle qualification command therefore exits nonzero.
+- Both handles still hold passively in isolated tests at 0.00025- and
+  0.000125-second timesteps, including with all friction coefficients zero.
+  An external catch-lift pulse releases them; disabling contact prevents holding.
+- The coupled model actuates only the piston. Both weighted handles and the
+  catch remain passive. Three complete 18-second cycles reach all six endpoint
+  stages at each of three timesteps: 0.0005, 0.00025 and 0.000125 seconds.
+- The heavier 0.25 catch remains a failed control: it holds the lower handle
+  partway through its return. Disabling contact also prevents the required
+  switching sequence. Stable integration alone is not a passing transfer.
+- The diagnostic now checks contact distance at **every solver step**, rather
+  than only at the 20 ms output samples. Finite clearance is a separate gate;
+  the transfer result does not establish a collision-free playback asset.
+  The worst reported penetration is 0.001348 model units (about 0.108 source
+  pixels), during the return. All three timesteps fail the clearance gate, so
+  the qualification command still exits nonzero. Endpoint errors across the
+  passing transfer trials stay below 0.000763 radians for the handles and
+  0.004906 model units for the piston.
+
+Exploratory weight trials were sensitive: a 0.16 catch completed some runs but
+lost the upper latch at the finest timestep. Increasing the contact margin from
+0.0002 to 0.001 also lost upper retention on a later return. Extending the upper
+notch another two pixels and raising the lower nose two pixels did not fix that
+larger-margin trial. Those variants are not the current candidate. The inferred
+weight and the narrow release sequence remain reconstruction limitations.
 
 The lower isolated fixture starts with the catch at +0.033 radians, just clear
 of the holding face reached during the coupled ascent. Starting that fixture
@@ -129,12 +145,11 @@ still falls short of the horn visible in 182, and the catch's upper contour
 does not overlay both drawings well. Adding a separate opposite-side nose
 jammed the first transfer in exploratory tests. Changes to physical cycle
 period alone (6, 9 and 12 seconds) did not fix the unregistered reconstruction.
-The next geometry change should address the upper finger and catch together,
-using the assembled closed pose and both source views, rather than accepting
-a one-stroke success as a working cycle.
+Further reconstruction must preserve both transfers while addressing the upper
+finger and catch together, using the assembled closed pose and both source views.
 
 Reproduce the prototype with `node scripts/probe-diagonal-catch-transfer.mjs`
-(expected nonzero exit while transfer fails). It writes the compact report above
+(a nonzero exit now also reports a failed finite-contact-clearance gate). It writes the compact report above
 and full traces to `/dev/shm/181-transfer-probe.json`.
 `node scripts/preview-diagonal-catch-profiles.mjs` writes a source-overlay HTML
 and PNG to `/dev/shm/181-candidate-profiles.*`. The source site's 181 page marks
@@ -144,8 +159,9 @@ its animation unavailable; the engraving and caption remain the reference.
 
 Finish reconstructing the actual hook/finger surfaces from both engravings. The current
 nearly closed circular pockets and cylindrical latch rollers are not faithful
-and still intersect. Then validate passive catch retention and release with
-both weighted handles and the piston together before baking that motion.
+and still intersect. Passive transfer now works in the candidate contact model;
+resolve its finite clearance and validate the complete visible assembly before
+baking that motion.
 The finite piston rod also needs the source's sectioned extent, and the full
 catch/handle silhouettes need further comparison. Do not mark either movement
 fully reviewed or advance to 183 yet. The complete 507-movement goal remains active.

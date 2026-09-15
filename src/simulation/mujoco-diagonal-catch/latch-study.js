@@ -3,7 +3,7 @@ import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 import {convexProfilePieces} from '../mujoco-bench-clamp/profile.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 
-export function makeLatchStudy(m,{side='upper',contacts=true,timestep=.00025,friction=.1,catchMass=.25,release=false,registered=true}={}){
+export function makeLatchStudy(m,{side='upper',contacts=true,timestep=.00025,friction=.1,catchMass=.17,release=false,registered=true}={}){
  const {fit,raster,polygons,angle:initial}=diagonalLatchFinger(side,{registered});
  // The lower holding face seats with the catch raised by about 0.032 rad,
  // as reached passively in the coupled ascent. Starting it at zero would

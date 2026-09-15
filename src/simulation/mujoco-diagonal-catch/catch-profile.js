@@ -37,7 +37,7 @@ export function diagonalCatchProfile() {
 export function diagonalLatchFinger(side,{registered=true}={}) {
  const fit=fitDiagonalHandle(side),angle=side==='upper'?0:fit.angle;
  const raster=side==='upper'
-  ? [[218,122],[229,127],[233,143],[222,148],[213,127]].map(([x,y])=>[x,y-(registered?3:0)])
+  ? [[218,122],[229,127],[233,143],[222,148],[registered?211:213,registered?129:127]].map(([x,y])=>[x,y-(registered?3:0)])
   : [[326,296],[329,288],[332,307],[331,320],[323,321],[320,312]];
  const points=raster.map(([x,y])=>[(x-271)*.0125-fit.pivot[0],(234-y)*.0125-fit.pivot[1]]);
  let polygons=poly(points),heelRaster=null;

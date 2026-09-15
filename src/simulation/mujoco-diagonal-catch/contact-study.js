@@ -8,7 +8,7 @@ import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 
 // Both weighted handles and the catch are passive. Only the piston is driven.
 // Axial contact layers separate the working arms from the latch fingers.
-export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.25,contacts=true,period=18,registered=true}={}){
+export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.17,contacts=true,period=18,registered=true}={}){
  const visual=createAuthoredDiagonalCatchMovement({id:181}),g=visual.root.userData.geometry,b=visual.root.userData.blocks;
  let assets='',next=0;
  const collision=(rings,mask,affinity,z)=>{
