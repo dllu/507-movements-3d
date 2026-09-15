@@ -28,7 +28,7 @@ function finiteMarineOutputRod(length) {
   const root = new THREE.Group();
   const hole = (center, radius) => poly(circle(center, radius, 96));
   const shape = clip.difference(clip.union(capsule([0, 0], [length, 0], .045),
-    hole([0, 0], .13), hole([length, 0], .12)), hole([0, 0], .094), hole([length, 0], .079));
+    hole([0, 0], .13), hole([length, 0], .12)), hole([0, 0], .049), hole([length, 0], .079));
   root.add(new THREE.Mesh(plate(shape, -.05, .05), matte(PALETTE.driven)));
   root.userData.setEndpoints = (start, end) => {
     root.position.set(start.x, start.y, .40);
@@ -99,23 +99,6 @@ function linkSlotPoint(radius, angle) {
     radius * Math.sin(angle),
     radius * (1 - Math.cos(angle)),
   );
-}
-
-function makeLinkArcCurve({
-  centerRadius,
-  railRadius,
-  halfAngle,
-  z = 0,
-}) {
-  const points = Array.from({ length: 65 }, (_, index) => {
-    const angle = -halfAngle + 2 * halfAngle * index / 64;
-    return new THREE.Vector3(
-      railRadius * Math.sin(angle),
-      centerRadius - railRadius * Math.cos(angle),
-      z,
-    );
-  });
-  return new THREE.CatmullRomCurve3(points, false, 'centripetal');
 }
 
 function makeTrunnionArcCurve({ radius, halfAngle, z = 0 }) {
@@ -253,7 +236,6 @@ function oscillatingMarineEngineStephensonValveGear() {
   const linkSlotRadius = 2.8;
   const selectorHalfAngle = 0.27;
   const visibleLinkHalfAngle = 0.405;
-  const linkSlotHalfWidth = 0.105;
   const dieGuideX = 0;
   const sourceSelector = 0;
   const sourceInputAngle = 0;
@@ -773,53 +755,21 @@ function oscillatingMarineEngineStephensonValveGear() {
   const linkGroup = new THREE.Group();
   linkGroup.userData.role =
     'single-rigid-curved-slotted-stephenson-launch-link';
-  const innerLinkCurve = makeLinkArcCurve({
-    centerRadius: linkSlotRadius,
-    halfAngle: visibleLinkHalfAngle,
-    railRadius: linkSlotRadius - linkSlotHalfWidth,
-  });
-  const outerLinkCurve = makeLinkArcCurve({
-    centerRadius: linkSlotRadius,
-    halfAngle: visibleLinkHalfAngle,
-    railRadius: linkSlotRadius + linkSlotHalfWidth,
-  });
-  const innerLinkRail = makeArcRail(
-    innerLinkCurve,
-    0.075,
-    accentMaterial,
-  );
-  innerLinkRail.userData.role = 'inner-edge-of-stephenson-link-slot';
-  const outerLinkRail = makeArcRail(
-    outerLinkCurve,
-    0.075,
-    accentMaterial,
-  );
-  outerLinkRail.userData.role = 'outer-edge-of-stephenson-link-slot';
-  linkGroup.add(innerLinkRail, outerLinkRail);
-  const linkEndBridges = [-1, 1].map((sign) => {
-    const angle = sign * visibleLinkHalfAngle;
-    const inner = new THREE.Vector3(
-      (linkSlotRadius - linkSlotHalfWidth) * Math.sin(angle),
-      linkSlotRadius
-        - (linkSlotRadius - linkSlotHalfWidth) * Math.cos(angle),
-      0,
-    );
-    const outer = new THREE.Vector3(
-      (linkSlotRadius + linkSlotHalfWidth) * Math.sin(angle),
-      linkSlotRadius
-        - (linkSlotRadius + linkSlotHalfWidth) * Math.cos(angle),
-      0,
-    );
-    const bridge = makeBeam(inner, outer, {
-      color: PALETTE.accent,
-      depth: 0.18,
-      jointRadius: 0.001,
-      thickness: 0.13,
-    });
-    bridge.userData.role = `${sign < 0 ? 'ahead' : 'astern'}-closed-slot-end`;
-    linkGroup.add(bridge);
-    return bridge;
-  });
+  const translateProfile = (shape, x, y) => shape.map(polygon =>
+    polygon.map(ring => ring.map(point => [point[0] + x, point[1] + y])));
+  const upperArc = (halfWidth, halfAngle) => translateProfile(
+    sector(linkSlotRadius - halfWidth, linkSlotRadius + halfWidth,
+      -Math.PI / 2 - halfAngle, -Math.PI / 2 + halfAngle, 192), 0, linkSlotRadius);
+  const reachLugLocal = new THREE.Vector2(-1.22, 0.16);
+  const upperPinPoints = [aheadLinkPinLocal, asternLinkPinLocal, reachLugLocal];
+  const upperOutline = clip.union(upperArc(.17, visibleLinkHalfAngle),
+    ...upperPinPoints.map(point => poly(circle(point.toArray(), .13, 96))));
+  const upperLinkPlate = new THREE.Mesh(plate(clip.difference(upperOutline,
+    upperArc(.06, visibleLinkHalfAngle - .035),
+    ...upperPinPoints.map(point => poly(circle(point.toArray(), .074, 96)))), -.10, .10), accentMaterial);
+  upperLinkPlate.userData.role = 'finite-stephenson-link-with-through-slot-and-pin-bores';
+  linkGroup.add(upperLinkPlate);
+  const linkEndBridges = []; // Closed ends are integral to the plate.
   const linkPinAssemblies = [
     {
       localPoint: aheadLinkPinLocal,
@@ -842,13 +792,14 @@ function oscillatingMarineEngineStephensonValveGear() {
     linkGroup.add(group);
     return group;
   });
-  const reachLugLocal = new THREE.Vector2(-1.22, 0.16);
   const reachLug = new THREE.Group();
   reachLug.position.set(reachLugLocal.x, reachLugLocal.y, 0.32);
   reachLug.userData.role = 'source-visible-link-lifting-reach-lug';
+  const reachLugPin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
+  reachLugPin.position.z = -0.12;
   reachLug.add(
     makeEye(0.13, 0.052, accentMaterial, 0),
-    cylinderAlongZ(0.07, 0.34, darkMaterial, 24),
+    reachLugPin,
   );
   linkGroup.add(reachLug);
   root.add(linkGroup);
@@ -874,11 +825,12 @@ function oscillatingMarineEngineStephensonValveGear() {
   dieBlock.userData.role =
     'guided-die-block-sliding-inside-stephenson-link-slot';
   const dieBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.23, 0.31, 0.46),
+    plate(clip.difference(upperArc(.055, .03),
+      poly(circle([0, 0], .049, 96))), -.39, -.21),
     darkMaterial,
   );
-  dieBody.userData.role = 'rectangular-link-die';
-  const diePin = cylinderAlongZ(0.09, 0.88, brassMaterial, 28);
+  dieBody.userData.role = 'curved-link-die-with-pin-bore';
+  const diePin = cylinderAlongZ(0.045, 0.88, brassMaterial, 28);
   diePin.userData.role = 'die-pin-to-output-radius-rod';
   const dieIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 20, 14),
@@ -946,17 +898,6 @@ function oscillatingMarineEngineStephensonValveGear() {
   curvedSlide.userData.role =
     'rigid-curved-slide-translating-in-cylinder-carried-guides';
   const lowerHalfAngle = 1.04;
-  const lowerSlotHalfWidth = 0.13;
-  const lowerInnerCurve = makeTrunnionArcCurve({
-    halfAngle: lowerHalfAngle,
-    radius: slotRadius - lowerSlotHalfWidth,
-    z: 0.16,
-  });
-  const lowerOuterCurve = makeTrunnionArcCurve({
-    halfAngle: lowerHalfAngle,
-    radius: slotRadius + lowerSlotHalfWidth,
-    z: 0.16,
-  });
   const lowerInnerRail = new THREE.Mesh(plate(sector(slotRadius - .205, slotRadius - .101,
     Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerInnerRail.userData.role = 'inner-edge-of-trunnion-centered-slot';
@@ -1175,6 +1116,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     inputShaftIndex,
     linkEndBridges,
     linkGroup,
+    upperLinkPlate,
     linkPinAssemblies,
     lowerInnerRail,
     lowerOuterRail,
@@ -1295,6 +1237,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     );
     linkGroup.rotation.z = state.linkAngle;
     dieBlock.position.set(state.diePoint.x, state.diePoint.y, 0.30);
+    dieBlock.rotation.z = state.linkAngle + state.dieSlotAngle;
 
     const reachLugWorld = pointInPose(
       state.linkPosition,
@@ -1412,7 +1355,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(7.8, 4.6, 13.2),
+    cameraDirection: new THREE.Vector3(0, 0, 1),
     root,
     update,
     reset: () => update(0),

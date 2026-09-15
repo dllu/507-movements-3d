@@ -1,7 +1,8 @@
 # Movement 171 — oscillating marine valve gear (review open)
 
-The lower slot walls, guide bores and connecting-rod eyes are repaired in the
-existing model. Fog and ground remain disabled. The upper rod pins and die now use their
+Both slotted links now have finite walls and fitted followers. The lower
+guide bores and connecting-rod eyes are also repaired in the existing model.
+Fog and ground remain disabled. The upper rod pins and die now use their
 recorded source coordinates. Whole-contour proportions and the complete
 reconstruction remain open; no bake is registered.
 
@@ -38,7 +39,7 @@ not historical valve-timing measurements.
 
 The selector varies continuously over 18 seconds, with three six-second crank
 turns in the same interval. The [cycle check](validation/171-cycle.json) checks
-all 99 visible mesh transforms: maximum seam difference is 1.67e-15, and
+all 92 visible mesh transforms: maximum seam difference is 1.67e-15, and
 one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
 0.86-radian/second crank did not close with the selector period.
 
@@ -81,11 +82,25 @@ checks ten pairs at 97 poses over the current 18-second traversal, with
 clearance. This is deliberately a lower-interface qualification, not a
 whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
 
+The upper link is now one plate with a through-slot and bored rod/reversing
+lugs, replacing the tubular rails and separate end bridges. Its 0.12-wide
+opening contains a 0.11-wide curved die that rotates with the local slot
+tangent. The die and output-rod eye have 0.098-diameter bores around a
+0.09-diameter pin. Plate thickness and these running clearances are inferred;
+the recorded rod-pin coordinates are retained. The reversing-lug pin extends
+through the plate instead of ending ahead of it.
+
+The [upper-interface sweep](validation/171-upper-clearance.json) samples six
+pairs over 97 poses, covering die/slot, die/pin and all three lug pins against
+the plate. It finds no sampled penetration above 1e-6 and checks that every
+pin overlaps the plate axially by more than 0.15 world units. This does not
+qualify the eccentric straps or the rest of the assembly.
+
 ## Current change and next work
 
-All 99 material instances examined in the existing scene have fog disabled,
-and `hideGround` is true. These rendering flags and the lower-interface repairs
-are shipped while the complete mechanical reconstruction remains open.
+All 92 material instances examined in the existing scene have fog disabled,
+and `hideGround` is true. The default camera now faces the engraving plane.
+These rendering flags and the upper/lower interface repairs are shipped while the complete mechanical reconstruction remains open.
 
 The production build and [packaged browser check](validation/171-browser.json)
 pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
@@ -103,6 +118,7 @@ node scripts/review-marine-valve-existing.mjs
 node scripts/review-marine-valve-cycle.mjs
 node scripts/review-marine-valve-closure.mjs
 node scripts/review-marine-valve-lower-solids.mjs
+node scripts/review-marine-valve-upper-solids.mjs
 ```
 
 Movement 171 remains open. The full 507-movement review remains active.

@@ -1,57 +1,41 @@
 {
   "movement": 171,
-  "status": "repaired-lower-interface-diagnostic",
+  "status": "repaired-upper-slot-interface-diagnostic",
   "poses": 97,
   "pairs": [
     [
-      "follower",
-      "innerRail"
-    ],
-    [
-      "follower",
-      "outerRail"
-    ],
-    [
-      "leftGuide",
-      "leftBlock"
-    ],
-    [
-      "rightGuide",
-      "rightBlock"
-    ],
-    [
-      "slidePin",
-      "outputRod"
+      "die",
+      "plate"
     ],
     [
       "diePin",
-      "outputRod"
+      "plate"
     ],
     [
-      "leftGuide",
-      "innerRail"
+      "diePin",
+      "die"
     ],
     [
-      "leftGuide",
-      "outerRail"
+      "aheadPin",
+      "plate"
     ],
     [
-      "rightGuide",
-      "innerRail"
+      "asternPin",
+      "plate"
     ],
     [
-      "rightGuide",
-      "outerRail"
+      "reachPin",
+      "plate"
     ]
   ],
-  "queries": 2146668,
+  "queries": 8515048,
   "intersections": {},
   "sampledDuration": 18,
-  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot, slide guide and connecting-pin interfaces only; not whole-assembly qualification.",
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected upper-slot die, pivot pins and bored plate interfaces only; not whole-assembly qualification.",
   "sources": [
     {
-      "file": "scripts/review-marine-valve-lower-solids.mjs",
-      "sha256": "ae84b3d8a3a5635441ccddce8142a1c8c8d674f5eb719ac1d6b7c22fe850e57f"
+      "file": "scripts/review-marine-valve-upper-solids.mjs",
+      "sha256": "d8a051d2d82131f6d9867a9076dbed15a2cbee2054f93d1972e2ded70df9b19c"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",

@@ -2,7 +2,7 @@
   "movement": 171,
   "period": 18,
   "crankPeriod": 6,
-  "meshes": 99,
+  "meshes": 92,
   "maximumPoseSeam": 1.6653345369377348e-15,
   "maximumVelocitySeam": 0.00010966227037556564,
   "epsilon": 0.0001,
@@ -28,7 +28,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "af27444411bd74cf8b24a5bea87ab63fbc57b832c73e07afade2425fd4a9d474"
+      "sha256": "00e934d3ef0170f8157daf88fe716bbea5b2b72a5dbb35bd31ddbfba331c6b3e"
     }
   ]
 }
