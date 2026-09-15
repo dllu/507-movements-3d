@@ -1,7 +1,7 @@
 {
   "movement": 171,
   "status": "packaged-lower-repair-desktop-mobile-passed",
-  "scope": "Integral bored eccentric straps and tapered rods, flat sheave rims and axially offset rod-pin caps; full source and mechanical reconstruction remain open.",
+  "scope": "Source-visible 40-mesh scene after removal of unillustrated engine/frame solids, attached lower eye, closed slot ends and bored trunnion; mechanical reconstruction remains open.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8bdda195de2c1a70aa15b28006eb636d88a2be7e0b8084c0a13a34ab747f2e3c"
+      "sha256": "7dfcc75b23b0b91e9c4f80934737b7760c388c0b8d50f20c4b8264fb2cebe489"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

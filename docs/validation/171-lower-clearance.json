@@ -42,20 +42,48 @@
     [
       "rightGuide",
       "outerRail"
+    ],
+    [
+      "follower",
+      "leftEnd"
+    ],
+    [
+      "follower",
+      "rightEnd"
+    ],
+    [
+      "follower",
+      "slideEye"
+    ],
+    [
+      "slidePin",
+      "slideEye"
+    ],
+    [
+      "leftGuide",
+      "leftEnd"
+    ],
+    [
+      "rightGuide",
+      "rightEnd"
+    ],
+    [
+      "trunnion",
+      "bearing"
     ]
   ],
-  "queries": 2146668,
+  "queries": 2964468,
   "intersections": {},
   "sampledDuration": 18,
-  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot, slide guide and connecting-pin interfaces only; not whole-assembly qualification.",
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot including closed ends and attached eye, slide guides, connecting pins and trunnion bearing only; not whole-assembly qualification.",
   "sources": [
     {
       "file": "scripts/review-marine-valve-lower-solids.mjs",
-      "sha256": "ae84b3d8a3a5635441ccddce8142a1c8c8d674f5eb719ac1d6b7c22fe850e57f"
+      "sha256": "f2d1a86211cfee2002cb9240e08695036a2da805bc7bd7a3b51ab2f2e0860e7c"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8bdda195de2c1a70aa15b28006eb636d88a2be7e0b8084c0a13a34ab747f2e3c"
+      "sha256": "7dfcc75b23b0b91e9c4f80934737b7760c388c0b8d50f20c4b8264fb2cebe489"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

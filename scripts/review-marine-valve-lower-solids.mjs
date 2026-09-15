@@ -9,9 +9,13 @@ import {solidSurface, surfacePoints} from '../tests/helpers/solid-surface.mjs';
 const model = createAuthoredMarineValveGearMovement({id: 171});
 const blocks = model.root.userData.blocks;
 const meshes = {diePin:blocks.diePin,follower:blocks.followerPin,innerRail:blocks.lowerInnerRail,outerRail:blocks.lowerOuterRail,leftGuide:blocks.slideGuidePosts[0],rightGuide:blocks.slideGuidePosts[1],leftBlock:blocks.slideBlocks[0],rightBlock:blocks.slideBlocks[1],slidePin:blocks.slideEyePin,outputRod:blocks.outputRadiusRod.children[0]};
+Object.assign(meshes, {leftEnd:blocks.lowerEndBridges[0],rightEnd:blocks.lowerEndBridges[1],
+  slideEye:blocks.slideEyeRing,trunnion:blocks.trunnionShaft,bearing:blocks.trunnionFace});
 const parts = Object.fromEntries(Object.entries(meshes).map(([name, mesh]) =>
   [name, {mesh, surface: solidSurface(mesh.geometry), points: surfacePoints(mesh.geometry)}]));
 const pairs = [['follower','innerRail'],['follower','outerRail'],['leftGuide','leftBlock'],['rightGuide','rightBlock'],['slidePin','outputRod'],['diePin','outputRod'],['leftGuide','innerRail'],['leftGuide','outerRail'],['rightGuide','innerRail'],['rightGuide','outerRail']];
+pairs.push(['follower','leftEnd'],['follower','rightEnd'],['follower','slideEye'],
+  ['slidePin','slideEye'],['leftGuide','leftEnd'],['rightGuide','rightEnd'],['trunnion','bearing']);
 const intersections = {};
 let queries = 0;
 try {
@@ -45,7 +49,7 @@ try {
     movement: 171, status: 'repaired-lower-interface-diagnostic', poses: 97,
     pairs, queries, intersections,
     sampledDuration: 18,
-    method: 'Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot, slide guide and connecting-pin interfaces only; not whole-assembly qualification.',
+    method: 'Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected lower-slot including closed ends and attached eye, slide guides, connecting pins and trunnion bearing only; not whole-assembly qualification.',
     sources,
   };
   fs.writeFileSync('docs/validation/171-lower-clearance.json', JSON.stringify(report, null, 2) + '\n');

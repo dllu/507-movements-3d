@@ -4,15 +4,15 @@
   "command": "node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs",
   "passed": 1,
   "skipped": 164,
-  "scope": "Reconstructed linkage closure, asymmetric source anchors, cylinder-local invariance and rendered transforms; not historical topology qualification.",
+  "scope": "Reconstructed linkage closure, asymmetric source anchors, cylinder-local invariance, source-visible rendered transforms and absence of unillustrated engine/frame solids; not historical topology qualification.",
   "sources": [
     {
       "file": "tests/models.test.mjs",
-      "sha256": "82c12a3097340f025c0b7aeea7895bf888b222ae9c35dbc2fa6364dc8944c1cf"
+      "sha256": "adc92147c5d0ea880f16871bfb7a5565b5b7e99fd68d3bed43aa0d6efb5f312f"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "8bdda195de2c1a70aa15b28006eb636d88a2be7e0b8084c0a13a34ab747f2e3c"
+      "sha256": "7dfcc75b23b0b91e9c4f80934737b7760c388c0b8d50f20c4b8264fb2cebe489"
     }
   ]
 }

@@ -1,15 +1,19 @@
 # Open review: 171 oscillating marine valve gear
 
+The unillustrated frame, cylinder, piston, rear crank and valve chest/output
+solids are removed, reducing 171 from 84 to 40 meshes. Their inferred solver
+relationships remain under review.
 Integral tapered eccentric rods with bored straps replace the former bars
 through the sheaves and pass a 21-pair interface sweep.
 Fog and ground are disabled, with a front-facing default view. A bored upper
 link plate and curved die replace tubular rails and pass their six-pair
 interface sweep, including axial pin engagement. Annular lower slot walls, bored guide blocks and
-connecting-rod eyes pass a ten-pair lower-interface sweep over 97 poses. The
+connecting-rod eyes pass a 17-pair lower-interface sweep over 97 poses, now
+including closed slot ends, the attached slide eye and bored trunnion bearing. The
 upper rod pins and die now fit their recorded source anchors; ideal lengths
 close across five reversing settings. Three six-second crank turns synchronize
 with the 18-second reversing traversal, with position and velocity continuity
-checked across all 84 visible meshes. Whole-contour source solids and trunnion
+checked across all 40 visible meshes. Whole-contour source solids and trunnion
 compensation reconstruction remain open; see [movement 171](movement-171.md).
 
 # Shipped reconstruction: 170 crossed-arm governor

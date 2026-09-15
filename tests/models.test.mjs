@@ -58737,39 +58737,25 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
     asternStrap,
     cameraEnvelope,
     curvedSlide,
-    cylinderBody,
     cylinderCarrier,
     dieBlock,
     dieGuide,
     diePin,
-    fixedFrame,
-    followerArm,
     followerPin,
     inputRotor,
     inputShaft,
-    inputShaftIndex,
     linkGroup,
     linkPinAssemblies,
     lowerInnerRail,
     lowerOuterRail,
-    mainCrankDisk,
-    mainCrankPin,
     outputRadiusRod,
-    pistonRod,
     reversingReachRod,
-    rockshaft,
     rockshaftRotor,
     slideBlocks,
     slideEye,
     slideGuidePosts,
     trunnionFace,
     trunnionShaft,
-    valveArm,
-    valveGuideChest,
-    valveLink,
-    valvePlate,
-    valveSlider,
-    valveStem,
   } = blocks;
   const near = (actual, expected, tolerance, message) => {
     assert.ok(
@@ -58825,34 +58811,21 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
     asternSheave,
     asternStrap,
     curvedSlide,
-    cylinderBody,
     dieBlock,
     dieGuide,
     diePin,
-    followerArm,
     followerPin,
     inputRotor,
     inputShaft,
-    inputShaftIndex,
     linkGroup,
     lowerInnerRail,
     lowerOuterRail,
-    mainCrankDisk,
-    mainCrankPin,
     outputRadiusRod,
-    pistonRod,
     reversingReachRod,
-    rockshaft,
     rockshaftRotor,
     slideEye,
     trunnionFace,
     trunnionShaft,
-    valveArm,
-    valveGuideChest,
-    valveLink,
-    valvePlate,
-    valveSlider,
-    valveStem,
   ]) assert.ok(object?.isObject3D);
   assert.notEqual(aheadSheave, asternSheave);
   assert.notEqual(aheadStrap, asternStrap);
@@ -59150,7 +59123,6 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
     const state = model.root.userData.kinematics;
     const aheadSheaveWorld = aheadSheave.getWorldPosition(new THREE.Vector3());
     const asternSheaveWorld = asternSheave.getWorldPosition(new THREE.Vector3());
-    const mainCrankPinWorld = mainCrankPin.getWorldPosition(new THREE.Vector3());
     const linkWorld = linkGroup.getWorldPosition(new THREE.Vector3());
     const dieWorld = dieBlock.getWorldPosition(new THREE.Vector3());
     const slideCenterWorld = curvedSlide.getWorldPosition(new THREE.Vector3());
@@ -59158,7 +59130,6 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
       new THREE.Vector3(),
     );
     const followerPinWorld = followerPin.getWorldPosition(new THREE.Vector3());
-    const valveSliderWorld = valveSlider.getWorldPosition(new THREE.Vector3());
     vectorNear(
       new THREE.Vector2(aheadSheaveWorld.x, aheadSheaveWorld.y),
       state.aheadEccentricCenter,
@@ -59170,12 +59141,6 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
       state.asternEccentricCenter,
       3e-15,
       'rendered astern sheave center',
-    );
-    vectorNear(
-      new THREE.Vector2(mainCrankPinWorld.x, mainCrankPinWorld.y),
-      state.crankPin,
-      3e-15,
-      'rendered main crankpin',
     );
     vectorNear(
       new THREE.Vector2(linkWorld.x, linkWorld.y),
@@ -59206,12 +59171,6 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
       state.followerPinWorld,
       2e-15,
       'rendered slot follower pin',
-    );
-    vectorNear(
-      new THREE.Vector2(valveSliderWorld.x, valveSliderWorld.y),
-      state.valveStemPointWorld,
-      2e-15,
-      'rendered guided valve output',
     );
     near(inputRotor.rotation.z, state.inputAngle, 1e-15,
       'rendered common shaft rotation');
@@ -59248,30 +59207,13 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
   assert.equal(cameraEnvelope.material.colorWrite, false);
   assert.equal(cameraEnvelope.castShadow, false);
   assert.equal(cameraEnvelope.receiveShadow, false);
-  const physicalBounds = new THREE.Box3();
-  for (const time of [0, 4.5, 9, 13.5]) {
-    model.update(time, 0.016);
-    model.root.updateMatrixWorld(true);
-    for (const object of [
-      fixedFrame,
-      inputRotor,
-      aheadStrap,
-      asternStrap,
-      aheadEccentricRod,
-      asternEccentricRod,
-      linkGroup,
-      outputRadiusRod,
-      cylinderCarrier,
-      trunnionShaft,
-    ]) physicalBounds.expandByObject(object);
-  }
-  const physicalSize = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(physicalSize.x > 4.6);
-  assert.ok(physicalSize.y > 8.3);
-  assert.ok(physicalSize.z > 3.0,
-    'layered straps, rods, rear crank/cylinder, rockshaft, and frame occupy real depth');
-  assert.ok(physicalBounds.min.z < -1.5);
-  assert.ok(physicalBounds.max.z > 1.5);
+  const removedRoles = new Set([
+    'oscillating-marine-engine-cylinder', 'rear-engine-frame-supporting-both-fixed-axes',
+    'rear-main-crank-fast-on-eccentric-shaft', 'slide-valve-stem',
+    'rear-main-crank-to-oscillating-cylinder-piston-rod',
+  ]);
+  model.root.traverse(object => assert.ok(!removedRoles.has(object.userData.role),
+    'unillustrated engine/frame solids must not obscure the source-visible gear'));
   assert.equal(model.cameraDirection.x, 0);
   assert.equal(model.cameraDirection.y, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

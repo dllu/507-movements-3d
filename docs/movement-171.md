@@ -15,12 +15,18 @@ trunnion. The caption identifies the lower slot as an arc described from the
 trunnion center, accommodating the cylinder's oscillation without interfering
 with valve stroke.
 
-The existing reconstruction adds a complete cylinder, piston, rear crank,
-rockshaft output linkage and large supporting frame. Those hidden components
-are assumptions, not measurements from this drawing. The replacement should
-retain the illustrated mechanism and explicitly justify the hidden closure
-needed to move it. In particular, verify which lower guides and members move
-with the cylinder when reconstructing the trunnion-centered compensation.
+The added cylinder, piston, rear crank disk, valve chest/output linkage and
+large supporting frame have been removed from the visible model. The source
+shows none of these solids. The shaft and trunnion are shorter, with a real
+bored trunnion bearing, so these additions no longer obscure the engraving's
+valve gear. The rendered scene falls from 84 to 40 meshes.
+
+The analytic solver still uses an inferred hidden crank to determine cylinder
+oscillation, and a cylinder-carried rockshaft/output linkage to locate the
+follower and calculate valve travel. Removing their visible solids does not
+validate that assumed construction. Resolve the trunnion-centered compensation
+and which members are cylinder-carried before declaring the reconstruction
+complete. The visible slide guides, arc and follower retain their motion.
 
 ## Existing motion evidence
 
@@ -39,7 +45,7 @@ not historical valve-timing measurements.
 
 The selector varies continuously over 18 seconds, with three six-second crank
 turns in the same interval. The [cycle check](validation/171-cycle.json) checks
-all 84 visible mesh transforms: maximum seam difference is 4.45e-16, and
+all 40 visible mesh transforms: maximum seam difference is 4.45e-16, and
 one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
 0.86-radian/second crank did not close with the selector period.
 
@@ -77,11 +83,18 @@ slide pins. It stays in a single plane between the pins' ends without scaling
 or deforming its length.
 
 The [expanded lower-interface sweep](validation/171-lower-clearance.json)
-checks ten pairs at 97 poses over the current 18-second traversal, with
-2,146,668 bidirectional surface queries. It finds no sampled penetration above
-1e-6 world units. The added pairs cover both rod eyes and guide-post/slot-wall
-clearance. This is deliberately a lower-interface qualification, not a
+checks 17 pairs at 97 poses over the current 18-second traversal, with
+2,964,468 bidirectional surface queries. It finds no sampled penetration above
+1e-6 world units. The added pairs cover both rod eyes, guide-post/slot-wall
+clearance, the closed slot ends, the attached slide eye and trunnion bearing. This is deliberately a lower-interface qualification, not a
 whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
+
+The lower slide eye is now a bored plate with a web joining the outer arc,
+replacing its disconnected torus. Its pin spans both this plate and the
+connecting-rod eye. End bridges join both slot walls to each other and the
+guide blocks. These are rigid parts of the same slide; their shared solid
+junctions are intentional. The shortened trunnion shaft has a 0.33 radius
+inside a 0.336-radius bearing opening.
 
 The upper link is now one plate with a through-slot and bored rod/reversing
 lugs, replacing the tubular rails and separate end bridges. Its 0.12-wide
@@ -114,13 +127,15 @@ qualification, not a whole-assembly or whole-contour fidelity claim.
 
 ## Current change and next work
 
-All 84 material instances examined in the existing scene have fog disabled,
+All 40 material instances examined in the existing scene have fog disabled,
 and `hideGround` is true. The default camera now faces the engraving plane.
 These rendering flags and the upper/lower interface repairs are shipped while the complete mechanical reconstruction remains open.
 
 The [scoped model test](validation/171-unit.json) passes after replacing stale
 symmetry and oblique-camera assumptions with the recorded asymmetric anchors
-and current front view. Closure and rendered-position assertions are retained.
+and current front view. Checks for removed engine/frame meshes are replaced
+with absence checks; closure and source-visible rendered-position assertions
+are retained.
 The production build and [packaged browser check](validation/171-browser.json)
 pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
 with no page errors or WASM requests. Restart explicitly restores the initial

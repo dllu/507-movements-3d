@@ -658,15 +658,9 @@ function oscillatingMarineEngineStephensonValveGear() {
   inputRotor.userData.axis = Z_AXIS.clone();
   inputRotor.userData.role =
     'one-crankshaft-carrying-both-eccentrics-and-main-crank';
-  const inputShaft = cylinderAlongZ(0.13, 3.05, darkMaterial, 38);
+  const inputShaft = cylinderAlongZ(0.23, 1.10, darkMaterial, 38);
   inputShaft.userData.role = 'common-crankshaft-through-both-eccentrics';
-  const inputShaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, 0.54, 0.055),
-    whiteMaterial,
-  );
-  inputShaftIndex.position.set(0.19, 0, 1.47);
-  inputShaftIndex.userData.role = 'white-index-on-common-crankshaft';
-  inputRotor.add(inputShaft, inputShaftIndex);
+  inputRotor.add(inputShaft);
 
   const aheadSheave = makeIndexedEccentricSheave({
     material: driverMaterial,
@@ -688,38 +682,6 @@ function oscillatingMarineEngineStephensonValveGear() {
   asternSheave.userData.role = 'astern-eccentric-sheave';
   inputRotor.add(aheadSheave, asternSheave);
 
-  const mainCrankDisk = cylinderAlongZ(0.91, 0.19, driverMaterial, 52);
-  mainCrankDisk.position.z = -1.03;
-  mainCrankDisk.userData.role = 'rear-main-crank-fast-on-eccentric-shaft';
-  const mainCrankRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.88, 0.06, 10, 56),
-    darkMaterial,
-  );
-  mainCrankRim.position.z = -0.92;
-  const mainCrankPin = cylinderAlongZ(0.12, 0.42, darkMaterial, 30);
-  mainCrankPin.position.set(
-    mainCrankPinLocal.x,
-    mainCrankPinLocal.y,
-    -1.03,
-  );
-  mainCrankPin.userData.role =
-    'main-crankpin-determining-oscillating-cylinder-axis';
-  const mainCrankIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.10, 22, 14),
-    whiteMaterial,
-  );
-  mainCrankIndex.position.set(
-    mainCrankPinLocal.x,
-    mainCrankPinLocal.y,
-    -0.78,
-  );
-  mainCrankIndex.userData.role = 'white-index-on-main-crankpin';
-  inputRotor.add(
-    mainCrankDisk,
-    mainCrankRim,
-    mainCrankPin,
-    mainCrankIndex,
-  );
   root.add(inputRotor);
 
   const aheadStrap = makeEccentricStrap({
@@ -845,33 +807,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   cylinderCarrier.position.set(trunnionCenter.x, trunnionCenter.y, 0);
   cylinderCarrier.userData.axis = Z_AXIS.clone();
   cylinderCarrier.userData.role =
-    'complete-cylinder-carried-slide-rockshaft-and-valve-assembly';
-
-  const cylinderBody = cylinderAlongY(0.57, 2.25, drivenMaterial, 44);
-  cylinderBody.position.set(0, -1.23, -0.90);
-  cylinderBody.userData.role = 'oscillating-marine-engine-cylinder';
-  const cylinderTopBand = new THREE.Mesh(
-    new THREE.TorusGeometry(0.59, 0.065, 10, 44),
-    darkMaterial,
-  );
-  cylinderTopBand.rotation.x = Math.PI / 2;
-  cylinderTopBand.position.set(0, -0.14, -0.90);
-  cylinderTopBand.userData.role = 'upper-cylinder-head-band';
-  const cylinderLowerBand = cylinderTopBand.clone();
-  cylinderLowerBand.position.y = -2.32;
-  cylinderLowerBand.userData.role = 'lower-cylinder-head-band';
-  const cylinderIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, 0.68, 0.045),
-    whiteMaterial,
-  );
-  cylinderIndex.position.set(0.45, -1.0, -0.30);
-  cylinderIndex.userData.role = 'white-index-showing-cylinder-rocking';
-  cylinderCarrier.add(
-    cylinderBody,
-    cylinderTopBand,
-    cylinderLowerBand,
-    cylinderIndex,
-  );
+    'cylinder-carried-guides-slide-and-follower';
 
   const lowerGuideHalfX = (
     slotRadius + 0.13
@@ -894,7 +830,11 @@ function oscillatingMarineEngineStephensonValveGear() {
   const lowerOuterRail = new THREE.Mesh(plate(sector(slotRadius + .101, slotRadius + .205,
     Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerOuterRail.userData.role = 'outer-edge-of-trunnion-centered-slot';
-  curvedSlide.add(lowerInnerRail, lowerOuterRail);
+  const lowerEndBridges = [-1, 1].map(sign => new THREE.Mesh(plate(
+    sector(slotRadius - .205, slotRadius + .205,
+      Math.PI / 2 + sign * lowerHalfAngle - .025,
+      Math.PI / 2 + sign * lowerHalfAngle + .025, 24), .085, .235), drivenMaterial));
+  curvedSlide.add(lowerInnerRail, lowerOuterRail, ...lowerEndBridges);
   const slideBlocks = [-1, 1].map((sign) => {
     const block = new THREE.Mesh(
       plate(clip.difference(poly([[-.145, -.25], [.145, -.25], [.145, .25], [-.145, .25]]),
@@ -911,10 +851,12 @@ function oscillatingMarineEngineStephensonValveGear() {
     return block;
   });
   const slideEye = new THREE.Group();
-  slideEye.position.set(0, slideEyeRadius, 0.50);
+  slideEye.position.set(0, slideEyeRadius, 0.16);
   slideEye.userData.role = 'upper-eye-of-curved-slide';
-  const slideEyeRing = makeEye(0.15, 0.06, drivenMaterial);
-  const slideEyePin = cylinderAlongZ(0.075, 0.48, darkMaterial, 24);
+  const slideEyeRing = new THREE.Mesh(plate(clip.difference(clip.union(
+    poly(circle([0, 0], .21, 96)), capsule([0, 1.43 - slideEyeRadius], [0, 0], .10)),
+    poly(circle([0, 0], .079, 96))), -.075, .075), drivenMaterial);
+  const slideEyePin = cylinderAlongZ(0.075, 0.64, darkMaterial, 24);
   slideEye.add(slideEyeRing, slideEyePin);
   curvedSlide.add(slideEye);
   cylinderCarrier.add(curvedSlide);
@@ -928,143 +870,26 @@ function oscillatingMarineEngineStephensonValveGear() {
   rockshaftRotor.userData.axis = Z_AXIS.clone();
   rockshaftRotor.userData.role =
     'valve-rockshaft-with-slot-follower-and-opposite-valve-arm';
-  const rockshaft = cylinderAlongZ(0.10, 1.12, darkMaterial, 30);
-  rockshaft.userData.role = 'cylinder-carried-valve-rockshaft';
-  const followerArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(followerArmLocal.x, followerArmLocal.y, 0),
-    {
-      color: PALETTE.accent,
-      depth: 0.16,
-      jointRadius: 0.001,
-      thickness: 0.12,
-    },
-  );
-  followerArm.userData.role = 'rockshaft-arm-to-curved-slot-follower';
   const followerPin = cylinderAlongZ(0.095, 0.68, whiteMaterial, 28);
   followerPin.position.set(followerArmLocal.x, followerArmLocal.y, 0);
   followerPin.userData.role = 'white-pin-captured-within-curved-slide-slot';
-  const valveArm = makeBeam(
-    new THREE.Vector3(0, 0, -0.34),
-    new THREE.Vector3(valveArmLocal.x, valveArmLocal.y, -0.34),
-    {
-      color: PALETTE.accent,
-      depth: 0.14,
-      jointRadius: 0.001,
-      thickness: 0.11,
-    },
-  );
-  valveArm.userData.role = 'opposite-rockshaft-arm-driving-valve-link';
-  rockshaftRotor.add(rockshaft, followerArm, followerPin, valveArm);
+  rockshaftRotor.add(followerPin);
   cylinderCarrier.add(rockshaftRotor);
-
-  const valveLink = makeDynamicLink({
-    color: PALETTE.brass,
-    depth: 0.12,
-    jointRadius: 0.055,
-    thickness: 0.10,
-  });
-  valveLink.userData.role = 'finite-link-from-rockshaft-to-guided-valve-stem';
-  cylinderCarrier.add(valveLink);
-  const valveSlider = new THREE.Group();
-  valveSlider.userData.role = 'guided-slide-valve-output-moving-with-cylinder';
-  const valveStem = cylinderAlongY(0.055, 1.18, brassMaterial, 22);
-  valveStem.position.y = -0.36;
-  valveStem.userData.role = 'slide-valve-stem';
-  const valvePlate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.40, 0.25),
-    accentMaterial,
-  );
-  valvePlate.position.y = -0.92;
-  valvePlate.userData.role = 'oscillating-cylinder-slide-valve';
-  const valveIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.08, 0.035),
-    whiteMaterial,
-  );
-  valveIndex.position.set(0, -0.92, 0.16);
-  valveIndex.userData.role = 'white-index-on-moving-valve';
-  valveSlider.add(valveStem, valvePlate, valveIndex);
-  cylinderCarrier.add(valveSlider);
-  const valveGuideChest = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 1.52, 0.38),
-    frameMaterial,
-  );
-  valveGuideChest.position.set(valveGuideX, -0.62, -0.26);
-  valveGuideChest.userData.role = 'cylinder-fixed-valve-stem-guide-and-chest';
-  cylinderCarrier.add(valveGuideChest);
   root.add(cylinderCarrier);
 
   const outputRadiusRod = finiteMarineOutputRod(outputRodLength);
   outputRadiusRod.userData.role =
     'finite-die-output-rod-to-cylinder-carried-curved-slide';
-  const pistonRod = makeDynamicLink({
-    color: PALETTE.frame,
-    depth: 0.14,
-    jointRadius: 0.065,
-    thickness: 0.13,
-  });
-  pistonRod.userData.role =
-    'rear-main-crank-to-oscillating-cylinder-piston-rod';
-  root.add(outputRadiusRod, pistonRod);
+  root.add(outputRadiusRod);
 
-  const trunnionShaft = cylinderAlongZ(0.25, 3.12, darkMaterial, 38);
+  const trunnionShaft = cylinderAlongZ(0.33, 0.64, darkMaterial, 38);
   trunnionShaft.position.set(trunnionCenter.x, trunnionCenter.y, -0.05);
   trunnionShaft.userData.role = 'fixed-axis-through-oscillating-cylinder-trunnion';
-  const trunnionFace = cylinderAlongZ(0.37, 0.18, frameMaterial, 42);
-  trunnionFace.position.set(trunnionCenter.x, trunnionCenter.y, 0.77);
+  const trunnionFace = new THREE.Mesh(plate(clip.difference(
+    poly(circle([0, 0], .44, 128)), poly(circle([0, 0], .336, 128))), -.12, .12), frameMaterial);
+  trunnionFace.position.set(trunnionCenter.x, trunnionCenter.y, 0);
   trunnionFace.userData.role = 'front-trunnion-bearing-face';
-  const trunnionIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.07, 0.035),
-    whiteMaterial,
-  );
-  trunnionIndex.position.set(
-    trunnionCenter.x + 0.16,
-    trunnionCenter.y,
-    0.88,
-  );
-  trunnionIndex.userData.role = 'fixed-white-trunnion-center-reference';
-  root.add(trunnionShaft, trunnionFace, trunnionIndex);
-
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.role = 'rear-engine-frame-supporting-both-fixed-axes';
-  const frameBeams = [
-    [new THREE.Vector3(-2.35, -3.75, -1.48), new THREE.Vector3(2.35, -3.75, -1.48)],
-    [new THREE.Vector3(-2.12, -3.75, -1.48), new THREE.Vector3(-1.20, 4.70, -1.48)],
-    [new THREE.Vector3(2.12, -3.75, -1.48), new THREE.Vector3(1.20, 4.70, -1.48)],
-    [new THREE.Vector3(-1.20, 4.70, -1.48), new THREE.Vector3(1.20, 4.70, -1.48)],
-    [new THREE.Vector3(-1.88, -2.05, -1.48), new THREE.Vector3(1.88, -2.05, -1.48)],
-  ].map(([start, end], index) => {
-    const beam = makeBeam(start, end, {
-      color: PALETTE.frame,
-      depth: 0.24,
-      jointRadius: 0.001,
-      thickness: index === 0 ? 0.22 : 0.18,
-    });
-    beam.userData.role = `fixed-rear-frame-member-${index + 1}`;
-    fixedFrame.add(beam);
-    return beam;
-  });
-  const shaftBearings = [
-    { center: shaftCenter, z: -1.45, role: 'rear-crankshaft-bearing' },
-    { center: shaftCenter, z: 1.45, role: 'front-crankshaft-bearing' },
-    { center: trunnionCenter, z: -1.43, role: 'rear-trunnion-bearing' },
-    { center: trunnionCenter, z: 1.43, role: 'front-trunnion-bearing' },
-  ].map(({ center, role, z }) => {
-    const bearing = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        role.includes('trunnion') ? 0.34 : 0.24,
-        0.09,
-        12,
-        40,
-      ),
-      frameMaterial,
-    );
-    bearing.position.set(center.x, center.y, z);
-    bearing.userData.role = role;
-    fixedFrame.add(bearing);
-    return bearing;
-  });
-  root.add(fixedFrame);
+  root.add(trunnionShaft, trunnionFace);
 
   const cameraEnvelope = new THREE.Mesh(
     new THREE.BoxGeometry(6.4, 9.4, 3.4),
@@ -1090,52 +915,34 @@ function oscillatingMarineEngineStephensonValveGear() {
     asternStrap,
     cameraEnvelope,
     curvedSlide,
-    cylinderBody,
     cylinderCarrier,
     dieBlock,
     dieBody,
     dieGuide,
     dieIndex,
     diePin,
-    fixedFrame,
-    followerArm,
     followerPin,
-    frameBeams,
     inputRotor,
     inputShaft,
-    inputShaftIndex,
     linkEndBridges,
     linkGroup,
     upperLinkPlate,
     linkPinAssemblies,
     lowerInnerRail,
     lowerOuterRail,
-    mainCrankDisk,
-    mainCrankIndex,
-    mainCrankPin,
+    lowerEndBridges,
     outputRadiusRod,
-    pistonRod,
     reachLug,
     reversingHandle,
     reversingReachRod,
-    rockshaft,
     rockshaftRotor,
-    shaftBearings,
     slideBlocks,
     slideEye,
     slideEyePin,
     slideEyeRing,
     slideGuidePosts,
     trunnionFace,
-    trunnionIndex,
     trunnionShaft,
-    valveArm,
-    valveGuideChest,
-    valveIndex,
-    valveLink,
-    valvePlate,
-    valveSlider,
-    valveStem,
   };
 
   const geometry = {
@@ -1251,24 +1058,6 @@ function oscillatingMarineEngineStephensonValveGear() {
     cylinderCarrier.rotation.z = state.cylinderAngle;
     curvedSlide.position.set(0, state.slideStroke, 0);
     rockshaftRotor.rotation.z = state.rockshaftAngle;
-    valveSlider.position.set(
-      state.valveStemPointLocal.x,
-      state.valveStemPointLocal.y,
-      0.02,
-    );
-    setDynamicLinkEndpoints(
-      valveLink,
-      new THREE.Vector3(
-        state.valveArmPointLocal.x,
-        state.valveArmPointLocal.y,
-        0,
-      ),
-      new THREE.Vector3(
-        state.valveStemPointLocal.x,
-        state.valveStemPointLocal.y,
-        0,
-      ),
-    );
     setDynamicLinkEndpoints(
       outputRadiusRod,
       new THREE.Vector3(state.diePoint.x, state.diePoint.y, 0.50),
@@ -1276,19 +1065,6 @@ function oscillatingMarineEngineStephensonValveGear() {
         state.slideEyeWorld.x,
         state.slideEyeWorld.y,
         0.50,
-      ),
-    );
-    const cylinderHeadWorld = trunnionCenter.clone().addScaledVector(
-      state.cylinderAxis,
-      -0.10,
-    );
-    setDynamicLinkEndpoints(
-      pistonRod,
-      new THREE.Vector3(state.crankPin.x, state.crankPin.y, -1.03),
-      new THREE.Vector3(
-        cylinderHeadWorld.x,
-        cylinderHeadWorld.y,
-        -1.03,
       ),
     );
     root.userData.kinematics = state;
@@ -1336,10 +1112,6 @@ function oscillatingMarineEngineStephensonValveGear() {
   for (const object of [
     cameraEnvelope,
     dieIndex,
-    inputShaftIndex,
-    mainCrankIndex,
-    trunnionIndex,
-    valveIndex,
   ]) {
     object.castShadow = false;
     object.receiveShadow = false;
