@@ -3,8 +3,8 @@ import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-pla
 import {PALETTE,matte,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {cordTreadleSource as source,cordTreadleParameters} from '../cord-treadle-motion.js';
-// Source-shaped rigid core only. Cord terminations and full assembly validation
-// are still outstanding; this factory is deliberately not registered in the app.
+// Source-shaped rigid core and inferred cord anchor studs. Full cord contact
+// validation remains outstanding; this factory is not registered in the app.
 export function makeCordTreadleSolids(){
  const root=new THREE.Group(),g=cordTreadleParameters(),blocks={},parts={},families={},materials=new Map();
  for(const name of ['disk','treadle','pulley','fixed']){blocks[name]=new THREE.Group();root.add(blocks[name]);}
@@ -35,7 +35,24 @@ export function makeCordTreadleSolids(){
  add('pulleyBearing',ring(.144,.28,-.96,.494,128),'fixed',PALETTE.frame,g.guide);
  add('pulleyMount',plate(poly([[-.35,-.45],[.35,-.45],[.35,.45],[-.35,.45]]),-1.10,-.96),'fixed',PALETTE.frame,g.guide);
  add('floor',plate(imagePoly([[22,457],[512,457],[512,464],[22,464]]),-1.15,.90),'fixed',PALETTE.frame);
+ // The flexible cord is secured at the center of a rounded anchor head. The
+ // short embedded cord end is an intended fastening, not a free sliding contact.
+ // Closed lathe profiles avoid overlapping primitive volumes in mass integration.
+ const anchor=base=>{
+  const radius=.075,join=.64-Math.sqrt(radius**2-.055**2);
+  const profile=[[0,base],[.055,base],[.055,.38],[.14,.38],[.14,.46],[.055,.46],[.055,join]];
+  const start=Math.acos((join-.64)/radius);
+  for(let i=1;i<=24;i++){const a=start*(1-i/24);profile.push([radius*Math.sin(a),.64+radius*Math.cos(a)]);}
+  const geometry=new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(...p)),64);
+  // LatheGeometry emits collapsed apex triangles; omit them so distance and
+  // collision queries never encounter zero-area faces.
+  const indices=[],positions=geometry.attributes.position,a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+  for(let i=0;i<geometry.index.count;i+=3){const face=[0,1,2].map(j=>geometry.index.getX(i+j));a.fromBufferAttribute(positions,face[0]);b.fromBufferAttribute(positions,face[1]);c.fromBufferAttribute(positions,face[2]);if(b.sub(a).cross(c.sub(a)).lengthSq()>1e-20)indices.push(...face);}
+  geometry.setIndex(indices);geometry.rotateX(Math.PI/2);return geometry;
+ };
+ add('crankCordAnchor',anchor(-.13),'disk',PALETTE.ink,g.pin);
+ add('treadleCordAnchor',anchor(.29),'treadle',PALETTE.ink,[-g.armLength,0]);
  const update=state=>{blocks.disk.rotation.z=state.disk;blocks.treadle.position.set(...g.pivot,0);blocks.treadle.rotation.z=state.treadle;blocks.pulley.position.set(...g.guide,0);blocks.pulley.rotation.z=state.pulley;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{parts,families,blocks,geometry:g,source,hideGround:true,attachmentSites:{crank:[...g.pin,.64],treadle:[-g.armLength,0,.64]},reconstructionNote:'Unregistered rigid-core prototype. Pedestals follow the engraving; shaft depths, bearings, pulley groove and rear mounting pad are inferred. Cord terminations are not yet built.'});
+ Object.assign(root.userData,{parts,families,blocks,geometry:g,source,hideGround:true,attachmentSites:{crank:[...g.pin,.64],treadle:[-g.armLength,0,.64]},reconstructionNote:'Unregistered rigid-core prototype. Pedestals follow the engraving; shaft depths, bearings, pulley groove and rear mounting pad are inferred. Shouldered rounded cord-anchor studs are inferred; cord ends are secured inside the heads. Full rope/anchor clearance and attachment behavior remain unqualified.'});
  update({disk:0,treadle:g.initialTreadle,pulley:0});markShadows(root);return{root,update,dispose:()=>disposeObject3D(root)};
 }

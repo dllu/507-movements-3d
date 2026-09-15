@@ -1,3 +1,4 @@
+import {makeCordTreadleSolids} from '../src/simulation/mujoco-cord-treadle/solids.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -19,7 +20,8 @@ test('rigid core scale has correct mass and physical inertia scaling',()=>{
  // Independent thin-annulus inertia check, with the smaller hub included.
  const r=1.6,h=.34,ri=.144,rh=.22,hh=.11,rho=7.2;
  const expected=rho*Math.PI/2*(h*(r**4-ri**4)+hh*(rh**4-ri**4));
- assert.ok(Math.abs(a.bodies.disk.fullinertia[2]/expected-1)<.001);
+ const assembly=makeCordTreadleSolids();
+ try {const measured=['disk','diskHub'].reduce((sum,name)=>{const p=integrateSolidGeometry(assembly.root.userData.parts[name].geometry);return sum+rho*(p.second[0]+p.second[1]);},0);assert.ok(Math.abs(measured/expected-1)<.001);}finally{assembly.dispose();}
 });
 test('native model uses the authored masses, centers and scaled gravity',async()=>{
  const {default:loadMujoco}=await import('@mujoco/mujoco');
@@ -37,4 +39,16 @@ test('native model uses the authored masses, centers and scaled gravity',async()
   for(let i=0;i<20;i++)p.step();
   near(p.data.time,20*p.timestep);assert.ok(p.state().points.flat().every(Number.isFinite));
  }finally{p.dispose();}
+});
+test('anchor surfaces have finite clearance distances around every side',async()=>{
+ const {solidSurface}=await import('./helpers/solid-surface.mjs');
+ const assembly=makeCordTreadleSolids();
+ try{for(const name of ['crankCordAnchor','treadleCordAnchor']){
+  const surface=solidSurface(assembly.root.userData.parts[name].geometry);
+  for(let i=0;i<32;i++){
+   const angle=i*Math.PI/16,p=new THREE.Vector3(.16*Math.cos(angle),.16*Math.sin(angle),.64);
+   const d=surface.signedDistance(p);assert.ok(Number.isFinite(d));assert.ok(Math.abs(d-.085)<.001);
+  }
+  assert.ok(surface.signedDistance(new THREE.Vector3(0,0,.64))<0);
+ }}finally{assembly.dispose();}
 });

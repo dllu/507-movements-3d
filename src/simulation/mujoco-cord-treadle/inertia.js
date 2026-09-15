@@ -30,6 +30,6 @@ export function cordTreadleRigidProperties({metresPerUnit=.1,densityKgPerM3=7200
   const [x,y,z]=center;
   bodies[family]={volume,mass,center,fullinertia:[rho*(yy+zz)-mass*(y*y+z*z),rho*(xx+zz)-mass*(x*x+z*z),rho*(xx+yy)-mass*(x*x+y*y),-rho*xy+mass*x*y,-rho*xz+mass*x*z,-rho*yz+mass*y*z]};
  }
- return {metresPerUnit,densityKgPerM3,gravity:9.81/metresPerUnit,bodies,assumptions:'0.1 metre per display unit and uniform 7200 kg/m³ rigid material by default. Source gives no dimensions or materials. Core solids only; cord fittings still missing.'};
+ return {metresPerUnit,densityKgPerM3,gravity:9.81/metresPerUnit,bodies,assumptions:'0.1 metre per display unit and uniform 7200 kg/m³ rigid material by default. Source gives no dimensions or materials. Rigid solids include inferred anchor studs; cord itself is modeled separately.'};
  }finally{assembly.dispose();}
 }

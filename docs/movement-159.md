@@ -265,10 +265,56 @@ RIGID_CORE=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPL
 node --test tests/cord-treadle-inertia.test.mjs tests/cord-treadle-bending.test.mjs
 ```
 
+## Cord anchor reconstruction
+
+Both measured cord endpoints now have shouldered anchor studs attached to their
+moving solids. Their circular shoulders follow the compact end fittings in the
+engraving; shaft depth and rounded heads are inferred. The treadle fastening is
+a stud reconstruction rather than the engraving's under-treadle loop. This is
+an explicit remaining source-detail discrepancy. The native endpoint coordinates
+and cord length have not moved. The flexible cord is secured inside each rounded
+head: overlap of the immediate cord end with its own head is intentional, while
+remote rope contact with either fitting must still clear.
+
+Each stud is one closed surface of revolution, touching its parent face without
+overlapping its volume. Mesh integration automatically includes its mass and
+full inertia tensor, including the crank stud's off-axis contribution. The
+annulus reference test now isolates the disk and hub, while compiled native
+checks continue to cover the complete moving bodies. A new clearance regression
+checks finite signed distances around both anchor heads: collapsed apex triangles
+are removed from the lathed surfaces. All five inertia/bending tests pass. Front and oblique Chrome previews were inspected without page errors.
+
+The first full rope/hardware audit found a remote rope segment entering the
+new treadle anchor by 0.0299 display units at 0.86 s. The failure is retained in
+[the pre-contact report](validation/159-rope-hardware-before-contact.json).
+The scaled native model now includes both rounded heads as spherical collision
+surfaces. Only rope links within 0.15 material units of their own secured end
+are excluded; a remote slack loop must respond to head contact. The clearance
+audit independently checks actual visible triangles rather than the native
+sphere representation and rejects non-finite distance results.
+
+With native head contact enabled, the same full-cycle audit reports no sampled
+unintended penetration. Minimum remote rope/head clearance is 0.0000513 display
+units at the treadle head, versus −0.0299 before contact was modeled. This small
+positive sampled value is not a continuous clearance margin: the spatial
+sampling bound is 0.0075 units. Pulley soft-contact penetration remains 0.00421
+units. The rigid audit covers 21 parts, 132 pairs and 129 poses, with no unintended
+intersections; the intended foot/floor penetration is 0.000321 units. Endpoint
+error stays below 0.000281 units over this cycle. Reports:
+[rope/hardware](validation/159-rope-hardware.json),
+[rigid clearance](validation/159-anchor-clearance.json),
+[native run](validation/159-anchor-contact.json).
+
+```sh
+RIGID_CORE=1 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-anchor-contact.json REPORT=/dev/shm/159-anchor-contact-report.json node scripts/probe-finite-cord-treadle.mjs
+SAMPLES=/dev/shm/159-anchor-contact.json node scripts/review-cord-treadle-rope-hardware.mjs
+SAMPLES=/dev/shm/159-anchor-contact.json REPORT=docs/validation/159-anchor-clearance.json node scripts/review-cord-treadle-core.mjs
+```
+
 ## Remaining work
 
-Complete the cord termination hardware and include it in the new core inertias.
-Then refine the finite rope at the explicit physical scale and qualify
+Resolve the under-treadle loop source detail and qualify the rope/anchor fastening.
+Refine the finite rope at the explicit physical scale and qualify
 timestep/rope-resolution convergence and longer-run behavior. Preserve the
 measured joints and floor. Qualify
 clearances and passive dynamics with final inertias before registering a bake.

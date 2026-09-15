@@ -2,11 +2,14 @@
 
 Four-cycle finite-rope runs do not establish a seamless repeat: fourth-cycle
 rope seams still differ by 7.6–11.1 source pixels, with large velocity mismatches.
-A source-shaped 19-mesh rigid core now passes a four-cycle clearance audit,
-excluding the cord and unfinished termination hardware. An explicit 0.1 m per
+The source-shaped rigid assembly now includes inferred cord-anchor studs.
+Native head contact fixes a measured slack-rope penetration; updated one-cycle
+rope/hardware and rigid-part audits pass their sampled checks. An explicit 0.1 m per
 display unit reconstruction and mesh-integrated rigid-core inertias are now
 available in the native probe, with independent formula and compiled-model
-tests. Finish fittings and qualify the finite rope at this scale next.
+tests. The rounded studs preserve measured endpoints but still differ from the
+engraving’s under-treadle loop. Qualify the finite rope and resolve that source
+detail next.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 

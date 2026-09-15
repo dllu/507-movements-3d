@@ -1,0 +1,38 @@
+{
+  "movement": 159,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 poses across supplied native trajectory; rigid core and anchor studs only, no cord; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Finite sampling, not a continuous collision proof.",
+  "parts": 21,
+  "pairs": 132,
+  "poses": 129,
+  "checks": 3980370,
+  "failures": {},
+  "workingContacts": {
+    "treadle/floor": {
+      "firstPose": 3,
+      "maximumDepth": 0.0003204506507001881,
+      "points": 6
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-core.mjs",
+      "sha256": "b51ca5224127bd2956d0664755db058e356076eccd8483b2a79917d160e10c87"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/solids.js",
+      "sha256": "783d4e9dc25fef5690830eb32ddaf00ff5defff08028baaa94183cac1ac78df3"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "/dev/shm/159-anchor-contact.json",
+      "sha256": "2d193c589407074846b7bfc5a8a26488c3fd0498a669d93b5501c36c85c05197"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
