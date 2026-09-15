@@ -1,9 +1,9 @@
-# Movement 159 — cord treadle review in progress
+# Movement 159 — baked ideal-cord treadle
 
-159 remains **open**, with a source-preserving route now established: let the
-treadle contact the floor and the cord go slack. The old always-taut assumption
-caused the floor penetration. Production registration and visible geometry are
-unchanged while the slack cord and pickup dynamics are reconstructed.
+159 now uses a source-proportioned assembly and a baked passive MuJoCo treadle
+cycle. Floor contact allows the cord to go slack instead of pulling the foot
+below the engraving floor. The massless slack curve is a length-preserving
+geometric illustration, not a prediction of finite-rope vibration.
 
 ## Source and clearance conflict
 
@@ -672,17 +672,14 @@ SAMPLES=/dev/shm/159-ideal-shaped.json REPORT=docs/validation/159-ideal-shape-ha
 node --test tests/cord-treadle-ideal-shape.test.mjs
 ```
 
-## Remaining work
+## Finite-rope research limits
 
-Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify
-the inferred rope/anchor fastening and final moving assembly with material-clipped
-anchor contact.
-Refine the finite rope at the explicit physical scale and qualify
-timestep/rope-resolution convergence and longer-run behavior. Preserve the
-measured joints and floor. Qualify
-clearances and passive dynamics with final inertias before registering a bake.
-Ground rendering, camera, speed, restart and mobile checks remain outstanding
-for that replacement.
+The finite-rope prototype remains unqualified: timestep, buckling and longer-run
+rope trajectories do not converge sufficiently. It is retained for research and
+is not the shipped model. The ideal model deliberately omits rope and pulley
+inertia. Its drive, scale, material and attachment assumptions remain explicit.
+
+Historical reproduction commands:
 
 ```sh
 node scripts/review-cord-treadle-clearance.mjs
@@ -701,4 +698,29 @@ node scripts/review-finite-cord-treadle.mjs
 ```
 
 Small reports and provenance hashes are under `docs/validation/159-*.json`.
-Raw trajectories stay in `/dev/shm`. No browser bundle or bake is shipped yet.
+Raw trajectories stay in `/dev/shm`.
+
+## Shipped bake and playback validation
+
+Run `node scripts/bake-cord-treadle.mjs` to regenerate the asset and source-hash
+provenance. Native steps are 0.000125 seconds. The settled cycle starts at the
+disk’s third full-turn crossing (11.9856764 seconds), aligning the first frame
+with the engraving phase. The four-second cycle contains 3,357 adaptive keys.
+Raw position closure is below 4.3e-13 radians and velocity closure below
+4.2e-11 radians/second before closing the endpoint.
+
+The 524,567-byte gzip asset stores merged rigid geometry and three angles plus
+the solved slack amplitude. Eight meshes render the assembly. Browser playback
+interpolates keys and updates a reusable cord buffer; it runs neither MuJoCo
+nor the arclength root solver.
+
+Across 2,001 intermediate phases, the fast cord profile differs from the fully
+solved profile by at most 0.0000654 world units (0.0037 engraving pixels);
+length error is at most 0.0000346 world units. Bounds enclose 257 sampled
+poses, including the cord, with finite vertices and stable buffers. Seam and
+exact restart tests pass. The five native ideal-model tests and four shape/
+playback tests pass. The private production build and desktop/mobile Chrome
+test pass, including playback changes, restart, orbit, no horizontal overflow,
+no page errors and no WASM request. Packaged front and oblique views were
+inspected. Local Node animation updates measured 0.183 ms median and 0.228 ms
+p95 over 1,000 warmed frames; this excludes browser rendering.

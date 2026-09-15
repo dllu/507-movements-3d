@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "movement": 159,
+  "names": [
+    "disk",
+    "treadle",
+    "pulley",
+    "amplitude"
+  ],
+  "turns": [
+    6.283185307179586,
+    0,
+    0,
+    0
+  ],
+  "period": 4,
+  "loopStart": 0,
+  "loopEnd": 4,
+  "bounds": {
+    "min": [
+      -1.6777778244018555,
+      -3.5799999809265137,
+      -1.2099999761581421
+    ],
+    "max": [
+      7.15333324432373,
+      3.7044444708319353,
+      0.9599999761581421
+    ]
+  },
+  "focus": [
+    2.7377777099609375,
+    0.06222224495271078,
+    -0.125
+  ],
+  "cameraDirection": [
+    0.02,
+    0.02,
+    15
+  ],
+  "sourceTime": 11.98567640377883,
+  "closure": [
+    2.6645352591003757e-13,
+    1.555977569012157e-13,
+    -4.285460875053104e-13,
+    0
+  ],
+  "velocityClosure": [
+    4.1105785442141496e-11,
+    2.0080492824092744e-11
+  ],
+  "refinements": 1356,
+  "sources": [
+    {
+      "file": "scripts/bake-cord-treadle.mjs",
+      "sha256": "0a42536771727023338918a813ad4ac923d545ebb0de7290a9eacfbc5db086e0"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/physics.js",
+      "sha256": "ab95474e79b4123f0c013fb528aa5535e846afe10a1a91575ac7b48e585c2100"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/inertia.js",
+      "sha256": "735b77da0d61e7746595789b9c21ea56bc9c97aeea530c490b4779e98f16897d"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/solids.js",
+      "sha256": "8b118b3022e125bbfa33572495113ba3fedebf079c810e646ecc6a321e32ae74"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/ideal-cord-shape.js",
+      "sha256": "3c52ad92414422060eb405c9bdf9692112fd21fa1792decf115443beab822fc3"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    }
+  ],
+  "assumptions": "Native ideal massless cord and passive treadle; slack shape is a length-preserving geometric illustration, not finite-rope vibration.",
+  "samples": 3357,
+  "bytes": 524567,
+  "sha256": "7cbb65a1fb7bb9f3b4fd1fda848fbe77e71bb32036d7049bac6694063b2a3ed1"
+}

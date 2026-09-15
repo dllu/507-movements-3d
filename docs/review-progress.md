@@ -1,17 +1,13 @@
-# Active source reconstruction: 159 cord treadle
+# Shipped reconstruction: 159 cord treadle
 
-The scaled ideal-cord model produces a repeatable passive treadle cycle. Its
-length-preserving geometric slack illustration now passes sampled hardware,
-self-clearance and curvature checks, and front/oblique previews are inspected.
-This explicitly illustrates the underdetermined massless slack shape; it does
-not claim to reproduce finite-rope vibration. Native rigid geometry follows the
-engraving, including the lower treadle eye and supported shafts.
-
-Next phase-align and bake the settled motion and geometric profile, then check
-interpolation, source framing and desktop/mobile playback before registration.
-Production remains unchanged. The finite-rope prototype remains unqualified;
-its timestep and buckling studies are retained in [movement 159](movement-159.md).
-150's source fit also remains open.
+159 now plays a four-second baked passive MuJoCo cycle with source-proportioned
+rigid parts, floor contact and a length-preserving slack illustration. The
+525 KB asset renders eight meshes without loading MuJoCo WASM. Native tests,
+interpolated cord/profile checks, bounds, seam/restart, private production build
+and desktop/mobile playback pass. The massless slack shape is explicitly an
+illustration; the finite-rope prototype remains unqualified. Details and
+assumptions are in [movement 159](movement-159.md). Continue at 160; 147’s
+mesh refinement and 150’s source fit remain open. The complete review is active.
 
 # Shipped reconstruction: 158 treadle and disk
 
