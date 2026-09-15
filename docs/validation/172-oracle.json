@@ -1,0 +1,225 @@
+{
+  "movement": 172,
+  "engravingWitnessBounds": [
+    181,
+    189,
+    357,
+    326
+  ],
+  "reconstructedWitnessBounds": [
+    168.43658838538744,
+    200.7702406091536,
+    347.0535559952699,
+    316.63504853392703
+  ],
+  "url": "https://507movements.com/mm_172.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "maximumOracleCoordinateError": 3.019806626980426e-14,
+  "samples": [
+    {
+      "phase": 0,
+      "pin": [
+        10,
+        0
+      ],
+      "wrist": [
+        50,
+        0
+      ],
+      "tracer": [
+        25,
+        0
+      ]
+    },
+    {
+      "phase": 0.125,
+      "pin": [
+        7.0710678118654755,
+        -7.071067811865475
+      ],
+      "wrist": [
+        46.44110718192453,
+        -8.881784197001252e-16
+      ],
+      "tracer": [
+        21.83483257563762,
+        -4.419417382415922
+      ]
+    },
+    {
+      "phase": 0.25,
+      "pin": [
+        6.123233995736766e-16,
+        -10
+      ],
+      "wrist": [
+        38.72983346207417,
+        1.7763568394002505e-15
+      ],
+      "tracer": [
+        14.523687548277813,
+        -6.25
+      ]
+    },
+    {
+      "phase": 0.375,
+      "pin": [
+        -7.071067811865475,
+        -7.0710678118654755
+      ],
+      "wrist": [
+        32.29897155819358,
+        1.7763568394002505e-15
+      ],
+      "tracer": [
+        7.69269695190667,
+        -4.419417382415922
+      ]
+    },
+    {
+      "phase": 0.5,
+      "pin": [
+        -10,
+        -1.2246467991473533e-15
+      ],
+      "wrist": [
+        30,
+        1.9721522630525295e-31
+      ],
+      "tracer": [
+        5,
+        -7.654042494670958e-16
+      ]
+    },
+    {
+      "phase": 0.625,
+      "pin": [
+        -7.071067811865477,
+        7.071067811865475
+      ],
+      "wrist": [
+        32.29897155819358,
+        -8.881784197001252e-15
+      ],
+      "tracer": [
+        7.69269695190667,
+        4.419417382415922
+      ]
+    },
+    {
+      "phase": 0.75,
+      "pin": [
+        -1.8369701987210296e-15,
+        10
+      ],
+      "wrist": [
+        38.72983346207417,
+        -1.5987211554602254e-14
+      ],
+      "tracer": [
+        14.52368754827781,
+        6.25
+      ]
+    },
+    {
+      "phase": 0.875,
+      "pin": [
+        7.071067811865474,
+        7.071067811865477
+      ],
+      "wrist": [
+        46.44110718192453,
+        -6.217248937900877e-15
+      ],
+      "tracer": [
+        21.83483257563762,
+        4.419417382415923
+      ]
+    },
+    {
+      "phase": 1,
+      "pin": [
+        10,
+        0
+      ],
+      "wrist": [
+        50,
+        0
+      ],
+      "tracer": [
+        25,
+        0
+      ]
+    }
+  ],
+  "sourcePose": [
+    {
+      "name": "crank",
+      "source": [
+        57,
+        332
+      ],
+      "projected": [
+        57.000000000000014,
+        332
+      ],
+      "error": 1.4210854715202004e-14
+    },
+    {
+      "name": "wrist",
+      "source": [
+        480,
+        260
+      ],
+      "projected": [
+        480,
+        260
+      ],
+      "error": 0
+    },
+    {
+      "name": "tracer",
+      "source": [
+        206,
+        309
+      ],
+      "projected": [
+        205.6093268807743,
+        306.70479542454905
+      ],
+      "error": 2.3282159541710334
+    }
+  ],
+  "production": {
+    "radius": 1.071701450964773,
+    "length": 5.149006894538013,
+    "guideY": -0.024,
+    "fraction": 0.351322285770152,
+    "phase": -2.1650100305953304,
+    "period": 4
+  },
+  "oracle": {
+    "radius": 10,
+    "length": 40,
+    "fraction": 0.375
+  },
+  "method": "Execute original anilib at 721 phases and compare finite slider-crank closure using oracle dimensions. Production uses separate engraving measurements; tracer position is projected onto the measured rigid rod.",
+  "sourceHashes": {
+    "html": "7219489c6585662179885f39a6c6d489ee72ffad7e476ccba2ce78748cea84f8",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "sources": [
+    {
+      "file": "scripts/compare-egg-curve-oracle.mjs",
+      "sha256": "091caa09f311280b80280f41d41cd25170832bf8001d87a72595917a65c5023e"
+    },
+    {
+      "file": "src/simulation/egg-curve-motion.js",
+      "sha256": "9a9ab4c8c18ded8058d02874f39e3358215306a43f2f27982898e7a5d7533100"
+    },
+    {
+      "file": "public/engravings/mm_172.png",
+      "sha256": "22195ccb4c910058aa1e31e0b762aa030015b9e59abe1b7bc92e756a93613730"
+    }
+  ]
+}

@@ -1,3 +1,14 @@
+# Shipped reconstruction: 172 slider-crank egg curve
+
+Seven physical meshes and a dashed trajectory replace the oversized scene.
+The analytic four-second cycle agrees with the original animation's wrist
+coordinates at 721 phases using its dimensions; the visible model retains
+the engraving's separately measured proportions. Initial joints fit exactly
+and the tracer within 2.33 pixels. Three tests, the 129-pose solid sweep,
+production build and desktop/mobile checks pass without WASM. The engraving's
+inconsistent dotted curve and inferred guide are documented in
+[movement 172](movement-172.md). Next source review: 173; the full review remains active.
+
 # Shipped reconstruction: 171 oscillating marine valve gear
 
 Thirty-six meshes reconstruct the source-visible gear with corrected eccentric

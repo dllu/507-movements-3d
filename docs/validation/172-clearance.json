@@ -1,0 +1,104 @@
+{
+  "movement": 172,
+  "poses": 129,
+  "meshes": 7,
+  "pairs": [
+    [
+      "shaft",
+      "crank"
+    ],
+    [
+      "shaft",
+      "crankPin"
+    ],
+    [
+      "shaft",
+      "rod"
+    ],
+    [
+      "shaft",
+      "tracer"
+    ],
+    [
+      "shaft",
+      "wristPin"
+    ],
+    [
+      "shaft",
+      "slider"
+    ],
+    [
+      "crank",
+      "rod"
+    ],
+    [
+      "crank",
+      "tracer"
+    ],
+    [
+      "crank",
+      "wristPin"
+    ],
+    [
+      "crank",
+      "slider"
+    ],
+    [
+      "crankPin",
+      "rod"
+    ],
+    [
+      "crankPin",
+      "tracer"
+    ],
+    [
+      "crankPin",
+      "wristPin"
+    ],
+    [
+      "crankPin",
+      "slider"
+    ],
+    [
+      "rod",
+      "wristPin"
+    ],
+    [
+      "rod",
+      "slider"
+    ],
+    [
+      "tracer",
+      "wristPin"
+    ],
+    [
+      "tracer",
+      "slider"
+    ]
+  ],
+  "queries": 3626190,
+  "intersections": {},
+  "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. Nonphysical line witness excluded. Sampled clearance only.",
+  "sources": [
+    {
+      "file": "scripts/review-egg-curve-solids.mjs",
+      "sha256": "cefa70bcd063835b0eac17de17d76712de28cd32780b905eb86eaff2e27db784"
+    },
+    {
+      "file": "src/simulation/authored-curve-generators.js",
+      "sha256": "45635522a086bdb656c616933f9dae81eaa22ed9ed7ccf03678145ea051bba22"
+    },
+    {
+      "file": "src/simulation/egg-curve-motion.js",
+      "sha256": "9a9ab4c8c18ded8058d02874f39e3358215306a43f2f27982898e7a5d7533100"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
