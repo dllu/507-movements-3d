@@ -1,10 +1,10 @@
 # Active reconstruction: 162 water-wheel governor
 
-162's native study now includes source-measured stud spans and backing contacts
-that prevent the pin from passing through a gear body. Four mechanical and
-counterfactual tests pass. Repeated runs retain reversal, but contact refinement
-is not monotonic and the cycles do not close; no false loop is baked. Source
-solids and qualified playback remain open. Production is unchanged.
+162 now has a source-sized five-bevel candidate with real bores and conical
+backplates/teeth. A 65-pose gear sweep clears, and native backing contact uses
+the visible body shapes. Six geometry and mechanical tests pass. Timestep
+refinement improves, but repeated motion is not yet a qualified loop. The
+remaining source solids and baked playback stay open. Production is unchanged.
 See [movement 162](movement-162.md). The full 507-movement review remains active.
 
 # Shipped reconstruction: 161 centrifugal governor

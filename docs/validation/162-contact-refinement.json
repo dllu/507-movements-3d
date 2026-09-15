@@ -9,64 +9,76 @@
       "maxDepth": 0.0009793496312125987,
       "firstForward": 1.1324999999999308,
       "firstReverse": 5.439499999999705,
-      "finalOutput": 6.623715716572177
+      "finalOutput": 6.623715715613882
     },
     {
       "timestep": 0.00025,
       "maxDepth": 0.0013486130409602146,
       "firstForward": 1.1322499999999618,
-      "firstReverse": 5.437000000000899,
-      "finalOutput": 6.602594915698222
+      "firstReverse": 5.4380000000009,
+      "finalOutput": 6.599707940380374
     },
     {
       "timestep": 0.000125,
-      "maxDepth": 0.001366438447866162,
+      "maxDepth": 0.0013273094697666722,
       "firstForward": 1.1320000000000525,
-      "firstReverse": 5.4377499999986645,
-      "finalOutput": 6.602166212570842
+      "firstReverse": 5.440374999998658,
+      "finalOutput": 6.606892584652107
     },
     {
       "timestep": 0.0000625,
       "maxDepth": 0.0014169574608404161,
       "firstForward": 1.131937499999947,
-      "firstReverse": 5.439062500003217,
-      "finalOutput": 6.611541623572407
+      "firstReverse": 5.438750000003216,
+      "finalOutput": 6.611338692376142
     }
   ],
   "differences": [
     {
       "coarse": 0.0005,
       "fine": 0.00025,
-      "spindle": 0.000053262098656858825,
-      "leftSpread": 0.0007434323147282873,
-      "sleeveY": 0.0016286467690800333,
-      "output": 0.021120800873955403
+      "spindle": 0.00005110659845453114,
+      "leftSpread": 0.000744061624005532,
+      "sleeveY": 0.0016300228250294424,
+      "output": 0.024007775233507722
     },
     {
       "coarse": 0.00025,
       "fine": 0.000125,
-      "spindle": 0.00002562755482671264,
-      "leftSpread": 0.00022344802544499442,
-      "sleeveY": 0.0004723038775760191,
-      "output": 0.004827886504894963
+      "spindle": 0.0000531072438647584,
+      "leftSpread": 0.00022554847369538056,
+      "sleeveY": 0.0004742102829204953,
+      "output": 0.01271214922198638
     },
     {
       "coarse": 0.000125,
       "fine": 0.0000625,
-      "spindle": 0.0000306122130560027,
-      "leftSpread": 0.0001317000704458282,
-      "sleeveY": 0.00027834593823450327,
-      "output": 0.009375411001592227
+      "spindle": 0.000026952432513382973,
+      "leftSpread": 0.0001296862058915993,
+      "sleeveY": 0.0002777957215713833,
+      "output": 0.007545952858873051
     }
   ],
   "sources": [
     {
       "file": "scripts/refine-water-governor.mjs",
-      "sha256": "85b599610ff2109c49177c07b50e7d3d18dc19cf8561a4c4bb9a165ac5a8224b"
+      "sha256": "83420c14a0e735849955bcfaa42e15cd58d3259cf4f0c5e9e92e90af0a73594a"
     },
     {
       "file": "src/simulation/mujoco-water-governor/physics.js",
-      "sha256": "32ea3928f07ed6fba275b3cdde054dff7c315464a7e651282cf048fda944b5f4"
+      "sha256": "4215f3eacf5bf4f8d4b660ce4984b751350a7262ddcb72e08617168da7e48f6d"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/backing-contact.js",
+      "sha256": "b3586af6def93c5a1c9c51c4d96b87f0c7158a83c3076f57cf496eb8d47ee698"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/bevel-train.js",
+      "sha256": "5ccccce52af0b2ac985ed2495735b08f621b42db051cee104cb509d54fc5bdf0"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",

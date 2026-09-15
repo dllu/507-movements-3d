@@ -1,0 +1,45 @@
+{
+  "movement": 162,
+  "status": "unregistered-bevel-candidate",
+  "parameters": {
+    "teeth": 30,
+    "module": 0.04237734185870577,
+    "pitchRadius": 0.6356601278805866,
+    "outerRadius": 0.6659999999999999,
+    "bore": 0.155,
+    "topApex": [
+      0,
+      -0.3979999999999997,
+      0
+    ],
+    "lowerApex": [
+      0,
+      -2.162,
+      0
+    ],
+    "toothThicknessFactor": 0.94
+  },
+  "poses": 65,
+  "pairs": 3844,
+  "queries": 16802554,
+  "failures": {},
+  "method": "Bidirectional vertices, edge midpoints and triangle centers over one tooth pitch at exact ideal ratios. Tooth/body solids, including opposed loose gears. Finite sampled clearance; native soft gear-constraint errors and pin/body contacts not yet included.",
+  "sources": [
+    {
+      "file": "scripts/review-water-governor-bevels.mjs",
+      "sha256": "bcf68f5122d046d4241a50185959d253d18027536a0d4a63fe40c5cb600a24ec"
+    },
+    {
+      "file": "src/simulation/mujoco-water-governor/bevel-train.js",
+      "sha256": "5ccccce52af0b2ac985ed2495735b08f621b42db051cee104cb509d54fc5bdf0"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

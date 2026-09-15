@@ -52,10 +52,11 @@ with axial half-height 0.045. Depths and radial dimensions remain inferred.
 A long run exposed a defect in the first native study: with the gear bodies
 omitted from collision, the pin could pass through the upper backing and settle
 on top of the upper stud. It then stayed coupled through the whole speed cycle.
-The diagnostic now includes coaxial backing surfaces at the stud roots. Only
-the pin collides with these proxies; its minimum radius of 0.16 lies outside
-the intended 0.14 bore, so the solid-cylinder proxy gives the same pin contact
-surface as an annulus. Visible bodies still need actual bores and source profiles.
+The diagnostic now derives backing collision hulls from the actual visible
+conical gear bodies. Only the pin collides with these hulls; its minimum radius
+of 0.16 lies outside the 0.155 bore. Filling the bore in the convex collision
+hull therefore preserves the pin's accessible contact surface. The previous
+flat-cylinder proxies overextended the inner face beyond the conical body.
 
 The overspeed regression proves that removing the backing permits the former
 pass-through, while the backed pin stays within the physical selector gap.
@@ -72,23 +73,24 @@ output motion. Relative stud azimuth determines pickup alongside speed and lift.
 At the original 0.0005-second timestep, maximum linkage closure error is
 9.07e-7 world units, penetration 0.000980 world units (0.055 source pixels),
 and soft bevel-constraint error 0.00155 radians. Final output advance is
-6.624 radians, not a forced zero. Four tests cover bidirectional pickup,
+6.624 radians, not a forced zero. Four native tests cover bidirectional pickup,
 removed-contact and shifted-stud counterfactuals, neutral equilibrium, clock
 continuity, pin closure and the added backing surfaces.
 
 Four-timestep refinement samples the first eight seconds every 0.002 seconds.
-Successive maximum output-angle differences are 0.02112, 0.00483 and 0.00938
+Successive maximum output-angle differences are 0.02401, 0.01271 and 0.00755
 radians for 0.0005 → 0.00025 → 0.000125 → 0.0000625-second steps. The final
-pair changes sleeve height by 0.000279 world units, about 0.0155 source pixels.
-The impact-driven output difference is not monotonic; convergence is not yet
-qualified. See `docs/validation/162-contact-refinement.json`.
+pair changes sleeve height by 0.000278 world units, about 0.0155 source pixels.
+The output differences now decrease with timestep, but impact accuracy and
+repeated playback are not yet qualified. See
+`docs/validation/162-contact-refinement.json`.
 
 A separate repeated-cycle study uses an 8.4342254-second input period (seven
 nominal spindle revolutions), with 64 cycles at each of two timesteps. Both
 runs retain forward and reverse output during all final eight cycles. The pin
-never passes the backing faces: observed offsets span −0.146 to +0.4234 world
+never passes the backing faces: observed offsets span −0.1431 to +0.4234 world
 units. However, last-cycle output phase closure errors range from roughly
-0.34 to 2.39 radians, and internal coordinates also fail to close. Merely
+0.0023 to 3.01 radians, and internal coordinates also fail to close. Merely
 making spindle travel an integer number of turns does not produce a valid
 baked loop. See `docs/validation/162-repeated-selector.json`.
 
@@ -105,3 +107,26 @@ Reports include source hashes; raw trajectories remain outside Git. Next work
 is resolving impact/repeated-cycle behavior, building the source-visible gears
 and selector, checking actual mesh clearance and baking validated playback.
 Production 162 remains unchanged.
+
+## Visible bevel train candidate
+
+`mujoco-water-governor/bevel-train.js` reconstructs all five bevels at the two
+source shaft intersections. The inferred equal 30-tooth gears have a 37-pixel
+outer radius and 0.635660-world-unit pitch radius. Separate face widths put the
+upper/lower loose-gear inner body faces at the measured stud roots. Their
+shallow conical backplates follow the raised centers visible behind the teeth.
+Every body has a real 0.155-radius bore, and all materials disable fog.
+
+The shared back-cone involute approximation supplies conical tooth ends and
+analytic cap normals. A 65-pose tooth-pitch sweep checks 3,844 cross-gear pairs
+with 16,802,554 bidirectional surface queries and finds no unintended sampled
+penetration above 1e-6 world units. This covers exact ideal gear ratios; native
+soft-constraint phase errors and pin/stud visible-solid clearances still need
+checking. See `docs/validation/162-bevel-clearance.json`.
+
+Two geometry tests verify outer envelopes, bores, inner face positions and
+matching pitch velocities at all three meshes. Front and oblique Chrome views
+were inspected. The visible reconstruction remains unregistered and still needs
+the governor linkage, shafts, selector and support hardware. Native backing
+assets are generated from these same visible bodies, retaining their conical
+contact profiles rather than a separately dimensioned flat collision disk.
