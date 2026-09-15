@@ -38933,7 +38933,11 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [7.4, 4.6, 12.6]);
+  assert.deepEqual(model.cameraDirection.toArray(), [.1, .06, 15]);
+  assert.equal(model.root.userData.hideGround, true);
+  model.reset();
+  assert.ok(model.root.userData.kinematics.crankPin.position.distanceTo(
+    sourceState.crankPin.position) < 1e-15);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 8.65);
   assert.equal(cameraEnvelope.geometry.parameters.height, 5.18);

@@ -1540,6 +1540,11 @@ function rockingBeamTieRodFlywheelMotion() {
     frameMaterial,
   );
   flywheelBearingPost.position.set(0, floorY / 2, -0.54);
+  flywheelBearingPost.geometry.dispose();
+  flywheelBearingPost.geometry = plate(clip.difference(clip.union(
+    poly([[-.21,floorY],[.21,floorY],[.21,0],[-.21,0]]), poly(circle([0,0],.24,64))),
+    poly(circle([0,0],.133,64))), -.75, -.33);
+  flywheelBearingPost.position.set(0,0,0);
   flywheelBearingPost.userData.role = 'fixed-bearing-post-behind-flywheel';
   const flywheelBearingRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.31, 0.075, 10, 40),
@@ -1547,6 +1552,7 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   flywheelBearingRing.position.set(0, 0, -0.25);
   flywheelBearingRing.userData.role = 'fixed-bearing-ring-behind-flywheel-hub';
+  flywheelBearingRing.visible = false;
   const beamBackColumnHeight = beamPivot.y - floorY;
   const beamPivotBackColumn = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -1573,6 +1579,8 @@ function rockingBeamTieRodFlywheelMotion() {
     beamBackColumnCenterZ,
   );
   beamColumnFoot.userData.role = 'fixed-foot-of-rear-beam-pivot-column';
+  beamColumnFoot.geometry.dispose();
+  beamColumnFoot.geometry = new THREE.BoxGeometry(1.02,.15,.46);
   fixedFrame.add(
     beamColumnFoot,
     beamPivotBackColumn,
@@ -1620,6 +1628,8 @@ function rockingBeamTieRodFlywheelMotion() {
   });
   beamPivotPin.position.copy(beamPivot);
   beamPivotPin.userData.fixed = true;
+  beamPivotPin.userData.blocks.ring.position.z = 1.075;
+  beamPivotPin.userData.blocks.index.position.z = 1.09;
   const beamPivotFrontRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.30, 0.075, 10, 40),
     accentMaterial,
@@ -1679,11 +1689,16 @@ function rockingBeamTieRodFlywheelMotion() {
     32,
   );
   flywheelShaft.userData.role = 'fixed-axis-output-shaft-through-flywheel';
+  flywheelShaft.geometry.dispose();
+  flywheelShaft.geometry = new THREE.CylinderGeometry(.13,.13,1,32);
+  flywheelShaft.position.z = -.20;
   const crankArm = new THREE.Mesh(
     new THREE.BoxGeometry(crankRadius, 0.15, 0.19),
     darkMaterial,
   );
-  crankArm.position.set(-crankRadius / 2, 0, 0.24);
+  crankArm.geometry.dispose();
+  crankArm.geometry = new THREE.BoxGeometry(crankRadius, .15, .16);
+  crankArm.position.set(-crankRadius / 2, 0, 0.22);
   crankArm.userData.role = 'rigid-four-unit-crank-arm';
   const crankPin = makePinAssembly({
     centerZ: 0.20,
@@ -1713,19 +1728,22 @@ function rockingBeamTieRodFlywheelMotion() {
     flywheelShaft,
   );
 
-  const primaryConnectingRod = makeDynamicLink({
+  const primaryConnectingRod = makeBoredScissorLink({
     color: PALETTE.driven,
     depth: primaryRodDepth,
-    jointRadius: 0.15,
+    length: primaryRodLength,
+    pinRadius: .105,
+    pinPositions: [0, tieDistanceFromCrank, primaryRodLength],
     thickness: 0.15,
   });
   primaryConnectingRod.userData.nominalLength = primaryRodLength;
   primaryConnectingRod.userData.role =
     'twenty-four-unit-crank-to-sliding-standard-primary-rod';
-  const beamConnectingRod = makeDynamicLink({
+  const beamConnectingRod = makeBoredScissorLink({
     color: PALETTE.driven,
     depth: beamConnectorDepth,
-    jointRadius: 0.14,
+    length: beamConnectorLength,
+    pinRadius: .105,
     thickness: 0.14,
   });
   beamConnectingRod.userData.nominalLength = beamConnectorLength;
@@ -1751,7 +1769,11 @@ function rockingBeamTieRodFlywheelMotion() {
   beamAssembly.add(beamRotor);
   beamAssembly.userData.rotor = beamRotor;
   const beamBody = new THREE.Mesh(
-    new THREE.BoxGeometry(beamRadius * 2, 0.25, beamDepth),
+    plate(clip.difference(clip.union(
+      poly([[-beamRadius,.16],[0,.32],[beamRadius,.16],[beamRadius,-.16],[0,-.32],[-beamRadius,-.16]]),
+      ...[-beamRadius,0,beamRadius].map(x => poly(circle([x,0],x === 0 ? .32 : .16,64)))),
+      ...[-beamRadius,0,beamRadius].map(x => poly(circle([x,0],.108,64)))),
+    -beamDepth / 2, beamDepth / 2),
     driverMaterial,
   );
   beamBody.position.z = beamPlaneZ;
@@ -1762,6 +1784,7 @@ function rockingBeamTieRodFlywheelMotion() {
     hub.userData.role = direction < 0
       ? 'left-working-eye-of-rocking-beam'
       : 'right-free-end-eye-of-rocking-beam';
+    hub.visible = false;
     beamRotor.add(hub);
     return hub;
   });
@@ -1773,6 +1796,7 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   beamCenterHub.position.z = beamPlaneZ;
   beamCenterHub.userData.role = 'beam-hub-turning-about-fixed-center-pin';
+  beamCenterHub.visible = false;
   const beamMotionIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 18, 12),
     whiteMaterial,
@@ -1810,6 +1834,13 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   standardFoot.position.set(0, floorY + 0.09, sliderStandardCenterZ);
   standardFoot.userData.role = 'moving-foot-sliding-on-horizontal-rail';
+  // Extrude a YZ sleeve along X. Local horizontal coordinate is -world Z.
+  standardFoot.geometry.dispose();
+  standardFoot.geometry = plate(clip.difference(
+    poly([[.07,floorY+.02],[.79,floorY+.02],[.79,floorY+.16],[.07,floorY+.16]]),
+    poly([[.165,floorY+.04],[.695,floorY+.04],[.695,floorY+.17],[.165,floorY+.17]])),
+    -.46,.46).rotateY(Math.PI/2);
+  standardFoot.position.set(0,0,0);
   const standardBearingRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.24, 0.065, 10, 36),
     accentMaterial,
@@ -1828,11 +1859,18 @@ function rockingBeamTieRodFlywheelMotion() {
     { color: PALETTE.frame, depth: 0.22, thickness: 0.13 },
   );
   standardRightBrace.userData.role = 'right-gusset-of-moving-standard';
+  standardLeftBrace.position.y = .04;
+  standardRightBrace.position.y = .04;
   const sliderWristPin = makePinAssembly({
     centerZ: -0.02,
     length: 1.02,
     role: 'through-pin-at-horizontally-sliding-standard-wrist',
   });
+  sliderWristPin.userData.blocks.ring.position.z = .58;
+  sliderWristPin.userData.blocks.index.position.z = .60;
+  sliderWristPin.userData.blocks.shaft.geometry.dispose();
+  sliderWristPin.userData.blocks.shaft.geometry = new THREE.CylinderGeometry(.105,.105,1.10,30);
+  sliderWristPin.userData.blocks.shaft.position.z = .02;
   slidingStandard.add(
     sliderWristPin,
     standardBearingRing,
@@ -1877,6 +1915,13 @@ function rockingBeamTieRodFlywheelMotion() {
     tiePin,
   );
   root.userData.cameraDistanceScale = 1.015;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {
+    authoredCyclePeriod: rotationPeriod,
+    displayCycleDuration: rotationPeriod,
+    playbackTimeScale: 1,
+  };
   root.userData.mechanism =
     'rocking-beam-tie-rod-horizontal-standard-continuous-crank-flywheel';
   root.userData.blocks = {
@@ -2049,8 +2094,9 @@ function rockingBeamTieRodFlywheelMotion() {
   const model = finish(
     root,
     update,
-    new THREE.Vector3(7.4, 4.6, 12.6),
+    new THREE.Vector3(.1, .06, 15),
   );
+  model.reset = () => update(0);
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   for (const index of [

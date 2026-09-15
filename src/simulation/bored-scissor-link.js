@@ -3,9 +3,9 @@ import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-
 import { matte } from './primitives.js';
 
 // A rigid, flat link: its geometry is never stretched during playback.
-export function makeBoredScissorLink({ length, depth, thickness, color, pinRadius, centerPin }) {
+export function makeBoredScissorLink({ length, depth, thickness, color, pinRadius, centerPin, pinPositions }) {
   const group = new THREE.Group();
-  const joints = centerPin ? [0, length / 2, length] : [0, length];
+  const joints = pinPositions ?? (centerPin ? [0, length / 2, length] : [0, length]);
   const boreRadius = pinRadius + 0.003;
   const outline = clip.union(
     capsule([0, 0], [length, 0], thickness / 2, 12),

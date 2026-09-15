@@ -1,3 +1,13 @@
+# Completed review: 145 rocking beam and tied rod
+
+145 retains the source animation's exact analytic linkage and complete beam.
+Both rods and the tapered beam now have bored joints; the axle, bearing, pin
+retainers and sliding guide have actual clearance. The 129-pose visible assembly
+check and focused joint checks pass, along with packaged desktop/mobile
+playback and restart. Axial supports and the distinction between prescribed
+rotation and force-driven motion are explicit in [movement 145](movement-145.md).
+Continue to 146.
+
 # Completed review: 144 lazy-tongs joints
 
 144's analytic 3:1 linkage now uses bored flat links and handle clevises, a

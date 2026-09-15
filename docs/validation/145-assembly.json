@@ -1,0 +1,34 @@
+{
+  "movement": 145,
+  "method": "Bidirectional actual vertices, edge midpoints and face centers against oriented mesh solids. All visible parts, excluding same rigid body joins. Full cycle covers one crank revolution. This is a sampled check, not a continuous swept-volume proof.",
+  "sources": [
+    {
+      "file": "scripts/review-rocking-beam-assembly.mjs",
+      "sha256": "8b9f47bfbc5d3d47ed2c4455bd49bad4845c218779ac072616fa8bcb9ba3636e"
+    },
+    {
+      "file": "src/simulation/authored-linkages.js",
+      "sha256": "08b4f751d2f12656ad1555ef47eae3547121aebfacc5925078bdad30e1e32a98"
+    },
+    {
+      "file": "src/simulation/bored-scissor-link.js",
+      "sha256": "aba0b68b3505a62ea3c0e297772896ea89e0fb792b9e0b0ae17d4dcf111bbb22"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "summary": {
+    "poses": 129,
+    "parts": 44,
+    "pairs": 762,
+    "checks": 4812732,
+    "failingPairs": 0
+  },
+  "failures": {}
+}
