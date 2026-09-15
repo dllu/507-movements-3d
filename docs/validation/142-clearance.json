@@ -1,0 +1,23 @@
+{
+  "samples": 721,
+  "overlaps": {},
+  "note": "Finite plate and gear profiles at overlapping axial depths. Same-body unions excluded; the transverse guide-shoe passage is tested separately.",
+  "sources": [
+    {
+      "file": "src/simulation/silk-traverse-geometry.js",
+      "sha256": "89c949c7edc96aeda1f4867b9604256aa37ee91e17e5fa7687e784ee231a6bc9"
+    },
+    {
+      "file": "src/simulation/silk-traverse-gears.js",
+      "sha256": "4b4eacec3b1f5ecab93369e3857e8c5d4eff1f0d294d87d4c7209929b764c5a7"
+    },
+    {
+      "file": "src/simulation/silk-traverse-kinematics.js",
+      "sha256": "b7d01ba69ae757abd67db257cd97e3886f1bd15a950078b7ee9a8df9fa0bb756"
+    },
+    {
+      "file": "scripts/review-silk-traverse-clearance.mjs",
+      "sha256": "eb003220c8eaba19e857c6a8ea1d306471cf086d8593c3b41c23d6d0f56ddc31"
+    }
+  ]
+}

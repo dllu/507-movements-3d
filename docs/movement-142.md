@@ -1,4 +1,4 @@
-# 142: epicyclic variable traverse review
+# 142: reconstructed epicyclic variable traverse
 
 The [source caption](https://507movements.com/mm_142.html) describes a fixed central
 pinion, an orbiting spur gear carried by a disk, and a crank attached to that gear
@@ -42,18 +42,38 @@ Independent verification doubles tooth and cutter sampling and checks another
 zero pitch-contact velocity at the fixed sun. See the
 [hashed prototype report](validation/142-gear-prototype.json).
 
-## Remaining work
+## Complete hardware and playback
 
-The browser still uses the old implementation. Build the measured carrier,
-axially separated gears and stud cap, bolted crank and connected rod/guide.
-The drawing truncates the rod and omits its output guide; their full dimensions
-must remain explicit assumptions. Bake the expensive gear geometry offline,
-retain analytic playback, and verify all joint/shaft clearances, motion bounds,
-source view, speed, restart and packaged desktop/mobile behavior before
-advancing to 143.
+The browser now loads the measured carrier, corrected gears, separated stud cap,
+bolted crank and complete connecting rod/guide. The fixed cap is in front of the
+gear working faces, so its drawn 24-pixel radius does not fill the tooth-root
+clearance. The crank and wrist pin pass in front of that cap. Planet axle, central
+carrier bearing, crank hub and output shoe have actual passages.
+
+The engraving truncates the rod and omits its output guide. The reconstructed
+370-pixel rod retains the preceding model's explicitly assumed length. A complete
+vertical guide, transverse output bar, supports and base show its action rather
+than truncating the linkage. All their depths and omitted dimensions are inferred.
+The guide is ahead of the crank's swept volume; placing it in the wrist pin's
+axial layer would produce interference near maximum crank reach.
+
+The full assembly passes 721 finite-profile clearance poses, including gears,
+crank, stud cap, shafts, rod and guide supports. See
+[the clearance report](validation/142-clearance.json). Same-body unions are excluded;
+a separate check verifies the complete transverse shoe passage and its engagement
+on the rail. Runtime tests check actual rod endpoints, loop closure, restart and
+complete mesh bounds across three carrier turns.
+
+Expensive geometry is generated offline and loaded from an approximately 530 KB
+compressed asset. Motion is analytic: one carrier revolution takes five seconds
+and the complete pattern takes fifteen. Five focused tests, packaged desktop/mobile
+playback and visual checks pass without requesting WASM. Geometry and source
+provenance are stored beside the asset. Fog and the generic ground plane are disabled.
 
 ```sh
 node scripts/prototype-silk-traverse-gears.mjs
 node scripts/review-silk-traverse-overlay.mjs
-node --test tests/silk-traverse-gears.test.mjs
+node scripts/review-silk-traverse-clearance.mjs
+node scripts/bake-silk-traverse.mjs
+node --test tests/silk-traverse-gears.test.mjs tests/silk-traverse-model.test.mjs
 ```

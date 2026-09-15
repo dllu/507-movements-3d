@@ -1,12 +1,13 @@
-# Current review: 142 corrected fixed-pinion count
+# Current review: 142 reconstructed variable traverse
 
-142's engraving has six central pinion teeth, not the old model's eight. With
-eighteen planet teeth, modulation and the complete pattern take three carrier
-turns. Measured centres and a profile-shifted involute pair now fit the tooth-tip
-radii; 720 contact poses and a finer independent 180-pose check clear. The
-registered overlay has been inspected. Visible hardware, stud-cap separation,
-rod/guide assumptions and browser replacement remain. See
-[movement 142](movement-142.md). Do not advance to 143.
+142 now loads the corrected six/eighteen-tooth gearing, measured carrier and
+bolted crank with a complete rod and output guide. Stud cap, working teeth and
+guide are separated axially; 721 full-assembly clearance poses and a finer gear
+check pass. Prebuilt geometry keeps gear generation out of the browser; analytic
+playback takes fifteen seconds for the three-turn pattern. Joint, shoe, framing,
+restart and packaged desktop/mobile checks pass without WASM. The rod's full
+length, omitted guide, supports and depths remain explicit assumptions. See
+[movement 142](movement-142.md). Continue to 143.
 
 # Current review: 141 reconstructed band saw
 

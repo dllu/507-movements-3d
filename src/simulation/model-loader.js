@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 142) {
+    const {makeBakedSilkTraverse} = await import('./baked/silk-traverse.js');
+    const model = await makeBakedSilkTraverse();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 141) {
     const {makeBandSaw} = await import('./band-saw.js');
     const model = makeBandSaw();
