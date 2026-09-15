@@ -1,10 +1,10 @@
 # Current review: 150 selectable valve cams
 
-150's rendered cam bevels and outline tubes now clear the follower tread across
-97 sampled demonstration poses. The lower camera angle, hidden ground and
-Restart are enabled. Source animation is unavailable. The shaft is substantially
-undersized, and cam-stack projection, bores, output connection, supports and
-passive return remain open. See [movement 150](movement-150.md).
+150 now has a source-sized shaft, keyed bored hub, annular sleeve/collars and
+relocated bored bearings. Shaft/carrier/support checks pass for 164 pairs at
+97 poses, as does the cam working-contact check. Cam-stack projection, exposed
+shaft length, valve connection, remaining assembly and passive return still
+need review. See [movement 150](movement-150.md).
 
 # Shipped reconstruction: 149 twin cam followers
 

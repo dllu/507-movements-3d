@@ -17,10 +17,11 @@ cam/roller pairs: bevels penetrated the tread by about 0.012 world units and
 outline tubes by up to 0.02321 units. Mathematical contact metadata missed these
 rendered additions. The baseline report records the earlier source hashes.
 
-Cam bevels now inset the mathematical outline. Decorative tubes are thinner
-and sit 0.04 units inward along the profile normal. [The updated check](validation/150-contact.json)
+The first correction inset the bevels. The subsequent bored carrier rebuild
+uses finite cam-lobe plates without outward bevels, meeting an annular common
+sleeve. Decorative tubes sit 0.04 units inward along the profile normal. [The updated check](validation/150-contact.json)
 compares the actual tread against all four cam plates, their outlines and the
-common-heel sleeve through 97 demonstration poses: 720,292 bidirectional
+common-heel sleeve through 97 demonstration poses: 1,038,508 bidirectional
 point/solid checks, no penetration above 1e-6. This checks working pairs only,
 not whole-assembly interference or continuous motion. Run
 `REQUIRE_CLEAR=1 node scripts/review-selectable-cam-contact.mjs`.
@@ -33,16 +34,29 @@ including play/pause, exact restart, orbit/reset and no WASM request.
 
 ## Remaining source reconstruction
 
-The engraving's hatched shaft end has an approximate 36-pixel radius. The current
-shaft radius is 0.13 / 0.016 = 8.125 pixels at the model's source scale. Its
-carrier hub, common sleeve, cam bores and bearings need coordinated review;
-merely enlarging the shaft would intersect the currently solid components.
-The cam-stack projection and relative silhouettes also need tracing rather than
-assuming the current polar profiles and camera reproduce their printed outlines.
+The shaft radius is now 0.56 / 0.016 = 35 source pixels, close to the approximately
+36-pixel hatched end in the engraving (previously 8.125 pixels). The hub has a
+real axial bore and keyway, the sleeve and end collars are annular, and the cam
+plates contain only the lobes outside the common sleeve. Bearings have matching
+bores and sit beyond the complete carrier stroke. Posts end below the enlarged
+bearing housings; base rails extend under the relocated posts. Throw markers
+were moved outward onto the lobes to keep them out of the enlarged bore.
+
+[The shaft assembly check](validation/150-shaft-clearance.json) compares the shaft
+and key against the carrier and fixed bearings/posts, plus the carrier against
+those fixed parts: 164 pairs, 97 poses and 20,039,716 point/solid checks, with no
+penetration above 1e-6. Rigid carrier internal interfaces and the rest of the
+mechanism are excluded; this is not whole-assembly validation.
+Run `node scripts/review-selectable-cam-shaft.mjs`.
+
+The cam-stack projection, exposed shaft length and relative silhouettes still
+need tracing rather than assuming the current polar profiles and camera
+reproduce the engraving. The enlarged bore is a dimensional correction, not
+proof that the axial arrangement matches the source.
 
 The rectangular slotted output head replaces an ordinary-looking source pin,
 and the large frame/supports are invented. Review the valve connection and
 whole assembly together. The working-pair correction does not validate those
-features. The local constructor takes about 135 ms, including roller-spin
+features. The local constructor takes about 178 ms, including roller-spin
 precomputation; decide on offline baking after the geometry and mechanics are
 settled. Do not mark 150 complete from the contact check alone.

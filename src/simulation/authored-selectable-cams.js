@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate as finitePlate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -10,20 +11,11 @@ import {
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const FULL_TURN = Math.PI * 2;
 
-function centeredExtrusion(shape, depth, bevel = 0.012) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: bevel > 0,
-    bevelSegments: 1,
-    bevelSize: bevel,
-    bevelOffset: -bevel,
-    bevelThickness: bevel,
-    curveSegments: 64,
-    depth,
-    steps: 1,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  geometry.computeVertexNormals();
-  return geometry;
+function annularPlate(inner, outer, depth, material, keyed = false) {
+  const hole = keyed ? clip.union(poly(circle([0, 0], inner, 192)),
+    poly([[.54, -.03], [.603, -.03], [.603, .03], [.54, .03]]))
+    : poly(circle([0, 0], inner, 192));
+  return new THREE.Mesh(finitePlate(clip.difference(poly(circle([0, 0], outer, 192)), hole), -depth / 2, depth / 2), material);
 }
 
 function cylinderAlongZ(radius, length, material, segments = 36) {
@@ -357,24 +349,22 @@ function makeCamAssembly(
   assembly.userData.phaseOffset = config.phaseOffset;
   assembly.userData.role = `throw-${config.index + 1}-cam-rigid-on-sliding-carrier`;
 
-  const shape = new THREE.Shape();
+  const profilePoints = [];
   const outlinePoints = [];
   const profileSamples = 192;
   for (let index = 0; index < profileSamples; index += 1) {
     const angle = index / profileSamples * FULL_TURN;
     const profile = profileGeometryAt(config, angle);
     const point = profile.boundary;
-    if (index === 0) shape.moveTo(point.x, point.y);
-    else shape.lineTo(point.x, point.y);
+    profilePoints.push(point.toArray());
     outlinePoints.push(new THREE.Vector3(
       point.x - profile.normal.x * 0.04,
       point.y - profile.normal.y * 0.04,
       config.camDepth / 2 + 0.012,
     ));
   }
-  shape.closePath();
   const plate = new THREE.Mesh(
-    centeredExtrusion(shape, config.camDepth, 0.012),
+    finitePlate(clip.difference(poly(profilePoints), poly(circle([0, 0], config.baseRadius, profileSamples))), -config.camDepth / 2, config.camDepth / 2),
     material,
   );
   plate.userData.camProfile = 'common-heel-variable-throw-polar-pear';
@@ -401,7 +391,7 @@ function makeCamAssembly(
   const throwTicks = Array.from({ length: config.index + 1 }, (_, index) => {
     const tick = cylinderAlongZ(0.026, 0.025, indexMaterial, 16);
     tick.position.set(
-      0.22 + index * 0.09,
+      0.70 + index * 0.07,
       -0.16,
       config.camDepth / 2 + 0.050,
     );
@@ -792,31 +782,30 @@ function slidingFourThrowCamValveGear() {
     return { ...record, config };
   });
   const stackLength = camPitch * (camCount - 1) + camDepth;
-  const commonBaseSleeve = cylinderAlongZ(
-    baseRadius,
+  const commonBaseSleeve = annularPlate(
+    .604, baseRadius,
     stackLength,
     driverMaterials[0],
-    64,
   );
   commonBaseSleeve.userData.role = 'continuous-common-heel-selection-sleeve';
-  const carrierHub = cylinderAlongZ(0.24, stackLength + 0.18, darkMaterial, 34);
+  const carrierHub = annularPlate(.568, .604, stackLength + 0.18, darkMaterial, true);
   carrierHub.userData.role = 'keyed-hub-rigid-with-all-four-cams';
   const carrierEndCollars = [-1, 1].map((side) => {
-    const collar = cylinderAlongZ(0.30, 0.075, darkMaterial, 34);
-    collar.position.z = side * (stackLength / 2 + 0.055);
+    const collar = annularPlate(.604, baseRadius, .075, darkMaterial);
+    collar.position.z = side * (stackLength / 2 + 0.0375);
     collar.userData.role = 'sliding-carrier-end-collar';
     collar.userData.side = side < 0 ? 'rear' : 'front';
     return collar;
   });
   slidingCarrier.add(commonBaseSleeve, carrierHub, ...carrierEndCollars);
 
-  const rotatingShaft = cylinderAlongZ(0.13, 3.55, darkMaterial, 36);
+  const rotatingShaft = cylinderAlongZ(0.56, 3.80, darkMaterial, 192);
   rotatingShaft.userData.role = 'long-keyed-shaft-through-sliding-cam-series';
   const shaftKeyIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 0.050, 3.20),
+    new THREE.BoxGeometry(0.055, 0.050, 3.00),
     indexMaterial,
   );
-  shaftKeyIndex.position.x = 0.135;
+  shaftKeyIndex.position.x = 0.565;
   shaftKeyIndex.userData.role = 'white-longitudinal-key-and-rotation-index';
   camRotor.add(rotatingShaft, shaftKeyIndex);
 
@@ -908,14 +897,14 @@ function slidingFourThrowCamValveGear() {
       new THREE.BoxGeometry(6.45, 0.19, 0.24),
       frameMaterial,
     );
-    rail.position.set(1.65, baseY, side * 1.46);
+    rail.position.set(1.65, baseY, side * 1.65);
     rail.userData.role = 'fixed-longitudinal-base-rail';
     rail.userData.side = side < 0 ? 'rear' : 'front';
     return rail;
   });
   const baseTies = [-1.10, 4.38].map((x, index) => {
     const tie = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.19, 3.16),
+      new THREE.BoxGeometry(0.24, 0.19, 3.60),
       frameMaterial,
     );
     tie.position.set(x, baseY, 0);
@@ -925,20 +914,17 @@ function slidingFourThrowCamValveGear() {
   });
   const camBearingPosts = [-1, 1].map((side) => {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, -baseY, 0.30),
+      new THREE.BoxGeometry(0.30, -baseY - .72, 0.30),
       frameMaterial,
     );
-    post.position.set(shaftCenter.x, baseY / 2, side * 1.46);
+    post.position.set(shaftCenter.x, (baseY - .72) / 2, side * 1.65);
     post.userData.role = 'fixed-camshaft-bearing-post';
     post.userData.side = side < 0 ? 'rear' : 'front';
     return post;
   });
   const camBearingRings = [-1, 1].map((side) => {
-    const bearing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.25, 0.060, 10, 42),
-      darkMaterial,
-    );
-    bearing.position.set(shaftCenter.x, shaftCenter.y, side * 1.46);
+    const bearing = annularPlate(.568, .72, .16, darkMaterial);
+    bearing.position.set(shaftCenter.x, shaftCenter.y, side * 1.65);
     bearing.userData.role = 'fixed-camshaft-bearing-ring';
     bearing.userData.side = side < 0 ? 'rear' : 'front';
     return bearing;
