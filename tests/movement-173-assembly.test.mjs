@@ -20,7 +20,8 @@ test('173 baked assembly retains nut lead, horizontal guide and reset through it
   assert.ok(Math.abs(parts.guideRod.getWorldPosition(new THREE.Vector3()).y)<1e-12);
   for(const mesh of Object.values(parts)){assert.ok(mesh.matrixWorld.elements.every(Number.isFinite));assert.equal(mesh.material.fog,false);}
  }
- const end=stateAtTime(g.duration);m.update(1000);assert.equal(m.root.userData.kinematics.wheel,end.wheel);m.reset();assert.deepEqual(m.root.userData.kinematics,initial);
- assert.equal(Object.keys(parts).length,42);assert.equal(m.root.userData.hideGround,true);
+ for(const cycle of [1,2,10]){m.update(g.duration*cycle+.5);assert.ok(Math.abs(m.root.userData.kinematics.wheel-stateAtTime(.5).wheel)<1e-10);}
+ m.update(g.duration+.01);const before=m.root.userData.kinematics.carrier;m.update(g.duration+.1);assert.ok(m.root.userData.kinematics.carrier>before);m.reset();assert.deepEqual(m.root.userData.kinematics,initial);
+ assert.equal(Object.keys(parts).length,39);assert.equal(m.root.userData.hideGround,true);
  }finally{m.dispose();}
 });

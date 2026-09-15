@@ -1,7 +1,7 @@
 {
   "movement": 171,
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Reconstructed 36-mesh marine valve gear with corrected eccentric layers, rounded strap shoulders/lugs and asymmetric upper slot. Hidden dimensions and operator selection remain documented assumptions.",
+  "scope": "Tighter sampled-hardware framing; original mechanism preserved.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
+      "sha256": "ff48a5509d3b524358ea6f5b8131590eb898c569d728b45a33863e265853fc4f"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -25,7 +25,7 @@
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "146011e92e471c85b9e5c1b117c65da5babc954e0fa5ae3dcf9c7326294cf1f4"
+      "sha256": "937eccd1678fd320d9cafbb2ff00d5c09457236a34f7939ab9ac99cc6eeff3ba"
     }
   ]
 }

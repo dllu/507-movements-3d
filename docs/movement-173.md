@@ -1,10 +1,14 @@
 # Movement 173: tappet-indexed silk traverse
 
-The browser now uses a 42-mesh reconstruction driven by a 51,130-byte MuJoCo
+The browser now uses a 39-solid reconstruction driven by a 51,130-byte MuJoCo
 motion bake. The visible screw, traveling nut and slotted guide replace the
 legacy prescribed indexing curve and oversized frame. A four-second disk turn
 indexes the passive wheel by one tooth. The finite adjustment lasts 71.825
-seconds from the source pose and stops without wrapping the nut back.
+seconds from the source pose and then automatically restarts. The nut resets at
+that replay boundary; this is an animation repeat, not unlimited screw travel.
+The screw has an integral trapezoidal helical thread instead of a round-wire
+coil. A dark index tooth and marks on both wheel faces expose the small indexing
+rotation, including in the initial edge-on view.
 
 The [original page](https://507movements.com/mm_173.html) has no enabled 2D
 animation. Its engraving and caption are the source reference.
@@ -43,12 +47,12 @@ Fog and ground are disabled; Restart restores the exact source pose.
 - [Dense contact clearance](validation/173-tappet-baked-clearance.json): 20,456
   interpolated poses have positive finite wheel-to-tappet clearance. The common
   rigid transformation used to place that component preserves this clearance.
-- [Assembly clearance](validation/173-assembly-clearance.json): all 42 physical
-  meshes classified; 521 cross-body pairs at 129 adjustment poses, with
-  239,749,964 surface queries and no sampled intersections. This is a sampled
+- [Assembly clearance](validation/173-assembly-clearance.json): all 39 physical
+  meshes classified; the cross-body pairs at 129 adjustment poses, with
+  73,111,628 surface queries and no sampled intersections. This is a sampled
   sweep, not a continuous collision proof.
 - Four tests pass: native/visible tooth centers, axes and dimensions; finite
-  monotone playback; source landmarks; and complete-assembly nut lead, guide
+  monotone contact recording and repeating assembly playback; source landmarks; and complete-assembly nut lead, guide
   constraint, finite transforms and reset.
 - Production build and [desktop/mobile browser checks](validation/173-browser.json)
   pass playback, exact Restart, orbit/reset view, viewport overflow, no WASM

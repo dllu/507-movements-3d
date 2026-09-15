@@ -36,6 +36,11 @@ export function makeOpposedScrewNuts(){
  // Local X becomes world -Z: the input shaft is viewed end-on in Brown's plate.
  add('input-shaft',disk(f.wormRoot*.95,-1.42/scale,.75/scale,96).rotateY(Math.PI/2),worm,'ink');
  for(const [name,low,high] of [['front-input-journal',-1.42,-.45],['rear-input-journal',.45,.75]])add(name,disk(f.wormRoot,low/scale,high/scale,192).rotateY(Math.PI/2),worm,'ink');
+ // Flush end-face paint rotates with the camera-facing end of the input shaft.
+ const inputMark=new THREE.Mesh(new THREE.PlaneGeometry(.13/scale,.035/scale),materials.white);
+ inputMark.name='input-shaft-rotation-mark';inputMark.rotation.y=-Math.PI/2;
+ inputMark.position.set(-1.42/scale-.0002,.055/scale,0);worm.add(inputMark);
+ inputMark.userData.visualIndicator=true;
  const frame=body('frame'),inputY=f.distance*scale;
  add('upper-bearing',ring(.237,.535,1.18,1.34).translate(0,inputY,0),frame,'frame');
  add('upper-bearing-sleeve',ring(f.wormRoot*scale+.004,.235,1.15,1.36).translate(0,inputY,0),frame,'accent');

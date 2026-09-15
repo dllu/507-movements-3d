@@ -4481,3 +4481,5 @@ correction of every identified wrong topology/proportion/contact, inspection of
 actual rendered clearances through motion, readable playback at default speed,
 and the build, numerical tests, and browser checks against the final state.
 The goal remains active until that evidence exists.
+
+User-requested corrections: 165 now uses six equal sinusoidal lobes sized for the finite roller; 171 uses tighter hardware-based framing; 173 has a solid thread, visible wheel indexing and automatic finite-adjustment replay; 151 has an input-shaft face mark. Targeted unit, sampled-clearance and desktop/mobile checks cover this batch.

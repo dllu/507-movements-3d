@@ -2,7 +2,7 @@ import {expect,test} from '@playwright/test';
 test('165 plays its baked waved cam and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/165');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
- await expect(page.getByText('The waved cam drives the upright bar through a roller and lever.',{exact:false})).toBeVisible();
+ await expect(page.getByText('Six identical, evenly spaced sinusoidal lobes drive the upright bar through a roller and lever.',{exact:false})).toBeVisible();
  console.log('165 load ms',await page.evaluate(()=>performance.now()));
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/165-packaged-source.png'});
  await page.locator('.play-control').click();console.log('165 frame timing',await page.evaluate(()=>new Promise(resolve=>{const start=performance.now();let frames=0;function tick(now){frames++;if(now-start>=1800)resolve({frames,elapsed:now-start,fps:1000*frames/(now-start)});else requestAnimationFrame(tick);}requestAnimationFrame(tick);})));

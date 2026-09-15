@@ -1,7 +1,7 @@
 {
   "movement": 173,
   "poses": 129,
-  "meshes": 42,
+  "meshes": 39,
   "pairs": [
     [
       "hub",
@@ -1317,19 +1317,7 @@
     ],
     [
       "tappet",
-      "screw0"
-    ],
-    [
-      "tappet",
-      "screw1"
-    ],
-    [
-      "tappet",
-      "screw2"
-    ],
-    [
-      "tappet",
-      "screw3"
+      "screwThread"
     ],
     [
       "tappet",
@@ -1357,19 +1345,7 @@
     ],
     [
       "disk",
-      "screw0"
-    ],
-    [
-      "disk",
-      "screw1"
-    ],
-    [
-      "disk",
-      "screw2"
-    ],
-    [
-      "disk",
-      "screw3"
+      "screwThread"
     ],
     [
       "disk",
@@ -1425,19 +1401,7 @@
     ],
     [
       "channelRail-1",
-      "screw0"
-    ],
-    [
-      "channelRail-1",
-      "screw1"
-    ],
-    [
-      "channelRail-1",
-      "screw2"
-    ],
-    [
-      "channelRail-1",
-      "screw3"
+      "screwThread"
     ],
     [
       "channelRail-1",
@@ -1493,19 +1457,7 @@
     ],
     [
       "channelRail1",
-      "screw0"
-    ],
-    [
-      "channelRail1",
-      "screw1"
-    ],
-    [
-      "channelRail1",
-      "screw2"
-    ],
-    [
-      "channelRail1",
-      "screw3"
+      "screwThread"
     ],
     [
       "channelRail1",
@@ -1561,19 +1513,7 @@
     ],
     [
       "lowerBearing",
-      "screw0"
-    ],
-    [
-      "lowerBearing",
-      "screw1"
-    ],
-    [
-      "lowerBearing",
-      "screw2"
-    ],
-    [
-      "lowerBearing",
-      "screw3"
+      "screwThread"
     ],
     [
       "lowerBearing",
@@ -1629,19 +1569,7 @@
     ],
     [
       "upperBearing",
-      "screw0"
-    ],
-    [
-      "upperBearing",
-      "screw1"
-    ],
-    [
-      "upperBearing",
-      "screw2"
-    ],
-    [
-      "upperBearing",
-      "screw3"
+      "screwThread"
     ],
     [
       "upperBearing",
@@ -1696,179 +1624,47 @@
       "tappetSupport"
     ],
     [
-      "screw0",
+      "screwThread",
       "nut"
     ],
     [
-      "screw0",
+      "screwThread",
       "wrist"
     ],
     [
-      "screw0",
+      "screwThread",
       "yoke"
     ],
     [
-      "screw0",
+      "screwThread",
       "guideRod"
     ],
     [
-      "screw0",
+      "screwThread",
       "guideBearing"
     ],
     [
-      "screw0",
+      "screwThread",
       "guideBracket"
     ],
     [
-      "screw0",
+      "screwThread",
       "guideFoot"
     ],
     [
-      "screw0",
+      "screwThread",
       "footNeck"
     ],
     [
-      "screw0",
+      "screwThread",
       "tappetStem"
     ],
     [
-      "screw0",
+      "screwThread",
       "tappetArm"
     ],
     [
-      "screw0",
-      "tappetSupport"
-    ],
-    [
-      "screw1",
-      "nut"
-    ],
-    [
-      "screw1",
-      "wrist"
-    ],
-    [
-      "screw1",
-      "yoke"
-    ],
-    [
-      "screw1",
-      "guideRod"
-    ],
-    [
-      "screw1",
-      "guideBearing"
-    ],
-    [
-      "screw1",
-      "guideBracket"
-    ],
-    [
-      "screw1",
-      "guideFoot"
-    ],
-    [
-      "screw1",
-      "footNeck"
-    ],
-    [
-      "screw1",
-      "tappetStem"
-    ],
-    [
-      "screw1",
-      "tappetArm"
-    ],
-    [
-      "screw1",
-      "tappetSupport"
-    ],
-    [
-      "screw2",
-      "nut"
-    ],
-    [
-      "screw2",
-      "wrist"
-    ],
-    [
-      "screw2",
-      "yoke"
-    ],
-    [
-      "screw2",
-      "guideRod"
-    ],
-    [
-      "screw2",
-      "guideBearing"
-    ],
-    [
-      "screw2",
-      "guideBracket"
-    ],
-    [
-      "screw2",
-      "guideFoot"
-    ],
-    [
-      "screw2",
-      "footNeck"
-    ],
-    [
-      "screw2",
-      "tappetStem"
-    ],
-    [
-      "screw2",
-      "tappetArm"
-    ],
-    [
-      "screw2",
-      "tappetSupport"
-    ],
-    [
-      "screw3",
-      "nut"
-    ],
-    [
-      "screw3",
-      "wrist"
-    ],
-    [
-      "screw3",
-      "yoke"
-    ],
-    [
-      "screw3",
-      "guideRod"
-    ],
-    [
-      "screw3",
-      "guideBearing"
-    ],
-    [
-      "screw3",
-      "guideBracket"
-    ],
-    [
-      "screw3",
-      "guideFoot"
-    ],
-    [
-      "screw3",
-      "footNeck"
-    ],
-    [
-      "screw3",
-      "tappetStem"
-    ],
-    [
-      "screw3",
-      "tappetArm"
-    ],
-    [
-      "screw3",
+      "screwThread",
       "tappetSupport"
     ],
     [
@@ -2088,7 +1884,7 @@
       "tappetSupport"
     ]
   ],
-  "queries": 239749964,
+  "queries": 73111628,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All physical meshes classified; standalone contact has a separate dense audit. Sampled clearance only.",
   "sources": [
@@ -2098,7 +1894,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "d87d39887275c5895f296f0348cfb0ee603f17b8cbb4367d492a2b878cbd28c4"
+      "sha256": "5fdbb631e06f949e46a537fd7cc16b12dce5745768e200e47e7a0497bab90fdb"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",

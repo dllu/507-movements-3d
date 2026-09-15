@@ -2,6 +2,8 @@
   "movement": 165,
   "status": "baked-quasistatic-solid-diagnostic",
   "parameters": {
+    "lobes": 6,
+    "waveAmplitude": 0.18,
     "scale": 0.018,
     "axisPixelX": 341,
     "outerRadius": 2.754,
@@ -33,7 +35,7 @@
   "poses": 721,
   "meshes": 13,
   "pairs": 61,
-  "queries": 47632034,
+  "queries": 25696970,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the twelve-second baked quasi-static cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -44,11 +46,11 @@
     },
     {
       "file": "src/simulation/baked/assets/165.json.gz",
-      "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+      "sha256": "8cec51ec90ae1b9730f8625d41693de0586f9b556e366e630f033068a311ba75"
     },
     {
       "file": "src/simulation/baked/wave-cam.js",
-      "sha256": "c033540e456c0a7974482874cbbf904c1ae1756d050bedf691e424719e9625df"
+      "sha256": "f1b870e22bbeca3bcce8b926d6799db95fce9d6f9aef55fcff8e5282cc8ee96b"
     },
     {
       "file": "src/simulation/baked/playback.js",

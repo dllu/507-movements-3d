@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import load from '@mujoco/mujoco';
 import {waveCamGeometry,waveCamHeight,waveCamTrace,waveCamTraceY} from '../src/simulation/mujoco-wave-cam/profile.js';
+import {makeWaveCamContactSolver} from '../src/simulation/mujoco-wave-cam/quasistatic.js';
 import {waveCamProfileAngles} from '../src/simulation/mujoco-wave-cam/adaptive-profile.js';
 import {makeWaveCamPhysics} from '../src/simulation/mujoco-wave-cam/physics.js';
 
@@ -16,18 +17,18 @@ test('165 source silhouette interpolates its measurements without overshoot',()=
  }
 });
 
-test('165 relieved cam clears the finite source roller and repeats continuously',()=>{
- const g=waveCamGeometry();let minimum=Infinity;
+test('165 evenly spaced sine cam clears its finite seated roller',()=>{
+ const g=waveCamGeometry(),seated=makeWaveCamContactSolver({margin:0}).solve(0);let minimum=Infinity;
  for(let i=0;i<=512;i++)for(let j=0;j<=32;j++){
-  const dx=g.rollerRadius*Math.sin(-Math.PI/2+Math.PI*i/512),x=g.rollerX+dx,z=g.rollerZ-g.rollerDepth/2+g.rollerDepth*j/32;
+  const dx=g.rollerRadius*Math.sin(-Math.PI/2+Math.PI*i/512),x=seated.rollerCenter[0]+dx,z=g.rollerZ-g.rollerDepth/2+g.rollerDepth*j/32;
   if(Math.hypot(x,z)>g.outerRadius)continue;
-  const top=g.rollerY+Math.sqrt(Math.max(0,g.rollerRadius**2-dx**2));
+  const top=seated.rollerCenter[1]+Math.sqrt(Math.max(0,g.rollerRadius**2-dx**2));
   minimum=Math.min(minimum,waveCamHeight(Math.atan2(x,z),g)-top);
  }
- assert.ok(minimum>=-1e-12&&minimum<1e-5);
+ assert.ok(minimum>=-1e-10&&minimum<1e-5);
  for(let i=0;i<200;i++){
   const a=i*Math.PI/100;
-  assert.ok(Math.abs(waveCamHeight(a)-waveCamHeight(a+Math.PI))<1e-12);
+  assert.ok(Math.abs(waveCamHeight(a)-waveCamHeight(a+2*Math.PI/g.lobes))<1e-12);
  }
  assert.ok(Math.abs(waveCamHeight(Math.PI/2-1e-7)-waveCamHeight(Math.PI/2+1e-7))<1e-8);
 });

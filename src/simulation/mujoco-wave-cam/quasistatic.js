@@ -1,39 +1,31 @@
-import {waveCamGeometry,waveCamTrace,waveCamTraceY} from './profile.js';
-import {waveCamProjectedHeight} from './projected-profile.js';
+import {waveCamGeometry,waveCamHeight} from './profile.js';
 
-// Profile minima over an interval occur at its endpoints, measured monotonic
-// cubic boundaries, or crossings of the cubic and roller envelope. The circle
-// is monotonic on either side of its crown; same-direction branches cannot
-// introduce an interior minimum even if they cross more than once.
+// Angular extrema of the sinusoidal lower face.
 export function waveCamProfileCriticalPoints(g=waveCamGeometry()){
- const raw=x=>g.topY+(177-waveCamTraceY(g.axisPixelX+x/g.scale))*g.scale;
- const circle=x=>g.rollerY+Math.sqrt(Math.max(0,g.rollerRadius**2-(x-g.rollerX)**2));
- const knots=[...waveCamTrace.map(([x])=>(x-g.axisPixelX)*g.scale),g.rollerX-g.rollerRadius,g.rollerX,g.rollerX+g.rollerRadius].sort((a,b)=>a-b),result=[...knots];
- for(let i=1;i<knots.length;i++){
-  let a=knots[i-1],b=knots[i];if(a<g.rollerX-g.rollerRadius||b>g.rollerX+g.rollerRadius)continue;
-  let fa=raw(a)-circle(a),fb=raw(b)-circle(b);if(fa*fb>=0)continue;
-  for(let j=0;j<48;j++){const c=(a+b)/2,fc=raw(c)-circle(c);if(fa*fc>0){a=c;fa=fc;}else{b=c;fb=fc;}}
-  result.push((a+b)/2);
- }
- return result.sort((a,b)=>a-b);
+ return Array.from({length:2*g.lobes},(_,i)=>i*Math.PI/g.lobes);
 }
 
 export function makeWaveCamContactSolver({samples=128,margin=.006,geometry:g=waveCamGeometry()}={}){
  const critical=waveCamProfileCriticalPoints(g),zmin=g.rollerZ-g.rollerDepth/2,zmax=g.rollerZ+g.rollerDepth/2,limit=Math.sqrt(g.outerRadius**2-zmin**2);
  const arm=Math.hypot(g.rollerX-g.pivot[0],g.rollerY-g.pivot[1]),leftLength=Math.hypot(g.outputPin[0]-g.pivot[0],g.outputPin[1]-g.pivot[1]),initialAngle=Math.atan2(g.rollerY-g.pivot[1],g.rollerX-g.pivot[0]),leftX=g.pivot[0]-leftLength*Math.cos(initialAngle);
  function solve(cam){
-  const cos=Math.cos(cam),sin=Math.sin(cam);
   function faceAt(x){
-   const hi=Math.min(zmax,Math.sqrt(Math.max(0,g.outerRadius**2-x*x))),u=x*cos-zmin*sin,v=x*cos-hi*sin,low=Math.min(u,v),high=Math.max(u,v);
-   let local=waveCamProjectedHeight(u,g)<waveCamProjectedHeight(v,g)?u:v,height=waveCamProjectedHeight(local,g);
-   for(const k of critical){if(k<low)continue;if(k>high)break;const h=waveCamProjectedHeight(k,g);if(h<height){height=h;local=k;}}
-   return{height,z:Math.abs(sin)>1e-12?Math.max(zmin,Math.min(hi,(x*cos-local)/sin)):zmin};
+   const hi=Math.min(zmax,Math.sqrt(Math.max(0,g.outerRadius**2-x*x)));
+   const height=z=>waveCamHeight(Math.atan2(x,z)-cam,g);
+   let z=height(zmin)<height(hi)?zmin:hi;
+   for(const angle of critical){
+    const candidate=x/Math.tan(cam+angle);
+    if(candidate<zmin||candidate>hi||!Number.isFinite(candidate))continue;
+    if(height(candidate)<height(z))z=candidate;
+   }
+   return{height:height(z),z};
   }
   const xs=new Set(Array.from({length:samples+1},(_,i)=>-limit+2*limit*i/samples));
   const add=x=>{if(x>-limit&&x<limit)xs.add(x);};
-  for(const k of critical){
-   if(Math.abs(cos)>1e-12)add((k+zmin*sin)/cos);
-   if(Math.abs(k)<=g.outerRadius){const a=Math.asin(k/g.outerRadius);for(const phi of [cam+a,cam+Math.PI-a]){const z=g.outerRadius*Math.cos(phi);if(z>=zmin&&z<=zmax)add(g.outerRadius*Math.sin(phi));}}
+  for(const angle of critical){
+   add(zmin*Math.tan(cam+angle));
+   const z=g.outerRadius*Math.cos(cam+angle);
+   if(z>=zmin&&z<=zmax)add(g.outerRadius*Math.sin(cam+angle));
   }
   const grid=[...xs].sort((a,b)=>a-b).map(x=>({x,...faceAt(x)}));
   function support(centerX){

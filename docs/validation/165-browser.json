@@ -2,11 +2,11 @@
   "movement": 165,
   "status": "packaged-desktop-mobile-passed",
   "environment": "Local headless Chrome; requestAnimationFrame cadence while playing, not a hardware-independent performance guarantee.",
-  "readyCheckMilliseconds": 2376.6,
+  "readyCheckMilliseconds": 2372,
   "frameSample": {
-    "frames": 54,
-    "elapsedMilliseconds": 1809.4,
-    "framesPerSecond": 29.8441
+    "frames": 63,
+    "elapsedMilliseconds": 1826.4,
+    "framesPerSecond": 34.4941
   },
   "checks": [
     "packaged portable-subdirectory route",
@@ -22,15 +22,15 @@
   "sources": [
     {
       "file": "tests/e2e/wave-cam.spec.mjs",
-      "sha256": "73eddb8ae0fa8fc11c89ea7ac60079fb62298be25195ed24ff1a9764783b2352"
+      "sha256": "89db0a605a63de0d5304ef037a750236ded4b5b47cbdab8f3a060949a81df421"
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "931d9e6c462d75c936cb4c2befb6f9496f7621b06d938f30d720de7705218b72"
+      "sha256": "937eccd1678fd320d9cafbb2ff00d5c09457236a34f7939ab9ac99cc6eeff3ba"
     },
     {
       "file": "src/simulation/baked/wave-cam.js",
-      "sha256": "c033540e456c0a7974482874cbbf904c1ae1756d050bedf691e424719e9625df"
+      "sha256": "f1b870e22bbeca3bcce8b926d6799db95fce9d6f9aef55fcff8e5282cc8ee96b"
     },
     {
       "file": "src/simulation/baked/playback.js",
@@ -42,7 +42,8 @@
     },
     {
       "file": "src/simulation/baked/assets/165.json.gz",
-      "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+      "sha256": "8cec51ec90ae1b9730f8625d41693de0586f9b556e366e630f033068a311ba75"
     }
-  ]
+  ],
+  "scope": "Six equal sinusoidal lobes with finite-roller contact and refreshed bake."
 }

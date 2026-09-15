@@ -6,7 +6,7 @@ import {waveCamSampledGap} from '../src/simulation/mujoco-wave-cam/clearance.js'
 const solver=makeWaveCamContactSolver(),fine=makeWaveCamContactSolver({samples:256}),states=[];let refinement=0,minimumGap=Infinity,maximumSeatedGap=0,residual=0;
 for(let i=0;i<=720;i++){
  const cam=2*Math.PI*i/720,s=solver.solve(cam);s.time=12*i/720;states.push(s);residual=Math.max(residual,Math.abs(s.residual));
- const gap=waveCamSampledGap(s,{samples:1024,profileType:'projected'}).gap;minimumGap=Math.min(minimumGap,gap);maximumSeatedGap=Math.max(maximumSeatedGap,gap);
+ const gap=waveCamSampledGap(s,{samples:1024,profileType:'radial'}).gap;minimumGap=Math.min(minimumGap,gap);maximumSeatedGap=Math.max(maximumSeatedGap,gap);
  if(i%2===0)refinement=Math.max(refinement,Math.abs(s.outputY-fine.solve(cam).outputY));
 }
 const sources=['scripts/probe-wave-cam-quasistatic.mjs','src/simulation/mujoco-wave-cam/quasistatic.js','src/simulation/mujoco-wave-cam/projected-profile.js','src/simulation/mujoco-wave-cam/profile.js','src/simulation/mujoco-wave-cam/clearance.js'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));

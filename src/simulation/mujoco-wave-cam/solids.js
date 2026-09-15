@@ -4,13 +4,12 @@ import * as THREE from 'three';
 import {plate,poly,circle,capsule,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
-import {waveCamGeometry} from './profile.js';
-import {waveCamProjectedHeight} from './projected-profile.js';
+import {waveCamGeometry,waveCamHeight} from './profile.js';
 
 // Closed annular face cam. Separate normal domains retain the sharp top/rim
 // boundaries; the lower face and cylindrical walls shade smoothly within each.
 export function waveCamVisibleGeometry(g=waveCamGeometry()){
- const radii=Array.from({length:5},(_,i)=>2.69+(g.outerRadius-2.69)*i/4),angles=waveCamProfileAngles({segments:180,tolerance:.0003,heightFunctions:radii.map(r=>a=>waveCamProjectedHeight(r*Math.sin(a),g))}),positions=[],indices=[];
+ const radii=Array.from({length:5},(_,i)=>2.69+(g.outerRadius-2.69)*i/4),angles=waveCamProfileAngles({segments:180,tolerance:.0003,heightFunctions:[a=>waveCamHeight(a,g)]}),positions=[],indices=[];
  function grid(rows,columns,point,reverse=false){
   const offset=positions.length/3;
   for(let i=0;i<rows;i++)for(let j=0;j<columns;j++)positions.push(...point(i,j));
@@ -20,10 +19,10 @@ export function waveCamVisibleGeometry(g=waveCamGeometry()){
   }
  }
  const xyz=(a,r,y)=>[r*Math.sin(a),y,r*Math.cos(a)];
- grid(angles.length,radii.length,(i,j)=>xyz(angles[i],radii[j],waveCamProjectedHeight(radii[j]*Math.sin(angles[i]),g)));
+ grid(angles.length,radii.length,(i,j)=>xyz(angles[i],radii[j],waveCamHeight(angles[i],g)));
  grid(angles.length,2,(i,j)=>xyz(angles[i],j?g.outerRadius:2.69,g.topY),true);
- grid(angles.length,2,(i,j)=>xyz(angles[i],g.outerRadius,j?g.topY:waveCamProjectedHeight(g.outerRadius*Math.sin(angles[i]),g)));
- grid(angles.length,2,(i,j)=>xyz(angles[i],2.69,j?g.topY:waveCamProjectedHeight(2.69*Math.sin(angles[i]),g)),true);
+ grid(angles.length,2,(i,j)=>xyz(angles[i],g.outerRadius,j?g.topY:waveCamHeight(angles[i],g)));
+ grid(angles.length,2,(i,j)=>xyz(angles[i],2.69,j?g.topY:waveCamHeight(angles[i],g)),true);
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();return geometry;
 }
 

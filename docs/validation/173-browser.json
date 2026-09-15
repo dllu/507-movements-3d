@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "d87d39887275c5895f296f0348cfb0ee603f17b8cbb4367d492a2b878cbd28c4"
+      "sha256": "5fdbb631e06f949e46a537fd7cc16b12dce5745768e200e47e7a0497bab90fdb"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
@@ -36,8 +36,8 @@
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "c380cefaf0f677633d6a2f61440524f5195dbfff05272899040dd333f9069e27"
+      "sha256": "937eccd1678fd320d9cafbb2ff00d5c09457236a34f7939ab9ac99cc6eeff3ba"
     }
   ],
-  "scope": "42-mesh source reconstruction with enlarged tappet wheel, tall guide flange, near-orthographic view and baked passive contact."
+  "scope": "Solid screw thread, marked wheel and repeating finite adjustment."
 }

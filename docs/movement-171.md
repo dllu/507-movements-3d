@@ -96,3 +96,7 @@ node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs
 ```
 
 Next source review: 172. The full 507-movement review remains active.
+
+## Display correction
+
+Default framing now uses sampled bounds of the moving hardware and an 8-degree field of view. The oversized invisible camera envelope is removed; the mechanism and its motion are unchanged. Desktop/mobile playback and Restart checks pass.

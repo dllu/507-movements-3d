@@ -1,0 +1,23 @@
+{
+  "movement": 151,
+  "status": "packaged-desktop-mobile-passed",
+  "checks": [
+    "visible input-shaft face marker",
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "mobile view",
+    "no WASM request",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/opposed-screw.spec.mjs",
+      "sha256": "0b1541b1797741b33af6717f8a456b15864315ff08404992183054a4be0d2ff5"
+    },
+    {
+      "file": "src/simulation/opposed-screw-nuts.js",
+      "sha256": "91b3545372b0c5a8f4b3079e95c478e393b7f782cc8a2d71c61588b74699a97e"
+    }
+  ]
+}

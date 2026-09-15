@@ -72,3 +72,7 @@ the shaft and connecting the rear support arm, removed those intersections.
 Retain the 6.8px upper-axis discrepancy, inferred 18-tooth pair/supports, ideal
 coupling and finite sampling as reconstruction limits. Movement 150's cam-face
 interpretation remains open separately.
+
+## Display correction
+
+A white mark on the camera-facing input-shaft end now makes worm rotation visible. It is surface paint attached to the rotating shaft. Desktop/mobile playback and Restart checks pass.

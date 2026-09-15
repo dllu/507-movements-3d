@@ -5,27 +5,27 @@
   "poses": 721,
   "refinementPoses": 361,
   "maximumOutputRefinementDifference": 0,
-  "minimumIndependentSampledGap": 0.0059999999858235675,
-  "maximumIndependentSeatedGap": 0.00628358112123184,
-  "maximumRootResidual": 1.4266365866433262e-11,
+  "minimumIndependentSampledGap": 0.006000000010044193,
+  "maximumIndependentSeatedGap": 0.0060002982198374966,
+  "maximumRootResidual": 1.3165468715214956e-11,
   "outputEndpointDifference": 0,
   "initial": {
     "cam": 0,
-    "rocker": 0.297131037652798,
+    "rocker": 0.2943119499290333,
     "rollerAngle": 0,
     "rollerCenter": [
-      -0.08716841424210209,
-      2.3168023259888417,
+      -0.08456770813739123,
+      2.3082657507606723,
       2.754
     ],
-    "outputY": 0.6933218101799767,
-    "shoeX": -0.0021285057070059565,
+    "outputY": 0.6997387618971384,
+    "shoeX": -0.004083458959145858,
     "contactPoint": [
-      0.5717342039794366,
-      2.9091224942357323,
+      -0.286805465891237,
+      3.172766705542091,
       2.694
     ],
-    "residual": 6.5996097475817805e-12,
+    "residual": -1.27613475342514e-11,
     "margin": 0.006,
     "method": "quasistatic finite-surface contact",
     "time": 0
@@ -33,11 +33,11 @@
   "sources": [
     {
       "file": "scripts/probe-wave-cam-quasistatic.mjs",
-      "sha256": "7ee6489f53378e76b1ae4512cec529de7e0e2a3ae4ae7c065c4f28bafd605331"
+      "sha256": "b5db96ee83ae8a8ef6b6b0bcb165aa103594844ee8ef5121799b0764158c1e97"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/quasistatic.js",
-      "sha256": "82eb373fad25076d9bab236f8b1a475a038863a695f37a6988e6ed432ad987f4"
+      "sha256": "a65576fdc30df461a8822f35dfd2fffaac1366b863baeb16f41e74efa107555f"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/projected-profile.js",
@@ -45,7 +45,7 @@
     },
     {
       "file": "src/simulation/mujoco-wave-cam/profile.js",
-      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+      "sha256": "112bc8dc016a5c2dbb7b593e8c6cc34f3bcab569a62be77c11b96b526672df35"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/clearance.js",

@@ -2,6 +2,8 @@
   "version": 1,
   "movement": 165,
   "geometry": {
+    "lobes": 6,
+    "waveAmplitude": 0.18,
     "scale": 0.018,
     "axisPixelX": 341,
     "outerRadius": 2.754,
@@ -38,35 +40,35 @@
   "turns": [
     6.283185307179586,
     0,
-    -22.081244029080214
+    -19.945308566546743
   ],
   "period": 12,
   "loopStart": 0,
   "loopEnd": 12,
   "bounds": {
     "min": [
-      -5.85659048663947,
-      -1.7787108908048208,
-      -2.7940000985922215
+      -5.818611004271839,
+      -1.779035613652603,
+      -2.794000071629123
     ],
     "max": [
-      2.7940000985922215,
+      2.794000071629123,
       5.929999866485596,
       3.095000066757202
     ]
   },
   "focus": [
-    -1.5312951940236241,
-    2.0756444878403872,
-    0.15049998408249032
+    -1.5123054663213578,
+    2.0754821264164964,
+    0.15049999756403953
   ],
   "cameraDirection": [
     0.01,
     0.01,
     15
   ],
-  "maximumAcceptedProbeError": 0.0000019995317416046654,
-  "solverStates": 14535,
+  "maximumAcceptedProbeError": 0.000001998403240499602,
+  "solverStates": 9350,
   "assumptions": "Quasistatic finite-surface cam contact; ideal pins and vertical guide; 0.006 world-unit contact clearance. Illustrative tangential rolling with axial slip, not a friction/inertia simulation. Display speed is illustrative.",
   "sources": [
     {
@@ -75,11 +77,11 @@
     },
     {
       "file": "src/simulation/mujoco-wave-cam/quasistatic.js",
-      "sha256": "82eb373fad25076d9bab236f8b1a475a038863a695f37a6988e6ed432ad987f4"
+      "sha256": "a65576fdc30df461a8822f35dfd2fffaac1366b863baeb16f41e74efa107555f"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/solids.js",
-      "sha256": "cb9ba13860810966a80774da51cb93134d58d9c3778b4b0b658a78efa4bf2df1"
+      "sha256": "d93e058a0f2ef25c2e20cec215f8564068d998f422dd6d495693cabce41484e7"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/adaptive-profile.js",
@@ -95,7 +97,7 @@
     },
     {
       "file": "src/simulation/mujoco-wave-cam/profile.js",
-      "sha256": "783f715170588945d8284716d0c3866a0a139ca842ccebc311deaf904f4cc85c"
+      "sha256": "112bc8dc016a5c2dbb7b593e8c6cc34f3bcab569a62be77c11b96b526672df35"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -106,7 +108,7 @@
       "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
     }
   ],
-  "samples": 3507,
-  "bytes": 666304,
-  "sha256": "b5d793c817688252b8755f49b9ac80880b08bebb3737f41def008daf1da74d8d"
+  "samples": 2259,
+  "bytes": 313821,
+  "sha256": "8cec51ec90ae1b9730f8625d41693de0586f9b556e366e630f033068a311ba75"
 }

@@ -1114,6 +1114,18 @@ function oscillatingMarineEngineStephensonValveGear() {
   root.userData.supportsRestart = true;
   root.userData.materialsIgnoreSceneFog = true;
 
+  // Fit the moving hardware, excluding the old oversized invisible envelope.
+  root.remove(cameraEnvelope);
+  const motionBounds = new THREE.Box3();
+  for (let i = 0; i <= 180; i++) {
+    update(selectorPeriod * i / 180);
+    root.updateMatrixWorld(true);
+    motionBounds.union(new THREE.Box3().setFromObject(root, true));
+  }
+  root.userData.cameraFitBounds = motionBounds.expandByScalar(.06);
+  root.userData.cameraFov = 8;
+  cameraEnvelope.geometry.dispose();
+  cameraEnvelope.material.dispose();
   update(0);
   root.traverse(object => {
     const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
