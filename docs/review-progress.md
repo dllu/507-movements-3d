@@ -1,14 +1,13 @@
 # Open review: 171 oscillating marine valve gear
 
-The lower slide now follows remeasured source landmarks: taller, wider-spaced
-guides, individually fitted blocks, a higher and narrower slot, and a centered
-neutral slide. Twelve lower landmarks fit within 0.5 source pixel. The removed
-engine/frame solids leave 40 meshes. Eccentric, upper-slot and lower-interface
-sweeps pass, alongside linkage closure and the continuous 18-second cycle.
-The inferred diagnostic valve link was extended to avoid constraining these
-source dimensions; its hidden topology and valve output remain unqualified.
-Upper contour proportions and trunnion compensation remain open; see
-[movement 171](movement-171.md).
+Bourne's contemporary description supports a frame-fixed, vertically translating
+sector with a cylinder-carried follower. The revised model keeps the guide
+columns stationary and the central connecting rod vertical. A 3,605-state audit
+verifies neutral compensation without imposing exact cancellation off neutral.
+Twelve lower landmarks fit within 0.5 source pixel; the scene has 40 meshes.
+Selected finite-interface sweeps, ideal linkage closure and the cycle seam pass.
+Upper source contours and whole-assembly clearance remain open. Unillustrated
+rocker/output dimensions are still assumptions; see [movement 171](movement-171.md).
 
 # Shipped reconstruction: 170 crossed-arm governor
 

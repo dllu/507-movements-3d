@@ -58978,29 +58978,32 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
     'time-state ahead selection',
   );
 
-  // The lower cancellation is evaluated in cylinder coordinates. For a fixed
-  // slide stroke, changing cylinder angle rotates the entire slot/pin pair in
-  // world space but leaves the relative rockshaft angle and valve stroke
-  // exactly unchanged. This checks the implemented cylinder-carried construction only.
-  for (const slideStroke of [-0.18, -0.10, -0.03, 0.06, 0.15, 0.24]) {
+  // At the neutral slide position its arc is centered on the trunnion,
+  // so cylinder rocking alone leaves the relative valve-shaft angle unchanged.
+  // Away from neutral, validate closure without assuming exact compensation.
+  for (const slideStroke of [-0.18, -0.10, 0, 0.06, 0.15, 0.24]) {
     const reference = lowerStateAtSlideStroke(slideStroke, 0);
     for (const cylinderAngle of [-0.42, -0.19, 0, 0.23, 0.47]) {
       const state = lowerStateAtSlideStroke(slideStroke, cylinderAngle);
-      near(state.rockshaftAngle, reference.rockshaftAngle, 2e-15,
-        'cylinder rocking contributes no relative rockshaft angle');
-      near(
-        state.valveStemPointLocal.y,
-        reference.valveStemPointLocal.y,
-        2e-15,
-        'cylinder rocking contributes no valve stroke',
-      );
-      vectorNear(
-        state.followerPinLocal,
-        reference.followerPinLocal,
-        2e-15,
-        'follower cylinder-local position',
-      );
-      near(state.slotContactError, 0, 5e-16,
+      if (slideStroke === 0) {
+        near(state.rockshaftAngle, reference.rockshaftAngle, 2e-15,
+          'cylinder rocking contributes no relative rockshaft angle');
+        near(
+          state.valveStemPointLocal.y,
+          reference.valveStemPointLocal.y,
+          2e-15,
+          'cylinder rocking contributes no valve stroke',
+        );
+        vectorNear(
+          state.followerPinLocal,
+          reference.followerPinLocal,
+          2e-15,
+          'follower cylinder-local position',
+        );
+      }
+      vectorNear(state.slotCenterWorld, geometry.trunnionCenter.clone().add(new THREE.Vector2(0, slideStroke)),
+        1e-14, 'slot center stays in the vertical frame guide');
+      near(state.slotContactError, 0, 1e-14,
         'pin remains on the circular slot centerline');
       near(state.followerArmLengthError, 0, 4e-16,
         'finite rockshaft follower arm');
@@ -59011,8 +59014,8 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
       near(
         state.followerPinWorld.distanceTo(state.slotCenterWorld),
         geometry.slotRadius,
-        7e-16,
-        'world-space pin remains in rotated circular slot',
+        1e-14,
+        'world-space pin remains in the translating circular slot',
       );
     }
   }

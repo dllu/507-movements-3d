@@ -21,24 +21,40 @@ shows none of these solids. The shaft and trunnion are shorter, with a real
 bored trunnion bearing, so these additions no longer obscure the engraving's
 valve gear. The rendered scene falls from 84 to 40 meshes.
 
-The analytic solver still uses an inferred hidden crank to determine cylinder
-oscillation, and a cylinder-carried rockshaft/output linkage to locate the
-follower and calculate valve travel. Removing their visible solids does not
-validate that assumed construction. Resolve the trunnion-centered compensation
-and which members are cylinder-carried before declaring the reconstruction
-complete. The visible slide guides, arc and follower retain their motion.
+The solver uses an inferred hidden crank to determine cylinder oscillation.
+The lower sector and its guides are now frame-fixed; only the follower
+rockshaft moves with the cylinder. The upper die and central connecting rod
+translate the sector vertically. This replaces the earlier model in which
+both slot and guides rocked with the cylinder.
+
+The reconstruction follows John Bourne's [A Catechism of the Steam Engine,
+section 630](https://www.gutenberg.org/cache/epub/10998/pg10998-images.html).
+He describes the sector's ascending guide tail and its end guides on the frame
+columns, and specifies curvature centered on the trunnion at valve half stroke.
+This contemporary description supports the fixed-guide interpretation of the
+abbreviated Brown drawing; it does not provide Brown's unillustrated rocker
+pivot dimensions. Those and the diagnostic output linkage remain assumptions.
+
+The [compensation audit](validation/171-compensation.json) independently
+recomputes rocker angles and circle distances over 3,605 states spanning five
+slide positions and cylinder angles from -0.3 to +0.3 radians. At neutral,
+maximum added relative rocker rotation is 5.56e-16 radians. At nonzero slide
+positions, it retains the geometric variation rather than imposing exact
+cancellation. Over 721 playback poses, the guide columns do not move and the
+central connecting rod has zero horizontal span. Arm and slot distance errors
+remain below 8.89e-16 world units.
 
 ## Existing motion evidence
 
 The [closure audit](validation/171-existing-closure.json) recomputes distances
 from exported positions at 721 crank phases for each of five fixed reversing
 settings. Maximum length error is 1.34e-14 world units and die-guide error is
-7.33e-15. The maximum absolute lower-slot parameter angle is 0.618387 radians.
+7.33e-15. The maximum absolute lower-slot parameter angle is 0.455893 radians.
 These checks establish consistency of the implemented ideal construction;
 they do not establish source fidelity or finite pin contact.
 
-Full ahead and astern now give valve strokes of 0.188750 and 0.304937 world
-units; midgear retains 0.117631. The asymmetric source pin positions change
+Full ahead and astern now give valve strokes of 0.204882 and 0.324972 world
+units; midgear retains 0.115148. The asymmetric source pin positions change
 these excursions; the previously equal strokes resulted from an assumed
 symmetric pin layout. These are properties of the current ideal reconstruction,
 not historical valve-timing measurements. Fitting the lower slide exposed an
@@ -96,7 +112,7 @@ or deforming its length.
 
 The [expanded lower-interface sweep](validation/171-lower-clearance.json)
 checks 17 pairs at 97 poses over the current 18-second traversal, with
-2,865,192 bidirectional surface queries. It finds no sampled penetration above
+2,770,752 bidirectional surface queries. It finds no sampled penetration above
 1e-6 world units. The added pairs cover both rod eyes, guide-post/slot-wall
 clearance, the closed slot ends, the attached slide eye and trunnion bearing. This is deliberately a lower-interface qualification, not a
 whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
@@ -145,7 +161,9 @@ These rendering flags and the upper/lower interface repairs are shipped while th
 
 The [scoped model test](validation/171-unit.json) passes after replacing stale
 symmetry and oblique-camera assumptions with the recorded asymmetric anchors
-and current front view. Checks for removed engine/frame meshes are replaced
+and current front view. Neutral-only compensation and fixed slot-center checks replace the
+earlier artificial all-stroke invariance test. Checks for removed engine/frame
+meshes are replaced
 with absence checks; closure and source-visible rendered-position assertions
 are retained.
 The production build and [packaged browser check](validation/171-browser.json)
@@ -153,14 +171,16 @@ pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
 with no page errors or WASM requests. Restart explicitly restores the initial
 pose. These checks validate this repair, not the complete reconstruction.
 
-Next, rebuild the source-visible solids and resolve the lower compensation
-construction. Use analytic linkage closure where determined; use MuJoCo if
+Next, finish the upper source-visible contours and check the whole assembly
+for finite intersections. The fixed-guide lower compensation is now explicit,
+with unillustrated rocker dimensions recorded as assumptions. Use analytic linkage closure where determined; use MuJoCo if
 contacts or otherwise unresolved constraints require it. Any final bake must
 have a validated full-cycle seam and a readable crank/reversing speed. Then
 check finite surfaces, source fit, restart and desktop/mobile rendering.
 
 ```sh
 node scripts/review-marine-valve-existing.mjs
+node scripts/review-marine-valve-compensation.mjs
 node scripts/review-marine-valve-source-fit.mjs
 node scripts/review-marine-valve-cycle.mjs
 node scripts/review-marine-valve-closure.mjs

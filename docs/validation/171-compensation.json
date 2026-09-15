@@ -1,0 +1,46 @@
+{
+  "movement": 171,
+  "poses": 3605,
+  "playbackPoses": 721,
+  "neutralAngleError": 5.551115123125783e-16,
+  "slotCenterError": 0,
+  "armLengthError": 8.881784197001252e-16,
+  "slotRadiusError": 8.881784197001252e-16,
+  "guideMotion": 0,
+  "outputRodHorizontalSpan": 0,
+  "offNeutral": [
+    {
+      "stroke": -0.18,
+      "relativeAngleRange": 0.024991764028030827
+    },
+    {
+      "stroke": -0.1,
+      "relativeAngleRange": 0.01155747808729668
+    },
+    {
+      "stroke": 0,
+      "relativeAngleRange": 9.992007221626409e-16
+    },
+    {
+      "stroke": 0.1,
+      "relativeAngleRange": 0.017229939924799265
+    },
+    {
+      "stroke": 0.24,
+      "relativeAngleRange": 0.10439692081992669
+    }
+  ],
+  "source": "https://www.gutenberg.org/cache/epub/10998/pg10998-images.html",
+  "section": 630,
+  "scope": "Fixed-column translating sector and cylinder-carried follower reconstruction. Exact cancellation is checked at neutral only; unmeasured rocker pivot and valve output dimensions remain assumptions.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-compensation.mjs",
+      "sha256": "0e6e048a303e769bacd62f240a6e51fdf4a73b399b1740a71ee9994bdbf4b3b5"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "45390fe58d505c36ec6c44fd5c81d83ab998aaa7cee54c1e65fb5eaf7fac484c"
+    }
+  ]
+}

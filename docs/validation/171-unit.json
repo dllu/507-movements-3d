@@ -4,15 +4,15 @@
   "command": "node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs",
   "passed": 1,
   "skipped": 164,
-  "scope": "Reconstructed linkage closure and rendered transforms after lower source fitting; hidden diagnostic output linkage remains unqualified.",
+  "scope": "Reconstructed linkage closure, neutral-only compensation, fixed slot centers and source-visible rendered transforms; unillustrated rocker/output dimensions remain assumptions.",
   "sources": [
     {
       "file": "tests/models.test.mjs",
-      "sha256": "4d095505ad68cb20acf570199fb4391a0731c683c81376ce0d296aae397919b6"
+      "sha256": "e6e0188a87eedd5ebedc3f0002e0762ac87c48ee2f75f78e02a590ed8f62ecef"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "c844a1a35049fad9a86fc4244b9352068c5ac0844b36ede54ec816d8ac211926"
+      "sha256": "45390fe58d505c36ec6c44fd5c81d83ab998aaa7cee54c1e65fb5eaf7fac484c"
     }
   ]
 }

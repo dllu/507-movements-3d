@@ -423,9 +423,10 @@ function oscillatingMarineEngineStephensonValveGear() {
     + valveArmLocal.length() + .01;
 
   const lowerStateAtSlideStroke = (slideStroke, cylinderAngle = 0) => {
-    const slotCenterLocal = new THREE.Vector2(0, slideStroke);
-    const centerDifference = slotCenterLocal.clone().sub(
-      rockshaftPivotLocal,
+    const slotCenterFixed = new THREE.Vector2(0, slideStroke);
+    const pivotFixed = rotate2(cylinderAngle, rockshaftPivotLocal);
+    const centerDifference = slotCenterFixed.clone().sub(
+      pivotFixed,
     );
     const centerDistance = centerDifference.length();
     const minimumDistance = Math.abs(followerArmLength - slotRadius);
@@ -454,7 +455,7 @@ function oscillatingMarineEngineStephensonValveGear() {
       -centerDirection.y,
       centerDirection.x,
     );
-    const intersectionMiddle = rockshaftPivotLocal.clone().addScaledVector(
+    const intersectionMiddle = pivotFixed.clone().addScaledVector(
       centerDirection,
       alongCenters,
     );
@@ -466,9 +467,9 @@ function oscillatingMarineEngineStephensonValveGear() {
       perpendicularDirection,
       -perpendicularDistance,
     );
-    const followerPinLocal = candidateA.y > candidateB.y
-      ? candidateA
-      : candidateB;
+    const followerPinFixed = candidateA.y > candidateB.y ? candidateA : candidateB;
+    const followerPinLocal = rotate2(-cylinderAngle, followerPinFixed);
+    const slotCenterLocal = rotate2(-cylinderAngle, slotCenterFixed);
     const followerVector = followerPinLocal.clone().sub(
       rockshaftPivotLocal,
     );
@@ -477,8 +478,8 @@ function oscillatingMarineEngineStephensonValveGear() {
         - sourceFollowerArmAngle,
     );
     const slotParameterAngle = Math.atan2(
-      followerPinLocal.x - slotCenterLocal.x,
-      followerPinLocal.y - slotCenterLocal.y,
+      followerPinFixed.x - slotCenterFixed.x,
+      followerPinFixed.y - slotCenterFixed.y,
     );
 
     const valveArmPointLocal = rockshaftPivotLocal.clone().add(
@@ -503,7 +504,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     );
     const followerPinWorld = worldFromCylinder(followerPinLocal);
     const rockshaftPivotWorld = worldFromCylinder(rockshaftPivotLocal);
-    const slotCenterWorld = worldFromCylinder(slotCenterLocal);
+    const slotCenterWorld = trunnionCenter.clone().add(slotCenterFixed);
     const valveArmPointWorld = worldFromCylinder(valveArmPointLocal);
     const valveStemPointWorld = worldFromCylinder(valveStemPointLocal);
 
@@ -565,26 +566,12 @@ function oscillatingMarineEngineStephensonValveGear() {
       1 / pistonDistance,
     );
     const cylinderAngle = Math.atan2(-cylinderAxis.x, cylinderAxis.y);
-    const dieFromTrunnion = top.diePoint.clone().sub(trunnionCenter);
-    const projectionOnCylinderAxis = dieFromTrunnion.dot(cylinderAxis);
-    const perpendicularDistanceSquared = Math.max(
-      0,
-      dieFromTrunnion.lengthSq() - projectionOnCylinderAxis ** 2,
-    );
-    const outputRodRadicand = outputRodLength ** 2
-      - perpendicularDistanceSquared;
-    if (outputRodRadicand < -1e-10) {
-      throw new RangeError(
-        'Movement 171 finite output rod cannot reach the cylinder slide.',
-      );
-    }
-    const slideEyeDistanceFromTrunnion = projectionOnCylinderAxis
-      - Math.sqrt(Math.max(0, outputRodRadicand));
+    // The sector follows a vertical frame guide (Bourne, section 630).
+    // Its connecting rod translates with the upper die; cylinder rocking
+    // acts through the separate follower arm, not through the guide columns.
+    const slideEyeWorld = new THREE.Vector2(top.diePoint.x, top.diePoint.y - outputRodLength);
+    const slideEyeDistanceFromTrunnion = slideEyeWorld.y - trunnionCenter.y;
     const slideStroke = slideEyeDistanceFromTrunnion - slideEyeRadius;
-    const slideEyeWorld = trunnionCenter.clone().addScaledVector(
-      cylinderAxis,
-      slideEyeDistanceFromTrunnion,
-    );
     const lower = lowerStateAtSlideStroke(slideStroke, cylinderAngle);
     const crankRadialError = Math.abs(
       crankPin.distanceTo(shaftCenter) - mainCrankRadius
@@ -815,19 +802,23 @@ function oscillatingMarineEngineStephensonValveGear() {
   cylinderCarrier.position.set(trunnionCenter.x, trunnionCenter.y, 0);
   cylinderCarrier.userData.axis = Z_AXIS.clone();
   cylinderCarrier.userData.role =
-    'cylinder-carried-guides-slide-and-follower';
+    'cylinder-carried-follower-rockshaft';
+  const slideCarrier = new THREE.Group();
+  slideCarrier.position.set(trunnionCenter.x, trunnionCenter.y, 0);
+  slideCarrier.userData.role = 'frame-fixed-slide-guide-columns';
+  root.add(slideCarrier);
 
   const slideGuidePosts = [-1, 1].map((sign) => {
     const post = cylinderAlongY(0.055, lowerGuideLength, darkMaterial, 22);
     post.position.set(sign * lowerGuideHalfX, lowerGuideCenterY, -0.05);
-    post.userData.role = `${sign < 0 ? 'left' : 'right'}-cylinder-carried-slide-guide`;
-    cylinderCarrier.add(post);
+    post.userData.role = `${sign < 0 ? 'left' : 'right'}-frame-fixed-slide-guide`;
+    slideCarrier.add(post);
     return post;
   });
 
   const curvedSlide = new THREE.Group();
   curvedSlide.userData.role =
-    'rigid-curved-slide-translating-in-cylinder-carried-guides';
+    'rigid-curved-slide-translating-in-frame-fixed-guides';
   const lowerInnerRail = new THREE.Mesh(plate(sector(slotRadius - .13, slotRadius - .051,
     Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerInnerRail.userData.role = 'inner-edge-of-trunnion-centered-slot';
@@ -868,7 +859,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   const slideEyePin = cylinderAlongZ(0.075, 0.64, darkMaterial, 24);
   slideEye.add(slideEyeRing, slideEyePin);
   curvedSlide.add(slideEye);
-  cylinderCarrier.add(curvedSlide);
+  slideCarrier.add(curvedSlide);
 
   const rockshaftRotor = new THREE.Group();
   rockshaftRotor.position.set(
@@ -888,7 +879,7 @@ function oscillatingMarineEngineStephensonValveGear() {
 
   const outputRadiusRod = finiteMarineOutputRod(outputRodLength);
   outputRadiusRod.userData.role =
-    'finite-die-output-rod-to-cylinder-carried-curved-slide';
+    'finite-die-output-rod-to-vertically-guided-curved-slide';
   root.add(outputRadiusRod);
 
   const trunnionShaft = cylinderAlongZ(0.33, 0.64, darkMaterial, 38);
@@ -925,6 +916,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     cameraEnvelope,
     curvedSlide,
     cylinderCarrier,
+    slideCarrier,
     dieBlock,
     dieBody,
     dieGuide,
