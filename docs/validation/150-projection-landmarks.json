@@ -1,0 +1,120 @@
+{
+  "movement": 150,
+  "method": "Five approximate engraving landmarks, best uniform scale and XY translation after perspective projection. No rotation or independent axis scaling. Measures landmark fit only, not cam outlines or visibility. Shaft end inferred as the visible front section.",
+  "views": [
+    {
+      "label": "current",
+      "direction": [
+        8,
+        0.2,
+        15
+      ],
+      "fov": 36,
+      "rmsPixels": 16.554730622801998,
+      "errors": [
+        {
+          "name": "shaft section",
+          "pixels": 22.40909715714619
+        },
+        {
+          "name": "lever pivot",
+          "pixels": 7.4188834833399335
+        },
+        {
+          "name": "roller",
+          "pixels": 28.110553670148363
+        },
+        {
+          "name": "upper rod pin",
+          "pixels": 0.7197283745430313
+        },
+        {
+          "name": "rod end",
+          "pixels": 4.729357869149423
+        }
+      ]
+    },
+    {
+      "label": "flatter",
+      "direction": [
+        4.3,
+        0.2,
+        15
+      ],
+      "fov": 18,
+      "rmsPixels": 10.16081893245197,
+      "errors": [
+        {
+          "name": "shaft section",
+          "pixels": 15.379004712531074
+        },
+        {
+          "name": "lever pivot",
+          "pixels": 3.5780060814433505
+        },
+        {
+          "name": "roller",
+          "pixels": 15.590048569471573
+        },
+        {
+          "name": "upper rod pin",
+          "pixels": 1.4856646238882354
+        },
+        {
+          "name": "rod end",
+          "pixels": 4.651717924629339
+        }
+      ]
+    },
+    {
+      "label": "frontal",
+      "direction": [
+        0.05,
+        0.03,
+        15
+      ],
+      "fov": 18,
+      "rmsPixels": 2.2384421089522197,
+      "errors": [
+        {
+          "name": "shaft section",
+          "pixels": 3.554699716432134
+        },
+        {
+          "name": "lever pivot",
+          "pixels": 1.157871841746238
+        },
+        {
+          "name": "roller",
+          "pixels": 2.49424470380194
+        },
+        {
+          "name": "upper rod pin",
+          "pixels": 1.0451466838595127
+        },
+        {
+          "name": "rod end",
+          "pixels": 1.939837587664035
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/measure-selectable-cam-projection.mjs",
+      "sha256": "15e55ce3ca945ce19a2d0bc3bd586b83df0fd1de5320b316b768f8116f3d5a8f"
+    },
+    {
+      "file": "src/simulation/selectable-cam-valve.js",
+      "sha256": "264d306e29ec033485f81395d2029ecd9bc616c08bb5ffe438d1e9f2235dd63a"
+    },
+    {
+      "file": "src/simulation/authored-selectable-cams.js",
+      "sha256": "8ae138e078f5ba7f03f59be35c98256550ae477fbe3e542973b67f5b0c1f95e9"
+    },
+    {
+      "file": "src/simulation/engine.js",
+      "sha256": "a3f11cb54a31b2030fd09c6f90548e91b4e18ca7e3c5304dc45dfcb3547bc581"
+    }
+  ]
+}

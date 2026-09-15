@@ -2,7 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import loadMujoco from '@mujoco/mujoco';
 import {makeSelectableCamPhysics} from '../src/simulation/mujoco-selectable-cam/physics.js';
+import {syncSelectableCamPhysics} from '../src/simulation/mujoco-selectable-cam/sync.js';
+import {makeSelectableCamValve} from '../src/simulation/selectable-cam-valve.js';
+import * as THREE from 'three';
 const mujoco=await loadMujoco();
+test('150 visible rod and slider match native pin locations during passive motion',()=>{
+ const p=makeSelectableCamPhysics(mujoco),v=makeSelectableCamValve();
+ try{
+  const ids=['rod-tip','slider-pin'].map(n=>p.id('mjOBJ_SITE',n));
+  for(const time of [0,3.3,6,10,18,26]){
+   while(p.data.time<time)p.step();mujoco.mj_forward(p.model,p.data);syncSelectableCamPhysics(v,p.state());
+   const u=v.root.userData,points=[u.valveBodies.rod.localToWorld(new THREE.Vector3(0,-u.valveGeometry.pinDistance,0)),u.valveBodies.slider.getWorldPosition(new THREE.Vector3())];
+   points.forEach((point,i)=>{const expected=new THREE.Vector3(...p.data.site_xpos.slice(ids[i]*3,ids[i]*3+3));assert.ok(point.distanceTo(expected)<1e-11);});
+  }
+ }finally{v.dispose();p.dispose();}
+});
 test('150 native bodies match source joints and geometry-derived masses',()=>{
  const p=makeSelectableCamPhysics(mujoco);
  try{

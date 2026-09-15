@@ -77,7 +77,7 @@ an active contact. Lever, rod and slider position closure is within 4e-12, while
 carrier closure is within 1e-9 units. These are sampled measurements, not proof
 of continuous contact or collision convergence with mesh refinement.
 
-Three tests check native source joints/masses, freedom from the observed
+Four tests check rendered/native pin correspondence, native source joints/masses, freedom from the observed
 selection lock, and stationary followers when both gravity and contact are
 removed. Run `node --test tests/selectable-cam-physics.test.mjs`. Reproduce the
 chosen reports with `REPORT=docs/validation/150-passive-libccd.json node scripts/probe-selectable-cam-physics.mjs`
@@ -87,6 +87,39 @@ and `TICKS=120000 REPORT=docs/validation/150-passive-libccd-fine.json node scrip
 Production playback remains analytical. The passive trajectory still needs
 rendered assembly and interpolation checks before an offline bake replaces it;
 source cam-stack projection and shaft exposure also remain open.
+
+## Rendered passive trajectory and projection check
+
+`syncSelectableCamPhysics` now applies the native shaft, carrier, lever,
+roller, rod and slider coordinates to the authored meshes. A test compares the
+rendered lower rod and slider pin positions with native MuJoCo sites at six
+operating/selection times; their difference stays below 1e-11 world units.
+All four focused physics tests pass.
+
+[The passive assembly check](validation/150-passive-assembly.json) runs three
+demonstrations at 120,000 physics ticks per demonstration, then checks 65 poses
+in the third one. It covers 53 visible meshes and 934 pairs between different
+rigid bodies: 21,979,484 bidirectional point/solid checks and no unintended
+penetration above 1e-6. Only working cam plates and the common sleeve may be
+reported as soft contacts with the roller; the largest sampled depth is
+0.0000262 units. Other carrier parts are not exempted. Same-body mating
+interfaces remain excluded, and this does not prove continuous clearance.
+Run `node scripts/review-selectable-cam-passive.mjs`.
+
+[The projection diagnostic](validation/150-projection-landmarks.json) compares
+five approximate engraving landmarks after fitting uniform scale and translation.
+The current camera has 16.55-pixel RMS error; reducing obliquity and field of view
+gives 10.16 pixels, and a nearly frontal view gives 2.24 pixels. The latter would
+hide much of the current cam stack. This is a joint-landmark check, not a fit of
+the cam contours. The hatched shaft section is treated as the visible front
+end, which is an interpretation. A flatter preview reduces perspective but
+still does not reproduce the engraving's cam arrangement.
+
+Production camera and geometry were not changed from this comparison. Trace
+and reconcile the cam contours and axial projection before treating the source
+match as complete. Passive-trajectory interpolation and baking also remain open.
+Run `node scripts/measure-selectable-cam-projection.mjs` to reproduce the
+landmark comparison.
 
 ## Working-contact correction
 

@@ -1,12 +1,11 @@
 # Current review: 150 selectable valve cams
 
-150's passive MuJoCo prototype now drives only shaft rotation and cam selection.
-Its free lever, roller, pinned rod and slider agree closely with the analytic
-motion at two timesteps using libccd with multiple contacts disabled. Native
-collision comparisons exposed selection locking and timestep-sensitive gaps;
-these are documented rather than treated as validated motion. Three physics
-tests pass. Source projection, shaft exposure, passive-trajectory assembly and
-bake validation remain open. See [movement 150](movement-150.md).
+150's native MuJoCo trajectory now passes a 53-mesh, 934-pair rendered assembly
+check. Four physics tests include rendered/native pin correspondence. A source
+projection diagnostic measures 16.55px RMS joint error in the current view;
+nearly frontal framing reduces that error but hides the present cam stack.
+Cam contours/axial projection still require reconciliation with the engraving,
+and passive playback still needs interpolation/baking. See [movement 150](movement-150.md).
 
 # Shipped reconstruction: 149 twin cam followers
 
