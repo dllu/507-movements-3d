@@ -1,3 +1,4 @@
+import {ring} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -2566,8 +2567,8 @@ function eccentricCircularGuideVariableSpeedShaper() {
   const plateOutlineZ = plateFrontZ + 0.018;
   const shaftOpeningRadius = 0.39;
   const shaftRadius = 0.24;
-  const shaftLength = 1.52;
-  const shaftCenterZ = 0.02;
+  const shaftLength = 1.35;
+  const shaftCenterZ = -0.065;
   const crankPlaneZ = 0.13;
   const crankDepth = 0.28;
   const crankFrontZ = crankPlaneZ + crankDepth / 2;
@@ -2583,13 +2584,13 @@ function eccentricCircularGuideVariableSpeedShaper() {
   const grooveShoeDepth = plateDepth + 0.16;
   const radialShoeCenterZ = 0.15;
   const radialShoeDepth = 0.62;
-  const sliderBlockCenterZ = 0.39;
+  const sliderBlockCenterZ = 0.42;
   const sliderBlockDepth = 0.28;
   const sliderBlockLength = 0.88;
   const sliderBlockWidth = 0.55;
   const sliderFrontBossRadius = 0.29;
-  const sliderFrontBossDepth = 0.28;
-  const sliderFrontBossCenterZ = 0.55;
+  const sliderFrontBossDepth = 0.50;
+  const sliderFrontBossCenterZ = 0.66;
   const connectingRodPlaneZ = 0.76;
   const connectingRodDepth = 0.20;
   const connectingRodThickness = 0.19;
@@ -2602,8 +2603,8 @@ function eccentricCircularGuideVariableSpeedShaper() {
   const outputSlideDepth = 0.46;
   const outputSlideCenterZ = 0.34;
   const outputPinRadius = 0.25;
-  const outputPinDepth = 0.64;
-  const outputPinCenterZ = 0.48;
+  const outputPinDepth = 0.75;
+  const outputPinCenterZ = 0.535;
 
   const positiveModulo = (value, modulus) => {
     const remainder = value % modulus;
@@ -2819,13 +2820,13 @@ function eccentricCircularGuideVariableSpeedShaper() {
   shaftCenterAnchor.userData.role = 'eccentric-driving-shaft-center-anchor';
 
   const fixedShaftBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(shaftOpeningRadius + 0.08, 0.075, 10, 56),
+    ring(shaftRadius + .01, shaftOpeningRadius, -.05, .05, 96),
     frameMaterial,
   );
   fixedShaftBearing.position.set(
     shaftCenter.x,
     shaftCenter.y,
-    plateFrontZ + 0.035,
+    -.20,
   );
   fixedShaftBearing.userData.role = 'fixed-bearing-around-eccentric-input-shaft';
 
@@ -3013,6 +3014,16 @@ function eccentricCircularGuideVariableSpeedShaper() {
   connectingRod.userData.fullLength = connectingRodLength;
   const [connectingRodBeam, connectingRodSliderEye,
     connectingRodOutputEye] = connectingRod.children;
+  // Flat bored eyes and a beam stopping outside both pin bores.
+  // Keep the existing endpoint updater and its exact rigid-length constraint.
+  connectingRodBeam.geometry.dispose();
+  connectingRodBeam.geometry = new THREE.BoxGeometry(1 - .64 / connectingRodLength,
+    connectingRodThickness, connectingRodDepth);
+  const oldEyeGeometry = connectingRodSliderEye.geometry;
+  for (const eye of [connectingRodSliderEye, connectingRodOutputEye]) {
+    eye.geometry = ring(eye === connectingRodSliderEye ? .30 : .26, .39, -connectingRodDepth/2, connectingRodDepth/2, 96);
+  }
+  oldEyeGeometry.dispose();
   connectingRodBeam.userData.role = 'rigid-beam-of-finite-connecting-rod';
   connectingRodSliderEye.userData.role =
     'connecting-rod-eye-on-circular-guide-slide';
@@ -3112,14 +3123,14 @@ function eccentricCircularGuideVariableSpeedShaper() {
     new THREE.BoxGeometry(1.08, 0.16, 0.30),
     drivenMaterial,
   );
-  cuttingToolBar.position.set(-0.83, 0, outputSlideCenterZ);
+  cuttingToolBar.position.set(-0.83, 0, .45);
   cuttingToolBar.userData.role = 'short-cutting-tool-carried-by-output-slide';
   const cuttingToolTip = new THREE.Mesh(
     new THREE.ConeGeometry(0.18, 0.42, 4),
     darkMaterial,
   );
   cuttingToolTip.rotation.z = Math.PI / 2;
-  cuttingToolTip.position.set(-1.53, 0, outputSlideCenterZ);
+  cuttingToolTip.position.set(-1.53, 0, .45);
   cuttingToolTip.userData.role = 'left-facing-cutting-tool-tip';
   const outputPinAnchor = new THREE.Object3D();
   outputPinAnchor.position.z = connectingRodPlaneZ;
@@ -3680,6 +3691,14 @@ function eccentricCircularGuideVariableSpeedShaper() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
 
+  // Pin shoulders span the entire bored eye; heads retain the rod axially.
+  for (const [parent, name] of [[sliderAssembly, 'wristRetainer'], [outputSlide, 'outputRetainer']]) {
+    const head = cylinderAlongZ(.34, .06, darkMaterial, 96);
+    head.position.z = .94;
+    head.userData.role = name;
+    parent.add(head);
+    root.userData.blocks[name] = head;
+  }
   // Decorative round wires entered the actual slide paths. The finite plate
   // and crank slot edges already provide their physical contact boundaries.
   for (const decoration of [grooveInnerWall, grooveOuterWall,

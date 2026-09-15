@@ -1,0 +1,71 @@
+{
+  "movement": 178,
+  "status": "source-registration-open",
+  "source": "https://507movements.com/mm_178.html",
+  "method": "Initial-pose landmarks under the existing disk-center/radius raster registration. These are diagnostic measurements, not a full contour fit.",
+  "samples": [
+    {
+      "name": "shaft center",
+      "actual": [
+        295,
+        310.6
+      ],
+      "expected": [
+        295,
+        321
+      ],
+      "errorPixels": 10.399999999999977
+    },
+    {
+      "name": "slider center",
+      "actual": [
+        295,
+        72.80000000000001
+      ],
+      "expected": [
+        295,
+        77
+      ],
+      "errorPixels": 4.199999999999989
+    },
+    {
+      "name": "rod at engraved crop",
+      "actual": [
+        39,
+        127.78611413980278
+      ],
+      "expected": [
+        39,
+        154
+      ],
+      "errorPixels": 26.213885860197223
+    },
+    {
+      "name": "crank upper tip",
+      "actual": [
+        295.00000000000006,
+        23.599999999999994
+      ],
+      "expected": [
+        295,
+        7
+      ],
+      "errorPixels": 16.599999999999994
+    }
+  ],
+  "maximumErrorPixels": 26.213885860197223,
+  "sources": [
+    {
+      "file": "scripts/review-variable-shaper-source.mjs",
+      "sha256": "65194d7bef4a4c380f88a0e7c2589a247fc36e7e34e6329149976486d0716964"
+    },
+    {
+      "file": "src/simulation/authored-variable-cranks.js",
+      "sha256": "d0636016e4ddcdd7e5f05e675fe1f4dd8e425ac47f3b4b29d6eee9d3caebef8f"
+    },
+    {
+      "file": "public/engravings/mm_178.png",
+      "sha256": "b8abe014bdd7b8aa5d35e8712579ead8c7b0570248eed131a68d60d1bb99098f"
+    }
+  ]
+}

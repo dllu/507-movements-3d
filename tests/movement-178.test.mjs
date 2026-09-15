@@ -877,7 +877,7 @@ test('movement 178 closes one rotating radial slot through a fixed eccentric cir
   assert.ok(radialShoeBackZ < crankBackZ);
   assert.ok(radialShoeFrontZ > geometry.crankFrontZ,
     'radial shoe pin spans the open crank slot');
-  assert.ok(sliderBlockBackZ <= geometry.crankFrontZ);
+  assert.ok(sliderBlockBackZ > geometry.crankFrontZ, 'slider body clears crank face');
   assert.ok(sliderBlockFrontZ < rodBackZ);
   assert.ok(sliderBossFrontZ >= rodBackZ,
     'front wrist boss reaches the connecting-rod plane');
@@ -1029,10 +1029,10 @@ test('movement 178 closes one rotating radial slot through a fixed eccentric cir
     'full finite rod, disk, guide, and cutting tool are visible');
   assert.ok(visibleSize.y > 7.8,
     'source-pose disk and vertical crank occupy full height');
-  assert.ok(visibleSize.z > 1.78,
+  assert.ok(visibleSize.z > 1.70,
     'plate, two shoes, crank, slide, rod, and pins occupy real depth');
   assert.ok(visibleBounds.min.z < -0.73);
-  assert.ok(visibleBounds.max.z > 1.04);
+  assert.ok(visibleBounds.max.z > .96);
   near(model.root.userData.cameraDistanceScale, 0.98, 0,
     'source-complete wide-mechanism camera scale');
   assert.ok(model.cameraDirection.x > 0);

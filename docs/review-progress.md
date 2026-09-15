@@ -1,3 +1,9 @@
+# Movement 178: joint repair checked; source fit remains open
+
+The 29-mesh assembly now passes its 129-pose cross-body clearance sweep after fitting bored rod eyes, retained full-depth pins, a shorter shaft and revised slider/cutter depths. Motion, joint and desktop/mobile checks pass. Four source landmarks still differ by 4–26 pixels. Continue with 178's source proportions and framing; the full review remains active.
+
+## Earlier checkpoints
+
 # Review open: 178 joints and source fit
 
 177's shaft attachment and source fit were completed in 436dbff. The user's corrections to 151, 165, 171 and 173 were pushed in b808131. The review now proceeds through 178: its first solid audit found 28 interfering pairs; slot bevel and decorative-wire corrections reduce that to 11. Remaining joint geometry and source registration are open. See [movement 178](movement-178.md).

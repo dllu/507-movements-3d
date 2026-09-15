@@ -1,7 +1,7 @@
 {
   "movement": 178,
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Partial slot/render repair. Physical clearance and source registration remain open.",
+  "scope": "Bored and retained rod joints, cleared shaft/slider/cutter. Source proportions and default framing remain open.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "44fe71df95e4751d6a7ed22a76a270e6795e7148e88a6a11971ad3a9e7059918"
+      "sha256": "d0636016e4ddcdd7e5f05e675fe1f4dd8e425ac47f3b4b29d6eee9d3caebef8f"
     }
   ]
 }
