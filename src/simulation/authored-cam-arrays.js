@@ -15,6 +15,7 @@ function centeredExtrusion(shape, depth, bevel = 0.012) {
     bevelEnabled: bevel > 0,
     bevelSegments: 1,
     bevelSize: bevel,
+    bevelOffset: -bevel,
     bevelThickness: bevel,
     curveSegments: 64,
     depth,
@@ -313,13 +314,14 @@ function makeCamAssembly(config, material, darkMaterial, indexMaterial) {
   const outlinePoints = [];
   for (let index = 0; index < profileSamples; index += 1) {
     const angle = index / profileSamples * Math.PI * 2;
-    const point = profileGeometryAt(config, angle).boundary;
+    const profile = profileGeometryAt(config, angle);
+    const point = profile.boundary;
     if (index === 0) shape.moveTo(point.x, point.y);
     else shape.lineTo(point.x, point.y);
     outlinePoints.push(new THREE.Vector3(
-      point.x,
-      point.y,
-      config.camDepth / 2 + 0.025,
+      point.x - profile.normal.x * .04,
+      point.y - profile.normal.y * .04,
+      config.camDepth / 2 + 0.012,
     ));
   }
   shape.closePath();
@@ -335,7 +337,7 @@ function makeCamAssembly(config, material, darkMaterial, indexMaterial) {
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(outlinePoints, true, 'centripetal'),
       profileSamples,
-      0.026,
+      0.012,
       7,
       true,
     ),
@@ -488,7 +490,7 @@ function twinCamLeverRodArray() {
   const rollerRadius = 0.22;
   const rollerWidth = 0.30;
   const camDepth = 0.27;
-  const inputAngularSpeed = 0.60;
+  const inputAngularSpeed = fullTurn / 6;
   const cyclePeriod = fullTurn / inputAngularSpeed;
 
   const makeConfig = ({
@@ -1019,6 +1021,9 @@ function twinCamLeverRodArray() {
     for (const material of materials) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {authoredCyclePeriod:cyclePeriod,displayCycleDuration:cyclePeriod,playbackTimeScale:1};
   root.userData.fidelity = 'authored';
   markShadows(root);
   root.traverse((object) => {
@@ -1040,9 +1045,10 @@ function twinCamLeverRodArray() {
   }
 
   return {
-    cameraDirection: new THREE.Vector3(8.3, 4.8, 12.0),
+    cameraDirection: new THREE.Vector3(.05, .03, 15),
     root,
     update,
+    reset: () => update(0),
   };
 }
 

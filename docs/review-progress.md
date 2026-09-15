@@ -1,3 +1,12 @@
+# Current review: 149 twin cam followers
+
+149's cam bevels and outline tubes no longer protrude into the rollers. A
+65-pose actual-surface check passes, as do the focused analytic test, build and
+desktop/mobile playback/restart. The cycle is now six seconds, with frontal
+view and no ground plane. The cam silhouettes remain unlike the source, both
+rods are too short, and bores, supports and return dynamics still need review.
+See [movement 149](movement-149.md); working-contact clearance is not completion.
+
 # Shipped reconstruction: 148 oblong-frame crank-rocker
 
 148 now uses the traced oblong on the long rocker, a bored short crank and hubs,

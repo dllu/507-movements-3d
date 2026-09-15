@@ -1,0 +1,49 @@
+{
+  "movement": 149,
+  "method": "Actual tread vertices, edge midpoints and triangle centers against cam plates and decorative outline tubes, in both directions, at 65 poses. Separately compare roller-center distance to the plate with roller radius. Working pairs only, not whole assembly.",
+  "summary": {
+    "poses": 65,
+    "pairs": 4,
+    "checks": 1777620,
+    "failingPairs": 4,
+    "minimumRadialGap": -0.014003010371068464,
+    "maximumRadialGap": -0.013733121034866402,
+    "constructionMilliseconds": 406.68742322921753
+  },
+  "failures": {
+    "upper-plate": {
+      "firstPose": 0,
+      "points": 4406,
+      "maximumDepth": 0.01397553160884865
+    },
+    "upper-outline": {
+      "firstPose": 0,
+      "points": 2282,
+      "maximumDepth": 0.01342520117759713
+    },
+    "lower-plate": {
+      "firstPose": 0,
+      "points": 5468,
+      "maximumDepth": 0.013989962261490598
+    },
+    "lower-outline": {
+      "firstPose": 0,
+      "points": 2711,
+      "maximumDepth": 0.013425201177597101
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-twin-cam-contact.mjs",
+      "sha256": "ca9f69e0ec2e82dc97bc05b76e9da77f253f241e17abd168a581ed6fc2863c85"
+    },
+    {
+      "file": "src/simulation/authored-cam-arrays.js",
+      "sha256": "f82d5d315fc7388c6106c97bf625bc82a7bdbf63fb3d029a93f7eff207519c67"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

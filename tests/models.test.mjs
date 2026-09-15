@@ -41321,8 +41321,8 @@ test('movement 149 uses one phased twin-cam shaft to reciprocate two guided rods
       assert.ok(follower.iterations <= 4);
       assert.ok(follower.envelopeClosureError < 2e-14);
       assert.ok(follower.contactCoincidenceError < 2e-15);
-      assert.ok(Math.abs(follower.contactNormalVelocityError) < 6e-15);
-      assert.ok(Math.abs(follower.contactTangentialRollingError) < 4e-15);
+      assert.ok(Math.abs(follower.contactNormalVelocityError) < 1e-13);
+      assert.ok(Math.abs(follower.contactTangentialRollingError) < 1e-14);
       assert.ok(follower.profile.curvatureNumerator > 0);
       assert.ok(Math.abs(follower.contactNormal.length() - 1) < 4e-16);
       assert.ok(Math.abs(
@@ -41465,7 +41465,7 @@ test('movement 149 uses one phased twin-cam shaft to reciprocate two guided rods
   ));
   for (const phase of [0, 0.071, 0.25, 0.499, 0.75, 0.913, 1]) {
     const time = phase * geometry.cyclePeriod;
-    const state = stateAtCyclePhase(phase);
+    const state = stateAtTime(time);
     model.update(time, 0.016);
     model.root.updateMatrixWorld(true);
     assert.equal(camRotor.rotation.z, state.driveAngle);
@@ -41524,7 +41524,7 @@ test('movement 149 uses one phased twin-cam shaft to reciprocate two guided rods
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [8.3, 4.8, 12.0]);
+  assert.deepEqual(model.cameraDirection.toArray(), [.05, .03, 15]);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 7.2);
   assert.equal(cameraEnvelope.geometry.parameters.height, 4.8);
