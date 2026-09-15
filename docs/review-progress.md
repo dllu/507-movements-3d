@@ -1,3 +1,12 @@
+# Active reconstruction: 162 water-wheel governor
+
+162's native study now couples passive flyball dynamics to finite pin/stud
+contacts and opposed loose bevels. Removing contact stops the output, shifting
+stud phase changes pickup, and nominal speed holds neutral. Three tests pass.
+The authored threshold-based output and artificially balanced loop remain in
+production until contact refinement, source solids and baked playback qualify.
+See [movement 162](movement-162.md). The full 507-movement review remains active.
+
 # Shipped reconstruction: 161 centrifugal governor
 
 161 now plays a settled eight-second native cycle from a 451 KB bake, with no
