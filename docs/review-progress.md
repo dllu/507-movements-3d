@@ -1,16 +1,13 @@
-# Active reconstruction: 161 centrifugal governor
+# Shipped reconstruction: 161 centrifugal governor
 
-161’s native arms and sleeve now have calibrated speed endpoints accounting
-for full linkage gravity and inertia. The engraved spread holds at constant
-speed; long runs settle without increasing damping. Paired timestep sleeve
-differences are below 0.0023 pixels, and five mechanical/equilibrium tests pass.
-The settled response still differs from instantaneous equilibrium, validating
-the need for passive dynamics. A source-sized 36:30 bevel candidate now clears
-a 65-pose tooth-pitch sweep; analytic conical cap normals fix shared shading.
-Two candidate tests and 20 bevel regressions pass. Source-shaped solids,
-supporting hardware, output-fork interpretation and baked registration remain
-open. Production 161 is unchanged. See
-[movement 161](movement-161.md). The complete review remains active.
+161 now plays a settled eight-second native cycle from a 451 KB bake, with no
+live browser physics. Source-sized bevels, bored pin joints, balls, sleeve and
+output fork replace the old equilibrium-driven assembly and invented valve.
+The passive dynamics, interpolation, unwrapped rotation seam, 99-mesh clearance
+sweep, bounds, restart, private build and desktop/mobile Chrome checks pass.
+Inferred masses, depths and the unloaded remote valve connection remain explicit
+in [movement 161](movement-161.md). Continue at 162; 147's mesh refinement and
+150's source fit remain open. The full 507-movement review remains active.
 
 # Shipped reconstruction: 160 spring-return treadle
 

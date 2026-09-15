@@ -1,7 +1,8 @@
-# Movement 161 — centrifugal governor review in progress
+# Movement 161 — centrifugal governor
 
-161 remains open. Production still uses the authored governor; the new native
-linkage is a diagnostic and is not registered.
+161 now uses a source-shaped assembly and offline native bake. The final section
+records shipped validation and remaining modeling assumptions; earlier sections
+retain the diagnostic history.
 
 ## Source and current issues
 
@@ -167,3 +168,55 @@ passes. Reproduce the clearance report with
 161 is still open: source-shaped arms, supporting hardware and output
 forks/collars must be completed, clearances checked, and the settled native
 motion baked and registered. This candidate does not yet change production 161.
+
+## Registered native bake and visible reconstruction
+
+161 now uses the baked native governor. The browser loads a 451,447-byte asset
+containing 2,001 samples of the settled 1592–1600 second interval; it does not
+load MuJoCo for this movement. The eight-second speed cycle retains the spindle's
+40.313736454-radian advance and corresponding input-gear advance across every
+loop. The internal-coordinate seam closes within 5.4e-11 and the native velocity
+seam within 4.9e-10. At 2,000 intervening half-frame times, playback differs from
+native coordinates by at most 5.96e-7 (radians for angles, world units for sleeve
+height). Interpolation uses native joint coordinates, including the lower hinges,
+rather than substituting an instantaneous equilibrium trajectory.
+
+The 99 visible meshes include source-shaped head cheeks, bored arm eyes, elbow
+pins, balls, sleeve barrel and conical shoulder, groove flanges, a nonrotating
+output fork and lower forked support. Ordinary pin clearances and separate link
+plate depths replace intersecting beam joints. The old rectangular steam-port
+assembly is removed: the actual valve and remote fork connection are outside
+the drawing. The output fork follows the unloaded sleeve groove in translation;
+its remote support, valve load and engine feedback are not modeled. Rear cheeks,
+bearing depth, fork depth and lower support tilt are inferred. Effective native
+masses remain the calibrated values, not densities derived from the visible
+stylized geometry.
+
+The complete solid sweep covers 65 poses, 2,495 cross-family pairs and 12,730,288
+surface queries across the settled spread envelope while the spindle turns twice.
+It found and corrected interference between the sleeve shoulder and lower-link
+eyes. The final sweep finds no unintended sampled penetration beyond 1e-6 world
+units. Rigid joins within one family (head cheeks/hub, sleeve/crossbar, arm/ball)
+are intentional; bevel-to-bevel clearance is covered by its separate report.
+These are finite surface samples, not continuous collision proofs. The new
+report is `docs/validation/161-solid-clearance.json`; its candidate status records
+the geometry validation stage before registration.
+
+Eight mechanical, equilibrium, geometry and native-coordinate tests plus two
+baked playback tests pass. Playback tests also cover later-cycle bounds, the
+unwrapped seam, exact restart and disabled fog. A private production build
+passes. Bake inputs, source hashes, loop increment and closure evidence are in
+`src/simulation/baked/assets/161.provenance.json`. Reproduce with:
+
+```sh
+node scripts/review-governor-solids.mjs
+node scripts/bake-ball-governor.mjs
+node --test tests/ball-governor-*.test.mjs
+```
+
+Packaged Chrome validation passes on desktop and mobile: animation changes the
+render, restart restores it exactly, the scene loads no WASM, and there are no
+page errors or horizontal overflow. Source, moving, oblique and mobile views
+were captured outside the repository; the full spindle and lower support fit.
+Thin plates use the explicit shadow bias already used by adjacent rebuilt
+movements, with fog and the unrelated ground plane disabled.

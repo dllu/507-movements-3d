@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 161) {
+    const {makeBakedBallGovernor} = await import('./baked/ball-governor.js');
+    const model = await makeBakedBallGovernor();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 160) {
     const {makeBakedSpringTreadle} = await import('./baked/spring-treadle.js');
     const model = await makeBakedSpringTreadle();

@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "movement": 161,
+  "names": [
+    "spindle",
+    "leftSpread",
+    "leftLower",
+    "rightSpread",
+    "rightLower",
+    "sleeve"
+  ],
+  "turns": [
+    40.31373645412623,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "period": 8,
+  "loopStart": 0,
+  "loopEnd": 8,
+  "bounds": {
+    "min": [
+      -3.2500204651742535,
+      -3.836999997138977,
+      -3.261389355169789
+    ],
+    "max": [
+      3.2500204651742535,
+      5.297000017192722,
+      3.261389355169789
+    ]
+  },
+  "focus": [
+    0,
+    0.7300000100268722,
+    0
+  ],
+  "cameraDirection": [
+    0.01,
+    0.01,
+    15
+  ],
+  "sources": [
+    {
+      "file": "scripts/bake-ball-governor.mjs",
+      "sha256": "20bfbf8813e3814f420c9f597acf4dd80a49caa488f4409028b299a8f8c7b77f"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/physics.js",
+      "sha256": "ef6db804186848035ec1d72bc0a907af9a21fb46215ca046ca01aa08f30ebd0e"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
+      "sha256": "92da15920e31972b46616497ccf7c3fec0748d24726cb1ce38cfe4ceb85cd59c"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/kinematics.js",
+      "sha256": "a12a2b2258e0a9fc53007ad85972a73c2a09c2a68aece16dc9ad990789e34e38"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/solids.js",
+      "sha256": "b0a6e0a0c38d4a127be386bdae2478f6fe59f699c0b751b8a77cacc714e85bba"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/update-solids.js",
+      "sha256": "d597aa84f613b436277ecb14abd31e832951fa0c6036d97985c70fec69022923"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/bevel-pair.js",
+      "sha256": "61fb502cd336057aa61e7964edae488f6e32b1912089abe04dc21a4c845ad316"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ],
+  "parameters": {
+    "movement": 161,
+    "timestep": 0.0005,
+    "period": 8,
+    "variableSpeed": true,
+    "spindleDrive": true,
+    "equilibriumCalibration": true,
+    "lowSpeed": 4.7733934017120685,
+    "highSpeed": 5.305040709875139,
+    "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints optionally include the full linkage gravity and rotational-inertia derivatives; the native transient remains passive."
+  },
+  "sourceTime": 1592,
+  "closure": 5.3691802739952443e-11,
+  "velocityClosure": 4.84890886123801e-10,
+  "samples": 2001,
+  "bytes": 451447,
+  "sha256": "c3dfd79314953677ceaf86d3c8ae2dcd713d96a632cbaff8803a30ec9c8577fe"
+}
