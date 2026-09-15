@@ -1,0 +1,50 @@
+{
+  "movement": 159,
+  "method": "Compare identical material vertices of the 96-segment rope at matching .02 s samples over one cycle; both timesteps use .02 initial bow. Before/after differs only in anchor-contact selection.",
+  "results": [
+    {
+      "name": "whole-link exclusions",
+      "samples": 201,
+      "duration": 4.000000000004016,
+      "maximumPointDifference": {
+        "time": 2.079999999999965,
+        "vertex": 76,
+        "distance": 0.15234894323718087
+      },
+      "maximumTreadleDifference": 0.0025801656999956124
+    },
+    {
+      "name": "material-clipped contact",
+      "samples": 201,
+      "duration": 4.000000000004016,
+      "maximumPointDifference": {
+        "time": 2.9000000000016954,
+        "vertex": 96,
+        "distance": 0.5847841356331733
+      },
+      "maximumTreadleDifference": 0.2307676584659614
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-anchor-refinement.mjs",
+      "sha256": "2dc63fbb0813c83c64029be4eaba4b9c6ffea5ceaaa9baf48d03e52d69025612"
+    },
+    {
+      "file": "/dev/shm/159-bow-full.json",
+      "sha256": "b9608227d94091da32fd8247410ce575a006a51ca6cfa9f7d705ff87f71760c6"
+    },
+    {
+      "file": "/dev/shm/159-bow-full-fine.json",
+      "sha256": "5800f16b5d9776f73d084f83954e40df1b8263213e210b5c0138c2b4f88ba7ea"
+    },
+    {
+      "file": "/dev/shm/159-clipped-anchor.json",
+      "sha256": "4bab60d388138762eed2caf1fc5128a7557475e575a836bc597f4c12720f45b6"
+    },
+    {
+      "file": "/dev/shm/159-clipped-anchor-fine.json",
+      "sha256": "0c3141c8fa0a51f72df83873906ca2dd8211a2b5a5f2004872e0f56005d47e23"
+    }
+  ]
+}

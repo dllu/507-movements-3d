@@ -407,10 +407,61 @@ FULL=1 node scripts/review-cord-treadle-buckling.mjs
 node --test tests/cord-treadle-initial-bow.test.mjs
 ```
 
+## Material-clipped anchor contact
+
+Anchor contact now excludes exactly the first/last 0.15 material units at the
+matching secured end. A link crossing that boundary gets a clipped capsule for
+head contact; its remaining original capsule still handles pulley, floor and
+self-contact. Remote links use their full capsule. The contact capsules add no
+mass and do not change visible rope geometry, link lengths or inertias.
+
+Explicit geom pairs preserve head contact even for a direct child body. Their
+friction and solver parameters are specified explicitly, as required by the
+[MuJoCo pair documentation](https://mujoco.readthedocs.io/en/latest/XMLreference.html#contact-pair).
+This replaces the previous whole-body exclusions rather than broadening the
+accepted fastening overlap. The actual visible-mesh audit still exempts only
+the secured material region.
+
+A regression runs the bowed floor-impact trajectory for 0.4 s, checking every
+0.002 s. It independently clips rope segments by material length and measures
+capsule/head distance against the actual moving head centers. It passes a
+0.001-unit penetration limit. The six existing inertia, bending and initial-bow
+tests also pass.
+
+The new regression was also run against the previous commit’s physics module;
+it fails there with 0.01469 units of head penetration, confirming that the test
+captures the original bug. It passes with the material-clipped contact change.
+
+**Full-cycle qualification still fails.** Both 4 s runs finish without native
+reset, but the 0.1 ms trajectory reaches treadle angle −0.45848 rad whereas the
+0.05 ms run reaches −0.22802 rad. Maximum paired timestep difference is 0.23077
+rad at the treadle and 0.58478 display units at a rope vertex. The coarse visible
+hardware audit finds 0.00201 units of later rope/head penetration at 1.62 s.
+The rigid audit also finds 0.06954 units of treadle/crank-stud penetration late
+in the coarse cycle. The stud’s shaft is currently visible but not included in
+native rigid collision: this cannot be accepted just because the smaller-swing
+trajectory avoids it. Further timestep refinement and complete rigid-contact
+coverage are needed before choosing any bake. Reports:
+[native coarse](validation/159-clipped-anchor-native.json),
+[native fine](validation/159-clipped-anchor-fine.json),
+[timestep comparison](validation/159-anchor-refinement.json),
+[failed hardware audit](validation/159-clipped-anchor-hardware.json),
+[failed rigid audit](validation/159-clipped-anchor-clearance.json).
+
+```sh
+RIGID_CORE=1 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-clipped-anchor.json REPORT=/dev/shm/159-clipped-anchor-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-clipped-anchor-fine.json REPORT=/dev/shm/159-clipped-anchor-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+node --test tests/cord-treadle-anchor-contact.test.mjs
+node scripts/review-cord-treadle-anchor-refinement.mjs
+SAMPLES=/dev/shm/159-clipped-anchor.json REPORT=docs/validation/159-clipped-anchor-hardware.json node scripts/review-cord-treadle-rope-hardware.mjs
+SAMPLES=/dev/shm/159-clipped-anchor.json REPORT=docs/validation/159-clipped-anchor-clearance.json node scripts/review-cord-treadle-core.mjs
+```
+
 ## Remaining work
 
-Restrict native endpoint contact exclusions to the secured material region,
-then qualify the inferred rope/anchor fastening and final moving assembly.
+Include crank-stud/treadle rigid contact and refine timestep further. Qualify
+the inferred rope/anchor fastening and final moving assembly with material-clipped
+anchor contact.
 Refine the finite rope at the explicit physical scale and qualify
 timestep/rope-resolution convergence and longer-run behavior. Preserve the
 measured joints and floor. Qualify

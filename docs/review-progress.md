@@ -14,8 +14,10 @@ pixels when timestep is halved and 22.4 pixels across rope resolutions, despite
 small endpoint errors. The finite rope is not converged.
 A 1.125 px initial bow reduces early buckling-branch sensitivity but leaves
 8.6 px full-cycle disagreement. The bowed trajectory exposes a too-broad native
-endpoint contact exclusion; restrict contact exemption to the secured cord
-region before further qualification.
+endpoint contact exclusion, now fixed with material-clipped geom pairs and a
+regression that fails on the old code. Full-cycle qualification still fails:
+the coarse trajectory has larger swing, later head penetration and a treadle/
+crank-stud collision. Include that rigid contact and refine timestep next.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 

@@ -1,0 +1,115 @@
+{
+  "sources": [
+    {
+      "file": "scripts/probe-finite-cord-treadle.mjs",
+      "sha256": "679d66ffe63f6994b99f529bcc824010dc592183fbb7ff69972688f44a3728be"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/rope-physics.js",
+      "sha256": "2c4d5780ed13de90963863473c3b49fdcfdddf7e0bbe7c5ed07a95a83bfe813f"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/inertia.js",
+      "sha256": "735b77da0d61e7746595789b9c21ea56bc9c97aeea530c490b4779e98f16897d"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/solids.js",
+      "sha256": "8b118b3022e125bbfa33572495113ba3fedebf079c810e646ecc6a321e32ae74"
+    }
+  ],
+  "duration": 4.000000000004016,
+  "samples": 201,
+  "description": {
+    "rigidProperties": {
+      "metresPerUnit": 0.1,
+      "densityKgPerM3": 7200,
+      "gravity": 98.1,
+      "bodies": {
+        "disk": {
+          "volume": 2.7333811591049346,
+          "mass": 19.680344345555536,
+          "center": [
+            0.005335523911471262,
+            -0.003037144380375752,
+            -0.29622978982301934
+          ],
+          "fullinertia": [
+            12.863200147979576,
+            12.94484375434407,
+            25.341466434791126,
+            0.0687510060597344,
+            -0.06745602994685523,
+            0.038398047815901365
+          ]
+        },
+        "treadle": {
+          "volume": 0.2650794579032647,
+          "mass": 1.9085720969035065,
+          "center": [
+            -2.509574119799678,
+            -0.03698458705796586,
+            0.17974106676670992
+          ],
+          "fullinertia": [
+            0.04717114616477605,
+            4.2215650124369315,
+            4.238991452989859,
+            -0.0046848759526813555,
+            0.0005653565918077863,
+            -0.0006876002623978795
+          ]
+        },
+        "pulley": {
+          "volume": 0.5093551246967357,
+          "mass": 3.6673568978164983,
+          "center": [
+            1.897261542421514e-17,
+            -8.026254348142306e-17,
+            0.6399999836377268
+          ],
+          "fullinertia": [
+            0.5958707479262348,
+            0.5958707479262353,
+            1.1415936923446135,
+            1.3619793483481566e-18,
+            8.958256081104221e-17,
+            -8.94152724672218e-17
+          ]
+        }
+      },
+      "assumptions": "0.1 metre per display unit and uniform 7200 kg/m³ rigid material by default. Source gives no dimensions or materials. Rigid solids include inferred anchor studs; cord itself is modeled separately."
+    },
+    "initialBow": 0.02,
+    "segments": 96,
+    "timestep": 0.0001,
+    "period": 4,
+    "ropeMass": 0.08,
+    "ropeRadius": 0.045,
+    "friction": 0.5,
+    "bendingRigidity": 0.0002,
+    "bendingRelaxation": 0.4,
+    "totalLength": 11.181588685193725,
+    "nominalLength": 11.18344383731753,
+    "groundY": -3.3955555555555557,
+    "pulleyRadius": 0.755,
+    "assumptions": "Experimental planar articulated rope with optional straight-rest bending stiffness scaled by inverse segment length, Kelvin-Voigt bending relaxation, finite capsule self-contact, gravity, passive pulley friction and floor contact. Rigid core mass/inertia and gravity can be supplied explicitly, enabling spherical anchor-head contact with contact restricted by material distance to omit only the first/last .15 units at the matching head; otherwise uniform beam and provisional rope/pulley masses. Rope mass, bending and damping remain provisional; driven disk only. Optional initial bow perturbs only the starting outgoing leg and consistent initial velocities; subsequent rope motion remains passive. Attachment compliance and resolution remain unqualified."
+  },
+  "maximumAttachmentError": 0.0007174172345902087,
+  "minimumFootClearance": -0.0003763257066675685,
+  "treadleRange": [
+    -0.45848430231355136,
+    0.3452779673131219
+  ],
+  "pulleyRange": [
+    -1.9432331461831402,
+    1.090839067236203
+  ]
+}
