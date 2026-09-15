@@ -1,0 +1,79 @@
+{
+  "movement": 159,
+  "method": "First .4 s of 96-link native trajectories, matching .02 s samples at .05/.025 ms timesteps. Direct material-vertex comparisons and independent capsule/pulley clearance. Initial radial lift is not a runtime constraint.",
+  "initialChange": {
+    "maximumVertexDisplacement": 0.0021261495966993327,
+    "endpoints": [
+      0,
+      7.549516567451064e-15
+    ],
+    "restLengthBefore": 11.18158868519372,
+    "restLengthAfter": 11.187717251144818
+  },
+  "comparisons": [
+    {
+      "name": "inscribed initial rope",
+      "maximumPointDifference": {
+        "time": 0.3399999999999707,
+        "vertex": 70,
+        "distance": 0.07629233418892054
+      },
+      "maximumTreadleDifference": 0.00011231670896810764,
+      "runs": [
+        {
+          "initialMinimumPulleyClearance": -0.0021195165850335096,
+          "minimumPulleyClearance": -0.0021195165850335096
+        },
+        {
+          "initialMinimumPulleyClearance": -0.0021195165850335096,
+          "minimumPulleyClearance": -0.0021195165850335096
+        }
+      ]
+    },
+    {
+      "name": "cleared initial rope",
+      "maximumPointDifference": {
+        "time": 0.23999999999998173,
+        "vertex": 94,
+        "distance": 0.363637500836184
+      },
+      "maximumTreadleDifference": 0.00012519305651964574,
+      "runs": [
+        {
+          "initialMinimumPulleyClearance": 0.0000010000000000287557,
+          "minimumPulleyClearance": -0.00045280981740070114
+        },
+        {
+          "initialMinimumPulleyClearance": 0.0000010000000000287557,
+          "minimumPulleyClearance": -0.00034544522674362366
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-initial-clearance.mjs",
+      "sha256": "2fca73b26d1b01066cfb946cc5017b66dad2d2a7d33e52938fee02c1b9a4ef5b"
+    },
+    {
+      "file": "src/simulation/cord-treadle-motion.js",
+      "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
+    },
+    {
+      "file": "/dev/shm/159-stud-fine.json",
+      "sha256": "0c3141c8fa0a51f72df83873906ca2dd8211a2b5a5f2004872e0f56005d47e23"
+    },
+    {
+      "file": "/dev/shm/159-stud-finer.json",
+      "sha256": "5b1fb219769edc0413ddba25493d980ce74fc6c5a2f4de8c6291fea486926698"
+    },
+    {
+      "file": "/dev/shm/159-initial-clear-fine.json",
+      "sha256": "98bb3ec22a64680e9d068a3ebf6a0de8f3f2cb5932aa7d86825398438a5006d9"
+    },
+    {
+      "file": "/dev/shm/159-initial-clear-finer.json",
+      "sha256": "b408f356604c10a6330ddc6f7fda0d0ff3fb196b40bacee6acc127de0229a65b"
+    }
+  ]
+}

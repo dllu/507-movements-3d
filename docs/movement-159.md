@@ -504,6 +504,42 @@ node scripts/review-cord-treadle-stud-refinement.mjs
 node --test tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-anchor-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-bending.test.mjs
 ```
 
+## Clear initial pulley fit
+
+The previous polygonal rope began with 0.00212 display units of pulley
+penetration. Scaled models now default to a small radial lift of interior
+vertices near the guide, fading smoothly away from it. A bracketed search
+clears every initial centerline segment by 0.000001 units above the pitch radius.
+Secured endpoints stay fixed. This prepares only the initial geometry and its
+reference velocities; it is not a runtime force or shape projection.
+
+At 96 segments the maximum displacement is 0.002126 units (0.120 source pixels).
+Rest length changes from 11.181589 to 11.187717 units, compared with the continuous
+source-path length 11.183444. Polygonal approximation and the small initial bow
+affect this value; material length is not exactly identical across resolutions.
+`CORD_CLEAR_PULLEY=0` reproduces the historical inscribed initialization. The
+other parameters are unchanged. A new test at 64 and 96 segments checks initial
+capsule clearance, native contacts, preserved endpoints, small source displacement
+and attachment closure. All nine focused tests pass.
+
+Two 0.4 s runs at 0.05 and 0.025 ms finish without reset. Initial clearance is
+positive and subsequent maximum pulley penetration falls to 0.000453 and
+0.000345 units. **Timestep disagreement does not improve:** maximum vertex
+separation rises from 0.07629 to 0.36364 units in the short window, concentrated
+near the lower endpoint. Removing the initial overlap is geometrically necessary
+but does not cure buckling sensitivity. Inspect the local end-shape model before
+more long runs; do not revert to overlapping geometry for a better score.
+Reports: [comparison](validation/159-initial-clearance.json),
+[native fine](validation/159-initial-clear-fine-native.json),
+[native finer](validation/159-initial-clear-finer-native.json).
+
+```sh
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-initial-clear-fine.json REPORT=/dev/shm/159-initial-clear-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.000025 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=.4 SAMPLES=/dev/shm/159-initial-clear-finer.json REPORT=/dev/shm/159-initial-clear-finer-report.json node scripts/probe-finite-cord-treadle.mjs
+node scripts/review-cord-treadle-initial-clearance.mjs
+node --test tests/cord-treadle-initial-clearance.test.mjs tests/cord-treadle-anchor-contact.test.mjs tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-bending.test.mjs
+```
+
 ## Remaining work
 
 Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify
