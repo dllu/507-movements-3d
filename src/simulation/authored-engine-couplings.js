@@ -1270,6 +1270,33 @@ function qualifyEngagedGeometry(model) {
   model.cameraDirection=new THREE.Vector3(0,0,1);model.reset=()=>model.update(0);return model;
 }
 
+// The two engravings show one selector at two orientations. Its passage
+// follows the released wrist orbit; the engaged case uses these SAME solids.
+function installSharedSelector(model) {
+  const {root}=model,{blocks:b}=root.userData;
+  b.selectorBearingOutline.removeFromParent();b.selectorBearingOutline.geometry.dispose();
+  const contours=outerRadius=>{
+    const p=makeTangentialPassageProfiles({crankRadius:3.3,outerRadius,slotHalfWidth:.29});
+    return [p.upperShape,p.lowerShape].map(shape=>poly(shape.getPoints(24).map(v=>[-v.y,v.x])));
+  };
+  const [left,right]=contours(.62),[rearLeft,rearRight]=contours(.70);
+  const geometries={left:plate(left,-.09,.39),right:plate(right,-.09,.39),
+    leftFace:plate(polygonClipping.difference(left,sector(.51,.58,Math.PI-.85,Math.PI+.85,64)),.39,.41),
+    rightFace:plate(polygonClipping.difference(right,sector(.51,.58,-.85,.85,64)),.39,.41),
+    sleeve:ring(.60,.634,.165,.42,128),front:ring(.60,.70,.41,.44,128),
+    rear:plate(polygonClipping.difference(polygonClipping.union(rearLeft,rearRight),poly(circle([0,0],.60,128))),.12,.15)};
+  const oldLeft=b.selectorLeftLobe??b.selectorUpperLobe,oldRight=b.selectorRightLobe??b.selectorLowerLobe;
+  for(const child of [...b.selectorRing.children])if(child.isMesh){child.removeFromParent();child.geometry.dispose();}
+  const material=matte(PALETTE.accent,{metalness:.12,roughness:.60,fog:false}),floor=material.clone();floor.color.multiplyScalar(.8);
+  const parts={};for(const [name,geometry]of Object.entries(geometries)){
+    const mesh=name==='left'?oldLeft:name==='right'?oldRight:new THREE.Mesh();mesh.geometry=geometry;mesh.material=['left','right'].includes(name)?floor:material;
+    mesh.userData.role='shared-selector-'+name;b.selectorRing.add(mesh);parts[name]=mesh;
+  }
+  Object.assign(b,{'selector-connecting-sleeve':parts.sleeve,'selector-front-retaining-lip':parts.front,'selector-rear-retaining-lips':parts.rear,'selector-left-recessed-face':parts.leftFace,'selector-right-recessed-face':parts.rightFace});
+  root.userData.sharedSelector={orbitRadius:3.3,halfWidth:.29,outerRadius:.62,parts,assumptions:'One rigid annular passage used at angles zero and minus pi/2; selected angle held by an ideal lock. Axial retention inferred.'};
+  return model;
+}
+
 function qualifyReleasedGeometry(model) {
   const {root}=model,{blocks:b,geometry:g}=root.userData;
   const profiles=makeTangentialPassageProfiles({crankRadius:g.crankRadius,outerRadius:g.selectorOuterRadius,slotHalfWidth:g.slotHalfWidth});
@@ -1285,7 +1312,7 @@ function qualifyReleasedGeometry(model) {
 }
 
 export function createAuthoredEngineCouplingMovement(movement) {
-  if (movement.id === 176) return qualifyEngagedGeometry(engagedSlottedRingEngineCoupling());
-  if (movement.id === 177) return qualifyReleasedGeometry(disengagedSlottedRingEngineCoupling());
+  if (movement.id === 176) return installSharedSelector(qualifyEngagedGeometry(engagedSlottedRingEngineCoupling()));
+  if (movement.id === 177) return installSharedSelector(qualifyReleasedGeometry(disengagedSlottedRingEngineCoupling()));
   return null;
 }

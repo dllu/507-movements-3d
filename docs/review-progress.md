@@ -1,10 +1,11 @@
-# Review open: 176/177 shared selector
+# Review open: 177 final assembly and source fit
 
-177's decorative wrist/slot and front-bearing interferences are removed.
-The 386-pose clearance sweep, both motion tests, build and desktop/mobile
-checks pass. However, the two factories use different physical slot profiles.
-Unify the geometry and requalify both orientations before closing their shared
-mechanism review. See [movement 177](movement-177.md).
+The shared selector inconsistency is resolved. All seven physical solids now
+have identical geometry and transforms in 176 and 177, with only a quarter-turn
+of the ring. Both finite-clearance sweeps, shared geometry/contact checks,
+attachment checks, motion tests, build and desktop/mobile checks pass.
+177's output-shaft attachment and quantitative source fit remain open.
+See [movement 177](movement-177.md). Continue with 177.
 
 # Shipped reconstruction: 176 engaged engine coupling
 

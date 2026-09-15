@@ -1,7 +1,7 @@
 {
   "movement": 176,
   "status": "sampled-clearance-passed",
-  "meshes": 27,
+  "meshes": 24,
   "poses": 129,
   "pairs": [
     [
@@ -50,43 +50,31 @@
     ],
     [
       "fixed-front-output-bearing-solid",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "fixed-front-output-bearing-solid",
-      "selector-right-recessed-face"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "fixed-front-output-bearing-solid",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "fixed-front-output-bearing-solid",
@@ -150,43 +138,31 @@
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "fixed-rear-input-bearing-solid",
-      "selector-right-recessed-face"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "fixed-rear-input-bearing-solid",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "fixed-rear-input-bearing-solid",
@@ -214,43 +190,31 @@
     ],
     [
       "rear-input-crank-arm",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-input-crank-arm",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-input-crank-arm",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-input-crank-arm",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-input-crank-arm",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-input-crank-arm",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-input-crank-arm",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-input-crank-arm",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-input-crank-arm",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-input-crank-arm",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-input-crank-arm",
@@ -278,43 +242,31 @@
     ],
     [
       "rear-input-crank-shaft-boss",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-input-crank-shaft-boss",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-input-crank-shaft-boss",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-input-crank-shaft-boss",
@@ -342,43 +294,31 @@
     ],
     [
       "rear-input-crank-wrist-boss",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-input-crank-wrist-boss",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-input-crank-wrist-boss",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-input-crank-wrist-boss",
@@ -406,43 +346,31 @@
     ],
     [
       "rear-input-shaft-outline",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-input-shaft-outline",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-input-shaft-outline",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-input-shaft-outline",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-input-shaft-outline",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-input-shaft-outline",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-input-shaft-outline",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-input-shaft-outline",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-input-shaft-outline",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-input-shaft-outline",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-input-shaft-outline",
@@ -470,43 +398,31 @@
     ],
     [
       "rear-input-wrist-outline",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-input-wrist-outline",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-input-wrist-outline",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-input-wrist-outline",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-input-wrist-outline",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-input-wrist-outline",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-input-wrist-outline",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-input-wrist-outline",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-input-wrist-outline",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-input-wrist-outline",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-input-wrist-outline",
@@ -534,43 +450,31 @@
     ],
     [
       "rear-independent-input-shaft",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "rear-independent-input-shaft",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "rear-independent-input-shaft",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "rear-independent-input-shaft",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "rear-independent-input-shaft",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "rear-independent-input-shaft",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "rear-independent-input-shaft",
-      "selector-right-recessed-face"
-    ],
-    [
-      "rear-independent-input-shaft",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "rear-independent-input-shaft",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "rear-independent-input-shaft",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "rear-independent-input-shaft",
@@ -598,43 +502,31 @@
     ],
     [
       "white-index-on-rear-input-shaft",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "white-index-on-rear-input-shaft",
-      "selector-right-recessed-face"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "white-index-on-rear-input-shaft",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "white-index-on-rear-input-shaft",
@@ -662,43 +554,31 @@
     ],
     [
       "input-wrist-pin",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "input-wrist-pin",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "input-wrist-pin",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "input-wrist-pin",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "input-wrist-pin",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "input-wrist-pin",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "input-wrist-pin",
-      "selector-right-recessed-face"
-    ],
-    [
-      "input-wrist-pin",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "input-wrist-pin",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "input-wrist-pin",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "input-wrist-pin",
@@ -726,43 +606,31 @@
     ],
     [
       "white-index-on-input-wrist",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "white-index-on-input-wrist",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "white-index-on-input-wrist",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "white-index-on-input-wrist",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "white-index-on-input-wrist",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "white-index-on-input-wrist",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "white-index-on-input-wrist",
-      "selector-right-recessed-face"
-    ],
-    [
-      "white-index-on-input-wrist",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "white-index-on-input-wrist",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "white-index-on-input-wrist",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "white-index-on-input-wrist",
@@ -782,246 +650,174 @@
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "front-output-crank-cheek-with-two-real-bores",
-      "selector-right-recessed-face"
-    ],
-    [
-      "front-output-crank-cheek-with-two-real-bores",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "front-output-crank-cheek-with-two-real-bores",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "front-output-crank-cheek-with-two-real-bores",
-      "selector-rear-retaining-lips"
+      "shared-selector-rear"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "engaged-selector-left-slot-lobe"
+      "shared-selector-left"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "engaged-selector-right-slot-lobe"
+      "shared-selector-right"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "engaged-left-tangential-slot-wall"
+      "shared-selector-leftFace"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "engaged-right-tangential-slot-wall"
+      "shared-selector-rightFace"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "white-index-fixed-to-radial-selector-ring"
+      "shared-selector-sleeve"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "selector-left-recessed-face"
+      "shared-selector-front"
     ],
     [
       "white-index-fixed-to-output-crank",
-      "selector-right-recessed-face"
+      "shared-selector-rear"
     ],
     [
-      "white-index-fixed-to-output-crank",
-      "selector-connecting-sleeve"
-    ],
-    [
-      "white-index-fixed-to-output-crank",
-      "selector-front-retaining-lip"
-    ],
-    [
-      "white-index-fixed-to-output-crank",
-      "selector-rear-retaining-lips"
-    ],
-    [
-      "engaged-selector-left-slot-lobe",
+      "shared-selector-left",
       "front-independent-output-shaft"
     ],
     [
-      "engaged-selector-left-slot-lobe",
+      "shared-selector-left",
       "front-output-shaft-end-cap"
     ],
     [
-      "engaged-selector-left-slot-lobe",
+      "shared-selector-left",
       "output-bottom-boss"
     ],
     [
-      "engaged-selector-left-slot-lobe",
+      "shared-selector-left",
       "output-top-boss"
     ],
     [
-      "engaged-selector-right-slot-lobe",
+      "shared-selector-right",
       "front-independent-output-shaft"
     ],
     [
-      "engaged-selector-right-slot-lobe",
+      "shared-selector-right",
       "front-output-shaft-end-cap"
     ],
     [
-      "engaged-selector-right-slot-lobe",
+      "shared-selector-right",
       "output-bottom-boss"
     ],
     [
-      "engaged-selector-right-slot-lobe",
+      "shared-selector-right",
       "output-top-boss"
     ],
     [
-      "engaged-left-tangential-slot-wall",
+      "shared-selector-leftFace",
       "front-independent-output-shaft"
     ],
     [
-      "engaged-left-tangential-slot-wall",
+      "shared-selector-leftFace",
       "front-output-shaft-end-cap"
     ],
     [
-      "engaged-left-tangential-slot-wall",
+      "shared-selector-leftFace",
       "output-bottom-boss"
     ],
     [
-      "engaged-left-tangential-slot-wall",
+      "shared-selector-leftFace",
       "output-top-boss"
     ],
     [
-      "engaged-right-tangential-slot-wall",
+      "shared-selector-rightFace",
       "front-independent-output-shaft"
     ],
     [
-      "engaged-right-tangential-slot-wall",
+      "shared-selector-rightFace",
       "front-output-shaft-end-cap"
     ],
     [
-      "engaged-right-tangential-slot-wall",
+      "shared-selector-rightFace",
       "output-bottom-boss"
     ],
     [
-      "engaged-right-tangential-slot-wall",
+      "shared-selector-rightFace",
       "output-top-boss"
     ],
     [
-      "white-index-fixed-to-radial-selector-ring",
+      "shared-selector-sleeve",
       "front-independent-output-shaft"
     ],
     [
-      "white-index-fixed-to-radial-selector-ring",
+      "shared-selector-sleeve",
       "front-output-shaft-end-cap"
     ],
     [
-      "white-index-fixed-to-radial-selector-ring",
+      "shared-selector-sleeve",
       "output-bottom-boss"
     ],
     [
-      "white-index-fixed-to-radial-selector-ring",
+      "shared-selector-sleeve",
       "output-top-boss"
     ],
     [
-      "selector-left-recessed-face",
+      "shared-selector-front",
       "front-independent-output-shaft"
     ],
     [
-      "selector-left-recessed-face",
+      "shared-selector-front",
       "front-output-shaft-end-cap"
     ],
     [
-      "selector-left-recessed-face",
+      "shared-selector-front",
       "output-bottom-boss"
     ],
     [
-      "selector-left-recessed-face",
+      "shared-selector-front",
       "output-top-boss"
     ],
     [
-      "selector-right-recessed-face",
+      "shared-selector-rear",
       "front-independent-output-shaft"
     ],
     [
-      "selector-right-recessed-face",
+      "shared-selector-rear",
       "front-output-shaft-end-cap"
     ],
     [
-      "selector-right-recessed-face",
+      "shared-selector-rear",
       "output-bottom-boss"
     ],
     [
-      "selector-right-recessed-face",
-      "output-top-boss"
-    ],
-    [
-      "selector-connecting-sleeve",
-      "front-independent-output-shaft"
-    ],
-    [
-      "selector-connecting-sleeve",
-      "front-output-shaft-end-cap"
-    ],
-    [
-      "selector-connecting-sleeve",
-      "output-bottom-boss"
-    ],
-    [
-      "selector-connecting-sleeve",
-      "output-top-boss"
-    ],
-    [
-      "selector-front-retaining-lip",
-      "front-independent-output-shaft"
-    ],
-    [
-      "selector-front-retaining-lip",
-      "front-output-shaft-end-cap"
-    ],
-    [
-      "selector-front-retaining-lip",
-      "output-bottom-boss"
-    ],
-    [
-      "selector-front-retaining-lip",
-      "output-top-boss"
-    ],
-    [
-      "selector-rear-retaining-lips",
-      "front-independent-output-shaft"
-    ],
-    [
-      "selector-rear-retaining-lips",
-      "front-output-shaft-end-cap"
-    ],
-    [
-      "selector-rear-retaining-lips",
-      "output-bottom-boss"
-    ],
-    [
-      "selector-rear-retaining-lips",
+      "shared-selector-rear",
       "output-top-boss"
     ]
   ],
-  "queries": 7986984,
+  "queries": 8795076,
   "intersections": {},
   "method": "All cross-family pairs, including selector versus output cheek despite their locked relative angle, finite mesh vertices, edge midpoints and face centers. Excludes the nonphysical orbit and contact marker. Includes hidden index meshes conservatively. Rigid attachments are checked separately by review-engine-coupling-mount.mjs.",
   "sources": [
@@ -1031,7 +827,7 @@
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "30c37558609f13ed4fb3ea0699c91213b9471566777ff20286f09fac58817298"
+      "sha256": "6a0d52a71a57adf0f79de720229bfc6ea065f1ab3378684f5d6d1148616ad849"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

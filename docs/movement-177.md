@@ -1,45 +1,47 @@
-# Movement 177: released engine coupling — review open
+# Movement 177: released engine coupling — final assembly review open
 
-The wrist now clears the rendered curved passage without clipping decorative
-wall tubes, grooves or markers. The front bearing has a real cylindrical bore
-and clears the shaft cap. Fog and scene ground are disabled, the initial camera
-is nearly orthographic, and Restart restores the source pose. Catalog playback
-is bounded below by four seconds.
+176 and 177 now instantiate the same seven selector solids. The annular curved
+passage, recessed faces, connecting sleeve and retaining lips are identical;
+only the selector orientation changes by a quarter turn. The previous straight
+engaged slot has been replaced. The geometry does not morph between states.
 
-## Important shared-mechanism discrepancy
+## Shared physical selector
 
 The source caption for [176 and 177](https://507movements.com/mm_176.html)
-describes rotating the same selector ring. The current factories instead use
-a straight radial slot for 176 and an annular curved passage for 177. A quarter
-turn of the former cannot produce the latter. The
-[shape comparison](validation/176-177-slot-consistency.json) quantifies this:
-at local x = 0.5, the released walls are -0.33182 and +0.25501 instead of
--0.29 and +0.29. That difference is about four engraving pixels at one wall.
+describes rotating the same selector ring. The
+[consistency check](validation/176-177-slot-consistency.json) now proves exact
+position, normal and index-buffer identity for every selector part, identical
+local part transforms, and a ring-angle difference of minus pi/2. Both use an
+annular passage of radius 3.3 and half-width 0.29.
 
-This reopens the cross-state consistency of 176 as well as 177. The individual
-steady engaged view's checks remain useful, but they do not establish a shared
-physical selector. The next step is one canonical slot profile, instantiated
-at two orientations, followed by engaged contact and released clearance checks.
-Do not simulate selection by morphing the slot geometry.
+The engaged wrist's analytic wall-contact residual is at most 3.29e-11 model
+units with the retained clearance lag. The released wrist has 0.01 clearance
+from each annular wall to numerical precision. Finite-solid sweeps check the
+actual triangulated geometry independently. The selector attachment check in
+176 applies to the identical local solids and transforms in 177; its mounting
+against the different cheek is included in 177's separate clearance sweep.
 
-## Current checks and limits
+The input rotation, stationary released output and selected ring angle remain
+prescribed. This is not a passive dynamic demonstration of disengaging under
+load. Retaining depths, bearing supports and the angular lock are assumptions.
 
-The [historical baseline](validation/177-existing-solids.json), using source
-geometry at fadeb59, records eight interfering pairs. The
-[current sweep](validation/177-assembly.json) checks 19 meshes at 386 poses:
+## Checks and remaining work
+
+The [current sweep](validation/177-assembly.json) checks 22 meshes at 386 poses:
 129 full-turn samples plus 257 concentrated entry/passage/exit samples. It
-performs 4,303,180 finite-surface queries with no sampled cross-body
-intersections. This is not continuous proof and does not validate attachment
-of the separate selector lobes.
+performs 22,780,162 finite-surface queries with no sampled cross-body
+intersections. This is not continuous proof.
 
-Both existing 176/177 motion tests pass. Production build and
-[packaged desktop/mobile checks](validation/177-browser.json) pass playback,
-exact Restart, orbit/reset, no overflow, no WASM requests and no page errors.
-The front view was inspected next to the engraving. The removed arc tubes
-need replacement with source-faithful details as part of the shared selector
-rebuild; the present view is provisional.
+Both 176/177 motion tests pass. Production build and packaged
+[desktop/mobile checks](validation/177-browser.json) pass for both views:
+playback, exact Restart, orbit/reset, no overflow, no WASM requests and no page
+errors. The front views were inspected alongside their engravings. Fog and
+scene ground are disabled, and catalog playback is bounded below by four seconds.
 
-The input rotation and stationary output remain prescribed. The model is not
-a passive dynamic disengagement demonstration. Retention, shaft attachment
-and quantitative source fit still need qualification for the final shared
-assembly. Continue with the 176/177 selector; the full review remains active.
+The [historical baseline](validation/177-existing-solids.json), using geometry
+at fadeb59, records eight interfering pairs from decorative tubes, markers and
+the front bearing. Those interferences are removed.
+
+Continue with 177's output-shaft attachment and quantitative source fit. The
+shared-selector inconsistency is resolved; the remaining assembly review and
+the full 507-movement goal are still active.

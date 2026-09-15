@@ -1,4 +1,4 @@
-# Movement 176: engaged engine coupling — shared selector review reopened
+# Movement 176: engaged engine coupling — shared selector verified
 
 The wrist engages a radial slot in the selector carried by the output crank.
 Both coaxial cranks have equal throw and turn together under an ideal steady
@@ -6,14 +6,14 @@ engaged load. The reconstructed selector has connecting and retaining geometry;
 the output shaft has an integral shoulder fitted to the crank cheek. Circular
 bosses and recessed arc details replace missing edges and decorative tubes.
 
-## Shared-selector consistency remains open
+## Shared-selector consistency
 
-The subsequent 177 review found different slot profiles in the two factories:
-straight when engaged, curved when released. Their shared-selector consistency
-is therefore not established. See [movement 177](movement-177.md) and the
-[comparison](validation/176-177-slot-consistency.json). The checks below apply
-to the individual steady engaged reconstruction at fadeb59; they do not prove
-that a quarter-turn of its ring yields the released assembly.
+176 and 177 now use identical selector solids at two orientations. The
+[comparison](validation/176-177-slot-consistency.json) checks actual geometry
+buffers and transforms, not nominal widths. The annular passage is curved in
+both views; the old straight engaged profile is replaced. Engaged analytic
+contact has a residual below 3.29e-11 model units. The attachment, source-edge,
+finite-clearance and browser checks below were refreshed for this geometry.
 
 ## Source and assumptions
 
@@ -48,9 +48,9 @@ rear lips capturing the cheek. Their visible arc details are shallow recesses.
   The sleeve begins 0.015 model units in front of the wrist tip. Retaining-lip
   clearance is conservatively bounded using the former beveled-cheek envelope.
   Ideal fitted joints and fixed bearing supports remain assumptions.
-- The [clearance sweep](validation/176-assembly.json) checks 27 meshes at
+- The [clearance sweep](validation/176-assembly.json) checks 24 meshes at
   129 poses, including selector-versus-cheek pairs even though their relative
-  angle is locked. There are 7,986,984 finite-surface queries and no sampled
+  angle is locked. There are 8,795,076 finite-surface queries and no sampled
   cross-body intersections. Hidden index meshes are included conservatively.
   This is not a continuous collision proof.
 - Existing 176 and 177 tests pass. They check the engaged contact geometry,

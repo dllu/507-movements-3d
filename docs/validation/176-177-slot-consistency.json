@@ -1,56 +1,57 @@
 {
-  "status": "shared-physical-slot-inconsistency-open",
+  "status": "shared-selector-solids-identical-at-quarter-turn",
   "movements": [
     176,
     177
   ],
-  "samples": [
+  "parts": [
     {
-      "x": 0,
-      "releasedCenterline": 0,
-      "straightWalls": [
-        -0.29,
-        0.29
-      ],
-      "releasedWalls": [
-        -0.29000000000000004,
-        0.29000000000000004
-      ]
+      "name": "left",
+      "sha256": "cf4cc72d4ef637bb4647c50da41fd80c6764d6d0a4ff1fb39f854f2f070c7298",
+      "vertices": 1428
     },
     {
-      "x": 0.3,
-      "releasedCenterline": -0.013664654969003376,
-      "straightWalls": [
-        -0.29,
-        0.29
-      ],
-      "releasedWalls": [
-        -0.3049874791580587,
-        0.2774432210728377
-      ]
+      "name": "right",
+      "sha256": "e9eb6a69c91c7fa379c9c297ed44abee3acdf20b30708de435cb500d804d809b",
+      "vertices": 1428
     },
     {
-      "x": 0.5,
-      "releasedCenterline": -0.03809871393998199,
-      "straightWalls": [
-        -0.29,
-        0.29
-      ],
-      "releasedWalls": [
-        -0.33181873868862244,
-        0.25501054850755667
-      ]
+      "name": "leftFace",
+      "sha256": "e886865bbf0ff5a763df7fdfdaf7307807d85d29e76dc1072038055b522d90e0",
+      "vertices": 3000
+    },
+    {
+      "name": "rightFace",
+      "sha256": "4571bd700b85553452bb435417752fa5eaf1c316a2dfafc3e5d69cecf117f0ab",
+      "vertices": 3000
+    },
+    {
+      "name": "sleeve",
+      "sha256": "c32ec3874652fb50e6768e0b986f747650ce23f3896d397c924092b812c3e974",
+      "vertices": 3072
+    },
+    {
+      "name": "front",
+      "sha256": "fe09bdabc3643428b62a0654fe4fde553b46a1938837324efb05c96499bad31a",
+      "vertices": 3072
+    },
+    {
+      "name": "rear",
+      "sha256": "23b8a2bfc8a8db5f3befaea4958f9e63fe1d73d337cc9b443de504e3ff6ad0c4",
+      "vertices": 2544
     }
   ],
-  "meaning": "At equal local half-width, the released annular passage is curved while a quarter-turn of the engaged straight passage stays straight. These are not the same physical selector. Both renderings must be revised and requalified against a shared profile.",
+  "maximumEngagedContactResidual": 3.286326766271941e-11,
+  "maximumReleasedClearanceError": 8.795048023202412e-16,
+  "meaning": "Identical local position/normal/index buffers and part transforms for all seven selector solids. Only the ring angle changes by minus pi/2. Annular walls use one radius 3.3 and half-width .29. The retained engaged clearance lag has a sub-nanounit analytic residual; separate finite-solid sweeps validate both rendered assemblies.",
   "sources": [
     {
       "file": "scripts/compare-coupling-slot-shapes.mjs",
-      "sha256": "da45b7fef95e7627f3c698a033ea5dfd383ce56cf8431d9f81239831101a427e"
+      "sha256": "5649af193c04e81ef1993bc548f87a33d8b31e9be201bddd2b57880faccf335e"
     },
     {
       "file": "src/simulation/authored-engine-couplings.js",
-      "sha256": "13407e4c21fc4d545caf360460514a6828204ad37c07b311a2dfd2f6676e0139"
+      "sha256": "6a0d52a71a57adf0f79de720229bfc6ea065f1ab3378684f5d6d1148616ad849"
     }
   ]
 }
