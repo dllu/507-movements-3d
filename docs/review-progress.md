@@ -1,3 +1,16 @@
+# Movements 181–182: tappet jam isolated; contact reconstruction open
+
+A passive-handle MuJoCo study shows that a source-width shoe stalls against the
+current working arms at both tested timesteps. Disabled-contact and extra-travel
+controls complete the stroke, identifying the handle contour/travel combination
+as the immediate problem. The extra travel is diagnostic, not a proposed source
+fit. Removed unused outline construction without changing visible geometry;
+four targeted tests and the production build pass. Continue fitting the working
+tips and weight arms jointly against both engravings, then reconstruct the
+catch. See [181–182 review](movement-181.md). The full goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: pivots and weight joints repaired; contact reconstruction open
 
 Added actual pivot bores, separated the handle layers, fitted retained weight-rod joints, removed intersecting decorations and the unillustrated frame, and restored front framing and Restart. The sampled interference count falls from 68 to 16 pairs. Four targeted tests and both packaged browser checks pass, but the tappet and latch still intersect and their motion remains prescribed. Continue with the contact surfaces and passive native motion; see [181–182 review](movement-181.md). The full goal remains active.

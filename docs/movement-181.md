@@ -39,11 +39,50 @@ works. Production build and [desktop/mobile checks](validation/181-browser.json)
 pass for both variants, including playback, exact Restart, orbit/reset, no
 horizontal overflow, no WASM request and no page errors.
 
+## Isolated tappet experiment
+
+The [native contact study](validation/181-tappet-study.json), reproduced with
+`node scripts/probe-diagonal-catch-tappet.mjs`, uses the current curved working
+arms and a narrow shoe following source pixels 170–193. Only the piston is
+actuated. Each weighted handle responds passively, with the existing end angles
+used as inferred valve stops. The catch and the other handle are omitted to
+isolate the drive contact; masses, friction and actuator force are assumptions.
+
+Both handles jam before completing the stroke at timesteps 0.00025 and
+0.000125 seconds. The lower test stops about 2.037 model units short; the upper
+test stops about 1.592 units short. Halving the timestep changes the final
+piston position by less than 0.000066 units. Thus merely narrowing the shoe
+does not fix the existing handle contours and travel limits.
+
+Two controls distinguish this from an input/solver problem. With contact
+disabled, the shoe completes its stroke while each handle remains at its
+gravity stop. Allowing 0.4 radians of extra driven handle travel also lets the
+shoe pass at both timesteps. This extra travel is a diagnostic intervention,
+not a source-fitted motion proposal. Without a catch, the handle then falls
+back under its weight. All ten runs remain numerically stable; the control
+assertions pass, while the original travel limits still fail the stroke check.
+
+The next reconstruction must fit the working tips and weight arms jointly
+against both engravings, with enough clearance for the finite shoe. Matching
+the weight-arm angles alone has proved insufficient. Catch retention/release
+must then be added to the passive study before considering a production bake.
+
+Removed generation of unused outline tubes and an unused intermediate shape
+from the production plate builder. Visible mesh geometry, indices, roles and
+world transforms have identical SHA-256 fingerprints before and after this
+cleanup. An alternating local [construction benchmark](validation/181-construction-cleanup.json)
+measures median construction time of 112.36 ms before and 105.54 ms after;
+this does not measure browser load time or frame rate.
+The four targeted tests and production build pass. This cleanup does
+not change the existing scripted contacts or resolve the 16 interfering pairs.
+
 ## Remaining reconstruction work
 
 - The tappet is oversized in X to follow a nominal roller point that moves
   sideways as each handle rotates. Actual contact must move along the curved
-  handle profile. The current tappet penetrates several handle parts.
+  handle profile. The current tappet penetrates several handle parts. The
+  isolated study now also shows that the current handle travel cannot clear
+  a narrow shoe.
 - The nearly closed circular latch pockets and their rollers collide with each
   other and with the catch backbone during transfer. Reconstruct the actual
   hook/handle contact surfaces from both engravings before validating release.

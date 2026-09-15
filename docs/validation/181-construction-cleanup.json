@@ -1,0 +1,43 @@
+{
+  "scope": "Local alternating construction microbenchmark; ten samples per version after four warmups, no rendering.",
+  "samples": {
+    "before": [
+      116.12082958221436,
+      114.79243564605713,
+      110.52315425872803,
+      111.71576404571533,
+      109.27504014968872,
+      121.12293815612793,
+      119.84603118896484,
+      112.24883794784546,
+      112.46172904968262,
+      110.99533700942993
+    ],
+    "after": [
+      110.30459403991699,
+      111.36085796356201,
+      106.71036052703857,
+      103.69451093673706,
+      103.97872018814087,
+      107.89612102508545,
+      105.84790992736816,
+      104.46698570251465,
+      104.41025972366333,
+      105.22361755371094
+    ]
+  },
+  "medianMs": {
+    "before": 112.35528349876404,
+    "after": 105.53576374053955
+  },
+  "baselineCommit": "42a33b2",
+  "visibleMeshFingerprint": {
+    "before": "33d368a51dd182aa10951eed80d351f8bca8ab274b0e97a70d4b0dfd94a10980",
+    "after": "33d368a51dd182aa10951eed80d351f8bca8ab274b0e97a70d4b0dfd94a10980",
+    "scope": "Movement 181 at initial pose; mesh roles, world transforms, vertex attributes and indices."
+  },
+  "source": {
+    "file": "src/simulation/authored-diagonal-catches.js",
+    "sha256": "7a6ae196621245ba750927e8420ac54228484e1922df95df96e9f3e085b49c4b"
+  }
+}

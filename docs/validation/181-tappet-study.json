@@ -1,0 +1,429 @@
+{
+  "movement": 181,
+  "status": "isolated-tappet-study",
+  "scope": "Current working-arm surface with a source-width input shoe; passive weighted handle, inferred valve end stops, no catch and no other handle. This does not qualify the complete mechanism.",
+  "assumptions": [
+    "Shoe bounds follow source pixels 170 through 193 at scale 0.0125.",
+    "Handle mass, inertia, friction, damping, valve stops and actuator force are diagnostic assumptions, not measurements.",
+    "Extra-travel cases widen only the driven stop by 0.4 radians; they are counterfactual controls, not proposed production motion.",
+    "With no catch, a released handle falls back under its weight after the shoe passes."
+  ],
+  "checks": [
+    {
+      "side": "lower",
+      "stable": true,
+      "disabledContactCompletesStroke": true,
+      "disabledContactHandleDrift": 0.00016076461293218903,
+      "prescribedStopsCompleteStroke": false,
+      "extraTravelCompletesStroke": true
+    },
+    {
+      "side": "upper",
+      "stable": true,
+      "disabledContactCompletesStroke": true,
+      "disabledContactHandleDrift": 0.00017576398868190957,
+      "prescribedStopsCompleteStroke": false,
+      "extraTravelCompletesStroke": true
+    }
+  ],
+  "runs": [
+    {
+      "parameters": {
+        "side": "lower",
+        "timestep": 0.00025,
+        "contacts": true,
+        "extraTravel": 0,
+        "range": [
+          -0.7944147174651272,
+          0
+        ],
+        "cells": 71,
+        "limit": -0.7944147174651272,
+        "initial": 0,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": -0.8148401977974006,
+        "piston": -0.07411696608486962,
+        "angularSpeed": -0.00012647186935188656,
+        "pistonSpeed": 0.00035105547381423835,
+        "target": 1.9625000000000004,
+        "force": 200,
+        "contacts": 3
+      },
+      "pistonError": 2.03661696608487,
+      "completedStroke": false,
+      "angleRange": [
+        -0.8148401977974006,
+        0.00016076461293218903
+      ]
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "timestep": 0.000125,
+        "contacts": true,
+        "extraTravel": 0,
+        "range": [
+          -0.7944147174651272,
+          0
+        ],
+        "cells": 71,
+        "limit": -0.7944147174651272,
+        "initial": 0,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "angle": -0.8148164872939786,
+        "piston": -0.07418277854047549,
+        "angularSpeed": -0.00013209241394593305,
+        "pistonSpeed": 0.0003666361749146006,
+        "target": 1.9625000000000004,
+        "force": 200,
+        "contacts": 3
+      },
+      "pistonError": 2.036682778540476,
+      "completedStroke": false,
+      "angleRange": [
+        -0.8148164872939786,
+        0.0001607647610009825
+      ]
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "timestep": 0.00025,
+        "contacts": false,
+        "extraTravel": 0,
+        "range": [
+          -0.7944147174651272,
+          0
+        ],
+        "cells": 71,
+        "limit": -0.7944147174651272,
+        "initial": 0,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": 0.0001607644895580667,
+        "piston": 1.9575949999999929,
+        "angularSpeed": 2.6094799001738816e-17,
+        "pistonSpeed": 1.8483240805183266e-13,
+        "target": 1.9625000000000004,
+        "force": 9.8100000000004,
+        "contacts": 0
+      },
+      "pistonError": 0.004905000000007487,
+      "completedStroke": true,
+      "angleRange": [
+        0,
+        0.00016076461293218903
+      ]
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "timestep": 0.00025,
+        "contacts": true,
+        "extraTravel": 0.4,
+        "range": [
+          -1.1944147174651272,
+          0
+        ],
+        "cells": 71,
+        "limit": -0.7944147174651272,
+        "initial": 0,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": 0.0001607644895580682,
+        "piston": 1.9575949999999929,
+        "angularSpeed": -2.2903038725679746e-17,
+        "pistonSpeed": 1.8483240805183266e-13,
+        "target": 1.9625000000000004,
+        "force": 9.8100000000004,
+        "contacts": 0
+      },
+      "pistonError": 0.004905000000007487,
+      "completedStroke": true,
+      "angleRange": [
+        -1.205972255575476,
+        0.020950524226677987
+      ]
+    },
+    {
+      "parameters": {
+        "side": "lower",
+        "timestep": 0.000125,
+        "contacts": true,
+        "extraTravel": 0.4,
+        "range": [
+          -1.1944147174651272,
+          0
+        ],
+        "cells": 71,
+        "limit": -0.7944147174651272,
+        "initial": 0,
+        "start": -1.6375000000000002,
+        "end": 1.9625000000000001,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "angle": 0.00016076448955806852,
+        "piston": 1.9575949999999656,
+        "angularSpeed": -3.081750851426681e-17,
+        "pistonSpeed": 8.72551489071352e-13,
+        "target": 1.9625000000000004,
+        "force": 9.809999999999945,
+        "contacts": 0
+      },
+      "pistonError": 0.004905000000034798,
+      "completedStroke": true,
+      "angleRange": [
+        -1.2062357145075284,
+        0.021194496488939816
+      ]
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "timestep": 0.00025,
+        "contacts": true,
+        "extraTravel": 0,
+        "range": [
+          -0.846296296534586,
+          0
+        ],
+        "cells": 65,
+        "limit": -0.846296296534586,
+        "initial": -0.846296296534586,
+        "start": 1.9625000000000001,
+        "end": -1.6375000000000002,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": -0.0008506176733851405,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": 0.02622997090158239,
+        "piston": -0.045562312720358926,
+        "angularSpeed": 0.00010284486396208261,
+        "pistonSpeed": -0.00031416868929481657,
+        "target": -1.6375000000000004,
+        "force": -200,
+        "contacts": 3
+      },
+      "pistonError": 1.5919376872796416,
+      "completedStroke": false,
+      "angleRange": [
+        -0.846472060523268,
+        0.02622997090158239
+      ]
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "timestep": 0.000125,
+        "contacts": true,
+        "extraTravel": 0,
+        "range": [
+          -0.846296296534586,
+          0
+        ],
+        "cells": 65,
+        "limit": -0.846296296534586,
+        "initial": -0.846296296534586,
+        "start": 1.9625000000000001,
+        "end": -1.6375000000000002,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": -0.0008314101214312996,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "angle": 0.02623658698945017,
+        "piston": -0.04558252369981725,
+        "angularSpeed": 0.00010223158945862237,
+        "pistonSpeed": -0.0003123000307337776,
+        "target": -1.6375000000000004,
+        "force": -200,
+        "contacts": 3
+      },
+      "pistonError": 1.591917476300183,
+      "completedStroke": false,
+      "angleRange": [
+        -0.8464720609520436,
+        0.02623658698945017
+      ]
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "timestep": 0.00025,
+        "contacts": false,
+        "extraTravel": 0,
+        "range": [
+          -0.846296296534586,
+          0
+        ],
+        "cells": 65,
+        "limit": -0.846296296534586,
+        "initial": -0.846296296534586,
+        "start": 1.9625000000000001,
+        "end": -1.6375000000000002,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": 0,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": -0.8464720599670104,
+        "piston": -1.642404999999993,
+        "angularSpeed": -3.881953019410831e-14,
+        "pistonSpeed": -1.9038504231451158e-13,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "contacts": 0
+      },
+      "pistonError": 0.00490499999999261,
+      "completedStroke": true,
+      "angleRange": [
+        -0.846472060523268,
+        -0.846296296534586
+      ]
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "timestep": 0.00025,
+        "contacts": true,
+        "extraTravel": 0.4,
+        "range": [
+          -0.846296296534586,
+          0.4
+        ],
+        "cells": 65,
+        "limit": -0.846296296534586,
+        "initial": -0.846296296534586,
+        "start": 1.9625000000000001,
+        "end": -1.6375000000000002,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": -0.0008506176733851405,
+      "failure": null,
+      "final": {
+        "time": 3.999999999999143,
+        "angle": -0.8464720599670162,
+        "piston": -1.642404999999993,
+        "angularSpeed": 2.464324926292927e-13,
+        "pistonSpeed": -1.9037680915426427e-13,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "contacts": 0
+      },
+      "pistonError": 0.00490499999999261,
+      "completedStroke": true,
+      "angleRange": [
+        -0.8672326796046218,
+        0.4046442743631933
+      ]
+    },
+    {
+      "parameters": {
+        "side": "upper",
+        "timestep": 0.000125,
+        "contacts": true,
+        "extraTravel": 0.4,
+        "range": [
+          -0.846296296534586,
+          0.4
+        ],
+        "cells": 65,
+        "limit": -0.846296296534586,
+        "initial": -0.846296296534586,
+        "start": 1.9625000000000001,
+        "end": -1.6375000000000002,
+        "shoeLeft": -1.2625000000000002,
+        "shoeRight": -0.9750000000000001,
+        "shaftX": -1.175
+      },
+      "minimumGap": -0.0008314101214312996,
+      "failure": null,
+      "final": {
+        "time": 4.000000000002015,
+        "angle": -0.8464720599670187,
+        "piston": -1.6424049999999655,
+        "angularSpeed": 4.02974930276357e-13,
+        "pistonSpeed": -8.782046596047527e-13,
+        "target": -1.6375000000000004,
+        "force": 9.809999999999945,
+        "contacts": 0
+      },
+      "pistonError": 0.004904999999965076,
+      "completedStroke": true,
+      "angleRange": [
+        -0.8678759063175353,
+        0.40438291058941506
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/probe-diagonal-catch-tappet.mjs",
+      "sha256": "027e14af0542bd7b10af8d41c2f0e81d21fdd55fbcaf8f4773f2306ede854177"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/tappet-study.js",
+      "sha256": "d5d216d148c81f50316099ad049c3673ea7e2f979a075428e2668ee1072eb4c2"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "7a6ae196621245ba750927e8420ac54228484e1922df95df96e9f3e085b49c4b"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
+    }
+  ]
+}

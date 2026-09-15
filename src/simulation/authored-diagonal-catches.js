@@ -98,7 +98,6 @@ function variableWidthPlate({
   centerline,
   depth,
   material,
-  outlineMaterial,
   role,
   sampleCount = 72,
   widths,
@@ -120,12 +119,6 @@ function variableWidthPlate({
     right.push(point.clone().addScaledVector(normal, -halfWidth));
   }
   const perimeter = [...left, ...right.reverse()];
-  const shape = new THREE.Shape();
-  perimeter.forEach((point, index) => {
-    if (index === 0) shape.moveTo(point.x, point.y);
-    else shape.lineTo(point.x, point.y);
-  });
-  shape.closePath();
   const group = new THREE.Group();
   group.userData.role = role;
   const plate = new THREE.Mesh(
@@ -133,29 +126,8 @@ function variableWidthPlate({
     material,
   );
   plate.userData.role = `${role}-plate`;
-  const outlineCurve = new THREE.CatmullRomCurve3(
-    perimeter.map((point) => new THREE.Vector3(
-      point.x,
-      point.y,
-      depth / 2 + 0.018,
-    )),
-    true,
-    'centripetal',
-  );
-  const outline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      outlineCurve,
-      perimeter.length * 2,
-      0.017,
-      6,
-      true,
-    ),
-    outlineMaterial,
-  );
-  outline.userData.role = `${role}-dark-outline`;
   group.add(plate);
-  outline.geometry.dispose();
-  return { group, outline, plate };
+  return { group, plate };
 }
 
 function annularSectorShape(innerRadius, outerRadius, startAngle, endAngle) {
@@ -845,7 +817,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       centerline: workingCenterline,
       depth: handleDepth,
       material: handleMaterial,
-      outlineMaterial: darkMaterial,
       role: `${role}-curved-tappet-arm`,
       widths: [0.20, 0.17, 0.145, 0.12],
     });
@@ -860,7 +831,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       centerline: latchCurve,
       depth: handleDepth,
       material: handleMaterial,
-      outlineMaterial: darkMaterial,
       role: `${role}-catch-engaging-finger`,
       sampleCount: 48,
       widths: [0.19, 0.14, 0.10],
@@ -874,7 +844,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       centerline: weightCurve,
       depth: handleDepth * 0.86,
       material: handleMaterial,
-      outlineMaterial: darkMaterial,
       role: `${role}-back-weight-arm`,
       sampleCount: 48,
       widths: [0.18, 0.13, 0.075],
@@ -1015,7 +984,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     centerline: catchCenterline,
     depth: catchDepth,
     material: catchMaterial,
-    outlineMaterial: darkMaterial,
     role: 'source-fitted-s-shaped-diagonal-catch-backbone',
     sampleCount: 88,
     widths: [0.18, 0.20, 0.25, 0.31, 0.38, 0.31, 0.25, 0.20],
@@ -1029,7 +997,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     ],
     depth: catchDepth * 0.92,
     material: catchMaterial,
-    outlineMaterial: darkMaterial,
     role: 'diagonal-catch-back-weight-arm',
     sampleCount: 56,
     widths: [0.30, 0.24, 0.18, 0.085],
