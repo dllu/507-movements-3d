@@ -1,0 +1,161 @@
+{
+  "movement": 153,
+  "description": {
+    "period": 12,
+    "timestep": 0.00025,
+    "gravity": 9.81,
+    "barFriction": 0.5,
+    "barDamping": 1,
+    "leverDamping": 0.02,
+    "outputLengthScale": 0.87,
+    "contact": true,
+    "mass": {
+      "disk": {
+        "volume": 2.710323008076472,
+        "centroid": [
+          1.0912734451675378e-16,
+          5.427865307594218e-17,
+          0.003779070707339229
+        ],
+        "inertia": [
+          1.689189506989647,
+          1.9433742521989081,
+          3.5484268493533646,
+          1.6889836968250764e-17,
+          9.24925336945558e-18,
+          -1.5887381941687372e-18
+        ]
+      },
+      "bar": {
+        "volume": 1.1664191765326373,
+        "centroid": [
+          -0.42142097963435965,
+          2.1766652841806162,
+          0.44508457665255535
+        ],
+        "inertia": [
+          0.0733080493616376,
+          4.639834537531106,
+          4.695208438800213,
+          0.030683458555476495,
+          0.01386509315201842,
+          0.00027952597506519794
+        ]
+      },
+      "lever": {
+        "volume": 0.2947286665726391,
+        "centroid": [
+          0.29165296063732443,
+          0.2839857897391307,
+          0.0019904488247367907
+        ],
+        "inertia": [
+          0.10196055286998634,
+          0.08584129150596959,
+          0.18412247955179512,
+          0.02530541497981836,
+          0.0001710959717951331,
+          0.0001665980848102752
+        ]
+      }
+    },
+    "density": 0.8573247252095562,
+    "initialDisk": 1.6993518923437687,
+    "initialLever": -0.5087298243155534,
+    "speed": -0.5235987755982988,
+    "assumptions": "Only disk is driven. Bar and lever move through frictionless finite contact. Gravity resets the lever against an inferred lower stop; bar guide friction and damping are inferred. Legacy overlapping decorative mesh volumes are provisional mass estimates. Finite bearings and nonworking collision pairs are not qualified."
+  },
+  "summary": {
+    "barRange": [
+      1.8912429642830721,
+      1.8912429642830721
+    ],
+    "leverRange": [
+      -0.5100052817683856,
+      0.6445564451796757
+    ],
+    "cycleEnds": [
+      {
+        "time": 0,
+        "bar": 0,
+        "lever": -0.5087298243155534,
+        "velocities": [
+          0,
+          0
+        ]
+      },
+      {
+        "time": 11.999999999994708,
+        "bar": 1.8912429642830721,
+        "lever": -0.49663104402725666,
+        "velocities": [
+          1e-323,
+          -0.02410152685551269
+        ]
+      },
+      {
+        "time": 24.000000000023583,
+        "bar": 1.8912429642830721,
+        "lever": -0.4984492311128796,
+        "velocities": [
+          1e-323,
+          -0.04989442597398284
+        ]
+      },
+      {
+        "time": 36.00000000008088,
+        "bar": 1.8912429642830721,
+        "lever": -0.4984492552410835,
+        "velocities": [
+          1e-323,
+          -0.04989473858856607
+        ]
+      },
+      {
+        "time": 48.00000000013818,
+        "bar": 1.8912429642830721,
+        "lever": -0.4984492324785291,
+        "velocities": [
+          1e-323,
+          -0.04989444366786726
+        ]
+      },
+      {
+        "time": 60.00000000019548,
+        "bar": 1.8912429642830721,
+        "lever": -0.4984493148440595,
+        "velocities": [
+          1e-323,
+          -0.04989551082842221
+        ]
+      },
+      {
+        "time": 72.0000000000254,
+        "bar": 1.8912429642830721,
+        "lever": -0.4984492270166352,
+        "velocities": [
+          1e-323,
+          -0.04989437290141289
+        ]
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-stud-reverser.mjs",
+      "sha256": "ac5cad27e42922e1488223aacf7e3012539d90ab4958415700483641990851cf"
+    },
+    {
+      "file": "src/simulation/mujoco-stud-reverser/physics.js",
+      "sha256": "1960ea201da6f1bdee34c154de1882abd94503de76c51108b734a0a1120b096b"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    }
+  ]
+}

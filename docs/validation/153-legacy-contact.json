@@ -1,0 +1,29 @@
+{
+  "movement": 153,
+  "method": "Bidirectional actual pin and input-arm vertices, edge midpoints and triangle centers through 241 prescribed half-cycle poses. This checks the old production animation, independently of native physics assumptions.",
+  "summary": {
+    "poses": 241,
+    "checks": 645880,
+    "failedPoses": 26,
+    "maxDepth": 0.03722173125024133,
+    "witness": {
+      "time": 3.35,
+      "stage": "gravity-resetting-elbow-at-left-limit",
+      "depth": 0.03722173125024133
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-stud-reverser-legacy-contact.mjs",
+      "sha256": "87abbd52f44be6a5122676a8d383a1fc43727c003200029e64d3b92e7f925a6e"
+    },
+    {
+      "file": "src/simulation/authored-stud-drives.js",
+      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
