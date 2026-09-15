@@ -1,0 +1,27 @@
+{
+  "movement": 158,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 full-cycle poses; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Finite sampling, not a continuous collision proof.",
+  "parts": 16,
+  "pairs": 99,
+  "poses": 129,
+  "checks": 4431726,
+  "failures": {},
+  "sources": [
+    {
+      "file": "scripts/review-source-treadle-assembly.mjs",
+      "sha256": "8f946ee931f2749e262be48825004bece18e851874eab7da5b16865e60528a4f"
+    },
+    {
+      "file": "src/simulation/source-treadle.js",
+      "sha256": "2de4151606d897afbdfa105d9163f91117372331adcfde0a0021828cf82d1e8c"
+    },
+    {
+      "file": "src/simulation/source-treadle-motion.js",
+      "sha256": "3b996d143058f59c557893a2fb7575784549d322527912b5bcfe0401c7fbfe5b"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,3 +1,14 @@
+# Shipped reconstruction: 158 treadle and disk
+
+158 now preserves measured joint centers and the larger crank radius of the
+engraving, with its tapered pedestal and supported treadle. A 16-mesh analytic
+assembly updates only three rigid transforms. Three tests, source-oracle
+comparison, 129-pose clearance audit, production build and desktop/mobile
+playback pass. The model shows ideal linked motion at steady disk speed;
+foot force and flywheel dynamics are not simulated. These limits and inferred
+bearing details are explicit in [movement 158](movement-158.md). Continue at
+159; 150's source fit remains open.
+
 # Shipped reconstruction: 157 pinned bell crank
 
 157 now uses source-proportioned bored links and an analytic full-turn assembly.

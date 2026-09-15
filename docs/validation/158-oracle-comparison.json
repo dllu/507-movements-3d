@@ -1,0 +1,236 @@
+{
+  "movement": 158,
+  "url": "https://507movements.com/mm_158.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "method": "Execute actual source animation in isolated VM at 721 phases; compare old model and reusable analytic solver with oracle dimensions. Foot is the rigid extension of the oracle treadle joint. Separately align disk center, radius and crank phase with engraving.",
+  "sourceHashes": {
+    "html": "8276a688941909dc4e3d99c27eb9c2f25902c83c456a0acf4978ee23a62815b7",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "maximumWorldErrors": {
+    "pin": 2.645237086158283e-16,
+    "joint": 3.0201331455116262e-15,
+    "foot": 3.972054645195637e-15
+  },
+  "reusableSolverErrors": {
+    "pin": 2.645237086158283e-16,
+    "joint": 2.886579864025407e-15,
+    "foot": 4.636427468134552e-15
+  },
+  "diskAndPhaseAlignedLandmarks": [
+    {
+      "name": "pin",
+      "mapped": [
+        227.04622817285488,
+        279.0454927696445
+      ],
+      "engraving": [
+        205,
+        295
+      ],
+      "errorPixels": 27.21364506296512
+    },
+    {
+      "name": "pivot",
+      "mapped": [
+        414.2,
+        428.7
+      ],
+      "engraving": [
+        421,
+        418
+      ],
+      "errorPixels": 12.677933585565114
+    },
+    {
+      "name": "joint",
+      "mapped": [
+        181.44885303046183,
+        415.9519184045426
+      ],
+      "engraving": [
+        181,
+        412
+      ],
+      "errorPixels": 3.977326755386998
+    }
+  ],
+  "engravingParameters": {
+    "pin": [
+      -1.064,
+      -0.77
+    ],
+    "pivot": [
+      1.96,
+      -2.492
+    ],
+    "armLength": 3.36104983598875,
+    "rodLength": 1.672106455941128,
+    "footLength": 4.803299203461748,
+    "restAngle": 3.1165978599708732,
+    "period": 4
+  },
+  "fullTurnMarginsPixels": {
+    "inner": 12.00725151726491,
+    "outer": 39.23780920553743
+  },
+  "footHeightPixels": {
+    "highest": 169.216953947989,
+    "lowest": 432.90532999117033
+  },
+  "samples": [
+    {
+      "phase": 0,
+      "pin": [
+        6,
+        0
+      ],
+      "joint": [
+        -5.691022820690623,
+        -5.68506687789081
+      ],
+      "foot": [
+        -11.588030427587498,
+        -1.9134225038544148
+      ]
+    },
+    {
+      "phase": 0.125,
+      "pin": [
+        4.242640687119286,
+        4.242640687119285
+      ],
+      "joint": [
+        -5.0945576741347445,
+        -4.8026192186321826
+      ],
+      "foot": [
+        -10.792743565512993,
+        -0.7368256248429077
+      ]
+    },
+    {
+      "phase": 0.25,
+      "pin": [
+        3.6739403974420594e-16,
+        6
+      ],
+      "joint": [
+        -5.692513920326917,
+        -5.687398567127087
+      ],
+      "foot": [
+        -11.59001856043589,
+        -1.9165314228361154
+      ]
+    },
+    {
+      "phase": 0.375,
+      "pin": [
+        -4.242640687119285,
+        4.242640687119286
+      ],
+      "joint": [
+        -7.168921426133416,
+        -8.423727420451051
+      ],
+      "foot": [
+        -13.558561901511222,
+        -5.564969893934736
+      ]
+    },
+    {
+      "phase": 0.5,
+      "pin": [
+        -6,
+        7.347880794884119e-16
+      ],
+      "joint": [
+        -8.564322911135733,
+        -12.744577200026074
+      ],
+      "foot": [
+        -15.419097214847646,
+        -11.326102933368098
+      ]
+    },
+    {
+      "phase": 0.625,
+      "pin": [
+        -4.242640687119286,
+        -4.242640687119285
+      ],
+      "joint": [
+        -8.989779503097619,
+        -16.34489969367801
+      ],
+      "foot": [
+        -15.986372670796825,
+        -16.126532924904012
+      ]
+    },
+    {
+      "phase": 0.75,
+      "pin": [
+        -1.102182119232618e-15,
+        -6
+      ],
+      "joint": [
+        -8.941709257398987,
+        -15.436410098980712
+      ],
+      "foot": [
+        -15.922279009865314,
+        -14.915213465307616
+      ]
+    },
+    {
+      "phase": 0.875,
+      "pin": [
+        4.242640687119284,
+        -4.242640687119286
+      ],
+      "joint": [
+        -7.6297394587971965,
+        -9.538543789598414
+      ],
+      "foot": [
+        -14.17298594506293,
+        -7.051391719464553
+      ]
+    },
+    {
+      "phase": 1,
+      "pin": [
+        6,
+        0
+      ],
+      "joint": [
+        -5.691022820690623,
+        -5.68506687789081
+      ],
+      "foot": [
+        -11.588030427587498,
+        -1.9134225038544148
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/compare-source-treadle-oracle.mjs",
+      "sha256": "32784f778be047e92a25d325b90bcc5f9e8507d9d3fcbd0daf5478f1a0c379f7"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "src/simulation/source-treadle-motion.js",
+      "sha256": "3b996d143058f59c557893a2fb7575784549d322527912b5bcfe0401c7fbfe5b"
+    },
+    {
+      "file": "public/engravings/mm_158.png",
+      "sha256": "abebc44c1e73c430939f73d386ceab8cc8a8284f2dd630e756e43b33ad3e7a36"
+    }
+  ]
+}

@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 158) {
+    const {makeSourceTreadle} = await import('./source-treadle.js');
+    const model = makeSourceTreadle();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 157) {
     const {makePinnedElbow} = await import('./pinned-elbow.js');
     const model = makePinnedElbow();
