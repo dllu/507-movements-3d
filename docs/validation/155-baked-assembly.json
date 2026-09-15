@@ -1,0 +1,58 @@
+{
+  "movement": 155,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 interpolated poses between bake samples over startup and the settled cycle; constituent solids share the merged asset body coordinates in both installations; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Pawl/tooth soft working contact reported separately. Finite sampling, not a continuous collision proof.",
+  "results": [
+    {
+      "side": "right",
+      "parts": 30,
+      "pairs": 390,
+      "poses": 129,
+      "checks": 8931638,
+      "failures": {},
+      "workingContacts": {
+        "cog/click": {
+          "firstPose": 36,
+          "maximumDepth": 0.00000243497469939643,
+          "points": 2
+        }
+      },
+      "sampleFile": "src/simulation/baked/assets/155.json.gz"
+    },
+    {
+      "side": "left",
+      "parts": 30,
+      "pairs": 390,
+      "poses": 129,
+      "checks": 7925916,
+      "failures": {},
+      "workingContacts": {},
+      "sampleFile": "src/simulation/baked/assets/155.json.gz"
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-elbow-pawl-baked-assembly.mjs",
+      "sha256": "ce7a9eaeb18f70f618b5738793d0f273daa8bef8110eb65b97d9cf919516dc5b"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/geometry.js",
+      "sha256": "88abfcb1ac38b44777ad1f0a07e6c1adae9b1ec515f98ec9149903793e4de627"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/sync.js",
+      "sha256": "b571e51200e565dd77d2e7872c64d020b14e1dc692838e991c3bdf437bdaccfc"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "src/simulation/baked/assets/155.json.gz",
+      "sha256": "beb17540f561eaa3fec9c7f5e170d6aa41afe6638da33e38a2405f811658d658"
+    },
+    {
+      "file": "src/simulation/baked/assets/155.json.gz",
+      "sha256": "beb17540f561eaa3fec9c7f5e170d6aa41afe6638da33e38a2405f811658d658"
+    }
+  ]
+}

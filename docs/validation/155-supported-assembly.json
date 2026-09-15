@@ -1,0 +1,64 @@
+{
+  "movement": 155,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 65 startup-cycle and 64 eighth-cycle poses in both installations; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Pawl/tooth soft working contact reported separately. Finite sampling, not a continuous collision proof.",
+  "results": [
+    {
+      "side": "right",
+      "parts": 30,
+      "pairs": 390,
+      "poses": 129,
+      "checks": 8992356,
+      "failures": {},
+      "workingContacts": {
+        "cog/click": {
+          "firstPose": 36,
+          "maximumDepth": 0.0000032100398785478734,
+          "points": 2
+        }
+      },
+      "sampleFile": "/dev/shm/155-supported-right-fine-samples.json"
+    },
+    {
+      "side": "left",
+      "parts": 30,
+      "pairs": 390,
+      "poses": 129,
+      "checks": 8177648,
+      "failures": {},
+      "workingContacts": {
+        "cog/click": {
+          "firstPose": 1,
+          "maximumDepth": 0.00015734167500009827,
+          "points": 5
+        }
+      },
+      "sampleFile": "/dev/shm/155-supported-left-fine-samples.json"
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-elbow-pawl-assembly.mjs",
+      "sha256": "30b8a7fb5c129f34e1436aaa4230b8d01add7d31e66068001c85f319d8bc6538"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/geometry.js",
+      "sha256": "88abfcb1ac38b44777ad1f0a07e6c1adae9b1ec515f98ec9149903793e4de627"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/sync.js",
+      "sha256": "b571e51200e565dd77d2e7872c64d020b14e1dc692838e991c3bdf437bdaccfc"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "/dev/shm/155-supported-right-fine-samples.json",
+      "sha256": "6cc155165f787ccca90e8b9b6b0c2390e5bacb7757884ce30fbd5569f8b043ce"
+    },
+    {
+      "file": "/dev/shm/155-supported-left-fine-samples.json",
+      "sha256": "5d5fc3d8825f26352cac73772484c15b41d82030be1013303119a33e4f2aa67e"
+    }
+  ]
+}

@@ -1,24 +1,13 @@
-# Working native candidate: 155 reversible elbow pawl
+# Shipped reconstruction: 155 reversible elbow-pawl feed
 
-155 now has an unregistered MuJoCo candidate with a source-shaped elbow,
-shallower 23-tooth wheel and ordinary pinned input rod. Only the vertical
-input slide is actuated. Right and left pawl installations each feed one tooth
-per settled cycle in opposite directions. Three tests cover passive feeding,
-contact removal, native/rendered body positions and reset. Reversal requires a
-separate turned-over installation; the invalid in-plane swing was rejected.
-Full support/assembly qualification, impact refinement, backlash, rendering and
-baking remain open in [movement 155](movement-155.md). Continue there.
-
-# Open reconstruction: 155 reversible elbow pawl
-
-155's production pawl never physically meets the wheel: all 129 claimed
-engagement poses across both directions retain a 0.471-unit depth gap.
-Pixel measurements also disprove its 154px tooth-root circle and support a
-shallower, approximately 23-tooth reconstruction over the current 20 teeth.
-The source overlay and finite sampling limits are documented in
-[movement 155](movement-155.md). Build and qualify the passive pinned-linkage
-replacement next; production 155 remains uncorrected. 150's source fit is also
-still open.
+155 now uses an 839 KB MuJoCo bake with both pawl installations, natural startup
+and settled one-tooth feed. The source-shaped elbow, shallower teeth and pinned
+input replace disconnected scripted engagement. Bored supports, retainers and
+an upper crosshead pass startup and settled assembly checks. Five focused tests,
+interpolated-assembly checks, production build and packaged desktop/mobile
+playback pass. Inferred tooth count, pawl remounting, input guide and resisting
+load remain explicit in [movement 155](movement-155.md). Continue at 156;
+150's source fit remains open.
 
 # Shipped reconstruction: 154 passive weighted bell-crank
 

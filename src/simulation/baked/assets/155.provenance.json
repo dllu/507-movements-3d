@@ -1,0 +1,144 @@
+{
+  "bytes": 838775,
+  "sha256": "beb17540f561eaa3fec9c7f5e170d6aa41afe6638da33e38a2405f811658d658",
+  "sources": [
+    {
+      "file": "scripts/bake-elbow-pawl.mjs",
+      "sha256": "35e2b2d9793f877868bac2407f00824fb0a24b32e901a74fcd177a6567d68a25"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/geometry.js",
+      "sha256": "88abfcb1ac38b44777ad1f0a07e6c1adae9b1ec515f98ec9149903793e4de627"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/physics.js",
+      "sha256": "e28a5d37e4fe54e34cbf1384e3d3798e265d74c536a5b98295e06fb69db79563"
+    },
+    {
+      "file": "src/simulation/mujoco-elbow-pawl/sync.js",
+      "sha256": "b571e51200e565dd77d2e7872c64d020b14e1dc692838e991c3bdf437bdaccfc"
+    },
+    {
+      "file": "docs/validation/155-supported-right-fine.json",
+      "sha256": "8be96a359b0635fec22d49202d192609f1ad7790564a8cd5116533af3b39b268"
+    },
+    {
+      "file": "docs/validation/155-supported-left-fine.json",
+      "sha256": "dd974ee09b743c640bd287c7e8a0af4a9ddc69bbf6e6424333f288b5edcd72be"
+    },
+    {
+      "file": "docs/validation/155-supported-assembly.json",
+      "sha256": "3e6e9694ebc38c51d721098210d804abf91632e11add86633538a7c4e169b29e"
+    },
+    {
+      "file": "docs/validation/155-supported-refinement.json",
+      "sha256": "a6d6e89d0fe9548198ae367cae3870b7d7dda7af6c63ce05e53354883dba7e10"
+    }
+  ],
+  "installations": {
+    "right": {
+      "version": 1,
+      "names": [
+        "carrier",
+        "rod",
+        "pawl",
+        "output",
+        "slider"
+      ],
+      "turns": [
+        0,
+        0,
+        0,
+        -0.2731819698773733,
+        0
+      ],
+      "period": 4.4,
+      "loopStart": 4.4,
+      "loopEnd": 8.8,
+      "sourceTime": 0,
+      "closure": [
+        4.14188526683644e-13,
+        -4.1415139275923635e-13,
+        5.444680040156413e-9,
+        4.63499905123399e-10,
+        1.0386754119556113e-12
+      ],
+      "meshes": 9,
+      "bounds": {
+        "min": [
+          -2.27,
+          -2.5399999809265137,
+          -0.9199999761581421
+        ],
+        "max": [
+          3.1700000953674317,
+          4.070000190734863,
+          0.7799999904632569
+        ]
+      },
+      "focus": [
+        0.4500000476837158,
+        0.7650001049041746,
+        -0.06999999284744263
+      ],
+      "cameraDirection": [
+        0.02,
+        0.03,
+        15
+      ],
+      "samples": 4401
+    },
+    "left": {
+      "version": 1,
+      "names": [
+        "carrier",
+        "rod",
+        "pawl",
+        "output",
+        "slider"
+      ],
+      "turns": [
+        0,
+        0,
+        0,
+        0.2731819698773733,
+        0
+      ],
+      "period": 4.4,
+      "loopStart": 4.4,
+      "loopEnd": 8.8,
+      "sourceTime": 0,
+      "closure": [
+        3.4559486349061697e-15,
+        -3.456246790503603e-15,
+        9.93784157743427e-9,
+        -5.362115751417207e-9,
+        8.682751783187226e-15
+      ],
+      "meshes": 9,
+      "bounds": {
+        "min": [
+          -2.27,
+          -2.5399999809265137,
+          -0.9199999761581421
+        ],
+        "max": [
+          3.1700000953674317,
+          4.070000190734863,
+          0.7799999904632569
+        ]
+      },
+      "focus": [
+        0.4500000476837158,
+        0.7650001049041746,
+        -0.06999999284744263
+      ],
+      "cameraDirection": [
+        0.02,
+        0.03,
+        15
+      ],
+      "samples": 4401
+    }
+  }
+}

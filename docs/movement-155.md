@@ -1,115 +1,116 @@
-# Movement 155 — source and contact review in progress
+# Movement 155 — reversible elbow-pawl feed
 
-155 is not yet corrected in production. Its current apparent engagement does
-not correspond to contact between the rendered solids. An unregistered source-based MuJoCo candidate now feeds in both directions.
-Full assembly qualification, timestep refinement and offline playback remain open.
+155 now uses an 839 KB offline MuJoCo bake with selectable right and left pawl
+installations. Only the input slide is actuated in the native model. Pin
+constraints move the rod and elbow; gravity and tooth contact determine the
+pawl and output motion. Each settled 4.4-second cycle advances one tooth.
+The browser interpolates five coordinates and loads no physics engine.
 
-## Verified defects
+## Source fidelity
 
-`review-elbow-pawl-legacy-contact.mjs` samples the actual wheel and pawl body
-extents at 129 poses in each direction. All 65 forward and 64 reverse poses
-claiming engagement have a **0.471 world-unit Z gap** between the bodies.
-Consequently no amount of plan-view contact metadata establishes actual
-engagement. The current wheel rotation, pawl lifting and settling are prescribed.
-This check disproves contact; it does not qualify the other assembly parts.
+The [engraving and caption](https://507movements.com/mm_155.html) describe an
+elbow-carried pawl producing intermittent feed in either direction according to
+its installed side. The source marks its 2D animation unavailable.
 
-The existing wheel has 20 teeth and a root radius of 154 source pixels. The
-154-pixel circle is an internal drawn circle, not the outside of the tooth
-spaces. Pixel measurements of the unobscured left/lower silhouette place those
-roots near 182–184 pixels and the outer ink near 211–213 pixels. The present
-56-pixel teeth are approximately twice the source tooth depth.
+The previous production model reported engagement despite a 0.471 world-unit
+Z gap between the pawl and wheel. Every claimed engagement in 129 forward and
+reverse samples had that gap. It also used 20 teeth rooted at the internal
+154px decorative circle, making the teeth approximately twice the drawn depth.
+The old diagnostic remains in `155-legacy-contact.json`.
 
-## Measured source evidence
+Direct pixel sampling of 14 unobscured tooth-tip runs favors 23 regular teeth:
+1.118° RMS angular error, versus 1.881° for 22 and 8.440° for the previous 20.
+The hidden count is inferred, and the drawing is not exactly periodic. The
+[source overlay](validation/155-source-teeth.svg) records that distinction.
+Nearest-pixel sampling and ink thickness give approximately 2px uncertainty.
 
-The [source page](https://507movements.com/mm_155.html) describes an elbow-carried
-pawl that feeds the wheel in either direction according to the side selected.
-It marks the 2D animation unavailable.
+The reconstruction uses 0.01 world units per source pixel, tooth roots at radius
+183px and tips at 210px, and the traced elbow/pawl. It preserves the six-pixel
+upper-pin offset formerly removed by idealization. A 0.020-radian wheel mounting
+adjustment and up to 5px inner pawl toe/neck relief reconcile the regular teeth
+with the drawing without initial penetration. The internal circle is a surface
+marking rather than a tooth boundary. The nearly frontal view retains the source
+arrangement; the full wheel and extended input mechanism remain visible in 3D.
 
-`measure-elbow-pawl-source.mjs` reads the local 525×525 engraving directly,
-without a browser. It samples outermost dark pixels every 0.1 degree and 0.25px
-radius over the unobscured 115–345 degree sector. Fourteen complete tooth-tip
-runs are fitted to consecutive centers for candidate tooth counts:
+The right input uses an ordinary pin, replacing the invented slot. The rod's
+upper pin at source (477, −70), beyond the cropped engraving, attaches to a
+vertical crosshead. Its upper guide, rear frame, bored bearing, stepped output
+shaft, sleeves and retainers are inferred construction.
 
-| Teeth | RMS angular error | Maximum angular error |
-| --- | ---: | ---: |
-| 23 | 1.118° | 2.372° |
-| 22 | 1.881° | 2.724° |
-| 20, current model | 8.440° | 13.361° |
+## Passive feed and reversal
 
-The 23-tooth candidate is materially closer, with roughly 4.1px RMS tangential
-error at radius 210. The drawing is not exactly periodic, and its obscured
-sector does not prove an exact tooth count. Preserve that distinction when
-choosing a regularized working profile. Nearest-pixel sampling and ink thickness
-introduce approximately 2px measurement uncertainty. The radius quantiles also
-include tooth flanks; they are not fitted circular root/tip radii.
+A vertical input stroke of 0.78 world units drives the pinned rod over 4.4s.
+Gravity seats the freely hinged pawl; hinge damping and output bearing friction
+of 3 model dissipative joints and a resisting tool load. Common-density moving
+mesh inertias normalize the output family to mass one. The input crosshead's
+actual mesh inertia is included. Guides and hinges are ideal constraints;
+nonworking solid contacts are audited separately. The painted circle has no mass.
 
-[The source overlay](validation/155-source-teeth.svg) compares the old root circle
-with the measured root region and shows the regular 23-tooth candidate. It has
-been visually inspected. The hidden upper sector of that candidate is a
-reconstruction, not a traced source contour.
+A weak resisting load (0.3) allowed the wheel to follow the elbow backward and
+forward without net feed. The selected load produces one tooth per cycle in
+both installations, without prescribed wheel steps or pawl lifts.
 
-## Native candidate
+Reversal represents a **separate installation**, with the pawl turned over 180°
+about the radial line through its pin and a reflected wheel mounting. The
+selection resets playback; it does not animate disassembly/remounting. Only the
+right-hand installation is shown in the source, so the left setup is inferred.
+Simply swinging the hooked part across its pin in the same plane was rejected:
+it put the handle inside the wheel, with 0.28-unit initial penetration.
 
-The candidate uses a 23-tooth wheel with radius 1.83 at the roots and 2.10 at
-the tips, and a traced elbow/pawl at 0.01 world units per source pixel. It retains
-the upper pin's six-pixel offset. The wheel mount is shifted 0.020 radians from
-the silhouette fit and the pawl's inner toe/neck is relieved by up to five source
-pixels to remove initial overlap. These are explicit regularization choices.
-The pawl and wheel share the same working depth.
+## Numerical and assembly evidence
 
-The right rod is attached through a normal pin. Its inferred upper pin is at
-source (477, −70), beyond the source crop, and connects to an ideal vertical
-slide. Only that slide is actuated: 0.78 world-unit stroke, 4.4-second period.
-The elbow and rod follow the native pin constraint; the pawl and wheel remain
-passive. Gravity and inferred hinge damping seat the pawl, and output bearing
-friction of 3 represents a resisting tool load. Common-density mesh inertias
-normalize wheel-family mass to one. No output step or pawl lift is prescribed.
+The supported native runs at dt=0.00025 start without penetration and settle to
+one tooth per cycle, with per-cycle step error below 1e-7 tooth. Maximum sampled
+soft penetration is 0.000148 (right) and 0.000172 (left); native pin-constraint
+error stays below 7.4e-7 world units. These are sampled bounds, not continuous
+contact proofs.
 
-A low resisting load (0.3) allows the wheel to follow the elbow backward and
-forward without useful net feed. Increasing stroke alone did not correct this.
-The resisted candidate advances one tooth per settled cycle.
+Halving dt from 0.0005 changes the largest sampled pawl angle by 0.000339 rad,
+output angle by 0.0000295 rad, and input-slide coordinate by 0.0000133 world
+units. Reverse motion during seating is below 0.95% of one tooth in either
+installation (approximately 0.54 source pixels at the tooth tips).
 
-Reversal is a **separate installation** of the same pawl turned over 180° about
-the radial line through its pin; its reflected wheel mounting is initialized
-accordingly. It does not animate the remounting operation. A trial that merely
-swung the hooked pawl across the pin in its original plane started with 755
-contacts and 0.28-unit penetration, putting the handle inside the wheel, and
-was rejected. The original shows only the right-hand installation, so the
-left-hand assembly and remounting interpretation remain inferred.
+Each installation contains 30 constituent solids. The native assembly audit
+checks 390 relevant pairs at 129 startup/settled poses, with same-moving-body
+interfaces checked once: 8,992,356 right and 8,177,648 left point queries find no
+unintended intersections. Intended pawl/tooth soft contacts are reported
+separately. Fixed-frame unions are excluded from the mass-overlap check.
 
-Eight-cycle probes at dt=0.0005 record:
+The bake retains startup from the source pose, then repeats the settled second
+cycle. Each installation records 4,401 poses at 0.002s spacing. Tests compare
+17,601 native instants per installation, including between-frame positions.
+Maximum interpolation errors across both installations are 0.000328 rad for the
+pawl, 0.0000311 rad for the wheel, and 0.0000467 world units for the input slide.
+The between-frame assembly check adds 8,931,638 right and 7,925,916 left point
+queries with no unintended intersections. Surface sampling is finite; it does
+not establish a continuous collision proof.
 
-| Installation | Settled teeth per cycle | Max sampled penetration | Max pin-constraint error |
-| --- | ---: | ---: | ---: |
-| Right | −1, error below 7e-8 | 0.000281 | 4.83e-7 |
-| Left | +1, error below 1e-7 | 0.000195 | 6.00e-7 |
+The production bundle has nine merged solid meshes plus a painted circle per
+installation. Five focused tests cover native feed, loss of feed when contact
+is removed, native/rendered body positions, interpolation, configuration, bounds,
+fog, periodic closure and exact restart. Production build and packaged playback
+check both selections, play/pause, restart, orbit/view reset, mobile layout,
+errors and absence of a WASM request. Source-facing and oblique views are inspected.
 
-Both start without native contacts or initial penetration. Three tests check
-single-slide actuation, repeated contact-driven feed in both installations,
-rendered/native body positions, exact native reset, and a stationary wheel when
-contact is removed. These establish a working native candidate, not complete
-source/assembly correctness. Contact sampling is every 0.01 seconds and does
-not prove a continuous penetration bound.
-
-## Reconstruction requirements still open
-
-- Add and audit connected, bored support hardware, the output shaft connection,
-  and the upper input slide/pin. The current candidate omits the fixed frame.
-- Audit all moving and fixed rendered solids through both complete sweeps;
-  qualify mass-volume interfaces and native collision approximation.
-- Refine timestep/contact meshes and quantify holding backlash and interpolation.
-- Inspect source-facing and oblique views, full-sweep bounds and readable timing.
-- Bake the qualified installations and preserve restart/selection in lightweight
-  production playback. Production registration remains unchanged.
+## Reproduction
 
 ```sh
-node scripts/measure-elbow-pawl-source.mjs
-node scripts/review-elbow-pawl-legacy-contact.mjs
-REPORT=docs/validation/155-right-native-prototype.json node scripts/probe-elbow-pawl.mjs
-SIDE=left REPORT=docs/validation/155-left-native-prototype.json node scripts/probe-elbow-pawl.mjs
-node --test tests/elbow-pawl-physics.test.mjs
+REPORT=/dev/shm/155-supported-right.json node scripts/probe-elbow-pawl.mjs
+cp /dev/shm/155-native-samples.json /dev/shm/155-supported-right-samples.json
+SIDE=left REPORT=/dev/shm/155-supported-left.json node scripts/probe-elbow-pawl.mjs
+cp /dev/shm/155-native-samples.json /dev/shm/155-supported-left-samples.json
+DT=.00025 REPORT=docs/validation/155-supported-right-fine.json node scripts/probe-elbow-pawl.mjs
+cp /dev/shm/155-native-samples.json /dev/shm/155-supported-right-fine-samples.json
+SIDE=left DT=.00025 REPORT=docs/validation/155-supported-left-fine.json node scripts/probe-elbow-pawl.mjs
+cp /dev/shm/155-native-samples.json /dev/shm/155-supported-left-fine-samples.json
+node scripts/review-elbow-pawl-refinement.mjs
+node scripts/review-elbow-pawl-assembly.mjs
+node scripts/bake-elbow-pawl.mjs
+node scripts/review-elbow-pawl-baked-assembly.mjs
+node --test tests/elbow-pawl-physics.test.mjs tests/elbow-pawl-baked.test.mjs
 ```
 
-The compact reports carry source hashes in `docs/validation/155-source-teeth.json`
-and `155-legacy-contact.json`. Raw radial samples and the rendered overlay
-screenshot are under `/dev/shm`.
+Reports and source hashes are in `docs/validation/155-*.json` and
+`src/simulation/baked/assets/155.provenance.json`. Raw trajectories, production
+builds and browser artifacts are under `/dev/shm`. Early prototype reports are
+superseded by the supported reports; their history remains in Git.

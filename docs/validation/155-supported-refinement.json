@@ -1,0 +1,82 @@
+{
+  "movement": 155,
+  "method": "Matched .01-second samples from the eighth cycle at dt=.0005 and .00025; maximum reverse excursion measured against the running forward maximum in the fine trajectory. Finite timestep/sampling evidence, not exact impact convergence.",
+  "results": [
+    {
+      "side": "right",
+      "differences": [
+        {
+          "name": "carrier",
+          "maximum": 0.000005289438304687151
+        },
+        {
+          "name": "rod",
+          "maximum": 0.000005271383608969511
+        },
+        {
+          "name": "pawl",
+          "maximum": 0.00033869271141696855
+        },
+        {
+          "name": "output",
+          "maximum": 0.000029407123909086508
+        },
+        {
+          "name": "slider",
+          "maximum": 0.000013206055990068466
+        }
+      ],
+      "maximumReverseExcursion": 0.002565837234210111,
+      "reverseToothFraction": 0.009392410616856856
+    },
+    {
+      "side": "left",
+      "differences": [
+        {
+          "name": "carrier",
+          "maximum": 0.0000022676732914644893
+        },
+        {
+          "name": "rod",
+          "maximum": 0.000002251675502541045
+        },
+        {
+          "name": "pawl",
+          "maximum": 0.00012576097192396052
+        },
+        {
+          "name": "output",
+          "maximum": 0.0000075064904137001065
+        },
+        {
+          "name": "slider",
+          "maximum": 0.000005704494124649656
+        }
+      ],
+      "maximumReverseExcursion": 0.002591606716122241,
+      "reverseToothFraction": 0.009486741446683208
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-elbow-pawl-refinement.mjs",
+      "sha256": "c2b0befdae2241575eae57a2b0a6f1024fc866f81bf00cf381fa6b81d78dfe30"
+    },
+    {
+      "file": "/dev/shm/155-supported-right-samples.json",
+      "sha256": "15d28c2a75a24abe0f6460e193a4105abd362d99f87f52591a43d751e2ddd72a"
+    },
+    {
+      "file": "/dev/shm/155-supported-right-fine-samples.json",
+      "sha256": "6cc155165f787ccca90e8b9b6b0c2390e5bacb7757884ce30fbd5569f8b043ce"
+    },
+    {
+      "file": "/dev/shm/155-supported-left-samples.json",
+      "sha256": "769e73d230a10be39bae0f2694b948c855962fca0feff3dfc4955b5eae07ad21"
+    },
+    {
+      "file": "/dev/shm/155-supported-left-fine-samples.json",
+      "sha256": "5d5fc3d8825f26352cac73772484c15b41d82030be1013303119a33e4f2aa67e"
+    }
+  ]
+}

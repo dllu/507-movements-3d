@@ -15,7 +15,7 @@ for(const side of ['right','left'])test(`155 ${side} installation feeds one toot
   const ticks=Math.round(p.description.options.period/p.timestep),ends=[];
   for(let cycle=0;cycle<4;cycle++){for(let i=0;i<ticks;i++)p.step();ends.push(p.data.qpos[3]);
    mujoco.mj_forward(p.model,p.data);syncElbowPawl(v,{qpos:Array.from(p.data.qpos)});
-   for(const name of ['carrier','rod','pawl','output']){const xyz=v.root.userData.blocks[name].getWorldPosition(new THREE.Vector3()),body=p.bodies[name];assert.ok(xyz.distanceTo(new THREE.Vector3(...p.data.xpos.slice(body*3,body*3+3)))<1e-10,name);}
+   for(const name of ['carrier','rod','pawl','output','slider']){const xyz=v.root.userData.blocks[name].getWorldPosition(new THREE.Vector3()),body=p.bodies[name];assert.ok(xyz.distanceTo(new THREE.Vector3(...p.data.xpos.slice(body*3,body*3+3)))<1e-10,name);}
   }
   for(let i=1;i<ends.length;i++)assert.ok(Math.abs((ends[i]-ends[i-1])/v.root.userData.profile.pitch-(side==='right'?-1:1))<1e-4);
   assert.equal(p.data.qfrc_actuator[2],0);assert.equal(p.data.qfrc_actuator[3],0);
