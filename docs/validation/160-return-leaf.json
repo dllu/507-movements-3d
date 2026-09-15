@@ -1,0 +1,129 @@
+{
+  "movement": 160,
+  "status": "isolated-spring-candidate",
+  "runs": [
+    {
+      "segments": 16,
+      "tailSegments": 3,
+      "timestep": 0.0005,
+      "EI": 2000,
+      "viscosity": 200,
+      "mass": 0.2,
+      "load": 10,
+      "ramp": 1,
+      "release": 2,
+      "assumptions": "Isolated inextensible curved leaf, fixed root direction, distributed mass and linear hinge bending energy, smoothly applied downward tie load. No gravity, band or treadle yet. Effective bending stiffness and damping are inferred, not measured steel properties.",
+      "maximumLinkLengthError": 7.216449660063518e-16,
+      "loadedTie": [
+        0.8120855792261686,
+        2.3083707462087637,
+        0
+      ],
+      "loadedDisplacement": [
+        0.03808557922616862,
+        -0.355629253791236,
+        0
+      ],
+      "finalReturnError": 4.6646224838315135e-12
+    },
+    {
+      "segments": 32,
+      "tailSegments": 6,
+      "timestep": 0.0005,
+      "EI": 2000,
+      "viscosity": 200,
+      "mass": 0.2,
+      "load": 10,
+      "ramp": 1,
+      "release": 2,
+      "assumptions": "Isolated inextensible curved leaf, fixed root direction, distributed mass and linear hinge bending energy, smoothly applied downward tie load. No gravity, band or treadle yet. Effective bending stiffness and damping are inferred, not measured steel properties.",
+      "maximumLinkLengthError": 6.38378239159465e-16,
+      "loadedTie": [
+        0.8153895104530567,
+        2.2914588621151983,
+        0
+      ],
+      "loadedDisplacement": [
+        0.04138951045305994,
+        -0.37254113788480137,
+        0
+      ],
+      "finalReturnError": 5.0483580289840486e-12
+    },
+    {
+      "segments": 64,
+      "tailSegments": 12,
+      "timestep": 0.0005,
+      "EI": 2000,
+      "viscosity": 200,
+      "mass": 0.2,
+      "load": 10,
+      "ramp": 1,
+      "release": 2,
+      "assumptions": "Isolated inextensible curved leaf, fixed root direction, distributed mass and linear hinge bending energy, smoothly applied downward tie load. No gravity, band or treadle yet. Effective bending stiffness and damping are inferred, not measured steel properties.",
+      "maximumLinkLengthError": 5.273559366969494e-16,
+      "loadedTie": [
+        0.8170761515762798,
+        2.282893175641888,
+        0
+      ],
+      "loadedDisplacement": [
+        0.04307615157627753,
+        -0.3811068243581115,
+        0
+      ],
+      "finalReturnError": 5.250551484820709e-12
+    },
+    {
+      "segments": 64,
+      "tailSegments": 12,
+      "timestep": 0.00025,
+      "EI": 2000,
+      "viscosity": 200,
+      "mass": 0.2,
+      "load": 10,
+      "ramp": 1,
+      "release": 2,
+      "assumptions": "Isolated inextensible curved leaf, fixed root direction, distributed mass and linear hinge bending energy, smoothly applied downward tie load. No gravity, band or treadle yet. Effective bending stiffness and damping are inferred, not measured steel properties.",
+      "maximumLinkLengthError": 5.273559366969494e-16,
+      "loadedTie": [
+        0.8170761516436663,
+        2.282893175662051,
+        0
+      ],
+      "loadedDisplacement": [
+        0.04307615164366407,
+        -0.3811068243379485,
+        0
+      ],
+      "finalReturnError": 5.377633228747653e-12
+    }
+  ],
+  "spatialRefinementLoadedTip": [
+    0.017231592646827384,
+    0.008730162829958853
+  ],
+  "timestepRefinementLoadedTip": 7.033840870354339e-11,
+  "sources": [
+    {
+      "file": "scripts/probe-return-leaf.mjs",
+      "sha256": "7adee534b63199d6280b59a5eba0bbd1da9f2d4c68aa849fa91f09b1329eb631"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/leaf-physics.js",
+      "sha256": "beeb88c924ec6151dd4ff898832ea1c25595b685f0e27c5aafc1e4e4250bfb1a"
+    },
+    {
+      "file": "src/simulation/mujoco-spring-return-treadle/source.js",
+      "sha256": "6b5a60855bc60af2829a0c75d6adf927ace7b387f30f333c9a7ea42e86a2606b"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    },
+    {
+      "file": "public/engravings/mm_160.png",
+      "sha256": "6c71f2b15f18f77517c571effe5625cc556deeff78faf446a40af128b2e7eb1a"
+    }
+  ]
+}

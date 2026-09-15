@@ -78,3 +78,60 @@ the stretching spring curve and qualify the spring-driven return under explicit
 load/material assumptions. Inspect actual band/drum, attachment, spring and
 frame clearances through the cycle. Then bake expensive work and verify framing,
 restart, speed and desktop/mobile playback before production registration.
+
+## Isolated native leaf spring
+
+`mujoco-spring-return-treadle/source.js` now records the spring centerline from
+ink-boundary midpoints. The obscured tie region is interpolated between visible
+leaf readings. A Catmull–Rom curve through those readings provides a common
+rest geometry for refinement. At 64 loaded-span links plus 12 tail links,
+the discrete centerline lies within 0.026 pixels of the recorded readings.
+This checks reproduction of the trace, not its measurement uncertainty.
+An engraving overlay of rest and loaded centerlines was inspected in
+`/dev/shm/160-leaf-overlay.png`.
+
+`leaf-physics.js` is an isolated MuJoCo bending diagnostic. The first link fixes
+the root position and direction; subsequent hinges have rest curvature from
+the source and stiffness EI divided by their adjacent half-length sum. The
+links cannot stretch. Distributed mass and hinge damping are explicit. A
+one-second cosine load ramp applies a downward point force to the actual tie,
+then releases it at two seconds. There are no actuators and no prescribed
+return trajectory. Cartesian kinematics are refreshed before force application
+and state inspection so the force lever arms match current joint positions.
+The point-force generalized torques pass an independent virtual-work check.
+
+The diagnostic uses mass 0.2, effective EI 2000, bending viscosity 200 and load
+10 in consistent kilogram/world-length/second units. These are inferred study
+parameters, not measured material properties. Gravity, the treadle, band forces,
+pulley inertia, visible spring cross-section and hardware contacts are still
+absent. The source's initial curve is treated as the unloaded rest shape for
+this isolation test; assembly preload may require a different stress-free shape.
+The formulation uses MuJoCo's native
+[joint stiffness, spring reference and damping](https://mujoco.readthedocs.io/en/latest/XMLreference.html#body-joint).
+
+Four runs compare 16/32/64 loaded-span links at 0.0005-second steps and 64 links
+at 0.00025 seconds. Maximum individual-link length error is 7.3e-16 world
+units. The loaded tie changes by 0.01723 world units from 16 to 32 links and
+0.008730 from 32 to 64 (0.49 engraving pixels). The halved timestep changes
+the loaded tie by 7.1e-11 world units. Link refinement, including the finite
+clamped first segment, remains the larger discretization error.
+
+At the finest tested resolution, the tie moves 0.04308 world units right and
+0.38111 down under load: about 2.39 and 21.17 pixels. It returns to its initial
+position within 1e-7 world units by four seconds without an actuator. The
+assembly must therefore permit lateral spring-eye movement and recompute both
+band tangencies. Keeping the upper band endpoint on a prescribed vertical line
+would reintroduce a constraint absent from the source.
+
+Reproduce with:
+
+```sh
+node scripts/probe-return-leaf.mjs
+node --test tests/return-leaf.test.mjs tests/axially-separated-band.test.mjs
+```
+
+All four tests pass. Reports and provenance are in
+`docs/validation/160-return-leaf.json`; raw motion remains in `/dev/shm`.
+This prototype is not registered in production. Next couple the spring to the
+band and treadle, qualify preload and passive return, and reconstruct the
+source-shaped visible assembly.

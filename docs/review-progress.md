@@ -1,11 +1,13 @@
 # Active reconstruction: 160 spring-return treadle
 
-The source has no 2D animation. A reproducible review finds full-wrap band
-self-overlap at every sampled phase and 2.19% artificial leaf-spring stretching.
-A tested spatial band candidate preserves the complete XY projection, constant
-length and material no-slip velocity while providing positive sampled self-
-clearance. Production is unchanged pending the source-shaped spring, pulley
-and support reconstruction and mechanical validation. See [movement 160](movement-160.md).
+The source has no 2D animation. The old model has full-wrap band self-overlap
+and artificial spring stretching. A spatial band candidate preserves projection,
+length and no-slip motion. A source-traced, fixed-length native leaf now bends
+under a point load and returns without an actuator. Four tests pass, including
+virtual work; 32-to-64-link loaded-tip refinement is 0.49 pixels. The native
+leaf’s lateral attachment motion must be allowed in the coupled band model.
+Production is unchanged pending spring/band/treadle coupling, preload and
+source-shaped hardware reconstruction. See [movement 160](movement-160.md).
 The full 507-movement review remains active.
 
 # Shipped reconstruction: 159 cord treadle
