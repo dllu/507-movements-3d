@@ -12,6 +12,10 @@ diameter, with inferred hidden fastening geometry. Qualify the finite rope and
 final assembly next. The updated scaled model still differs by 23.4 source
 pixels when timestep is halved and 22.4 pixels across rope resolutions, despite
 small endpoint errors. The finite rope is not converged.
+A 1.125 px initial bow reduces early buckling-branch sensitivity but leaves
+8.6 px full-cycle disagreement. The bowed trajectory exposes a too-broad native
+endpoint contact exclusion; restrict contact exemption to the secured cord
+region before further qualification.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 

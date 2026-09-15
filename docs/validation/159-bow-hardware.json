@@ -1,0 +1,50 @@
+{
+  "movement": 159,
+  "method": "Native poses every .02 s; rope centerlines sampled at <=.015 display units, minus capsule radius .045, against actual visible triangle surfaces. Intended embedding excluded only within .15 material units of the matching anchor. Pulley and floor contact depths reported separately. Spatial distance sampling can miss up to half the spacing; no continuous-time proof.",
+  "samples": 201,
+  "queries": 68526,
+  "minimum": {
+    "crankCordAnchor": {
+      "clearance": 0.03972040432400217,
+      "time": 0.41999999999997006,
+      "materialDistance": 0.1601795341282459
+    },
+    "treadleCordAnchor": {
+      "clearance": -0.014365962332417027,
+      "time": 0.3399999999999789,
+      "materialDistance": 11.021408941561699
+    }
+  },
+  "contacts": {
+    "pulleyCore": {
+      "clearance": -0.0020281954970799085,
+      "time": 0,
+      "materialDistance": 6.1139443017234685
+    }
+  },
+  "failures": {
+    "treadleCordAnchor": {
+      "clearance": -0.014365962332417027,
+      "time": 0.3399999999999789,
+      "materialDistance": 11.021408941561699
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-rope-hardware.mjs",
+      "sha256": "3ceed27c2a7ea2c7805c3978b15598fb670ed40d1c6ef2f7b1f67c0b56decedf"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/solids.js",
+      "sha256": "8b118b3022e125bbfa33572495113ba3fedebf079c810e646ecc6a321e32ae74"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    },
+    {
+      "file": "/dev/shm/159-bow-full.json",
+      "sha256": "b9608227d94091da32fd8247410ce575a006a51ca6cfa9f7d705ff87f71760c6"
+    }
+  ]
+}

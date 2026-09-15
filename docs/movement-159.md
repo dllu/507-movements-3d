@@ -355,9 +355,62 @@ SAMPLES=/dev/shm/159-lower-eye.json REPORT=docs/validation/159-lower-eye-clearan
 SAMPLES=/dev/shm/159-lower-eye.json REPORT=docs/validation/159-lower-eye-hardware.json node scripts/review-cord-treadle-rope-hardware.mjs
 ```
 
+## Initial buckling sensitivity
+
+Matching material-vertex comparisons localize the large early timestep
+sensitivity to the lower slack cord after the foot reaches the floor near 0.1 s.
+At 0.2 s, the second vertex above the secured end lies 0.1763 display units left
+of the endpoint in the 0.1 ms run, but 0.1107 units right in the 0.05 ms run.
+The treadle itself remains at nearly identical floor-rest angles. This supports
+buckling-branch sensitivity as a contributor, rather than simply divergent
+rigid-link motion. The first differences are already present in the incoming
+cord before floor contact, so buckling is not established as the sole cause.
+
+An optional `initialBow` parameter now adds a smooth sine-squared lateral bow
+to the outgoing leg at initialization. A 0.02-unit amplitude is 1.125 source
+pixels (2 mm at the assumed physical scale), with unchanged endpoints and zero
+bow slope at each end. It is an explicit initial-shape assumption, not a runtime
+forcing term; all subsequent rope joints remain passive. Default zero preserves
+the historical diagnostic. A test checks source displacement, fixed endpoints,
+planarity, single-actuator count and deterministic reset.
+
+In a 0.4 s diagnostic at both timesteps, this bow selects the same initial
+buckling side. Maximum material-vertex disagreement drops from 0.3521 to 0.0683
+units (19.81 to 3.84 source pixels). This is evidence of initial-condition
+sensitivity, not a convergence certificate. See
+[short comparison](validation/159-rope-buckling.json).
+
+Over a full 4 s cycle the bow reduces maximum matching-vertex disagreement
+from 0.42974 to 0.15235 units (24.17 to 8.57 source pixels). These are direct
+96-link vertex comparisons, so they differ slightly from earlier 129-fraction
+resampling metrics. The result remains too sensitive to claim convergence;
+the initial bow is an experimental parameter, not a qualified production choice.
+See [full comparison](validation/159-rope-buckling-full.json) and native reports
+[coarse](validation/159-bow-full-native.json),
+[fine](validation/159-bow-full-fine-native.json).
+
+The bowed trajectory passes the rigid-part audit but **fails the rope/hardware
+audit**: 0.01437 units of penetration into the treadle head at 0.34 s, at material
+distance 11.02141 along the rope. This is outside the intended last 0.15 units
+of secured cord. The native model currently excludes whole endpoint-adjacent
+links whenever any part lies inside that region; the unchecked remainder can
+fold back into the head. The next fix is to restrict the exclusion spatially
+along those links, maintaining head contact on the remainder. Do not enlarge
+the audit exemption to hide this collision. Reports:
+[rigid audit](validation/159-bow-clearance.json),
+[failed rope/hardware audit](validation/159-bow-hardware.json).
+
+```sh
+RIGID_CORE=1 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-bow-full.json REPORT=/dev/shm/159-bow-full-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-bow-full-fine.json REPORT=/dev/shm/159-bow-full-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+FULL=1 node scripts/review-cord-treadle-buckling.mjs
+node --test tests/cord-treadle-initial-bow.test.mjs
+```
+
 ## Remaining work
 
-Qualify the inferred rope/anchor fastening and final moving assembly.
+Restrict native endpoint contact exclusions to the secured material region,
+then qualify the inferred rope/anchor fastening and final moving assembly.
 Refine the finite rope at the explicit physical scale and qualify
 timestep/rope-resolution convergence and longer-run behavior. Preserve the
 measured joints and floor. Qualify

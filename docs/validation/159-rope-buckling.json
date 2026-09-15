@@ -1,0 +1,91 @@
+{
+  "movement": 159,
+  "duration": 0.4,
+  "method": "Compare identical material vertices of the 96-link rope at matching .02 s samples, over the reported duration. Initial bow is a starting-shape assumption, not a runtime forcing term. Lateral offset uses the penultimate-but-one vertex relative to the secured end.",
+  "results": [
+    {
+      "name": "straight",
+      "windows": [
+        {
+          "start": 0,
+          "end": 0.1,
+          "maximumPointDifference": 0.092343827949447,
+          "maximumTreadleDifference": 0.0006546289737482947
+        },
+        {
+          "start": 0.1,
+          "end": 0.4,
+          "maximumPointDifference": 0.35210850580668407,
+          "maximumTreadleDifference": 0.000003394881934681848
+        }
+      ],
+      "firstDifference": {
+        "time": 0.08000000000000126,
+        "link": 11,
+        "distance": 0.016157769324029472
+      },
+      "maximum": {
+        "time": 0.3399999999999789,
+        "link": 92,
+        "distance": 0.35210850580668407
+      },
+      "nearEndLateralOffsetAtPoint2Seconds": {
+        "coarse": -0.1762727599382652,
+        "fine": 0.11074913514792639
+      }
+    },
+    {
+      "name": "bow .02",
+      "windows": [
+        {
+          "start": 0,
+          "end": 0.1,
+          "maximumPointDifference": 0.029865224245386006,
+          "maximumTreadleDifference": 0.00033547197193262157
+        },
+        {
+          "start": 0.1,
+          "end": 0.4,
+          "maximumPointDifference": 0.06829804374940869,
+          "maximumTreadleDifference": 0.00000875617489520808
+        }
+      ],
+      "firstDifference": {
+        "time": 0.10000000000000184,
+        "link": 3,
+        "distance": 0.010967617294269016
+      },
+      "maximum": {
+        "time": 0.3399999999999789,
+        "link": 7,
+        "distance": 0.06829804374940869
+      },
+      "nearEndLateralOffsetAtPoint2Seconds": {
+        "coarse": 0.1513546842132607,
+        "fine": 0.14566266464067423
+      }
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-buckling.mjs",
+      "sha256": "5b70650e39a096414ba72276d48cafb80f7c10366b4b87ed7acf2ce685e11423"
+    },
+    {
+      "file": "/dev/shm/159-lower-eye.json",
+      "sha256": "b3e2935e250eb614fdfdd16b32461228f335b86fd9e5f85811aa415b57290ff1"
+    },
+    {
+      "file": "/dev/shm/159-lower-eye-fine.json",
+      "sha256": "5dd7e82624b8a0e558e0cfeafc9900ce5f1fcadc917ec0990f450a98331b2e63"
+    },
+    {
+      "file": "/dev/shm/159-bow-short.json",
+      "sha256": "0898a9a2fa797966a026bd18ee591e6cafad1dcac5f509ed89f63be81acea369"
+    },
+    {
+      "file": "/dev/shm/159-bow-short-fine.json",
+      "sha256": "ebbcaceae8654835e0dffeabbab7bc168179ec3b14d163ebafc3250ea0e3d5ce"
+    }
+  ]
+}
