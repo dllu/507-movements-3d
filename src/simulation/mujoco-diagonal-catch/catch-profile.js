@@ -2,14 +2,17 @@ import * as THREE from 'three';
 import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {fitDiagonalHandle} from './handle-fit.js';
 
-// Outer boundary traced from plate 181, registered at the catch pivot.
+// Outer boundary traced from plate 181, registered at the catch pivot. The
+// rounded head is a compromise between both plates, whose radial dimensions
+// differ. Keep the upper holding ledge at its qualified source-181 coordinates.
 // The two catching faces belong to this continuous plate, not circular sockets.
 export function diagonalCatchProfile() {
+ const headLandmarks={lip:[203,117],leftShoulder:[179,117]};
  const path=new THREE.Shape();
- path.moveTo(193,113);
- path.bezierCurveTo(190,128,170,126,169,113);
- path.bezierCurveTo(167,96,189,88,202,99);
- path.bezierCurveTo(209,104,213,113,217,120);
+ path.moveTo(...headLandmarks.lip);
+ path.bezierCurveTo(200,132,180,130,...headLandmarks.leftShoulder);
+ path.bezierCurveTo(177,100,199,92,212,103);
+ path.bezierCurveTo(216,108,213,113,217,120);
  path.lineTo(211,126);
  path.bezierCurveTo(211,145,224,161,235,174);
  path.bezierCurveTo(242,190,251,197,268,194);
@@ -24,11 +27,11 @@ export function diagonalCatchProfile() {
  path.bezierCurveTo(329,281,301,258,277,259);
  path.bezierCurveTo(254,267,235,254,232,234);
  path.bezierCurveTo(229,214,218,196,207,182);
- path.bezierCurveTo(197,168,199,139,193,113);
+ path.bezierCurveTo(197,168,205,143,...headLandmarks.lip);
  path.closePath();
  const raster=path.getPoints(12).map(p=>[p.x,p.y]);
  const outline=poly(raster.map(([x,y])=>[(x-271)*.0125,(234-y)*.0125]));
- return {raster,polygons:clip.difference(outline,poly(circle([0,0],.12,96)))};
+ return {raster,headLandmarks,polygons:clip.difference(outline,poly(circle([0,0],.12,96)))};
 }
 
 // Registered faces compensate for the fitted handle axes and finite shoe

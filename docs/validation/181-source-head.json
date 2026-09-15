@@ -1,0 +1,166 @@
+{
+  "movements": [
+    181,
+    182
+  ],
+  "scope": "Two manually selected rounded-head landmarks per plate; not whole-contour or complete-assembly qualification.",
+  "method": "Register at the catch pivot and evaluate both outlines at the same current baked angles. The radial lower bound allows arbitrary rotation but fixes each landmark on a rigid body; it depends on the hand-selected correspondences.",
+  "radialDiscrepancies": [
+    {
+      "name": "lip",
+      "radiiPixels": [
+        143.96180048887967,
+        123.54756169184401
+      ],
+      "differencePixels": 20.414238797035665,
+      "minimumPossibleMaximumErrorPixels": 10.207119398517833
+    },
+    {
+      "name": "leftShoulder",
+      "radiiPixels": [
+        158.25612152457168,
+        138.2208377922808
+      ],
+      "differencePixels": 20.03528373229088,
+      "minimumPossibleMaximumErrorPixels": 10.01764186614544
+    }
+  ],
+  "baselineCommit": "1fc48f9c2b3f60b2af6c5a7969bfa91864fb52d7",
+  "previousHeadLandmarks": {
+    "lip": [
+      193,
+      113
+    ],
+    "leftShoulder": [
+      169,
+      113
+    ]
+  },
+  "currentHeadLandmarks": {
+    "lip": [
+      203,
+      117
+    ],
+    "leftShoulder": [
+      179,
+      117
+    ]
+  },
+  "measurements": [
+    {
+      "movement": 181,
+      "catchAngle": 0.0009849402582771875,
+      "pivot": [
+        271,
+        234
+      ],
+      "landmarks": [
+        {
+          "name": "lip",
+          "measured": [
+            193,
+            113
+          ],
+          "modeled": [
+            202.88479499205974,
+            117.06703267800705
+          ],
+          "errorPixels": 10.688775740889435,
+          "previousModeled": [
+            192.8808600821998,
+            113.0768840192118
+          ],
+          "previousErrorPixels": 0.14179376722408754
+        },
+        {
+          "name": "leftShoulder",
+          "measured": [
+            169,
+            113
+          ],
+          "modeled": [
+            178.88480663334653,
+            117.09067124038373
+          ],
+          "errorPixels": 10.697803203254118,
+          "previousModeled": [
+            168.8808717234866,
+            113.10052258158848
+          ],
+          "previousErrorPixels": 0.15587281890781093
+        }
+      ]
+    },
+    {
+      "movement": 182,
+      "catchAngle": 0.0320149890998407,
+      "pivot": [
+        270,
+        236
+      ],
+      "landmarks": [
+        {
+          "name": "lip",
+          "measured": [
+            210,
+            128
+          ],
+          "modeled": [
+            198.28973176434093,
+            121.23660239619153
+          ],
+          "errorPixels": 13.523088748443824,
+          "previousModeled": [
+            188.1668180427903,
+            117.55874734384894
+          ],
+          "previousErrorPixels": 24.20139647636492
+        },
+        {
+          "name": "leftShoulder",
+          "measured": [
+            189,
+            124
+          ],
+          "modeled": [
+            174.30203022815957,
+            122.00483088504183
+          ],
+          "errorPixels": 14.832768292237901,
+          "previousModeled": [
+            164.17911650660895,
+            118.3269758326992
+          ],
+          "previousErrorPixels": 25.460939900075786
+        }
+      ]
+    }
+  ],
+  "rmsErrorPixels": 12.565606478838243,
+  "previousRmsErrorPixels": 17.56424958409537,
+  "maximumErrorPixels": 14.832768292237901,
+  "previousMaximumErrorPixels": 25.460939900075786,
+  "motionHash": "89460c4e21b08689f42e91bf9c662b93026ee7640be3181b1afcdb289a7b141d",
+  "sources": [
+    {
+      "file": "scripts/review-diagonal-catch-source.mjs",
+      "sha256": "e7482fb3dd260719953fe190ad455f75d6ff116d9071331fc0029998caa01dbb"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
+      "sha256": "cbd7ee64146d007620ac4cab3fbb1c213db5ce841f8bcbcd0893d40c2b22f47e"
+    },
+    {
+      "file": "docs/validation/181-projected-contact-motion.json",
+      "sha256": "8b3d2a1240f6698ab8233f56adae9ca46fd366ab7b039c39e86a21fb8c15cdce"
+    },
+    {
+      "file": "public/engravings/mm_181.png",
+      "sha256": "c072cc9e89c4aa16cf105ace0cff201b24b80562d0e53f5a3eaac3d35dbe394d"
+    },
+    {
+      "file": "public/engravings/mm_182.png",
+      "sha256": "a8431ab34a0a622ff92b3887493f5520836fe265b1e476afd7f1859a86e15371"
+    }
+  ]
+}

@@ -21,22 +21,22 @@
   ],
   "bounds": {
     "min": [
-      -2.5548796561284868,
-      -5.450399832614488,
+      -2.554635860154062,
+      -5.4495088687704465,
       -0.8260000029206276
     ],
     "max": [
-      2.2168385199363674,
+      2.216838488797031,
       2.7224999046325684,
       0.849999997317791
     ]
   },
   "focus": [
-    -0.1690205680960597,
-    -1.3639499639909596,
+    -0.16889868567851551,
+    -1.363504482068939,
     0.011999997198581691
   ],
-  "inputHash": "10f77c4dbaa12f36cc3f7f896c99dc1e06b09fdc8831e26d4898a6e1a706471e",
+  "inputHash": "89460c4e21b08689f42e91bf9c662b93026ee7640be3181b1afcdb289a7b141d",
   "sources": [
     {
       "file": "scripts/bake-diagonal-catch.mjs",
@@ -52,7 +52,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
-      "sha256": "fda54e20db805443250e37df8d3a622aa774742ea7b3a48530c27d7e10428cc9"
+      "sha256": "cbd7ee64146d007620ac4cab3fbb1c213db5ce841f8bcbcd0893d40c2b22f47e"
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
@@ -64,11 +64,11 @@
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "7f790ecbe302604b8cbc1194aba712d1e535c99c0bdbc7b74415a5d63d65a013"
+      "sha256": "8b3d2a1240f6698ab8233f56adae9ca46fd366ab7b039c39e86a21fb8c15cdce"
     }
   ],
   "keys": 9001,
-  "bytes": 549087,
-  "sha256": "cc4b92b409db709bc5436c8e565ccd43a4deab2fb0c86bb264078452ee66af96",
+  "bytes": 551060,
+  "sha256": "7d5ef298c5a88fa68eb5ee77afd9ab4ba37d4d1371f1b1848da844b7816264f1",
   "status": "baked-assembly-source-review-open"
 }

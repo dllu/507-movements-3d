@@ -1,6 +1,6 @@
 # Movements 181–182 — baked passive catch; source contours under review
 
-The browser now loads a 50-mesh reconstruction driven by a 549,087-byte motion
+The browser now loads a 50-mesh reconstruction driven by a 551,060-byte motion
 and geometry bake. The old circular latch pockets and cylindrical latch rollers
 are removed. A continuous S-shaped catch, finite fingers, bored rear supports
 and axial webs replace them. Both engravings show stages of the same mechanism;
@@ -34,7 +34,20 @@ is 0.10 model units (eight source pixels); the shoe spans registered source
 X pixels 170–193. Its rounded tips use the same 64-sided section as the qualified
 native contact geometry.
 
-The catch outline is traced from 181. The upper holding face is registered
+The catch body is traced from 181. Its rounded upper head is a compromise
+between both plates: the lip and left shoulder move ten source pixels right
+and four down, with a blended neck that retains the upper holding ledge.
+The [head comparison](validation/181-source-head.json) registers both engravings
+at their catch pivots and uses the baked catch angles without per-stage scaling.
+Across two corresponding hand-selected landmarks in each drawing, RMS error
+decreases from 17.56 to 12.57 pixels; maximum error is 14.83 pixels. This measures
+those four points, not the entire contour. The two drawings have different
+radial dimensions: each selected landmark's radius differs by about 20 pixels.
+Even with arbitrary rotation, a rigid reconstruction must miss at least one
+plate by about 10 pixels for each correspondence. The compromise is close to
+that lower bound, though it is not a claim of globally optimal contour fit.
+
+The upper holding face is registered
 three source pixels higher, with its toe extended two pixels along the ledge.
 The lower holding heel moves six pixels right and five up. Its tripping nose
 and holding heel share a continuous rear support. That support follows the
@@ -61,36 +74,40 @@ as surface marks so its travel remains legible from the front. The rod's 0.17-un
 Fog, ground, the former added frame and floating contact markers are disabled.
 
 The front and oblique views are improved, but source review is **not complete**.
-The lower finger's holding heel still extends outside the engraved crescent, and
-the catch's upper contour does not superimpose on both drawings. The upper horn's
-rear offset is an interpretation of the two views, not a measured depth.
-These contours need further work before either movement is marked fully reviewed.
+The lower finger's holding heel still extends outside the engraved crescent.
+The catch's upper contour retains the quantified compromise above; the upper
+horn's rear offset is an interpretation of the two views, not a measured depth.
+The lower heel needs further source review before either movement is marked
+fully reviewed.
 
 ## Passive transfer and contact correction
 
 The [native study](validation/181-transfer-study.json) passes three complete
-cycles at each of 0.0005-, 0.00025- and 0.000125-second timesteps. Both isolated
+cycles at each of 0.00025-, 0.000125- and 0.0000625-second timesteps. The former
+0.0005-second timestep misses the third return after the head change; it remains
+in the report as a sensitivity check. The native model now defaults to 0.00025
+seconds, matching the bake's integration step. Both isolated
 handles hold with zero friction, release under an external catch-lift control,
 and fail to hold when contact is disabled. The previous 0.25 catch mass remains
 a failed return control; the inferred 0.17 mass completes both transfers.
 
 Every native solver step is checked. MuJoCo's soft contacts still penetrate by
-up to 0.001348 model units (about 0.108 source pixels), so the raw native probe
+up to 0.001314 model units (about 0.105 source pixels), so the raw native probe
 intentionally fails its separate finite-clearance gate. Increasing contact
 margin or deepening the notch upset retention in exploratory trials; these
 alternatives are not used in playback.
 
 The [offline projection](validation/181-projected-contact-motion.json) records
 the second native cycle in 9,001 poses at 2 ms spacing. Small joint-position
-corrections separate finite surfaces; no latch event is prescribed. Only 17
+corrections separate finite surfaces; no latch event is prescribed. Only 18
 recorded poses require contact correction, each within three iterations. A
 smooth correction over the final half-second of the settled bottom dwell
 removes the residual settling offset and closes the loop exactly.
 
-Including that loop correction, the largest angular change is 0.000783 radians
-(0.045 degrees), and the largest piston shift is 0.000477 units (0.038 source
+Including that loop correction, the largest angular change is 0.000849 radians
+(0.049 degrees), and the largest piston shift is 0.000504 units (0.041 source
 pixels). Across 36,001 interpolated poses at 0.5 ms spacing, minimum contact
-clearance is 0.00002966 units. Independent intersections of unsplit polygon
+clearance is 0.00002962 units. Independent intersections of unsplit polygon
 unions at 901 poses find zero overlap and detect overlap in the uncorrected
 trajectory. These are sampled checks, not continuous collision proof.
 
@@ -98,7 +115,7 @@ trajectory. These are sampled checks, not continuous collision proof.
 
 The [serialized assembly sweep](validation/181-baked-assembly-clearance.json)
 checks all 50 meshes across 1,025 different-body pairs at 129 poses, with
-8,898,074 finite-surface queries and no detected intersections. This includes
+8,760,976 finite-surface queries and no detected intersections. This includes
 the rear plates, axial webs, shafts, weight joints and sectioned rod. It uses
 rendered triangle surfaces rather than nominal contact radii. The earlier six
 latch intersections are absent from this reconstruction.
@@ -114,13 +131,16 @@ pass playback, Restart, orbit/reset, layout, no WASM requests and no page errors
 Reproduce the current checks with:
 
 - `node scripts/project-diagonal-catch-motion.mjs`
+- `node scripts/review-diagonal-catch-source.mjs`
 - `node scripts/bake-diagonal-catch.mjs`
 - `node scripts/review-diagonal-catch-assembly.mjs`
 - `node --test tests/diagonal-catch-baked.test.mjs tests/movement-181.test.mjs tests/movement-182.test.mjs tests/diagonal-catch-assembly.test.mjs`
 
 The projection command writes its intermediate trajectory under `/dev/shm`;
 the bake packages it in `src/simulation/baked/assets/181.json.gz`. Both movements
-share this asset.
+share this asset. The source-review command writes a pivot-registered contour
+overlay to `/dev/shm/181-source-head.html` and the landmark measurements to
+`docs/validation/181-source-head.json`.
 
 ## Historical diagnostics and next work
 
@@ -133,6 +153,6 @@ latch pairs are **not** the browser implementation. Its
 steps. `scripts/review-diagonal-catch-solids.mjs` still audits that legacy model
 and intentionally fails; use the baked-assembly command for current playback.
 
-Continue the lower-finger and upper-catch source contours while preserving the
+Continue the lower-finger source contour while preserving the
 qualified contact surfaces and complete-assembly clearance. Neither movement
 is fully reviewed yet. The full 507-movement goal remains active.

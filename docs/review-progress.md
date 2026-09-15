@@ -1,3 +1,20 @@
+# Movements 181–182: reconcile the upper catch head with both plates
+
+Adjusted the rounded head and neck while retaining the holding ledge. The
+pivot-registered source overlay measures four corresponding landmarks: RMS
+error falls from 17.56 to 12.57 pixels, with a 14.83-pixel maximum. The drawn
+radii differ by about 20 pixels, so a rigid head cannot match both exactly.
+The revised native model passes three cycles at 0.25, 0.125 and 0.0625 ms;
+the former 0.5 ms step misses a return and remains in the sensitivity report.
+The default is now 0.25 ms. The rebuilt 551,060-byte asset passes 36,001
+interpolated contact checks, the 50-mesh assembly sweep, seven tests and both
+packaged desktop/mobile checks. Raw native soft-contact overlap is corrected
+offline. Continue the lower finger's projecting holding heel; the upper head's
+remaining discrepancy is now quantified. Neither movement is fully reviewed.
+See [review](movement-181.md). The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: restore the lower finger's crescent edge
 
 Replaced the lower rear plate's broad convex fill with the engraved concave
