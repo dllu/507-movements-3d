@@ -1,0 +1,50 @@
+{
+  "movement": 161,
+  "status": "bevel-candidate-not-registered",
+  "parameters": {
+    "inputTeeth": 36,
+    "outputTeeth": 30,
+    "module": 0.033300824891720364,
+    "inputRadius": 0.5994148480509666,
+    "outputRadius": 0.49951237337580545,
+    "outerRadius": 0.621,
+    "inputInnerScale": 0.72,
+    "outputInnerScale": 0.66,
+    "toothThicknessFactor": 0.94,
+    "meshPhaseOffset": 0.0062,
+    "apex": [
+      0,
+      4.635999999999999,
+      0
+    ]
+  },
+  "poses": 65,
+  "pairs": 1147,
+  "queries": 6464366,
+  "maximumSampledPenetration": 0,
+  "nearestFlankDistanceRange": [
+    0.000029736008674743037,
+    0.000035396412221834234
+  ],
+  "maximumSampledPenetrationPixels": 0,
+  "intersections": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers across one tooth pitch. Cross-gear bodies/teeth only. Finite sampling, not exact contact or continuous collision proof.",
+  "sources": [
+    {
+      "file": "scripts/review-governor-bevels.mjs",
+      "sha256": "48d11a947a1c9fe6c9d1a612b0d3f4b97f1159bbcffe9836bbc9fd03d768dd83"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/bevel-pair.js",
+      "sha256": "61fb502cd336057aa61e7964edae488f6e32b1912089abe04dc21a4c845ad316"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

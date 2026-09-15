@@ -88,6 +88,20 @@ export function bevelToothGeometry({
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  // End caps lie on z + tan(delta)*radius = constant, not in a plane.
+  // Use that surface's normal so cap triangulation cannot create shading bands.
+  const normals = geometry.attributes.normal;
+  for (let i = 0; i < 2 * outline.length; i += 1) {
+    const p = i < outline.length ? inner[i] : outer[i - outline.length];
+    const radius = Math.hypot(p.x, p.y);
+    const normal = new THREE.Vector3(
+      Math.tan(pitchConeAngle) * p.x / radius,
+      Math.tan(pitchConeAngle) * p.y / radius,
+      1,
+    ).normalize();
+    if (i < outline.length) normal.negate();
+    normals.setXYZ(i, normal.x, normal.y, normal.z);
+  }
   geometry.userData.profile = 'back-cone-involute-approximation';
   geometry.userData.pitchConeAngle = pitchConeAngle;
   geometry.userData.pitchRadius = pitchRadius;

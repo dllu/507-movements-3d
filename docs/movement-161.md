@@ -130,3 +130,40 @@ Reports are `docs/validation/161-settled-linkage.json` and
 record the original uncalibrated study. Production remains unchanged. Source
 solids, the oversized bevel pair, real contact clearances and the interpretation
 of the lower output forks/collars are now the next work before baking.
+
+## Source-sized bevel candidate
+
+The unregistered `mujoco-ball-governor/bevel-pair.js` replaces the oversized
+candidate with a 34.5-pixel input outer radius (0.621 world units). A 36:30
+pair fits the visible input annulus and wider output pinion; these tooth counts
+are inferred, not authoritative historical dimensions. Both gears share a
+perpendicular pitch-cone apex at the spindle and input center. Input and output
+pitch radii are 0.599415 and 0.499512 world units, with a shared module of
+0.0333008. Their face widths follow the visible narrow input annulus and deeper
+pinion. The input construction axis faces the visible annulus toward the camera.
+
+The teeth retain the shared back-cone involute approximation and conical ends.
+Shared cap normals now follow the analytic cone instead of its triangulation,
+removing triangulation-dependent shading bands without changing vertex positions.
+Previously baked meshes retain their stored normals until regenerated. Both
+candidate gear bodies have actual shaft bores and fog-free materials.
+
+A 65-pose sweep over one tooth pitch checks 1,147 cross-gear mesh pairs using
+bidirectional vertices, edge midpoints and triangle centers. Across 6,464,366
+surface queries it finds no penetration beyond the 1e-6 world-unit tolerance.
+The nearest sampled tooth-flank distance stays between 0.00002974 and
+0.00003540 world units (0.00165–0.00197 engraving pixels), using a 0.0062-radian
+working-phase offset. This is finite sampled clearance evidence for approximate
+teeth, not an exact contact-force or continuous-collision proof. The pair is
+scripted at its pitch ratio; no MuJoCo gear-contact solve is needed for this
+ideal transmission. The input retains 30/36 of the unwrapped spindle travel.
+
+Two candidate envelope/transmission tests and 20 shared bevel regressions pass.
+Front and oblique Chrome views were inspected, and the private production build
+passes. Reproduce the clearance report with
+`node scripts/review-governor-bevels.mjs`; results and source hashes are in
+`docs/validation/161-bevel-clearance.json`.
+
+161 is still open: source-shaped arms, supporting hardware and output
+forks/collars must be completed, clearances checked, and the settled native
+motion baked and registered. This candidate does not yet change production 161.

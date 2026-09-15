@@ -55,3 +55,14 @@ for (const [teeth, angle] of [[10, 0.1], [24, Math.PI / 4], [100, 1.47]]) {
     geometry.dispose();
   });
 }
+
+test('bevel cap normals follow the cone independently of cap triangulation',()=>{
+ for(const angle of [.1,.8,1.47]){
+  const g=bevelToothGeometry({teeth:36,innerDistance:.5,outerDistance:.7,pitchConeAngle:angle,toothHeight:.06}),p=g.attributes.position,n=g.attributes.normal,count=p.count/6;
+  for(let i=0;i<2*count;i++){
+   const point=new THREE.Vector3().fromBufferAttribute(p,i),normal=new THREE.Vector3().fromBufferAttribute(n,i),r=Math.hypot(point.x,point.y),radialTangent=new THREE.Vector3(point.x/r,point.y/r,-Math.tan(angle)).normalize(),circumferential=new THREE.Vector3(-point.y/r,point.x/r,0);
+   assert.ok(Math.abs(normal.dot(radialTangent))<1e-6);assert.ok(Math.abs(normal.dot(circumferential))<1e-6);assert.ok(i<count?normal.z<0:normal.z>0);
+  }
+  g.dispose();
+ }
+});

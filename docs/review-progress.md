@@ -5,8 +5,11 @@ for full linkage gravity and inertia. The engraved spread holds at constant
 speed; long runs settle without increasing damping. Paired timestep sleeve
 differences are below 0.0023 pixels, and five mechanical/equilibrium tests pass.
 The settled response still differs from instantaneous equilibrium, validating
-the need for passive dynamics. Source-shaped solids, the oversized bevel pair
-and output-fork interpretation remain open. Production is unchanged. See
+the need for passive dynamics. A source-sized 36:30 bevel candidate now clears
+a 65-pose tooth-pitch sweep; analytic conical cap normals fix shared shading.
+Two candidate tests and 20 bevel regressions pass. Source-shaped solids,
+supporting hardware, output-fork interpretation and baked registration remain
+open. Production 161 is unchanged. See
 [movement 161](movement-161.md). The complete review remains active.
 
 # Shipped reconstruction: 160 spring-return treadle
