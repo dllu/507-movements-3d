@@ -1,13 +1,13 @@
 # Active reconstruction: 160 spring-return treadle
 
-The source has no 2D animation. The source-traced native leaf is now coupled
-to a force-driven treadle through a tension-only full-wrap band. Both band
-attachments move naturally. Gravity and inferred assembly prestress balance
-the engraved pose; subsequent pressure/return cycles repeat without joint
-actuators. Nine tests pass, with paired-timestep upper-tie differences below
-0.004 pixels. Finite band compliance, massless pulley and material assumptions
-remain explicit. Production is unchanged pending coupled refinement, visible
-source-shaped hardware and contact checks, and baking. See [movement 160](movement-160.md).
+160 now has a source-shaped visible candidate around its coupled native spring
+and treadle: solid pulley, explicit bored supports, traced pedestal, tapered
+strip and separated band ends. Front/loaded/oblique previews are inspected. A
+101-pose actual-mesh band clearance audit passes, as do native attachment,
+connected-casting, spring-winding and actual-vertex floor checks. Gravity and
+inferred prestress support repeatable passive return. Production is unchanged
+pending coupled refinement, complete rigid-pair checks and baked playback.
+See [movement 160](movement-160.md) for the explicit physical/visual assumptions.
 The full 507-movement review remains active.
 
 # Shipped reconstruction: 159 cord treadle

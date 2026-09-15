@@ -192,3 +192,53 @@ validation was rerun after extraction. Production remains unchanged. Before
 registration, refine the coupled leaf and band stiffness, reconstruct and check
 the visible source-shaped spring/drum/attachments/supports, evaluate drum inertia
 and contact assumptions, then bake and inspect desktop/mobile playback.
+
+## Visible source-shaped candidate
+
+`solids.js` constructs a 19-mesh candidate around the native state. The pulley
+has solid faces and a cylindrical band bed, with separate rear/front flanges
+accommodating the full helical wrap. Its axle, bored bearing and rear mounting
+pad are explicit. The treadle follows the source's tapered outline, circular
+pivot boss and raised attachment arch; its connected casting has a real pivot
+bore. The pedestal is traced from the source silhouette instead of a generic
+post. The ground strip follows the engraving floor. Hidden depth, mounting and
+fastening construction remain reconstruction assumptions.
+
+The flexible strip follows the native link endpoints. Its visible width tapers
+from the approximate ink-boundary width near the root to the narrower free end.
+That stylized width is not used to infer a steel modulus or native mass. The
+spring buffer is reused, and its closed triangle winding gives positive volume.
+The band currently rebuilds a tube in this **unregistered offline/preview
+factory**; a production player must bake or reuse that geometry efficiently.
+
+The two band ends are separated in depth (0.24 and 0.72 world units) and fastened
+inside rounded heads supported by stems. Their rendered centers follow the
+native spring and treadle attachment coordinates to 1e-12 world units. A native
+full-cycle test verifies the actual transformed treadle vertices stay above the
+source floor; using an imprecise transformed axis-aligned bounding box would
+incorrectly include empty space below this sloping part. The test also checks
+one connected treadle casting, finite spring vertices, stable spring buffer,
+positive spring volume, hidden generic ground and fog-free materials.
+
+The band/hardware review samples 101 settled-cycle poses and checks signed
+distances to the actual visible triangles at no more than 0.01 world-unit
+centerline spacing. Expanded bounding boxes reject points with more than 0.01
+surface clearance. Only the terminal 0.15 material units at each band's own
+fastening are exempt. There are 67,982 triangle-distance queries and no failures.
+The pulley bed's minimum clearance is -1.11e-8 world units, numerical contact;
+contact penetration greater than 0.001 would fail. No other part reaches the
+expanded band proximity region outside the fastening exclusions. This is a
+sampled band/hardware audit, not a continuous-time or complete rigid-pair proof.
+
+Front, loaded and oblique preview images were inspected at
+`/dev/shm/160-solids-{source,loaded,oblique}.png`. The source-like solid pulley,
+curved spring and pedestal now replace the earlier generic silhouettes in the
+candidate. Production registration remains unchanged pending remaining coupled
+refinement, rigid-pair checks and baked playback validation.
+
+```sh
+node scripts/review-spring-treadle-hardware.mjs
+node --test tests/spring-treadle-solids.test.mjs
+```
+
+The report with source hashes is `docs/validation/160-band-hardware.json`.
