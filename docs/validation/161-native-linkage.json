@@ -1,0 +1,76 @@
+{
+  "movement": 161,
+  "status": "native-linkage-study-not-registered",
+  "runs": [
+    {
+      "configuration": {
+        "movement": 161,
+        "timestep": 0.0005,
+        "period": 8,
+        "variableSpeed": true,
+        "spindleDrive": true,
+        "lowSpeed": 4.586361238233177,
+        "highSpeed": 5.096956646020253,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints are unloaded point-ball equilibria; actual finite-mass dynamics need comparison."
+      },
+      "maximumPinClosureError": 4.5750270512562465e-7,
+      "maximumSymmetryError": 1.1102230246251565e-16,
+      "spreadRange": [
+        0.22500507501503383,
+        0.5861320299604937
+      ],
+      "cycleEndSpread": [
+        0.365,
+        0.3412185131857191,
+        0.3025333447749856,
+        0.26529325457303965,
+        0.24115823851380874
+      ]
+    },
+    {
+      "configuration": {
+        "movement": 161,
+        "timestep": 0.00025,
+        "period": 8,
+        "variableSpeed": true,
+        "spindleDrive": true,
+        "lowSpeed": 4.586361238233177,
+        "highSpeed": 5.096956646020253,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints are unloaded point-ball equilibria; actual finite-mass dynamics need comparison."
+      },
+      "maximumPinClosureError": 2.130327500316417e-7,
+      "maximumSymmetryError": 1.1102230246251565e-16,
+      "spreadRange": [
+        0.22520834197380277,
+        0.586194044374366
+      ],
+      "cycleEndSpread": [
+        0.365,
+        0.34200925365845386,
+        0.3036139616406993,
+        0.2662134979007722,
+        0.24163077709043812
+      ]
+    }
+  ],
+  "maximumTimestepSpreadDifference": 0.0013756633046918543,
+  "limitations": "Under-damped transients have not settled to a periodic bake. Valve force, speed/load calibration, source-shaped solid clearances and bevel geometry/contact remain to review.",
+  "sources": [
+    {
+      "file": "scripts/probe-ball-governor.mjs",
+      "sha256": "9dd9e9aca7cc54663ff3065dba3f005b04a7a999f0f7a76cc0ccca8537b3da7b"
+    },
+    {
+      "file": "src/simulation/mujoco-ball-governor/physics.js",
+      "sha256": "b8a4be077edae26ee43508e42c01b5d7c4eb02839785155360ab45be5ab87f27"
+    },
+    {
+      "file": "public/engravings/mm_161.png",
+      "sha256": "93706ace30866ace25acf3681a98f0ec4c5f05750dbb5ca9a32759c3a395e1f3"
+    },
+    {
+      "file": "src/simulation/authored-governors.js",
+      "sha256": "24e0ed4d2cc3af45eabe876dbd1167b4afa538b8c4aaab7270d112a8a01ab68f"
+    }
+  ]
+}
