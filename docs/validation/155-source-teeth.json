@@ -1,0 +1,149 @@
+{
+  "movement": 155,
+  "method": "Outermost dark pixel sampled every .1 degree and .25px radius over 115–345 degrees, excluding the obscured upper/right sector. Complete runs above radius 201px identify 14 visible tooth tips. Fit consecutive tip centers to candidate integer counts; the hidden tooth count is inferred, not observed. Nearest-pixel and ink-thickness uncertainty are approximately 2px.",
+  "center": [
+    226,
+    300
+  ],
+  "radialQuantiles": {
+    "p10": 180.25,
+    "p25": 184,
+    "median": 208.25,
+    "p75": 212.5,
+    "p90": 213.25
+  },
+  "tipRuns": [
+    {
+      "start": 126.6,
+      "end": 134.4,
+      "center": 130.5
+    },
+    {
+      "start": 143.2,
+      "end": 151.2,
+      "center": 147.2
+    },
+    {
+      "start": 158.8,
+      "end": 167.4,
+      "center": 163.10000000000002
+    },
+    {
+      "start": 175.4,
+      "end": 182.9,
+      "center": 179.15
+    },
+    {
+      "start": 191.3,
+      "end": 199.60000000000002,
+      "center": 195.45000000000002
+    },
+    {
+      "start": 207.10000000000002,
+      "end": 215.4,
+      "center": 211.25
+    },
+    {
+      "start": 222.2,
+      "end": 230.60000000000002,
+      "center": 226.4
+    },
+    {
+      "start": 238.8,
+      "end": 247.1,
+      "center": 242.95
+    },
+    {
+      "start": 254.20000000000002,
+      "end": 262.20000000000005,
+      "center": 258.20000000000005
+    },
+    {
+      "start": 269.9,
+      "end": 277.5,
+      "center": 273.7
+    },
+    {
+      "start": 286.1,
+      "end": 294.3,
+      "center": 290.20000000000005
+    },
+    {
+      "start": 301.5,
+      "end": 309.8,
+      "center": 305.65
+    },
+    {
+      "start": 318.4,
+      "end": 326.70000000000005,
+      "center": 322.55
+    },
+    {
+      "start": 334.3,
+      "end": 342.20000000000005,
+      "center": 338.25
+    }
+  ],
+  "candidates": [
+    {
+      "teeth": 23,
+      "pitchDegrees": 15.652173913043478,
+      "phaseDegrees": 132.8715838509317,
+      "rmsDegrees": 1.1177825958565752,
+      "maximumDegrees": 2.3715838509316995
+    },
+    {
+      "teeth": 22,
+      "pitchDegrees": 16.363636363636363,
+      "phaseDegrees": 128.24707792207795,
+      "rmsDegrees": 1.881133107578084,
+      "maximumDegrees": 2.7243506493506686
+    },
+    {
+      "teeth": 24,
+      "pitchDegrees": 15,
+      "phaseDegrees": 137.1107142857143,
+      "rmsDegrees": 3.688165367158882,
+      "maximumDegrees": 6.610714285714295
+    },
+    {
+      "teeth": 21,
+      "pitchDegrees": 17.142857142857142,
+      "phaseDegrees": 123.18214285714286,
+      "rmsDegrees": 4.99213795147236,
+      "maximumDegrees": 7.7892857142857395
+    },
+    {
+      "teeth": 25,
+      "pitchDegrees": 14.4,
+      "phaseDegrees": 141.01071428571427,
+      "rmsDegrees": 6.0972235652042155,
+      "maximumDegrees": 10.510714285714272
+    },
+    {
+      "teeth": 26,
+      "pitchDegrees": 13.846153846153847,
+      "phaseDegrees": 144.6107142857143,
+      "rmsDegrees": 8.325921592767783,
+      "maximumDegrees": 14.110714285714295
+    },
+    {
+      "teeth": 20,
+      "pitchDegrees": 18,
+      "phaseDegrees": 117.61071428571428,
+      "rmsDegrees": 8.440065558551836,
+      "maximumDegrees": 13.360714285714266
+    }
+  ],
+  "conclusion": "The production 20-tooth model with 154px root radius is inconsistent with the visible silhouette. The 154px circle is internal decoration; exposed tooth roots are near 182–184px. A regular 23-tooth reconstruction fits the visible spacing better than 20 or 22, but the drawing is not exactly periodic and hidden teeth cannot establish the count.",
+  "sources": [
+    {
+      "file": "public/engravings/mm_155.png",
+      "sha256": "2343c0016b825dfe6c7c343969302bacc84a4657589375b47a6328f223203e88"
+    },
+    {
+      "file": "scripts/measure-elbow-pawl-source.mjs",
+      "sha256": "d31a63fe3011c7f5f7a4c5168b6f42a3d13e9df7396a6b3ce021fc7ea1945650"
+    }
+  ]
+}

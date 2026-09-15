@@ -1,3 +1,14 @@
+# Open reconstruction: 155 reversible elbow pawl
+
+155's production pawl never physically meets the wheel: all 129 claimed
+engagement poses across both directions retain a 0.471-unit depth gap.
+Pixel measurements also disprove its 154px tooth-root circle and support a
+shallower, approximately 23-tooth reconstruction over the current 20 teeth.
+The source overlay and finite sampling limits are documented in
+[movement 155](movement-155.md). Build and qualify the passive pinned-linkage
+replacement next; production 155 remains uncorrected. 150's source fit is also
+still open.
+
 # Shipped reconstruction: 154 passive weighted bell-crank
 
 154 now loads a 351 KB, 6,001-pose MuJoCo bake without browser physics.

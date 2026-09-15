@@ -1,0 +1,46 @@
+{
+  "movement": 155,
+  "method": "Actual rendered wheel-body and pawl-body world-Z extents over 129 poses in each direction. Separation is sufficient to disprove physical contact regardless of any plan-view calculation. This does not qualify the rest of the assembly.",
+  "legacy": {
+    "toothCount": 20,
+    "rootRadiusPixels": 154,
+    "tipRadiusPixels": 210,
+    "sourceUpperPivot": [
+      232,
+      37
+    ],
+    "mappedUpperPivot": [
+      226,
+      37
+    ]
+  },
+  "modes": [
+    {
+      "direction": 1,
+      "poses": 129,
+      "claimedEngaged": 65,
+      "separatedWhileClaimedEngaged": 65,
+      "minimumDepthGap": 0.47099999964237216,
+      "maximumDepthGap": 0.47099999964237216
+    },
+    {
+      "direction": -1,
+      "poses": 129,
+      "claimedEngaged": 64,
+      "separatedWhileClaimedEngaged": 64,
+      "minimumDepthGap": 0.47099999964237216,
+      "maximumDepthGap": 0.47099999964237216
+    }
+  ],
+  "conclusion": "Every claimed engagement is separated in depth. The wheel and pawl angles, lifted return and slot closure are prescribed; contact metadata does not establish contact between the visible solids.",
+  "sources": [
+    {
+      "file": "scripts/review-elbow-pawl-legacy-contact.mjs",
+      "sha256": "3c52a730a575124f23c806b5926abefc07172430a87eb4f1ebc80d5e649ee90d"
+    },
+    {
+      "file": "src/simulation/authored-intermittent.js",
+      "sha256": "07acdf0af104066c8dab5ceb503ddb1fe6baaa82ae634469b378333aa5daba87"
+    }
+  ]
+}
