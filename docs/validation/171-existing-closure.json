@@ -3,72 +3,72 @@
   "status": "existing-ideal-closure-diagnostic",
   "poses": 3605,
   "maximumLengthError": 1.3322676295501878e-14,
-  "maximumDieGuideError": 6.661338147750939e-15,
-  "maximumSlotAngle": 0.4475070225225129,
+  "maximumDieGuideError": 7.327471962526033e-15,
+  "maximumSlotAngle": 0.6183868893863452,
   "runs": [
     {
       "selector": -1,
-      "minimumValve": -0.3229660642541735,
-      "maximumValve": -0.18058335405094317,
-      "valveStroke": 0.14238271020323034,
-      "minimumSlide": -0.11704887845406842,
-      "maximumSlide": 0.24748493122718318,
+      "minimumValve": -1.1935192770036176,
+      "maximumValve": -1.004769751969023,
+      "valveStroke": 0.18874952503459452,
+      "minimumSlide": -0.054525880763952816,
+      "maximumSlide": 0.29096558318836174,
       "valveFirstHarmonic": {
-        "sine": 0.06663298615652039,
-        "cosine": 0.009900333241995435,
-        "amplitude": 0.06736446720963209
+        "sine": 0.09897603374851258,
+        "cosine": 0.015203311480081472,
+        "amplitude": 0.10013688599385881
       }
     },
     {
       "selector": -0.5,
-      "minimumValve": -0.3141537276925665,
-      "maximumValve": -0.22709973724112698,
-      "valveStroke": 0.08705399045143952,
-      "minimumSlide": -0.05361793360631717,
-      "maximumSlide": 0.1072018311608276,
+      "minimumValve": -1.1519888251848336,
+      "maximumValve": -1.0493858359607346,
+      "valveStroke": 0.10260298922409894,
+      "minimumSlide": 0.0012289101889944032,
+      "maximumSlide": 0.14966085481087155,
       "valveFirstHarmonic": {
-        "sine": 0.034003775417914286,
-        "cosine": 0.025178457501012025,
-        "amplitude": 0.04231089061698206
+        "sine": 0.03608117210510707,
+        "cosine": 0.03168781915866194,
+        "amplitude": 0.04802050461532468
       }
     },
     {
       "selector": 0,
-      "minimumValve": -0.30762034510680336,
-      "maximumValve": -0.2201593672186573,
-      "valveStroke": 0.08746097788814605,
-      "minimumSlide": -0.06343069715882854,
-      "maximumSlide": 0.08790166412472256,
+      "minimumValve": -1.1515828256913256,
+      "maximumValve": -1.033952192221956,
+      "valveStroke": 0.11763063346936975,
+      "minimumSlide": -0.018281579012793703,
+      "maximumSlide": 0.14892242888611196,
       "valveFirstHarmonic": {
-        "sine": -0.03172442654284588,
-        "cosine": 0.026886378587456045,
-        "amplitude": 0.04158505251914971
+        "sine": -0.046612279576946004,
+        "cosine": 0.031550139445507656,
+        "amplitude": 0.05628601874702417
       }
     },
     {
       "selector": 0.5,
-      "minimumValve": -0.32296625601886964,
-      "maximumValve": -0.1580662492393884,
-      "valveStroke": 0.16490000677948125,
-      "minimumSlide": -0.14637288939685877,
-      "maximumSlide": 0.20371726509089116,
+      "minimumValve": -1.1924112427034275,
+      "maximumValve": -0.9630422729256668,
+      "valveStroke": 0.22936896977776067,
+      "minimumSlide": -0.10561503044748455,
+      "maximumSlide": 0.26503636589001567,
       "valveFirstHarmonic": {
-        "sine": -0.08589725330102677,
-        "cosine": 0.013483284443148929,
-        "amplitude": 0.08694904878166072
+        "sine": -0.11919727706876496,
+        "cosine": 0.014424167816989148,
+        "amplitude": 0.12006684587270787
       }
     },
     {
       "selector": 1,
-      "minimumValve": -0.3229637126882061,
-      "maximumValve": -0.08681035612661037,
-      "valveStroke": 0.23615335656159575,
-      "minimumSlide": -0.2365562371073333,
-      "maximumSlide": 0.33688661607375847,
+      "minimumValve": -1.1935191264149996,
+      "maximumValve": -0.8885821436333016,
+      "valveStroke": 0.304936982781698,
+      "minimumSlide": -0.19697739841456685,
+      "maximumSlide": 0.39771281487200594,
       "valveFirstHarmonic": {
-        "sine": -0.06882431548232795,
-        "cosine": -0.0014318432389296052,
-        "amplitude": 0.06883920813513092
+        "sine": -0.15330719013226587,
+        "cosine": -0.010992453715868992,
+        "amplitude": 0.15370077613644714
       }
     }
   ],
@@ -100,11 +100,11 @@
     {
       "name": "diePoint",
       "engraving": [
-        132,
+        134,
         300
       ],
       "projected": [
-        132,
+        134,
         300
       ],
       "pixelError": 0
@@ -112,26 +112,26 @@
     {
       "name": "slideEyeWorld",
       "engraving": [
-        133,
+        134,
         361
       ],
       "projected": [
-        132,
-        364.46222222222224
+        134,
+        360.99999999999994
       ],
-      "pixelError": 3.603745650854051
+      "pixelError": 5.684341886080802e-14
     },
     {
       "name": "followerPinWorld",
       "engraving": [
-        132,
-        394
+        134,
+        382
       ],
       "projected": [
-        135.03366689636402,
-        397.18817283521247
+        134,
+        381.99999999999994
       ],
-      "pixelError": 4.400861377648886
+      "pixelError": 5.684341886080802e-14
     }
   ],
   "selectorCycle": {
@@ -143,11 +143,11 @@
   "sources": [
     {
       "file": "scripts/review-marine-valve-closure.mjs",
-      "sha256": "68f62343e3e4b7e3d02f88462dfe1da7d5199db9b096ff61b277ba370bc9af73"
+      "sha256": "f77cf062a070d63e57df14704a35cee968e9fc60aa06907d5791f0b39166a8d0"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "7dfcc75b23b0b91e9c4f80934737b7760c388c0b8d50f20c4b8264fb2cebe489"
+      "sha256": "c844a1a35049fad9a86fc4244b9352068c5ac0844b36ede54ec816d8ac211926"
     },
     {
       "file": "public/engravings/mm_171.png",

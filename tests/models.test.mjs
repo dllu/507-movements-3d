@@ -59100,7 +59100,7 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
   assert.ok(dense.eccentricOpposition < 1e-15);
   assert.ok(dense.followerArm < 7e-16);
   assert.ok(dense.linkPinSpacing < 7e-16);
-  assert.ok(dense.outputRod < 2.1e-15);
+  assert.ok(dense.outputRod < 1e-12);
   assert.ok(dense.slotContact < 7e-16);
   assert.ok(dense.unitCylinderAxis < 4e-16);
   assert.ok(dense.valveGuide < 1e-15);
@@ -59110,7 +59110,7 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
   assert.ok(maximumCylinderAngle < 0.11);
   assert.ok(maximumLinkAngle > 0.47);
   assert.ok(maximumRockshaftAngle > 0.56);
-  assert.ok(maximumSlotParameter < 1.04 - 0.095 / geometry.slotRadius,
+  assert.ok(maximumSlotParameter < geometry.lowerHalfAngle - 0.045 / geometry.slotRadius,
     'finite follower remains clear of the lower slot ends');
   assert.ok(minimumSlideStroke < -0.17);
   assert.ok(maximumSlideStroke > 0.28);

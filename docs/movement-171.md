@@ -33,15 +33,20 @@ complete. The visible slide guides, arc and follower retain their motion.
 The [closure audit](validation/171-existing-closure.json) recomputes distances
 from exported positions at 721 crank phases for each of five fixed reversing
 settings. Maximum length error is 1.34e-14 world units and die-guide error is
-6.67e-15. The maximum absolute lower-slot parameter angle is 0.447508 radians.
+7.33e-15. The maximum absolute lower-slot parameter angle is 0.618387 radians.
 These checks establish consistency of the implemented ideal construction;
 they do not establish source fidelity or finite pin contact.
 
-Full ahead and astern now give valve strokes of 0.142383 and 0.236153 world
-units; midgear retains 0.087461. The asymmetric source pin positions change
+Full ahead and astern now give valve strokes of 0.188750 and 0.304937 world
+units; midgear retains 0.117631. The asymmetric source pin positions change
 these excursions; the previously equal strokes resulted from an assumed
 symmetric pin layout. These are properties of the current ideal reconstruction,
-not historical valve-timing measurements.
+not historical valve-timing measurements. Fitting the lower slide exposed an
+unreachable branch in the old, unillustrated 0.66-length valve connecting link.
+That diagnostic link now exceeds the maximum lateral reach of its arm by 0.01,
+so it does not constrain source-visible geometry. Its length and the hidden
+rockshaft pivot remain assumptions; the resulting valve stroke is not a
+validated historical output.
 
 The selector varies continuously over 18 seconds, with three six-second crank
 turns in the same interval. The [cycle check](validation/171-cycle.json) checks
@@ -49,12 +54,19 @@ all 40 visible mesh transforms: maximum seam difference is 4.45e-16, and
 one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
 0.86-radian/second crank did not close with the selector period.
 
-The initial upper rod pins and die coincide with the recorded source anchors,
-replacing the previous 10.52- and 11.87-pixel rod-pin errors. This is an anchor
-fit using the shaft/trunnion scale, not a whole-contour qualification. The slide
-eye remains within 3.61 pixels and lower follower within 4.41 of their recorded
-anchors. The eccentric straps and rods now have integral tapered outlines and real
-bearing bores; their whole-contour source fit still needs review.
+The initial upper rod pins and die coincide with the recorded source anchors.
+The lower slide was remeasured using a centerline at raster x=134, an eye at
+(134,361), a follower at (134,382), guide endpoints at y=349/507 and separate
+left/right block bounds. The former follower anchor at y=394 placed the arc
+too low. The neutral slot is now centered on the trunnion without the former
+-0.05 preload; its radius is 1.395433 world units.
+
+The [12-landmark lower source check](validation/171-source-fit.json) compares
+actual mesh bounds and pin positions against the engraving. Maximum error is
+0.5 pixel at the guide centerlines; both arc apex errors are below 0.012 pixel.
+This is an initial orthographic landmark fit with approximate raster line
+centers, not a whole-contour or perspective-camera qualification. The eccentric
+straps, reversing reach and remaining upper proportions still need source review.
 
 ## Finite interfaces
 
@@ -74,8 +86,8 @@ The tubular rails left insufficient room for the finite follower, and the
 slider blocks had no actual guide bores. It covers selected lower interfaces,
 not the upper eccentric bearings or complete assembly.
 
-The replacement uses explicit annular slot walls with a 0.202-wide opening
-around the 0.19-diameter follower. Actual 0.118-diameter bores surround the
+The replacement uses explicit annular slot walls with a 0.102-wide opening
+around the 0.09-diameter follower. Actual 0.118-diameter bores surround the
 0.11-diameter guide posts. The posts sit behind the slot plate, retaining their
 frontal positions; block depth and post offsets are inferred. The rigid
 connecting rod has real end eyes, with separate hole sizes for the die and
@@ -84,7 +96,7 @@ or deforming its length.
 
 The [expanded lower-interface sweep](validation/171-lower-clearance.json)
 checks 17 pairs at 97 poses over the current 18-second traversal, with
-2,964,468 bidirectional surface queries. It finds no sampled penetration above
+2,865,192 bidirectional surface queries. It finds no sampled penetration above
 1e-6 world units. The added pairs cover both rod eyes, guide-post/slot-wall
 clearance, the closed slot ends, the attached slide eye and trunnion bearing. This is deliberately a lower-interface qualification, not a
 whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
@@ -149,6 +161,7 @@ check finite surfaces, source fit, restart and desktop/mobile rendering.
 
 ```sh
 node scripts/review-marine-valve-existing.mjs
+node scripts/review-marine-valve-source-fit.mjs
 node scripts/review-marine-valve-cycle.mjs
 node scripts/review-marine-valve-closure.mjs
 node scripts/review-marine-valve-lower-solids.mjs

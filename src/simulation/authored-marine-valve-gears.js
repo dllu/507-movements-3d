@@ -197,14 +197,14 @@ function oscillatingMarineEngineStephensonValveGear() {
   // trunnion; their separation establishes the scale used below.
   const sourceImageWidth = 263;
   const sourceImageHeight = 525;
-  const sourceRasterAxisX = 132;
-  const sourceRasterShaftCenter = new THREE.Vector2(132, 52);
+  const sourceRasterAxisX = 134;
+  const sourceRasterShaftCenter = new THREE.Vector2(134, 52);
   const sourceRasterAheadLinkPin = new THREE.Vector2(76, 278);
   const sourceRasterAsternLinkPin = new THREE.Vector2(167, 278);
-  const sourceRasterLinkDie = new THREE.Vector2(132, 300);
-  const sourceRasterSlideEye = new THREE.Vector2(133, 361);
-  const sourceRasterFollowerPin = new THREE.Vector2(132, 394);
-  const sourceRasterTrunnion = new THREE.Vector2(132, 468);
+  const sourceRasterLinkDie = new THREE.Vector2(134, 300);
+  const sourceRasterSlideEye = new THREE.Vector2(134, 361);
+  const sourceRasterFollowerPin = new THREE.Vector2(134, 382);
+  const sourceRasterTrunnion = new THREE.Vector2(134, 468);
 
   const shaftCenter = new THREE.Vector2(0, 4.7);
   const trunnionCenter = new THREE.Vector2(0, -2.05);
@@ -397,9 +397,14 @@ function oscillatingMarineEngineStephensonValveGear() {
   // rocking is not an unrelated decorative sine wave.
   const mainCrankRadius = 0.72;
   const mainCrankPinLocal = new THREE.Vector2(0, -mainCrankRadius);
-  const slotRadius = 1.2;
-  const slideEyeRadius = 1.73;
-  const sourceSlideStroke = -0.05;
+  const slotRadius = (sourceRasterTrunnion.y - sourceRasterFollowerPin.y) * sourceUnitsPerPixel;
+  const slideEyeRadius = (sourceRasterTrunnion.y - sourceRasterSlideEye.y) * sourceUnitsPerPixel;
+  const sourceSlideStroke = 0;
+  const lowerHalfAngle = 1.14;
+  const lowerGuideHalfX = 87.5 * sourceUnitsPerPixel;
+  const lowerGuideCenterY = (468 - 428) * sourceUnitsPerPixel;
+  const lowerGuideLength = (507 - 349) * sourceUnitsPerPixel;
+  const sourceRasterBlockBounds = [[35, 406, 64, 457], [207, 404, 234, 455]];
   const rockshaftPivotLocal = new THREE.Vector2(-0.55, 0.62);
   const sourceFollowerPinLocal = new THREE.Vector2(0, slotRadius);
   const followerArmLocal = sourceFollowerPinLocal.clone().sub(
@@ -412,7 +417,10 @@ function oscillatingMarineEngineStephensonValveGear() {
   );
   const valveArmLocal = new THREE.Vector2(-0.50, -0.30);
   const valveGuideX = -1.36;
-  const valveLinkLength = 0.66;
+  // Unillustrated diagnostic output linkage: allow the full rockshaft arm
+  // sweep without constraining the source-measured slide geometry.
+  const valveLinkLength = Math.abs(rockshaftPivotLocal.x - valveGuideX)
+    + valveArmLocal.length() + .01;
 
   const lowerStateAtSlideStroke = (slideStroke, cylinderAngle = 0) => {
     const slotCenterLocal = new THREE.Vector2(0, slideStroke);
@@ -809,12 +817,9 @@ function oscillatingMarineEngineStephensonValveGear() {
   cylinderCarrier.userData.role =
     'cylinder-carried-guides-slide-and-follower';
 
-  const lowerGuideHalfX = (
-    slotRadius + 0.13
-  ) * Math.sin(1.04);
   const slideGuidePosts = [-1, 1].map((sign) => {
-    const post = cylinderAlongY(0.055, 2.25, darkMaterial, 22);
-    post.position.set(sign * lowerGuideHalfX, 0.20, -0.05);
+    const post = cylinderAlongY(0.055, lowerGuideLength, darkMaterial, 22);
+    post.position.set(sign * lowerGuideHalfX, lowerGuideCenterY, -0.05);
     post.userData.role = `${sign < 0 ? 'left' : 'right'}-cylinder-carried-slide-guide`;
     cylinderCarrier.add(post);
     return post;
@@ -823,27 +828,31 @@ function oscillatingMarineEngineStephensonValveGear() {
   const curvedSlide = new THREE.Group();
   curvedSlide.userData.role =
     'rigid-curved-slide-translating-in-cylinder-carried-guides';
-  const lowerHalfAngle = 1.04;
-  const lowerInnerRail = new THREE.Mesh(plate(sector(slotRadius - .205, slotRadius - .101,
+  const lowerInnerRail = new THREE.Mesh(plate(sector(slotRadius - .13, slotRadius - .051,
     Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerInnerRail.userData.role = 'inner-edge-of-trunnion-centered-slot';
-  const lowerOuterRail = new THREE.Mesh(plate(sector(slotRadius + .101, slotRadius + .205,
+  const lowerOuterRail = new THREE.Mesh(plate(sector(slotRadius + .051, slotRadius + .13,
     Math.PI / 2 - lowerHalfAngle, Math.PI / 2 + lowerHalfAngle, 192), .085, .235), drivenMaterial);
   lowerOuterRail.userData.role = 'outer-edge-of-trunnion-centered-slot';
   const lowerEndBridges = [-1, 1].map(sign => new THREE.Mesh(plate(
-    sector(slotRadius - .205, slotRadius + .205,
+    sector(slotRadius - .13, slotRadius + .13,
       Math.PI / 2 + sign * lowerHalfAngle - .025,
       Math.PI / 2 + sign * lowerHalfAngle + .025, 24), .085, .235), drivenMaterial));
   curvedSlide.add(lowerInnerRail, lowerOuterRail, ...lowerEndBridges);
-  const slideBlocks = [-1, 1].map((sign) => {
+  const slideBlocks = [-1, 1].map((sign, index) => {
+    const [left, top, right, bottom] = sourceRasterBlockBounds[index];
+    const guideX = sourceRasterAxisX + sign * lowerGuideHalfX / sourceUnitsPerPixel;
+    const x0 = (left - guideX) * sourceUnitsPerPixel;
+    const x1 = (right - guideX) * sourceUnitsPerPixel;
+    const halfHeight = (bottom - top) * sourceUnitsPerPixel / 2;
     const block = new THREE.Mesh(
-      plate(clip.difference(poly([[-.145, -.25], [.145, -.25], [.145, .25], [-.145, .25]]),
-        poly(circle([0, -.03], .059, 96))), -.24, .24).rotateX(Math.PI / 2),
+      plate(clip.difference(poly([[x0, -.25], [x1, -.25], [x1, .25], [x0, .25]]),
+        poly(circle([0, -.03], .059, 96))), -halfHeight, halfHeight).rotateX(Math.PI / 2),
       drivenMaterial,
     );
     block.position.set(
       sign * lowerGuideHalfX,
-      slotRadius * Math.cos(lowerHalfAngle),
+      (sourceRasterTrunnion.y - (top + bottom) / 2) * sourceUnitsPerPixel,
       -0.02,
     );
     block.userData.role = `${sign < 0 ? 'left' : 'right'}-moving-curved-slide-guide-block`;
@@ -854,7 +863,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   slideEye.position.set(0, slideEyeRadius, 0.16);
   slideEye.userData.role = 'upper-eye-of-curved-slide';
   const slideEyeRing = new THREE.Mesh(plate(clip.difference(clip.union(
-    poly(circle([0, 0], .21, 96)), capsule([0, 1.43 - slideEyeRadius], [0, 0], .10)),
+    poly(circle([0, 0], .21, 96)), capsule([0, slotRadius + .18 - slideEyeRadius], [0, 0], .10)),
     poly(circle([0, 0], .079, 96))), -.075, .075), drivenMaterial);
   const slideEyePin = cylinderAlongZ(0.075, 0.64, darkMaterial, 24);
   slideEye.add(slideEyeRing, slideEyePin);
@@ -870,7 +879,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   rockshaftRotor.userData.axis = Z_AXIS.clone();
   rockshaftRotor.userData.role =
     'valve-rockshaft-with-slot-follower-and-opposite-valve-arm';
-  const followerPin = cylinderAlongZ(0.095, 0.68, whiteMaterial, 28);
+  const followerPin = cylinderAlongZ(0.045, 0.68, whiteMaterial, 28);
   followerPin.position.set(followerArmLocal.x, followerArmLocal.y, 0);
   followerPin.userData.role = 'white-pin-captured-within-curved-slide-slot';
   rockshaftRotor.add(followerPin);
@@ -958,6 +967,11 @@ function oscillatingMarineEngineStephensonValveGear() {
     linkCenterAtSource: linkCenterAtSource.clone(),
     linkPinSpacing,
     linkSlotRadius,
+    lowerHalfAngle,
+    lowerGuideHalfX,
+    lowerGuideCenterY,
+    lowerGuideLength,
+    sourceRasterBlockBounds,
     mainCrankPinLocal: mainCrankPinLocal.clone(),
     mainCrankRadius,
     outputRodLength,

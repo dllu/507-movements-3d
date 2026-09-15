@@ -38,7 +38,7 @@ try {
     ['aheadLinkPin', g.sourceRasterAheadLinkPin], ['asternLinkPin', g.sourceRasterAsternLinkPin],
     ['diePoint', g.sourceRasterLinkDie], ['slideEyeWorld', g.sourceRasterSlideEye], ['followerPinWorld', g.sourceRasterFollowerPin],
   ].map(([name, point]) => {
-    const projected = [132 + initial[name].x / g.sourceUnitsPerPixel, 52 + (g.shaftCenter.y - initial[name].y) / g.sourceUnitsPerPixel];
+    const projected = [g.sourceRasterShaftCenter.x + initial[name].x / g.sourceUnitsPerPixel, g.sourceRasterShaftCenter.y + (g.shaftCenter.y - initial[name].y) / g.sourceUnitsPerPixel];
     return {name, engraving: point.toArray(), projected, pixelError: Math.hypot(projected[0] - point.x, projected[1] - point.y)};
   });
   const sources = ['scripts/review-marine-valve-closure.mjs', 'src/simulation/authored-marine-valve-gears.js', 'public/engravings/mm_171.png']

@@ -1,0 +1,165 @@
+{
+  "movement": 171,
+  "points": [
+    {
+      "name": "slide eye",
+      "source": [
+        134,
+        361
+      ],
+      "projected": [
+        134,
+        360.99999999999994
+      ],
+      "error": 5.684341886080802e-14
+    },
+    {
+      "name": "slot follower",
+      "source": [
+        134,
+        382
+      ],
+      "projected": [
+        134,
+        381.99999999999994
+      ],
+      "error": 5.684341886080802e-14
+    },
+    {
+      "name": "guide 0 top",
+      "source": [
+        47,
+        349
+      ],
+      "projected": [
+        46.5,
+        349.00000169542096
+      ],
+      "error": 0.5000000000028745
+    },
+    {
+      "name": "guide 0 bottom",
+      "source": [
+        47,
+        507
+      ],
+      "projected": [
+        46.5,
+        506.9999983045789
+      ],
+      "error": 0.5000000000028745
+    },
+    {
+      "name": "guide 1 top",
+      "source": [
+        222,
+        349
+      ],
+      "projected": [
+        221.5,
+        349.00000169542096
+      ],
+      "error": 0.5000000000028745
+    },
+    {
+      "name": "guide 1 bottom",
+      "source": [
+        222,
+        507
+      ],
+      "projected": [
+        221.5,
+        506.9999983045789
+      ],
+      "error": 0.5000000000028745
+    },
+    {
+      "name": "block 0 top left",
+      "source": [
+        35,
+        406
+      ],
+      "projected": [
+        35.00000021192763,
+        405.99999915228943
+      ],
+      "error": 8.738000480969085e-7
+    },
+    {
+      "name": "block 0 bottom right",
+      "source": [
+        64,
+        457
+      ],
+      "projected": [
+        63.99999971742983,
+        457.00000084771045
+      ],
+      "error": 8.935652818712778e-7
+    },
+    {
+      "name": "block 1 top left",
+      "source": [
+        207,
+        404
+      ],
+      "projected": [
+        206.9999997880724,
+        403.9999991522895
+      ],
+      "error": 8.737999895040535e-7
+    },
+    {
+      "name": "block 1 bottom right",
+      "source": [
+        234,
+        455
+      ],
+      "projected": [
+        233.99999992935744,
+        455.00000084771045
+      ],
+      "error": 8.506488011206072e-7
+    },
+    {
+      "name": "outer arc apex",
+      "source": [
+        134,
+        374
+      ],
+      "projected": [
+        134,
+        373.9881473117404
+      ],
+      "error": 0.01185268825958019
+    },
+    {
+      "name": "inner arc apex",
+      "source": [
+        134,
+        390
+      ],
+      "projected": [
+        134,
+        390.01185042769816
+      ],
+      "error": 0.011850427698163912
+    }
+  ],
+  "maximumError": 0.5000000000028745,
+  "scope": "Initial orthographic lower-slide landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-source-fit.mjs",
+      "sha256": "ce7023e6745552984669bfdfa7c3a1ceddcbf28e8229ff0121dd1c9d0bbf2d79"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "c844a1a35049fad9a86fc4244b9352068c5ac0844b36ede54ec816d8ac211926"
+    },
+    {
+      "file": "public/engravings/mm_171.png",
+      "sha256": "52579c4d524db81f2b1f00c6e2d415dffd2021b26104ad5fda9fa882bfb6a3a9"
+    }
+  ]
+}
