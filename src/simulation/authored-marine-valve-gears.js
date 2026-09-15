@@ -24,14 +24,14 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   return cylinder;
 }
 
-function finiteMarineOutputRod(length) {
+function finiteMarineOutputRod(length, tailLength) {
   const root = new THREE.Group();
   const hole = (center, radius) => poly(circle(center, radius, 96));
-  const shape = clip.difference(clip.union(capsule([0, 0], [length, 0], .045),
+  const shape = clip.difference(clip.union(capsule([-tailLength, 0], [length, 0], .045),
     hole([0, 0], .13), hole([length, 0], .12)), hole([0, 0], .049), hole([length, 0], .079));
   root.add(new THREE.Mesh(plate(shape, -.05, .05), matte(PALETTE.driven)));
   root.userData.setEndpoints = (start, end) => {
-    root.position.set(start.x, start.y, .40);
+    root.position.set(start.x, start.y, .52);
     root.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
   };
   return root;
@@ -707,7 +707,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   const upperArc = (halfWidth, halfAngle) => translateProfile(
     sector(linkSlotRadius - halfWidth, linkSlotRadius + halfWidth,
       -Math.PI / 2 - halfAngle, -Math.PI / 2 + halfAngle, 192), 0, linkSlotRadius);
-  const reachLugLocal = new THREE.Vector2(-1.22, 0.16);
+  const reachLugLocal = sourcePointFromRaster(new THREE.Vector2(60, 298)).sub(linkCenterAtSource);
   const upperPinPoints = [aheadLinkPinLocal, asternLinkPinLocal, reachLugLocal];
   const upperOutline = clip.union(upperArc(.17, visibleLinkHalfAngle),
     ...upperPinPoints.map(point => poly(circle(point.toArray(), .13, 96))));
@@ -751,22 +751,19 @@ function oscillatingMarineEngineStephensonValveGear() {
   linkGroup.add(reachLug);
   root.add(linkGroup);
 
-  const reversingReachRod = makeDynamicLink({
-    color: PALETTE.driver,
-    depth: 0.10,
-    jointRadius: 0.055,
-    thickness: 0.09,
-  });
-  reversingReachRod.userData.kinematicConstraint =
-    'operator-prescribes-selected-die-point';
-  reversingReachRod.userData.role =
-    'source-visible-off-frame-reversing-reach-rod';
-  const reversingHandle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.11, 22, 14),
-    darkMaterial,
-  );
-  reversingHandle.userData.role = 'off-frame-reversing-reach-handle-end';
-  root.add(reversingReachRod, reversingHandle);
+  const reversingReachRod = new THREE.Group();
+  const reachLength = (sourceRasterAxisX - 6) * sourceUnitsPerPixel + reachLugLocal.x - .045;
+  const reachOutline = clip.union(capsule([0, 0], [reachLength, 0], .045),
+    poly(circle([0, 0], .12, 96)));
+  reversingReachRod.add(new THREE.Mesh(plate(clip.difference(reachOutline,
+    poly(circle([0, 0], .074, 96))), -.05, .05), driverMaterial));
+  reversingReachRod.userData.setEndpoints = (start, end) => {
+    reversingReachRod.position.set(start.x, start.y, .50);
+    reversingReachRod.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
+  };
+  reversingReachRod.userData.kinematicConstraint = 'operator-prescribes-selected-die-point';
+  reversingReachRod.userData.role = 'source-visible-off-frame-reversing-reach-rod';
+  root.add(reversingReachRod);
 
   const dieBlock = new THREE.Group();
   dieBlock.userData.role =
@@ -787,15 +784,13 @@ function oscillatingMarineEngineStephensonValveGear() {
   dieIndex.userData.role = 'white-index-on-link-die';
   dieBlock.add(dieBody, diePin, dieIndex);
   const dieGuide = new THREE.Group();
-  dieGuide.userData.role = 'fixed-vertical-guide-for-link-die-output';
-  for (const sign of [-1, 1]) {
-    const guide = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, 1.45, 0.10),
-      frameMaterial,
-    );
-    guide.position.set(sign * 0.19, 0.64, -0.35);
-    dieGuide.add(guide);
-  }
+  dieGuide.userData.role = 'fixed-upper-bearing-for-vertical-guide-tail';
+  const guideBody = new THREE.Mesh(plate(clip.difference(
+    poly([[-.15, -.10], [.15, -.10], [.15, .10], [-.15, .10]]),
+    poly([[-.052, -.057], [.052, -.057], [.052, .057], [-.052, .057]])),
+    -.13, .13).rotateX(Math.PI / 2), frameMaterial);
+  guideBody.position.set(0, shaftCenter.y - (146 - 52) * sourceUnitsPerPixel, .52);
+  dieGuide.add(guideBody);
   root.add(dieGuide, dieBlock);
 
   const cylinderCarrier = new THREE.Group();
@@ -856,7 +851,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   const slideEyeRing = new THREE.Mesh(plate(clip.difference(clip.union(
     poly(circle([0, 0], .21, 96)), capsule([0, slotRadius + .18 - slideEyeRadius], [0, 0], .10)),
     poly(circle([0, 0], .079, 96))), -.075, .075), drivenMaterial);
-  const slideEyePin = cylinderAlongZ(0.075, 0.64, darkMaterial, 24);
+  const slideEyePin = cylinderAlongZ(0.075, 0.90, darkMaterial, 24);
   slideEye.add(slideEyeRing, slideEyePin);
   curvedSlide.add(slideEye);
   slideCarrier.add(curvedSlide);
@@ -877,7 +872,7 @@ function oscillatingMarineEngineStephensonValveGear() {
   cylinderCarrier.add(rockshaftRotor);
   root.add(cylinderCarrier);
 
-  const outputRadiusRod = finiteMarineOutputRod(outputRodLength);
+  const outputRadiusRod = finiteMarineOutputRod(outputRodLength, (300 - 117) * sourceUnitsPerPixel - .045);
   outputRadiusRod.userData.role =
     'finite-die-output-rod-to-vertically-guided-curved-slide';
   root.add(outputRadiusRod);
@@ -934,7 +929,6 @@ function oscillatingMarineEngineStephensonValveGear() {
     lowerEndBridges,
     outputRadiusRod,
     reachLug,
-    reversingHandle,
     reversingReachRod,
     rockshaftRotor,
     slideBlocks,
@@ -1048,12 +1042,7 @@ function oscillatingMarineEngineStephensonValveGear() {
       reachLugLocal,
     );
     const reachHandleWorld = reachLugWorld.clone().add(
-      new THREE.Vector2(-1.48, 0),
-    );
-    reversingHandle.position.set(
-      reachHandleWorld.x,
-      reachHandleWorld.y,
-      0.32,
+      new THREE.Vector2(-reachLength, 0),
     );
     setDynamicLinkEndpoints(
       reversingReachRod,

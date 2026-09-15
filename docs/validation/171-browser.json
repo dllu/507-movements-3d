@@ -1,7 +1,7 @@
 {
   "movement": 171,
   "status": "packaged-lower-repair-desktop-mobile-passed",
-  "scope": "Fixed-column vertically translating sector with a cylinder-carried follower; upper contours and whole-assembly clearance remain open.",
+  "scope": "Source guide tail and upper bearing, bored reversing eye, shortened reach rod and 36-mesh scene; upper eccentric outlines remain open.",
   "checks": [
     "playback",
     "exact restart",
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "45390fe58d505c36ec6c44fd5c81d83ab998aaa7cee54c1e65fb5eaf7fac484c"
+      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

@@ -4,7 +4,7 @@
   "command": "node --test --test-name-pattern='^movement 171 ' tests/models.test.mjs",
   "passed": 1,
   "skipped": 164,
-  "scope": "Reconstructed linkage closure, neutral-only compensation, fixed slot centers and source-visible rendered transforms; unillustrated rocker/output dimensions remain assumptions.",
+  "scope": "Reconstructed linkage closure, fixed-guide compensation and source-visible transforms after guide-tail and reversing-eye repairs.",
   "sources": [
     {
       "file": "tests/models.test.mjs",
@@ -12,7 +12,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "45390fe58d505c36ec6c44fd5c81d83ab998aaa7cee54c1e65fb5eaf7fac484c"
+      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
     }
   ]
 }

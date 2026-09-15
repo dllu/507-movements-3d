@@ -2,6 +2,54 @@
   "movement": 171,
   "points": [
     {
+      "name": "central tail tip",
+      "source": [
+        134,
+        117
+      ],
+      "projected": [
+        134,
+        116.99999434859664
+      ],
+      "error": 0.0000056514033559551535
+    },
+    {
+      "name": "upper guide center",
+      "source": [
+        134,
+        146
+      ],
+      "projected": [
+        134,
+        146
+      ],
+      "error": 0
+    },
+    {
+      "name": "reversing lug",
+      "source": [
+        60,
+        298
+      ],
+      "projected": [
+        60,
+        298
+      ],
+      "error": 0
+    },
+    {
+      "name": "reversing rod end",
+      "source": [
+        6,
+        298
+      ],
+      "projected": [
+        5.99999971742983,
+        298
+      ],
+      "error": 2.825701699293859e-7
+    },
+    {
       "name": "slide eye",
       "source": [
         134,
@@ -147,15 +195,15 @@
     }
   ],
   "maximumError": 0.5000000000028745,
-  "scope": "Initial orthographic lower-slide landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.",
+  "scope": "Initial orthographic lower-slide and central/reversing-rod landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.",
   "sources": [
     {
       "file": "scripts/review-marine-valve-source-fit.mjs",
-      "sha256": "ce7023e6745552984669bfdfa7c3a1ceddcbf28e8229ff0121dd1c9d0bbf2d79"
+      "sha256": "cd579e1b2f1c08360623f1b035bf683da20d2b9d2187e4191107c3c9aeb1a037"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "45390fe58d505c36ec6c44fd5c81d83ab998aaa7cee54c1e65fb5eaf7fac484c"
+      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
     },
     {
       "file": "public/engravings/mm_171.png",

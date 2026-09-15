@@ -16,6 +16,13 @@ const add = (name,world,source) => {
 };
 try {
   model.update(0);model.root.updateMatrixWorld(true);
+  const tailBounds=new THREE.Box3().setFromObject(b.outputRadiusRod);
+  add('central tail tip',new THREE.Vector3(0,tailBounds.max.y,0),[134,117]);
+  const upperGuideBounds=new THREE.Box3().setFromObject(b.dieGuide);
+  add('upper guide center',upperGuideBounds.getCenter(new THREE.Vector3()),[134,146]);
+  add('reversing lug',b.reachLug.getWorldPosition(new THREE.Vector3()),[60,298]);
+  const reachBounds=new THREE.Box3().setFromObject(b.reversingReachRod);
+  add('reversing rod end',new THREE.Vector3(reachBounds.min.x,reachBounds.getCenter(new THREE.Vector3()).y,0),[6,298]);
   add('slide eye',b.slideEye.getWorldPosition(new THREE.Vector3()),[134,361]);
   add('slot follower',b.followerPin.getWorldPosition(new THREE.Vector3()),[134,382]);
   for(const [i,x] of [[0,47],[1,222]]) {
@@ -40,7 +47,7 @@ try {
   assert.ok(Number.isFinite(innerEdge));
   add('inner arc apex',new THREE.Vector3(0,innerEdge,0),[134,390]);
   const maximumError=Math.max(...points.map(p=>p.error));
-  const report={movement:171,points,maximumError,scope:'Initial orthographic lower-slide landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.',sources:['scripts/review-marine-valve-source-fit.mjs','src/simulation/authored-marine-valve-gears.js','public/engravings/mm_171.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+  const report={movement:171,points,maximumError,scope:'Initial orthographic lower-slide and central/reversing-rod landmarks measured from the 263x525 engraving. Approximate raster line centers and rectangular bounds; not whole-contour, perspective-camera or mechanical qualification.',sources:['scripts/review-marine-valve-source-fit.mjs','src/simulation/authored-marine-valve-gears.js','public/engravings/mm_171.png'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
   fs.writeFileSync('docs/validation/171-source-fit.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
-  assert.ok(maximumError<4,'selected lower contours must fit within four source pixels');
+  assert.ok(maximumError<4,'selected source contours must fit within four source pixels');
 } finally {disposeObject3D(model.root);}

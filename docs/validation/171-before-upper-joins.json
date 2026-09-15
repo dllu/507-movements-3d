@@ -1,0 +1,51 @@
+{
+  "movement": 171,
+  "commit": "bb72218",
+  "poses": 129,
+  "meshes": 39,
+  "pairCount": 647,
+  "queries": 20436218,
+  "intersections": {
+    "linkGroup/0/5/reversingReachRod/0/0": {
+      "firstTime": 0,
+      "maximumDepth": 0.045000001788139336,
+      "samples": 43794
+    },
+    "linkGroup/0/6/reversingReachRod/0/0": {
+      "firstTime": 0,
+      "maximumDepth": 0.06940114030714921,
+      "samples": 2116
+    },
+    "linkGroup/0/6/reversingReachRod/0/1": {
+      "firstTime": 0,
+      "maximumDepth": 0.0694011403071492,
+      "samples": 153510
+    },
+    "asternStrap/0/0/dieGuide/0/1": {
+      "firstTime": 0.5625,
+      "maximumDepth": 0.049999998956918756,
+      "samples": 1596
+    },
+    "linkGroup/0/3/dieGuide/0/1": {
+      "firstTime": 0.5625,
+      "maximumDepth": 0.023865286844084038,
+      "samples": 2155
+    },
+    "linkGroup/0/4/dieGuide/0/1": {
+      "firstTime": 0.84375,
+      "maximumDepth": 0.009999995976686452,
+      "samples": 58
+    },
+    "linkGroup/0/3/dieGuide/0/0": {
+      "firstTime": 2.25,
+      "maximumDepth": 0.02410521481965725,
+      "samples": 3501
+    },
+    "asternStrap/0/0/dieGuide/0/0": {
+      "firstTime": 2.953125,
+      "maximumDepth": 0.02249411072265073,
+      "samples": 2238
+    }
+  },
+  "scope": "Historical whole-assembly sweep before guide-tail and reversing-eye repairs."
+}

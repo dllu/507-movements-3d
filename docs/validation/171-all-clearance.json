@@ -1,0 +1,74 @@
+{
+  "movement": 171,
+  "status": "whole-assembly-sampled-clearance",
+  "poses": 129,
+  "meshes": 35,
+  "families": {
+    "inputRotor/0/0": "shaft",
+    "inputRotor/0/1": "shaft",
+    "inputRotor/0/2": "shaft",
+    "inputRotor/0/3": "shaft",
+    "inputRotor/0/4": "shaft",
+    "inputRotor/0/5": "shaft",
+    "inputRotor/0/6": "shaft",
+    "aheadStrap/0/0": "ahead",
+    "asternStrap/0/0": "astern",
+    "linkGroup/0/0": "link",
+    "linkGroup/0/1": "link",
+    "linkGroup/0/2": "link",
+    "linkGroup/0/3": "link",
+    "linkGroup/0/4": "link",
+    "linkGroup/0/5": "link",
+    "linkGroup/0/6": "link",
+    "dieBlock/0/0": "die",
+    "dieBlock/0/1": "die",
+    "dieBlock/0/2": "die",
+    "outputRadiusRod/0/0": "output",
+    "curvedSlide/0/0": "slide",
+    "curvedSlide/0/1": "slide",
+    "curvedSlide/0/2": "slide",
+    "curvedSlide/0/3": "slide",
+    "curvedSlide/0/4": "slide",
+    "curvedSlide/0/5": "slide",
+    "curvedSlide/0/6": "slide",
+    "curvedSlide/0/7": "slide",
+    "followerPin/0/0": "follower",
+    "dieGuide/0/0": "fixed",
+    "trunnionFace/0/0": "fixed",
+    "trunnionShaft/0/0": "fixed",
+    "slideGuidePosts/0/0": "fixed",
+    "slideGuidePosts/1/0": "fixed",
+    "reversingReachRod/0/0": "reach"
+  },
+  "pairCount": 512,
+  "queries": 17551282,
+  "intersections": {},
+  "sampledDuration": 18,
+  "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Every cross-rigid-family mesh pair; same rigid-part unions and the non-rendering camera envelope excluded. Sampling does not prove continuous clearance.",
+  "sources": [
+    {
+      "file": "scripts/review-marine-valve-all-solids.mjs",
+      "sha256": "88108a1a25f60b272c99514ea082f1022b516d253784bef3d994a76fb925483c"
+    },
+    {
+      "file": "src/simulation/authored-marine-valve-gears.js",
+      "sha256": "8d9d07cefc1300a1c1c1d55bc5e37a334ff76e7fca717add2207e0e704b45e64"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

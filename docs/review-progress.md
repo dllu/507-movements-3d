@@ -1,13 +1,13 @@
 # Open review: 171 oscillating marine valve gear
 
-Bourne's contemporary description supports a frame-fixed, vertically translating
-sector with a cylinder-carried follower. The revised model keeps the guide
-columns stationary and the central connecting rod vertical. A 3,605-state audit
-verifies neutral compensation without imposing exact cancellation off neutral.
-Twelve lower landmarks fit within 0.5 source pixel; the scene has 40 meshes.
-Selected finite-interface sweeps, ideal linkage closure and the cycle seam pass.
-Upper source contours and whole-assembly clearance remain open. Unillustrated
-rocker/output dimensions are still assumptions; see [movement 171](movement-171.md).
+A whole-assembly sweep found and resolved eight interfering pairs at the
+reversing joint and added upper guide bars. The model now has a bored reversing
+rod, the source's long central guide tail and one bored upper bearing. All 35
+physical meshes pass the 512-pair, 129-pose sweep; guide engagement is checked.
+Sixteen source landmarks fit within 0.5 pixel. The scene has 36 meshes including
+the invisible camera envelope. Fixed-column compensation, closure and cycle
+continuity pass. Upper eccentric contours remain under review, with hidden
+rocker/output dimensions documented as assumptions; see [movement 171](movement-171.md).
 
 # Shipped reconstruction: 170 crossed-arm governor
 

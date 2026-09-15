@@ -19,7 +19,7 @@ The added cylinder, piston, rear crank disk, valve chest/output linkage and
 large supporting frame have been removed from the visible model. The source
 shows none of these solids. The shaft and trunnion are shorter, with a real
 bored trunnion bearing, so these additions no longer obscure the engraving's
-valve gear. The rendered scene falls from 84 to 40 meshes.
+valve gear. The rendered scene now contains 36 meshes, including its invisible camera envelope.
 
 The solver uses an inferred hidden crank to determine cylinder oscillation.
 The lower sector and its guides are now frame-fixed; only the follower
@@ -66,7 +66,7 @@ validated historical output.
 
 The selector varies continuously over 18 seconds, with three six-second crank
 turns in the same interval. The [cycle check](validation/171-cycle.json) checks
-all 40 visible mesh transforms: maximum seam difference is 4.45e-16, and
+all 36 mesh transforms: maximum seam difference is 2.23e-16, and
 one-sided velocity difference is 0.000110 using a 0.0001-second step. The former
 0.86-radian/second crank did not close with the selector period.
 
@@ -77,12 +77,14 @@ left/right block bounds. The former follower anchor at y=394 placed the arc
 too low. The neutral slot is now centered on the trunnion without the former
 -0.05 preload; its radius is 1.395433 world units.
 
-The [12-landmark lower source check](validation/171-source-fit.json) compares
+The [16-landmark source check](validation/171-source-fit.json) compares
 actual mesh bounds and pin positions against the engraving. Maximum error is
 0.5 pixel at the guide centerlines; both arc apex errors are below 0.012 pixel.
 This is an initial orthographic landmark fit with approximate raster line
-centers, not a whole-contour or perspective-camera qualification. The eccentric
-straps, reversing reach and remaining upper proportions still need source review.
+centers, not a whole-contour or perspective-camera qualification. The central
+tail tip, upper guide, reversing lug and rod end now match their recorded
+source coordinates. Eccentric outlines and remaining upper proportions still
+need whole-contour review.
 
 ## Finite interfaces
 
@@ -112,7 +114,7 @@ or deforming its length.
 
 The [expanded lower-interface sweep](validation/171-lower-clearance.json)
 checks 17 pairs at 97 poses over the current 18-second traversal, with
-2,770,752 bidirectional surface queries. It finds no sampled penetration above
+3,050,112 bidirectional surface queries. It finds no sampled penetration above
 1e-6 world units. The added pairs cover both rod eyes, guide-post/slot-wall
 clearance, the closed slot ends, the attached slide eye and trunnion bearing. This is deliberately a lower-interface qualification, not a
 whole-assembly clearance claim. The closure audit is recomputed for the asymmetric upper pin layout.
@@ -153,9 +155,31 @@ the upper plate and output rod, plus each other. Its 2,723,760 surface queries
 find no sampled penetration above 1e-6. This remains a selected-interface
 qualification, not a whole-assembly or whole-contour fidelity claim.
 
+The full assembly sweep initially found eight interfering pairs, recorded in
+[the pre-repair diagnostic](validation/171-before-upper-joins.json) for commit
+bb72218. The reversing rod had a solid joint end and the two added guide bars
+intersected the rear eccentric rod and its pin hardware. The replacement
+reversing rod has a 0.148-diameter bore around its 0.14-diameter pin, is shortened
+to the source extent and omits the added ball handle. Its lug is fitted to the
+recorded (60,298) source position.
+
+The central rod now extends upward to the source's y=117 guide-tail tip and
+passes through one bored bearing at y=146. A 0.104-by-0.114 opening surrounds
+its 0.09-by-0.10 section. Its plane is z=0.52, clear of the eccentric rods;
+the lower pin is extended to span the relocated eye. Axial layers and running
+clearances are inferred from the front elevation.
+
+The [whole-assembly sweep](validation/171-all-clearance.json) covers all 35
+physical meshes, checking 512 pairs across distinct rigid families at 129
+poses over the 18-second cycle. Its 17,551,282 bidirectional surface queries
+find no sampled penetration above 1e-6. It additionally verifies
+axial engagement at the sampled poses for the central tail and both lower
+guide posts. Same-rigid-family unions and the non-rendering camera envelope
+are excluded. This sampled check does not prove clearance between samples.
+
 ## Current change and next work
 
-All 40 material instances examined in the existing scene have fog disabled,
+All 36 material instances examined in the existing scene have fog disabled,
 and `hideGround` is true. The default camera now faces the engraving plane.
 These rendering flags and the upper/lower interface repairs are shipped while the complete mechanical reconstruction remains open.
 
@@ -171,8 +195,9 @@ pass: playback, exact Restart, orbit/reset and a 390-by-844 mobile viewport,
 with no page errors or WASM requests. Restart explicitly restores the initial
 pose. These checks validate this repair, not the complete reconstruction.
 
-Next, finish the upper source-visible contours and check the whole assembly
-for finite intersections. The fixed-guide lower compensation is now explicit,
+Next, finish the upper source-visible contours. The sampled whole-assembly
+clearance check passes for the current geometry and must be rerun after those
+changes. The fixed-guide lower compensation is now explicit,
 with unillustrated rocker dimensions recorded as assumptions. Use analytic linkage closure where determined; use MuJoCo if
 contacts or otherwise unresolved constraints require it. Any final bake must
 have a validated full-cycle seam and a readable crank/reversing speed. Then
@@ -180,6 +205,7 @@ check finite surfaces, source fit, restart and desktop/mobile rendering.
 
 ```sh
 node scripts/review-marine-valve-existing.mjs
+node scripts/review-marine-valve-all-solids.mjs
 node scripts/review-marine-valve-compensation.mjs
 node scripts/review-marine-valve-source-fit.mjs
 node scripts/review-marine-valve-cycle.mjs
