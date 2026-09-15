@@ -1,3 +1,13 @@
+# Active reconstruction: 160 spring-return treadle
+
+The source has no 2D animation. A reproducible review finds full-wrap band
+self-overlap at every sampled phase and 2.19% artificial leaf-spring stretching.
+A tested spatial band candidate preserves the complete XY projection, constant
+length and material no-slip velocity while providing positive sampled self-
+clearance. Production is unchanged pending the source-shaped spring, pulley
+and support reconstruction and mechanical validation. See [movement 160](movement-160.md).
+The full 507-movement review remains active.
+
 # Shipped reconstruction: 159 cord treadle
 
 159 now plays a four-second baked passive MuJoCo cycle with source-proportioned

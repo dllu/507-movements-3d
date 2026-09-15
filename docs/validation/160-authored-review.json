@@ -1,0 +1,112 @@
+{
+  "movement": 160,
+  "status": "open",
+  "source": "https://507movements.com/mm_160.html",
+  "sourceAnimationAvailable": false,
+  "samples": 257,
+  "method": "Review of current authored model. Analytic nonlocal full-wrap centerline witness plus actual rendered foot bounds and 72-section spring centerline lengths. This is not a full solid collision audit.",
+  "bandRadius": 0.048,
+  "minWrapRadians": 6.279801989966656,
+  "maxWrapRadians": 6.2987281990371455,
+  "minimumNonlocalBandClearance": -0.09599999999999981,
+  "minimumNonlocalBandClearancePixels": -5.333333333333323,
+  "overlappingPoses": 257,
+  "exactRepeatedArcPoses": 137,
+  "maximumBandLengthError": 0,
+  "minimumFootFloorClearance": 0.09831931450885412,
+  "springCenterlineLengthRange": [
+    6.0176844683236,
+    6.14934765163899
+  ],
+  "springLengthChangePercent": 2.1879376362860192,
+  "springForceDrivesMotion": false,
+  "cyclePeriod": 4,
+  "rows": [
+    {
+      "time": 0,
+      "wrapRadians": 6.2987281990371455,
+      "nonlocalBandClearance": -0.09599999999999981,
+      "springCenterlineLength": 6.14934765163899,
+      "springDeflection": 0,
+      "treadleOffset": 0
+    },
+    {
+      "time": 0.5,
+      "wrapRadians": 6.2905370300417385,
+      "nonlocalBandClearance": -0.09599999999999981,
+      "springCenterlineLength": 6.121687006915227,
+      "springDeflection": 0.12664609936896998,
+      "treadleOffset": -0.03514718625761429
+    },
+    {
+      "time": 1,
+      "wrapRadians": 6.280623648308034,
+      "nonlocalBandClearance": -0.09401727657553623,
+      "springCenterlineLength": 6.066327074746684,
+      "springDeflection": 0.4348356870573009,
+      "treadleOffset": -0.11999999999999998
+    },
+    {
+      "time": 1.5,
+      "wrapRadians": 6.281261985226258,
+      "nonlocalBandClearance": -0.09451134903757225,
+      "springCenterlineLength": 6.028230918624314,
+      "springDeflection": 0.7440927507633299,
+      "treadleOffset": -0.20485281374238568
+    },
+    {
+      "time": 2,
+      "wrapRadians": 6.283894951128034,
+      "nonlocalBandClearance": -0.09599999999999981,
+      "springCenterlineLength": 6.0176844683236,
+      "springDeflection": 0.8719600503408764,
+      "treadleOffset": -0.24
+    },
+    {
+      "time": 2.5,
+      "wrapRadians": 6.281261985226258,
+      "nonlocalBandClearance": -0.09451134903757225,
+      "springCenterlineLength": 6.028230918624314,
+      "springDeflection": 0.7440927507633299,
+      "treadleOffset": -0.2048528137423857
+    },
+    {
+      "time": 3,
+      "wrapRadians": 6.280623648308034,
+      "nonlocalBandClearance": -0.09401727657553623,
+      "springCenterlineLength": 6.066327074746684,
+      "springDeflection": 0.43483568705730136,
+      "treadleOffset": -0.12000000000000002
+    },
+    {
+      "time": 3.5,
+      "wrapRadians": 6.2905370300417385,
+      "nonlocalBandClearance": -0.09599999999999981,
+      "springCenterlineLength": 6.121687006915227,
+      "springDeflection": 0.12664609936897042,
+      "treadleOffset": -0.035147186257614316
+    },
+    {
+      "time": 4,
+      "wrapRadians": 6.2987281990371455,
+      "nonlocalBandClearance": -0.09599999999999981,
+      "springCenterlineLength": 6.14934765163899,
+      "springDeflection": 0,
+      "treadleOffset": 0
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-spring-return-treadle.mjs",
+      "sha256": "f82785d22cd1ad003ac86959fa6292374f51819294884595be615d52a2b02aa8"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "public/engravings/mm_160.png",
+      "sha256": "6c71f2b15f18f77517c571effe5625cc556deeff78faf446a40af128b2e7eb1a"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "movement": 160,
+  "status": "candidate-not-registered",
+  "poses": 129,
+  "segments": 1024,
+  "startZ": 0.24,
+  "endZ": 0.72,
+  "minimumNonlocalClearanceLowerBound": 0.05772022415254338,
+  "minimumNonlocalClearancePixels": 3.206679119585744,
+  "worstPose": 57,
+  "contactAxialSurfaceRange": [
+    0.27933257888078805,
+    0.6554132060989706
+  ],
+  "method": "Spatial lift preserves every XY point and fixes each material point depth. Nonlocal points separated by at least four cord radii: sampled pair distances minus two arclength sample spacings and two radii conservatively bound the intervening curve at each reviewed pose. No claim of continuous-time or hardware clearance.",
+  "sources": [
+    {
+      "file": "scripts/review-spatial-treadle-band.mjs",
+      "sha256": "922615681eded311452fa1215f3300b41961c37f2a2dce89c1aa430b85ea7fda"
+    },
+    {
+      "file": "src/simulation/axially-separated-band.js",
+      "sha256": "b999fb71cd4c5af87e0d83663abc4999f1472aebf6271a202f70bba4e051b2ef"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    }
+  ]
+}
