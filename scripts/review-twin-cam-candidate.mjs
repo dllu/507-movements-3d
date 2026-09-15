@@ -29,8 +29,8 @@ try{
   }
   if(tick<36000)p.step();
  }
- const report={movement:149,status:'pinned-output-rod-candidate',method:'All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 simulated poses from 12 to 18 seconds. Cam/roller soft contact reported separately. Fixed support structure not yet modeled. No continuous collision proof.',summary:{poses,parts:parts.length,checks,failingPairs:Object.keys(failures).length},failures,workingContacts,
+ const report={movement:149,status:'guided-output-rod-candidate',method:'All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 simulated poses from 12 to 18 seconds. Cam/roller soft contact reported separately. Inferred output channels and rear shaft bearing frame included. No continuous collision proof.',summary:{poses,parts:parts.length,checks,failingPairs:Object.keys(failures).length},failures,workingContacts,
  sources:['scripts/review-twin-cam-candidate.mjs','src/simulation/mujoco-twin-cam/geometry.js','src/simulation/mujoco-twin-cam/physics.js','src/simulation/mujoco-twin-cam/source.js','src/simulation/mujoco/mass.js','tests/helpers/solid-surface.mjs'].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
- fs.writeFileSync('docs/validation/149-pinned-assembly.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary,failures,workingContacts);
+ fs.writeFileSync('docs/validation/149-guided-assembly.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary,failures,workingContacts);
  if(Object.keys(failures).length)process.exitCode=1;
 }finally{v.dispose();p.dispose();}

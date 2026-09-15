@@ -54,7 +54,53 @@ contact model are settled, precomputing the expensive motion data is preferable
 to rebuilding it on every visit. Do not mark 149 complete from the working-pair
 checks alone.
 
-## Traced-profile physics candidate
+## Guided output candidate
+
+The current candidate connects each ordinary pinned rod to a vertical output
+slider at its lower end. The rod can tilt as its upper pin follows the lever;
+the output pin remains on a straight vertical line. Rear channels, lower rod
+bosses and a rear shaft-bearing frame make this engineering interpretation
+visible. These features are **inferred**, not details shown in the engraving.
+The two source-length rods and traced cam silhouettes are retained.
+
+All nine moving coordinates remain native MuJoCo coordinates. Only the cam
+shaft is driven; two point constraints connect rod tips to free vertical slides.
+Cam, lever, roller, rod and slider inertias come from the visible geometry at a
+common density. Bearing friction, damping, dimensions hidden in the engraving
+and the absence of an external output load remain assumptions.
+
+The [60-second guided probe](validation/149-guided-rods.json) and
+[finer timestep probe](validation/149-guided-fine.json) measure the final
+six-second revolution. Halving the timestep from 0.5 to 0.25 ms changes sampled
+lever angles by at most 0.000104 rad and slider positions by 0.000289 world
+units. In the fine run, maximum pin mismatch is 0.000000272 units; slider
+position closure is within 0.00000342 units. Rod inclination stays below 1.71
+and 1.05 degrees. This replaces unconstrained pendulum sway with a constrained
+rod linkage and rectilinear output sliders.
+
+Position closure does not prove a perfectly smooth bake. At the fine timestep,
+upper slider velocity differs by 0.00251 units/s across the cycle boundary and
+upper roller spin velocity by 0.0543 rad/s. Profile gap ranges from -0.000562 to
+0.002039 units, with brief contact losses. Baking must account for these measured
+residuals and check the interpolated motion; do not claim exact rolling contact.
+
+The [33-part assembly check](validation/149-guided-assembly.json) includes the
+channels, pins, retainers and bearing frame. It finds no unintended overlap in
+7,751,612 bidirectional point/solid checks at 61 poses. Working cam/roller soft
+contact is reported separately (maximum sampled mesh depth 0.000490 units).
+This remains sampled evidence rather than a continuous swept-volume proof.
+Five focused tests pass, including native pin alignment and constant output X.
+Preview framing includes the broad cam's complete circular sweep, which extends
+farther right than its source pose.
+
+Reproduce current evidence with `node --test tests/twin-cam-physics.test.mjs`,
+`node scripts/review-twin-cam-candidate.mjs`, and
+`DURATION=60 node scripts/probe-twin-cam-physics.mjs`; use `TIMESTEP=.00025`
+and `REPORT=docs/validation/149-guided-fine.json` for refinement.
+The application still uses the older analytic version. Offline baking,
+interpolation checks and packaged playback validation are next.
+
+## Historical freely suspended rod candidate (d181801)
 
 `src/simulation/mujoco-twin-cam/` contains a separate, unregistered candidate.
 Both convex cam outlines are traced approximately from the engraving; the

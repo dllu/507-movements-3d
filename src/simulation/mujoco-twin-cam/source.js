@@ -25,6 +25,8 @@ export const twinCamLevers=twinCamSource.rollers.map(([x,y],i)=>{
  const length=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const rodX=[277,290][i],attachment=length*(rodX-twinCamSource.pivot[0])/(x-twinCamSource.pivot[0]);
  const headY=twinCamSource.pivot[1]-attachment*Math.sin(angle)/twinCamSource.scale;
+ const rodLength=([414,430][i]-headY)*twinCamSource.scale,rodPinDistance=rodLength-.15;
  return {length,angle,radius:twinCamSource.rollerRadii[i]*twinCamSource.scale,z:twinCamSource.planes[i],
-  attachment,rodLength:([414,430][i]-headY)*twinCamSource.scale,rodZ:.43};
+  attachment,rodLength,rodPinDistance,rodZ:.43,
+  guideX:attachment*Math.cos(angle),guideY:attachment*Math.sin(angle)-rodPinDistance};
 });

@@ -1,0 +1,50 @@
+{
+  "movement": 149,
+  "status": "guided-output-rod-candidate",
+  "method": "All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 simulated poses from 12 to 18 seconds. Cam/roller soft contact reported separately. Inferred output channels and rear shaft bearing frame included. No continuous collision proof.",
+  "summary": {
+    "poses": 61,
+    "parts": 33,
+    "checks": 7751612,
+    "failingPairs": 0
+  },
+  "failures": {},
+  "workingContacts": {
+    "cam1/roller1": {
+      "firstTime": 12.100000000003297,
+      "points": 53,
+      "maximumDepth": 0.0002887718370175178
+    },
+    "cam0/roller0": {
+      "firstTime": 12.800000000004152,
+      "points": 48,
+      "maximumDepth": 0.0004890438957006667
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/review-twin-cam-candidate.mjs",
+      "sha256": "73e8a12250a5d9e813b0113d963bf94838e6a6321c5ba2ce60f34b19196c3411"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "2ecb1b14078f791d8a201491234d6cc36657563c7ceeb111d7996a0ead381b48"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

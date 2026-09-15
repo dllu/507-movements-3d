@@ -22,7 +22,7 @@ test('149 output rods reach engraved endpoints with ordinary coaxial pins',()=>{
 test('149 compiled moving bodies use common-density visible mesh masses',()=>{
  const p=makeTwinCamPhysics(mujoco);
  try{
-  assert.equal(p.model.nq,7);
+  assert.equal(p.model.nq,9);
   for(const [name,m] of Object.entries(p.description.mass)){
    const id=p.id('mjOBJ_BODY',name);
    assert.ok(Math.abs(p.model.body_mass[id]-m.volume*p.description.density)<1e-12);
@@ -44,17 +44,25 @@ test('149 traced cam controls produce convex outlines',()=>{
 test('149 traced cams drive free gravity-return levers through repeated turns',()=>{
  const p=makeTwinCamPhysics(mujoco);let low=[Infinity,Infinity],high=[-Infinity,-Infinity];
  try{
-  assert.equal(p.model.nu,1);assert.equal(p.model.neq,0);
+  const pins=[0,1].map(i=>['rod-tip','slider-tip'].map(name=>p.id('mjOBJ_SITE',name+i)));
+  assert.equal(p.model.nu,1);assert.equal(p.model.neq,2);
   for(let i=0;i<36000;i++){
    p.step();assert.equal(p.data.qfrc_applied[1],0);assert.equal(p.data.qfrc_applied[4],0);
    if(i>=24000)for(const [k,j] of [1,4].entries()){low[k]=Math.min(low[k],p.data.qpos[j]);high[k]=Math.max(high[k],p.data.qpos[j]);}
+   if(i>=24000&&i%200===0){
+    mujoco.mj_forward(p.model,p.data);
+    for(const [k,[a,b]] of pins.entries()){
+     assert.ok(Math.hypot(...[0,1,2].map(axis=>p.data.site_xpos[3*a+axis]-p.data.site_xpos[3*b+axis]))<1e-5);
+     assert.ok(Math.abs(p.data.site_xpos[3*b]-twinCamLevers[k].guideX)<1e-12);
+    }
+   }
   }
   assert.ok(p.data.qpos[0]>6*Math.PI-.01);
   assert.ok(high[0]-low[0]>.25&&high[1]-low[1]>.18);
  }finally{p.dispose();}
 });
 test('149 lever coordinates are not prescribed when contact and gravity are removed',()=>{
- const p=makeTwinCamPhysics(mujoco,{gravity:0});
+ const p=makeTwinCamPhysics(mujoco,{gravity:0,guided:false});
  try{
   p.model.geom_contype.fill(0);p.model.geom_conaffinity.fill(0);const initial=Array.from(p.data.qpos);
   for(let i=0;i<12000;i++)p.step();

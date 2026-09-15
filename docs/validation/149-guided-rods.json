@@ -1,0 +1,81 @@
+{
+  "movement": 149,
+  "status": "traced-profile-guided-output-rods",
+  "assumptions": "Visible moving geometry integrated at common density, normalized to upper lever mass 1. Ordinary pinned rods connect to inferred vertical output sliders when guided=true; guides are not depicted in the source. Assumed hinge damping and no external output load. Only the cam shaft is driven.",
+  "options": {
+    "timestep": 0.0005,
+    "period": 6,
+    "gravity": 9.81,
+    "rodDamping": 0.002,
+    "guided": true,
+    "duration": 60
+  },
+  "summary": {
+    "samples": 301,
+    "maximumPinError": 5.426055590482632e-7,
+    "velocityClosure": [
+      0.0000030072079486576087,
+      0.000448105717757559,
+      -0.01631659188993151,
+      -0.0003347680852783877,
+      0.00000322910918282987,
+      0.000025481622516476676,
+      -0.0000033680399517746484,
+      0.0012423665020646346,
+      0.000009453393489552986
+    ],
+    "maximumPenetration": 0.0006750493786539975,
+    "missingUpper": 11,
+    "missingLower": 11,
+    "minimumProfileGap": -0.0006750311707751644,
+    "maximumProfileGap": 0.0019774335371613994,
+    "closure": {
+      "upper": 0.000001035805615917651,
+      "lower": 1.9279214062001282e-8,
+      "upperRod": -7.739081588908903e-7,
+      "lowerRod": -2.011173097851704e-8,
+      "upperSlide": 0.000002871709470748853,
+      "lowerSlide": 5.644365404754159e-8
+    },
+    "angleRanges": {
+      "upper": [
+        -0.05818505465390927,
+        0.23319521305912644
+      ],
+      "lower": [
+        -0.0382329975301952,
+        0.16230257793449349
+      ]
+    },
+    "rodTilt": {
+      "upper": 0.02977514139234463,
+      "lower": 0.01825766262143233
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-twin-cam-physics.mjs",
+      "sha256": "9a2efd6bca48c8da1be313761d0a9f7864e6e15722796647210827550a4bcc34"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/geometry.js",
+      "sha256": "2ecb1b14078f791d8a201491234d6cc36657563c7ceeb111d7996a0ead381b48"
+    },
+    {
+      "file": "src/simulation/mujoco/mass.js",
+      "sha256": "f05f0ee8cc681f5800e9b2505a7275cce87f8a7cd8eaa734a4fc8fc0b321e6f5"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

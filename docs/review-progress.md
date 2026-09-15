@@ -1,11 +1,13 @@
 # Current review: 149 twin cam followers
 
-The traced-profile MuJoCo candidate now includes source-length pinned output
-rods and geometry-derived moving masses. Five tests pass, and an 18-part,
-61-pose assembly check finds no unintended overlap. A 60-second run exposes
-persistent rod sway and nonperiodic lower-rod motion: free pins alone do not
-establish the caption's rectilinear output. Guidance interpretation, supports,
-refinement and baking remain open. See [movement 149](movement-149.md).
+149's MuJoCo candidate now uses ordinary pinned rods connected to inferred
+vertical output sliders. The 33-part reconstruction includes rear guide channels
+and shaft bearings; sampled assembly checks and five physics tests pass. The
+finer timestep agrees within 0.006 degrees for lever positions. Source-length
+rods and traced cam silhouettes are retained. Supports and output guidance are
+explicit engineering interpretations. Position closure is small, but velocity
+residuals and interpolated contacts need bake validation before production
+playback is switched. See [movement 149](movement-149.md).
 
 149's cam bevels and outline tubes no longer protrude into the rollers. A
 65-pose actual-surface check passes, as do the focused analytic test, build and
