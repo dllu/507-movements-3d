@@ -1,0 +1,82 @@
+{
+  "bakedAssetHash": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a",
+  "movement": 170,
+  "status": "baked-solid-diagnostic",
+  "parameters": {
+    "scale": 0.017,
+    "spread": 0.5126880123245573,
+    "armLength": 3.1018012911854944,
+    "extension": 1.0291671390012413,
+    "radius": 1.5215,
+    "drop": 2.7030000000000003,
+    "wristRadius": 0.5048285350967525,
+    "wristY": 0.8968462243618286,
+    "outputY": 1.6320000000000001,
+    "linkLength": 0.8917975799939087,
+    "ballRadius": 0.68,
+    "layer": 0.105,
+    "nominalSpeed": 1.9050723810171988,
+    "linkLayer": 0.275
+  },
+  "poses": 129,
+  "meshes": 88,
+  "pairs": 2459,
+  "queries": 54375472,
+  "intersections": {},
+  "unexpected": {},
+  "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the settled native cycle, phased near the engraving. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
+  "sources": [
+    {
+      "file": "src/simulation/baked/assets/170.json.gz",
+      "sha256": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a"
+    },
+    {
+      "file": "src/simulation/baked/crossed-governor.js",
+      "sha256": "0e1d23394d38d7e0f38e01243aff83e6fdce0d09ac5f81ea0bc8c09151e48abd"
+    },
+    {
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "scripts/review-crossed-governor-baked-solids.mjs",
+      "sha256": "18ee70fdb490feb335092097681e0cc0ed9bdd739f3453c8b083b106ea49fe6b"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/solids.js",
+      "sha256": "9d071b518f46404fc68dc937748fb2771af93ae6dbe52a689f55dfc838510f9a"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
+      "sha256": "741490aa6ad3b69d0875daccab25ebe3835858646fc83c50ecbba3bd058c18da"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/physics.js",
+      "sha256": "5d2b08096c3e77283eca5a62d804eb83f3fb9e46be01b8e16b4246c4fa9b9760"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/bevel-pair.js",
+      "sha256": "8041e7e1d154157822c93d4d30b8e5570138c06b881024a6e8e8673639511234"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "movement": 170,
+  "geometry": {
+    "scale": 0.017,
+    "spread": 0.5126880123245573,
+    "armLength": 3.1018012911854944,
+    "extension": 1.0291671390012413,
+    "radius": 1.5215,
+    "drop": 2.7030000000000003,
+    "wristRadius": 0.5048285350967525,
+    "wristY": 0.8968462243618286,
+    "outputY": 1.6320000000000001,
+    "linkLength": 0.8917975799939087,
+    "ballRadius": 0.68,
+    "layer": 0.105,
+    "nominalSpeed": 1.9050723810171988,
+    "linkLayer": 0.275
+  },
+  "names": [
+    "spindle",
+    "leftSpread",
+    "rightSpread",
+    "outputY"
+  ],
+  "turns": [
+    18.84955592153876,
+    0,
+    0,
+    0
+  ],
+  "period": 9.60621754427926,
+  "loopStart": 0,
+  "loopEnd": 9.60621754427926,
+  "bounds": {
+    "min": [
+      -2.912999906539917,
+      -6.024000205993652,
+      -2.8557213862436326
+    ],
+    "max": [
+      2.8212849458625042,
+      2.407041774759729,
+      2.8557213862436326
+    ]
+  },
+  "focus": [
+    -0.0458574803387064,
+    -1.8084792156169618,
+    0
+  ],
+  "cameraDirection": [
+    0.01,
+    0.01,
+    15
+  ],
+  "maximumMidpointError": 0.000009621181985330907,
+  "nativeCycleHash": "08e32daa43cf7ddbfdca44881cd5f58356807e857c083264bddbdbd76b3cd4f9",
+  "assumptions": "Passive MuJoCo arms, links and axial output driven by one spindle. Inferred masses/damping and ideal bearings. Visible collar represents a nonrotating rod bearing; bearing friction, steam feedback and tooth contact dynamics are omitted. Equal bevel gearing is scripted.",
+  "sources": [
+    {
+      "file": "scripts/bake-crossed-governor.mjs",
+      "sha256": "685d7728800b4ac3aba62ec9d68993c72009da2445818fa08d64f3d2bbb54213"
+    },
+    {
+      "file": "scripts/settle-crossed-governor.mjs",
+      "sha256": "a7dbbf71eb4349a2dc5adb699c0b524b87384c83d959b7b6159dc37d742c8fd4"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/physics.js",
+      "sha256": "5d2b08096c3e77283eca5a62d804eb83f3fb9e46be01b8e16b4246c4fa9b9760"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/solids.js",
+      "sha256": "9d071b518f46404fc68dc937748fb2771af93ae6dbe52a689f55dfc838510f9a"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
+      "sha256": "741490aa6ad3b69d0875daccab25ebe3835858646fc83c50ecbba3bd058c18da"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/bevel-pair.js",
+      "sha256": "8041e7e1d154157822c93d4d30b8e5570138c06b881024a6e8e8673639511234"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/clutch-section-geometry.js",
+      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    }
+  ],
+  "samples": 481,
+  "bytes": 408398,
+  "sha256": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a"
+}

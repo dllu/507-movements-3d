@@ -26,7 +26,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 0.12,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 0.000010046746764007844,
       "minimumSpread": 0.5126880123245573,
@@ -54,7 +55,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 0.12,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 0.000003499583568546231,
       "minimumSpread": 0.5126880123245573,
@@ -82,7 +84,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 0.12,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 3.5215233478531295e-9,
       "minimumSpread": 0.5126880123245573,
@@ -110,7 +113,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 0.12,
-        "spindleDrive": false
+        "spindleDrive": false,
+        "linkLayer": 0.105
       },
       "maximumClosure": 0.0000036093024326389553,
       "minimumSpread": -0.5053808199460789,
@@ -138,7 +142,8 @@
         "outputMass": 0.2,
         "armMass": 0.02,
         "damping": 0.12,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 0.0000576393248726375,
       "minimumSpread": -1.048097018273761,
@@ -166,7 +171,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 1,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 1.1977986844802048e-7,
       "minimumSpread": 0.4307071746095138,
@@ -194,7 +200,8 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 1,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 6.085845863044548e-8,
       "minimumSpread": 0.4307135643174485,
@@ -222,7 +229,8 @@
         "outputMass": 0.2,
         "armMass": 0.02,
         "damping": 1,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.105
       },
       "maximumClosure": 1.060442153784389e-7,
       "minimumSpread": 0.5126880123245573,
@@ -250,7 +258,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/physics.js",
-      "sha256": "dcee5a948a2f6ad37747872ad72c5aa1a48d96c23484e33b80654ed77189ea03"
+      "sha256": "5d2b08096c3e77283eca5a62d804eb83f3fb9e46be01b8e16b4246c4fa9b9760"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",

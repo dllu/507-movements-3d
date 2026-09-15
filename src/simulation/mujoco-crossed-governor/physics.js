@@ -14,14 +14,14 @@ export function crossedGovernorGeometry() {
 // Unregistered dynamics study. One driven spindle; arms, links and axial output
 // respond passively. Ideal bearings only: no finite-solid contact qualification.
 export function makeCrossedGovernorPhysics(mujoco, {timestep = .001, speedAmplitude = .08,
-  period = 8, outputMass = .02, armMass = .02, damping = .12, spindleDrive = true} = {}) {
+  period = 8, outputMass = .02, armMass = .02, damping = .12, spindleDrive = true, linkLayer = .105} = {}) {
   const g = crossedGovernorGeometry();
   const arms = [-1, 1].map((sign, i) => {
     const x = -sign * g.wristRadius, z = sign * g.layer;
     return `<body name="arm${i}"><joint name="spread${i}" axis="0 0 ${sign}" damping="${damping}"/>
       <geom type="capsule" fromto="${sign * g.radius} ${-g.drop} ${z} ${x} ${g.wristY} ${z}" size=".06" mass="${armMass}"/>
       <geom type="sphere" pos="${sign * g.radius} ${-g.drop} ${z}" size="${g.ballRadius}" mass="1"/>
-      <body pos="${x} ${g.wristY} ${z}"><joint name="link${i}" axis="0 0 1" damping=".005"/>
+      <body pos="${x} ${g.wristY} ${sign * linkLayer}"><joint name="link${i}" axis="0 0 1" damping=".005"/>
         <geom type="capsule" fromto="0 0 0 ${-x} ${g.outputY - g.wristY} 0" size=".05" mass=".01"/>
         <site name="linkEnd${i}" pos="${-x} ${g.outputY - g.wristY} 0"/>
       </body></body>`;
@@ -32,7 +32,7 @@ export function makeCrossedGovernorPhysics(mujoco, {timestep = .001, speedAmplit
     <worldbody><body><joint name="spindle" axis="0 1 0"/><inertial pos="0 0 0" mass=".2" diaginertia=".05 .05 .05"/>
     ${arms}<body pos="0 ${g.outputY} 0"><joint name="output" type="slide" axis="0 1 0" damping=".05"/>
     <inertial pos="0 0 0" mass="${outputMass}" diaginertia=".001 .001 .001"/>
-    <site name="output0" pos="0 0 ${-g.layer}"/><site name="output1" pos="0 0 ${g.layer}"/>
+    <site name="output0" pos="0 0 ${-linkLayer}"/><site name="output1" pos="0 0 ${linkLayer}"/>
     </body></body></worldbody><equality>${constraints}</equality>
     ${spindleDrive ? '<actuator><position joint="spindle" kp="10000" kv="100"/></actuator>' : ''}</mujoco>`;
   const frequency = 2 * Math.PI / period;
@@ -47,7 +47,7 @@ export function makeCrossedGovernorPhysics(mujoco, {timestep = .001, speedAmplit
     beforeStep: ({data, time}) => { if (spindleDrive) { const d = drive(time - timestep); data.ctrl[0] = d.angle + .01 * d.speed; } },
   });
   const pairs = [0, 1].map(i => [p.id('mjOBJ_SITE', 'linkEnd' + i), p.id('mjOBJ_SITE', 'output' + i)]);
-  return Object.assign(p, {geometry: g, parameters: {timestep, speedAmplitude, period, outputMass, armMass, damping, spindleDrive},
+  return Object.assign(p, {geometry: {...g, linkLayer}, parameters: {timestep, speedAmplitude, period, outputMass, armMass, damping, spindleDrive, linkLayer},
     state: () => {
       mujoco.mj_kinematics(p.model, p.data);
       const position = id => Array.from(p.data.site_xpos.slice(id * 3, id * 3 + 3));

@@ -1,100 +1,96 @@
-# Movement 170 — crossed-arm governor (review open)
+# Movement 170 — baked crossed-arm governor
 
-The existing model needs finite-joint reconstruction and a validated dynamic
-response. An unregistered MuJoCo study now drives only the spindle; both ball
-arms, upper links and axial output respond passively. No browser replacement
-or production bake is registered yet.
+170 now loads a 408,398-byte geometry/motion bundle and plays four interpolated
+coordinates. The arms, upper links and output are baked from passive MuJoCo
+dynamics; equal bevel gearing is scripted. The browser neither runs MuJoCo
+nor generates bevel geometry. There are 88 meshes and 481 animation keys.
+Three spindle revolutions occupy one 9.606218-second speed cycle.
 
-## Source and existing model
+## Source and finite construction
 
 The [source page](https://507movements.com/mm_170.html) has no working animation
-script. Its defining feature is that the ball arms cross and extend upward to
-two short links connected directly to the valve rod. There is no lower sleeve
-sliding on the spindle. Preserve that topology and the bowed reference piece.
+script. Its defining feature is that the ball arms cross, continue above the
+spindle and connect directly to the valve rod through two short links. There
+is no lower sleeve sliding on the spindle. The replacement retains that
+topology, the bowed reference piece and the two bevel gears; the added frame
+and index decorations are removed. Ground and fog are disabled.
 
-The existing factory measures the front engraving and imposes a spread angle
-from the massless conical-pendulum equilibrium formula. It then forces all
-visible links into that pose. This verifies neither loaded transient response
-nor finite-body clearance. The added external frame, index decorations and
-extended valve rod also need comparison with the simpler source silhouette.
-The equal bevel pair remains to be checked at actual tooth surfaces.
+The geometry follows the front engraving at 0.017 world units per pixel.
+The central pivot is near (264,160), balls near (176,319)/(355,319), upper wrists
+near (295,108)/(233,108), and gear apex near (264,456). Small asymmetries are
+averaged to make a balanced mechanism. The initial baked ball centers are
+within three pixels of those measured centers. This is a joint-position check,
+not whole-contour registration. Hidden support, depths and pin clearances are
+inferred. The visible valve rod ends near the source's upper crop.
 
-The [97-pose selected-interface audit](validation/170-existing-contact.json)
-makes 323,980 bidirectional visible-surface queries. It finds approximately
-0.055 world units of central-pin intrusion into each arm, 0.1293 at each upper
-wrist/link interface, 0.1294 at each output-pin/link interface, and 0.1165 between
-the rotating collar and nonrotating clevis. This selected audit excludes gears
-and does not certify the rest of the assembly.
+A forked spindle head leaves space for the crossed arms. Real bores surround
+the central and wrist pins. Upper links occupy separated depth planes
+(+/-0.275), matching the native study. Two short radial output pins leave the
+axial valve-rod bore unobstructed. A rotating collar is captured between two
+flanges on the nonrotating rod. This is an ideal bearing representation with
+clearance; thrust-bearing friction and detailed rolling elements are omitted.
 
-## MuJoCo study
+The equal 30-tooth bevel pair uses the shared Tredgold back-cone involute
+approximation with conical tooth ends, not an exact generated octoid flank.
+Counts and face widths are inferred. The outer radius is 0.629 world units.
+The [tooth-pitch sweep](validation/170-bevel-clearance.json) finds no sampled
+interference across 65 phases and 961 pairs; nearest sampled flank clearance
+is 0.002305–0.002310 world units. Teeth transmit prescribed equal-ratio motion,
+not simulated tooth contact forces.
 
-`mujoco-crossed-governor/physics.js` uses the existing source-derived arm lengths
-as a starting point. Two spindle-carried hinges support the crossed arms.
-Each upper wrist carries a passive short link whose far site connects to an
-axially sliding output body. A single position actuator drives the spindle;
-no actuator or prescribed trajectory controls spread or valve output.
+## Native motion and bake
 
-The [native study](validation/170-native-study.json) runs eight cases for
-16 seconds each, including timestep halving, constant speed, no spindle drive,
-and heavier valve output. Masses and damping are inferred. The output slider
-represents an ideal axial bearing above the spindle, not the lower sleeve
-that the source specifically replaces. The study does not yet include the
-nonrotating output bearing, finite collision contacts, bevel transmission or
-steam feedback. Raw trajectories stay in `/dev/shm/170-native-runs.json`.
+One spindle actuator drives the MuJoCo model. Both arms, short links and the
+axial output are passive, with ideal hinge and connection constraints. The
+output slide represents the direct upper valve bearing, not a sleeve on the
+lower spindle. Ball mass is 1 per ball; arm mass, link mass, output mass and
+damping are inferred. No steam feedback or valve pressure force is modeled.
 
-A 16% peak speed increase with weak damping produces excessive spread near
-1.048 radians and upper-link branch reversal. Increasing output mass to 0.2
-also permits the arms to exchange branches. Those cases must not be baked as
-acceptable governor behavior. With zero spindle drive, arms swing through the
-axis because no physical stops/contact surfaces are included yet.
+The [eight-case study](validation/170-native-study.json) includes timestep,
+load, constant-speed and no-drive variations. Large speed excursions with weak
+damping can reverse the upper-link branch, and heavier output changes the
+response. Those failure cases are not used in production. The selected drive
+has a 6% peak speed increase and arm damping 1, with output mass 0.02.
 
-A smaller 6% peak speed increase with arm damping 1 produces spread from
-0.430707 to 0.810904 radians, output from 1.197512 to 1.716627 world units, and
-maximum site closure error 1.20e-7. Halving the timestep changes sampled spread
-by at most 5.80e-5 radians and output by 8.50e-5 world units. This is a promising
-operating case, not yet a settled periodic or finite-contact qualification.
-With heavier output under the same drive, peak spread increases to 0.858623.
+The [settled-cycle report](validation/170-native-cycle.json) compares all
+corresponding generalized positions and velocities through the last two of
+forty cycles at two timesteps. The fine-step maximum cycle errors are below
+8.84e-10 in position and 2.37e-10 in velocity; maximum link closure error is
+2.23e-8. Halving the timestep changes sampled spread by 2.57e-5 radians and
+output by 3.83e-5 world units. Settled spread ranges from 0.517094 to 0.760822
+radians, and output from 1.285516 to 1.627042 world units.
 
-## Settled cycle and replacement bevel candidate
+The bake starts near the engraved spread, preserves three full turns per loop,
+and records native midpoint interpolation error below 9.63e-6 across its four
+coordinates. This is sampled interpolation evidence, not a continuous error
+bound. Native runs remain in `/dev/shm`; the compact production bundle and
+[provenance](../src/simulation/baked/assets/170.provenance.json) are committed.
 
-The [settled-cycle qualification](validation/170-native-cycle.json) drives three
-complete spindle turns in a 9.606218-second speed cycle. At both timesteps,
-all corresponding generalized positions and velocities repeat through the
-last two of forty cycles: maximum position error is below 8.84e-10 and velocity
-error below 2.43e-10. The fine-step maximum connection error is 2.24e-8.
-Halving the timestep changes sampled spread by 2.57e-5 radians and output
-travel by 3.83e-5 world units. This qualifies periodicity of the ideal native
-linkage, not finite meshes or the unmodeled output bearing.
+## Clearance and playback validation
 
-The settled spread range is 0.517094–0.760822 radians and output range is
-1.285516–1.627041. The best source-pose seam is sample 65 of 960, differing
-from the measured spread by approximately 0.004406 radians. Full native states
-and the last two cycles are retained temporarily in
-`/dev/shm/170-settled-cycles.json`; no interpolated browser bake is registered.
+The [legacy audit](validation/170-existing-contact.json) found intrusion at
+all seven selected pin/collar interfaces. During replacement, a solid spindle
+top also crossed the arms; the forked head resolves that interference.
 
-A separate equal 30-tooth bevel candidate uses the shared Tredgold back-cone
-involute approximation, with conical tooth ends and an inferred 0.629 outer
-radius. It is not an exact generated octoid gear. The
-[65-pose tooth-pitch sweep](validation/170-bevel-clearance.json) checks 961
-cross-gear pairs and 6,414,422 surface queries. No sampled interference is found;
-nearest sampled flank distance stays between 0.002305 and 0.002310 world units.
-Counts, face widths and clearance are inferred; source fit and shaft interfaces
-still require assembly review. This pair is unregistered and does not yet
-constitute a loaded contact simulation.
+The [native-pose solid sweep](validation/170-solid-clearance.json) checks
+129 poses and 2,459 cross-body pairs with 54,198,170 bidirectional queries.
+The [loaded-bake sweep](validation/170-baked-solid-clearance.json) repeats the
+check through interpolated playback with 54,375,472 queries. Neither finds
+sampled penetration above 1e-6 world units. Same-body joins are excluded.
+Both scripts reject nonfinite transforms and empty query sets.
 
-## Remaining work
-
-Fit the source silhouette and actual bored joints, reconstruct the rotating
-to nonrotating output connection, and integrate the candidate bevel pair. Check
-all visible solids through the settled cycle, then bake the motion for browser playback. Runtime
-MuJoCo is not necessary for the final viewer. Build, restart, full framing,
-desktop/mobile and rendering checks follow registration.
+Three tests check finite transforms, complete motion bounds, link-end closure
+between bake keys, exact restart, three-turn loop continuity and initial ball
+positions. The production build and packaged Chrome desktop/mobile checks pass, including
+playback, exact restart, orbit/reset, no WASM request, no page errors and no
+horizontal mobile overflow. Front and oblique views were inspected. The
+[browser record](validation/170-browser.json) identifies the tested files.
 
 ```sh
-node scripts/review-crossed-governor-existing.mjs
-node scripts/probe-crossed-governor.mjs
 node scripts/settle-crossed-governor.mjs
-node scripts/review-crossed-governor-bevels.mjs
+node scripts/bake-crossed-governor.mjs
+node scripts/review-crossed-governor-baked-solids.mjs
+node --test tests/crossed-governor-baked.test.mjs
 ```
 
-Movement 170 remains open. The full 507-movement review remains active.
+The full 507-movement review remains active. Next source review: 171.

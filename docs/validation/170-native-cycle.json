@@ -3,9 +3,9 @@
   "status": "unregistered-native-cycle-qualified",
   "period": 9.60621754427926,
   "turns": 3,
-  "maximumSpreadDifference": 0.000025634060255241842,
-  "maximumOutputDifference": 0.00003825967718551482,
-  "maximumSpindleDifference": 2.473583435858018e-7,
+  "maximumSpreadDifference": 0.000025633930567203755,
+  "maximumOutputDifference": 0.00003825937018575587,
+  "maximumSpindleDifference": 2.4735925308050355e-7,
   "method": "Corresponding states throughout the final two of forty driven cycles, with three complete spindle turns per cycle. Compare all generalized positions and velocities, then halve timestep. No mesh-clearance or bearing-contact qualification.",
   "runs": [
     {
@@ -18,24 +18,25 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 1,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.275
       },
       "best": {
         "index": 65,
-        "maximumPositionError": 2.07073469482566e-10,
-        "maximumVelocityError": 2.1289873435427573e-11,
-        "sourceSpreadError": 0.004402519884438849
+        "maximumPositionError": 2.0730084315800923e-10,
+        "maximumVelocityError": 2.2050644587991077e-11,
+        "sourceSpreadError": 0.0044021251429092745
       },
       "maximumCyclePositionError": 2.1901058744333568e-10,
-      "maximumCycleVelocityError": 7.543386748576353e-11,
-      "maximumClosureError": 4.255757107051604e-8,
+      "maximumCycleVelocityError": 7.718779782006635e-11,
+      "maximumClosureError": 4.242464246651912e-8,
       "spreadRange": [
-        0.5170905322089961,
-        0.7608219586290499
+        0.5170901374674665,
+        0.7608218318247315
       ],
       "outputRange": [
-        1.2855153591338961,
-        1.6270451956199348
+        1.2855155732999515,
+        1.6270456417578585
       ]
     },
     {
@@ -48,35 +49,36 @@
         "outputMass": 0.02,
         "armMass": 0.02,
         "damping": 1,
-        "spindleDrive": true
+        "spindleDrive": true,
+        "linkLayer": 0.275
       },
       "best": {
         "index": 65,
-        "maximumPositionError": 8.35434832424653e-10,
-        "maximumVelocityError": 4.56652406318446e-11,
-        "sourceSpreadError": 0.0044059501158819625
+        "maximumPositionError": 8.352074587492098e-10,
+        "maximumVelocityError": 3.1750501221770346e-11,
+        "sourceSpreadError": 0.004405554961302016
       },
-      "maximumCyclePositionError": 8.836380516186182e-10,
-      "maximumCycleVelocityError": 2.4291905639794997e-10,
-      "maximumClosureError": 2.2320237360431207e-8,
+      "maximumCyclePositionError": 8.837517384563398e-10,
+      "maximumCycleVelocityError": 2.36389975302731e-10,
+      "maximumClosureError": 2.2258825078836703e-8,
       "spreadRange": [
-        0.5170939624404393,
-        0.7608216444044729
+        0.5170935672858593,
+        0.7608215168877704
       ],
       "outputRange": [
-        1.2855158907779856,
-        1.6270413186152317
+        1.2855161061470766,
+        1.6270417652229858
       ]
     }
   ],
   "sources": [
     {
       "file": "scripts/settle-crossed-governor.mjs",
-      "sha256": "a27a41c4f645eaef4960590efbaa4d71c04d3072e55a78e966404cd82cf9db0a"
+      "sha256": "a7dbbf71eb4349a2dc5adb699c0b524b87384c83d959b7b6159dc37d742c8fd4"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/physics.js",
-      "sha256": "dcee5a948a2f6ad37747872ad72c5aa1a48d96c23484e33b80654ed77189ea03"
+      "sha256": "5d2b08096c3e77283eca5a62d804eb83f3fb9e46be01b8e16b4246c4fa9b9760"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",

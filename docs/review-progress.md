@@ -1,13 +1,13 @@
-# Open review: 170 crossed-arm governor
+# Shipped reconstruction: 170 crossed-arm governor
 
-The selected finite-joint audit finds interference at all seven checked
-interfaces. An unregistered MuJoCo study now drives only the spindle, leaving
-crossed arms, upper links and axial output passive. Eight load/drive/timestep
-cases identify branch failures at excessive speed and a promising smaller
-drive range. Forty-cycle runs now qualify periodicity at two timesteps, and
-an unregistered conical involute bevel pair passes its finite-surface sweep.
-Source solids, the output bearing, assembly clearance and browser bake remain
-open; see [movement 170](movement-170.md).
+An 88-mesh source reconstruction plays passive MuJoCo motion from a 408,398-byte
+bake with 481 keys. Forked pivot support, bored links and a rotating collar
+replace the former solid joint intersections. The conical involute bevel pair
+and the full interpolated assembly pass their sampled clearance sweeps. The
+native cycle repeats at two timesteps; three playback tests, production build
+and packaged desktop/mobile checks pass without WASM. Three spindle turns take
+9.61 seconds. Inferred loads and bearing assumptions are documented in
+[movement 170](movement-170.md). Next source review: 171; the full review remains active.
 
 # Shipped reconstruction: 169 link-connected crank
 

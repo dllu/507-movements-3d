@@ -4,11 +4,11 @@ import {createHash} from 'node:crypto';
 import loadMujoco from '@mujoco/mujoco';
 import {crossedGovernorGeometry, makeCrossedGovernorPhysics} from '../src/simulation/mujoco-crossed-governor/physics.js';
 
-const mujoco = await loadMujoco(), g = crossedGovernorGeometry();
+const mujoco = await loadMujoco(), g = {...crossedGovernorGeometry(), linkLayer: .275};
 const amplitude = .03, turns = 3, period = turns * 2 * Math.PI / (g.nominalSpeed * (1 + amplitude));
 const runs = [];
 for (const steps of [9600, 19200]) {
-  const p = makeCrossedGovernorPhysics(mujoco, {period, timestep: period / steps, speedAmplitude: amplitude, damping: 1});
+  const p = makeCrossedGovernorPhysics(mujoco, {period, timestep: period / steps, speedAmplitude: amplitude, damping: 1, linkLayer: g.linkLayer});
   const cycles = 40, stride = steps / 960, samples = [];
   try {
     for (let tick = 0; tick <= cycles * steps; tick++) {

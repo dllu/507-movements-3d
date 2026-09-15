@@ -1,0 +1,34 @@
+{
+  "movement": 170,
+  "status": "packaged-desktop-mobile-passed",
+  "checks": [
+    "playback",
+    "exact restart",
+    "orbit and reset",
+    "390x844 viewport without horizontal overflow",
+    "no WASM request",
+    "no page errors"
+  ],
+  "sources": [
+    {
+      "file": "tests/e2e/crossed-governor.spec.mjs",
+      "sha256": "ca51f7509d1b49e8652969b7650b423c3c995db132420e5c9f8bc9c80677160e"
+    },
+    {
+      "file": "src/simulation/baked/crossed-governor.js",
+      "sha256": "0e1d23394d38d7e0f38e01243aff83e6fdce0d09ac5f81ea0bc8c09151e48abd"
+    },
+    {
+      "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
+      "sha256": "741490aa6ad3b69d0875daccab25ebe3835858646fc83c50ecbba3bd058c18da"
+    },
+    {
+      "file": "src/simulation/baked/assets/170.json.gz",
+      "sha256": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a"
+    },
+    {
+      "file": "src/simulation/model-loader.js",
+      "sha256": "146011e92e471c85b9e5c1b117c65da5babc954e0fa5ae3dcf9c7326294cf1f4"
+    }
+  ]
+}
