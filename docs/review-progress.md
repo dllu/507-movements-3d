@@ -1,3 +1,13 @@
+# Active source reconstruction: 156 slotted elbow
+
+156's current analytic trajectory agrees with the real source animation library
+to numerical precision at 721 phases. The drawing and animation dimensions differ:
+a disk-aligned comparison leaves about 22px bell-pivot and 21px output-joint error.
+A reusable analytic constraint model now preserves measured engraving landmarks
+and passes full-turn linkage tests; no live physics is needed for this determined
+motion. Build and qualify the visible assembly next. Production is unchanged;
+see [movement 156](movement-156.md). 150's source fit remains open.
+
 # Shipped reconstruction: 155 reversible elbow-pawl feed
 
 155 now uses an 839 KB MuJoCo bake with both pawl installations, natural startup

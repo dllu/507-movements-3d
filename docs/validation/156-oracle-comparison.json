@@ -1,0 +1,231 @@
+{
+  "movement": 156,
+  "url": "https://507movements.com/mm_156.html",
+  "libraryUrl": "https://507movements.com/js/anilib.js",
+  "method": "Execute the source animation definition with its actual animation library in an isolated VM and a no-op canvas; read transformed important points at 721 equal cycle phases. Compare current model positions at its four-second period. This tests analytic trajectory agreement, not rendered solids or wall-clock source speed.",
+  "sourceHashes": {
+    "html": "4c27abe95d78ea2e468f69ed467893e7958ad2aa538a330cfbad16341993190d",
+    "library": "722066891914ec70fd4d0ebc903c7850069cd54d17015e7ab0a57cfbbe35ac2b"
+  },
+  "maximumWorldErrors": {
+    "pin": 6.280369834735101e-16,
+    "bellOutput": 2.401779625492033e-15,
+    "slider": 4.7207330545682824e-15
+  },
+  "reusableFormulaErrors": {
+    "pin": 4.695944831791985e-16,
+    "bellOutput": 2.220446049250313e-15,
+    "slider": 5.402578411571407e-15
+  },
+  "diskAlignedSourceLandmarks": [
+    {
+      "name": "pin",
+      "mapped": [
+        140.555502,
+        147.37273
+      ],
+      "engraving": [
+        140,
+        157
+      ],
+      "errorPixels": 9.643283161087005
+    },
+    {
+      "name": "pivot",
+      "mapped": [
+        259.810963,
+        379.9688725
+      ],
+      "engraving": [
+        280,
+        388
+      ],
+      "errorPixels": 21.72777540174385
+    },
+    {
+      "name": "output",
+      "mapped": [
+        419.2180218609672,
+        298.2385304281456
+      ],
+      "engraving": [
+        438,
+        289
+      ],
+      "errorPixels": 20.931152555147985
+    }
+  ],
+  "engravingParameters": {
+    "pivot": [
+      0.924,
+      -2.5060000000000002
+    ],
+    "pin": [
+      -1.036,
+      0.728
+    ],
+    "restAngle": 2.1156602422464403,
+    "includedAngle": -1.5559239177282673,
+    "outputLength": 2.6103524666220843,
+    "rodLength": 3.7800000000000002,
+    "guideX": 3.136,
+    "period": 4,
+    "nearCapDistance": 0.9534678369253162,
+    "farCapDistance": 4.780400387872132
+  },
+  "samples": [
+    {
+      "phase": 0,
+      "pin": [
+        -2.489644,
+        2.08906
+      ],
+      "bellOutput": [
+        6.956543113931092,
+        -3.0250349297676484
+      ],
+      "slider": [
+        6.7104570000000034,
+        -17.77298196060995
+      ]
+    },
+    {
+      "phase": 0.125,
+      "pin": [
+        -0.2832556628348324,
+        3.23763264744597
+      ],
+      "bellOutput": [
+        7.503697878353739,
+        -4.58594337075314
+      ],
+      "slider": [
+        6.710457000000004,
+        -19.314598058432818
+      ]
+    },
+    {
+      "phase": 0.25,
+      "pin": [
+        2.08906,
+        2.489644
+      ],
+      "bellOutput": [
+        7.612717383009693,
+        -6.187692756086137
+      ],
+      "slider": [
+        6.7104570000000034,
+        -20.91007117131685
+      ]
+    },
+    {
+      "phase": 0.375,
+      "pin": [
+        3.23763264744597,
+        0.2832556628348324
+      ],
+      "bellOutput": [
+        7.404807562510978,
+        -7.417384458829312
+      ],
+      "slider": [
+        6.710456999999996,
+        -22.151032252106464
+      ]
+    },
+    {
+      "phase": 0.5,
+      "pin": [
+        2.4896440000000006,
+        -2.0890599999999995
+      ],
+      "bellOutput": [
+        7.440286509246151,
+        -7.283450828966759
+      ],
+      "slider": [
+        6.710456999999996,
+        -22.01538379404074
+      ]
+    },
+    {
+      "phase": 0.625,
+      "pin": [
+        0.28325566283483283,
+        -3.2376326474459702
+      ],
+      "bellOutput": [
+        6.992193171553909,
+        -3.0956973825720318
+      ],
+      "slider": [
+        6.710457000000004,
+        -17.843006449979487
+      ]
+    },
+    {
+      "phase": 0.75,
+      "pin": [
+        -2.0890599999999995,
+        -2.4896440000000006
+      ],
+      "bellOutput": [
+        5.634341120980917,
+        -1.2992296429328078
+      ],
+      "slider": [
+        6.710457000000004,
+        -16.009922169626545
+      ]
+    },
+    {
+      "phase": 0.875,
+      "pin": [
+        -3.23763264744597,
+        -0.28325566283483306
+      ],
+      "bellOutput": [
+        6.13637441136817,
+        -1.8122297913452097
+      ],
+      "slider": [
+        6.710457000000001,
+        -16.55105366509544
+      ]
+    },
+    {
+      "phase": 1,
+      "pin": [
+        -2.489644,
+        2.08906
+      ],
+      "bellOutput": [
+        6.956543113931092,
+        -3.0250349297676484
+      ],
+      "slider": [
+        6.7104570000000034,
+        -17.77298196060995
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/compare-slotted-elbow-oracle.mjs",
+      "sha256": "904a67d2e14978cc0302cf9ce334c5415a41304ae4043f856a8803f420698015"
+    },
+    {
+      "file": "src/simulation/authored-cranks.js",
+      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+    },
+    {
+      "file": "src/simulation/slotted-elbow-motion.js",
+      "sha256": "70b87ede25a9501217ad7cd7bb4b4b19dff677ef137c677c8bbc7282b42960c1"
+    },
+    {
+      "file": "public/engravings/mm_156.png",
+      "sha256": "f0b9a8c7f5fcda10b2c2995864e01a85a02b4c63f1b976f0220d0cdc34cbf615"
+    }
+  ]
+}
