@@ -53,3 +53,37 @@ the local Node construction measured about 0.4 seconds. Once the geometry and
 contact model are settled, precomputing the expensive motion data is preferable
 to rebuilding it on every visit. Do not mark 149 complete from the working-pair
 checks alone.
+
+## Traced-profile physics candidate
+
+`src/simulation/mujoco-twin-cam/` now contains a separate, unregistered
+candidate. Both convex cam outlines are traced approximately from the engraving;
+the hidden lower half of the rear cam is reconstructed. Two rounds of Chaikin
+refinement round the trace inside its convex hull. The visible plates and
+collision meshes share these contours. The candidate includes bored plates,
+levers and rollers, but does not yet include the output rods or complete supports.
+
+Only the cam shaft is driven. Gravity and contact move the free lever hinges;
+the rollers also spin freely. Assumed masses are uniform one-unit rods and
+0.1-unit rollers, with no output load. These are prototype assumptions, not
+mass properties derived from the final visible assembly.
+
+The [0.5 ms probe](validation/149-gravity-prototype.json) and
+[0.25 ms probe](validation/149-gravity-fine.json) each run three six-second
+revolutions and measure the last revolution at 20 ms intervals. Maximum
+corresponding lever-angle differences are 0.000153 rad (upper) and 0.0000773 rad
+(lower). At the finer timestep the measured profile gap ranges from -0.000677
+to 0.001587 world units. Eight upper and nine lower samples have no reported
+contact. These sampled measurements do not establish continuous contact or
+mesh convergence. Lever position closure is within 0.00000747 rad; roller-spin
+closure and velocity continuity have not been established.
+
+Three focused tests verify convex profiles, repeated passive lever motion, and
+stationary follower coordinates when both gravity and contact are disabled.
+Run `node --test tests/twin-cam-physics.test.mjs`; reproduce the diagnostic with
+`node scripts/probe-twin-cam-physics.mjs` and optionally `TIMESTEP=0.00025`
+and `REPORT=docs/validation/149-gravity-fine.json`.
+
+The existing application remains on the analytic implementation. Complete the
+rod geometry, load assumptions, collision review and bake validation before
+switching playback to this candidate.

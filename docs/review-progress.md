@@ -1,5 +1,12 @@
 # Current review: 149 twin cam followers
 
+A separate traced-profile MuJoCo candidate now drives both followers passively
+with gravity and contact. Three physics tests pass; halving the timestep changes
+sampled lever angles by less than 0.009 degrees. Its 12-part preliminary geometry
+renders alongside the engraving without browser errors. The candidate is not
+registered or baked: output rods, loads, complete supports and assembly validation
+remain unfinished. See the prototype evidence in [movement 149](movement-149.md).
+
 149's cam bevels and outline tubes no longer protrude into the rollers. A
 65-pose actual-surface check passes, as do the focused analytic test, build and
 desktop/mobile playback/restart. The cycle is now six seconds, with frontal

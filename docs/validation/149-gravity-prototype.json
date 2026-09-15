@@ -1,0 +1,50 @@
+{
+  "movement": 149,
+  "status": "traced-profile-gravity-prototype",
+  "assumptions": "Uniform one-unit-mass rods and 0.1-unit-mass rollers. No output rod load. Only the cam shaft is driven; lever lift and roller spin are passive.",
+  "options": {
+    "timestep": 0.0005,
+    "period": 6,
+    "gravity": 9.81
+  },
+  "summary": {
+    "samples": 301,
+    "maximumPenetration": 0.0009895113644256756,
+    "missingUpper": 8,
+    "missingLower": 9,
+    "minimumProfileGap": -0.0010155298210710595,
+    "maximumProfileGap": 0.0015589773204420232,
+    "closure": {
+      "upper": 0.000016484242382708292,
+      "lower": 3.529924311185262e-8
+    },
+    "angleRanges": {
+      "upper": [
+        -0.058164256026119465,
+        0.23319060984911555
+      ],
+      "lower": [
+        -0.03823294472583302,
+        0.16230149073283084
+      ]
+    }
+  },
+  "sources": [
+    {
+      "file": "scripts/probe-twin-cam-physics.mjs",
+      "sha256": "246c7861b93cd237275132100397c8fa0a6dfffe82ca4b436259d8e4805a6f52"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/source.js",
+      "sha256": "556297041581826d84387f75ecddb5ece68ddb03aa1bda90cfe03461dd582c34"
+    },
+    {
+      "file": "src/simulation/mujoco-twin-cam/physics.js",
+      "sha256": "b0e82fc8b380d2eeee9cd0a6441ceac2d9ae508569b5ddc1903650d309d40793"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}
