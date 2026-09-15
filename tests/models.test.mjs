@@ -38117,7 +38117,11 @@ test('movement 144 amplifies one short right-hand stroke through four exact lazy
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [6.6, 4.2, 11.4]);
+  assert.deepEqual(model.cameraDirection.toArray(), [0.1, 0.06, 15]);
+  assert.equal(model.root.userData.hideGround, true);
+  model.reset();
+  assert.ok(model.root.userData.kinematics.leftOutput.position.distanceTo(
+    sourceState.leftOutput.position) < 1e-15);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 9.45);
   assert.equal(cameraEnvelope.geometry.parameters.height, 4.72);

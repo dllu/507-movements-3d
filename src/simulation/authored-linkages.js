@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { makeBoredScissorLink } from './bored-scissor-link.js';
 import {
   PALETTE,
   makeBeam,
@@ -628,10 +629,12 @@ function lazyTongsRectilinearAmplifier() {
   linkageGroup.userData.role = 'ten-member-four-bay-lazy-tongs-linkage';
   linkageGroup.userData.planar = true;
   const links = linkDefinitions.map((definition, index) => {
-    const link = makeDynamicLink({
+    const link = makeBoredScissorLink({
       color: definition.planeZ > 0 ? 0x174f69 : PALETTE.driven,
       depth: linkDepth,
-      jointRadius: 0.145,
+      length: definition.nominalLength,
+      pinRadius,
+      centerPin: definition.kind === 'full-cross-link',
       thickness: linkThickness,
     });
     link.userData.lazyTongsLink = true;
@@ -764,6 +767,13 @@ function lazyTongsRectilinearAmplifier() {
     rightInputAssembly,
   );
   root.userData.cameraDistanceScale = 1.01;
+  root.userData.hideGround = true;
+  root.userData.supportsRestart = true;
+  root.userData.animationTiming = {
+    authoredCyclePeriod: cyclePeriod,
+    displayCycleDuration: cyclePeriod,
+    playbackTimeScale: 1,
+  };
   root.userData.mechanism =
     'fixed-center-four-bay-lazy-tongs-three-to-one-rectilinear-amplifier';
   root.userData.blocks = {
@@ -928,8 +938,9 @@ function lazyTongsRectilinearAmplifier() {
   const model = finish(
     root,
     update,
-    new THREE.Vector3(6.6, 4.2, 11.4),
+    new THREE.Vector3(0.1, 0.06, 15),
   );
+  model.reset = () => update(0);
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   for (const assembly of [leftOutputAssembly, rightInputAssembly]) {

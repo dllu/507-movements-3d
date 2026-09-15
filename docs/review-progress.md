@@ -1,4 +1,12 @@
-# Current review: 143 generated keyed-worm traverse
+# Current review: 144 lazy-tongs joints
+
+144's existing analytic 3:1 linkage agrees with the source mechanism. Its ten
+links now have flat plates and actual pin bores; a 65-orientation surface test
+and the existing kinematic test pass. Frontal view and restart are added.
+Continue with handle clevises, pedestal support and full-assembly clearance;
+see [movement 144](movement-144.md). This review is not complete.
+
+# Completed review: 143 generated keyed-worm traverse
 
 143 now loads a prebuilt generated worm/wheel assembly with a keyed bore,
 bored guide and bearings, direct wrist attachment, and twelve-second analytic
