@@ -17,7 +17,10 @@ A 1.125 px initial bow reduces early buckling-branch sensitivity but leaves
 endpoint contact exclusion, now fixed with material-clipped geom pairs and a
 regression that fails on the old code. Full-cycle qualification still fails:
 the coarse trajectory has larger swing, later head penetration and a treadle/
-crank-stud collision. Include that rigid contact and refine timestep next.
+crank-stud collision. Native stud/beam contact now limits that overlap to
+0.0134 source pixels. The two finer runs pass sampled hardware checks and
+agree in treadle angle within 0.0015 rad, but slack-rope positions still differ
+by 19.5 pixels. Review rope/contact modeling and repeatability next.
 No bake is qualified; production remains unchanged. See
 [movement 159](movement-159.md). 150's source fit also remains open.
 

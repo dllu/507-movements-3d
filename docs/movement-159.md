@@ -457,9 +457,56 @@ SAMPLES=/dev/shm/159-clipped-anchor.json REPORT=docs/validation/159-clipped-anch
 SAMPLES=/dev/shm/159-clipped-anchor.json REPORT=docs/validation/159-clipped-anchor-clearance.json node scripts/review-cord-treadle-core.mjs
 ```
 
+## Native crank-stud contact
+
+The scaled native model now includes the visible crank-stud shaft as a cylinder
+of radius 0.055, extending from z = −0.13 to 0.38. It contacts the treadle beam
+without changing the visible geometry or the mesh-derived moving inertia. A new
+regression puts the two bodies at the recorded 3.76 s intersecting pose and
+requires a native shaft/beam contact, then checks that reset restores a clear
+initial pose. It passes, as do the seven other inertia, bending, initial-bow and
+anchor-contact tests.
+
+In the coarse full-cycle trajectory, maximum sampled stud/treadle overlap drops
+from 0.06954 to 0.0002383 display units (about 0.0134 source pixels). The audit
+now reports this modeled working contact separately, with a 0.001-unit limit;
+it still rejects larger penetration. This acknowledges the native soft-contact
+model without hiding the measured depth. The coarse rope/head audit still fails
+with 0.00201 units of later penetration. The 0.05 ms run passes its sampled
+rope/hardware audit. These are separate checks from timestep convergence.
+
+All three 4 s stud-contact runs finish without native reset. The 0.1 ms run
+still develops the larger swing and loads the driven disk against the stud,
+with up to 0.3782 rad tracking error. The 0.05 and 0.025 ms runs remain on the
+smaller swing: maximum treadle disagreement is 0.001494 rad, but rope vertices
+still differ by 0.34703 units (19.52 source pixels) during slack motion. Both
+finer trajectories pass the sampled rigid and rope/hardware audits. Neither is
+a qualified loop: initial/final rope position gaps are 0.03082 and 0.03493 units,
+and these position checks do not establish matching velocities or steady state.
+Further blind timestep reduction is not justified as the sole remedy; rope
+initial-condition/material sensitivity and contact discretization remain open.
+See [refinement and seams](validation/159-stud-refinement.json),
+[native coarse](validation/159-stud-coarse-native.json),
+[native fine](validation/159-stud-fine-native.json),
+[native finer](validation/159-stud-finer-native.json),
+[coarse rigid audit](validation/159-stud-coarse-clearance.json),
+[coarse failed hardware audit](validation/159-stud-coarse-hardware.json),
+[fine rigid audit](validation/159-stud-fine-clearance.json),
+[fine hardware audit](validation/159-stud-fine-hardware.json),
+[finer rigid audit](validation/159-stud-finer-clearance.json),
+[finer hardware audit](validation/159-stud-finer-hardware.json).
+
+```sh
+RIGID_CORE=1 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-stud-coarse.json REPORT=/dev/shm/159-stud-coarse-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.00005 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-stud-fine.json REPORT=/dev/shm/159-stud-fine-report.json node scripts/probe-finite-cord-treadle.mjs
+RIGID_CORE=1 DT=.000025 CORD_INITIAL_BOW=.02 CORD_BENDING=.0002 CORD_RELAXATION=.4 CORD_DURATION_SECONDS=4 SAMPLES=/dev/shm/159-stud-finer.json REPORT=/dev/shm/159-stud-finer-report.json node scripts/probe-finite-cord-treadle.mjs
+node scripts/review-cord-treadle-stud-refinement.mjs
+node --test tests/cord-treadle-stud-contact.test.mjs tests/cord-treadle-anchor-contact.test.mjs tests/cord-treadle-inertia.test.mjs tests/cord-treadle-initial-bow.test.mjs tests/cord-treadle-bending.test.mjs
+```
+
 ## Remaining work
 
-Include crank-stud/treadle rigid contact and refine timestep further. Qualify
+Qualify timestep convergence with crank-stud/treadle contact enabled. Qualify
 the inferred rope/anchor fastening and final moving assembly with material-clipped
 anchor contact.
 Refine the finite rope at the explicit physical scale and qualify

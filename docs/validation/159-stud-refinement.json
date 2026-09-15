@@ -1,0 +1,126 @@
+{
+  "movement": 159,
+  "method": "Identical material-vertex comparisons at matching .02 s samples over one native cycle, with crank-stud contact and .02 initial bow. Seams compare positions only and do not establish velocity continuity or a settled orbit.",
+  "comparisons": [
+    {
+      "timesteps": [
+        0.0001,
+        0.00005
+      ],
+      "windows": [
+        {
+          "start": 0,
+          "end": 0.4,
+          "rope": {
+            "time": 0.39999999999997227,
+            "vertex": 14,
+            "distance": 0.06881133545553067
+          },
+          "treadle": 0.00033547197193262157,
+          "disk": 0.0003559864447927885
+        },
+        {
+          "start": 0.4,
+          "end": 2,
+          "rope": {
+            "time": 1.9399999999998028,
+            "vertex": 96,
+            "distance": 0.5401723911084243
+          },
+          "treadle": 0.21309126449597157,
+          "disk": 0.04911695154953266
+        },
+        {
+          "start": 2,
+          "end": 4,
+          "rope": {
+            "time": 4.000000000004016,
+            "vertex": 96,
+            "distance": 0.9818739524557334
+          },
+          "treadle": 0.389023567224565,
+          "disk": 0.4003560051689572
+        }
+      ]
+    },
+    {
+      "timesteps": [
+        0.00005,
+        0.000025
+      ],
+      "windows": [
+        {
+          "start": 0,
+          "end": 0.4,
+          "rope": {
+            "time": 0.3399999999999707,
+            "vertex": 70,
+            "distance": 0.07629233418892054
+          },
+          "treadle": 0.00011231670896810764,
+          "disk": 0.00027123619717983605
+        },
+        {
+          "start": 0.4,
+          "end": 2,
+          "rope": {
+            "time": 1.2000000000003201,
+            "vertex": 85,
+            "distance": 0.34703483261658774
+          },
+          "treadle": 0.0014943525309261685,
+          "disk": 0.0023885280715512103
+        },
+        {
+          "start": 2,
+          "end": 4,
+          "rope": {
+            "time": 2.2200000000014954,
+            "vertex": 82,
+            "distance": 0.07776602590609459
+          },
+          "treadle": 0.001290970105488315,
+          "disk": 0.001731371126932224
+        }
+      ]
+    }
+  ],
+  "seams": [
+    {
+      "file": "/dev/shm/159-stud-coarse.json",
+      "rope": 0.9587553924777585,
+      "treadle": 0.37974080297961743,
+      "maximumDiskTrackingError": 0.37820630368255603
+    },
+    {
+      "file": "/dev/shm/159-stud-fine.json",
+      "rope": 0.03082452027209982,
+      "treadle": 0.009282764244947561,
+      "maximumDiskTrackingError": 0.04582908438347788
+    },
+    {
+      "file": "/dev/shm/159-stud-finer.json",
+      "rope": 0.03492588812870111,
+      "treadle": 0.00924324408802718,
+      "maximumDiskTrackingError": 0.04634897706424024
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/review-cord-treadle-stud-refinement.mjs",
+      "sha256": "4d9acbbef4659013cc3b8bab60437e2c34a0fef8c504ee39d95a4846a026cc7d"
+    },
+    {
+      "file": "/dev/shm/159-stud-coarse.json",
+      "sha256": "8ed375b3e3eadfe876eff8b96eaec3292fa2374ad28b6a101fbaf29d64541797"
+    },
+    {
+      "file": "/dev/shm/159-stud-fine.json",
+      "sha256": "0c3141c8fa0a51f72df83873906ca2dd8211a2b5a5f2004872e0f56005d47e23"
+    },
+    {
+      "file": "/dev/shm/159-stud-finer.json",
+      "sha256": "5b1fb219769edc0413ddba25493d980ce74fc6c5a2f4de8c6291fea486926698"
+    }
+  ]
+}
