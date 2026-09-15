@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "movements": [
+    181,
+    182
+  ],
+  "names": [
+    "upper",
+    "lower",
+    "catch",
+    "piston"
+  ],
+  "period": 18,
+  "loopStart": 0,
+  "loopEnd": 18,
+  "turns": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "bounds": {
+    "min": [
+      -2.5548796561284868,
+      -5.450399832614488,
+      -0.8260000029206276
+    ],
+    "max": [
+      2.2168385199363674,
+      2.7224999046325684,
+      0.849999997317791
+    ]
+  },
+  "focus": [
+    -0.1690205680960597,
+    -1.3639499639909596,
+    0.011999997198581691
+  ],
+  "inputHash": "10f77c4dbaa12f36cc3f7f896c99dc1e06b09fdc8831e26d4898a6e1a706471e",
+  "sources": [
+    {
+      "file": "scripts/bake-diagonal-catch.mjs",
+      "sha256": "6c9e549601da217152e318f6fff22cda2fe353186d845da4fb9ab842e0a19574"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/assembly.js",
+      "sha256": "4d0bc08c655be6d3b82d04717c2e632ff502603c30d829e40bfa8cfda73093e7"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
+      "sha256": "65a1c432c69a928372c2f06d50add706db4041a324496b055b8a607204571920"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
+      "sha256": "fda54e20db805443250e37df8d3a622aa774742ea7b3a48530c27d7e10428cc9"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "docs/validation/181-projected-contact-motion.json",
+      "sha256": "7f790ecbe302604b8cbc1194aba712d1e535c99c0bdbc7b74415a5d63d65a013"
+    }
+  ],
+  "keys": 9001,
+  "bytes": 520876,
+  "sha256": "ec66dbedf433a5c10380fa2181be6ea9b3972b0810d585910efdea03728077b7",
+  "status": "baked-assembly-source-review-open"
+}

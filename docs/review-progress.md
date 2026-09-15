@@ -1,3 +1,20 @@
+# Movements 181–182: passive bake published; source contours still open
+
+Replaced the browser's old circular latch pockets and rollers with the traced
+catch, finite fingers, continuous rear supports and axial webs. The upper horn
+now has the inferred rear offset needed to appear in 182 and lie behind the
+rod in 181. The shared 520,876-byte bake runs a 12-second display cycle without
+live MuJoCo; the tappet face has source-style hatching. All 50 physical meshes
+pass the 129-pose assembly sweep (1,025 pairs, 8,676,710 surface queries), and
+the seven scoped tests and both packaged browser checks pass. The corrected
+contact trajectory retains its 36,001-pose clearance evidence. The lower
+finger's crescent silhouette and upper catch's fit to both drawings remain
+unfinished. Continue those contours while retaining the qualified contact
+faces; do not mark 181–182 fully reviewed yet. See [review](movement-181.md).
+The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: rod section repaired; projected contact motion clears
 
 The visible piston rod now matches the source width and sectioned extent, with

@@ -1,198 +1,135 @@
-# Movements 181–182 — fitted tappet motion; latch reconstruction open
+# Movements 181–182 — baked passive catch; source contours under review
 
-These engravings show opposite stages of one mechanism. The
-[source description](https://507movements.com/mm_181.html) says the piston tappet
-closes one valve handle, the diagonal catch transfers engagement, and the other
-backweight opens its valve pair. Both variants share geometry and motion;
-182 starts at the opposite end of the 18-second cycle.
+The browser now loads a 50-mesh reconstruction driven by a 520,876-byte motion
+and geometry bake. The old circular latch pockets and cylindrical latch rollers
+are removed. A continuous S-shaped catch, finite fingers, bored rear supports
+and axial webs replace them. Both engravings show stages of the same mechanism;
+182 starts halfway through the cycle. An 18-second native cycle is displayed
+in 12 seconds. The browser runs neither MuJoCo nor contact projection.
 
-## Handle fit and finite contact
+The [original caption](https://507movements.com/mm_181.html) describes the piston
+tappet closing one valve handle, the catch transferring engagement and the other
+backweight opening its valve pair. Only the piston is actuated in the native
+model. The weighted handles and catch move passively. The visible weight rods
+remain vertical through ideal guidance; masses, inertias, friction and valve
+travel stops are reconstruction assumptions.
 
-The old model inferred handle travel from the weight pins alone. Its working
-arms did not clear a narrow tappet. The [isolated baseline](validation/181-tappet-baseline.json)
-stalled in both directions at both timesteps; widening the travel limits let
-it pass. That ruled out merely narrowing the oversized shoe as a repair.
+## Source fit and visible assembly
 
-Each handle now uses one rigid fit to its working tip and weight pin in both
-engravings, registered at its pivot. The fit also requires the held tip to clear
-the shoe's right edge. Tip radii are 0.10 model units (eight source pixels).
-The working-arm tracing receives one fixed similarity transform; it does not
-change shape while moving. Angles are -0.995 radians for the upper handle and
--0.9446 for the lower. The fit is an explicit compromise between inconsistent
-hand-drawn positions:
+Each working handle uses one rigid fit to its tip and weight pin in both plates,
+registered at its pivot. The fit also requires the held tip to clear the finite
+shoe. The traced working-arm curvature receives one fixed similarity transform;
+it never changes shape during playback. Nominal travel is -0.995 radians for the
+upper handle and -0.9446 for the lower. The inconsistent drawn positions require
+an explicit compromise:
 
 | Handle | Tip error in 181 | Tip error in 182 | Weight-pin error in each plate |
 | --- | ---: | ---: | ---: |
 | Upper | 10.37 px | 15.50 px | 10.70 px |
 | Lower | 14.30 px | 6.43 px | 11.54 px |
 
-The shoe spans registered source X pixels 170–193. The invented contact rollers
-are removed. Contact now comes from the finite working-arm outline over the
-whole shoe width, with a circumscribed approximation to the rounded tip.
-The tappet moves continuously; its position determines the driven handle angle.
-Contact progresses along the arm rather than following one material point.
-A short prescribed seating interval finishes the handle's last approximately
-1.2% of travel after the working surface clears the shoe.
+These are nominal rigid-fit residuals, not whole-contour registration scores.
+The baked settled angles differ slightly from those nominal values. Tip radius
+is 0.10 model units (eight source pixels); the shoe spans registered source
+X pixels 170–193. Its rounded tips use the same 64-sided section as the qualified
+native contact geometry.
 
-The opposite handle stays caught during the drive, then returns separately.
-Its return is constrained against the opposite shoe face until the tappet has
-passed. This replaces the old simultaneous motion, which made the released
-handle cross the tappet during overtravel. Valve fractions follow their own
-handles. Return timing, seating and catch switching remain prescribed; they
-are not yet a fully passive valve-gear simulation.
+The catch outline is traced from 181. The upper holding face is registered
+three source pixels higher, with its toe extended two pixels along the ledge.
+The lower holding heel moves six pixels right and five up. Its tripping nose
+and holding heel share a continuous rear support rather than separate prongs.
+The upper rear plate includes the horn visible in 182. At the opposite stage,
+its extra length lies behind the piston rod; an inferred rear offset and bored
+sleeve connect it to the hub. Axial webs connect both handles to their front
+contact faces. The contact faces retain the geometry used in the native study.
 
-## Assembly and rendering
+The handle planes are -0.12 and +0.12; the catch is at +0.43. The upper rear
+finger plate occupies -0.58 to -0.46. Its 0.12-radius bore clears the 0.11-radius
+shaft. The lower backweight arm runs behind the rod at -0.68, with a bored
+sleeve connecting it to the handle. All three weight rods have retained pins
+and bored eyes. Depths, the unillustrated supports and displayed hanging weights
+are inferred.
 
-The previous repair added 0.12-radius bores around 0.11-radius shafts and
-retained, bored weight-rod joints. The handle planes remain at -0.12 and +0.12.
-The catch is now at +0.43, clear of the shoe thickness. Its exposed fixed shaft
-ends at the back of the catch, an inferred cutaway of the unillustrated support.
-The lower backweight arm runs behind the piston rod at -0.68, with a bored
-sleeve connecting it to its handle; the engraving shows this arm obscured by
-the rod. Depths are reconstruction assumptions.
+The piston rod has the source's 33-pixel width and wavy section cuts at rows
+23 and 500. These are viewing limits on a longer translating rod, not physical
+ends or a telescoping member. The section stays in this window while its shoe
+moves. The tappet's end face carries the engraving's diagonal hatching, drawn
+as surface marks so its travel remains legible from the front. The rod's 0.17-unit depth at z=-0.355 clears the rear weight eye and front arm.
+Fog, ground, the former added frame and floating contact markers are disabled.
 
-The piston rod now has the engraving's 33-pixel width and wavy section cuts at
-source rows 23 and 500. These are fixed viewing limits on a longer translating
-rod, not physical ends or a telescoping member. The rendered section therefore
-stays in that window while the attached shoe moves. Its inferred 0.17-unit
-depth at z=-0.355 clears both the rear weight eye and the front working arm.
+The front and oblique views are improved, but source review is **not complete**.
+The lower finger's broad support still differs from the engraved crescent, and
+the catch's upper contour does not superimpose on both drawings. The upper horn's
+rear offset is an interpretation of the two views, not a measured depth.
+These contours need further work before either movement is marked fully reviewed.
 
-No ground, fog, added engine frame or floating contact markers are shown.
-Both variants retain front full-motion framing, orbit controls and exact
-Restart. The earlier unused-outline cleanup remains in place.
+## Passive transfer and contact correction
 
-## Evidence and limits
+The [native study](validation/181-transfer-study.json) passes three complete
+cycles at each of 0.0005-, 0.00025- and 0.000125-second timesteps. Both isolated
+handles hold with zero friction, release under an external catch-lift control,
+and fail to hold when contact is disabled. The previous 0.25 catch mass remains
+a failed return control; the inferred 0.17 mass completes both transfers.
 
-The [updated native study](validation/181-tappet-study.json) drives only the
-piston against one passive weighted handle at a time. Both fitted handles
-complete their strokes at 0.00025- and 0.000125-second timesteps, without extra
-travel. Disabled-contact controls and extra-travel controls also pass; all ten
-runs remain stable. Final input error is 0.004905 model units, the expected
-static gravity/servo offset. The largest measured soft-contact penetration is
-0.000943 units. The study omits the catch and opposite handle; its masses,
-friction, damping and valve stops are assumptions. It qualifies only the
-isolated drive contact, not the complete mechanism.
+Every native solver step is checked. MuJoCo's soft contacts still penetrate by
+up to 0.001348 model units (about 0.108 source pixels), so the raw native probe
+intentionally fails its separate finite-clearance gate. Increasing contact
+margin or deepening the notch upset retention in exploratory trials; these
+alternatives are not used in playback.
 
-Four targeted production tests pass. The two motion tests each check 1,201
-poses, including finite polygon overlap between the shoe and both working arms,
-source-feature residuals, continuous monotone piston strokes, handle continuity,
-separate drive/return timing, contact migration and restart. They replace old
-tests that asserted the incorrect weight-only angles and fixed-marker motion.
-The two joint tests retain checks for bores, layers and retained weight eyes.
+The [offline projection](validation/181-projected-contact-motion.json) records
+the second native cycle in 9,001 poses at 2 ms spacing. Small joint-position
+corrections separate finite surfaces; no latch event is prescribed. Only 17
+recorded poses require contact correction, each within three iterations. A
+smooth correction over the final half-second of the settled bottom dwell
+removes the residual settling offset and closes the loop exactly.
 
-The [full assembly sweep](validation/181-current-solids.json) checks 49 meshes,
-1,002 cross-body pairs and 8,690,134 finite-surface samples at 129 poses. It
-finds **six remaining interfering pairs**, down from 16 before this repair
-(and 68 before the initial joint repair). All six involve the old latch rollers
-against catch surfaces or the catch's weight pin. The full audit deliberately
-still exits nonzero. These sampled checks are not continuous collision proofs.
+Including that loop correction, the largest angular change is 0.000783 radians
+(0.045 degrees), and the largest piston shift is 0.000477 units (0.038 source
+pixels). Across 36,001 interpolated poses at 0.5 ms spacing, minimum contact
+clearance is 0.00002966 units. Independent intersections of unsplit polygon
+unions at 901 poses find zero overlap and detect overlap in the uncorrected
+trajectory. These are sampled checks, not continuous collision proof.
 
-The production build and [desktop/mobile browser checks](validation/181-browser.json)
-pass for both variants: playback, exact Restart, orbit/reset, no horizontal
-overflow, no live WASM request and no page errors. The front screenshots were
-inspected. The rod section now follows the engraving; the old catch profile
-still visibly differs and remains unfinished.
+## Complete-assembly and browser checks
 
-Reproduce with:
+The [serialized assembly sweep](validation/181-baked-assembly-clearance.json)
+checks all 50 meshes across 1,025 different-body pairs at 129 poses, with
+8,676,710 finite-surface queries and no detected intersections. This includes
+the rear plates, axial webs, shafts, weight joints and sectioned rod. It uses
+rendered triangle surfaces rather than nominal contact radii. The earlier six
+latch intersections are absent from this reconstruction.
 
-- `node --test tests/movement-181.test.mjs tests/movement-182.test.mjs tests/diagonal-catch-assembly.test.mjs`
-- `node scripts/probe-diagonal-catch-tappet.mjs`
-- `node scripts/review-diagonal-catch-solids.mjs` (expected failure on the six unresolved latch pairs)
+Seven targeted tests pass: the retained four input-model tests plus three new
+baked-model tests. The latter check full-loop transforms, exact Restart, retained
+weight joints, the stationary section window, both transfer endpoints and
+rendered vertices against the qualified contact envelopes. The bake records
+geometry and motion provenance in [181-bake.json](validation/181-bake.json).
+The build and [packaged desktop/mobile checks](validation/181-browser.json)
+pass playback, Restart, orbit/reset, layout, no WASM requests and no page errors.
 
-## Offline catch reconstruction experiment
+Reproduce the current checks with:
 
-The [coupled contact study](validation/181-transfer-study.json) now contains a
-candidate continuous catch outline and finite finger surfaces, including the
-lower finger's pointed tripping nose. This is an offline prototype; it has not
-replaced the six-intersection scripted latch in production.
+- `node scripts/project-diagonal-catch-motion.mjs`
+- `node scripts/bake-diagonal-catch.mjs`
+- `node scripts/review-diagonal-catch-assembly.mjs`
+- `node --test tests/diagonal-catch-baked.test.mjs tests/movement-181.test.mjs tests/movement-182.test.mjs tests/diagonal-catch-assembly.test.mjs`
 
-The candidate now completes both transfers instead of only the upward stroke.
-The upper finger's toe extends two source pixels left and down along its existing
-holding face. That lets the returning upper handle lift the catch and release
-the lower heel. With the previous catch mass of 0.25, the lower handle then
-caught again on its pointed nose. Reducing the inferred catch mass to 0.17 lets
-the weighted lower handle clear that second contact and return fully.
+The projection command writes its intermediate trajectory under `/dev/shm`;
+the bake packages it in `src/simulation/baked/assets/181.json.gz`. Both movements
+share this asset.
 
-- Both handles still hold passively in isolated tests at 0.00025- and
-  0.000125-second timesteps, including with all friction coefficients zero.
-  An external catch-lift pulse releases them; disabling contact prevents holding.
-- The coupled model actuates only the piston. Both weighted handles and the
-  catch remain passive. Three complete 18-second cycles reach all six endpoint
-  stages at each of three timesteps: 0.0005, 0.00025 and 0.000125 seconds.
-- The heavier 0.25 catch remains a failed control: it holds the lower handle
-  partway through its return. Disabling contact also prevents the required
-  switching sequence. Stable integration alone is not a passing transfer.
-- The diagnostic now checks contact distance at **every solver step**, rather
-  than only at the 20 ms output samples. Finite clearance is a separate gate;
-  the transfer result does not establish a collision-free playback asset.
-  The worst reported penetration is 0.001348 model units (about 0.108 source
-  pixels), during the return. All three timesteps fail the clearance gate, so
-  the qualification command still exits nonzero. Endpoint errors across the
-  passing transfer trials stay below 0.000763 radians for the handles and
-  0.004906 model units for the piston.
+## Historical diagnostics and next work
 
-Exploratory weight trials were sensitive: a 0.16 catch completed some runs but
-lost the upper latch at the finest timestep. Increasing the contact margin from
-0.0002 to 0.001 also lost upper retention on a later return. Extending the upper
-notch another two pixels and raising the lower nose two pixels did not fix that
-larger-margin trial. Those variants are not the current candidate. The inferred
-weight and the narrow release sequence remain reconstruction limitations.
+The synchronous legacy registry remains as an input-geometry generator and
+historical reconstruction. Its prescribed catch motion and six interfering
+latch pairs are **not** the browser implementation. Its
+[old assembly report](validation/181-current-solids.json),
+[isolated baseline](validation/181-tappet-baseline.json) and
+[isolated fitted-arm study](validation/181-tappet-study.json) describe earlier
+steps. `scripts/review-diagonal-catch-solids.mjs` still audits that legacy model
+and intentionally fails; use the baked-assembly command for current playback.
 
-The lower isolated fixture starts with the catch at +0.033 radians, just clear
-of the holding face reached during the coupled ascent. Starting that fixture
-at zero creates an initial overlap and a separation impulse; that is not a
-valid retention test. The catch stop, masses, inertias and axial contact layers
-are reconstruction assumptions. Connecting hardware and the full visible
-assembly are not included in this contact model. Successful isolated controls
-do not qualify the complete mechanism or its source fit.
-
-The source overlay was inspected in both stages. The upper tripping finger
-still falls short of the horn visible in 182, and the catch's upper contour
-does not overlay both drawings well. Adding a separate opposite-side nose
-jammed the first transfer in exploratory tests. Changes to physical cycle
-period alone (6, 9 and 12 seconds) did not fix the unregistered reconstruction.
-Further reconstruction must preserve both transfers while addressing the upper
-finger and catch together, using the assembled closed pose and both source views.
-
-Reproduce the prototype with `node scripts/probe-diagonal-catch-transfer.mjs`
-(a nonzero exit now also reports a failed finite-contact-clearance gate). It writes the compact report above
-and full traces to `/dev/shm/181-transfer-probe.json`.
-`node scripts/preview-diagonal-catch-profiles.mjs` writes a source-overlay HTML
-and PNG to `/dev/shm/181-candidate-profiles.*`. The source site's 181 page marks
-its animation unavailable; the engraving and caption remain the reference.
-
-## Offline contact projection
-
-The [projected-motion check](validation/181-projected-contact-motion.json) takes
-the second native cycle at a 0.00025-second timestep, records 9,001 poses at
-2 ms spacing, and separates finite contact surfaces with small joint-position
-corrections. It does not prescribe the transfer or actuate a handle. A smooth
-correction during the final half-second of the settled bottom dwell removes
-the residual settling offset so the loop closes exactly.
-
-Only 17 recorded poses need contact projection; each converges within three
-iterations. Including the loop correction, the largest angular change is
-0.000783 radians (0.045 degrees), and the largest piston shift is 0.000477
-model units (0.038 engraving pixels). Across 36,001 linearly interpolated poses
-at 0.5 ms spacing, minimum separating-axis clearance is 0.00002966 units. An
-independent intersection of the unsplit polygon unions at 901 poses finds zero
-overlap, while the same check detects overlap in the uncorrected trajectory.
-These are sampled contact-surface checks, not continuous collision proof.
-
-Reproduce with `node scripts/project-diagonal-catch-motion.mjs`. It writes the
-candidate trajectory to `/dev/shm/181-contact-motion.json`; no runtime physics
-or projection is added to the browser. The complete connecting hardware,
-visible catch/fingers and production bake are still missing. The raw native
-probe intentionally retains its failed soft-contact-clearance result. Firmer
-contact reduced penetration in exploratory runs, but expanding the margin
-could lose the upper latch on a later return; those alternatives are not used.
-
-## Next work
-
-Finish reconstructing the actual hook/finger surfaces from both engravings. The current
-nearly closed circular pockets and cylindrical latch rollers are not faithful
-and still intersect. Passive transfer now works in the candidate contact model;
-the projected contact motion now passes the sampled clearance check. Build and
-validate the complete visible catch/finger assembly before publishing a bake.
-The full catch/handle silhouettes still need comparison against both drawings. Do not mark either movement
-fully reviewed or advance to 183 yet. The complete 507-movement goal remains active.
+Continue the lower-finger and upper-catch source contours while preserving the
+qualified contact surfaces and complete-assembly clearance. Neither movement
+is fully reviewed yet. The full 507-movement goal remains active.

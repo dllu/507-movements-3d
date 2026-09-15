@@ -4,14 +4,15 @@
     182
   ],
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Source-width sectioned piston rod with corrected depth clearance. Complete latch motion and source contours remain unqualified.",
+  "scope": "Baked passive catch with continuous rear supports, offset upper horn, sectioned rod and hatched tappet. Remaining source-contour differences are not qualified by this browser check.",
   "checks": [
-    "playback",
+    "baked playback",
     "exact restart",
     "orbit/reset",
     "390x844 layout without horizontal overflow",
     "no WASM requests",
-    "no page errors"
+    "no page errors",
+    "front/oblique source comparison inspected"
   ],
   "sources": [
     {
@@ -19,16 +20,24 @@
       "sha256": "5e41f776261f13149cda1163d42a6a3bd890a8663348342357e31c2a3b11aa9e"
     },
     {
-      "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+      "file": "src/simulation/model-loader.js",
+      "sha256": "55be0d3b49dc095536435174b79cd80db87a21f38d51dccf426111ede52b5d9f"
     },
     {
-      "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
-      "sha256": "ae0ca0d3ae60d616330e233ac7bb879777c2c713b8dd34a8bf285ca49b4b6644"
+      "file": "src/simulation/baked/diagonal-catch.js",
+      "sha256": "59d97902fff8f37b8915f4333d7ade3b0f3e453c58b800439a22d874f7745c67"
     },
     {
-      "file": "src/simulation/mujoco-diagonal-catch/tappet-envelope.js",
-      "sha256": "74e0503b0b58d88bdaa284fa2cb2bc485e1b116d5f0873e0d8b9a9e9335eaa4f"
+      "file": "src/simulation/baked/playback.js",
+      "sha256": "c021f19619d02ed4a0fcdd2dd8522367fe43422a303ad08733b051d56bdee4fb"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
+      "sha256": "65a1c432c69a928372c2f06d50add706db4041a324496b055b8a607204571920"
+    },
+    {
+      "file": "src/simulation/baked/assets/181.json.gz",
+      "sha256": "ec66dbedf433a5c10380fa2181be6ea9b3972b0810d585910efdea03728077b7"
     }
   ]
 }

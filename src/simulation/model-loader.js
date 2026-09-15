@@ -44,6 +44,12 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  if (movement.id === 181 || movement.id === 182) {
+    const {makeBakedDiagonalCatch} = await import('./baked/diagonal-catch.js');
+    const model = await makeBakedDiagonalCatch(movement.id);
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
   if (movement.id === 180) {
     const {makeBakedSingleClamp} = await import('./baked/single-clamp.js');
     const model = await makeBakedSingleClamp();
