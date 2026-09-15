@@ -1,0 +1,81 @@
+{
+  "movements": [
+    181,
+    182
+  ],
+  "status": "projected-contact-motion-passed-assembly-unqualified",
+  "scope": "Offline candidate contact surfaces only. No complete connecting hardware, production bake, or source-overlay qualification.",
+  "period": 18,
+  "interval": 0.002,
+  "physicsTimestep": 0.00025,
+  "nativeCycle": 2,
+  "projectionGap": 0.00003,
+  "keys": 9001,
+  "correctedPoses": 17,
+  "maxIterations": 3,
+  "maximumCorrection": [
+    0.00016678005599113366,
+    0.0007829682503224245,
+    0.0005114464132385923,
+    0.0004761999333346978
+  ],
+  "failures": 0,
+  "poses": 36001,
+  "minimumInterpolatedGap": 0.00002966049811514715,
+  "independentPoses": 901,
+  "maximumIntersectionArea": 0,
+  "maximumRawIntersectionArea": 0.0000011298356345501581,
+  "seam": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "controls": {
+    "projectionConverges": true,
+    "boundedCorrection": true,
+    "interpolatedClearance": true,
+    "independentPolygonClearance": true,
+    "rawOverlapDetected": true,
+    "closedLoop": true
+  },
+  "method": "Minimum joint-position corrections along convex separating-axis gradients. Validate interpolated poses every 0.5 ms; independently intersect unsplit polygon unions every 20 ms. Sampled evidence, not continuous collision proof.",
+  "sources": [
+    {
+      "file": "scripts/project-diagonal-catch-motion.mjs",
+      "sha256": "9e3a9b5bd6e692d1da5278cb2bf52496e1e994bf43bf7d554ea54180dd2ff8db"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/project-contact.js",
+      "sha256": "e39f19a33e22e05878ec813edd9989e4850886d03453afcbe535e5f3912e63ab"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/contact-study.js",
+      "sha256": "27998148dad36a041389b1eaaf048268a4797083448d056d0a146bba94a03414"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
+      "sha256": "fda54e20db805443250e37df8d3a622aa774742ea7b3a48530c27d7e10428cc9"
+    },
+    {
+      "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
+      "sha256": "ae0ca0d3ae60d616330e233ac7bb879777c2c713b8dd34a8bf285ca49b4b6644"
+    },
+    {
+      "file": "src/simulation/authored-diagonal-catches.js",
+      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+    },
+    {
+      "file": "src/simulation/mujoco-bench-clamp/profile.js",
+      "sha256": "6e7cc6de064c811ff2c0472e15311606dfd9636384fe155494226b51f8ea6e20"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/mujoco/simulation.js",
+      "sha256": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+    }
+  ]
+}

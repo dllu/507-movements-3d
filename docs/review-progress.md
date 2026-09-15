@@ -1,3 +1,17 @@
+# Movements 181–182: rod section repaired; projected contact motion clears
+
+The visible piston rod now matches the source width and sectioned extent, with
+depth clearance from the rear weight eye. Four production tests, the build and
+both desktop/mobile browser checks pass; the assembly still has the six known
+old-latch intersections. Offline projection of the passive candidate produces
+a closed 18-second trajectory: 36,001 interpolated contact poses have positive
+clearance, and 901 independent polygon checks have zero overlap. Corrections
+stay below 0.045 degrees and 0.039 source pixels of piston travel. Continue
+with the complete visible catch/finger assembly and its source fit before
+publishing the bake. See [181–182 review](movement-181.md). The full goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: both passive transfers now work; clearance remains open
 
 A two-pixel upper-toe extension and a lighter inferred catch weight let the

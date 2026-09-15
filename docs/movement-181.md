@@ -51,6 +51,12 @@ The lower backweight arm runs behind the piston rod at -0.68, with a bored
 sleeve connecting it to its handle; the engraving shows this arm obscured by
 the rod. Depths are reconstruction assumptions.
 
+The piston rod now has the engraving's 33-pixel width and wavy section cuts at
+source rows 23 and 500. These are fixed viewing limits on a longer translating
+rod, not physical ends or a telescoping member. The rendered section therefore
+stays in that window while the attached shoe moves. Its inferred 0.17-unit
+depth at z=-0.355 clears both the rear weight eye and the front working arm.
+
 No ground, fog, added engine frame or floating contact markers are shown.
 Both variants retain front full-motion framing, orbit controls and exact
 Restart. The earlier unused-outline cleanup remains in place.
@@ -84,8 +90,8 @@ still exits nonzero. These sampled checks are not continuous collision proofs.
 The production build and [desktop/mobile browser checks](validation/181-browser.json)
 pass for both variants: playback, exact Restart, orbit/reset, no horizontal
 overflow, no live WASM request and no page errors. The front screenshots were
-inspected; the catch profile and short moving rod still visibly differ from
-the engraving.
+inspected. The rod section now follows the engraving; the old catch profile
+still visibly differs and remains unfinished.
 
 Reproduce with:
 
@@ -155,13 +161,38 @@ and full traces to `/dev/shm/181-transfer-probe.json`.
 and PNG to `/dev/shm/181-candidate-profiles.*`. The source site's 181 page marks
 its animation unavailable; the engraving and caption remain the reference.
 
+## Offline contact projection
+
+The [projected-motion check](validation/181-projected-contact-motion.json) takes
+the second native cycle at a 0.00025-second timestep, records 9,001 poses at
+2 ms spacing, and separates finite contact surfaces with small joint-position
+corrections. It does not prescribe the transfer or actuate a handle. A smooth
+correction during the final half-second of the settled bottom dwell removes
+the residual settling offset so the loop closes exactly.
+
+Only 17 recorded poses need contact projection; each converges within three
+iterations. Including the loop correction, the largest angular change is
+0.000783 radians (0.045 degrees), and the largest piston shift is 0.000477
+model units (0.038 engraving pixels). Across 36,001 linearly interpolated poses
+at 0.5 ms spacing, minimum separating-axis clearance is 0.00002966 units. An
+independent intersection of the unsplit polygon unions at 901 poses finds zero
+overlap, while the same check detects overlap in the uncorrected trajectory.
+These are sampled contact-surface checks, not continuous collision proof.
+
+Reproduce with `node scripts/project-diagonal-catch-motion.mjs`. It writes the
+candidate trajectory to `/dev/shm/181-contact-motion.json`; no runtime physics
+or projection is added to the browser. The complete connecting hardware,
+visible catch/fingers and production bake are still missing. The raw native
+probe intentionally retains its failed soft-contact-clearance result. Firmer
+contact reduced penetration in exploratory runs, but expanding the margin
+could lose the upper latch on a later return; those alternatives are not used.
+
 ## Next work
 
 Finish reconstructing the actual hook/finger surfaces from both engravings. The current
 nearly closed circular pockets and cylindrical latch rollers are not faithful
 and still intersect. Passive transfer now works in the candidate contact model;
-resolve its finite clearance and validate the complete visible assembly before
-baking that motion.
-The finite piston rod also needs the source's sectioned extent, and the full
-catch/handle silhouettes need further comparison. Do not mark either movement
+the projected contact motion now passes the sampled clearance check. Build and
+validate the complete visible catch/finger assembly before publishing a bake.
+The full catch/handle silhouettes still need comparison against both drawings. Do not mark either movement
 fully reviewed or advance to 183 yet. The complete 507-movement goal remains active.

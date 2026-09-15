@@ -8,7 +8,7 @@ import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 
 // Both weighted handles and the catch are passive. Only the piston is driven.
 // Axial contact layers separate the working arms from the latch fingers.
-export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.17,contacts=true,period=18,registered=true}={}){
+export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.17,contacts=true,period=18,registered=true,contactTimeConstant=.003,contactMargin=.0002}={}){
  const visual=createAuthoredDiagonalCatchMovement({id:181}),g=visual.root.userData.geometry,b=visual.root.userData.blocks;
  let assets='',next=0;
  const collision=(rings,mask,affinity,z)=>{
@@ -33,7 +33,7 @@ export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.17,contact
  const catchGeoms=collision(diagonalCatchProfile().polygons.map(p=>p[0]),4,8,1);
  const start=g.source181PistonY,end=g.source182PistonY;
  const xml=`<mujoco><compiler angle="radian"/><option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="PGS" iterations="100" tolerance="1e-9"/>
- <default><geom friction=".1 .001 .001" margin=".0002" solref=".003 1" solimp=".999 .999 .001"/></default><asset>${assets}</asset><worldbody>${handles}
+ <default><geom friction=".1 .001 .001" margin="${contactMargin}" solref="${contactTimeConstant} 1" solimp=".999 .999 .001"/></default><asset>${assets}</asset><worldbody>${handles}
  <body><joint name="catch" axis="0 0 1" range="${registered?0:-.3} .3" damping=".05"/><inertial mass="${catchMass}" pos="1.2375 -1.5 0" diaginertia=".04 .04 .08"/>${catchGeoms}</body>
  <body><joint name="piston" type="slide" axis="0 1 0"/><geom type="box" pos="${(g.tappetShoeLeftX+g.tappetShoeRightX)/2} 0 0" size="${(g.tappetShoeRightX-g.tappetShoeLeftX)/2} .25 .1" mass="1" contype="1" conaffinity="2"/></body>
  </worldbody><actuator><position joint="piston" kp="2000" kv="80" forcerange="-200 200"/></actuator></mujoco>`;
@@ -41,5 +41,5 @@ export function makeDiagonalContactStudy(m,{timestep=.0005,catchMass=.17,contact
  const smooth=x=>{const v=Math.max(0,Math.min(1,x));return v*v*v*(10+v*(-15+6*v));};
  const target=time=>{const phase=(time%period)*18/period;return phase<9?start+(end-start)*smooth((phase-1)/6):end+(start-end)*smooth((phase-9)/6);};
  const sim=createMujocoSimulation(m,{xml,initialize:({data})=>{data.qpos[3]=start;data.ctrl[0]=start;},beforeStep:({data,time})=>{data.ctrl[0]=target(time);}});
- return Object.assign(sim,{parameters:{timestep,catchMass,contacts,period,registered,start,end,fits},state:()=>({time:sim.data.time,upper:sim.data.qpos[0],lower:sim.data.qpos[1],catch:sim.data.qpos[2],piston:sim.data.qpos[3],target:target(sim.data.time),force:sim.data.actuator_force[0],speed:Array.from(sim.data.qvel),contacts:sim.data.ncon})});
+ return Object.assign(sim,{parameters:{timestep,catchMass,contacts,period,registered,contactTimeConstant,contactMargin,start,end,fits},state:()=>({time:sim.data.time,upper:sim.data.qpos[0],lower:sim.data.qpos[1],catch:sim.data.qpos[2],piston:sim.data.qpos[3],target:target(sim.data.time),force:sim.data.actuator_force[0],speed:Array.from(sim.data.qvel),contacts:sim.data.ncon})});
 }

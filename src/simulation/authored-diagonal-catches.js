@@ -1144,13 +1144,22 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   pistonGroup.position.set(0, source181PistonY, handlePlaneZ);
   pistonGroup.userData.axis = new THREE.Vector3(0, 1, 0);
   pistonGroup.userData.role = 'vertically-reciprocating-piston-rod-and-projecting-tappet';
-  const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 4.30, 0.24),
-    pistonMaterial,
-  );
+  // Both drawings section the long piston rod at the page limits. Show that
+  // fixed viewing window, with wavy cut faces, rather than inventing short
+  // physical rod ends that travel into the middle of the mechanism.
+  const pistonRodSection = { width: 33 * sourceScale, top: (234-23)*sourceScale, bottom: (234-500)*sourceScale };
+  const sectionEdge = (height, reverse=false) => Array.from({length:49},(_,i)=>{
+    const u=(reverse?48-i:i)/48;
+    return [(u-.5)*pistonRodSection.width,height+.025*Math.sin(5*Math.PI*u)];
+  });
+  const pistonRod = new THREE.Mesh(finitePlate(poly([
+    ...sectionEdge(pistonRodSection.top),
+    ...sectionEdge(pistonRodSection.bottom,true),
+  ]),-.085,.085),pistonMaterial);
   pistonRod.position.x = pistonRodX;
-  pistonRod.position.z = -.39;
+  pistonRod.position.z = -.355;
   pistonRod.userData.role = 'moving-piston-rod';
+  pistonRod.userData.sectioned = true;
   const tappet = new THREE.Mesh(
     new THREE.BoxGeometry(
       tappetShoeRightX - tappetShoeLeftX,
@@ -1295,6 +1304,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     catchGroup.rotation.z = state.catchAngle;
     catchGroup.userData.angularVelocity = state.catchAngularVelocity;
     pistonGroup.position.y = state.pistonPosition.y;
+    pistonRod.position.y = -state.pistonPosition.y;
     pistonGroup.userData.velocity = state.pistonVelocity.clone();
     upperWeightParts.group.position.set(
       state.upperWeightPin.x,
@@ -1408,6 +1418,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     frameDepth,
     handleDepth,
     handlePlaneZ,
+    pistonRodSection,
     initialBasePhase,
     latchRollerRadius,
     lowerContactLocal: lowerContactLocal.clone(),

@@ -4,7 +4,7 @@
     182
   ],
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Fitted handles and finite-surface tappet drive/return, plus joint/framing repair. Complete latch motion and source contours remain unqualified.",
+  "scope": "Source-width sectioned piston rod with corrected depth clearance. Complete latch motion and source contours remain unqualified.",
   "checks": [
     "playback",
     "exact restart",
@@ -20,7 +20,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "9b790471a2502345f88f099e6aac45ee4365fc56d5e4c743914d9fbd3cefb122"
+      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",

@@ -650,6 +650,8 @@
         "contacts": true,
         "period": 18,
         "registered": false,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -846,6 +848,8 @@
         "contacts": true,
         "period": 18,
         "registered": true,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -1042,6 +1046,8 @@
         "contacts": true,
         "period": 18,
         "registered": true,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -1238,6 +1244,8 @@
         "contacts": true,
         "period": 18,
         "registered": true,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -1434,6 +1442,8 @@
         "contacts": true,
         "period": 18,
         "registered": true,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -1630,6 +1640,8 @@
         "contacts": false,
         "period": 18,
         "registered": true,
+        "contactTimeConstant": 0.003,
+        "contactMargin": 0.0002,
         "start": -1.6375000000000002,
         "end": 1.9625000000000001,
         "closedAngles": {
@@ -1820,7 +1832,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/contact-study.js",
-      "sha256": "f4410bd0a1dd8aff01a9027484939ad9881a74d67c38401c6ec6a23d0bf2b59a"
+      "sha256": "27998148dad36a041389b1eaaf048268a4797083448d056d0a146bba94a03414"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
@@ -1828,7 +1840,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "9b790471a2502345f88f099e6aac45ee4365fc56d5e4c743914d9fbd3cefb122"
+      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",
