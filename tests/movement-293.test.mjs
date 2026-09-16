@@ -154,7 +154,7 @@ test('movement 293 records Brown’s measured roller, pallet, two tooth rows, an
   vectorNear(sourcePointToModel(plate.rasterWheelCenter),
     geometry.wheelCenter, 0, 'source wheel center');
   near(geometry.lockingToothTipRadius + geometry.rollerRadius,
-    geometry.centerDistance, 0, 'derived lock center distance');
+    geometry.centerDistance + .06, 1e-12, 'finite side-lock overlap');
   assert.deepEqual(sourceReference.primaryScan, {
     archiveIdentifier: 'fivehundredseven00browiala',
     descriptionPage: 77,
@@ -168,272 +168,21 @@ test('movement 293 records Brown’s measured roller, pallet, two tooth rows, an
   disposeModel(model.root);
 });
 
-test('movement 293 holds each long tooth on roller A throughout frictional rest', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const {
-    geometry,
-    lockPoint,
-    stateAtCyclePhase,
-  } = model.root.userData;
-  let restSamples = 0;
-
-  for (let sample = 0; sample <= 16000; sample += 1) {
-    const state = stateAtCyclePhase(sample / 16000);
-    if (state.contactMode !== 'frictional-rest') continue;
-    restSamples += 1;
-    assert.equal(state.wheelAngularSpeed, 0);
-    assert.equal(state.wheelAngularAcceleration, 0);
-    vectorNear(state.activeLockingToothPoint, lockPoint, 2e-15,
-      `fixed locking point at ${sample}`);
-    near(state.contact.pointError, 0, 2e-15,
-      `roller/tooth closure at ${sample}`);
-    near(state.contact.rollerRadiusError, 0, 5e-16,
-      `roller radius at ${sample}`);
-    near(state.contact.normalVelocityError, 0, 5e-15,
-      `frictional-rest normal velocity at ${sample}`);
-    assert.ok(Number.isFinite(state.contact.relativeSlipSpeed));
-  }
-  assert.ok(restSamples > 12000);
-  near(lockPoint.distanceTo(geometry.balanceCenter),
-    geometry.rollerRadius, 5e-16, 'world lock radius');
-  disposeModel(model.root);
+test('movement 293 production law advances one tooth and renderer binds the finite branch', () => {
+ const model=createMovementModel(catalog.movements[292]),d=model.root.userData,b=d.blocks;
+ for(let i=0;i<513;i++){
+  const time=i*4/513,state=d.stateAtTime(time),next=d.stateAtTime(time+4);
+  near(next.wheelAngle-state.wheelAngle,-d.geometry.toothPitch,2e-12,'one-tooth advance');
+  near(next.balanceAngle,state.balanceAngle,2e-12,'balance closure');
+  model.update(time);near(b.wheelRotor.rotation.z,state.wheelAngle,0,'wheel transform');near(b.balance.rotation.z,state.balanceAngle,0,'balance transform');
+  assert.equal(d.kinematics.contactMode,state.contactMode);assert.equal(b.lockContactMarker.visible,false);assert.equal(b.impulseContactMarker.visible,false);
+ }
+ assert.ok(d.workingDuplex293.bake.samples.some(row=>row[2]===2));assert.ok(d.workingDuplex293.bake.samples.some(row=>row[2]===3));
+ disposeModel(model.root);
 });
-
-test('movement 293 releases through A and transfers the powered beat through crown pin and pallet B', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const {
-    geometry,
-    impulsePalletFrameAtPhase,
-    notchFrameAtPhase,
-    stateAtCyclePhase,
-  } = model.root.userData;
-  let releaseSamples = 0;
-  let impulseSamples = 0;
-  let flightSamples = 0;
-
-  for (let sample = 0; sample <= 20000; sample += 1) {
-    const phase = sample / 20000;
-    const state = stateAtCyclePhase(phase);
-    if (state.contactMode === 'powered-notch-release') {
-      releaseSamples += 1;
-      const frame = notchFrameAtPhase(phase, 'release');
-      vectorNear(state.contact.localPoint, frame.point, 0,
-        `powered notch material point at ${sample}`);
-      near(state.contact.pointError, 0, 2e-15,
-        `powered notch point closure at ${sample}`);
-      near(state.contact.normalVelocityError, 0, 2e-9,
-        `powered notch normal velocity at ${sample}`);
-      assert.equal(state.lockingToothIndex, 0);
-      assert.equal(state.singleBeatImpulseActive, false);
-    } else if (state.contactMode === 'crown-pin-impulse') {
-      impulseSamples += 1;
-      const frame = impulsePalletFrameAtPhase(phase);
-      vectorNear(state.contact.localPoint, frame.point, 0,
-        `pallet B material point at ${sample}`);
-      near(state.contact.pointError, 0, 2e-15,
-        `crown-pin impulse closure at ${sample}`);
-      near(state.contact.pinRadiusError, 0, 4e-16,
-        `crown-pin radius at ${sample}`);
-      near(state.contact.normalVelocityError, 0, 2e-9,
-        `crown-pin impulse normal velocity at ${sample}`);
-      assert.equal(state.activeImpulsePinIndex, 0);
-      assert.equal(state.singleBeatImpulseActive, true);
-      near(state.contact.pinSurfacePoint.distanceTo(
-        state.activeImpulsePinCenter,
-      ), geometry.impulsePinRadius, 4e-16,
-      `pin surface distance at ${sample}`);
-    } else if (
-      phase > geometry.impulseEnd
-      && phase < geometry.landing
-    ) {
-      flightSamples += 1;
-      assert.equal(state.contactMode, null);
-      assert.equal(state.contactActive, false);
-    }
-  }
-  assert.ok(releaseSamples > 450);
-  assert.ok(impulseSamples > 1000);
-  assert.ok(flightSamples > 850);
-  disposeModel(model.root);
-});
-
-test('movement 293 has one powered beat and one non-escaping silent recoil per oscillation', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const {
-    canonicalStates,
-    geometry,
-    lockPoint,
-    notchFrameAtPhase,
-    stateAtCyclePhase,
-  } = model.root.userData;
-  let silentSamples = 0;
-  let positiveRecoilRates = 0;
-  let returningRecoilRates = 0;
-
-  assert.equal(canonicalStates.impulseMiddle.contactMode,
-    'crown-pin-impulse');
-  assert.equal(canonicalStates.silentMiddle.contactMode,
-    'silent-notch-recoil');
-  assert.equal(canonicalStates.silentMiddle.singleBeatImpulseActive, false);
-  near(canonicalStates.silentMiddle.recoil,
-    geometry.recoilAmplitude, 2e-17, 'maximum silent recoil');
-  assert.equal(canonicalStates.silentStart.lockingToothIndex, 1);
-  assert.equal(canonicalStates.silentEnd.lockingToothIndex, 1);
-
-  for (let sample = 0; sample <= 12000; sample += 1) {
-    const phase = sample / 12000;
-    const state = stateAtCyclePhase(phase);
-    if (state.contactMode !== 'silent-notch-recoil') continue;
-    silentSamples += 1;
-    assert.equal(state.singleBeatImpulseActive, false);
-    assert.equal(state.lockingToothIndex, 1);
-    assert.ok(state.recoil >= 0);
-    assert.ok(state.recoil <= geometry.recoilAmplitude + 2e-17);
-    const frame = notchFrameAtPhase(phase, 'silent');
-    vectorNear(state.contact.localPoint, frame.point, 0,
-      `silent notch material point at ${sample}`);
-    near(state.contact.pointError, 0, 2e-15,
-      `silent notch closure at ${sample}`);
-    near(state.contact.normalVelocityError, 0, 2e-9,
-      `silent notch normal velocity at ${sample}`);
-    if (phase < geometry.silentMiddle
-      && state.wheelAngularSpeed > 1e-8) positiveRecoilRates += 1;
-    if (phase > geometry.silentMiddle
-      && state.wheelAngularSpeed < -1e-8) returningRecoilRates += 1;
-  }
-  assert.ok(silentSamples > 1050);
-  assert.ok(positiveRecoilRates > 500);
-  assert.ok(returningRecoilRates > 500);
-  vectorNear(canonicalStates.silentStart.activeLockingToothPoint,
-    lockPoint, 2e-15, 'silent beat begins at same lock point');
-  vectorNear(canonicalStates.silentEnd.activeLockingToothPoint,
-    lockPoint, 2e-15, 'silent beat returns same tooth to lock');
-  disposeModel(model.root);
-});
-
-test('movement 293 advances exactly one clockwise tooth per full balance oscillation', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const {
-    geometry,
-    stateAtTime,
-    transmission,
-  } = model.root.userData;
-  near(transmission.oscillationAdvance, geometry.toothPitch, 0,
-    'one tooth per oscillation');
-
-  for (const time of [0.17, 0.82, 1.04, 1.47, 2.88, 3.39]) {
-    const state = stateAtTime(time);
-    const next = stateAtTime(time + geometry.balancePeriod);
-    near(next.balanceAngle, state.balanceAngle, 9e-16,
-      `balance closure at ${time}`);
-    near(next.wheelAngle - state.wheelAngle,
-      -geometry.toothPitch, 9e-16,
-    `clockwise tooth advance at ${time}`);
-    assert.equal(next.activeImpulsePinIndex,
-      (state.activeImpulsePinIndex + 1) % geometry.toothCount);
-    assert.equal(next.lockingToothIndex,
-      (state.lockingToothIndex + 1) % geometry.toothCount);
-  }
-
-  const beforeStep = stateAtTime(geometry.releaseStart
-    * geometry.balancePeriod).wheelAngle;
-  const landed = stateAtTime(geometry.landing
-    * geometry.balancePeriod).wheelAngle;
-  near(landed - beforeStep, -geometry.toothPitch, 4e-16,
-    'powered step and drop total one tooth');
-  const silentStartAngle = stateAtTime(geometry.silentStart
-    * geometry.balancePeriod).wheelAngle;
-  const silentEndAngle = stateAtTime(geometry.silentEnd
-    * geometry.balancePeriod).wheelAngle;
-  near(silentEndAngle, silentStartAngle, 3e-16,
-    'silent beat has zero net escape');
-  disposeModel(model.root);
-});
-
-test('movement 293 analytic balance and wheel rates match finite differences', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const { stateAtTime } = model.root.userData;
-  const epsilon = 1e-5;
-
-  for (const time of [0.4, 0.84, 0.88, 0.96, 1.04, 1.18, 1.4,
-    2.4, 2.88, 3, 3.12, 3.4]) {
-    const before = stateAtTime(time - epsilon);
-    const state = stateAtTime(time);
-    const after = stateAtTime(time + epsilon);
-    near((after.balanceAngle - before.balanceAngle) / (2 * epsilon),
-      state.balanceAngularSpeed, 8e-10,
-    `balance speed at ${time}`);
-    near((after.balanceAngularSpeed - before.balanceAngularSpeed)
-        / (2 * epsilon),
-    state.balanceAngularAcceleration, 2e-9,
-    `balance acceleration at ${time}`);
-    near((after.wheelAngle - before.wheelAngle) / (2 * epsilon),
-      state.wheelAngularSpeed, 5e-9,
-    `wheel speed at ${time}`);
-    near((after.wheelAngularSpeed - before.wheelAngularSpeed)
-        / (2 * epsilon),
-    state.wheelAngularAcceleration, 8e-8,
-    `wheel acceleration at ${time}`);
-  }
-  disposeModel(model.root);
-});
-
-test('movement 293 renderer binds both axial systems, both beats, cycle, and next draft', () => {
-  const model = createMovementModel(catalog.movements[292]);
-  const {
-    animationTiming,
-    blocks,
-    geometry,
-    stateAtTime,
-    timeline,
-  } = model.root.userData;
-  assert.equal(animationTiming.authoredCyclePeriod, 4);
-  assert.equal(animationTiming.targetCycleDuration, 2);
-  assertReadableTiming(animationTiming);
-  assert.equal(timeline.demonstrationPeriod, 4);
-
-  for (const phase of [0.10, 0.215, 0.25, 0.30, 0.50, 0.72,
-    0.75, 0.78, 0.90]) {
-    const time = phase * geometry.balancePeriod;
-    const expected = stateAtTime(time);
-    model.update(time);
-    near(blocks.balance.rotation.z, expected.balanceAngle, 0,
-      `rendered balance at ${phase}`);
-    near(blocks.wheelRotor.rotation.z, expected.wheelAngle, 0,
-      `rendered duplex wheel at ${phase}`);
-    assert.equal(model.root.userData.contacts.mode,
-      expected.contactMode);
-    assert.equal(model.root.userData.contacts.activeLockingToothIndex,
-      expected.lockingToothIndex);
-    assert.equal(model.root.userData.contacts.activeImpulsePinIndex,
-      expected.activeImpulsePinIndex);
-    assert.equal(blocks.lockContactMarker.visible,
-      expected.contactActive
-        && expected.contactMode !== 'crown-pin-impulse');
-    assert.equal(blocks.impulseContactMarker.visible,
-      expected.contactMode === 'crown-pin-impulse');
-    if (expected.contactActive) {
-      near(model.root.userData.contacts.pointError, 0, 2e-15,
-        `rendered contact closure at ${phase}`);
-    }
-  }
-
-  model.update(0.73);
-  const startBalanceAngle = blocks.balance.rotation.z;
-  const startWheelAngle = blocks.wheelRotor.rotation.z;
-  model.update(0.73 + geometry.balancePeriod);
-  near(blocks.balance.rotation.z, startBalanceAngle, 8e-16,
-    'rendered balance closure');
-  near(blocks.wheelRotor.rotation.z - startWheelAngle,
-    -geometry.toothPitch, 9e-16,
-  'rendered one-tooth advance');
-
-  const movement507 = catalog.movements[506];
-  const model294 = createMovementModel(movement507);
-  assert.equal(movement507.id, 507);
-  assert.equal(movement507.fidelity, 'authored');
-  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model294.root.userData.fidelity, 'authored');
-  disposeModel(model294.root);
-  disposeModel(model.root);
+test('movement 293 reported rates match interpolation away from event knots', () => {
+ const model=createMovementModel(catalog.movements[292]),d=model.root.userData,rows=d.workingDuplex293.bake.samples;
+ for(let i=0;i<rows.length-1;i+=17){const time=((rows[i][0]+rows[i+1][0])/2-.30)*4,epsilon=(rows[i+1][0]-rows[i][0])*4e-3,s=d.stateAtTime(time),before=d.stateAtTime(time-epsilon),after=d.stateAtTime(time+epsilon);
+ near((after.wheelAngle-before.wheelAngle)/(2*epsilon),s.wheelAngularSpeed,2e-6,'piecewise wheel speed');near((after.balanceAngle-before.balanceAngle)/(2*epsilon),s.balanceAngularSpeed,2e-6,'balance speed');}
+ assertReadableTiming(d.animationTiming);disposeModel(model.root);
 });

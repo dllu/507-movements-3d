@@ -136,7 +136,7 @@ test('movement 207 is one common shaft carrying two opposite-hand worms and two 
   );
 
   assert.equal(sourceAnimation.available, false);
-  assert.match(sourceAnimation.reason, /unavailable/i);
+  assert.match(sourceAnimation.reason, /unavailable|no registered/i);
   assert.equal(sourceRaster.sourceUrl, movement.sourceUrl);
   assert.equal(sourceRaster.referenceMovement, 195);
   assert.equal(sourceRaster.inferredWheelTeeth, 24);
@@ -702,7 +702,8 @@ test('movement 207 runtime exposes both worm hands, counterrotation indexes, ful
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.6 && size.x < 5.7);
   assert.ok(size.y > 3.6 && size.y < 3.7);
-  assert.ok(size.z > 2.6 && size.z < 2.7);
+  assert.equal(blocks.baseRail.visible, false);
+  assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).z > .9);
   assert.ok(bounds.min.x < -2.88);
   assert.ok(bounds.max.x > 2.73);
   assert.ok(bounds.max.y > 2.37);

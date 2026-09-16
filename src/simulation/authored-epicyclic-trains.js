@@ -2208,7 +2208,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
     * (lowerBCAngularSpeed - carrierAngularSpeed);
   const nominalCarrierPeriod = FULL_TURN / carrierAngularSpeed;
   const mountPhases = Object.freeze({
-    driver: 0,
+    driver: Math.PI,
     lowerBC: 0,
     planetDE: Math.PI / teeth.d,
     upperFG: 0,
@@ -2917,7 +2917,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(7.0, 5.0, 13.0),
+    cameraDirection: new THREE.Vector3(0.4, 0.6, 16.0),
   };
 }
 
@@ -2972,7 +2972,7 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   const nominalCarrierPeriod = FULL_TURN / carrierAngularSpeed;
   const nominalSlowOutputPeriod = FULL_TURN / slowOutputAngularSpeed;
   const mountPhases = Object.freeze({
-    carrier: 0,
+    carrier: Math.PI,
     longDE: 0,
     outputC: 0,
     planetFG: Math.PI / teeth.F,
@@ -3723,7 +3723,7 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(8.0, 5.6, 14.0),
+    cameraDirection: new THREE.Vector3(0.7, 0.35, 18.0),
   };
 }
 

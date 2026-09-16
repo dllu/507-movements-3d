@@ -1,0 +1,57 @@
+{
+  "movement": 195,
+  "factorySource": {
+    "file": "src/simulation/authored-gears-core.js",
+    "name": "opposedFeedRollWormDrive",
+    "sha256": "5230daf6438d5d769003fdb1bc9ad82dc0e0fd03290293be8def8a987ea961b2"
+  },
+  "poses": 17,
+  "phaseOffset": 0,
+  "status": "sampled-flanks-clear",
+  "method": "Actual rendered worm and every instanced closed tooth sector; bidirectional triangle vertices, edge midpoints and face centers through one complete input turn. BVH winding containment and finite triangle distances. Sampling is not continuous collision proof.",
+  "scope": "Working worm/wheel solids only; bearing frames, wheel hubs and shafts excluded.",
+  "results": [
+    {
+      "side": "upper",
+      "queries": 597322,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.0034828785139292087,
+      "worst": null
+    },
+    {
+      "side": "lower",
+      "queries": 597698,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.0034828785530318187,
+      "worst": null
+    }
+  ],
+  "sources": [
+    {
+      "file": "src/simulation/feed-worm-assembly-parts.js",
+      "sha256": "d57c71af0266e7d35afda05e4576a68914596e9f00bbe14f4146791c509b72ca"
+    },
+    {
+      "file": "src/data/face-worm-195.js",
+      "sha256": "6de4408f58fe4496e845f72fb68443dd70fe6094fd04a6a0ba8862bf064f3fb0"
+    },
+    {
+      "file": "scripts/generate-face-worm-195.mjs",
+      "sha256": "2824b474c8d937b90a1197681d3e05d55e22e8e7732ea54357624de5483182bd"
+    },
+    {
+      "file": "src/simulation/feed-worm-wheel.js",
+      "sha256": "fbf1d0c9fa788f3126986a65dc16404d01e6001b639237910c16f688043333a9"
+    },
+    {
+      "file": "src/data/feed-worm-wheel-profile.js",
+      "sha256": "4454cad2e61744bbc2fc9b9a76dc2408e940ca02a3749f1e6979f648b2ecfe38"
+    },
+    {
+      "file": "src/simulation/solid-worm.js",
+      "sha256": "5231a35523bec23e3ced781c29beaa9be87e88aff1fa26558e2b3b823b29e210"
+    }
+  ]
+}

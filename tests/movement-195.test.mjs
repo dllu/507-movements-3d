@@ -72,7 +72,7 @@ function finiteStateNumbers(value, path = 'state') {
   }
 }
 
-test('movement 195 matches Brown\'s two identical opposed wheels, one worm, visible upper teeth, and concealed lower teeth', () => {
+test('movement 195 preserves Brown\'s opposed-wheel layout and nominal source geometry', () => {
   const movement = catalog.movements[194];
   const model = createMovementModel(movement);
   const {
@@ -559,8 +559,8 @@ test('movement 195 rendered transforms expose uniform input, equal counter-rotat
     vector3Near(blocks.lowerWheel.position, geometry.lowerWheelCenter, 1e-15, `${name} lower center`);
     vector2Near(blocks.upperContactMarker.position, geometry.upperContactPoint, 1e-15, `${name} upper marker`);
     vector2Near(blocks.lowerContactMarker.position, geometry.lowerContactPoint, 1e-15, `${name} lower marker`);
-    assert.equal(blocks.upperIndex.position.z, 0.07200000000000001);
-    assert.equal(blocks.lowerIndex.position.z, 0.422);
+    assert.equal(blocks.upperIndex.position.z, 0.0015);
+    assert.equal(blocks.lowerIndex.position.z, 0.3655);
     const contacts = model.root.userData.contacts;
     near(
       contacts.upperWormWheelMesh.rollingVelocityError,
@@ -645,9 +645,10 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.9);
   assert.ok(size.y > 5.3);
-  assert.ok(size.z > 2.4);
-  assert.ok(physicalBounds.min.z < -1.55);
-  assert.ok(physicalBounds.max.z > 0.92);
+  assert.ok(blocks.upperGeneratedFace.isInstancedMesh);
+  assert.ok(blocks.lowerGeneratedFace.isInstancedMesh);
+  assert.equal(blocks.framePost.visible, false, 'unpictured support frame is omitted');
+  assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).z > .9);
   let visibleUpperSpaceCount = 0;
   let concealedLowerSpaceCount = 0;
   let screwThreadCount = 0;

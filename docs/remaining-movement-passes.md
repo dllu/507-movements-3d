@@ -10,6 +10,17 @@ assignment is not a claim that its existing simulation is correct. Previously
 reviewed movements remain reusable references, with their documented residuals.
 The executable inventory is [movement-batches.mjs](../scripts/lib/movement-batches.mjs).
 
+## Latest outcome: forty-seventh family pass
+
+195/207 now have finite working feed teeth and bored assemblies; 293 has baked
+finite duplex contact; 297 uses qualified MuJoCo-derived playback with an explicit
+offline overlap projection; 506/507 have source-oriented connected supports.
+The six rows in the [ledger](movement-status.md) link their independent Astra
+visual reviews and remaining limits. See [review progress](review-progress.md).
+296's detached-pallet/fork law, 396's F-detent behavior and 402's upper holding
+branch remain concrete follow-ups. Historical entries below are superseded only
+for the interfaces actually qualified by the newer reviews.
+
 ## Passes
 
 1. **Screen the whole queue.** Check construction, finite geometry/transforms,

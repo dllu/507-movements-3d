@@ -8,6 +8,41 @@ with uncertain reviewer identity, and scoped collision checks from global claims
 Its JSON source and generator validate complete coverage and evidence paths.
 Update affected rows in every progress commit, as required by `AGENTS.md`.
 
+# Forty-seventh family pass: finite feed teeth, escapements and source supports
+
+The [status ledger](movement-status.md) records new independent primary-agent
+source comparisons for 195, 207, 293, 297, 506 and 507. These are scoped corrections;
+the full review remains active.
+
+- [195/207 feed worms](feed-worm-195-207-finite-review.md): replace 195's painted
+  spaces with generated finite working flanks, retain 207's qualified opposing
+  hands, and add bored hubs, seated indexes and source-facing views. Ratios remain
+  prescribed; friction, loaded backlash and inferred construction remain limits.
+- [293 duplex](duplex-293-contact-review.md): replace penetrating point contacts
+  with finite roller/notch and crown-pallet paths, baked offline for cheap playback.
+  The rim is circular. This is a geometric bake, not MuJoCo; balance forcing,
+  free advance and impact behavior remain prescribed, with the measured normal
+  speed mismatch disclosed. Movement 296's working-law defects remain queued.
+- [297 lantern](lantern-297-finite-contact-review.md): restore full finite pallets
+  and correct resisting reactions, with offline MuJoCo motion and a small geometric
+  projection to remove soft overlap. The arm is imposed; altered B placement,
+  larger stroke, a 0.374-degree timestep path difference and unvalidated impact
+  forces are explicit. Runtime interpolates the bake without running physics.
+- [506/507 epicyclic supports](compound-epicyclic-source-support-review.md): use
+  curved, connected standards, actual shaft passages, shorter shafts and source
+  mounting phases. Selected support sweeps and 33-pose working-gear audits clear.
+  The 25,000:1 ratio of 507 remains unchanged. Hidden dimensions and loaded contact
+  remain inferred or unsolved.
+
+All **91 focused checks** pass, and all three new bakes regenerate identically.
+The final production build passes in **23.64 seconds**. Independent source/default
+and oblique renders of all six fit their sampled cycles without browser errors.
+CPU screens report no flags, nonfinite geometry or object/geometry growth; these
+exclude imports and GPU work. Five packaged desktop/playback/mobile checks passed
+in 29.3 seconds, followed by the separate final 297 packaged check in 3.8 seconds. Bulk evidence
+is under `/dev/shm/family47-*`; durable scope and measurements are in the linked
+reviews. Route ownership is unchanged.
+
 # Forty-sixth family pass: working profiles and baked clock clicks
 
 The full review continues in independent working-profile lanes for 371/394,

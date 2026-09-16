@@ -18,13 +18,9 @@ for(const[id,create]of[[293,duplex],[296,lever]]){
   m.root.traverse(o=>{if(o.geometry)saved.push([o,o.geometry,o.geometry.attributes.position.array]);for(const mat of[].concat(o.material??[]))assert.equal(mat.fog,false);});
   for(let i=0;i<=16;i++)m.update(d.geometry.balancePeriod*i/16);
   let count=0;m.root.traverse(o=>{if(o.geometry)count++;});assert.equal(count,saved.length);for(const[o,g,a]of saved){assert.equal(o.geometry,g);assert.equal(o.geometry.attributes.position.array,a);}
-  assert.equal(b.base.visible,false);assert.equal(b.cameraEnvelope.visible,false);assert.equal(b.balanceRim.visible,false);assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,4);assert.match(d.reconstructionNote,/unresolved/);assert.ok(m.cameraDirection.z>10);
+  assert.equal(b.base.visible,false);assert.equal(b.cameraEnvelope.visible,false);assert.equal(b.balanceRim.visible,false);assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,id===293?6:4);assert.match(d.reconstructionNote,/unresolved/);assert.ok(m.cameraDirection.z>10);
  });
 }
-test('293 remaining radial lock has zero resisting moment and is not represented as qualified',()=>{
- const d=duplex({id:293}).root.userData,g=d.geometry,s=d.stateAtTime(.1),radial=s.activeLockingToothPoint.clone().sub(g.wheelCenter),normal=s.activeLockingToothPoint.clone().sub(g.balanceCenter).normalize(),tangent=new THREE.Vector2(radial.y,-radial.x).normalize();
- assert.ok(Math.abs(normal.dot(tangent))<1e-12);assert.match(d.escapementInterfaces.contactResidual,/cannot positively lock/);
-});
 test('296 retained pallet depth gap is recorded instead of falsely qualifying a disconnected mesh',()=>{
  const m=lever({id:296}),d=m.root.userData,b=d.blocks;m.root.updateMatrixWorld(true);
  const wheel=new THREE.Box3().setFromObject(b.wheelTeeth[0]);

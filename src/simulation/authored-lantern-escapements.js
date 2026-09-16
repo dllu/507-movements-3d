@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { correctLanternWorkingParts } from './lantern-working-parts.js';
+import { installLanternFinitePlayback297 } from './lantern-finite-playback-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -1012,10 +1013,11 @@ function lanternWheelEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   correctLanternWorkingParts(root, update);
+  const finiteUpdate = installLanternFinitePlayback297(root);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: finiteUpdate,
   };
 }
 

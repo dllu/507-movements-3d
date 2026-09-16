@@ -307,7 +307,7 @@ test('movement 506 is continuous, fits every carrier pose, and leaves 507 next',
   near(oneTurn.carrierAngle - initial.carrierAngle, FULL_TURN, 0,
     'one aggregate carrier turn');
   near(oneTurn.driverAngle - initial.driverAngle,
-    19 * FULL_TURN / 3, 8e-15, 'driver remains unwrapped');
+    19 * FULL_TURN / 3, 2e-14, 'driver remains unwrapped after subtracting the source mounting phase');
   near(oneTurn.planetCompoundAngle - initial.planetCompoundAngle,
     -25 * FULL_TURN / 4, 2e-14, 'd-e remains unwrapped');
   near(after.carrierAngle - before.carrierAngle,
@@ -318,7 +318,9 @@ test('movement 506 is continuous, fits every carrier pose, and leaves 507 next',
   for (let sample = 0; sample <= 1080; sample += 1) {
     model.update(period * sample / 1080);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // Rotating local AABBs overestimate the circular gear envelope. Compare
+    // the fitted bounds with actual vertices, as the viewport review does.
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));

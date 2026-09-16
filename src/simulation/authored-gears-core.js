@@ -1,3 +1,4 @@
+import {correctFeedWormAssembly} from './feed-worm-assembly-parts.js';
 import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
 import { spurStopProfile239, finishOpposedSpur239 } from './opposed-spur-239-working-parts.js';
@@ -21260,7 +21261,7 @@ function opposedFeedRollWormDrive() {
     if (object.material) object.material.fog = false;
   });
   update(0);
-  return finish(root, update, new THREE.Vector3(6.5, 4.8, 9.8));
+  return finish(root, update, correctFeedWormAssembly(root, 195));
 }
 
 function oppositeHandTwinWormFeedRollDrive() {
@@ -22018,7 +22019,7 @@ function oppositeHandTwinWormFeedRollDrive() {
     if (object.material) object.material.fog = false;
   });
   update(0);
-  return finish(root, update, new THREE.Vector3(3.2, 3.6, 12));
+  return finish(root, update, correctFeedWormAssembly(root, 207));
 }
 
 function threeRatioPinWheelAndSlidingSlottedPinion() {

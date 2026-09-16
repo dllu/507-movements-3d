@@ -53,5 +53,5 @@ test('297: stable visible-cycle framing, readable timing and explicit working-co
   }
   for (const [o, geometry, array] of resources) { assert.equal(o.geometry, geometry); assert.equal(o.geometry.attributes.position.array, array); }
   assert.equal(d.hideGround, true); assert.equal(d.minimumDisplayCycleSeconds, 4);
-  assert.match(d.reconstructionNote, /finite interference.*still need reconstruction/);
+  assert.match(d.reconstructionNote, /offline projection removes solver overlap/);
 });

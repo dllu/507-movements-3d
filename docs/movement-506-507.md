@@ -1,5 +1,9 @@
 # Compound epicyclic trains: 506–507
 
+The support, shaft-length and initial-pose residuals below are superseded by the
+[pass 47 source/support correction](compound-epicyclic-source-support-review.md).
+Its review retains the working tooth geometry and ratios documented here.
+
 Source captions and engravings: [506](https://507movements.com/mm_506.html) and
 [507](https://507movements.com/mm_507.html), checked 2026-09-15. Neither page has
 an available animation. 506's tooth counts remain inferred; 507 explicitly gives
