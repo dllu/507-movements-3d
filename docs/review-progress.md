@@ -1,3 +1,45 @@
+# Thirty-fourth family pass: finite grooves, clutches and feed surfaces
+
+Eight movements receive scoped corrections: 360, 361, 364, 383, 388, 397, 398
+and 415. Three independent lanes reuse finite plates, bored joints, working
+roller surfaces and offline profile generation. The full 507-movement review
+remains active.
+
+The [groove review](groove-drive-family-review.md) records how 397's open
+crescent replaces the old synthetic closed loop; its groove now determines the
+rocker motion. 398 retains the official animation's circular
+arcs in actual recessed walls. 364 replaces interfering raised tubes with an
+offline swept groove, but its finite mesh still has a measured 0.00315045
+contact interference near a groove mouth. It remains a partial correction,
+with that residual visible in the reconstruction note. The
+[clutch review](one-way-clutch-family-review.md)
+records 361's finite pin phase,
+415's working pawl depth, and 360's one-way capture/coast law. The
+[383/388 roller review](textile-planer-family-review.md) records source rotation,
+cloth/brush contact, pointed feed teeth, actual bearing bores and stock framing.
+Prescribed coasting, friction, cutting and material deformation remain explicit
+limits rather than inferred force validation.
+
+A separate [351 contact experiment](stamp-trip-family-review.md) reuses the
+rendered tooth geometry in offline MuJoCo. A lower stop permits repeated
+cycles, and removing tooth contact removes the lift. Its pickup trajectory
+still differs under timestep refinement, so it remains an experiment and does
+not replace production playback. This did not delay the independent families.
+
+All **88 distinct focused checks pass**, including the final affected reruns
+after the pivot rendering and camera corrections. The final production build
+passes in 21.55 seconds. The eight-model construction/update screen reports no
+flags. Fresh source/default/oblique browser checks show no errors or viewport
+clipping; maximum normalized screen extents are 0.794–0.884. All eight packaged
+desktop/playback/mobile checks pass in 23.9 seconds, with both affected 397/398
+cases passing again against the final rebuild in 5.7 seconds.
+
+These checks qualify the scoped corrections; they do not close 364's measured
+contact residual, 351's timestep-sensitive pickup, or the stated passive-load
+and material-behavior assumptions.
+The [next independent lanes](remaining-movement-passes.md) are 363's rocking
+supports, 384's screw/rolling surfaces, and 385's toggle/spring sockets.
+
 # Thirty-third family pass: travelling clamps, spring interfaces and finite stepping
 
 Nine movements receive corrections: 267, 280, 351, 353, 377, 378, 413, 416 and

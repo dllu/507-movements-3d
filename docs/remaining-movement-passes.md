@@ -81,7 +81,7 @@ are recorded separately from the corrected geometry and motion.
   and journal passages, rounded hammer tail and finite striking faces. 351's
   release and pickup still interfere; 353 retains idealized impact and return.
 
-## Next independent lanes
+## Thirty-fourth pass
 
 - **364/397/398, groove and roller drives:** own
   `authored-orthogonal-roller-indexers.js`, `authored-intermittent-shuttle-drives.js`
@@ -97,6 +97,43 @@ are recorded separately from the corrected geometry and motion.
   `authored-planer-feeds.js`. Reuse rope tangency, bored journals and finite feed
   teeth. 383's web is tangent to radius 0.62 while its actual central roll radius
   is 0.5642; its brush boxes also overrun their stated contact radius.
+
+These three independent lanes form one bounded correction batch. Their new
+source/geometry evidence belongs in the linked family reviews;
+passing prescribed motion does not establish passive load or material behavior.
+364's generated groove retains a measured 0.00315045 finite-mesh interference
+near its mouth. Keep that tessellation/contact residual queued separately from
+the corrected open topology in 397 and recessed source-arc walls in 398.
+The parallel 351 MuJoCo study is reproducible, but its pickup changes under
+timestep refinement and it remains offline. It does not hold up these lanes.
+
+All 88 focused checks, the final build, eight-model construction screen and
+eight packaged desktop/playback/mobile cases pass. Both 397/398 cases also
+pass against the final rebuild after their camera and pivot presentation fixes.
+The full review remains active; these checks do not close the explicit contact
+and passive-load residuals above.
+
+## Next independent lanes
+
+- **363, rocking supports:** `authored-seesaws.js`. Reuse bored pivots and finite
+  frame passages while preserving the official cosine swing. At the current
+  extreme the plank reaches y=-0.13495 below the ground at -0.09. At the level
+  pose its underside is 1.265 while the central post reaches 1.31; the solid
+  radius-0.235 bearing boss also contains the radius-0.105 fixed shaft.
+- **384, screw and rolling contact:** `authored-helicographs.js`. Reuse closed
+  mating thread geometry and finite rolling surfaces. The open male thread
+  floats 0.026 above its core, the female wire is disconnected from its hub,
+  and the wheel sits 0.032 above the transfer paper. Preserve the existing
+  disclosed axial scrub rather than inventing a source belt drive. No official
+  animation is available.
+- **385, toggle and spring sockets:** `authored-door-closers.js`. Reuse bored
+  links and socket geometry; compare against its available official animation.
+  Solid radius-0.19 sockets overlap radius-0.085 rotating pins over 0.195 axial
+  length, and the source toggle eyes are represented by solid spheres.
+
+379–382 already have finite thread, bore and guide corrections. Their cutting,
+wood friction and locking-preload limits remain documented residuals; they are
+not newly unreviewed breadth work.
 
 These are code-inspected candidates, not qualified mechanisms or completed
 collision studies. Prioritize their working motion and surfaces before detailing.
