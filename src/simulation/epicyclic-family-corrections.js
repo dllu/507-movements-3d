@@ -89,6 +89,13 @@ export function correctEpicyclicFamily(root,id){
   g.toothHeight=rack.module*(rack.addendum+rack.dedendum);
  }
  root.traverse(o=>{for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material)material.fog=false;});
+ // Fit the full orbit explicitly; a wide-angle sphere fit made the initial
+ // source views unnecessarily small, especially the shallow 504 gear stack.
+ if(id!==505){
+  root.userData.cameraFov=12;
+  const bounds=root.userData.cameraFitBounds;
+  root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ }
  root.userData.cameraDistanceScale=1;
  root.userData.familyReview={workingMotion:'analytic',ground:false,shaftBores:true,sourceSupports:'unsupported invented frames omitted',contactQualification:'See docs/validation/502-505-gear-solids.json; sampled gear-body contacts only.'};
 }

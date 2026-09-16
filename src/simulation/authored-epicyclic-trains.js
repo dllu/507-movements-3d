@@ -775,7 +775,7 @@ function compoundOutputEpicyclic(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.8, 4.3, 12.5),
+    cameraDirection: new THREE.Vector3(0.1, 0.2, 16),
   };
 }
 
@@ -1205,7 +1205,7 @@ function bevelDifferentialEpicyclic(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(1.5, 1.2, 12),
+    cameraDirection: new THREE.Vector3(0.3, 0.3, 16),
   };
 }
 
@@ -1744,7 +1744,7 @@ function fergusonMechanicalParadox(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.7, 5.7, 11.8),
+    cameraDirection: new THREE.Vector3(0.3, 1.3, 16),
   };
 }
 
@@ -1955,7 +1955,8 @@ function fixedAnnulusSimplePlanetary(movement) {
   const bcPhaseConstant = planetTeeth * planetMountPhase
     - ringTeeth * ringMountPhase;
   const stateAtTime = (time) => {
-    const carrierAngle = carrierAngularSpeed * time;
+    // Start at the engraving's diagonal arm; preserve the same closed gear orbit.
+    const carrierAngle = Math.PI / 4 + carrierAngularSpeed * time;
     const radial = new THREE.Vector3(
       Math.cos(carrierAngle),
       Math.sin(carrierAngle),
@@ -2166,7 +2167,7 @@ function fixedAnnulusSimplePlanetary(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.8, 4.5, 12.8),
+    cameraDirection: new THREE.Vector3(0.3, 0.2, 16),
   };
 }
 

@@ -11832,18 +11832,22 @@
     {
       "id": 502,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-502-505.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser default/front/advanced source comparisons show intact involute and conical faces, open bores and continuous opposed/aggregate motion. Each renders under 80,000 triangles including shadows. 502's full-orbit camera necessarily leaves space around its initially vertical…"
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/epicyclic-source-pose-followup.md",
+        "note": "Default and advanced oblique production views compared directly with source; source-fit differences retained."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-502-505.md",
         "note": "Selected finite interfaces sampled in the cited review; broader pairs and continuous-time collision freedom unverified. `node scripts/review-epicyclic-teeth.mjs` checks actual rendered gear bodies and teeth bidirectionally using vertices, edge midpoints and triangle centers. The published `docs/validation/502-505-gear-solids.json` uses 33 uniformly spaced carrier poses per movement: 180,768 queries for 502; 243,906…"
       },
-      "flaws": "Shallow teeth lack full engagement-coverage qualification; source proportions and carrier/fixed-member clearances need follow-up.",
+      "flaws": "Shallow engagement coverage unqualified; canvas-derived wheel proportions differ from engraving. Carrier/fixed-member clearances need follow-up.",
       "references": [
-        "docs/movement-502-505.md"
+        "docs/movement-502-505.md",
+        "docs/epicyclic-source-pose-followup.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11855,18 +11859,22 @@
     {
       "id": 503,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-503-504-contact.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/epicyclic-source-pose-followup.md",
+        "note": "Default and advanced oblique production views compared directly with source; source-fit differences retained."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-503-504-contact.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - 503: 409,058 surface queries, zero sampled penetrations; maximum closest-surface gap 0.003011. The back-cone approximation gives contact ratio 1.638936. - 504: 852,549 surface queries, zero sampled penetrations. Maximum closest-surface gaps are 0.000582 for A–B and B–F, 0.000600 for B–E, and 0.000596 for B–G. - Focused tests also check actual 503 hub/sleeve/head surfaces…"
       },
-      "flaws": "Bevel flanks use back-cone approximation; exact conjugacy, backlash under load and tooth-force dynamics unvalidated.",
+      "flaws": "45-degree cones and axial spacing look deeper than engraving. Back-cone flanks approximate; loaded conjugacy, backlash and forces unvalidated.",
       "references": [
-        "docs/movement-503-504-contact.md"
+        "docs/movement-503-504-contact.md",
+        "docs/epicyclic-source-pose-followup.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11878,18 +11886,22 @@
     {
       "id": 504,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-503-504-contact.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/epicyclic-source-pose-followup.md",
+        "note": "Default and advanced oblique production views compared directly with source; source-fit differences retained."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-503-504-contact.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - 503: 409,058 surface queries, zero sampled penetrations; maximum closest-surface gap 0.003011. The back-cone approximation gives contact ratio 1.638936. - 504: 852,549 surface queries, zero sampled penetrations. Maximum closest-surface gaps are 0.000582 for A–B and B–F, 0.000600 for B–E, and 0.000596 for B–G. - Focused tests also check actual 503 hub/sleeve/head surfaces…"
       },
-      "flaws": "Four-band pinion, extra lowest band and output stack differ from engraving; reconstructed modules close centers but historical tooth compromise unresolved.",
+      "flaws": "Continuous B and source E/F/G order corrected; generated tooth thicknesses/root connections and supports inferred. Loaded backlash/forces unvalidated.",
       "references": [
-        "docs/movement-503-504-contact.md"
+        "docs/movement-503-504-contact.md",
+        "docs/epicyclic-source-pose-followup.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11901,18 +11913,22 @@
     {
       "id": 505,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-502-505.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser default/front/advanced source comparisons show intact involute and conical faces, open bores and continuous opposed/aggregate motion. Each renders under 80,000 triangles including shadows. 502's full-orbit camera necessarily leaves space around its initially vertical…"
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/epicyclic-source-pose-followup.md",
+        "note": "Default and advanced oblique production views compared directly with source; source-fit differences retained."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-502-505.md",
-        "note": "Selected finite interfaces sampled in the cited review; broader pairs and continuous-time collision freedom unverified. `node scripts/review-epicyclic-teeth.mjs` checks actual rendered gear bodies and teeth bidirectionally using vertices, edge midpoints and triangle centers. The published `docs/validation/502-505-gear-solids.json` uses 33 uniformly spaced carrier poses per movement: 180,768 queries for 502; 243,906…"
+        "evidence": "docs/epicyclic-source-pose-followup.md",
+        "note": "New source-start phase: 33 working-gear poses, 1,246,666 surface queries, no intrusion above 1e-6. Retained scoped journal checks; no exhaustive assembly proof."
       },
-      "flaws": "Arm starts horizontal instead of source diagonal; source proportions and carrier/fixed-member clearances need follow-up. Loaded backlash unsolved.",
+      "flaws": "Diagonal source start corrected; carrier/fixed-member clearances need follow-up. Generated profiles and loaded backlash remain inferred/unsolved.",
       "references": [
-        "docs/movement-502-505.md"
+        "docs/movement-502-505.md",
+        "docs/epicyclic-source-pose-followup.md"
       ],
       "mujoco": {
         "mode": "none",

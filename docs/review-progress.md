@@ -19,6 +19,13 @@ visual checks. Seven relevant focused checks, production build and four packaged
 desktop/mobile cases pass. Independent 183/184, 296 and 306/307 contact repairs
 are still in progress; no clearance or completion claim is made for those lanes.
 
+[502–505 source poses](epicyclic-source-pose-followup.md) now use clearer
+source-facing cameras with full-orbit fitting; 505 starts at the source diagonal
+on the unchanged tooth-engagement trajectory. The stale 504 four-band ledger
+comment is corrected against the current continuous wheel and working-contact
+review. Four more attributable visual checks retain explicit source-proportion,
+approximate tooth and assembly-qualification residuals.
+
 # Forty-seventh family pass: finite feed teeth, escapements and source supports
 
 The [status ledger](movement-status.md) records new independent primary-agent
