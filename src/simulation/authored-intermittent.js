@@ -1,3 +1,4 @@
+import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
 import {makeEccentricTwoStop} from './eccentric-two-stop.js';
 import { makePumpCatchDrive } from './pump-catch.js';
 import { makeWiperStampDrive } from './wiper-stamp.js';
@@ -9997,7 +9998,7 @@ function fiveSlotGenevaWindingStop() {
     center: new THREE.Vector2(0, 0),
     end: 0.614753,
     radius: 4,
-    segments: 160,
+    segments: 1024,
     start: 1.637813,
   });
   const driverOutlineRaw = [];
@@ -10018,7 +10019,7 @@ function fiveSlotGenevaWindingStop() {
     center: new THREE.Vector2(0, 0),
     end: 3.83139,
     radius: 4,
-    segments: 34,
+    segments: 256,
     start: 3.080114,
   });
   const slotPolylinesRaw = [
@@ -10064,28 +10065,28 @@ function fiveSlotGenevaWindingStop() {
       center: new THREE.Vector2(-4.374409, 6.020858),
       end: 5.720109,
       radius: 4,
-      segments: 34,
+      segments: 256,
       start: 4.961306,
     }),
     sampleRawArc({
       center: new THREE.Vector2(0, -7.442189),
       end: 1.950198,
       radius: 4,
-      segments: 34,
+      segments: 256,
       start: 1.191394,
     }),
     sampleRawArc({
       center: new THREE.Vector2(7.077943, -2.299763),
       end: 3.206835,
       radius: 4,
-      segments: 34,
+      segments: 256,
       start: 2.448031,
     }),
     sampleRawArc({
       center: new THREE.Vector2(4.374409, 6.020858),
       end: 4.463472,
       radius: 4,
-      segments: 34,
+      segments: 256,
       start: 3.704669,
     }),
   ];
@@ -11062,7 +11063,7 @@ function fiveSlotGenevaWindingStop() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 3.9, 10.5));
+  return finishGenevaWorkingParts(finish(root, update, new THREE.Vector3(4.8, 3.9, 10.5)), 212);
 }
 
 function splitRimFacePinWindingStop() {
@@ -13391,7 +13392,7 @@ function crescentPinSixSlotWindingStop() {
       } else {
         while (sweep < 0) sweep += fullTurn;
       }
-      const segmentCount = Math.max(6, Math.ceil(Math.abs(sweep) * 24));
+      const segmentCount = Math.max(6, Math.ceil(Math.abs(sweep) * 128));
       points = Array.from({ length: segmentCount + 1 }, (_, index) => {
         const angle = startAngle + sweep * index / segmentCount;
         return new THREE.Vector2(
@@ -13434,11 +13435,11 @@ function crescentPinSixSlotWindingStop() {
   };
   const sourceCrescentInnerProfile = sampleArc(
     sourceCrescentInnerArc,
-    180,
+    1024,
   );
   const sourceCrescentEccentricProfile = sampleArc(
     sourceCrescentEccentricArc,
-    80,
+    256,
   );
   // These two source arcs meet at both ends and describe the raised
   // crescent locking cam seen inside the larger carrier circle. They are
@@ -14541,7 +14542,7 @@ function crescentPinSixSlotWindingStop() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.8, 5.1, 11.6));
+  return finishGenevaWorkingParts(finish(root, update, new THREE.Vector3(6.8, 5.1, 11.6)), 215);
 }
 
 function vibratingCarrierSinglePawlRatchet(movement) {

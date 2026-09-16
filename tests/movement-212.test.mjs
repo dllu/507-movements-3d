@@ -191,10 +191,10 @@ test('movement 212 reproduces the official five-position construction, four pock
   near(transmission.normalIndexRatio, -24 / 17, 3e-16,
     'official 72-over-51 active ratio');
 
-  assert.equal(geometry.driverOutlineRaw.length, 345);
-  assert.equal(geometry.stopWheelOutlineRaw.length, 187);
+  assert.equal(geometry.driverOutlineRaw.length, 1209);
+  assert.equal(geometry.stopWheelOutlineRaw.length, 1297);
   assert.equal(geometry.driverFingerArcRaw.length, 31);
-  assert.equal(geometry.convexStopArcRaw.length, 35);
+  assert.equal(geometry.convexStopArcRaw.length, 257);
   vector2Near(
     geometry.driverOutlineRaw[0],
     new THREE.Vector2(2.783027155941134, 3.5362069862062944),

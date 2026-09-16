@@ -260,16 +260,16 @@ test('movement 215 reproduces the source construction, official track, and two c
   near(geometry.stopStepAngle, STEP_ANGLE, 0,
     'six-slot angular pitch');
 
-  assert.equal(geometry.sourceStopWheelOutline.length, 1302);
-  assert.equal(geometry.stopWheelOutline.length, 1302);
-  assert.equal(geometry.sourceCrescentInnerProfile.length, 181);
-  assert.equal(geometry.sourceCrescentEccentricProfile.length, 81);
-  assert.equal(geometry.sourceLockingCamOutline.length, 261);
-  assert.equal(geometry.lockingCamOutline.length, 261);
-  assert.equal(geometry.specialSectorArc.length, 21);
-  near(signedArea(geometry.sourceStopWheelOutline), 56.5626739026578,
+  assert.equal(geometry.sourceStopWheelOutline.length, 6829);
+  assert.equal(geometry.stopWheelOutline.length, 6829);
+  assert.equal(geometry.sourceCrescentInnerProfile.length, 1025);
+  assert.equal(geometry.sourceCrescentEccentricProfile.length, 257);
+  assert.equal(geometry.sourceLockingCamOutline.length, 1281);
+  assert.equal(geometry.lockingCamOutline.length, 1281);
+  assert.equal(geometry.specialSectorArc.length, 108);
+  near(signedArea(geometry.sourceStopWheelOutline), 56.555749033972425,
     2e-14, 'ordered source stop-wheel outline area');
-  near(signedArea(geometry.stopWheelOutline), 19.027683500854124,
+  near(signedArea(geometry.stopWheelOutline), 19.025353975028477,
     8e-15, 'scaled stop-wheel outline area');
   assert.ok(signedArea(geometry.sourceLockingCamOutline) < 0,
     'traced source locking-cam contour retains its clockwise order');
@@ -283,7 +283,7 @@ test('movement 215 reproduces the source construction, official track, and two c
     'raised cam and Geneva wheel share a working thickness');
   near(geometry.commonLockingPlaneZ, 0, 0,
     'raised cam and wheel share the locking plane');
-  near(geometry.axialLayerGap, 0.06, 0,
+  near(geometry.axialLayerGap, 0.085, 0,
     'rear carrier clears the front Geneva wheel');
 
   assert.equal(sourceAnimation.available, true);
@@ -743,7 +743,7 @@ test('movement 215 runtime stops at every engagement boundary, reverses continuo
   disposeModel(model.root);
 });
 
-test('movement 215 renders separated carrier and locking planes without solid interference and leaves the reviewed queue sequential', () => {
+test('movement 215 renders separated carrier and locking planes with nominal profile checks and leaves the reviewed queue sequential', () => {
   const model = createMovementModel(catalog.movements[214]);
   const {
     blocks,
