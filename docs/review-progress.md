@@ -1,3 +1,28 @@
+# Second family pass: nine corrections and selective browser loading
+
+Corrected 200/226, 231/273 and 255–259 in parallel. The decisive motion fix is
+226's input pivot: its gear previously orbited away from its mating wheels.
+Shared bored lathe/link geometry now clears pulley shafts and rhombus pins;
+shaft/journal extents, unsupported frames and source-facing views were corrected.
+Seventy-nine focused tests pass, and browser source comparisons cover all nine.
+See the [bevel](bevel-family-pass-200-226.md), [linkage](analytic-linkage-family-review.md)
+and [pulley](pulley-family-review.md) reviews for remaining reconstruction limits.
+
+The production app now loads only the requested authored family. The main chunk
+fell from 26.31 MB to 0.59 MB (other requested chunks/assets still load). All 507
+lazy routes match the legacy geometry, sampled transforms and timing; nine
+loader/renderer tests, route-generation consistency, the build and five packaged
+browser tests pass. Baked 123 loads no unrelated authored families or MuJoCo.
+See [family loading](family-loading.md).
+
+Continue the family inventory, keeping a parallel lane for contact exceptions
+rather than only easy geometry. The unqualified 183–184 prototype is unchanged;
+195/207 wheel envelopes, 200's compound driver, 226's finite tooth contact and
+231's source proportions remain explicit follow-ups. These bounded passes do not
+complete the full 507-movement review; the goal remains active.
+
+## Earlier checkpoints
+
 # Family passes started: 325 movements in 20 queues
 
 Changed the remaining review from serial drawing refinement to reusable family

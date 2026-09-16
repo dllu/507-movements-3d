@@ -120,3 +120,21 @@ the queue passed two coverage/parser tests. The production build passed. Browser
 source comparisons and 17-pose desktop framing checks passed for all four; 230's
 initial view now exposes both linkage planes. Their family review documents retain
 unresolved wheel-contact and depth/clearance assumptions.
+
+
+## Second parallel batch
+
+- **200/226:** fixed 226's incorrect input pivot and shaft interference; removed
+  200's unsupported frame and improved views. Fourteen focused tests pass.
+- **231/273:** corrected shaft engagement and rebuilt solid pin joints with real
+  bores; removed the unsupported 273 frame. Eighteen focused tests pass.
+- **255–259:** shared bored lathe profiles, improved shoulders/grooves and source
+  widths, groundless/fogless presentation. Forty-seven focused tests pass.
+- **Loading:** [family-selective imports](family-loading.md) reduce the main chunk
+  from 26.31 MB to 0.59 MB; all 507 route comparisons and packaged network/playback
+  checks pass. Large legacy gears/intermittent chunks still need internal splitting.
+
+These are correction passes, not family completion. Keep finite contact studies
+moving in one parallel lane while other lanes clear shared geometry and source
+mismatches. The source-animation check must inspect whether a usable animation
+actually loads: 273 has one despite its static HTML's unavailable class.

@@ -1,5 +1,5 @@
 import catalog from './data/movements.json';
-import { MovementEngine } from './simulation/engine.js';
+import { MovementEngine } from './simulation/async-engine.js';
 import './styles.css';
 
 const PAGE_SIZE = 12;

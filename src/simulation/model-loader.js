@@ -1,4 +1,4 @@
-import {createMovementModel} from './registry.js';
+import {loadAuthoredMovement} from './authored-loader.js';
 
 // Migrate a movement by registering its factory here. Existing authored models
 // remain available while each replacement's geometry and contacts are checked.
@@ -285,7 +285,7 @@ export async function loadMovementModel(movement) {
     return model;
   }
   const loadFactory = physicsFactories[movement.id];
-  if (!loadFactory) return createMovementModel(movement);
+  if (!loadFactory) return loadAuthoredMovement(movement);
   const [mujoco, factory] = await Promise.all([
     import('./mujoco/load.js').then(module => module.getMujoco()),
     loadFactory(),

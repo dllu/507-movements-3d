@@ -35,3 +35,9 @@ irregular visible outlines; infer occlusions separately and use ideal mechanical
 curves where intended. Publish bounded corrections with honest residuals; do not
 let one difficult movement block unrelated families. Reserve expensive native and
 collision studies for the contact/dynamic uncertainty that warrants them.
+
+The browser uses `async-engine.js` and generated `authored-routes.js`; `engine.js`
+keeps synchronous compatibility for offline reviews. When changing which IDs an
+authored factory handles, regenerate routes with
+`node --expose-gc scripts/generate-authored-routes.mjs` and run the loader tests.
+Do not reintroduce eager registry imports into the production application.
