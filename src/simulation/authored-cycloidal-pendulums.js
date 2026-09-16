@@ -6,6 +6,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { fitPistonGuide } from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -44,21 +46,24 @@ function beamBetween(start, end, width, depth, material) {
 }
 
 class CycloidalCheekCurve extends THREE.Curve {
-  constructor({ cycloidRadius, lowestBobY, side, maximumParameter, z }) {
+  constructor({ cycloidRadius, lowestBobY, side, maximumParameter, z, offset = 0 }) {
     super();
     this.cycloidRadius = cycloidRadius;
     this.lowestBobY = lowestBobY;
     this.side = side;
     this.maximumParameter = maximumParameter;
     this.z = z;
+    this.offset = offset;
   }
 
   getPoint(progress, target = new THREE.Vector3()) {
     const theta = this.side * this.maximumParameter * progress;
     return target.set(
-      this.cycloidRadius * (theta - Math.sin(theta)),
+      this.cycloidRadius * (theta - Math.sin(theta))
+        + this.side * this.offset * Math.cos(theta / 2),
       this.lowestBobY
-        + this.cycloidRadius * (3 + Math.cos(theta)),
+        + this.cycloidRadius * (3 + Math.cos(theta))
+        + this.offset * Math.sin(Math.abs(theta) / 2),
       this.z,
     );
   }
@@ -108,6 +113,8 @@ function cycloidalIsochronousPendulum(movement) {
   const mechanismPlaneZ = 0.20;
   const cheekDepth = 0.30;
   const cheekThickness = 0.18;
+  const cordRadius = 0.028;
+  const contactClearance = 0.0006;
   const wrappedCableSegments = 48;
   const freeCableSegments = 18;
 
@@ -313,11 +320,13 @@ function cycloidalIsochronousPendulum(movement) {
 
   const makeCheekPlate = (side) => {
     const shape = new THREE.Shape();
-    const samples = 96;
+    const samples = 256;
     for (let index = 0; index <= samples; index += 1) {
       const magnitude = maximumCheekParameter * index / samples;
       const theta = side * magnitude;
       const point = cheekPointAtParameter(theta, 0);
+      point.x += side * (cordRadius + contactClearance) * Math.cos(theta / 2);
+      point.y += (cordRadius + contactClearance) * Math.sin(magnitude / 2);
       if (index === 0) shape.moveTo(point.x, point.y);
       else shape.lineTo(point.x, point.y);
     }
@@ -325,6 +334,8 @@ function cycloidalIsochronousPendulum(movement) {
       const magnitude = maximumCheekParameter * index / samples;
       const theta = side * magnitude;
       const point = cheekPointAtParameter(theta, 0);
+      point.x += side * (cordRadius + contactClearance) * Math.cos(theta / 2);
+      point.y += (cordRadius + contactClearance) * Math.sin(magnitude / 2);
       shape.lineTo(
         point.x + side * cheekThickness * 0.10,
         point.y + cheekThickness,
@@ -332,14 +343,14 @@ function cycloidalIsochronousPendulum(movement) {
     }
     shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: true,
+      bevelEnabled: false,
       bevelSegments: 2,
       bevelSize: 0.018,
       bevelThickness: 0.018,
       curveSegments: 1,
       depth: cheekDepth,
     });
-    geometry.translate(0, 0, -cheekDepth / 2);
+    geometry.translate(0, 0, mechanismPlaneZ - cheekDepth / 2);
     const plate = new THREE.Mesh(geometry, cheekMaterial);
     plate.userData.fixed = true;
     plate.userData.role = side > 0
@@ -359,14 +370,16 @@ function cycloidalIsochronousPendulum(movement) {
       lowestBobY,
       maximumParameter: maximumCheekParameter,
       side: -1,
-      z: cheekDepth / 2 + 0.018,
+      z: mechanismPlaneZ,
+      offset: cordRadius + contactClearance + 0.012,
     }),
     right: new CycloidalCheekCurve({
       cycloidRadius,
       lowestBobY,
       maximumParameter: maximumCheekParameter,
       side: 1,
-      z: cheekDepth / 2 + 0.018,
+      z: mechanismPlaneZ,
+      offset: cordRadius + contactClearance + 0.012,
     }),
   };
   const cheekContactRails = Object.entries(cheekCurves).map(([
@@ -374,7 +387,7 @@ function cycloidalIsochronousPendulum(movement) {
     curve,
   ]) => {
     const rail = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 128, 0.025, 8, false),
+      new THREE.TubeGeometry(curve, 256, 0.012, 8, false),
       darkMaterial,
     );
     rail.userData.fixed = true;
@@ -408,11 +421,16 @@ function cycloidalIsochronousPendulum(movement) {
     darkMaterial,
   );
   suspensionBoss.rotation.x = Math.PI / 2;
-  suspensionBoss.position.set(0, cuspY, mechanismPlaneZ - 0.02);
+  suspensionBoss.position.set(0, cuspY, -0.06);
   suspensionBoss.userData.fixed = true;
   suspensionBoss.userData.role =
     'central-cusp-anchor-of-inextensible-pendulum-cord';
   root.add(suspensionBoss);
+  const anchorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 24), darkMaterial);
+  anchorPin.rotation.x = Math.PI / 2;
+  anchorPin.position.set(0, cuspY, 0.17);
+  anchorPin.userData.role = 'cord-anchor-stud-to-rear-suspension-boss';
+  root.add(anchorPin);
 
   const braceMembers = [];
   for (const side of [-1, 1]) {
@@ -466,14 +484,14 @@ function cycloidalIsochronousPendulum(movement) {
   const cord = makeDynamicCable({
     color: PALETTE.ink,
     maxSegments: wrappedCableSegments + freeCableSegments,
-    radius: 0.028,
+    radius: cordRadius,
   });
   cord.userData.role =
     'massless-inextensible-cord-wrapping-on-one-cycloidal-cheek';
   root.add(cord);
 
   const contactBead = new THREE.Mesh(
-    new THREE.SphereGeometry(0.055, 18, 12),
+    new THREE.SphereGeometry(0.028, 18, 12).translate(0, 0, 0.19),
     whiteMaterial,
   );
   contactBead.userData.role =
@@ -555,6 +573,7 @@ function cycloidalIsochronousPendulum(movement) {
     archetype:
       'huygens-cycloidal-cheeks-isochronous-cord-pendulum',
     blocks: {
+      anchorPin,
       bob,
       bobIndex,
       bobSphere,
@@ -600,6 +619,8 @@ function cycloidalIsochronousPendulum(movement) {
       cuspPoint: new THREE.Vector3(0, cuspY, mechanismPlaneZ),
       cuspY,
       cycloidRadius,
+      cordRadius,
+      contactClearance,
       gravity,
       isochronousPeriod,
       lowestBobY,
@@ -687,15 +708,19 @@ function cycloidalIsochronousPendulum(movement) {
     },
   };
 
+  root.userData.minimumDisplayCycleSeconds = 6;
+  root.userData.reconstructionNote = 'The physical cheek faces are offset from the ideal cycloidal cord centerline by the visible cord radius, with 0.0006 discretization clearance. The white tangency dot sits in front as an annotation. The cord is massless and the bob is a point mass for the exact Huygens motion law.';
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.52, -1.16, -0.38),
     new THREE.Vector3(2.52, 2.67, 0.48),
   );
   root.userData.groundFloorY = -1.15;
+  fitPistonGuide(root, update, isochronousPeriod);
+  root.userData.cameraFov = 8;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(3.8, 2.8, 8.8),
+    cameraDirection: new THREE.Vector3(0.4, 0.2, 14),
     root,
     update,
   };

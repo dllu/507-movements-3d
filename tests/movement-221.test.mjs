@@ -295,7 +295,7 @@ test('movement 221 uses one common pitch and a real recessed parallel guide', ()
   assert.ok(geometry.grooveHalfWidth > geometry.guideRollerRadius);
   near(
     geometry.grooveHalfWidth - geometry.guideRollerRadius,
-    0.05,
+    0.003,
     2e-17,
     'roller running clearance in recessed guide',
   );

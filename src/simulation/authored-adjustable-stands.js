@@ -5,6 +5,11 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {plate,sector} from './finite-plate-geometry.js';
+import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -35,11 +40,11 @@ function adjustableMirrorStand(movement) {
   const yawPhaseOffset = Math.PI / 2;
   const tiltFrequencyRatio = 2;
   const tiltPhaseOffset = -Math.PI / 4;
-  const mirrorCenterLocal = new THREE.Vector3(0, 0.28, 0);
+  const mirrorCenterLocal = new THREE.Vector3(0, 0.28, -0.82);
   const mirrorOuterWidth = 2.48;
   const mirrorOuterHeight = 2.86;
-  const mirrorGlassWidth = 1.98;
-  const mirrorGlassHeight = 2.34;
+  const mirrorGlassWidth = 2.28;
+  const mirrorGlassHeight = 2.66;
   const socketRadialClearance = 0.055;
   const stemRadius = 0.145;
   const socketBoreRadius = stemRadius + socketRadialClearance;
@@ -166,20 +171,31 @@ function adjustableMirrorStand(movement) {
     base.add(tier);
   }
   const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.48, 0.62, 1.25, 42),
+    boredLatheGeometry([
+      {axial:-1.015,radial:.62},{axial:-.75,radial:.46},
+      {axial:0,radial:.27},{axial:.51,radial:.38},
+    ],socketBoreRadius,64),
     frameMaterial,
   );
-  pillar.position.y = -0.39;
+  pillar.position.y = 0;
   pillar.userData.role = 'fixed-hollow-socket-pillar';
   base.add(pillar);
   const socketCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.38, 0.38, 0.30, 40),
+    boredCylinderGeometry(.38,socketBoreRadius,.24),
     frameMaterial,
   );
   socketCollar.position.y = socketTopY - 0.12;
   socketCollar.userData.boreRadius = socketBoreRadius;
   socketCollar.userData.role = 'fixed-upper-stem-socket-collar';
   base.add(socketCollar);
+  // A finite side opening connects the bored socket to its radial screw boss.
+  socketCollar.geometry.dispose();
+  socketCollar.geometry = plate(sector(socketBoreRadius,.38,.44,2*Math.PI-.44,96),-.12,.12).rotateX(-Math.PI/2);
+  const socketBoss = new THREE.Mesh(boredCylinderGeometry(.14,.081,.32),frameMaterial);
+  socketBoss.rotation.z = Math.PI/2;
+  socketBoss.position.set(.34,.63,0);
+  socketBoss.userData.role='bored-radial-set-screw-boss';
+  base.add(socketBoss);
   const socketBoreWitness = new THREE.Mesh(
     new THREE.TorusGeometry(socketBoreRadius, 0.025, 8, 40),
     darkMaterial,
@@ -190,7 +206,7 @@ function adjustableMirrorStand(movement) {
   base.add(socketBoreWitness);
 
   const socketSetScrew = new THREE.Group();
-  socketSetScrew.position.set(0.42, 0.43, 0);
+  socketSetScrew.position.set(0, 0.63, 0);
   socketSetScrew.userData.fixed = true;
   socketSetScrew.userData.lockedDegreesOfFreedom = [
     'stem vertical translation',
@@ -201,11 +217,11 @@ function adjustableMirrorStand(movement) {
   root.add(socketSetScrew);
   const socketScrewCore = cylinderAlongX(
     0.075,
-    0.50,
+    0.75,
     screwMaterial,
     22,
   );
-  socketScrewCore.position.x = 0.18;
+  socketScrewCore.position.x = 0.535;
   socketScrewCore.userData.role = 'socket-lock-screw-core';
   socketSetScrew.add(socketScrewCore);
   const socketScrewKnob = cylinderAlongX(
@@ -214,7 +230,11 @@ function adjustableMirrorStand(movement) {
     screwMaterial,
     28,
   );
-  socketScrewKnob.position.x = 0.47;
+  socketScrewKnob.position.x = .97;
+  const screwProfile={inner:.074,outer:.079,low:.20,high:.90,width:.025,lead:.05/(2*Math.PI),phase:0};
+  const socketThread=new THREE.Mesh(helicalThread(screwProfile,threadAngles(screwProfile,40)).rotateY(Math.PI/2),screwMaterial);
+  socketThread.userData.role='closed-socket-set-screw-thread';
+  socketSetScrew.add(socketThread);
   socketScrewKnob.userData.role = 'socket-lock-screw-knob';
   socketSetScrew.add(socketScrewKnob);
 
@@ -227,19 +247,19 @@ function adjustableMirrorStand(movement) {
     new THREE.CylinderGeometry(
       stemRadius,
       stemRadius,
-      stemTopLocalY - stemBottomLocalY,
+      stemTopLocalY - .23 - stemBottomLocalY,
       30,
     ),
     stemMaterial,
   );
-  stemCore.position.y = (stemTopLocalY + stemBottomLocalY) / 2;
+  stemCore.position.y = (stemTopLocalY - .23 + stemBottomLocalY) / 2;
   stemCore.userData.role = 'inner-stem-inside-pillar-socket';
   stem.add(stemCore);
   const stemHeightIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.035, 0.62, 0.035),
+    new THREE.BoxGeometry(0.018, 0.24, 0.018),
     whiteMaterial,
   );
-  stemHeightIndex.position.set(stemRadius + 0.018, 0.32, 0);
+  stemHeightIndex.position.set(stemRadius - .004, .85, 0);
   stemHeightIndex.userData.role = 'white-stem-height-and-yaw-index';
   stem.add(stemHeightIndex);
 
@@ -247,16 +267,21 @@ function adjustableMirrorStand(movement) {
   hingeYoke.position.y = stemTopLocalY;
   hingeYoke.userData.role = 'stem-mounted-fixed-half-of-tilt-hinge';
   stem.add(hingeYoke);
+  const yokeBridge = new THREE.Mesh(new THREE.BoxGeometry(.76,.12,.22),stemMaterial);
+  yokeBridge.position.y=-.26;
+  hingeYoke.add(yokeBridge);
   const hingeOuterBarrels = [];
   for (const x of [-0.31, 0.31]) {
     const barrel = cylinderAlongX(0.20, 0.28, stemMaterial, 28);
+    barrel.geometry.dispose();
+    barrel.geometry=boredCylinderGeometry(.20,.080,.28);
     barrel.position.x = x;
     barrel.userData.role = 'one-of-two-stem-side-hinge-barrels';
     hingeOuterBarrels.push(barrel);
     hingeYoke.add(barrel);
   }
   const hingeSetScrew = new THREE.Group();
-  hingeSetScrew.position.x = -0.56;
+  hingeSetScrew.position.x = 0;
   hingeSetScrew.userData.lockedDegreesOfFreedom = [
     'mirror inclination about horizontal hinge',
   ];
@@ -265,11 +290,11 @@ function adjustableMirrorStand(movement) {
   hingeYoke.add(hingeSetScrew);
   const hingeScrewCore = cylinderAlongX(
     0.072,
-    0.38,
+    1.30,
     screwMaterial,
     22,
   );
-  hingeScrewCore.position.x = -0.16;
+  hingeScrewCore.position.x = -.20;
   hingeScrewCore.userData.role = 'hinge-lock-screw-core';
   hingeSetScrew.add(hingeScrewCore);
   const hingeScrewKnob = cylinderAlongX(
@@ -278,7 +303,11 @@ function adjustableMirrorStand(movement) {
     screwMaterial,
     28,
   );
-  hingeScrewKnob.position.x = -0.39;
+  hingeScrewKnob.position.x = -.91;
+  const hingeProfile={inner:.071,outer:.077,low:-.85,high:-.17,width:.025,lead:.05/(2*Math.PI),phase:0};
+  const hingeThread=new THREE.Mesh(helicalThread(hingeProfile,threadAngles(hingeProfile,40)).rotateY(Math.PI/2),screwMaterial);
+  hingeThread.userData.role='closed-hinge-lock-screw-thread';
+  hingeSetScrew.add(hingeThread);
   hingeScrewKnob.userData.role = 'hinge-lock-screw-knob';
   hingeSetScrew.add(hingeScrewKnob);
 
@@ -289,10 +318,15 @@ function adjustableMirrorStand(movement) {
   hingeYoke.add(mirrorTiltPivot);
   const centerHingeBarrel = cylinderAlongX(
     0.155,
-    0.42,
+    0.32,
     mirrorFrameMaterial,
     28,
   );
+  centerHingeBarrel.geometry.dispose();
+  centerHingeBarrel.geometry=boredCylinderGeometry(.155,.080,.32);
+  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,.67),mirrorFrameMaterial);
+  mirrorBackBracket.position.z=-.485;
+  mirrorTiltPivot.add(mirrorBackBracket);
   centerHingeBarrel.userData.role =
     'mirror-side-center-hinge-barrel';
   mirrorTiltPivot.add(centerHingeBarrel);
@@ -360,6 +394,11 @@ function adjustableMirrorStand(movement) {
     blocks: {
       base,
       baseTiers,
+      socketBoss,
+      socketThread,
+      hingeThread,
+      yokeBridge,
+      mirrorBackBracket,
       centerHingeBarrel,
       hingeOuterBarrels,
       hingeScrewCore,
@@ -504,9 +543,10 @@ function adjustableMirrorStand(movement) {
     new THREE.Vector3(1.88, 4.22, 1.82),
   );
   root.userData.groundFloorY = -1.42;
+  fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.2, 2.8, 9.2),
+    cameraDirection: new THREE.Vector3(3.2, 1.7, 10.2),
     root,
     update,
   };

@@ -1,0 +1,94 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-elliptical-idler-gears.js",
+      "sha256": "1360c491103a6331bb8847639db38dbf446a87a07e718a4337b1cef32693d9fd"
+    },
+    {
+      "file": "src/simulation/authored-stepped-sector-gears.js",
+      "sha256": "205aa061bd9f4eb19ed560091dcaa2be2764172c72370e7d0ccf1ff13be29826"
+    },
+    {
+      "file": "src/simulation/variable-idler-gear-parts.js",
+      "sha256": "0a7ef6b88039821577b4682339819bb17db00b763dd7578e048dfbb7a72fc6a3"
+    },
+    {
+      "file": "src/simulation/generated-elliptical-idler-profile.js",
+      "sha256": "61388c4cdeadca85a52c70228013076dd475d5ab91e0fd4f844b43b91f121cdc"
+    },
+    {
+      "file": "src/simulation/band-epicyclic-geometry.js",
+      "sha256": "a6a6c0275260970d1d701cec0b1b871724396ff7be90c553d62686d635e25e53"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/variable-sector-parts.js",
+      "sha256": "fe0b59d373aa7ed598313ee9c8fb1fb8d594c06c0bb4f0e41624f0f10a7bdb3f"
+    },
+    {
+      "file": "src/simulation/generated-stepped-sector-relief.js",
+      "sha256": "8a262335503dc587ab8fe6a59e451ea28550d031e9cc09c5daf9d02bd73a65e4"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    },
+    {
+      "file": "src/simulation/bored-planar-link.js",
+      "sha256": "48b130e220ce4b59faf730ddc50987dfc94dbcd7badd6c0f9dad6061cc1dba78"
+    },
+    {
+      "file": "scripts/review-variable-idler-contact.py",
+      "sha256": "955c5838b60a4258f4df0548022e378f85a48ec83705cceab14201b850c9495f"
+    },
+    {
+      "file": "scripts/export-variable-idler-contact.mjs",
+      "sha256": "dfd1a8ec520ef3b82e6a13e8c5ca8285025b62065850eac0946cd319d4079e63"
+    }
+  ],
+  "method": "Intersection of actual rendered gear triangle projections over full cycles and 223 transition-neighborhood poses; parallel planar gear solids. Includes sector webs and hubs; excludes other hubs, guides, links and journals, which have scoped finite-solid tests. Max active gap compares each continuously meshing 221/222 pair and the active 223 pair.",
+  "results": [
+    {
+      "id": 221,
+      "poses": 513,
+      "penetratingPairPoses": 0,
+      "maximumOverlapArea": 0.0,
+      "maximumClosestGap": 0.000940106005654525,
+      "maximumActiveGap": 0.0010124492669559037,
+      "worst": {
+        "phase": 0.0007246093749999999,
+        "pair": 0,
+        "area": 0.0
+      }
+    },
+    {
+      "id": 222,
+      "poses": 513,
+      "penetratingPairPoses": 0,
+      "maximumOverlapArea": 0.0,
+      "maximumClosestGap": 0.0009700987244683711,
+      "maximumActiveGap": 0.0009743608283087626,
+      "worst": {
+        "phase": 0.000724609375,
+        "pair": 0,
+        "area": 0.0
+      }
+    },
+    {
+      "id": 223,
+      "poses": 538,
+      "penetratingPairPoses": 0,
+      "maximumOverlapArea": 0.0,
+      "maximumClosestGap": 0.00474964777309152,
+      "maximumActiveGap": 0.006702002760200717,
+      "worst": {
+        "phase": 0.0007246093749999999,
+        "pair": 0,
+        "area": 0.0
+      }
+    }
+  ]
+}

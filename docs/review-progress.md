@@ -1,3 +1,35 @@
+# Thirteenth family pass: variable gears, adjustments and pendulum instruments
+
+Eleven further movements receive bounded corrections across four parallel lanes:
+221/222/223, 369/411, 381/382/399 and 427/428/429. The complete review remains
+active; this is a family checkpoint, not certification of every physical effect.
+All 105 focused/regression tests, the production build and eleven packaged
+playback/mobile-resize checks pass.
+
+The variable gears reuse compatible involutes and offline swept profiles, with
+no browser-side cutter generation. Actual rendered profiles pass the saved
+full-cycle overlap audit. 223 retains prescribed discontinuous speed handoffs;
+continuous loaded engagement is not claimed. See the
+[variable-gear review](variable-idler-gear-review.md).
+
+381/382/399 reuse closed threads, actual bores, dovetails and captured journals.
+381 now actually overlaps the wood it clamps; 382's mirror clears its support;
+399's nuts and retaining heads have compatible finite geometry. See the
+[adjustment review](adjustment-family-review.md) for unloaded-motion assumptions.
+
+369's cheek faces accommodate the finite cord radius while retaining the exact
+cycloidal centerline law. 411 has true rolling tire radii, a pointed pencil,
+bored journals and a conical bevel pair. Its drum/frame heights remain a
+schematic departure from the engraving. See the
+[pendulum review](pendulum-instrument-review.md).
+
+427/428 have real packing slots, roller bores and compatible working surfaces.
+429's casing is corrected, but its retained official mating profiles still
+penetrate by up to 0.0134534 model units in the sampled sweep. That residual is
+recorded separately from the passing casing/joint checks. 428's prescribed
+liner deformation does not establish steam-driving torque. See the
+[rotary-engine review](rotary-engine-427-429-review.md).
+
 # Twelfth family pass: rack outputs, source-correct drill layout and rotary pistons
 
 Seven further movements receive bounded corrections: 282/283, 368/372 and

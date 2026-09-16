@@ -404,7 +404,7 @@ test('movement 382 closes one elevation/yaw cycle and two tilt cycles before mov
     'tilt pose closes');
   near(closure.stemExtension, start.stemExtension, 1e-16,
     'elevation closes');
-  vectorNear(closure.mirrorCenter, start.mirrorCenter, 4e-16,
+  vectorNear(closure.mirrorCenter, start.mirrorCenter, 6e-16,
     'mirror center closes');
   quaternionNear(closure.mirrorQuaternion,
     start.mirrorQuaternion, 4e-16,

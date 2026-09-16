@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -47,6 +48,7 @@ function makeLiningGeometry(nodeCount) {
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
   geometry.setIndex(indices);
   return geometry;
 }
@@ -64,7 +66,7 @@ function rubberLinedRotaryEngine(movement) {
   const linerIndentationDepth = linerRestRadius - linerContactRadius;
   const linerInfluenceHalfAngle = 0.78;
   const linerThickness = 0.105;
-  const linerNodeCount = 180;
+  const linerNodeCount = 720;
   const housingInnerRadius = 3.10;
   const housingOuterRadius = 3.48;
   const sourcePoseFirstRollerAngle = Math.PI;
@@ -261,7 +263,8 @@ function rubberLinedRotaryEngine(movement) {
     ),
     frameMaterial,
   );
-  rearHousing.position.z = -0.42;
+  rearHousing.geometry.dispose();rearHousing.geometry=ring(housingInnerRadius,housingOuterRadius,-0.42,0.90,1024);
+  rearHousing.position.z = 0;
   rearHousing.userData.role =
     'fixed-rigid-cylinder-surrounding-flexible-lining';
   root.add(rearHousing);
@@ -269,7 +272,8 @@ function rubberLinedRotaryEngine(movement) {
     new THREE.TorusGeometry(housingInnerRadius, 0.095, 10, 96),
     frameMaterial,
   );
-  innerHousingWall.position.z = -0.03;
+  innerHousingWall.geometry.dispose();innerHousingWall.geometry=ring(housingInnerRadius,housingInnerRadius+0.095,0.90,0.94,1024);
+  innerHousingWall.position.z = 0;
   innerHousingWall.userData.role =
     'fixed-inner-wall-containing-steam-outside-liner-E';
   root.add(innerHousingWall);
@@ -277,7 +281,8 @@ function rubberLinedRotaryEngine(movement) {
     new THREE.TorusGeometry(housingOuterRadius, 0.12, 10, 96),
     frameMaterial,
   );
-  outerHousingWall.position.z = -0.20;
+  outerHousingWall.geometry.dispose();outerHousingWall.geometry=ring(housingOuterRadius-0.12,housingOuterRadius,0.90,0.94,1024);
+  outerHousingWall.position.z = 0;
   outerHousingWall.userData.role = 'fixed-outer-cylinder-wall';
   root.add(outerHousingWall);
 
@@ -285,7 +290,7 @@ function rubberLinedRotaryEngine(movement) {
     new THREE.BoxGeometry(8.25, 0.30, 1.45),
     frameMaterial,
   );
-  foundation.position.set(0, -3.80, -0.18);
+  foundation.position.set(0, -housingOuterRadius-0.15, -0.18);
   foundation.userData.role = 'fixed-foundation-of-rubber-lined-engine';
   root.add(foundation);
   for (const side of [-1, 1]) {
@@ -344,13 +349,13 @@ function rubberLinedRotaryEngine(movement) {
     const localAngle = sourcePoseFirstRollerAngle
       + rollerIndex * FULL_TURN / rollerCount;
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(armRadius, 0.22, 0.36),
+      new THREE.BoxGeometry(armRadius, 0.22, 0.20),
       rotorMaterial,
     );
     arm.position.set(
       Math.cos(localAngle) * armRadius / 2,
       Math.sin(localAngle) * armRadius / 2,
-      0.34,
+      -0.10,
     );
     arm.rotation.z = localAngle;
     arm.userData.role = `radial-arm-${rollerIndex + 1}-from-B-to-A`;
@@ -370,7 +375,8 @@ function rubberLinedRotaryEngine(movement) {
       rollerMaterial,
       44,
     );
-    roller.position.z = 0.46;
+    roller.geometry.dispose();roller.geometry=ring(0.164,rollerRadius,-0.40,0.40,256);
+    roller.rotation.set(0,0,0);roller.position.z = 0.46;
     roller.userData.role = `working-roller-A-${rollerIndex + 1}`;
     rollerGroup.add(roller);
     const rollerPin = cylinderAlongZ(0.16, 1.02, darkMaterial, 28);
@@ -396,7 +402,7 @@ function rubberLinedRotaryEngine(movement) {
   root.add(linerE);
 
   const materialWitnesses = [];
-  const witnessStride = 15;
+  const witnessStride = 60;
   for (let nodeIndex = 0; nodeIndex < linerNodeCount;
     nodeIndex += witnessStride) {
     const materialAngle = materialAngles[nodeIndex];
@@ -479,6 +485,7 @@ function rubberLinedRotaryEngine(movement) {
       rearHousing,
       rollerArms: rollerParts.map(({ arm }) => arm),
       rollerGroups: rollerParts.map(({ rollerGroup }) => rollerGroup),
+      rollerPins: rollerParts.map(({ rollerPin }) => rollerPin),
       rollersA: rollerParts.map(({ roller }) => roller),
       rotor,
       shaftB,
@@ -505,7 +512,7 @@ function rubberLinedRotaryEngine(movement) {
     linerIndentationWeight,
     linerRadiusAtWorldAngle,
     mechanism:
-      'Three rollers A replace rigid pistons and are carried clockwise on three arms fast to main shaft B. The fixed-material india-rubber cylinder lining E deforms radially inward only where each roller passes, remaining exactly tangent at the roller’s outer radial point. Every roller counterspins at arm-radius divided by roller-radius times the carrier speed, so its instantaneous surface velocity at E is zero. Steam admitted between the rigid housing and E presses the lining against the rollers and transmits torque to B.',
+      'Three rollers A replace rigid pistons and are carried clockwise on three arms fast to main shaft B. The fixed-material india-rubber cylinder lining E deforms radially inward only where each roller passes, remaining exactly tangent at the roller’s outer radial point. Every roller counterspins at arm-radius divided by roller-radius times the carrier speed, so its instantaneous surface velocity at E is zero. Brown describes steam outside E driving the rollers; this prescribed radial-contact illustration does not solve the asymmetric pressure and deformation needed to generate shaft torque.',
     motion: {
       carrierDirection: 'clockwise',
       carrierRevolutionsPerCycle: 1,
@@ -578,6 +585,10 @@ function rubberLinedRotaryEngine(movement) {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.2, 3.8, 11.9);
   root.userData.groundFloorY = -3.96;
+  root.userData.hideGround=true;
+  root.userData.solidReview={rollerBoreRadius:0.164,
+    qualification:'Bored rollers with rear carrier arms; closed rigid casing and outward-wound, finer finite liner mesh. Liner deformation is prescribed; its radial contact supplies no independently validated steam-driven torque or elastic response.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {plate,poly,circle,polygonClipping,ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -300,7 +302,8 @@ function eccentricShaftRadialPistonEngine(movement) {
     ),
     frameMaterial,
   );
-  cylinderA.position.z = -0.38;
+  cylinderA.geometry.dispose();cylinderA.geometry=ring(cylinderRadius+0.00006,cylinderOuterRadius,-0.38,0.98,1024);
+  cylinderA.position.z = 0;
   cylinderA.userData.role =
     'fixed-circular-cylinder-concentric-with-guide-rings';
   root.add(cylinderA);
@@ -308,7 +311,8 @@ function eccentricShaftRadialPistonEngine(movement) {
     new THREE.TorusGeometry(cylinderRadius, 0.11, 10, 96),
     frameMaterial,
   );
-  innerCylinderWall.position.z = -0.02;
+  innerCylinderWall.geometry.dispose();innerCylinderWall.geometry=ring(cylinderRadius+0.00006,cylinderRadius+0.11,0.98,1.02,1024);
+  innerCylinderWall.position.z = 0;
   innerCylinderWall.userData.role = 'fixed-inner-sealing-wall-of-cylinder';
   root.add(innerCylinderWall);
 
@@ -316,7 +320,7 @@ function eccentricShaftRadialPistonEngine(movement) {
     new THREE.BoxGeometry(7.80, 0.28, 1.42),
     frameMaterial,
   );
-  foundation.position.set(0, -3.72, -0.14);
+  foundation.position.set(0, -cylinderOuterRadius-0.14, -0.14);
   foundation.userData.role = 'fixed-foundation-of-eccentric-shaft-engine';
   root.add(foundation);
 
@@ -336,14 +340,14 @@ function eccentricShaftRadialPistonEngine(movement) {
     new THREE.TorusGeometry(guideRingInnerRadius, 0.045, 8, 72),
     darkMaterial,
   );
-  guideRingInner.position.z = 0.72;
+  guideRingInner.position.z = 1.12;
   guideRingInner.userData.role =
     'inner-fixed-head-ring-keeping-pistons-radial';
   const guideRingOuter = new THREE.Mesh(
     new THREE.TorusGeometry(guideRingOuterRadius, 0.045, 8, 72),
     darkMaterial,
   );
-  guideRingOuter.position.z = 0.72;
+  guideRingOuter.position.z = 1.12;
   guideRingOuter.userData.role =
     'outer-fixed-head-ring-keeping-pistons-radial';
   root.add(guideRingInner, guideRingOuter);
@@ -352,14 +356,25 @@ function eccentricShaftRadialPistonEngine(movement) {
   hubRotor.position.copy(shaftCenter);
   hubRotor.userData.role = 'hub-C-concentric-with-eccentric-shaft-B';
   const hubC = cylinderAlongZ(hubRadius, 0.66, hubMaterial, 72);
-  hubC.position.z = 0.08;
+  const rectangle=(left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
+  const mergeParts=parts=>{for(const part of parts){part.deleteAttribute('uv');part.deleteAttribute('color');}
+    const geometry=mergeGeometries(parts);parts.forEach(part=>part.dispose());return geometry;};
+  const hubSection=polygonClipping.difference(poly(circle([0,0],hubRadius,512)),
+    poly(circle([0,0],0.314,128)),poly(circle([packingOrbitRadius,0],packingRadius+0.004,256)),
+    poly(circle([-packingOrbitRadius,0],packingRadius+0.004,256)));
+  const packingTilt=Math.asin(shaftEccentricity/packingOrbitRadius),slotHalfWidth=pistonHalfWidth+0.004;
+  const bladeRelief=side=>poly([[0.5,-1],[2,-1],[2.65,-1],[2.65,1],[2,1],[0.5,1]].map(([x,sign])=>
+    [side*x,sign*(slotHalfWidth/Math.cos(packingTilt)+Math.abs(x-packingOrbitRadius)*Math.tan(packingTilt))]));
+  const frontSection=polygonClipping.difference(hubSection,bladeRelief(1),bladeRelief(-1));
+  hubC.geometry.dispose();hubC.geometry=mergeParts([plate(hubSection,-0.25,0.20),plate(frontSection,0.20,0.41)]);
+  hubC.rotation.set(0,0,0);hubC.position.z = 0;
   hubC.userData.role = 'rotating-circular-hub-C';
   hubRotor.add(hubC);
   const hubRotationMarker = new THREE.Mesh(
-    new THREE.BoxGeometry(1.58, 0.12, 0.24),
+    new THREE.BoxGeometry(0.80, 0.08, 0.03),
     darkMaterial,
   );
-  hubRotationMarker.position.set(0.79, 0, 0.46);
+  hubRotationMarker.position.set(0.80, 0.70, 0.425);
   hubRotationMarker.userData.role = 'visible-clockwise-rotation-marker-on-C';
   hubRotor.add(hubRotationMarker);
   root.add(hubRotor);
@@ -384,15 +399,21 @@ function eccentricShaftRadialPistonEngine(movement) {
       new THREE.BoxGeometry(0.28, 0.34, 0.64),
       pistonMaterial,
     );
-    seal.position.set(cylinderRadius - pistonRootRadius - 0.14, 0, 0.50);
+    const tipHalfAngle=Math.asin(pistonHalfWidth/pistonNoseRadius);
+    const tip=Array.from({length:129},(_,i)=>{const angle=-tipHalfAngle+2*tipHalfAngle*i/128;
+      return [pistonNoseCenter+pistonNoseRadius*Math.cos(angle),pistonNoseRadius*Math.sin(angle)];});
+    seal.geometry.dispose();seal.geometry=plate(poly(tip),0.22,0.74);seal.position.set(0,0,0);
     seal.userData.role = `${name}-outer-seal-of-A-on-cylinder-wall`;
     group.add(seal);
-    const marker = cylinderAlongZ(0.10, 0.76, whiteMaterial, 20);
-    marker.position.set(pistonBodyEnd - 0.08, 0, 0.53);
+    const marker = cylinderAlongZ(0.065, 0.012, whiteMaterial, 20);
+    marker.position.set(pistonBodyEnd - 0.10, 0, 0.746);
     marker.userData.role = `${name}-piston-A-angle-marker`;
     group.add(marker);
+    const guidePin=cylinderAlongZ(0.075,0.46,darkMaterial,64);
+    guidePin.position.set((guideRingInnerRadius+guideRingOuterRadius)/2-pistonRootRadius,0,0.93);
+    guidePin.userData.role=`${name}-piston-guide-pin-between-fixed-head-rings`;group.add(guidePin);
     root.add(group);
-    return { body, group, marker, seal };
+    return { body, group, marker, seal, guidePin };
   };
   const rightPistonParts = makePiston('right-orbit');
   const leftPistonParts = makePiston('left-orbit');
@@ -401,22 +422,27 @@ function eccentricShaftRadialPistonEngine(movement) {
     const group = new THREE.Group();
     group.userData.role = `${name}-rolling-packing-a-in-hub-C`;
     const body = cylinderAlongZ(packingRadius, 0.78, packingMaterial, 40);
-    body.position.z = 0.55;
+    const packingDisk=poly(circle([0,0],packingRadius,256));
+    const packingSlot=rectangle(-packingRadius-0.01,-slotHalfWidth,packingRadius+0.01,slotHalfWidth);
+    body.geometry.dispose();body.geometry=mergeParts([plate(packingDisk,0.16,0.215),
+      plate(polygonClipping.difference(packingDisk,packingSlot),0.215,0.94)]);
+    body.rotation.set(0,0,0);body.position.z = 0;
     body.userData.role = `${name}-cylindrical-body-of-rolling-packing-a`;
     group.add(body);
     const slot = new THREE.Mesh(
       new THREE.BoxGeometry(1.05, 0.18, 0.16),
       darkMaterial,
     );
-    slot.position.z = 0.98;
+    slot.geometry.dispose();slot.geometry=plate(polygonClipping.intersection(packingDisk,packingSlot),0.213,0.215);
+    slot.position.z = 0;
     slot.userData.role = `${name}-piston-slot-through-packing-a`;
     group.add(slot);
     const marker = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 0.08, 0.12),
+      new THREE.BoxGeometry(0.18, 0.05, 0.012),
       whiteMaterial,
     );
-    marker.position.set(0.27, 0.28, 1.03);
-    marker.rotation.z = Math.PI / 4;
+    marker.position.set(0, 0.32, 0.946);
+    marker.rotation.z = 0;
     marker.userData.role = `${name}-packing-orientation-marker`;
     group.add(marker);
     root.add(group);
@@ -482,11 +508,15 @@ function eccentricShaftRadialPistonEngine(movement) {
       innerCylinderWall,
       leftPacking: leftPackingParts.group,
       leftPackingBody: leftPackingParts.body,
+      leftPackingSlot: leftPackingParts.slot,
+      leftGuidePin: leftPistonParts.guidePin,
       leftPiston: leftPistonParts.group,
       leftPistonBody: leftPistonParts.body,
       leftPistonSeal: leftPistonParts.seal,
       rightPacking: rightPackingParts.group,
       rightPackingBody: rightPackingParts.body,
+      rightPackingSlot: rightPackingParts.slot,
+      rightGuidePin: rightPistonParts.guidePin,
       rightPiston: rightPistonParts.group,
       rightPistonBody: rightPistonParts.body,
       rightPistonSeal: rightPistonParts.seal,
@@ -591,6 +621,10 @@ function eccentricShaftRadialPistonEngine(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 3.7, 11.8);
   root.userData.groundFloorY = -3.88;
+  root.userData.hideGround=true;
+  root.userData.solidReview={slotHalfWidth,packingTilt,workingClearance:0.00006,
+    qualification:'Finite rolling-packing apertures, bounded blade relief and curved piston tips. Added head-ring guide pins and inferred axial depths; orientation remains prescribed, with forces, seals and fluid dynamics unmodeled.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -118,28 +118,14 @@ test('movement 399 preserves Brown’s two-part cross-connection and discloses i
   disposeModel(model.root);
 });
 
-test('movement 399 visible male helices advance one turn per declared pitch in their opposite insertion directions', () => {
+test('movement 399 closed male threads have the same physical handedness and declared lead', () => {
   const model = createMovementModel(catalog.movements[398]);
-  const data = model.root.userData;
-  const { blocks, geometry } = data;
-  const topCurve = blocks.topHalf.userData.screw.userData.helixCurve;
-  const bottomCurve = blocks.bottomHalf.userData.screw.userData.helixCurve;
-
-  for (const [curve, direction] of [[topCurve, -1], [bottomCurve, 1]]) {
-    const start = curve.getPoint(0);
-    const oneTurnParameter = geometry.threadPitch
-      / (geometry.screwLength - 0.035);
-    const oneTurn = curve.getPoint(oneTurnParameter);
-    near(oneTurn.y - start.y, direction * geometry.threadPitch,
-      2e-16, 'one-pitch axial advance');
-    near(Math.hypot(start.x, start.z), 0.165, 3e-17,
-      'thread start radius');
-    nearVector(
-      new THREE.Vector2(oneTurn.x, oneTurn.z),
-      new THREE.Vector2(start.x, start.z),
-      3e-15,
-      'one-turn angular closure',
-    );
+  const {blocks,geometry}=model.root.userData;
+  for(const half of [blocks.topHalf,blocks.bottomHalf]) {
+    const thread=half.userData.screw.userData.thread;
+    assert.equal(thread.geometry.type,'BufferGeometry');
+    near(thread.userData.threadProfile.lead*FULL_TURN,-geometry.threadPitch,1e-16,'signed thread lead');
+    near(thread.userData.threadProfile.high-thread.userData.threadProfile.low,geometry.screwLength,1e-16,'finite threaded length');
   }
   disposeModel(model.root);
 });

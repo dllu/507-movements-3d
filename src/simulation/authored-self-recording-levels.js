@@ -5,6 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import { boredCylinderGeometry, fitPistonGuide } from './piston-guide-parts.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { bevelToothGeometry, bevelBodyGeometry } from './bevel-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
@@ -84,7 +88,7 @@ function makeWheel(
   const rotor = new THREE.Group();
   rotor.userData.role = role;
   const tire = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.095, 12, 64),
+    new THREE.TorusGeometry(radius - 0.055, 0.055, 12, 128),
     materials.dark,
   );
   tire.userData.role = `${role}-road-tire`;
@@ -93,7 +97,8 @@ function makeWheel(
     materials.frame,
   );
   rim.userData.role = `${role}-inner-rim`;
-  const hub = cylinderAlongZ(radius * 0.16, 0.34, materials.accent, 32);
+  const hub = new THREE.Mesh(boredCylinderGeometry(radius * 0.16, 0.058, 0.34), materials.accent);
+  hub.rotation.x = Math.PI / 2;
   hub.userData.role = `${role}-hub-on-transverse-axle`;
   rotor.add(tire, rim, hub);
   const spokes = Array.from({ length: 8 }, (_, index) => {
@@ -141,9 +146,9 @@ function selfRecordingLevel(movement) {
   const pencilPendulumRadius = 1.52;
   const maximumGroundInclination = 0.205;
   const drumRadius = 0.49;
-  const chartContactRadius = drumRadius + 0.018;
+  const chartContactRadius = drumRadius + 0.0008;
   const drumLength = 1.55;
-  const drumCenter = new THREE.Vector3(0, 0, 0.23);
+  const drumCenter = new THREE.Vector3(0, 0, 0.60);
   const wheelToDrumRatio = 1;
   const chartTraceSamples = 360;
   const drumVerticalScaleOffset = 0;
@@ -279,6 +284,7 @@ function selfRecordingLevel(movement) {
     new THREE.Vector3(1.35, -0.16, -0.02),
     new THREE.Vector3(rightWheelCenter.x, 0.07, -0.02),
   ];
+  baseBracePoints.forEach(point => { point.z = -0.43; });
   const baseBrace = lineTube(baseBracePoints, 0.075, frameMaterial);
   baseBrace.userData.role = 'lower-wheel-center-base-brace';
   carriage.add(baseBrace);
@@ -356,11 +362,11 @@ function selfRecordingLevel(movement) {
   carriage.add(drumCarrier);
   const drumShaft = cylinderAlongX(
     0.065,
-    3.42,
+    3.27,
     darkMaterial,
     24,
   );
-  drumShaft.position.copy(drumCenter).setX(-0.30);
+  drumShaft.position.copy(drumCenter).setX(-0.225);
   drumShaft.userData.role =
     'horizontal-chart-drum-shaft-extending-to-left-bevel-drive';
   drumCarrier.add(drumShaft);
@@ -369,21 +375,17 @@ function selfRecordingLevel(movement) {
   drumRotor.userData.role =
     'wheel-geared-horizontal-axis-chart-drum-rotor';
   drumCarrier.add(drumRotor);
-  const paperDrum = cylinderAlongX(
-    drumRadius,
-    drumLength,
-    paperMaterial,
-    72,
-  );
+  const paperDrum = new THREE.Mesh(boredCylinderGeometry(drumRadius, 0.068, drumLength), paperMaterial);
+  paperDrum.rotation.z = Math.PI / 2;
   paperDrum.userData.role =
     'cylindrical-sectionally-ruled-recording-paper';
   drumRotor.add(paperDrum);
   const chartSectionRings = Array.from({ length: 13 }, (_, index) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(drumRadius + 0.006, 0.010, 6, 64),
-      index % 3 === 0 ? darkMaterial : frameMaterial,
-    );
-    ring.rotation.y = Math.PI / 2;
+    const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(
+      Array.from({length:128},(_,i)=>new THREE.Vector3(0,
+        (drumRadius+0.0008)*Math.sin(FULL_TURN*i/128),
+        (drumRadius+0.0008)*Math.cos(FULL_TURN*i/128))),
+    ),new THREE.LineBasicMaterial({color:index%3===0?PALETTE.ink:PALETTE.frame}));
     ring.position.x = THREE.MathUtils.lerp(
       -drumLength / 2 + 0.04,
       drumLength / 2 - 0.04,
@@ -397,15 +399,10 @@ function selfRecordingLevel(movement) {
   });
   const chartGeneratorLines = Array.from({ length: 12 }, (_, index) => {
     const angle = FULL_TURN * index / 12;
-    const line = new THREE.Mesh(
-      new THREE.BoxGeometry(drumLength - 0.06, 0.010, 0.010),
-      index % 3 === 0 ? darkMaterial : frameMaterial,
-    );
-    line.position.set(
-      0,
-      (drumRadius + 0.008) * Math.sin(angle),
-      (drumRadius + 0.008) * Math.cos(angle),
-    );
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-drumLength/2+0.03,(drumRadius+0.0008)*Math.sin(angle),(drumRadius+0.0008)*Math.cos(angle)),
+      new THREE.Vector3(drumLength/2-0.03,(drumRadius+0.0008)*Math.sin(angle),(drumRadius+0.0008)*Math.cos(angle)),
+    ]),new THREE.LineBasicMaterial({color:index%3===0?PALETTE.ink:PALETTE.frame}));
     line.userData.role = index % 3 === 0
       ? 'major-circumferential-paper-section-ruling'
       : 'minor-circumferential-paper-section-ruling';
@@ -429,10 +426,10 @@ function selfRecordingLevel(movement) {
   drumRotor.add(leftDrumCollar, rightDrumCollar);
 
   const verticalDrumGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 1.10, 0.16),
+    new THREE.BoxGeometry(0.16, 1.40, 0.16),
     frameMaterial,
   );
-  verticalDrumGuide.position.set(1.13, 0.24, 0.11);
+  verticalDrumGuide.position.set(1.13, 0.39, drumCenter.z);
   verticalDrumGuide.userData.role =
     'vertical-drum-scale-adjustment-guide';
   carriage.add(verticalDrumGuide);
@@ -442,7 +439,7 @@ function selfRecordingLevel(movement) {
     accentMaterial,
     30,
   );
-  verticalAdjustmentKnob.position.set(1.13, 0.66, 0.24);
+  verticalAdjustmentKnob.position.set(1.13, 0.66, drumCenter.z + 0.13);
   verticalAdjustmentKnob.userData.role =
     'drum-vertical-scale-locking-knob';
   carriage.add(verticalAdjustmentKnob);
@@ -452,50 +449,46 @@ function selfRecordingLevel(movement) {
     accentMaterial,
     30,
   );
-  axialAdjustmentKnob.position.set(1.18, 0, 0.23);
+  axialAdjustmentKnob.position.set(1.18, 0, drumCenter.z);
   axialAdjustmentKnob.userData.role =
     'drum-horizontal-paper-shift-locking-knob';
   carriage.add(axialAdjustmentKnob);
 
   const bevelDrive = new THREE.Group();
-  bevelDrive.position.set(leftWheelCenter.x, 0, 0.23);
+  bevelDrive.position.set(leftWheelCenter.x, 0, drumCenter.z);
   bevelDrive.userData.role =
     'left-wheel-axis-member-of-one-to-one-right-angle-bevel-stage';
-  const bevelDriveCone = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.34, 0.30, 28),
-    driverMaterial,
-  );
-  bevelDriveCone.rotation.x = Math.PI / 2;
-  bevelDriveCone.position.z = 0.17;
-  const bevelDriveIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.050, 14, 10),
-    whiteMaterial,
-  );
-  bevelDriveIndex.position.set(0, 0.27, 0.30);
-  bevelDriveIndex.userData.role = 'wheel-axis-bevel-speed-index';
-  bevelDrive.add(bevelDriveCone, bevelDriveIndex);
+  // Both pitch cones meet at the same apex. The wheel member extends
+  // toward +Z, and the drum member extends toward +X.
+  const makeBevel = (material, axis, phase) => {
+    const group = new THREE.Group();
+    const tooth = bevelToothGeometry({ teeth: 18, innerDistance: 0.17,
+      outerDistance: 0.34, pitchConeAngle: Math.PI / 4,
+      toothHeight: 0.074, toothThicknessFactor: 0.94 });
+    const body = new THREE.Mesh(bevelBodyGeometry(tooth, 0.068), material);
+    group.add(body);
+    for (let i = 0; i < 18; i += 1) {
+      const mesh = new THREE.Mesh(tooth.clone().rotateZ(i * FULL_TURN / 18 + phase), material);
+      mesh.userData.bevelTooth = true;
+      group.add(mesh);
+    }
+    tooth.dispose();
+    group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), axis);
+    return group;
+  };
+  const bevelDriveCone = makeBevel(driverMaterial, new THREE.Vector3(0, 0, 1), 0);
+  bevelDrive.add(bevelDriveCone);
   carriage.add(bevelDrive);
   const bevelDrum = new THREE.Group();
-  bevelDrum.position.set(leftWheelCenter.x + 0.18, 0, 0.23);
+  bevelDrum.position.copy(bevelDrive.position);
   bevelDrum.userData.role =
     'horizontal-drum-axis-member-of-one-to-one-right-angle-bevel-stage';
-  const bevelDrumCone = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.34, 0.30, 28),
-    accentMaterial,
-  );
-  bevelDrumCone.rotation.z = Math.PI / 2;
-  bevelDrumCone.position.x = 0.17;
-  const bevelDrumIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.050, 14, 10),
-    whiteMaterial,
-  );
-  bevelDrumIndex.position.set(0.30, 0.27, 0);
-  bevelDrumIndex.userData.role = 'drum-axis-bevel-speed-index';
-  bevelDrum.add(bevelDrumCone, bevelDrumIndex);
+  const bevelDrumCone = makeBevel(accentMaterial, new THREE.Vector3(1, 0, 0), Math.PI / 18);
+  bevelDrum.add(bevelDrumCone);
   carriage.add(bevelDrum);
 
   const pendulum = new THREE.Group();
-  pendulum.position.set(pendulumPivot.x, pendulumPivot.y, 0.76);
+  pendulum.position.set(pendulumPivot.x, pendulumPivot.y, 1.17);
   pendulum.userData.role =
     'gravity-vertical-pendulum-relative-to-inclining-carriage';
   const pendulumRod = new THREE.Mesh(
@@ -512,25 +505,25 @@ function selfRecordingLevel(movement) {
   pendulumBob.userData.role = 'gravity-pendulum-bob';
   const pencilCarrier = cylinderAlongZ(
     0.13,
-    0.20,
+    0.06,
     accentMaterial,
     30,
   );
-  pencilCarrier.position.set(0, -pencilPendulumRadius, -0.02);
+  pencilCarrier.position.set(0, -pencilPendulumRadius, 0);
   pencilCarrier.userData.role =
     'pencil-carrier-fixed-on-pendulum-rod';
   pendulum.add(pendulumRod, pendulumBob, pencilCarrier);
   carriage.add(pendulum);
   const pendulumPivotAxle = cylinderAlongZ(
     0.16,
-    0.42,
+    1.20,
     darkMaterial,
     34,
   );
   pendulumPivotAxle.position.set(
     pendulumPivot.x,
     pendulumPivot.y,
-    0.61,
+    0.60,
   );
   pendulumPivotAxle.userData.role =
     'pendulum-pivot-on-carriage-perpendicular-bisector';
@@ -542,7 +535,7 @@ function selfRecordingLevel(movement) {
   pivotIndex.position.set(
     pendulumPivot.x,
     pendulumPivot.y,
-    0.86,
+    1.23,
   );
   pivotIndex.userData.role = 'white-pendulum-axis-index';
   carriage.add(pivotIndex);
@@ -550,10 +543,10 @@ function selfRecordingLevel(movement) {
   const pencilStylus = new THREE.Group();
   pencilStylus.userData.role =
     'pendulum-pencil-maintaining-contact-with-chart-paper';
-  const pencilBody = cylinderAlongZ(0.050, 1, darkMaterial, 24);
+  const pencilBody = cylinderAlongZ(0.015, 1, darkMaterial, 24);
   pencilBody.userData.role = 'axial-pencil-stylus-to-drum';
   const pencilTip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.050, 16, 12),
+    new THREE.ConeGeometry(0.015, 0.05, 24).rotateX(-Math.PI / 2).translate(0, 0, 0.025),
     driverMaterial,
   );
   pencilTip.userData.role = 'pencil-tip-on-rotating-paper';
@@ -717,15 +710,15 @@ function selfRecordingLevel(movement) {
     drumRotor.rotation.x = state.drumAngle;
     bevelDrum.rotation.x = state.drumAngle;
     pendulum.rotation.z = state.pendulumRelativeAngle;
-    const stylusOuterZ = 0.83;
+    const stylusOuterZ = 1.20;
     const stylusLength = stylusOuterZ - state.pencilContact.z;
     pencilStylus.position.set(
       state.pencilContact.x,
       state.pencilContact.y,
       (stylusOuterZ + state.pencilContact.z) / 2,
     );
-    pencilBody.scale.y = stylusLength;
-    pencilBody.position.z = 0;
+    pencilBody.scale.y = stylusLength - 0.05;
+    pencilBody.position.z = 0.025;
     pencilTip.position.set(
       0,
       0,
@@ -768,11 +761,44 @@ function selfRecordingLevel(movement) {
     root.userData.kinematics = state;
   };
 
+  const replaceGeometry = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  for (const collar of [leftDrumCollar, rightDrumCollar]) {
+    replaceGeometry(collar, boredCylinderGeometry(drumRadius * 0.72, 0.068, 0.12));
+  }
+  replaceGeometry(axialAdjustmentKnob, boredCylinderGeometry(0.14, 0.068, 0.26));
+  const guideOutline = poly([[-0.08,-0.70],[0.08,-0.70],[0.08,0.70],[-0.08,0.70]]);
+  replaceGeometry(verticalDrumGuide, plate(polygonClipping.difference(guideOutline,
+    poly(circle([0,-0.39],0.068,128))), -0.08, 0.08).rotateY(Math.PI/2));
+  const pendulumEye = new THREE.Mesh(boredCylinderGeometry(0.22,0.163,0.095), darkMaterial);
+  pendulumEye.rotation.x=Math.PI/2;
+  pendulumEye.userData.role='bored-pendulum-pivot-eye';
+  pendulum.add(pendulumEye);
+  replaceGeometry(pendulumRod,new THREE.BoxGeometry(0.085,pendulumBobRadius-0.19,0.095));
+  pendulumRod.position.y=-(pendulumBobRadius+0.19)/2;
+  const wheelAxles = [leftWheelCenter,rightWheelCenter].map(center=>{
+    const left = center === leftWheelCenter;
+    const axle=cylinderAlongZ(0.055,left ? 1.54 : 0.94,darkMaterial,48);
+    axle.position.set(center.x,center.y,left ? 0.29 : -0.01);
+    axle.userData.role='stationary-wheel-journal-axle';
+    carriage.add(axle);return axle;
+  });
+  const drumBearing = new THREE.Mesh(boredCylinderGeometry(0.12,0.068,0.18),frameMaterial);
+  drumBearing.rotation.z=Math.PI/2;
+  drumBearing.position.set(-1.24,0,drumCenter.z);
+  carriage.add(drumBearing);
+  const bearingBridges=[[-1.24,0.94],[1.13,0.94]].map(([x,y])=>{
+    const bridge=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.13,0.59),frameMaterial);
+    bridge.position.set(x,y,0.31);carriage.add(bridge);return bridge;
+  });
+  const leftBearingSupport=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.89,0.14),frameMaterial);
+  leftBearingSupport.position.set(-1.24,0.56,drumCenter.z);carriage.add(leftBearingSupport);
+
   const sourceState = stateAtTime(0);
   root.userData = {
     archetype:
       'two-wheel-isosceles-survey-carriage-with-world-vertical-pendulum-wheel-geared-ruled-paper-drum-and-contact-pencil',
     blocks: {
+      pendulumEye, wheelAxles, drumBearing, bearingBridges,
       archFrame,
       axialAdjustmentKnob,
       baseBrace,
@@ -843,7 +869,7 @@ function selfRecordingLevel(movement) {
         'rigid isosceles carriage on a locally straight terrain tangent',
         'quasi-static gravity pendulum with no oscillatory transient',
         'rigid ideal one-to-one bevel gears with no backlash',
-        'massless frictionless pencil maintaining cylindrical chart contact; the visible ink radius is exaggerated 0.018 unit above the paper substrate',
+        'massless frictionless pencil maintaining cylindrical chart contact; the trace radius is 0.0008 unit above the paper substrate',
         'periodic inclination demonstration and moving-ground display',
         'wheel load, terrain compliance, friction, inertia, damping, pencil drag, and ink thickness omitted',
       ],
@@ -940,8 +966,11 @@ function selfRecordingLevel(movement) {
     object.castShadow = false;
   });
   chartTrace.castShadow = false;
-  update(0);
-  return { root, update };
+  root.userData.reconstructionNote = 'Closed journal bores, finite tire radius and a pointed stylus replace nominal contact markers; the 18/18 bevel pair uses back-cone involute approximations. Frame heights and the compact axle-level drum remain a schematic reconstruction, rather than the engraving’s elevated drum and taller construction triangle. Pendulum response and terrain slope remain quasi-static prescribed inputs.';
+  root.userData.cameraFov = 8;
+  root.userData.cameraDirection.set(0.5, 0.25, 14);
+  fitPistonGuide(root, update, cycleDuration);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredSelfRecordingLevelMovement(movement) {

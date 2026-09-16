@@ -364,3 +364,24 @@ The complete review remains active.
 
 104 focused/regression tests, the production build and eight packaged playback/mobile
 checks pass. Family reviews are linked from [review progress](review-progress.md).
+
+
+## Thirteenth parallel batch
+
+- **221/222/223:** compatible involutes, offline swept elliptical/sector
+  profiles, real guide/journal bores and explicit discontinuous handoffs.
+- **369/411:** finite cord/cheek offsets, correct tire radius, pointed recording
+  pencil and real journal/bevel interfaces.
+- **381/382/399:** actual wedge/wood overlap, dovetails, bored stand joints and
+  closed mating chain-link threads with retaining-head clearance.
+- **427/428/429:** slotted rolling packings, bored rollers, compatible working
+  walls and measured residual source-profile interference in 429.
+
+Existing ideal curves and shared parts suffice for these repairs. Expensive
+profile generation stays offline. No decorative manual tracing or new live
+physics was needed; pressure, torque, friction and loading limitations are
+explicit in the linked family reviews. 411's compact layout and 429's remaining
+mating interference stay queued rather than blocking the other families.
+
+105 focused/regression tests, the production build and eleven packaged playback/mobile
+checks pass. Family reports are linked from [review progress](review-progress.md).

@@ -1,3 +1,4 @@
+import {correctVariableSectors} from './variable-sector-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -75,7 +76,7 @@ function involuteToothShape({
   rootRadius,
 }) {
   const angularPitch = FULL_TURN / equivalentTeeth;
-  const pitchHalfToothAngle = Math.PI / (2 * equivalentTeeth);
+  const pitchHalfToothAngle = Math.PI / (2 * equivalentTeeth) - .001 / pitchRadius;
   const baseRadius = pitchRadius * Math.cos(pressureAngle);
   const involuteAtPitch = Math.tan(pressureAngle) - pressureAngle;
   const involuteAngleAtRadius = (sampleRadius) => {
@@ -99,7 +100,7 @@ function involuteToothShape({
       centerAngle - startHalfAngle,
     ));
   }
-  const flankSamples = 8;
+  const flankSamples = 24;
   for (let sample = 1; sample <= flankSamples; sample += 1) {
     const radius = THREE.MathUtils.lerp(
       involuteStartRadius,
@@ -231,7 +232,7 @@ function makeInvoluteSector({
     baseRadius = toothProfile.baseRadius;
     involuteStartRadius = toothProfile.involuteStartRadius;
     const tooth = new THREE.Mesh(
-      centeredExtrusion(toothProfile.shape, depth, 0.003),
+      centeredExtrusion(toothProfile.shape, depth, 0),
       material,
     );
     tooth.userData.centerAngle = centerAngle;
@@ -718,11 +719,12 @@ function steppedFourPlaneSectorGears(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  correctVariableSectors(root);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.2, -7.4, 10.5),
+    cameraDirection: new THREE.Vector3(2.2, -2.8, 12),
   };
 }
 

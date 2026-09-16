@@ -514,10 +514,10 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
       3e-16,
       'rendered eccentric C center',
     );
-    const outputLinkStart = blocks.outputLink.children[1].position;
-    const outputLinkEnd = blocks.outputLink.children[2].position;
-    const driverLinkStart = blocks.driverLink.children[1].position;
-    const driverLinkEnd = blocks.driverLink.children[2].position;
+    const outputLinkStart = blocks.outputLink.userData.boredMesh.position;
+    const outputLinkEnd = new THREE.Vector3(geometry.carrierLength,0,0).applyAxisAngle(Z_AXIS,blocks.outputLink.userData.boredMesh.rotation.z).add(outputLinkStart);
+    const driverLinkStart = blocks.driverLink.userData.boredMesh.position;
+    const driverLinkEnd = new THREE.Vector3(geometry.carrierLength,0,0).applyAxisAngle(Z_AXIS,blocks.driverLink.userData.boredMesh.rotation.z).add(driverLinkStart);
     vector3Near(
       outputLinkStart,
       new THREE.Vector3(
@@ -525,7 +525,7 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
         geometry.outputCenter.y,
         geometry.outputLinkZ,
       ),
-      0,
+      2e-14,
       'rendered A-B link starts at A',
     );
     vector3Near(
@@ -535,7 +535,7 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
         state.idlerCenter.y,
         geometry.outputLinkZ,
       ),
-      0,
+      2e-14,
       'rendered A-B link ends at B',
     );
     vector3Near(
@@ -545,7 +545,7 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
         state.driverGeometricCenter.y,
         geometry.driverLinkZ,
       ),
-      0,
+      2e-14,
       'rendered C-B link starts at C center',
     );
     vector3Near(
@@ -555,7 +555,7 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
         state.idlerCenter.y,
         geometry.driverLinkZ,
       ),
-      0,
+      2e-14,
       'rendered C-B link ends at B',
     );
     near(blocks.driverContactMarker.position.x,

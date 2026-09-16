@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -106,8 +107,9 @@ function makeProfileGeometry(profile, scale, depth) {
     shape.lineTo(point.x * scale, point.y * scale);
   }
   shape.closePath();
+  shape.holes.push(new THREE.Path(circle([0,0],0.364,128).map(p=>new THREE.Vector2(...p))));
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: false,
     bevelSegments: 1,
     bevelSize: 0.025,
     bevelThickness: 0.025,
@@ -172,14 +174,14 @@ function makePackingStrips(paths, scale, material, prefix) {
       new THREE.BoxGeometry(
         Math.max(0.07, (maximumX - minimumX) * scale),
         Math.max(0.07, (maximumY - minimumY) * scale),
-        0.10,
+        0.030,
       ),
       material,
     );
     strip.position.set(
       (minimumX + maximumX) * scale / 2,
       (minimumY + maximumY) * scale / 2,
-      0.36,
+      0.625,
     );
     strip.userData.role = `${prefix}-radial-packing-strip-${index + 1}`;
     return strip;
@@ -382,6 +384,13 @@ function doubleEllipticalRotaryEngine(movement) {
   });
   rearHousingGeometry.translate(0, 0, -0.66);
   const rearHousing = new THREE.Mesh(rearHousingGeometry, frameMaterial);
+  const rectangle=(left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
+  const outerSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],outerHousingRadius,1024)),
+    poly(circle([halfCenterDistance,0],outerHousingRadius,1024)),rectangle(-0.525,-3.91,0.525,3.91));
+  const cavitySection=polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius+0.00006,1024)),
+    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)),rectangle(-0.26,-3.92,0.26,3.92));
+  const housingSection=polygonClipping.difference(outerSection,cavitySection);
+  rearHousing.geometry.dispose();rearHousing.geometry=plate(housingSection,-0.66,0.68);
   rearHousing.userData.role =
     'fixed-double-lobed-cylinder-around-both-elliptical-pistons';
   root.add(rearHousing);
@@ -397,13 +406,18 @@ function doubleEllipticalRotaryEngine(movement) {
     frameMaterial,
     'fixed-outer-double-lobed-cylinder-wall',
   );
+  innerHousingWall.geometry.dispose();outerHousingWall.geometry.dispose();
+  innerHousingWall.geometry=plate(housingSection,0.68,0.70);
+  outerHousingWall.geometry=plate(housingSection,-0.68,-0.66);
   root.add(innerHousingWall, outerHousingWall);
 
   const foundation = new THREE.Mesh(
     new THREE.BoxGeometry(8.05, 0.29, 1.42),
     frameMaterial,
   );
-  foundation.position.set(0, -3.78, -0.18);
+  foundation.geometry.dispose();foundation.geometry=plate(polygonClipping.difference(rectangle(-4.025,-0.145,4.025,0.145),
+    rectangle(-0.26,-0.15,0.26,0.15)),-0.71,0.71);
+  foundation.position.set(0, -4.055, -0.18);
   foundation.userData.role = 'fixed-foundation-of-Holly-rotary-engine';
   root.add(foundation);
   for (const side of [-1, 1]) {
@@ -411,6 +425,8 @@ function doubleEllipticalRotaryEngine(movement) {
       new THREE.BoxGeometry(1.05, 1.62, 0.96),
       frameMaterial,
     );
+    neck.geometry.dispose();neck.geometry=plate(polygonClipping.difference(rectangle(-0.525,-0.81,0.525,0.81),
+      rectangle(-0.26,-0.82,0.26,0.82)),-0.48,0.48);
     neck.position.set(0, side * 3.10, -0.10);
     neck.userData.role = side > 0
       ? 'top-center-steam-induction-neck'
@@ -605,12 +621,16 @@ function doubleEllipticalRotaryEngine(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.08, -3.94, -1.04),
+    new THREE.Vector3(-4.08, -4.24, -1.04),
     new THREE.Vector3(4.08, 3.94, 1.42),
   );
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.1, 3.6, 12.2);
   root.userData.groundFloorY = -3.94;
+  root.userData.hideGround=true;
+  root.userData.solidReview={housingRadialClearance:0.00006,
+    qualification:'Unexpanded official mating profiles, bored shafts, closed double-circle working casing and open central port throats. The retained official polygonal mating outlines still have up to 0.0135 units sampled interference; conjugate-contact refinement remains open. Exact pressure, sealing, packing compression and load response are not modeled.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

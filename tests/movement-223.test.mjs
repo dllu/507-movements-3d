@@ -286,7 +286,7 @@ test('movement 223 uses true involutes and relieved changeover teeth', () => {
     );
   }
   assert.equal(transmission.historicalTransitionInterferenceRemoved, true);
-  assert.match(transmission.transitionMethod, /relieved-boundary-teeth/);
+  assert.match(transmission.transitionMethod, /offline-swept-sector-end-relief-with-prescribed-speed-jumps/);
   disposeModel(model.root);
 });
 

@@ -1,3 +1,4 @@
+import {correctVariableIdler} from './variable-idler-gear-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1038,11 +1039,12 @@ function ellipticalDriverCompoundIdler(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  correctVariableIdler(root, movement.id, update);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.2, -6.4, 10.2),
+    cameraDirection: new THREE.Vector3(1.5, -1.8, 12),
   };
 }
 
@@ -1697,6 +1699,7 @@ function eccentricSpurDriverLinkedIdler(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  correctVariableIdler(root, movement.id, update);
   markShadows(root);
   return {
     root,

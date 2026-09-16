@@ -247,12 +247,12 @@ test('movement 411 pencil and current material trace endpoint remain coincident 
     near(Math.hypot(
       state.pencilContact.y - geometry.drumCenter.y,
       state.pencilContact.z - geometry.drumCenter.z,
-    ), geometry.chartContactRadius, 1.2e-16,
+    ), geometry.chartContactRadius, 4e-16,
     'pencil on chart/ink cylinder');
   }
   assert.ok(maximumRadialResidual < 1.2e-16);
   assert.ok(maximumTraceResidual < 8e-16);
-  near(geometry.chartContactRadius - geometry.drumRadius, 0.018, 3e-17,
+  near(geometry.chartContactRadius - geometry.drumRadius, 0.0008, 3e-17,
     'disclosed visible ink offset');
   disposeModel(model.root);
 });

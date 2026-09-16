@@ -320,7 +320,7 @@ test('movement 381 renderer binds both wedge paths while bed, cheeks, lips, and 
         `rendered wedge ${index} lateral position`);
       near(blocks.wedgeContactStrips[index].position.z,
         expected.wedgeStates[index].innerFaceZ
-          - expected.wedgeStates[index].side * 0.014,
+          + expected.wedgeStates[index].side * 0.014,
         0, `rendered contact index ${index}`);
       vectorNear(blocks.cheeks[index].position,
         cheekPositions[index], 0, `cheek ${index} remains fixed`);

@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import {fitPistonGuide} from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function planPrism(points, height, material) {
@@ -42,7 +44,7 @@ function boweryJoinersClamp(movement) {
   const dovetailLipProjection = 0.13;
   const dovetailLipHeight = 0.11;
   const workpieceHalfWidth = 0.43;
-  const workpieceMinimumX = -0.43;
+  const workpieceMinimumX = -1.55;
   const workpieceMaximumX = 2.72;
   const workpieceHeight = 0.88;
   const wedgeMinimumX = -1.61;
@@ -165,6 +167,14 @@ function boweryJoinersClamp(movement) {
         new THREE.Vector2(cheekMinimumX, innerAtMinimum),
       ];
     const cheek = planPrism(points, cheekHeight, cheekMaterial);
+    const cp = cheek.geometry.attributes.position;
+    for (let i = 0; i < cp.count; i += 1) {
+      if (Math.abs(cp.getY(i) - side * cheekHalfGapAt(cp.getX(i))) < 1e-6) {
+        cp.setY(i, cp.getY(i) - side * dovetailLipProjection * (1 - cp.getZ(i) / cheekHeight));
+      }
+    }
+    cp.needsUpdate = true;
+    cheek.geometry.computeVertexNormals();
     cheek.position.y = bedTopY + cheekHeight;
     cheek.userData.fixed = true;
     cheek.userData.innerFaceSlope = side * cheekFaceSlope;
@@ -200,6 +210,8 @@ function boweryJoinersClamp(movement) {
       ];
     const lip = planPrism(lipPoints, dovetailLipHeight, darkMaterial);
     lip.position.y = bedTopY + cheekHeight;
+    // The continuous inclined cheek now supplies the undercut itself.
+    lip.visible = false;
     lip.userData.fixed = true;
     lip.userData.inwardProjection = dovetailLipProjection;
     lip.userData.side = side;
@@ -266,6 +278,14 @@ function boweryJoinersClamp(movement) {
         new THREE.Vector2(wedgeMinimumX, innerZ),
       ];
     const wedge = planPrism(points, wedgeHeight, wedgeMaterial);
+    const wp = wedge.geometry.attributes.position;
+    for (let i = 0; i < wp.count; i += 1) {
+      if (Math.abs(wp.getY(i) - side * cheekHalfGapAt(wp.getX(i))) < 1e-6) {
+        wp.setY(i, wp.getY(i) - side * dovetailLipProjection * (wedgeHeight - wp.getZ(i)) / cheekHeight);
+      }
+    }
+    wp.needsUpdate = true;
+    wedge.geometry.computeVertexNormals();
     wedge.position.y = bedTopY + wedgeHeight;
     wedge.userData.innerFaceLocalZ = innerZ;
     wedge.userData.outerFaceSlope = side * cheekFaceSlope;
@@ -286,7 +306,7 @@ function boweryJoinersClamp(movement) {
     contactStrip.position.set(
       (wedgeMinimumX + wedgeMaximumX) / 2,
       bedTopY + wedgeHeight * 0.54,
-      innerZ - side * 0.014,
+      innerZ + side * 0.014,
     );
     contactStrip.userData.side = side;
     contactStrip.userData.role =
@@ -313,7 +333,7 @@ function boweryJoinersClamp(movement) {
         (wedgeMinimumX + wedgeMaximumX) / 2
           + wedgeState.axialDisplacement;
       wedgeContactStrips[index].position.z =
-        wedgeState.innerFaceZ - wedgeState.side * 0.014;
+        wedgeState.innerFaceZ + wedgeState.side * 0.014;
     }
     root.userData.currentState = state;
     root.userData.constraintResiduals = {
@@ -457,6 +477,7 @@ function boweryJoinersClamp(movement) {
     new THREE.Vector3(3.13, 1.22, 1.58),
   );
   root.userData.groundFloorY = -0.36;
+  fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(5.8, 6.7, 8.8),

@@ -5,67 +5,14 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
+import {plate,poly,polygonClipping as clip} from './finite-plate-geometry.js';
+import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
-}
-
-class AxialHelixCurve3 extends THREE.Curve {
-  constructor({
-    axialEnd,
-    axialStart,
-    pitch,
-    radius,
-    startAngle = 0,
-  }) {
-    super();
-    this.axialEnd = axialEnd;
-    this.axialStart = axialStart;
-    this.pitch = pitch;
-    this.radius = radius;
-    this.startAngle = startAngle;
-  }
-
-  getPoint(parameter, target = new THREE.Vector3()) {
-    const axial = THREE.MathUtils.lerp(
-      this.axialStart,
-      this.axialEnd,
-      parameter,
-    );
-    const angle = this.startAngle
-      + FULL_TURN * (axial - this.axialStart)
-        / (this.pitch * Math.sign(this.axialEnd - this.axialStart));
-    return target.set(
-      this.radius * Math.cos(angle),
-      axial,
-      this.radius * Math.sin(angle),
-    );
-  }
-
-  getPointAt(parameter, target = new THREE.Vector3()) {
-    return this.getPoint(parameter, target);
-  }
-}
-
-function cylinderAlongZ(radius, length, material, segments = 36) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const direction = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(direction.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(direction.y, direction.x);
-  return beam;
 }
 
 function makeHalfCurve(legSpacing, archSpringY, archCrownY, sign) {
@@ -112,17 +59,12 @@ function makeThreadedScrew({
   shank.userData.role = `${rolePrefix}-screw-core`;
   screw.add(shank);
 
-  const helixCurve = new AxialHelixCurve3({
-    axialEnd: direction * length,
-    axialStart: direction * 0.035,
-    pitch,
-    radius: 0.165,
-    startAngle: direction > 0 ? 0 : Math.PI,
-  });
   const thread = new THREE.Mesh(
-    new THREE.TubeGeometry(helixCurve, 144, 0.027, 7, false),
+    helicalThread({inner:.14,outer:.19,low:Math.min(0,direction*length),high:Math.max(0,direction*length),width:pitch/2-.003,lead:-pitch/FULL_TURN,phase:0},
+      threadAngles({low:Math.min(0,direction*length),high:Math.max(0,direction*length),width:pitch/2-.003,lead:-pitch/FULL_TURN,phase:0},64)).rotateX(-Math.PI/2),
     threadMaterial,
   );
+  thread.userData.threadProfile={inner:.14,outer:.19,low:Math.min(0,direction*length),high:Math.max(0,direction*length),width:pitch/2-.003,lead:-pitch/FULL_TURN,phase:0};
   thread.userData.role = `${rolePrefix}-visible-helical-male-thread`;
   screw.add(thread);
 
@@ -135,7 +77,6 @@ function makeThreadedScrew({
   tip.userData.role = `${rolePrefix}-screw-tip`;
   screw.add(tip);
 
-  screw.userData.helixCurve = helixCurve;
   screw.userData.shank = shank;
   screw.userData.thread = thread;
   screw.userData.tip = tip;
@@ -193,11 +134,11 @@ function makeLinkHalf({
     `${halfName}-${swivelSide}-captive-swivel-journal`;
   half.add(swivelJournal);
   const swivelHead = new THREE.Mesh(
-    new THREE.SphereGeometry(0.235, 26, 16),
+    new THREE.CylinderGeometry(.215,.215,.07,32),
     colorMaterial,
   );
-  swivelHead.scale.y = 0.55;
-  swivelHead.position.set(swivelX, 0, 0);
+
+  swivelHead.position.set(swivelX, -sign*.375, 0);
   swivelHead.userData.role =
     `${halfName}-${swivelSide}-axial-swivel-retaining-head`;
   half.add(swivelHead);
@@ -231,49 +172,46 @@ function makeSwivelNut({
   const nut = new THREE.Group();
   nut.userData.role = `${name}-captured-rotating-swivel-nut`;
 
-  const handleGeometry = new THREE.ExtrudeGeometry(makeOvalNutShape(), {
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.035,
-    bevelThickness: 0.035,
-    curveSegments: 64,
-    depth: 0.22,
-    steps: 1,
-  });
-  handleGeometry.translate(0, 0, -0.11);
+  const outline=makeOvalNutShape();
+  const outer=poly(outline.getPoints(64).map(p=>[p.x,p.y]));
+  const inner=poly(outline.holes[0].getPoints(64).map(p=>[p.x,p.y]));
+  const handleGeometry=plate(clip.difference(outer,inner,poly([[-.195,-1],[.195,-1],[.195,1],[-.195,1]])),-.11,.11);
   const handle = new THREE.Mesh(handleGeometry, brassMaterial);
   handle.userData.role = `${name}-oval-hand-grip-and-nut-cage`;
   nut.add(handle);
 
   const captiveOffset = captiveSign * 0.68;
+  const bearingOffset = captiveSign * .49;
   const receiverOffset = -captiveSign * 0.50;
   const captiveBearing = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.26, 0.26, 0.34, 30),
+    boredCylinderGeometry(.30,.149,.26),
     brassMaterial,
   );
-  captiveBearing.position.y = captiveOffset;
+  captiveBearing.position.y = bearingOffset;
   captiveBearing.userData.role = `${name}-swivel-bearing-captured-on-own-half`;
   nut.add(captiveBearing);
   const captiveBore = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.15, 0.37, 26),
+    boredCylinderGeometry(.151,.149,.25),
     darkMaterial,
   );
-  captiveBore.position.y = captiveOffset;
+  captiveBore.position.y = bearingOffset;
   captiveBore.userData.role = `${name}-visible-captive-journal-bore`;
   nut.add(captiveBore);
 
   const threadedBarrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.26, 0.26, 0.50, 30),
+    boredCylinderGeometry(.30,.194,.50),
     brassMaterial,
   );
   threadedBarrel.position.y = receiverOffset;
   threadedBarrel.userData.role = `${name}-internally-threaded-receiver-barrel`;
   nut.add(threadedBarrel);
   const threadedBore = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.16, 0.53, 28),
+    helicalThread({inner:.144,outer:.194,low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10},
+      threadAngles({low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10},64)).rotateX(-Math.PI/2),
     darkMaterial,
   );
   threadedBore.position.y = receiverOffset;
+  threadedBore.userData.threadProfile={inner:.144,outer:.194,low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10};
   threadedBore.userData.role = `${name}-visible-female-thread-bore`;
   nut.add(threadedBore);
 
@@ -311,7 +249,7 @@ function chainRepairLink(movement) {
   const maximumAdjustmentTurns = 2;
   const tightSeparation = looseSeparation
     - threadPitch * maximumAdjustmentTurns;
-  const screwLength = 1.04;
+  const screwLength = .78;
   const cycleDuration = 8;
   const nutCaptureOffset = 0.68;
   const nutReceiverOffsetMagnitude = 0.50;
@@ -604,7 +542,9 @@ function chainRepairLink(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.5, 10.5);
   root.userData.groundFloorY = -3.20;
   update(0);
-  return { root, update };
+  fitPistonGuide(root, update, cycleDuration);
+  root.userData.cameraDirection = new THREE.Vector3(1.7,1.1,11);
+  return { root, update, cameraDirection:root.userData.cameraDirection };
 }
 
 export function createAuthoredChainRepairLinkMovement(movement) {
