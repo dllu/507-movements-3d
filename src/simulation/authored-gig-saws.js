@@ -1,3 +1,4 @@
+import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -814,7 +815,8 @@ function gigSawWithTensionSpring(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.2, 3.4, 11.2);
   root.userData.groundFloorY = -3.59;
   update(0);
-  return { root, update };
+  correctReciprocatingCordParts(root,392,update);
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredGigSawMovement(movement) {

@@ -1,3 +1,4 @@
+import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -723,8 +724,9 @@ function treadleEccentricBandDrive(movement) {
   );
   root.userData.groundFloorY = -2.73;
   markShadows(root);
+  correctReciprocatingCordParts(root,374,update);
   return {
-    cameraDirection: new THREE.Vector3(3.0, 2.3, 11.2),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };

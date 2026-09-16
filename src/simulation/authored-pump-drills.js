@@ -1,3 +1,4 @@
+import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -650,9 +651,10 @@ function pumpDrill(movement) {
     new THREE.Vector3(1.94, 2.72, 1.52),
   );
   root.userData.groundFloorY = -2.23;
+  correctReciprocatingCordParts(root,359,update);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.7, 2.8, 8.4),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
