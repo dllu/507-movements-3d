@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
+import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
 import {
   PALETTE,
   markShadows,
@@ -68,8 +70,8 @@ function breastWaterWheel(movement) {
   const drainStartTravelAngle = THREE.MathUtils.degToRad(86);
   const drainEndTravelAngle = THREE.MathUtils.degToRad(112);
   const breastStartAngle = THREE.MathUtils.degToRad(13);
-  const breastEndAngle = THREE.MathUtils.degToRad(-141);
-  const breastInnerRadius = 2.94;
+  const breastEndAngle = THREE.MathUtils.degToRad(-110);
+  const breastInnerRadius = 2.78;
   const breastOuterRadius = 3.22;
   const sourcePoseFloatOffset = Math.PI / 2;
   const bucketAngularOffset = Math.PI / floatCount;
@@ -295,6 +297,7 @@ function breastWaterWheel(movement) {
       new THREE.TorusGeometry(wheelOuterRadius, 0.095, 10, 96),
       wheelMaterial,
     );
+    outerRim.geometry.dispose();outerRim.geometry=ring(2.69,2.77,-.04,.04,256);
     outerRim.position.z = z;
     outerRim.userData.role = face < 0
       ? 'rear-breast-wheel-outer-rim'
@@ -309,18 +312,20 @@ function breastWaterWheel(movement) {
       : 'front-breast-wheel-inner-rim';
     rotor.add(outerRim, innerRim);
   }
+
+  const innerDrum=new THREE.Mesh(ring(1.73,1.82,-.51,.51,256),wheelMaterial);innerDrum.userData.role='closed-inner-bucket-drum';rotor.add(innerDrum);
   const hub = cylinderAlongZ(hubRadius, 1.28, wheelMaterial, 40);
   hub.userData.role = 'breast-wheel-hub-fast-on-main-shaft';
   rotor.add(hub);
   for (let spokeIndex = 0; spokeIndex < spokeCount; spokeIndex += 1) {
     const angle = spokeIndex * FULL_TURN / spokeCount;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(3.10, 0.13, 0.24),
+      new THREE.BoxGeometry(1.80, 0.13, 0.24),
       wheelMaterial,
     );
     spoke.position.set(
-      0.79 * Math.cos(angle),
-      0.79 * Math.sin(angle),
+      0.90 * Math.cos(angle),
+      0.90 * Math.sin(angle),
       0,
     );
     spoke.rotation.z = angle;
@@ -363,7 +368,7 @@ function breastWaterWheel(movement) {
     waterLoad.userData.role =
       `gravity-level-water-load-in-breast-cell-${floatIndex + 1}`;
     const waterBody = new THREE.Mesh(
-      new THREE.BoxGeometry(0.54, 0.28, floatAxialWidth * 0.70),
+      makeCellWaterGeometry(),
       waterMaterial,
     );
     waterBody.position.z = 0.02;
@@ -387,18 +392,7 @@ function breastWaterWheel(movement) {
   const shaft = cylinderAlongZ(shaftRadius, 1.72, darkMaterial, 36);
   shaft.userData.role = 'breast-wheel-main-shaft-in-fixed-bearings';
   root.add(shaft);
-  for (const side of [-1, 1]) {
-    const support = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 3.08, 0.34),
-      frameMaterial,
-    );
-    support.position.set(side * 2.92, -2.35, -0.60);
-    support.rotation.z = side * -0.23;
-    support.userData.role = side < 0
-      ? 'left-fixed-breast-wheel-bearing-support'
-      : 'right-fixed-breast-wheel-bearing-support';
-    root.add(support);
-  }
+  const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.29);
 
   const breastChannelRails = [];
   const channelSegmentCount = 24;
@@ -431,6 +425,8 @@ function breastWaterWheel(movement) {
       breastChannelRails.push(rail);
     }
   }
+  const breastFloor=new THREE.Mesh(plate(sector(breastInnerRadius,breastOuterRadius,breastEndAngle,0,256),-.55,.55),frameMaterial);breastFloor.userData.role='full-width-curved-breast-floor';root.add(breastFloor);
+  const innerCheeks=[];for(const face of[-1,1]){const material=frameMaterial.clone();if(face>0){material.transparent=true;material.opacity=.24;material.depthWrite=false;}const cheek=new THREE.Mesh(plate(sector(1.80,breastOuterRadius,breastEndAngle,breastStartAngle,256),face<0?-.69:.60,face<0?-.60:.69),material);cheek.userData.role='stationary-breast-side-cheek';root.add(cheek);innerCheeks.push(cheek);}
   const channelWater = makeTube(
     arcPoints(
       wheelOuterRadius + 0.08,
@@ -443,21 +439,21 @@ function breastWaterWheel(movement) {
     waterMaterial,
     'water-confined-between-wheel-floats-and-close-fitting-breast-channel',
   );
-  root.add(channelWater);
+  channelWater.visible=false;root.add(channelWater);
 
   const headrace = new THREE.Mesh(
-    new THREE.BoxGeometry(3.42, 0.24, 1.42),
+    new THREE.BoxGeometry(2.56, 0.24, 1.42),
     frameMaterial,
   );
-  headrace.position.set(3.85, -0.03, -0.18);
+  headrace.position.set(4.28, -0.03, -0.18);
   headrace.rotation.z = 0.035;
   headrace.userData.role = 'fixed-headrace-nearly-level-with-wheel-axle';
   root.add(headrace);
   const headraceWater = new THREE.Mesh(
-    new THREE.BoxGeometry(3.28, 0.16, 1.04),
+    new THREE.BoxGeometry(2.44, 0.16, 1.04),
     paleWaterMaterial,
   );
-  headraceWater.position.set(3.86, 0.14, 0.03);
+  headraceWater.position.set(4.28, 0.14, 0.03);
   headraceWater.rotation.z = 0.035;
   headraceWater.userData.role =
     'headwater-entering-breast-wheel-nearly-at-axle-level';
@@ -469,12 +465,14 @@ function breastWaterWheel(movement) {
   );
   gateTower.position.set(4.02, 1.47, -0.20);
   gateTower.userData.role = 'fixed-breast-wheel-inlet-sluice-frame';
+  gateTower.geometry.dispose();gateTower.geometry=new THREE.BoxGeometry(.58,.30,1.78);gateTower.position.y=3.61;
   root.add(gateTower);
+  for(const z of[-.84,.84]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.58,4.58,.18),frameMaterial);jamb.position.set(4.02,1.47,z);jamb.userData.role='sluice-side-jamb';root.add(jamb);}
   const gateLeaf = new THREE.Mesh(
     new THREE.BoxGeometry(0.68, 1.64, 1.12),
     darkMaterial,
   );
-  gateLeaf.position.set(4.01, 0.73, 0.03);
+  gateLeaf.position.set(4.01, 1.24, 0.03);
   gateLeaf.userData.role = 'partly-raised-breast-wheel-inlet-gate';
   root.add(gateLeaf);
   const gateStem = new THREE.Mesh(
@@ -520,7 +518,7 @@ function breastWaterWheel(movement) {
 
   const tailrace = makeTube(
     [
-      new THREE.Vector3(-0.65, -2.92, 0.06),
+      new THREE.Vector3(-1.12, -2.92, 0.06),
       new THREE.Vector3(-1.64, -3.08, 0.06),
       new THREE.Vector3(-2.86, -3.10, 0.06),
       new THREE.Vector3(-4.34, -3.00, 0.06),
@@ -547,13 +545,7 @@ function breastWaterWheel(movement) {
       const waterLoad = bucketWaterLoads[bucketIndex];
       const waterBody = bucketWaterBodies[bucketIndex];
       waterLoad.rotation.z = -state.wheelAngle;
-      waterBody.visible = bucketState.waterFill > 0.002;
-      waterBody.scale.set(
-        0.52 + 0.48 * bucketState.waterFill,
-        0.12 + 0.88 * bucketState.waterFill,
-        0.64 + 0.36 * bucketState.waterFill,
-      );
-      waterBody.position.y = -0.08 + 0.05 * bucketState.waterFill;
+      updateCellWater(waterBody,{angle:bucketState.worldAngle,halfAngle:Math.PI/floatCount-.035,inner:1.87,outer:2.72,fill:bucketState.waterFill,origin:bucketState.center,width:.96});
     }
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 0.72, 1);
     for (let markerIndex = 0; markerIndex < flowMarkers.length;
@@ -572,12 +564,16 @@ function breastWaterWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: 6,
     },
     archetype:
       'breast-water-wheel-with-axle-level-inlet-and-fixed-close-fitting-channel-forming-moving-buckets',
     blocks: {
+      innerDrum,
+      ...bearingParts,
       breastChannelRails,
+      breastFloor,
+      innerCheeks,
       bucketWaterBodies,
       bucketWaterLoads,
       channelWater,
@@ -685,11 +681,14 @@ function breastWaterWheel(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.76, -3.66, -1.10),
-    new THREE.Vector3(5.12, 3.80, 1.52),
+    new THREE.Vector3(5.65, 4.32, 1.52),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 3.6, 12.2);
   root.userData.groundFloorY = -3.66;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

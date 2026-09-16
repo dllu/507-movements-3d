@@ -10,6 +10,8 @@ import {
   HOLLY_RIGHT_PROFILE_PATHS,
 } from './movement-429-source-profiles.js';
 
+import hollyMate from './generated-holly-mate.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
@@ -469,12 +471,12 @@ function doubleEllipticalRotaryEngine(movement) {
   rightRotor.userData.role =
     'right-Holly-conjugate-toothed-elliptical-piston';
   const rightPiston = new THREE.Mesh(
-    makeProfileGeometry(rightProfile, sourceScale, 0.58),
+    makeProfileGeometry({points:hollyMate.outline.map(p=>new THREE.Vector2(...p))}, 1, 0.58),
     rightMaterial,
   );
   rightPiston.position.z = 0.32;
   rightPiston.userData.role =
-    'right-exact-official-profile-elliptical-piston';
+    'right-swept-conjugate-profile-elliptical-piston';
   rightRotor.add(rightPiston);
   const rightPackingStrips = makePackingStrips(
     HOLLY_RIGHT_PROFILE_PATHS,
@@ -531,14 +533,14 @@ function doubleEllipticalRotaryEngine(movement) {
     dynamics: {
       pressureExpansionCutoffLeakageFrictionInertiaAndLoadsModeled: false,
       profileContactModel:
-        'The two conjugate source profiles and their exact 1:-1 phase law are prescribed kinematically; compliant tooth contact forces and backlash are not solved.',
+        'The two conjugate source profiles supply the exact 1:-1 phase law. The right working face is relieved by the left rotor’s complete relative sweep with small clearance; forces, sealing and backlash dynamics are not solved.',
       steamPath:
         'Steam enters at the top center between the rotors and leaves at the bottom center as shown by Brown’s arrows; chamber thermodynamics are not solved.',
     },
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Holly’s two distinct conjugate toothed elliptical piston profiles turn about fixed centers eight source units apart. The left piston turns counterclockwise while the right turns clockwise at exactly the same speed. Their official source profiles already contain the required quarter-turn major-axis offset, so left angle plus right angle remains zero and their teeth stay phased. Steam enters between them from the top and drives the rotors apart toward the enclosing double-lobed cylinder before exhausting below.',
+      'Holly’s two distinct conjugate toothed elliptical piston profiles turn about fixed centers eight source units apart. The left piston turns counterclockwise while the right turns clockwise at exactly the same speed. Their source profiles contain the required quarter-turn major-axis offset; the right working outline receives a small swept mating correction, so left angle plus right angle remains zero and their teeth stay phased. Steam enters between them from the top and drives the rotors apart toward the enclosing double-lobed cylinder before exhausting below.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
@@ -570,6 +572,7 @@ function doubleEllipticalRotaryEngine(movement) {
       rightMajorAxisAngle: sourceState.rightMajorAxisAngle,
       rightReferencePoint: sourceState.rightReferencePoint.clone(),
     },
+    matingCorrection: {...hollyMate, outline: undefined},
     sourceProfiles: {
       leftConnectionGaps: [...leftProfile.connectionGaps],
       leftMaximumConnectionGap: leftProfile.maximumConnectionGap,
@@ -605,7 +608,7 @@ function doubleEllipticalRotaryEngine(movement) {
         officialCanvasEvidence:
           'The official model fixes the piston pivots at source coordinates (0,0) and (8,0), defines distinct left and right conjugate profiles with ten paths apiece, rotates the left profile by +cyclePos and the right by -cyclePos, and encloses them with radius-5.333333 inner and radius-6 outer end arcs.',
         reconstructionDisclosure:
-          'The planar piston profiles, centers, housing radii, opposite directions, 1:-1 speed ratio, source pose, and four-second website demonstration are directly reconstructed from the official Canvas model. Brown gives no absolute scale, axial depth, pressure, cutoff, leakage, friction, backlash, inertia, loads, or separate timing-gear detail; those unprovided physical properties are not asserted.',
+          'The original reference profiles, centers, housing radii, opposite directions, 1:-1 speed ratio, source pose, and four-second demonstration come from the official Canvas model. The displayed right profile is generated from the unchanged left rotor’s relative sweep to remove interference while retaining over 99.7 percent of its original area. Brown gives no absolute scale, axial depth, pressure, cutoff, leakage, friction, backlash, inertia, loads, or separate timing-gear detail; those unprovided physical properties are not asserted.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 429',
@@ -629,7 +632,7 @@ function doubleEllipticalRotaryEngine(movement) {
   root.userData.groundFloorY = -3.94;
   root.userData.hideGround=true;
   root.userData.solidReview={housingRadialClearance:0.00006,
-    qualification:'Unexpanded official mating profiles, bored shafts, closed double-circle working casing and open central port throats. The retained official polygonal mating outlines still have up to 0.0135 units sampled interference; conjugate-contact refinement remains open. Exact pressure, sealing, packing compression and load response are not modeled.'};
+    qualification:'Unexpanded official mating profiles, bored shafts, closed double-circle working casing and open central port throats. The right profile receives offline swept relief from the unchanged left rotor, retaining over 99.7 percent of source area with less than 0.0145 boundary displacement. Sampled actual-profile overlap and clearance are qualified separately in the saved contact report. Exact pressure, sealing, packing compression and load response are not modeled.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;

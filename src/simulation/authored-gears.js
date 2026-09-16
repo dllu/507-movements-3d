@@ -1,3 +1,4 @@
+import {correctVariableDrive} from './variable-drive-205-209-parts.js';
 import {correctIrregularGearFamily} from './irregular-gear-family.js';
 import {singleInclinedTwoSpeedBevel, correctSixBevelTrain} from './bevel-200-226-corrections.js';
 import { correctGloboidalWorm } from './special-worm-solids.js';
@@ -22195,7 +22196,7 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   const hubRadius = 0.19;
   const inputShaftRadius = 0.07;
   const pinRadius = 0.082;
-  const pinStartZ = diskFrontZ + 0.025;
+  const pinStartZ = diskFrontZ - 0.005;
   const pinEndZ = 0.68;
   const pinLength = pinEndZ - pinStartZ;
   const pinContactZ = 0.4;
@@ -23140,7 +23141,8 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 3.7, 7.8));
+  correctVariableDrive(root, 208);
+  return finish(root, update, new THREE.Vector3(3.4, -2.2, 10));
 }
 
 function rollingContactEllipsesWithToothedContinuation() {
@@ -24187,7 +24189,8 @@ function rollingContactEllipsesWithToothedContinuation() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.9, 4.3, 8.8));
+  correctVariableDrive(root, 209);
+  return finish(root, update, new THREE.Vector3(1.4, -1.8, 12));
 }
 
 function curvedSlotRockerVariableVelocitySlide() {
@@ -31793,7 +31796,8 @@ function splitTwoCamInvolutePinionDrive() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 4.2, 11.6));
+  correctVariableDrive(root, 205);
+  return finish(root, update, new THREE.Vector3(1.3, -1.6, 12));
 }
 
 function compoundMutilatedExternalInternalGearReverser() {

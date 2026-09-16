@@ -719,9 +719,9 @@ test('movement 205 runtime binds every marker and rotor to exact state while mov
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 60);
+  assert.ok(visibleMeshCount >= 45);
   assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.ok(model.cameraDirection.y < 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2);
 
   const nextMovement = catalog.movements[205];

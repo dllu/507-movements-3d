@@ -7,7 +7,6 @@ import {createAuthoredDoubleEllipticalRotaryEngineMovement} from '../src/simulat
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 function clearCycle(model,pairs) {
-  let maximumResidual=0;
   const surfaces=new Map(),points=new Map();
   const query=mesh=>{if(!surfaces.has(mesh))surfaces.set(mesh,solidSurface(mesh.geometry));return surfaces.get(mesh);};
   const samples=mesh=>{if(!points.has(mesh)){const all=surfacePoints(mesh.geometry),stride=Math.max(1,Math.floor(all.length/2000));points.set(mesh,all.filter((_,i)=>i%stride===0));}return points.get(mesh);};
@@ -18,17 +17,16 @@ function clearCycle(model,pairs) {
       if(!new THREE.Box3().setFromObject(from).intersectsBox(new THREE.Box3().setFromObject(to)))continue;
       const matrix=to.matrixWorld.clone().invert().multiply(from.matrixWorld);
       for(const point of points){const p=point.clone().applyMatrix4(matrix);
-        if(surface.inside(p)){const depth=surface.distance(p);if(from.userData.role.includes("exact-official")&&to.userData.role.includes("exact-official")){maximumResidual=Math.max(maximumResidual,depth);continue;}assert.ok(depth<3e-7,
+        if(surface.inside(p)){const depth=surface.distance(p);assert.ok(depth<3e-7,
           `${from.userData.role} enters ${to.userData.role}: frame ${frame}, depth ${depth}`);}
       }
     }
   }
-  assert.ok(maximumResidual<0.0135, `retained official 429 profile residual worsened: ${maximumResidual}`);
-  return maximumResidual;
+
 }
 
 const factories=[[427,createAuthoredEccentricShaftRadialPistonEngineMovement],[428,createAuthoredRubberLinedRotaryEngineMovement],[429,createAuthoredDoubleEllipticalRotaryEngineMovement]];
-for(const[id,create]of factories)test(`${id}: finite working walls and joints clear; retained 429 mating residual stays bounded`,()=>{
+for(const[id,create]of factories)test(`${id}: finite working walls, mating profiles and joints clear`,()=>{
   const model=create({id}),u=model.root.userData,b=u.blocks;try{
     const pairs=[];
     if(id===427){
@@ -44,7 +42,7 @@ for(const[id,create]of factories)test(`${id}: finite working walls and joints cl
       for(let i=0;i<3;i++)pairs.push([b.rollersA[i],b.rollerArms[i]],[b.rollersA[i],b.rollerPins[i]],[b.rollersA[i],b.rearHousing]);
       assert.ok(!solidSurface(b.rollersA[0].geometry).inside(new THREE.Vector3(0,0,0)),'roller axle is genuinely bored');
     }else{
-      pairs.push([b.leftPiston,b.rightPiston]);
+      pairs.push([b.leftPiston,b.rightPiston],[b.leftShaft,b.leftPiston],[b.rightShaft,b.rightPiston]);
       for(const moving of[b.leftPiston,b.rightPiston,...b.leftPackingStrips,...b.rightPackingStrips])pairs.push([moving,b.rearHousing]);
       for(const strip of b.leftPackingStrips)pairs.push([strip,b.rightPiston]);
       for(const strip of b.rightPackingStrips)pairs.push([strip,b.leftPiston]);

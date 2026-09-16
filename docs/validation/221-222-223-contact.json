@@ -10,7 +10,7 @@
     },
     {
       "file": "src/simulation/variable-idler-gear-parts.js",
-      "sha256": "0a7ef6b88039821577b4682339819bb17db00b763dd7578e048dfbb7a72fc6a3"
+      "sha256": "233802be969c6f491453931f4224ff5e14119623c6d06dadd97718093a38e9a5"
     },
     {
       "file": "src/simulation/generated-elliptical-idler-profile.js",
@@ -26,7 +26,7 @@
     },
     {
       "file": "src/simulation/variable-sector-parts.js",
-      "sha256": "fe0b59d373aa7ed598313ee9c8fb1fb8d594c06c0bb4f0e41624f0f10a7bdb3f"
+      "sha256": "50e4edb3fbaebc095930bb41605d62334bbe0badecf1e42b7a28e7eba8e1e79f"
     },
     {
       "file": "src/simulation/generated-stepped-sector-relief.js",

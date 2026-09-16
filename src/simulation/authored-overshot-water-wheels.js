@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
+import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
 import {
   PALETTE,
   markShadows,
@@ -261,6 +263,10 @@ function overshotWaterWheel(movement) {
       : 'front-inner-wheel-rim';
     rotor.add(outerRim, innerRim);
   }
+
+  const innerDrum=new THREE.Mesh(ring(1.91,2.02,-.51,.51,256),wheelMaterial);innerDrum.userData.role='closed-inner-bucket-drum';rotor.add(innerDrum);
+  const bucketCheeks=[];
+  for(const side of[-1,1]){const material=wheelMaterial.clone();if(side>0){material.transparent=true;material.opacity=.24;material.depthWrite=false;}const cheek=new THREE.Mesh(ring(1.91,2.77,side<0?-.59:.51,side<0?-.51:.59,256),material);cheek.userData.role='bucket-side-cheek';rotor.add(cheek);bucketCheeks.push(cheek);}
   const hub = cylinderAlongZ(hubRadius, 1.26, wheelMaterial, 40);
   hub.position.z = 0;
   hub.userData.role = 'water-wheel-hub-fast-on-main-shaft';
@@ -268,7 +274,7 @@ function overshotWaterWheel(movement) {
   for (let spokeIndex = 0; spokeIndex < spokeCount; spokeIndex += 1) {
     const angle = spokeIndex * FULL_TURN / spokeCount;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(3.90, 0.15, 0.26),
+      new THREE.BoxGeometry(1.96, 0.15, 0.26),
       wheelMaterial,
     );
     spoke.position.set(
@@ -326,7 +332,7 @@ function overshotWaterWheel(movement) {
     waterLoad.userData.role =
       `gravity-level-water-load-in-bucket-${bucketIndex + 1}`;
     const waterBody = new THREE.Mesh(
-      new THREE.BoxGeometry(0.46, 0.28, bucketAxialWidth * 0.72),
+      makeCellWaterGeometry(),
       waterMaterial,
     );
     waterBody.position.z = 0.02;
@@ -354,18 +360,7 @@ function overshotWaterWheel(movement) {
   shaft.position.z = 0;
   shaft.userData.role = 'main-water-wheel-shaft-in-fixed-bearings';
   root.add(shaft);
-  for (const side of [-1, 1]) {
-    const support = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 3.12, 0.36),
-      frameMaterial,
-    );
-    support.position.set(side * 3.10, -2.38, -0.47);
-    support.rotation.z = side * -0.25;
-    support.userData.role = side < 0
-      ? 'left-fixed-wheel-bearing-support'
-      : 'right-fixed-wheel-bearing-support';
-    root.add(support);
-  }
+  const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.85);
   const foundation = new THREE.Mesh(
     new THREE.BoxGeometry(8.20, 0.30, 1.72),
     frameMaterial,
@@ -453,14 +448,7 @@ function overshotWaterWheel(movement) {
       const bucketState = state.buckets[bucketIndex];
       const parts = bucketParts[bucketIndex];
       parts.waterLoad.rotation.z = -state.wheelAngle;
-      parts.waterBody.visible = bucketState.waterFill > 0.002;
-      parts.waterBody.scale.set(
-        0.54 + 0.46 * bucketState.waterFill,
-        0.12 + 0.88 * bucketState.waterFill,
-        0.66 + 0.34 * bucketState.waterFill,
-      );
-      parts.waterBody.position.y = -0.09
-        + 0.06 * bucketState.waterFill;
+      updateCellWater(parts.waterBody,{angle:bucketState.worldAngle-Math.PI/bucketCount,halfAngle:Math.PI/bucketCount-.035,inner:2.09,outer:2.57,fill:bucketState.waterFill,origin:bucketState.center,width:.96});
     }
     const flowPhase = THREE.MathUtils.euclideanModulo(
       time / 0.82,
@@ -482,11 +470,14 @@ function overshotWaterWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: 6,
     },
     archetype:
       'overshot-water-wheel-with-top-fed-retaining-buckets-weighting-clockwise-descending-side',
     blocks: {
+      innerDrum,
+      bucketCheeks,
+      ...bearingParts,
       bucketGroups: bucketParts.map(({ bucket }) => bucket),
       bucketWaterBodies: bucketParts.map(({ waterBody }) => waterBody),
       bucketWaterLoads: bucketParts.map(({ waterLoad }) => waterLoad),
@@ -585,6 +576,9 @@ function overshotWaterWheel(movement) {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.1, 3.8, 12.0);
   root.userData.groundFloorY = -4.16;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

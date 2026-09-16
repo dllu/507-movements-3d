@@ -6,6 +6,10 @@ import {
   matte,
 } from './primitives.js';
 
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {makeBoredLinkRod} from './bored-link-rod.js';
+import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+
 function addRole(object, role) {
   object.userData.role = role;
   return object;
@@ -13,7 +17,7 @@ function addRole(object, role) {
 
 function centeredExtrusion(shape, depth, bevel = 0.018) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevel > 0,
     bevelSegments: 2,
     bevelSize: bevel,
     bevelThickness: bevel,
@@ -336,7 +340,7 @@ function stoneLewis(movement) {
     3.75,
     stoneMaterial,
     'source-profiled-stone-with-open-front-sectional-bore',
-    0.035,
+    0,
   );
   stoneBody.position.z = -0.52;
   stone.add(stoneBody);
@@ -363,7 +367,7 @@ function stoneLewis(movement) {
     ),
     cutMaterial,
   ), 'bottom-face-of-sectioned-lewis-bore');
-  boreBottom.position.set(0, boreBottomY * sourceScale, -0.38);
+  boreBottom.position.set(0, boreBottomY * sourceScale - .0275, -0.38);
   stone.add(boreBottom);
   const boreWalls = [-1, 1].map((side, index) => {
     const wall = addRole(new THREE.Mesh(
@@ -375,7 +379,7 @@ function stoneLewis(movement) {
       cutMaterial,
     ), `vertical-bore-contact-wall-${index + 1}`);
     wall.position.set(
-      side * boreHalfWidth * sourceScale,
+      side * (boreHalfWidth * sourceScale + .0225),
       (boreBottomY + boreTopY) * sourceScale / 2,
       -0.38,
     );
@@ -404,7 +408,7 @@ function stoneLewis(movement) {
       0.68,
       packingMaterial,
       `${side < 0 ? 'left' : 'right'}-packing-taper-body`,
-      0.012,
+      0,
     );
     packing.add(body);
     const wallPad = addRole(new THREE.Mesh(
@@ -416,7 +420,7 @@ function stoneLewis(movement) {
       darkMaterial,
     ), `${side < 0 ? 'left' : 'right'}-packing-outer-contact-face`);
     wallPad.position.set(
-      0,
+      -side*.019,
       packingBottomY * sourceScale * 0.5,
       0,
     );
@@ -457,7 +461,7 @@ function stoneLewis(movement) {
     [centralWedgeBottomHalfWidth, centralWedgeBottomY],
     [centralWedgeTopHalfWidth, centralWedgeTopY],
     [-centralWedgeTopHalfWidth, centralWedgeTopY],
-  ]), 0.72, centerMaterial, 'central-broad-bottom-taper-wedge', 0.013);
+  ]), 0.72, centerMaterial, 'central-broad-bottom-taper-wedge', 0);
   centerPin.add(centerTaper);
   const centerHead = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -468,35 +472,26 @@ function stoneLewis(movement) {
     centerMaterial,
   ), 'central-wedge-upper-shackle-block');
   centerHead.position.y = -0.61225 * sourceScale;
+  centerHead.geometry.dispose();
+  centerHead.geometry=plate(clip.difference(poly([[-.25*sourceScale,-.30*sourceScale],[.25*sourceScale,-.30*sourceScale],[.25*sourceScale,.30*sourceScale],[-.25*sourceScale,.30*sourceScale]]),poly(circle([0,(.61225-.49)*sourceScale],.089,64))),-.38,.38);
   centerPin.add(centerHead);
   const shackleRing = addRole(new THREE.Mesh(
     new THREE.TorusGeometry(
-      0.39 * sourceScale,
+      .44,
       0.105 * sourceScale,
       12,
       48,
+      Math.PI,
     ),
     centerMaterial,
   ), 'lifting-shackle-carried-by-central-wedge');
   shackleRing.position.y = 0.34 * sourceScale;
+  shackleRing.rotation.y=Math.PI/2;
   centerPin.add(shackleRing);
   const shackleArms = [-1, 1].map((side, index) => {
-    const arm = cylinderBetween(
-      new THREE.Vector3(
-        side * 0.31 * sourceScale,
-        0.16 * sourceScale,
-        0,
-      ),
-      new THREE.Vector3(
-        side * 0.25 * sourceScale,
-        -0.43 * sourceScale,
-        0,
-      ),
-      0.070,
-      centerMaterial,
-      `shackle-side-arm-${index + 1}`,
-      16,
-    );
+    const {rod:arm}=makeBoredLinkRod({bodyMaterial:centerMaterial,depth:.10,length:(.34+.49)*sourceScale,planeZ:side*.44,role:`shackle-side-arm-${index+1}`,width:.14,startBoreRadius:.089,boreRadius:.04});
+    arm.position.y=-.49*sourceScale;
+    arm.rotation.z=Math.PI/2;
     centerPin.add(arm);
     return arm;
   });
@@ -541,7 +536,7 @@ function stoneLewis(movement) {
 
   const fixedHoistPoint = new THREE.Vector3(0, 5.05, 0.93);
   const shackleRopePointLocalY =
-    (0.34 + 0.39 + 0.105) * sourceScale;
+    .34*sourceScale+.44+.105*sourceScale;
   const hoistRope = addRole(makeDynamicCable({
     color: PALETTE.belt,
     maxSegments: 18,
@@ -757,7 +752,7 @@ function stoneLewis(movement) {
     new THREE.Vector3(2.82, 5.40, 1.62),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(7.4, 4.8, 10.6);
+  root.userData.cameraDirection = new THREE.Vector3(1.8, 1.5, 11);
   root.userData.groundFloorY = -1.78;
   markShadows(root);
   for (const marker of [
@@ -767,7 +762,7 @@ function stoneLewis(movement) {
     upwardIndex,
     upwardIndexShaft,
   ]) marker.castShadow = false;
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

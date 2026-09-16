@@ -385,3 +385,29 @@ mating interference stay queued rather than blocking the other families.
 
 105 focused/regression tests, the production build and eleven packaged playback/mobile
 checks pass. Family reports are linked from [review progress](review-progress.md).
+
+
+## Fourteenth parallel batch
+
+- **205/208/209:** offline working-profile corrections, finite pin slots and
+  actual shaft/journal interfaces using the existing analytical ratios.
+- **493/494:** finite wedge faces, tongs and bored joints; the original
+  animation timing is retained. The attempted 389 pawl correction remains
+  outside production because its seating branch is still discontinuous.
+- **430/431/432:** connected bored bearings, bounded spokes, open sluices,
+  real bucket/channel geometry and reusable clipped water-cell buffers.
+- **429 follow-up:** source-preserving swept relief removes the documented
+  piston interference. Varying clearance remains a sealing/loaded-transmission
+  limitation and is stated explicitly rather than hidden by a penetration test
+  allowance.
+
+These are geometrical corrections and prescribed explanatory motions. Contact
+loads, fluid dynamics and manufacturing-level sealing are not inferred from
+finite nonpenetration samples. Expensive profile cutting is performed offline.
+
+A small 221–223 follow-up corrects bore-wall winding in their baked profiles;
+prior finite/contact checks are refreshed for the changed geometry.
+
+110 focused/regression tests, the build and twelve packaged playback/mobile
+checks pass. The 389 experiment is preserved on `codex/389-finite-pawl-wip`;
+it remains outside main until its finite handoff is continuous.

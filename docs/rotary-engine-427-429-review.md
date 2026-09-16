@@ -20,7 +20,12 @@ node --test tests/movement-427.test.mjs tests/movement-428.test.mjs tests/moveme
 
 Thirty legacy tests and four new tests pass. New checks sample actual triangle solids in both directions over 65 poses, including blade/packing/hub/guide-ring joints for 427, roller/arm/axle/casing joints for 428, and piston/packing/casing pairs for 429. The liner check additionally measures every finite inner edge against each roller circle. These are bounded sampled checks, not continuous collision proofs.
 
-**429 is not yet an interference-free conjugate rotor pair.** Preserving the original official polygonal outlines leaves a maximum sampled penetration of **0.0134534 units** between the two mating pistons (shaft spacing 2.88). The regression records a 0.0135 upper bound separately from the strict casing/joint clearance checks. Resolving the residual requires reconstructing conjugate working curves; arbitrary profile shrinking was deliberately avoided. The original motion and tooth arrangement remain intact.
+**429 follow-up:** The original-profile penetration measured in this pass is
+resolved by the [subsequent swept mating correction](holly-mating-profile-review.md).
+The corrected right rotor retains 99.75% of source area and has no sampled
+finite overlap. Its varying clearance still does not establish pressure sealing
+or continuous loaded transmission. The previous 0.0135 penetration allowance
+has been removed from the finite-solid regression.
 
 **428 is a prescribed deformation illustration.** The symmetric radial roller contact does not establish a steam-driving torque. Elastic deformation, pressure asymmetry, attachment, friction, sealing and fluid timing remain unvalidated. The animation does not claim those are solved by physics. Likewise, 427 and 429 retain their analytically prescribed rotation/slide constraints; steam pressure, packing compression, leakage, inertia and load response are not simulated. No MuJoCo model was introduced for these determinate geometric repairs.
 

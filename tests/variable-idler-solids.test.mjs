@@ -1,4 +1,4 @@
-import test from'node:test';import assert from'node:assert/strict';import fs from'node:fs';import{createHash}from'node:crypto';import{createAuthoredEllipticalIdlerGearMovement as factory}from'../src/simulation/authored-elliptical-idler-gears.js';import{solidSurface,surfacePoints}from'./helpers/solid-surface.mjs';
+import test from'node:test';import assert from'node:assert/strict';import fs from'node:fs';import{createHash}from'node:crypto';import{createAuthoredEllipticalIdlerGearMovement as factory}from'../src/simulation/authored-elliptical-idler-gears.js';import{solidSurface,surfacePoints,surfaceTriangles}from'./helpers/solid-surface.mjs';
 import{createAuthoredSteppedSectorGearMovement as sectorFactory}from'../src/simulation/authored-stepped-sector-gears.js';
 const c=JSON.parse(fs.readFileSync('src/data/movements.json')).movements,create=id=>factory(c[id-1]);
 const clear=(a,b)=>{const s=solidSurface(b.geometry),matrix=b.matrixWorld.clone().invert().multiply(a.matrixWorld);for(const p of surfacePoints(a.geometry)){const q=p.clone().applyMatrix4(matrix);assert.ok(!s.inside(q)||s.distance(q)<1e-6,`${a.userData.role} into ${b.userData.role}`);}};
@@ -19,4 +19,9 @@ test('223 bored sector stacks clear their shafts and disclose prescribed handoff
  assert.match(m.root.userData.reconstructionNote,/continuous loaded engagement is not modeled/);
  assert.equal(m.root.userData.hideGround,true);
  m.root.traverse(o=>{for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material)assert.equal(material.fog,false);});
+});
+
+test('baked 221 and223 bore walls have normals pointing into the empty bore',()=>{
+ const a=create(221),b=sectorFactory(c[222]);
+ for(const [mesh,radius]of[[a.root.userData.blocks.driverBody,.15],...b.root.userData.blocks.outputSectors.map(s=>[s.children[0],.107])]){let walls=0;for(const triangle of surfaceTriangles(mesh.geometry)){const center=triangle.getMidpoint(new (a.root.position.constructor)()),normal=triangle.getNormal(center.clone());if(Math.hypot(center.x,center.y)<radius+1e-5&&Math.abs(normal.z)<1e-8){assert.ok(normal.x*center.x+normal.y*center.y<0);walls++;}}assert.ok(walls>100);}
 });

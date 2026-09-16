@@ -6,6 +6,10 @@ import {
   matte,
 } from './primitives.js';
 
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {makeBoredLinkRod} from './bored-link-rod.js';
+import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+
 function addRole(object, role) {
   object.userData.role = role;
   return object;
@@ -13,7 +17,7 @@ function addRole(object, role) {
 
 function centeredExtrusion(shape, depth, bevel = 0.018) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevel > 0,
     bevelSegments: 2,
     bevelSize: bevel,
     bevelThickness: bevel,
@@ -288,7 +292,7 @@ function stoneLiftingTongs(movement) {
     3.25,
     stoneMaterial,
     'source-profiled-lifted-stone',
-    0.038,
+    0,
   );
   stoneBody.position.z = -0.48;
   stone.add(stoneBody);
@@ -305,6 +309,7 @@ function stoneLiftingTongs(movement) {
       point.y * sourceScale,
       index === 0 ? 0.13 : -0.13,
     );
+    socket.visible=false;
     stone.add(socket);
     return socket;
   });
@@ -323,20 +328,17 @@ function stoneLiftingTongs(movement) {
     [leftBiteLocal.x, leftBiteLocal.y],
   ];
   const makeJawParts = (jaw, side, material) => {
-    const upperArm = cylinderBetween(
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(memberLength * sourceScale, 0, 0),
-      0.105,
-      material,
-      `${side}-tong-upper-arm`,
-      18,
-    );
+    const {rod:upperArm}=makeBoredLinkRod({bodyMaterial:material,depth:.18,length:memberLength*sourceScale,planeZ:0,role:`${side}-tong-upper-arm`,width:.20,startBoreRadius:.154,boreRadius:.109});
     jaw.add(upperArm);
     const curvePoints = sourceLeftCurve.map(([x, y]) => new THREE.Vector3(
       x * sourceScale,
       (side === 'left' ? y : -y) * sourceScale,
       0,
     ));
+    const finalPoint=curvePoints.at(-1).clone();
+    const tipDirection=new THREE.Vector3(Math.SQRT1_2,side==='left'?-Math.SQRT1_2:Math.SQRT1_2,0);
+    curvePoints[0]=curvePoints[1].clone().normalize().multiplyScalar(.29);
+    curvePoints[curvePoints.length-1].addScaledVector(tipDirection,-.24);
     const curvedJaw = tubeThrough(
       curvePoints,
       0.125,
@@ -344,9 +346,6 @@ function stoneLiftingTongs(movement) {
       `${side}-curved-gripping-arm`,
     );
     jaw.add(curvedJaw);
-    const finalPoint = curvePoints.at(-1);
-    const beforePoint = curvePoints.at(-2);
-    const tipDirection = finalPoint.clone().sub(beforePoint).normalize();
     const biteTip = addRole(new THREE.Mesh(
       new THREE.ConeGeometry(0.145, 0.38, 20),
       darkMaterial,
@@ -362,6 +361,7 @@ function stoneLiftingTongs(movement) {
       material,
     ), `${side}-upper-link-pivot-collar`);
     sidePivotCollar.position.x = memberLength * sourceScale;
+    sidePivotCollar.visible=false;
     jaw.add(sidePivotCollar);
     const biteMarker = addRole(new THREE.Mesh(
       new THREE.SphereGeometry(0.060, 18, 12),
@@ -381,16 +381,13 @@ function stoneLiftingTongs(movement) {
   const leftJawParts = makeJawParts(leftJaw, 'left', leftMaterial);
   const rightJawParts = makeJawParts(rightJaw, 'right', rightMaterial);
 
-  const leftUpperLink = makeDynamicRod(
-    0.095,
-    leftMaterial,
-    'left-link-from-jaw-arm-to-common-shackle',
-  );
-  const rightUpperLink = makeDynamicRod(
-    0.095,
-    rightMaterial,
-    'right-link-from-jaw-arm-to-common-shackle',
-  );
+  const makeUpperLink=(material,z,role)=>{
+    const {rod}=makeBoredLinkRod({bodyMaterial:material,depth:.14,length:memberLength*sourceScale,planeZ:z,role,width:.18,startBoreRadius:.109,boreRadius:.124});
+    rod.userData.setEndpoints=(a,b)=>{rod.position.set(a.x,a.y,0);rod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
+    return rod;
+  };
+  const leftUpperLink=makeUpperLink(leftMaterial,.38,'left-link-from-jaw-arm-to-common-shackle');
+  const rightUpperLink=makeUpperLink(rightMaterial,-.38,'right-link-from-jaw-arm-to-common-shackle');
   root.add(leftUpperLink, rightUpperLink);
 
   const jawPivotPin = cylinderAlongZ(
@@ -414,7 +411,7 @@ function stoneLiftingTongs(movement) {
   });
   const shacklePivotPin = cylinderAlongZ(
     0.12,
-    1.16,
+    1.52,
     darkMaterial,
     'common-upper-link-shackle-pin',
     24,
@@ -438,13 +435,7 @@ function stoneLiftingTongs(movement) {
   ), 'hoist-shackle-ring');
   shackleRing.position.y = 0.36;
   shackle.add(shackleRing);
-  const shackleStem = cylinderBetween(
-    new THREE.Vector3(0, 0.06, 0),
-    new THREE.Vector3(0, 0.27, 0),
-    0.09,
-    shackleMaterial,
-    'shackle-neck-above-common-link-pin',
-  );
+  const shackleStem=addRole(new THREE.Mesh(plate(clip.difference(clip.union(poly(circle([0,0],.16,64)),poly([[-.08,0],[.08,0],[.08,.22],[-.08,.22]])),poly(circle([0,0],.124,64))),-.06,.06),shackleMaterial),'shackle-neck-above-common-link-pin');
   shackle.add(shackleStem);
 
   const fixedHoistPoint = new THREE.Vector3(0, 6.25, 0.62);
@@ -651,7 +642,7 @@ function stoneLiftingTongs(movement) {
     new THREE.Vector3(2.85, 6.56, 1.75),
   );
   root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraDirection = new THREE.Vector3(7.7, 5.1, 10.8);
+  root.userData.cameraDirection = new THREE.Vector3(1.8, 1.5, 11);
   root.userData.groundFloorY = groundFloorY;
   markShadows(root);
   for (const marker of [
@@ -659,7 +650,7 @@ function stoneLiftingTongs(movement) {
     leftJawParts.biteMarker,
     rightJawParts.biteMarker,
   ]) marker.castShadow = false;
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

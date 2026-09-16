@@ -334,9 +334,8 @@ test('movement 430 update keeps water surfaces level while wheel-fixed bucket sh
         0, 2.5e-16, `bucket ${index + 1} horizontal water surface`);
       assert.equal(blocks.bucketWaterBodies[index].visible,
         state.buckets[index].waterFill > 0.002);
-      near(blocks.bucketWaterBodies[index].scale.y,
-        0.12 + 0.88 * state.buckets[index].waterFill,
-        0, `bucket ${index + 1} displayed fill`);
+      assert.equal(blocks.bucketWaterBodies[index].scale.y, 1,
+        `bucket ${index + 1} fill is clipped geometry rather than a scaled box`);
     }
     vectorNear(blocks.shaft.position, shaftPosition, 0,
       'shaft bearing fixed');

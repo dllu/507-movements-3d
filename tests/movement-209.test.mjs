@@ -590,7 +590,7 @@ test('movement 209 renders rigid indices while 210–213 are distinct and author
   assert.ok(size.z > 1.8, 'shafts, bodies, and front guide occupy real depth');
   assert.ok(bodyBounds.min.y < -2.7, 'fixed frame clears the moving profiles');
   assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  assert.ok(model.cameraDirection.y < 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   const movement208 = createMovementModel(catalog.movements[207]);

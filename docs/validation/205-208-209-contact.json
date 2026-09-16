@@ -1,0 +1,74 @@
+{
+  "method": "205 and209: actual rendered tooth/body triangle projections,513interleaved full-input-turn poses; 205compares each axialcam/toothrow separately. 208: actual pin vertices/edge-midpoints/trianglecenters against triangleBVH of selected pinion and web,99running+68stoppedselectorposes; shaftbores have separate finite tests. Sampled geometric evidence, not continuous force closure.",
+  "sources": [
+    {
+      "file": "src/simulation/authored-gears.js",
+      "functions": [
+        "splitTwoCamInvolutePinionDrive",
+        "threeRatioPinWheelAndSlidingSlottedPinion",
+        "rollingContactEllipsesWithToothedContinuation"
+      ],
+      "sha256": "8760b409c093cd7c6d5c0f40515e023582438156f5fdf35920d1166639697e58"
+    },
+    {
+      "file": "src/simulation/variable-drive-205-209-parts.js",
+      "sha256": "bfc1463fbc8ad2b0803f3c71586ad9208c8a070cc787a19ca0520941324ed331"
+    },
+    {
+      "file": "src/simulation/generated-variable-drive-205-209.js",
+      "sha256": "23f04642430940cdb39e95469fc0d33d827a3834edf3ad62bc78b1b843f98176"
+    },
+    {
+      "file": "src/simulation/generated-pin-slot-208.js",
+      "sha256": "5a8e7d31cbb4bf6bd3bd818e63e9ec419257e980b0656271bd86cbed4db91fe8"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "scripts/export-205-209-contact.mjs",
+      "sha256": "cd7c2f15b2734c1f368c6990eeed2a2664b7fc7707a1c33b382a9daa8575083a"
+    },
+    {
+      "file": "scripts/review-205-209-contact.py",
+      "sha256": "1ed6b8f82a95c2059c09ffc6009a51cfc74f0afc389117f4b2549bda9e62ac99"
+    },
+    {
+      "file": "scripts/review-208-pin-slots.mjs",
+      "sha256": "788951c77ee89a137ca4f19fccf7a03bec75502a53e30ede9de12d1d39c466e1"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "planar": [
+    {
+      "id": 205,
+      "poses": 513,
+      "overlap": 0,
+      "penetratingPairPoses": 0,
+      "maximumClosestGap": 0.0010564264714109
+    },
+    {
+      "id": 209,
+      "poses": 513,
+      "overlap": 0,
+      "penetratingPairPoses": 0,
+      "maximumClosestGap": 0.0007165254104267071
+    }
+  ],
+  "pinSlots": {
+    "poses": 167,
+    "tested": 976752,
+    "inside": 0,
+    "maxPenetration": 0,
+    "maxGap": 0.012154190073883225,
+    "maxWorkingGap": 0.001662722252577804
+  }
+}

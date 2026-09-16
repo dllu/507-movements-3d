@@ -1,3 +1,35 @@
+# Fourteenth family pass: working slots, lifting contacts and water wheels
+
+Eight further movements receive bounded corrections: 205/208/209, 493/494
+and 430/431/432. A fourth lane removes the previously measured rotor interference
+in 429. All 110 focused/regression tests, the production build and twelve
+packaged playback/mobile-resize checks pass. The full review remains active.
+
+A follow-up also corrects inward-facing bore normals in the baked 221–223
+profiles, with their prior geometry audits refreshed.
+
+205/209 reuse offline swept mating profiles; 208's slots now accommodate the
+finite pin ends and no longer contain solid decorative floors. The analytical
+motion laws remain the reference. See the
+[variable-drive review](variable-drive-205-209-review.md).
+
+493/494 retain their source animation timing with compatible lifting faces and
+bored joints. The attempted 389 pawl correction remains outside production:
+its finite geometry clears, but a seating branch still jumps. See the
+[lifting review](lifting-contact-review.md) for the evidence and remaining loads.
+
+430/431/432 share bored shaft supports and finite cell-water geometry. Spokes
+stop within the wheel; 432 gains the caption's essential curved breast floor.
+Water is an explanatory flow illustration, not a conserved-volume fluid solve.
+See the [water-wheel review](water-wheel-430-432-review.md).
+
+429's right rotor is generated from the unchanged left rotor's relative sweep,
+retaining 99.75% of source area and changing its boundary by less than 0.0145
+model units. The independent 1,025-pose audit finds no actual-profile overlap;
+the old penetration exemption is removed. Clearance still varies up to 0.013372,
+so pressure sealing and continuous loaded transmission remain unproven. See the
+[Holly follow-up](holly-mating-profile-review.md).
+
 # Thirteenth family pass: variable gears, adjustments and pendulum instruments
 
 Eleven further movements receive bounded corrections across four parallel lanes:

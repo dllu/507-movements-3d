@@ -349,9 +349,9 @@ test('movement 493 renderer binds the exact center, packing, stone, and contact 
       .getWorldPosition(new THREE.Vector3()).x;
     const leftWallX = blocks.boreWalls[0]
       .getWorldPosition(new THREE.Vector3()).x;
-    near(rightWallX, geometry.boreHalfWidth * geometry.sourceScale, 0,
+    near(rightWallX - .0225, geometry.boreHalfWidth * geometry.sourceScale, 1e-16,
       `right bore wall fixed laterally at ${time}`);
-    near(leftWallX, -geometry.boreHalfWidth * geometry.sourceScale, 0,
+    near(leftWallX + .0225, -geometry.boreHalfWidth * geometry.sourceScale, 1e-16,
       `left bore wall fixed laterally at ${time}`);
     near(
       blocks.boreWalls[1].getWorldPosition(new THREE.Vector3()).y

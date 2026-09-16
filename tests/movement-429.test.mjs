@@ -89,7 +89,7 @@ test('movement 429 has two distinct conjugate toothed elliptical pistons on fixe
   assert.deepEqual(belts, []);
   for (const role of [
     'left-exact-official-profile-elliptical-piston',
-    'right-exact-official-profile-elliptical-piston',
+    'right-swept-conjugate-profile-elliptical-piston',
     'top-center-steam-induction-neck',
     'bottom-center-steam-eduction-neck',
     'fixed-inner-double-lobed-cylinder-wall',
@@ -137,7 +137,7 @@ test('movement 429 records Brown’s Holly topology and the official two-profile
   assert.match(evidence.officialCanvasEvidence,
     /left profile by \+cyclePos and the right by -cyclePos/);
   assert.match(evidence.reconstructionDisclosure,
-    /directly reconstructed from the official Canvas model/);
+    /come from the official Canvas model/);
   disposeModel(model.root);
 });
 

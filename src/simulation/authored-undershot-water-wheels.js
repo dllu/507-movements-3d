@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
+import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
 import {
   PALETTE,
   markShadows,
@@ -221,12 +223,12 @@ function undershotWaterWheel(movement) {
   for (let spokeIndex = 0; spokeIndex < spokeCount; spokeIndex += 1) {
     const angle = spokeIndex * FULL_TURN / spokeCount;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(3.76, 0.13, 0.26),
+      new THREE.BoxGeometry(2.26, 0.13, 0.26),
       wheelMaterial,
     );
     spoke.position.set(
-      0.94 * Math.cos(angle),
-      0.94 * Math.sin(angle),
+      1.13 * Math.cos(angle),
+      1.13 * Math.sin(angle),
       0,
     );
     spoke.rotation.z = angle;
@@ -269,18 +271,7 @@ function undershotWaterWheel(movement) {
   const shaft = cylinderAlongZ(shaftRadius, 1.68, darkMaterial, 36);
   shaft.userData.role = 'undershot-wheel-main-shaft-in-fixed-bearings';
   root.add(shaft);
-  for (const side of [-1, 1]) {
-    const support = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 3.18, 0.36),
-      frameMaterial,
-    );
-    support.position.set(side * 3.00, -2.34, -0.47);
-    support.rotation.z = side * -0.24;
-    support.userData.role = side < 0
-      ? 'left-fixed-undershot-wheel-bearing-support'
-      : 'right-fixed-undershot-wheel-bearing-support';
-    root.add(support);
-  }
+  const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.2);
 
   const channelBed = new THREE.Mesh(
     new THREE.BoxGeometry(9.05, 0.28, 1.72),
@@ -308,7 +299,9 @@ function undershotWaterWheel(movement) {
   );
   gateTower.position.set(-3.62, -0.25, -0.20);
   gateTower.userData.role = 'fixed-vertical-sluice-gate-frame';
+  gateTower.geometry.dispose();gateTower.geometry=plate(polygonClipping.difference(poly([[-.31,-2.87],[.31,-2.87],[.31,2.87],[-.31,2.87]]),poly([[-.4,-2.86],[.4,-2.86],[.4,2.4],[-.4,2.4]])),-.71,.71);
   root.add(gateTower);
+  for(const z of[-.86,.86]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.62,5.74,.18),frameMaterial);jamb.position.set(-3.62,-.25,z);jamb.userData.role='sluice-side-jamb';root.add(jamb);}
   const gateLeaf = new THREE.Mesh(
     new THREE.BoxGeometry(0.72, 1.42, 1.12),
     darkMaterial,
@@ -397,11 +390,12 @@ function undershotWaterWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: 6,
     },
     archetype:
       'undershot-water-wheel-with-bottom-stream-impulse-on-radial-float-boards-turning-counterclockwise',
     blocks: {
+      ...bearingParts,
       channelBed,
       channelWater,
       gateHandle,
@@ -502,6 +496,9 @@ function undershotWaterWheel(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.1, 3.7, 12.0);
   root.userData.groundFloorY = -3.56;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   channelBed.receiveShadow = true;
   update(0);
