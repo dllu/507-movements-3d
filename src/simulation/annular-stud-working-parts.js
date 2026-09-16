@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
-import { circle, plate, poly, ring } from './finite-plate-geometry.js';
+import { capsule, circle, plate, poly, ring } from './finite-plate-geometry.js';
 import { markShadows } from './primitives.js';
 
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
@@ -73,13 +73,41 @@ export function correctAnnularStudEscapement(root, id, update) {
     arbor.rotation.x = Math.PI / 2; arbor.position.z = -.74;
     arbor.userData.role = 'pallet-arbor-extension-through-fixed-journal';
     b.palletAssembly.add(arbor); p.arbor = arbor;
+    // The concave working blocks are beyond the studs as seen from F. Their
+    // long arms pass outside the pin ends, with short axial mounting bosses.
+    p.mounts = [];
+    for (const [group, side] of [[b.frontPallet, 1], [b.rearPallet, -1]]) {
+      const arm = group.children.find(o => o.userData.role.endsWith('long-arm-from-F'));
+      const bridge = group.children.find(o => o.userData.role.endsWith('arm-to-working-pallet-bridge'));
+      const points = d.lockFacePoints(side);
+      const mid = points[Math.floor(points.length / 2)];
+      const mountPoint = mid.clone().addScaledVector(mid.clone().normalize(), .28 * .55);
+      arm.position.z = side * .96; bridge.position.z = side * .96;
+      const mount = new THREE.Mesh(new THREE.CylinderGeometry(.065, .065, .36, 32), arm.material);
+      mount.rotation.x = Math.PI / 2;
+      mount.position.set(mountPoint.x, mountPoint.y, side * .81);
+      mount.userData.role = `${side > 0 ? 'front' : 'rear'}-axial-pallet-mount`;
+      group.add(mount); p.mounts.push(mount);
+      for (const edge of group.children.filter(o => o.geometry?.type === 'TubeGeometry')) edge.visible = false;
+    }
+    replace(b.palletPivotHub, new THREE.CylinderGeometry(.30, .30, 2.16, 64));
+    replace(arbor, new THREE.CylinderGeometry(.14, .14, .84, 64));
+    arbor.position.z = -1.36;
+    replace(b.wheelShaft, new THREE.CylinderGeometry(.14, .14, 2.62, 64));
+    b.wheelShaft.position.z = -.50;
+    b.wheelBearing.position.z = -1.58; b.palletBearing.position.z = -1.58;
+    const axes = [g.wheelCenter.toArray(), g.palletPivot.toArray()];
+    const support = capsule(...axes, .25, 48);
+    support[0].push(...axes.map(center => circle(center, .146, 64)));
+    replace(b.rearStandard, plate(support, -1.87, -1.63));
+    b.rearStandard.position.set(0, 0, 0); b.rearStandard.rotation.set(0, 0, 0);
     p.pairs.push([arbor, b.palletBearing], [arbor, b.rearStandard]);
     p.pairs.push([b.palletPivotHub, b.palletBearing], ...b.spokeMeshes.map(spoke => [b.wheelShaft, spoke]));
     replace(b.pivotIndex, new THREE.CircleGeometry(.045, 24));
-    b.pivotIndex.position.set(.18, 0, .8105);
+    b.pivotIndex.position.set(.18, 0, 1.0805);
     replace(b.wheelIndex, new THREE.CircleGeometry(.065, 24));
     b.wheelIndex.position.set(g.studOrbitRadius, 0, .8155);
-    d.reconstructionNote = 'The wheel has alternating front/rear studs and concentric locking faces. Shaft interfaces and spoke attachments are corrected, but finite stud/pallet and arm interference remains unresolved during the prescribed handoff; this is not contact-validated passive dynamics.';
+    d.reconstructionNote = 'The outward-backed pallets oppose clockwise stud motion, with arms outside the pin ends and axial mounting bosses. Small finite working-face interference remains unresolved during the prescribed handoff; this is not contact-validated passive dynamics.';
   }
   p.pairs.push([b.wheelShaft, b.wheelHub], [b.wheelShaft, b.wheelBearing], [b.wheelShaft, b.rearStandard]);
   b.base.visible = false; b.cameraEnvelope.visible = false;

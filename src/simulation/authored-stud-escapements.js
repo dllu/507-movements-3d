@@ -20,7 +20,7 @@ function cylinderAlongZ(radius, length, material, segments = 30) {
 
 function centeredExtrusion(shape, depth, bevelSize = 0.008) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevelSize > 0,
     bevelSegments: 1,
     bevelSize,
     bevelThickness: bevelSize,
@@ -200,17 +200,11 @@ function studEscapement(movement) {
     ) {
       return centerFrameLocal(side, palletAngle, 'lock');
     }
-    const epsilon = 1e-6;
     const center = studCenterLocal(side, palletAngle, mode);
-    const tangent = studCenterLocal(
-      side,
-      palletAngle + epsilon,
-      mode,
-    ).sub(studCenterLocal(
-      side,
-      palletAngle - epsilon,
-      mode,
-    )).normalize();
+    const worldCenter = mode === 'lock' ? lockStudCenter : impulseStudCenter(side, palletAngle);
+    const wheelSlope = mode === 'lock' ? 0 : impulseWheelSlopeAtPalletAngle(side, palletAngle);
+    const tangent = rotate2(crossZ(worldCenter.clone().sub(wheelCenter))
+      .multiplyScalar(wheelSlope).sub(crossZ(worldCenter.clone().sub(palletPivot))), -palletAngle).normalize();
     const outwardNormal = new THREE.Vector2(-tangent.y, tangent.x);
     if (outwardNormal.dot(center) < 0) outwardNormal.multiplyScalar(-1);
     return { center, outwardNormal, tangent };
@@ -219,30 +213,19 @@ function studEscapement(movement) {
     const frame = centerFrameLocal(side, palletAngle, mode);
     return frame.center.clone().addScaledVector(
       frame.outwardNormal,
-      -studRadius,
+      studRadius,
     );
   };
   const palletFaceFrame = (side, palletAngle, mode) => {
-    const epsilon = 1e-6;
     const centerFrame = centerFrameLocal(side, palletAngle, mode);
     const point = centerFrame.center.clone().addScaledVector(
       centerFrame.outwardNormal,
-      -studRadius,
-    );
-    const before = palletFaceLocalPoint(
-      side,
-      palletAngle - epsilon,
-      mode,
-    );
-    const after = palletFaceLocalPoint(
-      side,
-      palletAngle + epsilon,
-      mode,
+      studRadius,
     );
     return {
       ...centerFrame,
       point,
-      tangent: after.sub(before).normalize(),
+      tangent: centerFrame.tangent,
     };
   };
   const lockFacePoints = (side, pointCount = 49) => Array.from(
@@ -390,13 +373,13 @@ function studEscapement(movement) {
       ...impulsePoints.slice(1),
     ];
     const bodyThickness = 0.28;
-    const innerPath = workingPath.map((point) => point.clone()
-      .addScaledVector(point.clone().normalize(), -bodyThickness));
+    const backingPath = workingPath.map((point) => point.clone()
+      .addScaledVector(point.clone().normalize(), bodyThickness));
     const body = new THREE.Mesh(
       centeredExtrusion(polygonShape([
         ...workingPath,
-        ...innerPath.reverse(),
-      ]), palletDepth, 0.006),
+        ...backingPath.reverse(),
+      ]), palletDepth, 0),
       drivenMaterial,
     );
     body.position.z = planeZ;
@@ -419,7 +402,7 @@ function studEscapement(movement) {
     const radialDirection = lockPoints[0].clone().normalize();
     const transverse = crossZ(radialDirection);
     const armEnd2 = radialDirection
-      .multiplyScalar(lockPoints[0].length() - 0.32)
+      .multiplyScalar(lockPoints[0].length() + 0.14)
       .addScaledVector(transverse, side * 0.40);
     const arm = beamBetween(
       new THREE.Vector3(0, 0, planeZ),
@@ -433,7 +416,7 @@ function studEscapement(movement) {
       .clone()
       .addScaledVector(
         lockPoints[Math.floor(lockPoints.length / 2)].clone().normalize(),
-        -bodyThickness * 0.55,
+        bodyThickness * 0.55,
       );
     const bridge = beamBetween(
       new THREE.Vector3(armEnd2.x, armEnd2.y, planeZ),
@@ -682,7 +665,7 @@ function studEscapement(movement) {
         concentricRadiusError: lockActive
           ? Math.abs(
             faceFrame.point.length()
-              - (lockStudCenter.distanceTo(palletPivot) - studRadius)
+              - (lockStudCenter.distanceTo(palletPivot) + studRadius)
           )
           : null,
         expectedPoint,

@@ -185,8 +185,8 @@ test('movement 292 builds concentric stop arcs joined to nonconcentric impulse i
   assert.equal(palletProfiles.rear.impulsePoints.length, 31);
   assert.ok(palletProfiles.front.lockConcentricRadiusRange < 4e-15);
   assert.ok(palletProfiles.rear.lockConcentricRadiusRange < 4e-15);
-  assert.ok(palletProfiles.front.impulseConcentricRadiusRange > 0.14);
-  assert.ok(palletProfiles.rear.impulseConcentricRadiusRange > 0.14);
+  assert.ok(palletProfiles.front.impulseConcentricRadiusRange > 0.05);
+  assert.ok(palletProfiles.rear.impulseConcentricRadiusRange > 0.05);
 
   for (const side of [-1, 1]) {
     const lockPoints = lockFacePoints(side, 121);
@@ -196,7 +196,7 @@ test('movement 292 builds concentric stop arcs joined to nonconcentric impulse i
       `${side} concentric stop radius`);
     vectorNear(lockPoints[0], impulsePoints[0], 3e-15,
       `${side} stop/impulse corner`);
-    assert.ok(impulsePoints.at(-1).distanceTo(impulsePoints[0]) > 0.15);
+    assert.ok(impulsePoints.at(-1).distanceTo(impulsePoints[0]) > 0.07);
 
     const joinAngle = side * geometry.lockingAmplitudeFraction
       * geometry.palletAmplitude;

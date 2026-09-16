@@ -59,9 +59,41 @@ Its ideal landing velocity change, pendulum energy balance, friction and impact
 forces have not been passively simulated. Close clearance is not a solved
 force contact.
 
-292 still has an incompatible finite stud/pallet handoff. A preliminary
+292 originally had an incompatible finite stud/pallet handoff. A preliminary
 65-pose sweep found up to 0.0577 model units of penetration into working blocks
 and 0.0517 into arms/bridges; an impulse-edge tube also intersects a stud.
-Those working faces and timing are deliberately retained pending a coherent
-contact reconstruction, rather than hollowing away the intended lock faces.
-The corrected journals and attachments do not qualify the mechanism as a whole.
+The follow-up below corrects the load side and arm interference, while retaining
+an explicit smaller handoff residual.
+
+## 292 follow-up: correct load side and supported outboard arms
+
+The original pallets were offset toward F from the stud centers, with their
+backing farther inward. That placed the material on the wrong side: its
+reaction assisted clockwise wheel travel. Both faces now offset outward from F
+by the finite stud radius, with the full 0.28 backing beyond them. The true
+concentric locking arc and existing prescribed center trajectories remain.
+Analytical center-path derivatives replace numerical differences; working
+bevels and falsely solid contact-highlight tubes are removed.
+
+The long arms and bridges now lie outside the projecting pin ends. Short axial
+bosses connect each bridge to the full pallet backing. The common hub reaches
+both arms, and the two arbors reach bored journals on a compact rear plate.
+This reuses the existing finite plate, bored journal and capsule constructors;
+it introduces no live solver or runtime geometry rebuilding.
+
+The 2,049-pose, all-48-pin planar solid sweep finds a minimum working gap of
+**−0.001635**, versus approximately −0.058 previously. This remaining offset-
+curve handoff error is **not** classified as clear contact. Active-face error
+is bounded by the same amount; the actual finite boundary reaction has dot
+product at most **−0.533** with clockwise wheel motion on both pallets.
+The axial mounting bosses clear the full pin sweep by at least **0.089**;
+the arms have **0.045** axial clearance from the pin ends. Actual solid-overlap
+checks verify hub/arm, arm/bridge, bridge/boss and boss/pallet attachments.
+Existing shaft, journal, spoke and visible-cycle checks pass.
+
+All 33 checks pass using the command above plus
+`tests/stud-pallet-contact.test.mjs`, including unchanged 290 and 304 regressions.
+Source/default/oblique browser review has no errors or clipping (maximum NDC
+0.892). The full wheel remains visible. Remaining limitations are the small
+working-face handoff penetration and prescribed rather than passive timing,
+impact and energy balance; the complete escapement is still mechanically partial.
