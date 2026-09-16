@@ -1,0 +1,128 @@
+{
+  "status": "unqualified-do-not-bake",
+  "engine": "@mujoco/mujoco 3.13.0",
+  "modelSources": [
+    {
+      "file": "src/simulation/mujoco-dual-band/physics.js",
+      "sha256": "6f876ab75c2d2f3e3e50a862564e1f1ae7670c2287e44a4c3b4fe3ca0cfb28c9"
+    },
+    {
+      "file": "src/simulation/dual-band-pawl-contact.js",
+      "sha256": "029078999664a789b8508934418e7f9b8e0691981b4c0b303e18fffc537784b5"
+    }
+  ],
+  "coarse": {
+    "options": {
+      "timestep": 0.00025,
+      "contact": true,
+      "period": 8,
+      "outputDamping": 0.18,
+      "pawlSpring": 0.03,
+      "pawlDamping": 0.00008,
+      "contactMargin": 0.0006,
+      "carrierGain": 2000000,
+      "inputPhase": -1.5707963267948966
+    },
+    "duration": 24,
+    "maxCarrierError": 0.000044726033094327766,
+    "minimum": {
+      "gap": 0.0006672329793856303,
+      "time": 21.810000000013126,
+      "pair": [
+        "crossed-toe",
+        "wheel-1-1"
+      ]
+    },
+    "final": {
+      "time": 24.000000000023583,
+      "q": [
+        -1.6032975602397161,
+        -0.2713812319649363,
+        1.6032975787470876,
+        -0.19458221218706945,
+        31.824689009201744
+      ],
+      "v": [
+        -0.00012410874055026656,
+        -1.245864078237044,
+        0.00012546546042287133,
+        -1.7916878530193106,
+        1.5122581022088661
+      ]
+    },
+    "lastCycleAdvance": 8.94970703292023,
+    "lastCycleMinimumSpeed": 0.6816241658844805,
+    "lastCycleMaximumSpeed": 1.9614881101181543,
+    "pawlRanges": [
+      [
+        -0.28696191982122093,
+        -0.011558365279489105
+      ],
+      [
+        -0.28312273930533344,
+        -0.010723805745221622
+      ]
+    ]
+  },
+  "fine": {
+    "options": {
+      "timestep": 0.000125,
+      "contact": true,
+      "period": 8,
+      "outputDamping": 0.18,
+      "pawlSpring": 0.03,
+      "pawlDamping": 0.00008,
+      "contactMargin": 0.0006,
+      "carrierGain": 2000000,
+      "inputPhase": -1.5707963267948966
+    },
+    "duration": 24,
+    "maxCarrierError": 0.000046627767395113207,
+    "minimum": {
+      "gap": 0.0007951142368351346,
+      "time": 23.37000000006608,
+      "pair": [
+        "open-arm-6",
+        "open-stop"
+      ]
+    },
+    "final": {
+      "time": 24.00000000006909,
+      "q": [
+        -1.6032969535602066,
+        -0.015194320300207254,
+        1.60329694793676,
+        -0.015100767134417183,
+        30.979034138864748
+      ],
+      "v": [
+        -0.0000618579592017636,
+        -0.014162167109710612,
+        0.00006192256651577402,
+        -0.029546214589195756,
+        1.4113882330827234
+      ]
+    },
+    "lastCycleAdvance": 8.95335086997126,
+    "lastCycleMinimumSpeed": 0.6401746702548008,
+    "lastCycleMaximumSpeed": 1.8048184700102692,
+    "pawlRanges": [
+      [
+        -0.2857019333711849,
+        -0.010797712938361095
+      ],
+      [
+        -0.28151986864104644,
+        -0.011569668799705102
+      ]
+    ]
+  },
+  "comparison": {
+    "finalOutputAngleDifference": 0.8456548703369968,
+    "maxOutputAngleDifference": 1.9279787437524156,
+    "maxOutputSpeedDifference": 1.3133670682232976,
+    "maxPawlAngleDifference": 0.2675953890390942,
+    "lastCycleAdvanceDifference": 0.0036438370510296636,
+    "passesPointwiseGate": false
+  }
+}
