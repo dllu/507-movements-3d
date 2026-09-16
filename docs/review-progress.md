@@ -1,3 +1,27 @@
+# Seventeenth family pass: watch interfaces, spatial joints and water mechanisms
+
+Nine movements receive bounded corrections: 261, 318/319, 439/440/444,
+489/490/492. Shared bored joints, watch interfaces and clipped fluid-cell geometry
+replace intersecting or disconnected parts. 490 also gains the source's spatial
+shaft layout and a continuous, nearly fixed-length rope with compatible grooves.
+The complete review remains active.
+
+- [Watch interfaces](watch-balance-family-review.md): spring/curb clearance,
+  connected collets, real bearings and compensation-weight passages.
+- [Spatial linkages](spatial-linkage-family-review.md): crank layers, an actual
+  eccentric ring bearing, cord clearance and a correctly oriented release eye.
+- [Water mechanisms](water-mechanism-439-440-444-review.md): contact-derived
+  bucket-valve lift, clipped trough water, finite passages and valve seats.
+- [Steering reconstruction](rope-steering-spatial-review.md): across-plan barrel
+  shaft, corrected tiller handedness, finite grooves and separate rope clamps.
+
+All 96 focused tests, the production build and nine packaged playback/mobile
+checks pass. The nine-movement screen finds no nonfinite data, scene growth or
+replacement geometry during playback. These are selected interface
+and playback checks, not passive-force or fluid validation. 492's hook/tongue
+handoff still intersects; 444's chamber water and delivery junction remain
+schematic. Those explicit exceptions do not delay the independent corrections.
+
 # Sixteenth family pass: pendulum journals, folding joints and fluid passages
 
 Nine more movements receive source and finite-interface corrections: 315–317,

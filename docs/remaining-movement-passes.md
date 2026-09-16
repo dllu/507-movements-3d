@@ -464,3 +464,22 @@ structural loading and rope friction/tension are not claimed as solved dynamics.
 pass. A fresh screen of all ten changed movements reports no nonfinite data,
 scene growth or replacement geometry during playback. Detailed limits and source
 comparisons are linked from [review progress](review-progress.md).
+
+
+## Seventeenth parallel batch
+
+- **318/319:** spring/curb gap, staff/collet connections, bored bearings and real
+  compensation-weight passages, retaining prescribed spring and thermal laws.
+- **261/489/492:** shared finite linkage joints and corrected layers; 492's eye
+  now releases along its tongue end, but hook/tongue handoff remains an exception.
+- **439/440/444:** finite valve contact and passages, clipped compartment water,
+  bored supports and full-cycle framing; fluid and pressure timing stay prescribed.
+- **490 spatial follow-up:** correct shaft orientation, source-relative layout,
+  actual tiller/clamp handedness, finite grooves and fixed-length slack bows.
+  Tension, friction and axial rope creep remain unvalidated.
+
+All 96 focused tests, the production build and nine packaged playback/mobile
+checks pass. The nine-movement screen finds no nonfinite data, scene growth or
+replacement geometry during playback. Source views and actual
+surface samples qualify the stated interfaces. See the linked family evidence
+and residuals in [review progress](review-progress.md).

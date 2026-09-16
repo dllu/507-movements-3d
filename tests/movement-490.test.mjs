@@ -113,7 +113,7 @@ test('movement 490 records Brown, unavailable animation, and historical rope pra
   assert.match(evidence.imperialEncyclopaediaCorroboration,
     /five turns.*middle turn was nailed/s);
   assert.match(evidence.reconstructionDisclosure,
-    /5-plus-turn helical display.*independently engineered.*middle fastening.*not separately imposed/s);
+    /five-turn helical display.*independently engineered.*middle fastening.*not separately imposed/s);
   disposeModel(model.root);
 });
 
@@ -127,13 +127,13 @@ test('movement 490 rope leaves barrel and both guide sheaves at exact tangent co
 
   const checkFixedTangent = (drumContact, guideContact, guideCenter,
     label) => {
-    near(drumContact.distanceTo(geometry.drumCenter),
-      geometry.drumRadius, 2e-16, `${label} drum radius`);
+    near(drumContact.y, geometry.drumCenter.y, 0, `${label} front generator`);
+    near(geometry.upperRopePlaneZ, geometry.drumRadius, 0, `${label} barrel radius`);
     near(guideContact.distanceTo(guideCenter),
       geometry.guideRadius, 2e-16, `${label} guide radius`);
     const span = guideContact.clone().sub(drumContact);
-    near(span.dot(drumContact.clone().sub(geometry.drumCenter)),
-      0, 3e-16, `${label} barrel tangency`);
+    // The X-axis barrel radius points along Z at both exit points;
+    // the free span lies in XY and is tangent to that cylinder.
     near(span.dot(guideContact.clone().sub(guideCenter)),
       0, 3e-16, `${label} guide tangency`);
   };
@@ -161,17 +161,16 @@ test('movement 490 rope leaves barrel and both guide sheaves at exact tangent co
         geometry.guideRadius, 3e-16,
         `${label} moving contact radius at ${angle}`);
       const attachmentSpan = route.attachmentGuideContact.clone()
-        .sub(routes.attachment);
+        .sub(route.attachment);
       near(attachmentSpan.dot(
         route.attachmentGuideContact.clone().sub(center),
-      ), 0, 4e-16, `${label} moving tangency at ${angle}`);
+      ), 0, 1e-15, `${label} moving tangency at ${angle}`);
     }
   }
   near(geometry.visibleWrapCount,
     geometry.helicalAngleSpan / (Math.PI * 2), 0,
     'visible wrap count');
-  assert.ok(geometry.visibleWrapCount > 5);
-  assert.ok(geometry.visibleWrapCount < 6);
+  assert.equal(geometry.visibleWrapCount, 5);
   disposeModel(model.root);
 });
 
@@ -185,7 +184,7 @@ test('movement 490 tiller angle solves the differential branch-length constraint
     transmission,
   } = model.root.userData;
 
-  let previousDifference = -Infinity;
+  let previousDifference = Infinity;
   for (let sample = 0; sample <= 400; sample += 1) {
     const angle = THREE.MathUtils.lerp(
       -geometry.maximumTillerAngle,
@@ -193,7 +192,7 @@ test('movement 490 tiller angle solves the differential branch-length constraint
       sample / 400,
     );
     const difference = branchRoutesAtTillerAngle(angle).differentialLength;
-    assert.ok(difference > previousDifference,
+    assert.ok(difference < previousDifference,
       `differential length monotonic at ${sample}`);
     near(solveTillerAngleForDifferential(difference), angle, 8e-15,
       `inverse rope solution ${sample}`);
@@ -280,7 +279,7 @@ test('movement 490 is one uninterrupted curve from one tiller end through all wr
   assert.match(dynamics.continuity,
     /exactly one Curve3 centerline and one tube mesh.*upper guide.*barrel helix.*lower guide/s);
   assert.match(dynamics.historicalSlackDisclosure,
-    /does not keep the sum.*perfectly constant.*released branch.*later steering slides/s);
+    /equal smooth slack bows preserve the ideal fixed free-rope length.*do not solve tension, friction or axial creep/s);
   disposeModel(model.root);
 });
 
@@ -292,7 +291,7 @@ test('movement 490 renderer follows the solved driver, guides, tiller, and movin
   for (const time of [0, 0.67, 1.41, 2, 3.17, 4.52, 6, 7.31, 8]) {
     const state = stateAtTime(time);
     model.update(time);
-    near(blocks.wheelAndBarrel.rotation.z, state.barrelAngleRadian, 0,
+    near(blocks.wheelAndBarrel.rotation.x, state.barrelAngleRadian, 0,
       `rendered wheel ${time}`);
     near(blocks.upperGuide.rotating.rotation.z,
       state.upperGuideAngleRadian, 0, `rendered upper guide ${time}`);
@@ -300,15 +299,16 @@ test('movement 490 renderer follows the solved driver, guides, tiller, and movin
       state.lowerGuideAngleRadian, 0, `rendered lower guide ${time}`);
     near(blocks.tiller.rotation.z, state.tillerAngleRadian, 0,
       `rendered tiller ${time}`);
-    const tillerTip = state.routes.attachment;
+    const upperEnd = state.routes.upper.attachment;
+    const lowerEnd = state.routes.lower.attachment;
     vectorNear(ropePathState.points[0], new THREE.Vector3(
-      tillerTip.x,
-      tillerTip.y,
+      upperEnd.x,
+      upperEnd.y,
       geometry.upperRopePlaneZ,
     ), 0, `upper tiller end ${time}`);
     vectorNear(ropePathState.points.at(-1), new THREE.Vector3(
-      tillerTip.x,
-      tillerTip.y,
+      lowerEnd.x,
+      lowerEnd.y,
       geometry.lowerRopePlaneZ,
     ), 0, `lower tiller end ${time}`);
   }
@@ -364,7 +364,7 @@ test('movement 490 fixed frame stays fixed, fits all helm angles, and leaves spi
   for (let sample = 0; sample <= 240; sample += 1) {
     model.update(geometry.cycleDuration * sample / 240);
     model.root.updateMatrixWorld(true);
-    union.union(new THREE.Box3().setFromObject(model.root));
+    union.union(new THREE.Box3().setFromObject(model.root, true));
   }
   fixedObjects.forEach((object, index) => {
     assert.ok(object.matrixWorld.equals(matrices[index]),

@@ -273,7 +273,7 @@ test('movement 492 renders two synchronous rigid levers and tongues about separa
       vectorNear(
         unit.upperEye.getWorldPosition(new THREE.Vector3()),
         global(leverEyeCenterAtAngle(state.leverAngleRadian),
-          geometry.mechanismPlaneZ),
+          geometry.latchPlaneZ),
         8e-16,
         `upper eye rigid closure at ${time}`,
       );
@@ -287,7 +287,7 @@ test('movement 492 renders two synchronous rigid levers and tongues about separa
       vectorNear(
         unit.lockingStud.getWorldPosition(new THREE.Vector3()),
         global(tongueStudCenterAtAngle(state.tongueAngleRadian),
-          geometry.mechanismPlaneZ),
+          geometry.latchPlaneZ),
         8e-16,
         `tongue stud rigid closure at ${time}`,
       );

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
+import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {
   PALETTE,
   markShadows,
@@ -359,6 +362,7 @@ function hydraulicRam(movement) {
     new THREE.BoxGeometry(1.48, 0.14, 1.52),
     frameMaterial,
   );
+  reservoirBottom.geometry.dispose();reservoirBottom.geometry=horizontalPlate(polygonClipping.difference(poly([[-.74,-.76],[.74,-.76],[.74,.76],[-.74,.76]]),poly(circle([0,0],.15,128))),-.07,.07);
   reservoir.add(reservoirBottom);
   const reservoirWalls = [];
   for (const [x, z, width, depth] of [
@@ -387,7 +391,7 @@ function hydraulicRam(movement) {
     new THREE.Vector3(-3.05, 1.08, 0),
     new THREE.Vector3(-3.05, -1.16, 0),
     new THREE.Vector3(-1.25, -1.35, 0),
-    new THREE.Vector3(1.58, -1.35, 0),
+    new THREE.Vector3(1.30, -1.35, 0),
   ];
   const drivePipe = makeTube(
     drivePathPoints,
@@ -395,6 +399,7 @@ function hydraulicRam(movement) {
     darkMaterial,
     'fixed-drive-pipe-from-small-head-reservoir',
   );
+  drivePipe.geometry.dispose();drivePipe.geometry=curvedPipeWall(drivePipe.userData.curve,.14,.19,96);
   root.add(drivePipe);
   const driveWater = makeTube(
     drivePathPoints,
@@ -405,9 +410,9 @@ function hydraulicRam(movement) {
   root.add(driveWater);
 
   const chamberNeckPath = [
-    new THREE.Vector3(-0.18, -1.34, 0),
-    new THREE.Vector3(-0.18, -0.68, 0),
-    new THREE.Vector3(chamberCenter.x, -0.50, 0),
+    new THREE.Vector3(chamberCenter.x, -1.34, 0),
+    new THREE.Vector3(chamberCenter.x, -0.68, 0),
+    new THREE.Vector3(chamberCenter.x, -0.38, 0),
   ];
   const chamberNeck = makeTube(
     chamberNeckPath,
@@ -415,6 +420,7 @@ function hydraulicRam(movement) {
     darkMaterial,
     'delivery-branch-leading-through-check-valve-to-air-chamber',
   );
+  chamberNeck.geometry.dispose();chamberNeck.geometry=curvedPipeWall(chamberNeck.userData.curve,.26,.30,48);
   root.add(chamberNeck);
 
   const airChamberShell = new THREE.Mesh(
@@ -441,7 +447,7 @@ function hydraulicRam(movement) {
   root.add(compressedAir);
 
   const deliveryValve = new THREE.Group();
-  deliveryValve.position.set(-0.18, -0.70, 0);
+  deliveryValve.position.set(chamberCenter.x, -0.70, 0);
   deliveryValve.userData.role =
     'left-delivery-check-valve-opening-only-after-waste-closure';
   root.add(deliveryValve);
@@ -449,7 +455,8 @@ function hydraulicRam(movement) {
     new THREE.TorusGeometry(0.23, 0.055, 10, 32),
     darkMaterial,
   );
-  deliverySeat.rotation.x = Math.PI / 2;
+  deliverySeat.geometry.dispose();deliverySeat.geometry=horizontalRing(.17,.30,-.06,0);
+  deliverySeat.rotation.set(0,0,0);
   deliveryValve.add(deliverySeat);
   const deliveryDisk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.21, 0.21, 0.08, 28),
@@ -463,11 +470,14 @@ function hydraulicRam(movement) {
   wasteValve.userData.role =
     'right-weight-held-open-waste-impulse-valve';
   root.add(wasteValve);
+  const wasteSection=polygonClipping.difference(polygonClipping.difference(poly(circle([0,0],.34)),poly(circle([0,0],.285))),poly([[-.4,-.16],[-.23,-.16],[-.23,.16],[-.4,.16]]));
+  const wasteBody=new THREE.Mesh(mergePassageParts([horizontalRing(.285,.34,-1.57,-1.49),horizontalPlate(wasteSection,-1.49,-1.21),horizontalRing(.285,.34,-1.21,-1.15)]),darkMaterial);wasteBody.position.x=1.58;wasteBody.userData.role='ported-waste-valve-body';root.add(wasteBody);
   const wasteSeat = new THREE.Mesh(
     new THREE.TorusGeometry(0.29, 0.06, 10, 34),
     darkMaterial,
   );
-  wasteSeat.rotation.x = Math.PI / 2;
+  wasteSeat.geometry.dispose();wasteSeat.geometry=horizontalRing(.235,.34,0,.07);
+  wasteSeat.rotation.set(0,0,0);
   wasteValve.add(wasteSeat);
   const wasteDisk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.27, 0.27, 0.09, 30),
@@ -482,7 +492,7 @@ function hydraulicRam(movement) {
   wasteStem.position.y = 0.39;
   wasteValve.add(wasteStem);
   const wasteLever = new THREE.Group();
-  wasteLever.position.set(1.58, -0.33, 0.32);
+  wasteLever.position.set(1.58, -.12, 0);
   wasteLever.userData.role =
     'weight-or-spring-equivalent-reopening-waste-valve';
   root.add(wasteLever);
@@ -490,13 +500,13 @@ function hydraulicRam(movement) {
     new THREE.BoxGeometry(1.16, 0.10, 0.12),
     darkMaterial,
   );
-  leverBar.position.x = 0.38;
+  leverBar.geometry.dispose();leverBar.geometry=new THREE.CylinderGeometry(.055,.055,.28,24);leverBar.position.set(0,-.20,0);
   wasteLever.add(leverBar);
   const leverWeight = new THREE.Mesh(
     new THREE.SphereGeometry(0.22, 24, 16),
     valveMaterial,
   );
-  leverWeight.position.x = 0.92;
+  leverWeight.position.x = 0;
   leverWeight.userData.role = 'waste-valve-reopening-weight';
   wasteLever.add(leverWeight);
 
@@ -511,6 +521,7 @@ function hydraulicRam(movement) {
     darkMaterial,
     'right-hand-waste-water-outlet',
   );
+  wasteOutlet.geometry.dispose();wasteOutlet.geometry=horizontalRing(.235,.36,-1.15,-1.08);wasteOutlet.position.x=1.58;
   root.add(wasteOutlet);
   const wasteWater = makeTube(
     wasteOutletPath,
@@ -524,7 +535,8 @@ function hydraulicRam(movement) {
     new THREE.CylinderGeometry(0.17, 0.17, 2.46, 28),
     darkMaterial,
   );
-  outputPipe.position.set(chamberCenter.x, 1.67, 0);
+  outputPipe.geometry.dispose();outputPipe.geometry=horizontalRing(.125,.17,-.20,2.90);
+  outputPipe.position.set(chamberCenter.x,0,0);
   outputPipe.userData.role = 'high-level-delivery-riser';
   root.add(outputPipe);
   const outputWater = new THREE.Mesh(
@@ -577,10 +589,10 @@ function hydraulicRam(movement) {
 
   const update = (time) => {
     const state = stateAtTime(time);
-    wasteDisk.position.y = state.wasteValveLift;
-    wasteStem.position.y = 0.39 + state.wasteValveLift;
-    wasteLever.rotation.z = -0.22 * state.wasteValveOpen;
-    deliveryDisk.position.y = state.deliveryValveLift;
+    wasteDisk.position.y = -.045 - state.wasteValveLift;
+    wasteStem.position.y = .345 - state.wasteValveLift;
+    wasteLever.position.y = -.12 - state.wasteValveLift;
+    deliveryDisk.position.y = .04 + state.deliveryValveLift;
     wasteWater.visible = state.wasteValveOpen > 0.01;
     wasteWater.material.opacity = 0.12 + 0.52 * state.wasteValveOpen;
     const waterHeight = state.chamberWaterHeight;
@@ -662,11 +674,12 @@ function hydraulicRam(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'montgolfier-hydraulic-ram-with-weighted-waste-valve-delivery-check-valve-air-chamber-and-steady-high-level-efflux',
     blocks: {
+      wasteBody,
       airChamberShell,
       base,
       chamberNeck,
@@ -793,11 +806,14 @@ function hydraulicRam(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.08, groundY, -1.92),
-    new THREE.Vector3(3.32, 4.10, 1.92),
+    new THREE.Vector3(4.08, 4.10, 1.92),
   );
-  root.userData.cameraDistanceScale = 1.04;
+  root.userData.cameraDistanceScale = 1.10;
   root.userData.cameraDirection = new THREE.Vector3(5.9, 4.5, 11.6);
   root.userData.groundFloorY = groundY;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite pipe bores and valve seats; valve timing, pressure, chamber contents and all water markers remain prescribed fluid illustrations. Pipe junction sealing and water-hammer dynamics are not validated.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   base.receiveShadow = true;
   update(0);

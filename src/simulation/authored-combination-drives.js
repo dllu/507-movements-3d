@@ -8,6 +8,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {foldingRod} from './folding-joint-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -126,7 +129,7 @@ function combinationWeightDrive(movement) {
   const diskRadius = 0.83;
   const diskHubRadius = 0.24;
   const drumRadius = 0.22;
-  const drumAxialAdvancePerRadian = 0.012;
+  const drumAxialAdvancePerRadian = 0.014;
   const effectiveDrumTakeupRadius = Math.hypot(
     drumRadius,
     drumAxialAdvancePerRadian,
@@ -424,10 +427,10 @@ function combinationWeightDrive(movement) {
   frame.userData.role = 'fixed-right-standard-and-bearing-frame';
   root.add(frame);
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(4.45, 0.18, 1.18),
+    new THREE.BoxGeometry(3.50, 0.18, 1.18),
     frameMaterial,
   );
-  base.position.set(0.15, -3.15, -0.2);
+  base.position.set(.625, -3.15, -.2);
   base.userData.role = 'fixed-base-rail';
   const rightPost = new THREE.Mesh(
     new THREE.BoxGeometry(0.22, 5.8, 0.48),
@@ -475,7 +478,7 @@ function combinationWeightDrive(movement) {
   const diskHub = cylinderAlongZ(diskHubRadius, 0.56, darkMaterial, 44);
   diskHub.position.z = 0.12;
   diskHub.userData.role = 'fixed-axis-disk-B-hub';
-  const drum = cylinderAlongZ(drumRadius, 0.62, inputMaterial, 56);
+  const drum = cylinderAlongZ(drumRadius - cordRadius, 0.62, inputMaterial, 56);
   drum.position.z = 0.31;
   drum.userData.effectiveTakeupRadius = effectiveDrumTakeupRadius;
   drum.userData.role = 'cord-winding-drum-coaxial-with-disk-B';
@@ -487,20 +490,13 @@ function combinationWeightDrive(movement) {
   diskIndex.userData.role = 'white-disk-B-and-drum-speed-index';
   diskAssembly.add(diskBody, diskRim, diskHub, drum, diskIndex);
 
-  const armA = makeDynamicLink({
-    color: PALETTE.accent,
-    depth: 0.24,
-    jointRadius: 0.12,
-    thickness: 0.16,
-  });
+  const armA = foldingRod({length: pulleyArmRadius, width: .16, depth: .18,
+    bore: .184, material: armMaterial, role: 'rocking-arm-A-pivoted-at-G-and-carrying-pulley-E'});
+  armA.userData.addPinEye(rockerJointRadius, .119);
   armA.userData.role = 'rocking-arm-A-pivoted-at-G-and-carrying-pulley-E';
   root.add(armA);
-  const linkC = makeDynamicLink({
-    color: PALETTE.accent,
-    depth: 0.2,
-    jointRadius: 0.11,
-    thickness: 0.14,
-  });
+  const linkC = foldingRod({length: couplerLength, width: .14, depth: .16,
+    bore: .124, material: armMaterial, role: 'connecting-arm-C-from-disk-crank-to-arm-A'});
   linkC.userData.role = 'connecting-arm-C-from-disk-crank-to-arm-A';
   root.add(linkC);
 
@@ -510,7 +506,7 @@ function combinationWeightDrive(movement) {
   const movingPulleyRotor = new THREE.Group();
   movingPulleyRotor.userData.role = 'no-slip-moving-pulley-E-rotor';
   const pulleyCore = cylinderAlongZ(
-    movingPulleyPitchRadius * 0.92,
+    movingPulleyPitchRadius - cordRadius,
     0.25,
     drivenMaterial,
     68,
@@ -560,6 +556,7 @@ function combinationWeightDrive(movement) {
     drivenMaterial,
   );
   weightBody.userData.role = 'hanging-weight-W-body';
+  weightBody.position.z = cordPlaneZ;
   const weightEye = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.035, 10, 36),
     darkMaterial,
@@ -598,14 +595,14 @@ function combinationWeightDrive(movement) {
   });
   root.add(cord);
 
-  const fixedPivot = cylinderAlongZ(0.16, 0.64, darkMaterial, 40);
+  const fixedPivot = cylinderAlongZ(0.18, 0.64, darkMaterial, 40);
   fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.02);
   fixedPivot.userData.role = 'fixed-rocker-pivot-G';
   root.add(fixedPivot);
-  const crankPin = cylinderAlongZ(0.12, 0.58, darkMaterial, 34);
+  const crankPin = cylinderAlongZ(0.12, 0.94, darkMaterial, 34);
   crankPin.userData.role = 'eccentric-pin-on-disk-B-driving-link-C';
   root.add(crankPin);
-  const rockerJointPin = cylinderAlongZ(0.115, 0.52, darkMaterial, 34);
+  const rockerJointPin = cylinderAlongZ(0.115, 0.94, darkMaterial, 34);
   rockerJointPin.userData.role = 'joint-between-link-C-and-arm-A';
   root.add(rockerJointPin);
 
@@ -843,12 +840,12 @@ function combinationWeightDrive(movement) {
       new THREE.Vector3(
         configuration.linkage.rockerJoint.x,
         configuration.linkage.rockerJoint.y,
-        0.19,
+        0.85,
       ),
       new THREE.Vector3(
         configuration.linkage.crankPin.x,
         configuration.linkage.crankPin.y,
-        0.19,
+        0.85,
       ),
     );
     movingPulley.position.set(
@@ -861,12 +858,12 @@ function combinationWeightDrive(movement) {
     crankPin.position.set(
       configuration.linkage.crankPin.x,
       configuration.linkage.crankPin.y,
-      0.18,
+      0.50,
     );
     rockerJointPin.position.set(
       configuration.linkage.rockerJoint.x,
       configuration.linkage.rockerJoint.y,
-      0.18,
+      0.50,
     );
     cordContactMarkers[0].position.set(
       configuration.weightTangent.x,
@@ -889,12 +886,12 @@ function combinationWeightDrive(movement) {
     cord.userData.centerlineLengthError = configuration.cordLengthError;
     root.userData.kinematics = state;
   };
-  update(0);
+  fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.3, 3.9, 11.6),
+    cameraDirection: new THREE.Vector3(2.5, 1.8, 12),
   };
 }
 

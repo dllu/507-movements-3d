@@ -1,5 +1,9 @@
 # 490 playback allocation correction
 
+This records the earlier performance-only pass. Its queued layout issues are
+addressed by the subsequent [spatial reconstruction](rope-steering-spatial-review.md);
+that review states the current geometry, measurements and remaining limits.
+
 The [official plan and caption](https://507movements.com/mm_490.html) show a
 handwheel/barrel, two guide pulleys and one rope ending on the rudder tiller.
 This pass improves playback cost while preserving the existing reconstruction's

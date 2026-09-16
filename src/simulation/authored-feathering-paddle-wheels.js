@@ -5,6 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+import {foldingRod} from './folding-joint-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function addRole(object, role) {
@@ -234,24 +238,20 @@ function featheringPaddleWheel(movement) {
   markerMaterial.depthWrite = false;
 
   const fixedEccentric = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      stationaryEccentricRadiusSceneUnit,
-      stationaryEccentricRadiusSceneUnit,
-      0.24,
-      48,
-    ),
+    plate(clip.difference(poly(circle([0, 0], stationaryEccentricRadiusSceneUnit, 128)),
+      poly(circle([-eccentricOffsetSceneUnit, 0], mainShaftRadiusSceneUnit + .004, 96))), -.12, .12),
     supportMaterial,
   ), 'fixed-stationary-eccentric-e');
-  fixedEccentric.rotation.x = Math.PI / 2;
+
   fixedEccentric.position.copy(eccentricCenter);
-  fixedEccentric.position.z = -0.48;
+  fixedEccentric.position.z = .22;
   root.add(fixedEccentric);
   const eccentricIndex = addRole(new THREE.Mesh(
     new THREE.SphereGeometry(0.080, 18, 12),
     markerMaterial,
   ), 'white-index-on-fixed-eccentric-center');
   eccentricIndex.position.copy(eccentricCenter);
-  eccentricIndex.position.z = -0.31;
+  eccentricIndex.position.z = .37;
   root.add(eccentricIndex);
 
   const mainRotor = addRole(new THREE.Group(),
@@ -263,7 +263,7 @@ function featheringPaddleWheel(movement) {
     new THREE.CylinderGeometry(
       mainShaftRadiusSceneUnit,
       mainShaftRadiusSceneUnit,
-      1.72,
+      2.14,
       36,
     ),
     mainMaterial,
@@ -282,11 +282,11 @@ function featheringPaddleWheel(movement) {
     ), `rigid-arm-bar-b-${index + 1}`);
     armBar.position.x = armRadiusSceneUnit / 2;
     const pivot = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.18, 0.18, 0.72, 24),
+      new THREE.CylinderGeometry(0.18, 0.18, 1.68, 24),
       darkMaterial,
     ), `bucket-pivot-on-arm-b-${index + 1}`);
     pivot.rotation.x = Math.PI / 2;
-    pivot.position.x = armRadiusSceneUnit;
+    pivot.position.set(armRadiusSceneUnit, 0, -.60);
     arm.add(armBar, pivot);
     mainRotor.add(arm);
     mainArms.push(arm);
@@ -296,7 +296,7 @@ function featheringPaddleWheel(movement) {
     new THREE.BoxGeometry(0.50, 0.08, 0.052),
     markerMaterial,
   ), 'white-index-fixed-to-main-shaft');
-  mainShaftIndex.position.set(0.34, 0, 0.89);
+  mainShaftIndex.position.set(.20, 0, 1.09);
   mainRotor.add(mainShaftIndex);
 
   const controlRotor = addRole(new THREE.Group(),
@@ -305,7 +305,7 @@ function featheringPaddleWheel(movement) {
   controlRotor.position.z = 0.22;
   root.add(controlRotor);
   const controlRing = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(controlRingRadiusSceneUnit, 0.090, 12, 64),
+    boredCylinderGeometry(controlRingRadiusSceneUnit + .09, stationaryEccentricRadiusSceneUnit + .006, .14).rotateX(Math.PI / 2),
     controlMaterial,
   ), 'loose-annular-control-ring-d');
   controlRotor.add(controlRing);
@@ -322,11 +322,11 @@ function featheringPaddleWheel(movement) {
     ), `radial-extension-of-ring-d-${index + 1}`);
     radialArm.position.x = controlRingRadiusSceneUnit + radialLength / 2;
     const controlPin = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.105, 0.105, 0.54, 20),
+      new THREE.CylinderGeometry(0.105, 0.105, .28, 24),
       markerMaterial,
     ), `control-pin-at-end-of-ring-arm-${index + 1}`);
     controlPin.rotation.x = Math.PI / 2;
-    controlPin.position.x = armRadiusSceneUnit;
+    controlPin.position.set(armRadiusSceneUnit, 0, -.055);
     assembly.add(radialArm, controlPin);
     controlRotor.add(assembly);
     controlArms.push(assembly);
@@ -351,27 +351,31 @@ function featheringPaddleWheel(movement) {
       ),
       bucketMaterial,
     ), `vertical-broad-face-of-bucket-a-${index + 1}`);
-    panel.position.y = 0;
-    const crank = cylinderBetween(
-      new THREE.Vector3(0, 0, 0.39),
-      new THREE.Vector3(eccentricOffsetSceneUnit, 0, 0.39),
-      0.070,
-      bucketMaterial,
-      `fixed-horizontal-crank-c-${index + 1}`,
-      16,
-    );
+    panel.position.set(0, 0, -1.05);
+    panel.geometry.dispose();
+    panel.geometry = plate(clip.difference(poly([[-bucketThicknessSceneUnit/2,-bucketHeightSceneUnit/2],
+      [bucketThicknessSceneUnit/2,-bucketHeightSceneUnit/2],[bucketThicknessSceneUnit/2,bucketHeightSceneUnit/2],
+      [-bucketThicknessSceneUnit/2,bucketHeightSceneUnit/2]]),poly(circle([0,0],.184,64))), -.50, .74);
+    const rearWeb = new THREE.Mesh(new THREE.BoxGeometry(bucketThicknessSceneUnit,
+      bucketHeightSceneUnit, .24), bucketMaterial);
+    rearWeb.position.z = -1.67;
+    rearWeb.userData.role = 'blind-paddle-axle-bore-back-wall';
+    bucket.add(rearWeb);
+    const crank = foldingRod({length: eccentricOffsetSceneUnit, width: .14, depth: .08,
+      bore: .109, material: bucketMaterial, role: `fixed-horizontal-crank-c-${index + 1}`, planeZ: .065});
+    crank.userData.addPinEye(0, .184, .24);
     const bucketPivotBoss = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.24, 0.24, 0.27, 26),
+      boredCylinderGeometry(.24, .184, .04),
       darkMaterial,
     ), `bucket-a-pivot-boss-${index + 1}`);
     bucketPivotBoss.rotation.x = Math.PI / 2;
-    bucketPivotBoss.position.z = 0.39;
+    bucketPivotBoss.position.z = .125;
     const crankEndBoss = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.15, 0.30, 24),
+      boredCylinderGeometry(.15, .109, .04),
       darkMaterial,
     ), `crank-c-control-end-${index + 1}`);
     crankEndBoss.rotation.x = Math.PI / 2;
-    crankEndBoss.position.set(eccentricOffsetSceneUnit, 0, 0.39);
+    crankEndBoss.position.set(eccentricOffsetSceneUnit, 0, .125);
     bucket.add(panel, crank, bucketPivotBoss, crankEndBoss);
     root.add(bucket);
     buckets.push({
@@ -384,12 +388,18 @@ function featheringPaddleWheel(movement) {
   }
 
   const bearing = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(0.48, 0.085, 12, 42),
+    boredCylinderGeometry(.52, mainShaftRadiusSceneUnit + .004, .18).rotateX(Math.PI / 2),
     darkMaterial,
   ), 'fixed-main-shaft-front-bearing');
   bearing.position.copy(rotorCenter);
   bearing.position.z = 0.93;
   root.add(bearing);
+  const eccentricSupport = new THREE.Mesh(boredCylinderGeometry(.43,
+    mainShaftRadiusSceneUnit + .004, .50), supportMaterial);
+  eccentricSupport.rotation.x = Math.PI / 2;
+  eccentricSupport.position.set(rotorCenter.x, rotorCenter.y, .59);
+  eccentricSupport.userData.role = 'fixed-eccentric-to-main-bearing-bored-support';
+  root.add(eccentricSupport);
   const supportLegs = [-1, 1].map((side) => {
     const leg = cylinderBetween(
       new THREE.Vector3(rotorCenter.x + side * 1.25, -3.02, 0.88),
@@ -650,7 +660,7 @@ function featheringPaddleWheel(movement) {
     new THREE.Vector3(4.42, 3.58, 2.14),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(7.8, 4.8, 11.6);
+  root.userData.cameraDirection = new THREE.Vector3(2.6, 1.8, 12);
   root.userData.groundFloorY = -3.30;
   markShadows(root);
   waterVolume.castShadow = false;
@@ -658,7 +668,7 @@ function featheringPaddleWheel(movement) {
   wakeMarkerSets.flat().forEach((marker) => {
     marker.castShadow = false;
   });
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

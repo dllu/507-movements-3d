@@ -1,3 +1,4 @@
+import { correctWatchRegulator } from './watch-balance-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -908,6 +909,7 @@ function watchRegulator(movement) {
     springStiffnessLaw: 'kappa is inversely proportional to active length',
   };
 
+  correctWatchRegulator(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -926,7 +928,7 @@ function watchRegulator(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(2.2, 2.8, 12.8),
+    cameraDirection: new THREE.Vector3(.6, .7, 14),
     root,
     update,
   };

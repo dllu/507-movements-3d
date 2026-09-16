@@ -6,6 +6,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {boreCurvedLink} from './spatial-linkage-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function addRole(object, role) {
@@ -123,7 +126,8 @@ function boatDetachingHooks(movement) {
   const pullBarTravel = 0.62;
   const pullBarHeight = -0.52;
   const mechanismPlaneZ = 0.48;
-  const tonguePlaneZ = 0.26;
+  const latchPlaneZ = mechanismPlaneZ + .32;
+  const tonguePlaneZ = 0.30;
   const tacklePlaneZ = 0.22;
 
   const leverEyeCenterAtAngle = (angleRadian) => leverPivot.clone()
@@ -320,6 +324,7 @@ function boatDetachingHooks(movement) {
       ),
     ], 0.13, tongueMaterial,
     `curved-tongue-body-${unitIndex + 1}`, 48);
+    boreCurvedLink(tongueBody, .13, .18, [{x: 0, y: 0, radius: .134}]);
     tongue.add(tongueBody);
     const lockingStud = addRole(cylinderAlongZ(
       tongueStudRadius,
@@ -330,9 +335,19 @@ function boatDetachingHooks(movement) {
     lockingStud.position.set(
       tongueStudLocal.x,
       tongueStudLocal.y,
-      mechanismPlaneZ,
+      latchPlaneZ,
     );
+    // The tongue end passes along the eye normal, so the lever can slide
+    // its closed eye off the end instead of passing sideways through a pin.
+    lockingStud.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(-upperEyeVector.y, upperEyeVector.x, 0).normalize());
     tongue.add(lockingStud);
+    const tongueEndRoot = tongueStudLocal.clone().addScaledVector(
+      new THREE.Vector2(-upperEyeVector.y, upperEyeVector.x).normalize(), -.31);
+    const endNeck = cylinderAlongZ(.07, .54, tongueMaterial);
+    endNeck.position.set(tongueEndRoot.x, tongueEndRoot.y, .53);
+    endNeck.userData.role = 'tongue-end-offset-neck';
+    tongue.add(endNeck);
     const tongueNoseMarker = addRole(new THREE.Mesh(
       new THREE.SphereGeometry(0.075, 18, 12),
       whiteMaterial,
@@ -353,12 +368,13 @@ function boatDetachingHooks(movement) {
       new THREE.Vector3(-0.16, 0.40, mechanismPlaneZ),
       new THREE.Vector3(-0.34, 0.76, mechanismPlaneZ),
       new THREE.Vector3(
-        upperEyeVector.x,
-        upperEyeVector.y,
+        upperEyeVector.x * .79,
+        upperEyeVector.y * .79,
         mechanismPlaneZ,
       ),
     ], 0.105, leverMaterial,
     `upper-arm-of-release-lever-${unitIndex + 1}`);
+    boreCurvedLink(leverUpperArm, .105, .18, [{x: 0, y: 0, radius: .144}]);
     lever.add(leverUpperArm);
     const leverLowerArm = tubeThrough([
       new THREE.Vector3(0, 0, mechanismPlaneZ),
@@ -371,6 +387,7 @@ function boatDetachingHooks(movement) {
       ),
     ], 0.105, leverMaterial,
     `lower-rope-arm-of-release-lever-${unitIndex + 1}`);
+    boreCurvedLink(leverLowerArm, .105, .18, [{x: 0, y: 0, radius: .144}, {x: lowerEyeVector.x, y: lowerEyeVector.y, radius: .126}]);
     lever.add(leverLowerArm);
     const upperEye = addRole(new THREE.Mesh(
       new THREE.TorusGeometry(
@@ -384,8 +401,10 @@ function boatDetachingHooks(movement) {
     upperEye.position.set(
       upperEyeVector.x,
       upperEyeVector.y,
-      mechanismPlaneZ,
+      latchPlaneZ,
     );
+    upperEye.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(-upperEyeVector.y, upperEyeVector.x, 0).normalize());
     lever.add(upperEye);
     const lowerEye = addRole(new THREE.Mesh(
       new THREE.TorusGeometry(0.20, 0.075, 10, 42),
@@ -586,6 +605,7 @@ function boatDetachingHooks(movement) {
     lockedTongueNoseCenter,
     lowerEyeVector,
     mechanismPlaneZ,
+    latchPlaneZ,
     pullBarHeight,
     pullBarRestX,
     pullBarTravel,
@@ -627,10 +647,11 @@ function boatDetachingHooks(movement) {
       unitsCommandedSynchronously: true,
     },
     dynamics: {
+      contactResiduals: ['The tongue and tackle-hook solids still intersect during the prescribed handoff. Their load-bearing contact and passive release remain unresolved; the finite qualification in this pass covers the latch eye and pivots only.'],
       didacticResetDisclosure:
         'The first half of the cycle is the working release: pull levers, free both tongue studs, swing both unloaded tongues, and let the tackle hooks rise. The second half lowers the tackle hooks, reseats the tongues, and restores the lever eyes only to repeat the demonstration; that reset is not a claim of automatic reattachment.',
       eyeReleaseCriterion:
-        'Each tongue remains geometrically captured until the distance between the lever-eye center and locked tongue-stud center reaches r_eye_inner+r_stud. Tongue motion begins only after the lever has exceeded that analytically computed clearing angle.',
+        'The transverse closed eye slides off the tongue end. The retained staged demonstration delays tongue rotation until the conservative projected center distance reaches r_eye_inner+r_stud; this is a schedule, not a unilateral-contact or force solve.',
       loadPath:
         'While locked, each external tackle hook bears on its hinged tongue; the tongue locking stud lies inside the release-lever eye; the lever reacts at the middle fulcrum; and the fixed standard transfers the load to the boat deck. Pulling the lower lever eye removes only the lock before the tongue and tackle separate.',
       synchronization:
@@ -719,7 +740,7 @@ function boatDetachingHooks(movement) {
     new THREE.Vector3(4.70, 4.12, 2.70),
   );
   root.userData.cameraDistanceScale = 1.06;
-  root.userData.cameraDirection = new THREE.Vector3(8.0, 5.7, 10.5);
+  root.userData.cameraDirection = new THREE.Vector3(3, 2, 12);
   root.userData.groundFloorY = -2.32;
   markShadows(root);
   for (const unit of units) {
@@ -730,7 +751,7 @@ function boatDetachingHooks(movement) {
     ]) marker.castShadow = false;
   }
   pullDirectionIndex.castShadow = false;
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

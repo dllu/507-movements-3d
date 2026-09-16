@@ -177,10 +177,9 @@ test('movement 439 fill, descent, ground-opened drain, and counterweight return 
   1e-15, 'loaded bucket halfway down');
   near(stateAtPhase(geometry.descendEndPhase).bucketAttachmentY,
     geometry.bottomAttachmentY, 0, 'bucket reaches anvil station');
-  near(valveLiftAtPhase(
-    (geometry.valveOpenStartPhase + geometry.valveFullyOpenPhase) / 2,
-  ), geometry.valveMaximumLift / 2, 1.5e-15,
-  'ground valve opens smoothly');
+  const contactPhase = (geometry.valveOpenStartPhase + geometry.valveFullyOpenPhase) / 2;
+  near(stateAtPhase(contactPhase).valveTipY, geometry.strikeAnvilY, 1e-15,
+    'stem stays on the anvil while the bucket opens its valve');
   near(valveLiftAtPhase(geometry.valveFullyOpenPhase),
     geometry.valveMaximumLift, 0, 'valve fully open');
   near(waterFillAtPhase(
@@ -329,7 +328,7 @@ test('movement 439 update binds bucket, counterweight, valve, rope strands, and 
   const { blocks, geometry, stateAtTime } = model.root.userData;
   const fixedBlocks = [blocks.pulleyShaft, blocks.frameBeam,
     blocks.framePost, blocks.ground, blocks.strikeAnvil,
-    blocks.flume, blocks.fallingWater];
+    blocks.flume];
   const fixedPositions = fixedBlocks.map((block) => block.position.clone());
 
   for (const time of [0, 0.41, 1.08, 1.96, 2.72, 3.56, 4.20,

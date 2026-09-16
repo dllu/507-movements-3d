@@ -1,3 +1,4 @@
+import { correctCompensationBalance } from './watch-balance-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -852,6 +853,7 @@ function compensationBalance(movement) {
     timingScrewCount: 2,
   };
 
+  correctCompensationBalance(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -870,7 +872,7 @@ function compensationBalance(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(2.4, 2.6, 12.8),
+    cameraDirection: new THREE.Vector3(.6, .7, 14),
     root,
     update,
   };

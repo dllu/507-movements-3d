@@ -302,12 +302,12 @@ test('movement 440 trough remains rigid on its fixed pivot and meets symmetric t
   const model = createMovementModel(catalog.movements[439]);
   const { blocks, geometry, stateAtInputAngle, update } = model.root.userData;
   const leftContactLocal = new THREE.Vector3(
-    -1.70,
+    -2.02,
     geometry.floorLocalY - geometry.floorThickness / 2,
     0,
   );
   const rightContactLocal = new THREE.Vector3(
-    1.70,
+    2.02,
     geometry.floorLocalY - geometry.floorThickness / 2,
     0,
   );
@@ -404,12 +404,8 @@ test('movement 440 update binds the rigid trough, horizontal water loads, drains
       `trough update at ${phase}`);
     assert.equal(blocks.leftWater.visible, state.leftFill > 0.002);
     assert.equal(blocks.rightWater.visible, state.rightFill > 0.002);
-    near(blocks.leftWater.scale.y,
-      Math.max(geometry.maximumWaterDepth * state.leftFill, 0.001),
-      2e-15, `left fill depth at ${phase}`);
-    near(blocks.rightWater.scale.y,
-      Math.max(geometry.maximumWaterDepth * state.rightFill, 0.001),
-      2e-15, `right fill depth at ${phase}`);
+    assert.equal(blocks.leftWater.scale.y, 1, 'left water is clipped geometry');
+    assert.equal(blocks.rightWater.scale.y, 1, 'right water is clipped geometry');
     assert.equal(blocks.leftSpill.visible, state.leftDrainFlow > 0.002);
     assert.equal(blocks.rightSpill.visible, state.rightDrainFlow > 0.002);
     model.root.updateMatrixWorld(true);

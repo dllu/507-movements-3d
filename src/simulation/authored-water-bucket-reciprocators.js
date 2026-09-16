@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,plate,ring,turned,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -83,7 +85,7 @@ function waterBucketReciprocator(movement) {
   const attachmentHeightSum = topAttachmentY + bottomAttachmentY;
   const bucketValveTipOffset = -1.20;
   const valveMaximumLift = 0.24;
-  const strikeAnvilY = bottomAttachmentY + bucketValveTipOffset;
+  const strikeAnvilY = bottomAttachmentY + bucketValveTipOffset + valveMaximumLift;
   const fillStartPhase = 0.02;
   const fillEndPhase = 0.25;
   const descendStartPhase = 0.25;
@@ -115,24 +117,8 @@ function waterBucketReciprocator(movement) {
     return 0;
   };
 
-  const valveLiftAtPhase = (phaseValue) => {
-    const phase = THREE.MathUtils.euclideanModulo(phaseValue, 1);
-    if (phase < valveOpenStartPhase) return 0;
-    if (phase < valveFullyOpenPhase) {
-      return valveMaximumLift * smoothStep5(
-        (phase - valveOpenStartPhase)
-          / (valveFullyOpenPhase - valveOpenStartPhase),
-      );
-    }
-    if (phase < valveCloseStartPhase) return valveMaximumLift;
-    if (phase < riseStartPhase) {
-      return valveMaximumLift * (1 - smoothStep5(
-        (phase - valveCloseStartPhase)
-          / (riseStartPhase - valveCloseStartPhase),
-      ));
-    }
-    return 0;
-  };
+  const valveLiftAtPhase = (phaseValue) => Math.max(0,
+    strikeAnvilY - bucketAttachmentKinematicsAtPhase(phaseValue).value - bucketValveTipOffset);
 
   const bucketAttachmentKinematicsAtPhase = (phaseValue) => {
     const phase = THREE.MathUtils.euclideanModulo(phaseValue, 1);
@@ -352,19 +338,21 @@ function waterBucketReciprocator(movement) {
   root.add(pulley);
   const pulleyDisk = cylinderAlongZ(pulleyOuterRadius, 0.42,
     pulleyMaterial, 48);
+  pulleyDisk.geometry.dispose();pulleyDisk.geometry=turned([[-.21,.224],[-.21,pulleyOuterRadius],[-.10,pulleyOuterRadius],[-.055,pulleyPitchRadius-.045],[.055,pulleyPitchRadius-.045],[.10,pulleyOuterRadius],[.21,pulleyOuterRadius],[.21,.224]]);pulleyDisk.rotation.set(0,0,0);
   pulleyDisk.userData.role = 'grooved-pulley-wheel';
   pulley.add(pulleyDisk);
   const pulleyGroove = new THREE.Mesh(
     new THREE.TorusGeometry(pulleyPitchRadius, 0.07, 9, 96),
     darkMaterial,
   );
+  pulleyGroove.geometry.dispose();pulleyGroove.geometry=ring(pulleyPitchRadius-.051,pulleyPitchRadius-.045,-.05,.05);
   pulleyGroove.userData.role = 'single-rope-pitch-groove';
   pulley.add(pulleyGroove);
   const pulleyMarker = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.09, 0.10),
+    new THREE.BoxGeometry(0.58, 0.09, 0.10),
     whiteMaterial,
   );
-  pulleyMarker.position.set(0.33, 0, 0.27);
+  pulleyMarker.position.set(0.60, 0, 0.27);
   pulleyMarker.userData.role = 'visible-oscillating-pulley-rotation-marker';
   pulley.add(pulleyMarker);
   const pulleyShaft = cylinderAlongZ(0.22, 1.02, darkMaterial, 36);
@@ -426,6 +414,7 @@ function waterBucketReciprocator(movement) {
     new THREE.CylinderGeometry(0.62, 0.48, 1.00, 36, 1, true),
     bucketMaterial,
   );
+  bucketShell.geometry.dispose();bucketShell.geometry=horizontalTurned([[-.5,.45],[-.5,.48],[.5,.62],[.5,.59]]);
   bucketShell.position.y = -0.55;
   bucketShell.userData.role = 'open-bucket-shell';
   bucket.add(bucketShell);
@@ -433,6 +422,7 @@ function waterBucketReciprocator(movement) {
     new THREE.CylinderGeometry(0.48, 0.48, 0.10, 36),
     bucketMaterial,
   );
+  bucketBottom.geometry.dispose();bucketBottom.geometry=horizontalRing(.18,.48,-.05,.05);
   bucketBottom.position.y = -1.03;
   bucketBottom.userData.role = 'bucket-bottom-around-lifting-valve';
   bucket.add(bucketBottom);
@@ -450,14 +440,14 @@ function waterBucketReciprocator(movement) {
     new THREE.CylinderGeometry(0.22, 0.22, 0.10, 28),
     darkMaterial,
   );
-  valveDisk.position.y = -1.02;
+  valveDisk.position.y = -.93;
   valveDisk.userData.role = 'lifting-bottom-valve-disk';
   valve.add(valveDisk);
   const valveStem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, 0.42, 18),
+    new THREE.CylinderGeometry(0.055, 0.055, 0.30, 24),
     darkMaterial,
   );
-  valveStem.position.y = -1.15;
+  valveStem.position.y = -1.05;
   valveStem.userData.role = 'ground-striking-valve-stem';
   valve.add(valveStem);
 
@@ -487,6 +477,7 @@ function waterBucketReciprocator(movement) {
   frameBeam.position.set(0, 4.42, -0.44);
   frameBeam.userData.role = 'fixed-overhead-pulley-support-beam';
   root.add(frameBeam);
+  const hanger=new THREE.Mesh(plate(polygonClipping.difference(poly([[-.35,3.0],[.35,3.0],[.35,4.43],[-.35,4.43]]),poly(circle([0,pulleyCenter.y],.224,128))),-.56,-.31),frameMaterial);hanger.userData.role='bored-pulley-shaft-hanger';root.add(hanger);
   const framePost = new THREE.Mesh(
     new THREE.BoxGeometry(0.32, 7.64, 0.46),
     frameMaterial,
@@ -498,30 +489,30 @@ function waterBucketReciprocator(movement) {
     new THREE.BoxGeometry(6.30, 0.24, 3.28),
     frameMaterial,
   );
-  ground.position.set(0, strikeAnvilY - 0.16, -0.22);
+  ground.position.set(0, strikeAnvilY - valveMaximumLift - 0.16, -0.22);
   ground.userData.role = 'fixed-ground-beneath-bucket';
   root.add(ground);
   const strikeAnvil = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.26, 0.34, 0.18, 28),
+    new THREE.CylinderGeometry(0.10, 0.14, 0.30, 32),
     darkMaterial,
   );
-  strikeAnvil.position.set(bucketRopeX, strikeAnvilY - 0.01, 0);
+  strikeAnvil.position.set(bucketRopeX, strikeAnvilY - 0.15, 0);
   strikeAnvil.userData.role = 'ground-anvil-opening-bucket-valve';
   root.add(strikeAnvil);
 
   const flume = new THREE.Mesh(
-    new THREE.BoxGeometry(3.68, 0.22, 0.82),
+    new THREE.BoxGeometry(3.30, 0.22, 0.82),
     frameMaterial,
   );
-  flume.position.set(2.40, 2.70, 0.02);
-  flume.rotation.z = -0.30;
+  flume.position.set(bucketRopeX+.33+1.65*Math.cos(.30),1.80+1.65*Math.sin(.30),0.02);
+  flume.rotation.z = 0.30;
   flume.userData.role = 'fixed-flume-providing-continuous-water-fall';
   root.add(flume);
   const fallingWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 5.58, 20),
+    new THREE.CylinderGeometry(0.12, 0.12, 4.70, 20),
     waterMaterial,
   );
-  fallingWater.position.set(bucketRopeX, -0.08, 0.06);
+  fallingWater.position.set(bucketRopeX+.33, -.55, 0.06);
   fallingWater.userData.role =
     'continuous-vertical-water-stream-through-bucket-station';
   root.add(fallingWater);
@@ -569,6 +560,10 @@ function waterBucketReciprocator(movement) {
       state.bucketAttachmentY,
     );
     ropeMarker.position.copy(state.ropeMarker.position);
+    const streamBottom = state.bucketAttachmentY - .90 + .70 * state.waterFill;
+    const streamLength = 1.80 - streamBottom;
+    fallingWater.position.y = (1.80 + streamBottom) / 2;
+    fallingWater.scale.y = streamLength / 4.70;
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 0.92, 1);
     for (let markerIndex = 0; markerIndex < flowMarkers.length;
       markerIndex += 1) {
@@ -577,9 +572,9 @@ function waterBucketReciprocator(movement) {
         1,
       );
       flowMarkers[markerIndex].position.set(
-        bucketRopeX,
-        2.70 - 5.60 * progress,
-        0.42,
+        bucketRopeX+.33,
+        1.80 - streamLength * progress,
+        0.06,
       );
       const endpointFade = Math.sin(Math.PI * progress);
       flowMarkers[markerIndex].scale.setScalar(
@@ -591,11 +586,12 @@ function waterBucketReciprocator(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'water-filled-bucket-reciprocator-with-ground-opened-bottom-valve-single-rope-pulley-and-return-counterweight',
     blocks: {
+      hanger,
       bucket,
       bucketBottom,
       bucketShell,
@@ -631,7 +627,7 @@ function waterBucketReciprocator(movement) {
     },
     dynamics: {
       fillDrainMotionSchedule:
-        'The demonstration uses quintic zero-velocity, zero-acceleration ramps: fill at the top, loaded descent, ground-triggered valve opening and drain at the bottom, counterweight return, then top dwell. Threshold impact and coupled rigid-body dynamics are not integrated.',
+        'The demonstration uses quintic zero-velocity, zero-acceleration ramps: fill at the top, loaded descent, ground-triggered valve opening and drain at the bottom, counterweight return, then top dwell. Valve lift is derived from finite stem contact with the anvil; threshold impact and coupled rigid-body dynamics are not integrated.',
       fluidPressureSplashLeakageValveImpactRopeElasticityPulleyInertiaBearingFrictionBucketMassCounterweightMassAndDynamicAccelerationModeled:
         false,
       ropeMarkerContinuity:
@@ -706,11 +702,14 @@ function waterBucketReciprocator(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.12, -3.56, -1.72),
-    new THREE.Vector3(4.26, 4.72, 1.72),
+    new THREE.Vector3(4.54, 4.72, 1.72),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.6, 3.7, 11.2);
   root.userData.groundFloorY = -3.56;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite passages, water envelopes and contact geometry; bucket/trough motion and fill remain prescribed, without validated passive dynamics or fluid loads.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   ground.receiveShadow = true;
   update(0);

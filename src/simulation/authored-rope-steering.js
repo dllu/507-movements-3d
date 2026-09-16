@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {tubePathUpdater} from './update-tube-path.js';
+import {correctSteeringSolids} from './steering-spatial-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -48,26 +49,6 @@ function tangentPointFromExternalPoint(center, radius, point, side) {
     .addScaledVector(perpendicular, side * tangentScale);
 }
 
-function externalCircleTangent(centerA, radiusA, centerB, radiusB, side) {
-  const delta = centerB.clone().sub(centerA);
-  const distanceSquared = delta.lengthSq();
-  const radiusDifference = radiusA - radiusB;
-  const discriminant = distanceSquared - radiusDifference ** 2;
-  if (discriminant <= 0) throw new Error('guide and barrel overlap');
-  const perpendicular = new THREE.Vector2(-delta.y, delta.x);
-  const normal = delta.clone().multiplyScalar(
-    radiusDifference / distanceSquared,
-  ).addScaledVector(
-    perpendicular,
-    side * Math.sqrt(discriminant) / distanceSquared,
-  );
-  return {
-    contactA: centerA.clone().addScaledVector(normal, radiusA),
-    contactB: centerB.clone().addScaledVector(normal, radiusB),
-    normal,
-  };
-}
-
 function appendPoint(points, point) {
   if (points.length === 0 || points.at(-1).distanceToSquared(point) > 1e-18) {
     points.push(point);
@@ -92,59 +73,38 @@ function arcPoints2D({ center, end, radius, start, steps, z }) {
 
 function ropeSteering(movement) {
   const root = new THREE.Group();
-  const drumCenter = new THREE.Vector2(-2.20, 0.32);
-  const drumRadius = 0.38;
-  const drumHalfWidth = 0.34;
-  const guideRadius = 0.34;
-  const upperGuideCenter = new THREE.Vector2(-0.18, 1.66);
-  const lowerGuideCenter = new THREE.Vector2(-0.18, -1.02);
-  const rudderCenter = new THREE.Vector2(2.66, 0.32);
-  const tillerLength = 2.20;
+  const drumCenter = new THREE.Vector2(-1.67, 0);
+  const drumRadius = 0.44;
+  const drumHalfWidth = 0.46;
+  const guideRadius = 0.44;
+  const upperGuideCenter = new THREE.Vector2(-1.03, 2.63);
+  const lowerGuideCenter = new THREE.Vector2(-1.03, -2.52);
+  const rudderCenter = new THREE.Vector2(3.07, 0);
+  const tillerLength = 2.90;
   const maximumTillerAngle = THREE.MathUtils.degToRad(25);
   const cycleDuration = 8;
   const cycleAngularFrequency = FULL_TURN / cycleDuration;
-  const upperRopePlaneZ = 0.38;
-  const lowerRopePlaneZ = -0.38;
-  const ropeRadius = 0.036;
+  const upperRopePlaneZ = drumRadius;
+  const lowerRopePlaneZ = drumRadius;
+  const ropeRadius = 0.025;
   const visibleFullWrapCount = 5;
   const markerCount = 14;
 
-  const upperDrumGuideTangent = externalCircleTangent(
-    drumCenter,
-    drumRadius,
-    upperGuideCenter,
-    guideRadius,
-    1,
-  );
-  const lowerDrumGuideTangent = externalCircleTangent(
-    drumCenter,
-    drumRadius,
-    lowerGuideCenter,
-    guideRadius,
-    -1,
-  );
-  const upperDrumContact = upperDrumGuideTangent.contactA;
-  const upperFixedGuideContact = upperDrumGuideTangent.contactB;
-  const lowerDrumContact = lowerDrumGuideTangent.contactA;
-  const lowerFixedGuideContact = lowerDrumGuideTangent.contactB;
-  const upperDrumContactAngle = Math.atan2(
-    upperDrumContact.y - drumCenter.y,
-    upperDrumContact.x - drumCenter.x,
-  );
-  let lowerDrumContactAngle = Math.atan2(
-    lowerDrumContact.y - drumCenter.y,
-    lowerDrumContact.x - drumCenter.x,
-  );
-  while (lowerDrumContactAngle <= upperDrumContactAngle) {
-    lowerDrumContactAngle += FULL_TURN;
-  }
-  const helicalAngleSpan = visibleFullWrapCount * FULL_TURN
-    + lowerDrumContactAngle - upperDrumContactAngle;
-  const visibleWrapCount = helicalAngleSpan / FULL_TURN;
+  // The barrel axis lies across the plan (X), unlike the guide axes (Z).
+  // Both free branches leave the front barrel generator, at opposite axial ends.
+  const upperDrumContact = new THREE.Vector2(drumCenter.x - .33, drumCenter.y);
+  const lowerDrumContact = new THREE.Vector2(drumCenter.x + .33, drumCenter.y);
+  const upperFixedGuideContact = tangentPointFromExternalPoint(
+    upperGuideCenter, guideRadius, upperDrumContact, -1);
+  const lowerFixedGuideContact = tangentPointFromExternalPoint(
+    lowerGuideCenter, guideRadius, lowerDrumContact, 1);
+  const upperDrumContactAngle = Math.PI / 2;
+  const helicalAngleSpan = visibleFullWrapCount * FULL_TURN;
+  const visibleWrapCount = visibleFullWrapCount;
 
   const tillerTipAtAngle = (angleRadian) => new THREE.Vector2(
     rudderCenter.x - tillerLength * Math.cos(angleRadian),
-    rudderCenter.y + tillerLength * Math.sin(angleRadian),
+    rudderCenter.y - tillerLength * Math.sin(angleRadian),
   );
 
   const routeFromAttachmentToDrum = ({
@@ -187,6 +147,7 @@ function ropeSteering(movement) {
     const straightLength = attachment.distanceTo(attachmentGuideContact)
       + fixedGuideContact.distanceTo(drumContact);
     return {
+      attachment: attachment.clone(),
       arcDelta: arc.arcDelta,
       attachmentGuideContact,
       branchLength: straightLength + guideRadius * Math.abs(arc.arcDelta),
@@ -197,8 +158,11 @@ function ropeSteering(movement) {
 
   const branchRoutesAtTillerAngle = (tillerAngleRadian, includePoints = true) => {
     const attachment = tillerTipAtAngle(tillerAngleRadian);
+    const offset = new THREE.Vector2(-Math.sin(tillerAngleRadian), Math.cos(tillerAngleRadian)).multiplyScalar(.12);
+    const upperAttachment = attachment.clone().add(offset);
+    const lowerAttachment = attachment.clone().sub(offset);
     const upper = routeFromAttachmentToDrum({
-      attachment,
+      attachment: upperAttachment,
       attachmentTangentSide: 1,
       drumContact: upperDrumContact,
       fixedGuideContact: upperFixedGuideContact,
@@ -207,7 +171,7 @@ function ropeSteering(movement) {
       includePoints,
     });
     const lower = routeFromAttachmentToDrum({
-      attachment,
+      attachment: lowerAttachment,
       attachmentTangentSide: -1,
       drumContact: lowerDrumContact,
       fixedGuideContact: lowerFixedGuideContact,
@@ -224,13 +188,29 @@ function ropeSteering(movement) {
     };
   };
 
+  // Equal slack bows retain one fixed-length rope without assigning an
+  // unsupported tension/friction law to the ordinary unquadranted tiller.
+  const freeRopeLength = .03 + Math.max(...Array.from({length:513}, (_, i) =>
+    branchRoutesAtTillerAngle(maximumTillerAngle * (2*i/512-1), false).totalFreeBranchLength));
+  const bowSamples = Array.from({length:65}, (_, i) => ({
+    slope: Math.PI * Math.sin(2*Math.PI*i/64), weight: i===0||i===64 ? 1 : i%2 ? 4 : 2,
+  }));
+  const bowedLength = (distance, amplitude) => bowSamples.reduce((sum, q) =>
+    sum + q.weight * Math.hypot(distance, amplitude*q.slope), 0) / 192;
+  const bowAmplitude = (distance, extra) => {
+    let low=0,high=1;
+    while(bowedLength(distance,high)<distance+extra)high*=2;
+    for(let i=0;i<32;i++){const mid=(low+high)/2;
+      if(bowedLength(distance,mid)<distance+extra)low=mid;else high=mid;}
+    return (low+high)/2;
+  };
   const neutralRoutes = branchRoutesAtTillerAngle(0);
   const neutralDifferentialLength = neutralRoutes.differentialLength;
   const positiveExtremeRoutes = branchRoutesAtTillerAngle(
     maximumTillerAngle,
   );
   const maximumDifferentialExcursion =
-    positiveExtremeRoutes.differentialLength - neutralDifferentialLength;
+    Math.abs(positiveExtremeRoutes.differentialLength - neutralDifferentialLength);
   const drumAngleAmplitude =
     maximumDifferentialExcursion / (2 * drumRadius);
 
@@ -471,14 +451,27 @@ function ropeSteering(movement) {
   deck.position.set(-0.12, 0.28, -1.04);
   root.add(deck);
 
-  const helicalPoints = Array.from({ length: 181 }, (_, index) => {
-    const progress = index / 180;
-    const angle = upperDrumContactAngle + helicalAngleSpan * progress;
-    return new THREE.Vector3(
-      drumCenter.x + drumRadius * Math.cos(angle),
-      drumCenter.y + drumRadius * Math.sin(angle),
-      THREE.MathUtils.lerp(upperRopePlaneZ, lowerRopePlaneZ, progress),
-    );
+  const axialLead = (lowerDrumContact.x - upperDrumContact.x) / helicalAngleSpan;
+  const entrySlope = -drumRadius * (upperDrumContact.x - upperFixedGuideContact.x)
+    / (upperDrumContact.y - upperFixedGuideContact.y);
+  const exitSlope = -drumRadius * (lowerFixedGuideContact.x - lowerDrumContact.x)
+    / (lowerFixedGuideContact.y - lowerDrumContact.y);
+  const transition = Math.PI / 2;
+  const hermite = (a, b, da, db, u) => (2*u**3-3*u*u+1)*a
+    +(u**3-2*u*u+u)*da+(-2*u**3+3*u*u)*b+(u**3-u*u)*db;
+  const helicalPoints = Array.from({ length: 241 }, (_, index) => {
+    const theta = helicalAngleSpan * index / 240;
+    const angle = upperDrumContactAngle + theta;
+    let x = upperDrumContact.x + axialLead * theta;
+    if (theta < transition) x = hermite(upperDrumContact.x,
+      upperDrumContact.x + axialLead * transition, entrySlope * transition,
+      axialLead * transition, theta / transition);
+    if (theta > helicalAngleSpan - transition) x = hermite(
+      lowerDrumContact.x - axialLead * transition, lowerDrumContact.x,
+      axialLead * transition, exitSlope * transition,
+      (theta - helicalAngleSpan + transition) / transition);
+    return new THREE.Vector3(x, drumCenter.y + drumRadius * Math.cos(angle),
+      drumRadius * Math.sin(angle));
   });
   // Force the analytic tangent contacts exactly at the two endpoints.
   helicalPoints[0].set(
@@ -503,7 +496,7 @@ function ropeSteering(movement) {
         new THREE.Vector3(),
         new THREE.Vector3(0.001, 0, 0),
       ),
-      220,
+      420,
       ropeRadius,
       7,
       false,
@@ -524,11 +517,23 @@ function ropeSteering(movement) {
   });
   const buildContinuousRopeCurve = (routes) => {
     const points = [];
-    for (const point of routes.upper.points) appendPoint(points, point);
+    const slack = (freeRopeLength-routes.totalFreeBranchLength)/2;
+    const bowedBranch = route => {
+      const [start,end] = route.points;
+      const amplitude=bowAmplitude(start.distanceTo(end),slack), result=[];
+      for(let i=0;i<=32;i++){
+        const u=i/32,point=start.clone().lerp(end,u);
+        point.z+=amplitude*Math.sin(Math.PI*u)**2;
+        result.push(point);
+      }
+      result.push(...route.points.slice(2));
+      return result;
+    };
+    for (const point of bowedBranch(routes.upper)) appendPoint(points, point);
     for (let index = 1; index < helicalPoints.length; index += 1) {
       appendPoint(points, helicalPoints[index]);
     }
-    const reversedLower = [...routes.lower.points].reverse();
+    const reversedLower = bowedBranch(routes.lower).reverse();
     for (let index = 1; index < reversedLower.length; index += 1) {
       appendPoint(points, reversedLower[index]);
     }
@@ -537,7 +542,7 @@ function ropeSteering(movement) {
       false,
       'centripetal',
     );
-    curve.arcLengthDivisions = 600;
+    curve.arcLengthDivisions = 1400;
     ropePathState.curve = curve;
     ropePathState.pathLength = curve.getLength();
     ropePathState.points = points;
@@ -552,7 +557,7 @@ function ropeSteering(movement) {
 
   const update = (time) => {
     const state = stateAtTime(time);
-    wheelAndBarrel.rotation.z = state.handwheelAngleRadian;
+    wheelAndBarrel.rotation.x = state.handwheelAngleRadian;
     upperGuide.rotating.rotation.z = state.upperGuideAngleRadian;
     lowerGuide.rotating.rotation.z = state.lowerGuideAngleRadian;
     tiller.rotation.z = state.tillerAngleRadian;
@@ -587,6 +592,7 @@ function ropeSteering(movement) {
     maximumTillerAngle,
     neutralDifferentialLength,
     ropeRadius,
+    freeRopeLength,
     rudderCenter,
     tillerLength,
     upperDrumContact,
@@ -634,18 +640,18 @@ function ropeSteering(movement) {
       continuity:
         'There is exactly one Curve3 centerline and one tube mesh: upper tiller end to upper guide, continuous multi-turn barrel helix, lower guide, and lower tiller end. Every adjacent sampled section shares its endpoint.',
       historicalSlackDisclosure:
-        'The ordinary unquadranted tiller layout does not keep the sum of its two free branch lengths perfectly constant at finite helm angle; the released branch accommodates the small geometric surplus, a known limitation that later steering slides addressed. Differential length and all no-slip rates remain exact.',
+        'The ordinary unquadranted tiller does not keep its taut branch-length sum constant. Reconstructed equal smooth slack bows preserve the ideal fixed free-rope length and differential payout. Bow shape and imposed guide rotation do not solve tension, friction or axial creep on the barrel.',
       markerContinuity:
         'White material markers use the signed analytic drum payout divided by current total path length and getPointAt arc-length sampling over the single uninterrupted rope curve, so transitions between free spans, guide arcs, and barrel turns are smooth.',
       sourceProjectionDisclosure:
-        'Brown supplies a plan projection but no deck-height routing. The displayed coaxial plan-view extrusion preserves the topology and tangencies while separating the two rope planes axially so all turns remain inspectable.',
+        'The barrel and handwheel share the across-plan X shaft; guide and rudder axes are Z. Both branches meet the front barrel generator and a five-turn helix joins them with reconstructed axial lead transitions. Depths, supports, tension and axial creep are inferred.',
     },
     fidelity: 'authored',
     geometry,
     mechanism:
       'One rope begins at one side of the tiller-end boss, runs tangentially around the upper guide sheave, follows a common external tangent to the handwheel barrel, makes one continuous multi-turn helical wrap, leaves by the opposite barrel tangent, passes around the lower guide sheave, and terminates at the other side of the tiller-end boss. The handwheel and barrel are one rotor. Turning it winds one branch while paying out the other; the exact differential free-branch length determines tiller and rudder angle.',
     motion: {
-      barrelAxis: new THREE.Vector3(0, 0, 1),
+      barrelAxis: new THREE.Vector3(1, 0, 0),
       guideAxes: [
         new THREE.Vector3(0, 0, 1),
         new THREE.Vector3(0, 0, 1),
@@ -695,7 +701,7 @@ function ropeSteering(movement) {
         imperialEncyclopaediaCorroboration:
           'The historical Imperial Encyclopaedia states that five turns of tiller rope were usually wound about the wheel barrel and that the middle turn was nailed to it.',
         reconstructionDisclosure:
-          'The one-rope topology, wound barrel, two guides, tiller-end attachments, coaxial handwheel, wind-one/pay-out-the-other action, and rudder rotation are source-grounded. Exact dimensions, tangency choices, 5-plus-turn helical display, axial plane separation, maximum helm angle, smooth cycle, colors, and supports are independently engineered and exposed; the corroborating source’s middle fastening is recorded but not separately imposed on Brown’s schematic.',
+          'The one-rope topology, wound barrel, two guides, tiller-end attachments, coaxial handwheel, wind-one/pay-out-the-other action, and rudder rotation are source-grounded. Exact dimensions, tangency choices, five-turn helical display, spatial exit routing, maximum helm angle, smooth cycle, colors, and supports are independently engineered and exposed; the corroborating source’s middle fastening is recorded but not separately imposed on Brown’s schematic.',
       },
       ballantyneUrl:
         'https://www.gutenberg.org/files/21749/21749-h/21749-h.htm',
@@ -730,6 +736,7 @@ function ropeSteering(movement) {
   root.traverse(object => {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
+  correctSteeringSolids(root);
   markShadows(root);
   ropeMarkers.forEach((marker) => {
     marker.castShadow = false;

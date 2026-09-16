@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {poly,circle,plate,turned,polygonClipping} from './finite-plate-geometry.js';
+import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import {
   PALETTE,
   markShadows,
@@ -85,7 +87,7 @@ function tippingWaterMeter(movement) {
   const maximumTiltAngle = THREE.MathUtils.degToRad(14);
   const troughHalfLength = 2.34;
   const troughWidth = 1.46;
-  const floorLocalY = 0.18;
+  const floorLocalY = 0.31;
   const floorThickness = 0.16;
   const floorTopLocalY = floorLocalY + floorThickness / 2;
   const sideWallHeight = 0.72;
@@ -384,26 +386,27 @@ function tippingWaterMeter(movement) {
     new THREE.BoxGeometry(3.22, 0.18, 0.42),
     darkMaterial,
   );
+  underBrace.geometry.dispose();underBrace.geometry=plate(polygonClipping.difference(poly([[-1.61,-.09],[1.61,-.09],[1.61,.09],[-1.61,.09]]),poly(circle([0,-(floorLocalY-.17)],.204,128))),-.21,.21);
   underBrace.position.y = floorLocalY - 0.17;
   underBrace.userData.role = 'rigid-trough-underframe-centered-on-axis';
   trough.add(underBrace);
   const angleIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.92, 0.08, 0.11),
+    new THREE.BoxGeometry(0.66, 0.08, 0.11),
     whiteMaterial,
   );
-  angleIndicator.position.set(0.46, -0.03, troughWidth / 2 + 0.06);
+  angleIndicator.position.set(0.73, -0.03, troughWidth / 2 + 0.06);
   angleIndicator.userData.role = 'visible-trough-angle-index';
   trough.add(angleIndicator);
 
   const leftWater = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    makeCellWaterGeometry(),
     waterMaterial,
   );
   leftWater.userData.role =
     'left-variable-water-load-with-horizontal-free-surface';
   trough.add(leftWater);
   const rightWater = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    makeCellWaterGeometry(),
     waterMaterial,
   );
   rightWater.userData.role =
@@ -419,6 +422,7 @@ function tippingWaterMeter(movement) {
       new THREE.TorusGeometry(0.29, 0.075, 10, 36),
       frameMaterial,
     );
+    ring.geometry.dispose();ring.geometry=turned([[-.09,.204],[-.09,.365],[.09,.365],[.09,.204]]);
     ring.position.set(pivot.x, pivot.y, sign * 0.92);
     ring.userData.role = `fixed-${sign < 0 ? 'rear' : 'front'}-axis-bearing`;
     root.add(ring);
@@ -437,6 +441,7 @@ function tippingWaterMeter(movement) {
       new THREE.BoxGeometry(0.34, 2.22, 0.30),
       frameMaterial,
     );
+    post.geometry.dispose();post.geometry=plate(polygonClipping.difference(poly([[-.17,-1.11],[.17,-1.11],[.17,1.11],[-.17,1.11]]),poly(circle([0,pivot.y+.78],.204,128))),-.15,.15);
     post.position.set(0, -0.78, zSign * 0.92);
     post.userData.role =
       `fixed-${zSign < 0 ? 'rear' : 'front'}-pivot-standard`;
@@ -461,12 +466,12 @@ function tippingWaterMeter(movement) {
 
   const lowFloorLocalY = floorLocalY - floorThickness / 2;
   const leftStopContact = transformLocalPoint(
-    new THREE.Vector3(-1.70, lowFloorLocalY, 0),
+    new THREE.Vector3(-2.02, lowFloorLocalY, 0),
     pivot,
     maximumTiltAngle,
   );
   const rightStopContact = transformLocalPoint(
-    new THREE.Vector3(1.70, lowFloorLocalY, 0),
+    new THREE.Vector3(2.02, lowFloorLocalY, 0),
     pivot,
     -maximumTiltAngle,
   );
@@ -475,7 +480,8 @@ function tippingWaterMeter(movement) {
       new THREE.BoxGeometry(0.44, 0.18, 0.64),
       darkMaterial,
     );
-    pad.position.set(contact.x, contact.y - 0.09, 0);
+    const angle=side==='left'?maximumTiltAngle:-maximumTiltAngle;pad.rotation.z=angle;
+    pad.position.set(contact.x+.09*Math.sin(angle),contact.y-.09*Math.cos(angle),0);
     pad.userData.role = `fixed-${side}-trough-travel-stop`;
     root.add(pad);
     return pad;
@@ -554,19 +560,9 @@ function tippingWaterMeter(movement) {
   const rightSpill = makeSpill('right');
 
   const updateWater = (water, side, fill, angle) => {
-    const waterDepth = maximumWaterDepth * fill;
-    water.visible = fill > 0.002;
-    water.position.set(
-      side * compartmentWaterCenterX,
-      floorTopLocalY + waterDepth / 2,
-      0,
-    );
-    water.rotation.z = -angle;
-    water.scale.set(
-      troughHalfLength - 0.28,
-      Math.max(waterDepth, 0.001),
-      troughWidth - 0.30,
-    );
+    const minimumX=side<0?-troughHalfLength+.025:.075;
+    const maximumX=side<0?-.075:troughHalfLength-.025;
+    updateClippedCell(water,[[minimumX,floorTopLocalY+.004],[maximumX,floorTopLocalY+.004],[maximumX,floorTopLocalY+sideWallHeight-.02],[minimumX,floorTopLocalY+sideWallHeight-.02]],angle,fill,maximumWaterDepth,troughWidth-2*sideWallThickness-.02);
   };
 
   const updateSpill = (spill, outlet, flow) => {
@@ -637,7 +633,7 @@ function tippingWaterMeter(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'tipping-water-meter-with-equally-divided-pivoted-trough-alternately-filling-and-emptying',
@@ -769,6 +765,9 @@ function tippingWaterMeter(movement) {
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(6.1, 7.2, 10.8);
   root.userData.groundFloorY = groundY;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite passages, water envelopes and contact geometry; bucket/trough motion and fill remain prescribed, without validated passive dynamics or fluid loads.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   base.receiveShadow = true;
   update(0);

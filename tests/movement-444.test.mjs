@@ -314,15 +314,15 @@ test('movement 444 update moves only valve disks and stems while chamber renderi
     const time = geometry.cycleDuration * phase;
     const state = stateAtTime(time);
     update(time);
-    near(blocks.wasteDisk.position.y, state.wasteValveLift, 0,
+    near(blocks.wasteDisk.position.y, -.045 - state.wasteValveLift, 0,
       `moving waste disk at ${phase}`);
     near(blocks.wasteStem.position.y,
-      0.39 + state.wasteValveLift, 0,
+       .345 - state.wasteValveLift, 0,
     `moving waste stem at ${phase}`);
     vectorNear(blocks.wasteValve.position,
       sourceWasteValvePosition, 0,
     `fixed waste seat group at ${phase}`);
-    near(blocks.deliveryDisk.position.y, state.deliveryValveLift, 0,
+    near(blocks.deliveryDisk.position.y, .04 + state.deliveryValveLift, 0,
       `moving delivery disk at ${phase}`);
     near(blocks.chamberWater.scale.y, state.chamberWaterHeight, 0,
       `chamber water height at ${phase}`);

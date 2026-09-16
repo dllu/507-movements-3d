@@ -391,7 +391,7 @@ test('movement 318 renderer binds wheel, lever, curb pins, spring boundary, and 
   assert.equal(blocks.springSegments[0].receiveShadow, false);
   assert.equal(model.root.userData.groundFloorY, -5.65);
   assert.ok(model.root.userData.cameraFitBounds.isBox3);
-  assert.ok(model.root.userData.cameraFitBounds.max.x > 5);
+  assert.ok(model.root.userData.cameraFitBounds.max.x > geometry.balanceOuterRadius);
 
   for (const time of [
     canonicalTimes.neutralRising,

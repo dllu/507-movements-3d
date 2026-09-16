@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import {createAuthoredRopeSteeringMovement} from '../src/simulation/authored-rope-steering.js';
 
-test('490 retains GPU buffers while reproducing the original tube surface throughout steering', () => {
+test('490 retains GPU buffers while matching Three.js tube surfaces throughout steering', () => {
   const model = createAuthoredRopeSteeringMovement({id: 490});
   const data = model.root.userData, geometry = data.blocks.rope.geometry;
   const attributes = Object.fromEntries(Object.entries(geometry.attributes));
@@ -19,7 +19,7 @@ test('490 retains GPU buffers while reproducing the original tube surface throug
       assert.equal(geometry.attributes[key], attributes[key]);
       assert.equal(geometry.attributes[key].array, arrays[key]);
     }
-    const reference = new THREE.TubeGeometry(data.ropePathState.curve, 220,
+    const reference = new THREE.TubeGeometry(data.ropePathState.curve, geometry.parameters.tubularSegments,
       data.geometry.ropeRadius, 7, false);
     for (const key of ['position', 'normal']) {
       const actual = geometry.attributes[key].array, expected = reference.attributes[key].array;
@@ -36,4 +36,25 @@ test('490 retains GPU buffers while reproducing the original tube surface throug
   assert.equal(disposals, 0);
   assert.equal(data.hideGround, true);
   assert.equal(data.animationTiming.targetCycleDuration, data.geometry.cycleDuration);
+});
+
+test('490 fixed-length rope ends follow actual tiller clamps throughout the helm cycle', () => {
+  const model = createAuthoredRopeSteeringMovement({id: 490});
+  const data = model.root.userData;
+  const clamps = data.blocks.tiller.children.filter(o => o.userData.role === 'fixed-rope-end-clamp-on-tiller');
+  const lengths = [];
+  for (let i = 0; i <= 64; i++) {
+    model.update(data.geometry.cycleDuration * i / 64);
+    model.root.updateMatrixWorld(true);
+    lengths.push(data.ropePathState.pathLength);
+    const points = data.ropePathState.points;
+    for (const clamp of clamps) {
+      const end = clamp.position.y > 0 ? points[0] : points.at(-1);
+      assert.ok(clamp.getWorldPosition(new THREE.Vector3()).distanceTo(end) < 1e-12,
+        `rope disconnected from rendered clamp at pose ${i}`);
+    }
+  }
+  // Cubic interpolation and arc-length quadrature leave a small numerical
+  // residual; the previous taut path varied by more than one percent.
+  assert.ok((Math.max(...lengths) - Math.min(...lengths)) / Math.min(...lengths) < 1e-5);
 });
