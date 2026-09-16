@@ -1,3 +1,40 @@
+# Thirty-first family pass: finite pin contacts and shared supports
+
+Seven movements receive bounded corrections: 292, 305–308, 313 and 314. The
+complete mechanisms remain mechanically partial; passing interface checks do
+not certify their unresolved handoffs. Independent lanes reuse finite plates,
+bored journals, carriers, cycle framing and contact checks.
+
+- [292 stud pallets](annular-stud-family-review.md): reverse the working material
+  to oppose wheel drive, place the arms outside the projecting pins, and connect
+  the blocks through clear axial mounts. Working penetration drops from about
+  0.058 to 0.001635; the smaller handoff residual remains explicit.
+- [305–307 pin escapements](pin-escapement-family-review.md): correct 305's solid
+  sides and qualify its finite upright impulse, with connected carriers and
+  bored shaft passages across the family. The prescribed dead-face handoff in
+  305 and substantial working interference in 306/307 remain unresolved.
+- [313 return pallet](chronometer-313-return-review.md): preserve its complete
+  active face and thickness while correcting an excessive end allowance. The
+  entire pallet return now clears. A bounded native passing-spring experiment
+  failed penetration/timestep qualification and remains offline, not a bake.
+- [308/314 detached interfaces](detached-chronometer-review.md): 308's rounded
+  locking catch clears all 60 pins through its prescribed withdrawal and return,
+  and the pin row mounts in the rim. 314's banking stops and bored journals are
+  corrected. Impulse/click and wheel-pallet/fork handoffs remain unqualified.
+
+All 109 distinct focused checks pass, including neighboring 290, 291 and 304
+regressions. The production build passes in 20.33 seconds; the seven-model
+construction/update screen has no flags. Final source/default/oblique reviews
+show no browser errors or camera clipping (maximum NDC range 0.826–0.898).
+All seven packaged desktop/playback/mobile checks pass in 17.4 seconds. These
+checks validate the scoped corrections and application behavior, not the open
+mechanical faults listed above.
+
+The [next breadth pass](remaining-movement-passes.md) prioritizes 329/331 piston
+guides, 375–377 runners/treadwheels and 227–229/254 chain drives. Regular geometry
+uses analytical curves; the existing OpenCV contour workflow remains available
+for genuinely irregular visible outlines. The overall review stays active.
+
 # Thirtieth family pass: escapement construction and working-surface review
 
 Seven movements receive bounded corrections: 291, 293–297 and 313. **All seven

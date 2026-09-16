@@ -46,6 +46,24 @@ quadrant prototype's first 36-second trial stalls on return (piston ends near
 −0.593 instead of −1.388); it is not production and does not block these batches.
 181–182's wider lower catch head also remains a source-fit residual.
 
+## Next breadth pass after the escapement corrections
+
+Prefer these independent families before another escapement contact micro-pass:
+
+- **329/331, piston guides:** reuse `piston-guide-parts.js`, finite slots and bored
+  links; compare the epicyclic transmission with the corrected internal gearing.
+  Their determinate motion can remain analytical.
+- **375–377, edge runners and treadwheels:** reuse bored journals and closed wheel
+  geometry. Start with the solid bearing/axle overlap in 376 and finite runner,
+  pan and tread interfaces; keep inferred gait and driving loads explicit.
+- **227–229/254, chains and sprockets:** share pitch, link-plane and articulation
+  checks, bored hubs and the swept-pocket construction used for 462. Separate
+  finite geometric engagement from any future loaded-chain dynamic study.
+
+These are fresh review candidates, not qualified mechanisms. Each lane should
+publish its reusable correction and residuals before pursuing difficult passive
+contact experiments.
+
 ## Running the screen
 
 ```sh
