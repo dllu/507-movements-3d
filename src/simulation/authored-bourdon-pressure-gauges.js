@@ -1,3 +1,4 @@
+import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -684,13 +685,14 @@ function bourdonPressureGauge(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctElasticGaugeParts(root,499,update);
   markShadows(root);
   dialFace.castShadow = false;
   pressureCore.castShadow = false;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.7, 4.1, 12.4),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

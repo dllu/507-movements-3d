@@ -24,7 +24,8 @@ consistent with them.
 - Both instruments have finite glass walls, open bores and exact semicircular
   lower bends with vertical end tangents. The former glass legs had only outer
   surfaces. Retaining clips now surround real holes, clear the glass, and join
-  the rear support. The support reaches its base and brackets carry the scale.
+  the rear support. Lowered bases clear the glass bends; the rear supports reach
+  those bases and brackets carry the scales.
 - 498 has a bored inlet flange and stopcock boss. Its new circular elbow joins
   the left leg from above with a downward tangent; the previous spline curved
   upward into an open, pointed connection. The handle has connecting spokes.
@@ -52,8 +53,8 @@ closure and whole-cycle bounds.
 
 Serial Chrome comparison captures show no errors or clipping: maximum projected
 extent is 0.910 for 498 and 0.915 for 501, where 1 is the viewport edge. These
-captures preceded the final small scale-support brackets; packaged browser
-checks cover the final assembly. Production build and packaged desktop/mobile
+captures preceded the final scale-support and base-clearance changes; packaged
+browser checks cover the final assembly. Production build and desktop/mobile
 results are recorded in `review-progress.md`.
 
 Dimensions, pressure histories, support hardware, glass thickness and reservoir

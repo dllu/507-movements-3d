@@ -45,6 +45,12 @@ for (const [id, create] of [[498, siphon], [501, barometer]]) {
     const m = create({id}), d = m.root.userData, b = d.blocks, g = d.geometry;
     try {
       const clips = id === 498 ? b.tubeClamps : b.retainingClips;
+      m.root.updateMatrixWorld(true);
+      const base = new T.Box3().setFromObject(id === 498 ? b.base : b.supportBase);
+      const post = new T.Box3().setFromObject(id === 498 ? b.backPost : b.supportSpine);
+      const bend = new T.Box3().setFromObject(b.glassBend);
+      assert.ok(bend.min.y > base.max.y, 'lower glass bend clears the display base');
+      assert.ok(Math.abs(post.min.y - base.max.y) < 1e-6, 'post meets the lowered base');
       for (let i = 0; i < clips.length; i++) {
         const surface = solidSurface(clips[i].geometry);
         const xs = id === 498 || i === 0 ? [-g.legCenterX, g.legCenterX] : [g.legCenterX];

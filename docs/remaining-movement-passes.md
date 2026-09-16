@@ -603,3 +603,21 @@ All 125 distinct focused checks pass, including the 38 affected meter checks
 rerun after their final correction. The production build and nine-model screen
 pass; final meter models were screened again.
 Nine packaged desktop/playback/mobile checks pass in 41.1 seconds.
+
+## Twenty-fourth parallel batch
+
+- **491:** real capstan sockets, spindle bores and separated rope turns. The
+  measured finite pawl/crown penetration remains an explicit partial result.
+- **496/497:** shared shaft/bearing, fiber-guide and blower-casing corrections.
+- **498/501:** shared finite mercury/glass passages and supports, with the
+  barometer reservoir matching the existing constant-area hydrostatic law.
+- **499/500:** involute sector/pinion interfaces, connected joints and finite
+  pressure passages; prescribed elastic deformation remains qualified.
+
+Detailed evidence and remaining limits are linked from
+[review progress](review-progress.md). Analytical motion is retained where the
+constraints are already determined; contact defects are not hidden by the
+simpler playback implementation.
+
+All 69 focused checks pass. The production build, seven-model screen and seven
+packaged desktop/playback/mobile checks pass; the screen reports no flags.

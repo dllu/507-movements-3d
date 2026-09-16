@@ -76,8 +76,9 @@ export function correctMercuryInstrument(root, id, update) {
     const boss = new THREE.Mesh(wall(bore, .28, -.16, .16), b.boilerFlange.material);
     boss.rotation.z = Math.PI / 2; boss.position.set(-2.53, inletY, 0);
     root.add(boss); b.valveBoss = boss;
-    replace(b.backPost, new THREE.BoxGeometry(.16, 6.03, .18));
-    b.backPost.position.y = -.275;
+    b.base.position.y = -3.47;
+    replace(b.backPost, new THREE.BoxGeometry(.16, 6.12, .18));
+    b.backPost.position.y = -.32;
     for (let i = 0; i < b.tubeClamps.length; i++) {
       const old = b.tubeClamps[i];
       const clip = retainingClip([-g.legCenterX, g.legCenterX], g.glassOuterRadius + .004, old.position.y, old.material);
@@ -119,8 +120,9 @@ export function correctMercuryInstrument(root, id, update) {
       cap.push([Math.sin(a) * .06, bore * Math.cos(a)]);
     }
     replace(b.sealedLongCap, lathe(cap)); b.sealedLongCap.scale.y = 1;
-    replace(b.supportSpine, new THREE.BoxGeometry(.16, 9.56, .17));
-    b.supportSpine.position.y = -.04;
+    b.supportBase.position.y = -5.0;
+    replace(b.supportSpine, new THREE.BoxGeometry(.16, 9.65, .17));
+    b.supportSpine.position.y = -.085;
     for (let i = 0; i < b.retainingClips.length; i++) {
       const old = b.retainingClips[i];
       const clip = retainingClip(i ? [g.legCenterX] : [-g.legCenterX, g.legCenterX], g.glassOuterRadius + .004, i ? old.position.y : -3.8, old.material);

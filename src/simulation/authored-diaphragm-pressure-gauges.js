@@ -1,3 +1,4 @@
+import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -650,6 +651,7 @@ function diaphragmPressureGauge(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctElasticGaugeParts(root,500,update);
   markShadows(root);
   dialFace.castShadow = false;
   chamber.castShadow = false;
@@ -659,7 +661,7 @@ function diaphragmPressureGauge(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.3, 4.6, 12.2),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

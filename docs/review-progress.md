@@ -1,3 +1,29 @@
+# Twenty-fourth family pass: winding, blower and pressure instruments
+
+Seven movements receive bounded corrections in four parallel lanes: 491 and
+496–501. Existing bores, finite passages, gears and tube-routing components
+replace repeated outline tracing.
+
+- [491 capstan](capstan-491-finite-review.md): real handspike sockets, spindle
+  bores and separated rope turns. **Finite pawl contact remains partial.**
+- [496/497 spinning and blower](spinning-fan-family-review.md): drafting-roll,
+  spindle, yarn-guide and fan-casing interfaces.
+- [498/501 mercury instruments](mercury-instrument-family-review.md): finite
+  glass passages, a reservoir matching its volume law, supports and readable
+  scale views.
+- [499/500 elastic gauges](elastic-gauge-family-review.md): meshing pointer
+  gearing, connected sector arms, hollow pressure paths and link joints.
+
+The overall review remains active. Prescribed fiber/fluid/elastic behavior and
+unresolved contacts are recorded in each family review. No live browser physics
+is added for these analytical demonstrations.
+
+All 69 focused tests pass. The production build passes (20.70 seconds), and the
+seven-model construction/playback screen reports no flags. Seven packaged
+desktop/playback/mobile checks pass in 28.9 seconds. Final screenshots confirm
+the mercury bases clear the bends and the compact diaphragm linkage remains
+visible behind its gear pair.
+
 # Twenty-third family pass: bevel, wind and marine rotors
 
 Nine movements receive corrections: 469 and 481–488. Four parallel lanes reuse
