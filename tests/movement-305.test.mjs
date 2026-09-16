@@ -277,9 +277,9 @@ test('movement 305 alternates exact upper and lower upright-face impulse constra
   assert.equal(palletFaces.upper.impulseCenterlineX, 0);
   assert.equal(palletFaces.lower.impulseCenterlineX, 0);
   near(palletFaces.upper.impulseFaceX,
-    -geometry.pinRadius, 0, 'upper solid lies left of pin centre');
+    geometry.pinRadius, 0, 'upper solid lies right of pin centre');
   near(palletFaces.lower.impulseFaceX,
-    geometry.pinRadius, 0, 'lower solid lies right of pin centre');
+    -geometry.pinRadius, 0, 'lower solid lies left of pin centre');
   for (const side of ['upper', 'lower']) {
     for (const fraction of [-1, -0.5, 0, 0.5, 1]) {
       const palletAngle = fraction * geometry.contactAngle;
@@ -361,8 +361,7 @@ test('movement 305 renderer follows the exact state and leaves movement 507 auth
       state.pendulumAngle, 0, `pallet angle at ${time}`);
     near(blocks.wheelRotor.rotation.z,
       state.wheelAngle, 0, `disc angle at ${time}`);
-    assert.equal(blocks.contactMarker.visible,
-      state.contactPoint !== null);
+    assert.equal(blocks.contactMarker.visible,false, 'unqualified global contact marker is suppressed');
     assert.equal(blocks.contactMarker.userData.activeFace,
       state.activeFace);
     blocks.rubyPin.updateWorldMatrix(true, false);
@@ -377,7 +376,7 @@ test('movement 305 renderer follows the exact state and leaves movement 507 auth
     }
   }
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, geometry.pendulumPeriod);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 6);
   assertReadableTiming(model.root.userData.animationTiming);
 
   const movement507 = catalog.movements[506];

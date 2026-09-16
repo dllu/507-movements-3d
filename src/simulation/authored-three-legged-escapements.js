@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctThreeLegParts, finishPinEscapement} from './pin-escapement-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -626,7 +627,7 @@ function threeLeggedDeadEscapement(movement) {
     const state = stateAtTime(time);
     palletAssembly.rotation.z = state.palletAngle;
     wheelRotor.rotation.z = state.wheelAngle;
-    contactMarker.visible = state.contactPoint !== null;
+    contactMarker.visible = state.contactPoint !== null && !root.userData.workingPartsReview?.contactMarkersSuppressed;
     if (state.contactPoint) {
       contactMarker.position.set(
         state.contactPoint.x,
@@ -795,6 +796,7 @@ function threeLeggedDeadEscapement(movement) {
   };
   root.userData.wheelAngleAtBeatStart = wheelAngleAtBeatStart;
 
+  correctThreeLegParts(root,movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1326,7 +1328,7 @@ function longStoppingToothEscapement(movement) {
     const state = stateAtTime(time);
     palletAssembly.rotation.z = state.palletAngle;
     wheelRotor.rotation.z = state.wheelAngle;
-    contactMarker.visible = state.contactPoint !== null;
+    contactMarker.visible = state.contactPoint !== null && !root.userData.workingPartsReview?.contactMarkersSuppressed;
     if (state.contactPoint) {
       contactMarker.position.set(
         state.contactPoint.x,
@@ -1518,6 +1520,7 @@ function longStoppingToothEscapement(movement) {
   };
   root.userData.wheelAngleAtBeatStart = wheelAngleAtBeatStart;
 
+  correctThreeLegParts(root,movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1542,8 +1545,8 @@ function longStoppingToothEscapement(movement) {
 
 export function createAuthoredThreeLeggedEscapementMovement(movement) {
   switch (movement.id) {
-    case 306: return threeLeggedDeadEscapement(movement);
-    case 307: return longStoppingToothEscapement(movement);
+    case 306: return finishPinEscapement(threeLeggedDeadEscapement(movement));
+    case 307: return finishPinEscapement(longStoppingToothEscapement(movement));
     default: return null;
   }
 }

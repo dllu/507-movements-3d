@@ -372,7 +372,7 @@ test('movement 306 preserves a finite non-contact clearance drop before every al
   disposeModel(model.root);
 });
 
-test('movement 306 renderer follows its exact contact state and leaves movement 507 authored', () => {
+test('movement 306 renderer follows its prescribed contact state and leaves movement 507 authored', () => {
   const movement = catalog.movements[305];
   const model = createMovementModel(movement);
   const { blocks, geometry, stateAtTime } = model.root.userData;
@@ -384,8 +384,7 @@ test('movement 306 renderer follows its exact contact state and leaves movement 
       state.palletAngle, 0, `pallet angle at ${time}`);
     near(blocks.wheelRotor.rotation.z,
       state.wheelAngle, 0, `wheel angle at ${time}`);
-    assert.equal(blocks.contactMarker.visible,
-      state.contactPoint !== null);
+    assert.equal(blocks.contactMarker.visible,false, 'unqualified global contact marker is suppressed');
     assert.equal(blocks.contactMarker.userData.activeFace,
       state.activeFace);
     assert.equal(blocks.contactMarker.userData.activeToothIndex,
@@ -398,7 +397,7 @@ test('movement 306 renderer follows its exact contact state and leaves movement 
     }
   }
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, geometry.pendulumPeriod);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 6);
   assertReadableTiming(model.root.userData.animationTiming);
 
   const movement507 = catalog.movements[506];

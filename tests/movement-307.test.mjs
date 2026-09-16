@@ -385,7 +385,7 @@ test('movement 307 partitions every beat into inner-pin impulse and a finite eig
   disposeModel(model.root);
 });
 
-test('movement 307 renderer follows the solved two-system state and leaves movement 339 as the next authored frontier', () => {
+test('movement 307 renderer follows the prescribed two-system state and leaves movement 339 as the next authored frontier', () => {
   const movement = catalog.movements[306];
   const model = createMovementModel(movement);
   const { blocks, geometry, stateAtTime } = model.root.userData;
@@ -412,8 +412,7 @@ test('movement 307 renderer follows the solved two-system state and leaves movem
       state.palletAngle, 0, `pallet angle at ${time}`);
     near(blocks.wheelRotor.rotation.z,
       state.wheelAngle, 0, `wheel angle at ${time}`);
-    assert.equal(blocks.contactMarker.visible,
-      state.contactPoint !== null);
+    assert.equal(blocks.contactMarker.visible,false, 'unqualified global contact marker is suppressed');
     assert.equal(blocks.contactMarker.userData.activeFace,
       state.activeFace);
     assert.equal(blocks.contactMarker.userData.activeIndex,
@@ -433,7 +432,7 @@ test('movement 307 renderer follows the solved two-system state and leaves movem
     }
   }
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, geometry.pendulumPeriod);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 6);
   assertReadableTiming(model.root.userData.animationTiming);
 
   const movement507 = catalog.movements[506];

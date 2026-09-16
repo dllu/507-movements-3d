@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctSinglePinParts, finishPinEscapement} from './pin-escapement-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -155,7 +156,7 @@ function macdowallSinglePinEscapement(movement) {
   // order to hold the angle of escape to about one degree.
   const eccentricityRatio = 1 / 60;
   const pinOrbitRadius = centerDistance * eccentricityRatio;
-  const pinRadius = 0.064;
+  const pinRadius = 0.024;
   const pinLength = 0.42;
   const diskRadius = 0.39;
   const diskDepth = 0.22;
@@ -314,8 +315,8 @@ function macdowallSinglePinEscapement(movement) {
 
     if (state.contactKind === 'upright-impulse') {
       const faceX = state.impulseSide === 'upper'
-        ? -pinRadius
-        : pinRadius;
+        ? pinRadius
+        : -pinRadius;
       contactPointLocal = new THREE.Vector2(faceX, pinCenterLocal.y);
       contactPoint = palletWorldPoint(
         contactPointLocal,
@@ -647,7 +648,7 @@ function macdowallSinglePinEscapement(movement) {
     const state = stateAtTime(time);
     palletAssembly.rotation.z = state.pendulumAngle;
     wheelRotor.rotation.z = state.wheelAngle;
-    contactMarker.visible = state.contactPoint !== null;
+    contactMarker.visible = state.contactPoint !== null && !root.userData.workingPartsReview?.contactMarkersSuppressed;
     if (state.contactPoint) {
       contactMarker.position.set(
         state.contactPoint.x,
@@ -737,14 +738,14 @@ function macdowallSinglePinEscapement(movement) {
       deadFacePoints: lowerDeadPoints,
       deadFaceRadius: lowerDeadFaceRadius,
       impulseCenterlineX: 0,
-      impulseFaceX: pinRadius,
+      impulseFaceX: -pinRadius,
       position: 'lower-right',
     },
     upper: {
       deadFacePoints: upperDeadPoints,
       deadFaceRadius: upperDeadFaceRadius,
       impulseCenterlineX: 0,
-      impulseFaceX: -pinRadius,
+      impulseFaceX: pinRadius,
       position: 'upper-left',
     },
   };
@@ -831,6 +832,7 @@ function macdowallSinglePinEscapement(movement) {
     recoil: 'none while either dead face is engaged',
   };
 
+  correctSinglePinParts(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -855,5 +857,5 @@ function macdowallSinglePinEscapement(movement) {
 
 export function createAuthoredSinglePinEscapementMovement(movement) {
   if (movement.id !== 305) return null;
-  return macdowallSinglePinEscapement(movement);
+  return finishPinEscapement(macdowallSinglePinEscapement(movement));
 }
