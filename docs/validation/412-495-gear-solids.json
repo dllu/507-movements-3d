@@ -18,7 +18,7 @@
     },
     {
       "file": "src/simulation/authored-gears.js",
-      "sha256": "5f09464aa8b09fb057240033601f85307df0f2fc8897df276ea17ac490e321c6"
+      "sha256": "f94b7c2b142f6c186e9a18348591f6791d9e68fa80120652257f854fe83de763"
     },
     {
       "file": "src/simulation/bevel-geometry.js",
@@ -42,32 +42,32 @@
         {
           "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-1-on-carrier",
           "maximumSampledGap": 0.00029450333256035013,
-          "minimumSampledGap": 0.00009268001023568512
+          "minimumSampledGap": 9.268001023568512e-05
         },
         {
           "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-1-on-carrier",
           "maximumSampledGap": 0.0004238065683567892,
-          "minimumSampledGap": 3.3693957819102856e-8
+          "minimumSampledGap": 3.3693957819102856e-08
         },
         {
           "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-2-on-carrier",
           "maximumSampledGap": 0.0002945058588436635,
-          "minimumSampledGap": 0.00009265504483219621
+          "minimumSampledGap": 9.265504483219621e-05
         },
         {
           "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-2-on-carrier",
           "maximumSampledGap": 0.0004237698870937379,
-          "minimumSampledGap": 6.140812554370733e-8
+          "minimumSampledGap": 6.140812554370733e-08
         },
         {
           "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-3-on-carrier",
           "maximumSampledGap": 0.00029450585884478194,
-          "minimumSampledGap": 0.00009265504483367219
+          "minimumSampledGap": 9.265504483367219e-05
         },
         {
           "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-3-on-carrier",
           "maximumSampledGap": 0.00042376988709241336,
-          "minimumSampledGap": 6.140812527846006e-8
+          "minimumSampledGap": 6.140812527846006e-08
         }
       ]
     },
@@ -91,5 +91,6 @@
         }
       ]
     }
-  ]
+  ],
+  "sourceHashRefresh": "Only the 200 and 226 builders and their dedicated import changed in authored-gears.js; all builders and shared gear functions used by this audit are byte-identical to the preceding revision."
 }

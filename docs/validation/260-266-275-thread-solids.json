@@ -30,7 +30,7 @@
     },
     {
       "file": "src/simulation/authored-gears.js",
-      "sha256": "5f09464aa8b09fb057240033601f85307df0f2fc8897df276ea17ac490e321c6"
+      "sha256": "f94b7c2b142f6c186e9a18348591f6791d9e68fa80120652257f854fe83de763"
     }
   ],
   "method": "Rendered mating-thread and tooth vertices, edge midpoints and triangle centers tested bidirectionally against BVH containment across the complete programmed cycle. Distances capped at .02 local units. Housings, shafts and collars are excluded from this selected working-surface audit. Rack teeth outside the worm axial range are inactive.",
@@ -52,13 +52,13 @@
         {
           "pair": "F-D",
           "maximumSampledGap": 0.0001296493460654225,
-          "minimumSampledGap": 0.000017728886843896903,
+          "minimumSampledGap": 1.7728886843896903e-05,
           "activePoses": 33
         },
         {
           "pair": "B-E",
-          "maximumSampledGap": 0.0000658289239964337,
-          "minimumSampledGap": 0.000006476185388317654,
+          "maximumSampledGap": 6.58289239964337e-05,
+          "minimumSampledGap": 6.476185388317654e-06,
           "activePoses": 33
         }
       ]
@@ -149,5 +149,6 @@
         }
       ]
     }
-  ]
+  ],
+  "sourceHashRefresh": "Only the 200 and 226 builders and their dedicated import changed in authored-gears.js; all builders and shared gear functions used by this audit are byte-identical to the preceding revision."
 }

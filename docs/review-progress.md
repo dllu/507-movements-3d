@@ -1,3 +1,38 @@
+# Ninth family pass: bevel construction, finite slots and drawing contacts
+
+Nine movements receive bounded corrections across four parallel lanes:
+200/226, 348/350/354, 400 and 403/404/405. Exact determinate motion remains
+analytical, while reusable finite plates, bores, threads and contact helpers
+correct the rendered working interfaces. All 103 focused/regression tests, three
+lazy-loader checks (including all 507 models), the production build and nine
+packaged playback/mobile-resize checks pass. The full review remains active.
+
+200 now has the single inclined driving bevel shown in the engraving; 226 has
+narrow conical tooth bands and a connected carrier. The 33-pose audit finds no
+sampled penetration in 1,403,808 queries. See the [bevel review](movement-200-226.md)
+for inferred dimensions, approximate tooth geometry and the source caption's
+inconsistent 226 ratio.
+
+348/350/354 now have engaged slots, bored joints and connected guides. 354's
+former painted groove is a real channel with a retaining bridge. The
+[slot review](double-traverse-groove-review.md) retains the prescribed timing and
+instantaneous-reversal limitations.
+
+400's finite followers meet the actual cam surface, and its shaft meets bored
+bearings. A fast deterministic face-support solve handles the displaced axial
+contact without live physics. The [feed review](movement-400.md) distinguishes
+this geometric correction from unqualified preload and load dynamics.
+
+403's equal-radius pins and pencil touch offset rule edges while retaining the
+exact circular locus. 404's fixed rollers have migrating contact points, its
+screw has closed threads and a matching nut, and its overhangs clear the base.
+See the [cyclograph review](cyclograph-403-404-review.md) for the prescribed
+intermediate bending family and rounded-pad reconstruction. 405 retains its
+exact ideal-string hyperbola with separated physical layers and a finite visual
+cord. Its [finite-cord review](movement-405-finite-review.md) records the
+17.826% length variation: this remains an illustrative cord, not an
+inextensible physical reconstruction.
+
 # Eighth family pass: solid threads, recessed followers and extracted ruler arms
 
 Ten movements received corrections across four parallel lanes: 260/266/275,

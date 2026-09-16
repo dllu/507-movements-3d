@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -98,7 +100,7 @@ function crossedSlotDiskGeometry(radius, halfLength, halfWidth, depth) {
   const shape = new THREE.Shape();
   shape.absarc(0, 0, radius, 0, FULL_TURN, false);
   shape.holes.push(crossedSlotHole(halfLength, halfWidth));
-  return centeredExtrusion(shape, depth, 0.014);
+  return centeredExtrusion(shape, depth, 0);
 }
 
 function makeSlotSlide({
@@ -213,7 +215,7 @@ function snyderDoubleStrokeSlotDrive(movement) {
   const guideToPrimaryPivot = sourceGuideToPrimaryPivot * sourceScale;
   const guideToSecondaryPivot = sourceGuideToSecondaryPivot * sourceScale;
   const diskDepth = 0.24;
-  const slidePlaneZ = 0.18;
+  const slidePlaneZ = 0;
   const slideDepth = 0.15;
   const jointPlaneZ = 0.46;
   const rodDepth = 0.16;
@@ -585,9 +587,9 @@ function snyderDoubleStrokeSlotDrive(movement) {
     new THREE.BoxGeometry(1.58, 0.22, 0.24),
     frameMaterial,
   );
-  bearingBridge.position.set(0, diskCenter.y, rearPlaneZ);
+  bearingBridge.position.set(0, diskCenter.y - 0.28, rearPlaneZ);
   bearingBridge.userData.role = 'fixed-rear-shaft-bearing-bridge';
-  const shaftBearing = cylinderAlongZ(0.25, 0.32, edgeMaterial, 42);
+  const shaftBearing = boredJournal(0.25, 0.156, 0.32, edgeMaterial);
   shaftBearing.position.set(
     diskCenter.x,
     diskCenter.y,
@@ -598,7 +600,7 @@ function snyderDoubleStrokeSlotDrive(movement) {
   const guideMinimumY = diskCenter.y + 19 * sourceScale;
   const guideMaximumY = diskCenter.y + 26 * sourceScale;
   const guideCenterY = (guideMinimumY + guideMaximumY) / 2;
-  const guideHalfGap = 0.245;
+  const guideHalfGap = 0.136;
   const guideRailThickness = 0.105;
   const guideRails = [-1, 1].map((side) => {
     const rail = new THREE.Mesh(
@@ -696,26 +698,22 @@ function snyderDoubleStrokeSlotDrive(movement) {
     return floor;
   });
   const slotEdges = [];
-  for (const angle of [0, Math.PI / 2]) {
-    for (const side of [-1, 1]) {
-      const edge = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          slotHalfLength * 2,
-          0.024,
-          diskDepth + 0.025,
-        ),
-        edgeMaterial,
-      );
-      edge.position.y = side * slotHalfWidth;
-      edge.position.z = 0.004;
-      edge.rotation.z = angle;
-      edge.userData.role = 'cross-slot-machined-edge';
-      diskAssembly.add(edge);
-      slotEdges.push(edge);
+  for (const angle of [0, Math.PI / 2]) for (const side of [-1, 1]) {
+    const edge = new THREE.Group();
+    edge.rotation.z = angle;
+    edge.userData.role = 'cross-slot-machined-edge';
+    for (const direction of [-1, 1]) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(
+        slotHalfLength - slotHalfWidth, 0.024, diskDepth + 0.025), edgeMaterial);
+      strip.position.set(direction * (slotHalfLength + slotHalfWidth) / 2,
+        side * (slotHalfWidth + 0.012), 0.004);
+      edge.add(strip);
     }
+    diskAssembly.add(edge);
+    slotEdges.push(edge);
   }
-  const inputShaft = cylinderAlongZ(0.15, 1.02, edgeMaterial, 36);
-  inputShaft.position.z = -0.46;
+  const inputShaft = cylinderAlongZ(0.15, 0.86, edgeMaterial, 36);
+  inputShaft.position.z = -0.53;
   inputShaft.userData.role = 'central-input-shaft-behind-crossed-slots';
   const diskIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.30, 0.075, 0.035),
@@ -740,12 +738,14 @@ function snyderDoubleStrokeSlotDrive(movement) {
   const rodTopY = 0.20;
   const rodBottomY = sourceRodBottomY * sourceScale;
   const rodBodyHeight = rodTopY - (rodBottomY + rodHalfWidth);
+  const rodBodyCenterY = (rodTopY + rodBottomY + rodHalfWidth) / 2;
+  const rodPinBore = 0.25 * (sourceSlideWidth * sourceScale - visualSlideClearance) + 0.006;
   const rodBody = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      rodHalfWidth * 2,
-      rodBodyHeight,
-      rodDepth,
-    ),
+    plate(clip.difference(poly([[-rodHalfWidth, -rodBodyHeight / 2],
+      [rodHalfWidth, -rodBodyHeight / 2], [rodHalfWidth, rodBodyHeight / 2],
+      [-rodHalfWidth, rodBodyHeight / 2]]),
+    ...[guideToPrimaryPivot, guideToSecondaryPivot].map(distance =>
+      poly(circle([0, -distance - rodBodyCenterY], rodPinBore, 64)))), -rodDepth / 2, rodDepth / 2),
     rodMaterial,
   );
   rodBody.position.y = (rodTopY + rodBottomY + rodHalfWidth) / 2;
@@ -757,6 +757,10 @@ function snyderDoubleStrokeSlotDrive(movement) {
     38,
   );
   rodLowerCap.position.y = rodBottomY + rodHalfWidth;
+  rodLowerCap.geometry.dispose();
+  rodLowerCap.geometry = plate(clip.difference(poly(circle([0, 0], rodHalfWidth, 64)),
+    poly(circle([0, -guideToPrimaryPivot - rodLowerCap.position.y], rodPinBore, 64))), -rodDepth / 2, rodDepth / 2);
+  rodLowerCap.rotation.x = 0;
   rodLowerCap.userData.role = 'rod-B-rounded-lower-end';
   const rodCenterIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.035, 1.18, 0.022),
@@ -776,15 +780,15 @@ function snyderDoubleStrokeSlotDrive(movement) {
   const secondaryRodAnchor = new THREE.Object3D();
   secondaryRodAnchor.position.y = -guideToSecondaryPivot;
   secondaryRodAnchor.userData.role = 'rod-B-secondary-pivot-anchor-C2';
-  const guideRoller = cylinderAlongZ(0.13, 0.23, accentMaterial, 34);
-  guideRoller.position.z = -jointPlaneZ + 0.12;
+  const guideRoller = cylinderAlongZ(0.13, 0.64, accentMaterial, 34);
+  guideRoller.position.z = -jointPlaneZ + 0.24;
   guideRoller.userData.role =
     'rod-B-circular-pin-sliding-in-explicit-vertical-guide';
   const guideRollerIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, 0.16, 0.025),
     whiteMaterial,
   );
-  guideRollerIndex.position.set(0, 0, -jointPlaneZ + 0.245);
+  guideRollerIndex.position.set(0, 0, -jointPlaneZ + 0.58);
   guideRollerIndex.userData.role = 'guide-pin-white-center-index';
   rodAssembly.add(
     rodBody,
@@ -1077,9 +1081,10 @@ function snyderDoubleStrokeSlotDrive(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.6, 3.0, 12.5),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };

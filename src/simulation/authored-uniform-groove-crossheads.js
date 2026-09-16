@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { fitPistonGuide } from './piston-guide-parts.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -129,54 +131,6 @@ function grooveDerivativeAtPhase(phase, crankRadius, outputHalfStroke) {
   );
 }
 
-function makeGrooveBandGeometry(
-  crankRadius,
-  outputHalfStroke,
-  grooveHalfWidth,
-  sampleCount = 384,
-) {
-  const positions = [];
-  const indices = [];
-  for (let index = 0; index < sampleCount; index += 1) {
-    const phase = index / sampleCount;
-    const center = grooveCenterAtPhase(
-      phase,
-      crankRadius,
-      outputHalfStroke,
-    );
-    const tangent = grooveDerivativeAtPhase(
-      phase,
-      crankRadius,
-      outputHalfStroke,
-    ).normalize();
-    const normal = new THREE.Vector2(-tangent.y, tangent.x);
-    positions.push(
-      center.x + normal.x * grooveHalfWidth,
-      center.y + normal.y * grooveHalfWidth,
-      0,
-      center.x - normal.x * grooveHalfWidth,
-      center.y - normal.y * grooveHalfWidth,
-      0,
-    );
-    const next = (index + 1) % sampleCount;
-    indices.push(
-      index * 2,
-      next * 2,
-      index * 2 + 1,
-      index * 2 + 1,
-      next * 2,
-      next * 2 + 1,
-    );
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
 
 function sampledGrooveEdge(
   crankRadius,
@@ -270,7 +224,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const diskCenterZ = -0.23;
   const diskFrontZ = diskCenterZ + diskDepth / 2;
   const shaftRadius = hubRadius * 0.67;
-  const shaftLength = 1.48;
+  const shaftLength = 1.10;
   const shaftCenterZ = -0.47;
   const wristLength = 0.95;
   const wristCenterZ = 0.17;
@@ -282,7 +236,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const grooveFaceZ = yokeFrontZ + 0.018;
   const grooveCornerRadius = grooveHalfWidth;
   const stemDepth = 0.24;
-  const stemPlaneZ = -0.43;
+  const stemPlaneZ = yokePlaneZ;
   const guideRunningClearance = 0.018;
   const guideInnerHalfWidth = stemHalfWidth + guideRunningClearance;
   const frameZ = -0.78;
@@ -299,11 +253,6 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.2,
     roughness: 0.49,
-  });
-  const grooveMaterial = matte('#152f3b', {
-    metalness: 0.08,
-    roughness: 0.72,
-    side: THREE.DoubleSide,
   });
   const wristMaterial = matte(PALETTE.brass, {
     metalness: 0.27,
@@ -424,17 +373,40 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   yoke.userData.role =
     'nonrotating-crosshead-with-one-shaped-endless-groove';
 
+  // Subtract the wrist's actual swept section, including the two corner
+  // envelopes at the ideal instantaneous reversals.
+  const grooveLoops = [-1, 1].map(side => poly(sampledGrooveEdge(
+    crankRadius, outputHalfStroke, grooveHalfWidth, side, 384).map(p => [p.x, p.y])));
+  const grooveSection = clip.union(clip.xor(...grooveLoops), ...[0, 0.5].map(phase => {
+    const center = grooveCenterAtPhase(phase, crankRadius, outputHalfStroke);
+    return poly(circle([center.x, center.y], grooveCornerRadius, 64));
+  }));
+  const yokeSection = poly(horizontalCapsuleShape(yokeOuterHalfHeight, yokeEndCenter)
+    .getPoints(128).map(p => [p.x, p.y]));
   const yokeBody = new THREE.Mesh(
-    centeredExtrusion(
-      horizontalCapsuleShape(yokeOuterHalfHeight, yokeEndCenter),
-      yokeDepth,
-      0.014,
-    ),
+    plate(clip.difference(yokeSection, grooveSection), -yokeDepth / 2, yokeDepth / 2),
     drivenMaterial,
   );
   yokeBody.position.z = yokePlaneZ;
   yokeBody.userData.role = 'source-proportioned-capsule-crosshead-plate';
   yoke.add(yokeBody);
+  // A raised retaining strap ties the groove's inner island to the outer
+  // crosshead without crossing the wrist's working depth.
+  const islandRetainer = new THREE.Group();
+  islandRetainer.userData.role = 'raised-retainer-joining-groove-island-to-crosshead';
+  const retainerZ = wristFrontZ + wristCapDepth + 0.12;
+  const outerStation = yokeOuterHalfHeight - 0.065;
+  for (const y of [0, outerStation]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07,
+      retainerZ - yokeFrontZ + 0.06), drivenMaterial);
+    post.position.set(0, y, (retainerZ + yokeFrontZ) / 2);
+    islandRetainer.add(post);
+  }
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.10, outerStation + 0.07, 0.06), drivenMaterial);
+  strap.position.set(0, outerStation / 2, retainerZ);
+  islandRetainer.add(strap);
+  yoke.add(islandRetainer);
+
 
   const yokeOutlineThickness = 0.055;
   const yokeOutline = new THREE.Mesh(
@@ -453,38 +425,20 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   yokeOutline.userData.role = 'front-outline-of-capsule-crosshead';
   yoke.add(yokeOutline);
 
-  const grooveBand = new THREE.Mesh(
-    makeGrooveBandGeometry(
-      crankRadius,
-      outputHalfStroke,
-      grooveHalfWidth,
-    ),
-    grooveMaterial,
-  );
-  grooveBand.position.z = grooveFaceZ;
-  grooveBand.userData.role =
-    'recessed-endless-groove-derived-from-the-uniform-output-law';
+  // Inspection anchors describe the open channel; no painted face or
+  // corner disk occupies the volume in which the wrist now runs.
+  const grooveBand = new THREE.Group();
+  grooveBand.userData.role = 'actual-through-groove-inspection-frame';
+  grooveBand.userData.section = grooveSection;
   yoke.add(grooveBand);
-
-  // The output reverses instantaneously at phase 0 and 1/2.  The centerline
-  // has a real corner at each reversal, so circular pockets of the wrist's
-  // running radius complete the two corner envelopes without visual cracks.
   const grooveCornerPockets = [0, 0.5].map((phase, index) => {
-    const center = grooveCenterAtPhase(
-      phase,
-      crankRadius,
-      outputHalfStroke,
-    );
-    const pocket = cylinderAlongZ(
-      grooveCornerRadius,
-      0.022,
-      grooveMaterial,
-      48,
-    );
+    const center = grooveCenterAtPhase(phase, crankRadius, outputHalfStroke);
+    const pocket = new THREE.Object3D();
     pocket.position.set(center.x, center.y, grooveFaceZ + 0.002);
-    pocket.userData.role = 'rounded-groove-pocket-at-ideal-output-reversal';
+    pocket.userData.role = 'open-groove-corner-envelope';
     pocket.userData.index = index;
     pocket.userData.phase = phase;
+    pocket.userData.radius = grooveCornerRadius;
     yoke.add(pocket);
     return pocket;
   });
@@ -564,7 +518,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       cheek.position.set(
         sideX * (innerX + outerX) / 2,
         shaftCenter.y + sideY * guideCenter,
-        0.02,
+        stemPlaneZ,
       );
       cheek.userData.role = 'fixed-cheek-guiding-rectangular-output-stem';
       cheek.userData.sideX = sideX;
@@ -616,7 +570,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       new THREE.Vector3(
         sideX * guideHalfWidth,
         shaftCenter.y + sideY * guideCenter,
-        -0.18,
+        stemPlaneZ - 0.20,
       ),
       { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
     );
@@ -877,6 +831,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     input,
     inputRotor,
     inputShaft,
+    islandRetainer,
     lowerStem,
     rearBearing,
     rearFrameRails,
@@ -1029,13 +984,14 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   );
 
   update(0);
+  fitPistonGuide(root, update, inputCyclePeriod);
   markShadows(root);
   for (const line of grooveEdges) {
     line.castShadow = false;
     line.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(4.4, 2.8, 13.5),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };

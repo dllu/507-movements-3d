@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {ring} from './finite-plate-geometry.js';
+import {sphereFaceSupport} from './sphere-face-support.js';
 import {
   PALETTE,
   markShadows,
@@ -223,7 +225,7 @@ function makeCompoundCam({
   cam.userData.role =
     'single-rigid-x-axis-compound-cam-C-with-radial-and-axial-prominence';
 
-  const exactSurfaceAtPhase = (phase) => {
+  const nominalControlAtPhase = (phase) => {
     const feed = lawWithDwells(phase, {
       endDwellEnd: 1,
       forwardEnd: 0.36,
@@ -243,40 +245,46 @@ function makeCompoundCam({
   const frontVertices = [];
   const frontIndices = [];
   const innerRadius = 0.23;
+  const axialOuterRadius = 0.68;
+  const followerRadius = 0.08;
+  const radialMeshAllowance = 0.00006;
+  const axialContactTriangles = [];
   for (let index = 0; index <= profileSampleCount; index += 1) {
     const theta = FULL_TURN * index / profileSampleCount;
     const phase = positiveModulo((Math.PI / 2 - theta) / FULL_TURN, 1);
-    const surface = exactSurfaceAtPhase(phase);
-    const shapeX = surface.radialRadius * Math.cos(theta);
-    const shapeY = surface.radialRadius * Math.sin(theta);
+    const surface = nominalControlAtPhase(phase);
+    // Inward normal offset of the rounded radial follower's pitch curve.
+    const pitchRadius = surface.radialRadius + followerRadius;
+    const derivative = -radialLift * liftLawAtPhase(phase).ratePerPhase / FULL_TURN;
+    const speed = Math.hypot(pitchRadius, derivative);
+    const shapeX = pitchRadius * Math.cos(theta)
+      - (followerRadius + radialMeshAllowance) * (pitchRadius * Math.cos(theta) + derivative * Math.sin(theta)) / speed;
+    const shapeY = pitchRadius * Math.sin(theta)
+      - (followerRadius + radialMeshAllowance) * (pitchRadius * Math.sin(theta) - derivative * Math.cos(theta)) / speed;
     profilePoints.push(new THREE.Vector2(shapeX, shapeY));
 
-    const outerY = surface.radialRadius * Math.sin(theta);
-    const outerZ = -surface.radialRadius * Math.cos(theta);
+    const outerY = axialOuterRadius * Math.sin(theta);
+    const outerZ = -axialOuterRadius * Math.cos(theta);
     const innerY = innerRadius * Math.sin(theta);
     const innerZ = -innerRadius * Math.cos(theta);
     faceRimPoints.push(new THREE.Vector3(
-      surface.axialFront + 0.015,
-      outerY,
-      outerZ,
+      surface.axialFront - 0.04,
+      outerY * 0.9,
+      outerZ * 0.9,
     ));
     frontVertices.push(
       surface.axialFront, innerY, innerZ,
       surface.axialFront, outerY, outerZ,
       axialBaseFront, outerY, outerZ,
+      axialBaseFront, innerY, innerZ,
     );
     if (index < profileSampleCount) {
-      const here = index * 3;
-      const next = (index + 1) * 3;
-      // Variable front annulus.
+      const here = index * 4, next = (index + 1) * 4;
       frontIndices.push(
-        here, next + 1, next,
-        here, here + 1, next + 1,
-      );
-      // Outer wall from the base cylinder to the advancing face.
-      frontIndices.push(
-        here + 2, next + 1, here + 1,
-        here + 2, next + 2, next + 1,
+        here, next + 1, next, here, here + 1, next + 1,
+        here + 2, next + 1, here + 1, here + 2, next + 2, next + 1,
+        here + 3, next + 2, here + 2, here + 3, next + 3, next + 2,
+        here, next + 3, here + 3, here, next, next + 3,
       );
     }
   }
@@ -307,6 +315,13 @@ function makeCompoundCam({
   );
   frontGeometry.setIndex(frontIndices);
   frontGeometry.computeVertexNormals();
+  const finiteVertices = frontGeometry.attributes.position;
+  for (let i = 0; i < profileSampleCount; i++) {
+    const here = i * 4, next = (i + 1) * 4;
+    for (const indices of [[here, next + 1, next], [here, here + 1, next + 1]]) {
+      axialContactTriangles.push(indices.map(j => [finiteVertices.getX(j), finiteVertices.getY(j), finiteVertices.getZ(j)]));
+    }
+  }
   const axialFace = new THREE.Mesh(frontGeometry, driverMaterial);
   axialFace.userData.role =
     'front-extension-of-same-prominence-driving-carrier-forward';
@@ -325,25 +340,25 @@ function makeCompoundCam({
 
   const shaft = cylinderAlongAxis(
     0.15,
-    axialBaseFront - backFace + 1.25,
+    axialBaseFront + axialStroke - backFace + 0.90,
     new THREE.Vector3(1, 0, 0),
     darkMaterial,
     30,
   );
-  shaft.position.x = (axialBaseFront + backFace) / 2 - 0.15;
+  shaft.position.x = (axialBaseFront + axialStroke + backFace) / 2;
   shaft.userData.role = 'constant-speed-camshaft';
   cam.add(shaft);
 
-  const indexSurface = exactSurfaceAtPhase(0.75);
+  const indexSurface = nominalControlAtPhase(0.75);
   const index = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 18, 12),
     whiteMaterial,
   );
   const indexTheta = Math.PI / 2 - FULL_TURN * 0.75;
   index.position.set(
-    indexSurface.axialFront + 0.075,
-    indexSurface.radialRadius * Math.sin(indexTheta),
-    -indexSurface.radialRadius * Math.cos(indexTheta),
+    indexSurface.axialFront + 0.03,
+    0.28 * Math.sin(indexTheta),
+    -0.28 * Math.cos(indexTheta),
   );
   index.userData.role = 'white-index-showing-continuous-camshaft-rotation';
   cam.add(index);
@@ -352,10 +367,10 @@ function makeCompoundCam({
     { length: profileSampleCount + 1 },
     (_, index) => ({
       phase: index / profileSampleCount,
-      ...exactSurfaceAtPhase(index / profileSampleCount),
+      ...nominalControlAtPhase(index / profileSampleCount),
     }),
   );
-  const renderedSurfaceAtPhase = (phase) => {
+  const sampledControlAtPhase = (phase) => {
     const coordinate = positiveModulo(phase, 1) * profileSampleCount;
     const index = Math.floor(coordinate) % profileSampleCount;
     const amount = coordinate - Math.floor(coordinate);
@@ -376,11 +391,13 @@ function makeCompoundCam({
   };
 
   cam.userData.axialFace = axialFace;
-  cam.userData.exactSurfaceAtPhase = exactSurfaceAtPhase;
+  cam.userData.axialContactTriangles = axialContactTriangles;
+  cam.userData.axialSphereSupport = sphereFaceSupport(axialContactTriangles, followerRadius);
+  cam.userData.nominalControlAtPhase = nominalControlAtPhase;
   cam.userData.faceRim = faceRim;
   cam.userData.index = index;
   cam.userData.radialBody = radialBody;
-  cam.userData.renderedSurfaceAtPhase = renderedSurfaceAtPhase;
+  cam.userData.sampledControlAtPhase = sampledControlAtPhase;
   cam.userData.shaft = shaft;
   cam.userData.surfaceSamples = surfaceSamples;
   return markShadows(cam);
@@ -399,10 +416,10 @@ function makeCarrierA({
 
   const rails = [-0.25, 0.25].map((z) => {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(5.95, 0.17, 0.13),
+      new THREE.BoxGeometry(5.025, 0.17, 0.13),
       carrierMaterial,
     );
-    rail.position.set(0.15, pivotY + 0.49, z);
+    rail.position.set(-0.3125, pivotY + 0.49, z);
     rail.userData.role = 'forked-carrier-A-long-rail';
     carrier.add(rail);
     return rail;
@@ -428,19 +445,21 @@ function makeCarrierA({
   pivotShaft.userData.role = 'pivot-joining-feed-bar-B-inside-fork-A';
   carrier.add(pivotShaft);
 
-  const projection = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 0.88, 0.64),
-    carrierMaterial,
-  );
-  projection.position.set(axialBaseFront + 0.10, 0.30, 0);
-  projection.userData.role =
-    'downward-carrier-projection-following-axial-cam-face';
+  // Two fork legs clear B; a narrow neck carries the rounded face button.
+  const projection = new THREE.Group();
+  projection.userData.role = 'downward-carrier-projection-following-axial-cam-face';
+  const rearX = axialBaseFront + 0.93, contactY = 0.33;
+  for (const z of [-0.25, 0.25]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.04, 0.13), carrierMaterial);
+    leg.position.set(rearX, contactY + 0.52, z);projection.add(leg);
+  }
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.63), carrierMaterial);
+  bridge.position.set(rearX, contactY, 0);projection.add(bridge);
+  const neck = cylinderAlongAxis(0.045, 0.85, new THREE.Vector3(1, 0, 0), darkMaterial, 24);
+  neck.position.set(axialBaseFront + 0.505, contactY, 0);projection.add(neck);
   carrier.add(projection);
-  const projectionContact = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, 0.42, 0.42),
-    darkMaterial,
-  );
-  projectionContact.position.set(axialBaseFront - 0.022, 0.08, 0);
+  const projectionContact = new THREE.Mesh(new THREE.SphereGeometry(0.08, 40, 24), darkMaterial);
+  projectionContact.position.set(axialBaseFront + 0.08, contactY, 0);
   projectionContact.userData.role = 'axial-cam-face-contact-pad';
   carrier.add(projectionContact);
 
@@ -465,25 +484,19 @@ function makeFeedBarB({
     'feed-bar-B-pivoted-in-fork-A-and-carrying-the-toothed-feeder';
 
   const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(dogX + 0.35, 0.15, 0.22),
+    new THREE.BoxGeometry(dogX + 0.35 - 0.18, 0.15, 0.22),
     feedMaterial,
   );
-  beam.position.set((dogX + 0.35) / 2, 0, 0);
+  beam.position.set((dogX + 0.35 + 0.18) / 2, 0, 0);
   beam.userData.role = 'rigid-feed-bar-B';
   bar.add(beam);
 
-  const pivotHub = cylinderAlongAxis(
-    0.23,
-    0.42,
-    new THREE.Vector3(0, 0, 1),
-    darkMaterial,
-    30,
-  );
+  const pivotHub = new THREE.Mesh(ring(0.16, 0.23, -0.17, 0.17, 64), darkMaterial);
   pivotHub.userData.role = 'feed-bar-B-pivot-hub';
   bar.add(pivotHub);
 
   const followerPad = new THREE.Mesh(
-    new THREE.BoxGeometry(0.56, 0.16, 0.52),
+    new THREE.SphereGeometry(0.08, 40, 24),
     darkMaterial,
   );
   followerPad.position.set(followerArm, followerOffsetY, 0);
@@ -515,7 +528,7 @@ function makeFeedBarB({
     new THREE.SphereGeometry(0.075, 18, 12),
     whiteMaterial,
   );
-  dogIndex.position.set(0.28, 0.20, 0.30);
+  dogIndex.position.set(0.28, 0.20, 0);
   dogIndex.userData.role = 'white-index-tracing-the-four-motion-feed-path';
   dog.add(dogIndex);
   bar.add(dog);
@@ -540,7 +553,7 @@ function fourMotionFeed(movement) {
   const radialLift = 0.29;
   const camBaseRadius = 0.82;
   const camCenterY = -0.17;
-  const camBackFace = -1.08;
+  const camBackFace = 0.15;
   const camAxialBaseFront = 1.12;
   const camProfileSampleCount = 720;
   const pivotX = -2.58;
@@ -659,34 +672,38 @@ function fourMotionFeed(movement) {
   });
 
   const workPlateLeft = new THREE.Mesh(
-    new THREE.BoxGeometry(1.20, 0.12, 1.38),
+    new THREE.BoxGeometry(3.20, 0.12, 0.48),
     frameMaterial,
   );
-  workPlateLeft.position.set(1.80, workPlateY, 0);
+  workPlateLeft.position.set(2.55, workPlateY, -0.60);
   workPlateLeft.userData.role = 'fixed-work-plate-left-of-feed-dog-slot';
   const workPlateRight = new THREE.Mesh(
-    new THREE.BoxGeometry(0.85, 0.12, 1.38),
+    new THREE.BoxGeometry(3.20, 0.12, 0.48),
     frameMaterial,
   );
-  workPlateRight.position.set(3.45, workPlateY, 0);
+  workPlateRight.position.set(2.55, workPlateY, 0.60);
   workPlateRight.userData.role = 'fixed-work-plate-right-of-feed-dog-slot';
   root.add(markShadows(workPlateLeft), markShadows(workPlateRight));
 
-  const shaftBearings = [-1.60, 2.25].map((x) => {
+  const shaftBearings = [camBackFace - 0.28, camAxialBaseFront + feedStroke + 0.28].map((x) => {
     const support = beamBetween(
-      new THREE.Vector3(x, -1.65, -0.82),
-      new THREE.Vector3(x, camCenterY, -0.82),
+      new THREE.Vector3(x, -1.65, 0),
+      new THREE.Vector3(x, camCenterY - 0.21, 0),
       0.15,
       0.22,
       frameMaterial,
     );
     support.userData.role = 'fixed-camshaft-bearing-support';
-    root.add(support);
+    const bearing = new THREE.Mesh(ring(0.18, 0.25, -0.12, 0.12, 64), frameMaterial);
+    bearing.rotation.y = Math.PI / 2;bearing.position.set(x, camCenterY, 0);
+    bearing.userData.role = 'bored-fixed-camshaft-bearing';
+    root.add(support, bearing);
+    support.userData.bearing = bearing;
     return support;
   });
   const base = beamBetween(
-    new THREE.Vector3(-4.42, -1.65, -0.82),
-    new THREE.Vector3(4.15, -1.65, -0.82),
+    new THREE.Vector3(-4.42, -1.65, 0),
+    new THREE.Vector3(4.15, -1.65, 0),
     0.17,
     0.30,
     frameMaterial,
@@ -713,16 +730,25 @@ function fourMotionFeed(movement) {
     return 'lowered-rear-dwell';
   };
 
+  const axialStateAtPhase = phase => {
+    const angle = FULL_TURN * phase;
+    return cam.userData.axialSphereSupport(0.50 * Math.cos(angle), -0.50 * Math.sin(angle));
+  };
+  const axialVelocity = (phase, contact) => {
+    const angle = FULL_TURN * phase, n = contact.normal;
+    return 0.50 * (n[1] * Math.sin(angle) + n[2] * Math.cos(angle)) / n[0] * FULL_TURN / cycleDuration;
+  };
   const stateAtTime = (time) => {
     const cycleCoordinate = time / cycleDuration;
     const cyclePhase = positiveModulo(cycleCoordinate, 1);
     const feed = feedLawAtPhase(cyclePhase);
     const lift = liftLawAtPhase(cyclePhase);
-    const carrierX = feedStroke * feed.value;
-    const carrierVelocity = feedStroke * feed.ratePerPhase
-      / cycleDuration;
-    const carrierAcceleration = feedStroke
-      * feed.accelerationPerPhaseSquared / cycleDuration ** 2;
+    const axialContact = axialStateAtPhase(cyclePhase);
+    const carrierX = axialContact.x - camAxialBaseFront - 0.08;
+    const carrierVelocity = axialVelocity(cyclePhase, axialContact);
+    const epsilon = 1e-6;
+    const carrierAcceleration = (axialVelocity(cyclePhase + epsilon, axialStateAtPhase(cyclePhase + epsilon))
+      - axialVelocity(cyclePhase - epsilon, axialStateAtPhase(cyclePhase - epsilon))) / (2 * epsilon * cycleDuration);
     const rockerAngle = rockerAngleAtLiftFraction(lift.value);
     const followerPointLocal = new THREE.Vector2(
       followerArm,
@@ -734,7 +760,13 @@ function fourMotionFeed(movement) {
     );
     const radialCamTopY = camCenterY + camBaseRadius
       + radialLift * lift.value;
-    const axialCamFrontX = camAxialBaseFront + carrierX;
+    const axialCamFrontX = axialContact.point[0];
+    const pitchRadius = camBaseRadius + 0.08 + radialLift * lift.value;
+    const derivative = -radialLift * lift.ratePerPhase / FULL_TURN;
+    const pitchSpeed = Math.hypot(pitchRadius, derivative);
+    const radialNormal = new THREE.Vector3(0, pitchRadius / pitchSpeed, -derivative / pitchSpeed);
+    const radialContactPoint = new THREE.Vector3(followerPadCenterWorld.x, followerPadCenterWorld.y, 0)
+      .addScaledVector(radialNormal, -0.08);
     const dogPointLocal = new THREE.Vector2(dogX, 0.27)
       .rotateAround(new THREE.Vector2(0, 0), rockerAngle);
     const feedDogTipWorld = new THREE.Vector2(
@@ -742,8 +774,11 @@ function fourMotionFeed(movement) {
       pivotY + dogPointLocal.y,
     );
     return {
-      axialCamContactError:
-        carrierX + camAxialBaseFront - axialCamFrontX,
+      axialCamContactError: Math.hypot(axialContact.x - axialContact.point[0],
+        0.50 * Math.cos(FULL_TURN * cyclePhase) - axialContact.point[1],
+        -0.50 * Math.sin(FULL_TURN * cyclePhase) - axialContact.point[2]) - 0.08,
+      axialContact,
+      nominalCarrierX: feedStroke * feed.value,
       axialCamFrontX,
       camAngle: FULL_TURN * cycleCoordinate,
       camAngularSpeed: FULL_TURN / cycleDuration,
@@ -758,15 +793,18 @@ function fourMotionFeed(movement) {
       followerPadCenterWorld,
       gravityDropActive: lift.stage === 'gravity-drop-on-receding-cam',
       liftLaw: lift,
-      overallStage: overallStageAtPhase(cyclePhase),
-      radialCamContactError:
-        followerPadCenterWorld.y - followerPadHalfHeight
-        - radialCamTopY,
+      overallStage: lift.value < 1e-10 && Math.abs(carrierVelocity) > 1e-8
+        ? carrierVelocity > 0 ? 'lowered-forward-clearance-takeup' : 'spring-return-below-work'
+        : overallStageAtPhase(cyclePhase),
+      radialCamContactError: new THREE.Vector3(followerPadCenterWorld.x, followerPadCenterWorld.y, 0)
+        .distanceTo(radialContactPoint) - 0.08,
       radialCamTopY,
+      radialContactPoint,
+      radialNormal,
       rockerAngle,
       springExtension: carrierX,
       springLength: springBaseLength + carrierX,
-      springReturnActive: feed.stage === 'spring-return-stroke',
+      springReturnActive: carrierVelocity < -1e-8,
     };
   };
 
@@ -787,6 +825,10 @@ function fourMotionFeed(movement) {
         faceX: state.axialCamFrontX,
         residual: state.axialCamContactError,
         springLoaded: true,
+        point: new THREE.Vector3(...state.axialContact.point)
+          .applyAxisAngle(new THREE.Vector3(1, 0, 0), state.camAngle).add(cam.position),
+        normal: new THREE.Vector3(...state.axialContact.normal)
+          .applyAxisAngle(new THREE.Vector3(1, 0, 0), state.camAngle),
       },
       forkAToBarBPivot: {
         active: true,
@@ -799,7 +841,10 @@ function fourMotionFeed(movement) {
         active: true,
         gravityLoaded: true,
         residual: state.radialCamContactError,
-        topY: state.radialCamTopY,
+        topY: state.radialContactPoint.y,
+        point: state.radialContactPoint.clone(),
+        normal: state.radialNormal.clone(),
+        renderedClearanceAllowance: 0.00006,
       },
     };
     root.userData.kinematics = state;
@@ -823,10 +868,11 @@ function fourMotionFeed(movement) {
       workPlateRight,
     },
     camSynthesis: {
-      exactSurfaceAtPhase: cam.userData.exactSurfaceAtPhase,
+      nominalControlAtPhase: cam.userData.nominalControlAtPhase,
       profileSampleCount: camProfileSampleCount,
-      renderedSurfaceAtPhase: cam.userData.renderedSurfaceAtPhase,
+      sampledControlAtPhase: cam.userData.sampledControlAtPhase,
       surfaceSamples: cam.userData.surfaceSamples,
+      sampleMeaning: 'nominal radial pitch radius minus follower radius, and axial front control ordinates',
     },
     constraintResiduals: {
       highRadialContact: highState.radialCamContactError,
@@ -858,8 +904,8 @@ function fourMotionFeed(movement) {
     dynamics: {
       idealizations: [
         'rigid cam, carrier, feed bar, pivot, feeder, and frame',
-        'zero-clearance gravity-loaded radial contact',
-        'zero-clearance spring-loaded axial contact',
+        'rounded gravity-loaded radial contact with 0.00006 mesh allowance',
+        'finite rounded spring-loaded axial contact solved against the face triangles',
         'constant camshaft speed and prescribed quasi-static return',
         'inertia, impact, friction, fabric load, and spring-force magnitude omitted',
       ],
@@ -878,6 +924,9 @@ function fourMotionFeed(movement) {
       followerArm,
       followerOffsetY,
       followerPadHalfHeight,
+      radialFollowerRadius: 0.08,
+      axialFollowerRadius: 0.08,
+      radialMeshAllowance: 0.00006,
       pivotX,
       pivotY,
       radialLift,
@@ -930,7 +979,7 @@ function fourMotionFeed(movement) {
         engravingEvidence:
           'The side elevation shows long forked carrier A, the nested feed bar B and its right-hand teeth, a left fork pivot, a spring, and cam C on a shaft parallel to the feed direction.',
         reconstructionDisclosure:
-          'Brown supplies no dimensions, cam coordinates, phase intervals, speed, or lift and stroke magnitudes. The smooth dwell schedule and the exact radial/axial cam surfaces realizing it are independently synthesized.',
+          'Brown supplies no dimensions, cam coordinates, phase intervals, speed, or lift and stroke magnitudes. The smooth dwell schedule is independently synthesized. Rounded followers, fork legs and a longitudinal work-plate opening are inferred. The finite axial button shifts the nominal feed timing slightly; gravity and spring preload are not dynamically solved.',
       },
       officialPage: movement.sourceUrl,
       usPatent12116: {
@@ -950,9 +999,9 @@ function fourMotionFeed(movement) {
     },
     transmission: {
       axialCamLaw:
-        'x_A(phi)=feedStroke*feedLaw(phi); the spring-loaded projection follows the cam front x=baseFront+x_A',
+        'carrier translation is the exact finite-sphere support of the triangulated axial face; the original feed law defines that face',
       radialCamLaw:
-        'r(phi)=baseRadius+radialLift*liftLaw(phi); B rotates so its underside pad remains on the upper radial surface',
+        'B rotates so its rounded follower center follows the radial pitch curve; the cam is its inward normal offset',
     },
     update,
   };
@@ -962,7 +1011,10 @@ function fourMotionFeed(movement) {
   );
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(7.8, 5.0, 11.8);
-  root.userData.groundFloorY = -1.78;
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   update(0);
   return { root, update };
 }

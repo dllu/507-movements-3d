@@ -1,3 +1,4 @@
+import {installHyperbolaFiniteGeometry} from './hyperbola-finite-cord.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -472,6 +473,7 @@ function hyperbolaDrawingInstrument(movement) {
     };
   };
 
+  let updateFiniteGeometry = null;
   const update = (time) => {
     const state = stateAtTime(time);
     rule.rotation.z = state.ruleAngle;
@@ -523,6 +525,7 @@ function hyperbolaDrawingInstrument(movement) {
         point: state.upperFocus,
       },
     };
+    updateFiniteGeometry?.(state);
     root.userData.kinematics = state;
   };
 
@@ -691,8 +694,9 @@ function hyperbolaDrawingInstrument(movement) {
   referenceAxes.vertical.traverse((object) => {
     object.castShadow = false;
   });
+  updateFiniteGeometry = installHyperbolaFiniteGeometry(root);
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredHyperbolaDrawingMovement(movement) {

@@ -1,0 +1,77 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "f94b7c2b142f6c186e9a18348591f6791d9e68fa80120652257f854fe83de763"
+    },
+    {
+      "file": "src/simulation/bevel-200-226-corrections.js",
+      "sha256": "7ea83b1cc2e263ae9dd310076bd88222d262d7acf56fd572337bacd92e973563"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    }
+  ],
+  "method": "Actual rendered gear teeth and bodies sampled bidirectionally at vertices, edge midpoints and triangle centers with BVH containment across one input tooth period. Hubs, shafts and supports excluded. Distances capped at .15.",
+  "results": [
+    {
+      "id": 200,
+      "poses": 33,
+      "queries": 583670,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "single-inclined-driving-bevel-large-upper-loose-output",
+          "maximumSampledGap": 0.001589753411491518,
+          "minimumSampledGap": 0.0015748641076259462
+        },
+        {
+          "pair": "single-inclined-driving-bevel-small-lower-loose-output",
+          "maximumSampledGap": 0.0015963772726358965,
+          "minimumSampledGap": 0.001579944788952222
+        }
+      ]
+    },
+    {
+      "id": 226,
+      "poses": 33,
+      "queries": 820138,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "equal-miter-input-gear-B-equal-miter-gear-fast-on-shaft-F",
+          "maximumSampledGap": 0.0018634115772421188,
+          "minimumSampledGap": 0.001821693454597401
+        },
+        {
+          "pair": "equal-miter-input-gear-B-right-stage-equal-miter-gear-on-hollow-C-shaft",
+          "maximumSampledGap": 0.0018634115772419738,
+          "minimumSampledGap": 0.001821693454597774
+        },
+        {
+          "pair": "equal-miter-side-gear-C-loose-on-F-equal-miter-planet-gear-D-carried-by-A",
+          "maximumSampledGap": 0.0018634229711560737,
+          "minimumSampledGap": 0.0018216747414355964
+        },
+        {
+          "pair": "equal-miter-loose-output-gear-E-equal-miter-planet-gear-D-carried-by-A",
+          "maximumSampledGap": 0.0018634229711560783,
+          "minimumSampledGap": 0.0018216747414355598
+        }
+      ]
+    }
+  ]
+}

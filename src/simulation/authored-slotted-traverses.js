@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -108,6 +110,13 @@ function beamBetween3D(start, end, width, depth, material) {
     delta.clone().normalize(),
   );
   return beam;
+}
+
+function boreRectangularMember(mesh, x, y, radius) {
+  const { width: w, height: h, depth: d } = mesh.geometry.parameters;
+  mesh.geometry.dispose();
+  mesh.geometry = plate(clip.difference(poly([[-w / 2, -h / 2], [w / 2, -h / 2],
+    [w / 2, h / 2], [-w / 2, h / 2]]), poly(circle([x, y], radius, 64))), -d / 2, d / 2);
 }
 
 function slottedTraverse(movement) {
@@ -458,19 +467,19 @@ function slottedTraverse(movement) {
     guide.position.x = sourceX * sourceScale;
     guide.userData.role = `fixed-output-guide-a-${index + 1}`;
     const upright = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 1.38, 0.36),
+      new THREE.BoxGeometry(0.18, 1.38, 0.54),
       frameMaterial,
     );
-    upright.position.set(0, sourceOutputRailWorldY, fixedFramePlaneZ);
+    upright.position.set(0, sourceOutputRailWorldY, fixedFramePlaneZ + 0.04);
     const lips = [-1, 1].map((side) => {
       const lip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.48, 0.12, 0.39),
+        new THREE.BoxGeometry(0.48, 0.12, 0.30),
         inkMaterial,
       );
       lip.position.set(
         side * 0.14,
-        sourceOutputRailWorldY + side * 0.27,
-        fixedFramePlaneZ + 0.05,
+        sourceOutputRailWorldY + side * 0.19,
+        outputBarPlaneZ,
       );
       guide.add(lip);
       return lip;
@@ -512,15 +521,14 @@ function slottedTraverse(movement) {
 
   const inputGuideWorldY = worldOffsetY
     + sourceInputGuideY * sourceScale;
-  const inputGuideRail = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceInputHalfStroke * 2 * sourceScale + 0.34,
-      0.055,
-      0.16,
-    ),
-    frameMaterial,
-  );
-  inputGuideRail.position.set(0, inputGuideWorldY, -0.10);
+  const inputGuideRail = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(
+      sourceInputHalfStroke * 2 * sourceScale + 0.34, 0.03, 0.24), frameMaterial);
+    rail.position.y = side * 0.12;
+    inputGuideRail.add(rail);
+  }
+  inputGuideRail.position.set(0, inputGuideWorldY, -0.05);
   inputGuideRail.userData.role =
     'fixed-horizontal-guide-for-driven-lower-pin-D';
   const inputGuideDashes = [];
@@ -594,6 +602,7 @@ function slottedTraverse(movement) {
     barDepth,
     barMaterial,
   );
+  boreRectangularMember(jointToRiser, -jointToRiser.geometry.parameters.width / 2, 0, 0.136);
   jointToRiser.userData.role =
     'angled-neck-from-output-joint-C-to-clearance-riser';
   const riserToRail = beamBetween3D(
@@ -604,8 +613,7 @@ function slottedTraverse(movement) {
     barMaterial,
   );
   riserToRail.userData.role = 'lower-neck-joining-riser-to-output-rail';
-  const outputJointBoss = cylinderAlongZ(0.24, barDepth * 1.12,
-    barMaterial, 38);
+  const outputJointBoss = boredJournal(0.24, 0.136, barDepth * 1.12, barMaterial);
   outputJointBoss.userData.role = 'output-bar-joint-boss-C';
   const outputJointAnchor = new THREE.Object3D();
   outputJointAnchor.position.z = jointPlaneZ - outputBarPlaneZ;
@@ -672,10 +680,11 @@ function slottedTraverse(movement) {
   lowerSlottedEnd.userData.actualThroughSlot = true;
   lowerSlottedEnd.userData.role = 'lower-actual-slot-for-moving-pin-D';
   const upperNeck = new THREE.Mesh(
-    new THREE.BoxGeometry(0.47, 0.72, leverDepth),
+    new THREE.BoxGeometry(0.47, 0.36, leverDepth),
     leverMaterial,
   );
-  upperNeck.position.y = 0.43 * sourceScale;
+  upperNeck.position.y = 0.18;
+  boreRectangularMember(upperNeck, 0, -upperNeck.position.y, 0.136);
   upperNeck.userData.role = 'upper-slot-neck-to-center-C';
   const lowerNeckLength = 3.42 * sourceScale;
   const lowerNeck = new THREE.Mesh(
@@ -683,9 +692,9 @@ function slottedTraverse(movement) {
     leverMaterial,
   );
   lowerNeck.position.y = -lowerNeckLength / 2;
+  boreRectangularMember(lowerNeck, 0, -lowerNeck.position.y, 0.136);
   lowerNeck.userData.role = 'lower-slot-neck-to-center-C';
-  const centerBoss = cylinderAlongZ(0.35, leverDepth * 1.18,
-    leverMaterial, 42);
+  const centerBoss = boredJournal(0.35, 0.136, leverDepth * 1.18, leverMaterial);
   centerBoss.userData.role = 'lever-center-boss-at-output-joint-C';
   const upperSlotOutline = new THREE.LineSegments(
     new THREE.EdgesGeometry(upperSlottedEnd.geometry, 24),
@@ -756,7 +765,7 @@ function slottedTraverse(movement) {
   );
   root.add(movingInput);
 
-  const centralJointPin = cylinderAlongZ(0.13, 0.62,
+  const centralJointPin = cylinderAlongZ(0.13, 0.74,
     whiteMaterial, 34);
   centralJointPin.userData.role =
     'shared-revolute-pin-lever-to-output-bar-at-C';
@@ -1036,13 +1045,14 @@ function slottedTraverse(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   upperSlotOutline.castShadow = false;
   upperSlotOutline.receiveShadow = false;
   lowerSlotOutline.castShadow = false;
   lowerSlotOutline.receiveShadow = false;
   return {
-    cameraDirection: new THREE.Vector3(6.1, 3.8, 13.2),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };

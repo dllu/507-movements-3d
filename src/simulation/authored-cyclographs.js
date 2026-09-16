@@ -5,6 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
+
+const GUIDE_RADIUS = .065;
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
@@ -88,7 +91,7 @@ function makeRule({
   );
   body.position.set(
     (lengthMin + lengthMax) / 2,
-    outsideSide * width / 2,
+    outsideSide * (width / 2 + GUIDE_RADIUS),
     0,
   );
   body.userData.role = `${role}-straight-rigid-body`;
@@ -97,7 +100,8 @@ function makeRule({
     new THREE.BoxGeometry(length, 0.032, depth * 0.24),
     whiteMaterial,
   );
-  workingEdge.position.set((lengthMin + lengthMax) / 2, 0, depth * 0.58);
+  workingEdge.position.set((lengthMin + lengthMax) / 2,
+    outsideSide * (GUIDE_RADIUS + .016), depth * 0.58);
   workingEdge.userData.role = `${role}-pin-contact-working-edge`;
   rule.add(workingEdge);
   const endMarks = [lengthMin + 0.22, lengthMax - 0.22].map((x, index) => {
@@ -105,7 +109,7 @@ function makeRule({
       new THREE.BoxGeometry(0.055, width * 0.72, depth * 0.16),
       whiteMaterial,
     );
-    mark.position.set(x, outsideSide * width / 2, depth * 0.59);
+    mark.position.set(x, outsideSide * (width / 2 + GUIDE_RADIUS), depth * 0.59);
     mark.userData.role = `${role}-end-index-${index + 1}`;
     rule.add(mark);
     return mark;
@@ -377,7 +381,7 @@ function cyclograph(movement) {
     const washer = cylinderAlongZ(0.16, 0.075, darkMaterial, 36);
     washer.position.z = -0.03;
     washer.userData.role = `${role}-base-washer`;
-    const pin = cylinderAlongZ(0.065, 0.56, darkMaterial, 28);
+    const pin = cylinderAlongZ(GUIDE_RADIUS, 0.56, darkMaterial, 28);
     pin.position.z = 0.18;
     pin.userData.role = `${role}-stationary-point`;
     const cap = new THREE.Mesh(
@@ -423,10 +427,10 @@ function cyclograph(movement) {
 
   const leftBracePoint = new THREE.Vector2(
     braceDistance,
-    -ruleWidth / 2,
+    -(ruleWidth / 2 + GUIDE_RADIUS),
   );
   const rightBracePoint = rotate2(
-    new THREE.Vector2(braceDistance, ruleWidth / 2),
+    new THREE.Vector2(braceDistance, ruleWidth / 2 + GUIDE_RADIUS),
     includedRuleAngle,
   );
   const braceDirection = rightBracePoint.clone().sub(leftBracePoint)
@@ -440,8 +444,8 @@ function cyclograph(movement) {
     braceOverhang,
   );
   const brace = beamBetween(
-    new THREE.Vector3(braceStart.x, braceStart.y, 0.15),
-    new THREE.Vector3(braceEnd.x, braceEnd.y, 0.15),
+    new THREE.Vector3(braceStart.x, braceStart.y, .42),
+    new THREE.Vector3(braceEnd.x, braceEnd.y, .42),
     0.22,
     0.12,
     rulerMaterial,
@@ -449,13 +453,13 @@ function cyclograph(movement) {
   brace.userData.role = 'third-straight-rule-fastened-across-as-brace';
   carriage.add(brace);
   const bracePins = [leftBracePoint, rightBracePoint].map((position, index) => {
-    const pin = cylinderAlongZ(0.085, 0.31, whiteMaterial, 28);
-    pin.position.set(position.x, position.y, 0.20);
+    const pin = cylinderAlongZ(0.085, .59, whiteMaterial, 28);
+    pin.position.set(position.x, position.y, .225);
     pin.userData.role = `fixed-brace-fastener-${index + 1}`;
     carriage.add(pin);
     return pin;
   });
-  const apexFastener = cylinderAlongZ(0.10, 0.36, darkMaterial, 30);
+  const apexFastener = boredJournal(.12, .068, .36, darkMaterial);
   apexFastener.position.z = 0.17;
   apexFastener.userData.role =
     'fastened-crossing-of-the-two-sloping-rules';
@@ -463,21 +467,21 @@ function cyclograph(movement) {
 
   const pencil = new THREE.Group();
   pencil.userData.role = 'pencil-at-angle-of-crossing-rule-edges';
-  const pencilShaft = cylinderAlongZ(0.082, 0.92, pencilMaterial, 24);
-  pencilShaft.position.z = 0.89;
+  const pencilShaft = cylinderAlongZ(GUIDE_RADIUS, .97, pencilMaterial, 64);
+  pencilShaft.position.z = .615;
   pencilShaft.userData.role = 'pencil-shaft-perpendicular-to-drawing-plane';
   const pencilTip = new THREE.Mesh(
-    new THREE.ConeGeometry(0.105, 0.24, 24),
+    new THREE.ConeGeometry(GUIDE_RADIUS, .205, 64),
     pencilMaterial,
   );
-  pencilTip.rotation.x = -Math.PI / 2;
-  pencilTip.position.z = 0.33;
+  pencilTip.rotation.x = Math.PI / 2;
+  pencilTip.position.z = .0275;
   pencilTip.userData.role = 'pencil-point-touching-described-arc';
   const graphite = new THREE.Mesh(
-    new THREE.SphereGeometry(0.052, 16, 12),
+    new THREE.SphereGeometry(.01, 16, 12),
     darkMaterial,
   );
-  graphite.position.z = 0.17;
+  graphite.position.z = -.075;
   graphite.userData.role = 'graphite-contact-at-rule-edge-intersection';
   pencil.add(pencilShaft, pencilTip, graphite);
   root.add(pencil);
@@ -563,7 +567,7 @@ function cyclograph(movement) {
     dynamics: {
       idealizations: [
         'three perfectly rigid straight rules and rigid fasteners',
-        'point guide pins with zero clearance against infinitely thin working edges',
+        'equal-radius guide pins and pencil barrel; parallel rule edges offset by that radius retain the exact circle locus',
         'massless quasi-static hand guidance with no friction, pencil drag, or compliance',
         'the cycle reverses smoothly short of each singular chord endpoint',
       ],
@@ -586,6 +590,7 @@ function cyclograph(movement) {
       leftGuidePin,
       rightEndpointAngle,
       rightGuidePin,
+      guideRadius: GUIDE_RADIUS,
       ruleDepth,
       ruleLengthMax,
       ruleLengthMin,
@@ -675,8 +680,13 @@ function cyclograph(movement) {
   for (const object of [board, describedArc, chordLine, versedSineLine]) {
     object.castShadow = false;
   }
-  update(0);
-  return { root, update };
+  // The construction lines define a drawing plane without an opaque board
+  // obscuring the mechanism when the user orbits underneath it.
+  root.remove(board, ...boardBorder);
+  root.userData.cameraFov = 8;
+  root.userData.cameraDirection = new THREE.Vector3(0, .8, 12);
+  fitPistonGuide(root, update, cycleDuration);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredCyclographMovement(movement) {

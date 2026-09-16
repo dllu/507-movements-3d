@@ -275,3 +275,24 @@ pass. Shared helper regressions are included. All four family reviews linked
 from [review progress](review-progress.md) distinguish validated constraints and
 sampled working-solid clearance from unresolved load behavior and reconstruction
 choices. The full review remains active.
+
+## Ninth parallel batch
+
+- **200/226:** inclined single-driver bevel construction, narrower conical tooth
+  bands, engaged shafts and corrected carrier support. Reuses the existing
+  involute bevel builder; saved finite-contact audit covers all six meshes.
+- **348/350/354:** shared slot/plate tools provide real openings, bored joints,
+  seated sliders and guides. Preserve exact ratio laws and documented reversal
+  idealizations.
+- **400:** finite radial and axial follower buttons, actual rendered cam-face
+  support, connected bearings and feed-bar passages. Fast deterministic contact
+  geometry replaces erroneous point-center placement; loaded spring/gravity
+  dynamics remain unqualified.
+- **403/404/405:** keep exact drawing loci and correct finite pins, rollers,
+  pencil/cord routes, threads and depth layers. 404's bending and 405's finite
+  cord winding remain prescribed reconstructions, with specific residuals.
+
+These corrections reuse finite plates, bores, conical gears and solid threads;
+none requires manually tracing a new decorative silhouette or adding live
+browser physics. Prior finite audit hashes are refreshed only after confirming
+that the changed 200/226 builders leave their other gear dependencies byte-identical.

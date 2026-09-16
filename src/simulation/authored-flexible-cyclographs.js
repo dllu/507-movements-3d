@@ -7,6 +7,9 @@ import {
   setSpin,
 } from './primitives.js';
 
+import {boredJournal, boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {helicalThread, polygonCylinder, threadAngles} from './mujoco-screw/thread-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
@@ -130,7 +133,6 @@ function flexibleBarCyclograph(movement) {
   const threadLead = threadPitch;
   const screwLength = 2.30;
   const screwRadius = 0.15;
-  const screwStroke = maximumSagitta - minimumSagitta;
   const cycleDuration = 6;
   const sourcePhaseOffset = 0.5;
 
@@ -148,6 +150,7 @@ function flexibleBarCyclograph(movement) {
     roughness: 0.55,
     side: THREE.DoubleSide,
   });
+  barMaterial.flatShading = true;
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.14,
     roughness: 0.53,
@@ -179,7 +182,7 @@ function flexibleBarCyclograph(movement) {
     const normalized = x / supportHalfSpan;
     return supportY + minimumSagitta * (1 - normalized ** 2);
   };
-  const outerEdgeY = (x, bend) => THREE.MathUtils.lerp(
+  const rawOuterEdgeY = (x, bend) => THREE.MathUtils.lerp(
     minimumOuterEdgeY(x),
     maximumOuterEdgeY(x),
     THREE.MathUtils.clamp(bend, 0, 1),
@@ -198,16 +201,50 @@ function flexibleBarCyclograph(movement) {
     maximumOuterSlope(x),
     THREE.MathUtils.clamp(bend, 0, 1),
   );
+  // Fixed finite rollers touch the circular source setting along its normal.
+  // During adjustment the contact moves along the strip, not the standard.
+  const sourceSlope = outerSlope(supportHalfSpan, 1);
+  const rollerCenterX = supportHalfSpan - rollerRadius * sourceSlope
+    / Math.hypot(1, sourceSlope);
+  const rollerCenterY = supportY + rollerRadius / Math.hypot(1, sourceSlope);
+  let lastContact;
+  const contactAtBend = (bend) => {
+    if (lastContact?.bend === bend) return lastContact;
+    let low = supportHalfSpan - 2 * rollerRadius;
+    let high = supportHalfSpan + 2 * rollerRadius;
+    for (let i = 0; i < 48; i++) {
+      const x = (low + high) / 2, slope = outerSlope(x, bend);
+      if (x - rollerRadius * slope / Math.hypot(1, slope) < rollerCenterX) low = x;
+      else high = x;
+    }
+    const x = bend === 1 ? supportHalfSpan : (low + high) / 2;
+    const slope = outerSlope(x, bend), normalLength = Math.hypot(1, slope);
+    const slopeBend = maximumOuterSlope(x) - minimumOuterSlope(x);
+    const slopeX = (1 - bend) * (-2 * minimumSagitta / supportHalfSpan ** 2)
+      - bend * maximumCircleRadius ** 2 / (maximumCircleRadius ** 2 - x ** 2) ** 1.5;
+    const xBend = rollerRadius * slopeBend / (normalLength ** 3 - rollerRadius * slopeX);
+    const shift = bend === 1 ? 0
+      : rollerCenterY - rawOuterEdgeY(x, bend) - rollerRadius / normalLength;
+    const shiftBend = -(maximumOuterEdgeY(x) - minimumOuterEdgeY(x));
+    return lastContact = {bend, x, slope, shift, shiftBend,
+      shiftBendBend: -slopeBend * xBend,
+      normalTurnBend: -(slopeBend + slopeX * xBend) / normalLength ** 2};
+  };
+  const outerEdgeY = (x, bend) => rawOuterEdgeY(x, bend) + contactAtBend(bend).shift;
+  const minimumApexY = outerEdgeY(0, 0);
+  const screwStroke = outerEdgeY(0, 1) - minimumApexY;
+  const initialContactSlope = contactAtBend(0).slope;
   const centralArcLengthAtBend = (bend) => {
+    const contactX = contactAtBend(bend).x;
     let length = 0;
     let previous = new THREE.Vector2(
-      -supportHalfSpan,
-      outerEdgeY(-supportHalfSpan, bend),
+      -contactX,
+      outerEdgeY(-contactX, bend),
     );
     for (let index = 1; index < centralSampleCount; index += 1) {
       const x = THREE.MathUtils.lerp(
-        -supportHalfSpan,
-        supportHalfSpan,
+        -contactX,
+        contactX,
         index / (centralSampleCount - 1),
       );
       const point = new THREE.Vector2(x, outerEdgeY(x, bend));
@@ -225,10 +262,11 @@ function flexibleBarCyclograph(movement) {
   );
 
   const pathAtBend = (bend) => {
+    const contactX = contactAtBend(bend).x;
     const central = Array.from({ length: centralSampleCount }, (_, index) => {
       const x = THREE.MathUtils.lerp(
-        -supportHalfSpan,
-        supportHalfSpan,
+        -contactX,
+        contactX,
         index / (centralSampleCount - 1),
       );
       return new THREE.Vector2(x, outerEdgeY(x, bend));
@@ -243,11 +281,11 @@ function flexibleBarCyclograph(movement) {
     const rightContact = central.at(-1);
     const leftOutward = new THREE.Vector2(
       -1,
-      -outerSlope(-supportHalfSpan, bend),
+      -outerSlope(-contactX, bend),
     ).normalize();
     const rightOutward = new THREE.Vector2(
       1,
-      outerSlope(supportHalfSpan, bend),
+      outerSlope(contactX, bend),
     ).normalize();
     const leftOverhang = Array.from(
       { length: overhangSampleCount },
@@ -274,7 +312,7 @@ function flexibleBarCyclograph(movement) {
       const tangent = next.clone().sub(previous).normalize();
       const inwardNormal = new THREE.Vector2(tangent.y, -tangent.x);
       const normalizedX = THREE.MathUtils.clamp(
-        point.x / supportHalfSpan,
+        point.x / contactX,
         -1,
         1,
       );
@@ -453,9 +491,12 @@ function flexibleBarCyclograph(movement) {
     const arcLengthDerivative = arcLengthDerivativeAtBend(bend);
     const materialSlideSpeedPerEnd = arcLengthDerivative
       * bendRate / 2;
-    const screwDisplacement = screwStroke * bend;
-    const screwAxialSpeed = screwStroke * bendRate;
-    const screwAxialAcceleration = screwStroke * bendAcceleration;
+    const contact = contactAtBend(bend);
+    const apexBend = maximumSagitta - minimumSagitta + contact.shiftBend;
+    const screwDisplacement = outerEdgeY(0, bend) - minimumApexY;
+    const screwAxialSpeed = apexBend * bendRate;
+    const screwAxialAcceleration = apexBend * bendAcceleration
+      + contact.shiftBendBend * bendRate ** 2;
     const screwAngle = screwDisplacement / threadLead * FULL_TURN;
     const screwAngularSpeed = screwAxialSpeed / threadLead * FULL_TURN;
     const screwAngularAcceleration = screwAxialAcceleration
@@ -468,25 +509,26 @@ function flexibleBarCyclograph(movement) {
       0,
       outerApex.y - middleBarDepth,
     );
-    const leftRollerAngle = materialSlidePerEnd / rollerRadius;
-    const rightRollerAngle = -materialSlidePerEnd / rollerRadius;
+    const contactNormalTurn = -(Math.atan(contact.slope) - Math.atan(initialContactSlope));
+    const leftRollerAngle = materialSlidePerEnd / rollerRadius + contactNormalTurn;
+    const rightRollerAngle = -leftRollerAngle;
     const leftRollerAngularSpeed = materialSlideSpeedPerEnd
-      / rollerRadius;
-    const rightRollerAngularSpeed = -materialSlideSpeedPerEnd
-      / rollerRadius;
+      / rollerRadius + contact.normalTurnBend * bendRate;
+    const rightRollerAngularSpeed = -leftRollerAngularSpeed;
     return {
       bend,
       bendAcceleration,
       bendLaw,
       bendRate,
       centralArcLength,
+      contactNormalTurn,
       cycleCoordinate,
       cyclePhase,
       innerApex,
       leftRollerAngle,
       leftRollerAngularSpeed,
       leftRollerNoSlipResidual:
-        rollerRadius * leftRollerAngle - materialSlidePerEnd,
+        rollerRadius * (leftRollerAngle - contactNormalTurn) - materialSlidePerEnd,
       materialSlidePerEnd,
       materialSlideSpeedPerEnd,
       outerApex,
@@ -494,7 +536,7 @@ function flexibleBarCyclograph(movement) {
       rightRollerAngle,
       rightRollerAngularSpeed,
       rightRollerNoSlipResidual:
-        -rollerRadius * rightRollerAngle - materialSlidePerEnd,
+        rollerRadius * (-rightRollerAngle - contactNormalTurn) - materialSlidePerEnd,
       screwAngle,
       screwAngularAcceleration,
       screwAngularSpeed,
@@ -504,16 +546,24 @@ function flexibleBarCyclograph(movement) {
       screwLeadResidual:
         screwDisplacement - screwAngle / FULL_TURN * threadLead,
       screwPadContactResidual: innerApex.y
-        - (supportY + minimumSagitta - middleBarDepth
+        - (minimumApexY - middleBarDepth
           + screwDisplacement),
     };
   };
 
+  const baseShape = new THREE.Shape();
+  baseShape.moveTo(-3.275, -.45); baseShape.lineTo(3.275, -.45);
+  baseShape.lineTo(3.275, .45); baseShape.lineTo(-3.275, .45); baseShape.closePath();
+  const baseBore = new THREE.Path(); baseBore.absarc(0, -.14, .176, 0, FULL_TURN, true);
+  baseShape.holes.push(baseBore);
+  const baseGeometry = new THREE.ExtrudeGeometry(baseShape,
+    {depth: .34, bevelEnabled: false, curveSegments: 48});
+  baseGeometry.translate(0, 0, -.17); baseGeometry.rotateX(-Math.PI / 2);
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(6.55, 0.34, 0.54),
+    baseGeometry,
     frameMaterial,
   );
-  base.position.set(0, -0.22, 0);
+  base.position.set(0, -.42, .12);
   base.userData.role = 'fixed-straight-bar-carrying-screw-and-end-rollers';
   root.add(base);
   const baseFeet = [-3.12, 3.12].map((x, index) => {
@@ -521,33 +571,28 @@ function flexibleBarCyclograph(movement) {
       new THREE.BoxGeometry(0.42, 0.30, 0.60),
       frameMaterial,
     );
-    foot.position.set(x, -0.44, 0);
+    foot.position.set(x, -.64, 0);
     foot.userData.role = `straight-bar-end-foot-${index + 1}`;
     root.add(foot);
     return foot;
   });
 
   const rollerAssemblies = [-1, 1].map((side) => {
-    const x = side * supportHalfSpan;
+    const x = side * rollerCenterX;
     const role = side < 0 ? 'left' : 'right';
     const standard = beamBetween(
-      new THREE.Vector3(x, -0.08, -0.03),
-      new THREE.Vector3(x, supportY + rollerRadius, -0.03),
+      new THREE.Vector3(x, -.28, -.08),
+      new THREE.Vector3(x, rollerCenterY, -.08),
       0.18,
-      0.34,
+      0.30,
       frameMaterial,
     );
     standard.userData.role = `${role}-fixed-roller-standard`;
     root.add(standard);
     const roller = new THREE.Group();
-    roller.position.set(x, supportY + rollerRadius, 0.30);
+    roller.position.set(x, rollerCenterY, .26);
     roller.userData.role = `${role}-small-confining-roller`;
-    const body = cylinderAlongZ(
-      rollerRadius,
-      rollerDepth,
-      accentMaterial,
-      40,
-    );
+    const body = boredJournal(rollerRadius, .058, rollerDepth, accentMaterial);
     body.userData.role = `${role}-roller-body`;
     const axle = cylinderAlongZ(0.055, 0.58, darkMaterial, 26);
     axle.userData.role = `${role}-fixed-roller-axle`;
@@ -563,10 +608,10 @@ function flexibleBarCyclograph(movement) {
   });
 
   const fixedNut = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.27, 0.27, 0.32, 6),
+    boredCylinderGeometry(.27, .176, .32),
     darkMaterial,
   );
-  fixedNut.position.set(0, -0.10, 0);
+  fixedNut.position.set(0, -.10, .26);
   fixedNut.userData.role = 'fixed-threaded-nut-in-straight-bar';
   root.add(fixedNut);
   const screw = makeScrew({
@@ -578,6 +623,24 @@ function flexibleBarCyclograph(movement) {
     threadRadius: 0.022,
   });
   screw.userData.role = 'single-right-hand-central-adjusting-screw';
+  // Closed square threads and a complementary fixed nut replace the coil.
+  const threadProfile = {inner: .102, outer: .172, width: threadPitch / 2,
+    lead: threadPitch / FULL_TURN, low: -screwLength / 2, high: screwLength / 2,
+    phase: -screwLength / 2};
+  const angles = threadAngles(threadProfile, 64);
+  const rotor = screw.userData.rotor;
+  for (const old of [...rotor.children]) { rotor.remove(old); old.geometry?.dispose(); }
+  const core = new THREE.Mesh(polygonCylinder(.102, threadProfile.low, threadProfile.high, angles), driverMaterial);
+  const thread = new THREE.Mesh(helicalThread(threadProfile, angles), driverMaterial);
+  thread.userData.screwThread = true; rotor.add(core, thread);
+  screw.userData.thread = thread; screw.userData.threadCaps = [];
+  const minimumScrewCenterY = minimumApexY - middleBarDepth - .32 - screwLength / 2;
+  const nutProfile = {inner: .104, outer: .176, width: threadPitch / 2 - .006,
+    lead: threadPitch / FULL_TURN, low: -.16, high: .16,
+    phase: threadProfile.phase + minimumScrewCenterY - fixedNut.position.y + threadPitch / 2};
+  const nutThread = new THREE.Mesh(helicalThread(nutProfile, threadAngles(nutProfile, 64)), darkMaterial);
+  nutThread.rotation.x = -Math.PI / 2; fixedNut.add(nutThread);
+
   root.add(screw);
   const handwheel = makeHandwheel(driverMaterial, whiteMaterial);
   handwheel.handwheel.rotation.x = Math.PI / 2;
@@ -588,15 +651,16 @@ function flexibleBarCyclograph(movement) {
   const thrustPad = new THREE.Group();
   thrustPad.userData.role =
     'nonrotating-swivel-thrust-pad-at-inner-arched-bar-midpoint';
-  const padBody = cylinderAlongZ(0.24, 0.22, accentMaterial, 36);
+  const padBody = cylinderAlongZ(.16, .18, accentMaterial, 96);
   padBody.userData.role = 'central-screw-thrust-pad';
+  padBody.position.y = -.085;
   const padContact = new THREE.Mesh(
     new THREE.BoxGeometry(0.44, 0.065, 0.25),
     accentMaterial,
   );
   padContact.position.y = 0.07;
   padContact.userData.role = 'flat-pad-contacting-inner-bar-edge';
-  thrustPad.add(padBody, padContact);
+  thrustPad.add(padBody);
   root.add(thrustPad);
 
   const requiredArcPoints = [
@@ -618,8 +682,8 @@ function flexibleBarCyclograph(movement) {
   );
   const targetArcPoints = Array.from({ length: 129 }, (_, index) => {
     const angle = THREE.MathUtils.lerp(
-      Math.PI - targetArcHalfAngle,
-      targetArcHalfAngle,
+      Math.PI / 2 + targetArcHalfAngle,
+      Math.PI / 2 - targetArcHalfAngle,
       index / 128,
     );
     return new THREE.Vector3(
@@ -640,10 +704,10 @@ function flexibleBarCyclograph(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     const path = updateBarGeometry(state.bend);
-    const screwTopY = state.innerApex.y - 0.09;
-    screw.position.set(0, screwTopY - screwLength / 2, 0.03);
+    const screwTopY = state.innerApex.y - .32;
+    screw.position.set(0, screwTopY - screwLength / 2, .26);
     setSpin(screw, state.screwAngle);
-    thrustPad.position.set(0, state.innerApex.y - 0.075, 0.28);
+    thrustPad.position.set(0, state.innerApex.y - 0.075, .26);
     rollerAssemblies[0].roller.rotation.z = state.leftRollerAngle;
     rollerAssemblies[1].roller.rotation.z = state.rightRollerAngle;
     root.userData.contacts = {
@@ -684,6 +748,8 @@ function flexibleBarCyclograph(movement) {
       fixedNut,
       handwheel,
       outerEdgeHighlight,
+      padBody,
+      nutThread,
       requiredArcPoints,
       requiredCircularArc,
       rollerAssemblies,
@@ -738,6 +804,8 @@ function flexibleBarCyclograph(movement) {
       minimumCentralArcLength,
       minimumSagitta,
       overhangSampleCount,
+      rollerCenterX,
+      rollerCenterY,
       rollerDepth,
       rollerRadius,
       screwLength,
@@ -752,6 +820,7 @@ function flexibleBarCyclograph(movement) {
       totalOuterEdgeLength,
       totalPathSampleCount,
     },
+    contactAtBend,
     maximumOuterEdgeY,
     mechanism:
       'one tapered elastic arched template passes beneath two small rollers fixed to a straight base; one central screw in a fixed nut raises a swivel pad against the bar midpoint, drawing material inward through both rollers until the outer edge fits the three prescribed points as a true circular arc',
@@ -817,7 +886,7 @@ function flexibleBarCyclograph(movement) {
     },
     transmission: {
       endRollerRelation:
-        'leftAngle=+materialSlide/rollerRadius and rightAngle=-materialSlide/rollerRadius',
+        'leftAngle=materialSlide/rollerRadius+contactNormalTurn and rightAngle=-leftAngle',
       screwLeadRelation:
         'screwDisplacement=screwAngle*threadLead/(2*pi)',
       totalBarLengthRelation:
@@ -834,8 +903,10 @@ function flexibleBarCyclograph(movement) {
   root.userData.groundFloorY = -1.80;
   markShadows(root);
   requiredCircularArc.castShadow = false;
-  update(0);
-  return { root, update };
+  root.userData.cameraFov = 8;
+  root.userData.cameraDirection = new THREE.Vector3(0, .8, 12);
+  fitPistonGuide(root, update, cycleDuration);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredFlexibleCyclographMovement(movement) {

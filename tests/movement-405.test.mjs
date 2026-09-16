@@ -313,69 +313,23 @@ test('movement 405 sweeps both halves, passes the vertex, and reverses short of 
   disposeModel(model.root);
 });
 
-test('movement 405 update puts both thread endpoints, bight, rule anchor, and pencil point in actual 3D contact', () => {
+test('movement 405 renders finite tangent endpoints while retaining the ideal string constraint', () => {
   const model = createMovementModel(catalog.movements[404]);
-  const data = model.root.userData;
-  const { blocks, geometry, stateAtTime } = data;
-
-  for (const cycleFraction of [0, 0.11, 0.27, 0.49, 0.72, 0.93, 1]) {
-    const time = geometry.cycleDuration * cycleFraction;
-    const state = stateAtTime(time);
-    model.update(time);
-    model.root.updateMatrixWorld(true);
-    near(blocks.rule.rotation.z, state.ruleAngle, 0,
-      'rendered rule angle');
-    vectorNear(blocks.pencil.position,
-      new THREE.Vector3(state.pencilPoint.x, state.pencilPoint.y, 0),
-      0, 'rendered pencil location');
-
-    const focusStart = blocks.focusCord.localToWorld(
-      new THREE.Vector3(0, -0.5, 0),
-    );
-    const focusEnd = blocks.focusCord.localToWorld(
-      new THREE.Vector3(0, 0.5, 0),
-    );
-    const ruleStart = blocks.ruleCord.localToWorld(
-      new THREE.Vector3(0, -0.5, 0),
-    );
-    const ruleEnd = blocks.ruleCord.localToWorld(
-      new THREE.Vector3(0, 0.5, 0),
-    );
-    const expectedLowerFocus = new THREE.Vector3(
-      state.lowerFocus.x,
-      state.lowerFocus.y,
-      0.255,
-    );
-    const expectedBight = new THREE.Vector3(
-      state.pencilPoint.x,
-      state.pencilPoint.y,
-      0.255,
-    );
-    const expectedRuleEnd = new THREE.Vector3(
-      state.ruleEnd.x,
-      state.ruleEnd.y,
-      0.255,
-    );
-    vectorNear(focusStart, expectedLowerFocus, 1e-13,
-      'focus-cord loop endpoint');
-    vectorNear(focusEnd, expectedBight, 1e-13,
-      'focus-cord bight endpoint');
-    vectorNear(ruleStart, expectedBight, 1e-13,
-      'rule-cord bight endpoint');
-    vectorNear(ruleEnd, expectedRuleEnd, 1e-13,
-      'rule-cord attachment endpoint');
-    vectorNear(blocks.threadAnchor.getWorldPosition(new THREE.Vector3()),
-      expectedRuleEnd, 1e-13, 'rule-end anchor contact');
-    vectorNear(blocks.pencil.children.find(({ userData }) =>
-      userData.role === 'white-thread-bight-around-pencil')
-      .getWorldPosition(new THREE.Vector3()), expectedBight, 0,
-    'pencil-bight contact');
-    const boardPoint = blocks.pencil.children.find(({ userData }) =>
-      userData.role === 'pencil-point-on-hyperbola')
-      .getWorldPosition(new THREE.Vector3());
-    near(boardPoint.z, -0.265, 0, 'pencil tip at board face');
-    near(data.contacts.threadAtRuleEnd.totalLengthResidual,
-      state.threadLengthResidual, 0, 'published thread contact');
+  const data = model.root.userData, { blocks, geometry, stateAtTime } = data;
+  for (const cycleFraction of [0, .11, .27, .49, .72, .93, 1]) {
+    const time = geometry.cycleDuration * cycleFraction, state = stateAtTime(time);
+    model.update(time); model.root.updateMatrixWorld(true);
+    near(blocks.rule.rotation.z, state.ruleAngle, 0, 'rendered rule angle');
+    vectorNear(blocks.pencil.position, new THREE.Vector3(state.pencilPoint.x, state.pencilPoint.y, 0), 0, 'pencil location');
+    const path = data.finiteCord;
+    for (const [cord, start, end] of [[blocks.focusCord, path.start, path.entry], [blocks.ruleCord, path.exit, path.end]]) {
+      vectorNear(cord.localToWorld(new THREE.Vector3(0, -.5, 0)), start, 1e-13, 'finite cord start');
+      vectorNear(cord.localToWorld(new THREE.Vector3(0, .5, 0)), end, 1e-13, 'finite cord end');
+    }
+    vectorNear(blocks.threadAnchor.getWorldPosition(new THREE.Vector3()), new THREE.Vector3(state.ruleEnd.x, state.ruleEnd.y, .36), 1e-13, 'rule anchor');
+    near(blocks.pencilPoint.getWorldPosition(new THREE.Vector3()).z, -.145, 0, 'graphite on trace');
+    near(data.contacts.threadAtRuleEnd.totalLengthResidual, state.threadLengthResidual, 0, 'ideal thread law');
+    assert.ok(path.lengthResidual > 0, 'finite visual winding is explicitly distinct from the ideal length');
   }
   disposeModel(model.root);
 });
