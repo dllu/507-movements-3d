@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { sawFeedFlank, installSawFeedWorkingParts } from './saw-feed-working-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -317,7 +318,8 @@ function crankRockerAdjustableSawFeed(movement) {
   const ratchetRootRadius = ratchetOuterRadius - 0.19;
   const ratchetInnerRadius = ratchetOuterRadius * 0.62;
   const pawlNoseRadius = 0.085;
-  const pawlContactCenterRadius = ratchetOuterRadius + pawlNoseRadius;
+  const workingFlank = sawFeedFlank({radius:ratchetOuterRadius,rootRadius:ratchetRootRadius,teeth:ratchetTeeth,noseRadius:pawlNoseRadius});
+  const pawlContactCenterRadius = workingFlank.radius;
   const sourcePawlContactCenter = new THREE.Vector2(
     Math.cos(sourceRasterPawlContactDirection) * pawlContactCenterRadius,
     Math.sin(sourceRasterPawlContactDirection) * pawlContactCenterRadius,
@@ -412,7 +414,7 @@ function crankRockerAdjustableSawFeed(movement) {
   const toothOuterStartPhase = 0.12;
   const toothOuterEndPhase = 0.25;
   const ratchetMountPhase = driveStartContact.contactAngle
-    - toothOuterEndPhase * ratchetToothPitch;
+    - workingFlank.angle;
   const inputCyclePeriod = 5;
   const inputAngularSpeed = -FULL_TURN / inputCyclePeriod;
   const pinionTeeth = 12;
@@ -500,18 +502,10 @@ function crankRockerAdjustableSawFeed(movement) {
   const sourceWheelAngle = sourcePose.wheelAngle;
   const stateAtCycleCoordinate = (cycleCoordinate) => {
     const pose = poseAtCycleCoordinate(cycleCoordinate);
-    const contactNormal = pose.pawlGeometry.pawlContactCenter
-      .clone().normalize();
-    const pawlContactPoint = pose.pawlGeometry.pawlContactCenter
-      .clone().addScaledVector(contactNormal, -pawlNoseRadius);
-    const activeLocalContactAngle = driveStartContact.contactAngle
-      + pose.cycleIndex * ratchetToothPitch;
-    const ratchetContactPoint = new THREE.Vector2(
-      Math.cos(activeLocalContactAngle + pose.wheelAngle)
-        * ratchetOuterRadius,
-      Math.sin(activeLocalContactAngle + pose.wheelAngle)
-        * ratchetOuterRadius,
-    );
+    const activeFaceAngle = ratchetMountPhase + pose.wheelAngle + pose.cycleIndex * ratchetToothPitch;
+    const contactNormal = rotate2(workingFlank.normal, activeFaceAngle);
+    const pawlContactPoint = pose.pawlGeometry.pawlContactCenter.clone().addScaledVector(contactNormal, -pawlNoseRadius);
+    const ratchetContactPoint = rotate2(workingFlank.point, activeFaceAngle);
     const rackX = sourceRackCenterX - pinionPitchRadius
       * (pose.wheelAngle - sourceWheelAngle);
     const rackSpeed = -pinionPitchRadius * pose.wheelAngularSpeed;
@@ -530,6 +524,8 @@ function crankRockerAdjustableSawFeed(movement) {
         ? pawlContactPoint.distanceTo(ratchetContactPoint)
         : null,
       pawlContactPoint,
+      contactNormal,
+      outputContactMomentArm: -cross2(ratchetContactPoint,contactNormal),
       pawlPivotVelocity,
       pinionRackNoSlipError: rackSpeed
         + pinionPitchRadius * pose.wheelAngularSpeed,
@@ -953,6 +949,8 @@ function crankRockerAdjustableSawFeed(movement) {
     pawlContactCenterRadius,
     pawlLength,
     pawlNoseRadius,
+    workingFlank,
+    ratchetMountPhase,
     pawlReturnLift,
     pinionPitchRadius,
     pinionTeeth,
@@ -1131,9 +1129,11 @@ function crankRockerAdjustableSawFeed(movement) {
         pitchPoint: new THREE.Vector3(0, pinionPitchRadius, 0),
       },
     };
+    root.userData.updateWorkingInterfaces?.(state);
     root.userData.kinematics = state;
   };
 
+  installSawFeedWorkingParts(root);
   update(0);
   markShadows(root);
   return {
