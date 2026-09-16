@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctGyroscopeParts } from './gyroscope-working-parts.js';
+
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -122,6 +124,7 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   const diskThickness = 0.34;
   const spindleRadius = 0.09;
   const spindleHalfLength = ringRadius + 0.38;
+  const spindleLeftLength = ringRadius - 0.13;
   const bearingOffset = ringRadius - 0.16;
   const bearingOuterRadius = 0.22;
   const bearingLength = 0.34;
@@ -435,10 +438,11 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
 
   const spindle = cylinderAlongX(
     spindleRadius,
-    spindleHalfLength * 2,
+    spindleHalfLength + spindleLeftLength,
     darkMaterial,
     48,
   );
+  spindle.position.x = (spindleHalfLength - spindleLeftLength) / 2;
   spindle.userData.role = 'spindle-of-metallic-disk-C';
   spinRotor.add(spindle);
 
@@ -615,7 +619,7 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
       )
     ));
     const spindleEndpoints = [-1, 1].map((side) => (
-      diskCenter.clone().addScaledVector(spinAxis, side * spindleHalfLength)
+      diskCenter.clone().addScaledVector(spinAxis, side < 0 ? -spindleLeftLength : spindleHalfLength)
     ));
     return {
       bearingAxisError: bearingCenters[1].clone()
@@ -779,6 +783,7 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     sourceSupportPivotRaster: sourceSupportPivotRaster.clone(),
     sourceSupportToCenterPixels,
     spindleHalfLength,
+    spindleLeftLength,
     spindleRadius,
     spinAngularSpeed,
     spinCyclePeriod,
@@ -836,8 +841,9 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
 
   update(0);
   markShadows(root);
+  correctGyroscopeParts(root, 355);
   return {
-    cameraDirection: new THREE.Vector3(7.2, 4.5, 11.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
@@ -884,7 +890,7 @@ function bohnenbergerThreeRingMachine(movement) {
   const innerPivotOffset = (middleRadius + innerRadius) / 2;
   const rotorBearingOffset = innerRadius - 0.12;
   const rotorShaftRadius = 0.064;
-  const rotorShaftHalfLength = innerRadius + 0.22;
+  const rotorShaftHalfLength = innerRadius + 0.09;
   const bearingLength = 0.26;
   const bearingRadius = 0.17;
   const hubRadius = 0.22;
@@ -895,7 +901,7 @@ function bohnenbergerThreeRingMachine(movement) {
   const outerYawAmplitude = 0.72;
   const sourceOuterYaw = 0.08;
   const fixedMiddleWorldYaw = -1.02;
-  const fixedInnerPitch = 0.64;
+  const fixedInnerPitch = -0.64;
   const spinTurnsPerAlterationCycle = 18;
   const ballSpinAngularSpeed =
     spinTurnsPerAlterationCycle * fullTurn / alterationCyclePeriod;
@@ -1627,8 +1633,9 @@ function bohnenbergerThreeRingMachine(movement) {
 
   update(0);
   markShadows(root);
+  correctGyroscopeParts(root, 356);
   return {
-    cameraDirection: new THREE.Vector3(6.4, 4.2, 11.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
