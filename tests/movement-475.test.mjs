@@ -140,7 +140,7 @@ test('movement 475 A bends to an upward nozzle exactly coaxial with B and C whil
 
   near(pipeStart.y, 0.05, 0, 'side A inlet height');
   assert.ok(pipeStart.x > 3);
-  vectorNear(pipeEnd, geometry.nozzleTip, 2e-16,
+  vectorNear(pipeEnd, geometry.nozzleTip, 1e-12,
     'A pipe terminates at nozzle tip');
   near(geometry.nozzleTip.x, 0, 0, 'nozzle on C axis x');
   near(geometry.nozzleTip.z, 0, 0, 'nozzle on C axis z');

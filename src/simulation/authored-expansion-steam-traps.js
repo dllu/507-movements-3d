@@ -1,3 +1,4 @@
+import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -867,6 +868,7 @@ function rayExpansionSteamTrap(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(8.7, 4.4, 11.8);
   root.userData.groundFloorY = -2.60;
+  correctEjectorTrapParts(root,478,update);
   markShadows(root);
   hollowSphereC.castShadow = false;
   update(0);

@@ -362,7 +362,7 @@ test('movement 477 renderer maps exact lift, arc-length paths, flow visibility, 
         2e-15, `marker ${flatIndex} arc-length point`);
       near(blocks.condensateMarkers[flatIndex].scale.x,
         Math.sin(Math.PI * progress) ** 0.55
-          * Math.sqrt(state.flowFraction),
+          * state.flowFraction,
         2e-15, `marker ${flatIndex} visibility`);
     }
   }

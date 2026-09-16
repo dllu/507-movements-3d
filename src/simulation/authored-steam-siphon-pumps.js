@@ -1,3 +1,4 @@
+import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -528,6 +529,7 @@ function lansdellSteamSiphonPump(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(7.2, 3.8, 9.4);
   root.userData.groundFloorY = -3.15;
+  correctEjectorTrapParts(root,476,update);
   markShadows(root);
   basin.receiveShadow = true;
   update(0);

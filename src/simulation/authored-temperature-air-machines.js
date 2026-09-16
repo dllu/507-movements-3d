@@ -1,3 +1,4 @@
+import { correctTemperatureAirMachine } from './thermal-steam-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -172,7 +173,7 @@ function temperatureAirMachine(movement) {
   const waterRaisingRotationSign = 1;
   const operatingScrewRotationSign = -1;
   const bubbleCount = 14;
-  const bubbleBaseRadius = 0.098;
+  const bubbleBaseRadius = 0.055;
   const groundY = tankBottomY - 0.09;
 
   const wallMaterial = matte(PALETTE.frame, {
@@ -337,7 +338,8 @@ function temperatureAirMachine(movement) {
     depth: 0.22,
     radius: transferPinionPitchRadius,
     teeth: transferPinionTeeth,
-    toothHeight: 0.095,
+    addendum: 2*transferPinionPitchRadius/transferPinionTeeth,
+    dedendum: 2.5*transferPinionPitchRadius/transferPinionTeeth,
   }), 'bevel-output-transfer-pinion');
   transferPinion.position.z = 0.18;
   outputShaftRotor.add(transferPinion);
@@ -363,7 +365,8 @@ function temperatureAirMachine(movement) {
     depth: 0.24,
     radius: wheelGearPitchRadius,
     teeth: wheelGearTeeth,
-    toothHeight: 0.095,
+    addendum: 2*transferPinionPitchRadius/transferPinionTeeth,
+    dedendum: 2.5*transferPinionPitchRadius/transferPinionTeeth,
   }), 'water-wheel-ring-gear');
   wheelGear.position.z = -0.30;
   waterWheelRotor.add(wheelGear);
@@ -413,7 +416,8 @@ function temperatureAirMachine(movement) {
     0.54,
   );
   const pipePoints = [
-    screwLowerPoint.clone().setZ(0.24),
+    screwLowerPoint.clone().addScaledVector(screwAxis,-.22),
+    screwLowerPoint.clone().addScaledVector(screwAxis,-.32),
     new THREE.Vector3(-3.18, -0.38, -0.30),
     new THREE.Vector3(-3.22, 0.72, -0.38),
     new THREE.Vector3(-2.92, 1.73, -0.38),
@@ -878,6 +882,7 @@ function temperatureAirMachine(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.4, 11.8);
   root.userData.groundFloorY = groundY;
 
+  correctTemperatureAirMachine(root);
   markShadows(root);
   for (const object of [coldTankParts.water, warmTankParts.water,
     screwBarrel, airConduit, ...airBubbles]) {

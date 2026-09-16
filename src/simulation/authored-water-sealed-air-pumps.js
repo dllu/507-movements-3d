@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWaterSealedPump} from './water-sealed-pump-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -29,20 +30,20 @@ function waterSealedBellPump(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4.0;
   const angularVelocity = FULL_TURN / cycleDuration;
-  const leverAngleAmplitude = 0.32;
+  const leverAngleAmplitude = 0.18;
   const leverPivotY = 3.05;
   const leverPivotX = 1.05;
-  const leverInnerArmLength = 0.78;
+  const leverInnerArmLength = 1.50;
   const leverOuterArmLength = 1.25;
-  const suspensionRopeLength = 1.15;
+  const suspensionRopeLength = 1.50;
   const bellLugX = 0.36;
-  const bellLugLocalY = 0.58;
-  const bellHeight = 1.56;
+  const bellLugLocalY = 1.21;
+  const bellHeight = 2.18;
   const bellOuterRadius = 0.63;
   const bellInnerRadius = 0.55;
   const bellRoofThickness = 0.09;
   const gasArea = Math.PI * bellInnerRadius ** 2;
-  const externalWaterLineY = 0.86;
+  const externalWaterLineY = 0.28;
   const outerTubBottomY = -0.86;
   const outerTubTopY = 1.08;
   const outerTubInnerRadius = 0.91;
@@ -696,6 +697,7 @@ function waterSealedBellPump(movement) {
     inletGasColumn.visible = state.lowerInletValveOpen;
     inletGasJet.visible = state.lowerInletValveOpen
       && state.inletVolumetricFlow > 0;
+    root.userData.updateWorkingParts?.(state);
     trappedGas.material = state.upperOutletValveOpen
       ? exhaustGasMaterial
       : shaftGasMaterial;
@@ -864,12 +866,19 @@ function waterSealedBellPump(movement) {
   root.userData.cameraDirection = new THREE.Vector3(5.6, 3.5, 10.8);
   root.userData.groundFloorY = groundY;
 
+  correctWaterSealedPump(root);
   markShadows(root);
   for (const object of [bellShell, bellRoof, tubShell, outerWater,
     outerWaterSurface, internalWaterSurface, trappedGas, inletGasColumn,
     inletGasJet, outletGasPlume]) {
     object.castShadow = false;
   }
+  root.traverse(object => {
+    if (object.material?.transparent) {
+      object.castShadow = false;
+      object.receiveShadow = false;
+    }
+  });
   foundation.receiveShadow = true;
   update(0);
   return {

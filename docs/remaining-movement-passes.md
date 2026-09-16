@@ -569,3 +569,21 @@ in the linked family reviews. No live browser physics is introduced.
 The focused suites pass 119 tests. The production build, eight packaged
 playback/mobile checks and eight-model screen pass; the final hydraulic
 port corrections were screened again.
+
+## Twenty-second parallel batch
+
+- **469/474:** thermal machine and steam rotor finite drive/passage interfaces.
+- **473:** source-correct crossed bell suspension, finite water-sealed vessels,
+  pipe and valve bores, and continuous displayed check lift.
+- **475–478:** reusable ejector passages, trap seats and bored moving glands.
+- **479/480:** finite gas bells/tanks, rope grooves and counterweight clearance.
+
+Source-specific validation and residuals are linked from
+[review progress](review-progress.md). This pass preserves analytical laws and
+keeps unresolved passive fluid/thermal forces distinct from geometric checks.
+
+The combined focused run passes 115 tests. The final production build and
+nine-model construction/playback screen pass with no screen flags.
+Nine packaged desktop/playback/mobile checks also pass (49.3 seconds).
+469 still needs a toothed bevel transmission; fluid and thermal residuals remain
+explicit in each family review.

@@ -1,3 +1,26 @@
+# Twenty-second family pass: sealed vessels and steam passages
+
+Nine movements receive working-interface and source-layout corrections in four
+parallel lanes: 469 and 473–480. The full review remains active.
+
+- [469/474 thermal and steam rotors](thermal-steam-family-review.md): finite
+  screw and steam passages, shaft/bearing interfaces and drive alignment.
+- [473 water-sealed air pump](water-sealed-air-pump-review.md): crossed
+  suspension, finite bell/tub walls, working check bores and continuous lift.
+- [475–478 ejectors and traps](ejector-trap-family-review.md): open passages,
+  valve seats and rod glands following the engraved flow arrangements.
+- [479/480 gasometers](gasometer-family-review.md): finite vessels, bored pipe
+  penetrations, real rope grooves and clear counterweight/guide interfaces.
+
+Analytical motion and ideal fluid laws remain where appropriate. Unsolved fluid,
+thermal, force and sealing behavior is explicitly recorded in each family review;
+finite geometric passages alone do not qualify a passive fluid simulation.
+
+The combined focused run passes 115 tests. The final production build and
+nine-model construction/playback screen pass, with no screen flags. Nine
+packaged desktop/playback/mobile checks also pass (49.3 seconds). The final
+476 desktop capture confirms the restored fork side rail.
+
 # Twenty-first family pass: hydraulic and hammer working interfaces
 
 Eight movements receive corrections in four parallel lanes: 455, 464–467 and

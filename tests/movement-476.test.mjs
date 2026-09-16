@@ -167,7 +167,7 @@ test('movement 476 A reaches an upward central nozzle while four complete water 
   const pipeEnd = flowPaths.steamPipeCurve.getPoint(1);
 
   assert.ok(pipeStart.x > 2);
-  assert.ok(pipeStart.z > 0,
+  assert.ok(pipeStart.z < 0,
     'A approaches behind the engraving plane');
   vectorNear(pipeEnd, geometry.nozzleTip, 3e-16,
     'A terminates at nozzle');

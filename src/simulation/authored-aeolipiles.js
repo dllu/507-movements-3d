@@ -1,3 +1,4 @@
+import { correctAeolipile } from './thermal-steam-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -806,6 +807,7 @@ function heroAeolipile(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.3, 9.4);
   root.userData.groundFloorY = -2.42;
+  correctAeolipile(root);
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

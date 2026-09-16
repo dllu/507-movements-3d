@@ -325,11 +325,11 @@ test('movement 473 renderer maps exact levers, ropes, bell, pressure surface, ch
       `internal water surface at ${phase}`);
     near(blocks.lowerInletValveDisk.position.y,
       geometry.inletPipeTopY + 0.05
-        + (state.lowerInletValveOpen ? 0.10 : 0),
+        + 0.10 * model.root.userData.valveLiftAtPhase(state.phase).lower,
       1e-12, `lower check lift at ${phase}`);
     near(blocks.upperOutletValveDisk.position.y,
-      geometry.bellHeight / 2 + 0.285
-        + (state.upperOutletValveOpen ? 0.10 : 0),
+      geometry.bellHeight / 2 + 0.2885
+        + 0.10 * model.root.userData.valveLiftAtPhase(state.phase).upper,
       1e-12, `upper check lift at ${phase}`);
     assert.equal(blocks.outletGasPlume.visible,
       state.upperOutletValveOpen && state.outletVolumetricFlow > 0);

@@ -167,13 +167,13 @@ test('movement 474 two complete steam routes meet opposite ends of one horizonta
   const [leftTrunnion, rightTrunnion] = geometry.feedTrunnionPoints;
 
   assert.equal(flowPaths.feedCurves.length, 2);
-  vectorNear(leftCurve.points.at(-1), geometry.globeCenter, 0,
+  vectorNear(leftCurve.getPointAt(1), geometry.globeCenter, 0,
     'left steam path reaches globe center');
-  vectorNear(rightCurve.points.at(-1), geometry.globeCenter, 0,
+  vectorNear(rightCurve.getPointAt(1), geometry.globeCenter, 0,
     'right steam path reaches globe center');
-  vectorNear(leftCurve.points.at(-2), leftTrunnion, 0,
+  vectorNear(new THREE.Line3(leftCurve.curves.at(-1).v1,leftCurve.curves.at(-1).v2).closestPointToPoint(leftTrunnion,true,new THREE.Vector3()), leftTrunnion, 0,
     'left visible riser reaches left trunnion');
-  vectorNear(rightCurve.points.at(-2), rightTrunnion, 0,
+  vectorNear(new THREE.Line3(rightCurve.curves.at(-1).v1,rightCurve.curves.at(-1).v2).closestPointToPoint(rightTrunnion,true,new THREE.Vector3()), rightTrunnion, 0,
     'right visible riser reaches right trunnion');
   near(leftTrunnion.y, rightTrunnion.y, 0, 'pivot ends share height');
   near(leftTrunnion.z, rightTrunnion.z, 0, 'pivot ends share depth');

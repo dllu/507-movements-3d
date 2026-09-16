@@ -7,6 +7,8 @@ import {
   setSpin,
 } from './primitives.js';
 
+import { correctGasometerWorkingParts } from './gasometer-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function cylinderBetween(start, end, radius, material, role, sides = 36) {
@@ -756,10 +758,17 @@ function singleLiftCounterweightedGasometer(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(8.5, 4.7, 10.5);
   root.userData.groundFloorY = -2.55;
+  correctGasometerWorkingParts(root, 479);
   markShadows(root);
   tankWall.castShadow = false;
   outerAnnularWater.castShadow = false;
   innerWater.castShadow = false;
+  root.traverse(object => {
+    if (object.material?.transparent) {
+      object.castShadow = false;
+      object.receiveShadow = false;
+    }
+  });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,
@@ -1431,10 +1440,17 @@ function centerGuidedGasometer(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(8.3, 4.4, 10.4);
   root.userData.groundFloorY = -2.72;
+  correctGasometerWorkingParts(root, 480);
   markShadows(root);
   tankWall.castShadow = false;
   outerAnnularWater.castShadow = false;
   innerAnnularWater.castShadow = false;
+  root.traverse(object => {
+    if (object.material?.transparent) {
+      object.castShadow = false;
+      object.receiveShadow = false;
+    }
+  });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

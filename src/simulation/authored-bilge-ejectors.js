@@ -1,3 +1,4 @@
+import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -553,6 +554,7 @@ function brearBilgeEjector(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.4, 3.7, 9.0);
   root.userData.groundFloorY = -3.22;
+  correctEjectorTrapParts(root,475,update);
   markShadows(root);
   bilgeBasin.receiveShadow = true;
   update(0);

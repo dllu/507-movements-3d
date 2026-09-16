@@ -1,3 +1,4 @@
+import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -558,6 +559,7 @@ function thermalDiaphragmSteamTrap(movement) {
         endpointFade * Math.sqrt(state.flowFraction),
       );
     }
+    root.userData.updateWorkingParts?.(time,state);
   };
 
   const geometry = {
@@ -736,6 +738,7 @@ function thermalDiaphragmSteamTrap(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(7.4, 2.7, 10.4);
   root.userData.groundFloorY = -3.34;
+  correctEjectorTrapParts(root,477,update);
   markShadows(root);
   rearWall.castShadow = false;
   update(0);
