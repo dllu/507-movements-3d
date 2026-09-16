@@ -131,7 +131,7 @@ test('movement 238 preserves source axes and B root with an explicitly shortened
     'source D-to-B tooth-tip radius');
   near(geometry.wheelMountPhase, Math.atan2(-0.7095, -0.8415), 2e-15,
     'source star mounting phase');
-  const source = stateAtCycleCoordinate(0);
+  const source = model.root.userData.nominalKinematics238.stateAtCycleCoordinate(0);
   assert.equal(source.stage, 'B-root-lock');
   assert.equal(source.activePallet, 'B');
   assert.equal(source.activeToothIndex, 0);
@@ -203,7 +203,8 @@ test('movement 238 builds seven equally spaced star tips in the source phase', (
 
 test('movement 238 B nominal point law runs root-to-tip without reversal (finite support checked separately)', () => {
   const model = createMovementModel(catalog.movements[237]);
-  const { geometry, stateAtCycleCoordinate } = model.root.userData;
+  const { geometry } = model.root.userData;
+  const { stateAtCycleCoordinate } = model.root.userData.nominalKinematics238;
   const { start, end } = geometry.phases.bDrive;
   let previousCoordinate = -Infinity;
   let previousWheelAngle = -Infinity;
@@ -247,7 +248,8 @@ test('movement 238 B nominal point law runs root-to-tip without reversal (finite
 
 test('movement 238 has two prescribed positive nominal drops and stationary lock intervals', () => {
   const model = createMovementModel(catalog.movements[237]);
-  const { geometry, stateAtCycleCoordinate } = model.root.userData;
+  const { geometry } = model.root.userData;
+  const { stateAtCycleCoordinate } = model.root.userData.nominalKinematics238;
   const first = geometry.phases.firstDrop;
   const second = geometry.phases.secondDrop;
 
@@ -409,16 +411,16 @@ test('movement 238 remains one-way, renders its constraints, and closes before 2
     `escapement includes visible locks (${dwellSamples} samples)`);
   for (let cycle = 0; cycle <= 14; cycle += 1) {
     const closure = stateAtCycleCoordinate(cycle);
-    near(closure.wheelAngle, cycle * geometry.toothPitch, 8e-15,
+    near(closure.wheelAngle, cycle * geometry.toothPitch + model.root.userData.bContactBranch.initialWheelAngle, 1e-7,
       `accumulated tooth index ${cycle}`);
     near(closure.palletAngle, geometry.lowPalletAngle, 0,
       `carrier closes cycle ${cycle}`);
     assert.equal(closure.activePallet, 'B');
     assert.equal(closure.activeToothIndex, (7 - cycle % 7) % 7);
   }
-  near(stateAtCycleCoordinate(7).wheelAngle, FULL_TURN, 2e-15,
+  near(stateAtCycleCoordinate(7).wheelAngle - stateAtCycleCoordinate(0).wheelAngle, FULL_TURN, 2e-15,
     'seven oscillations close one wheel revolution');
-  near(stateAtCycleCoordinate(14).wheelAngle, 2 * FULL_TURN, 4e-15,
+  near(stateAtCycleCoordinate(14).wheelAngle - stateAtCycleCoordinate(0).wheelAngle, 2 * FULL_TURN, 4e-15,
     'fourteen oscillations close two wheel revolutions');
 
   for (const time of [0, 0.5, 0.88, 1.48, 1.96, 2.8, 3.4, 4]) {

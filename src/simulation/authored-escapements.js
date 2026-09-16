@@ -1,3 +1,4 @@
+import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
 import {
@@ -1780,7 +1781,7 @@ function sevenToothAnchorEscapement(movement) {
   };
   finishSevenTooth238(root);
   update(0);
-  return finish(root, update, new THREE.Vector3(0.8, -0.5, 18));
+  return finishSevenTooth238Contact(finish(root, update, new THREE.Vector3(0.8, -0.5, 18)));
 }
 
 function classicWatchVergeEscapement(

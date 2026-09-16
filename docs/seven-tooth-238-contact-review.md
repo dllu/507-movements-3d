@@ -1,5 +1,7 @@
 # Movement 238 — bounded finite pallet correction
 
+The B-flank residual below is historical; the [finite B-impulse follow-up](seven-tooth-238-loaded-branch-review.md) closes its geometric contact and normal-velocity mismatch without further profile cutting. Dynamic capture remains unvalidated.
+
 The [primary engraving and caption](https://507movements.com/mm_238.html) show a seven-point wheel D and two pallets B/C on one carrier about A. The fetched page has no registered `add_model`/`mm_present` animation. The geometry is undimensioned. This pass removes the original large wheel/pallet intersections and connects the previously detached C working bar, but **does not qualify a complete loaded escapement**.
 
 ## Reconstruction and source differences
