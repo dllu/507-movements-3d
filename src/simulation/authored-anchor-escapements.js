@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctAnchorEscapement } from './anchor-escapement-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -839,8 +840,9 @@ function recoilAnchorEscapement(movement) {
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   root.userData.fidelity = 'authored';
+  correctAnchorEscapement(root, 288, update);
   return {
-    cameraDirection: new THREE.Vector3(5.6, 3.8, 13.2),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
