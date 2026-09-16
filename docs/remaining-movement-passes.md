@@ -202,32 +202,37 @@ registration, not the initial HTML availability class; the repository's
 pair and bidirectional checks in the thirty-seventh pass. 211's sparse checks
 found no penetration, but do not establish passive triggering.
 
-## Next breadth candidates
+## Thirty-eighth pass
 
-- **232, lift-and-draw pawl:** own only its factory in
-  `authored-intermittent.js`. A 33-pose actual-surface probe finds 0.17420
-  pawl-body/wheel penetration at t=0, 0.05440 retaining-body penetration at t=0,
-  and 0.08000 retaining-nose penetration at t=2.5 seconds. Reconstruct the
-  finite working faces and axial layers against the source's lift, return,
-  drop and draw sequence; the generated point-contact face alone is insufficient.
-- **271, double-pawl ratchet bar:** own `authored-ratchet-bars.js`. Reuse bored
-  links and finite pawl/rack surfaces. Both active noses sit wholly in front of
-  the rack despite zero reported XY error: actual gaps are 0.247 for the short
-  pawl at t=1.25 and 0.527 for the long pawl at t=3.75. Reconstruct stepped
-  hooks, bored pivots and continuous crest clearance together. The full source
-  HTML has no registered animation.
-- **284, adjustable saw feed:** own `authored-saw-feeds.js`. Reuse rack gearing
-  and finite pawl faces. At cycle coordinate 0.3 (t=0.07794713), the nose
-  penetrates the actual ratchet by 0.00204153 despite a zero reported point
-  error. The radial reported normal supplies zero wheel torque, and contact
-  lies beyond the designated flank (segment coordinate -0.23275). Reconstruct
-  nose/flank engagement and return, retaining the solved crank-rocker linkage;
-  also replace the solid hub/bore overlay with a real shaft passage. The full
-  source HTML has no registered animation.
+231/232/271/284 now have scoped corrections in the linked
+[review progress](review-progress.md). Finite stepped hooks engage the rack,
+the saw-feed nose drives a real flank, and the retaining click has actual seated
+contact. Shared bored joints, rack gearing and camera fitting support the pass.
+All 50 focused checks, the final build, four-model screen and four packaged
+browser cases pass. This does not complete their passive loaded dynamics.
 
-These are independent screening targets, not certified defects in every named
-interface. Compare captions and registered source animations before changing
-their motion laws. Keep dense studies limited to a demonstrated contact fault.
+## Next independent lanes
+
+- **197/198, pinion mangle racks:** own their scoped factories in
+  `authored-gears.js`. Actual surface samples find 0.10275/0.10283 penetration.
+  Reuse the 192–194 envelope cutters, preserving the distinct rising-pinion
+  and suspended-rack topologies and close working faces at reversal.
+- **199, partial lantern-pinion rack:** own its separate factory in that file.
+  A lantern pin penetrates a rack tooth by 0.00964 at phase 0.375. Preserve the
+  special entry teeth and establish driving contact through the rack transfer.
+  Coordinate imports with the other rack lane; use independent helpers.
+- **232, drawing-pawl branch:** the retaining click/joint correction is retained.
+  Replace the incompatible long generated driving face with a source-consistent
+  short tip and a contact-derived wheel law, including lift, dwell and drop.
+  The current drawing-pawl residual is 0.1300. Do not remove the load face
+  merely to make a clearance sweep pass.
+
+All 197–199 pages have registered animation models. Their exact witnesses and
+reusable components are in the [next rack triage](mangle-rack-next-pass-triage.md).
+231's proportions, 271's pickup holding/impact and omitted cord, and 284's loaded
+transfer and finite observation window remain follow-ups. Keep native studies
+focused on demonstrated passive uncertainty; point coincidence alone cannot
+qualify these contacts.
 
 ## Running the screen
 

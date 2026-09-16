@@ -1,3 +1,45 @@
+# Thirty-eighth family pass: alternating pawls, saw feed and source-facing views
+
+Four movements receive scoped corrections: 231, 232, 271 and 284. Three
+independent pawl lanes reuse finite plates, bored joints and rack gearing;
+the drag-link view receives a separate camera correction. The complete
+507-movement review remains active.
+
+- [271 ratchet bar](ratchet-bar-271-contact-review.md): stepped finite hooks
+  replace noses floating 0.247/0.527 ahead of the rack. Both working faces
+  engage through 0.20 of depth and have seating reactions. A short pickup
+  interval allows continuous crest clearance and drop while retaining equal
+  one-pitch advances. Pickup holding, return bias and impact remain prescribed.
+- [284 saw feed](saw-feed-working-review.md): move the driving nose from a
+  zero-torque radial corner onto the actual tooth flank; reconstruct the
+  holding click's finite path offline. Shared involute rack/pinion surfaces
+  retain close engagement, and actual bores replace overlapping hubs. A bored
+  input crank removes visible spindle-cap flicker. Loaded transfer is open.
+- [232 lift-and-draw pawl](lift-draw-pawl-232-review.md): correct the retaining
+  roller, its clear lift and selected pin passages. The seated click blocks
+  rollback geometrically. The main drawing pawl still penetrates by 0.1300;
+  its contact branch and early-release holding remain unresolved and disclosed.
+  A clearance cut that removed the driving face was rejected. The white wheel
+  index now lies flush inside the root disk.
+- [231 drag link](analytic-linkage-family-review.md): view the exposed output
+  shaft from the side matching the engraving; fit actual swept vertices and
+  disable fog. The exact four-bar law is retained. The source-proportion
+  mismatch is explicitly separate from this view correction.
+
+All **50 distinct focused checks pass**, including one unchanged 273 joint
+regression. The holding-path bake regenerates byte-identically. Final build
+passes in 22.18 seconds; the four-model construction/update screen has no flags.
+Final source/default/oblique views report no browser errors or clipping
+(normalized extents 0.693–0.894). All four packaged desktop/playback/mobile
+checks pass in 11.2 seconds.
+
+These are bounded geometric corrections, not passive-load certification. The
+linked reviews retain 271's pickup dwells, 284's load/observation-window limits,
+232's main contact defect and 231's source-fit residual. Read-only
+[197–199 triage](mangle-rack-next-pass-triage.md) finds finite tooth interference
+in all three mangle racks; all have registered source animations for the next
+shared rack pass.
+
 # Thirty-seventh family pass: finite gear and hook contacts
 
 Five movements receive independently publishable corrections: 194, 214, 215,
