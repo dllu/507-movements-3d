@@ -426,8 +426,8 @@ test('movement 316 renderer exposes the moving level and fixed effective-length 
     model.root.updateMatrixWorld(true);
     near(blocks.pendulumCarrier.rotation.z, expected.swingAngle, 0,
       `rendered swing at ${time}`);
-    near(blocks.rod.scale.y, expected.massProperties.rodLength, 0,
-      `rendered rod length at ${time}`);
+    near(blocks.rod.scale.y, expected.massProperties.rodLength - 0.25, 0,
+      `rendered rod below pivot hub at ${time}`);
     near(blocks.jarAssembly.position.y,
       -expected.massProperties.jarCenterDistance, 0,
     `rendered jar travel at ${time}`);

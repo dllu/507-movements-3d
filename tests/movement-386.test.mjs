@@ -421,7 +421,7 @@ test('movement 386 closes one full fold-and-unfold cycle before movement 507 rem
   assert.equal(data.animationTiming.targetCycleDuration, 2);
   assertReadableTiming(data.animationTiming);
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
-  assert.equal(data.cameraDistanceScale, 1.25);
+  assert.equal(data.cameraDistanceScale, 1.02);
   assert.ok(Number.isFinite(data.groundFloorY));
   for (const residual of Object.values(data.constraintResiduals)) {
     near(residual, 0, 2e-16, 'static constraint residual');

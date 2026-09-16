@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {
   PALETTE,
-  makeDynamicLink,
   markShadows,
   matte,
 } from './primitives.js';
+
+import {foldingRod} from './folding-joint-parts.js';
+import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -77,7 +79,7 @@ function halfAnnularRailGeometry({
   }
   shape.closePath();
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: false,
     bevelSegments: 1,
     bevelSize: 0.008,
     bevelThickness: 0.008,
@@ -144,12 +146,20 @@ function makeHalfTubeSidePiece({
   const pivotPins = [];
   const pivotIndexes = [];
   for (let index = 0; index < pivotOffsets.length; index += 1) {
-    const pin = cylinderAlongZ(0.105, outerRadius * 2.12, pinMaterial, 28);
+    const pin = cylinderAlongZ(0.060, 0.35, pinMaterial, 28);
     pin.position.y = pivotOffsets[index];
     pin.userData.role = 'round-pivot-pin-through-side-piece';
     pin.userData.roundIndex = index;
     group.add(pin);
     pivotPins.push(pin);
+    // Internal clevis cheeks attach to the shell, leaving the rotating eye
+    // between them; the axle remains inside the pole cavity at closure.
+    for (const z of [-0.14, 0.14]) {
+      const cheek = boredJournal(0.114, 0.064, 0.05, material);
+      cheek.position.set(0, pivotOffsets[index], z);
+      cheek.userData.role = 'bored-internal-round-pivot-cheek';
+      group.add(cheek);
+    }
 
     const pivotIndex = new THREE.Mesh(
       new THREE.CircleGeometry(0.048, 20),
@@ -171,7 +181,7 @@ function makeHalfTubeSidePiece({
     whiteMaterial,
   );
   endIndex.position.set(
-    -side * (closedHalfGap + outerRadius * 0.74),
+    side * (outerRadius - closedHalfGap + .025),
     length / 2 - 0.44,
     0,
   );
@@ -212,14 +222,15 @@ function foldingLibraryLadder(movement) {
     { length: roundCount },
     (_, index) => (index - (roundCount - 1) / 2) * pivotPitch,
   );
-  const sidePieceLength = 57.717309 * sourceScale;
+  // Full end complements need one fold-offset beyond the outermost round.
+  const sidePieceLength = 2 * (pivotOffsets.at(-1) + closedVerticalOffset + .15);
   const sidePieceCenterY = 3.52;
   const closedHalfGap = closedHorizontalGap / 2;
   const shellOuterRadius = 0.36;
   const shellInnerRadius = 0.26;
   const roundThickness = 0.095;
   const roundDepth = 0.105;
-  const roundJointRadius = 0.095;
+  const roundJointRadius = 0.099;
   const cycleDuration = 10;
   const foldingEndPhase = 0.40;
   const foldedDwellEndPhase = 0.50;
@@ -277,12 +288,9 @@ function foldingLibraryLadder(movement) {
   const rounds = [];
   const roundIndexes = [];
   for (let index = 0; index < roundCount; index += 1) {
-    const round = makeDynamicLink({
-      color: PALETTE.driver,
-      depth: roundDepth,
-      jointRadius: roundJointRadius,
-      thickness: roundThickness,
-    });
+    const round = foldingRod({length: roundLength, width: roundThickness,
+      depth: roundDepth, bore: 0.064, material: roundMaterial,
+      role: 'pivoted-ladder-round-folding-into-pole'});
     round.userData.role = 'pivoted-ladder-round-folding-into-pole';
     round.userData.roundIndex = index;
     root.add(round);
@@ -644,13 +652,13 @@ function foldingLibraryLadder(movement) {
     new THREE.Vector3(-1.52, -1.24, -0.62),
     new THREE.Vector3(1.52, 8.46, 0.62),
   );
-  root.userData.cameraDistanceScale = 1.25;
+  fitPistonGuide(root, update, cycleDuration);
   root.userData.groundFloorY = -0.82;
   markShadows(root);
   poleSectionGuide.castShadow = false;
   poleSectionGuide.receiveShadow = false;
   return {
-    cameraDirection: new THREE.Vector3(5.0, 3.7, 9.2),
+    cameraDirection: new THREE.Vector3(2.5, 1.6, 10),
     root,
     update,
   };

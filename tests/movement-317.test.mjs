@@ -433,8 +433,8 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
     model.root.updateMatrixWorld(true);
     near(blocks.pendulumCarrier.rotation.z, expected.swingAngle, 0,
       `rendered swing at ${time}`);
-    near(blocks.rod.scale.y, expected.massProperties.rodLength, 0,
-      `rendered rod length at ${time}`);
+    near(blocks.rod.scale.y, expected.massProperties.rodLength - 0.25, 0,
+      `rendered rod below pivot hub at ${time}`);
     near(blocks.compoundBar.position.y,
       -expected.barCenterDistance, 0,
     `rendered bar-center travel at ${time}`);

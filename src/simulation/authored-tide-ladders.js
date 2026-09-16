@@ -6,6 +6,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {foldingRod} from './folding-joint-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
 }
@@ -49,18 +52,18 @@ function makeEndFrame({
       new THREE.BoxGeometry(0.18, handrailHeight, 0.18),
       material,
     );
-    post.position.set(0, handrailHeight / 2, z);
+    post.position.set(0, handrailHeight / 2, z - Math.sign(z) * 0.22);
     post.userData.role = `${role}-vertical-post`;
     group.add(post);
     posts.push(post);
 
-    const lowerPin = cylinderAlongZ(0.13, 0.31, pinMaterial);
+    const lowerPin = cylinderAlongZ(0.13, 0.64, pinMaterial);
     lowerPin.position.set(0, 0, z);
     lowerPin.userData.role = `${role}-lower-stringer-pivot`;
     group.add(lowerPin);
     lowerPins.push(lowerPin);
 
-    const upperPin = cylinderAlongZ(0.13, 0.31, pinMaterial);
+    const upperPin = cylinderAlongZ(0.13, 0.64, pinMaterial);
     upperPin.position.set(0, handrailHeight, z);
     upperPin.userData.role = `${role}-upper-handrail-pivot`;
     group.add(upperPin);
@@ -70,7 +73,7 @@ function makeEndFrame({
       new THREE.SphereGeometry(0.16, 20, 14),
       whiteMaterial,
     );
-    cap.position.set(0, handrailHeight + 0.16, z);
+    cap.position.set(0, handrailHeight + 0.16, z - Math.sign(z) * .22);
     cap.userData.role = `${role}-white-post-cap`;
     group.add(cap);
     caps.push(cap);
@@ -126,7 +129,7 @@ function makeTread({
 
   const frontEdge = cylinderAlongZ(
     0.055,
-    railHalfWidth * 2 + 0.24,
+    railHalfWidth * 2 + 0.64,
     pinMaterial,
     20,
   );
@@ -164,7 +167,7 @@ function makeWharf({
     new THREE.BoxGeometry(2.9, wallHeight, railHalfWidth * 2 + 1.2),
     material,
   );
-  wall.position.set(1.45, -wallHeight / 2 + 0.08, 0);
+  wall.position.set(1.63, -wallHeight / 2 + 0.08, 0);
   wall.userData.role = 'fixed-wharf-wall';
   group.add(wall);
 
@@ -172,7 +175,7 @@ function makeWharf({
     new THREE.BoxGeometry(3.15, 0.22, railHalfWidth * 2 + 1.5),
     material,
   );
-  deck.position.set(1.5, -0.04, 0);
+  deck.position.set(1.755, -0.04, 0);
   deck.userData.role = 'fixed-wharf-deck';
   group.add(deck);
 
@@ -274,7 +277,7 @@ function selfAdjustingWharfLadder(movement) {
   const treadDepth = 1.95 * sourceScale;
   const treadThickness = 0.105;
   const railHalfWidth = 0.69;
-  const treadWidth = railHalfWidth * 2 + 0.24;
+  const treadWidth = railHalfWidth * 2 - 0.20;
   const supportRodLength = Math.hypot(handrailHeight, treadDepth);
   const dockLower = new THREE.Vector3(2.72, 1.58, 0);
   const cycleDuration = 10;
@@ -356,27 +359,29 @@ function selfAdjustingWharfLadder(movement) {
   const upperHandrails = [];
   const railIndexes = [];
   for (const side of [-1, 1]) {
-    const lowerStringer = makeDynamicLink({
-      color: PALETTE.driver,
-      depth: 0.17,
-      jointRadius: 0.145,
-      thickness: 0.20,
-    });
+    const lowerStringer = foldingRod({length: ladderLength, width: .20,
+      depth: .17, bore: .134, material: matte(PALETTE.driver),
+      role: 'rigid-lower-ladder-stringer', planeZ: 0});
     lowerStringer.userData.role = 'rigid-lower-ladder-stringer';
     lowerStringer.userData.side = side;
     root.add(lowerStringer);
     lowerStringers.push(lowerStringer);
+    for (let i = 1; i < treadCount; i++) lowerStringer.userData.addPinEye(i * treadSpacing, .089);
 
-    const upperHandrail = makeDynamicLink({
-      color: PALETTE.driven,
-      depth: 0.15,
-      jointRadius: 0.14,
-      thickness: 0.16,
-    });
+    const upperHandrail = foldingRod({length: ladderLength, width: .16,
+      depth: .15, bore: .134, material: matte(PALETTE.driven),
+      role: 'parallel-upper-handrail-bar', planeZ: 0});
     upperHandrail.userData.role = 'parallel-upper-handrail-bar';
     upperHandrail.userData.side = side;
     root.add(upperHandrail);
     upperHandrails.push(upperHandrail);
+    for (let i = 1; i < treadCount; i++) upperHandrail.userData.addPinEye(i * treadSpacing, .059);
+    for (let i = 0; i < treadCount; i++) {
+      const pin = cylinderAlongZ(i === 0 ? .13 : .055, .66, pinMaterial);
+      pin.position.set(i * treadSpacing, 0, side * .05);
+      pin.userData.role = 'upper-suspension-pivot-pin';
+      upperHandrail.add(pin);
+    }
 
     const railIndex = new THREE.Mesh(
       new THREE.SphereGeometry(0.065, 18, 12),
@@ -406,15 +411,16 @@ function selfAdjustingWharfLadder(movement) {
 
     const rodsForTread = [];
     for (const side of [-1, 1]) {
-      const rod = makeDynamicLink({
-        color: PALETTE.ink,
-        depth: 0.07,
-        jointRadius: 0.075,
-        thickness: 0.07,
-      });
+      const rod = foldingRod({length: supportRodLength, width: .07,
+        depth: .07, bore: .059, material: pinMaterial,
+        role: 'constant-length-tread-suspension-rod', planeZ: side * .24});
       rod.userData.role = 'constant-length-tread-suspension-rod';
       rod.userData.side = side;
       rod.userData.treadIndex = index;
+      if (index === 0) {
+        // Main handrail pivot is larger than intermediate suspension pins.
+        rod.userData.addPinEye(0, .134, .169);
+      }
       root.add(rod);
       rodsForTread.push(rod);
     }
@@ -831,13 +837,13 @@ function selfAdjustingWharfLadder(movement) {
     new THREE.Vector3(-3.72, -1.18, -2.12),
     new THREE.Vector3(5.78, 4.46, 2.12),
   );
-  root.userData.cameraDistanceScale = 1.20;
+  fitPistonGuide(root, update, cycleDuration);
   root.userData.groundFloorY = -1.06;
   markShadows(root);
   water.castShadow = false;
   water.receiveShadow = true;
   return {
-    cameraDirection: new THREE.Vector3(6.8, 4.4, 10.6),
+    cameraDirection: new THREE.Vector3(3.8, 2.8, 12),
     root,
     update,
   };

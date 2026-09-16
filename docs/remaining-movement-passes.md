@@ -442,3 +442,25 @@ Only 490 creates replacement geometry during playback; the old rope geometry is
 disposed, so this is allocation/upload churn rather than a demonstrated leak.
 The screen is CPU/scene triage, not contact or visual qualification. Raw output
 for this pass is `/dev/shm/family15-all-screen.json`.
+
+
+## Sixteenth parallel batch
+
+- **315/316/317:** real journals and weight passages; driven conical motion and
+  exaggerated thermal compensation remain explicit analytical demonstrations.
+- **386/387/468:** bored folding/tide-ladder joints, clear folding shells and
+  open spherical pipe passages with outboard hinge pins.
+- **436/437/438:** open axial discharge, pitched working buckets, hollow supply
+  shaft and bent arms, correct nozzle planes and bored supports.
+- **490 performance follow-up:** persistent rope buffers and a leaner inverse
+  angle solve preserve the current centerline and motion. Source shaft orientation,
+  relative guide placement and finite rope contacts remain mechanically unresolved.
+
+All construction stays outside the playback loop. Source comparisons and bounded
+finite-interface checks qualify the named corrections; fluid, thermal-material,
+structural loading and rope friction/tension are not claimed as solved dynamics.
+
+107 focused tests, the production build and ten packaged playback/mobile checks
+pass. A fresh screen of all ten changed movements reports no nonfinite data,
+scene growth or replacement geometry during playback. Detailed limits and source
+comparisons are linked from [review progress](review-progress.md).

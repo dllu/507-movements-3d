@@ -1,3 +1,4 @@
+import { correctCompensationJournals } from './pendulum-journal-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -680,8 +681,8 @@ function mercurialCompensationPendulum(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     pendulumCarrier.rotation.z = state.swingAngle;
-    rod.scale.y = state.massProperties.rodLength;
-    rod.position.y = -state.massProperties.rodLength / 2;
+    rod.scale.y = state.massProperties.rodLength - 0.25;
+    rod.position.y = -(state.massProperties.rodLength + 0.25) / 2;
     rodIndex.position.y = -1.02
       * state.massProperties.rodLength / referenceRodLength;
     threadHelix.scale.y = state.massProperties.rodLength
@@ -849,6 +850,7 @@ function mercurialCompensationPendulum(movement) {
     thermalInput: 'exaggerated cyclic temperature applied to steel rod and mercury',
   };
 
+  correctCompensationJournals(root, movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -874,7 +876,7 @@ function mercurialCompensationPendulum(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(8.8, 3.8, 12.4),
+    cameraDirection: new THREE.Vector3(1.2, .6, 16),
     root,
     update,
   };
@@ -1544,8 +1546,8 @@ function compoundBarCompensationPendulum(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     pendulumCarrier.rotation.z = state.swingAngle;
-    rod.scale.y = state.massProperties.rodLength;
-    rod.position.y = -state.massProperties.rodLength / 2;
+    rod.scale.y = state.massProperties.rodLength - 0.25;
+    rod.position.y = -(state.massProperties.rodLength + 0.25) / 2;
     mainBob.position.y = -state.massProperties.mainBobCenterDistance;
     mainBobHub.position.y = mainBob.position.y;
     compoundBar.position.y = -state.barCenterDistance;
@@ -1760,6 +1762,7 @@ function compoundBarCompensationPendulum(movement) {
   };
   root.userData.weightStateAtRodExtension = weightStateAtRodExtension;
 
+  correctCompensationJournals(root, movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1781,7 +1784,7 @@ function compoundBarCompensationPendulum(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(8.9, 3.8, 13.2),
+    cameraDirection: new THREE.Vector3(1.2, .6, 16),
     root,
     update,
   };

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
+import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
 import {
   PALETTE,
   markShadows,
@@ -203,6 +206,9 @@ function barkerReactionMill(movement) {
     new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLength, 40),
     runnerMaterial,
   );
+  const shaftPorts=Array.from({length:armCount},(_,i)=>poly([[0,-.09],[.40,-.09],[.40,.09],[0,.09]].map(p=>rotate(p,sourcePoseArmOffset+i*armPitch))));
+  const portSection=polygonClipping.difference(polygonClipping.difference(poly(circle([0,0],shaftRadius)),poly(circle([0,0],.20))),...shaftPorts);
+  shaft.geometry.dispose();shaft.geometry=mergePassageParts([horizontalRing(.20,shaftRadius,-shaftLength/2,armHeight-shaftCenterY-.09),horizontalPlate(portSection,armHeight-shaftCenterY-.09,armHeight-shaftCenterY+.09),horizontalRing(.20,shaftRadius,armHeight-shaftCenterY+.09,shaftLength/2)]);
   shaft.position.y = shaftCenterY;
   shaft.userData.role = 'central-rotating-hollow-water-supply-shaft';
   runner.add(shaft);
@@ -238,7 +244,7 @@ function barkerReactionMill(movement) {
         .add(new THREE.Vector3(0, armHeight, 0)),
       radial.clone().multiplyScalar(1.42)
         .add(new THREE.Vector3(0, armHeight, 0)),
-      radial.clone().multiplyScalar(2.13)
+      radial.clone().multiplyScalar(armRadius)
         .addScaledVector(tangent, 0.05)
         .add(new THREE.Vector3(0, armHeight, 0)),
       radial.clone().multiplyScalar(armRadius)
@@ -256,6 +262,7 @@ function barkerReactionMill(movement) {
       runnerMaterial,
       `hollow-radial-arm-with-bent-nozzle-${armIndex + 1}-of-four`,
     );
+    arm.geometry.dispose();arm.geometry=curvedPipeWall(curve,.085,.13);
     runner.add(arm);
     armPipes.push(arm);
     const collar = new THREE.Mesh(
@@ -263,7 +270,7 @@ function barkerReactionMill(movement) {
       nozzleMaterial,
     );
     collar.position.copy(points.at(-1));
-    collar.rotation.set(Math.PI / 2, -angle, 0);
+    collar.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),tangent);
     collar.userData.role =
       `tangential-outlet-collar-${armIndex + 1}-of-four`;
     runner.add(collar);
@@ -273,7 +280,7 @@ function barkerReactionMill(movement) {
     new THREE.BoxGeometry(0.74, 0.10, 0.12),
     whiteMaterial,
   );
-  rotationMarker.position.set(0.42, 3.67, 0);
+  rotationMarker.position.set(0.42, 3.14, 0);
   rotationMarker.userData.role =
     'visible-reaction-mill-shaft-rotation-marker';
   runner.add(rotationMarker);
@@ -282,6 +289,7 @@ function barkerReactionMill(movement) {
     new THREE.CylinderGeometry(0.84, 0.28, 0.76, 44, 1, true),
     frameMaterial,
   );
+  inletHopper.geometry.dispose();inletHopper.geometry=horizontalTurned([[-.38,.304],[-.38,.36],[.38,.84],[.38,.78]]);
   inletHopper.position.y = 4.04;
   inletHopper.userData.role =
     'fixed-open-hopper-feeding-central-hollow-shaft';
@@ -297,6 +305,7 @@ function barkerReactionMill(movement) {
     new THREE.CylinderGeometry(0.45, 0.45, 0.34, 40),
     frameMaterial,
   );
+  upperBearing.geometry.dispose();upperBearing.geometry=horizontalRing(shaftRadius+.004,.45,-.17,.17);
   upperBearing.position.y = 3.54;
   upperBearing.userData.role = 'fixed-upper-bearing-around-hollow-shaft';
   root.add(upperBearing);
@@ -304,6 +313,7 @@ function barkerReactionMill(movement) {
     new THREE.CylinderGeometry(0.42, 0.42, 0.32, 36),
     frameMaterial,
   );
+  lowerBearing.geometry.dispose();lowerBearing.geometry=horizontalTurned([[-.16,0],[-.16,.42],[.16,.42],[.16,.10],[-.032,0]]);
   lowerBearing.position.y = -1.18;
   lowerBearing.userData.role = 'fixed-lower-bearing-below-reaction-arms';
   root.add(lowerBearing);
@@ -319,6 +329,7 @@ function barkerReactionMill(movement) {
     new THREE.BoxGeometry(3.36, 0.18, 0.40),
     frameMaterial,
   );
+  bearingBracket.geometry.dispose();bearingBracket.geometry=horizontalPlate(polygonClipping.difference(poly([[-1.68,-.20],[1.68,-.20],[1.68,.20],[-1.68,.20]]),poly(circle([-1.76,-.32],shaftRadius+.004,128))),-.09,.09);
   bearingBracket.position.set(1.76, 3.54, -0.32);
   bearingBracket.userData.role = 'fixed-horizontal-upper-bearing-bracket';
   root.add(bearingBracket);
@@ -427,7 +438,7 @@ function barkerReactionMill(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'barker-reaction-mill-with-four-tangential-nozzles-fed-through-central-hollow-shaft-rotating-opposite-exhaust',
@@ -545,6 +556,9 @@ function barkerReactionMill(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.2, 4.6, 10.6);
   root.userData.groundFloorY = -1.80;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

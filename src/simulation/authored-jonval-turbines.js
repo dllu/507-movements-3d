@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
+import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
 import {
   PALETTE,
   markShadows,
@@ -253,6 +256,7 @@ function jonvalTurbine(movement) {
     ),
     frameMaterial,
   );
+  guideDrum.geometry.dispose();guideDrum.geometry=horizontalRing(shaftRadius+.004,annulusInnerRadius-.08,-(rowHeight+.18)/2,(rowHeight+.18)/2);
   guideDrum.position.y = guideRowCenterY;
   guideDrum.userData.role =
     'fixed-central-drum-carrying-radial-guide-shutes';
@@ -363,6 +367,8 @@ function jonvalTurbine(movement) {
       0.14, 72),
     runnerMaterial,
   );
+  const floorSpokes=Array.from({length:4},(_,i)=>horizontalPlate(poly([[shaftRadius,-.10],[annulusOuterRadius,-.10],[annulusOuterRadius,.10],[shaftRadius,.10]].map(p=>rotate(p,i*Math.PI/2))),-.07,.07));
+  runnerFloor.geometry.dispose();runnerFloor.geometry=mergePassageParts([horizontalRing(annulusOuterRadius-.10,annulusOuterRadius+.06,-.07,.07),...floorSpokes]);
   runnerFloor.position.y = runnerRowCenterY - rowHeight / 2 - 0.09;
   runnerFloor.userData.role = 'rotating-lower-support-plate-of-runner-c';
   runner.add(runnerFloor);
@@ -400,6 +406,7 @@ function jonvalTurbine(movement) {
     ),
     casingMaterial,
   );
+  casing.geometry.dispose();casing.geometry=horizontalRing(annulusOuterRadius+.24,annulusOuterRadius+.30,-1.71,1.71);
   casing.position.y = 0.28;
   casing.userData.role = 'fixed-trunk-or-casing-b-around-both-vane-rows';
   root.add(casing);
@@ -433,6 +440,7 @@ function jonvalTurbine(movement) {
     new THREE.CylinderGeometry(0.38, 0.38, 0.42, 36),
     frameMaterial,
   );
+  upperBearing.geometry.dispose();upperBearing.geometry=horizontalRing(shaftRadius+.004,.38,-.21,.21);
   upperBearing.position.y = 3.84;
   upperBearing.userData.role = 'fixed-upper-bearing-for-runner-shaft';
   root.add(upperBearing);
@@ -440,6 +448,7 @@ function jonvalTurbine(movement) {
     new THREE.BoxGeometry(5.96, 0.24, 0.74),
     frameMaterial,
   );
+  upperBeam.geometry.dispose();upperBeam.geometry=horizontalPlate(polygonClipping.difference(poly([[-2.98,-.37],[2.98,-.37],[2.98,.37],[-2.98,.37]]),poly(circle([0,0],shaftRadius+.004,128))),-.12,.12);
   upperBeam.position.y = 3.98;
   upperBeam.userData.role = 'fixed-beam-supporting-upper-bearing';
   root.add(upperBeam);
@@ -447,6 +456,7 @@ function jonvalTurbine(movement) {
     new THREE.CylinderGeometry(0.38, 0.38, 0.34, 36),
     frameMaterial,
   );
+  lowerBearing.geometry.dispose();lowerBearing.geometry=horizontalRing(shaftRadius+.004,.38,-.17,.17);
   lowerBearing.position.y = -1.72;
   lowerBearing.userData.role = 'fixed-lower-thrust-bearing-below-runner';
   root.add(lowerBearing);
@@ -456,7 +466,7 @@ function jonvalTurbine(movement) {
     frameMaterial,
   );
   inletFlume.position.set(3.52, 2.41, 0.08);
-  inletFlume.rotation.z = -0.35;
+  inletFlume.rotation.z = 0.35;
   inletFlume.userData.role = 'fixed-sloping-inlet-flume-to-casing-b';
   root.add(inletFlume);
   const inletWater = new THREE.Mesh(
@@ -464,7 +474,7 @@ function jonvalTurbine(movement) {
     waterMaterial,
   );
   inletWater.position.set(3.48, 2.55, 0.08);
-  inletWater.rotation.z = -0.35;
+  inletWater.rotation.z = 0.35;
   inletWater.userData.role = 'water-descending-inlet-flume-into-casing';
   root.add(inletWater);
   const lowerBasin = new THREE.Mesh(
@@ -478,6 +488,7 @@ function jonvalTurbine(movement) {
     new THREE.CylinderGeometry(3.26, 3.26, 0.22, 80),
     frameMaterial,
   );
+  foundation.geometry.dispose();foundation.geometry=horizontalRing(shaftRadius+.004,3.26,-.11,.11);
   foundation.position.y = -1.73;
   foundation.userData.role = 'fixed-jonval-casing-foundation';
   root.add(foundation);
@@ -552,7 +563,7 @@ function jonvalTurbine(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'jonval-axial-flow-turbine-with-fixed-radial-upper-shutes-and-more-numerous-tangential-parabolic-lower-runner-buckets',
@@ -672,6 +683,9 @@ function jonvalTurbine(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.0, 4.8, 11.0);
   root.userData.groundFloorY = -1.96;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

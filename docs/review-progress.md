@@ -1,3 +1,26 @@
+# Sixteenth family pass: pendulum journals, folding joints and fluid passages
+
+Nine more movements receive source and finite-interface corrections: 315–317,
+386/387/468 and 436–438. Movement 490 separately receives a verified playback
+performance correction; its shaft orientation and finite rope contacts remain
+queued for mechanical reconstruction. All 107 focused tests, the production
+build and ten packaged playback/mobile checks pass. The complete review remains
+active.
+
+The ladder and pipe pass reuses bored links, spherical chambers and framing
+helpers. The fluid-rotor pass opens obstructed passages and supplies finite pipe
+walls and bored supports. The pendulum pass corrects journal and weight interfaces
+while explicitly retaining prescribed swing and thermal demonstrations. See the
+[pendulum-interface review](pendulum-interface-review.md),
+[folding-joint review](folding-pipe-family-review.md),
+[fluid-rotor review](fluid-rotor-436-438-review.md) and
+[490 performance record](rope-steering-playback-review.md).
+
+490 now retains its geometry and GPU buffers. A 65-pose comparison found identical
+rope vertices and motion states; local median CPU update cost fell from 0.868 to
+0.535 ms. Its screen no longer reports replacement geometry during playback.
+This does not resolve its source-layout and rope/contact issues.
+
 # Fifteenth family pass: face gears, tube couplings and horizontal turbines
 
 Nine further movements receive bounded corrections across three independent

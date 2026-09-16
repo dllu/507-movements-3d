@@ -1,3 +1,4 @@
+import { correctConicalJournals } from './pendulum-journal-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -547,6 +548,7 @@ function conicalPendulum(movement) {
     spindleTurnsPerPendulumRevolution: 1,
   };
 
+  correctConicalJournals(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -563,7 +565,7 @@ function conicalPendulum(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(9.5, 4.2, 12.5),
+    cameraDirection: new THREE.Vector3(1.5, 1, 16),
     root,
     update,
   };

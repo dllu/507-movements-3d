@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
+import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
 import {
   PALETTE,
   markShadows,
@@ -347,10 +350,11 @@ function voluteWaterWheel(movement) {
       const segment = horizontalBoxBetween(
         points[segmentIndex],
         points[segmentIndex + 1],
-        0.42,
+        0.50,
         0.09,
         bucketMaterial,
       );
+      segment.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.55));
       segment.userData.role =
         `inclined-bucket-c-${bucketIndex + 1}-segment-${segmentIndex + 1}`;
       bucketGroup.add(segment);
@@ -364,14 +368,17 @@ function voluteWaterWheel(movement) {
       0.12, 72),
     runnerMaterial,
   );
+  const floorSpokes=Array.from({length:8},(_,i)=>poly([[-.10,-.08],[runnerOuterRadius,-.08],[runnerOuterRadius,.08],[-.10,.08]].map(p=>rotate(p,i*Math.PI/4))));
+  const floorOutline=polygonClipping.union(polygonClipping.difference(poly(circle([0,0],runnerOuterRadius)),poly(circle([0,0],runnerOuterRadius-.12))),poly(circle([0,0],.44)),...floorSpokes);
+  runnerFloor.geometry.dispose();runnerFloor.geometry=horizontalPlate(floorOutline,-.06,.06);
   runnerFloor.position.y = -0.67;
   runnerFloor.userData.role = 'rotating-bottom-plate-with-escape-openings';
   runner.add(runnerFloor);
   const runnerHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.42, 0.42, 0.58, 40),
+    new THREE.CylinderGeometry(0.42, 0.42, 1.02, 40),
     runnerMaterial,
   );
-  runnerHub.position.y = -0.05;
+  runnerHub.position.y = -0.20;
   runnerHub.userData.role = 'volute-wheel-hub-fast-on-vertical-shaft';
   runner.add(runnerHub);
   const shaft = new THREE.Mesh(
@@ -408,6 +415,12 @@ function voluteWaterWheel(movement) {
     waterMaterial,
     'clockwise-water-confined-around-runner-by-volute-b',
   );
+  outerScrollWall.geometry.dispose();outerScrollWall.geometry=horizontalVane(scrollOuterWallCurve.getPoints(192),.10,-.74,.73);
+  // The volute opens directly onto the runner around its inner perimeter. A full inner wall would isolate the driving water.
+  innerScrollWall.geometry.dispose();innerScrollWall.geometry=horizontalVane(scrollInnerWallCurve.getPoints(192).map(p=>{const r=Math.hypot(p.x,p.z),safe=Math.max(r,runnerOuterRadius+.16);return p.clone().multiplyScalar(safe/r);}),.045,-.78,-.73);
+  const scrollOuter=scrollOuterWallCurve.getPoints(192).map(p=>[p.x,-p.z]);
+  const scrollInner=scrollOuter.map(p=>{const r=Math.hypot(...p);return p.map(v=>v*(runnerOuterRadius+.15)/r);}).reverse();
+  const scrollFloor=new THREE.Mesh(horizontalPlate(poly([...scrollOuter,...scrollInner]),-.78,-.74),frameMaterial);scrollFloor.userData.role='fixed-open-annular-volute-floor';root.add(scrollFloor);
   root.add(outerScrollWall, innerScrollWall, scrollWater);
   const voluteStart = scrollFlowCurve.getPoint(0);
   const voluteStartTangent = scrollFlowCurve.getTangent(0).normalize();
@@ -498,9 +511,12 @@ function voluteWaterWheel(movement) {
     new THREE.CylinderGeometry(0.38, 0.38, 0.40, 36),
     frameMaterial,
   );
+  upperBearing.geometry.dispose();upperBearing.geometry=horizontalRing(shaftRadius+.004,.38,-.20,.20);
   upperBearing.position.y = 3.18;
   upperBearing.userData.role = 'fixed-upper-bearing-of-volute-wheel-shaft';
   root.add(upperBearing);
+  const bearingBeam=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.50,-.14],[3.50,-.14],[3.50,.14],[-3.50,.14]]),poly(circle([0,0],shaftRadius+.004,128))),3.14,3.30),frameMaterial);bearingBeam.userData.role='bored-upper-bearing-crossbeam';root.add(bearingBeam);
+  const bearingPosts=[];for(const x of[-3.42,3.42]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,4.82,.22),frameMaterial);post.position.set(x,.75,0);post.userData.role='upper-bearing-support-post';root.add(post);bearingPosts.push(post);}
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -538,17 +554,20 @@ function voluteWaterWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'volute-water-wheel-with-eight-radial-vanes-driven-around-fixed-scroll-and-four-lower-inclined-escape-buckets',
     blocks: {
+      bearingBeam,
+      bearingPosts,
       casingFloor,
       escapeFlowTubes,
       escapeMarkers: escapeMarkers.map(({ marker }) => marker),
       inletFlume,
       inletWater,
       innerScrollWall,
+      scrollFloor,
       lowerBasin,
       lowerBuckets,
       outerScrollWall,
@@ -657,6 +676,9 @@ function voluteWaterWheel(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(5.5, 7.8, 8.4);
   root.userData.groundFloorY = -2.02;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   casingFloor.receiveShadow = true;
   update(0);

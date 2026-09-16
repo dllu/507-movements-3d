@@ -5,6 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {hollowPipeBall} from './folding-joint-parts.js';
+import {boredCylinderGeometry, boredJournal, fitPistonGuide} from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -89,6 +92,12 @@ function rodBetween(start, end, radius, material, segments = 18) {
   );
   setRodBetween(rod, start, end);
   return rod;
+}
+
+function hingeArmBetween(start, pivot, radius, material) {
+  // Attach to the outside of the bored journal, never fill its axle passage.
+  const end = pivot.clone().lerp(start, .105 / start.distanceTo(pivot));
+  return rodBetween(start, end, radius, material);
 }
 
 function flexibleWaterMain(movement) {
@@ -393,14 +402,15 @@ function flexibleWaterMain(movement) {
       localSegmentGroups.push(segmentGroup);
       segmentGroups.push(segmentGroup);
 
-      const pipeShell = addRole(cylinderAlongX(
-        outerRadius,
-        pipeBarrelLength,
-        ironMaterials[mainIndex],
-        48,
-        true,
-      ), `${insideDiameterInches}-inch-pipe-shell-${segmentIndex + 1}`);
-      pipeShell.position.x = framePitch / 2;
+      const ballGeometry = hollowPipeBall(ballRadius, ballRadius - pipeWallThickness, innerRadius);
+      const ballEnd = ballGeometry.userData.outerEnd;
+      const barrelStartX = segmentIndex === 0 ? .14 : .40;
+      const barrelEndX = segmentIndex < segmentCount - 1 ? framePitch - ballEnd : framePitch;
+      const pipeShell = addRole(new THREE.Mesh(
+        boredCylinderGeometry(outerRadius, innerRadius, barrelEndX - barrelStartX),
+        ironMaterials[mainIndex]), `${insideDiameterInches}-inch-pipe-shell-${segmentIndex + 1}`);
+      pipeShell.rotation.z = -Math.PI / 2;
+      pipeShell.position.x = (barrelStartX + barrelEndX) / 2;
       segmentGroup.add(pipeShell);
       localPipeShells.push(pipeShell);
       pipeShells.push(pipeShell);
@@ -494,7 +504,7 @@ function flexibleWaterMain(movement) {
 
       if (segmentIndex < segmentCount - 1) {
         const ball = addRole(new THREE.Mesh(
-          new THREE.SphereGeometry(ballRadius, 40, 24),
+          ballGeometry,
           jointMaterials[mainIndex],
         ), `${insideDiameterInches}-inch-ball-joint-${segmentIndex + 1}`);
         ball.position.x = framePitch;
@@ -503,11 +513,17 @@ function flexibleWaterMain(movement) {
         localBallJoints.push(ball);
         ballJoints.push(ball);
 
-        const hingePin = addRole(cylinderAlongZ(
-          hingePinRadius,
-          hingePinLength,
-          hingeMaterial,
-        ), `${insideDiameterInches}-inch-horizontal-hinge-pin-${segmentIndex + 1}`);
+        // Coaxial outboard stub pins leave the hydraulic passage unobstructed.
+        const hingePin = addRole(new THREE.Group(),
+          `${insideDiameterInches}-inch-horizontal-hinge-pin-${segmentIndex + 1}`);
+        hingePin.rotation.x = Math.PI / 2;
+        for (const side of [-1, 1]) {
+          const stub = new THREE.Mesh(new THREE.CylinderGeometry(hingePinRadius,
+            hingePinRadius, .34, 28), hingeMaterial);
+          stub.position.y = side * .56;
+          stub.userData.role = 'outboard-water-main-hinge-stub';
+          hingePin.add(stub);
+        }
         hingePin.position.x = framePitch;
         hingePin.userData.axisLocal = Z_AXIS.clone();
         hingePin.userData.centerLocal = new THREE.Vector3(framePitch, 0, 0);
@@ -516,7 +532,7 @@ function flexibleWaterMain(movement) {
         hingePins.push(hingePin);
 
         for (const side of [-1, 1]) {
-          const hingeArm = addRole(rodBetween(
+          const hingeArm = addRole(hingeArmBetween(
             new THREE.Vector3(
               framePitch - 0.34,
               frameLogY,
@@ -525,82 +541,67 @@ function flexibleWaterMain(movement) {
             new THREE.Vector3(
               framePitch,
               0,
-              side * frameLogOffsetZ,
+              side * .47,
             ),
             0.058,
             hingeMaterial,
           ), `${insideDiameterInches}-inch-upstream-hinge-arm-${segmentIndex + 1}`);
           segmentGroup.add(hingeArm);
 
-          const hingeBarrel = cylinderAlongZ(
-            0.105,
-            0.22,
-            hingeMaterial,
-            22,
-          );
+          const hingeBarrel = boredJournal(.105, hingePinRadius + .004, .10, hingeMaterial);
+          hingeBarrel.userData.role = 'upstream-bored-hinge-barrel';
           hingeBarrel.position.set(
             framePitch,
             0,
-            side * (frameLogOffsetZ + 0.01),
+            side * .47,
           );
           segmentGroup.add(hingeBarrel);
         }
       }
 
       if (segmentIndex > 0) {
+        // A finite spherical seat opens into the downstream pipe neck.
+        // Clearance is geometric; no gasket preload or hydraulic solve is implied.
+        const socketInner = ballRadius + .008;
+        const socketProfile = [];
+        for (let i = 0; i <= 24; i++) {
+          const x = -.12 + .40 * i / 24;
+          socketProfile.push(new THREE.Vector2(Math.sqrt(socketInner ** 2 - x ** 2) + .04, x));
+        }
+        socketProfile.push(new THREE.Vector2(outerRadius, .40), new THREE.Vector2(innerRadius, .40));
+        for (let i = 24; i >= 0; i--) {
+          const x = -.12 + .40 * i / 24;
+          socketProfile.push(new THREE.Vector2(Math.sqrt(socketInner ** 2 - x ** 2), x));
+        }
+        socketProfile.push(socketProfile[0].clone());
         const socketBand = addRole(new THREE.Mesh(
-          new THREE.SphereGeometry(
-            socketRadius,
-            44,
-            18,
-            Math.PI * 0.16,
-            Math.PI * 1.68,
-            Math.PI / 2 - socketBandHalfAngle,
-            socketBandHalfAngle * 2,
-          ),
-          socketMaterials[mainIndex],
-        ), `${insideDiameterInches}-inch-socket-zone-${segmentIndex}`);
-        socketBand.rotation.z = Math.PI / 2;
-        socketBand.userData.centerLocal = new THREE.Vector3(0, 0, 0);
+          new THREE.LatheGeometry(socketProfile, 64).rotateZ(-Math.PI / 2),
+          socketMaterials[mainIndex]), `${insideDiameterInches}-inch-socket-zone-${segmentIndex}`);
+        socketBand.userData.centerLocal = new THREE.Vector3();
+        socketBand.geometry.userData = {socketInnerRadius: socketInner};
         segmentGroup.add(socketBand);
         localSocketJoints.push(socketBand);
         socketJoints.push(socketBand);
 
-        const socketMouthRadius = socketRadius
-          * Math.cos(socketBandHalfAngle);
-        for (const sign of [-1, 1]) {
-          const socketLip = torusNormalX(
-            socketMouthRadius,
-            0.036,
-            hingeMaterial,
-            9,
-            44,
-          );
-          socketLip.position.x = sign * socketRadius
-            * Math.sin(socketBandHalfAngle);
-          segmentGroup.add(socketLip);
-        }
-
         for (const side of [-1, 1]) {
-          const hingeArm = addRole(rodBetween(
+          const hingeArm = addRole(hingeArmBetween(
             new THREE.Vector3(
               0.34,
               frameLogY,
               side * frameLogOffsetZ,
             ),
-            new THREE.Vector3(0, 0, side * frameLogOffsetZ),
+            new THREE.Vector3(0, 0, side * .61),
             0.058,
             hingeMaterial,
           ), `${insideDiameterInches}-inch-downstream-hinge-arm-${segmentIndex}`);
           segmentGroup.add(hingeArm);
         }
-        const centerBarrel = cylinderAlongZ(
-          0.105,
-          0.34,
-          hingeMaterial,
-          22,
-        );
-        segmentGroup.add(centerBarrel);
+        for (const side of [-1, 1]) {
+          const barrel = boredJournal(.105, hingePinRadius + .004, .10, hingeMaterial);
+          barrel.position.z = side * .61;
+          barrel.userData.role = 'downstream-bored-hinge-barrel';
+          segmentGroup.add(barrel);
+        }
       }
 
       if (segmentIndex === 0) {
@@ -617,6 +618,7 @@ function flexibleWaterMain(movement) {
       }
 
       if (segmentIndex === segmentCount - 1) {
+        ballGeometry.dispose();
         const plug = addRole(cylinderAlongX(
           outerRadius + 0.055,
           0.10,
@@ -912,7 +914,7 @@ function flexibleWaterMain(movement) {
       hauling:
         'each plugged north end has its own tow cable and winch; displayed winch rotation equals reeled cable length divided by spool radius',
       hydraulicPassage:
-        '15-inch and 18-inch clear bores remain center-continuous through their spherical joints; the two mains are separate and transmit no motion to one another',
+        'the nominal 15-inch and 18-inch pipes open into hollow spherical joints; articulation changes the overlapping port area, and flow and sealing are not simulated',
       jointConstraint:
         'hinge axis dot each adjacent pipe axis is zero because every pipe axis remains in the vertical installation plane and every hinge pin remains horizontal across it',
     },
@@ -923,7 +925,7 @@ function flexibleWaterMain(movement) {
     new THREE.Vector3(7.90, 2.18, 2.68),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(8.9, 6.4, 12.2);
+  root.userData.cameraDirection = new THREE.Vector3(3.5, 5.5, 15);
   root.userData.groundFloorY = groundY;
 
   markShadows(root);
@@ -936,7 +938,7 @@ function flexibleWaterMain(movement) {
   socketJoints.forEach((socket) => {
     socket.castShadow = false;
   });
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
