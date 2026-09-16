@@ -435,7 +435,8 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
       `reported rod-P closure ${fraction}`);
     vectorNear(blocks.springL.position, geometry.springLowerAnchor,
       0, `spring-L fixed anchor ${fraction}`);
-    near(blocks.springL.scale.y, state.springVisualLength, 2e-15,
+    near(blocks.springL.children[0].geometry.parameters.path.getPoint(1).distanceTo(
+      blocks.springL.children[0].geometry.parameters.path.getPoint(0)), state.springVisualLength, 2e-15,
       `rendered spring-L length ${fraction}`);
     near(data.contacts.universalJoint.centerError, 0, 2e-15,
       `reported Cardan center ${fraction}`);
@@ -451,7 +452,7 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.equal(meshCount, 198);
+  assert.equal(meshCount, 204); // Conical bodies, open hinge support and lower frame struts.
   disposeModel(model.root);
 });
 

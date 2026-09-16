@@ -7,6 +7,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctParabolicGovernor } from './governor-274-357-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -1029,10 +1031,12 @@ function parabolicGovernor(movement) {
   };
   update(0);
   markShadows(root);
+  correctParabolicGovernor(root);
+  update(0);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.8, 4.4, 9.2),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

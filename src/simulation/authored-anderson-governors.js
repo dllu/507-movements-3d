@@ -8,6 +8,8 @@ import {
   setSpin,
 } from './primitives.js';
 
+import { correctAndersonGovernor } from './governor-274-357-parts.js';
+
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -217,7 +219,7 @@ function andersonGyroscopeGovernor(movement) {
   const crownContactLocal = new THREE.Vector3(-crownPitchRadius, 0, 0);
   const rotorRadius = 1.18;
   const rotorWidth = 0.38;
-  const rotorCenterOffset = 0.16;
+  const rotorCenterOffset = 0.65;
   const outputLeverLength = 1.58;
   const outputLinkLength = 1.72;
   const forkLayerOffset = 0.19;
@@ -1361,8 +1363,10 @@ function andersonGyroscopeGovernor(movement) {
 
   update(0);
   markShadows(root);
+  correctAndersonGovernor(root, update);
+  update(0);
   return {
-    cameraDirection: new THREE.Vector3(7.4, 5.0, 11.6),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
