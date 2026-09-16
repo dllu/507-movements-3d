@@ -1,3 +1,32 @@
+# Twenty-sixth family pass: bearings, gimbals, rope traverses and jack handoff
+
+Eight movements receive corrections in four parallel lanes: 250, 270, 352,
+355–356, 358, 362 and 389. The overall review remains active.
+
+- [250/270 bearings](bearing-family-review.md): source-correct wheel spokes and
+  pedestal, real roller/hub bores, connected axles and clear working races.
+- [355/356 gyroscopes](gyroscope-family-review.md): bored nested rings and
+  journals, connected pivots, finite rotor clearance and readable framing.
+- [352/358/362 cord traverses](cord-traverse-family-review.md): finite rope
+  channels, shaft interfaces, a readable carriage closeup and smooth reversal
+  of the oblique-groove traverse. The complete track remains inspectable by
+  zooming out, including on mobile.
+- [389 jack](jack-389-contact-review.md): source proportions and continuous
+  finite-pawl handoff with enough overtravel for seating, integrating the
+  previously isolated experiment.
+
+Analytical rolling and controlled kinematics remain inexpensive during playback.
+Passive force responses and reconstruction assumptions are recorded separately
+from the selected geometric checks.
+
+All 96 distinct focused checks pass. This includes the final ten affected 362
+checks after aligning its bed plate beneath the rear posts, plus a portrait
+camera check that the complete 358 track remains reachable from its closeup.
+The final production build passes (20.08 seconds). The eight-model screen has
+no flags; 362 was screened again after its final support correction.
+All eight packaged desktop/playback/mobile checks pass (23.9 seconds), with
+362's affected packaged check repeated successfully on the final build.
+
 # Twenty-fifth family pass: drawing, fluid passages and capstan contact
 
 Seven movements receive corrections in four parallel lanes: 395, 406–407,

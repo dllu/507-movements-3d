@@ -282,7 +282,11 @@ export class MovementEngine {
     // distance beyond the generic interactive ceiling. Keep the model's
     // computed fit authoritative while retaining 24 as the normal minimum
     // orbit limit for compact mechanisms.
-    this.controls.maxDistance = Math.max(24, distance * 3);
+    // A source closeup can still retain a much longer track or workpiece that
+    // the user should be able to inspect by zooming out.
+    const authoredMaxDistance = this.model.root.userData.cameraMaxDistance;
+    this.controls.maxDistance = Math.max(24, distance * 3,
+      Number.isFinite(authoredMaxDistance) ? authoredMaxDistance : 0);
     this.initialTarget = sphere.center.clone();
     this.initialCameraPosition = sphere.center.clone().add(direction.clone().normalize().multiplyScalar(distance));
     if (preserveView && previousFitDistance > 0) {
@@ -300,7 +304,8 @@ export class MovementEngine {
       this.controls.target.copy(this.initialTarget);
     }
     this.camera.near = Math.max(0.03, distance / 180);
-    this.camera.far = distance * 8;
+    this.camera.far = Math.max(distance * 8,
+      Number.isFinite(authoredMaxDistance) ? authoredMaxDistance * 2 : 0);
     this.camera.updateProjectionMatrix();
     this.controls.update();
   }

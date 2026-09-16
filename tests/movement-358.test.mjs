@@ -328,7 +328,7 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
         0, 1e-15, `wheel rolling contact ${wheelIndex}/${index}`);
     });
     near(contacts.fuseeCords.commonTakeoffSeparation,
-      0, 0, `one shared takeoff ${index}`);
+      .040, 1e-14, `finite separated takeoffs ${index}`);
     near(contacts.fuseeCords.tangentialVelocityError,
       0, 1e-15, `cord no-slip contact ${index}`);
     cords.forEach((cord, cordIndex) => {

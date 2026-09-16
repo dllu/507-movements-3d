@@ -1,3 +1,4 @@
+import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
 import {
   CircularArcCurve3,
@@ -50,7 +51,8 @@ class WoundBarrelHelix extends THREE.Curve {
   }
 
   getPoint(t, target = new THREE.Vector3()) {
-    const smooth = t * t * (3 - 2 * t);
+    const e=.035,denominator=1-e;
+    const smooth=t<e?t*t/(2*e*denominator):t>1-e?1-(1-t)**2/(2*e*denominator):(t-e/2)/denominator;
     const x = this.reverse
       ? this.exitX + this.axialSpan * smooth
       : this.exitX - this.axialSpan * (1 - smooth);
@@ -65,7 +67,8 @@ class WoundBarrelHelix extends THREE.Curve {
   }
 
   getTangent(t, target = new THREE.Vector3()) {
-    const smoothDerivative = 6 * t * (1 - t);
+    const e=.035;
+    const smoothDerivative=(t<e?t/e:t>1-e?(1-t)/e:1)/(1-e);
     const xDerivative = this.axialSpan * smoothDerivative;
     const phase = this.reverse
       ? this.exitPhase - this.wrapSweep * t
@@ -1363,9 +1366,10 @@ function redirectedChineseWindlass(movement) {
   };
 
   update(0);
+  correctCordTraverseParts(root,352,update);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(6.9, 4.6, 13.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };

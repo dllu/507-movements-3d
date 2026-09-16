@@ -1,3 +1,4 @@
+import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -522,12 +523,12 @@ function fuseeCarriageTraverse(movement) {
     const wrappedProgress = Math.abs(progress - startProgress);
     if (wrappedProgress > 1e-8) {
       path.add(new FuseeGrooveSegmentCurve3(
-        (sampleProgress) => groovePointAt(sampleProgress, state),
+        (sampleProgress) => groovePointAt(sampleProgress, state).add(new THREE.Vector3(0,isLeft?.020:-.020,0)),
         startProgress,
         progress,
       ));
     }
-    const contact = groovePointAt(progress, state);
+    const contact = groovePointAt(progress, state).add(new THREE.Vector3(0,isLeft?.020:-.020,0));
     const freeDirection = anchor.clone().sub(contact);
     const freeLength = freeDirection.length();
     const wrappedDirection = grooveTangentAt(
@@ -723,6 +724,7 @@ function fuseeCarriageTraverse(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     carriage.position.x = state.carriagePosition;
+    if (root.userData.followCarriage) root.position.y = -state.carriagePosition;
     fuseeRotor.rotation.y = state.shaftAngle;
     carriageWheels.forEach((wheel, index) => {
       setSpin(wheel, state.wheelAngle);
@@ -878,9 +880,10 @@ function fuseeCarriageTraverse(movement) {
     new THREE.Vector3(trackHalfLength + 0.55, 2.62, 0.82),
   );
   root.userData.groundFloorY = -0.88;
+  correctCordTraverseParts(root,358,update);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(2.1, 1.8, 13.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };

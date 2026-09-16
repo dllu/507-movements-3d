@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MovementEngine } from '../src/simulation/engine.js';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { disposeObject3D } from '../src/simulation/dispose-model.js';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url)));
 
@@ -80,4 +81,24 @@ test('reset consumes pending orbit inertia, uses the current viewport and retain
   assert.ok(engine.controls.target.distanceTo(target) < 1e-10);
   assert.equal(engine.controls.enableDamping, true);
   assertAllVerticesFit(engine);
+});
+
+test('358 closeup still permits inspecting the complete retained track at maximum zoom-out', () => {
+  const engine = Object.create(MovementEngine.prototype);
+  engine.model = createMovementModel(catalog.movements[357]);
+  engine.camera = new THREE.PerspectiveCamera();
+  engine.controls = new OrbitControls(engine.camera);
+  engine.container = {clientWidth: 390, clientHeight: 532};
+  try {
+    engine.fitCamera(engine.model.cameraDirection);
+    const closeupDistance = engine.camera.position.distanceTo(engine.controls.target);
+    engine.camera.position.copy(engine.controls.target).addScaledVector(
+      engine.model.cameraDirection.clone().normalize(), engine.controls.maxDistance);
+    engine.controls.update();
+    for (const time of [0, 3, 6, 9, 12]) {
+      engine.model.update(time);
+      assertAllVerticesFit(engine);
+    }
+    assert.ok(engine.camera.position.distanceTo(engine.controls.target) > closeupDistance * 2);
+  } finally { disposeObject3D(engine.model.root); }
 });

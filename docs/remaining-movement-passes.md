@@ -643,3 +643,23 @@ All 81 focused checks pass. The final production build, seven-model screen and
 seven packaged desktop/playback/mobile checks pass; the screen reports no flags.
 406's final separated cord legs and smooth helical wrap clear each other across
 the checked cycle while retaining the exact ideal point-thread parabola law.
+
+## Twenty-sixth parallel batch
+
+- **250/270:** shared finite bearing interfaces, corrected spoke topology and
+  pedestal proportions, real bores and source-facing views.
+- **355/356:** finite gimbal/journal interfaces and clear rotor envelopes.
+- **352/358/362:** actual rope/groove surfaces and smooth oblique-groove travel.
+- **389:** close the previously isolated jack's finite handoff and continuity
+  exception, retaining explicit prescribed preload and unloaded reset.
+
+Detailed evidence and remaining dynamics assumptions are linked from
+[review progress](review-progress.md). No family is deemed complete solely from
+the construction screen or from matching a prescribed motion law.
+
+All 96 distinct focused checks pass, including the affected 362 rerun after the
+final bed-plate correction. The final production build and eight-model screen
+pass; 362's final screen also has no flags. The 358 closeup follows its carriage
+while retaining the full ten-turn law and complete zoomable track.
+Eight packaged desktop/playback/mobile checks pass, including a final rebuilt
+362 recheck after its support correction.

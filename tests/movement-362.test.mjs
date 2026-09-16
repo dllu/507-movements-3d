@@ -168,12 +168,12 @@ test('movement 362 records the engraving and distinguishes its evidence from tim
   );
   assert.match(
     sourceReference.constructionEvidence.inference,
-    /unseen half.*equal opposite pitch/,
+    /oblique plane.*unseen half.*smooth opposite traverse/,
   );
   disposeModel(model.root);
 });
 
-test('movement 362 renders one closed cylindrical groove with equal opposite constant-pitch halves', () => {
+test('movement 362 renders one closed cylindrical groove with an oblique plane and smooth reversals', () => {
   const model = createMovementModel(catalog.movements[361]);
   const data = model.root.userData;
   const { blocks, curves, geometry } = data;
@@ -191,9 +191,9 @@ test('movement 362 renders one closed cylindrical groove with equal opposite con
   );
   near(
     geometry.groovePitchMagnitude,
-    geometry.outputStroke / Math.PI,
+    geometry.followerAmplitude,
     0,
-    'constant half-turn pitch',
+    'maximum oblique-plane slope',
   );
   assert.ok(
     geometry.followerAmplitude + geometry.grooveTubeRadius
@@ -239,9 +239,9 @@ test('movement 362 renders one closed cylindrical groove with equal opposite con
     -geometry.groovePitchMagnitude, 0, 'negative-pitch branch');
   near(data.groovePitchAtLocalAngle(0), 0, 0,
     'ideal left reversal pitch');
-  near(data.groovePitchAtLocalAngle(Math.PI), 0, 0,
+  near(data.groovePitchAtLocalAngle(Math.PI), 0, 5e-17,
     'ideal right reversal pitch');
-  assert.match(data.transmission.grooveLaw, /one closed groove/);
+  assert.match(data.transmission.grooveLaw, /closed oblique planar groove/);
   disposeModel(model.root);
 });
 
@@ -296,7 +296,7 @@ test('movement 362 keeps the upper-shaft pin exactly on the rotating groove at a
   disposeModel(model.root);
 });
 
-test('movement 362 traverses uniformly in opposite directions and reverses once at each end per input turn', () => {
+test('movement 362 traverses smoothly in opposite directions and reverses once at each end per input turn', () => {
   const model = createMovementModel(catalog.movements[361]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline } = data;
@@ -316,14 +316,14 @@ test('movement 362 traverses uniformly in opposite directions and reverses once 
   assert.equal(left.atLeftReversal, true);
   assert.equal(right.atRightReversal, true);
   assert.equal(closure.atLeftReversal, true);
-  assert.equal(left.outputVelocityDiscontinuousAtReversal, true);
-  assert.equal(right.outputVelocityDiscontinuousAtReversal, true);
+  assert.equal(left.outputVelocityDiscontinuousAtReversal, false);
+  assert.equal(right.outputVelocityDiscontinuousAtReversal, false);
   near(left.outputVelocityX, 0, 0, 'displayed reversal velocity');
   near(right.outputVelocityX, 0, 0, 'displayed opposite reversal velocity');
-  near(rightwardMid.outputVelocityX, geometry.uniformTraverseSpeed,
-    2e-15, 'uniform rightward speed');
-  near(leftwardMid.outputVelocityX, -geometry.uniformTraverseSpeed,
-    2e-15, 'uniform leftward speed');
+  near(rightwardMid.outputVelocityX, geometry.peakTraverseSpeed,
+    2e-15, 'peak rightward speed');
+  near(leftwardMid.outputVelocityX, -geometry.peakTraverseSpeed,
+    2e-15, 'peak leftward speed');
   assert.equal(rightwardMid.forwardTraverse, true);
   assert.equal(leftwardMid.forwardTraverse, false);
   near(rightwardMid.outputAngularSpeed, 0, 0,
@@ -346,7 +346,7 @@ test('movement 362 traverses uniformly in opposite directions and reverses once 
       stateAtTime(time + epsilon).outputX
         - stateAtTime(time - epsilon).outputX
     ) / (2 * epsilon);
-    near(finiteDifference, stateAtTime(time).outputVelocityX, 2e-10,
+    near(finiteDifference, stateAtTime(time).outputVelocityX, 5e-10,
       `analytic traverse speed at ${time}`);
   }
   for (const reversalTime of [0, 4, 8]) {
@@ -354,12 +354,12 @@ test('movement 362 traverses uniformly in opposite directions and reverses once 
     near(
       stateAtTime(reversalTime + epsilon).outputX,
       stateAtTime(reversalTime - epsilon).outputX,
-      geometry.uniformTraverseSpeed * epsilon * 2 + 1e-12,
+      geometry.peakTraverseSpeed * epsilon * 2 + 1e-12,
       `position continuity at reversal ${reversalTime}`,
     );
   }
-  assert.match(data.transmission.forwardLaw, /rises linearly/);
-  assert.match(data.transmission.returnLaw, /falls linearly/);
+  assert.match(data.transmission.forwardLaw, /rises sinusoidally/);
+  assert.match(data.transmission.returnLaw, /falls sinusoidally/);
   disposeModel(model.root);
 });
 
@@ -415,7 +415,7 @@ test('movement 362 renderer binds its rotor and traversing assembly for 1,200 fi
       }
     });
   }
-  assert.ok(largestStep < 0.0022,
+  assert.ok(largestStep < 0.00336,
     `largest per-frame traverse step was ${largestStep}`);
   disposeModel(model.root);
 });

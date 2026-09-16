@@ -1,3 +1,4 @@
+import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -53,8 +54,8 @@ function rotatingObliqueGrooveTraverse(movement) {
   const grooveSegments = 640;
   const followerAmplitude = 0.32;
   const outputStroke = followerAmplitude * 2;
-  const groovePitchMagnitude = outputStroke / Math.PI;
-  const contactWorldAngle = 0.70;
+  const groovePitchMagnitude = followerAmplitude;
+  const contactWorldAngle = -0.70;
   const sourceDriverAngle = -contactWorldAngle;
   const contactY = lowerAxisY
     + grooveCenterRadius * Math.cos(contactWorldAngle);
@@ -66,23 +67,8 @@ function rotatingObliqueGrooveTraverse(movement) {
   const upperShaftLength = 4.04;
   const lowerShaftLength = 2.78;
 
-  const grooveXAtLocalAngle = (localAngle) => {
-    const phase = positiveModulo(localAngle, FULL_TURN);
-    if (phase <= Math.PI) {
-      return -followerAmplitude + groovePitchMagnitude * phase;
-    }
-    return followerAmplitude
-      - groovePitchMagnitude * (phase - Math.PI);
-  };
-
-  const groovePitchAtLocalAngle = (localAngle) => {
-    const phase = positiveModulo(localAngle, FULL_TURN);
-    if (angularDistance(phase, 0) < 1e-10
-      || angularDistance(phase, Math.PI) < 1e-10) return 0;
-    return phase < Math.PI
-      ? groovePitchMagnitude
-      : -groovePitchMagnitude;
-  };
+  const grooveXAtLocalAngle = angle => -followerAmplitude*Math.cos(angle);
+  const groovePitchAtLocalAngle = angle => followerAmplitude*Math.sin(angle);
 
   const grooveCurve = new class extends THREE.Curve {
     getPoint(parameter, target = new THREE.Vector3()) {
@@ -149,12 +135,12 @@ function rotatingObliqueGrooveTraverse(movement) {
       grooveWorldTangent,
     ).normalize();
     const stage = atLeftReversal
-      ? 'left-end-instantaneous-groove-reversal'
+      ? 'left-end-smooth-groove-reversal'
       : atRightReversal
-        ? 'right-end-instantaneous-groove-reversal'
+        ? 'right-end-smooth-groove-reversal'
         : forwardTraverse
-          ? 'uniform-rightward-traverse-on-positive-pitch-half'
-          : 'uniform-leftward-traverse-on-negative-pitch-half';
+          ? 'smooth-rightward-traverse-on-positive-pitch-half'
+          : 'smooth-leftward-traverse-on-negative-pitch-half';
     return {
       atLeftReversal,
       atReversal,
@@ -179,11 +165,12 @@ function rotatingObliqueGrooveTraverse(movement) {
       inputSurfaceVelocity,
       localContactAngle,
       localContactAngleUnbounded,
-      outputAccelerationUndefinedAtReversal: atReversal,
+      outputAccelerationUndefinedAtReversal: false,
+      outputAccelerationX: followerAmplitude*Math.cos(localContactAngle)*inputAngularSpeed**2,
       outputAngularSpeed: 0,
       outputDrumSpinPrescribedBySource: false,
       outputVelocity,
-      outputVelocityDiscontinuousAtReversal: atReversal,
+      outputVelocityDiscontinuousAtReversal: false,
       outputVelocityX,
       outputX,
       radialNormal,
@@ -228,7 +215,7 @@ function rotatingObliqueGrooveTraverse(movement) {
     new THREE.BoxGeometry(4.25, 0.18, 0.76),
     frameMaterial,
   );
-  base.position.set(0.08, baseY, 0.35);
+  base.position.set(0.08, baseY, -0.35);
   base.userData.role = 'source-visible-bed-plate';
   frame.add(base);
   const framePostSpecifications = [
@@ -242,7 +229,7 @@ function rotatingObliqueGrooveTraverse(movement) {
       new THREE.BoxGeometry(0.23, height, 0.34),
       frameMaterial,
     );
-    post.position.set(x, baseY + 0.09 + height / 2, 0.43);
+    post.position.set(x, baseY + 0.09 + height / 2, -0.43);
     post.userData.role = role;
     frame.add(post);
     return post;
@@ -483,7 +470,7 @@ function rotatingObliqueGrooveTraverse(movement) {
     },
     dynamics: {
       idealReversal:
-        'the two constant-pitch groove halves meet at ideal sharp reversals, so axial velocity changes sign instantaneously while position stays continuous',
+        'an oblique planar groove gives a sinusoidal axial traverse; velocity changes sign smoothly through zero at each end',
       sourceSpecifiesInputSpeedOrInertia: false,
       upperShaftSpinPrescribedBySource: false,
     },
@@ -507,7 +494,7 @@ function rotatingObliqueGrooveTraverse(movement) {
       lowerShaftLength,
       outputStroke,
       sourceDriverAngle,
-      uniformTraverseSpeed: groovePitchMagnitude * inputAngularSpeed,
+      peakTraverseSpeed: groovePitchMagnitude * inputAngularSpeed,
       upperAxisY,
       upperDrumOffsetX,
       upperDrumRadius,
@@ -560,7 +547,7 @@ function rotatingObliqueGrooveTraverse(movement) {
         engravingEvidence:
           'the plate shows parallel horizontal shafts, one large upper traversing drum, one continuously journaled lower cylinder, and one visible diagonal groove branch',
         inference:
-          'alternating positive drive requires the unseen half of the single closed groove to return with equal opposite pitch; the displayed lower rotation is uniform but Brown gives no timing',
+          'the visible diagonal is reconstructed as an oblique plane intersecting the cylinder; its unseen half gives a smooth opposite traverse, while Brown supplies no timing',
       },
       primaryScan: {
         archiveIdentifier: 'fivehundredseven00browiala',
@@ -580,11 +567,11 @@ function rotatingObliqueGrooveTraverse(movement) {
       contactPhaseLaw:
         'local groove contact angle = contactWorldAngle + driverAngle modulo 2*pi',
       forwardLaw:
-        'over the positive-pitch half, outputX rises linearly by the full stroke in one half input turn',
+        'over the positive-pitch half, outputX rises sinusoidally by the full stroke in one half input turn',
       grooveLaw:
-        'one closed groove consists of equal constant-pitch positive and negative half-turn helices joined at the two traverse ends',
+        'the closed oblique planar groove has x=-amplitude*cos(local angle), with finite smooth reversals',
       returnLaw:
-        'over the negative-pitch half, outputX falls linearly by the full stroke in one half input turn',
+        'over the negative-pitch half, outputX falls sinusoidally by the full stroke in one half input turn',
     },
   };
 
@@ -594,9 +581,10 @@ function rotatingObliqueGrooveTraverse(movement) {
     new THREE.Vector3(2.25, 1.67, 0.82),
   );
   root.userData.groundFloorY = -1.67;
+  correctCordTraverseParts(root,362,update);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.7, 2.8, -8.5),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
