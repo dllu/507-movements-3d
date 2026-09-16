@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, bellLipSphereGap } from './spring-pivot-family-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -127,7 +128,8 @@ function springReturnBellHammer(movement) {
     pivot.z,
   );
   const bellBaseY = strikeHeadCenter.y - 0.02;
-  const bellCenterX = strikeHeadCenter.x + strikerRadius + bellLipRadius;
+  const bellCenterX = strikeHeadCenter.x + bellLipRadius
+    + Math.sqrt((strikerRadius + 0.075) ** 2 - 0.02 ** 2);
   const bellTopY = bellBaseY + bellHeight;
   const bellContactX = bellCenterX - bellLipRadius;
   const ringDuration = 2.05;
@@ -135,7 +137,7 @@ function springReturnBellHammer(movement) {
   const bellAngularFrequency = FULL_TURN * 6.4;
   const bellDecayRate = 2.2;
   const springRestContactY = pivot.y
-    + springContactRadius * Math.sin(restAngle);
+    + springContactRadius * Math.sin(restAngle) - 0.1752 * Math.cos(restAngle);
 
   const stateAtCycleTime = (unwrappedTime) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(
@@ -178,14 +180,12 @@ function springReturnBellHammer(movement) {
       radial,
       springContactRadius,
     );
-    springContact.z = springBase.z;
+    springContact.addScaledVector(tangent, -0.1752);
     const springDeflection = springRestContactY - springContact.y;
     const springCompression = springPreload + springDeflection;
     const returnSpringForce = springStiffness * springCompression;
     const returnSpringTorque = returnSpringForce
       * (springContact.x - pivot.x);
-    const contactClearance = bellContactX
-      - (hammerHeadCenter.x + strikerRadius);
     const bellAngle = bellRingAngle(
       cycleTime,
       strikeTime,
@@ -194,6 +194,9 @@ function springReturnBellHammer(movement) {
       bellAngularFrequency,
       bellDecayRate,
     );
+    const contactClearance = bellLipSphereGap(hammerHeadCenter,
+      new THREE.Vector3(bellCenterX, bellTopY, pivot.z), bellAngle,
+      bellHeight, bellLipRadius, 0.075, strikerRadius);
     const isImpact = Math.abs(cycleTime - strikeTime) <= 1e-12;
     return {
       bellAngle,
@@ -293,7 +296,8 @@ function springReturnBellHammer(movement) {
   pivotStand.add(pedestal);
   const bearing = cylinderAlongZ(0.25, 0.96, darkMaterial, 36);
   bearing.position.copy(pivot);
-  bearing.position.z = 0.12;
+  bearing.position.z = 0.05;
+  boreZCylinder(bearing, 0.25, 0.108, 0.50);
   bearing.userData.role = 'fixed-bearing-at-hammer-pivot';
   pivotStand.add(bearing);
   const pivotPin = cylinderAlongZ(0.105, 1.18, whiteMaterial, 28);
@@ -310,21 +314,24 @@ function springReturnBellHammer(movement) {
     new THREE.BoxGeometry(hammerArmLength, 0.14, 0.24),
     hammerMaterial,
   );
-  hammerArm.position.set(hammerArmLength / 2, 0, 0.12);
+  hammerArm.position.set(hammerArmLength / 2, 0, 0);
+  boreBoxAtLocalPoint(hammerArm, [-hammerArmLength/2, 0], 0.108);
   hammerArm.userData.role = 'rigid-hammer-arm';
   hammer.add(hammerArm);
   const hammerTail = new THREE.Mesh(
     new THREE.BoxGeometry(hammerTailLength, 0.16, 0.26),
     hammerMaterial,
   );
-  hammerTail.position.set(-hammerTailLength / 2, 0, 0.12);
+  hammerTail.position.set(-hammerTailLength / 2, 0, 0);
+  boreBoxAtLocalPoint(hammerTail, [hammerTailLength/2, 0], 0.108);
+  const hammerHub = addZJournal(hammer, 0.21, 0.108, 0.26, hammerMaterial, new THREE.Vector3(), 'bored-hammer-pivot-hub');
   hammerTail.userData.role = 'abstract-actuating-tail-of-hammer';
   hammer.add(hammerTail);
   const hammerHead = new THREE.Mesh(
     new THREE.BoxGeometry(0.50, 0.46, 0.62),
     hammerMaterial,
   );
-  hammerHead.position.set(hammerArmLength - 0.16, 0, 0.12);
+  hammerHead.position.set(hammerArmLength - 0.22, 0, 0);
   hammerHead.rotation.z = THREE.MathUtils.degToRad(8);
   hammerHead.userData.role = 'rectangular-hammer-head';
   hammer.add(hammerHead);
@@ -332,7 +339,7 @@ function springReturnBellHammer(movement) {
     new THREE.SphereGeometry(strikerRadius, 26, 20),
     whiteMaterial,
   );
-  strikerFace.position.set(hammerArmLength, 0, 0.12);
+  strikerFace.position.set(hammerArmLength, 0, 0);
   strikerFace.userData.role = 'rounded-bell-contact-face';
   hammer.add(strikerFace);
   root.add(hammer);
@@ -343,7 +350,7 @@ function springReturnBellHammer(movement) {
   );
   springHeel.position.copy(springBase);
   springHeel.position.y -= 0.13;
-  springHeel.position.z = 0.05;
+  springHeel.position.z = springBase.z;
   springHeel.userData.role = 'fixed-heel-of-return-spring';
   root.add(springHeel);
   const returnLeafSpring = makeSegmentedLeafSpring(
@@ -361,7 +368,7 @@ function springReturnBellHammer(movement) {
   root.add(springContactPad);
 
   const bellPivot = new THREE.Group();
-  bellPivot.position.set(bellCenterX, bellTopY, 0.08);
+  bellPivot.position.set(bellCenterX, bellTopY, pivot.z);
   bellPivot.userData.role = 'small-post-impact-bell-vibration-pivot';
   const bellProfile = [
     new THREE.Vector2(0.18, bellHeight),
@@ -374,7 +381,8 @@ function springReturnBellHammer(movement) {
     new THREE.Vector2(bellLipRadius, 0),
   ];
   const bellBody = new THREE.Mesh(
-    new THREE.LatheGeometry(bellProfile, 64),
+    new THREE.LatheGeometry([...bellProfile,
+      ...bellProfile.slice().reverse().map(p => new THREE.Vector2(p.x - 0.055, p.y)), bellProfile[0]].reverse(), 96),
     bellMaterial,
   );
   bellBody.position.set(0, -bellHeight, 0);
@@ -400,10 +408,10 @@ function springReturnBellHammer(movement) {
   const fixedBellSupport = new THREE.Group();
   fixedBellSupport.userData.role = 'fixed-overhead-bell-support';
   const supportPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 3.80, 0.28),
+    new THREE.BoxGeometry(0.20, bellTopY + 0.34 + 1.72, 0.28),
     frameMaterial,
   );
-  supportPost.position.set(3.12, 0.18, -0.38);
+  supportPost.position.set(3.12, (bellTopY + 0.34 - 1.72) / 2, -0.38);
   supportPost.userData.role = 'fixed-bell-support-post';
   fixedBellSupport.add(supportPost);
   const supportArm = new THREE.Mesh(
@@ -413,8 +421,8 @@ function springReturnBellHammer(movement) {
   supportArm.position.set(2.62, bellTopY + 0.25, -0.38);
   supportArm.userData.role = 'fixed-overhead-arm-carrying-bell';
   fixedBellSupport.add(supportArm);
-  const hanger = cylinderAlongZ(0.11, 0.54, darkMaterial, 26);
-  hanger.position.set(bellCenterX, bellTopY + 0.08, -0.06);
+  const hanger = cylinderAlongZ(0.11, 1.04, darkMaterial, 26);
+  hanger.position.set(bellCenterX, bellTopY + 0.08, 0.06);
   hanger.userData.role = 'fixed-bell-hanger-pin';
   fixedBellSupport.add(hanger);
   root.add(fixedBellSupport);
@@ -448,6 +456,9 @@ function springReturnBellHammer(movement) {
       foundation,
       hammer,
       hammerArm,
+      hammerHub,
+      bearing,
+      pivotPin,
       hammerHead,
       hammerTail,
       pivotStand,
@@ -525,7 +536,7 @@ function springReturnBellHammer(movement) {
     stateAtTime,
     transmission: {
       bellClearance:
-        'bellContactX-(hammerHeadCenterX+strikerRadius)',
+        'distance from striker center to rotated bell lip centerline minus both contact radii',
       springCompression:
         'preload+restContactHeight-currentContactHeight',
       strikePulse:
@@ -540,6 +551,7 @@ function springReturnBellHammer(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(4.7, 3.0, 10.8);
   root.userData.groundFloorY = -1.94;
+  finishSpringFamily(root, cycleDuration);
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -157,7 +157,7 @@ test('movement 420 compact strike pulse is C2 at its dwell boundaries and reache
     'strike angle');
   vectorNear(strike.hammerHeadCenter, geometry.strikeHeadCenter, 5e-16,
     'strike head center');
-  near(strike.contactClearance, 0, 3e-16, 'exact bell contact');
+  near(strike.contactClearance, 0, 1e-14, 'exact bell contact');
   assert.equal(strike.isImpact, true);
   assert.equal(strike.hammerClearOfBell, false);
   disposeModel(model.root);
@@ -179,11 +179,11 @@ test('movement 420 hammer never penetrates the bell and clears it promptly for m
       minimumTime = time;
     }
     if (state.hammerClearOfBell) clearSamples += 1;
-    assert.ok(state.contactClearance >= -3e-16);
+    assert.ok(state.contactClearance >= -1e-14);
   }
   near(minimumTime, geometry.strikeTime, 5e-15,
     'unique closest-approach time');
-  near(minimumClearance, 0, 3e-16, 'minimum clearance');
+  near(minimumClearance, 0, 1e-14, 'minimum clearance');
   assert.ok(clearSamples / sampleCount > 0.999);
   near(motion.clearDwellDuration,
     geometry.cycleDuration - geometry.strikeWindowDuration, 0,
@@ -236,7 +236,7 @@ test('movement 420 hammer head and spring contact obey one rigid lever angle wit
     springRadial.z = 0;
     near(headRadial.length(), geometry.hammerArmLength, 5e-16,
       'rigid head radius');
-    near(springRadial.length(), geometry.springContactRadius, 5e-16,
+    near(springRadial.length(), Math.hypot(geometry.springContactRadius,.1752), 8e-16,
       'rigid spring-contact radius');
     near(Math.atan2(headRadial.y, headRadial.x), state.hammerAngle,
       2.3e-16, 'head angle');

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { makeBoredPlanarLink } from './bored-planar-link.js';
+import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, finiteSawSheave } from './spring-pivot-family-parts.js';
 import {
   PALETTE,
-  makePulley,
   markShadows,
   matte,
   setSpin,
@@ -29,13 +30,6 @@ function tubeBetween(start, end, radius, material) {
     ),
     material,
   );
-}
-
-function setHorizontalPlaneRod(mesh, start, end) {
-  const delta = end.clone().sub(start);
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.rotation.z = Math.atan2(delta.y, delta.x);
-  mesh.scale.x = delta.length();
 }
 
 function setVerticalRope(mesh, x, firstY, secondY, z) {
@@ -279,7 +273,8 @@ function pendulumTreeSaw(movement) {
     darkMaterial,
     28,
   );
-  pendulumBearing.position.copy(pendulumPivot).setZ(0.16);
+  pendulumBearing.position.copy(pendulumPivot).setZ(0.04);
+  boreZCylinder(pendulumBearing, .16, .063, .42);
   pendulumBearing.userData.role = 'fixed-pendulum-pivot-bearing';
   pendulumFrame.add(pendulumBearing);
 
@@ -294,6 +289,10 @@ function pendulumTreeSaw(movement) {
     pendulumMaterial,
   );
   pendulumRod.position.y = -pendulumLength / 2;
+  boreBoxAtLocalPoint(pendulumRod, [0,pendulumLength/2], .063);
+  const pendulumHub=addZJournal(pendulum,.14,.063,.15,pendulumMaterial,new THREE.Vector3(),'bored-pendulum-pivot-hub');
+  const pendulumShaft=cylinderAlongZ(.06,.72,darkMaterial);
+  pendulumShaft.position.copy(pendulumPivot).setZ(.16);root.add(pendulumShaft);
   pendulumRod.userData.role = 'rigid-pendulum-rod';
   pendulum.add(pendulumRod);
   const pendulumBob = new THREE.Mesh(
@@ -303,7 +302,7 @@ function pendulumTreeSaw(movement) {
   pendulumBob.position.y = -pendulumLength;
   pendulumBob.userData.role = 'rectangular-source-style-pendulum-bob';
   pendulum.add(pendulumBob);
-  const rodJointPin = cylinderAlongZ(0.11, 0.34, darkMaterial, 24);
+  const rodJointPin = cylinderAlongZ(0.11, 0.64, darkMaterial, 24);
   rodJointPin.position.y = -rodAttachmentRadius;
   rodJointPin.userData.role = 'pendulum-lower-driving-pin';
   pendulum.add(rodJointPin);
@@ -323,7 +322,7 @@ function pendulumTreeSaw(movement) {
     new THREE.BoxGeometry(3.54, 0.13, 0.24),
     carriageMaterial,
   );
-  carriageTop.position.set(1.35, 1.29, 0.34);
+  carriageTop.position.set(1.35, 1.29, 0.08);
   carriageTop.userData.role = 'moving-carriage-top-crossbar';
   carriage.add(carriageTop);
   const carriageSides = [];
@@ -332,18 +331,18 @@ function pendulumTreeSaw(movement) {
       new THREE.BoxGeometry(0.13, 1.52, 0.24),
       carriageMaterial,
     );
-    side.position.set(x, 0.53, 0.34);
+    side.position.set(x, 0.53, 0.08);
     side.userData.role = 'moving-carriage-vertical-guide-side';
     carriageSides.push(side);
     carriage.add(side);
   }
-  const carriageGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(3.54, 0.055, 0.10),
-    carriageMaterial,
-  );
-  carriageGuide.position.set(1.35, 0, 0.34);
-  carriageGuide.userData.role =
-    'moving-horizontal-line-constraining-saw-pin';
+  const carriageGuide = new THREE.Group();
+  carriageGuide.position.set(1.35, 0, 0.08);
+  carriageGuide.userData.role = 'moving-horizontal-line-constraining-saw-pin';
+  for(const y of [-.1475,.1475]){
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(3.54,.045,.12),carriageMaterial);
+    rail.position.y=y;carriageGuide.add(rail);
+  }
   carriage.add(carriageGuide);
   const carriageAnchors = [];
   for (const x of [-0.42, 3.12]) {
@@ -354,14 +353,12 @@ function pendulumTreeSaw(movement) {
     carriage.add(anchor);
   }
 
-  const connectingRod = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 0.085, 0.11),
-    ropeMaterial,
-  );
+  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.085,eyeRadius:.16,boreRadius:.123,depth:.10},ropeMaterial);
   connectingRod.userData.role =
     'constant-length-rod-from-pendulum-pin-to-horizontal-saw-slider';
   root.add(connectingRod);
-  const sawPinMarker = cylinderAlongZ(0.12, 0.38, darkMaterial, 24);
+  const sawPinMarker = cylinderAlongZ(0.12, 0.66, darkMaterial, 24);
+  sawPinMarker.geometry.translate(0,-.08,0);
   sawPinMarker.userData.role = 'horizontal-saw-slider-pin';
   root.add(sawPinMarker);
 
@@ -414,13 +411,12 @@ function pendulumTreeSaw(movement) {
   const ropeSegments = [];
   const counterweights = [];
   for (let index = 0; index < 2; index += 1) {
-    const pulley = makePulley({
-      radius: pulleyRadius,
-      width: 0.20,
-      color: PALETTE.accent,
-      grooves: 1,
-      spokes: 4,
-    });
+    const pulley = finiteSawSheave(carriageMaterial);
+    const shaft=cylinderAlongZ(.035,.70,darkMaterial);shaft.position.copy(pulleyCenters[index]).setZ(.12);root.add(shaft);
+    pulley.userData.shaft=shaft;
+    const bracket=makeBoredPlanarLink({length:.19,width:.13,eyeRadius:.085,boreRadius:.038,depth:.12},frameMaterial);
+    bracket.position.copy(pulleyCenters[index]).setZ(0);bracket.rotation.z=Math.PI/2;
+    bracket.userData.role='bored-sheave-support-tab';fixedFrame.add(bracket);pulley.userData.bracket=bracket;
     pulley.position.copy(pulleyCenters[index]);
     pulley.userData.role =
       'fixed-axis-counterweight-rope-pulley';
@@ -429,7 +425,7 @@ function pendulumTreeSaw(movement) {
 
     const ropeArc = new THREE.Mesh(
       new THREE.TorusGeometry(
-        pulleyRadius + 0.015,
+        pulleyRadius,
         0.025,
         8,
         36,
@@ -437,13 +433,13 @@ function pendulumTreeSaw(movement) {
       ),
       ropeMaterial,
     );
-    ropeArc.position.copy(pulleyCenters[index]).setZ(0.47);
+    ropeArc.position.copy(pulleyCenters[index]).setZ(0.34);
     ropeArc.userData.role = 'fixed-upper-half-rope-wrap-on-pulley';
     ropeArcs.push(ropeArc);
     root.add(ropeArc);
 
     const innerRope = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, 1, 0.045),
+      new THREE.CylinderGeometry(.025,.025,1,12),
       ropeMaterial,
     );
     innerRope.userData.side = index === 0 ? 'left' : 'right';
@@ -452,7 +448,7 @@ function pendulumTreeSaw(movement) {
     ropeSegments.push(innerRope);
     root.add(innerRope);
     const outerRope = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, 1, 0.045),
+      new THREE.CylinderGeometry(.025,.025,1,12),
       ropeMaterial,
     );
     outerRope.userData.side = index === 0 ? 'left' : 'right';
@@ -521,11 +517,7 @@ function pendulumTreeSaw(movement) {
     carriage.position.y = state.guideY;
     saw.position.copy(state.sawPin);
     sawPinMarker.position.copy(state.sawPin);
-    setHorizontalPlaneRod(
-      connectingRod,
-      state.rodJoint,
-      state.sawPin,
-    );
+    connectingRod.userData.setEndpoints(state.rodJoint.clone().setZ(.55),state.sawPin.clone().setZ(.55));
     for (let index = 0; index < 2; index += 1) {
       const pulleyCenter = pulleyCenters[index];
       const innerX = index === 0
@@ -539,14 +531,14 @@ function pendulumTreeSaw(movement) {
         innerX,
         state.anchorY,
         pulleyY,
-        0.47,
+        0.34,
       );
       setVerticalRope(
         ropeSegments[index * 2 + 1],
         outerX,
         state.counterweightRopeTopY,
         pulleyY,
-        0.47,
+        0.34,
       );
       counterweights[index].position.y = state.counterweightY;
       setSpin(pulleyRoots[index], state.pulleyAngles[index]);
@@ -585,6 +577,8 @@ function pendulumTreeSaw(movement) {
       pendulum,
       pendulumBase,
       pendulumBearing,
+      pendulumHub,
+      pendulumShaft,
       pendulumBob,
       pendulumFrame,
       pendulumIndex,
@@ -714,6 +708,7 @@ function pendulumTreeSaw(movement) {
     new THREE.Vector3(4.10, 2.55, 1.65),
   );
   root.userData.groundFloorY = -2.00;
+  finishSpringFamily(root, 14.4);
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(3.8, 2.8, 10.2),

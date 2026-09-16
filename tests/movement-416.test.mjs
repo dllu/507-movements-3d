@@ -80,7 +80,7 @@ test('movement 416 is one full-turn crank B, one pitman, one rocking treadle, an
     if (object.userData.role) roles.push(object.userData.role);
     if (object.userData.isBelt) belts.push(object);
     if (object.userData.role
-      === 'preloaded-tension-compression-helical-spring-A') {
+      === 'preloaded-planar-curled-spring-A') {
       springs.push(object);
     }
   });
@@ -92,8 +92,8 @@ test('movement 416 is one full-turn crank B, one pitman, one rocking treadle, an
     'white-crank-B-pin-and-spring-attachment',
     'rocking-foot-treadle-input',
     'constant-length-pitman-from-crank-B-to-treadle',
-    'preloaded-tension-compression-helical-spring-A',
-    'fixed-inner-end-of-helical-spring-A',
+    'preloaded-planar-curled-spring-A',
+    'fixed-inner-end-of-curled-spring-A',
     'white-full-rotation-flywheel-index',
     'white-treadle-rocking-index',
   ]) assert.ok(roles.includes(role), role);
@@ -295,7 +295,7 @@ test('movement 416 linear spring force is conservative and exchanges zero net wo
     const energyDerivative = (
       after.springPotentialEnergy - before.springPotentialEnergy
     ) / (2 * derivativeStep);
-    near(energyDerivative, -state.springTorque, 1.2e-10,
+    near(energyDerivative, -state.springTorque, 2e-10,
       `spring conservative torque at ${angle}`);
   }
   disposeModel(model.root);
@@ -370,9 +370,9 @@ test('movement 416 update binds crank, treadle, pitman, and deforming spring to 
       'flywheel/crank update');
     near(blocks.treadleRotor.rotation.z, state.treadleAngle, 0,
       'treadle update');
-    near(blocks.pitman.scale.y, geometry.pitmanLength, 3e-15,
+    near(blocks.pitman.geometry.userData.bores[1].x, geometry.pitmanLength, 3e-15,
       'rendered pitman length');
-    near(blocks.spring.scale.x, state.springLength, 0,
+    near(blocks.spring.userData.attachmentDistance, state.springLength, 0,
       'rendered spring length');
     vectorNear(blocks.spring.position, geometry.springAnchor, 0,
       'spring fixed endpoint');

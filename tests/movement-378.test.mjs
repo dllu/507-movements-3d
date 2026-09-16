@@ -360,14 +360,14 @@ test('movement 378 renderer binds pendulum, fed carriage, saw, rigid rod, ropes,
     }
     blocks.connectingRod.updateMatrixWorld(true);
     const renderedStart = blocks.connectingRod.localToWorld(
-      new THREE.Vector3(-0.5, 0, 0),
+      new THREE.Vector3(0, 0, 0),
     );
     const renderedEnd = blocks.connectingRod.localToWorld(
-      new THREE.Vector3(0.5, 0, 0),
+      new THREE.Vector3(geometry.connectingRodLength, 0, 0),
     );
-    vectorNear(renderedStart, expected.rodJoint, 8e-16,
+    vectorNear(renderedStart, expected.rodJoint.clone().setZ(.55), 2e-15,
       'rendered rigid rod pendulum endpoint');
-    vectorNear(renderedEnd, expected.sawPin, 8e-16,
+    vectorNear(renderedEnd, expected.sawPin.clone().setZ(.55), 2e-15,
       'rendered rigid rod saw endpoint');
     vectorNear(blocks.fixedFrame.position, fixedFramePosition, 0,
       'overhead frame remains fixed');
