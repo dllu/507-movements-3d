@@ -292,8 +292,8 @@ test('movement 383 disclosed brush-cylinder choice is half the winding angular s
     'armed-with-brush-bars');
   assert.match(transmission.ratioAndDirectionChoice, /conjectural|clockwise|counterclockwise/);
   near(transmission.dressingAngularSpeed,
-    -0.5 * transmission.windingAngularSpeed, 0,
-    'chosen angular ratio and opposite direction');
+    0.5 * transmission.windingAngularSpeed, 0,
+    'official conjectural angular ratio and same direction');
   near(transmission.dressingSurfaceSpeed,
     transmission.dressingAngularSpeed
       * geometry.dressingContactRadius,
@@ -303,7 +303,7 @@ test('movement 383 disclosed brush-cylinder choice is half the winding angular s
     0, 'dressing slip speed');
   assert.ok(transmission.dressingRelativeSlipSpeed > 0);
   assert.ok(transmission.dressingRelativeSlipSpeed
-    < transmission.webSpeed);
+    > transmission.webSpeed);
   for (const time of [-12, 0, 2.3, 17]) {
     const state = stateAtTime(time);
     near(state.dressingRelativeSlipSpeed,
@@ -409,8 +409,8 @@ test('movement 383 closes two web circuits, two winding turns, and one dressing 
       `winding roll ${index} pose closes`);
   }
   near(closure.dressingAngle - start.dressingAngle,
-    FULL_TURN, 2e-15,
-    'dressing cylinder makes one counterclockwise turn');
+    -FULL_TURN, 2e-15,
+    'dressing cylinder makes one clockwise turn');
   angleNear(closure.dressingAngle, start.dressingAngle, 2e-15,
     'dressing cylinder pose closes');
   for (let index = 0; index < geometry.markerCount; index += 1) {

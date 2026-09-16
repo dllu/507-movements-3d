@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { boredRollGeometry, boredBlockGeometry, textileBrushGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -180,7 +182,7 @@ function textileDressingElements(movement) {
   const webCircuitPeriod = webPath.length / webSpeed;
   const demonstrationPeriod = 2 * webCircuitPeriod;
   const windingAngularSpeed = -webSpeed / rollRadius;
-  const dressingAngularSpeed = -0.5 * windingAngularSpeed;
+  const dressingAngularSpeed = 0.5 * windingAngularSpeed;
   const windingStartAngles = [
     THREE.MathUtils.degToRad(8),
     THREE.MathUtils.degToRad(-13),
@@ -278,7 +280,7 @@ function textileDressingElements(movement) {
     roughness: 0.84,
     side: THREE.DoubleSide,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
+  const whiteMaterial = matte(PALETTE.white, { roughness: 0.43, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
@@ -312,9 +314,9 @@ function textileDressingElements(movement) {
     fixedFrame.add(foot);
   }
   const bearingBars = [];
-  for (const y of [centerSpacing, -centerSpacing]) {
+  for (const y of [centerSpacing, 0, -centerSpacing]) {
     const bar = new THREE.Mesh(
-      new THREE.BoxGeometry(2.84, 0.12, 0.17),
+      boredBlockGeometry(2.84, 0.34, 0.17, 0.14),
       frameMaterial,
     );
     bar.position.set(0, y, -1.12);
@@ -325,6 +327,8 @@ function textileDressingElements(movement) {
   const bearingBlocks = [];
   for (const y of [centerSpacing, 0, -centerSpacing]) {
     const bearing = cylinderAlongZ(0.19, 0.30, darkMaterial, 28);
+    bearing.geometry.dispose();
+    bearing.geometry = boredRollGeometry(0.19, 0.30, y === 0 ? 0.134 : 0.114);
     bearing.position.set(0, y, -1.08);
     bearing.userData.role = 'fixed-parallel-axis-bearing';
     bearingBlocks.push(bearing);
@@ -344,15 +348,17 @@ function textileDressingElements(movement) {
       : 'lower-takeup-winding-roll';
     root.add(roller);
     const rollBody = cylinderAlongZ(
-      rollRadius * 0.91,
+      rollRadius,
       webWidth + 0.12,
       rollMaterial,
-      44,
+      128,
     );
+    rollBody.geometry.dispose();
+    rollBody.geometry = boredRollGeometry(rollRadius, webWidth + 0.12, 0.112);
     rollBody.userData.role = 'cloth-wound-roll-body';
     roller.add(rollBody);
     const rollRims = [];
-    for (const z of [-webWidth / 2, webWidth / 2]) {
+    for (const z of [-webWidth / 2 - 0.09, webWidth / 2 + 0.09]) {
       const rim = new THREE.Mesh(
         new THREE.TorusGeometry(rollRadius, 0.045, 9, 56),
         darkMaterial,
@@ -364,17 +370,17 @@ function textileDressingElements(movement) {
     }
     const axle = cylinderAlongZ(
       0.11,
-      webWidth + 0.58,
+      2.60,
       darkMaterial,
       26,
     );
     axle.userData.role = 'winding-roll-axle';
     roller.add(axle);
     const indexMark = new THREE.Mesh(
-      new THREE.BoxGeometry(rollRadius * 0.72, 0.055, 0.04),
+      new THREE.BoxGeometry(rollRadius * 0.50, 0.055, 0.025),
       whiteMaterial,
     );
-    indexMark.position.set(rollRadius * 0.38, 0, webWidth / 2 + 0.045);
+    indexMark.position.set(rollRadius * 0.51, 0, webWidth / 2 + 0.073);
     indexMark.userData.role = 'white-winding-roll-rotation-index';
     roller.add(indexMark);
     roller.userData.blocks = { axle, indexMark, rollBody, rollRims };
@@ -392,29 +398,16 @@ function textileDressingElements(movement) {
     dressingMaterial,
     48,
   );
+  dressingCore.geometry.dispose();
+  dressingCore.geometry = boredRollGeometry(dressingCoreRadius, webWidth + 0.20, 0.132);
   dressingCore.userData.role = 'dressing-cylinder-core';
   dressingCylinder.add(dressingCore);
   const brushBars = [];
   for (let index = 0; index < brushCount; index += 1) {
     const angle = index * FULL_TURN / brushCount;
     const brush = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        dressingContactRadius - dressingCoreRadius + 0.10,
-        0.085,
-        webWidth * 0.90,
-      ),
+      textileBrushGeometry(dressingCoreRadius - 0.015, dressingContactRadius - 0.0002, webWidth * 0.90),
       brushMaterial,
-    );
-    brush.position.set(
-      Math.cos(angle) * (
-        dressingCoreRadius
-          + (dressingContactRadius - dressingCoreRadius) / 2
-      ),
-      Math.sin(angle) * (
-        dressingCoreRadius
-          + (dressingContactRadius - dressingCoreRadius) / 2
-      ),
-      0,
     );
     brush.rotation.z = angle;
     brush.userData.index = index;
@@ -424,17 +417,17 @@ function textileDressingElements(movement) {
   }
   const dressingAxle = cylinderAlongZ(
     0.13,
-    webWidth + 0.70,
+    2.60,
     darkMaterial,
     28,
   );
   dressingAxle.userData.role = 'dressing-cylinder-axle';
   dressingCylinder.add(dressingAxle);
   const dressingIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.060, 0.04),
+    new THREE.BoxGeometry(0.50, 0.060, 0.025),
     whiteMaterial,
   );
-  dressingIndex.position.set(0.40, 0, webWidth / 2 + 0.08);
+  dressingIndex.position.set(0.40, 0, webWidth / 2 + 0.113);
   dressingIndex.userData.role = 'white-dressing-cylinder-rotation-index';
   dressingCylinder.add(dressingIndex);
 
@@ -450,7 +443,7 @@ function textileDressingElements(movement) {
   const webMarkers = [];
   for (let index = 0; index < markerCount; index += 1) {
     const marker = new THREE.Mesh(
-      new THREE.BoxGeometry(0.075, 0.030, webWidth * 0.94),
+      new THREE.PlaneGeometry(0.075, webWidth * 0.94).rotateX(Math.PI / 2),
       whiteMaterial,
     );
     marker.userData.index = index;
@@ -519,7 +512,7 @@ function textileDressingElements(movement) {
         'inextensible zero-thickness textile web following exact straight and circular tangent spans',
         'constant equal effective winding radii on supply and takeup rolls',
         'no slip between web and either winding roll at its tangent point',
-        'rigid brush-armed dressing cylinder with prescribed slower surface motion',
+        'rigid brush-armed dressing cylinder with prescribed opposed cloth-relative surface motion',
         'steady transport without roll-radius buildup, textile elasticity, tension, or process-force dynamics',
       ],
       sourceSpecifiesDimensionsTimingTurnRatioDirectionOrWebSpeed: false,
@@ -605,7 +598,7 @@ function textileDressingElements(movement) {
       dressingSurfaceSpeed:
         dressingAngularSpeed * dressingContactRadius,
       ratioAndDirectionChoice:
-        'equal winding rolls turn clockwise at web speed divided by effective radius; the interposed brush cylinder turns counterclockwise at half their angular-speed magnitude',
+        'equal winding rolls turn clockwise at web speed divided by effective radius; the interposed brush cylinder turns clockwise at half their angular-speed magnitude, following the official animation’s conjectural choice',
       selectedInterposedSurface: 'armed-with-brush-bars',
       webSpeed,
       windingAngularSpeed,
@@ -614,6 +607,8 @@ function textileDressingElements(movement) {
     },
   };
 
+  finishProcessPresentation(root, demonstrationPeriod, 'Equal winding radii and constant cloth transport are prescribed. The official animation also calls roller direction and ratio conjectural. Brush tips follow the cloth envelope; cloth thickness, tension, bristle deflection and finishing forces are not simulated.');
+  root.userData.workingInterfaces = { windingRadius: rollRadius, brushOuterRadius: dressingContactRadius - 0.0002, nominalBrushClearance: 0.0002, clothThickness: 0 };
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.30, -2.92, -1.58),
@@ -622,7 +617,7 @@ function textileDressingElements(movement) {
   root.userData.groundFloorY = -2.84;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.8, 2.7, 9.4),
+    cameraDirection: new THREE.Vector3(2.5, 1.2, 16),
     root,
     update,
   };

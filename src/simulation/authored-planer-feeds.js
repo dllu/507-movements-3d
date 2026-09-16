@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {
   PALETTE,
-  makeDynamicLink,
   markShadows,
   matte,
 } from './primitives.js';
+
+import { boredRollGeometry, boredBlockGeometry, woodFeedToothGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -30,11 +32,11 @@ function makeFaceIndexes({
   const indexes = [];
   for (const side of [-1, 1]) {
     const index = new THREE.Mesh(
-      new THREE.BoxGeometry(radius * 0.70, 0.065, 0.035),
+      new THREE.BoxGeometry(radius * 0.48, 0.065, 0.035),
       whiteMaterial,
     );
     index.position.set(
-      radius * 0.40,
+      radius * 0.50,
       0,
       side * (rollerWidth / 2 + 0.024),
     );
@@ -59,6 +61,8 @@ function makeSmoothSupportingRoller({
   root.add(rotor);
 
   const drum = cylinderAlongZ(radius, rollerWidth, material, 64);
+  drum.geometry.dispose();
+  drum.geometry = boredRollGeometry(radius, rollerWidth, 0.162, 192);
   drum.userData.role = 'smooth-cylindrical-workpiece-support-surface';
   rotor.add(drum);
 
@@ -95,30 +99,20 @@ function makeToothedFeedRoller({
   root.add(rotor);
 
   const core = cylinderAlongZ(rootRadius, rollerWidth, material, 64);
+  core.geometry.dispose();
+  core.geometry = boredRollGeometry(rootRadius, rollerWidth, 0.152);
   core.userData.role = 'toothed-feed-roller-root-cylinder';
   rotor.add(core);
 
   const toothPitch = FULL_TURN / toothCount;
-  const toothHeight = toothTipRadius - rootRadius;
-  const toothTangentialWidth = pitchRadius * toothPitch * 0.43;
   const teeth = [];
   for (let index = 0; index < toothCount; index += 1) {
     const baseAngle = -Math.PI / 2 + index * toothPitch;
     const tooth = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toothTangentialWidth,
-        toothHeight,
-        rollerWidth * 0.96,
-      ),
+      woodFeedToothGeometry(rootRadius - 0.01, toothTipRadius, toothPitch, rollerWidth * 0.96),
       material,
     );
-    const centerRadius = (rootRadius + toothTipRadius) / 2;
-    tooth.position.set(
-      centerRadius * Math.cos(baseAngle),
-      centerRadius * Math.sin(baseAngle),
-      0,
-    );
-    tooth.rotation.z = baseAngle - Math.PI / 2;
+    tooth.rotation.z = baseAngle;
     tooth.userData.baseAngle = baseAngle;
     tooth.userData.role = 'radial-work-gripping-feed-tooth';
     tooth.userData.toothIndex = index;
@@ -162,12 +156,12 @@ function makeRollerFrame({
   for (const side of [-1, 1]) {
     const z = side * bearingZ;
     const standard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, upperCenter.y + 1.14, 0.25),
+      new THREE.BoxGeometry(0.26, upperCenter.y + 1.71, 0.25),
       material,
     );
     standard.position.set(
       standardX,
-      (upperCenter.y - 0.64) / 2,
+      (upperCenter.y - 1.21) / 2,
       z,
     );
     standard.userData.role = 'fixed-planer-feed-frame-standard';
@@ -175,22 +169,16 @@ function makeRollerFrame({
     standards.push(standard);
 
     for (const center of [lowerCenter, upperCenter]) {
-      const arm = makeDynamicLink({
-        color: PALETTE.frame,
-        depth: 0.17,
-        jointRadius: 0.001,
-        thickness: 0.18,
-      });
-      arm.userData.setEndpoints(
-        new THREE.Vector3(standardX, center.y, z),
-        new THREE.Vector3(0, center.y, z),
-      );
+      const bore = center.y === lowerCenter.y ? 0.164 : 0.154;
+      const arm = new THREE.Mesh(boredPlanarLinkGeometry({ length: standardX,
+        width: 0.18, eyeRadius: 0.23, boreRadius: bore, depth: 0.17 }), material);
+      arm.position.set(0, center.y, z);
       arm.userData.role = 'fixed-bearing-support-arm';
       group.add(arm);
       arms.push(arm);
 
       const block = new THREE.Mesh(
-        new THREE.BoxGeometry(0.48, 0.48, 0.20),
+        boredBlockGeometry(0.48, 0.48, 0.20, bore),
         material,
       );
       block.position.set(0, center.y, z);
@@ -199,7 +187,7 @@ function makeRollerFrame({
       bearingBlocks.push(block);
 
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.20, 0.045, 10, 32),
+        boredRollGeometry(0.245, 0.045, bore).rotateX(Math.PI / 2),
         matte(PALETTE.ink, { metalness: 0.26, roughness: 0.47 }),
       );
       ring.position.set(0, center.y, side * (bearingZ + 0.105));
@@ -300,7 +288,7 @@ function woodworthPlanerFeed(movement) {
   const feedTravelPerCycle = FULL_TURN * workingRadius;
   const markerRepeatsPerCycle = 5;
   const markerPitch = feedTravelPerCycle / markerRepeatsPerCycle;
-  const workpieceLength = 24;
+  const workpieceLength = 10.2;
 
   const upperMaterial = matte(PALETTE.driver, {
     metalness: 0.12,
@@ -442,6 +430,14 @@ function woodworthPlanerFeed(movement) {
     upperRoller.userData.rotor.rotation.z = state.upperAngle;
     lowerRoller.userData.rotor.rotation.z = state.lowerAngle;
     workpiece.position.x = state.workpieceOffset;
+    // The plank is a fixed observation window of long stock. Material indexes
+    // translate at the prescribed feed speed and disappear only at its edges.
+    workpiece.userData.board.position.x = -state.workpieceOffset;
+    for (const marker of workpiece.userData.markers) {
+      const edgeDistance = workpieceLength / 2 - Math.abs(marker.position.x + state.workpieceOffset);
+      marker.visible = edgeDistance > 0;
+      marker.scale.x = THREE.MathUtils.clamp(edgeDistance / 0.0275, 0, 1);
+    }
     workpiece.userData.materialVelocity = state.feedVelocity.clone();
     root.userData.contacts = {
       lowerSmoothNip: {
@@ -507,7 +503,7 @@ function woodworthPlanerFeed(movement) {
       idealizations: [
         'both roller axes are fixed, parallel, and frictionless',
         'the upper tooth tips grip the wood while its 4-unit pitch circle defines mean feed speed',
-        'the plank is rigid and moves without compression or slip on the smooth lower roller',
+        'mean feed is prescribed without slip on the smooth lower roller; the upper points intentionally indent the wood, whose deformation and local tip slip are not solved',
         'the source does not specify torque, bearing load, timber properties, tooth penetration compliance, inertia, or absolute speed',
         'absolute scale and period, slight tooth bite, axial widths, repeated long-stock representation, frame, materials, and camera are reconstruction decisions',
       ],
@@ -616,16 +612,20 @@ function woodworthPlanerFeed(movement) {
     },
   };
 
+  lowerContactIndex.visible = false;
+  upperContactIndex.visible = false;
+  finishProcessPresentation(root, cycleDuration, 'The two rollers turn at equal opposite rates, as in the official animation. Mean feed follows their equal working radii. Pointed upper teeth indent the wood by 0.034–0.050 model units; this illustrates compliant gripping, not rigid nonpenetration or a validated traction force. The plank is a fixed window of continuously moving long stock.');
+  root.userData.workingInterfaces = { stockObservationLength: workpieceLength, upperToothMaximumRadius: toothTipRadius, prescribedWoodIndentation: true, rigidContactValidated: false };
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.55, -1.84, -1.62),
     new THREE.Vector3(5.55, 4.43, 1.62),
   );
-  root.userData.cameraDistanceScale = 1.16;
+  root.userData.cameraDistanceScale = 1;
   root.userData.groundFloorY = -1.69;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(6.2, 3.9, 9.7),
+    cameraDirection: new THREE.Vector3(2.1, 1.2, 16),
     root,
     update,
   };
