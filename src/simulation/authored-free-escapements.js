@@ -1,3 +1,4 @@
+import { correctFreeEscapement, fitFreeEscapement } from './free-escapement-finite-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1177,8 +1178,10 @@ function arnoldFreeEscapement(movement) {
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   root.userData.fidelity = 'authored';
+  correctFreeEscapement(root, movement.id);
+  fitFreeEscapement(root, update);
   return {
-    cameraDirection: new THREE.Vector3(5.9, 4.0, 13.2),
+    cameraDirection: new THREE.Vector3(.7, .5, 14),
     root,
     update,
   };
@@ -2507,8 +2510,10 @@ function earnshawSpringDetentEscapement(movement) {
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   root.userData.fidelity = 'authored';
+  correctFreeEscapement(root, movement.id);
+  fitFreeEscapement(root, update);
   return {
-    cameraDirection: new THREE.Vector3(5.8, 4.8, 13.5),
+    cameraDirection: new THREE.Vector3(.7, .5, 14),
     root,
     update,
   };
