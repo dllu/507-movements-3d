@@ -50,6 +50,10 @@ reconstruction choices rather than dimensions specified by Brown.
 
 ## Queued: 389 jack handoff
 
+**Follow-up:** the twenty-sixth pass integrates the corrected finite handoff and
+source proportions; see [the 389 contact review](jack-389-contact-review.md).
+The notes below preserve the earlier experiments and their then-open issues.
+
 389 was reviewed but **is not changed in this published pass**. Its original
 point-law pawls do not establish a continuous finite-pawl handoff. A candidate
 bored eccentric/strap/support reconstruction passed finite collision samples,
