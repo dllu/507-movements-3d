@@ -1,24 +1,19 @@
 import * as THREE from 'three';
 import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
-import {plate,poly,circle,ring,capsule,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {makeDiagonalCatchUpdater} from './update-solids.js';
 
 function lowerBacking(finger){
  const local=([x,y])=>[(x-271)*.0125-finger.fit.pivot[0],(234-y)*.0125-finger.fit.pivot[1]];
- // Concave inner edge and convex outer rim traced from the crescent in 181.
- // The registered holding heel lies beyond that tracing. A narrow rear bridge
- // connects it to the crescent without filling the source's open inner curve.
+ // One continuous crescent supports the same face during trip and retention.
+ // Its tip compromises between the two inconsistent engraved positions.
  const crescent=new THREE.Shape();crescent.moveTo(295,323);
  crescent.bezierCurveTo(312,319,326,315,329,288);
  crescent.bezierCurveTo(340,319,338,343,317,365);
  crescent.quadraticCurveTo(306,376,289,375);crescent.lineTo(285,351);crescent.closePath();
- const heel=finger.heelRaster.map(local),heldCenter=heel.reduce((s,p)=>[s[0]+p[0]/heel.length,s[1]+p[1]/heel.length],[0,0]);
- const a=-finger.fit.angle,center=[heldCenter[0]*Math.cos(a)-heldCenter[1]*Math.sin(a),heldCenter[0]*Math.sin(a)+heldCenter[1]*Math.cos(a)];
- const bridge=new THREE.QuadraticBezierCurve(new THREE.Vector2(...center),new THREE.Vector2(...local([321,273])),new THREE.Vector2(...local([328,301]))).getPoints(24).map(p=>p.toArray());
- return clip.union(poly(circle([0,0],.38,96)),poly(crescent.getPoints(16).map(p=>local(p.toArray()))),finger.polygons,
-  ...bridge.slice(1).map((p,i)=>capsule(bridge[i],p,.06,12)));
+ return clip.union(poly(circle([0,0],.38,96)),poly(crescent.getPoints(16).map(p=>local(p.toArray()))),finger.polygons);
 }
 
 // Complete visible assembly around the qualified planar contact profiles.

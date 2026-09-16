@@ -1,3 +1,24 @@
+# Movements 181–182: continuous lower finger; 183–184 baseline audited
+
+Joined the lower tripping and holding edges into one solid contact head, using
+the same boundary in MuJoCo and the visible mesh. Removed the narrow rear
+bridge and one axial web. The 520,179-byte bake passes the 49-mesh assembly
+sweep (988 pairs, 8,397,036 queries), 36,001 interpolated contact checks, seven
+tests and both packaged desktop/mobile checks. The continuous finger completes
+three cycles at all four tested timesteps and with the heavier catch that
+previously jammed. Its width remains a documented source compromise; 181–182
+are not marked fully source-qualified.
+
+The next substantial reconstruction is 183–184. Its baseline has 76 intersecting
+mesh pairs in the sampled sweep, including both retaining-pin/quadrant contacts,
+unbored joints, crossing arms and the piston assembly. It also has an added
+frame, partial rod, ground and floating markers. See [181–182](movement-181.md)
+and [183–184 baseline](movement-183.md). Continue the quadrant mechanism while
+retaining the diagonal-finger source-width discrepancy for the final review.
+The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: reconcile the upper catch head with both plates
 
 Adjusted the rounded head and neck while retaining the holding ledge. The

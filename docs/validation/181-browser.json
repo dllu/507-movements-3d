@@ -4,7 +4,7 @@
     182
   ],
   "status": "packaged-desktop-mobile-passed",
-  "scope": "Baked passive catch with a head fitted to both engraved stages, connected rear supports, crescent lower plate, offset upper horn, sectioned rod and hatched tappet. Remaining lower-finger source differences are not qualified by this browser check.",
+  "scope": "Baked passive catch with a continuous solid lower finger head and direct crescent support, replacing the split pads and thin rear bridge. Remaining lower-head width differences are not qualified by this browser check.",
   "checks": [
     "baked playback",
     "exact restart",
@@ -37,7 +37,7 @@
     },
     {
       "file": "src/simulation/baked/assets/181.json.gz",
-      "sha256": "7d5ef298c5a88fa68eb5ee77afd9ab4ba37d4d1371f1b1848da844b7816264f1"
+      "sha256": "906cdf86bc1479fedfd1c9473829bedb21375f2c5473f2c356ab3c82a6b0dfea"
     }
   ]
 }

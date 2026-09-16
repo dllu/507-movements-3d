@@ -2,6 +2,13 @@ import * as THREE from 'three';
 import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {fitDiagonalHandle} from './handle-fit.js';
 
+function convexOutline(points){
+ const sorted=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+ const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ const half=points=>{const result=[];for(const p of points){while(result.length>1&&cross(result.at(-2),result.at(-1),p)<=0)result.pop();result.push(p);}return result.slice(0,-1);};
+ return [...half(sorted),...half([...sorted].reverse())];
+}
+
 // Outer boundary traced from plate 181, registered at the catch pivot. The
 // rounded head is a compromise between both plates, whose radial dimensions
 // differ. Keep the upper holding ledge at its qualified source-181 coordinates.
@@ -48,7 +55,10 @@ export function diagonalLatchFinger(side,{registered=true}={}) {
   const c=Math.cos(-angle),s=Math.sin(-angle);
   heelRaster=[[350,340],[348,349],[333,349],[335,340],[342,339]].map(([x,y])=>[x+(registered?6:0),y-(registered?5:0)]);
   const heel=heelRaster.map(([x,y])=>{const dx=(x-271)*.0125-fit.pivot[0],dy=(234-y)*.0125-fit.pivot[1];return[dx*c-dy*s,dx*s+dy*c];});
-  polygons=clip.union(polygons,poly(heel));
+  // The two source stages require different working edges on one solid head.
+  // Fill between them in both collision and display geometry, rather than
+  // using disjoint contact pads and a thin rear bridge.
+  polygons=poly(convexOutline([...points,...heel]));
  }
  return {raster,heelRaster,points,polygons,fit,angle,registered};
 }

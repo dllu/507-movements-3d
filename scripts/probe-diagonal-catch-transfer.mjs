@@ -28,8 +28,8 @@ for(const side of ['upper','lower'])for(const options of [{},{timestep:.000125},
  const {fit,...parameters}=r.parameters;summary.parameters={...parameters,closedAngle:fit.angle};
  retention.push(summary);traces.push({kind:'retention',...r});
 }
-// Retain the former 0.5 ms step as a sensitivity check. The rounded-head
-// reconstruction needs 0.25 ms or finer for repeated return capture.
+// Retain the former 0.5 ms step as a sensitivity check alongside the three
+// finer steps used to qualify the bake.
 for(const options of [{registered:false,timestep:.0005},{timestep:.0005},{},
  {timestep:.000125},{timestep:.0000625},{catchMass:.25,timestep:.0005},{contacts:false,timestep:.0005}]){
  const p=makeDiagonalContactStudy(m,options),period=p.parameters.period,stages=[];
@@ -56,8 +56,13 @@ const maximumQualifiedTimestep=.00025;
 const qualified=coupled.filter(r=>r.parameters.registered&&r.parameters.contacts&&r.parameters.catchMass===.17&&r.parameters.timestep<=maximumQualifiedTimestep);
 controls.repeatedPassiveTransfer=qualified.length===3&&qualified.every(r=>r.completedThreeCycles);
 controls.finiteContactClearance=qualified.every(r=>r.minimumGap>=-1e-6);
-controls.heavierCatchDoesNotCompleteTransfer=coupled.filter(r=>r.parameters.catchMass===.25).every(r=>!r.completedThreeCycles);
-const report={movements:[181,182],status:Object.values(controls).every(Boolean)?'passive-transfer-study-passed-assembly-unqualified':'contact-reconstruction-not-qualified',scope:'Native catch/finger contact geometry, including coarse-step sensitivity. Browser playback uses a separately projected and audited bake; this study does not qualify visible assembly clearance or source fit.',maximumQualifiedTimestep,assumptions:['Catch body traced from plate 181, rounded head compromised between plates 181 and 182; terminal finger surfaces inferred from both plates.','Upper holding face lifted 3 source pixels and its toe extended 2 pixels along the same ledge; lower heel moved 6 pixels right and 5 up to register with the fitted handle axes.','Registered model has a one-sided catch stop at zero radians; unregistered control permits -0.3 radians.','Catch mass 0.17, handle masses 0.1, inertias, friction and stops are diagnostic assumptions. The previous 0.25 catch mass is retained as a failed return-transfer control.','Contact layers separate the working arms from the catching fingers; connecting hardware and full visible-solid validation are not included.','The isolated release control applies a 6-unit torque pulse directly to the catch for 0.2 seconds; the coupled model actuates only the piston.'],controls,retention,coupled,sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
+// The heavier catch was a failed trial for the split finger. Its behavior is
+// a sensitivity result, not a requirement that an improved finger must jam.
+const sensitivity={
+ coarseStepTransfers:coupled.filter(r=>r.parameters.registered&&r.parameters.contacts&&r.parameters.catchMass===.17&&r.parameters.timestep===.0005).every(r=>r.completedThreeCycles),
+ heavierCatchTransfers:coupled.filter(r=>r.parameters.catchMass===.25).every(r=>r.completedThreeCycles),
+};
+const report={movements:[181,182],status:Object.values(controls).every(Boolean)?'passive-transfer-study-passed-assembly-unqualified':'contact-reconstruction-not-qualified',scope:'Native catch/finger contact geometry, including coarse-step sensitivity. Browser playback uses a separately projected and audited bake; this study does not qualify visible assembly clearance or source fit.',maximumQualifiedTimestep,sensitivity,assumptions:['Catch body traced from plate 181, rounded head compromised between plates 181 and 182; terminal finger surfaces inferred from both plates and joined into one continuous lower head.','Upper holding face lifted 3 source pixels and its toe extended 2 pixels along the same ledge; lower heel moved 6 pixels right and 5 up to register with the fitted handle axes.','Registered model has a one-sided catch stop at zero radians; unregistered control permits -0.3 radians.','Catch mass 0.17, handle masses 0.1, inertias, friction and stops are diagnostic assumptions. The previous 0.25 catch mass is retained as a load-sensitivity trial.','Contact layers separate the working arms from the catching fingers; connecting hardware and full visible-solid validation are not included.','The isolated release control applies a 6-unit torque pulse directly to the catch for 0.2 seconds; the coupled model actuates only the piston.'],controls,retention,coupled,sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
 fs.writeFileSync('/dev/shm/181-transfer-probe.json',JSON.stringify(traces));
 fs.writeFileSync('docs/validation/181-transfer-study.json',JSON.stringify(report,null,2)+'\n');
 console.log(controls);console.table(coupled.flatMap(r=>r.stages.map(s=>({registered:r.parameters.registered,contacts:r.parameters.contacts,mass:r.parameters.catchMass,dt:r.parameters.timestep,cycle:s.cycle,stage:s.stage,...s.errors,passed:s.passed}))));

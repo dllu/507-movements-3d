@@ -1,0 +1,637 @@
+{
+  "movements": [
+    183,
+    184
+  ],
+  "status": "finite-solids-intersect",
+  "poses": 65,
+  "meshes": 57,
+  "pairs": 1200,
+  "queries": 27342444,
+  "intersections": {
+    "fixed-vertical-guide-behind-piston-rod#1/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.029999998211860668,
+      "time": 0,
+      "families": [
+        "fixed",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-source-scale-rocking-hub#27": {
+      "depth": 0.11800000071525568,
+      "time": 4.21875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-dark-hub-ring#28": {
+      "depth": 0.029308104664087287,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.1093083415701176,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-source-scale-rocking-hub#27": {
+      "depth": 0.01699999719858164,
+      "time": 15.75,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-dark-hub-ring#28": {
+      "depth": 0.052035105468831486,
+      "time": 3.9375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.0993840273227522,
+      "time": 14.625,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-back-weight-arm-plate#6/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.1093083415701176,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-back-weight-arm-plate#6/upper-quadrant-handle-hanging-back-weight-depth-bridging-eye-pin#51": {
+      "depth": 0.05699884026863534,
+      "time": 14.34375,
+      "families": [
+        "upperHandle",
+        "upperWeightAssembly"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#7/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.09921889392150947,
+      "time": 15.75,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#7/upper-quadrant-handle-hanging-back-weight-depth-bridging-eye-pin#51": {
+      "depth": 0.04196812838342763,
+      "time": 7.59375,
+      "families": [
+        "upperHandle",
+        "upperWeightAssembly"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-source-scale-rocking-hub#8/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.10930834157011761,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23": {
+      "depth": 0.11199999600648883,
+      "time": 4.5,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.002999998629093198,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-source-scale-rocking-hub#27": {
+      "depth": 0.11800000071525568,
+      "time": 15.75,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-dark-hub-ring#28": {
+      "depth": 0.021308110803365726,
+      "time": 15.75,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-white-rocking-angle-index#13/fixed-upper-quadrant-handle-pivot-fixed-shaft#45": {
+      "depth": 0.009937123302839471,
+      "time": 0,
+      "families": [
+        "upperHandle",
+        "fixed"
+      ]
+    },
+    "upper-handle-pin-retained-by-lower-quadrant-at-source-183#22/lower-handle-rigid-hollow-quadrant-annular-sector-band#33": {
+      "depth": 0.08779998920580866,
+      "time": 15.46875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23/moving-piston-rod#42": {
+      "depth": 0.11995921634108675,
+      "time": 15.75,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.1093083415701176,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24/moving-piston-rod#42": {
+      "depth": 0.018999993801116943,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.09930687088606756,
+      "time": 5.625,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-plate#25/moving-piston-rod#42": {
+      "depth": 0.11993463087826317,
+      "time": 6.75,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-plate#25/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.04117345815502437,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-plate#25/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.1093083415701176,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-plate#25/lower-quadrant-handle-hanging-back-weight-depth-bridging-eye-pin#54": {
+      "depth": 0.056999776663061656,
+      "time": 14.34375,
+      "families": [
+        "lowerHandle",
+        "lowerWeightAssembly"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26/moving-piston-rod#42": {
+      "depth": 0.03099999576807022,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.029994411468505566,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.09968255127170772,
+      "time": 12.09375,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26/lower-quadrant-handle-hanging-back-weight-depth-bridging-eye-pin#54": {
+      "depth": 0.04245850430670142,
+      "time": 5.34375,
+      "families": [
+        "lowerHandle",
+        "lowerWeightAssembly"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-source-scale-rocking-hub#27/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.10930834157011761,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29/moving-piston-rod#42": {
+      "depth": 0.11999999731779096,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-white-rocking-angle-index#32/fixed-lower-quadrant-handle-pivot-fixed-shaft#48": {
+      "depth": 0.009937123302839471,
+      "time": 0,
+      "families": [
+        "lowerHandle",
+        "fixed"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.1599999964237213,
+      "time": 6.46875,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.05899999290704727,
+      "time": 3.375,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.07816252709006843,
+      "time": 15.1875,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23": {
+      "depth": 0.1119999960064888,
+      "time": 4.5,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.010999992489814758,
+      "time": 4.21875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23": {
+      "depth": 0.010999992489814758,
+      "time": 4.21875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.014718863676070117,
+      "time": 8.15625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-back-weight-arm-plate#25": {
+      "depth": 0.02192810856212788,
+      "time": 16.03125,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26": {
+      "depth": 0.012437317883232922,
+      "time": 16.03125,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29": {
+      "depth": 0.11199999600648883,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/moving-piston-rod#42": {
+      "depth": 0.11965333168988557,
+      "time": 6.1875,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.1599999964237213,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29": {
+      "depth": 0.018999993801116943,
+      "time": 14.625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/moving-piston-rod#42": {
+      "depth": 0.018999993801116943,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.05899999290704727,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/moving-piston-rod#42": {
+      "depth": 0.11809464619465357,
+      "time": 14.90625,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-rounded-working-tip#12/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.15999999642372129,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.01700000673532487,
+      "time": 5.34375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/lower-handle-pin-retained-by-upper-quadrant-at-source-184#41": {
+      "depth": 0.06205418607392241,
+      "time": 12.65625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-plate#15/lower-handle-pin-retained-by-upper-quadrant-at-source-184#41": {
+      "depth": 0.055200008630752584,
+      "time": 15.1875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-dark-outline#16/lower-handle-pin-retained-by-upper-quadrant-at-source-184#41": {
+      "depth": 0.06712865320022046,
+      "time": 15.1875,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-inner-arc-outline#20/lower-handle-pin-retained-by-upper-quadrant-at-source-184#41": {
+      "depth": 0.05077462965145074,
+      "time": 14.625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-white-sector-index#21/lower-handle-rigid-hollow-quadrant-annular-sector-band#33": {
+      "depth": 0.024000001803040516,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-pin-retained-by-lower-quadrant-at-source-183#22/lower-handle-rigid-hollow-quadrant-end-radial-arm-plate#36": {
+      "depth": 0.05279999899864199,
+      "time": 5.0625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29": {
+      "depth": 0.0019999986886978516,
+      "time": 5.625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-plate#15/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.018400006771087662,
+      "time": 5.34375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#10/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#23": {
+      "depth": 0.11199999600648883,
+      "time": 6.75,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#10/lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#24": {
+      "depth": 0.018999993801116957,
+      "time": 5.625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-plate#15/lower-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#29": {
+      "depth": 0.0033999987244606317,
+      "time": 5.625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-rounded-working-tip#31/moving-piston-rod#42": {
+      "depth": 0.1197665442576927,
+      "time": 12.9375,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#10/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.05789205005487438,
+      "time": 7.03125,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/moving-piston-rod#42": {
+      "depth": 0.001999998688697824,
+      "time": 6.75,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-plate#15/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.043399997830390946,
+      "time": 6.75,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-white-sector-index#21/lower-handle-rigid-hollow-quadrant-end-radial-arm-plate#36": {
+      "depth": 0.02540000183880331,
+      "time": 6.75,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-hidden-source-contact-locus-anchor#10/moving-piston-rod#42": {
+      "depth": 0.1189239070467219,
+      "time": 12.375,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-start-radial-arm-plate#15/moving-piston-rod#42": {
+      "depth": 0.003399998724460618,
+      "time": 7.03125,
+      "families": [
+        "upperHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-rounded-working-tip#31/source-projecting-piston-rod-tappet-shoe#43": {
+      "depth": 0.15999999642372129,
+      "time": 7.03125,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-backweighted-quadrant-valve-handle-back-weight-eye#30/moving-piston-rod#42": {
+      "depth": 0.03745493593811988,
+      "time": 7.59375,
+      "families": [
+        "lowerHandle",
+        "pistonGroup"
+      ]
+    },
+    "lower-handle-rigid-hollow-quadrant-white-sector-index#40/upper-quadrant-handle-hanging-back-weight-gravity-weight#53": {
+      "depth": 0.024132876666119407,
+      "time": 7.3125,
+      "families": [
+        "lowerHandle",
+        "upperWeightAssembly"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate#4/lower-backweighted-quadrant-valve-handle-rounded-working-tip#31": {
+      "depth": 0.11199999600648883,
+      "time": 7.59375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-dark-outline#5/lower-backweighted-quadrant-valve-handle-rounded-working-tip#31": {
+      "depth": 0.002999998629093198,
+      "time": 7.59375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/lower-backweighted-quadrant-valve-handle-back-weight-eye#30": {
+      "depth": 0.06345493999123575,
+      "time": 7.59375,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    },
+    "upper-handle-rigid-hollow-quadrant-annular-sector-band#14/lower-backweighted-quadrant-valve-handle-back-weight-arm-dark-outline#26": {
+      "depth": 0.005000004768371591,
+      "time": 8.15625,
+      "families": [
+        "upperHandle",
+        "lowerHandle"
+      ]
+    }
+  },
+  "scope": "Baseline prescribed-motion assembly. Both variants share the full cycle. All cross-family mesh pairs except the three floating contact markers; painted indices remain attached to their mechanical body. Same-body joins and source fit are not qualified.",
+  "method": "Bidirectional triangle vertices, edge midpoints and face centers, with bounding-box rejection and independent surface containment. Sampled evidence, not continuous proof.",
+  "sources": [
+    {
+      "file": "scripts/review-quadrant-catch-solids.mjs",
+      "sha256": "37408888d48bfb1361053df91f38051519400637e9402af55d48358edc0b591d"
+    },
+    {
+      "file": "src/simulation/authored-quadrant-catches.js",
+      "sha256": "ba539a784480c8ee275e0009da3968235a6c017680f16698e102d0139866d0db"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ]
+}
