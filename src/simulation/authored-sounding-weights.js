@@ -1,3 +1,4 @@
+import { finishSounding247Parts } from './release-mechanism-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -246,19 +247,19 @@ function seabedTriggeredSoundingWeight(movement) {
   const sourceCatchSupport = new THREE.Vector2(322, 375);
   const sourceDetentTip = new THREE.Vector2(292, 266);
 
-  const cyclePeriod = 10;
+  const cyclePeriod = 11.1;
   const timeline = Object.freeze({
     loadedDwellEnd: 0.5,
-    seabedContact: 2.2,
-    supportRelease: 3.3,
-    catchFullyRetracted: 3.5,
-    weightImpact: 4.2,
-    probeDecompressed: 4.5,
-    rodRecovered: 6.2,
-    manualReloadBegins: 6.7,
-    manualReloadLifted: 8.2,
-    manualCatchReset: 9.0,
-    weightSeated: 9.5,
+    seabedContact: 3.3,
+    supportRelease: 4.4,
+    catchFullyRetracted: 4.6,
+    weightImpact: 5.3,
+    probeDecompressed: 5.6,
+    rodRecovered: 7.3,
+    manualReloadBegins: 7.8,
+    manualReloadLifted: 9.3,
+    manualCatchReset: 10.1,
+    weightSeated: 10.6,
     cycleClosure: cyclePeriod,
   });
 
@@ -1178,6 +1179,6 @@ function seabedTriggeredSoundingWeight(movement) {
 }
 
 export function createAuthoredSoundingWeightMovement(movement) {
-  if (movement.id === 247) return seabedTriggeredSoundingWeight(movement);
+  if (movement.id === 247) return finishSounding247Parts(seabedTriggeredSoundingWeight(movement));
   return null;
 }

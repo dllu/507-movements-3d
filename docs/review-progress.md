@@ -1,3 +1,43 @@
+# Forty-fifth family pass: releases, friction surfaces and reversing-drive guides
+
+The full review continues through reusable finite surfaces, bored joints and
+source-facing assemblies. These corrections do not close the separately measured
+reversing-drive tooth defects.
+
+- [204 skew friction wheels](skew-friction-204-review.md): close and bore the
+  bodies, caps and hubs; remove raised marks from the working surfaces; shorten
+  bearing posts and retain flush end indicators. Actual faceted surfaces remain
+  close with opposed normals and no sampled intrusion. The prescribed ratio
+  includes longitudinal sliding; friction and load capacity are not simulated.
+- [371/394 reversing transmissions](reversing-transmission-371-394-review.md):
+  open shaft/guide passages, connect 371's four-window web and start at the source
+  terminal, and replace 394's intrusive guide hoops with finite open mouths.
+  Rack roots now join a solid body. Actual flange-guide clearance is retained.
+  Both mechanisms still have substantial finite tooth intersections, with exact
+  witnesses recorded for the next working-profile pass. 371's larger opening
+  and 394's inferred guides remain source-fit differences.
+
+- [247/278 release mechanisms](release-mechanism-247-278-review.md): open the
+  probe guide and lever eye, separate crossed arms and bore the working joints.
+  278's finite pawls seat on flat rack lands. For 247, a rounded finite nose
+  supports the weight until its required upward force vanishes; free fall
+  inherits the release velocity. A longer initial descent keeps the support
+  force nonnegative. Manual reset, spring actuation and impacts remain prescribed.
+
+The cheap screen now uses a declared full mechanism period when longer than
+its display beat, and records the sampled duration. In particular, 371 is
+checked over all nine input revolutions rather than only the first one.
+
+Validation: 52 focused checks and all five packaged desktop/mobile playback
+checks pass; the production build completed in 21.75 seconds. Full-cycle default
+and oblique browser views show no errors or clipping. Maximum normalized screen
+extents for 204, 247, 278, 371 and 394 are respectively 0.77802, 0.86945,
+0.80101, 0.90744 and 0.91180. The cheap CPU screen reports construction in
+55–161 ms and update P95 at most 0.522 ms, with no flags, object growth or new
+geometry; those timings exclude imports and GPU work. RAM evidence is in
+`/dev/shm/family45-final-{browser-review,screen}.json` and
+`/dev/shm/family45-final-packaged.log`. The full 507-movement review remains active.
+
 # Forty-fourth family pass: finite flank motion and smaller gear downloads
 
 Independent lanes continue the complete 507-movement review. This pass ships

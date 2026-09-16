@@ -1,3 +1,4 @@
+import { finishOtis278Parts } from './release-mechanism-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1147,7 +1148,7 @@ function otisSafetyStop(movement) {
 
 export function createAuthoredSafetyStopMovement(movement) {
   if (movement.id !== 278) return null;
-  const result = otisSafetyStop(movement);
+  const result = finishOtis278Parts(otisSafetyStop(movement));
   result.root.userData.fidelity = 'authored';
   return result;
 }

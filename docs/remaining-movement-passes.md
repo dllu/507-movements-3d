@@ -299,23 +299,40 @@ a true finite-pin obstruction; neither study changes production playback.
   belts and Entwistle gearing share a small direct miter-geometry import. See
   [measured response sizes and checks](family-loading.md).
 
-## Next independent lanes: breadth before further escapement tuning
+## Forty-fifth pass
 
-- **371/394, reversing transmissions:** replace solid shaft collars/bearings and
-  the input-rod guide with reusable bored journals and finite guide passages.
-  Own `authored-mangle-wheels.js` and `authored-parsons-racks.js`.
-- **247/278, release mechanisms:** open the sounding probe's interfering guide
-  and the safety stop's solid sliding eye; separate overlapping lever layers
-  and bore their joints. Own `authored-sounding-weights.js` and
-  `authored-safety-stops.js`; retain prescribed spring/load limits.
-- **204, skew friction wheels:** replace raised tube indexes on tangent working
-  surfaces with flush marks and bore end parts. Own only
-  `skewHyperboloidFrictionDrive()` in `authored-gears-core.js`; validate actual
-  finite contact in addition to the ideal hyperboloid equations.
+- **204:** finite closed/bored friction bodies and end parts, flush indicators
+  and clear bearing posts. See the [working-surface review](skew-friction-204-review.md).
+- **371/394:** source-facing connected structures and finite guide passages;
+  394's working guide walls retain the full flanges. Both tooth meshes remain
+  wrong, with measured witnesses in the [review](reversing-transmission-371-394-review.md).
+- **247/278:** actual probe/eye/joint passages and finite retaining seats;
+  247 releases under the unilateral gravity condition with continuous launch
+  velocity, while 278's pawls seat on the rack lands. See the
+  [release review](release-mechanism-247-278-review.md).
 
-Reuse existing bored/finite plate components, inspect source and selected working
-poses, and publish bounded corrections. The 199 impact sensitivity and remaining
-escapement passive dynamics stay queued without blocking these independent lanes.
+## Next independent lanes: working tooth and pallet defects
+
+- **371/394:** reconstruct compatible finite teeth using the recorded annular
+  body/face-tooth and internal-rack witnesses. Preserve useful contact through
+  crossover; clearance-only cuts do not supply a driving flank. Reuse generated
+  face/internal gear profiles and retain the corrected guides and joints.
+- **396, Reed escapement:** F/G stand 0.044 above the wheel, and direct pallet J
+  stands 0.004 above it. J also lacks a physical connection to its shaft/roller
+  (sampled gaps 0.17/0.05). Reconstruct attached finite pallets and their working
+  faces together; lowering the old boxes alone can introduce penetration.
+- **402, Guernsey escapement:** tooth-tip loci are the centers of radius-0.12
+  pallet tubes, burying the teeth despite tiny nominal residuals. A tooth-0
+  surface witness at time 0.2 penetrates the upper pallet by 0.0912772, at world
+  point (1.04643965, −0.199419014, 0.379999995). Replace the tubes with sided
+  finite pallets; check actual sector/pinion meshes and their journals as well.
+
+396/402 have no registered source animation. Their current metadata-only camera
+directions are ineffective, and ground suppression is missing. Read-only triage
+is saved in `/dev/shm/escapement396402-triage.mjs` and `.jsonl`. Reuse finite
+plates, bored joints and earlier escapement methods; do not spend time tracing
+ideal working curves. Prioritize these measured geometric failures over optional
+force studies of otherwise coherent analytical mechanisms.
 
 212's reverse bias/dead-center capture and 213's source tooth fit and passive
 friction/impact response remain follow-ups. The legacy gear bundle has now been
@@ -341,6 +358,8 @@ after every movement in `/dev/shm` by default. Run against settled files; rerun
 any entries affected by concurrent edits. CPU timing excludes module import,
 GPU rendering and browser loading. The screen also flags scene growth and new
 geometry identities during playback, catching accidental per-frame mesh creation.
+The screen records `sampledPeriod` and uses a declared full mechanism period
+when it exceeds the display beat (for example, all nine revolutions of 371).
 These are triage flags; intentional dynamic geometry may legitimately trigger them. Draw-call counts are estimates. Forty-nine
 finite update samples catch gross failures, **not** clipping, contact correctness,
 source fidelity or physics validity. Timing flags are triage thresholds, not

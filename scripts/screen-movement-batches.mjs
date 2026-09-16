@@ -37,7 +37,13 @@ if (value('--worker')) {
       for (const attribute of Object.values(geometry.attributes)) geometryBytes += attribute.array?.byteLength ?? 0;
       for (const coordinate of geometry.attributes.position?.array ?? []) finiteGeometry &&= Number.isFinite(coordinate);
     });
-    const period = root.userData.animationTiming?.authoredCyclePeriod ?? 10;
+    // A readable display beat can be shorter than the mechanism sequence:
+    // 371 reverses only after several input revolutions. Screen that full
+    // sequence rather than repeatedly checking its first driving branch.
+    const displayPeriod = root.userData.animationTiming?.authoredCyclePeriod ?? 10;
+    const mechanismPeriod = root.userData.geometry?.mechanismCyclePeriod;
+    const period = Number.isFinite(mechanismPeriod) && mechanismPeriod > 0
+      ? Math.max(displayPeriod, mechanismPeriod) : displayPeriod;
     const sceneSnapshot = () => {
       const objects = new Set(), geometries = new Set();
       root.traverse(object => {
@@ -66,7 +72,7 @@ if (value('--worker')) {
     if (renderedTriangles > 500000) flags.push('many-triangles');
     if (sceneObjectGrowth > 0) flags.push('scene-growth');
     if (newGeometryCount > 0) flags.push('new-geometry-during-playback');
-    console.log(JSON.stringify({id, status: finiteGeometry && finiteTransforms ? 'screened' : 'failed', constructMs, updateP95Ms: percentile(costs, .95), updateMaxMs: Math.max(...costs), meshes, drawCallsEstimate, renderedTriangles: Math.round(renderedTriangles), geometryBytes, sceneObjectGrowth, newGeometryCount, finiteGeometry, finiteTransforms, sourceAnimationAvailable: root.userData.sourceAnimation?.available ?? null, flags}));
+    console.log(JSON.stringify({id, status: finiteGeometry && finiteTransforms ? 'screened' : 'failed', sampledPeriod: period, constructMs, updateP95Ms: percentile(costs, .95), updateMaxMs: Math.max(...costs), meshes, drawCallsEstimate, renderedTriangles: Math.round(renderedTriangles), geometryBytes, sceneObjectGrowth, newGeometryCount, finiteGeometry, finiteTransforms, sourceAnimationAvailable: root.userData.sourceAnimation?.available ?? null, flags}));
   } finally { disposeMovementModel(model); }
 } else {
   for (const arg of args) if (!/^--(ids|batch|out|timeout-ms)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);

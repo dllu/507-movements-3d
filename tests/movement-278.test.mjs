@@ -424,14 +424,12 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
       `left lever rotation at ${time}`);
     near(blocks.rightLever.rotation.z, -expected.leverAngle, 0,
       `right lever rotation at ${time}`);
-    vectorNear(blocks.leftPawl.children[1].position,
-      expected.leftLowerJoint, 0, `left pawl joint at ${time}`);
-    vectorNear(blocks.leftPawl.children[2].position,
-      expected.leftPawlTip, 0, `left pawl tip at ${time}`);
-    vectorNear(blocks.rightPawl.children[1].position,
-      expected.rightLowerJoint, 0, `right pawl joint at ${time}`);
-    vectorNear(blocks.rightPawl.children[2].position,
-      expected.rightPawlTip, 0, `right pawl tip at ${time}`);
+    for (const [side, joint, tip] of [['left', expected.leftLowerJoint, expected.leftPawlTip], ['right', expected.rightLowerJoint, expected.rightPawlTip]]) {
+      const mesh=blocks[side+'Pawl'].children[0];
+      vectorNear(mesh.position,joint,0,`${side} bored pawl joint at ${time}`);
+      const end=new THREE.Vector3(model.root.userData.geometry.pawlLength,0,0).applyQuaternion(mesh.quaternion).add(mesh.position);
+      vectorNear(end,tip,1e-14,`${side} finite pawl tip at ${time}`);
+    }
     vectorNear(blocks.lowerJointPins[0].position,
       expected.leftLowerJoint, 0, `left joint pin at ${time}`);
     vectorNear(blocks.lowerJointPins[1].position,
