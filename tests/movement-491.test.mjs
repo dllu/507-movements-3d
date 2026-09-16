@@ -170,7 +170,7 @@ test('movement 491 head, barrel, hand-spike, and pawl carrier share one angle wh
   disposeModel(model.root);
 });
 
-test('movement 491 pawl has exact rigid closure to each fixed tooth ramp and a continuous fall after each edge', () => {
+test('movement 491 pawl has rigid closure to the finite contact profile and a continuous drop after each edge', () => {
   const { model } = movementModel();
   const {
     geometry,
@@ -185,14 +185,14 @@ test('movement 491 pawl has exact rigid closure to each fixed tooth ramp and a c
     near(closure.toothSurface.height, surface.height, 0,
       `shared tooth surface ${sample}`);
     near(closure.verticalDifference,
-      closure.pawlTipHeight - geometry.pawlPivotHeight, 0,
+      closure.pawlTipHeight - geometry.pawlPivotHeight, 2e-16,
       `vertical closure ${sample}`);
     near(Math.hypot(
       closure.radialProjection,
       closure.verticalDifference,
     ), geometry.pawlLength, 2e-16, `rigid pawl length ${sample}`);
     near(closure.pawlTipRadius,
-      geometry.pawlPivotRadius + closure.radialProjection, 0,
+      Math.hypot(geometry.pawlPivotRadius + closure.radialProjection, geometry.pawlTipLead), 0,
       `tip radius ${sample}`);
     assert.ok(closure.pawlTipRadius >= geometry.ratchetInnerRadius);
     assert.ok(closure.pawlTipRadius <= geometry.ratchetOuterRadius);
@@ -204,7 +204,7 @@ test('movement 491 pawl has exact rigid closure to each fixed tooth ramp and a c
   }
 
   const phaseEpsilon = 1e-8;
-  const toothStart = geometry.ratchetPhaseOffset;
+  const toothStart = geometry.ratchetPhaseOffset - geometry.pawlLeadAngle;
   const beforeEdge = pawlClosureAtAzimuth(
     toothStart - phaseEpsilon * geometry.ratchetToothPitch,
   );
@@ -212,20 +212,20 @@ test('movement 491 pawl has exact rigid closure to each fixed tooth ramp and a c
   const afterEdge = pawlClosureAtAzimuth(
     toothStart + phaseEpsilon * geometry.ratchetToothPitch,
   );
-  near(beforeEdge.pawlTipHeight, geometry.ratchetHighHeight,
-    3e-9, 'approach high edge');
-  near(atEdge.pawlTipHeight, geometry.ratchetHighHeight, 0,
+  near(beforeEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012,
+    3e-7, 'approach high edge');
+  near(atEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012, 3e-7,
     'continuous release at high edge');
-  near(afterEdge.pawlTipHeight, geometry.ratchetHighHeight,
-    3e-12, 'continuous freefall after high edge');
-  assert.equal(atEdge.falling, true);
+  near(afterEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012,
+    3e-7, 'continuous freefall after high edge');
+  assert.equal(atEdge.falling, false);
   const landing = pawlClosureAtAzimuth(
     toothStart
       + (geometry.pawlFreefallFraction + 1e-10)
         * geometry.ratchetToothPitch,
   );
-  near(landing.pawlTipHeight, landing.toothSurface.height, 0,
-    'pawl lands on the next ramp');
+  near(landing.airborneClearance, 0, 1e-8,
+    'pawl lands on the finite next ramp envelope');
   assert.equal(landing.contactingRamp, true);
   disposeModel(model.root);
 });

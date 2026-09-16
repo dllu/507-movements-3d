@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctOscillatingColumnParts } from './oscillating-column-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function smoothStep5(value) {
@@ -629,6 +631,7 @@ function dectolOscillatingColumn(movement) {
         0.20,
       );
     });
+    root.userData.updateFluidInterfaces?.(time, state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -796,6 +799,7 @@ function dectolOscillatingColumn(movement) {
   root.userData.groundFloorY = groundY;
   markShadows(root);
   base.receiveShadow = true;
+  correctOscillatingColumnParts(root);
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

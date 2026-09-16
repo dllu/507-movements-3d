@@ -1,5 +1,5 @@
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { circle, poly, plate, polygonClipping } from './finite-plate-geometry.js';
+import { circle, capsule, poly, plate, polygonClipping } from './finite-plate-geometry.js';
 
 const rectangle = (x0, y0, x1, y1) => poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
 const verticalPlate = (outline, low, high) => plate(outline, low, high).rotateX(-Math.PI / 2);
@@ -37,4 +37,21 @@ export function capstanPackingProgress(progress, wrapAngle) {
   const u = Math.min(angle / lead, 1);
   const integral = angle < lead ? lead * (u**3 - 0.5*u**4) : angle - lead/2;
   return integral / (wrapAngle - lead/2);
+}
+
+export function capstanPawlArmGeometry(length, lead) {
+  const outline = polygonClipping.union(poly(circle([0,0],0.105,64)),capsule([0,0],[length-0.035,0],0.03,24));
+  const geometry = plate(polygonClipping.difference(outline,poly(circle([0,0],0.060,48))),-0.045,0.045);
+  const positions = geometry.attributes.position;
+  for (let i=0;i<positions.count;i++) {
+    const u=Math.max(0,Math.min(1,(positions.getX(i)-0.12)/(length-0.12-0.035)));
+    positions.setZ(i,positions.getZ(i)+lead*u);
+  }
+  geometry.computeVertexNormals(); return geometry;
+}
+
+export function capstanPawlCheekGeometry(low, high) {
+  const outline = polygonClipping.union(poly(circle([0,0],0.115,64)),
+    poly([[-0.25,-0.20],[0.03,-0.20],[0.085,-0.06],[-0.04,0.06],[-0.25,-0.05]]));
+  return plate(polygonClipping.difference(outline,poly(circle([0,0],0.060,48))),low,high);
 }

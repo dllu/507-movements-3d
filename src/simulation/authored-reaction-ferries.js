@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctReactionFerry} from './reaction-ferry-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -515,6 +516,7 @@ function reactionFerry(movement) {
   nearBank.receiveShadow = true;
   farBank.receiveShadow = true;
   update(0);
+  correctReactionFerry(root);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

@@ -111,7 +111,7 @@ test('movement 445 records both Brown plates and discloses its fluid-envelope as
     /static engraving and the shared 445–446 caption/);
   assert.equal(dynamics.allSolidPartsAbsolutelyFixed, true);
   assert.match(dynamics.fluidModel,
-    /mass-balanced, axisymmetric kinematic water envelope.*not a CFD solution/);
+    /upper-storage scalar balance.*not a CFD solution/);
   assert.match(dynamics.periodicRegulation,
     /Constant supply minus the exact time derivative of upper storage/);
   assert.match(dynamics.transitionContinuity,

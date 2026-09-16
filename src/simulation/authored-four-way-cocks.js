@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {cockPassagePath, correctFourWayCock} from './four-way-cock-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -195,9 +196,9 @@ function fourWaySteamCock(movement) {
   // The upper engraving is the reference pose. Rotating its one rigid plug
   // clockwise by exactly 90 degrees produces the lower engraving.
   const plugRadius = 1.72;
-  const passageEndpointRadius = 1.46;
-  const passageRadius = passageEndpointRadius;
-  const bodyInnerRadius = 1.79;
+  const passageEndpointRadius = plugRadius;
+  const passageRadius = 1.46;
+  const bodyInnerRadius = 1.728;
   const bodyOuterRadius = 2.10;
   const bodyDepth = 0.58;
   const plugDepth = 0.43;
@@ -316,20 +317,8 @@ function fourWaySteamCock(movement) {
   const channelAEnd = new THREE.Vector2(-passageEndpointRadius, 0);
   const channelBStart = channelAStart.clone().multiplyScalar(-1);
   const channelBEnd = channelAEnd.clone().multiplyScalar(-1);
-  const channelACurve = new PlanarArcCurve3(
-    new THREE.Vector2(-passageRadius, passageRadius),
-    passageRadius,
-    0,
-    -HALF_PI,
-    plugDepth / 2 + 0.13,
-  );
-  const channelBCurve = new PlanarArcCurve3(
-    new THREE.Vector2(passageRadius, -passageRadius),
-    passageRadius,
-    Math.PI,
-    -HALF_PI,
-    plugDepth / 2 + 0.13,
-  );
+  const channelACurve = cockPassagePath(passageRadius, passageEndpointRadius, 0);
+  const channelBCurve = cockPassagePath(passageRadius, passageEndpointRadius, 0, true);
   const channelA = makePassage({
     curve: channelACurve,
     flowMaterial: supplyMaterial,
@@ -513,7 +502,7 @@ function fourWaySteamCock(movement) {
         ? forwardParameter
         : 1 - forwardParameter;
       marker.position.copy(passage.userData.curve.getPoint(parameter));
-      marker.position.z += 0.34;
+      marker.position.z = 0;
     });
   }
 
@@ -536,7 +525,7 @@ function fourWaySteamCock(movement) {
         bodyOuterRadius + pipeLength - 0.24,
         directed,
       );
-      marker.position.set(axis.x * coordinate, axis.y * coordinate, 0.42);
+      marker.position.set(axis.x * coordinate, axis.y * coordinate, 0);
     });
   }
 
@@ -631,7 +620,7 @@ function fourWaySteamCock(movement) {
       plugQuarterTurn:
         lowerPositionAngle - upperPositionAngle + HALF_PI,
       plugToBodyRadialClearance:
-        bodyInnerRadius - plugRadius - 0.07,
+        bodyInnerRadius - plugRadius - 0.008,
       sidePortsOpposed:
         portCenters.leftCylinder.clone()
           .add(portCenters.rightCylinder).length(),
@@ -768,7 +757,8 @@ function fourWaySteamCock(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 5.5, 12.5);
   root.userData.groundFloorY = -4.32;
   update(0);
-  return { root, update };
+  correctFourWayCock(root);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredFourWayCockMovement(movement) {
