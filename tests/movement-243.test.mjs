@@ -345,8 +345,8 @@ test('movement 243 has one non-self-intersecting flat band and one marker set', 
   assert.equal(markers.length, geometry.markerCount);
   assert.equal(geometry.markerCount, 14);
   assert.equal(ribbon.userData.role, 'single-flat-spatial-power-band');
-  assert.equal(positions.count, (384 + 1) * 4);
-  assert.equal(ribbon.geometry.index.count, 384 * 24);
+  assert.equal(positions.count, (blocks.belt.userData.ribbonSamples + 1) * 4);
+  assert.equal(ribbon.geometry.index.count, blocks.belt.userData.ribbonSamples * 24);
   assert.equal(
     new Set(markers.map(({ userData }) => userData.markerIndex)).size,
     geometry.markerCount,

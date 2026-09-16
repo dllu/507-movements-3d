@@ -1,3 +1,4 @@
+import { correctCraneBrakeJoints, correctSpatialPulley, finishBandDrive } from './band-drive-working-parts.js';
 import {correctChainDrive} from './chain-drive-working-parts.js';
 import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
@@ -9292,7 +9293,7 @@ function leverContractedCraneBandBrake(movement) {
   const bandWidth = 0.12;
   const bandDepth = 0.18;
   const bandPlaneZ = 0.08;
-  const bandContactRadius = wheelRadius + bandWidth / 2;
+  const bandContactRadius = wheelRadius + bandWidth / 2 + .0005;
   const appliedLeverAngle = THREE.MathUtils.degToRad(-25);
   const bandArcSamples = 121;
   const cyclePeriod = 4;
@@ -9427,21 +9428,21 @@ function leverContractedCraneBandBrake(movement) {
     if (phase < releasedEnd) {
       return { acceleration: 0, rate: 0, value: 0 };
     }
-    if (phase < applicationEnd) {
-      const duration = applicationEnd - releasedEnd;
-      const progress = segmentProgress(phase, releasedEnd, applicationEnd);
+    if (phase < brakingStart) {
+      const duration = brakingStart - releasedEnd;
+      const progress = segmentProgress(phase, releasedEnd, brakingStart);
       return {
         acceleration: (6 - 12 * progress) / duration ** 2,
         rate: 6 * progress * (1 - progress) / duration,
         value: smoothStep01(progress),
       };
     }
-    if (phase < appliedHoldEnd) {
+    if (phase < accelerationEnd) {
       return { acceleration: 0, rate: 0, value: 1 };
     }
     if (phase < releaseEnd) {
-      const duration = releaseEnd - appliedHoldEnd;
-      const progress = segmentProgress(phase, appliedHoldEnd, releaseEnd);
+      const duration = releaseEnd - accelerationEnd;
+      const progress = segmentProgress(phase, accelerationEnd, releaseEnd);
       return {
         acceleration: -(6 - 12 * progress) / duration ** 2,
         rate: -6 * progress * (1 - progress) / duration,
@@ -9577,6 +9578,7 @@ function leverContractedCraneBandBrake(movement) {
     positionAttribute.setUsage(THREE.DynamicDrawUsage);
     geometry.setAttribute('position', positionAttribute);
     geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    for (let i = 0; i < indices.length; i += 3) [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
     geometry.setIndex(indices);
     const band = new THREE.Mesh(
       geometry,
@@ -9598,9 +9600,12 @@ function leverContractedCraneBandBrake(movement) {
           next.y - previous.y,
         ).normalize();
         const normal = new THREE.Vector2(-tangent.y, tangent.x);
-        const plus = new THREE.Vector2(points[index].x, points[index].y)
+        const center = new THREE.Vector2(points[index].x, points[index].y);
+        if (index === 0) center.addScaledVector(tangent, .115);
+        if (index === pointCount - 1) center.addScaledVector(tangent, -.115);
+        const plus = center.clone()
           .addScaledVector(normal, bandWidth / 2);
-        const minus = new THREE.Vector2(points[index].x, points[index].y)
+        const minus = center.clone()
           .addScaledVector(normal, -bandWidth / 2);
         const base = index * 12;
         positions.set([
@@ -9611,6 +9616,7 @@ function leverContractedCraneBandBrake(movement) {
         ], base);
       }
       positionAttribute.needsUpdate = true;
+      geometry.computeVertexNormals();
       geometry.computeBoundingSphere();
       band.userData.centerlinePoints = points.map((point) => point.clone());
     };
@@ -9737,7 +9743,7 @@ function leverContractedCraneBandBrake(movement) {
       stage = 'contracted-band-holds-brake-wheel-stopped';
     } else if (cyclePhase >= appliedHoldEnd && cyclePhase < releaseEnd) {
       stage = cyclePhase < accelerationEnd
-        ? 'lever-released-band-unloads-and-wheel-resumes'
+        ? 'taut-band-unloads-and-wheel-resumes'
         : 'lever-returning-with-band-slack';
     }
     return {
@@ -9745,7 +9751,8 @@ function leverContractedCraneBandBrake(movement) {
       bandPath,
       bandTaut: bandPath.slackLength < 2e-10,
       brakeEngagement,
-      brakeNormalForce: brakeEngagement * mechanicalAdvantage,
+      brakeNormalForce: null,
+      illustrativeLoadIndex: brakeEngagement * mechanicalAdvantage,
       cycleCoordinate,
       cycleIndex,
       cyclePhase,
@@ -9784,13 +9791,14 @@ function leverContractedCraneBandBrake(movement) {
     upperEndpointShaft,
     wheel,
     wheelBody,
+    wheelHub,
     wheelIndex,
     wheelPost,
     wheelShaft,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.95, -2.3, -0.5),
-    new THREE.Vector3(4.15, 1.9, 0.65),
+    new THREE.Vector3(-1.95, -2.3, -0.65),
+    new THREE.Vector3(4.15, 1.9, 0.85),
   );
   root.userData.bandPathAtLeverAngle = bandPathAtLeverAngle;
   root.userData.geometry = {
@@ -9907,18 +9915,22 @@ function leverContractedCraneBandBrake(movement) {
         active: state.brakeEngagement > 0,
         innerSurfaceClearance: bandContactRadius
           - bandWidth / 2 - wheelRadius,
-        normalForce: state.brakeNormalForce,
+        normalForce: null,
+        illustrativeLoadIndex: state.illustrativeLoadIndex,
         taut: state.bandTaut,
         wrapAngle: state.bandPath.wrapAngle,
       },
     };
     root.userData.kinematics = state;
   };
+  correctCraneBrakeJoints(root);
+  finishBandDrive(root, 6, 'The lever first takes up slack; only then does the prescribed wheel slowdown begin. It holds the strap taut while the illustrative braking load rises and falls, then releases it. Friction, band elasticity, tension and normal force are not solved; the wheel schedule is a demonstration, not validated braking dynamics.');
+  root.userData.dynamics = { prescribedWheelSchedule: true, forceValidated: false, normalForce: null, illustrativeLoadIndexIsDimensionless: true };
   update(0);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.4, 3.8, 9.6),
+    cameraDirection: new THREE.Vector3(.8, .5, 15),
   };
 }
 
@@ -10070,7 +10082,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     X_AXIS.clone().negate(),
   );
   const quarterTurnWidth = (from, to, progress) => {
-    const angle = Math.PI / 2 * progress;
+    const angle = Math.PI / 2 * smoothStep01(progress);
     return from.clone().multiplyScalar(Math.cos(angle))
       .addScaledVector(to, Math.sin(angle));
   };
@@ -10190,12 +10202,18 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const beltCurve = new ExactSpatialBeltCurve();
 
   const makeSpatialRibbonBelt = () => {
-    const ribbonSamples = 384;
+    const sectionDistances = [];
+    for (const segment of beltSegments) {
+      const count = Math.ceil(384 * segment.length / beltLength);
+      for (let i = 0; i < count; i++) sectionDistances.push(segment.startDistance + segment.length * i / count);
+    }
+    sectionDistances.push(beltLength);
+    const ribbonSamples = sectionDistances.length - 1;
     const vertexCount = (ribbonSamples + 1) * 4;
     const positions = new Float32Array(vertexCount * 3);
     for (let sample = 0; sample <= ribbonSamples; sample += 1) {
       const frame = beltFrameAtDistance(
-        beltLength * sample / ribbonSamples,
+        sectionDistances[sample],
       );
       const widthOffset = frame.widthDirection.clone()
         .multiplyScalar(beltWidth / 2);
@@ -10228,6 +10246,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    for (let i = 0; i < indices.length; i += 3) [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
@@ -10246,7 +10265,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     const markerMaterial = matte(PALETTE.white, { roughness: 0.48 });
     const markers = Array.from({ length: markerCount }, (_, index) => {
       const marker = new THREE.Mesh(
-        new THREE.SphereGeometry(0.075, 12, 9),
+        new THREE.BoxGeometry(beltWidth * .9, beltThickness + .0003, .034),
         markerMaterial,
       );
       marker.userData.markerIndex = index;
@@ -10260,6 +10279,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     group.userData.length = beltLength;
     group.userData.markers = markers;
     group.userData.ribbon = ribbon;
+    group.userData.ribbonSamples = ribbonSamples;
     group.userData.segments = beltSegments;
     group.userData.updateDistance = (distance) => {
       group.userData.distance = distance;
@@ -10269,6 +10289,8 @@ function horizontalDriverToTwinVerticalShafts(movement) {
         const markerDistance = distance + beltLength * index / markerCount;
         const frame = beltFrameAtDistance(markerDistance);
         marker.position.copy(frame.point);
+        marker.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+          frame.widthDirection, frame.thicknessDirection, frame.tangent));
         marker.userData.distance = positiveModulo(markerDistance, beltLength);
         marker.userData.pathRole = frame.role;
         marker.userData.segmentIndex = frame.segmentIndex;
@@ -10282,7 +10304,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const driver = makePulley({
     axis: Z_AXIS,
     color: PALETTE.driver,
-    radius: driverRadius - 0.07,
+    radius: driverRadius - beltThickness / 2 - .0006,
     spokes: 5,
     width: 0.36,
   });
@@ -10292,7 +10314,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const leftGuide = makePulley({
     axis: Z_AXIS,
     color: PALETTE.accent,
-    radius: guideRadius - 0.07,
+    radius: guideRadius - beltThickness / 2 - .0006,
     spokes: 3,
     width: 0.27,
   });
@@ -10302,7 +10324,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const rightGuide = makePulley({
     axis: Z_AXIS,
     color: PALETTE.accent,
-    radius: guideRadius - 0.07,
+    radius: guideRadius - beltThickness / 2 - .0006,
     spokes: 3,
     width: 0.27,
   });
@@ -10312,7 +10334,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const leftVertical = makePulley({
     axis: Y_AXIS,
     color: PALETTE.driven,
-    radius: verticalRadius - 0.07,
+    radius: verticalRadius - beltThickness / 2 - .0006,
     spokes: 4,
     width: 0.38,
   });
@@ -10322,7 +10344,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
   const rightVertical = makePulley({
     axis: Y_AXIS,
     color: PALETTE.driven,
-    radius: verticalRadius - 0.07,
+    radius: verticalRadius - beltThickness / 2 - .0006,
     spokes: 4,
     width: 0.38,
   });
@@ -10550,11 +10572,13 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     };
     root.userData.kinematics = state;
   };
+  for (const [pulley, shaftRadius] of [[driver, .105], [leftGuide, .07], [rightGuide, .07], [leftVertical, .095], [rightVertical, .095]]) correctSpatialPulley(pulley, shaftRadius);
+  finishBandDrive(root, 6, 'One band follows two quarter twists and a rear return to drive both vertical shafts. Ratios use the belt neutral-line radii; the inner running surfaces lie half a belt thickness below them. Belt stretch, tracking, tension and transmitted torque are not simulated.');
   update(0);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.2, 4.2, 10.8),
+    cameraDirection: new THREE.Vector3(2.2, 1.6, 15),
   };
 }
 
