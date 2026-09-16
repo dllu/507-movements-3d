@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
+import { horizontalRing } from './horizontal-turbine-solids.js';
+import { ring } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -102,7 +105,7 @@ function streamDrivenArchimedesScrew(movement) {
   const streamDriveTorque = waterWheelRadius
     * representativeStreamForce;
   const dischargeTroughY = 1.82;
-  const groundY = -2.48;
+  const groundY = -3.05;
 
   const worldFromAssemblyLocal = (localPoint) => localPoint.clone()
     .applyQuaternion(assemblyQuaternion)
@@ -279,6 +282,9 @@ function streamDrivenArchimedesScrew(movement) {
     }),
     screwMaterial,
   );
+  const flightProfile = { inner: centralShaftRadius, outer: casingRadius-.04, low: -screwLength/2, high: screwLength/2, width: .035, lead: screwPitch/FULL_TURN, phase: -screwLength/2 + screwPitch/2 };
+  helicalFlight.geometry.dispose();
+  helicalFlight.geometry = helicalThread(flightProfile, threadAngles(flightProfile, 128)).rotateX(-Math.PI/2);
   helicalFlight.userData.role =
     'five-turn-helical-water-lifting-passage';
   rotor.add(helicalFlight);
@@ -293,6 +299,8 @@ function streamDrivenArchimedesScrew(movement) {
     ),
     casingMaterial,
   );
+  casing.geometry.dispose();
+  casing.geometry = horizontalRing(casingRadius-.04,casingRadius,-screwLength/2,screwLength/2);
   casing.userData.role = 'transparent-rotating-oblique-screw-casing';
   rotor.add(casing);
   const casingIndex = new THREE.Mesh(
@@ -374,6 +382,8 @@ function streamDrivenArchimedesScrew(movement) {
       new THREE.TorusGeometry(casingRadius + 0.11, 0.09, 10, 48),
       frameMaterial,
     );
+    bearing.geometry.dispose();
+    bearing.geometry = ring(casingRadius+.073,casingRadius+.20,-.09,.09);
     bearing.quaternion.setFromUnitVectors(Z_AXIS, axisDirection);
     bearing.position.copy(worldFromAssemblyLocal(localPosition));
     bearing.userData.role =
@@ -390,11 +400,21 @@ function streamDrivenArchimedesScrew(movement) {
     support.position.set(
       bearing.position.x,
       groundY + height / 2,
-      index === 0 ? -0.92 : 0.92,
+      index === 0 ? -1.82 : 1.82,
     );
     support.userData.role = `fixed-oblique-bearing-support-${index + 1}`;
     root.add(support);
     return support;
+  });
+
+  const bearingBridges = bearings.map((bearing, index) => {
+    const sign = index === 0 ? -1 : 1;
+    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.98,24),frameMaterial);
+    bridge.rotation.x = Math.PI/2;
+    bridge.position.set(bearing.position.x,bearing.position.y,sign*1.33);
+    bridge.userData.role = `finite-bearing-to-post-bridge-${index + 1}`;
+    root.add(bridge);
+    return bridge;
   });
 
   const base = new THREE.Mesh(
@@ -412,10 +432,10 @@ function streamDrivenArchimedesScrew(movement) {
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(3.90, 0.30, 4.70),
+    new THREE.BoxGeometry(3.90, streamSurfaceY-groundY-.45, 4.70),
     waterMaterial,
   );
-  streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY - 0.15, 0);
+  streamWater.position.set(lowerEnd.x + 0.20, (streamSurfaceY+groundY+.45)/2, 0);
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';
   root.add(streamWater);
@@ -431,7 +451,7 @@ function streamDrivenArchimedesScrew(movement) {
   }
 
   const dischargeTrough = new THREE.Group();
-  dischargeTrough.position.set(upperEnd.x - 1.52, dischargeTroughY, 0);
+  dischargeTrough.position.set(upperEnd.x - 2.02, dischargeTroughY, 0);
   dischargeTrough.rotation.z = -0.05;
   dischargeTrough.userData.role =
     'fixed-upper-trough-receiving-continuous-screw-discharge';
@@ -532,7 +552,7 @@ function streamDrivenArchimedesScrew(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: shaftRevolutionDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: shaftRevolutionDuration,
     },
     archetype:
       'stream-driven-inclined-archimedes-screw-with-one-to-one-lower-water-wheel-and-gravity-low-rising-pockets',
@@ -540,6 +560,7 @@ function streamDrivenArchimedesScrew(movement) {
       base,
       bearings,
       bearingSupports,
+      bearingBridges,
       casing,
       casingEndRings,
       casingIndex,
@@ -650,12 +671,15 @@ function streamDrivenArchimedesScrew(movement) {
     worldFromAssemblyLocal,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.18, groundY, -2.72),
+    new THREE.Vector3(-5.52, groundY, -2.72),
     new THREE.Vector3(4.10, 3.48, 2.72),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 4.8, 10.8);
   root.userData.groundFloorY = groundY;
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = shaftRevolutionDuration;
+  root.traverse(o => { for (const m of o.material ? [].concat(o.material) : []) m.fog = false; });
   markShadows(root);
   base.receiveShadow = true;
   streamBed.receiveShadow = true;

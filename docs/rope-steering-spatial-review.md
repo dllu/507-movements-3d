@@ -62,3 +62,9 @@ at their display interval; they are not tracked material knots through the end
 fastenings. Brown's corroborating historical middle fastening is not imposed.
 This is a corrected analytical layout and motion demonstration, not a passive
 loaded steering simulation.
+
+
+The subsequent timing follow-up also sets `minimumDisplayCycleSeconds=8`.
+The production registry replaces a factory's target timing; the explicit minimum
+and `tests/reviewed-cycle-timing.test.mjs` now enforce the reviewed eight-second
+cycle through that path.

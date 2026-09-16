@@ -1,3 +1,37 @@
+# Eighteenth family pass: maintaining power, lift pumps and hook release
+
+The next pass covers 320/321, 441–443 and 448/449, plus the outstanding 492 hook
+handoff. It reuses finite grooves, bored joints, pipe walls and clipped water
+geometry. The complete review remains active.
+
+[320/321's clock review](maintaining-clock-family-review.md) supplies finite
+clicks and ratchets, working rope grooves, bored journals and persistent chain
+buffers. Polygon-overlap and step-refinement checks cover the finite click
+followers; winding handoff forces remain prescribed.
+
+[441–443's water-lifting review](water-lifting-441-443-review.md) supplies open
+channels, finite buckets and a closed screw flight. **441 remains partial:** its
+scheduled trip and receiver still intersect, with named measurements recorded.
+The other two clear the checked fixed apparatus.
+
+All 99 focused tests, the production build and twelve packaged playback/mobile
+checks pass. The twelve-movement screen
+reports no nonfinite data, scene growth or new playback geometry.
+
+[492's contact follow-up](boat-detacher-contact-review.md) replaces the intersecting
+hook and corrects the tongue's release direction. Actual surfaces now establish
+locked capture, latch restraint and continuous prescribed withdrawal. Load-driven
+release timing and friction remain unsolved.
+
+[448/449's pump review](lift-pump-family-review.md) supplies open bucket passages,
+yokes, rod bores, finite seats and working outlet openings. Ideal fluid volumes
+and phase-driven check timing remain explicit approximations.
+
+The viewer's default timing could replace a factory's reviewed cycle target.
+Explicit minimum durations now protect 439/440/444/490 as well as the new models;
+a regression applies the production timing function rather than inspecting only
+factory metadata.
+
 # Seventeenth family pass: watch interfaces, spatial joints and water mechanisms
 
 Nine movements receive bounded corrections: 261, 318/319, 439/440/444,

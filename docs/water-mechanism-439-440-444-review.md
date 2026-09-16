@@ -27,3 +27,12 @@ Chrome default/source, front and reverse-oblique views were inspected. All three
 * 444 retains scheduled check-valve timing and the existing illustrative pressure/mass-balance relation. The transparent spherical chamber is a sectional shell; its cylindrical water graphic and air bubble are schematic and can overlap its spherical boundary and riser. The delivery tee is not a fully boolean-open sealed junction, and the reservoir connection/sealing details have not been pressure-qualified. Water markers and the waste efflux curve are schematic; the latter is not a ballistic jet. These are explicit residuals, not a claim of a validated fluid network.
 
 MuJoCo was not introduced: none of these changes requires estimating an unknown rigid-body trajectory, and a rigid contact solver would not validate the missing fluid dynamics. A later coupled fluid/contact study would be necessary to replace the operating schedules with passive dynamics.
+
+
+## Viewer timing follow-up
+
+The subsequent family pass adds `minimumDisplayCycleSeconds` for all three
+models. The registry overwrites the factory's target timing, so a target alone
+did not enforce the reviewed duration in the actual viewer. The 8/6/4.8-second
+cycles now survive that integration path; `tests/reviewed-cycle-timing.test.mjs`
+applies the production timing function and checks the resulting duration.

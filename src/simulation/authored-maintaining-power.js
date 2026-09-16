@@ -1,3 +1,4 @@
+import { correctEndlessMaintainingChain } from './maintaining-clock-parts.js';
 import * as THREE from 'three';
 import {
   CircularArcCurve3,
@@ -992,10 +993,10 @@ function endlessChainMaintainingPower(movement) {
   chain.userData.mesh = chainMesh;
 
   const pawlPivot = referencePath.centers.A.clone().add(
-    new THREE.Vector3(-0.74, 1.04, 0.34),
+    new THREE.Vector3(0.48, 1.03, 0.34),
   );
   const pawlContact = referencePath.centers.A.clone().add(
-    new THREE.Vector3(0.22, 0.75, 0.34),
+    new THREE.Vector3(-0.12, 0.73, 0.34),
   );
   const pawlDirection = pawlContact.clone().sub(pawlPivot);
   const pawlLength = pawlDirection.length();
@@ -1070,6 +1071,7 @@ function endlessChainMaintainingPower(movement) {
       windingHandle.position.z += 0.16;
     }
     root.userData.renderState = state;
+    root.userData.updateClockInterfaces?.(state);
   };
 
   const sourcePointToReferenceFront = (point) => new THREE.Vector3(
@@ -1194,6 +1196,7 @@ function endlessChainMaintainingPower(movement) {
     windingPhase: 'pull b down; p freewheels under its click, c raises W, and P continues in its going direction',
   };
 
+  correctEndlessMaintainingChain(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1210,7 +1213,7 @@ function endlessChainMaintainingPower(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(5.8, 3.9, 11.5),
+    cameraDirection: new THREE.Vector3(.6, .8, 15),
     root,
     update,
   };

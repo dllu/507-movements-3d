@@ -1,3 +1,4 @@
+import { correctGoingBarrel } from './maintaining-clock-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -501,7 +502,7 @@ function harrisonGoingBarrel(movement) {
       weightPosition: new THREE.Vector3(
         weightX,
         referenceWeightY - ropeDrumPitchRadius * barrelAngle,
-        0.78,
+        1.48,
       ),
       weightVelocity: -ropeDrumPitchRadius * barrelAngularVelocity,
     };
@@ -702,8 +703,8 @@ function harrisonGoingBarrel(movement) {
   rope.userData.role = 'single-weight-rope-wound-on-barrel-B';
   const ropeContact = new THREE.Vector3(
     weightX,
-    -0.08,
-    0.78,
+    0,
+    1.48,
   );
 
   const fixedFrame = new THREE.Group();
@@ -822,6 +823,7 @@ function harrisonGoingBarrel(movement) {
     }
     root.userData.contacts = state.contacts;
     root.userData.renderState = state;
+    root.userData.updateClockInterfaces?.(state);
   };
 
   const sourcePointToReferenceFront = (point) => new THREE.Vector3(
@@ -957,6 +959,7 @@ function harrisonGoingBarrel(movement) {
     windingPath: 'operator reverses B; R overruns, T holds the larger ratchet, and S–S′ alone supplies G',
   };
 
+  correctGoingBarrel(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -977,7 +980,7 @@ function harrisonGoingBarrel(movement) {
   root.userData.fidelity = 'authored';
 
   return {
-    cameraDirection: new THREE.Vector3(4.9, 3.4, 11.8),
+    cameraDirection: new THREE.Vector3(.6, .8, 15),
     root,
     update,
   };

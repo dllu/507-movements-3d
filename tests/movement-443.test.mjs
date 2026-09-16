@@ -381,7 +381,7 @@ test('movement 443 update binds the rotor and flow markers while fixed casing su
   ));
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.shaftRevolutionDuration);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 11);
   assert.equal(model.root.userData.motion.screwRevolutionsPerMaterialStateCycle,
     geometry.helixTurns);
   disposeModel(model.root);

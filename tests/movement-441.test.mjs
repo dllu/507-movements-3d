@@ -413,7 +413,7 @@ test('movement 441 update keeps bucket water level, binds all rotating parts, an
       `bucket ${index} tip cycle closure`);
   });
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 12);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 12);
   disposeModel(model.root);
 });
 

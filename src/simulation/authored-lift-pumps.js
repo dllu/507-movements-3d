@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctLiftPumpParts} from './lift-pump-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -52,7 +53,7 @@ function commonLiftPump(movement) {
   const leftLeverRadius = 0.90;
   const handleRadius = 2.80;
   const connectingRodLength = 1.45;
-  const pistonJointOffsetY = 0.28;
+  const pistonJointOffsetY = 0.62;
   const pistonThickness = 0.20;
   const pistonRadius = 0.67;
   const barrelWaterRadius = 0.61;
@@ -483,6 +484,7 @@ function commonLiftPump(movement) {
       );
       marker.visible = transferVisible;
     });
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -626,6 +628,7 @@ function commonLiftPump(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 4.5, 10.8);
   root.userData.groundFloorY = groundY;
+  correctLiftPumpParts(root, movement.id);
   markShadows(root);
   base.receiveShadow = true;
   update(0);
@@ -721,8 +724,8 @@ function modernLiftingPump(movement) {
       pistonValveOpen: downstrokeValveOpen,
       pistonVelocity,
       pistonY,
-      rodBottomY: pistonTopY,
-      rodTopY: pistonTopY + pumpRodLength,
+      rodBottomY: pistonTopY + .52,
+      rodTopY: pistonTopY + .52 + pumpRodLength,
       upperChamberWaterVolume,
       upperChamberWaterVolumeRate,
     };
@@ -1014,6 +1017,7 @@ function modernLiftingPump(movement) {
       marker.position.z = 0.22;
       marker.visible = flowing;
     });
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -1159,6 +1163,7 @@ function modernLiftingPump(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(6.1, 4.7, 10.5);
   root.userData.groundFloorY = groundY;
+  correctLiftPumpParts(root, movement.id);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

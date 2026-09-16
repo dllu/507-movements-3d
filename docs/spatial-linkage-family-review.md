@@ -1,6 +1,6 @@
 # Combination drive, feathering wheel and detacher: 261, 489, 492
 
-This pass corrects finite joints and visible support geometry while preserving the existing prescribed laws. **492 remains partial:** its latch-eye topology and pivots are corrected, but tongue/tackle-hook interpenetration and load-bearing release remain unresolved.
+This pass corrects finite joints and visible support geometry while preserving the existing prescribed laws. This pass originally left 492’s tongue/tackle handoff unresolved. The subsequent [492 contact correction](boat-detacher-contact-review.md) resolves interpenetration and qualifies locked capture plus a continuous prescribed release; passive force/timing remains unvalidated.
 
 ## Primary references
 
@@ -30,4 +30,4 @@ Official and local screenshots and the cheap CPU screen are RAM artifacts under 
 
 261 retains prescribed disk timing and a numerically solved inextensible centerline. No friction, load response or multilayer spooling is simulated; its periodic return is a demonstration reset. 489's hydrodynamic numbers and water-flow markers remain illustrative drag estimates, not validated fluid dynamics or propulsion performance. Its source-level geometric upright-bucket law is exact.
 
-492's tongue body and tackle-hook body still interpenetrate during their prescribed handoff. Correcting the eye does not validate hook capture, load transfer, passive tongue release or automatic reset. That finite hook/tongue reconstruction remains queued separately; the published correction is limited to the tested latch and hinge interfaces. A future contact study should follow a corrected spatial hook and tongue geometry, rather than attempt to validate the current intersecting shapes.
+The original 492 hook/tongue residual recorded in this pass is superseded by the [contact follow-up](boat-detacher-contact-review.md): locked capture and finite release-path clearance now qualify. Load transfer, friction and passive release timing still require a dynamics study; automatic reset is not claimed.

@@ -737,6 +737,7 @@ function ropeSteering(movement) {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
   correctSteeringSolids(root);
+  root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   ropeMarkers.forEach((marker) => {
     marker.castShadow = false;

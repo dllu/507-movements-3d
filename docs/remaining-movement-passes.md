@@ -483,3 +483,26 @@ checks pass. The nine-movement screen finds no nonfinite data, scene growth or
 replacement geometry during playback. Source views and actual
 surface samples qualify the stated interfaces. See the linked family evidence
 and residuals in [review progress](review-progress.md).
+
+
+## Eighteenth parallel batch
+
+- **320/321:** maintaining-power clock interfaces and opposite-handed clicks.
+- **441/442/443:** finite channels, buckets and screw passages; 441 remains
+  partial because its scheduled bucket trip still intersects fixed apparatus.
+- **448/449:** open valve passages, yokes, packed rod bores, finite pipe walls
+  and actual barrel outlet openings.
+- **492 contact follow-up:** locked hook capture and a continuous clear release
+  path replace the intersecting prescribed handoff; passive forces remain open.
+- **439/440/444/490 timing:** explicit minimum durations survive the production
+  registry's display-timing normalization.
+
+The 441 trip now becomes a contact-lane candidate. Pumps 450/451 can reuse the
+new finite-passage and bore corrections, with a separate review of their force
+pump and air-chamber layouts. Shared geometry does not validate their fluid laws.
+
+
+All 99 focused tests, the production build and twelve packaged playback/mobile
+checks pass. A twelve-movement screen
+reports no nonfinite data, scene growth or replacement playback geometry.
+Detailed scope and physical limits are linked from [review progress](review-progress.md).

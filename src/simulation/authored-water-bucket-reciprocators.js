@@ -710,6 +710,7 @@ function waterBucketReciprocator(movement) {
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite passages, water envelopes and contact geometry; bucket/trough motion and fill remain prescribed, without validated passive dynamics or fluid loads.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
+  root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   ground.receiveShadow = true;
   update(0);

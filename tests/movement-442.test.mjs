@@ -67,7 +67,7 @@ test('movement 442 has twelve open pots rigidly secured between two wheel rims',
   assert.equal(blocks.pots.length, 12);
   assert.equal(blocks.potWaters.length, 12);
   assert.equal(blocks.dischargeStreams.length, 12);
-  assert.equal(blocks.spokes.length, 24);
+  assert.equal(blocks.spokes.length, 12);
   assert.equal(blocks.wheel.parent, model.root);
   assert.equal(blocks.hub.parent, blocks.wheel);
   blocks.rims.forEach((rim) => assert.equal(rim.parent, blocks.wheel));
@@ -361,7 +361,7 @@ test('movement 442 update keeps displayed water level while all fixed supports a
   assert.equal(model.root.userData.metering.elevatedVolumePerWheelRevolution,
     geometry.potCapacity * geometry.potCount);
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 12);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 12);
   disposeModel(model.root);
 });
 

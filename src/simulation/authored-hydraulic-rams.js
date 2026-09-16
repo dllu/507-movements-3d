@@ -814,6 +814,7 @@ function hydraulicRam(movement) {
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite pipe bores and valve seats; valve timing, pressure, chamber contents and all water markers remain prescribed fluid illustrations. Pipe junction sealing and water-hammer dynamics are not validated.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
+  root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   base.receiveShadow = true;
   update(0);

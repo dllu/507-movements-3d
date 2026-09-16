@@ -113,9 +113,9 @@ function boatDetachingHooks(movement) {
     .sub(tonguePivot);
   const tongueNoseLocal = new THREE.Vector2(-0.69, 0.31);
   const upperEyeInnerRadius = 0.235;
-  const tongueStudRadius = 0.095;
+  const tongueStudRadius = 0.205;
   const leverReleaseAngle = THREE.MathUtils.degToRad(30);
-  const tongueReleaseAngle = THREE.MathUtils.degToRad(58);
+  const tongueReleaseAngle = THREE.MathUtils.degToRad(-110);
   const eyeClearDistance = upperEyeInnerRadius + tongueStudRadius;
   const leverEyeClearAngle = 2 * Math.asin(
     eyeClearDistance / (2 * upperEyeVector.length()),
@@ -128,7 +128,7 @@ function boatDetachingHooks(movement) {
   const mechanismPlaneZ = 0.48;
   const latchPlaneZ = mechanismPlaneZ + .32;
   const tonguePlaneZ = 0.30;
-  const tacklePlaneZ = 0.22;
+  const tacklePlaneZ = tonguePlaneZ;
 
   const leverEyeCenterAtAngle = (angleRadian) => leverPivot.clone()
     .add(rotateVector(upperEyeVector, angleRadian));
@@ -332,6 +332,12 @@ function boatDetachingHooks(movement) {
       darkMaterial,
       22,
     ), `tongue-locking-stud-through-lever-eye-${unitIndex + 1}`);
+    lockingStud.geometry.dispose();
+    lockingStud.geometry = new THREE.LatheGeometry([
+      new THREE.Vector2(0, -.31), new THREE.Vector2(tongueStudRadius, -.31),
+      new THREE.Vector2(tongueStudRadius, 0), new THREE.Vector2(.075, .31),
+      new THREE.Vector2(0, .31),
+    ], 64);
     lockingStud.position.set(
       tongueStudLocal.x,
       tongueStudLocal.y,
@@ -357,6 +363,7 @@ function boatDetachingHooks(movement) {
       tongueNoseLocal.y,
       tonguePlaneZ,
     );
+    tongueNoseMarker.visible = false;
     tongue.add(tongueNoseMarker);
 
     const lever = addRole(new THREE.Group(),
@@ -455,16 +462,28 @@ function boatDetachingHooks(movement) {
     const tackleHookAssembly = addRole(new THREE.Group(),
       `external-tackle-hook-assembly-${unitIndex + 1}`);
     unit.add(tackleHookAssembly);
-    const tackleHook = tubeThrough([
-      new THREE.Vector3(-0.73, 2.82, tacklePlaneZ),
-      new THREE.Vector3(-0.77, 2.35, tacklePlaneZ),
-      new THREE.Vector3(-0.78, 1.91, tacklePlaneZ),
-      new THREE.Vector3(-0.72, 1.66, tacklePlaneZ),
-      new THREE.Vector3(-0.55, 1.54, tacklePlaneZ),
-      new THREE.Vector3(-0.34, 1.58, tacklePlaneZ),
-      new THREE.Vector3(-0.25, 1.75, tacklePlaneZ),
-    ], 0.135, tackleMaterial,
-    `curved-hook-of-tackle-${unitIndex + 1}`, 58);
+    // A finite J-hook bears under the tongue, rather than crossing its body.
+    // The flat seat is located from the actual lowest tongue surface at lock.
+    tongueBody.geometry.computeBoundingBox();
+    const seatY = tonguePivot.y + tongueBody.geometry.boundingBox.min.y;
+    const hookShape = new THREE.Shape();
+    hookShape.moveTo(-.70, 2.66);
+    hookShape.lineTo(-.88, 2.68);
+    hookShape.quadraticCurveTo(-1.03, 2.62, -1.03, 2.30);
+    hookShape.lineTo(-1.03, seatY + .13);
+    hookShape.quadraticCurveTo(-1.03, seatY - .23, -.70, seatY - .23);
+    hookShape.quadraticCurveTo(-.34, seatY - .23, -.24, seatY + .05);
+    hookShape.lineTo(-.40, seatY);
+    hookShape.lineTo(-.72, seatY);
+    hookShape.quadraticCurveTo(-.82, seatY, -.82, seatY + .15);
+    hookShape.lineTo(-.82, 2.30);
+    hookShape.quadraticCurveTo(-.82, 2.48, -.70, 2.54);
+    hookShape.closePath();
+    const tackleHook = addRole(new THREE.Mesh(
+      new THREE.ExtrudeGeometry(hookShape, {depth: .16, bevelEnabled: false, curveSegments: 24})
+        .translate(0, 0, tacklePlaneZ - .08), tackleMaterial),
+      `curved-hook-of-tackle-${unitIndex + 1}`);
+    tackleHook.userData.seatY = seatY;
     tackleHookAssembly.add(tackleHook);
     const tackleHeadRing = addRole(new THREE.Mesh(
       new THREE.TorusGeometry(0.31, 0.10, 11, 48),
@@ -481,6 +500,7 @@ function boatDetachingHooks(movement) {
       lockedTongueNoseCenter.y,
       tacklePlaneZ,
     );
+    tackleThroatMarker.visible = false;
     tackleHookAssembly.add(tackleThroatMarker);
     const fallRope = addRole(makeDynamicCable({
       color: ropeMaterialColor,
@@ -626,8 +646,9 @@ function boatDetachingHooks(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
+    minimumDisplayCycleSeconds: cycleDuration,
     archetype:
       'paired-eye-lever-boat-detachers-with-hinged-load-tongues',
     blocks: {
@@ -647,7 +668,7 @@ function boatDetachingHooks(movement) {
       unitsCommandedSynchronously: true,
     },
     dynamics: {
-      contactResiduals: ['The tongue and tackle-hook solids still intersect during the prescribed handoff. Their load-bearing contact and passive release remain unresolved; the finite qualification in this pass covers the latch eye and pivots only.'],
+      contactResiduals: ['Locked capture and the continuous prescribed release path are qualified against finite surfaces. Contact forces, latch preload, friction and passive load-driven timing remain unsolved; the tongue is commanded clockwise clear before the tackle rises.'],
       didacticResetDisclosure:
         'The first half of the cycle is the working release: pull levers, free both tongue studs, swing both unloaded tongues, and let the tackle hooks rise. The second half lowers the tackle hooks, reseats the tongues, and restores the lever eyes only to repeat the demonstration; that reset is not a claim of automatic reattachment.',
       eyeReleaseCriterion:

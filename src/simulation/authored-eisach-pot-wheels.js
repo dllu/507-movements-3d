@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { ring, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
 import {
   PALETTE,
   markShadows,
@@ -46,7 +48,7 @@ function eisachPotWheel(movement) {
   const wheelCenter = new THREE.Vector3(0.38, 0.28, 0);
   const wheelRadius = 2.43;
   const potCount = 12;
-  const potPivotRadius = 2.36;
+  const potPivotRadius = 1.85;
   const rimDepth = 1.46;
   const potTangentialWidth = 0.58;
   const potRadialDepth = 0.58;
@@ -77,8 +79,8 @@ function eisachPotWheel(movement) {
   const streamVelocityX = 1.30;
   const representativeCurrentForce = 6.20;
   const currentDriveTorque = wheelRadius * representativeCurrentForce;
-  const dischargeTroughY = 1.96;
-  const groundY = -2.32;
+  const dischargeTroughY = 1.98;
+  const groundY = -2.75;
   const derivativeMaximum = 1.875;
 
   const potStateAtWorldAngle = (worldAngleValue) => {
@@ -228,13 +230,16 @@ function eisachPotWheel(movement) {
     return rim;
   });
   const hub = cylinderAlongZ(0.44, rimDepth + 0.28, darkMaterial, 36);
+  hub.geometry.dispose();
+  hub.geometry = ring(.184,.44,-.80,.80);
+  hub.rotation.set(0,0,0);
   hub.userData.role = 'rigid-pot-wheel-hub';
   wheel.add(hub);
   const hubIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.07, 0.08),
+    new THREE.BoxGeometry(0.20, 0.07, 0.02),
     whiteMaterial,
   );
-  hubIndex.position.set(0.31, 0, rimDepth / 2 + 0.12);
+  hubIndex.position.set(0.31, 0, .81);
   hubIndex.userData.role = 'visible-pot-wheel-rotation-index';
   wheel.add(hubIndex);
 
@@ -244,11 +249,13 @@ function eisachPotWheel(movement) {
   const dischargeStreams = [];
   for (let index = 0; index < potCount; index += 1) {
     const baseAngle = index * FULL_TURN / potCount;
-    for (const z of [-rimDepth / 2, rimDepth / 2]) {
+    for (const z of [-rimDepth / 2]) {
       const spoke = new THREE.Mesh(
         new THREE.BoxGeometry(wheelRadius * 1.78, 0.075, 0.075),
         darkMaterial,
       );
+      spoke.geometry.dispose();
+      spoke.geometry = plate(polygonClipping.difference(poly([[-wheelRadius*.89,-.0375],[wheelRadius*.89,-.0375],[wheelRadius*.89,.0375],[-wheelRadius*.89,.0375]]),poly(circle([0,0],.184,128))),-.0375,.0375);
       spoke.position.z = z;
       spoke.rotation.z = baseAngle;
       spoke.userData.role = `rigid-pot-wheel-spoke-${index + 1}`;
@@ -349,6 +356,8 @@ function eisachPotWheel(movement) {
       ),
       waterMaterial,
     );
+    potWater.geometry.dispose();
+    potWater.geometry = makeCellWaterGeometry();
     potWater.userData.role = `water-carried-in-rigid-pot-${index + 1}`;
     pot.add(potWater);
     potWaters.push(potWater);
@@ -373,6 +382,8 @@ function eisachPotWheel(movement) {
       new THREE.TorusGeometry(0.30, 0.075, 10, 36),
       frameMaterial,
     );
+    bearing.geometry.dispose();
+    bearing.geometry = ring(.184,.375,-.075,.075);
     bearing.position.set(
       wheelCenter.x,
       wheelCenter.y,
@@ -392,7 +403,7 @@ function eisachPotWheel(movement) {
   base.userData.role = 'fixed-eisach-wheel-base';
   root.add(base);
   const supports = [];
-  for (const z of [-0.92, 0.92]) {
+  for (const z of [-1.10, 1.10]) {
     const left = beamBetween(
       new THREE.Vector3(-1.25, groundY + 0.27, z),
       new THREE.Vector3(wheelCenter.x, wheelCenter.y - 0.18, z),
@@ -421,10 +432,10 @@ function eisachPotWheel(movement) {
   streamBed.userData.role = 'fixed-river-bed-under-pot-wheel';
   root.add(streamBed);
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(7.72, 0.30, 3.18),
+    new THREE.BoxGeometry(7.72, streamSurfaceY-groundY-.44, 3.18),
     waterMaterial,
   );
-  streamWater.position.set(0, streamSurfaceY - 0.15, 0);
+  streamWater.position.set(0, (streamSurfaceY+groundY+.44)/2, 0);
   streamWater.userData.role =
     'rightward-current-partly-immersing-peripheral-pots';
   root.add(streamWater);
@@ -440,34 +451,35 @@ function eisachPotWheel(movement) {
   }
 
   const dischargeTrough = new THREE.Group();
-  dischargeTrough.position.set(-1.62, dischargeTroughY, -0.96);
-  dischargeTrough.rotation.z = -0.035;
+  dischargeTrough.position.set(wheelCenter.x, dischargeTroughY, 1.50);
+  dischargeTrough.rotation.y = Math.PI/2;
+  dischargeTrough.rotation.z = 0;
   dischargeTrough.userData.role =
     'fixed-trough-above-stream-receiving-overturned-pots';
   root.add(dischargeTrough);
   const troughLength = 4.36;
   const troughBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength, 0.14, 1.62),
+    new THREE.BoxGeometry(troughLength, 0.10, .44),
     frameMaterial,
   );
   dischargeTrough.add(troughBottom);
   const troughSides = [-1, 1].map((sign) => {
     const side = new THREE.Mesh(
-      new THREE.BoxGeometry(troughLength, 0.42, 0.10),
+      new THREE.BoxGeometry(troughLength, 0.08, .04),
       frameMaterial,
     );
-    side.position.set(0, 0.20, sign * 0.76);
+    side.position.set(0, 0.04, sign * .20);
     dischargeTrough.add(side);
     return side;
   });
   const troughWater = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength - 0.18, 0.10, 1.36),
+    new THREE.BoxGeometry(troughLength - 0.18, .02, .35),
     waterMaterial,
   );
-  troughWater.position.y = 0.12;
+  troughWater.position.y = 0.065;
   troughWater.userData.role = 'raised-water-flow-in-discharge-trough';
   dischargeTrough.add(troughWater);
-  const troughSupports = [-2.70, -0.76].map((x) => {
+  const troughSupports = [wheelCenter.x-.25, wheelCenter.x+.25].map((x) => {
     const support = new THREE.Mesh(
       new THREE.BoxGeometry(
         0.22,
@@ -479,7 +491,7 @@ function eisachPotWheel(movement) {
     support.position.set(
       x,
       (dischargeTroughY + groundY + 0.20) / 2,
-      -1.54,
+      2.9,
     );
     support.userData.role = 'fixed-raised-trough-support';
     root.add(support);
@@ -487,11 +499,9 @@ function eisachPotWheel(movement) {
   });
 
   const updatePotWater = (water, potState) => {
-    const waterDepth = 0.42 * potState.potFill;
-    water.visible = potState.potFill > 0.01;
-    water.position.set(0, -potRadialDepth + waterDepth / 2 + 0.05, 0);
-    water.rotation.z = -potState.potWorldRotation;
-    water.scale.y = Math.max(waterDepth, 0.001);
+    const x = potTangentialWidth / 2 - .085;
+    updateClippedCell(water, [[-x,-potRadialDepth+.045],[x,-potRadialDepth+.045],[x,-.015],[-x,-.015]], potState.potWorldRotation, potState.potFill, .42, potAxialWidth-.17);
+    water.visible = potState.potFill > .01;
   };
 
   const updateDischarge = (stream, potState) => {
@@ -570,7 +580,7 @@ function eisachPotWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'eisach-current-driven-pot-wheel-with-twelve-rigid-inward-opening-peripheral-pots-and-high-discharge-trough',
@@ -690,11 +700,14 @@ function eisachPotWheel(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.14, groundY, -1.98),
-    new THREE.Vector3(4.10, 3.20, 1.98),
+    new THREE.Vector3(4.10, 3.20, 3.78),
   );
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(5.8, 4.3, 11.8);
   root.userData.groundFloorY = groundY;
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.traverse(o => { for (const m of o.material ? [].concat(o.material) : []) m.fog = false; });
   markShadows(root);
   base.receiveShadow = true;
   streamBed.receiveShadow = true;

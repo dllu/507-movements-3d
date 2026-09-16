@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
+import { horizontalTurned } from './horizontal-turbine-solids.js';
+import { ring } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -123,14 +126,14 @@ function persianIrrigationWheel(movement) {
   const sourceWheelAngle = Math.PI / 2;
   const wheelCenter = new THREE.Vector3(0, 0.34, 0);
   const floatCount = 6;
-  const floatInnerRadius = 0.58;
+  const floatInnerRadius = 0.30;
   const floatOuterRadius = 2.48;
   const bucketPivotRadius = 2.58;
   const floatSweepAngle = THREE.MathUtils.degToRad(82);
   const floatDepth = 0.34;
   const hollowShaftOuterRadius = 0.54;
   const hollowShaftInnerRadius = 0.31;
-  const hollowShaftLength = 0.92;
+  const hollowShaftLength = 1.70;
   const streamSurfaceY = -1.36;
   const streamVelocityX = 1.25;
   const representativeStreamForce = 5.8;
@@ -144,7 +147,7 @@ function persianIrrigationWheel(movement) {
   const maximumBucketTip = THREE.MathUtils.degToRad(-76);
   const bucketCapacity = 0.0032;
   const highDeliveryY = 1.60;
-  const groundY = -2.28;
+  const groundY = -3.45;
   const pickupEndTravel = THREE.MathUtils.euclideanModulo(
     pickupEndAngle - pickupStartAngle,
     FULL_TURN,
@@ -330,7 +333,8 @@ function persianIrrigationWheel(movement) {
     floatOuterRadius,
     floatSweepAngle,
   );
-  const floatGeometry = makeCurvedFloatGeometry(floatCurve, floatDepth);
+  const channel = curvedFloatChannel(floatCurve, floatDepth);
+  const floatGeometry = channel.geometry;
   const wheel = new THREE.Group();
   wheel.position.copy(wheelCenter);
   wheel.userData.role =
@@ -345,11 +349,13 @@ function persianIrrigationWheel(movement) {
     ),
     darkMaterial,
   );
+  hollowShaft.geometry.dispose();
+  hollowShaft.geometry = portedFloatHub(hollowShaftInnerRadius, hollowShaftOuterRadius, hollowShaftLength, channel.port, floatCount, floatDepth);
   hollowShaft.userData.role =
     'rotating-hollow-shaft-receiving-float-lifted-water';
   wheel.add(hollowShaft);
   const shaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.07, 0.08),
+    new THREE.BoxGeometry(0.26, 0.07, 0.08),
     whiteMaterial,
   );
   shaftIndex.position.set(0.38, 0, hollowShaftLength / 2 + 0.05);
@@ -381,16 +387,16 @@ function persianIrrigationWheel(movement) {
       new THREE.TubeGeometry(floatCurve, 96, 0.075, 9, false),
       floatWaterMaterial,
     );
-    floatWater.position.z = floatDepth / 2 + 0.025;
+    floatWater.position.z = 0;
     floatWater.userData.role =
       `water-lifted-inward-by-curved-float-${index + 1}`;
     arm.add(floatWater);
     floatWaters.push(floatWater);
     const channelMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.105, 18, 12),
+      new THREE.SphereGeometry(0.06, 18, 12),
       paleWaterMaterial,
     );
-    channelMarker.position.z = floatDepth / 2 + 0.08;
+    channelMarker.position.z = 0;
     channelMarker.userData.role =
       `inward-moving-float-water-marker-${index + 1}`;
     arm.add(channelMarker);
@@ -419,6 +425,8 @@ function persianIrrigationWheel(movement) {
       new THREE.CylinderGeometry(0.30, 0.23, 0.50, 28, 1, true),
       bucketMaterial,
     );
+    bucketBody.geometry.dispose();
+    bucketBody.geometry = horizontalTurned([[-.25,.20],[-.25,.23],[.25,.30],[.25,.27]]);
     bucketBody.position.y = -0.39;
     bucketBody.userData.role = `open-irrigation-bucket-${index + 1}`;
     bucket.add(bucketBody);
@@ -456,6 +464,12 @@ function persianIrrigationWheel(movement) {
       new THREE.TorusGeometry(0.105, 0.035, 8, 24),
       darkMaterial,
     );
+    hinge.geometry.dispose();
+    hinge.geometry = ring(.072,.14,-.035,.035);
+    const suspensionPin = cylinderAlongZ(.068,.36,darkMaterial,32);
+    suspensionPin.position.set(bucketPivotRadius,0,.18);
+    suspensionPin.userData.role = `finite-bucket-suspension-pin-${index + 1}`;
+    arm.add(suspensionPin);
     hinge.userData.role = `free-bucket-suspension-pivot-${index + 1}`;
     bucket.add(hinge);
     const bucketWater = new THREE.Mesh(
@@ -509,6 +523,8 @@ function persianIrrigationWheel(movement) {
       ),
       frameMaterial,
     );
+    bearing.geometry.dispose();
+    bearing.geometry = ring(hollowShaftOuterRadius+.004,hollowShaftOuterRadius+.175,-.09,.09);
     bearing.position.set(
       wheelCenter.x,
       wheelCenter.y,
@@ -529,8 +545,8 @@ function persianIrrigationWheel(movement) {
   root.add(base);
   const supports = [-1, 1].map((zSign) => {
     const support = beamBetween(
-      new THREE.Vector3(-1.42, groundY + 0.26, zSign * 0.70),
-      new THREE.Vector3(0, wheelCenter.y, zSign * 0.70),
+      new THREE.Vector3(-1.42, groundY + 0.26, zSign * 1.12),
+      new THREE.Vector3(0, wheelCenter.y, zSign * 1.12),
       0.23,
       0.24,
       frameMaterial,
@@ -548,10 +564,10 @@ function persianIrrigationWheel(movement) {
   streamBed.userData.role = 'fixed-stream-bed-beneath-wheel';
   root.add(streamBed);
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(7.20, 0.28, 2.82),
+    new THREE.BoxGeometry(7.20, streamSurfaceY-groundY-.47, 2.82),
     waterMaterial,
   );
-  streamWater.position.set(0, streamSurfaceY - 0.14, 0);
+  streamWater.position.set(0, (streamSurfaceY+groundY+.47)/2, 0);
   streamWater.userData.role =
     'moving-stream-partly-immersing-curved-floats';
   root.add(streamWater);
@@ -671,7 +687,7 @@ function persianIrrigationWheel(movement) {
       channelMarkers[index].position.copy(
         floatCurve.getPoint(bucketState.channelMarkerParameter),
       );
-      channelMarkers[index].position.z = floatDepth / 2 + 0.08;
+      channelMarkers[index].position.z = 0;
     }
     shaftWater.visible = state.shaftDeliveryFlow > 0.01;
     const shaftScale = 0.34 + 0.66 * Math.min(1, state.shaftDeliveryFlow);
@@ -732,7 +748,7 @@ function persianIrrigationWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'persian-irrigation-wheel-with-six-curved-stream-driven-floats-hollow-shaft-and-pin-tipped-suspended-buckets',
@@ -864,6 +880,10 @@ function persianIrrigationWheel(movement) {
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(5.6, 4.2, 11.8);
   root.userData.groundFloorY = groundY;
+  root.userData.solidReview = { status: 'partial', residual: 'Prescribed bucket tipping still intersects the fixed trip pin and receiving trough; channels, bucket shells, bed and shaft supports improved, but trip contact is not validated.' };
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.traverse(o => { for (const m of o.material ? [].concat(o.material) : []) m.fog = false; });
   markShadows(root);
   base.receiveShadow = true;
   streamBed.receiveShadow = true;

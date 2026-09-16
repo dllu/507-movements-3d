@@ -297,9 +297,9 @@ test('movement 448 update maps linkage, piston, checks, and water extents exactl
       geometry.connectingRodLength, 5e-16,
     `rendered rigid-link length at ${phase}`);
     const endpoints = rodEndpoints();
-    vectorNear(endpoints.piston, state.pistonRodJoint, 8e-16,
+    vectorNear(endpoints.piston, state.pistonRodJoint.clone().setZ(.27), 8e-16,
       `rod piston endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin, 8e-16,
+    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.27), 8e-16,
       `rod lever endpoint at ${phase}`);
     assert.equal(blocks.spoutWater.visible,
       state.dischargeFlowRate > 0.002);
