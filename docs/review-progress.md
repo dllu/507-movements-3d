@@ -1,3 +1,41 @@
+# Thirty-fifth family pass: rocking supports, screw contact and toggle joints
+
+Four movements receive scoped corrections: 363, 364, 384 and 385. Shared bored
+joints, finite plates and screw profiles support three independent lanes; a
+small offline sampling change resolves 364's previously measured mesh overlap.
+The full 507-movement review remains active.
+
+- [363 seesaw](seesaw-363-support-review.md): restore the source stand/beam
+  proportion, clear the full swing and provide actual axle passages through the
+  moving beam and paired fixed cheeks. Preserve the official cosine motion.
+- [364 roller indexer](groove-drive-family-review.md): concentrate existing
+  envelope samples near the groove mouths. This closes the previously measured
+  0.00315045 interference without changing roller size, cutter allowance, timing
+  or mesh size. Shifted surface checks have positive clearance in both directions.
+- [384 helicograph](helicograph-working-review.md): replace floating wire threads
+  with closed mating screw surfaces, bring the wheel onto the paper, correct
+  spoke connections and use a flat pigment trace. The logarithmic spiral law
+  and its disclosed axial scrub remain unchanged.
+- [385 door closer](door-closer-working-joints-review.md): bore the rotating pin
+  sockets and articulate the gravity-weight toggle with real clevises, layered
+  eyes and captured pins. This is a weight-driven closer, not a spring mechanism.
+
+All **50 distinct focused checks pass**. The final production build passes in 23.09
+seconds; the four-model construction screen reports no flags. Source/default/
+oblique browser inspection finds no errors or viewport clipping (maximum
+normalized extents 0.832–0.907). All four packaged desktop/playback/mobile checks
+pass in 13.6 seconds; 385 also passes against the final metadata-corrected rebuild
+in 3.7 seconds.
+
+These qualify the bounded geometric corrections and retained prescribed motion.
+Passive loads, friction and clearance take-up remain explicit limits. Animation
+availability must be checked from each page's actual inline model: the initial
+HTML `unavailable` class alone is insufficient because JavaScript changes it.
+
+The next independent lanes are 192–194 mangle guides, 242–243 band/pulley
+interfaces and 212/215 Geneva slots. Their concrete defects and reusable
+components are recorded in [the family queue](remaining-movement-passes.md).
+
 # Thirty-fourth family pass: finite grooves, clutches and feed surfaces
 
 Eight movements receive scoped corrections: 360, 361, 364, 383, 388, 397, 398

@@ -113,30 +113,52 @@ pass against the final rebuild after their camera and pivot presentation fixes.
 The full review remains active; these checks do not close the explicit contact
 and passive-load residuals above.
 
+## Thirty-fifth pass
+
+- **363:** source-proportioned rocking supports, bored moving and fixed pivots,
+  and clear full-cycle framing; preserve the official cosine swing.
+- **384:** closed mating screw threads, connected wheel spokes, actual paper
+  contact and a flat pigment trace; retain the disclosed axial scrub.
+- **385:** bored sockets and articulated, axially separated toggle eyes with
+  captured pins. The source mechanism closes through a hanging weight.
+- **364 follow-up:** cosine-cluster the existing groove samples at the steep
+  mouth shoulders. This supersedes the thirty-fourth pass's measured mesh
+  penetration: shifted finite-surface checks now have positive clearance in
+  both directions, without changing cutter allowance or mesh size.
+
+All 50 focused checks, the final build, four-model screen and four packaged
+checks pass. The full review remains active; finite sampling does not establish
+continuous nonpenetration or validate passive forces.
+
 ## Next independent lanes
 
-- **363, rocking supports:** `authored-seesaws.js`. Reuse bored pivots and finite
-  frame passages while preserving the official cosine swing. At the current
-  extreme the plank reaches y=-0.13495 below the ground at -0.09. At the level
-  pose its underside is 1.265 while the central post reaches 1.31; the solid
-  radius-0.235 bearing boss also contains the radius-0.105 fixed shaft.
-- **384, screw and rolling contact:** `authored-helicographs.js`. Reuse closed
-  mating thread geometry and finite rolling surfaces. The open male thread
-  floats 0.026 above its core, the female wire is disconnected from its hub,
-  and the wheel sits 0.032 above the transfer paper. Preserve the existing
-  disclosed axial scrub rather than inventing a source belt drive. No official
-  animation is available.
-- **385, toggle and spring sockets:** `authored-door-closers.js`. Reuse bored
-  links and socket geometry; compare against its available official animation.
-  Solid radius-0.19 sockets overlap radius-0.085 rotating pins over 0.195 axial
-  length, and the source toggle eyes are represented by solid spheres.
+These are current-code findings, not claims that the movements have never been
+reviewed. Preserve prior analytical/source tests while correcting finite parts.
 
-379–382 already have finite thread, bore and guide corrections. Their cutting,
-wood friction and locking-preload limits remain documented residuals; they are
-not newly unreviewed breadth work.
+- **192–194, reversing mangle guides:** three scoped factories in
+  `authored-gears.js`. Solid tube guides sit on uncut disks, and pinions overlap
+  the disks axially by 0.03–0.04 before bevel/hub allowances. Reuse 036's mangle
+  cutter/outline construction and finite channels; check both reversals.
+- **242–243, bands and pulleys:** two scoped factories in `authored-belts.js`.
+  242 applies half its prescribed braking while 0.01305 band slack remains; its
+  lower strap lacks a pin spanning a 0.165 axial gap. 243 has a 0.04 belt/barrel
+  gap and oversized belt markers. Reuse finite pulley and bored-joint parts;
+  distinguish a prescribed braking schedule from validated friction dynamics.
+- **212/215, Geneva working surfaces:** sparse actual-surface samples find
+  0.001007 driver/stop overlap in 212, and 0.02379 pin/slot plus 0.05062
+  crescent/wheel overlap in 215. Reuse finite slots and locking pockets, checking
+  bevel-expanded solids rather than only nominal planar outlines.
 
-These are code-inspected candidates, not qualified mechanisms or completed
-collision studies. Prioritize their working motion and surfaces before detailing.
+Separate follow-ups: 246's pencil/tracer penetrate the paper by 0.030/0.037 and
+its pinned bars/slides need real passages; 213 has about 0.09365 pin/tooth
+penetration during its prescribed quintic index; 214 has sampled spur-tooth
+overlap of 0.062–0.108. 211's sparse checks found no penetration, but do not prove
+passive triggering. Avoid folding these into unrelated lanes just to raise the
+batch count.
+
+Check actual inline animation models instead of the initial HTML availability
+class. Models are present for 211/212/214/215, 246 and 385; source evidence must
+be recorded per movement before choosing a motion oracle.
 
 ## Running the screen
 
