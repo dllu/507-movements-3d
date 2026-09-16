@@ -1,3 +1,4 @@
+import {correctEpicyclicGuide,finishPistonGuides} from './piston-guide-329-331-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -255,6 +256,9 @@ function FixedAnnulusAndFrame({
     pitchRadius: fixedRingPitchRadius,
     teeth: fixedRingTeeth,
     toothIndexOffset: 0,
+    backlash: .001,
+    flankSamples: 18,
+    chamfer: 0,
   });
   fixedRingD.position.z = gearPlaneZ;
   fixedRingD.userData.fixed = true;
@@ -489,6 +493,9 @@ function EpicyclicPistonRodGuide(movement) {
     radius: planetPitchRadius,
     teeth: sourcePlanetTeeth,
     toothHeight: gearToothHeight,
+    addendum: gearModule,
+    dedendum: gearModule*1.25,
+    chamfer: 0,
   });
   const planetToothIndexOffset = Math.PI / sourcePlanetTeeth;
   planetGearB.userData.rotor.rotation.z = planetToothIndexOffset;
@@ -997,8 +1004,10 @@ function EpicyclicPistonRodGuide(movement) {
 
   update(0);
   markShadows(root);
+  correctEpicyclicGuide(root);
+  finishPistonGuides(root,update);
   return {
-    cameraDirection: new THREE.Vector3(5.4, 3.6, 13.6),
+    cameraDirection: new THREE.Vector3(.8,.4,15),
     root,
     update,
   };

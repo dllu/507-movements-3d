@@ -1,3 +1,4 @@
+import {correctSlottedGuide,finishPistonGuides} from './piston-guide-329-331-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1106,8 +1107,10 @@ function slottedCrossheadPillarEngine(movement) {
 
   update(0);
   markShadows(root);
+  correctSlottedGuide(root);
+  finishPistonGuides(root,update);
   return {
-    cameraDirection: new THREE.Vector3(4.8, 3.2, 13.4),
+    cameraDirection: new THREE.Vector3(.8,.4,15),
     root,
     update,
   };
