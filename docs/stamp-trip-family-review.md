@@ -43,4 +43,50 @@ Selected minima from the final 25-test run, including the separated helve/nose c
 
 These are sampled finite-interface checks, not continuous collision certificates. The 351 tooth sweep is intentionally qualified only during lift; its documented release diagnostic is not a test exemption masquerading as full-cycle clearance.
 
+## 351 follow-up: offline contact study, not accepted playback
+
+The thirty-fourth pass adds `scripts/study-sector-stamp.mjs`. It decomposes the
+actual rendered rack and pinion tooth caps into 37 convex contact cells, reusing
+the shared MuJoCo loader/stepper. Only the pinion has an actuator; the rack has
+an ideal vertical guide and falls under gravity. The broad lower-stop proxies
+set rack displacement zero at impact; their absolute plane is 0.02 below the
+visible face. This is a working-contact experiment, not a complete hardware
+reconstruction. Mass, damping, contact softness, servo parameters and scale are
+explicit assumptions in the script.
+
+The original stop position jams on the second pickup. Lowering the stop by
+0.1 model unit and starting the gear 0.5 radians earlier avoids the initial
+tooth overlap and permits repeated lift/drop cycles. The candidate is kept
+offline because the pickup has not converged sufficiently under timestep
+refinement:
+
+| Three-cycle run | 50 microsecond step | 25 microsecond step |
+| --- | ---: | ---: |
+| Maximum rack travel above candidate stop | 3.9500557 | 3.9500694 |
+| Sampled contact penetration | 0.0003665 | 0.0004500 |
+| Minimum rack height, checked every step | -0.0004727 | -0.0004634 |
+| Maximum input tracking error, radians | 0.0041374 | 0.0026848 |
+| Simulation resets | 0 | 0 |
+
+Despite similar stroke maxima, comparison at common times in cycles two and
+three gives maximum rack-position disagreement **0.0379753** near pickup and
+velocity disagreement **5.45991** near impact. Contact distances are sampled
+every 0.0002 seconds, so the table is not a continuous penetration bound.
+Disabling gear contact leaves the rack on its stop after falling from its
+0.005 initial clearance; there is no hidden prescribed rack lift.
+
+Reproduce without browser physics or generated repository artifacts:
+
+```sh
+node scripts/study-sector-stamp.mjs /dev/shm/351-study.json
+node scripts/study-sector-stamp.mjs /dev/shm/351-control.json '{"timestep":0.000025}'
+node scripts/study-sector-stamp.mjs /dev/shm/351-no-contact.json '{"gearContact":false,"duration":4}'
+```
+
+Each command writes sampled positions/velocities, per-cycle diagnostics and
+its exact XML beside the report. The next step is a converged pickup/contact
+model, followed by actual rendered-hardware clearance and interpolation checks
+before any bake replaces production. The existing visible release/pickup
+limitation remains in force; this experiment does not mark 351 complete.
+
 Production ownership is limited to `authored-stamps.js`, `authored-trip-hammers.js`, and the new dedicated `stamp-trip-working-parts.js`. Shared rack/plate/ring helpers are reused without modification. Final root source/default/oblique captures, including the separated 353 nose cap, show no browser errors or clipping (maximum normalized screen extent 0.908 for 351, 0.883 for 353). The visible nose no longer flickers. Packaged validation is recorded in the central progress ledger.
