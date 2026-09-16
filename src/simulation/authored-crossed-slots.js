@@ -1,3 +1,4 @@
+import { capsule, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -300,8 +301,21 @@ function equalOppositeCrossedSlotTraverse(movement) {
   });
   movingYoke.add(leftArm, rightArm);
 
+  // Cut the two complete slots through every yoke member, including the
+  // crossbar/web at their lower ends. The prior separate boxes blocked the pins.
+  const cutYokeRectangle = (width, height, centerY) => {
+    const outline = poly([[-width / 2, centerY - height / 2],
+      [width / 2, centerY - height / 2], [width / 2, centerY + height / 2],
+      [-width / 2, centerY + height / 2]]);
+    const holes = [[leftSlotBottom, leftSlotTop], [rightSlotBottom, rightSlotTop]]
+      .map(([a, b]) => capsule(a.toArray(), b.toArray(), movingSlotRadius, 64));
+    const geometry = plate(polygonClipping.difference(outline, ...holes),
+      -yokeDepth / 2, yokeDepth / 2);
+    geometry.translate(0, -centerY, 0);
+    return geometry;
+  };
   const crossbar = new THREE.Mesh(
-    new THREE.BoxGeometry(10.7, 0.55, yokeDepth),
+    cutYokeRectangle(10.7, 0.55, 0),
     driverMaterial,
   );
   crossbar.position.set(0, 0, movingYokePlaneZ);
@@ -309,7 +323,7 @@ function equalOppositeCrossedSlotTraverse(movement) {
   movingYoke.add(crossbar);
 
   const lowerWeb = new THREE.Mesh(
-    new THREE.BoxGeometry(9.9, 0.28, yokeDepth),
+    cutYokeRectangle(9.9, 0.28, -0.41),
     driverMaterial,
   );
   lowerWeb.position.set(0, -0.41, movingYokePlaneZ);
@@ -466,6 +480,10 @@ function equalOppositeCrossedSlotTraverse(movement) {
     rightRollerPin: rightRoller.pin,
     topRail,
   };
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
   root.userData.cameraDistanceScale = 0.95;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.15, -4.25, -0.9),
@@ -615,12 +633,19 @@ function equalOppositeCrossedSlotTraverse(movement) {
     };
     root.userData.kinematics = state;
   };
+  const sweptBounds = new THREE.Box3();
+  for (const time of [0, FULL_CYCLE * 0.4]) {
+    update(time);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.02);
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(3.8, -4.6, 13),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 13),
   };
 }
 

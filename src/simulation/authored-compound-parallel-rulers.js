@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {makeRulerArm, boredRulerPlate, finishDrawingRuler} from './drawing-ruler-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -52,6 +53,7 @@ function makeSlottedRuler({
   slotEndX,
   slotRadius,
   slotStartX,
+  fixedPivotX,
 }) {
   const shape = new THREE.Shape();
   shape.moveTo(-halfLength, -halfWidth);
@@ -60,6 +62,9 @@ function makeSlottedRuler({
   shape.lineTo(-halfLength, halfWidth);
   shape.closePath();
   shape.holes.push(capsulePath(slotStartX, slotEndX, slotRadius));
+  const pivotBore = new THREE.Path();
+  pivotBore.absarc(fixedPivotX, 0, .09, 0, Math.PI * 2, true);
+  shape.holes.push(pivotBore);
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: false,
@@ -143,12 +148,12 @@ function makeVerticalPin({
   return markShadows(group);
 }
 
-function makeSimpleRuler({ depth, length, role, width }) {
+function makeSimpleRuler({ depth, length, role, width, pivotXs }) {
   const group = new THREE.Group();
   group.userData.role = role;
   group.userData.solidDepth = depth;
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(length, depth, width),
+    boredRulerPlate(length, width, depth, pivotXs),
     matte(PALETTE.driven, { metalness: 0.08, roughness: 0.66 }),
   );
   body.userData.isRigidBody = true;
@@ -208,8 +213,8 @@ function compoundCrossedArmParallelRuler(movement) {
   const transitionDuration = demonstrationPeriod * outwardEndPhase;
   const armLayerUpperToLower = 0.35;
   const armLayerLowerToUpper = 0.49;
-  const pinBaseY = rulerTopY - 0.02;
-  const pinHeight = 0.55;
+  const pinBaseY = -rulerDepth / 2 - 0.02;
+  const pinHeight = 0.74;
   const pinWasherY = 0.60;
   const paperTopY = -rulerDepth / 2 - 0.055;
 
@@ -256,6 +261,7 @@ function compoundCrossedArmParallelRuler(movement) {
     slotEndX,
     slotRadius,
     slotStartX,
+    fixedPivotX,
   });
   const lowerRulerA = makeSlottedRuler({
     depth: rulerDepth,
@@ -265,6 +271,7 @@ function compoundCrossedArmParallelRuler(movement) {
     slotEndX,
     slotRadius,
     slotStartX,
+    fixedPivotX,
   });
 
   const upperFixedPin = makeVerticalPin({
@@ -301,36 +308,18 @@ function compoundCrossedArmParallelRuler(movement) {
     washerY: pinWasherY,
   });
   const centerPivot = makeVerticalPin({
-    baseY: rulerTopY,
-    height: pinHeight,
+    baseY: armLayerUpperToLower - .075,
+    height: .38,
     radius: centerPinRadius,
     role: 'common-midpoint-pivot-of-both-crossed-arms',
     washerY: pinWasherY + 0.035,
   });
 
-  const armUpperFixedToLowerSlider = makeBeam(
-    new THREE.Vector3(),
-    new THREE.Vector3(1, 0, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.13,
-      jointRadius: 0.001,
-      thickness: 0.17,
-    },
-  );
+  const armUpperFixedToLowerSlider = makeRulerArm(armLength, {middleEye: true});
   armUpperFixedToLowerSlider.userData.nominalLength = armLength;
   armUpperFixedToLowerSlider.userData.role =
     'crossed-arm-upper-fixed-to-lower-slot';
-  const armLowerFixedToUpperSlider = makeBeam(
-    new THREE.Vector3(),
-    new THREE.Vector3(1, 0, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.13,
-      jointRadius: 0.001,
-      thickness: 0.17,
-    },
-  );
+  const armLowerFixedToUpperSlider = makeRulerArm(armLength, {middleEye: true});
   armLowerFixedToUpperSlider.userData.nominalLength = armLength;
   armLowerFixedToUpperSlider.userData.role =
     'crossed-arm-lower-fixed-to-upper-slot';
@@ -734,8 +723,9 @@ function compoundCrossedArmParallelRuler(movement) {
   markShadows(root);
   paperOutline.castShadow = false;
   paperOutline.receiveShadow = false;
+  finishDrawingRuler(root, [paper, paperOutline]);
   return {
-    cameraDirection: new THREE.Vector3(6.0, 8.4, 9.4),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };
@@ -768,8 +758,8 @@ function twoArmParallelogramRuler(movement) {
   const returnEndPhase = 0.90;
   const transitionDuration = demonstrationPeriod * outwardEndPhase;
   const armLayerY = 0.37;
-  const pinBaseY = rulerTopY - 0.02;
-  const pinHeight = 0.47;
+  const pinBaseY = -rulerDepth / 2 - 0.02;
+  const pinHeight = 0.67;
   const pinWasherY = 0.52;
   const pivotRadius = 0.125;
   const paperTopY = -rulerDepth / 2 - 0.055;
@@ -806,35 +796,19 @@ function twoArmParallelogramRuler(movement) {
     length: rulerLength,
     role: 'upper-simple-ruler-A',
     width: rulerWidth,
+    pivotXs: [upperLeftPivotOffsetX, upperRightPivotOffsetX],
   });
   const lowerRulerB = makeSimpleRuler({
     depth: rulerDepth,
     length: rulerLength,
     role: 'lower-simple-ruler-B',
     width: rulerWidth,
+    pivotXs: [lowerLeftPivotOffsetX, lowerRightPivotOffsetX],
   });
-  const leftArmC = makeBeam(
-    new THREE.Vector3(),
-    new THREE.Vector3(1, 0, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.13,
-      jointRadius: 0.001,
-      thickness: 0.17,
-    },
-  );
+  const leftArmC = makeRulerArm(armLength);
   leftArmC.userData.nominalLength = armLength;
   leftArmC.userData.role = 'left-pivoted-swinging-arm-C';
-  const rightArmC = makeBeam(
-    new THREE.Vector3(),
-    new THREE.Vector3(1, 0, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.13,
-      jointRadius: 0.001,
-      thickness: 0.17,
-    },
-  );
+  const rightArmC = makeRulerArm(armLength);
   rightArmC.userData.nominalLength = armLength;
   rightArmC.userData.role = 'right-pivoted-swinging-arm-C';
 
@@ -1243,8 +1217,9 @@ function twoArmParallelogramRuler(movement) {
     object.castShadow = false;
     object.receiveShadow = false;
   }
+  finishDrawingRuler(root, [paper, paperOutline, ...guideLines]);
   return {
-    cameraDirection: new THREE.Vector3(6.2, 8.3, 9.2),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };

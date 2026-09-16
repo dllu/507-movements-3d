@@ -75,15 +75,15 @@ test('movement 322 is the source two-triangle diagonal-contact ruler', () => {
 
   assert.equal(blocks.pieceA.parent, model.root);
   assert.equal(blocks.pieceB.parent, model.root);
-  assert.equal(blocks.paper.parent, model.root);
+  assert.equal(blocks.paper.parent, null);
   assert.equal(blocks.pieceA.userData.body.parent, blocks.pieceA);
   assert.equal(blocks.pieceB.userData.body.parent, blocks.pieceB);
-  assert.equal(blocks.seamA.parent, blocks.pieceA);
-  assert.equal(blocks.seamB.parent, blocks.pieceB);
-  assert.equal(blocks.workingEdgeA.parent, blocks.pieceA);
-  assert.equal(blocks.workingEdgeB.parent, blocks.pieceB);
-  assert.equal(blocks.pieceA.userData.holeRings.length, 2);
-  assert.equal(blocks.pieceB.userData.holeRings.length, 2);
+  assert.equal(blocks.seamA.parent, null);
+  assert.equal(blocks.seamB.parent, null);
+  assert.equal(blocks.workingEdgeA.parent, null);
+  assert.equal(blocks.workingEdgeB.parent, null);
+  assert.equal(blocks.pieceA.userData.holeRings.length, 0);
+  assert.equal(blocks.pieceB.userData.holeRings.length, 0);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -92,11 +92,11 @@ test('movement 322 is the source two-triangle diagonal-contact ruler', () => {
   assert.equal(roles.filter((role) =>
     role === 'lower-right-right-triangle-B').length, 1);
   assert.equal(roles.filter((role) =>
-    role.endsWith('-handling-hole-rim')).length, 4);
+    role.endsWith('-handling-hole-rim')).length, 0);
   assert.equal(roles.filter((role) =>
-    role.startsWith('visible-contact-edge-on-hypotenuse-')).length, 2);
+    role.startsWith('visible-contact-edge-on-hypotenuse-')).length, 0);
   assert.equal(roles.filter((role) =>
-    role.startsWith('parallel-drawing-edge-of-triangle-')).length, 2);
+    role.startsWith('parallel-drawing-edge-of-triangle-')).length, 0);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });

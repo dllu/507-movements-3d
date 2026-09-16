@@ -2507,31 +2507,19 @@ function curvedSlottedArmVariableVibration() {
       end: 1.566026,
     }),
   };
+  // Ideal circular working walls replace hand-rounded source offsets. A small
+  // radial clearance covers tessellation; no bevel projects into the slot.
+  const slotClearance = 0.008;
+  const slotHalfWidth = followerPinRadius + slotClearance;
   const slotArcs = {
-    inner: scaleArc({
-      center: sourceSlotCenter,
-      radius: 5.496987,
-      start: 1.553907,
-      end: 4.76006,
-    }),
-    lowerCap: scaleArc({
-      center: new THREE.Vector2(0.251507, -2.989439),
-      radius: 0.5,
-      start: 4.796323,
-      end: 1.654731,
-    }),
-    outer: scaleArc({
-      center: sourceSlotCenter,
-      radius: 6.496431,
-      start: 1.555771,
-      end: 4.765641,
-    }),
-    upperCap: scaleArc({
-      center: new THREE.Vector2(0.042934, 8.999898),
-      radius: 0.5,
-      start: 4.707618,
-      end: 1.566026,
-    }),
+    inner: { center: slotCenterLocal, radius: slotRadius - slotHalfWidth,
+      start: slotStartAngle, end: slotEndAngle },
+    outer: { center: slotCenterLocal, radius: slotRadius + slotHalfWidth,
+      start: slotStartAngle, end: slotEndAngle },
+    lowerCap: { center: pointOnArc({ center: slotCenterLocal, radius: slotRadius }, slotEndAngle),
+      radius: slotHalfWidth, start: slotEndAngle, end: slotEndAngle + Math.PI },
+    upperCap: { center: pointOnArc({ center: slotCenterLocal, radius: slotRadius }, slotStartAngle),
+      radius: slotHalfWidth, start: slotStartAngle + Math.PI, end: slotStartAngle + fullTurn },
   };
   const plateShape = new THREE.Shape();
   const plateStart = pointOnArc(
@@ -2583,7 +2571,7 @@ function curvedSlottedArmVariableVibration() {
 
   const plateDepth = 0.28;
   const curvedPlate = new THREE.Mesh(
-    centeredExtrusion(plateShape, plateDepth, 0.012),
+    centeredExtrusion(plateShape, plateDepth, 0),
     driverMaterial,
   );
   curvedPlate.userData.actualThroughSlot = true;
@@ -2647,11 +2635,11 @@ function curvedSlottedArmVariableVibration() {
     return edge;
   };
   const slotInnerEdge = makeArcEdge(
-    slotArcs.inner,
+    { ...slotArcs.inner, radius: slotArcs.inner.radius - 0.022 },
     'inner-working-edge-of-circular-slot',
   );
   const slotOuterEdge = makeArcEdge(
-    slotArcs.outer,
+    { ...slotArcs.outer, radius: slotArcs.outer.radius + 0.022 },
     'outer-working-edge-of-circular-slot',
   );
   inputArm.add(slotInnerEdge, slotOuterEdge);
@@ -2666,16 +2654,12 @@ function curvedSlottedArmVariableVibration() {
     new THREE.Vector2(-12.02, -0.79975),
     new THREE.Vector2(-1.323243, -1.067252),
   ].map((point) => point.multiplyScalar(sourceScale));
-  const outputArmShape = new THREE.Shape();
-  sourceArmOutline.forEach((point, index) => {
-    if (index === 0) outputArmShape.moveTo(point.x, point.y);
-    else outputArmShape.lineTo(point.x, point.y);
-  });
-  outputArmShape.closePath();
   const outputArmPlaneZ = 0.39;
   const outputArmDepth = 0.2;
   const outputArmBody = new THREE.Mesh(
-    centeredExtrusion(outputArmShape, outputArmDepth, 0.01),
+    plate(clip.difference(poly(sourceArmOutline.map(point => point.toArray())),
+      poly(circle([-outputArmLength, 0], followerPinRadius + 0.005, 64))),
+    -outputArmDepth / 2, outputArmDepth / 2),
     drivenMaterial,
   );
   outputArmBody.position.z = outputArmPlaneZ;
@@ -2693,9 +2677,9 @@ function curvedSlottedArmVariableVibration() {
   outputPivotBoss.userData.role = 'boss-around-fixed-output-arm-pivot';
   const followerBoss = new THREE.Mesh(
     centeredExtrusion(
-      annularShape(followerPinRadius, 0.8 * sourceScale),
+      annularShape(followerPinRadius + 0.005, 0.8 * sourceScale),
       outputArmDepth + 0.08,
-      0.008,
+      0,
     ),
     drivenMaterial,
   );
@@ -2744,7 +2728,7 @@ function curvedSlottedArmVariableVibration() {
     axis: Z_AXIS,
     color: PALETTE.ink,
     length: 1.35,
-    radius: 0.72 * sourceScale,
+    radius: sourceScale - 0.01,
   });
   inputShaft.position.set(inputPivot.x, inputPivot.y, 0.05);
   inputShaft.userData.fixedCenter = true;
@@ -2754,7 +2738,7 @@ function curvedSlottedArmVariableVibration() {
     axis: Z_AXIS,
     color: PALETTE.ink,
     length: 1.42,
-    radius: 0.78 * sourceScale,
+    radius: 1.1 * sourceScale - 0.01,
   });
   outputShaft.position.set(outputPivot.x, outputPivot.y, 0.08);
   outputShaft.userData.fixedCenter = true;
@@ -2974,7 +2958,16 @@ function curvedSlottedArmVariableVibration() {
     outputSwingAngle,
     variableOutputGain: true,
   };
+  // Brown depicts the mechanism in isolation; the old stand was invented.
+  root.remove(baseRail, inputPost, outputPost, inputBridge, outputBridge, ...bearingRings,
+    cameraEnvelope);
+  root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 1.02;
+  root.userData.reconstruction = { slotClearance,
+    assumptions: 'Ideal circular slot with finite pin clearance; fixed pivots are external supports. Input dwells follow the official animation.' };
+  root.traverse(object => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -3004,8 +2997,15 @@ function curvedSlottedArmVariableVibration() {
     };
     root.userData.kinematics = state;
   };
+  const sweptBounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i += 1) {
+    update(cyclePeriod * i / 64);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.02);
   update(0);
-  return finish(root, update, new THREE.Vector3(6.8, 4.8, 10.8));
+  return finish(root, update, new THREE.Vector3(1.2, 0.6, 12));
 }
 
 export function createAuthoredLinkageMovement(movement) {

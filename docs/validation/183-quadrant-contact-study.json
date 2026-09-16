@@ -1,0 +1,331 @@
+{
+  "movements": [
+    183,
+    184
+  ],
+  "status": "unqualified-contact-candidate",
+  "scope": "One native cycle with only piston actuation. Selective contact removal diagnoses the inferred pin/rim geometry. This is not the browser model, and a passing endpoint check alone would not qualify it.",
+  "sources": [
+    {
+      "file": "scripts/probe-quadrant-catch-transfer.mjs",
+      "sha256": "d36548887ece7d1600677d43504a77a200a9722ca939cdba95b66a159f918219"
+    },
+    {
+      "file": "src/simulation/mujoco-quadrant-catch/contact-study.js",
+      "sha256": "6118c4300d4b875a8caebbfd395bb51a193aa9248d24512cc32b199d4be8a2a9"
+    },
+    {
+      "file": "src/simulation/mujoco-quadrant-catch/geometry.js",
+      "sha256": "b41f8170bdefd6e7f02b31e759a67c1732eedde8d56dee2494574b1f7d621113"
+    }
+  ],
+  "results": [
+    {
+      "name": "original-pin-inference",
+      "parameters": {
+        "timestep": 0.0005,
+        "contacts": true,
+        "period": 18,
+        "releaseLead": 0.04,
+        "pinRadius": 0.07,
+        "handleMass": 0.1,
+        "upperRetention": true,
+        "lowerRetention": true,
+        "shoeContacts": true
+      },
+      "status": "unqualified-contact-candidate",
+      "top": {
+        "time": 7.999999999998286,
+        "q": [
+          -0.00006651043815737812,
+          0.00018555070406514333,
+          1.2825949999999957
+        ],
+        "speed": [
+          -2.1448664164941983e-10,
+          -1.3254504909634928e-7,
+          1.0521337270079563e-13
+        ],
+        "contacts": 5
+      },
+      "final": {
+        "time": 18.0000000000034,
+        "q": [
+          -0.00005062055028784409,
+          0.012036684922109638,
+          -0.5929317070827925
+        ],
+        "speed": [
+          0.00013179207525058497,
+          0.000014048419107200467,
+          0.000004547186476774925
+        ],
+        "contacts": 8
+      },
+      "topError": [
+        1.1190334895618426,
+        1.042685550704065
+      ],
+      "bottomError": [
+        -0.00005062055028784409,
+        0.012036684922109638
+      ],
+      "pistonReturnError": 0.7945682929172077,
+      "minimumHandleAngles": [
+        -0.00006876175938596192,
+        -0.9560669697092208
+      ],
+      "finalContactPairs": {
+        "upper-pin/lower-quadrant": 0.0003994977497820402,
+        "piston-shoe/lower-working": 0.00039989780910777467
+      },
+      "completesCandidateEndpoints": false,
+      "pistonTopError": -0.004905000000004378
+    },
+    {
+      "name": "earlier-release",
+      "parameters": {
+        "timestep": 0.0005,
+        "contacts": true,
+        "period": 18,
+        "releaseLead": 0.12,
+        "pinRadius": 0.07,
+        "handleMass": 0.1,
+        "upperRetention": true,
+        "lowerRetention": true,
+        "shoeContacts": true
+      },
+      "status": "unqualified-contact-candidate",
+      "top": {
+        "time": 7.999999999998286,
+        "q": [
+          -0.16407701708040048,
+          -0.8639748612564814,
+          1.2825949999999957
+        ],
+        "speed": [
+          -4.0361773450445397e-10,
+          2.6615676054323513e-10,
+          1.0528238154289861e-13
+        ],
+        "contacts": 9
+      },
+      "final": {
+        "time": 18.0000000000034,
+        "q": [
+          -0.16407702165087676,
+          -0.8639748563566705,
+          1.0765871486055574
+        ],
+        "speed": [
+          1.0345754202064343e-8,
+          -6.8235275076519024e-9,
+          8.615837274528788e-9
+        ],
+        "contacts": 12
+      },
+      "topError": [
+        0.9550229829195995,
+        0.1785251387435186
+      ],
+      "bottomError": [
+        -0.16407702165087676,
+        -0.8639748563566705
+      ],
+      "pistonReturnError": 2.4640871486055573,
+      "minimumHandleAngles": [
+        -0.16408718421142926,
+        -0.9560653366551918
+      ],
+      "finalContactPairs": {
+        "upper-pin/lower-quadrant": 0.0003999968326018617,
+        "lower-pin/upper-quadrant": 0.0003999972108568261,
+        "piston-shoe/lower-working": 0.00039999763569640716
+      },
+      "completesCandidateEndpoints": false,
+      "pistonTopError": -0.004905000000004378
+    },
+    {
+      "name": "without-upper-pin-retention",
+      "parameters": {
+        "timestep": 0.0005,
+        "contacts": true,
+        "period": 18,
+        "releaseLead": 0.12,
+        "pinRadius": 0.07,
+        "handleMass": 0.1,
+        "upperRetention": false,
+        "lowerRetention": true,
+        "shoeContacts": true
+      },
+      "status": "unqualified-contact-candidate",
+      "top": {
+        "time": 7.999999999998286,
+        "q": [
+          -0.4360297020250175,
+          -0.5301289672860577,
+          -0.6108935477144262
+        ],
+        "speed": [
+          3.6653763770964947e-10,
+          -3.9205540831966904e-10,
+          7.084481802811212e-10
+        ],
+        "contacts": 11
+      },
+      "final": {
+        "time": 18.0000000000034,
+        "q": [
+          -0.9230432605157699,
+          0.0002700044443770881,
+          -1.392404999999996
+        ],
+        "speed": [
+          4.8399575451346803e-8,
+          -7.70589027730517e-8,
+          -1.1066261606003591e-13
+        ],
+        "contacts": 4
+      },
+      "topError": [
+        0.6830702979749825,
+        0.5123710327139422
+      ],
+      "bottomError": [
+        -0.9230432605157699,
+        0.0002700044443770881
+      ],
+      "pistonReturnError": -0.004904999999995718,
+      "minimumHandleAngles": [
+        -0.9232165426058042,
+        -0.5301454320679826
+      ],
+      "finalContactPairs": {
+        "lower-pin/upper-quadrant": 0.0003999999938712926
+      },
+      "completesCandidateEndpoints": false,
+      "pistonTopError": -1.8983935477144263
+    },
+    {
+      "name": "without-lower-pin-retention",
+      "parameters": {
+        "timestep": 0.0005,
+        "contacts": true,
+        "period": 18,
+        "releaseLead": 0.12,
+        "pinRadius": 0.07,
+        "handleMass": 0.1,
+        "upperRetention": true,
+        "lowerRetention": false,
+        "shoeContacts": true
+      },
+      "status": "unqualified-contact-candidate",
+      "top": {
+        "time": 7.999999999998286,
+        "q": [
+          -1.103840032396438,
+          0.0001732396639950725,
+          1.2831394236132168
+        ],
+        "speed": [
+          -7.259898053158304e-8,
+          -2.061269609116473e-17,
+          9.470381352455408e-8
+        ],
+        "contacts": 3
+      },
+      "final": {
+        "time": 18.0000000000034,
+        "q": [
+          -0.727157432523761,
+          0.0005364642865981397,
+          0.831912687341868
+        ],
+        "speed": [
+          -2.448565540887049e-9,
+          -1.302676560363972e-7,
+          3.3068293908735948e-9
+        ],
+        "contacts": 8
+      },
+      "topError": [
+        0.015259967603562075,
+        1.042673239663995
+      ],
+      "bottomError": [
+        -0.727157432523761,
+        0.0005364642865981397
+      ],
+      "pistonReturnError": 2.219412687341868,
+      "minimumHandleAngles": [
+        -1.1038417412799977,
+        -0.9560657521560347
+      ],
+      "finalContactPairs": {
+        "upper-pin/lower-quadrant": 0.0003999948784177937,
+        "piston-shoe/upper-working": 0.0003999974799446596
+      },
+      "completesCandidateEndpoints": false,
+      "pistonTopError": -0.0043605763867833325
+    },
+    {
+      "name": "shoe-only",
+      "parameters": {
+        "timestep": 0.0005,
+        "contacts": true,
+        "period": 18,
+        "releaseLead": 0.12,
+        "pinRadius": 0.07,
+        "handleMass": 0.1,
+        "upperRetention": false,
+        "lowerRetention": false,
+        "shoeContacts": true
+      },
+      "status": "unqualified-contact-candidate",
+      "top": {
+        "time": 7.999999999998286,
+        "q": [
+          -1.1282525021604983,
+          -0.9557966622645685,
+          0.5228207603204481
+        ],
+        "speed": [
+          -0.000029967938559389353,
+          0.00014310540318057533,
+          0.000030358688263376162
+        ],
+        "contacts": 6
+      },
+      "final": {
+        "time": 18.0000000000034,
+        "q": [
+          -1.1192476491979522,
+          0.00017323966399579967,
+          -1.392404999999996
+        ],
+        "speed": [
+          2.1768415692528449e-13,
+          -2.5918629783222704e-17,
+          -1.107656099284244e-13
+        ],
+        "contacts": 0
+      },
+      "topError": [
+        -0.009152502160498344,
+        0.08670333773543148
+      ],
+      "bottomError": [
+        -1.1192476491979522,
+        0.00017323966399579967
+      ],
+      "pistonReturnError": -0.004904999999995718,
+      "minimumHandleAngles": [
+        -1.1314940289480888,
+        -0.9558030563417885
+      ],
+      "finalContactPairs": {},
+      "completesCandidateEndpoints": false,
+      "pistonTopError": -0.764679239679552
+    }
+  ]
+}

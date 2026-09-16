@@ -191,7 +191,9 @@ test('movement 210 reconstructs the source-scaled annular slot, C-shaped body, a
     geometry.slotCenterRadius, 3e-16, 'lower slot cap center');
   assert.ok(geometry.bodyOutline.length >= 230);
   assert.ok(geometry.slotBoundary.length >= 180);
-  assert.equal(blocks.plate.geometry.parameters.shapes.holes.length, 2,
+  assert.equal(blocks.plate.geometry.parameters.shapes.length, 1,
+    'the corrected cap leaves one connected C-shaped plate');
+  assert.equal(blocks.plate.geometry.parameters.shapes[0].holes.length, 2,
     'the plate has a real curved slot and a real shaft bore');
 
   vector2Near(
@@ -532,14 +534,14 @@ test('movement 210 renders exact transforms while 211–213 are distinct and aut
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 4.4, 'the rocking arm sweeps a real horizontal envelope');
   assert.ok(sweptSize.y > 8.4, 'the bar and arm sweep a real vertical envelope');
-  assert.ok(sweptSize.z > 1.9, 'shaft, plate, roller, and frame use real depth');
+  assert.ok(sweptSize.z > 1.5, 'shaft, plate, and roller use real depth');
   assert.ok(sweptBounds.min.y < -3.3);
   assert.ok(sweptBounds.max.y > 5.1);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
-  assert.ok(model.root.userData.cameraDistanceScale >= 1.3,
-    'the initial source-pose camera reserves the opposite reversal envelope');
+  assert.ok(model.root.userData.cameraFitBounds.clone().expandByScalar(0.01).containsBox(sweptBounds),
+    'camera bounds reserve the complete stroke without an oversized stand');
 
   const movement209 = createMovementModel(catalog.movements[208]);
   const movement211 = createMovementModel(catalog.movements[210]);

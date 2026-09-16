@@ -1,3 +1,6 @@
+import { plate as finiteSlotPlate, poly as slotPolygon, circle as slotCircle, polygonClipping as slotClipping } from './finite-plate-geometry.js';
+import { boredPlanarLinkGeometry } from './bored-planar-link.js';
+import { makeFeedWormWheel } from './feed-worm-wheel.js';
 import { makeSolidWorm } from './solid-worm.js';
 import { sectorPressWebShape } from './sector-press-web.js';
 import {makePinnedEyeRod} from './pinned-eye-rod.js';
@@ -21492,7 +21495,7 @@ function oppositeHandTwinWormFeedRollDrive() {
   const inputPeriod = fullTurn / inputAngularSpeed;
   const wormPhase = -Math.PI / 2;
   const contactPolarAngle = -Math.PI / 2;
-  const contactGapLocalAngle = wheelToothPitch / 2;
+  const contactGapLocalAngle = 0;
   const leftWheelPhase = contactPolarAngle - contactGapLocalAngle;
   const rightWheelPhase = contactPolarAngle - contactGapLocalAngle;
 
@@ -21546,60 +21549,6 @@ function oppositeHandTwinWormFeedRollDrive() {
     );
   };
 
-  const makeToothGeometry = ({ handedness, index }) => {
-    const halfRootAngle = wheelToothPitch * 0.3;
-    const halfTipAngle = wheelToothPitch * 0.22;
-    const backZ = -wheelDepth / 2;
-    const frontZ = wheelDepth / 2;
-    const backCenterAngle = toothCenterAngleAtAxial(
-      index,
-      backZ,
-      handedness,
-    );
-    const frontCenterAngle = toothCenterAngleAtAxial(
-      index,
-      frontZ,
-      handedness,
-    );
-    const point = (radius, angle, z) => [
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
-      z,
-    ];
-    const positions = [
-      ...point(wheelRootRadius, backCenterAngle - halfRootAngle, backZ),
-      ...point(wheelRootRadius, backCenterAngle + halfRootAngle, backZ),
-      ...point(wheelOuterRadius, backCenterAngle + halfTipAngle, backZ),
-      ...point(wheelOuterRadius, backCenterAngle - halfTipAngle, backZ),
-      ...point(wheelRootRadius, frontCenterAngle - halfRootAngle, frontZ),
-      ...point(wheelRootRadius, frontCenterAngle + halfRootAngle, frontZ),
-      ...point(wheelOuterRadius, frontCenterAngle + halfTipAngle, frontZ),
-      ...point(wheelOuterRadius, frontCenterAngle - halfTipAngle, frontZ),
-    ];
-    const indices = [
-      0, 1, 2, 0, 2, 3,
-      4, 7, 6, 4, 6, 5,
-      0, 4, 5, 0, 5, 1,
-      1, 5, 6, 1, 6, 2,
-      2, 6, 7, 2, 7, 3,
-      3, 7, 4, 3, 4, 0,
-    ];
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(positions, 3),
-    );
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    geometry.userData = {
-      backCenterAngle,
-      frontCenterAngle,
-      handedness,
-      index,
-    };
-    return geometry;
-  };
-
   const makeWormWheel = ({
     center,
     handedness,
@@ -21617,42 +21566,10 @@ function oppositeHandTwinWormFeedRollDrive() {
     wheel.userData.rotor = rotor;
     wheel.userData.teeth = wheelTeeth;
 
-    const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        wheelRootRadius,
-        wheelRootRadius,
-        wheelDepth,
-        96,
-      ),
-      wheelMaterial,
-    );
-    body.rotation.x = Math.PI / 2;
-    body.userData.role = `${label}-worm-wheel-root-body`;
+    const body = makeFeedWormWheel(handedness, wheelShaftRadius + 0.001, wheelMaterial);
+    body.userData.role = `${label}-worm-generated-wheel`;
     rotor.add(body);
-
-    const teeth = Array.from({ length: wheelTeeth }, (_, index) => {
-      const tooth = new THREE.Mesh(
-        makeToothGeometry({ handedness, index }),
-        wheelMaterial,
-      );
-      tooth.userData.backCenterAngle = toothCenterAngleAtAxial(
-        index,
-        -wheelDepth / 2,
-        handedness,
-      );
-      tooth.userData.frontCenterAngle = toothCenterAngleAtAxial(
-        index,
-        wheelDepth / 2,
-        handedness,
-      );
-      tooth.userData.handedness = handedness;
-      tooth.userData.index = index;
-      tooth.userData.pitchAngle = index * wheelToothPitch;
-      tooth.userData.role = `${label}-helically-skewed-worm-wheel-tooth`;
-      tooth.userData.wormWheelTooth = true;
-      rotor.add(tooth);
-      return tooth;
-    });
+    const teeth = body;
 
     const faceRing = new THREE.Mesh(
       new THREE.TorusGeometry(
@@ -24645,7 +24562,7 @@ function curvedSlotRockerVariableVelocitySlide() {
   const bodyOutlineOfficial = [];
   appendDistinct(bodyOutlineOfficial, sampleArc({
     center: new THREE.Vector2(3.393678, 9.367696),
-    clockwise: true,
+    clockwise: false,
     end: officialSlotStartAngle,
     radius: 1.5,
     segments: 32,
@@ -24688,20 +24605,14 @@ function curvedSlotRockerVariableVelocitySlide() {
     start: 1.971116,
   }));
   const bodyOutline = bodyOutlineOfficial.map(transformOfficialPoint);
-  const bodyShape = new THREE.Shape();
-  bodyOutline.forEach((point, index) => {
-    if (index === 0) bodyShape.moveTo(point.x, point.y);
-    else bodyShape.lineTo(point.x, point.y);
-  });
-  bodyShape.closePath();
-
+  const slotClearance = 0.003;
   const slotBoundary = [];
   appendDistinct(slotBoundary, sampleArc({
     center: slotCenterLocal,
     clockwise: false,
     end: slotEndAngle,
-    radius: slotInnerRadius,
-    segments: 72,
+    radius: slotInnerRadius - slotClearance,
+    segments: 192,
     start: slotStartAngle,
   }));
   const lowerCapCenter = slotCenterLocal.clone().add(
@@ -24712,18 +24623,18 @@ function curvedSlotRockerVariableVelocitySlide() {
   );
   appendDistinct(slotBoundary, sampleArc({
     center: lowerCapCenter,
-    clockwise: false,
+    clockwise: true,
     end: slotEndAngle,
-    radius: followerRadius,
-    segments: 20,
+    radius: followerRadius + slotClearance,
+    segments: 48,
     start: slotEndAngle + Math.PI,
   }));
   appendDistinct(slotBoundary, sampleArc({
     center: slotCenterLocal,
     clockwise: true,
     end: slotStartAngle,
-    radius: slotOuterRadius,
-    segments: 72,
+    radius: slotOuterRadius + slotClearance,
+    segments: 192,
     start: slotEndAngle,
   }));
   const upperCapCenter = slotCenterLocal.clone().add(
@@ -24734,35 +24645,18 @@ function curvedSlotRockerVariableVelocitySlide() {
   );
   appendDistinct(slotBoundary, sampleArc({
     center: upperCapCenter,
-    clockwise: false,
+    clockwise: true,
     end: slotStartAngle + Math.PI,
-    radius: followerRadius,
-    segments: 20,
+    radius: followerRadius + slotClearance,
+    segments: 48,
     start: slotStartAngle,
   }));
-  const slotHole = new THREE.Path();
-  slotBoundary.forEach((point, index) => {
-    if (index === 0) slotHole.moveTo(point.x, point.y);
-    else slotHole.lineTo(point.x, point.y);
-  });
-  slotHole.closePath();
-  bodyShape.holes.push(slotHole);
   const hubBoreRadius = unitScale;
-  const hubBore = new THREE.Path();
-  hubBore.absarc(0, 0, hubBoreRadius, 0, fullTurn, true);
-  bodyShape.holes.push(hubBore);
-
-  const plateGeometry = new THREE.ExtrudeGeometry(bodyShape, {
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.018,
-    bevelThickness: 0.018,
-    curveSegments: 2,
-    depth: armDepth,
-    steps: 1,
-  });
-  plateGeometry.translate(0, 0, -armDepth / 2);
-  plateGeometry.computeVertexNormals();
+  const plateGeometry = finiteSlotPlate(slotClipping.difference(
+    slotPolygon(bodyOutline.map(point => point.toArray())),
+    slotPolygon(slotBoundary.map(point => point.toArray())),
+    slotPolygon(slotCircle([0, 0], hubBoreRadius, 64))),
+  -armDepth / 2, armDepth / 2);
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.11,
     roughness: 0.63,
@@ -24844,9 +24738,11 @@ function curvedSlotRockerVariableVelocitySlide() {
   const armIndexTip = new THREE.Object3D();
   armIndexTip.position.set(0.63, 0, armDepth / 2 + 0.06);
   armIndexTip.userData.role = 'input-index-tip';
-  arm.userData.rotor.add(slotLip, bodyEdge, hubRing, armIndex, armIndexTip);
+  arm.userData.rotor.add(bodyEdge, hubRing, armIndex, armIndexTip);
 
-  const inputShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.55, Z_AXIS);
+  const inputShaft = makeShaft({ axis: Z_AXIS, length: 1.55,
+    radius: hubBoreRadius - 0.005, color: PALETTE.ink });
+  root.add(inputShaft);
   inputShaft.userData.role = 'rocking-input-shaft';
 
   const slider = new THREE.Group();
@@ -24884,15 +24780,12 @@ function curvedSlotRockerVariableVelocitySlide() {
   followerRoller.userData.radius = followerRadius;
   followerRoller.userData.role = 'slot-filling-loaded-wall-roller';
   const followerBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      followerRadius,
-      followerRadius,
-      armDepth + 0.11,
-      40,
-    ),
+    boredPlanarLinkGeometry({ length: 0, width: 0,
+      eyeRadius: followerRadius, boreRadius: followerRadius * 0.34 + 0.004,
+      depth: armDepth + 0.11 }),
     drivenMaterial,
   );
-  followerBody.rotation.x = Math.PI / 2;
+  followerBody.userData.actualAxleBore = true;
   followerBody.userData.role = 'captive-follower-roller-body';
   const followerTread = new THREE.Mesh(
     new THREE.TorusGeometry(followerRadius * 0.78, 0.022, 8, 36),
@@ -24978,7 +24871,7 @@ function curvedSlotRockerVariableVelocitySlide() {
         new THREE.BoxGeometry(
           railHalfWidth - openingHalfWidth,
           0.25,
-          0.5,
+          0.42,
         ),
         frameMaterial,
       );
@@ -24992,7 +24885,7 @@ function curvedSlotRockerVariableVelocitySlide() {
         new THREE.BoxGeometry(0.36, 0.25, 0.055),
         frameMaterial,
       );
-      bridge.position.z = zSide * 0.2225;
+      bridge.position.z = zSide * 0.1825;
       guide.add(bridge);
     }
     return guide;
@@ -25142,9 +25035,15 @@ function curvedSlotRockerVariableVelocitySlide() {
     variableSliderVelocity: true,
   };
   // The arm's swept envelope extends well below its engraved source pose.
-  // The camera is fitted at that source pose, so retain enough margin for the
-  // opposite reversal instead of letting the rotating C-shaped tip clip.
-  root.userData.cameraDistanceScale = 1.32;
+  // Fit the complete stroke below; the source has no freestanding support frame.
+  root.remove(baseRail, pivotPost, pivotBrace, pivotBearing, ...guideSupports, ...baseFeet);
+  root.userData.hideGround = true;
+  root.userData.cameraDistanceScale = 1.02;
+  root.userData.reconstruction = { slotClearance,
+    assumptions: 'Clearance-fit roller and bored axle; guide blocks retained from engraving. Ideal loaded-wall rolling remains an analytic illustration, not a dynamic contact solution.' };
+  root.traverse(object => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -25166,8 +25065,15 @@ function curvedSlotRockerVariableVelocitySlide() {
     };
     root.userData.kinematics = state;
   };
+  const sweptBounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i += 1) {
+    update(cycleDuration * i / 64);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.02);
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 4.1, 9.2));
+  return finish(root, update, new THREE.Vector3(1.2, 0.6, 12));
 }
 
 function fixedPinionIrregularVibratingWheelCarrier() {

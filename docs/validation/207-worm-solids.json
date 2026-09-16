@@ -1,0 +1,94 @@
+{
+  "movement": 207,
+  "poses": 65,
+  "phaseOffset": 0,
+  "status": "sampled-flanks-clear",
+  "method": "Actual rendered worm and every instanced closed tooth sector; bidirectional triangle vertices, edge midpoints and face centers through one complete input turn. BVH winding containment and finite triangle distances. Sampling is not continuous collision proof.",
+  "scope": "Working worm/wheel solids only; bearing frames, wheel hubs and shafts excluded.",
+  "results": [
+    {
+      "side": "left",
+      "queries": 2279836,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.00022863713979827003,
+      "worst": null
+    },
+    {
+      "side": "right",
+      "queries": 2279836,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.0002286371397982531,
+      "worst": null
+    }
+  ],
+  "sources": [
+    {
+      "file": "src/simulation/feed-worm-wheel.js",
+      "sha256": "fbf1d0c9fa788f3126986a65dc16404d01e6001b639237910c16f688043333a9"
+    },
+    {
+      "file": "src/data/feed-worm-wheel-profile.js",
+      "sha256": "4454cad2e61744bbc2fc9b9a76dc2408e940ca02a3749f1e6979f648b2ecfe38"
+    },
+    {
+      "file": "src/simulation/solid-worm.js",
+      "sha256": "5231a35523bec23e3ced781c29beaa9be87e88aff1fa26558e2b3b823b29e210"
+    },
+    {
+      "file": "src/simulation/worm-wheel-profile.js",
+      "sha256": "986016012e8da3ae4800910c1503624ac60021f801215327dd95ecb3a22d3105"
+    },
+    {
+      "file": "src/simulation/instanced-worm-wheel.js",
+      "sha256": "3e9aa121b9c54d976244ad643f3581225253df45a7f3ead102a76d19270ceee6"
+    }
+  ],
+  "negativeControl": {
+    "poses": 3,
+    "phaseOffset": 0.06,
+    "status": "intersections-detected",
+    "results": [
+      {
+        "side": "left",
+        "queries": 97206,
+        "penetrations": 38294,
+        "maximumDepth": 0.01,
+        "minimumGap": -0.01,
+        "worst": {
+          "frame": 0,
+          "instance": 0,
+          "p": [
+            -0.22238365767085733,
+            -0.18999999761581424,
+            -0.0762832016492186
+          ]
+        }
+      },
+      {
+        "side": "right",
+        "queries": 97206,
+        "penetrations": 38294,
+        "maximumDepth": 0.01,
+        "minimumGap": -0.01,
+        "worst": {
+          "frame": 0,
+          "instance": 0,
+          "p": [
+            -0.30802608019279965,
+            -0.1899999976158142,
+            0.039111953355658834
+          ]
+        }
+      }
+    ],
+    "depthReportingCap": 0.01
+  },
+  "tessellation": {
+    "angularSteps": 128,
+    "axialSteps": 16,
+    "radialClearance": 0.0065,
+    "visibleWheelTriangles": 250272
+  }
+}

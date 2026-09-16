@@ -1513,7 +1513,7 @@ function sourceScaledQuadrantHandGear({ movementId }) {
       state.lowerWeightPin.y,
       handlePlaneZ,
     );
-    tappetContactMarker.visible = Boolean(state.activeContactPoint);
+    tappetContactMarker.visible = false;
     if (state.activeContactPoint) {
       tappetContactMarker.position.set(
         state.activeContactPoint.x,
@@ -1521,13 +1521,13 @@ function sourceScaledQuadrantHandGear({ movementId }) {
         lowerQuadrantPlaneZ + lowerQuadrantDepth / 2 + 0.18,
       );
     }
-    bottomLatchMarker.visible = state.bottomLatchEngagement >= 0.5;
+    bottomLatchMarker.visible = false;
     bottomLatchMarker.position.set(
       (state.lowerBottomHookPoint.x + state.upperBottomSeatPoint.x) / 2,
       (state.lowerBottomHookPoint.y + state.upperBottomSeatPoint.y) / 2,
       lowerQuadrantPlaneZ + lowerQuadrantDepth / 2 + 0.12,
     );
-    topLatchMarker.visible = state.topLatchEngagement > 0.5;
+    topLatchMarker.visible = false;
     topLatchMarker.position.set(
       (state.upperTopHookPoint.x + state.lowerTopSeatPoint.x) / 2,
       (state.upperTopHookPoint.y + state.lowerTopSeatPoint.y) / 2,
@@ -1744,6 +1744,9 @@ function sourceScaledQuadrantHandGear({ movementId }) {
     upperWeightConnector: upperWeightParts.connector,
     upperWeightRod: upperWeightParts.rod,
   };
+  // Contact points remain available in userData for diagnostics. The engraving
+  // has no floating contact spheres or ground beneath this sectional mechanism.
+  root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 1.16;
   root.userData.canonicalStates = canonicalStates;
   root.userData.cyclePhaseToBasePhase = cyclePhaseToBasePhase;

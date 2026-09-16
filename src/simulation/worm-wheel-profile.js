@@ -4,10 +4,13 @@
 export function generateWormWheelProfile(parameters, { angularSteps = 256, axialSteps = 32,
   phaseSteps = 1600, radialSteps = 80, clearance = 0.0004 } = {}) {
   const { teeth, pitchRadius, wormPitchRadius, wormLength, depth, pressureAngle } = parameters;
-  const key = JSON.stringify({ teeth, pitchRadius, wormPitchRadius, wormLength, depth, pressureAngle });
+  const optional = Object.fromEntries(['wormRootRadius', 'wormTipRadius'].filter(name => parameters[name] !== undefined).map(name => [name, parameters[name]]));
+  const key = JSON.stringify({ teeth, pitchRadius, wormPitchRadius, wormLength, depth, pressureAngle, ...optional });
   const turn = Math.PI * 2, module = 2 * pitchRadius / teeth, pitch = turn / teeth, axialPitch = Math.PI * module;
   const lead = axialPitch / turn, distance = pitchRadius + wormPitchRadius, tangent = Math.tan(pressureAngle);
-  const tip = wormPitchRadius + 1.25 * module, root = wormPitchRadius - 1.25 * module, outer = pitchRadius + module;
+  const tip = parameters.wormTipRadius ?? wormPitchRadius + 1.25 * module;
+  const root = parameters.wormRootRadius ?? wormPitchRadius - 1.25 * module;
+  const outer = pitchRadius + module;
   const sweep = Math.acos((distance - tip) / outer) + pitch / 2, phaseStep = 2 * sweep / phaseSteps;
   const radii = new Float64Array((axialSteps + 1) * (angularSteps + 1)), phases = new Float64Array(radii.length);
   const wrap = value => value - axialPitch * Math.floor(value / axialPitch + 0.5);

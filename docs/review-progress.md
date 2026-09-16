@@ -1,3 +1,32 @@
+# Third family pass: generated teeth, clear slots and bored ruler joints
+
+Corrected 207's worm-wheel working surfaces, 203/210/252's finite slots and
+322–325's ruler assemblies in parallel. Shared generated tooth sectors, bored
+lathe profiles and eye plates replace incompatible or intersecting solids.
+Source-facing views and full-stroke framing accompany the clearance fixes.
+Seventy-three focused tests, the production build and four packaged browser
+checks (play/pause and mobile resize) pass. See the
+[worm](movement-195-207.md), [slot](slot-family-review.md) and
+[ruler](drawing-ruler-family-review.md) reviews for evidence and residuals.
+
+207's generated field is baked offline. Its lighter 128×16 grid passes a
+65-pose, 4.56-million-query working-mesh audit with no sampled penetration;
+this is not continuous collision proof. Default/front/advanced browser captures
+show no missing faces or errors, with 538,964 rendered triangles including
+shadows (the first dense candidate used about 1.83 million).
+
+183–184 loses the ground and floating markers, but its passive reconstruction
+is still unqualified. Five native diagnostic cases isolate incompatible inferred
+retaining-pin/rim sweeps; none completes the endpoint checks. The documented
+[offline study](../src/simulation/mujoco-quadrant-catch/README.md) is not imported
+by production or used to bake motion. Further contact reconstruction remains
+in its own lane rather than blocking unrelated families.
+
+Continue the family inventory. These bounded corrections do not complete the
+full 507-movement review; the goal remains active.
+
+## Earlier checkpoints
+
 # Second family pass: nine corrections and selective browser loading
 
 Corrected 200/226, 231/273 and 255–259 in parallel. The decisive motion fix is

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {finishDrawingRuler} from './drawing-ruler-parts.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -81,26 +84,8 @@ function makeTriangularPlate({
   outline.userData.noShadow = true;
   outline.userData.role = `${role}-source-outline`;
 
-  const ringMaterial = matte(PALETTE.white, {
-    metalness: 0.04,
-    roughness: 0.58,
-  });
-  const holeRings = [-1, 1].map((side) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(holeRadius, 0.045, 10, 52),
-      ringMaterial,
-    );
-    ring.rotation.x = Math.PI / 2;
-    ring.position.set(
-      holeCenter.x,
-      side * (depth / 2 + 0.012),
-      holeCenter.y,
-    );
-    ring.userData.role = `${role}-handling-hole-rim`;
-    return ring;
-  });
-
-  group.add(body, outline, ...holeRings);
+  const holeRings = [];
+  group.add(body, outline);
   group.userData.body = body;
   group.userData.holeRings = holeRings;
   return markShadows(group);
@@ -192,6 +177,15 @@ function makeRulerPlate({
   return markShadows(group);
 }
 
+
+function boredCylinderAlongX(radius, length, boreRadius, material) {
+  const geometry = boredLatheGeometry([
+    {axial: -length/2, radial: radius}, {axial: length/2, radial: radius},
+  ], boreRadius, 64);
+  geometry.rotateZ(-Math.PI / 2);
+  return new THREE.Mesh(geometry, material);
+}
+
 function makeNickedWheel({ radius, role, station, width }) {
   const group = new THREE.Group();
   group.position.x = station;
@@ -210,7 +204,7 @@ function makeNickedWheel({ radius, role, station, width }) {
     roughness: 0.48,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.46 });
-  const body = cylinderAlongX(radius - 0.065, width, wheelMaterial, 48);
+  const body = boredCylinderAlongX(radius - 0.065, width, .084, wheelMaterial);
   body.userData.role = `${role}-solid-wheel-body`;
   group.add(body);
 
@@ -222,7 +216,7 @@ function makeNickedWheel({ radius, role, station, width }) {
       new THREE.BoxGeometry(width * 0.96, 0.080, 0.105),
       index === 0 ? whiteMaterial : darkMaterial,
     );
-    const radialStation = radius - 0.040;
+    const radialStation = Math.sqrt(radius ** 2 - (0.105 / 2) ** 2) - 0.040;
     nick.position.set(
       0,
       Math.cos(angle) * radialStation,
@@ -238,7 +232,7 @@ function makeNickedWheel({ radius, role, station, width }) {
   }
 
   const sideRings = [-1, 1].map((side) => {
-    const ring = ringAroundX(radius - 0.032, 0.031, darkMaterial);
+    const ring = ringAroundX(radius - 0.031, 0.031, darkMaterial);
     ring.position.x = side * (width / 2 + 0.012);
     ring.userData.role = `${role}-side-rim`;
     group.add(ring);
@@ -248,11 +242,13 @@ function makeNickedWheel({ radius, role, station, width }) {
   for (const side of [-1, 1]) {
     for (let index = 0; index < 4; index += 1) {
       const spoke = new THREE.Mesh(
-        new THREE.BoxGeometry(0.026, radius * 1.38, 0.065),
+        new THREE.BoxGeometry(0.026, radius * .48, 0.065),
         index === 0 ? whiteMaterial : darkMaterial,
       );
       spoke.position.x = side * (width / 2 + 0.018);
       spoke.rotation.x = index * Math.PI / 4;
+      spoke.position.y = Math.cos(spoke.rotation.x) * radius * .55;
+      spoke.position.z = Math.sin(spoke.rotation.x) * radius * .55;
       spoke.userData.role = index === 0
         ? `${role}-white-face-rotation-index`
         : `${role}-face-spoke`;
@@ -260,9 +256,10 @@ function makeNickedWheel({ radius, role, station, width }) {
       spokes.push(spoke);
     }
   }
-  const hub = cylinderAlongX(0.145, width * 1.45, darkMaterial, 28);
+  const hub = boredCylinderAlongX(0.145, width * 1.45, .084, darkMaterial);
   hub.userData.role = `${role}-hub-fixed-to-axle-C`;
   group.add(hub);
+  group.userData.hub = hub;
   group.userData.body = body;
   group.userData.nickCount = nickCount;
   group.userData.nicks = nicks;
@@ -362,9 +359,10 @@ function rollingWheelParallelRuler(movement) {
     station: wheelRightStation,
     width: wheelWidth,
   });
-  const collarC = cylinderAlongX(
+  const collarC = boredCylinderAlongX(
     0.155,
     0.18,
+    .084,
     matte(PALETTE.white, { metalness: 0.12, roughness: 0.48 }),
     28,
   );
@@ -372,9 +370,10 @@ function rollingWheelParallelRuler(movement) {
   collarC.userData.role = 'visible-axle-C-identification-collar';
 
   const axleEndNuts = [-1, 1].map((side) => {
-    const nut = cylinderAlongX(
+    const nut = boredCylinderAlongX(
       0.155,
       0.20,
+      .084,
       matte(PALETTE.ink, { metalness: 0.28, roughness: 0.42 }),
       6,
     );
@@ -402,13 +401,15 @@ function rollingWheelParallelRuler(movement) {
         ? 'left-fixed-bearing-housing-on-ruler-B'
         : 'right-fixed-bearing-housing-on-ruler-B';
       for (const side of [-1, 1]) {
-        const sideBearing = new THREE.Mesh(
-          new THREE.BoxGeometry(0.14, 0.36, 0.34),
-          housingMaterial,
-        );
+        const journalGeometry = plate(polygonClipping.difference(
+          poly([[-.17, 0], [.17, 0], [.17, .44], [-.17, .44]]),
+          poly(circle([0, wheelCenterY], axleRadius + .005, 48)),
+        ), -.07, .07);
+        journalGeometry.rotateY(Math.PI / 2);
+        const sideBearing = new THREE.Mesh(journalGeometry, housingMaterial);
         sideBearing.position.set(
           side * housingOuterHalfLength,
-          0.17,
+          0,
           0,
         );
         sideBearing.userData.role =
@@ -694,8 +695,9 @@ function rollingWheelParallelRuler(movement) {
     object.castShadow = false;
     object.receiveShadow = false;
   }
+  finishDrawingRuler(root, [paper, paperOutline, ...guideLines]);
   return {
-    cameraDirection: new THREE.Vector3(6.5, 8.2, 8.8),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };
@@ -1185,8 +1187,9 @@ function slidingTriangleParallelRuler(movement) {
     object.castShadow = false;
     object.receiveShadow = false;
   }
+  finishDrawingRuler(root, [paper, paperOutline, ...guideLines, seamA, seamB, workingEdgeA, workingEdgeB]);
   return {
-    cameraDirection: new THREE.Vector3(5.8, 8.8, 8.2),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };

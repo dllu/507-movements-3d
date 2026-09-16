@@ -138,3 +138,29 @@ These are correction passes, not family completion. Keep finite contact studies
 moving in one parallel lane while other lanes clear shared geometry and source
 mismatches. The source-animation check must inspect whether a usable animation
 actually loads: 273 has one despite its static HTML's unavailable class.
+
+
+## Third parallel batch
+
+- **207:** baked generated worm-wheel sectors replace skewed trapezoids. A
+  65-pose working-mesh audit passes for both hands, and the coarser qualified
+  grid reduces wheel triangles by about four times versus the first candidate.
+  195's different face-wheel envelope remains separate work.
+- **203/210/252:** ideal circular slots and actual pin/roller bores, corrected
+  210 endcaps, and continued slots through 252's crossbar and lower web.
+- **322–325:** shared bored ruler arms and pivots, bored rolling-wheel journals,
+  source-facing orientation and removal of invented paper/guide decorations.
+- **183–184:** remove floating markers/ground; preserve an explicitly failed
+  native diagnostic with contact-disabled controls and named residual contacts.
+  The inferred hidden retaining pins need a mechanically compatible sweep.
+
+The integrated focused run passes 73 tests, including shared worm regression
+coverage; the production build and four packaged desktop/mobile checks pass.
+Desktop source comparisons cover
+the eight substantive geometry corrections. The new finite-clearance tests
+check actual rendered holes and slot boundaries; they do not certify every
+solid pair. Analytical transmission laws remain in production for these families.
+Classical contour extraction helps measure visible boundaries, while ideal
+circles and separately inferred occlusions remain necessary for the quadrant
+contact exception. Detailed evidence and limitations are linked from
+[review progress](review-progress.md).

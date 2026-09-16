@@ -126,6 +126,7 @@ function comparePhysicalStates(actual, expected, label) {
 test('movement 184 starts at the top pose and the descending tappet transfers the two quadrants back to 183', () => {
   const movement = catalog.movements[183];
   const model = createMovementModel(movement);
+  assert.equal(model.root.userData.hideGround, true);
   const movement183 = createMovementModel(catalog.movements[182]);
   const {
     baseStateAtCyclePhase,
@@ -638,7 +639,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   near(pistonGroup.position.y, geometry.source184PistonY, 1e-15,
     'initial rendered piston height');
   assert.equal(bottomLatchMarker.visible, false);
-  assert.equal(topLatchMarker.visible, true);
+  assert.equal(topLatchMarker.visible, false);
   assert.equal(tappetContactMarker.visible, false);
   near(upperWeightRod.rotation.z, 0, 0, 'upper weight rod remains vertical');
   near(lowerWeightRod.rotation.z, 0, 0, 'lower weight rod remains vertical');
@@ -647,7 +648,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.activeTappetContact,
     'upper-quadrant-handle');
-  assert.equal(tappetContactMarker.visible, true);
+  assert.equal(tappetContactMarker.visible, false);
   vector3Near(
     tappetContactMarker.position,
     new THREE.Vector3(
@@ -668,7 +669,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   model.update(0.48 * geometry.cyclePeriod, 0);
   near(model.root.userData.kinematics.topStateBlend, 0, 0,
     'rendered descending stroke reaches source 183');
-  assert.equal(bottomLatchMarker.visible, true);
+  assert.equal(bottomLatchMarker.visible, false);
   assert.equal(topLatchMarker.visible, false);
   assert.equal(tappetContactMarker.visible, false);
 
@@ -676,7 +677,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.activeTappetContact,
     'lower-quadrant-handle');
-  assert.equal(tappetContactMarker.visible, true);
+  assert.equal(tappetContactMarker.visible, false);
   vector3Near(
     tappetContactMarker.position,
     new THREE.Vector3(
@@ -693,7 +694,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   vector3Near(worldPoint(tappetAnchor), source184.pistonPosition, 1e-14,
     'one public cycle returns exactly to source 184');
   assert.equal(bottomLatchMarker.visible, false);
-  assert.equal(topLatchMarker.visible, true);
+  assert.equal(topLatchMarker.visible, false);
   assert.equal(tappetContactMarker.visible, false);
 
   const frameFrontZ = geometry.frameCenterZ + geometry.frameDepth / 2;

@@ -398,9 +398,9 @@ test('movement 325 renderer binds both rulers, both C arms, and all four revolut
       new THREE.Vector3(state.joints.upperRight.x,
         geometry.armLayerY, state.joints.upperRight.z),
     0, `rendered right C start at ${time}`);
-    near(blocks.leftArmC.children[0].scale.x,
+    near(blocks.leftArmC.userData.nominalLength,
       geometry.armLength, 2e-15, `rendered left C length at ${time}`);
-    near(blocks.rightArmC.children[0].scale.x,
+    near(blocks.rightArmC.userData.nominalLength,
       geometry.armLength, 2e-15, `rendered right C length at ${time}`);
     for (const [name, pin] of Object.entries(blocks.jointPins)) {
       vectorNear(pin.position, state.joints[name], 0,

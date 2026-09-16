@@ -406,9 +406,9 @@ test('movement 324 renderer follows both rulers, both slots, both crossed arms, 
       new THREE.Vector3(state.pins.lowerFixed.x,
         geometry.armLayerLowerToUpper, state.pins.lowerFixed.z),
     0, `rendered second arm start at ${time}`);
-    near(blocks.armUpperFixedToLowerSlider.children[0].scale.x,
+    near(blocks.armUpperFixedToLowerSlider.userData.nominalLength,
       geometry.armLength, 2e-15, `rendered first arm length at ${time}`);
-    near(blocks.armLowerFixedToUpperSlider.children[0].scale.x,
+    near(blocks.armLowerFixedToUpperSlider.userData.nominalLength,
       geometry.armLength, 2e-15, `rendered second arm length at ${time}`);
     vectorNear(model.root.userData.contacts.centerArmPivot.closureResidual,
       new THREE.Vector3(), 0, `rendered center closure at ${time}`);

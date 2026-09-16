@@ -61,6 +61,7 @@ function rotateVector2(vector, angle) {
 test('movement 183 replaces the diagonal catch with two rigid mutually retaining handle quadrants', () => {
   const movement = catalog.movements[182];
   const model = createMovementModel(movement);
+  assert.equal(model.root.userData.hideGround, true);
   const {
     baseStateAtCyclePhase,
     blocks,
@@ -779,7 +780,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     'upper quadrant occupies its rigid handle layer');
   near(lowerQuadrant.position.z, geometry.lowerQuadrantPlaneZ, 0,
     'lower quadrant occupies its rigid handle layer');
-  assert.equal(bottomLatchMarker.visible, true);
+  assert.equal(bottomLatchMarker.visible, false);
   assert.equal(topLatchMarker.visible, false);
   assert.equal(tappetContactMarker.visible, false);
   near(upperWeightRod.rotation.z, 0, 0, 'upper weight rod remains vertical');
@@ -822,7 +823,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
   near(pistonGroup.position.y, geometry.source184PistonY, 1e-15,
     'rendered source 184 piston height');
   assert.equal(bottomLatchMarker.visible, false);
-  assert.equal(topLatchMarker.visible, true);
+  assert.equal(topLatchMarker.visible, false);
   assert.equal(tappetContactMarker.visible, false);
 
   const lowerTripPhase = (
@@ -834,7 +835,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.activeTappetContact,
     'lower-quadrant-handle');
-  assert.equal(tappetContactMarker.visible, true);
+  assert.equal(tappetContactMarker.visible, false);
   vector3Near(
     tappetContactMarker.position,
     new THREE.Vector3(
@@ -855,7 +856,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.activeTappetContact,
     'upper-quadrant-handle');
-  assert.equal(tappetContactMarker.visible, true);
+  assert.equal(tappetContactMarker.visible, false);
   vector3Near(
     tappetContactMarker.position,
     new THREE.Vector3(

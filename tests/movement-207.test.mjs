@@ -121,8 +121,8 @@ test('movement 207 is one common shaft carrying two opposite-hand worms and two 
   assert.equal(blocks.rightWorm.userData.starts, 1);
   assert.equal(blocks.leftWheel.userData.teeth, 24);
   assert.equal(blocks.rightWheel.userData.teeth, 24);
-  assert.equal(blocks.leftWheelTeeth.length, 24);
-  assert.equal(blocks.rightWheelTeeth.length, 24);
+  assert.equal(blocks.leftWheelTeeth.count, 24);
+  assert.equal(blocks.rightWheelTeeth.count, 24);
 
   assert.equal(transmission.gearReduction, 24);
   assert.equal(transmission.fullTrainClosureInputTurns, 24);
@@ -164,7 +164,7 @@ test('movement 207 is one common shaft carrying two opposite-hand worms and two 
     if (/single-start-worm-on-common-shaft$/.test(role)) counts.worms += 1;
     if (/twenty-four-tooth-worm-wheel$/.test(role)) counts.wormWheels += 1;
     if (object.userData.screwThread) counts.screwThreads += 1;
-    if (object.userData.wormWheelTooth) counts.wormWheelTeeth += 1;
+    if (object.userData.profile === 'offline-worm-generated-envelope') counts.wormWheelTeeth += object.count;
   });
   assert.deepEqual(counts, {
     commonInputShafts: 1,
@@ -393,29 +393,11 @@ test('movement 207 reproduces the source proportions and exact conjugate lead di
     ['left', blocks.leftWheelTeeth, -1],
     ['right', blocks.rightWheelTeeth, 1],
   ]) {
-    teeth.forEach((tooth, index) => {
-      assert.equal(tooth.userData.index, index);
-      assert.equal(tooth.userData.handedness, handedness);
-      near(
-        tooth.userData.pitchAngle,
-        index * geometry.wheelToothPitch,
-        1e-15,
-        `${label} tooth pitch ${index}`,
-      );
-      near(
-        tooth.userData.frontCenterAngle - tooth.userData.backCenterAngle,
-        handedness * geometry.wheelDepth
-          / (geometry.wheelTeeth * geometry.wormPitchRadius),
-        2e-14,
-        `${label} tooth lead ${index}`,
-      );
-      near(
-        toothCenterAngleAtAxial(index, 0, handedness),
-        index * geometry.wheelToothPitch,
-        1e-15,
-        `${label} tooth pitch-center plane ${index}`,
-      );
-    });
+    assert.equal(teeth.isInstancedMesh, true);
+    assert.equal(teeth.count, 24);
+    assert.equal(teeth.userData.handedness, handedness);
+    assert.equal(teeth.userData.profile, 'offline-worm-generated-envelope');
+    assert.ok(teeth.geometry.attributes.position.count > 3000);
     near(
       Math.abs(threadTangentAtContact(handedness).dot(
         toothLineTangentAtContact(handedness),
@@ -425,14 +407,6 @@ test('movement 207 reproduces the source proportions and exact conjugate lead di
       `${label} worm thread and wheel tooth lead are parallel`,
     );
   }
-  assert.ok(
-    blocks.leftWheelTeeth[0].userData.frontCenterAngle
-      < blocks.leftWheelTeeth[0].userData.backCenterAngle,
-  );
-  assert.ok(
-    blocks.rightWheelTeeth[0].userData.frontCenterAngle
-      > blocks.rightWheelTeeth[0].userData.backCenterAngle,
-  );
   disposeModel(model.root);
 });
 
@@ -731,13 +705,13 @@ test('movement 207 runtime exposes both worm hands, counterrotation indexes, ful
   assert.ok(size.z > 2.6 && size.z < 2.7);
   assert.ok(bounds.min.x < -2.88);
   assert.ok(bounds.max.x > 2.73);
-  assert.ok(bounds.max.y > 2.4);
+  assert.ok(bounds.max.y > 2.37);
   assert.ok(bounds.min.z < -1.7);
   let screwThreadCount = 0;
   let toothCount = 0;
   model.root.traverse((object) => {
     if (object.userData.screwThread) screwThreadCount += 1;
-    if (object.userData.wormWheelTooth) toothCount += 1;
+    if (object.userData.profile === 'offline-worm-generated-envelope') toothCount += object.count;
   });
   for (const worm of [blocks.leftWorm, blocks.rightWorm]) {
     assert.equal(worm.userData.toothProfile, 'axial-straight-flanked-worm');

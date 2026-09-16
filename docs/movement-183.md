@@ -7,8 +7,9 @@ the current implementation is `src/simulation/authored-quadrant-catches.js`.
 The front-view comparison exposes several concrete rendering and geometry
 problems. A large added grey guide and frame surround the mechanism, while the
 orange piston rod covers only part of the sectioned extent drawn in the source.
-The ground and its shadows are visible. White contact spheres and quadrant
-indices are added explanatory markers rather than engraved mechanical parts.
+The added ground and floating contact spheres have now been hidden in both
+variants; diagnostic contact coordinates remain available. White quadrant
+indices still remain and are explanatory markers rather than engraved parts.
 The default oblique view makes source comparison harder.
 
 The two quadrants belong to their respective handles, but their prescribed
@@ -31,9 +32,35 @@ Next work: reconstruct the finite quadrant contact profiles against both
 engravings, test both passive transfers with only the piston driven, and bake
 qualified motion. Reuse the finite-plate, native-study and assembly-audit tools
 from 181–182. Replace the partial rod and added guide with a source-width rod
-section, remove the added frame/markers/ground, and inspect the source view,
+section, remove the remaining added frame/indices, and inspect the source view,
 orbit, full cycle and mobile layout. Keep useful joint and kinematic tests;
 replace assertions that merely preserve the obsolete presentation.
 
 The baseline captures are temporary RAM artifacts, not shipped assets. Neither
 movement has been qualified by this initial inspection.
+
+## Bounded native contact diagnosis
+
+The [unqualified native study](../src/simulation/mujoco-quadrant-catch/README.md)
+uses two passive handle hinges and one driven piston. Its inferred axial pins
+and circular quadrant rims are **not ready to replace production playback**.
+The [one-cycle diagnostic](validation/183-quadrant-contact-study.json) records
+five cases, including each retaining pair disabled separately and shoe-only
+contact. Run `node scripts/probe-quadrant-catch-transfer.mjs` to reproduce it.
+
+The original inference releases too late: the driven lower handle reaches
+about −0.956 rad and leaves the shoe before the upper handle is released.
+Moving the release earlier exposes incompatible pin/rim sweeps. Removing the
+lower pin allows the first upper swing, but then the lower handle falls back
+and the upper pin blocks the return. Removing the upper pin leaves the other
+pair blocking the upstroke. Shoe-only contact loses the intended sequencing.
+No contact deletion, mass adjustment, or solver tuning is accepted as a fix.
+The next contact reconstruction must make the two pin sweeps compatible and
+hand over support before the driven handle leaves the shoe.
+
+The contour tool extracts the two source crops in about 0.01 seconds each.
+Joined ink boundaries expose the visible rims, but cannot recover the hidden
+retaining faces. Use ideal circular rims and explicitly inferred hidden faces;
+there is no need for prolonged pixel tracing. Existing source residuals and
+finite-solid intersections remain open. The older finite-solid report predates
+the presentation-only ground/marker change; physical meshes were unchanged.
