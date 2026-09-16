@@ -3,6 +3,7 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { capsule, plate } from './finite-plate-geometry.js';
 import { markShadows } from './primitives.js';
 import envelope from './generated/anchor-escapement-envelopes.js';
+import deadbeatProfiles from './generated/deadbeat-contact-profiles.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 function journal(outer,bore,length){return boredLatheGeometry([{radial:outer,axial:-length/2},{radial:outer,axial:length/2}],bore,64);}
 export function correctAnchorEscapement(root,id,update){
@@ -21,10 +22,20 @@ export function correctAnchorEscapement(root,id,update){
   d.reconstructionNote='The wheel recoils on each outgoing nonconcentric pallet and advances on return, then drops to the other pallet. Finite working profiles follow this prescribed contact path. Tooth landing has an idealized velocity change; impact, friction and pendulum energy balance are not dynamically simulated.';
   p.contactQualification='Finite envelope with 0.0015 nominal clearance; active-face proximity and reaction direction checked. Prescribed path, not passive dynamics.';
  }else{
-  b.anchorBody.position.z=.20; // The structural arch clears the wheel plane; pallets retain their working layer.
+  // Only the structural arch is in the front layer; the working pallets overlap
+  // the wheel's depth and must pass the finite contact checks themselves.
+  b.anchorBody.position.z=.20;
+  const shape=b.toothedRim.geometry.parameters.shapes;
+  p.originalWheelProfile=shape.getPoints().map(v=>v.toArray());
+  const teeth=new THREE.ExtrudeGeometry(shape,{depth:g.wheelDepth,bevelEnabled:false,curveSegments:64});teeth.translate(0,0,-g.wheelDepth/2);replace(b.toothedRim,teeth);
+  for(const[name,pallet]of[['left',b.leftPallet],['right',b.rightPallet]]){
+   replace(pallet.userData.body,plate(deadbeatProfiles[name],-(g.anchorDepth+.05)/2,(g.anchorDepth+.05)/2));
+   p.pairs.push([b.toothedRim,pallet.userData.body]);
+  }
   p.pairs.push([b.toothedRim,b.anchorBody]);
-  d.reconstructionNote='Concentric locking faces illustrate a stationary escape wheel during repose, followed by impulse and drop. The prescribed timing is retained, but finite tooth/pallet interference during the handoff remains unresolved; this model is not contact validated or a passive dynamics simulation.';
-  p.contactQualification='Unresolved finite tooth/pallet interference: a naive clearance cut would remove up to 0.316 of the intended active face. Original timing and working profiles retained.';
+  p.profileQualification=deadbeatProfiles.qualification;
+  d.reconstructionNote='The wheel rests on concentric locking faces, receives a 2° impulse at each return, then drops forward to the opposite pallet. The 3° swing and tooth rake are inferred to permit finite clearance. This prescribed contact motion idealizes velocity changes at the impulse corner and landing; impact, friction and pendulum energy balance are not simulated.';
+  p.contactQualification='Finite working profiles retain both concentric locks and impulse faces within 0.0006, with 0.0005 nominal clearance. Reaction direction and handoff continuity checked; prescribed motion, not a passive dynamics solution.';
  }
  replace(b.wheelHub,journal(.42,.146,.74));
  for(const bearing of[b.wheelBearing,b.anchorBearing]){replace(bearing,journal(bearing===b.wheelBearing?.40:.33,.146,.42).rotateX(Math.PI/2));bearing.position.z=-.70;}

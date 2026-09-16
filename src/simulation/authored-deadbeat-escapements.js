@@ -171,7 +171,8 @@ function deadbeatAnchorEscapement(movement) {
   const palletSpanAngle = palletSpanTeeth * toothPitch;
   const leftLockReferenceAngle = Math.PI / 2 + palletSpanAngle / 2;
   const rightLockReferenceAngle = Math.PI / 2 - palletSpanAngle / 2;
-  const toothLeanAngle = toothPitch * 0.15;
+  // Forward-raked narrow teeth clear the distinct lock/impulse corners.
+  const toothLeanAngle = toothPitch * -0.65;
   const wheelRootRadius = 2.05;
   const toothTipRadius = sourceRasterWheelTipRadius * sourceScale;
   const wheelInnerRadius = 1.48;
@@ -180,7 +181,7 @@ function deadbeatAnchorEscapement(movement) {
 
   const pendulumPeriod = 4;
   const halfBeatDuration = pendulumPeriod / 2;
-  const anchorAmplitude = THREE.MathUtils.degToRad(5);
+  const anchorAmplitude = THREE.MathUtils.degToRad(3);
   const lockingAmplitudeFraction = 0.34;
   const releaseAmplitudeFraction = 0.06;
   const landingHalfPhase = Math.asin(lockingAmplitudeFraction) / Math.PI;
@@ -190,7 +191,7 @@ function deadbeatAnchorEscapement(movement) {
   const impulseAnchorSpan = (
     lockingAmplitudeFraction - releaseAmplitudeFraction
   ) * anchorAmplitude;
-  const impulseAdvance = THREE.MathUtils.degToRad(1.35);
+  const impulseAdvance = THREE.MathUtils.degToRad(2);
   const freeDropAdvance = halfToothPitch - impulseAdvance;
   const dropDuration = (
     1 - releaseHalfPhase + landingHalfPhase
@@ -237,11 +238,10 @@ function deadbeatAnchorEscapement(movement) {
   );
   const impulseWheelDeltaAtAnchorAngle = (side, anchorAngle) => {
     const progress = impulseProgressAtAnchorAngle(side, anchorAngle);
-    return impulseAdvance * progress ** 2;
+    return impulseAdvance * progress;
   };
   const impulseWheelSlopeAtAnchorAngle = (side, anchorAngle) => {
-    const progress = impulseProgressAtAnchorAngle(side, anchorAngle);
-    return -side * 2 * impulseAdvance * progress / impulseAnchorSpan;
+    return -side * impulseAdvance / impulseAnchorSpan;
   };
   const impulseContactPoint = (side, anchorAngle) => {
     const toothAngle = lockReferenceAngleForSide(side)
@@ -309,16 +309,16 @@ function deadbeatAnchorEscapement(movement) {
     const centerAngle = toothIndex * toothPitch;
     const outlinePoints = [
       new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.48) * wheelRootRadius,
+        Math.cos(centerAngle - toothPitch * 0.15) * wheelRootRadius,
+        Math.sin(centerAngle - toothPitch * 0.15) * wheelRootRadius,
       ),
       new THREE.Vector2(
         Math.cos(centerAngle - toothLeanAngle) * toothTipRadius,
         Math.sin(centerAngle - toothLeanAngle) * toothTipRadius,
       ),
       new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.48) * wheelRootRadius,
+        Math.cos(centerAngle + toothPitch * 0.15) * wheelRootRadius,
+        Math.sin(centerAngle + toothPitch * 0.15) * wheelRootRadius,
       ),
     ];
     for (const point of outlinePoints) {
@@ -527,11 +527,9 @@ function deadbeatAnchorEscapement(movement) {
     / impulseAnchorSpan;
   const releaseProgressAcceleration = -impulseReleaseAnchorAcceleration
     / impulseAnchorSpan;
-  const impulseReleaseWheelSpeed = 2 * impulseAdvance
+  const impulseReleaseWheelSpeed = impulseAdvance
     * releaseProgressRate;
-  const impulseReleaseWheelAcceleration = 2 * impulseAdvance * (
-    releaseProgressRate ** 2 + releaseProgressAcceleration
-  );
+  const impulseReleaseWheelAcceleration = impulseAdvance * releaseProgressAcceleration;
   const freeDropAngularAcceleration = 2 * (
     freeDropAdvance - impulseReleaseWheelSpeed * dropDuration
   ) / dropDuration ** 2;
@@ -587,13 +585,9 @@ function deadbeatAnchorEscapement(movement) {
       const progressAcceleration = -side * anchorAngularAcceleration
         / impulseAnchorSpan;
       wheelAngle = wheelAngleAtHalfLanding(halfBeatIndex)
-        + impulseAdvance * impulseProgress ** 2;
-      wheelAngularSpeed = 2 * impulseAdvance
-        * impulseProgress * progressRate;
-      wheelAngularAcceleration = 2 * impulseAdvance * (
-        progressRate ** 2
-          + impulseProgress * progressAcceleration
-      );
+        + impulseAdvance * impulseProgress;
+      wheelAngularSpeed = impulseAdvance * progressRate;
+      wheelAngularAcceleration = impulseAdvance * progressAcceleration;
       stage = side > 0
         ? 'left-pallet-c-e-return-impulse'
         : 'right-pallet-d-b-return-impulse';
