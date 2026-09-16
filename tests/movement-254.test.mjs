@@ -227,7 +227,7 @@ test('movement 254 has a positive fork gap but does not invent an unspecified ch
     roles.some((role) => /chain-(?:link|span|loop)/.test(role)),
     false,
   );
-  assert.ok(geometry.chainSeatHalfGap > 0.19);
+  assert.ok(geometry.chainSeatHalfGap > 0.10);
   near(
     geometry.maximumReferenceLinkHalfWidth,
     geometry.chainSeatHalfGap,

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -72,16 +73,20 @@ function tenForkChainSprocket(movement) {
   const forkRootRadius = 2.32;
   const forkJunctionRadius = 2.68;
   const forkTipRadius = 3.03;
-  const forkHalfSpread = 0.45;
-  const forkBarRadius = 0.11;
+  const forkHalfSpread = 0.27;
+  const forkBarRadius = 0.065;
   const chainSeatRadius = 2.92;
   const chainSeatProgress =
     (chainSeatRadius - forkJunctionRadius)
     / (forkTipRadius - forkJunctionRadius);
-  const chainSeatHalfGap = forkHalfSpread * chainSeatProgress - forkBarRadius;
+  // A horizontal section through a sloping round prong is wider than its
+  // radius. Use the actual cylinder surface, not a centerline subtraction.
+  const prongSlope = forkHalfSpread / (forkTipRadius - forkJunctionRadius);
+  const chainSeatHalfGap = forkHalfSpread * chainSeatProgress
+    - forkBarRadius * Math.sqrt(1 + prongSlope ** 2);
   const maximumReferenceLinkHalfWidth = chainSeatHalfGap;
-  const shaftRadius = 0.28;
-  const shaftLength = 7.6;
+  const shaftRadius = 0.33;
+  const shaftLength = 4.25;
   const pitchRadius = chainSeatRadius;
   const chainPitch = 2 * pitchRadius * Math.sin(toothStep / 2);
   const angularSpeed = FULL_TURN / 5;
@@ -109,28 +114,40 @@ function tenForkChainSprocket(movement) {
     radius: wheelBodyRadius,
     role: 'broad-edge-profile-sprocket-wheel-body',
   });
+  const replaceWithBore = (mesh, radius, depth) => {
+    mesh.geometry.dispose();
+    mesh.geometry = boredLatheGeometry([
+      { radial: radius, axial: -depth / 2 },
+      { radial: radius, axial: depth / 2 },
+    ], shaftRadius + .005, 96);
+  };
+  replaceWithBore(wheelBody, wheelBodyRadius, wheelWidth);
   sprocketRotor.add(wheelBody);
 
   const sideRims = [-1, 1].map((side) => {
     const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(wheelBodyRadius, 0.09, 12, 96),
+      new THREE.TorusGeometry(wheelBodyRadius - .025, 0.025, 8, 96),
       darkMaterial,
     );
     rim.rotation.y = Math.PI / 2;
-    rim.position.x = side * (wheelWidth / 2 + 0.025);
+    rim.position.x = side * (wheelWidth / 2 - .025);
     rim.userData.role =
       `sprocket-${side < 0 ? 'left' : 'right'}-side-rim`;
+    // The engraving's edge lines are the drum boundary, not separate hoops.
+    // Coincident dark tubes produced speckles along the actual drum edge.
+    rim.visible = false;
     sprocketRotor.add(rim);
     return rim;
   });
 
   const hub = makeAxialCylinder({
-    depth: wheelWidth + 0.38,
+    depth: wheelWidth + 0.44,
     material: darkMaterial,
-    radius: 0.58,
+    radius: 0.69,
     role: 'sprocket-wheel-rigid-hub',
     segments: 48,
   });
+  replaceWithBore(hub, .69, wheelWidth + .44);
   sprocketRotor.add(hub);
 
   const shaft = makeAxialCylinder({
@@ -143,10 +160,11 @@ function tenForkChainSprocket(movement) {
   sprocketRotor.add(shaft);
 
   const shaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 0.68, 0.12),
+    new THREE.CircleGeometry(0.045, 24),
     whiteMaterial,
   );
-  shaftIndex.position.set(shaftLength / 2 + 0.035, 0.36, 0);
+  shaftIndex.rotation.y = Math.PI / 2;
+  shaftIndex.position.set(shaftLength / 2 + 0.0005, 0.18, 0);
   shaftIndex.userData.role = 'white-shaft-end-speed-index';
   sprocketRotor.add(shaftIndex);
 
@@ -266,11 +284,11 @@ function tenForkChainSprocket(movement) {
     sprocketRotor,
     wheelBody,
   };
-  root.userData.cameraDistanceScale = 0.92;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.45, -3.1, -3.1),
-    new THREE.Vector3(3.45, 3.1, 3.1),
-  );
+  root.userData.cameraDistanceScale = 0.90;
+  root.userData.cameraFov = 8;
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = 5;
+  root.userData.reconstructionNote = 'A source-proportioned fork sprocket with a real shaft bore. Ten forks and the nominal pitch radius are inferred; the source specifies no chain shape or route. Rotation is prescribed and the reported seat gap describes the finite prongs, not validated chain engagement or load transfer.';
   root.userData.chainDefinition = {
     exactLinkFormSpecifiedBySource: false,
     exactRouteSpecifiedBySource: false,
@@ -367,11 +385,27 @@ function tenForkChainSprocket(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  root.traverse(object => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
+  const bounds = new THREE.Box3(), point = new THREE.Vector3();
+  for (let sample = 0; sample <= 40; sample++) {
+    update(cyclePeriod * sample / 40); root.updateMatrixWorld(true);
+    root.traverseVisible(object => {
+      const positions = object.geometry?.attributes.position;
+      if (positions) for (let i = 0; i < positions.count; i++) {
+        bounds.expandByPoint(point.fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld));
+      }
+    });
+  }
+  root.userData.cameraFitBounds = bounds.expandByScalar(.08);
+  update(0);
   markShadows(root);
+  shaftIndex.castShadow = false; shaftIndex.receiveShadow = false;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(3.7, 2.8, 10.5),
+    cameraDirection: new THREE.Vector3(0, 0, 15),
   };
 }
 
