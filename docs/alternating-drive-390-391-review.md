@@ -1,5 +1,11 @@
 # Alternating drives 390–391: bounded finite-interface pass
 
+Follow-up: [390 finite pawl contact](dual-band-390-contact-review.md) and
+[391 rack handoff](weighted-rack-391-contact-review.md) supersede the specific
+geometric residuals closed there. This earlier review remains the evidence for
+the original groove/bore/guide corrections; its residual measurements describe
+the earlier implementation, not the updated contact geometry.
+
 Both movements remain **partial**. This pass fixes pulley journals, band grooves, guide slots and the active rack mesh; it does not certify their remaining pawl/rack handoffs.
 
 ## Sources

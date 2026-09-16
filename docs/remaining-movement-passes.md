@@ -683,3 +683,24 @@ matching prescribed coordinates or by the construction screen.
 
 The final production build and nine-model screen pass, with no screen flags.
 All nine packaged desktop/playback/mobile checks pass in 24.7 seconds.
+
+## Twenty-eighth parallel batch
+
+- **244/287:** finite working friction surfaces and keyed sleeve/weight passages,
+  with source-facing views and readable preserved ratios.
+- **288/289:** qualify 288's finite lock/recoil path and correct both sets of
+  journals. Keep 289's incompatible finite handoff explicitly queued.
+- **390:** close the finite pawl/ratchet penetration with opposed bored pawls
+  and continuous return. Flywheel coasting and impact remain unresolved.
+- **391:** correct inactive rack withdrawal and weight clearance with coherent
+  pivot/stroke/guide geometry, rather than reducing useful tooth engagement.
+  Its elbow selector contact still interferes and remains queued.
+
+See [review progress](review-progress.md) for the family evidence and explicit
+limits. This pass supersedes the preceding geometric contact residuals only
+where the new family review proves closure; it does not certify passive dynamics.
+
+All 83 distinct focused checks pass, including unchanged 303 behavior and the
+final shared-interface check after 391's stroke change. The production build and
+six-model screen pass with no flags. All six packaged desktop/playback/mobile
+checks pass in 17.1 seconds. The overall review remains active.

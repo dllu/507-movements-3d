@@ -1,3 +1,33 @@
+# Twenty-eighth family pass: finite handoffs, escapements and working clamps
+
+Six movements receive corrections in four parallel lanes: 244, 287–289 and
+390–391. The overall review remains active.
+
+- [244/287 brake and governor](clamp-governor-brake-review.md): finite brake
+  liners, an open suspension eye, real keyed sleeve/weight passages and a
+  shaft-fixed feather. Source-facing views and readable response timing.
+- [288/289 anchor escapements](anchor-escapement-family-review.md): 288 retains
+  actual locking faces with measured clearance and opposing reaction direction;
+  both gain proper journals and framing. **289 remains partial:** its existing
+  impulse/handoff law crosses the finite pallet faces and needs reconstruction.
+- [390 dual-band ratchets](dual-band-390-contact-review.md): opposed finite
+  bored pawls, asymmetric teeth, continuous return and explicit take-up close
+  the previous pawl penetration. Passive coasting and pickup impact remain
+  unresolved; the short output dwells are an explicit source discrepancy.
+- [391 weighted racks](weighted-rack-391-contact-review.md): corrected rack
+  withdrawal and weight clearance with a shorter source-informed stroke.
+  **The elbow selector remains partial:** its finite guide-pin contact still
+  interferes; a cam experiment with the wrong reaction direction was rejected.
+
+These corrections use shared geometry and small offline contact envelopes.
+Actual locking/working-face proximity is checked separately from clearance, so
+removing interference does not silently remove the mechanism's interaction.
+
+All 83 distinct focused checks pass, including 303's unchanged regression and
+the final shared-interface checks after 391's stroke correction. The production
+build passes in 19.87 seconds. The six-model construction/update screen has no
+flags, and all six packaged desktop/playback/mobile checks pass (17.1 seconds).
+
 # Twenty-seventh family pass: governors, rolling contacts and reciprocating drives
 
 Nine movements receive bounded corrections in four parallel lanes: 274, 357,
