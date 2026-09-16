@@ -89,7 +89,7 @@ test('movement 342 is the atmospheric single-acting chain beam engine', () => {
   assert.equal(blocks.pumpJointAnchor.parent, blocks.beam);
   assert.equal(blocks.pistonTopAnchor.parent, blocks.piston);
   assert.equal(blocks.pumpRodTopAnchor.parent, blocks.weightedPumpRod);
-  assert.equal(blocks.chainLinks.length, 11);
+  assert.equal(blocks.chainLinks.length, 10);
   blocks.chainLinks.forEach(({ link }) => assert.equal(link.parent, model.root));
   assert.equal(contacts.beamPivot.fixedMember, blocks.fixedFrame);
   assert.equal(contacts.beamPivot.movingMember, blocks.beam);
@@ -107,7 +107,7 @@ test('movement 342 is the atmospheric single-acting chain beam engine', () => {
   assert.equal(roles.filter((role) => role ===
     'gravity-hanging-pump-rod-at-opposite-end-of-beam').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'articulated-atmospheric-engine-chain-link').length, 11);
+    'articulated-atmospheric-engine-chain-link').length, 10);
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
   disposeModel(model.root);
 });
@@ -506,7 +506,7 @@ test('movement 342 renderer binds the beam, chain, piston, and weighted pump rod
       new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, 0.42),
       1e-15, `rendered piston-chain pin at ${time}`);
     vector3Near(worldPosition(blocks.pistonHeadAnchor),
-      new THREE.Vector3(state.pistonHead.x, state.pistonHead.y, 0.24),
+      new THREE.Vector3(state.pistonHead.x, state.pistonHead.y, .42),
       1e-15, `rendered piston head at ${time}`);
     vector3Near(worldPosition(blocks.pumpRodTopAnchor),
       new THREE.Vector3(state.pumpRodTop.x, state.pumpRodTop.y, 0.20),

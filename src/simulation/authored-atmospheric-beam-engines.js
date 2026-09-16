@@ -1,3 +1,4 @@
+import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -78,32 +79,37 @@ function makeFlexibleChainLink({
   darkMaterial,
   depth,
   nominalPitch,
+  planeZ,
   width,
 }) {
   const link = new THREE.Group();
   link.userData.nominalPitch = nominalPitch;
   link.userData.role = 'articulated-atmospheric-engine-chain-link';
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(nominalPitch, width, depth),
+    new THREE.BoxGeometry(nominalPitch - .15, width, depth),
     chainMaterial,
   );
-  body.position.set(nominalPitch / 2, 0, 0.76);
+  body.position.set(nominalPitch / 2, 0, planeZ);
   body.userData.role = 'green-chain-link-side-plate';
   const startBoss = cylinderAlongZ(width * 0.62, depth * 1.25,
     chainMaterial, 28);
-  startBoss.position.z = 0.76;
+  startBoss.geometry.dispose();
+  startBoss.geometry = boredCylinderGeometry(width * .62, .054, depth * 1.25);
+  startBoss.position.z = planeZ;
   startBoss.userData.role = 'chain-link-start-boss';
   const endBoss = cylinderAlongZ(width * 0.62, depth * 1.25,
     chainMaterial, 28);
-  endBoss.position.set(nominalPitch, 0, 0.76);
+  endBoss.geometry.dispose();
+  endBoss.geometry = boredCylinderGeometry(width * .62, .054, depth * 1.25);
+  endBoss.position.set(nominalPitch, 0, planeZ);
   endBoss.userData.role = 'chain-link-end-boss';
-  const startPin = cylinderAlongZ(width * 0.21, depth * 1.75,
+  const startPin = cylinderAlongZ(.051, .84,
     darkMaterial, 22);
-  startPin.position.z = 0.76;
+  startPin.position.z = .57;
   startPin.userData.role = 'chain-link-start-pin';
-  const endPin = cylinderAlongZ(width * 0.21, depth * 1.75,
+  const endPin = cylinderAlongZ(.051, .84,
     darkMaterial, 22);
-  endPin.position.set(nominalPitch, 0, 0.76);
+  endPin.position.set(nominalPitch, 0, .57);
   endPin.userData.role = 'chain-link-end-pin';
   const startAnchor = new THREE.Object3D();
   startAnchor.position.z = 0.76;
@@ -111,6 +117,14 @@ function makeFlexibleChainLink({
   const endAnchor = new THREE.Object3D();
   endAnchor.position.set(nominalPitch, 0, 0.76);
   endAnchor.userData.role = 'analytic-chain-link-end';
+  const roller = cylinderAlongZ(.09, .20, chainMaterial, 64);
+  roller.geometry.dispose();
+  roller.geometry = boredCylinderGeometry(.09, .054, .20);
+  roller.position.z = .30;
+  roller.userData.role = 'chain-pin-roller-bearing-on-circular-shoe';
+  const endRoller = roller.clone();
+  endRoller.position.x = nominalPitch;
+  link.add(roller, endRoller);
   link.add(
     body,
     startBoss,
@@ -121,6 +135,8 @@ function makeFlexibleChainLink({
     endAnchor,
   );
   return {
+    roller,
+    endRoller,
     body,
     endAnchor,
     endBoss,
@@ -206,7 +222,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
   const pumpRodJoint = sourcePumpRodJoint.clone().multiplyScalar(sourceScale);
   const pumpRodLength = sourcePumpRodLength * sourceScale;
   const chainLinkPitch = sourceChainLinkPitch * sourceScale;
-  const chainLinkCount = 11;
+  const chainLinkCount = 10;
 
   const rotatePoint = (point, angle) => new THREE.Vector2(
     point.x * Math.cos(angle) - point.y * Math.sin(angle),
@@ -603,10 +619,10 @@ function atmosphericChainBeamPumpingEngine(movement) {
     'fixed-atmospheric-engine-frame-open-cylinder-and-beam-bearing';
   const framePlaneZ = -0.64;
   const baseRail = new THREE.Mesh(
-    new THREE.BoxGeometry(29 * sourceScale, 0.72 * sourceScale, 0.88),
+    new THREE.BoxGeometry(29 * sourceScale, 0.72 * sourceScale, 1.8),
     frameMaterial,
   );
-  baseRail.position.set(-2 * sourceScale, -23.1 * sourceScale, framePlaneZ);
+  baseRail.position.set(-2 * sourceScale, -23.1 * sourceScale, -.2);
   baseRail.userData.fixed = true;
   baseRail.userData.role = 'fixed-atmospheric-engine-foundation';
   fixedFrame.add(baseRail);
@@ -636,10 +652,12 @@ function atmosphericChainBeamPumpingEngine(movement) {
   });
   const pivotBearing = cylinderAlongZ(1.12 * sourceScale, 0.82,
     frameMaterial, 44);
-  pivotBearing.position.set(0, 0, -0.25);
+  pivotBearing.position.set(0, 0, -.40);
+  pivotBearing.geometry.dispose();
+  pivotBearing.geometry = boredCylinderGeometry(1.12 * sourceScale, .38 * sourceScale + .004, .82);
   pivotBearing.userData.fixed = true;
   pivotBearing.userData.role = 'fixed-main-beam-bearing-at-origin';
-  const pivotShaft = cylinderAlongZ(0.38 * sourceScale, 1.56,
+  const pivotShaft = cylinderAlongZ(0.38 * sourceScale, 1.90,
     darkMaterial, 36);
   pivotShaft.position.set(0, 0, 0.12);
   pivotShaft.userData.fixed = true;
@@ -647,7 +665,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
   fixedFrame.add(pivotBearing, pivotShaft);
 
   const cylinderTopY = -11.75 * sourceScale;
-  const cylinderBottomY = -22.55 * sourceScale;
+  const cylinderBottomY = -22.85 * sourceScale;
   const cylinderHalfWidth = 3.05 * sourceScale;
   const cylinderWalls = [-1, 1].map((side, index) => {
     const wall = new THREE.Mesh(
@@ -741,7 +759,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
   );
   rightBrace.userData.role = 'right-diagonal-rocking-beam-brace';
   const crownPost = beamBetween3D(
-    new THREE.Vector3(0, 0, 0.28),
+    new THREE.Vector3(0, .16, 0.28),
     crownPoint,
     0.48 * sourceScale,
     0.30,
@@ -763,21 +781,27 @@ function atmosphericChainBeamPumpingEngine(movement) {
     'curved-left-beam-segment-concentric-with-main-pivot';
   const pivotBoss = cylinderAlongZ(0.88 * sourceScale, 0.47,
     beamMaterial, 40);
+  pivotBoss.geometry.dispose();
+  pivotBoss.geometry = boredCylinderGeometry(.88 * sourceScale, .38 * sourceScale + .004, .47);
   pivotBoss.position.z = 0.34;
   pivotBoss.userData.role = 'moving-main-beam-pivot-boss';
   const pivotBore = cylinderAlongZ(0.33 * sourceScale, 0.52,
     darkMaterial, 32);
+  pivotBore.geometry.dispose();
+  pivotBore.geometry = boredCylinderGeometry(.15, .38 * sourceScale + .004, .52);
   pivotBore.position.z = 0.35;
   pivotBore.userData.role = 'moving-main-beam-pivot-bore';
-  const chainAttachmentBoss = cylinderAlongZ(0.46 * sourceScale, 0.46,
+  const chainAttachmentBoss = cylinderAlongZ(0.46 * sourceScale, .20,
     chainMaterial, 32);
+  chainAttachmentBoss.geometry.dispose();
+  chainAttachmentBoss.geometry = boredCylinderGeometry(.46 * sourceScale, .054, .20);
   chainAttachmentBoss.position.set(
     rawChainAttachment.x,
     rawChainAttachment.y,
-    0.62,
+    .40,
   );
   chainAttachmentBoss.userData.role = 'beam-chain-terminal-boss';
-  const chainAttachmentPin = cylinderAlongZ(0.17 * sourceScale, 0.60,
+  const chainAttachmentPin = cylinderAlongZ(0.17 * sourceScale, .80,
     whiteMaterial, 26);
   chainAttachmentPin.position.set(
     rawChainAttachment.x,
@@ -836,29 +860,31 @@ function atmosphericChainBeamPumpingEngine(movement) {
     'vertical-piston-and-rod-in-open-top-atmospheric-cylinder';
   const pistonTopBoss = cylinderAlongZ(0.43 * sourceScale, 0.38,
     pistonMaterial, 32);
+  pistonTopBoss.geometry.dispose();
+  pistonTopBoss.geometry = boredCylinderGeometry(.43 * sourceScale, .054, .38);
   pistonTopBoss.position.z = 0.42;
   pistonTopBoss.userData.role = 'piston-rod-chain-connection-eye';
-  const pistonTopPin = cylinderAlongZ(0.15 * sourceScale, 0.52,
+  const pistonTopPin = cylinderAlongZ(0.15 * sourceScale, .78,
     whiteMaterial, 24);
   pistonTopPin.position.z = 0.43;
   pistonTopPin.userData.role = 'piston-rod-chain-connection-pin';
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38 * sourceScale, pistonRodLength, 0.22),
+    new THREE.BoxGeometry(0.38 * sourceScale, pistonRodLength - .07, 0.22),
     pistonMaterial,
   );
-  pistonRod.position.set(0, -pistonRodLength / 2, 0.42);
+  pistonRod.position.set(0, -(pistonRodLength + .13) / 2, .42);
   pistonRod.userData.role = 'long-atmospheric-piston-rod';
   const pistonHead = new THREE.Mesh(
     new THREE.BoxGeometry(5.25 * sourceScale, 0.90 * sourceScale, 0.74),
     pistonMaterial,
   );
-  pistonHead.position.set(0, pistonHeadCenterOffset, 0.24);
+  pistonHead.position.set(0, pistonHeadCenterOffset, .42);
   pistonHead.userData.role = 'working-atmospheric-piston-head';
   const pistonTopAnchor = new THREE.Object3D();
   pistonTopAnchor.position.z = 0.42;
   pistonTopAnchor.userData.role = 'analytic-top-of-piston-rod';
   const pistonHeadAnchor = new THREE.Object3D();
-  pistonHeadAnchor.position.set(0, pistonHeadCenterOffset, 0.24);
+  pistonHeadAnchor.position.set(0, pistonHeadCenterOffset, .42);
   pistonHeadAnchor.userData.role = 'analytic-piston-head-center';
   piston.add(
     pistonTopBoss,
@@ -868,6 +894,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     pistonTopAnchor,
     pistonHeadAnchor,
   );
+  for (const part of [...cylinderWalls, ...cylinderLip, cylinderBottom, cylinderFoot, ...pistonGuides]) part.position.z = .42;
   root.add(piston);
 
   const weightedPumpRod = new THREE.Group();
@@ -876,19 +903,21 @@ function atmosphericChainBeamPumpingEngine(movement) {
     'gravity-hanging-pump-rod-at-opposite-end-of-beam';
   const pumpRodTopBoss = cylinderAlongZ(0.45 * sourceScale, 0.40,
     pistonMaterial, 32);
-  pumpRodTopBoss.position.z = 0.20;
+  pumpRodTopBoss.geometry.dispose();
+  pumpRodTopBoss.geometry = boredCylinderGeometry(.45 * sourceScale, .054, .20);
+  pumpRodTopBoss.position.z = .65;
   pumpRodTopBoss.userData.role = 'weighted-pump-rod-top-eye';
   const pumpRodBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42 * sourceScale, pumpRodLength, 0.24),
+    new THREE.BoxGeometry(0.42 * sourceScale, pumpRodLength - .10, .20),
     pistonMaterial,
   );
-  pumpRodBody.position.set(0, -pumpRodLength / 2, 0.20);
+  pumpRodBody.position.set(0, -(pumpRodLength + .10) / 2, .65);
   pumpRodBody.userData.role = 'heavy-pump-rod-return-member';
   const pumpWeight = new THREE.Mesh(
     new THREE.BoxGeometry(2.7 * sourceScale, 1.35 * sourceScale, 0.82),
     pistonMaterial,
   );
-  pumpWeight.position.set(0, -pumpRodLength, 0.08);
+  pumpWeight.position.set(0, -pumpRodLength, .65);
   pumpWeight.userData.role = 'pump-rod-return-weight';
   const pumpRodTopAnchor = new THREE.Object3D();
   pumpRodTopAnchor.position.z = 0.20;
@@ -899,6 +928,12 @@ function atmosphericChainBeamPumpingEngine(movement) {
     pumpWeight,
     pumpRodTopAnchor,
   );
+  const pumpJointPin = cylinderAlongZ(.051, .8, whiteMaterial);
+  pumpJointPin.position.set(pumpRodJoint.x, pumpRodJoint.y, .45);
+  pumpJointPin.userData.role = 'beam-to-pump-rod-common-pin';
+  beam.add(pumpJointPin);
+  pumpJointBoss.geometry.dispose();
+  pumpJointBoss.geometry = boredCylinderGeometry(.50 * sourceScale, .054, .44);
   root.add(weightedPumpRod);
 
   const pressureVolume = new THREE.Mesh(
@@ -916,17 +951,20 @@ function atmosphericChainBeamPumpingEngine(movement) {
       darkMaterial,
       depth: 0.13,
       nominalPitch: chainLinkPitch,
+      planeZ: index % 2 ? .87 : .64,
       width: 0.57 * sourceScale,
     });
     parts.link.userData.index = index;
+    parts.endPin.visible = index === chainLinkCount - 1;
+    parts.endRoller.visible = index === chainLinkCount - 1;
     root.add(parts.link);
     return parts;
   });
   const terminalConnectorNominalLength = constantChainPathLength
     - chainLinkCount * chainLinkPitch;
   const chainTerminalConnector = new THREE.Mesh(
-    new THREE.BoxGeometry(terminalConnectorNominalLength,
-      0.14 * sourceScale, 0.14),
+    new THREE.BoxGeometry(terminalConnectorNominalLength - .15,
+      0.14 * sourceScale, .05),
     chainMaterial,
   );
   chainTerminalConnector.position.z = 0.76;
@@ -934,6 +972,11 @@ function atmosphericChainBeamPumpingEngine(movement) {
     terminalConnectorNominalLength;
   chainTerminalConnector.userData.role =
     'short-terminal-chain-connector-to-rocking-beam';
+  const terminalEyes = [0, 1].map(() => {
+    const eye = cylinderAlongZ(.10, .05, chainMaterial);
+    eye.geometry.dispose(); eye.geometry = boredCylinderGeometry(.10, .054, .05);
+    eye.userData.role = 'bored-last-chain-link-eye'; root.add(eye); return eye;
+  });
   root.add(chainTerminalConnector);
 
   const contacts = {
@@ -1015,10 +1058,11 @@ function atmosphericChainBeamPumpingEngine(movement) {
       const chordLength = delta.length();
       parts.link.position.set(start.x, start.y, 0);
       parts.link.rotation.z = Math.atan2(delta.y, delta.x);
-      parts.body.scale.x = chordLength / chainLinkPitch;
+      parts.body.scale.x = (chordLength - .15) / (chainLinkPitch - .15);
       parts.body.position.x = chordLength / 2;
       parts.endBoss.position.x = chordLength;
       parts.endPin.position.x = chordLength;
+      parts.endRoller.position.x = chordLength;
       parts.endAnchor.position.x = chordLength;
       parts.link.userData.chordLength = chordLength;
       parts.link.userData.startCurve = chainPointAtDistance(
@@ -1034,6 +1078,8 @@ function atmosphericChainBeamPumpingEngine(movement) {
       state,
       chainLinkCount * chainLinkPitch,
     ).point;
+    terminalEyes[0].position.set(lastChainPoint.x, lastChainPoint.y, .76);
+    terminalEyes[1].position.set(state.chain.attachmentPoint.x, state.chain.attachmentPoint.y, .76);
     placeSpan(chainTerminalConnector, lastChainPoint,
       state.chain.attachmentPoint, terminalConnectorNominalLength);
 
@@ -1043,7 +1089,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     pressureVolume.position.set(
       pistonLineX,
       cylinderBottomY + volumeHeight / 2,
-      -0.02,
+      .42,
     );
     if (state.phase < 0.5) {
       pressureMaterial.color.setHex(PALETTE.fluid);
@@ -1113,6 +1159,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     chainLinks,
     chainShoe,
     chainTerminalConnector,
+    terminalEyes,
     crownPost,
     cylinderBottom,
     cylinderFoot,
@@ -1136,6 +1183,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     pressureVolume,
     pumpJointAnchor,
     pumpJointBoss,
+    pumpJointPin,
     pumpRodBody,
     pumpRodTopAnchor,
     pumpRodTopBoss,
@@ -1260,11 +1308,12 @@ function atmosphericChainBeamPumpingEngine(movement) {
       'the piston descends 8.377578 source units while the far beam end raises the weighted pump rod',
   };
 
-  update(0);
+  fitPistonGuide(root, update, cyclePeriod);
+  root.userData.cameraFov = 8;
   markShadows(root);
   pressureVolume.castShadow = false;
   return {
-    cameraDirection: new THREE.Vector3(5.0, 3.5, 13.8),
+    cameraDirection: new THREE.Vector3(.6, .3, 14),
     root,
     update,
   };

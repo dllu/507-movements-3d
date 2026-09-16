@@ -1,3 +1,39 @@
+# Seventh family pass: cam contact, engine passages and carried gears
+
+Nine movements received bounded corrections across four parallel lanes:
+272/276, 342–343, 344–346 and 412/495. All 92 focused tests, the production build
+and nine packaged desktop playback/mobile-resize checks pass. Shared bored
+links, finite plates and journal geometry replace cosmetic pin holes and
+obstructed passages. The complete 507-movement review remains active.
+
+272 loses a raised contact overlay that intruded into its follower. 276 loses
+an outward cam bevel and rim interference; its connected rear yoke now clears
+the input shaft. Finite working-surface tests retain nearby contact and include
+negative controls for the old faults. See the [cam review](movement-272-276.md)
+for ideal pitch-law and preload limitations.
+
+342–343 have aligned piston/cylinder sections, sufficient stroke clearance,
+engaged pins and separated moving layers. 342's rollers sit on its circular
+shoe; its final chain connector now has room for both eyes. 343's bored rods,
+crosspiece and frame bearings reuse shared components. See the
+[beam/upright review](beam-upright-engine-review.md), including the retained
+continuous-chain approximation and source-crop reconstructions.
+
+344–346 now have actual rod passages through their covers and glands. Split
+trunnions clear 344's piston; crank layers and 346's side rods and crosshead
+clear their neighbors. Exact analytic laws are unchanged. The
+[oscillating/table review](oscillating-table-engine-review.md) records the
+open-section cylinder and support simplifications.
+
+412 now presents the engraved base wheel-work, with a bored three-lobed carrier
+and matching 25-degree involutes. 495's output mounting phase and deeper bevel
+flanks repair sampled interference and an estimated contact ratio below one.
+A 33-pose working-solid audit finds zero sampled penetration across 1.94 million
+queries; maximum nearest gaps are 0.000424 and 0.001852 model units. Real shaft
+passages and separated journal seats supplement that tooth audit. Refreshed
+playback retains exact ratios. The [gear review](movement-412-495.md) qualifies
+approximate bevel profiles, inferred fits and prescribed mode changes.
+
 # Sixth family pass: generated worm wheels, finite catches and guided links
 
 Twelve movements received corrections across four parallel lanes: 202/264,

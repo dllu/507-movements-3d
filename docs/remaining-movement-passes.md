@@ -237,3 +237,21 @@ loaded worm contact, inferred cone guides and legacy linkage joints remain in
 the family reviews linked from [review progress](review-progress.md). This pass
 uses geometry generated offline and existing analytic constraints; no new live
 browser physics or hand-traced decorative contours are needed.
+
+## Seventh parallel batch
+
+- **272/276:** corrected finite cam/follower contact, inset trim, bored rollers
+  and a relieved rear yoke; retained existing analytic motion.
+- **342–343:** shared bored joints, engaged pins, corrected chain/shoe depth,
+  piston/cylinder alignment, stroke clearance and connected bearing supports.
+- **344–346:** real rod passages through covers/glands, separated trunnions and
+  crank layers, and a crosshead that fits between its guides.
+- **412/495:** corrected involute mesh and bevel phase/depth, bored journals,
+  carrier supports and source-facing views. 412 shows the engraved base gearing;
+  both retain their exact ratios and use refreshed readable playback profiles.
+
+92 focused tests, the production build and nine packaged playback/mobile checks
+pass. Finite mesh audits distinguish sampled clearance from loaded dynamics;
+342's continuous-chain approximation, cam preload, open engine sections and
+approximate bevel flanks remain documented in the reviews linked from
+[review progress](review-progress.md). The complete review remains active.

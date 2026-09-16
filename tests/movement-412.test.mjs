@@ -153,7 +153,7 @@ test('movement 412 records Brown’s plate, stated operating modes, and unavaila
   assert.match(evidence.reconstructionDisclosure,
     /independently engineered physically compatible interpretation/);
   assert.equal(data.displayTreatment.skinOpacity, 0.14);
-  assert.equal(data.displayTreatment.mechanicalGeometryOmitted, false);
+  assert.equal(data.displayTreatment.mechanicalGeometryOmitted, true);
   disposeModel(model.root);
 });
 

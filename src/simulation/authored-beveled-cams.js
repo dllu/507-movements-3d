@@ -204,7 +204,7 @@ function beveledDiskInclinedFollower(movement) {
   const camBackX = 0.48;
   const bevelTiltCoefficient = 0.18;
   const bevelAngle = Math.atan(bevelTiltCoefficient);
-  const bevelSurfaceOffset = 0.012;
+  const bevelSurfaceOffset = 0;
   const camSegments = 128;
   const shaftRadius = 0.13;
   const shaftLength = 5.7;
@@ -380,6 +380,11 @@ function beveledDiskInclinedFollower(movement) {
     roughness: 0.54,
     side: THREE.DoubleSide,
   });
+  // Offset depth testing, not the physical face: avoid z-fighting without
+  // lifting the visible working surface into the tangent shoe.
+  bevelMaterial.polygonOffset = true;
+  bevelMaterial.polygonOffsetFactor = -1;
+  bevelMaterial.polygonOffsetUnits = -1;
   const drivenMaterial = matte(PALETTE.driven, {
     metalness: 0.12,
     roughness: 0.64,
@@ -605,8 +610,8 @@ function beveledDiskInclinedFollower(movement) {
     translationIndex,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.38, -2.82, -1.2),
-    new THREE.Vector3(2.92, 4.02, 2.25),
+    new THREE.Vector3(-4.85, -2.82, -2.12),
+    new THREE.Vector3(2.95, 4.35, 2.12),
   );
   root.userData.geometry = {
     bevelAngle,
@@ -740,11 +745,16 @@ function beveledDiskInclinedFollower(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   markShadows(root);
+  bevelFace.castShadow = false;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.3, 4.5, 10.8),
+    cameraDirection: new THREE.Vector3(-6.3, 4.5, 10.8),
   };
 }
 

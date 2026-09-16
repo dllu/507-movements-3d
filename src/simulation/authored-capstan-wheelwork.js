@@ -1,3 +1,4 @@
+import { correctCapstanWheelwork } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -284,6 +285,7 @@ function capstanWheelwork(movement) {
       radius: planetPitchRadius,
       teeth: planetTeeth,
       toothHeight: module * 2,
+      pressureAngle: 25 * Math.PI / 180,
     });
     planet.position.set(
       Math.cos(angle) * planetCenterRadius,
@@ -311,6 +313,7 @@ function capstanWheelwork(movement) {
     radius: sunPitchRadius,
     teeth: sunTeeth,
     toothHeight: module * 2,
+    pressureAngle: 25 * Math.PI / 180,
   });
   sunGear.position.y = gearPlaneY;
   sunGear.userData.role = 'fifteen-tooth-central-sun-on-spindle';
@@ -360,6 +363,8 @@ function capstanWheelwork(movement) {
     pitchRadius: annulusPitchRadius,
     teeth: annulusTeeth,
     toothIndexOffset: Math.PI / annulusTeeth,
+    pressureAngle: 25 * Math.PI / 180,
+    backlash: .001,
   });
   annulusGear.position.y = gearPlaneY;
   annulusGear.userData.role =
@@ -932,10 +937,11 @@ function capstanWheelwork(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(7.8, 6.2, 10.4);
   root.userData.groundFloorY = 0;
+  correctCapstanWheelwork(root);
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredCapstanWheelworkMovement(movement) {

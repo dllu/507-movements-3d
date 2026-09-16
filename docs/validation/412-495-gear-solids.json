@@ -1,0 +1,95 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-capstan-wheelwork.js",
+      "sha256": "03b750b223665064972a050519de747d7b0a2f2ac2cbc02a45492735122bf071"
+    },
+    {
+      "file": "src/simulation/authored-entwistle-gearing.js",
+      "sha256": "e54df7f846687708e1451021aafbc484d819c4e3e868f0f51b4dce5075fda3f1"
+    },
+    {
+      "file": "src/simulation/capstan-entwistle-corrections.js",
+      "sha256": "998238f73fc019057f195780381a0ed878a4c335ba7729f45a8fdafa8688aa23"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "5f09464aa8b09fb057240033601f85307df0f2fc8897df276ea17ac490e321c6"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    }
+  ],
+  "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment through one full programmed 412 mode cycle and one complete 495 tooth period. Hubs, shafts, supports excluded. Distances capped at .15; sampled closest points bound engagement gaps.",
+  "results": [
+    {
+      "id": 412,
+      "poses": 33,
+      "queries": 1496257,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-1-on-carrier",
+          "maximumSampledGap": 0.00029450333256035013,
+          "minimumSampledGap": 0.00009268001023568512
+        },
+        {
+          "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-1-on-carrier",
+          "maximumSampledGap": 0.0004238065683567892,
+          "minimumSampledGap": 3.3693957819102856e-8
+        },
+        {
+          "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-2-on-carrier",
+          "maximumSampledGap": 0.0002945058588436635,
+          "minimumSampledGap": 0.00009265504483219621
+        },
+        {
+          "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-2-on-carrier",
+          "maximumSampledGap": 0.0004237698870937379,
+          "minimumSampledGap": 6.140812554370733e-8
+        },
+        {
+          "pair": "fifteen-tooth-central-sun-on-spindle-equal-fixed-axis-idler-pinion-3-on-carrier",
+          "maximumSampledGap": 0.00029450585884478194,
+          "minimumSampledGap": 0.00009265504483367219
+        },
+        {
+          "pair": "forty-five-tooth-internal-annulus-rigid-with-barrel-equal-fixed-axis-idler-pinion-3-on-carrier",
+          "maximumSampledGap": 0.00042376988709241336,
+          "minimumSampledGap": 6.140812527846006e-8
+        }
+      ]
+    },
+    {
+      "id": 495,
+      "poses": 33,
+      "queries": 441886,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "fixed-equal-bevel-gear-A-carried-equal-bevel-planet-B",
+          "maximumSampledGap": 0.0018519838293603922,
+          "minimumSampledGap": 0.0018421205733242403
+        },
+        {
+          "pair": "loose-equal-bevel-output-gear-C-carried-equal-bevel-planet-B",
+          "maximumSampledGap": 0.0018519838293603922,
+          "minimumSampledGap": 0.0018421205733242503
+        }
+      ]
+    }
+  ]
+}

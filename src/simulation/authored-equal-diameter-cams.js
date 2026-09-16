@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {capsule, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -12,7 +13,7 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 function centeredExtrusion(shape, depth, bevel = 0.018) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevel > 0,
     bevelSegments: 2,
     bevelSize: bevel,
     bevelThickness: bevel,
@@ -60,7 +61,7 @@ function makeRoller({
   rotor.userData.role = `${role}-free-rolling-rotor`;
   roller.add(rotor);
 
-  const tread = cylinderAlongZ(radius, depth, drivenMaterial, 48);
+  const tread = new THREE.Mesh(ring(radius * 0.4, radius, -depth / 2, depth / 2, 96), drivenMaterial);
   tread.userData.role = `${role}-tread`;
   rotor.add(tread);
 
@@ -77,11 +78,11 @@ function makeRoller({
 
   const rotationIndices = [-1, 1].map((side) => {
     const index = new THREE.Mesh(
-      new THREE.BoxGeometry(radius * 0.62, radius * 0.13, 0.025),
+      new THREE.BoxGeometry(radius * 0.44, radius * 0.13, 0.025),
       whiteMaterial,
     );
     index.position.set(
-      radius * 0.31,
+      radius * 0.65,
       0,
       side * (depth / 2 + 0.025),
     );
@@ -215,7 +216,9 @@ function equalDiameterCam(movement) {
   ) * sourceScale / 2;
   const barDepth = 0.25;
   const barHalfLength = 4.62;
-  const barZ = -0.39;
+  const barZ = -0.57;
+  const bearingReliefRadius = 0.375;
+  const yokeEyeOuterRadius = 0.475;
   const guideClearance = 0.035;
   const guideXs = [-3.52, 3.52];
   const cyclePeriod = 4;
@@ -470,21 +473,22 @@ function equalDiameterCam(movement) {
 
   const camShape = new THREE.Shape();
   const profileSegments = 540;
+  // A tiny machining allowance bounds the chord error of the finite mesh.
+  const profileMeshAllowance = 0.00023;
   const profilePoints = [];
   for (let index = 0; index < profileSegments; index += 1) {
     const theta = index / profileSegments * FULL_TURN;
     const point = camProfilePointAt(theta);
-    profilePoints.push(new THREE.Vector3(
-      point.x,
-      point.y,
-      camDepth / 2 + 0.022,
-    ));
-    if (index === 0) camShape.moveTo(point.x, point.y);
-    else camShape.lineTo(point.x, point.y);
+    // Face trim stays inside the working envelope, away from the rollers.
+    const trim = point.clone().addScaledVector(outwardNormalAt(theta), -0.04);
+    profilePoints.push(new THREE.Vector3(trim.x, trim.y, camDepth / 2 + 0.012));
+    const finitePoint = point.clone().addScaledVector(outwardNormalAt(theta), -profileMeshAllowance);
+    if (index === 0) camShape.moveTo(finitePoint.x, finitePoint.y);
+    else camShape.lineTo(finitePoint.x, finitePoint.y);
   }
   camShape.closePath();
   const camBody = new THREE.Mesh(
-    centeredExtrusion(camShape, camDepth, 0.022),
+    centeredExtrusion(camShape, camDepth, 0),
     driverMaterial,
   );
   camBody.userData.role =
@@ -532,14 +536,16 @@ function equalDiameterCam(movement) {
   yoke.userData.role =
     'single-rigid-horizontal-bar-with-two-opposed-rollers';
   root.add(yoke);
-  const bar = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      barHalfLength * 2,
-      barHalfHeight * 2,
-      barDepth,
-    ),
-    drivenMaterial,
+  // The translating yoke needs a real oblong eye around the fixed input
+  // bearing. Its two webs stay hidden behind the cam in the source view.
+  const yokeOuter = polygonClipping.union(
+    poly([[-barHalfLength, -barHalfHeight], [barHalfLength, -barHalfHeight],
+      [barHalfLength, barHalfHeight], [-barHalfLength, barHalfHeight]]),
+    capsule([-pitchAmplitude, 0], [pitchAmplitude, 0], yokeEyeOuterRadius, 48),
   );
+  const yokeSection = polygonClipping.difference(yokeOuter,
+    capsule([-pitchAmplitude, 0], [pitchAmplitude, 0], bearingReliefRadius, 48));
+  const bar = new THREE.Mesh(plate(yokeSection, -barDepth / 2, barDepth / 2), drivenMaterial);
   bar.position.z = barZ;
   bar.userData.role = 'reciprocating-rectilinear-bar';
   yoke.add(bar);
@@ -606,14 +612,12 @@ function equalDiameterCam(movement) {
     { color: PALETTE.frame, depth: 0.24, thickness: 0.18 },
   );
   camBearingPost.userData.role = 'fixed-rear-cam-bearing-post';
-  const camBearingArm = makeBeam(
-    new THREE.Vector3(0, 0, frameZ),
-    new THREE.Vector3(0, 0, -0.62),
-    { color: PALETTE.frame, depth: 0.23, thickness: 0.18 },
+  const camBearingArm = new THREE.Mesh(
+    ring(0.235, 0.345, frameZ, -0.61, 64), frameMaterial,
   );
   camBearingArm.userData.role = 'fixed-cam-bearing-arm';
   const camBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.27, 0.075, 10, 40),
+    new THREE.TorusGeometry(0.29, 0.055, 10, 40),
     frameMaterial,
   );
   camBearing.position.z = -0.61;
@@ -697,6 +701,8 @@ function equalDiameterCam(movement) {
     barHalfHeight,
     barHalfLength,
     barZ,
+    bearingReliefRadius,
+    yokeEyeOuterRadius,
     camDepth,
     cyclePeriod,
     equalDiameter,
@@ -707,6 +713,7 @@ function equalDiameterCam(movement) {
     pitchMeanRadius,
     pitchPerimeter: arcLength.perimeter,
     profileSegments,
+    profileMeshAllowance,
     rollerDepth,
     rollerRadius,
     sourceScale,
@@ -840,6 +847,10 @@ function equalDiameterCam(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   markShadows(root);
   return {
     root,

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { makeBoredLinkRod } from './bored-link-rod.js';
+import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
+import { rectangularRodPassageGeometry } from './authored-oscillating-engines.js';
 import {
   PALETTE,
   markShadows,
@@ -62,58 +65,12 @@ function tubeThrough(points, radius, material) {
   );
 }
 
-function makeSideRod({
-  depth,
-  eyeMaterial,
-  length,
-  material,
-  role,
-  width,
-}) {
-  const group = new THREE.Group();
-  group.userData.axis = Z_AXIS.clone();
-  group.userData.nominalLength = length;
-  group.userData.role = role;
-
-  const shank = new THREE.Mesh(
-    new THREE.BoxGeometry(length, width, depth),
-    material,
-  );
-  shank.position.x = length / 2;
-  shank.userData.role = `${role}-constant-length-shank`;
-  const bosses = [0, length].map((x, index) => {
-    const boss = cylinderAlongZ(width * 0.86, depth * 1.28,
-      material, 34);
-    boss.position.x = x;
-    boss.userData.role = `${role}-${index === 0 ? 'crank' : 'crosshead'}-boss`;
-    group.add(boss);
-    return boss;
-  });
-  const eyes = [0, length].map((x, index) => {
-    const eye = new THREE.Mesh(
-      new THREE.TorusGeometry(width * 0.46, width * 0.14, 8, 30),
-      eyeMaterial,
-    );
-    eye.position.set(x, 0, depth / 2 + 0.012);
-    eye.userData.role = `${role}-${index === 0 ? 'crank' : 'crosshead'}-eye`;
-    group.add(eye);
-    return eye;
-  });
-  const startAnchor = new THREE.Object3D();
-  startAnchor.userData.role = `${role}-analytic-crank-end-P`;
-  const endAnchor = new THREE.Object3D();
-  endAnchor.position.x = length;
-  endAnchor.userData.role = `${role}-analytic-crosshead-end-C`;
-  group.add(shank, startAnchor, endAnchor);
-
-  return {
-    bosses,
-    endAnchor,
-    eyes,
-    group,
-    shank,
-    startAnchor,
-  };
+function makeSideRod({ depth, length, material, role, width }) {
+  const part = makeBoredLinkRod({ bodyMaterial: material, depth, length,
+    planeZ: 0, role, width, boreRadius: 0.118 });
+  part.rod.userData.axis = Z_AXIS.clone();
+  return { group: part.rod, shank: part.body,
+    startAnchor: part.startAnchor, endAnchor: part.endAnchor };
 }
 
 function tableEngine(movement) {
@@ -175,7 +132,8 @@ function tableEngine(movement) {
   const pistonHeadThickness = sourcePistonHeadThickness * sourceScale;
   const cylinderBoreMinimumY = sourceCylinderBoreMinimumY * sourceScale;
   const cylinderBoreMaximumY = sourceCylinderBoreMaximumY * sourceScale;
-  const sideRodPlaneZ = 0.63;
+  const sideRodPlaneZ = 1.20;
+  const crankPlaneZ = 0.93;
 
   const sourceStateAtCyclePosition = (cyclePosition) => {
     const unwrappedInputAngle = sourceCrankPhaseOffset
@@ -454,7 +412,7 @@ function tableEngine(movement) {
       new THREE.BoxGeometry(
         cylinderWallThickness,
         cylinderBoreHeight,
-        0.72,
+        0.94,
       ),
       frameMaterial,
     );
@@ -485,11 +443,10 @@ function tableEngine(movement) {
   );
   lowerCylinderCover.userData.role = 'fixed-table-engine-lower-cylinder-cover';
   const upperCylinderCover = new THREE.Mesh(
-    new THREE.BoxGeometry(
+    rectangularRodPassageGeometry(
       sourceCylinderOuterHalfWidth * 2.5 * sourceScale,
-      (sourceCylinderShellMaximumY - sourceCylinderBoreMaximumY)
-        * sourceScale,
-      0.84,
+      (sourceCylinderShellMaximumY - sourceCylinderBoreMaximumY) * sourceScale,
+      0.84, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.19,
     ),
     frameMaterial,
   );
@@ -522,10 +479,10 @@ function tableEngine(movement) {
     { halfWidth: 0.375, maximumY: 8.0, minimumY: 7.75 },
   ].forEach((specification, index) => {
     const collar = new THREE.Mesh(
-      new THREE.BoxGeometry(
+      rectangularRodPassageGeometry(
         specification.halfWidth * 2 * sourceScale,
         (specification.maximumY - specification.minimumY) * sourceScale,
-        0.91,
+        0.91, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.16,
       ),
       index === 0 ? frameEdgeMaterial : frameMaterial,
     );
@@ -541,12 +498,12 @@ function tableEngine(movement) {
 
   const guideRails = [-1, 1].map((side, index) => {
     const start = new THREE.Vector3(
-      side * 0.375 * sourceScale,
+      side * 0.66 * sourceScale,
       8.375 * sourceScale,
       0.19,
     );
     const end = new THREE.Vector3(
-      side * 0.375 * sourceScale,
+      side * 0.66 * sourceScale,
       14.0 * sourceScale,
       0.19,
     );
@@ -568,7 +525,7 @@ function tableEngine(movement) {
       -0.17,
     );
     const end = new THREE.Vector3(
-      side * 0.54 * sourceScale,
+      side * 0.91 * sourceScale,
       14.33 * sourceScale,
       -0.17,
     );
@@ -587,8 +544,8 @@ function tableEngine(movement) {
   for (let index = 0; index <= 16; index += 1) {
     const angle = Math.PI - Math.PI * index / 16;
     guideArchPoints.push(new THREE.Vector3(
-      0.54 * sourceScale * Math.cos(angle),
-      (14.33 + 0.54 * Math.sin(angle)) * sourceScale,
+      0.91 * sourceScale * Math.cos(angle),
+      (14.33 + 0.91 * Math.sin(angle)) * sourceScale,
       -0.17,
     ));
   }
@@ -602,8 +559,8 @@ function tableEngine(movement) {
   for (let index = 0; index <= 16; index += 1) {
     const angle = Math.PI - Math.PI * index / 16;
     guideSlotArchPoints.push(new THREE.Vector3(
-      0.25 * sourceScale * Math.cos(angle),
-      (14.0 + 0.25 * Math.sin(angle)) * sourceScale,
+      0.535 * sourceScale * Math.cos(angle),
+      (14.0 + 0.535 * Math.sin(angle)) * sourceScale,
       0.19,
     ));
   }
@@ -614,16 +571,17 @@ function tableEngine(movement) {
   );
   guideSlotArch.userData.role = 'fixed-inner-semicircular-end-of-guide-slot';
   const guideFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(2.75 * sourceScale, 0.22 * sourceScale, 0.82),
+    rectangularRodPassageGeometry(2.75 * sourceScale, 0.22 * sourceScale, 0.82,
+      sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.18),
     frameMaterial,
   );
   guideFoot.position.set(0, 7.86 * sourceScale, -0.04);
   guideFoot.userData.role = 'fixed-guide-frame-foot-on-cylinder';
 
   const crankBearingBlocks = [-1, 1].map((side, index) => {
-    const bearing = cylinderAlongZ(0.38 * sourceScale, 0.28,
-      frameEdgeMaterial, 36);
-    bearing.position.set(0, 0, side * 0.90);
+    const bearing = boredJournal(0.38 * sourceScale, 0.22 * sourceScale + 0.006, 0.28,
+      frameEdgeMaterial);
+    bearing.position.set(0, 0, side * 0.66);
     bearing.userData.role = `fixed-crankshaft-bearing-${index + 1}`;
     fixedFrame.add(bearing);
     return bearing;
@@ -658,18 +616,18 @@ function tableEngine(movement) {
       new THREE.BoxGeometry(crankRadius, 0.42 * sourceScale, 0.18),
       crankMaterial,
     );
-    crankArm.position.set(crankRadius / 2, 0, side * sideRodPlaneZ);
+    crankArm.position.set(crankRadius / 2, 0, side * crankPlaneZ);
     crankArm.userData.role = `parallel-crank-arm-${index + 1}-O-P`;
     const crankHub = cylinderAlongZ(0.42 * sourceScale, 0.24,
       crankMaterial, 36);
-    crankHub.position.z = side * sideRodPlaneZ;
+    crankHub.position.z = side * crankPlaneZ;
     crankHub.userData.role = `parallel-crank-hub-${index + 1}`;
-    const crankPinBoss = cylinderAlongZ(0.32 * sourceScale, 0.34,
+    const crankPinBoss = cylinderAlongZ(0.22 * sourceScale, 0.49,
       crankMaterial, 34);
     crankPinBoss.position.set(
       crankRadius,
       0,
-      side * sideRodPlaneZ,
+      side * 1.085,
     );
     crankPinBoss.userData.role = `parallel-crank-pin-boss-${index + 1}-P`;
     const crankIndex = new THREE.Mesh(
@@ -679,7 +637,7 @@ function tableEngine(movement) {
     crankIndex.position.set(
       crankRadius * 0.31,
       0,
-      side * sideRodPlaneZ + side * 0.105,
+      side * crankPlaneZ + side * 0.105,
     );
     crankIndex.userData.role = `parallel-crank-angular-index-${index + 1}`;
     inputCranks.add(crankArm, crankHub, crankPinBoss, crankIndex);
@@ -710,7 +668,7 @@ function tableEngine(movement) {
     new THREE.BoxGeometry(
       sourceCrossheadWidth * sourceScale,
       sourceCrossheadHeight * sourceScale,
-      sideRodPlaneZ * 2 + 0.42,
+      sideRodPlaneZ * 2 - 0.24,
     ),
     pistonMaterial,
   );
@@ -1035,9 +993,10 @@ function tableEngine(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(6.0, 3.6, 12.5),
+    cameraDirection: new THREE.Vector3(1.8, 0.7, 14),
     root,
     update,
   };

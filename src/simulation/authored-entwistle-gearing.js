@@ -1,3 +1,4 @@
+import { correctEntwistleGearing } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
 import { makeMiterGear } from './authored-gears.js';
 import {
@@ -23,6 +24,7 @@ function annulusGeometry(outerRadius, boreRadius, depth) {
     bevelEnabled: true,
     bevelSegments: 2,
     bevelSize: 0.025,
+    bevelOffset: -0.025,
     bevelThickness: 0.025,
     curveSegments: 64,
     depth,
@@ -47,7 +49,7 @@ function entwistlePatentGearing(movement) {
   const teeth = 20;
   const innerDistance = 0.31;
   const outerDistance = 1.26;
-  const toothHeight = 0.145;
+  const toothHeight = 0.22;
   const toothPitch = fullTurn / teeth;
   const contactDistance = (innerDistance + outerDistance) / 2;
   const shaftRadius = 0.085;
@@ -85,6 +87,7 @@ function entwistlePatentGearing(movement) {
 
   const planetGearB = makeMiterGear({
     axis: planetAxisAtSource,
+    boreRadius: 0.074,
     color: PALETTE.driver,
     innerDistance,
     outerDistance,
@@ -103,7 +106,7 @@ function entwistlePatentGearing(movement) {
   const shaftD = makeShaft({
     axis: carrierAxis,
     color: PALETTE.ink,
-    length: 7.25,
+    length: 7.8,
     radius: shaftRadius,
   });
   shaftD.position.set(0, 0, 0);
@@ -111,13 +114,13 @@ function entwistlePatentGearing(movement) {
   const studE = makeShaft({
     axis: planetAxisAtSource,
     color: PALETTE.ink,
-    length: 3.0,
+    length: 1.55,
     radius: 0.072,
   });
-  studE.position.copy(planetAxisAtSource).multiplyScalar(0.74);
+  studE.position.copy(planetAxisAtSource).multiplyScalar(0.78);
   studE.userData.role = 'stud-E-fixed-radially-in-shaft-D';
   const carrierCollar = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 0.52, 32),
+    new THREE.CylinderGeometry(0.28, 0.28, 0.32, 32),
     matte(PALETTE.brass, { metalness: 0.25, roughness: 0.43 }),
   ), 'carrier-collar-securing-stud-E-to-shaft-D');
   carrierCollar.rotation.z = Math.PI / 2;
@@ -337,7 +340,7 @@ function entwistlePatentGearing(movement) {
   const sourceContactA = sourceState.fixedContact.clone();
   const sourceContactC = sourceState.outputContact.clone();
   const fixedMountPhase = 0;
-  const outputMountPhase = toothPitch / 2;
+  const outputMountPhase = 0;
   const planetMountPhase = toothPitch / 2;
   setSpin(fixedGearA, fixedMountPhase);
   setSpin(outputGearC, outputMountPhase);
@@ -484,13 +487,14 @@ function entwistlePatentGearing(movement) {
     };
     root.userData.kinematics = state;
   };
+  correctEntwistleGearing(root);
   update(0);
   root.userData.fidelity = 'authored';
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.8, 4.9, 8.9),
+    cameraDirection: new THREE.Vector3(2.8, 2.5, 12),
   };
 }
 

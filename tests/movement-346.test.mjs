@@ -403,9 +403,9 @@ test('movement 346 renderer binds both parallel cranks and side rods to one cros
     const bounds = new THREE.Box3().setFromObject(rail);
     return bounds.getCenter(new THREE.Vector3());
   });
-  near(guideCenters[0].x, -0.375 * geometry.sourceScale, 2e-16,
+  near(guideCenters[0].x, -0.66 * geometry.sourceScale, 2e-16,
     'left straight guide center');
-  near(guideCenters[1].x, 0.375 * geometry.sourceScale, 2e-16,
+  near(guideCenters[1].x, 0.66 * geometry.sourceScale, 2e-16,
     'right straight guide center');
   near(guideCenters[0].x + guideCenters[1].x, 0, 2e-16,
     'symmetric guide centers');

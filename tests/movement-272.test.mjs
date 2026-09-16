@@ -574,7 +574,7 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   assert.ok(size.y > 6.5);
   assert.ok(size.z > 4.1);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
-  assert.ok(model.cameraDirection.x > model.cameraDirection.y);
+  assert.ok(model.cameraDirection.x < 0, 'default view exposes the working bevel and shoe');
   disposeModel(model.root);
 });
 

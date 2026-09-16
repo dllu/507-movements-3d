@@ -545,7 +545,7 @@ test('movement 343 renderer keeps every visible rod and common pin on the analyt
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 55);
+  assert.ok(meshCount >= 35, 'shared bored rods replace separate decorative eye meshes');
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 7.5);
