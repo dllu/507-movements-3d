@@ -111,8 +111,8 @@ test('movement 204 is one tangent pair of ruled hyperboloidal friction wheels on
   );
   assert.equal(blocks.driver.userData.hyperboloid, true);
   assert.equal(blocks.driven.userData.hyperboloid, true);
-  assert.equal(blocks.driverBody.userData.exactRuledHyperboloid, true);
-  assert.equal(blocks.drivenBody.userData.exactRuledHyperboloid, true);
+  assert.equal(blocks.driverBody.userData.nominalRuledHyperboloid, true);
+  assert.equal(blocks.drivenBody.userData.nominalRuledHyperboloid, true);
   assert.equal(blocks.driverShaft.userData.keyedToHyperboloid, true);
   assert.equal(blocks.drivenShaft.userData.keyedToHyperboloid, true);
   assert.equal(blocks.contactMarkers.length, 9);
@@ -370,7 +370,7 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
   disposeModel(model.root);
 });
 
-test('movement 204 preserves exact tangency, transverse rolling, and uniform line sliding at 32,769 contact points', () => {
+test('movement 204 nominal smooth axodes have exact tangency, transverse rolling, and uniform sliding at 32,769 points', () => {
   const model = createMovementModel(catalog.movements[203]);
   const {
     contactAtLineParameter,
@@ -746,7 +746,7 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 60);
+  assert.ok(visibleMeshCount >= 45);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 4);

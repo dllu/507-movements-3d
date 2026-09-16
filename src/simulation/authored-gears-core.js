@@ -1,3 +1,4 @@
+import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
 import { spurStopProfile239, finishOpposedSpur239 } from './opposed-spur-239-working-parts.js';
 import { finishPartialLanternRack } from './partial-lantern-rack-parts.js';
@@ -30765,6 +30766,7 @@ function skewHyperboloidFrictionDrive() {
     };
     root.userData.kinematics = state;
   };
+  correctSkewFrictionParts(root);
   update(0);
   return finish(root, update, new THREE.Vector3(2.7, 4.7, 13.2));
 }
