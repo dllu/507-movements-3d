@@ -1,3 +1,4 @@
+import {correctChainDrive} from './chain-drive-working-parts.js';
 import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
@@ -7450,7 +7451,7 @@ function alternatingPlaneLinkChainPulley(movement) {
   const sourceToothTipCenterRadius = Math.hypot(1.674168, 6.248079);
   const toothTipRadius = (sourceToothTipCenterRadius + 0.2) * sourceScale;
   const sprocketDepth = 0.15;
-  const linkLoopHalfWidth = sourceLinkHalfWidth * sourceScale * 0.72;
+  const linkLoopHalfWidth = sourceLinkHalfWidth * sourceScale * 1.25;
   const linkWireRadius = sourceLinkHalfWidth * sourceScale * 0.25;
   const chainTailLinkCount = 7;
   const visibleMinimumY = wheelCenter.y + sourceViewBox.bottom * sourceScale - 0.2;
@@ -7979,8 +7980,8 @@ function ladderRungChainPulley() {
   const shaftRadius = 0.14;
   const shaftLength = 1.75;
   const sidePlaneOffset = 0.48;
-  const sidePlaneAlternation = 0.035;
-  const sideLinkHalfWidth = 0.13;
+  const sidePlaneAlternation = 0.042;
+  const sideLinkHalfWidth = 0.096;
   const sideLinkWireRadius = 0.038;
   const rungRadius = 0.055;
   const rungLength = 1.18;
@@ -8617,7 +8618,7 @@ function toothedLinkChainWheel() {
 
   const centeredExtrusion = (shape, depth, bevelSize = 0.008) => {
     const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: true,
+      bevelEnabled: false,
       bevelSegments: 2,
       bevelSize,
       bevelThickness: bevelSize,
@@ -8733,8 +8734,11 @@ function toothedLinkChainWheel() {
   );
   linkShape.closePath();
   const pivotHole = new THREE.Path();
-  pivotHole.absarc(0, 0, pivotHoleRadius, 0, fullTurn, true);
+  pivotHole.absarc(0, 0, pivotHoleRadius, 0, fullTurn, false);
   linkShape.holes.push(pivotHole);
+  const endPivotHole = new THREE.Path();
+  endPivotHole.absarc(linkPitch, 0, pivotHoleRadius, 0, fullTurn, false);
+  linkShape.holes.push(endPivotHole);
   const linkPlateGeometry = centeredExtrusion(
     linkShape,
     linkPlateDepth,
@@ -11296,9 +11300,9 @@ export function createAuthoredBeltMovement(movement) {
     case 129: result = chineseDifferentialWindlass(); break;
     case 134: result = singleWrappedRopeDrumDrive(); break;
     case 141: result = endlessBandSaw(); break;
-    case 227: result = alternatingPlaneLinkChainPulley(movement); break;
-    case 228: result = ladderRungChainPulley(); break;
-    case 229: result = toothedLinkChainWheel(); break;
+    case 227: result = alternatingPlaneLinkChainPulley(movement); correctChainDrive(result, 227); break;
+    case 228: result = ladderRungChainPulley(); correctChainDrive(result, 228); break;
+    case 229: result = toothedLinkChainWheel(); correctChainDrive(result, 229); break;
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
     case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); break;
