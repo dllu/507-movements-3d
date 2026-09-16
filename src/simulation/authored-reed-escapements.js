@@ -1,3 +1,4 @@
+import {finishReed396Parts} from './reed-396-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -914,7 +915,7 @@ function reedHybridEscapement(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 5.2, 12.8);
   root.userData.groundFloorY = -2.72;
   update(0);
-  return { root, update };
+  return finishReed396Parts({ root, update });
 }
 
 export function createAuthoredReedEscapementMovement(movement) {

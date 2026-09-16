@@ -1,3 +1,54 @@
+# Forty-sixth family pass: working profiles and baked clock clicks
+
+The full review continues in independent working-profile lanes for 371/394,
+396 and 402. The previous pass's structural clearances did not qualify their
+tooth or pallet contacts.
+
+[320/321 clock playback](maintaining-clock-family-review.md) now interpolates
+three offline finite-click paths instead of solving all circle/edge contacts
+each frame. The exact geometric law remains available for generation and tests.
+All 22 clock checks pass, including actual-solid clearances, continuity and
+independent interpolation comparisons below 9.91e-7 radians. The 99 KB tables
+regenerate byte-identically. In a warmed same-process comparison, 321's mean
+CPU update falls from 0.92 to 0.17 ms; 320 remains about 2 ms because its moving
+chain dominates. Default/source and oblique views retain their previous framing.
+
+[371/394 working profiles](reversing-transmission-tooth-contact-review.md)
+replace the measured body/tooth intersections with connected finite tooth bars
+and generated rack flanks. Actual driving-face normals oppose the input and
+assist the output; sampled bidirectional clearances are positive. 371's displayed
+mesh uses 102,516 triangles after conservative simplification of the offline
+cutter. All 27 focused checks and byte-identical regeneration pass. Backlash,
+the wider 371 opening, shortened terminal rack teeth and frictional flange
+handoff remain stated limitations.
+
+A broader cheap screen of all 33 escapement models reports no flags,
+nonfinite transforms or scene/geometry growth. It does not verify contacts,
+source fit, loading or GPU performance. Evidence is under
+`/dev/shm/family46-escapement-screen.*` and `/dev/shm/family46-clock-*`.
+
+[396 Reed](reed-396-finite-contact-review.md) now has attached finite pallets,
+real shaft passages and an offline contact-selected wheel path. Adaptive time
+knots remove the observed interpolation penetrations; runtime only interpolates.
+All 15 focused checks pass. F still receives work on withdrawal instead of
+acting strictly as a detent, and fork coupling and spring dynamics remain
+prescribed. A concentric F candidate was rejected on actual surface evidence.
+
+[402 Guernsey](guernsey-402-contact-review.md) replaces enclosing pallet tubes
+with finite sided plates, compact relieved teeth, matching involute sectors and
+real shaft passages through the spokes. All 17 focused checks pass. The retained
+timing still separates the upper holding branch and early lower impulse; a
+continuation study failed its guard and was not installed. Clear sampled surfaces
+do not establish a working passive escapement.
+
+The combined batch passes **81 focused checks**, reproducible bakes, the final
+production build (23.41 seconds), and six distinct packaged desktop/playback/mobile
+cases. The 402 packaged case was repeated after its final spoke-bore correction.
+All six source/default and oblique views were inspected; sampled full-cycle framing
+has no clipping or browser errors. The CPU screen has no flags or geometry/object
+growth. It excludes imports and GPU work. Evidence is under `/dev/shm/family46-*`;
+the complete 507-movement review remains active.
+
 # Forty-fifth family pass: releases, friction surfaces and reversing-drive guides
 
 The full review continues through reusable finite surfaces, bored joints and

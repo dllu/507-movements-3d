@@ -311,28 +311,45 @@ a true finite-pin obstruction; neither study changes production playback.
   velocity, while 278's pawls seat on the rack lands. See the
   [release review](release-mechanism-247-278-review.md).
 
-## Next independent lanes: working tooth and pallet defects
+## Forty-sixth pass: working tooth and pallet defects
 
-- **371/394:** reconstruct compatible finite teeth using the recorded annular
-  body/face-tooth and internal-rack witnesses. Preserve useful contact through
-  crossover; clearance-only cuts do not supply a driving flank. Reuse generated
-  face/internal gear profiles and retain the corrected guides and joints.
-- **396, Reed escapement:** F/G stand 0.044 above the wheel, and direct pallet J
-  stands 0.004 above it. J also lacks a physical connection to its shaft/roller
-  (sampled gaps 0.17/0.05). Reconstruct attached finite pallets and their working
-  faces together; lowering the old boxes alone can introduce penetration.
-- **402, Guernsey escapement:** tooth-tip loci are the centers of radius-0.12
-  pallet tubes, burying the teeth despite tiny nominal residuals. A tooth-0
-  surface witness at time 0.2 penetrates the upper pallet by 0.0912772, at world
-  point (1.04643965, −0.199419014, 0.379999995). Replace the tubes with sided
-  finite pallets; check actual sector/pinion meshes and their journals as well.
+- **371/394:** generated finite tooth bars and rack flanks now clear the prior
+  body/tooth witnesses while retaining actual useful driving-face normals.
+  Offline cutter detail is reduced for playback; the 371 model uses 102,516
+  visible triangles. See the [working-profile review](reversing-transmission-tooth-contact-review.md)
+  for backlash, shortened terminal teeth and the prescribed frictional handoff.
+- **320/321:** offline click tables preserve the prior finite geometric paths;
+  321's warmed mean CPU update falls from 0.92 to 0.17 ms. 320's chain remains
+  the dominant update cost. See the [clock review](maintaining-clock-family-review.md).
+- **396, Reed escapement:** attached finite F/G/J pallets and an adaptively baked
+  contact path replace the detached nominal contacts. F's strict detent-only
+  action and the fork coupling remain unresolved. See the
+  [finite-contact review](reed-396-finite-contact-review.md).
+- **402, Guernsey escapement:** compact relieved teeth, sided pallets, involute
+  sectors and bored shafts replace the measured enclosing-tube intersections.
+  Upper holding and early lower impulse still separate under the retained timing;
+  the failed continuation study was not installed. See the
+  [finite-contact review](guernsey-402-contact-review.md).
 
-396/402 have no registered source animation. Their current metadata-only camera
-directions are ineffective, and ground suppression is missing. Read-only triage
-is saved in `/dev/shm/escapement396402-triage.mjs` and `.jsonl`. Reuse finite
-plates, bored joints and earlier escapement methods; do not spend time tracing
-ideal working curves. Prioritize these measured geometric failures over optional
-force studies of otherwise coherent analytical mechanisms.
+396/402 have no registered source animation. Both now have effective source-facing
+cameras, hidden ground, disabled fog and a six-second minimum display cycle.
+Their remaining working-law defects stay queued independently of the corrected
+geometry and successful sampled clearances.
+
+The next reusable pallet candidates are **293/296 and 297**. A fresh read-only
+293/296 check reproduces 293's radial-tooth/roller intrusion of 0.007035 and
+crown-pin/pallet intrusion of 0.044947; 296 still separates its pallets axially
+from the wheel. Rebuild useful lock/impulse and fork entry together, rather than
+lowering the old boxes into the tooth path. Evidence:
+`/dev/shm/family46-next-293-296.json`.
+
+297's sparse current-state check reproduces pin/pallet intrusion of 0.058 and
+front-ring/pallet intrusion of 0.14133. Both active faces have the wrong reaction
+sign; release is scheduled 0.12 inside the finite pallet ends and resets the
+outgoing wheel speed to zero. Its next lane should combine clear axial layers,
+source-sized sided pallets/end caps and contact-selected release with inherited
+velocity. Simply reversing the flat C face needs a contact beyond its finite
+length. Read-only handoff: `/dev/shm/297-next-pass46-triage.md`.
 
 212's reverse bias/dead-center capture and 213's source tooth fit and passive
 friction/impact response remain follow-ups. The legacy gear bundle has now been

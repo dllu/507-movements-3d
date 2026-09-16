@@ -170,7 +170,7 @@ test('movement 402 derives both circular sector pitch radii from the four source
   disposeModel(model.root);
 });
 
-test('movement 402 external and internal tooth flanks impose exact opposite-signed balance motion', () => {
+test('movement 402 nominal external/internal pitch constraints prescribe opposite-signed balance motion', () => {
   const model = createMovementModel(catalog.movements[401]);
   const data = model.root.userData;
   const { geometry, stateAtTime } = data;
@@ -338,7 +338,7 @@ test('movement 402 uses smooth lock, impulse, free-drop, and opposite-lock hando
   disposeModel(model.root);
 });
 
-test('movement 402 alternates exact synthesized pallet contact around each free drop', () => {
+test('movement 402 retains its nominal point-locus reference around each prescribed drop', () => {
   const model = createMovementModel(catalog.movements[401]);
   const data = model.root.userData;
   const { geometry, palletProfiles, stateAtTime } = data;

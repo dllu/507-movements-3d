@@ -1,3 +1,4 @@
+import { correctGuernseyWorkingParts } from './guernsey-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -933,6 +934,7 @@ function guernseyCounterOscillatingEscapement(movement) {
     root.userData.contacts = {
       escapeWheelToAnchorPallet: state.activePalletContact
         ? {
+          classification: 'nominal point locus only; finite holding unresolved',
           error: state.activePalletContact.error,
           mode: state.activePalletContact.mode,
           pallet: state.activePalletContact.side,
@@ -1152,9 +1154,10 @@ function guernseyCounterOscillatingEscapement(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(4.6, 3.2, 14.2);
   root.userData.groundFloorY = -2.10;
+  correctGuernseyWorkingParts(root);
   markShadows(root);
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredGuernseyEscapementMovement(movement) {
