@@ -1,3 +1,34 @@
+# Twenty-seventh family pass: governors, rolling contacts and reciprocating drives
+
+Nine movements receive bounded corrections in four parallel lanes: 274, 357,
+359, 365, 373–374 and 390–392. The overall review remains active.
+
+- [274/357 governors](governor-274-357-review.md): compatible conical gear
+  meshes, finite shaft/hinge clearance, bored sleeves and correctly oriented
+  rod joints. Passive response remains prescribed.
+- [359/374/392 cord, treadle and saw](reciprocating-cord-family-review.md):
+  finite cord and pulley channels, bored joints, captured guides and readable
+  source-facing views. The available 374/392 source animations confirm the
+  analytical linkage laws.
+- [365/373 rolling mechanisms](roller-family-review.md): surface-painted
+  motion cues, connected source-correct spokes, bored wheels, separated loads
+  and an honest calibrated force-indicator presentation.
+- [390/391 alternating drives](alternating-drive-390-391-review.md): actual
+  band grooves, shaft bores and guide slots, plus conjugate active rack teeth.
+  **These two remain partial:** 390's original pawls still penetrate the
+  ratchet, while 391's inactive rack and right weight still interfere with the
+  pinion near handoff. Those require a coupled geometry/contact correction.
+
+Shared finite geometry and retained animation buffers keep this pass inexpensive
+in playback. Intended mechanical curves remain analytical instead of tracing
+hand-drawn irregularities. The review documents distinguish geometric evidence
+from unresolved force, contact and reconstruction assumptions.
+
+All 94 distinct focused checks pass, including the affected checks after final
+geometry adjustments. The final production build passes (21.32 seconds), the
+nine-model construction/update screen reports no flags, and all nine packaged
+desktop/playback/mobile checks pass (24.7 seconds).
+
 # Twenty-sixth family pass: bearings, gimbals, rope traverses and jack handoff
 
 Eight movements receive corrections in four parallel lanes: 250, 270, 352,

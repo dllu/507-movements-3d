@@ -663,3 +663,23 @@ pass; 362's final screen also has no flags. The 358 closeup follows its carriage
 while retaining the full ten-turn law and complete zoomable track.
 Eight packaged desktop/playback/mobile checks pass, including a final rebuilt
 362 recheck after its support correction.
+
+## Twenty-seventh parallel batch
+
+- **274/357:** shared bored joints and actual conical bevel meshes, with finite
+  shaft/hinge clearances and retained spring buffers.
+- **359/374/392:** finite cord, belt, journal and slider-guide interfaces, using
+  the available source animations as analytical motion references.
+- **365/373:** working roller surfaces, flush markers, connected wheel geometry,
+  separated loads and calibrated indicator limitations.
+- **390/391:** publish bounded groove/bore/guide and active tooth corrections.
+  Keep their remaining pawl, inactive rack and weight/pinion contact problems
+  explicitly queued; these movements are not contact-qualified as a whole.
+
+The linked [review progress](review-progress.md) contains family evidence and
+limits. All 94 distinct focused checks pass. No expensive native solve was added
+for already determined analytical motion; unresolved contact is not certified by
+matching prescribed coordinates or by the construction screen.
+
+The final production build and nine-model screen pass, with no screen flags.
+All nine packaged desktop/playback/mobile checks pass in 24.7 seconds.
