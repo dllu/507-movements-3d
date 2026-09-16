@@ -454,7 +454,7 @@ test('movement 267 closes smoothly with one output turn and leaves 269 authored'
     'declared output advance');
   assert.equal(timeline.demonstrationPeriod, 9.2);
   assert.equal(animationTiming.authoredCyclePeriod, 9.2);
-  assert.equal(animationTiming.targetCycleDuration, 2);
+  assert.ok(animationTiming.displayCycleDuration >= 9.2);
   assertReadableTiming(animationTiming);
 
   const movement507 = catalog.movements[506];

@@ -1,3 +1,4 @@
+import { correctFriction413, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -138,7 +139,7 @@ function adjustableFrictionGear(movement) {
   ) / 2;
   const upperInputTurns = 3;
   const lowerOutputTurns = -2;
-  const adjustmentNutTurns = 4;
+  const adjustmentNutTurns = 1;
   const leftPlateLooseX = -looseRubberWidth / 2 - 0.07;
   const leftPlateTightX = -tightRubberWidth + looseRubberWidth / 2 - 0.07;
   const rightPlateX = looseRubberWidth / 2 + 0.07;
@@ -782,5 +783,5 @@ function adjustableFrictionGear(movement) {
 
 export function createAuthoredAdjustableFrictionGearMovement(movement) {
   if (movement.id !== 413) return null;
-  return adjustableFrictionGear(movement);
+  return finishFrictionFamily(correctFriction413(adjustableFrictionGear(movement)), 413);
 }

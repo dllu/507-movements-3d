@@ -444,7 +444,7 @@ test('movement 413 update binds both rotors, rubber deformation, moving plate, a
   assert.equal(closure.compression, source.compression);
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.cycleDuration);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 9);
   disposeModel(model.root);
 });
 

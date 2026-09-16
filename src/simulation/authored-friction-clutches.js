@@ -1,3 +1,4 @@
+import { correctFriction267, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -830,5 +831,5 @@ export function createAuthoredFrictionClutchMovement(movement) {
   if (movement.id !== 267) return null;
   const result = springBiasedOverrunningPulley(movement);
   result.root.userData.fidelity = 'authored';
-  return result;
+  return finishFrictionFamily(correctFriction267(result), 267);
 }

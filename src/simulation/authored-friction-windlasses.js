@@ -1,3 +1,4 @@
+import { correctFriction280, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1034,5 +1035,5 @@ export function createAuthoredFrictionWindlassMovement(movement) {
   if (movement.id !== 280) return null;
   const result = frictionWindlass(movement);
   result.root.userData.fidelity = 'authored';
-  return result;
+  return finishFrictionFamily(correctFriction280(result), 280);
 }
