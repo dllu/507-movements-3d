@@ -225,7 +225,7 @@ test('movement 406 closes blade contact, equal-distance locus, stock contact, an
   assert.equal(maximumThreadResidual, 0);
   assert.equal(maximumBladeResidual, 0);
   assert.equal(maximumStockResidual, 0);
-  assert.ok(minimumBladeSegmentLength > 1.33);
+  assert.ok(minimumBladeSegmentLength > .94);
   assert.ok(maximumPerpendicularDistance < geometry.bladeLength);
   disposeModel(model.root);
 });
@@ -251,25 +251,25 @@ test('movement 406 thread rates cancel and analytic square/pencil kinematics mat
     const afterAcceleration = stateAtTime(time + accelerationEpsilon);
     near(state.squareSpeed,
       (after.squareOffset - before.squareOffset) / (2 * velocityEpsilon),
-      9e-10, 'square speed');
+      3e-9, 'square speed');
     near(state.pencilVerticalSpeed,
       (after.pencilPoint.y - before.pencilPoint.y)
         / (2 * velocityEpsilon),
-    8e-10, 'pencil vertical speed');
+    3e-9, 'pencil vertical speed');
     const finiteVelocity = after.pencilPoint.clone()
       .sub(before.pencilPoint)
       .multiplyScalar(1 / (2 * velocityEpsilon));
-    vectorNear(state.pencilVelocity, finiteVelocity, 1.1e-9,
+    vectorNear(state.pencilVelocity, finiteVelocity, 4e-9,
       'pencil velocity');
     const finiteAcceleration = afterAcceleration.pencilVelocity.clone()
       .sub(beforeAcceleration.pencilVelocity)
       .multiplyScalar(1 / (2 * accelerationEpsilon));
-    vectorNear(state.pencilAcceleration, finiteAcceleration, 8e-9,
+    vectorNear(state.pencilAcceleration, finiteAcceleration, 1.2e-8,
       'pencil acceleration');
     near(state.focusSegmentRate,
       (after.focusSegmentLength - before.focusSegmentLength)
         / (2 * velocityEpsilon),
-    8e-10, 'focus-side thread rate');
+    3e-9, 'focus-side thread rate');
   }
   disposeModel(model.root);
 });
@@ -290,7 +290,7 @@ test('movement 406 traverses both sides through the vertex and reverses smoothly
     'right square limit');
   near(leftExtreme.squareSpeed, 0, 3e-16,
     'left smooth reversal');
-  near(rightExtreme.squareSpeed, 0, 9e-17,
+  near(rightExtreme.squareSpeed, 0, 1.1e-16,
     'right smooth reversal');
   for (const vertexState of [firstVertex, secondVertex]) {
     near(vertexState.squareOffset, 0, 4.6e-16,
@@ -303,7 +303,7 @@ test('movement 406 traverses both sides through the vertex and reverses smoothly
   disposeModel(model.root);
 });
 
-test('movement 406 update puts focus loop, pencil bight, blade anchor, stock, and pencil tip in actual 3D contact', () => {
+test('movement 406 finite cord follows tangent wraps while its guide and pencil retain the ideal locus', () => {
   const model = createMovementModel(catalog.movements[405]);
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime } = data;
@@ -336,7 +336,7 @@ test('movement 406 update puts focus loop, pencil bight, blade anchor, stock, an
     const expectedFocus = new THREE.Vector3(
       state.focus.x,
       state.focus.y,
-      0.255,
+      0.215,
     );
     const expectedBight = new THREE.Vector3(
       state.pencilPoint.x,
@@ -346,25 +346,32 @@ test('movement 406 update puts focus loop, pencil bight, blade anchor, stock, an
     const expectedBladeEnd = new THREE.Vector3(
       state.bladeEnd.x,
       state.bladeEnd.y,
-      0.255,
+      0.295,
     );
-    vectorNear(focusStart, expectedFocus, 1e-13,
-      'focus-cord loop endpoint');
-    vectorNear(focusEnd, expectedBight, 1e-13,
-      'focus-cord bight endpoint');
-    vectorNear(bladeStart, expectedBight, 1e-13,
-      'blade-cord bight endpoint');
-    vectorNear(bladeEnd, expectedBladeEnd, 1e-13,
-      'blade-cord anchor endpoint');
-    vectorNear(blocks.threadAnchor.getWorldPosition(new THREE.Vector3()),
-      expectedBladeEnd, 1e-13, 'blade-end anchor contact');
+    near(focusStart.distanceTo(expectedFocus), .100, 1e-13, 'focus wrap radius');
+    near(focusEnd.distanceTo(expectedBight.clone().setZ(.215)), .113, 1e-13, 'pencil wrap radius');
+    near(focusEnd.clone().sub(focusStart).dot(focusStart.clone().sub(expectedFocus)), 0, 1e-13, 'common tangent at focus');
+    near(focusEnd.clone().sub(focusStart).dot(focusEnd.clone().sub(expectedBight.clone().setZ(.215))), 0, 1e-13, 'common tangent at pencil');
+    expectedBladeEnd.x += .113;
+    vectorNear(bladeStart, expectedBight.clone().add(new THREE.Vector3(.113,0,.040)), 1e-13, 'vertical tangent leaving pencil');
+    vectorNear(bladeEnd, expectedBladeEnd, 1e-13, 'blade anchor');
+    vectorNear(blocks.threadAnchor.getWorldPosition(new THREE.Vector3()),expectedBladeEnd,1e-13,'visible anchor');
     const bight = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'white-thread-bight-around-pencil');
     vectorNear(bight.getWorldPosition(new THREE.Vector3()),
       expectedBight, 0, 'pencil-bight contact');
+    const wrapPositions=bight.geometry.attributes.position;
+    const capStart=bight.localToWorld(new THREE.Vector3().fromBufferAttribute(wrapPositions,wrapPositions.count-2));
+    const capEnd=bight.localToWorld(new THREE.Vector3().fromBufferAttribute(wrapPositions,wrapPositions.count-1));
+    vectorNear(capStart,focusEnd,1e-8,'helical wrap joins free leg');
+    vectorNear(capEnd,bladeStart,1e-8,'helical wrap joins guide leg');
+    const ringCenter=i=>bight.localToWorld(new THREE.Vector3().fromBufferAttribute(wrapPositions,i*13).add(new THREE.Vector3().fromBufferAttribute(wrapPositions,i*13+6)).multiplyScalar(.5));
+    assert.ok(ringCenter(1).sub(ringCenter(0)).normalize().dot(focusEnd.clone().sub(focusStart).normalize())>.998,'smooth free-leg tangent join');
+    assert.ok(ringCenter(96).sub(ringCenter(95)).normalize().dot(bladeEnd.clone().sub(bladeStart).normalize())>.998,'smooth guide-leg tangent join');
+    assert.ok(bladeStart.z-focusEnd.z>.05,'leg separation exceeds the cord diameter');
     const point = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'pencil-point-on-parabola');
-    near(point.getWorldPosition(new THREE.Vector3()).z, -0.265, 0,
+    near(point.getWorldPosition(new THREE.Vector3()).z, -0.248, 0,
       'pencil tip at board face');
     near(data.contacts.stockToStraightedge.residual, 0, 0,
       'rendered stock/directrix contact');

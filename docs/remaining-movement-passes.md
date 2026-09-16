@@ -621,3 +621,25 @@ simpler playback implementation.
 
 All 69 focused checks pass. The production build, seven-model screen and seven
 packaged desktop/playback/mobile checks pass; the screen reports no flags.
+
+## Twenty-fifth parallel batch
+
+- **395/447:** actual valve channels/ports and finite ferry immersion, rudder
+  and tether interfaces, with readable source-facing views.
+- **406/407:** exact ideal parabola travel, a monotone inextensible arch
+  template and finite guide/cord/slot interfaces.
+- **445/446:** finite passages and water-envelope clearance, with continuous
+  discharge tracers and correctly directed storage-rise tracers.
+- **491:** the previously measured 0.08019 tip/crown penetration is closed
+  geometrically. A finite leading nose seats against the reverse face; bored
+  hinge geometry and a single-tooth offline envelope replace the point follower.
+
+The 491 follow-up supersedes the geometric contact exception recorded in the
+previous batch. Its gravity/drop schedule and loads remain prescribed. Fluid
+and elastic force limitations for the other families remain explicit in the
+reviews linked from [review progress](review-progress.md).
+
+All 81 focused checks pass. The final production build, seven-model screen and
+seven packaged desktop/playback/mobile checks pass; the screen reports no flags.
+406's final separated cord legs and smooth helical wrap clear each other across
+the checked cycle while retaining the exact ideal point-thread parabola law.

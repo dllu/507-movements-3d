@@ -1,3 +1,30 @@
+# Twenty-fifth family pass: drawing, fluid passages and capstan contact
+
+Seven movements receive corrections in four parallel lanes: 395, 406–407,
+445–447 and 491. The full review remains active.
+
+- [395/447 cock and ferry](cock-ferry-family-review.md): actual cutaway valve
+  passages, immersed hull/rudder, connected fittings and source-facing views.
+- [406/407 drawing instruments](drawing-template-family-review.md): complete
+  parabola travel, a monotone pointed-arch template, finite guides/cords and a
+  real slot with a captured slide.
+- [445/446 oscillating columns](oscillating-column-family-review.md): finite
+  vessel passages, contained water envelopes and continuous directional tracers.
+- [491 capstan contact](capstan-491-finite-review.md): close the previous finite
+  tip/crown penetration with a bored hinge and a baked leading-nose envelope;
+  reverse-face geometry seats the pawl and opposes recoil.
+
+Analytical motion and small offline geometry/contact bakes keep playback simple.
+Prescribed fluid, elastic, gravity and drive laws remain qualified separately
+from the verified geometric interfaces.
+
+All 81 focused checks pass after the final 406 cord separation. The production
+build passes (21.04 seconds), and the seven-model construction/playback screen
+reports no flags. Seven packaged desktop/playback/mobile checks pass in
+26.5 seconds. Source-facing captures confirm the drawing guides and fluid
+interfaces remain readable; finite cord length/tension and passive pawl dynamics
+remain explicit limitations.
+
 # Twenty-fourth family pass: winding, blower and pressure instruments
 
 Seven movements receive bounded corrections in four parallel lanes: 491 and

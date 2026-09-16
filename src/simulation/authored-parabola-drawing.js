@@ -1,3 +1,4 @@
+import {correctDrawingTemplateParts} from './drawing-template-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -90,7 +91,7 @@ function parabolaDrawingInstrument(movement) {
   const vertex = new THREE.Vector2(0, 0);
   const bladeLength = 3.55;
   const threadLength = bladeLength;
-  const maximumSquareOffset = 1.85;
+  const maximumSquareOffset = 2.05;
   const targetHalfWidth = 2.05;
   const targetBaseY = -(targetHalfWidth ** 2) / (4 * focalLength);
   const stockWidth = 0.96;
@@ -485,6 +486,7 @@ function parabolaDrawingInstrument(movement) {
         totalLengthResidual: state.threadLengthResidual,
       },
     };
+    root.userData.updateWorkingParts?.(state);
     root.userData.kinematics = state;
   };
 
@@ -644,7 +646,8 @@ function parabolaDrawingInstrument(movement) {
     object.castShadow = false;
   });
   update(0);
-  return { root, update };
+  correctDrawingTemplateParts(root,406,update);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredParabolaDrawingMovement(movement) {

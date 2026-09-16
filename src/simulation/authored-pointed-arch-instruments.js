@@ -1,3 +1,4 @@
+import {correctDrawingTemplateParts,pointedTemplateParameters,taperedBendIntegrals} from './drawing-template-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -79,36 +80,6 @@ function makeDynamicCord(radius, material) {
   return cord;
 }
 
-function constantCurvatureRatios(angle) {
-  if (Math.abs(angle) < 1e-4) {
-    const angle2 = angle ** 2;
-    const angle3 = angle2 * angle;
-    const angle4 = angle2 ** 2;
-    const angle5 = angle4 * angle;
-    return {
-      f: angle / 2 - angle3 / 24 + angle5 / 720,
-      f1: 0.5 - angle2 / 8 + angle4 / 144,
-      f2: -angle / 4 + angle3 / 36,
-      g: 1 - angle2 / 6 + angle4 / 120,
-      g1: -angle / 3 + angle3 / 30,
-      g2: -1 / 3 + angle2 / 10 - angle4 / 168,
-    };
-  }
-  const numeratorF = angle * Math.sin(angle)
-    - (1 - Math.cos(angle));
-  const numeratorG = angle * Math.cos(angle) - Math.sin(angle);
-  return {
-    f: (1 - Math.cos(angle)) / angle,
-    f1: numeratorF / angle ** 2,
-    f2: (angle ** 2 * Math.cos(angle) - 2 * numeratorF)
-      / angle ** 3,
-    g: Math.sin(angle) / angle,
-    g1: numeratorG / angle ** 2,
-    g2: (-(angle ** 2) * Math.sin(angle) - 2 * numeratorG)
-      / angle ** 3,
-  };
-}
-
 function pointedArchInstrument(movement) {
   const root = new THREE.Group();
   const halfSpan = 2.45;
@@ -116,22 +87,14 @@ function pointedArchInstrument(movement) {
   const springingY = 0;
   const leftSpringingX = -halfSpan;
   const rightSpringingX = halfSpan;
-  const maximumTurningAngle = 2 * Math.atan(halfSpan / rise);
-  const finalCircleRadius = rise / Math.sin(maximumTurningAngle);
-  const elasticBarLength = finalCircleRadius * maximumTurningAngle;
-  const finalLeftCircleCenter = new THREE.Vector2(
-    leftSpringingX + finalCircleRadius,
-    springingY,
-  );
-  const finalRightCircleCenter = new THREE.Vector2(
-    -finalLeftCircleCenter.x,
-    springingY,
-  );
+  const selectedTemplate = pointedTemplateParameters(halfSpan,rise);
+  const maximumTurningAngle = selectedTemplate.angle;
+  const elasticBarLength = selectedTemplate.length;
   const apex = new THREE.Vector2(0, rise);
   const barDepth = 0.22;
   const barThickness = 0.18;
   const barSampleCount = 257;
-  const slidePin = new THREE.Vector2(0, -0.11);
+  const slidePin = new THREE.Vector2(0, -0.23);
   const slotLeft = -1.90;
   const slotRight = 0.55;
   const cycleDuration = 6;
@@ -297,19 +260,19 @@ function pointedArchInstrument(movement) {
     const normalized = THREE.MathUtils.clamp(arcFraction, 0, 1);
     const totalAngle = maximumTurningAngle
       * THREE.MathUtils.clamp(bend, 0, 1);
-    const pointAngle = totalAngle * normalized;
-    const ratios = constantCurvatureRatios(pointAngle);
+    const ratios = taperedBendIntegrals(totalAngle,normalized);
+    if(normalized===1&&bend===1)return apex.clone();
     return new THREE.Vector2(
       leftSpringingX
-        + elasticBarLength * normalized * ratios.f,
+        + elasticBarLength * ratios.f,
       springingY
-        + elasticBarLength * normalized * ratios.g,
+        + elasticBarLength * ratios.g,
     );
   };
   const tangentOnWorkingEdge = (arcFraction, bend) => {
     const angle = maximumTurningAngle
       * THREE.MathUtils.clamp(bend, 0, 1)
-      * THREE.MathUtils.clamp(arcFraction, 0, 1);
+      * (2*THREE.MathUtils.clamp(arcFraction, 0, 1)-THREE.MathUtils.clamp(arcFraction, 0, 1)**2);
     return new THREE.Vector2(Math.sin(angle), Math.cos(angle));
   };
   const pathAtBend = (bend) => {
@@ -398,8 +361,9 @@ function pointedArchInstrument(movement) {
   const updateBarGeometry = (bend) => {
     const path = pathAtBend(bend);
     for (let index = 0; index < barSampleCount; index += 1) {
-      const outer = path.outerPoints[index];
-      const inner = path.innerPoints[index];
+      const u=index/(barSampleCount-1)*(1-.115/elasticBarLength);
+      const outer=pointOnWorkingEdge(u,bend),tangent=tangentOnWorkingEdge(u,bend);
+      const inner=outer.clone().addScaledVector(new THREE.Vector2(tangent.y,-tangent.x),barDepth);
       const offset = index * 12;
       barPositions[offset] = outer.x;
       barPositions[offset + 1] = outer.y;
@@ -414,8 +378,8 @@ function pointedArchInstrument(movement) {
       barPositions[offset + 10] = inner.y;
       barPositions[offset + 11] = -barThickness / 2;
       const edgeOffset = index * 3;
-      edgePositions[edgeOffset] = outer.x;
-      edgePositions[edgeOffset + 1] = outer.y;
+      edgePositions[edgeOffset] = path.outerPoints[index].x;
+      edgePositions[edgeOffset + 1] = path.outerPoints[index].y;
       edgePositions[edgeOffset + 2] = 0;
     }
     barPositionAttribute.needsUpdate = true;
@@ -537,11 +501,12 @@ function pointedArchInstrument(movement) {
     const totalTurningAngle = maximumTurningAngle * bend;
     const turningRate = maximumTurningAngle * bendRate;
     const turningAcceleration = maximumTurningAngle * bendAcceleration;
-    const functions = constantCurvatureRatios(totalTurningAngle);
+    const functions = taperedBendIntegrals(totalTurningAngle);
     const tip = new THREE.Vector2(
       leftSpringingX + elasticBarLength * functions.f,
       springingY + elasticBarLength * functions.g,
     );
+    if(bend===1)tip.copy(apex);
     const tipVelocity = new THREE.Vector2(
       elasticBarLength * functions.f1 * turningRate,
       elasticBarLength * functions.g1 * turningRate,
@@ -625,6 +590,7 @@ function pointedArchInstrument(movement) {
         slotRange: [slotLeft, slotRight],
       },
     };
+    root.userData.updateWorkingParts?.(state);
     root.userData.kinematics = state;
   };
 
@@ -658,13 +624,13 @@ function pointedArchInstrument(movement) {
       cord:
         'One working cord joins the bar-tip/pencil collar to the loop pin on the locked horizontal slide; the operator takes up cord to set the bend.',
       finalArch:
-        'At greatest bend the left working edge is one circular half-arch from springing point to apex, and its mirror forms a genuine pointed crown.',
+        'At greatest bend the left working edge is one monotone tapering-curvature half-arch from springing point to apex, and its mirror forms a genuine pointed crown.',
       slide:
         'The slide is first positioned beneath the selected apex and locked; it is an adjustment coordinate, not a second cyclic actuator.',
     },
     degreesOfFreedom: {
       dependentCoordinates: [
-        'uniform-curvature elastic-bar profile',
+        'tapering-curvature elastic-bar profile',
         'bar-tip and pencil coordinates',
         'working cord length and take-up',
       ],
@@ -692,9 +658,6 @@ function pointedArchInstrument(movement) {
       barThickness,
       cycleDuration,
       elasticBarLength,
-      finalCircleRadius,
-      finalLeftCircleCenter,
-      finalRightCircleCenter,
       halfSpan,
       leftSpringingX,
       maximumTurningAngle,
@@ -753,7 +716,7 @@ function pointedArchInstrument(movement) {
         engravingEvidence:
           'The plate shows one long slotted base on the springing line, one slide pin beneath the crown, one nearly vertical cord, one thick elastic strip fixed at the left base and bowed to the crown, a small tip collar, and a jamb reference behind the strip.',
         reconstructionDisclosure:
-          'Brown gives no bar length, section, elastic modulus, force law, cord length, slide procedure, exact arch family, dimensions, or timing. A circular two-arc pointed profile is selected for the normalized final pose; uniform-curvature intermediate setup shapes and operator cord take-up are independently synthesized and identified as such.',
+          'Brown gives no bar length, section, elastic modulus, force law, cord length, slide procedure, exact arch family, dimensions, or timing. An inextensible tapering-curvature pointed profile is selected for the normalized final pose; tapering-curvature intermediate setup shapes and operator cord take-up are independently synthesized and identified as such.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 407',
@@ -772,7 +735,7 @@ function pointedArchInstrument(movement) {
     },
     transmission: {
       finalArcRelation:
-        'phi=2*atan(halfSpan/rise), radius=rise/sin(phi), barLength=radius*phi',
+        'theta(u)=phi*(2u-u^2); phi and length match the prescribed span and rise with a monotone rising tangent',
       inextensibleBarRelation:
         'working-edge arclength is constant for every displayed bend',
       setupRelation:
@@ -793,7 +756,8 @@ function pointedArchInstrument(movement) {
   targetArch.right.castShadow = false;
   updateBarGeometry(1);
   update(0);
-  return { root, update };
+  correctDrawingTemplateParts(root,407,update);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredPointedArchMovement(movement) {

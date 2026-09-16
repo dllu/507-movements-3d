@@ -142,56 +142,24 @@ test('movement 407 records Brown’s plate, written setup, and unavailable-anima
   assert.match(evidence.engravingEvidence,
     /one nearly vertical cord.*one thick elastic strip/);
   assert.match(evidence.reconstructionDisclosure,
-    /uniform-curvature intermediate setup shapes.*independently synthesized/);
+    /tapering-curvature intermediate setup shapes.*independently synthesized/);
   disposeModel(model.root);
 });
 
-test('movement 407 derives an exact constant-length circular half-arch tangent to the jamb and its pointed mirror', () => {
+test('movement 407 reaches the source apex monotonically with an inextensible tapered-curvature arch', () => {
   const model = createMovementModel(catalog.movements[406]);
-  const data = model.root.userData;
-  const { geometry, sourcePose } = data;
-  const maximumPath = data.pathAtBend(1);
-
-  near(geometry.maximumTurningAngle,
-    2 * Math.atan(geometry.halfSpan / geometry.rise), 0,
-  'turning angle from prescribed span and rise');
-  near(geometry.finalCircleRadius,
-    geometry.rise / Math.sin(geometry.maximumTurningAngle), 0,
-  'circle radius from rise and turning angle');
-  near(geometry.elasticBarLength,
-    geometry.finalCircleRadius * geometry.maximumTurningAngle, 0,
-  'constant working-edge length');
-  vectorNear(maximumPath.outerPoints[0],
-    new THREE.Vector2(geometry.leftSpringingX, geometry.springingY),
-    0, 'left springing point');
-  vectorNear(maximumPath.tip, geometry.apex, 0, 'selected apex');
-  vectorNear(data.tangentOnWorkingEdge(0, 1),
-    new THREE.Vector2(0, 1), 0, 'vertical jamb tangent');
-
-  let maximumCircleResidual = 0;
-  for (const point of maximumPath.outerPoints) {
-    maximumCircleResidual = Math.max(
-      maximumCircleResidual,
-      Math.abs(point.distanceTo(geometry.finalLeftCircleCenter)
-        - geometry.finalCircleRadius),
-    );
+  const data=model.root.userData,{geometry}=data,path=data.pathAtBend(1);
+  vectorNear(path.outerPoints[0],new THREE.Vector2(geometry.leftSpringingX,0),0,'fixed springing');
+  vectorNear(path.tip,geometry.apex,0,'source apex');
+  vectorNear(data.tangentOnWorkingEdge(0,1),new THREE.Vector2(0,1),0,'vertical base tangent');
+  assert.ok(geometry.maximumTurningAngle>0&&geometry.maximumTurningAngle<Math.PI/2,'pointed crown approached from below');
+  assert.ok(geometry.elasticBarLength>Math.hypot(geometry.halfSpan,geometry.rise));
+  for(let i=1;i<path.outerPoints.length;i++) {
+    assert.ok(path.outerPoints[i].x>=path.outerPoints[i-1].x);
+    assert.ok(path.outerPoints[i].y>=path.outerPoints[i-1].y);
+    assert.ok(path.outerPoints[i].y<=geometry.apex.y,'no shoulder above the crown');
   }
-  assert.ok(maximumCircleResidual < 4.5e-16);
-  const rightSpringing = new THREE.Vector2(
-    geometry.rightSpringingX,
-    geometry.springingY,
-  );
-  near(rightSpringing.distanceTo(geometry.finalRightCircleCenter),
-    geometry.finalCircleRadius, 4.5e-16,
-  'mirrored right springing on circle');
-  near(geometry.apex.distanceTo(geometry.finalRightCircleCenter),
-    geometry.finalCircleRadius, 4.5e-16,
-  'apex on mirrored circle');
-  assert.ok(Math.abs(Math.cos(geometry.maximumTurningAngle)) > 0.13,
-    'the mirrored halves meet with a point, not a horizontal tangent');
-  near(sourcePose.bend, 1, 0, 'source pose at greatest bend');
-  vectorNear(sourcePose.pencilPoint, geometry.apex, 0,
-    'source pencil at apex');
+  near(data.sourcePose.bend,1,0,'source pose');
   disposeModel(model.root);
 });
 
@@ -244,7 +212,7 @@ test('movement 407 keeps one fixed base point, one vertical base tangent, and on
   near(maximumCordLength, geometry.relaxedCordLength, 0,
     'relaxed working cord length');
   near(minimumTakeUp, 0, 0, 'no take-up when straight');
-  assert.ok(maximumTakeUp > 2.27);
+  near(maximumTakeUp,geometry.relaxedCordLength-(geometry.apex.y-geometry.slidePin.y),1e-14,"complete cord take-up");
   disposeModel(model.root);
 });
 
@@ -320,20 +288,17 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
     const cordEnd = blocks.cord.localToWorld(
       new THREE.Vector3(0, 0.5, 0),
     );
-    vectorNear(cordStart,
-      new THREE.Vector3(state.slidePin.x, state.slidePin.y, 0.33),
-      1e-13, 'rendered cord at slide loop');
-    vectorNear(cordEnd,
-      new THREE.Vector3(state.tip.x, state.tip.y, 0.33),
-      1e-13, 'rendered cord at tip collar');
+    const origin=new THREE.Vector3(state.slidePin.x,state.slidePin.y,.33),tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=tip.clone().sub(origin).normalize();
+    vectorNear(cordStart,origin.clone().addScaledVector(direction,.105),1e-13,'cord meets outside of slide loop');
+    vectorNear(cordEnd,tip.clone().addScaledVector(direction,-.139),1e-13,'cord meets outside of pencil loop');
     const collar = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'white-cord-and-bar-tip-connection-collar');
-    vectorNear(collar.getWorldPosition(new THREE.Vector3()), cordEnd,
+    vectorNear(collar.getWorldPosition(new THREE.Vector3()), tip,
       1e-13, 'tip collar and cord endpoint');
     const pencilPoint = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'pencil-point-on-drawing-board');
     near(pencilPoint.getWorldPosition(new THREE.Vector3()).z,
-      -0.265, 0, 'pencil tip on board');
+      -0.248, 0, 'pencil tip on board');
     assert.equal(data.contacts.slideInHorizontalSlot.locked, true);
     near(data.contacts.barAtFixedClamp.positionResidual, 0, 0,
       'rendered clamp position');
