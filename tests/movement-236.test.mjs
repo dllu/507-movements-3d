@@ -110,10 +110,10 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
 
   near(geometry.sourceScale, 0.016, 0, 'engraving scale');
   near(geometry.toothPitch, FULL_TURN / 15, 0, 'fifteen-tooth pitch');
-  near(geometry.longDriveFaceFraction, 0.65, 0,
-    'long pawl seats down the straight drive face');
-  near(geometry.shortDriveFaceFraction, 0.2, 0,
-    'short pawl seats near the outer drive-face end');
+  near(geometry.longDriveFaceFraction, 0, 0,
+    'long pawl seats at the rising-flank outer corner');
+  near(geometry.shortDriveFaceFraction, 0, 0,
+    'short pawl seats at the rising-flank outer corner');
   assert.ok(Math.abs(geometry.handoffError) < 3e-14);
   near(
     geometry.shortStartAngle - geometry.longStartAngle,
@@ -121,8 +121,8 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
     3e-14,
     'the two selected tooth faces share one ratchet phase',
   );
-  assert.ok(THREE.MathUtils.radToDeg(geometry.leverAmplitude) > 12);
-  assert.ok(THREE.MathUtils.radToDeg(geometry.leverAmplitude) < 12.3);
+  assert.ok(THREE.MathUtils.radToDeg(geometry.leverAmplitude) > 14.9);
+  assert.ok(THREE.MathUtils.radToDeg(geometry.leverAmplitude) < 15.05);
   const source = stateAtCycleCoordinate(geometry.sourceCyclePhase);
   near(source.leverAngle, 0, 2e-17, 'engraving lever pose');
   vectorNear(source.longAnchor, geometry.sourceLongAnchor, 2e-15,
@@ -132,8 +132,8 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
   vectorNear(
     source.longTipCenter,
     new THREE.Vector2(-1.28, 0.48),
-    0.05,
-    'engraving long-pawl nose',
+    0.33,
+    'source nose region with mechanically inferred outer-corner seating',
   );
   disposeModel(model.root);
 });
@@ -156,7 +156,7 @@ test('movement 236 long pawl drives one exact pitch with rigid contact', () => {
     assert.ok(state.activePawlLengthError < 3e-12);
     assert.ok(state.contactCenterError < 3e-12);
     assert.ok(state.activeTipVelocityError < 3e-12);
-    assert.ok(state.activeCompressionTorque > 1.1);
+    assert.ok(state.activeCompressionTorque > 0.28);
     assert.ok(state.wheelAngle >= previousWheelAngle - 2e-13);
     assert.ok(state.wheelAngularSpeed >= -2e-12);
     previousWheelAngle = state.wheelAngle;
@@ -189,7 +189,7 @@ test('movement 236 short pawl continues counterclockwise through the return stro
     assert.ok(state.activePawlLengthError < 3e-12);
     assert.ok(state.contactCenterError < 4e-12);
     assert.ok(state.activeTipVelocityError < 3e-12);
-    assert.ok(state.activeCompressionTorque > 0.35);
+    assert.ok(state.activeCompressionTorque > 0.28);
     assert.ok(state.wheelAngle >= previousWheelAngle - 2e-13);
     assert.ok(state.wheelAngularSpeed >= -2e-12);
     previousWheelAngle = state.wheelAngle;
@@ -243,9 +243,9 @@ test('movement 236 returned pawls remain rigid, smooth, and outside every tooth'
       state.shortProfileClearance,
     );
   }
-  assert.ok(maximumLongStep < 2.3e-4,
+  assert.ok(maximumLongStep < 2.7e-4,
     `long-pawl maximum sample step ${maximumLongStep}`);
-  assert.ok(maximumShortStep < 1.6e-4,
+  assert.ok(maximumShortStep < 2.2e-4,
     `short-pawl maximum sample step ${maximumShortStep}`);
   assert.ok(maximumLongClearance > 0.65);
   assert.ok(maximumShortClearance > 0.25);

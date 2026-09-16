@@ -1,3 +1,6 @@
+import { installAlternatingPawl236 } from './alternating-pawl-236-working-parts.js';
+import { starTappetState, finishStarTappet } from './star-tappet-working-parts.js';
+import { carrierPawlFlank225, carrierPawlClearance225, installCarrierPawl225 } from './carrier-pawl-225-working-parts.js';
 import {finishLiftDrawPawl232} from './lift-draw-pawl-232-working-parts.js';
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
 import { correctGearFingerStop } from './gear-finger-stop-working-parts.js';
@@ -14566,7 +14569,8 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   const ratchetOuterRadius = 1.56;
   const ratchetRootRadius = 1.3;
   const pawlNoseRadius = 0.09;
-  const pawlContactCenterRadius = ratchetOuterRadius + pawlNoseRadius;
+  const workingFlank = carrierPawlFlank225({ outerRadius: ratchetOuterRadius, rootRadius: ratchetRootRadius, pitch: toothPitch, noseRadius: pawlNoseRadius });
+  const pawlContactCenterRadius = workingFlank.radius;
   const pawlLength = 2.64;
   const carrierMidAngle = Math.PI / 2;
 
@@ -14639,8 +14643,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   const driveEnd = contactGeometryAtCarrierAngle(carrierEndAngle);
   const toothOuterStartPhase = 0.16;
   const toothOuterEndPhase = 0.25;
-  const ratchetMountPhase = driveStart.contactAngle
-    - toothOuterEndPhase * toothPitch;
+  const ratchetMountPhase = driveStart.contactAngle - workingFlank.angle;
   const pawlReturnLift = -0.25;
   const cyclesPerSecond = 0.25;
   const cyclePeriod = 1 / cyclesPerSecond;
@@ -14704,29 +14707,23 @@ function vibratingCarrierSinglePawlRatchet(movement) {
         driveEnd.pawlAngle,
         driveStart.pawlAngle,
         progress,
-      ) + pawlReturnLift * Math.sin(Math.PI * progress);
-      pawlAngularSpeed = (
-        driveStart.pawlAngle - driveEnd.pawlAngle
-        + pawlReturnLift * Math.PI * Math.cos(Math.PI * progress)
-      ) * progressRate;
+      ) + pawlReturnLift * Math.sin(Math.PI * local) ** 2;
+      pawlAngularSpeed = (driveStart.pawlAngle - driveEnd.pawlAngle) * progressRate
+        + pawlReturnLift * 2 * Math.PI * Math.sin(Math.PI * local)
+          * Math.cos(Math.PI * local) * 2 * cyclesPerSecond;
       pawlContactCenter = pawlPivot.clone().add(new THREE.Vector2(
         Math.cos(pawlAngle) * pawlLength,
         Math.sin(pawlAngle) * pawlLength,
       ));
-      returnClearance = pawlContactCenter.length()
-        - pawlContactCenterRadius;
+      returnClearance = carrierPawlClearance225(pawlContactCenter, wheelAngle, ratchet.userData.profilePoints.map(p => p.toArray()), pawlNoseRadius);
     }
-    const contactNormal = pawlContactCenter.clone().normalize();
+    const workingAngle = ratchetMountPhase + wheelAngle - cycleIndex * toothPitch;
+    const contactNormal = workingFlank.normal.clone().rotateAround(new THREE.Vector2(), workingAngle);
     const pawlContactPoint = pawlContactCenter.clone().addScaledVector(
       contactNormal,
       -pawlNoseRadius,
     );
-    const activeLocalAngle = driveStart.contactAngle
-      - cycleIndex * toothPitch;
-    const ratchetContactPoint = new THREE.Vector2(
-      Math.cos(activeLocalAngle + wheelAngle) * ratchetOuterRadius,
-      Math.sin(activeLocalAngle + wheelAngle) * ratchetOuterRadius,
-    );
+    const ratchetContactPoint = workingFlank.point.clone().rotateAround(new THREE.Vector2(), workingAngle);
     const pawlSurfaceVelocity = pawlPivotVelocity.clone().add(new THREE.Vector2(
       -(pawlContactPoint.y - pawlPivot.y) * pawlAngularSpeed,
       (pawlContactPoint.x - pawlPivot.x) * pawlAngularSpeed,
@@ -14753,6 +14750,8 @@ function vibratingCarrierSinglePawlRatchet(movement) {
         ? pawlContactPoint.distanceTo(ratchetContactPoint)
         : null,
       pawlContactPoint,
+      contactNormal,
+      outputMomentArm: -(ratchetContactPoint.x * contactNormal.y - ratchetContactPoint.y * contactNormal.x),
       pawlPivot,
       pawlPivotVelocity,
       pawlSurfaceVelocity,
@@ -14890,6 +14889,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     sourcePose: 0,
   };
   root.userData.geometry = {
+    workingFlank,
     carrierEndAngle,
     carrierLength,
     carrierMidAngle,
@@ -14923,7 +14923,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
-    reason: 'The official Movement 225 page marks its animation unavailable.',
+    reason: 'The official Movement 225 page has no canvas, ae.add_model or mm_present registration; its animation is unavailable.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -14987,7 +14987,9 @@ function vibratingCarrierSinglePawlRatchet(movement) {
       returnClearance: state.returnClearance,
     };
     root.userData.kinematics = state;
+    root.userData.updateWorkingParts225?.(state);
   };
+  installCarrierPawl225(root);
   update(0);
   return finish(root, update, new THREE.Vector3(2.4, -2.8, 12.5));
 }
@@ -16624,16 +16626,16 @@ function springTappetArmStarRatchet(movement) {
   const sharpTipPhase = 1 - driveFaceAngularSpan / toothPitch;
   const baseDriveFaceOuter = new THREE.Vector2(ratchetOuterRadius, 0);
   const baseDriveFaceRoot = new THREE.Vector2(
-    Math.cos(driveFaceAngularSpan) * ratchetRootRadius,
-    Math.sin(driveFaceAngularSpan) * ratchetRootRadius,
+    Math.cos(driveFaceAngularSpan - toothPitch) * ratchetRootRadius,
+    Math.sin(driveFaceAngularSpan - toothPitch) * ratchetRootRadius,
   );
   const baseDriveFaceVector = baseDriveFaceRoot.clone().sub(
     baseDriveFaceOuter,
   );
   const baseDriveFaceTangent = baseDriveFaceVector.clone().normalize();
   const baseDriveFaceNormal = new THREE.Vector2(
-    baseDriveFaceTangent.y,
-    -baseDriveFaceTangent.x,
+    -baseDriveFaceTangent.y,
+    baseDriveFaceTangent.x,
   );
   const baseNoseCenterOuter = baseDriveFaceOuter.clone().addScaledVector(
     baseDriveFaceNormal,
@@ -16750,8 +16752,7 @@ function springTappetArmStarRatchet(movement) {
   }
   const driveCarrierSwing = (driveSwingLow + driveSwingHigh) / 2;
   const driveCarrierEndAngle = sourceCarrierAngle - driveCarrierSwing;
-  const highCarrierAngle = sourceCarrierAngle
-    - THREE.MathUtils.degToRad(28);
+  const highCarrierAngle = driveCarrierEndAngle;
   const returnContactReleaseAngle = sourceCarrierAngle
     + THREE.MathUtils.degToRad(12);
   const lowCarrierAngle = sourceCarrierAngle
@@ -17043,7 +17044,7 @@ function springTappetArmStarRatchet(movement) {
       - holdingClickStateAtWheelAngle(wheelAngle - epsilon).clickDelta
     ) / (2 * epsilon);
   };
-  const stateAtCycleCoordinate = (rawCoordinate) => {
+  const nominalStateAtCycleCoordinate = (rawCoordinate) => {
     const cycleCoordinate = normalizedCoordinate(rawCoordinate);
     const cycleIndex = Math.floor(cycleCoordinate);
     const cyclePhase = cycleCoordinate - cycleIndex;
@@ -17293,6 +17294,11 @@ function springTappetArmStarRatchet(movement) {
       wheelDwelling: wheelAngularSpeed === 0,
     };
   };
+  const stateAtCycleCoordinate = rawCoordinate => starTappetState(
+    nominalStateAtCycleCoordinate(rawCoordinate),
+    {tappetRestRelativeAngle,tappetLength,tappetNoseRadius,holdingClickRestAngle,holdingClickPivot,holdingClickLength,holdingClickRadius},
+    profileClearanceAt,
+  );
   const stateAtTime = (time) => stateAtCycleCoordinate(
     time * cyclesPerSecond,
   );
@@ -17613,6 +17619,7 @@ function springTappetArmStarRatchet(movement) {
     },
     sourceUrl: movement.sourceUrl,
   };
+  root.userData.nominalStateAtCycleCoordinate = nominalStateAtCycleCoordinate;
   root.userData.stateAtCycleCoordinate = stateAtCycleCoordinate;
   root.userData.stateAtTime = stateAtTime;
   root.userData.driveContactAtCarrierAngle = driveContactAtCarrierAngle;
@@ -17647,7 +17654,7 @@ function springTappetArmStarRatchet(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     carrierGroup.rotation.z = state.carrierAngle;
-    tappet.position.set(state.tappetHinge.x, state.tappetHinge.y, 0.39);
+    tappet.position.set(state.tappetHinge.x, state.tappetHinge.y, 0.5);
     tappet.rotation.z = state.tappetAngle;
     tappetSpring.userData.setCurve(springCurveAt(state.tappetDelta));
     setSpin(ratchet, state.wheelAngle);
@@ -17685,8 +17692,9 @@ function springTappetArmStarRatchet(movement) {
     };
     root.userData.kinematics = state;
   };
+  finishStarTappet(root);
   update(0);
-  return finish(root, update, new THREE.Vector3(2.7, -3.7, 13.8));
+  return finish(root, update, new THREE.Vector3(1.1, -0.7, 18));
 }
 
 function alternatingTwoPawlContinuousRatchet(movement) {
@@ -17734,29 +17742,30 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   const toothOuterStartPhase = 0.08;
   const toothOuterEndPhase = 0.2;
   const pawlNoseRadius = 0.045;
-  const longDriveFaceFraction = 0.65;
-  const shortDriveFaceFraction = 0.2;
+  const longDriveFaceFraction = 0;
+  const shortDriveFaceFraction = 0;
   const shortToothOffset = -4;
   const cyclesPerSecond = 0.25;
   const cyclePeriod = 1 / cyclesPerSecond;
   const sourceCyclePhase = 0.25;
-  const initialCyclePhase = sourceCyclePhase;
+  const initialCyclePhase = 0; // Both independent pawls are seated at the opening handoff.
   const longResetSwing = THREE.MathUtils.degToRad(-18);
   const shortResetSwing = THREE.MathUtils.degToRad(-18);
+  const returnClearanceSwing = 0.15;
 
   const baseFaceOuter = new THREE.Vector2(
-    Math.cos(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
-    Math.sin(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
+    Math.cos(toothOuterStartPhase * toothPitch) * ratchetOuterRadius,
+    Math.sin(toothOuterStartPhase * toothPitch) * ratchetOuterRadius,
   );
   const baseFaceRoot = new THREE.Vector2(
-    Math.cos(toothPitch) * ratchetRootRadius,
-    Math.sin(toothPitch) * ratchetRootRadius,
+    ratchetRootRadius,
+    0,
   );
   const baseFaceVector = baseFaceRoot.clone().sub(baseFaceOuter);
   const baseFaceTangent = baseFaceVector.clone().normalize();
   const baseFaceNormal = new THREE.Vector2(
-    baseFaceTangent.y,
-    -baseFaceTangent.x,
+    Math.cos(toothOuterStartPhase * toothPitch - THREE.MathUtils.degToRad(10)),
+    Math.sin(toothOuterStartPhase * toothPitch - THREE.MathUtils.degToRad(10)),
   );
   const driveGeometryAtFraction = (fraction) => {
     const profilePoint = baseFaceOuter.clone().addScaledVector(
@@ -17838,8 +17847,8 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       shortStartAngle,
     };
   };
-  let amplitudeLow = THREE.MathUtils.degToRad(12);
-  let amplitudeHigh = THREE.MathUtils.degToRad(12.3);
+  let amplitudeLow = THREE.MathUtils.degToRad(14.9);
+  let amplitudeHigh = THREE.MathUtils.degToRad(15.05);
   let lowHandoffError = driveStartsAtAmplitude(
     amplitudeLow,
   ).handoffError;
@@ -18059,11 +18068,13 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     const eased = smoothStep01(fraction);
     const easedDerivative = 6 * fraction * (1 - fraction);
     const angle = THREE.MathUtils.lerp(startAngle, endAngle, eased)
-      + swing * Math.sin(Math.PI * eased);
+      + swing * Math.sin(Math.PI * eased)
+      - returnClearanceSwing * Math.sin(Math.PI * fraction) ** 2;
     const derivativePerFraction = (
       endAngle - startAngle
       + swing * Math.PI * Math.cos(Math.PI * eased)
-    ) * easedDerivative;
+    ) * easedDerivative
+      - returnClearanceSwing * Math.PI * Math.sin(2 * Math.PI * fraction);
     return { angle, derivativePerFraction, eased };
   };
   const boundaryEpsilon = 1e-12;
@@ -18224,9 +18235,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       activeContactNormal,
       pawlNoseRadius,
     );
-    const activeForceDirection = activeContactCenter.clone().sub(
-      activeAnchor,
-    ).normalize();
+    const activeForceDirection = activeContactNormal.clone().negate();
     const activeCompressionTorque = cross2(
       activeProfilePoint,
       activeForceDirection,
@@ -18490,7 +18499,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,
     longToShortHandoff: (0.5 - initialCyclePhase) * cyclePeriod,
-    sourcePose: 0,
+    sourcePose: (sourceCyclePhase - initialCyclePhase) * cyclePeriod,
   };
   root.userData.geometry = {
     axis: Z_AXIS.clone(),
@@ -18521,6 +18530,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     shortPawlLength,
     shortPawlPlaneZ,
     shortResetSwing,
+    returnClearanceSwing,
     shortStartAngle,
     shortToothOffset,
     sourceCyclePhase,
@@ -18539,7 +18549,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
-    reason: 'The official Movement 236 page marks its animation unavailable.',
+    reason: 'The official page has an unavailable marker and no inline animation registration.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -18629,7 +18639,8 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(2.8, -3.9, 13.6));
+  installAlternatingPawl236(root);
+  return finish(root, update, new THREE.Vector3(0.5, 0.4, 14));
 }
 
 function coaxialArmCrownRatchet(movement) {
