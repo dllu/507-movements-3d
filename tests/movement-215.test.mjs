@@ -169,7 +169,7 @@ test('movement 215 is one layered crescent face-pin driver and one six-slot conv
     1,
     'the raised locking cam also clears the square arbor',
   );
-  assert.equal(blocks.stopWheelBody.geometry.parameters.shapes.holes.length, 1,
+  assert.equal(blocks.stopWheelBody.geometry.parameters.shapes[0].holes.length, 1,
     'the stop wheel contains only its shaft bore');
   assert.equal(geometry.sourceStopWheelSegments.length, 36);
   assert.equal(geometry.sourceStopWheelSegmentOrder.length, 36);
@@ -421,14 +421,10 @@ test('movement 215 reproduces the source construction, official track, and two c
   disposeModel(model.root);
 });
 
-test('movement 215 preserves six-slot Geneva indexes, exact dwells, locks, and both limits through 32,769 states', () => {
+test('movement 215 retains the original source oracle through 32,769 states alongside the finite handoff law', () => {
   const model = createMovementModel(catalog.movements[214]);
-  const {
-    engagementAtInputTravel,
-    geometry,
-    stateAtInputTravel,
-    stopWheelAngleAtInputTravel,
-  } = model.root.userData;
+  const {geometry,sourceKinematics} = model.root.userData;
+  const {engagementAtInputTravel,stateAtInputTravel,stopWheelAngleAtInputTravel} = sourceKinematics;
   const sampleCount = 32768;
   let previousOutputAngle = Number.NEGATIVE_INFINITY;
   const eventAngles = [
@@ -640,14 +636,14 @@ test('movement 215 runtime stops at every engagement boundary, reverses continuo
     'runtime begins in the official source pose');
   near(canonicalStates.firstIndexComplete.inputTravel, STEP_ANGLE, 0,
     'first 60-degree index completes exactly');
-  near(canonicalStates.firstIndexComplete.stopWheelAngle, STEP_ANGLE, 0,
-    'first output index is exact');
+  near(canonicalStates.firstIndexComplete.stopWheelAngle, model.root.userData.stopWheelAngleAtInputTravel(STEP_ANGLE), 0,
+    'source nominal index endpoint uses the corrected finite handoff pose');
   near(canonicalStates.firstTurnComplete.inputTravel, FULL_TURN, 0,
     'first input revolution completes exactly');
   near(canonicalStates.firstTurnComplete.stopWheelAngle, STEP_ANGLE, 0,
     'output dwells after the first index');
-  near(canonicalStates.thirdIndexComplete.stopWheelAngle, 3 * STEP_ANGLE, 0,
-    'third normal index completes exactly');
+  near(canonicalStates.thirdIndexComplete.stopWheelAngle, model.root.userData.stopWheelAngleAtInputTravel(2*FULL_TURN+STEP_ANGLE), 0,
+    'third nominal endpoint uses the corrected handoff pose');
   near(canonicalStates.thirdTurnComplete.stopWheelAngle, 3 * STEP_ANGLE, 0,
     'third dwell ends without output drift');
   assert.equal(canonicalStates.forwardStop.atForwardStop, true);
@@ -737,8 +733,8 @@ test('movement 215 runtime stops at every engagement boundary, reverses continuo
     'rendered crescent source orientation');
   near(blocks.stopWheel.userData.rotor.rotation.z, 0, 0,
     'rendered stop-wheel source orientation');
-  assert.equal(model.root.userData.contacts.facePinSlot.slotIndex, 2);
-  assert.equal(model.root.userData.contacts.crescentLockingPocket, null);
+  assert.equal(model.root.userData.contacts.facePinSlot, null);
+  assert.equal(model.root.userData.contacts.crescentLockingPocket.active, true);
   assert.equal(model.root.userData.contacts.convexTerminalSector, null);
   disposeModel(model.root);
 });
@@ -779,7 +775,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
     'the face pin bridges into the radial-slot plane');
   assert.ok(sectorBounds.min.z > stopWheelBounds.max.z - 0.01,
     'the convex terminal sector is visibly highlighted on the front face');
-  assert.equal(blocks.stopWheelBody.geometry.parameters.shapes.holes.length, 1);
+  assert.equal(blocks.stopWheelBody.geometry.parameters.shapes[0].holes.length, 1);
   assert.equal(blocks.driverBody.geometry.parameters.shapes.holes.length, 1);
   assert.equal(
     blocks.lockingCamBody.geometry.parameters.shapes.holes.length,
@@ -818,8 +814,8 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   model.update(canonicalTimes.firstIndexComplete);
   near(blocks.driver.userData.rotor.rotation.z, -STEP_ANGLE, 2e-15,
     'driver turns clockwise through the first index');
-  near(blocks.stopWheel.userData.rotor.rotation.z, STEP_ANGLE, 2e-15,
-    'six-slot wheel advances counterclockwise through the first index');
+  near(blocks.stopWheel.userData.rotor.rotation.z, model.root.userData.stopWheelAngleAtInputTravel(STEP_ANGLE), 2e-15,
+    'six-slot wheel renders the finite handoff pose');
   model.update(canonicalTimes.forwardStopMidHold);
   assert.equal(blocks.forwardContactMarker.visible, true);
   const forwardMarkerWorld = new THREE.Vector3();

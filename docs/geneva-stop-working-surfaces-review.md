@@ -1,6 +1,6 @@
 # Geneva winding stops: 212 and 215
 
-This is a bounded finite-geometry correction, **not complete loaded-contact qualification**. Movement 212 retains an unresolved broad-finger indexing law; 215 retains a short pin/mouth collision at the engagement handoff. Both are stated in the viewer's `reconstructionNote`.
+This records the initial bounded finite-geometry correction. Movement 212 still retains an unresolved broad-finger indexing law. The former 215 mouth collision described below was subsequently corrected by the compatible branch in [the 215 contact follow-up](geneva-stop-215-contact-review.md); that review supersedes the historical 215 handoff residual here. Neither pass claims complete passive loaded-contact qualification.
 
 ## Sources and retained motion
 
@@ -16,13 +16,13 @@ The official [212 page](https://507movements.com/mm_212.html) and [215 page](htt
 
 **Both.** Solid beam ends at the rotating shafts are replaced by fixed through-bored support plates attached to the existing frame. New support meshes cast and receive shadows. Source-facing cameras, full-cycle bounds, disabled ground/fog, and minimum display durations of 14 seconds (212) and 16 seconds (215) improve readability. Playback retains geometry buffers.
 
-## Remaining contact problems
+## Remaining 212 problem and historical 215 investigation
 
 **212 indexing.** The broad finger has about `0.001007` overlap at the middle of the first ordinary index, while selected earlier/later index poses have about 0.034 clearance. A small phase change alone cannot fit both flanks at the pinch. The oracle's interpolated schedule is therefore a reference animation, not a solved finite transmission. This pass improves the circular dwell and supports without shaving away the working finger or claiming that its indexing law is mechanically solved. A future correction needs a coherent contacting branch and compatible finger/slot flanks.
 
-**215 handoff.** At input travel `-5.199966088277341`, just outside the nominal active interval, the finite pin penetrates the rounded slot mouth by about `0.029991`. The source orbit and switching angles are not a tangent-entry Geneva construction. Interior indices, interior dwells and terminal stops are checked separately from this unqualified handoff interval.
+**215 handoff before the follow-up.** At input travel `-5.199966088277341`, just outside the nominal active interval, the finite pin penetrates the rounded slot mouth by about `0.029991`. The source orbit and switching angles are not a tangent-entry Geneva construction. Interior indices, interior dwells and terminal stops are checked separately from this unqualified handoff interval.
 
-A bounded offline candidate relieved only the pin's inactive mouth sweep. It cleared the sampled full-cycle collision and retained the interior slot and terminal faces, but left a 0.022 drive gap at entry/exit, lasting about 0.02 input radians. The crescent also did not maintain sufficient contact to supply that missing transfer. **That relief was rejected and is not in production.** Removing the mouth material alone is not a contacting solution. A future pass must reconstruct the compatible pickup/release branch, retaining actual load faces and checking torque direction; only then consider a passive/native study if needed. Diagnostic candidate scripts remain in `/dev/shm/geneva36-relief.mjs`, `/dev/shm/geneva36-candidate.test.mjs`, and `/dev/shm/geneva36-cam-mouth.mjs` for the current session.
+A bounded offline candidate relieved only the pin's inactive mouth sweep. It cleared the sampled full-cycle collision and retained the interior slot and terminal faces, but left a 0.022 drive gap at entry/exit, lasting about 0.02 input radians. The crescent also did not maintain sufficient contact to supply that missing transfer. **That relief-only law was rejected.** The later follow-up combines the relief with a compatible contacting branch; it does not retain this unsupported schedule. Removing the mouth material alone is not a contacting solution. A future pass must reconstruct the compatible pickup/release branch, retaining actual load faces and checking torque direction; only then consider a passive/native study if needed. Diagnostic candidate scripts remain in `/dev/shm/geneva36-relief.mjs`, `/dev/shm/geneva36-candidate.test.mjs`, and `/dev/shm/geneva36-cam-mouth.mjs` for the current session.
 
 Friction, impact, inertia and watch-spring loading are not simulated. No force or loaded operation claim follows from these prescribed motion laws or geometric checks.
 
