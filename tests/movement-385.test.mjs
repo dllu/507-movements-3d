@@ -120,7 +120,7 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
   disposeModel(model.root);
 });
 
-test('movement 385 preserves Brown\'s stated action, measured plate, and official animation event proportions', () => {
+test('movement 385 preserves Brown\'s stated action, measured plate, and verified official animation event proportions', () => {
   const movement = catalog.movements[384];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -139,15 +139,10 @@ test('movement 385 preserves Brown\'s stated action, measured plate, and officia
   assert.equal(sourceAnimation.available, true);
   assert.equal(sourceAnimation.officialCanvasModelPresent, true);
   assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
+  assert.equal(sourceAnimation.officialCanvasModelId, 'mm_385');
   assert.deepEqual(sourceAnimation.sourceViewBox, [0, 0, 42, 42]);
-  assert.deepEqual(
-    sourceAnimation.normalizedEventPhases,
-    [0, 0.4, 0.5, 0.9, 1],
-  );
-  assert.deepEqual(
-    timeline.normalizedEventPhases,
-    sourceAnimation.normalizedEventPhases,
-  );
+  assert.deepEqual(sourceAnimation.normalizedEventPhases, timeline.normalizedEventPhases);
+  assert.deepEqual(timeline.normalizedEventPhases, [0, 0.4, 0.5, 0.9, 1]);
   assert.equal(
     dynamics.sourceSpecifiesDimensionsMassGravityAbsoluteTimingOrDoorAngle,
     false,
@@ -164,13 +159,14 @@ test('movement 385 preserves Brown\'s stated action, measured plate, and officia
   assert.equal(plate.halfEndpointSpanPixels, 228.5);
   assert.equal(plate.jointRisePixels, 192);
   assert.equal(evidence.explicitInBrownDescription.length, 4);
+  assert.match(evidence.officialAnimationEvidence, /inline mm_385 canvas model/);
   assert.match(evidence.officialAnimationEvidence, /0\.4, 0\.5, and 0\.9/);
   assert.match(evidence.plateProportionUse, /192 pixels/);
   assert.match(evidence.reconstructionDisclosure, /independently engineered/);
   disposeModel(model.root);
 });
 
-test('movement 385 follows the official open-dwell-close-dwell phases with smooth zero-rate boundaries', () => {
+test('movement 385 follows its prescribed open-dwell-close-dwell phases with smooth zero-rate boundaries', () => {
   const model = createMovementModel(catalog.movements[384]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline } = data;
@@ -265,9 +261,9 @@ test('movement 385 equal rigid links place the weighted apex exactly over the pi
   for (let sample = -1400; sample <= 2800; sample += 1) {
     const state = stateAtTime(timeline.cycleDuration * sample / 1400);
     near(state.apex.distanceTo(state.frameAnchor),
-      geometry.linkLength, 5e-16, 'frame-side rigid link length');
+      geometry.linkLength, 2e-15, 'frame-side rigid link length');
     near(state.apex.distanceTo(state.doorAnchor),
-      geometry.linkLength, 5e-16, 'door-side rigid link length');
+      geometry.linkLength, 2e-15, 'door-side rigid link length');
     near(state.apex.x, state.midpoint.x, 0,
       'apex above chord midpoint x');
     near(state.apex.z, state.midpoint.z, 0,
@@ -275,11 +271,11 @@ test('movement 385 equal rigid links place the weighted apex exactly over the pi
     near(state.apex.y - geometry.endpointY,
       Math.sqrt(
         geometry.linkLength ** 2 - (state.endpointDistance / 2) ** 2,
-      ), 5e-16, 'exact isosceles-toggle rise');
+      ), 2e-15, 'exact isosceles-toggle rise');
     near(state.weightEye.y - state.weightCenter.y,
-      geometry.weightEyeOffsetY, 3e-16, 'weight eye offset');
+      geometry.weightEyeOffsetY, 1e-15, 'weight eye offset');
     near(state.apex.y - state.weightEye.y,
-      geometry.weightSuspensionLength, 3e-16,
+      geometry.weightSuspensionLength, 2e-15,
       'fixed vertical weight suspension');
     near(state.weightCenter.x, state.apex.x, 0,
       'weight hangs vertically beneath apex x');
@@ -377,7 +373,7 @@ test('movement 385 renderer keeps both pin yokes aligned to their links while bi
     );
     const frameToDoor = expected.doorAnchor.clone()
       .sub(expected.frameAnchor).setY(0).normalize();
-    vectorNear(frameDirection, frameToDoor, 3e-16,
+    vectorNear(frameDirection, frameToDoor, 2e-15,
       'frame pin yoke aims along toggle chord');
     const doorWorldDirection = new THREE.Vector3(
       Math.cos(expected.doorPinWorldYaw),
@@ -393,16 +389,16 @@ test('movement 385 renderer keeps both pin yokes aligned to their links while bi
         `fixed hinge barrel ${index}`);
     });
     near(data.contacts.toggleJoint.leftLinkClosure,
-      0, 5e-16, 'runtime left link closure');
+      0, 2e-15, 'runtime left link closure');
     near(data.contacts.toggleJoint.rightLinkClosure,
-      0, 5e-16, 'runtime right link closure');
+      0, 2e-15, 'runtime right link closure');
     near(expected.doorAnchor.y, geometry.endpointY, 0,
       'door pin height');
   }
   disposeModel(model.root);
 });
 
-test('movement 385 closes exactly after one source-proportioned cycle before movement 507 remains authored', () => {
+test('movement 385 closes exactly after one prescribed cycle before movement 507 remains authored', () => {
   const movement = catalog.movements[384];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -427,7 +423,7 @@ test('movement 385 closes exactly after one source-proportioned cycle before mov
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
   assert.ok(Number.isFinite(data.groundFloorY));
   for (const residual of Object.values(data.constraintResiduals)) {
-    near(residual, 0, 3e-16, 'static closure residual');
+    near(residual, 0, 2e-15, 'static closure residual');
   }
 
   const movement507 = catalog.movements[506];

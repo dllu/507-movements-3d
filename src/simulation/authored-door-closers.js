@@ -1,3 +1,4 @@
+import { correctDoorCloserParts } from './door-closer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -170,7 +171,7 @@ function russianWeightedDoorCloser(movement) {
   const hingeAxis = new THREE.Vector3(0, 0, 0);
   const framePinOffset = 1.05;
   const doorPinRadius = 2.25;
-  const endpointY = 3.24;
+  const endpointY = 3.64;
   const linkLength = 2.15;
   const maximumDoorAngle = THREE.MathUtils.degToRad(78);
   const cycleDuration = 10;
@@ -681,13 +682,8 @@ function russianWeightedDoorCloser(movement) {
     sourceAnimation: {
       available: true,
       officialCanvasModelPresent: true,
-      normalizedEventPhases: [
-        0,
-        openingEndPhase,
-        openDwellEndPhase,
-        closingEndPhase,
-        1,
-      ],
+      officialCanvasModelId: 'mm_385',
+      normalizedEventPhases: [0, openingEndPhase, openDwellEndPhase, closingEndPhase, 1],
       sourcePrescribedAbsoluteTiming: false,
       sourceViewBox: [0, 0, 42, 42],
     },
@@ -711,11 +707,11 @@ function russianWeightedDoorCloser(movement) {
           'the descending weight depresses the toggle joint toward a straight line and widens the pins to close the door',
         ],
         officialAnimationEvidence:
-          'the official canvas model uses a static support, one interpolated member, one connecting rod, and normalized key positions 0, 0.4, 0.5, and 0.9 in a 42-by-42 view',
+          'the inline mm_385 canvas model has a static support, an interpolated member, a connecting rod, and normalized key positions 0, 0.4, 0.5, and 0.9 in a 42-by-42 view',
         plateProportionUse:
           'the equal-link length is selected so the closed reconstruction reproduces the plate ratio of 192 pixels joint rise to 228.5 pixels half endpoint span',
         reconstructionDisclosure:
-          'the real three-dimensional door hinge arc, absolute scale, 78-degree opening, ten-second quintic schedule, weight mass, materials, architecture, and camera are independently engineered rather than copied from the proprietary canvas',
+          'the real three-dimensional door hinge arc, absolute scale, 78-degree opening, ten-second quintic schedule, weight mass, materials, architecture, and camera are independently engineered reconstruction choices; the official animation supplies the qualitative action and normalized event phases',
       },
       officialPage: movement.sourceUrl,
       primaryScan: {
@@ -741,7 +737,7 @@ function russianWeightedDoorCloser(movement) {
         1,
       ],
       note:
-        'source event proportions are retained while quintic easing gives zero velocity and acceleration at every motion/dwell boundary',
+        'source event proportions are retained; the ten-second duration and quintic easing are reconstruction choices giving zero velocity and acceleration at motion/dwell boundaries',
     },
     transmission: {
       endpointDistanceLaw:
@@ -769,5 +765,5 @@ function russianWeightedDoorCloser(movement) {
 
 export function createAuthoredDoorCloserMovement(movement) {
   if (movement.id !== 385) return null;
-  return russianWeightedDoorCloser(movement);
+  return correctDoorCloserParts(russianWeightedDoorCloser(movement));
 }
