@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {tubePathUpdater} from './update-tube-path.js';
 import {
   PALETTE,
   markShadows,
@@ -78,7 +79,7 @@ function arcPoints2D({ center, end, radius, start, steps, z }) {
   const endAngle = Math.atan2(end.y - center.y, end.x - center.x);
   const arcDelta = signedShortestAngle(startAngle, endAngle);
   const points = [];
-  for (let index = 0; index <= steps; index += 1) {
+  for (let index = 0; steps > 0 && index <= steps; index += 1) {
     const angle = startAngle + arcDelta * index / steps;
     points.push(new THREE.Vector3(
       center.x + radius * Math.cos(angle),
@@ -153,6 +154,7 @@ function ropeSteering(movement) {
     fixedGuideContact,
     guideCenter,
     ropePlaneZ,
+    includePoints,
   }) => {
     const attachmentGuideContact = tangentPointFromExternalPoint(
       guideCenter,
@@ -165,21 +167,23 @@ function ropeSteering(movement) {
       end: fixedGuideContact,
       radius: guideRadius,
       start: attachmentGuideContact,
-      steps: 18,
+      steps: includePoints ? 18 : 0,
       z: ropePlaneZ,
     });
     const points = [];
-    appendPoint(points, new THREE.Vector3(
-      attachment.x,
-      attachment.y,
-      ropePlaneZ,
-    ));
-    for (const point of arc.points) appendPoint(points, point);
-    appendPoint(points, new THREE.Vector3(
-      drumContact.x,
-      drumContact.y,
-      ropePlaneZ,
-    ));
+    if (includePoints) {
+      appendPoint(points, new THREE.Vector3(
+        attachment.x,
+        attachment.y,
+        ropePlaneZ,
+      ));
+      for (const point of arc.points) appendPoint(points, point);
+      appendPoint(points, new THREE.Vector3(
+        drumContact.x,
+        drumContact.y,
+        ropePlaneZ,
+      ));
+    }
     const straightLength = attachment.distanceTo(attachmentGuideContact)
       + fixedGuideContact.distanceTo(drumContact);
     return {
@@ -191,7 +195,7 @@ function ropeSteering(movement) {
     };
   };
 
-  const branchRoutesAtTillerAngle = (tillerAngleRadian) => {
+  const branchRoutesAtTillerAngle = (tillerAngleRadian, includePoints = true) => {
     const attachment = tillerTipAtAngle(tillerAngleRadian);
     const upper = routeFromAttachmentToDrum({
       attachment,
@@ -200,6 +204,7 @@ function ropeSteering(movement) {
       fixedGuideContact: upperFixedGuideContact,
       guideCenter: upperGuideCenter,
       ropePlaneZ: upperRopePlaneZ,
+      includePoints,
     });
     const lower = routeFromAttachmentToDrum({
       attachment,
@@ -208,6 +213,7 @@ function ropeSteering(movement) {
       fixedGuideContact: lowerFixedGuideContact,
       guideCenter: lowerGuideCenter,
       ropePlaneZ: lowerRopePlaneZ,
+      includePoints,
     });
     return {
       attachment,
@@ -231,11 +237,11 @@ function ropeSteering(movement) {
   const solveTillerAngleForDifferential = (targetDifferentialLength) => {
     let low = -maximumTillerAngle;
     let high = maximumTillerAngle;
-    const increasing = branchRoutesAtTillerAngle(high).differentialLength
-      > branchRoutesAtTillerAngle(low).differentialLength;
+    const increasing = branchRoutesAtTillerAngle(high, false).differentialLength
+      > branchRoutesAtTillerAngle(low, false).differentialLength;
     for (let iteration = 0; iteration < 64; iteration += 1) {
       const middle = (low + high) / 2;
-      const difference = branchRoutesAtTillerAngle(middle)
+      const difference = branchRoutesAtTillerAngle(middle, false)
         .differentialLength;
       if ((difference < targetDifferentialLength) === increasing) {
         low = middle;
@@ -249,8 +255,8 @@ function ropeSteering(movement) {
   const differentialDerivativeAtAngle = (angleRadian) => {
     const step = 1e-6;
     return (
-      branchRoutesAtTillerAngle(angleRadian + step).differentialLength
-      - branchRoutesAtTillerAngle(angleRadian - step).differentialLength
+      branchRoutesAtTillerAngle(angleRadian + step, false).differentialLength
+      - branchRoutesAtTillerAngle(angleRadian - step, false).differentialLength
     ) / (2 * step);
   };
 
@@ -497,7 +503,7 @@ function ropeSteering(movement) {
         new THREE.Vector3(),
         new THREE.Vector3(0.001, 0, 0),
       ),
-      2,
+      220,
       ropeRadius,
       7,
       false,
@@ -507,6 +513,7 @@ function ropeSteering(movement) {
   rope.userData.isBelt = false;
   rope.userData.isSingleContinuousRope = true;
   root.add(rope);
+  const refillRope = tubePathUpdater(rope.geometry);
   const ropeMarkers = Array.from({ length: markerCount }, (_, index) => {
     const marker = addRole(new THREE.Mesh(
       new THREE.SphereGeometry(0.061, 16, 11),
@@ -539,15 +546,7 @@ function ropeSteering(movement) {
 
   const updateRopeGeometry = (routes) => {
     const curve = buildContinuousRopeCurve(routes);
-    const oldGeometry = rope.geometry;
-    rope.geometry = new THREE.TubeGeometry(
-      curve,
-      220,
-      ropeRadius,
-      7,
-      false,
-    );
-    oldGeometry.dispose();
+    refillRope(curve);
     return curve;
   };
 
@@ -600,7 +599,7 @@ function ropeSteering(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'single-wound-steering-rope-over-two-guide-sheaves-driving-a-rudder-tiller',
@@ -727,6 +726,10 @@ function ropeSteering(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.2, 6.5, 11.8);
   root.userData.groundFloorY = -2.00;
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   markShadows(root);
   ropeMarkers.forEach((marker) => {
     marker.castShadow = false;
