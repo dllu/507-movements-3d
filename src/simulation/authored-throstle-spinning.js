@@ -12,6 +12,8 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
+import { correctSpinningFanParts, throstleYarnCurve } from './spinning-fan-working-parts.js';
+
 function addRole(object, role) {
   object.userData.role = role;
   return object;
@@ -140,22 +142,22 @@ function throstleDrawingAndTwisting(movement) {
   const rollCenters = {
     backBottom: new THREE.Vector3(
       backCenterX,
-      nipY - rollRadius,
+      nipY - rollRadius - 0.030,
       0,
     ),
     backTop: new THREE.Vector3(
       backCenterX,
-      nipY + rollRadius,
+      nipY + rollRadius + 0.030,
       0,
     ),
     frontBottom: new THREE.Vector3(
       frontCenterX,
-      nipY - rollRadius,
+      nipY - rollRadius - 0.030,
       0,
     ),
     frontTop: new THREE.Vector3(
       frontCenterX,
-      nipY + rollRadius,
+      nipY + rollRadius + 0.030,
       0,
     ),
   };
@@ -330,7 +332,7 @@ function throstleDrawingAndTwisting(movement) {
   const liveYarn = makeDynamicCable({
     color: PALETTE.brass,
     maxSegments: 36,
-    radius: 0.034,
+    radius: 0.026,
   });
   liveYarn.userData.role =
     'continuous-yarn-from-front-rolls-through-flyer-eye-to-bobbin';
@@ -403,30 +405,14 @@ function throstleDrawingAndTwisting(movement) {
     const flyerAngle = flyerAngularSpeed * time;
     const bobbinAngle = bobbinAngularSpeed * time;
     const relativeWindingAngle = flyerAngle - bobbinAngle;
-    const flyerRadial = new THREE.Vector3(
-      Math.cos(flyerAngle),
-      0,
-      -Math.sin(flyerAngle),
-    );
     const flyerEye = spindleOrigin.clone().add(
       flyerEyeLocal.clone().applyAxisAngle(Y_AXIS, flyerAngle),
     );
     const windingContact = spindleOrigin.clone().add(
       windingContactLocal.clone().applyAxisAngle(Y_AXIS, flyerAngle),
     );
-    const yarnControl = new THREE.Vector3(
-      THREE.MathUtils.lerp(frontNip.x, topGuide.x, 0.58),
-      THREE.MathUtils.lerp(frontNip.y, topGuide.y, 0.58) + 0.16,
-      0,
-    );
-    const liveYarnCurve = new THREE.CatmullRomCurve3([
-      frontNip.clone(),
-      yarnControl,
-      topGuide.clone(),
-      topGuide.clone().addScaledVector(flyerRadial, 0.25),
-      flyerEye,
-      windingContact,
-    ], false, 'centripetal');
+    const liveYarnCurve = throstleYarnCurve(frontNip, topGuide, spindleOrigin,
+      flyerAngle, flyerEye, windingContact);
     const backMaterialVelocity = X_AXIS.clone().multiplyScalar(
       backDeliverySpeed,
     );
@@ -632,10 +618,11 @@ function throstleDrawingAndTwisting(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   markShadows(root);
+  correctSpinningFanParts(root, 496);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.8, 4.9, 9.2),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

@@ -221,8 +221,8 @@ test('movement 496 live yarn is a smooth closed-cycle path fixed to both guides'
       `yarn begins at B nip ${sample}`);
     vectorNear(state.liveYarnPoints.at(-1), state.windingContact, 5e-15,
       `yarn ends on bobbin ${sample}`);
-    assert.ok(state.liveYarnCurve.getLength() > 4.0);
-    assert.ok(state.liveYarnCurve.getLength() < 4.3);
+    assert.ok(state.liveYarnCurve.getLength() > 5.47);
+    assert.ok(state.liveYarnCurve.getLength() < 5.48);
     if (previousEye) {
       assert.ok(state.flyerEye.distanceTo(previousEye) < 0.009,
         `flyer eye motion is continuous ${sample}`);
@@ -297,7 +297,11 @@ test('movement 496 closes all integer turns, fits all poses, and leaves movement
   for (let sample = 0; sample <= 480; sample += 1) {
     model.update(geometry.cycleDuration * sample / 480);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    model.root.traverseVisible(object => {
+      if (!object.geometry) return;
+      object.geometry.computeBoundingBox();
+      swept.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+    });
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));

@@ -6,6 +6,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctSpinningFanParts, fanAirflowCurve } from './spinning-fan-working-parts.js';
+
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 function addRole(object, role) {
@@ -86,52 +88,6 @@ function makeOpenVoluteWall(material, depth) {
   wall.userData.centerline = guide;
   wall.userData.centerlinePoints = points;
   return wall;
-}
-
-function makeAirflowCurve(side, lane) {
-  const startAngle = -Math.PI / 2 + lane * 0.22;
-  const offset = lane * 0.08;
-  const points = [
-    new THREE.Vector3(
-      Math.cos(startAngle) * (0.36 + Math.abs(lane) * 0.12),
-      Math.sin(startAngle) * (0.36 + Math.abs(lane) * 0.12),
-      side * 2.05,
-    ),
-    new THREE.Vector3(
-      Math.cos(startAngle) * 0.28,
-      Math.sin(startAngle) * 0.28,
-      side * 0.72,
-    ),
-    new THREE.Vector3(0, -0.28 + offset, side * 0.12),
-  ];
-  const spiralAngles = [
-    -Math.PI * 2.5,
-    -Math.PI * 2,
-    -Math.PI * 1.5,
-    -Math.PI,
-    -Math.PI / 2,
-  ];
-  const radii = [0.34, 0.82, 1.38, 2.04, 2.68];
-  for (let index = 0; index < radii.length; index += 1) {
-    const angle = spiralAngles[index] + lane * 0.035;
-    points.push(new THREE.Vector3(
-      Math.cos(angle) * radii[index],
-      Math.sin(angle) * radii[index],
-      side * 0.08,
-    ));
-  }
-  points.push(
-    new THREE.Vector3(3.18, -2.62 + offset, side * 0.08),
-    new THREE.Vector3(4.98, -2.62 + offset, side * 0.08),
-  );
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  curve.arcLengthDivisions = 4096;
-  curve.updateArcLengths();
-  return curve;
 }
 
 function centrifugalFanBlower(movement) {
@@ -267,7 +223,7 @@ function centrifugalFanBlower(movement) {
   const airflowCurves = [];
   for (const side of [-1, 1]) {
     for (const lane of [-1, 0, 1]) {
-      airflowCurves.push(makeAirflowCurve(side, lane));
+      airflowCurves.push(fanAirflowCurve(side, lane));
     }
   }
   const airflowMaterial = matte(PALETTE.white, {
@@ -445,10 +401,11 @@ function centrifugalFanBlower(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   markShadows(root);
+  correctSpinningFanParts(root, 497);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.3, 4.8, 10.3),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 
