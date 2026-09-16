@@ -1,3 +1,4 @@
+import { correctCompoundEpicyclic } from './compound-epicyclic-corrections.js';
 import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
 import {
@@ -2907,6 +2908,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctCompoundEpicyclic(root, movement.id);
   markShadows(root);
   return {
     root,
@@ -3712,6 +3714,7 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctCompoundEpicyclic(root, movement.id);
   markShadows(root);
   return {
     root,

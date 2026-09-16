@@ -190,3 +190,27 @@ finite plate, bored-link and generated-gear helpers; no new live browser physics
 is needed for the retained determinate motion laws. Remaining source, contact
 and axial reconstruction limits stay in the linked family reviews rather than
 being silently counted as complete.
+
+
+## Fifth parallel batch
+
+- **186–187:** finite round toes, connected rear shoulders and analytically
+  solved handle rocking. Tangency, finite extents, axial overlap and reaction
+  torque checks pass, with a frozen-angle negative control. Operator lift and
+  latch motion remain prescribed; other legacy contacts remain unresolved.
+- **328/330:** shared bored journals, open rod eyes, connected/aligned piston
+  assemblies, finite fork/guide clearances and full-stroke framing. 328's
+  involute flanks now have a small running allowance with unchanged pitch radii.
+- **332–336:** shared bored links including intermediate pin stations, extended
+  pivot shafts, source-facing/full-stroke views, and matching 334 rack/sector
+  involutes with a bored backing roller at the true tangent line.
+- **506–507:** ratio-derived common-apex bevels, corrected tooth mounting phases,
+  full-depth spur profiles and bored nested sleeves. 507 retains its actual
+  25,000:1 output with a visible index and an explanation of its slow rate.
+
+The integrated run passes 119 tests, the production build and six packaged
+playback/mobile checks. Source comparisons cover all eleven movements. The
+family reviews linked from [review progress](review-progress.md) distinguish
+sampled finite-contact evidence from unresolved source interpretations and
+passive dynamics. These families reuse analytical constraints without adding
+live browser physics or manual pixel tracing.

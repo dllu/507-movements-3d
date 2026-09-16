@@ -426,7 +426,7 @@ test('movement 186 stops at alignment for operation, runs while latched, and cro
       'input progress is monotone through the demonstration');
     previousTurns = state.inputTurns;
     assert.ok(state.minimumGabSolidClearance >= 0.04 - 4e-13);
-    if (state.camContactActive) {
+    if (state.camLiftActive) {
       near(state.inputAngularSpeed, 0, 5e-13,
         'cam is operated only at the stopped alignment');
       near(state.camContactError, 0, 2e-13,
@@ -548,13 +548,13 @@ test('movement 186 rendered transforms keep the four bodies, contacts, and movin
       'rendered cam pivot');
     near(valveRocker.rotation.z, state.rockerAngle, 2e-15,
       'rendered valve rocker angle');
-    near(camLever.rotation.z, state.handleAngle, 2e-15,
+    near(camLever.rotation.z, state.camAngle, 2e-15,
       'rendered cam handle angle');
     near(worldPoint(notchAAnchor).z, 0.80, 2e-14,
       'notch plate depth');
     near(worldPoint(springTipIndex).z, 0.80 + state.springDeflection, 2e-14,
       'spring tip depth flex');
-    assert.equal(camContactMarker.visible, state.camContactActive);
+    assert.equal(camContactMarker.visible, state.camLiftActive);
     assert.equal(gabCaptureMarker.visible, state.gabCaptured);
     assert.equal(latchMarker.visible, state.latchEngagement > 1 - 1e-8);
     assert.equal(springHandle.children.filter((child) => child.visible).length, 48);
@@ -580,7 +580,7 @@ test('movement 186 rendered transforms keep the four bodies, contacts, and movin
   assert.equal(camContactMarker.visible, true);
 
   assert.ok(valveRocker.position.z < eccentricRod.position.z);
-  assert.ok(eccentricRod.position.z < worldPoint(camContactNose).z);
+  assert.ok(eccentricRod.position.z > worldPoint(camContactNose).z);
   assert.ok(worldPoint(camContactNose).z < worldPoint(notchAAnchor).z);
   disposeModel(model.root);
 });
@@ -607,7 +607,7 @@ test('movement 186 fills a real 3D envelope and remains distinct from authored 1
   assert.ok(size.y > 7.0);
   assert.ok(size.z > 2.30);
   assert.ok(physicalBounds.min.z < -1.07);
-  assert.ok(physicalBounds.max.z > 1.21);
+  assert.ok(physicalBounds.max.z > blocks.eccentricRod.position.z + .5);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.1);

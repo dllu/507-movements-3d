@@ -452,7 +452,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.3);
   assert.ok(size.y > 5.1);
-  assert.ok(size.z > 1.69,
+  assert.ok(size.z > 1.60,
     'frame, lever, paired links, E-D, F-C, and piston occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

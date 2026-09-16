@@ -1,3 +1,4 @@
+import { makeBoredLinkRod } from './bored-link-rod.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -134,64 +135,7 @@ function rigidLinkRates(vector, velocity, acceleration) {
   };
 }
 
-function makeRigidRod({
-  bodyMaterial,
-  depth,
-  eyeMaterial,
-  length,
-  planeZ,
-  role,
-  width,
-}) {
-  const rod = new THREE.Group();
-  rod.userData.nominalLength = length;
-  rod.userData.role = role;
-
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(length, width, depth),
-    bodyMaterial,
-  );
-  body.position.set(length / 2, 0, planeZ);
-  body.userData.role = `${role}-constant-length-shank`;
-  const startBoss = cylinderAlongZ(width * 0.88, depth * 1.18,
-    bodyMaterial, 36);
-  startBoss.position.z = planeZ;
-  startBoss.userData.role = `${role}-start-boss`;
-  const endBoss = cylinderAlongZ(width * 0.88, depth * 1.18,
-    bodyMaterial, 36);
-  endBoss.position.set(length, 0, planeZ);
-  endBoss.userData.role = `${role}-end-boss`;
-  const startEye = new THREE.Mesh(
-    new THREE.TorusGeometry(width * 0.48, width * 0.12, 8, 32),
-    eyeMaterial,
-  );
-  startEye.position.z = planeZ + depth / 2 + 0.014;
-  startEye.userData.role = `${role}-start-eye`;
-  const endEye = new THREE.Mesh(
-    new THREE.TorusGeometry(width * 0.48, width * 0.12, 8, 32),
-    eyeMaterial,
-  );
-  endEye.position.set(length, 0, planeZ + depth / 2 + 0.014);
-  endEye.userData.role = `${role}-end-eye`;
-  const startAnchor = new THREE.Object3D();
-  startAnchor.position.z = planeZ;
-  startAnchor.userData.role = `${role}-analytic-start`;
-  const endAnchor = new THREE.Object3D();
-  endAnchor.position.set(length, 0, planeZ);
-  endAnchor.userData.role = `${role}-analytic-end`;
-  rod.add(body, startBoss, endBoss, startEye, endEye,
-    startAnchor, endAnchor);
-  return {
-    body,
-    endAnchor,
-    endBoss,
-    endEye,
-    rod,
-    startAnchor,
-    startBoss,
-    startEye,
-  };
-}
+const makeRigidRod = makeBoredLinkRod;
 
 function makeSideLever({
   darkMaterial,
@@ -973,7 +917,8 @@ function sideLeverRockshaftParallelMotion(movement) {
     0.40,
   );
   sideRodIntermediateAnchor.userData.role = 'analytic-side-rod-point-N';
-  sideRodParts.rod.add(sideRodIntermediateBoss, sideRodIntermediateAnchor);
+  sideRodParts.rod.userData.addPinEye(sideRodIntermediateDistance, 0.22 * sourceScale + 0.005);
+  sideRodParts.rod.add(sideRodIntermediateAnchor);
   const crossbarParts = makeRigidRod({
     bodyMaterial: crossbarMaterial,
     depth: 0.17,
@@ -990,6 +935,7 @@ function sideLeverRockshaftParallelMotion(movement) {
     length: radiusArmLength,
     planeZ: 0.94,
     role: 'one-point-seven-five-seven-five-five-six-unit-rockshaft-arm-F-Q',
+    boreRadius: 0.24 * sourceScale + 0.005,
     width: 0.46 * sourceScale,
   });
   root.add(
@@ -1318,9 +1264,20 @@ function sideLeverRockshaftParallelMotion(movement) {
   };
 
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
+  const sweptBounds = new THREE.Box3();
+  for (let sample = 0; sample <= 64; sample += 1) {
+    update(cyclePeriod * sample / 64);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
+  root.userData.cameraDistanceScale = 1.02;
+  update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.1, 3.7, 13.6),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };
@@ -1698,10 +1655,10 @@ function sideLeverMarineParallelMotion(movement) {
   fixedPivotF.position.set(radiusPivotF.x, radiusPivotF.y, frameCenterZ + 0.08);
   fixedPivotF.userData.fixed = true;
   fixedPivotF.userData.role = 'fixed-radius-bar-pivot-F';
-  const fixedPivotFBore = cylinderAlongZ(0.25 * sourceScale, 0.59,
+  const fixedPivotFBore = cylinderAlongZ(0.25 * sourceScale, 1.66,
     darkMaterial, 34);
   fixedPivotFBore.position.set(radiusPivotF.x, radiusPivotF.y,
-    frameCenterZ + 0.085);
+    0.18);
   fixedPivotFBore.userData.fixed = true;
   fixedPivotFBore.userData.role = 'fixed-bearing-bore-at-F';
 
@@ -1750,7 +1707,8 @@ function sideLeverMarineParallelMotion(movement) {
   const pointCAnchor = new THREE.Object3D();
   pointCAnchor.position.set(leftLinkPointCDistance, 0, 0.36);
   pointCAnchor.userData.role = 'analytic-point-C-on-left-link';
-  leftLinkParts.rod.add(pointCBoss, pointCAnchor);
+  leftLinkParts.rod.userData.addPinEye(leftLinkPointCDistance, 0.22 * sourceScale + 0.005);
+  leftLinkParts.rod.add(pointCAnchor);
   root.add(leftLinkParts.rod);
 
   const rightLinkParts = makeRigidRod({
@@ -2059,9 +2017,20 @@ function sideLeverMarineParallelMotion(movement) {
   };
 
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
+  const sweptBounds = new THREE.Box3();
+  for (let sample = 0; sample <= 64; sample += 1) {
+    update(cyclePeriod * sample / 64);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
+  root.userData.cameraDistanceScale = 1.02;
+  update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.0, 3.6, 13.2),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };
@@ -2440,9 +2409,9 @@ function doubleParallelMotion(movement) {
     bearing.position.z = -0.20;
     bearing.userData.fixed = true;
     bearing.userData.role = `${name}-fixed-bearing-housing`;
-    const bore = cylinderAlongZ(0.25 * sourceScale, 0.65,
+    const bore = cylinderAlongZ(0.25 * sourceScale, 1.70,
       darkMaterial, 34);
-    bore.position.z = -0.195;
+    bore.position.z = 0.30;
     bore.userData.fixed = true;
     bore.userData.role = `${name}-fixed-bearing-bore`;
     const neck = new THREE.Mesh(
@@ -2486,7 +2455,8 @@ function doubleParallelMotion(movement) {
   const pointMAnchor = new THREE.Object3D();
   pointMAnchor.position.set(longLinkMidpointDistance, 0, 0.10);
   pointMAnchor.userData.role = 'analytic-midpoint-M-on-long-link';
-  longLinkParts.rod.add(pointMBoss, pointMAnchor);
+  longLinkParts.rod.userData.addPinEye(longLinkMidpointDistance, 0.27 * sourceScale + 0.005, 0.55 * sourceScale);
+  longLinkParts.rod.add(pointMAnchor);
   root.add(longLinkParts.rod);
 
   const leftRadiusParts = makeRigidRod({
@@ -2527,7 +2497,8 @@ function doubleParallelMotion(movement) {
   const pointNAnchor = new THREE.Object3D();
   pointNAnchor.position.set(centerLinkMidpointDistance, 0, 0.77);
   pointNAnchor.userData.role = 'analytic-midpoint-N-on-center-link';
-  centerLinkParts.rod.add(pointNBoss, pointNAnchor);
+  centerLinkParts.rod.userData.addPinEye(centerLinkMidpointDistance, 0.20 * sourceScale + 0.005);
+  centerLinkParts.rod.add(pointNAnchor);
   root.add(centerLinkParts.rod);
 
   const rightLowerParts = makeRigidRod({
@@ -2801,9 +2772,20 @@ function doubleParallelMotion(movement) {
   };
 
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
+  const sweptBounds = new THREE.Box3();
+  for (let sample = 0; sample <= 64; sample += 1) {
+    update(cyclePeriod * sample / 64);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
+  root.userData.cameraDistanceScale = 1.02;
+  update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.1, 3.5, 13.4),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };

@@ -432,7 +432,7 @@ test('movement 187 stops for lift and recapture, runs while held clear, and cros
     if (state.couplingBlend < 1 - 1e-12) {
       assert.equal(state.pinFullyClearBelowGab, true);
     }
-    if (state.camContactActive) {
+    if (state.camLiftActive) {
       near(state.camContactError, 0, 3e-13,
         'active cam remains on the valve-lever shoe');
       assert.equal(state.camContactWithinSupport, true);
@@ -538,9 +538,9 @@ test('movement 187 rendered transforms keep the rigid lower grip and moving uppe
       'rendered independently moving upper grip');
     near(valveRocker.rotation.z, state.rockerAngle, 2e-15,
       'rendered valve rocker angle');
-    near(upperCamHandle.rotation.z, state.handleAngle, 2e-15,
+    near(upperCamHandle.rotation.z, state.camAngle, 2e-15,
       'rendered upper cam-handle angle');
-    assert.equal(camContactMarker.visible, state.camContactActive);
+    assert.equal(camContactMarker.visible, state.camLiftActive);
     assert.equal(gabCaptureMarker.visible, state.gabCaptured);
     assert.equal(heldClearMarker.visible, state.operatorHoldingHandle);
     assert.equal(model.root.userData.contacts.camShoulder.active,
@@ -570,7 +570,7 @@ test('movement 187 rendered transforms keep the rigid lower grip and moving uppe
   model.update(canonicalTimes.heldClearStopped);
   model.root.updateMatrixWorld(true);
   assert.ok(valveRocker.position.z < eccentricRod.position.z);
-  assert.ok(worldPoint(lowerHandle).z < worldPoint(camContactNose).z);
+  assert.ok(worldPoint(lowerHandle).z > worldPoint(camContactNose).z);
   assert.ok(worldPoint(camContactNose).z > worldPoint(camSupportAnchor).z);
   assert.ok(worldPoint(camContactNose).z - worldPoint(camSupportAnchor).z < 0.32,
     'cam and shoe occupy adjacent overlapping contact layers');
@@ -600,7 +600,7 @@ test('movement 187 fills a real 3D envelope and remains distinct from authored 1
   assert.ok(size.y > 5.15);
   assert.ok(size.z > 2.40);
   assert.ok(physicalBounds.min.z < -1.17);
-  assert.ok(physicalBounds.max.z > 1.24);
+  assert.ok(physicalBounds.max.z > blocks.eccentricRod.position.z + .5);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.4);

@@ -5,12 +5,12 @@ import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry
 import {planetary505Parameters as rack,planetary505Profiles as profiles} from '../data/planetary-505-profiles.js';
 
 function replaceGeometry(mesh,geometry){mesh.geometry.dispose();mesh.geometry=geometry;}
-function boredCylinder(mesh,boreRadius){
+export function boredCylinder(mesh,boreRadius){
  const p=mesh.geometry.parameters;
  replaceGeometry(mesh,boredLatheGeometry([{radial:Math.max(p.radiusBottom,boreRadius+.035),axial:-p.height/2},{radial:Math.max(p.radiusTop,boreRadius+.035),axial:p.height/2}],boreRadius,64));
  mesh.userData.boreRadius=boreRadius;
 }
-function boreSpur(gear,boreRadius,generated=false){
+export function boreSpur(gear,boreRadius,generated=false){
  const rotor=gear.userData.rotor,body=rotor.children[0],p=body.geometry.parameters;
  let shape,options;
  if(generated){const teeth=gear.userData.teeth,radii=profiles[teeth],points=[];

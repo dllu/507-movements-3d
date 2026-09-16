@@ -1,0 +1,37 @@
+{
+  "status": "sampled-contact-neighborhood-clear",
+  "scope": "Corrected cam toe, axial neck, handle plate and shoulder against every other rigid family. Same-body joins, indices and floating markers excluded. This is sampled rendered-solid evidence, not whole-assembly or continuous collision proof.",
+  "method": "Bidirectional triangle vertices, edge midpoints and centroids against independent surface-containment BVHs, with bounding-box rejection. The toe tangency test separately verifies finite axial overlap and rejects missing contact.",
+  "sources": [
+    {
+      "file": "scripts/review-gab-cam-solids.mjs",
+      "sha256": "2baf8e6e052feed8d3c13fb9dd6fc3c1789ca856801990813595af1543dc4c25"
+    },
+    {
+      "file": "src/simulation/authored-gab-disengagers.js",
+      "sha256": "632e7189a2b08349b0df3c0fb3913d36f39a8cd95da662c4b3d313e40e2ee9d2"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "results": [
+    {
+      "id": 186,
+      "poses": 129,
+      "meshes": 103,
+      "pairs": 468,
+      "queries": 1993810,
+      "intersections": {}
+    },
+    {
+      "id": 187,
+      "poses": 129,
+      "meshes": 30,
+      "pairs": 117,
+      "queries": 761306,
+      "intersections": {}
+    }
+  ]
+}

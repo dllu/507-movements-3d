@@ -1,0 +1,120 @@
+{
+  "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment at uniform carrier phases. Hubs, shafts, supports excluded. Distances capped at .15; sampled closest points bound engagement gaps.",
+  "results": [
+    {
+      "id": 506,
+      "poses": 33,
+      "queries": 706898,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "a-b",
+          "maximumSampledGap": 0.008294633582965439,
+          "minimumSampledGap": 0.008269251604885225
+        },
+        {
+          "pair": "h-g",
+          "maximumSampledGap": 0.008288201614654423,
+          "minimumSampledGap": 0.00826997848903298
+        },
+        {
+          "pair": "c-d",
+          "maximumSampledGap": 0.008301724221120804,
+          "minimumSampledGap": 0.008274522422427134
+        },
+        {
+          "pair": "e-f",
+          "maximumSampledGap": 0.008306829691808872,
+          "minimumSampledGap": 0.008269668621361768
+        }
+      ]
+    },
+    {
+      "id": 507,
+      "poses": 33,
+      "queries": 1629206,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "C-A",
+          "maximumSampledGap": 0.003977112808291668,
+          "minimumSampledGap": 0.003959036366792718
+        },
+        {
+          "pair": "C-D",
+          "maximumSampledGap": 0.003977112808291829,
+          "minimumSampledGap": 0.003959036366792904
+        },
+        {
+          "pair": "E-F",
+          "maximumSampledGap": 0.00014614035643858785,
+          "minimumSampledGap": 0.0001412094112621383
+        },
+        {
+          "pair": "H-G",
+          "maximumSampledGap": 0.00015319490995227715,
+          "minimumSampledGap": 0.00014113863584507203
+        }
+      ]
+    }
+  ],
+  "slowBevelWindow": {
+    "description": "507 full C tooth period =250 carrier turns",
+    "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment at uniform carrier phases. Hubs, shafts, supports excluded. Distances capped at .15; sampled closest points bound engagement gaps.",
+    "results": [
+      {
+        "id": 507,
+        "poses": 33,
+        "queries": 1620523,
+        "penetrations": 0,
+        "maxDepth": 0,
+        "worst": null,
+        "pairs": [
+          {
+            "pair": "C-A",
+            "maximumSampledGap": 0.004255556834922021,
+            "minimumSampledGap": 0.003822070342757964
+          },
+          {
+            "pair": "C-D",
+            "maximumSampledGap": 0.004255556834922175,
+            "minimumSampledGap": 0.0038220703427581377
+          },
+          {
+            "pair": "E-F",
+            "maximumSampledGap": 0.00014593362378885545,
+            "minimumSampledGap": 0.00014103990533327198
+          },
+          {
+            "pair": "H-G",
+            "maximumSampledGap": 0.00015319490995227715,
+            "minimumSampledGap": 0.0001409854190781739
+          }
+        ]
+      }
+    ]
+  },
+  "scope": "Working gear bodies and teeth only; journal clearance checked separately, remaining assembly not fully audited.",
+  "sources": [
+    {
+      "file": "src/simulation/authored-epicyclic-trains.js",
+      "sha256": "b815bcf06bb8dd01a10a533db77c9924c94d535c247c36b7c3975d0f33bb67e4"
+    },
+    {
+      "file": "src/simulation/compound-epicyclic-corrections.js",
+      "sha256": "03eba1a7e46837190d63cefa0a32b0f2db20e35d152d93b2eab41991c0ca386e"
+    },
+    {
+      "file": "src/simulation/epicyclic-family-corrections.js",
+      "sha256": "d9e9bef716d7510952893fdb952bf2e76053a0eff546350daa5b7477d8040566"
+    },
+    {
+      "file": "scripts/review-compound-epicyclic-teeth.mjs",
+      "sha256": "1359ab6c05ad3a46462bcb0343ebe1d345a30edbe0e072f8d19c14851f6d7855"
+    }
+  ]
+}

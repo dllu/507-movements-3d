@@ -57,6 +57,34 @@ function rotate2(angle, point) {
   );
 }
 
+function boredCamHandle(points, radius, boreRadius, material) {
+  const curve = new THREE.SplineCurve(points), left = [], right = [];
+  for (let i = 0; i <= 128; i++) {
+    const p = curve.getPoint(i / 128), tangent = curve.getTangent(i / 128);
+    left.push([p.x - radius * tangent.y, p.y + radius * tangent.x]);
+    right.push([p.x + radius * tangent.y, p.y - radius * tangent.x]);
+  }
+  const outline = polygonClipping.union(poly([...left, ...right.reverse()]), poly(circle([0, 0], .20, 64)));
+  return new THREE.Mesh(plate(polygonClipping.difference(outline,
+    poly(circle([0, 0], boreRadius, 64))), -radius, radius), material);
+}
+
+// A round cam toe bears on a flat shoulder. Rocking the free handle resolves
+// the changing rod/support pose without prescribing a penetrated contact.
+function camAngleOnShoulder(pivot, toe, support, normal, commandedAngle) {
+  const residual = rotate2(commandedAngle, toe).add(pivot).sub(support).dot(normal);
+  if (Math.abs(residual) < 1e-13) return commandedAngle;
+  const projection = support.clone().sub(pivot).dot(normal) / toe.length();
+  if (Math.abs(projection) > 1 + 1e-12) throw new RangeError('Gab cam cannot reach its shoulder');
+  const supportAngle = Math.atan2(normal.y, normal.x) - Math.PI / 2;
+  const toeAngle = Math.atan2(toe.y, toe.x);
+  const angle = Math.asin(THREE.MathUtils.clamp(projection, -1, 1));
+  return [angle, Math.PI - angle].map(candidate => {
+    const result = supportAngle + candidate - toeAngle;
+    return commandedAngle + THREE.MathUtils.euclideanModulo(result - commandedAngle + Math.PI, FULL_TURN) - Math.PI;
+  }).sort((a, b) => Math.abs(a - commandedAngle) - Math.abs(b - commandedAngle))[0];
+}
+
 function pointInPose(position, angle, localPoint) {
   return rotate2(angle, localPoint).add(position);
 }
@@ -164,6 +192,8 @@ function springHandleGabDisengager() {
   const sourceHandleGrip = sourcePointFromRaster(sourceRasterHandleGrip);
   const handleGripLocal = sourceHandleGrip.clone().sub(camPivotLocal);
   const maximumHandleAngle = 0.75;
+  const camToeRadius = .145;
+  const camSupportHalfLength = .82;
   const sourceCamContact = sourcePointFromRaster(sourceRasterCamContact);
   const camContactLocal = sourceCamContact.clone().sub(camPivotLocal);
   const camContactSourceHeight = camPivotLocal.y + camContactLocal.y;
@@ -475,9 +505,6 @@ function springHandleGabDisengager() {
     const pinRelativeToGab = valvePin.clone().sub(gabCenter);
 
     const camPivot = gabCenter.clone().add(camPivotLocal);
-    const camContactPoint = camPivot.clone().add(
-      rotate2(handleAngle, camContactLocal),
-    );
     const camSupportCenter = pointInPose(
       valvePivot,
       rockerAngle,
@@ -491,6 +518,10 @@ function springHandleGabDisengager() {
       -camSupportTangent.y,
       camSupportTangent.x,
     );
+    const camAngle = camAngleOnShoulder(camPivot, camContactLocal,
+      camSupportCenter, camSupportNormal, handleAngle);
+    const camContactPoint = camPivot.clone().add(rotate2(camAngle, camContactLocal));
+    const camSurfacePoint = camContactPoint.clone().addScaledVector(camSupportNormal, -camToeRadius);
     const contactFromSupportCenter = camContactPoint.clone().sub(
       camSupportCenter,
     );
@@ -503,10 +534,10 @@ function springHandleGabDisengager() {
     );
     const camContactError = Math.abs(camContactSignedNormalError);
 
-    const notchALocal = notchALocalAtHandleAngle(handleAngle);
+    const notchALocal = notchALocalAtHandleAngle(camAngle);
     const notchA = gabCenter.clone().add(notchALocal);
     const springHandlePointsLocal = springHandlePointsAtConfiguration({
-      handleAngle,
+      handleAngle: camAngle,
       handleFraction: resolvedHandleFraction,
       springDeflection,
     });
@@ -569,6 +600,8 @@ function springHandleGabDisengager() {
       && valvePin.distanceTo(gabCenter) <= 1e-12;
 
     return {
+      camAngle, camSurfacePoint,
+      camRockingCorrection: camAngle - handleAngle,
       camContactError,
       camContactPoint,
       camContactSignedNormalError,
@@ -643,7 +676,8 @@ function springHandleGabDisengager() {
     state.springDeflectionRate = sequence.springDeflectionRatePerPhase
       * phaseRate;
     state.stage = sequence.stage;
-    state.camContactActive = (
+    state.camContactActive = true;
+    state.camLiftActive = (
       sequence.stage === 'pulling-spring-handle-cam-lifting-gab'
         || sequence.stage === 'spring-handle-passing-notch-a'
         || sequence.stage === 'cam-lowering-gab-around-valve-pin'
@@ -683,7 +717,7 @@ function springHandleGabDisengager() {
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
   const valveRocker = new THREE.Group();
-  valveRocker.position.set(valvePivot.x, valvePivot.y, -0.22);
+  valveRocker.position.set(valvePivot.x, valvePivot.y, -.48);
   valveRocker.userData.axis = Z_AXIS.clone();
   valveRocker.userData.role =
     'fixed-axis-valve-gab-lever-carrying-the-engagement-pin';
@@ -717,29 +751,30 @@ function springHandleGabDisengager() {
   valveShaftIndex.userData.role = 'white-index-on-valve-rockshaft';
   const camSupportShoe = makeBeam(
     new THREE.Vector3(
-      camSupportValveLocal.x - 0.50,
+      camSupportValveLocal.x - camSupportHalfLength,
       camSupportValveLocal.y,
-      0.62,
+      .23,
     ),
     new THREE.Vector3(
-      camSupportValveLocal.x + 0.50,
+      camSupportValveLocal.x + camSupportHalfLength,
       camSupportValveLocal.y,
-      0.62,
+      .23,
     ),
     {
       color: PALETTE.driven,
-      depth: 0.46,
+      depth: 0.14,
       jointRadius: 0.001,
       thickness: 0.16,
     },
   );
+  camSupportShoe.position.y -= camToeRadius + .08;
   camSupportShoe.userData.role =
     'valve-lever-shoulder-on-which-the-lifting-cam-slides';
   const camSupportAnchor = new THREE.Group();
   camSupportAnchor.position.set(
     camSupportValveLocal.x,
     camSupportValveLocal.y,
-    0.62,
+    .23,
   );
   camSupportAnchor.userData.role = 'source-center-of-cam-support-shoulder';
   valveRocker.add(
@@ -860,22 +895,19 @@ function springHandleGabDisengager() {
     new THREE.Vector2(1.70, -0.18),
     handleGripLocal.clone(),
   ];
-  const camLeverBody = makeTube(
-    camLeverPath,
-    0.115,
-    accentMaterial,
-    0,
-  );
+  const camLeverBody = boredCamHandle(camLeverPath, .115, .127, accentMaterial);
   camLeverBody.userData.role = 'curved-cam-and-upper-pull-handle';
   const camPivotPin = cylinderAlongZ(0.115, 1.18, darkMaterial, 28);
   camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, 0.42);
   camPivotPin.userData.role = 'cam-lever-pivot-fixed-in-eccentric-rod';
-  const camContactNose = new THREE.Mesh(
-    new THREE.SphereGeometry(0.145, 24, 16),
-    accentMaterial,
-  );
-  camContactNose.position.set(camContactLocal.x, camContactLocal.y, 0);
-  camContactNose.userData.role = 'cam-nose-sliding-on-valve-gear-shoulder';
+  camLeverBody.position.z = .18;
+  const camContactNose = cylinderAlongZ(camToeRadius, .16, accentMaterial, 128);
+  camContactNose.position.set(camContactLocal.x, camContactLocal.y, -.81);
+  const camToeNeck = cylinderAlongZ(.10, 1.02, accentMaterial, 32);
+  camToeNeck.userData.role = 'axial-neck-joining-rear-cam-toe-to-visible-handle';
+  camToeNeck.position.set(camContactLocal.x, camContactLocal.y, -.315);
+  camLever.add(camToeNeck);
+  camContactNose.userData.role = 'finite-round-cam-toe-bearing-on-valve-gear-shoulder';
   const upperHandleGrip = cylinderAlongZ(0.15, 0.60, darkMaterial, 28);
   upperHandleGrip.position.set(handleGripLocal.x, handleGripLocal.y, 0.10);
   upperHandleGrip.userData.role = 'source-upper-handle-grip';
@@ -1033,6 +1065,7 @@ function springHandleGabDisengager() {
     cameraEnvelope,
     camContactMarker,
     camContactNose,
+    camToeNeck,
     camSupportAnchor,
     camSupportShoe,
     camLatchTang,
@@ -1070,7 +1103,9 @@ function springHandleGabDisengager() {
   };
 
   const geometry = {
+    camToeRadius,
     camContactLocal: camContactLocal.clone(),
+    camSupportHalfLength,
     camContactSourceHeight,
     camSupportValveLocal: camSupportValveLocal.clone(),
     camNotchALocal: camNotchALocal.clone(),
@@ -1119,7 +1154,7 @@ function springHandleGabDisengager() {
       state.gabCenter.y,
       0.18,
     );
-    camLever.rotation.z = state.handleAngle;
+    camLever.rotation.z = state.camAngle;
     const springCurve = new THREE.CatmullRomCurve3(
       state.springHandlePointsLocal,
       false,
@@ -1128,11 +1163,11 @@ function springHandleGabDisengager() {
     springHandle.userData.setPoints(springCurve.getSpacedPoints(48));
     springTipIndex.position.copy(state.springLatchTipLocal);
     camContactMarker.position.set(
-      state.camContactPoint.x,
-      state.camContactPoint.y,
+      state.camSurfacePoint.x,
+      state.camSurfacePoint.y,
       0.61,
     );
-    camContactMarker.visible = state.camContactActive;
+    camContactMarker.visible = state.camLiftActive;
     gabCaptureMarker.position.set(
       state.valvePin.x,
       state.valvePin.y,
@@ -1143,9 +1178,10 @@ function springHandleGabDisengager() {
     latchMarker.visible = state.latchEngagement > 1 - 1e-8;
     root.userData.contacts = {
       camShoulder: {
-        active: camContactMarker.visible,
+        active: state.camContactActive,
         contactError: state.camContactError,
-        point: state.camContactPoint.clone(),
+        point: state.camSurfacePoint.clone(),
+        toeCenter: state.camContactPoint.clone(),
       },
       gabPin: {
         captured: state.gabCaptured,
@@ -1236,8 +1272,8 @@ function twoHandleGabDisengager() {
 
   // Brown's 187 side elevation is measured from the gab-pin center. Unlike
   // 186, the lower handle is one rigid piece with the eccentric rod and the
-  // upper handle alone pivots. Its upper-left cam nose bears on the underside
-  // of the valve-lever shoe: raising that handle makes the nose descend about
+  // upper handle alone pivots. Its rear cam toe bears on the top surface
+  // of the valve-lever shoulder: raising that handle makes the toe descend about
   // its rod-mounted pivot, so the reaction lifts the rod and its open gab.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
@@ -1282,6 +1318,7 @@ function twoHandleGabDisengager() {
 
   const rodStroke = 0.30;
   const maximumHandleAngle = 0.92;
+  const camToeRadius = .16;
   const gabPinRadius = 0.22;
   const gabInnerHalfWidth = gabPinRadius + 0.05;
   const gabJawWidth = 0.17;
@@ -1483,12 +1520,6 @@ function twoHandleGabDisengager() {
     const pinRelativeToGab = valvePin.clone().sub(gabCenter);
 
     const camPivot = gabCenter.clone().add(camPivotLocal);
-    const camContactPoint = camPivot.clone().add(
-      rotate2(handleAngle, camContactLocal),
-    );
-    const upperGrip = camPivot.clone().add(
-      rotate2(handleAngle, upperGripLocal),
-    );
     const lowerGrip = gabCenter.clone().add(lowerGripLocal);
     const camSupportCenter = pointInPose(
       valvePivot,
@@ -1503,6 +1534,10 @@ function twoHandleGabDisengager() {
       -camSupportTangent.y,
       camSupportTangent.x,
     );
+    const camAngle = camAngleOnShoulder(camPivot, camContactLocal,
+      camSupportCenter, camSupportNormal, handleAngle);
+    const camContactPoint = camPivot.clone().add(rotate2(camAngle, camContactLocal));
+    const camSurfacePoint = camContactPoint.clone().addScaledVector(camSupportNormal, -camToeRadius);
     const contactFromSupportCenter = camContactPoint.clone().sub(
       camSupportCenter,
     );
@@ -1559,7 +1594,10 @@ function twoHandleGabDisengager() {
       && couplingBlend >= 1 - 1e-12
       && pinInsideGabMouth;
 
+    const upperGrip = camPivot.clone().add(rotate2(camAngle, upperGripLocal));
     return {
+      camAngle, camSurfacePoint,
+      camRockingCorrection: camAngle - handleAngle,
       camContactAlongSupport,
       camContactError,
       camContactPoint,
@@ -1626,7 +1664,8 @@ function twoHandleGabDisengager() {
     state.inputAngularSpeed = input.ratePerPhase * phaseRate;
     state.inputTurns = input.turns;
     state.stage = sequence.stage;
-    state.camContactActive = (
+    state.camContactActive = true;
+    state.camLiftActive = (
       sequence.stage === 'raising-upper-cam-handle-lifting-gab'
         || sequence.stage
           === 'operator-holding-two-handle-gab-clear-while-rod-runs'
@@ -1673,7 +1712,7 @@ function twoHandleGabDisengager() {
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
   const valveRocker = new THREE.Group();
-  valveRocker.position.set(valvePivot.x, valvePivot.y, -0.32);
+  valveRocker.position.set(valvePivot.x, valvePivot.y, -.54);
   valveRocker.userData.axis = Z_AXIS.clone();
   valveRocker.userData.role =
     'top-pivoted-valve-lever-carrying-the-gab-pin-and-cam-support';
@@ -1706,22 +1745,23 @@ function twoHandleGabDisengager() {
   valveShaftIndex.position.set(0.24, 0, 0.62);
   valveShaftIndex.userData.role = 'white-index-on-valve-rockshaft';
   const camSupportShoe = makeBeam(
-    new THREE.Vector3(supportLeftLocal.x, supportLeftLocal.y, 0.60),
-    new THREE.Vector3(supportRightLocal.x, supportRightLocal.y, 0.60),
+    new THREE.Vector3(supportLeftLocal.x, supportLeftLocal.y, .23),
+    new THREE.Vector3(supportRightLocal.x, supportRightLocal.y, .23),
     {
       color: PALETTE.driven,
-      depth: 0.40,
+      depth: 0.14,
       jointRadius: 0.001,
       thickness: 0.17,
     },
   );
+  camSupportShoe.position.y -= camToeRadius + .085;
   camSupportShoe.userData.role =
-    'broad-valve-lever-underside-shoe-supporting-the-upper-cam';
+    'rear-valve-lever-shoulder-supporting-the-upper-cam';
   const camSupportAnchor = new THREE.Group();
   camSupportAnchor.position.set(
     camSupportValveLocal.x,
     camSupportValveLocal.y,
-    0.60,
+    .23,
   );
   camSupportAnchor.userData.role = 'center-of-valve-lever-cam-support-line';
   valveRocker.add(
@@ -1864,20 +1904,17 @@ function twoHandleGabDisengager() {
     new THREE.Vector2(1.62, 0.10),
     upperGripLocal.clone(),
   ];
-  const upperCamBody = makeTube(
-    upperCamPath,
-    0.145,
-    accentMaterial,
-    0,
-  );
+  const upperCamBody = boredCamHandle(upperCamPath, .145, .132, accentMaterial);
   upperCamBody.userData.role = 'curved-cam-and-upper-lifting-handle';
-  const camContactNose = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 26, 18),
-    accentMaterial,
-  );
-  camContactNose.position.set(camContactLocal.x, camContactLocal.y, 0);
+  upperCamBody.position.z = .12;
+  const camContactNose = cylinderAlongZ(camToeRadius, .16, accentMaterial, 128);
+  camContactNose.position.set(camContactLocal.x, camContactLocal.y, -.82);
+  const camToeNeck = cylinderAlongZ(.10, 1.02, accentMaterial, 32);
+  camToeNeck.userData.role = 'axial-neck-joining-rear-cam-toe-to-visible-handle';
+  camToeNeck.position.set(camContactLocal.x, camContactLocal.y, -.345);
+  upperCamHandle.add(camToeNeck);
   camContactNose.userData.role =
-    'upper-left-cam-nose-sliding-under-the-valve-lever-shoe';
+    'finite-round-cam-toe-bearing-on-rear-valve-lever-shoulder';
   const upperHandleGrip = cylinderAlongZ(0.18, 0.56, darkMaterial, 28);
   upperHandleGrip.position.set(upperGripLocal.x, upperGripLocal.y, 0.02);
   upperHandleGrip.userData.role = 'source-upper-moving-handle-grip';
@@ -1965,6 +2002,7 @@ function twoHandleGabDisengager() {
     cameraEnvelope,
     camContactMarker,
     camContactNose,
+    camToeNeck,
     camPivotPin,
     camSupportAnchor,
     camSupportShoe,
@@ -2000,6 +2038,7 @@ function twoHandleGabDisengager() {
   };
 
   const geometry = {
+    camToeRadius,
     camContactLocal: camContactLocal.clone(),
     camPivotLocal: camPivotLocal.clone(),
     camSupportHalfLength,
@@ -2044,13 +2083,13 @@ function twoHandleGabDisengager() {
     const state = stateAtTime(time);
     valveRocker.rotation.z = state.rockerAngle;
     eccentricRod.position.set(state.gabCenter.x, state.gabCenter.y, 0.14);
-    upperCamHandle.rotation.z = state.handleAngle;
+    upperCamHandle.rotation.z = state.camAngle;
     camContactMarker.position.set(
-      state.camContactPoint.x,
-      state.camContactPoint.y,
+      state.camSurfacePoint.x,
+      state.camSurfacePoint.y,
       0.56,
     );
-    camContactMarker.visible = state.camContactActive;
+    camContactMarker.visible = state.camLiftActive;
     gabCaptureMarker.position.set(state.valvePin.x, state.valvePin.y, 1.18);
     gabCaptureMarker.visible = state.gabCaptured;
     heldClearMarker.position.set(
@@ -2063,7 +2102,8 @@ function twoHandleGabDisengager() {
       camShoulder: {
         active: state.camContactActive,
         contactError: state.camContactError,
-        point: state.camContactPoint.clone(),
+        point: state.camSurfacePoint.clone(),
+        toeCenter: state.camContactPoint.clone(),
         withinSupport: state.camContactWithinSupport,
       },
       gabPin: {

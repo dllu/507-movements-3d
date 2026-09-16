@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-parts.js';
+import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -53,18 +55,15 @@ function makeForkedConnectingRod({
   const branchEnd = stemEnd + branchLength * 0.48;
 
   const stem = new THREE.Mesh(
-    new THREE.BoxGeometry(stemEnd, 0.15, 0.16),
+    new THREE.BoxGeometry(branchStart + .06 - .14, 0.15, 0.16),
     rodMaterial,
   );
-  stem.position.x = stemEnd / 2;
+  stem.position.x = (branchStart + .06 + .14) / 2;
   stem.userData.role = 'single-upper-stem-of-forked-connecting-rod';
-  const crankBoss = cylinderAlongZ(0.20, 0.20, rodMaterial, 34);
+  const crankBoss = boredJournal(.20,.114,.20,rodMaterial);
   crankBoss.userData.role = 'forked-rod-upper-crank-eye-boss';
-  const crankEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.13, 0.045, 8, 34),
-    darkMaterial,
-  );
-  crankEye.position.z = 0.11;
+  const crankEye = boredJournal(.18,.114,.02,darkMaterial);
+  crankEye.position.z = .11;
   crankEye.userData.role = 'forked-rod-upper-crank-pin-eye';
 
   const branches = [];
@@ -82,30 +81,27 @@ function makeForkedConnectingRod({
     );
     branch.userData.role = `${sideName}-fork-transition-branch`;
     branches.push(branch);
-    const prongLength = length - branchEnd;
+    const prongLength = length - .14 - branchEnd;
     const prong = new THREE.Mesh(
       new THREE.BoxGeometry(prongLength, 0.12, prongDepth),
       rodMaterial,
     );
     prong.position.set(
-      (branchEnd + length) / 2,
+      (branchEnd + length - .14) / 2,
       0,
       side * forkHalfSpacing,
     );
     prong.userData.role =
       `${sideName}-lower-fork-prong-clearing-prolonged-piston-rod`;
     prongs.push(prong);
-    const wristBoss = cylinderAlongZ(0.18, prongDepth, rodMaterial, 32);
+    const wristBoss = boredJournal(.18,.124,prongDepth,rodMaterial);
     wristBoss.position.set(length, 0, side * forkHalfSpacing);
     wristBoss.userData.role = `${sideName}-fork-wrist-boss`;
-    const wristEye = new THREE.Mesh(
-      new THREE.TorusGeometry(0.115, 0.040, 8, 32),
-      darkMaterial,
-    );
+    const wristEye = boredJournal(.17,.124,.016,darkMaterial);
     wristEye.position.set(
       length,
       0,
-      side * forkHalfSpacing + side * (prongDepth / 2 + 0.014),
+      side * forkHalfSpacing + side * (prongDepth / 2 + .008),
     );
     wristEye.userData.role = `${sideName}-fork-wrist-eye`;
     wristEyes.push(wristBoss, wristEye);
@@ -212,14 +208,14 @@ function ForkedPistonRodGuide(movement) {
     -crankOffset,
   );
 
-  const crankPlaneZ = -0.18;
+  const crankPlaneZ = .28;
   const connectingRodPlaneZ = 0.62;
   const forkHalfSpacing = 0.28;
   const forkProngDepth = 0.10;
   const pistonRodDepth = 0.14;
   const pistonRodHalfWidth = 5 * engravingScale;
   const pistonRodTopLocalY = 3.38;
-  const pistonRodBottomLocalY = -1.46;
+  const pistonRodBottomLocalY = -2.40;
   const guideInnerRadius = Math.hypot(
     pistonRodHalfWidth,
     pistonRodDepth / 2,
@@ -268,12 +264,12 @@ function ForkedPistonRodGuide(movement) {
   frameColumn.position.set(2.38, 0.35, -0.34);
   frameColumn.userData.fixed = true;
   frameColumn.userData.role = 'fixed-column-supporting-guide-A';
-  const bearingHousing = cylinderAlongZ(0.36, 0.68, frameMaterial, 44);
-  bearingHousing.position.set(crankCenter.x, crankCenter.y, -0.28);
+  const bearingHousing = boredJournal(.36,.18,.68,frameMaterial);
+  bearingHousing.position.set(crankCenter.x, crankCenter.y, -.28);
   bearingHousing.userData.fixed = true;
   bearingHousing.userData.role = 'fixed-overhead-crankshaft-bearing';
-  const bearingBore = cylinderAlongZ(0.16, 0.72, darkMaterial, 36);
-  bearingBore.position.set(crankCenter.x, crankCenter.y, -0.27);
+  const bearingBore = boredJournal(.18,.134,.72,darkMaterial);
+  bearingBore.position.set(crankCenter.x, crankCenter.y, -.27);
   bearingBore.userData.fixed = true;
   bearingBore.userData.role = 'fixed-overhead-bearing-bore';
 
@@ -284,10 +280,10 @@ function ForkedPistonRodGuide(movement) {
   guideA.userData.role =
     'fixed-guide-A-centered-on-cylinder-and-piston-rod-axis';
   const guideBracket = new THREE.Mesh(
-    new THREE.BoxGeometry(2.30, 0.20, 0.38),
+    new THREE.BoxGeometry(2.18, .20, .22),
     frameMaterial,
   );
-  guideBracket.position.set(1.23, 0, 0.39);
+  guideBracket.position.set(1.29, 0, connectingRodPlaneZ);
   guideBracket.userData.fixed = true;
   guideBracket.userData.role = 'fixed-horizontal-arm-of-guide-A';
   const guideCollar = new THREE.Mesh(
@@ -306,48 +302,47 @@ function ForkedPistonRodGuide(movement) {
   guideCollar.userData.role =
     'real-annular-guide-A-collar-around-prolonged-piston-rod';
   const guideShoe = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.28, 0.36),
+    plate(clip.difference(poly([[-.19,-.18],[.34,-.18],[.34,.18],[-.19,.18]]),
+      poly(circle([0,0],guideInnerRadius,64))),-.14,.14).rotateX(Math.PI/2),
     frameMaterial,
   );
-  guideShoe.position.set(0.15, 0, 0.39);
+  guideShoe.position.set(0, 0, connectingRodPlaneZ);
   guideShoe.userData.fixed = true;
   guideShoe.userData.role = 'fixed-guide-A-bearing-block';
-  guideA.add(guideBracket, guideShoe, guideCollar);
+  const guideMount = beamBetween3D(new THREE.Vector3(2.38,0,-.34),
+    new THREE.Vector3(2.38,0,connectingRodPlaneZ),.20,.24,frameMaterial);
+  guideMount.userData.role = 'guide-A-depth-bracket-to-fixed-column';
+  guideA.add(guideBracket, guideShoe, guideCollar,guideMount);
 
   const cylinderRadius = 0.68;
   const cylinderHeight = 2.35;
   const cylinderCenterY = -4.05;
   const cylinderBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      cylinderRadius,
-      cylinderRadius,
-      cylinderHeight,
-      48,
-    ),
+    boredCylinderGeometry(cylinderRadius,.60,cylinderHeight),
     frameMaterial,
   );
-  cylinderBody.position.set(0, cylinderCenterY, 0.05);
+  cylinderBody.position.set(0, cylinderCenterY, connectingRodPlaneZ);
   cylinderBody.userData.fixed = true;
   cylinderBody.userData.role = 'fixed-cylinder-collinear-with-guide-A';
   const cylinderTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.84, 0.84, 0.15, 48),
+    boredCylinderGeometry(.84,guideInnerRadius,.15),
     darkMaterial,
   );
-  cylinderTop.position.set(0, cylinderCenterY + cylinderHeight / 2, 0.05);
+  cylinderTop.position.set(0, cylinderCenterY + cylinderHeight / 2, connectingRodPlaneZ);
   cylinderTop.userData.fixed = true;
   cylinderTop.userData.role = 'fixed-cylinder-top-cap';
   const gland = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.23, 0.23, 0.19, 36),
+    boredCylinderGeometry(.23,guideInnerRadius,.19),
     frameMaterial,
   );
-  gland.position.set(0, cylinderCenterY + cylinderHeight / 2 + 0.16, 0.05);
+  gland.position.set(0, cylinderCenterY + cylinderHeight / 2 + 0.16, connectingRodPlaneZ);
   gland.userData.fixed = true;
   gland.userData.role = 'fixed-piston-rod-gland-on-cylinder-axis';
   const cylinderBase = new THREE.Mesh(
     new THREE.BoxGeometry(1.85, 0.20, 1.05),
     frameMaterial,
   );
-  cylinderBase.position.set(0, cylinderCenterY - cylinderHeight / 2, 0.05);
+  cylinderBase.position.set(0, cylinderCenterY - cylinderHeight / 2, connectingRodPlaneZ);
   cylinderBase.userData.fixed = true;
   cylinderBase.userData.role = 'fixed-cylinder-foundation';
   fixedFrame.add(
@@ -367,7 +362,7 @@ function ForkedPistonRodGuide(movement) {
   crankRotor.userData.axis = Z_AXIS.clone();
   crankRotor.userData.role =
     'one-rigid-overhead-crank-web-pin-and-live-shaft';
-  const crankHub = cylinderAlongZ(0.23, 0.55, driverMaterial, 40);
+  const crankHub = cylinderAlongZ(.23,.18,driverMaterial,40);
   crankHub.position.z = crankPlaneZ;
   crankHub.userData.role = 'overhead-crank-hub';
   const crankArm = new THREE.Mesh(
@@ -450,7 +445,7 @@ function ForkedPistonRodGuide(movement) {
   pistonRod.userData.role =
     'one-piece-piston-rod-prolonged-upward-through-guide-A';
   const crosshead = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 0.25, forkHalfSpacing * 2 + 0.36),
+    new THREE.BoxGeometry(.42,.20,2*(forkHalfSpacing-forkProngDepth/2-.015)),
     pistonMaterial,
   );
   crosshead.position.z = connectingRodPlaneZ;
@@ -468,7 +463,7 @@ function ForkedPistonRodGuide(movement) {
     new THREE.CylinderGeometry(0.58, 0.58, 0.18, 44),
     pistonMaterial,
   );
-  pistonHead.position.set(0, pistonRodBottomLocalY - 0.16, 0.05);
+  pistonHead.position.set(0, pistonRodBottomLocalY - .06, connectingRodPlaneZ);
   pistonHead.userData.role = 'piston-rigid-with-prolonged-rod';
   const pistonIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.065, 0.24, 0.032),
@@ -845,10 +840,10 @@ function ForkedPistonRodGuide(movement) {
     output: 'reciprocating prolonged piston rod on the cylinder axis',
   };
 
-  update(0);
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(7.2, 3.8, 11.8),
+    cameraDirection: new THREE.Vector3(7.2, 1.2, 11.8),
     root,
     update,
   };

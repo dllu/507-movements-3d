@@ -1,3 +1,41 @@
+# Fifth family pass: finite cam contact, piston guides and compound gears
+
+Eleven movements received corrections in four parallel lanes: 186–187,
+328/330, 332–336 and 506–507. Shared bored rods, journals, finite plates and
+involute gear profiles replace repeated solid-joint approximations. The
+integrated run passes 119 focused tests, the production build and six packaged
+playback/mobile checks (186, 187, 328, 330, 334 and 507).
+
+186–187 now solve the small handle rocking needed for a finite round toe to
+remain tangent to its shoulder. Dense tangency checks include axial overlap,
+opposing torque and a frozen-angle negative control. A separate 129-pose audit
+of 585 contact-neighborhood pairs finds no sampled intersections. The inferred
+rear contact stack is documented; operator lift and latch motion remain
+prescribed. Existing gab-pin/crown and spring overlaps remain separate work.
+
+328/330 receive real rod and bearing bores, connected piston assemblies and
+aligned hollow cylinders. 328's involute flank allowance clears its working
+gear pairs through 129 sampled poses; 330's fork clears its rod, crosshead and
+fixed guide through 65 poses. 332–336 share bored links and full-stroke views.
+334's rack and involute sector have zero detected overlap through 97 poses,
+with a maximum nearest-flank gap of 0.000394 model units.
+
+506–507 retain their existing signed ratios, including 507's true 25,000:1
+output, while their bevel cones now meet at common apices. Approximate conical
+involutes, corrected mounting phases and bored nested sleeves replace the
+incompatible working solids. Working-pair audits cover 33 carrier poses and a
+separate full slow-bevel tooth period for 507 without sampled penetration.
+This does not prove continuous or complete assembly collision freedom.
+
+See the [gab](movement-186-189.md), [piston-guide](piston-guide-328-330-review.md),
+[marine/beam](marine-parallel-family-review.md) and
+[compound-gear](movement-506-507.md) reviews. Inferred support geometry,
+335's uncertain topology, source starting-phase differences and approximate
+bevel flanks remain explicit. Continue the family inventory; this bounded pass
+does not complete the 507-movement review.
+
+## Earlier checkpoints
+
 # Fourth family pass: valve slots, engine guides and epicyclic tooth contact
 
 Twelve movements received bounded corrections across four independent lanes:
