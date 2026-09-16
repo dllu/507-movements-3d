@@ -101,7 +101,7 @@ export function finishMangleRackWorkingParts(root, update, id) {
   d.hideGround = true;
   d.sourceAnimation = { available: true, registeredModel: `mm_${id}`, sourceUrl: `https://507movements.com/mm_${id}.html` };
   d.reconstructionNote = id === 197
-    ? 'Ten finite pinion teeth are cut offline against the eleven full-radius rack pins. The rising and falling shaft and opposite straight runs retain the source topology; playback reverses the official animation\'s motor direction. Motion is prescribed; guide loads, friction and passive branch selection are not dynamically solved.'
+    ? 'Ten finite pinion teeth are cut offline against the eleven full-radius rack pins. The rising and falling shaft, opposite straight runs and counterclockwise motor follow the registered source topology and direction. Motion is prescribed; guide loads, friction and passive branch selection are not dynamically solved.'
     : 'The closed rack teeth are cut offline against the six-tooth pinion, retaining the two suspension links and fixed shaft. The shaft passes through a finite clearance opening and behind the front cross-tie. Rigid linkage closure and driving motion are prescribed; loads, friction and compliance are not dynamically solved.';
   d.finiteWorkingProfile = profiles[id];
   const bounds = new THREE.Box3(), point = new THREE.Vector3();

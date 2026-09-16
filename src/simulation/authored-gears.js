@@ -26073,8 +26073,9 @@ function capsuleGuidedMangleRack() {
   ) * sourceScale;
   const sourceTopProgress = sourcePathDistance / straightRackLength;
   const pinionAngularSpeedMagnitude = 0.9;
-  const pinionAngularSpeed = -pinionAngularSpeedMagnitude;
-  const pitchPathSpeed = pinionPitchRadius * pinionAngularSpeedMagnitude;
+  const pinionAngularSpeed = pinionAngularSpeedMagnitude;
+  // The registered source turns the pinion counterclockwise in Y-up space.
+  const pitchPathSpeed = -pinionPitchRadius * pinionAngularSpeedMagnitude;
   const cyclePeriod = inputTravelPerCycle / pinionAngularSpeedMagnitude;
   const rackDepth = 0.2;
   const pinionDepth = 0.34;
@@ -26197,7 +26198,7 @@ function capsuleGuidedMangleRack() {
     .wheelCenterRelativeToRack.x;
   const stateAtInputTravel = (inputTravel) => {
     const pathDistance = sourcePathDistance
-      + inputTravel * pinionPitchRadius;
+      - inputTravel * pinionPitchRadius;
     const capsule = evaluateCapsuleAtPathDistance(pathDistance);
     const rackTranslation = new THREE.Vector2(
       -capsule.wheelCenterRelativeToRack.x,
@@ -26315,7 +26316,7 @@ function capsuleGuidedMangleRack() {
 
   const inputTravelToLocalPath = (targetPathDistance) => {
     const forwardDistance = THREE.MathUtils.euclideanModulo(
-      targetPathDistance - sourcePathDistance,
+      sourcePathDistance - targetPathDistance,
       capsulePerimeter,
     );
     return forwardDistance / pinionPitchRadius;
@@ -26703,10 +26704,10 @@ function capsuleGuidedMangleRack() {
     cyclePeriod,
     inputTravelPerCycle,
     pinionAngularSpeed,
-    pinionRevolutionsPerRackCycle: -inputTravelPerCycle / fullTurn,
+    pinionRevolutionsPerRackCycle: inputTravelPerCycle / fullTurn,
     pinionVerticalStroke: pinionPitchRadius * 2,
     rackReversalsPerCycle: 2,
-    rackStraightRunSpeed: pitchPathSpeed,
+    rackStraightRunSpeed: Math.abs(pitchPathSpeed),
     rackStroke: straightRackLength + 2 * pinionPitchRadius,
   };
   root.userData.variant =

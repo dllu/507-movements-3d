@@ -19,7 +19,8 @@ for (const id of [197, 198]) {
   });
   test(`${id} original penetrating witnesses now clear actual solid triangles`, () => {
     const model = create({ id }), d = model.root.userData, b = d.blocks;
-    const time = id === 197 ? 12.43547092 : 4.36332313;
+    // The same spatial witness occurs at complementary time after reversing197.
+    const time = id === 197 ? d.transmission.cyclePeriod - 12.43547092 : 4.36332313;
     model.update(time); model.root.updateMatrixWorld(true);
     const tooth = (id === 197 ? b.rackPins : b.rackTeeth)[id === 197 ? 4 : 34];
     const gear = b.pinion.userData.rotor.children[0], field = solidSurface(gear.geometry);

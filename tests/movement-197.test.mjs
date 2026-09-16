@@ -240,7 +240,7 @@ test('movement 197 closes a ten-pitch, two-semicircle capsule path in exactly th
     'full frame stroke includes both outward guide bulges',
   );
   assert.equal(transmission.rackReversalsPerCycle, 2);
-  near(transmission.pinionRevolutionsPerRackCycle, -3, 1e-15, 'signed turns');
+  near(transmission.pinionRevolutionsPerRackCycle, 3, 1e-15, 'signed turns');
 
   blocks.rackPins.forEach((pin, index) => {
     assert.equal(pin.userData.index, index);
@@ -369,9 +369,9 @@ test('movement 197 rolls without slip through 32,769 states while the frame reve
     segments.add(state.pathSegment);
     near(
       state.pinionAngle,
-      canonicalStates.sourcePose.pinionAngle - inputTravel,
+      canonicalStates.sourcePose.pinionAngle + inputTravel,
       4e-14,
-      `uniform clockwise pinion angle at sample ${index}`,
+      `uniform counterclockwise pinion angle at sample ${index}`,
     );
     near(
       state.pinionAngularSpeed,
@@ -450,9 +450,9 @@ test('movement 197 rolls without slip through 32,769 states while the frame reve
   }
   assert.deepEqual([...segments], [
     'upper-rack-run',
-    'right-end-guide-turn',
-    'lower-rack-run',
     'left-end-guide-turn',
+    'lower-rack-run',
+    'right-end-guide-turn',
   ]);
   assert.equal(rackReversals, 2);
   assert.ok(maximumContactRadiusError < 4e-16);
@@ -494,9 +494,9 @@ test('movement 197 rolls without slip through 32,769 states while the frame reve
   );
   near(
     canonicalStates.rightRackExtreme.shaftVerticalVelocity,
-    -transmission.rackStraightRunSpeed,
+    transmission.rackStraightRunSpeed,
     2e-15,
-    'shaft descends at full speed through right guide midpoint',
+    'shaft rises at full speed through right guide midpoint',
   );
   near(
     canonicalStates.leftRackExtreme.rackVelocity.x,
@@ -506,9 +506,9 @@ test('movement 197 rolls without slip through 32,769 states while the frame reve
   );
   near(
     canonicalStates.leftRackExtreme.shaftVerticalVelocity,
-    transmission.rackStraightRunSpeed,
+    -transmission.rackStraightRunSpeed,
     2e-15,
-    'shaft rises at full speed through left guide midpoint',
+    'shaft descends at full speed through left guide midpoint',
   );
 
   const boundaryTravels = [
@@ -550,9 +550,9 @@ test('movement 197 rolls without slip through 32,769 states while the frame reve
   near(
     canonicalStates.cycleClosure.pinionAngle
       - canonicalStates.sourcePose.pinionAngle,
-    -FULL_TURN * 3,
+    FULL_TURN * 3,
     4e-14,
-    'pinion closes after three clockwise turns',
+    'pinion closes after three counterclockwise turns',
   );
   disposeModel(model.root);
 });
@@ -777,5 +777,32 @@ test('movement 197 remains fully three-dimensional as the review queue advances 
   disposeModel(movement198.root);
   disposeModel(movement199.root);
   disposeModel(movement200.root);
+  disposeModel(model.root);
+});
+
+
+test('197 source-direction playback has consistent translational and rotational derivatives', () => {
+  const model = createMovementModel(catalog.movements[196]);
+  const { stateAtTime, transmission } = model.root.userData;
+  // The registered source uses add_rot(..., 3, ...) in Y-up coordinates.
+  assert.ok(stateAtTime(0).rackVelocity.x > 0);
+  for (let i = 0; i < 65; i += 1) {
+    const time = transmission.cyclePeriod * (i + 0.31) / 65;
+    const h = 1e-5;
+    const state = stateAtTime(time);
+    const before = stateAtTime(time - h);
+    const after = stateAtTime(time + h);
+    near((after.pinionAngle - before.pinionAngle) / (2 * h), 0.9,
+      1e-8, 'source counterclockwise pinion speed');
+    for (const [position, velocity, acceleration] of [
+      ['rackTranslation', 'rackVelocity', 'frameAcceleration'],
+      ['pinionCenter', 'pinionCenterVelocity', 'pinionCenterAcceleration'],
+    ]) {
+      vector2Near(after[position].clone().sub(before[position]).multiplyScalar(1 / (2 * h)),
+        state[velocity], 1e-8, `${position} velocity`);
+      vector2Near(after[velocity].clone().sub(before[velocity]).multiplyScalar(1 / (2 * h)),
+        state[acceleration], 1e-8, `${position} acceleration`);
+    }
+  }
   disposeModel(model.root);
 });

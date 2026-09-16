@@ -2,7 +2,7 @@
 
 The [197 caption and engraving](https://507movements.com/mm_197.html) require an eleven-pin rack with a rising/falling pinion shaft. [198](https://507movements.com/mm_198.html) fixes that shaft and suspends the closed toothed rack on two rods. Both pages register their matching `ae.add_model` and set `mm_present`; their unavailable CSS class does not indicate a missing animation.
 
-The existing distinction is retained: 197 has isolated round pins and a three-turn capsule cycle; 198 has 36 connected rack-tooth sectors, a six-tooth pinion, and exact two-rod closure through a five-turn mechanical cycle. The source animation for 197 uses a +3-turn rotation in its Y-up coordinates, whereas retained production traverses the reversible mechanism clockwise (−3). This direction discrepancy is now disclosed. 198's source defines a −2.5-turn input with a half-rate guide path; its complete mechanical closure spans five turns. No source tooth contours were traced or copied.
+The existing distinction is retained: 197 has isolated round pins and a three-turn capsule cycle; 198 has 36 connected rack-tooth sectors, a six-tooth pinion, and exact two-rod closure through a five-turn mechanical cycle. The source animation for 197 uses a +3-turn rotation in its Y-up coordinates. The initial finite-profile pass retained clockwise playback; the fortieth pass corrects playback to the source's counterclockwise direction. The engraving-aligned initial pose is retained. 198's source defines a −2.5-turn input with a half-rate guide path; its complete mechanical closure spans five turns. No source tooth contours were traced or copied.
 
 ## Working correction
 
@@ -30,7 +30,7 @@ node scripts/generate-mangle-rack-working-profiles.mjs --check
 | 198, either straight run | 0.00008461 | 0.00049965 | 0.26942 |
 | 198, either end turn | 0.00005402 | 0.00045676 | 0.31464 |
 
-197 is conservatively checked against complete circular pins, enclosing their rendered polygonal cylinders. 198 has no positive-area intersection between opposing finite working outlines. The nearby contact normals produce a positive moment opposing the clockwise pinion input on every sampled branch; close but torque-free faces are not accepted as driving witnesses. The small manufacturing/profile clearances remain explicit, rather than claiming that separated surfaces already exert contact forces.
+197 is conservatively checked against complete circular pins, enclosing their rendered polygonal cylinders. 198 has no positive-area intersection between opposing finite working outlines. The nearby contact normals oppose each pinion's input on every sampled branch (197 now counterclockwise, 198 clockwise); close but torque-free faces are not accepted as driving witnesses. The small manufacturing/profile clearances remain explicit, rather than claiming that separated surfaces already exert contact forces.
 
 Additional checks cover 197's collar/guide depth overlap and **0.008** end-guide running clearance, the slider's real bore, 198's shaft passage clearance above **0.0088**, front tie/end-of-shaft clearance above **0.0449**, bored suspension and guide-wheel journals, frame/roller clearance, stable descendant/geometry identities, and 65-pose visible-vertex framing.
 
@@ -44,4 +44,24 @@ Parent source/default/oblique browser review reported no errors or clipping, wit
 
 These are finite geometrically compatible profiles under prescribed rolling and linkage closure, not load-validated dynamic simulations. Motor torque, clearance take-up, guide reactions, friction, compliance, and passive branch selection are not solved. 197's guide clearance can permit a small loaded trajectory change; 198's reconstructed suspension assumes rigid links and ideal hinges. Sampled finite checks do not establish an exhaustive arbitrary-load collision proof. A later native study should use these corrected visible/contact profiles if loaded pickup or guide behavior needs validation.
 
-197's motor direction remains reversed relative to its registered animation, as disclosed above. Source engravings leave out several support depths; their axial arrangement is reconstructed. No claim is made that the nominal pitch-contact marker alone proves working contact.
+Source engravings leave out several support depths; their axial arrangement is reconstructed. No claim is made that the nominal pitch-contact marker alone proves working contact.
+
+
+## Fortieth-pass direction follow-up
+
+The current [source animation](https://507movements.com/mm_197.html) registers
+three positive rotor turns. Its library uses a positive counterclockwise
+rotation matrix and flips canvas Y to display Y-up model coordinates. Movement
+197 now advances the rotor by `+6π` per rack cycle and traverses the same guide
+path in reverse. Canonical times, rack/shaft velocities and speed metadata are
+updated consistently. No tooth, guide or source-pose geometry changes.
+
+The profile audit checks the newly loaded side, with maximum nearby driving
+clearance `0.00098570` and opposing moment magnitude at least `0.65758`.
+The original penetrating witness is checked at its complementary cycle time.
+All **20 affected checks pass**, including unchanged 198 regressions and a new
+independent finite-difference check of translational and rotational derivatives.
+The offline generator deliberately retains its clockwise sampling order so the
+same geometry asset reproduces byte-identically regardless of playback direction.
+Default/oblique browser inspection reports no errors or clipping (NDC `0.91145`).
+This closes the direction discrepancy; the prescribed-load limitations above remain.

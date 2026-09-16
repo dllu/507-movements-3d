@@ -8,7 +8,8 @@ const turn = 2 * Math.PI, result = {};
   const outer = g.pinionPitchRadius + g.pinionToothHeight / 2;
   const radii = new Float64Array(radial).fill(outer);
   for (let i = 0; i <= samples; i++) {
-    const s = d.stateAtTime(d.transmission.cyclePeriod * i / samples), a = -s.pinionAngle, c = Math.cos(a), sn = Math.sin(a);
+    // Preserve clockwise cutter ordering independently of playback direction.
+    const s = d.stateAtTime(-d.transmission.cyclePeriod * i / samples), a = -s.pinionAngle, c = Math.cos(a), sn = Math.sin(a);
     for (const pin of d.blocks.rackPins) {
       const wx = pin.position.x + s.rackTranslation.x, wy = -s.pinionCenter.y;
       const x = wx * c - wy * sn, y = wx * sn + wy * c, distance = Math.hypot(x, y), radius = g.rackPinRadius + allowance;
