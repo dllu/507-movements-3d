@@ -3596,20 +3596,24 @@
     {
       "id": 151,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-151.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/user-display-followup-review.md",
+        "note": "Independent primary-agent inspection of production-loader default and advanced oblique views beside the engraving; source proportions and explicit display requests reviewed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-151.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Upper axis differs by 6.8 pixels; 18-tooth pair, supports and ideal screw coupling inferred.",
+      "flaws": "Upper axis differs by 6.8 pixels; added frame absent from engraving. 18-tooth pair, supports and ideal screw coupling inferred.",
       "references": [
         "docs/movement-151.md",
         "docs/review-progress.md",
-        "docs/validation/151-render-contact.json"
+        "docs/validation/151-render-contact.json",
+        "docs/user-display-followup-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3946,9 +3950,12 @@
     {
       "id": 165,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-165.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/user-display-followup-review.md",
+        "note": "Independent primary-agent inspection of production-loader default and advanced oblique views beside the engraving; source proportions and explicit display requests reviewed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3960,7 +3967,8 @@
         "docs/movement-165.md",
         "docs/review-progress.md",
         "docs/validation/165-baked-clearance.json",
-        "docs/validation/165-solid-clearance.json"
+        "docs/validation/165-solid-clearance.json",
+        "docs/user-display-followup-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -4101,9 +4109,12 @@
     {
       "id": 171,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-171.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/user-display-followup-review.md",
+        "note": "Independent primary-agent inspection of production-loader default and advanced oblique views beside the engraving; source proportions and explicit display requests reviewed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4114,7 +4125,8 @@
       "references": [
         "docs/movement-171.md",
         "docs/review-progress.md",
-        "docs/validation/171-all-clearance.json"
+        "docs/validation/171-all-clearance.json",
+        "docs/user-display-followup-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4150,21 +4162,25 @@
     {
       "id": 173,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-173.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/user-display-followup-review.md",
+        "note": "Independent primary-agent inspection of production-loader default and advanced oblique views beside the engraving; source proportions and explicit display requests reviewed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-173.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Native tappet indexing retained, but ideal nut/guide constraints, tooth geometry and depths inferred.",
+      "flaws": "Finite 71.825-second adjustment visibly resets at replay boundary; ideal nut/guide constraints, tooth geometry and depths inferred.",
       "references": [
         "docs/movement-173.md",
         "docs/review-progress.md",
         "docs/validation/173-assembly-clearance.json",
-        "docs/validation/173-tappet-baked-clearance.json"
+        "docs/validation/173-tappet-baked-clearance.json",
+        "docs/user-display-followup-review.md"
       ],
       "mujoco": {
         "mode": "baked",

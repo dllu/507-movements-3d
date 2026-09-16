@@ -94,6 +94,9 @@ export function makeSilkTraverseAssembly(bundle) {
   reconstructionNote:'The tappet indexes the screw and gradually changes the traverse. At the end of its finite adjustment, playback restarts from the initial nut position.',
   mechanism:'tappet-indexed-silk-traverse',fidelity:'authored',simulationBackend:'baked-mujoco',reconstructionStatus:'reconstructed'});
  update(0);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.duration*i/128);bounds.union(new THREE.Box3().setFromObject(root));}update(0);
- root.userData.cameraFitBounds=bounds.clone().expandByScalar(.08);markShadows(root);
+ root.userData.cameraFitBounds=bounds.clone().expandByScalar(.08);
+ // Ask the renderer to fit the complete adjustment, not just its source pose.
+ root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ markShadows(root);
  return {root,update,reset:()=>update(0),cameraDirection:new THREE.Vector3(0,0,1),dispose:()=>disposeObject3D(root)};
 }

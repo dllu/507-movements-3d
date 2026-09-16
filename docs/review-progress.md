@@ -8,6 +8,17 @@ with uncertain reviewer identity, and scoped collision checks from global claims
 Its JSON source and generator validate complete coverage and evidence paths.
 Update affected rows in every progress commit, as required by `AGENTS.md`.
 
+# Forty-eighth family pass: display follow-ups and remaining finite contacts
+
+The [independent source follow-up](user-display-followup-review.md) confirms the
+requested 151 shaft indicator, 165 equal sine lobes, 171 viewport framing and
+173 solid screw/index marks. It also fixes 173's newly observed mid-animation
+camera clipping by activating the engine's full-motion fit. The 71.825-second
+nut reset remains explicit. Four more ledger rows now have attributable Astra
+visual checks. Seven relevant focused checks, production build and four packaged
+desktop/mobile cases pass. Independent 183/184, 296 and 306/307 contact repairs
+are still in progress; no clearance or completion claim is made for those lanes.
+
 # Forty-seventh family pass: finite feed teeth, escapements and source supports
 
 The [status ledger](movement-status.md) records new independent primary-agent
