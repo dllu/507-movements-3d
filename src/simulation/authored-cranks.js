@@ -1,3 +1,4 @@
+import { makeCouplingShaft } from './coupling-shaft.js';
 import {toggleSocketDisk} from './toggle-socket-disk.js';
 import {boredHorizontalPlate} from './bored-horizontal-plate.js';
 import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
@@ -14748,7 +14749,10 @@ function quadratureTwinCrankShaftCoupling() {
   const frontDiskRadius = 1.52;
   const frontDiskDepth = 0.34;
   const shaftRadius = 0.16;
-  const shaftLength = 3.45;
+  // Both ends stop before the translating rods sweep across the shaft axes.
+  const shaftStartZ = -0.95;
+  const shaftEndZ = 0.96;
+  const shaftLength = shaftEndZ - shaftStartZ;
   const hubRadius = 0.30;
   const hubDepth = 0.54;
   const upperShaftCenter = new THREE.Vector3(0, centerDistance / 2, 0);
@@ -14771,9 +14775,6 @@ function quadratureTwinCrankShaftCoupling() {
   const rearCrankEyeOuterRadius = 0.255;
   const rearCrankEyeInnerRadius = shaftRadius + 0.045;
   const rearCrankPinEyeInnerRadius = rodEyeInnerRadius;
-  const bearingRadius = 0.34;
-  const rearBearingZ = -1.56;
-  const frontBearingZ = 0.28;
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.14,
@@ -14790,10 +14791,6 @@ function quadratureTwinCrankShaftCoupling() {
   const linerMaterial = matte(PALETTE.ink, {
     metalness: 0.30,
     roughness: 0.44,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.16,
-    roughness: 0.64,
   });
   const indexMaterial = matte(PALETTE.white, { roughness: 0.44 });
 
@@ -14882,7 +14879,9 @@ function quadratureTwinCrankShaftCoupling() {
     rotor.userData.role = `${role}-rigid-rotor`;
     assembly.add(rotor);
 
-    const shaft = cylinderAlongZ(shaftRadius, shaftLength, linerMaterial, 36);
+    const shaft = makeCouplingShaft({
+      startZ: shaftStartZ, endZ: shaftEndZ, radius: shaftRadius, color: PALETTE.ink,
+    });
     shaft.userData.role = `${role}-continuous-shaft-joining-both-crank-planes`;
 
     const frontDisk = cylinderAlongZ(
@@ -15018,40 +15017,11 @@ function quadratureTwinCrankShaftCoupling() {
     rearRodPlaneZ,
   );
 
-  const fixedBearings = [upperShaftCenter, lowerShaftCenter].flatMap(
-    (center, shaftIndex) => [frontBearingZ, rearBearingZ].map((bearingZ) => {
-      const bearing = new THREE.Mesh(
-        new THREE.TorusGeometry(bearingRadius, 0.072, 10, 44),
-        frameMaterial,
-      );
-      bearing.position.set(center.x, center.y, bearingZ);
-      bearing.userData.role = `${shaftIndex === 0 ? 'upper' : 'lower'}-${
-        bearingZ === frontBearingZ ? 'front' : 'rear'
-      }-fixed-shaft-bearing`;
-      return bearing;
-    }),
-  );
-
-  const cameraEnvelope = new THREE.Mesh(
-    new THREE.BoxGeometry(7.0, 10.2, 3.8),
-    new THREE.MeshBasicMaterial({
-      colorWrite: false,
-      depthWrite: false,
-      opacity: 0,
-      transparent: true,
-    }),
-  );
-  cameraEnvelope.userData.cameraFitGuide = true;
-  cameraEnvelope.userData.cameraFramingEnvelope = true;
-  cameraEnvelope.userData.role = 'invisible-complete-movement-230-envelope';
-
   root.add(
-    ...fixedBearings,
     inputShaft,
     outputShaft,
     frontRod,
     rearRod,
-    cameraEnvelope,
   );
 
   const pointState = (center, phase, planeZ) => {
@@ -15182,13 +15152,21 @@ function quadratureTwinCrankShaftCoupling() {
     sourcePoseAngle + inputAngularSpeed * time,
   );
 
+  root.userData.hideGround = true;
+  root.userData.cameraDistanceScale = 0.9;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.58, -centerDistance / 2 - 1.58, -1.34),
+    new THREE.Vector3(1.58, centerDistance / 2 + 1.58, 1.39),
+  );
+  root.traverse((object) => {
+    for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
+  });
+  root.userData.materialsIgnoreSceneFog = true;
   root.userData.archetype =
     'quadrature-two-plane-parallelogram-crank-coupling';
   root.userData.mechanism = root.userData.archetype;
   root.userData.blocks = {
-    cameraEnvelope,
     connectingRods: [frontRod, rearRod],
-    fixedBearings,
     frontCrankDisks: [
       inputShaft.userData.parts.frontDisk,
       outputShaft.userData.parts.frontDisk,
@@ -15219,13 +15197,11 @@ function quadratureTwinCrankShaftCoupling() {
   };
   root.userData.geometry = {
     axis: Z_AXIS.clone(),
-    bearingRadius,
     centerDistance,
     connectingRodDepth,
     crankPinRadius,
     crankRadius,
     cyclePeriod,
-    frontBearingZ,
     frontDiskCenterZ,
     frontDiskDepth,
     frontDiskRadius,
@@ -15240,7 +15216,6 @@ function quadratureTwinCrankShaftCoupling() {
     minimumGuaranteedNormalizedLeverage: Math.SQRT1_2,
     pinBearingClearance,
     quarterTurn,
-    rearBearingZ,
     rearCrankDepth,
     rearCrankPlaneZ,
     rearPinCenterZ,
@@ -15249,6 +15224,8 @@ function quadratureTwinCrankShaftCoupling() {
     rodEyeInnerRadius,
     rodEyeOuterRadius,
     shaftLength,
+    shaftStartZ,
+    shaftEndZ,
     shaftRadius,
     sourceImageHeight: 525,
     sourceImageWidth: 525,
@@ -15341,8 +15318,8 @@ function quadratureTwinCrankShaftCoupling() {
     root.userData.kinematics = state;
   };
   update(0);
-  const model = finish(root, update, new THREE.Vector3(7.8, 4.6, 12.4));
-  for (const object of [cameraEnvelope, ...root.userData.blocks.rotationIndexes]) {
+  const model = finish(root, update, new THREE.Vector3(-9, 4, 12.4));
+  for (const object of root.userData.blocks.rotationIndexes) {
     object.castShadow = false;
     object.receiveShadow = false;
   }

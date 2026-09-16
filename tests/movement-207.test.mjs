@@ -733,15 +733,19 @@ test('movement 207 runtime exposes both worm hands, counterrotation indexes, ful
   assert.ok(bounds.max.x > 2.73);
   assert.ok(bounds.max.y > 2.4);
   assert.ok(bounds.min.z < -1.7);
-  let meshCount = 0;
   let screwThreadCount = 0;
   let toothCount = 0;
   model.root.traverse((object) => {
-    if (object.isMesh) meshCount += 1;
     if (object.userData.screwThread) screwThreadCount += 1;
     if (object.userData.wormWheelTooth) toothCount += 1;
   });
-  assert.ok(meshCount >= 91);
+  for (const worm of [blocks.leftWorm, blocks.rightWorm]) {
+    assert.equal(worm.userData.toothProfile, 'axial-straight-flanked-worm');
+    assert.equal(worm.userData.rotor.children.filter(child => child.isMesh).length, 1);
+  }
+  assert.equal(model.root.userData.hideGround, true);
+  assert.equal(blocks.leftContactMarker.visible, false);
+  assert.equal(blocks.rightContactMarker.visible, false);
   assert.equal(screwThreadCount, 2);
   assert.equal(toothCount, 48);
   assert.ok(model.cameraDirection.x > 0);

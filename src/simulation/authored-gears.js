@@ -1,3 +1,4 @@
+import { makeSolidWorm } from './solid-worm.js';
 import { sectorPressWebShape } from './sector-press-web.js';
 import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
@@ -20828,6 +20829,7 @@ function singleCircleEqualSpeedMangleWheel() {
 
 function opposedFeedRollWormDrive() {
   const root = new THREE.Group();
+  root.userData.hideGround = true;
   const fullTurn = Math.PI * 2;
   const sourceUpperWheelCenter = new THREE.Vector2(262, 139);
   const sourceLowerWheelCenter = new THREE.Vector2(262, 369);
@@ -21000,14 +21002,14 @@ function opposedFeedRollWormDrive() {
   upper.wheel.position.copy(upperWheelCenter);
   lower.wheel.position.copy(lowerWheelCenter);
 
-  const worm = makeScrew({
+  const worm = makeSolidWorm({
     axis: X_AXIS,
     color: PALETTE.driver,
     handedness: wormHandedness,
     length: wormLength,
     pitch: axialPitch,
     radius: wormPitchRadius,
-    threadRadius: 0.035,
+    shaftRadius: 0.067,
   });
   worm.position.copy(wormCenter);
   worm.userData.role = 'single-start-worm-between-opposed-feed-roll-wheels';
@@ -21047,6 +21049,7 @@ function opposedFeedRollWormDrive() {
   );
   upperContactMarker.position.copy(upperContactPoint);
   upperContactMarker.position.z = 0.205;
+  upperContactMarker.visible = false;
   upperContactMarker.userData.role = 'upper-worm-wheel-pitch-contact-marker';
   const lowerContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.047, 18, 12),
@@ -21054,6 +21057,7 @@ function opposedFeedRollWormDrive() {
   );
   lowerContactMarker.position.copy(lowerContactPoint);
   lowerContactMarker.position.z = 0.205;
+  lowerContactMarker.visible = false;
   lowerContactMarker.userData.role = 'lower-worm-wheel-pitch-contact-marker';
 
   const frameZ = -1.42;
@@ -21390,12 +21394,16 @@ function opposedFeedRollWormDrive() {
     };
     root.userData.kinematics = state;
   };
+  root.traverse((object) => {
+    if (object.material) object.material.fog = false;
+  });
   update(0);
   return finish(root, update, new THREE.Vector3(6.5, 4.8, 9.8));
 }
 
 function oppositeHandTwinWormFeedRollDrive() {
   const root = new THREE.Group();
+  root.userData.hideGround = true;
   const fullTurn = Math.PI * 2;
 
   // Brown's plate is a same-side counterpart to movement 195. Both wheel
@@ -21712,26 +21720,26 @@ function oppositeHandTwinWormFeedRollDrive() {
     label: 'right-clockwise',
     phase: rightWheelPhase,
   });
-  const leftWorm = makeScrew({
+  const leftWorm = makeSolidWorm({
     axis: X_AXIS,
     color: PALETTE.driver,
     handedness: leftWormHandedness,
     length: wormLength,
     pitch: axialPitch,
     radius: wormPitchRadius,
-    threadRadius: wormThreadRadius,
+    shaftRadius: inputShaftRadius,
   });
   leftWorm.position.copy(leftWormCenter);
   leftWorm.userData.keyedToCommonShaft = true;
   leftWorm.userData.role = 'left-hand-single-start-worm-on-common-shaft';
-  const rightWorm = makeScrew({
+  const rightWorm = makeSolidWorm({
     axis: X_AXIS,
     color: PALETTE.driver,
     handedness: rightWormHandedness,
     length: wormLength,
     pitch: axialPitch,
     radius: wormPitchRadius,
-    threadRadius: wormThreadRadius,
+    shaftRadius: inputShaftRadius,
   });
   rightWorm.position.copy(rightWormCenter);
   rightWorm.userData.keyedToCommonShaft = true;
@@ -21789,6 +21797,7 @@ function oppositeHandTwinWormFeedRollDrive() {
       whiteMaterial,
     );
     marker.position.copy(point);
+    marker.visible = false;
     marker.userData.fixedPitchContact = true;
     marker.userData.role = `${label}-worm-wheel-pitch-contact-marker`;
     return marker;
@@ -22229,6 +22238,9 @@ function oppositeHandTwinWormFeedRollDrive() {
     };
     root.userData.kinematics = state;
   };
+  root.traverse((object) => {
+    if (object.material) object.material.fog = false;
+  });
   update(0);
   return finish(root, update, new THREE.Vector3(3.2, 3.6, 12));
 }

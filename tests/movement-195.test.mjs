@@ -648,12 +648,10 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
   assert.ok(size.z > 2.4);
   assert.ok(physicalBounds.min.z < -1.55);
   assert.ok(physicalBounds.max.z > 0.92);
-  let meshCount = 0;
   let visibleUpperSpaceCount = 0;
   let concealedLowerSpaceCount = 0;
   let screwThreadCount = 0;
   model.root.traverse((object) => {
-    if (object.isMesh) meshCount += 1;
     if (object.userData.role === 'visible-tooth-space-on-upper-near-mesh-face') {
       visibleUpperSpaceCount += 1;
     }
@@ -662,7 +660,13 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
     }
     if (object.userData.screwThread) screwThreadCount += 1;
   });
-  assert.ok(meshCount >= 86);
+  for (const worm of [blocks.worm]) {
+    assert.equal(worm.userData.toothProfile, 'axial-straight-flanked-worm');
+    assert.equal(worm.userData.rotor.children.filter(child => child.isMesh).length, 2);
+  }
+  assert.equal(model.root.userData.hideGround, true);
+  assert.equal(blocks.upperContactMarker.visible, false);
+  assert.equal(blocks.lowerContactMarker.visible, false);
   assert.equal(visibleUpperSpaceCount, 24);
   assert.equal(concealedLowerSpaceCount, 24);
   assert.equal(screwThreadCount, 1);

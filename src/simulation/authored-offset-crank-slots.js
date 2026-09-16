@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import { makeCouplingShaft } from './coupling-shaft.js';
 import {
   PALETTE,
-  makeShaft,
   markShadows,
   matte,
   setSpin,
@@ -82,7 +82,9 @@ function parallelOffsetSlottedCranks(movement) {
   const inputCyclePeriod = FULL_TURN / inputAngularSpeed;
   const minimumSlotRadius = inputCrankRadius - centerDistance;
   const maximumSlotRadius = inputCrankRadius + centerDistance;
-  const slotStartRadius = minimumSlotRadius - 0.2;
+  // Keep the rounded slot end clear of the shaft hub at minimum throw.
+  const slotStartRadius = minimumSlotRadius - 0.02;
+  const outputHubRadius = 0.17;
   const slotEndRadius = maximumSlotRadius + 0.2;
   const slotHalfWidth = 0.155;
   const wristPinRadius = 0.095;
@@ -157,7 +159,7 @@ function parallelOffsetSlottedCranks(movement) {
   outputSlottedArm.position.z = outputPlaneZ;
   outputSlottedArm.userData.role = 'continuous-radial-slot-output-arm';
   outputRotor.add(outputSlottedArm);
-  const outputHub = cylinderAlongZ(0.45, crankDepth * 1.45, drivenMaterial, 40);
+  const outputHub = cylinderAlongZ(outputHubRadius, crankDepth * 1.45, drivenMaterial, 40);
   outputHub.position.z = outputPlaneZ;
   outputHub.userData.role = 'output-slotted-crank-hub';
   outputRotor.add(outputHub);
@@ -191,22 +193,16 @@ function parallelOffsetSlottedCranks(movement) {
   slotFollowerRoller.userData.role = 'wrist-roller-visible-in-radial-slot';
   inputRotor.add(slotFollowerRoller);
 
-  const inputShaft = makeShaft({
-    axis: Z_AXIS,
-    color: PALETTE.ink,
-    length: 1.75,
-    radius: 0.105,
+  const inputShaft = makeCouplingShaft({
+    color: PALETTE.ink, radius: 0.105, startZ: -1.915, endZ: -0.165,
   });
-  inputShaft.position.set(inputCenter.x, inputCenter.y, -1.04);
+  inputShaft.position.x = inputCenter.x;
   inputShaft.userData.role = 'first-offset-parallel-crank-shaft';
   root.add(inputShaft);
-  const outputShaft = makeShaft({
-    axis: Z_AXIS,
-    color: PALETTE.ink,
-    length: 1.75,
-    radius: 0.105,
+  const outputShaft = makeCouplingShaft({
+    color: PALETTE.ink, radius: 0.105, startZ: 0.165, endZ: 1.915,
   });
-  outputShaft.position.set(outputCenter.x, outputCenter.y, 1.04);
+  outputShaft.position.x = outputCenter.x;
   outputShaft.userData.role = 'second-offset-parallel-slotted-crank-shaft';
   root.add(outputShaft);
 
@@ -361,6 +357,7 @@ function parallelOffsetSlottedCranks(movement) {
       innerSlotTravelMargin: state.slotRadius - slotStartRadius,
       outerSlotTravelMargin: slotEndRadius - state.slotRadius,
       wristToSlotSideClearance: slotHalfWidth - wristPinRadius,
+      rollerToHubClearance: state.slotRadius - slotHalfWidth * 0.72 - outputHubRadius,
     };
   };
 
@@ -389,10 +386,13 @@ function parallelOffsetSlottedCranks(movement) {
     slotFollowerRoller,
     wristPin,
   };
+  root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 0.88;
+  // The slotted arm makes a complete revolution, including its lower half.
+  const sweptRadius = outputBodyEnd + outputBodyHalfWidth + 0.025;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.45, -2.15, -2.02),
-    new THREE.Vector3(3.95, 3.85, 2.02),
+    new THREE.Vector3(outputCenter.x - sweptRadius, -sweptRadius, -1.915),
+    new THREE.Vector3(outputCenter.x + sweptRadius, sweptRadius, 1.915),
   );
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.driverAngleAtOutputAngle = driverAngleAtOutputAngle;
@@ -408,6 +408,7 @@ function parallelOffsetSlottedCranks(movement) {
     outputBodyEnd,
     outputBodyHalfWidth,
     outputBodyStart,
+    outputHubRadius,
     outputCenter,
     outputPlaneZ,
     slotEndRadius,
@@ -475,10 +476,14 @@ function parallelOffsetSlottedCranks(movement) {
   };
   update(0);
   markShadows(root);
+  root.traverse((object) => {
+    for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
+  });
+  root.userData.materialsIgnoreSceneFog = true;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.4, -7.8, 7.1),
+    cameraDirection: new THREE.Vector3(-6.4, -3.8, 10),
   };
 }
 
