@@ -164,3 +164,29 @@ Classical contour extraction helps measure visible boundaries, while ideal
 circles and separately inferred occlusions remain necessary for the quadrant
 contact exception. Detailed evidence and limitations are linked from
 [review progress](review-progress.md).
+
+
+## Fourth parallel batch
+
+- **185/418:** real slot/die engagement and connected pin lugs; eccentric rods
+  join straps. Separate the rod/roller/guide planes, connect guide ends, and
+  correct valve/seat tangency. Fifteen focused tests pass.
+- **186–189:** bored valve levers and 189's bell-crank/hanger joints; 188's pin
+  web clears its axle. Twenty-four tests pass. Finite cam/shoe intersections in
+  186–187 remain measured and need a separate contact-envelope correction.
+- **326–327:** open rod/bearing/roller bores, shorten crankshafts, correct rolling
+  radius and guide placement, separate the crosshead, align bored cylinder and
+  gland, join 326's piston rod to its shoes, and fit full stroke. Twenty-one
+  focused tests pass.
+- **502–505:** bored gears/journals and improved carrier assemblies; remove
+  invented frames and markers. 505 gets offline rack-generated involute gears
+  after its ring teeth were found entering the old planet root. The 33-pose
+  mesh audit clears all four, with calculated 505 contact ratios above one.
+
+The integrated run passes 93 focused tests, followed by the final 504/shared-gear
+recheck. The production build and five packaged playback/mobile checks pass.
+These passes reuse bored lathe,
+finite plate, bored-link and generated-gear helpers; no new live browser physics
+is needed for the retained determinate motion laws. Remaining source, contact
+and axial reconstruction limits stay in the linked family reviews rather than
+being silently counted as complete.

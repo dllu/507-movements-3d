@@ -1,3 +1,4 @@
+import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -767,6 +768,7 @@ function compoundOutputEpicyclic(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctEpicyclicFamily(root, movement.id);
   markShadows(root);
   return {
     root,
@@ -1195,6 +1197,7 @@ function bevelDifferentialEpicyclic(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctEpicyclicFamily(root, movement.id);
   markShadows(root);
   return {
     root,
@@ -1731,6 +1734,7 @@ function fergusonMechanicalParadox(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctEpicyclicFamily(root, movement.id);
   markShadows(root);
   return {
     root,
@@ -1795,11 +1799,17 @@ function fixedAnnulusSimplePlanetary(movement) {
   centralStud.position.z = 0.02;
 
   const fixedRingC = makeInvoluteInternalGear({
-    addendum: module,
+    addendum: module * 0.8,
     color: PALETTE.muted,
-    dedendum: module * 1.25,
+    dedendum: module * 1.05,
     depth: gearDepth,
     module,
+    pressureAngle: 25 * Math.PI / 180,
+    backlash: 0.0012,
+    chamfer: 0,
+    flankSamples: 32,
+    tipSamples: 8,
+    rootGapSamples: 8,
     outerRadius: ringPitchRadius + module * 3.0,
     pitchRadius: ringPitchRadius,
     teeth: ringTeeth,
@@ -2146,6 +2156,7 @@ function fixedAnnulusSimplePlanetary(movement) {
   };
   update(0);
   root.userData.fidelity = 'authored';
+  correctEpicyclicFamily(root, movement.id);
   markShadows(root);
   return {
     root,

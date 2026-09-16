@@ -329,8 +329,8 @@ test('movement 418 guide-height adjustment remains a stationary configuration wh
       'upper B pin x update');
     near(blocks.upperPinSlider.position.y, state.upperPin.y, 0,
       'upper B pin y update');
-    near(blocks.rodB.scale.y, geometry.rodLength, 5e-16,
-      'rendered B length');
+    near(blocks.rodB.scale.x, 1, 0,
+      'bored B plate retains its rigid length without deformation');
     vectorNear(blocks.rollerC.position, state.rollerCenter, 0,
       'roller C center update');
     sameAngle(blocks.rollerC.rotation.z, state.rollerAngle, 0,

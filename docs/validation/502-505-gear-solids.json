@@ -1,0 +1,60 @@
+{
+  "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment at uniform carrier phases. Hubs, shafts, supports excluded. Depth capped at .05.",
+  "results": [
+    {
+      "id": 502,
+      "poses": 33,
+      "queries": 180768,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null
+    },
+    {
+      "id": 503,
+      "poses": 33,
+      "queries": 243906,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null
+    },
+    {
+      "id": 504,
+      "poses": 33,
+      "queries": 230715,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null
+    },
+    {
+      "id": 505,
+      "poses": 33,
+      "queries": 1246068,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null
+    }
+  ],
+  "sources": [
+    {
+      "file": "src/simulation/authored-epicyclic-trains.js",
+      "sha256": "a1747d7b680ce9e0ac739e9d383269fa422fef7fef4d83edc5d1b0cd4463273d"
+    },
+    {
+      "file": "src/simulation/epicyclic-family-corrections.js",
+      "sha256": "4bc07d8758df20b42167795cfffb0770db508f1ddd019c386f773436b8ea9eb6"
+    },
+    {
+      "file": "src/data/planetary-505-profiles.js",
+      "sha256": "d1659803ae11eff874e5a2514a85ebc31259f51efd73b8001cf13efc142ed252"
+    },
+    {
+      "file": "scripts/review-epicyclic-teeth.mjs",
+      "sha256": "9247d964dd84cf3b3eb66c0c6e76997651cb673c9aa278c086aa5979b771026c"
+    }
+  ],
+  "baseline505": {
+    "poses": 17,
+    "penetrations": 3762,
+    "depthLowerBound": 0.05
+  }
+}

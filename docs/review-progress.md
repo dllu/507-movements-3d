@@ -1,3 +1,35 @@
+# Fourth family pass: valve slots, engine guides and epicyclic tooth contact
+
+Twelve movements received bounded corrections across four independent lanes:
+185/418 valve linkages, 186–189 gab joints, 326–327 engine guides and 502–505
+planetary trains. Existing analytic ratios and linkage equations remain intact.
+The integrated focused run passes 93 tests; final 504/shared-gear rechecks, the
+production build and five packaged browser checks pass. Those browser checks
+cover play/pause and mobile resize for 185, 186, 326, 327 and 505.
+
+The main working-surface fixes are 185's die inside its actual slot, 418's rod
+clear of its roller/rails, 327's roller radius matching its no-slip law, and
+505's generated involute gear profiles clearing its internal ring. The gear
+mesh audit covers 33 poses per movement and about 1.90 million surface queries
+across 502–505 without sampled penetrations. 505 also retains overlapping tooth
+engagement by its calculated working contact ratios. This is sampled evidence,
+not continuous all-pairs collision proof.
+
+Real bores replace solid disks at the revised joints, engine shafts stop before
+the swinging rods, and reconstructed rods/guide webs now join their attachments.
+Ground and fog are disabled in these families. See the
+[valve](valve-linkage-family-review.md), [gab](movement-186-189.md),
+[engine-guide](steam-engine-guide-family-review.md) and
+[epicyclic](movement-502-505.md) reviews for exact scope and residuals.
+
+Finite cam/shoe penetration remains measured in 186–187 despite the old nominal
+contact-point tests. Gab motion remains prescribed, 183–184's native contact
+candidate remains failed, and 504 retains a stepped compound-gear assumption.
+These issues stay explicit follow-ups. Continue the family inventory; the full
+507-movement review remains active.
+
+## Earlier checkpoints
+
 # Third family pass: generated teeth, clear slots and bored ruler joints
 
 Corrected 207's worm-wheel working surfaces, 203/210/252's finite slots and

@@ -1,3 +1,5 @@
+import { plate, poly, circle, capsule, sector, polygonClipping as clip } from './finite-plate-geometry.js';
+import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -779,22 +781,26 @@ function locomotiveStephensonExpansionLinkValveGear() {
     z: backwardLayerZ,
   });
   backwardStrap.userData.role = 'backward-eccentric-strap';
-  const forwardEccentricRod = makeDynamicLink({
-    color: PALETTE.driven,
-    depth: 0.13,
-    jointRadius: 0.075,
-    thickness: 0.125,
-  });
-  forwardEccentricRod.userData.role =
-    'finite-forward-eccentric-rod-to-upper-link-pin';
-  const backwardEccentricRod = makeDynamicLink({
-    color: PALETTE.driven,
-    depth: 0.13,
-    jointRadius: 0.075,
-    thickness: 0.125,
-  });
-  backwardEccentricRod.userData.role =
-    'finite-backward-eccentric-rod-to-lower-link-pin';
+  const makeStrapRod = (length, role) => {
+    // Rod starts at the strap rim: it must not sweep through its rotating sheave.
+    const outline = clip.union(poly([[strapPitchRadius - 0.02, -0.0625],
+      [length, -0.0625], [length, 0.0625], [strapPitchRadius - 0.02, 0.0625]]),
+      poly(circle([length, 0], 0.13, 64)));
+    const body = new THREE.Mesh(plate(clip.difference(outline,
+      poly(circle([length, 0], 0.075, 64))), -0.065, 0.065), drivenMaterial);
+    body.userData.role = role;
+    body.userData.setEndpoints = (start, end) => {
+      body.position.copy(start);
+      body.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
+    };
+    return body;
+  };
+  const forwardEccentricRod = makeStrapRod(aheadEccentricRodLength,
+    'finite-forward-eccentric-rod-to-upper-link-pin');
+  const backwardEccentricRod = makeStrapRod(asternEccentricRodLength,
+    'finite-backward-eccentric-rod-to-lower-link-pin');
+  forwardStrap.remove(forwardStrap.userData.tailBoss);
+  backwardStrap.remove(backwardStrap.userData.tailBoss);
   root.add(
     forwardStrap,
     backwardStrap,
@@ -809,7 +815,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
     center: linkSlotCenterLocal,
     halfAngle: visibleLinkHalfAngle,
     material: accentMaterial,
-    radius: linkSlotRadius - linkSlotHalfWidth,
+    radius: linkSlotRadius - linkSlotHalfWidth - 0.072,
     tubeRadius: 0.072,
     z: 0,
   });
@@ -818,24 +824,42 @@ function locomotiveStephensonExpansionLinkValveGear() {
     center: linkSlotCenterLocal,
     halfAngle: visibleLinkHalfAngle,
     material: accentMaterial,
-    radius: linkSlotRadius + linkSlotHalfWidth,
+    radius: linkSlotRadius + linkSlotHalfWidth + 0.072,
     tubeRadius: 0.072,
     z: 0,
   });
   outerLinkRail.userData.role = 'outer-rail-of-expansion-link-slot';
+  // The pin lugs and lifting lug belong to the slotted member, with real
+  // holes and finite webs joining them to the corresponding wall.
+  const wallPolygon = (low, high) => sector(low, high,
+    Math.PI - visibleLinkHalfAngle, Math.PI + visibleLinkHalfAngle, 128)
+    .map(polygon => polygon.map(ring => ring.map(([x, y]) =>
+      [x + linkSlotCenterLocal.x, y + linkSlotCenterLocal.y])));
+  const innerWall = clip.union(wallPolygon(linkSlotRadius - linkSlotHalfWidth - 0.144,
+    linkSlotRadius - linkSlotHalfWidth),
+    ...[aheadLinkPinLocal, asternLinkPinLocal].map(point => poly(circle(point.toArray(), 0.15, 64))));
+  innerLinkRail.geometry.dispose();
+  innerLinkRail.geometry = plate(clip.difference(innerWall,
+    ...[aheadLinkPinLocal, asternLinkPinLocal].map(point => poly(circle(point.toArray(), 0.075, 64)))), -0.10, 0.10);
+  const outerWall = clip.union(wallPolygon(linkSlotRadius + linkSlotHalfWidth,
+    linkSlotRadius + linkSlotHalfWidth + 0.144),
+    capsule([0, 0], [0.30, 0], 0.075, 32), poly(circle([0, 0], 0.15, 64)));
+  outerLinkRail.geometry.dispose();
+  outerLinkRail.geometry = plate(clip.difference(outerWall,
+    poly(circle([0, 0], 0.08, 64))), -0.10, 0.10);
   expansionLink.add(innerLinkRail, outerLinkRail);
   const linkEndBridges = [-1, 1].map((sign) => {
     const angle = sign * visibleLinkHalfAngle;
     const inner = new THREE.Vector3(
       linkSlotCenterLocal.x
-        - (linkSlotRadius - linkSlotHalfWidth) * Math.cos(angle),
-      (linkSlotRadius - linkSlotHalfWidth) * Math.sin(angle),
+        - (linkSlotRadius - linkSlotHalfWidth - 0.072) * Math.cos(angle),
+      (linkSlotRadius - linkSlotHalfWidth - 0.072) * Math.sin(angle),
       0,
     );
     const outer = new THREE.Vector3(
       linkSlotCenterLocal.x
-        - (linkSlotRadius + linkSlotHalfWidth) * Math.cos(angle),
-      (linkSlotRadius + linkSlotHalfWidth) * Math.sin(angle),
+        - (linkSlotRadius + linkSlotHalfWidth + 0.072) * Math.cos(angle),
+      (linkSlotRadius + linkSlotHalfWidth + 0.072) * Math.sin(angle),
       0,
     );
     const bridge = makeBeam(inner, outer, {
@@ -878,7 +902,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   suspensionLug.userData.role = 'central-link-lifting-lug';
   const suspensionLugEye = makeEye(0.14, 0.054, driverMaterial);
-  const suspensionLugPin = cylinderAlongZ(0.075, 0.52, darkMaterial, 24);
+  const suspensionLugPin = cylinderAlongZ(0.075, 1.30, darkMaterial, 24);
   suspensionLug.add(suspensionLugEye, suspensionLugPin);
   expansionLink.add(suspensionLug);
   root.add(expansionLink);
@@ -1056,9 +1080,11 @@ function locomotiveStephensonExpansionLinkValveGear() {
   dieBlock.userData.role =
     'rectangular-die-block-captured-inside-curved-link-slot';
   const dieBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 0.29, 0.45),
+    plate(clip.difference(poly([[-0.10, -0.145], [0.10, -0.145],
+      [0.10, 0.145], [-0.10, 0.145]]), poly(circle([0, 0], 0.09, 64))), -0.10, 0.10),
     darkMaterial,
   );
+  dieBody.position.z = -0.44;
   dieBody.userData.role = 'working-link-die-body';
   const diePin = cylinderAlongZ(0.085, 1.50, brassMaterial, 28);
   diePin.userData.role = 'die-pin-through-link-and-output-rocker';
@@ -1103,8 +1129,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
 
   const valveGuide = new THREE.Group();
   valveGuide.userData.role = 'fixed-horizontal-valve-guide-and-steam-chest';
-  const guideBarrel = cylinderAlongX(0.21, 1.52, frameMaterial, 36);
-  guideBarrel.position.set(-1.82, valveGuideY, -0.20);
+  const guideBarrel = new THREE.Mesh(boredPlanarLinkGeometry({ length: 0, width: 0,
+    eyeRadius: 0.18, boreRadius: 0.063, depth: 0.30 }), frameMaterial);
+  guideBarrel.rotation.y = Math.PI / 2;
+  guideBarrel.position.set(-1.28, valveGuideY, 0.96);
   guideBarrel.userData.role = 'valve-stem-guide-barrel';
   const steamChest = new THREE.Mesh(
     new THREE.BoxGeometry(1.30, 1.20, 0.78),
@@ -1385,12 +1413,32 @@ function locomotiveStephensonExpansionLinkValveGear() {
   root.userData.selectorAtTime = selectorAtTime;
   root.userData.selectorLawAtCyclePhase = selectorLawAtCyclePhase;
   root.userData.solveLinkPose = solveLinkPose;
+  root.userData.sourceAnimation = {
+    available: true,
+    sourceUrl: 'https://507movements.com/mm_185.html',
+    inspectedConstruction: 'Two eccentric rods, suspended link, radius-26 slot, radius-7 output rocker, and horizontal valve slider.',
+    timingDifference: 'Official selector follows a four-input-cycle interpolated sequence; this demonstration retains eight turns over 24 seconds, with separate smooth transitions and dwells.'
+  };
   root.userData.sourcePointFromRaster = sourcePointFromRaster;
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
+  root.remove(fixedFrame, cameraEnvelope);
+  root.userData.hideGround = true;
+  root.userData.reconstruction = {
+    correctedFiniteParts: ['die within free slot', 'die axle bore', 'eccentric rods terminate at straps', 'coaxial bored valve guide'],
+    remaining: 'Other shaft/lever joints and reconstructed source proportions still need a finite-solid qualification.'
+  };
+  root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
   root.userData.cameraDistanceScale = 1.03;
   root.userData.fidelity = 'authored';
 
+  const sweptBounds = new THREE.Box3();
+  for (let i = 0; i <= 96; i += 1) {
+    update(selectorPeriod * i / 96);
+    root.updateMatrixWorld(true);
+    sweptBounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.03);
   update(0);
   markShadows(root);
   for (const object of [
@@ -1405,7 +1453,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(4.8, 2.5, 16.0),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 16.0),
     root,
     update,
   };

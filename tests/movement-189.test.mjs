@@ -529,8 +529,7 @@ test('movement 189 rendered transforms keep the valve lever, rod, bell crank, an
     valvePinAnchor,
     valveRocker,
   } = blocks;
-  const hangerStartJoint = hangerLink.children[1];
-  const hangerEndJoint = hangerLink.children[2];
+  const hangerLength = model.root.userData.geometry.hangerLength;
 
   for (const time of Object.values(canonicalTimes)) {
     model.update(time);
@@ -551,9 +550,9 @@ test('movement 189 rendered transforms keep the valve lever, rod, bell crank, an
     vector2Near(worldPoint(operatingPivotAnchor),
       model.root.userData.geometry.operatingPivot, 2e-15,
       'rendered fixed operating pivot');
-    vector2Near(worldPoint(hangerStartJoint), state.crankPin, 4e-14,
+    vector2Near(new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld), state.crankPin, 4e-14,
       'rendered hanger upper joint');
-    vector2Near(worldPoint(hangerEndJoint), state.rodHangerPin, 5e-14,
+    vector2Near(new THREE.Vector3(hangerLength, 0, 0).applyMatrix4(hangerLink.matrixWorld), state.rodHangerPin, 5e-14,
       'rendered hanger lower joint');
     near(operatingLever.rotation.z, state.operatingAngle, 2e-15,
       'rendered operating angle');
@@ -580,8 +579,8 @@ test('movement 189 rendered transforms keep the valve lever, rod, bell crank, an
   model.root.updateMatrixWorld(true);
   assert.ok(valveRocker.position.z < eccentricRod.position.z);
   assert.ok(eccentricRod.position.z < operatingLever.position.z);
-  assert.ok(operatingLever.position.z < worldPoint(hangerStartJoint).z);
-  near(worldPoint(hangerStartJoint).z, worldPoint(hangerEndJoint).z, 1e-15,
+  assert.ok(operatingLever.position.z < new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z);
+  near(new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z, new THREE.Vector3(hangerLength, 0, 0).applyMatrix4(hangerLink.matrixWorld).z, 1e-15,
     'both hanger pins share one working plane');
   assert.equal(cameraEnvelope.material.colorWrite, false);
   assert.equal(cameraEnvelope.castShadow, false);

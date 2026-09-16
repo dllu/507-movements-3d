@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -22,6 +23,31 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
+}
+
+function boredCylinderAlongZ(radius, bore, length, material, segments = 64) {
+  const mesh = new THREE.Mesh(boredLatheGeometry([
+    {axial: -length / 2, radial: radius},
+    {axial: length / 2, radial: radius},
+  ], bore, segments), material);
+  mesh.rotation.x = Math.PI / 2;
+  return mesh;
+}
+
+function finishGuidePresentation(root, update, period) {
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
+  const bounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i++) {
+    update(period * i / 64);
+    root.updateMatrixWorld(true);
+    bounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = bounds.expandByScalar(.025);
+  root.userData.cameraDistanceScale = 1.02;
+  update(0);
 }
 
 function centeredExtrusion(shape, depth, bevelSize = 0.01) {
@@ -314,6 +340,8 @@ function makeConnectingRod({
   depth,
   drivenMaterial,
   eyeRadius,
+  crankBore,
+  wristBore,
   rodLength,
 }) {
   const rod = new THREE.Group();
@@ -329,15 +357,15 @@ function makeConnectingRod({
   body.position.x = rodLength / 2;
   body.userData.role = 'constant-length-connecting-rod-shank';
 
-  const crankEyeBody = cylinderAlongZ(
-    eyeRadius,
+  const crankEyeBody = boredCylinderAlongZ(
+    eyeRadius, crankBore,
     depth,
     drivenMaterial,
     36,
   );
   crankEyeBody.userData.role = 'connecting-rod-crank-eye-body';
-  const wristEyeBody = cylinderAlongZ(
-    eyeRadius * 0.82,
+  const wristEyeBody = boredCylinderAlongZ(
+    eyeRadius * 0.82, wristBore,
     depth,
     drivenMaterial,
     36,
@@ -345,27 +373,11 @@ function makeConnectingRod({
   wristEyeBody.position.x = rodLength;
   wristEyeBody.userData.role = 'connecting-rod-slide-eye-body';
 
-  const crankEye = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      eyeRadius * 0.56,
-      eyeRadius * 0.15,
-      9,
-      36,
-    ),
-    darkMaterial,
-  );
-  crankEye.position.z = depth / 2 + 0.016;
+  const crankEye = boredCylinderAlongZ(eyeRadius * .95, crankBore, .012, darkMaterial);
+  crankEye.position.z = depth / 2 + .006;
   crankEye.userData.role = 'connecting-rod-crank-pin-eye';
-  const wristEye = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      eyeRadius * 0.45,
-      eyeRadius * 0.13,
-      9,
-      36,
-    ),
-    darkMaterial,
-  );
-  wristEye.position.set(rodLength, 0, depth / 2 + 0.016);
+  const wristEye = boredCylinderAlongZ(eyeRadius * .78, wristBore, .012, darkMaterial);
+  wristEye.position.set(rodLength, 0, depth / 2 + .006);
   wristEye.userData.role = 'connecting-rod-slide-A-eye';
 
   const crankEyeAnchor = new THREE.Object3D();
@@ -526,7 +538,7 @@ function verticalPlanedSlotPistonGuide(movement) {
     centeredExtrusion(
       sourceFrameShape(sourceScale),
       frameDepth,
-      0.012,
+      0,
     ),
     frameMaterial,
   );
@@ -540,7 +552,7 @@ function verticalPlanedSlotPistonGuide(movement) {
     new THREE.BoxGeometry(
       14 * sourceScale,
       3 * sourceScale,
-      1.10,
+      0.62,
     ),
     frameMaterial,
   );
@@ -552,21 +564,12 @@ function verticalPlanedSlotPistonGuide(movement) {
   foundationFoot.userData.fixed = true;
   foundationFoot.userData.role = 'deep-engine-standard-foundation-foot';
 
-  const guideOutline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      verticalCapsuleCurve(
-        0,
-        guideSlotUpperCenterY,
-        guideSlotLowerCenterY,
-        guideSlotHalfWidth,
-        frameFrontZ + 0.026,
-      ),
-      144,
-      0.018,
-      6,
-      true,
-    ),
-    darkMaterial,
+  const guideOutline = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(verticalCapsuleCurve(
+      0, guideSlotUpperCenterY, guideSlotLowerCenterY,
+      guideSlotHalfWidth, frameFrontZ + .001,
+    ).getPoints(144)),
+    new THREE.LineBasicMaterial({color: PALETTE.ink, fog: false}),
   );
   guideOutline.userData.fixed = true;
   guideOutline.userData.role = 'real-vertical-guide-slot-outline';
@@ -580,19 +583,19 @@ function verticalPlanedSlotPistonGuide(movement) {
     darkMaterial,
   );
   leftPlanedFace.position.set(
-    -guideSlotHalfWidth,
+    -guideSlotHalfWidth - .012,
     guideCenterY,
-    frameFrontZ + 0.036,
+    frameFrontZ - .0375,
   );
   leftPlanedFace.userData.fixed = true;
   leftPlanedFace.userData.role = 'left-planed-true-guide-surface';
   const rightPlanedFace = leftPlanedFace.clone();
-  rightPlanedFace.position.x = guideSlotHalfWidth;
+  rightPlanedFace.position.x = guideSlotHalfWidth + .012;
   rightPlanedFace.userData.fixed = true;
   rightPlanedFace.userData.role = 'right-planed-true-guide-surface';
 
-  const bearingHousing = cylinderAlongZ(
-    1.75 * sourceScale,
+  const bearingHousing = boredCylinderAlongZ(
+    1.75 * sourceScale, 1.02 * sourceScale,
     0.54,
     frameMaterial,
     48,
@@ -600,8 +603,8 @@ function verticalPlanedSlotPistonGuide(movement) {
   bearingHousing.position.z = 0.04;
   bearingHousing.userData.fixed = true;
   bearingHousing.userData.role = 'fixed-crankshaft-bearing-housing';
-  const bearingBore = cylinderAlongZ(
-    1.02 * sourceScale,
+  const bearingBore = boredCylinderAlongZ(
+    1.02 * sourceScale, .72 * sourceScale + .004,
     0.565,
     darkMaterial,
     42,
@@ -663,11 +666,11 @@ function verticalPlanedSlotPistonGuide(movement) {
 
   const liveShaft = cylinderAlongZ(
     0.72 * sourceScale,
-    connectingRodPlaneZ - flywheelPlaneZ + 0.54,
+    crankPlaneZ + crankDepth / 2 + .025 - (flywheelPlaneZ - .20),
     darkMaterial,
     36,
   );
-  liveShaft.position.z = (connectingRodPlaneZ + flywheelPlaneZ) / 2;
+  liveShaft.position.z = (crankPlaneZ + crankDepth / 2 + .025 + flywheelPlaneZ - .20) / 2;
   liveShaft.userData.axis = Z_AXIS.clone();
   liveShaft.userData.role = 'live-crankshaft-through-flywheel-and-bearing';
   rotorParts.rotor.add(liveShaft);
@@ -677,6 +680,8 @@ function verticalPlanedSlotPistonGuide(movement) {
     depth: connectingRodDepth,
     drivenMaterial,
     eyeRadius: 0.66 * sourceScale,
+    crankBore: crankPinRadius + .004,
+    wristBore: wristPinRadius * .58 + .004,
     rodLength: connectingRodLength,
   });
 
@@ -719,6 +724,9 @@ function verticalPlanedSlotPistonGuide(movement) {
   crossheadBridge.position.z = frameFrontZ + 0.16;
   crossheadBridge.userData.role =
     'rigid-crosshead-bridge-between-the-two-slide-shoes';
+  const lowerSlideBridge = crossheadBridge.clone();
+  lowerSlideBridge.position.y = -slideHeight / 2 + .02;
+  lowerSlideBridge.userData.role = 'lower-slide-bridge-attaching-piston-rod';
 
   const wristBoss = cylinderAlongZ(
     wristPinRadius * 1.45,
@@ -741,7 +749,7 @@ function verticalPlanedSlotPistonGuide(movement) {
   pistonRod.position.set(
     0,
     (pistonRodTopLocalY + pistonRodBottomLocalY) / 2,
-    frameFrontZ + 0.06,
+    frameFrontZ + 0.10,
   );
   pistonRod.userData.role = 'rigid-piston-rod-carried-by-slide-A';
 
@@ -760,6 +768,7 @@ function verticalPlanedSlotPistonGuide(movement) {
     rightShoe,
     pistonRod,
     crossheadBridge,
+    lowerSlideBridge,
     wristBoss,
     slideIndex,
     wristPinAnchor,
@@ -1065,6 +1074,7 @@ function verticalPlanedSlotPistonGuide(movement) {
     rightSlideShoe: rightShoe,
     slideA,
     slideBridge: crossheadBridge,
+    lowerSlideBridge,
     slideIndex,
     wristBoss,
     wristPinAnchor,
@@ -1194,10 +1204,10 @@ function verticalPlanedSlotPistonGuide(movement) {
     strokeToCrankRadiusRatio: 2,
   };
 
-  update(0);
+  finishGuidePresentation(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.3, 3.5, 12.8),
+    cameraDirection: new THREE.Vector3(.8, .5, 14),
     root,
     update,
   };
@@ -1217,24 +1227,25 @@ function makeIndexedGuideRoller({
   roller.userData.radius = radius;
   roller.userData.role = role;
 
-  const disk = cylinderAlongZ(radius * 0.91, depth, accentMaterial, 48);
+  const bore = radius / 3 + .004;
+  const disk = boredCylinderAlongZ(radius * .95, bore, depth, accentMaterial);
   disk.position.z = planeZ;
   disk.userData.role = `${role}-solid-rolling-disk`;
   const tread = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, radius * 0.075, 10, 56),
+    new THREE.TorusGeometry(radius * .925, radius * 0.075, 12, 96),
     darkMaterial,
   );
   tread.position.z = planeZ;
   tread.userData.role = `${role}-working-tread`;
-  const hub = cylinderAlongZ(radius * 0.31, depth * 1.18, darkMaterial, 32);
+  const hub = boredCylinderAlongZ(radius * .45, bore, depth * 1.18, darkMaterial);
   hub.position.z = planeZ;
   hub.userData.role = `${role}-rotating-hub`;
   const rotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 0.68, radius * 0.12, 0.032),
+    new THREE.BoxGeometry(radius * 0.50, radius * 0.12, 0.032),
     whiteMaterial,
   );
   rotationIndex.position.set(
-    radius * 0.58,
+    radius * 0.67,
     0,
     planeZ + depth / 2 + 0.030,
   );
@@ -1297,7 +1308,7 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   const crankDepth = 0.20;
   const rollerPlaneZ = 0.30;
   const rollerDepth = 0.22;
-  const crossheadPlaneZ = 0.25;
+  const crossheadPlaneZ = 0.56;
   const connectingRodPlaneZ = 0.76;
   const connectingRodDepth = 0.15;
   const crankPinRadius = 0.3125 * sourceScale;
@@ -1387,10 +1398,10 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     body.userData.fixed = true;
     body.userData.role = `${group.userData.role}-solid-body`;
     const contactFace = new THREE.Mesh(
-      new THREE.BoxGeometry(0.026, guideBarHeight * 0.82, 0.12),
+      new THREE.BoxGeometry(0.026, guideBarHeight * 0.82, .24),
       darkMaterial,
     );
-    contactFace.position.set(contactX, guideBarCenterY, frameFrontZ + 0.025);
+    contactFace.position.set(contactX + side * .013, guideBarCenterY, rollerPlaneZ);
     contactFace.userData.fixed = true;
     contactFace.userData.role = `${group.userData.role}-inner-working-face`;
     const mountingPad = new THREE.Mesh(
@@ -1433,32 +1444,32 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   lowerCrossBase.userData.fixed = true;
   lowerCrossBase.userData.role = 'lower-cylinder-support-crossbase';
   const cylinderBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.62 * sourceScale, 1.62 * sourceScale,
-      2.9, 48),
+    boredLatheGeometry([{axial: -1.45, radial: 1.62 * sourceScale},
+      {axial: 1.45, radial: 1.62 * sourceScale}], .20, 64),
     frameMaterial,
   );
-  cylinderBody.position.set(0, -6.30, -0.02);
+  cylinderBody.position.set(0, -6.30, crossheadPlaneZ);
   cylinderBody.userData.fixed = true;
   cylinderBody.userData.role = 'fixed-upright-engine-cylinder-below-crosshead';
   const cylinderTopCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.10 * sourceScale, 2.10 * sourceScale,
-      0.13, 48),
+    boredLatheGeometry([{axial: -.065, radial: 2.10 * sourceScale},
+      {axial: .065, radial: 2.10 * sourceScale}], .115, 64),
     darkMaterial,
   );
-  cylinderTopCap.position.set(0, -24 * sourceScale, -0.02);
+  cylinderTopCap.position.set(0, -24 * sourceScale, crossheadPlaneZ);
   cylinderTopCap.userData.fixed = true;
   cylinderTopCap.userData.role = 'fixed-cylinder-top-and-piston-rod-gland';
   const gland = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.72 * sourceScale, 0.72 * sourceScale,
-      0.19, 36),
+    boredLatheGeometry([{axial: -.095, radial: .72 * sourceScale},
+      {axial: .095, radial: .72 * sourceScale}], .115, 64),
     accentMaterial,
   );
-  gland.position.set(0, -23.45 * sourceScale, -0.02);
+  gland.position.set(0, -23.45 * sourceScale, crossheadPlaneZ);
   gland.userData.fixed = true;
   gland.userData.role = 'fixed-piston-rod-stuffing-box';
 
-  const bearingHousing = cylinderAlongZ(
-    1.25 * sourceScale,
+  const bearingHousing = boredCylinderAlongZ(
+    1.25 * sourceScale, .72 * sourceScale,
     0.56,
     frameMaterial,
     48,
@@ -1466,8 +1477,8 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   bearingHousing.position.z = 0.02;
   bearingHousing.userData.fixed = true;
   bearingHousing.userData.role = 'fixed-overhead-crankshaft-bearing';
-  const bearingBore = cylinderAlongZ(
-    0.72 * sourceScale,
+  const bearingBore = boredCylinderAlongZ(
+    0.72 * sourceScale, .54 * sourceScale + .004,
     0.59,
     darkMaterial,
     40,
@@ -1526,11 +1537,11 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
 
   const liveShaft = cylinderAlongZ(
     0.54 * sourceScale,
-    connectingRodPlaneZ - flywheelPlaneZ + 0.52,
+    crankPlaneZ + crankDepth / 2 + .025 - (flywheelPlaneZ - .20),
     darkMaterial,
     36,
   );
-  liveShaft.position.z = (connectingRodPlaneZ + flywheelPlaneZ) / 2;
+  liveShaft.position.z = (crankPlaneZ + crankDepth / 2 + .025 + flywheelPlaneZ - .20) / 2;
   liveShaft.userData.axis = Z_AXIS.clone();
   liveShaft.userData.role = 'live-overhead-flywheel-crankshaft';
   rotorParts.rotor.add(liveShaft);
@@ -1540,6 +1551,8 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     depth: connectingRodDepth,
     drivenMaterial,
     eyeRadius: 0.68 * sourceScale,
+    crankBore: crankPinRadius + .004,
+    wristBore: wristPinRadius * .58 + .004,
     rodLength: connectingRodLength,
   });
   rodParts.rod.userData.role =
@@ -2110,10 +2123,10 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       'y = r*sin(beta) - sqrt(L^2 - r^2*cos(beta)^2), beta = theta + pi/2',
   };
 
-  update(0);
+  finishGuidePresentation(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.0, 3.3, 12.9),
+    cameraDirection: new THREE.Vector3(.8, .5, 14),
     root,
     update,
   };

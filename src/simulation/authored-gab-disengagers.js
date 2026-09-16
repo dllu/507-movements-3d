@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {makeBoredPlanarLink, boredPlanarLinkGeometry} from './bored-planar-link.js';
+import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -17,6 +19,33 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
+}
+
+function boredBoss(radius, depth, boreRadius, material) {
+  return new THREE.Mesh(boredPlanarLinkGeometry({
+    length: 0, width: radius * 2, eyeRadius: radius, boreRadius, depth,
+  }), material);
+}
+
+// Finite tapered lever, with different eyes at the shaft and driven pin.
+function boredGabLever(end, {startRadius, endRadius, startBore, endBore, depth, width}, material) {
+  const length = Math.hypot(end.x, end.y);
+  const startHalfWidth = width === undefined ? startRadius * .72 : width / 2;
+  const endHalfWidth = width === undefined ? endRadius * .72 : width / 2;
+  const outline = polygonClipping.union(
+    poly(circle([0, 0], startRadius, 64)),
+    poly(circle([length, 0], endRadius, 64)),
+    poly([[0, -startHalfWidth], [length, -endHalfWidth],
+      [length, endHalfWidth], [0, startHalfWidth]]),
+  );
+  const bores = [{x: 0, y: 0, radius: startBore}];
+  if (endBore > 0) bores.push({x: length, y: 0, radius: endBore});
+  const geometry = plate(polygonClipping.difference(outline,
+    ...bores.map(bore => poly(circle([bore.x, bore.y], bore.radius, 64)))), -depth / 2, depth / 2);
+  geometry.userData.bores = bores;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.z = Math.atan2(end.y, end.x);
+  return mesh;
 }
 
 function rotate2(angle, point) {
@@ -660,19 +689,13 @@ function springHandleGabDisengager() {
     'fixed-axis-valve-gab-lever-carrying-the-engagement-pin';
   const valveShaft = cylinderAlongZ(0.34, 1.66, darkMaterial, 40);
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = cylinderAlongZ(0.58, 0.22, drivenMaterial, 48);
+  const valveShaftFace = boredBoss(0.58, 0.22, 0.352, drivenMaterial);
   valveShaftFace.position.z = 0.46;
   valveShaftFace.userData.role = 'source-round-valve-rockshaft-boss';
-  const valveArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(valvePinLocal.x, valvePinLocal.y, 0),
-    {
-      color: PALETTE.driven,
-      depth: 0.32,
-      jointRadius: 0.001,
-      thickness: 0.42,
-    },
-  );
+  const valveArm = boredGabLever(valvePinLocal, {
+    startRadius: 0.58, endRadius: gabPinRadius + .16,
+    startBore: 0.352, endBore: gabPinRadius + .012, depth: 0.32,
+  }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
   const valvePin = cylinderAlongZ(gabPinRadius, 1.78, brassMaterial, 32);
   valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.50);
@@ -1656,19 +1679,13 @@ function twoHandleGabDisengager() {
     'top-pivoted-valve-lever-carrying-the-gab-pin-and-cam-support';
   const valveShaft = cylinderAlongZ(0.32, 1.72, darkMaterial, 40);
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = cylinderAlongZ(0.56, 0.24, drivenMaterial, 48);
+  const valveShaftFace = boredBoss(0.56, 0.24, 0.332, drivenMaterial);
   valveShaftFace.position.z = 0.48;
   valveShaftFace.userData.role = 'source-round-valve-rockshaft-boss';
-  const valveArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(valvePinLocal.x, valvePinLocal.y, 0),
-    {
-      color: PALETTE.driven,
-      depth: 0.34,
-      jointRadius: 0.001,
-      thickness: 0.40,
-    },
-  );
+  const valveArm = boredGabLever(valvePinLocal, {
+    startRadius: 0.56, endRadius: gabPinRadius + .16,
+    startBore: 0.332, endBore: gabPinRadius + .012, depth: 0.34,
+  }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
   const valvePin = cylinderAlongZ(gabPinRadius, 1.82, brassMaterial, 32);
   valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.62);
@@ -2804,7 +2821,7 @@ function loopHandlePinCamGabDisengager() {
   valvePin.position.z = 0.66;
   valvePin.userData.role =
     'round-valve-gear-pin-serving-as-gab-capture-and-direct-cam-follower';
-  const valvePinBoss = cylinderAlongZ(0.38, 0.20, drivenMaterial, 38);
+  const valvePinBoss = boredBoss(0.38, 0.20, gabPinRadius + .012, drivenMaterial);
   valvePinBoss.position.z = 0.12;
   valvePinBoss.userData.role = 'rear-boss-of-guided-valve-gear-pin';
   const valvePinAnchor = new THREE.Group();
@@ -2821,16 +2838,10 @@ function loopHandlePinCamGabDisengager() {
   );
   valveCarrierTongue.position.set(0, -0.53, -0.08);
   valveCarrierTongue.userData.role = 'rear-guided-valve-gear-pin-carrier';
-  const valveCarrierWeb = makeBeam(
-    new THREE.Vector3(0, -0.49, -0.08),
-    new THREE.Vector3(0, -0.08, -0.08),
-    {
-      color: PALETTE.driven,
-      depth: 0.28,
-      jointRadius: 0.001,
-      thickness: 0.20,
-    },
-  );
+  const valveCarrierWeb = new THREE.Mesh(plate(polygonClipping.difference(
+    poly([[-.10, -.49], [.10, -.49], [.10, -.08], [-.10, -.08]]),
+    poly(circle([0, 0], gabPinRadius + .012, 64))), -.14, .14), drivenMaterial);
+  valveCarrierWeb.position.z = -.08;
   valveCarrierWeb.userData.role = 'valve-pin-carrier-web';
   valveGear.add(
     valveCarrierTongue,
@@ -3947,19 +3958,13 @@ function bellCrankHangerGabDisengager() {
     'fixed-axis-valve-gab-lever-carrying-the-engagement-pin';
   const valveShaft = cylinderAlongZ(0.31, 1.62, darkMaterial, 40);
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = cylinderAlongZ(0.53, 0.23, drivenMaterial, 48);
+  const valveShaftFace = boredBoss(0.53, 0.23, 0.322, drivenMaterial);
   valveShaftFace.position.z = 0.48;
   valveShaftFace.userData.role = 'source-hatched-valve-rockshaft-boss';
-  const valveArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(valvePinLocal.x, valvePinLocal.y, 0),
-    {
-      color: PALETTE.driven,
-      depth: 0.34,
-      jointRadius: 0.001,
-      thickness: 0.36,
-    },
-  );
+  const valveArm = boredGabLever(valvePinLocal, {
+    startRadius: 0.53, endRadius: gabPinRadius + .16,
+    startBore: 0.322, endBore: gabPinRadius + .012, depth: 0.34,
+  }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
   const valvePin = cylinderAlongZ(gabPinRadius, 1.82, brassMaterial, 34);
   valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.55);
@@ -4027,17 +4032,20 @@ function bellCrankHangerGabDisengager() {
     prong.userData.role = `${sign < 0 ? 'lower' : 'upper'}-off-frame-eccentric-fork-prong`;
     return prong;
   });
-  const rodRightTail = makeTube(
-    [
-      new THREE.Vector2(0.40, 0.18),
-      new THREE.Vector2(0.72, 0.10),
-      new THREE.Vector2(1.44, 0.02),
-      rodRightEndLocal.clone(),
-    ],
-    0.11,
-    driverMaterial,
-    0,
-  );
+  const tailCurve = new THREE.SplineCurve([
+    new THREE.Vector2(.40, .18), new THREE.Vector2(.72, .10),
+    new THREE.Vector2(1.44, .02), rodRightEndLocal.clone(),
+  ]);
+  const tailLeft = [], tailRight = [];
+  for (let i = 0; i <= 48; i++) {
+    const point = tailCurve.getPoint(i / 48), tangent = tailCurve.getTangent(i / 48);
+    tailLeft.push([point.x - .11 * tangent.y, point.y + .11 * tangent.x]);
+    tailRight.push([point.x + .11 * tangent.y, point.y - .11 * tangent.x]);
+  }
+  const tailProfile = polygonClipping.union(poly([...tailLeft, ...tailRight.reverse()]),
+    poly(circle(rodHangerPinLocal.toArray(), .25, 64)));
+  const rodRightTail = new THREE.Mesh(plate(polygonClipping.difference(tailProfile,
+    poly(circle(rodHangerPinLocal.toArray(), .132, 64))), -.11, .11), driverMaterial);
   rodRightTail.userData.role = 'source-tail-beyond-gab-to-hanger-pin';
   const gabTopBridge = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -4098,7 +4106,7 @@ function bellCrankHangerGabDisengager() {
     eccentricRod.add(shoe);
     return shoe;
   });
-  const rodHangerBoss = cylinderAlongZ(0.25, 0.52, driverMaterial, 36);
+  const rodHangerBoss = boredBoss(0.25, 0.52, .132, driverMaterial);
   rodHangerBoss.position.set(
     rodHangerPinLocal.x,
     rodHangerPinLocal.y,
@@ -4155,35 +4163,13 @@ function bellCrankHangerGabDisengager() {
   operatingLever.userData.axis = Z_AXIS.clone();
   operatingLever.userData.role =
     'single-rigid-operating-handle-and-short-lifting-crank';
-  const operatingHandleStem = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(
-      operatingHandleTopLocal.x,
-      operatingHandleTopLocal.y,
-      0,
-    ),
-    {
-      color: PALETTE.accent,
-      depth: 0.30,
-      jointRadius: 0.001,
-      thickness: 0.16,
-    },
-  );
+  const operatingHandleStem = boredGabLever(operatingHandleTopLocal, {
+    startRadius: .31, endRadius: .08, startBore: .162, endBore: 0, depth: .30, width: .16,
+  }, accentMaterial);
   operatingHandleStem.userData.role = 'source-long-upright-operating-handle';
-  const operatingCrankArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(
-      operatingCrankLocal.x,
-      operatingCrankLocal.y,
-      0,
-    ),
-    {
-      color: PALETTE.accent,
-      depth: 0.34,
-      jointRadius: 0.001,
-      thickness: 0.25,
-    },
-  );
+  const operatingCrankArm = boredGabLever(operatingCrankLocal, {
+    startRadius: .31, endRadius: .23, startBore: .162, endBore: .132, depth: .34, width: .25,
+  }, accentMaterial);
   operatingCrankArm.userData.role =
     'source-short-crank-rigid-with-operating-handle';
   const crankPin = cylinderAlongZ(0.12, 1.44, darkMaterial, 30);
@@ -4237,12 +4223,7 @@ function bellCrankHangerGabDisengager() {
     0.40,
   );
   operatingPivotPin.userData.role = 'fixed-pivot-of-operating-bell-crank';
-  const operatingPivotFace = cylinderAlongZ(
-    0.31,
-    0.18,
-    accentMaterial,
-    38,
-  );
+  const operatingPivotFace = boredBoss(.31, .18, .162, accentMaterial);
   operatingPivotFace.position.set(
     operatingPivot.x,
     operatingPivot.y,
@@ -4254,24 +4235,9 @@ function bellCrankHangerGabDisengager() {
   operatingPivotAnchor.userData.role = 'exact-fixed-operating-pivot-center';
   root.add(operatingPivotAnchor, operatingPivotFace, operatingPivotPin);
 
-  const hangerLink = makeBeam(
-    new THREE.Vector3(
-      sourceCrankPin.x,
-      sourceCrankPin.y,
-      0.96,
-    ),
-    new THREE.Vector3(
-      rodHangerPinLocal.x,
-      rodHangerPinLocal.y,
-      0.96,
-    ),
-    {
-      color: PALETTE.brass,
-      depth: 0.24,
-      jointRadius: 0.001,
-      thickness: 0.16,
-    },
-  );
+  const hangerLink = makeBoredPlanarLink({
+    length: hangerLength, width: .16, eyeRadius: .22, boreRadius: .132, depth: .24,
+  }, brassMaterial);
   hangerLink.userData.role =
     'single-finite-hanger-link-between-crank-and-eccentric-rod';
   root.add(hangerLink);
@@ -4294,15 +4260,10 @@ function bellCrankHangerGabDisengager() {
     frame.add(beam);
     return beam;
   });
-  const frameValveBearing = cylinderAlongZ(0.39, 0.22, frameMaterial, 38);
+  const frameValveBearing = boredBoss(0.39, 0.22, .322, frameMaterial);
   frameValveBearing.position.set(valvePivot.x, valvePivot.y, 0.10);
   frameValveBearing.userData.role = 'rear-valve-rockshaft-frame-bearing';
-  const frameOperatingBearing = cylinderAlongZ(
-    0.36,
-    0.22,
-    frameMaterial,
-    38,
-  );
+  const frameOperatingBearing = boredBoss(.36, .22, .162, frameMaterial);
   frameOperatingBearing.position.set(
     operatingPivot.x,
     operatingPivot.y,
@@ -4550,9 +4511,19 @@ function bellCrankHangerGabDisengager() {
 }
 
 export function createAuthoredGabDisengagerMovement(movement) {
-  if (movement.id === 186) return springHandleGabDisengager();
-  if (movement.id === 187) return twoHandleGabDisengager();
-  if (movement.id === 188) return loopHandlePinCamGabDisengager();
-  if (movement.id === 189) return bellCrankHangerGabDisengager();
-  return null;
+  const factory = {
+    186: springHandleGabDisengager,
+    187: twoHandleGabDisengager,
+    188: loopHandlePinCamGabDisengager,
+    189: bellCrankHangerGabDisengager,
+  }[movement.id];
+  if (!factory) return null;
+  const model = factory();
+  model.root.userData.hideGround = true;
+  model.root.traverse(object => {
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if (material) material.fog = false;
+    }
+  });
+  return model;
 }
