@@ -1,3 +1,4 @@
+import {finishLiftDrawPawl232} from './lift-draw-pawl-232-working-parts.js';
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
 import { correctGearFingerStop } from './gear-finger-stop-working-parts.js';
 import {makeEccentricTwoStop} from './eccentric-two-stop.js';
@@ -15780,7 +15781,7 @@ function parallelogramLiftAndDrawPawlRatchet(movement) {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(3.2, -3.5, 12.8));
+  return finishLiftDrawPawl232(finish(root, update, new THREE.Vector3(3.2, -3.5, 12.8)));
 }
 
 function rollerAndLatchStopsForLanternWheel(movement) {

@@ -57,7 +57,7 @@ test('movement 232 is the engraved A-B-C parallelogram ratchet with a retaining 
   assert.equal(archetype, movement.archetype);
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.independentlyReconstructed, true);
-  assert.match(sourceAnimation.reason, /unavailable/);
+  assert.match(sourceAnimation.reason, /no canvas, inline animation program or ae.add_model registration/);
   assert.equal(blocks.framePlate.parent, model.root);
   assert.equal(blocks.inputLever.parent, model.root);
   assert.equal(blocks.pawl.parent, model.root);
@@ -142,8 +142,8 @@ test('movement 232 preserves Brown’s measured pivots, source pose, and axial s
   const rear = (layer) => layer.center - layer.depth / 2;
   assert.ok(front(layers.wheel) - rear(layers.pawlC) > 0,
     'C overlaps the wheel axially at its working face');
-  assert.ok(front(layers.wheel) - rear(layers.retainingClick) > 0,
-    'retaining click overlaps the wheel axially');
+  assert.ok(rear(layers.retainingClick) > front(layers.wheel),
+    'retaining click body clears the wheel while its separate roller enters the working plane');
   assert.ok(rear(layers.frameA) - front(layers.pawlC) > 0,
     'A clears the moving C body');
   assert.ok(rear(layers.inputB) - front(layers.frameA) > 0,
@@ -210,7 +210,7 @@ test('movement 232 holds on lift and indexes monotonically through 65,537 states
       assert.equal(state.wheelAngularSpeed, 0);
       assert.equal(state.wheelAngularAcceleration, 0);
       assert.equal(state.contact, null);
-      assert.equal(state.retainingClickEngaged, true);
+      assert.equal(state.retainingClickEngaged, state.cyclePhase <= .4);
     } else {
       assert.equal(state.driving, true);
       assert.ok(state.contact);
@@ -246,7 +246,7 @@ test('movement 232 holds on lift and indexes monotonically through 65,537 states
   disposeModel(model.root);
 });
 
-test('movement 232 tooth corner slides on C without separation or normal slip', () => {
+test('movement 232 retains the prescribed nominal drawing curve separately from finite contact qualification', () => {
   const model = createMovementModel(catalog.movements[231]);
   const {
     contactSurfaceAtPawlAngle,
@@ -332,8 +332,8 @@ test('movement 232 retaining click locks successive gaps and clears during drive
 
   near(source.clickAngle, geometry.retainingRestAngle, 0,
     'source click seated');
-  near(lifted.clickAngle, geometry.retainingRestAngle, 0,
-    'click holds throughout lift');
+  near(lifted.clickAngle, geometry.retainingRestAngle + geometry.retainingLift, 0,
+    'prescribed pre-lift clears the next tooth before the drive');
   near(driveMiddle.clickAngle,
     geometry.retainingRestAngle + geometry.retainingLift, 0,
     'click rides over the passing tooth');
