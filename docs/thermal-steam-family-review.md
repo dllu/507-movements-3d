@@ -8,7 +8,7 @@ The spring-like tube was replaced with a closed, finite helical flight between t
 
 The 18/54 spur gears formerly occupied different axial planes. Their faces now overlap in one plane, and their tooth phases account for the actual line of centers. Standard module-based addendum/dedendum replaces the former oversized equal tooth depths. The wheel gear and wheel hub have real shaft bores, and six finite spokes connect the wheel hub to its blades/rims. The fixed axle remains supported at the rear cistern wall.
 
-**Remaining transmission limitation:** the right-angle input/output bevel members are still smooth, toothless truncated cones. Their displayed angular ratio is prescribed; tooth contact, a common pitch apex and transmitted torque have not been validated. Thus this pass does not qualify the whole transmission as mechanically corrected. A later bevel-family pass should replace those cones with a compatible finite bevel pair.
+**Update:** the former smooth, toothless bevel cones have now been replaced by a finite, common-apex miter pair. See the [469 bevel follow-up](thermal-air-469-bevel-review.md) for placement, tooth phasing, clearance measurements and remaining analytical-load limitations.
 
 The existing temperature run-down, stop and external reset remain an illustrative schedule, not a heat-transfer simulation or a prediction of self-running operation. Brown explicitly leaves temperature maintenance unexplained. Air compression, hydrostatic head, bubble slip, drag, sealing, passive starting torque and water occupancy are unsolved. The 13.8-second minimum display cycle is now enforced.
 

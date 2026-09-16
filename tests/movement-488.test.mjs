@@ -357,7 +357,10 @@ test('movement 488 fits every propeller pose and leaves spinning movement 507 as
   for (let sample = 0; sample <= 360; sample += 1) {
     model.update(geometry.cycleDuration * sample / 360);
     model.root.updateMatrixWorld(true);
-    union.union(new THREE.Box3().setFromObject(model.root));
+    model.root.traverseVisible(object => {
+      const positions=object.geometry?.attributes.position;
+      if(positions)for(let i=0;i<positions.count;i++)union.expandByPoint(new THREE.Vector3().fromBufferAttribute(positions,i).applyMatrix4(object.matrixWorld));
+    });
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(union));
   assert.ok(model.root.userData.cameraDistanceScale >= 1);

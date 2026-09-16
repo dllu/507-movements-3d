@@ -1,3 +1,4 @@
+import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -721,6 +722,7 @@ function wetGasMeter(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 3.2, 11.8);
   root.userData.groundFloorY = -2.72;
+  correctGasMeterParts(root,481,update);
   markShadows(root);
   caseShell.castShadow = false;
   rearCaseHead.castShadow = false;

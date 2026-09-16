@@ -1,3 +1,4 @@
+import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -168,9 +169,9 @@ function powersMercuryRegulator(movement) {
     return (lowerPressure + upperPressure) / 2;
   };
 
-  const leverPivot = new THREE.Vector3(0.25, 0.95, 1.02);
+  const leverPivot = new THREE.Vector3(0.25, 0.95, .70);
   const cupConnectorX = -0.90;
-  const valveCenterX = 1.15;
+  const valveCenterX = 1.0;
   const innerMercurySurfaceY = -0.33;
   const valveNotchApexLocalY = innerMercurySurfaceY
     + nominalNotchExposedHeightMetre
@@ -921,6 +922,7 @@ function powersMercuryRegulator(movement) {
   root.userData.cameraDistanceScale = 1.10;
   root.userData.cameraDirection = new THREE.Vector3(8.6, 4.5, 12.2);
   root.userData.groundFloorY = -2.70;
+  correctGasMeterParts(root,482,update);
   markShadows(root);
   housingShell.castShadow = false;
   cupHPressureVolume.castShadow = false;

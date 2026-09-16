@@ -128,7 +128,7 @@ test('movement 484 preserves Brown’s unavailable source and discloses the reco
   disposeModel(model.root);
 });
 
-test('movement 484 blade vertices form one exact right-handed radial helical ribbon', () => {
+test('movement 484 blade midsurface vertices form one exact right-handed radial helical ribbon', () => {
   const { model } = movementModel();
   const { blocks, geometry, helixPointScene, transmission } =
     model.root.userData;
@@ -139,7 +139,8 @@ test('movement 484 blade vertices form one exact right-handed radial helical rib
   assert.equal(bladeData.turns, 1);
   assert.equal(bladeData.handedness, 1);
   assert.equal(bladeData.segments, geometry.helixSegments);
-  assert.equal(positions.count, 2 * (geometry.helixSegments + 1));
+  assert.equal(bladeData.sourceVertexCount, 2 * (geometry.helixSegments + 1));
+  assert.ok(positions.count > bladeData.sourceVertexCount);
   near(bladeData.innerRadius, geometry.coreRadiusSceneUnit, 0,
     'inner ribbon radius');
   near(bladeData.outerRadius, geometry.outerRadiusSceneUnit, 0,
@@ -157,6 +158,8 @@ test('movement 484 blade vertices form one exact right-handed radial helical rib
       positions,
       2 * index + 1,
     );
+    inner.add(new THREE.Vector3().fromBufferAttribute(positions, bladeData.sourceVertexCount + 2 * index)).multiplyScalar(0.5);
+    outer.add(new THREE.Vector3().fromBufferAttribute(positions, bladeData.sourceVertexCount + 2 * index + 1)).multiplyScalar(0.5);
     vectorNear(inner, helixPointScene(u, geometry.coreRadiusSceneUnit),
       8e-8, `inner helix station ${index}`);
     vectorNear(outer, helixPointScene(u, geometry.outerRadiusSceneUnit),

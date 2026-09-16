@@ -134,7 +134,7 @@ test('movement 485 records Brown’s unavailable original and separates evidence
   disposeModel(model.root);
 });
 
-test('movement 485 constructs every sail as the same exact 17-to-8-degree twisted surface', () => {
+test('movement 485 constructs every sail as the same exact 17-to-8-degree twisted midsurface', () => {
   const { model } = movementModel();
   const { bladePointScene, blocks, geometry, transmission } =
     model.root.userData;
@@ -148,7 +148,8 @@ test('movement 485 constructs every sail as the same exact 17-to-8-degree twiste
     const data = panelGeometry.userData;
     const positions = panelGeometry.getAttribute('position');
     assert.equal(data.segments, geometry.bladeSegments);
-    assert.equal(positions.count, 2 * (geometry.bladeSegments + 1));
+    assert.equal(data.sourceVertexCount, 2 * (geometry.bladeSegments + 1));
+    assert.ok(positions.count > data.sourceVertexCount);
     near(data.rootRadiusSceneUnit, geometry.rootRadiusSceneUnit, 0,
       `root radius sail ${sailIndex}`);
     near(data.tipRadiusSceneUnit, geometry.tipRadiusSceneUnit, 0,
@@ -165,6 +166,7 @@ test('movement 485 constructs every sail as the same exact 17-to-8-degree twiste
           positions,
           2 * station + side,
         );
+        actual.add(new THREE.Vector3().fromBufferAttribute(positions, data.sourceVertexCount + 2 * station + side)).multiplyScalar(0.5);
         vectorNear(actual, bladePointScene(u, chordFraction), 8e-8,
           `sail ${sailIndex} station ${station} side ${side}`);
       }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctMarineRotor} from './marine-rotor-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -613,6 +614,7 @@ function screwPropeller(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(9.6, 5.2, 10.8);
   root.userData.groundFloorY = -2.92;
+  correctMarineRotor(root,488);
   markShadows(root);
   waterVolume.castShadow = false;
   bladeAssemblies.forEach(({ blade }) => {
@@ -621,6 +623,7 @@ function screwPropeller(movement) {
   wakeMarkerSets.flat().forEach((marker) => {
     marker.castShadow = false;
   });
+  root.traverse(object => { if(object.material?.transparent) { object.castShadow=false; object.receiveShadow=false; } });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

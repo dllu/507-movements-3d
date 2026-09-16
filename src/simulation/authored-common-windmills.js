@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctWindRotorWorkingParts } from './wind-rotor-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function addRole(object, role) {
@@ -721,6 +723,7 @@ function commonWindmill(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.6, 4.4, 11.8);
   root.userData.groundFloorY = -2.10;
+  correctWindRotorWorkingParts(root, 485);
   markShadows(root);
   for (const sail of sails) sail.panel.castShadow = false;
   for (const arrow of windArrows) {

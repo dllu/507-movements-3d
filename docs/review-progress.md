@@ -1,3 +1,25 @@
+# Twenty-third family pass: bevel, wind and marine rotors
+
+Nine movements receive corrections: 469 and 481–488. Four parallel lanes reuse
+finite gears, passage walls, bored joints and a shared closed-surface helper.
+
+- [469 bevel transmission](thermal-air-469-bevel-review.md): a common-apex,
+  toothed miter pair replaces the known toothless-cone exception.
+- [481–483 gas meters/regulator](gas-meter-regulator-family-review.md):
+  inlet, journal, valve and moving-link interfaces.
+- [484–486 wind rotors](wind-rotor-family-review.md): finite flights/sails,
+  shaft passages and actual pivoted-sail hinges.
+- [487/488 marine rotors](marine-rotor-family-review.md): flat wheel rims,
+  connected spokes, closed helicoid blades and clear fixed supports.
+
+The full review remains active. Fluid, thermal, wind-force and loaded-drive
+limits are documented independently of the corrected geometric interfaces.
+
+All 125 distinct focused checks pass; the affected 38 meter checks were rerun
+after the final wall-opening correction. The final production build and the
+nine-model screen pass, with the final three meter models screened again. Nine
+packaged desktop/playback/mobile checks pass in 41.1 seconds.
+
 # Twenty-second family pass: sealed vessels and steam passages
 
 Nine movements receive working-interface and source-layout corrections in four

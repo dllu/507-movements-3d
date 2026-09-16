@@ -587,3 +587,19 @@ nine-model construction/playback screen pass with no screen flags.
 Nine packaged desktop/playback/mobile checks also pass (49.3 seconds).
 469 still needs a toothed bevel transmission; fluid and thermal residuals remain
 explicit in each family review.
+
+## Twenty-third parallel batch
+
+- **469:** close the known bevel exception with a common-apex toothed pair.
+- **481–483:** finite gas-meter/regulator journals, passages and valve links.
+- **484–486:** shared closed flights/sails and bored pivoting-sail interfaces.
+- **487/488:** finite marine rotors, connected spokes and clear supports.
+
+Both rotor families reuse the new indexed-surface thickness helper. Source
+oracles inform 486/487 topology and timing where available; signed direction and
+prescribed force limitations are explicitly recorded in the family reviews.
+
+All 125 distinct focused checks pass, including the 38 affected meter checks
+rerun after their final correction. The production build and nine-model screen
+pass; final meter models were screened again.
+Nine packaged desktop/playback/mobile checks pass in 41.1 seconds.

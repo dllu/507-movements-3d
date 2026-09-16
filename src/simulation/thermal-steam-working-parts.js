@@ -77,8 +77,11 @@ export function correctTemperatureAirMachine(root){
   const gearRotor=b.wheelGear.userData.rotor,gearBody=gearRotor.children[0],shape=gearBody.geometry.parameters.shapes;
   const gearOutline=poly(shape.getPoints().map(p=>p.toArray()));
   replace(gearBody,plate(polygonClipping.difference(gearOutline,poly(circle([0,0],.072,128))),-.12,.12));
+  const pinionRotor=b.transferPinion.userData.rotor,pinionBody=pinionRotor.children[0];
+  replace(pinionBody,plate(polygonClipping.difference(poly(pinionBody.geometry.parameters.shapes.getPoints().map(p=>p.toArray())),poly(circle([0,0],.067,128))),-.11,.11));
+  replace(pinionRotor.children[1],ring(.067,.11,-.15,.15,128).rotateX(-Math.PI/2));
   const gearHub=gearRotor.children[1];replace(gearHub,ring(.072,g.wheelGearPitchRadius*.19,-.162,.162,96).rotateX(-Math.PI/2));
-  const hub=b.waterWheelRotor.children.find(o=>o.geometry?.type==='CylinderGeometry');replace(hub,ring(.072,.16,-.35,.35,96).rotateX(-Math.PI/2));
+  const hub=b.waterWheelRotor.children.find(o=>o.geometry?.type==='CylinderGeometry');replace(hub,ring(.072,.16,-.48,.35,96).rotateX(-Math.PI/2));
   b.wheelSpokes=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3,spoke=new THREE.Mesh(new THREE.BoxGeometry(.68,.08,.10),b.wheelRims[0].material);spoke.position.set(.47*Math.cos(a),.47*Math.sin(a),.18);spoke.rotation.z=a;spoke.userData.role='finite-wheel-spoke-joining-hub-to-blades';b.waterWheelRotor.add(spoke);return spoke;});
   const collectorProfile=[[-.22,.078],[-.22,.105],[-.06,.4],[.20,.4],[.20,.36],[-.06,.36]];
   replace(b.receiver,turned(collectorProfile,128).rotateX(-Math.PI/2));b.receiver.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),g.screwAxis);
@@ -90,6 +93,6 @@ export function correctTemperatureAirMachine(root){
   const wallPlan=polygonClipping.difference(poly([[g.tankBottomY,-g.tankDepth/2],[g.tankTopY,-g.tankDepth/2],[g.tankTopY,g.tankDepth/2],[g.tankBottomY,g.tankDepth/2]]),opening),wallGeometry=plate(wallPlan,-.07,.07),vertices=wallGeometry.attributes.position;
   for(let i=0;i<vertices.count;i++){const y=vertices.getX(i),z=vertices.getY(i),x=vertices.getZ(i);vertices.setXYZ(i,x,y+x*g.screwAxis.y/g.screwAxis.x,z);}
   wallGeometry.computeVertexNormals();replace(wall,wallGeometry);wall.position.set(wallX,0,0);b.barrelGlandWall=wall;
-  d.solidReview={qualification:'Solid Archimedean flight, finite barrel/collector/conduit, coplanar phased spur gears and bored wheel hubs. Bevel cones remain schematic; heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
+  d.solidReview={qualification:'Solid Archimedean flight, finite barrel/collector/conduit, coplanar phased spur gears and bored wheel hubs. Equal finite 45-degree bevels share an apex, use bored hubs and clear shaft ends; their Tredgold teeth and thermal motion are reconstructed. Heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
   finish(root);
 }

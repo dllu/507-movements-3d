@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctMarineRotor} from './marine-rotor-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -622,12 +623,14 @@ function commonPaddleWheel(movement) {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(7.8, 4.7, 11.8);
   root.userData.groundFloorY = -3.46;
+  correctMarineRotor(root,487);
   markShadows(root);
   waterVolume.castShadow = false;
   waterSurface.castShadow = false;
   wakeMarkerSets.flat().forEach((marker) => {
     marker.castShadow = false;
   });
+  root.traverse(object => { if(object.material?.transparent) { object.castShadow=false; object.receiveShadow=false; } });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

@@ -5,6 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { correctWindRotorWorkingParts } from './wind-rotor-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function addRole(object, role) {
@@ -633,6 +635,7 @@ function helicalCurrentRotor(movement) {
   root.userData.cameraDistanceScale = 1.14;
   root.userData.cameraDirection = new THREE.Vector3(8.4, 4.4, 11.5);
   root.userData.groundFloorY = -2.05;
+  correctWindRotorWorkingParts(root, 484);
   markShadows(root);
   helicalBlade.castShadow = false;
   for (const arrow of flowArrows) {
