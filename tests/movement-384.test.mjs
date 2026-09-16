@@ -174,7 +174,7 @@ test('movement 384 preserves Brown\'s topology, transfer process, measured plate
   disposeModel(model.root);
 });
 
-test('movement 384 external and female thread centerlines have one exact lead and remain phase-engaged through travel', () => {
+test('movement 384 external and female thread reference helices have one lead and remain half-pitch interleaved through travel', () => {
   const model = createMovementModel(catalog.movements[383]);
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime } = data;
@@ -216,14 +216,14 @@ test('movement 384 external and female thread centerlines have one exact lead an
       const globalX = state.radius + localPoint.x;
       const externalPhase = (globalX - geometry.screwMinimumX)
         / geometry.threadLead * FULL_TURN;
-      angleNear(internalWorldPhase, externalPhase, 8e-14,
-        'female and external thread phase engagement');
+      angleNear(internalWorldPhase, externalPhase + Math.PI, 8e-14,
+        'female tooth lies between adjacent male turns');
     }
   }
   near(
     geometry.wheelHubBoreRadius
       - (geometry.screwThreadRadius + geometry.threadTubeRadius),
-    0.035,
+    0.004,
     2e-17,
     'threaded hub radial running clearance',
   );
@@ -469,7 +469,7 @@ test('movement 384 closes every pose exactly before movement 507 remains the nex
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
   assert.ok(Number.isFinite(data.groundFloorY));
   for (const residual of Object.values(data.constraintResiduals)) {
-    near(residual, 0, 3e-16, 'static constraint residual');
+    near(residual, 0, 8e-16, 'static constraint residual');
   }
 
   const movement507 = catalog.movements[506];

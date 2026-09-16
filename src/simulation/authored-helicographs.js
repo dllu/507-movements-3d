@@ -5,6 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { helicographThreadGeometry, helicographPivotBridge, helicographTraceGeometry } from './helicograph-working-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
@@ -33,22 +36,10 @@ function annulusAlongX({
   outerRadius,
   width,
 }) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const bore = new THREE.Path();
-  bore.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  bore.closePath();
-  shape.holes.push(bore);
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: 0.012,
-    bevelThickness: 0.012,
-    curveSegments: 48,
-    depth: width,
-  });
-  geometry.translate(0, 0, -width / 2);
-  geometry.rotateY(Math.PI / 2);
+  const geometry = boredLatheGeometry([
+    { axial: -width / 2, radial: outerRadius },
+    { axial: width / 2, radial: outerRadius },
+  ], innerRadius, 96).rotateZ(Math.PI / 2);
   return new THREE.Mesh(geometry, material);
 }
 
@@ -105,25 +96,11 @@ class LogarithmicSpiralOnPaper extends THREE.Curve {
   }
 }
 
-function makeRoundedBar({ length, material, thickness, width }) {
-  const group = new THREE.Group();
-  const middleLength = Math.max(0, length - width);
-  const middle = new THREE.Mesh(
-    new THREE.BoxGeometry(middleLength, thickness, width),
-    material,
-  );
-  middle.position.x = length / 2;
-  group.add(middle);
-  for (const x of [width / 2, length - width / 2]) {
-    const end = cylinderAlongY(width / 2, thickness, material, 36);
-    end.position.x = x;
-    group.add(end);
-  }
-  return group;
-}
-
 function makeThreadedRollingWheel({
   axleRadius,
+  screwCoreRadius,
+  screwMinimumX,
+  initialRadius,
   hubWidth,
   internalThreadPhase,
   material,
@@ -141,7 +118,7 @@ function makeThreadedRollingWheel({
 
   const rimTube = 0.075;
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(radius - rimTube, rimTube, 12, 72),
+    new THREE.TorusGeometry(radius - rimTube, rimTube, 16, 192),
     rimMaterial,
   );
   rim.rotation.y = Math.PI / 2;
@@ -173,14 +150,14 @@ function makeThreadedRollingWheel({
       spokeCenter * Math.cos(angle),
       spokeCenter * Math.sin(angle),
     );
-    spoke.rotation.x = -angle;
+    spoke.rotation.x = angle;
     spoke.userData.role = 'one-of-eight-wheel-spokes';
     rotor.add(spoke);
     spokes.push(spoke);
   }
 
   const hub = annulusAlongX({
-    innerRadius: axleRadius + 0.035,
+    innerRadius: axleRadius + 0.004,
     material: rimMaterial,
     outerRadius: radius * 0.27,
     width: hubWidth,
@@ -191,18 +168,13 @@ function makeThreadedRollingWheel({
   const internalThreadCurve = new RadialScrewHelix({
     maximumX: hubWidth * 0.56,
     minimumX: -hubWidth * 0.56,
-    phase: internalThreadPhase,
+    phase: internalThreadPhase + Math.PI,
     pitch: threadLead,
     radius: axleRadius + 0.018,
   });
   const internalThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      internalThreadCurve,
-      48,
-      0.008,
-      6,
-      false,
-    ),
+    helicographThreadGeometry({ minimum: screwMinimumX, lead: threadLead,
+      core: screwCoreRadius, crest: axleRadius, initialRadius, nutWidth: hubWidth }),
     material,
   );
   internalThread.userData.role =
@@ -213,14 +185,14 @@ function makeThreadedRollingWheel({
   const faceIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       0.025,
-      radius * 0.57,
+      radius * 0.50,
       Math.max(0.055, radius * 0.085),
     ),
     whiteMaterial,
   );
   faceIndex.position.set(
-    hubWidth / 2 + 0.025,
-    radius * 0.48,
+    0.0676,
+    radius * 0.53,
     0,
   );
   faceIndex.userData.role = 'white-wheel-spin-index-on-near-face';
@@ -238,12 +210,16 @@ function makeThreadedRollingWheel({
   treadIndex.userData.role = 'white-wheel-spin-index-on-tread';
   rotor.add(treadIndex);
 
+  assembly.userData.rim = rim;
+  assembly.userData.hub = hub;
+  assembly.userData.face = face;
+  treadIndex.visible = false;
   assembly.userData.rotor = rotor;
   assembly.userData.spokes = spokes;
   assembly.userData.faceIndex = faceIndex;
-  assembly.userData.hubBoreRadius = axleRadius + 0.035;
+  assembly.userData.hubBoreRadius = axleRadius + 0.004;
   assembly.userData.internalThread = internalThread;
-  assembly.userData.internalThreadPhase = internalThreadPhase;
+  assembly.userData.internalThreadPhase = internalThreadPhase + Math.PI;
   assembly.userData.treadIndex = treadIndex;
   return assembly;
 }
@@ -255,7 +231,7 @@ function screwHelicograph(movement) {
   // selected scale keeps the same long radial screw, thin rolling wheel, and
   // compact centre pivot proportions while leaving the generated spiral
   // unobstructed in an oblique three-dimensional view.
-  const drawingPlaneY = 0.04;
+  const drawingPlaneY = 0.008;
   const paperTopY = 0;
   const paperThickness = 0.10;
   const paperSize = 10.6;
@@ -282,7 +258,7 @@ function screwHelicograph(movement) {
   const cycleDuration = 12;
   const pivotNeedleRadius = 0.075;
   const pivotSleeveRadius = 0.20;
-  const armWidth = 0.42;
+  const armWidth = 0.50;
   const armThickness = 0.17;
 
   const paperMaterial = matte(PALETTE.paper, {
@@ -347,7 +323,7 @@ function screwHelicograph(movement) {
     sweepAngle,
   });
   const transferredTrace = new THREE.Mesh(
-    new THREE.TubeGeometry(spiralPath, 560, 0.026, 8, false),
+    helicographTraceGeometry(spiralPath, 0.045),
     darkMaterial,
   );
   transferredTrace.userData.role =
@@ -368,12 +344,11 @@ function screwHelicograph(movement) {
   orbitingArm.userData.role = 'radial-screw-arm-revolving-about-fixed-centre';
   root.add(orbitingArm);
 
-  const bridge = makeRoundedBar({
-    length: 0.74,
-    material: driverMaterial,
-    thickness: armThickness,
-    width: armWidth,
-  });
+  const bridge = new THREE.Group();
+  const boredBridge = new THREE.Mesh(helicographPivotBridge({ length: .74,
+    width: armWidth, depth: armThickness, bore: pivotSleeveRadius + .004 }), driverMaterial);
+  boredBridge.userData.role = 'bored-orbiting-pivot-eye-and-screw-bridge';
+  bridge.add(boredBridge);
   bridge.position.set(-armWidth / 2, wheelAxisY, 0);
   bridge.userData.role = 'pivot-to-screw-bearing-arm';
   orbitingArm.add(bridge);
@@ -400,13 +375,8 @@ function screwHelicograph(movement) {
     radius: screwThreadRadius,
   });
   const screwThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      screwThreadCurve,
-      Math.ceil(screwLength / threadLead) * 40,
-      threadTubeRadius,
-      8,
-      false,
-    ),
+    helicographThreadGeometry({ minimum: screwMinimumX, maximum: screwMaximumX,
+      lead: threadLead, core: screwCoreRadius, crest: screwThreadRadius + threadTubeRadius }),
     darkMaterial,
   );
   screwThread.position.y = wheelAxisY;
@@ -421,6 +391,9 @@ function screwHelicograph(movement) {
 
   const threadedWheel = makeThreadedRollingWheel({
     axleRadius: screwThreadRadius + threadTubeRadius,
+    screwCoreRadius,
+    screwMinimumX,
+    initialRadius: outerRadius,
     hubWidth: wheelWidth,
     internalThreadPhase: (
       outerRadius - screwMinimumX - wheelWidth * 0.56
@@ -449,17 +422,18 @@ function screwHelicograph(movement) {
     ),
     darkMaterial,
   );
+  needle.rotation.z = Math.PI;
   needle.position.y = drawingPlaneY + needleHeight / 2;
   needle.userData.role = 'needle-point-fixed-in-paper-centre';
   fixedPivot.add(needle);
 
   const pivotSleeve = cylinderAlongY(
     pivotSleeveRadius,
-    1.04,
+    1.08,
     frameMaterial,
     36,
   );
-  pivotSleeve.position.y = drawingPlaneY + needleHeight + 0.52;
+  pivotSleeve.position.y = drawingPlaneY + needleHeight + 0.54;
   pivotSleeve.userData.role = 'central-pivot-sleeve';
   fixedPivot.add(pivotSleeve);
 
@@ -599,6 +573,10 @@ function screwHelicograph(movement) {
       'fixed-center-threaded-rolling-wheel-logarithmic-helicograph',
     blocks: {
       bridge,
+      boredBridge,
+      wheelRim: threadedWheel.userData.rim,
+      wheelHub: threadedWheel.userData.hub,
+      wheelFace: threadedWheel.userData.face,
       centerMark,
       drawingPaper,
       fixedPivot,
@@ -748,6 +726,15 @@ function screwHelicograph(movement) {
     },
   };
 
+  liveContact.visible = false;
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.userData.cameraFov = 8;
+  root.userData.reconstructionNote = 'An ideal constant-lead screw and circumferential rolling give the logarithmic spiral. The wheel necessarily scrubs axially as it advances. The hand-driven return retraces the curve; friction, thread load, paper deformation and pigment transfer are not simulated.';
+  root.userData.workingInterfaces = { maleThread: screwThread.geometry.userData.thread,
+    femaleThread: threadedWheel.userData.internalThread.geometry.userData.thread,
+    idealPaperContactY: drawingPlaneY, radialThreadClearance: .004, axialFlankClearance: .003 };
+  root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.35, -0.12, -5.35),
