@@ -272,7 +272,7 @@ function eccentricPawlJack(movement) {
   const engagedNoseY = (angle) => driveNoseAtAngle(angle).y;
   const followerExtrema = findPeriodicExtrema(engagedNoseY);
   const followerExcursion=followerExtrema.highValue-followerExtrema.lowValue;
-  const seatingOvertravel=.06, returnUndershoot=.06;
+  const seatingOvertravel=.10, returnUndershoot=.04;
   const toothPitch=followerExcursion-seatingOvertravel-returnUndershoot;
   const driveReferenceY=followerExtrema.lowValue+returnUndershoot;
   let startLow=followerExtrema.lowAngle,startHigh=followerExtrema.highAngle;
@@ -513,7 +513,9 @@ function eccentricPawlJack(movement) {
         holdingEngaged = strokeProgress <= 1e-12;
         const retreat=withinStroke<toothPitch-1e-7
           ?firstClearRetreat(a=>clearRackPawl(holdOutline,holdingPivot,holdingBaseAngle-a,rackTriangles,rackDisplacement),0,.85)
-          :crestRetreat*(1-quinticState((withinStroke-toothPitch-.025)/(seatingOvertravel-.025)).value);
+          :withinStroke-toothPitch<.08
+            ?crestRetreat+1.1*(withinStroke-toothPitch)
+            :(crestRetreat+.088)*(1-quinticState((withinStroke-toothPitch-.08)/(seatingOvertravel-.08)).value);
         holdingAngle=holdingBaseAngle-retreat;
         stage = 'eccentric-power-stroke-lifting-rack';
       } else if(strokePhase<transferFraction) {

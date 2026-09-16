@@ -31,3 +31,21 @@ test('389 eccentric disk, actual strap bore, shaft bearings and guided rack rema
   ...b.rackTeeth.map(o=>[o,[b.frame.userData.base,...b.frame.userData.feet,...b.fixedSupports]]),
  ]),d.timeline.cycleDuration,65);
 });
+
+// This experimental regression guards the specific upper-pawl branch jump.
+// A finite speed bound must hold when temporal resolution is doubled.
+test('389 candidate pawl paths have bounded travel at two time resolutions',()=>{
+ const model=createMovementModel(catalog[388]),d=model.root.userData;
+ for(const samples of [32768,65536]) {
+  const dt=d.timeline.cycleDuration/samples;
+  let previous=d.stateAtTime(0);
+  for(let i=1;i<=samples;i++) {
+   const state=d.stateAtTime(i*dt);
+   for(const key of ['driveNose','holdingTip']) {
+    const speed=state[key].distanceTo(previous[key])/dt;
+    assert.ok(speed<4.3,`${key} discontinuity at ${i*dt}: ${speed}`);
+   }
+   previous=state;
+  }
+ }
+});
