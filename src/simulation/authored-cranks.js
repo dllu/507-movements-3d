@@ -15372,14 +15372,16 @@ function dragLinkDoubleCrankMotion() {
   const inputCrankPinLength = 1.12;
   const outputCrankPinCenterZ = 0.375;
   const outputCrankPinLength = 0.62;
-  const inputShaftCenterZ = -1.02;
-  const outputShaftCenterZ = 1.02;
+  // Both shafts traverse the fixed bearing plate, but stop before the other
+  // crank's layer. Hubs must also clear that plate, not merely hide its bore.
+  const inputShaftCenterZ = -0.77;
+  const outputShaftCenterZ = 0.70;
   const shaftLength = 1.65;
   const pivotHubRadius = 0.27;
-  const pivotHubDepth = 0.40;
+  const pivotHubDepth = 0.20;
   const bearingRadius = 0.34;
-  const inputBearingZ = -0.14;
-  const outputBearingZ = 0.07;
+  const inputBearingZ = groundPlaneZ;
+  const outputBearingZ = groundPlaneZ;
   const axialClearances = {
     groundToInputCrank: groundPlaneZ - groundDepth / 2
       - (inputCrankPlaneZ + crankDepth / 2),
@@ -15840,6 +15842,7 @@ function dragLinkDoubleCrankMotion() {
     sourcePoseAngle + inputAngularSpeed * time,
   );
 
+  root.userData.hideGround = true;
   root.userData.archetype = 'strict-grashof-drag-link-double-crank';
   root.userData.mechanism = root.userData.archetype;
   root.userData.cameraDistanceScale = 0.82;

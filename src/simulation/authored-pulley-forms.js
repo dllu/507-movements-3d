@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -22,11 +23,15 @@ function makeAxialCylinder({
   depth,
   material,
   radius,
+  boreRadius = 0,
   role,
   segments = 84,
 }) {
   const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, depth, segments),
+    boreRadius > 0
+      ? boredLatheGeometry([{ axial: -depth / 2, radial: radius },
+        { axial: depth / 2, radial: radius }], boreRadius, segments)
+      : new THREE.CylinderGeometry(radius, radius, depth, segments),
     material,
   );
   cylinder.quaternion.setFromUnitVectors(
@@ -41,14 +46,13 @@ function makeAxialCylinder({
 function makeAxialLathe({
   material,
   profile,
+  boreRadius,
   role,
   segments = 112,
 }) {
-  const geometry = new THREE.LatheGeometry(
-    profile.map(({ axial, radial }) => new THREE.Vector2(radial, axial)),
-    segments,
+  const geometry = boredLatheGeometry(
+    profile.filter(({ radial }) => radial > 0), boreRadius, segments,
   );
-  geometry.computeVertexNormals();
   const lathe = new THREE.Mesh(geometry, material);
   lathe.quaternion.setFromUnitVectors(
     new THREE.Vector3(0, 1, 0),
@@ -62,6 +66,7 @@ function makeAxialLathe({
 function makeAxialNotchedVBody({
   grooveDepth,
   grooveHalfWidth,
+  boreRadius,
   material,
   notchAngularWidth,
   notchCount,
@@ -150,28 +155,36 @@ function makeAxialNotchedVBody({
     }
   }
 
+  // Close both faces with annuli and join their inner rings to a through-bore.
+  // Each cap has its own vertices so its normal stays perpendicular to the shaft.
+  const boreRings = [];
   [-1, 1].forEach((side) => {
     const axial = side * pulleyHalfWidth;
-    const centerIndex = positions.length / 3;
-    positions.push(axial, 0, 0);
     const ringStart = positions.length / 3;
-    for (let angularIndex = 0; angularIndex < angularSegments;
-      angularIndex += 1) {
+    for (let angularIndex = 0; angularIndex <= angularSegments; angularIndex += 1) {
       const angle = FULL_TURN * angularIndex / angularSegments;
-      positions.push(
-        axial,
-        outerRadius * Math.cos(angle),
-        outerRadius * Math.sin(angle),
-      );
+      for (const radial of [boreRadius, outerRadius]) {
+        positions.push(axial, radial * Math.cos(angle), radial * Math.sin(angle));
+      }
     }
-    for (let angularIndex = 0; angularIndex < angularSegments;
-      angularIndex += 1) {
-      const current = ringStart + angularIndex;
-      const next = ringStart + (angularIndex + 1) % angularSegments;
-      if (side < 0) indices.push(centerIndex, next, current);
-      else indices.push(centerIndex, current, next);
+    for (let angularIndex = 0; angularIndex < angularSegments; angularIndex += 1) {
+      const inner = ringStart + 2 * angularIndex, outer = inner + 1;
+      const nextInner = inner + 2, nextOuter = inner + 3;
+      const faces = [inner, outer, nextOuter, inner, nextOuter, nextInner];
+      if (side < 0) faces.reverse();
+      indices.push(...faces);
     }
+    const boreStart = positions.length / 3;
+    for (let angularIndex = 0; angularIndex <= angularSegments; angularIndex += 1) {
+      const angle = FULL_TURN * angularIndex / angularSegments;
+      positions.push(axial, boreRadius * Math.cos(angle), boreRadius * Math.sin(angle));
+    }
+    boreRings.push(boreStart);
   });
+  for (let i = 0; i < angularSegments; i += 1) {
+    const a = boreRings[0] + i, b = boreRings[1] + i;
+    indices.push(a, b, a + 1, a + 1, b, b + 1);
+  }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
@@ -182,6 +195,7 @@ function makeAxialNotchedVBody({
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
+  geometry.userData.boreRadius = boreRadius;
   const body = new THREE.Mesh(geometry, material);
   body.userData.axialSamples = axialSamples;
   body.userData.baseVRadiusAtAxial = baseVRadiusAtAxial;
@@ -197,9 +211,9 @@ function flangedFlatBeltPulley(movement) {
   root.scale.setScalar(0.9);
 
   const treadRadius = 2.32;
-  const treadWidth = 1.28;
+  const treadWidth = 0.85;
   const flangeRadius = 2.65;
-  const flangeThickness = 0.18;
+  const flangeThickness = 0.26;
   const flangeCenterOffset = treadWidth / 2 + flangeThickness / 2;
   const flangeInnerFaceOffset = treadWidth / 2;
   const flangeOuterFaceOffset = treadWidth / 2 + flangeThickness;
@@ -207,7 +221,7 @@ function flangedFlatBeltPulley(movement) {
   const hubRadius = 0.74;
   const hubWidth = 2.02;
   const shaftRadius = 0.38;
-  const shaftLength = 7.2;
+  const shaftLength = 4.46;
   const beltEdgeRunningClearance = 0.05;
   const maximumCompatibleBeltWidth =
     treadWidth - 2 * beltEdgeRunningClearance;
@@ -235,6 +249,7 @@ function flangedFlatBeltPulley(movement) {
     depth: treadWidth,
     material: pulleyMaterial,
     radius: treadRadius,
+    boreRadius: hubRadius + 0.008,
     role: 'straight-cylindrical-flat-belt-working-tread',
   });
   tread.userData.axialHalfWidth = treadWidth / 2;
@@ -246,6 +261,7 @@ function flangedFlatBeltPulley(movement) {
       depth: flangeThickness,
       material: pulleyMaterial,
       radius: flangeRadius,
+      boreRadius: hubRadius + 0.008,
       role: `${side < 0 ? 'left' : 'right'}-belt-retaining-flange`,
       segments: 96,
     });
@@ -274,6 +290,7 @@ function flangedFlatBeltPulley(movement) {
     depth: hubWidth,
     material: darkMaterial,
     radius: hubRadius,
+    boreRadius: shaftRadius + 0.008,
     role: 'flanged-pulley-hub',
     segments: 52,
   });
@@ -473,6 +490,7 @@ function plainFlatBeltPulley(movement) {
     depth: treadWidth,
     material: pulleyMaterial,
     radius: treadRadius,
+    boreRadius: hubRadius + 0.008,
     role: 'plain-straight-cylindrical-flat-belt-working-tread',
     segments: 104,
   });
@@ -498,6 +516,7 @@ function plainFlatBeltPulley(movement) {
     depth: hubWidth,
     material: darkMaterial,
     radius: hubRadius,
+    boreRadius: shaftRadius + 0.008,
     role: 'plain-pulley-hub',
     segments: 52,
   });
@@ -714,6 +733,7 @@ function concaveGroovedRoundBandPulley(movement) {
   const pulleyBody = makeAxialLathe({
     material: pulleyMaterial,
     profile: solidProfile,
+    boreRadius: hubRadius + 0.008,
     role: 'true-round-bottom-concave-grooved-pulley-body',
   });
   pulleyBody.userData.grooveProfile = grooveProfile;
@@ -737,6 +757,7 @@ function concaveGroovedRoundBandPulley(movement) {
     depth: hubWidth,
     material: darkMaterial,
     radius: hubRadius,
+    boreRadius: shaftRadius + 0.008,
     role: 'concave-pulley-hub',
     segments: 52,
   });
@@ -977,6 +998,7 @@ function smoothVGroovedRoundBandPulley(movement) {
   const pulleyBody = makeAxialLathe({
     material: pulleyMaterial,
     profile: solidProfile,
+    boreRadius: hubRadius + 0.008,
     role: 'true-smooth-v-grooved-pulley-body',
   });
   pulleyBody.userData.grooveProfile = grooveProfile;
@@ -999,6 +1021,7 @@ function smoothVGroovedRoundBandPulley(movement) {
     depth: hubWidth,
     material: darkMaterial,
     radius: hubRadius,
+    boreRadius: shaftRadius + 0.008,
     role: 'smooth-v-pulley-hub',
     segments: 52,
   });
@@ -1231,6 +1254,7 @@ function notchedVGroovedRoundBandPulley(movement) {
   root.add(pulleyRotor);
 
   const pulleyBody = makeAxialNotchedVBody({
+    boreRadius: hubRadius + 0.008,
     grooveDepth,
     grooveHalfWidth,
     material: pulleyMaterial,
@@ -1290,6 +1314,7 @@ function notchedVGroovedRoundBandPulley(movement) {
     depth: hubWidth,
     material: darkMaterial,
     radius: hubRadius,
+    boreRadius: shaftRadius + 0.008,
     role: 'notched-v-pulley-hub',
     segments: 52,
   });
@@ -1496,5 +1521,35 @@ export function createAuthoredPulleyFormMovement(movement) {
   if (movement.id === 259) result = notchedVGroovedRoundBandPulley(movement);
   if (!result) return null;
   result.root.userData.fidelity = 'authored';
+  result.root.userData.hideGround = true;
+  const { blocks, geometry } = result.root.userData;
+  const outerFace = geometry.flangeOuterFaceOffset
+    ?? geometry.treadHalfWidth ?? geometry.pulleyHalfWidth;
+  // A painted index belongs on the face, not floating visibly in front of it.
+  blocks.faceIndex.scale.x = 0.012 / 0.055;
+  blocks.faceIndex.position.x = outerFace + 0.007;
+  blocks.faceIndex.userData.surfaceDecoration = true;
+  result.root.traverse((object) => {
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if (material) material.fog = false;
+    }
+  });
+  // The engraving is an edge elevation; a small reveal keeps the groove readable
+  // while avoiding the old enlarged circular face and diagonal shaft.
+  result.cameraDirection.set(0.8, 0.35, 12);
+  result.root.updateMatrixWorld(true);
+  const fitBounds = new THREE.Box3().setFromObject(result.root, true);
+  const radius = Math.max(Math.abs(fitBounds.min.y), Math.abs(fitBounds.max.y),
+    Math.abs(fitBounds.min.z), Math.abs(fitBounds.max.z)) + 0.01;
+  fitBounds.min.y = fitBounds.min.z = -radius;
+  fitBounds.max.y = fitBounds.max.z = radius;
+  result.root.userData.cameraFitBounds = fitBounds;
+  result.root.userData.reconstruction = {
+    throughBores: true,
+    fitClearance: 0.008,
+    rigidAssembly: true,
+    motion: 'scripted constant rotation; no band route or friction transfer is specified',
+    notchCount259: '48 evenly spaced notches inferred from the visible front half',
+  };
   return result;
 }

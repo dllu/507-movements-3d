@@ -29207,10 +29207,10 @@ function coaxialDifferentialSpeedBevelGears() {
   const inputShaft = makeShaft({
     axis: inputAxis,
     color: PALETTE.ink,
-    length: 3.7,
+    length: 3.66,
     radius: 0.105,
   });
-  inputShaft.position.x = 1.95;
+  inputShaft.position.x = 1.97;
   inputShaft.userData.keyedToBothDriverSections = true;
   inputShaft.userData.role =
     'input-shaft-keyed-to-both-sections-of-one-driving-wheel';
@@ -29257,68 +29257,6 @@ function coaxialDifferentialSpeedBevelGears() {
   lowerContactMarker.userData.role =
     'lower-simultaneous-bevel-mesh-contact-marker';
 
-  const rearZ = -0.82;
-  const baseY = -2.5;
-  const leftPostX = -2.12;
-  const inputBearingX = 3.18;
-  const spindleBearingY = 2.12;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.45, baseY, rearZ),
-    new THREE.Vector3(3.48, baseY, rearZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.16 },
-  );
-  const rearPost = makeBeam(
-    new THREE.Vector3(leftPostX, baseY, rearZ),
-    new THREE.Vector3(leftPostX, spindleBearingY, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.16 },
-  );
-  const upperBearingBridge = makeBeam(
-    new THREE.Vector3(leftPostX, spindleBearingY, rearZ),
-    new THREE.Vector3(0, spindleBearingY, 0),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.15 },
-  );
-  const lowerBearingBridge = makeBeam(
-    new THREE.Vector3(leftPostX, -spindleBearingY, rearZ),
-    new THREE.Vector3(0, -spindleBearingY, 0),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.15 },
-  );
-  const inputBearingPost = makeBeam(
-    new THREE.Vector3(inputBearingX, baseY, rearZ),
-    new THREE.Vector3(inputBearingX, 0, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.16 },
-  );
-  const inputBearingBridge = makeBeam(
-    new THREE.Vector3(inputBearingX, 0, rearZ),
-    new THREE.Vector3(inputBearingX, 0, 0),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.15 },
-  );
-  const makeFixedBearing = (position, axis, role) => {
-    const bearing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.235, 0.055, 10, 40),
-      matte(PALETTE.muted, { metalness: 0.22, roughness: 0.5 }),
-    );
-    bearing.position.copy(position);
-    bearing.quaternion.setFromUnitVectors(Z_AXIS, axis);
-    bearing.userData.fixed = true;
-    bearing.userData.role = role;
-    return bearing;
-  };
-  const upperSpindleBearing = makeFixedBearing(
-    new THREE.Vector3(0, spindleBearingY, 0),
-    upperOutputAxis,
-    'upper-fixed-bearing-of-common-stationary-spindle',
-  );
-  const lowerSpindleBearing = makeFixedBearing(
-    new THREE.Vector3(0, -spindleBearingY, 0),
-    upperOutputAxis,
-    'lower-fixed-bearing-of-common-stationary-spindle',
-  );
-  const inputBearing = makeFixedBearing(
-    new THREE.Vector3(inputBearingX, 0, 0),
-    inputAxis,
-    'fixed-bearing-of-compound-driving-wheel-input-shaft',
-  );
-
   const upperDriverContactDistance = (
     upperDriverInnerDistance + upperDriverOuterDistance
   ) / 2;
@@ -29352,16 +29290,9 @@ function coaxialDifferentialSpeedBevelGears() {
   upperContactMarker.position.copy(upperContactPoint);
   lowerContactMarker.position.copy(lowerContactPoint);
 
+  upperContactMarker.visible = false;
+  lowerContactMarker.visible = false;
   root.add(
-    baseRail,
-    rearPost,
-    upperBearingBridge,
-    lowerBearingBridge,
-    inputBearingPost,
-    inputBearingBridge,
-    upperSpindleBearing,
-    lowerSpindleBearing,
-    inputBearing,
     commonSpindle,
     upperOutput,
     lowerOutput,
@@ -29546,26 +29477,17 @@ function coaxialDifferentialSpeedBevelGears() {
   root.userData.variant =
     '24-tooth-rigid-driver-sections-with-48-tooth-upper-and-32-tooth-lower-loose-wheels';
   root.userData.blocks = {
-    baseRail,
     commonSpindle,
     compoundDriver,
     driverCoupling,
-    inputBearing,
-    inputBearingBridge,
-    inputBearingPost,
     inputShaft,
-    lowerBearingBridge,
     lowerContactMarker,
     lowerDriverSection,
     lowerInwardIndexMarker,
     lowerOutput,
-    lowerSpindleBearing,
-    rearPost,
-    upperBearingBridge,
     upperContactMarker,
     upperDriverSection,
     upperOutput,
-    upperSpindleBearing,
   };
   root.userData.canonicalTimes = {
     commonFourTurnPose: inputCyclePeriod * 4,
@@ -29655,7 +29577,15 @@ function coaxialDifferentialSpeedBevelGears() {
     simultaneousMeshCount: 2,
     stationaryCommonSpindle: true,
   };
-  root.userData.cameraDistanceScale = 1.03;
+  root.userData.hideGround = true;
+  root.userData.cameraDistanceScale = 0.93;
+  root.userData.reconstructionAssumptions = [
+    'The broad driving wheel is reconstructed as two rigid bevel sections; exact historical tooth geometry is unspecified.',
+    'Analytical no-slip gear ratios are retained; finite tooth contact has not been dynamically qualified.',
+  ];
+  root.traverse((object) => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -29679,7 +29609,7 @@ function coaxialDifferentialSpeedBevelGears() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(5.8, 4.4, 8.8));
+  return finish(root, update, new THREE.Vector3(2.2, 1.7, 12));
 }
 
 function eccentricGearCarriedPinionRocker() {
@@ -33591,6 +33521,7 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
 
   const planetGearD = makeMiterGear({
     axis: planetAxisAtSource,
+    boreRadius: 0.078,
     color: PALETTE.accent,
     innerDistance,
     outerDistance,
@@ -33620,11 +33551,15 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
   const inputShaft = makeShaft({
     axis: inputAxis,
     color: PALETTE.ink,
-    length: 3.45,
+    length: 2.22,
     radius: 0.09,
   });
-  inputShaft.position.copy(stageOneApex).addScaledVector(inputAxis, 1.55);
+  inputShaft.position.copy(stageOneApex).addScaledVector(inputAxis, 1.24);
   inputShaft.userData.role = 'vertical-input-shaft-B';
+  // Rotate about B's own shaft, not the world origin between the stages.
+  inputAssembly.position.copy(stageOneApex);
+  inputGearB.position.sub(stageOneApex);
+  inputShaft.position.sub(stageOneApex);
   inputAssembly.add(inputGearB, inputShaft);
 
   const carrierAssembly = new THREE.Group();
@@ -33675,11 +33610,25 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
   const planetAxle = makeShaft({
     axis: planetAxisAtSource,
     color: PALETTE.ink,
-    length: 2.8,
+    length: 1.17,
     radius: 0.066,
   });
-  planetAxle.position.copy(stageTwoApex).setZ(0.02);
+  planetAxle.position.copy(stageTwoApex).setZ(0.715);
   planetAxle.userData.role = 'transverse-axle-for-carried-planet-D';
+  // A blind journal begins beyond F; a through axle would intersect F.
+  // The engraving hides its support, reconstructed as an outside cantilever.
+  const planetSupportRear = makeBeam(
+    new THREE.Vector3(stageTwoApex.x, frameTopY, frameRearZ),
+    new THREE.Vector3(stageTwoApex.x, frameTopY, 1.3),
+    frameMaterialOptions,
+  );
+  const planetSupportFront = makeBeam(
+    new THREE.Vector3(stageTwoApex.x, frameTopY, 1.3),
+    new THREE.Vector3(stageTwoApex.x, 0, 1.3),
+    frameMaterialOptions,
+  );
+  planetSupportRear.userData.role = 'inferred-planet-journal-cantilever';
+  planetSupportFront.userData.role = 'inferred-planet-journal-support';
   carrierAssembly.add(
     shaftGearF,
     shaftF,
@@ -33688,6 +33637,8 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
     frameLeft,
     frameRight,
     planetAxle,
+    planetSupportRear,
+    planetSupportFront,
     planetGearD,
   );
 
@@ -33812,6 +33763,7 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
       matte(PALETTE.white, { roughness: 0.48 }),
     );
     marker.userData.role = role;
+    marker.visible = false;
     return marker;
   };
   const stageOneFContactMarker = makeContactMarker(
@@ -33851,7 +33803,7 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
     'left-fixed-bearing-around-output-E-and-shaft-F',
   );
   const inputBearing = makeBearing(
-    stageOneApex.clone().addScaledVector(inputAxis, 2.55),
+    stageOneApex.clone().addScaledVector(inputAxis, 2.1),
     inputAxis,
     'upper-fixed-bearing-for-input-shaft-B',
   );
@@ -34051,6 +34003,8 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
     outputGearE,
     outputSleeve,
     planetAxle,
+    planetSupportRear,
+    planetSupportFront,
     planetGearD,
     shaftF,
     shaftGearF,
@@ -34058,7 +34012,7 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.72, -1.95, -2.05),
-    new THREE.Vector3(3.62, 3.05, 2.25),
+    new THREE.Vector3(3.62, 2.5, 2.25),
   );
   root.userData.canonicalTimes = {
     cycleClosure: inputCyclePeriod,
@@ -34154,7 +34108,15 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
       closureState.outputAngle - sourceState.outputAngle
     ) / fullTurn,
   };
-  root.userData.cameraDistanceScale = 1.04;
+  root.userData.hideGround = true;
+  root.userData.cameraDistanceScale = 0.95;
+  root.userData.reconstructionAssumptions = [
+    'The hidden planet journal is a blind pin on an outside cantilever, clearing the uninterrupted F shaft.',
+    'Gears follow analytical no-slip constraints; the source claim of two output turns conflicts with the three-turn differential result.',
+  ];
+  root.traverse((object) => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
+  });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -34199,7 +34161,7 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, -7.1, 11.5));
+  return finish(root, update, new THREE.Vector3(2.8, 2.2, 14));
 }
 
 function pairedStopsForSpurGear(movement) {

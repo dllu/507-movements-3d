@@ -546,32 +546,24 @@ test('movement 200 fills a source-like 3D envelope and remains distinct as the q
       blocks.upperOutput,
       blocks.lowerOutput,
       blocks.commonSpindle,
-      blocks.upperContactMarker,
-      blocks.lowerContactMarker,
-      blocks.baseRail,
-      blocks.rearPost,
-      blocks.upperBearingBridge,
-      blocks.lowerBearingBridge,
-      blocks.inputBearingPost,
-      blocks.inputBearingBridge,
-      blocks.upperSpindleBearing,
-      blocks.lowerSpindleBearing,
-      blocks.inputBearing,
-    ]) physicalBounds.expandByObject(object);
+    ]) physicalBounds.expandByObject(object, true);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 6.2);
-  assert.ok(size.y > 4.8);
-  assert.ok(size.z > 3.3);
-  assert.ok(physicalBounds.min.x < -2.4);
+  assert.ok(size.x > 5.3 && size.x < 5.6);
+  assert.ok(size.y > 4.5 && size.y < 4.7);
+  assert.ok(size.z > 3.2 && size.z < 3.3);
+  assert.ok(physicalBounds.min.x > -1.8);
   assert.ok(physicalBounds.max.x > 3.79);
-  assert.ok(physicalBounds.min.z < -1.67);
-  assert.ok(physicalBounds.max.z > 1.67);
+  assert.ok(physicalBounds.min.z < -1.62);
+  assert.ok(physicalBounds.max.z > 1.62);
   let visibleMeshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 165);
+  assert.ok(visibleMeshCount >= 145);
+  assert.equal(model.root.userData.hideGround, true);
+  assert.equal(blocks.upperContactMarker.visible, false);
+  assert.equal(blocks.lowerContactMarker.visible, false);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

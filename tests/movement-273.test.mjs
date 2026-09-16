@@ -111,7 +111,7 @@ test('movement 273 is one four-link rhombus joining four rectilinear sliders', (
   disposeModel(model.root);
 });
 
-test('movement 273 records the unavailable source and idealizes its hand drawing within uncertainty', () => {
+test('movement 273 records the source animation and idealizes its hand drawing within uncertainty', () => {
   const model = createMovementModel(catalog.movements[272]);
   const {
     geometry,
@@ -122,16 +122,16 @@ test('movement 273 records the unavailable source and idealizes its hand drawing
   } = model.root.userData;
   const plate = sourceReference.plate273;
 
-  assert.equal(sourceAnimation.available, false);
+  assert.equal(sourceAnimation.available, true);
   assert.equal(sourceAnimation.independentlyReconstructed, true);
-  assert.match(sourceAnimation.reason, /animation control unavailable/);
+  assert.match(sourceAnimation.reason, /source animation instead holds briefly/);
   assert.match(sourceAnimation.reason, /reconstructed independently/);
   assert.equal(sourceReference.officialDescription,
     catalog.movements[272].description);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.equal(plate.measurementUncertaintyPixels, 8);
-  assert.equal(plate.officialAnimationAvailable, false);
+  assert.equal(plate.officialAnimationAvailable, true);
   assert.deepEqual(plate.rasterCenter, { x: 267, y: 274 });
   assert.deepEqual(plate.rasterJointCenters, {
     A: { x: 154, y: 278 },
@@ -507,11 +507,6 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
   } = model.root.userData;
   const fixedObjects = [
     ...Object.values(blocks.guides),
-    ...blocks.guideBrackets,
-    blocks.horizontalBackingRail,
-    blocks.verticalBackingRail,
-    blocks.baseRail,
-    blocks.baseStem,
   ].map((object) => ({
     object,
     position: object.position.clone(),
@@ -568,11 +563,12 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
       const expectedEnd = linkState.end.position.clone();
       expectedStart.z = linkState.planeZ;
       expectedEnd.z = linkState.planeZ;
-      vectorNear(link.children[1].position, expectedStart, 0,
+      model.root.updateMatrixWorld(true);
+      vectorNear(link.localToWorld(new THREE.Vector3()), expectedStart, 1e-14,
         `rendered ${linkState.id} start at ${time}`);
-      vectorNear(link.children[2].position, expectedEnd, 0,
+      vectorNear(link.localToWorld(new THREE.Vector3(geometry.linkLength, 0, 0)), expectedEnd, 1e-14,
         `rendered ${linkState.id} end at ${time}`);
-      near(link.children[0].scale.x, geometry.linkLength, 9e-16,
+      near(link.scale.x, 1, 0,
         `rendered ${linkState.id} length at ${time}`);
       near(link.userData.angularSpeed, linkState.angularSpeed, 0,
         `rendered ${linkState.id} angular speed at ${time}`);
@@ -587,12 +583,12 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.equal(meshCount, 68);
+  assert.equal(meshCount, 40);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
-  assert.ok(size.x > 7.6);
-  assert.ok(size.y > 9);
-  assert.ok(size.z > 1.3);
+  assert.ok(size.x > 7.5);
+  assert.ok(size.y > 8.7);
+  assert.ok(size.z < 1);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   assert.ok(model.cameraDirection.x > model.cameraDirection.y);
   disposeModel(model.root);

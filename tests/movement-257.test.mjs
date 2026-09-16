@@ -54,7 +54,8 @@ test('movement 257 is one true round-bottom groove rigid on its shaft', () => {
   );
   assert.equal(archetype, movement.archetype);
   assert.match(mechanism, /semicircular-round-bottom-groove/);
-  assert.equal(blocks.pulleyBody.geometry.type, 'LatheGeometry');
+  assert.ok(blocks.pulleyBody.geometry.userData.boreRadius > 0,
+    'the revolved body has a through-bore for the hub');
   assert.equal(blocks.pulleyBody.parent, blocks.pulleyRotor);
   assert.equal(blocks.hub.parent, blocks.pulleyRotor);
   assert.equal(blocks.shaft.parent, blocks.pulleyRotor);

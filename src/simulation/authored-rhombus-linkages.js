@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import {
   PALETTE,
-  makeBeam,
-  makeDynamicLink,
   markShadows,
   matte,
 } from './primitives.js';
+
+import { boredPlanarLinkGeometry, makeBoredPlanarLink } from './bored-planar-link.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -82,11 +82,17 @@ function makeSlidingRod({
   rod.userData.axis = axis.clone();
   rod.userData.outwardDirection = axis.clone().multiplyScalar(outwardSign);
   rod.userData.role = role;
+  const eyeRadius = 0.21;
+  const neckStart = 0.18;
+  const eye = new THREE.Mesh(boredPlanarLinkGeometry({
+    length: 0, width: 0, eyeRadius, boreRadius: 0.135, depth: 0.16,
+  }), colorMaterial);
+  eye.userData.role = `${role}-bored-pin-eye`;
   const body = Math.abs(axis.x) > 0.5
-    ? cylinderAlongX(rodRadius, length, colorMaterial, 36)
-    : cylinderAlongY(rodRadius, length, colorMaterial, 36);
+    ? cylinderAlongX(rodRadius, length - neckStart, colorMaterial, 36)
+    : cylinderAlongY(rodRadius, length - neckStart, colorMaterial, 36);
   body.position.copy(rod.userData.outwardDirection)
-    .multiplyScalar(length / 2);
+    .multiplyScalar((length + neckStart) / 2);
   body.userData.role = `${role}-straight-body`;
   const indexLength = 0.11;
   const index = Math.abs(axis.x) > 0.5
@@ -102,8 +108,8 @@ function makeSlidingRod({
   endCap.position.copy(rod.userData.outwardDirection)
     .multiplyScalar(length);
   endCap.userData.role = `${role}-outer-rounded-end`;
-  rod.add(body, endCap, index);
-  rod.userData.blocks = { body, endCap, index };
+  rod.add(body, endCap, index, eye);
+  rod.userData.blocks = { body, endCap, index, eye };
   return rod;
 }
 
@@ -182,10 +188,10 @@ function rhombusRectilinearConverter(movement) {
   const guideDepth = 0.5;
   const guideJawThickness = 0.17;
   const guideClearance = 0.025;
-  const frontLinkPlaneZ = 0.18;
-  const rearLinkPlaneZ = -0.18;
+  const frontLinkPlaneZ = 0.22;
+  const rearLinkPlaneZ = -0.22;
   const linkThickness = 0.17;
-  const linkDepth = 0.2;
+  const linkDepth = 0.16;
   const pinRadius = 0.12;
   const pinSpan = 0.86;
   const reversalTolerance = 1e-10;
@@ -424,14 +430,10 @@ function rhombusRectilinearConverter(movement) {
   linkage.userData.role = 'four-equal-link-rhombus';
   root.add(linkage);
   const linkMeshes = linkDefinitions.map((definition, index) => {
-    const link = makeDynamicLink({
-      color: definition.planeZ > 0
-        ? frontLinkMaterial
-        : rearLinkMaterial,
-      depth: linkDepth,
-      jointRadius: 0.001,
-      thickness: linkThickness,
-    });
+    const link = makeBoredPlanarLink({
+      length: linkLength, width: linkThickness, depth: linkDepth,
+      eyeRadius: 0.21, boreRadius: pinRadius + 0.015,
+    }, matte(definition.planeZ > 0 ? frontLinkMaterial : rearLinkMaterial));
     link.userData.index = index;
     link.userData.nominalLength = linkLength;
     link.userData.planeZ = definition.planeZ;
@@ -541,47 +543,6 @@ function rhombusRectilinearConverter(movement) {
   guides.D.position.y = -verticalGuideDistance;
   for (const guide of Object.values(guides)) root.add(guide);
 
-  const backingPlaneZ = -0.72;
-  const horizontalBackingRail = makeBeam(
-    new THREE.Vector3(-3.18, 0, backingPlaneZ),
-    new THREE.Vector3(3.18, 0, backingPlaneZ),
-    { color: PALETTE.frame, depth: 0.17, thickness: 0.13 },
-  );
-  horizontalBackingRail.userData.role =
-    'fixed-horizontal-backing-rail-for-A-and-B-guides';
-  const verticalBackingRail = makeBeam(
-    new THREE.Vector3(0, -3.82, backingPlaneZ),
-    new THREE.Vector3(0, 3.82, backingPlaneZ),
-    { color: PALETTE.frame, depth: 0.17, thickness: 0.13 },
-  );
-  verticalBackingRail.userData.role =
-    'fixed-vertical-backing-rail-for-C-and-D-guides';
-  root.add(horizontalBackingRail, verticalBackingRail);
-  const guideBrackets = Object.entries(guides).map(([label, guide]) => {
-    const bracket = makeBeam(
-      guide.position.clone().setZ(backingPlaneZ),
-      guide.position.clone().setZ(-guideDepth / 2),
-      { color: PALETTE.frame, depth: 0.14, thickness: 0.12 },
-    );
-    bracket.userData.guide = label;
-    bracket.userData.role = `fixed-rear-bracket-for-guide-${label}`;
-    root.add(bracket);
-    return bracket;
-  });
-  const baseRail = makeBeam(
-    new THREE.Vector3(-3.25, -4.08, backingPlaneZ),
-    new THREE.Vector3(3.25, -4.08, backingPlaneZ),
-    { color: PALETTE.frame, depth: 0.25, thickness: 0.18 },
-  );
-  baseRail.userData.role = 'fixed-base-for-crossed-guide-frame';
-  const baseStem = makeBeam(
-    new THREE.Vector3(0, -4.08, backingPlaneZ),
-    new THREE.Vector3(0, -3.76, backingPlaneZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.16 },
-  );
-  baseStem.userData.role = 'fixed-stem-between-guide-frame-and-base';
-  root.add(baseRail, baseStem);
-
   const sourcePointToModel = ({ x, y }, z = 0) => new THREE.Vector3(
     (x - sourceCenter.x) * sourceScale,
     (sourceCenter.y - y) * sourceScale,
@@ -621,20 +582,17 @@ function rhombusRectilinearConverter(movement) {
 
   root.userData.archetype = movement.archetype;
   root.userData.blocks = {
-    baseRail,
-    baseStem,
-    guideBrackets,
     guides,
-    horizontalBackingRail,
     linkage,
     linkMeshes,
     pins,
     rods,
-    verticalBackingRail,
   };
+  root.userData.hideGround = true;
+  root.userData.cameraDistanceScale = 0.93;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.42, -4.34, -1.12),
-    new THREE.Vector3(4.42, 4.78, 1.18),
+    new THREE.Vector3(-4.42, -4.84, -0.5),
+    new THREE.Vector3(4.42, 4.84, 0.5),
   );
   root.userData.geometry = {
     cyclePeriod,
@@ -672,10 +630,10 @@ function rhombusRectilinearConverter(movement) {
     'four-equal-rigid-links-form-one-pin-jointed-rhombus-between-opposed-horizontal-sliders-A-and-B-and-opposed-vertical-sliders-C-and-D; symmetric-horizontal-inward-motion-forces-symmetric-vertical-outward-motion-by-x-squared-plus-y-squared-equals-link-length-squared';
   root.userData.movement = movement;
   root.userData.sourceAnimation = {
-    available: false,
+    available: true,
     independentlyReconstructed: true,
     reason:
-      'The official Movement 273 page marks its animation control unavailable; the one-degree-of-freedom rhombus constraint and a smooth reciprocal demonstration were reconstructed independently from the public-domain engraving and description.',
+      'The official animation confirms opposed horizontal and vertical sliders constrained by equal links. Our sinusoidal input was reconstructed independently; the source animation instead holds briefly at each reversal and uses a wider stroke.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourcePointToModel = sourcePointToModel;
@@ -687,7 +645,7 @@ function rhombusRectilinearConverter(movement) {
       inferredTopology:
         'four equal side links, four shared corner pins, two opposed horizontal sliders A and B, two opposed vertical sliders C and D, and four fixed rectilinear guides',
       measurementUncertaintyPixels: 8,
-      officialAnimationAvailable: false,
+      officialAnimationAvailable: true,
       rasterCenter: { x: sourceCenter.x, y: sourceCenter.y },
       rasterGuideCenters: {
         A: { x: 95, y: 279 },
@@ -807,7 +765,7 @@ function rhombusRectilinearConverter(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.8, 4.5, 10.8),
+    cameraDirection: new THREE.Vector3(2.1, 1.6, 12),
   };
 }
 
