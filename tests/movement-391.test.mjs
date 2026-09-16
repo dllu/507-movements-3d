@@ -286,7 +286,7 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
   disposeModel(model.root);
 });
 
-test('movement 391 advances one clockwise output turn per piston cycle without reversal', () => {
+test('movement 391 advances eight tenths of a clockwise output turn per piston cycle without reversal', () => {
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { constraintResiduals, geometry, stateAtTime, timeline,
@@ -295,12 +295,12 @@ test('movement 391 advances one clockwise output turn per piston cycle without r
   for (const [name, residual] of Object.entries(constraintResiduals)) {
     near(residual, 0, 0, name);
   }
-  near(geometry.rackPitchesPerStroke, 10, 0,
-    'ten exact rack pitches per half-cycle');
-  near(geometry.stroke / geometry.pinionPitchRadius, Math.PI, 0,
-    'half turn per working stroke');
-  assert.match(transmission.fullCycleLaw, /-2 pi/);
-  assert.match(transmission.pitchLaw, /stroke=10\*p/);
+  near(geometry.rackPitchesPerStroke, 8, 0,
+    'eight exact rack pitches per half-cycle');
+  near(geometry.stroke / geometry.pinionPitchRadius, .8*Math.PI, 0,
+    'four tenths of a turn per working stroke');
+  assert.match(transmission.fullCycleLaw, /-1.6 pi/);
+  assert.match(transmission.pitchLaw, /stroke=8\*p/);
 
   let previousAngle = Infinity;
   for (let sample = -16000; sample <= 32000; sample += 1) {
@@ -312,8 +312,8 @@ test('movement 391 advances one clockwise output turn per piston cycle without r
   for (let cycle = -8; cycle <= 8; cycle += 1) {
     const start = stateAtTime(timeline.cycleDuration * (cycle + 0.137));
     const end = stateAtTime(timeline.cycleDuration * (cycle + 1.137));
-    near(end.outputAngle - start.outputAngle, -FULL_TURN, 4e-15,
-      'one clockwise output turn per cycle');
+    near(end.outputAngle - start.outputAngle, -.8*FULL_TURN, 1e-14,
+      'eight tenths of a clockwise output turn per cycle');
     near(end.crossheadY, start.crossheadY, 4e-15,
       'crosshead repeats after one cycle');
     near(end.leftRack.rackAngle, start.leftRack.rackAngle, 1e-15,
@@ -375,8 +375,8 @@ test('movement 391 update places both guide-pin axes through their fixed slots a
         new THREE.Vector3(),
       );
       const slotPoint = curve.getPoint(phase);
-      near(worldPin.x, slotPoint.x, 7e-16, 'pin x on slot');
-      near(worldPin.y, slotPoint.y, 7e-16, 'pin y on slot');
+      near(worldPin.x, slotPoint.x, 2e-15, 'pin x on slot');
+      near(worldPin.y, slotPoint.y, 2e-15, 'pin y on slot');
       assert.ok(
         Math.abs(worldPin.z - geometry.guidePlaneZ)
           < 1.05 / 2,

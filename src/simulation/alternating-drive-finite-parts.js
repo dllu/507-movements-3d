@@ -36,21 +36,48 @@ export function correctWeightedRackInterfaces(root) {
   }
   const guide=b.fixedFrame.children.find(o=>o.userData.role==='fixed-piston-rod-guide-collar');
   replace(guide,boredAxialCylinder(.31,.108,.50));
-  d.finiteInterfaceReview={qualification:'Finite guide slots and bored joints; guide selection and spring assistance remain prescribed.'};
+  if(g.rackRootExtension){
+    // The extended racks turn on pins ahead of the crosshead, not through its web.
+    replace(b.crossheadBeam,new THREE.BoxGeometry(2.42,.18,.20));b.crossheadBeam.position.z=-.30;
+    for(const rack of[b.leftRack,b.rightRack]){
+      replace(rack.userData.pivotBore,new THREE.CylinderGeometry(.085,.085,.94,32));rack.userData.pivotBore.position.z=-.10;
+      replace(rack.userData.guidePin,new THREE.CylinderGeometry(.115,.115,1.30,32));rack.userData.guidePin.position.z=-.05;
+    }
+    const base=b.fixedFrame.children.find(o=>o.userData.role==='fixed-machine-bed');
+    base.position.y=g.crossheadLowY-.65;
+    const outline=poly([[-3.025,-.725],[3.025,-.725],[3.025,.725],[-3.025,.725]]);
+    const baseGeometry=plate(clip.difference(outline,poly(circle([0,-.06],.14,64))),-.13,.13).rotateX(-Math.PI/2);
+    replace(base,baseGeometry);
+    // The input rod remains in its guide even at the top of the stroke.
+    replace(b.pistonRod,new THREE.CylinderGeometry(.10,.10,g.stroke+.90,40));b.pistonRod.position.set(0,-(g.stroke+.90)/2+.025,-.30);
+    guide.position.set(0,g.crossheadLowY-.40,-.30);b.inputIndex.position.z=-.17;
+    const post=b.fixedFrame.children.find(o=>o.userData.role==='fixed-output-shaft-bearing-standard');
+    const bottom=base.position.y+.13;
+    const postOutline=clip.union(poly([[-.14,bottom],[.14,bottom],[.14,0],[-.14,0]]),poly(circle([0,0],.24,64)));
+    replace(post,plate(clip.difference(postOutline,poly(circle([0,0],.109,64))),-.17,.17));post.position.y=0;
+    replace(b.outputGear.userData.shaft,new THREE.CylinderGeometry(.105,.105,1.60,40));b.outputGear.userData.shaft.position.z=-.25;
+    for(const support of b.fixedFrame.children.filter(o=>o.userData.role==='fixed-guide-groove-support-standard')){
+      const upper=support.children[2].position.clone(),lower=support.children[1].position.clone();lower.y=base.position.y+.13;
+      support.userData.setEndpoints(lower,upper);
+    }
+  }
+  d.finiteInterfaceReview={qualification:'Finite guide slots, extended lower rack pivots and bored joints; guide selection during the crosshead dwells and spring assistance remain prescribed, not a passive force solution.',rackRootExtension:g.rackRootExtension??0};
 }
 
 export function correctWeightedRackTeeth(root) {
   const d=root.userData,b=d.blocks,g=d.geometry,R=g.pinionPitchRadius,p=g.circularPitch;
   const addendum=.065;
-  const firstY=g.crossheadLowY+.24;
+  const extension=g.rackRootExtension??0;
+  const firstY=g.crossheadLowY+extension+.24;
   const phase=-firstY/R-g.pinionAngularPitch/2;
   replace(b.outputGear.userData.wheel,rackPinionGeometry({radius:R,teeth:g.pinionToothCount,addendum,depth:.48,bore:.108}).rotateZ(phase));
   const rightFirstY=R*(phase+g.pinionAngularPitch/2-Math.PI);
-  const rightOffset=((rightFirstY-g.crossheadHighY)%p+p)%p;
+  const rightOffset=((rightFirstY-g.crossheadHighY-extension)%p+p)%p+extension;
   for(const rack of [b.leftRack,b.rightRack])for(const tooth of rack.userData.teeth) {
     const side=rack.userData.side;
     replace(tooth,rackToothGeometry({pitch:p,addendum,depth:g.rackDepth*.94}).rotateZ(side<0?-Math.PI/2:Math.PI/2).translate(-side*.26,0,0));
     if(side>0)tooth.position.y=rightOffset+tooth.userData.materialToothIndex*p;
+    else tooth.position.y=.24+extension+tooth.userData.materialToothIndex*p;
   }
   d.finiteInterfaceReview.toothProfile={addendum,phase,rightOffset};
 }

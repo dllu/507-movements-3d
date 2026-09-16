@@ -349,18 +349,20 @@ function alternatingWeightedRackDrive(movement) {
   const pinionToothCount = 20;
   const pinionAngularPitch = FULL_TURN / pinionToothCount;
   const circularPitch = pinionPitchRadius * pinionAngularPitch;
-  const stroke = Math.PI * pinionPitchRadius;
+  const stroke = 8 * circularPitch;
+  const outputAdvancePerCycle = 2 * stroke / pinionPitchRadius;
   const rackPitchesPerStroke = stroke / circularPitch;
-  const crossheadLowY = -2.76;
+  const rackRootExtension = .60;
+  const crossheadLowY = -2.76-rackRootExtension;
   const crossheadHighY = crossheadLowY + stroke;
   const rackPivotHalfSpacing = pinionPitchRadius + 0.26;
-  const rackBodyLength = 4.36;
+  const rackBodyLength = 4.36+rackRootExtension;
   const rackBodyWidth = 0.26;
   const rackDepth = 0.37;
   const rackToothHeight = 0.26;
   const rackToothCount = 17;
   const guideArm = 0.68;
-  const guideY = 4.08;
+  const guideY = 4.08+rackRootExtension;
   const outwardRackAngle = 0.205;
   const guidePlaneZ = -0.34;
   const rackPlaneZ = 0.12;
@@ -651,7 +653,7 @@ function alternatingWeightedRackDrive(movement) {
   rightRack.position.z = rackPlaneZ;
   root.add(leftRack, rightRack);
 
-  const elbowPivot = new THREE.Vector3(1.48, 5.13, 0.13);
+  const elbowPivot = new THREE.Vector3(1.48, 5.13-(Math.PI*pinionPitchRadius-stroke), 0.13);
   const elbowLever = new THREE.Group();
   elbowLever.position.copy(elbowPivot);
   elbowLever.userData.role =
@@ -681,7 +683,7 @@ function alternatingWeightedRackDrive(movement) {
   elbowLever.add(leverContactIndex);
   root.add(markShadows(elbowLever));
 
-  const springAnchor = new THREE.Vector3(2.95, 4.82, 0.13);
+  const springAnchor = new THREE.Vector3(2.95, 4.82-(Math.PI*pinionPitchRadius-stroke), 0.13);
   const springAnchorBoss = cylinderAlongZ(0.10, 0.54, darkMaterial, 24);
   springAnchorBoss.position.copy(springAnchor);
   springAnchorBoss.userData.role = 'fixed-anchor-of-tension-spring-d';
@@ -698,7 +700,7 @@ function alternatingWeightedRackDrive(movement) {
     const phaseData = phaseState(phase);
     const leftPose = rackPose(-1, phase);
     const rightPose = rackPose(1, phase);
-    const outputAngle = -cycles * FULL_TURN
+    const outputAngle = -cycles * outputAdvancePerCycle
       + phaseData.outputWithinCycle;
     const outputAngularSpeed = phaseData.outputAngularSpeedPerPhase
       / cycleDuration;
@@ -710,16 +712,16 @@ function alternatingWeightedRackDrive(movement) {
       phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist';
     const assistProgress = topAssistActive ? phaseData.stageProgress : 0;
     const leverDeflection = topAssistActive
-      ? 0.15 * Math.sin(Math.PI * assistProgress)
+      ? 0.32 * quinticState(assistProgress).value * (1-quinticState(assistProgress).value)
       : 0;
-    const leverAngle = -0.035 + leverDeflection;
+    const leverAngle = -.035+leverDeflection;
     const leftRackPhaseError = wrappedSignedAngle(
-      outputAngle + (phaseData.crossheadY - crossheadLowY)
-        / pinionPitchRadius,
+      (phaseData.outputWithinCycle + (phaseData.crossheadY - crossheadLowY)
+        / pinionPitchRadius) * pinionToothCount,
     );
     const rightRackPhaseError = wrappedSignedAngle(
-      outputAngle - (phaseData.crossheadY - crossheadHighY)
-        / pinionPitchRadius + Math.PI,
+      (phaseData.outputWithinCycle - (phaseData.crossheadY - crossheadHighY)
+        / pinionPitchRadius + stroke/pinionPitchRadius) * pinionToothCount,
     );
     return {
       activeDrive: phaseData.stage,
@@ -738,7 +740,7 @@ function alternatingWeightedRackDrive(movement) {
         ...leftPose,
         angularSpeed: leftPose.rackAngularRatePerPhase / cycleDuration,
         engaged: phaseData.stage === 'left-rack-A-working-upstroke',
-        toothPhaseError: leftRackPhaseError,
+        toothPhaseError: leftRackPhaseError/pinionToothCount,
       },
       outputAngle,
       outputAngularSpeed,
@@ -747,7 +749,7 @@ function alternatingWeightedRackDrive(movement) {
         ...rightPose,
         angularSpeed: rightPose.rackAngularRatePerPhase / cycleDuration,
         engaged: phaseData.stage === 'right-rack-A1-working-downstroke',
-        toothPhaseError: rightRackPhaseError,
+        toothPhaseError: rightRackPhaseError/pinionToothCount,
       },
       stageProgress: phaseData.stageProgress,
     };
@@ -829,8 +831,8 @@ function alternatingWeightedRackDrive(movement) {
       springAnchorBoss,
     },
     constraintResiduals: {
-      pitchesPerStroke: rackPitchesPerStroke - 10,
-      outputCycleClosure: 2 * stroke / pinionPitchRadius - FULL_TURN,
+      pitchesPerStroke: rackPitchesPerStroke - 8,
+      outputCycleClosure: 5*outputAdvancePerCycle - 4*FULL_TURN,
       rackPitchIdentity:
         circularPitch - pinionPitchRadius * pinionAngularPitch,
     },
@@ -881,9 +883,12 @@ function alternatingWeightedRackDrive(movement) {
       guidePlaneZ,
       guideY,
       outwardRackAngle,
+      outputAdvancePerCycle,
+      markedClosureCycles: 5,
       pinionAngularPitch,
       pinionPitchRadius,
       pinionToothCount,
+      rackRootExtension,
       rackBodyLength,
       rackBodyWidth,
       rackDepth,
@@ -898,7 +903,7 @@ function alternatingWeightedRackDrive(movement) {
       'one-piston-rod-crosshead-reciprocates-two-weighted-pivoted-racks-A-and-A1-whose-end-pins-follow-opposed-fixed-closed-guide-grooves-b-so-A-meshes-on-ascent-and-A1-meshes-on-descent-to-turn-one-cog-wheel-continuously-clockwise-while-spring-d-returns-elbow-lever-C-at-the-right-upper-corner',
     motion: {
       outputDirection: 'clockwise only, with zero speed at guide crossovers',
-      outputTurnsPerInputCycle: -1,
+      outputTurnsPerInputCycle: -.8,
       rackExchange:
         'top and bottom exchanges occur while the piston and cog wheel are instantaneously stationary',
       strokeLaw:
@@ -952,10 +957,10 @@ function alternatingWeightedRackDrive(movement) {
     transmission: {
       activeMeshLaw:
         'theta=-DeltaY/R on rack A ascent; theta=theta_top+DeltaY/R on rack A1 descent',
-      fullCycleLaw: 'Delta theta = -2 stroke / R = -2 pi',
+      fullCycleLaw: 'Delta theta = -2 stroke / R = -1.6 pi; the marked wheel closes after five piston cycles and four clockwise turns',
       guideLaw:
         'inner branch means rack angle zero and exact mesh; outer branch means rack angle is displaced outward by 0.205 rad',
-      pitchLaw: 'p=2*pi*R/N and stroke=10*p',
+      pitchLaw: 'p=2*pi*R/N and stroke=8*p; five piston cycles advance the wheel by four turns',
     },
     update,
   };
