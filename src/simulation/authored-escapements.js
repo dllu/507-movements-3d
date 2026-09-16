@@ -1,3 +1,4 @@
+import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -948,7 +949,7 @@ function sevenToothAnchorEscapement(movement) {
   const toothCount = 7;
   const toothPitch = FULL_TURN / toothCount;
   const halfToothPitch = toothPitch / 2;
-  const dropFractionOfPitch = 0.1;
+  const dropFractionOfPitch = 0.5 - 5 / (360 / toothCount);
   const dropAngle = toothPitch * dropFractionOfPitch;
   const contactAdvance = halfToothPitch - dropAngle;
   const sourceScale = 0.0165;
@@ -969,7 +970,7 @@ function sevenToothAnchorEscapement(movement) {
   const wheelRootRadius = 0.63;
   const wheelDepth = 0.3;
   const wheelPlaneZ = 0.42;
-  const palletAmplitude = THREE.MathUtils.degToRad(8);
+  const palletAmplitude = THREE.MathUtils.degToRad(4);
   const lowPalletAngle = -palletAmplitude;
   const highPalletAngle = palletAmplitude;
   const palletBodyDepth = 0.22;
@@ -1755,8 +1756,8 @@ function sevenToothAnchorEscapement(movement) {
     setSpin(escapeWheel, state.wheelAngle);
     setSpin(escapeShaft, state.wheelAngle);
     palletCarrier.rotation.z = state.palletAngle;
-    bContactMarker.visible = state.activePallet === 'B';
-    cContactMarker.visible = state.activePallet === 'C';
+    bContactMarker.visible = false;
+    cContactMarker.visible = false;
     if (state.contact) {
       const marker = state.activePallet === 'B'
         ? bContactMarker
@@ -1777,8 +1778,9 @@ function sevenToothAnchorEscapement(movement) {
     };
     root.userData.kinematics = state;
   };
+  finishSevenTooth238(root);
   update(0);
-  return finish(root, update, new THREE.Vector3(3.6, -5.2, 12.4));
+  return finish(root, update, new THREE.Vector3(0.8, -0.5, 18));
 }
 
 function classicWatchVergeEscapement(

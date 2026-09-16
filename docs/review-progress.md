@@ -1,3 +1,41 @@
+# Forty-second family pass: finite stops and bounded escapement reconstruction
+
+Parallel lanes reuse finite plates, bored joints and offline profile envelopes
+for 233, 238 and 239. The complete 507-movement review remains active.
+
+- [233 lantern stops](lantern-stop-233-contact-review.md): remove the expanding
+  latch bevel and oversized roller rim, preserving useful working normals.
+  Real bores, separated arms and connected shafts clear the finite trundles.
+  Withdrawal, bias and reseating remain prescribed.
+- [239 opposed spur stops](opposed-spur-239-contact-review.md): use a standard
+  involute gear and offline stop envelopes with finite retaining lands.
+  Opposed normals resist both rotation directions; real bores and connected
+  supports improve the source-facing view. Passive stop preload is unresolved.
+- [238 seven-tooth escapement](seven-tooth-238-contact-review.md), **partial**:
+  clear the finite pallets, connect C's support and restore a clean seven-tip
+  wheel with offline contained-chord simplification. This reconstruction removes
+  13.1% of the original profile area and shortens B. C's sampled working normal
+  is supported, but B's actual loaded flank/impulse remains unresolved. Lock,
+  impulse and drop are prescribed; clearance is not contact qualification.
+
+All **40 focused checks pass** (13 for 233, 14 for 238, 13 for 239). Both offline
+geometry bakes reproduce byte-identically. Production builds pass in 23.46 and
+23.23 seconds; all three packaged desktop/playback/mobile cases pass (233/239
+in 7.6 seconds, final 238 in 3.7 seconds). Final source/default/oblique views
+show no browser errors or clipping, with maximum normalized extents 0.900,
+0.862 and 0.850. Construction/update screens report no flags or object/geometry
+growth: construction 133–143 ms and sampled update P95 below 0.25 ms. These
+timings exclude imports, GPU rendering and browser loading. Bulk evidence is
+under `/dev/shm/family42-*`.
+
+Two independent diagnostic studies refine the next winding-stop work without
+changing playback. [212](geneva-212-phase-feasibility-review.md) has a narrowly
+feasible unchanged-profile midstroke pose, correcting the previous claim that
+phase adjustment could not help. A full continuous loaded branch is still
+needed. [213](split-rim-213-feasibility-review.md) has a true finite-pin width
+obstruction; its regular tooth flanks and one-pitch motion must be reconstructed
+together, rejecting discontinuous jumps between disconnected clearance regions.
+
 # Forty-first family pass: finite crown, stop and indexing contacts
 
 Three parallel lanes correct 237, 240 and 241 using actual working surfaces,

@@ -178,8 +178,14 @@ additional support detailing.
   drive moment and the source's equal opposite main-run rates.
 - **212/213/215, finite indexing and handoff:** scoped factories in
   `authored-intermittent.js`. 212 has 0.001007 midstroke overlap but about 0.034
-  clearance earlier/later under its linear schedule. 213's quintic index law
-  gives about 0.09365 pin/tooth penetration. 215's former 0.029991 source-mouth
+  clearance earlier/later under its linear schedule. A finer
+  [local phase study](geneva-212-phase-feasibility-review.md) clears the
+  midstroke pose with unchanged profiles; continue that branch before cutting
+  geometry. 213's quintic index law gives about 0.09365 pin/tooth penetration,
+  and a [finite-width study](split-rim-213-feasibility-review.md) proves the
+  unchanged pin cannot fit a regular gap even at its best phase. Its tooth
+  geometry and indexing law must be reconstructed together. 215's former
+  0.029991 source-mouth
   interference is superseded by the baked mouth/phase correction; its remaining
   task is passive branch and force validation, including reverse preload.
   Reconstruct 212/213 contacting branches while preserving real load faces
@@ -238,25 +244,44 @@ curved driver and click faces. All 39 focused checks, both bake checks, the
 production build, three-model screen and packaged browser cases pass. Passive
 bias, impact and loaded holding remain explicitly distinct from these results.
 
+## Forty-second pass
+
+233/239 finite-stop corrections are pushed as `3f9f767`: useful lantern
+contacts, an involute gear and opposed retaining lands, real bores, complete
+wheels and source-facing views. All 26 focused checks, production build,
+construction screens and both packaged desktop/playback/mobile cases pass.
+238's finite star/pallet reconstruction is a partial correction: clean seven-tip
+wheel, connected C support and clear journals, with B's loaded impulse still
+unresolved. Its 13.1% profile-area reduction and shortened B are explicit source
+assumptions. See the [contact review](seven-tooth-238-contact-review.md).
+All 40 focused checks and three packaged desktop/playback/mobile cases pass;
+both offline geometry bakes reproduce byte-identically. These checks do not
+qualify 238's remaining B contact or the prescribed passive dynamics.
+
+The parallel [212 phase](geneva-212-phase-feasibility-review.md) and
+[213 width](split-rim-213-feasibility-review.md) studies are pushed as
+`74940a7`. They distinguish a narrowly feasible unchanged-profile pose from
+a true finite-pin obstruction; neither study changes production playback.
+
 ## Next independent lanes
 
-The [233/238/239 interface triage](stop-escapement-next-pass-triage.md) records
-actual rendered-solid witnesses and source/default/oblique browser inspection.
-Use disjoint factories and helpers, with imports coordinated centrally.
+- **212, broad-finger winding stop:** continue a loaded finite contact branch
+  from the newly feasible midstroke pose, retaining both profiles first.
+  Include neighboring teeth, entry/exit, locking and the terminal sector.
+- **213, split-rim winding stop:** reconstruct regular tooth flanks and
+  one-pitch indexing together. The full pin cannot fit the current regular
+  passage. Reject disconnected gap jumps; verify both finite terminal stops.
+- **294–295, cylinder escapements:** use the
+  [working-contact witnesses](cylinder-escapement-family-review.md) to solve
+  finite tooth, lip and handoff geometry, including the previous tooth still
+  in the exit region. Preserve opposite impulses and locking faces.
 
-- **233, lantern stops:** close the latch's 0.01901 trundle intrusion and the
-  roller rim's 0.00919 overlap, preserving working roller and latch surfaces.
-- **238, seven-tooth escapement:** reconstruct finite pallets together with
-  their lock/impulse/drop sequence; actual working bars enter the wheel by
-  0.175 and 0.145. Preserve useful contact rather than cutting it away.
-- **239, opposed spur stops:** correct both 0.207 body intrusions, retaining
-  the source pivots, complete wheel and two opposed resisting faces.
+These independent lanes should reuse finite profiles, offline envelopes and
+actual-normal checks. Use MuJoCo for unresolved passive selection or dynamics
+after compatible working geometry exists. Keep source fidelity and useful
+working faces explicit rather than publishing clearance-only cuts.
 
-The pages mark animation unavailable. Use the caption/engraving and existing
-CV extractor for visible irregular outlines; infer occluded geometry and fit
-ideal mechanical working faces separately. Initial views fit without clipping,
-but 238's raised working bars also need a coherent attachment to the carrier.
-
+238's actual B flank and compatible loaded impulse remain a targeted follow-up.
 199's late retarding-only contact, 232's prescribed rocking-carrier branch,
 225/235/236's passive pawl bias and loaded transfer, 237/240/241's prescribed
 bias and ideal impact assumptions, 231's proportions,

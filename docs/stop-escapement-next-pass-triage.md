@@ -1,5 +1,17 @@
 # Next finite-stop family: 233, 238 and 239
 
+## Follow-up status
+
+The forty-second pass supersedes the baseline penetrations below with the
+[233 finite-stop correction](lantern-stop-233-contact-review.md),
+[239 involute-stop correction](opposed-spur-239-contact-review.md), and
+[238 partial pallet correction](seven-tooth-238-contact-review.md).
+238's B loaded impulse remains unresolved despite finite clearance. The table
+and witnesses below describe the historical baseline, not the corrected meshes;
+running the screen on current production will therefore give different results.
+
+## Historical baseline
+
 Read-only screen against baseline `5767c6b`, on 2026-09-16. These factories are
 unchanged by the parallel 237/240/241 pass. They reuse the same finite working
 surfaces, profile envelopes and bored-joint components, with independent
