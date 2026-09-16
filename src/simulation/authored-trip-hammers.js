@@ -1,3 +1,4 @@
+import {correctTripHammerParts} from './stamp-trip-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1314,5 +1315,8 @@ function firstOrderTripHammer(movement) {
 
 export function createAuthoredTripHammerMovement(movement) {
   if (movement.id !== 353) return null;
-  return firstOrderTripHammer(movement);
+  const model = firstOrderTripHammer(movement);
+  correctTripHammerParts(model);
+  markShadows(model.root);
+  return model;
 }

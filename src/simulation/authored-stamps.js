@@ -1,3 +1,4 @@
+import {stampMeshParameters,correctStampParts} from './stamp-trip-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -62,6 +63,7 @@ function gravityDropStamp(movement) {
   const toothPitchAngle = fullTurn / virtualToothCount;
   const engagementFraction = sectorToothCount / virtualToothCount;
   const pitchRadius = 0.92;
+  const workingMesh = stampMeshParameters(pitchRadius, virtualToothCount);
   const rackToothPitch = pitchRadius * toothPitchAngle;
   const rackStroke = sectorToothCount * rackToothPitch;
   const cyclesPerMinute = 15;
@@ -99,31 +101,31 @@ function gravityDropStamp(movement) {
   const rackCenterX = 0;
   const rackBarWidth = 0.20;
   const rackToothRootX = rackCenterX + rackBarWidth / 2;
-  const rackToothTipX = 0.46;
+  const rackToothTipX = wheelCenter.x - pitchRadius + workingMesh.addendum;
   const pitchLineX = wheelCenter.x - pitchRadius;
-  const gearRootRadius = 0.72;
-  const gearOuterRadius = 1.09;
+  const gearRootRadius = workingMesh.rootRadius;
+  const gearOuterRadius = workingMesh.tipRadius;
   const gearDepth = 0.42;
   const rackDepth = 0.38;
   const gearPlaneZ = 0.24;
   const rackPlaneZ = 0.23;
   const jointPlaneZ = 0.52;
-  const gearBaseAngle = Math.PI + toothPitchAngle / 2;
+  const gearBaseAngle = workingMesh.gearBaseAngle;
   const installedToothIndices = Array.from(
     { length: sectorToothCount },
     (_, index) => index,
   );
 
-  const rackBarBottomY = -3.13;
+  const rackBarBottomY = -6.33;
   const rackBarTopY = 3.62;
   const rackBarLength = rackBarTopY - rackBarBottomY;
-  const rackToothBaseY = wheelCenter.y;
+  const rackToothBaseY = wheelCenter.y + workingMesh.rackOffset;
   const firstRackToothIndex = -7;
   const lastRackToothIndex = 5;
   const rackToothThickness = rackToothPitch * 0.38;
   const upperGuideY = 3.42;
   const lowerGuideY = -2.36;
-  const stampFaceRestY = -3.82;
+  const stampFaceRestY = -7.02;
   const workpieceTopY = stampFaceRestY;
   const anvilTopY = workpieceTopY - 0.13;
   const impactPoint = new THREE.Vector3(
@@ -446,7 +448,7 @@ function gravityDropStamp(movement) {
     new THREE.BoxGeometry(0.88, 0.24, 0.68),
     rackMaterial,
   );
-  lowerCollar.position.set(rackCenterX, -3.12, 0);
+  lowerCollar.position.set(rackCenterX, -6.32, 0);
   lowerCollar.userData.role = 'moving-lower-collar-above-stamp-head';
 
   const dieShape = new THREE.Shape();
@@ -651,8 +653,10 @@ function gravityDropStamp(movement) {
       toothlessClearancePitches,
     };
   };
+  const initialCyclePhase = engagementFraction;
+  const stateAtUnshiftedTime = (time) => stateAtCycleCoordinate(time / cyclePeriod);
   const stateAtTime = (time) => stateAtCycleCoordinate(
-    time / cyclePeriod,
+    initialCyclePhase + time / cyclePeriod,
   );
   const canonicalTimes = {
     toothEngagement: 0,
@@ -663,6 +667,10 @@ function gravityDropStamp(movement) {
     midDwell: (impactTime + cyclePeriod) / 2,
     cycleClosure: cyclePeriod,
   };
+  for (const name of Object.keys(canonicalTimes)) {
+    canonicalTimes[name] = name === 'cycleClosure' ? cyclePeriod
+      : THREE.MathUtils.euclideanModulo(canonicalTimes[name] - releaseTime, cyclePeriod);
+  }
   const canonicalStates = Object.fromEntries(
     Object.entries(canonicalTimes).map(([name, time]) => [
       name,
@@ -834,6 +842,7 @@ function gravityDropStamp(movement) {
     gearRootRadius,
     impactPoint: impactPoint.clone(),
     installedToothIndices,
+    initialCyclePhase,
     jointPlaneZ,
     lastRackToothIndex,
     lowerGuideY,
@@ -910,6 +919,7 @@ function gravityDropStamp(movement) {
   };
   root.userData.stateAtCycleCoordinate = stateAtCycleCoordinate;
   root.userData.stateAtTime = stateAtTime;
+  root.userData.stateAtUnshiftedTime = stateAtUnshiftedTime;
   root.userData.transmission = {
     blankSector:
       'four missing tooth positions provide free-flight and lower-stop dwell before the sector returns',
@@ -940,5 +950,8 @@ function gravityDropStamp(movement) {
 
 export function createAuthoredStampMovement(movement) {
   if (movement.id !== 351) return null;
-  return gravityDropStamp(movement);
+  const model = gravityDropStamp(movement);
+  correctStampParts(model);
+  markShadows(model.root);
+  return model;
 }

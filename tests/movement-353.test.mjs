@@ -509,8 +509,8 @@ test('movement 353 renderer binds the wiper face, tail, fulcrum, and anvil', () 
       `fixed fulcrum shaft ${phase}`);
     vectorNear(blocks.followerNose.getWorldPosition(new THREE.Vector3()),
       state.followerCenter, 8e-16, `rendered follower center ${phase}`);
-    assert.equal(blocks.contactMarker.visible, state.camContactEngaged);
-    assert.equal(blocks.impactMarker.visible, state.anvilContactEngaged);
+    assert.equal(blocks.contactMarker.visible, false);
+    assert.equal(blocks.impactMarker.visible, false);
     if (state.camContactEngaged) {
       vectorNear(blocks.contactMarker.position, state.camContactPoint, 0,
         `contact marker ${phase}`);

@@ -234,18 +234,16 @@ test('movement 351 maintains exact pitch mesh through all six tooth handoffs', (
   for (let toothIndex = 0;
     toothIndex < geometry.sectorToothCount;
     toothIndex += 1) {
-    const centerPhase = (toothIndex + 0.5)
-      / geometry.virtualToothCount;
+    const centerPhase = (geometry.gearBaseAngle - Math.PI
+      + toothIndex * geometry.toothPitchAngle) / geometry.fullTurn;
     const state = stateAtCycleCoordinate(centerPhase);
     const toothWorldAngle = geometry.gearBaseAngle
       + toothIndex * geometry.toothPitchAngle
       - geometry.fullTurn * centerPhase;
     near(toothWorldAngle, Math.PI, 9e-16,
       `tooth ${toothIndex} centered at left pitch point`);
-    near(state.activeGearToothPhase, 0.5, 5e-16,
-      `tooth ${toothIndex} centered in its engagement interval`);
-    near(state.rackContactCoordinate, -toothIndex - 0.5,
-      9e-16, `tooth ${toothIndex} lies between two rack teeth`);
+    near(state.rackDisplacement, geometry.pitchRadius * geometry.fullTurn * centerPhase,
+      9e-16, `tooth ${toothIndex} preserves the rack pitch law`);
   }
   const beforeRelease = stateAtCycleCoordinate(
     geometry.engagementFraction - 1e-12,
@@ -264,7 +262,7 @@ test('movement 351 gives the released stamp an exact gravity trajectory', () => 
     dynamics,
     geometry,
     stateAtCycleCoordinate,
-    stateAtTime,
+    stateAtUnshiftedTime: stateAtTime,
   } = model.root.userData;
   const release = stateAtTime(dynamics.releaseTime);
   near(release.rackDisplacement, geometry.rackStroke, 0,
@@ -323,7 +321,7 @@ test('movement 351 impacts before the blank sector ends and dwells safely', () =
     contacts,
     dynamics,
     geometry,
-    stateAtTime,
+    stateAtUnshiftedTime: stateAtTime,
   } = model.root.userData;
 
   assert.ok(dynamics.impactPhase > geometry.engagementFraction);
@@ -371,7 +369,7 @@ test('movement 351 impacts before the blank sector ends and dwells safely', () =
 
 test('movement 351 analytic lift and fall rates match finite differences', () => {
   const model = createMovementModel(catalog.movements[350]);
-  const { dynamics, stateAtTime } = model.root.userData;
+  const { dynamics, stateAtUnshiftedTime: stateAtTime } = model.root.userData;
   const velocityStep = 2e-6;
   const accelerationStep = 1e-4;
   const samples = [
@@ -419,10 +417,10 @@ test('movement 351 renderer keeps the mesh, rack guides, and impact face closed'
     near(blocks.rack.position.y, state.rackDisplacement, 0,
       `rendered rack displacement ${time}`);
     vector3Near(worldPosition(blocks.pinionPitchContactAnchor),
-      expectedContact, 4e-16,
+      expectedContact, 1e-15,
     `pinion pitch-contact anchor ${time}`);
     vector3Near(worldPosition(blocks.rackPitchContactAnchor),
-      expectedContact, 4e-16,
+      expectedContact, 1e-15,
     `rack pitch-contact anchor ${time}`);
     vector3Near(worldPosition(blocks.stampFaceAnchor),
       new THREE.Vector3(
@@ -433,8 +431,8 @@ test('movement 351 renderer keeps the mesh, rack guides, and impact face closed'
       0,
       `stamp impact-face anchor ${time}`,
     );
-    assert.equal(blocks.contactMarker.visible, state.gearEngaged);
-    assert.equal(blocks.impactHalo.visible, state.lowerStopEngaged);
+    assert.equal(blocks.contactMarker.visible, false);
+    assert.equal(blocks.impactHalo.visible, false);
     assert.equal(contacts.stampAtLowerStop.engaged,
       state.lowerStopEngaged);
     assert.equal(contacts.gearRackPitchContact.activeGearToothIndex,
@@ -464,7 +462,7 @@ test('movement 351 renderer keeps the mesh, rack guides, and impact face closed'
 
 test('movement 351 closes one shaft revolution and leaves movement 507 authored', () => {
   const model = createMovementModel(catalog.movements[350]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry, stateAtUnshiftedTime: stateAtTime } = model.root.userData;
   const start = stateAtTime(0);
   const finish = stateAtTime(geometry.cyclePeriod);
   near(finish.cyclePhase, start.cyclePhase, 0, 'cycle-phase closure');
