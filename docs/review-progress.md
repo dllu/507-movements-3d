@@ -1,3 +1,43 @@
+# Thirty-ninth family pass: generated mangle racks and short drawing pawl
+
+Four movements receive scoped corrections: 197, 198, 199 and 232. Three
+parallel lanes reuse finite profile cutters, bored joints and contact audits.
+The complete 507-movement review remains active.
+
+- [197/198 mangle racks](mangle-rack-197-198-contact-review.md): offline
+  profiles close the previous 0.10275/0.10283 tooth penetrations. Nearby
+  working faces have resisting moments through both straight runs and both
+  reversals. The collar/end guides, fixed-shaft passages, suspension eyes
+  and guide-wheel journals now have finite working geometry. Their motion
+  remains prescribed; 197 reverses the official animation's motor direction.
+- [199 partial lantern](partial-lantern-rack-review.md): retain four pins,
+  larger entry teeth and the original animation law while closing the
+  0.00964 tooth penetration. Shaft bores and connected spokes replace
+  overlapping/disconnected supports. The late-stroke force-direction defect
+  remains explicit: the closest positive-drive face is up to 0.0918 away.
+- [232 lift-and-draw pawl](lift-draw-pawl-232-review.md): replace the long
+  inward curve with an outer C body and short rounded tip. An inferred
+  rocking A carrier preserves the parallelogram and permits clear lift,
+  backward travel, drop, capture and a one-tooth draw. The former 0.1300
+  penetration is closed; actual radial-flank contact provides clockwise
+  torque. Lift/drop and click transfer remain prescribed. A spring-driven
+  MuJoCo trial jammed and was rejected, with a reproducible diagnostic saved.
+
+All **41 distinct focused checks pass** (19 rack, nine lantern, 13 pawl).
+Both offline tooth assets regenerate byte-identically. The four-model screen
+has no construction/update/geometry flags; updates remain below 0.6 ms P95
+in that CPU run, with no runtime mesh allocation. Final source/default/oblique
+views show no browser errors or clipping (normalized extents 0.876–0.911).
+The final production build passes in 23.24 seconds. All four packaged
+desktop/playback/mobile checks pass in 14.0 seconds; the 232 case is repeated
+after its last metadata-only rebuild and passes in 4.1 seconds.
+
+These corrections do not certify passive loaded behavior. The linked reviews
+retain source-direction, clearance take-up, load-transfer and inferred-carrier
+limits. The next [225/235/236 pawl triage](pawl-next-pass-triage.md) supplies
+reproducible zero-torque and depth-separated working-contact witnesses for
+another shared finite-pawl pass.
+
 # Thirty-eighth family pass: alternating pawls, saw feed and source-facing views
 
 Four movements receive scoped corrections: 231, 232, 271 and 284. Three

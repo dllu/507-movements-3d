@@ -211,28 +211,37 @@ contact. Shared bored joints, rack gearing and camera fitting support the pass.
 All 50 focused checks, the final build, four-model screen and four packaged
 browser cases pass. This does not complete their passive loaded dynamics.
 
+## Thirty-ninth pass
+
+197/198/199/232 now have scoped corrections in the linked
+[review progress](review-progress.md). Offline mangle profiles eliminate the
+measured tooth interference, working guides and shaft passages have finite
+geometry, and a short drawing tip replaces 232's penetrating long curve.
+All 41 focused checks pass. The full review remains active: prescribed motion
+and finite geometric contact are separate from passive-load qualification.
+
 ## Next independent lanes
 
-- **197/198, pinion mangle racks:** own their scoped factories in
-  `authored-gears.js`. Actual surface samples find 0.10275/0.10283 penetration.
-  Reuse the 192–194 envelope cutters, preserving the distinct rising-pinion
-  and suspended-rack topologies and close working faces at reversal.
-- **199, partial lantern-pinion rack:** own its separate factory in that file.
-  A lantern pin penetrates a rack tooth by 0.00964 at phase 0.375. Preserve the
-  special entry teeth and establish driving contact through the rack transfer.
-  Coordinate imports with the other rack lane; use independent helpers.
-- **232, drawing-pawl branch:** the retaining click/joint correction is retained.
-  Replace the incompatible long generated driving face with a source-consistent
-  short tip and a contact-derived wheel law, including lift, dwell and drop.
-  The current drawing-pawl residual is 0.1300. Do not remove the load face
-  merely to make a clearance sweep pass.
+The [next pawl triage](pawl-next-pass-triage.md) has reproducible witnesses
+for three scoped factories in `authored-intermittent.js`. Parallel lanes must
+coordinate additive imports and own disjoint functions/helpers.
 
-All 197–199 pages have registered animation models. Their exact witnesses and
-reusable components are in the [next rack triage](mangle-rack-next-pass-triage.md).
-231's proportions, 271's pickup holding/impact and omitted cord, and 284's loaded
-transfer and finite observation window remain follow-ups. Keep native studies
-focused on demonstrated passive uncertainty; point coincidence alone cannot
-qualify these contacts.
+- **225, vibrating-carrier pawl:** move its zero-torque radial-tip contact
+  onto a real driving flank, reusing 284's finite nose/hinged-pawl closure.
+- **235, sprung star-wheel tappet:** correct the 0.03 axial separation of
+  both working noses, then qualify finite drive, return and holding faces.
+- **236, alternating pawls:** step the long/short contact fingers across
+  their 0.06/0.18 depth gaps, then qualify both strokes and the handoff.
+
+None of these pages registers a source animation. Use their captions and
+engravings, ideal mechanical profiles and extracted visible irregular outlines
+where useful; keep passive bias and transfer assumptions explicit.
+
+197's motor direction, 199's late retarding-only contact, 232's prescribed
+rocking-carrier branch, 231's proportions, 271's pickup holding/impact and
+omitted cord, and 284's loaded transfer/finite observation window remain
+follow-ups. Do not let one unresolved dynamic branch block an independent
+finite-geometry correction, and do not label such a correction load-validated.
 
 ## Running the screen
 
