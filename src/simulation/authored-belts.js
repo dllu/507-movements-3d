@@ -2,6 +2,7 @@ import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
+import {correctClampParts} from './clamp-working-parts.js';
 import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
 import { makeMiterGear } from './authored-gears.js';
 import { whitePulleys } from './authored-white-pulleys.js';
@@ -11300,7 +11301,7 @@ export function createAuthoredBeltMovement(movement) {
     case 229: result = toothedLinkChainWheel(); break;
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
-    case 244: result = pronyBrakeDynamometer(movement); break;
+    case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); break;
     default: return null;
   }
   markShadows(result.root);

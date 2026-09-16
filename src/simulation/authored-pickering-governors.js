@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctClampParts} from './clamp-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -1046,5 +1047,7 @@ function pickeringThreeSpringGovernor(movement) {
 
 export function createAuthoredPickeringGovernorMovement(movement) {
   if (movement.id !== 287) return null;
-  return pickeringThreeSpringGovernor(movement);
+  const model = pickeringThreeSpringGovernor(movement);
+  correctClampParts(model, 287);
+  return model;
 }
