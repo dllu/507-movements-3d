@@ -1,4 +1,5 @@
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
+import { correctGearFingerStop } from './gear-finger-stop-working-parts.js';
 import {makeEccentricTwoStop} from './eccentric-two-stop.js';
 import { makePumpCatchDrive } from './pump-catch.js';
 import { makeWiperStampDrive } from './wiper-stamp.js';
@@ -13243,7 +13244,7 @@ function opposedGearFingerWindingStop() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.9, 5.2, 11.8));
+  return correctGearFingerStop(finish(root, update, new THREE.Vector3(6.9, 5.2, 11.8)));
 }
 
 function crescentPinSixSlotWindingStop() {

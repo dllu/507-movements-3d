@@ -141,8 +141,8 @@ test('movement 214 is the source ten-to-twelve gear-finger stop, not a generic i
     blocks.drivenAssembly.fingerBody.userData.integralStopFinger,
     true,
   );
-  assert.equal(geometry.driverGearOutline.length, 40);
-  assert.equal(geometry.drivenGearOutline.length, 48);
+  assert.equal(geometry.driverGearOutline.length, 10 * 512);
+  assert.equal(geometry.drivenGearOutline.length, 12 * 512);
   assert.equal(geometry.driverFingerLocal.length, 3);
   assert.equal(geometry.drivenFingerLocal.length, 3);
   assert.equal(geometry.driverBoreLocal.length, 4);
@@ -227,13 +227,13 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
 
   const driverRadii = geometry.driverGearOutline.map((point) => point.length());
   const drivenRadii = geometry.drivenGearOutline.map((point) => point.length());
-  near(Math.min(...driverRadii), geometry.driverRootRadius, 8e-16,
+  near(Math.min(...driverRadii), geometry.driverRootRadius - .0001, 1e-9,
     'input outline root circle');
-  near(Math.max(...driverRadii), geometry.driverOuterRadius, 8e-16,
+  near(Math.max(...driverRadii), geometry.driverOuterRadius - .0001, 1e-9,
     'input outline addendum circle');
-  near(Math.min(...drivenRadii), geometry.drivenRootRadius, 8e-16,
+  near(Math.min(...drivenRadii), geometry.drivenRootRadius - .0001, 1e-9,
     'counterwheel outline root circle');
-  near(Math.max(...drivenRadii), geometry.drivenOuterRadius, 8e-16,
+  near(Math.max(...drivenRadii), geometry.drivenOuterRadius - .0001, 1e-9,
     'counterwheel outline addendum circle');
 
   assert.equal(sourceAnimation.available, true);
