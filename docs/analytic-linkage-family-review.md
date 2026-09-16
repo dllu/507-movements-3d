@@ -48,6 +48,29 @@ than in the engraving. The repaired joints do not establish fidelity of those
 pre-existing link lengths or of the source-pose camera projection. Its complete
 rotation also occupies more area than the initial pose, requiring framing room.
 
+## 231 view follow-up, thirty-eighth pass
+
+The former camera viewed the shafts from the wrong side: the exposed output
+shaft projected left/down, opposite the engraving's right/up direction. The
+default camera now uses the corresponding side of the mechanism. Actual visible
+vertices through 65 poses replace an oversized invisible box for framing, and
+materials explicitly ignore fog. Full-cycle view checks retain room for both
+complete rotations. The exact four-bar law, lengths, layered joints and existing
+two-second display cycle remain unchanged.
+
+This corrects the viewing direction, not the outstanding link proportions.
+A small joint-center reconstruction trial did not reconcile the engraving with
+the existing depth assumptions and strict full-rotation constraint; it is not
+used to replace the mechanism with an ill-conditioned fit. The viewer now
+discloses reconstructed Grashof lengths and the remaining source-fit limitation.
+No detailed outline tracing was performed.
+
+All 10 selected existing motion/joint checks pass:
+`node --test tests/movement-231.test.mjs tests/analytic-linkage-joints.test.mjs`.
+Source/default/oblique views report no browser errors or clipping, with maximum
+normalized screen extent 0.6928. The complete rotating envelope is larger than
+the initial pose; this view does not claim an exact engraving superposition.
+
 ## Validation
 
 `node --test tests/movement-231.test.mjs tests/movement-273.test.mjs tests/analytic-linkage-joints.test.mjs`

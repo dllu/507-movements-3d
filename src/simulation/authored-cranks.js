@@ -16000,7 +16000,30 @@ function dragLinkDoubleCrankMotion() {
     root.userData.kinematics = state;
   };
   update(0);
-  const model = finish(root, update, new THREE.Vector3(7.8, 5.0, 12.2));
+  // The engraving shows the exposed output shaft extending right and upward.
+  // View from that side; the former opposite view reversed its projection.
+  cameraEnvelope.visible = false;
+  root.traverse(object => {
+    for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
+  });
+  const bounds = new THREE.Box3();
+  const point = new THREE.Vector3();
+  for (let i = 0; i <= 64; i++) {
+    update(cyclePeriod * i / 64);
+    root.updateMatrixWorld(true);
+    root.traverseVisible(object => {
+      const positions = object.geometry?.attributes.position;
+      if (positions) for (let j = 0; j < positions.count; j++) {
+        bounds.expandByPoint(point.fromBufferAttribute(positions, j).applyMatrix4(object.matrixWorld));
+      }
+    });
+  }
+  update(0);
+  root.userData.cameraFitBounds = bounds.expandByScalar(.03);
+  root.userData.cameraDistanceScale = 1.02;
+  root.userData.cameraFov = 12;
+  root.userData.reconstructionNote = 'Exact ideal double-crank linkage with reconstructed Grashof lengths and layered joints. The view follows the engraved shaft direction; link proportions remain approximate. Backlash, loads and elastic deflection are not simulated.';
+  const model = finish(root, update, new THREE.Vector3(-10, -5.3, 12));
   for (const object of [cameraEnvelope, ...root.userData.blocks.rotationIndexes]) {
     object.castShadow = false;
     object.receiveShadow = false;
