@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctPantographParts } from './pantograph-working-parts.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -1462,7 +1463,7 @@ function adjustablePantograph(movement) {
 export function createAuthoredDrawingInstrumentMovement(movement) {
   switch (movement.id) {
     case 152: return twoStudEllipsograph();
-    case 246: return adjustablePantograph(movement);
+    case 246: return correctPantographParts(adjustablePantograph(movement));
     default: return null;
   }
 }
