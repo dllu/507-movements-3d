@@ -60,8 +60,8 @@ test('391 playback retains scene objects and geometry buffers',()=>{
 test('391 output stays unbounded across repeated piston cycles and its face mark closes after five',()=>{
  for(let cycle=-3;cycle<=7;cycle++){
   const t=8*cycle,a=d.stateAtTime(t-1e-7),c=d.stateAtTime(t+1e-7);assert.ok(Math.abs(c.outputAngle-a.outputAngle)<1e-6,'no output-index jump at piston reset');
-  assert.ok(Math.abs(d.stateAtTime(t+8).outputAngle-d.stateAtTime(t).outputAngle+.8*2*Math.PI)<2e-14);
+  assert.ok(Math.abs(d.stateAtTime(t+8).outputAngle-d.stateAtTime(t).outputAngle-.8*2*Math.PI)<2e-14);
  }
- const a=d.stateAtTime(1.23),c=d.stateAtTime(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle+4*2*Math.PI)<2e-14);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
+ const a=d.stateAtTime(1.23),c=d.stateAtTime(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle-4*2*Math.PI)<2e-14);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
  for(const t of[3.36,4]){const a=d.stateAtTime(t-1e-6),b=d.stateAtTime(t),c=d.stateAtTime(t+1e-6);assert.ok(Math.abs((c.elbowAssist.leverAngle-a.elbowAssist.leverAngle)/2e-6)<1e-5,'prescribed lever returns with zero endpoint speed');}
 });

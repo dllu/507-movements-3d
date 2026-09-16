@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {installWeightedRackSelector, selectorState} from './weighted-rack-selector-contact.js';
 import { correctWeightedRackInterfaces, correctWeightedRackTeeth, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import {
   PALETTE,
@@ -61,7 +62,7 @@ function makeSpurGear({
 }) {
   const rotor = new THREE.Group();
   rotor.userData.role =
-    'continuous-clockwise-fixed-axis-output-cog-wheel';
+    'continuous-counterclockwise-fixed-axis-output-cog-wheel';
   const angularPitch = FULL_TURN / toothCount;
   const rootRadius = pitchRadius - toothHeight / 2;
   const outerRadius = pitchRadius + toothHeight / 2;
@@ -412,18 +413,18 @@ function alternatingWeightedRackDrive(movement) {
     let outputAngularSpeedPerPhase = 0;
 
     if (phase < ascentEnd) {
-      stage = 'left-rack-A-working-upstroke';
+      stage = 'right-rack-A1-working-upstroke';
       stageProgress = phase / ascentEnd;
       const motion = quinticState(stageProgress);
       crossheadY = crossheadLowY + stroke * motion.value;
       crossheadVelocityPerPhase = stroke * motion.rate / ascentEnd;
       crossheadAccelerationPerPhase2 =
         stroke * motion.acceleration / ascentEnd ** 2;
-      leftOutwardFraction = 0;
-      rightOutwardFraction = 1;
-      outputWithinCycle = -(crossheadY - crossheadLowY)
+      leftOutwardFraction = 1;
+      rightOutwardFraction = 0;
+      outputWithinCycle = (crossheadY - crossheadLowY)
         / pinionPitchRadius;
-      outputAngularSpeedPerPhase = -crossheadVelocityPerPhase
+      outputAngularSpeedPerPhase = crossheadVelocityPerPhase
         / pinionPitchRadius;
     } else if (phase < topCrossoverEnd) {
       stage = 'top-zero-speed-guide-crossover-with-elbow-assist';
@@ -431,15 +432,15 @@ function alternatingWeightedRackDrive(movement) {
         / (topCrossoverEnd - ascentEnd);
       const switchState = quinticState(stageProgress);
       crossheadY = crossheadHighY;
-      leftOutwardFraction = switchState.value;
-      leftOutwardRatePerPhase = switchState.rate
+      leftOutwardFraction = 1-switchState.value;
+      leftOutwardRatePerPhase = -switchState.rate
         / (topCrossoverEnd - ascentEnd);
-      rightOutwardFraction = 1 - switchState.value;
-      rightOutwardRatePerPhase = -switchState.rate
+      rightOutwardFraction = switchState.value;
+      rightOutwardRatePerPhase = switchState.rate
         / (topCrossoverEnd - ascentEnd);
-      outputWithinCycle = -stroke / pinionPitchRadius;
+      outputWithinCycle = stroke / pinionPitchRadius;
     } else if (phase < descentEnd) {
-      stage = 'right-rack-A1-working-downstroke';
+      stage = 'left-rack-A-working-downstroke';
       stageProgress = (phase - topCrossoverEnd)
         / (descentEnd - topCrossoverEnd);
       const motion = quinticState(stageProgress);
@@ -448,22 +449,22 @@ function alternatingWeightedRackDrive(movement) {
         / (descentEnd - topCrossoverEnd);
       crossheadAccelerationPerPhase2 = -stroke * motion.acceleration
         / (descentEnd - topCrossoverEnd) ** 2;
-      leftOutwardFraction = 1;
-      rightOutwardFraction = 0;
-      outputWithinCycle = -stroke / pinionPitchRadius
-        + (crossheadY - crossheadHighY) / pinionPitchRadius;
-      outputAngularSpeedPerPhase = crossheadVelocityPerPhase
+      leftOutwardFraction = 0;
+      rightOutwardFraction = 1;
+      outputWithinCycle = stroke / pinionPitchRadius
+        - (crossheadY - crossheadHighY) / pinionPitchRadius;
+      outputAngularSpeedPerPhase = -crossheadVelocityPerPhase
         / pinionPitchRadius;
     } else {
       stage = 'bottom-zero-speed-guide-crossover';
       stageProgress = (phase - descentEnd) / (1 - descentEnd);
       const switchState = quinticState(stageProgress);
       crossheadY = crossheadLowY;
-      leftOutwardFraction = 1 - switchState.value;
-      leftOutwardRatePerPhase = -switchState.rate / (1 - descentEnd);
-      rightOutwardFraction = switchState.value;
-      rightOutwardRatePerPhase = switchState.rate / (1 - descentEnd);
-      outputWithinCycle = -2 * stroke / pinionPitchRadius;
+      leftOutwardFraction = switchState.value;
+      leftOutwardRatePerPhase = switchState.rate / (1 - descentEnd);
+      rightOutwardFraction = 1-switchState.value;
+      rightOutwardRatePerPhase = -switchState.rate / (1 - descentEnd);
+      outputWithinCycle = 2 * stroke / pinionPitchRadius;
     }
 
     return {
@@ -700,7 +701,7 @@ function alternatingWeightedRackDrive(movement) {
     const phaseData = phaseState(phase);
     const leftPose = rackPose(-1, phase);
     const rightPose = rackPose(1, phase);
-    const outputAngle = -cycles * outputAdvancePerCycle
+    const outputAngle = cycles * outputAdvancePerCycle
       + phaseData.outputWithinCycle;
     const outputAngularSpeed = phaseData.outputAngularSpeedPerPhase
       / cycleDuration;
@@ -708,13 +709,9 @@ function alternatingWeightedRackDrive(movement) {
       / cycleDuration;
     const crossheadAcceleration =
       phaseData.crossheadAccelerationPerPhase2 / cycleDuration ** 2;
-    const topAssistActive =
-      phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist';
+    const contactState = selectorState(rightPose,guideY,elbowPivot);
+    const topAssistActive = phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist' && contactState.contact;
     const assistProgress = topAssistActive ? phaseData.stageProgress : 0;
-    const leverDeflection = topAssistActive
-      ? 0.32 * quinticState(assistProgress).value * (1-quinticState(assistProgress).value)
-      : 0;
-    const leverAngle = -.035+leverDeflection;
     const leftRackPhaseError = wrappedSignedAngle(
       (phaseData.outputWithinCycle + (phaseData.crossheadY - crossheadLowY)
         / pinionPitchRadius) * pinionToothCount,
@@ -733,13 +730,13 @@ function alternatingWeightedRackDrive(movement) {
       cycles,
       elbowAssist: {
         active: topAssistActive,
-        leverAngle,
-        springDeflection: leverDeflection,
+        ...contactState,
+        loading: contactState.contact && !topAssistActive,
       },
       leftRack: {
         ...leftPose,
         angularSpeed: leftPose.rackAngularRatePerPhase / cycleDuration,
-        engaged: phaseData.stage === 'left-rack-A-working-upstroke',
+        engaged: phaseData.stage === 'left-rack-A-working-downstroke',
         toothPhaseError: leftRackPhaseError/pinionToothCount,
       },
       outputAngle,
@@ -748,7 +745,7 @@ function alternatingWeightedRackDrive(movement) {
       rightRack: {
         ...rightPose,
         angularSpeed: rightPose.rackAngularRatePerPhase / cycleDuration,
-        engaged: phaseData.stage === 'right-rack-A1-working-downstroke',
+        engaged: phaseData.stage === 'right-rack-A1-working-upstroke',
         toothPhaseError: rightRackPhaseError/pinionToothCount,
       },
       stageProgress: phaseData.stageProgress,
@@ -773,7 +770,8 @@ function alternatingWeightedRackDrive(movement) {
     rightRack.rotation.z = state.rightRack.rackAngle;
     outputGear.rotation.z = state.outputAngle;
     elbowLever.rotation.z = state.elbowAssist.leverAngle;
-    leverContactIndex.visible = state.elbowAssist.active;
+    leverContactIndex.visible = state.elbowAssist.contact;
+    root.userData.updateSelectorContact?.(state);
     const springAttachment = springAttachmentLocal.clone()
       .applyAxisAngle(new THREE.Vector3(0, 0, 1), elbowLever.rotation.z)
       .add(elbowPivot);
@@ -842,7 +840,7 @@ function alternatingWeightedRackDrive(movement) {
       guideClosure:
         'Each guide groove b is the closed fixed locus of its rigid rack guide pin; inner and outer branches meet only during zero-speed crossovers.',
       meshSelection:
-        'Rack A is exactly vertical and meshes only on ascent; rack A1 is exactly vertical and meshes only on descent.',
+        'Rack A1 is exactly vertical and meshes on ascent; rack A is exactly vertical and meshes on descent. The spring-loaded selector pushes A1 outward at the upper corner.',
       rigidRack:
         'Each rack, its teeth, lower weight arm, upper guide arm, and guide pin are one rigid body about pivot a.',
     },
@@ -857,7 +855,7 @@ function alternatingWeightedRackDrive(movement) {
       independentPrescribedInputs: 1,
       inputs: ['one reciprocating piston-rod stroke'],
       note:
-        'The fixed guide grooves select the two rack attitudes; there is never a second independently prescribed rack or output rotation.',
+        'The fixed guide grooves select the two rack attitudes; the corner traversal is prescribed; passive branch dynamics are not solved.',
       storedEnergyStates: 0,
     },
     dynamics: {
@@ -900,10 +898,10 @@ function alternatingWeightedRackDrive(movement) {
       topCrossoverEnd,
     },
     mechanism:
-      'one-piston-rod-crosshead-reciprocates-two-weighted-pivoted-racks-A-and-A1-whose-end-pins-follow-opposed-fixed-closed-guide-grooves-b-so-A-meshes-on-ascent-and-A1-meshes-on-descent-to-turn-one-cog-wheel-continuously-clockwise-while-spring-d-returns-elbow-lever-C-at-the-right-upper-corner',
+      'one-piston-rod-crosshead-reciprocates-two-weighted-pivoted-racks-A-and-A1-whose-end-pins-follow-opposed-fixed-closed-guide-grooves-b-so-A1-meshes-on-ascent-and-A-meshes-on-descent-to-turn-one-cog-wheel-continuously-counterclockwise-while-spring-d-returns-elbow-lever-C-at-the-right-upper-corner',
     motion: {
-      outputDirection: 'clockwise only, with zero speed at guide crossovers',
-      outputTurnsPerInputCycle: -.8,
+      outputDirection: 'counterclockwise only, with zero speed at guide crossovers',
+      outputTurnsPerInputCycle: .8,
       rackExchange:
         'top and bottom exchanges occur while the piston and cog wheel are instantaneously stationary',
       strokeLaw:
@@ -941,7 +939,7 @@ function alternatingWeightedRackDrive(movement) {
           'elbow lever C and spring d carry the right-hand pin over the upper angle',
         ],
         reconstructionDisclosure:
-          'Because no official animation is available, branch curvature, crossover dwell fraction, dimensions, tooth count, colors, and timing are independently engineered while preserving every topology and motion relation stated in the source.',
+          'Because no official animation is available, branch curvature, crossover dwell fraction, dimensions, tooth count, colors, and timing are independently engineered with the spring/selector direction determining the previously unspecified working-side assignment.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 391',
@@ -956,8 +954,8 @@ function alternatingWeightedRackDrive(movement) {
     },
     transmission: {
       activeMeshLaw:
-        'theta=-DeltaY/R on rack A ascent; theta=theta_top+DeltaY/R on rack A1 descent',
-      fullCycleLaw: 'Delta theta = -2 stroke / R = -1.6 pi; the marked wheel closes after five piston cycles and four clockwise turns',
+        'theta=DeltaY/R on rack A1 ascent; theta=theta_top-DeltaY/R on rack A descent',
+      fullCycleLaw: 'Delta theta = 2 stroke / R = 1.6 pi; the marked wheel closes after five piston cycles and four counterclockwise turns',
       guideLaw:
         'inner branch means rack angle zero and exact mesh; outer branch means rack angle is displaced outward by 0.205 rad',
       pitchLaw: 'p=2*pi*R/N and stroke=8*p; five piston cycles advance the wheel by four turns',
@@ -973,6 +971,7 @@ function alternatingWeightedRackDrive(movement) {
   root.userData.groundFloorY = -3.72;
   correctWeightedRackInterfaces(root);
   correctWeightedRackTeeth(root);
+  installWeightedRackSelector(root);
   finishAlternatingDrive(root,update,cycleDuration);
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }

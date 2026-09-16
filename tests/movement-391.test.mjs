@@ -53,13 +53,13 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
   assert.match(data.mechanism, /one-piston-rod-crosshead/);
   assert.match(data.mechanism, /two-weighted-pivoted-racks-A-and-A1/);
   assert.match(data.mechanism, /opposed-fixed-closed-guide-grooves-b/);
-  assert.match(data.mechanism, /A-meshes-on-ascent/);
-  assert.match(data.mechanism, /A1-meshes-on-descent/);
+  assert.match(data.mechanism, /A1-meshes-on-ascent/);
+  assert.match(data.mechanism, /A-meshes-on-descent/);
   assert.match(data.mechanism, /elbow-lever-C/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
   assert.match(degreesOfFreedom.inputs[0], /piston-rod stroke/);
-  assert.match(degreesOfFreedom.note, /never a second independently/);
+  assert.match(degreesOfFreedom.note, /passive branch dynamics are not solved/);
 
   for (const component of [
     blocks.crosshead,
@@ -91,7 +91,7 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
     'right-rack-A1-weighted-pivoted-rack',
     'left-fixed-closed-guide-groove-b',
     'right-fixed-closed-guide-groove-b',
-    'continuous-clockwise-fixed-axis-output-cog-wheel',
+    'continuous-counterclockwise-fixed-axis-output-cog-wheel',
     'one-reciprocating-piston-rod-crosshead-carrying-both-rack-pivots',
     'spring-returned-elbow-lever-C-for-right-upper-guide-angle',
     'tension-spring-d-returning-elbow-lever-C',
@@ -205,16 +205,16 @@ test('movement 391 alternates exactly one working rack and exchanges mesh only a
     );
     if (state.leftRack.engaged) {
       near(state.leftRack.rackAngle, 0, 0,
-        'rack A vertical on working ascent');
+        'rack A vertical on working descent');
       near(state.rightRack.rackAngle, -geometry.outwardRackAngle, 0,
-        'rack A1 on outer return branch during ascent');
-      assert.ok(state.crossheadVelocity > 0);
+        'rack A1 on outer return branch during descent');
+      assert.ok(state.crossheadVelocity < 0);
     } else if (state.rightRack.engaged) {
       near(state.rightRack.rackAngle, 0, 0,
-        'rack A1 vertical on working descent');
+        'rack A1 vertical on working ascent');
       near(state.leftRack.rackAngle, geometry.outwardRackAngle, 0,
-        'rack A on outer return branch during descent');
-      assert.ok(state.crossheadVelocity < 0);
+        'rack A on outer return branch during ascent');
+      assert.ok(state.crossheadVelocity > 0);
     } else {
       near(state.crossheadVelocity, 0, 0,
         'piston stationary throughout guide crossover');
@@ -227,7 +227,7 @@ test('movement 391 alternates exactly one working rack and exchanges mesh only a
     timeline.cycleDuration
       * (geometry.ascentEnd + geometry.topCrossoverEnd) / 2,
   );
-  assert.equal(topMiddle.elbowAssist.active, true);
+  assert.equal(topMiddle.elbowAssist.active, false); // C has released before the crossover midpoint.
   near(topMiddle.leftRack.outwardFraction, 0.5, 4e-15,
     'left top crossover midpoint');
   near(topMiddle.rightRack.outwardFraction, 0.5, 4e-15,
@@ -247,8 +247,8 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
-  assert.match(transmission.activeMeshLaw, /theta=-DeltaY\/R/);
-  assert.match(transmission.activeMeshLaw, /rack A1 descent/);
+  assert.match(transmission.activeMeshLaw, /theta=DeltaY\/R/);
+  assert.match(transmission.activeMeshLaw, /rack A descent/);
 
   for (let cycle = -4; cycle <= 4; cycle += 1) {
     for (let sample = 1; sample < 1000; sample += 1) {
@@ -256,11 +256,11 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
       const ascent = stateAtTime(
         timeline.cycleDuration * (cycle + ascentPhase),
       );
-      near(ascent.leftRack.toothPhaseError, 0, 4e-15,
+      near(ascent.rightRack.toothPhaseError, 0, 4e-15,
         'rack A tooth phase');
       near(
         ascent.crossheadVelocity
-          + geometry.pinionPitchRadius * ascent.outputAngularSpeed,
+          - geometry.pinionPitchRadius * ascent.outputAngularSpeed,
         0,
         5e-16,
         'rack A pitch-line velocity closure',
@@ -272,11 +272,11 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
       const descent = stateAtTime(
         timeline.cycleDuration * (cycle + descentPhase),
       );
-      near(descent.rightRack.toothPhaseError, 0, 6e-15,
+      near(descent.leftRack.toothPhaseError, 0, 6e-15,
         'rack A1 tooth phase');
       near(
         descent.crossheadVelocity
-          - geometry.pinionPitchRadius * descent.outputAngularSpeed,
+          + geometry.pinionPitchRadius * descent.outputAngularSpeed,
         0,
         5e-16,
         'rack A1 pitch-line velocity closure',
@@ -286,7 +286,7 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
   disposeModel(model.root);
 });
 
-test('movement 391 advances eight tenths of a clockwise output turn per piston cycle without reversal', () => {
+test('movement 391 advances eight tenths of a counterclockwise output turn per piston cycle without reversal', () => {
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { constraintResiduals, geometry, stateAtTime, timeline,
@@ -299,21 +299,21 @@ test('movement 391 advances eight tenths of a clockwise output turn per piston c
     'eight exact rack pitches per half-cycle');
   near(geometry.stroke / geometry.pinionPitchRadius, .8*Math.PI, 0,
     'four tenths of a turn per working stroke');
-  assert.match(transmission.fullCycleLaw, /-1.6 pi/);
+  assert.match(transmission.fullCycleLaw, /1.6 pi/);
   assert.match(transmission.pitchLaw, /stroke=8\*p/);
 
-  let previousAngle = Infinity;
+  let previousAngle = -Infinity;
   for (let sample = -16000; sample <= 32000; sample += 1) {
     const state = stateAtTime(timeline.cycleDuration * sample / 16000);
-    assert.ok(state.outputAngle <= previousAngle + 4e-15);
-    assert.ok(state.outputAngularSpeed <= 1e-15);
+    assert.ok(state.outputAngle >= previousAngle - 4e-15);
+    assert.ok(state.outputAngularSpeed >= -1e-15);
     previousAngle = state.outputAngle;
   }
   for (let cycle = -8; cycle <= 8; cycle += 1) {
     const start = stateAtTime(timeline.cycleDuration * (cycle + 0.137));
     const end = stateAtTime(timeline.cycleDuration * (cycle + 1.137));
-    near(end.outputAngle - start.outputAngle, -.8*FULL_TURN, 1e-14,
-      'eight tenths of a clockwise output turn per cycle');
+    near(end.outputAngle - start.outputAngle, .8*FULL_TURN, 1e-14,
+      'eight tenths of a counterclockwise output turn per cycle');
     near(end.crossheadY, start.crossheadY, 4e-15,
       'crosshead repeats after one cycle');
     near(end.leftRack.rackAngle, start.leftRack.rackAngle, 1e-15,
@@ -324,11 +324,11 @@ test('movement 391 advances eight tenths of a clockwise output turn per piston c
   disposeModel(model.root);
 });
 
-test('movement 391 elbow lever C and spring d actuate only while carrying the right pin over the upper corner', () => {
+test('movement 391 elbow lever C loads on approach, assists the upper corner, then releases', () => {
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime, timeline } = data;
-  const topMiddlePhase = (geometry.ascentEnd + geometry.topCrossoverEnd) / 2;
+  const topMiddlePhase = geometry.ascentEnd + .25*(geometry.topCrossoverEnd-geometry.ascentEnd);
   const inactive = stateAtTime(timeline.cycleDuration * 0.20);
   const active = stateAtTime(timeline.cycleDuration * topMiddlePhase);
   const bottom = stateAtTime(
@@ -338,8 +338,7 @@ test('movement 391 elbow lever C and spring d actuate only while carrying the ri
   assert.equal(active.elbowAssist.active, true);
   assert.equal(bottom.elbowAssist.active, false);
   assert.ok(active.elbowAssist.springDeflection > 0);
-  near(active.rightRack.outwardFraction, 0.5, 4e-15,
-    'right rack halfway over upper angle');
+  assert.ok(active.rightRack.outwardFraction > 0 && active.rightRack.outwardFraction < .5, 'assistance precedes release');
 
   model.update(timeline.cycleDuration * topMiddlePhase);
   assert.equal(blocks.leverContactIndex.visible, true);
