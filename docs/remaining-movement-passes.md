@@ -130,35 +130,64 @@ All 50 focused checks, the final build, four-model screen and four packaged
 checks pass. The full review remains active; finite sampling does not establish
 continuous nonpenetration or validate passive forces.
 
+## Thirty-sixth pass
+
+- **192–194:** real blind guides and clear front-side shaft/pinion interfaces.
+  192/193 additionally reuse 036's cutter for offline complementary tooth
+  cavities, with positive sampled clearance and close faces through reversals.
+  194 retains its disclosed finite pin-row contact defect.
+- **242–243:** coherent brake slack/load ordering, actual strap pin joints,
+  close pulley working surfaces, clear belt twist exits and flat moving marks.
+- **212/215:** corrected finite locking geometry, removed expanding bevels and
+  bored fixed supports. These remain partial because of the specific working
+  stroke/handoff faults below.
+- **246:** real bar/slide passages, captured joints and paper-contacting pencil
+  and tracer, preserving the exact analytical copying law.
+
+All 81 focused checks and the final build pass; the eight-model construction
+screen has no flags. All eight packaged desktop/playback/mobile checks pass.
+The [progress record](review-progress.md) and linked family
+reviews distinguish geometric corrections from prescribed dynamics.
+
 ## Next independent lanes
 
 These are current-code findings, not claims that the movements have never been
-reviewed. Preserve prior analytical/source tests while correcting finite parts.
+reviewed. Prioritize working faces, compatible motion and force direction over
+additional support detailing.
 
-- **192–194, reversing mangle guides:** three scoped factories in
-  `authored-gears.js`. Solid tube guides sit on uncut disks, and pinions overlap
-  the disks axially by 0.03–0.04 before bevel/hub allowances. Reuse 036's mangle
-  cutter/outline construction and finite channels; check both reversals.
-- **242–243, bands and pulleys:** two scoped factories in `authored-belts.js`.
-  242 applies half its prescribed braking while 0.01305 band slack remains; its
-  lower strap lacks a pin spanning a 0.165 axial gap. 243 has a 0.04 belt/barrel
-  gap and oversized belt markers. Reuse finite pulley and bored-joint parts;
-  distinguish a prescribed braking schedule from validated friction dynamics.
-- **212/215, Geneva working surfaces:** sparse actual-surface samples find
-  0.001007 driver/stop overlap in 212, and 0.02379 pin/slot plus 0.05062
-  crescent/wheel overlap in 215. Reuse finite slots and locking pockets, checking
-  bevel-expanded solids rather than only nominal planar outlines.
+- **194, radial pin mangle:** scoped factory in `authored-gears.js`. The retained
+  pin row penetrates the pinion by 0.064059 at phase 0.90625, pin 6, outside run.
+  Generate a mating pinion against the finite pin/seat envelope on both main
+  runs and both reversals. Determine whether one fixed profile supports the
+  existing phase law; do not copy 192/193's continuous cavity over isolated pins.
+- **212/213/215, finite indexing and handoff:** scoped factories in
+  `authored-intermittent.js`. 212 has 0.001007 midstroke overlap but about 0.034
+  clearance earlier/later under its linear schedule. 213's quintic index law
+  gives about 0.09365 pin/tooth penetration. 215's source mouth interferes by
+  0.029991 outside the nominal engagement interval; simply relieving the mouth
+  creates a 0.022 drive gap. Reconstruct contacting branches and compatible
+  profiles while preserving real load faces and terminal stops. Keep each
+  correction independently publishable; use a passive study where branch/load
+  selection remains uncertain.
+- **251/253, lifting and arresting hooks:** separate files
+  `authored-pile-drivers.js` and `authored-check-hooks.js`. In 251, a hook
+  centerline sample reaches -0.12268 clearance against the unchanged head bar
+  at 0.06 radians of squeeze, despite zero nominal latch residual. Reconstruct
+  the retaining lip and release opening. In 253, the designated radial catch
+  normal has essentially zero moment arm about the drum, so it cannot provide
+  the claimed arrest torque. Correct the working face/reaction direction and
+  engagement before addressing the solid pivot roots.
 
-Separate follow-ups: 246's pencil/tracer penetrate the paper by 0.030/0.037 and
-its pinned bars/slides need real passages; 213 has about 0.09365 pin/tooth
-penetration during its prescribed quintic index; 214 has sampled spur-tooth
-overlap of 0.062–0.108. 211's sparse checks found no penetration, but do not prove
-passive triggering. Avoid folding these into unrelated lanes just to raise the
-batch count.
+The 251/253 full source HTML contains no `add_model` or `mm_present` definitions;
+these use captions and engravings. 212/215 have actual inline animation models,
+which remain motion references rather than proof of finite contact. Check model
+registration, not the initial HTML availability class; the repository's
+`index-source-animations.mjs` follows that distinction.
 
-Check actual inline animation models instead of the initial HTML availability
-class. Models are present for 211/212/214/215, 246 and 385; source evidence must
-be recorded per movement before choosing a motion oracle.
+Separate gear follow-up: 214's trapezoidal/beveled pair has sampled tooth overlap
+of 0.062–0.108. Preserve its 10:12 ratio and validated stop-finger construction
+while replacing the real tooth pair. 211's sparse checks found no penetration,
+but do not establish passive triggering.
 
 ## Running the screen
 

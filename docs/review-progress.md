@@ -1,3 +1,47 @@
+# Thirty-sixth family pass: generated mangle teeth, bands and pinned instruments
+
+Eight movements receive scoped corrections: 192–194, 212, 215, 242, 243 and
+246. Three independent lanes reuse existing tooth cutters, finite plates,
+pulley surfaces and bored joints; the pantograph receives matching joint and
+paper-contact corrections. The full 507-movement review remains active.
+
+- [192–194 mangle guides](reversing-mangle-guides-review.md): actual blind
+  channels with connected backing replace solid tubes. Pinions and accessible
+  input shafts clear the wheel faces. For 192/193, the existing 036 cutter
+  generates complementary tooth cavities offline: minimum sampled clearances
+  are 0.000448 and 0.000300, with close working faces through both reversals.
+  The bake regenerates byte-identically. 194's separate pin-row geometry still
+  has 0.064059 measured interference and remains partial.
+- [212/215 Geneva stops](geneva-stop-working-surfaces-review.md): remove bevel
+  expansion of working surfaces, improve circular locking faces and provide
+  real fixed-shaft bores. 215's interior slot contacts and both terminal stops
+  are checked against actual surfaces. 212's broad-finger index and 215's short
+  mouth handoff remain unresolved; both viewer notes disclose this. A relief
+  that traded collision for missing drive contact was rejected.
+- [242/243 bands and pulleys](band-drive-family-review.md): take up brake slack
+  before the imposed slowdown, connect strap eyes with actual pins, restore
+  close belt/barrel surfaces and flatten marker patches. Zero twist slope at
+  pulley exits removes a newly exposed belt-edge collision. Prescribed braking
+  is not presented as solved tension or normal force.
+- [246 pantograph](pantograph-working-review.md): bore the four bars and both
+  slides, capture the pins and bring both finite drawing tips onto the paper.
+  The exact 2:1 copying law is unchanged. A source-facing camera improves the
+  default view without tracing the engraving's hand-drawn irregularities.
+
+All **81 distinct focused checks pass**, including two unchanged ellipsograph
+regressions and the affected framing rerun. Final build passes in 21.44 seconds.
+The eight-model construction/update screen reports no flags. Source/default/
+oblique browser inspection reports no errors or viewport clipping; normalized
+screen extents range from 0.704 to 0.882. Mangle framing now uses swept actual
+vertices, avoiding inflation from rotated local bounding boxes. All eight packaged
+desktop/playback/mobile checks pass in 35.4 seconds.
+
+The remaining 194, 212 and 215 contact defects are explicitly separate from the
+verified corrections. Sampled surface proximity does not establish continuous
+nonpenetration, passive load transfer or friction dynamics. The
+[next independent lanes](remaining-movement-passes.md) prioritize these contact
+laws alongside the newly identified lifting/arresting hook faults in 251/253.
+
 # Thirty-fifth family pass: rocking supports, screw contact and toggle joints
 
 Four movements receive scoped corrections: 363, 364, 384 and 385. Shared bored
