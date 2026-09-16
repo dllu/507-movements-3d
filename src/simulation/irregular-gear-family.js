@@ -1,0 +1,54 @@
+import * as THREE from 'three';
+import {bandInvoluteGear,involute} from './band-epicyclic-geometry.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import generated from './generated-irregular-gear-profiles.js';
+import {boredPlanarLinkGeometry} from './bored-planar-link.js';
+const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
+const boreHub=(mesh,bore)=>{const p=mesh.geometry.parameters;replace(mesh,boredLatheGeometry([{radial:Math.max(p.radiusTop,bore+.025),axial:-p.height/2},{radial:Math.max(p.radiusBottom,bore+.025),axial:p.height/2}],bore,64));};
+const contourGeometry=(outline,bore,depth)=>{const shape=new THREE.Shape(outline.map(([x,y])=>new THREE.Vector2(x,y))),hole=new THREE.Path();hole.absarc(0,0,bore,0,Math.PI*2,true);shape.holes.push(hole);const geometry=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-depth/2);geometry.userData={outline,boreRadius:bore,toothProfile:'offline-swept-mating-gear-envelope'};return geometry;};
+export function irregularCircularProfile(radius,teeth,depth,bore){
+ const alpha=Math.PI/6,module=2*radius/teeth,baseRadius=radius*Math.cos(alpha);
+ return bandInvoluteGear({teeth,baseRadius,baseHalfAngle:Math.PI/(2*teeth)+involute(1/Math.cos(alpha))-.0008/radius,rootRadius:radius-.9*module,tipRadius:radius+.85*module,boreRadius:bore,depth,flankSamples:24});
+}
+export function correctIrregularGearFamily(root,id,update){
+ const b=root.userData.blocks,g=root.userData.geometry;
+ if(id===201){
+  const body=b.eccentricGear.userData.rotor.children[0],profile=irregularCircularProfile(g.driverPitchRadius,g.driverTeeth,.34,.13),offset=g.driverEccentricOffset;
+  const outline=profile.userData.outline.map(p=>p.clone().add(offset)),shape=new THREE.Shape(outline),hole=new THREE.Path();hole.absarc(0,0,.13,0,2*Math.PI,true);shape.holes.push(hole);
+  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.34,bevelEnabled:false,curveSegments:64}).translate(0,0,-.17);geometry.userData={...profile.userData,outline,boreCenter:[0,0]};replace(body,geometry);profile.dispose();
+  const rotor=b.pinion.userData.rotor;replace(rotor.children[0],irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,.34,.084));
+  // The original quarter-pitch convention belonged to trapezoidal teeth.
+  rotor.children[0].geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
+  boreHub(rotor.children[1],.084);rotor.children[2].visible=false;
+  replace(b.slotFollower,new THREE.CylinderGeometry(.125,.125,.36,48));
+  const rim=b.rod.children.find(o=>o.userData.role==='slot-follower-roller-rim');replace(rim,new THREE.TorusGeometry(.13,.025,10,48));
+  root.userData.reconstructionNote='An eccentric circular gear reconstructs the unspecified irregular driver. Its carried pinion rotates continuously, rocking the slotted arm and reciprocating rod A. The belt speed is measured relative to that moving arm; dimensions and speeds are inferred.';
+ }else if(id===196){
+  replace(b.wheelBody,contourGeometry(generated[196].outline,g.boreRadius,g.wheelDepth));for(const tooth of b.wheelToothMeshes)tooth.visible=false;
+  const pinionBody=b.pinion.userData.rotor.children[0];replace(pinionBody,irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070));pinionBody.geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
+  boreHub(b.wheelHub,.075);b.wheelHub.userData.boreRadius=.075;
+  const rotor=b.pinion.userData.rotor;boreHub(rotor.children[1],.070);rotor.children[2].visible=false;
+  const arm=b.carrierArm,link=new THREE.Mesh(boredPlanarLinkGeometry({length:g.carrierLength,width:.12,eyeRadius:.17,boreRadius:.076,depth:.15}),arm.children[0].material);
+  for(const child of arm.children)child.visible=false;arm.add(link);
+  arm.userData.setEndpoints=(start,end)=>{link.position.copy(start);link.rotation.z=Math.atan2(end.y-start.y,end.x-start.x);};
+  const state=root.userData.kinematics;arm.userData.setEndpoints(new THREE.Vector3(g.carrierPivot.x,g.carrierPivot.y,.405),new THREE.Vector3(state.wheelCenter.x,state.wheelCenter.y,.405));
+  b.boredCarrierLink=link;
+  const pivot=new THREE.Mesh(new THREE.CylinderGeometry(.073,.073,1.28,48),link.material);pivot.rotation.x=Math.PI/2;pivot.position.set(g.carrierPivot.x,g.carrierPivot.y,0);pivot.userData.role='fixed-pin-through-bored-carrier-eye';root.add(pivot);b.carrierPivotPin=pivot;
+  replace(b.carrierBearing,boredLatheGeometry([{radial:.25,axial:-.4},{radial:.25,axial:.4}],.075,64).rotateX(Math.PI/2));b.carrierBearing.position.z=-.125;
+  b.carrierStandard.userData.setEndpoints(new THREE.Vector3(g.carrierPivot.x,-1.7,-.58),new THREE.Vector3(g.carrierPivot.x,g.carrierPivot.y-.20,-.58));
+  root.userData.reconstructionNote='A uniform fixed-axis pinion rolls against an inferred two-lobed pitch curve and rocks the carrying arm. The mating teeth are reconstructed around that motion; historical dimensions and load response are unspecified.';
+ }else{
+  root.userData.profileGenerationBlank=[b.drivenBody,...b.drivenTeeth].map(mesh=>({outline:mesh.geometry.parameters.shapes.extractPoints(64).shape.map(p=>[p.x,p.y]),buffer:mesh.geometry.parameters.options.bevelSize??0}));
+  replace(b.drivenBody,contourGeometry(generated[191].outline,g.boreRadius,g.gearDepth));for(const tooth of b.drivenTeeth)tooth.visible=false;
+  for(const gear of[b.driver,b.driven]){const hub=gear.userData.rotor.children.find(o=>o.userData.role?.endsWith('scroll-gear-hub'));boreHub(hub,.076);hub.userData.boreRadius=.076;}
+  root.userData.reconstructionNote='The lower scroll turns uniformly and accelerates the upper scroll during each turn. The stepped seam requires disengagement and a sudden speed reset: this prescribed repeat is not a smooth, continuously engaged physical drive.';
+ }
+ root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=id===191?12:10;
+ root.userData.irregularGearReview={report:'docs/validation/191-196-201-contact.json',generatedEnvelope:id!==201,loadedDynamics:false};
+ for(const object of[b.contactMarker,b.gearContactMarker,b.wheelPitchLine,b.driverPitchLine,b.drivenPitchLine])if(object)object.visible=false;
+ root.traverse(o=>{for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material)material.fog=false;});
+ const visible=[];root.traverseVisible(o=>{if(o.isMesh){o.geometry.computeBoundingBox();visible.push(o);}});
+ const bounds=new THREE.Box3(),period=root.userData.transmission.cyclePeriod??root.userData.transmission.inputCyclePeriod;
+ for(let i=0;i<=64;i++){update(period*i/64);root.updateMatrixWorld(true);for(const mesh of visible)bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));}
+ root.userData.cameraFitBounds=bounds.expandByScalar(.06);root.userData.cameraDistanceScale=1.04;update(0);
+}

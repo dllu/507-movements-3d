@@ -2,11 +2,15 @@ import * as THREE from 'three';
 import {
   PALETTE,
   makeBeam,
-  makeDynamicLink,
   markShadows,
   matte,
   setSpin,
 } from './primitives.js';
+
+import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-parts.js';
+import {makeBoredLinkRod} from './bored-link-rod.js';
+import {circle,plate,poly,polygonClipping as clip} from './finite-plate-geometry.js';
+import {bevelToothGeometry} from './bevel-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -86,14 +90,17 @@ function makePitchConeGear({
   const toothHeightAt = (distance) => toothHeight
     * distance / outerDistance;
   const innerRootRadius = pitchRadiusAt(innerDistance)
-    - toothHeightAt(innerDistance) * 0.44;
+    - toothHeightAt(innerDistance) * .55 * Math.cos(pitchConeAngle);
   const outerRootRadius = pitchRadiusAt(outerDistance)
-    - toothHeight * 0.44;
+    - toothHeight * .55 * Math.cos(pitchConeAngle);
+  const innerRootZ=innerDistance+toothHeightAt(innerDistance)*.55*Math.sin(pitchConeAngle);
+  const outerRootZ=outerDistance+toothHeight*.55*Math.sin(pitchConeAngle);
   const bodyGeometry = new THREE.LatheGeometry([
-    new THREE.Vector2(boreRadius, innerDistance),
-    new THREE.Vector2(innerRootRadius, innerDistance),
-    new THREE.Vector2(outerRootRadius, outerDistance),
-    new THREE.Vector2(boreRadius, outerDistance),
+    new THREE.Vector2(boreRadius, innerRootZ),
+    new THREE.Vector2(innerRootRadius, innerRootZ),
+    new THREE.Vector2(outerRootRadius, outerRootZ),
+    new THREE.Vector2(boreRadius, outerRootZ),
+    new THREE.Vector2(boreRadius, innerRootZ),
   ], 72);
   bodyGeometry.rotateX(Math.PI / 2);
   const body = new THREE.Mesh(
@@ -112,51 +119,11 @@ function makePitchConeGear({
     roughness: 0.44,
     side: THREE.DoubleSide,
   });
-  const halfToothAngle = Math.PI / teeth * 0.54;
   const toothMeshes = [];
-  const vertex = (distance, radialOffset, angle) => {
-    const radius = pitchRadiusAt(distance) + radialOffset;
-    return [
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
-      distance,
-    ];
-  };
   for (let index = 0; index < teeth; index += 1) {
-    const angle = index / teeth * FULL_TURN;
-    const innerHeight = toothHeightAt(innerDistance);
-    const vertices = [
-      ...vertex(innerDistance, -innerHeight * 0.44,
-        angle - halfToothAngle),
-      ...vertex(innerDistance, -innerHeight * 0.44,
-        angle + halfToothAngle),
-      ...vertex(innerDistance, innerHeight * 0.56,
-        angle + halfToothAngle),
-      ...vertex(innerDistance, innerHeight * 0.56,
-        angle - halfToothAngle),
-      ...vertex(outerDistance, -toothHeight * 0.44,
-        angle - halfToothAngle),
-      ...vertex(outerDistance, -toothHeight * 0.44,
-        angle + halfToothAngle),
-      ...vertex(outerDistance, toothHeight * 0.56,
-        angle + halfToothAngle),
-      ...vertex(outerDistance, toothHeight * 0.56,
-        angle - halfToothAngle),
-    ];
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(vertices, 3),
-    );
-    geometry.setIndex([
-      0, 3, 2, 0, 2, 1,
-      4, 5, 6, 4, 6, 7,
-      0, 1, 5, 0, 5, 4,
-      3, 7, 6, 3, 6, 2,
-      0, 4, 7, 0, 7, 3,
-      1, 2, 6, 1, 6, 5,
-    ]);
-    geometry.computeVertexNormals();
+    const geometry=bevelToothGeometry({teeth,innerDistance,outerDistance,pitchConeAngle,toothHeight,
+      toothThicknessFactor:.94,flankSegments:10,tipSegments:4});
+    geometry.rotateZ(index/teeth*FULL_TURN);
     const tooth = new THREE.Mesh(
       geometry,
       index === indexTooth ? whiteMaterial : toothMaterial,
@@ -177,7 +144,7 @@ function makePitchConeGear({
     ),
     matte(PALETTE.ink, { metalness: 0.18, roughness: 0.51 }),
   );
-  faceRing.position.z = outerDistance + 0.018;
+  faceRing.position.z = outerRootZ + .018;
   faceRing.userData.role = 'outer-face-ring-on-bevel-gear';
   rotor.add(faceRing);
   const faceIndex = new THREE.Mesh(
@@ -191,7 +158,7 @@ function makePitchConeGear({
   faceIndex.position.set(
     pitchRadiusAt(outerDistance) * 0.45,
     0,
-    outerDistance + 0.034,
+    outerRootZ + .034,
   );
   faceIndex.userData.role = 'white-index-showing-bevel-gear-angle';
   rotor.add(faceIndex);
@@ -232,7 +199,7 @@ function treadleBevelDrillingMachine(movement) {
   const pinionOuterDistance = outerSlantDistance
     * Math.cos(pinionPitchConeAngle);
   const driverInnerDistance = driverOuterDistance * 0.30;
-  const pinionInnerDistance = pinionOuterDistance * 0.30;
+  const pinionInnerDistance = pinionOuterDistance * .40;
   const driverOuterPitchRadius = driverOuterDistance
     * Math.tan(driverPitchConeAngle);
   const pinionOuterPitchRadius = pinionOuterDistance
@@ -374,7 +341,7 @@ function treadleBevelDrillingMachine(movement) {
     'large-hand-crank-driven-horizontal-axis-bevel-gear';
   const pinionGear = makePitchConeGear({
     axis: pinionAxis,
-    boreRadius: 0.125,
+    boreRadius: .099,
     color: PALETTE.driven,
     indexTooth: 0,
     innerDistance: pinionInnerDistance,
@@ -391,22 +358,21 @@ function treadleBevelDrillingMachine(movement) {
   const driverBasePhase = driverContactAngle;
   const pinionBasePhase = pinionContactAngle - Math.PI / pinionTeeth;
 
-  const pinionKeyway = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.052,
-      0.090,
-      pinionOuterDistance - pinionInnerDistance + 0.12,
-    ),
-    darkMaterial,
-  );
-  pinionKeyway.position.set(
-    pinionGear.userData.boreRadius,
-    0,
-    (pinionInnerDistance + pinionOuterDistance) / 2,
-  );
-  pinionKeyway.userData.role =
-    'longitudinal-keyway-in-small-bevel-pinion-bore';
+  const pinionKeyway = new THREE.Object3D();
+  pinionKeyway.userData.role='longitudinal-keyway-in-small-bevel-pinion-bore';
   pinionGear.userData.rotor.add(pinionKeyway);
+  const pinionRootZ0=pinionInnerDistance+.105*(pinionInnerDistance/pinionOuterDistance)*.55*Math.sin(pinionPitchConeAngle);
+  const pinionRootZ1=pinionOuterDistance+.105*.55*Math.sin(pinionPitchConeAngle);
+  const rootR1=pinionOuterPitchRadius-.105*.55*Math.cos(pinionPitchConeAngle);
+  const keyHole=clip.union(poly(circle([0,0],.099,80)),poly([[.075,-.031],[.135,-.031],[.135,.031],[.075,.031]]));
+  const keyedBody=plate(clip.difference(poly(circle([0,0],rootR1,96)),keyHole),pinionRootZ0,pinionRootZ1);
+  const bp=keyedBody.attributes.position;
+  for(let i=0;i<bp.count;i++){
+    const r=Math.hypot(bp.getX(i),bp.getY(i));
+    if(r>rootR1-1e-6){const scale=bp.getZ(i)/pinionRootZ1;bp.setXY(i,bp.getX(i)*scale,bp.getY(i)*scale);}
+  }
+  bp.needsUpdate=true;keyedBody.computeVertexNormals();
+  pinionGear.userData.body.geometry.dispose();pinionGear.userData.body.geometry=keyedBody;
   root.add(driverGear, pinionGear);
 
   const inputRotor = new THREE.Group();
@@ -414,8 +380,8 @@ function treadleBevelDrillingMachine(movement) {
   inputRotor.userData.axis = driverAxis.clone();
   inputRotor.userData.role =
     'horizontal-input-shaft-crank-and-handle-one-rigid-rotor';
-  const inputShaft = cylinderAlongX(0.090, 2.78, darkMaterial, 32);
-  inputShaft.position.x = 1.18;
+  const inputShaft = cylinderAlongX(.090,2.43,darkMaterial,32);
+  inputShaft.position.x = 1.355;
   inputShaft.userData.role = 'horizontal-hand-crank-input-shaft';
   inputRotor.add(inputShaft);
   const crankArm = makeBeam(
@@ -436,6 +402,8 @@ function treadleBevelDrillingMachine(movement) {
   crankIndex.position.set(2.42, 0.60, 0.14);
   crankIndex.userData.role = 'white-index-on-rotating-hand-crank';
   inputRotor.add(crankIndex);
+  // Gear tooth indexing need not put the visible hand crank end-on at rest.
+  for(const part of[crankArm,crankHandle,crankIndex])part.applyMatrix4(new THREE.Matrix4().makeRotationX(-driverBasePhase));
   root.add(inputRotor);
 
   const drillSlide = new THREE.Group();
@@ -447,26 +415,26 @@ function treadleBevelDrillingMachine(movement) {
   shaftSpinRotor.userData.role =
     'rotating-keyed-drillshaft-chuck-and-bit';
   const drillShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.095, 0.095, 3.03, 32),
+    new THREE.CylinderGeometry(.095,.095,3.43,32),
     drivenMaterial,
   );
-  drillShaft.position.y = 1.63;
+  drillShaft.position.y = 1.83;
   drillShaft.userData.role =
     'vertical-drillshaft-sliding-through-small-bevel-pinion';
   shaftSpinRotor.add(drillShaft);
   const shaftFeather = new THREE.Mesh(
-    new THREE.BoxGeometry(0.050, 2.54, 0.054),
+    new THREE.BoxGeometry(.050,1.05,.054),
     accentMaterial,
   );
-  shaftFeather.position.set(0.102, 1.82, 0);
+  shaftFeather.position.set(.102,1.83,0);
   shaftFeather.userData.role =
     'longitudinal-feather-key-sliding-in-pinion-groove';
   shaftSpinRotor.add(shaftFeather);
   const shaftSpinIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.040, 0.72, 0.028),
+    new THREE.BoxGeometry(.040,.26,.028),
     whiteMaterial,
   );
-  shaftSpinIndex.position.set(0, 1.00, 0.110);
+  shaftSpinIndex.position.set(0,.96,.110);
   shaftSpinIndex.userData.role =
     'white-index-showing-drillshaft-spin-during-axial-feed';
   shaftSpinRotor.add(shaftSpinIndex);
@@ -482,6 +450,7 @@ function treadleBevelDrillingMachine(movement) {
     drivenMaterial,
   );
   drillBit.position.y = -0.43;
+  drillBit.rotation.x=Math.PI;
   drillBit.userData.role = 'rotating-pointed-drill-bit';
   shaftSpinRotor.add(drillBit);
   const bitFlutes = [0, Math.PI / 2].map((angle) => {
@@ -503,7 +472,7 @@ function treadleBevelDrillingMachine(movement) {
   drillSlide.add(shaftSpinRotor);
 
   const thrustCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.205, 0.205, 0.22, 36),
+    boredCylinderGeometry(.205,.100,.22),
     darkMaterial,
   );
   thrustCollar.position.y = neutralCollarY;
@@ -511,7 +480,7 @@ function treadleBevelDrillingMachine(movement) {
     'nonrotating-thrust-collar-translating-with-drillshaft';
   drillSlide.add(thrustCollar);
   const collarYoke = makeBeam(
-    new THREE.Vector3(0, neutralCollarY, 0),
+    new THREE.Vector3(0, neutralCollarY, .18),
     new THREE.Vector3(0, neutralCollarY, linkagePlaneZ),
     { color: PALETTE.accent, depth: 0.10, thickness: 0.11 },
   );
@@ -544,7 +513,7 @@ function treadleBevelDrillingMachine(movement) {
   treadlePedal.position.x = treadleRightArmLength - 0.12;
   treadlePedal.userData.role = 'broad-foot-pad-at-end-of-treadle';
   lowerLeverRotor.add(treadlePedal);
-  const lowerPivotHub = cylinderAlongZ(0.16, 0.48, darkMaterial, 28);
+  const lowerPivotHub = boredJournal(.16,.084,.48,darkMaterial);
   lowerPivotHub.userData.role = 'fixed-pivot-boss-of-foot-treadle';
   lowerLeverRotor.add(lowerPivotHub);
   root.add(lowerLeverRotor);
@@ -567,29 +536,34 @@ function treadleBevelDrillingMachine(movement) {
   ) / 2;
   upperLeverBeam.userData.role = 'two-sided-upper-feed-lever';
   upperLeverRotor.add(upperLeverBeam);
-  const upperPivotHub = cylinderAlongZ(0.16, 0.48, darkMaterial, 28);
+  const upperPivotHub = boredJournal(.16,.084,.48,darkMaterial);
   upperPivotHub.userData.role = 'fixed-pivot-boss-of-upper-feed-lever';
   upperLeverRotor.add(upperPivotHub);
   root.add(upperLeverRotor);
 
-  const verticalConnector = makeDynamicLink({
-    thickness: 0.10,
-    depth: 0.13,
-    color: PALETTE.accent,
-    jointRadius: 0.12,
+  const makeFeedRod=(length,width,role)=>{
+    const {rod}=makeBoredLinkRod({bodyMaterial:accentMaterial,length,width,depth:.13,planeZ:0,boreRadius:.064,role});
+    rod.userData.setEndpoints=(a,b)=>{rod.position.set(a.x,a.y,.94);rod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
+    root.add(rod);return rod;
+  };
+  const verticalConnector=makeFeedRod(upperLeverPivot.distanceTo(lowerLeverPivot),.10,'rigid-vertical-link-joining-left-ends-of-treadle-and-upper-lever');
+  const upperThrustLink=makeFeedRod(thrustLinkLength,.095,'finite-link-from-upper-lever-to-nonrotating-thrust-collar');
+  const feedPins=[];
+  for(const [lever,x] of [[lowerLeverRotor,-leftLeverArmLength],[upperLeverRotor,-leftLeverArmLength],[upperLeverRotor,upperRightArmLength]]){
+    const pin=cylinderAlongZ(.06,.56,darkMaterial);pin.position.set(x,0,.14);lever.add(pin);feedPins.push(pin);
+  }
+  const collarPin=cylinderAlongZ(.06,.56,darkMaterial);collarPin.position.set(0,neutralCollarY,.82);drillSlide.add(collarPin);
+  const thrustRings=[neutralCollarY-.15,neutralCollarY+.15].map(y=>{
+    const ring=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.06,48),drivenMaterial);ring.position.y=y;shaftSpinRotor.add(ring);return ring;
   });
-  verticalConnector.userData.role =
-    'rigid-vertical-link-joining-left-ends-of-treadle-and-upper-lever';
-  root.add(verticalConnector);
-  const upperThrustLink = makeDynamicLink({
-    thickness: 0.095,
-    depth: 0.13,
-    color: PALETTE.accent,
-    jointRadius: 0.115,
+  const pivotShafts=[lowerLeverPivot,upperLeverPivot].map(p=>{
+    const pin=cylinderAlongZ(.08,.64,darkMaterial);pin.position.set(p.x,p.y,.66);root.add(pin);return pin;
   });
-  upperThrustLink.userData.role =
-    'finite-link-from-upper-lever-to-nonrotating-thrust-collar';
-  root.add(upperThrustLink);
+  for(const beam of [treadleBeam,upperLeverBeam]){
+    const p=beam.geometry.parameters;
+    const outline=poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]]);
+    beam.geometry.dispose();beam.geometry=plate(clip.difference(outline,poly(circle([-beam.position.x,0],.084,64))),-p.depth/2,p.depth/2);
+  }
 
   const frame = new THREE.Group();
   frame.userData.fixed = true;
@@ -620,7 +594,7 @@ function treadleBevelDrillingMachine(movement) {
   frame.add(frameTop);
   const inputBearingBridge = makeBeam(
     new THREE.Vector3(1.48, 2.38, frameRearZ),
-    new THREE.Vector3(1.48, 2.38, 0),
+    new THREE.Vector3(1.48, 2.38, -.205),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   inputBearingBridge.userData.role =
@@ -637,8 +611,8 @@ function treadleBevelDrillingMachine(movement) {
   inputBearing.userData.role = 'fixed-horizontal-input-shaft-bearing';
   frame.add(inputBearing);
   const lowerShaftGuide = torusNormalToAxis(
-    0.145,
-    0.050,
+    .155,
+    .050,
     frameMaterial,
     Y_AXIS,
     48,
@@ -648,30 +622,39 @@ function treadleBevelDrillingMachine(movement) {
     'fixed-lower-guide-bearing-for-sliding-rotating-drillshaft';
   frame.add(lowerShaftGuide);
   const upperShaftGuide = torusNormalToAxis(
-    0.145,
-    0.050,
+    .155,
+    .050,
     frameMaterial,
     Y_AXIS,
     48,
   );
-  upperShaftGuide.position.set(0, 2.94, 0);
+  upperShaftGuide.position.set(0,2.65,0);
   upperShaftGuide.userData.role =
     'fixed-upper-guide-bearing-for-sliding-rotating-drillshaft';
   frame.add(upperShaftGuide);
   const lowerLeverSupport = makeBeam(
     new THREE.Vector3(lowerLeverPivot.x, frameBaseY, frameRearZ),
-    lowerLeverPivot,
+    lowerLeverPivot.clone().setZ(.36),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   lowerLeverSupport.userData.role = 'fixed-support-for-treadle-pivot';
   frame.add(lowerLeverSupport);
   const upperLeverSupport = makeBeam(
     new THREE.Vector3(upperLeverPivot.x, 3.25, frameRearZ),
-    upperLeverPivot,
+    upperLeverPivot.clone().setZ(.36),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   upperLeverSupport.userData.role = 'fixed-support-for-upper-lever-pivot';
   frame.add(upperLeverSupport);
+  const shaftGuideBridges=[];
+  for(const [guide,start] of [[lowerShaftGuide,new THREE.Vector3(frameColumnX,.48,frameRearZ)],
+      [upperShaftGuide,new THREE.Vector3(0,3.25,frameRearZ)]]){
+    const rear=new THREE.Vector3(0,guide.position.y,frameRearZ);
+    for(const [a,b] of [[start,rear],[rear,new THREE.Vector3(0,guide.position.y,-.185)]]){
+      const support=makeBeam(a,b,{color:PALETTE.frame,depth:.12,thickness:.12});
+      frame.add(support);shaftGuideBridges.push(support);
+    }
+  }
   root.add(frame);
 
   const pitchConeNormal = (axis, pitchConeAngle) => {
@@ -873,7 +856,7 @@ function treadleBevelDrillingMachine(movement) {
       lowerLeverRotor,
       lowerLeverSupport,
       lowerPivotHub,
-      lowerShaftGuide,
+      lowerShaftGuide, shaftGuideBridges,
       pinionGear,
       pinionKeyway,
       shaftFeather,
@@ -889,7 +872,7 @@ function treadleBevelDrillingMachine(movement) {
       upperPivotHub,
       upperShaftGuide,
       upperThrustLink,
-      verticalConnector,
+      verticalConnector, feedPins, collarPin, pivotShafts, thrustRings,
     },
     degreesOfFreedom: {
       dependentCoordinates: [
@@ -1027,9 +1010,11 @@ function treadleBevelDrillingMachine(movement) {
     new THREE.Vector3(3.08, 4.04, 1.18),
   );
   root.userData.groundFloorY = -0.89;
+  root.userData.cameraDirection=new THREE.Vector3(3.8,1.4,12);
+  fitPistonGuide(root,update,demonstrationPeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.6, 3.5, 8.8),
+    cameraDirection:root.userData.cameraDirection,
     root,
     update,
   };

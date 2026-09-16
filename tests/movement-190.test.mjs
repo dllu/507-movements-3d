@@ -262,10 +262,10 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
 
   near(geometry.openHolderAngle, -0.14, 1e-15, 'open holder angle');
   near(geometry.clampedHolderAngle, 0, 1e-15, 'source holder angle');
-  assert.ok(geometry.screwAxialTravel > 0.234);
-  assert.ok(geometry.screwAxialTravel < 0.235);
-  assert.ok(geometry.screwTighteningTurns < -1.37);
-  assert.ok(geometry.screwTighteningTurns > -1.39);
+  assert.ok(geometry.screwAxialTravel > 0.252);
+  assert.ok(geometry.screwAxialTravel < 0.253);
+  assert.ok(geometry.screwTighteningTurns < -1.48);
+  assert.ok(geometry.screwTighteningTurns > -1.49);
   near(geometry.threadLead, geometry.threadPitch, 1e-15,
     'single-start lead equals pitch');
   near(
@@ -307,9 +307,9 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   );
   near(
     sourceState.holderBearingPoint.x,
-    sourcePointToModel(geometry.sourceScrewAxis).x,
+    sourcePointToModel(geometry.sourceScrewAxis).x + geometry.collarContactOffsetX,
     2e-15,
-    'source thrust point x',
+    'finite collar-rim thrust point x',
   );
   near(
     sourceState.holderBearingPoint.y,
@@ -401,10 +401,10 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
     assert.ok(state.shoeContactGap >= -2e-15);
     assert.equal(state.workpieceContactCompression, 0);
     assert.equal(state.pressureShoeAngle, 0);
-    assert.ok(state.leverForceRatio > 0.80);
-    assert.ok(state.leverForceRatio < 0.84);
-    assert.ok(state.clampForcePerHandleForce > 44);
-    assert.ok(state.clampForcePerHandleForce < 47);
+    assert.ok(state.leverForceRatio > 0.88);
+    assert.ok(state.leverForceRatio < 0.95);
+    assert.ok(state.clampForcePerHandleForce > 48);
+    assert.ok(state.clampForcePerHandleForce < 53);
     near(
       state.screwAngle,
       (geometry.screwAxialTravel - state.screwAxialDisplacement)
@@ -438,9 +438,9 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
     );
     near(
       state.holderBearingPoint.x,
-      geometry.screwAxisX,
+      geometry.thrustContactX,
       3e-15,
-      `fixed screw axis closure ${index}`,
+      `finite collar-rim contact closure ${index}`,
     );
     near(
       state.holderBearingPoint.y,
@@ -454,8 +454,8 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
       1e-15,
       `bearing remains on straight holder face ${index}`,
     );
-    assert.ok(state.bearingLocalPoint.x > 1.55);
-    assert.ok(state.bearingLocalPoint.x < 1.72);
+    assert.ok(state.bearingLocalPoint.x > 1.76);
+    assert.ok(state.bearingLocalPoint.x < 1.85);
     assert.equal(state.clamped, index === sampleCount);
     assert.ok(state.screwAxialDisplacement >= previousDisplacement - 1e-14);
     assert.ok(state.shoeContactGap <= previousGap + 1e-14);

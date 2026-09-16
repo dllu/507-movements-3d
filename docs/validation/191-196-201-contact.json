@@ -1,0 +1,65 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "56a772582006dd130e60f1153ab5b64466fc0acbffa8e94ce39734d529e2122c"
+    },
+    {
+      "file": "src/simulation/irregular-gear-family.js",
+      "sha256": "4eca3747edce5534b75937a1dc8a19237fb2515c82a6e28e43bea49d2a191d6c"
+    },
+    {
+      "file": "src/simulation/generated-irregular-gear-profiles.js",
+      "sha256": "881e1652ecf88aae7f1e25985914ea26d9fe597b7f4c3be8787a446326d6dff7"
+    },
+    {
+      "file": "src/simulation/band-epicyclic-geometry.js",
+      "sha256": "a6a6c0275260970d1d701cec0b1b871724396ff7be90c553d62686d635e25e53"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "scripts/review-irregular-gear-contact.mjs",
+      "sha256": "c48d7ebedc0bfe0c23ccc8a9476f6da3b1c93e4a8a95edccb776b2b136543626"
+    },
+    {
+      "file": "scripts/review-irregular-gear-contact.py",
+      "sha256": "ef2f7b853c936e6da8d211e6860c816fab915a78e3ebc17f31d1fdb5cb2c3a90"
+    }
+  ],
+  "method": "Union actual rendered gear-body/tooth triangles projected onto their common XY working plane, then check intersection area and separation at513 interleaved poses over the full motion cycle, including cycle closure. XY clearance is sufficient for these parallel planar solids; projection conservatively includes bevels. Shafts, hubs and supports are excluded. This does not prove continuous-time contact or transmitted load.",
+  "results": [
+    {
+      "id": 191,
+      "poses": 513,
+      "period": 12,
+      "projectedTriangles": 8006,
+      "maximumOverlapArea": 0.0,
+      "penetratingPoses": 0,
+      "minimumGap": 0.0012033233193169133,
+      "maximumGap": 0.001343013071010527
+    },
+    {
+      "id": 196,
+      "poses": 513,
+      "period": 19.54768762233649,
+      "projectedTriangles": 9664,
+      "maximumOverlapArea": 0.0,
+      "penetratingPoses": 0,
+      "minimumGap": 0.0006437733215509751,
+      "maximumGap": 0.0008134580985968897
+    },
+    {
+      "id": 201,
+      "poses": 513,
+      "period": 6.829549246934333,
+      "projectedTriangles": 5152,
+      "maximumOverlapArea": 0.0,
+      "penetratingPoses": 0,
+      "minimumGap": 0.001386125462141142,
+      "maximumGap": 0.001449766117721355
+    }
+  ]
+}

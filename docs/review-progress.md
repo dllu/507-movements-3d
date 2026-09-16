@@ -1,3 +1,35 @@
+# Eleventh family pass: generated gear profiles, drill feeds and engine joints
+
+Nine further movements receive bounded corrections across three reusable families:
+191/196/201, 366/379/380 and 421/422/423. A fourth parallel lane resolves 190's
+previously measured collar/holder interference. All 101 focused/regression tests,
+the production build and ten packaged playback/mobile-resize checks pass. The
+full review remains active.
+
+191/196 reuse offline swept-cutter envelopes for their irregular teeth; 201 uses
+compatible involutes and a correctly sized slot follower. The saved actual-profile
+audit checks 513 poses per movement with no projected overlap. The baked profiles
+total 121 KB and do not run their generation in the browser. The scroll seam in
+191 still requires a prescribed speed reset; continuous loaded engagement is not
+claimed. See the [gear review](irregular-gear-family-review.md).
+
+366/379/380 reuse closed screw threads, real bores, keys and drilled feed links.
+All three drill points now face down. The
+[drill review](drill-feed-family-review.md) retains an explicit source-layout
+residual in 366: its small bevel gear is still mounted below the large wheel.
+
+190 now solves support at the actual collar-rim/cheek-edge contacts. Its corrected
+stroke preserves the full collar radius and the source pose. The
+[screw review](movement-190-285-solid-review.md) records the finite-contact
+regression and retains the prescribed return/friction limitations.
+
+421–423 reuse bored links, journals and closed sector geometry. The trunk and
+gland in 421 share one axis; 422's vane, sealing head and slide valve clear real
+openings; 423 has separate bored rod planes and curved piston heads. Full-cycle
+framing, fog and ground settings are corrected. See the
+[engine review](steam-engine-421-423-working-solids.md) for finite-surface checks
+and the limits of these pressure-free explanatory cutaways.
+
 # Tenth family pass: continuous gears, open guides and measuring instruments
 
 Ten further movements receive bounded corrections across four parallel lanes:

@@ -319,3 +319,26 @@ checks pass. Other clamp/epicyclic builders and shared
 helpers remain byte-identical after excluding the scoped builders/imports.
 Historical contact reports retain their original source snapshots; the new
 503/504 report supersedes those movements' old stepped-wheel results.
+
+
+## Eleventh parallel batch
+
+- **190 follow-up:** actual finite collar-rim/cheek-edge support resolves the
+  previously measured penetration, preserving the collar radius and source pose.
+- **191/196/201:** offline generated mating contours, compatible involutes,
+  correctly sized slot follower and bored carrier joints. The 513-pose rendered
+  gear-profile audit clears all three meshes; 191's seam reset remains prescribed.
+- **366/379/380:** closed threads, open bores, compatible keys and shafts,
+  thrust capture, bored feed links and downward drill tips. 366's small-pinion
+  mounting still differs from the source layout and remains queued.
+- **421/422/423:** coaxial trunk/gland, closed curved sectors, open valve chest
+  and separated bored rods. Shared finite-solid helpers retain the exact
+  analytical linkage laws and improve full-cycle source-facing framing.
+
+The new gear envelopes are generated offline rather than approximated by eye.
+Ideal circles, sectors and screws remain analytical; no new decorative tracing
+or live browser contact solver is needed. Full pressure/load behavior is not
+claimed for the engine cutaways, and the whole 507-movement review remains active.
+
+101 focused/regression tests, the production build and ten packaged playback/mobile
+checks pass. See the family reports linked from [review progress](review-progress.md).

@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import * as THREE from 'three';
+import {createAuthoredGearMovement} from '../src/simulation/authored-gears.js';
+import {irregularCircularProfile} from '../src/simulation/irregular-gear-family.js';
+const catalog=JSON.parse(fs.readFileSync('src/data/movements.json')).movements;
+const model=id=>createAuthoredGearMovement(catalog[id-1]);
+const xy=p=>[p.x,p.y];
+const shape=mesh=>{const s=mesh.geometry.parameters.shapes;return {outline:s.extractPoints(64).shape.map(xy),buffer:mesh.geometry.parameters.options.bevelSize??0};};
+const result=[];
+for(const id of[191,196,201]){
+ const m=model(id),u=m.root.userData,b=u.blocks,g=u.geometry;
+ const period=u.transmission.cyclePeriod??u.transmission.inputCyclePeriod;
+ let a,bb,blank,cutters;
+ if(id===191){a=b.driven;bb=b.driver;blank=u.profileGenerationBlank??[shape(b.drivenBody),...b.drivenTeeth.map(shape)];cutters=[shape(b.driverBody),...b.driverTeeth.map(shape)];}
+ if(id===196){a=b.wheel;bb=b.pinion;const profile=irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070);cutters=[{outline:profile.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];blank=[{outline:Array.from({length:1024},(_,i)=>{const p=u.profileAtParameter(g.sourceProfileParameter+i*2*Math.PI/1024);return xy(p.pitchPoint.clone().addScaledVector(p.outwardNormal,.85*g.module));}),buffer:0}];}
+ if(id===201){a=b.eccentricGear;bb=b.pinion;blank=[{outline:a.userData.rotor.children[0].geometry.userData.outline.map(xy),buffer:0}];cutters=[{outline:bb.userData.rotor.children[0].geometry.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];}
+ const poseAt=time=>{m.update(time);m.root.updateMatrixWorld(true);const mat=a.userData.rotor.matrixWorld.clone().invert().multiply(bb.userData.rotor.matrixWorld),e=mat.elements;return[e[0],e[4],e[1],e[5],e[12],e[13]];};
+ result.push({id,period,bore:id===191?g.boreRadius:id===196?g.boreRadius:.13,depth:id===196?g.wheelDepth:.34,blank,cutters,poses:Array.from({length:id===191?8193:2049},(_,i)=>poseAt(period*i/(id===191?8192:2048))),auditPoses:Array.from({length:129},(_,i)=>poseAt(period*(i+.37)/129))});
+}
+fs.writeFileSync('/dev/shm/irregular-profile-input.json',JSON.stringify(result));

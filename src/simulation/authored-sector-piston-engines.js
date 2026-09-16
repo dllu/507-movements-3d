@@ -5,6 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { annularSector } from './steam-engine-parts.js';
+import { plate, poly, polygonClipping } from './finite-plate-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
@@ -14,17 +18,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
 }
 
 function makeTubeThrough(points, radius, material, role) {
@@ -41,23 +34,6 @@ function makeTubeThrough(points, radius, material, role) {
   return tube;
 }
 
-function arcPoints(radius, startAngle, endAngle, z, count = 80) {
-  const points = [];
-  for (let index = 0; index <= count; index += 1) {
-    const angle = THREE.MathUtils.lerp(
-      startAngle,
-      endAngle,
-      index / count,
-    );
-    points.push(new THREE.Vector3(
-      radius * Math.cos(angle),
-      radius * Math.sin(angle),
-      z,
-    ));
-  }
-  return points;
-}
-
 function sectorPistonEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
@@ -69,12 +45,12 @@ function sectorPistonEngine(movement) {
   const sectorHalfAngle = (2.012233 - 1.12936) / 2;
   const sectorRightAngle = pistonCenterAngle - sectorHalfAngle;
   const sectorLeftAngle = pistonCenterAngle + sectorHalfAngle;
-  const innerCylinderRadius = 0.58;
-  const outerCylinderRadius = 2.44;
+  const innerCylinderRadius = 0.42;
+  const outerCylinderRadius = 2.31;
   const pistonSealRadius = 2.30;
   const radialSealClearance = outerCylinderRadius - pistonSealRadius;
   const angularEndClearance = sectorHalfAngle - pistonAngularAmplitude;
-  const pistonVaneInnerRadius = 0.42;
+  const pistonVaneInnerRadius = 0.26;
   const pistonVaneLength = pistonSealRadius - pistonVaneInnerRadius;
   const valveTravelAmplitude = 0.30;
   const valveCenter = new THREE.Vector3(0, 1.96, 0.34);
@@ -260,51 +236,26 @@ function sectorPistonEngine(movement) {
   sectorBack.position.z = -0.36;
   sectorBack.userData.role = 'cutaway-back-of-sector-steam-space';
   cylinderA.add(sectorBack);
-  const innerArc = makeTubeThrough(
-    arcPoints(
-      innerCylinderRadius,
-      sectorRightAngle,
-      sectorLeftAngle,
-      0,
-    ),
-    0.115,
-    frameMaterial,
-    'inner-curved-wall-of-sector-cylinder-A',
-  );
-  const outerArc = makeTubeThrough(
-    arcPoints(
-      outerCylinderRadius,
-      sectorRightAngle,
-      sectorLeftAngle,
-      0,
-    ),
-    0.135,
-    frameMaterial,
-    'outer-curved-wall-of-sector-cylinder-A',
-  );
+  const innerArc = boredJournal(0.42, 0.282, 0.30, frameMaterial);
+  innerArc.position.z = -0.55;
+  innerArc.userData.role = 'inner-curved-wall-of-sector-cylinder-A';
+  const outerArc = new THREE.Mesh(annularSector(2.31, 2.50,
+    sectorRightAngle - 0.0125, sectorLeftAngle + 0.0125, 0.68), frameMaterial);
+  outerArc.userData.role = 'outer-curved-wall-of-sector-cylinder-A';
   cylinderA.add(innerArc, outerArc);
   for (const [angle, role] of [
     [sectorRightAngle, 'clockwise-end-wall-of-sector-cylinder-A'],
     [sectorLeftAngle, 'counterclockwise-end-wall-of-sector-cylinder-A'],
   ]) {
-    const wall = beamBetween(
-      new THREE.Vector3(
-        innerCylinderRadius * Math.cos(angle),
-        innerCylinderRadius * Math.sin(angle),
-        0,
-      ),
-      new THREE.Vector3(
-        outerCylinderRadius * Math.cos(angle),
-        outerCylinderRadius * Math.sin(angle),
-        0,
-      ),
-      0.18,
-      0.68,
-      frameMaterial,
-    );
+    const wall = new THREE.Mesh(annularSector(0.40, 2.50,
+      angle - 0.0125, angle + 0.0125, 1.04), frameMaterial);
+    wall.position.z = -0.18;
     wall.userData.role = role;
     cylinderA.add(wall);
   }
+  const bearingFoot = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.36, 0.30), frameMaterial);
+  bearingFoot.position.set(0, -0.35, -0.55);
+  cylinderA.add(bearingFoot);
   root.add(cylinderA);
 
   const rockshaftRotor = new THREE.Group();
@@ -312,19 +263,17 @@ function sectorPistonEngine(movement) {
   rockshaftRotor.userData.role =
     'rock-shaft-C-with-rigid-sector-piston-B';
   const pistonVane = new THREE.Mesh(
-    new THREE.BoxGeometry(pistonVaneLength, 0.16, 0.61),
+    annularSector(0.26, pistonSealRadius - 0.08, -0.018, 0.018, 0.61),
     pistonMaterial,
   );
-  pistonVane.position.x = (
-    pistonVaneInnerRadius + pistonSealRadius
-  ) / 2;
+
   pistonVane.userData.role = 'radial-oscillating-piston-B';
   rockshaftRotor.add(pistonVane);
   const pistonSeal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.31, 0.66),
+    annularSector(2.13, pistonSealRadius, -0.018, 0.018, 0.61),
     pistonMaterial,
   );
-  pistonSeal.position.x = pistonSealRadius - 0.10;
+
   pistonSeal.userData.role = 'outer-sealing-head-of-piston-B';
   rockshaftRotor.add(pistonSeal);
   const shaftC = cylinderAlongZ(0.28, 1.28, darkMaterial, 40);
@@ -351,19 +300,16 @@ function sectorPistonEngine(movement) {
 
   const fixedValveChest = new THREE.Group();
   fixedValveChest.userData.role = 'fixed-slide-valve-chest-above-A';
-  const chest = new THREE.Mesh(
-    new THREE.BoxGeometry(1.80, 0.68, 0.92),
-    frameMaterial,
-  );
+  const chest = new THREE.Mesh(plate(polygonClipping.difference(
+    poly([[-0.90, -0.40], [0.90, -0.40], [0.90, 0.40], [-0.90, 0.40]]),
+    poly([[-0.70, -0.21], [0.70, -0.21], [0.70, 0.21], [-0.70, 0.21]]),
+    poly([[0.69, -0.055], [0.91, -0.055], [0.91, 0.055], [0.69, 0.055]])
+  ), -0.38, 0.38), frameMaterial);
   chest.position.copy(valveCenter);
-  chest.position.z = -0.22;
   chest.userData.role = 'fixed-valve-D-chest';
   fixedValveChest.add(chest);
-  const valveGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(3.05, 0.12, 0.48),
-    darkMaterial,
-  );
-  valveGuide.position.copy(valveCenter);
+  const valveGuide = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.08, 0.72), darkMaterial);
+  valveGuide.position.copy(valveCenter).add(new THREE.Vector3(0, -0.25, 0));
   valveGuide.userData.role = 'horizontal-guide-for-slide-valve-D';
   fixedValveChest.add(valveGuide);
   root.add(fixedValveChest);
@@ -560,16 +506,11 @@ function sectorPistonEngine(movement) {
     },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.00, -1.86, -1.12),
-    new THREE.Vector3(3.20, 2.62, 1.18),
-  );
-  root.userData.cameraDistanceScale = 1.02;
-  root.userData.cameraDirection = new THREE.Vector3(4.8, 3.4, 10.8);
-  root.userData.groundFloorY = -1.86;
+  root.userData.cameraDirection = new THREE.Vector3(0.8, 0.3, 14);
   markShadows(root);
   foundation.receiveShadow = true;
-  update(0);
+  root.userData.cameraFov = 8;
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

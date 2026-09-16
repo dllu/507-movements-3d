@@ -111,8 +111,8 @@ test('movement 380 is a C-frame drill whose inner spindle passes through a separ
     blocks.fixedFeedNut.userData.fixedAgainstRotationAndTranslation,
     true,
   );
-  assert.equal(blocks.hollowSleeve.geometry.parameters.openEnded, true);
-  near(blocks.hollowSleeve.geometry.parameters.radiusTop,
+  assert.equal(blocks.hollowSleeve.geometry.userData.boreRadius, geometry.innerBoreRadius);
+  near(blocks.hollowSleeve.geometry.userData.outerProfile[0].radial,
     geometry.outerSleeveRadius, 0, 'outer sleeve radius');
   near(blocks.drillSpindle.geometry.parameters.radiusTop,
     geometry.drillSpindleRadius, 0, 'inner spindle radius');

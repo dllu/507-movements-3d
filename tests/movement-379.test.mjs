@@ -199,7 +199,7 @@ test('movement 379 drill tip, feed screw, and work rest share one exact vertical
     near(state.workRestY,
       state.feedRotorY + geometry.workRestLocalY, 0,
       'work rest follows lower screw axially');
-    near(state.clearance, state.drillTipY - state.workRestY, 0,
+    near(state.clearance, state.drillTipY - state.workRestTopY, 0,
       'opposed axial clearance');
     assert.ok(state.clearance >= geometry.minimumClearance - 2e-16,
       'rest never intersects drill tip');

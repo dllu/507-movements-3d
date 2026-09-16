@@ -495,8 +495,6 @@ test('movement 196 rendered transforms show independent wheel spin, arm vibratio
     canonicalTimes,
     geometry,
   } = model.root.userData;
-  const armStartJoint = blocks.carrierArm.children[1];
-  const armEndJoint = blocks.carrierArm.children[2];
   const pinionFaceIndex = blocks.pinion.userData.rotor.children.at(-1);
   const armEndpointZ = geometry.wheelDepth / 2 + 0.235;
 
@@ -534,7 +532,7 @@ test('movement 196 rendered transforms show independent wheel spin, arm vibratio
       `${name} uniformly rotating pinion B`,
     );
     vector3Near(
-      armStartJoint.position,
+      blocks.boredCarrierLink.position,
       new THREE.Vector3(
         geometry.carrierPivot.x,
         geometry.carrierPivot.y,
@@ -544,7 +542,9 @@ test('movement 196 rendered transforms show independent wheel spin, arm vibratio
       `${name} fixed arm pivot`,
     );
     vector3Near(
-      armEndJoint.position,
+      new THREE.Vector3(geometry.carrierLength, 0, 0)
+        .applyAxisAngle(Z_AXIS, blocks.boredCarrierLink.rotation.z)
+        .add(blocks.boredCarrierLink.position),
       new THREE.Vector3(
         state.wheelCenter.x,
         state.wheelCenter.y,

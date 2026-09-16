@@ -388,9 +388,9 @@ test('movement 423 update binds both piston rockers, both rods, common crank D, 
       state.bottomPiston.pistonAngle, 1.2e-16, 'bottom piston update');
     sameAngle(blocks.inductionValveA.rotation.z,
       state.valveAngle, 1.2e-16, 'single induction valve update');
-    near(blocks.topConnectingRod.scale.y,
+    near(blocks.topConnectingRod.geometry.userData.bores[1].x,
       geometry.connectingRodLength, 2e-15, 'top displayed rod length');
-    near(blocks.bottomConnectingRod.scale.y,
+    near(blocks.bottomConnectingRod.geometry.userData.bores[1].x,
       geometry.connectingRodLength, 2e-15, 'bottom displayed rod length');
     near(blocks.topAdmissionIndicator.scale.x,
       0.58 + 1.05 * state.topInductionOpening, 0,

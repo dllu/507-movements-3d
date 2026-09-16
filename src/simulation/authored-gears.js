@@ -1,3 +1,4 @@
+import {correctIrregularGearFamily} from './irregular-gear-family.js';
 import {singleInclinedTwoSpeedBevel, correctSixBevelTrain} from './bevel-200-226-corrections.js';
 import { correctGloboidalWorm } from './special-worm-solids.js';
 import { plate as finiteSlotPlate, poly as slotPolygon, circle as slotCircle, polygonClipping as slotClipping } from './finite-plate-geometry.js';
@@ -18082,6 +18083,7 @@ function progressiveSpeedScrollGears() {
     root.userData.kinematics = state;
   };
   update(0);
+  correctIrregularGearFamily(root, 191, update);
   return finish(root, update, new THREE.Vector3(7.2, 4.8, 14.4));
 }
 
@@ -26030,7 +26032,8 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.4, 10.8));
+  correctIrregularGearFamily(root, 196, update);
+  return finish(root, update, new THREE.Vector3(2, 1.4, 12));
 }
 
 function capsuleGuidedMangleRack() {
@@ -29734,6 +29737,7 @@ function eccentricGearCarriedPinionRocker() {
     root.userData.kinematics = state;
   };
   update(0);
+  correctIrregularGearFamily(root, 201, update);
   return finish(root, update, new THREE.Vector3(5.4, 3.8, 9.5));
 }
 

@@ -5,8 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { engineRod, annularSector } from './steam-engine-parts.js';
+
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
   const cylinder = new THREE.Mesh(
@@ -26,29 +28,6 @@ function beamBetween(start, end, width, depth, material) {
   beam.position.copy(start).add(end).multiplyScalar(0.5);
   beam.rotation.z = Math.atan2(delta.y, delta.x);
   return beam;
-}
-
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
-}
-
-function makeDynamicRod(radius, material, role) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 24),
-    material,
-  );
-  rod.userData.role = role;
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
 }
 
 function makeTubeThrough(points, radius, material, role) {
@@ -569,7 +548,7 @@ function doubleQuadrantEngine(movement) {
   const bottomSectorStart = bottomInnerAngle - 0.10;
   const bottomSectorEnd = bottomOuterAngle + 0.08;
   const chamberOuterRadius = pistonRockerRadius + 0.38;
-  const chamberInnerRadius = 0.42;
+  const chamberInnerRadius = 0.57;
 
   const topChamberBack = new THREE.Mesh(
     new THREE.RingGeometry(
@@ -628,37 +607,15 @@ function doubleQuadrantEngine(movement) {
   );
   root.add(topCylinderWall, bottomCylinderWall);
 
-  const topEndWall = beamBetween(
-    topFixedPivot.clone().add(new THREE.Vector3(
-      chamberInnerRadius * Math.cos(topSectorEnd),
-      chamberInnerRadius * Math.sin(topSectorEnd),
-      -0.02,
-    )),
-    topFixedPivot.clone().add(new THREE.Vector3(
-      chamberOuterRadius * Math.cos(topSectorEnd),
-      chamberOuterRadius * Math.sin(topSectorEnd),
-      -0.02,
-    )),
-    0.22,
-    0.62,
-    frameMaterial,
-  );
+  const topEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
+    topSectorEnd - 0.015, topSectorEnd + 0.015, 0.62), frameMaterial);
+  topEndWall.position.copy(topFixedPivot);
+  topEndWall.position.z = -0.02;
   topEndWall.userData.role = 'top-quadrant-cylinder-end-wall';
-  const bottomEndWall = beamBetween(
-    bottomFixedPivot.clone().add(new THREE.Vector3(
-      chamberInnerRadius * Math.cos(bottomSectorStart),
-      chamberInnerRadius * Math.sin(bottomSectorStart),
-      -0.02,
-    )),
-    bottomFixedPivot.clone().add(new THREE.Vector3(
-      chamberOuterRadius * Math.cos(bottomSectorStart),
-      chamberOuterRadius * Math.sin(bottomSectorStart),
-      -0.02,
-    )),
-    0.22,
-    0.62,
-    frameMaterial,
-  );
+  const bottomEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
+    bottomSectorStart - 0.015, bottomSectorStart + 0.015, 0.62), frameMaterial);
+  bottomEndWall.position.copy(bottomFixedPivot);
+  bottomEndWall.position.z = -0.02;
   bottomEndWall.userData.role = 'bottom-quadrant-cylinder-end-wall';
   root.add(topEndWall, bottomEndWall);
 
@@ -667,21 +624,25 @@ function doubleQuadrantEngine(movement) {
     group.position.copy(fixedPivot);
     group.userData.role = `${rolePrefix}-single-acting-piston-B`;
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(pistonRockerRadius - 0.42, 0.30, 0.46),
+      annularSector(0.42, pistonRockerRadius, -0.032, 0.032, 0.46),
       pistonMaterial,
     );
-    arm.position.set((pistonRockerRadius + 0.42) / 2, 0, z);
+    arm.position.set(0, 0, z);
     arm.userData.role = `${rolePrefix}-radial-body-of-piston-B`;
     group.add(arm);
+    const hub = boredJournal(0.55, 0.313, 0.46, pistonMaterial);
+    hub.position.z = z;
+    hub.userData.role = `${rolePrefix}-bored-piston-hub`;
+    group.add(hub);
     const sealingHead = new THREE.Mesh(
-      new THREE.BoxGeometry(0.48, 0.78, 0.58),
+      annularSector(pistonRockerRadius - 0.40, chamberOuterRadius - 0.19, -0.068, 0.068, 0.58),
       pistonMaterial,
     );
-    sealingHead.position.set(pistonRockerRadius - 0.20, 0, z);
+    sealingHead.position.set(0, 0, z);
     sealingHead.userData.role = `${rolePrefix}-outer-sealing-head-of-piston-B`;
     group.add(sealingHead);
-    const wristBearing = cylinderAlongZ(0.22, 0.72, whiteMaterial, 28);
-    wristBearing.position.set(pistonRockerRadius, 0, z + 0.06);
+    const wristBearing = cylinderAlongZ(0.22, 1.25, whiteMaterial, 28);
+    wristBearing.position.set(pistonRockerRadius, 0, 0.55);
     wristBearing.userData.role = `${rolePrefix}-piston-wrist-bearing`;
     group.add(wristBearing);
     return { arm, group, sealingHead, wristBearing };
@@ -690,12 +651,12 @@ function doubleQuadrantEngine(movement) {
   const topPistonParts = makePistonRocker(
     topFixedPivot,
     'top',
-    0.24,
+    0,
   );
   const bottomPistonParts = makePistonRocker(
     bottomFixedPivot,
     'bottom',
-    0.52,
+    0,
   );
   root.add(topPistonParts.group, bottomPistonParts.group);
 
@@ -724,8 +685,8 @@ function doubleQuadrantEngine(movement) {
   crankArm.position.set(crankRadius / 2, 0, 0.39);
   crankArm.userData.role = 'arm-of-common-crank-D';
   crankRotor.add(crankArm);
-  const commonCrankPin = cylinderAlongZ(0.23, 1.08, whiteMaterial, 28);
-  commonCrankPin.position.set(crankRadius, 0, 0.48);
+  const commonCrankPin = cylinderAlongZ(0.23, 1.42, whiteMaterial, 28);
+  commonCrankPin.position.set(crankRadius, 0, 0.68);
   commonCrankPin.userData.role =
     'single-common-crank-pin-D-shared-by-both-connecting-rods';
   crankRotor.add(commonCrankPin);
@@ -734,16 +695,10 @@ function doubleQuadrantEngine(movement) {
   crankShaft.userData.role = 'fixed-axis-of-common-crank-D';
   root.add(crankRotor, crankShaft);
 
-  const topConnectingRod = makeDynamicRod(
-    0.12,
-    rodMaterial,
-    'top-connecting-rod-from-B-to-common-crank-pin-D',
-  );
-  const bottomConnectingRod = makeDynamicRod(
-    0.12,
-    rodMaterial,
-    'bottom-connecting-rod-from-B-to-common-crank-pin-D',
-  );
+  const topConnectingRod = engineRod(connectingRodLength, 0.20, 0.34, 0.235, 0.16,
+    rodMaterial, 'top-connecting-rod-from-B-to-common-crank-pin-D');
+  const bottomConnectingRod = engineRod(connectingRodLength, 0.20, 0.34, 0.235, 0.16,
+    rodMaterial, 'bottom-connecting-rod-from-B-to-common-crank-pin-D');
   root.add(topConnectingRod, bottomConnectingRod);
 
   const valveChest = cylinderAlongZ(0.92, 0.42, frameMaterial, 40);
@@ -833,14 +788,14 @@ function doubleQuadrantEngine(movement) {
     inductionValveA.rotation.z = state.valveAngle;
 
     const crankTop = state.crankPin.clone();
-    crankTop.z = 0.47;
+    crankTop.z = 0.75;
     const topWrist = state.topPiston.wristPin.clone();
-    topWrist.z = 0.47;
+    topWrist.z = 0.75;
     topConnectingRod.userData.setEndpoints(crankTop, topWrist);
     const crankBottom = state.crankPin.clone();
-    crankBottom.z = 0.75;
+    crankBottom.z = 1.05;
     const bottomWrist = state.bottomPiston.wristPin.clone();
-    bottomWrist.z = 0.75;
+    bottomWrist.z = 1.05;
     bottomConnectingRod.userData.setEndpoints(crankBottom, bottomWrist);
 
     topAdmissionIndicator.scale.setScalar(
@@ -994,16 +949,11 @@ function doubleQuadrantEngine(movement) {
     },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.35, -5.18, -1.05),
-    new THREE.Vector3(5.25, 5.40, 1.45),
-  );
-  root.userData.cameraDistanceScale = 1.00;
-  root.userData.cameraDirection = new THREE.Vector3(5.8, 4.2, 13.4);
-  root.userData.groundFloorY = -5.18;
+  root.userData.cameraDirection = new THREE.Vector3(0.7, 0.3, 15);
   markShadows(root);
   foundation.receiveShadow = true;
-  update(0);
+  root.userData.cameraFov = 8;
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

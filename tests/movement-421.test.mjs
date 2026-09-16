@@ -321,7 +321,7 @@ test('movement 421 update binds crank rotation, piston/trunk translation, pitman
       'piston/trunk centerline update');
     near(blocks.pistonAndTrunk.position.y, state.pistonY, 0,
       'piston/trunk vertical update');
-    near(blocks.pitman.scale.y, geometry.pitmanLength, 9e-16,
+    near(blocks.pitman.geometry.userData.bores[1].x, geometry.pitmanLength, 9e-16,
       'rendered pitman length');
     near(blocks.upperSteam.scale.y, state.upperChamberHeight, 0,
       'upper chamber height update');

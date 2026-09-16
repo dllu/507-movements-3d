@@ -1707,11 +1707,20 @@ function screwThrustLeverClamp() {
   const clampedHandleCenterY = sourcePointToModel(sourceHandleCenter).y;
   const handleRadius = sourcePointToModel(sourceHandleTip).x - screwAxisX;
 
+  const holderPlateDepth = 0.12;
+  const holderCheekCenterZ = 0.32;
+  const collarRadius = 0.29;
+  const collarContactZ = holderCheekCenterZ - holderPlateDepth / 2;
+  // The finite collar supports both inner cheek edges. For the operating
+  // angles (<= 0), first contact is the positive-X rim intersection, not
+  // the screw axis. Opposed depth reactions cancel between the two cheeks.
+  const collarContactOffsetX = Math.sqrt(collarRadius ** 2 - collarContactZ ** 2);
+  const thrustContactX = screwAxisX + collarContactOffsetX;
   const holderBearingAtAngle = (holderAngle) => {
     const cosine = Math.cos(holderAngle);
     const sine = Math.sin(holderAngle);
     const localX = (
-      screwAxisX - holderPivot.x
+      thrustContactX - holderPivot.x
         + holderBearingFaceLocalY * sine
     ) / cosine;
     const localPoint = new THREE.Vector2(
@@ -1726,7 +1735,7 @@ function screwThrustLeverClamp() {
   const holderBearingDerivatives = (holderAngle) => {
     const secant = 1 / Math.cos(holderAngle);
     const tangent = Math.tan(holderAngle);
-    const horizontalOffset = screwAxisX - holderPivot.x;
+    const horizontalOffset = thrustContactX - holderPivot.x;
     return {
       first: horizontalOffset * secant ** 2
         + holderBearingFaceLocalY * secant * tangent,
@@ -1779,7 +1788,7 @@ function screwThrustLeverClamp() {
     phase: clampedScrewOriginY + threadLocalMinimumY + threadPitch / 2 };
   const threadGeometry = profile => helicalThread(profile, threadAngles(profile, 96)).rotateX(-Math.PI / 2);
   const shoePinRadius = shoePinLocal.length();
-  const clampedScrewArm = screwAxisX - holderPivot.x;
+  const clampedScrewArm = thrustContactX - holderPivot.x;
   const clampedWorkArm = holderPivot.x
     - sourcePointToModel(sourceShoeContact).x;
   const clampedLeverForceRatio = clampedScrewArm / clampedWorkArm;
@@ -1916,7 +1925,13 @@ function screwThrustLeverClamp() {
       nutCenterY - nutThreadMinimumY
     ) * threadWaveNumber + internalThreadPhaseAtMinimum;
     const dynamicWorkArm = holderPivot.x - shoeContactPoint.x;
-    const leverForceRatio = clampedScrewArm / dynamicWorkArm;
+    const leverForceRatio = derivatives.first / dynamicWorkArm;
+    const thrustContacts = [-1, 1].map(side => ({
+      point: new THREE.Vector3(bearing.worldPoint.x, bearing.worldPoint.y, side * collarContactZ),
+      // A permissible shared normal of the collar rim and inner cheek edge.
+      normal: new THREE.Vector3(-Math.sin(holderAngle), Math.cos(holderAngle),
+        -side * Math.sin(holderAngle) * collarContactZ / collarContactOffsetX).normalize(),
+    }));
     return {
       bearingAccelerationY,
       bearingContactGap: bearing.worldPoint.y
@@ -1937,7 +1952,7 @@ function screwThrustLeverClamp() {
       holderBearingPoint: new THREE.Vector3(
         bearing.worldPoint.x,
         bearing.worldPoint.y,
-        0,
+        collarContactZ,
       ),
       idealThreadAdvanceError: screwAxialDisplacement
         + threadLeadPerRadian * (screwAngle + screwTighteningAngleTravel),
@@ -1953,7 +1968,7 @@ function screwThrustLeverClamp() {
       screwAxialVelocity,
       screwOriginY,
       screwRevolutionsFromSource: screwAngle / FULL_TURN,
-      screwAxisError: bearing.worldPoint.x - screwAxisX,
+      screwAxisError: bearing.worldPoint.x - collarContactOffsetX - screwAxisX,
       shoeContactAcceleration: new THREE.Vector3(
         shoePinAcceleration.x,
         shoePinAcceleration.y,
@@ -1980,6 +1995,7 @@ function screwThrustLeverClamp() {
       threadPhaseError: externalThreadPhaseAtNut
         - internalThreadPhaseAtNut,
       thrustCollarTopY: screwOriginY + collarHalfThickness,
+      thrustContacts,
       workpieceContactCompression: Math.max(0, -shoeContactGap),
     };
   };
@@ -2201,15 +2217,17 @@ function screwThrustLeverClamp() {
   holder.userData.axis = Z_AXIS.clone();
   holder.userData.role =
     'one-rigid-two-cheek-holder-lever-on-fixed-fulcrum';
-  const holderModelPoints = sourceHolderOutline.map(sourcePointToModel);
+  // Recover the intended straight bearing land from its two-pixel slope
+  // in the hand engraving. Keep the source points in measurement metadata.
+  const holderModelPoints = sourceHolderOutline.map(point => sourcePointToModel(
+    point.x >= 327 && point.y >= 324 ? new THREE.Vector2(point.x, sourceHolderBearingFaceY) : point));
   const holderLocalPoints = holderModelPoints.map((point) => point.clone().sub(
     holderPivot,
   ));
-  const holderPlateDepth = 0.12;
-  const holderCheekCenterZ = 0.32;
   const holderCheeks = [-1, 1].map((sideSign) => {
     const cheek = new THREE.Mesh(
       extrudeModelOutline({
+        bevel: 0,
         depth: holderPlateDepth,
         holes: [
           { center: new THREE.Vector2(0, 0), radius: 0.18 },
@@ -2362,16 +2380,16 @@ function screwThrustLeverClamp() {
   externalThread.userData.role = 'single-start-right-hand-external-screw-thread';
   externalThread.userData.screwThread = true;
   const thrustCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.29, 0.29, collarThickness, 40),
+    new THREE.CylinderGeometry(collarRadius, collarRadius, collarThickness, 512),
     screwMaterial,
   );
   thrustCollar.userData.role =
     'rotating-thrust-collar-bearing-under-holder-short-arms';
   const collarIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.075, collarThickness + 0.025, 0.075),
+    new THREE.BoxGeometry(0.008, 0.040, 0.035),
     whiteMaterial,
   );
-  collarIndex.position.x = 0.24;
+  collarIndex.position.x = collarRadius - 0.002;
   collarIndex.userData.role = 'white-index-on-rotating-thrust-collar';
   const handleHub = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.22, 0.18, 36),
@@ -2533,6 +2551,10 @@ function screwThrustLeverClamp() {
     clampedWorkArm,
     collarHalfThickness,
     collarThickness,
+    collarRadius,
+    collarContactOffsetX,
+    collarContactZ,
+    thrustContactX,
     cyclePeriod,
     externalThreadTubeRadius,
     frameDepth,
@@ -2660,7 +2682,7 @@ function screwThrustLeverClamp() {
   };
   root.userData.hideGround = true;
   root.userData.solidReview = { externalProfile, internalProfile, threadCrestRadius,
-    flankClearance: 0.002, qualification: 'Prescribed lead law and gravity-aligned shoe; inferred square threads and bored lower arm. Collar/holder finite thrust contact and passive return remain unqualified.' };
+    flankClearance: 0.002, qualification: 'Prescribed lead law and gravity-aligned shoe; inferred square threads and bored lower arm. Finite collar-rim/cheek-edge support is analytic; holder return, shoe gravity alignment, friction and load response remain prescribed.' };
   root.traverse(object => { for (const material of object.material ? [].concat(object.material) : []) material.fog = false; });
   update(0);
   markShadows(root);

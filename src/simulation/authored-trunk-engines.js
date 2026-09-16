@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import {
   PALETTE,
-  makePulley,
   markShadows,
   matte,
   setSpin,
 } from './primitives.js';
 
+import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { sectionedCylinder, engineRod, annularSector } from './steam-engine-parts.js';
+
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
   const cylinder = new THREE.Mesh(
@@ -19,43 +20,20 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
-}
-
-function makeDynamicRod(radius, material, role) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 26),
-    material,
-  );
-  rod.userData.role = role;
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
-}
-
 function trunkEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const crankCenter = new THREE.Vector3(0, 2.78, 0.38);
+  const crankCenter = new THREE.Vector3(0, 2.78, 0);
   const crankRadius = 0.48;
   const pitmanLength = crankRadius * (7.45 / 1.5);
   const sourceCrankAngle = 0;
-  const pistonRadius = 1.02;
+  const pistonRadius = 1.115;
   const pistonThickness = 0.24;
   const trunkOuterRadius = 0.50;
   const trunkLength = 1.42;
   const cylinderHeadY = 1.12;
-  const cylinderBottomY = -2.28;
+  const cylinderBottomY = -0.90;
   const cylinderRadius = 1.20;
   const lowerEffectiveArea = Math.PI * pistonRadius ** 2;
   const trunkCrossSectionArea = Math.PI * trunkOuterRadius ** 2;
@@ -234,10 +212,10 @@ function trunkEngine(movement) {
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(4.30, 0.26, 2.34),
+    new THREE.BoxGeometry(3.36, 0.22, 1.92),
     frameMaterial,
   );
-  foundation.position.set(0, -2.50, -0.20);
+  foundation.position.set(0, -1.16, -0.20);
   foundation.userData.role = 'marine-trunk-engine-foundation';
   root.add(foundation);
 
@@ -281,7 +259,7 @@ function trunkEngine(movement) {
     new THREE.BoxGeometry(2.84, 0.20, 1.92),
     frameMaterial,
   );
-  lowerFlange.position.set(0, cylinderBottomY, -0.10);
+  lowerFlange.position.set(0, cylinderBottomY - 0.10, -0.10);
   lowerFlange.userData.role = 'lower-cylinder-flange';
   fixedCylinder.add(lowerFlange);
   for (const side of [-1, 1]) {
@@ -303,10 +281,8 @@ function trunkEngine(movement) {
     fixedCylinder.add(headHalf);
   }
   const stuffingBox = new THREE.Mesh(
-    new THREE.TorusGeometry(trunkOuterRadius + 0.06, 0.105, 14, 64),
-    darkMaterial,
+    boredCylinderGeometry(0.68, trunkOuterRadius + 0.008, 0.22), darkMaterial,
   );
-  stuffingBox.rotation.x = Math.PI / 2;
   stuffingBox.position.set(0, cylinderHeadY + 0.13, 0);
   stuffingBox.userData.role =
     'fixed-annular-stuffing-box-around-moving-trunk';
@@ -317,10 +293,10 @@ function trunkEngine(movement) {
   rearCrankSupport.userData.role = 'fixed-upper-crankshaft-support';
   for (const side of [-1, 1]) {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 4.62, 0.24),
+      new THREE.BoxGeometry(0.18, 3.86, 0.24),
       frameMaterial,
     );
-    post.position.set(side * 1.54, 0.43, -0.72);
+    post.position.set(side * 1.54, 0.80, -0.72);
     post.userData.role = 'rear-crankshaft-support-column';
     rearCrankSupport.add(post);
     const arm = new THREE.Mesh(
@@ -338,27 +314,20 @@ function trunkEngine(movement) {
   rearCrankSupport.add(crankAxle);
   root.add(rearCrankSupport);
 
-  const crankWheel = makePulley({
-    color: PALETTE.driver,
-    grooves: 0,
-    radius: 0.78,
-    spokes: 4,
-    width: 0.34,
-  });
+  const crankWheel = new THREE.Group();
+  crankWheel.userData.rotor = new THREE.Group();
+  crankWheel.add(crankWheel.userData.rotor);
   crankWheel.position.copy(crankCenter);
   crankWheel.userData.role = 'continuously-rotating-upper-crank';
   const crankArm = new THREE.Mesh(
     new THREE.BoxGeometry(crankRadius, 0.11, 0.19),
     pitmanMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, 0.25);
+  crankArm.position.set(crankRadius / 2, 0, -0.20);
   crankArm.userData.role = 'crank-throw-to-pitman';
   crankWheel.userData.rotor.add(crankArm);
-  const crankPinMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 24, 18),
-    whiteMaterial,
-  );
-  crankPinMarker.position.set(crankRadius, 0, 0.29);
+  const crankPinMarker = cylinderAlongZ(0.085, 0.43, whiteMaterial);
+  crankPinMarker.position.set(crankRadius, 0, -0.12);
   crankPinMarker.userData.role = 'white-upper-crank-pin';
   crankWheel.userData.rotor.add(crankPinMarker);
   root.add(crankWheel);
@@ -367,34 +336,27 @@ function trunkEngine(movement) {
   pistonAndTrunk.userData.role =
     'single-translating-piston-and-attached-hollow-trunk';
   const piston = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pistonRadius,
-      pistonRadius,
-      pistonThickness,
-      56,
-    ),
+    sectionedCylinder(pistonRadius, pistonThickness, 0.22),
     pistonMaterial,
   );
   piston.userData.role = 'vertical-sliding-piston';
   pistonAndTrunk.add(piston);
   for (const side of [-1, 1]) {
     const trunkSide = new THREE.Mesh(
-      new THREE.BoxGeometry(0.105, trunkLength, 0.62),
+      annularSector(0.40, trunkOuterRadius,
+        (side < 0 ? Math.PI : 0) - 0.65, (side < 0 ? Math.PI : 0) + 0.65, trunkLength),
       pistonMaterial,
     );
-    trunkSide.position.set(
-      side * trunkOuterRadius,
-      trunkLength / 2,
-      -0.02,
-    );
+    trunkSide.rotation.x = -Math.PI / 2;
+    trunkSide.position.y = trunkLength / 2;
     trunkSide.userData.role =
       'cutaway-side-of-hollow-trunk-attached-to-piston';
     pistonAndTrunk.add(trunkSide);
   }
   const trunkBack = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      trunkOuterRadius,
-      trunkOuterRadius,
+      trunkOuterRadius - 0.05,
+      trunkOuterRadius - 0.05,
       trunkLength,
       40,
       1,
@@ -408,29 +370,28 @@ function trunkEngine(movement) {
   trunkBack.userData.role = 'open-front-hollow-trunk-shell';
   pistonAndTrunk.add(trunkBack);
   const trunkTopRim = new THREE.Mesh(
-    new THREE.TorusGeometry(trunkOuterRadius, 0.052, 12, 48),
-    pistonMaterial,
+    boredCylinderGeometry(trunkOuterRadius, trunkOuterRadius - 0.10, 0.07), pistonMaterial,
   );
-  trunkTopRim.rotation.x = Math.PI / 2;
   trunkTopRim.position.set(0, trunkLength, 0);
   trunkTopRim.userData.role = 'open-upper-rim-of-moving-trunk';
   pistonAndTrunk.add(trunkTopRim);
-  const pistonPinMarker = cylinderAlongZ(0.15, 0.82, whiteMaterial, 28);
-  pistonPinMarker.position.z = 0.18;
+  const pistonPinMarker = cylinderAlongZ(0.085, 0.56, whiteMaterial, 28);
+  pistonPinMarker.position.z = -0.18;
   pistonPinMarker.userData.role =
     'white-pitman-pin-directly-in-piston-at-trunk-bottom';
   pistonAndTrunk.add(pistonPinMarker);
+  const pistonPinSeat = boredJournal(0.16, 0.088, 0.13, pistonMaterial);
+  pistonPinSeat.position.z = -0.20;
+  pistonPinSeat.userData.role = 'bored-rear-piston-pin-seat';
+  pistonAndTrunk.add(pistonPinSeat);
   root.add(pistonAndTrunk);
 
-  const pitman = makeDynamicRod(
-    0.085,
-    pitmanMaterial,
-    'constant-length-pitman-entering-hollow-trunk',
-  );
+  const pitman = engineRod(pitmanLength, 0.10, 0.145, 0.088, 0.12,
+    pitmanMaterial, 'constant-length-pitman-entering-hollow-trunk');
   root.add(pitman);
 
   const upperSteam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.90, 0.90, 1, 48),
+    boredCylinderGeometry(1.09, trunkOuterRadius + 0.015, 1),
     highSteamMaterial,
   );
   upperSteam.userData.role =
@@ -449,20 +410,20 @@ function trunkEngine(movement) {
     setSpin(crankWheel, state.crankAngle);
     pistonAndTrunk.position.set(0, state.pistonY, crankCenter.z);
     pitman.userData.setEndpoints(
-      state.crankPin.clone().setZ(0.72),
-      state.pistonPin.clone().setZ(0.72),
+      state.crankPin.clone().setZ(0),
+      state.pistonPin.clone().setZ(0),
     );
     upperSteam.position.set(
       0,
       state.pistonY + pistonThickness / 2
         + state.upperChamberHeight / 2,
-      -0.04,
+      0,
     );
     upperSteam.scale.y = state.upperChamberHeight;
     lowerSteam.position.set(
       0,
       cylinderBottomY + state.lowerChamberHeight / 2,
-      -0.04,
+      0,
     );
     lowerSteam.scale.y = state.lowerChamberHeight;
   };
@@ -582,16 +543,11 @@ function trunkEngine(movement) {
     },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.28, -2.66, -1.20),
-    new THREE.Vector3(2.28, 3.72, 1.20),
-  );
-  root.userData.cameraDistanceScale = 1.02;
-  root.userData.cameraDirection = new THREE.Vector3(5.0, 3.8, 10.7);
-  root.userData.groundFloorY = -2.66;
+  root.userData.cameraDirection = new THREE.Vector3(0.8, 0.4, 14);
   markShadows(root);
   foundation.receiveShadow = true;
-  update(0);
+  root.userData.cameraFov = 8;
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

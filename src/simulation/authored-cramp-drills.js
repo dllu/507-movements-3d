@@ -5,6 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
+import {boreBoxY,replaceYJournal,closeFeedThread} from './drill-feed-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 
 class VerticalHelixCurve extends THREE.Curve {
@@ -74,9 +77,10 @@ function opposingFeedScrewCrampDrill(movement) {
     commonAxisZ,
   );
   const workRestLocalY = 1.55;
+  const workRestHalfHeight=.085;
   const maximumFeedTravel = threadLead * feedTurnAmplitude;
   const minimumClearance = drillTipY
-    - (feedBaseY + workRestLocalY + maximumFeedTravel);
+    - (feedBaseY + workRestLocalY + workRestHalfHeight + maximumFeedTravel);
   const threadMinimumY = 0.31;
   const threadMaximumY = 1.46;
   const threadTurns = (threadMaximumY - threadMinimumY) / threadLead;
@@ -101,7 +105,8 @@ function opposingFeedScrewCrampDrill(movement) {
     const axialAcceleration = threadLead * feedTurnsAcceleration;
     const feedRotorY = feedBaseY + axialTravel;
     const workRestY = feedRotorY + workRestLocalY;
-    const clearance = drillTipY - workRestY;
+    const workRestTopY=workRestY+workRestHalfHeight;
+    const clearance = drillTipY - workRestTopY;
     return {
       axialAcceleration,
       axialSpeed,
@@ -120,7 +125,7 @@ function opposingFeedScrewCrampDrill(movement) {
       feedTurnsRate,
       threadAdvanceResidual: axialTravel
         + threadLead * feedScrewAngle / FULL_TURN,
-      workRestY,
+      workRestY, workRestTopY,
     };
   };
 
@@ -201,11 +206,11 @@ function opposingFeedScrewCrampDrill(movement) {
   root.add(drillRotor);
   const drillSpindle = cylinderAlongY(
     0.105,
-    1.36,
+    1.66,
     darkMaterial,
     28,
   );
-  drillSpindle.position.y = -0.42;
+  drillSpindle.position.y = -.27;
   drillSpindle.userData.role = 'fixed-height-rotating-drill-spindle';
   drillRotor.add(drillSpindle);
   const drillChuck = cylinderAlongY(
@@ -221,7 +226,8 @@ function opposingFeedScrewCrampDrill(movement) {
     new THREE.ConeGeometry(0.12, 0.54, 5),
     darkMaterial,
   );
-  drillBit.position.y = -1.02;
+  drillBit.position.y = drillTipLocalY+.54/2;
+  drillBit.rotation.x=Math.PI;
   drillBit.rotation.y = Math.PI / 5;
   drillBit.userData.role = 'downward-pointing-drill-bit';
   drillRotor.add(drillBit);
@@ -252,10 +258,10 @@ function opposingFeedScrewCrampDrill(movement) {
   drillCrankKnob.userData.role = 'free-turning-upper-crank-hand-knob';
   drillRotor.add(drillCrankKnob);
   const drillIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.055, 0.055),
+    new THREE.BoxGeometry(.08,.12,.012),
     whiteMaterial,
   );
-  drillIndex.position.set(-0.34, -0.73, 0.225);
+  drillIndex.position.set(0,-.77,.222);
   drillIndex.userData.role = 'white-drill-spindle-rotation-index';
   drillRotor.add(drillIndex);
 
@@ -338,12 +344,19 @@ function opposingFeedScrewCrampDrill(movement) {
     feedScrewRotor.add(knob);
   }
   const feedIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.47, 0.055, 0.055),
+    new THREE.BoxGeometry(.24,.055,.055),
     whiteMaterial,
   );
-  feedIndex.position.set(0.34, 0.18, 0);
+  feedIndex.position.set(.35,.045,0);
   feedIndex.userData.role = 'white-feed-screw-rotation-index';
   feedScrewRotor.add(feedIndex);
+
+  replaceYJournal(drillHousing,.34,.109,.72);
+  replaceYJournal(fixedFeedNut,.31,.189,.40);
+  boreBoxY(frameTop,.115,commonAxisX-frameTop.position.x);
+  boreBoxY(frameBottom,.195,commonAxisX-frameBottom.position.x);
+  const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:.13,outer:.185,
+    low:threadMinimumY,high:threadMaximumY,lead:threadLead,feedBaseY,nutY:nutCenterY,nutLength:.40});
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -377,7 +390,7 @@ function opposingFeedScrewCrampDrill(movement) {
       feedScrewCore,
       feedScrewRotor,
       feedThread,
-      fixedFeedNut,
+      fixedFeedNut, nutThread,
       frameBack,
       frameBottom,
       frameTop,
@@ -430,7 +443,7 @@ function opposingFeedScrewCrampDrill(movement) {
       threadMaximumY,
       threadMinimumY,
       threadTurns,
-      workRestLocalY,
+      workRestLocalY, workRestHalfHeight,
     },
     mechanism:
       'one-fixed-c-cramp-carries-one-axially-fixed-upper-hand-crank-drill-and-one-separate-coaxial-opposed-lower-feed-screw-whose-handwheel-raises-the-work-rest-through-a-fixed-nut',
@@ -495,9 +508,11 @@ function opposingFeedScrewCrampDrill(movement) {
     new THREE.Vector3(2.42, 3.46, 1.18),
   );
   root.userData.groundFloorY = -1.90;
+  root.userData.cameraDirection=new THREE.Vector3(1.1,.6,14);
+  fitPistonGuide(root,update,demonstrationPeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.8, 3.0, 8.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
@@ -746,10 +761,10 @@ function throughFeedScrewCrampDrill(movement) {
     'feed-sleeve-thrust-collar-capturing-inner-drill-axially';
   feedSleeveRotor.add(thrustCollar);
   const feedIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.052, 0.052),
+    new THREE.BoxGeometry(.35,.012,.115),
     whiteMaterial,
   );
-  feedIndex.position.set(0.36, 0.77, 0);
+  feedIndex.position.set(.45,.96,0);
   feedIndex.userData.role = 'white-hollow-feed-screw-rotation-index';
   feedSleeveRotor.add(feedIndex);
 
@@ -783,7 +798,8 @@ function throughFeedScrewCrampDrill(movement) {
     new THREE.ConeGeometry(0.12, 0.58, 5),
     darkMaterial,
   );
-  drillBit.position.y = -1.44;
+  drillBit.position.y = drillTipLocalY+.58/2;
+  drillBit.rotation.x=Math.PI;
   drillBit.rotation.y = Math.PI / 5;
   drillBit.userData.role = 'downward-bit-on-through-spindle';
   drillRotor.add(drillBit);
@@ -814,12 +830,31 @@ function throughFeedScrewCrampDrill(movement) {
   drillCrankKnob.userData.role = 'upper-drill-crank-hand-knob';
   drillRotor.add(drillCrankKnob);
   const drillIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.50, 0.052, 0.052),
+    new THREE.BoxGeometry(.08,.12,.012),
     whiteMaterial,
   );
-  drillIndex.position.set(-0.33, -1.16, 0.23);
+  drillIndex.position.set(0,-1.26,.222);
   drillIndex.userData.role = 'white-inner-drill-spindle-rotation-index';
   drillRotor.add(drillIndex);
+
+  replaceYJournal(hollowSleeve,outerSleeveRadius,innerBoreRadius,sleeveLength);
+  // End rings remain inspection faces; the sleeve itself now includes its inner wall.
+  replaceYJournal(fixedFeedNut,.39,.325,.70);
+  replaceYJournal(feedHandleHub,.34,innerBoreRadius,.22);
+  replaceYJournal(thrustCollar,.32,.095,.28);
+  boreBoxY(feedHandleBar,innerBoreRadius);
+  boreBoxY(frameTop,.331,commonAxisX-frameTop.position.x);
+  const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:outerSleeveRadius,outer:.321,
+    low:sleeveMinimumY,high:sleeveMaximumY,lead:threadLead,feedBaseY,nutY:1.33,nutLength:.70});
+  // A hollow neck connects the cross handle to the sleeve; opposed rotating
+  // thrust rings capture the independently spinning inner drill shaft.
+  const sleeveNeck=new THREE.Mesh(boredCylinderGeometry(.255,innerBoreRadius,.16),feedMaterial);
+  sleeveNeck.position.y=.76;feedSleeveRotor.add(sleeveNeck);
+  const lowerSleeveNeck=new THREE.Mesh(boredCylinderGeometry(.23,innerBoreRadius,.08),feedMaterial);
+  lowerSleeveNeck.position.y=-.73;feedSleeveRotor.add(lowerSleeveNeck);
+  const thrustRings=[-.88-.18,-.88+.18].map(y=>{
+    const ring=cylinderAlongY(.14,.06,drillMaterial);ring.position.y=y;drillRotor.add(ring);return ring;
+  });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -855,12 +890,12 @@ function throughFeedScrewCrampDrill(movement) {
       feedIndex,
       feedSleeveRotor,
       feedThread,
-      fixedFeedNut,
+      fixedFeedNut, nutThread,
       fixedWorkRest,
       frameBack,
       frameBottom,
       frameTop,
-      hollowSleeve,
+      hollowSleeve, sleeveNeck, lowerSleeveNeck, thrustRings,
       sleeveEndRings,
       thrustCollar,
     },
@@ -977,9 +1012,11 @@ function throughFeedScrewCrampDrill(movement) {
     new THREE.Vector3(2.50, 3.52, 1.22),
   );
   root.userData.groundFloorY = -1.50;
+  root.userData.cameraDirection=new THREE.Vector3(1.1,.6,14);
+  fitPistonGuide(root,update,demonstrationPeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.8, 3.0, 8.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
