@@ -1,3 +1,46 @@
+# Sixth family pass: generated worm wheels, finite catches and guided links
+
+Twelve movements received corrections across four parallel lanes: 202/264,
+217–218, 262/263/265 and 337–341. The integrated focused run passes 112 tests,
+including shared worm regressions. The production build and ten packaged
+playback/mobile checks pass (202, 217, 218, 262–265, 337, 339 and 341). These are
+bounded corrections; the full 507-movement review remains active.
+
+202 and 264 now have integral bored worm solids and offline-generated mating
+wheel profiles. A 33-pose audit through a complete input turn finds no sampled
+working-solid penetration: 202's maximum nearest gap is 0.002338 model units;
+264's two wheels reach 0.000546/0.000426. Both 264 wheels use the same physical
+worm cutter, with independently correct 100/101 generating ratios. Corrected
+nested journals connect each wheel to its own output. Playback measurements
+were refreshed: 264 now runs at 2.4 seconds per worm revolution, preserving its
+true 10,100-turn relative-output beat. Approximate cutter envelopes and loaded
+contact remain qualified in the [worm review](movement-202-264.md).
+
+217–218's radial notch flanks previously cut through their releasing hook while
+the nominal clearance diagnostic reported success. A small offline swept-hook
+pocket clears that exit and preserves both load-bearing flanks, with less than
+0.1 degree take-up in each direction. Rendered-solid tests and a legacy-notch
+negative control pass. The finite trip actuator still does not supply the
+whole prescribed lifting stroke; this remains an explicit passive-contact
+exception in the [catch review](movement-217-218.md).
+
+262/263 now use real mating screw/nut threads, bored rollers and a connected
+spring carriage outside the cone's sweep. Uniform input between short end ramps
+replaces continuous acceleration; the inferred return remains disclosed.
+265's sliding roller has true shaft passages and loses its invented frame.
+Shared finite-surface tests cover the revised cone, roller, thread and support
+interfaces through 65 poses. See the [cone review](cone-friction-family-review.md)
+for ideal rolling assumptions and source differences.
+
+337–341 reuse bored rods with intermediate pin stations, correctly engaged
+shafts and separated fixed bearings. 339's bored slider now lies inside its
+slot and the slot joins its frame. Analytic rigid-link closure and the source
+animation's documented dimension corrections are retained. Source comparisons
+and full-cycle framing pass; legacy beam/crosshead joints remain outside this
+bounded pass. See the [linkage review](vibrating-direct-action-family-review.md).
+
+## Earlier checkpoints
+
 # Fifth family pass: finite cam contact, piston guides and compound gears
 
 Eleven movements received corrections in four parallel lanes: 186–187,

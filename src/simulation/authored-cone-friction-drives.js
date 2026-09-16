@@ -1,7 +1,7 @@
+import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
-  makeBeam,
   makeShaft,
   markShadows,
   matte,
@@ -48,15 +48,6 @@ function cylinderAlongLocalZ({
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function torusAroundAxis(radius, tube, axis, material, segments = 52) {
-  const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, tube, 10, segments),
-    material,
-  );
-  torus.quaternion.setFromUnitVectors(Z_AXIS, axis.clone().normalize());
-  return torus;
 }
 
 function traversingRollerConeDrive(movement) {
@@ -128,10 +119,6 @@ function traversingRollerConeDrive(movement) {
   const inkMaterial = matte(PALETTE.ink, {
     metalness: 0.25,
     roughness: 0.46,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.13,
-    roughness: 0.67,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
 
@@ -212,6 +199,8 @@ function traversingRollerConeDrive(movement) {
     radiusBottom: rollerBodyRadius,
     radialSegments: 72,
   });
+  rollerBody.geometry.dispose();
+  rollerBody.geometry = boredCylinderGeometry(rollerBodyRadius, .061, rollerWidth);
   rollerBody.userData.role = 'thin-friction-roller-disk';
   rollerRotor.add(rollerBody);
   const rollerTread = new THREE.Mesh(
@@ -231,6 +220,8 @@ function traversingRollerConeDrive(movement) {
     radiusBottom: 0.16,
     radialSegments: 32,
   });
+  rollerHub.geometry.dispose();
+  rollerHub.geometry = boredCylinderGeometry(.16, .061, rollerWidth + .18);
   rollerHub.userData.role = 'roller-hub-sliding-on-guide-shaft';
   rollerRotor.add(rollerHub);
   const rollerIndices = [-1, 1].map((side) => {
@@ -267,78 +258,12 @@ function traversingRollerConeDrive(movement) {
   );
   contactMarker.userData.role = 'moving-no-slip-cone-roller-contact';
 
-  const baseY = -2.08;
-  const coneBearingXs = [-2.35, 2.35];
-  const coneBearings = coneBearingXs.map((x, index) => {
-    const bearing = torusAroundAxis(0.16, 0.038, X_AXIS, frameMaterial, 36);
-    bearing.position.set(x, 0, 0);
-    bearing.userData.role = index === 0
-      ? 'fixed-large-end-cone-shaft-bearing'
-      : 'fixed-small-end-cone-shaft-bearing';
-    return bearing;
-  });
-  const coneBearingPosts = coneBearings.map((bearing, index) => {
-    const post = makeBeam(
-      new THREE.Vector3(bearing.position.x, baseY, -0.58),
-      bearing.position,
-      { color: PALETTE.frame, depth: 0.15, thickness: 0.13 },
-    );
-    post.userData.role = index === 0
-      ? 'large-end-cone-bearing-standard'
-      : 'small-end-cone-bearing-standard';
-    return post;
-  });
-
-  const guideHalfVector = coneGeneratorAxis.clone().multiplyScalar(
-    rollerGuideLength / 2 - 0.12,
-  );
-  const guideBearingCenters = [
-    guideOrigin.clone().sub(guideHalfVector),
-    guideOrigin.clone().add(guideHalfVector),
-  ];
-  const guideBearings = guideBearingCenters.map((center, index) => {
-    const bearing = torusAroundAxis(
-      0.13,
-      0.032,
-      coneGeneratorAxis,
-      frameMaterial,
-      34,
-    );
-    bearing.position.copy(center);
-    bearing.userData.role = index === 0
-      ? 'fixed-left-traverse-guide-bearing'
-      : 'fixed-right-traverse-guide-bearing';
-    return bearing;
-  });
-  const guideBearingPosts = guideBearings.map((bearing, index) => {
-    const post = makeBeam(
-      new THREE.Vector3(bearing.position.x, baseY, -0.82),
-      bearing.position,
-      { color: PALETTE.frame, depth: 0.13, thickness: 0.11 },
-    );
-    post.userData.role = index === 0
-      ? 'left-traverse-guide-standard'
-      : 'right-traverse-guide-standard';
-    return post;
-  });
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.7, baseY, -0.82),
-    new THREE.Vector3(2.7, baseY, -0.82),
-    { color: PALETTE.frame, depth: 0.24, thickness: 0.16 },
-  );
-  baseRail.userData.role = 'fixed-cone-drive-base-rail';
-
   root.add(
     cone,
     coneShaft,
     roller,
     rollerGuide,
     contactMarker,
-    ...coneBearings,
-    ...coneBearingPosts,
-    ...guideBearings,
-    ...guideBearingPosts,
-    baseRail,
   );
 
   const stateAtTime = (time) => {
@@ -412,10 +337,7 @@ function traversingRollerConeDrive(movement) {
   root.userData.mechanism =
     'constant-speed-conical-drum-friction-drives-one-generator-axis-roller-whose-smooth-lengthwise-traverse-varies-output-speed-in-direct-proportion-to-local-cone-radius';
   root.userData.blocks = {
-    baseRail,
     cone,
-    coneBearingPosts,
-    coneBearings,
     coneBody,
     coneFaceRims,
     coneHub,
@@ -423,8 +345,6 @@ function traversingRollerConeDrive(movement) {
     coneRotor,
     coneShaft,
     contactMarker,
-    guideBearingPosts,
-    guideBearings,
     roller,
     rollerBody,
     rollerGuide,
@@ -562,12 +482,16 @@ function traversingRollerConeDrive(movement) {
     };
     root.userData.kinematics = state;
   };
-  update(0);
+  contactMarker.visible = false;
+  root.userData.minimumDisplayCycleSeconds = 8;
+  root.userData.cameraFov = 8;
+  root.userData.reconstructionNote = 'The roller slides along the cone while its circumferential speed follows the local radius. The traverse is illustrative; sideways sliding is permitted at the contact.';
+  fitPistonGuide(root, update, traversePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.2, 3.8, 9.8),
+    cameraDirection: new THREE.Vector3(-.75, .15, 14),
   };
 }
 

@@ -214,3 +214,26 @@ family reviews linked from [review progress](review-progress.md) distinguish
 sampled finite-contact evidence from unresolved source interpretations and
 passive dynamics. These families reuse analytical constraints without adding
 live browser physics or manual pixel tracing.
+
+
+## Sixth parallel batch
+
+- **202/264:** integral bored worm solids and offline wheel profiles generated
+  with the actual common cutter motion. Both 264 counts retain exact indexing;
+  corrected nested journals and refreshed playback profiles prevent misleading
+  speed. The 33-pose working-mesh audit passes with nearby working surfaces.
+- **217–218:** swept-hook notch pockets remove finite release interference while
+  retaining two opposing load-bearing flanks. The diagnostic now checks actual
+  flanks. A restored legacy-notch negative control detects the old fault.
+- **262/263/265:** real roller bores, mating screw/nut solids, connected spring
+  guides clear of the cone, readable speed and source-facing views. Preserve
+  ideal circumferential rolling; axial sliding and inferred returns are explicit.
+- **337–341:** shared bored rods and intermediate eyes, engaged fixed pins,
+  separated bearings, and a physically guided/connected 339 slider assembly.
+
+112 focused tests, the production build and ten packaged playback/mobile checks
+pass. Remaining catch-trip dynamics,
+loaded worm contact, inferred cone guides and legacy linkage joints remain in
+the family reviews linked from [review progress](review-progress.md). This pass
+uses geometry generated offline and existing analytic constraints; no new live
+browser physics or hand-traced decorative contours are needed.

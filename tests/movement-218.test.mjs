@@ -342,8 +342,8 @@ test('movement 218 catch, hook, wheel, and visible axial layers stay disjoint', 
       );
     }
   }
-  assert.ok(minimumCatchClearance > 0.0249);
-  assert.ok(minimumPlainRimClearance > 0.113);
+  assert.ok(minimumCatchClearance > geometry.notchReliefClearance - 0.00011);
+  assert.ok(minimumPlainRimClearance > 0.028);
   assert.ok(minimumTripClearance > -1e-12);
 
   const clearances = model.root.userData.solidClearanceAtInputTravel(

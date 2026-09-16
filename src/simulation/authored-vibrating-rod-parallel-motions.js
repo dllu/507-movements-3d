@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
+import { fitPistonGuide } from './piston-guide-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -130,63 +132,6 @@ function rigidLinkRates(vector, velocity, acceleration) {
   };
 }
 
-function makeRigidRod({
-  bodyMaterial,
-  depth,
-  eyeMaterial,
-  length,
-  planeZ,
-  role,
-  width,
-}) {
-  const rod = new THREE.Group();
-  rod.userData.nominalLength = length;
-  rod.userData.role = role;
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(length, width, depth),
-    bodyMaterial,
-  );
-  body.position.set(length / 2, 0, planeZ);
-  body.userData.role = `${role}-constant-length-shank`;
-  const startBoss = cylinderAlongZ(width * 0.88, depth * 1.18,
-    bodyMaterial, 34);
-  startBoss.position.z = planeZ;
-  startBoss.userData.role = `${role}-start-boss`;
-  const endBoss = cylinderAlongZ(width * 0.88, depth * 1.18,
-    bodyMaterial, 34);
-  endBoss.position.set(length, 0, planeZ);
-  endBoss.userData.role = `${role}-end-boss`;
-  const startEye = new THREE.Mesh(
-    new THREE.TorusGeometry(width * 0.48, width * 0.12, 8, 30),
-    eyeMaterial,
-  );
-  startEye.position.z = planeZ + depth / 2 + 0.014;
-  startEye.userData.role = `${role}-start-eye`;
-  const endEye = new THREE.Mesh(
-    new THREE.TorusGeometry(width * 0.48, width * 0.12, 8, 30),
-    eyeMaterial,
-  );
-  endEye.position.set(length, 0, planeZ + depth / 2 + 0.014);
-  endEye.userData.role = `${role}-end-eye`;
-  const startAnchor = new THREE.Object3D();
-  startAnchor.position.z = planeZ;
-  startAnchor.userData.role = `${role}-analytic-start`;
-  const endAnchor = new THREE.Object3D();
-  endAnchor.position.set(length, 0, planeZ);
-  endAnchor.userData.role = `${role}-analytic-end`;
-  rod.add(body, startBoss, endBoss, startEye, endEye,
-    startAnchor, endAnchor);
-  return {
-    body,
-    endAnchor,
-    endBoss,
-    endEye,
-    rod,
-    startAnchor,
-    startBoss,
-    startEye,
-  };
-}
 
 function midpointVibratingRodParallelMotion(movement) {
   const root = new THREE.Group();
@@ -471,7 +416,7 @@ function midpointVibratingRodParallelMotion(movement) {
   radiusBearing.position.set(radiusPivotF.x, radiusPivotF.y, -0.26);
   radiusBearing.userData.fixed = true;
   radiusBearing.userData.role = 'fixed-radius-rod-bearing-F';
-  const radiusShaft = cylinderAlongZ(0.23 * sourceScale, 1.10,
+  const radiusShaft = cylinderAlongZ(0.23 * sourceScale, 1.72,
     darkMaterial, 32);
   radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, -0.01);
   radiusShaft.userData.fixed = true;
@@ -580,14 +525,11 @@ function midpointVibratingRodParallelMotion(movement) {
     role: 'short-five-point-five-eight-two-one-nine-six-unit-vibrating-rod-B-D',
     width: 0.38 * sourceScale,
   });
-  const midpointBoss = cylinderAlongZ(0.375 * sourceScale, 0.23,
-    vibratingMaterial, 34);
-  midpointBoss.position.set(vibratingRodMidpointDistance, 0, 0.39);
-  midpointBoss.userData.role = 'vibrating-rod-midpoint-boss-C';
+  vibratingParts.rod.userData.addPinEye(vibratingRodMidpointDistance, 0.22 * sourceScale + 0.006);
   const pointCAnchor = new THREE.Object3D();
   pointCAnchor.position.set(vibratingRodMidpointDistance, 0, 0.39);
   pointCAnchor.userData.role = 'analytic-vibrating-rod-midpoint-C';
-  vibratingParts.rod.add(midpointBoss, pointCAnchor);
+  vibratingParts.rod.add(pointCAnchor);
   root.add(vibratingParts.rod);
 
   const radiusParts = makeRigidRod({
@@ -849,9 +791,10 @@ function midpointVibratingRodParallelMotion(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.0, 3.6, 13.5),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };
@@ -1204,7 +1147,7 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   radiusBearing.position.set(radiusPivotF.x, radiusPivotF.y, -0.24);
   radiusBearing.userData.fixed = true;
   radiusBearing.userData.role = 'fixed-upper-radius-bar-bearing-F';
-  const radiusShaft = cylinderAlongZ(0.20 * sourceScale, 1.08,
+  const radiusShaft = cylinderAlongZ(0.20 * sourceScale, 1.72,
     darkMaterial, 32);
   radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, 0);
   radiusShaft.userData.fixed = true;
@@ -1305,14 +1248,11 @@ function upperRadiusVibratingRodParallelMotion(movement) {
     role: 'four-unit-vibrating-rod-L-R-U-centered-on-beam',
     width: 0.34 * sourceScale,
   });
-  const midpointBoss = cylinderAlongZ(0.375 * sourceScale, 0.23,
-    vibratingMaterial, 34);
-  midpointBoss.position.set(vibratingRodHalfLength, 0, 0.39);
-  midpointBoss.userData.role = 'vibrating-rod-center-boss-R';
+  vibratingParts.rod.userData.addPinEye(vibratingRodHalfLength, 0.22 * sourceScale + 0.006);
   const vibratingMidpointAnchor = new THREE.Object3D();
   vibratingMidpointAnchor.position.set(vibratingRodHalfLength, 0, 0.39);
   vibratingMidpointAnchor.userData.role = 'analytic-vibrating-rod-center-R';
-  vibratingParts.rod.add(midpointBoss, vibratingMidpointAnchor);
+  vibratingParts.rod.add(vibratingMidpointAnchor);
   root.add(vibratingParts.rod);
 
   const radiusParts = makeRigidRod({
@@ -1584,9 +1524,10 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.1, 3.7, 13.6),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,
   };

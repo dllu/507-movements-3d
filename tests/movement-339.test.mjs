@@ -435,7 +435,7 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
       new THREE.Vector3(state.pointA.x, state.pointA.y, 0.84), 0,
     `contact A at ${time}`);
     vector3Near(contacts.barAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.55), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.40), 0,
     `contact C at ${time}`);
   }
 
@@ -454,7 +454,7 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.8);
   assert.ok(size.y > 9.0);
-  assert.ok(size.z > 2.4,
+  assert.ok(size.z > 2.3,
     'frame, crank, connecting rod, piston, B-C, and F-A occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

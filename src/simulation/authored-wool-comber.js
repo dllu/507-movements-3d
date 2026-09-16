@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {circle, poly, polygonClipping} from './finite-plate-geometry.js';
+import {woolComberNotch} from '../data/wool-comber-notch.js';
 import {
   PALETTE,
   markShadows,
@@ -252,16 +254,46 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const notchCount = 9;
   const notchPitchAngle = FULL_TURN / notchCount;
   const notchPhaseAngle = engagedHookBaseAngle;
-  const notchHalfAngle = 0.095;
   const notchWheelOuterRadius = 1.55;
-  const notchRootRadius = 1.16;
   const catchHookRadius = 0.085;
+  const notchRootRadius = engagedHookRadius - catchHookRadius - woolComberNotch.clearance;
 
   const grooveHalfWidth = 0.155;
   const followerRollerRadius = 0.12;
   const grooveRadialClearance = grooveHalfWidth - followerRollerRadius;
   const grooveSampleCount = 720;
   const camOuterRadius = 5.58;
+
+  // The hinged hook leaves on an oblique arc, so radial notch flanks bind.
+  // This offline milled envelope retains two driving flanks with small take-up;
+  // playback still prescribes ideal output and catch lift, not passive dynamics.
+  const cutters = Array.from({length: notchCount}, (_, index) => {
+    const angle = notchPhaseAngle + index * notchPitchAngle;
+    return poly(woolComberNotch.profile.map(([x, y]) => [
+      x * Math.cos(angle) - y * Math.sin(angle),
+      x * Math.sin(angle) + y * Math.cos(angle),
+    ]));
+  });
+  const wheelOutline = polygonClipping.difference(poly(circle([0, 0], notchWheelOuterRadius, 384)), ...cutters);
+  if (wheelOutline.length !== 1 || wheelOutline[0].length !== 1) throw new Error('Invalid wool-comber notch relief');
+  const wheelPoints = wheelOutline[0][0].slice(0, -1).map(point => new THREE.Vector2(...point));
+  const wheelEdges = wheelPoints.map((a, i) => {
+    const b = wheelPoints[(i + 1) % wheelPoints.length], dx = b.x - a.x, dy = b.y - a.y;
+    return {a, b, dx, dy, lengthSquared: dx * dx + dy * dy,
+      notch: Math.min(a.length(), b.length()) < notchWheelOuterRadius - 1e-4};
+  });
+  // Measure the finite circle against every flank, not only the notch root.
+  const hookClearanceInWheel = point => {
+    let inside = false, squaredDistance = Infinity, nearestIsNotch = false;
+    for (const {a, b, dx, dy, lengthSquared, notch} of wheelEdges) {
+      const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
+      const distance = (point.x - a.x - t * dx) ** 2 + (point.y - a.y - t * dy) ** 2;
+      if (distance < squaredDistance) {squaredDistance = distance;nearestIsNotch = notch;}
+      if ((a.y > point.y) !== (b.y > point.y) && point.x < dx * (point.y - a.y) / dy + a.x) inside = !inside;
+    }
+    return {clearance: (inside ? -1 : 1) * Math.sqrt(squaredDistance) - catchHookRadius,
+      nearestIsNotch};
+  };
 
   const rockerLawAtPhase = (phase) => {
     if (phase <= backwardEndPhase) {
@@ -492,12 +524,9 @@ function groovedCamWoolComberRollerMotion(movementId) {
         nearestNotchIndex = index;
       }
     }
-    const hookWithinNotchOpening = Math.abs(
-      nearestNotchAngularDifference,
-    ) <= notchHalfAngle;
-    const catchSolidClearance = hookWithinNotchOpening
-      ? catchHookPolarRadius - catchHookRadius - notchRootRadius
-      : catchHookPolarRadius - catchHookRadius - notchWheelOuterRadius;
+    const finiteHook = hookClearanceInWheel(rotate2(catchHookFromOutput, -outputAngle));
+    const hookWithinNotchOpening = finiteHook.nearestIsNotch;
+    const catchSolidClearance = finiteHook.clearance;
 
     const tripLugWorld = rotate2(tripLugLocal, driverAngle);
     const tripSeparation = tripLugWorld.distanceTo(catchTripBossWorld);
@@ -655,24 +684,6 @@ function groovedCamWoolComberRollerMotion(movementId) {
   outputRotor.userData.role = 'F-nine-notch-detaching-roller-wheel';
   root.add(outputRotor);
 
-  const wheelPoints = [];
-  for (let index = 0; index < notchCount; index += 1) {
-    const center = notchPhaseAngle + index * notchPitchAngle;
-    for (const [angleOffset, radius] of [
-      [-notchPitchAngle / 2, notchWheelOuterRadius],
-      [-notchHalfAngle, notchWheelOuterRadius],
-      [-notchHalfAngle, notchRootRadius],
-      [notchHalfAngle, notchRootRadius],
-      [notchHalfAngle, notchWheelOuterRadius],
-      [notchPitchAngle / 2, notchWheelOuterRadius],
-    ]) {
-      const angle = center + angleOffset;
-      wheelPoints.push(new THREE.Vector2(
-        radius * Math.cos(angle),
-        radius * Math.sin(angle),
-      ));
-    }
-  }
   const wheelShape = shapeFromPoints(wheelPoints);
   const wheelBoreRadius = 0.25;
   wheelShape.holes.push(pathFromPoints(circlePoints(wheelBoreRadius, 64)));
@@ -991,6 +1002,8 @@ function groovedCamWoolComberRollerMotion(movementId) {
   root.userData.blocks = blocks;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.fidelity = 'authored';
+  // The suspended cam extends below the default floor plane.
+  root.userData.hideGround = true;
   root.userData.geometry = {
     camCenter,
     camLandDepth,
@@ -1022,10 +1035,12 @@ function groovedCamWoolComberRollerMotion(movementId) {
     idealOuterWall,
     innerWall,
     notchCount,
-    notchHalfAngle,
     notchPhaseAngle,
     notchPitchAngle,
     notchRootRadius,
+    notchReliefClearance: woolComberNotch.clearance,
+    notchReliefProfile: woolComberNotch.profile,
+    wheelPoints,
     notchWheelOuterRadius,
     outerWall,
     outputCenter,

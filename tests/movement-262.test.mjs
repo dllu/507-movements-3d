@@ -413,7 +413,8 @@ test('movement 262 renders exact rates, closes smoothly, and leaves 269 authored
   const reversal = stateAtTime(6);
   const reverse = stateAtTime(9);
   const closure = stateAtTime(timeline.cycleClosure);
-  const derivativeStep = 1e-5;
+  // Shorter step resolves the new end-ramp curvature without FD truncation error.
+  const derivativeStep = 3e-6;
   let maximumRollerRateError = 0;
   let maximumVerticalRateError = 0;
 

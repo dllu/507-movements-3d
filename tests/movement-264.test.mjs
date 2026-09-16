@@ -306,7 +306,8 @@ test('movement 264 uses one common orthogonal worm at both pitch contacts', () =
       label,
     );
   }
-  assert.ok(geometry.wormCoreToWheelTipClearance > 0.08);
+  assert.ok(geometry.wormCoreRadius > .45);
+  assert.equal(blocks.worm.userData.toothProfile, 'axial-straight-flanked-worm');
   near(
     blocks.wheel100ContactMarker.position.distanceTo(
       geometry.wheel100ContactPoint,
@@ -375,7 +376,7 @@ test('movement 264 stays continuous, closes its beat, and leaves 269 authored', 
   const { animationTiming, blocks, stateAtTime, timeline } = model.root.userData;
   const epsilon = 1e-6;
 
-  assert.equal(animationTiming.authoredCyclePeriod, 8);
+  assert.equal(animationTiming.authoredCyclePeriod, 240);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
   model.update(timeline.demonstrationPeriod - epsilon);

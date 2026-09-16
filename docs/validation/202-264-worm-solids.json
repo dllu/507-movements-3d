@@ -1,0 +1,80 @@
+{
+  "movements": [
+    202,
+    264
+  ],
+  "poses": 33,
+  "status": "sampled-flanks-clear",
+  "method": "Actual rendered integral worm and every instanced closed tooth sector; bidirectional triangle vertices, edge midpoints and face centers through one complete input turn. BVH winding containment and finite triangle distances. Sampling is not continuous collision proof.",
+  "scope": "Working worm/wheel solids only; wheel hubs, pointers and shafts excluded. Distances in model coordinates before root display scaling.",
+  "results": [
+    {
+      "id": 202,
+      "side": 0,
+      "queries": 2550790,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.0011919900915933535,
+      "maximumClosestGap": 0.002338103823727412,
+      "worst": null
+    },
+    {
+      "id": 264,
+      "side": 0,
+      "queries": 998352,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.00043630719374165465,
+      "maximumClosestGap": 0.0005459953317537788,
+      "worst": null
+    },
+    {
+      "id": 264,
+      "side": 1,
+      "queries": 1006386,
+      "penetrations": 0,
+      "maximumDepth": 0,
+      "minimumGap": 0.000351815273154646,
+      "maximumClosestGap": 0.0004257821099198486,
+      "worst": null
+    }
+  ],
+  "sources": [
+    {
+      "file": "src/simulation/special-worm-solids.js",
+      "sha256": "92e810b9d5a47947bc11825df50c90635e526426b61997157e424aee25a7b905"
+    },
+    {
+      "file": "src/simulation/special-worm-parameters.js",
+      "sha256": "8bc4fad8b283d4f027766d7ac7f29fd4c1c507e50538d61bbc28db4cdcc79ef5"
+    },
+    {
+      "file": "src/data/special-worm-wheel-profiles.js",
+      "sha256": "7b3073805b092d91f0bdbfcc9878a007a1fe4da92ad228531b1c685f38208d75"
+    },
+    {
+      "file": "src/simulation/solid-worm.js",
+      "sha256": "5231a35523bec23e3ced781c29beaa9be87e88aff1fa26558e2b3b823b29e210"
+    },
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "5f09464aa8b09fb057240033601f85307df0f2fc8897df276ea17ac490e321c6"
+    },
+    {
+      "file": "src/simulation/authored-differential-worm-drives.js",
+      "sha256": "fef15d508af9060eb9ee86490d95f479727dd28daf3e97d17acb4d65481ac846"
+    },
+    {
+      "file": "src/simulation/instanced-worm-wheel.js",
+      "sha256": "3e9aa121b9c54d976244ad643f3581225253df45a7f3ead102a76d19270ceee6"
+    },
+    {
+      "file": "src/simulation/worm-gear-geometry.js",
+      "sha256": "efda9da5b65dc16734d15718a91a9fd1000150e240b3f5da0ecc83ee7ce3079a"
+    },
+    {
+      "file": "src/simulation/bored-worm-geometry.js",
+      "sha256": "9d545d8bcbd3583c1df25f9e490e6deb7b8a971f2f96bd76146c50ffa0e9fbcb"
+    }
+  ]
+}

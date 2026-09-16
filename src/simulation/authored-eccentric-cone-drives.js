@@ -1,3 +1,5 @@
+import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {helicalThread, threadAngles} from './mujoco-screw/thread-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -49,27 +51,6 @@ function annularCollarAlongX({
   const collar = new THREE.Mesh(geometry, material);
   collar.rotation.y = Math.PI / 2;
   return collar;
-}
-
-class ScrewHelixCurve extends THREE.Curve {
-  constructor({ hand, lead, radius, xEnd, xStart }) {
-    super();
-    this.hand = hand;
-    this.lead = lead;
-    this.radius = radius;
-    this.xEnd = xEnd;
-    this.xStart = xStart;
-  }
-
-  getPoint(progress, target = new THREE.Vector3()) {
-    const x = THREE.MathUtils.lerp(this.xStart, this.xEnd, progress);
-    const angle = this.hand * FULL_TURN * (x - this.xStart) / this.lead;
-    return target.set(
-      x,
-      this.radius * Math.cos(angle),
-      this.radius * Math.sin(angle),
-    );
-  }
 }
 
 class UnitVerticalSpringCurve extends THREE.Curve {
@@ -153,7 +134,7 @@ function eccentricConeFrictionReverser(movement) {
   const screwLead = 0.19;
   const screwCoreRadius = 0.12;
   const screwThreadRadius = 0.17;
-  const screwThreadTubeRadius = 0.026;
+  const screwThreadTipRadius = .196;
   const screwThreadHand = -1;
   const screwThreadXStart = 2.38;
   const screwThreadXEnd = 6.28;
@@ -408,19 +389,19 @@ function eccentricConeFrictionReverser(movement) {
     new THREE.BoxGeometry(9.25, 0.18, 1.2),
     frameMaterial,
   );
-  base.position.set(1.1, -1.55, -0.28);
+  base.position.set(1.1, -2.04, 0);
   base.userData.role = 'fixed-machine-base';
   frame.add(base);
   const nutPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 1.58, 0.66),
+    new THREE.BoxGeometry(0.24, 1.72, 0.40),
     frameMaterial,
   );
-  nutPost.position.set(nutAxialPosition, -0.78, -0.02);
+  nutPost.position.set(nutAxialPosition, -1.17, 0);
   nutPost.userData.role = 'fixed-standard-carrying-nut-E';
   frame.add(nutPost);
   const nut = annularCollarAlongX({
     depth: 0.28,
-    innerRadius: screwCoreRadius + 0.012,
+    innerRadius: .202,
     material: springMaterial,
     outerRadius: 0.31,
   });
@@ -429,26 +410,16 @@ function eccentricConeFrictionReverser(movement) {
   nut.userData.role = 'fixed-threaded-nut-E';
   frame.add(nut);
 
-  const guideRailXPositions = [
-    rollerAxialCenter - 0.46,
-    rollerAxialCenter + 0.46,
-  ];
-  const guideRails = guideRailXPositions.map((x, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 3.85, 0.14),
-      frameMaterial,
-    );
-    rail.position.set(x, 0.48, -0.5);
-    rail.userData.role =
-      `${index === 0 ? 'large-end-side' : 'small-end-side'}-roller-guide-rail`;
-    frame.add(rail);
-    return rail;
+  // Keep the inferred spring guide beyond the translating cone's small end.
+  const guideX = 2.50;
+  const guideRails = [-.5, .5].map((z, index) => {
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, 4.38, 32), frameMaterial);
+    rail.position.set(guideX, .15, z);
+    rail.userData.role = `roller-vertical-guide-${index}`;
+    frame.add(rail); return rail;
   });
-  const guideTop = new THREE.Mesh(
-    new THREE.BoxGeometry(1.04, 0.12, 0.22),
-    frameMaterial,
-  );
-  guideTop.position.set(rollerAxialCenter, 2.43, -0.5);
+  const guideTop = new THREE.Mesh(new THREE.BoxGeometry(.24, .12, 1.20), frameMaterial);
+  guideTop.position.set(guideX, 2.40, 0);
   guideTop.userData.role = 'fixed-spring-abutment-over-roller-C';
   frame.add(guideTop);
 
@@ -482,23 +453,18 @@ function eccentricConeFrictionReverser(movement) {
   rightScrewCore.userData.role =
     'right-core-of-screw-D-through-fixed-nut-E';
   screwCore.add(leftInputJournal, rightScrewCore);
-  const threadCurve = new ScrewHelixCurve({
-    hand: screwThreadHand,
-    lead: screwLead,
-    radius: screwThreadRadius,
-    xEnd: screwThreadXEnd,
-    xStart: screwThreadXStart,
-  });
-  const screwThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      threadCurve,
-      960,
-      screwThreadTubeRadius,
-      7,
-      false,
-    ),
-    darkMaterial,
-  );
+  const threadParameters = {inner: screwCoreRadius, outer: screwThreadTipRadius,
+    low: screwThreadXStart, high: screwThreadXEnd, lead: -screwLead / FULL_TURN,
+    phase: screwThreadXStart, width: .085};
+  const screwThread = new THREE.Mesh(helicalThread(threadParameters,
+    threadAngles(threadParameters, 64)).rotateY(Math.PI / 2), darkMaterial);
+  const nutParameters = {...threadParameters, inner: .124, outer: .204,
+    low: -.14, high: .14, phase: screwThreadXStart - nutAxialPosition + screwLead / 2};
+  const nutThread = new THREE.Mesh(helicalThread(nutParameters,
+    threadAngles(nutParameters, 64)).rotateY(Math.PI / 2), springMaterial);
+  nutThread.position.x = nutAxialPosition;
+  nutThread.userData.role = 'stationary-mating-solid-thread-in-nut-E';
+  frame.add(nutThread);
   screwThread.userData.hand = screwThreadHand;
   screwThread.userData.lead = screwLead;
   screwThread.userData.role = 'single-start-helical-thread-on-screw-D';
@@ -597,6 +563,8 @@ function eccentricConeFrictionReverser(movement) {
     drivenMaterial,
     68,
   );
+  rollerBody.geometry.dispose();
+  rollerBody.geometry = boredCylinderGeometry(rollerRadius, .069, rollerWidth);
   rollerBody.userData.contactEdgeLocalX = -rollerWidth / 2;
   rollerBody.userData.role =
     'thin-roller-C-touching-cone-at-large-end-side-edge';
@@ -620,24 +588,24 @@ function eccentricConeFrictionReverser(movement) {
     'white-index-showing-variable-and-reversing-roller-C-spin';
   rollerRotor.add(rollerBody, rollerFaceRim, rollerIndex);
   const rollerAxle = cylinderAlongX(
-    0.075,
-    0.78,
+    0.065,
+    guideX - rollerAxialCenter + .30,
     darkMaterial,
     30,
   );
+  rollerAxle.position.x = (guideX - rollerAxialCenter) / 2;
   rollerAxle.userData.role = 'guided-axis-of-friction-roller-C';
   rollerCarriage.add(rollerAxle);
-  const carriageBlocks = [-1, 1].map((side) => {
-    const block = new THREE.Mesh(
-      new THREE.BoxGeometry(0.14, 0.22, 0.24),
-      frameMaterial,
-    );
-    block.position.set(side * 0.36, 0, -0.4);
-    block.userData.role =
-      `${side < 0 ? 'large-end-side' : 'small-end-side'}-roller-slide-block`;
-    rollerCarriage.add(block);
-    return block;
+  const carriageBlocks = [-.5, .5].map((z, index) => {
+    const block = new THREE.Mesh(boredCylinderGeometry(.13, .059, .20), frameMaterial);
+    block.position.set(guideX - rollerAxialCenter, 0, z);
+    block.userData.role = `bored-roller-slide-${index}`;
+    rollerCarriage.add(block); return block;
   });
+  const carriageBridge = new THREE.Mesh(new THREE.BoxGeometry(.12, .10, .76), frameMaterial);
+  carriageBridge.position.x = guideX - rollerAxialCenter;
+  carriageBridge.userData.role = 'rigid-bridge-joining-roller-axle-to-guided-spring-seat';
+  rollerCarriage.add(carriageBridge);
 
   const springCurve = new UnitVerticalSpringCurve({
     coilCount: 8,
@@ -651,7 +619,7 @@ function eccentricConeFrictionReverser(movement) {
     'source-permitted-spring-pressing-roller-C-against-cone-B';
   contactSpring.userData.setEndpoints = (lowerY, upperY) => {
     const length = Math.max(upperY - lowerY, 0.08);
-    contactSpring.position.set(rollerAxialCenter, lowerY, -0.5);
+    contactSpring.position.set(guideX, lowerY, .5);
     contactSpring.scale.set(1, length, 1);
   };
   root.add(contactSpring);
@@ -667,12 +635,29 @@ function eccentricConeFrictionReverser(movement) {
   const stateAtTime = (time) => {
     const wrappedTime = positiveModulo(time, demonstrationPeriod);
     const phase = FULL_TURN * wrappedTime / demonstrationPeriod;
-    const inputAngleUnwrapped = maximumInputAngle
-      * (1 - Math.cos(phase)) / 2;
-    const inputAngularSpeed = maximumInputAngle * Math.PI
-      / demonstrationPeriod * Math.sin(phase);
-    const inputAngularAcceleration = maximumInputAngle * 2 * Math.PI ** 2
-      / demonstrationPeriod ** 2 * Math.cos(phase);
+    // Uniform source drive for most of each stroke; short cosine ramps
+    // make the finite demonstrator's explicitly inferred return continuous.
+    const halfPeriod = demonstrationPeriod / 2, ramp = .4;
+    const returning = wrappedTime > halfPeriod;
+    const strokeTime = returning ? demonstrationPeriod - wrappedTime : wrappedTime;
+    const speed = maximumInputAngle / (halfPeriod - ramp);
+    let inputAngleUnwrapped, velocity, acceleration;
+    if (strokeTime < ramp) {
+      const a = Math.PI * strokeTime / ramp;
+      inputAngleUnwrapped = speed * (strokeTime - ramp * Math.sin(a) / Math.PI) / 2;
+      velocity = speed * (1 - Math.cos(a)) / 2;
+      acceleration = speed * Math.PI * Math.sin(a) / (2 * ramp);
+    } else if (strokeTime > halfPeriod - ramp) {
+      const t = halfPeriod - strokeTime, a = Math.PI * t / ramp;
+      inputAngleUnwrapped = maximumInputAngle - speed * (t - ramp * Math.sin(a) / Math.PI) / 2;
+      velocity = speed * (1 - Math.cos(a)) / 2;
+      acceleration = -speed * Math.PI * Math.sin(a) / (2 * ramp);
+    } else {
+      inputAngleUnwrapped = speed * (strokeTime - ramp / 2);
+      velocity = speed; acceleration = 0;
+    }
+    const inputAngularSpeed = returning ? -velocity : velocity;
+    const inputAngularAcceleration = acceleration;
     const configuration = configurationAtInputAngle(inputAngleUnwrapped);
     const derivativeStep = 1e-5;
     const lowerAngle = Math.max(0, inputAngleUnwrapped - derivativeStep);
@@ -718,6 +703,8 @@ function eccentricConeFrictionReverser(movement) {
   root.userData.blocks = {
     base,
     carriageBlocks,
+    carriageBridge,
+    nutThread,
     coneBody,
     coneGeneratorIndex,
     coneRims,
@@ -757,7 +744,7 @@ function eccentricConeFrictionReverser(movement) {
   };
   root.userData.driveSchedule = {
     demonstration:
-      'three-turn-smooth-forward-cone-traverse-followed-by-exact-reverse-return',
+      'three-turn-uniform-forward-traverse-with-short-end-ramps-and-exact-reverse-return',
     demonstrationBeginsAtAxialFraction: initialContactAxialFraction,
     purpose:
       'show-three-successive-reversals-and-close-without-teleporting-the-screw',
@@ -896,19 +883,25 @@ function eccentricConeFrictionReverser(movement) {
     rollerRotor.rotation.x = state.rollerAngle;
     contactMarker.position.copy(configuration.coneContactPoint);
     contactSpring.userData.setEndpoints(
-      configuration.rollerCenter.y + rollerRadius + 0.12,
+      configuration.rollerCenter.y + .10,
       guideTop.position.y - 0.08,
     );
     root.userData.kinematics = state;
   };
-  update(0);
+  contactMarker.visible = false;
+  // The raised generator line protruded into the roller's working surface.
+  coneGeneratorIndex.removeFromParent();
+  root.userData.minimumDisplayCycleSeconds = 12;
+  root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
+  root.userData.reconstructionNote = 'The eccentric cone changes and reverses the roller speed. The guide and spring are reconstructed. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
+  fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     root,
     update,
     cameraDirection: presentationView === 'end-view'
-      ? new THREE.Vector3(-8.5, 3.6, 7)
-      : new THREE.Vector3(2.8, 3.2, 12),
+      ? new THREE.Vector3(-14, .12, .5)
+      : new THREE.Vector3(-.5, .2, 14),
   };
 }
 

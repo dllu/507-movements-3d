@@ -1,3 +1,4 @@
+import { correctGloboidalWorm } from './special-worm-solids.js';
 import { plate as finiteSlotPlate, poly as slotPolygon, circle as slotCircle, polygonClipping as slotClipping } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { makeFeedWormWheel } from './feed-worm-wheel.js';
@@ -30765,8 +30766,9 @@ function globoidalWormAndWheel() {
     root.userData.globoidalContacts = state.contacts;
     root.userData.kinematics = state;
   };
+  correctGloboidalWorm(root);
   update(0);
-  return finish(root, update, new THREE.Vector3(5.7, 4.2, 9.3));
+  return finish(root, update, new THREE.Vector3(2.5, 1.6, 12));
 }
 
 function skewHyperboloidFrictionDrive() {

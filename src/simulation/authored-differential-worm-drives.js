@@ -1,8 +1,9 @@
+import { makeSolidWorm } from './solid-worm.js';
+import { makeSpecialWormWheel } from './special-worm-solids.js';
 import * as THREE from 'three';
 import {
   PALETTE,
   makeBeam,
-  makeScrew,
   makeShaft,
   markShadows,
   matte,
@@ -26,7 +27,7 @@ function annularGeometry({ depth, innerRadius, outerRadius }) {
   bore.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
   shape.holes.push(bore);
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: false,
     bevelSegments: 1,
     bevelSize: Math.min(0.018, depth * 0.08),
     bevelThickness: Math.min(0.018, depth * 0.08),
@@ -43,6 +44,7 @@ function makePointer({
   color,
   length,
   rootAxialPosition,
+  boreRadius,
 }) {
   const pointer = new THREE.Group();
   pointer.position.z = axialPosition - rootAxialPosition;
@@ -51,17 +53,17 @@ function makePointer({
 
   const material = matte(color, { metalness: 0.14, roughness: 0.54 });
   const arm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.075, length, 0.055),
+    new THREE.BoxGeometry(0.075, length - 0.24, 0.055),
     material,
   );
-  arm.position.y = length / 2 - 0.1;
+  arm.position.y = length / 2 + 0.02;
   arm.userData.role = 'radial-pointer-arm-rigid-with-worm-wheel';
 
   const collar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.17, 0.17, 0.12, 36),
+    annularGeometry({depth: .12, innerRadius: boreRadius, outerRadius: .17}),
     matte(PALETTE.ink, { metalness: 0.24, roughness: 0.46 }),
   );
-  collar.rotation.x = Math.PI / 2;
+  collar.userData.boreRadius = boreRadius;
   collar.userData.role = 'pointer-output-shaft-collar';
 
   const tip = new THREE.Mesh(
@@ -106,36 +108,12 @@ function makeWormWheel({
     roughness: 0.47,
   });
 
-  const body = new THREE.Mesh(
-    annularGeometry({
-      depth: faceWidth,
-      innerRadius: boreRadius,
-      outerRadius: bodyRadius,
-    }),
-    bodyMaterial,
-  );
+  const body = makeSpecialWormWheel(teeth === 100 ? 264100 : 264101, boreRadius, bodyMaterial);
   body.userData.role = `${label}-bored-worm-wheel-body`;
   rotor.add(body);
-
   const toothPitch = FULL_TURN * pitchRadius / teeth;
-  const toothGeometry = new THREE.BoxGeometry(
-    toothHeight,
-    toothPitch * 0.54,
-    faceWidth * 0.94,
-  );
-  const toothMeshes = [];
-  for (let index = 0; index < teeth; index += 1) {
-    const carrier = new THREE.Group();
-    carrier.rotation.z = index * FULL_TURN / teeth;
-    const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
-    tooth.position.x = pitchRadius;
-    tooth.rotation.x = helixAngle;
-    tooth.userData.index = index;
-    tooth.userData.role = `${label}-worm-wheel-tooth`;
-    carrier.add(tooth);
-    rotor.add(carrier);
-    toothMeshes.push(tooth);
-  }
+  // One closed sector is instanced per tooth; no independently rotated boxes.
+  const toothMeshes = Array.from({length: teeth}, (_, index) => ({index, mesh: body, instance: index}));
 
   const faceRims = [-1, 1].map((side) => {
     const rim = new THREE.Mesh(
@@ -150,8 +128,8 @@ function makeWormWheel({
 
   const hub = new THREE.Mesh(
     annularGeometry({
-      depth: faceWidth + 0.11,
-      innerRadius: boreRadius,
+      depth: faceWidth + 0.04,
+      innerRadius: teeth === 100 ? .117 : .071,
       outerRadius: 0.31,
     }),
     inkMaterial,
@@ -176,6 +154,7 @@ function makeWormWheel({
     color,
     length: pointerLength,
     rootAxialPosition: axialCenter,
+    boreRadius: teeth === 100 ? .118 : .071,
   });
   rotor.add(pointerParts.pointer);
 
@@ -242,20 +221,20 @@ function twinWormWheelDifferential(movement) {
   const wheelToothHeight = 0.07;
   const wheelFaceWidth = 0.3;
   const wheelAxialSeparation = 0.38;
-  const wheel100AxialCenter = -wheelAxialSeparation / 2;
-  const wheel101AxialCenter = wheelAxialSeparation / 2;
+  const wheel100AxialCenter = wheelAxialSeparation / 2;
+  const wheel101AxialCenter = -wheelAxialSeparation / 2;
   const wormStarts = 1;
   const wormHandedness = 1;
   const wormPitchRadius = 0.5;
-  const wormCoreRadius = wormPitchRadius * 0.68;
+  const wormCoreRadius = wormPitchRadius - 1.25 * (2 * wheelPitchRadius / wheel100Teeth);
   const wormThreadRadius = 0.045;
   const wheel100CircularPitch = FULL_TURN
     * wheelPitchRadius / wheel100Teeth;
   const wheel101CircularPitch = FULL_TURN
     * wheelPitchRadius / wheel101Teeth;
   const wormPitch = wheel100CircularPitch;
-  const wormLength = 3.9;
-  const wormShaftLength = 4.8;
+  const wormLength = 1.1;
+  const wormShaftLength = 1.8;
   const contactVerticalOffset = Math.sqrt(
     wormPitchRadius ** 2 - wheel100AxialCenter ** 2,
   );
@@ -309,7 +288,7 @@ function twinWormWheelDifferential(movement) {
 
   const innerShaft = makeShaft({
     axis: X_AXIS,
-    length: 5.2,
+    length: 3.8,
     radius: 0.07,
   });
   innerShaft.position.x = 0.18;
@@ -326,14 +305,14 @@ function twinWormWheelDifferential(movement) {
   });
   wheel100.rotor.add(outerSleeve);
 
-  const worm = makeScrew({
+  const worm = makeSolidWorm({
     axis: Z_AXIS,
     color: PALETTE.driver,
     handedness: wormHandedness,
     length: wormLength,
     pitch: wormPitch,
     radius: wormPitchRadius,
-    threadRadius: wormThreadRadius,
+    shaftRadius: .075,
   });
   worm.position.copy(wormCenter);
   worm.userData.role =
@@ -461,7 +440,7 @@ function twinWormWheelDifferential(movement) {
     baseRail,
   );
 
-  const wheel100RevolutionPeriod = 8;
+  const wheel100RevolutionPeriod = 240;
   const wormAngularSpeed = FULL_TURN
     * wheel100Teeth / wheel100RevolutionPeriod;
   const wheel100AngularSpeed = -wormHandedness
@@ -698,12 +677,20 @@ function twinWormWheelDifferential(movement) {
     };
     root.userData.kinematics = state;
   };
+  for (const object of [baseRail, ...wheelBearingPosts, ...wheelBearings, ...wormBearingPosts, ...wormBearings, wheel100ContactMarker, wheel101ContactMarker]) object.removeFromParent();
+  root.traverse(o => {for (const material of (Array.isArray(o.material) ? o.material : [o.material])) if (material) material.fog = false;});
+  root.userData.hideGround = true;
+  root.userData.materialsIgnoreSceneFog = true;
+  root.userData.minimumDisplayCycleSeconds = 240;
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.9, -1.76, -.92), new THREE.Vector3(2.2, 2.72, .92));
+  root.userData.reconstructionNote = 'One worm turn advances each wheel one tooth. The 100/101 pointers separate by one turn after 10,100 input turns (6 h 44 min at this speed). Equal outside diameters use separately generated flanks, not equal operating pitches.';
+  root.userData.contactQualification = {method: 'independent offline envelopes of the same finite common worm', clearance: .0025, nominalPitchRadiiAreReferenceOnly: true};
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(3.5, 3.1, 11.5),
+    cameraDirection: new THREE.Vector3(3.2, 1.4, 12),
   };
 }
 

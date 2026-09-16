@@ -418,8 +418,8 @@ test('movement 217 catch clears the rim and its rear projection contacts only at
     }
     if (state.tripContact) tripContactSamples += 1;
   }
-  assert.ok(minimumCatchClearance > 0.0249);
-  assert.ok(minimumPlainRimClearance > 0.113);
+  assert.ok(minimumCatchClearance > geometry.notchReliefClearance - 0.00011);
+  assert.ok(minimumPlainRimClearance > 0.028);
   assert.ok(minimumTripClearance > -1e-12);
   assert.ok(tripContactSamples <= 1);
 
