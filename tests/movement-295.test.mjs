@@ -70,7 +70,7 @@ test('movement 295 animates one enlarged cylinder through Brown’s sequential s
   assert.equal(blocks.cylinderAssembly.parent, model.root);
   assert.equal(blocks.escapeWheel.parent, model.root);
   assert.equal(blocks.cylinderSection.parent, blocks.cylinderAssembly);
-  assert.equal(blocks.sectionStaff.parent, blocks.cylinderAssembly);
+  assert.equal(blocks.sectionStaff.parent, null, 'working section must remain hollow');
   assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
   assert.equal(blocks.cameraEnvelope.parent, model.root);
   assert.equal(blocks.palletAssemblies.length, 15);
@@ -174,7 +174,7 @@ test('movement 295 records the composite plate as three times, not three mechani
   disposeModel(model.root);
 });
 
-test('movements 294 and 295 share one exact cylinder contact law in distinct views', () => {
+test('movements 294 and 295 share one prescribed point-contact law in distinct views', () => {
   const perspective = createMovementModel(catalog.movements[293]);
   const action = createMovementModel(catalog.movements[294]);
   const perspectiveData = perspective.root.userData;
@@ -247,10 +247,10 @@ test('movement 295 exposes the working section, three pallet labels, and source 
     `source pallet marker orbit ${index}`);
   }
   assert.equal(model.root.userData.cameraFitBounds.isBox3, true);
-  assert.deepEqual(model.root.userData.cameraFitBounds.min,
-    new THREE.Vector3(-3.0, -0.55, -1.20));
-  assert.deepEqual(model.root.userData.cameraFitBounds.max,
-    new THREE.Vector3(3.0, 3.05, 1.10));
+  assert.ok(model.root.userData.cameraFitBounds.min.y < -4.6, 'complete wheel is retained in the fit');
+  model.root.updateMatrixWorld(true);
+  const sectionBounds=new THREE.Box3().setFromObject(blocks.cylinderSection);
+  assert.ok(model.root.userData.cameraFitBounds.containsBox(sectionBounds), 'working cylinder remains inside the fit');
   near(model.root.userData.groundFloorY,
     geometry.wheelCenter.y - geometry.wheelOuterRadius - 0.34, 0,
   'ground remains below the complete wheel despite source crop');
@@ -302,7 +302,7 @@ test('movement 295 resolves a, b, and c sequentially with one active contact onl
   disposeModel(model.root);
 });
 
-test('movement 295 closes every outside, lip, and inside contact exactly', () => {
+test('movement 295 closes its nominal outside, lip, and inside reference points', () => {
   const model = createMovementModel(catalog.movements[294]);
   const { stateAtCyclePhase } = model.root.userData;
   const counts = new Map([
@@ -401,7 +401,8 @@ test('movement 295 renderer shows one contact sequence and leaves movement 507 a
     timeline,
   } = model.root.userData;
   assert.equal(animationTiming.authoredCyclePeriod, 4);
-  assert.equal(animationTiming.targetCycleDuration, 2);
+  assert.ok(animationTiming.displayCycleDuration >= 6, 'the authored minimum keeps both impulses readable');
+  assert.equal(model.root.userData.minimumDisplayCycleSeconds,6);
   assertReadableTiming(animationTiming);
   assert.equal(timeline.demonstrationPeriod, 4);
   assert.deepEqual(timeline.sourceCompositeResolution, [
@@ -419,7 +420,7 @@ test('movement 295 renderer shows one contact sequence and leaves movement 507 a
       `rendered section cylinder at ${phase}`);
     near(blocks.wheelRotor.rotation.z, expected.wheelAngle, 0,
       `rendered enlarged wheel at ${phase}`);
-    assert.equal(blocks.contactMarker.visible, expected.contactActive);
+    assert.equal(blocks.contactMarker.visible, false, 'unqualified point-contact marker is suppressed');
     assert.equal(model.root.userData.contacts.mode, expected.contactMode);
     assert.equal(model.root.userData.contacts.activeToothIndex,
       expected.activeToothIndex);

@@ -230,7 +230,7 @@ test('movement 294 reproduces the hollow tube, offset window, and raised pallet 
   disposeModel(model.root);
 });
 
-test('movement 294 holds exact dead friction on both cylinder surfaces', () => {
+test('movement 294 retains the prescribed point schedule on both cylinder surfaces', () => {
   const model = createMovementModel(catalog.movements[293]);
   const {
     innerLockPoint,
@@ -421,7 +421,8 @@ test('movement 294 renderer binds the cylinder, both impulses, closure, and next
     timeline,
   } = model.root.userData;
   assert.equal(animationTiming.authoredCyclePeriod, 4);
-  assert.equal(animationTiming.targetCycleDuration, 2);
+  assert.ok(animationTiming.displayCycleDuration >= 6, 'the authored minimum keeps both impulses readable');
+  assert.equal(model.root.userData.minimumDisplayCycleSeconds,6);
   assertReadableTiming(animationTiming);
   assert.equal(timeline.demonstrationPeriod, 4);
   assert.deepEqual(timeline.schedule, [
@@ -441,7 +442,7 @@ test('movement 294 renderer binds the cylinder, both impulses, closure, and next
       `rendered cylinder at ${phase}`);
     near(blocks.wheelRotor.rotation.z, expected.wheelAngle, 0,
       `rendered escape wheel at ${phase}`);
-    assert.equal(blocks.contactMarker.visible, expected.contactActive);
+    assert.equal(blocks.contactMarker.visible, false, 'unqualified point-contact marker is suppressed');
     assert.equal(model.root.userData.contacts.mode, expected.contactMode);
     assert.equal(model.root.userData.contacts.activeToothIndex,
       expected.activeToothIndex);

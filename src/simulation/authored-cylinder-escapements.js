@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctCylinderWorkingParts, finishCylinderReview} from './cylinder-escapement-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -948,7 +949,7 @@ function cylinderEscapementPerspective(movement) {
     wheelRotor.userData.angularAcceleration =
       state.wheelAngularAcceleration;
     wheelRotor.userData.angularSpeed = state.wheelAngularSpeed;
-    contactMarker.visible = state.contactActive;
+    contactMarker.visible = state.contactActive && !root.userData.finiteContactReview?.contactMarkersSuppressed;
     if (state.contactActive) {
       contactMarker.position.set(
         state.contact.expectedPoint.x,
@@ -1150,6 +1151,7 @@ function cylinderEscapementPerspective(movement) {
   root.userData.wheelAngleAtCyclePhase = wheelAngleAtCyclePhase;
   root.userData.wheelStateAtPhase = wheelStateAtPhase;
 
+  correctCylinderWorkingParts(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1188,6 +1190,7 @@ function cylinderEscapementActionDiagram(movement) {
   const { root, update } = model;
   const oldBlocks = root.userData.blocks;
   const { cylinderAssembly } = oldBlocks;
+  root.userData.balanceHubForSectionRemoval=oldBlocks.balanceHub;
   for (const object of [
     oldBlocks.leftTube,
     oldBlocks.rightTube,
@@ -1345,6 +1348,7 @@ function cylinderEscapementActionDiagram(movement) {
     palletHeads: oldBlocks.palletHeads,
     palletLabelMarkers,
     palletStems: oldBlocks.palletStems,
+    palletFeet: oldBlocks.palletFeet,
     sectionStaff,
     wheelHub: oldBlocks.wheelHub,
     wheelIndex: oldBlocks.wheelIndex,
@@ -1441,7 +1445,7 @@ function cylinderEscapementActionDiagram(movement) {
 }
 
 export function createAuthoredCylinderEscapementMovement(movement) {
-  if (movement.id === 294) return cylinderEscapementPerspective(movement);
-  if (movement.id === 295) return cylinderEscapementActionDiagram(movement);
+  if (movement.id === 294) return finishCylinderReview(cylinderEscapementPerspective(movement),294);
+  if (movement.id === 295) return finishCylinderReview(cylinderEscapementActionDiagram(movement),295);
   return null;
 }
