@@ -1,3 +1,4 @@
+import {correctDetachedChronometer} from './detached-chronometer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -165,7 +166,7 @@ function airyDetachedEscapement(movement) {
   const lockPinOffset = 12;
   const detentLockAngle = impulseContactStartAngle
     + lockPinOffset * pinPitch;
-  const detentLiftAngle = THREE.MathUtils.degToRad(-1.35);
+  const detentLiftAngle = THREE.MathUtils.degToRad(-3);
 
   const pendulumPeriod = 4;
   const pendulumAmplitude = THREE.MathUtils.degToRad(5);
@@ -185,9 +186,9 @@ function airyDetachedEscapement(movement) {
   const bypassEndPhase = 1 - unlockStartPhase;
   const impulsePhaseSpan = impulseEndPhase - impulseStartPhase;
   const detentReturnStartPhase = impulseStartPhase
-    + impulsePhaseSpan * 0.30;
+    + impulsePhaseSpan * 0.80;
   const detentRelockPhase = impulseStartPhase
-    + impulsePhaseSpan * 0.78;
+    + impulsePhaseSpan;
   const clickMaximumDeflection = THREE.MathUtils.degToRad(-4);
   const phaseBoundaryEpsilon = 1e-12;
 
@@ -220,14 +221,14 @@ function airyDetachedEscapement(movement) {
     -Math.cos(detentLockAngle),
   );
   const detentCatchTangentialThickness = 0.05;
-  const detentCatchCenterAtRest = fixedDetentLockPoint.clone().add(
-    clockwiseLockTangent.clone().multiplyScalar(
-      pinRadius + detentCatchTangentialThickness / 2,
-    ),
+  const detentCatchRadius = 0.025;
+  const detentContactClearance = 0.0005;
+  const catchDirection = fixedDetentLockPoint.clone().sub(detentPivot).normalize();
+  const detentCatchCenterAtRest = fixedDetentLockPoint.clone().addScaledVector(
+    catchDirection, pinRadius + detentCatchRadius + detentContactClearance,
   );
-  const detentCatchFacePointAtRest = fixedDetentLockPoint.clone().add(
-    clockwiseLockTangent.clone().multiplyScalar(pinRadius),
-  );
+  const detentCatchFacePointAtRest = detentCatchCenterAtRest.clone()
+    .addScaledVector(catchDirection, -detentCatchRadius);
   const pendulumLocalPoint = (worldPoint, pendulumAngle) => rotate2(
     worldPoint.clone().sub(pendulumPivot),
     -pendulumAngle,
@@ -702,12 +703,8 @@ function airyDetachedEscapement(movement) {
   );
   detentBrace.userData.role = 'Q-open-upper-brace';
   detentAssembly.add(detentBrace);
-  const detentCatch = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, detentCatchTangentialThickness, 0.16),
-    darkMaterial,
-  );
-  detentCatch.position.set(detentCatchLocal.x, detentCatchLocal.y, 0);
-  detentCatch.rotation.z = detentLockAngle;
+  const detentCatch = cylinderAlongZ(detentCatchRadius, 0.20, darkMaterial, 64);
+  detentCatch.position.set(detentCatchLocal.x, detentCatchLocal.y, -0.05);
   detentCatch.userData.role = 'Q-wheel-pin-locking-catch';
   detentAssembly.add(detentCatch);
   const detentTailPad = cylinderAlongZ(0.075, 0.20, darkMaterial, 20);
@@ -842,6 +839,8 @@ function airyDetachedEscapement(movement) {
     detentCatchCenterAtRest: detentCatchCenterAtRest.clone(),
     detentCatchFacePointAtRest: detentCatchFacePointAtRest.clone(),
     detentCatchTangentialThickness,
+    detentCatchRadius,
+    detentContactClearance,
     detentLiftAngle,
     detentLockAngle,
     detentPivot: detentPivot.clone(),
@@ -1000,8 +999,9 @@ function airyDetachedEscapement(movement) {
     object.castShadow = false;
     object.receiveShadow = false;
   }
+  correctDetachedChronometer(root, 308, update);
   return {
-    cameraDirection: new THREE.Vector3(3.2, 1.8, 14.5),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };

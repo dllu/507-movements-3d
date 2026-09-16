@@ -1,3 +1,4 @@
+import {correctDetachedChronometer} from './detached-chronometer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1458,8 +1459,9 @@ function leverChronometerEscapement(movement) {
     object.receiveShadow = false;
   }
   root.userData.fidelity = 'authored';
+  correctDetachedChronometer(root, 314, update);
   return {
-    cameraDirection: new THREE.Vector3(6.8, -7.2, 14.2),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
