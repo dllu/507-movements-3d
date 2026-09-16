@@ -1,0 +1,59 @@
+{
+  "qualifiedForPlayback": false,
+  "reason": "Finite pin/leaf penetration and same-time velocity differences remain excessive; production leaf motion is unchanged.",
+  "runs": [
+    {
+      "timestep": 0.00025,
+      "contact": true,
+      "period": 4,
+      "minGap": -0.015882937480235487,
+      "detentRange": [
+        -2.220352427663138e-06,
+        0.14547769711769531
+      ],
+      "leafRange": [
+        -0.0008638009855170947,
+        0.4976463212954587
+      ],
+      "returnDetentMax": 9.614486555324782e-05
+    },
+    {
+      "timestep": 0.000125,
+      "contact": true,
+      "period": 4,
+      "minGap": -0.015867641199038843,
+      "detentRange": [
+        -1.7037489389227242e-06,
+        0.14547748981489098
+      ],
+      "leafRange": [
+        -0.0008851408076591146,
+        0.4976443703216041
+      ],
+      "returnDetentMax": 9.567406493851852e-05
+    },
+    {
+      "timestep": 0.00025,
+      "contact": false,
+      "period": 4,
+      "minGap": null,
+      "detentRange": [
+        0,
+        0
+      ],
+      "leafRange": [
+        0,
+        0
+      ],
+      "returnDetentMax": 0
+    }
+  ],
+  "coarseFineMaximumPositionDifference": [
+    0.0005749566534074182,
+    0.0017465236286827723
+  ],
+  "coarseFineMaximumVelocityDifference": [
+    0.11703165797286363,
+    0.35762037786645273
+  ]
+}

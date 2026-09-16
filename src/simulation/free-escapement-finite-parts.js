@@ -56,7 +56,7 @@ export function correctFreeEscapement(root,id){
     // Local -y is outward from the wheel on the ten-degree drawing face.
     b.lockingStoneT.geometry.translate(0,-.0652,0);
   }
-  d.finiteContactReview={qualification:'Partial geometric correction: active working faces and journals improved; free-return pallet and one-way leaf contact residuals remain. Balance, spring flexure and tooth release are prescribed, not a passive contact solve.'};
+  d.finiteContactReview={qualification:id===313?'Finite impulse pallet clears the locked return envelope and retains the full active face; one-way leaf contact and prescribed detent-release dynamics remain unqualified.':'Partial geometric correction: active working faces and journals improved; free-return pallet and one-way leaf contact residuals remain. Balance, spring flexure and tooth release are prescribed, not a passive contact solve.'};
   d.hideGround=true;d.minimumDisplayCycleSeconds=4;
   b.cameraEnvelope.visible=false;
 }

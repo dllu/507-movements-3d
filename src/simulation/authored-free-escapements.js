@@ -1862,10 +1862,13 @@ function earnshawSpringDetentEscapement(movement) {
     contactStartGeometry.palletRadius,
     contactEndGeometry.palletRadius,
   ) - 0.06;
+  // Retain the complete sliding impulse face plus .02 end allowance. The
+  // previous .06 extension entered the locked tooth's return-clearance circle;
+  // with the full .15 transverse thickness, this outer corner clears that circle.
   const palletOuterRadius = Math.max(
     contactStartGeometry.palletRadius,
     contactEndGeometry.palletRadius,
-  ) + 0.06;
+  ) + 0.02;
   const palletNormalLocal = crossZ(impulsePalletLocalDirection);
   const palletHalfWidth = 0.075;
   const impulsePalletShape = polygonShape([
