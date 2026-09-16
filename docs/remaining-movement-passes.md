@@ -149,17 +149,31 @@ screen has no flags. All eight packaged desktop/playback/mobile checks pass.
 The [progress record](review-progress.md) and linked family
 reviews distinguish geometric corrections from prescribed dynamics.
 
-## Next independent lanes
+## Thirty-seventh pass
+
+194, 214, 251 and 253 now have scoped corrections in the linked
+[review progress](review-progress.md): generated finite pinion and involute
+profiles, keyed stop fingers, and load-facing hook surfaces with bored joints.
+All 55 focused checks, the production build, four-model screen and four packaged
+browser cases pass. Expensive tooth cutting remains offline.
+
+194 retains a 0.00821 sampled working gap; a discontinuous terminal seating law
+was rejected. 251's edge release and 253's deployment/arrest are prescribed,
+not passive-load validated. The 215 mouth/phase candidate is being checked
+independently. 212/213 are unchanged. These residuals should not block breadth
+work on independent families.
+
+## Contact follow-up queue
 
 These are current-code findings, not claims that the movements have never been
 reviewed. Prioritize working faces, compatible motion and force direction over
 additional support detailing.
 
-- **194, radial pin mangle:** scoped factory in `authored-gears.js`. The retained
-  pin row penetrates the pinion by 0.064059 at phase 0.90625, pin 6, outside run.
-  Generate a mating pinion against the finite pin/seat envelope on both main
-  runs and both reversals. Determine whether one fixed profile supports the
-  existing phase law; do not copy 192/193's continuous cavity over isolated pins.
+- **194, radial pin mangle:** the generated profile clears the old 0.064059
+  penetration, retaining full pins and seats. Jointly reconstruct terminal
+  pin placement, working flanks and guide/phase transition to close the 0.00821
+  working gap without the rejected 0.02211-radian pickup jump. Preserve finite
+  drive moment and the source's equal opposite main-run rates.
 - **212/213/215, finite indexing and handoff:** scoped factories in
   `authored-intermittent.js`. 212 has 0.001007 midstroke overlap but about 0.034
   clearance earlier/later under its linear schedule. 213's quintic index law
@@ -169,14 +183,11 @@ additional support detailing.
   profiles while preserving real load faces and terminal stops. Keep each
   correction independently publishable; use a passive study where branch/load
   selection remains uncertain.
-- **251/253, lifting and arresting hooks:** separate files
-  `authored-pile-drivers.js` and `authored-check-hooks.js`. In 251, a hook
-  centerline sample reaches -0.12268 clearance against the unchanged head bar
-  at 0.06 radians of squeeze, despite zero nominal latch residual. Reconstruct
-  the retaining lip and release opening. In 253, the designated radial catch
-  normal has essentially zero moment arm about the drum, so it cannot provide
-  the claimed arrest torque. Correct the working face/reaction direction and
-  engagement before addressing the solid pivot roots.
+- **251/253, lifting and arresting hooks:** finite working faces now clear and
+  their reaction directions support initial retention/arrest. A future native
+  study should resolve 251's finite-load edge release and 253's passive
+  deployment, impact and holding. Use the corrected geometry as its starting
+  point; the current prescribed demonstrations do not certify those dynamics.
 
 The 251/253 full source HTML contains no `add_model` or `mm_present` definitions;
 these use captions and engravings. 212/215 have actual inline animation models,

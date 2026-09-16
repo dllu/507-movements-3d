@@ -1,3 +1,37 @@
+# Thirty-seventh family pass: finite gear and hook contacts
+
+Four movements receive independently publishable corrections: 194, 214, 251
+and 253. Existing rack cutters, finite plates and bored joints support the
+parallel lanes. The complete 507-movement review remains active.
+
+- [194 radial-pin mangle](radial-pin-mangle-contact-review.md): generate a fixed
+  pinion offline against the retained full-sized pins and seats. Five repeated
+  tooth pairs close the cycle, with minimum sampled clearance 0.000102.
+  The ideal rolling law still leaves a maximum 0.00821 working gap. A trial
+  seating law jumps at a terminal pin and is explicitly rejected.
+- [214 geared winding stop](gear-finger-stop-214-review.md): reuse rounded-rack
+  involutes, with a reconstructed 30-degree pressure angle, through both
+  directions of the 10:12 pair. Real keyed arbors, connected hubs and bored
+  supports retain the source fingers and terminal stops. Both working flank
+  directions pass proximity, torque-direction and virtual-work checks.
+- [251/253 lifting and arresting hooks](lifting-check-hook-family-review.md):
+  finite toes follow reconstructed retaining shelves; initial reactions seat
+  the hooks against connected stops. The drum catch now supplies resisting
+  torque and backs off before retraction. Both retain prescribed dynamics;
+  251's final edge release still lacks finite-load validation.
+
+All **55 distinct focused checks pass**, including unchanged 192/193 source
+regressions. Both tooth bakes regenerate byte-identically. The production build
+passes in 22.06 seconds and the four-model construction/update screen has no
+flags. Source/default/oblique views show no errors or viewport clipping
+(normalized extents 0.704–0.867). All four packaged desktop/playback/mobile
+checks pass in 18.1 seconds.
+
+212/213 remain unchanged. The separate 215 mouth/phase candidate is still under
+contact-direction and continuity review and is not included in this result.
+Sampled geometry and reaction directions do not establish passive loaded
+behavior. The linked reviews and viewer notes retain those limits.
+
 # Thirty-sixth family pass: generated mangle teeth, bands and pinned instruments
 
 Eight movements receive scoped corrections: 192–194, 212, 215, 242, 243 and
