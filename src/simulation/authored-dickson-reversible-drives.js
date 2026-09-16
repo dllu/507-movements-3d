@@ -1,3 +1,4 @@
+import { correctDicksonParts, finishOneWayFamily } from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -910,5 +911,5 @@ function dicksonReversibleDrive(movement) {
 
 export function createAuthoredDicksonReversibleDriveMovement(movement) {
   if (movement.id !== 415) return null;
-  return dicksonReversibleDrive(movement);
+  return finishOneWayFamily(correctDicksonParts(dicksonReversibleDrive(movement)), 415);
 }

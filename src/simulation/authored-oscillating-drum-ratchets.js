@@ -1,3 +1,4 @@
+import {correctOscillatingDrum,finishOneWayFamily} from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -943,6 +944,6 @@ function oscillatingDrumRatchet(movement) {
 }
 
 export function createAuthoredOscillatingDrumRatchetMovement(movement) {
-  if (movement.id === 360) return oscillatingDrumRatchet(movement);
+  if (movement.id === 360) return finishOneWayFamily(correctOscillatingDrum(oscillatingDrumRatchet(movement)), 360);
   return null;
 }

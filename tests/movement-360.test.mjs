@@ -56,9 +56,9 @@ test('movement 360 separates the loose oscillating drum from the shaft-fast ratc
   assert.match(data.mechanism, /drum-mounted-pawl/);
   assert.match(data.mechanism, /shaft-fixed-ratchet/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
-  assert.equal(degreesOfFreedom.storedEnergyStates, 1);
+  assert.equal(degreesOfFreedom.storedEnergyStates, 0);
   assert.match(degreesOfFreedom.input, /rocking beam/);
-  assert.match(degreesOfFreedom.note, /history-dependent/);
+  assert.match(degreesOfFreedom.note, /prescribed periodic capture\/coast history/);
 
   assert.equal(blocks.looseDrum.parent, model.root);
   assert.equal(blocks.flywheelRotor.parent, model.root);
@@ -233,20 +233,20 @@ test('movement 360 reverses the loose drum twice per beam cycle while its flywhe
     assert.ok(state.flywheelAngularSpeed > 0);
     assert.equal(state.flywheelDirection, 'positive continuous rotation');
   });
-  near(states[4].flywheelAngle, Math.PI, 2e-12,
-    'half-turn after one beam cycle');
-  near(states[8].flywheelAngle, 0, 2e-12,
-    'full-turn display closure');
+  near(states[4].flywheelAngle - states[0].flywheelAngle, Math.PI * .75, 2e-12,
+    'six teeth after one beam cycle');
+  near(states[8].flywheelAngle - states[0].flywheelAngle, Math.PI * 1.5, 2e-12,
+    'continuous twelve-tooth output over the demonstration');
   near(
     dynamics.flywheelAdvancePerBeamCycle,
-    Math.PI,
+    Math.PI * .75,
     2e-12,
     'flywheel advance per beam cycle',
   );
-  near(dynamics.flywheelAdvancePerCycle, FULL_TURN, 2e-12,
+  near(dynamics.flywheelAdvancePerCycle, FULL_TURN * .75, 2e-12,
     'flywheel advance per demonstration');
   assert.equal(states[1].carrierCatching, true);
-  assert.match(states[1].pawlMode, /driving impulse/);
+  assert.match(states[1].pawlMode, /driving locked/);
   assert.equal(states[3].carrierCatching, false);
   assert.match(states[3].pawlMode, /overrunning/);
   assert.deepEqual(timeline.driveStrokeMidpoints, [1.5, 7.5]);

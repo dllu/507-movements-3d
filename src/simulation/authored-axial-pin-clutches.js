@@ -1,3 +1,4 @@
+import { correctAxialPinParts, finishOneWayFamily } from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -323,6 +324,7 @@ function axialPinPulleyClutch(movement) {
   const shaftDogCenterX = -0.45;
   const shaftDogAxialWidth = 0.14;
   const shaftRadius = 0.085;
+  const pinContactPhase = Math.asin(0.12 / pulleyDogRadius);
   const beltMarkerCount = 10;
 
   const dogIntervalsAtPulleyX = (pulleyX) => {
@@ -464,10 +466,10 @@ function axialPinPulleyClutch(movement) {
       + driverAngleWithinCycle;
     const lowerPulleyAngle = driverAngle * pulleyRatio;
     const lowerPulleyAngularSpeed = driverAngularSpeed * pulleyRatio;
-    const outputAngle = cycleIndex * FULL_TURN + outputAngleWithinCycle;
+    const outputAngle = cycleIndex * FULL_TURN + outputAngleWithinCycle + pinContactPhase;
     const intervals = dogIntervalsAtPulleyX(pulleyAxialPosition);
     const dogAngularAlignmentError = Math.abs(signedAngleError(
-      lowerPulleyAngle - outputAngle,
+      lowerPulleyAngle - outputAngle + pinContactPhase,
     ));
     const beltPath = beltPathAtPulleyX(pulleyAxialPosition);
     const pinsAxiallyOverlapping = intervals.overlap > 1e-9;
@@ -826,6 +828,7 @@ function axialPinPulleyClutch(movement) {
       storedEnergyStates: 0,
     },
     dogGeometry: {
+      pinContactPhase,
       dogIntervalsAtPulleyX,
       engagedIntervals: dogIntervalsAtPulleyX(engagedPulleyX),
       disengagedIntervals: dogIntervalsAtPulleyX(disengagedPulleyX),
@@ -938,6 +941,6 @@ function axialPinPulleyClutch(movement) {
 }
 
 export function createAuthoredAxialPinClutchMovement(movement) {
-  if (movement.id === 361) return axialPinPulleyClutch(movement);
+  if (movement.id === 361) return finishOneWayFamily(correctAxialPinParts(axialPinPulleyClutch(movement)), 361);
   return null;
 }

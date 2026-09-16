@@ -337,9 +337,9 @@ test('movement 361 shifts only at rest and changes from axial clearance to posit
   near(
     positiveModulo(connected.outputAngle - connected.lowerPulleyAngle,
       FULL_TURN),
-    0,
+    model.root.userData.dogGeometry.pinContactPhase,
     2e-12,
-    'locked angular phase',
+    'finite-pin side-contact phase',
   );
   near(
     stateAtTime(geometry.cyclePeriod).outputAngle
