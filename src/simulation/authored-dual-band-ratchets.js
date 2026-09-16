@@ -1,3 +1,4 @@
+import { dualBandPawlDimensions, pawl390Angle, install390Pawls } from './dual-band-pawl-contact.js';
 import { correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import * as THREE from 'three';
 import {
@@ -321,7 +322,9 @@ function dualBandOscillationRectifier(movement) {
   const sectorRadius = 1.65;
   const loosePulleyRadius = 0.50;
   const pulleyRatio = sectorRadius / loosePulleyRadius;
-  const rockerAmplitude = FULL_TURN / (4 * pulleyRatio);
+  const carrierOvertravel = dualBandPawlDimensions.overtravel;
+  const carrierAmplitude = (Math.PI + carrierOvertravel) / 2;
+  const rockerAmplitude = carrierAmplitude / pulleyRatio;
   const upperBaseWrap = 0.57;
   const cycleDuration = 8;
   const inputAngularFrequency = FULL_TURN / cycleDuration;
@@ -330,10 +333,10 @@ function dualBandOscillationRectifier(movement) {
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
   const ratchetOuterRadius = 0.34;
   const ratchetRootRadius = 0.255;
-  const pawlMaximumLift = 0.19;
+  const pawlMaximumLift = 0.29;
   const openPlaneZ = 0.29;
   const crossedPlaneZ = 0.73;
-  const outputAdvancePerCycle = 4 * pulleyRatio * rockerAmplitude;
+  const outputAdvancePerCycle = FULL_TURN;
 
   const openCurveAtAngle = (rockerAngle) => anchoredBandCurve({
     crossed: false,
@@ -640,7 +643,7 @@ function dualBandOscillationRectifier(movement) {
     return 4 * rockerAmplitude + rockerAngle;
   };
 
-  const pawlState = (flywheelAngle, carrierAngle, active) => {
+  const pawlState = (flywheelAngle, carrierAngle, active, overrunning, advance) => {
     const relativeAngle = flywheelAngle - carrierAngle;
     const relativeToothPhase = positiveModulo(
       relativeAngle,
@@ -652,10 +655,11 @@ function dualBandOscillationRectifier(movement) {
     return {
       active,
       contactError: active ? contactError : null,
-      liftAngle: active
-        ? 0
-        : pawlMaximumLift
-          * Math.sin(Math.PI * relativeToothPhase) ** 2,
+      liftAngle: pawl390Angle(relativeAngle, { overrunning, advance })
+        - dualBandPawlDimensions.seatAngle,
+      overrunning,
+      advance,
+      takingUp: !active && !overrunning,
       relativeAngle,
       relativeToothPhase,
     };
@@ -673,27 +677,37 @@ function dualBandOscillationRectifier(movement) {
     const openPulleyAngularSpeed = pulleyRatio * rockerAngularSpeed;
     const crossedPulleyAngularSpeed = -pulleyRatio * rockerAngularSpeed;
     const rockerTravel = accumulatedRockerTravel(phase, rockerAngle);
-    const flywheelAngle = pulleyRatio * rockerTravel;
-    const flywheelAngularSpeed = pulleyRatio
-      * Math.abs(rockerAngularSpeed);
-    const atHandoff = Math.abs(rockerAngularSpeed) < 1e-12;
-    const openDriving = rockerAngularSpeed > 0 || atHandoff;
-    const crossedDriving = rockerAngularSpeed < 0 || atHandoff;
+    // The extra carrier travel lets an overrunning toe finish its finite drop.
+    // On reversal the new carrier takes up that clearance before driving.
+    const flywheelAngle = phase < .25 ? openPulleyAngle
+      : phase < .75 ? Math.max(carrierAmplitude, crossedPulleyAngle + Math.PI)
+        : Math.max(carrierAmplitude + Math.PI, openPulleyAngle + FULL_TURN);
+    const openDriving = phase < .25 || (phase >= .75
+      && openPulleyAngle + FULL_TURN >= carrierAmplitude + Math.PI - 1e-13);
+    const crossedDriving = phase >= .25 && phase < .75
+      && crossedPulleyAngle + Math.PI >= carrierAmplitude - 1e-13;
+    const flywheelAngularSpeed = openDriving ? Math.max(0, openPulleyAngularSpeed)
+      : crossedDriving ? Math.max(0, crossedPulleyAngularSpeed) : 0;
+    const atHandoff = !openDriving && !crossedDriving;
     const openPawl = pawlState(
       flywheelAngle,
       openPulleyAngle,
       openDriving,
+      phase >= .25 && phase < .75,
+      flywheelAngle - openPulleyAngle,
     );
     const crossedPawl = pawlState(
       flywheelAngle,
       crossedPulleyAngle,
       crossedDriving,
+      phase < .25 || phase >= .75,
+      flywheelAngle - crossedPulleyAngle + (phase < .25 ? Math.PI : -Math.PI),
     );
     const openCurve = openCurveAtAngle(rockerAngle);
     const crossedCurve = crossedCurveAtAngle(rockerAngle);
     return {
       activeDrive: atHandoff
-        ? 'both-pawls-seated-at-zero-speed-handoff'
+        ? 'output-dwell-during-finite-pawl-take-up'
         : openDriving
           ? 'open-band-C-pawl-driving'
           : 'crossed-band-D-pawl-driving',
@@ -812,10 +826,12 @@ function dualBandOscillationRectifier(movement) {
       ],
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
       treatment:
-        'exact constant-length anchored-band geometry, no-slip sector-to-pulley ratios, and piecewise analytic full-wave ratchet rectification',
+        'constant-length anchored bands, no-slip carrier angles, finite geometric pawl contact with prescribed return and analytic take-up; no passive force solution',
     },
     fidelity: 'authored',
     geometry: {
+      carrierOvertravel,
+      carrierAmplitude,
       crossedBandLength,
       crossedPlaneZ,
       flywheelRadius,
@@ -892,12 +908,14 @@ function dualBandOscillationRectifier(movement) {
       cycleDuration,
       demonstrationPeriod: cycleDuration,
       events: {
-        crossedPawlTakesDrive: cycleDuration * 0.25,
-        openPawlRetakesDrive: cycleDuration * 0.75,
+        crossedPawlTakesDrive: cycleDuration * (.25 + Math.acos(1 - carrierOvertravel / carrierAmplitude) / FULL_TURN),
+        crossedCarrierReverses: cycleDuration * .25,
+        openPawlRetakesDrive: cycleDuration * (.75 + Math.acos(1 - carrierOvertravel / carrierAmplitude) / FULL_TURN),
+        openCarrierReverses: cycleDuration * .75,
         oneInputOscillationAndOutputTurn: cycleDuration,
       },
       note:
-        'one sinusoidal oscillation of A gives one complete positive output turn; speed falls continuously to zero at each pawl handoff without reversing the flywheel',
+        'one oscillation gives one positive output turn with brief stationary take-up after each carrier reversal; finite drop is prescribed and impact at pickup is omitted',
     },
     transmission: {
       bandLengthLaw:
@@ -905,9 +923,9 @@ function dualBandOscillationRectifier(movement) {
       beltDirectionLaw:
         'open C gives theta_C=(R/r)*alpha while crossed D gives theta_D=-(R/r)*alpha',
       outputLaw:
-        'theta_B=(R/r)*integral(abs(d alpha)); omega_B=(R/r)*abs(omega_A)>=0',
+        'theta_B follows the positive carrier after finite take-up; omega_B is either abs(omega_carrier) or zero during the two short dwells',
       pawlLaw:
-        'the pawl on whichever loose pulley has positive angular speed is seated against its fast ratchet while the other pawl overruns',
+        'a carrier with positive angular speed takes up the finite drop allowance before its pawl seats; the opposite pawl follows the finite tooth envelope',
     },
   };
 
@@ -919,6 +937,7 @@ function dualBandOscillationRectifier(movement) {
   root.userData.cameraDistanceScale = 1.17;
   root.userData.groundFloorY = -1.74;
   correctDualBandInterfaces(root);
+  install390Pawls(root);
   finishAlternatingDrive(root, update, cycleDuration);
   markShadows(root);
   return {

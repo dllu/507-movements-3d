@@ -254,7 +254,7 @@ test('movement 390 open and crossed loose pulleys obey exact equal-magnitude opp
   disposeModel(model.root);
 });
 
-test('movement 390 alternates pawls at reversals and full-wave rectifies one oscillation into one positive flywheel turn', () => {
+test('movement 390 takes up finite pawl overtravel and rectifies one oscillation into one positive flywheel turn', () => {
   const model = createMovementModel(catalog.movements[389]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
@@ -269,8 +269,9 @@ test('movement 390 alternates pawls at reversals and full-wave rectifies one osc
     assert.ok(state.flywheelAngle >= previousAngle - 2e-15);
     assert.ok(state.flywheelAngularSpeed >= 0);
     near(state.flywheelAngularSpeed,
-      geometry.pulleyRatio * Math.abs(state.rockerAngularSpeed), 0,
-      'rectified output speed');
+      state.openPawl.active || state.crossedPawl.active
+        ? geometry.pulleyRatio * Math.abs(state.rockerAngularSpeed) : 0, 2e-15,
+      'engaged speed or finite take-up dwell');
     if (state.openPawl.active) {
       near(state.openPawl.contactError, 0, 2e-15,
         'open driving pawl tooth closure');
@@ -282,22 +283,19 @@ test('movement 390 alternates pawls at reversals and full-wave rectifies one osc
     previousAngle = state.flywheelAngle;
   }
 
-  const firstHandoff = stateAtTime(
-    timeline.events.crossedPawlTakesDrive,
-  );
-  const secondHandoff = stateAtTime(
-    timeline.events.openPawlRetakesDrive,
-  );
-  for (const handoff of [firstHandoff, secondHandoff]) {
-    assert.equal(handoff.openPawl.active, true);
-    assert.equal(handoff.crossedPawl.active, true);
-    near(handoff.flywheelAngularSpeed, 0, 3e-16,
-      'zero-speed direction handoff');
-    near(handoff.openPawl.contactError, 0, 2e-15,
-      'open pawl seated at handoff');
-    near(handoff.crossedPawl.contactError, 0, 2e-15,
-      'crossed pawl seated at handoff');
+  for (const [event, active] of [
+    [timeline.events.crossedPawlTakesDrive, 'crossedPawl'],
+    [timeline.events.openPawlRetakesDrive, 'openPawl'],
+  ]) {
+    const before = stateAtTime(event - 1e-7);
+    const after = stateAtTime(event + 1e-7);
+    assert.equal(before.flywheelAngularSpeed, 0, 'output waits for physical take-up');
+    assert.equal(after[active].active, true);
+    near(after[active].contactError, 0, 2e-15, 'new pawl locks at its tooth phase');
+    near(before.flywheelAngle, after.flywheelAngle, 1e-6, 'pickup position is continuous');
   }
+  assert.ok(timeline.events.crossedPawlTakesDrive > timeline.events.crossedCarrierReverses);
+  assert.ok(timeline.events.openPawlRetakesDrive > timeline.events.openCarrierReverses);
   disposeModel(model.root);
 });
 
