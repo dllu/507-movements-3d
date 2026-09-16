@@ -704,3 +704,21 @@ All 83 distinct focused checks pass, including unchanged 303 behavior and the
 final shared-interface check after 391's stroke change. The production build and
 six-model screen pass with no flags. All six packaged desktop/playback/mobile
 checks pass in 17.1 seconds. The overall review remains active.
+
+## Twenty-ninth parallel batch
+
+- **289:** reconstruct compatible deadbeat lock/impulse faces and forward-raked
+  teeth, retaining the working surfaces through finite handoff.
+- **290/292:** correct outward pallet backing, shared shaft interfaces,
+  connected spokes and framing. Keep 292's incompatible stud/pallet handoff
+  queued separately from its verified structural corrections.
+- **391:** replace the interfering selector with finite curved contact on a
+  separate inboard lug, with correct outward spring assistance and release.
+- **390:** publish a reproducible offline MuJoCo flywheel study. Its timestep
+  controls disagree, so it remains experimental and does not replace playback.
+
+The [review progress](review-progress.md) links each family's evidence and
+limits. All 105 distinct focused checks, the final production build, four-model
+screen and four packaged desktop/playback/mobile checks pass. The native
+study's failed dynamics comparison remains an explicit exception, alongside
+292's working contact and the prescribed passive dynamics of the other models.

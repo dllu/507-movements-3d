@@ -1,3 +1,34 @@
+# Twenty-ninth family pass: escapement handoffs and a working rack selector
+
+Four movements receive production corrections: 289, 290, 292 and 391. A bounded
+native study of 390 remains experimental. The overall review remains active.
+
+- [289 deadbeat contact](deadbeat-contact-review.md): compatible forward-raked
+  teeth, concentric locks and impulse faces replace the incompatible handoff.
+  Finite clearance, retained working faces and reaction direction are checked.
+- [290/292 annular and stud escapements](annular-stud-family-review.md): 290's
+  outward pallet backing fixes its wheel collision; shared bores, journals,
+  attached spokes and source-facing framing improve both. **292's working
+  stud/pallet handoff remains unresolved.**
+- [391 weighted-rack selector](weighted-rack-selector-contact-review.md): a
+  separate inboard lug, curved lever and real stop now load, assist outward
+  transfer and release coherently. Spring/contact torque direction is checked;
+  passive guide-branch dynamics and corner timing remain prescribed.
+- [390 native flywheel study](dual-band-native-study.md): passive pawls and
+  flywheel are driven only through the band carriers. Timestep controls fail
+  to agree, so no native trajectory replaces production playback.
+
+Analytical contact profiles and direct tangency keep the corrected browser
+models inexpensive. Expensive dynamics remain an offline qualification task;
+a failed native study does not hold up unrelated corrections.
+
+All 105 distinct focused checks pass, including unchanged 288/303/304 behavior,
+shared alternating-drive interfaces and three native setup regressions. The
+final production build passes in 21.22 seconds. The four-model construction/
+update screen has no flags. All four packaged desktop/playback/mobile checks
+pass in 10.4 seconds. Passing setup tests do not qualify the failed native
+timestep comparison or the remaining 292 contact problem.
+
 # Twenty-eighth family pass: finite handoffs, escapements and working clamps
 
 Six movements receive corrections in four parallel lanes: 244, 287–289 and

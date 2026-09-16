@@ -92,6 +92,12 @@ export function correctAnnularStudEscapement(root, id, update) {
   markShadows(root);
   for (const marker of [b.contactMarker, b.wheelIndex, b.pivotIndex].filter(Boolean)) {
     marker.castShadow = false; marker.receiveShadow = false;
+    if (marker.geometry.type === 'CircleGeometry') {
+      marker.material = marker.material.clone();
+      marker.material.polygonOffset = true;
+      marker.material.polygonOffsetFactor = -1;
+      marker.material.polygonOffsetUnits = -1;
+    }
   }
   const bounds = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 32; i++) {
