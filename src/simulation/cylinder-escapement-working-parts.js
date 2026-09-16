@@ -38,7 +38,9 @@ export function correctCylinderWorkingParts(root){
  for(const o of[b.entryLipTrace,b.exitLipTrace,b.innerLockTrace,b.outerLockTrace])o.visible=false;
  b.contactMarker.visible=false;
  b.palletFeet=palletFeet;b.balanceHub=balanceHub;
- d.finiteContactReview={qualification:'Support, journal and hollow-passage corrections only. Finite pallet/cylinder and lip contact remains unresolved; the existing point-contact schedule is prescribed and does not qualify the visible solids.',
+ d.reconstructionNote='This illustrates the intended outside lock, entry, inside lock and opposite exit impulse. The finite teeth still intersect the cylinder and lips; the displayed timing follows a prescribed reference point inside each tooth. Loaded locking, both real impulses and passive balance motion remain unresolved. Hollow passages and shaft journals are corrected, but this is not a validated working escapement.';
+ d.transmission.loadedImpulseValidated=false;
+ d.finiteContactReview={nominalPointInsideToothDepth:.0167871633791542,loadedLockingValidated:false,oppositeFiniteImpulsesValidated:false,qualification:'Support, journal and hollow-passage corrections only. Finite pallet/cylinder and lip contact remains unresolved; the existing point-contact schedule is prescribed and does not qualify the visible solids.',
   measuredResiduals:{baselineShellPenetration:.08129,baselineLipPenetration:.02589},
   noPassiveForceValidation:true,contactMarkersSuppressed:true};
 }

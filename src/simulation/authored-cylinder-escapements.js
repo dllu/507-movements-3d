@@ -959,6 +959,8 @@ function cylinderEscapementPerspective(movement) {
     }
     root.userData.contacts = state.contactActive
       ? {
+        contactKind: 'prescribed-reference-point',
+        finiteSurfaceValidated: false,
         activeToothIndex: state.activeToothIndex,
         mode: state.contactMode,
         normalVelocityError: state.contact.normalVelocityError,
@@ -967,6 +969,8 @@ function cylinderEscapementPerspective(movement) {
         surfaceRadiusError: state.contact.surfaceRadiusError,
       }
       : {
+        contactKind: 'prescribed-reference-point',
+        finiteSurfaceValidated: false,
         activeToothIndex: state.activeToothIndex,
         mode: null,
         normalVelocityError: null,
