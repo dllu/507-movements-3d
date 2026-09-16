@@ -1,3 +1,4 @@
+import {correctDuplexLeverInterfaces} from './duplex-lever-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1090,8 +1091,9 @@ function duplexEscapement(movement) {
     object.receiveShadow = false;
   }
   root.userData.fidelity = 'authored';
+  correctDuplexLeverInterfaces(root, 293, update);
   return {
-    cameraDirection: new THREE.Vector3(6.3, 4.7, 14.2),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
