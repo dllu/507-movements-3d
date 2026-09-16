@@ -1,0 +1,97 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-cylinder-spiral-scribers.js",
+      "sha256": "38593c6847cc0b9a37fe70691d8a34598bba80d1c1d69a684b578d722c9eb754"
+    },
+    {
+      "file": "src/simulation/authored-dynamometers.js",
+      "sha256": "30258008ba92991d0051df74d41ab726e6ae1807f73153747cbf39e644d588b1"
+    },
+    {
+      "file": "src/simulation/scriber-dynamometer-gears.js",
+      "sha256": "75b5d3c28afdc01f7169ecdcd193f74a62405eff1ad5477952a5345936935e86"
+    },
+    {
+      "file": "src/simulation/bevel-geometry.js",
+      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    },
+    {
+      "file": "src/simulation/rack-pinion-parts.js",
+      "sha256": "7c2a182124255120b60516fdbe2b1604e5b64a4f6d7a1d4c12b6f16364aabeff"
+    },
+    {
+      "file": "src/simulation/band-epicyclic-geometry.js",
+      "sha256": "a6a6c0275260970d1d701cec0b1b871724396ff7be90c553d62686d635e25e53"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "scripts/review-368-372-contact-solids.mjs",
+      "sha256": "ebfdae82a8640a18a665185ec633dd848737483c3c51ba3746fa6f913378729d"
+    }
+  ],
+  "method": "Actual rendered gear teeth and bodies sampled bidirectionally at vertices, edge midpoints and triangle centers with BVH containment over a full368forward traverse and one372working tooth period. Hubs, shafts and supports excluded. Distances capped at .15.",
+  "results": [
+    {
+      "id": 368,
+      "poses": 33,
+      "queries": 561449,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "input-shaft-bevel-pinion-driving-cylinder-shaft-vertical-shaft-bevel-wheel-driving-cylinder",
+          "maximumSampledGap": 0.0009373294781074218,
+          "minimumSampledGap": 0.0009318442403218737
+        },
+        {
+          "pair": "same-input-shaft-spur-pinion-driving-vertical-rack-finite-toothed-rack-sliding-through-guides",
+          "maximumSampledGap": 0.0009082161884968006,
+          "minimumSampledGap": 0.0009063719810879946
+        }
+      ]
+    },
+    {
+      "id": 372,
+      "poses": 33,
+      "queries": 1093410,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "right-loose-input-miter-gear-free-on-horizontal-shaft-upper-balanced-intermediate-miter-gear-carried-by-hoop",
+          "maximumSampledGap": 0.0017858355807837019,
+          "minimumSampledGap": 0.0017757112620395206
+        },
+        {
+          "pair": "left-miter-gear-fast-keyed-to-horizontal-output-shaft-upper-balanced-intermediate-miter-gear-carried-by-hoop",
+          "maximumSampledGap": 0.0017858355807837427,
+          "minimumSampledGap": 0.0017757112620395109
+        },
+        {
+          "pair": "right-loose-input-miter-gear-free-on-horizontal-shaft-lower-balanced-intermediate-miter-gear-carried-by-hoop",
+          "maximumSampledGap": 0.0017858355807837427,
+          "minimumSampledGap": 0.0017757112620395109
+        },
+        {
+          "pair": "left-miter-gear-fast-keyed-to-horizontal-output-shaft-lower-balanced-intermediate-miter-gear-carried-by-hoop",
+          "maximumSampledGap": 0.0017858355807837019,
+          "minimumSampledGap": 0.0017757112620395206
+        }
+      ]
+    }
+  ]
+}

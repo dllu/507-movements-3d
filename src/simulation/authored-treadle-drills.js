@@ -186,13 +186,13 @@ function treadleBevelDrillingMachine(movement) {
   const pinionTeeth = 16;
   const bevelRatio = driverTeeth / pinionTeeth;
   const pinionLocalAngularSpeed = -bevelRatio * driverAngularSpeed;
-  const drillShaftAngularSpeed = -pinionLocalAngularSpeed;
+  const drillShaftAngularSpeed = pinionLocalAngularSpeed;
   const shaftAngle = Math.PI / 2;
   const driverPitchConeAngle = Math.atan2(driverTeeth, pinionTeeth);
   const pinionPitchConeAngle = Math.atan2(pinionTeeth, driverTeeth);
-  const apex = new THREE.Vector3(0, 2.38, 0);
+  const apex = new THREE.Vector3(0, 1.58, 0);
   const driverAxis = X_AXIS.clone();
-  const pinionAxis = Y_AXIS.clone().negate();
+  const pinionAxis = Y_AXIS.clone();
   const outerSlantDistance = 1.04;
   const driverOuterDistance = outerSlantDistance
     * Math.cos(driverPitchConeAngle);
@@ -373,6 +373,16 @@ function treadleBevelDrillingMachine(movement) {
   }
   bp.needsUpdate=true;keyedBody.computeVertexNormals();
   pinionGear.userData.body.geometry.dispose();pinionGear.userData.body.geometry=keyedBody;
+  // The fixed upper bearing supports a rotating keyed hub. The feather can
+  // therefore traverse it without sweeping through a stationary round bore.
+  const pinionHub=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.20,96)),keyHole),pinionOuterDistance,1.17),drivenMaterial);
+  pinionHub.userData.role='keyed-pinion-hub-turning-in-fixed-upper-bearing';
+  pinionGear.userData.rotor.add(pinionHub);
+  const pinionBearingCollars=[[.97,1.00],[1.14,1.17]].map(([low,high])=>{
+    const collar=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.235,96)),keyHole),low,high),drivenMaterial);
+    collar.userData.role='rotating-pinion-bearing-axial-retainer';
+    pinionGear.userData.rotor.add(collar);return collar;
+  });
   root.add(driverGear, pinionGear);
 
   const inputRotor = new THREE.Group();
@@ -423,10 +433,10 @@ function treadleBevelDrillingMachine(movement) {
     'vertical-drillshaft-sliding-through-small-bevel-pinion';
   shaftSpinRotor.add(drillShaft);
   const shaftFeather = new THREE.Mesh(
-    new THREE.BoxGeometry(.050,1.05,.054),
+    new THREE.BoxGeometry(.050,1.08,.054),
     accentMaterial,
   );
-  shaftFeather.position.set(.102,1.83,0);
+  shaftFeather.position.set(.102,2.33,0);
   shaftFeather.userData.role =
     'longitudinal-feather-key-sliding-in-pinion-groove';
   shaftSpinRotor.add(shaftFeather);
@@ -593,8 +603,8 @@ function treadleBevelDrillingMachine(movement) {
   frameTop.userData.role = 'upper-arm-of-drill-c-frame';
   frame.add(frameTop);
   const inputBearingBridge = makeBeam(
-    new THREE.Vector3(1.48, 2.38, frameRearZ),
-    new THREE.Vector3(1.48, 2.38, -.205),
+    new THREE.Vector3(1.48, apex.y, frameRearZ),
+    new THREE.Vector3(1.48, apex.y, -.205),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   inputBearingBridge.userData.role =
@@ -607,7 +617,7 @@ function treadleBevelDrillingMachine(movement) {
     X_AXIS,
     48,
   );
-  inputBearing.position.set(1.48, 2.38, 0);
+  inputBearing.position.set(1.48, apex.y, 0);
   inputBearing.userData.role = 'fixed-horizontal-input-shaft-bearing';
   frame.add(inputBearing);
   const lowerShaftGuide = torusNormalToAxis(
@@ -622,7 +632,7 @@ function treadleBevelDrillingMachine(movement) {
     'fixed-lower-guide-bearing-for-sliding-rotating-drillshaft';
   frame.add(lowerShaftGuide);
   const upperShaftGuide = torusNormalToAxis(
-    .155,
+    .255,
     .050,
     frameMaterial,
     Y_AXIS,
@@ -630,7 +640,7 @@ function treadleBevelDrillingMachine(movement) {
   );
   upperShaftGuide.position.set(0,2.65,0);
   upperShaftGuide.userData.role =
-    'fixed-upper-guide-bearing-for-sliding-rotating-drillshaft';
+    'fixed-upper-bearing-around-keyed-pinion-hub';
   frame.add(upperShaftGuide);
   const lowerLeverSupport = makeBeam(
     new THREE.Vector3(lowerLeverPivot.x, frameBaseY, frameRearZ),
@@ -650,7 +660,7 @@ function treadleBevelDrillingMachine(movement) {
   for(const [guide,start] of [[lowerShaftGuide,new THREE.Vector3(frameColumnX,.48,frameRearZ)],
       [upperShaftGuide,new THREE.Vector3(0,3.25,frameRearZ)]]){
     const rear=new THREE.Vector3(0,guide.position.y,frameRearZ);
-    for(const [a,b] of [[start,rear],[rear,new THREE.Vector3(0,guide.position.y,-.185)]]){
+    for(const [a,b] of [[start,rear],[rear,new THREE.Vector3(0,guide.position.y,guide===upperShaftGuide?-.285:-.185)]]){
       const support=makeBeam(a,b,{color:PALETTE.frame,depth:.12,thickness:.12});
       frame.add(support);shaftGuideBridges.push(support);
     }
@@ -682,7 +692,7 @@ function treadleBevelDrillingMachine(movement) {
     const driverAngle = driverBasePhase + driverTravelAngle;
     const pinionLocalAngle = pinionBasePhase
       + pinionLocalAngularSpeed * time;
-    const drillShaftAngle = -pinionLocalAngle;
+    const drillShaftAngle = pinionLocalAngle;
     const cycleCoordinate = time / demonstrationPeriod;
     const cyclePhase = normalizeFeedPhase(
       positiveModulo(cycleCoordinate, 1),
@@ -764,7 +774,7 @@ function treadleBevelDrillingMachine(movement) {
       driverAngularSpeed,
       driverSurfaceVelocity,
       featherPhaseError: wrappedAngle(
-        drillShaftAngle + pinionLocalAngle,
+        drillShaftAngle - pinionLocalAngle,
       ),
       feedDown,
       feedVelocityDown,
@@ -857,7 +867,7 @@ function treadleBevelDrillingMachine(movement) {
       lowerLeverSupport,
       lowerPivotHub,
       lowerShaftGuide, shaftGuideBridges,
-      pinionGear,
+      pinionGear, pinionHub, pinionBearingCollars,
       pinionKeyway,
       shaftFeather,
       shaftSpinIndex,
@@ -996,7 +1006,7 @@ function treadleBevelDrillingMachine(movement) {
       bevelLaw:
         'pinion local angular speed = -(32/16) times large-gear speed; pitch-line surface velocities are identical at the common pitch-cone contact',
       featherLaw:
-        'drillshaft world angle = negative pinion local angle because the pinion local axis points down; their physical world angular velocities are identical at every axial feed position',
+        'drillshaft world angle equals pinion local angle because both axes point up; their physical world angular velocities are identical at every axial feed position',
       feedLaw:
         'equal-angle upper and lower levers keep the far-left connector rigid; the finite upper link converts the upper lever tip arc to exact vertical thrust-collar travel',
       motionSuperposition:

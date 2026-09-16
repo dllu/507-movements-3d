@@ -61,7 +61,7 @@ test('379 and 380 actual drill points face down and preserve clearance to the wo
 test('366 finite keyed pinion and shaft guides clear the sliding feather across every feed position',()=>{
  const {root,update}=createMovementModel(catalog[365]),b=root.userData.blocks;
  const meshes=[];
- for(const object of[b.pinionGear.userData.body,b.lowerShaftGuide,b.upperShaftGuide,b.thrustCollar,b.collarYoke,b.inputShaft])object.traverse(o=>{if(o.geometry)meshes.push(o);});
+ for(const object of[b.pinionGear.userData.body,b.pinionHub,...b.pinionBearingCollars,b.lowerShaftGuide,b.upperShaftGuide,b.thrustCollar,b.collarYoke,b.inputShaft])object.traverse(o=>{if(o.geometry)meshes.push(o);});
  const targets=meshes.map(o=>[o,solidSurface(o.geometry)]);
  for(let i=0;i<=64;i++){
   update(i*8/64);root.updateMatrixWorld(true);
@@ -113,4 +113,24 @@ test('366 shared involute bevel surfaces clear each other throughout one tooth p
   assert.ok(nearest<.003);
  }
  assert.ok(queries>10000);
+});
+
+
+test('366 source-facing upper pinion mounting clears its fixed bearing and moving thrust stack over the full feed stroke',()=>{
+ const {root,update}=createMovementModel(catalog[365]),d=root.userData,b=d.blocks;
+ const hubPoints=surfacePoints(b.pinionHub.geometry);
+ const bearingSurface=solidSurface(b.upperShaftGuide.geometry);
+ for(let i=0;i<=128;i++){
+  update(i*8/128);root.updateMatrixWorld(true);
+  const cone=bounds(b.pinionGear.userData.body),hub=bounds(b.pinionHub),bearing=bounds(b.upperShaftGuide);
+  assert.ok(cone.min.y>b.inputRotor.position.y,'small bevel must be above the horizontal input shaft');
+  assert.ok(cone.max.y<bearing.min.y,'pinion cone clears the upper bearing');
+  assert.ok(hub.min.y<bearing.min.y&&hub.max.y>bearing.max.y,'fixed bearing captures the rotating neck');
+  for(const ring of b.thrustRings)assert.ok(bounds(ring).min.y>hub.max.y,'thrust flanges clear the fixed-height pinion hub');
+  assert.ok(bounds(b.thrustCollar).min.y>hub.max.y,'translating collar clears the hub');
+  clear(b.upperShaftGuide,hubPoints,b.pinionHub,bearingSurface);
+  assert.ok(bearing.min.y-bounds(b.pinionBearingCollars[0]).max.y>.019);
+  assert.ok(bounds(b.pinionBearingCollars[1]).min.y-bearing.max.y>.019);
+  assert.ok(d.stateAtTime(i*8/128).drillShaftAngularSpeed<0,'physical spindle phase follows the upward pinion axis');
+ }
 });

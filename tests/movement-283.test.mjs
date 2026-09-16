@@ -95,7 +95,8 @@ test('movement 283 is one handled pinion driving two opposed pump racks', () => 
   assert.equal(roles.filter((role) => /air-pump-piston$/.test(role)).length,
     2);
   assert.equal(roles.filter((role) => /rack-pinion-pitch-contact/.test(role))
-    .length, 2);
+    .length, 0);
+  assert.ok(blocks.contactMarkers.every(marker=>!marker.visible));
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -389,7 +390,7 @@ test('movement 283 renderer binds the one rotor and both rack-piston trains', ()
   assert.equal(animationTiming.authoredCyclePeriod, 4);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  assert.equal(model.root.userData.cameraDistanceScale, 1.15);
+  assert.equal(model.root.userData.cameraDistanceScale, 1.02);
   assert.equal(blocks.leftRackIndex.parent, blocks.leftRack);
   assert.equal(blocks.rightRackIndex.parent, blocks.rightRack);
   assert.equal(blocks.handleGripCap.parent, blocks.pinionRotor);

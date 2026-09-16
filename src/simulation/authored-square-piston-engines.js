@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate,poly,circle,polygonClipping,ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -319,7 +320,7 @@ function squarePistonEngine(movement) {
     new THREE.BoxGeometry(housingOuterWidth + 0.80, 0.28, 1.34),
     frameMaterial,
   );
-  foundation.position.set(0, -housingOuterHeight / 2 - 0.30, -0.12);
+  foundation.position.set(0, -housingOuterHeight / 2 - 0.14, -0.12);
   foundation.userData.role = 'fixed-foundation-of-square-piston-engine';
   root.add(foundation);
 
@@ -347,11 +348,19 @@ function squarePistonEngine(movement) {
     ),
     pistonCMaterial,
   );
+  pistonCBody.geometry.dispose();
+  pistonCBody.geometry = plate(polygonClipping.difference(poly([
+    [-pistonCHalfWidth,-pistonCHalfHeight],[pistonCHalfWidth,-pistonCHalfHeight],
+    [pistonCHalfWidth,pistonCHalfHeight],[-pistonCHalfWidth,pistonCHalfHeight]]),
+  poly(circle([0,0],0.185,128))),-0.31,0.31);
   pistonCBody.position.z = 0.46;
   pistonCBody.userData.role = 'horizontal-body-of-piston-C';
   pistonC.add(pistonCBody);
   const pistonCWristBearing = cylinderAlongZ(0.20, 0.90, whiteMaterial, 28);
-  pistonCWristBearing.position.z = 0.62;
+  pistonCWristBearing.geometry.dispose();
+  pistonCWristBearing.geometry = ring(0.185,0.26,-0.06,0.06,128);
+  pistonCWristBearing.rotation.set(0,0,0);
+  pistonCWristBearing.position.z = 0.82;
   pistonCWristBearing.userData.role =
     'crank-wrist-a-rigidly-attached-at-center-of-piston-C';
   pistonC.add(pistonCWristBearing);
@@ -361,7 +370,7 @@ function squarePistonEngine(movement) {
     new THREE.TorusGeometry(crankRadius, 0.045, 10, 56),
     darkMaterial,
   );
-  crankReference.position.z = 0.80;
+  crankReference.position.z = 1.34;
   crankReference.userData.role = 'crank-wrist-circular-path-reference';
   root.add(crankReference);
   const crankRotor = new THREE.Group();
@@ -370,7 +379,7 @@ function squarePistonEngine(movement) {
     new THREE.BoxGeometry(crankRadius, 0.18, 0.34),
     crankMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, 0.88);
+  crankArm.position.set(crankRadius / 2, 0, 1.08);
   crankArm.userData.role = 'crank-arm-from-main-shaft-b-to-wrist-a';
   crankRotor.add(crankArm);
   const crankWristA = cylinderAlongZ(0.18, 0.84, whiteMaterial, 28);
@@ -379,8 +388,8 @@ function squarePistonEngine(movement) {
     'single-crank-wrist-a-directly-driving-piston-C';
   crankRotor.add(crankWristA);
   root.add(crankRotor);
-  const mainShaftB = cylinderAlongZ(0.24, 1.10, darkMaterial, 32);
-  mainShaftB.position.z = 0.42;
+  const mainShaftB = cylinderAlongZ(0.24, 0.42, darkMaterial, 32);
+  mainShaftB.position.z = 1.17;
   mainShaftB.userData.role = 'fixed-axis-main-shaft-b';
   root.add(mainShaftB);
 
@@ -604,6 +613,9 @@ function squarePistonEngine(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(4.8, 3.3, 11.8);
   root.userData.groundFloorY = -3.30;
+  root.userData.hideGround = true;
+  root.userData.solidReview = { qualification: 'Bored piston wrist and finite sliding guides; front cutaway crank/shaft stub avoids passing a fixed shaft through translating C. Rear bearing support and steam sealing/pressure are not modeled.' };
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

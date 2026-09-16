@@ -1,3 +1,33 @@
+# Twelfth family pass: rack outputs, source-correct drill layout and rotary pistons
+
+Seven further movements receive bounded corrections: 282/283, 368/372 and
+424/425/426. A fourth parallel lane resolves 366's documented source-layout
+mismatch. All 104 focused/regression tests, the production build and eight
+packaged playback/mobile-resize checks pass. The full review remains active.
+
+366 now places the small bevel above the large wheel, with the corresponding
+shaft phase, keyed hub and upper-bearing arrangement. Full-stroke bearing and
+retainer checks pass; the previous layout residual is removed from the
+[drill review](drill-feed-family-review.md).
+
+282/283 have genuine slots, compatible rack/pinion teeth, open guides and
+coaxial pump barrels. 282's finite cord now runs in its sheave; 283's bedplate
+has actual passages for its descending racks. See the
+[rack-output review](rack-output-282-283-review.md). Their longer cord and full
+pump stroke remain documented differences from the abbreviated engraving.
+
+368 reuses the same rack/pinion helper. Its bevel drive and 372's differential
+reuse conical involutes and actual shaft bores. A 33-pose audit finds no sampled
+penetration in 1,654,859 queries. See the
+[scriber/dynamometer review](scriber-dynamometer-bevel-review.md) for the
+approximate bevel flanks, selected torque and contact scope.
+
+424/425/426 now align finite piston, wrist, abutment and housing geometry with
+their analytical constraints. Open bores and grooves replace filled joints;
+426's displayed abutments follow the same source profile as the motion law.
+See the [engine review](piston-engine-424-426-review.md) for selected working
+surfaces and the unmodeled pressure/load behavior.
+
 # Eleventh family pass: generated gear profiles, drill feeds and engine joints
 
 Nine further movements receive bounded corrections across three reusable families:

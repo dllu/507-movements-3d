@@ -7,22 +7,13 @@ import {
   matte,
 } from './primitives.js';
 
+import { rackPinionGeometry, rackToothGeometry, RACK_PRESSURE_ANGLE } from './rack-pinion-parts.js';
+import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { circle, poly, plate, polygonClipping as clip } from './finite-plate-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 const HALF_TURN = Math.PI;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-
-function centeredExtrusion(shape, depth, bevelSize = 0.006) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 8,
-    depth,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
 
 function cylinderAlongZ(radius, length, material, segments = 36) {
   const cylinder = new THREE.Mesh(
@@ -52,23 +43,6 @@ function septicSmoothstep(normalized) {
     secondDerivative: 420 * u2 * oneMinusU ** 2 * (1 - 2 * u),
     value: 35 * u ** 4 - 84 * u ** 5 + 70 * u ** 6 - 20 * u ** 7,
   };
-}
-
-function makeRackToothGeometry({
-  depth,
-  innerDirection,
-  pitch,
-  toothHeight,
-}) {
-  const rootX = -innerDirection * toothHeight / 2;
-  const tipX = innerDirection * toothHeight / 2;
-  const shape = new THREE.Shape();
-  shape.moveTo(rootX, -pitch * 0.42);
-  shape.lineTo(tipX, -pitch * 0.19);
-  shape.lineTo(tipX, pitch * 0.19);
-  shape.lineTo(rootX, pitch * 0.42);
-  shape.closePath();
-  return centeredExtrusion(shape, depth);
 }
 
 function handRockedPinionAndPumpRacks(movement) {
@@ -398,17 +372,10 @@ function handRockedPinionAndPumpRacks(movement) {
   for (const side of [-1, 1]) {
     const x = side * pinionPitchRadius;
     const cylinder = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.45,
-        0.45,
-        pumpCylinderHeight,
-        40,
-        1,
-        true,
-      ),
+      boredCylinderGeometry(.45,.365,pumpCylinderHeight),
       glassMaterial,
     );
-    cylinder.position.set(x, pumpCylinderCenterY, -0.1);
+    cylinder.position.set(x, pumpCylinderCenterY, 0.23);
     cylinder.userData.role = side < 0
       ? 'left-transparent-air-pump-barrel'
       : 'right-transparent-air-pump-barrel';
@@ -420,7 +387,7 @@ function handRockedPinionAndPumpRacks(movement) {
         darkMaterial,
       );
       ring.rotation.x = Math.PI / 2;
-      ring.position.set(x, y, -0.1);
+      ring.position.set(x, y, 0.23);
       ring.userData.role = 'fixed-pump-barrel-end-ring';
       pumpCylinderRings.push(ring);
       root.add(ring);
@@ -439,6 +406,19 @@ function handRockedPinionAndPumpRacks(movement) {
   pinion.userData.role = 'handle-driven-half-turn-pinion';
   root.add(pinion);
   const pinionRotor = pinion.userData.rotor;
+  const pinionBody=pinionRotor.children[0];
+  pinionBody.geometry.dispose();
+  pinionBody.geometry=rackPinionGeometry({radius:pinionPitchRadius,teeth:pinionTeeth,
+    addendum:pinionToothHeight/2,depth:.44,bore:.153});
+  // At the reference pose both racks have a tooth on y=0, so the pinion
+  // must present a space at both horizontal pitch points (18 teeth).
+  pinionBody.geometry.rotateZ(pinionAngularPitch/2);
+  Object.assign(pinion.userData,{pressureAngle:RACK_PRESSURE_ANGLE,
+    baseRadius:pinionBody.geometry.userData.baseRadius,
+    rootRadius:pinionBody.geometry.userData.rootRadius,dedendum:pinionToothHeight/2+.006});
+  const hub=pinionRotor.children[1];hub.geometry.dispose();
+  hub.geometry=boredCylinderGeometry(.32,.153,.52);
+  pinionRotor.children[2].visible=false;
   pinionRotor.userData.role = 'rigid-pinion-and-handle-rotor';
   const handleCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(sourceHandleRoot.x, sourceHandleRoot.y, 0.30),
@@ -465,18 +445,8 @@ function handRockedPinionAndPumpRacks(movement) {
   root.add(pinionAxle);
 
   const rackToothGeometries = {
-    left: makeRackToothGeometry({
-      depth: rackDepth,
-      innerDirection: 1,
-      pitch: rackPitch,
-      toothHeight: pinionToothHeight,
-    }),
-    right: makeRackToothGeometry({
-      depth: rackDepth,
-      innerDirection: -1,
-      pitch: rackPitch,
-      toothHeight: pinionToothHeight,
-    }),
+    left:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth}).rotateZ(-Math.PI/2),
+    right:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth}).rotateZ(Math.PI/2),
   };
 
   const makePumpRack = (side) => {
@@ -487,7 +457,7 @@ function handRockedPinionAndPumpRacks(movement) {
     const innerDirection = -side;
     const rackX = side * pinionPitchRadius;
     const bodyCenterX = rackX - innerDirection * (
-      pinionToothHeight / 2 + rackBodyWidth / 2
+      pinionToothHeight / 2 + .006 + rackBodyWidth / 2
     );
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(rackBodyWidth, rackLength, rackDepth),
@@ -541,6 +511,10 @@ function handRockedPinionAndPumpRacks(movement) {
       ? 'left-rack-to-piston-rod'
       : 'right-rack-to-piston-rod';
     rack.add(pistonRod);
+    const rodShoulder=new THREE.Mesh(new THREE.BoxGeometry(Math.abs(bodyCenterX-rackX)+rackBodyWidth,.14,rackDepth),drivenMaterial);
+    rodShoulder.position.set((bodyCenterX+rackX)/2,pistonRodTop+.01,.23);
+    rodShoulder.userData.role=side<0?'left-rack-rod-shoulder':'right-rack-rod-shoulder';
+    rack.add(rodShoulder);
     const piston = new THREE.Mesh(
       new THREE.CylinderGeometry(0.36, 0.36, 0.13, 36),
       drivenMaterial,
@@ -551,7 +525,7 @@ function handRockedPinionAndPumpRacks(movement) {
       : 'right-air-pump-piston';
     rack.add(piston);
     const index = new THREE.Mesh(
-      new THREE.BoxGeometry(0.035, rackPitch * 0.66, rackDepth + 0.035),
+      new THREE.BoxGeometry(0.035, rackPitch * 0.66, rackDepth + 0.006),
       whiteMaterial,
     );
     index.position.set(bodyCenterX, rackPitch / 2, 0.23);
@@ -576,6 +550,32 @@ function handRockedPinionAndPumpRacks(movement) {
   const rightRack = rightRackAssembly.rack;
   root.add(leftRack, rightRack);
 
+  for(const slab of [baseSlab,baseRail]) {
+    const {width,height}=slab.geometry.parameters;
+    const holes=[-1,1].map(side=>poly(circle([side*pinionPitchRadius,-.23],.46,64)));
+    slab.geometry.dispose();
+    slab.geometry=plate(clip.difference(poly([[-width/2,-.76],[width/2,-.76],[width/2,.76],[-width/2,.76]]),...holes),-height/2,height/2).rotateX(-Math.PI/2);
+    slab.position.z=0;
+  }
+  for(const side of [-1,1]) {
+    const name=side<0?'left':'right',guide=supports.children.find(o=>o.userData.role===`${name}-fixed-rack-slide-guide`);
+    const center=side*(pinionPitchRadius+pinionToothHeight/2+.006+ rackBodyWidth/2);
+    guide.geometry.dispose();
+    guide.geometry=plate(clip.difference(
+      poly([[-.09,-.28],[.22,-.28],[.22,.28],[-.09,.28]].map(([x,z])=>[side*x,z])),
+      poly([[-.096,-.177],[.095,-.177],[.095,.177],[-.096,.177]].map(([x,z])=>[side*x,z]))
+    ),-.39,.39).rotateX(-Math.PI/2);
+    guide.position.set(center,0,.23);
+  }
+  const axleBearing=boredJournal(.23,.153,.28,frameMaterial);
+  axleBearing.position.set(0,0,-.30);
+  axleBearing.userData.role='bored-fixed-pinion-bearing';root.add(axleBearing);
+  const bearingBridge=new THREE.Mesh(new THREE.BoxGeometry(2.80,.22,.18),frameMaterial);
+  bearingBridge.position.set(0,-.24,-.43);
+  bearingBridge.userData.role='rear-pinion-bearing-bridge';root.add(bearingBridge);
+  pinionAxle.geometry.dispose();pinionAxle.geometry=new THREE.CylinderGeometry(.15,.15,1.10,48);
+  pinionAxle.position.z=.13;
+
   const contactMarkers = [-1, 1].map((side) => {
     const marker = new THREE.Mesh(
       new THREE.SphereGeometry(0.07, 22, 14),
@@ -585,7 +585,7 @@ function handRockedPinionAndPumpRacks(movement) {
     marker.userData.role = side < 0
       ? 'white-left-rack-pinion-pitch-contact'
       : 'white-right-rack-pinion-pitch-contact';
-    root.add(marker);
+    marker.visible=false;
     return marker;
   });
 
@@ -825,12 +825,13 @@ function handRockedPinionAndPumpRacks(movement) {
     root.userData.kinematics = state;
   };
 
-  update(0);
+  root.userData.cameraFov=8;
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(0, 3.1, 14),
+    cameraDirection: new THREE.Vector3(.4,.25,14),
   };
 }
 

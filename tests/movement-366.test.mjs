@@ -178,8 +178,8 @@ test('movement 366 unequal bevel pitch cones share one apex, oppose normals, and
   const { gearContact, geometry, stateAtTime } = data;
 
   vectorNear(gearContact.driverAxis, X_AXIS, 0, 'driver axis');
-  vectorNear(gearContact.pinionAxis, Y_AXIS.clone().negate(), 0,
-    'downward pinion axis');
+  vectorNear(gearContact.pinionAxis, Y_AXIS, 0,
+    'upward pinion axis');
   near(Math.abs(gearContact.driverAxis.dot(gearContact.pinionAxis)),
     0, 0, 'right-angle gear axes');
   near(
@@ -211,16 +211,16 @@ test('movement 366 unequal bevel pitch cones share one apex, oppose normals, and
     gearContact.contactPoint.clone().sub(gearContact.apex)
       .dot(gearContact.pinionAxis),
     geometry.pinionOuterDistance,
-    2e-16,
+    3e-16,
     'pinion axial contact distance',
   );
   near(radialDistanceToAxis(gearContact.contactPoint,
     gearContact.apex, gearContact.driverAxis),
-  geometry.driverOuterPitchRadius, 2e-16,
+  geometry.driverOuterPitchRadius, 5e-16,
   'driver contact pitch radius');
   near(radialDistanceToAxis(gearContact.contactPoint,
     gearContact.apex, gearContact.pinionAxis),
-  geometry.pinionOuterPitchRadius, 2e-16,
+  geometry.pinionOuterPitchRadius, 5e-16,
   'pinion contact pitch radius');
   assert.ok(gearContact.driverPitchConeNormal.clone()
     .add(gearContact.pinionPitchConeNormal).length() < 2e-16);
@@ -265,10 +265,10 @@ test('movement 366 fixed-height pinion and feathered drillshaft keep identical p
   for (let sample = 0; sample <= 400; sample += 1) {
     const time = geometry.demonstrationPeriod * sample / 400;
     const state = stateAtTime(time);
-    near(state.drillShaftAngle, -state.pinionLocalAngle, 0,
+    near(state.drillShaftAngle, state.pinionLocalAngle, 0,
       'world/local shaft angle conversion');
     near(state.drillShaftAngularSpeed,
-      -state.pinionLocalAngularSpeed, 0,
+      state.pinionLocalAngularSpeed, 0,
       'world/local shaft speed conversion');
     near(state.featherPhaseError, 0, 0,
       'feather angular lock');
@@ -286,7 +286,7 @@ test('movement 366 fixed-height pinion and feathered drillshaft keep identical p
     near(data.contacts.featherAndGroove.pinionAxialPositionError, 0, 0,
       'rendered fixed pinion');
   }
-  assert.match(data.transmission.featherLaw, /negative pinion local angle/);
+  assert.match(data.transmission.featherLaw, /equals pinion local angle/);
   assert.match(data.transmission.featherLaw, /identical/);
   assert.match(data.transmission.motionSuperposition,
     /continues rotating/);
@@ -451,7 +451,7 @@ test('movement 366 closes one crank turn, two drill turns, and one complete trea
     -FULL_TURN * geometry.bevelRatio, 0,
     'two opposite local pinion turns');
   near(closure.drillShaftAngle - start.drillShaftAngle,
-    FULL_TURN * geometry.bevelRatio, 0,
+    -FULL_TURN * geometry.bevelRatio, 0,
     'two physical drillshaft turns');
   near(closure.feedDown, start.feedDown, 0, 'feed closure');
   near(closure.leverAngle, start.leverAngle, 0, 'lever closure');

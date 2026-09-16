@@ -1,3 +1,4 @@
+import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -996,6 +997,7 @@ function spiralCylinderScriber(movement) {
     new THREE.Vector3(-2.28, -1.57, -1.15),
     new THREE.Vector3(2.53, 6.42, 1.15),
   );
+  correctScriberDynamometer(root, 368);
   root.userData.groundFloorY = -1.56;
   markShadows(root);
   return {

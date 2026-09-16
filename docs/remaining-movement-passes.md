@@ -342,3 +342,25 @@ claimed for the engine cutaways, and the whole 507-movement review remains activ
 
 101 focused/regression tests, the production build and ten packaged playback/mobile
 checks pass. See the family reports linked from [review progress](review-progress.md).
+
+
+## Twelfth parallel batch
+
+- **366 follow-up:** source-correct small bevel above the large wheel, matching
+  spindle phase, keyed rotating hub and upper-bearing retainers. The previous
+  layout mismatch is resolved.
+- **282/283:** real straight/curved slots, involute rack outputs, open guides,
+  seated pulley/cord and coaxial piston barrels with bedplate passages.
+- **368/372:** shared conical involutes, bored shaft/sleeve/carrier interfaces;
+  368 directly reuses the rack-output helper. A saved 33-pose working-solid
+  audit clears all named meshes.
+- **424/425/426:** finite wrist/shaft clearance, compatible chamber and sliding
+  abutment profiles, and actual radial hub grooves.
+
+The source-facing drill correction closes an existing residual while independent
+families proceed. Determinate links and gears remain analytical. Steam pressure,
+contact loads and return/preload forces are not inferred from geometry tests.
+The complete review remains active.
+
+104 focused/regression tests, the production build and eight packaged playback/mobile
+checks pass. Family reviews are linked from [review progress](review-progress.md).

@@ -1,3 +1,4 @@
+import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -840,6 +841,7 @@ function hoopReactionDynamometer(movement) {
     new THREE.Vector3(-2.85, -2.50, -1.08),
     new THREE.Vector3(2.85, 1.98, 2.05),
   );
+  correctScriberDynamometer(root, 372);
   root.userData.groundFloorY = -2.10;
   markShadows(root);
   return {

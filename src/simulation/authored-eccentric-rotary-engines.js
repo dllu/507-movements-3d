@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {plate,poly,sector} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -281,21 +282,15 @@ function eccentricRotaryEngine(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
-  const topGapHalfAngle = THREE.MathUtils.degToRad(20.5);
+  const topGapHalfAngle = Math.asin(0.5 / sourceCylinderInnerRadius);
   const housingArcStart = Math.PI / 2 + topGapHalfAngle;
   const housingArcEnd = Math.PI / 2 + FULL_TURN - topGapHalfAngle;
   const housingBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      cylinderInnerRadius,
-      cylinderOuterRadius,
-      104,
-      1,
-      housingArcStart,
-      housingArcEnd - housingArcStart,
-    ),
+    plate(sector(cylinderInnerRadius + 0.00003, cylinderOuterRadius,
+      housingArcStart, housingArcEnd, 1536), -0.41, 0.63),
     frameMaterial,
   );
-  housingBack.position.z = -0.40;
+  housingBack.position.z = 0;
   housingBack.userData.role = 'fixed-annular-cutaway-body-of-cylinder-A';
   root.add(housingBack);
   const innerCylinderWall = makeTubeThrough(
@@ -320,24 +315,29 @@ function eccentricRotaryEngine(movement) {
     frameMaterial,
     'fixed-outer-circular-wall-of-cylinder-A',
   );
+  innerCylinderWall.geometry.dispose(); outerCylinderWall.geometry.dispose();
+  innerCylinderWall.geometry = plate(sector(cylinderInnerRadius + 0.00003, cylinderInnerRadius + 0.12,
+    housingArcStart, housingArcEnd, 1536), 0.63, 0.67);
+  outerCylinderWall.geometry = plate(sector(cylinderOuterRadius - 0.12, cylinderOuterRadius,
+    housingArcStart, housingArcEnd, 1536), 0.63, 0.67);
   root.add(innerCylinderWall, outerCylinderWall);
 
   const foundation = new THREE.Mesh(
     new THREE.BoxGeometry(8.10, 0.28, 1.42),
     frameMaterial,
   );
-  foundation.position.set(0, -3.62, -0.14);
+  foundation.position.set(0, -cylinderOuterRadius - 0.14, -0.14);
   foundation.userData.role = 'fixed-foundation-of-rotary-engine-A';
   root.add(foundation);
 
   const neckLeft = makeTubeThrough([
-    new THREE.Vector3(-1.12, 2.66, -0.04),
-    new THREE.Vector3(-1.46, 3.18, -0.04),
+    new THREE.Vector3(-1.35, 3.12, -0.04),
+    new THREE.Vector3(-1.46, 3.40, -0.04),
     new THREE.Vector3(-1.46, 4.20, -0.04),
   ], 0.17, frameMaterial, 'left-eduction-neck-of-cylinder-A');
   const neckRight = makeTubeThrough([
-    new THREE.Vector3(1.12, 2.66, -0.04),
-    new THREE.Vector3(1.46, 3.18, -0.04),
+    new THREE.Vector3(1.35, 3.12, -0.04),
+    new THREE.Vector3(1.46, 3.40, -0.04),
     new THREE.Vector3(1.46, 4.20, -0.04),
   ], 0.17, frameMaterial, 'right-induction-neck-of-cylinder-A');
   root.add(neckLeft, neckRight);
@@ -346,10 +346,10 @@ function eccentricRotaryEngine(movement) {
   guideTower.userData.role = 'fixed-vertical-guide-for-sliding-abutment-D';
   for (const side of [-1, 1]) {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 3.18, 0.62),
+      new THREE.BoxGeometry(0.22, 3.10, 0.92),
       frameMaterial,
     );
-    rail.position.set(side * 0.56, 4.13, -0.02);
+    rail.position.set(side * 0.33, 4.55, 0.25);
     rail.userData.role = side < 0
       ? 'left-guide-rail-for-abutment-D'
       : 'right-guide-rail-for-abutment-D';
@@ -359,7 +359,7 @@ function eccentricRotaryEngine(movement) {
     new THREE.BoxGeometry(1.34, 0.24, 0.72),
     frameMaterial,
   );
-  guideCap.position.set(0, 5.66, -0.02);
+  guideCap.position.set(0, 6.22, 0.25);
   guideCap.userData.role = 'cap-of-abutment-D-guide';
   guideTower.add(guideCap);
   root.add(guideTower);
@@ -370,7 +370,7 @@ function eccentricRotaryEngine(movement) {
     pistonRadius,
     0.70,
     pistonMaterial,
-    72,
+    512,
   );
   eccentricPiston.position.set(0, -eccentricity, 0.22);
   eccentricPiston.userData.role = 'circular-body-of-eccentric-piston-C';
@@ -420,15 +420,24 @@ function eccentricRotaryEngine(movement) {
     abutmentMaterial,
     40,
   );
+  // The source nose is a 60-degree circular cap, not a full round roller.
+  const noseHalfAngle = Math.PI / 6;
+  const noseArc = Array.from({length:129},(_,i)=>{
+    const angle=3*Math.PI/2-noseHalfAngle+2*noseHalfAngle*i/128;
+    return [abutmentNoseRadius*Math.cos(angle),abutmentNoseRadius*Math.sin(angle)];
+  });
+  abutmentNose.geometry.dispose();
+  abutmentNose.geometry = plate(poly(noseArc),-0.37,0.37);
+  abutmentNose.rotation.set(0,0,0);
   abutmentNose.position.z = 0.26;
   abutmentNose.userData.role =
     'radius-one-contact-nose-of-sliding-abutment-D';
   abutmentD.add(abutmentNose);
   const abutmentStem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 2.42, 0.62),
+    new THREE.BoxGeometry(0.42, 2.68 + abutmentNoseRadius*Math.cos(Math.PI/6), 0.74),
     abutmentMaterial,
   );
-  abutmentStem.position.set(0, 1.47, 0.25);
+  abutmentStem.position.set(0, (2.68-abutmentNoseRadius*Math.cos(Math.PI/6))/2, 0.26);
   abutmentStem.userData.role = 'guided-stem-of-sliding-abutment-D';
   abutmentD.add(abutmentStem);
   root.add(abutmentD);
@@ -607,11 +616,15 @@ function eccentricRotaryEngine(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.15, -3.78, -1.00),
-    new THREE.Vector3(4.15, 6.14, 1.38),
+    new THREE.Vector3(4.15, 6.48, 1.38),
   );
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 3.8, 12.8);
   root.userData.groundFloorY = -3.78;
+  root.userData.hideGround = true;
+  root.userData.solidReview = { chamberRadialClearance: 0.00003,
+    qualification: 'Closed annular working wall and source circular-cap abutment with full-stroke guide clearance. Circle contact is prescribed; return loading, steam sealing, pressure and friction are not simulated.' };
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

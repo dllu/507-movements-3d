@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {plate,poly,circle,polygonClipping,ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -231,7 +233,7 @@ function radialPistonRotaryEngine(movement) {
   const pistonHalfWidth = sourcePistonHalfWidth * sourceScale;
   const shaftRadius = sourceScale;
   const cylinderInnerRadius = 7 * sourceScale;
-  const cylinderOuterRadius = 8.65 * sourceScale;
+  const cylinderOuterRadius = 7 * sourceScale;
 
   const sourceRadialRootAtInputAngle = (inputAngle) => {
     const canonicalAngle = THREE.MathUtils.euclideanModulo(
@@ -459,62 +461,39 @@ function radialPistonRotaryEngine(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
-  const topHousingBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      cylinderInnerRadius,
-      cylinderOuterRadius,
-      72,
-      1,
-      THREE.MathUtils.degToRad(19),
-      THREE.MathUtils.degToRad(142),
-    ),
-    frameMaterial,
-  );
-  topHousingBack.position.z = -0.40;
+  // Join the same source arcs used by the radial solver into the actual
+  // closed chamber. Their printed endpoints differ by source rounding only.
+  const chamberArcs = [POSITIVE_FIXED_PROFILE[2], POSITIVE_FIXED_PROFILE[0],
+    POSITIVE_FIXED_PROFILE[1], POSITIVE_FIXED_PROFILE[4], POSITIVE_FIXED_PROFILE[3],
+    NEGATIVE_FIXED_PROFILE[0], NEGATIVE_FIXED_PROFILE[1], NEGATIVE_FIXED_PROFILE[4]];
+  const chamberClearanceScale = 1.00002;
+  const chamberOutline = chamberArcs.flatMap(arc => {
+    const sweep = normalizedAngle(arc[5]-arc[4]), count=Math.ceil(sweep/0.004);
+    return Array.from({length:count},(_,i)=>pointOnArc(arc,arc[4]+sweep*i/count)
+      .multiplyScalar(sourceScale*chamberClearanceScale).toArray());
+  });
+  const rectangle = (left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
+  const shell = polygonClipping.difference(poly(circle([0,0],cylinderOuterRadius,512)),poly(chamberOutline));
+  const leftRegion = rectangle(-5,-0.9,-1.8,0.9), rightRegion = rectangle(1.8,-0.9,5,0.9);
+  const abutmentSections = {left:polygonClipping.intersection(shell,leftRegion),right:polygonClipping.intersection(shell,rightRegion)};
+  const remainingShell = polygonClipping.difference(shell,leftRegion,rightRegion);
+  const topSection = polygonClipping.intersection(remainingShell,rectangle(-5,0,5,5));
+  const bottomSection = polygonClipping.intersection(remainingShell,rectangle(-5,-5,5,0));
+  const topHousingBack = new THREE.Mesh(plate(topSection,-0.24,0.83),frameMaterial);
   topHousingBack.userData.role = 'fixed-upper-body-of-cylinder';
-  const bottomHousingBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      cylinderInnerRadius,
-      cylinderOuterRadius,
-      72,
-      1,
-      THREE.MathUtils.degToRad(199),
-      THREE.MathUtils.degToRad(142),
-    ),
-    frameMaterial,
-  );
-  bottomHousingBack.position.z = -0.40;
+  const bottomHousingBack = new THREE.Mesh(plate(bottomSection,-0.24,0.83),frameMaterial);
   bottomHousingBack.userData.role = 'fixed-lower-body-of-cylinder';
-  root.add(topHousingBack, bottomHousingBack);
-  const upperInnerWall = makeTubeThrough(
-    arcPoints(
-      cylinderInnerRadius,
-      THREE.MathUtils.degToRad(19),
-      THREE.MathUtils.degToRad(161),
-      -0.04,
-    ),
-    0.12,
-    frameMaterial,
-    'fixed-upper-inner-wall-of-cylinder',
-  );
-  const lowerInnerWall = makeTubeThrough(
-    arcPoints(
-      cylinderInnerRadius,
-      THREE.MathUtils.degToRad(199),
-      THREE.MathUtils.degToRad(341),
-      -0.04,
-    ),
-    0.12,
-    frameMaterial,
-    'fixed-lower-inner-wall-of-cylinder',
-  );
-  root.add(upperInnerWall, lowerInnerWall);
+  const upperInnerWall = new THREE.Mesh(plate(topSection,0.83,0.87),frameMaterial);
+  upperInnerWall.userData.role = 'fixed-upper-inner-wall-of-cylinder';
+  const lowerInnerWall = new THREE.Mesh(plate(bottomSection,0.83,0.87),frameMaterial);
+  lowerInnerWall.userData.role = 'fixed-lower-inner-wall-of-cylinder';
+  root.add(topHousingBack,bottomHousingBack,upperInnerWall,lowerInnerWall);
 
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(8.30, 0.28, 1.44),
+    new THREE.BoxGeometry(6.40, 0.28, 1.44),
     frameMaterial,
   );
-  foundation.position.set(0, -4.30, -0.14);
+  foundation.position.set(0, -cylinderOuterRadius-0.14, -0.14);
   foundation.userData.role = 'fixed-foundation-of-radial-piston-engine';
   root.add(foundation);
 
@@ -523,21 +502,12 @@ function radialPistonRotaryEngine(movement) {
     group.userData.role = side < 0
       ? 'left-stationary-abutment-D'
       : 'right-stationary-abutment-D';
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1.72, 0.72, 0.68),
-      frameMaterial,
-    );
-    body.position.set(side * 3.33, side < 0 ? 0.18 : -0.18, -0.02);
-    body.userData.role = side < 0
-      ? 'left-fixed-port-body'
-      : 'right-fixed-port-body';
-    group.add(body);
-    const nose = cylinderAlongZ(0.38, 0.72, frameMaterial, 36);
-    nose.position.set(side * 2.36, side < 0 ? 0.14 : -0.14, -0.01);
-    nose.userData.role = side < 0
-      ? 'left-inward-contact-nose-of-D'
-      : 'right-inward-contact-nose-of-D';
-    group.add(nose);
+    const section=side<0?abutmentSections.left:abutmentSections.right;
+    const body = new THREE.Mesh(plate(section,-0.24,0.83),frameMaterial);
+    body.userData.role = side < 0 ? 'left-fixed-port-body' : 'right-fixed-port-body';
+    const nose = new THREE.Mesh(plate(section,0.83,0.87),frameMaterial);
+    nose.userData.role = side < 0 ? 'left-inward-contact-nose-of-D' : 'right-inward-contact-nose-of-D';
+    group.add(body,nose);
     return { body, group, nose };
   };
   const leftAbutment = makeStationaryAbutment(-1);
@@ -547,14 +517,23 @@ function radialPistonRotaryEngine(movement) {
   const rotor = new THREE.Group();
   rotor.userData.role = 'hub-C-fast-on-main-shaft-B';
   const hubC = cylinderAlongZ(hubRadius, 0.64, hubMaterial, 72);
-  hubC.position.z = 0.10;
+  const hubBore=shaftRadius+0.004, grooveHalfWidth=pistonHalfWidth+0.004;
+  const hubFront=plate(polygonClipping.difference(poly(circle([0,0],hubRadius,512)),
+    poly(circle([0,0],hubBore,128)),rectangle(-hubRadius-0.01,-grooveHalfWidth,hubRadius+0.01,grooveHalfWidth)),0.18,0.42);
+  const hubBack=ring(hubBore,hubRadius,-0.22,0.18,512);
+  hubFront.deleteAttribute('uv');hubBack.deleteAttribute('color');
+  hubC.geometry.dispose();hubC.geometry=mergeGeometries([hubBack,hubFront]);hubBack.dispose();hubFront.dispose();
+  hubC.rotation.set(0,0,0);hubC.position.z = 0;
   hubC.userData.role = 'rotating-hub-C-with-two-opposed-radial-grooves';
   rotor.add(hubC);
   const groove = new THREE.Mesh(
     new THREE.BoxGeometry(2 * hubRadius - 0.10, 0.25, 0.12),
     darkMaterial,
   );
-  groove.position.z = 0.46;
+  groove.geometry.dispose();
+  groove.geometry=plate(polygonClipping.difference(rectangle(-hubRadius+0.05,-grooveHalfWidth,hubRadius-0.05,grooveHalfWidth),
+    poly(circle([0,0],hubBore,128))),0.17,0.18);
+  groove.position.z = 0;
   groove.userData.role = 'diametral-guide-groove-in-hub-C';
   rotor.add(groove);
 
@@ -579,13 +558,18 @@ function radialPistonRotaryEngine(movement) {
       pistonMaterial,
       30,
     );
-    nose.position.set(followerNoseCenter, 0, 0.48);
+    const noseArc=Array.from({length:129},(_,i)=>{
+      const angle=-Math.PI/6+i*Math.PI/3/128;
+      return [followerNoseRadius*Math.cos(angle),followerNoseRadius*Math.sin(angle)];
+    });
+    nose.geometry.dispose();nose.geometry=plate(poly(noseArc),0.19,0.73);
+    nose.rotation.set(0,0,0);nose.position.set(followerNoseCenter, 0, 0);
     nose.userData.role = side < 0
       ? 'negative-rounded-cam-nose-of-piston-A'
       : 'positive-rounded-cam-nose-of-piston-A';
     group.add(nose);
-    const marker = cylinderAlongZ(0.10, 0.78, whiteMaterial, 20);
-    marker.position.set(pistonBodyEnd - 0.08, 0, 0.51);
+    const marker = cylinderAlongZ(0.07, 0.012, whiteMaterial, 20);
+    marker.position.set(pistonBodyEnd - 0.08, 0, 0.736);
     marker.userData.role = side < 0
       ? 'negative-piston-A-motion-marker'
       : 'positive-piston-A-motion-marker';
@@ -653,6 +637,9 @@ function radialPistonRotaryEngine(movement) {
     archetype:
       'two-opposed-rounded-pistons-sliding-radially-in-rotating-hub-against-two-stationary-port-abutments',
     blocks: {
+      bottomHousingBack,
+      leftAbutmentBody: leftAbutment.body,
+      rightAbutmentBody: rightAbutment.body,
       eductionIndicator,
       foundation,
       groove,
@@ -771,12 +758,16 @@ function radialPistonRotaryEngine(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.35, -4.46, -1.00),
-    new THREE.Vector3(4.35, 4.36, 1.40),
+    new THREE.Vector3(-4.15, -3.70, -1.00),
+    new THREE.Vector3(4.15, 3.56, 1.40),
   );
   root.userData.cameraDistanceScale = 1.01;
   root.userData.cameraDirection = new THREE.Vector3(5.2, 3.8, 12.4);
   root.userData.groundFloorY = -4.46;
+  root.userData.hideGround = true;
+  root.userData.solidReview = { chamberOutline, chamberArcs, chamberClearanceScale, hubBore, grooveHalfWidth,
+    qualification: 'The source solver arcs now bound the closed working chamber; source 60-degree nose caps replace full rollers and actual radial hub slots receive the blades. Small geometric running clearance is inferred. Passive outward loading, sealing, steam pressure and friction remain unmodeled.' };
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -6,22 +6,13 @@ import {
   matte,
 } from './primitives.js';
 
+import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
+import { plate, poly, capsule, circle, sector as sectorPolygon, polygonClipping as clip } from './finite-plate-geometry.js';
+import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-
-function centeredExtrusion(shape, depth, bevelSize = 0.012) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 12,
-    depth,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
 
 function cylinderAlongZ(radius, length, material, segments = 36) {
   const cylinder = new THREE.Mesh(
@@ -57,16 +48,6 @@ function setRodBetween(rod, start, end) {
   rod.position.copy(start).add(end).multiplyScalar(0.5);
   rod.scale.set(1, length, 1);
   rod.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
-}
-
-function makeRackToothGeometry(pitch, height, depth) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-pitch * 0.42, 0);
-  shape.lineTo(-pitch * 0.19, height);
-  shape.lineTo(pitch * 0.19, height);
-  shape.lineTo(pitch * 0.42, 0);
-  shape.closePath();
-  return centeredExtrusion(shape, depth, 0.006);
 }
 
 function slottedDiskLeverRackAndWeight(movement) {
@@ -157,7 +138,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   const cyclePeriod = 4;
   const diskAngularSpeed = FULL_TURN / cyclePeriod;
   const drivePinRadius = 0.075;
-  const slotHalfWidth = 0.11;
+  const slotHalfWidth = drivePinRadius + .003;
   const slotEndClearance = 0.12;
   const sectorEquivalentToothCount = 16;
   const sectorAngularPitch = FULL_TURN / sectorEquivalentToothCount;
@@ -169,10 +150,10 @@ function slottedDiskLeverRackAndWeight(movement) {
   const rackDepth = 0.32;
   const rackBodyHeight = 0.24;
   const rackPitchY = leverPivot.y - sectorPitchRadius;
-  const rackToothRootY = rackPitchY - toothHeight / 2;
+  const rackToothRootY = rackPitchY - toothHeight / 2 - .006;
   const sourceRackX = 0;
   const pulleySourceAngle = 0;
-  const pulleyFlangeMajorRadius = pulleyRunningRadius * 1.42;
+  const pulleyFlangeMajorRadius = pulleyRunningRadius * 1.10;
   const pulleyFlangeTubeRadius = 0.045;
   const pulleyOuterRadius = pulleyFlangeMajorRadius
     + pulleyFlangeTubeRadius;
@@ -604,18 +585,32 @@ function slottedDiskLeverRackAndWeight(movement) {
     new THREE.TorusGeometry(diskRadius, 0.045, 10, 80),
     darkMaterial,
   );
-  diskRim.position.z = 0.17;
+  diskRim.position.z = 0.14;
   diskRim.userData.role = 'driving-disk-rim';
   diskRotor.add(diskRim);
-  const diskHub = cylinderAlongZ(0.14, 0.52, darkMaterial, 32);
+  const diskHub = cylinderAlongZ(0.14, 0.30, darkMaterial, 32);
   diskHub.userData.role = 'fixed-disk-axis-hub';
   diskRotor.add(diskHub);
+  const diskAxle=cylinderAlongZ(.07,.70,darkMaterial);
+  diskAxle.position.z=-.17;
+  diskAxle.userData.role='rear-disk-axle';diskRotor.add(diskAxle);
+  const diskBearing=boredJournal(.18,.073,.20,frameMaterial);
+  diskBearing.position.set(diskCenter.x,diskCenter.y,-.48);
+  diskBearing.userData.role='bored-disk-bearing';root.add(diskBearing);
+  for(const x of [leftFoot.x,rightFoot.x]) {
+    frame.add(makeBeam(new THREE.Vector3(x,0,-.48),new THREE.Vector3(Math.sign(x)*.18,0,-.48),
+      {color:PALETTE.frame,radius:.085}));
+    const y=leverPivot.y+Math.sqrt((guideRadius-.145)**2-(x-leverPivot.x)**2);
+    frame.add(makeBeam(new THREE.Vector3(x,frameTopY,-.42),new THREE.Vector3(x,y,-.12),
+      {color:PALETTE.frame,radius:.08}));
+  }
   const diskIndex = makeBeam(
     new THREE.Vector3(0, 0, 0.19),
     new THREE.Vector3(crankRadius, 0, 0.19),
     { color: PALETTE.white, radius: 0.035 },
   );
   diskIndex.userData.role = 'white-disk-phase-and-crank-radius-index';
+  diskIndex.position.z=-.04;
   diskRotor.add(diskIndex);
   const drivePin = cylinderAlongZ(drivePinRadius, 0.62, accentMaterial, 32);
   drivePin.position.set(crankRadius, 0, 0.27);
@@ -632,47 +627,31 @@ function slottedDiskLeverRackAndWeight(movement) {
   lever.userData.role =
     'single-pivoted-slotted-bar-with-rack-sector-and-cord-eye';
   root.add(lever);
-  const leverBody = makeBeam(
-    new THREE.Vector3(0.08, 0, 0),
-    new THREE.Vector3(cordAttachmentRadius + 0.28, 0, 0),
-    { color: PALETTE.driven, radius: 0.19 },
-  );
+  const leverBody = new THREE.Mesh(plate(clip.difference(
+    capsule([0,0],[cordAttachmentRadius+.12,0],.19,32),
+    capsule([slotMinimumRadius,0],[slotMaximumRadius,0],slotHalfWidth,32),
+    poly(circle([0,0],.133,64))
+  ),-.09,.09), drivenMaterial);
   leverBody.userData.role = 'upright-slotted-vibrating-bar';
   lever.add(leverBody);
-  const slotFloor = makeBeam(
-    new THREE.Vector3(slotMinimumRadius, 0, 0.145),
-    new THREE.Vector3(slotMaximumRadius, 0, 0.145),
-    { color: PALETTE.ink, radius: slotHalfWidth },
-  );
-  slotFloor.userData.role = 'single-straight-recessed-lever-slot';
-  lever.add(slotFloor);
-  const slotHighlight = makeBeam(
-    new THREE.Vector3(slotMinimumRadius + 0.06, 0, 0.18),
-    new THREE.Vector3(slotMaximumRadius - 0.06, 0, 0.18),
-    { color: 0x5f8394, radius: slotHalfWidth * 0.36 },
-  );
-  slotHighlight.userData.role = 'slot-bottom-depth-highlight';
-  lever.add(slotHighlight);
+  const slotFloor = new THREE.Object3D();
+  slotFloor.userData.role='single-straight-recessed-lever-slot';
+  slotFloor.visible=false;
+  const slotHighlight = new THREE.Object3D();
+  slotHighlight.visible=false;
 
   const sectorContactAngle = -Math.PI / 2 - sourceLeverAngle;
   const sectorHalfSpan = sectorAngularPitch * sectorToothCount / 2;
-  const sectorRootRadius = sectorPitchRadius - toothHeight / 2;
-  const sectorShape = new THREE.Shape();
-  sectorShape.moveTo(0, 0);
-  for (let index = 0; index <= 40; index += 1) {
-    const angle = sectorContactAngle - sectorHalfSpan
-      + 2 * sectorHalfSpan * index / 40;
-    sectorShape.lineTo(
-      Math.cos(angle) * sectorRootRadius,
-      Math.sin(angle) * sectorRootRadius,
-    );
-  }
-  sectorShape.lineTo(0, 0);
-  sectorShape.closePath();
-  const sector = new THREE.Mesh(
-    centeredExtrusion(sectorShape, rackDepth, 0.01),
-    drivenMaterial,
-  );
+  const wholePinion = rackPinionGeometry({radius:sectorPitchRadius, teeth:sectorEquivalentToothCount,
+    addendum:toothHeight/2, depth:rackDepth, bore:.133});
+  const sectorOutline=wholePinion.userData.outline.map(p=>[
+    p.x*Math.cos(sectorContactAngle)-p.y*Math.sin(sectorContactAngle),
+    p.x*Math.sin(sectorContactAngle)+p.y*Math.cos(sectorContactAngle)]);
+  const sector = new THREE.Mesh(plate(clip.difference(clip.union(
+    clip.intersection(poly(sectorOutline),sectorPolygon(0,sectorPitchRadius+toothHeight,
+      sectorContactAngle-sectorHalfSpan,sectorContactAngle+sectorHalfSpan)),
+    poly(circle([0,0],.19,64))),poly(circle([0,0],.133,64))),-rackDepth/2,rackDepth/2), drivenMaterial);
+  wholePinion.dispose();
   sector.position.z = 0;
   sector.userData.role = 'lever-rigid-lower-toothed-sector-body';
   lever.add(sector);
@@ -680,10 +659,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   for (let index = 0; index < sectorToothCount; index += 1) {
     const offset = index - (sectorToothCount - 1) / 2;
     const angle = sectorContactAngle + offset * sectorAngularPitch;
-    const tooth = new THREE.Mesh(
-      new THREE.BoxGeometry(rackPitch * 0.52, toothHeight, rackDepth),
-      drivenMaterial,
-    );
+    const tooth = new THREE.Object3D();
     tooth.position.set(
       Math.cos(angle) * sectorPitchRadius,
       Math.sin(angle) * sectorPitchRadius,
@@ -693,12 +669,17 @@ function slottedDiskLeverRackAndWeight(movement) {
     tooth.userData.index = index;
     tooth.userData.role = 'sector-rack-working-tooth';
     sectorTeeth.push(tooth);
-    lever.add(tooth);
+    tooth.visible = false;
   }
-  const pivotPin = cylinderAlongZ(0.13, 0.66, darkMaterial, 32);
-  pivotPin.position.set(leverPivot.x, leverPivot.y, 0.22);
+  const pivotPin = cylinderAlongZ(0.13, 1.00, darkMaterial, 32);
+  pivotPin.position.set(leverPivot.x, leverPivot.y, 0.12);
   pivotPin.userData.role = 'fixed-lower-lever-fulcrum';
   root.add(pivotPin);
+  const pivotBearing=boredJournal(.23,.133,.20,frameMaterial);
+  pivotBearing.position.set(leverPivot.x,leverPivot.y,-.27);root.add(pivotBearing);
+  for(const x of [leftFoot.x,rightFoot.x])frame.add(makeBeam(
+    new THREE.Vector3(x,leverPivot.y,-.33),new THREE.Vector3(leverPivot.x+Math.sign(x)*.23,leverPivot.y,-.33),
+    {color:PALETTE.frame,radius:.085}));
   const pivotCap = cylinderAlongZ(0.075, 0.07, whiteMaterial, 30);
   pivotCap.position.set(leverPivot.x, leverPivot.y, 0.58);
   pivotCap.userData.role = 'white-fixed-lever-pivot-index';
@@ -706,45 +687,21 @@ function slottedDiskLeverRackAndWeight(movement) {
 
   const guideMinimumAngle = minimumLeverAngle - 0.09;
   const guideMaximumAngle = maximumLeverAngle + 0.09;
-  const guidePoints = Array.from({ length: 65 }, (_, index) => {
-    const angle = THREE.MathUtils.lerp(
-      guideMinimumAngle,
-      guideMaximumAngle,
-      index / 64,
-    );
-    return new THREE.Vector3(
-      leverPivot.x + Math.cos(angle) * guideRadius,
-      leverPivot.y + Math.sin(angle) * guideRadius,
-      -0.03,
-    );
-  });
-  const guideCurve = new THREE.CatmullRomCurve3(
-    guidePoints,
-    false,
-    'centripetal',
-  );
-  const topGuide = new THREE.Mesh(
-    new THREE.TubeGeometry(guideCurve, 128, 0.17, 12, false),
-    frameMaterial,
-  );
+  const guideOutline=sectorPolygon(guideRadius-.17,guideRadius+.17,guideMinimumAngle,guideMaximumAngle);
+  const guideOpening=sectorPolygon(guideRadius-.088,guideRadius+.088,
+    guideMinimumAngle+.02,guideMaximumAngle-.02);
+  const topGuide = new THREE.Mesh(plate(clip.difference(guideOutline,guideOpening),-.17,-.05), frameMaterial);
+  topGuide.position.set(leverPivot.x,leverPivot.y,0);
   topGuide.userData.role = 'fixed-concentric-upper-lever-guide';
   root.add(topGuide);
-  const guideSlot = new THREE.Mesh(
-    new THREE.TubeGeometry(guideCurve, 128, 0.065, 10, false),
-    darkMaterial,
-  );
-  guideSlot.position.z = 0.16;
-  guideSlot.userData.role = 'upper-guide-arcuate-slot';
-  root.add(guideSlot);
-  const guidePin = cylinderAlongZ(0.085, 0.48, whiteMaterial, 30);
-  guidePin.position.set(guideRadius, 0, 0.18);
+  const guideSlot = new THREE.Object3D();
+  guideSlot.userData.role='upper-guide-arcuate-slot';
+  const guidePin = cylinderAlongZ(0.085, 0.62, whiteMaterial, 30);
+  guidePin.position.set(guideRadius, 0, -.05);
   guidePin.userData.role = 'lever-pin-traversing-concentric-guide';
   lever.add(guidePin);
-  const cordEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.105, 0.035, 10, 28),
-    darkMaterial,
-  );
-  cordEye.position.set(cordAttachmentRadius, 0, 0.28);
+  const cordEye = cylinderAlongZ(.045,.32,darkMaterial);
+  cordEye.position.set(cordAttachmentRadius, 0, .25);
   cordEye.userData.role = 'cord-eye-on-upper-end-of-lever';
   lever.add(cordEye);
 
@@ -762,17 +719,13 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   rackBody.userData.role = 'guided-horizontal-rack-body';
   rack.add(rackBody);
-  const rackToothGeometry = makeRackToothGeometry(
-    rackPitch,
-    toothHeight,
-    rackDepth,
-  );
+  const rackToothSolid = rackToothGeometry({pitch:rackPitch,addendum:toothHeight/2,depth:rackDepth});
   const rackTeeth = [];
   for (let index = 0; index < rackToothCount; index += 1) {
-    const tooth = new THREE.Mesh(rackToothGeometry, drivenMaterial);
+    const tooth = new THREE.Mesh(rackToothSolid, drivenMaterial);
     tooth.position.set(
-      (index - (rackToothCount - 1) / 2) * rackPitch,
-      rackToothRootY,
+      leverPivot.x + (index - (rackToothCount - 1) / 2) * rackPitch,
+      rackPitchY,
       0.18,
     );
     tooth.userData.index = index;
@@ -802,44 +755,35 @@ function slottedDiskLeverRackAndWeight(movement) {
   }
 
   const pulley = new THREE.Group();
-  pulley.position.set(pulleyCenter.x, pulleyCenter.y, 0.37);
+  pulley.position.set(pulleyCenter.x, pulleyCenter.y, 0.59);
   pulley.userData.axis = Z_AXIS.clone();
   pulley.userData.role = 'fixed-axis-cord-redirect-pulley';
   root.add(pulley);
   const pulleyRotor = new THREE.Group();
   pulleyRotor.userData.role = 'no-slip-cord-pulley-rotor';
   pulley.add(pulleyRotor);
-  const pulleySheave = cylinderAlongZ(
-    pulleyRunningRadius * 1.06,
-    0.28,
-    accentMaterial,
-    48,
-  );
+  const pulleySheave = boredJournal(pulleyRunningRadius-.029, .048, .08, accentMaterial);
   pulleySheave.userData.role = 'cord-running-sheave';
   pulleyRotor.add(pulleySheave);
   const pulleyFlanges = [-1, 1].map((side) => {
-    const flange = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        pulleyFlangeMajorRadius,
-        pulleyFlangeTubeRadius,
-        10,
-        56,
-      ),
-      darkMaterial,
-    );
-    flange.position.z = side * 0.17;
+    const flange = boredJournal(pulleyOuterRadius,.048,.055,darkMaterial);
+    flange.position.z=side*.0675;
     flange.userData.role = 'pulley-retaining-flange';
     pulleyRotor.add(flange);
     return flange;
   });
-  const pulleyHub = cylinderAlongZ(0.075, 0.48, darkMaterial, 28);
+  const pulleyHub = boredJournal(0.075,.048,.48,darkMaterial);
   pulleyHub.userData.role = 'pulley-hub';
   pulleyRotor.add(pulleyHub);
+  const pulleyAxle=cylinderAlongZ(.045,1.20,darkMaterial);
+  pulleyAxle.position.set(pulleyCenter.x,pulleyCenter.y,.05);
+  pulleyAxle.userData.role='fixed-pulley-axle-reaching-frame';
+  root.add(pulleyAxle);
   const pulleyIndex = new THREE.Mesh(
     new THREE.BoxGeometry(pulleyRunningRadius * 0.95, 0.045, 0.035),
     whiteMaterial,
   );
-  pulleyIndex.position.set(pulleyRunningRadius * 0.46, 0, 0.205);
+  pulleyIndex.position.set(pulleyRunningRadius * 0.46, 0, 0.105);
   pulleyIndex.userData.role = 'white-pulley-no-slip-speed-index';
   pulleyRotor.add(pulleyIndex);
 
@@ -871,10 +815,10 @@ function slottedDiskLeverRackAndWeight(movement) {
   weightBody.userData.role = 'hanging-weight-body';
   weight.add(weightBody);
   const weightTopEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.075, 0.025, 8, 24),
+    new THREE.SphereGeometry(.035,12,8),
     darkMaterial,
   );
-  weightTopEye.position.y = weightHeight / 2 + 0.055;
+  weightTopEye.position.y = weightHeight / 2;
   weightTopEye.userData.role = 'weight-cord-eye';
   weight.add(weightTopEye);
   const weightIndex = new THREE.Mesh(
@@ -1158,7 +1102,7 @@ function slottedDiskLeverRackAndWeight(movement) {
     pulley.userData.angularAcceleration = state.pulleyAngularAcceleration;
     pulley.userData.angularSpeed = state.pulleyAngularSpeed;
     weight.position.copy(state.weightCenter);
-    weight.position.z = 0.37;
+    weight.position.z = ropePlaneZ;
     weight.userData.acceleration = state.weightAcceleration.clone();
     weight.userData.velocity = state.weightVelocity.clone();
     updateCord(state);
@@ -1194,12 +1138,13 @@ function slottedDiskLeverRackAndWeight(movement) {
     root.userData.kinematics = state;
   };
 
-  update(0);
+  root.userData.cameraFov=8;
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.4, 3.4, 11.8),
+    cameraDirection: new THREE.Vector3(.5,.25,14),
   };
 }
 

@@ -74,9 +74,10 @@ test('movement 282 is one disk-pin slotted lever with rack and weight outputs', 
   assert.equal(blocks.drivePin.parent, blocks.diskRotor);
   assert.equal(blocks.lever.parent, model.root);
   assert.equal(blocks.leverBody.parent, blocks.lever);
-  assert.equal(blocks.slotFloor.parent, blocks.lever);
+  assert.equal(blocks.slotFloor.parent, null);
+  assert.equal(blocks.slotFloor.visible, false);
   assert.equal(blocks.sector.parent, blocks.lever);
-  assert.ok(blocks.sectorTeeth.every(({ parent }) => parent === blocks.lever));
+  assert.ok(blocks.sectorTeeth.every(tooth => !tooth.visible));
   assert.equal(blocks.rack.parent, model.root);
   assert.equal(blocks.rackBody.parent, blocks.rack);
   assert.ok(blocks.rackTeeth.every(({ parent }) => parent === blocks.rack));
@@ -207,7 +208,7 @@ test('movement 282 keeps the revolving pin in one finite straight slot', () => {
   near(transmission.slotRadialClearance,
     geometry.slotHalfWidth - geometry.drivePinRadius, 0,
   'pin-to-slot side clearance');
-  near(transmission.slotRadialClearance, 0.035, 2e-17,
+  near(transmission.slotRadialClearance, 0.003, 2e-17,
     'visible pin-to-slot side clearance');
   assert.match(transmission.slotConstraint,
     /disk-fixed pin = lever pivot/);
