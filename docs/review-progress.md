@@ -1,3 +1,42 @@
+# Thirty-third family pass: travelling clamps, spring interfaces and finite stepping
+
+Nine movements receive corrections: 267, 280, 351, 353, 377, 378, 413, 416 and
+420. Three independent family lanes reuse finite plates, bored joints, rack
+profiles and screw geometry; a fourth correction resolves 377's foot/board
+collision. The full 507-movement review remains active.
+
+- [267/280/413 friction drives](friction-drive-family-review.md): actual clutch
+  arm/rim engagement, a source-correct travelling jaw and exact circle closure
+  for 280, correctly directed ratchet teeth with baked outward pawl motion,
+  and mating screw threads for 413. Loaded rubber deformation and
+  passive backstop/traction behavior remain explicit residuals.
+- [351/353 stamp and trip hammer](stamp-trip-family-review.md): involute rack
+  lifting faces, guide/shaft passages and finite striking surfaces. 351's
+  tooth-release/pickup still needs contact-driven reconstruction; the passing
+  guide and gear-lift checks do not qualify its complete fall.
+- [378/416/420 saw and springs](spring-pivot-family-review.md): continuous rope
+  tangency and working grooves, connected pitman/spring eyes, a source-shaped
+  curled spring, and actual hammer/lip and underside spring contact. Cutting,
+  elastic spring dynamics and energetic bell impact remain prescribed.
+- [377 treadmill gait](treadmill-377-contact-review.md): radial boards and
+  tread-indexed planted feet, a continuous clearance swing and fixed-length
+  two-link legs. Actual finite feet and legs clear every board over 1,401 poses;
+  sole corners remain supported during stance. Passive human balance and
+  reaction forces are not claimed.
+
+The finite-surface test helper now rejects degenerate pole triangles, preventing
+NaN distances from silently weakening sphere/capsule checks. Its regression and
+all **131 distinct focused checks pass**. The production build passes in 20.94
+seconds; the nine-model construction/update screen has no flags. Final
+source/default/oblique views show no browser errors or clipping (maximum
+normalized screen extents 0.740–0.917). All nine packaged desktop/playback/mobile
+checks pass in 22.9 seconds. The backstop bake regenerates byte-identically.
+
+These checks qualify the scoped corrections, not the open loaded-contact and
+dynamic issues above. The [next family queue](remaining-movement-passes.md)
+covers groove drives, mechanical clutches and material-feed rollers, with
+concrete source/motion defects identified for each lane.
+
 # Thirty-second family pass: piston guides, treadwheels and chains
 
 Nine movements receive corrections: 227–229, 254, 329, 331 and 375–377. This

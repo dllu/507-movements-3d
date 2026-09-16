@@ -64,20 +64,42 @@ The scoped results are recorded in `review-progress.md` and the linked family
 reviews. Their remaining dynamic/contact limitations are not a claim of complete
 mechanism qualification.
 
+## Thirty-third pass
+
+The following lanes now have scoped corrections recorded in `review-progress.md`.
+377 also receives a finite gait follow-up. Remaining loaded-contact limitations
+are recorded separately from the corrected geometry and motion.
+
+- **378/416/420, saw and spring-return treadles:** corrected rope grooves, bored
+  pivots, finite spring attachments and actual hammer/lip alignment. 416 now
+  follows the source's curled spring silhouette; elastic and impact laws remain
+  prescribed.
+- **267/280/413, friction transmissions:** corrected finite arm/rim engagement,
+  the travelling jaw's linkage and clamp surfaces, and mating screw threads.
+  Passive holding/traction and loaded rubber deformation remain open.
+- **351/353, stamps and trip hammers:** corrected involute lifting teeth, guide
+  and journal passages, rounded hammer tail and finite striking faces. 351's
+  release and pickup still interfere; 353 retains idealized impact and return.
+
 ## Next independent lanes
 
-- **378/416/420, saw and spring-return treadles:** shared bored pivots and finite
-  spring attachments; 416/420 still build their fixed pivot bearings as solid
-  cylinders. Check actual spring/lever interfaces while distinguishing any
-  prescribed return from passive dynamics.
-- **267/280/413, friction transmissions:** reuse bored sleeves, mating screws and
-  finite friction surfaces. Start with 413's solid shaft bearings and inspect
-  working engagement before attempting friction/load studies.
-- **351/353, stamps and trip hammers:** reuse existing wiper/contact geometry and
-  hammer parts. The pinion bearing in 351 and capsule bearing cap in 353 need
-  real passages; review finite lift, release and striking interfaces together.
+- **364/397/398, groove and roller drives:** own
+  `authored-orthogonal-roller-indexers.js`, `authored-intermittent-shuttle-drives.js`
+  and `authored-cam-rocking-drives.js`. Reuse recessed channels, finite plates and
+  bored links. 397 currently depicts its slot as two solid tubes on the same
+  locus as the pin; 364's roller is wider than the nominal flank spacing.
+- **360/361/415, mechanical clutches:** own `authored-oscillating-drum-ratchets.js`,
+  `authored-axial-pin-clutches.js` and `authored-dickson-reversible-drives.js`.
+  Reuse finite pawls and friction-drive interfaces. 361's engaged dog angles
+  coincide while the finite pins overlap axially, rather than meeting on
+  opposing working faces.
+- **383/388, material-feed rollers:** own `authored-textile-dressing.js` and
+  `authored-planer-feeds.js`. Reuse rope tangency, bored journals and finite feed
+  teeth. 383's web is tangent to radius 0.62 while its actual central roll radius
+  is 0.5642; its brush boxes also overrun their stated contact radius.
 
-These are unreviewed candidates, not evidence of correctness.
+These are code-inspected candidates, not qualified mechanisms or completed
+collision studies. Prioritize their working motion and surfaces before detailing.
 
 ## Running the screen
 
