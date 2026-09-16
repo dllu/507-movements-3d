@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctPileHookSurfaces, pileHeadOffset, pileLatch } from './lifting-check-hook-parts.js';
 import {
   PALETTE,
   makeDynamicCable,
@@ -613,14 +614,15 @@ function pileDriverReleasingHooks(movement) {
     const rigidAngle = side < 0 ? -hookAngle : hookAngle;
     const rotatedBearing = rotateVector2(bearingLocal, rigidAngle);
     const hookPoint = pivot.clone().add(rotatedBearing);
-    const headArcPivot = new THREE.Vector2(
-      pivot.x,
-      headY - headRelativeY,
-    );
-    const headPoint = headArcPivot.add(rotatedBearing);
+    const mirroredX = side < 0 ? hookPoint.x : -hookPoint.x;
+    const corner = new THREE.Vector2(pileLatch.edgeX, headY + pileLatch.shelfTop);
+    const along = Math.min(0, ((mirroredX - corner.x) + (hookPoint.y - corner.y)) / 2);
+    const headPoint = new THREE.Vector2(side < 0 ? corner.x + along : -corner.x - along, corner.y + along);
+    const normal = hookPoint.clone().sub(headPoint).normalize();
     return {
       arcCoordinate: hookAngle / releaseHookAngle,
-      gap: hookPoint.distanceTo(headPoint),
+      gap: hookPoint.distanceTo(headPoint) - pileLatch.toeRadius,
+      normal,
       headPoint,
       hookPoint,
       radialError: rotatedBearing.length() - latchArcRadius,
@@ -758,6 +760,17 @@ function pileDriverReleasingHooks(movement) {
       stage = 'latched-low-cycle-end-dwell';
     }
 
+    const headOffset = pileHeadOffset(hookState.value);
+    // Position contact law is authoritative. Derivatives are reported only for
+    // the interior smooth portion; the final shelf-edge force singularity is
+    // explicitly outside this prescribed demonstration's dynamic validation.
+    const epsilon = 1e-6;
+    const lo = Math.max(0, hookState.value - epsilon);
+    const hi = Math.min(releaseHookAngle, hookState.value + epsilon);
+    const derivative = (pileHeadOffset(hi) - pileHeadOffset(lo)) / (hi - lo || 1);
+    headState.value += headOffset;
+    headState.velocity += derivative * hookState.velocity;
+    headState.acceleration = null;
     const leftPivotPoint = leftPivot(pivotState.value);
     const rightPivotPoint = rightPivot(pivotState.value);
     const leftHookAngle = -hookState.value;
@@ -1082,6 +1095,7 @@ function pileDriverReleasingHooks(movement) {
     };
     root.userData.kinematics = state;
   };
+  correctPileHookSurfaces(root);
   update(0);
   markShadows(root);
   return {

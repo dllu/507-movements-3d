@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctCheckHookJournals } from './lifting-check-hook-parts.js';
 import {
   PALETTE,
   makeDynamicCable,
@@ -186,6 +187,8 @@ function centrifugalMineDrumCheckHooks(movement) {
   const caughtDwellEnd = 6.2;
   const springUnloadEnd = 7;
   const hookRetractionEnd = 7.8;
+  const hookReleaseClearanceTime = 7.2;
+  const reliefAngle = -.18;
   const externalReturnEnd = 10.8;
   const normalAccelerationDuration = normalAccelerationEnd - readyDwellEnd;
   const runawayDuration = catchTime - normalAccelerationEnd;
@@ -206,10 +209,10 @@ function centrifugalMineDrumCheckHooks(movement) {
   const hookCenterline = [
     new THREE.Vector2(0, 0),
     new THREE.Vector2(1.2, 0),
-    new THREE.Vector2(1.65, -0.02),
-    new THREE.Vector2(1.9, -0.18),
-    new THREE.Vector2(1.82, -0.5),
-    new THREE.Vector2(1.48, -0.67),
+    new THREE.Vector2(1.65, 0),
+    new THREE.Vector2(1.9, .6),
+    new THREE.Vector2(1.8, .92),
+    new THREE.Vector2(1.48, 1.05),
   ];
   const hookContactIndex = 3;
   const hookContactLocal = hookCenterline[hookContactIndex];
@@ -217,7 +220,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     hookPivotRadius + hookContactLocal.x,
     hookContactLocal.y,
   );
-  const contactNormalAtCatch = contactCenterAtCatch.clone().normalize();
+  const contactNormalAtCatch = new THREE.Vector2(Math.cos(Math.PI / 15), Math.sin(Math.PI / 15));
   const baseStudCenter = contactCenterAtCatch.clone().addScaledVector(
     contactNormalAtCatch,
     hookBarRadius + studRadius,
@@ -685,14 +688,15 @@ function centrifugalMineDrumCheckHooks(movement) {
     } else if (cycleTime <= hookRetractionEnd) {
       const retraction = transitionState(
         cycleTime,
-        springUnloadEnd,
+        hookReleaseClearanceTime,
         hookRetractionEnd,
         deployedHookAngle,
         retractedHookAngle,
       );
-      flangeAngle = 0;
-      flangeAngularAcceleration = 0;
-      flangeAngularSpeed = 0;
+      const relief = transitionState(cycleTime, springUnloadEnd, hookReleaseClearanceTime, 0, reliefAngle);
+      flangeAngle = relief.value;
+      flangeAngularAcceleration = relief.acceleration;
+      flangeAngularSpeed = relief.velocity;
       hookAngle = retraction.value;
       hookDeploymentProgress = THREE.MathUtils.clamp(
         (retraction.value - retractedHookAngle)
@@ -700,10 +704,10 @@ function centrifugalMineDrumCheckHooks(movement) {
         0,
         1,
       );
-      loadAngularAcceleration = 0;
-      loadAngularSpeed = 0;
+      loadAngularAcceleration = relief.acceleration;
+      loadAngularSpeed = relief.velocity;
       phase = 'external-hook-retraction';
-      ropeDrumAngle = 0;
+      ropeDrumAngle = flangeAngle;
       springDeflection = 0;
       springPotentialEnergy = 0;
     } else if (cycleTime <= externalReturnEnd) {
@@ -711,7 +715,7 @@ function centrifugalMineDrumCheckHooks(movement) {
         cycleTime,
         hookRetractionEnd,
         externalReturnEnd,
-        0,
+        reliefAngle,
         readyFlangeAngle,
       );
       flangeAngle = reset.value;
@@ -928,6 +932,8 @@ function centrifugalMineDrumCheckHooks(movement) {
     demonstrationPeriod: cycleDuration,
     externalReturnEnd,
     hookRetractionEnd,
+    hookReleaseClearanceTime,
+    reliefAngle,
     loadArrestEnd,
     normalAccelerationEnd,
     readyDwellEnd,
@@ -972,6 +978,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     };
     root.userData.kinematics = state;
   };
+  correctCheckHookJournals(root);
   update(0);
   markShadows(root);
   return {

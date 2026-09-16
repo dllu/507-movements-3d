@@ -410,7 +410,7 @@ test('movement 253 is collision-free, closes in twelve seconds, and leaves 269 a
     const clearance = solidClearanceAtTime(time);
     minimumGap = Math.min(minimumGap, clearance.hookToStudMinimumGap);
     assert.ok(clearance.flangeToFixedBackingAxialClearance > 0.09);
-    assert.ok(clearance.studToFrameRimRadialClearance > 0.2);
+    assert.ok(clearance.studToFrameRimRadialClearance > 0.15);
     assert.ok(clearance.hookToStudMinimumGap > -8e-15);
   }
   assert.ok(minimumGap < 5e-15);

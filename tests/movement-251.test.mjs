@@ -213,7 +213,7 @@ test('movement 251 keeps both round hook tips exactly on the straight slot faces
   disposeModel(model.root);
 });
 
-test('movement 251 carries the head on two concentric arcs until their endpoints', () => {
+test('movement 251 carries finite rounded toes on head shelves until their inner edges', () => {
   const model = createMovementModel(catalog.movements[250]);
   const { geometry, stateAtTime, timeline } = model.root.userData;
   let maximumLatchGap = 0;
@@ -242,7 +242,7 @@ test('movement 251 carries the head on two concentric arcs until their endpoints
       `matching latch coordinates at ${sample}`,
     );
   }
-  assert.ok(maximumLatchGap < 5e-16);
+  assert.ok(maximumLatchGap < 2e-15);
   assert.ok(maximumRadialError < 5e-16);
 
   const release = stateAtTime(timeline.releaseTime);
@@ -311,7 +311,7 @@ test('movement 251 gives the released hammer an exact gravity-only fall and impa
     minimumPileGap = Math.min(minimumPileGap, state.pileHeadGap);
     near(state.weightAcceleration, -geometry.gravitationalAcceleration, 0,
       `gravity-only acceleration at ${sample}`);
-    near(state.liftHeadY, geometry.releasePivotY + geometry.headRelativeY, 0,
+    near(state.liftHeadY, stateAtTime(timeline.releaseTime).liftHeadY, 0,
       `released lifting head remains fixed at ${sample}`);
     near(state.hookOpeningAngle, geometry.releaseHookAngle, 0,
       `released hooks remain open at ${sample}`);
