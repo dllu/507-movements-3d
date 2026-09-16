@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { openCrescentShuttleLaw } from './open-crescent-shuttle-motion.js';
+import crescent from './baked/open-crescent-shuttle.js';
+import { plate } from './finite-plate-geometry.js';
+import { boredCylinderGeometry } from './piston-guide-parts.js';
+import { makeBoredPlanarLink } from './bored-planar-link.js';
 import {
   PALETTE,
   markShadows,
@@ -20,15 +25,6 @@ function rotate2(point, angle) {
   );
 }
 
-function quinticState(parameter) {
-  const u = THREE.MathUtils.clamp(parameter, 0, 1);
-  return {
-    acceleration: 60 * u * (1 - u) * (1 - 2 * u),
-    rate: 30 * u ** 2 * (1 - u) ** 2,
-    value: u ** 3 * (10 + u * (-15 + 6 * u)),
-  };
-}
-
 function cylinderAlongZ(radius, length, material, segments = 32) {
   const cylinder = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, length, segments),
@@ -36,34 +32,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const direction = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(direction.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(direction.y, direction.x);
-  return beam;
-}
-
-function makeDynamicRod(radius, material) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 24),
-    material,
-  );
-  rod.userData.setEndpoints = (start, end) => {
-    const direction = end.clone().sub(start);
-    rod.position.copy(start).add(end).multiplyScalar(0.5);
-    rod.scale.set(1, direction.length(), 1);
-    rod.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      direction.clone().normalize(),
-    );
-  };
-  return rod;
 }
 
 function makeCrank({
@@ -116,55 +84,23 @@ function makeSlottedRocker({
 }) {
   const rocker = new THREE.Group();
   rocker.userData.role =
-    'bottom-pivoted-rocker-carrying-one-closed-dwell-cam-slot';
-  const slotBody = new THREE.Mesh(
-    new THREE.TubeGeometry(slotCurve, 320, 0.29, 14, true),
-    rockerMaterial,
-  );
-  slotBody.userData.role = 'thick-curved-rocker-body-around-slot';
-  rocker.add(slotBody);
-  const slot = new THREE.Mesh(
-    new THREE.TubeGeometry(slotCurve, 320, 0.135, 12, true),
-    darkMaterial,
-  );
-  slot.position.z = 0.18;
-  slot.userData.role =
-    'single-closed-synthesized-slot-centerline-envelope';
-  rocker.add(slot);
-
-  const sampledPoints = slotCurve.points;
-  const lowestSlotPoint = sampledPoints.reduce((lowest, point) => (
-    point.y < lowest.y ? point : lowest
-  ), sampledPoints[0]);
-  const highestSlotPoint = sampledPoints.reduce((highest, point) => (
-    point.y > highest.y ? point : highest
-  ), sampledPoints[0]);
-  const lowerArm = beamBetween(
-    new THREE.Vector3(0, 0, 0.22),
-    new THREE.Vector3(lowestSlotPoint.x, lowestSlotPoint.y, 0.22),
-    0.25,
-    0.24,
-    rockerMaterial,
-  );
-  lowerArm.userData.role = 'rocker-lower-arm-to-fixed-pivot';
-  const upperArm = beamBetween(
-    new THREE.Vector3(highestSlotPoint.x, highestSlotPoint.y, 0.22),
-    new THREE.Vector3(topJointLocal.x, topJointLocal.y, 0.22),
-    0.22,
-    0.24,
-    rockerMaterial,
-  );
-  upperArm.userData.role = 'rocker-upper-arm-to-output-joint';
-  rocker.add(lowerArm, upperArm);
-
-  const pivotHub = cylinderAlongZ(0.18, 0.72, darkMaterial, 30);
-  pivotHub.position.z = 0.14;
+    'bottom-pivoted-rocker-carrying-one-open-crescent-cam-slot';
+  const slotBody = new THREE.Mesh(plate(crescent.body,.40,.64),rockerMaterial);
+  slotBody.userData.role='finite-open-crescent-channel-walls';rocker.add(slotBody);
+  const slot=new THREE.Group();slot.userData.role='open-crescent-slot-void';rocker.add(slot);
+  const lowerArm=new THREE.Mesh(plate(crescent.lower,.40,.64),rockerMaterial);
+  lowerArm.userData.role='rocker-lower-arm-to-fixed-pivot';
+  const upperArm=new THREE.Mesh(plate(crescent.upper,.40,.64),rockerMaterial);
+  upperArm.userData.role='rocker-upper-arm-to-output-joint';rocker.add(lowerArm,upperArm);
+  // Let the bearing caps and rim stand proud of the arm's coincident surfaces.
+  const pivotHub = new THREE.Mesh(boredCylinderGeometry(.235,.144,.28),darkMaterial);pivotHub.rotation.x=Math.PI/2;
+  pivotHub.position.z = 0.52;
   pivotHub.userData.role = 'fixed-bottom-rocker-pivot-bearing';
-  const topJoint = cylinderAlongZ(0.15, 0.52, darkMaterial, 28);
-  topJoint.position.set(topJointLocal.x, topJointLocal.y, 0.28);
+  const topJoint = cylinderAlongZ(0.15, 0.66, darkMaterial, 28);
+  topJoint.position.set(topJointLocal.x, topJointLocal.y, 0.63);
   topJoint.userData.role = 'rocker-top-pin-to-finite-output-rod';
   const topJointIndex = cylinderAlongZ(0.075, 0.10, whiteMaterial, 22);
-  topJointIndex.position.set(topJointLocal.x, topJointLocal.y, 0.59);
+  topJointIndex.position.set(topJointLocal.x, topJointLocal.y, 1.00);
   topJointIndex.userData.role = 'white-index-on-rocker-output-pin';
   rocker.add(pivotHub, topJoint, topJointIndex);
 
@@ -182,86 +118,24 @@ function makeSlottedRocker({
 function intermittentShuttleDrive(movement) {
   const root = new THREE.Group();
 
-  // Brown gives only the topology.  A positive curved groove is synthesized
-  // by inverse kinematics: at each constant-speed crank angle, the pin's
-  // world point is transformed into the current rocker coordinates.  The
-  // resulting one-cycle locus is the rigid slot that exactly realizes the
-  // chosen two-dwell rocker law.
+  // The source has one open crescent, not the previous synthesized closed loop.
+  // Radius about the fixed rocker pivot selects a unique groove station.
   const cycleDuration = 6;
   const crankCenter = new THREE.Vector2(0.78, 0.20);
   const rockerPivot = new THREE.Vector2(0, -2.00);
   const crankRadius = 1.22;
   const crankReferenceAngle = THREE.MathUtils.degToRad(150);
   const crankAngularSpeed = FULL_TURN / cycleDuration;
-  const rockerAmplitude = THREE.MathUtils.degToRad(9);
   const topJointRadius = 3.75;
   const topJointLocal = new THREE.Vector2(0, topJointRadius);
   const guideY = rockerPivot.y + topJointRadius + 0.08;
   const connectingRodLength = 2.42;
   const pinRadius = 0.12;
   const sourcePoseLawPhase = 0.35;
-  const rightDwellEnd = 0.25;
-  const leftwardStrokeEnd = 0.45;
-  const leftDwellEnd = 0.75;
-  const rightwardStrokeEnd = 0.95;
-  const slotSampleCount = 360;
+  const slotSampleCount = 513;
 
-  const rockerLawAtPhase = (unwrappedLawPhase) => {
-    const lawPhase = positiveModulo(unwrappedLawPhase, 1);
-    let stage;
-    let angle;
-    let angularSpeed;
-    let angularAcceleration;
-    let progress;
-    if (lawPhase < rightDwellEnd) {
-      stage = 'right-end-output-dwell';
-      angle = -rockerAmplitude;
-      angularSpeed = 0;
-      angularAcceleration = 0;
-      progress = 0;
-    } else if (lawPhase < leftwardStrokeEnd) {
-      stage = 'leftward-output-stroke';
-      const width = leftwardStrokeEnd - rightDwellEnd;
-      progress = (lawPhase - rightDwellEnd) / width;
-      const motion = quinticState(progress);
-      const duration = width * cycleDuration;
-      angle = -rockerAmplitude + 2 * rockerAmplitude * motion.value;
-      angularSpeed = 2 * rockerAmplitude * motion.rate / duration;
-      angularAcceleration = 2 * rockerAmplitude
-        * motion.acceleration / duration ** 2;
-    } else if (lawPhase < leftDwellEnd) {
-      stage = 'left-end-output-dwell';
-      angle = rockerAmplitude;
-      angularSpeed = 0;
-      angularAcceleration = 0;
-      progress = 1;
-    } else if (lawPhase < rightwardStrokeEnd) {
-      stage = 'rightward-output-return-stroke';
-      const width = rightwardStrokeEnd - leftDwellEnd;
-      progress = (lawPhase - leftDwellEnd) / width;
-      const motion = quinticState(progress);
-      const duration = width * cycleDuration;
-      angle = rockerAmplitude - 2 * rockerAmplitude * motion.value;
-      angularSpeed = -2 * rockerAmplitude * motion.rate / duration;
-      angularAcceleration = -2 * rockerAmplitude
-        * motion.acceleration / duration ** 2;
-    } else {
-      stage = 'right-end-output-dwell';
-      angle = -rockerAmplitude;
-      angularSpeed = 0;
-      angularAcceleration = 0;
-      progress = 0;
-    }
-    return {
-      angle,
-      angularAcceleration,
-      angularSpeed,
-      lawPhase,
-      progress,
-      stage,
-    };
-  };
-
+  const openLaw=openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,reference:crankReferenceAngle,period:cycleDuration});
+  const rockerLawAtPhase=phase=>openLaw.atPhase(phase-sourcePoseLawPhase);
   const crankPinWorldAtPhase = (driverPhase) => crankCenter.clone().add(
     rotate2(
       new THREE.Vector2(crankRadius, 0),
@@ -277,20 +151,8 @@ function intermittentShuttleDrive(movement) {
       -rockerState.angle,
     );
   };
-  const slotSamples = Array.from(
-    { length: slotSampleCount },
-    (_, index) => {
-      const driverPhase = index / slotSampleCount;
-      const point = slotLocalAtDriverPhase(driverPhase);
-      return new THREE.Vector3(point.x, point.y, 0.38);
-    },
-  );
-  const slotCurve = new THREE.CatmullRomCurve3(
-    slotSamples,
-    true,
-    'centripetal',
-  );
-
+  const slotSamples=crescent.points.map(([x,y])=>new THREE.Vector3(x,y,.52));
+  const slotCurve=new THREE.CatmullRomCurve3(slotSamples,false,'centripetal');
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.16,
     roughness: 0.51,
@@ -332,7 +194,7 @@ function intermittentShuttleDrive(movement) {
   rocker.position.set(rockerPivot.x, rockerPivot.y, 0);
   root.add(rocker);
 
-  const connectingRod = makeDynamicRod(0.075, rockerMaterial);
+  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.15,eyeRadius:.21,boreRadius:.154,depth:.10},rockerMaterial);
   connectingRod.userData.role =
     'finite-link-from-rocker-top-to-horizontal-shuttle-slide';
   root.add(markShadows(connectingRod));
@@ -345,7 +207,7 @@ function intermittentShuttleDrive(movement) {
   );
   shuttleBar.position.set(-0.48, 0.27, 0);
   shuttleBar.userData.role = 'sewing-machine-or-printing-press-output-slide';
-  const sliderJoint = cylinderAlongZ(0.14, 0.46, darkMaterial, 28);
+  const sliderJoint = cylinderAlongZ(0.14, 0.58, darkMaterial, 28);
   sliderJoint.position.z = 0.28;
   sliderJoint.userData.role = 'output-rod-to-slider-pin';
   const outputIndex = new THREE.Mesh(
@@ -375,13 +237,15 @@ function intermittentShuttleDrive(movement) {
   crankBoss.position.set(crankCenter.x, crankCenter.y, -0.24);
   crankBoss.userData.role = 'fixed-crank-bearing-boss';
   fixedFrame.add(rockerBoss, crankBoss);
-  const guideLength = 5.85;
+  for(const boss of [rockerBoss,crankBoss]){boss.geometry.dispose();boss.geometry=boredCylinderGeometry(.30,.144,.20);}
+  const rockerShaft=cylinderAlongZ(.14,1.10,darkMaterial);rockerShaft.position.set(rockerPivot.x,rockerPivot.y,.18);fixedFrame.add(rockerShaft);
+  const guideLength = 8.8;
   const guides = [-1, 1].map((side) => {
     const guide = new THREE.Mesh(
       new THREE.BoxGeometry(guideLength, 0.075, 0.12),
       darkMaterial,
     );
-    guide.position.set(-1.98, guideY + 0.27 + side * 0.19, -0.07);
+    guide.position.set(-.50, guideY + 0.27 + side * 0.15, .32);
     guide.userData.side = side;
     guide.userData.role = 'fixed-horizontal-shuttle-guide-rail';
     fixedFrame.add(guide);
@@ -462,11 +326,11 @@ function intermittentShuttleDrive(movement) {
       0.32,
     );
     connectingRod.userData.setEndpoints(
-      new THREE.Vector3(state.topJointWorld.x, state.topJointWorld.y, 0.48),
+      new THREE.Vector3(state.topJointWorld.x, state.topJointWorld.y, 0.80),
       new THREE.Vector3(
         state.sliderJointWorld.x,
         state.sliderJointWorld.y,
-        0.48,
+        0.80,
       ),
     );
     root.userData.contacts = {
@@ -493,27 +357,10 @@ function intermittentShuttleDrive(movement) {
     root.userData.kinematics = state;
   };
 
-  const rightDwellState = rockerLawAtPhase(0.10);
-  const leftDwellState = rockerLawAtPhase(0.60);
-  const rightSlider = (() => {
-    const top = rockerPivot.clone().add(rotate2(
-      topJointLocal,
-      rightDwellState.angle,
-    ));
-    return top.x - Math.sqrt(
-      connectingRodLength ** 2 - (guideY - top.y) ** 2,
-    );
-  })();
-  const leftSlider = (() => {
-    const top = rockerPivot.clone().add(rotate2(
-      topJointLocal,
-      leftDwellState.angle,
-    ));
-    return top.x - Math.sqrt(
-      connectingRodLength ** 2 - (guideY - top.y) ** 2,
-    );
-  })();
-
+  const fullStates=Array.from({length:2048},(_,i)=>stateAtTime(cycleDuration*i/2048));
+  const rightSlider=Math.max(...fullStates.map(s=>s.sliderJointWorld.x));
+  const leftSlider=Math.min(...fullStates.map(s=>s.sliderJointWorld.x));
+  const dwellFraction=fullStates.filter(s=>s.dwellActive).length/fullStates.length;
   root.userData = {
     archetype:
       'constant-speed-crank-pin-in-synthesized-two-dwell-curved-slot-rocker-driving-finite-rod-shuttle',
@@ -527,24 +374,14 @@ function intermittentShuttleDrive(movement) {
       outputIndex,
       outputSlider,
       rocker,
+      rockerShaft,
       rockerBoss,
       shuttleBar,
       sliderJoint,
     },
     constraintResiduals: {
-      crankRadiusAtReference:
-        crankPinWorldAtPhase(0).distanceTo(crankCenter) - crankRadius,
-      leftDwellAngle:
-        leftDwellState.angle - rockerAmplitude,
-      outputStrokeIdentity:
-        rightSlider - leftSlider
-          - 2 * topJointRadius * Math.sin(rockerAmplitude),
-      rightDwellAngle:
-        rightDwellState.angle + rockerAmplitude,
-      slotCycleClosure:
-        slotLocalAtDriverPhase(0).distanceTo(
-          slotLocalAtDriverPhase(1),
-        ),
+      crankRadiusAtReference:crankPinWorldAtPhase(0).distanceTo(crankCenter)-crankRadius,
+      slotCycleClosure:slotLocalAtDriverPhase(0).distanceTo(slotLocalAtDriverPhase(1)),
     },
     constraints: {
       crank:
@@ -552,9 +389,9 @@ function intermittentShuttleDrive(movement) {
       output:
         'A finite connecting rod joins the rocker top pin to a carriage constrained to one horizontal guide line.',
       rocker:
-        'The rocker has one fixed bottom pivot and one rotational coordinate with two exact constant-angle dwell intervals.',
+        'The rocker has one fixed bottom pivot and one rotational coordinate with a circular-arc dwell and smooth rounded-end reversals.',
       slot:
-        'One rigid closed slot is the inverse-kinematic locus R(-theta(phi))*(pin(phi)-rockerPivot), so its transformed centerline contains the crank pin at every phase.',
+        'One open crescent has monotone radius about the rocker pivot; the pin radius selects a station and its polar angle determines the rocker angle. The same finite slot is traversed forward and backward.',
     },
     degreesOfFreedom: {
       dependentCoordinates: [
@@ -570,9 +407,9 @@ function intermittentShuttleDrive(movement) {
     dynamics: {
       idealizations: [
         'rigid crank, roller, grooved rocker, rod, carriage, and frame',
-        'positive centerline constraint with zero roller/slot clearance',
+        'ideal centerline closure with .0015 finite roller/slot running clearance',
         'constant input angular speed',
-        'quintic strokes with zero velocity and acceleration at dwell boundaries',
+        'circular middle arc and quintic radial-end blends preserve continuous velocity and acceleration',
         'inertia, friction, impact, elastic deformation, and load omitted',
       ],
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
@@ -588,7 +425,7 @@ function intermittentShuttleDrive(movement) {
       leftSlider,
       pinRadius,
       rightSlider,
-      rockerAmplitude,
+      rockerAmplitude:(Math.max(...fullStates.map(s=>s.rockerAngle))-Math.min(...fullStates.map(s=>s.rockerAngle)))/2,
       rockerPivot: rockerPivot.clone(),
       slotSampleCount,
       sourcePoseLawPhase,
@@ -600,11 +437,9 @@ function intermittentShuttleDrive(movement) {
     motion: {
       cycleDuration,
       inputDirection: 'counterclockwise continuously',
-      leftDwellFraction: leftDwellEnd - leftwardStrokeEnd,
-      leftwardStrokeFraction: leftwardStrokeEnd - rightDwellEnd,
+      dwellFraction,
       outputStroke: rightSlider - leftSlider,
-      rightDwellFraction: rightDwellEnd + 1 - rightwardStrokeEnd,
-      rightwardStrokeFraction: rightwardStrokeEnd - leftDwellEnd,
+
     },
     sourceAnimation: {
       available: false,
@@ -636,7 +471,7 @@ function intermittentShuttleDrive(movement) {
           'also applied to three-revolution cylinder printing presses',
         ],
         reconstructionDisclosure:
-          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The exact inverse-kinematic slot, two 30-percent dwells, two 20-percent quintic strokes, and all display timing are independently synthesized.',
+          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The open crescent uses an ideal circular middle arc with short radial-end blends; dimensions, end continuation, centerline constraint, six-second timing and the resulting dwell fraction are reconstructed. No two-dwell motion is imposed independently of the groove.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 397',
@@ -647,19 +482,13 @@ function intermittentShuttleDrive(movement) {
       law:
         'q(phi)=R(-theta(phi))*(C+r*[cos(phi),sin(phi)]-O)',
       samples: slotSamples.map((point, index) => ({
-        driverPhase: index / slotSampleCount,
+        radialFraction: index / (slotSamples.length-1),
         point: new THREE.Vector2(point.x, point.y),
       })),
     },
     stateAtTime,
     timeline: {
       cycleDuration,
-      lawPhaseIntervals: {
-        leftDwell: [leftwardStrokeEnd, leftDwellEnd],
-        leftwardStroke: [rightDwellEnd, leftwardStrokeEnd],
-        rightDwell: [[0, rightDwellEnd], [rightwardStrokeEnd, 1]],
-        rightwardStroke: [leftDwellEnd, rightwardStrokeEnd],
-      },
       sourcePoseLawPhase,
     },
     transmission: {
@@ -668,19 +497,23 @@ function intermittentShuttleDrive(movement) {
       slotLaw:
         'worldPin=O+R(theta)*q; q is fixed in the slotted rocker',
       stageSequence:
-        'right dwell -> leftward stroke -> left dwell -> rightward stroke -> right dwell',
+        'circular-arc dwell -> rounded end -> working stroke and return through the same open crescent',
     },
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.10, -2.62, -0.72),
-    new THREE.Vector3(2.75, 2.34, 1.02),
+    new THREE.Vector3(4.00, 2.50, 1.08),
   );
   root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraDirection = new THREE.Vector3(7.4, 5.4, 13.4);
+  root.userData.cameraDirection = new THREE.Vector3(2.5, 1.2, 16);
   root.userData.groundFloorY = -2.48;
+  root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=cycleDuration;
+  root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});
+  root.userData.reconstructionNote = 'The source shows an open crescent, not a closed cam loop. Its circular dwell arc and rounded open ends are reconstructed analytically; the pin follows the ideal channel centerline. Motion is prescribed, without solved friction, loads or clearance backlash.';
+  root.userData.openCrescentLaw=openLaw;
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredIntermittentShuttleDriveMovement(movement) {

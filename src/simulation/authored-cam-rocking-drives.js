@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { recess398Cam, finishGrooveDrive } from './groove-drive-working-parts.js';
+import { makeBoredPlanarLink } from './bored-planar-link.js';
 import {
   PALETTE,
   markShadows,
@@ -220,6 +222,7 @@ function makeCam({
   cam.userData.offsetEdges = offsetEdges;
   cam.userData.outerRim = outerRim;
   cam.userData.shaft = shaft;
+  recess398Cam(cam,contactArcs,scale);
   return markShadows(cam);
 }
 
@@ -602,7 +605,7 @@ function camRockingDrive(movement) {
   outputWheel.position.set(outputCenter.x, outputCenter.y, 0);
   root.add(outputWheel);
 
-  const connectingRod = makeDynamicRod(0.105, rodMaterial);
+  const connectingRod = makeBoredPlanarLink({length:sourceConnectingRodLength*sourceScale,width:.21,eyeRadius:.22,boreRadius:.148,depth:.12},rodMaterial);
   connectingRod.userData.role =
     'single-finite-connecting-rod-from-crosshead-to-output-crank';
   root.add(markShadows(connectingRod));
@@ -611,12 +614,12 @@ function camRockingDrive(movement) {
   const guideSourceEnd = 12.573977;
   const guideStartX = sourceOffsetX + guideSourceStart * sourceScale;
   const guideEndX = sourceOffsetX + guideSourceEnd * sourceScale;
-  const guides = [-0.66, 0.66].map((guideY) => {
+  const guides = [-0.44, 0.44].map((guideY) => {
     const guide = beamBetween(
-      new THREE.Vector3(guideStartX, guideY, 0.02),
-      new THREE.Vector3(guideEndX, guideY, 0.02),
+      new THREE.Vector3(guideStartX, guideY, 0.43),
+      new THREE.Vector3(guideEndX, guideY, 0.43),
       0.15,
-      0.20,
+      0.40,
       frameMaterial,
     );
     guide.userData.role = 'fixed-horizontal-crosshead-guide';
@@ -880,10 +883,12 @@ function camRockingDrive(movement) {
     new THREE.Vector3(6.05, 2.50, 1.15),
   );
   root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraDirection = new THREE.Vector3(6.2, 4.4, 12.8);
+  root.userData.cameraDirection = new THREE.Vector3(2.5, 1.2, 16);
+  root.userData.reconstructionNote = 'The cam arcs and follower/link closure reproduce the official 2D animation. Finite recessed walls add small running clearance around its ideal contact law. Input motion and follower branch are prescribed; loads, friction and backlash are not dynamically solved.';
+  finishGrooveDrive(root,cycleDuration);
   root.userData.groundFloorY = -2.66;
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredCamRockingDriveMovement(movement) {

@@ -106,8 +106,9 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
   assert.equal(blocks.rollerBodies.length, 8);
   assert.equal(blocks.rollerSpinRotors.length, 8);
   assert.equal(blocks.rollerSpinIndexes.length, 8);
-  assert.equal(blocks.grooveFlanks.length, 16);
-  assert.equal(blocks.grooveEntries.length, 16);
+  assert.equal(blocks.grooveFlanks.length, 0);
+  assert.equal(blocks.outputWheel.geometry.userData.grooveCount, 8);
+  assert.equal(blocks.grooveEntries.length, 0);
   assert.equal(curves.grooveCenterCurves.length, 8);
 
   const roles = [];
@@ -124,7 +125,6 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
     'radial-stud-on-small-driver-wheel',
     'friction-roller-on-one-of-eight-radial-driver-studs',
     'large-horizontal-output-wheel-with-cylindrical-working-face',
-    'curved-oblique-working-face-border-on-output-wheel-rim',
     'vertical-output-shaft-fixed-to-intermittent-large-wheel',
     'white-face-index-showing-continuous-driver-angle-and-rate',
     'white-top-face-index-showing-output-dwell-and-index-rate',

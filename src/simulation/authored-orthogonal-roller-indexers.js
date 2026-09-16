@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import grooveData from './baked/roller-indexer-grooves.js';
+import { radialGroovedWheelGeometry, finishGrooveDrive, boreCylinder } from './groove-drive-working-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -432,8 +434,8 @@ function orthogonalRollerGrooveIndexer(movement) {
     mount.userData.mountAngle = mountAngle;
     mount.userData.role = 'radial-stud-and-free-friction-roller-mount';
 
-    const stud = cylinderAlongX(0.052, 0.31, darkMaterial, 20);
-    stud.position.x = 0.72;
+    const stud = cylinderAlongX(0.052, 0.64, darkMaterial, 20);
+    stud.position.x = 0.89;
     stud.userData.index = index;
     stud.userData.role = 'radial-stud-on-small-driver-wheel';
     mount.add(stud);
@@ -455,15 +457,16 @@ function orthogonalRollerGrooveIndexer(movement) {
       ),
       rollerMaterial,
     );
+    boreCylinder(roller,rollerRadius,.055,rollerLength);
     roller.userData.index = index;
     roller.userData.role =
       'friction-roller-on-one-of-eight-radial-driver-studs';
     spinRotor.add(roller);
     const spinIndex = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035, 16, 10),
+      new THREE.BoxGeometry(.025,.002,.030),
       whiteMaterial,
     );
-    spinIndex.position.set(rollerRadius * 0.88, 0, 0);
+    spinIndex.position.set(.10,rollerLength/2+.001,0);
     spinIndex.userData.index = index;
     spinIndex.userData.role =
       'white-index-showing-free-friction-roller-bearing-spin';
@@ -484,30 +487,13 @@ function orthogonalRollerGrooveIndexer(movement) {
   outputRotor.userData.role =
     'intermittently-indexed-large-horizontal-grooved-wheel-and-vertical-shaft';
   const outputWheel = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      outputRadius,
-      outputRadius,
-      outputBodyHeight,
-      96,
-    ),
+    radialGroovedWheelGeometry(grooveData),
     outputMaterial,
   );
   outputWheel.userData.role =
     'large-horizontal-output-wheel-with-cylindrical-working-face';
   outputRotor.add(outputWheel);
-  const outputEndRims = [-1, 1].map((side) => {
-    const rim = torusNormalToY(
-      outputRadius,
-      0.044,
-      darkMaterial,
-      96,
-    );
-    rim.position.y = side * outputBodyHalfHeight;
-    rim.userData.role = 'dark-edge-of-large-horizontal-output-wheel';
-    rim.userData.side = side;
-    outputRotor.add(rim);
-    return rim;
-  });
+  const outputEndRims = []; // The closed profiled end faces include the groove mouths.
   const outputShaft = new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 3.20, 32),
     darkMaterial,
@@ -524,41 +510,8 @@ function orthogonalRollerGrooveIndexer(movement) {
   outputRotor.add(outputHub);
   const grooveFlanks = [];
   const grooveEntries = [];
-  for (let grooveIndex = 0; grooveIndex < grooveCount; grooveIndex += 1) {
-    for (const side of [-1, 1]) {
-      const flank = new THREE.Mesh(
-        new THREE.TubeGeometry(
-          makeGrooveCurve(
-            grooveIndex,
-            side * grooveFlankAngularOffset,
-          ),
-          grooveSegments,
-          grooveTubeRadius,
-          8,
-          false,
-        ),
-        darkMaterial,
-      );
-      flank.userData.grooveIndex = grooveIndex;
-      flank.userData.role =
-        'curved-oblique-working-face-border-on-output-wheel-rim';
-      flank.userData.side = side;
-      outputRotor.add(flank);
-      grooveFlanks.push(flank);
-    }
-    for (const parameter of [0, 1]) {
-      const entry = new THREE.Mesh(
-        new THREE.SphereGeometry(grooveTubeRadius * 1.18, 16, 10),
-        darkMaterial,
-      );
-      entry.position.copy(grooveLocalPoint(grooveIndex, parameter));
-      entry.userData.end = parameter === 0 ? 'lower' : 'upper';
-      entry.userData.grooveIndex = grooveIndex;
-      entry.userData.role = 'rounded-entry-or-exit-of-oblique-rim-groove';
-      outputRotor.add(entry);
-      grooveEntries.push(entry);
-    }
-  }
+  // Working walls are the finite roller envelope baked into outputWheel;
+  // no raised centerline tubes or spheres occupy the groove mouths.
   const outputIndex = new THREE.Mesh(
     new THREE.BoxGeometry(outputRadius * 0.82, 0.035, 0.060),
     whiteMaterial,
@@ -568,10 +521,10 @@ function orthogonalRollerGrooveIndexer(movement) {
     'white-top-face-index-showing-output-dwell-and-index-rate';
   outputRotor.add(outputIndex);
   const indexedGrooveMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.065, 18, 12),
+    new THREE.BoxGeometry(.05,.003,.07),
     whiteMaterial,
   );
-  indexedGrooveMarker.position.copy(grooveLocalPoint(0, 0.5));
+  indexedGrooveMarker.position.set(-.75,outputBodyHalfHeight+.0015,.30);
   indexedGrooveMarker.userData.role =
     'white-marker-identifying-one-of-eight-oblique-output-grooves';
   outputRotor.add(indexedGrooveMarker);
@@ -780,6 +733,9 @@ function orthogonalRollerGrooveIndexer(movement) {
     new THREE.Vector3(-3.92, -0.08, -1.72),
     new THREE.Vector3(1.72, 3.28, 1.72),
   );
+  root.userData.finiteGrooveEnvelope={clearance:grooveData.clearance,profile:"offline swept finite cylinders, with retained driving walls"};
+  root.userData.reconstructionNote = 'The caption gives oblique roller grooves but no exact profile or timing. This reconstruction prescribes a quintic index and dwell and cuts the finite roller envelope offline. Remaining groove tessellation permits up to 0.00316 model-unit roller/wheel penetration in the sampled audit; contact is not certified. Friction, roller traction and dwell holding are assumed, not dynamically solved.';
+  finishGrooveDrive(root,inputCyclePeriod);
   root.userData.groundFloorY = -0.06;
   markShadows(root);
   return {

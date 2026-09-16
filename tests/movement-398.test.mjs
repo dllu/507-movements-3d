@@ -77,8 +77,8 @@ test('movement 398 is one cam, one roller crosshead, one finite rod, and one roc
     'output-crank-pin-driven-by-finite-rod',
     'white-radial-index-showing-output-rocking-angle',
   ]) assert.ok(roles.includes(role), role);
-  assert.equal(blocks.cam.userData.contactEdges.length, 6);
-  assert.equal(blocks.cam.userData.offsetEdges.length, 6);
+  assert.equal(blocks.cam.userData.contactEdges.length, 1);
+  assert.equal(blocks.cam.userData.offsetEdges.length, 1);
   disposeModel(model.root);
 });
 
