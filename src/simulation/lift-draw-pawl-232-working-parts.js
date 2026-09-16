@@ -1,3 +1,4 @@
+import {finishRockingPawl232} from './lift-draw-pawl-232-branch.js';
 import * as T from 'three';
 import {poly,circle,capsule,plate,polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
@@ -51,5 +52,5 @@ export function finishLiftDrawPawl232(model){
  d.hideGround=true;d.minimumDisplayCycleSeconds=6;
  model.root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}for(const mat of(Array.isArray(o.material)?o.material:[o.material]))if(mat)mat.fog=false;});
  model.update=t=>{oldUpdate(t);const s=d.stateAtTime(t);b.inputLever.position.z=.70;coupler.userData.setEndpoints(new T.Vector3(s.inputCouplerPivot.x,s.inputCouplerPivot.y,.86),new T.Vector3(s.pawlCouplerPivot.x,s.pawlCouplerPivot.y,.86));b.inputCouplerPin.position.z=.78;b.pawlCouplerPin.position.z=.50;b.retainingClick.rotation.z=s.clickAngle;b.retainingClick.userData.angularSpeed=s.clickAngularSpeed;d.contacts.retainingClick={engaged:s.retainingClickEngaged,nosePoint:s.retainingNosePoint,radialLift:s.retainingNoseRadialLift,passiveLiftSolved:false};d.kinematics=s;};
- model.cameraDirection=new T.Vector3(.6,.45,12);model.update(0);return model;
+ model.cameraDirection=new T.Vector3(.6,.45,12);model.update(0);return finishRockingPawl232(model);
 }

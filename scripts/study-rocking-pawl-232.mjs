@@ -1,0 +1,20 @@
+// Bounded diagnostic only: trial springs jammed; this is NOT the playback bake.
+// Run: node scripts/study-rocking-pawl-232.mjs (output stays in /dev/shm).
+import fs from 'node:fs';
+import loadMujoco from '@mujoco/mujoco';
+import {createMujocoSimulation} from '../src/simulation/mujoco/simulation.js';
+import {createAuthoredIntermittentMovement as make} from '../src/simulation/authored-intermittent.js';
+const d=make({id:232}).root.userData,g=d.geometry,r=.065,L=g.groundLength,pitch=g.toothPitch,R=1.82,phi=g.gapMountPhase-g.gapHalfAngle,q=[R*Math.cos(phi),R*Math.sin(phi)],tip=[q[0]-r*Math.sin(phi),q[1]+r*Math.cos(phi)],local=[tip[0],tip[1]-L],assets=[];let geoms='';
+for(let i=0;i<20;i++){const a=g.gapMountPhase+i*pitch+g.gapHalfAngle,b=g.gapMountPhase+(i+1)*pitch-g.gapHalfAngle;const poly=[[g.wheelRootRadius,a],[g.wheelOuterRadius,a],[g.wheelOuterRadius,b],[g.wheelRootRadius,b]].map(([r,a])=>[r*Math.cos(a),r*Math.sin(a)]),v=[-.19,.19].flatMap(z=>poly.flatMap(p=>[...p,z]));assets.push(`<mesh name="tooth${i}" vertex="${v.join(' ')}"/>`);geoms+=`<geom type="mesh" mesh="tooth${i}" contype="1" conaffinity="2"/>`;}
+const period=6,dt=.0005,k=Number(process.env.STIFFNESS??2),clickK=Number(process.env.CLICK_STIFFNESS??1),betaMax=pitch+Number(process.env.OVERTRAVEL??0),clickRest=g.retainingRestAngle;
+const xml=`<mujoco><compiler angle="radian" inertiafromgeom="false"/><option timestep="${dt}" gravity="0 0 0" iterations="80" tolerance="1e-10" integrator="implicitfast"/><default><joint damping=".01"/><geom condim="1" friction="0 0 0" solref=".002 1" solimp=".99 .999 .001"/></default><asset>${assets.join('')}</asset><worldbody>
+<body name="wheel"><joint name="wheel" axis="0 0 1"/><inertial pos="0 0 0" mass=".2" diaginertia=".2 .2 .4"/><geom type="cylinder" size="${g.wheelRootRadius} .19" contype="1" conaffinity="2"/>${geoms}</body>
+<body name="carrier"><joint name="carrier" axis="0 0 1" limited="true" range="-.4 .5" damping=".02"/><inertial pos="0 .8 0" mass=".02" diaginertia=".02 .02 .02"/>
+<body name="input"><joint name="relativeInput" axis="0 0 1" stiffness="${k}" springref="0" damping=".04"/><inertial pos=".5 0 0" mass=".002" diaginertia=".001 .001 .001"/></body>
+<body name="pawl" pos="0 ${L} 0"><joint name="relativePawl" axis="0 0 1"/><inertial pos=".8 -.3 0" mass=".01" diaginertia=".004 .004 .004"/><geom name="nose" type="sphere" size="${r}" pos="${local[0]} ${local[1]} 0" contype="2" conaffinity="1"/></body></body>
+<body name="click" pos="${g.retainingPivot.x} ${g.retainingPivot.y} 0"><joint name="click" axis="0 0 1" stiffness="${clickK}" springref="${clickRest-.025}" damping=".03"/><inertial pos=".5 0 0" mass=".005" diaginertia=".001 .001 .001"/><geom name="clickNose" type="sphere" size=".085" pos="${g.retainingLength} 0 0" contype="2" conaffinity="1"/></body>
+</worldbody><equality><joint joint1="relativePawl" joint2="relativeInput" polycoef="0 1 0 0 0" solref=".001 1"/></equality><tendon><fixed name="beta"><joint joint="carrier" coef="1"/><joint joint="relativeInput" coef="1"/></fixed></tendon><actuator><position tendon="beta" kp="10000" kv="100"/></actuator></mujoco>`;
+const smooth=x=>x*x*x*(10+x*(-15+6*x));
+const p=createMujocoSimulation(await loadMujoco(),{xml,initialize:({data})=>{data.qpos[4]=clickRest;},beforeStep:({data,time})=>{const phase=(time%period)/period,x=phase<.5?phase*2:(1-phase)*2;data.ctrl[0]=betaMax*smooth(x);data.qfrc_applied[0]=.002;}});
+let min=0,error=0,rows=[],reset=0;
+try{for(let i=0;i<Number(process.env.CYCLES??3)*period/dt;i++){p.step();if(Math.abs(p.data.time-(i+1)*dt)>1e-7)reset++;const c=p.data.contact;try{for(let j=0;j<c.size();j++){const q=c.get(j);try{min=Math.min(min,q.dist);}finally{q.delete();}}}finally{c.delete();}error=Math.max(error,Math.abs(p.data.qpos[3]-p.data.qpos[2]));if(i%100===0)rows.push([p.data.time,...p.data.qpos]);}const result={k,clickK,period,betaMax,dt,min,error,reset,tip,local,rows};fs.writeFileSync('/dev/shm/232-rocking-native.json',JSON.stringify(result));console.log({k,clickK,min,error,reset,final:[...p.data.qpos],cycles:rows.filter((_,i)=>i%120===0)});}finally{p.dispose();}

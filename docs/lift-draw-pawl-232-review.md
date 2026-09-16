@@ -1,27 +1,49 @@
-# Movement 232: retaining click and working joints
+# Movement 232: short drawing tip and rocking carrier
 
-This is a partial mechanical correction. The retaining click and selected joints now have finite, checked working geometry. The main drawing pawl still intersects the wheel; its prescribed output law is not a solved transmission.
+The former `0.1300` drawing-pawl/wheel penetration is closed. C now has the source's outer body and a short rounded inward tip. Only that tip enters the tooth plane; it bears on the actual radial tooth flank during the draw. The previous retaining-click, bored-joint and wheel-index corrections remain.
 
-The [official caption and engraving](https://507movements.com/mm_232.html) show B lifting C out of the teeth, carrying it backward, then lowering it to draw the wheel. The page fetched on 2026-09-16 contains no canvas, inline animation program or `ae.add_model` registration. Animation availability remains false based on those checks, rather than only the tab's initial CSS class.
+The [official caption and engraving](https://507movements.com/mm_232.html) describe lifting C out of the teeth, carrying it backward, then dropping and drawing on lowering B. The fetched page has no canvas, inline animation program or `ae.add_model` registration; no official animation is available. A is journalled at the wheel axis in the drawing, and the caption does not call it fixed. We explicitly reconstruct it as a bounded rocking carrier, with the right-hand holes interpreted as curved guide passages. This is an inference, not a claimed source dimension or demonstrated passive mechanism.
 
-The wheel's square tooth section, pawl working face, ground pivots and equal-link parallelogram are retained. Outward cosmetic bevels no longer expand working profiles or narrow the pin holes. The coupler has actual bored eyes; the input handle and C have bores for their coupler pins. A small fixed boss around the click pivot provides a complete frame bearing. The frame, handle and coupler axial layers now clear one another. The retaining body sits ahead of the wheel, with a separate bored working roller extending into the tooth plane and supported by its axle. The roller seats at the actual outer tooth corner; its position and rounding are inferred, while the engraved fixed pivot is retained.
+The earlier fixed-A model forced rigid C to retrace its outbound path while the wheel stayed still, then asserted contact with a new tooth on return. Its long generated inward surface crossed the wheel. Carving that surface clear also removed its supposed load face; that approach was rejected.
 
-The old click's buried nose and short sinusoidal lift crossed the square teeth. The corrected click follows a continuous prescribed lift before the draw, stays clear while the tooth passes and reseats at the end. This is not a passive spring/contact simulation. Holding during its early release is unresolved, alongside the main drawing-pawl contact. Both limitations appear in the viewer's `reconstructionNote`. Playback has a minimum six-second cycle, no ground or fog, and retains geometry buffers.
+The new two-degree-of-freedom branch preserves the parallelogram exactly. Two-link inverse geometry determines A and B from the short tip's position:
 
-## Evidence and remaining work
+1. Lift the tip radially clear of the tooth crest.
+2. Carry it backward one tooth pitch with `0.04` radial clearance.
+3. Drop into the next gap while B begins lowering.
+4. Hold on the tooth flank while the retaining click lifts.
+5. Draw one tooth clockwise on the finite radial flank.
+6. Hold the wheel while the retaining click reseats.
+
+During draw, output angle follows the tip's angular bearing and the selected radial flank. Its compressive contact has a clockwise moment arm of `1.82` model units. A and B rotate together during this interval; the carrier follows a different path during lift and drop. All stage joins have continuous position, velocity and acceleration. The output angle is unbounded across cycles, so its marker does not reset.
+
+C's front body has real pin bores and a short axle connecting its bored working roller into the tooth plane. The rocking carrier has a bored central journal and finite curved passages around both fixed guide pins. A separate fixed brace supports the retaining-click and guide pins. The upper pivot pin now ends ahead of the wheel rather than crossing its teeth. Playback takes six seconds per cycle, retains geometry buffers and disables ground/fog.
+
+## Qualification
+
+Carrier lift/drop and click transfer are **prescribed**. A bounded MuJoCo trial with an actuated B, passive rocking A, trial relative spring and passive retaining click jammed instead of establishing the desired branch. Across three six-second cycles it stopped near wheel angle `+0.054276` radians, with maximum penetration `0.002050` and parallelogram joint error `0.008381` radians. This failed diagnostic was rejected; it supplies no playback data or passive-force claim.
+
+Reproduce the diagnostic with:
+
+```sh
+node scripts/study-rocking-pawl-232.mjs
+```
+
+It writes only to `/dev/shm`. The trial uses inferred masses/springs, frictionless rounded contacts and a cylindrical approximation of the root disk. Further passive validation would require suitable preload, stops and transfer forces; no additional spring tuning was attempted in this bounded pass. Loads, impact and friction remain unqualified. The viewer states these limitations and identifies the inferred carrier freedom.
 
 ```sh
 node --test tests/movement-232.test.mjs tests/lift-draw-pawl-232-solids.test.mjs
 ```
 
-All **13 tests pass**: eight source/kinematic regressions and five focused finite/contact checks. The new suite samples 193 poses over two cycles for click/wheel clearance, checks actual roller/tooth witnesses and compressive torque opposing rollback, and verifies that a small attempted rollback penetrates the real retaining face. It also checks ten selected pin/plate pairs across 33 poses, prescribed click derivatives, public contact fields and retained buffers. These are selected interfaces, not exhaustive all-pairs qualification.
+All **13 tests pass**. Eight source/kinematic checks cover the stage sequence, inverse linkage closure, radial-flank output constraint, analytic derivatives, transfer timing, rendered state and twenty-cycle marked closure. Five finite/presentation checks cover:
 
-The corrected retaining surfaces clear the wheel; the smallest sampled signed clearance is approximately `0.0000211` model units. The main C/wheel residual remains `−0.1300`, with a source-pose witness near wheel-local `[0.337031, 1.834688, 0.060000]`. Its previous bevel-expanded witness was approximately `−0.1742`. The residual test caps its magnitude and requires disclosure, allowing future improvements to pass.
+- Actual main tip, axle, C body and retaining parts against the wheel through 193 poses over two cycles: minimum sampled signed clearance `+0.00000970`.
+- Actual draw witnesses over 65 poses: maximum surface distance `0.00001787`, below the `0.000021` circular-mesh tolerance, and nonzero clockwise contact torque.
+- Retaining contact and actual blocked rollback.
+- Twenty selected body, bore, shaft and guide-slot interfaces over 33 poses.
+- Continuous click derivatives, exposed contact fields and retained buffers.
 
-An offline diagnostic subtraction of the stationary/advancing wheel envelope from the current long generated C face disconnected the shape and removed large portions of the claimed driving surface. That clearance-only alteration was rejected. This does **not** establish that the engraved rigid C mechanism is impossible: the source has an outer body and short inward tip, while the current long generated working curve is incompatible with its return path. The next correction should use a finite rounded short tip against the actual radial tooth flank, solve output angle from that contact, and include explicit lift, dwell and drop intervals. Its passive loading and the retaining click's early-release hold then need separate qualification.
+These are selected-interface checks, not exhaustive collision or loaded-dynamics certification. Root's final source/default/oblique browser review found no errors or clipping (maximum NDC `0.90040`). Its CPU screen reported approximately 338 ms construction, 0.043 ms update P95, 18,636 triangles and no growth flags. Geometry and law are frozen for integration.
 
-Root's final source/default/oblique views report no errors or viewport clipping
-(maximum normalized extent 0.82992). A flush white index inside the wheel's root
-disk replaces its former floating extension into a tooth gap. The integrated
-build and packaged desktop/playback/mobile check pass. No native dynamics
-qualification is claimed.
+The final production build and packaged desktop/playback/mobile case pass,
+including a repeat after the final metadata correction.
