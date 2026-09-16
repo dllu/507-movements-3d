@@ -538,7 +538,7 @@ test('movement 194 rendered transforms keep the one pinion captured through both
       3e-14,
       `${name} moving shaft`,
     );
-    vector3Near(blocks.pinion.position, state.pinionCenter, 0.27, `${name} rendered pinion center`);
+    vector3Near(blocks.pinion.position, new THREE.Vector3(state.pinionCenter.x, state.pinionCenter.y, model.root.userData.finiteGuide.pinionPlaneZ), 1e-14, `${name} rendered pinion center`);
     vector2Near(blocks.pinion.position, state.pinionCenter, 3e-14, `${name} pinion xy`);
     vector2Near(blocks.pinionShaft.position, state.pinionCenter, 3e-14, `${name} shaft xy`);
     vector2Near(blocks.guideFollower.position, state.pinionCenter, 3e-14, `${name} follower xy`);
@@ -631,7 +631,7 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
   assert.ok(size.x > 4.3);
   assert.ok(size.y > 4.4);
   assert.ok(size.z > 2.3);
-  assert.ok(physicalBounds.min.z < -1.56);
+  assert.ok(physicalBounds.min.z < -0.76);
   assert.ok(physicalBounds.max.z > 0.79);
   let meshCount = 0;
   let facePinCount = 0;

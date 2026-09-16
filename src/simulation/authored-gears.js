@@ -1,3 +1,4 @@
+import { finishReversingMangleGuides } from './reversing-mangle-guides.js';
 import {correctVariableDrive} from './variable-drive-205-209-parts.js';
 import {correctIrregularGearFamily} from './irregular-gear-family.js';
 import {singleInclinedTwoSpeedBevel, correctSixBevelTrain} from './bevel-200-226-corrections.js';
@@ -18122,7 +18123,7 @@ function eccentricVariableSpeedMangleWheel() {
   const wheelDepth = 0.28;
   const wheelRadius = 232 * sourceScale;
   const wheelFaceZ = wheelDepth / 2;
-  const pinionPlaneZ = wheelFaceZ + 0.11;
+  const pinionPlaneZ = .37;
   const pinionAngularSpeed = 3;
 
   const pitchSegments = [
@@ -18643,7 +18644,7 @@ function eccentricVariableSpeedMangleWheel() {
     tooth.position.set(
       toothState.point.x,
       toothState.point.y,
-      pinionPlaneZ,
+      wheelFaceZ + .11,
     );
     tooth.rotation.z = Math.atan2(
       toothState.tangent.y,
@@ -18693,17 +18694,17 @@ function eccentricVariableSpeedMangleWheel() {
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.55, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-oscillating-wheel-shaft';
   const pinionShaft = makeShaft({
-    length: 1.18,
-    radius: 0.068,
+    length: .8,
+    radius: .055,
     axis: Z_AXIS,
   });
-  pinionShaft.position.z = pinionPlaneZ - 0.08;
+  pinionShaft.position.z = .4;
   pinionShaft.userData.role = 'groove-guided-vibrating-pinion-shaft';
   const guideFollower = new THREE.Mesh(
     new THREE.TorusGeometry(0.082, 0.027, 10, 28),
     inkMaterial,
   );
-  guideFollower.position.z = wheelFaceZ + 0.055;
+  guideFollower.position.z = .055;
   guideFollower.userData.role = 'shaft-collar-captured-in-eccentric-guide-groove';
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.052, 18, 12),
@@ -18720,9 +18721,9 @@ function eccentricVariableSpeedMangleWheel() {
   const fixedUniversalPoint = new THREE.Vector3(
     fixedUniversalPoint2.x,
     fixedUniversalPoint2.y,
-    -0.82,
+    1.36,
   );
-  const movingUniversalPoint = new THREE.Vector3(0, 0, -0.24);
+  const movingUniversalPoint = new THREE.Vector3(0, 0, .8);
   const universalSlipShaft = makeDynamicLink({
     color: PALETTE.frame,
     depth: 0.09,
@@ -18754,7 +18755,7 @@ function eccentricVariableSpeedMangleWheel() {
   rearInputShaft.position.set(
     fixedUniversalPoint.x,
     fixedUniversalPoint.y,
-    -1.13,
+    1.68,
   );
   rearInputShaft.userData.role = 'fixed-rear-input-shaft';
   const movingUniversalJoint = new THREE.Mesh(
@@ -18942,17 +18943,17 @@ function eccentricVariableSpeedMangleWheel() {
     pinionShaft.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      pinionPlaneZ - 0.08,
+      .4,
     );
     guideFollower.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      wheelFaceZ + 0.055,
+      .055,
     );
     movingUniversalPoint.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      -0.24,
+      .8,
     );
     movingUniversalJoint.position.copy(movingUniversalPoint);
     universalSlipShaft.userData.setEndpoints(
@@ -18986,7 +18987,8 @@ function eccentricVariableSpeedMangleWheel() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(5.8, 4.2, 10.2));
+  finish(root, update);
+  return finishReversingMangleGuides(root, update, 192);
 }
 
 function concentricUnequalSpeedMangleWheel() {
@@ -19026,7 +19028,7 @@ function concentricUnequalSpeedMangleWheel() {
   const wheelDepth = 0.28;
   const wheelRadius = sourceWheelRadius * sourceScale;
   const wheelFaceZ = wheelDepth / 2;
-  const pinionPlaneZ = wheelFaceZ + 0.11;
+  const pinionPlaneZ = .37;
   const pinionAngularSpeed = 3;
 
   const pitchSegments = [
@@ -19543,7 +19545,7 @@ function concentricUnequalSpeedMangleWheel() {
     tooth.position.set(
       toothState.point.x,
       toothState.point.y,
-      pinionPlaneZ,
+      wheelFaceZ + .11,
     );
     tooth.rotation.z = Math.atan2(
       toothState.tangent.y,
@@ -19593,17 +19595,17 @@ function concentricUnequalSpeedMangleWheel() {
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.6, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-oscillating-mangle-wheel-shaft';
   const pinionShaft = makeShaft({
-    length: 1.2,
-    radius: 0.07,
+    length: .8,
+    radius: .055,
     axis: Z_AXIS,
   });
-  pinionShaft.position.z = pinionPlaneZ - 0.08;
+  pinionShaft.position.z = .4;
   pinionShaft.userData.role = 'groove-guided-vibrating-pinion-shaft';
   const guideFollower = new THREE.Mesh(
     new THREE.TorusGeometry(0.065, 0.024, 10, 28),
     inkMaterial,
   );
-  guideFollower.position.z = wheelFaceZ + 0.055;
+  guideFollower.position.z = .055;
   guideFollower.userData.role = 'shaft-collar-captured-in-closed-guide-groove';
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.052, 18, 12),
@@ -19619,9 +19621,9 @@ function concentricUnequalSpeedMangleWheel() {
   const fixedUniversalPoint = new THREE.Vector3(
     fixedUniversalPoint2.x,
     fixedUniversalPoint2.y,
-    -0.86,
+    1.36,
   );
-  const movingUniversalPoint = new THREE.Vector3(0, 0, -0.24);
+  const movingUniversalPoint = new THREE.Vector3(0, 0, .8);
   const universalSlipShaft = makeDynamicLink({
     color: PALETTE.frame,
     depth: 0.09,
@@ -19653,7 +19655,7 @@ function concentricUnequalSpeedMangleWheel() {
   rearInputShaft.position.set(
     fixedUniversalPoint.x,
     fixedUniversalPoint.y,
-    -1.18,
+    1.68,
   );
   rearInputShaft.userData.role = 'fixed-rear-unidirectional-input-shaft';
   const movingUniversalJoint = new THREE.Mesh(
@@ -19863,17 +19865,17 @@ function concentricUnequalSpeedMangleWheel() {
     pinionShaft.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      pinionPlaneZ - 0.08,
+      .4,
     );
     guideFollower.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      wheelFaceZ + 0.055,
+      .055,
     );
     movingUniversalPoint.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      -0.24,
+      .8,
     );
     movingUniversalJoint.position.copy(movingUniversalPoint);
     universalSlipShaft.userData.setEndpoints(
@@ -19907,7 +19909,8 @@ function concentricUnequalSpeedMangleWheel() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.1, 4.4, 10.8));
+  finish(root, update);
+  return finishReversingMangleGuides(root, update, 193);
 }
 
 function singleCircleEqualSpeedMangleWheel() {
@@ -19938,7 +19941,7 @@ function singleCircleEqualSpeedMangleWheel() {
   const wheelDepth = 0.28;
   const wheelRadius = sourceWheelRadius * sourceScale;
   const wheelFaceZ = wheelDepth / 2;
-  const pinionPlaneZ = wheelFaceZ + 0.12;
+  const pinionPlaneZ = .37;
   const pinionAngularSpeed = 3;
 
   // The pinion center follows the closed offset of one open tooth arc.  On
@@ -20524,17 +20527,17 @@ function singleCircleEqualSpeedMangleWheel() {
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.6, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-equal-speed-oscillating-wheel-shaft';
   const pinionShaft = makeShaft({
-    length: 1.22,
-    radius: 0.07,
+    length: .8,
+    radius: .055,
     axis: Z_AXIS,
   });
-  pinionShaft.position.z = pinionPlaneZ - 0.08;
+  pinionShaft.position.z = .4;
   pinionShaft.userData.role = 'groove-guided-large-travel-pinion-shaft';
   const guideFollower = new THREE.Mesh(
     new THREE.TorusGeometry(0.075, 0.024, 10, 28),
     inkMaterial,
   );
-  guideFollower.position.z = wheelFaceZ + 0.055;
+  guideFollower.position.z = .055;
   guideFollower.userData.role = 'shaft-collar-captured-in-two-radius-guide';
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.052, 18, 12),
@@ -20547,9 +20550,9 @@ function singleCircleEqualSpeedMangleWheel() {
   const fixedUniversalPoint = new THREE.Vector3(
     fixedUniversalPoint2.x,
     fixedUniversalPoint2.y,
-    -0.88,
+    1.36,
   );
-  const movingUniversalPoint = new THREE.Vector3(0, 0, -0.24);
+  const movingUniversalPoint = new THREE.Vector3(0, 0, .8);
   const universalSlipShaft = makeDynamicLink({
     color: PALETTE.frame,
     depth: 0.09,
@@ -20581,7 +20584,7 @@ function singleCircleEqualSpeedMangleWheel() {
   rearInputShaft.position.set(
     fixedUniversalPoint.x,
     fixedUniversalPoint.y,
-    -1.2,
+    1.68,
   );
   rearInputShaft.userData.role = 'fixed-rear-unidirectional-input-shaft';
   const movingUniversalJoint = new THREE.Mesh(
@@ -20786,17 +20789,17 @@ function singleCircleEqualSpeedMangleWheel() {
     pinionShaft.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      pinionPlaneZ - 0.08,
+      .4,
     );
     guideFollower.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      wheelFaceZ + 0.055,
+      .055,
     );
     movingUniversalPoint.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      -0.24,
+      .8,
     );
     movingUniversalJoint.position.copy(movingUniversalPoint);
     universalSlipShaft.userData.setEndpoints(
@@ -20832,7 +20835,8 @@ function singleCircleEqualSpeedMangleWheel() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.5, 10.9));
+  finish(root, update);
+  return finishReversingMangleGuides(root, update, 194);
 }
 
 function opposedFeedRollWormDrive() {
