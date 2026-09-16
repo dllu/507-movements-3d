@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
+import { capsule, circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -80,13 +82,14 @@ function crankTangentOscillatingRod(movement) {
     64,
   );
   crankDisk.userData.role = 'source-proportioned-input-crank-disk';
-  const crankShaft = cylinderAlongZ(0.2, 0.75, darkMaterial, 36);
+  const crankShaft = cylinderAlongZ(0.2, 0.65, darkMaterial, 36);
+  crankShaft.position.z = -0.135;
   crankShaft.userData.role = 'fixed-axis-input-crankshaft';
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.18, 0.18),
+    new THREE.BoxGeometry(crankRadius, 0.18, 0.10),
     darkMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, 0.22);
+  crankArm.position.set(crankRadius / 2, 0, 0.14);
   crankArm.userData.role = 'rigid-input-crank-arm';
   const crankPin = cylinderAlongZ(0.15, 0.48, darkMaterial, 32);
   crankPin.position.set(crankRadius, 0, 0.3);
@@ -111,17 +114,13 @@ function crankTangentOscillatingRod(movement) {
   );
 
   const guideAssembly = new THREE.Group();
-  guideAssembly.position.set(guideCenter.x, guideCenter.y, 0.08);
+  guideAssembly.position.set(guideCenter.x, guideCenter.y, rodPlaneZ);
   guideAssembly.userData.role = 'fixed-center-guide-roller-bearing';
   const guideRotor = new THREE.Group();
   guideRotor.userData.axis = new THREE.Vector3(0, 0, 1);
   guideRotor.userData.role = 'passive-no-slip-guide-roller';
-  const guideRoller = cylinderAlongZ(
-    guideRollerRadius,
-    guideRollerDepth,
-    guideMaterial,
-    52,
-  );
+  const guideRoller = boredJournal(guideRollerRadius, 0.136,
+    guideRollerDepth, guideMaterial);
   guideRoller.userData.role = 'fixed-center-rod-support-roller';
   const guideTread = new THREE.Mesh(
     new THREE.TorusGeometry(guideRollerRadius - 0.035, 0.035, 9, 64),
@@ -152,20 +151,20 @@ function crankTangentOscillatingRod(movement) {
   rod.userData.role =
     'rigid-oscillating-rod-sliding-reciprocally-over-fixed-guide-roller';
   const rodBody = new THREE.Mesh(
-    new THREE.BoxGeometry(rodLength, rodHalfWidth * 2, rodDepth),
+    plate(clip.difference(clip.union(capsule([-rodLength, 0], [0, 0], rodHalfWidth, 32),
+      poly(circle([0, 0], 0.215, 64))), poly(circle([0, 0], 0.156, 64))), -rodDepth / 2, rodDepth / 2),
     drivenMaterial,
   );
-  rodBody.position.x = -rodLength / 2;
+
   rodBody.userData.role = 'constant-length-tangent-oscillating-rod-body';
   const rodWorkingFace = new THREE.Mesh(
-    new THREE.BoxGeometry(rodLength - 0.08, 0.025, rodDepth + 0.025),
+    plate(clip.difference(poly([[-rodLength + 0.04, -rodHalfWidth],
+      [-0.04, -rodHalfWidth], [-0.04, -rodHalfWidth + 0.025],
+      [-rodLength + 0.04, -rodHalfWidth + 0.025]]), poly(circle([0, 0], 0.156, 64))),
+    -rodDepth / 2 - 0.001, rodDepth / 2 + 0.001),
     darkMaterial,
   );
-  rodWorkingFace.position.set(
-    -rodLength / 2,
-    -rodHalfWidth + 0.0125,
-    -0.005,
-  );
+
   rodWorkingFace.userData.role = 'straight-lower-face-tangent-to-guide-roller';
   const rodLeftEnd = cylinderAlongZ(
     rodHalfWidth,
@@ -175,11 +174,7 @@ function crankTangentOscillatingRod(movement) {
   );
   rodLeftEnd.position.x = -rodLength;
   rodLeftEnd.userData.role = 'free-reciprocating-rod-end';
-  const rodEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.17, 0.045, 9, 36),
-    darkMaterial,
-  );
-  rodEye.position.z = rodDepth / 2 + 0.015;
+  const rodEye = boredJournal(0.215, 0.156, rodDepth + 0.012, darkMaterial);
   rodEye.userData.role = 'rod-eye-on-moving-crank-pin';
   const rodIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.52, 0.05, 0.045),
@@ -569,11 +564,12 @@ function crankTangentOscillatingRod(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(0.8, 2.2, 11.5),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
   };
 }
 

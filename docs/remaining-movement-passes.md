@@ -255,3 +255,23 @@ pass. Finite mesh audits distinguish sampled clearance from loaded dynamics;
 342's continuous-chain approximation, cam preload, open engine sections and
 approximate bevel flanks remain documented in the reviews linked from
 [review progress](review-progress.md). The complete review remains active.
+
+
+## Eighth parallel batch
+
+- **260/266/275:** integral mating screw/nut solids, corrected 260 gear phase and
+  involutes, properly seated journals, and a solid worm with matching rack faces.
+  A 33-pose finite working-surface audit clears 1.45 million queries.
+- **268/273/279:** bored rod eye, full-depth roller engagement, closed guides,
+  open crosshead slot and connected taper liners within the journal box.
+- **281/286:** a genuine recessed channel, compatible toe/lifter faces,
+  aligned rod guides and a valve head that actually closes on its seat.
+- **349/367:** extracted source arm silhouettes reused as bored flat plates,
+  separated joint layers and a calibrated circular indicator strip. The small
+  profile generator demonstrates repeatable classical CV use in production.
+
+118 focused tests, the production build and ten packaged playback/mobile checks
+pass. Shared helper regressions are included. All four family reviews linked
+from [review progress](review-progress.md) distinguish validated constraints and
+sampled working-solid clearance from unresolved load behavior and reconstruction
+choices. The full review remains active.

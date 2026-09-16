@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ring} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -10,7 +11,7 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 function centeredExtrusion(shape, depth, bevelSize = 0.006) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevelSize > 0,
     bevelSegments: 1,
     bevelSize,
     bevelThickness: bevelSize,
@@ -314,7 +315,7 @@ function rockShaftToeAndPoppetLifter(movement) {
   toe.userData.role = 'curved-toe-rigid-on-rock-shaft';
   root.add(toe);
   const toeShape = new THREE.Shape();
-  const workingArcSamples = 28;
+  const workingArcSamples = 128;
   for (let index = 0; index <= workingArcSamples; index += 1) {
     const angle = THREE.MathUtils.lerp(
       workingArcOuterAngle,
@@ -336,7 +337,7 @@ function rockShaftToeAndPoppetLifter(movement) {
     sourceToeNose.y - 0.02, sourceToeNose.x, sourceToeNose.y);
   toeShape.closePath();
   const toeBody = new THREE.Mesh(
-    centeredExtrusion(toeShape, 0.38, 0.008),
+    centeredExtrusion(toeShape, 0.38, 0),
     driverMaterial,
   );
   toeBody.userData.role = 'engraving-proportioned-rocking-toe-body';
@@ -349,8 +350,8 @@ function rockShaftToeAndPoppetLifter(movement) {
         parameter,
       );
       return target.set(
-        workingCircleCenter.x + workingCircleRadius * Math.cos(angle),
-        workingCircleCenter.y + workingCircleRadius * Math.sin(angle),
+        workingCircleCenter.x + (workingCircleRadius - 0.055) * Math.cos(angle),
+        workingCircleCenter.y + (workingCircleRadius - 0.055) * Math.sin(angle),
         0.22,
       );
     }
@@ -365,7 +366,7 @@ function rockShaftToeAndPoppetLifter(movement) {
     new THREE.SphereGeometry(0.065, 18, 12),
     whiteMaterial,
   );
-  toeNoseIndex.position.set(sourceToeNose.x, sourceToeNose.y, 0.26);
+  toeNoseIndex.position.set(sourceToeNose.x + 0.08, sourceToeNose.y - 0.085, 0.27);
   toeNoseIndex.userData.role = 'white-toe-nose-index';
   toe.add(toeNoseIndex);
   const rockShaft = cylinderAlongZ(0.31, 1.06, darkMaterial, 38);
@@ -407,7 +408,7 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   lifterShape.closePath();
   const lifterBody = new THREE.Mesh(
-    centeredExtrusion(lifterShape, 0.34, 0.007),
+    centeredExtrusion(lifterShape, 0.34, 0),
     drivenMaterial,
   );
   lifterBody.userData.role = 'flat-bottomed-valve-lifter-attached-to-rod';
@@ -422,7 +423,7 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   followerShoe.position.set(
     (lifterLeft.x + lifterBlockRight.x) / 2,
-    followerRestBottomY,
+    followerRestBottomY + 0.045 / 2,
     0.01,
   );
   followerShoe.userData.role = 'flat-horizontal-toe-contact-shoe';
@@ -468,23 +469,29 @@ function rockShaftToeAndPoppetLifter(movement) {
       frameMaterial,
     );
     guide.rotation.x = Math.PI / 2;
-    guide.position.set(valveRodX, center.y - highPoseOffset / 2, -0.10);
+    // Fixed guides must lie on the rod axis and outside the moving lifter.
+    const guideY = role.startsWith('upper') ? rodTopY - 0.08 : center.y - highPoseOffset / 2 + 0.08;
+    guide.position.set(valveRodX, guideY, 0);
     guide.userData.role = role;
     fixedGuides.add(guide);
+    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.75), frameMaterial);
+    bracket.position.set(valveRodX + 0.20, guideY, -0.375);
+    bracket.userData.role = `${role}-rear-bracket`;
+    fixedGuides.add(bracket);
   }
   const guidePost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 7.2, 0.44),
+    new THREE.BoxGeometry(0.28, 8.4, 0.44),
     frameMaterial,
   );
-  guidePost.position.set(valveRodX + 0.34, -0.15, -0.32);
+  guidePost.position.set(valveRodX + 0.34, -0.80, -0.75);
   guidePost.userData.role = 'fixed-valve-rod-guide-standard';
   fixedGuides.add(guidePost);
   const valveSeat = new THREE.Mesh(
-    new THREE.TorusGeometry(0.53, 0.09, 10, 44),
+    ring(0.44, 0.62, 0, 0.12, 96),
     frameMaterial,
   );
   valveSeat.rotation.x = Math.PI / 2;
-  valveSeat.position.set(valveRodX, rodBottomY - 0.68, -0.08);
+  valveSeat.position.set(valveRodX, rodBottomY - 0.21, 0);
   valveSeat.userData.role = 'fixed-poppet-valve-seat';
   fixedGuides.add(valveSeat);
   const base = new THREE.Mesh(
@@ -494,6 +501,12 @@ function rockShaftToeAndPoppetLifter(movement) {
   base.position.set(valveRodX, rodBottomY - 0.92, -0.16);
   base.userData.role = 'fixed-valve-guide-base';
   fixedGuides.add(base);
+  for (const side of [-1, 1]) {
+    const support = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.49, 0.18), frameMaterial);
+    support.position.set(valveRodX + side * 0.56, rodBottomY - 0.575, 0);
+    support.userData.role = 'fixed-seat-support-outside-poppet-sweep';
+    fixedGuides.add(support);
+  }
 
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 20, 13),
@@ -691,6 +704,10 @@ function rockShaftToeAndPoppetLifter(movement) {
   };
 
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   markShadows(root);
   return {
     root,

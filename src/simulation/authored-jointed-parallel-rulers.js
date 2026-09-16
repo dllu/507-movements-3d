@@ -1,3 +1,6 @@
+import { disposeObject3D } from './dispose-model.js';
+import { ornamentalRulerArmGeometry } from './ornamental-ruler-arm.js';
+import { circle, poly, plate, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -45,29 +48,6 @@ function rigidVectorRates(vector, velocity, acceleration) {
   };
 }
 
-function centeredPlanarExtrusion(points, depth, scale) {
-  const shape = new THREE.Shape();
-  points.forEach(([x, y], index) => {
-    if (index === 0) shape.moveTo(x * scale, y * scale);
-    else shape.lineTo(x * scale, y * scale);
-  });
-  shape.closePath();
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.016,
-    bevelThickness: 0.016,
-    curveSegments: 24,
-    depth,
-    steps: 1,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  // Source x/y becomes world x/-z, and extrusion depth becomes world y.
-  geometry.rotateX(-Math.PI / 2);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
 function cylinderAlongY(radius, height, material, segments = 36) {
   return new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, height, segments),
@@ -75,67 +55,21 @@ function cylinderAlongY(radius, height, material, segments = 36) {
   );
 }
 
-function ringAroundY(radius, tube, material, segments = 40) {
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, tube, 9, segments),
-    material,
-  );
-  ring.rotation.x = Math.PI / 2;
-  return ring;
-}
-
-function makePlanarLink({
-  depth,
-  eyeMaterial,
-  length,
-  material,
-  role,
-  width,
-}) {
+function makePlanarLink({ depth, length, material, role }) {
   const group = new THREE.Group();
   group.userData.nominalLength = length;
   group.userData.role = role;
-
-  const shank = new THREE.Mesh(
-    new THREE.BoxGeometry(length, depth, width * 0.64),
-    material,
-  );
-  shank.position.x = length / 2;
-  shank.userData.role = `${role}-constant-length-shank`;
-  const bosses = [0, length].map((x, index) => {
-    const boss = cylinderAlongY(width * 0.52, depth * 1.08,
-      material, 34);
-    boss.position.x = x;
-    boss.userData.role = `${role}-${index === 0 ? 'outer' : 'middle'}-boss`;
-    group.add(boss);
-    return boss;
-  });
-  const eyeRings = [0, length].map((x, index) => {
-    const eye = ringAroundY(
-      width * 0.28,
-      width * 0.075,
-      eyeMaterial,
-      34,
-    );
-    eye.position.set(x, depth / 2 + 0.016, 0);
-    eye.userData.role = `${role}-${index === 0 ? 'outer' : 'middle'}-eye`;
-    group.add(eye);
-    return eye;
-  });
-  const startAnchor = new THREE.Object3D();
-  startAnchor.userData.role = `${role}-analytic-outer-anchor`;
-  const endAnchor = new THREE.Object3D();
+  const geometry = ornamentalRulerArmGeometry(349, length, depth, .104, .119);
+  geometry.rotateX(-Math.PI / 2);
+  const shank = new THREE.Mesh(geometry, material);
+  shank.userData.role = `${role}-bored-source-outline`;
+  // Lower arms pass above upper arms at the common middle pivots.
+  shank.position.y = role.startsWith('lower') ? .17 : 0;
+  if (role.startsWith('lower')) shank.scale.z = -1;
+  const startAnchor = new THREE.Object3D(), endAnchor = new THREE.Object3D();
   endAnchor.position.x = length;
-  endAnchor.userData.role = `${role}-analytic-middle-anchor`;
   group.add(shank, startAnchor, endAnchor);
-  return {
-    bosses,
-    endAnchor,
-    eyeRings,
-    group,
-    shank,
-    startAnchor,
-  };
+  return { bosses: [], eyeRings: [], group, shank, startAnchor, endAnchor };
 }
 
 function jointedParallelRuler(movement) {
@@ -192,7 +126,7 @@ function jointedParallelRuler(movement) {
   const rulerDepth = 0.16;
   const armPlaneY = 0.39;
   const armDepth = 0.13;
-  const intermediatePlaneY = 0.58;
+  const intermediatePlaneY = 0.20;
   const intermediateDepth = 0.14;
   const armWidth = 0.30;
   const armLength = sourceArmLength * sourceScale;
@@ -519,11 +453,10 @@ function jointedParallelRuler(movement) {
   const makeRuler = (points, role) => {
     const group = new THREE.Group();
     group.userData.role = role;
-    const geometry = centeredPlanarExtrusion(
-      points,
-      rulerDepth,
-      sourceScale,
-    );
+    const pivotY = role.startsWith('upper') ? .5 : -.5;
+    const geometry = plate(clip.difference(poly(points.map(([x, y]) => [x * sourceScale, y * sourceScale])),
+      ...[-5.333333, -2.666667].map(x => poly(circle([x * sourceScale, pivotY * sourceScale], .104, 64)))),
+    -rulerDepth / 2, rulerDepth / 2).rotateX(-Math.PI / 2);
     const body = new THREE.Mesh(geometry, rulerMaterial);
     body.userData.role = `${role}-solid-body`;
     const outline = new THREE.LineSegments(
@@ -546,11 +479,9 @@ function jointedParallelRuler(movement) {
   const intermediateBar = new THREE.Group();
   intermediateBar.userData.role =
     'intermediate-parallel-bar-joining-both-middle-joints';
-  const intermediateGeometry = centeredPlanarExtrusion(
-    sourceIntermediateBarPoints,
-    intermediateDepth,
-    sourceScale,
-  );
+  const intermediateGeometry = plate(clip.difference(poly(sourceIntermediateBarPoints.map(([x, y]) => [x * sourceScale, y * sourceScale])),
+    ...[0, pivotSpacing].map(x => poly(circle([x, 0], .119, 64)))),
+  -intermediateDepth / 2, intermediateDepth / 2).rotateX(-Math.PI / 2);
   const intermediateBody = new THREE.Mesh(
     intermediateGeometry,
     intermediateMaterial,
@@ -654,12 +585,12 @@ function jointedParallelRuler(movement) {
   );
 
   const pivotPins = {
-    upperLeft: cylinderAlongY(0.10, 0.34, inkMaterial, 30),
-    upperRight: cylinderAlongY(0.10, 0.34, inkMaterial, 30),
-    lowerLeft: cylinderAlongY(0.10, 0.34, inkMaterial, 30),
-    lowerRight: cylinderAlongY(0.10, 0.34, inkMaterial, 30),
-    middleLeft: cylinderAlongY(0.115, 0.48, inkMaterial, 32),
-    middleRight: cylinderAlongY(0.115, 0.48, inkMaterial, 32),
+    upperLeft: cylinderAlongY(0.10, 0.58, inkMaterial, 30),
+    upperRight: cylinderAlongY(0.10, 0.58, inkMaterial, 30),
+    lowerLeft: cylinderAlongY(0.10, 0.58, inkMaterial, 30),
+    lowerRight: cylinderAlongY(0.10, 0.58, inkMaterial, 30),
+    middleLeft: cylinderAlongY(0.115, 0.58, inkMaterial, 32),
+    middleRight: cylinderAlongY(0.115, 0.58, inkMaterial, 32),
   };
   const pivotCaps = Object.fromEntries(
     Object.entries(pivotPins).map(([name]) => {
@@ -702,7 +633,10 @@ function jointedParallelRuler(movement) {
     line.userData.role = `parallel-reference-line-${index + 1}`;
     return line;
   });
-  root.add(paper, paperOutline, ...parallelGuideLines);
+  // Retain metadata compatibility, but the source drawing has no raised paper slab.
+  paper.visible = paperOutline.visible = false;
+  parallelGuideLines.forEach(line => { line.visible = false; });
+  for (const object of [paper, paperOutline, ...parallelGuideLines]) disposeObject3D(object);
 
   const contacts = {
     lowerRulerPivots: {
@@ -735,8 +669,8 @@ function jointedParallelRuler(movement) {
     link.group.userData.angularAcceleration = angularAcceleration;
   };
   const setPivot = (object, cap, point, middle) => {
-    object.position.set(point.x, middle ? 0.43 : 0.33, point.z);
-    cap.position.set(point.x, middle ? 0.69 : 0.515, point.z);
+    object.position.set(point.x, 0.40, point.z);
+    cap.position.set(point.x, 0.7075, point.z);
   };
   const update = (time) => {
     const state = stateAtTime(time);
@@ -963,6 +897,9 @@ function jointedParallelRuler(movement) {
       'topRight-topLeft=middleRight-middleLeft=bottomRight-bottomLeft=(2.666666,0)',
   };
 
+  root.userData.hideGround = true;
+  root.userData.cameraFov = 8;
+  root.traverse(object => { for (const material of [object.material].flat().filter(Boolean)) material.fog = false; });
   update(0);
   markShadows(root);
   for (const object of [
@@ -976,7 +913,7 @@ function jointedParallelRuler(movement) {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(4.9, 8.8, 7.2),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };

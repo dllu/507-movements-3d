@@ -1,3 +1,4 @@
+import { correctDifferentialThreads } from './differential-thread-solids.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -117,7 +118,7 @@ function differentialScrewDrive(movement) {
   const narrowGearFaceWidth = 0.58;
   const wheelDFaceWidth = 0.5;
   const inputShaftRadius = 0.14;
-  const inputShaftLength = 6.3;
+  const inputShaftLength = 6.95;
   const screwCoreRadius = 0.235;
   const externalThreadRadius = 0.315;
   const internalThreadRadius = 0.348;
@@ -129,8 +130,8 @@ function differentialScrewDrive(movement) {
     + wheelDFaceWidth / 2 + 0.08;
   const externalThreadEndX = externalThreadStartX
     + screwLead * externalThreadTurnCount;
-  const screwCoreLength = 6.8;
-  const screwCoreCenterX = 0.45;
+  const screwCoreLength = 7.75;
+  const screwCoreCenterX = 0.125;
   const nutWidth = 0.82;
   const nutOuterRadius = 0.51;
   const nutThreadTurnCount = nutWidth / screwLead;
@@ -146,9 +147,9 @@ function differentialScrewDrive(movement) {
   const pinionFPhase = 0;
   const wheelDPhase = Math.PI / wheelDTeeth;
   const pinionBPhase = 0;
-  const wheelEPhase = Math.PI / wheelETeeth;
+  const wheelEPhase = 0; // Odd/odd pair on the vertical centerline.
   const externalMeshPhaseConstantFD = Math.PI;
-  const externalMeshPhaseConstantBE = Math.PI;
+  const externalMeshPhaseConstantBE = 0;
   const wheelDRatio = -pinionFTeeth / wheelDTeeth;
   const wheelERatio = -pinionBTeeth / wheelETeeth;
   const maximumRelativeThreadRotation = (
@@ -286,6 +287,7 @@ function differentialScrewDrive(movement) {
     radius: pinionFRadius,
     teeth: pinionFTeeth,
     toothHeight,
+    pressureAngle: Math.PI / 6,
   });
   longPinionF.position.x = longPinionStationX;
   longPinionF.userData.role = 'long-faced-pinion-F-accommodating-wheel-D-travel';
@@ -299,6 +301,7 @@ function differentialScrewDrive(movement) {
     radius: pinionBRadius,
     teeth: pinionBTeeth,
     toothHeight,
+    pressureAngle: Math.PI / 6,
   });
   pinionB.position.x = fixedGearStationX;
   pinionB.userData.role = 'fixed-station-pinion-B';
@@ -328,6 +331,7 @@ function differentialScrewDrive(movement) {
     radius: wheelDRadius,
     teeth: wheelDTeeth,
     toothHeight,
+    pressureAngle: Math.PI / 6,
   });
   wheelD.position.x = wheelDNominalX;
   wheelD.userData.role = 'translating-wheel-D-rigid-with-screw-C';
@@ -377,6 +381,7 @@ function differentialScrewDrive(movement) {
     radius: wheelERadius,
     teeth: wheelETeeth,
     toothHeight,
+    pressureAngle: Math.PI / 6,
   });
   wheelE.position.x = fixedGearStationX;
   wheelE.userData.role = 'axially-fixed-wheel-E-carrying-rotating-nut';
@@ -717,12 +722,13 @@ function differentialScrewDrive(movement) {
     contactMarkerFD.position.x = state.wheelDAxialPosition;
     root.userData.kinematics = state;
   };
+  correctDifferentialThreads(root, 260);
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.4, 4.8, 12.4),
+    cameraDirection: new THREE.Vector3(3.4, 3.2, 12.4),
   };
 }
 

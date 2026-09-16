@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { fitPistonGuide } from './piston-guide-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -65,6 +66,16 @@ function makeSplitGuide({
     guide.add(jaw);
     return jaw;
   });
+  // Close the split guide in depth too, leaving clearance for the largest
+  // moving section (the translation index as well as the cylindrical rod).
+  for (const sign of [-1, 1]) {
+    const strap = new THREE.Mesh(horizontal
+      ? new THREE.BoxGeometry(length, 2 * (rodRadius + clearance + thickness), 0.10)
+      : new THREE.BoxGeometry(2 * (rodRadius + clearance + thickness), length, 0.10), material);
+    strap.position.z = sign * (depth / 2 - 0.05);
+    strap.userData.role = `${role}-depth-retaining-strap`;
+    guide.add(strap);
+  }
   guide.userData.jaws = jaws;
   return guide;
 }
@@ -761,11 +772,12 @@ function rhombusRectilinearConverter(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(2.1, 1.6, 12),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
   };
 }
 

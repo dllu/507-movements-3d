@@ -106,3 +106,14 @@ A synthetic nested-rectangle check also verified retained holes/islands, ROI
 coordinate offsets, contour-subtree selection, crop-boundary flags, and output
 prefixes containing dots. Generated fixtures and review outputs stay in
 `/dev/shm/507-contours/`; no bulk review artifacts are committed.
+
+## Production example: ruler arms
+
+Movements 349 and 367 reuse extracted ornamental arm silhouettes instead of
+hand-built tubes. `scripts/generate-ruler-arm-profiles.py` runs this extractor,
+selects the closed arm-interior contours, and normalizes them around two
+annotated pin centers. The shared `ornamental-ruler-arm.js` constructor scales
+that outline, supplies ideal circular eyes and cuts real bores. One silhouette
+serves each ruler's repeated arms. This separates observed outline recovery
+from exact joint geometry and inferred depth layers; see the
+[ruler review](ruler-349-367-review.md) for reproduction and limitations.

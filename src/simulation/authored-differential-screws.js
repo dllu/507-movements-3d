@@ -1,3 +1,4 @@
+import { correctDifferentialThreads } from './differential-thread-solids.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -130,6 +131,7 @@ function rectangularAnnularGeometry({
     bevelEnabled: true,
     bevelSegments: 1,
     bevelSize: 0.025,
+    bevelOffset: -0.025,
     bevelThickness: 0.025,
     curveSegments: 48,
     depth,
@@ -638,6 +640,7 @@ function twoPitchDifferentialScrew(movement) {
     };
     root.userData.kinematics = state;
   };
+  correctDifferentialThreads(root, 266);
   update(0);
   markShadows(root);
   return {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {circle, disk as solidDisk, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -344,33 +345,27 @@ function groovedDiskFollower(movement) {
   diskRotor.userData.role = 'rigid-disk-and-face-groove';
   disk.add(diskRotor);
   root.add(disk);
-  const diskBody = cylinderAlongZ(diskRadius, 0.36,
-    driverMaterial, 72);
+  // Mill the actual closed channel. The former raised tubes filled the very
+  // space in which the follower was supposed to run.
+  const grooveSamples = 720, grooveFloorZ = -0.04, diskFrontZ = 0.18;
+  const offsetLoops = [-1, 1].map(side => Array.from({length: grooveSamples}, (_, i) => {
+    const angle = i * FULL_TURN / grooveSamples, point = groovePointAtDiskAngle(angle);
+    const tangent = groovePointAtDiskAngle(angle + 1e-5).sub(groovePointAtDiskAngle(angle - 1e-5)).normalize();
+    return point.add(new THREE.Vector2(-tangent.y, tangent.x).multiplyScalar(side * grooveHalfWidth)).toArray();
+  }));
+  const grooveSection = polygonClipping.xor(...offsetLoops.map(poly));
+  const lands = polygonClipping.difference(poly(circle([0, 0], diskRadius, 256)), grooveSection);
+  const diskBody = new THREE.Mesh(solidDisk(diskRadius, -0.18, -0.05, 256), driverMaterial);
   diskBody.userData.role = 'solid-driver-disk';
   diskRotor.add(diskBody);
   const diskRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius * 0.965, diskRadius * 0.035, 10, 80),
-    darkMaterial,
+    new THREE.TorusGeometry(diskRadius * 0.965, diskRadius * 0.035, 10, 80), darkMaterial,
   );
   diskRim.userData.role = 'dark-disk-rim';
   diskRotor.add(diskRim);
-  const grooveOuter = new THREE.Mesh(
-    new THREE.TubeGeometry(grooveCurve, 360, grooveHalfWidth, 8, true),
-    darkMaterial,
-  );
-  grooveOuter.position.z = 0.23;
+  const grooveOuter = new THREE.Mesh(plate(lands, -0.05, diskFrontZ), driverMaterial);
   grooveOuter.userData.role = 'closed-face-groove-outer-walls';
-  const grooveFloor = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      grooveCurve,
-      360,
-      followerPinRadius + 0.004,
-      8,
-      true,
-    ),
-    driverMaterial,
-  );
-  grooveFloor.position.z = 0.246;
+  const grooveFloor = new THREE.Mesh(plate(grooveSection, -0.05, grooveFloorZ), darkMaterial);
   grooveFloor.userData.role = 'recessed-face-groove-floor';
   diskRotor.add(grooveOuter, grooveFloor);
   const diskHub = cylinderAlongZ(diskHubRadius, 0.72,
@@ -523,6 +518,9 @@ function groovedDiskFollower(movement) {
     followerArmLength,
     followerPinRadius,
     grooveHalfWidth,
+    grooveSamples,
+    grooveFloorZ,
+    diskFrontZ,
     leverCosineCoefficients: [...leverCosineCoefficients],
     leverSineCoefficients: [...leverSineCoefficients],
     maximumLeverAngle,
@@ -640,6 +638,10 @@ function groovedDiskFollower(movement) {
   };
 
   update(0);
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
   markShadows(root);
   return {
     root,

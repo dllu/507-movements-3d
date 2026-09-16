@@ -1,3 +1,44 @@
+# Eighth family pass: solid threads, recessed followers and extracted ruler arms
+
+Ten movements received corrections across four parallel lanes: 260/266/275,
+268/273/279, 281/286 and 349/367. All 118 focused tests, the production build
+and ten packaged playback/mobile-resize checks pass. This includes regressions
+for the previously corrected parallel-ruler helpers. The complete review remains
+active; these are bounded corrections with the limits below.
+
+260 and 266 now use closed screw threads with complementary internal nut
+threads. 260 also needed a half-tooth gear phase correction, matching 30-degree
+involutes and properly seated shafts/journals. 275's solid worm and shaped rack
+flanks now agree with its rotation handedness. A 33-pose audit finds no sampled
+working-solid penetration across 1,449,802 queries. Exact feed ratios remain;
+playback profiles are refreshed. See the [thread review](movement-260-266-275.md)
+for gaps, end engagement and inferred thread sections/supports.
+
+268's roller engages the rod depth and its crank pin passes through a real eye.
+273's guides enclose the rod depth. 279's output bar leaves its slot open; its
+journal box, liners and gibs now occupy connected, compatible working surfaces.
+The [slot/linkage review](tangent-rhombus-journal-review.md) distinguishes those
+finite corrections from prescribed rolling, demonstration timing and static
+wear adjusters.
+
+281's former solid tubes are replaced by a real recessed closed channel with
+a floor and side walls. 286's toe and lifter meet at their visible working
+surfaces, the guides align with the rod, and the valve meets its seat when
+closed. Finite tests include negative controls for the old interference.
+The [follower review](movement-281-286.md) retains the limits on passive preload,
+clearance take-up and impact dynamics.
+
+349 and 367 use shared bored flat arms generated from classical OpenCV contour
+extraction, taking about 15 milliseconds per source image. Exact circular joints
+and inferred depth layers are applied after extraction; irregular ornament is
+reused across matching arms. The reproducible generator and source hashes are
+included. 349's ternary joints occupy separate planes; 367's calibrated outer
+indicator edge is a fitted circular strip instead of a thick polynomial tube.
+Its source pose is retained, with a revised travel range and refreshed playback.
+See the [ruler review](ruler-349-367-review.md) and
+[extraction workflow](engraving-extraction.md) for evidence and reconstruction
+limits. No new live physics or hand-traced decorative outlines were needed.
+
 # Seventh family pass: cam contact, engine passages and carried gears
 
 Nine movements received bounded corrections across four parallel lanes:

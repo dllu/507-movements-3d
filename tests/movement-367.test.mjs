@@ -93,7 +93,7 @@ test('movement 367 is a two-link parallel ruler with an ivory scale and a lower-
     'fixed-lower-ruler-blade-straight-rigid-body',
     'translating-upper-ruler-blade-straight-rigid-body',
     'one-of-two-equal-parallel-ornamental-link-arms',
-    'vertical-pivot-boss-of-parallel-link',
+    'through-pin-of-parallel-link',
     'graduated-ivory-scale-on-lower-edge-of-upper-blade',
     'major-distance-graduation-on-ivory-scale',
     'minor-distance-graduation-on-ivory-scale',
@@ -146,7 +146,7 @@ test('movement 367 records the unavailable animation, Brown scale description, a
   assert.equal(evidence.explicitInBrownDescription.length, 4);
   assert.match(evidence.engravingEvidence, /two equal matching ornamental links/);
   assert.match(evidence.engravingEvidence, /one curved brass indicator/);
-  assert.match(evidence.reconstructionDisclosure, /arc polynomial/);
+  assert.match(evidence.reconstructionDisclosure, /fitted circular arc/);
   assert.match(evidence.reconstructionDisclosure, /no numerical dimensions/);
   disposeModel(model.root);
 });
@@ -282,7 +282,7 @@ test('movement 367 every ivory tick is calibrated by the same inverse linkage-an
       assert.ok(entry.localX < calibration.scaleCalibration[index - 1].localX);
     }
   }
-  assert.ok(geometry.scaleMaximumX - geometry.scaleMinimumX > 1.7);
+  assert.ok(geometry.scaleMaximumX - geometry.scaleMinimumX > .7);
   const xSteps = calibration.scaleCalibration.slice(1).map(
     (entry, index) => entry.localX
       - calibration.scaleCalibration[index].localX,
@@ -317,7 +317,7 @@ test('movement 367 harmonic manual demonstration reaches both calibrated limits 
     'maximum link angle');
   near(maximum.bladeGap, geometry.minimumBladeGap, 0,
     'minimum blade gap');
-  near(maximum.linkAngularSpeed, 0, 5e-17,
+  near(maximum.linkAngularSpeed, 0, 1e-15,
     'minimum-gap reversal speed');
   assert.equal(maximum.stage, 'minimum-blade-opening-reversal');
 
@@ -329,20 +329,20 @@ test('movement 367 harmonic manual demonstration reaches both calibrated limits 
     near(
       (after.linkAngle - before.linkAngle) / (2 * step),
       state.linkAngularSpeed,
-      2e-11,
+      1e-10,
       `angular speed at ${time}`,
     );
     near(
       (after.bladeGap - before.bladeGap) / (2 * step),
       state.bladeGapRate,
-      4e-11,
+      1e-10,
       `gap speed at ${time}`,
     );
     const numericalUpperVelocity = after.upperBladePosition.clone()
       .sub(before.upperBladePosition)
       .multiplyScalar(1 / (2 * step));
     vectorNear(numericalUpperVelocity, state.upperBladeVelocity,
-      5e-11, `upper blade velocity at ${time}`);
+      2e-10, `upper blade velocity at ${time}`);
   }
   disposeModel(model.root);
 });

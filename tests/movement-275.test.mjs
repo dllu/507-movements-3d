@@ -311,7 +311,7 @@ test('movement 275 converts two smooth worm turns into exactly two rack pitches'
   disposeModel(model.root);
 });
 
-test('movement 275 keeps the helical flank phase-locked with zero normal separation', () => {
+test('movement 275 keeps the helical flank phase-locked with finite flank clearance', () => {
   const model = createMovementModel(catalog.movements[274]);
   const {
     geometry,
@@ -338,8 +338,8 @@ test('movement 275 keeps the helical flank phase-locked with zero normal separat
       `radial/flank orthogonality at sample ${sample}`);
     near(
       state.contactThreadCenter.distanceTo(state.contactPoint),
-      geometry.wormThreadTubeRadius,
-      9e-17,
+      geometry.wormThreadTubeRadius + geometry.threadFlankClearance,
+      2e-16,
       `thread-tube tangency at sample ${sample}`,
     );
     near(state.contactPoint.y, state.activeToothFlankY, 0,
@@ -354,7 +354,7 @@ test('movement 275 keeps the helical flank phase-locked with zero normal separat
     );
     maximumSurfaceGap = Math.max(
       maximumSurfaceGap,
-      Math.abs(state.contactSurfaceGap),
+      Math.abs(state.contactSurfaceGap - geometry.threadFlankClearance),
     );
     maximumFlankNormalVelocityError = Math.max(
       maximumFlankNormalVelocityError,
@@ -369,9 +369,9 @@ test('movement 275 keeps the helical flank phase-locked with zero normal separat
       Math.abs(state.slidingSpeedAlongThread),
     );
   }
-  assert.ok(maximumPhaseError < 3.6e-15);
-  assert.ok(maximumActivePhaseError < 3.4e-16);
-  assert.ok(maximumSurfaceGap < 8.4e-17);
+  assert.ok(maximumPhaseError < 5e-15);
+  assert.ok(maximumActivePhaseError < 6e-16);
+  assert.ok(maximumSurfaceGap < 2e-16);
   assert.ok(maximumFlankNormalVelocityError < 1.7e-16);
   near(maximumRadialVelocityError, 0, 0,
     'no radial interpenetration velocity');

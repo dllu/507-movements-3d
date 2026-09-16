@@ -200,7 +200,7 @@ test('movement 279 keeps the wrist bearing, taper gibs, and slot envelopes valid
     const state = stateAtCrankAngle(Math.PI * 2 * index / 4096);
     near(state.linerRadialClearance, 0.026, 5e-17,
       `wrist running clearance at ${index}`);
-    near(state.leftGibClearance, 0.072, 1e-16,
+    near(state.leftGibClearance, 0.018, 1e-16,
       `left gib clearance at ${index}`);
     near(state.rightGibClearance, state.leftGibClearance, 0,
       `equal gib clearance at ${index}`);
@@ -219,7 +219,7 @@ test('movement 279 keeps the wrist bearing, taper gibs, and slot envelopes valid
   assert.ok(minimumSlotEndClearance > 0.03);
   near(geometry.linerInnerRadius - geometry.wristRadius, 0.026, 5e-17,
     'liner-to-wrist radial clearance');
-  near(geometry.slotHalfWidth - geometry.gibOuterFace, 0.072, 1e-16,
+  near(geometry.slotHalfWidth - geometry.gibOuterFace, 0.018, 1e-16,
     'gib-to-slot side clearance');
   assert.notEqual(blocks.adjustmentScrews[0], blocks.adjustmentScrews[1]);
   near(blocks.adjustmentScrews[0].position.x, -geometry.screwX, 0,

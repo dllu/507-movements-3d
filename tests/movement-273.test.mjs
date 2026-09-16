@@ -583,7 +583,7 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.equal(meshCount, 40);
+  assert.equal(meshCount, 48);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 7.5);

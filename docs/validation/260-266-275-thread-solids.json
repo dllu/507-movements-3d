@@ -1,0 +1,153 @@
+{
+  "sources": [
+    {
+      "file": "src/simulation/authored-differential-drives.js",
+      "sha256": "1c12b4cb4a08dc7814a8507fbe6d57c359020d01a5df71c7269ae3ecd1133c2a"
+    },
+    {
+      "file": "src/simulation/authored-differential-screws.js",
+      "sha256": "ca26f3b40c76409d1bd91b39c36a82a3e07367c3b31b5e0114c3109a972e995b"
+    },
+    {
+      "file": "src/simulation/authored-worm-racks.js",
+      "sha256": "b22af52d1d7c5efe6b477f93fd101c64c24a3af21f10870311cf951a15bb9283"
+    },
+    {
+      "file": "src/simulation/differential-thread-solids.js",
+      "sha256": "6d6717ccaf3565f57c5a2364e7a892bc6c56254f8e323aea8554afcee79d010c"
+    },
+    {
+      "file": "src/simulation/mujoco-screw/thread-geometry.js",
+      "sha256": "6b2ffc3165135dd59e8b822b27f2aecbb84fe53880cc62507ae5412c65942be2"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "src/simulation/authored-gears.js",
+      "sha256": "5f09464aa8b09fb057240033601f85307df0f2fc8897df276ea17ac490e321c6"
+    }
+  ],
+  "method": "Rendered mating-thread and tooth vertices, edge midpoints and triangle centers tested bidirectionally against BVH containment across the complete programmed cycle. Distances capped at .02 local units. Housings, shafts and collars are excluded from this selected working-surface audit. Rack teeth outside the worm axial range are inactive.",
+  "results": [
+    {
+      "id": 260,
+      "poses": 33,
+      "queries": 645272,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "screw-nut",
+          "maximumSampledGap": 0.0017580119271843316,
+          "minimumSampledGap": 0.0015413879179635482,
+          "activePoses": 33
+        },
+        {
+          "pair": "F-D",
+          "maximumSampledGap": 0.0001296493460654225,
+          "minimumSampledGap": 0.000017728886843896903,
+          "activePoses": 33
+        },
+        {
+          "pair": "B-E",
+          "maximumSampledGap": 0.0000658289239964337,
+          "minimumSampledGap": 0.000006476185388317654,
+          "activePoses": 33
+        }
+      ]
+    },
+    {
+      "id": 266,
+      "poses": 33,
+      "queries": 663719,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "coarse-thread",
+          "maximumSampledGap": 0.0016217691715037885,
+          "minimumSampledGap": 0.001480960031057605,
+          "activePoses": 33
+        },
+        {
+          "pair": "fine-thread",
+          "maximumSampledGap": 0.0017562896987951503,
+          "minimumSampledGap": 0.001592498227493006,
+          "activePoses": 33
+        }
+      ]
+    },
+    {
+      "id": 275,
+      "poses": 33,
+      "queries": 140811,
+      "penetrations": 0,
+      "maxDepth": 0,
+      "worst": null,
+      "pairs": [
+        {
+          "pair": "rack-0",
+          "maximumSampledGap": 0.002367355493239894,
+          "minimumSampledGap": 0.0023442829441798767,
+          "activePoses": 6
+        },
+        {
+          "pair": "rack-1",
+          "maximumSampledGap": 0.00236853013790207,
+          "minimumSampledGap": 0.002343992797633994,
+          "activePoses": 18
+        },
+        {
+          "pair": "rack-2",
+          "maximumSampledGap": 0.002418474616263231,
+          "minimumSampledGap": 0.002336131563489837,
+          "activePoses": 33
+        },
+        {
+          "pair": "rack-3",
+          "maximumSampledGap": 0.002418519534106723,
+          "minimumSampledGap": 0.0023361176466906923,
+          "activePoses": 33
+        },
+        {
+          "pair": "rack-4",
+          "maximumSampledGap": 0.0024185053495245556,
+          "minimumSampledGap": 0.0023361376712455854,
+          "activePoses": 33
+        },
+        {
+          "pair": "rack-5",
+          "maximumSampledGap": 0.002963053697794985,
+          "minimumSampledGap": 0.0023361477997613967,
+          "activePoses": 33
+        },
+        {
+          "pair": "rack-6",
+          "maximumSampledGap": 0.0029697943784556375,
+          "minimumSampledGap": 0.0023361550646388424,
+          "activePoses": 17
+        },
+        {
+          "pair": "rack-7",
+          "maximumSampledGap": 0.00858123556821555,
+          "minimumSampledGap": 0.0029498762601647055,
+          "activePoses": 3
+        },
+        {
+          "pair": "rack-8",
+          "maximumSampledGap": 0,
+          "minimumSampledGap": null,
+          "activePoses": 0
+        }
+      ]
+    }
+  ]
+}

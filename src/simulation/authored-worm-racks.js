@@ -1,3 +1,4 @@
+import { correctWormRack } from './differential-thread-solids.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -44,7 +45,7 @@ function verticalHelixCurve({
       return target.set(
         radius * Math.cos(angle),
         y,
-        -radius * Math.sin(angle),
+        --radius * Math.sin(angle),
       );
     }
   }();
@@ -125,7 +126,8 @@ function wormDrivenRack(movement) {
   const wormAxisX = 0.55;
   const wormCoreRadius = 0.39;
   const wormThreadRadius = 0.66;
-  const wormThreadTubeRadius = 0.095;
+  const wormThreadTubeRadius = 0.16; // Square-thread axial half-width (legacy metadata key).
+  const threadFlankClearance = .003;
   const wormThreadMinimumY = -1.45;
   const wormThreadMaximumY = 1.45;
   const wormShaftMinimumY = -1.824;
@@ -137,7 +139,7 @@ function wormDrivenRack(movement) {
   const wormLead = rackToothPitch;
   const leadPerRadian = wormHandedness * wormLead / FULL_TURN;
   const wormWaveNumber = wormHandedness * FULL_TURN / wormLead;
-  const rackToothThickness = 0.19;
+  const rackToothThickness = 0.314;
   const rackToothHalfThickness = rackToothThickness / 2;
   const rackToothDepth = 0.38;
   const rackToothTipX = wormAxisX
@@ -165,7 +167,7 @@ function wormDrivenRack(movement) {
     sourceRasterWormCenterY - sourceRasterRackToothTip.y
   ) * sourceScale;
   const sourceContactThreadCenterY = sourceActiveToothY
-    + rackToothHalfThickness + wormThreadTubeRadius;
+    + rackToothHalfThickness + wormThreadTubeRadius + threadFlankClearance;
   const sourceThreadPhase = Math.PI
     - wormWaveNumber * sourceContactThreadCenterY;
 
@@ -201,7 +203,7 @@ function wormDrivenRack(movement) {
     const activeToothFlankY = activeToothCenterY
       + rackToothHalfThickness;
     const contactThreadCenterY = activeToothFlankY
-      + wormThreadTubeRadius;
+      + wormThreadTubeRadius + threadFlankClearance;
     const contactThreadLocalAngle = sourceThreadPhase
       + wormWaveNumber * contactThreadCenterY;
     const contactThreadWorldAngle = contactThreadLocalAngle + wormAngle;
@@ -620,6 +622,7 @@ function wormDrivenRack(movement) {
     wormThreadRadius,
     wormThreadTubeRadius,
     wormThreadTurns,
+    threadFlankClearance,
     wormWaveNumber,
   };
   root.userData.mechanism =
@@ -729,12 +732,13 @@ function wormDrivenRack(movement) {
     };
     root.userData.kinematics = state;
   };
+  correctWormRack(root);
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.4, 4.7, 10.2),
+    cameraDirection: new THREE.Vector3(1.8, 1.4, 12),
   };
 }
 

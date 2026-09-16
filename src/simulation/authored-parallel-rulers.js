@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ornamentalRulerArmGeometry } from './ornamental-ruler-arm.js';
 import {finishDrawingRuler} from './drawing-ruler-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
@@ -1200,7 +1201,7 @@ function graduatedArcParallelRuler(movement) {
   const demonstrationPeriod = 8;
   const cycleRate = FULL_TURN / demonstrationPeriod;
   const linkLength = 1.60;
-  const minimumLinkAngle = THREE.MathUtils.degToRad(100);
+  const minimumLinkAngle = THREE.MathUtils.degToRad(116);
   const maximumLinkAngle = THREE.MathUtils.degToRad(145);
   const sourceLinkAngle = THREE.MathUtils.degToRad(119);
   const meanLinkAngle = (minimumLinkAngle + maximumLinkAngle) / 2;
@@ -1220,21 +1221,13 @@ function graduatedArcParallelRuler(movement) {
   const arcPivot = new THREE.Vector3(0.62, 0.205, lowerBladeCenterZ);
   const arcHeight = 0.205;
   const scaleEdgeInset = 0.018;
-  const arcXLinear = -0.30;
-  const arcXQuadratic = -1.32;
-  const arcRiseLinear = 1.82;
-  const arcRiseQuadratic = -0.18;
-  const arcParameterAtRise = (rise) => {
-    const discriminant = arcRiseLinear ** 2
-      + 4 * arcRiseQuadratic * rise;
-    return (
-      -arcRiseLinear + Math.sqrt(Math.max(0, discriminant))
-    ) / (2 * arcRiseQuadratic);
-  };
-  const arcXAtParameter = (parameter) => arcPivot.x
-    + arcXLinear * parameter + arcXQuadratic * parameter ** 2;
-  const arcRiseAtParameter = (parameter) => arcRiseLinear * parameter
-    + arcRiseQuadratic * parameter ** 2;
+  // Ideal circle fitted to the visible arc contour (367 contour 21), rounded
+  // slightly to keep one unambiguous scale crossing throughout the travel.
+  const arcRadius = 1.28;
+  const arcSweep = THREE.MathUtils.degToRad(103);
+  const arcParameterAtRise = rise => Math.asin(THREE.MathUtils.clamp(rise / arcRadius, 0, 1)) / arcSweep;
+  const arcXAtParameter = parameter => arcPivot.x + arcRadius * (Math.cos(parameter * arcSweep) - 1);
+  const arcRiseAtParameter = parameter => arcRadius * Math.sin(parameter * arcSweep);
   const upperBladePositionAtAngle = (angle) => new THREE.Vector3(
     upperPivotLocalOffsetX + linkLength * Math.cos(angle),
     0.035,
@@ -1306,10 +1299,10 @@ function graduatedArcParallelRuler(movement) {
   arcCurve.arcLengthDivisions = 180;
 
   const stateAtTime = (time) => {
-    const phaseAngle = sourcePhaseAngle + cycleRate * time;
     const cyclePhase = positiveModulo(time / demonstrationPeriod, 1);
-    const linkAngle = meanLinkAngle
-      - linkAngleAmplitude * Math.cos(phaseAngle);
+    const phaseAngle = sourcePhaseAngle + FULL_TURN * cyclePhase;
+    const linkAngle = THREE.MathUtils.clamp(meanLinkAngle
+      - linkAngleAmplitude * Math.cos(phaseAngle), minimumLinkAngle, maximumLinkAngle);
     const linkAngularSpeed = linkAngleAmplitude * cycleRate
       * Math.sin(phaseAngle);
     const linkAngularAcceleration = linkAngleAmplitude * cycleRate ** 2
@@ -1394,11 +1387,12 @@ function graduatedArcParallelRuler(movement) {
     roughness: 0.56,
   });
 
-  const makeBlade = (role) => {
+  const makeBlade = (role, pivotXs) => {
     const group = new THREE.Group();
     group.userData.role = role;
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(bladeLength, bladeThickness, bladeWidth),
+      plate(polygonClipping.difference(poly([[-bladeLength/2, -bladeWidth/2], [bladeLength/2, -bladeWidth/2], [bladeLength/2, bladeWidth/2], [-bladeLength/2, bladeWidth/2]]),
+        ...pivotXs.map(x => poly(circle([x, 0], .089, 64)))), -bladeThickness/2, bladeThickness/2).rotateX(Math.PI / 2),
       bladeMaterial,
     );
     body.userData.role = `${role}-straight-rigid-body`;
@@ -1423,11 +1417,11 @@ function graduatedArcParallelRuler(movement) {
     return group;
   };
 
-  const lowerBlade = makeBlade('fixed-lower-ruler-blade');
+  const lowerBlade = makeBlade('fixed-lower-ruler-blade', lowerPivotXs);
   lowerBlade.position.set(0, 0.035, lowerBladeCenterZ);
   lowerBlade.userData.fixed = true;
   root.add(lowerBlade);
-  const upperBlade = makeBlade('translating-upper-ruler-blade');
+  const upperBlade = makeBlade('translating-upper-ruler-blade', upperPivotLocalXs);
   root.add(upperBlade);
 
   const scaleLength = scaleMaximumX - scaleMinimumX + 0.24;
@@ -1477,29 +1471,20 @@ function graduatedArcParallelRuler(movement) {
     group.userData.index = index;
     group.userData.role =
       'one-of-two-equal-parallel-ornamental-link-arms';
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(linkLength * 0.23, 0.018, 0.075),
-      new THREE.Vector3(linkLength * 0.50, 0.035, -0.060),
-      new THREE.Vector3(linkLength * 0.77, 0.018, 0.075),
-      new THREE.Vector3(linkLength, 0, 0),
-    ]);
     const arm = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 72, 0.073, 12, false),
+      ornamentalRulerArmGeometry(367, linkLength, .10, .089).rotateX(Math.PI / 2),
       linkMaterial,
     );
-    arm.userData.role = 'ornamental-rigid-body-of-parallel-link';
+    arm.position.y = .13;
+    arm.userData.role = 'bored-extracted-outline-of-parallel-link';
     group.add(arm);
     const pivotBosses = [0, linkLength].map((x, end) => {
-      const boss = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.145, 0.145, 0.25, 32),
-        darkMaterial,
-      );
-      boss.position.x = x;
-      boss.userData.end = end === 0 ? 'lower-blade' : 'upper-blade';
-      boss.userData.role = 'vertical-pivot-boss-of-parallel-link';
-      group.add(boss);
-      return boss;
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(.085, .085, .44, 48), darkMaterial);
+      pin.position.x = x;
+      pin.userData.end = end === 0 ? 'lower-blade' : 'upper-blade';
+      pin.userData.role = 'through-pin-of-parallel-link';
+      group.add(pin);
+      return pin;
     });
     group.userData.arm = arm;
     group.userData.pivotBosses = pivotBosses;
@@ -1511,26 +1496,30 @@ function graduatedArcParallelRuler(movement) {
     return link;
   });
 
-  const brassArc = new THREE.Mesh(
-    new THREE.TubeGeometry(arcCurve, 144, 0.055, 12, false),
-    brassMaterial,
-  );
-  brassArc.userData.role =
-    'fixed-to-lower-blade-brass-arc-crossing-graduated-scale';
+  // The calibrated circle is the visible outer edge, not the center of
+  // a thick tube. A flat strip below the links keeps the reading unobscured.
+  const arcPoints = Array.from({ length: 181 }, (_, i) => {
+    const p = arcCurve.getPoint(i / 180); return [p.x, p.z];
+  });
+  const arcOutline = polygonClipping.union(poly([...arcPoints,
+    ...arcPoints.slice().reverse().map(([x, z]) => [arcPivot.x - arcRadius + (x - arcPivot.x + arcRadius) * (arcRadius - .06) / arcRadius,
+      arcPivot.z + (z - arcPivot.z) * (arcRadius - .06) / arcRadius])]),
+    poly(circle([arcPivot.x - .03, arcPivot.z], .10, 48)));
+  const brassArc = new THREE.Mesh(plate(polygonClipping.difference(arcOutline,
+    poly(circle([arcPivot.x, arcPivot.z], .044, 48))), -.0175, .0175).rotateX(Math.PI / 2), brassMaterial);
+  brassArc.position.y = arcHeight;
+  brassArc.userData.role = 'fixed-to-lower-blade-brass-arc-crossing-graduated-scale';
   root.add(brassArc);
-  const brassArcPivot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.25, 32),
-    darkMaterial,
-  );
+  const brassArcPivot = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .25, 32), darkMaterial);
   brassArcPivot.position.copy(arcPivot);
-  brassArcPivot.userData.role =
-    'fastening-pivot-of-brass-indicating-arc-on-lower-blade';
+  brassArcPivot.position.y = .12;
+  brassArcPivot.userData.role = 'fastening-pivot-of-brass-indicating-arc-on-lower-blade';
   root.add(brassArcPivot);
-  const brassArcTip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    brassMaterial,
-  );
-  brassArcTip.position.copy(arcCurve.getPoint(1));
+  const tip = arcCurve.getPoint(1);
+  const brassArcTip = new THREE.Mesh(plate(polygonClipping.difference(
+    poly(circle([tip.x - .03, tip.z], .055, 48)), poly(circle([tip.x - .03, tip.z], .025, 48))),
+  -.0175, .0175).rotateX(Math.PI / 2), brassMaterial);
+  brassArcTip.position.y = arcHeight;
   brassArcTip.userData.role = 'rounded-free-end-of-brass-indicating-arc';
   root.add(brassArcTip);
 
@@ -1603,10 +1592,8 @@ function graduatedArcParallelRuler(movement) {
     geometry: {
       arcHeight,
       arcPivot: arcPivot.clone(),
-      arcRiseLinear,
-      arcRiseQuadratic,
-      arcXLinear,
-      arcXQuadratic,
+      arcRadius,
+      arcSweep,
       bladeLength,
       bladeThickness,
       bladeWidth,
@@ -1674,7 +1661,7 @@ function graduatedArcParallelRuler(movement) {
         engravingEvidence:
           'the plate shows two long straight blades, two equal matching ornamental links with four pivots, one curved brass indicator fastened to the lower blade, and a ticked scale along the facing edge of the upper blade',
         reconstructionDisclosure:
-          'blade dimensions, opening limits, smooth manual timing, arc polynomial, and calibrated units are engineered from the engraving because Brown supplies no numerical dimensions or graduation values',
+          'blade dimensions, opening limits, smooth manual timing, fitted circular arc, and calibrated units are engineered from the engraving because Brown supplies no numerical dimensions or graduation values',
       },
       primaryScan: {
         archiveIdentifier: 'fivehundredseven00browiala',
@@ -1704,10 +1691,11 @@ function graduatedArcParallelRuler(movement) {
     new THREE.Vector3(-2.86, -0.12, -0.96),
     new THREE.Vector3(2.86, 0.48, 2.44),
   );
-  root.userData.groundFloorY = -0.10;
+  finishDrawingRuler(root, []);
+  root.userData.cameraFov = 8;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.2, 8.8, 7.6),
+    cameraDirection: new THREE.Vector3(0, 12, .9),
     root,
     update,
   };

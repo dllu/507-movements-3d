@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -33,25 +34,19 @@ function cylinderAlongZ(radius, length, material, segments = 40) {
   return cylinder;
 }
 
-function halfAnnulusShape(side, innerRadius, outerRadius) {
+function halfAnnulusShape(side, innerRadius, halfHeight, outerFaceAtY) {
+  // A split bearing lining has a circular inner face and a straight taper
+  // against its gib; an isolated half-ring cannot transmit load to that gib.
   const shape = new THREE.Shape();
-  const start = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-  const end = side < 0 ? Math.PI * 1.5 : Math.PI / 2;
-  const segments = 24;
-  for (let index = 0; index <= segments; index += 1) {
-    const angle = start + (end - start) * index / segments;
-    const x = outerRadius * Math.cos(angle);
-    const y = outerRadius * Math.sin(angle);
-    if (index === 0) shape.moveTo(x, y);
-    else shape.lineTo(x, y);
+  shape.moveTo(side * outerFaceAtY(halfHeight), halfHeight);
+  shape.lineTo(0, halfHeight);
+  shape.lineTo(0, innerRadius);
+  for (let index = 1; index <= 48; index += 1) {
+    const angle = Math.PI / 2 + (side < 0 ? 1 : -1) * Math.PI * index / 48;
+    shape.lineTo(innerRadius * Math.cos(angle), innerRadius * Math.sin(angle));
   }
-  for (let index = segments; index >= 0; index -= 1) {
-    const angle = start + (end - start) * index / segments;
-    shape.lineTo(
-      innerRadius * Math.cos(angle),
-      innerRadius * Math.sin(angle),
-    );
-  }
+  shape.lineTo(0, -halfHeight);
+  shape.lineTo(side * outerFaceAtY(-halfHeight), -halfHeight);
   shape.closePath();
   return shape;
 }
@@ -130,7 +125,7 @@ function claytonSlidingJournalBox(movement) {
   const crossheadRodY = (
     sourceRasterCrankCenter.y - sourceRasterCrossheadRodY
   ) * sourceScale;
-  const gibOuterFace = 0.84;
+  const gibOuterFace = 0.894;
   const gibInnerTop = 0.62;
   const gibInnerBottom = 0.70;
   const gibTopY = 0.98;
@@ -290,16 +285,17 @@ function claytonSlidingJournalBox(movement) {
   );
   crankArm.userData.role = 'rigid-crank-arm';
   crankRotor.add(crankArm);
-  const mainHub = cylinderAlongZ(0.54, 0.68, driverMaterial, 48);
+  const mainHub = cylinderAlongZ(0.54, 0.60, driverMaterial, 48);
+  mainHub.position.z = -0.11;
   mainHub.userData.role = 'crank-main-shaft-hub';
   crankRotor.add(mainHub);
-  const crankWrist = cylinderAlongZ(wristRadius, 1.42, darkMaterial, 52);
-  crankWrist.position.set(crankRadius, 0, 0.48);
+  const crankWrist = cylinderAlongZ(wristRadius, 0.96, darkMaterial, 52);
+  crankWrist.position.set(crankRadius, 0, 0.32);
   crankWrist.userData.role = 'rotating-crank-wrist-journal';
   crankRotor.add(crankWrist);
-  const wristFace = cylinderAlongZ(wristRadius * 0.82, 1.46,
+  const wristFace = cylinderAlongZ(wristRadius * 0.82, 0.03,
     driverMaterial, 48);
-  wristFace.position.set(crankRadius, 0, 0.49);
+  wristFace.position.set(crankRadius, 0, 0.815);
   wristFace.userData.role = 'crank-wrist-colored-face';
   crankRotor.add(wristFace);
   const wristRotationIndex = new THREE.Mesh(
@@ -309,14 +305,11 @@ function claytonSlidingJournalBox(movement) {
   wristRotationIndex.position.set(
     crankRadius + wristRadius * 0.47,
     0,
-    1.22,
+    0.85,
   );
   wristRotationIndex.userData.role = 'white-crank-wrist-rotation-index';
   crankRotor.add(wristRotationIndex);
-  const fixedCrankBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.60, 0.075, 10, 40),
-    frameMaterial,
-  );
+  const fixedCrankBearing = boredJournal(0.675, 0.546, 0.15, frameMaterial);
   fixedCrankBearing.position.z = -0.75;
   fixedCrankBearing.userData.role = 'fixed-crank-shaft-bearing';
   root.add(fixedCrankBearing);
@@ -353,7 +346,7 @@ function claytonSlidingJournalBox(movement) {
   slotHole.closePath();
   crossheadShape.holes.push(slotHole);
   const crossheadBody = new THREE.Mesh(
-    centeredExtrusion(crossheadShape, 0.34, 0.018),
+    centeredExtrusion(crossheadShape, 0.34, 0),
     drivenMaterial,
   );
   crossheadBody.userData.role = 'source-profiled-crosshead-yoke-body';
@@ -363,20 +356,21 @@ function claytonSlidingJournalBox(movement) {
     darkMaterial,
   );
   leftSlotFace.position.set(
-    -slotHalfWidth,
+    -slotHalfWidth - 0.0275,
     (slotTopY + slotBottomY) / 2,
     0.06,
   );
   leftSlotFace.userData.role = 'left-vertical-box-guide-face';
   const rightSlotFace = leftSlotFace.clone();
-  rightSlotFace.position.x = slotHalfWidth;
+  rightSlotFace.position.x = slotHalfWidth + 0.0275;
   rightSlotFace.userData.role = 'right-vertical-box-guide-face';
   crosshead.add(leftSlotFace, rightSlotFace);
-  const crossheadRod = new THREE.Mesh(
-    new THREE.BoxGeometry(rodHalfLength * 2, 0.28, 0.32),
-    drivenMaterial,
-  );
-  crossheadRod.position.set(0, crossheadRodY, -0.02);
+  const crossheadRod = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(rodHalfLength - slotHalfWidth, 0.28, 0.32), drivenMaterial);
+    arm.position.set(side * (rodHalfLength + slotHalfWidth) / 2, crossheadRodY, -0.02);
+    crossheadRod.add(arm);
+  }
   crossheadRod.userData.role = 'crosshead-horizontal-output-rod';
   crosshead.add(crossheadRod);
   const crossheadMotionIndex = new THREE.Mesh(
@@ -391,12 +385,12 @@ function claytonSlidingJournalBox(movement) {
   for (const side of [-1, 1]) {
     for (const verticalSide of [-1, 1]) {
       const block = new THREE.Mesh(
-        new THREE.BoxGeometry(guideHalfWidth * 2, 0.18, 0.54),
+        new THREE.BoxGeometry(guideHalfWidth * 2, 0.18, 0.78),
         frameMaterial,
       );
       block.position.set(
         side * guideCenterX,
-        crossheadRodY + verticalSide * 0.22,
+        crossheadRodY + verticalSide * 0.24,
         -0.02,
       );
       block.userData.role = `${side < 0 ? 'left' : 'right'}-fixed-crosshead-guide-${
@@ -432,9 +426,11 @@ function claytonSlidingJournalBox(movement) {
   const liningPieces = [-1, 1].map((side) => {
     const lining = new THREE.Mesh(
       centeredExtrusion(
-        halfAnnulusShape(side, linerInnerRadius, linerOuterRadius),
+        halfAnnulusShape(side, linerInnerRadius, linerOuterRadius,
+          y => gibInnerBottom + (gibInnerTop - gibInnerBottom)
+            * (y - gibBottomY) / (gibTopY - gibBottomY)),
         0.30,
-        0.008,
+        0,
       ),
       boxMaterial,
     );
@@ -454,7 +450,7 @@ function claytonSlidingJournalBox(movement) {
         gibInnerBottom,
         gibTopY,
         gibBottomY,
-      ), 0.28, 0.008),
+      ), 0.28, 0),
       boxMaterial,
     );
     gib.position.z = 0.39;
@@ -487,6 +483,7 @@ function claytonSlidingJournalBox(movement) {
       new THREE.CylinderGeometry(0.065, 0.065, screwTravel, 24),
       darkMaterial,
     );
+    shaft.position.y = -0.11;
     shaft.userData.role = 'threaded-adjuster-shaft';
     assembly.add(shaft);
     for (let index = -2; index <= 2; index += 1) {
@@ -495,7 +492,7 @@ function claytonSlidingJournalBox(movement) {
         brassMaterial,
       );
       thread.rotation.x = Math.PI / 2;
-      thread.position.y = index * 0.065;
+      thread.position.y = index * 0.065 - 0.11;
       thread.userData.role = 'visible-adjustment-screw-thread';
       assembly.add(thread);
     }
@@ -503,7 +500,7 @@ function claytonSlidingJournalBox(movement) {
       new THREE.CylinderGeometry(0.14, 0.14, 0.13, 6),
       brassMaterial,
     );
-    nut.position.y = -0.12;
+    nut.position.y = -0.04;
     nut.userData.role = 'gib-locking-nut';
     assembly.add(nut);
     journalBox.add(assembly);
@@ -516,6 +513,8 @@ function claytonSlidingJournalBox(movement) {
   boxMotionIndex.position.set(gibOuterFace - 0.10, -0.30, 0.60);
   boxMotionIndex.userData.role = 'white-vertical-journal-box-slide-index';
   journalBox.add(boxMotionIndex);
+  // Put the finite sliding box inside the crosshead guide faces.
+  for (const part of journalBox.children) part.position.z -= 0.28;
 
   const sourceState = stateAtTime(0);
   const modelToSourcePixel = (point) => new THREE.Vector2(
@@ -769,11 +768,12 @@ function claytonSlidingJournalBox(movement) {
   };
 
   update(0);
+  fitPistonGuide(root, update, cyclePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(4.5, 3.4, 12.2),
+    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
   };
 }
 
