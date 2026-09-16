@@ -534,11 +534,8 @@ test('movement 370 renderer preserves bar guide, mirror pose, click contact, fol
     );
     vectorNear(renderedIndex, state.mirrorIndexPoint, 1e-15,
       'rendered compound mirror index');
-    const renderedContact = blocks.contactMarker.getWorldPosition(
-      new THREE.Vector3(),
-    );
-    vectorNear(renderedContact, state.pawlTipWorld, 1.2e-15,
-      'rendered click-tip contact marker');
+    assert.equal(blocks.contactMarker.visible, false);
+    assert.ok(blocks.finiteClick.body.visible);
     if (previousMirrorCenter !== null) {
       largestMirrorCenterStep = Math.max(
         largestMirrorCenterStep,

@@ -25,3 +25,7 @@ node --test tests/movement-436.test.mjs tests/movement-437.test.mjs tests/moveme
 The models retain analytical prescribed rotation. Flow tubes and dots illustrate direction and may cross working surfaces; they are not solved fluid trajectories. Pressure, free-surface shape, continuity of mass flow, leakage, viscous/nozzle losses, cavitation, efficiency, inertia, bearing loads and load-dependent speed are not validated. In particular, the drawn torque diagnostics assume imposed flows and velocities. Shaft-port shapes, pipe wall thickness, manufacturing junctions, clearances, support construction and axial dimensions are inferred. No rigid-body simulator is claimed to establish fluid correctness.
 
 Final default/plan/rear comparisons and 65-pose projection sweeps found zero vertices outside the default viewport for all three models. Review artifacts stay outside Git under `/dev/shm/turbine-436-*`, `/dev/shm/turbine-437-*`, `/dev/shm/turbine-438-*` and `/dev/shm/436438-browser*.log`.
+
+### Production timing follow-up
+
+The nineteenth pass found that the production display wrapper replaced the factory's target period with two seconds. These movements now explicitly preserve their reviewed 5.4–6-second cycle through `minimumDisplayCycleSeconds`; the actual production wrapper is covered by `tests/reviewed-cycle-timing.test.mjs`. Earlier cycle-duration descriptions referred to the authored motion, not the effective viewer speed before this correction.

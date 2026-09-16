@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctDoubleActingParts } from './flexible-pump-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -58,10 +59,10 @@ function doubleActingPump(movement) {
   const stuffingBoxY = 2.14;
   const maximumValveLift = 0.16;
   const valveSeats = Object.freeze({
-    lowerDischarge3: new THREE.Vector3(-1.18, -1.12, 0),
-    lowerSuction2: new THREE.Vector3(1.18, -1.12, 0),
-    upperDischarge4: new THREE.Vector3(-1.18, 1.57, 0),
-    upperSuction1: new THREE.Vector3(1.18, 1.57, 0),
+    lowerDischarge3: new THREE.Vector3(-1.45, -1.12, 0),
+    lowerSuction2: new THREE.Vector3(1.45, -1.12, 0),
+    upperDischarge4: new THREE.Vector3(-1.45, 1.57, 0),
+    upperSuction1: new THREE.Vector3(1.45, 1.57, 0),
   });
   const groundY = -2.62;
 
@@ -297,7 +298,7 @@ function doubleActingPump(movement) {
     new THREE.CylinderGeometry(0.31, 0.31, 4.65, 36, 1, true),
     shellMaterial,
   ), 'common-suction-pipe-A-feeding-two-inlet-checks');
-  suctionManifold.position.set(2.02, -0.18, 0);
+  suctionManifold.position.set(2.40, -0.18, 0);
   root.add(suctionManifold);
   const suctionManifoldWater = new THREE.Mesh(
     new THREE.CylinderGeometry(0.21, 0.21, 4.63, 32),
@@ -306,14 +307,14 @@ function doubleActingPump(movement) {
   suctionManifoldWater.position.copy(suctionManifold.position);
   root.add(suctionManifoldWater);
   const suctionMouth = horizontalRing(0.31, 0.05, darkMaterial);
-  suctionMouth.position.set(2.02, -2.50, 0);
+  suctionMouth.position.set(2.40, -2.50, 0);
   root.add(suctionMouth);
 
   const dischargeManifold = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.31, 0.31, 4.80, 36, 1, true),
     shellMaterial,
   ), 'common-discharge-pipe-B-receiving-two-outlet-checks');
-  dischargeManifold.position.set(-2.02, 0.48, 0);
+  dischargeManifold.position.set(-2.40, 0.48, 0);
   root.add(dischargeManifold);
   const dischargeManifoldWater = new THREE.Mesh(
     new THREE.CylinderGeometry(0.21, 0.21, 4.78, 32),
@@ -322,38 +323,38 @@ function doubleActingPump(movement) {
   dischargeManifoldWater.position.copy(dischargeManifold.position);
   root.add(dischargeManifoldWater);
   const dischargeMouth = horizontalRing(0.31, 0.05, darkMaterial);
-  dischargeMouth.position.set(-2.02, 2.88, 0);
+  dischargeMouth.position.set(-2.40, 2.88, 0);
   root.add(dischargeMouth);
 
   const upperSuctionBranch = makeTube([
-    new THREE.Vector3(2.02, 1.78, 0),
+    new THREE.Vector3(2.40, 1.78, 0),
     new THREE.Vector3(1.60, 1.79, 0),
-    new THREE.Vector3(1.18, 1.57, 0),
+    new THREE.Vector3(1.45, 1.57, 0),
     new THREE.Vector3(0.86, 1.47, 0),
   ], 0.25, shellMaterial,
   'upper-suction-branch-through-valve-1');
   root.add(upperSuctionBranch);
   const lowerSuctionBranch = makeTube([
-    new THREE.Vector3(2.02, -1.31, 0),
+    new THREE.Vector3(2.40, -1.31, 0),
     new THREE.Vector3(1.58, -1.32, 0),
-    new THREE.Vector3(1.18, -1.12, 0),
+    new THREE.Vector3(1.45, -1.12, 0),
     new THREE.Vector3(0.86, -1.03, 0),
   ], 0.25, shellMaterial,
   'lower-suction-branch-through-valve-2');
   root.add(lowerSuctionBranch);
   const lowerDischargeBranch = makeTube([
     new THREE.Vector3(-0.86, -1.03, 0),
-    new THREE.Vector3(-1.18, -1.12, 0),
+    new THREE.Vector3(-1.45, -1.12, 0),
     new THREE.Vector3(-1.58, -1.32, 0),
-    new THREE.Vector3(-2.02, -1.31, 0),
+    new THREE.Vector3(-2.40, -1.31, 0),
   ], 0.25, shellMaterial,
   'lower-discharge-branch-through-valve-3');
   root.add(lowerDischargeBranch);
   const upperDischargeBranch = makeTube([
     new THREE.Vector3(-0.86, 1.47, 0),
-    new THREE.Vector3(-1.18, 1.57, 0),
+    new THREE.Vector3(-1.45, 1.57, 0),
     new THREE.Vector3(-1.60, 1.79, 0),
-    new THREE.Vector3(-2.02, 1.78, 0),
+    new THREE.Vector3(-2.40, 1.78, 0),
   ], 0.25, shellMaterial,
   'upper-discharge-branch-through-valve-4');
   root.add(upperDischargeBranch);
@@ -610,12 +611,13 @@ function doubleActingPump(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.42, groundY, -1.72),
-    new THREE.Vector3(2.42, 4.08, 1.72),
+    new THREE.Vector3(-3.50, groundY, -1.72),
+    new THREE.Vector3(3.50, 4.32, 1.72),
   );
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(6.0, 4.7, 10.4);
   root.userData.groundFloorY = groundY;
+  correctDoubleActingParts(root);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

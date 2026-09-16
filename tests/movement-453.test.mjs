@@ -229,10 +229,10 @@ test('movement 453 opposed beam geometry keeps both rods vertical and constant l
       `left rod vertical x at ${sample}`);
     near(state.rightBeamPin.x, state.rightTopPlateCenter.x, 0,
       `right rod vertical x at ${sample}`);
-    near(state.leftBeamPin.distanceTo(state.leftTopPlateCenter),
+    near(state.leftBeamPin.distanceTo(state.leftTopPlateCenter.clone().add(new THREE.Vector3(0,geometry.linkEyeHeight,0))),
       geometry.connectingRodLength, 4e-16,
     `left constant rod at ${sample}`);
-    near(state.rightBeamPin.distanceTo(state.rightTopPlateCenter),
+    near(state.rightBeamPin.distanceTo(state.rightTopPlateCenter.clone().add(new THREE.Vector3(0,geometry.linkEyeHeight,0))),
       geometry.connectingRodLength, 4e-16,
     `right constant rod at ${sample}`);
     near(state.leftBeamPin.distanceTo(geometry.beamPivot),

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -53,6 +54,7 @@ function doubleLanternBellowsPump(movement) {
   const beamPinHalfSpan = 1.75;
   const beamAmplitude = THREE.MathUtils.degToRad(18);
   const connectingRodLength = 1.18;
+  const linkEyeHeight = .29;
   const topPlateHalfThickness = 0.07;
   const bellowsFloorY = -0.11;
   const bellowsCenterXs = Object.freeze({ left: -1.75, right: 1.75 });
@@ -61,9 +63,9 @@ function doubleLanternBellowsPump(movement) {
   const maximumValveLift = 0.15;
   const groundY = -2.26;
   const valveSeats = Object.freeze({
-    leftDelivery: new THREE.Vector3(-0.70, -0.10, 0.55),
+    leftDelivery: new THREE.Vector3(-0.40, -0.10, 0.55),
     leftSuction: new THREE.Vector3(-1.25, -0.64, 0.55),
-    rightDelivery: new THREE.Vector3(0.70, -0.10, 0.55),
+    rightDelivery: new THREE.Vector3(0.40, -0.10, 0.55),
     rightSuction: new THREE.Vector3(1.25, -0.64, 0.55),
   });
 
@@ -118,9 +120,9 @@ function doubleLanternBellowsPump(movement) {
       .clone()
       .multiplyScalar(-1);
     const leftTopPlateCenter = leftBeamPin.clone();
-    leftTopPlateCenter.y -= connectingRodLength;
+    leftTopPlateCenter.y -= connectingRodLength + linkEyeHeight;
     const rightTopPlateCenter = rightBeamPin.clone();
-    rightTopPlateCenter.y -= connectingRodLength;
+    rightTopPlateCenter.y -= connectingRodLength + linkEyeHeight;
     const leftBellowsTopY = leftTopPlateCenter.y
       - topPlateHalfThickness;
     const rightBellowsTopY = rightTopPlateCenter.y
@@ -555,12 +557,12 @@ function doubleLanternBellowsPump(movement) {
     rightTopPlate.position.copy(state.rightTopPlateCenter);
     setCylinderBetween(
       leftConnectingRod,
-      state.leftTopPlateCenter,
+      state.leftTopPlateCenter.clone().add(new THREE.Vector3(0,linkEyeHeight,0)),
       state.leftBeamPin,
     );
     setCylinderBetween(
       rightConnectingRod,
-      state.rightTopPlateCenter,
+      state.rightTopPlateCenter.clone().add(new THREE.Vector3(0,linkEyeHeight,0)),
       state.rightBeamPin,
     );
     updateBellows(
@@ -587,6 +589,7 @@ function doubleLanternBellowsPump(movement) {
     rightDeliveryValve.userData.disk.position.y =
       rightDeliveryValve.userData.closedDiskY
         + state.rightDeliveryValveLift;
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -599,6 +602,7 @@ function doubleLanternBellowsPump(movement) {
     bellowsFloorY,
     bellowsWaterRadius,
     connectingRodLength,
+    linkEyeHeight,
     cycleDuration,
     groundY,
     inputAngularSpeed,
@@ -615,6 +619,7 @@ function doubleLanternBellowsPump(movement) {
       'double-lantern-bellows-pump-with-common-rocking-lever-opposed-strokes-four-checks-and-shared-suction-discharge',
     blocks: {
       base,
+      chestBottom,
       beam,
       commonDischarge,
       commonSuction,
@@ -730,6 +735,7 @@ function doubleLanternBellowsPump(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.8, 10.8);
   root.userData.groundFloorY = groundY;
+  correctFlexiblePumpParts(root,453);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

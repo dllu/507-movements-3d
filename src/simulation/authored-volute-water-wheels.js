@@ -679,6 +679,7 @@ function voluteWaterWheel(movement) {
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
   casingFloor.receiveShadow = true;
   update(0);

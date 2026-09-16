@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
 import { horizontalTurned } from './horizontal-turbine-solids.js';
-import { ring } from './finite-plate-geometry.js';
+import { ring, capsule, plate } from './finite-plate-geometry.js';
+import { makePersianBucketTrip } from './persian-bucket-trip.js';
 import {
   PALETTE,
   markShadows,
@@ -142,11 +143,13 @@ function persianIrrigationWheel(movement) {
   const pickupStartAngle = THREE.MathUtils.degToRad(220);
   const pickupEndAngle = THREE.MathUtils.degToRad(290);
   const dumpStartAngle = THREE.MathUtils.degToRad(40);
-  const dumpPeakAngle = THREE.MathUtils.degToRad(60);
-  const dumpEndAngle = THREE.MathUtils.degToRad(80);
-  const maximumBucketTip = THREE.MathUtils.degToRad(-76);
+  const trip=makePersianBucketTrip(bucketPivotRadius,wheelCenter.y,dumpStartAngle);
+  const dumpPeakAngle = trip.peak;
+  const dumpEndAngle = trip.peak + THREE.MathUtils.degToRad(12);
+  const maximumBucketTip = trip.maximum;
+  const bucketPlaneZ=.57;
   const bucketCapacity = 0.0032;
-  const highDeliveryY = 1.60;
+  const highDeliveryY = 1.05;
   const groundY = -3.45;
   const pickupEndTravel = THREE.MathUtils.euclideanModulo(
     pickupEndAngle - pickupStartAngle,
@@ -165,7 +168,7 @@ function persianIrrigationWheel(movement) {
     FULL_TURN,
   ) / FULL_TURN;
   const derivativeMaximum = 1.875;
-  const bucketTripLugLocal = new THREE.Vector2(0.23, -0.02);
+  const bucketTripLugLocal = new THREE.Vector2(trip.shoeX, trip.shoeTop);
 
   const bucketStateAtWorldAngle = (worldAngleValue) => {
     const worldAngle = THREE.MathUtils.euclideanModulo(
@@ -187,18 +190,8 @@ function persianIrrigationWheel(movement) {
           / (dumpEndTravel - dumpStartTravel),
       );
     }
-    let tipFraction = 0;
-    if (travel >= dumpStartTravel && travel < dumpPeakTravel) {
-      tipFraction = smoothStep5(
-        (travel - dumpStartTravel)
-          / (dumpPeakTravel - dumpStartTravel),
-      );
-    } else if (travel >= dumpPeakTravel && travel < dumpEndTravel) {
-      tipFraction = 1 - smoothStep5(
-        (travel - dumpPeakTravel)
-          / (dumpEndTravel - dumpPeakTravel),
-      );
-    }
+    const bucketTipAngle=trip.angleAt(worldAngle);
+    const tipFraction=bucketTipAngle/maximumBucketTip;
     let dischargeFlow = 0;
     if (travel >= dumpStartTravel && travel < dumpEndTravel) {
       const progress = (travel - dumpStartTravel)
@@ -216,7 +209,7 @@ function persianIrrigationWheel(movement) {
     }
     return {
       bucketFill: fill,
-      bucketTipAngle: maximumBucketTip * tipFraction,
+      bucketTipAngle,
       channelMarkerParameter,
       channelMarkerVisible:
         fill > 0.015 && travel < dumpEndTravel,
@@ -246,7 +239,7 @@ function persianIrrigationWheel(movement) {
       const pivotPosition = new THREE.Vector3(
         wheelCenter.x + bucketPivotRadius * Math.cos(worldAngle),
         wheelCenter.y + bucketPivotRadius * Math.sin(worldAngle),
-        0.30,
+        bucketPlaneZ,
       );
       const tripLugOffset = rotateVector2(
         bucketTripLugLocal,
@@ -262,7 +255,7 @@ function persianIrrigationWheel(movement) {
         tripLugPosition: new THREE.Vector3(
           pivotPosition.x + tripLugOffset.x,
           pivotPosition.y + tripLugOffset.y,
-          0.48,
+          trip.pin.z,
         ),
       });
     }
@@ -415,7 +408,7 @@ function persianIrrigationWheel(movement) {
     arm.add(endLink);
 
     const bucket = new THREE.Group();
-    bucket.position.set(bucketPivotRadius, 0, 0.30);
+    bucket.position.set(bucketPivotRadius, 0, bucketPlaneZ);
     bucket.userData.role =
       `gravity-suspended-pin-tipped-bucket-${index + 1}`;
     bucket.userData.bucketIndex = index;
@@ -444,14 +437,14 @@ function persianIrrigationWheel(movement) {
     bucketRim.position.y = -0.14;
     bucket.add(bucketRim);
     const hangerLeft = beamBetween(
-      new THREE.Vector3(0, -0.02, 0),
+      new THREE.Vector3(-.08, -.085, 0),
       new THREE.Vector3(-0.28, -0.18, 0),
       0.045,
       0.045,
       darkMaterial,
     );
     const hangerRight = beamBetween(
-      new THREE.Vector3(0, -0.02, 0),
+      new THREE.Vector3(.08, -.085, 0),
       new THREE.Vector3(0.28, -0.18, 0),
       0.045,
       0.045,
@@ -466,8 +459,8 @@ function persianIrrigationWheel(movement) {
     );
     hinge.geometry.dispose();
     hinge.geometry = ring(.072,.14,-.035,.035);
-    const suspensionPin = cylinderAlongZ(.068,.36,darkMaterial,32);
-    suspensionPin.position.set(bucketPivotRadius,0,.18);
+    const suspensionPin = cylinderAlongZ(.068,.64,darkMaterial,32);
+    suspensionPin.position.set(bucketPivotRadius,0,.30);
     suspensionPin.userData.role = `finite-bucket-suspension-pin-${index + 1}`;
     arm.add(suspensionPin);
     hinge.userData.role = `free-bucket-suspension-pivot-${index + 1}`;
@@ -480,18 +473,18 @@ function persianIrrigationWheel(movement) {
       `gravity-level-water-load-in-bucket-${index + 1}`;
     bucket.add(bucketWater);
     bucketWaters.push(bucketWater);
-    const tripLug = new THREE.Mesh(
-      new THREE.SphereGeometry(0.09, 16, 11),
-      darkMaterial,
-    );
-    tripLug.position.set(
-      bucketTripLugLocal.x,
-      bucketTripLugLocal.y,
-      0.18,
-    );
+    const tripLug = new THREE.Mesh(plate(capsule(
+      [trip.shoeX,trip.shoeBottom],[trip.shoeX,trip.shoeTop],trip.shoeRadius,48),
+      -.03,.03),darkMaterial);
+    tripLug.position.z=trip.pin.z-bucketPlaneZ;
     tripLug.userData.role = `stationary-pin-trip-lug-${index + 1}`;
-    bucket.add(tripLug);
-    tripLugs.push(tripLug);
+    bucket.add(tripLug);tripLugs.push(tripLug);
+    for(const y of [-.20,-.49]) {
+      const brace=beamBetween(new THREE.Vector3(-.23,y,0),new THREE.Vector3(trip.shoeX,y,0),.045,.045,darkMaterial);
+      brace.position.z=trip.pin.z-bucketPlaneZ;bucket.add(brace);
+      const standoff=cylinderAlongZ(.025,trip.pin.z-bucketPlaneZ,darkMaterial);
+      standoff.position.set(-.23,y,(trip.pin.z-bucketPlaneZ)/2);bucket.add(standoff);
+    }
 
     const spill = new THREE.Mesh(
       new THREE.CylinderGeometry(0.085, 0.065, 1, 14),
@@ -582,28 +575,17 @@ function persianIrrigationWheel(movement) {
     currentMarkers.push(marker);
   }
 
-  const tripPivot = new THREE.Vector2(
-    wheelCenter.x + bucketPivotRadius * Math.cos(dumpPeakAngle),
-    wheelCenter.y + bucketPivotRadius * Math.sin(dumpPeakAngle),
-  );
-  const tripLugAtMaximum = rotateVector2(
-    bucketTripLugLocal,
-    maximumBucketTip,
-  );
-  const tripPinPosition = new THREE.Vector3(
-    tripPivot.x + tripLugAtMaximum.x,
-    tripPivot.y + tripLugAtMaximum.y,
-    0.48,
-  );
-  const stationaryTripPin = cylinderAlongZ(0.10, 0.62,
-    darkMaterial, 24);
+  const tripPinPosition = trip.pin.clone();
+  const stationaryTripPin = cylinderAlongZ(trip.pinRadius, .40,
+    darkMaterial, 64);
   stationaryTripPin.position.copy(tripPinPosition);
+  stationaryTripPin.position.z=1.11;
   stationaryTripPin.userData.role =
     'fixed-pin-tilting-each-bucket-at-high-station';
   root.add(stationaryTripPin);
   const tripPinBracket = beamBetween(
-    new THREE.Vector3(3.42, tripPinPosition.y, 0.48),
-    tripPinPosition,
+    new THREE.Vector3(3.42, tripPinPosition.y, 1.34),
+    new THREE.Vector3(tripPinPosition.x,tripPinPosition.y,1.34),
     0.12,
     0.16,
     frameMaterial,
@@ -621,31 +603,37 @@ function persianIrrigationWheel(movement) {
   tripPinPost.position.set(
     3.42,
     (tripPinPosition.y + groundY + 0.16) / 2,
-    0.48,
+    1.34,
   );
   tripPinPost.userData.role = 'fixed-trip-pin-support-post';
   root.add(tripPinPost);
 
   const deliveryTrough = new THREE.Group();
-  deliveryTrough.position.set(2.66, highDeliveryY, 0.50);
-  deliveryTrough.rotation.z = -0.10;
+  deliveryTrough.position.set(.925, highDeliveryY, bucketPlaneZ);
   deliveryTrough.userData.role =
     'fixed-high-level-trough-receiving-tipped-bucket-water';
   root.add(deliveryTrough);
   const deliveryBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(2.46, 0.13, 0.78),
+    new THREE.BoxGeometry(1.85, 0.13, 0.68),
     frameMaterial,
   );
   deliveryTrough.add(deliveryBottom);
   const deliverySides = [-1, 1].map((sign) => {
     const side = new THREE.Mesh(
-      new THREE.BoxGeometry(2.46, 0.28, 0.09),
+      new THREE.BoxGeometry(1.85, 0.22, 0.06),
       frameMaterial,
     );
-    side.position.set(0, 0.14, sign * 0.35);
+    side.position.set(0, 0.10, sign * 0.31);
     deliveryTrough.add(side);
     return side;
   });
+
+  const receiverPost=new THREE.Mesh(new THREE.BoxGeometry(.16,highDeliveryY-groundY,.16),frameMaterial);
+  receiverPost.position.set(.10,(groundY+highDeliveryY)/2,1.34);
+  receiverPost.userData.role='fixed-outboard-receiver-standard';root.add(receiverPost);
+  const receiverBridge=new THREE.Mesh(new THREE.BoxGeometry(.16,.13,.80),frameMaterial);
+  receiverBridge.position.set(.10,highDeliveryY,1.00);
+  receiverBridge.userData.role='fixed-receiver-to-standard-bridge';root.add(receiverBridge);
 
   const updateBucketWater = (water, fill, bucketTipAngle) => {
     const waterDepth = 0.34 * fill;
@@ -656,16 +644,13 @@ function persianIrrigationWheel(movement) {
   };
 
   const updateSpill = (spill, bucketState) => {
-    const streamTopY = bucketState.pivotPosition.y - 0.30;
-    const streamLength = Math.max(0.08, streamTopY - highDeliveryY);
-    spill.visible = bucketState.dischargeFlow > 0.01;
-    spill.position.set(
-      bucketState.pivotPosition.x + 0.20,
-      streamTopY - streamLength / 2,
-      0.48,
-    );
-    const width = 0.35 + 0.65 * bucketState.dischargeFlow;
-    spill.scale.set(width, streamLength, width);
+    const lip=rotateVector2(new THREE.Vector2(-.27,-.14),bucketState.bucketTipAngle);
+    const streamTopY=bucketState.pivotPosition.y+lip.y;
+    const streamLength=Math.max(.001,streamTopY-highDeliveryY-.065);
+    spill.visible=bucketState.dischargeFlow>.01;
+    spill.position.set(bucketState.pivotPosition.x+lip.x,streamTopY-streamLength/2,bucketPlaneZ);
+    const width=.22+.45*bucketState.dischargeFlow;
+    spill.scale.set(width,streamLength,width);
   };
 
   const update = (time) => {
@@ -712,6 +697,8 @@ function persianIrrigationWheel(movement) {
   const sourceState = stateAtInputAngle(0);
   const geometry = {
     bucketCapacity,
+    bucketPlaneZ,
+    trip,
     bucketPivotRadius,
     bucketTripLugLocal: bucketTripLugLocal.clone(),
     cycleDuration,
@@ -764,6 +751,8 @@ function persianIrrigationWheel(movement) {
       deliveryBottom,
       deliverySides,
       deliveryTrough,
+      receiverPost,
+      receiverBridge,
       floatWaters,
       hollowShaft,
       shaftIndex,
@@ -791,7 +780,7 @@ function persianIrrigationWheel(movement) {
       bucketSwingImpactPinContactFluidCaptureLeakageSloshFloatHydrodynamicsBearingFrictionAndRotationalInertiaModeled:
         false,
       bucketTiming:
-        'Each bucket is held gravity-upright by exact counter-rotation, filled with a quintic ramp while traversing the submerged pickup arc, carried full up the right side, and smoothly pin-tipped and emptied through a forty-degree high-level contact window.',
+        'Each bucket is held gravity-upright by exact counter-rotation, then pin-tipped along exact round-pin/capsule-shoe tangency until its angular maximum. Its clear return swing and water filling/emptying remain prescribed; passive impact, inertia and fluid capture are not solved.',
       floatWaterTransport:
         'A visible water band and a quintic material tracer move from each immersed curved float tip toward the hollow shaft during its rising travel. This illustrates Brown’s stated inward delivery without claiming a solved free-surface flow field.',
       streamDrive:
@@ -865,7 +854,7 @@ function persianIrrigationWheel(movement) {
       bucketGravityOrientation:
         'bucketLocalAngle=-wheelAngle-armIndexAngle+pinTipAngle, so each untripped bucket has exactly zero world rotation while its pivot follows the wheel.',
       fixedPinContact:
-        'At the sixty-degree dump center the moving bucket-lug center coincides with the reconstructed stationary-pin center and the bucket reaches its maximum clockwise tip.',
+        'A finite outboard capsule shoe meets a round stationary pin; the rising tip angle solves their tangency, then a continuous prescribed return clears the pin.',
       streamTorque:
         'At the bottom contact r=(0,-R) and rightward F=(+F,0), hence tau_z=-r_y*F_x=R*F>0, counterclockwise.',
       waterPath:
@@ -878,9 +867,9 @@ function persianIrrigationWheel(movement) {
     new THREE.Vector3(4.08, 3.62, 1.85),
   );
   root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraDirection = new THREE.Vector3(5.6, 4.2, 11.8);
+  root.userData.cameraDirection = new THREE.Vector3(2.8, 2.1, 13.5);
   root.userData.groundFloorY = groundY;
-  root.userData.solidReview = { status: 'partial', residual: 'Prescribed bucket tipping still intersects the fixed trip pin and receiving trough; channels, bucket shells, bed and shaft supports improved, but trip contact is not validated.' };
+  root.userData.solidReview = { status: 'qualified-geometry', residual: 'Finite shoe/pin tangency and clear receiver path are reconstructed; impact, passive swing and fluid volume/discharge remain prescribed, not dynamically solved.' };
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   root.traverse(o => { for (const m of o.material ? [].concat(o.material) : []) m.fog = false; });

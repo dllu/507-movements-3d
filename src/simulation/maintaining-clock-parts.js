@@ -10,7 +10,7 @@ const difference=(a,b)=>[a[0]-b[0],a[1]-b[1]];
 const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 
-function ratchet(mesh,{radius,bore,teeth,hand,phase,depth}){
+export function ratchet(mesh,{radius,bore,teeth,hand,phase,depth}){
   const pitch=TAU/teeth,outline=[];
   for(let i=0;i<teeth;i++)for(const[r,a]of [[radius,0],[radius*.84,.90*pitch]])outline.push(turn([r,0],phase+hand*(i*pitch+a)));
   const geometry=plate(clip.difference(poly(outline),poly(circle([0,0],bore,64))),-depth/2,depth/2);
@@ -20,7 +20,7 @@ function ratchet(mesh,{radius,bore,teeth,hand,phase,depth}){
 // A prescribed geometric follower: intersect the toe-center orbit with the
 // outward-offset polygon edges/vertices. This checks finite toe radii rather
 // than guessing a sinusoidal lift from nominal pitch circles. No force solve.
-function makeFollower(group,wheel,center,outline,depth=.12){
+export function makeFollower(group,wheel,center,outline,depth=.12){
   const base=group.rotation.z,oldBody=group.children.find(o=>o.userData.role?.endsWith('-body'));
   const length=oldBody.geometry.parameters.width,pivot=[group.position.x-center[0],group.position.y-center[1]];
   const a=turn([length,0],base),sign=Math.sign(cross(a,pivot))||1;

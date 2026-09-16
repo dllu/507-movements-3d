@@ -54,11 +54,11 @@ test('movement 393 is one concentric upright shaft, one bent carrier, one ball j
   assert.match(data.mechanism, /one-bent-carrier-and-eccentric-ball-joint/);
   assert.match(data.mechanism, /one-conformal-polishing-cup/);
   assert.match(data.mechanism, /revolves-about-the-common-axis/);
-  assert.match(data.mechanism, /passively-spins-about-its-own-radial-axis/);
+  assert.match(data.mechanism, /prescribed-spin-about-its-own-radial-axis/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
   assert.match(degreesOfFreedom.inputs[0], /upright concentric shaft/);
-  assert.match(degreesOfFreedom.note, /not a second motor input/);
+  assert.match(degreesOfFreedom.note, /prescribes.*zero-twist/);
 
   for (const component of [
     blocks.frame,
@@ -120,7 +120,7 @@ test('movement 393 preserves Brown topology and explicitly discloses unavailable
     dynamics.sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces,
     false,
   );
-  assert.equal(dynamics.idealizations.length, 5);
+  assert.equal(dynamics.idealizations.length, 6);
 
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
@@ -134,7 +134,7 @@ test('movement 393 preserves Brown topology and explicitly discloses unavailable
   assert.equal(evidence.explicitInBrownDescription.length, 6);
   assert.match(evidence.engravingEvidence, /offset bent carrier/);
   assert.match(evidence.reconstructionDisclosure, /No official animation or spin ratio/);
-  assert.match(evidence.reconstructionDisclosure, /zero-twist idealization/);
+  assert.match(evidence.reconstructionDisclosure, /zero-twist illustration/);
   disposeModel(model.root);
 });
 

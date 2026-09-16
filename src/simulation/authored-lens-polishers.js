@@ -1,3 +1,4 @@
+import { correctLensPolisher } from './polishing-joint-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -468,13 +469,13 @@ function eccentricLensPolisher(movement) {
       sphericalConformity:
         'The cup shell and polishing layer are spherical caps centered on the same point as the stationary lens; a small radial render gap exposes both surfaces.',
       zeroTwistTransport:
-        'Passive cup spin cancels the upright-shaft angular-velocity component along the instantaneous cup axis.',
+        'Prescribed cup spin cancels the upright-shaft angular-velocity component along the instantaneous cup axis.',
     },
     degreesOfFreedom: {
       dependentCoordinates: [
         'ball-joint azimuth about lens axis',
         'radial cup-axis orientation',
-        'passive cup spin about ball-and-socket axis',
+        'prescribed cup spin about ball-and-socket axis',
         'polishing material index trajectory',
       ],
       independentPrescribedInputs: 1,
@@ -509,7 +510,7 @@ function eccentricLensPolisher(movement) {
       tableTopY,
     },
     mechanism:
-      'one-upright-shaft-concentric-with-a-stationary-spherical-lens-rotates-one-bent-carrier-and-eccentric-ball-joint-so-one-conformal-polishing-cup-both-revolves-about-the-common-axis-and-passively-spins-about-its-own-radial-axis',
+      'one-upright-shaft-concentric-with-a-stationary-spherical-lens-rotates-one-bent-carrier-and-eccentric-ball-joint-so-one-conformal-polishing-cup-both-revolves-about-the-common-axis-and-prescribed-spin-about-its-own-radial-axis',
     motion: {
       carrierOrbitDuration: shaftOrbitDuration,
       cupRelativeSpinRate,
@@ -549,7 +550,7 @@ function eccentricLensPolisher(movement) {
           'changing material-to-work contact prevents repeated paths',
         ],
         reconstructionDisclosure:
-          'No official animation or spin ratio is supplied. Dimensions and timing are independently scaled from the engraving; passive spin uses an explicit rotation-minimizing zero-twist idealization rather than an unsupported arbitrary rate.',
+          'No official animation or spin ratio is supplied. Dimensions and timing are independently scaled from the engraving; spin is prescribed by a rotation-minimizing zero-twist illustration; passive friction and inertia are not solved.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 393',
@@ -578,8 +579,10 @@ function eccentricLensPolisher(movement) {
   root.userData.cameraDistanceScale = 1.12;
   root.userData.cameraDirection = new THREE.Vector3(7.8, 4.1, 9.8);
   root.userData.groundFloorY = -0.43;
+  correctLensPolisher(root);
+  markShadows(root);
   update(0);
-  return { root, update };
+  return { root, update, cameraDirection: new THREE.Vector3(1.8, 2.4, 12) };
 }
 
 export function createAuthoredLensPolisherMovement(movement) {

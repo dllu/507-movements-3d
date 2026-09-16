@@ -8,7 +8,7 @@ const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = g
 
 // A finite cylinder wall with a side opening. Boundary cells receive returns
 // across the wall thickness, so this is an open passage rather than hidden faces.
-function portedBarrel(inner, outer, low, high, portY, portHalfHeight, side) {
+export function portedBarrel(inner, outer, low, high, portY, portHalfHeight, side) {
   const n = 128, levels = [low, portY-portHalfHeight, portY+portHalfHeight, high];
   const active = (i,j) => j>=0 && j<3 && !(j===1 && Math.cos((i+.5)*2*Math.PI/n)*side>.84);
   const point = (r,y,i) => new THREE.Vector3(r*Math.cos(i*2*Math.PI/n),y,r*Math.sin(i*2*Math.PI/n));

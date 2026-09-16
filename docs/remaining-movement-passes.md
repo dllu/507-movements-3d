@@ -506,3 +506,26 @@ All 99 focused tests, the production build and twelve packaged playback/mobile
 checks pass. A twelve-movement screen
 reports no nonfinite data, scene growth or replacement playback geometry.
 Detailed scope and physical limits are linked from [review progress](review-progress.md).
+
+
+## Nineteenth parallel batch
+
+- **370/393:** reuse the clock ratchet follower and bored joints; reconstruct
+  the lens cup's captured ball/socket. Indexing and cup spin remain prescribed.
+- **441 follow-up:** finite pin/shoe contact and clear receiver replace the
+  previous geometric exception; impact and passive return remain open.
+- **450/451:** reuse finite pump passages and lever joints, with a chamber-fit
+  volume envelope for water and air.
+- **452–454:** extend ported walls to multiple branches, connect lever/plate
+  joints and separate discharge routes from moving parts.
+- **430–438 timing:** preserve the reviewed 5.4–6-second periods through the
+  actual production display wrapper.
+
+The shared parts accelerate these corrections without treating visual clearance
+as hydraulic or passive-force validation. Scope, source assumptions and remaining
+limits are linked from [review progress](review-progress.md).
+
+All 149 focused tests, the production build and seventeen packaged playback/mobile
+checks pass. The seventeen-movement screen reports no flags. The final 453
+fixed-axle follow-up received its own repeated interface, screen and packaged
+checks after rebuilding.

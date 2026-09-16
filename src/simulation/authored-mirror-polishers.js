@@ -1,3 +1,4 @@
+import { correctMirrorPolisher } from './polishing-joint-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -98,8 +99,8 @@ function makeTelescopingFollower({ darkMaterial, followerMaterial }) {
   };
   group.userData.setEndpoints = (upper, lower) => {
     const midpoint = upper.clone().lerp(lower, 0.57);
-    setSegment(outer, upper, midpoint);
-    setSegment(inner, midpoint, lower);
+    setSegment(outer, upper, midpoint.clone().lerp(lower, 0.10));
+    setSegment(inner, midpoint.clone().lerp(upper, 0.08), lower);
     upperJoint.position.copy(upper);
     lowerJoint.position.copy(lower);
     group.userData.currentLength = upper.distanceTo(lower);
@@ -590,6 +591,7 @@ function mirrorPolishingCompoundMotion(movement) {
       state.eccentricCenter,
       state.carrierPivotWorld,
     );
+    root.userData.updatePolishingInterfaces?.(state);
     root.userData.currentState = state;
     root.userData.constraints = {
       clickContact: {
@@ -764,15 +766,16 @@ function mirrorPolishingCompoundMotion(movement) {
     },
   };
 
+  correctMirrorPolisher(root);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.48, -2.18, -0.55),
-    new THREE.Vector3(2.48, 3.32, 0.66),
+    new THREE.Vector3(-2.48, -3.88, -0.55),
+    new THREE.Vector3(2.48, 3.40, 0.80),
   );
   root.userData.groundFloorY = -2.17;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.6, 3.7, 8.8),
+    cameraDirection: new THREE.Vector3(.6, .8, 15),
     root,
     update,
   };

@@ -1,3 +1,30 @@
+# Nineteenth family pass: working pump passages and polishing joints
+
+Eight movements receive geometry or contact-path corrections: 370, 393, 441 and
+450–454. Nine previously reviewed water wheels/turbines (430–438) also retain
+their intended playback periods through the production timing wrapper. The
+complete mechanical review remains active.
+
+- [Polishing interfaces](polishing-family-review.md): shared finite ratchet
+  follower, bored crank/carrier joints and a captured lens ball/socket.
+- [441's trip](persian-bucket-trip-review.md): continuous pin/shoe tangency,
+  bucket/float clearance and a receiver that catches the rendered discharge.
+- [450/451 force pumps](force-pump-family-review.md): bored link joints, open
+  delivery passages and a fitted air-chamber water/air envelope.
+- [452–454 pump interfaces](flexible-pump-family-review.md): finite rod and
+  lever bores, ported valve chambers, connected link eyes and clear pipe routes.
+
+The 441 geometric trip/receiver exception from the previous pass is resolved.
+Passive bucket impact and return remain unsolved. Polishing indexing/spin,
+flexible pump shapes, valve timing and fluid laws retain documented prescribed
+approximations. These bounded corrections do not qualify passive dynamics.
+
+All 149 focused tests and seventeen packaged playback/mobile checks pass.
+The production build succeeds, and the seventeen-movement screen reports no
+nonfinite data, scene growth or new geometry during playback. After a final
+453 fixed-axle extension, its nine interface tests, screen and packaged check
+were repeated against the rebuilt production bundle.
+
 # Eighteenth family pass: maintaining power, lift pumps and hook release
 
 The next pass covers 320/321, 441–443 and 448/449, plus the outstanding 492 hook

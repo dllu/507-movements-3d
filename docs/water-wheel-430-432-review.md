@@ -27,3 +27,7 @@ Thirty existing tests plus five finite-geometry tests pass. The added checks sam
 Default/front/rear views were compared with the engravings. Final default-camera projection sweeps found zero outside vertices for all three wheels over 65 poses. Screenshots and logs remain in `/dev/shm/water-wheel-*` and `/dev/shm/430432-browser*.log`.
 
 The water remains an explanatory animation. Cell fill is a prescribed clipping height, not a conserved volume or solved free surface; stream tubes and moving dots illustrate direction rather than fluid particles or validated fluid-solid contacts. Normalized torque diagnostics use idealized prescribed loads/forces, not the visible mesh's changing mass distribution. Gate-thread action, flow separation, splashing, leakage through clearances, water pressure, efficiency, inertia and load-dependent speed remain unmodeled. Axial bearing construction, bucket details, dimensions, transparency and timing are inferred. MuJoCo rigid-body contact would not establish hydrodynamic validity, so no physics claim or unnecessary live solver was introduced.
+
+### Production timing follow-up
+
+The nineteenth pass found that the production display wrapper replaced the factory's target period with two seconds. These movements now explicitly preserve their reviewed 5.4–6-second cycle through `minimumDisplayCycleSeconds`; the actual production wrapper is covered by `tests/reviewed-cycle-timing.test.mjs`. Earlier cycle-duration descriptions referred to the authored motion, not the effective viewer speed before this correction.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -108,6 +109,7 @@ function diaphragmForcePump(movement) {
   const leverAmplitude = THREE.MathUtils.degToRad(15);
   const diaphragmCenterX = 0;
   const connectingRodLength = 1.20;
+  const linkEyeHeight = .20;
   const diaphragmRadius = 1.15;
   const diaphragmRimY = 1.50;
   const chamberBottomY = -0.35;
@@ -161,7 +163,7 @@ function diaphragmForcePump(movement) {
     const verticalProjection = Math.sqrt(
       connectingRodLength ** 2 - horizontalOffset ** 2,
     );
-    const diaphragmCenterY = leverPin.y - verticalProjection;
+    const diaphragmCenterY = leverPin.y - verticalProjection - linkEyeHeight;
     const diaphragmCenterVelocity = leverPinVelocity.y
       + horizontalOffset * leverPinVelocity.x / verticalProjection;
     const diaphragmCenterAcceleration = leverPinAcceleration.y
@@ -173,7 +175,7 @@ function diaphragmForcePump(movement) {
         / verticalProjection ** 3;
     const connectingRodBottom = new THREE.Vector3(
       diaphragmCenterX,
-      diaphragmCenterY,
+      diaphragmCenterY + linkEyeHeight,
       0,
     );
     const averageWaterTopY = diaphragmRimY
@@ -574,6 +576,7 @@ function diaphragmForcePump(movement) {
     );
     suctionValve.rotation.z = state.suctionValveAngle;
     deliveryValve.rotation.z = state.deliveryValveAngle;
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -581,6 +584,7 @@ function diaphragmForcePump(movement) {
     chamberArea,
     chamberBottomY,
     connectingRodLength,
+    linkEyeHeight,
     cycleDuration,
     deliveryValveSeat,
     diaphragmCenterX,
@@ -704,12 +708,13 @@ function diaphragmForcePump(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.10, groundY, -1.58),
-    new THREE.Vector3(3.05, 3.55, 1.58),
+    new THREE.Vector3(-4.40, groundY, -1.58),
+    new THREE.Vector3(3.55, 3.55, 1.58),
   );
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(6.4, 4.7, 10.6);
   root.userData.groundFloorY = groundY;
+  correctFlexiblePumpParts(root,454);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

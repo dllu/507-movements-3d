@@ -7,7 +7,17 @@ import {createAuthoredHydraulicRamMovement} from '../src/simulation/authored-hyd
 import {createAuthoredRopeSteeringMovement} from '../src/simulation/authored-rope-steering.js';
 import {createAuthoredLiftPumpMovement} from '../src/simulation/authored-lift-pumps.js';
 
-for(const [id,factory] of [[439,createAuthoredWaterBucketReciprocatorMovement],
+import {createAuthoredOvershotWaterWheelMovement} from '../src/simulation/authored-overshot-water-wheels.js';
+import {createAuthoredUndershotWaterWheelMovement} from '../src/simulation/authored-undershot-water-wheels.js';
+import {createAuthoredBreastWaterWheelMovement} from '../src/simulation/authored-breast-water-wheels.js';
+import {createAuthoredHorizontalOvershotWaterWheelMovement} from '../src/simulation/authored-horizontal-overshot-water-wheels.js';
+import {createAuthoredFourneyronTurbineMovement} from '../src/simulation/authored-fourneyron-turbines.js';
+import {createAuthoredWarrenCentralDischargeTurbineMovement} from '../src/simulation/authored-warren-central-discharge-turbines.js';
+import {createAuthoredJonvalTurbineMovement} from '../src/simulation/authored-jonval-turbines.js';
+import {createAuthoredVoluteWaterWheelMovement} from '../src/simulation/authored-volute-water-wheels.js';
+import {createAuthoredBarkerReactionMillMovement} from '../src/simulation/authored-barker-reaction-mills.js';
+
+for(const [id,factory] of [[430,createAuthoredOvershotWaterWheelMovement],[431,createAuthoredUndershotWaterWheelMovement],[432,createAuthoredBreastWaterWheelMovement],[433,createAuthoredHorizontalOvershotWaterWheelMovement],[434,createAuthoredFourneyronTurbineMovement],[435,createAuthoredWarrenCentralDischargeTurbineMovement],[436,createAuthoredJonvalTurbineMovement],[437,createAuthoredVoluteWaterWheelMovement],[438,createAuthoredBarkerReactionMillMovement],[439,createAuthoredWaterBucketReciprocatorMovement],
   [440,createAuthoredTippingWaterMeterMovement],[444,createAuthoredHydraulicRamMovement],
   [490,createAuthoredRopeSteeringMovement],[448,createAuthoredLiftPumpMovement],[449,createAuthoredLiftPumpMovement]]) {
   test(`${id} production display timing preserves the reviewed minimum cycle`,()=>{

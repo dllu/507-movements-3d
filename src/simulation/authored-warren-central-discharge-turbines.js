@@ -568,6 +568,7 @@ function warrenCentralDischargeTurbine(movement) {
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite vanes, shaft clearances and open water passages; flow paths and angular-momentum diagnostics remain prescribed illustrations, not solved pressure, efficiency or load response.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
   casingFloor.receiveShadow = true;
   update(0);

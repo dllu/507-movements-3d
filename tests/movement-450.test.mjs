@@ -295,9 +295,9 @@ test('movement 450 update maps solid piston, lever linkage, two checks, and flow
       geometry.pistonRodJointOffset - geometry.pistonThickness / 2,
     5e-16, `rendered pump-rod length at ${phase}`);
     const endpoints = sliderLinkEndpoints();
-    vectorNear(endpoints.slider, state.pistonRodJoint, 8e-16,
+    vectorNear(endpoints.slider, state.pistonRodJoint.clone().setZ(.26), 8e-16,
       `rendered slider endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin, 8e-16,
+    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.26), 8e-16,
       `rendered lever endpoint at ${phase}`);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,

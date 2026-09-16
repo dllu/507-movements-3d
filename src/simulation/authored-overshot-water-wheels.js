@@ -579,6 +579,7 @@ function overshotWaterWheel(movement) {
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -2,13 +2,9 @@
 
 Sources: [Persian wheel 441](https://507movements.com/mm_441.html), [Eisach pot wheel 442](https://507movements.com/mm_442.html), [stream-driven screw 443](https://507movements.com/mm_443.html), and their local engravings. None of the fetched pages contains `ae.add_model` or `mm_present`; all mark their animation control unavailable. The captions establish water-lifting topology, but provide no dimensions or operating rates.
 
-## 441 — partial correction; trip contact remains open
+## 441 — finite trip and receiver follow-up completed
 
-The curved floats were solid slabs with water drawn over their faces. They now have finite floors and sidewalls, open ends, and six matching openings through the hollow shaft wall. Channel water and markers are inside the passages. Buckets now have finite tapered walls, suspension eyes have actual bores and matching pins, and the shaft bearings have finite journals. The shaft is extended to place its standards beyond the bucket width. The stream bed and base are below the complete bucket sweep instead of intersecting it. Water extends from the bed to the illustrated stream surface.
-
-**441 is not mechanically corrected as a whole.** The legacy prescribed 76-degree tipping motion still interpenetrates its trip apparatus and receiver. For bucket 6, at input phase 1/12 (one second of the 12-second cycle), `stationary-pin-trip-lug-6` and `fixed-pin-tilting-each-bucket-at-high-station` have coincident planar centers. Their radii are 0.09 and 0.10; an external round contact would require a 0.19 center distance. Moving the round pin slightly does not produce the prescribed tilt as a passive contact constraint.
-
-A 65-pose surface audit also finds `open-irrigation-bucket-6` inside the fixed trip pin at frame 4/64 (0.75 seconds), with sampled depth 0.01206. `curved-stream-driven-float-blade-6` intersects the receiving-trough geometry at frame 1/64, with sampled depth 0.01625. These are examples of a family of remaining receiver/trip collisions, not a complete maximum-penetration calculation. The production metadata explicitly marks this model `solidReview.status = 'partial'`. A dedicated trip/receiver reconstruction remains necessary; the scoped passing clearance test intentionally covers only the bed and shaft supports.
+The initial pass supplied hollow float channels, finite bucket walls and suspension bores, extended shaft journals and a bed below the bucket sweep. Its unresolved lug/pin and receiver intersections are superseded by the [441 trip and receiver review](persian-bucket-trip-review.md): a finite side shoe now follows round-pin tangency, and the receiving trough clears the moving parts while collecting the rendered discharge paths. Passive impact/swing and fluid behavior remain explicit approximations; this is a qualified geometric reconstruction, not a complete dynamics model.
 
 ## 442 — finite wheel and receiver corrections
 
@@ -32,6 +28,6 @@ Run:
 node --test tests/water-lifting-441-443-solids.test.mjs tests/movement-441.test.mjs tests/movement-442.test.mjs tests/movement-443.test.mjs
 ```
 
-38 tests pass, including repeated state/update object and geometry identity checks, sampled finite moving-vs-fixed clearances for 442/443 and the qualified subset of 441, 442 water containment, 443 flight/casing radial closure, and open 441 hub ports with retained channel floors. Clearance tests sample actual triangle surfaces over 65 poses; they are regressions, not exhaustive collision proofs.
+38 tests pass, including repeated state/update object and geometry identity checks, sampled finite moving-vs-fixed clearances for 442/443 and the bed/support subset of 441 (the follow-up adds the trip and receiver tests), 442 water containment, 443 flight/casing radial closure, and open 441 hub ports with retained channel floors. Clearance tests sample actual triangle surfaces over 65 poses; they are regressions, not exhaustive collision proofs.
 
 Chrome source/default, front and reverse-oblique views were reviewed. Full-cycle default framing sweeps contain all visible vertices. Bulk captures and diagnostic logs stay in `/dev/shm`. No new live solver or native process is used; the remaining unknowns concern trip contact and fluid behavior, not a reason to label scripted playback as solved physics.

@@ -21,7 +21,7 @@ for (const [id,create] of factories) {
     } finally {disposeObject3D(model.root);}
   });
 
-  test(`${id}: finite rotating parts clear ${id===441?'bed and shaft supports (trip remains unqualified)':'fixed apparatus'}`, () => {
+  test(`${id}: finite rotating parts clear ${id===441?'bed and shaft supports':'fixed apparatus'}`, () => {
     const model=create({id}),u=model.root.userData,b=u.blocks;
     try {
       const rotor=b.wheel??b.rotor,moving=[],fixed=[];
@@ -96,6 +96,6 @@ test('441: each curved channel opens through the hollow hub while retaining a fi
       assert.equal(surface.inside(floor),true,'finite channel floor remains');
       assert.ok(ports>5);
     });
-    assert.equal(model.root.userData.solidReview.status,'partial');
+    assert.equal(model.root.userData.solidReview.status,'qualified-geometry');
   }finally{disposeObject3D(model.root);}
 });

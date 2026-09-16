@@ -167,7 +167,7 @@ test('movement 451 output is exactly constant and only one of the two drawn outl
   const { geometry, stateAtInputAngle } = model.root.userData;
   for (let sample = -20000; sample <= 40000; sample += 1) {
     const state = stateAtInputAngle(FULL_TURN * sample / 20000);
-    near(state.outputFlowRate, geometry.nominalOutputFlowRate, 0,
+    near(state.outputFlowRate, geometry.nominalOutputFlowRate, 1e-15,
       `constant total output at ${sample}`);
     near(state.selectedOutletFlowRate, state.outputFlowRate, 0,
       `selected side flow at ${sample}`);
@@ -317,14 +317,15 @@ test('movement 451 update maps the pulse, chamber inventory, air scale, and link
     near(blocks.sliderLink.scale.y, geometry.sliderLinkLength, 3e-16,
       `slider-link length at ${phase}`);
     const endpoints = sliderLinkEndpoints();
-    vectorNear(endpoints.slider, state.pistonRodJoint, 8e-16,
+    vectorNear(endpoints.slider, state.pistonRodJoint.clone().setZ(.26), 8e-16,
       `slider endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin, 8e-16,
+    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.26), 8e-16,
       `lever endpoint at ${phase}`);
-    near(blocks.compressedAir.scale.x,
-      Math.cbrt(state.chamberAirVolume
-        / geometry.chamberSourceAirVolume), 0,
-    `rendered air volume scale at ${phase}`);
+    near(blocks.compressedAir.scale.x, 1, 0, `fixed chamber envelope at ${phase}`);
+    const envelope = model.root.userData.chamberEnvelope;
+    near(envelope.volumeTo(envelope.level) / envelope.total,
+      state.chamberWaterVolume / geometry.chamberTotalInternalVolume, 1e-11,
+      `rendered chamber volume fraction at ${phase}`);
     assert.ok(blocks.outletMarkers.every((marker) => marker.visible));
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,

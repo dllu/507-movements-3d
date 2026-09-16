@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctForcePumpParts} from './force-pump-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -51,13 +52,13 @@ function ordinaryForcePump(movement) {
   const leverRodPinRadius = 1.02;
   const handleLength = 3.65;
   const sliderLinkLength = 0.48;
-  const pistonRodJointOffset = 1.34;
+  const pistonRodJointOffset = 2.04;
   const pistonThickness = 0.24;
   const pistonRadius = 0.68;
-  const barrelWaterRadius = 0.61;
+  const barrelWaterRadius = 0.68;
   const barrelArea = Math.PI * barrelWaterRadius ** 2;
   const suctionValveSeatY = -1.17;
-  const deliveryValveSeatY = -0.39;
+  const deliveryValveSeatY = .08;
   const maximumValveLift = 0.17;
   const groundY = -2.54;
 
@@ -456,6 +457,7 @@ function ordinaryForcePump(movement) {
       marker.position.z = 0.21;
       marker.visible = flowing;
     });
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -600,6 +602,7 @@ function ordinaryForcePump(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.2, 4.6, 10.7);
   root.userData.groundFloorY = groundY;
+  correctForcePumpParts(root,movement.id);
   markShadows(root);
   base.receiveShadow = true;
   update(0);
@@ -620,13 +623,13 @@ function airChamberForcePump(movement) {
   const leverRodPinRadius = 1.02;
   const handleLength = 3.58;
   const sliderLinkLength = 0.48;
-  const pistonRodJointOffset = 1.34;
+  const pistonRodJointOffset = 2.04;
   const pistonThickness = 0.24;
   const pistonRadius = 0.68;
-  const barrelWaterRadius = 0.61;
+  const barrelWaterRadius = 0.68;
   const barrelArea = Math.PI * barrelWaterRadius ** 2;
   const suctionValveSeatY = -1.17;
-  const deliveryValveSeatY = -0.35;
+  const deliveryValveSeatY = .60;
   const maximumValveLift = 0.17;
   const chamberCenter = new THREE.Vector3(-1.02, 1.16, 0);
   const chamberTotalInternalVolume = 1.80;
@@ -1216,6 +1219,7 @@ function airChamberForcePump(movement) {
       marker.position.copy(sideOutletCurve.getPoint(travel));
       marker.position.z = 0.18;
     });
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -1388,6 +1392,7 @@ function airChamberForcePump(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.5, 4.8, 10.8);
   root.userData.groundFloorY = groundY;
+  correctForcePumpParts(root,movement.id);
   markShadows(root);
   base.receiveShadow = true;
   update(0);
