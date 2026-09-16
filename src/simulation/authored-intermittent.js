@@ -1,3 +1,7 @@
+import { stop240Definitions } from './ratchet-stop-240-contact.js';
+import { stateStops240, finishStops240, stop240MaximumLifts } from './ratchet-stop-240-working-parts.js';
+import { crown237Return, crown237LiftAtTravel, crown237Triangles, crown237Closest, installCrown237Parts, fitCrown237 } from './crown-pawl-237-working-parts.js';
+import { finishSingleTooth241 } from './single-tooth-241-working-parts.js';
 import { installAlternatingPawl236 } from './alternating-pawl-236-working-parts.js';
 import { starTappetState, finishStarTappet } from './star-tappet-working-parts.js';
 import { carrierPawlFlank225, carrierPawlClearance225, installCarrierPawl225 } from './carrier-pawl-225-working-parts.js';
@@ -18746,91 +18750,13 @@ function coaxialArmCrownRatchet(movement) {
     };
   };
   const baseTipGeometry = tipGeometryAtLift(0);
-  let peakLiftLow = 0;
-  let peakLiftHigh = Math.PI / 2;
-  for (let iteration = 0; iteration < 72; iteration += 1) {
-    const middle = (peakLiftLow + peakLiftHigh) / 2;
-    if (tipGeometryAtLift(middle).bottomHeight < wheelTipHeight) {
-      peakLiftLow = middle;
-    } else {
-      peakLiftHigh = middle;
-    }
-  }
-  const peakLiftAngle = (peakLiftLow + peakLiftHigh) / 2;
-  const peakTipGeometry = tipGeometryAtLift(peakLiftAngle);
-  const releaseReturnTravel = toothPitch
-    - faceContactOffset
-    - (peakTipGeometry.angleOffset - baseTipAngleOffset);
-  const rampContactStartTravel = (
-    (baseTipGeometry.bottomHeight - wheelBaseHeight)
-      / wheelToothHeight * toothPitch
-  ) - faceContactOffset;
+  const peakLiftAngle = crown237Return.peakLift;
+  const peakLiftDerivative = 0;
+  const releaseReturnTravel = crown237Return.peakTravel;
+  const rampContactStartTravel = crown237Return.startTravel;
   const fallTravel = armSwing - releaseReturnTravel;
-  if (rampContactStartTravel <= 0 || fallTravel <= 0) {
-    throw new RangeError('The crown-ratchet pawl has no reset interval.');
-  }
   const rampSlope = wheelToothHeight / toothPitch;
-  const liftDerivativeOnRamp = (tipGeometry) => rampSlope / (
-    tipGeometry.verticalDerivative
-      - rampSlope * tipGeometry.angleOffsetDerivative
-  );
-  const peakLiftDerivative = liftDerivativeOnRamp(peakTipGeometry);
-
-  const liftAtReturnTravel = (returnTravel) => {
-    if (returnTravel <= rampContactStartTravel + boundaryEpsilon) {
-      return {
-        derivativePerTravel: 0,
-        liftAngle: 0,
-        mode: 'clear-over-low-crown-ramp',
-      };
-    }
-    if (returnTravel <= releaseReturnTravel + boundaryEpsilon) {
-      let low = 0;
-      let high = peakLiftAngle;
-      for (let iteration = 0; iteration < 64; iteration += 1) {
-        const middle = (low + high) / 2;
-        const tipGeometry = tipGeometryAtLift(middle);
-        const rawPhase = faceContactOffset
-          + returnTravel
-          + tipGeometry.angleOffset
-          - baseTipAngleOffset;
-        const clearance = tipGeometry.bottomHeight
-          - wheelBaseHeight
-          - rampSlope * rawPhase;
-        if (clearance < 0) low = middle;
-        else high = middle;
-      }
-      const liftAngle = (low + high) / 2;
-      const tipGeometry = tipGeometryAtLift(liftAngle);
-      return {
-        derivativePerTravel: liftDerivativeOnRamp(tipGeometry),
-        liftAngle,
-        mode: 'pawl-climbing-crown-ramp',
-      };
-    }
-    const normalizedFall = THREE.MathUtils.clamp(
-      (returnTravel - releaseReturnTravel) / fallTravel,
-      0,
-      1,
-    );
-    const squared = normalizedFall ** 2;
-    const cubed = normalizedFall ** 3;
-    const valueBasis = 2 * cubed - 3 * squared + 1;
-    const tangentBasis = cubed - 2 * squared + normalizedFall;
-    const valueDerivative = 6 * squared - 6 * normalizedFall;
-    const tangentDerivative = 3 * squared - 4 * normalizedFall + 1;
-    return {
-      derivativePerTravel: (
-        valueDerivative * peakLiftAngle
-          + tangentDerivative * fallTravel * peakLiftDerivative
-      ) / fallTravel,
-      liftAngle: valueBasis * peakLiftAngle
-        + tangentBasis * fallTravel * peakLiftDerivative,
-      mode: normalizedFall >= 1 - boundaryEpsilon
-        ? 'pawl-seated-after-crown-face'
-        : 'pawl-free-fall-behind-crown-face',
-    };
-  };
+  const liftAtReturnTravel = crown237LiftAtTravel;
 
   const makeCrownWheel = () => {
     const crown = makePlanarRotor();
@@ -18958,6 +18884,7 @@ function coaxialArmCrownRatchet(movement) {
   };
 
   const crownWheel = makeCrownWheel();
+  const contactTriangles = crown237Triangles(crownWheel);
   root.add(crownWheel);
   const outputShaft = makeShaft({
     axis: verticalAxis,
@@ -19249,22 +19176,15 @@ function coaxialArmCrownRatchet(movement) {
         toothPitch,
       )
       : crownSurface.height;
-    const resetProfileClearance = tipGeometry.bottomHeight
-      - resetSurfaceHeight;
+    const localCenter = new THREE.Vector3(tipPlanar.x, tipPlanar.y, tipGeometry.centerHeight).applyAxisAngle(Z_AXIS, -wheelAngle);
+    const finiteContact = crown237Closest(localCenter, contactTriangles);
+    const resetProfileClearance = finiteContact.distance - pawlNoseRadius;
+    const finitePoint = finiteContact.point.clone().applyAxisAngle(Z_AXIS, wheelAngle);
+    const finiteNormal = finiteContact.normal.clone().applyAxisAngle(Z_AXIS, wheelAngle);
     const returnConstraintVelocityError = climbingRamp
-      ? Math.abs(
-        tipGeometry.verticalDerivative * pawlLiftAngularSpeed
-          - rampSlope * (
-            halfTravelSpeed
-              + tipGeometry.angleOffsetDerivative
-                * pawlLiftAngularSpeed
-          ),
-      )
+      ? Math.abs(planarTipVelocity.x * finiteNormal.x + planarTipVelocity.y * finiteNormal.y + tipVerticalSpeed * finiteNormal.z)
       : null;
-    const rampContactWorld = planarToWorld(
-      tipPlanar,
-      resetSurfaceHeight,
-    );
+    const rampContactWorld = planarToWorld(finitePoint, finitePoint.z);
     return {
       activePhysicalToothIndex,
       activeToothIndex,
@@ -19518,8 +19438,9 @@ function coaxialArmCrownRatchet(movement) {
     };
     root.userData.kinematics = state;
   };
-  update(0);
-  return finish(root, update, new THREE.Vector3(-5, 5, 7));
+  installCrown237Parts(root);
+  fitCrown237(root, update);
+  return finish(root, update, new THREE.Vector3(5, 3, 12));
 }
 
 function threeAlternativeRatchetStops(movement) {
@@ -19855,21 +19776,11 @@ function threeAlternativeRatchetStops(movement) {
     return (after.angleDerivative - before.angleDerivative) / (2 * delta);
   };
 
+  // The finite follower maxima were baked offline; avoid thousands of
+  // circle/edge intersections during browser construction.
   for (const stop of stopDefinitions) {
-    let maximumLift = 0;
-    for (let sample = 0; sample <= 1024; sample += 1) {
-      const contact = contactAtWheelAngle(
-        stop,
-        -toothPitch * sample / 1024,
-      );
-      const lift = positiveModulo(
-        stop.liftSign * (contact.angle - stop.restAngle),
-        fullTurn,
-      );
-      maximumLift = Math.max(maximumLift, lift);
-    }
-    stop.maximumContactLift = maximumLift;
-    stop.parkLift = maximumLift + THREE.MathUtils.degToRad(9);
+    stop.maximumContactLift = stop240MaximumLifts[stop.index];
+    stop.parkLift = stop.maximumContactLift + THREE.MathUtils.degToRad(9);
     stop.parkDelta = stop.liftSign * stop.parkLift;
   }
 
@@ -20025,7 +19936,8 @@ function threeAlternativeRatchetStops(movement) {
   const springBearingLocal = sourceToWorld(sourceSpringJoint)
     .sub(springAnchor);
 
-  const stateAtCycleCoordinate = (cycleCoordinate) => {
+  const finiteStopDefinitions = stop240Definitions(stopDefinitions, localProfilePoints);
+  const nominalStateAtCycleCoordinate = (cycleCoordinate) => {
     const globalStepCoordinate = cycleCoordinate * demonstrationsPerCycle;
     const stepIndex = Math.floor(globalStepCoordinate);
     const stepPhase = globalStepCoordinate - stepIndex;
@@ -20178,6 +20090,7 @@ function threeAlternativeRatchetStops(movement) {
       wheelPitchesAdvanced: -wheelAngle / toothPitch,
     };
   };
+  const stateAtCycleCoordinate = coordinate => stateStops240(nominalStateAtCycleCoordinate(coordinate), finiteStopDefinitions, localProfilePoints, toothPitch);
   const stateAtTime = (time) => stateAtCycleCoordinate(
     initialCycleCoordinate + time * cyclesPerSecond,
   );
@@ -20337,7 +20250,7 @@ function threeAlternativeRatchetStops(movement) {
       block.group.userData.angularSpeed = pawl.angularSpeed;
       block.group.userData.engaged = pawl.engaged;
       block.group.userData.mode = pawl.mode;
-      block.contactMarker.visible = pawl.contact !== null;
+      block.contactMarker.visible = false; // Diagnostic points are metadata, not working parts.
       if (pawl.contact) {
         block.contactMarker.position.x = pawl.contact.point.x;
         block.contactMarker.position.y = pawl.contact.point.y;
@@ -20360,8 +20273,9 @@ function threeAlternativeRatchetStops(movement) {
     ]));
     root.userData.kinematics = state;
   };
+  finishStops240(root, finiteStopDefinitions);
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 5.6, 9));
+  return finish(root, update, new THREE.Vector3(1.1, 0.7, 18));
 }
 
 function singleToothContinuousRatchetIndex(movement) {
@@ -21132,7 +21046,7 @@ function singleToothContinuousRatchetIndex(movement) {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.6, 5.4, 8.6));
+  return finishSingleTooth241(finish(root, update, new THREE.Vector3(0.5, 0.5, 14)));
 }
 
 export function createAuthoredIntermittentMovement(movement) {

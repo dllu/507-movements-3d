@@ -229,28 +229,37 @@ matches its source motor direction. The final 58 focused checks, build,
 four-model screen and four packaged browser cases pass. Passive load behavior
 is still separate from the corrected geometric transmission.
 
+## Forty-first pass
+
+237/240/241 now have scoped finite-contact corrections in the linked
+[review progress](review-progress.md). Offline sphere and stop envelopes close
+working interference and depth gaps; non-expanding extrusions preserve 241's
+curved driver and click faces. All 39 focused checks, both bake checks, the
+production build, three-model screen and packaged browser cases pass. Passive
+bias, impact and loaded holding remain explicitly distinct from these results.
+
 ## Next independent lanes
 
-The [next stop-interface triage](ratchet-stop-next-pass-triage.md) has
-reproducible witnesses for three scoped factories in `authored-intermittent.js`.
-Parallel lanes must coordinate additive imports and use disjoint helpers.
+The [233/238/239 interface triage](stop-escapement-next-pass-triage.md) records
+actual rendered-solid witnesses and source/default/oblique browser inspection.
+Use disjoint factories and helpers, with imports coordinated centrally.
 
-- **237, crown pawl:** correct actual nose/body intrusion into the axial teeth
-  (0.01136/0.01059), preserving useful ramp, drive and drop contact.
-- **240, alternative stops:** bring all three working bodies across their
-  0.0484 depth gap, then qualify free running and rollback blocking for each
-  source alternative. Do not mistake the comparison plate for three
-  simultaneously loaded stops.
-- **241, single-tooth index:** reconstruct driver and holding-click faces
-  around actual 0.02953/0.03055 penetration witnesses, with continuous entry,
-  handoff and return, preserving the source rotation arrows and ratio.
+- **233, lantern stops:** close the latch's 0.01901 trundle intrusion and the
+  roller rim's 0.00919 overlap, preserving working roller and latch surfaces.
+- **238, seven-tooth escapement:** reconstruct finite pallets together with
+  their lock/impulse/drop sequence; actual working bars enter the wheel by
+  0.175 and 0.145. Preserve useful contact rather than cutting it away.
+- **239, opposed spur stops:** correct both 0.207 body intrusions, retaining
+  the source pivots, complete wheel and two opposed resisting faces.
 
-None of these pages registers a source animation. Use caption/engraving,
-ideal mechanical curves and the existing contour extractor for irregular
-visible bodies. Do not erase working faces merely to pass a clearance test.
+The pages mark animation unavailable. Use the caption/engraving and existing
+CV extractor for visible irregular outlines; infer occluded geometry and fit
+ideal mechanical working faces separately. Initial views fit without clipping,
+but 238's raised working bars also need a coherent attachment to the carrier.
 
 199's late retarding-only contact, 232's prescribed rocking-carrier branch,
-225/235/236's passive pawl bias and loaded transfer, 231's proportions,
+225/235/236's passive pawl bias and loaded transfer, 237/240/241's prescribed
+bias and ideal impact assumptions, 231's proportions,
 271's pickup holding/impact and omitted cord, and 284's loaded transfer/finite
 observation window remain follow-ups. 236's source fit is approximate around
 its inferred corner seat and initial handoff phase. Keep the broader goal

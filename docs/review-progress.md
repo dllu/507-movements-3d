@@ -1,3 +1,46 @@
+# Forty-first family pass: finite crown, stop and indexing contacts
+
+Three parallel lanes correct 237, 240 and 241 using actual working surfaces,
+shared finite plates and bored joints. The complete 507-movement review remains
+active; prescribed contact paths are not passive-load qualification.
+
+- [237 crown pawl](crown-pawl-237-contact-review.md): replace the nose-bottom
+  ramp law with an offline envelope against actual tooth triangles. A revised
+  curved shoulder clears the teeth, while the finite nose retains clockwise
+  drive and lifting ramp reactions. The radial hinge and output passages are
+  bored. Flat tooth faces, a smooth rim, no ground/fog and a lower fitted view
+  expose the complete shaft and improve the source comparison.
+- [240 alternative stops](ratchet-stop-240-review.md): close all three 0.0484
+  axial gaps with connected finite toes on the retaining flanks. Small offline
+  tables supply continuous free-run/drop paths; real bores and a captured spring
+  attachment replace overlapping joints. Actual normals oppose rollback but
+  tend to open the stops, so gravity/spring preload remains required. The
+  source-facing comparison selects one alternative at a time over twelve seconds.
+- [241 single-tooth index](single-tooth-241-contact-review.md): remove the
+  outward-expanding bevel that caused about 0.03 driver/click penetration.
+  Preserve the actual curved outlines, opposed rotations and one-tooth ratio.
+  Finite working normals and corner cones provide clockwise drive/holding.
+  Bored joints, recessed driver disk and flush indexes improve presentation.
+
+All **39 focused checks pass**, 13 per movement. Both offline bakes reproduce
+byte-identically. The final production build passes in 24.51 seconds. The
+three-model construction/update screen has no flags or geometry/object growth:
+construction 66–96 ms and sampled update P95 below 1.1 ms. Final source/default/
+oblique views show no browser errors or clipping; maximum normalized extents
+are 0.721, 0.829 and 0.851. All three packaged desktop/playback/mobile checks pass
+in 9.6 seconds. Bulk evidence remains under `/dev/shm/family41-*`.
+
+Remaining limits are explicit in the viewer and family reviews: 237's crest
+clearance/drop and wheel holding are prescribed, with a small separated pickup
+transition; 240's free-run paths have velocity corners and can separate from
+the ramp; 241 retains ideal entry/release impacts and singular sharp-click
+seating speed. Passive bias, friction, elastic response, loaded holding and
+impact compliance are not claimed as validated.
+
+The next [233/238/239 screen](stop-escapement-next-pass-triage.md) records actual
+latch/rim, pallet and stop penetrations and browser/source evidence. Its reusable
+screen and witnesses are committed separately as `c3ea80c`.
+
 # Fortieth family pass: useful pawl reactions and source-direction playback
 
 Four movements receive corrections: 197, 225, 235 and 236. Parallel pawl lanes

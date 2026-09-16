@@ -494,8 +494,8 @@ test('movement 241 renderer has overlapping contact planes and collision-free ou
       'rendered wheel-A angle');
     near(blocks.holdingClick.rotation.z, state.holdingAngleDelta, 2e-15,
       'rendered holding-click angle');
-    assert.equal(blocks.driverContactMarker.visible, state.driverEngaged);
-    assert.equal(blocks.holdingContactMarker.visible, true);
+    assert.equal(blocks.driverContactMarker.visible, false);
+    assert.equal(blocks.holdingContactMarker.visible, false);
     const renderedDriverContact = model.root.userData.contacts.driverToWheelA;
     assert.equal(renderedDriverContact !== null, state.driverContact !== null);
     if (state.driverContact) {
