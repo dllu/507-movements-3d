@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {horizontalVane,horizontalRing,horizontalPlate,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -38,7 +40,7 @@ function warrenCentralDischargeTurbine(movement) {
   const runnerBucketPitch = FULL_TURN / runnerBucketCount;
   const guideInnerRadius = 2.26;
   const guideOuterRadius = 3.45;
-  const runnerInnerRadius = 0.68;
+  const runnerInnerRadius = 1.45;
   const runnerOuterRadius = 2.14;
   const runnerBucketCenterRadius =
     (runnerInnerRadius + runnerOuterRadius) / 2;
@@ -213,20 +215,19 @@ function warrenCentralDischargeTurbine(movement) {
       new THREE.TorusGeometry(guideInnerRadius, 0.09, 9, 104),
       frameMaterial,
     );
-    innerRing.rotation.x = Math.PI / 2;
-    innerRing.position.y = height;
+    innerRing.geometry.dispose();innerRing.geometry=horizontalRing(guideInnerRadius-.035,guideInnerRadius+.035,height-.04,height+.04);innerRing.rotation.set(0,0,0);innerRing.position.y=0;
     innerRing.userData.role =
       `fixed-guide-inner-boundary-at-y-${height.toFixed(2)}`;
     const outerRing = new THREE.Mesh(
       new THREE.TorusGeometry(guideOuterRadius, 0.10, 9, 120),
       frameMaterial,
     );
-    outerRing.rotation.x = Math.PI / 2;
-    outerRing.position.y = height;
+    outerRing.geometry.dispose();outerRing.geometry=horizontalRing(guideOuterRadius-.035,guideOuterRadius+.035,height-.04,height+.04);outerRing.rotation.set(0,0,0);outerRing.position.y=0;
     outerRing.userData.role =
       `fixed-guide-outer-boundary-at-y-${height.toFixed(2)}`;
     fixedGuideAssembly.add(innerRing, outerRing);
   }
+  const guideFloor=new THREE.Mesh(horizontalRing(guideInnerRadius-.045,guideOuterRadius+.045,-.18,-.10),frameMaterial);guideFloor.userData.role='stationary-annular-guide-floor';fixedGuideAssembly.add(guideFloor);
   const fixedGuideVanes = [];
   for (let guideIndex = 0; guideIndex < fixedGuideCount; guideIndex += 1) {
     const baseAngle = guideIndex * FULL_TURN / fixedGuideCount;
@@ -251,6 +252,7 @@ function warrenCentralDischargeTurbine(movement) {
       guideMaterial,
       `fixed-outer-curved-guide-${guideIndex + 1}-of-sixteen`,
     );
+    vane.geometry.dispose();vane.geometry=horizontalVane(points,.038,-.10,.45);
     fixedGuideAssembly.add(vane);
     fixedGuideVanes.push(vane);
   }
@@ -264,20 +266,19 @@ function warrenCentralDischargeTurbine(movement) {
       new THREE.TorusGeometry(runnerInnerRadius, 0.08, 9, 72),
       runnerMaterial,
     );
-    innerRing.rotation.x = Math.PI / 2;
-    innerRing.position.y = height;
+    innerRing.geometry.dispose();innerRing.geometry=horizontalRing(runnerInnerRadius-.035,runnerInnerRadius+.035,height-.04,height+.04);innerRing.rotation.set(0,0,0);innerRing.position.y=0;
     innerRing.userData.role =
       `runner-inner-discharge-ring-at-y-${height.toFixed(2)}`;
     const outerRing = new THREE.Mesh(
       new THREE.TorusGeometry(runnerOuterRadius, 0.09, 9, 96),
       runnerMaterial,
     );
-    outerRing.rotation.x = Math.PI / 2;
-    outerRing.position.y = height;
+    outerRing.geometry.dispose();outerRing.geometry=horizontalRing(runnerOuterRadius-.035,runnerOuterRadius+.035,height-.04,height+.04);outerRing.rotation.set(0,0,0);outerRing.position.y=0;
     outerRing.userData.role =
       `runner-outer-inlet-ring-at-y-${height.toFixed(2)}`;
     runner.add(innerRing, outerRing);
   }
+  const runnerBackplate=new THREE.Mesh(horizontalRing(runnerInnerRadius-.04,runnerOuterRadius+.045,-.14,-.05),runnerMaterial);runnerBackplate.userData.role='annular-runner-backplate-joining-working-vanes';runner.add(runnerBackplate);
   const runnerBuckets = [];
   for (let bucketIndex = 0; bucketIndex < runnerBucketCount;
     bucketIndex += 1) {
@@ -305,6 +306,7 @@ function warrenCentralDischargeTurbine(movement) {
       runnerMaterial,
       `curved-inner-runner-bucket-${bucketIndex + 1}-of-twenty`,
     );
+    bucket.geometry.dispose();bucket.geometry=horizontalVane(points,.032,-.05,.45);
     runner.add(bucket);
     runnerBuckets.push(bucket);
   }
@@ -333,11 +335,11 @@ function warrenCentralDischargeTurbine(movement) {
   for (let armIndex = 0; armIndex < 4; armIndex += 1) {
     const angle = Math.PI / 4 + armIndex * Math.PI / 2;
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(2.55, 0.11, 0.11),
+      new THREE.BoxGeometry(1.56, 0.28, 0.15),
       runnerMaterial,
     );
-    arm.position.copy(horizontalRadial(angle).multiplyScalar(0.68));
-    arm.position.y = -0.27;
+    arm.position.copy(horizontalRadial(angle).multiplyScalar(.78));
+    arm.position.y = -.12;
     arm.rotation.y = angle;
     arm.userData.role =
       `runner-b-lower-support-arm-${armIndex + 1}-of-four`;
@@ -366,8 +368,8 @@ function warrenCentralDischargeTurbine(movement) {
       polarPoint(2.20, baseAngle, 0.21),
       polarPoint(1.70, baseAngle - 0.06, 0.20),
       polarPoint(1.18, baseAngle + 0.10, 0.18),
-      polarPoint(0.70, baseAngle + 0.34, 0.11),
-      polarPoint(0.22, baseAngle + 0.38, -0.06),
+      polarPoint(1.08, baseAngle + 0.34, -0.12),
+      polarPoint(.98, baseAngle + 0.38, -1.10),
     ];
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -413,7 +415,7 @@ function warrenCentralDischargeTurbine(movement) {
     new THREE.CylinderGeometry(0.36, 0.36, 1.34, 40),
     waterMaterial,
   );
-  centralDischarge.position.y = -0.58;
+  centralDischarge.geometry.dispose();centralDischarge.geometry=horizontalRing(.64,1.30,-1.25,-.50);centralDischarge.position.y=0;
   centralDischarge.userData.role =
     'water-discharging-downward-at-turbine-center';
   root.add(centralDischarge);
@@ -421,11 +423,14 @@ function warrenCentralDischargeTurbine(movement) {
     new THREE.CylinderGeometry(3.86, 3.86, 0.18, 88),
     frameMaterial,
   );
-  casingFloor.position.y = -0.54;
+  casingFloor.geometry.dispose();casingFloor.geometry=horizontalRing(1.38,3.86,-.63,-.45);casingFloor.position.y=0;
   casingFloor.userData.role =
     'fixed-foundation-below-warren-plan-view-turbine';
   root.add(casingFloor);
 
+  const shaftBearing=new THREE.Mesh(horizontalRing(.234,.36,-1.98,-1.78),frameMaterial);shaftBearing.userData.role='bored-output-shaft-lower-bearing';root.add(shaftBearing);
+  const bearingBridge=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.4,-.16],[3.4,-.16],[3.4,.16],[-3.4,.16]]),poly(circle([0,0],.234,128))),-1.98,-1.82),frameMaterial);bearingBridge.userData.role='lower-shaft-bearing-support-bridge';root.add(bearingBridge);
+  for(const x of[-3.35,3.35]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,1.23,.25),frameMaterial);post.position.set(x,-1.225,0);post.userData.role='lower-bearing-bridge-support-post';root.add(post);}
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -447,11 +452,15 @@ function warrenCentralDischargeTurbine(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'warren-inward-flow-turbine-with-fixed-outer-guides-and-clockwise-inner-runner-discharging-centrally',
     blocks: {
+      shaftBearing,
+      bearingBridge,
+      runnerBackplate,
+      guideFloor,
       casingFloor,
       centralDischarge,
       fixedGuideAssembly,
@@ -556,6 +565,9 @@ function warrenCentralDischargeTurbine(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(4.9, 8.8, 6.5);
   root.userData.groundFloorY = -2.12;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite vanes, shaft clearances and open water passages; flow paths and angular-momentum diagnostics remain prescribed illustrations, not solved pressure, efficiency or load response.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   casingFloor.receiveShadow = true;
   update(0);

@@ -1,3 +1,30 @@
+# Fifteenth family pass: face gears, tube couplings and horizontal turbines
+
+Nine further movements receive bounded corrections across three independent
+families: 219/224/414, 245/248/249 and 433/434/435. All 92 focused/regression
+tests, the production build and nine packaged playback/mobile checks pass. The
+complete review remains active. Shared geometry and offline generation replace decorative tracing and
+expensive per-frame construction.
+
+- [Variable face gears](variable-face-gear-review.md): finite working profiles,
+  through-slots and captured radial guides.
+- [Tube couplings](pipe-coupling-family-review.md): real mating threads, flat
+  seats, a hollow ball chamber and bored clamp hardware.
+- [Horizontal turbines](horizontal-water-wheel-433-435-review.md): finite vane
+  walls, connected supports, shaft bores and an open annular discharge path.
+
+The turbine review also caught and removed accidental per-update mesh creation;
+repeated state queries and updates now preserve scene objects and geometry.
+Fluid paths, contact loads and sealing remain explicit physical limitations.
+The general screen now detects scene growth and new geometry during playback.
+All 325 queued movements pass its finite-data and scene-growth checks; 490 alone
+flags replacement rope geometry for a later performance pass.
+
+The [389 experiment](lifting-contact-review.md#queued-389-jack-handoff) now has a
+continuous sampled pawl path with sufficient overtravel, preserved on a separate
+branch. Its changed pitch and settling law are not yet qualified for production.
+It does not delay the independent family corrections.
+
 # Fourteenth family pass: working slots, lifting contacts and water wheels
 
 Eight further movements receive bounded corrections: 205/208/209, 493/494

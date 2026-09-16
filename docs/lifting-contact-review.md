@@ -58,3 +58,12 @@ is preserved on the [separate WIP branch](https://github.com/dllu/507-movements-
 (commit `5d710e2`, with resume notes and candidate tests); publishing 493–494 does not claim to
 resolve it. The next pass must qualify continuity and overtravel together, while
 keeping prescribed preload and unloaded reset distinct from validated dynamics.
+
+A subsequent bounded experiment is preserved on
+[`codex/389-continuous-pawl`](https://github.com/dllu/507-movements-3d/tree/codex/389-continuous-pawl)
+(commit `1a4025d`). It identifies the disconnected feasible pawl-angle intervals
+and uses sufficient overtravel to connect them before seating. Three experimental
+tests pass, including full-cycle travel bounds at 32,768 and 65,536 samples.
+Production 389 remains unchanged: the reduced tooth pitch needs source review,
+and four legacy motion assertions still require reconciliation with the proposed
+settling/reset law. This experiment does not establish passive contact dynamics.

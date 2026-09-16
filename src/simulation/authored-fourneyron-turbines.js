@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {horizontalVane,horizontalRing,horizontalPlate,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -206,7 +208,7 @@ function fourneyronTurbine(movement) {
     new THREE.CylinderGeometry(guideOuterRadius, guideOuterRadius, 0.14, 72),
     frameMaterial,
   );
-  guideFloor.position.y = -0.17;
+  guideFloor.geometry.dispose();guideFloor.geometry=horizontalRing(.40,1.765,-.24,-.10);guideFloor.position.y=0;
   guideFloor.userData.role = 'fixed-floor-beneath-inner-guide-passages';
   fixedGuideAssembly.add(guideFloor);
   const centralInlet = new THREE.Mesh(
@@ -240,6 +242,7 @@ function fourneyronTurbine(movement) {
       guideMaterial,
       `fixed-curved-guide-shute-${guideIndex + 1}-of-six`,
     );
+    vane.geometry.dispose();vane.geometry=horizontalVane(points,.038,-.10,.45);
     fixedGuideAssembly.add(vane);
     fixedGuideVanes.push(vane);
   }
@@ -247,8 +250,7 @@ function fourneyronTurbine(movement) {
     new THREE.TorusGeometry(guideOuterRadius, 0.09, 10, 96),
     darkMaterial,
   );
-  guideBoundary.rotation.x = Math.PI / 2;
-  guideBoundary.position.y = 0.18;
+  guideBoundary.geometry.dispose();guideBoundary.geometry=horizontalRing(1.68,1.765,-.10,-.06);guideBoundary.rotation.set(0,0,0);guideBoundary.position.y=0;
   guideBoundary.userData.role = 'fixed-outer-boundary-of-guide-ring-A';
   fixedGuideAssembly.add(guideBoundary);
 
@@ -261,20 +263,19 @@ function fourneyronTurbine(movement) {
       new THREE.TorusGeometry(runnerInnerRadius, 0.08, 9, 96),
       runnerMaterial,
     );
-    innerRing.rotation.x = Math.PI / 2;
-    innerRing.position.y = height;
+    innerRing.geometry.dispose();innerRing.geometry=horizontalRing(runnerInnerRadius-.035,runnerInnerRadius+.035,height-.04,height+.04);innerRing.rotation.set(0,0,0);innerRing.position.y=0;
     innerRing.userData.role =
       `runner-inner-ring-at-y-${height.toFixed(2)}`;
     const outerRing = new THREE.Mesh(
       new THREE.TorusGeometry(runnerOuterRadius, 0.09, 9, 112),
       runnerMaterial,
     );
-    outerRing.rotation.x = Math.PI / 2;
-    outerRing.position.y = height;
+    outerRing.geometry.dispose();outerRing.geometry=horizontalRing(runnerOuterRadius-.035,runnerOuterRadius+.035,height-.04,height+.04);outerRing.rotation.set(0,0,0);outerRing.position.y=0;
     outerRing.userData.role =
       `runner-outer-ring-at-y-${height.toFixed(2)}`;
     runner.add(innerRing, outerRing);
   }
+  const runnerBackplate=new THREE.Mesh(horizontalRing(runnerInnerRadius-.04,runnerOuterRadius+.045,-.14,-.05),runnerMaterial);runnerBackplate.userData.role='annular-runner-backplate-joining-working-vanes';runner.add(runnerBackplate);
   const runnerBuckets = [];
   for (let bucketIndex = 0; bucketIndex < runnerBucketCount;
     bucketIndex += 1) {
@@ -302,6 +303,7 @@ function fourneyronTurbine(movement) {
       runnerMaterial,
       `curved-outer-runner-bucket-${bucketIndex + 1}-of-sixteen`,
     );
+    bucket.geometry.dispose();bucket.geometry=horizontalVane(points,.032,-.05,.45);
     runner.add(bucket);
     runnerBuckets.push(bucket);
   }
@@ -323,10 +325,10 @@ function fourneyronTurbine(movement) {
   for (let armIndex = 0; armIndex < 4; armIndex += 1) {
     const angle = armIndex * Math.PI / 2;
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(3.98, 0.12, 0.12),
+      new THREE.BoxGeometry(3.05, 0.12, 0.14),
       runnerMaterial,
     );
-    arm.position.copy(horizontalRadial(angle).multiplyScalar(1.04));
+    arm.position.copy(horizontalRadial(angle).multiplyScalar(1.525));
     arm.position.y = -0.36;
     arm.rotation.y = angle;
     arm.userData.role =
@@ -334,6 +336,7 @@ function fourneyronTurbine(movement) {
     runner.add(arm);
     runnerSupportArms.push(arm);
   }
+  const runnerRisers=[];for(let i=0;i<4;i++){const angle=i*Math.PI/2,post=new THREE.Mesh(new THREE.BoxGeometry(.16,.22,.16),runnerMaterial);post.position.copy(horizontalRadial(angle).multiplyScalar(2.50));post.position.y=-.24;post.userData.role='runner-spider-to-backplate-riser';runner.add(post);runnerRisers.push(post);}
   const rotationMarker = new THREE.Mesh(
     new THREE.BoxGeometry(0.72, 0.10, 0.12),
     whiteMaterial,
@@ -391,7 +394,7 @@ function fourneyronTurbine(movement) {
     new THREE.CylinderGeometry(3.62, 3.62, 0.18, 84),
     frameMaterial,
   );
-  casingFloor.position.y = -0.54;
+  casingFloor.geometry.dispose();casingFloor.geometry=horizontalRing(.344,3.62,-.63,-.45);casingFloor.position.y=0;
   casingFloor.userData.role =
     'fixed-foundation-below-plan-view-turbine';
   root.add(casingFloor);
@@ -405,6 +408,9 @@ function fourneyronTurbine(movement) {
     'circumferential-outward-water-discharge';
   root.add(dischargeRing);
 
+  const shaftBearing=new THREE.Mesh(horizontalRing(.224,.36,-1.98,-1.78),frameMaterial);shaftBearing.userData.role='bored-output-shaft-lower-bearing';root.add(shaftBearing);
+  const bearingBridge=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.4,-.16],[3.4,-.16],[3.4,.16],[-3.4,.16]]),poly(circle([0,0],.224,128))),-1.98,-1.82),frameMaterial);bearingBridge.userData.role='lower-shaft-bearing-support-bridge';root.add(bearingBridge);
+  for(const x of[-3.35,3.35]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,1.23,.25),frameMaterial);post.position.set(x,-1.225,0);post.userData.role='lower-bearing-bridge-support-post';root.add(post);}
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -426,11 +432,15 @@ function fourneyronTurbine(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'fourneyron-outward-flow-turbine-with-fixed-inner-curved-guides-and-clockwise-outer-runner',
     blocks: {
+      shaftBearing,
+      bearingBridge,
+      runnerBackplate,
+      runnerRisers,
       casingFloor,
       centralInlet,
       dischargeRing,
@@ -535,6 +545,9 @@ function fourneyronTurbine(movement) {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(4.9, 8.6, 6.4);
   root.userData.groundFloorY = -2.15;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite vanes, shaft clearances and open water passages; flow paths and angular-momentum diagnostics remain prescribed illustrations, not solved pressure, efficiency or load response.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   casingFloor.receiveShadow = true;
   update(0);

@@ -153,7 +153,7 @@ test('movement 224 keeps every stud in its slot and radial guide for 32,769 stat
 test('movement 224 has real cut-through slots and collision-free endpoint margins', () => {
   const model = createMovementModel(catalog.movements[223]);
   const { blocks, geometry } = model.root.userData;
-  assert.equal(blocks.slotPlate.geometry.parameters.shapes.holes.length, 6);
+  assert.equal(blocks.slotPlate.geometry.parameters.shapes.holes.length, 7);
   assert.equal(geometry.slotPaths.length, 6);
   assert.ok(geometry.slotHalfWidth > geometry.studRadius);
   assert.ok(geometry.slotEndArcClearance > 0.018);

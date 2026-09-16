@@ -1,3 +1,4 @@
+import {correctVariableFaceGear} from './variable-face-gear-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -690,12 +691,13 @@ function scrollGear(movement) {
     new THREE.Vector3(2.72, 2.68, 1.25),
   );
   root.userData.cameraDistanceScale = 1.01;
-  root.userData.cameraDirection = new THREE.Vector3(6.5, 4.0, 10.8);
+  root.userData.cameraDirection = new THREE.Vector3(2.8, -3, -12);
   root.userData.groundFloorY = -2.89;
   markShadows(root);
   base.receiveShadow = true;
   contactMarker.castShadow = false;
   update(0);
+  correctVariableFaceGear(root, 414);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

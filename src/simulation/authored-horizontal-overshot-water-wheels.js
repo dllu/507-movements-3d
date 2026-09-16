@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {horizontalVane,horizontalRing,horizontalPlate,horizontalTurned} from './horizontal-turbine-solids.js';
+import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -252,7 +254,8 @@ function horizontalOvershotWaterWheel(movement) {
       new THREE.BoxGeometry(bladeRadialLength, 0.11, 0.58),
       bucketMaterial,
     );
-    bladeFloor.position.set(bladeCenterRadius, 0.03, 0);
+    bladeFloor.geometry.dispose();bladeFloor.geometry=horizontalVane(Array.from({length:33},(_,i)=>{const t=i/32,r=bladeInnerRadius+t*bladeRadialLength;return new THREE.Vector3(r*Math.cos(.20*Math.sin(Math.PI*t)),0,-r*Math.sin(.20*Math.sin(Math.PI*t)));}),.045,-.10,.43);
+    bladeFloor.position.set(0,0,0);
     bladeFloor.userData.role =
       `radial-floor-of-horizontal-scoop-${bladeIndex + 1}`;
     bladeGroup.add(bladeFloor);
@@ -285,10 +288,10 @@ function horizontalOvershotWaterWheel(movement) {
   hubRing.userData.role = 'horizontal-wheel-central-bucket-support-ring';
   rotor.add(hubRing);
   const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 4.18, 36),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 4.70, 64),
     darkMaterial,
   );
-  shaft.position.y = 2.21;
+  shaft.position.y = 1.95;
   shaft.userData.role = 'rotating-vertical-output-shaft';
   rotor.add(shaft);
   const rotationMarker = new THREE.Mesh(
@@ -304,14 +307,15 @@ function horizontalOvershotWaterWheel(movement) {
     new THREE.TorusGeometry(0.34, 0.10, 10, 48),
     frameMaterial,
   );
-  lowerBearing.rotation.x = Math.PI / 2;
-  lowerBearing.position.y = 0.10;
+  lowerBearing.geometry.dispose();lowerBearing.geometry=horizontalRing(.194,.34,-.40,-.20);
+  lowerBearing.rotation.set(0,0,0);lowerBearing.position.y=0;
   lowerBearing.userData.role = 'fixed-lower-vertical-shaft-bearing';
   root.add(lowerBearing);
   const upperBearing = new THREE.Mesh(
     new THREE.CylinderGeometry(0.34, 0.34, 0.38, 32),
     frameMaterial,
   );
+  upperBearing.geometry.dispose();upperBearing.geometry=horizontalRing(.194,.34,-.19,.19);
   upperBearing.position.y = 4.04;
   upperBearing.userData.role = 'fixed-overhead-vertical-shaft-bearing';
   root.add(upperBearing);
@@ -319,6 +323,7 @@ function horizontalOvershotWaterWheel(movement) {
     new THREE.BoxGeometry(7.60, 0.28, 0.70),
     frameMaterial,
   );
+  overheadBeam.geometry.dispose();overheadBeam.geometry=horizontalPlate(polygonClipping.difference(poly([[-3.8,-.35],[3.8,-.35],[3.8,.35],[-3.8,.35]]),poly(circle([.10,-.18],.194,128))),-.14,.14);
   overheadBeam.position.set(-0.10, 4.20, -0.18);
   overheadBeam.userData.role = 'fixed-overhead-bearing-beam';
   root.add(overheadBeam);
@@ -326,6 +331,7 @@ function horizontalOvershotWaterWheel(movement) {
     new THREE.ConeGeometry(0.30, 0.54, 28),
     frameMaterial,
   );
+  bearingCone.geometry.dispose();bearingCone.geometry=horizontalTurned([[-.27,.194],[-.27,.30],[.27,.205],[.27,.194]]);
   bearingCone.position.y = 3.71;
   bearingCone.userData.role = 'fixed-conical-upper-bearing-seat';
   root.add(bearingCone);
@@ -412,6 +418,7 @@ function horizontalOvershotWaterWheel(movement) {
   foundation.position.y = -0.70;
   foundation.userData.role = 'fixed-horizontal-water-wheel-foundation';
   root.add(foundation);
+  const lowerPedestal=new THREE.Mesh(horizontalRing(.194,.34,-.59,-.40),frameMaterial);lowerPedestal.userData.role='fixed-lower-bearing-pedestal';root.add(lowerPedestal);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -449,11 +456,12 @@ function horizontalOvershotWaterWheel(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: cycleDuration,
     },
     archetype:
       'horizontal-overshot-water-wheel-with-falling-tangential-jet-driving-scoops-on-vertical-shaft',
     blocks: {
+      lowerPedestal,
       bearingCone,
       bladeGroups,
       contactMarker,
@@ -560,6 +568,9 @@ function horizontalOvershotWaterWheel(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 5.2, 10.5);
   root.userData.groundFloorY = -0.88;
+  root.userData.hideGround=true;
+  root.userData.solidReview={qualification:'Finite vanes, shaft clearances and open water passages; flow paths and angular-momentum diagnostics remain prescribed illustrations, not solved pressure, efficiency or load response.'};
+  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

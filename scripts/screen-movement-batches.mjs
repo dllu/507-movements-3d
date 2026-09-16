@@ -38,6 +38,15 @@ if (value('--worker')) {
       for (const coordinate of geometry.attributes.position?.array ?? []) finiteGeometry &&= Number.isFinite(coordinate);
     });
     const period = root.userData.animationTiming?.authoredCyclePeriod ?? 10;
+    const sceneSnapshot = () => {
+      const objects = new Set(), geometries = new Set();
+      root.traverse(object => {
+        objects.add(object);
+        if (object.geometry) geometries.add(object.geometry);
+      });
+      return {objects, geometries};
+    };
+    const initialScene = sceneSnapshot();
     const costs = [];
     for (let i = 0; i <= 48; i++) {
       const before = performance.now();
@@ -46,13 +55,18 @@ if (value('--worker')) {
       costs.push(performance.now() - before);
       root.traverse(object => { finiteTransforms &&= object.matrixWorld.elements.every(Number.isFinite); });
     }
+    const finalScene = sceneSnapshot();
+    const sceneObjectGrowth = finalScene.objects.size - initialScene.objects.size;
+    const newGeometryCount = [...finalScene.geometries].filter(geometry => !initialScene.geometries.has(geometry)).length;
     const flags = [];
     if (!finiteGeometry || !finiteTransforms) flags.push('nonfinite');
     if (constructMs > 1000) flags.push('slow-construction');
     if (percentile(costs, .95) > 16) flags.push('slow-cpu-update');
     if (drawCallsEstimate > 500) flags.push('many-draw-calls');
     if (renderedTriangles > 500000) flags.push('many-triangles');
-    console.log(JSON.stringify({id, status: finiteGeometry && finiteTransforms ? 'screened' : 'failed', constructMs, updateP95Ms: percentile(costs, .95), updateMaxMs: Math.max(...costs), meshes, drawCallsEstimate, renderedTriangles: Math.round(renderedTriangles), geometryBytes, finiteGeometry, finiteTransforms, sourceAnimationAvailable: root.userData.sourceAnimation?.available ?? null, flags}));
+    if (sceneObjectGrowth > 0) flags.push('scene-growth');
+    if (newGeometryCount > 0) flags.push('new-geometry-during-playback');
+    console.log(JSON.stringify({id, status: finiteGeometry && finiteTransforms ? 'screened' : 'failed', constructMs, updateP95Ms: percentile(costs, .95), updateMaxMs: Math.max(...costs), meshes, drawCallsEstimate, renderedTriangles: Math.round(renderedTriangles), geometryBytes, sceneObjectGrowth, newGeometryCount, finiteGeometry, finiteTransforms, sourceAnimationAvailable: root.userData.sourceAnimation?.available ?? null, flags}));
   } finally { disposeMovementModel(model); }
 } else {
   for (const arg of args) if (!/^--(ids|batch|out|timeout-ms)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);

@@ -58,7 +58,9 @@ Each model runs in its own timed process, so one pathological constructor does
 not block the queue or retain geometry in the next model. Output is checkpointed
 after every movement in `/dev/shm` by default. Run against settled files; rerun
 any entries affected by concurrent edits. CPU timing excludes module import,
-GPU rendering and browser loading. Draw-call counts are estimates. Forty-nine
+GPU rendering and browser loading. The screen also flags scene growth and new
+geometry identities during playback, catching accidental per-frame mesh creation.
+These are triage flags; intentional dynamic geometry may legitimately trigger them. Draw-call counts are estimates. Forty-nine
 finite update samples catch gross failures, **not** clipping, contact correctness,
 source fidelity or physics validity. Timing flags are triage thresholds, not
 performance guarantees.
@@ -411,3 +413,32 @@ prior finite/contact checks are refreshed for the changed geometry.
 110 focused/regression tests, the build and twelve packaged playback/mobile
 checks pass. The 389 experiment is preserved on `codex/389-finite-pawl-wip`;
 it remains outside main until its finite handoff is continuous.
+
+
+## Fifteenth parallel batch
+
+- **219/224/414:** generated face-gear profiles and real through-slots/guides.
+- **245/248/249:** finite bayonet clearance, mating union threads, hollow ball
+  cavity and actual clamp bores using existing shared solid helpers.
+- **433/434/435:** finite working vanes, connected bored supports and corrected
+  central-discharge geometry. Scene-stability regression checks prevent
+  per-frame geometry allocation.
+
+These corrections retain analytical explanatory motion. Expensive tooth-profile
+construction stays offline, and fluid dynamics, loads and seals are not claimed.
+The separate 389 experiment improves sampled continuity but remains outside main
+pending source-proportion and motion-law qualification.
+
+92 focused/regression tests, the production build and nine packaged browser
+checks pass. Family evidence and limitations are linked from
+[review progress](review-progress.md). The next spatial family candidates are
+386/387/468, sharing bored ladder and hollow pipe joints. Movement 490 separately
+rebuilds and disposes its rope geometry on each update; retain and update its
+buffers in a subsequent performance pass.
+
+The refreshed cheap screen completed all 325 queued movements (183–507): no
+nonfinite geometry/transforms, scene growth, timeouts or other threshold flags.
+Only 490 creates replacement geometry during playback; the old rope geometry is
+disposed, so this is allocation/upload churn rather than a demonstrated leak.
+The screen is CPU/scene triage, not contact or visual qualification. Raw output
+for this pass is `/dev/shm/family15-all-screen.json`.

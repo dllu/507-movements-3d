@@ -259,7 +259,7 @@ test('movement 248 nut obeys one exact right-hand screw law whenever B and C are
     'three-turn axial travel');
   near(geometry.looseNutAngle, -geometry.loosenTurns * Math.PI * 2, 0,
     'counter-rotation required to loosen');
-  assert.ok(geometry.threadRadialClearance > 0.014);
+  assert.ok(geometry.threadRadialClearance > 0.003);
   assert.ok(geometry.disengagedThreadAxialClearance > 0.019);
   disposeModel(model.root);
 });

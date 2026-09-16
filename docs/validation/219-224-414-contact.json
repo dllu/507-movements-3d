@@ -1,0 +1,86 @@
+{
+  "method": "Bidirectional actual mesh vertices, edge midpoints and triangle centroids against triangle BVHs; 17 interleaved full-cycle poses. Gear profiles plus 224 stud/slot and arm/guide contacts. Separate tests cover bores/keyways. Includes world-space presentation rotation for219. Sampled finite geometry, not loaded dynamics or exhaustive continuous collision proof.",
+  "sources": [
+    {
+      "file": "src/simulation/authored-eccentric-crown-gears.js",
+      "sha256": "91320406774bf777fe578179b4526767d1f76e17a99048b6f0f2e7bb92b9fcca"
+    },
+    {
+      "file": "src/simulation/authored-expanding-pulleys.js",
+      "sha256": "c64481b6ac450be7662fb48dce75298eff7a54a55f8d72d70f82fe8095a5b02d"
+    },
+    {
+      "file": "src/simulation/authored-scroll-gears.js",
+      "sha256": "0e675181d7fe4eba5a0782b53fbdd01d009f570ac06b31e1b16a26e680e476b1"
+    },
+    {
+      "file": "src/simulation/variable-face-gear-parts.js",
+      "sha256": "882e4355a2a7d8f334de53f4503d7071d440169422fde5e1658d0452f02e94c3"
+    },
+    {
+      "file": "src/simulation/generated-variable-face-gears.js",
+      "sha256": "0b8dc60a0285a82bc99941febc7204dcb271872a0ccee95f2bb1097618802bda"
+    },
+    {
+      "file": "src/simulation/band-epicyclic-geometry.js",
+      "sha256": "a6a6c0275260970d1d701cec0b1b871724396ff7be90c553d62686d635e25e53"
+    },
+    {
+      "file": "src/simulation/bored-lathe-geometry.js",
+      "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
+    },
+    {
+      "file": "src/simulation/finite-plate-geometry.js",
+      "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
+    },
+    {
+      "file": "src/simulation/primitives.js",
+      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+    },
+    {
+      "file": "scripts/review-variable-face-contact.mjs",
+      "sha256": "259d968617311915cf26a7780c16b8a12c1739bbd3aa76c1196a49831b4f51e7"
+    },
+    {
+      "file": "tests/helpers/solid-surface.mjs",
+      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+    }
+  ],
+  "results": [
+    {
+      "id": 219,
+      "poses": 17,
+      "tested": 1110604,
+      "inside": 0,
+      "maxPenetration": 0,
+      "maxWorkingGap": 0.0023826424422577347,
+      "categories": {
+        "gear": 0
+      }
+    },
+    {
+      "id": 224,
+      "poses": 17,
+      "tested": 6652236,
+      "inside": 0,
+      "maxPenetration": 0,
+      "maxWorkingGap": 0.0009506478283761708,
+      "categories": {
+        "gear": 0,
+        "slot": 0,
+        "guide": 0
+      }
+    },
+    {
+      "id": 414,
+      "poses": 17,
+      "tested": 3203304,
+      "inside": 0,
+      "maxPenetration": 0,
+      "maxWorkingGap": 0.0012061875538153428,
+      "categories": {
+        "gear": 0
+      }
+    }
+  ]
+}

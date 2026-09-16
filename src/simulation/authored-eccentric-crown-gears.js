@@ -1,3 +1,4 @@
+import {correctVariableFaceGear} from './variable-face-gear-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -604,11 +605,14 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  correctVariableFaceGear(root, 219);
+  root.rotation.z = THREE.MathUtils.degToRad(55);
+  root.userData.cameraFitBounds.set(new THREE.Vector3(-3.23, -3.23, -2.27), new THREE.Vector3(3.35, 4.70, 1.46));
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.8, -8.4, 7.3),
+    cameraDirection: new THREE.Vector3(0, -10, 6),
   };
 }
 

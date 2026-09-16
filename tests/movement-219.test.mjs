@@ -517,7 +517,7 @@ test('movement 219 runtime binds every rigid transform while 262 remains authore
     const ringCenterWorld = blocks.crownRing.localToWorld(
       new THREE.Vector3(geometry.eccentricity, 0, 0),
     );
-    vectorNear(ringCenterWorld, state.eccentricCenter, 8e-16,
+    vectorNear(ringCenterWorld, state.eccentricCenter.clone().applyMatrix4(model.root.matrixWorld), 2e-15,
       'rendered eccentric-ring center');
     const sampledTooth = blocks.crownTeeth[7];
     const expectedToothWorld = sampledTooth.position.clone().applyAxisAngle(
@@ -526,14 +526,14 @@ test('movement 219 runtime binds every rigid transform while 262 remains authore
     );
     vectorNear(
       sampledTooth.getWorldPosition(new THREE.Vector3()),
-      expectedToothWorld,
-      9e-16,
+      expectedToothWorld.applyMatrix4(model.root.matrixWorld),
+      2e-15,
       'rendered rigid crown tooth',
     );
     const pinionWorldAxis = Z_AXIS.clone().applyQuaternion(
       blocks.pinion.getWorldQuaternion(new THREE.Quaternion()),
     );
-    assert.ok(Math.abs(pinionWorldAxis.dot(X_AXIS)) > 1 - 1e-12);
+    assert.ok(Math.abs(pinionWorldAxis.dot(X_AXIS.clone().applyAxisAngle(Z_AXIS, model.root.rotation.z))) > 1 - 1e-12);
     assert.ok(model.root.userData.contact.rollingDirection.distanceTo(Y_AXIS) < 1e-12);
     near(model.root.userData.contact.rollingSpeedError, 0, 5e-16,
       'runtime no-slip error');
@@ -541,7 +541,7 @@ test('movement 219 runtime binds every rigid transform while 262 remains authore
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.3);
+  assert.ok(size.x > 6.0);
   assert.ok(size.y > 5.2);
   assert.ok(size.z > 3.2);
   let meshCount = 0;

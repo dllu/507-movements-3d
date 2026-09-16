@@ -1,3 +1,4 @@
+import {correctVariableFaceGear} from './variable-face-gear-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -338,8 +339,9 @@ function expandingPulley(movement) {
     };
   };
   update(0);
+  correctVariableFaceGear(root, 224);
   markShadows(root);
-  return { root, update, cameraDirection: new THREE.Vector3(4.8, -6.2, 10.5) };
+  return { root, update, cameraDirection: new THREE.Vector3(1.6, -2, 12) };
 }
 
 export function createAuthoredExpandingPulleyMovement(movement) {

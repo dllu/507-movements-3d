@@ -5,6 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+import {boreBoxY} from './drill-feed-parts.js';
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -269,7 +273,6 @@ function makeBayonetSocketGeometry({
     innerRadius,
     outerRadius,
     positions,
-    reverse: true,
     segments: 48,
     y: slotBottomY,
   });
@@ -279,6 +282,7 @@ function makeBayonetSocketGeometry({
     innerRadius,
     outerRadius,
     positions,
+    reverse: true,
     segments: 40,
     y: slotTopY,
   });
@@ -359,7 +363,7 @@ function makeCutawayLathe({
   group.userData.role = role;
   const shell = new THREE.Mesh(
     new THREE.LatheGeometry(
-      profile,
+      profile[0].equals(profile.at(-1))?profile:[...profile,profile[0]],
       segments,
       cutawayHalfAngle,
       FULL_TURN - 2 * cutawayHalfAngle,
@@ -381,7 +385,9 @@ function makeCutawayLathe({
     cutawayHalfAngle,
     FULL_TURN - cutawayHalfAngle,
   ].map((angle, index) => {
-    const face = new THREE.Mesh(sectionGeometry, sectionMaterial);
+    const faceGeometry=index===0?sectionGeometry:sectionGeometry.clone();
+    if(index===1){const a=faceGeometry.index.array;for(let i=0;i<a.length;i+=3)[a[i+1],a[i+2]]=[a[i+2],a[i+1]];faceGeometry.computeVertexNormals();}
+    const face = new THREE.Mesh(faceGeometry, sectionMaterial);
     face.rotation.y = angle - Math.PI / 2;
     face.userData.role = `${role}-section-face-${index + 1}`;
     group.add(face);
@@ -438,10 +444,14 @@ function hollowBallProfile({
       y,
     ));
   }
-  points.push(
-    new THREE.Vector2(boreRadius, maximumY),
-    new THREE.Vector2(boreRadius, minimumY),
-  );
+  const cavityRadius=outerRadius-.24;
+  const cavityEnd=Math.sqrt(cavityRadius**2-boreRadius**2);
+  points.push(new THREE.Vector2(boreRadius,maximumY),new THREE.Vector2(boreRadius,cavityEnd));
+  for(let i=1;i<=samples;i++){
+    const y=THREE.MathUtils.lerp(cavityEnd,-cavityEnd,i/samples);
+    points.push(new THREE.Vector2(Math.sqrt(cavityRadius**2-y**2),y));
+  }
+  points.push(new THREE.Vector2(boreRadius,minimumY));
   return { maximumY, minimumY, points };
 }
 
@@ -478,7 +488,7 @@ function bayonetJoint(movement) {
   const pinEnvelopeRadius = 0.15;
   const pinCenterlineRadius = socketOuterRadius;
   const pinAngularHalfWidth = Math.asin(
-    pinEnvelopeRadius / pinCenterlineRadius,
+    pinShaftRadius / socketInnerRadius,
   );
   const slotEndAngle = 1.11;
   const lockedAngle = slotEndAngle - pinAngularHalfWidth;
@@ -904,14 +914,14 @@ function bayonetJoint(movement) {
     };
     root.userData.kinematics = state;
   };
-  update(0);
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
   slotOutline.castShadow = false;
   slotOutline.receiveShadow = false;
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.2, 3.8, 9.2),
+    cameraDirection: new THREE.Vector3(2.8,2.0,11),
   };
 }
 
@@ -1017,7 +1027,7 @@ function ballAndSocketPipeJoint(movement) {
     new THREE.CylinderGeometry(
       ballBoreRadius - 0.006,
       ballBoreRadius - 0.006,
-      upperTubeMaximumY - ballProfile.minimumY,
+      upperTubeMaximumY - ballProfile.maximumY,
       72,
       1,
       true,
@@ -1029,7 +1039,7 @@ function ballAndSocketPipeJoint(movement) {
     }),
   );
   maleBoreLiner.position.y =
-    (upperTubeMaximumY + ballProfile.minimumY) / 2;
+    (upperTubeMaximumY + ballProfile.maximumY) / 2;
   maleBoreLiner.userData.role =
     'visible-inner-wall-of-continuous-male-bore';
 
@@ -1124,6 +1134,7 @@ function ballAndSocketPipeJoint(movement) {
       new THREE.BoxGeometry(0.86, 0.24, 0.74),
       upperSocketMaterial,
     );
+    boreBoxY(upperEar,.109);
     upperEar.position.set(earX, 0.14, 0);
     upperEar.userData.role =
       `upper-socket-clamp-ear-${side < 0 ? 'left' : 'right'}`;
@@ -1133,6 +1144,7 @@ function ballAndSocketPipeJoint(movement) {
       new THREE.BoxGeometry(0.86, 0.24, 0.74),
       lowerSocketMaterial,
     );
+    boreBoxY(lowerEar,.109);
     lowerEar.position.set(earX, -0.14, 0);
     lowerEar.userData.role =
       `lower-socket-clamp-ear-${side < 0 ? 'left' : 'right'}`;
@@ -1151,10 +1163,12 @@ function ballAndSocketPipeJoint(movement) {
       new THREE.CylinderGeometry(0.2, 0.2, 0.15, 6),
       boltMaterial,
     );
-    upperNut.position.y = 0.43;
+    upperNut.geometry.dispose();
+    upperNut.geometry=plate(clip.difference(poly(circle([0,0],.2,6)),poly(circle([0,0],.109,64))),-.075,.075).rotateX(-Math.PI/2);
+    upperNut.position.y = .335;
     upperNut.userData.role = 'upper-hexagonal-clamp-nut';
     const lowerNut = upperNut.clone();
-    lowerNut.position.y = -0.43;
+    lowerNut.position.y = -.335;
     lowerNut.userData.role = 'lower-hexagonal-clamp-nut';
     bolt.position.x = earX;
     bolt.add(shank, upperNut, lowerNut);
@@ -1465,12 +1479,12 @@ function ballAndSocketPipeJoint(movement) {
     };
     root.userData.kinematics = state;
   };
-  update(0);
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.7, 3.3, 8.8),
+    cameraDirection: new THREE.Vector3(.8,1,11),
   };
 }
 

@@ -5,6 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -68,7 +71,7 @@ function makeCutawayLathe({
   group.userData.role = role;
   const shell = new THREE.Mesh(
     new THREE.LatheGeometry(
-      profile,
+      profile[0].equals(profile.at(-1))?profile:[...profile,profile[0]],
       segments,
       cutawayHalfAngle,
       FULL_TURN - 2 * cutawayHalfAngle,
@@ -90,7 +93,9 @@ function makeCutawayLathe({
     cutawayHalfAngle,
     FULL_TURN - cutawayHalfAngle,
   ].map((angle, index) => {
-    const face = new THREE.Mesh(sectionGeometry, sectionMaterial);
+    const faceGeometry=index===0?sectionGeometry:sectionGeometry.clone();
+    if(index===1){const a=faceGeometry.index.array;for(let i=0;i<a.length;i+=3)[a[i+1],a[i+2]]=[a[i+2],a[i+1]];faceGeometry.computeVertexNormals();}
+    const face = new THREE.Mesh(faceGeometry, sectionMaterial);
     face.rotation.y = angle - Math.PI / 2;
     face.userData.role = `${role}-section-face-${index + 1}`;
     group.add(face);
@@ -222,7 +227,7 @@ function unionPipeCoupling(movement) {
   const spigotRadialClearance = counterboreRadius - spigotOuterRadius;
   const spigotBottomClearance = spigotMinimumY - pipeCBodyMaximumY;
   const threadedBossCoreRadius = 1.02;
-  const threadedBossMinimumY = pipeCBodyMaximumY;
+  const threadedBossMinimumY = -.23;
   const threadedBossMaximumY = pipeCSeatY;
 
   const threadPitch = 0.36;
@@ -242,10 +247,7 @@ function unionPipeCoupling(movement) {
   const internalThreadRadius = 1.245;
   const internalThreadTubeRadius = 0.04;
   const threadPitchRadius = 1.18;
-  const threadRadialClearance = internalThreadRadius
-    - internalThreadTubeRadius
-    - externalThreadRadius
-    - externalThreadTubeRadius;
+  const threadRadialClearance = .004;
 
   const nutOuterBodyRadius = 1.65;
   const nutOuterCollarRadius = 1.82;
@@ -339,19 +341,8 @@ function unionPipeCoupling(movement) {
     role: 'counterbored-thread-core-at-end-of-pipe-C',
     sectionMaterial: pipeCSectionMaterial,
   });
-  const pipeCSeat = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      (counterboreRadius + flangeRadius) / 2,
-      (flangeRadius - counterboreRadius) / 2,
-      10,
-      72,
-      FULL_TURN - 2 * cutawayHalfAngle,
-    ),
-    darkMaterial,
-  );
-  pipeCSeat.rotation.x = Math.PI / 2;
-  pipeCSeat.rotation.z = cutawayHalfAngle;
-  pipeCSeat.position.y = pipeCSeatY - 0.018;
+  const pipeCSeatParts=makeCutawayAnnularCylinder({cutawayHalfAngle,innerRadius:counterboreRadius,outerRadius:flangeRadius,minimumY:pipeCSeatY-.036,maximumY:pipeCSeatY,material:darkMaterial,sectionMaterial:pipeCSectionMaterial,role:'flat-annular-pipe-seat'});
+  const pipeCSeat=pipeCSeatParts.group;
   pipeCSeat.userData.role = 'annular-end-face-of-C-abutting-flange-A';
   const externalThreadParts = makeThread({
     color: PALETTE.ink,
@@ -453,6 +444,14 @@ function unionPipeCoupling(movement) {
     tubeRadius: internalThreadTubeRadius,
     turns: threadTurns,
   });
+  // Closed complementary square-thread solids, in the same screw convention
+  // as the retained exact nut law y=tightY-lead*angle/(2*pi).
+  const externalProfile={inner:threadedBossCoreRadius,outer:externalThreadRadius+externalThreadTubeRadius,low:externalThreadMinimumY,high:externalThreadMaximumY,width:threadPitch/2-.004,lead:-threadLeadPerRadian,phase:externalThreadMinimumY};
+  const internalProfile={inner:threadedBossCoreRadius+threadRadialClearance,outer:nutCavityRadius,low:internalThreadMinimumY,high:internalThreadMaximumY,width:threadPitch/2-.008,lead:-threadLeadPerRadian,phase:externalThreadMinimumY-tightNutY+threadPitch/2};
+  for(const [mesh,profile]of [[externalThreadParts.mesh,externalProfile],[internalThreadParts.mesh,internalProfile]]){
+    mesh.geometry.dispose();mesh.geometry=helicalThread(profile,threadAngles(profile,96)).rotateX(-Math.PI/2);
+    mesh.userData.threadProfile=profile;
+  }
   nutB.add(internalThreadParts.mesh);
 
   const gripRibs = Array.from({ length: 10 }, (_, index) => {
@@ -957,10 +956,11 @@ function unionPipeCoupling(movement) {
     new THREE.Vector3(-2.15, -3.05, -2.15),
     new THREE.Vector3(2.15, 7.55, 2.15),
   );
+  fitPistonGuide(root,update,cyclePeriod);
   markShadows(root);
 
   return {
-    cameraDirection: new THREE.Vector3(2.8, 4.5, 11.4),
+    cameraDirection: new THREE.Vector3(.8,1.3,11.4),
     root,
     update,
   };
