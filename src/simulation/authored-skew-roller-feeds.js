@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctRollerParts} from './roller-working-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -468,6 +469,7 @@ function skewRollerHelicalRodFeed(movement) {
     rodMarkers.forEach((marker, index) => {
       marker.position.y = state.markerStates[index].wrappedY;
     });
+    root.userData.updateWorkingParts?.(state);
     root.userData.currentState = state;
     root.userData.contacts = {
       frontRollerToRod: state.contacts.front,
@@ -515,7 +517,7 @@ function skewRollerHelicalRodFeed(movement) {
     },
     dynamics: {
       contactModel:
-        'ideal positive rolling friction at two diametrically opposite line contacts; force, preload, compliance, and slip coefficient are not specified by Brown',
+        'ideal positive rolling friction at two diametrically opposite point contacts; force, preload, compliance, and slip coefficient are not specified by Brown',
       sourceSpecifiesInputSpeedOrInertia: false,
       synchronizationDisclosure:
         'the engraving omits how the two rollers are powered; equal magnitudes and opposite signed spins are the compatibility condition for simultaneous no-slip contact in the reconstructed symmetric geometry',
@@ -622,7 +624,7 @@ function skewRollerHelicalRodFeed(movement) {
       eulerianRodWindow:
         'the uniformly cylindrical stock remains in a fixed viewing window while periodic material markers carry the exact unbounded axial displacement and rod angle',
       markerWrap:
-        'marker identities wrap only inside the two opaque guide collars; their unbounded material coordinates remain available in state',
+        'surface-painted marker identities fade at the viewing-window edges before wrapping; their unbounded material coordinates remain available in state',
       reason:
         'an actually unbounded translating rod would eventually leave any finite camera view',
     },
@@ -643,6 +645,8 @@ function skewRollerHelicalRodFeed(movement) {
 }
 
 export function createAuthoredSkewRollerFeedMovement(movement) {
-  if (movement.id === 365) return skewRollerHelicalRodFeed(movement);
-  return null;
+  if (movement.id !== 365) return null;
+  const model = skewRollerHelicalRodFeed(movement);
+  correctRollerParts(model, 365);
+  return model;
 }

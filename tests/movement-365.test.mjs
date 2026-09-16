@@ -379,7 +379,7 @@ test('movement 365 produces exact unbounded screw motion and reverses both outpu
   disposeModel(model.root);
 });
 
-test('movement 365 marker window carries exact material translation and rotation while every identity wrap is hidden inside a guide collar', () => {
+test('movement 365 marker window carries exact material translation and rotation with disclosed marker fading at window edges', () => {
   const model = createMovementModel(catalog.movements[364]);
   const data = model.root.userData;
   const { geometry, markerMaterialCoordinates, stateAtInputAngle } = data;
@@ -431,7 +431,7 @@ test('movement 365 marker window carries exact material translation and rotation
   assert.match(data.visualizationDisclosure.eulerianRodWindow,
     /exact unbounded axial displacement/);
   assert.match(data.visualizationDisclosure.markerWrap,
-    /opaque guide collars/);
+    /fade at the viewing-window edges/);
   assert.match(data.visualizationDisclosure.reason,
     /leave any finite camera view/);
   disposeModel(model.root);

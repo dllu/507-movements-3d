@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctRollerParts} from './roller-working-parts.js';
 import {
   PALETTE,
   makePulley,
@@ -807,7 +808,7 @@ function rollingCarriageFrictionExperiment(movement) {
       ],
       sourceSpecifiesDimensionsTimingSpringRateFrictionOrLoad: false,
       treatment:
-        'Brown specifies the apparatus and qualitative result but no dimensions, timing, spring rate, friction coefficient, or test loads; the geometry and smooth demonstration schedule are engineered, while all rolling, force, torque, and spring balances are analytic',
+        'Brown specifies the apparatus and qualitative result but no dimensions, timing, spring rate, friction coefficient, or test loads; the geometry and smooth demonstration schedule are engineered, while rolling rates are analytic and the force indication uses a prescribed empirical calibration; the internal indicator transmission and carriage reaction forces are not solved',
     },
     experiment: {
       addedNormalLoad,
@@ -950,5 +951,7 @@ function rollingCarriageFrictionExperiment(movement) {
 
 export function createAuthoredRollingFrictionExperimentMovement(movement) {
   if (movement.id !== 373) return null;
-  return rollingCarriageFrictionExperiment(movement);
+  const model = rollingCarriageFrictionExperiment(movement);
+  correctRollerParts(model, 373);
+  return model;
 }

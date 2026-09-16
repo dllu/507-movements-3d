@@ -366,7 +366,7 @@ test('movement 373 varies speed smoothly and positively without moving the force
   disposeModel(model.root);
 });
 
-test('movement 373 force and spiral-spring indication respond exactly to load with balanced contact forces, torque, and power', () => {
+test('movement 373 force and spiral-spring indication respond exactly to load under the prescribed force, torque, and power calibration', () => {
   const model = createMovementModel(catalog.movements[372]);
   const data = model.root.userData;
   const { experiment, geometry, loadStateAtPhase, stateAtTime } = data;
@@ -435,7 +435,7 @@ test('movement 373 force and spiral-spring indication respond exactly to load wi
   disposeModel(model.root);
 });
 
-test('movement 373 visible spiral keeps its outer anchor fixed, turns its inner end with the pointer, and the renderer binds every moving member', () => {
+test('movement 373 retained spring state keeps its outer anchor fixed, turns its inner end with the pointer, and the renderer binds every moving member', () => {
   const model = createMovementModel(catalog.movements[372]);
   const data = model.root.userData;
   const { blocks, geometry, springPointsAtDeflection, stateAtTime } = data;
