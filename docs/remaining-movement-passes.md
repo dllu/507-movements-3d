@@ -151,16 +151,18 @@ reviews distinguish geometric corrections from prescribed dynamics.
 
 ## Thirty-seventh pass
 
-194, 214, 251 and 253 now have scoped corrections in the linked
+194, 214, 215, 251 and 253 now have scoped corrections in the linked
 [review progress](review-progress.md): generated finite pinion and involute
-profiles, keyed stop fingers, and load-facing hook surfaces with bored joints.
-All 55 focused checks, the production build, four-model screen and four packaged
-browser cases pass. Expensive tooth cutting remains offline.
+profiles, keyed stop fingers, a compatible finite mouth handoff, and load-facing
+hook surfaces with bored joints. All 76 focused checks, both production builds,
+five-model screens and six packaged browser cases pass. Expensive tooth cutting
+and mouth contact reconstruction remain offline.
 
 194 retains a 0.00821 sampled working gap; a discontinuous terminal seating law
 was rejected. 251's edge release and 253's deployment/arrest are prescribed,
-not passive-load validated. The 215 mouth/phase candidate is being checked
-independently. 212/213 are unchanged. These residuals should not block breadth
+not passive-load validated. 215 uses a selected contact branch with assisting
+preload on reverse motion and a 0.000022 final-lock tolerance. 212/213 are
+unchanged. These residuals should not block breadth
 work on independent families.
 
 ## Contact follow-up queue
@@ -177,10 +179,11 @@ additional support detailing.
 - **212/213/215, finite indexing and handoff:** scoped factories in
   `authored-intermittent.js`. 212 has 0.001007 midstroke overlap but about 0.034
   clearance earlier/later under its linear schedule. 213's quintic index law
-  gives about 0.09365 pin/tooth penetration. 215's source mouth interferes by
-  0.029991 outside the nominal engagement interval; simply relieving the mouth
-  creates a 0.022 drive gap. Reconstruct contacting branches and compatible
-  profiles while preserving real load faces and terminal stops. Keep each
+  gives about 0.09365 pin/tooth penetration. 215's former 0.029991 source-mouth
+  interference is superseded by the baked mouth/phase correction; its remaining
+  task is passive branch and force validation, including reverse preload.
+  Reconstruct 212/213 contacting branches while preserving real load faces
+  and terminal stops. Keep each
   correction independently publishable; use a passive study where branch/load
   selection remains uncertain.
 - **251/253, lifting and arresting hooks:** finite working faces now clear and
@@ -195,10 +198,36 @@ which remain motion references rather than proof of finite contact. Check model
 registration, not the initial HTML availability class; the repository's
 `index-source-animations.mjs` follows that distinction.
 
-Separate gear follow-up: 214's trapezoidal/beveled pair has sampled tooth overlap
-of 0.062–0.108. Preserve its 10:12 ratio and validated stop-finger construction
-while replacing the real tooth pair. 211's sparse checks found no penetration,
-but do not establish passive triggering.
+214's former 0.062–0.108 tooth overlap is superseded by the generated involute
+pair and bidirectional checks in the thirty-seventh pass. 211's sparse checks
+found no penetration, but do not establish passive triggering.
+
+## Next breadth candidates
+
+- **232, lift-and-draw pawl:** own only its factory in
+  `authored-intermittent.js`. A 33-pose actual-surface probe finds 0.17420
+  pawl-body/wheel penetration at t=0, 0.05440 retaining-body penetration at t=0,
+  and 0.08000 retaining-nose penetration at t=2.5 seconds. Reconstruct the
+  finite working faces and axial layers against the source's lift, return,
+  drop and draw sequence; the generated point-contact face alone is insufficient.
+- **271, double-pawl ratchet bar:** own `authored-ratchet-bars.js`. Reuse bored
+  links and finite pawl/rack surfaces. Both active noses sit wholly in front of
+  the rack despite zero reported XY error: actual gaps are 0.247 for the short
+  pawl at t=1.25 and 0.527 for the long pawl at t=3.75. Reconstruct stepped
+  hooks, bored pivots and continuous crest clearance together. The full source
+  HTML has no registered animation.
+- **284, adjustable saw feed:** own `authored-saw-feeds.js`. Reuse rack gearing
+  and finite pawl faces. At cycle coordinate 0.3 (t=0.07794713), the nose
+  penetrates the actual ratchet by 0.00204153 despite a zero reported point
+  error. The radial reported normal supplies zero wheel torque, and contact
+  lies beyond the designated flank (segment coordinate -0.23275). Reconstruct
+  nose/flank engagement and return, retaining the solved crank-rocker linkage;
+  also replace the solid hub/bore overlay with a real shaft passage. The full
+  source HTML has no registered animation.
+
+These are independent screening targets, not certified defects in every named
+interface. Compare captions and registered source animations before changing
+their motion laws. Keep dense studies limited to a demonstrated contact fault.
 
 ## Running the screen
 

@@ -1,7 +1,7 @@
 # Thirty-seventh family pass: finite gear and hook contacts
 
-Four movements receive independently publishable corrections: 194, 214, 251
-and 253. Existing rack cutters, finite plates and bored joints support the
+Five movements receive independently publishable corrections: 194, 214, 215,
+251 and 253. Existing rack cutters, finite plates and bored joints support the
 parallel lanes. The complete 507-movement review remains active.
 
 - [194 radial-pin mangle](radial-pin-mangle-contact-review.md): generate a fixed
@@ -14,23 +14,30 @@ parallel lanes. The complete 507-movement review remains active.
   directions of the 10:12 pair. Real keyed arbors, connected hubs and bored
   supports retain the source fingers and terminal stops. Both working flank
   directions pass proximity, torque-direction and virtual-work checks.
+- [215 finite mouth handoff](geneva-stop-215-contact-review.md): bake compatible
+  mouth relief and a continuous contact branch, retaining the interior slots
+  and terminal stops. The old 0.029991 collision is removed. Actual pin/mouth
+  normals provide positive output torque; final crescent capture stays within
+  0.000022 profile tolerance. Reverse motion requires assisting preload.
 - [251/253 lifting and arresting hooks](lifting-check-hook-family-review.md):
   finite toes follow reconstructed retaining shelves; initial reactions seat
   the hooks against connected stops. The drum catch now supplies resisting
   torque and backs off before retraction. Both retain prescribed dynamics;
   251's final edge release still lacks finite-load validation.
 
-All **55 distinct focused checks pass**, including unchanged 192/193 source
-regressions. Both tooth bakes regenerate byte-identically. The production build
-passes in 22.06 seconds and the four-model construction/update screen has no
-flags. Source/default/oblique views show no errors or viewport clipping
-(normalized extents 0.704–0.867). All four packaged desktop/playback/mobile
-checks pass in 18.1 seconds.
+All **76 distinct focused checks pass**, including unchanged 192/193 and 212
+source regressions. Both tooth bakes and the 215 handoff asset regenerate
+byte-identically. The initial four-model production build passes in 22.06
+seconds; the final build including 215 passes in 21.54 seconds. Construction/
+update screens have no flags across all five changed movements. Source/default/
+oblique views show no errors or viewport clipping (normalized extents
+0.704–0.867). Four packaged desktop/playback/mobile checks pass in 18.1 seconds;
+the separate final 215 and shared-helper 212 cases pass in 11.0 seconds.
 
-212/213 remain unchanged. The separate 215 mouth/phase candidate is still under
-contact-direction and continuity review and is not included in this result.
-Sampled geometry and reaction directions do not establish passive loaded
-behavior. The linked reviews and viewer notes retain those limits.
+212/213 remain unchanged. Sampled geometry and reaction directions do not
+establish passive loaded behavior. The linked reviews and viewer notes retain
+those limits. Read-only triage queues independent 232/271/284 pawl corrections:
+finite overlap, depth-separated noses and a radial zero-torque contact witness.
 
 # Thirty-sixth family pass: generated mangle teeth, bands and pinned instruments
 
