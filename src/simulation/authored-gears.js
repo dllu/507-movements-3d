@@ -1,3 +1,4 @@
+import { spurStopProfile239, finishOpposedSpur239 } from './opposed-spur-239-working-parts.js';
 import { finishPartialLanternRack } from './partial-lantern-rack-parts.js';
 import { finishMangleRackWorkingParts } from './mangle-rack-working-parts.js';
 import { fitRadialPinManglePinion, discloseRadialPinMangleContact } from './radial-pin-mangle-contact.js';
@@ -33584,8 +33585,9 @@ function pairedStopsForSpurGear(movement) {
   const gearOuterRadius = 2.68;
   const gearPitchRadius = 2.4;
   const gearDepth = 0.42;
-  const rootHalfToothAngle = toothPitch * 0.34;
-  const tipHalfToothAngle = toothPitch * 0.19;
+  const workingProfile = spurStopProfile239({ teeth: toothCount, pitchRadius: gearPitchRadius, rootRadius: gearRootRadius, outerRadius: gearOuterRadius });
+  const rootHalfToothAngle = workingProfile.halfRoot;
+  const tipHalfToothAngle = workingProfile.halfTip;
   const cyclePeriod = 4;
   const cyclesPerSecond = 1 / cyclePeriod;
   const phases = {
@@ -33632,36 +33634,7 @@ function pairedStopsForSpurGear(movement) {
     outer: polarPoint(gearOuterRadius, side * tipHalfToothAngle),
     root: polarPoint(gearRootRadius, side * rootHalfToothAngle),
   });
-  const pointOnLocalFlankAtRadius = (side, radius) => {
-    const segment = localFlankSegment(side);
-    const delta = segment.outer.clone().sub(segment.root);
-    const quadraticA = delta.lengthSq();
-    const quadraticB = 2 * segment.root.dot(delta);
-    const quadraticC = segment.root.lengthSq() - radius ** 2;
-    const discriminant = quadraticB ** 2
-      - 4 * quadraticA * quadraticC;
-    if (discriminant < -1e-12) {
-      throw new RangeError('Stop nose radius misses the spur tooth flank.');
-    }
-    const squareRoot = Math.sqrt(Math.max(0, discriminant));
-    const candidates = [
-      (-quadraticB - squareRoot) / (2 * quadraticA),
-      (-quadraticB + squareRoot) / (2 * quadraticA),
-    ].filter((value) => value >= -1e-12 && value <= 1 + 1e-12);
-    if (candidates.length === 0) {
-      throw new RangeError('Stop nose lies outside the working flank span.');
-    }
-    const segmentCoordinate = THREE.MathUtils.clamp(candidates[0], 0, 1);
-    const point = segment.root.clone().addScaledVector(
-      delta,
-      segmentCoordinate,
-    );
-    return {
-      angle: Math.atan2(point.y, point.x),
-      point,
-      segmentCoordinate,
-    };
-  };
+  const pointOnLocalFlankAtRadius = workingProfile.pointAtRadius;
   const rightFlankAtNose = pointOnLocalFlankAtRadius(
     1,
     rightNose.length(),
@@ -33710,7 +33683,9 @@ function pairedStopsForSpurGear(movement) {
     const nose = isLeft ? leftNose : rightNose;
     const toothIndex = isLeft ? leftBlockingToothIndex : 0;
     const flankSide = isLeft ? -1 : 1;
-    const segment = flankSegmentAt(flankSide, toothIndex, wheelAngle);
+    const localSegment = pointOnLocalFlankAtRadius(flankSide, nose.length()).segment;
+    const segmentAngle = gearMountPhase + toothIndex * toothPitch + wheelAngle;
+    const segment = {root: rotateVector2(localSegment.root, segmentAngle), outer: rotateVector2(localSegment.outer, segmentAngle)};
     const closest = closestPointOnSegment(
       nose,
       segment.root,
@@ -33729,7 +33704,7 @@ function pairedStopsForSpurGear(movement) {
       ? normalizeAngle(sameRadiusAngle - leftNoseAngle)
       : normalizeAngle(rightNoseAngle - sameRadiusAngle);
     const tangent = segment.outer.clone().sub(segment.root).normalize();
-    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    const normal = isLeft ? new THREE.Vector2(tangent.y, -tangent.x) : new THREE.Vector2(-tangent.y, tangent.x);
     return {
       angularClearance,
       blockingDirection: isLeft ? 'clockwise' : 'counterclockwise',
@@ -33754,33 +33729,14 @@ function pairedStopsForSpurGear(movement) {
   gear.userData.role = 'eighteen-tooth-source-spur-gear';
   const gearShape = new THREE.Shape();
   let firstGearPoint = true;
-  const appendGearPoint = (radius, angle) => {
-    const point = polarPoint(radius, angle);
-    if (firstGearPoint) {
-      gearShape.moveTo(point.x, point.y);
-      firstGearPoint = false;
-    } else {
-      gearShape.lineTo(point.x, point.y);
-    }
-  };
-  for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
-    const centerAngle = gearMountPhase + toothIndex * toothPitch;
-    appendGearPoint(gearRootRadius, centerAngle - toothPitch / 2);
-    appendGearPoint(gearRootRadius, centerAngle - rootHalfToothAngle);
-    appendGearPoint(gearOuterRadius, centerAngle - tipHalfToothAngle);
-    appendGearPoint(gearOuterRadius, centerAngle + tipHalfToothAngle);
-    appendGearPoint(gearRootRadius, centerAngle + rootHalfToothAngle);
-    appendGearPoint(gearRootRadius, centerAngle + toothPitch / 2);
+  for (const point of workingProfile.outline) {
+    const p = rotateVector2(point, gearMountPhase);
+    if (firstGearPoint) { gearShape.moveTo(p.x, p.y); firstGearPoint = false; }
+    else gearShape.lineTo(p.x, p.y);
   }
   gearShape.closePath();
-  const gearGeometry = new THREE.ExtrudeGeometry(gearShape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: 0.025,
-    bevelThickness: 0.025,
-    curveSegments: 1,
-    depth: gearDepth,
-  });
+  const bore = new THREE.Path(); bore.absarc(0, 0, 0.108, 0, fullTurn, true); gearShape.holes.push(bore);
+  const gearGeometry = new THREE.ExtrudeGeometry(gearShape, { bevelEnabled: false, curveSegments: 96, depth: gearDepth });
   gearGeometry.translate(0, 0, -gearDepth / 2);
   const gearBody = new THREE.Mesh(
     gearGeometry,
@@ -33818,7 +33774,7 @@ function pairedStopsForSpurGear(movement) {
   gear.userData.pitchRadius = gearPitchRadius;
   gear.userData.rootRadius = gearRootRadius;
   gear.userData.teeth = toothCount;
-  gear.userData.toothProfile = 'source-trapezoidal-spur';
+  gear.userData.toothProfile = 'true-involute';
   root.add(gear);
 
   const gearShaft = makeShaft({
@@ -34099,6 +34055,7 @@ function pairedStopsForSpurGear(movement) {
   };
   root.userData.geometry = {
     clockwiseLimit,
+    workingProfile,
     cyclePeriod,
     cyclesPerSecond,
     gearDepth,
@@ -34189,7 +34146,7 @@ function pairedStopsForSpurGear(movement) {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.2, -5.4, 12.8));
+  return finishOpposedSpur239(finish(root, update, new THREE.Vector3(0.4, 0.3, 15)));
 }
 
 export function createAuthoredGearMovement(movement) {

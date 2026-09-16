@@ -1,3 +1,4 @@
+import { installLanternStop233 } from './lantern-stop-233-working-parts.js';
 import { stop240Definitions } from './ratchet-stop-240-contact.js';
 import { stateStops240, finishStops240, stop240MaximumLifts } from './ratchet-stop-240-working-parts.js';
 import { crown237Return, crown237LiftAtTravel, crown237Triangles, crown237Closest, installCrown237Parts, fitCrown237 } from './crown-pawl-237-working-parts.js';
@@ -16368,7 +16369,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
       tangentialVelocityError: rollerGeometry.rollingVelocityError.dot(
         rollerGeometry.contactTangent,
       ) * rollerDrive.speed * cyclesPerSecond,
-      trundleIndex: positiveModulo(cycleIndex, trundleCount),
+      trundleIndex: 0,
     } : null;
     const latchContact = latchActive ? {
       normalVelocityError: latchGeometry.normalVelocityError
@@ -16380,7 +16381,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
       ) - trundleRadius,
       tangentialSlidingSpeed: latchGeometry.tangentialSlidingSpeed
         * latchDrive.speed * cyclesPerSecond,
-      trundleIndex: positiveModulo(cycleIndex - 3, trundleCount),
+      trundleIndex: trundleCount - 3,
     } : null;
     const sourcePose = (
       (cyclePhase < 0.08 || cyclePhase >= 0.94)
@@ -16580,8 +16581,8 @@ function rollerAndLatchStopsForLanternWheel(movement) {
     };
     root.userData.kinematics = state;
   };
-  update(0);
-  return finish(root, update, new THREE.Vector3(3.1, -3.8, 13.6));
+  installLanternStop233(root, latchShape, update);
+  return finish(root, update, new THREE.Vector3(0.4, 0.2, 15));
 }
 
 function springTappetArmStarRatchet(movement) {

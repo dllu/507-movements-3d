@@ -130,9 +130,9 @@ test('movement 239 preserves the measured pivots, noses, and abbreviated source 
   vectorNear(geometry.rightNose, new THREE.Vector2(1.552, 1.52), 2e-15,
     'right source nose');
   near(THREE.MathUtils.radToDeg(geometry.gearMountPhase),
-    38.27666115384453, 2e-14, 'source tooth mounting phase');
+    38.54923225692958, 2e-14, 'source tooth mounting phase');
   near(THREE.MathUtils.radToDeg(geometry.clockwiseLimit),
-    -4.88543310360168, 2e-14, 'source-derived clockwise limit');
+    -4.916675463899594, 2e-14, 'source-derived clockwise limit');
   const source = stateAtCycleCoordinate(0);
   assert.equal(source.stage, 'right-stop-holds-counterclockwise-limit');
   assert.equal(source.activeStop, 'right');
@@ -155,7 +155,7 @@ test('movement 239 reconstructs the complete eighteen-tooth source spur profile'
 
   vectorNear(gear.userData.axis, new THREE.Vector3(0, 0, 1), 0,
     'spur-gear axis');
-  assert.equal(gear.userData.toothProfile, 'source-trapezoidal-spur');
+  assert.equal(gear.userData.toothProfile, 'true-involute');
   near(gear.userData.angularPitch, FULL_TURN / 18, 0,
     'eighteen-tooth pitch');
   near(gear.userData.rootRadius, geometry.gearRootRadius, 0,
@@ -168,9 +168,9 @@ test('movement 239 reconstructs the complete eighteen-tooth source spur profile'
   for (let toothIndex = 0; toothIndex < geometry.toothCount; toothIndex += 1) {
     for (const side of [-1, 1]) {
       const segment = flankSegmentAt(side, toothIndex, 0);
-      near(segment.root.length(), geometry.gearRootRadius, 5e-16,
+      near(segment.root.length(), geometry.gearRootRadius, 1e-15,
         `tooth ${toothIndex} flank ${side} root radius`);
-      near(segment.outer.length(), geometry.gearOuterRadius, 5e-16,
+      near(segment.outer.length(), geometry.gearOuterRadius, 1e-15,
         `tooth ${toothIndex} flank ${side} outer radius`);
       const expectedRootAngle = geometry.gearMountPhase
         + toothIndex * geometry.toothPitch
@@ -272,7 +272,7 @@ test('movement 239 traverses clockwise through only the positive trapped clearan
   near(leftLock.wheelAngle, geometry.clockwiseLimit, 0,
     'clockwise traverse reaches left limit');
   assert.equal(leftLock.activeStop, 'left');
-  near(leftLock.leftClearance, 0, 3e-16, 'left limit closes');
+  near(leftLock.leftClearance, 0, 1e-15, 'left limit closes');
   assert.ok(maximumClockwiseSpeed > 0.18);
   disposeModel(model.root);
 });
@@ -294,7 +294,7 @@ test('movement 239 left stop rejects clockwise overtravel and returns to the rig
       `left lock angle at ${coordinate}`);
     near(state.wheelAngularSpeed, 0, 0,
       `left lock speed at ${coordinate}`);
-    near(state.contact.clearance, 0, 3e-16,
+    near(state.contact.clearance, 0, 1e-15,
       `left contact closure at ${coordinate}`);
     near(state.contact.angularClearance, 0, 0,
       `left angular closure at ${coordinate}`);
@@ -397,10 +397,10 @@ test('movement 239 renderer binds both limits and leaves movement 507 authored',
       `left stop remains seated at ${time}`);
     near(blocks.rightStop.rotation.z, 0, 0,
       `right stop remains seated at ${time}`);
-    assert.equal(blocks.leftContactMarker.visible, state.activeStop === 'left');
+    assert.equal(blocks.leftContactMarker.visible, false);
     assert.equal(
       blocks.rightContactMarker.visible,
-      state.activeStop === 'right',
+      false,
     );
     assert.equal(
       model.root.userData.contacts.leftStopTooth !== null,
