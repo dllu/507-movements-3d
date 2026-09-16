@@ -1,6 +1,6 @@
 import { correctEntwistleGearing } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
-import { makeMiterGear } from './authored-gears.js';
+import { makeMiterGear } from './miter-gear.js';
 import {
   PALETTE,
   makeBeam,

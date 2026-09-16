@@ -1,3 +1,4 @@
+import { createAuthoredGearCoreMovement } from './authored-gears-core.js';
 import { createAuthoredIntermittentCoreMovement } from './authored-intermittent-core.js';
 import {applyDisplayTiming} from './display-timing.js';
 export {DEFAULT_DISPLAY_CYCLE_SECONDS, MAX_DISPLAY_ANGULAR_SPEED, MAX_SUSTAINED_DISPLAY_ANGULAR_SPEED, authoredCyclePeriodFor, applyDisplayTiming} from './display-timing.js';
@@ -481,6 +482,7 @@ export function createMovementModel(movement) {
     ?? createAuthoredEllipticalIdlerGearMovement(movement)
     ?? createAuthoredSteppedSectorGearMovement(movement)
     ?? createAuthoredExpandingPulleyMovement(movement)
+    ?? createAuthoredGearCoreMovement(movement)
     ?? createAuthoredGearMovement(movement)
     ?? createAuthoredGearLinkageMovement(movement)
     ?? createAuthoredEscapementMovement(movement)

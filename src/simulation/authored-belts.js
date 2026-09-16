@@ -6,7 +6,7 @@ import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenTo
 import * as THREE from 'three';
 import {correctClampParts} from './clamp-working-parts.js';
 import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
-import { makeMiterGear } from './authored-gears.js';
+import { makeMiterGear } from './miter-gear.js';
 import { whitePulleys } from './authored-white-pulleys.js';
 import { twoFixedOneMovable } from './authored-fixed-tackle.js';
 import { spanishBartonFourToOne, spanishBartonFiveToOne } from './authored-bartons.js';

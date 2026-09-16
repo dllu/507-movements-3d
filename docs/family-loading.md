@@ -48,6 +48,40 @@ performance follow-ups. Historical one-off integration scripts targeting the
 old monolithic source belong to their recorded baselines; current ordinary
 intermittent factory edits should target the core file.
 
+## Gear and shared-miter split, forty-fourth pass
+
+The same dependency problem remained in the gear family. Its ordinary factories
+now live in `authored-gears-core.js`; 19 independent mechanisms resolve directly
+to their own modules. The compatibility entry point retains `makeMiterGear`,
+`wormAndWheel` and `createAuthoredGearMovement` for existing callers. The route
+generator also preserves literal numeric variants, including universal joints
+50 and 51, and rejects unfamiliar dispatch expressions.
+
+The miter-gear constructor and its annulus helper moved unchanged into
+`miter-gear.js`. Belts and Entwistle gearing import that reusable component
+directly. Their old helper import unnecessarily loaded the whole gear family.
+Both moved function bodies are byte-identical to the preceding revision;
+this split does not change bevel geometry, shading or motion.
+
+Fresh portable pages on the same static server requested these uncompressed
+JavaScript response sizes, including shared app/runtime chunks:
+
+| Movement | Before | After |
+| --- | ---: | ---: |
+| 239, opposed stops | 8,145,139 bytes | 4,390,519 bytes |
+| 87, weighted clutch | 8,145,139 bytes | 3,634,576 bytes |
+| 1, belt drive | 8,372,951 bytes | 1,656,220 bytes |
+| 495, Entwistle gearing | 8,158,701 bytes | 1,441,335 bytes |
+
+This measures payload reduction, not an FPS or connection-speed improvement.
+Records are `/dev/shm/family44-{load,shared-load}-{before,after}.json`.
+All 507 synchronous/lazy geometry, sampled-pose and timing comparisons pass
+(three loader tests, 64.95 seconds); all 296 generated routes reproduce under
+`--check`. The production build passes in 23.49 seconds. Ten packaged loading,
+payload-budget and cancellation cases pass in 12.9 seconds. Ordinary gear models
+still share a substantial core and its profile tables; further separation must
+retain the same compatibility evidence.
+
 ## Keep routing in sync
 
 When adding a factory or changing which IDs an authored factory handles, run:

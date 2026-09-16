@@ -1,11 +1,15 @@
 import {test, expect} from '@playwright/test';
 
 for (const {id, family, maximumScriptBytes} of [
+  {id: 1, family: 'authored-belts', maximumScriptBytes: 3_000_000},
+  {id: 87, family: null, maximumScriptBytes: 5_000_000},
   {id: 123, family: null},
   {id: 75, family: null, maximumScriptBytes: 6_000_000},
   {id: 233, family: 'authored-intermittent-core', maximumScriptBytes: 6_000_000},
+  {id: 239, family: 'authored-gears-core', maximumScriptBytes: 6_000_000},
   {id: 255, family: 'authored-pulley-forms'},
   {id: 273, family: 'authored-rhombus-linkages'},
+  {id: 495, family: 'authored-entwistle-gearing', maximumScriptBytes: 3_000_000},
 ]) {
   test(`${id} loads its own model without downloading unrelated authored families`, async ({page}, testInfo) => {
     const errors = [];
