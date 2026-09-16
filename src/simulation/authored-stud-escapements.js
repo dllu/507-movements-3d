@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctAnnularStudEscapement } from './annular-stud-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -988,8 +989,9 @@ function studEscapement(movement) {
     object.receiveShadow = false;
   }
   root.userData.fidelity = 'authored';
+  correctAnnularStudEscapement(root, 292, update);
   return {
-    cameraDirection: new THREE.Vector3(6.1, 4.3, 13.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };

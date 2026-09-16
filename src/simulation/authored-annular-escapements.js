@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctAnnularStudEscapement } from './annular-stud-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -909,8 +910,9 @@ function annularPendulumEscapement(movement) {
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
   root.userData.fidelity = 'authored';
+  correctAnnularStudEscapement(root, 290, update);
   return {
-    cameraDirection: new THREE.Vector3(5.5, 3.8, 13.0),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
