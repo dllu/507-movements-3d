@@ -1,3 +1,51 @@
+# Forty-fourth family pass: finite flank motion and smaller gear downloads
+
+Independent lanes continue the complete 507-movement review. This pass ships
+bounded corrections and retains unresolved dynamics as explicit follow-ups.
+
+- [238 B pallet](seven-tooth-238-loaded-branch-review.md): constrain the finite
+  inner corner to the actual cleaned wheel flank. The existing seven-tip profile
+  is unchanged. Actual rendered normals resist wheel drive and assist the pallet;
+  scheduled handoffs are continuous. C's small clearance, faceted impacts and
+  passive capture remain prescribed.
+- [294–295 cylinder escapements](cylinder-escapement-finite-contact-review.md):
+  share a historically constructed curved tooth whose point lies inside its
+  heel radius, and a rounded cylinder shell. Offline first-contact sampling
+  supplies both opposite impulses and inner/outer rests with small running
+  clearance. Drops and balance motion remain prescribed; this does not establish
+  passive regulation, friction or spring-energy closure.
+- [Family loading](family-loading.md): ordinary gears load their core separately
+  from 19 independent models. Belts and Entwistle gearing import the shared miter
+  geometry directly. Fresh JavaScript responses fall from 8.15 MB to 4.39 MB for
+  239 and 3.63 MB for 87; examples 1 and 495 now request 1.66 MB and 1.44 MB.
+  These are response sizes, not frame-rate measurements.
+
+The loading change passes all three loader checks across 507 models, generated
+route verification, the production build and ten packaged browser checks. The
+238 correction passes 16 focused checks and byte-identical profile regeneration.
+Its source-facing and oblique browser views have no errors or clipping, with
+maximum normalized extent 0.862. CPU construction is 122 ms and sampled update
+P95 is 0.400 ms, with no object or geometry growth; imports and GPU work are
+excluded. The [199 native rack study](partial-lantern-native-study.md) preserves every
+finite tooth and full pin, with an unactuated rack. It reproduces the near-full
+stroke and reverses through contact, but the half-timestep paths differ by
+0.016735 units and successive cycles differ by 0.005469/0.002430. It is **not
+qualified for a playback bake**; production geometry and playback remain unchanged. Further
+work should isolate impact sensitivity; no additional tooth tracing is needed.
+
+The integrated four-model CPU screen has no flags or object/geometry growth:
+construction 109–144 ms and sampled update P95 below 0.698 ms, excluding imports
+and GPU rendering. Default and oblique cylinder views have no errors or clipping;
+maximum normalized extents are 0.772 for 294 and 0.884 for 295. Bulk evidence
+stays under `/dev/shm/family44-*`.
+
+All **42 focused mechanism checks** pass (199: 13, 238: 16, 294–295: 13).
+The cylinder bake regenerates byte-identically. After the final endpoint and
+source-metadata corrections, the production build passes in 24.91 seconds and
+all 14 packaged desktop/playback/mobile and loading checks pass in 23.7 seconds.
+The final four-model browser sweep has no errors or clipping; 199's maximum
+normalized extent is 0.896. The complete review remains active.
+
 # Forty-third family pass: winding-stop contact and smaller model downloads
 
 Two winding stops receive mechanical corrections, while an independent loading

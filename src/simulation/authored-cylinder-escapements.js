@@ -1,3 +1,5 @@
+import cylinderContactData from './baked/cylinder-contact.js';
+import {installCylinderContact} from './cylinder-contact-motion.js';
 import * as THREE from 'three';
 import {correctCylinderWorkingParts, finishCylinderReview} from './cylinder-escapement-working-parts.js';
 import {
@@ -177,12 +179,12 @@ function cylinderEscapementPerspective(movement) {
   const sourceRasterWorkingBandWidth = 59;
   const sourceAxialScale = 0.0093;
 
-  const cylinderCenter = new THREE.Vector2(0, 1.45);
+  const cylinderCenter = new THREE.Vector2(0, -1.55+cylinderContactData.centerDistance);
   const wheelCenter = new THREE.Vector2(0, -1.55);
   const centerDistance = cylinderCenter.distanceTo(wheelCenter);
   const toothCount = 15;
   const toothPitch = FULL_TURN / toothCount;
-  const toothOrbitRadius = 3.05;
+  const toothOrbitRadius = cylinderContactData.pointRadius;
   const outerEntryWheelAngle = Math.PI / 2 + toothPitch / 2;
   const entryImpulseAdvance = THREE.MathUtils.degToRad(3);
   const freeDropAdvance = THREE.MathUtils.degToRad(18);
@@ -199,8 +201,8 @@ function cylinderEscapementPerspective(movement) {
   const outerLockPoint = toothReferencePointAtAngle(outerEntryWheelAngle);
   const innerLockPoint = toothReferencePointAtAngle(innerLockWheelAngle);
   const outerExitPoint = toothReferencePointAtAngle(outerExitWheelAngle);
-  const cylinderOuterRadius = outerLockPoint.distanceTo(cylinderCenter);
-  const cylinderInnerRadius = innerLockPoint.distanceTo(cylinderCenter);
+  const cylinderOuterRadius = cylinderContactData.outerRadius;
+  const cylinderInnerRadius = cylinderContactData.innerRadius;
   const cylinderWallThickness = cylinderOuterRadius - cylinderInnerRadius;
   const sourceRadialScale = cylinderOuterRadius / sourceRasterOuterRadius;
 
@@ -1449,7 +1451,7 @@ function cylinderEscapementActionDiagram(movement) {
 }
 
 export function createAuthoredCylinderEscapementMovement(movement) {
-  if (movement.id === 294) return finishCylinderReview(cylinderEscapementPerspective(movement),294);
-  if (movement.id === 295) return finishCylinderReview(cylinderEscapementActionDiagram(movement),295);
+  if (movement.id === 294) return finishCylinderReview(installCylinderContact(cylinderEscapementPerspective(movement),294),294);
+  if (movement.id === 295) return finishCylinderReview(installCylinderContact(cylinderEscapementActionDiagram(movement),295),295);
   return null;
 }

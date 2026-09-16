@@ -1,5 +1,7 @@
 # Cylinder escapements 294–295: bounded contact-branch study
 
+Historical review: superseded by the [finite working-geometry reconstruction](cylinder-escapement-finite-contact-review.md). The residuals below describe the previous model.
+
 This follows [the support review](cylinder-escapement-family-review.md). Primary sources remain [294](https://507movements.com/mm_294.html) and [295](https://507movements.com/mm_295.html); their caption requires alternating inner/outer rests and two opposed impulses. No registered original animation is available. The source uses three plan outlines to show successive states of one cylinder.
 
 **No replacement contact mechanism was accepted in this pass.** The production geometry and timing remain unchanged. Viewer text now explicitly discloses finite tooth/shell intersections and unvalidated loaded locking/impulses. Runtime contact metadata identifies a prescribed reference point rather than a validated finite surface. This is evidence and qualification progress, not a completed mechanical correction.

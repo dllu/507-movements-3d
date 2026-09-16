@@ -283,25 +283,43 @@ a true finite-pin obstruction; neither study changes production playback.
   of 18.5 MB. The [loading review](family-loading.md) records exact measurements
   and compatibility checks across all 507 movements.
 
-## Next independent lanes
+## Forty-fourth pass
 
-- **238, seven-tooth escapement:** solve the actual B flank and compatible
-  loaded impulse, preserving the cleaned seven-tip profile and C support.
-- **199, partial lantern rack:** resolve the late retarding-only contact with
-  a useful driven face and continuous transfer, retaining its existing guides.
-- **294–295, cylinder escapements:** use the
-  [rejected branch and finite witnesses](cylinder-escapement-contact-study.md)
-  to reconstruct the exit-working edge, inner rest and neighboring-tooth
-  transfer together. Both opposite impulses and loaded locking are required.
+- **238:** the finite B corner now follows the actual cleaned wheel flank, with
+  unchanged baked profile and correct impulse normal. C clearance and passive
+  capture remain explicit limits. See the [follow-up](seven-tooth-238-loaded-branch-review.md).
+- **199:** the unactuated native rack study reproduces coasting and reversal,
+  but timestep and repeat-cycle controls disagree. Preserve production and keep
+  the [study](partial-lantern-native-study.md) experimental.
+- **294–295:** a curved tooth with inner point/outer heel and rounded shell now
+  supplies both geometric impulse branches and clear neighboring transfer. The
+  small running clearance, balance schedule and finite drops remain prescribed;
+  loaded dynamics are open. See the [finite-contact review](cylinder-escapement-finite-contact-review.md).
+- **Loading:** ordinary gears now load independently of 19 delegated models;
+  belts and Entwistle gearing share a small direct miter-geometry import. See
+  [measured response sizes and checks](family-loading.md).
 
-These independent lanes should reuse finite profiles, offline envelopes and
-actual-normal checks. Use MuJoCo for unresolved passive selection or dynamics
-after compatible working geometry exists. Keep source fidelity and useful
-working faces explicit rather than publishing clearance-only cuts.
+## Next independent lanes: breadth before further escapement tuning
+
+- **371/394, reversing transmissions:** replace solid shaft collars/bearings and
+  the input-rod guide with reusable bored journals and finite guide passages.
+  Own `authored-mangle-wheels.js` and `authored-parsons-racks.js`.
+- **247/278, release mechanisms:** open the sounding probe's interfering guide
+  and the safety stop's solid sliding eye; separate overlapping lever layers
+  and bore their joints. Own `authored-sounding-weights.js` and
+  `authored-safety-stops.js`; retain prescribed spring/load limits.
+- **204, skew friction wheels:** replace raised tube indexes on tangent working
+  surfaces with flush marks and bore end parts. Own only
+  `skewHyperboloidFrictionDrive()` in `authored-gears-core.js`; validate actual
+  finite contact in addition to the ideal hyperboloid equations.
+
+Reuse existing bored/finite plate components, inspect source and selected working
+poses, and publish bounded corrections. The 199 impact sensitivity and remaining
+escapement passive dynamics stay queued without blocking these independent lanes.
 
 212's reverse bias/dead-center capture and 213's source tooth fit and passive
-friction/impact response remain follow-ups. The large legacy gear bundle is
-the next independent loading target. 232's prescribed rocking-carrier branch,
+friction/impact response remain follow-ups. The legacy gear bundle has now been
+split. 232's prescribed rocking-carrier branch,
 225/235/236's passive pawl bias and loaded transfer, 237/240/241's prescribed
 bias and ideal impact assumptions, 231's proportions,
 271's pickup holding/impact and omitted cord, and 284's loaded transfer/finite

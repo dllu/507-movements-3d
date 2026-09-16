@@ -1,5 +1,7 @@
 # Cylinder escapements 294–295: passages and supports
 
+Historical review: superseded by the [finite working-geometry reconstruction](cylinder-escapement-finite-contact-review.md). The residuals below describe the previous model.
+
 Sources: [movement 294](https://507movements.com/mm_294.html), [movement 295](https://507movements.com/mm_295.html), and their local engravings. Both official pages mark the animation unavailable. Brown shows the hollow cylinder in perspective and its alternating outside/inside tooth engagements in a sequence of plan positions. The three plan outlines represent successive states of one cylinder.
 
 This is a **bounded topology/support correction, not a completed finite-contact reconstruction**. The existing prescribed tooth advance and balance motion are retained. Working cylinder material has not been removed to conceal collisions.
