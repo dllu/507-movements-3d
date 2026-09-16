@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { boredCylinderGeometry, fitPistonGuide } from './piston-guide-parts.js';
+import { circle, poly, plate, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -36,7 +38,8 @@ function seesawMovement(movement) {
   const cyclePeriod = 60 / sourceCyclesPerMinute;
   const angularFrequency = FULL_TURN / cyclePeriod;
   const beamAmplitude = Math.PI / 6;
-  const pivot = new THREE.Vector3(0, 1.34, 0);
+  // The source stand is 4 units tall for a beam half-span of 4.5.
+  const pivot = new THREE.Vector3(0, 0.18 + 2.82 * 4 / 4.5, 0);
   const beamHalfLength = 2.82;
   const beamLength = beamHalfLength * 2;
   const beamThickness = 0.15;
@@ -145,17 +148,17 @@ function seesawMovement(movement) {
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-pedestal-and-two-plane-a-frame';
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(3.34, 0.18, 1.28),
+    new THREE.BoxGeometry(3.76, 0.18, 1.28),
     frameMaterial,
   );
   base.position.set(0, baseY + 0.09, 0);
   base.userData.role = 'source-visible-seesaw-base';
   frame.add(base);
   const centerPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, pivot.y - 0.12, 0.54),
+    new THREE.BoxGeometry(0.34, pivot.y - 0.45, 0.74),
     frameMaterial,
   );
-  centerPost.position.set(0, (pivot.y + 0.06) / 2, 0);
+  centerPost.position.set(0, (pivot.y - 0.27) / 2, 0);
   centerPost.userData.role = 'central-vertical-fulcrum-post';
   frame.add(centerPost);
   const frameLegs = [];
@@ -163,7 +166,7 @@ function seesawMovement(movement) {
     for (const side of [-1, 1]) {
       const leg = makeBeam(
         new THREE.Vector3(side * 1.18, baseY + 0.18, z),
-        new THREE.Vector3(0, pivot.y - 0.04, z),
+        new THREE.Vector3(0, pivot.y - 0.95, z),
         { color: PALETTE.frame, depth: 0.12, thickness: 0.16 },
       );
       leg.userData.role = 'inclined-leg-of-fixed-a-frame';
@@ -173,13 +176,14 @@ function seesawMovement(movement) {
       frameLegs.push(leg);
     }
   }
+  const cheekOutline = [[-.25, .09], [.25, .09], [.25, pivot.y]];
+  for (let i = 1; i <= 48; i++) {
+    const angle = Math.PI * i / 48;
+    cheekOutline.push([.25 * Math.cos(angle), pivot.y + .305 * Math.sin(angle)]);
+  }
+  const cheekProfile = polygonClipping.difference(poly(cheekOutline), poly(circle([0, pivot.y], .108, 96)));
   const apexCaps = [-0.43, 0.43].map((z) => {
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.25, 24, 16),
-      frameMaterial,
-    );
-    cap.position.set(0, pivot.y, z);
-    cap.scale.set(1, 1.22, 0.48);
+    const cap = new THREE.Mesh(plate(cheekProfile, z - .09, z + .09), frameMaterial);
     cap.userData.role = 'rounded-fixed-fulcrum-cheek';
     cap.userData.planeZ = z;
     frame.add(cap);
@@ -193,23 +197,30 @@ function seesawMovement(movement) {
   beamRotor.userData.role =
     'one-rigid-seesaw-beam-seats-and-handles-rocking-about-fixed-axle';
   const plank = new THREE.Mesh(
-    new THREE.BoxGeometry(beamLength, beamThickness, beamDepth),
+    plate(polygonClipping.difference(
+      poly([[-beamHalfLength, -beamThickness/2], [beamHalfLength, -beamThickness/2],
+        [beamHalfLength, beamThickness/2], [-beamHalfLength, beamThickness/2]]),
+      poly(circle([0, 0], .109, 96))), -beamDepth/2, beamDepth/2),
     beamMaterial,
   );
   plank.userData.role = 'single-straight-balanced-seesaw-plank';
   beamRotor.add(plank);
   const plankEdgeRails = [-1, 1].map((side) => {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(beamLength, 0.040, 0.055),
+      plate(polygonClipping.difference(
+        poly([[-beamHalfLength, beamThickness/2-.008], [beamHalfLength, beamThickness/2-.008],
+          [beamHalfLength, beamThickness/2+.032], [-beamHalfLength, beamThickness/2+.032]]),
+        poly(circle([0, 0], .109, 96))), side*.14-.0275, side*.14+.0275),
       darkMaterial,
     );
-    rail.position.set(0, beamThickness / 2 + 0.012, side * 0.14);
+    // Profile is expressed directly in beam coordinates, including the axle aperture.
     rail.userData.role = 'dark-longitudinal-edge-of-rigid-plank';
     rail.userData.side = side;
     beamRotor.add(rail);
     return rail;
   });
-  const pivotBoss = cylinderAlongZ(0.235, 0.72, beamMaterial, 48);
+  const pivotBoss = new THREE.Mesh(boredCylinderGeometry(.235, .109, .54), beamMaterial);
+  pivotBoss.rotation.x = Math.PI / 2;
   pivotBoss.userData.role = 'moving-beam-bearing-boss-around-fixed-axle';
   beamRotor.add(pivotBoss);
 
@@ -222,7 +233,7 @@ function seesawMovement(movement) {
       new THREE.BoxGeometry(0.62, 0.13, 0.72),
       seatMaterial,
     );
-    seat.position.set(side * seatStation, 0.16, 0);
+    seat.position.set(side * seatStation, 0.14, 0);
     seat.userData.role = 'end-seat-rigidly-fastened-to-seesaw-beam';
     seat.userData.side = side;
     beamRotor.add(seat);
@@ -419,14 +430,13 @@ function seesawMovement(movement) {
   };
 
   update(0);
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.20, -0.10, -0.88),
-    new THREE.Vector3(3.20, 2.95, 0.88),
-  );
+  root.userData.reconstructionNote = 'The source cosine animation prescribes the ±30° swing; rider forces and bearing friction are not simulated. Fulcrum height follows the source 4:4.5 stand/half-span ratio. Paired bored cheeks and a fixed axle reconstruct the hidden depth interfaces.';
+  root.userData.minimumDisplayCycleSeconds = cyclePeriod;
+  fitPistonGuide(root, update, cyclePeriod);
   root.userData.groundFloorY = -0.09;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(4.6, 3.0, 8.6),
+    cameraDirection: new THREE.Vector3(1.5, 0.9, 16),
     root,
     update,
   };
