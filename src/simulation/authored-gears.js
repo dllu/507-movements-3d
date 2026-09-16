@@ -1,3 +1,5 @@
+import { finishPartialLanternRack } from './partial-lantern-rack-parts.js';
+import { finishMangleRackWorkingParts } from './mangle-rack-working-parts.js';
 import { fitRadialPinManglePinion, discloseRadialPinMangleContact } from './radial-pin-mangle-contact.js';
 import { finishReversingMangleGuides } from './reversing-mangle-guides.js';
 import {correctVariableDrive} from './variable-drive-205-209-parts.js';
@@ -26750,7 +26752,8 @@ function capsuleGuidedMangleRack() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.6, 4.6, 11.4));
+  finish(root, update);
+  return finishMangleRackWorkingParts(root, update, 197);
 }
 
 function fixedPinionLiftedMangleRack() {
@@ -28060,7 +28063,8 @@ function fixedPinionLiftedMangleRack() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(7.2, 5.0, 12.4));
+  finish(root, update);
+  return finishMangleRackWorkingParts(root, update, 198);
 }
 
 function partialLanternPinionMangleRack() {
@@ -28991,8 +28995,9 @@ function partialLanternPinionMangleRack() {
     };
     root.userData.kinematics = state;
   };
-  update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.2, 12.8));
+  const workingUpdate = finishPartialLanternRack(root, update);
+  workingUpdate(0);
+  return finish(root, workingUpdate, new THREE.Vector3(1.2, 0.7, 18));
 }
 
 function coaxialDifferentialSpeedBevelGears() {

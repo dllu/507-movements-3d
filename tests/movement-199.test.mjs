@@ -289,7 +289,9 @@ test('movement 199 preserves the official ten-position pitch, four installed pin
   disposeModel(model.root);
 });
 
-test('movement 199 maintains one exclusive rack mesh and exact rolling through 32,769 states', () => {
+// Original-source pitch construction only: these nominal contacts do not
+// establish finite positive-force transmission. See the working-parts tests.
+test('movement 199 retains the source nominal rack selection and pitch law through 32,769 states', () => {
   const model = createMovementModel(catalog.movements[198]);
   const {
     canonicalStates,
