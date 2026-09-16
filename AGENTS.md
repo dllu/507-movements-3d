@@ -22,3 +22,16 @@ Use the commit email `daniel@lawrence.lu`. This is standing user authorization
 to commit and push progress; do not ask for approval again for routine pushes.
 Preserve remote history, validate changes appropriately, and keep dependencies,
 build output, and bulk generated review artifacts out of Git.
+
+## Review in reusable family passes
+
+Use `docs/remaining-movement-passes.md` and `scripts/lib/movement-batches.mjs`
+to coordinate remaining work. The user explicitly authorizes parallel subagents
+for independent mechanism families; assign disjoint production files or functions
+and integrate commits centrally. Reuse existing components before authoring new
+ones. Prioritize working constraints, contact, continuity and framing over
+pixel-perfect reconstruction. Use the classical contour extraction tool for
+irregular visible outlines; infer occlusions separately and use ideal mechanical
+curves where intended. Publish bounded corrections with honest residuals; do not
+let one difficult movement block unrelated families. Reserve expensive native and
+collision studies for the contact/dynamic uncertainty that warrants them.

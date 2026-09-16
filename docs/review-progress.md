@@ -1,3 +1,26 @@
+# Family passes started: 325 movements in 20 queues
+
+Changed the remaining review from serial drawing refinement to reusable family
+passes. The [inventory and workflow](remaining-movement-passes.md) assigns every
+movement 183–507 to one primary queue and identifies existing components to reuse.
+The whole-queue CPU screen constructed all 325 models and found finite geometry
+and transforms at sampled poses; this does not qualify contact or source fidelity.
+
+The first parallel batch replaces spring-like worms in 195/207 with shared solid
+bored threads and fixes hub/shaft interference, complete sweep bounds and camera
+views in 220/230. Twenty-nine focused model tests, two queue tests, the build and
+four desktop browser reviews pass. See [worm residuals](movement-195-207.md) and
+[coupling review](coupling-family-review.md).
+
+A new [classical contour extractor](engraving-extraction.md) produces SVG/JSON and
+source overlays in fractions of a second. Occluded spans still need reconstruction.
+The 26.31 MB initial bundle is a shared loading-performance priority. Next passes
+can proceed independently through the family inventory; 183–184 contact work and
+181–182's source-width discrepancy remain explicit exceptions rather than queue
+blockers. The full 507-movement goal remains active.
+
+## Earlier checkpoints
+
 # Movements 181–182: continuous lower finger; 183–184 baseline audited
 
 Joined the lower tripping and holding edges into one solid contact head, using
