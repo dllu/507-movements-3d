@@ -722,3 +722,20 @@ limits. All 105 distinct focused checks, the final production build, four-model
 screen and four packaged desktop/playback/mobile checks pass. The native
 study's failed dynamics comparison remains an explicit exception, alongside
 292's working contact and the prescribed passive dynamics of the other models.
+
+## Thirtieth parallel batch
+
+- **291/313:** correct finite active faces, axial lock engagement and journals;
+  retain explicit return-pallet, passing-spring and withdrawal residuals.
+- **293/296:** actual arbors, bores and connected supports; restore the flat
+  widened lever end C. Reconstruct their incompatible working laws separately.
+- **294/295:** clear hollow cylinder passages and connected raised tooth stems,
+  with real journals and source-oriented views. Working lip contact is pending.
+- **297:** connect the complete lantern wheel and its bored supports; record
+  finite release/depth and force-direction defects in the existing schedule.
+
+All seven are partial corrections, not completed escapement simulations. The
+[review progress](review-progress.md) links measured defects and targeted next
+work. All 77 focused checks, final build, seven-model screen and seven packaged
+desktop/playback/mobile checks pass. Structural clearance and point-law tests
+are not used to certify the remaining working contact.

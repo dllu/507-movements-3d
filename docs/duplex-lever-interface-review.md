@@ -103,7 +103,7 @@ reported no browser errors and no camera clipping over 17 full-cycle poses:
 | Movement | Maximum NDC extent | Draw calls | Rendered triangles, including shadows |
 | --- | ---: | ---: | ---: |
 | 293 | 0.889 | 104 | 27,120 |
-| 296 | 0.878 | 110 | 43,920 |
+| 296 | 0.878 | 110 | 43,752 |
 
 The final C tab passed the revised clearance and attachment checks; the root
 integration review captures its final source/default/oblique views.

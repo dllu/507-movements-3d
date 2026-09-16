@@ -1,3 +1,38 @@
+# Thirtieth family pass: escapement construction and working-surface review
+
+Seven movements receive bounded corrections: 291, 293–297 and 313. **All seven
+remain mechanically partial.** This pass fixes actual construction defects and
+records where prescribed point laws fail against finite working surfaces; the
+overall 507-movement review remains active.
+
+- [291/313 free escapements](free-escapement-291-313-review.md): one-sided
+  impulse/locking faces, axial engagement, real bores and reaching journals.
+  Active working gaps and 313's reaction directions improve. A denser sweep
+  still finds return collisions and passing-spring defects; neither mechanism
+  is qualified through its complete cycle.
+- [293/296 duplex and lever interfaces](duplex-lever-interface-review.md):
+  actual arbors, bored journals, attached rear supports, unobscured source
+  views and a flat widened lever end C. The radial duplex lock lacks a resisting
+  moment; 296's working pallets and balance-pin handoff remain incompatible.
+- [294/295 cylinder passages](cylinder-escapement-family-review.md): split end
+  pivots clear the hollow working band; raised teeth, collars and supports are
+  physically connected and bored. Working tooth/cylinder interference remains.
+- [297 lantern construction](lantern-escapement-review.md): connected spokes,
+  circular end rings, attached journals and a compact bored rear support.
+  Pallet release, working depth and force direction still need reconstruction.
+
+The source pages in this batch provide no moving animation oracle. Intended
+circles and straight members use shared analytical components; bounded contact
+experiments rejected incompatible schedules instead of cutting away load faces.
+The failures are kept separate from the passing structural checks.
+
+All 77 distinct focused checks pass. The final production build passes in
+20.66 seconds, and the seven-model construction/update screen has no flags.
+Final source/default/oblique views have no browser errors or camera clipping.
+All seven packaged desktop/playback/mobile checks pass in 18.1 seconds. These
+checks verify the scoped corrections and interface behavior, not the unresolved
+working-contact laws listed above.
+
 # Twenty-ninth family pass: escapement handoffs and a working rack selector
 
 Four movements receive production corrections: 289, 290, 292 and 391. A bounded
