@@ -4,8 +4,13 @@ Read-only triage on 2026-09-16 found three bounded candidates for the same
 finite-contact and stepped-pawl components used in 271 and 284. No correction
 to these three movements is claimed by this report.
 
-Reproduce the finite-surface, axial-range and moment witnesses with
-`node scripts/screen-pawl-working-interfaces.mjs`.
+The measurements below describe baseline commit `bec462f`. Run
+`node scripts/screen-pawl-working-interfaces.mjs` to measure the current model;
+after corrections it should no longer reproduce those baseline defects.
+The fortieth pass records the corrections in the
+[225](carrier-pawl-225-contact-review.md),
+[235](star-tappet-235-review.md) and
+[236](alternating-pawl-236-contact-review.md) reviews.
 
 | Movement | Measured defect | Reusable correction |
 | --- | --- | --- |

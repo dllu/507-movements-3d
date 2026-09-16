@@ -1,3 +1,48 @@
+# Fortieth family pass: useful pawl reactions and source-direction playback
+
+Four movements receive corrections: 197, 225, 235 and 236. Parallel pawl lanes
+reuse finite profiles, bored joints and contact checks; a separate mangle
+follow-up closes its source-direction discrepancy. The complete 507-movement
+review remains active.
+
+- [225 carrier pawl](carrier-pawl-225-contact-review.md): replace radial,
+  zero-torque contact with a finite rising-flank seat (+1.40029 moment arm).
+  A continuous return clears the next crest; real bored eyes join the carrier
+  and pawl. A browser-only polygon-union failure was fixed with simple ordered
+  curved perimeters. The wheel marker now sits flush inside the root disk.
+- [235 sprung tappet](star-tappet-235-review.md): close both 0.03 axial gaps
+  and switch the drive to the flank whose reaction turns the wheel correctly.
+  Small offline return/holding paths replace the 0.117-radian click jump.
+  Corrected pivots, spring attachment, curved hook, narrow carrier and hub
+  index improve the actual source-facing view. Velocity corners and imposed
+  spring/transfer behavior remain explicit.
+- [236 alternating pawls](alternating-pawl-236-contact-review.md): close the
+  0.06/0.18 depth gaps and seat the toes on actual steep-flank corners with
+  positive wheel torque on both strokes. Return and handoff are continuous;
+  actual eyes and pins replace solid overlapping pivots. Full-stroke bounds
+  correct a browser clipping witness; the initial handoff seats both pawls.
+  This phase tilts the lever relative to the engraving, and the inferred
+  corner seat moves one source tip by about 20 pixels; source fit remains
+  approximate rather than pixel-exact.
+- [197 direction](mangle-rack-197-198-contact-review.md): the pinion now turns
+  counterclockwise, matching the registered source. Canonical times and
+  velocity/acceleration fields follow the reversed path; the same finite
+  teeth support the newly loaded side. The geometry bake is unchanged.
+
+All **58 distinct focused checks pass**, including unchanged 198 regressions.
+The mangle-profile and tappet-path bakes regenerate byte-identically. The final
+build passes in 22.06 seconds. Four-model construction/update screens have no
+flags or runtime geometry growth; sampled CPU update P95 stays below 1.2 ms.
+Final source/default/oblique views report no browser errors or clipping
+(normalized extents 0.784–0.911). All four packaged desktop/playback/mobile
+checks pass in 11.1 seconds.
+
+These corrections establish finite geometry and prescribed contact paths, not
+passive force closure. Pawl bias, return holding, impact and loaded transfer
+remain qualified in the linked reviews and viewer notes. The next
+[237/240/241 stop-interface screen](ratchet-stop-next-pass-triage.md) records
+actual tooth penetration and depth-gap witnesses for a further shared pass.
+
 # Thirty-ninth family pass: generated mangle racks and short drawing pawl
 
 Four movements receive scoped corrections: 197, 198, 199 and 232. Three

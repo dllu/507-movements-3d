@@ -220,28 +220,41 @@ geometry, and a short drawing tip replaces 232's penetrating long curve.
 All 41 focused checks pass. The full review remains active: prescribed motion
 and finite geometric contact are separate from passive-load qualification.
 
+## Fortieth pass
+
+197/225/235/236 now have scoped corrections in the linked
+[review progress](review-progress.md). Finite pawl reactions turn the wheels
+in the intended direction, return/handoff paths clear the teeth, and 197
+matches its source motor direction. The final 58 focused checks, build,
+four-model screen and four packaged browser cases pass. Passive load behavior
+is still separate from the corrected geometric transmission.
+
 ## Next independent lanes
 
-The [next pawl triage](pawl-next-pass-triage.md) has reproducible witnesses
-for three scoped factories in `authored-intermittent.js`. Parallel lanes must
-coordinate additive imports and own disjoint functions/helpers.
+The [next stop-interface triage](ratchet-stop-next-pass-triage.md) has
+reproducible witnesses for three scoped factories in `authored-intermittent.js`.
+Parallel lanes must coordinate additive imports and use disjoint helpers.
 
-- **225, vibrating-carrier pawl:** move its zero-torque radial-tip contact
-  onto a real driving flank, reusing 284's finite nose/hinged-pawl closure.
-- **235, sprung star-wheel tappet:** correct the 0.03 axial separation of
-  both working noses, then qualify finite drive, return and holding faces.
-- **236, alternating pawls:** step the long/short contact fingers across
-  their 0.06/0.18 depth gaps, then qualify both strokes and the handoff.
+- **237, crown pawl:** correct actual nose/body intrusion into the axial teeth
+  (0.01136/0.01059), preserving useful ramp, drive and drop contact.
+- **240, alternative stops:** bring all three working bodies across their
+  0.0484 depth gap, then qualify free running and rollback blocking for each
+  source alternative. Do not mistake the comparison plate for three
+  simultaneously loaded stops.
+- **241, single-tooth index:** reconstruct driver and holding-click faces
+  around actual 0.02953/0.03055 penetration witnesses, with continuous entry,
+  handoff and return, preserving the source rotation arrows and ratio.
 
-None of these pages registers a source animation. Use their captions and
-engravings, ideal mechanical profiles and extracted visible irregular outlines
-where useful; keep passive bias and transfer assumptions explicit.
+None of these pages registers a source animation. Use caption/engraving,
+ideal mechanical curves and the existing contour extractor for irregular
+visible bodies. Do not erase working faces merely to pass a clearance test.
 
-197's motor direction, 199's late retarding-only contact, 232's prescribed
-rocking-carrier branch, 231's proportions, 271's pickup holding/impact and
-omitted cord, and 284's loaded transfer/finite observation window remain
-follow-ups. Do not let one unresolved dynamic branch block an independent
-finite-geometry correction, and do not label such a correction load-validated.
+199's late retarding-only contact, 232's prescribed rocking-carrier branch,
+225/235/236's passive pawl bias and loaded transfer, 231's proportions,
+271's pickup holding/impact and omitted cord, and 284's loaded transfer/finite
+observation window remain follow-ups. 236's source fit is approximate around
+its inferred corner seat and initial handoff phase. Keep the broader goal
+active until these and the remaining movement reviews are actually resolved.
 
 ## Running the screen
 
