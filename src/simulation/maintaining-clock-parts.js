@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { tubePathUpdater } from './update-tube-path.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
+import clickPaths from './baked/maintaining-clock-clicks.js';
 const TAU=2*Math.PI;
 const tube=(r,h,b)=>boredLatheGeometry([{radial:r,axial:-h/2},{radial:r,axial:h/2}],b,64);
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
@@ -20,7 +21,7 @@ export function ratchet(mesh,{radius,bore,teeth,hand,phase,depth}){
 // A prescribed geometric follower: intersect the toe-center orbit with the
 // outward-offset polygon edges/vertices. This checks finite toe radii rather
 // than guessing a sinusoidal lift from nominal pitch circles. No force solve.
-export function makeFollower(group,wheel,center,outline,depth=.12){
+export function makeFollower(group,wheel,center,outline,depth=.12,bakeKey){
   const base=group.rotation.z,oldBody=group.children.find(o=>o.userData.role?.endsWith('-body'));
   const length=oldBody.geometry.parameters.width,pivot=[group.position.x-center[0],group.position.y-center[1]];
   const a=turn([length,0],base),sign=Math.sign(cross(a,pivot))||1;
@@ -59,7 +60,19 @@ export function makeFollower(group,wheel,center,outline,depth=.12){
     }
     return base+sign*lift;
   }
-  return{group,body,pin,wheel,pivot,length,base,sign,outline,angleAt,update(angle){group.rotation.z=angleAt(angle);}};
+  const path=clickPaths[bakeKey];
+  const playbackAngleAt=path ? angle=>{
+    const phase=((angle/path.pitch)%1+1)%1,coordinate=phase*path.phaseScale,knots=path.knots;
+    let lo=0,hi=knots.length-1;
+    while(hi-lo>1){const mid=(lo+hi)>>1;if(knots[mid][0]<=coordinate)lo=mid;else hi=mid;}
+    const a=knots[lo],b=knots[hi],t=(coordinate-a[0])/(b[0]-a[0]);
+    return a[1]+t*(b[1]-a[1]);
+  } : angleAt;
+  // Keep the exact construction available to offline bakers and comparisons;
+  // playback only searches the small periodic table.
+  return{group,body,pin,wheel,pivot,length,base,sign,outline,angleAt,playbackAngleAt,bakeKey,
+    bakeSignature:{pivot,length,base,sign,outline},
+    update(angle){group.rotation.z=playbackAngleAt(angle);}};
 }
 
 export function correctEndlessMaintainingChain(root){
@@ -90,7 +103,7 @@ export function correctEndlessMaintainingChain(root){
   b.pawl.position.z=g.chainPlaneZ+mesh.position.z;
   const length=b.pawl.children[0].geometry.parameters.width,p=turn([length,0],b.pawl.rotation.z),angle=Math.atan2(b.pawl.position.y-center[1]+p[1],b.pawl.position.x-center[0]+p[0]);
   const outline=ratchet(mesh,{radius:.76,bore:.132,teeth:g.ratchetToothCount,hand:1,phase:angle+.05*g.ratchetToothPitch,depth:.16});
-  const follower=makeFollower(b.pawl,mesh,center,outline);b.finiteClicks=[follower];
+  const follower=makeFollower(b.pawl,mesh,center,outline,.12,'320-p');b.finiteClicks=[follower];
   replace(follower.pin,new THREE.CylinderGeometry(.08,.08,1.05,32));follower.pin.position.z=.125;
   const support=new THREE.Mesh(new THREE.BoxGeometry(.16,.35,.20),b.fixedFrame.children[0].children[0].material);
   support.position.set(b.pawl.position.x,b.pawl.position.y+.175,-.45);b.fixedFrame.add(support);
@@ -121,7 +134,7 @@ export function correctGoingBarrel(root){
   for(const[name,pawl,mesh,radius,teeth,hand,bore,depth]of setups){
     const p=pawl.userData.contact,phase=Math.atan2(p.y,p.x)+hand*.05*TAU/teeth;
     const outline=ratchet(mesh,{radius,bore,teeth,hand,phase,depth});
-    const follower=makeFollower(pawl,mesh,[0,0],outline);follower.name=name;b.finiteClicks.push(follower);
+    const follower=makeFollower(pawl,mesh,[0,0],outline,.12,`321-${name}`);follower.name=name;b.finiteClicks.push(follower);
     replace(follower.pin,new THREE.CylinderGeometry(.08,.08,name==='R'?.99:.80,32));
     follower.pin.position.z=name==='R'?.395:-.25;
   }

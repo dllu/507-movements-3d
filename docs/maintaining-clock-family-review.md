@@ -56,7 +56,30 @@ All **2,244,640** selected surface queries clear at a .00001 numerical tolerance
 
 Final serial Chrome default/source comparisons, front views, and advanced poses produced no browser errors. Full-cycle visible-vertex projection maxima were .836 and .892 NDC, without clipping. Rendered triangles including shadows were 64,016 / 36,268, with 143 / 173 draw calls. One Node screen measured approximately 113 / 77 ms construction and 2.17 / 1.06 ms mean update across 200 poses. No native simulation or expensive geometry bake runs in the browser. Bulk captures remain in `/dev/shm/maintaining-clock-final-*`.
 
-## Explicit residuals
+## Offline click playback follow-up
+
+The three finite geometric click paths now use periodic offline tables generated
+by `node scripts/bake-maintaining-clock-clicks.mjs`. Browser frames perform a
+binary search and linear interpolation rather than repeating every circle/edge
+intersection. The exact follower remains available to the generator and tests.
+The tables contain 982, 1,995 and 1,103 keys, respectively, and total 99,099 bytes
+(about 38 KB gzip). Geometry signatures catch stale tables when dimensions change;
+`--check` reproduces the committed data byte-for-byte.
+
+All 22 clock checks pass, including the existing actual-solid/rope clearances
+and independent, non-dyadic samples across positive and negative tooth periods.
+The greatest observed interpolation error is 9.91e-7 radians. The existing
+positive click clearances and tooth-handoff convergence remain intact. This is
+an approximation to the same geometric constraint, not a new dynamics model.
+
+A warmed, same-process 512-pose CPU comparison measured 321 mean update time
+at 0.92 ms with the exact follower versus 0.17 ms with the bake (P95 1.02 versus
+0.27 ms). 320 remains about 2.0 ms because updating its chain dominates. These
+exclude imports and GPU rendering and are measurements, not timing guarantees.
+Final full-cycle browser checks preserve the previous framing, with no errors
+or clipping; screenshots and logs are under `/dev/shm/family46-clock-*`.
+
+## Remaining physical assumptions
 
 **The output continuity is prescribed, not force-validated.** Neither model currently solves gravity, click bias springs, impact, bearing friction, winding force, elastic energy transfer, or escapement load as coupled dynamics. The positive click clearance and geometric follower do not establish that the chosen loaded holding pose will support the assumed torque without backlash. Existing nominal pitch-contact records remain ideal references; 321 marks these as such in render metadata.
 
