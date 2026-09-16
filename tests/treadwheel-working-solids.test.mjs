@@ -37,9 +37,9 @@ test('377 axle has a real bearing passage and rail posts meet the foundation',()
  for(const post of b.railPosts)joined(post,b.base,new T.Vector3(post.position.x,-1.97,post.position.z));
  for(const foot of b.feet){const p=foot.getWorldPosition(new T.Vector3());assert.ok(Math.abs(p.z)+.08<1.102,'foot lies inside full-width tread field');}
 });
-test('gait contact remains explicitly unqualified, with measured foot/tread interference separate from bearing tests',()=>{
+test('377 prescribed finite foot path clears every board while passive balance remains unqualified',()=>{
  const m=models[2],b=m.root.userData.blocks;let min=0;for(let i=0;i<=64;i++){m.update(i/16);m.root.updateMatrixWorld(true);for(const foot of b.feet)for(const tread of b.treadBoards)min=Math.min(min,clearance(foot,tread));}
- assert.ok(min<-.02&&min>-.08,`document the retained finite gait residual: ${min}`);console.log({personFootTreadResidual:min});
+ assert.ok(min>=-2e-6,`foot/tread penetration: ${min}`);
  for(const [i,m]of models.entries()){assert.equal(m.root.userData.hideGround,true);assert.equal(m.root.userData.minimumDisplayCycleSeconds,i===0?6:12);assert.match(m.root.userData.workingPartsReview.qualification,/unqualified/);}
 });
 test('family playback retains scene objects and geometry buffers',()=>{for(const m of models){const before=[];m.root.traverse(o=>before.push([o,o.geometry]));for(let i=0;i<=64;i++)m.update(i/16);const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);}});

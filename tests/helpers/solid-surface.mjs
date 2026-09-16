@@ -4,7 +4,9 @@ export function surfaceTriangles(geometry) {
   const p = geometry.attributes.position, index = geometry.index, result = [];
   for (let i = 0; i < (index?.count ?? p.count); i += 3) result.push(new THREE.Triangle(...[0, 1, 2]
     .map((j) => new THREE.Vector3().fromBufferAttribute(p, index ? index.getX(i + j) : i + j))));
-  return result;
+  // Sphere/capsule poles can contain zero-area triangles. Three's closest-
+  // point routine has no unique triangle plane there and may return NaN.
+  return result.filter(triangle => triangle.getArea() > 1e-16);
 }
 export function surfacePoints(geometry) {
   const result = [], seen = new Set();

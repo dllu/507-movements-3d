@@ -1,4 +1,5 @@
 import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working-parts.js';
+import { treadmillLegState } from './treadmill-gait.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -57,15 +58,19 @@ function externalPersonTreadmill(movement) {
   const personMass = 1.0;
   const gravity = 9.81;
   const personCenterOfMass = wheelCenter.clone().add(
-    new THREE.Vector3(1.55, 1.55, 0.60),
+    new THREE.Vector3(1.95, 1.90, 0.60),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
     .sub(wheelCenter).cross(personWeight).z;
   const outputPower = personWeightTorque * wheelAngularSpeed;
   const legPhaseOffsets = [0, Math.PI];
-  const upperLegAmplitude = 0.31;
-  const lowerLegAmplitude = 0.39;
+  const upperLegLength = 0.70;
+  const lowerLegLength = 0.65;
+  const gaitGeometry = { treadPitch, treadRadius, treadCount, wheelStartAngle,
+    wheelPeriod, hipX: personCenterOfMass.x - wheelCenter.x,
+    hipY: personCenterOfMass.y - wheelCenter.y - 0.27,
+    upperLength: upperLegLength, lowerLength: lowerLegLength };
 
   const stateAtTime = (time) => {
     const wheelTravel = wheelAngularSpeed * time;
@@ -94,21 +99,7 @@ function externalPersonTreadmill(movement) {
     );
     const relativeClimbVelocity = surfaceVelocityAtPerson.clone().negate();
     const gaitPhase = gaitAngularSpeed * time;
-    const legStates = legPhaseOffsets.map((offset, index) => {
-      const phase = gaitPhase + offset;
-      return {
-        index,
-        lowerAngle: 0.18
-          + lowerLegAmplitude * Math.sin(phase + Math.PI / 2),
-        lowerAngularSpeed: lowerLegAmplitude * gaitAngularSpeed
-          * Math.cos(phase + Math.PI / 2),
-        phase,
-        upperAngle: -0.06
-          + upperLegAmplitude * Math.sin(phase),
-        upperAngularSpeed: upperLegAmplitude * gaitAngularSpeed
-          * Math.cos(phase),
-      };
-    });
+    const legStates = legPhaseOffsets.map((_, index) => treadmillLegState(time, index, gaitGeometry));
     return {
       gaitAngularSpeed,
       gaitPhase,
@@ -197,7 +188,9 @@ function externalPersonTreadmill(movement) {
       Math.sin(angle) * treadRadius,
       0,
     );
-    tread.rotation.z = angle + Math.PI / 2;
+    // Radial boards provide upward-facing steps on the descending side.
+    // Tangential boards would present a nearly vertical wall to the walker.
+    tread.rotation.z = angle;
     tread.userData.index = index;
     tread.userData.role =
       'cross-width-peripheral-step-board-rigid-with-treadmill';
@@ -291,12 +284,10 @@ function externalPersonTreadmill(movement) {
   const upperLegs = [];
   const lowerLegs = [];
   const feet = [];
-  const upperLegLength = 0.54;
-  const lowerLegLength = 0.50;
   for (let index = 0; index < 2; index += 1) {
     const legRoot = new THREE.Group();
     legRoot.position.set(
-      index === 0 ? -0.13 : 0.13,
+      0,
       -0.27,
       index === 0 ? 0.12 : -0.12,
     );
@@ -330,7 +321,7 @@ function externalPersonTreadmill(movement) {
       new THREE.BoxGeometry(0.30, 0.10, 0.16),
       darkMaterial,
     );
-    foot.position.set(-0.09, -lowerLegLength, 0);
+    foot.position.set(-0.04, -lowerLegLength - 0.05, 0);
     foot.userData.role = 'person-foot-above-peripheral-step';
     knee.add(foot);
     feet.push(foot);
@@ -422,8 +413,13 @@ function externalPersonTreadmill(movement) {
     const state = stateAtTime(time);
     wheelRotor.rotation.z = state.wheelAngle;
     for (let index = 0; index < legRoots.length; index += 1) {
-      legRoots[index].rotation.z = state.legStates[index].upperAngle;
-      kneePivots[index].rotation.z = state.legStates[index].lowerAngle;
+      const leg = state.legStates[index];
+      legRoots[index].rotation.z = leg.upperAngle;
+      kneePivots[index].rotation.z = leg.lowerAngle;
+      const ankleRotation = leg.soleAngle - leg.upperAngle - leg.lowerAngle;
+      feet[index].rotation.z = ankleRotation;
+      feet[index].position.set(-0.04, -0.05, 0).applyAxisAngle(Z_AXIS, ankleRotation);
+      feet[index].position.y -= lowerLegLength;
     }
     root.userData.currentState = state;
     root.userData.weightDrive = {
@@ -465,13 +461,13 @@ function externalPersonTreadmill(movement) {
       input:
         'person stepping upward relative to the descending peripheral boards on the right side of the broad treadmill',
       note:
-        'the end wheels, cross-width tread boards, and output axle are one rigid rotor; the two-leg motion is a smooth explanatory gait tied to wheel phase',
+        'the end wheels, cross-width tread boards, and output axle are one rigid rotor; planted feet track individual boards and two-link legs follow the prescribed feet',
       storedEnergyStates: 0,
     },
     dynamics: {
       idealizations: [
         'rigid broad drum, output axle, end rings, and fourteen peripheral boards',
-        'person torso held at one mean world station while two legs display a smooth gait',
+        'person torso held at one mean world station; feet alternate planted board tracking with a prescribed outside swing, using two-link inverse kinematics',
         'mean relative climb exactly cancels descending tread velocity',
         'constant person mass and gravitational field',
         'steady resisting load balances person-weight torque so wheel speed is uniform',
@@ -485,15 +481,14 @@ function externalPersonTreadmill(movement) {
       drumWidth,
       gaitAngularSpeed,
       gaitCyclesPerWheelTurn,
+      gaitGeometry,
       legPhaseOffsets,
-      lowerLegAmplitude,
       personCenterOfMass,
       personStationAngle,
       personStationPoint,
       treadCount,
       treadPitch,
       treadRadius,
-      upperLegAmplitude,
       wheelCenter,
       wheelPeriod,
       wheelRadius,
@@ -533,7 +528,7 @@ function externalPersonTreadmill(movement) {
         engravingEvidence:
           'the plate shows a broad field of cross-width peripheral steps, one braced end wheel and output axle at left, one person standing externally on the right side, a fixed handrail, and a diagonal fixed side frame',
         reconstructionDisclosure:
-          'drum depth, fourteen tread boards, end-ring structure, supports, colors, speed, person mass, and smooth two-leg gait are engineered because Brown gives no values and the official page has no canvas animation; the gait is explanatory rather than a biomechanical contact solver',
+          'drum depth, fourteen tread boards with radial working faces, end-ring structure, supports, colors, speed, person mass, and tread-indexed gait are engineered because Brown gives no values and the official page has no canvas animation; finite sole placement is prescribed, while balance and muscle/contact forces remain unqualified',
       },
       officialPage: 'https://507movements.com/mm_377.html',
       primaryScan: {

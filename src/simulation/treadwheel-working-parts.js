@@ -37,7 +37,7 @@ export function correctRunnerTreadParts(root,id){
   // Make each handrail standard reach the actual foundation top.
   for(const post of b.railPosts){const top=post.position.y+1.06,bottom=-1.98;replace(post,new T.BoxGeometry(.14,top-bottom,.14));post.position.y=(top+bottom)/2;}
   for(const spoke of b.endSpokes)replace(spoke,new T.BoxGeometry(3.15,.075,.060));
-  d.workingPartsReview={scope:'Bored axle bearing, connected spokes and grounded rail standards; person aligned with the tread width.',qualification:'Prescribed explanatory gait and mean weight torque are retained; individual foot placement and passive balance remain unqualified.'};
+  d.workingPartsReview={scope:'Bored axle bearing, connected spokes and grounded rail standards; radial tread boards and tread-indexed finite sole placement.',qualification:'Finite foot placement uses prescribed stance/swing and two-link leg closure; passive balance, muscle forces and individual reaction loads remain unqualified.'};
  }
 }
 

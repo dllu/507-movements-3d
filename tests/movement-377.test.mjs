@@ -160,7 +160,7 @@ test('movement 377 preserves Brown\'s tread-board, weight-drive, penal-labor, gr
   assert.match(evidence.engravingEvidence, /broad field/);
   assert.match(evidence.engravingEvidence, /standing externally/);
   assert.match(evidence.reconstructionDisclosure, /fourteen tread boards/);
-  assert.match(evidence.reconstructionDisclosure, /explanatory rather than a biomechanical contact solver/);
+  assert.match(evidence.reconstructionDisclosure, /balance and muscle\/contact forces remain unqualified/);
   disposeModel(model.root);
 });
 
@@ -311,17 +311,16 @@ test('movement 377 two-leg gait is smooth, alternating, derivative-consistent, a
         after.legStates[index].lowerAngle
           - before.legStates[index].lowerAngle
       ) / (2 * step);
-      near(numericalUpperRate, leg.upperAngularSpeed, 4e-9,
+      near(numericalUpperRate, leg.upperAngularSpeed, 1e-7,
         `leg ${index} upper analytic derivative`);
-      near(numericalLowerRate, leg.lowerAngularSpeed, 4e-9,
+      near(numericalLowerRate, leg.lowerAngularSpeed, 1e-7,
         `leg ${index} lower analytic derivative`);
     }
-    near(state.legStates[0].upperAngle + 0.06,
-      -(state.legStates[1].upperAngle + 0.06),
-      2e-15, 'upper legs alternate');
-    near(state.legStates[0].lowerAngle - 0.18,
-      -(state.legStates[1].lowerAngle - 0.18),
-      2e-15, 'lower legs alternate');
+    const halfCycleLater = stateAtTime(time + geometry.wheelPeriod / 14).legStates[0];
+    near(state.legStates[1].upperAngle, halfCycleLater.upperAngle,
+      1e-13, 'upper legs alternate by half a gait cycle');
+    near(state.legStates[1].lowerAngle, halfCycleLater.lowerAngle,
+      1e-13, 'lower legs alternate by half a gait cycle');
   }
   disposeModel(model.root);
 });
@@ -382,10 +381,10 @@ test('movement 377 closes one clockwise wheel turn and seven gait cycles before 
     'wheel index closes');
   for (let index = 0; index < 2; index += 1) {
     angleNear(closure.legStates[index].upperAngle,
-      start.legStates[index].upperAngle, 2e-15,
+      start.legStates[index].upperAngle, 1e-13,
       `upper leg ${index} closes`);
     angleNear(closure.legStates[index].lowerAngle,
-      start.legStates[index].lowerAngle, 2e-15,
+      start.legStates[index].lowerAngle, 1e-13,
       `lower leg ${index} closes`);
   }
   for (let index = 0; index < geometry.treadCount; index += 1) {
