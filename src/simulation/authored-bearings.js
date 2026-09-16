@@ -1,3 +1,4 @@
+import {correctBearingParts} from './bearing-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -84,7 +85,7 @@ function makeSupportWheel({
   const spokeLength = innerRadius - hubRadius - 0.08;
   const spokeCenterRadius = (innerRadius + hubRadius + 0.08) / 2;
   for (let index = 0; index < spokeCount; index += 1) {
-    const angle = FULL_TURN * index / spokeCount;
+    const angle = Math.PI / 4 + FULL_TURN * index / spokeCount;
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(spokeLength, 0.18, 0.28),
       material,
@@ -338,7 +339,7 @@ function antiFrictionWheelBearing(movement) {
     material: supportMaterial,
     outerRadius: supportOuterRadius,
     role: 'left-circumferential-support-wheel',
-    spokeCount: 8,
+    spokeCount: 4,
     z: leftSupportAxialPlane,
   });
   left.wheel.position.set(-supportCenterX, supportCenterY, 0);
@@ -349,7 +350,7 @@ function antiFrictionWheelBearing(movement) {
     material: supportMaterial,
     outerRadius: supportOuterRadius,
     role: 'right-circumferential-support-wheel',
-    spokeCount: 8,
+    spokeCount: 4,
     z: rightSupportAxialPlane,
   });
   right.wheel.position.set(supportCenterX, supportCenterY, 0);
@@ -577,7 +578,7 @@ function antiFrictionWheelBearing(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'one small shaft journal at the center of a four-spoke flywheel rests simultaneously on the circumferences of two eight-spoke wheels carried by a fixed pedestal',
+        'one small shaft journal at the center of a four-spoke flywheel rests simultaneously on the circumferences of two four-spoke wheels carried by a fixed pedestal',
       measurementUncertaintyPixels: 5,
       officialAnimationAvailable: true,
       rasterFrameBounds: {
@@ -886,7 +887,7 @@ function sixRollerPulleyBearing(movement) {
   const rollerIndices = [];
   const rollerInitialAngles = [];
   for (let index = 0; index < rollerCount; index += 1) {
-    const initialAngle = FULL_TURN * index / rollerCount;
+    const initialAngle = Math.PI / 2 + FULL_TURN * index / rollerCount;
     rollerInitialAngles.push(initialAngle);
     const positionGroup = new THREE.Group();
     positionGroup.position.set(
@@ -1416,6 +1417,7 @@ function sixRollerPulleyBearing(movement) {
         beltDepth / 2 + 0.065,
       );
       marker.visible = markerState.visible;
+      marker.scale.setScalar(markerState.visible ? Math.min(1, markerState.routeDistance / .12, (beltVisibleLength - markerState.routeDistance) / .12) : 0);
       marker.userData.velocity = markerState.velocity.clone();
       marker.userData.pathStage = markerState.pathStage;
     }
@@ -1464,6 +1466,7 @@ export function createAuthoredBearingMovement(movement) {
     case 270: result = sixRollerPulleyBearing(movement); break;
     default: return null;
   }
+  correctBearingParts(result, movement.id);
   result.root.userData.fidelity = 'authored';
   return result;
 }

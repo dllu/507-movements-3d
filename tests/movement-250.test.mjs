@@ -261,8 +261,8 @@ test('movement 250 renders distinct rotating members and a fixed pedestal', () =
     }));
 
   assert.equal(blocks.mainFlywheelSpokes.length, 4);
-  assert.equal(blocks.leftSupportSpokes.length, 8);
-  assert.equal(blocks.rightSupportSpokes.length, 8);
+  assert.equal(blocks.leftSupportSpokes.length, 4);
+  assert.equal(blocks.rightSupportSpokes.length, 4);
   assert.equal(blocks.leftSupportWheel.userData.axialPlane, 0.22);
   assert.equal(blocks.rightSupportWheel.userData.axialPlane, 0.78);
   assert.equal(blocks.leftSupportIndex.userData.initialAngle, Math.PI);
