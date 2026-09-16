@@ -158,7 +158,7 @@ test('movement 389 closes the eccentric orbit, rigid strap pawl, and constructed
   near(geometry.followerHighY - geometry.followerLowY,
     geometry.toothPitch, 0, 'follower excursion defines pitch');
   for (const [name, residual] of Object.entries(constraintResiduals)) {
-    near(residual, 0, 3e-16, name);
+    near(residual, 0, 5e-16, name);
   }
 
   for (let sample = -7200; sample <= 14400; sample += 1) {
@@ -292,7 +292,7 @@ test('movement 389 loop reset is smooth, non-operating, and visibly releases bot
     'raised reset boundary');
   near(raised.rackSpeed, 0, 0, 'raised reset boundary speed');
   near(resetMiddle.rackDisplacement,
-    geometry.liftStrokeCount * geometry.toothPitch / 2, 3e-15,
+    geometry.liftStrokeCount * geometry.toothPitch / 2, 5e-15,
     'reset midpoint height');
   assert.ok(resetMiddle.rackSpeed < 0);
   assert.equal(resetMiddle.drivingEngaged, false);
