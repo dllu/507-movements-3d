@@ -1,3 +1,47 @@
+# Forty-third family pass: winding-stop contact and smaller model downloads
+
+Two winding stops receive mechanical corrections, while an independent loading
+change reduces unrelated downloads. The full 507-movement review remains active.
+
+- [212 Geneva stop](geneva-212-contact-review.md): preserve the complete working
+  curves and solve their entry, circular hold, rim drive and concentric lock.
+  Actual selected surface gaps/penetration stay within 3.1e-6 tessellation
+  tolerance. Hub bores and flush indexes replace overlapping/floating details.
+  The source's 51° interpolation remains separately available; the contacting
+  branch captures lock at 54.78°. Impacts, reverse bias and loaded dead-center
+  capture are not dynamically qualified.
+- [213 split-rim stop](split-rim-213-contact-review.md): retain the full pin and
+  both terminal rims, reconstruct finite working flanks offline, and follow
+  separate forward/reverse retaining branches. Both directions have useful
+  actual surface normals. Shorter scalloped teeth and finite reversal hysteresis
+  remain explicit source differences; friction and impact response are prescribed.
+- [294–295 cylinder study](cylinder-escapement-contact-study.md): **unresolved**.
+  The proposed clear profile released the wheel instead of providing the exit
+  impulse and was rejected. The study records neighboring-tooth intersections
+  and proves that the old nominal contact point lies inside a tooth. Production
+  now accurately labels that prescribed, intersecting reconstruction.
+- [Family loading](family-loading.md): ordinary intermittent factories load a
+  common core; 19 independent recorded mechanisms load their own modules.
+  Fresh 233/75 JavaScript requests fall from 18.47 MB to 3.05/3.33 MB. The
+  synchronous public factory remains compatible, and generated routes cover
+  all 507 movements without importing the compatibility wrapper in the browser.
+
+The 55 focused mechanism checks pass, including the affected 215 regressions.
+The three loader checks pass again on final production, comparing all 507
+models' geometry, two sampled poses and timing; generated routes pass `--check`.
+The 213 bake regenerates byte-identically. The final production build passes in
+22.22 seconds, and all ten packaged desktop/playback/mobile and loading cases
+pass in 20.8 seconds. Source/default/oblique views show no errors or clipping;
+maximum normalized extents are 0.799, 0.918, 0.772 and 0.901 for 212, 213, 294
+and 295. The 213 canonical source pose was also inspected; its revised tooth
+shape is a visible reconstruction difference.
+
+CPU construction/update screens report no flags or object/geometry growth:
+construction 107–230 ms and sampled update P95 below 0.523 ms. These figures
+exclude imports, GPU rendering and browser loading. Bulk evidence is under
+`/dev/shm/family43-*`; it does not establish passive dynamics or close the
+cylinder family's remaining contacts.
+
 # Forty-second family pass: finite stops and bounded escapement reconstruction
 
 Parallel lanes reuse finite plates, bored joints and offline profile envelopes

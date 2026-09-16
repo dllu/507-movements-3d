@@ -1,6 +1,9 @@
 # Movement 213: finite-pin feasibility before motion reconstruction
 
-Read-only study; production geometry and playback are unchanged. Run:
+Historical read-only study, committed as `74940a7`. Reproduce it at that revision;
+the later [finite contact reconstruction](split-rim-213-contact-review.md)
+changes the radial flanks and invalidates this script's old-profile assertions.
+No production geometry or playback was changed by the study itself. Run:
 
 ```sh
 node scripts/check-split-rim-213-feasibility.mjs --branch

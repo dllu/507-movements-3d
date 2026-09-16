@@ -1,7 +1,9 @@
 import {test, expect} from '@playwright/test';
 
-for (const {id, family} of [
+for (const {id, family, maximumScriptBytes} of [
   {id: 123, family: null},
+  {id: 75, family: null, maximumScriptBytes: 6_000_000},
+  {id: 233, family: 'authored-intermittent-core', maximumScriptBytes: 6_000_000},
   {id: 255, family: 'authored-pulley-forms'},
   {id: 273, family: 'authored-rhombus-linkages'},
 ]) {
@@ -19,6 +21,12 @@ for (const {id, family} of [
     expect(authored.length).toBe(family ? 1 : 0);
     if (family) expect(authored[0].name.startsWith(`${family}-`)).toBe(true);
     expect(resources.some(entry => /\.wasm$/.test(entry.name))).toBe(false);
+    if (maximumScriptBytes) {
+      const scriptBytes = resources.filter(entry => entry.name.endsWith('.js'))
+        .reduce((sum, entry) => sum + entry.bytes, 0);
+      expect(scriptBytes).toBeGreaterThan(0);
+      expect(scriptBytes).toBeLessThan(maximumScriptBytes);
+    }
     expect(errors).toEqual([]);
     await testInfo.attach('loaded-resources', {body: JSON.stringify(resources, null, 2), contentType: 'application/json'});
   });

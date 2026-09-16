@@ -191,9 +191,9 @@ test('movement 212 reproduces the official five-position construction, four pock
   near(transmission.normalIndexRatio, -24 / 17, 3e-16,
     'official 72-over-51 active ratio');
 
-  assert.equal(geometry.driverOutlineRaw.length, 1209);
+  assert.equal(geometry.driverOutlineRaw.length, 1307);
   assert.equal(geometry.stopWheelOutlineRaw.length, 1297);
-  assert.equal(geometry.driverFingerArcRaw.length, 31);
+  assert.equal(geometry.driverFingerArcRaw.length, 129);
   assert.equal(geometry.convexStopArcRaw.length, 257);
   vector2Near(
     geometry.driverOutlineRaw[0],
@@ -326,14 +326,14 @@ test('movement 212 reproduces the official five-position construction, four pock
   disposeModel(model.root);
 });
 
-test('movement 212 preserves every index, concentric lock, reversal, and hard limit through 32,769 states', () => {
+test('movement 212 retains the official interpolation as an independent source oracle through 32,769 states', () => {
   const model = createMovementModel(catalog.movements[211]);
   const {
     geometry,
     stateAtTime,
     timeline,
     transmission,
-  } = model.root.userData;
+  } = {...model.root.userData, ...model.root.userData.sourceKinematics};
   const sampleCount = 32768;
   const directions = new Set();
   const stages = new Set();
@@ -482,7 +482,7 @@ test('movement 212 preserves every index, concentric lock, reversal, and hard li
   disposeModel(model.root);
 });
 
-test('movement 212 has smooth finite-range timing, exact rates, reversible run-down, and no loop reset', () => {
+test('movement 212 retains the source timing and reversible oracle without a loop reset', () => {
   const model = createMovementModel(catalog.movements[211]);
   const {
     canonicalStates,
@@ -493,7 +493,7 @@ test('movement 212 has smooth finite-range timing, exact rates, reversible run-d
     stateAtTime,
     timeline,
     transmission,
-  } = model.root.userData;
+  } = {...model.root.userData, ...model.root.userData.sourceKinematics};
 
   assert.equal(timeline.forwardSegments.length, 7);
   near(timeline.forwardMotionDuration, 12.6, 2e-15,
@@ -692,7 +692,7 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
           Z_AXIS,
         ),
         geometry.stopSectorRadius,
-        4e-16,
+        1e-15,
         `convex-sector endpoint ${index} remains rigid`,
       );
     });

@@ -15,9 +15,38 @@ offline review scripts; the production application does not import that entry.
 The first production build reduced the main chunk from 26.31 MB to 0.59 MB
 (9.16 MB to 0.15 MB gzip). These are main-chunk sizes, not total page transfers or a
 claimed load-time speedup. Shared Three.js/runtime chunks and requested assets
-still load. The large legacy gears/intermittent families remain 4.59 MB/15.62 MB;
-splitting those internally is a separate follow-up for movements that use them.
+still load. At that stage the legacy gears/intermittent families were still
+4.59 MB/15.62 MB; the intermittent follow-up is described below.
 No physics or geometry work was removed from the selected mechanism.
+
+## Intermittent family split, forty-third pass
+
+The common intermittent entry point still caused a fresh 233 or 75 page to
+request **18,470,573 bytes of JavaScript**, including recordings for unrelated
+mechanisms. Its ordinary factories now live in `authored-intermittent-core.js`.
+`authored-intermittent.js` preserves the synchronous public entry point, while
+the offline route generator resolves its 19 independent no-argument delegates
+into separate literal imports. The browser never needs the compatibility
+wrapper's complete collection of recordings.
+
+On the final production build, fresh portable pages request **3,052,212 bytes**
+for 233 and **3,326,606 bytes** for 75, reductions of about **83%** and **82%**.
+These are uncompressed JavaScript response sizes on the same static server,
+including shared runtime/app chunks; they exclude images and are not frame-rate
+or network-latency claims. The final 233 measurement includes the new 213 contact
+table shared by the core family. Bulk network records are
+`/dev/shm/family43-load-{before,final}.json`.
+
+All 507 synchronous/lazy geometry, sampled-transform and timing fingerprints
+still agree. All 277 generated routes reproduce under `--check`. Six packaged
+loading/cancellation cases pass, including new 75/233 transfer-budget checks;
+the complete ten-case pass also checks 212/213/294/295 desktop playback and
+mobile resizing. The final production build passes in 22.22 seconds.
+
+The separate legacy gear bundle and the largest individual recordings remain
+performance follow-ups. Historical one-off integration scripts targeting the
+old monolithic source belong to their recorded baselines; current ordinary
+intermittent factory edits should target the core file.
 
 ## Keep routing in sync
 

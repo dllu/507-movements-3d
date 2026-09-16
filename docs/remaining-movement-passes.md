@@ -263,26 +263,45 @@ The parallel [212 phase](geneva-212-phase-feasibility-review.md) and
 `74940a7`. They distinguish a narrowly feasible unchanged-profile pose from
 a true finite-pin obstruction; neither study changes production playback.
 
+## Forty-third pass
+
+- **212:** an analytic finite drive/hold/lock branch replaces the incompatible
+  linear interpolation without relieving the working profiles. Actual lock
+  capture is at 54.78°. Reverse bias, impacts and dead-center loading remain
+  explicit limits. See the [contact review](geneva-212-contact-review.md).
+- **213:** offline finite-pin reconstruction supplies separate retaining paths
+  for both directions and retains the terminal rims. Shorter scalloped teeth
+  and reversal hysteresis are reconstruction differences, not an exact tracing.
+  See the [contact review](split-rim-213-contact-review.md).
+- **294–295:** the candidate cleared all teeth but skipped the exit impulse;
+  it was rejected. Production discloses the remaining intersections and the
+  point inside each tooth that the old law follows. The
+  [contact study](cylinder-escapement-contact-study.md) supplies a reproducible
+  next step; this family is still mechanically unresolved.
+- **Loading:** split the common intermittent core from 19 independent recorded
+  mechanisms. Fresh 233/75 pages request about 3.1/3.3 MB of JavaScript instead
+  of 18.5 MB. The [loading review](family-loading.md) records exact measurements
+  and compatibility checks across all 507 movements.
+
 ## Next independent lanes
 
-- **212, broad-finger winding stop:** continue a loaded finite contact branch
-  from the newly feasible midstroke pose, retaining both profiles first.
-  Include neighboring teeth, entry/exit, locking and the terminal sector.
-- **213, split-rim winding stop:** reconstruct regular tooth flanks and
-  one-pitch indexing together. The full pin cannot fit the current regular
-  passage. Reject disconnected gap jumps; verify both finite terminal stops.
+- **238, seven-tooth escapement:** solve the actual B flank and compatible
+  loaded impulse, preserving the cleaned seven-tip profile and C support.
+- **199, partial lantern rack:** resolve the late retarding-only contact with
+  a useful driven face and continuous transfer, retaining its existing guides.
 - **294–295, cylinder escapements:** use the
-  [working-contact witnesses](cylinder-escapement-family-review.md) to solve
-  finite tooth, lip and handoff geometry, including the previous tooth still
-  in the exit region. Preserve opposite impulses and locking faces.
+  [rejected branch and finite witnesses](cylinder-escapement-contact-study.md)
+  to reconstruct the exit-working edge, inner rest and neighboring-tooth
+  transfer together. Both opposite impulses and loaded locking are required.
 
 These independent lanes should reuse finite profiles, offline envelopes and
 actual-normal checks. Use MuJoCo for unresolved passive selection or dynamics
 after compatible working geometry exists. Keep source fidelity and useful
 working faces explicit rather than publishing clearance-only cuts.
 
-238's actual B flank and compatible loaded impulse remain a targeted follow-up.
-199's late retarding-only contact, 232's prescribed rocking-carrier branch,
+212's reverse bias/dead-center capture and 213's source tooth fit and passive
+friction/impact response remain follow-ups. The large legacy gear bundle is
+the next independent loading target. 232's prescribed rocking-carrier branch,
 225/235/236's passive pawl bias and loaded transfer, 237/240/241's prescribed
 bias and ideal impact assumptions, 231's proportions,
 271's pickup holding/impact and omitted cord, and 284's loaded transfer/finite

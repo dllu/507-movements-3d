@@ -1,5 +1,9 @@
 # Movement 212: local phase feasibility
 
+Follow-up: the [forty-third contact pass](geneva-212-contact-review.md) extends
+this local result into the production drive/hold/lock branch. The measurements
+below remain the historical study; current tessellation and playback differ.
+
 Read-only follow-up against production baseline `ceb68ef`; geometry and playback
 are unchanged. The source's registered animation is still the reference for its
 five-position winding stop, but its linear output interpolation is not a finite
