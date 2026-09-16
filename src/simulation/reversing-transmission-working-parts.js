@@ -1,3 +1,4 @@
+import {installMangle371Profiles,installParsons394Profiles} from './reversing-transmission-tooth-profiles.js';
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,ring,sector,polygonClipping as clip} from './finite-plate-geometry.js';
 import {markShadows} from './primitives.js';
@@ -26,8 +27,9 @@ export function finishMangle371(root,update){
   shoe.position.set(-.72,y,0);shoe.userData.role='bored-cross-slide-shoe-with-radial-float';b.pinionCarrier.add(shoe);b.guideShoes.push(shoe);
  }
  for(const marker of[b.frontContactMarker,b.rearContactMarker,b.terminalContactMarker])marker.userData.referenceOnly=true;
- d.reconstructionNote='The initial rear-face terminal matches the source opening below the shaft. Bored journals, radial-float guide shoes and a connected four-window web are finite reconstructions. Tooth counts and terminal rollover follow an ideal median-plane pitch law; actual face-tooth and terminal interference remains unqualified, and the displayed pitch points are not physical contact witnesses.';
+ d.reconstructionNote='The initial rear-face terminal matches the source opening below the shaft. Bored journals, radial-float guide shoes and a connected four-window web are finite reconstructions. Finite tooth bars are cut offline against both face runs and terminal rollovers; open root rails replace the interfering solid median disk. The 60-degree opening is wider than the engraving. Motion remains prescribed by the ideal pitch law, with finite backlash and unqualified passive crossover loads; pitch points are hidden rather than presented as contact witnesses.';
  const wrapped=time=>{update(time);for(const marker of[b.frontContactMarker,b.rearContactMarker,b.terminalContactMarker])marker.visible=false;};
+ installMangle371Profiles(root);
  return finishView(root,wrapped,Math.max(3,d.geometry.inputRevolutionPeriod),new THREE.Vector3(.35,.2,15),d.geometry.mechanismCyclePeriod);
 }
 export function finishParsons394(root,update){
@@ -68,7 +70,8 @@ export function finishParsons394(root,update){
    spacer.userData.role='guide-attachment-spacer-outside-pinion-sweep';groove.add(spacer);b.guideAttachments.push(spacer);
   }
  }
- d.reconstructionNote='Both side guides have finite open mouths around the full flange envelopes; the former inverted inner arcs intersected the flanges. The rod guide permits the small transverse shift, and the teeth join a solid rack body. The unequal circular flanges are coaxial with the pinion; their handoff angle assumes no-slip friction, since a circular normal alone supplies no shaft torque. Rack/pinion tooth mating and passive handoff loads remain unqualified.';
+ d.reconstructionNote='Both side guides have finite open mouths around the full flange envelopes; the former inverted inner arcs intersected the flanges. The rod guide permits the small transverse shift, and the teeth join a solid rack body. The unequal circular flanges are coaxial with the pinion; their handoff angle assumes no-slip friction, since a circular normal alone supplies no shaft torque. The pinion is mounted half a tooth pitch from the former colliding phase, and the rack flanks are cut offline through the complete cycle. Shortened terminal-region teeth and finite backlash retain an unqualified loaded-handoff residual; the prescribed motion is not a solved passive transmission.';
+ installParsons394Profiles(root);
  return finishView(root,update,8,new THREE.Vector3(.25,.12,15),d.timeline.cycleDuration);
 }
 function finishView(root,update,minimum,cameraDirection,cycle){

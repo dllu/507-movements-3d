@@ -1,9 +1,8 @@
 # Movements 371 and 394: finite supports and reversing guide interfaces
 
-This is a bounded source/support/guide correction. **Neither movement's tooth
-mesh is contact-qualified.** The measured tooth interference below remains a
-separate working-profile reconstruction task; nominal pitch residuals do not
-certify those finite teeth.
+This records the earlier source/support/guide correction. The historical tooth
+intersections below are superseded by the [finite working-profile review](reversing-transmission-tooth-contact-review.md). Passive loads and frictional
+handoffs remain unqualified; nominal pitch residuals alone do not certify contact.
 
 ## Source evidence
 
@@ -79,7 +78,7 @@ no-slip friction; preload, friction capacity, pickup and passive reversal are
 not solved. A near wall and a zero pitch-speed residual do not validate that
 frictional transmission.
 
-## Remaining finite tooth witnesses
+## Historical finite tooth witnesses (superseded)
 
 Phase means fraction of the full 27-second authored cycle for 371 and the
 8-second authored cycle for 394, including 371's new source-pose offset.
