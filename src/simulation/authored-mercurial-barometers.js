@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctMercuryInstrument} from './mercury-instrument-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -616,10 +617,11 @@ function mercurialBarometer(movement) {
       if (object.isMesh) object.castShadow = false;
     });
   });
+  correctMercuryInstrument(root, 501, update);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.2, 3.2, 13.0),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

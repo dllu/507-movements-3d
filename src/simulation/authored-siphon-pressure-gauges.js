@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctMercuryInstrument} from './mercury-instrument-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -517,10 +518,11 @@ function siphonPressureGauge(movement) {
     glassObject.receiveShadow = false;
   }
   pressureCore.castShadow = false;
+  correctMercuryInstrument(root, 498, update);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(7.4, 4.5, 11.5),
+    cameraDirection: root.userData.cameraDirection,
   };
 }
 

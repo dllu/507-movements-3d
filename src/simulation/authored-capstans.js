@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress } from './capstan-finite-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -173,7 +175,7 @@ class CapstanCableCurve extends THREE.Curve {
     const angle = Math.PI / 2 + this.wrapAngle * progress;
     return target.set(
       this.barrelRadius * Math.cos(angle),
-      this.entryHeight - this.helixRise * smootherstep(progress),
+      this.entryHeight - this.helixRise * capstanPackingProgress(progress, this.wrapAngle),
       this.barrelRadius * Math.sin(angle),
     );
   }
@@ -185,11 +187,11 @@ function commonCapstan(movement) {
   // Brown fixes the topology but supplies no scale or operating speed. These
   // dimensions preserve the measured silhouette of plate 491 and leave the
   // pawl/ratchet contact open to inspection from the selected camera.
-  const barrelRadius = 0.72;
+  const barrelRadius = 0.696;
   const ropeRadius = 0.055;
   const wrapCount = 3;
   const wrapAngle = wrapCount * FULL_TURN;
-  const helixRise = 0.30;
+  const helixRise = 0.42;
   const ropeEntryHeight = 0.18;
   const freeCableEndX = 4.05;
   const cableMarkerCount = 17;
@@ -362,10 +364,10 @@ function commonCapstan(movement) {
   fixedBase.add(ratchetInnerBand);
 
   const fixedSpindle = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.14, 3.82, 28),
+    new THREE.CylinderGeometry(0.14, 0.14, 2.98, 64),
     darkMaterial,
   ), 'fixed-vertical-capstan-spindle');
-  fixedSpindle.position.y = 0.06;
+  fixedSpindle.position.y = -0.36;
   root.add(fixedSpindle);
 
   const capstanRotor = addRole(new THREE.Group(),
@@ -376,26 +378,26 @@ function commonCapstan(movement) {
     new THREE.Vector2(1.03, -1.03),
     new THREE.Vector2(0.84, -0.77),
     new THREE.Vector2(0.70, -0.43),
-    new THREE.Vector2(0.64, -0.12),
+    new THREE.Vector2(0.64, -0.31),
     new THREE.Vector2(0.64, 0.35),
     new THREE.Vector2(0.73, 0.69),
     new THREE.Vector2(0.96, 1.00),
     new THREE.Vector2(1.11, 1.08),
   ];
   const barrelBody = addRole(new THREE.Mesh(
-    new THREE.LatheGeometry(bodyProfile, 64),
+    boredLatheGeometry(bodyProfile.map(p => ({ radial: p.x, axial: p.y })), 0.15, 128),
     driverMaterial,
   ), 'rotating-waisted-capstan-barrel');
   capstanRotor.add(barrelBody);
   const lowerCollar = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(1.10, 1.10, 0.26, 56),
+    boredLatheGeometry([{ radial: 1.10, axial: -0.13 }, { radial: 1.10, axial: 0.13 }], 0.15, 128),
     driverMaterial,
   ), 'rotating-lower-capstan-collar-carrying-pawl');
   lowerCollar.position.y = -1.20;
   capstanRotor.add(lowerCollar);
 
   const drumHead = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(headRadius, headRadius, 0.42, 64),
+    capstanHeadGeometry(headRadius),
     driverMaterial,
   ), 'rotating-capstan-head-with-handspike-sockets');
   drumHead.position.y = 1.27;
@@ -413,7 +415,7 @@ function commonCapstan(movement) {
     darkMaterial,
   ), 'dark-band-around-capstan-head');
   headBand.rotation.x = Math.PI / 2;
-  headBand.position.y = 1.26;
+  headBand.position.y = 1.47;
   capstanRotor.add(headBand);
 
   const handSpike = addRole(new THREE.Mesh(
@@ -435,12 +437,12 @@ function commonCapstan(movement) {
   const socketMarkers = Array.from({ length: 8 }, (_, index) => {
     const angle = index * FULL_TURN / 8;
     const socket = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.20, 0.19, 0.09),
+      capstanSocketRimGeometry(),
       darkMaterial,
     ), `square-handspike-socket-${index + 1}`);
     socket.position.set(
       headRadius * Math.cos(angle),
-      1.28,
+      1.29,
       headRadius * Math.sin(angle),
     );
     socket.rotation.y = -angle;
@@ -526,7 +528,7 @@ function commonCapstan(movement) {
     }
   };
 
-  const maximumAxialPitchPerRadian = helixRise * 1.875 / wrapAngle;
+  const maximumAxialPitchPerRadian = helixRise / (wrapAngle - 0.125);
   const maximumHelixArcSpeedRatio = Math.hypot(
     barrelRadius,
     maximumAxialPitchPerRadian,
@@ -565,7 +567,7 @@ function commonCapstan(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: operatingPeriod,
-      targetCycleDuration: 2,
+      targetCycleDuration: operatingPeriod,
     },
     archetype:
       'handspike-driven-capstan-with-rotating-pawl-on-fixed-crown-ratchet',
@@ -606,10 +608,11 @@ function commonCapstan(movement) {
       ratchetBaseCoordinates: 0,
     },
     dynamics: {
+      finiteContactResidual: 'The pawl still follows an ideal point-height law. Its finite tip, bar and collar hinge are not a validated contact solution; the rendered tip intersects the crown. No passive locking or rope-friction dynamics are solved.',
       cableMarkerContinuity:
         'All white cable markers use constant-distance getPointAt sampling on the one cable Curve3. Its free-span endpoint and barrel-wrap start share position and tangent, so no marker changes path or speed abruptly at that transition.',
       helixPackingDisclosure:
-        'The three displayed turns use a 0.30-unit axial packing rise. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes marker azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
+        'The three displayed turns use a 0.42-unit axial packing rise with a short smooth lead into constant pitch. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes marker azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
       idealRatchetContact:
         'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp, passes its high vertical edge, falls continuously under the idealized gravity schedule, and recontacts the next ramp. Reverse motion meets that high face after at most one tooth of backlash.',
     },
@@ -695,6 +698,11 @@ function commonCapstan(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(7.8, 4.5, 9.4);
   root.userData.groundFloorY = -2.02;
+  root.userData.hideGround = true;
+  root.traverse(object => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
+  root.userData.minimumDisplayCycleSeconds = operatingPeriod;
   markShadows(root);
   for (const marker of [...cableMarkers, pawlTip, rotationIndex]) {
     marker.castShadow = false;
