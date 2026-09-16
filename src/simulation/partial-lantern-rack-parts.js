@@ -59,7 +59,7 @@ export function finishPartialLanternRack(root, update) {
   d.workingParts = { teeth: [...b.topRackTeeth, ...b.bottomRackTeeth], profiles: data, finiteContactAtState: partialLanternContacts };
   d.hideGround = true;
   d.minimumDisplayCycleSeconds = 8;
-  d.sourceAnimation = { available: true, registeredModel: 'mm_199', sourceUrl: 'https://507movements.com/mm_199.html' };
+  d.sourceAnimation = { ...d.sourceAnimation, available: true, registeredModel: 'mm_199', sourceUrl: 'https://507movements.com/mm_199.html' };
   d.reconstructionNote = 'The four source pins and larger entry teeth are retained. Finite rack flanks are reconstructed; the source animation’s constant-speed strokes and instantaneous reversals remain prescribed. During roughly the final fifth of each half-stroke, close contact only retards the frame: the nearest positive-drive face is up to 0.092 model units away. Loaded pickup and reversal are not validated.';
   d.contactQualification = { finiteFlanksCorrected: true, loadedTransmissionValidated: false,
     stateAtInputTravelContactFields: 'nominal original-source pitch construction; use workingParts.finiteContactAtState for rendered surfaces',

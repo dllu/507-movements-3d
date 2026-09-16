@@ -1,0 +1,115 @@
+{
+  "qualifiedForBake": false,
+  "checks": {
+    "validSamples": true,
+    "monotoneInput": true,
+    "twoCycleCoverage": true,
+    "sameStart": true,
+    "disabledControl": true,
+    "numericalAgreement": false,
+    "contactAndTracking": true
+  },
+  "limits": {
+    "positionDifference": 0.001,
+    "cycleDifference": 0.001,
+    "penetration": 0.0002,
+    "inputTrackingError": 0.01
+  },
+  "positionDifference": 0.016734789302642827,
+  "cycleDifference": [
+    0.0054689411256156895,
+    0.0024298837889338287
+  ],
+  "runs": [
+    {
+      "label": "base",
+      "summary": {
+        "options": {
+          "timestep": 0.000125,
+          "contact": true,
+          "rackDamping": 0.015,
+          "speed": 0.9,
+          "initialX": -2.4,
+          "initialVelocity": 0.6875493541569878,
+          "solref": 0.0005,
+          "margin": 0.0001
+        },
+        "cells": 888,
+        "duration": 24,
+        "minGap": -0.0000242542404256695,
+        "maxInputError": 0.0026327686961558072,
+        "minX": -2.397455529614115,
+        "maxX": -0.00298986203947269,
+        "final": {
+          "time": 24.00000000006909,
+          "x": -0.30089487707667895,
+          "velocity": 0.6854296883770853,
+          "input": 21.59737626387444,
+          "inputSpeed": 0.9
+        }
+      },
+      "xmlSha256": "602998220cc9a13913b5d5d76c8615d2ca7490fce19639ac5e6d4b52e3eaa2f0"
+    },
+    {
+      "label": "half-timestep",
+      "summary": {
+        "options": {
+          "timestep": 0.0000625,
+          "contact": true,
+          "rackDamping": 0.015,
+          "speed": 0.9,
+          "initialX": -2.4,
+          "initialVelocity": 0.6875493541569878,
+          "solref": 0.0005,
+          "margin": 0.0001
+        },
+        "cells": 888,
+        "duration": 24,
+        "minGap": -0.00007656940976917372,
+        "maxInputError": 0.0021345176370530794,
+        "minX": -2.3994289812921044,
+        "maxX": -0.001137021716932597,
+        "final": {
+          "time": 23.999999999864468,
+          "x": -0.30152359647934973,
+          "velocity": 0.6826938311789289,
+          "input": 21.597874120652865,
+          "inputSpeed": 0.8999999999999999
+        }
+      },
+      "xmlSha256": "27c32d20c92a6f8074cff68a5687f41053483fc54c61dc5bc33da823290646b6"
+    },
+    {
+      "label": "contact-disabled",
+      "summary": {
+        "options": {
+          "timestep": 0.000125,
+          "contact": false,
+          "rackDamping": 0.015,
+          "speed": 0.9,
+          "initialX": -2.4,
+          "initialVelocity": 0.6875493541569878,
+          "solref": 0.0005,
+          "margin": 0.0001
+        },
+        "cells": 888,
+        "duration": 16,
+        "minGap": null,
+        "maxInputError": 1.447020281375444e-11,
+        "maxContactCount": 0,
+        "minX": 3.400443799841624,
+        "maxX": 7.380250308579464,
+        "final": {
+          "time": 16.00000000003089,
+          "x": 7.380250308579464,
+          "velocity": 0.5408455995282916,
+          "input": 14.400000000019535,
+          "inputSpeed": 0.9,
+          "contacts": 0
+        }
+      },
+      "xmlSha256": "df91354c4b1643d6c7529146e364e30a4892a8a27528c424ac8431400a07f663"
+    }
+  ],
+  "note": "Compare at equal measured input angles; a finite stroke alone does not qualify coasting, impact, or periodic playback."
+}
