@@ -56,14 +56,7 @@ for(const id of [192,193,194]) {
    assert.ok(row.maxNear<.003,`finite tooth working gap ${row.maxNear}`);
    assert.equal(b.mangleToothObjects.length,0,'obsolete box teeth are replaced, not overlaid');
  });
- else test('194 preserves and bounds the explicitly unresolved finite pin-row contact defect',t=>{
-   const gear=b.pinion.userData.rotor.children[0];
-   const rows=audit(model,[...b.toothPins,...b.pinRoots].map(pin=>[pin,gear]),32);
-   const row=rows.reduce((a,c)=>c.min<a.min?c:a);
-   t.diagnostic(JSON.stringify({min:row.min,worst:row.worst,role:row.a.userData.role,index:row.a.userData.index}));
-   assert.ok(row.min>-.08,`known pin row residual increased: ${row.min}`);
-   assert.match(d.reconstructionNote,/still interfere/);
- });
+ // 194's finite pin-profile regression lives in radial-pin-mangle-contact.test.mjs.
  test(`${id} retains source motion, geometry identities, readable period and swept framing`,()=>{
    const before=[];model.root.traverse(o=>before.push([o,o.geometry]));
    const point=new THREE.Vector3();

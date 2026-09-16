@@ -1,3 +1,4 @@
+import { fitRadialPinManglePinion, discloseRadialPinMangleContact } from './radial-pin-mangle-contact.js';
 import { finishReversingMangleGuides } from './reversing-mangle-guides.js';
 import {correctVariableDrive} from './variable-drive-205-209-parts.js';
 import {correctIrregularGearFamily} from './irregular-gear-family.js';
@@ -20836,7 +20837,10 @@ function singleCircleEqualSpeedMangleWheel() {
   };
   update(0);
   finish(root, update);
-  return finishReversingMangleGuides(root, update, 194);
+  fitRadialPinManglePinion(root);
+  const model = finishReversingMangleGuides(root, update, 194);
+  discloseRadialPinMangleContact(root);
+  return model;
 }
 
 function opposedFeedRollWormDrive() {

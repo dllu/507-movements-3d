@@ -28,11 +28,11 @@ The offline cuts use 8,160 stations for 192 and 6,528 for 193, the shared cutter
 
 Before the final finishing allowance, a 65-pose finite-pinion audit found +0.000160 minimum clearance for 192, with its closest witness in the upper-right reversal, and −0.000000155 for 193. Maximum nearest working gaps were 0.00162 and 0.00191. The final 65-pose bidirectional tests measure minimum clearance / maximum nearest working gap of **+0.00044816 / 0.00170810 for 192** and **+0.00029986 / 0.00201195 for 193**, including both reversal intervals. They require positive clearance and nearest working separation below 0.003.
 
-## 194: guide correction complete, tooth contact remains partial
+## 194: finite pinion follow-up
 
-The single radial pin row does not map directly to the continuous cavity generator. The retained pin row and circular involute pinion still interfere. A 33-pose one-direction baseline found **0.064059 penetration**, at **phase 0.90625**, radial pin **6**, on the outer run. The final finite regression bounds the known residual without requiring it to remain, and the viewer explicitly discloses that this tooth contact is not qualified.
+The original isolated radial pins and involute pinion had **0.064059 penetration** at phase **0.90625**, pin **6**, on the outer run. The subsequent [194 finite pinion pass](radial-pin-mangle-contact-review.md) replaces that pinion with an offline capsule-envelope profile, retaining the full pins and five repeated tooth pairs. It clears the old witness and the full sampled cycle. The guide/interface correction above is retained.
 
-The concrete next step is a generator that cuts a mating pinion against the actual finite radial pin/seat envelope on both sides of the pitch circle and around both terminal pins. It must check whether one fixed pinion profile can satisfy both branches and the existing phase law; otherwise phase or terminal geometry must change together. Applying the complementary 192/193 cavity would erase the source's distinct isolated pin-row topology.
+The mechanism remains **partial**: the original ideal rolling law leaves a measured maximum working gap of **0.00821**. A loaded-flank seating trial develops a **0.02211-radian terminal pickup jump** and is deliberately not used for playback. The linked review records the exact witnesses, regeneration and remaining terminal/phase reconstruction work.
 
 ## Playback and verification
 
