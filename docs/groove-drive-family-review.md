@@ -22,15 +22,39 @@ The official animation's six arcs, roller radius, guide offset and connecting-ro
 
 At 129 poses, measured inner-wall clearance was at least +0.000571, outer-wall clearance +0.000594, and floor clearance +0.030. Nearest-wall separation stayed below 0.00111. The crosshead guides engage the actual block depth with 0.005 nominal clearance. Bored rod eyes retain both pins. The original eight source-oracle/motion tests pass. The source's ideal follower law is prescribed across the small manufactured clearance; forces, backlash and contact selection are not dynamically solved.
 
-## 364: finite groove improvement, contact remains partial
+## 364: finite groove and mouth sampling
 
 The original raised borders were too close together for the 0.25-diameter roller and sat on a solid cylindrical drum. The new drum is a closed, bored solid with eight actual recessed grooves. An offline finite-cylinder sweep uses the existing quintic indexing law and a constant 0.002 cutter allowance; roller dimensions and index timing are unchanged. Roller journals have real bores and longer studs that span the working bodies. Raised rim ornaments that blocked groove mouths were replaced by the profiled body's own end faces. Flush indexing marks no longer enlarge the roller contact radius.
 
 The first uniform radial mesh audit found −0.008637 penetration. At its worst witness, radius 1.436600773, the exact swept-cylinder envelope allowed radius 1.434008650: +0.002592 clearance. Adjacent mesh samples included an outside radius of 1.52, so interpolation across the discontinuous mouth filled part of the opening. This distinguished the larger mesh error from the ideal index law. Duplicated finite mouth edges replaced that interpolation without increasing cutter clearance.
 
-The resulting 65-pose / eight-roller audit over one index event still measures **−0.00315045 penetration**, at **t=0.296875 seconds, roller 0 against the output wheel**. Its maximum engaged nearest-wall gap is +0.00199621. This is a bounded tessellation/contact residual, **not a certified contact correction**. The regression permits improvements and prevents exceeding 0.00316 penetration; it deliberately does not require the defect to remain. A later pass should check the remaining witness against the exact envelope and use a conforming local mesh before validating passive indexing. No inference is made that the unmeasured remainder is exclusively tessellation error.
+The thirty-fourth pass still measured −0.00315045 penetration at t=0.296875,
+roller 0 against the wheel. The thirty-fifth pass traced that witness to the
+remaining steep, square-root shoulder of the finite-cylinder envelope. The
+witness radius is 1.431396349; the exact swept envelope there is 1.428643969,
+leaving +0.002752380 clearance. Uniform angular samples were bridging that
+shoulder with a chord that filled part of the opening.
 
-Frictional roller spin, drive traction and dwell holding remain prescribed assumptions. Neither a MuJoCo model nor a bake of passive dynamics is claimed. The finite cavity and unchanged close working faces are useful progress, but 364 remains partial.
+Cosine-distributed samples now concentrate the same 64 interior stations at the
+two groove mouths. The cutter allowance remains 0.002; roller dimensions, timing,
+65 vertical rows, 385 sweep states and baked vertex count are unchanged. This
+corrects the mesh approximation without enlarging the nominal groove or adding
+browser work.
+
+The original 65-pose audit now has +0.000277700 minimum clearance. An independent
+257-pose shifted-phase sweep has **+0.000043815 minimum clearance**, with engaged
+nearest-wall gaps no larger than 0.002026257. A reverse check samples actual wheel
+vertices, edge midpoints and triangle centers against conservative full finite
+roller cylinders: 429,169 nearby queries over 65 shifted poses give
+**+0.000194514 minimum clearance**. The regression now requires positive sampled
+clearance, includes the former penetrating witness and the dense sweep's closest
+pose, and checks both dwell boundaries. These finite sampled checks supersede
+the previously recorded mesh penetration; they are not a continuous collision
+proof.
+
+Frictional roller spin, clearance take-up, drive traction and dwell holding
+remain prescribed assumptions. Neither a MuJoCo model nor a bake of passive
+dynamics is claimed.
 
 ## Reproduction
 

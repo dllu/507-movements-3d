@@ -734,7 +734,7 @@ function orthogonalRollerGrooveIndexer(movement) {
     new THREE.Vector3(1.72, 3.28, 1.72),
   );
   root.userData.finiteGrooveEnvelope={clearance:grooveData.clearance,profile:"offline swept finite cylinders, with retained driving walls"};
-  root.userData.reconstructionNote = 'The caption gives oblique roller grooves but no exact profile or timing. This reconstruction prescribes a quintic index and dwell and cuts the finite roller envelope offline. Remaining groove tessellation permits up to 0.00316 model-unit roller/wheel penetration in the sampled audit; contact is not certified. Friction, roller traction and dwell holding are assumed, not dynamically solved.';
+  root.userData.reconstructionNote = 'The caption gives oblique roller grooves but no exact profile or timing. This reconstruction prescribes a quintic index and dwell and cuts the finite roller envelope offline. Finite rollers clear the groove walls in sampled surface checks; clearance take-up, friction, roller traction and dwell holding are not dynamically solved.';
   finishGrooveDrive(root,inputCyclePeriod);
   root.userData.groundFloorY = -0.06;
   markShadows(root);

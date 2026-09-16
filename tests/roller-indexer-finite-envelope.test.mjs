@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 import { createAuthoredOrthogonalRollerIndexerMovement } from '../src/simulation/authored-orthogonal-roller-indexers.js';
 import { surfacePoints, solidSurface } from './helpers/solid-surface.mjs';
 
@@ -7,16 +8,16 @@ const model = createAuthoredOrthogonalRollerIndexerMovement({ id: 364 });
 const data = model.root.userData;
 const blocks = data.blocks;
 
-test('364 finite grooved wheel bounds the documented mesh residual without losing its working faces', () => {
+test('364 finite grooved wheel clears its rollers without losing nearby working faces', () => {
   const field = solidSurface(blocks.outputWheel.geometry);
   const points = blocks.rollerBodies.map(mesh => surfacePoints(mesh.geometry));
   let minimum = Infinity;
   let maximumWorkingGap = -Infinity;
-  // One whole index event includes both mouths and both dwells; all eight
-  // actual finite rollers are checked. This is a residual limit, not a claim
-  // that the present triangulated envelope is interference-free.
-  for (let i = 0; i <= 64; i++) {
-    const time = i / 64;
+  // Include the old penetrating witness and the smallest-clearance pose from
+  // an independent 257-pose shifted-phase sweep, plus both dwell boundaries.
+  const times = [...Array.from({length: 65}, (_, i) => i / 64),
+    .296875, .23582421875, .36 - 1e-6, .36 + 1e-6, .64 - 1e-6, .64 + 1e-6];
+  for (const time of times) {
     model.update(time);
     model.root.updateMatrixWorld(true);
     const state = data.stateAtTime(time);
@@ -34,10 +35,42 @@ test('364 finite grooved wheel bounds the documented mesh residual without losin
     }
     if (state.engaged) maximumWorkingGap = Math.max(maximumWorkingGap, activeGap);
   }
-  assert.ok(minimum > -0.00316, `finite mesh residual ${minimum}`);
-  assert.ok(maximumWorkingGap < 0.0021, `working wall proximity ${maximumWorkingGap}`);
+  assert.ok(minimum > 0, `finite mesh clearance ${minimum}`);
+  assert.ok(maximumWorkingGap < 0.0022, `working wall proximity ${maximumWorkingGap}`);
   assert.equal(blocks.outputWheel.geometry.userData.clearance, 0.002);
-  assert.match(data.reconstructionNote, /contact is not certified/);
+  assert.match(data.reconstructionNote, /clear.*sampled surface checks/);
+  console.log({id: 364, minimumRollerToWheelGap: minimum, maximumWorkingGap});
+});
+
+test('364 actual wheel surfaces remain outside conservative finite roller cylinders', () => {
+  const points = surfacePoints(blocks.outputWheel.geometry);
+  const sample = new THREE.Vector3();
+  let minimum = Infinity, queries = 0;
+  for (let i = 0; i <= 64; i++) {
+    model.update((i + .273) / 64);
+    model.root.updateMatrixWorld(true);
+    for (const roller of blocks.rollerBodies) {
+      const transform = roller.matrixWorld.clone().invert().multiply(blocks.outputWheel.matrixWorld);
+      const bounds = new THREE.Box3(new THREE.Vector3(-.126, -.176, -.126),
+        new THREE.Vector3(.126, .176, .126)).applyMatrix4(
+        blocks.outputWheel.matrixWorld.clone().invert().multiply(roller.matrixWorld));
+      for (const point of points) {
+        if (!bounds.containsPoint(point)) continue;
+        sample.copy(point).applyMatrix4(transform);
+        // A full ideal cylinder contains the faceted, bored rendered roller.
+        // Clearance outside it is a conservative reverse-direction check.
+        const radial = Math.hypot(sample.x, sample.z) - .125;
+        const axial = Math.abs(sample.y) - .175;
+        const gap = Math.hypot(Math.max(radial, 0), Math.max(axial, 0))
+          + Math.min(Math.max(radial, axial), 0);
+        minimum = Math.min(minimum, gap);
+        queries++;
+      }
+    }
+  }
+  assert.ok(queries > 100000);
+  assert.ok(minimum > 0, `wheel / conservative roller clearance ${minimum}`);
+  console.log({id: 364, minimumWheelToRollerGap: minimum, queries});
 });
 
 test('364 preserves bored finite rollers, running shafts and allocation-stable readable playback', () => {

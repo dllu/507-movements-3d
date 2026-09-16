@@ -1,6 +1,6 @@
 import {writeFile} from 'node:fs/promises';
 const R=1.52,pitch=Math.PI/4,half=pitch*.36,gap=1.10,centerRadius=1.04,rollerRadius=.125,rollerLength=.35;
-const height=2*(gap*Math.tan(half)+.035),angular=96,vertical=64,clearance=.002,states=[];
+const height=2*(gap*Math.tan(half)+.035),vertical=64,clearance=.002,states=[];
 for(let i=0;i<=384;i++){
  const phi=-pitch/2+pitch*i/384,u=Math.max(0,Math.min(1,(Math.tan(phi)+Math.tan(half))/(2*Math.tan(half)))),f=u*u*u*(10-15*u+6*u*u),a=f*pitch;
  const cp=Math.cos(phi),sp=Math.sin(phi),ca=Math.cos(a),sa=Math.sin(a),x=-R-gap+centerRadius*cp;
@@ -36,7 +36,9 @@ for(let j=0;j<=vertical;j++){
  // Duplicate mouth angles with their two finite radii: interpolation must not
  // bridge from the bottom of a groove across its open mouth.
  const row=[{a:leftOutside-1e-7,r:R},{a:leftInside+1e-7,r:radiusAt(leftInside+1e-7,y)}];
- for(let i=1;i<insideCount;i++){const a=leftInside+(rightInside-leftInside)*i/insideCount;row.push({a,r:radiusAt(a,y)});}
+ // The cylinder envelope has steep square-root shoulders at each mouth.
+ // Cluster samples there instead of interpolating a wide chord across them.
+ for(let i=1;i<insideCount;i++){const u=(1-Math.cos(Math.PI*i/insideCount))/2,a=leftInside+(rightInside-leftInside)*u;row.push({a,r:radiusAt(a,y)});}
  row.push({a:rightInside-1e-7,r:radiusAt(rightInside-1e-7,y)},{a:rightOutside+1e-7,r:R});
  for(let i=1;i<outsideCount;i++)row.push({a:rightOutside+(leftOutside+pitch-rightOutside)*i/outsideCount,r:R});
  for(const p of row){angles.push(Math.round(p.a*1e8)/1e8);values.push(Math.round(p.r*1e8)/1e8);}
