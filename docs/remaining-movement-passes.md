@@ -46,9 +46,9 @@ quadrant prototype's first 36-second trial stalls on return (piston ends near
 −0.593 instead of −1.388); it is not production and does not block these batches.
 181–182's wider lower catch head also remains a source-fit residual.
 
-## Next breadth pass after the escapement corrections
+## Breadth pass after the escapement corrections
 
-Prefer these independent families before another escapement contact micro-pass:
+The thirty-second pass covers these independent families:
 
 - **329/331, piston guides:** reuse `piston-guide-parts.js`, finite slots and bored
   links; compare the epicyclic transmission with the corrected internal gearing.
@@ -60,9 +60,24 @@ Prefer these independent families before another escapement contact micro-pass:
   checks, bored hubs and the swept-pocket construction used for 462. Separate
   finite geometric engagement from any future loaded-chain dynamic study.
 
-These are fresh review candidates, not qualified mechanisms. Each lane should
-publish its reusable correction and residuals before pursuing difficult passive
-contact experiments.
+The scoped results are recorded in `review-progress.md` and the linked family
+reviews. Their remaining dynamic/contact limitations are not a claim of complete
+mechanism qualification.
+
+## Next independent lanes
+
+- **378/416/420, saw and spring-return treadles:** shared bored pivots and finite
+  spring attachments; 416/420 still build their fixed pivot bearings as solid
+  cylinders. Check actual spring/lever interfaces while distinguishing any
+  prescribed return from passive dynamics.
+- **267/280/413, friction transmissions:** reuse bored sleeves, mating screws and
+  finite friction surfaces. Start with 413's solid shaft bearings and inspect
+  working engagement before attempting friction/load studies.
+- **351/353, stamps and trip hammers:** reuse existing wiper/contact geometry and
+  hammer parts. The pinion bearing in 351 and capsule bearing cap in 353 need
+  real passages; review finite lift, release and striking interfaces together.
+
+These are unreviewed candidates, not evidence of correctness.
 
 ## Running the screen
 

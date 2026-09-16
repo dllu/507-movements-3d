@@ -1,3 +1,39 @@
+# Thirty-second family pass: piston guides, treadwheels and chains
+
+Nine movements receive corrections: 227–229, 254, 329, 331 and 375–377. This
+breadth pass uses shared bored joints, finite plates, involute gear geometry and
+offline repeated-profile generation; the overall 507-movement review remains
+active.
+
+- [227–229 chain drives](chain-drive-family-review.md): retain exact chordal
+  pitch and continuous entry/exit, correct link layers and hinge bores, and
+  generate compact repeated wheel profiles offline. Finite clearance and close
+  driving faces with positive work direction are checked separately. Chain
+  tension, load sharing and elastic dynamics remain unsolved.
+- [254 fork sprocket](sprocket-254-review.md): source-proportioned shaft and
+  prongs, actual bores and fork attachments, a corrected finite seat gap,
+  source-facing framing and a flush index. The source supplies no chain route,
+  so its nominal pitch bookkeeping is not presented as validated chain contact.
+- [329/331 piston guides](piston-guide-329-331-review.md): retain the official
+  animated paths while correcting internal gear engagement, slot and guide
+  surfaces, journal and pin lengths, and real rod/piston passages. The cropped
+  cylinder is continued and opened for inspection; support depths and fits are
+  explicit inferred construction.
+- [375–377 runners/treadwheels](runner-treadwheel-family-review.md): connected
+  pans, treads, spokes and supports, actual shaft bores and corrected source
+  positions. 375 also gains back-cone involute bevel teeth with conical ends,
+  correct surface normals and checked finite engagement. Finite runner scrub
+  and individual hoof/foot contact remain explicit limitations; 377 still has
+  a measured foot/tread interference during its prescribed gait.
+
+All 94 distinct focused checks pass. The production build passes in 22.54 seconds;
+the nine-model construction/update screen has no flags. Final source/default/oblique
+views show no browser errors or clipping. All nine packaged desktop/playback/mobile
+checks pass in 26.4 seconds. These checks validate the scoped corrections, not the
+unresolved loaded-chain dynamics or individual foot/hoof contacts.
+The next independent lanes cover saw/spring returns, friction transmissions and
+stamp/hammer interfaces; see the [family queue](remaining-movement-passes.md).
+
 # Thirty-first family pass: finite pin contacts and shared supports
 
 Seven movements receive bounded corrections: 292, 305–308, 313 and 314. The
