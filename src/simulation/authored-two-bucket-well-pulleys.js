@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
   PALETTE,
   makePulley,
@@ -463,6 +464,7 @@ function twoBucketWellPulley(movement) {
     rightBucket.bucket.position.copy(state.rightBucketCenter);
     updateBucketWater(leftBucket, state.leftWaterFraction);
     updateBucketWater(rightBucket, state.rightWaterFraction);
+    root.userData.updateWorkingParts?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -622,6 +624,7 @@ function twoBucketWellPulley(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.0, 4.7, 10.8);
   root.userData.groundFloorY = groundY;
+  correctWellBucketParts(root,458);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

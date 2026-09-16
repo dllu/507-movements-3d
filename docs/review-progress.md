@@ -1,3 +1,37 @@
+# Twentieth family pass: rotary pumps and water-lifting interfaces
+
+This pass covers 455–463 in four parallel families. It reuses finite passages,
+bored journals, bucket walls, pulley grooves and connected channels. The full
+review remains active; prescribed fluid and contact behavior is not treated as
+validated passive physics.
+
+[457/458's well-bucket review](well-bucket-family-review.md) corrects bail
+attachment, finite buckets, actual sheave grooves and connected supports. 458's
+official animation supplies the opposing exchange sequence, while exact
+rope-length/no-slip constraints determine the pulley motion.
+
+[455/456's rotary-pump review](rotary-pump-455-456-review.md) corrects the
+roller-offset cam, working dwell, radial slots and discharge route in 456.
+455 gains finite hinges and passages but remains an explicit exception: its
+folding vane still penetrates the abutment by up to 0.23727 model units in the
+sampled sweep.
+
+[459–461's lift/scoop/gutter review](well-scoop-gutter-review.md) supplies tangent
+rope joins, real grooves, bored scoop joints and connected open flap passages.
+459's worm contact and bucket-driven selector exchange remain unqualified.
+
+[462/463's chain/weir review](chain-weir-family-review.md) supplies finite wheel
+pockets generated offline, bored supports and corrected finite panel/flow
+interfaces. Chain drive forces and automatic hydraulic response remain
+prescribed; geometric proximity does not establish a force solution.
+
+The combined run passed 113 tests. The final scoop-water correction added one
+containment regression, and all 17 affected checks passed again (114 distinct
+focused checks in this batch). The production build and nine packaged
+playback/mobile checks pass. The nine-movement screen reports no nonfinite data,
+scene growth or new playback geometry; 460 was screened again after its final
+water correction.
+
 # Nineteenth family pass: working pump passages and polishing joints
 
 Eight movements receive geometry or contact-path corrections: 370, 393, 441 and

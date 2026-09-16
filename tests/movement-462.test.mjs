@@ -303,8 +303,8 @@ test('movement 462 sealing geometry forms equally spaced ideal displacement buck
     expectedArea * state.chainSpeed, 1e-12,
     'state-dependent ideal flow');
   assert.equal(state.ascendingDiskCount, state.ascendingDiskIndices.length);
-  assert.ok(state.ascendingDiskCount >= 3);
-  assert.ok(state.ascendingDiskCount <= 5);
+  assert.ok(state.ascendingDiskCount >= 2);
+  assert.ok(state.ascendingDiskCount <= 3);
   state.ascendingDiskIndices.forEach((index) => {
     const carrier = state.carrierStates[index];
     assert.equal(carrier.hasSealingDisk, true);
@@ -436,7 +436,8 @@ test('movement 462 has finite render bounds and movement 507 remains the next au
   const model462 = createMovementModel(movement462);
   const model507 = createMovementModel(movement507);
   model462.root.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(model462.root);
+  const bounds = new THREE.Box3();
+  model462.root.traverseVisible(o=>{const p=o.geometry?.attributes.position;if(p)for(let i=0;i<p.count;i++)bounds.expandByPoint(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld));});
   const fitBounds = model462.root.userData.cameraFitBounds;
 
   for (const value of [bounds.min.x, bounds.min.y, bounds.min.z,

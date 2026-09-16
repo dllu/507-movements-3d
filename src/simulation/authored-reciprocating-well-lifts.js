@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {
   PALETTE,
   makeGear,
@@ -104,7 +105,7 @@ function reciprocatingWellLift(movement) {
   const wheelCenterY = carrierTop.y
     - Math.sqrt(carrierCenterDistance ** 2 - engagementShift ** 2);
   const pulleyZ = -0.39;
-  const ropeZ = -0.57;
+  const ropeZ = pulleyZ;
   const pulleyCenters = {
     left: new THREE.Vector3(-wheelCenterX, wheelCenterY, pulleyZ),
     right: new THREE.Vector3(wheelCenterX, wheelCenterY, pulleyZ),
@@ -115,7 +116,7 @@ function reciprocatingWellLift(movement) {
   };
   const leftRopeX = -wheelCenterX - pulleyRadius;
   const rightRopeX = wheelCenterX + pulleyRadius;
-  const innerRopeSpan = 2 * (wheelCenterX - pulleyRadius);
+  const innerRopeSpan = 2 * wheelCenterX;
   const highBailY = 0.58;
   const lowBailY = highBailY - bucketStroke;
   const bucketHeight = 0.68;
@@ -128,7 +129,7 @@ function reciprocatingWellLift(movement) {
   const tappetAngleMagnitude = Math.asin(
     (tappetPivot.y - highBailY) / tappetHalfLength,
   );
-  const fixedRopeLength = 2 * Math.PI * pulleyRadius + innerRopeSpan;
+  const fixedRopeLength = Math.PI * pulleyRadius + innerRopeSpan;
   const totalRopeLength = wheelCenterY - highBailY
     + fixedRopeLength + wheelCenterY - lowBailY;
   const wormTravelPerLift = wheelTeeth * pulleyTravelAngle / wormStarts;
@@ -682,15 +683,16 @@ function reciprocatingWellLift(movement) {
     'one-continuous-rope-over-two-coaxially-driven-pulleys-with-two-bucket-ends');
   root.add(continuousRope);
   const makeUpperArc = (center, side) => {
-    const points = Array.from({ length: 65 }, (_, index) => {
-      const angle = Math.PI - Math.PI * index / 64;
-      return new THREE.Vector3(
-        center.x + pulleyRadius * Math.cos(angle),
-        center.y + pulleyRadius * Math.sin(angle),
-        ropeZ,
-      );
-    });
-    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const first=side==='left'?Math.PI:Math.PI/2;
+    const curve=new THREE.Curve();
+    curve.getPoint=(t,target=new THREE.Vector3())=>{
+      const angle=first-Math.PI*t/2;
+      return target.set(center.x+pulleyRadius*Math.cos(angle),center.y+pulleyRadius*Math.sin(angle),ropeZ);
+    };
+    curve.getTangent=(t,target=new THREE.Vector3())=>{
+      const angle=first-Math.PI*t/2;
+      return target.set(Math.sin(angle),-Math.cos(angle),0);
+    };
     return addRole(new THREE.Mesh(
       new THREE.TubeGeometry(curve, 128, 0.038, 12, false),
       ropeMaterial,
@@ -704,7 +706,7 @@ function reciprocatingWellLift(movement) {
     ropeMaterial,
   ), 'single-rope-inner-span-between-two-pulleys');
   innerRope.rotation.z = Math.PI / 2;
-  innerRope.position.set(0, wheelCenterY, ropeZ);
+  innerRope.position.set(0, wheelCenterY + pulleyRadius, ropeZ);
   continuousRope.add(innerRope);
   const leftRopeLeg = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.038, 0.038, 1, 14),
@@ -876,6 +878,7 @@ function reciprocatingWellLift(movement) {
       tappetPivot.z,
     );
     setRodBetween(selectorLink, tappetCrank, state.lowerBearing);
+    root.userData.updateSolids?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -1056,6 +1059,7 @@ function reciprocatingWellLift(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
   root.userData.groundFloorY = groundY;
+  correctWaterLiftParts(root,459);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

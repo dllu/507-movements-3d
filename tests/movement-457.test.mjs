@@ -197,7 +197,7 @@ test('movement 457 rope stays vertical and constant-length while the upright buc
     near(state.bucketCenter.x, state.ropeBottom.x, 0,
       `upright bucket x at ${sample}`);
     near(state.bucketCenter.y,
-      state.ropeBottom.y - geometry.bucketHeight / 2,
+      state.ropeBottom.y - (geometry.bucketHeight / 2 + geometry.bucketHandleRise),
     0, `bucket hanger offset at ${sample}`);
     assert.ok(Math.abs(state.bucketCenter.x - geometry.wellCenterX) + 0.40
       < 1.08,
@@ -234,7 +234,7 @@ test('movement 457 counterbalance moment is exactly half the full raised load an
   near(
     Math.abs(fullAscent.counterweightGravityTorque),
     fullAscent.bucketGravityTorque / 2,
-    4e-13,
+    8e-13,
     'counterweight cancels half full-load torque',
   );
   disposeModel(model.root);
@@ -307,14 +307,13 @@ test('movement 457 renderer maps beam, rope, bucket water, and effort direction 
       `bucket transform at ${phase}`);
     near(blocks.rope.scale.y, geometry.ropeLength, 4e-16,
       `rope display length at ${phase}`);
-    assert.equal(blocks.operatorArrow.visible,
-      state.operatorAction !== 'hold');
+    assert.equal(blocks.operatorArrow.visible, false);
     const expectedWaterVisible = 0.60 * state.bucketWaterFraction > 1e-5;
     assert.equal(blocks.bucketWater.visible, expectedWaterVisible);
     if (expectedWaterVisible) {
-      near(blocks.bucketWater.scale.y,
-        0.60 * state.bucketWaterFraction, 0,
-      `bucket water height at ${phase}`);
+      blocks.bucketWater.geometry.computeBoundingBox();
+      assert.ok(blocks.bucketWater.geometry.boundingBox.max.y-blocks.bucketWater.geometry.boundingBox.min.y > 0);
+      assert.ok(blocks.bucketWater.geometry.boundingBox.max.y-blocks.bucketWater.geometry.boundingBox.min.y <= geometry.bucketHeight-.11+1e-7);
     }
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,

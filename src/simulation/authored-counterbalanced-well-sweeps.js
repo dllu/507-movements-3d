@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -45,10 +46,11 @@ function counterbalancedWellSweep(movement) {
   const longArmLength = 4.40;
   const shortArmLength = 1.45;
   const counterweightMomentArm = 1.08;
-  const highBeamAngle = THREE.MathUtils.degToRad(-27);
+  const highBeamAngle = THREE.MathUtils.degToRad(-42);
   const lowBeamAngle = THREE.MathUtils.degToRad(10);
   const ropeLength = 3.00;
   const bucketHeight = 0.78;
+  const bucketHandleRise = .40;
   const emptyBucketWeight = 25;
   const fullBucketWeight = 100;
   const counterbalanceEquivalentWeight = fullBucketWeight / 2;
@@ -57,11 +59,11 @@ function counterbalancedWellSweep(movement) {
   const descentEndPhase = 0.35;
   const fillEndPhase = 0.50;
   const ascentEndPhase = 0.85;
-  const wellCenterX = -2.80;
-  const wellRimY = -0.58;
-  const wellBottomY = -2.66;
+  const wellCenterX = -2.43;
+  const wellRimY = .50;
+  const wellBottomY = -3.02;
   const gravity = 9.81;
-  const groundY = -2.74;
+  const groundY = -3.10;
 
   const easedTransition = (
     phase,
@@ -179,7 +181,7 @@ function counterbalancedWellSweep(movement) {
     const ropeBottom = leftTip.clone();
     ropeBottom.y -= ropeLength;
     const bucketCenter = ropeBottom.clone();
-    bucketCenter.y -= bucketHeight / 2;
+    bucketCenter.y -= bucketHeight / 2 + bucketHandleRise;
     const counterweightCenter = new THREE.Vector3(
       beamPivot.x + counterweightMomentArm * Math.cos(beamAngle),
       beamPivot.y + counterweightMomentArm * Math.sin(beamAngle),
@@ -446,6 +448,7 @@ function counterbalancedWellSweep(movement) {
     } else if (state.operatorAction === 'raise-full-bucket') {
       operatorArrow.setDirection(new THREE.Vector3(0, 1, 0));
     }
+    root.userData.updateWorkingParts?.(state);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -453,6 +456,7 @@ function counterbalancedWellSweep(movement) {
     ascentEndPhase,
     beamPivot,
     bucketHeight,
+    bucketHandleRise,
     counterbalanceEquivalentWeight,
     counterweightActualWeight,
     counterweightMomentArm,
@@ -579,7 +583,7 @@ function counterbalancedWellSweep(movement) {
       effortSigns:
         'Empty: W_empty<0.5 W_full, so gravity torque raises the bucket and the operator pulls down. Full: W_full>0.5 W_full, so the operator lifts against only the remaining half-load moment.',
       ropeConstraint:
-        'The rope remains vertical with constant length and the bucket center is a fixed half-height below its lower endpoint.',
+        'The rope remains vertical with constant length and the bucket center is a fixed bail-plus-half-height below its lower endpoint.',
     },
     update,
   };
@@ -590,6 +594,7 @@ function counterbalancedWellSweep(movement) {
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.4, 4.9, 10.8);
   root.userData.groundFloorY = groundY;
+  correctWellBucketParts(root,457);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

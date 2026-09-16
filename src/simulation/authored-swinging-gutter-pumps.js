@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -160,7 +161,7 @@ function swingingGutterPump(movement) {
         : oddValveProfile.acceleration
     ));
     const flapAngles = valveOpenAmounts.map(
-      (amount, index) => turnSigns[index] * maximumFlapAngle * amount,
+      (amount) => maximumFlapAngle * amount,
     );
     const segmentFillFractions = segmentLengths.map((_, index) => {
       const profile = index % 2 === 0
@@ -434,6 +435,7 @@ function swingingGutterPump(movement) {
     for (let index = 0; index < flaps.length; index += 1) {
       flaps[index].flap.rotation.z = state.flapAngles[index];
     }
+    root.userData.updateSolids?.();
     const dischargeVisible = state.outletDischargeFraction > 1e-4;
     for (let index = 0; index < dischargeJets.length; index += 1) {
       const jet = dischargeJets[index];
@@ -573,6 +575,7 @@ function swingingGutterPump(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.3, 12.0);
   root.userData.groundFloorY = groundY;
+  correctWaterLiftParts(root,461);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

@@ -1,3 +1,4 @@
+import { correctOldPump } from './rotary-pump-contact.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -633,6 +634,7 @@ function oldRotaryPump(movement) {
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.8, 4.6, 11.8);
   root.userData.groundFloorY = groundY;
+  correctOldPump(root);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

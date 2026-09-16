@@ -369,8 +369,8 @@ test('movement 460 renderer maps the solved pins and rigid links while both grou
       state.lowerPin, 7e-16, `lower rendered pin at ${phase}`);
     assert.equal(blocks.scoopWater.visible, state.waterFraction > 1e-5);
     if (blocks.scoopWater.visible) {
-      near(blocks.scoopWater.scale.y, state.waterFraction, 0,
-        `scoop water at ${phase}`);
+      near(blocks.scoopWater.rotation.z, -state.scoopAngle, 0,
+        `horizontal clipped water at ${phase}`);
     }
     assert.equal(blocks.dischargeStream.visible,
       state.dischargeFlowRate > 1e-4

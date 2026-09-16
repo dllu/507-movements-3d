@@ -1,3 +1,4 @@
+import {correctChainPump} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -56,14 +57,14 @@ function chainPump(movement) {
   const radialSealClearance = cylinderInnerRadius - diskRadius;
   const diskThickness = 0.085;
   const cylinderTopY = 1.70;
-  const cylinderBottomY = bottomWheelCenter.y + 0.08;
+  const cylinderBottomY = bottomWheelCenter.y + 0.75;
   const cylinderHeight = cylinderTopY - cylinderBottomY;
   const cylinderCenterY = (cylinderTopY + cylinderBottomY) / 2;
   const theoreticalBucketVolume = Math.PI * cylinderInnerRadius ** 2
     * diskSpacing;
   const theoreticalFlowRate = Math.PI * cylinderInnerRadius ** 2
     * linearSpeed;
-  const reservoirSurfaceY = -0.55;
+  const reservoirSurfaceY = -0.25;
   const groundY = -2.18;
   const leftVerticalEnd = wheelCenterDistance;
   const topArcEnd = leftVerticalEnd + Math.PI * pitchRadius;
@@ -584,12 +585,13 @@ function chainPump(movement) {
     },
     update,
   };
+  correctChainPump(root);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, groundY - 0.02, -1.72),
-    new THREE.Vector3(3.55, 3.65, 1.72),
+    new THREE.Vector3(-3.10, -2.20, -.76),
+    new THREE.Vector3(1.70, 3.61, .60),
   );
   root.userData.cameraDistanceScale = 1.06;
-  root.userData.cameraDirection = new THREE.Vector3(3.4, 1.45, 13.0);
+  root.userData.cameraDirection = new THREE.Vector3(.6, .8, 15.0);
   root.userData.groundFloorY = groundY;
   markShadows(root);
   base.receiveShadow = true;

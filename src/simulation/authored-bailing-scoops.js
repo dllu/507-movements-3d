@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -569,6 +570,7 @@ function bailingScoop(movement) {
     scoopWater.visible = state.waterFraction > 1e-5;
     scoopWater.scale.y = Math.max(0.001, state.waterFraction);
     scoopWater.position.y = -1.11 + 0.21 * state.waterFraction;
+    root.userData.updateSolids?.(state);
     const streamTop = state.outletPoint.clone();
     streamTop.x -= 0.08;
     streamTop.z = 0;
@@ -736,6 +738,7 @@ function bailingScoop(movement) {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(2.2, 3.2, 12.5);
   root.userData.groundFloorY = groundY;
+  correctWaterLiftParts(root,460);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

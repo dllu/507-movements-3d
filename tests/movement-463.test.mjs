@@ -312,9 +312,9 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
       (state.waterLevel + geometry.channelFloorY) / 2, 1e-12,
       `upstream water center at phase ${phase}`);
     assert.equal(blocks.notchFlow.visible,
-      state.notchFlowFraction > 1e-4);
+      state.contactDrive < 1e-8);
     assert.equal(blocks.bedFlow.visible,
-      state.bedFlowFraction > 1e-4);
+      state.contactDrive > .05 && state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY > .02);
     near(blocks.sedimentBank.scale.x,
       1.45 * state.sedimentRemainingFraction, 1e-12,
       `sediment render scale at phase ${phase}`);

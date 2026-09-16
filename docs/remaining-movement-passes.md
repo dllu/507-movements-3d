@@ -529,3 +529,24 @@ All 149 focused tests, the production build and seventeen packaged playback/mobi
 checks pass. The seventeen-movement screen reports no flags. The final 453
 fixed-axle follow-up received its own repeated interface, screen and packaged
 checks after rebuilding.
+
+
+## Twentieth parallel batch
+
+- **455/456:** rotary-pump cam, sealing-head, bore and passage corrections;
+  455's folding-vane contact remains an explicit exception.
+- **457/458:** common finite buckets, bail attachment, sheave grooves and
+  connected well supports, with contained volume-dependent water geometry.
+- **459–461:** tangent rope paths, finite scoop joints, open gutters and
+  working flap passages; prescribed fluid/selector behavior remains qualified.
+- **462/463:** chain-wheel pockets baked from pin sweeps and finite weir
+  interfaces; chain forces and automatic hydraulic response remain prescribed.
+
+Source-specific scope and verification are recorded in the family reviews linked
+from [review progress](review-progress.md).
+
+The combined 113-test run and all 17 checks affected by the final scoop-water
+change pass, including one new containment regression (114 distinct checks).
+The production build, nine packaged playback/mobile checks and nine-model screen
+pass; the final scoop change received a rebuilt bundle and repeated screen.
+455 and 459 remain explicitly partial contact reconstructions.

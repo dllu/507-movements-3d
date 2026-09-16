@@ -267,7 +267,7 @@ test('movement 461 alternating flap sets open only forward on opposite pendulum 
       && state.oddValveOpenAmount > 0));
     state.valveOpenAmounts.forEach((amount, index) => {
       assert.ok(amount >= 0 && amount <= 1);
-      assert.ok(state.flapAngles[index] * geometry.turnSigns[index] >= 0,
+      assert.ok(state.flapAngles[index] >= 0,
         `valve ${index} never opens backward at ${sample}`);
       near(Math.abs(state.flapAngles[index]),
         geometry.maximumFlapAngle * amount, 2e-16,

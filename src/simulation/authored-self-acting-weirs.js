@@ -1,3 +1,4 @@
+import {correctWeir} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -421,6 +422,7 @@ function selfActingWeir(movement) {
     bedFlowMaterial.opacity = 0.16 + 0.46 * state.bedFlowFraction;
     sedimentBank.scale.x = 1.45 * state.sedimentRemainingFraction;
     sedimentBank.scale.z = 1.35 * state.sedimentRemainingFraction;
+    root.userData.updateWorkingParts?.(state);
   };
 
   const sourceState = stateAtPhase(0);
@@ -557,12 +559,13 @@ function selfActingWeir(movement) {
     },
     update,
   };
+  correctWeir(root);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.65, groundY - 0.02, -1.86),
     new THREE.Vector3(3.65, 3.58, 1.86),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(5.5, 2.3, 10.8);
+  root.userData.cameraDirection = new THREE.Vector3(.8, 1.0, 15.0);
   root.userData.groundFloorY = groundY;
   markShadows(root);
   foundation.receiveShadow = true;

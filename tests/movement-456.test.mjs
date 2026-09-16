@@ -127,7 +127,7 @@ test('movement 456 source record maps A, B, a, c, E, F, H, L, and M without inve
     false,
   );
   assert.match(dynamics.camContactModel,
-    /fixed single-valued heart-cam radius.*retract to the drum seat.*reach the casing exactly/);
+    /finite roller.*heart cam.*working dwell/);
   assert.match(dynamics.flowModel,
     /F-to-L suction and M-to-H discharge.*not predicted/);
   assert.equal(plate.imageWidth, 525);
@@ -191,21 +191,13 @@ test('movement 456 every piston inner end follows the fixed heart cam and its bo
   disposeModel(model.root);
 });
 
-test('movement 456 conjugate cam radii make one piston seat at E exactly when the opposite reaches the chamber wall', () => {
+test('movement 456 dwell cam seats a piston at E while the opposite remains against the wall', () => {
   const model = createMovementModel(catalog.movements[455]);
   const { geometry, stateAtInputAngle } = model.root.userData;
-  for (let sample = 0; sample < 24000; sample += 1) {
-    const state = stateAtInputAngle(FULL_TURN * sample / 24000);
-    near(state.pistons[0].camRadius + state.pistons[1].camRadius,
-      2 * geometry.camMeanRadius, 8e-16,
-    `conjugate cam radii at ${sample}`);
-    near(state.pistons[0].tipRadius + state.pistons[1].tipRadius,
-      2 * (geometry.camMeanRadius + geometry.pistonLength),
-      9e-16,
-    `conjugate tip radii at ${sample}`);
-    near(state.pistons[0].camRadiusVelocity
-      + state.pistons[1].camRadiusVelocity, 0, 8e-16,
-    `opposed radial velocities at ${sample}`);
+  for (let sample = 0; sample < 720; sample += 1) {
+    const state = stateAtInputAngle(FULL_TURN * sample / 720);
+    for (let i=0;i<2;i++) if(state.pistons[i].oppositePortSeparator)
+      near(state.pistons[1-i].tipRadius,geometry.casingInnerRadius,1e-12,'opposite working dwell');
   }
 
   const firstAtEInput = geometry.sourceRotorAngle + Math.PI / 2;
@@ -327,7 +319,7 @@ test('movement 456 renderer rotates A/B and translates each c while cam a, casin
   near(closure.pistons[0].camRadius, source.pistons[0].camRadius, 5e-16,
     'piston closure');
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 6.2);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  assert.ok(model.root.userData.animationTiming.displayCycleDuration >= 6.2);
   disposeModel(model.root);
 });
 

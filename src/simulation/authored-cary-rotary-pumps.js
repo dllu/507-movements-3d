@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { caryFollowerLaw, correctCaryPump } from './rotary-pump-contact.js';
 import {
   PALETTE,
   markShadows,
@@ -68,7 +69,7 @@ function caryRotaryPump(movement) {
   const casingDepth = 0.78;
   const drumInnerRadius = 1.20;
   const drumOuterRadius = 1.58;
-  const camMeanRadius = 0.78;
+  const camMeanRadius = 0.89;
   const camLiftAmplitude = 0.36;
   const camMinimumRadius = camMeanRadius - camLiftAmplitude;
   const camMaximumRadius = camMeanRadius + camLiftAmplitude;
@@ -79,8 +80,7 @@ function caryRotaryPump(movement) {
   const separatorClearance = 0.035;
   const groundY = -3.78;
 
-  const camRadiusAtAngle = (angle) => camMeanRadius
-    + camLiftAmplitude * Math.sin(angle);
+  const camRadiusAtAngle = (angle) => caryFollowerLaw(angle).radius;
 
   const pistonTipRadiusAtAngle = (angle) => camRadiusAtAngle(angle)
     + pistonLength;
@@ -115,12 +115,9 @@ function caryRotaryPump(movement) {
     const pistons = Array.from({ length: pistonCount }, (_, index) => {
       const absoluteAngle = rotorAngle + index * Math.PI;
       const camRadius = camRadiusAtAngle(absoluteAngle);
-      const camRadiusVelocity = camLiftAmplitude
-        * Math.cos(absoluteAngle) * rotorAngularSpeed;
-      const camRadiusAcceleration = camLiftAmplitude * (
-        -Math.sin(absoluteAngle) * rotorAngularSpeed ** 2
-          + Math.cos(absoluteAngle) * rotorAngularAcceleration
-      );
+      const camRadiusVelocity = caryFollowerLaw(absoluteAngle).first * rotorAngularSpeed;
+      const camRadiusAcceleration = caryFollowerLaw(absoluteAngle).second * rotorAngularSpeed ** 2
+        + caryFollowerLaw(absoluteAngle).first * rotorAngularAcceleration;
       const tipRadius = camRadius + pistonLength;
       const extensionFromSeat = tipRadius - drumOuterRadius;
       const followerPoint = new THREE.Vector3(
@@ -525,7 +522,7 @@ function caryRotaryPump(movement) {
       fullFluidPressureLeakagePistonSealFrictionCamContactForceTorqueAndCavitationModeled:
         false,
       camContactModel:
-        'Each piston inner end is constrained directly to the fixed single-valued heart-cam radius r=a+b sin(theta). Its constant body length makes the outer tip retract to the drum seat at bottom E and reach the casing exactly at the diametrically opposite top point.',
+        'Each finite roller follows a reconstructed heart cam with an extended working dwell and a retracted dwell around E. Quintic transitions maintain continuous velocity and acceleration; the opposite piston stays extended while one crosses the separator.',
       flowModel:
         'The source arrows establish F-to-L suction and M-to-H discharge. The displayed swept-rate is only an ideal annular geometric diagnostic; pressure, leakage, port timing, trapped volume and hydraulic efficiency are not predicted.',
     },
@@ -579,7 +576,7 @@ function caryRotaryPump(movement) {
         engravingEvidence:
           'Brown’s section shows clockwise arrows on drum B, a stationary heart profile around axle A, two collinear opposed piston blades through rotating radial guides, inlet F rising into L on the lower-left, fixed separator E below the cam, port M on the lower-right, and the curved H discharge passage ending in a downward arrow.',
         reconstructionDisclosure:
-          'Brown gives no cam equation, casing depth, drum speed, slider length, separator clearance, port timing, pressure, leakage, friction, torque or absolute timing. Those values, the r=a+b sin(theta) conjugate-radius cam, transparent cutaway, colors and 6.2-second cycle are independently engineered. Fixed cam a, rotating A/B assembly, two opposed radial pistons, bottom retraction/opposite wall contact, separator E and F-L/M-H routing are source-grounded.',
+          'Brown gives no cam equation, casing depth, drum speed, slider length, separator clearance, port timing, pressure, leakage, friction, torque or absolute timing. Those values, the finite-roller offset cam with a 24-degree retraction dwell and 40-degree quintic transitions, transparent cutaway, colors and 6.2-second cycle are independently engineered. Fixed cam a, rotating A/B assembly, two opposed radial pistons, bottom retraction/opposite wall contact, separator E and F-L/M-H routing are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 456',
@@ -588,9 +585,9 @@ function caryRotaryPump(movement) {
     stateAtTime,
     transmission: {
       camLaw:
-        'r_c(theta)=r_mean+r_lift sin(theta), r_tip=r_c+L, with L=R_casing-r_c,max.',
+        'Roller-center radius has a 24-degree half-width lower dwell, 40-degree quintic transitions and a circular working dwell; the solid cam is its inward normal offset by the 0.11 roller radius.',
       conjugateOpposition:
-        'r_c(theta)+r_c(theta+pi)=2 r_mean exactly: when one piston retracts at bottom E, the other reaches its maximum at top.',
+        'When either piston retracts at bottom E, the opposite piston stays at its maximum working radius; both piston radii follow the same stationary cam.',
       separatorConstraint:
         'Across the fixed E sector, the separator inner contour remains outside the contemporaneous piston tip by the stated positive clearance.',
     },
@@ -603,9 +600,10 @@ function caryRotaryPump(movement) {
     new THREE.Vector3(-3.40, groundY, -1.48),
     new THREE.Vector3(4.35, 3.20, 1.48),
   );
-  root.userData.cameraDistanceScale = 1.05;
+  root.userData.cameraDistanceScale = 1.14;
   root.userData.cameraDirection = new THREE.Vector3(5.9, 4.7, 11.7);
   root.userData.groundFloorY = groundY;
+  correctCaryPump(root);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

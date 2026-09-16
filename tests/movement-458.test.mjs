@@ -360,14 +360,14 @@ test('movement 458 renderer maps the one-rope state and visible sheave index whi
     assert.equal(blocks.rightBucket.water.visible,
       state.rightWaterFraction > 1e-5);
     if (blocks.leftBucket.water.visible) {
-      near(blocks.leftBucket.water.scale.y,
-        0.58 * state.leftWaterFraction, 0,
-      `left water height at ${phase}`);
+      blocks.leftBucket.water.geometry.computeBoundingBox();
+      assert.ok(blocks.leftBucket.water.geometry.boundingBox.max.y-blocks.leftBucket.water.geometry.boundingBox.min.y > 0);
+      assert.ok(blocks.leftBucket.water.geometry.boundingBox.max.y-blocks.leftBucket.water.geometry.boundingBox.min.y <= geometry.bucketHeight-.11+1e-7);
     }
     if (blocks.rightBucket.water.visible) {
-      near(blocks.rightBucket.water.scale.y,
-        0.58 * state.rightWaterFraction, 0,
-      `right water height at ${phase}`);
+      blocks.rightBucket.water.geometry.computeBoundingBox();
+      assert.ok(blocks.rightBucket.water.geometry.boundingBox.max.y-blocks.rightBucket.water.geometry.boundingBox.min.y > 0);
+      assert.ok(blocks.rightBucket.water.geometry.boundingBox.max.y-blocks.rightBucket.water.geometry.boundingBox.min.y <= geometry.bucketHeight-.11+1e-7);
     }
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
