@@ -9,12 +9,14 @@ copy or convert the proprietary canvas animations on 507movements.com.
 ## Current model coverage
 
 - Movements 001–507 have individually authored geometry and kinematics.
-- MuJoCo is the default engine for ongoing reconstruction. Movements 082 and 083
-  run live joint and contact dynamics in the catalog; other entries are being
-  migrated incrementally. See [simulation architecture](docs/mujoco-integration.md).
+- Determinate mechanisms use scripted motion; contact-dependent mechanisms use
+  MuJoCo where needed, live or baked for playback. Offline studies are tracked
+  separately from installed simulation. See [simulation architecture](docs/mujoco-integration.md).
 - Source fidelity, interference, and visual quality are being rechecked across
   the collection. Authored coverage and passing numerical tests do not certify
-  the correctness of every reconstruction. See [review progress](docs/review-progress.md).
+  the correctness of every reconstruction. The [507-row status table](docs/movement-status.md)
+  tracks visual review, MuJoCo use, intersections and remaining flaws. Detailed
+  history is in [review progress](docs/review-progress.md).
 - Playback aims for a two-second cycle, limited by measured part rotation rates
   to keep reductions and multi-stage demonstrations readable.
 

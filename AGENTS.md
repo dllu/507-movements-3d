@@ -25,6 +25,14 @@ build output, and bulk generated review artifacts out of Git.
 
 ## Review in reusable family passes
 
+Use `docs/movement-status.md` as the per-movement status ledger. Before choosing
+work, read the affected rows and their evidence. Every progress commit must update
+those rows in `docs/movement-status.json`, including reviewer attribution, production
+MuJoCo use, intersection scope and remaining flaws. Regenerate the table with
+`node scripts/generate-movement-status.mjs` and validate it with `--check`.
+Never promote unknown status to checked/clear from authorship or test success
+alone. Recheck changed visuals and retain unresolved limitations explicitly.
+
 Use `docs/remaining-movement-passes.md` and `scripts/lib/movement-batches.mjs`
 to coordinate remaining work. The user explicitly authorizes parallel subagents
 for independent mechanism families; assign disjoint production files or functions

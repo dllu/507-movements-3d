@@ -1,5 +1,9 @@
 # Remaining movements: family passes
 
+The [507-row status ledger](movement-status.md) is the current per-movement
+reference. Read its evidence before selecting a family and update the affected
+rows in every progress commit; the historical pass notes below may be superseded.
+
 The review queue is now **183–507, grouped into 20 component families** rather
 than one drawing at a time. Every number has one primary queue owner; a family
 assignment is not a claim that its existing simulation is correct. Previously

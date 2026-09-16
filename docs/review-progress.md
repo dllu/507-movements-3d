@@ -1,3 +1,13 @@
+# Per-movement status ledger
+
+The [507-row ledger](movement-status.md) is the current status reference; the
+entries below are historical pass reports and may be superseded. The initial
+ledger audits production routes and retained evidence for all movements. It
+distinguishes attributable primary-agent visual checks from historical inspections
+with uncertain reviewer identity, and scoped collision checks from global claims.
+Its JSON source and generator validate complete coverage and evidence paths.
+Update affected rows in every progress commit, as required by `AGENTS.md`.
+
 # Forty-sixth family pass: working profiles and baked clock clicks
 
 The full review continues in independent working-profile lanes for 371/394,
