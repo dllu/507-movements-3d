@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { plate, poly, circle, polygonClipping, ring } from './finite-plate-geometry.js';
+import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -112,11 +114,15 @@ function latheTailstockScrewFeed(movement) {
   const externalThreadTubeRadius = 0.035;
   const internalThreadRadius = 0.285;
   const internalThreadTubeRadius = 0.025;
-  const threadPitchRadius = 0.245;
-  const threadRadialClearance = internalThreadRadius
-    - internalThreadTubeRadius
-    - externalThreadRadius
-    - externalThreadTubeRadius;
+  const threadPitchRadius = 0.18;
+  // Root and crest running clearance; the mating flanks overlap radially.
+  const threadRadialClearance = 0.004;
+  const threadCrestRadius = externalThreadRadius + externalThreadTubeRadius;
+  const externalProfile = { inner: threadCoreRadius - 0.001, outer: threadCrestRadius,
+    low: threadMinimumX, high: threadMaximumX, width: threadPitch / 2,
+    lead: threadLeadPerRadian, phase: threadMinimumX };
+  const threadGeometry = (profile) => helicalThread(profile, threadAngles(profile, 96))
+    .rotateZ(Math.PI / 2).rotateY(Math.PI / 2);
   const threadSegmentsPerTurn = 24;
   const threadSegments = Math.ceil(
     threadTurnCount * threadSegmentsPerTurn,
@@ -309,9 +315,12 @@ function latheTailstockScrewFeed(movement) {
   barrelLower.position.set(housingCenterX, -0.54, 0);
   barrelLower.userData.role = 'fixed-lower-quill-guide-rail';
   frame.add(barrelLower);
+  const rectangle = (left, bottom, right, top) => poly([[left, bottom], [right, bottom], [right, top], [left, top]]);
+  const guideSection = polygonClipping.difference(rectangle(-0.53, -0.64, 0.53, 0.64),
+    poly(circle([0, 0], 0.382, 128)), rectangle(-0.112, 0, 0.112, 0.435));
   for (const x of [housingMinimumX, housingMaximumX]) {
     const endCheek = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 1.28, 1.06),
+      plate(guideSection, -0.09, 0.09).rotateY(Math.PI / 2),
       frameMaterial,
     );
     endCheek.position.set(x, 0, 0);
@@ -320,6 +329,14 @@ function latheTailstockScrewFeed(movement) {
       : 'rear-fixed-thrust-bearing-cheek';
     frame.add(endCheek);
   }
+
+  // Two inferred bearing lands overlap the quill throughout its entire travel.
+  const quillGuides = [-1.5, 0.65].map(x => {
+    const profile = polygonClipping.difference(rectangle(-0.53, -0.54, 0.53, 0.54),
+      poly(circle([0, 0], 0.335, 128)), rectangle(-0.112, 0, 0.112, 0.435));
+    const guide = new THREE.Mesh(plate(profile, -0.08, 0.08).rotateY(Math.PI / 2), frameMaterial);
+    guide.position.x = x; guide.userData.role = 'bored-keyed-quill-bearing-land'; frame.add(guide); return guide;
+  });
 
   const baseLeft = sourcePointToModel(sourceRasterBaseLeft);
   const baseRight = sourcePointToModel(sourceRasterBaseRight);
@@ -333,17 +350,17 @@ function latheTailstockScrewFeed(movement) {
   base.userData.role = 'tailstock-bed-clamping-base';
   frame.add(base);
   const leftColumn = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 2.45, 1.14),
+    new THREE.BoxGeometry(0.42, 2.448, 1.14),
     frameMaterial,
   );
-  leftColumn.position.set(-1.98, -1.47, 0);
+  leftColumn.position.set(-1.98, -1.674, 0);
   leftColumn.userData.role = 'front-tailstock-casting-column';
   frame.add(leftColumn);
   const rightColumn = new THREE.Mesh(
-    new THREE.BoxGeometry(0.46, 2.68, 1.14),
+    new THREE.BoxGeometry(0.46, 2.458, 1.14),
     frameMaterial,
   );
-  rightColumn.position.set(1.53, -1.33, 0);
+  rightColumn.position.set(1.53, -1.669, 0);
   rightColumn.userData.role = 'rear-tailstock-casting-column';
   frame.add(rightColumn);
   const lowerBridge = new THREE.Mesh(
@@ -388,33 +405,12 @@ function latheTailstockScrewFeed(movement) {
     radius: externalThreadRadius,
   });
   const externalThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      externalThreadCurve,
-      threadSegments,
-      externalThreadTubeRadius,
-      8,
-      false,
-    ),
+    threadGeometry(externalProfile),
     driverMaterial,
   );
   externalThread.userData.role =
     'one-continuous-visible-right-hand-leadscrew-thread';
   screw.add(externalThread);
-  for (const x of [threadMinimumX, threadMaximumX]) {
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(externalThreadTubeRadius, 16, 10),
-      driverMaterial,
-    );
-    const angle = (x - threadMinimumX) / threadPitch * FULL_TURN;
-    cap.position.set(
-      x,
-      externalThreadRadius * Math.cos(angle),
-      externalThreadRadius * Math.sin(angle),
-    );
-    cap.userData.role = 'external-thread-rounded-end';
-    screw.add(cap);
-  }
-
   const handwheel = new THREE.Group();
   handwheel.position.set(handwheelCenter.x, 0, 0);
   handwheel.userData.axis = X_AXIS.clone();
@@ -489,6 +485,9 @@ function latheTailstockScrewFeed(movement) {
   const quillLength = quillRearX - quillNose.x;
   const quillSleeve = cylinderAlongX(0.33, quillLength,
     glassMaterial, 48);
+  quillSleeve.geometry.dispose();
+  quillSleeve.geometry = ring(0.265, 0.33, -quillLength / 2, quillLength / 2, 128)
+    .rotateX(Math.PI / 2);
   quillSleeve.position.x = (quillNose.x + quillRearX) / 2;
   quillSleeve.userData.role = 'transparent-cutaway-sliding-quill-sleeve';
   quill.add(quillSleeve);
@@ -534,6 +533,9 @@ function latheTailstockScrewFeed(movement) {
   quill.add(quillIndex);
 
   const nut = cylinderAlongX(0.31, 0.42, accentMaterial, 34);
+  nut.geometry.dispose();
+  nut.geometry = ring(threadCrestRadius + threadRadialClearance, 0.31, -0.21, 0.21, 128);
+  nut.geometry.rotateX(Math.PI / 2); // Existing cylinder mesh turns Y onto X.
   nut.position.x = sourceNutCenterX;
   nut.userData.role = 'nonrotating-nut-fixed-inside-traveling-quill';
   quill.add(nut);
@@ -550,16 +552,10 @@ function latheTailstockScrewFeed(movement) {
     radius: internalThreadRadius,
   });
   const internalThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      internalThreadCurve,
-      Math.ceil(
-        (internalThreadMaximumX - internalThreadMinimumX)
-          / threadPitch * threadSegmentsPerTurn,
-      ),
-      internalThreadTubeRadius,
-      7,
-      false,
-    ),
+    threadGeometry({ ...externalProfile, inner: threadCoreRadius + threadRadialClearance,
+      outer: threadCrestRadius + threadRadialClearance, low: internalThreadMinimumX,
+      high: internalThreadMaximumX, width: threadPitch / 2 - 0.004,
+      phase: externalProfile.phase + threadPitch / 2 }),
     darkMaterial,
   );
   internalThread.userData.role =
@@ -567,10 +563,12 @@ function latheTailstockScrewFeed(movement) {
   quill.add(internalThread);
 
   const fixedKeyGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(housingLength - 0.4, 0.15, 0.31),
+    plate(polygonClipping.difference(rectangle(-0.155, -0.075, 0.155, 0.075),
+      rectangle(-0.112, -0.076, 0.112, 0.015)),
+    -(housingLength - 0.4) / 2, (housingLength - 0.4) / 2).rotateY(Math.PI / 2),
     darkMaterial,
   );
-  fixedKeyGuide.position.set(housingCenterX - 0.1, 0.49, 0);
+  fixedKeyGuide.position.set(housingCenterX - 0.1, 0.435, 0);
   fixedKeyGuide.userData.role = 'fixed-longitudinal-keyway-guide';
   frame.add(fixedKeyGuide);
 
@@ -624,6 +622,7 @@ function latheTailstockScrewFeed(movement) {
     quillKey,
     quillRings,
     quillSleeve,
+    quillGuides,
     rearBearing,
     screw,
     screwCore,
@@ -679,7 +678,7 @@ function latheTailstockScrewFeed(movement) {
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
-    reason: 'The official Movement 285 page marks its animation unavailable.',
+    reason: 'The official Movement 285 page marks its animation unavailable and has no ae.add_model or mm_present animation script.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourcePointToModel = sourcePointToModel;
@@ -833,12 +832,16 @@ function latheTailstockScrewFeed(movement) {
     root.userData.kinematics = state;
   };
 
+  root.userData.hideGround = true;
+  root.userData.solidReview = { externalProfile, threadCrestRadius, threadRadialClearance,
+    flankClearance: 0.002, qualification: 'Prescribed screw lead law; inferred square threads, running clearance and bored keyed guides. No passive force or friction validation.' };
+  root.traverse(object => { for (const material of object.material ? [].concat(object.material) : []) material.fog = false; });
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(8.2, 5.2, 11.8),
+    cameraDirection: new THREE.Vector3(-4.2, 3.7, 15.8),
   };
 }
 

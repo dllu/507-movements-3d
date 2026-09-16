@@ -350,7 +350,7 @@ test('movement 419 update binds both wheel rotations, the link, the rolling crad
       state.inputAngle, 0, 'wheel A update');
     sameAngle(blocks.outputWheelB.userData.rotor.rotation.z,
       state.outputAngle, 0, 'wheel B update');
-    near(blocks.connectingRod.scale.y, geometry.connectingRodLength,
+    near(blocks.connectingRod.userData.nominalLength, geometry.connectingRodLength,
       9e-16, 'rendered A–B link length');
     vectorNear(blocks.cradleE.position, state.cradleCenter, 0,
       'cradle E center update');

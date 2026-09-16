@@ -97,7 +97,6 @@ test('movement 408 is one rigid two-leg centrolinead sliding on two fixed board 
     'lower-working-back-edge-through-joint-center',
     'long-straight-blade-whose-upper-drawing-edge-crosses-joint-center',
     'moving-center-joint-at-intersection-of-three-working-lines',
-    'visible-arc-of-circle-through-two-pins-joint-and-vanishing-point',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

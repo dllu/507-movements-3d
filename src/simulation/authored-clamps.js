@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { helicalThread, threadAngles, chamferedHex } from './mujoco-screw/thread-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1766,6 +1769,15 @@ function screwThrustLeverClamp() {
   const internalThreadPhaseAtMinimum = (
     nutThreadMinimumY - clampedScrewOriginY - threadLocalMinimumY
   ) * threadWaveNumber;
+  const threadCrestRadius = threadPitchRadius + externalThreadTubeRadius;
+  const externalProfile = { inner: threadCoreRadius - 0.001, outer: threadCrestRadius,
+    low: threadLocalMinimumY, high: threadLocalMaximumY, width: threadPitch / 2,
+    lead: -threadLeadPerRadian, phase: threadLocalMinimumY };
+  const internalProfile = { ...externalProfile, inner: threadCoreRadius + 0.004,
+    outer: threadCrestRadius + 0.004, low: nutThreadMinimumY, high: nutThreadMaximumY,
+    width: threadPitch / 2 - 0.004,
+    phase: clampedScrewOriginY + threadLocalMinimumY + threadPitch / 2 };
+  const threadGeometry = profile => helicalThread(profile, threadAngles(profile, 96)).rotateX(-Math.PI / 2);
   const shoePinRadius = shoePinLocal.length();
   const clampedScrewArm = screwAxisX - holderPivot.x;
   const clampedWorkArm = holderPivot.x
@@ -2151,6 +2163,29 @@ function screwThrustLeverClamp() {
     }),
     frameMaterial,
   );
+  // Drill the thickened lower arm along the screw axis, preserving its
+  // front/rear ligaments instead of merely cutting a gap in the elevation.
+  const armLeft = (326 - sourceHolderPivot.x) * sourceScale;
+  const armRight = (409 - sourceHolderPivot.x) * sourceScale;
+  const armLow = (sourceHolderPivot.y - 374) * sourceScale;
+  const armHigh = (sourceHolderPivot.y - 346) * sourceScale;
+  const rectangle = (left, bottom, right, top) => poly([[left, bottom], [right, bottom], [right, top], [left, top]]);
+  bench.geometry.dispose();
+  bench.geometry = plate(polygonClipping.difference(
+    rectangle(-(benchMaximumX - benchMinimumX) / 2, -benchDepth / 2,
+      (benchMaximumX - benchMinimumX) / 2, benchDepth / 2),
+    poly(circle([screwAxisX - bench.position.x, bench.position.z], threadCrestRadius + 0.008, 128))),
+    -(benchTopY - benchBottomY) / 2, (benchTopY - benchBottomY) / 2).rotateX(-Math.PI / 2);
+  const upright = plate(polygonClipping.difference(poly(frameModelPoints.map(p => p.toArray())),
+    rectangle(armLeft, armLow - 0.01, armRight + 0.01, armHigh + 0.000001),
+    poly(circle(holderPivot.toArray(), 0.19, 128))), -frameDepth / 2, frameDepth / 2);
+  const lowerArm = plate(polygonClipping.difference(rectangle(armLeft, -0.38, armRight, 0.38),
+    poly(circle([screwAxisX, 0], threadCrestRadius + 0.004, 128))), armLow, armHigh)
+    .rotateX(-Math.PI / 2);
+  // Both generators are non-indexed; omit UVs to merge consistent attributes.
+  upright.deleteAttribute('uv'); lowerArm.deleteAttribute('uv');
+  fixedFrame.geometry.dispose(); fixedFrame.geometry = mergeGeometries([upright, lowerArm]);
+  upright.dispose(); lowerArm.dispose();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-central-fulcrum-standard-and-lower-threaded-arm';
@@ -2266,7 +2301,9 @@ function screwThrustLeverClamp() {
   holder.add(shoePin);
 
   const nutBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.34, 0.34, 6),
+    chamferedHex({ radius: 0.34, bore: threadCrestRadius + 0.004,
+      low: -0.17, high: 0.17, phase: 0, bottomBevel: 0.02, topBevel: 0.02 },
+    Array.from({ length: 193 }, (_, i) => i * FULL_TURN / 192)).rotateX(-Math.PI / 2),
     darkMaterial,
   );
   nutBody.position.set(screwAxisX, nutCenterY, 0);
@@ -2281,14 +2318,7 @@ function screwThrustLeverClamp() {
     radius: internalThreadRadius,
   });
   const internalThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      internalThreadCurve,
-      Math.ceil((nutThreadMaximumY - nutThreadMinimumY)
-        / threadPitch * 54),
-      internalThreadTubeRadius,
-      7,
-      false,
-    ),
+    threadGeometry(internalProfile),
     shoeMaterial,
   );
   internalThread.position.x = screwAxisX;
@@ -2325,14 +2355,7 @@ function screwThrustLeverClamp() {
     radius: threadPitchRadius,
   });
   const externalThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      externalThreadCurve,
-      Math.ceil((threadLocalMaximumY - threadLocalMinimumY)
-        / threadPitch * 54),
-      externalThreadTubeRadius,
-      8,
-      false,
-    ),
+    threadGeometry(externalProfile),
     threadMaterial,
   );
   externalThread.userData.handedness = 'right';
@@ -2630,6 +2653,15 @@ function screwThrustLeverClamp() {
   root.userData.stateAtCycleTime = stateAtCycleTime;
   root.userData.stateAtTime = stateAtTime;
 
+  root.userData.sourceAnimation = {
+    available: false, independentlyReconstructed: true,
+    sourceUrl: 'https://507movements.com/mm_190.html',
+    reason: 'The official page has no ae.add_model or mm_present animation definition.',
+  };
+  root.userData.hideGround = true;
+  root.userData.solidReview = { externalProfile, internalProfile, threadCrestRadius,
+    flankClearance: 0.002, qualification: 'Prescribed lead law and gravity-aligned shoe; inferred square threads and bored lower arm. Collar/holder finite thrust contact and passive return remain unqualified.' };
+  root.traverse(object => { for (const material of object.material ? [].concat(object.material) : []) material.fog = false; });
   update(0);
   markShadows(root);
   for (const object of [

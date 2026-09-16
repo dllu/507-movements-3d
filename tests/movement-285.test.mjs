@@ -155,8 +155,8 @@ test('movement 285 builds one continuous twenty-three-turn thread with positive 
     'thread turns fill measured length');
   near(geometry.threadLead, geometry.threadPitch, 0,
     'single-start lead');
-  assert.ok(geometry.threadRadialClearance > 0.025);
-  assert.ok(geometry.threadRadialClearance < 0.035);
+  near(geometry.threadRadialClearance, 0.004, 0,
+    'finite crest/root running clearance');
   assert.ok(geometry.threadSegments >= 23 * 24);
 
   const start = curves.externalThread.getPoint(0);

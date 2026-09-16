@@ -190,11 +190,9 @@ test('movement 410 equal links force the marker onto the exact cheek midpoint at
   assert.equal(maximumCenterResidual, 0);
   assert.ok(maximumLeftLengthResidual < 4.5e-16);
   assert.ok(maximumRightLengthResidual < 4.5e-16);
-  near(minimumSpacing,
-    geometry.setupAdjustableCheekX - geometry.fixedCheekX,
-    7e-16, 'minimum setup spacing');
-  near(maximumSpacing, geometry.fittedCheekSpacing, 5e-16,
-    'fitted spacing');
+  near(minimumSpacing, geometry.fittedCheekSpacing, 5e-16, 'fitted spacing');
+  near(maximumSpacing, geometry.setupAdjustableCheekX - geometry.fixedCheekX,
+    7e-16, 'outward setup spacing');
   disposeModel(model.root);
 });
 
@@ -344,7 +342,7 @@ test('movement 410 update binds the two cheeks, equal links, marker tip, and scr
       state.adjustableCheekX, 0, 'rendered adjustable link pivot');
     vector2Near(
       blocks.markingPoint.getWorldPosition(new THREE.Vector3()),
-      state.markerWorld,
+      model.root.localToWorld(new THREE.Vector3(state.markerWorld.x,state.markerWorld.y,0)),
       4e-16,
       'rendered marker pivot',
     );
@@ -356,7 +354,9 @@ test('movement 410 update binds the two cheeks, equal links, marker tip, and scr
         new THREE.Vector3(geometry.equalLinkLength / 2, 0, 0),
       ),
     ];
-    const leftTargets = [state.fixedLinkPivotWorld, state.markerWorld];
+    const leftTargets = [state.fixedLinkPivotWorld, state.markerWorld].map(p => {
+      const w=model.root.localToWorld(new THREE.Vector3(p.x,p.y,0));return new THREE.Vector2(w.x,w.y);
+    });
     const directError = new THREE.Vector2(leftEnds[0].x, leftEnds[0].y)
       .distanceTo(leftTargets[0])
       + new THREE.Vector2(leftEnds[1].x, leftEnds[1].y)
@@ -375,7 +375,7 @@ test('movement 410 update binds the two cheeks, equal links, marker tip, and scr
       'rendered fixed cheek contact');
   }
   const markerTip = blocks.markerNeedle.localToWorld(
-    new THREE.Vector3(0, geometry ? 0.22 : 0, 0),
+    new THREE.Vector3(0, blocks.markerNeedle.geometry.parameters.height / 2, 0),
   );
   near(markerTip.z, -0.18, 6e-17,
     'sharp conical marker tip touches workpiece top plane');

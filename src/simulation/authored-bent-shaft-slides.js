@@ -5,6 +5,23 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+
+// Closed lathed spherical seats; the upper bearing retains the journal bore.
+function sphericalSeat(inner, outer, halfSpan) {
+  const points=[];
+  for(let i=0;i<=48;i++){const y=-halfSpan+2*halfSpan*i/48;points.push(new THREE.Vector2(Math.sqrt(outer*outer-y*y),y));}
+  for(let i=48;i>=0;i--){const y=-halfSpan+2*halfSpan*i/48;points.push(new THREE.Vector2(Math.sqrt(inner*inner-y*y),y));}
+  points.push(points[0].clone());
+  return new THREE.LatheGeometry(points,64);
+}
+function lowerSeatGeometry() {
+ const p=[];
+ for(let i=0;i<=32;i++){const a=Math.PI/2+Math.PI/2*i/32;p.push(new THREE.Vector2(.205*Math.sin(a),.205*Math.cos(a)));}
+ for(let i=32;i>=0;i--){const a=Math.PI/2+Math.PI/2*i/32;p.push(new THREE.Vector2(.166*Math.sin(a),.166*Math.cos(a)));}
+ p.push(p[0].clone());return new THREE.LatheGeometry(p,64);
+}
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -258,17 +275,23 @@ function bentShaftSlide(movement) {
   base.userData.role = 'fixed-machine-foundation';
   fixedFrame.add(base);
   const bearingPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 3.27, 0.62),
+    new THREE.BoxGeometry(.30,2.97,.62),
     frameMaterial,
   );
-  bearingPost.position.set(1.35, -0.34, -0.44);
+  bearingPost.position.set(1.35,-.535,-.75);
   bearingPost.userData.role = 'fixed-upright-of-bearing-D';
   fixedFrame.add(bearingPost);
-  const bearingD = cylinderAlongX(0.34, 0.66, frameMaterial, 42);
+  const bearingSaddle=new THREE.Mesh(new THREE.BoxGeometry(.42,.20,.82),frameMaterial);
+  bearingSaddle.position.set(1.35,.90,-.40);
+  bearingSaddle.userData.role='rear-bearing-saddle-clear-of-spatial-rod-and-slide';
+  fixedFrame.add(bearingSaddle);
+  const bearingD = new THREE.Mesh(boredCylinderGeometry(.34,.153,.66),frameMaterial);
+  bearingD.rotation.z=Math.PI/2;
   bearingD.position.set(1.35, shaftAxisY, shaftAxisZ);
   bearingD.userData.role = 'fixed-bearing-D-around-shaft-A';
   fixedFrame.add(bearingD);
-  const bearingBore = cylinderAlongX(0.15, 0.76, darkMaterial, 34);
+  const bearingBore = new THREE.Mesh(boredCylinderGeometry(.15,.134,.76),darkMaterial);
+  bearingBore.rotation.z=Math.PI/2;
   bearingBore.position.copy(bearingD.position);
   bearingBore.userData.role = 'dark-bearing-D-bore-and-bushing';
   fixedFrame.add(bearingBore);
@@ -276,19 +299,23 @@ function bentShaftSlide(movement) {
     new THREE.BoxGeometry(5.15, 0.16, 0.90),
     frameMaterial,
   );
-  slideRail.position.set(0.18, slideAxisY - 0.28, slideAxisZ);
+  slideRail.position.set(0.18, slideAxisY - .67, slideAxisZ);
   slideRail.userData.role = 'fixed-single-axis-horizontal-guide-for-C';
   fixedFrame.add(slideRail);
   const guideLipFront = new THREE.Mesh(
-    new THREE.BoxGeometry(5.15, 0.25, 0.12),
+    new THREE.BoxGeometry(5.15, .39, .12),
     darkMaterial,
   );
-  guideLipFront.position.set(0.18, slideAxisY - 0.08, 0.50);
+  guideLipFront.position.set(0.18, slideAxisY - .405, .46);
   guideLipFront.userData.role = 'fixed-front-guide-lip-for-slide-C';
   const guideLipRear = guideLipFront.clone();
-  guideLipRear.position.z = -0.50;
+  guideLipRear.position.z = -.46;
   guideLipRear.userData.role = 'fixed-rear-guide-lip-for-slide-C';
   fixedFrame.add(guideLipFront, guideLipRear);
+  const guideKeepers = [-1,1].map(side=>{
+    const keeper=new THREE.Mesh(new THREE.BoxGeometry(5.15,.08,.12),darkMaterial);
+    keeper.position.set(.18,slideAxisY-.17,side*.38);fixedFrame.add(keeper);return keeper;
+  });
   root.add(fixedFrame);
 
   const shaftRotor = new THREE.Group();
@@ -351,29 +378,26 @@ function bentShaftSlide(movement) {
     new THREE.BoxGeometry(1.05, 0.36, 0.78),
     drivenMaterial,
   );
-  slideBody.position.y = -0.01;
+  slideBody.position.y = -.40;
   slideBody.userData.role = 'rigid-body-of-slide-C';
   slideC.add(slideBody);
   const lowerBall = new THREE.Mesh(
     new THREE.SphereGeometry(0.16, 24, 18),
     whiteMaterial,
   );
-  lowerBall.position.y = 0.08;
+  lowerBall.position.y = 0;
   lowerBall.userData.role = 'white-lower-ball-in-slide-C-socket';
   slideC.add(lowerBall);
-  const lowerSocketCup = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.045, 10, 32),
-    socketMaterial,
-  );
-  lowerSocketCup.rotation.x = Math.PI / 2;
-  lowerSocketCup.position.y = 0.08;
+  const lowerSocketCup = new THREE.Mesh(lowerSeatGeometry(),socketMaterial);
   lowerSocketCup.userData.role = 'lower-universal-socket-in-slide-C';
   slideC.add(lowerSocketCup);
+  const socketFoot=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.10,32),socketMaterial);
+  socketFoot.position.y=-.225;slideC.add(socketFoot);
   const slideIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.06, 0.84),
+    new THREE.BoxGeometry(.20,.012,.44),
     whiteMaterial,
   );
-  slideIndex.position.y = 0.21;
+  slideIndex.position.set(.38,-.214,0);
   slideIndex.userData.role = 'white-slide-C-linear-position-index';
   slideC.add(slideIndex);
   root.add(slideC);
@@ -383,19 +407,22 @@ function bentShaftSlide(movement) {
     drivenMaterial,
     'constant-length-oblique-double-socket-rod-B',
   );
+  // Only the exposed shank is drawn; the analytic center-to-center length is unchanged.
+  rodB.geometry.dispose();
+  rodB.geometry = new THREE.CylinderGeometry(.085,.085,1-.30/socketRodLength,32);
+  rodB.geometry.translate(0,.05/socketRodLength,0);
   root.add(rodB);
-  const upperBall = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 18),
-    whiteMaterial,
-  );
-  upperBall.userData.role =
-    'white-upper-ball-turning-on-bent-journal-of-A';
+  const ballProfile=[];
+  const ballHalfSpan=Math.sqrt(.16**2-.124**2);
+  for(let i=0;i<=48;i++){const y=-ballHalfSpan+2*ballHalfSpan*i/48;ballProfile.push(new THREE.Vector2(Math.sqrt(.16**2-y*y),y));}
+  ballProfile.push(new THREE.Vector2(.124,ballHalfSpan),new THREE.Vector2(.124,-ballHalfSpan),ballProfile[0].clone());
+  const upperBall = new THREE.Mesh(new THREE.LatheGeometry(ballProfile,64),whiteMaterial);
+  upperBall.rotation.z=Math.PI/2;
+  upperBall.userData.role='white-upper-ball-turning-on-bent-journal-of-A';
   root.add(upperBall);
-  const upperSocketCup = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.045, 10, 32),
-    socketMaterial,
-  );
-  upperSocketCup.userData.role = 'upper-universal-socket-of-rod-B';
+  const upperSocketCup = new THREE.Mesh(sphericalSeat(.166,.215,.09),socketMaterial);
+  upperSocketCup.rotation.z=Math.PI/2;
+  upperSocketCup.userData.role='upper-universal-socket-of-rod-B';
   root.add(upperSocketCup);
 
   const update = (time) => {
@@ -406,12 +433,8 @@ function bentShaftSlide(movement) {
     const rodEnd = state.lowerSocket.clone();
     rodB.userData.setEndpoints(rodStart, rodEnd);
     upperBall.position.copy(state.upperSocket);
-    const rodDirection = state.rodVector.clone().normalize();
     upperSocketCup.position.copy(state.upperSocket);
-    upperSocketCup.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 0, 1),
-      rodDirection,
-    );
+
   };
 
   const sourceState = stateAtTime(0);
@@ -419,12 +442,12 @@ function bentShaftSlide(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: 6,
     },
     archetype:
       'horizontal-bent-shaft-transverse-crank-journal-double-ball-socket-oblique-rod-to-single-axis-slide',
     blocks: {
-      bearingD,
+      bearingD, bearingBore, bearingPost, bearingSaddle, slideRail, guideLipFront, guideLipRear, guideKeepers, slideBody, socketFoot,
       bentJournal,
       bentWeb,
       fixedFrame,
@@ -528,11 +551,11 @@ function bentShaftSlide(movement) {
     new THREE.Vector3(2.75, 2.55, 1.48),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(7.8, 4.9, 10.8);
+  root.userData.cameraDirection = new THREE.Vector3(6, 2.8, 12);
   root.userData.groundFloorY = -2.28;
   markShadows(root);
   base.receiveShadow = true;
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

@@ -7,6 +7,9 @@ import {
   setSpin,
 } from './primitives.js';
 
+import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
+import {makeBoredLinkRod} from './bored-link-rod.js';
+
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -39,18 +42,6 @@ function updateCylinderBetween(cylinder, start, end) {
     delta.clone().multiplyScalar(1 / length),
   );
   cylinder.scale.set(1, length, 1);
-}
-
-function makeDynamicRod(radius, material, role) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 24),
-    material,
-  );
-  rod.userData.role = role;
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
 }
 
 function makeTubeThrough(points, radius, material, role) {
@@ -130,7 +121,7 @@ function sampleLeftBand(anchor, tangent, center, radius, segmentCount) {
   );
   const topAngle = Math.PI / 2;
   const straightLength = anchor.distanceTo(tangent);
-  const arcLength = radius * (tangentAngle - topAngle);
+  const arcLength = radius * Math.abs(tangentAngle - topAngle);
   const totalLength = straightLength + arcLength;
   const points = [];
   for (let index = 0; index <= segmentCount; index += 1) {
@@ -142,7 +133,7 @@ function sampleLeftBand(anchor, tangent, center, radius, segmentCount) {
       ));
     } else {
       const angle = tangentAngle
-        - (pathDistance - straightLength) / radius;
+        + Math.sign(topAngle-tangentAngle)*(pathDistance - straightLength) / radius;
       points.push(new THREE.Vector3(
         center.x + radius * Math.cos(angle),
         center.y + radius * Math.sin(angle),
@@ -159,14 +150,14 @@ function sampleRightBand(tangent, anchor, center, radius, segmentCount) {
     tangent.x - center.x,
   );
   const topAngle = Math.PI / 2;
-  const arcLength = radius * (topAngle - tangentAngle);
+  const arcLength = radius * Math.abs(topAngle - tangentAngle);
   const straightLength = tangent.distanceTo(anchor);
   const totalLength = arcLength + straightLength;
   const points = [];
   for (let index = 0; index <= segmentCount; index += 1) {
     const pathDistance = totalLength * index / segmentCount;
     if (pathDistance <= arcLength) {
-      const angle = topAngle - pathDistance / radius;
+      const angle = topAngle + Math.sign(tangentAngle-topAngle)*pathDistance / radius;
       points.push(new THREE.Vector3(
         center.x + radius * Math.cos(angle),
         center.y + radius * Math.sin(angle),
@@ -219,15 +210,16 @@ function selfRockingCradle(movement) {
   const cradleAngularAmplitude = THREE.MathUtils.degToRad(6);
   const cradlePerOutputRatio = 2 * cradleAngularAmplitude
     / outputAngularStroke;
-  const bandPitchRadius = outputWheelRadius;
+  const bandPitchRadius = outputWheelRadius + .042;
   const cradleBandEffectiveRadius = bandPitchRadius
     / cradlePerOutputRatio;
-  const rockerRollRadius = 3.55;
+  const rockerRollRadius = 3.68;
+  const rockerTubeRadius = .13;
   const groundY = -2.60;
   const cradleCenterY = groundY + rockerRollRadius;
-  const bandZ = 0.72;
-  const leftPostLocal = new THREE.Vector2(-2.02, 1.68);
-  const rightPostLocal = new THREE.Vector2(2.02, 1.68);
+  const bandZ = .42;
+  const leftPostLocal = new THREE.Vector2(-2.02, 1.05);
+  const rightPostLocal = new THREE.Vector2(2.02, 1.05);
 
   const stateAtInputAngle = (
     inputAngle,
@@ -495,7 +487,7 @@ function selfRockingCradle(movement) {
     new THREE.BoxGeometry(6.8, 0.18, 1.65),
     groundMaterial,
   );
-  ground.position.set(0, groundY - 0.14, -0.24);
+  ground.position.set(0, groundY - .09, -0.24);
   ground.userData.role = 'fixed-floor-beneath-rocking-cradle-E';
   root.add(ground);
 
@@ -503,16 +495,16 @@ function selfRockingCradle(movement) {
   fixedAxleFrame.userData.role =
     'fixed-rear-frame-carrying-A-and-B-axes';
   const rearMast = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 4.05, 0.24),
+    new THREE.BoxGeometry(.20,4.28,.24),
     frameMaterial,
   );
-  rearMast.position.set(0, -0.36, -0.58);
+  rearMast.position.set(0,-.475,-.94);
   rearMast.userData.role = 'rear-grounded-drive-bearing-standard';
   fixedAxleFrame.add(rearMast);
   for (const center of [inputCenter, outputCenter]) {
-    const axle = cylinderAlongZ(0.11, 1.28, groundMaterial, 28);
+    const axle = cylinderAlongZ(.11,1.50,groundMaterial,28);
     axle.position.copy(center);
-    axle.position.z = 0.03;
+    axle.position.z = -.21;
     axle.userData.role = center === inputCenter
       ? 'fixed-axis-of-continuously-rotating-wheel-A'
       : 'fixed-axis-of-oscillating-wheel-B';
@@ -538,10 +530,11 @@ function selfRockingCradle(movement) {
   inputCrankArm.userData.role = 'eccentric-crank-arm-on-wheel-A';
   inputWheelA.userData.rotor.add(inputCrankArm);
   const inputPinMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 24, 18),
+    new THREE.CylinderGeometry(.07,.07,.48,32),
     whiteMaterial,
   );
-  inputPinMarker.position.set(inputCrankRadius, 0, 0.28);
+  inputPinMarker.rotation.x=Math.PI/2;
+  inputPinMarker.position.set(inputCrankRadius, 0, .39);
   inputPinMarker.userData.role = 'white-crank-pin-of-wheel-A';
   inputWheelA.userData.rotor.add(inputPinMarker);
   root.add(inputWheelA);
@@ -564,20 +557,29 @@ function selfRockingCradle(movement) {
   outputCrankArm.userData.role = 'eccentric-output-arm-on-wheel-B';
   outputWheelB.userData.rotor.add(outputCrankArm);
   const outputPinMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 24, 18),
+    new THREE.CylinderGeometry(.07,.07,.48,32),
     whiteMaterial,
   );
-  outputPinMarker.position.set(outputPinRadius, 0, 0.30);
+  outputPinMarker.rotation.x=Math.PI/2;
+  outputPinMarker.position.set(outputPinRadius, 0, .39);
   outputPinMarker.userData.role = 'white-oscillating-pin-of-wheel-B';
   outputWheelB.userData.rotor.add(outputPinMarker);
   root.add(outputWheelB);
 
-  const connectingRod = makeDynamicRod(
-    0.075,
-    rodMaterial,
-    'constant-length-link-from-A-to-B',
-  );
+  const {rod:connectingRod,body:connectingRodBody,startAnchor:rodStart,endAnchor:rodEnd}=makeBoredLinkRod({
+    bodyMaterial:rodMaterial,depth:.12,length:connectingRodLength,planeZ:0,
+    width:.15,boreRadius:.074,role:'constant-length-link-from-A-to-B',
+  });
+  connectingRod.userData.setEndpoints=(a,b)=>{
+    connectingRod.position.copy(a);
+    connectingRod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);
+  };
   root.add(connectingRod);
+  // Pulley hubs rotate around the fixed axles rather than filling them.
+  for(const wheel of [inputWheelA,outputWheelB]){
+    const hub=wheel.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');
+    if(hub){const p=hub.geometry.parameters;hub.geometry.dispose();hub.geometry=boredJournal(p.radiusTop,.114,p.height,hub.material).geometry;}
+  }
 
   const cradleE = new THREE.Group();
   cradleE.userData.role = 'rolling-self-rocking-cradle-E';
@@ -585,8 +587,8 @@ function selfRockingCradle(movement) {
   for (let index = 0; index <= 72; index += 1) {
     const angle = THREE.MathUtils.lerp(-2.15, -0.99, index / 72);
     rockerPoints.push(new THREE.Vector3(
-      rockerRollRadius * Math.cos(angle),
-      rockerRollRadius * Math.sin(angle),
+      (rockerRollRadius-rockerTubeRadius) * Math.cos(angle),
+      (rockerRollRadius-rockerTubeRadius) * Math.sin(angle),
       -0.02,
     ));
   }
@@ -601,13 +603,13 @@ function selfRockingCradle(movement) {
     new THREE.BoxGeometry(4.55, 0.18, 0.82),
     cradleMaterial,
   );
-  cradleBed.position.set(0, -2.75, -0.02);
+  cradleBed.position.set(0, -2.75, -.25);
   cradleBed.userData.role = 'rigid-bed-of-cradle-E';
   cradleE.add(cradleBed);
   for (const side of [-1, 1]) {
     const standard = beamBetween(
-      new THREE.Vector3(side * 2.02, -2.68, -0.02),
-      new THREE.Vector3(side * 2.02, 1.68, -0.02),
+      new THREE.Vector3(side * 2.02, -2.68, -.25),
+      new THREE.Vector3(side * 2.02, 1.05, -.25),
       0.15,
       0.26,
       cradleMaterial,
@@ -616,8 +618,8 @@ function selfRockingCradle(movement) {
       ? 'left-band-standard-attached-to-rocker-E'
       : 'right-band-standard-attached-to-rocker-E';
     cradleE.add(standard);
-    const anchor = cylinderAlongZ(0.115, 0.46, whiteMaterial, 24);
-    anchor.position.set(side * 2.02, 1.68, 0.08);
+    const anchor = cylinderAlongZ(.115, .88, whiteMaterial, 24);
+    anchor.position.set(side * 2.02, 1.05, .05);
     anchor.userData.role = side < 0
       ? 'attachment-of-flexible-band-C-to-E'
       : 'attachment-of-flexible-band-D-to-E';
@@ -627,7 +629,7 @@ function selfRockingCradle(movement) {
     new THREE.BoxGeometry(2.15, 0.42, 0.72),
     cradleMaterial,
   );
-  cradleLoad.position.set(0, -2.42, -0.02);
+  cradleLoad.position.set(0, -2.50, -.25);
   cradleLoad.userData.role = 'representative-cradle-body-on-rocker-E';
   cradleE.add(cradleLoad);
   root.add(cradleE);
@@ -651,8 +653,8 @@ function selfRockingCradle(movement) {
     setSpin(inputWheelA, state.inputAngle);
     setSpin(outputWheelB, state.outputAngle);
     connectingRod.userData.setEndpoints(
-      state.inputPin.clone().setZ(0.72),
-      state.outputPin.clone().setZ(0.72),
+      state.inputPin.clone().setZ(.94),
+      state.outputPin.clone().setZ(.94),
     );
     cradleE.position.copy(state.cradleCenter);
     cradleE.rotation.z = state.cradleAngle;
@@ -681,18 +683,18 @@ function selfRockingCradle(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
+      targetCycleDuration: 4,
     },
     archetype:
       'continuous-crank-four-bar-oscillating-drum-antagonistic-band-driven-rolling-cradle',
     blocks: {
-      connectingRod,
+      connectingRod, connectingRodBody, rodStart, rodEnd,
       cradleBed,
       cradleE,
       fixedAxleFrame,
       flexibleBandC,
       flexibleBandD,
-      ground,
+      ground, rearMast, cradleLoad,
       inputCrankArm,
       inputPinMarker,
       inputWheelA,
@@ -710,6 +712,8 @@ function selfRockingCradle(movement) {
     },
     dynamics: {
       bandElasticityBacklashBearingFrictionInertiaAndLoadsModeled: false,
+      finiteBandLengthClosureValidated: false,
+      bandApproximation: 'Cradle angle uses the disclosed effective-radius law; tangent routes are visual geometry and do not conserve both finite band lengths.',
       sourceSpecifiesAbsoluteDimensionsMaterialsLoadsOrForces: false,
     },
     fidelity: 'authored',
@@ -784,11 +788,11 @@ function selfRockingCradle(movement) {
     new THREE.Vector3(3.35, 3.03, 1.15),
   );
   root.userData.cameraDistanceScale = 1.02;
-  root.userData.cameraDirection = new THREE.Vector3(4.8, 3.3, 10.5);
+  root.userData.cameraDirection = new THREE.Vector3(1.1, .6, 14);
   root.userData.groundFloorY = groundY - 0.23;
   markShadows(root);
   ground.receiveShadow = true;
-  update(0);
+  fitPistonGuide(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

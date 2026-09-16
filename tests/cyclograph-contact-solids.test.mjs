@@ -27,7 +27,11 @@ test('403 finite guide pins touch offset rule faces and clear the raised brace t
    });
   }
  }
- near(b.graphite.position.z,-.075);near(b.pencilTip.position.z-.205/2,-.075);
+ near(b.graphite.position.z,-.075);near(b.pencilTip.localToWorld(new THREE.Vector3(0,b.pencilTip.geometry.parameters.height/2,0)).z,-.075);
+ const vertices=b.pencilTip.geometry.attributes.position;
+ const p=new THREE.Vector3();let minimumZ=Infinity;
+ for(let i=0;i<vertices.count;i++)minimumZ=Math.min(minimumZ,b.pencilTip.localToWorld(p.fromBufferAttribute(vertices,i)).z);
+ near(minimumZ,-.075);
  assert.ok(b.apexFastener.geometry.userData.boreRadius>g.guideRadius);
  assert.equal(b.board.parent,null);assert.equal(root.userData.hideGround,true);
 });

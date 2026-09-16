@@ -1,3 +1,4 @@
+import {correctCentrolinead,finishDrawingGauge} from './drawing-gauge-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -68,7 +69,7 @@ function centrolinead(movement) {
   const pinCircleAngle = Math.asin(
     pinHalfSpacing / locusCircleRadius,
   );
-  const maximumJointCircleAngle = 0.42;
+  const maximumJointCircleAngle = .26;
   const bladeLength = 4.15;
   const bladeWidth = 0.24;
   const visibleLegLength = 2.45;
@@ -616,8 +617,8 @@ function centrolinead(movement) {
   board.receiveShadow = true;
   constructionCircleArc.castShadow = false;
   fixedPinChord.castShadow = false;
-  update(0);
-  return { root, update };
+  correctCentrolinead(root);
+  return finishDrawingGauge(root,update,cycleDuration);
 }
 
 export function createAuthoredCentrolineadMovement(movement) {

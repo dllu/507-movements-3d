@@ -1,3 +1,4 @@
+import {correctProportionalCompasses,finishDrawingGauge} from './drawing-gauge-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -307,8 +308,8 @@ function proportionalCompasses(movement) {
   const legDepth = 0.14;
   const bossRadius = 0.31;
   const slotWidth = 0.17;
-  const slotMinimumCoordinate = -0.72;
-  const slotMaximumCoordinate = 1.37;
+  const slotMinimumCoordinate = -.88;
+  const slotMaximumCoordinate = 1.47;
   const scaleRatios = [1, 1.125, 1.25, 1.275, 1.5, 1.75, 2, 2.5];
   const scaleCalibration = scaleRatios.map((ratio) => {
     const pivotFromShortPoint = totalPointLength / (ratio + 1);
@@ -769,8 +770,8 @@ function proportionalCompasses(movement) {
   board.receiveShadow = true;
   upperSpanWitness.castShadow = false;
   lowerSpanWitness.castShadow = false;
-  update(0);
-  return { root, update };
+  correctProportionalCompasses(root);
+  return finishDrawingGauge(root,update,cycleDuration);
 }
 
 export function createAuthoredProportionalCompassMovement(movement) {

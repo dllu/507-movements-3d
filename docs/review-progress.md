@@ -1,3 +1,34 @@
+# Tenth family pass: continuous gears, open guides and measuring instruments
+
+Ten further movements receive bounded corrections across four parallel lanes:
+190/285, 401/417/419, 503/504 and 408/409/410. A follow-up also corrects 403's
+reversed pencil cone. All 135 focused/regression tests, the production build and eleven packaged
+playback/mobile-resize checks pass. The complete review remains active; the specific limitations below remain.
+
+503's loose hubs and carrier clear one another. 504 now uses one continuous
+intermediate gear, with compatible 19/20/21-tooth outputs sharing a base pitch,
+source-correct layer order and orientation marks. The 33-pose audit finds no
+penetration in 1,261,607 actual-surface queries. See the
+[gear review](movement-503-504-contact.md) for approximate bevel flanks and
+reconstructed tooth profiles. Its evidence supersedes the old 503/504 rows.
+
+190/285 reuse closed square threads and bored screw passages; 285's keyed quill
+and casting are physically connected. The [screw review](movement-190-285-solid-review.md)
+measures the remaining 190 collar/holder contact residual: penetration reaches
+0.007293 model units. Prescribed motion does not resolve that loaded contact.
+
+401/417/419 now have open slots/bores, seated sockets, captured guides and
+compatible band/drum depths. The [linkage review](dead-center-socket-cradle-review.md)
+retains 401's scripted spring and 419's approximate band drive, whose displayed
+total band-length variation is about 0.2%.
+
+408's finite pins touch offset leg faces, with real head/leg bores and usable
+travel that clears the head. 409 has real compass slots, separate bored sliders
+and source-hashed scalloped grips extracted in about 24 milliseconds. 410 now
+opens outward from the wood and has open guides and separated centering links.
+See the [drawing-gauge review](drawing-gauge-408-410-review.md). 403's added
+regression checks the actual cone apex and vertices against the trace plane.
+
 # Ninth family pass: bevel construction, finite slots and drawing contacts
 
 Nine movements receive bounded corrections across four parallel lanes:

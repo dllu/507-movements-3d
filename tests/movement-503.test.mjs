@@ -266,7 +266,7 @@ test('movement 503 is continuous through carrier turns, fits all orientations, a
   for (let sample = 0; sample <= 1080; sample += 1) {
     model.update(period * sample / 1080);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));

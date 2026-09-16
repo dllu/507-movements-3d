@@ -296,3 +296,26 @@ These corrections reuse finite plates, bores, conical gears and solid threads;
 none requires manually tracing a new decorative silhouette or adding live
 browser physics. Prior finite audit hashes are refreshed only after confirming
 that the changed 200/226 builders leave their other gear dependencies byte-identical.
+
+## Tenth parallel batch
+
+- **190/285:** closed mating square threads, open screw passages and seated
+  keyed quill guides. 285's casting now meets its base; 190's small remaining
+  collar/holder interference is measured rather than claimed solved.
+- **401/417/419:** actual slotted/bored joints, seated spherical joints, captured
+  slide and compatible band/drum/shoe layers. 401's spring is still prescribed;
+  419's displayed two-band total length varies by about 0.2%.
+- **503/504:** common-apex bevel clearance and one continuous intermediate gear
+  for Ferguson's paradox, with compatible common-base-pitch output profiles.
+  The 33-pose audit finds no penetration in 1,261,607 sampled surface queries.
+- **408/409/410:** finite perspective guides, true compass slots/sliders and
+  outward bisecting-gauge setup. 409 reuses a source-hashed CV grip contour;
+  mechanical circles, straight webs and hidden connections remain analytical.
+- **403 follow-up:** corrected the reversed pencil cone and replaced the nominal
+  tip-height assertion with a transformed-apex and mesh-vertex check.
+
+135 focused/regression tests, the build and eleven packaged playback/mobile
+checks pass. Other clamp/epicyclic builders and shared
+helpers remain byte-identical after excluding the scoped builders/imports.
+Historical contact reports retain their original source snapshots; the new
+503/504 report supersedes those movements' old stepped-wheel results.

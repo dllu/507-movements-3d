@@ -474,7 +474,7 @@ function cyclograph(movement) {
     new THREE.ConeGeometry(GUIDE_RADIUS, .205, 64),
     pencilMaterial,
   );
-  pencilTip.rotation.x = Math.PI / 2;
+  pencilTip.rotation.x = -Math.PI / 2;
   pencilTip.position.z = .0275;
   pencilTip.userData.role = 'pencil-point-touching-described-arc';
   const graphite = new THREE.Mesh(

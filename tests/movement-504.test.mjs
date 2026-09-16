@@ -106,9 +106,9 @@ test('movement 504 records Brown, the unavailable animation, and the equal-diame
   assert.match(sourceReference.reconstructionDisclosure,
     /A=20.*F=20.*E=21.*G=19.*one rigid thick intermediate B/is);
   assert.match(sourceReference.reconstructionDisclosure,
-    /rigid four-row 20-tooth assembly.*adjusted modules.*center distances identical.*pitch contact slip-free/is);
+    /continuous 20-tooth profile.*common base pitch.*Adjusted output tooth thicknesses.*center distances identical.*pitch contact slip-free/is);
   assert.match(sourceReference.reconstructionDisclosure,
-    /exact stepped-band realization replaces.*equal-diameter approximation/is);
+    /Output E is above F.*above G.*A aligned to F/is);
   assert.match(
     sourceReference.historicalConstructionCorroboration.report,
     /Practical Mechanics.*A Mechanical Paradox.*1947/,
@@ -122,11 +122,12 @@ test('movement 504 records Brown, the unavailable animation, and the equal-diame
   disposeModel(model.root);
 });
 
-test('movement 504 makes every displayed branch an exact same-center standard-pitch mesh', () => {
+test('movement 504 makes every displayed branch an exact same-center working-pitch mesh', () => {
   const { model } = movementModel();
   const { geometry, meshes, stateAtTime, transmission } = model.root.userData;
 
-  assert.equal(transmission.exactSteppedWorkingBands, true);
+  assert.equal(transmission.exactSteppedWorkingBands, false);
+  assert.equal(transmission.constantIntermediateProfile, true);
   assert.equal(meshes.length, 4);
   assert.deepEqual(meshes.map(({ first, second }) => `${first}-${second}`),
     ['A-B-input-row', 'B-E-row-E', 'B-F-row-F', 'B-G-row-G']);

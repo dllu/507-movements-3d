@@ -1,3 +1,4 @@
+import {correctBisectingGauge,finishDrawingGauge} from './drawing-gauge-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -76,7 +77,7 @@ function bisectingGauge(movement) {
   const cheekThickness = 0.34;
   const fixedCheekX = -(workpieceHalfWidth + cheekThickness / 2);
   const fittedAdjustableCheekX = -fixedCheekX;
-  const setupAdjustableCheekX = 1.18;
+  const setupAdjustableCheekX = 1.98;
   const fittedCheekSpacing = fittedAdjustableCheekX - fixedCheekX;
   const equalLinkLength = 2.08;
   const linkAnchorLocalY = -0.22;
@@ -587,7 +588,7 @@ function bisectingGauge(movement) {
     link.position.set(
       (start.x + end.x) / 2,
       (start.y + end.y) / 2,
-      0.10,
+      link.userData.workingZ ?? .10,
     );
     link.rotation.z = Math.atan2(delta.y, delta.x);
   };
@@ -805,8 +806,8 @@ function bisectingGauge(movement) {
   workpiece.receiveShadow = true;
   exactCenterline.castShadow = false;
   fittedCenterWitness.castShadow = false;
-  update(0);
-  return { root, update };
+  correctBisectingGauge(root);
+  return finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(3,-5,10));
 }
 
 export function createAuthoredBisectingGaugeMovement(movement) {

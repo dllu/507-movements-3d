@@ -1,3 +1,4 @@
+import { correctEpicyclic503504 } from './epicyclic-503-504-contact.js';
 import { correctCompoundEpicyclic } from './compound-epicyclic-corrections.js';
 import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
@@ -1199,11 +1200,12 @@ function bevelDifferentialEpicyclic(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
+  correctEpicyclic503504(root, movement.id);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(4.6, 3.6, 12.5),
+    cameraDirection: new THREE.Vector3(1.5, 1.2, 12),
   };
 }
 
@@ -1222,10 +1224,10 @@ function fergusonMechanicalParadox(movement) {
   const nominalCarrierPeriod = FULL_TURN / carrierAngularSpeed;
   const gearDepth = 0.19;
   const layerY = Object.freeze({
-    A: -0.48,
-    E: -0.16,
-    F: 0.16,
-    G: 0.48,
+    A: 0,
+    E: 0.32,
+    F: 0,
+    G: -0.32,
   });
   const carrierPlaneY = 0.84;
   const intermediateMountPhase = Math.PI / intermediateTeeth;
@@ -1662,7 +1664,7 @@ function fergusonMechanicalParadox(movement) {
     },
     historicalConstructionCorroboration: {
       detail:
-        'A 1947 Practical Mechanics construction article explicitly notes that equal-diameter output blanks with one tooth more or less are theoretically imperfect; that historical compromise motivates the exact stepped working bands disclosed here.',
+        'A 1947 Practical Mechanics construction article explicitly notes that equal-diameter output blanks with one tooth more or less are theoretically imperfect; the present reconstruction instead uses common-base-pitch involutes with adjusted output tooth thicknesses.',
       report: 'Practical Mechanics, “A Mechanical Paradox” (May–June 1947)',
       url: 'https://www.worldradiohistory.com/UK/Practical-Mechanics/40s/Practical-Mechanics-1947-05-06-S-OCR.pdf',
     },
@@ -1670,7 +1672,7 @@ function fergusonMechanicalParadox(movement) {
     officialEngraving: './engravings/mm_504.png',
     officialInlineModelUrl: movement.sourceUrl,
     reconstructionDisclosure:
-      'The official page marks Animated unavailable. Brown fixes A=20, F=20, E=21, G=19, one rigid thick intermediate B, pins M/N, carrier C-D, and the stationary/forward/reverse result, but gives no B count, pitches, dimensions, speed, or timing. B is reconstructed as one rigid four-row 20-tooth assembly: its A and F rows use the reference module while its E and G rows use subtly adjusted modules that keep all four center distances identical and every pitch contact slip-free. This exact stepped-band realization replaces the historically common equal-diameter approximation; dimensions, 0.75-rad/s carrier input, supports, labels, and colors are reconstruction choices.',
+      'The official page marks Animated unavailable. Brown fixes A=20, F=20, E=21, G=19, one rigid thick intermediate B, pins M/N, carrier C-D, and the stationary/forward/reverse result, but gives no B count, pitches, dimensions, speed, or timing. B is reconstructed as one continuous 20-tooth profile with common base pitch across all outputs. Adjusted output tooth thicknesses and working pressure angles keep the center distances identical and every pitch contact slip-free. Output E is above F, which is above G, with A aligned to F. Tooth profiles, dimensions and carrier speed are reconstruction choices.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.stateAtTime = stateAtTime;
@@ -1683,7 +1685,8 @@ function fergusonMechanicalParadox(movement) {
     nominalCarrierPeriod,
     outputAbsoluteRatios,
     outputTeeth,
-    exactSteppedWorkingBands: true,
+    exactSteppedWorkingBands: false,
+    constantIntermediateProfile: true,
   };
   root.userData.cameraDistanceScale = 1.08;
   root.userData.groundFloorY = -1.84;
@@ -1736,6 +1739,7 @@ function fergusonMechanicalParadox(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
+  correctEpicyclic503504(root, movement.id);
   markShadows(root);
   return {
     root,

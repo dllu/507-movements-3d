@@ -5,6 +5,10 @@ import {
   matte,
 } from './primitives.js';
 
+import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
+import {makeBoredLinkRod} from './bored-link-rod.js';
+import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
+
 const FULL_TURN = Math.PI * 2;
 
 function positiveModulo(value, modulus) {
@@ -105,7 +109,7 @@ function tangentSlideShape({
 
 function extrudedMesh(shape, depth, material) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: false,
     bevelSegments: 2,
     bevelSize: 0.018,
     bevelThickness: 0.018,
@@ -334,7 +338,7 @@ function brownellDeadCenterCrank(movement) {
 
   const wheelStand = beamBetween(
     new THREE.Vector3(-1.46, -2.67, -0.48),
-    new THREE.Vector3(wheelCenter.x, wheelCenter.y, -0.48),
+    new THREE.Vector3(wheelCenter.x, wheelCenter.y-.26, -0.48),
     0.14,
     0.20,
     frameMaterial,
@@ -343,7 +347,7 @@ function brownellDeadCenterCrank(movement) {
   root.add(wheelStand);
   const treadleStand = beamBetween(
     new THREE.Vector3(1.72, -2.67, -0.48),
-    new THREE.Vector3(treadlePivot.x, treadlePivot.y, -0.48),
+    new THREE.Vector3(treadlePivot.x, treadlePivot.y-.20, -0.48),
     0.14,
     0.20,
     frameMaterial,
@@ -351,11 +355,11 @@ function brownellDeadCenterCrank(movement) {
   treadleStand.userData.role = 'fixed-treadle-pivot-standard';
   root.add(treadleStand);
 
-  const wheelBearing = cylinderAlongZ(0.24, 0.60, inkMaterial, 40);
-  wheelBearing.position.set(wheelCenter.x, wheelCenter.y, -0.16);
+  const wheelBearing = boredJournal(.24, .124, .60, inkMaterial);
+  wheelBearing.position.set(wheelCenter.x, wheelCenter.y, -.44);
   wheelBearing.userData.role = 'fixed-faceplate-shaft-bearing';
   root.add(wheelBearing);
-  const treadleBearing = cylinderAlongZ(0.16, 0.52, inkMaterial, 36);
+  const treadleBearing = boredJournal(.16, .094, .52, inkMaterial);
   treadleBearing.position.set(treadlePivot.x, treadlePivot.y, -0.13);
   treadleBearing.userData.role = 'fixed-treadle-fulcrum-bearing';
   root.add(treadleBearing);
@@ -366,12 +370,7 @@ function brownellDeadCenterCrank(movement) {
     'single-rotating-flywheel-faceplate-carrying-tangent-slide';
   root.add(faceplate);
 
-  const faceDisc = cylinderAlongZ(
-    wheelRadius * 0.88,
-    0.20,
-    driverMaterial,
-    64,
-  );
+  const faceDisc = boredJournal(wheelRadius-.035,.124,.20,driverMaterial);
   faceDisc.position.z = 0.02;
   faceDisc.userData.role = 'rigid-flywheel-faceplate';
   faceplate.add(faceDisc);
@@ -399,8 +398,8 @@ function brownellDeadCenterCrank(movement) {
   faceIndex.position.set(0, wheelRadius * 0.84, 0.19);
   faceIndex.userData.role = 'white-faceplate-angular-index';
   faceplate.add(faceIndex);
-  const hub = cylinderAlongZ(0.28, 0.54, inkMaterial, 42);
-  hub.position.z = 0.08;
+  const hub = boredJournal(.28,.124,.18,inkMaterial);
+  hub.position.z = .02;
   hub.userData.role = 'flywheel-hub';
   faceplate.add(hub);
 
@@ -413,8 +412,15 @@ function brownellDeadCenterCrank(movement) {
     turns: 2.18,
     width: 0.075,
   });
-  voluteSpring.position.z = 0.225;
+  voluteSpring.position.z = .225;
   faceplate.add(voluteSpring);
+  const springAnchor = cylinderAlongZ(.045,.15,inkMaterial);
+  const anchorAngle = Math.PI/2-2.18*FULL_TURN;
+  springAnchor.position.set(.21*Math.cos(anchorAngle),.21*Math.sin(anchorAngle),.18);
+  faceplate.add(springAnchor);
+  const springSlideAttachment = cylinderAlongZ(.045,.14,inkMaterial);
+  springSlideAttachment.position.set(0,crankRadius-slideHalfHeight+.015,.27);
+  faceplate.add(springSlideAttachment);
 
   const tangentSlide = new THREE.Group();
   tangentSlide.position.set(0, crankRadius, 0.33);
@@ -435,18 +441,22 @@ function brownellDeadCenterCrank(movement) {
   slideBody.userData.role =
     'rigid-slide-A-with-two-parallel-traverse-guide-slots';
   tangentSlide.add(slideBody);
-  const wristBoss = cylinderAlongZ(0.145, 0.38, drivenMaterial, 38);
+  const slideStop = new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.29),inkMaterial);
+  slideStop.position.set(slideHalfLength+.06,crankRadius,.25);
+  slideStop.userData.role='faceplate-stop-for-spring-returned-slide';
+  faceplate.add(slideStop);
+  const wristBoss = cylinderAlongZ(0.145, 0.26, drivenMaterial, 38);
   wristBoss.position.z = 0.06;
   wristBoss.userData.role = 'wrist-boss-rigidly-fixed-to-slide-A';
   tangentSlide.add(wristBoss);
-  const wristPin = cylinderAlongZ(0.075, 0.66, inkMaterial, 32);
-  wristPin.position.z = 0.21;
+  const wristPin = cylinderAlongZ(0.075, 1.02, inkMaterial, 32);
+  wristPin.position.z = .35;
   wristPin.userData.role = 'crank-wrist-pin-fixed-on-tangent-slide';
   tangentSlide.add(wristPin);
 
   const guidePins = [-slotCenterX, slotCenterX].map((x, index) => {
-    const pin = cylinderAlongZ(guidePinRadius, 0.38, whiteMaterial, 30);
-    pin.position.set(x, crankRadius, 0.41);
+    const pin = cylinderAlongZ(guidePinRadius, .52, whiteMaterial, 30);
+    pin.position.set(x, crankRadius, .32);
     pin.userData.role =
       `faceplate-fixed-guide-pin-${index + 1}-through-slide-slot`;
     faceplate.add(pin);
@@ -467,6 +477,14 @@ function brownellDeadCenterCrank(movement) {
     drivenMaterial,
   );
   treadleBeam.position.x = (treadleRearArm - treadleForwardArm) / 2;
+  const beamCenterX=treadleBeam.position.x;
+  treadleBeam.geometry.dispose();
+  treadleBeam.geometry=plate(clip.difference(poly([
+    [-treadleForwardArm-beamCenterX,-.065],
+    [treadleRearArm-beamCenterX,-.065],
+    [treadleRearArm-beamCenterX,.065],
+    [-treadleForwardArm-beamCenterX,.065],
+  ]),poly(circle([-beamCenterX,0],.094,64))),-.075,.075);
   treadleBeam.userData.role = 'rigid-treadle-rocker';
   treadle.add(treadleBeam);
   const footPad = new THREE.Mesh(
@@ -476,32 +494,28 @@ function brownellDeadCenterCrank(movement) {
   footPad.position.set(-treadleForwardArm + 0.30, 0.015, 0.02);
   footPad.userData.role = 'operator-foot-pressure-pad';
   treadle.add(footPad);
-  const treadlePivotBoss = cylinderAlongZ(0.18, 0.38, inkMaterial, 34);
+  const treadlePivotBoss = boredJournal(.18,.094,.38,inkMaterial);
   treadlePivotBoss.userData.role = 'treadle-fulcrum-boss';
   treadle.add(treadlePivotBoss);
-  const rearJointBoss = cylinderAlongZ(0.12, 0.36, whiteMaterial, 30);
+  const rearJointBoss = cylinderAlongZ(.09, 1.02, whiteMaterial, 30);
+  rearJointBoss.position.z = .25;
   rearJointBoss.position.x = treadleRearArm;
   rearJointBoss.userData.role = 'pitman-to-treadle-pin';
   treadle.add(rearJointBoss);
 
-  const pitman = new THREE.Group();
-  pitman.position.z = 0.50;
-  pitman.userData.role = 'rigid-pitman-from-treadle-to-sliding-wrist';
+  const {rod: pitman, body: pitmanBar} = makeBoredLinkRod({
+    bodyMaterial: drivenMaterial, depth: .12, length: pitmanLength,
+    planeZ: 0, role: 'rigid-pitman-from-treadle-to-sliding-wrist',
+    width: .115, boreRadius: .079, startBoreRadius: .094,
+  });
+  pitman.position.z = .82;
   root.add(pitman);
-  const pitmanBar = new THREE.Mesh(
-    new THREE.BoxGeometry(pitmanLength, 0.115, 0.12),
-    drivenMaterial,
-  );
-  pitmanBar.position.x = pitmanLength / 2;
-  pitmanBar.userData.role = 'constant-length-pitman-body';
-  pitman.add(pitmanBar);
-  const lowerEye = cylinderAlongZ(0.145, 0.16, drivenMaterial, 32);
-  lowerEye.userData.role = 'pitman-lower-eye';
-  pitman.add(lowerEye);
-  const upperEye = cylinderAlongZ(0.145, 0.16, drivenMaterial, 32);
-  upperEye.position.x = pitmanLength;
-  upperEye.userData.role = 'pitman-upper-wrist-eye';
-  pitman.add(upperEye);
+  const wheelShaft = cylinderAlongZ(.12, .90, inkMaterial);
+  wheelShaft.position.set(wheelCenter.x,wheelCenter.y,-.35);
+  root.add(wheelShaft);
+  const treadleShaft = cylinderAlongZ(.09,.94,inkMaterial);
+  treadleShaft.position.set(treadlePivot.x,treadlePivot.y,.05);
+  root.add(treadleShaft);
 
   const slideLawAtPhase = (phase) => {
     const p = positiveModulo(phase, 1);
@@ -622,13 +636,14 @@ function brownellDeadCenterCrank(movement) {
     const state = stateAtTime(time);
     faceplate.rotation.z = state.faceplateAngle;
     tangentSlide.position.x = -state.slideAdvance;
+    springSlideAttachment.position.x = -state.slideAdvance;
     voluteSpring.userData.springState =
       voluteSpring.userData.updateForAdvance(state.slideAdvance);
     treadle.rotation.z = state.treadleAngle;
     pitman.position.set(
       state.rearJointWorld.x,
       state.rearJointWorld.y,
-      0.50,
+      .82,
     );
     pitman.rotation.z = state.pitmanAngle;
     root.userData.contacts = {
@@ -680,6 +695,8 @@ function brownellDeadCenterCrank(movement) {
       voluteSpring,
       wheelBearing,
       wheelStand,
+      faceDisc, treadleBeam, treadlePivotBoss, slideStop, slideBody, wristPin, wristBoss, pitmanBar, rearJointBoss,
+      wheelShaft, treadleShaft, treadleBearing, hub,
     },
     constraintResiduals: {
       sourcePitmanLength: sourceState.pitmanLengthResidual,
@@ -723,7 +740,7 @@ function brownellDeadCenterCrank(movement) {
     dynamics: {
       idealizations: [
         'rigid faceplate, slide, pins, wrist, pitman, treadle, and frame',
-        'zero-clearance guide slots and revolute joints',
+        'finite guide-slot and bored-joint running clearance',
         'volute spring deformation shown kinematically without a force law',
         'foot force, flywheel inertia, friction, impact, and bearing clearance omitted',
       ],
@@ -819,11 +836,11 @@ function brownellDeadCenterCrank(movement) {
     new THREE.Vector3(2.80, 2.78, 0.92),
   );
   root.userData.cameraDistanceScale = 1.09;
-  root.userData.cameraDirection = new THREE.Vector3(7.4, 4.4, 12.6);
+  root.userData.cameraDirection = new THREE.Vector3(1.1, .6, 14);
   root.userData.groundFloorY = -2.73;
   markShadows(root);
-  update(0);
-  return { root, update };
+  fitPistonGuide(root, update, cycleDuration);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredDeadCenterCrankMovement(movement) {
