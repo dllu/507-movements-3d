@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctLanternWorkingParts } from './lantern-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -1010,8 +1011,9 @@ function lanternWheelEscapement(movement) {
     object.receiveShadow = false;
   }
   root.userData.fidelity = 'authored';
+  correctLanternWorkingParts(root, update);
   return {
-    cameraDirection: new THREE.Vector3(6.4, 4.8, 13.8),
+    cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
