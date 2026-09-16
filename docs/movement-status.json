@@ -4420,18 +4420,22 @@
     {
       "id": 183,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-183.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/quadrant-catch-finite-review.md",
+        "note": "Final production default/oblique source comparison includes the corrected sleeve radius. Thick rims, simplified contours and working overlaps remain."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/movement-183.md",
-        "note": "Known residual: Quadrant retaining-pin/band penetration 0.0878; crossed handles, rod/guide and unbored joint collisions; source frame/rod mismatch."
+        "evidence": "docs/quadrant-catch-finite-review.md",
+        "note": "Bores, joints and crossed handles corrected; working pin/band and rounded-tip/tappet intrusion remains, with finite witnesses measured through the shared cycle."
       },
-      "flaws": "Quadrant retaining-pin/band penetration 0.0878; crossed handles, rod/guide and unbored joint collisions; source frame/rod mismatch.",
+      "flaws": "Retaining-pin/band intrusion up to 0.08699 and tip/tappet up to 0.18615; synchronized transfer law unresolved. Rims too thick and contours simplified.",
       "references": [
-        "docs/movement-183.md"
+        "docs/movement-183.md",
+        "docs/quadrant-catch-finite-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -4446,18 +4450,22 @@
     {
       "id": 184,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-183.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/quadrant-catch-finite-review.md",
+        "note": "Final production default/oblique source comparison includes the corrected sleeve radius. Thick rims, simplified contours and working overlaps remain."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/movement-183.md",
-        "note": "Known residual: Shared quadrant-catch source/contact reconstruction remains unfinished; finite-solid defects reported for the family."
+        "evidence": "docs/quadrant-catch-finite-review.md",
+        "note": "Bores, joints and crossed handles corrected; working pin/band and rounded-tip/tappet intrusion remains, with finite witnesses measured through the shared cycle."
       },
-      "flaws": "Shared quadrant-catch source/contact reconstruction remains unfinished; finite-solid defects reported for the family.",
+      "flaws": "Retaining-pin/band intrusion up to 0.08699 and tip/tappet up to 0.18615; synchronized transfer law unresolved. Rims too thick and contours simplified.",
       "references": [
-        "docs/movement-183.md"
+        "docs/movement-183.md",
+        "docs/quadrant-catch-finite-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -7004,16 +7012,19 @@
     {
       "id": 294,
       "visual": {
-        "status": "unverified",
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
         "evidence": "docs/cylinder-escapement-finite-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems…"
+        "note": "Production default and advanced oblique source views inspected after smoothing the nonworking circular wheel rim."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/cylinder-escapement-finite-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems against the working shell, including the reverse shell-to-tooth test, pass 83,806 proximity-filtered…"
       },
-      "flaws": "Running clearance about 0.001 prevents zero-gap force proof; balance pause/drop prescribed. Spring energy, impacts, friction and passive regulation unsolved.",
+      "flaws": "Whole-assembly view makes cylinder window less legible than source detail; added supports inferred. Running gap about 0.001; balance pauses/drops and regulation prescribed.",
       "references": [
         "docs/cylinder-escapement-finite-contact-review.md"
       ],
@@ -7027,16 +7038,19 @@
     {
       "id": 295,
       "visual": {
-        "status": "unverified",
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
         "evidence": "docs/cylinder-escapement-finite-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems…"
+        "note": "Production default and advanced oblique source views inspected after smoothing the nonworking circular wheel rim."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/cylinder-escapement-finite-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems against the working shell, including the reverse shell-to-tooth test, pass 83,806 proximity-filtered…"
       },
-      "flaws": "Running clearance about 0.001 prevents zero-gap force proof; balance pause/drop prescribed. Spring energy, impacts, friction and passive regulation unsolved.",
+      "flaws": "One complete moving wheel replaces superposed source detail. Running gap about 0.001; spring energy, balance pauses/drops, impacts and passive regulation unsolved.",
       "references": [
         "docs/cylinder-escapement-finite-contact-review.md"
       ],
@@ -7050,23 +7064,27 @@
     {
       "id": 296,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/duplex-lever-interface-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The final C tab passed the revised clearance and attachment checks; the root integration review captures its final source/default/oblique views."
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/lever-296-contact-review.md",
+        "note": "Production source/default and advanced oblique views independently inspected; contour and working-law residuals retained."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/duplex-lever-interface-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. Pallets remain more than 0.03 above wheel plane; fork/balance-pin handoff and banking not reconstructed."
+        "status": "sampled-clear",
+        "evidence": "docs/lever-296-contact-review.md",
+        "note": "17,709,140 bidirectional queries on selected teeth/pallets, fork/pin, banks, stepped connections and arbor; minimum +0.000001882. Not an exhaustive continuous assembly proof."
       },
-      "flaws": "Pallets remain more than 0.03 above wheel plane; fork/balance-pin handoff and banking not reconstructed.",
+      "flaws": "Narrow teeth/straight spokes differ from engraving. Balance, preload, wheel timing and impacts prescribed; 0.0005 running gap, spring energy and passive operation unvalidated.",
       "references": [
-        "docs/duplex-lever-interface-review.md"
+        "docs/duplex-lever-interface-review.md",
+        "docs/lever-296-contact-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lever-escapements.js",
-        "note": "Authored analytical/prescribed playback; no production MuJoCo import."
+        "note": "Closed-form finite fork motion and offline generated pallet geometry; no production MuJoCo."
       },
       "updatedOn": "2026-09-16"
     },
@@ -7295,18 +7313,22 @@
     {
       "id": 306,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/pin-escapement-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser source/default/front and three advanced-pose captures were reviewed for all three models. A 17-pose visible-vertex framing sweep found maximum normalized screen extents of 0.884, 0.890 and 0.898 for 305, 306 and 307, with no clipping or browser errors. Default…"
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/three-leg-306-307-contact-review.md",
+        "note": "Production source/default and advanced oblique views independently inspected; contour and working-law residuals retained."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/pin-escapement-family-review.md",
-        "note": "Known residual: Tooth/plate penetration about 0.149 remains; aperture/escape law must be reconstructed together."
+        "evidence": "docs/three-leg-306-307-contact-review.md",
+        "note": "Working geometry unchanged; actual tooth/plate witness is -0.125 at t=.92, with earlier larger penetration retained as historical evidence. Diagnostic tip spheres hidden."
       },
-      "flaws": "Tooth/plate penetration about 0.149 remains; aperture/escape law must be reconstructed together.",
+      "flaws": "Tooth/plate intrusion remains (earlier 0.149; current witness 0.125). Broad arms and added frame differ from source; aperture and motion law need reconstruction.",
       "references": [
-        "docs/pin-escapement-family-review.md"
+        "docs/pin-escapement-family-review.md",
+        "docs/three-leg-306-307-contact-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7318,18 +7340,22 @@
     {
       "id": 307,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/pin-escapement-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser source/default/front and three advanced-pose captures were reviewed for all three models. A 17-pose visible-vertex framing sweep found maximum normalized screen extents of 0.884, 0.890 and 0.898 for 305, 306 and 307, with no clipping or browser errors. Default…"
+        "status": "yes",
+        "reviewer": "GPT-6 Astra — primary agent",
+        "reviewPass": 48,
+        "reviewedOn": "2026-09-16",
+        "evidence": "docs/three-leg-306-307-contact-review.md",
+        "note": "Production source/default and advanced oblique views independently inspected; contour and working-law residuals retained."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/pin-escapement-family-review.md",
-        "note": "Known residual: Tooth/stop penetration 0.0933 and pin/impulse-backing 0.0698 remain."
+        "evidence": "docs/three-leg-306-307-contact-review.md",
+        "note": "Concentric dead rests sampled clear with resisting normals; actual release intrusion witness .04177 and inner-pin/backing .06908 remain. Not a working escapement qualification."
       },
-      "flaws": "Tooth/stop penetration 0.0933 and pin/impulse-backing 0.0698 remain.",
+      "flaws": "Release intrusion .04177 and pin/backing .06908 persist; hooked tips, rounded aperture and added rear support differ from source. Contact-selected timing/sharp rear drivers unresolved.",
       "references": [
-        "docs/pin-escapement-family-review.md"
+        "docs/pin-escapement-family-review.md",
+        "docs/three-leg-306-307-contact-review.md"
       ],
       "mujoco": {
         "mode": "none",

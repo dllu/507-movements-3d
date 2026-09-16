@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctThreeLegParts, finishPinEscapement} from './pin-escapement-working-parts.js';
+import {correctThreeLegDeadRests} from './three-leg-dead-rest-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -797,6 +798,7 @@ function threeLeggedDeadEscapement(movement) {
   root.userData.wheelAngleAtBeatStart = wheelAngleAtBeatStart;
 
   correctThreeLegParts(root,movement.id);
+  correctThreeLegDeadRests(root,movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)
@@ -1521,6 +1523,7 @@ function longStoppingToothEscapement(movement) {
   root.userData.wheelAngleAtBeatStart = wheelAngleAtBeatStart;
 
   correctThreeLegParts(root,movement.id);
+  correctThreeLegDeadRests(root,movement.id);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)

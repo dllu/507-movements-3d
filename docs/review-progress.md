@@ -16,8 +16,8 @@ requested 151 shaft indicator, 165 equal sine lobes, 171 viewport framing and
 camera clipping by activating the engine's full-motion fit. The 71.825-second
 nut reset remains explicit. Four more ledger rows now have attributable Astra
 visual checks. Seven relevant focused checks, production build and four packaged
-desktop/mobile cases pass. Independent 183/184, 296 and 306/307 contact repairs
-are still in progress; no clearance or completion claim is made for those lanes.
+desktop/mobile cases pass. The independent contact lanes are summarized below; structural corrections do
+not certify their remaining working laws.
 
 [502–505 source poses](epicyclic-source-pose-followup.md) now use clearer
 source-facing cameras with full-orbit fitting; 505 starts at the source diagonal
@@ -25,6 +25,34 @@ on the unchanged tooth-engagement trajectory. The stale 504 four-band ledger
 comment is corrected against the current continuous wheel and working-contact
 review. Four more attributable visual checks retain explicit source-proportion,
 approximate tooth and assembly-qualification residuals.
+
+[183/184 structural interfaces](quadrant-catch-finite-review.md) now have bored
+joints, separated crossed handles, connected sleeves and a source-width rod.
+Their pin/band and tip/tappet contact failures remain measured and visible.
+[296 finite lever contact](lever-296-contact-review.md) replaces floating pallets
+and wrong-direction fork motion with finite pin/corner closure, attached working
+lands and physical banks. Selected surfaces and useful reaction directions pass;
+preload, impacts and balance regulation remain prescribed.
+[306/307 finite rests](three-leg-306-307-contact-review.md) qualify 307's outer
+rest faces and mounts, hide 306's diagnostic dots, and preserve the unresolved
+release/impulse and aperture failures. Rejected cuts that would delete the working
+faces are reproducible diagnostic evidence, not installed solutions.
+[294/295 source inspection](cylinder-escapement-finite-contact-review.md) corrects
+polygonal nonworking wheel rims while retaining the qualified working profiles.
+
+A reusable production-route capture command now samples instanced geometry as
+well as ordinary meshes: `node scripts/review-movement-source-views.mjs
+--ids=183,184 --output-dir=/dev/shm/source-review`. Images still require actual
+primary-agent inspection before the ledger can say visually checked.
+
+Pass 48 finishes with **126 distinct relevant focused checks** passing across
+its independent lanes, byte-identical 296 generation and rejected-study
+reproduction, and **15 packaged desktop/playback/mobile cases**. The final seven
+contact/cylinder cases pass in 18.4 seconds against the final 22.88-second build.
+The seven-model CPU screen has no flags, nonfinite geometry or object/geometry
+growth; it excludes imports and GPU work. All 15 production source views were
+independently inspected, bringing the ledger to **27 attributable Astra checks**.
+Known working intersections and source differences remain explicitly queued.
 
 # Forty-seventh family pass: finite feed teeth, escapements and source supports
 

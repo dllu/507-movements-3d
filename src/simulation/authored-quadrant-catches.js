@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctQuadrantCatchInterfaces } from './quadrant-catch-finite-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -1786,10 +1787,11 @@ function sourceScaledQuadrantHandGear({ movementId }) {
   });
   root.userData.materialsIgnoreSceneFog = true;
 
+  const finiteUpdate = correctQuadrantCatchInterfaces(root, update);
   return {
-    cameraDirection: new THREE.Vector3(5.0, 4.0, 15.5),
+    cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: finiteUpdate,
   };
 }
 

@@ -1,0 +1,26 @@
+{
+  "installed": false,
+  "scope": "Rejected finite profile/timing candidates; no force or dynamics validation.",
+  "306": {
+    "samples": 1025,
+    "largestActiveTipInsetInFullWheelSweep": 0.3597453487617263,
+    "time": 3.3046875,
+    "rejection": "Cutting the complete old motion envelope removes material around the active impulse tip. Clearance alone cannot qualify that face."
+  },
+  "307": {
+    "candidate": "Concentric outer rests; one-sided pin-radius-offset faces generated from linear impulse advance.",
+    "localContinuationSeed": {
+      "time": 0,
+      "palletAngle": -0.05235987755982989,
+      "wheelAngleRange": [
+        3.001592653589793,
+        3.142592653589793
+      ],
+      "samples": 72,
+      "minimumOverlapArea": 0.009195848473397796,
+      "wheelAngle": 3.001592653589793,
+      "interferingFace": "A-upper"
+    },
+    "rejection": "No clear initial seed in this bounded local range. This rejects this candidate only, not all possible sharp-edged-pin/face reconstructions."
+  }
+}

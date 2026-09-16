@@ -10,6 +10,23 @@ assignment is not a claim that its existing simulation is correct. Previously
 reviewed movements remain reusable references, with their documented residuals.
 The executable inventory is [movement-batches.mjs](../scripts/lib/movement-batches.mjs).
 
+## Latest outcome: forty-eighth family pass
+
+Fifteen more movements received independent production/source visual review:
+151, 165, 171, 173, 183, 184, 294, 295, 296, 306, 307 and 502–505. The ledger
+records source-fit limits separately from whether an inspection occurred.
+173's full-motion framing and 505's source start are corrected; 502–504 framing,
+294/295 rims, 183/184 structural joints and 296 finite engagement improve.
+307 has qualified resting interfaces only. 306's working geometry is unchanged.
+
+Next contact work must solve 183/184's coupled release/weight transfer and
+306/307's finite aperture/driver laws. Do not cut a clearance envelope that
+removes the active driving face, or preserve an incompatible old smoothstep.
+296's geometric engagement is now qualified within its recorded scope; passive
+energy balance remains open. 502 engagement/source proportions, 503 source cone
+depths and 505 carrier/fixed-member clearance remain targeted gear follow-ups.
+396's F-detent behavior and 402's upper holding branch remain queued.
+
 ## Latest outcome: forty-seventh family pass
 
 195/207 now have finite working feed teeth and bored assemblies; 293 has baked

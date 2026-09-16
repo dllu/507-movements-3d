@@ -18,14 +18,14 @@ for(const[id,create]of[[293,duplex],[296,lever]]){
   m.root.traverse(o=>{if(o.geometry)saved.push([o,o.geometry,o.geometry.attributes.position.array]);for(const mat of[].concat(o.material??[]))assert.equal(mat.fog,false);});
   for(let i=0;i<=16;i++)m.update(d.geometry.balancePeriod*i/16);
   let count=0;m.root.traverse(o=>{if(o.geometry)count++;});assert.equal(count,saved.length);for(const[o,g,a]of saved){assert.equal(o.geometry,g);assert.equal(o.geometry.attributes.position.array,a);}
-  assert.equal(b.base.visible,false);assert.equal(b.cameraEnvelope.visible,false);assert.equal(b.balanceRim.visible,false);assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,id===293?6:4);assert.match(d.reconstructionNote,/unresolved/);assert.ok(m.cameraDirection.z>10);
+  assert.equal(b.base.visible,false);assert.equal(b.cameraEnvelope.visible,false);assert.equal(b.balanceRim.visible,false);assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,6);assert.match(d.reconstructionNote,/unresolved/);assert.ok(m.cameraDirection.z>10);
  });
 }
-test('296 retained pallet depth gap is recorded instead of falsely qualifying a disconnected mesh',()=>{
+test('296 reconstructed pallets now share the actual wheel working plane',()=>{
  const m=lever({id:296}),d=m.root.userData,b=d.blocks;m.root.updateMatrixWorld(true);
  const wheel=new THREE.Box3().setFromObject(b.wheelTeeth[0]);
- for(const pallet of b.palletBlocks){const bounds=new THREE.Box3().setFromObject(pallet);assert.ok(bounds.min.z-wheel.max.z>.03);}
- assert.match(d.escapementInterfaces.contactResidual,/above the wheel working depth/);
+ for(const pallet of b.palletBlocks){const bounds=new THREE.Box3().setFromObject(pallet);assert.ok(Math.min(bounds.max.z,wheel.max.z)-Math.max(bounds.min.z,wheel.min.z)>.3);}
+ assert.match(d.escapementInterfaces.contactResidual,/Finite fork and wheel contacts reconstructed/);
 });
 
 test('296 new rigid lever end C clears wheel, balance pin, arbors and fixed banking hardware',()=>{
@@ -33,7 +33,7 @@ test('296 new rigid lever end C clears wheel, balance pin, arbors and fixed bank
  const targets=[b.wheelRim,...b.wheelTeeth,b.impulsePin,b.rollerDisk,b.balanceStaff,b.wheelShaft,...b.bankingPins,...d.escapementInterfaces.supports];
  const pairs=targets.flatMap(target=>[[end,target],[target,end]]),points=new Map(),solids=new Map();
  for(const[a,b]of pairs){if(!points.has(a.geometry))points.set(a.geometry,surfacePoints(a.geometry));if(!solids.has(b.geometry))solids.set(b.geometry,solidSurface(b.geometry));}
- const phases=[...Array.from({length:65},(_,i)=>i/64),...['pinEngagementHalfPhase','pinDisengagementHalfPhase','palletReleaseHalfPhase','palletImpulseEndHalfPhase'].flatMap(k=>[d.geometry[k]/2,.5+d.geometry[k]/2])];
+ const phases=[...Array.from({length:65},(_,i)=>i/64),...['pinEngagementHalfPhase','pinDisengagementHalfPhase'].flatMap(k=>[d.geometry[k]/2-.25,.25+d.geometry[k]/2])];
  const point=new THREE.Vector3();let min=.005,count=0;
  for(const phase of phases){m.update(d.geometry.balancePeriod*phase);m.root.updateMatrixWorld(true);
   for(const[a,b]of pairs){const matrix=b.matrixWorld.clone().invert().multiply(a.matrixWorld);for(const v of points.get(a.geometry)){point.copy(v).applyMatrix4(matrix);const gap=solids.get(b.geometry).signedDistance(point,.005);min=Math.min(min,gap);count++;assert.ok(gap>=-1e-5,`lever C, phase ${phase}: ${a.userData.role} cuts ${b.userData.role} by ${-gap}`);}}

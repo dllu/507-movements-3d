@@ -52,13 +52,13 @@ function taperedCylinderAlongZ(
   return cylinder;
 }
 
-function centeredExtrusion(shape, depth, bevelSize = 0.008) {
+function centeredExtrusion(shape, depth, bevelSize = 0.008, curveSegments = 12) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: true,
     bevelSegments: 1,
     bevelSize,
     bevelThickness: bevelSize,
-    curveSegments: 12,
+    curveSegments,
     depth,
     steps: 1,
   });
@@ -623,6 +623,7 @@ function cylinderEscapementPerspective(movement) {
       annularShape(wheelOuterRadius, wheelInnerRadius),
       wheelDepth,
       0.007,
+      96,
     ),
     driverMaterial,
   );

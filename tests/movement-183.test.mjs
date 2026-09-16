@@ -58,7 +58,7 @@ function rotateVector2(vector, angle) {
   );
 }
 
-test('movement 183 replaces the diagonal catch with two rigid mutually retaining handle quadrants', () => {
+test('movement 183 preserves prescribed two-quadrant source poses and kinematics', () => {
   const movement = catalog.movements[182];
   const model = createMovementModel(movement);
   assert.equal(model.root.userData.hideGround, true);
@@ -751,7 +751,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     new THREE.Vector3(
       source183PointToModel(geometry.source183LowerFreeTip).x,
       source183PointToModel(geometry.source183LowerFreeTip).y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     ),
     1e-12,
     'rendered source 183 lower free tip',
@@ -761,7 +761,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     new THREE.Vector3(
       source183.upperWeightPin.x,
       source183.upperWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-12,
     'rendered source 183 upper weight pin',
@@ -771,14 +771,14 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     new THREE.Vector3(
       source183.lowerWeightPin.x,
       source183.lowerWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     ),
     1e-12,
     'rendered source 183 lower weight pin',
   );
-  near(upperQuadrant.position.z, geometry.upperQuadrantPlaneZ, 0,
+  near(upperQuadrant.position.z + geometry.upperHandlePlaneZ, geometry.upperQuadrantPlaneZ, 1e-15,
     'upper quadrant occupies its rigid handle layer');
-  near(lowerQuadrant.position.z, geometry.lowerQuadrantPlaneZ, 0,
+  near(lowerQuadrant.position.z + geometry.lowerHandlePlaneZ, geometry.lowerQuadrantPlaneZ, 1e-15,
     'lower quadrant occupies its rigid handle layer');
   assert.equal(bottomLatchMarker.visible, false);
   assert.equal(topLatchMarker.visible, false);
@@ -801,7 +801,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     new THREE.Vector3(
       geometry.upperPivot.x + expectedUpperFreeVector.x,
       geometry.upperPivot.y + expectedUpperFreeVector.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'rendered source 184 upper free tip after fixed-axis registration',
@@ -811,7 +811,7 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     new THREE.Vector3(
       source184.upperHandleContactPoint.x,
       source184.upperHandleContactPoint.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'rendered source 184 upper tappet contact',
@@ -875,8 +875,8 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
   }
 
   const frameFrontZ = geometry.frameCenterZ + geometry.frameDepth / 2;
-  const handleBottomZ = geometry.handlePlaneZ - geometry.handleDepth / 2;
-  const handleTopZ = geometry.handlePlaneZ + geometry.handleDepth / 2;
+  const handleBottomZ = geometry.upperHandlePlaneZ - geometry.handleDepth / 2;
+  const handleTopZ = geometry.lowerHandlePlaneZ + geometry.handleDepth / 2;
   const upperQuadrantBottomZ = geometry.upperQuadrantPlaneZ
     - geometry.upperQuadrantDepth / 2;
   const upperQuadrantTopZ = geometry.upperQuadrantPlaneZ
@@ -908,9 +908,9 @@ test('movement 183 replaces the diagonal catch with two rigid mutually retaining
     'frame, handles, separate quadrants, weights, and fixed heads occupy depth');
   assert.ok(bounds.min.z < -0.73);
   assert.ok(bounds.max.z > 0.90);
-  near(model.root.userData.cameraDistanceScale, 1.16, 0,
+  near(model.root.userData.cameraDistanceScale, .88, 0,
     'source-complete portrait camera scale');
-  assert.ok(model.cameraDirection.x > 0);
+  assert.equal(model.cameraDirection.x, 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3);
 

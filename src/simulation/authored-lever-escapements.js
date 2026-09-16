@@ -1,3 +1,4 @@
+import {correctLever296Contact} from './lever-296-working-contact.js';
 import {correctDuplexLeverInterfaces} from './duplex-lever-working-parts.js';
 import * as THREE from 'three';
 import {
@@ -1269,11 +1270,11 @@ function leverEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   correctDuplexLeverInterfaces(root, 296, update);
-  return {
+  return correctLever296Contact({
     cameraDirection: root.userData.cameraDirection,
     root,
     update,
-  };
+  });
 }
 
 export function createAuthoredLeverEscapementMovement(movement) {

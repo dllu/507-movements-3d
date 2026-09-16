@@ -123,7 +123,7 @@ function comparePhysicalStates(actual, expected, label) {
   }
 }
 
-test('movement 184 starts at the top pose and the descending tappet transfers the two quadrants back to 183', () => {
+test('movement 184 preserves the shifted top-pose illustration and prescribed return cycle', () => {
   const movement = catalog.movements[183];
   const model = createMovementModel(movement);
   assert.equal(model.root.userData.hideGround, true);
@@ -592,7 +592,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
     new THREE.Vector3(
       geometry.upperPivot.x + expectedUpperFreeVector.x,
       geometry.upperPivot.y + expectedUpperFreeVector.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'initial rendered upper free tip matches source 184',
@@ -602,7 +602,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
     new THREE.Vector3(
       source184.upperHandleContactPoint.x,
       source184.upperHandleContactPoint.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-11,
     'initial upper contact anchor matches source 184',
@@ -612,7 +612,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
     new THREE.Vector3(
       source184.upperWeightPin.x,
       source184.upperWeightPin.y,
-      geometry.handlePlaneZ,
+      geometry.upperHandlePlaneZ,
     ),
     1e-12,
     'initial upper weight pin matches source 184 registration',
@@ -621,7 +621,7 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
     worldPoint(lowerHandleWeightAnchor).sub(new THREE.Vector3(
       geometry.lowerPivot.x,
       geometry.lowerPivot.y,
-      geometry.handlePlaneZ,
+      geometry.lowerHandlePlaneZ,
     )).normalize(),
     sourceVectorToModel(
       geometry.source184LowerWeightPin,
@@ -698,8 +698,8 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   assert.equal(tappetContactMarker.visible, false);
 
   const frameFrontZ = geometry.frameCenterZ + geometry.frameDepth / 2;
-  const handleBottomZ = geometry.handlePlaneZ - geometry.handleDepth / 2;
-  const handleTopZ = geometry.handlePlaneZ + geometry.handleDepth / 2;
+  const handleBottomZ = geometry.upperHandlePlaneZ - geometry.handleDepth / 2;
+  const handleTopZ = geometry.lowerHandlePlaneZ + geometry.handleDepth / 2;
   const upperQuadrantBottomZ = geometry.upperQuadrantPlaneZ
     - geometry.upperQuadrantDepth / 2;
   const upperQuadrantTopZ = geometry.upperQuadrantPlaneZ
@@ -726,9 +726,9 @@ test('movement 184 starts at the top pose and the descending tappet transfers th
   assert.ok(size.z > 1.64, 'all audited depth layers occupy real 3D space');
   assert.ok(bounds.min.z < -0.73);
   assert.ok(bounds.max.z > 0.90);
-  near(model.root.userData.cameraDistanceScale, 1.16, 0,
+  near(model.root.userData.cameraDistanceScale, .88, 0,
     'portrait source camera scale');
-  assert.ok(model.cameraDirection.x > 0);
+  assert.equal(model.cameraDirection.x, 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3);
 

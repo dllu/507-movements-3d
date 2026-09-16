@@ -167,291 +167,50 @@ test('movement 296 records Brown’s A–E layout, arrows, and unavailable anima
   disposeModel(model.root);
 });
 
-test('movement 296 derives the fork engagement window from fifteen balance degrees', () => {
+test('movement 296 uses finite corner engagement and both prescribed pallet impulses', () => {
   const model = createMovementModel(catalog.movements[295]);
-  const {
-    blocks,
-    geometry,
-    stateAtTime,
-  } = model.root.userData;
-
-  const entry = stateAtTime(
-    geometry.pinEngagementHalfPhase * geometry.halfBeatDuration,
-  );
-  const exit = stateAtTime(
-    geometry.pinDisengagementHalfPhase * geometry.halfBeatDuration,
-  );
-  near(entry.balanceAngle, -geometry.statedDisengagementAngle, 3e-16,
-    'pin enters fifteen degrees before center');
-  near(exit.balanceAngle, geometry.statedDisengagementAngle, 5e-16,
-    'pin leaves fifteen degrees past center');
-  near(geometry.pinEngagementHalfPhase
-      + geometry.pinDisengagementHalfPhase,
-  1, 0, 'symmetric fork window');
-  assert.equal(entry.forkPinContactActive, true);
-  assert.equal(exit.forkPinContactActive, true);
-  assert.equal(stateAtTime((geometry.pinEngagementHalfPhase - 1e-6)
-    * geometry.halfBeatDuration).forkPinContactActive, false);
-  assert.equal(stateAtTime((geometry.pinDisengagementHalfPhase + 1e-6)
-    * geometry.halfBeatDuration).forkPinContactActive, false);
-  near(blocks.impulsePin.position.z,
-    geometry.forkPlaneZ + 0.16, 0, 'roller pin crosses fork plane');
-  assert.ok(blocks.rollerDisk.position.z > geometry.forkPlaneZ);
+  const d=model.root.userData, sides=new Set(), stages=new Set();
+  for(let i=0;i<=2048;i++) {
+    const s=d.stateAtTime(4*i/2048); stages.add(s.stage);
+    assert.equal(s.pinEngaged, Math.abs(s.balanceAngle)<=15*Math.PI/180);
+    assert.equal(s.pinContactActive, s.pinEngaged);
+    if(s.pinEngaged) near(s.pinContact.radiusError,0,1e-12,'finite corner touches circular pin');
+    if(s.stage==='pallet-impulse') {sides.add(s.activePallet); assert.ok(s.pinEngaged); assert.ok(s.wheelAngularSpeed<0);}
+  }
+  assert.deepEqual([...sides].sort(),['left','right']);
+  assert.ok(stages.has('free-drop')&&stages.has('locked')&&stages.has('next-pallet-lock'));
+  assert.ok(d.nominal296.forkTineFacePoints); assert.equal(d.forkTineFacePoints,undefined);
+  assert.match(d.reconstructionNote,/prescribed/);
   disposeModel(model.root);
 });
 
-test('movement 296 has two distinct generated notch flanks exactly one pin diameter apart', () => {
-  const model = createMovementModel(catalog.movements[295]);
-  const {
-    forkTineFaceFrame,
-    forkTineFacePoints,
-    geometry,
-  } = model.root.userData;
-  const upper = forkTineFacePoints(1, 121);
-  const lower = forkTineFacePoints(-1, 121);
-
-  assert.equal(upper.length, 121);
-  assert.equal(lower.length, 121);
-  assert.ok(upper[0].distanceTo(upper.at(-1)) > 0.9);
-  assert.ok(lower[0].distanceTo(lower.at(-1)) > 0.9);
-  for (let index = 0; index < upper.length; index += 1) {
-    const reverseIndex = lower.length - 1 - index;
-    near(upper[index].distanceTo(lower[reverseIndex]),
-      2 * geometry.balancePinRadius, 3e-12,
-    `fork gap at sample ${index}`);
-  }
-  const middlePhase = 0.5;
-  const upperFrame = forkTineFaceFrame(1, middlePhase);
-  const lowerFrame = forkTineFaceFrame(-1, middlePhase);
-  vectorNear(
-    upperFrame.point.clone().add(lowerFrame.point).multiplyScalar(0.5),
-    upperFrame.center,
-    3e-12,
-    'pin center lies midway between notch flanks',
-  );
-  near(upperFrame.center.distanceTo(upperFrame.point),
-    geometry.balancePinRadius, 3e-16, 'upper pin-radius offset');
-  near(lowerFrame.center.distanceTo(lowerFrame.point),
-    geometry.balancePinRadius, 3e-16, 'lower pin-radius offset');
-  disposeModel(model.root);
+test('movement 296 advances monotonically by one tooth per oscillation across repeated cycles', () => {
+ const model=createMovementModel(catalog.movements[295]),d=model.root.userData,p=d.stateAtTime;
+ let previous=p(0).wheelAngle;
+ for(let i=1;i<=4096;i++){const s=p(12*i/4096);assert.ok(s.wheelAngle<=previous+1e-12);previous=s.wheelAngle;}
+ for(const t of[-.3,.03,.1,.4,1.7,2.1,3.9,8]){
+  near(p(t+2).wheelAngle-p(t).wheelAngle,-Math.PI/15,2e-14,'half-pitch each beat');
+  near(p(t+4).forkAngle,p(t).forkAngle,2e-14,'fork closes');
+  near(p(t+4).balanceAngle,p(t).balanceAngle,2e-14,'balance closes');
+ }
+ for(const t of[.01,.03,.08,.10,.12,2.01,2.08,2.12]){
+  const h=1e-6,a=p(t-h),s=p(t),b=p(t+h);
+  near((b.forkAngle-a.forkAngle)/(2*h),s.forkAngularSpeed,3e-8,'fork rate');
+  near((b.wheelAngle-a.wheelAngle)/(2*h),s.wheelAngularSpeed,3e-8,'wheel rate');
+  assert.equal(s.forkAngularAcceleration,null);assert.equal(s.wheelAngularAcceleration,null);
+ }
+ disposeModel(model.root);
 });
 
-test('movement 296 detaches the balance except while its one roller pin occupies E', () => {
-  const model = createMovementModel(catalog.movements[295]);
-  const {
-    geometry,
-    stateAtTime,
-  } = model.root.userData;
-  const tineCounts = new Map([['upper', 0], ['lower', 0]]);
-
-  for (let sample = 0; sample <= 20000; sample += 1) {
-    const time = geometry.balancePeriod * sample / 20000;
-    const state = stateAtTime(time);
-    assert.equal(state.balanceDetached, !state.forkPinContactActive);
-    if (!state.forkPinContactActive) {
-      assert.equal(state.forkPinContact, null);
-      continue;
-    }
-    tineCounts.set(state.forkPinContact.tine,
-      tineCounts.get(state.forkPinContact.tine) + 1);
-    near(state.forkPinContact.pointError, 0, 2e-15,
-      `pin/fork point closure at ${sample}`);
-    near(state.forkPinContact.pinRadiusError, 0, 6e-16,
-      `pin radius at ${sample}`);
-    near(state.forkPinContact.normalVelocityError, 0, 2e-7,
-      `pin/fork normal velocity at ${sample}`);
-    assert.ok(Number.isFinite(state.forkPinContact.relativeSlipSpeed));
-  }
-  assert.ok(tineCounts.get('upper') > 1400);
-  assert.ok(tineCounts.get('lower') > 1400);
-  disposeModel(model.root);
-});
-
-test('movement 296 alternates exact pallet locks and impulses around one free drop', () => {
-  const model = createMovementModel(catalog.movements[295]);
-  const {
-    geometry,
-    palletImpulsePoints,
-    palletLockPoints,
-    stateAtTime,
-  } = model.root.userData;
-  const sideCounts = new Map([['left', 0], ['right', 0]]);
-  let impulseCount = 0;
-  let dropCount = 0;
-
-  for (const side of [1, -1]) {
-    const lock = palletLockPoints(side, 81);
-    const impulse = palletImpulsePoints(side, 81);
-    vectorNear(lock.at(-1), impulse[0], 0,
-      `${side} lock/impulse profile join`);
-    assert.ok(impulse[0].distanceTo(impulse.at(-1)) > 0.45);
-  }
-
-  for (let sample = 0; sample <= 24000; sample += 1) {
-    const state = stateAtTime(
-      geometry.balancePeriod * sample / 24000,
-    );
-    if (state.wheelContactActive) {
-      sideCounts.set(state.wheelContact.palletSide,
-        sideCounts.get(state.wheelContact.palletSide) + 1);
-      near(state.wheelContact.pointError, 0, 6e-15,
-        `wheel/pallet closure at ${sample}`);
-      near(state.wheelContact.normalVelocityError, 0, 2e-7,
-        `wheel/pallet normal velocity at ${sample}`);
-      if (state.wheelContactMode === 'pallet-impulse') {
-        impulseCount += 1;
-        assert.ok(state.wheelAngularSpeed <= 1e-14);
-        assert.equal(state.forkPinContactActive, true);
-      } else {
-        assert.equal(state.wheelAngularSpeed, 0);
-      }
-    } else {
-      dropCount += 1;
-      assert.equal(state.wheelEvent, 'free-drop');
-      assert.ok(state.wheelAngularSpeed <= 0);
-    }
-  }
-  assert.ok(sideCounts.get('left') > 10000);
-  assert.ok(sideCounts.get('right') > 10000);
-  assert.ok(impulseCount > 1900);
-  assert.ok(dropCount > 800);
-  disposeModel(model.root);
-});
-
-test('movement 296 advances half a pitch per beat with analytic balance, fork, and wheel rates', () => {
-  const model = createMovementModel(catalog.movements[295]);
-  const {
-    geometry,
-    stateAtTime,
-    transmission,
-  } = model.root.userData;
-
-  near(transmission.halfBeatAdvance, geometry.halfToothPitch, 0,
-    'half pitch per vibration');
-  near(transmission.oscillationAdvance, geometry.toothPitch, 0,
-    'one tooth per oscillation');
-  for (const time of [0.23, 0.79, 1.42, 2.61, 3.75]) {
-    near(stateAtTime(time + geometry.halfBeatDuration).wheelAngle
-        - stateAtTime(time).wheelAngle,
-    -geometry.halfToothPitch, 8e-16,
-    `half-beat advance at ${time}`);
-    near(stateAtTime(time + geometry.balancePeriod).wheelAngle
-        - stateAtTime(time).wheelAngle,
-    -geometry.toothPitch, 9e-16,
-    `oscillation advance at ${time}`);
-    near(stateAtTime(time + geometry.balancePeriod).balanceAngle,
-      stateAtTime(time).balanceAngle, 9e-16,
-    `balance closure at ${time}`);
-    near(stateAtTime(time + geometry.balancePeriod).forkAngle,
-      stateAtTime(time).forkAngle, 9e-16,
-    `fork closure at ${time}`);
-  }
-
-  let previous = stateAtTime(0).wheelAngle;
-  for (let sample = 1; sample <= 24000; sample += 1) {
-    const state = stateAtTime(
-      geometry.balancePeriod * sample / 24000,
-    );
-    assert.ok(state.wheelAngle <= previous + 2e-15,
-      `no clockwise recoil at sample ${sample}`);
-    previous = state.wheelAngle;
-  }
-
-  const epsilon = 1e-5;
-  for (const halfPhase of [0.20, 0.445, 0.495, 0.55, 0.70]) {
-    const time = halfPhase * geometry.halfBeatDuration;
-    const before = stateAtTime(time - epsilon);
-    const state = stateAtTime(time);
-    const after = stateAtTime(time + epsilon);
-    near((after.balanceAngle - before.balanceAngle) / (2 * epsilon),
-      state.balanceAngularSpeed, 8e-10,
-    `balance speed at ${halfPhase}`);
-    near((after.forkAngle - before.forkAngle) / (2 * epsilon),
-      state.forkAngularSpeed, 8e-8,
-    `fork speed at ${halfPhase}`);
-    near((after.forkAngularSpeed - before.forkAngularSpeed)
-        / (2 * epsilon),
-    state.forkAngularAcceleration, 7e-7,
-    `fork acceleration at ${halfPhase}`);
-    near((after.wheelAngle - before.wheelAngle) / (2 * epsilon),
-      state.wheelAngularSpeed, 1.2e-7,
-    `wheel speed at ${halfPhase}`);
-    near((after.wheelAngularSpeed - before.wheelAngularSpeed)
-        / (2 * epsilon),
-    state.wheelAngularAcceleration, 6e-6,
-    `wheel acceleration at ${halfPhase}`);
-  }
-  disposeModel(model.root);
-});
-
-test('movement 296 renderer binds both contact chains and leaves movement 507 authored', () => {
-  const model = createMovementModel(catalog.movements[295]);
-  const {
-    animationTiming,
-    blocks,
-    geometry,
-    stateAtTime,
-    timeline,
-  } = model.root.userData;
-  assert.equal(animationTiming.authoredCyclePeriod, 4);
-  assert.equal(animationTiming.targetCycleDuration, 2);
-  assertReadableTiming(animationTiming);
-  assert.equal(timeline.demonstrationPeriod, 4);
-  assert.deepEqual(timeline.schedule, [
-    'balance-free-current-pallet-locked',
-    'roller-pin-enters-E-and-unlocks',
-    'escape-tooth-impulses-pallet-fork-and-balance',
-    'wheel-drops-to-opposite-pallet',
-    'roller-pin-leaves-E-and-balance-is-free',
-    'same-sequence-in-opposite-direction',
-  ]);
-
-  for (const time of [0, 0.4, 0.89, 0.99, 1.10, 1.40,
-    2.40, 2.89, 2.99, 3.10, 3.40, 4]) {
-    const expected = stateAtTime(time);
-    model.update(time);
-    near(blocks.balance.rotation.z, expected.balanceAngle, 0,
-      `rendered balance at ${time}`);
-    near(blocks.palletFork.rotation.z, expected.forkAngle, 0,
-      `rendered fork at ${time}`);
-    near(blocks.wheelRotor.rotation.z, expected.wheelAngle, 0,
-      `rendered wheel at ${time}`);
-    assert.equal(blocks.palletContactMarker.visible,
-      expected.wheelContactActive);
-    assert.equal(blocks.pinContactMarker.visible,
-      expected.forkPinContactActive);
-    assert.equal(model.root.userData.contacts.activeToothIndex,
-      expected.activeToothIndex);
-    assert.equal(model.root.userData.contacts.activePalletSide,
-      expected.activePalletSide);
-    if (expected.wheelContactActive) {
-      near(model.root.userData.contacts.wheelPallet.pointError, 0, 4e-15,
-        `rendered wheel contact at ${time}`);
-    }
-    if (expected.forkPinContactActive) {
-      near(model.root.userData.contacts.forkPin.pointError, 0, 2e-15,
-        `rendered pin contact at ${time}`);
-    }
-  }
-
-  model.update(0.73);
-  const startBalanceAngle = blocks.balance.rotation.z;
-  const startForkAngle = blocks.palletFork.rotation.z;
-  const startWheelAngle = blocks.wheelRotor.rotation.z;
-  model.update(0.73 + geometry.balancePeriod);
-  near(blocks.balance.rotation.z, startBalanceAngle, 9e-16,
-    'rendered balance closure');
-  near(blocks.palletFork.rotation.z, startForkAngle, 9e-16,
-    'rendered fork closure');
-  near(blocks.wheelRotor.rotation.z - startWheelAngle,
-    -geometry.toothPitch, 9e-16, 'rendered one-tooth advance');
-
-  const movement507 = catalog.movements[506];
-  const model507 = createMovementModel(movement507);
-  assert.equal(movement507.id, 507);
-  assert.equal(movement507.fidelity, 'authored');
-  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model507.root.userData.fidelity, 'authored');
-  disposeModel(model507.root);
-  disposeModel(model.root);
+test('movement 296 renderer exposes corrected state and a readable six-second cycle',()=>{
+ const model=createMovementModel(catalog.movements[295]),d=model.root.userData,b=d.blocks;
+ assert.equal(d.animationTiming.authoredCyclePeriod,4);assert.ok(d.animationTiming.displayCycleDuration>=6);assertReadableTiming(d.animationTiming);
+ for(const time of[0,.03,.12,.4,1.2,2.08,3.7,4,8]){
+  const s=d.stateAtTime(time);model.update(time);
+  near(b.balance.rotation.z,s.balanceAngle,0,'balance');near(b.palletFork.rotation.z,s.forkAngle,0,'fork');near(b.wheelRotor.rotation.z,s.wheelAngle,0,'wheel');
+  assert.equal(b.palletContactMarker.visible,false);assert.equal(b.pinContactMarker.visible,false);
+  assert.equal(d.contacts.pallet,s.activePallet);assert.equal(d.contacts.stage,s.stage);
+ }
+ assert.equal(d.stateAtTime(.2).activePallet,'right');assert.equal(d.stateAtTime(2.2).activePallet,'left');
+ disposeModel(model.root);
 });

@@ -39,3 +39,30 @@ node --test tests/movement-294.test.mjs tests/movement-295.test.mjs tests/cylind
 ```
 
 **13/13 focused tests pass** in 1.96 seconds (`/dev/shm/cylinder44-tests.log`). Obsolete tests asserting zero residual for a point inside the old tooth were replaced with actual finite-surface, neighboring-tooth, reaction-direction and continuity checks. The byte-identical generator check passes (`/dev/shm/cylinder44-bake-check.log`); its independently sampled qualification is included in the bake and `/dev/shm/cylinder44-audit.json`.
+
+## Independent Astra source review, pass 48
+
+On 2026-09-16 the primary GPT-6 Astra agent inspected both production views
+against their source engravings, including advanced oblique poses. The wheel's
+nonworking circular rim had an obvious polygonal silhouette; increasing only
+that extrusion's circle tessellation from 12 to 96 curve segments removes it.
+Working teeth, cylinder surfaces and the baked trajectory are unchanged. All
+13 existing finite-contact/support tests pass in 1.99 seconds.
+
+294 displays the complete mechanism around the cylinder detail supplied by the
+engraving. Its added balance wheel, escape wheel and support are explanatory
+reconstruction; the small cylinder window is less legible in the default whole
+assembly view than in the source's isolated detail. 295 shows the complete wheel
+and one moving cylinder rather than three superposed diagram positions. The
+inferred relative dimensions, prescribed pauses/drops and finite running gaps
+remain explicit limits; neither receives a passive timekeeping claim.
+
+The reusable `scripts/review-movement-source-views.mjs` loads the actual production
+routes and includes instanced geometry in its framing samples. Final default and
+oblique images are under `/dev/shm/family48-cylinder-final`. Capturing these images
+alone does not constitute review; the primary agent inspected the images above.
+
+Final integration passes the production build (22.88 seconds), scoped CPU screen
+and all seven packaged desktop/playback/mobile cases (18.4 seconds). The CPU
+screen excludes imports and GPU work. See [review progress](review-progress.md)
+for the combined pass record.
