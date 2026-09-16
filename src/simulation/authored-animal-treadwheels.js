@@ -1,3 +1,4 @@
+import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -52,7 +53,7 @@ function animalInteriorTreadwheel(movement) {
   const animalRelativeClimbSpeed = innerTreadRadius * wheelAngularSpeed;
   const animalMass = 1.40;
   const gravity = 9.81;
-  const animalCenterOfMass = new THREE.Vector3(-0.58, -0.18, 0);
+  const animalCenterOfMass = new THREE.Vector3(-0.58, -0.60, 0);
   const animalWeight = new THREE.Vector3(0, -animalMass * gravity, 0);
   const animalWeightTorque = animalCenterOfMass.clone()
     .cross(animalWeight).z;
@@ -232,7 +233,7 @@ function animalInteriorTreadwheel(movement) {
   wheelRotor.add(wheelIndex);
 
   const animal = new THREE.Group();
-  animal.position.set(-0.32, -0.10, 0.03);
+  animal.position.set(-0.32, -0.60, 0.03);
   animal.userData.fixedInWorld = true;
   animal.userData.role =
     'animal-held-at-one-side-while-walking-up-moving-interior';
@@ -295,8 +296,8 @@ function animalInteriorTreadwheel(movement) {
   const upperLegs = [];
   const lowerLegs = [];
   const hooves = [];
-  const upperLegLength = 0.53;
-  const lowerLegLength = 0.48;
+  const upperLegLength = 0.43;
+  const lowerLegLength = 0.38;
   const legDefinitions = [
     [-0.42, -0.28, 0.23],
     [0.31, -0.28, 0.23],
@@ -543,6 +544,7 @@ function animalInteriorTreadwheel(movement) {
     },
   };
 
+  correctRunnerTreadParts(root, 376);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.62, -2.40, -1.26),
@@ -559,5 +561,5 @@ function animalInteriorTreadwheel(movement) {
 
 export function createAuthoredAnimalTreadwheelMovement(movement) {
   if (movement.id !== 376) return null;
-  return animalInteriorTreadwheel(movement);
+  return finishRunnerTread(animalInteriorTreadwheel(movement), 376);
 }

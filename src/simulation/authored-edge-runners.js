@@ -1,3 +1,5 @@
+import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working-parts.js';
+import { correctEdgeRunnerBevels } from './edge-runner-bevel-parts.js';
 import * as THREE from 'three';
 import { makePitchConeGear } from './authored-dynamometers.js';
 import {
@@ -561,6 +563,8 @@ function pairedEdgeRunnerMill(movement) {
     },
   };
 
+  correctRunnerTreadParts(root, 375);
+  correctEdgeRunnerBevels(root);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.48, -2.02, -2.48),
@@ -577,5 +581,5 @@ function pairedEdgeRunnerMill(movement) {
 
 export function createAuthoredEdgeRunnerMovement(movement) {
   if (movement.id !== 375) return null;
-  return pairedEdgeRunnerMill(movement);
+  return finishRunnerTread(pairedEdgeRunnerMill(movement), 375);
 }

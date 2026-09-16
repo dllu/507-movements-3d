@@ -407,7 +407,7 @@ test('movement 375 closes three pinion turns, one carrier revolution, and two ru
   assert.equal(timeline.demonstrationPeriod, geometry.carrierPeriod);
   assert.equal(data.animationTiming.authoredCyclePeriod,
     geometry.carrierPeriod);
-  assert.equal(data.animationTiming.targetCycleDuration, 2);
+  assert.ok(data.animationTiming.displayCycleDuration >= 6);
   assertReadableTiming(data.animationTiming);
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
   assert.ok(Number.isFinite(data.groundFloorY));

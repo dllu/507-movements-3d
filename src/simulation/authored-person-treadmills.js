@@ -1,3 +1,4 @@
+import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -45,7 +46,7 @@ function externalPersonTreadmill(movement) {
   const gaitCyclesPerWheelTurn = treadCount / 2;
   const gaitAngularSpeed = Math.abs(wheelAngularSpeed)
     * gaitCyclesPerWheelTurn;
-  const personStationAngle = THREE.MathUtils.degToRad(-20);
+  const personStationAngle = THREE.MathUtils.degToRad(20);
   const personStationPoint = wheelCenter.clone().add(new THREE.Vector3(
     Math.cos(personStationAngle) * treadRadius,
     Math.sin(personStationAngle) * treadRadius,
@@ -56,7 +57,7 @@ function externalPersonTreadmill(movement) {
   const personMass = 1.0;
   const gravity = 9.81;
   const personCenterOfMass = wheelCenter.clone().add(
-    new THREE.Vector3(1.06, 0.63, drumWidth / 2 + 0.24),
+    new THREE.Vector3(1.55, 1.55, 0.60),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
@@ -558,6 +559,7 @@ function externalPersonTreadmill(movement) {
     },
   };
 
+  correctRunnerTreadParts(root, 377);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.55, -2.25, -1.75),
@@ -566,7 +568,7 @@ function externalPersonTreadmill(movement) {
   root.userData.groundFloorY = -2.15;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(-5.6, 3.2, 8.8),
+    cameraDirection: new THREE.Vector3(5.6, 3.2, 8.8),
     root,
     update,
   };
@@ -574,5 +576,5 @@ function externalPersonTreadmill(movement) {
 
 export function createAuthoredPersonTreadmillMovement(movement) {
   if (movement.id !== 377) return null;
-  return externalPersonTreadmill(movement);
+  return finishRunnerTread(externalPersonTreadmill(movement), 377);
 }

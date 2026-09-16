@@ -407,7 +407,7 @@ test('movement 376 closes one wheel turn and eight gait cycles before movement 5
   assert.equal(timeline.demonstrationPeriod, geometry.wheelPeriod);
   assert.equal(data.animationTiming.authoredCyclePeriod,
     geometry.wheelPeriod);
-  assert.equal(data.animationTiming.targetCycleDuration, 2);
+  assert.ok(data.animationTiming.displayCycleDuration >= 12);
   assertReadableTiming(data.animationTiming);
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
   assert.ok(Number.isFinite(data.groundFloorY));

@@ -229,8 +229,8 @@ test('movement 377 has clockwise descending motion at the external right-hand st
     'person station on peripheral tread circle');
   assert.ok(geometry.personStationPoint.x > geometry.wheelCenter.x,
     'person station is right of the axle');
-  assert.ok(geometry.personStationPoint.y < geometry.wheelCenter.y,
-    'person station is slightly below the axle');
+  assert.ok(geometry.personStationPoint.y > geometry.wheelCenter.y,
+    'person station is slightly above the axle');
   assert.match(transmission.meanNoDriftLaw, /equal and opposite/);
   for (let sample = -900; sample <= 1800; sample += 1) {
     const state = stateAtTime(geometry.wheelPeriod * sample / 900);
@@ -396,7 +396,7 @@ test('movement 377 closes one clockwise wheel turn and seven gait cycles before 
   assert.equal(timeline.demonstrationPeriod, geometry.wheelPeriod);
   assert.equal(data.animationTiming.authoredCyclePeriod,
     geometry.wheelPeriod);
-  assert.equal(data.animationTiming.targetCycleDuration, 2);
+  assert.ok(data.animationTiming.displayCycleDuration >= 12);
   assertReadableTiming(data.animationTiming);
   assert.ok(data.cameraFitBounds instanceof THREE.Box3);
   assert.ok(Number.isFinite(data.groundFloorY));
