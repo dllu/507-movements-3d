@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { correctWeightedRackInterfaces, correctWeightedRackTeeth, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -963,10 +964,12 @@ function alternatingWeightedRackDrive(movement) {
     new THREE.Vector3(3.30, 5.55, 1.05),
   );
   root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraDirection = new THREE.Vector3(7.8, 3.6, 11.8);
+  root.userData.cameraDirection = new THREE.Vector3(1.4, 1.1, 12);
   root.userData.groundFloorY = -3.72;
-  update(0);
-  return { root, update };
+  correctWeightedRackInterfaces(root);
+  correctWeightedRackTeeth(root);
+  finishAlternatingDrive(root,update,cycleDuration);
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredAlternatingWeightedRackMovement(movement) {

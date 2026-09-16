@@ -1,3 +1,4 @@
+import { correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -917,9 +918,11 @@ function dualBandOscillationRectifier(movement) {
   );
   root.userData.cameraDistanceScale = 1.17;
   root.userData.groundFloorY = -1.74;
+  correctDualBandInterfaces(root);
+  finishAlternatingDrive(root, update, cycleDuration);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(5.5, 3.8, 9.8),
+    cameraDirection: new THREE.Vector3(1.4, 1.1, 12),
     root,
     update,
   };
