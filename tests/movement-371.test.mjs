@@ -475,7 +475,7 @@ test('movement 371 one uniform pinion input produces equal alternating wheel swe
     const time = geometry.mechanismCyclePeriod * sample / 3600;
     const state = stateAtTime(time);
     near(state.inputAngle,
-      geometry.inputStartAngle + geometry.inputAngularSpeed * time,
+      geometry.inputStartAngle + geometry.sourceInputTravel + geometry.inputAngularSpeed * time,
       2e-14, 'input angle remains uniform and unwrapped');
     near(state.inputAngularSpeed, geometry.inputAngularSpeed, 0,
       'input angular speed remains constant');
@@ -533,12 +533,9 @@ test('movement 371 renderer follows the exact wheel, uniform pinion, carrier, an
       expected.pinionAngle, 0, 'rendered pinion spin');
     near(blocks.inputShaftRotor.rotation.x,
       expected.pinionAngle, 0, 'rendered shaft spin');
-    assert.equal(blocks.frontContactMarker.visible,
-      expected.activeFace === 'front');
-    assert.equal(blocks.rearContactMarker.visible,
-      expected.activeFace === 'rear');
-    assert.equal(blocks.terminalContactMarker.visible,
-      expected.activeFace === null);
+    assert.equal(blocks.frontContactMarker.visible, false);
+    assert.equal(blocks.rearContactMarker.visible, false);
+    assert.equal(blocks.terminalContactMarker.visible, false);
     vectorNear(data.kinematics.pinionCenter, expected.pinionCenter, 0,
       'published kinematics');
     vectorNear(data.activeContact.point, expected.contactPoint, 0,

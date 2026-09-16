@@ -1,3 +1,4 @@
+import {finishParsons394} from './reversing-transmission-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -918,7 +919,7 @@ function parsonsEndlessRackDrive(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.2, 4.6, 12.8);
   root.userData.groundFloorY = -1.95;
   update(0);
-  return { root, update };
+  return finishParsons394(root, update);
 }
 
 export function createAuthoredParsonsRackMovement(movement) {

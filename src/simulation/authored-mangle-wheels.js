@@ -1,3 +1,4 @@
+import {mangle371Web,finishMangle371} from './reversing-transmission-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -85,26 +86,7 @@ function makeOpenAnnularSector({
 }
 
 function makeFourLobedWeb({ depth, hubRadius, material, spokeRadius }) {
-  const shape = new THREE.Shape();
-  const samples = 192;
-  for (let index = 0; index < samples; index += 1) {
-    const angle = FULL_TURN * index / samples;
-    const cardinalWeight = Math.abs(Math.cos(2 * angle)) ** 5;
-    const radius = hubRadius
-      + (spokeRadius - hubRadius) * cardinalWeight;
-    const x = radius * Math.cos(angle);
-    const y = radius * Math.sin(angle);
-    if (index === 0) shape.moveTo(x, y);
-    else shape.lineTo(x, y);
-  }
-  shape.closePath();
-  const web = new THREE.Mesh(
-    extrudeCentered(shape, depth, {
-      bevelSize: 0.025,
-      bevelThickness: 0.025,
-    }),
-    material,
-  );
+  const web = new THREE.Mesh(mangle371Web(depth), material);
   web.userData.lobeCount = 4;
   web.userData.role = 'four-broad-spoke-web-of-open-mangle-wheel';
   return web;
@@ -346,7 +328,7 @@ function dualFaceGapTransferMangleWheel(movement) {
   };
 
   const stateAtTime = (time) => stateAtInputTravel(
-    time * inputAngularSpeed,
+    rearRunStart + time * inputAngularSpeed,
   );
 
   const wheelMaterial = matte(PALETTE.driven, {
@@ -676,6 +658,7 @@ function dualFaceGapTransferMangleWheel(movement) {
       inputAngularSpeed,
       inputRevolutionPeriod,
       inputStartAngle,
+      sourceInputTravel: rearRunStart,
       mainArcSweep,
       mainRunInputAngle,
       mainToothIntervals,
@@ -779,11 +762,7 @@ function dualFaceGapTransferMangleWheel(movement) {
   );
   root.userData.groundFloorY = -2.37;
   markShadows(root);
-  return {
-    cameraDirection: new THREE.Vector3(4.8, 3.6, 8.6),
-    root,
-    update,
-  };
+  return finishMangle371(root, update);
 }
 
 export function createAuthoredMangleWheelMovement(movement) {
