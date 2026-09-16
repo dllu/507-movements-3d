@@ -1,3 +1,28 @@
+# Twenty-first family pass: hydraulic and hammer working interfaces
+
+Eight movements receive corrections in four parallel lanes: 455, 464–467 and
+470–472. Reused finite passages, bores, links and profiles replace repeated
+engraving tracing. The overall review remains active.
+
+- [455 contact](old-rotary-pump-455-contact-review.md): abutment-driven closing
+  contact and a cleared rotor pocket resolve the previous measured penetration;
+  a small offline profile keeps browser playback cheap. Return remains prescribed.
+- [464/465 fountain and balance pumps](fountain-balance-family-review.md):
+  circular-segment bowl water, finite vessel passages and bored working joints.
+- [466/467 hydraulic press and jack](hydraulic-force-family-review.md):
+  working bores, plunger clearance, ram-water envelopes and geometric return seat.
+- [470–472 hammers](hammer-family-review.md): clear piston/rod/head interfaces,
+  actual striking planes, bored crank joints and finite valve/friction surfaces.
+
+Fluid forces, loaded valve response and hammer impacts remain explicitly
+unvalidated where motion is prescribed. Geometric clearance alone is not a
+passive physics solution.
+
+The focused suites pass 119 tests, including the unchanged 456 regressions.
+The eight-model construction/playback screen has no flags; the final hydraulic
+port adjustments were screened again. The final production build and eight
+packaged desktop/playback/mobile checks pass (31.7 seconds for the browser suite).
+
 # Twentieth family pass: rotary pumps and water-lifting interfaces
 
 This pass covers 455–463 in four parallel families. It reuses finite passages,

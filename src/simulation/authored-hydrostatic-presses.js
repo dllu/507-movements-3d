@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctHydraulicForceParts} from './hydraulic-force-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -52,7 +53,7 @@ function hydrostaticPress(movement) {
   const pumpLeverPinRadius = 0.55;
   const pumpSliderX = 1.65;
   const pumpPitmanLength = 1.25;
-  const pumpPistonRodOffset = 0.27;
+  const pumpPistonRodOffset = 0.80;
   const pumpPlungerRadius = 0.144;
   const ramRadius = 0.72;
   const diameterRatio = ramRadius / pumpPlungerRadius;
@@ -63,14 +64,14 @@ function hydrostaticPress(movement) {
   const idealRamForce = nominalInputForce * areaRatio;
   const idealHydraulicPressure = nominalInputForce / pumpPlungerArea;
   const ramCylinderBottomY = -1.28;
-  const ramCylinderTopY = 0.06;
+  const ramCylinderTopY = 0.28;
   const ramCylinderHeight = ramCylinderTopY - ramCylinderBottomY;
   const ramAxisX = -1.35;
   const initialPlatenY = 1.34;
   const fixedHeadUndersideY = 2.63;
   const initialLoadHeight = fixedHeadUndersideY - initialPlatenY - 0.10;
-  const pumpCylinderBottomY = 0.28;
-  const pumpCylinderTopY = 1.22;
+  const pumpCylinderBottomY = -0.53;
+  const pumpCylinderTopY = 0.37;
   const reservoirSurfaceY = 0.18;
   const groundY = -1.52;
   const brownExamplePumpDiameter = 1;
@@ -544,12 +545,13 @@ function hydrostaticPress(movement) {
     setRodBetween(pumpPistonRod, state.crosshead, state.piston);
     inletValve.position.y = pumpCylinderBottomY + 0.08
       + 0.07 * state.inletOpenAmount;
-    deliveryValve.position.y = pumpCylinderBottomY + 0.13
+    deliveryValve.position.y = -0.15
       + 0.07 * state.deliveryOpenAmount;
     reliefValve.position.y = 0.42 + 0.10 * state.reliefOpenAmount;
     inletWater.visible = state.inletOpenAmount > 1e-4;
     reliefWater.visible = state.reliefOpenAmount > 1e-4;
     ramAssembly.position.y = state.ramLift;
+    root.userData.updateSolids?.(state);
     const currentLoadHeight = initialLoadHeight - state.loadCompression;
     compressibleLoad.scale.y = currentLoadHeight / initialLoadHeight;
     compressibleLoad.position.set(
@@ -716,6 +718,7 @@ function hydrostaticPress(movement) {
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 2.9, 12.2);
   root.userData.groundFloorY = groundY;
+  correctHydraulicForceParts(root,466);
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [ramCylinderWater, reservoirWater, pressureWater,

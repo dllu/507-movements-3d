@@ -288,14 +288,14 @@ test('movement 465 renderer maps beam, sliders, pistons, pitmans, valves, and wa
         `piston ${index} at phase ${phase}`);
       near(assembly.pitman.scale.y, geometry.pitmanLength, 1e-12,
         `pitman ${index} render length at phase ${phase}`);
-      near(assembly.pistonRod.scale.y, geometry.pistonRodOffset, 1e-12,
+      near(assembly.pistonRod.scale.y, geometry.pistonRodOffset-.20, 1e-12,
         `piston rod ${index} render length at phase ${phase}`);
       near(assembly.inletValve.position.y,
         geometry.cylinderBottomY + 0.12
           + 0.075 * pump.inletOpenAmount,
         1e-12, `inlet check ${index} at phase ${phase}`);
       near(assembly.deliveryValve.position.y,
-        geometry.cylinderTopY + 0.09
+        -.65
           + 0.075 * pump.deliveryOpenAmount,
         1e-12, `delivery check ${index} at phase ${phase}`);
       assert.equal(assembly.inletWater.visible,

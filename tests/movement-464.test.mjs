@@ -210,9 +210,9 @@ test('movement 464 vessel levels follow their volumes and move in the source-pre
     near(state.lowerWaterHeight,
       state.lowerWaterVolume / geometry.lowerArea, 1e-12,
       'lower volume-to-height conversion');
-    near(state.intermediateWaterHeight,
-      state.intermediateWaterVolume / geometry.intermediateArea, 1e-12,
-      'intermediate volume-to-height conversion');
+    const r=1.2,h=state.intermediateWaterHeight;
+    const volume=1.35*(r*r*Math.acos((r-h)/r)-(r-h)*Math.sqrt(2*r*h-h*h));
+    near(volume,state.intermediateWaterVolume,1e-10,'circular bowl volume-to-height conversion');
     near(state.topWaterHeight,
       state.upperWaterVolume / geometry.topArea, 1e-12,
       'upper volume-to-height conversion');
@@ -325,12 +325,9 @@ test('movement 464 renderer maps all three levels, pressure jet height, and flow
     near(blocks.lowerWater.position.y,
       geometry.lowerBottomY + state.lowerWaterHeight / 2, 1e-12,
       `lower rendered center at ${phase}`);
-    near(blocks.intermediateWater.scale.y,
-      state.intermediateWaterHeight, 1e-12,
-      `intermediate rendered height at ${phase}`);
-    near(blocks.intermediateWater.position.y,
-      geometry.intermediateBottomY + state.intermediateWaterHeight / 2,
-      1e-12, `intermediate rendered center at ${phase}`);
+    blocks.intermediateWater.geometry.computeBoundingBox();
+    near(blocks.intermediateWater.geometry.boundingBox.max.y,state.intermediateWaterSurfaceY,2e-7,`intermediate rendered surface at ${phase}`);
+    near(blocks.intermediateWater.geometry.boundingBox.min.y,geometry.intermediateBottomY,2e-7,`intermediate rendered bottom at ${phase}`);
     near(blocks.topWater.scale.y, state.topWaterHeight, 1e-12,
       `upper rendered height at ${phase}`);
     near(blocks.jetColumn.scale.y,
@@ -380,7 +377,8 @@ test('movement 464 has finite render bounds and movement 507 remains the next au
   for (const phase of [0, 0.36, 0.90]) {
     model464.update(phase * model464.root.userData.geometry.cycleDuration);
     model464.root.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(model464.root);
+    const bounds=new THREE.Box3(),point=new THREE.Vector3();
+    model464.root.traverseVisible(o=>{const p=o.geometry?.attributes.position;if(p)for(let i=0;i<p.count;i++)bounds.expandByPoint(point.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld));});
     for (const value of [bounds.min.x, bounds.min.y, bounds.min.z,
       bounds.max.x, bounds.max.y, bounds.max.z]) {
       assert.ok(Number.isFinite(value));

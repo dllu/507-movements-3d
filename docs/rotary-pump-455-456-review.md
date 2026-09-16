@@ -2,7 +2,9 @@
 
 Primary references: [455](https://507movements.com/mm_455.html), [456](https://507movements.com/mm_456.html), and the corresponding local engravings. Both official pages were checked for the unavailable control **and** absence of inline `ae.add_model` / `mm_present` animation definitions. Neither supplies an animated oracle. Dimensions, operating rates, depth and contact-law details are reconstructed.
 
-## 455 — useful solid corrections; contact reconstruction remains partial
+## 455 — initial partial pass (superseded)
+
+**Update:** the measured abutment interference below is resolved by the [finite closing-contact follow-up](old-rotary-pump-455-contact-review.md). Its prescribed return and fluid limitations remain explicit. The text below records the original diagnosis.
 
 The source shows two hinged vanes, a lower inlet, upper outlet and a fixed lower-side abutment that folds each passing vane. This pass adds bored hinge eyes, rotor relief and finite supporting cheeks, shaft bores through both covers, actual casing port openings and open inlet/outlet walls. The lip uses the housing circle on one side and its hinge-sweep envelope on the other, so its finite trailing corner clears during initial folding. The six-second minimum display cycle is enforced; scene fog and ground are disabled.
 

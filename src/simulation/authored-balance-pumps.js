@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctBalancePumps} from './fountain-balance-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -471,6 +472,7 @@ function balancePumps(movement) {
       1,
       state.totalDeliveryOpenAmount,
     );
+    root.userData.updateWorkingParts?.(state);
   };
 
   const sourceState = stateAtInputAngle(-Math.PI / 4);
@@ -597,6 +599,7 @@ function balancePumps(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(4.7, 2.8, 12.4);
   root.userData.groundFloorY = groundY;
+  correctBalancePumps(root);
   markShadows(root);
   foundation.receiveShadow = true;
   reservoir.castShadow = false;

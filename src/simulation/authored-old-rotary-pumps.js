@@ -1,4 +1,4 @@
-import { correctOldPump } from './rotary-pump-contact.js';
+import { correctOldPump, oldPumpFoldAtHingeAngle, oldPumpContactGeometry } from './rotary-pump-contact.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -11,21 +11,6 @@ const FULL_TURN = Math.PI * 2;
 function addRole(object, role) {
   object.userData.role = role;
   return object;
-}
-
-function smootherStep(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return x ** 3 * (10 + x * (-15 + 6 * x));
-}
-
-function smootherStepDerivative(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return 30 * x ** 2 * (1 - x) ** 2;
-}
-
-function smootherStepSecondDerivative(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return 60 * x * (1 - x) * (1 - 2 * x);
 }
 
 function makeAnnularExtrusion(innerRadius, outerRadius, depth) {
@@ -54,79 +39,25 @@ function oldRotaryPump(movement) {
   const rotorRadius = 0.92;
   const valveLength = casingInnerRadius - rotorRadius;
   const valveCount = 2;
-  const maximumFoldAngle = THREE.MathUtils.degToRad(80);
-  const abutmentStartAngle = THREE.MathUtils.degToRad(-10);
-  const foldInTravel = THREE.MathUtils.degToRad(22);
-  const foldHoldEndTravel = THREE.MathUtils.degToRad(60);
-  const abutmentTotalTravel = THREE.MathUtils.degToRad(84);
-  const abutmentClearance = 0.045;
+  const maximumFoldAngle = oldPumpContactGeometry.maximumFold;
+  const abutmentStartAngle = -(oldPumpContactGeometry.fold.findIndex(v=>v>0)-1)*oldPumpContactGeometry.step;
+  const foldInTravel = oldPumpContactGeometry.peakAngle + abutmentStartAngle;
+  const foldHoldEndTravel = THREE.MathUtils.degToRad(145) + abutmentStartAngle;
+  const abutmentTotalTravel = THREE.MathUtils.degToRad(178) + abutmentStartAngle;
+  const abutmentClearance = oldPumpContactGeometry.clearance;
   const sweptVolumePerRadian = 0.5 * (
     casingInnerRadius ** 2 - rotorRadius ** 2
   ) * casingDepth;
   const groundY = -3.72;
 
-  const foldProfileAtHingeAngle = (hingeAngle) => {
-    let travel = THREE.MathUtils.euclideanModulo(
-      abutmentStartAngle - hingeAngle,
-      FULL_TURN,
-    );
-    if (Math.abs(travel) < 1e-12) travel = 0;
-    if (Math.abs(travel - abutmentTotalTravel) < 1e-12) {
-      travel = abutmentTotalTravel;
-    }
-    if (travel < 0 || travel > abutmentTotalTravel) {
-      return {
-        fraction: 0,
-        fractionDerivativeByTravel: 0,
-        fractionSecondDerivativeByTravel: 0,
-        travel,
-      };
-    }
-    if (travel <= foldInTravel) {
-      const normalized = travel / foldInTravel;
-      return {
-        fraction: smootherStep(normalized),
-        fractionDerivativeByTravel:
-          smootherStepDerivative(normalized) / foldInTravel,
-        fractionSecondDerivativeByTravel:
-          smootherStepSecondDerivative(normalized) / foldInTravel ** 2,
-        travel,
-      };
-    }
-    if (travel <= foldHoldEndTravel) {
-      return {
-        fraction: 1,
-        fractionDerivativeByTravel: 0,
-        fractionSecondDerivativeByTravel: 0,
-        travel,
-      };
-    }
-    const releaseTravel = abutmentTotalTravel - foldHoldEndTravel;
-    const normalized = (travel - foldHoldEndTravel) / releaseTravel;
-    return {
-      fraction: 1 - smootherStep(normalized),
-      fractionDerivativeByTravel:
-        -smootherStepDerivative(normalized) / releaseTravel,
-      fractionSecondDerivativeByTravel:
-        -smootherStepSecondDerivative(normalized) / releaseTravel ** 2,
-      travel,
-    };
-  };
+  const foldProfileAtHingeAngle = oldPumpFoldAtHingeAngle;
 
-  const tipRadiusForFoldFraction = (foldFraction) => Math.sqrt(
-    rotorRadius ** 2
-      + valveLength ** 2
-      + 2 * rotorRadius * valveLength
-        * Math.cos(maximumFoldAngle * foldFraction),
-  );
+  const tipRadiusForFoldFraction = fraction => Math.sqrt(rotorRadius**2+valveLength**2+2*rotorRadius*valveLength*Math.cos(maximumFoldAngle*fraction));
 
   const abutmentInnerRadiusAtAngle = (angle) => {
-    const { fraction } = foldProfileAtHingeAngle(angle);
-    return Math.min(
-      casingInnerRadius,
-      tipRadiusForFoldFraction(fraction)
-        + abutmentClearance * fraction,
-    );
+    const [x,y]=oldPumpContactGeometry.center,r=oldPumpContactGeometry.radius;
+    const along=x*Math.cos(angle)+y*Math.sin(angle),cross=x*Math.sin(angle)-y*Math.cos(angle);
+    return along>0&&Math.abs(cross)<r?Math.min(casingInnerRadius,along-Math.sqrt(r*r-cross*cross)):casingInnerRadius;
   };
 
   const stateAtInputAngle = (
@@ -164,11 +95,12 @@ function oldRotaryPump(movement) {
         0,
       );
       const tipRadius = tipPoint.length();
-      const abutmentInnerRadius = abutmentInnerRadiusAtAngle(hingeAngle);
+      const abutmentInnerRadius = abutmentInnerRadiusAtAngle(Math.atan2(tipPoint.y,tipPoint.x));
       return {
         absoluteBladeAngle,
         abutmentInnerRadius,
         closedByAbutment: profile.fraction > 0,
+        contactEngaged: profile.contactEngaged,
         flapAngle,
         flapAngularAcceleration,
         flapAngularSpeed,
@@ -553,7 +485,7 @@ function oldRotaryPump(movement) {
       flowModel:
         'Flow arrows and the swept-rate diagnostic show the captioned direction only. The annulus is treated as primed; the diagnostic weights ideal annular sweep by each valve’s sealing fraction and is not a pressure-resolved performance prediction.',
       valveContactModel:
-        'Each rigid hinged valve follows a C2 fold-hold-release law through the fixed abutment sector. The visible abutment inner contour is generated outside that same valve-tip envelope with positive clearance, preventing geometric passage through the solid projection.',
+        'Each finite hinged valve follows a baked polygon-contact closing branch against a rounded fixed abutment. A positive contact moment arm closes the vane; a prescribed hold and quintic return clear the projection continuously. Contact-entry velocity and fluid-driven return dynamics are not solved.',
     },
     fidelity: 'authored',
     geometry,
@@ -607,7 +539,7 @@ function oldRotaryPump(movement) {
         engravingEvidence:
           'Brown’s section shows a circular fixed casing, a central polygonal rotor with two opposite hinge pins and outward leaf valves, a bottom inlet arrow curving toward the left-hand sweep, an upper-right outlet arrow, and a hatched fixed wedge in the lower-right annulus.',
         reconstructionDisclosure:
-          'Brown gives no casing depth, rotor speed, valve fold law, hinge limits, abutment contour, sealing compliance, pressure, leakage, torque or timing. Those values, the C2 80-degree fold schedule, clearance-derived wedge profile, transparent cutaway, colors and 6-second cycle are independently engineered. The clockwise long-path transport inferred from the arrows, two opposed hinged valves, wall contact, port locations and fixed closing abutment are source-grounded.',
+          'Brown gives no casing depth, rotor speed, valve fold law, hinge limits, abutment contour, sealing compliance, pressure, leakage, torque or timing. Those values, the finite-contact 118.86-degree closing branch, rounded abutment, rotor pockets and prescribed hold/return, transparent cutaway, colors and 6-second cycle are independently engineered. The clockwise long-path transport inferred from the arrows, two opposed hinged valves, wall contact, port locations and fixed closing abutment are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 455',
@@ -616,7 +548,7 @@ function oldRotaryPump(movement) {
     stateAtTime,
     transmission: {
       abutmentConstraint:
-        'Within the abutment sector, r_tip(phi) is never greater than the fixed inner-boundary radius generated from r_tip plus the stated clearance; outside it both valves extend to the casing radius.',
+        'During closing, the full finite vane outline follows the rounded fixed abutment with a small numerical clearance and positive closing moment arm. It then holds clear before a prescribed quintic return; no free return dynamics or contact impact is claimed.',
       diametricalConstraint:
         'The two hinge carriers remain exactly pi radians apart on one rigid rotor and encounter the same fixed fold profile half a turn apart.',
       rotationDirection:

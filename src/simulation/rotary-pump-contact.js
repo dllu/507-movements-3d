@@ -1,3 +1,6 @@
+import {oldPumpVaneOutline} from './old-pump-vane-geometry.js';
+export {oldPumpVaneOutline} from './old-pump-vane-geometry.js';
+import oldProfile from './old-pump-contact-profile.js';
 import * as THREE from 'three';
 import {circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
@@ -60,12 +63,25 @@ export function correctCaryPump(root) {
   finish(root);
 }
 
-export function oldPumpVaneOutline(rotorRadius,length){
-  const blade=polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.19,96)),poly([[0,-.06],[length-.08,-.06],[length-.08,.06],[0,.06]])),poly(circle([0,0],.134,96)));
-  const edge=Array.from({length:33},(_,i)=>{const y=-.09+.18*i/32;return[y<0?Math.sqrt((length-.0001)**2-y*y):Math.sqrt((rotorRadius+length-.0001)**2-y*y)-rotorRadius,y]});
-  const lip=poly([...edge,...edge.map(([x,y])=>[x-.12,y]).reverse()]);
-  return {blade,lip};
+// Baked finite contact branch, followed by a disclosed hold and quintic return.
+export const oldPumpContactGeometry=oldProfile;
+export function oldPumpFoldAtHingeAngle(angle){
+  const travel=THREE.MathUtils.euclideanModulo(-angle,2*Math.PI);
+  if(travel>=Math.PI)return {fraction:0,fractionDerivativeByTravel:0,fractionSecondDerivativeByTravel:0,travel,contactEngaged:false};
+  if(travel>=oldProfile.peakAngle){
+    const duration=33*Math.PI/180,t=THREE.MathUtils.clamp((travel-145*Math.PI/180)/duration,0,1);
+    return {fraction:1-t*t*t*(10+t*(-15+6*t)),
+      fractionDerivativeByTravel:-30*t*t*(1-t)**2/duration,
+      fractionSecondDerivativeByTravel:-60*t*(1-t)*(1-2*t)/(duration*duration),travel,contactEngaged:false};
+  }
+  const index=travel/oldProfile.step,i=Math.floor(index),t=index-i;
+  const value=oldProfile.fold[i]*(1-t)+oldProfile.fold[i+1]*t;
+  return {fraction:value/oldProfile.maximumFold,
+    fractionDerivativeByTravel:(oldProfile.fold[i+1]-oldProfile.fold[i])/(oldProfile.step*oldProfile.maximumFold),
+    fractionSecondDerivativeByTravel:0,travel,
+    contactEngaged:value>1e-8&&travel<=oldProfile.peakAngle};
 }
+
 
 function finish(root){const d=root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=d.geometry.cycleDuration;root.traverse(o=>{for(const m of o.material?[].concat(o.material):[])m.fog=false;});}
 
@@ -79,7 +95,8 @@ export function correctOldPump(root) {
   // the rear and front cheeks retain the pin's connection to the rotor.
   const body=poly(circle([0,0],g.rotorRadius,8));
   const holes=[-1,1].map(sign=>poly(circle([sign*g.rotorRadius,0],.194,128)));
-  const center=plate(polygonClipping.difference(body,...holes),-.265,.265);
+  const pockets=[0,Math.PI].map(rotation=>poly([[g.rotorRadius,0],...Array.from({length:129},(_,i)=>{const a=-.34+(oldProfile.maximumFold+.68)*i/128;return[g.rotorRadius+1.52*Math.cos(a),1.52*Math.sin(a)];})].map(([x,y])=>[x*Math.cos(rotation)-y*Math.sin(rotation),x*Math.sin(rotation)+y*Math.cos(rotation)])));
+  const center=plate(polygonClipping.difference(body,...holes,...pockets),-.265,.265);
   const cheeks=[[-.327,-.27],[.27,.327]].map(([low,high])=>plate(polygonClipping.union(body,...[-1,1].map(sign=>poly(circle([sign*g.rotorRadius,0],.175,96)))),low,high));
   replace(b.rotorBody,mergePassageParts([center,...cheeks]));b.rotorBody.rotation.x=0;
   for(const cover of root.children.filter(o=>o.geometry?.type==='CircleGeometry'))replace(cover,plate(polygonClipping.difference(poly(circle([0,0],g.casingInnerRadius,512)),poly(circle([0,0],.224,128))),-.006,.006));
@@ -89,6 +106,7 @@ export function correctOldPump(root) {
     const panels=[-.38,.38].map(z=>{const geometry=new THREE.BoxGeometry(width,height,.06);geometry.translate(0,0,z);return geometry;});
     replace(shell,mergePassageParts(panels));
   }
-  d.solidReview={qualification:'Partial reconstruction: bored hinge eyes, supporting rotor cheeks circular sealing lips and open inlet/outlet casing passages are finite solids. The existing prescribed folding law is not validated against the fixed abutment and can interpenetrate it; fluid pressure, vane return and contact forces remain unsolved.'};
+  replace(b.abutment,plate(polygonClipping.intersection(poly(circle(oldProfile.center,oldProfile.radius,1024)),poly(circle([0,0],g.casingInnerRadius,512))),-g.casingDepth*.45,g.casingDepth*.45));
+  d.solidReview={qualification:'Finite polygon contact closes each vane against a reconstructed rounded abutment, with a positive closing moment arm and a pocket between rotor cheeks. A prescribed hold and quintic return releases the vane continuously; fluid pressure, return loads and contact forces remain unsolved.',contact:oldProfile};
   finish(root);
 }

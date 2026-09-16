@@ -1,3 +1,4 @@
+import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -79,7 +80,7 @@ function steamHammer(movement) {
   const gravity = 9.81;
   const maximumLift = 1.05;
   const movingMassKilogram = 160;
-  const pistonRadius = 0.27;
+  const pistonRadius = 0.337;
   const pistonArea = Math.PI * pistonRadius ** 2;
   const staticSupportGaugePressure = movingMassKilogram * gravity
     / pistonArea;
@@ -682,12 +683,13 @@ function steamHammer(movement) {
     update,
     valveKinematics,
   };
+  correctHammerWorkingParts(root, 470);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.15, groundY - 0.02, -1.06),
     new THREE.Vector3(2.25, 3.56, 1.06),
   );
   root.userData.cameraDistanceScale = 1.00;
-  root.userData.cameraDirection = new THREE.Vector3(6.4, 4.0, 11.0);
+  root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);
   root.userData.groundFloorY = groundY;
 
   markShadows(root);

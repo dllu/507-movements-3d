@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctHydraulicForceParts} from './hydraulic-force-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -49,11 +50,11 @@ function robertsonJack(movement) {
   const pumpCycleCount = 8;
   const maximumStrokeAngle = pumpCycleCount * FULL_TURN;
   const pumpLeverAmplitude = THREE.MathUtils.degToRad(20);
-  const pumpLeverPivot = new THREE.Vector3(-1.32, 1.05, 0.42);
+  const pumpLeverPivot = new THREE.Vector3(-1.32, 1.05, 0.78);
   const pumpLeverPinRadius = 0.42;
   const pumpSliderX = -0.90;
   const pumpPitmanLength = 0.72;
-  const pumpPistonRodOffset = 0.12;
+  const pumpPistonRodOffset = 0.50;
   const pumpPlungerRadius = 0.10;
   const fixedRamRadius = 0.42;
   const pumpPlungerArea = Math.PI * pumpPlungerRadius ** 2;
@@ -67,7 +68,7 @@ function robertsonJack(movement) {
   const movingCylinderBottomY = -0.20;
   const movingCylinderTopY = 1.72;
   const movingCylinderHeight = movingCylinderTopY - movingCylinderBottomY;
-  const initialPressureChamberHeight = movingCylinderTopY - fixedRamTopY;
+  const initialPressureChamberHeight = movingCylinderTopY - 0.16 - fixedRamTopY;
   const thumbScrewPitch = 0.045;
   const thumbScrewMaximumTurns = 1;
   const thumbScrewMaximumAngle = thumbScrewMaximumTurns * FULL_TURN;
@@ -624,8 +625,8 @@ function robertsonJack(movement) {
     pumpPiston.position.copy(state.piston);
     setRodBetween(pumpPitman, state.leverPin, state.crosshead);
     setRodBetween(pumpPistonRod, state.crosshead, state.piston);
-    inletValve.position.y = -0.05 + 0.065 * state.inletOpenAmount;
-    deliveryValve.position.y = -0.15 + 0.065 * state.deliveryOpenAmount;
+    inletValve.position.y = -0.82 + 0.065 * state.inletOpenAmount;
+    deliveryValve.position.y = -0.43 + 0.065 * state.deliveryOpenAmount;
     movingCylinder.position.y = state.cylinderLift;
     pressureChamber.scale.y = state.pressureChamberHeight;
     pressureChamber.position.set(
@@ -638,7 +639,8 @@ function robertsonJack(movement) {
     baseWater.scale.y = baseWaterHeight;
     baseWater.position.set(0, -1.00 + baseWaterHeight / 2, 0);
     thumbScrew.rotation.x = state.thumbScrewAngle;
-    thumbScrew.position.x = -0.62 - state.thumbScrewRetreat;
+    thumbScrew.position.x = -1.25 - state.thumbScrewRetreat;
+    root.userData.updateSolids?.(state);
     returnWater.visible = state.returnFlowRate > 1e-5;
     returnWaterMaterial.opacity = 0.16 + 0.50 * state.screwOpenAmount;
   };
@@ -803,6 +805,7 @@ function robertsonJack(movement) {
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(4.8, 2.8, 11.8);
   root.userData.groundFloorY = groundY;
+  correctHydraulicForceParts(root,467);
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [baseWater, internalPressurePipe, pressureChamber,

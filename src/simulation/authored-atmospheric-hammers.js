@@ -1,3 +1,4 @@
+import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -46,7 +47,7 @@ function atmosphericHammer(movement) {
   const crankRadius = 0.68;
   const connectingRodLength = 1.55;
   const cylinderAxisX = 0.38;
-  const crankCenter = new THREE.Vector3(cylinderAxisX, 0.39, 0.42);
+  const crankCenter = new THREE.Vector3(cylinderAxisX, 0.39, 1.0);
   const cylinderDrivePinBottomY = 1.05;
   const cylinderDriveAttachmentOffsetY = 0.42;
   const bottomHorizontalOffset = cylinderAxisX - crankCenter.x;
@@ -80,11 +81,11 @@ function atmosphericHammer(movement) {
   const impactSpeed = 3 * maximumHammerLift / upperDriveDuration;
   const pistonContactCenterY = 1.02;
   const hammerHeadHeight = 0.48;
-  const anvilTopY = -0.62;
+  const anvilTopY = -1.27;
   const hammerHeadContactCenterY = anvilTopY + hammerHeadHeight / 2;
   const movingHammerMassKilogram = 88;
   const gravity = 9.81;
-  const groundY = -1.16;
+  const groundY = -1.81;
 
   const crankKinematics = (unwrappedPhase) => {
     const phase = positiveModulo(unwrappedPhase, 1);
@@ -793,12 +794,13 @@ function atmosphericHammer(movement) {
     },
     update,
   };
+  correctHammerWorkingParts(root, 471);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-1.78, groundY - 0.14, -1.12),
-    new THREE.Vector3(1.80, 5.05, 1.00),
+    new THREE.Vector3(1.80, 5.05, 1.22),
   );
   root.userData.cameraDistanceScale = 1.00;
-  root.userData.cameraDirection = new THREE.Vector3(9.0, 4.2, 8.0);
+  root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);
   root.userData.groundFloorY = groundY;
 
   markShadows(root);

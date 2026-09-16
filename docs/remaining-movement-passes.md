@@ -550,3 +550,22 @@ change pass, including one new containment regression (114 distinct checks).
 The production build, nine packaged playback/mobile checks and nine-model screen
 pass; the final scoop change received a rebuilt bundle and repeated screen.
 455 and 459 remain explicitly partial contact reconstructions.
+
+## Twenty-first parallel batch
+
+- **455:** finite abutment-driven folding contact, a cleared rotor pocket and
+  an offline baked profile replace the previous measured contact exception.
+- **464/465:** finite fountain vessels and circular-segment bowl water; bored
+  balance-pump joints, split deck, ported cylinders and separate delivery paths.
+- **466/467:** hydraulic press/jack working bores, linkage clearance and ram
+  water envelopes, with a geometric return-screw seat in 467.
+- **470–472:** shared cylinder walls and rod glands, correct striking planes,
+  clear crank joints and corrected friction-disk/valve interfaces.
+
+These are bounded geometry/contact passes. Ideal hydraulic laws, prescribed
+checks, hammer trajectories and unvalidated impact/return forces remain explicit
+in the linked family reviews. No live browser physics is introduced.
+
+The focused suites pass 119 tests. The production build, eight packaged
+playback/mobile checks and eight-model screen pass; the final hydraulic
+port corrections were screened again.

@@ -61,8 +61,8 @@ test('455: finite bored hinge eyes clear pins and relieved rotor cheeks',()=>{
   }
   const lip=separation(m,b.valves[0].flexibleLip,b.casing,360);
   assert.ok(lip.minimum>=-2e-6,`sealing lip/casing ${JSON.stringify(lip)}`);
-  // Cap the documented residual without requiring the known fault to persist.
+  // The previous abutment penetration is now a strict finite-clearance check.
   const abutment=separation(m,b.valves[0].flexibleLip,b.abutment,180);
-  assert.ok(abutment.minimum>-.25,`known abutment residual ${JSON.stringify(abutment)}`);
-  assert.match(m.root.userData.solidReview.qualification,/Partial reconstruction.*not validated/);
+  assert.ok(abutment.minimum>=0,`abutment clearance ${JSON.stringify(abutment)}`);
+  assert.match(m.root.userData.solidReview.qualification,/Finite polygon contact.*prescribed hold and quintic return/);
 });

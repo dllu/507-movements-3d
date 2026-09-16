@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {correctFountain,fountainBowlLevel} from './fountain-balance-working-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -34,10 +35,9 @@ function heronsFountain(movement) {
   const gravitationalAcceleration = 9.81;
   const initialPressureRatio = 1.22;
   const intermediateInnerRadius = 0.90;
-  const intermediateArea = Math.PI * intermediateInnerRadius ** 2;
-  const intermediateBottomY = 0.72;
-  const intermediateInnerHeight = 1.35;
-  const intermediateCapacity = intermediateArea * intermediateInnerHeight;
+  const intermediateBottomY = 2.00;
+  const intermediateInnerHeight = 1.20;
+  const intermediateCapacity = 2.60 * 1.55 * (3.73 - .77);
   const intermediateInitialWaterVolume = 2.00;
   const lowerInnerLength = 4.10;
   const lowerInnerWidth = 1.45;
@@ -49,9 +49,9 @@ function heronsFountain(movement) {
   const topInnerLength = 4.20;
   const topInnerWidth = 1.35;
   const topArea = topInnerLength * topInnerWidth;
-  const topBasinBottomY = 2.63;
+  const topBasinBottomY = 3.85;
   const topWaterVolume = 1.05;
-  const nozzleY = 2.98;
+  const nozzleY = 4.40;
   const lowerTransfer = 0.32;
   const intermediateTransfer = 0.24;
   const externalPourTransfer = lowerTransfer - intermediateTransfer;
@@ -80,8 +80,7 @@ function heronsFountain(movement) {
     const sharedGasVolume = lowerGasVolume + intermediateGasVolume;
     const sharedGasPressure = sharedGasPVConstant / sharedGasVolume;
     const lowerWaterHeight = lowerWaterVolume / lowerArea;
-    const intermediateWaterHeight = intermediateWaterVolume
-      / intermediateArea;
+    const intermediateWaterHeight = fountainBowlLevel(intermediateWaterVolume) - intermediateBottomY;
     const topWaterHeight = upperWaterVolume / topArea;
     const lowerWaterSurfaceY = lowerBottomY + lowerWaterHeight;
     const intermediateWaterSurfaceY = intermediateBottomY
@@ -479,6 +478,7 @@ function heronsFountain(movement) {
     const visibleJetHeight = Math.max(0.02, state.idealJetHeight);
     jetColumn.scale.y = visibleJetHeight;
     jetColumn.position.set(0, nozzleY + visibleJetHeight / 2, 0);
+    root.userData.updateWorkingParts?.(state);
   };
 
   const sourceState = stateAtTransferProgress(0.35);
@@ -493,7 +493,6 @@ function heronsFountain(movement) {
     initialPressureRatio,
     initialSharedGasPressure,
     initialSharedGasVolume,
-    intermediateArea,
     intermediateBottomY,
     intermediateCapacity,
     intermediateInitialWaterVolume,
@@ -636,6 +635,7 @@ function heronsFountain(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(4.8, 2.7, 11.8);
   root.userData.groundFloorY = groundY;
+  correctFountain(root);
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [lowerWater, lowerAirCavity, intermediateWater,

@@ -1,3 +1,4 @@
+import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -98,8 +99,9 @@ function grimshawCompressedAirHammer(movement) {
   const pumpAxisZ = shaftCenter.z;
   const pumpConnectingRodLength = 2.03;
   const pumpPistonThickness = 0.16;
-  const pumpCylinderInnerBottomY = 0.04;
-  const pumpCylinderInnerTopY = 1.36;
+  const pumpWristOffset = 0.21;
+  const pumpCylinderInnerBottomY = 0.04 - pumpWristOffset;
+  const pumpCylinderInnerTopY = 1.36 - pumpWristOffset;
   const pumpPistonArea = Math.PI * pumpInnerRadius ** 2;
   const pumpDeliveredVolumePerDriveRevolution = 2
     * pumpPistonArea * pumpStroke;
@@ -112,7 +114,7 @@ function grimshawCompressedAirHammer(movement) {
   const hammerCylinderInnerTopY = 2.25;
   const hammerPistonArea = Math.PI * hammerInnerRadius ** 2;
   const hammerHeadHeight = 0.42;
-  const anvilTopY = -0.57;
+  const anvilTopY = -1.47;
   const hammerHeadBottomCenterY = anvilTopY + hammerHeadHeight / 2;
   const lowerAdmissionStartPhase = 0.02;
   const lowerCutoffPhase = 0.42;
@@ -191,7 +193,7 @@ function grimshawCompressedAirHammer(movement) {
       horizontalOffset,
       pistonAcceleration: pistonSecondDerivativeByAngle
         * driveAngularVelocity ** 2,
-      pistonCenterY: pistonPin.y,
+      pistonCenterY: pistonPin.y - pumpWristOffset,
       pistonDerivativeByAngle,
       pistonPin,
       pistonSecondDerivativeByAngle,
@@ -482,7 +484,7 @@ function grimshawCompressedAirHammer(movement) {
   });
   cylinderMaterial.depthWrite = false;
 
-  const groundY = -1.02;
+  const groundY = -1.92;
   const foundation = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(4.25, 0.20, 1.72),
     frameMaterial,
@@ -1044,6 +1046,7 @@ function grimshawCompressedAirHammer(movement) {
     pumpInnerRadius,
     pumpPistonArea,
     pumpPistonThickness,
+    pumpWristOffset,
     pumpStroke,
     reservoirAbsolutePressurePascal,
     reservoirGaugePressurePascal,
@@ -1234,12 +1237,13 @@ function grimshawCompressedAirHammer(movement) {
     update,
     valveKinematicsAtHammerPhase,
   };
+  correctHammerWorkingParts(root, 472);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.32, groundY - 0.10, -1.18),
     new THREE.Vector3(2.15, 3.50, 1.10),
   );
   root.userData.cameraDistanceScale = 1.00;
-  root.userData.cameraDirection = new THREE.Vector3(6.8, 3.8, 10.4);
+  root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);
   root.userData.groundFloorY = groundY;
 
   markShadows(root);

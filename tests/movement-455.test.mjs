@@ -121,7 +121,7 @@ test('movement 455 source record preserves the port, wall-fit, and abutment clai
   assert.match(dynamics.flowModel,
     /captioned direction only.*not a pressure-resolved performance prediction/);
   assert.match(dynamics.valveContactModel,
-    /C2 fold-hold-release law.*positive clearance.*preventing geometric passage/);
+    /baked polygon-contact closing branch.*positive contact moment arm.*prescribed hold and quintic return/);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.deepEqual(plate.approximateCasingCenterPixels, [276, 250]);
@@ -195,7 +195,7 @@ test('movement 455 each folding valve remains inside the fixed abutment clearanc
     const folded = state.valves.filter(({ closedByAbutment }) =>
       closedByAbutment);
     assert.ok(folded.length <= 1,
-      `at most one valve in 84-degree abutment at ${sample}`);
+      `at most one vane in the closing/return sequence at ${sample}`);
     for (const valve of folded) {
       foldedSamples += 1;
       assert.ok(valve.tipRadius <= valve.abutmentInnerRadius + 1e-14,
@@ -214,29 +214,20 @@ test('movement 455 each folding valve remains inside the fixed abutment clearanc
   disposeModel(model.root);
 });
 
-test('movement 455 abutment fold-in, hold, and release profile is C2 at all four boundaries', () => {
+test('movement 455 contact closure and release remain continuous with a smooth prescribed return', () => {
   const model = createMovementModel(catalog.movements[454]);
   const { foldProfileAtHingeAngle, geometry } = model.root.userData;
-  const boundaries = [
-    geometry.abutmentStartAngle,
-    geometry.abutmentStartAngle - geometry.foldInTravel,
-    geometry.abutmentStartAngle - geometry.foldHoldEndTravel,
-    geometry.abutmentStartAngle - geometry.abutmentTotalTravel,
-  ];
-  const expectedFractions = [0, 1, 1, 0];
-  boundaries.forEach((angle, index) => {
-    const profile = foldProfileAtHingeAngle(angle);
-    near(profile.fraction, expectedFractions[index], 2e-14,
-      `boundary fold fraction ${index}`);
-    near(profile.fractionDerivativeByTravel, 0, 2e-13,
-      `boundary fold speed ${index}`);
-    near(profile.fractionSecondDerivativeByTravel, 0, 2e-12,
-      `boundary fold acceleration ${index}`);
-  });
-  const midHoldAngle = geometry.abutmentStartAngle
-    - (geometry.foldInTravel + geometry.foldHoldEndTravel) / 2;
-  near(foldProfileAtHingeAngle(midHoldAngle).fraction, 1, 0,
-    'full fold hold');
+  for(let i=0;i<=3600;i++){
+    const angle=-i*Math.PI/1800,before=foldProfileAtHingeAngle(angle-1e-8),after=foldProfileAtHingeAngle(angle+1e-8);
+    assert.ok(Math.abs(before.fraction-after.fraction)<1e-6,'continuous finite contact branch');
+  }
+  for(const degrees of [145,178]){
+    const profile=foldProfileAtHingeAngle(-degrees*Math.PI/180);
+    near(profile.fractionDerivativeByTravel,0,1e-12,'zero return endpoint speed');
+    near(profile.fractionSecondDerivativeByTravel,0,1e-12,'zero return endpoint acceleration');
+  }
+  const midHoldAngle=geometry.abutmentStartAngle-(geometry.foldInTravel+geometry.foldHoldEndTravel)/2;
+  near(foldProfileAtHingeAngle(midHoldAngle).fraction,1,0,'closed hold');
   disposeModel(model.root);
 });
 
@@ -251,7 +242,7 @@ test('movement 455 second valve repeats the first valve fold exactly one half-tu
       `half-turn fold repeat at ${sample}`);
     near(secondLater.flapAngle, first.flapAngle, 4e-14,
       `half-turn flap-angle repeat at ${sample}`);
-    near(secondLater.tipRadius, first.tipRadius, 8e-15,
+    near(secondLater.tipRadius, first.tipRadius, 3e-14,
       `half-turn tip repeat at ${sample}`);
   }
   disposeModel(model.root);
