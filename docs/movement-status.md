@@ -2,7 +2,7 @@
 
 This is the current work ledger for all **507 movements**, not a completion certificate. Edit [movement-status.json](movement-status.json), then run `node scripts/generate-movement-status.mjs`. Update affected rows in every progress commit. The family queue selects reusable work; this ledger records each movement’s actual evidence.
 
-Last ledger update: **2026-09-16**. Historical evidence was audited from repository review notes and production code.
+Last ledger update: **2026-09-18**. Historical evidence was audited from repository review notes and production code.
 
 - **Astra visual check:** Yes means an attributable primary-agent comparison of rendered geometry with the engraving, not original authorship, a test pass, or merely creating a screenshot. Unverified means the record does not establish that attribution; a linked historical review may still exist. A visual check does not mean all flaws were fixed. Changes affecting appearance require a new check.
 - **MuJoCo:** live and baked both count as production simulation use. Study only means the installed motion is not MuJoCo-driven. Geometric contact tables and analytically generated animation are not MuJoCo bakes.

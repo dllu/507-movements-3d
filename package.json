@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Portable, paginated Three.js simulations of Henry T. Brown's 507 Mechanical Movements.",
+  "description": "3D simulations of Henry T. Brown's 507 Mechanical Movements.",
   "scripts": {
     "catalog": "node scripts/scrape-catalog.mjs",
     "source-images": "node scripts/fetch-source-images.mjs",

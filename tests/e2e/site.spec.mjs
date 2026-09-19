@@ -5,13 +5,13 @@ const catalog = JSON.parse(await readFile(new URL('../../src/data/movements.json
 
 test('catalog is paginated, searchable, and filterable', async ({ page }) => {
   await page.goto('/#/catalog?page=1');
-  await expect(page.getByRole('heading', { name: 'The movement catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mechanical Movements' })).toBeVisible();
   await expect(page.locator('.movement-card')).toHaveCount(12);
-  await expect(page.locator('.result-count')).toHaveText('Showing 1–12 of 507');
+  await expect(page.locator('.result-count')).toHaveText('1–12 of 507');
 
   await page.getByRole('link', { name: 'Page 43' }).click();
   await expect(page.locator('.movement-card')).toHaveCount(3);
-  await expect(page.locator('.result-count')).toHaveText('Showing 505–507 of 507');
+  await expect(page.locator('.result-count')).toHaveText('505–507 of 507');
   await expect(page.getByRole('link', { name: /Another form of epicyclic train designed/ }).first()).toBeVisible();
 
   await page.goto('/#/catalog?page=1');
@@ -34,7 +34,7 @@ test('authored detail view renders and exposes working controls', async ({ page 
   const canvas = page.locator('.simulation-canvas');
   await expect(page.getByRole('heading', { name: 'Belt and Pulleys' })).toBeVisible();
   await expect(canvas).toBeVisible();
-  await expect(page.getByText('Interactive 3D model')).toBeVisible();
+  await expect(page.getByText('Interactive 3D model')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('aria-label', /movement 1/i);
 
   const dimensions = await canvas.evaluate((element) => ({
@@ -53,7 +53,7 @@ test('authored detail view renders and exposes working controls', async ({ page 
     page.locator('.source-engraving').boundingBox(),
     page.locator('.movement-notes').boundingBox(),
   ]);
-  expect(simulationBox.width).toBeGreaterThan(engravingBox.width * 2);
+  expect(Math.abs(simulationBox.width - engravingBox.width * 2)).toBeLessThan(1);
   expect(engravingBox.x).toBeGreaterThan(simulationBox.x + simulationBox.width - 2);
   expect(Math.abs(notesBox.x - engravingBox.x)).toBeLessThan(2);
   expect(notesBox.y).toBeGreaterThan(engravingBox.y);
@@ -112,14 +112,14 @@ test('mobile catalog and detail layouts remain usable', async ({ page }) => {
   await expect(page.locator('.simulation-canvas')).toBeVisible();
   const stage = await page.locator('.simulation-stage').boundingBox();
   expect(stage.width).toBeLessThanOrEqual(390);
-  expect(stage.height).toBeGreaterThan(400);
+  expect(Math.abs(stage.height - stage.width)).toBeLessThan(1);
   const engraving = await page.locator('.source-engraving').boundingBox();
   const notes = await page.locator('.movement-notes').boundingBox();
-  expect(engraving.y).toBeGreaterThan(stage.y + stage.height);
+  expect(Math.abs(engraving.y - stage.y - stage.height)).toBeLessThan(1);
   expect(Math.abs(engraving.y - notes.y)).toBeLessThan(2);
   expect(Math.abs(engraving.width - notes.width)).toBeLessThan(2);
   expect(engraving.width).toBeLessThanOrEqual(195);
-  await expect(page.getByText('An interactive reconstruction of the mechanism')).toBeVisible();
+  await expect(page.getByText('An interactive reconstruction of the mechanism')).toHaveCount(0);
 });
 
 test('production output works unchanged beneath a static-host subdirectory', async ({ page }) => {
@@ -148,7 +148,54 @@ test('production output works unchanged beneath a static-host subdirectory', asy
 
   await page.goto('/portable/#/catalog?page=43');
   await expect(page.locator('.movement-card')).toHaveCount(3);
-  await expect(page.locator('.result-count')).toHaveText('Showing 505–507 of 507');
+  await expect(page.locator('.result-count')).toHaveText('505–507 of 507');
   expect(failedRequests).toEqual([]);
   expect(badResponses).toEqual([]);
+});
+
+
+test('square panels fit landscape and portrait windows, including rotation', async ({ page }) => {
+  await page.goto('/#/movement/010');
+  await expect(page.locator('.simulation-canvas')).toBeVisible();
+  for (const [width, height] of [[1440, 1000], [390, 844], [844, 390], [820, 1180], [320, 568]]) {
+    await page.setViewportSize({ width, height });
+    const boxes = await page.evaluate(() => {
+      const box = selector => {
+        const { x, y, width, height, bottom } = document.querySelector(selector).getBoundingClientRect();
+        return { x, y, width, height, bottom };
+      };
+      return { layout: box('.detail-layout'), stage: box('.simulation-stage'),
+        engraving: box('.source-engraving'), notes: box('.movement-notes'),
+        toolbar: box('.simulation-toolbar'), scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight };
+    });
+    for (const panel of [boxes.stage, boxes.engraving, boxes.notes]) {
+      expect(Math.abs(panel.width - panel.height)).toBeLessThan(1);
+    }
+    expect(Math.abs(boxes.stage.width / 2 - boxes.engraving.width)).toBeLessThan(1);
+    expect(boxes.layout.width / boxes.layout.height).toBeCloseTo(width > height ? 1.5 : 2 / 3, 2);
+    expect(boxes.toolbar.y).toBeGreaterThanOrEqual(boxes.layout.bottom - 1);
+    expect(boxes.toolbar.bottom).toBeLessThanOrEqual(height);
+    expect(boxes.scrollWidth).toBeLessThanOrEqual(width);
+    expect(boxes.scrollHeight).toBeLessThanOrEqual(height);
+  }
+});
+
+test('long source text and model notes remain accessible in the square panel', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/movement/015');
+  await expect(page.locator('.simulation-canvas')).toBeVisible();
+  const notes = page.locator('.movement-notes');
+  await expect(notes).toContainText('six supporting rope parts');
+  expect(await notes.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+  await notes.focus();
+  await page.keyboard.press('End');
+  await expect.poll(() => notes.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  await page.goto('/#/movement/129');
+  await expect(page.locator('.simulation-canvas')).toBeVisible();
+  const reconstruction = page.locator('.reconstruction-notes');
+  await expect(reconstruction).toBeVisible();
+  await reconstruction.locator('summary').click();
+  await expect(reconstruction).toHaveAttribute('open', '');
+  await expect(reconstruction.locator('p')).not.toBeEmpty();
 });
