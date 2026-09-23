@@ -96,29 +96,39 @@ function makeCrownEscapeWheel({
   const toothMaterial = matte(PALETTE.driven, {
     metalness: 0.16,
     roughness: 0.58,
-    side: THREE.DoubleSide,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.25,
     roughness: 0.48,
   });
 
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyDepth, 96),
+  const toothPitch = FULL_TURN / toothCount;
+  const innerRadius = contactRadius - toothRadialDepth;
+  const outerRadius = contactRadius;
+
+  // A crown is a cup: the teeth stand on a band of their own radial depth,
+  // closed below by a thin floor, with nothing projecting beyond the teeth.
+  const floorThickness = Math.min(0.1, bodyDepth * 0.4);
+  const bandShape = new THREE.Shape();
+  bandShape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
+  bandShape.holes.push(new THREE.Path().absarc(0, 0, innerRadius, 0, FULL_TURN, true));
+  const band = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bandShape, { bevelEnabled: false, curveSegments: 64, depth: bodyDepth }),
     wheelMaterial,
   );
-  body.rotation.x = Math.PI / 2;
-  body.position.z = toothBaseZ - bodyDepth / 2;
+  band.position.z = toothBaseZ - bodyDepth;
+  band.userData.role = 'crown-wheel-tooth-band';
+  const floor = new THREE.Mesh(
+    new THREE.CylinderGeometry(innerRadius + 0.01, innerRadius + 0.01, floorThickness, 96),
+    wheelMaterial,
+  );
+  floor.rotation.x = Math.PI / 2;
+  floor.position.z = toothBaseZ - bodyDepth + floorThickness / 2;
+  floor.userData.role = 'crown-wheel-floor';
+  const body = new THREE.Group();
+  body.add(band, floor);
   body.userData.role = 'crown-wheel-body';
   rotor.add(body);
-
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(bodyRadius * 0.94, 0.055, 10, 96),
-    darkMaterial,
-  );
-  rim.position.z = toothBaseZ + 0.025;
-  rim.userData.role = 'crown-wheel-rim';
-  rotor.add(rim);
 
   const hub = new THREE.Mesh(
     new THREE.CylinderGeometry(0.28, 0.28, bodyDepth * 1.9, 32),
@@ -129,14 +139,11 @@ function makeCrownEscapeWheel({
   hub.userData.role = 'crown-wheel-hub';
   rotor.add(hub);
 
-  const toothPitch = FULL_TURN / toothCount;
   // Saw teeth: an axial leading face in the counterclockwise running
   // direction and an inclined back, as in Brown's crown wheels. A radial tip
   // edge is oblique to both pallet planes, and its outer corner is always the
   // first point to reach them, so that corner lies on the contact orbit.
   const toothBackWidth = contactRadius * Math.sin(toothPitch * 0.62);
-  const innerRadius = contactRadius - toothRadialDepth;
-  const outerRadius = contactRadius;
   const toothMeshes = [];
   const toothTips = [];
   const point = (angle, radial, tangent, z) => [
@@ -155,19 +162,29 @@ function makeCrownEscapeWheel({
       ...point(angle, outerRadius, 0, toothBaseZ),
       ...point(angle, outerRadius, 0, toothTipZ),
     ];
-    const indices = [
-      0, 2, 1,
-      3, 4, 5,
-      0, 1, 4, 0, 4, 3,
-      1, 2, 5, 1, 5, 4,
-      2, 0, 3, 2, 3, 5,
+    // Closed triangular prism, wound outward and unshared so every flat face
+    // shades with its own normal.
+    const faces = [
+      [0, 2, 1],
+      [3, 4, 5],
+      [0, 1, 4], [0, 4, 3],
+      [1, 2, 5], [1, 5, 4],
+      [2, 0, 3], [2, 3, 5],
     ];
+    const corner = (i) => new THREE.Vector3(vertices[3 * i], vertices[3 * i + 1], vertices[3 * i + 2]);
+    const centroid = [0, 1, 2, 3, 4, 5].reduce((sum, i) => sum.add(corner(i)), new THREE.Vector3()).divideScalar(6);
+    const positions = [];
+    for (const face of faces) {
+      const [a, b, c] = face.map(corner);
+      const normal = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+      const ordered = normal.dot(a.clone().sub(centroid)) >= 0 ? [a, b, c] : [a, c, b];
+      for (const p of ordered) positions.push(p.x, p.y, p.z);
+    }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       'position',
-      new THREE.Float32BufferAttribute(vertices, 3),
+      new THREE.Float32BufferAttribute(positions, 3),
     );
-    geometry.setIndex(indices);
     geometry.computeVertexNormals();
     const tooth = new THREE.Mesh(geometry, toothMaterial);
     tooth.userData.index = index;
@@ -185,14 +202,15 @@ function makeCrownEscapeWheel({
   }
 
   const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(bodyRadius * 0.62, 0.075, 0.035),
+    new THREE.BoxGeometry(innerRadius * 0.5, 0.075, 0.035),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  indicator.position.set(bodyRadius * 0.38, 0, toothBaseZ + 0.075);
+  indicator.position.set(innerRadius * 0.45, 0, toothBaseZ - bodyDepth + floorThickness + 0.0175);
   indicator.userData.role = 'crown-wheel-rotation-witness';
   rotor.add(indicator);
 
   root.userData.body = body;
+  root.userData.toothBandRadius = (innerRadius + outerRadius) / 2;
   root.userData.contactRadius = contactRadius;
   root.userData.toothInnerRadius = innerRadius;
   root.userData.toothBaseZ = toothBaseZ;
@@ -1995,7 +2013,7 @@ function classicWatchVergeEscapement(
   // disk used by Movement 234 so both alternating pallets remain inspectable.
   blocks.crownWheel.userData.body.visible = false;
   const crownOpenRim = new THREE.Mesh(
-    new THREE.TorusGeometry(baseGeometry.bodyRadius * 0.9, 0.13, 12, 96),
+    new THREE.TorusGeometry(blocks.crownWheel.userData.toothBandRadius, 0.13, 12, 96),
     matte(PALETTE.driven, { metalness: 0.12, roughness: 0.6 }),
   );
   crownOpenRim.position.z = baseGeometry.toothBaseZ
@@ -2006,7 +2024,7 @@ function classicWatchVergeEscapement(
   for (let index = 0; index < 4; index += 1) {
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
-        baseGeometry.bodyRadius * 1.66,
+        blocks.crownWheel.userData.toothBandRadius * 2,
         0.14,
         0.13,
       ),
@@ -3380,7 +3398,7 @@ function oldFashionedClockVergeEscapement(movement) {
   // visible from the useful three-quarter camera angle.
   blocks.crownWheel.userData.body.visible = false;
   const crownRim = new THREE.Mesh(
-    new THREE.TorusGeometry(baseGeometry.bodyRadius * 0.91, 0.14, 12, 96),
+    new THREE.TorusGeometry(blocks.crownWheel.userData.toothBandRadius, 0.14, 12, 96),
     matte(PALETTE.driven, { metalness: 0.13, roughness: 0.6 }),
   );
   crownRim.position.z = baseGeometry.toothBaseZ
@@ -3391,7 +3409,7 @@ function oldFashionedClockVergeEscapement(movement) {
   for (let index = 0; index < 4; index += 1) {
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
-        baseGeometry.bodyRadius * 1.67,
+        blocks.crownWheel.userData.toothBandRadius * 2,
         0.14,
         0.13,
       ),
@@ -4656,7 +4674,8 @@ function debaufreFrictionalRestEscapement(
 
 export function createAuthoredEscapementMovement(movement) {
   switch (movement.id) {
-    case 234: return vergeAndCrownWheelEscapement(movement);
+    // Brown's plate shows no frame or bearings for this verge.
+    case 234: return vergeAndCrownWheelEscapement(movement, { includeFrame: false });
     case 238: return sevenToothAnchorEscapement(movement);
     case 298: return classicWatchVergeEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);

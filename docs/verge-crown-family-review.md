@@ -116,3 +116,30 @@ unknown; these notes record what was visible.
   spring are small and hard to see at the default distance.
 - **347 (disk engine):** conical heads and ball seat are shown as a translucent
   drum rather than Brown's section; crank and flywheel read correctly.
+
+## Follow-up from user review (same day)
+
+- **Crown body:** the shared crown was a solid disk wider than the teeth with a
+  dark rim torus, leaving a flange below the teeth. It is now a cup, as in
+  Brown's 234: a band of the teeth's own radial depth, a thin floor and the
+  hub. The open rims that 298/299 add sit under the tooth band instead of
+  outside it.
+- **Tooth shading:** tooth prisms shared vertices, so averaged normals shaded
+  the flat saw faces like cones. Each face now has its own outward-wound
+  triangles and flat normal; the double-sided material is gone.
+- **Handedness:** the tooth/flank relationship is unchanged and conventional:
+  the front (axial) flank drives the pallet and the back flank only lets the
+  pallet pass (Roess, *Theory of the Verge & Foliot Clock*, 2018). Brown's 234
+  draws the near teeth with their axial faces on the left, i.e. a wheel turning
+  clockwise from above; the model turned the other way. The 234 source
+  presentation now mirrors the model to the plate's handedness (verified:
+  tooth 0 moves clockwise seen from above). 302's arrow already matches the
+  unmirrored handedness.
+- **298 is the wrong mechanism.** Its plate shows a geared crown wheel like
+  Movement 26 (rectangular teeth on a drum) meshing a pinion under balance C,
+  on the arbor that carries two loop pallets over a face-on saw-tooth escape
+  wheel. The model reuses 234's verge-on-crown escapement. The reconstruction
+  is queued pending how the loop pallets act on the escape wheel.
+
+The 513-phase verge audit and all 39 family tests still pass after these
+changes.

@@ -45,11 +45,11 @@ rod, arbor and base were at conflicting depths.
   bevel mitres plus 0.003). The result is the broad hooked D and E pallets of
   the plate. The bake is byte-reproducible and records a geometry fingerprint
   that a test checks against production.
-- **Pendulum and supports:** the escape arbor turns with the wheel; the rod and
-  a lens bob hang behind the wheel as in the plate (occluded by rim and spokes),
-  joined to the pallet arbor through the anchor bearing. The frame post stands
-  outside the wheel and bob swing, with rear bars and bosses to both bearing
-  rings; the base is below the bob.
+- **Pendulum:** the escape arbor turns with the wheel; the rod and a lens bob
+  hang behind the wheel as in the plate (occluded by rim and spokes), joined to
+  the pallet arbor. Following the source-matching rule in `AGENTS.md`, the
+  rear frame and bearings added earlier in this pass were then removed: Brown
+  draws none.
 - The contact marker still tracks the active tip but no longer renders.
 
 ## Evidence
@@ -71,4 +71,4 @@ rod, arbor and base were at conflicting depths.
 - The anchor outline is reconstructed from Brown's proportions and the solved
   loci, not traced; its outer corners and arm widths are approximations.
 - Pendulum swing, impulse force, drop impacts and escapement energy remain
-  prescribed. The added rear frame is not in the plate.
+  prescribed. The arbors have no drawn support.

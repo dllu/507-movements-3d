@@ -1,4 +1,5 @@
 import displayProfiles from '../data/display-profiles.js';
+import { applySourcePresentation } from './source-presentation.js';
 
 export const DEFAULT_DISPLAY_CYCLE_SECONDS = 2;
 // Continuous gears remain trackable; brief escapement/indexing impulses may
@@ -142,6 +143,7 @@ export function applyDisplayTiming(
   movement,
   displayCycleSeconds = DEFAULT_DISPLAY_CYCLE_SECONDS,
 ) {
+  applySourcePresentation(model, movement);
   const authoredCyclePeriod = authoredCyclePeriodFor(model, movement);
   const targetCycleDuration = positiveFinite(displayCycleSeconds)
     ?? DEFAULT_DISPLAY_CYCLE_SECONDS;

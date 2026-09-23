@@ -1354,82 +1354,8 @@ function grahamDeadbeatPendulumEscapement(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'fixed-Graham-clock-frame';
-  const anchorBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.34, 0.075, 10, 40),
-    frameMaterial,
-  );
-  anchorBearing.position.set(anchorPivot.x, anchorPivot.y, -0.4);
-  anchorBearing.userData.role = 'fixed-pallet-arbor-bearing';
-  const wheelBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.31, 0.07, 10, 38),
-    frameMaterial,
-  );
-  wheelBearing.position.set(0, 0, -0.43);
-  wheelBearing.userData.role = 'fixed-escape-arbor-bearing';
-  // The post stands clear of the wheel and of the bob's full swing; bosses
-  // reach each bearing ring from the rear bars on the side away from the rod.
-  const rearZ = -0.84;
-  const postX = 3.05;
-  const frameBaseY = -4.3;
-  const topBarY = anchorPivot.y + 0.62;
-  const rearStandard = beamBetween(
-    new THREE.Vector3(postX, frameBaseY, rearZ),
-    new THREE.Vector3(postX, topBarY + 0.09, rearZ),
-    0.18,
-    0.2,
-    frameMaterial,
-  );
-  rearStandard.userData.role = 'rear-clock-frame-standard';
-  const topBar = beamBetween(
-    new THREE.Vector3(anchorPivot.x - 0.1, topBarY, rearZ),
-    new THREE.Vector3(postX, topBarY, rearZ),
-    0.18,
-    0.2,
-    frameMaterial,
-  );
-  topBar.userData.role = 'rear-pallet-arbor-bar';
-  const wheelBarY = 0;
-  const wheelBossX = -0.36;
-  const wheelBar = beamBetween(
-    new THREE.Vector3(wheelBossX - 0.06, wheelBarY, rearZ),
-    new THREE.Vector3(postX, wheelBarY, rearZ),
-    0.16,
-    0.2,
-    frameMaterial,
-  );
-  wheelBar.userData.role = 'rear-escape-arbor-bar';
-  const bossLength = (bearingZ) => bearingZ - rearZ;
-  const anchorBoss = cylinderAlongZ(0.06, bossLength(-0.4), frameMaterial, 16);
-  anchorBoss.position.set(anchorPivot.x, anchorPivot.y + 0.36, (rearZ - 0.4) / 2);
-  anchorBoss.userData.role = 'pallet-bearing-boss';
-  const anchorDrop = beamBetween(
-    new THREE.Vector3(anchorPivot.x, anchorPivot.y + 0.3, rearZ),
-    new THREE.Vector3(anchorPivot.x, topBarY + 0.05, rearZ),
-    0.14,
-    0.2,
-    frameMaterial,
-  );
-  anchorDrop.userData.role = 'rear-pallet-arbor-hanger';
-  const wheelBoss = cylinderAlongZ(0.06, bossLength(-0.43), frameMaterial, 16);
-  wheelBoss.position.set(wheelBossX, wheelBarY, (rearZ - 0.43) / 2);
-  wheelBoss.userData.role = 'escape-bearing-boss';
-  const frameBase = new THREE.Mesh(
-    new THREE.BoxGeometry(6.4, 0.22, 0.72),
-    frameMaterial,
-  );
-  frameBase.position.set(0, frameBaseY, -0.66);
-  frameBase.userData.role = 'Graham-clock-frame-base';
-  fixedFrame.add(
-    anchorBearing,
-    wheelBearing,
-    rearStandard,
-    topBar,
-    anchorDrop,
-    wheelBar,
-    anchorBoss,
-    wheelBoss,
-    frameBase,
-  );
+  // Brown's plate shows no frame or bearings; fixedFrame stays an empty group
+  // so the arbors read as they are drawn.
 
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.11, 18, 13),
@@ -1734,35 +1660,27 @@ function grahamDeadbeatPendulumEscapement(movement) {
   root.userData.blocks = {
     anchor,
     anchorArms,
-    anchorBearing,
     anchorPivotHub,
     contactMarker,
     escapeWheel,
     fixedFrame,
-    frameBase,
     leftPallet,
     pendulumBob,
     pendulumIndex,
     pendulumRod,
     pivotCap,
-    rearStandard,
     rightPallet,
     anchorArbor,
-    anchorBoss,
-    topBar,
-    wheelBar,
-    wheelBoss,
     spokeMeshes,
     toothedRim,
-    wheelBearing,
     wheelHub,
     wheelIndex,
     wheelRotor,
     wheelShaft,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.25, -4.25, -1.1),
-    new THREE.Vector3(3.25, 4.35, 1.1),
+    new THREE.Vector3(-3.1, -4.05, -0.8),
+    new THREE.Vector3(3.1, 4.3, 0.8),
   );
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.geometry = {

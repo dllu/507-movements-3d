@@ -5915,14 +5915,14 @@
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default/oblique production views inspected beside the engraving after the saw-tooth and pallet-side correction."
+        "note": "Re-inspected after cup crown, flat tooth shading, frame removal and mirroring to Brown’s handedness; matches the plate’s oblique view."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/verge-crown-family-review.md",
         "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Plain rectangular pallets instead of hooked flags A; added frame. Prescribed verge motion with ideal drops; impact and friction unsolved.",
+      "flaws": "Crown teeth taller than drawn (about 0.45 vs 0.28 of the radius); plain pallets instead of hooked flags A. Prescribed verge motion with ideal drops; impact and friction unsolved.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
@@ -7516,14 +7516,14 @@
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default/oblique production views inspected beside the engraving after the saw-tooth and pallet-side correction."
+        "note": "Initial capture inspected; a user review then identified that the plate’s drum is a geared crown wheel like 26, not an escape crown."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/verge-crown-family-review.md",
         "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Source lower wheel is face-on with saw teeth; model shows the 32-pin contrate wheel horizontal. Prescribed balance motion; train and arbor clearance outside the audit.",
+      "flaws": "Wrong mechanism: the plate shows a 26-style geared crown wheel meshing a pinion under balance C, on an arbor whose loop pallets act on a face-on saw-tooth escape wheel; the model reuses 234’s verge-on-crown escapement. Reconstruction queued.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
@@ -7632,7 +7632,7 @@
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default view and crown-tooth crop inspected beside the engraving; saw-tooth handedness matches the source arrow."
+        "note": "Default view and crown-tooth crop inspected beside the engraving; re-inspected after the cup crown change (no flange below the teeth)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7661,14 +7661,14 @@
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/graham-303-anchor-review.md",
-        "note": "Default, oblique and rod-occlusion crops inspected beside the plate after the tooth, anchor and pendulum correction."
+        "note": "Re-inspected after removing the undrawn frame; default front view matches the plate."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/graham-303-anchor-review.md",
         "note": "Relative-motion screen (0.01 spacing, 257 phases) and focused 97-phase test: wheel, anchor/pendulum and frame clear. Open working-edge tubes checked only as sources."
       },
-      "flaws": "Working faces 0.014–0.030 from the nominal tip; anchor outline reconstructed from proportions, not traced; added rear frame. Pendulum, impulse and drop dynamics prescribed.",
+      "flaws": "Working faces 0.014–0.030 from the nominal tip; anchor outline reconstructed from proportions, not traced; arbors shown without a frame, as drawn. Pendulum, impulse and drop dynamics prescribed.",
       "references": [
         "docs/graham-303-anchor-review.md",
         "docs/verge-crown-family-review.md",

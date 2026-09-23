@@ -100,9 +100,9 @@ test('movement 303 is one clockwise deadbeat wheel and one pendulum-carried two-
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   near(cameraDistanceScale, 1.08, 0, 'source-complete camera scale');
   vectorNear(cameraFitBounds.min,
-    new THREE.Vector3(-3.25, -4.25, -1.1), 0, 'camera minimum');
+    new THREE.Vector3(-3.1, -4.05, -0.8), 0, 'camera minimum');
   vectorNear(cameraFitBounds.max,
-    new THREE.Vector3(3.25, 4.35, 1.1), 0, 'camera maximum');
+    new THREE.Vector3(3.1, 4.3, 0.8), 0, 'camera maximum');
   assert.ok(model.cameraDirection.z > 10 * Math.abs(model.cameraDirection.x));
   assert.ok(model.cameraDirection.z > 10 * Math.abs(model.cameraDirection.y));
   disposeModel(model.root);

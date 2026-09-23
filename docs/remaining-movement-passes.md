@@ -22,6 +22,15 @@ without finite reviews queues 311's planar diamond arms and 300/301's thin
 hooked Debaufre teeth and side-on 301 framing; their intersection status
 remains unknown until audited.
 
+`AGENTS.md` now asks each movement to match its engraving: initial camera
+angle, part shapes, and no parts the plate does not show. Movements whose
+factories are not otherwise being edited can use the data-only
+[source presentation](../src/data/source-presentation.js) table (upright
+rotation, plate view direction, removal of undrawn parts by role), applied for
+both loading paths by `applyDisplayTiming`; re-measure display profiles after
+changing an entry. 234 is the first entry; 234 and 303 also lost their undrawn
+frames.
+
 A new relative-motion screen, `scripts/screen-body-intersections.mjs`, groups
 meshes into rigid bodies by constant relative transforms and checks closed
 meshes of different bodies for sampled penetration. It separates coaxial

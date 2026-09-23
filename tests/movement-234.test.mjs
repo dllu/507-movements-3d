@@ -76,8 +76,9 @@ test('movement 234 is one odd-tooth crown wheel and one two-pallet verge', () =>
   assert.equal(blocks.crownWheel.userData.teeth, 13);
   assert.equal(blocks.crownWheel.userData.toothMeshes.length, 13);
   assert.equal(blocks.crownWheel.userData.toothTips.length, 13);
-  assert.equal(blocks.bearings.length, 2);
-  assert.equal(blocks.frameBeams.length, 7);
+  // Brown draws no frame or bearings.
+  assert.equal(blocks.bearings.length, 0);
+  assert.equal(blocks.frameBeams.length, 0);
   near(
     blocks.crownWheel.userData.axis.dot(blocks.verge.userData.axis),
     0,
@@ -533,15 +534,20 @@ test('movement 234 renderer binds the wheel, verge, pallets, and contacts', () =
     blocks.crownWheel.userData.indicator.userData.role,
     'crown-wheel-rotation-witness',
   );
+  // Measure the assembly in its own frame, before the source presentation
+  // turns it upright.
+  const presented = model.root.quaternion.clone();
+  model.root.quaternion.identity();
   model.root.updateMatrixWorld(true);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
+  model.root.quaternion.copy(presented);
   assert.ok(size.x > 7.2);
   assert.ok(size.y > 5);
   assert.ok(size.z > 4.2);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 50);
+  assert.ok(meshCount >= 30);
   disposeModel(model.root);
 });
 
