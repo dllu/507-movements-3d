@@ -3963,9 +3963,9 @@
       "intersections": {
         "status": "known",
         "evidence": "docs/movement-137.md",
-        "note": "Interpolated contact clearance is tested, but a complete independently documented assembly intersection audit was not found. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fork boss runs 0.250 coaxially over its fixed shaft; the rolling wheels overlap their pins by 0.232 and the lower link by 0.240; the fork arms overlap the shaft by 0.184. The invisible stroke envelope is excluded as a fluid."
+        "note": "Interpolated contact clearance is tested, but a complete independently documented assembly intersection audit was not found. Pass-50 relative-motion screen (0.01 spacing, 129 poses) of the synchronous authored-cams model, not the production baked geometry from src/simulation/mujoco-expansion-eccentric/geometry.js: after boring its fork boss and rollers, the fork arms still run 0.184 into the pivot shaft, the eccentric overlaps the outer bow by 0.151, and the stretchable valve link overlaps itself and the wrist pin by up to 0.171. The production baked geometry is not screened."
       },
-      "flaws": "The screen shows an unbored fork boss and rollers overlapping by up to 0.25. Right-hand eye and hanging rod reduced to a pivot disk. Rollers shifted 12 pixels outward each to clear cam; hidden cam arcs, inertia and unloaded valve rod inferred.",
+      "flaws": "The synchronous model's fork arms, eccentric and valve link overlap by up to 0.184; the production baked geometry is unscreened. Right-hand eye and hanging rod reduced to a pivot disk. Rollers shifted 12 pixels outward each to clear cam; hidden cam arcs, inertia and unloaded valve rod inferred.",
       "references": [
         "docs/movement-137.md",
         "docs/review-progress.md",
@@ -3993,7 +3993,7 @@
       "intersections": {
         "status": "known",
         "evidence": "docs/movement-138.md",
-        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm now ends at its bearing ring instead of running 0.169 into the input shaft; the resting point still enters the cam edge by 0.093 at one sampled pose. The invisible stroke envelope is excluded as a fluid."
+        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm now ends at its bearing ring instead of running 0.169 into the input shaft; the resting point still enters the cam edge by 0.093 at one sampled pose. The invisible stroke envelope is excluded as a fluid. Rebaked with the saved options (timestep 0.00025, period 8, 128 samples per arc); the motion is unchanged (9301 samples, 0.063 px penetration)."
       },
       "flaws": "The resting point enters the cam edge by 0.093 at one sampled pose. Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
       "references": [

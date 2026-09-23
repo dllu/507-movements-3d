@@ -2,6 +2,7 @@ import { makeSpringRackCoil } from './spring-rack-coil.js';
 import { sphericalFaceFollower } from './spherical-face-follower.js';
 import { bowedValveYoke, rectangularGuideShoe } from './reuleaux-yoke-hardware.js';
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {makeEccentricStrap} from './eccentric-strap.js';
 import {
   PALETTE,
@@ -58,6 +59,18 @@ function planarRotor() {
   root.userData.axis = Z_AXIS.clone();
   root.userData.rotor = rotor;
   return root;
+}
+
+function boredCylinderAlongZ(radius, length, boreRadius, material, segments = 28) {
+  const cylinder = new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -length / 2, radial: radius },
+      { axial: length / 2, radial: radius },
+    ], boreRadius, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
 }
 
 function cylinderAlongZ(radius, length, material, segments = 28) {
@@ -8769,7 +8782,9 @@ function frenchExpansionEccentricValveFork() {
   ], 'outer-bow-rigidly-joining-both-fork-arms');
   fork.add(upperForkArm, lowerForkArm, outerForkBow);
 
-  const forkPivotBoss = cylinderAlongZ(0.46, 0.5, drivenMaterial, 48);
+  const forkPivotShaftRadius = 0.19;
+  const forkPivotBoss = boredCylinderAlongZ(0.46, 0.5,
+    forkPivotShaftRadius + 0.012, drivenMaterial, 48);
   forkPivotBoss.position.z = contactPlaneZ;
   forkPivotBoss.userData.role = 'rocking-boss-of-fork-at-fixed-right-pivot';
   const forkPivotRim = new THREE.Mesh(
@@ -8786,6 +8801,7 @@ function frenchExpansionEccentricValveFork() {
   forkMotionIndex.userData.role = 'rocking-index-on-fork-pivot-boss';
   fork.add(forkPivotBoss, forkPivotRim, forkMotionIndex);
 
+  const rollerPinRadius = 0.11;
   const makeForkRoller = (side) => {
     const roller = planarRotor();
     const localCenter = rollerLocalCenters[side];
@@ -8794,9 +8810,10 @@ function frenchExpansionEccentricValveFork() {
     roller.userData.rollerFollower = true;
     roller.userData.side = side;
     const rollerRotor = roller.userData.rotor;
-    const wheel = cylinderAlongZ(
+    const wheel = boredCylinderAlongZ(
       rollerRadius,
       0.48,
+      rollerPinRadius + 0.012,
       rollerMaterial,
       48,
     );
@@ -8815,7 +8832,7 @@ function frenchExpansionEccentricValveFork() {
     index.position.set(rollerRadius * 0.51, 0, 0.28);
     index.userData.role = `${side}-roller-no-slip-rotation-index`;
     rollerRotor.add(wheel, rim, index);
-    const pin = cylinderAlongZ(0.11, 0.86, darkMaterial, 28);
+    const pin = cylinderAlongZ(rollerPinRadius, 0.86, darkMaterial, 28);
     pin.position.z = 0.02;
     pin.userData.role = `${side}-fixed-pin-carrying-contact-roller`;
     roller.add(pin);
@@ -8904,7 +8921,7 @@ function frenchExpansionEccentricValveFork() {
     { thickness: 0.16, depth: 0.24, color: PALETTE.frame },
   );
   pivotSupport.userData.role = 'fixed-upright-support-of-fork-pivot';
-  const fixedPivotShaft = cylinderAlongZ(0.19, 1.45, darkMaterial, 32);
+  const fixedPivotShaft = cylinderAlongZ(forkPivotShaftRadius, 1.45, darkMaterial, 32);
   fixedPivotShaft.position.set(forkPivot.x, forkPivot.y, 0.02);
   fixedPivotShaft.userData.role = 'fixed-shaft-through-rocking-fork-boss';
   const fixedPivotBearing = new THREE.Mesh(
