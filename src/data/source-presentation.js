@@ -488,4 +488,28 @@ export default {
     remove: ['fixed-main-bearing-support-leg-(left|right)', 'fixed-feathering-wheel-base', 'fixed-water-volume-under-feathering-buckets', 'fixed-waterline-crossed-edgewise-by-upright-buckets', 'fixed-negative-x-feathering-wheel-wake-path-\\d', 'negative-x-water-marker-\\d-\\d'],
     note: 'Front elevation of the feathering wheel, eccentric e, ring d and cranks c; no stand, base or water is drawn.',
   },
+  491: {
+    camera: [0.05, 0.08, 1],
+    note: 'Side elevation of the capstan, pawls and bars, as Brown draws it.',
+  },
+  492: {
+    remove: ['fixed-boat-deck-carrying-fore-and-aft-standards', 'fixed-boat-side-rail-(1|2)'],
+    note: 'The disengaging hooks, tongues and levers on their standards; no boat deck or rails are drawn.',
+  },
+  496: {
+    remove: ['fixed-throstle-bed', 'fixed-drawing-roll-bearing-standard'],
+    note: 'The drawing rolls A, B and the flyer spindle; no bed or standards are drawn.',
+  },
+  501: {
+    remove: ['fixed-barometer-support-base', 'fixed-barometer-back-support'],
+    note: 'The siphon tube and its scale; no stand or backboard is drawn.',
+  },
+  504: {
+    camera: [0.05, 0.08, 1],
+    note: 'Side elevation of the wheels A, B, the pinions and the arm, as Brown draws it.',
+  },
+  507: {
+    camera: [0.05, 0.08, 1],
+    note: 'Front elevation of the wheels E, F, G, H, the worm C and the arm m n, as Brown draws it.',
+  },
 };

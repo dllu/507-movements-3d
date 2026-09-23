@@ -548,3 +548,25 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 488 | Presented without the undrawn pedestals, base and water; faithful screw propeller. |
 | 489 | Front elevation without the undrawn stand, base and water; faithful eccentric e, ring d, cranks c and buckets a. |
 | 490 | Faithful band, pulleys and lever. |
+
+## Pass 50 batch: 491–507
+
+| Movement | Observation |
+| --- | --- |
+| 491 | Side elevation, as Brown draws it; faithful capstan head, barrel, bars and pawls. |
+| 492 | Presented without the undrawn boat deck and rails; faithful hook, tongue and lever. The model carries two hooks where Brown draws one. |
+| 493 | Faithful lewis in the stone block. |
+| 494 | Faithful nippers, links and stone. |
+| 495 | Faithful bevel wheels B, C, C', the boss D and the pedestal. |
+| 496 | Presented without the undrawn bed and standards; faithful rolls A, B, flyer and spindle. |
+| 497 | Faithful fan casing and blades. |
+| 498 | Faithful U-gauge, cock and scale. |
+| 499 | Faithful Bourdon tube B, sector, pinion and dial. |
+| 500 | Faithful diaphragm gauge; Brown also draws a section. |
+| 501 | Presented without the undrawn stand and backboard; faithful siphon tube and scale. |
+| 502 | Faithful wheels B, F, D and the arm. |
+| 503 | Faithful bevel wheels C, D, B and the arm F. |
+| 504 | Side elevation, as Brown draws it; faithful wheels A, B, the pinions and the arm. |
+| 505 | Faithful annulus, wheels A, B and the arm D. |
+| 506 | Faithful frame, bevel wheels and handle A. |
+| 507 | Front elevation, as Brown draws it; faithful wheels E, F, G, H, the wheel C and the arm m n. |
