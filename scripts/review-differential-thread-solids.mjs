@@ -21,6 +21,6 @@ for(const id of(process.env.IDS??'260,266,275').split(',').map(Number)){
  }
  results.push(row);console.log(JSON.stringify(row));disposeObject3D(model.root);
 }
-const sources=['src/simulation/authored-differential-drives.js','src/simulation/authored-differential-screws.js','src/simulation/authored-worm-racks.js','src/simulation/differential-thread-solids.js','src/simulation/mujoco-screw/thread-geometry.js','src/simulation/bored-lathe-geometry.js','src/simulation/primitives.js','src/simulation/authored-gears.js'];
+const sources=['src/simulation/authored-differential-drives.js','src/simulation/authored-differential-screws.js','src/simulation/authored-worm-racks.js','src/simulation/differential-thread-solids.js','src/simulation/mujoco-screw/thread-geometry.js','src/simulation/bored-lathe-geometry.js','src/simulation/primitives.js'];
 fs.writeFileSync(process.env.REPORT??'docs/validation/260-266-275-thread-solids.json',JSON.stringify({sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),method:'Rendered mating-thread and tooth vertices, edge midpoints and triangle centers tested bidirectionally against BVH containment across the complete programmed cycle. Distances capped at .02 local units. Housings, shafts and collars are excluded from this selected working-surface audit. Rack teeth outside the worm axial range are inactive.',results},null,2)+'\n');
 if(results.some(r=>r.penetrations))process.exitCode=1;

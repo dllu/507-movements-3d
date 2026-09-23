@@ -2,7 +2,7 @@
   "method": "205 and209: actual rendered tooth/body triangle projections,513interleaved full-input-turn poses; 205compares each axialcam/toothrow separately. 208: actual pin vertices/edge-midpoints/trianglecenters against triangleBVH of selected pinion and web,99running+68stoppedselectorposes; shaftbores have separate finite tests. Sampled geometric evidence, not continuous force closure.",
   "sources": [
     {
-      "file": "src/simulation/authored-gears.js",
+      "file": "src/simulation/authored-gears-core.js",
       "functions": [
         "splitTwoCamInvolutePinionDrive",
         "threeRatioPinWheelAndSlidingSlottedPinion",
@@ -44,7 +44,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ],
   "planar": [

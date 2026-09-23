@@ -7574,16 +7574,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/debaufre-300-301-review.md",
+        "note": "Default and oblique production views inspected beside the plate after the thin hooked-tooth and carved-pallet correction."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/debaufre-300-301-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases: escape wheels and swept-cut D pallet clear; focused 161-phase test with an uncarved-pallet negative control."
       },
-      "flaws": "Teeth much broader than Brown’s thin hooked teeth; spokes read as loose sticks. Finite pallet/tooth intersections not audited.",
+      "flaws": "Tip lifts off the carved flange by up to 0.04 late in each impulse (prescribed easing); pallet 0.67 thick vs Brown’s about 0.28; lobed hub boss omitted. Motion prescribed.",
       "references": [
+        "docs/debaufre-300-301-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -7603,16 +7604,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/debaufre-300-301-review.md",
+        "note": "Side-on default view inspected beside the plate: close wheel pair, spacer drum and end-on D pallet."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/debaufre-300-301-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases: escape wheels and swept-cut D pallet clear; focused 161-phase test with an uncarved-pallet negative control."
       },
-      "flaws": "Side elevation not framed side-on; wheels widely separated versus the drawn close pair. Finite pallet/tooth intersections not audited.",
+      "flaws": "D pallet tilted −42° at time 0 instead of level; spacer drum radius read from one line; perspective camera approximates the plate. Same impulse lift-off and pallet thickness as 300.",
       "references": [
+        "docs/debaufre-300-301-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -7824,16 +7826,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Default view inspected beside the plate after the swept-cut plates and removal of the undrawn frame."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
       },
-      "flaws": "Disk weights instead of balls and an added frame; otherwise faithful. Finite pallet/tooth and fork-pin intersections not audited.",
+      "flaws": "Swept cut removes nearly all of each locking nib, so locking comes from the motion law; front suspension cock added. Motion prescribed.",
       "references": [
+        "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -7853,16 +7856,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Default view inspected beside the plate after the swept-cut plates."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
       },
-      "flaws": "Faithful pallet frame and three-legged wheel. Finite lifting-pin/pallet and stop intersections not audited.",
+      "flaws": "Stops D/E reduced to about 9% of their area by the cut, leaving small slivers; locking comes from the motion law. Motion prescribed.",
       "references": [
+        "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -7882,16 +7886,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Default and oblique views inspected: now Brown’s planar diamond of straight arms."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration except a lifting-pin graze of at most 0.0001."
       },
-      "flaws": "Curved crossing 3D arms instead of Brown’s planar diamond; hard to read. Finite stop/pin intersections not audited.",
+      "flaws": "Pin leaves the lift face after about 70% of each lift (gap up to 0.059), motion law finishes it; 0.0001 pin graze. Motion prescribed.",
       "references": [
+        "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -7911,16 +7916,17 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 49,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Default view inspected beside the plate after the swept-cut plates and removal of the undrawn support frame."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/gravity-escapement-309-312-review.md",
+        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
       },
-      "flaws": "Added trapezoid frame; T-headed teeth approximate the stops. Finite lift/stop intersections not audited.",
+      "flaws": "Straight spokes with T-heads approximate Brown’s stops; straight-box pallet-wheel teeth lift at their tip corners. Motion prescribed.",
       "references": [
+        "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",

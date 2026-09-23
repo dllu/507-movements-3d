@@ -11,5 +11,5 @@ for(const id of[191,196,201]){
  const poses=Array.from({length:513},(_,i)=>{m.update(period*(i===512?1:(i+.371)/512));m.root.updateMatrixWorld(true);const e=a.userData.rotor.matrixWorld.clone().invert().multiply(bb.userData.rotor.matrixWorld).elements;return[e[0],e[4],e[1],e[5],e[12],e[13]];});
  results.push({id,period,trianglesA:project(partsA),trianglesB:project(partsB),poses});
 }
-const files=['src/simulation/authored-gears.js','src/simulation/irregular-gear-family.js','src/simulation/generated-irregular-gear-profiles.js','src/simulation/band-epicyclic-geometry.js','src/simulation/primitives.js','scripts/review-irregular-gear-contact.mjs','scripts/review-irregular-gear-contact.py'];
+const files=['src/simulation/authored-gears.js','src/simulation/authored-gears-core.js','src/simulation/miter-gear.js','src/simulation/irregular-gear-family.js','src/simulation/generated-irregular-gear-profiles.js','src/simulation/band-epicyclic-geometry.js','src/simulation/primitives.js','scripts/review-irregular-gear-contact.mjs','scripts/review-irregular-gear-contact.py'];
 fs.writeFileSync('/dev/shm/irregular-contact-input.json',JSON.stringify({sources:files.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),results}));

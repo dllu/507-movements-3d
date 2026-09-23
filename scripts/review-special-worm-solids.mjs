@@ -33,7 +33,7 @@ for(const id of [202,264]){
  }
  disposeObject3D(model.root);
 }
-const sources=['src/simulation/special-worm-solids.js','src/simulation/special-worm-parameters.js','src/data/special-worm-wheel-profiles.js','src/simulation/solid-worm.js','src/simulation/authored-gears.js','src/simulation/authored-differential-worm-drives.js','src/simulation/instanced-worm-wheel.js','src/simulation/worm-gear-geometry.js','src/simulation/bored-worm-geometry.js'];
+const sources=['src/simulation/special-worm-solids.js','src/simulation/special-worm-parameters.js','src/data/special-worm-wheel-profiles.js','src/simulation/solid-worm.js','src/simulation/authored-gears.js','src/simulation/authored-gears-core.js','src/simulation/miter-gear.js','src/simulation/authored-differential-worm-drives.js','src/simulation/instanced-worm-wheel.js','src/simulation/worm-gear-geometry.js','src/simulation/bored-worm-geometry.js'];
 const report={movements:[202,264],poses,status:results.every(r=>r.penetrations===0)?'sampled-flanks-clear':'intersections-detected',method:'Actual rendered integral worm and every instanced closed tooth sector; bidirectional triangle vertices, edge midpoints and face centers through one complete input turn. BVH winding containment and finite triangle distances. Sampling is not continuous collision proof.',scope:'Working worm/wheel solids only; wheel hubs, pointers and shafts excluded. Distances in model coordinates before root display scaling.',results,sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
 fs.writeFileSync(process.env.REPORT??'docs/validation/202-264-worm-solids.json',JSON.stringify(report,null,2)+'\n');
 if(report.status!=='sampled-flanks-clear')process.exitCode=1;

@@ -646,9 +646,14 @@ test('movement 311 renderer follows the analytical solution and leaves movement 
       state.leftPalletAngle, 0, `left arm at phase ${phase}`);
     near(blocks.rightGravityArm.group.rotation.z,
       state.rightPalletAngle, 0, `right arm at phase ${phase}`);
-    assert.equal(blocks.wheelLiftMarker.visible,
+    assert.equal(blocks.wheelLiftMarker.userData.active,
       state.wheelStepActive);
-    assert.equal(blocks.lockMarker.visible, state.wheelLocked);
+    assert.equal(blocks.lockMarker.userData.active, state.wheelLocked);
+    for (const marker of [blocks.beatContactMarker,
+      blocks.wheelLiftMarker, blocks.lockMarker]) {
+      assert.equal(marker.visible, false,
+        `${marker.userData.role} is a diagnostic locus inside the parts`);
+    }
     assert.equal(blocks.beatContactMarker.userData.contactSide,
       state.beatContactSide);
     assert.equal(blocks.wheelLiftMarker.userData.contactSide,

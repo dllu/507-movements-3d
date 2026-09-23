@@ -4,6 +4,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { GRAVITY_ESCAPEMENT_PLATES } from './baked/gravity-escapement-plates.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -88,6 +89,152 @@ function polygonShape(points) {
   });
   shape.closePath();
   return shape;
+}
+
+// Working plates are declared in their owner's frame as unions of straight
+// bands, discs and polygons over a z slab. Their production outlines are
+// the blanks minus every other body's swept envelope, baked offline by
+// scripts/generate-gravity-escapement-plates.mjs.
+const PLATE_DISC_SEGMENTS = 36;
+const plateBand = (start, end, width) => ({
+  end: [end.x, end.y],
+  kind: 'band',
+  start: [start.x, start.y],
+  width,
+});
+const plateDisc = (center, radius) => ({
+  center: [center.x, center.y],
+  kind: 'disc',
+  radius,
+});
+const platePolygon = (points) => ({
+  kind: 'polygon',
+  points: points.map((point) => [point.x, point.y]),
+});
+const plateSector = (center, innerRadius, outerRadius, startAngle,
+  endAngle, segments = 12) => platePolygon([
+  ...Array.from({ length: segments + 1 }, (_, index) => {
+    const angle = THREE.MathUtils.lerp(startAngle, endAngle,
+      index / segments);
+    return new THREE.Vector2(
+      center.x + Math.cos(angle) * outerRadius,
+      center.y + Math.sin(angle) * outerRadius,
+    );
+  }),
+  ...Array.from({ length: segments + 1 }, (_, index) => {
+    const angle = THREE.MathUtils.lerp(endAngle, startAngle,
+      index / segments);
+    return new THREE.Vector2(
+      center.x + Math.cos(angle) * innerRadius,
+      center.y + Math.sin(angle) * innerRadius,
+    );
+  }),
+]);
+const plateStroke = (points, width) => [
+  ...points.slice(1).map((point, index) => plateBand(
+    points[index], point, width,
+  )),
+  ...points.slice(1, -1).map((point) => plateDisc(point, width / 2)),
+];
+
+function platePrimitiveRing(primitive) {
+  if (primitive.kind === 'disc') {
+    const [x, y] = primitive.center;
+    return Array.from({ length: PLATE_DISC_SEGMENTS }, (_, index) => {
+      const angle = index * FULL_TURN / PLATE_DISC_SEGMENTS;
+      return [
+        x + Math.cos(angle) * primitive.radius,
+        y + Math.sin(angle) * primitive.radius,
+      ];
+    });
+  }
+  if (primitive.kind === 'band') {
+    const [ax, ay] = primitive.start;
+    const [bx, by] = primitive.end;
+    const length = Math.hypot(bx - ax, by - ay);
+    const nx = -(by - ay) / length * primitive.width / 2;
+    const ny = (bx - ax) / length * primitive.width / 2;
+    return [
+      [ax + nx, ay + ny],
+      [bx + nx, by + ny],
+      [bx - nx, by - ny],
+      [ax - nx, ay - ny],
+    ];
+  }
+  return primitive.points.map((point) => [...point]);
+}
+
+function ringShape(outer, holes = []) {
+  const shape = polygonShape(outer.map(([x, y]) => new THREE.Vector2(x, y)));
+  for (const hole of holes) {
+    const path = new THREE.Path();
+    hole.forEach(([x, y], index) => {
+      if (index === 0) path.moveTo(x, y);
+      else path.lineTo(x, y);
+    });
+    path.closePath();
+    shape.holes.push(path);
+  }
+  return shape;
+}
+
+function createSweptPlateRegistry(movementId) {
+  const bake = GRAVITY_ESCAPEMENT_PLATES[movementId] ?? null;
+  const plates = [];
+  const add = ({ key, material, owner, primitives, role, z0, z1 }) => {
+    const baked = bake?.plates?.[key];
+    const shapes = baked?.outer?.length
+      ? [ringShape(baked.outer, baked.holes)]
+      : primitives.map((primitive) => ringShape(
+        platePrimitiveRing(primitive),
+      ));
+    const geometry = new THREE.ExtrudeGeometry(shapes, {
+      bevelEnabled: false,
+      curveSegments: 1,
+      depth: z1 - z0,
+      steps: 1,
+    });
+    geometry.translate(0, 0, z0);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = role;
+    mesh.userData.sweptPlateKey = key;
+    mesh.userData.bakedSweptCut = Boolean(baked?.outer?.length);
+    owner.add(mesh);
+    plates.push({
+      key,
+      mesh,
+      outline: baked?.outer?.length ? baked.outer : null,
+      owner,
+      primitiveRings: primitives.map(platePrimitiveRing),
+      primitives,
+      z0,
+      z1,
+    });
+    return mesh;
+  };
+  return {
+    add,
+    bakeInputHash: bake?.inputHash ?? null,
+    plates,
+    runningClearance: bake?.runningClearance ?? null,
+  };
+}
+
+function boredBearing(outerRadius, boreRadius, length, material,
+  segments = 36) {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, boreRadius, 0, FULL_TURN, true);
+  shape.holes.push(bore);
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    curveSegments: segments,
+    depth: length,
+    steps: 1,
+  });
+  geometry.translate(0, 0, -length / 2);
+  return new THREE.Mesh(geometry, material);
 }
 
 function mudgeGravityEscapement(movement) {
@@ -662,7 +809,7 @@ function mudgeGravityEscapement(movement) {
   fixedFrame.add(lowerCrossbar);
   const wheelBearingBracket = beamBetween(
     new THREE.Vector3(-2.92, wheelCenter.y, -0.56),
-    new THREE.Vector3(wheelCenter.x, wheelCenter.y, -0.56),
+    new THREE.Vector3(wheelCenter.x - 0.17, wheelCenter.y, -0.56),
     0.13,
     0.17,
     frameMaterial,
@@ -673,7 +820,7 @@ function mudgeGravityEscapement(movement) {
     const pivot = palletPivot(side);
     const bracket = beamBetween(
       new THREE.Vector3(side * 2.92, pivot.y, -0.52),
-      new THREE.Vector3(pivot.x, pivot.y, -0.52),
+      new THREE.Vector3(pivot.x + side * 0.11, pivot.y, -0.52),
       0.11,
       0.15,
       frameMaterial,
@@ -683,18 +830,51 @@ function mudgeGravityEscapement(movement) {
     fixedFrame.add(bracket);
     return bracket;
   });
+  const plateRegistry = createSweptPlateRegistry(movement.id);
+  // Journals are bored rings on the rear frame plane; the moving arbors run
+  // back through them. The pendulum hangs from a cock in front, clear of the
+  // two pallet arbors either side of its axis.
   const frameBearings = [
-    [wheelCenter, 'escape-wheel-bearing'],
-    [palletPivot(-1), 'left-independent-pallet-bearing-C'],
-    [palletPivot(1), 'right-independent-pallet-bearing-C'],
-    [pendulumPivot, 'pendulum-suspension-bearing'],
-  ].map(([point, role]) => {
-    const bearing = cylinderAlongZ(0.13, 1.08, darkMaterial, 30);
-    bearing.position.set(point.x, point.y, -0.05);
+    [wheelCenter, 'escape-wheel-bearing', -0.56, 0.21, 0.12],
+    [palletPivot(-1), 'left-independent-pallet-bearing-C', -0.52, 0.14,
+      0.085],
+    [palletPivot(1), 'right-independent-pallet-bearing-C', -0.52, 0.14,
+      0.085],
+  ].map(([point, role, z, outerRadius, boreRadius]) => {
+    const bearing = boredBearing(outerRadius, boreRadius, 0.16,
+      darkMaterial);
+    bearing.position.set(point.x, point.y, z);
     bearing.userData.role = role;
     fixedFrame.add(bearing);
     return bearing;
   });
+  const suspensionCockZ = pendulumPlaneZ + 0.20;
+  const suspensionCockTopY = palletPivotY + 0.55 + 0.15;
+  const suspensionStud = cylinderAlongZ(0.13,
+    suspensionCockZ + 0.04 - (pendulumPlaneZ - 0.12), darkMaterial, 30);
+  suspensionStud.position.set(pendulumPivot.x, pendulumPivot.y,
+    (suspensionCockZ + 0.04 + pendulumPlaneZ - 0.12) / 2);
+  suspensionStud.userData.role = 'pendulum-suspension-bearing';
+  fixedFrame.add(suspensionStud);
+  frameBearings.push(suspensionStud);
+  const suspensionCock = beamBetween(
+    new THREE.Vector3(pendulumPivot.x, pendulumPivot.y, suspensionCockZ),
+    new THREE.Vector3(pendulumPivot.x, suspensionCockTopY + 0.06,
+      suspensionCockZ),
+    0.14,
+    0.08,
+    frameMaterial,
+  );
+  suspensionCock.userData.role = 'front-pendulum-suspension-cock';
+  fixedFrame.add(suspensionCock);
+  const suspensionCockArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.12, suspensionCockZ + 0.04 + 0.65),
+    frameMaterial,
+  );
+  suspensionCockArm.position.set(pendulumPivot.x, suspensionCockTopY,
+    (suspensionCockZ + 0.04 - 0.65) / 2);
+  suspensionCockArm.userData.role = 'pendulum-cock-to-frame-arm';
+  fixedFrame.add(suspensionCockArm);
 
   const escapeWheel = new THREE.Group();
   escapeWheel.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -763,17 +943,26 @@ function mudgeGravityEscapement(movement) {
     wheelRotor.add(spoke);
     spokeMeshes.push(spoke);
   }
-  const wheelHub = cylinderAlongZ(0.30, 0.76, darkMaterial, 36);
+  // The hub stays below the half-fork layer that crosses in front of it.
+  const wheelHub = cylinderAlongZ(0.30, 0.30, darkMaterial, 36);
   wheelHub.userData.role = 'escape-wheel-hub';
   wheelRotor.add(wheelHub);
-  const wheelShaft = cylinderAlongZ(0.11, 1.20, darkMaterial, 28);
-  wheelShaft.userData.role = 'escape-wheel-fixed-axis-shaft';
-  escapeWheel.add(wheelShaft);
+  const wheelShaftRearZ = -0.68;
+  const wheelShaftFrontZ = 0.15;
+  const wheelShaft = cylinderAlongZ(0.11,
+    wheelShaftFrontZ - wheelShaftRearZ, darkMaterial, 28);
+  wheelShaft.position.z = (wheelShaftFrontZ + wheelShaftRearZ) / 2;
+  wheelShaft.userData.role = 'escape-wheel-arbor';
+  wheelRotor.add(wheelShaft);
   const wheelPhaseWitness = new THREE.Mesh(
     new THREE.SphereGeometry(0.09, 16, 12),
     markerMaterial,
   );
-  wheelPhaseWitness.position.set(toothTipRadius - 0.15, 0, 0.23);
+  wheelPhaseWitness.position.set(
+    Math.cos(Math.PI / 4) * 0.95,
+    Math.sin(Math.PI / 4) * 0.95,
+    0.06,
+  );
   wheelPhaseWitness.userData.role = 'white-wheel-phase-witness';
   wheelRotor.add(wheelPhaseWitness);
 
@@ -799,76 +988,82 @@ function mudgeGravityEscapement(movement) {
       );
       return lockFaceLocalPointAt(side, magnitude);
     });
-    const liftFace = edgeTube(
-      liftFacePoints,
-      -0.02,
-      0.050,
-      darkMaterial,
-      `${sideName}-tooth-lifting-acting-face`,
+    // Working layer: the lift pad and the nib span the tooth slab and are
+    // shaped by the swept teeth. Arm layer: the arm, backing, half-fork and
+    // weight stem lie in front of the teeth and behind the pendulum.
+    const workingZ0 = -0.10 - palletPlaneZ;
+    const workingZ1 = 0.18 - palletPlaneZ;
+    const armZ1 = 0.32 - palletPlaneZ;
+    const localWheelCenter = palletLocalPoint(side, wheelCenter,
+      cockedMagnitude);
+    const radialOffset = (point, distance) => point.clone().add(
+      point.clone().sub(localWheelCenter).normalize()
+        .multiplyScalar(distance),
     );
-    const lockFace = edgeTube(
-      lockFacePoints,
-      -0.02,
-      0.054,
-      markerMaterial,
-      `${sideName}-short-nib-locking-face`,
-    );
-    group.add(liftFace, lockFace);
+    const padPath = liftFacePoints.filter((_, index) => index % 4 === 0);
+    const liftFace = plateRegistry.add({
+      key: `${side > 0 ? 'right' : 'left'}-lift-pad`,
+      material: darkMaterial,
+      owner: group,
+      primitives: [platePolygon([
+        ...padPath.map((point) => radialOffset(point, 0.24)),
+        ...padPath.slice().reverse().map((point) => radialOffset(point,
+          -0.12)),
+      ])],
+      role: `${sideName}-tooth-lifting-acting-face`,
+      z0: workingZ0,
+      z1: workingZ1,
+    });
+    const lockAngle = lockAngleForSide(side);
+    const nibSector = plateSector(wheelCenter, toothTipRadius - 0.12,
+      toothTipRadius + 0.24,
+      lockAngle - THREE.MathUtils.degToRad(6),
+      lockAngle + THREE.MathUtils.degToRad(1), 8);
+    const lockingNib = plateRegistry.add({
+      key: `${side > 0 ? 'right' : 'left'}-nib`,
+      material: markerMaterial,
+      owner: group,
+      primitives: [platePolygon(nibSector.points.map(([x, y]) => (
+        palletLocalPoint(side, new THREE.Vector2(x, y), cockedMagnitude)
+      )))],
+      role: `${sideName}-terminal-locking-nib`,
+      z0: workingZ0,
+      z1: workingZ1,
+    });
 
     const faceJoin = liftFacePoints.at(-1);
-    const arm = beamBetween(
-      new THREE.Vector3(0, 0, 0.04),
-      new THREE.Vector3(
-        faceJoin.x - side * 0.06,
-        faceJoin.y + 0.10,
-        0.04,
-      ),
-      0.14,
-      palletDepth,
-      palletMaterial,
-    );
-    arm.userData.role = `${sideName}-pallet-arm-C`;
-    group.add(arm);
-    const faceBacking = beamBetween(
-      new THREE.Vector3(
-        liftFacePoints[0].x - side * 0.04,
-        liftFacePoints[0].y + 0.03,
-        0.035,
-      ),
-      new THREE.Vector3(
-        faceJoin.x - side * 0.05,
-        faceJoin.y + 0.04,
-        0.035,
-      ),
-      0.13,
-      palletDepth,
-      palletMaterial,
-    );
-    faceBacking.userData.role = `${sideName}-acting-face-backing`;
-    group.add(faceBacking);
-    const nibEnd = lockFacePoints[0].clone().add(
-      new THREE.Vector2(side * 0.15, 0.10),
-    );
-    const lockingNib = beamBetween(
-      new THREE.Vector3(lockFacePoints[0].x, lockFacePoints[0].y, -0.01),
-      new THREE.Vector3(nibEnd.x, nibEnd.y, -0.01),
-      0.10,
-      palletDepth * 1.02,
-      darkMaterial,
-    );
-    lockingNib.userData.role = `${sideName}-terminal-locking-nib`;
-    group.add(lockingNib);
-
+    const padStartBack = radialOffset(liftFacePoints[0], 0.16);
+    const padEndBack = radialOffset(faceJoin, 0.16);
+    const nibBackAngle = lockAngle - THREE.MathUtils.degToRad(4);
+    const nibBack = palletLocalPoint(side, wheelCenter.clone().add(
+      new THREE.Vector2(Math.cos(nibBackAngle), Math.sin(nibBackAngle))
+        .multiplyScalar(toothTipRadius + 0.14),
+    ), cockedMagnitude);
     const forkPoint = forkLocalPoint(side);
-    const forkRod = beamBetween(
-      new THREE.Vector3(side * 0.025, -0.05, 0.05),
-      new THREE.Vector3(forkPoint.x, forkPoint.y, 0.05),
-      0.115,
-      0.14,
-      palletMaterial,
+    const weightPoint = weightLocalPoint(side);
+    const armPoint = new THREE.Vector2(
+      side * Math.abs(faceJoin.x) * 0.55,
+      faceJoin.y * 0.55,
     );
-    forkRod.userData.role = `${sideName}-independent-half-fork`;
-    group.add(forkRod);
+    const arm = plateRegistry.add({
+      key: `${side > 0 ? 'right' : 'left'}-arms`,
+      material: palletMaterial,
+      owner: group,
+      primitives: [
+        plateBand(new THREE.Vector2(0, 0), padEndBack, 0.14),
+        plateBand(padStartBack, nibBack, 0.13),
+        plateDisc(padEndBack, 0.09),
+        plateBand(new THREE.Vector2(0, 0), forkPoint, 0.115),
+        plateDisc(forkPoint, 0.13),
+        plateBand(armPoint, weightPoint, 0.105),
+        plateDisc(new THREE.Vector2(0, 0), 0.15),
+      ],
+      role: `${sideName}-pallet-arm-C`,
+      z0: workingZ1,
+      z1: armZ1,
+    });
+    const faceBacking = arm;
+    const forkRod = arm;
     const forkPin = cylinderAlongZ(
       forkPinRadius,
       0.72,
@@ -880,46 +1075,23 @@ function mudgeGravityEscapement(movement) {
     forkPin.userData.role = `${sideName}-fork-pin-${side > 0 ? 'P' : 'Q'}`;
     group.add(forkPin);
 
-    const weightPoint = weightLocalPoint(side);
-    const armPoint = new THREE.Vector2(
-      side * Math.abs(faceJoin.x) * 0.55,
-      faceJoin.y * 0.55,
+    const weightStem = arm;
+    // Brown draws the weights as balls on the pallet stems.
+    const weight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.30, 32, 20),
+      weightMaterial,
     );
-    const weightStem = beamBetween(
-      new THREE.Vector3(armPoint.x, armPoint.y, 0.05),
-      new THREE.Vector3(weightPoint.x, weightPoint.y, 0.05),
-      0.105,
-      0.14,
-      palletMaterial,
-    );
-    weightStem.userData.role = `${sideName}-weight-stem`;
-    group.add(weightStem);
-    const weight = cylinderAlongZ(0.34, 0.25, weightMaterial, 40);
-    weight.position.set(weightPoint.x, weightPoint.y, 0.05);
+    weight.position.set(weightPoint.x, weightPoint.y,
+      (workingZ1 + armZ1) / 2);
     weight.userData.mass = palletWeightMass;
     weight.userData.role = `${sideName}-gravity-impulse-weight`;
     group.add(weight);
-    const weightWitness = new THREE.Mesh(
-      new THREE.SphereGeometry(0.055, 14, 10),
-      markerMaterial,
-    );
-    weightWitness.position.set(
-      weightPoint.x + side * 0.18,
-      weightPoint.y + 0.13,
-      0.20,
-    );
-    weightWitness.userData.role = `${sideName}-weight-motion-witness`;
-    group.add(weightWitness);
 
-    const pivotEye = new THREE.Mesh(
-      new THREE.TorusGeometry(0.16, 0.048, 10, 32),
-      palletMaterial,
-    );
-    pivotEye.position.z = 0.08;
-    pivotEye.userData.role = `${sideName}-separate-arbor-eye-C`;
-    group.add(pivotEye);
-    const arborHub = cylinderAlongZ(0.075, 0.54, darkMaterial, 24);
-    arborHub.position.z = 0.02;
+    const arborRearZ = -0.62 - palletPlaneZ;
+    const arborFrontZ = armZ1 - 0.02;
+    const arborHub = cylinderAlongZ(0.075, arborFrontZ - arborRearZ,
+      darkMaterial, 24);
+    arborHub.position.z = (arborFrontZ + arborRearZ) / 2;
     arborHub.userData.role = `${sideName}-independent-arbor-C`;
     group.add(arborHub);
 
@@ -932,13 +1104,10 @@ function mudgeGravityEscapement(movement) {
       group,
       liftFace,
       liftFacePoints,
-      lockFace,
       lockFacePoints,
       lockingNib,
-      pivotEye,
       weight,
       weightStem,
-      weightWitness,
     };
   };
 
@@ -955,7 +1124,7 @@ function mudgeGravityEscapement(movement) {
   pendulumAssembly.userData.role = 'free-pendulum-between-fork-pins-P-Q';
   root.add(pendulumAssembly);
   const pendulumRod = beamBetween(
-    new THREE.Vector3(0, -0.08, 0),
+    new THREE.Vector3(0, -0.17, 0),
     new THREE.Vector3(0, -7.92, 0),
     pendulumRodRadius * 2,
     0.17,
@@ -994,6 +1163,12 @@ function mudgeGravityEscapement(movement) {
   );
   lockMarker.userData.role = 'live-tooth-against-terminal-nib';
   root.add(lockMarker);
+  // Contact loci sit inside the working parts; they stay positioned for
+  // diagnostics but never render.
+  for (const marker of [forkContactMarker, wheelLiftMarker, lockMarker]) {
+    marker.visible = false;
+    marker.userData.diagnosticOnly = true;
+  }
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -1008,28 +1183,29 @@ function mudgeGravityEscapement(movement) {
       pendulumPlaneZ + 0.12,
     );
     forkContactMarker.userData.contactError = state.forkContactError;
+    forkContactMarker.userData.active = true;
     forkContactMarker.userData.contactSide = state.forkContactSide;
     forkContactMarker.userData.gravityImpulseActive =
       state.effectiveGravityImpulseActive;
 
-    wheelLiftMarker.visible = state.wheelStepActive;
+    wheelLiftMarker.userData.active = state.wheelStepActive;
     if (state.activeLiftPoint) {
       wheelLiftMarker.position.set(
         state.activeLiftPoint.x,
         state.activeLiftPoint.y,
-        palletPlaneZ + 0.13,
+        0,
       );
     }
     wheelLiftMarker.userData.contactError = state.liftContactError;
     wheelLiftMarker.userData.contactSide = state.activeLiftSide;
     wheelLiftMarker.userData.toothIndex = state.activeLiftToothIndex;
 
-    lockMarker.visible = state.wheelLocked;
+    lockMarker.userData.active = state.wheelLocked;
     if (state.activeLockPoint) {
       lockMarker.position.set(
         state.activeLockPoint.x,
         state.activeLockPoint.y,
-        palletPlaneZ + 0.12,
+        0,
       );
     }
     lockMarker.userData.contactError = state.lockContactError;
@@ -1055,6 +1231,8 @@ function mudgeGravityEscapement(movement) {
     pendulumRod,
     rightPallet,
     spokeMeshes,
+    suspensionCock,
+    suspensionCockArm,
     topCrossbar,
     wheelBearingBracket,
     wheelHub,
@@ -1064,6 +1242,21 @@ function mudgeGravityEscapement(movement) {
     wheelShaft,
     wheelTeeth,
   };
+  root.userData.sweptPlates = plateRegistry.plates;
+  root.userData.sweptPlateInputHash = plateRegistry.bakeInputHash;
+  root.userData.engagementContacts = (state) => ({
+    advanceSign: -1,
+    contacts: {
+      lock: state.wheelLocked ? {
+        point: state.activeLockPoint,
+        z: [-wheelDepth / 2, wheelDepth / 2],
+      } : null,
+      lift: state.wheelStepActive ? {
+        point: state.activeLiftPoint,
+        z: [-wheelDepth / 2, wheelDepth / 2],
+      } : null,
+    },
+  });
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.25, -4.18, -0.82),
@@ -1357,7 +1550,9 @@ function singleThreeLeggedGravityEscapement(movement) {
   const pendulumPeriod = 4;
   const pendulumAmplitude = THREE.MathUtils.degToRad(3);
   const pickupAngle = THREE.MathUtils.degToRad(1.2);
-  const unlockAngle = THREE.MathUtils.degToRad(1.5);
+  // Brown gives no unlocking arc. 1.8 degrees leaves a visible radial stop
+  // engagement after the swept running clearance.
+  const unlockAngle = THREE.MathUtils.degToRad(1.8);
   const pendulumRodRadius = 0.070;
   const beatPinRadius = 0.105;
   const beatContactClearance = pendulumRodRadius + beatPinRadius;
@@ -1836,9 +2031,11 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   topCrossbar.userData.role = 'upper-gravity-arm-bearing-crossbar';
   fixedFrame.add(topCrossbar);
+  const plateRegistry = createSweptPlateRegistry(movement.id);
+  const backFrameZ = -0.76;
   const wheelBearingBracket = beamBetween(
-    new THREE.Vector3(-2.30, wheelCenter.y, -0.76),
-    new THREE.Vector3(wheelCenter.x, wheelCenter.y, -0.76),
+    new THREE.Vector3(-2.30, wheelCenter.y, backFrameZ),
+    new THREE.Vector3(wheelCenter.x - 0.15, wheelCenter.y, backFrameZ),
     0.12,
     0.16,
     frameMaterial,
@@ -1854,18 +2051,28 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   suspensionBracket.userData.role = 'pendulum-suspension-bracket';
   fixedFrame.add(suspensionBracket);
+  // Journals are bored rings on the back frame plane; the moving arbors run
+  // back through them. The fixed suspension stud reaches the pendulum eye.
   const frameBearings = [
-    [wheelCenter, 'single-escape-wheel-bearing'],
-    [palletPivot(-1), 'left-gravity-arm-bearing'],
-    [palletPivot(1), 'right-gravity-arm-bearing'],
-    [pendulumPivot, 'pendulum-suspension-bearing'],
-  ].map(([point, role]) => {
-    const bearing = cylinderAlongZ(0.13, 1.36, darkMaterial, 30);
-    bearing.position.set(point.x, point.y, -0.05);
+    [wheelCenter, 'single-escape-wheel-bearing', 0.19, 0.105],
+    [palletPivot(-1), 'left-gravity-arm-bearing', 0.15, 0.083],
+    [palletPivot(1), 'right-gravity-arm-bearing', 0.15, 0.083],
+  ].map(([point, role, outerRadius, boreRadius]) => {
+    const bearing = boredBearing(outerRadius, boreRadius, 0.16,
+      darkMaterial);
+    bearing.position.set(point.x, point.y, backFrameZ);
     bearing.userData.role = role;
     fixedFrame.add(bearing);
     return bearing;
   });
+  const suspensionStudFrontZ = pendulumPlaneZ + 0.15;
+  const suspensionStud = cylinderAlongZ(0.13,
+    suspensionStudFrontZ - (backFrameZ - 0.08), darkMaterial, 30);
+  suspensionStud.position.set(pendulumPivot.x, pendulumPivot.y,
+    (suspensionStudFrontZ + backFrameZ - 0.08) / 2);
+  suspensionStud.userData.role = 'pendulum-suspension-bearing';
+  fixedFrame.add(suspensionStud);
+  frameBearings.push(suspensionStud);
 
   const escapeWheel = new THREE.Group();
   escapeWheel.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -1908,12 +2115,18 @@ function singleThreeLeggedGravityEscapement(movement) {
     wheelRotor.add(tip);
     lockingLegTipMeshes.push(tip);
   }
-  const wheelHub = cylinderAlongZ(0.255, 0.88, wheelMaterial, 36);
+  // The hub stays inside the leg slab so both pallet planes pass clear.
+  const wheelHub = cylinderAlongZ(0.255, lockingWheelDepth + 0.06,
+    wheelMaterial, 36);
   wheelHub.userData.role = 'single-three-legged-wheel-hub';
   wheelRotor.add(wheelHub);
-  const wheelShaft = cylinderAlongZ(0.095, 1.66, darkMaterial, 28);
+  const wheelShaftFrontZ = palletPlaneOffset - 0.09;
+  const wheelShaftRearZ = backFrameZ - 0.12;
+  const wheelShaft = cylinderAlongZ(0.095,
+    wheelShaftFrontZ - wheelShaftRearZ, darkMaterial, 28);
+  wheelShaft.position.z = (wheelShaftFrontZ + wheelShaftRearZ) / 2;
   wheelShaft.userData.role = 'single-escape-wheel-arbor';
-  escapeWheel.add(wheelShaft);
+  wheelRotor.add(wheelShaft);
   const liftingPinMeshes = [];
   for (let pinIndex = 0; pinIndex < 3; pinIndex += 1) {
     const angle = pinIndex * lockingLegPitch + liftingPinPhaseOffset;
@@ -1932,12 +2145,12 @@ function singleThreeLeggedGravityEscapement(movement) {
     new THREE.SphereGeometry(0.075, 16, 12),
     markerMaterial,
   );
-  wheelPhaseWitness.position.set(lockingLegRadius * 0.69, 0, 0.19);
+  wheelPhaseWitness.position.set(lockingLegRadius * 0.69, 0, 0.10);
   wheelPhaseWitness.userData.role = 'white-single-wheel-phase-witness';
   wheelRotor.add(wheelPhaseWitness);
 
   const flyRotor = new THREE.Group();
-  flyRotor.position.z = -0.54;
+  flyRotor.position.z = -0.61;
   flyRotor.userData.axis = Z_AXIS.clone();
   flyRotor.userData.role = 'friction-spring-fan-fly-on-escape-arbor';
   escapeWheel.add(flyRotor);
@@ -1992,71 +2205,62 @@ function singleThreeLeggedGravityEscapement(movement) {
       new THREE.Vector2(side * 1.63, wheelCenter.y - 2.55),
       new THREE.Vector2(side * beatPinWorldX, beatPinWorldY),
     ];
-    const outerBowPoints = referenceWorldPoints.map((point) => (
-      palletLocalPoint(side, point, cockedMagnitude)
-    ));
-    const outerBow = edgeTube(
-      outerBowPoints,
-      0,
-      0.105,
-      palletMaterial,
-      `${sideName}-long-inverted-gravity-arm-bow`,
-    );
-    group.add(outerBow);
-
+    // One flat arm plate in the pallet plane (bow, inward branch, tail, lift
+    // pad and arc bar), and a stop block reaching into the leg slab. Both
+    // are shaped by the swept wheel parts.
+    const sideKey = side > 0 ? 'right' : 'left';
+    const stopLetter = side > 0 ? 'E' : 'D';
+    const armHalfDepth = 0.07;
+    const toLocal = (point) => palletLocalPoint(side, point,
+      cockedMagnitude);
+    const outerBowPoints = referenceWorldPoints.map(toLocal);
+    const smoothBowPoints = new THREE.CatmullRomCurve3(
+      outerBowPoints.map((point) => new THREE.Vector3(point.x, point.y, 0)),
+      false,
+      'centripetal',
+    ).getSpacedPoints(36).map((point) => new THREE.Vector2(point.x, point.y));
     const liftFacePoints = Array.from({ length: 49 }, (_, index) => (
       liftFaceLocalPointAt(side, smootherStep(index / 48))
     ));
-    const liftFace = edgeTube(
-      liftFacePoints,
-      -side * 0.025,
-      0.050,
-      darkMaterial,
-      `${sideName}-inner-lifting-face-${side > 0 ? 'A' : 'B'}`,
-    );
-    group.add(liftFace);
-    const jawAnchorWorld = new THREE.Vector2(
-      side * 1.50,
-      wheelCenter.y + 0.18,
-    );
-    const jawAnchorLocal = palletLocalPoint(
-      side,
-      jawAnchorWorld,
-      cockedMagnitude,
-    );
+    // Raising the arm moves it along +side*perp(p) about its pivot, so the
+    // lift face backs onto that side of the pin-centre locus.
+    const padPath = liftFacePoints.filter((_, index) => index % 3 === 0);
+    const padNormals = padPath.map((point, index) => {
+      const next = padPath[Math.min(index + 1, padPath.length - 1)];
+      const previous = padPath[Math.max(index - 1, 0)];
+      const tangent = next.clone().sub(previous).normalize();
+      const normal = new THREE.Vector2(-tangent.y, tangent.x);
+      const raise = new THREE.Vector2(-point.y, point.x).multiplyScalar(side);
+      return normal.dot(raise) < 0 ? normal.negate() : normal;
+    });
+    const liftPad = platePolygon([
+      ...padPath.map((point, index) => point.clone()
+        .addScaledVector(padNormals[index], 0.22)),
+      ...padPath.map((point, index) => point.clone()
+        .addScaledVector(padNormals[index], -0.06)).reverse(),
+    ]);
+    const jawAnchorLocal = toLocal(new THREE.Vector2(side * 1.50,
+      wheelCenter.y + 0.18));
     const jawEnd = liftFacePoints[Math.floor(liftFacePoints.length / 2)];
-    const innerJaw = edgeTube(
-      [
-        jawAnchorLocal,
-        new THREE.Vector2(
-          side * Math.max(Math.abs(jawEnd.x) + 0.40, 0.72),
-          jawEnd.y + 0.30,
-        ),
-        jawEnd,
-      ],
-      0,
-      0.095,
-      palletMaterial,
-      `${sideName}-inward-branch-to-${side > 0 ? 'A' : 'B'}`,
-    );
-    group.add(innerJaw);
-    const innerTail = edgeTube(
-      [
-        liftFacePoints[0],
-        liftFacePoints[0].clone().add(
-          new THREE.Vector2(-side * 0.10, -0.48),
-        ),
-        liftFacePoints[0].clone().add(
-          new THREE.Vector2(side * 0.03, -1.02),
-        ),
-      ],
-      0,
-      0.080,
-      palletMaterial,
-      `${sideName}-inverted-inner-pallet-tail`,
-    );
-    group.add(innerTail);
-
+    const jawEndBack = jawEnd.clone().addScaledVector(
+      padNormals[Math.floor(padNormals.length / 2)], 0.14);
+    const jawPoints = [
+      jawAnchorLocal,
+      new THREE.Vector2(
+        side * Math.max(Math.abs(jawEnd.x) + 0.40, 0.72),
+        jawEnd.y + 0.30,
+      ),
+      jawEndBack,
+    ];
+    const tailPoints = [
+      liftFacePoints[0].clone().addScaledVector(padNormals[0], 0.12),
+      liftFacePoints[0].clone().add(
+        new THREE.Vector2(side * 0.02, -0.48),
+      ),
+      liftFacePoints[0].clone().add(
+        new THREE.Vector2(side * 0.13, -1.02),
+      ),
+    ];
     const lockFacePoints = Array.from({ length: 21 }, (_, index) => {
       const magnitude = THREE.MathUtils.lerp(
         cockedMagnitude,
@@ -2065,38 +2269,56 @@ function singleThreeLeggedGravityEscapement(movement) {
       );
       return lockFaceLocalPointAt(side, magnitude);
     });
-    const lockFace = edgeTube(
-      lockFacePoints,
-      side * 0.025,
-      0.052,
-      markerMaterial,
-      `${sideName}-outer-locking-stop-${side > 0 ? 'E' : 'D'}-face`,
-    );
-    group.add(lockFace);
-    const lockBackingPoint = lockFacePoints[0].clone().add(
-      new THREE.Vector2(side * 0.16, -0.03),
-    );
-    const lockBacking = beamBetween(
-      new THREE.Vector3(lockFacePoints[0].x, lockFacePoints[0].y, 0),
-      new THREE.Vector3(lockBackingPoint.x, lockBackingPoint.y, 0),
-      0.13,
-      0.16,
-      darkMaterial,
-    );
-    lockBacking.userData.role =
-      `${sideName}-stop-${side > 0 ? 'E' : 'D'}-backing`;
-    group.add(lockBacking);
+    const lockAngle = lockAngleForSide(side);
+    const lockBackLocal = toLocal(wheelCenter.clone().add(new THREE.Vector2(
+      Math.cos(lockAngle + THREE.MathUtils.degToRad(5)),
+      Math.sin(lockAngle + THREE.MathUtils.degToRad(5)),
+    ).multiplyScalar(lockingLegRadius + 0.16)));
+    const outerBow = plateRegistry.add({
+      key: `${sideKey}-arm`,
+      material: palletMaterial,
+      owner: group,
+      primitives: [
+        ...plateStroke(smoothBowPoints, 0.20),
+        ...plateStroke(jawPoints, 0.17),
+        ...plateStroke(tailPoints, 0.15),
+        liftPad,
+        plateBand(new THREE.Vector2(-side * 0.05, 0.02),
+          new THREE.Vector2(side * 1.13, 0.02), 0.12),
+        plateDisc(new THREE.Vector2(0, 0), 0.16),
+        plateDisc(outerBowPoints.at(-1), 0.15),
+        plateDisc(lockBackLocal, 0.15),
+      ],
+      role: `${sideName}-long-inverted-gravity-arm-bow-with-inner-lifting-face-${
+        side > 0 ? 'A' : 'B'}`,
+      z0: -armHalfDepth,
+      z1: armHalfDepth,
+    });
+    const liftFace = outerBow;
+    const innerJaw = outerBow;
+    const innerTail = outerBow;
+    const adjustmentBar = outerBow;
 
-    const adjustmentBar = beamBetween(
-      new THREE.Vector3(-side * 0.05, 0.02, 0),
-      new THREE.Vector3(side * 1.13, 0.02, 0),
-      0.12,
-      0.15,
-      palletMaterial,
-    );
-    adjustmentBar.userData.role =
-      `${sideName}-horizontal-pendulum-arc-adjustment`;
-    group.add(adjustmentBar);
+    const stopInnerZ = -side * palletPlaneOffset;
+    const stopOuterZ = -side * armHalfDepth;
+    const stopSector = plateSector(wheelCenter, lockingLegRadius - 0.15,
+      lockingLegRadius + 0.26, lockAngle - THREE.MathUtils.degToRad(3),
+      lockAngle + THREE.MathUtils.degToRad(10), 10);
+    const lockFace = plateRegistry.add({
+      key: `${sideKey}-stop-${stopLetter}`,
+      material: markerMaterial,
+      owner: group,
+      primitives: [
+        platePolygon(stopSector.points.map(([x, y]) => toLocal(
+          new THREE.Vector2(x, y),
+        ))),
+        plateDisc(lockBackLocal, 0.12),
+      ],
+      role: `${sideName}-outer-locking-stop-${stopLetter}-face`,
+      z0: Math.min(stopInnerZ, stopOuterZ),
+      z1: Math.max(stopInnerZ, stopOuterZ),
+    });
+    const lockBacking = lockFace;
     const adjustmentScrew = cylinderAlongZ(0.060, 0.31,
       darkMaterial, 20);
     adjustmentScrew.position.set(side * 0.82, 0.02, 0);
@@ -2138,7 +2360,11 @@ function singleThreeLeggedGravityEscapement(movement) {
     pivotEye.position.z = 0.02;
     pivotEye.userData.role = `${sideName}-separate-pallet-arbor-eye`;
     group.add(pivotEye);
-    const arborHub = cylinderAlongZ(0.073, 0.56, darkMaterial, 24);
+    const arborRearZ = backFrameZ - 0.10 - side * palletPlaneOffset;
+    const arborFrontZ = armHalfDepth + 0.02;
+    const arborHub = cylinderAlongZ(0.073, arborFrontZ - arborRearZ,
+      darkMaterial, 24);
+    arborHub.position.z = (arborFrontZ + arborRearZ) / 2;
     arborHub.userData.role = `${sideName}-pallet-arbor`;
     group.add(arborHub);
 
@@ -2176,7 +2402,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   root.add(pendulumAssembly);
   const pendulumLength = pendulumPivot.y - beatPinWorldY + 1.18;
   const pendulumRod = beamBetween(
-    new THREE.Vector3(0, -0.08, 0),
+    new THREE.Vector3(0, -0.16, 0),
     new THREE.Vector3(0, -pendulumLength, 0),
     pendulumRodRadius * 2,
     0.16,
@@ -2218,6 +2444,12 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   lockMarker.userData.role = 'live-leg-to-stop-D-or-E-contact';
   root.add(lockMarker);
+  // Contact loci sit inside the working parts; they stay positioned for
+  // diagnostics but never render.
+  for (const marker of [beatContactMarker, wheelLiftMarker, lockMarker]) {
+    marker.visible = false;
+    marker.userData.diagnosticOnly = true;
+  }
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -2232,31 +2464,32 @@ function singleThreeLeggedGravityEscapement(movement) {
       state.beatContactPoint.y,
       pendulumPlaneZ + 0.10,
     );
+    beatContactMarker.userData.active = true;
     beatContactMarker.userData.contactError = state.beatContactError;
     beatContactMarker.userData.contactSide = state.beatContactSide;
     beatContactMarker.userData.gravityImpulseActive =
       state.effectiveGravityImpulseActive;
 
-    wheelLiftMarker.visible = state.wheelStepActive;
+    wheelLiftMarker.userData.active = state.wheelStepActive;
     if (state.activeLiftPoint) {
       const side = state.activeLiftSide === 'right' ? 1 : -1;
       wheelLiftMarker.position.set(
         state.activeLiftPoint.x,
         state.activeLiftPoint.y,
-        side * palletPlaneOffset + 0.09,
+        side * palletPlaneOffset,
       );
     }
     wheelLiftMarker.userData.contactError = state.liftContactError;
     wheelLiftMarker.userData.contactSide = state.activeLiftSide;
     wheelLiftMarker.userData.pinIndex = state.activeLiftPinIndex;
 
-    lockMarker.visible = state.wheelLocked;
+    lockMarker.userData.active = state.wheelLocked;
     if (state.activeLockPoint) {
       const side = state.activeLockSide === 'right' ? 1 : -1;
       lockMarker.position.set(
         state.activeLockPoint.x,
         state.activeLockPoint.y,
-        side * palletPlaneOffset + 0.10,
+        side * lockingWheelDepth / 4,
       );
     }
     lockMarker.userData.contactError = state.lockContactError;
@@ -2293,6 +2526,30 @@ function singleThreeLeggedGravityEscapement(movement) {
     wheelPhaseWitness,
     wheelRotor,
     wheelShaft,
+  };
+  root.userData.sweptPlates = plateRegistry.plates;
+  root.userData.sweptPlateInputHash = plateRegistry.bakeInputHash;
+  root.userData.engagementContacts = (state) => {
+    const lockSide = state.activeLockSide === 'right' ? 1 : -1;
+    return {
+      advanceSign: 1,
+      contacts: {
+        lock: state.wheelLocked ? {
+          point: state.activeLockPoint,
+          radius: 0.080 - 0.025,
+          z: lockSide > 0
+            ? [0, lockingWheelDepth / 2]
+            : [-lockingWheelDepth / 2, 0],
+        } : null,
+        lift: state.wheelStepActive ? {
+          point: state.activeLiftPoint,
+          radius: 0.074,
+          z: state.activeLiftSide === 'right'
+            ? [palletPlaneOffset - 0.05, palletPlaneOffset + 0.05]
+            : [-palletPlaneOffset - 0.05, -palletPlaneOffset + 0.05],
+        } : null,
+      },
+    };
   };
   root.userData.cameraDistanceScale = 1.17;
   root.userData.cameraFitBounds = new THREE.Box3(
@@ -2596,7 +2853,9 @@ function doubleThreeLeggedGravityEscapement(movement) {
   const pendulumPeriod = 4;
   const pendulumAmplitude = THREE.MathUtils.degToRad(3);
   const pickupAngle = THREE.MathUtils.degToRad(1.2);
-  const unlockAngle = THREE.MathUtils.degToRad(1.5);
+  // Brown gives no unlocking arc. 1.8 degrees leaves a visible radial stop
+  // engagement of about 0.03 after the swept running clearance.
+  const unlockAngle = THREE.MathUtils.degToRad(1.8);
   const pendulumRodRadius = 0.068;
   const beatPinRadius = 0.098;
   const beatContactClearance = pendulumRodRadius + beatPinRadius;
@@ -3090,12 +3349,16 @@ function doubleThreeLeggedGravityEscapement(movement) {
     roughness: 0.25,
   });
 
+  const plateRegistry = createSweptPlateRegistry(movement.id);
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-double-three-legged-frame';
   root.add(fixedFrame);
+  // All journals are bored rings on the back frame plane, behind the rear
+  // wheel; the rotating arbors run through them.
+  const backFrameZ = -0.92;
   const topCrossbar = beamBetween(
-    new THREE.Vector3(-1.25, pendulumPivot.y + 0.28, -0.92),
-    new THREE.Vector3(1.25, pendulumPivot.y + 0.28, -0.92),
+    new THREE.Vector3(-1.25, pendulumPivot.y + 0.28, backFrameZ),
+    new THREE.Vector3(1.25, pendulumPivot.y + 0.28, backFrameZ),
     0.16,
     0.18,
     frameMaterial,
@@ -3103,26 +3366,45 @@ function doubleThreeLeggedGravityEscapement(movement) {
   topCrossbar.userData.role = 'upper-double-gravity-arm-crossbar';
   fixedFrame.add(topCrossbar);
   const wheelBearingBracket = beamBetween(
-    new THREE.Vector3(-2.42, wheelCenter.y, -0.92),
-    new THREE.Vector3(wheelCenter.x, wheelCenter.y, -0.92),
+    new THREE.Vector3(-2.42, wheelCenter.y, backFrameZ),
+    new THREE.Vector3(wheelCenter.x - 0.17, wheelCenter.y, backFrameZ),
     0.12,
     0.16,
     frameMaterial,
   );
   wheelBearingBracket.userData.role = 'double-wheel-bearing-bracket';
   fixedFrame.add(wheelBearingBracket);
+  const palletHangers = [-1, 1].map((side) => {
+    const hanger = beamBetween(
+      new THREE.Vector3(side * palletPivotX, pendulumPivot.y + 0.28,
+        backFrameZ),
+      new THREE.Vector3(side * palletPivotX, palletPivotY + 0.14,
+        backFrameZ),
+      0.11,
+      0.15,
+      frameMaterial,
+    );
+    hanger.userData.role = 'pallet-arbor-hanger';
+    fixedFrame.add(hanger);
+    return hanger;
+  });
   const frameBearings = [
-    [wheelCenter, 'common-double-wheel-bearing'],
-    [palletPivot(-1), 'left-between-wheels-pallet-bearing'],
-    [palletPivot(1), 'right-between-wheels-pallet-bearing'],
-    [pendulumPivot, 'pendulum-suspension-bearing'],
-  ].map(([point, role]) => {
-    const bearing = cylinderAlongZ(0.13, 1.74, darkMaterial, 30);
-    bearing.position.set(point.x, point.y, -0.04);
+    [wheelCenter, 'common-double-wheel-bearing', 0.17, 0.063],
+    [palletPivot(-1), 'left-between-wheels-pallet-bearing', 0.15, 0.078],
+    [palletPivot(1), 'right-between-wheels-pallet-bearing', 0.15, 0.078],
+  ].map(([point, role, outerRadius, boreRadius]) => {
+    const bearing = boredBearing(outerRadius, boreRadius, 0.16,
+      darkMaterial);
+    bearing.position.set(point.x, point.y, backFrameZ);
     bearing.userData.role = role;
     fixedFrame.add(bearing);
     return bearing;
   });
+  const suspensionStud = cylinderAlongZ(0.13, 1.74, darkMaterial, 30);
+  suspensionStud.position.set(pendulumPivot.x, pendulumPivot.y, -0.04);
+  suspensionStud.userData.role = 'pendulum-suspension-bearing';
+  fixedFrame.add(suspensionStud);
+  frameBearings.push(suspensionStud);
 
   const escapeWheelAssembly = new THREE.Group();
   escapeWheelAssembly.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -3214,9 +3496,15 @@ function doubleThreeLeggedGravityEscapement(movement) {
     planeZ: rearWheelPlaneZ,
     symbols: ['a', 'b', 'c'],
   });
-  const wheelShaft = cylinderAlongZ(0.090, 2.02, darkMaterial, 28);
+  // Slender enough that each fallen pallet's late lift face swings clear
+  // of it between the wheels.
+  const wheelShaftFrontZ = 0.72;
+  const wheelShaftRearZ = -1.36;
+  const wheelShaft = cylinderAlongZ(0.055,
+    wheelShaftFrontZ - wheelShaftRearZ, darkMaterial, 28);
+  wheelShaft.position.z = (wheelShaftFrontZ + wheelShaftRearZ) / 2;
   wheelShaft.userData.role = 'common-double-wheel-escape-arbor';
-  escapeWheelAssembly.add(wheelShaft);
+  wheelRotor.add(wheelShaft);
   const liftingPinMeshes = [];
   for (let pinIndex = 0; pinIndex < 3; pinIndex += 1) {
     const angle = liftingPinPhaseOffset + pinIndex * lockingLegPitch;
@@ -3238,7 +3526,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
   }
 
   const flyRotor = new THREE.Group();
-  flyRotor.position.z = rearWheelPlaneZ - 0.42;
+  flyRotor.position.z = backFrameZ - 0.34;
   flyRotor.userData.axis = Z_AXIS.clone();
   flyRotor.userData.role = 'large-friction-spring-fly-on-common-arbor';
   escapeWheelAssembly.add(flyRotor);
@@ -3285,63 +3573,96 @@ function doubleThreeLeggedGravityEscapement(movement) {
     group.userData.role = `${sideName}-between-wheels-gravity-arm`;
     root.add(group);
 
-    const stopWorld = fixedLockPointForSide(side);
-    const outerWorldPoints = [
-      palletPivot(side),
-      new THREE.Vector2(side * 0.88, palletPivotY - 1.88),
-      stopWorld,
-      new THREE.Vector2(side * 1.62, wheelCenter.y - 1.30),
-      new THREE.Vector2(side * beatPinWorldX, beatPinWorldY),
-    ];
-    const outerPoints = outerWorldPoints.map((point) => palletLocalPoint(
-      side,
-      point,
-      cockedMagnitude,
+    // Brown's plate: each pallet is one flat piece of straight arms, pivot
+    // to its corner stop and on to its lower pendulum pin, with an inner
+    // arm from the corner to the lifting pins. All are laid out at the
+    // cocked pose; the swept cut then shapes the pin face and the stop.
+    const stopLetter = isRight ? 'D' : 'E';
+    const lockAngle = lockAngleForSide(side);
+    const toLocal = (point) => palletLocalPoint(side, point,
+      cockedMagnitude);
+    const cornerWorld = wheelCenter.clone().add(new THREE.Vector2(
+      Math.cos(lockAngle) * palletCornerRadius,
+      Math.sin(lockAngle) * palletCornerRadius,
     ));
-    const outerRail = edgeTube(
-      outerPoints,
-      0,
-      0.098,
+    const pivotLocal = new THREE.Vector2(0, 0);
+    const cornerLocal = toLocal(cornerWorld);
+    const beatLocal = beatPinLocalPoint(side);
+    const padInnerWorld = new THREE.Vector2(side * 0.02,
+      wheelCenter.y);
+    const padOuterWorld = new THREE.Vector2(side * 0.52,
+      wheelCenter.y);
+    const padHalfHeight = 0.24;
+    const liftPadLocal = [
+      new THREE.Vector2(padInnerWorld.x, wheelCenter.y - padHalfHeight),
+      new THREE.Vector2(padOuterWorld.x, wheelCenter.y - padHalfHeight),
+      new THREE.Vector2(padOuterWorld.x, wheelCenter.y + padHalfHeight),
+      new THREE.Vector2(padInnerWorld.x, wheelCenter.y + padHalfHeight),
+    ].map(toLocal);
+    const innerArmEndLocal = toLocal(new THREE.Vector2(side * 0.44,
+      wheelCenter.y + 0.08));
+    const palletPlateHalfDepth = 0.06;
+    const palletPlate = plateRegistry.add({
+      key: `${isRight ? 'right' : 'left'}-diamond-pallet`,
       material,
-      `${sideName}-outer-triangular-rail`,
-    );
-    group.add(outerRail);
+      owner: group,
+      primitives: [
+        plateBand(pivotLocal, cornerLocal, 0.15),
+        plateBand(cornerLocal, beatLocal, 0.15),
+        plateBand(cornerLocal, innerArmEndLocal, 0.13),
+        plateDisc(pivotLocal, 0.165),
+        plateDisc(cornerLocal, 0.13),
+        plateDisc(beatLocal, 0.14),
+        platePolygon(liftPadLocal),
+      ],
+      role: `${sideName}-planar-diamond-pallet`,
+      z0: -palletPlateHalfDepth,
+      z1: palletPlateHalfDepth,
+    });
+
+    const lockingWheelPlaneZ = isRight ? frontWheelPlaneZ : rearWheelPlaneZ;
+    const stopInnerZ = lockingWheelPlaneZ - side * lockingWheelDepth / 2
+      - side * 0.04 - planeZ;
+    const stopOuterZ = lockingWheelPlaneZ + side * lockingWheelDepth / 2
+      - planeZ;
+    const sectorLocal = (innerRadius, outerRadius, startAngle, endAngle) => {
+      const polygon = plateSector(wheelCenter, innerRadius, outerRadius,
+        startAngle, endAngle);
+      return platePolygon(polygon.points.map(([x, y]) => toLocal(
+        new THREE.Vector2(x, y),
+      )));
+    };
+    const stopStartAngle = lockAngle - THREE.MathUtils.degToRad(3);
+    const stopEndAngle = lockAngle + THREE.MathUtils.degToRad(9);
+    const stopStemPlate = plateRegistry.add({
+      key: `${isRight ? 'right' : 'left'}-stop-${stopLetter}-stem`,
+      material: darkMaterial,
+      owner: group,
+      primitives: [
+        sectorLocal(lockingLegRadius + 0.10, lockingLegRadius + 0.30,
+          stopStartAngle, stopEndAngle),
+        plateDisc(cornerLocal, 0.10),
+      ],
+      role: `${sideName}-axial-stop-${stopLetter}-stem`,
+      z0: Math.min(side * palletPlateHalfDepth, stopInnerZ),
+      z1: Math.max(side * palletPlateHalfDepth, stopInnerZ),
+    });
+    const stopStem = plateRegistry.add({
+      key: `${isRight ? 'right' : 'left'}-stop-${stopLetter}`,
+      material: markerMaterial,
+      owner: group,
+      primitives: [
+        sectorLocal(lockingLegRadius - 0.12, lockingLegRadius + 0.30,
+          stopStartAngle, stopEndAngle),
+      ],
+      role: `${sideName}-exclusive-locking-stop-${stopLetter}-face`,
+      z0: Math.min(stopInnerZ, stopOuterZ),
+      z1: Math.max(stopInnerZ, stopOuterZ),
+    });
 
     const liftFacePoints = Array.from({ length: 49 }, (_, index) => (
       liftFaceLocalPointAt(side, smootherStep(index / 48))
     ));
-    const liftFace = edgeTube(
-      liftFacePoints,
-      0,
-      0.048,
-      darkMaterial,
-      `${sideName}-inner-shared-pin-lifting-face`,
-    );
-    group.add(liftFace);
-    const innerWorldAnchor = new THREE.Vector2(
-      side * 0.72,
-      wheelCenter.y + 0.82,
-    );
-    const lowerInnerWorld = new THREE.Vector2(
-      side * 0.84,
-      wheelCenter.y - 1.28,
-    );
-    const innerPoints = [
-      palletLocalPoint(side, palletPivot(side), cockedMagnitude),
-      palletLocalPoint(side, innerWorldAnchor, cockedMagnitude),
-      liftFacePoints[Math.floor(liftFacePoints.length / 2)],
-      palletLocalPoint(side, lowerInnerWorld, cockedMagnitude),
-      beatPinLocalPoint(side),
-    ];
-    const innerRail = edgeTube(
-      innerPoints,
-      0,
-      0.088,
-      material,
-      `${sideName}-inner-triangular-rail`,
-    );
-    group.add(innerRail);
-
     const lockFacePoints = Array.from({ length: 21 }, (_, index) => {
       const magnitude = THREE.MathUtils.lerp(
         cockedMagnitude,
@@ -3350,29 +3671,6 @@ function doubleThreeLeggedGravityEscapement(movement) {
       );
       return lockFaceLocalPointAt(side, magnitude);
     });
-    const lockFace = edgeTube(
-      lockFacePoints,
-      isRight
-        ? frontWheelPlaneZ - planeZ
-        : rearWheelPlaneZ - planeZ,
-      0.052,
-      markerMaterial,
-      `${sideName}-exclusive-locking-stop-${isRight ? 'D' : 'E'}-face`,
-    );
-    group.add(lockFace);
-    const stopExtensionEndZ = isRight
-      ? frontWheelPlaneZ - planeZ
-      : rearWheelPlaneZ - planeZ;
-    const stopStem = cylinderAlongZ(0.074,
-      Math.abs(stopExtensionEndZ) + 0.20, darkMaterial, 22);
-    stopStem.position.set(
-      lockFacePoints[0].x,
-      lockFacePoints[0].y,
-      stopExtensionEndZ / 2,
-    );
-    stopStem.userData.role =
-      `${sideName}-axial-stop-${isRight ? 'D' : 'E'}-extension`;
-    group.add(stopStem);
 
     const beatPoint = beatPinLocalPoint(side);
     const beatTargetLocalZ = pendulumPlaneZ - planeZ;
@@ -3401,14 +3699,10 @@ function doubleThreeLeggedGravityEscapement(movement) {
     beatPinWitness.userData.role = `${sideName}-beat-pin-tip-witness`;
     group.add(beatPinWitness);
 
-    const pivotEye = new THREE.Mesh(
-      new THREE.TorusGeometry(0.155, 0.045, 10, 32),
-      material,
-    );
-    pivotEye.position.z = 0.02;
-    pivotEye.userData.role = `${sideName}-separate-pallet-arbor-eye`;
-    group.add(pivotEye);
-    const arborHub = cylinderAlongZ(0.070, 0.48, darkMaterial, 24);
+    const arborRearZ = backFrameZ - 0.10 - planeZ;
+    const arborHub = cylinderAlongZ(0.070,
+      palletPlateHalfDepth + 0.02 - arborRearZ, darkMaterial, 24);
+    arborHub.position.z = (palletPlateHalfDepth + 0.02 + arborRearZ) / 2;
     arborHub.userData.role = `${sideName}-pallet-arbor`;
     group.add(arborHub);
 
@@ -3416,19 +3710,16 @@ function doubleThreeLeggedGravityEscapement(movement) {
       arborHub,
       beatPin,
       beatPinWitness,
+      cornerLocal,
       group,
-      innerPoints,
-      innerRail,
-      liftFace,
       liftFacePoints,
-      lockFace,
       lockFacePoints,
-      outerPoints,
-      outerRail,
-      pivotEye,
+      palletPlate,
       stopStem,
+      stopStemPlate,
     };
   };
+  const palletCornerRadius = lockingLegRadius + 0.15;
   const leftGravityArm = makeGravityArm(-1);
   const rightGravityArm = makeGravityArm(1);
 
@@ -3487,6 +3778,12 @@ function doubleThreeLeggedGravityEscapement(movement) {
   lockMarker.userData.role =
     'live-front-D-or-rear-E-exclusive-lock-contact';
   root.add(lockMarker);
+  // Contact loci sit inside the working parts; they stay positioned for
+  // diagnostics but never render.
+  for (const marker of [beatContactMarker, wheelLiftMarker, lockMarker]) {
+    marker.visible = false;
+    marker.userData.diagnosticOnly = true;
+  }
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -3501,33 +3798,34 @@ function doubleThreeLeggedGravityEscapement(movement) {
       state.beatContactPoint.y,
       pendulumPlaneZ + 0.10,
     );
+    beatContactMarker.userData.active = true;
     beatContactMarker.userData.contactError = state.beatContactError;
     beatContactMarker.userData.contactSide = state.beatContactSide;
     beatContactMarker.userData.gravityImpulseActive =
       state.effectiveGravityImpulseActive;
 
-    wheelLiftMarker.visible = state.wheelStepActive;
+    wheelLiftMarker.userData.active = state.wheelStepActive;
     if (state.activeLiftPoint) {
       wheelLiftMarker.position.set(
         state.activeLiftPoint.x,
         state.activeLiftPoint.y,
         state.activeLiftSide === 'right'
-          ? rightPalletPlaneZ + 0.08
-          : leftPalletPlaneZ + 0.08,
+          ? rightPalletPlaneZ
+          : leftPalletPlaneZ,
       );
     }
     wheelLiftMarker.userData.contactError = state.liftContactError;
     wheelLiftMarker.userData.contactSide = state.activeLiftSide;
     wheelLiftMarker.userData.pinIndex = state.activeLiftPinIndex;
 
-    lockMarker.visible = state.wheelLocked;
+    lockMarker.userData.active = state.wheelLocked;
     if (state.activeLockPoint) {
       lockMarker.position.set(
         state.activeLockPoint.x,
         state.activeLockPoint.y,
         state.activeLockWheel === 'front-ABC'
-          ? frontWheelPlaneZ + 0.13
-          : rearWheelPlaneZ + 0.13,
+          ? frontWheelPlaneZ
+          : rearWheelPlaneZ,
       );
     }
     lockMarker.userData.contactError = state.lockContactError;
@@ -3551,6 +3849,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
     leftGravityArm,
     liftingPinMeshes,
     lockMarker,
+    palletHangers,
     pendulumAssembly,
     pendulumBob,
     pendulumPivotEye,
@@ -3562,6 +3861,29 @@ function doubleThreeLeggedGravityEscapement(movement) {
     wheelLiftMarker,
     wheelRotor,
     wheelShaft,
+  };
+  root.userData.sweptPlates = plateRegistry.plates;
+  root.userData.sweptPlateInputHash = plateRegistry.bakeInputHash;
+  root.userData.engagementContacts = (state) => {
+    const lockWheelZ = state.activeLockWheel === 'front-ABC'
+      ? frontWheelPlaneZ
+      : rearWheelPlaneZ;
+    return {
+      advanceSign: 1,
+      contacts: {
+        lock: state.wheelLocked ? {
+          point: state.activeLockPoint,
+          radius: 0.075 - 0.022,
+          z: [lockWheelZ - lockingWheelDepth / 2,
+            lockWheelZ + lockingWheelDepth / 2],
+        } : null,
+        lift: state.wheelStepActive ? {
+          point: state.activeLiftPoint,
+          radius: 0.071,
+          z: [rearWheelPlaneZ, frontWheelPlaneZ],
+        } : null,
+      },
+    };
   };
   root.userData.cameraDistanceScale = 1.18;
   root.userData.cameraFitBounds = new THREE.Box3(
@@ -3643,7 +3965,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
   root.userData.mechanism = 'Denison’s double three-legged gravity escapement: rigid front wheel ABC and rear wheel abc each carry three long locking legs and are offset by 60 degrees. Two gravity arms lie between them; right stop D can lock only front ABC, left stop E can lock only rear abc, while one shared set of three axial pins alternately cocks the opposite arm before its fixed gravity fall impulses the pendulum.';
   root.userData.palletMagnitudeAt = palletMagnitudeAt;
   root.userData.palletWorldPoint = palletWorldPoint;
-  root.userData.presentation = 'front-oblique reconstruction of Brown’s six interleaved locking legs, visibly separated front ABC and rear abc wheel planes, two triangular weighted pallets between those planes, three shared lifting pins, the pendulum in front, and the long friction fly behind';
+  root.userData.presentation = 'front-oblique reconstruction of Brown’s six interleaved locking legs, visibly separated front ABC and rear abc wheel planes, two planar straight-armed diamond pallets between those planes, three shared lifting pins, the pendulum in front, and the long friction fly behind';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
@@ -4450,16 +4772,40 @@ function bloxamGravityEscapement(movement) {
   );
   lowerCrossbar.userData.role = 'lower-bloxam-frame-crossbar';
   fixedFrame.add(lowerCrossbar);
-  const frameBearings = [
-    [wheelCenter, 'common-two-wheel-arbor-bearing'],
-    [armPivot, 'coaxial-separate-gravity-arm-bearings'],
-  ].map(([point, role]) => {
-    const bearing = cylinderAlongZ(0.145, 1.82, darkMaterial, 32);
-    bearing.position.set(point.x, point.y, -0.04);
-    bearing.userData.role = role;
-    fixedFrame.add(bearing);
-    return bearing;
-  });
+  const plateRegistry = createSweptPlateRegistry(movement.id);
+  // The common arbor runs in a bored ring on the back frame plane. Both arms
+  // and the pendulum turn on one slender fixed stud through bored sleeves.
+  const backFrameZ = -0.92;
+  const wheelBearing = boredBearing(0.19, 0.084, 0.16, darkMaterial);
+  wheelBearing.position.set(wheelCenter.x, wheelCenter.y, backFrameZ);
+  wheelBearing.userData.role = 'common-two-wheel-arbor-bearing';
+  fixedFrame.add(wheelBearing);
+  const wheelBearingBracket = beamBetween(
+    new THREE.Vector3(-2.0, wheelCenter.y, backFrameZ),
+    new THREE.Vector3(wheelCenter.x - 0.15, wheelCenter.y, backFrameZ),
+    0.12,
+    0.16,
+    frameMaterial,
+  );
+  wheelBearingBracket.userData.role = 'common-arbor-bearing-bracket';
+  fixedFrame.add(wheelBearingBracket);
+  const armPivotStudRadius = 0.06;
+  const armPivotStud = cylinderAlongZ(armPivotStudRadius,
+    pendulumPlaneZ + 0.12 - (backFrameZ - 0.08), darkMaterial, 24);
+  armPivotStud.position.set(armPivot.x, armPivot.y,
+    (pendulumPlaneZ + 0.12 + backFrameZ - 0.08) / 2);
+  armPivotStud.userData.role = 'coaxial-separate-gravity-arm-bearings';
+  fixedFrame.add(armPivotStud);
+  const armPivotHanger = beamBetween(
+    new THREE.Vector3(armPivot.x, armPivot.y, backFrameZ),
+    new THREE.Vector3(armPivot.x, armPivot.y + 0.28, backFrameZ),
+    0.16,
+    0.16,
+    frameMaterial,
+  );
+  armPivotHanger.userData.role = 'arm-pivot-stud-hanger';
+  fixedFrame.add(armPivotHanger);
+  const frameBearings = [wheelBearing, armPivotStud];
 
   const escapeWheelAssembly = new THREE.Group();
   escapeWheelAssembly.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -4609,10 +4955,14 @@ function bloxamGravityEscapement(movement) {
   palletWheelPhaseWitness.position.set(0.245, 0, palletWheelDepth / 2 + 0.05);
   palletWheelPhaseWitness.userData.role = 'white-small-wheel-phase-witness';
   palletWheel.add(palletWheelPhaseWitness);
-  const commonWheelShaft = cylinderAlongZ(0.074, 1.82, darkMaterial, 28);
+  const commonShaftFrontZ = palletWheelPlaneZ + palletWheelDepth / 2 + 0.05;
+  const commonShaftRearZ = backFrameZ - 0.12;
+  const commonWheelShaft = cylinderAlongZ(0.074,
+    commonShaftFrontZ - commonShaftRearZ, darkMaterial, 28);
+  commonWheelShaft.position.z = (commonShaftFrontZ + commonShaftRearZ) / 2;
   commonWheelShaft.userData.role =
     'common-arbor-rigidly-fixing-both-nine-tooth-wheels';
-  escapeWheelAssembly.add(commonWheelShaft);
+  wheelRotor.add(commonWheelShaft);
 
   const makeGravityArm = (side) => {
     const isRight = side > 0;
@@ -4641,15 +4991,13 @@ function bloxamGravityEscapement(movement) {
       shoulderWorld,
       lockWorld,
     ].map((point) => armLocalPoint(point, cockedAngle));
-    const mainRail = edgeTube(
-      mainRailPoints,
-      0,
-      0.082,
-      material,
-      `${sideName}-thin-tubular-main-arm`,
-    );
-    group.add(mainRail);
-
+    // Each arm is one flat plate in its own thin slab (the two slabs are
+    // separated in z at the shared pivot). The pallet face and the outer
+    // detent are separate plates in the small- and large-wheel slabs, all
+    // shaped by the swept wheels.
+    const sideKey = isRight ? 'right' : 'left';
+    const armHalfDepth = 0.05;
+    const toLocal = (point) => armLocalPoint(point, cockedAngle);
     const palletFaceSamples = Array.from({ length: 41 }, (_, index) => (
       palletFaceLocalPointAt(side, index / 40)
     ));
@@ -4662,25 +5010,15 @@ function bloxamGravityEscapement(movement) {
       Math.cos(palletFaceLocalAngle(side)),
       Math.sin(palletFaceLocalAngle(side)),
     );
-    const palletFace = beamBetween(
-      new THREE.Vector3(
-        faceDirection.x * faceMinimumDistance,
-        faceDirection.y * faceMinimumDistance,
-        palletWheelPlaneZ - planeZ,
-      ),
-      new THREE.Vector3(
-        faceDirection.x * faceMaximumDistance,
-        faceDirection.y * faceMaximumDistance,
-        palletWheelPlaneZ - planeZ,
-      ),
-      0.090,
-      0.15,
-      darkMaterial,
-    );
-    palletFace.userData.planeRadiatesFromArmAxis = true;
-    palletFace.userData.role =
-      `${sideName}-plane-radial-inner-pallet-face`;
-    group.add(palletFace);
+    const localWheelCenter = toLocal(wheelCenter);
+    const faceMid = palletFaceSamples[Math.floor(palletFaceSamples.length / 2)];
+    const faceNormal = new THREE.Vector2(-faceDirection.y, faceDirection.x);
+    if (faceNormal.dot(faceMid.clone().sub(localWheelCenter)) < 0) {
+      faceNormal.negate();
+    }
+    const faceStart = faceDirection.clone().multiplyScalar(faceMinimumDistance);
+    const faceEnd = faceDirection.clone().multiplyScalar(faceMaximumDistance);
+    const faceBack = faceMid.clone().addScaledVector(faceNormal, 0.16);
 
     const forkLocal = forkPinLocalPoint(side);
     const lowerCrosspieceWorld = new THREE.Vector2(
@@ -4688,19 +5026,53 @@ function bloxamGravityEscapement(movement) {
       wheelCenter.y - 0.18,
     );
     const lowerCrosspiecePoints = [
-      armLocalPoint(lockWorld, cockedAngle),
-      armLocalPoint(lowerCrosspieceWorld, cockedAngle),
-      palletFaceSamples[Math.floor(palletFaceSamples.length / 2)],
+      toLocal(lockWorld),
+      toLocal(lowerCrosspieceWorld),
+      faceBack,
       forkLocal,
     ];
-    const heavyLowerCrosspiece = edgeTube(
-      lowerCrosspiecePoints,
-      0,
-      0.112,
+    const mainRail = plateRegistry.add({
+      key: `${sideKey}-arm`,
       material,
-      `${sideName}-solid-heavy-lower-crosspiece`,
-    );
-    group.add(heavyLowerCrosspiece);
+      owner: group,
+      primitives: [
+        ...plateStroke(mainRailPoints, 0.15),
+        ...plateStroke(lowerCrosspiecePoints, 0.19),
+        plateDisc(new THREE.Vector2(0, 0), 0.15),
+        plateDisc(forkLocal, 0.13),
+      ],
+      role: `${sideName}-thin-tubular-main-arm`,
+      z0: -armHalfDepth,
+      z1: armHalfDepth,
+    });
+    const heavyLowerCrosspiece = mainRail;
+
+    const palletSlabZ0 = palletWheelPlaneZ - palletWheelDepth / 2 - planeZ;
+    const palletSlabZ1 = palletWheelPlaneZ + palletWheelDepth / 2 - planeZ;
+    const palletFace = plateRegistry.add({
+      key: `${sideKey}-pallet-face`,
+      material: darkMaterial,
+      owner: group,
+      primitives: [platePolygon([
+        faceStart.clone().addScaledVector(faceNormal, -0.05),
+        faceEnd.clone().addScaledVector(faceNormal, -0.05),
+        faceEnd.clone().addScaledVector(faceNormal, 0.22),
+        faceStart.clone().addScaledVector(faceNormal, 0.22),
+      ])],
+      role: `${sideName}-plane-radial-inner-pallet-face`,
+      z0: palletSlabZ0,
+      z1: palletSlabZ1,
+    });
+    palletFace.userData.planeRadiatesFromArmAxis = true;
+    plateRegistry.add({
+      key: `${sideKey}-pallet-face-stem`,
+      material: darkMaterial,
+      owner: group,
+      primitives: [plateDisc(faceBack, 0.075)],
+      role: `${sideName}-pallet-face-stem`,
+      z0: armHalfDepth,
+      z1: palletSlabZ0,
+    });
 
     const reinforcementStartWorld = new THREE.Vector2(
       side * 0.52,
@@ -4735,28 +5107,44 @@ function bloxamGravityEscapement(movement) {
       );
       return lockFaceLocalPointAt(side, angle);
     });
-    const lockingDetentEdge = edgeTube(
-      lockFacePoints,
-      outerWheelPlaneZ - planeZ,
-      0.047,
-      darkMaterial,
-      `${sideName}-eight-degree-outer-locking-detent-${letter}`,
+    // The detent block starts just behind the locked tooth head and reaches
+    // ahead of it along the wheel's advance, so the swept teeth leave a
+    // hooked stop whose leading face catches the next T-head.
+    const lockWorldAngle = Math.atan2(
+      lockWorld.y - wheelCenter.y,
+      lockWorld.x - wheelCenter.x,
     );
+    const lockRadius = lockWorld.distanceTo(wheelCenter);
+    const stopSector = plateSector(wheelCenter, lockRadius - 0.14,
+      lockRadius + 0.24, lockWorldAngle - THREE.MathUtils.degToRad(2),
+      lockWorldAngle + THREE.MathUtils.degToRad(10));
+    const stopPrimitive = platePolygon(stopSector.points.map(([x, y]) => (
+      toLocal(new THREE.Vector2(x, y))
+    )));
+    const outerSlabZ0 = outerWheelPlaneZ - outerWheelDepth / 2 - 0.02 - planeZ;
+    const outerSlabZ1 = outerWheelPlaneZ + outerWheelDepth / 2 - planeZ;
+    const lockingDetentEdge = plateRegistry.add({
+      key: `${sideKey}-detent-${letter}`,
+      material: markerMaterial,
+      owner: group,
+      primitives: [stopPrimitive],
+      role: `${sideName}-eight-degree-outer-locking-detent-${letter}`,
+      z0: outerSlabZ0,
+      z1: outerSlabZ1,
+    });
     lockingDetentEdge.userData.faceSlopeRadians = detentFaceSlope;
-    group.add(lockingDetentEdge);
-    const stopStem = cylinderAlongZ(
-      0.071,
-      Math.abs(outerWheelPlaneZ - planeZ) + outerWheelDepth + 0.06,
-      darkMaterial,
-      22,
-    );
-    stopStem.position.set(
-      lockFacePoints[0].x,
-      lockFacePoints[0].y,
-      (outerWheelPlaneZ - planeZ) / 2,
-    );
-    stopStem.userData.role = `${sideName}-axial-outer-stop-${letter}`;
-    group.add(stopStem);
+    const stopStem = plateRegistry.add({
+      key: `${sideKey}-stop-${letter}`,
+      material: darkMaterial,
+      owner: group,
+      primitives: [
+        stopPrimitive,
+        plateDisc(toLocal(lockWorld), 0.09),
+      ],
+      role: `${sideName}-axial-outer-stop-${letter}`,
+      z0: outerSlabZ1,
+      z1: -armHalfDepth,
+    });
 
     const forkTargetLocalZ = pendulumPlaneZ - planeZ;
     const forkPin = cylinderAlongZ(
@@ -4789,7 +5177,8 @@ function bloxamGravityEscapement(movement) {
     pivotEye.position.z = 0.01;
     pivotEye.userData.role = `${sideName}-separate-coaxial-pivot-eye`;
     group.add(pivotEye);
-    const crankedArbor = cylinderAlongZ(0.066, 0.46, darkMaterial, 24);
+    const crankedArbor = boredBearing(0.10, armPivotStudRadius + 0.008,
+      2 * armHalfDepth - 0.006, darkMaterial, 28);
     crankedArbor.userData.role =
       `${sideName}-cranked-arbor-coincident-with-pendulum-axis`;
     group.add(crankedArbor);
@@ -4864,6 +5253,11 @@ function bloxamGravityEscapement(movement) {
   outerLockMarker.userData.role =
     'live-large-wheel-to-stop-A-or-B-contact';
   root.add(outerLockMarker);
+  for (const marker of [beatContactMarker, innerContactMarker,
+    outerLockMarker]) {
+    marker.visible = false;
+    marker.userData.diagnosticOnly = true;
+  }
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -4892,7 +5286,9 @@ function bloxamGravityEscapement(movement) {
     innerContactMarker.userData.contactSide = state.activeInnerContactSide;
     innerContactMarker.userData.toothIndex = state.activeInnerToothIndex;
 
-    outerLockMarker.visible = state.wheelLocked;
+    beatContactMarker.userData.active = true;
+    innerContactMarker.userData.active = true;
+    outerLockMarker.userData.active = state.wheelLocked;
     if (state.activeLockPoint) {
       outerLockMarker.position.set(
         state.activeLockPoint.x,
@@ -4937,7 +5333,43 @@ function bloxamGravityEscapement(movement) {
     rightFrameLeg,
     rightGravityArm,
     upperCrossbar,
+    armPivotHanger,
+    armPivotStud,
+    wheelBearingBracket,
     wheelRotor,
+  };
+  root.userData.sweptPlates = plateRegistry.plates;
+  root.userData.sweptPlateInputHash = plateRegistry.bakeInputHash;
+  root.userData.engagementContacts = (state) => {
+    // The outer lock is carried by the leading end of the T-head, and the
+    // straight small-wheel tooth lifts its arm with its leading tip corner.
+    const headLead = state.activeLockPoint
+      ? state.activeLockPoint.clone().sub(wheelCenter)
+        .rotateAround(new THREE.Vector2(), (0.115 - 0.035 / 2) / lockingRadius)
+        .add(wheelCenter)
+      : null;
+    const liftRadial = state.activeInnerPoint.clone().sub(wheelCenter)
+      .normalize();
+    const liftTip = wheelCenter.clone()
+      .addScaledVector(liftRadial, 0.175 + 0.23 / 2)
+      .add(new THREE.Vector2(-liftRadial.y, liftRadial.x).multiplyScalar(0.03));
+    return {
+      advanceSign: 1,
+      contacts: {
+        lock: state.wheelLocked ? {
+          point: headLead,
+          radius: 0.035 / 2,
+          z: [outerWheelPlaneZ - outerWheelDepth / 2,
+            outerWheelPlaneZ + outerWheelDepth / 2],
+        } : null,
+        lift: state.wheelStepActive ? {
+          point: liftTip,
+          radius: 0,
+          z: [palletWheelPlaneZ - palletWheelDepth / 2,
+            palletWheelPlaneZ + palletWheelDepth / 2],
+        } : null,
+      },
+    };
   };
   root.userData.cameraDistanceScale = 1.12;
   root.userData.cameraFitBounds = new THREE.Box3(

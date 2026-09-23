@@ -405,10 +405,24 @@ test('movement 300 renderer keeps both wheels locked and exposes the one live co
       state.wheelAngularSpeed, 0, `rear rate at ${time}`);
     near(blocks.palletAssembly.userData.angularSpeed,
       state.palletAngularSpeed, 0, `pallet rate at ${time}`);
-    assert.equal(blocks.frontContactMarker.visible,
+    assert.equal(blocks.frontContactMarker.visible, false,
+      'front diagnostic witness never renders through the parts');
+    assert.equal(blocks.rearContactMarker.visible, false,
+      'rear diagnostic witness never renders through the parts');
+    assert.equal(blocks.frontContactMarker.userData.active,
       state.activeWheel === 'front');
-    assert.equal(blocks.rearContactMarker.visible,
+    assert.equal(blocks.rearContactMarker.userData.active,
       state.activeWheel === 'rear');
+    if (state.contact) {
+      vectorNear(
+        (state.activeWheel === 'front'
+          ? blocks.frontContactMarker
+          : blocks.rearContactMarker).position,
+        state.contact.point,
+        0,
+        `hidden witness tracks the working point at ${time}`,
+      );
+    }
     assert.equal(
       model.root.userData.contacts.frontWheelToSinglePallet !== null,
       state.activeWheel === 'front',

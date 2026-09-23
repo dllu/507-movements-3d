@@ -1,4 +1,5 @@
 {
+  "sourceCommit": "c247ea8ddb06f658739f3b5b6d7ee6814d14ef69",
   "sources": [
     {
       "file": "src/simulation/authored-gears.js",

@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import {assertHistoricalSources} from './helpers/historical-source.mjs';
 import {makeConjugateInternalRack,internalRackPitchPose,internalRackPitchDimensions} from '../src/simulation/mujoco-internal-rack/profile.js';
 import {internalRackSuspension} from '../src/simulation/mujoco-internal-rack/suspension.js';
 import {polygonClipping as clip} from '../src/simulation/finite-plate-geometry.js';
-test('139 tooth review records actual intersections in the previous geometry',()=>{
+test('139 tooth review records actual intersections in the previous geometry',t=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/139-tooth-review.json'));
  assert.equal(report.interferingPoses,360);assert(report.worst.area>.1);
- for(const s of report.sources)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256);
+ assertHistoricalSources(report,t);
 });
 test('139 generated nine-tooth pinion clears its conjugate opening between cutter samples',()=>{
  const p=makeConjugateInternalRack();

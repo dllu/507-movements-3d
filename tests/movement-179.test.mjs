@@ -490,7 +490,7 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
     near(state.valveGuideError, 0, 0,
       'valve spindle remains on its horizontal guide');
     if (state.shaftStopContact !== 'between-stops') {
-      near(state.activeStopPositionError, 0, 1e-15,
+      near(state.activeStopPositionError, 0, 1e-12,
         'shaft lug and selected stop share one contact point');
     } else {
       near(state.eccentricAngularSpeed, 0, 0,

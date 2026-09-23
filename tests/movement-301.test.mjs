@@ -355,9 +355,11 @@ test('movement 301 renderer preserves wheel spacing and publishes the side-view 
       `rigid pair speed at ${time}`);
     near(blocks.palletAssembly.rotation.x,
       state.palletAngle, 0, `D-pallet angle at ${time}`);
-    assert.equal(blocks.frontContactMarker.visible,
+    assert.equal(blocks.frontContactMarker.visible, false);
+    assert.equal(blocks.rearContactMarker.visible, false);
+    assert.equal(blocks.frontContactMarker.userData.active,
       state.activeWheel === 'front');
-    assert.equal(blocks.rearContactMarker.visible,
+    assert.equal(blocks.rearContactMarker.userData.active,
       state.activeWheel === 'rear');
     assert.equal(
       model.root.userData.contacts.frontWheelToSinglePallet !== null,

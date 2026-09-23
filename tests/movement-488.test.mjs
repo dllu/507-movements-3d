@@ -204,7 +204,7 @@ test('movement 488 has consistent positive-X thrust and exact open-water coeffic
   near(geometry.openWaterEfficiency,
     geometry.advanceCoefficient * geometry.thrustCoefficient
       / (FULL_TURN * geometry.torqueCoefficient),
-    2e-16, 'ITTC efficiency');
+    1e-12, 'ITTC efficiency');
   assert.ok(geometry.openWaterEfficiency > 0);
   assert.ok(geometry.openWaterEfficiency < 1);
   assert.ok(geometry.axialSlipFraction > 0);

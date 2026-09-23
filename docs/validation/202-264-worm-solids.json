@@ -58,7 +58,15 @@
     },
     {
       "file": "src/simulation/authored-gears.js",
-      "sha256": "f94b7c2b142f6c186e9a18348591f6791d9e68fa80120652257f854fe83de763"
+      "sha256": "77a541b7d8021f588fa6f48204bc4f9f10eba4ae3634ec668b7336065bdf7e1c"
+    },
+    {
+      "file": "src/simulation/authored-gears-core.js",
+      "sha256": "b57b2c5011cc3c3d5baaec2275119cd1ebab02165929a75bb88cdd27bb5baf09"
+    },
+    {
+      "file": "src/simulation/miter-gear.js",
+      "sha256": "77708cf0f2f91ac0d9145c4bcea3d99e29ef6b691f8eb2a7016d04b026bc1bc8"
     },
     {
       "file": "src/simulation/authored-differential-worm-drives.js",
@@ -76,6 +84,5 @@
       "file": "src/simulation/bored-worm-geometry.js",
       "sha256": "9d545d8bcbd3583c1df25f9e490e6deb7b8a971f2f96bd76146c50ffa0e9fbcb"
     }
-  ],
-  "sourceHashRefresh": "Only the 200 and 226 builders and their dedicated import changed in authored-gears.js; all builders and shared gear functions used by this audit are byte-identical to the preceding revision."
+  ]
 }

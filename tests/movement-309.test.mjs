@@ -508,9 +508,14 @@ test('movement 309 renderer follows both pallets, wheel, pendulum, and live cont
       state.leftPalletAngle, 0, `left pallet at phase ${phase}`);
     near(blocks.rightPallet.group.rotation.z,
       state.rightPalletAngle, 0, `right pallet at phase ${phase}`);
-    assert.equal(blocks.wheelLiftMarker.visible,
+    assert.equal(blocks.wheelLiftMarker.userData.active,
       state.wheelStepActive);
-    assert.equal(blocks.lockMarker.visible, state.wheelLocked);
+    assert.equal(blocks.lockMarker.userData.active, state.wheelLocked);
+    for (const marker of [blocks.forkContactMarker,
+      blocks.wheelLiftMarker, blocks.lockMarker]) {
+      assert.equal(marker.visible, false,
+        `${marker.userData.role} is a diagnostic locus inside the parts`);
+    }
     assert.equal(blocks.forkContactMarker.userData.contactSide,
       state.forkContactSide);
     assert.equal(blocks.wheelLiftMarker.userData.contactSide,

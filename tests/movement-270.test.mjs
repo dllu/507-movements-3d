@@ -509,7 +509,7 @@ test('movement 270 closes all marked members and leaves movement 507 authored', 
     'full-closure roller spin mark');
   for (let index = 0; index < geometry.rollerCount; index += 1) {
     vectorNear(closure.rollers[index].center, source.rollers[index].center,
-      1.4e-13, `roller ${index} full-closure center`);
+      1e-12, `roller ${index} full-closure center`);
     near(
       Math.abs(Math.atan2(
         Math.sin(

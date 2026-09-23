@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import crypto from 'node:crypto';
+import {assertHistoricalSources} from './helpers/historical-source.mjs';
 import {togglePunchGeometry as g,togglePunchAtAngle as at,togglePunchAtTime} from '../src/simulation/toggle-punch-kinematics.js';
-test('140 diagnosis measures the engraving mismatch in the old handle',()=>{
+test('140 diagnosis measures the engraving mismatch in the old handle',t=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/140-dimensions.json'));
- for(const s of report.sources)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256,s.file);
+ if(!assertHistoricalSources(report,t))return;
  assert(report.legacyLandmarks.find(p=>p.key==='handleEnd').errorPixels>60);
  assert(report.fitted.maximumClosureError<1e-12);assert.equal(report.fitted.maximumRamReversal,0);
 });

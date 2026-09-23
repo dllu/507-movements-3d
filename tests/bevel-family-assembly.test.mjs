@@ -28,7 +28,14 @@ test('226 blind journals clear F and the planet has a genuine journal bore', () 
   for (let i = 0; i < hub.count; i++) {
     minimumRadius = Math.min(minimumRadius, Math.hypot(hub.getX(i), hub.getY(i)));
   }
-  assert.ok(minimumRadius >= 0.0779, 'planet journal bore exceeds its 0.066 radius pin');
+  const pin = blocks.planetAxle.userData.rotor.children[0].geometry.attributes.position;
+  let pinRadius = 0;
+  for (let i = 0; i < pin.count; i++) {
+    pinRadius = Math.max(pinRadius, Math.hypot(pin.getX(i), pin.getZ(i)));
+  }
+  assert.ok(Math.abs(pinRadius - 0.066) < 1e-6);
+  assert.ok(minimumRadius - pinRadius > 0.0015,
+    `planet journal bore ${minimumRadius} clears its ${pinRadius} radius pin`);
   assert.equal(blocks.planetSupportRear.parent, blocks.carrierAssembly);
   assert.equal(blocks.planetSupportFront.parent, blocks.carrierAssembly);
   // These supports lie beyond the gear's radial and front axial envelopes.

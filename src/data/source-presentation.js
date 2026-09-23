@@ -13,4 +13,12 @@ export default {
     camera: [2.2, 4.6, 9],
     note: 'Oblique view from above: crown wheel horizontal with its arbor hanging down and verge S across the top; no frame or bearings are drawn. The near teeth show their axial faces on the left, so with the front flank driving (the verge convention) the wheel turns clockwise seen from above: the model is mirrored to that handedness.',
   },
+  309: {
+    remove: ['fixed-Mudge-escapement-frame'],
+    note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q; no clock frame, crossbars or bearing brackets are drawn.',
+  },
+  312: {
+    remove: ['fixed-bloxam-support-frame'],
+    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn.',
+  },
 };

@@ -1,3 +1,4 @@
+import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
 import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
@@ -3916,8 +3917,115 @@ function oldFashionedClockVergeEscapement(movement) {
   return finish(root, update, new THREE.Vector3(9.8, 7.6, 12.2));
 }
 
+// Brown draws each tooth as a narrow radial stem ending in a barb hooked
+// forward (counterclockwise, the running direction).  Lags are fractions of
+// the tooth pitch behind the tip.  The barb point is both the outermost and
+// the leading point of the tooth, and the underside of the barb is cut back
+// steeply, so near the pallet only the point can reach the rest face.
+const DEBAUFRE_TOOTH_PROFILE = Object.freeze({
+  barbUndersideDepth: 0.3,
+  barbUndersideLag: 0.26,
+  kneeDepth: 0.08,
+  kneeLag: 0.37,
+  outerMidDepth: 0.025,
+  outerMidLag: 0.18,
+  stemLeadingRootLag: 0.25,
+  stemTrailingRootLag: 0.4,
+});
+
+function debaufreToothOutline({
+  outerRadius,
+  rootRadius,
+  tipAngle = 0,
+  toothPitch,
+}) {
+  const p = DEBAUFRE_TOOTH_PROFILE;
+  const polar = (radius, lag) => new THREE.Vector2(
+    Math.cos(tipAngle - lag * toothPitch) * radius,
+    Math.sin(tipAngle - lag * toothPitch) * radius,
+  );
+  return [
+    polar(outerRadius, 0),
+    polar(outerRadius - p.outerMidDepth, p.outerMidLag),
+    polar(outerRadius - p.kneeDepth, p.kneeLag),
+    polar(rootRadius, p.stemTrailingRootLag),
+    polar(rootRadius, p.stemLeadingRootLag),
+    polar(outerRadius - p.barbUndersideDepth, p.barbUndersideLag),
+  ];
+}
+
+// Unbevelled prism: a bevel would grow the sharp working tip past the
+// contact radius that the motion law is written for.
+function debaufrePrism(shape, depth, curveSegments = 12) {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    curveSegments,
+    depth,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+
+// Closed solid between a flat floor and a height field sampled on an x-z
+// grid (pallet-local coordinates, y up).
+function debaufreHeightfieldSolid(xs, zs, topAt, bottom) {
+  const nx = xs.length;
+  const nz = zs.length;
+  const positions = [];
+  for (let i = 0; i < nx; i += 1) {
+    for (let j = 0; j < nz; j += 1) positions.push(xs[i], topAt(i, j), zs[j]);
+  }
+  for (let i = 0; i < nx; i += 1) {
+    for (let j = 0; j < nz; j += 1) positions.push(xs[i], bottom, zs[j]);
+  }
+  const T = (i, j) => i * nz + j;
+  const B = (i, j) => nx * nz + i * nz + j;
+  const index = [];
+  for (let i = 0; i + 1 < nx; i += 1) {
+    for (let j = 0; j + 1 < nz; j += 1) {
+      index.push(T(i, j), T(i, j + 1), T(i + 1, j));
+      index.push(T(i + 1, j), T(i, j + 1), T(i + 1, j + 1));
+    }
+  }
+  const last = nx - 1;
+  const end = nz - 1;
+  // The flat floor only needs its boundary ring: fans close the two end
+  // strips over the x-wall vertices and plain quads fill the rest.
+  for (let j = 0; j < end; j += 1) {
+    index.push(B(1, 0), B(0, j + 1), B(0, j));
+    index.push(B(last - 1, end), B(last, j), B(last, j + 1));
+  }
+  index.push(B(1, 0), B(1, end), B(0, end));
+  index.push(B(last - 1, end), B(last - 1, 0), B(last, 0));
+  for (let i = 1; i + 2 < nx; i += 1) {
+    index.push(B(i, 0), B(i + 1, 0), B(i, end));
+    index.push(B(i + 1, 0), B(i + 1, end), B(i, end));
+  }
+  for (let j = 0; j + 1 < nz; j += 1) {
+    index.push(B(0, j), B(0, j + 1), T(0, j));
+    index.push(B(0, j + 1), T(0, j + 1), T(0, j));
+    index.push(B(last, j), T(last, j), B(last, j + 1));
+    index.push(B(last, j + 1), T(last, j), T(last, j + 1));
+  }
+  for (let i = 0; i + 1 < nx; i += 1) {
+    index.push(B(i, 0), T(i, 0), B(i + 1, 0));
+    index.push(B(i + 1, 0), T(i, 0), T(i + 1, 0));
+    index.push(B(i, end), B(i + 1, end), T(i, end));
+    index.push(B(i + 1, end), T(i + 1, end), T(i, end));
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function makeDebaufreRatchetWheel({
   color,
+  arborRadius,
   depth,
   mountPhase,
   outerRadius,
@@ -3927,6 +4035,8 @@ function makeDebaufreRatchetWheel({
   const root = new THREE.Group();
   const rotor = new THREE.Group();
   const toothPitch = FULL_TURN / toothCount;
+  const rimWidth = 0.17;
+  const hubRadius = 0.36;
   const wheelMaterial = matte(color, {
     metalness: 0.18,
     roughness: 0.57,
@@ -3939,90 +4049,84 @@ function makeDebaufreRatchetWheel({
   root.userData.axis = Z_AXIS.clone();
   root.userData.rotor = rotor;
 
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(rimRadius, 0.105, 10, 96),
-    wheelMaterial,
-  );
+  const rimShape = new THREE.Shape();
+  rimShape.absarc(0, 0, rimRadius, 0, FULL_TURN, false);
+  const rimHole = new THREE.Path();
+  rimHole.absarc(0, 0, rimRadius - rimWidth, 0, FULL_TURN, true);
+  rimShape.holes.push(rimHole);
+  const rim = new THREE.Mesh(debaufrePrism(rimShape, depth, 96), wheelMaterial);
   rim.userData.role = 'debaufre-ratchet-wheel-rim';
   rotor.add(rim);
 
+  // The hub is bored for the common arbor, which turns with it.
+  const hubShape = new THREE.Shape();
+  hubShape.absarc(0, 0, hubRadius, 0, FULL_TURN, false);
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, arborRadius, 0, FULL_TURN, true);
+  hubShape.holes.push(bore);
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.36, 0.36, depth * 1.45, 36),
+    debaufrePrism(hubShape, depth * 1.45, 36),
     darkMaterial,
   );
-  hub.rotation.x = Math.PI / 2;
   hub.userData.role = 'debaufre-ratchet-wheel-hub';
   rotor.add(hub);
 
+  const spokeInner = hubRadius - 0.04;
+  const spokeOuter = rimRadius - rimWidth + 0.04;
   const spokes = [];
   for (let index = 0; index < 3; index += 1) {
     const spokeAngle = mountPhase + index * FULL_TURN / 3;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(rimRadius * 1.72, 0.14, depth * 0.7),
+      new THREE.BoxGeometry(spokeOuter - spokeInner, 0.15, depth * 0.8),
       wheelMaterial,
     );
     spoke.position.set(
-      Math.cos(spokeAngle) * rimRadius * 0.48,
-      Math.sin(spokeAngle) * rimRadius * 0.48,
+      Math.cos(spokeAngle) * (spokeInner + spokeOuter) / 2,
+      Math.sin(spokeAngle) * (spokeInner + spokeOuter) / 2,
       0,
     );
     spoke.rotation.z = spokeAngle;
     spoke.userData.index = index;
+    spoke.userData.innerRadius = spokeInner;
+    spoke.userData.outerRadius = spokeOuter;
     spoke.userData.role = 'debaufre-ratchet-wheel-spoke';
     spokes.push(spoke);
     rotor.add(spoke);
   }
 
-  const polarPoint = (radius, angle) => new THREE.Vector2(
-    Math.cos(angle) * radius,
-    Math.sin(angle) * radius,
-  );
   const toothMeshes = [];
   const toothTips = [];
   for (let index = 0; index < toothCount; index += 1) {
     const tipAngle = mountPhase + index * toothPitch;
-    const rootLeading = polarPoint(
-      rimRadius - 0.08,
-      tipAngle - toothPitch * 0.43,
-    );
-    const tip = polarPoint(outerRadius, tipAngle);
-    const hookedShoulder = polarPoint(
-      outerRadius - 0.43,
-      tipAngle + toothPitch * 0.25,
-    );
-    const rootTrailing = polarPoint(
-      rimRadius - 0.02,
-      tipAngle + toothPitch * 0.44,
-    );
-    const shape = new THREE.Shape();
-    shape.moveTo(rootLeading.x, rootLeading.y);
-    shape.lineTo(tip.x, tip.y);
-    shape.quadraticCurveTo(
-      Math.cos(tipAngle + toothPitch * 0.12) * (outerRadius - 0.08),
-      Math.sin(tipAngle + toothPitch * 0.12) * (outerRadius - 0.08),
-      hookedShoulder.x,
-      hookedShoulder.y,
-    );
-    shape.lineTo(rootTrailing.x, rootTrailing.y);
-    shape.closePath();
-
+    const outline = debaufreToothOutline({
+      outerRadius,
+      rootRadius: rimRadius - 0.04,
+      tipAngle,
+      toothPitch,
+    });
     const tooth = new THREE.Mesh(
-      centeredExtrusion(shape, depth),
+      debaufrePrism(new THREE.Shape(outline), depth),
       wheelMaterial,
     );
     tooth.userData.index = index;
     tooth.userData.mountAngle = tipAngle;
     tooth.userData.role = 'debaufre-undercut-ratchet-tooth';
     toothMeshes.push(tooth);
-    toothTips.push(new THREE.Vector3(tip.x, tip.y, 0));
+    toothTips.push(new THREE.Vector3(outline[0].x, outline[0].y, 0));
     rotor.add(tooth);
   }
 
+  const indicatorLength = (spokeOuter - hubRadius) * 0.7;
   const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(rimRadius * 0.72, 0.065, 0.025),
+    new THREE.BoxGeometry(indicatorLength, 0.06, 0.02),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  indicator.position.set(rimRadius * 0.52, 0, depth / 2 + 0.025);
+  indicator.position.set(
+    Math.cos(mountPhase) * (hubRadius + indicatorLength / 2 + 0.12),
+    Math.sin(mountPhase) * (hubRadius + indicatorLength / 2 + 0.12),
+    depth * 0.4 + 0.008,
+  );
+  indicator.rotation.z = mountPhase;
   indicator.userData.role = 'debaufre-wheel-rotation-witness';
   rotor.add(indicator);
 
@@ -4059,10 +4163,20 @@ function debaufreFrictionalRestEscapement(
   const dropAngle = halfToothPitch * 0.22;
   const impulseAdvance = halfToothPitch - dropAngle;
   const wheelContactRadius = 3.3;
-  const wheelRimRadius = 2.48;
-  const wheelPlaneOffset = 0.84;
+  const wheelRimRadius = 2.3;
+  // Brown's side elevation (301) sets the plane spacing, D radius, arbor and
+  // collet sizes: 344 px there spans the escape arbor to the pallet journal.
+  const wheelPlaneOffset = 0.62;
   const wheelDepth = 0.15;
-  const palletRadius = 1.05;
+  const palletRadius = 0.8;
+  const escapeArborRadius = 0.15;
+  const spacerDrumRadius = 0.72;
+  const balanceStaffRadius = 0.12;
+  const balanceStaffLength = 5.9;
+  const palletColletRadius = 0.3;
+  // The rest face is set back by a film so the resting tip is tangent to,
+  // not coincident with, the rendered face.
+  const restFaceFilm = 5e-4;
   const palletThickness = 2 * wheelContactRadius
     * Math.sin(impulseAdvance / 2);
   const palletAmplitude = THREE.MathUtils.degToRad(42);
@@ -4128,6 +4242,7 @@ function debaufreFrictionalRestEscapement(
   );
 
   const frontWheel = makeDebaufreRatchetWheel({
+    arborRadius: escapeArborRadius,
     color: PALETTE.driven,
     depth: wheelDepth,
     mountPhase: frontMountPhase,
@@ -4141,6 +4256,7 @@ function debaufreFrictionalRestEscapement(
   frontWheel.userData.worldAxis = Z_AXIS.clone();
 
   const rearWheel = makeDebaufreRatchetWheel({
+    arborRadius: escapeArborRadius,
     color: PALETTE.fluid,
     depth: wheelDepth,
     mountPhase: rearMountPhase,
@@ -4157,11 +4273,25 @@ function debaufreFrictionalRestEscapement(
     axis: Z_AXIS,
     color: PALETTE.ink,
     length: wheelPlaneOffset * 2 + 1.45,
-    radius: 0.12,
+    radius: escapeArborRadius,
   });
   commonEscapeArbor.position.y = wheelCenterY;
   commonEscapeArbor.userData.role = 'common-two-wheel-escape-arbor';
   commonEscapeArbor.userData.worldAxis = Z_AXIS.clone();
+  // Brown's side elevation closes the space between the wheel planes with a
+  // drum edge 0.76 below the arbor and hides the arbor there.
+  const spacerDrum = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      spacerDrumRadius,
+      spacerDrumRadius,
+      2 * wheelPlaneOffset - wheelDepth + 0.02,
+      48,
+    ),
+    matte(PALETTE.ink, { metalness: 0.24, roughness: 0.5 }),
+  );
+  spacerDrum.rotation.x = Math.PI / 2;
+  spacerDrum.userData.role = 'common-arbor-wheel-spacer-drum';
+  commonEscapeArbor.userData.rotor.add(spacerDrum);
   root.add(rearWheel, frontWheel, commonEscapeArbor);
 
   const palletAssembly = new THREE.Group();
@@ -4172,52 +4302,129 @@ function debaufreFrictionalRestEscapement(
   root.add(palletAssembly);
 
   const balanceStaff = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.105, 0.105, 8.4, 30),
+    new THREE.CylinderGeometry(
+      balanceStaffRadius,
+      balanceStaffRadius,
+      balanceStaffLength,
+      30,
+    ),
     matte(PALETTE.ink, { metalness: 0.3, roughness: 0.43 }),
   );
   balanceStaff.rotation.z = Math.PI / 2;
   balanceStaff.userData.role = 'perpendicular-balance-staff';
   palletAssembly.add(balanceStaff);
 
+  // Pallet-local frame: x along the staff, y up through the cut-away flat.
+  // The approaching teeth move toward +x and rest against the face at
+  // x = -t/2; all pallet material lies on the +x side of that face.  The
+  // bands where the two wheel planes cross the flat are height fields carved
+  // offline by the swept rendered teeth over one full cycle
+  // (scripts/generate-debaufre-300-301-pallet.mjs).
+  const baked = DEBAUFRE_300_301_PALLET;
+  const palletX0 = -palletThickness / 2 + restFaceFilm;
+  const palletX1 = palletThickness / 2;
+  const bandXs = Array.from({ length: baked.x.count }, (_, i) =>
+    palletX0 + (palletX1 - palletX0) * i / (baked.x.count - 1));
+  const bandZs = Array.from({ length: baked.z.count }, (_, j) =>
+    baked.z.start + (baked.z.end - baked.z.start) * j / (baked.z.count - 1));
+  const sweptHeight = (i, j) => baked.heights[i * baked.z.count + j]
+    / baked.heightScale;
+  const palletMaterial = matte(PALETTE.driver, {
+    metalness: 0.08,
+    roughness: 0.56,
+  });
+  const flangeMaterial = matte(PALETTE.brass, {
+    metalness: 0.2,
+    roughness: 0.45,
+  });
+
   const palletShape = new THREE.Shape();
   palletShape.moveTo(-palletRadius, 0);
-  for (let index = 0; index <= 48; index += 1) {
-    const angle = Math.PI + index * Math.PI / 48;
+  for (const side of [-1, 1]) {
+    const [near, far] = side < 0
+      ? [-baked.z.end, -baked.z.start]
+      : [baked.z.start, baked.z.end];
+    palletShape.lineTo(near, 0);
+    palletShape.lineTo(near, baked.bandFloor);
+    palletShape.lineTo(far, baked.bandFloor);
+    palletShape.lineTo(far, 0);
+  }
+  palletShape.lineTo(palletRadius, 0);
+  for (let index = 1; index < 64; index += 1) {
+    const angle = -index * Math.PI / 64;
     palletShape.lineTo(
       Math.cos(angle) * palletRadius,
       Math.sin(angle) * palletRadius,
     );
   }
-  palletShape.lineTo(-palletRadius, 0);
   palletShape.closePath();
-  const palletBody = new THREE.Mesh(
-    centeredExtrusion(palletShape, palletThickness),
-    matte(PALETTE.driver, {
-      metalness: 0.08,
-      roughness: 0.56,
-      side: THREE.DoubleSide,
-    }),
-  );
-  palletBody.rotation.y = Math.PI / 2;
+  const palletGeometry = new THREE.ExtrudeGeometry(palletShape, {
+    bevelEnabled: false,
+    depth: palletX1 - palletX0,
+  });
+  palletGeometry.rotateY(Math.PI / 2);
+  palletGeometry.translate(palletX0, 0, 0);
+  const palletBody = new THREE.Mesh(palletGeometry, palletMaterial);
   palletBody.userData.profile = 'short-cylinder-with-half-cut-away';
+  palletBody.userData.restFaceX = palletX0;
   palletBody.userData.role = 'single-d-section-frictional-rest-pallet';
   palletAssembly.add(palletBody);
 
+  const lipHalfWidth = baked.lipHalfWidth;
+  const inLip = (z) => Math.abs(Math.abs(z) - wheelPlaneOffset)
+    <= lipHalfWidth + 1e-9;
+  const palletSweptBands = [-1, 1].map((side) => {
+    const zs = side > 0 ? bandZs : bandZs.map((z) => -z).reverse();
+    const column = (j) => (side > 0 ? j : baked.z.count - 1 - j);
+    const band = new THREE.Mesh(
+      debaufreHeightfieldSolid(
+        bandXs,
+        zs,
+        (i, j) => Math.min(0, sweptHeight(i, column(j)))
+          - (inLip(zs[j]) ? baked.flangeSkin : 0),
+        baked.bandFloor - 0.005,
+      ),
+      palletMaterial,
+    );
+    band.userData.pairMember = side > 0 ? 'front' : 'rear';
+    band.userData.role = side > 0
+      ? 'front-swept-rest-and-impulse-band'
+      : 'rear-swept-rest-and-impulse-band';
+    palletAssembly.add(band);
+    return band;
+  });
+
   const palletTopEdge = new THREE.Mesh(
-    new THREE.BoxGeometry(palletThickness + 0.045, 0.045, 2 * palletRadius),
+    new THREE.BoxGeometry(0.035, 0.012, 2 * (baked.z.start - 0.02)),
     matte(PALETTE.ink, { metalness: 0.25, roughness: 0.46 }),
   );
+  palletTopEdge.position.set(palletX0 + 0.0175 + 0.004, 0, 0);
   palletTopEdge.userData.role = 'pallet-cut-end-rest-edge';
   palletAssembly.add(palletTopEdge);
 
+  // Raised flanges in the wheel planes.  Their tops are the carved envelope
+  // of the passing tooth points, so the working point stays on a flange
+  // through the whole impulse instead of lifting off the flat halfway.
+  const lipZs = bandZs.filter((z) => inLip(z));
+  const lipStart = bandZs.indexOf(lipZs[0]);
   const impulseLips = [-1, 1].map((side) => {
+    const zs = side > 0
+      ? lipZs.map((z) => z - wheelPlaneOffset)
+      : lipZs.map((z) => wheelPlaneOffset - z).reverse();
+    const column = (j) => lipStart + (side > 0 ? j : lipZs.length - 1 - j);
     const lip = new THREE.Mesh(
-      new THREE.BoxGeometry(palletThickness * 0.88, 0.115, 0.19),
-      matte(PALETTE.brass, { metalness: 0.2, roughness: 0.45 }),
+      debaufreHeightfieldSolid(
+        bandXs,
+        zs,
+        (i, j) => Math.min(baked.flangeCap, sweptHeight(i, column(j))),
+        baked.bandFloor + 0.005,
+      ),
+      flangeMaterial,
     );
-    lip.position.set(0, -0.01, side * wheelPlaneOffset);
-    lip.rotation.z = side * Math.PI / 4;
+    lip.position.set(0, 0, side * wheelPlaneOffset);
+    // Reid's nominal flange angle; the carved ramp is flatter (recorded).
     lip.userData.chamferAngle = Math.PI / 4;
+    lip.userData.sweptRampAngle = baked.sweptRampAngle;
     lip.userData.pairMember = side > 0 ? 'front' : 'rear';
     lip.userData.role = side > 0
       ? 'front-rounded-forty-five-degree-impulse-flange'
@@ -4227,7 +4434,12 @@ function debaufreFrictionalRestEscapement(
   });
 
   const palletHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.27, 0.27, palletThickness * 1.42, 36),
+    new THREE.CylinderGeometry(
+      palletColletRadius,
+      palletColletRadius,
+      palletThickness * 1.42,
+      36,
+    ),
     matte(PALETTE.ink, { metalness: 0.28, roughness: 0.43 }),
   );
   palletHub.rotation.z = Math.PI / 2;
@@ -4256,6 +4468,10 @@ function debaufreFrictionalRestEscapement(
     matte(PALETTE.white, { roughness: 0.42 }),
   );
   rearContactMarker.userData.role = 'rear-wheel-live-contact-witness';
+  // Diagnostic witnesses sit on the working point and would render through
+  // tooth and pallet; they stay positioned but hidden, flagged by `active`.
+  frontContactMarker.visible = false;
+  rearContactMarker.visible = false;
   root.add(frontContactMarker, rearContactMarker);
 
   const wheelMotionAt = (cyclePhase) => {
@@ -4487,17 +4703,42 @@ function debaufreFrictionalRestEscapement(
     palletBody,
     palletHub,
     palletTopEdge,
+    palletSweptBands,
     palletWitness,
     rearContactMarker,
     rearWheel,
+    spacerDrum,
   };
   root.userData.archetype = movement.archetype;
   root.userData.blocks = blocks;
-  root.userData.cameraDistanceScale = 0.93;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.45, -3.55, -1.75),
-    new THREE.Vector3(4.45, 4.95, 1.75),
-  );
+  const wheelTop = wheelCenterY + wheelContactRadius + 0.15;
+  const palletBottom = palletCenterY - palletRadius - 0.15;
+  let cameraDirection;
+  if (presentation === 'side') {
+    // Brown's 301 is an orthographic view along the balance staff.  A narrow
+    // field approximates it, and the slight pitch puts the camera on the
+    // staff axis so the staff reads end-on instead of as a receding rod.
+    root.userData.cameraFov = 20;
+    root.userData.cameraDistanceScale = 1;
+    root.userData.cameraFitBounds = new THREE.Box3(
+      new THREE.Vector3(-3.45, palletBottom, -1.45),
+      new THREE.Vector3(3.45, wheelTop, 1.45),
+    );
+    const fitCenterY = (palletBottom + wheelTop) / 2;
+    const expectedDistance = 27;
+    cameraDirection = new THREE.Vector3(
+      1,
+      (palletCenterY - fitCenterY) / expectedDistance,
+      0,
+    );
+  } else {
+    root.userData.cameraDistanceScale = 0.93;
+    root.userData.cameraFitBounds = new THREE.Box3(
+      new THREE.Vector3(-3.75, palletBottom, -1.45),
+      new THREE.Vector3(3.75, wheelTop, 1.45),
+    );
+    cameraDirection = new THREE.Vector3(2.4, 1.8, 12.4);
+  }
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,
     firstCatch: firstCatchPhase * cyclePeriod,
@@ -4543,6 +4784,14 @@ function debaufreFrictionalRestEscapement(
     sourceScale,
     toothCount,
     toothPitch,
+    balanceStaffLength,
+    balanceStaffRadius,
+    escapeArborRadius,
+    palletColletRadius,
+    restFaceFilm,
+    restFaceX: palletX0,
+    spacerDrumRadius,
+    toothProfile: DEBAUFRE_TOOTH_PROFILE,
     wheelCenterY,
     wheelContactRadius,
     wheelDepth,
@@ -4641,8 +4890,8 @@ function debaufreFrictionalRestEscapement(
     setSpin(rearWheel, state.wheelAngle);
     setSpin(commonEscapeArbor, state.wheelAngle);
     palletAssembly.rotation.x = state.palletAngle;
-    frontContactMarker.visible = state.activeWheel === 'front';
-    rearContactMarker.visible = state.activeWheel === 'rear';
+    frontContactMarker.userData.active = state.activeWheel === 'front';
+    rearContactMarker.userData.active = state.activeWheel === 'rear';
     if (state.contact) {
       const marker = state.activeWheel === 'front'
         ? frontContactMarker
@@ -4666,9 +4915,6 @@ function debaufreFrictionalRestEscapement(
   };
   update(0);
   markShadows(root);
-  const cameraDirection = presentation === 'side'
-    ? new THREE.Vector3(12.5, 1.4, 1.0)
-    : new THREE.Vector3(2.4, 1.8, 12.4);
   return finish(root, update, cameraDirection);
 }
 

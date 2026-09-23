@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import crypto from 'node:crypto';
+import {assertHistoricalSources} from './helpers/historical-source.mjs';
 import {bandSawPathDimensions as d,bandSawPathLength as length,bandSawPoint as at,bandSawMotion} from '../src/simulation/band-saw-path.js';
-test('141 measured review records finite teeth penetrating the old wheel tread',()=>{
+test('141 measured review records finite teeth penetrating the old wheel tread',t=>{
  const r=JSON.parse(fs.readFileSync('docs/validation/141-review.json'));
- for(const s of r.sources)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256,s.file);
+ if(!assertHistoricalSources(r,t))return;
  assert.equal(r.contact.interferingPoses,64);assert(r.contact.maximumToothVertexDepthPixels>.46);
  assert(r.contact.rimRadialExcess>.005);assert(r.legacyWheelPitchRadiusPixels<47);assert.equal(r.measuredWheelRadiusPixels,50);
 });

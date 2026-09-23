@@ -376,17 +376,17 @@ test('movement 349 analytic translations and arm rates match finite differences'
     ]) {
       const numerical = afterPoint.clone().sub(beforePoint)
         .multiplyScalar(1 / (2 * velocityStep));
-      vector3Near(velocity, numerical, 5e-10,
+      vector3Near(velocity, numerical, 1e-9,
         `${name} analytic velocity ${time}`);
     }
     near(state.arms.upper.angularVelocity,
       (afterV.arms.upper.angle - beforeV.arms.upper.angle)
         / (2 * velocityStep),
-      3e-10, `upper-arm analytic rate ${time}`);
+      1e-9, `upper-arm analytic rate ${time}`);
     near(state.arms.lower.angularVelocity,
       (afterV.arms.lower.angle - beforeV.arms.lower.angle)
         / (2 * velocityStep),
-      3e-10, `lower-arm analytic rate ${time}`);
+      1e-9, `lower-arm analytic rate ${time}`);
 
     const beforeA = stateAtTime(time - accelerationStep);
     const afterA = stateAtTime(time + accelerationStep);

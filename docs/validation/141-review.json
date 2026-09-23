@@ -26,6 +26,7 @@
     "toothRootZ": 0.1
   },
   "caveat": "Finite tooth vertices inside the nominal wheel annulus prove interference; this is not an exhaustive triangle collision audit. The rim also exceeds the nominal blade inner radius. Browser geometry remains unchanged pending reconstruction.",
+  "sourceCommit": "c1a6de11981c5c68199d9f9b6d8066e75419c548",
   "sources": [
     {
       "file": "src/simulation/authored-belts.js",

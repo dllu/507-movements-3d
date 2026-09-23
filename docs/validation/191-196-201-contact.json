@@ -2,7 +2,15 @@
   "sources": [
     {
       "file": "src/simulation/authored-gears.js",
-      "sha256": "56a772582006dd130e60f1153ab5b64466fc0acbffa8e94ce39734d529e2122c"
+      "sha256": "77a541b7d8021f588fa6f48204bc4f9f10eba4ae3634ec668b7336065bdf7e1c"
+    },
+    {
+      "file": "src/simulation/authored-gears-core.js",
+      "sha256": "b57b2c5011cc3c3d5baaec2275119cd1ebab02165929a75bb88cdd27bb5baf09"
+    },
+    {
+      "file": "src/simulation/miter-gear.js",
+      "sha256": "77708cf0f2f91ac0d9145c4bcea3d99e29ef6b691f8eb2a7016d04b026bc1bc8"
     },
     {
       "file": "src/simulation/irregular-gear-family.js",
@@ -22,7 +30,7 @@
     },
     {
       "file": "scripts/review-irregular-gear-contact.mjs",
-      "sha256": "c48d7ebedc0bfe0c23ccc8a9476f6da3b1c93e4a8a95edccb776b2b136543626"
+      "sha256": "df6b1ffb44b2e192006770a4769e05f93d83028480d2d9172af4b2fac0c73bb9"
     },
     {
       "file": "scripts/review-irregular-gear-contact.py",

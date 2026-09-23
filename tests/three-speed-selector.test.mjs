@@ -2,18 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { makeThreeSpeedSelector } from '../src/simulation/three-speed-selector.js';
-import { surfaceTriangles, surfacePoints, solidSurface } from './helpers/solid-surface.mjs';
+import { surfacePoints, solidSurface } from './helpers/solid-surface.mjs';
 import { gearBoundary, boundaryIndex, planarPairDistance } from '../scripts/lib/coaxial-planar-distance.mjs';
 import { triangleTree, meshPairDistance } from '../scripts/lib/star-mangle-pair-distance.mjs';
 
 const model = makeThreeSpeedSelector(), { parts, blocks, geometry: p, motion } = model.root.userData;
 const setTime = time => { model.update(time); model.root.updateMatrixWorld(true); };
 const near = (a, b, tolerance = 1e-9) => assert.ok(Math.abs(a - b) < tolerance, `${a} ≈ ${b}`);
+// Every indexed triangle, including slivers that the shared surface helper drops,
+// so each face stays aligned with its vertex normals and closes the edge graph.
+const indexedTriangles = g => Array.from({ length: (g.index?.count ?? g.attributes.position.count) / 3 }, (_, i) => new THREE.Triangle(...[0, 1, 2]
+  .map(j => new THREE.Vector3().fromBufferAttribute(g.attributes.position, g.index ? g.index.getX(3 * i + j) : 3 * i + j))));
 
 test('058 has seventeen closed solids with consistent outward normals and independent bearings', () => {
   for (const [name, mesh] of Object.entries(parts)) {
     const g = mesh.geometry, edges = new Map(); let volume = 0;
-    for (const [i, face] of surfaceTriangles(g).entries()) {
+    for (const [i, face] of indexedTriangles(g).entries()) {
       assert.ok(face.getArea() > 1e-20, `${name}: nonzero face`);
       const normal = face.getNormal(new THREE.Vector3());
       for (let j = 0; j < 3; j += 1) {

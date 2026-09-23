@@ -653,7 +653,12 @@ test('movement 312 renderer follows the analytical mechanism and leaves movement
       state.rightArmAngle, 0, `B angle at ${phase}`);
     near(blocks.pendulumAssembly.rotation.z,
       state.pendulumAngle, 0, `pendulum angle at ${phase}`);
-    assert.equal(blocks.outerLockMarker.visible, state.wheelLocked);
+    assert.equal(blocks.outerLockMarker.userData.active, state.wheelLocked);
+    for (const marker of [blocks.beatContactMarker,
+      blocks.innerContactMarker, blocks.outerLockMarker]) {
+      assert.equal(marker.visible, false,
+        `${marker.userData.role} is a diagnostic locus inside the parts`);
+    }
     assert.equal(blocks.beatContactMarker.userData.contactSide,
       state.beatContactSide);
     assert.equal(blocks.innerContactMarker.userData.contactSide,
