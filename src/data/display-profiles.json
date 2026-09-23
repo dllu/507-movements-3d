@@ -3551,11 +3551,11 @@
       }
     },
     "186": {
-      "peakAngularSpeed": 0.7667266867518852,
-      "peakVisibleAngularSpeed": 0.7667266867518852,
+      "peakAngularSpeed": 0.7667266867507055,
+      "peakVisibleAngularSpeed": 0.7667266867507055,
       "sustainedVisibleAngularSpeed": 0.3404330454313067,
       "floorY": -3.9499999046325684,
-      "fastestPart": "Mesh",
+      "fastestPart": "fixed-axis-valve-gab-lever-carrying-the-engagement-pin",
       "motionBounds": {
         "min": [
           -4.55,
@@ -3563,18 +3563,18 @@
           -1.5
         ],
         "max": [
-          4.839246243019694,
+          4.833527256264245,
           4.249999904632569,
           1.5
         ]
       }
     },
     "187": {
-      "peakAngularSpeed": 1.0315479324033037,
-      "peakVisibleAngularSpeed": 1.0315479324033037,
-      "sustainedVisibleAngularSpeed": 0.4459353863296359,
+      "peakAngularSpeed": 1.1278341006362076,
+      "peakVisibleAngularSpeed": 1.1278341006358952,
+      "sustainedVisibleAngularSpeed": 0.45032323306689936,
       "floorY": -2.679999952316284,
-      "fastestPart": "Mesh",
+      "fastestPart": "axial-neck-joining-rear-cam-toe-to-visible-handle",
       "motionBounds": {
         "min": [
           -5.960000095367432,
@@ -3621,7 +3621,7 @@
         ],
         "max": [
           3.95,
-          6.05,
+          6.1279990031443585,
           1.7100000286102295
         ]
       }
@@ -3649,12 +3649,12 @@
       "peakAngularSpeed": 0.7889763386929252,
       "peakVisibleAngularSpeed": 0.7889763386884843,
       "sustainedVisibleAngularSpeed": 0.6277655628326689,
-      "floorY": -3.9916226871767932,
+      "floorY": -3.6450446280868016,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
           -2.0944841688842093,
-          -3.9916226871767932,
+          -3.6450446280868016,
           -0.7099999785423279
         ],
         "max": [
@@ -3668,18 +3668,18 @@
       "peakAngularSpeed": 3.0000000000019993,
       "peakVisibleAngularSpeed": 3.0000000000019993,
       "sustainedVisibleAngularSpeed": 2.9999999999942277,
-      "floorY": -2.2707754019635886,
+      "floorY": -1.8857754374223714,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
           -1.8857754374223714,
-          -2.2707754019635886,
-          -1.4900000143051146
+          -1.8857754374223714,
+          -0.7749999761581421
         ],
         "max": [
           1.8857754374223714,
           1.8857754374223714,
-          0.7749999761581421
+          2.0400000143051145
         ]
       }
     },
@@ -3687,37 +3687,37 @@
       "peakAngularSpeed": 3.0000000000019997,
       "peakVisibleAngularSpeed": 3.0000000000019997,
       "sustainedVisibleAngularSpeed": 2.999999999994228,
-      "floorY": -2.2844565226332,
+      "floorY": -1.8994564956717546,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -1.899456484459015,
-          -2.2844565226332,
-          -1.5400000143051147
+          -1.8994564956717546,
+          -1.8994564956717546,
+          -0.800000011920929
         ],
         "max": [
-          1.899456484459015,
-          1.899456484459015,
-          0.800000011920929
+          1.8994564956717546,
+          1.8994564956717546,
+          2.0400000143051145
         ]
       }
     },
     "194": {
-      "peakAngularSpeed": 3.0000000000031095,
-      "peakVisibleAngularSpeed": 3.0000000000031095,
+      "peakAngularSpeed": 3.123596621290726,
+      "peakVisibleAngularSpeed": 3.123596621290726,
       "sustainedVisibleAngularSpeed": 2.999999999995338,
-      "floorY": -2.2981690149785767,
-      "fastestPart": "Group",
+      "floorY": -2.0220000090641035,
+      "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
           -1.9031689944663668,
-          -2.2981690149785767,
-          -1.5700000047683715
+          -2.0220000090641035,
+          -0.800000011920929
         ],
         "max": [
           1.9031689944663668,
           1.9031689944663668,
-          0.800000011920929
+          2.0500000047683713
         ]
       }
     },
@@ -3839,16 +3839,16 @@
       "peakAngularSpeed": 2.9571211448379082,
       "peakVisibleAngularSpeed": 2.9571211448379082,
       "sustainedVisibleAngularSpeed": 2.6260115048218178,
-      "floorY": -2.915000002980232,
+      "floorY": -2.609099587531211,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
           -2.9628594183176578,
-          -2.915000002980232,
-          -0.9600000014901161
+          -2.609099587531211,
+          -0.8100000214576721
         ],
         "max": [
-          2.2010000000474976,
+          1.7090995875312107,
           4.5170081168321286,
           0.7899999785423278
         ]

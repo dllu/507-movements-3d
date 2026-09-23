@@ -43,6 +43,46 @@ export default {
     remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBack', 'guideRail.*', 'guideBackArm.*', 'guideStandoff.*'],
     note: 'The disk, rod, bell crank, link and output rod; no base, posts or guide rails are drawn.',
   },
+  186: {
+    camera: [0.2, 0.15, 1],
+    remove: ['fixed-frame-supporting-valve-rockshaft'],
+    note: 'The rockshaft, gab lever, eccentric rod and spring loop handle; no frame is drawn.',
+  },
+  187: {
+    camera: [0.2, 0.15, 1],
+    remove: ['fixed-frame-supporting-the-valve-rockshaft'],
+    note: 'The rockshaft, valve lever, eccentric rod and upper handle; no frame is drawn.',
+  },
+  188: {
+    camera: [0.2, 0.15, 1],
+    remove: ['fixed-frame-and-valve-carrier-guide'],
+    note: 'The eccentric rod with its loop handle a and leaf spring; no frame or guide is drawn.',
+  },
+  189: {
+    camera: [0.2, 0.15, 1],
+    remove: ['fixed-support-frame-behind-source-linkage'],
+    note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn.',
+  },
+  191: {
+    remove: ['rear-fixed-bearing-standard', 'fixed-support-foot'],
+    note: 'Face view of the two notched wheels; no standard or foot is drawn.',
+  },
+  192: {
+    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot'],
+    note: 'Face view of the mangle wheel and its pinion; no standard or foot is drawn.',
+  },
+  193: {
+    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot'],
+    note: 'Face view of the concentric mangle wheel and its pinion; no standard or foot is drawn.',
+  },
+  194: {
+    remove: ['rear-wheel-bearing-standard', 'fixed-equal-speed-mangle-wheel-support-foot'],
+    note: 'Face view of the pin mangle wheel and its pinion; no standard or foot is drawn.',
+  },
+  201: {
+    remove: ['fixed-base-rail', 'fixed-rear-support-post', 'fixed-(?:output-pivot|input-shaft)-bearing-bridge'],
+    note: 'The eccentric gears, belt, pulley and the guided rod A; no base, post or bearing bridges are drawn.',
+  },
   234: {
     rotate: [-Math.PI / 2, 0, 0],
     camera: [2.2, 4.6, 9],

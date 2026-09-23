@@ -182,7 +182,8 @@ test('movement 189 matches Brown\'s fixed operating lever, short crank, hanger, 
   assert.equal(eccentricRod.parent, model.root);
   assert.equal(operatingLever.parent, model.root);
   assert.equal(hangerLink.parent, model.root);
-  assert.equal(frame.parent, model.root);
+  assert.ok(frame.parent === null && model.root.userData.sourcePresentation.removedRoles.includes(frame.userData.role),
+    'source presentation removes the undrawn frame');
   assert.equal(valvePin.parent, valveRocker);
   assert.equal(operatingHandleStem.parent, operatingLever);
   assert.equal(operatingCrankArm.parent, operatingLever);

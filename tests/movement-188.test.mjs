@@ -185,7 +185,8 @@ test('movement 188 matches Brown\'s loop-handle direct-pin cam and separate leaf
   // to the moving loop, and notch a travels with that loop.
   assert.equal(valveGear.parent, model.root);
   assert.equal(eccentricRod.parent, model.root);
-  assert.equal(frame.parent, model.root);
+  assert.ok(frame.parent === null && model.root.userData.sourcePresentation.removedRoles.includes(frame.userData.role),
+    'source presentation removes the undrawn frame');
   assert.equal(valvePin.parent, valveGear);
   assert.equal(loopCamHandle.parent, eccentricRod);
   assert.equal(camLobe.parent, loopCamHandle);

@@ -180,7 +180,8 @@ test('movement 186 matches Brown\'s spring-handle gab-release topology and sourc
   // the independently pivoted upper cam lever.
   assert.equal(valveRocker.parent, model.root);
   assert.equal(eccentricRod.parent, model.root);
-  assert.equal(frame.parent, model.root);
+  assert.ok(frame.parent === null && model.root.userData.sourcePresentation.removedRoles.includes(frame.userData.role),
+    'source presentation removes the undrawn frame');
   assert.equal(valvePin.parent, valveRocker);
   assert.equal(camSupportShoe.parent, valveRocker);
   assert.equal(camLever.parent, eccentricRod);

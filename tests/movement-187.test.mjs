@@ -173,7 +173,8 @@ test('movement 187 matches Brown\'s rigid-lower-grip and pivoted-upper-cam topol
   // handle, and there is no spring or notch latch.
   assert.equal(valveRocker.parent, model.root);
   assert.equal(eccentricRod.parent, model.root);
-  assert.equal(frame.parent, model.root);
+  assert.ok(frame.parent === null && model.root.userData.sourcePresentation.removedRoles.includes(frame.userData.role),
+    'source presentation removes the undrawn frame');
   assert.equal(valvePin.parent, valveRocker);
   assert.equal(camSupportShoe.parent, valveRocker);
   assert.equal(lowerHandle.parent, eccentricRod);

@@ -206,3 +206,28 @@ registry.
 | 179 | Faithful lever, trip and coupling. |
 | 180 | Faithful single clamp. |
 | 181 | Faithful diagonal catches and weights. |
+
+## Pass 50 batch: 182–201
+
+| Movement | Observation |
+| --- | --- |
+| 182 | Faithful diagonal catch pair, links and weights. |
+| 183 | Faithful sector catches, links and weight. |
+| 184 | Faithful sector catches, second form. |
+| 185 | Linkage and graduated arc faithful; a wide side elevation. |
+| 186 | Presented without the undrawn rockshaft frame, in near side elevation. The spring loop handle hangs lower than Brown's a. |
+| 187 | Presented without the undrawn frame, in near side elevation; faithful. |
+| 188 | Presented without the undrawn frame and guide, in near side elevation. The loop handle rises at a different angle from Brown's. |
+| 189 | Presented without the undrawn frame, in near side elevation; faithful. |
+| 190 | Faithful clamp lever on its wooden bed. |
+| 191 | Presented without the undrawn standard and foot; faithful notched wheels. |
+| 192 | Presented without the undrawn standard and foot; faithful mangle wheel. |
+| 193 | Presented without the undrawn standard and foot; faithful concentric mangle wheel. |
+| 194 | Presented without the undrawn standard and foot; faithful pin mangle wheel. |
+| 195 | Faithful face wheel, pinion and rolling rod. |
+| 196 | Faithful gears, arm and pedestal. |
+| 197 | Faithful slotted pin rack and pinion. |
+| 198 | Faithful endless rack frame, pinion and guide wheels. |
+| 199 | Faithful toothed yoke, mutilated wheel and guide wheels. |
+| 200 | Faithful bevel reversing pair. |
+| 201 | Presented without the undrawn base, post and bearing bridges; faithful eccentric gears, belt and rod A. |

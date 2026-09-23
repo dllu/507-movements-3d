@@ -645,7 +645,7 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
       facePinSeatCount += 1;
     }
   });
-  assert.ok(meshCount >= 78);
+  assert.ok(meshCount >= 72, "the undrawn standard and foot are presented away");
   assert.equal(facePinCount, 25);
   assert.equal(facePinSeatCount, 25);
   assert.ok(model.cameraDirection.x > 0);
