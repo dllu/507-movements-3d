@@ -151,3 +151,58 @@ Captures come from the production MuJoCo routes, on true-aspect sheets.
 | 139 | Faithful rack frame, pinion, links and carriage. |
 | 140 | Faithful toggle press links and lever. |
 | 141 | Faithful band saw frame, pulleys and table. |
+
+## Pass 50 batch: 142–161
+
+The presentation test now builds each entry's production route (live
+MuJoCo, baked bundle or special factory) as well as the registry model.
+Several production factories name their parts differently from the
+registry.
+
+| Movement | Observation |
+| --- | --- |
+| 142 | Presented without the undrawn base, rear post and slider guide: the carrier disk, fixed pinion, planet wheel, crank and slider stem match. The traversing bar is longer than Brown's stub. |
+| 143 | Faithful sliding worm, wheel and bed. |
+| 144 | Faithful lazy-tongs. |
+| 145 | Faithful wheel, beam and treadle links. |
+| 146 | Faithful framed yoke and eccentric. |
+| 147 | Faithful fan governor, vanes and hand lever. |
+| 148 | Faithful geared crank and oval cam frame. |
+| 149 | Faithful twin cams and levers. |
+| 150 | Presented without the undrawn base, posts and valve-rod guide. Sliding cam series, lever and rod match, though an invisible stroke envelope keeps the framing loose. |
+| 151 | Presented without the undrawn base, posts, upright and nut guides. The opposite-hand screw, end bearings, nuts, worm and wheel match. |
+| 152 | Faithful trammel ellipsograph. |
+| 153 | Disk, elbow lever and bar faithful. The baked fixed body still carries an undrawn base rail and posts. |
+| 154 | Faithful weighted bell crank, cord and weight. |
+| 155 | Ratchet wheel, elbow lever and pawl faithful. The baked fixed body still carries an undrawn base and posts. |
+| 156 | Presented without the undrawn base, posts and output guide; disk, slotted bell crank, link and rod match. |
+| 157 | Presented without the undrawn base, posts and output guide; disk, rod, bell crank, link and output rod match. |
+| 158 | Faithful treadle, crank and pedestal. |
+| 159 | Faithful cord treadle and pulleys. |
+| 160 | Faithful spring pole, pulley and treadle. |
+| 161 | Faithful governor balls, links and collar. |
+
+## Pass 50 batch: 162–181
+
+| Movement | Observation |
+| --- | --- |
+| 162 | Faithful governor, sleeve and reversing bevels. |
+| 163 | Faithful governor, lever and belt-shifting frame. |
+| 164 | Faithful toggle lever and weight. |
+| 165 | Faithful wave cam and follower links. |
+| 166 | Slotted rod and crank disk faithful. The rod's guided slide stands in for the caption's mold and is not drawn. |
+| 167 | Faithful diagonal-groove drum and rod. |
+| 168 | Faithful linked variable crank. |
+| 169 | Faithful linked variable crank, reversed arrangement. |
+| 170 | Faithful crossed governor and bevels. |
+| 171 | Faithful marine governor and trunnion. |
+| 172 | Faithful oval cam lever. |
+| 173 | Faithful tappet silk traverse. |
+| 174 | Faithful bench clamp. |
+| 175 | Faithful slotted frame and link; the dotted wheel is omitted. |
+| 176 | Faithful rod end and gib. |
+| 177 | Faithful rod end and gib, second form. |
+| 178 | Slotted crank and eccentric circular slot faithful. The tool slide at the left follows the caption; Brown draws only the rod. |
+| 179 | Faithful lever, trip and coupling. |
+| 180 | Faithful single clamp. |
+| 181 | Faithful diagonal catches and weights. |
