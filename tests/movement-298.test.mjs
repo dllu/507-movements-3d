@@ -520,9 +520,11 @@ test('movement 298 analytic rates match finite differences and drive every rende
       state.crownWheelAngularSpeed, 0, `reported crown speed at ${time}`);
     near(blocks.trainWheel.userData.angularSpeed,
       state.trainWheelAngularSpeed, 0, `reported train speed at ${time}`);
-    assert.equal(blocks.rightContactMarker.visible,
+    assert.equal(blocks.rightContactMarker.visible, false);
+    assert.equal(blocks.rightContactMarker.userData.active,
       state.activePallet === 'right');
-    assert.equal(blocks.leftContactMarker.visible,
+    assert.equal(blocks.leftContactMarker.visible, false);
+    assert.equal(blocks.leftContactMarker.userData.active,
       state.activePallet === 'left');
     near(model.root.userData.kinematics.cycleCoordinate,
       state.cycleCoordinate, 0, `published state coordinate at ${time}`);

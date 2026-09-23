@@ -10,7 +10,30 @@ assignment is not a claim that its existing simulation is correct. Previously
 reviewed movements remain reusable references, with their documented residuals.
 The executable inventory is [movement-batches.mjs](../scripts/lib/movement-batches.mjs).
 
-## Latest outcome: forty-eighth family pass
+## Latest outcome: forty-ninth family pass
+
+234/298/299/302 share one corrected crown wheel and pallet set: saw teeth,
+side-correct pallets and a clean 513-phase rendered-solid audit, with a focused
+negative-control test. See the [verge review](verge-crown-family-review.md).
+303 now has Graham's narrow teeth, a baked swept-cut D–C–E anchor with
+side-correct pallets, a rotating arbor and a pendulum behind the wheel; see the
+[303 review](graham-303-anchor-review.md). Visual inspection of the other rows
+without finite reviews queues 311's planar diamond arms and 300/301's thin
+hooked Debaufre teeth and side-on 301 framing; their intersection status
+remains unknown until audited.
+
+A new relative-motion screen, `scripts/screen-body-intersections.mjs`, groups
+meshes into rigid bodies by constant relative transforms and checks closed
+meshes of different bodies for sampled penetration. It separates coaxial
+(missing bore/nested sleeve), fluid and deforming pairs from working solids;
+`scripts/show-body-intersections.mjs ID` lists every pair. It is triage, not
+certification: open shells are only sources and phases/spacing are sampled.
+
+17 tests in 17 files (for example 058/059 closed solids, 179, 226, 270, 349,
+488 and several saved-audit hash checks) already fail on the pre-pass HEAD;
+they are queued rather than attributed to this pass.
+
+## Forty-eighth family pass
 
 Fifteen more movements received independent production/source visual review:
 151, 165, 171, 173, 183, 184, 294, 295, 296, 306, 307 and 502–505. The ledger

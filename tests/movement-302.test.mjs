@@ -348,9 +348,11 @@ test('movement 302 renderer follows the solved balance, wheel, and live contact'
       state.crownWheelAngle, 0, `crown arbor render at t=${time}`);
     near(blocks.drivePinion.userData.rotor.rotation.z,
       state.drivePinionAngle, 0, `pinion render at t=${time}`);
-    assert.equal(blocks.leftContactMarker.visible,
+    assert.equal(blocks.leftContactMarker.visible, false);
+    assert.equal(blocks.leftContactMarker.userData.active,
       state.activePallet === 'left');
-    assert.equal(blocks.rightContactMarker.visible,
+    assert.equal(blocks.rightContactMarker.visible, false);
+    assert.equal(blocks.rightContactMarker.userData.active,
       state.activePallet === 'right');
     const contactValues = Object.values(model.root.userData.contacts)
       .filter((contact) => contact !== null);

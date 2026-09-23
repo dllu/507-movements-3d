@@ -8,6 +8,27 @@ with uncertain reviewer identity, and scoped collision checks from global claims
 Its JSON source and generator validate complete coverage and evidence paths.
 Update affected rows in every progress commit, as required by `AGENTS.md`.
 
+# Forty-ninth family pass: verge crown wheels
+
+The [verge/crown-wheel review](verge-crown-family-review.md) corrects the shared
+crown wheel and verge pallets of 234, 298, 299 and 302. A rendered-solid audit
+found up to 0.16 pallet/tooth penetration: the right pallet body sat on the
+tooth side of its contact plane, and symmetric teeth crossed the pallet planes.
+Saw teeth with axial leading faces, outer-corner contact on the unchanged orbit
+and side-correct pallets leave only the working tip touching in a 513-phase
+audit. A new focused test includes a negative control. Diagnostic markers no
+longer render. Eleven further escapement, rack, ratchet and engine rows
+without finite-interface reviews received attributable visual inspections;
+their observed source differences are recorded as flaws and their intersection
+status stays unknown.
+
+303 follows with the same wrong-side pallet finding plus straight arms through
+the tooth path, an unbored hub on a fixed arbor and a rod through the hub. The
+[303 review](graham-303-anchor-review.md) replaces them with Graham teeth, a
+baked swept-cut anchor and a pendulum behind the wheel; a focused test checks
+the bake fingerprint, three-body clearance and working proximity with a
+negative control.
+
 # Forty-eighth family pass: display follow-ups and remaining finite contacts
 
 The [independent source follow-up](user-display-followup-review.md) confirms the

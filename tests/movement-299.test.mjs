@@ -424,9 +424,11 @@ test('movement 299 renderer binds the foliot, crown, witnesses, and contact stat
       state.foliotAngularSpeed, 0, `reported foliot speed at ${time}`);
     near(blocks.crownWheel.userData.angularSpeed,
       state.crownWheelAngularSpeed, 0, `reported crown speed at ${time}`);
-    assert.equal(blocks.rightContactMarker.visible,
+    assert.equal(blocks.rightContactMarker.visible, false);
+    assert.equal(blocks.rightContactMarker.userData.active,
       state.activePallet === 'right');
-    assert.equal(blocks.leftContactMarker.visible,
+    assert.equal(blocks.leftContactMarker.visible, false);
+    assert.equal(blocks.leftContactMarker.userData.active,
       state.activePallet === 'left');
     near(model.root.userData.kinematics.cycleCoordinate,
       state.cycleCoordinate, 0, `published state coordinate at ${time}`);

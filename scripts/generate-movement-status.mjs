@@ -29,7 +29,7 @@ const lines = [
     + 'Edit [movement-status.json](movement-status.json), then run `node scripts/generate-movement-status.mjs`. '
     + 'Update affected rows in every progress commit. The family queue selects reusable work; this ledger records each movement’s actual evidence.', '',
   `Last ledger update: **${data.updatedOn}**. Historical evidence was audited from repository review notes and production code.`, '',
-  '- **Astra visual check:** Yes means an attributable primary-agent comparison of rendered geometry with the engraving, not original authorship, a test pass, or merely creating a screenshot. Unverified means the record does not establish that attribution; a linked historical review may still exist. A visual check does not mean all flaws were fixed. Changes affecting appearance require a new check.',
+  '- **Visual check:** Yes names the reviewer and means an attributable primary-agent comparison of rendered geometry with the engraving, not original authorship, a test pass, or merely creating a screenshot. Unverified means the record does not establish that attribution; a linked historical review may still exist. A visual check does not mean all flaws were fixed. Changes affecting appearance require a new check.',
   '- **MuJoCo:** live and baked both count as production simulation use. Study only means the installed motion is not MuJoCo-driven. Geometric contact tables and analytically generated animation are not MuJoCo bakes.',
   '- **Self intersections:** includes unintended interpenetration between mechanism parts. Known solver/contact overlap is also disclosed. “None in scoped checks” applies only to the interfaces, phases and tolerances in the cited evidence, not every pair at every instant. Unknown is not clean. Intended joined stock is not itself a defect.',
   '- **Remaining flaws:** specific open defects or qualification limits; “not established” never means flawless. Evidence links preserve the distinction between old failures, rejected studies and current production.', '',
@@ -39,7 +39,7 @@ const lines = [
   `Visual: ${counts('visual')}.`, '',
   `MuJoCo: ${counts('mujoco')}.`, '',
   `Intersections: ${counts('intersections')}.`, '',
-  '| Movement | Visually checked against engraving by Astra | Uses MuJoCo | Self intersections | Remaining flaws / limits |',
+  '| Movement | Visually checked against engraving (reviewer) | Uses MuJoCo | Self intersections | Remaining flaws / limits |',
   '| --- | --- | --- | --- | --- |',
 ];
 for (const [index, row] of data.movements.entries()) {
@@ -50,7 +50,8 @@ for (const [index, row] of data.movements.entries()) {
   if (row.visual.status === 'yes' && (!row.visual.reviewer || !row.visual.evidence)) throw new Error(`Missing visual attribution: ${row.id}`);
   if (row.intersections.status !== 'unknown' && !row.intersections.evidence) throw new Error(`Missing intersection evidence: ${row.id}`);
   const number = String(row.id).padStart(3, '0');
-  const visual = `${visualLabels[row.visual.status]} ${evidence(row.visual.evidence)}`.trim();
+  const reviewer = row.visual.status === 'yes' ? ` (${clean(row.visual.reviewer.split(' — ')[0])})` : '';
+  const visual = `${visualLabels[row.visual.status]}${reviewer} ${evidence(row.visual.evidence)}`.trim();
   const physics = `${physicsLabels[row.mujoco.mode]} ${evidence(row.mujoco.evidence)}`.trim();
   const intersectionLabel = row.intersections.status === 'known' && row.intersections.kind === 'contact-overlap'
     ? 'Yes — contact overlap' : intersectionLabels[row.intersections.status];

@@ -456,7 +456,8 @@ test('movement 303 analytic rates and renderer bindings agree through every moti
       `rendered wheel at ${time}`);
     near(blocks.wheelRotor.userData.angularSpeed,
       state.wheelAngularSpeed, 0, `rendered wheel speed at ${time}`);
-    assert.equal(blocks.contactMarker.visible, state.contactActive);
+    assert.equal(blocks.contactMarker.visible, false);
+    assert.equal(blocks.contactMarker.userData.active, state.contactActive);
     assert.equal(model.root.userData.contacts.mode, state.contactMode);
     if (state.contactActive) {
       vectorNear(new THREE.Vector2(

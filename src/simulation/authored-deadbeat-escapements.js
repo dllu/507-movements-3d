@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { correctAnchorEscapement } from './anchor-escapement-working-parts.js';
+import { GRAHAM_303_ANCHOR } from './baked/graham-303-anchor.js';
 import {
   PALETTE,
   markShadows,
@@ -49,6 +50,29 @@ function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
 }
 
+// One Graham tooth for Movement 303, drawn before rotation by its index:
+// a slightly forward-leaning radial front face ending at the working tip, a
+// back-sloping top and a radial rear side, leaving the wide gaps of Brown's
+// plate. The wheel turns clockwise, so "forward" is decreasing angle.
+export function grahamToothOutline({
+  toothLeanAngle,
+  toothPitch,
+  toothTipRadius,
+  wheelRootRadius,
+}) {
+  const polar = (angle, radius) => new THREE.Vector2(
+    Math.cos(angle) * radius,
+    Math.sin(angle) * radius,
+  );
+  const tipAngle = -toothLeanAngle;
+  return [
+    polar(tipAngle + toothPitch * 0.03, wheelRootRadius),
+    polar(tipAngle, toothTipRadius),
+    polar(tipAngle + toothPitch * 0.3, toothTipRadius - 0.13),
+    polar(tipAngle + toothPitch * 0.3, wheelRootRadius),
+  ];
+}
+
 function polygonShape(points) {
   const shape = new THREE.Shape();
   points.forEach((point, index) => {
@@ -89,17 +113,20 @@ function edgeTube(points, depth, radius, material, role) {
 }
 
 function makeDeadbeatPallet(lockPoints, impulsePoints, {
+  bodySide = -1,
   depth,
   sideName,
   thickness,
 }) {
+  // bodySide -1 puts the solid between the working face and the pallet
+  // arbor (a tooth bearing on an outer face); +1 puts it beyond the face.
   const root = new THREE.Group();
   const workingPath = [
     ...lockPoints.slice().reverse(),
     ...impulsePoints.slice(1),
   ];
   const innerPath = workingPath.map((point) => point.clone()
-    .addScaledVector(point.clone().normalize(), -thickness));
+    .addScaledVector(point.clone().normalize(), bodySide * thickness));
   const body = new THREE.Mesh(
     centeredExtrusion(polygonShape([
       ...workingPath,
@@ -1146,23 +1173,18 @@ function grahamDeadbeatPendulumEscapement(movement) {
   const wheelRotor = new THREE.Group();
   wheelRotor.userData.role = 'clockwise-deadbeat-wheel-rotor';
   escapeWheel.add(wheelRotor);
+  const toothOutline = grahamToothOutline({
+    toothLeanAngle,
+    toothPitch,
+    toothTipRadius,
+    wheelRootRadius,
+  });
   const wheelShape = new THREE.Shape();
   for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
-    const centerAngle = toothIndex * toothPitch;
-    const outlinePoints = [
-      new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.48) * wheelRootRadius,
-      ),
-      new THREE.Vector2(
-        Math.cos(centerAngle - toothLeanAngle) * toothTipRadius,
-        Math.sin(centerAngle - toothLeanAngle) * toothTipRadius,
-      ),
-      new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.48) * wheelRootRadius,
-      ),
-    ];
+    const outlinePoints = toothOutline.map((point) => rotate2(
+      point,
+      toothIndex * toothPitch,
+    ));
     for (const [pointIndex, point] of outlinePoints.entries()) {
       if (toothIndex === 0 && pointIndex === 0) {
         wheelShape.moveTo(point.x, point.y);
@@ -1176,7 +1198,7 @@ function grahamDeadbeatPendulumEscapement(movement) {
   wheelOpening.absarc(0, 0, wheelInnerRadius, 0, FULL_TURN, true);
   wheelShape.holes.push(wheelOpening);
   const toothedRim = new THREE.Mesh(
-    centeredExtrusion(wheelShape, wheelDepth, 0.006),
+    centeredExtrusion(wheelShape, wheelDepth, GRAHAM_303_ANCHOR.wheelBevel),
     wheelMaterial,
   );
   toothedRim.userData.role = 'thirty-forward-leaning-deadbeat-teeth';
@@ -1202,17 +1224,21 @@ function grahamDeadbeatPendulumEscapement(movement) {
   const wheelHub = cylinderAlongZ(0.37, 0.68, darkMaterial, 38);
   wheelHub.userData.role = 'Graham-escape-wheel-hub';
   wheelRotor.add(wheelHub);
-  const wheelShaft = cylinderAlongZ(0.12, 1.22, darkMaterial, 32);
-  wheelShaft.userData.role = 'fixed-Graham-escape-wheel-arbor';
-  escapeWheel.add(wheelShaft);
+  // The arbor turns with the wheel; its rear end stops short of the pendulum
+  // rod, which hangs behind the wheel as in Brown's plate.
+  const wheelShaft = cylinderAlongZ(0.12, 0.95, darkMaterial, 32);
+  wheelShaft.position.z = -0.025;
+  wheelShaft.userData.role = 'Graham-escape-wheel-arbor';
+  wheelRotor.add(wheelShaft);
   const wheelIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 18, 12),
     indexMaterial,
   );
+  const wheelIndexRadius = (wheelRootRadius + wheelInnerRadius) / 2;
   wheelIndex.position.set(
-    Math.cos(-toothLeanAngle) * (toothTipRadius - 0.06),
-    Math.sin(-toothLeanAngle) * (toothTipRadius - 0.06),
-    wheelDepth / 2 + 0.075,
+    Math.cos(-toothLeanAngle) * wheelIndexRadius,
+    Math.sin(-toothLeanAngle) * wheelIndexRadius,
+    wheelDepth / 2 + 0.03,
   );
   wheelIndex.userData.role = 'white-Graham-wheel-index';
   wheelRotor.add(wheelIndex);
@@ -1235,7 +1261,12 @@ function grahamDeadbeatPendulumEscapement(movement) {
   const rightPallet = makeDeadbeatPallet(
     rightLockPoints,
     rightImpulsePoints,
-    { depth: anchorDepth + 0.06, sideName: 'right-E', thickness: 0.27 },
+    {
+      bodySide: 1,
+      depth: anchorDepth + 0.06,
+      sideName: 'right-E',
+      thickness: 0.27,
+    },
   );
   rightPallet.userData.role =
     'right-pallet-E-inner-dead-face-and-B-impulse-face';
@@ -1245,25 +1276,29 @@ function grahamDeadbeatPendulumEscapement(movement) {
     point.y,
     z,
   );
-  const leftArmEnd = leftLockPoints[Math.floor(
-    leftLockPoints.length / 2,
-  )].clone().multiplyScalar(0.93);
-  const rightArmEnd = rightLockPoints[Math.floor(
-    rightLockPoints.length / 2,
-  )].clone().multiplyScalar(0.93);
-  const anchorArms = [leftArmEnd, rightArmEnd].map((end, index) => {
-    const arm = beamBetween(
-      new THREE.Vector3(0, -0.04, 0),
-      point3(end),
-      0.23,
-      anchorDepth,
+  // Each side's arm and pallet is one baked outline: a source-proportioned
+  // blank minus the envelope swept by the teeth in the anchor frame, so the
+  // solved lock/impulse faces remain while flanks and neighbours clear.
+  const anchorArms = [
+    ['left', leftPallet, 'left-anchor-arm-and-pallet-D'],
+    ['right', rightPallet, 'right-anchor-arm-and-pallet-E'],
+  ].map(([side, pallet, role], index) => {
+    const baked = GRAHAM_303_ANCHOR[side];
+    const shape = polygonShape(baked.outer.map(([x, y]) => new THREE.Vector2(x, y)));
+    for (const hole of baked.holes) {
+      shape.holes.push(new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y))));
+    }
+    const piece = new THREE.Mesh(
+      centeredExtrusion(shape, anchorDepth + 0.06, GRAHAM_303_ANCHOR.anchorBevel),
       anchorMaterial,
     );
-    arm.userData.index = index;
-    arm.userData.role = index === 0
-      ? 'left-anchor-arm-to-pallet-D'
-      : 'right-anchor-arm-to-pallet-E';
-    return arm;
+    piece.userData.index = index;
+    piece.userData.role = role;
+    const oldBody = pallet.userData.body;
+    pallet.remove(oldBody);
+    oldBody.geometry.dispose();
+    pallet.userData.body = piece;
+    return piece;
   });
   const anchorPivotHub = cylinderAlongZ(0.28, 0.82, darkMaterial, 36);
   anchorPivotHub.userData.role = 'Graham-pallet-arbor-C';
@@ -1276,10 +1311,16 @@ function grahamDeadbeatPendulumEscapement(movement) {
   pivotCap.position.y = 0.06;
   pivotCap.userData.role = 'triangular-anchor-apex-cap';
 
+  // Anchor-local depth of the pendulum plane: world z -0.6, behind the wheel
+  // arbor (rear end -0.5) and its bearing, in front of the rear supports.
+  const pendulumZ = -0.85;
+  const anchorArbor = cylinderAlongZ(0.12, 0.84, darkMaterial, 28);
+  anchorArbor.position.z = -0.5;
+  anchorArbor.userData.role = 'Graham-pallet-arbor-to-pendulum';
   const pendulumRodLength = 7.35;
   const pendulumRod = beamBetween(
-    new THREE.Vector3(0, -0.08, -0.5),
-    new THREE.Vector3(0, -pendulumRodLength, -0.5),
+    new THREE.Vector3(0, 0.1, pendulumZ),
+    new THREE.Vector3(0, -pendulumRodLength, pendulumZ),
     0.12,
     0.14,
     anchorMaterial,
@@ -1289,15 +1330,17 @@ function grahamDeadbeatPendulumEscapement(movement) {
     new THREE.SphereGeometry(0.34, 28, 18),
     anchorMaterial,
   );
-  pendulumBob.position.set(0, -pendulumRodLength, -0.5);
+  pendulumBob.scale.z = 0.35;
+  pendulumBob.position.set(0, -pendulumRodLength, pendulumZ);
   pendulumBob.userData.role = 'pendulum-point-F-bob';
   const pendulumIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.07, 16, 10),
     indexMaterial,
   );
-  pendulumIndex.position.set(0, -pendulumRodLength - 0.3, -0.49);
+  pendulumIndex.position.set(0, -pendulumRodLength, pendulumZ + 0.14);
   pendulumIndex.userData.role = 'white-pendulum-swing-witness';
   anchor.add(
+    anchorArbor,
     pendulumRod,
     pendulumBob,
     pendulumIndex,
@@ -1315,29 +1358,78 @@ function grahamDeadbeatPendulumEscapement(movement) {
     new THREE.TorusGeometry(0.34, 0.075, 10, 40),
     frameMaterial,
   );
-  anchorBearing.position.set(anchorPivot.x, anchorPivot.y, -0.38);
+  anchorBearing.position.set(anchorPivot.x, anchorPivot.y, -0.4);
   anchorBearing.userData.role = 'fixed-pallet-arbor-bearing';
   const wheelBearing = new THREE.Mesh(
     new THREE.TorusGeometry(0.31, 0.07, 10, 38),
     frameMaterial,
   );
-  wheelBearing.position.set(0, 0, -0.4);
+  wheelBearing.position.set(0, 0, -0.43);
   wheelBearing.userData.role = 'fixed-escape-arbor-bearing';
+  // The post stands clear of the wheel and of the bob's full swing; bosses
+  // reach each bearing ring from the rear bars on the side away from the rod.
+  const rearZ = -0.84;
+  const postX = 3.05;
+  const frameBaseY = -4.3;
+  const topBarY = anchorPivot.y + 0.62;
   const rearStandard = beamBetween(
-    new THREE.Vector3(anchorPivot.x, -4.05, -0.78),
-    new THREE.Vector3(anchorPivot.x, anchorPivot.y + 0.65, -0.78),
+    new THREE.Vector3(postX, frameBaseY, rearZ),
+    new THREE.Vector3(postX, topBarY + 0.09, rearZ),
     0.18,
     0.2,
     frameMaterial,
   );
   rearStandard.userData.role = 'rear-clock-frame-standard';
+  const topBar = beamBetween(
+    new THREE.Vector3(anchorPivot.x - 0.1, topBarY, rearZ),
+    new THREE.Vector3(postX, topBarY, rearZ),
+    0.18,
+    0.2,
+    frameMaterial,
+  );
+  topBar.userData.role = 'rear-pallet-arbor-bar';
+  const wheelBarY = 0;
+  const wheelBossX = -0.36;
+  const wheelBar = beamBetween(
+    new THREE.Vector3(wheelBossX - 0.06, wheelBarY, rearZ),
+    new THREE.Vector3(postX, wheelBarY, rearZ),
+    0.16,
+    0.2,
+    frameMaterial,
+  );
+  wheelBar.userData.role = 'rear-escape-arbor-bar';
+  const bossLength = (bearingZ) => bearingZ - rearZ;
+  const anchorBoss = cylinderAlongZ(0.06, bossLength(-0.4), frameMaterial, 16);
+  anchorBoss.position.set(anchorPivot.x, anchorPivot.y + 0.36, (rearZ - 0.4) / 2);
+  anchorBoss.userData.role = 'pallet-bearing-boss';
+  const anchorDrop = beamBetween(
+    new THREE.Vector3(anchorPivot.x, anchorPivot.y + 0.3, rearZ),
+    new THREE.Vector3(anchorPivot.x, topBarY + 0.05, rearZ),
+    0.14,
+    0.2,
+    frameMaterial,
+  );
+  anchorDrop.userData.role = 'rear-pallet-arbor-hanger';
+  const wheelBoss = cylinderAlongZ(0.06, bossLength(-0.43), frameMaterial, 16);
+  wheelBoss.position.set(wheelBossX, wheelBarY, (rearZ - 0.43) / 2);
+  wheelBoss.userData.role = 'escape-bearing-boss';
   const frameBase = new THREE.Mesh(
     new THREE.BoxGeometry(6.4, 0.22, 0.72),
     frameMaterial,
   );
-  frameBase.position.set(0, -4.05, -0.66);
+  frameBase.position.set(0, frameBaseY, -0.66);
   frameBase.userData.role = 'Graham-clock-frame-base';
-  fixedFrame.add(anchorBearing, wheelBearing, rearStandard, frameBase);
+  fixedFrame.add(
+    anchorBearing,
+    wheelBearing,
+    rearStandard,
+    topBar,
+    anchorDrop,
+    wheelBar,
+    anchorBoss,
+    wheelBoss,
+    frameBase,
+  );
 
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.11, 18, 13),
@@ -1345,6 +1437,7 @@ function grahamDeadbeatPendulumEscapement(movement) {
   );
   contactMarker.position.z = 0.78;
   contactMarker.userData.role = 'white-active-Graham-contact';
+  contactMarker.visible = false;
   root.add(fixedFrame, escapeWheel, anchor, contactMarker);
 
   const impulseReleaseAnchorSpeed = anchorAmplitude * Math.PI
@@ -1585,7 +1678,7 @@ function grahamDeadbeatPendulumEscapement(movement) {
     wheelRotor.userData.angularAcceleration =
       state.wheelAngularAcceleration;
     wheelRotor.userData.angularSpeed = state.wheelAngularSpeed;
-    contactMarker.visible = state.contactActive;
+    contactMarker.userData.active = state.contactActive;
     if (state.contactActive) {
       contactMarker.position.set(
         state.activeToothPoint.x,
@@ -1654,6 +1747,11 @@ function grahamDeadbeatPendulumEscapement(movement) {
     pivotCap,
     rearStandard,
     rightPallet,
+    anchorArbor,
+    anchorBoss,
+    topBar,
+    wheelBar,
+    wheelBoss,
     spokeMeshes,
     toothedRim,
     wheelBearing,

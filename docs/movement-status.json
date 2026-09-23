@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedOn": "2026-09-18",
+  "updatedOn": "2026-09-23",
   "evidencePolicy": "Historical source inspections without attributable reviewer identity remain unverified. Scoped nonpenetration is not global clearance. MuJoCo follows installed production routes; rejected studies are separate.",
   "movements": [
     {
@@ -5858,17 +5858,21 @@
     {
       "id": 234,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default/oblique production views inspected beside the engraving after the saw-tooth and pallet-side correction."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Plain rectangular pallets instead of hooked flags A; added frame. Prescribed verge motion with ideal drops; impact and friction unsolved.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -5878,7 +5882,7 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 235,
@@ -6699,17 +6703,21 @@
     {
       "id": 269,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Faithful; added gear stand. Finite rack/tooth handoff not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -6719,7 +6727,7 @@
         "evidence": "src/simulation/authored-mutilated-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 270,
@@ -6892,17 +6900,21 @@
     {
       "id": 277,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -6912,7 +6924,7 @@
         "evidence": "src/simulation/authored-colt-ratchets.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 278,
@@ -7419,17 +7431,21 @@
     {
       "id": 298,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default/oblique production views inspected beside the engraving after the saw-tooth and pallet-side correction."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Source lower wheel is face-on with saw teeth; model shows the 32-pin contrate wheel horizontal. Prescribed balance motion; train and arbor clearance outside the audit.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7439,22 +7455,26 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 299,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default/oblique production views inspected beside the edge-on engraving after the saw-tooth and pallet-side correction."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Oblique full crown does not reproduce Brown’s edge-on two-tooth section. Prescribed foliot motion with ideal drops; impact and friction unsolved.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7464,22 +7484,26 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 300,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Teeth much broader than Brown’s thin hooked teeth; spokes read as loose sticks. Finite pallet/tooth intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7489,22 +7513,26 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 301,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Side elevation not framed side-on; wheels widely separated versus the drawn close pair. Finite pallet/tooth intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7514,22 +7542,26 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 302,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default view and crown-tooth crop inspected beside the engraving; saw-tooth handedness matches the source arrow."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Pallets A/B are small blocks, not drawn blades; lower weight arrangement inferred. Prescribed balance motion; lower pinion outside the audit.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7539,22 +7571,27 @@
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 303,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/graham-303-anchor-review.md",
+        "note": "Default, oblique and rod-occlusion crops inspected beside the plate after the tooth, anchor and pendulum correction."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "sampled-clear",
+        "evidence": "docs/graham-303-anchor-review.md",
+        "note": "Relative-motion screen (0.01 spacing, 257 phases) and focused 97-phase test: wheel, anchor/pendulum and frame clear. Open working-edge tubes checked only as sources."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Working faces 0.014–0.030 from the nominal tip; anchor outline reconstructed from proportions, not traced; added rear frame. Pendulum, impulse and drop dynamics prescribed.",
       "references": [
+        "docs/graham-303-anchor-review.md",
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7564,22 +7601,26 @@
         "evidence": "src/simulation/authored-deadbeat-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 304,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Thin V pallet instead of Brown’s broad plate on a disk; white index markers at hub and pallet tip. Finite pin/pallet intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7589,7 +7630,7 @@
         "evidence": "src/simulation/authored-stud-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 305,
@@ -7698,17 +7739,21 @@
     {
       "id": 309,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Disk weights instead of balls and an added frame; otherwise faithful. Finite pallet/tooth and fork-pin intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7718,22 +7763,26 @@
         "evidence": "src/simulation/authored-gravity-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 310,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Faithful pallet frame and three-legged wheel. Finite lifting-pin/pallet and stop intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7743,22 +7792,26 @@
         "evidence": "src/simulation/authored-gravity-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 311,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Curved crossing 3D arms instead of Brown’s planar diamond; hard to read. Finite stop/pin intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7768,22 +7821,26 @@
         "evidence": "src/simulation/authored-gravity-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 312,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Added trapezoid frame; T-headed teeth approximate the stops. Finite lift/stop intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -7793,7 +7850,7 @@
         "evidence": "src/simulation/authored-gravity-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 313,
@@ -8621,17 +8678,21 @@
     {
       "id": 347,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "No attributable independent Astra source/render inspection located in the bounded documentation audit."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 49,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/verge-crown-family-review.md",
+        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
         "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Translucent drum instead of Brown’s conical-head section; crank/flywheel correct. Finite disk/seat intersections not audited.",
       "references": [
+        "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md"
@@ -8641,7 +8702,7 @@
         "evidence": "src/simulation/authored-disk-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 348,

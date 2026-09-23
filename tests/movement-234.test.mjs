@@ -497,12 +497,14 @@ test('movement 234 renderer binds the wheel, verge, pallets, and contacts', () =
       'rendered crown-arbor angle');
     near(blocks.verge.rotation.x, state.vergeAngle, 0,
       'rendered verge angle');
+    assert.equal(blocks.rightContactMarker.visible, false);
     assert.equal(
-      blocks.rightContactMarker.visible,
+      blocks.rightContactMarker.userData.active,
       state.activePallet === 'right',
     );
+    assert.equal(blocks.leftContactMarker.visible, false);
     assert.equal(
-      blocks.leftContactMarker.visible,
+      blocks.leftContactMarker.userData.active,
       state.activePallet === 'left',
     );
     if (state.contact) {

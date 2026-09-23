@@ -130,9 +130,13 @@ function makeCrownEscapeWheel({
   rotor.add(hub);
 
   const toothPitch = FULL_TURN / toothCount;
-  const toothTangentHalfWidth = contactRadius * Math.sin(toothPitch * 0.29);
-  const innerRadius = contactRadius - toothRadialDepth / 2;
-  const outerRadius = contactRadius + toothRadialDepth / 2;
+  // Saw teeth: an axial leading face in the counterclockwise running
+  // direction and an inclined back, as in Brown's crown wheels. A radial tip
+  // edge is oblique to both pallet planes, and its outer corner is always the
+  // first point to reach them, so that corner lies on the contact orbit.
+  const toothBackWidth = contactRadius * Math.sin(toothPitch * 0.62);
+  const innerRadius = contactRadius - toothRadialDepth;
+  const outerRadius = contactRadius;
   const toothMeshes = [];
   const toothTips = [];
   const point = (angle, radial, tangent, z) => [
@@ -144,11 +148,11 @@ function makeCrownEscapeWheel({
   for (let index = 0; index < toothCount; index += 1) {
     const angle = mountPhase + index * toothPitch;
     const vertices = [
-      ...point(angle, innerRadius, -toothTangentHalfWidth, toothBaseZ),
-      ...point(angle, innerRadius, toothTangentHalfWidth, toothBaseZ),
+      ...point(angle, innerRadius, -toothBackWidth, toothBaseZ),
+      ...point(angle, innerRadius, 0, toothBaseZ),
       ...point(angle, innerRadius, 0, toothTipZ),
-      ...point(angle, outerRadius, -toothTangentHalfWidth, toothBaseZ),
-      ...point(angle, outerRadius, toothTangentHalfWidth, toothBaseZ),
+      ...point(angle, outerRadius, -toothBackWidth, toothBaseZ),
+      ...point(angle, outerRadius, 0, toothBaseZ),
       ...point(angle, outerRadius, 0, toothTipZ),
     ];
     const indices = [
@@ -178,15 +182,6 @@ function makeCrownEscapeWheel({
       toothTipZ,
     );
     toothTips.push(tip);
-    const tipRidge = new THREE.Mesh(
-      new THREE.BoxGeometry(toothRadialDepth, 0.035, 0.035),
-      darkMaterial,
-    );
-    tipRidge.position.copy(tip);
-    tipRidge.rotation.z = angle;
-    tipRidge.userData.index = index;
-    tipRidge.userData.role = 'tooth-contact-ridge';
-    rotor.add(tipRidge);
   }
 
   const indicator = new THREE.Mesh(
@@ -199,6 +194,8 @@ function makeCrownEscapeWheel({
 
   root.userData.body = body;
   root.userData.contactRadius = contactRadius;
+  root.userData.toothInnerRadius = innerRadius;
+  root.userData.toothBaseZ = toothBaseZ;
   root.userData.indicator = indicator;
   root.userData.mountPhase = mountPhase;
   root.userData.teeth = toothCount;
@@ -363,11 +360,15 @@ function vergeAndCrownWheelEscapement(
     pallet.userData.baseAngle = baseAngle;
     pallet.userData.side = side;
     const x = (side === 'right' ? 1 : -1) * palletCenterX;
+    // The tooth pushes the right face toward local +y and the left face toward
+    // local -y, so each pallet body lies on the side away from the teeth.
+    const bodySide = side === 'right' ? 1 : -1;
+    pallet.userData.bodySide = bodySide;
     const neck = new THREE.Mesh(
       new THREE.BoxGeometry(palletWidth * 0.62, 0.16, palletRootDistance),
       vergeMaterial,
     );
-    neck.position.set(x, -0.055, -palletRootDistance / 2);
+    neck.position.set(x, bodySide * 0.08, -palletRootDistance / 2);
     neck.userData.role = `${side}-pallet-neck`;
     pallet.add(neck);
     const face = new THREE.Mesh(
@@ -380,7 +381,7 @@ function vergeAndCrownWheelEscapement(
     );
     face.position.set(
       x,
-      -palletThickness / 2,
+      bodySide * palletThickness / 2,
       -palletFaceMidDistance,
     );
     face.userData.contactFaceAtLocalY = 0;
@@ -392,7 +393,7 @@ function vergeAndCrownWheelEscapement(
     );
     tipEdge.position.set(
       x,
-      -palletThickness - 0.012,
+      bodySide * (palletThickness + 0.012),
       -palletTipDistance + 0.02,
     );
     tipEdge.userData.role = `${side}-pallet-release-edge`;
@@ -459,6 +460,9 @@ function vergeAndCrownWheelEscapement(
     matte(PALETTE.white, { roughness: 0.42 }),
   );
   rightContactMarker.userData.role = 'right-pallet-contact-marker';
+  // Diagnostic only: a marker at the contact point necessarily intersects
+  // both the tooth and the pallet, so it tracks the contact without rendering.
+  rightContactMarker.visible = false;
   const leftContactMarker = rightContactMarker.clone();
   leftContactMarker.userData.role = 'left-pallet-contact-marker';
   root.add(rightContactMarker, leftContactMarker);
@@ -921,8 +925,8 @@ function vergeAndCrownWheelEscapement(
     verge.rotation.x = state.vergeAngle;
     setSpin(crownWheel, state.wheelAngle);
     setSpin(crownShaft, state.wheelAngle);
-    rightContactMarker.visible = state.activePallet === 'right';
-    leftContactMarker.visible = state.activePallet === 'left';
+    rightContactMarker.userData.active = state.activePallet === 'right';
+    leftContactMarker.userData.active = state.activePallet === 'left';
     if (state.contact) {
       const marker = state.activePallet === 'right'
         ? rightContactMarker
@@ -2667,8 +2671,8 @@ function classicWatchVergeEscapement(
     setSpin(escapePinion, state.crownWheelAngle);
     setSpin(trainWheel, state.trainWheelAngle);
     setSpin(trainShaft, state.trainWheelAngle);
-    blocks.rightContactMarker.visible = state.activePallet === 'right';
-    blocks.leftContactMarker.visible = state.activePallet === 'left';
+    blocks.rightContactMarker.userData.active = state.activePallet === 'right';
+    blocks.leftContactMarker.userData.active = state.activePallet === 'left';
     if (state.contact) {
       const marker = state.activePallet === 'right'
         ? blocks.rightContactMarker
@@ -2762,17 +2766,19 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     inheritedBlocks.leftPallet,
     inheritedBlocks.rightPallet,
   ]) {
+    const bodySide = pallet.pallet.userData.bodySide;
     pallet.face.scale.y = visualPalletThickness
       / inheritedGeometry.palletThickness;
-    pallet.face.position.y = -visualPalletThickness / 2;
+    pallet.face.position.y = bodySide * visualPalletThickness / 2;
     pallet.neck.scale.y = 1.45;
-    pallet.neck.position.y = -0.08 * 1.45 / 2;
+    pallet.neck.position.y = bodySide * 0.16 * 1.45 / 2;
     pallet.tipEdge.scale.y = 1.7;
+    pallet.tipEdge.position.y = bodySide * (visualPalletThickness + 0.02);
     const carrier = new THREE.Mesh(
       new THREE.BoxGeometry(0.36, 0.2, 0.42),
       palletCarrierMaterial,
     );
-    carrier.position.set(pallet.face.position.x, -0.045, -0.21);
+    carrier.position.set(pallet.face.position.x, bodySide * 0.125, -0.21);
     carrier.userData.role = `${pallet.pallet.userData.side}-pallet-carrier-arm`;
     pallet.pallet.add(carrier);
     palletCarriers.push(carrier);
@@ -2784,7 +2790,13 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     new THREE.SphereGeometry(0.105, 20, 14),
     matte(PALETTE.white, { roughness: 0.44 }),
   );
-  toothWitness.position.copy(crownWheel.userData.toothTips[0]);
+  // Seated on the wheel face just inside tooth 0, below every pallet path.
+  const witnessRadius = crownWheel.userData.toothInnerRadius - 0.22;
+  toothWitness.position.set(
+    Math.cos(crownWheel.userData.mountPhase) * witnessRadius,
+    Math.sin(crownWheel.userData.mountPhase) * witnessRadius,
+    crownWheel.userData.toothBaseZ + 0.04,
+  );
   toothWitness.userData.role = 'crown-wheel-rotation-witness';
   crownWheel.userData.rotor.add(toothWitness);
 
@@ -3150,9 +3162,9 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     setSpin(crownWheel, state.crownWheelAngle);
     setSpin(crownShaft, state.crownWheelAngle);
     setSpin(drivePinion, state.drivePinionAngle);
-    inheritedBlocks.rightContactMarker.visible =
+    inheritedBlocks.rightContactMarker.userData.active =
       state.activePallet === 'right';
-    inheritedBlocks.leftContactMarker.visible =
+    inheritedBlocks.leftContactMarker.userData.active =
       state.activePallet === 'left';
     if (state.contact) {
       const marker = state.activePallet === 'right'
@@ -3859,8 +3871,8 @@ function oldFashionedClockVergeEscapement(movement) {
     blocks.verge.rotation.x = state.foliotAngle;
     setSpin(blocks.crownWheel, state.crownWheelAngle);
     setSpin(blocks.crownShaft, state.crownWheelAngle);
-    blocks.rightContactMarker.visible = state.activePallet === 'right';
-    blocks.leftContactMarker.visible = state.activePallet === 'left';
+    blocks.rightContactMarker.userData.active = state.activePallet === 'right';
+    blocks.leftContactMarker.userData.active = state.activePallet === 'left';
     if (state.contact) {
       const marker = state.activePallet === 'right'
         ? blocks.rightContactMarker
