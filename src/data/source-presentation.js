@@ -521,4 +521,9 @@ export default {
     remove: ['white-disk-rotation-index', 'white-lever-vibration-index'],
     note: 'Front elevation of the grooved disk, follower pin and lever; the white indices are not drawn.',
   },
+  277: {
+    camera: [-0.12, 0.05, 1],
+    remove: ['fixed-colt-indexing-display-base', 'fixed-cylinder-arbor-support-post', 'fixed-hammer-bearing-arm', 'fixed-rear-hammer-bearing-post', 'white-(?:cylinder-step|hammer-cocking|dog-ratchet-contact)-index'],
+    note: 'Side elevation of the cylinder, ratchet b, dog a, spring c and hammer; no base or bearing posts are drawn.',
+  },
 };

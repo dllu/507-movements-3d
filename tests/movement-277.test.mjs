@@ -73,20 +73,20 @@ test('movement 277 is one hammer-carried dog indexing one six-tooth cylinder rat
   near(transmission.cylinderStepPerCock, FULL_TURN / 6, 0,
     'one-chamber step');
 
-  assert.equal(blocks.cylinder.parent, model.root);
-  assert.equal(blocks.cylinderRotor.parent, blocks.cylinder);
-  assert.equal(blocks.cylinderBody.parent, blocks.cylinderRotor);
-  assert.equal(blocks.ratchet.parent, blocks.cylinderRotor);
+  assert.ok(blocks.cylinder.parent === model.root, 'cylinder parent');
+  assert.ok(blocks.cylinderRotor.parent === blocks.cylinder, 'cylinderRotor parent');
+  assert.ok(blocks.cylinderBody.parent === blocks.cylinderRotor, 'cylinder body on the rotor');
+  assert.ok(blocks.ratchet.parent === blocks.cylinderRotor, 'ratchet parent');
   assert.equal(blocks.lockingWards.length, 6);
   assert.ok(blocks.lockingWards.every((ward) =>
     ward.parent === blocks.cylinderRotor));
-  assert.equal(blocks.hammer.parent, model.root);
-  assert.equal(blocks.hammerRotor.parent, blocks.hammer);
-  assert.equal(blocks.hammerBody.parent, blocks.hammerRotor);
-  assert.equal(blocks.dogPivotPin.parent, blocks.hammerRotor);
-  assert.equal(blocks.dog.parent, model.root);
-  assert.equal(blocks.spring.parent, model.root);
-  assert.equal(blocks.lockBolt.parent, model.root);
+  assert.ok(blocks.hammer.parent === model.root, 'hammer parent');
+  assert.ok(blocks.hammerRotor.parent === blocks.hammer, 'hammerRotor parent');
+  assert.ok(blocks.hammerBody.parent === blocks.hammerRotor, 'hammerBody parent');
+  assert.ok(blocks.dogPivotPin.parent === blocks.hammerRotor, 'dogPivotPin parent');
+  assert.ok(blocks.dog.parent === model.root, 'dog parent');
+  assert.ok(blocks.spring.parent === model.root, 'spring parent');
+  assert.ok(blocks.lockBolt.parent === model.root, 'lockBolt parent');
   vectorNear(blocks.cylinder.userData.axis, X_AXIS, 0, 'cylinder axis');
   vectorNear(blocks.cylinderRotor.userData.axis, X_AXIS, 0,
     'cylinder rotor axis');
@@ -405,8 +405,8 @@ test('movement 277 update binds the hammer, cylinder, dog, spring, lock, and mot
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
   assert.ok(cameraFitBounds.max.x >= 4.56);
-  assert.equal(blocks.cylinderRotationIndex.parent, blocks.cylinderRotor);
-  assert.equal(blocks.hammerRotationIndex.parent, blocks.hammerRotor);
+  assert.ok(blocks.cylinderRotationIndex.parent === null, 'undrawn cylinder index removed');
+  assert.ok(blocks.hammerRotationIndex.parent === null, 'undrawn hammer index removed');
 
   model.update(0);
   const engagedLockY = blocks.lockBolt.position.y;

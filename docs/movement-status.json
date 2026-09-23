@@ -8067,15 +8067,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/intersection-screen-pass50.md",
+        "note": "Re-inspected: the earlier default view was an oblique end view on a base rail; it is now Brown's side elevation without the undrawn base, posts and white indices."
       },
       "intersections": {
         "status": "known",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the cylinder body runs 0.578 coaxially over its arbor and support post without a bore; the hammer shaft passes 0.151 through its bearing arm; dog A overlaps ratchet B by 0.126 and the receiver lock by 0.12; the lock overlaps the cylinder by 0.07."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the cylinder body, ratchet and hub are now bored over the arbor, and the undrawn posts are removed. Remaining overlaps: dog A's pivot pin 0.139 in its unbored stretchable link; dog A into ratchet B 0.126; the lock into its spring 0.12 and into the cylinder 0.07–0.091; spring C into dog A 0.095."
       },
-      "flaws": "The screen shows unbored cylinder and hammer bearings and dog, ratchet and lock overlaps up to 0.126. Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
+      "flaws": "Dog A is a stretchable box-and-sphere link without a pivot bore; the dog, ratchet, spring and lock overlap by up to 0.139. Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",

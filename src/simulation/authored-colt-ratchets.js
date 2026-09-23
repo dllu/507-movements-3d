@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -500,6 +501,7 @@ function coltCylinderRatchet(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
+  const cylinderArborRadius = 0.15;
   const cylinder = new THREE.Group();
   cylinder.position.set(cylinderCenterX, cylinderCenterY, 0);
   cylinder.userData.axis = X_AXIS.clone();
@@ -510,12 +512,14 @@ function coltCylinderRatchet(movement) {
   cylinder.add(cylinderRotor);
   root.add(cylinder);
 
-  const cylinderBody = cylinderAlongX(
-    cylinderRadius,
-    cylinderLength,
+  const cylinderBody = new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -cylinderLength / 2, radial: cylinderRadius },
+      { axial: cylinderLength / 2, radial: cylinderRadius },
+    ], cylinderArborRadius + 0.012, 72),
     drivenMaterial,
-    72,
   );
+  cylinderBody.rotation.z = Math.PI / 2;
   cylinderBody.userData.role = 'six-chamber-cylinder-body';
   cylinderRotor.add(cylinderBody);
   const cylinderEndRings = [-1, 1].map((side) => {
@@ -555,6 +559,15 @@ function coltCylinderRatchet(movement) {
     teeth: ratchetTeeth,
     tipRadius: ratchetTipRadius,
   });
+  const ratchetBore = new THREE.Path(Array.from({ length: 36 }, (_, index) => {
+    const angle = -index / 36 * Math.PI * 2;
+    return new THREE.Vector2(
+      Math.cos(angle) * (cylinderArborRadius + 0.012),
+      Math.sin(angle) * (cylinderArborRadius + 0.012),
+    );
+  }));
+  ratchetBore.closePath();
+  ratchetShape.holes.push(ratchetBore);
   const ratchet = new THREE.Mesh(
     centeredExtrusion(ratchetShape, ratchetDepth, 0.008),
     drivenMaterial,
@@ -563,7 +576,14 @@ function coltCylinderRatchet(movement) {
   ratchet.position.x = cylinderLength / 2 + ratchetDepth / 2;
   ratchet.userData.role = 'six-tooth-face-ratchet-b';
   cylinderRotor.add(ratchet);
-  const ratchetHub = cylinderAlongX(0.31, ratchetDepth * 1.32, darkMaterial, 36);
+  const ratchetHub = new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -ratchetDepth * 0.66, radial: 0.31 },
+      { axial: ratchetDepth * 0.66, radial: 0.31 },
+    ], cylinderArborRadius + 0.012, 36),
+    darkMaterial,
+  );
+  ratchetHub.rotation.z = Math.PI / 2;
   ratchetHub.position.x = cylinderLength / 2 + ratchetDepth / 2;
   ratchetHub.userData.role = 'ratchet-and-cylinder-common-hub';
   cylinderRotor.add(ratchetHub);
@@ -719,7 +739,7 @@ function coltCylinderRatchet(movement) {
   lockSpring.userData.role = 'receiver-lock-return-spring';
   root.add(lockSpring);
 
-  const cylinderShaft = cylinderAlongX(0.15, cylinderLength + 0.64,
+  const cylinderShaft = cylinderAlongX(cylinderArborRadius, cylinderLength + 0.64,
     darkMaterial, 30);
   cylinderShaft.position.set(cylinderCenterX, cylinderCenterY, 0);
   cylinderShaft.userData.role = 'fixed-cylinder-arbor';
