@@ -38,7 +38,12 @@ A new relative-motion screen, `scripts/screen-body-intersections.mjs`, groups
 meshes into rigid bodies by constant relative transforms and checks closed
 meshes of different bodies for sampled penetration. It separates coaxial
 (missing bore/nested sleeve), fluid and deforming pairs from working solids;
-`scripts/show-body-intersections.mjs ID` lists every pair. It is triage, not
+`scripts/show-body-intersections.mjs ID` lists every pair. The first full run
+([summary](validation/body-intersection-screen-pass49.json)) flags 272
+movements with solid overlap above 0.01, 206 of them rows the ledger lists as
+clear in their own scoped checks; those rows now disclose the finding. Triage
+them family by family (intended soft contact and rope wraps versus real
+faults) before changing any status. 41 timed out and needs a longer budget. It is triage, not
 certification: open shells are only sources and phases/spacing are sampled.
 
 The 17 tests that already failed before this pass are repaired without

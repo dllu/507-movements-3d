@@ -1,0 +1,4577 @@
+{
+ "generatedOn": "2026-09-23",
+ "tool": "scripts/screen-body-intersections.mjs --ids=1-507 --jobs=16 (65 phases, spacing diagonal/400)",
+ "scope": "Rendered closed-mesh penetration between distinct rigid bodies at sampled phases; open shells are not targets; triage, not certification.",
+ "note": "Triage only. Rows marked stale were corrected after this screen ran. Solid pairs can include intended soft contact, rope/belt wraps and parts whose roles are unnamed; each must be classified before a ledger status changes.",
+ "movements": [
+  {
+   "id": 1,
+   "bodies": 9,
+   "spacing": 0.0164,
+   "worstSolid": 0.012,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.1354,
+   "openMeshes": 0
+  },
+  {
+   "id": 2,
+   "bodies": 9,
+   "spacing": 0.0164,
+   "worstSolid": 0.012,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.1354,
+   "openMeshes": 0
+  },
+  {
+   "id": 3,
+   "bodies": 11,
+   "spacing": 0.0206,
+   "worstSolid": 0.0165,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.6533,
+   "openMeshes": 0
+  },
+  {
+   "id": 4,
+   "bodies": 17,
+   "spacing": 0.0197,
+   "worstSolid": 0.0476,
+   "worstSolidPair": "root/TubeGeometry x root/CylinderGeometry",
+   "worstCoaxial": 0.1411,
+   "openMeshes": 0
+  },
+  {
+   "id": 5,
+   "bodies": 12,
+   "spacing": 0.0186,
+   "worstSolid": 0.0042,
+   "worstSolidPair": "root/BoxGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.1562,
+   "openMeshes": 0
+  },
+  {
+   "id": 6,
+   "bodies": 9,
+   "spacing": 0.0158,
+   "worstSolid": 0.0008,
+   "worstSolidPair": "open-pulley-rim x root/BoxGeometry",
+   "worstCoaxial": 0.1636,
+   "openMeshes": 0
+  },
+  {
+   "id": 7,
+   "bodies": 12,
+   "spacing": 0.0167,
+   "worstSolid": 0.0114,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.123,
+   "openMeshes": 0
+  },
+  {
+   "id": 8,
+   "bodies": 26,
+   "spacing": 0.0202,
+   "worstSolid": 0.0119,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.1783,
+   "openMeshes": 0
+  },
+  {
+   "id": 9,
+   "bodies": 9,
+   "spacing": 0.0223,
+   "worstSolid": 0.0021,
+   "worstSolidPair": "cone-surface-index x root/BoxGeometry",
+   "worstCoaxial": 0.7566,
+   "openMeshes": 1
+  },
+  {
+   "id": 10,
+   "bodies": 9,
+   "spacing": 0.0234,
+   "worstSolid": 0.0026,
+   "worstSolidPair": "cone-surface-index x root/BoxGeometry",
+   "worstCoaxial": 0.8877,
+   "openMeshes": 1
+  },
+  {
+   "id": 11,
+   "bodies": 9,
+   "spacing": 0.0185,
+   "worstSolid": 0.0113,
+   "worstSolidPair": "root/BufferGeometry x root/BoxGeometry",
+   "worstCoaxial": 0.6732,
+   "openMeshes": 0
+  },
+  {
+   "id": 12,
+   "bodies": 10,
+   "spacing": 0.0163,
+   "worstSolid": 0.0035,
+   "worstSolidPair": "root/BoxGeometry x root/CylinderGeometry",
+   "worstCoaxial": 0.17,
+   "openMeshes": 1
+  },
+  {
+   "id": 13,
+   "bodies": 12,
+   "spacing": 0.0169,
+   "worstSolid": 0.0038,
+   "worstSolidPair": "root/BoxGeometry x root/CylinderGeometry",
+   "worstCoaxial": 0.16,
+   "openMeshes": 1
+  },
+  {
+   "id": 14,
+   "bodies": 9,
+   "spacing": 0.0144,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.11,
+   "openMeshes": 1
+  },
+  {
+   "id": 15,
+   "bodies": 5,
+   "spacing": 0.0177,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1,
+   "openMeshes": 1
+  },
+  {
+   "id": 16,
+   "bodies": 7,
+   "spacing": 0.0153,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 17,
+   "bodies": 7,
+   "spacing": 0.0158,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 18,
+   "bodies": 6,
+   "spacing": 0.0158,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 19,
+   "bodies": 11,
+   "spacing": 0.0167,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 20,
+   "bodies": 8,
+   "spacing": 0.0154,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 21,
+   "bodies": 6,
+   "spacing": 0.0141,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 22,
+   "bodies": 9,
+   "spacing": 0.0147,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 23,
+   "bodies": 10,
+   "spacing": 0.02,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.25,
+   "openMeshes": 1
+  },
+  {
+   "id": 24,
+   "bodies": 3,
+   "spacing": 0.0141,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.198,
+   "openMeshes": 1
+  },
+  {
+   "id": 25,
+   "bodies": 3,
+   "spacing": 0.0125,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0742,
+   "openMeshes": 0
+  },
+  {
+   "id": 26,
+   "bodies": 2,
+   "spacing": 0.0161,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 27,
+   "bodies": 5,
+   "spacing": 0.0184,
+   "worstSolid": 0,
+   "worstSolidPair": "root/ExtrudeGeometry x solid-pulley-drum",
+   "worstCoaxial": 0.135,
+   "openMeshes": 1
+  },
+  {
+   "id": 28,
+   "bodies": 2,
+   "spacing": 0.0151,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 29,
+   "bodies": 2,
+   "spacing": 0.0137,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 30,
+   "bodies": 2,
+   "spacing": 0.016,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 31,
+   "bodies": 2,
+   "spacing": 0.0106,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 32,
+   "bodies": 2,
+   "spacing": 0.0133,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 33,
+   "bodies": 2,
+   "spacing": 0.0127,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 34,
+   "bodies": 2,
+   "spacing": 0.012,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 35,
+   "bodies": 4,
+   "spacing": 0.01,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 36,
+   "bodies": 3,
+   "spacing": 0.0161,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 37,
+   "bodies": 2,
+   "spacing": 0.0177,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 38,
+   "bodies": 3,
+   "spacing": 0.02,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 39,
+   "bodies": 3,
+   "spacing": 0.0135,
+   "worstSolid": 0.1019,
+   "worstSolidPair": "root/ExtrudeGeometry x root/CylinderGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 40,
+   "bodies": 2,
+   "spacing": 0.018,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 41,
+   "status": "timeout"
+  },
+  {
+   "id": 42,
+   "bodies": 2,
+   "spacing": 0.0152,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 43,
+   "bodies": 2,
+   "spacing": 0.0106,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 44,
+   "bodies": 2,
+   "spacing": 0.0183,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 45,
+   "bodies": 3,
+   "spacing": 0.0191,
+   "worstSolid": 0,
+   "worstSolidPair": "root/BufferGeometry x root/BufferGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 46,
+   "bodies": 3,
+   "spacing": 0.0171,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 47,
+   "bodies": 7,
+   "spacing": 0.0103,
+   "worstSolid": 0,
+   "worstSolidPair": "root/BufferGeometry x root/BufferGeometry",
+   "worstCoaxial": 0.09,
+   "openMeshes": 1
+  },
+  {
+   "id": 48,
+   "bodies": 8,
+   "spacing": 0.0169,
+   "worstSolid": 0.0086,
+   "worstSolidPair": "root/BufferGeometry x root/ExtrudeGeometry",
+   "worstCoaxial": 0.002,
+   "openMeshes": 0
+  },
+  {
+   "id": 49,
+   "bodies": 7,
+   "spacing": 0.0141,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0006,
+   "openMeshes": 1
+  },
+  {
+   "id": 50,
+   "bodies": 5,
+   "spacing": 0.0132,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 51,
+   "bodies": 3,
+   "spacing": 0.0137,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 52,
+   "bodies": 5,
+   "spacing": 0.0139,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 53,
+   "bodies": 9,
+   "spacing": 0.0108,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 54,
+   "bodies": 2,
+   "spacing": 0.0186,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 55,
+   "bodies": 3,
+   "spacing": 0.0159,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 56,
+   "bodies": 5,
+   "spacing": 0.0263,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 57,
+   "bodies": 5,
+   "spacing": 0.0254,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 58,
+   "bodies": 7,
+   "spacing": 0.0226,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 59,
+   "bodies": 6,
+   "spacing": 0.0213,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 60,
+   "bodies": 6,
+   "spacing": 0.0213,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 61,
+   "bodies": 7,
+   "spacing": 0.021,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0937,
+   "openMeshes": 1
+  },
+  {
+   "id": 62,
+   "bodies": 7,
+   "spacing": 0.0215,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0925,
+   "openMeshes": 1
+  },
+  {
+   "id": 63,
+   "bodies": 9,
+   "spacing": 0.0182,
+   "worstSolid": 0.1697,
+   "worstSolidPair": "ten-point-intermittent-counter-star/ExtrudeGeometry x continuous-three-pin-driving-disk/CylinderGeometry",
+   "worstCoaxial": 0.1293,
+   "openMeshes": 0
+  },
+  {
+   "id": 64,
+   "bodies": 6,
+   "spacing": 0.0213,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 65,
+   "bodies": 4,
+   "spacing": 0.0162,
+   "worstSolid": 0,
+   "worstSolidPair": "driverDisk x stopToe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 66,
+   "bodies": 3,
+   "spacing": 0.0166,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 67,
+   "bodies": 3,
+   "spacing": 0.0183,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 68,
+   "bodies": 2,
+   "spacing": 0.0187,
+   "worstSolid": 0,
+   "worstSolidPair": "driverPlate x notchedPlate",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 69,
+   "bodies": 2,
+   "spacing": 0.0255,
+   "worstSolid": 0,
+   "worstSolidPair": "driverPlate x wheelPlate",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 70,
+   "bodies": 2,
+   "spacing": 0.0153,
+   "worstSolid": 0,
+   "worstSolidPair": "rim x stud0",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 71,
+   "bodies": 3,
+   "spacing": 0.019,
+   "worstSolid": 0.0827,
+   "worstSolidPair": "clockwise-intermittent-ten-stud-wheel-C/CylinderGeometry x single-radial-tappet-A",
+   "worstCoaxial": 0.0891,
+   "openMeshes": 0
+  },
+  {
+   "id": 72,
+   "bodies": 3,
+   "spacing": 0.0149,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 73,
+   "bodies": 5,
+   "spacing": 0.0148,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0959,
+   "openMeshes": 2
+  },
+  {
+   "id": 74,
+   "bodies": 3,
+   "spacing": 0.0138,
+   "worstSolid": 0,
+   "worstSolidPair": "gearBTooth14 x driverCTooth19",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 75,
+   "bodies": 6,
+   "spacing": 0.01,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 76,
+   "bodies": 6,
+   "spacing": 0.0197,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 77,
+   "bodies": 5,
+   "spacing": 0.01,
+   "worstSolid": 0,
+   "worstSolidPair": "wheelPin22 x lowerPawl",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 78,
+   "bodies": 5,
+   "spacing": 0.01,
+   "worstSolid": 0,
+   "worstSolidPair": "wheelBody x rightHook",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 79,
+   "bodies": 8,
+   "spacing": 0.01,
+   "worstSolid": 0,
+   "worstSolidPair": "wheelBody x lowerPawl",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 80,
+   "bodies": 5,
+   "spacing": 0.0195,
+   "worstSolid": 0,
+   "worstSolidPair": "slottedRack x leftHookWeb",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 81,
+   "bodies": 3,
+   "spacing": 0.0231,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 82,
+   "bodies": 19,
+   "spacing": 0.0212,
+   "worstSolid": 0.0993,
+   "worstSolidPair": "rear-treadle-D/BoxGeometry x single-continuous-strap-over-pulley-C/CylinderGeometry",
+   "worstCoaxial": 0.1024,
+   "openMeshes": 0
+  },
+  {
+   "id": 83,
+   "bodies": 10,
+   "spacing": 0.0248,
+   "worstSolid": 0.0814,
+   "worstSolidPair": "rear-negative-stroke-ratchet-sector-C/ExtrudeGeometry x rear-negative-stroke-ratchet-sector-C/TubeGeometry",
+   "worstCoaxial": 0.1473,
+   "openMeshes": 2
+  },
+  {
+   "id": 84,
+   "bodies": 4,
+   "spacing": 0.0198,
+   "worstSolid": 0,
+   "worstSolidPair": "singleWorkingCam x slottedRackFrame",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 85,
+   "bodies": 3,
+   "spacing": 0.0148,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 86,
+   "bodies": 6,
+   "spacing": 0.0281,
+   "worstSolid": 0,
+   "worstSolidPair": "fixedTripStop x hookedCatchB",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 87,
+   "bodies": 11,
+   "spacing": 0.0267,
+   "worstSolid": 0,
+   "worstSolidPair": "rightSlidingJaw x clutchForkShoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 88,
+   "bodies": 3,
+   "spacing": 0.0191,
+   "worstSolid": 0,
+   "worstSolidPair": "stopCFoot x camA",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 89,
+   "bodies": 4,
+   "spacing": 0.0215,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 90,
+   "bodies": 3,
+   "spacing": 0.0305,
+   "worstSolid": 0.0627,
+   "worstSolidPair": "fixed-annular-guide-for-yoke-rod x translation-index-on-yoke-output-rod",
+   "worstCoaxial": 0.1689,
+   "openMeshes": 0
+  },
+  {
+   "id": 91,
+   "bodies": 4,
+   "spacing": 0.0357,
+   "worstSolid": 0.0852,
+   "worstSolidPair": "fixed-annular-guide-for-valve-rod x translation-index-on-valve-rod",
+   "worstCoaxial": 0.1689,
+   "openMeshes": 0
+  },
+  {
+   "id": 92,
+   "bodies": 4,
+   "spacing": 0.0325,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1692,
+   "openMeshes": 0
+  },
+  {
+   "id": 93,
+   "bodies": 3,
+   "spacing": 0.0296,
+   "worstSolid": 0.009,
+   "worstSolidPair": "fixed-annular-guide-for-vertical-yoke-stem x visible-translation-index-on-upper-stem",
+   "worstCoaxial": 0.2094,
+   "openMeshes": 0
+  },
+  {
+   "id": 94,
+   "bodies": 4,
+   "spacing": 0.024,
+   "worstSolid": 0.1108,
+   "worstSolidPair": "rotation-index-on-rear-spiral-plate x quarter-radius-close-fitting-bolt-shank",
+   "worstCoaxial": 0.2226,
+   "openMeshes": 1
+  },
+  {
+   "id": 95,
+   "bodies": 3,
+   "spacing": 0.0269,
+   "worstSolid": 0.0599,
+   "worstSolidPair": "visible-rotation-index-on-oblique-disk-face x rounded-shoe-resting-on-oblique-disk-surface",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 96,
+   "bodies": 4,
+   "spacing": 0.0263,
+   "worstSolid": 0.016,
+   "worstSolidPair": "fixed-rectangular-guide-for-horizontal-output-bar x translation-index-on-horizontal-output-bar",
+   "worstCoaxial": 0.1244,
+   "openMeshes": 0
+  },
+  {
+   "id": 97,
+   "bodies": 3,
+   "spacing": 0.0299,
+   "worstSolid": 0.1314,
+   "worstSolidPair": "outer-land-with-real-heart-shaped-recess x captive-nonrotating-pin-inside-heart-groove",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 98,
+   "bodies": 3,
+   "spacing": 0.027,
+   "worstSolid": 0.158,
+   "worstSolidPair": "input-shaft-through-circular-disk x solid-backplate-floor-beneath-one-endless-groove",
+   "worstCoaxial": 0.2778,
+   "openMeshes": 0
+  },
+  {
+   "id": 99,
+   "bodies": 4,
+   "spacing": 0.034,
+   "worstSolid": 0.203,
+   "worstSolidPair": "visible-angular-index-on-reversing-feed-disk x small-roller-between-adjacent-spiral-turns",
+   "worstCoaxial": 0.4311,
+   "openMeshes": 1
+  },
+  {
+   "id": 100,
+   "bodies": 3,
+   "spacing": 0.0256,
+   "worstSolid": 0.338,
+   "worstSolidPair": "continuous-input-shaft-of-quick-return-crank x single-rigid-slotted-lever-body",
+   "worstCoaxial": 0.3591,
+   "openMeshes": 0
+  },
+  {
+   "id": 101,
+   "bodies": 3,
+   "spacing": 0.0309,
+   "worstSolid": 0.0101,
+   "worstSolidPair": "circular-pin-sliding-along-lever-slot x one-open-straight-slot-in-vibrating-lever",
+   "worstCoaxial": 0.1621,
+   "openMeshes": 0
+  },
+  {
+   "id": 102,
+   "bodies": 3,
+   "spacing": 0.0187,
+   "worstSolid": 0.3825,
+   "worstSolidPair": "solid-core-of-common-screw-bolt x visible-index-showing-nut-does-not-rotate",
+   "worstCoaxial": 0.0897,
+   "openMeshes": 2
+  },
+  {
+   "id": 103,
+   "bodies": 3,
+   "spacing": 0.0222,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1023,
+   "openMeshes": 2
+  },
+  {
+   "id": 104,
+   "bodies": 4,
+   "spacing": 0.0274,
+   "worstSolid": 0.1216,
+   "worstSolidPair": "one-continuous-twelve-turn-worm-thread x twenty-tooth-wheel-meshing-with-overhead-worm/ExtrudeGeometry",
+   "worstCoaxial": 0.2804,
+   "openMeshes": 1
+  },
+  {
+   "id": 105,
+   "bodies": 3,
+   "spacing": 0.0284,
+   "worstSolid": 0.001,
+   "worstSolidPair": "fixed-keyway-guide-preventing-ram-rotation/BoxGeometry x flat-lower-stamping-platen",
+   "worstCoaxial": 0.3073,
+   "openMeshes": 2
+  },
+  {
+   "id": 106,
+   "bodies": 3,
+   "spacing": 0.0177,
+   "worstSolid": 0.0853,
+   "worstSolidPair": "single-rotating-barrel-cam-body x captured-rounded-tip-centered-in-cam-groove",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 107,
+   "bodies": 3,
+   "spacing": 0.018,
+   "worstSolid": 0.209,
+   "worstSolidPair": "one-closed-twelve-branch-serpentine-barrel-groove x vertical-pin-entering-cylindrical-cam-groove",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 108,
+   "bodies": 3,
+   "spacing": 0.0168,
+   "worstSolid": 0.0698,
+   "worstSolidPair": "vertical-cylinder-carrying-opposite-hand-grooves x point-inserted-in-intersecting-reverse-grooves",
+   "worstCoaxial": 0.0999,
+   "openMeshes": 3
+  },
+  {
+   "id": 109,
+   "bodies": 4,
+   "spacing": 0.0146,
+   "worstSolid": 0.0879,
+   "worstSolidPair": "fixed-hidden-keyway-preventing-cutter-nut-rotation x bored-cutter-nut-surrounding-left-lead-screw",
+   "worstCoaxial": 0.1149,
+   "openMeshes": 6
+  },
+  {
+   "id": 110,
+   "bodies": 3,
+   "spacing": 0.0229,
+   "worstSolid": 0.2369,
+   "worstSolidPair": "single-core-divided-into-two-threaded-halves x real-concave-threaded-half-nut-body",
+   "worstCoaxial": 0.033,
+   "openMeshes": 3
+  },
+  {
+   "id": 111,
+   "bodies": 3,
+   "spacing": 0.0171,
+   "worstSolid": 0.09,
+   "worstSolidPair": "sectioned-lower-hollow-screw-sleeve-sectioned-annular-shell x output-key-sliding-without-rotation-between-rails",
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 112,
+   "bodies": 3,
+   "spacing": 0.0189,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.05,
+   "openMeshes": 3
+  },
+  {
+   "id": 113,
+   "bodies": 5,
+   "spacing": 0.0195,
+   "worstSolid": 0.18,
+   "worstSolidPair": "rolling-body-of-slide-guide x straight-rack-body-rigid-with-slide",
+   "worstCoaxial": 0.1785,
+   "openMeshes": 0
+  },
+  {
+   "id": 114,
+   "bodies": 3,
+   "spacing": 0.022,
+   "worstSolid": 0.0986,
+   "worstSolidPair": "downward-facing-tooth-of-upper-rack x installed-tooth-of-half-toothed-pinion",
+   "worstCoaxial": 0.1039,
+   "openMeshes": 0
+  },
+  {
+   "id": 115,
+   "bodies": 4,
+   "spacing": 0.0288,
+   "worstSolid": 0.1292,
+   "worstSolidPair": "upward-facing-staggered-tooth-of-lower-rack x lower-equal-pinion-driving-bottom-rack/ExtrudeGeometry",
+   "worstCoaxial": 0.1032,
+   "openMeshes": 0
+  },
+  {
+   "id": 116,
+   "bodies": 7,
+   "spacing": 0.0234,
+   "worstSolid": 0.0485,
+   "worstSolidPair": "front-plane-upward-tooth-of-lower-rack x front-loose-pinion-meshing-with-lower-rack/ExtrudeGeometry",
+   "worstCoaxial": 0.1045,
+   "openMeshes": 0
+  },
+  {
+   "id": 117,
+   "bodies": 5,
+   "spacing": 0.0258,
+   "worstSolid": 0.0124,
+   "worstSolidPair": "fixed-upper-linear-guide-for-yoke-stem x white-index-showing-yoke-translation",
+   "worstCoaxial": 0.1981,
+   "openMeshes": 0
+  },
+  {
+   "id": 118,
+   "bodies": 6,
+   "spacing": 0.046,
+   "worstSolid": 0.0661,
+   "worstSolidPair": "fixed-jaw-guiding-double-stroke-upper-rack x downward-tooth-of-double-stroke-moving-rack",
+   "worstCoaxial": 0.0895,
+   "openMeshes": 0
+  },
+  {
+   "id": 119,
+   "bodies": 5,
+   "spacing": 0.0453,
+   "worstSolid": 0.2085,
+   "worstSolidPair": "tooth-on-oblong-endless-rack x source-profile-eight-tooth-pinion-body",
+   "worstCoaxial": 0.094,
+   "openMeshes": 0
+  },
+  {
+   "id": 120,
+   "bodies": 5,
+   "spacing": 0.0414,
+   "worstSolid": 0.133,
+   "worstSolidPair": "inward-tooth-of-outer-internal-segment x large-pinion-meshing-with-internal-segment",
+   "worstCoaxial": 0.1188,
+   "openMeshes": 0
+  },
+  {
+   "id": 121,
+   "bodies": 7,
+   "spacing": 0.0234,
+   "worstSolid": 0.07,
+   "worstSolidPair": "finite-rod-with-alternating-rectilinear-end/BoxGeometry x upper-reciprocating-rod-stem",
+   "worstCoaxial": 0.1098,
+   "openMeshes": 0
+  },
+  {
+   "id": 122,
+   "bodies": 11,
+   "spacing": 0.024,
+   "worstSolid": 0.0871,
+   "worstSolidPair": "shaft-of-twenty-nine-tooth-gear/CylinderGeometry x equal-length-upper-crank-connecting-rod/BoxGeometry",
+   "worstCoaxial": 0.127,
+   "openMeshes": 0
+  },
+  {
+   "id": 123,
+   "bodies": 6,
+   "spacing": 0.0251,
+   "worstSolid": 0.1432,
+   "worstSolidPair": "center-gear-to-transfer-cam-collar x central-body-of-double-rack",
+   "worstCoaxial": 0.1307,
+   "openMeshes": 2
+  },
+  {
+   "id": 124,
+   "bodies": 7,
+   "spacing": 0.0271,
+   "worstSolid": 0.0251,
+   "worstSolidPair": "edge-of-string-groove-on-spindle-pulley x single-bowstring-with-one-complete-spindle-wrap/CylinderGeometry",
+   "worstCoaxial": 0.06,
+   "openMeshes": 2
+  },
+  {
+   "id": 125,
+   "bodies": 19,
+   "spacing": 0.0284,
+   "worstSolid": 0.0716,
+   "worstSolidPair": "fixed-axis-shaft-of-twenty-three-tooth-gear/CylinderGeometry x fifty-nine-unit-middle-crank-rod/BoxGeometry",
+   "worstCoaxial": 0.1123,
+   "openMeshes": 2
+  },
+  {
+   "id": 126,
+   "bodies": 9,
+   "spacing": 0.0269,
+   "worstSolid": 0.0311,
+   "worstSolidPair": "open-pulley-rim x single-constant-length-input-cable-over-pulley/CylinderGeometry",
+   "worstCoaxial": 0.1595,
+   "openMeshes": 2
+  },
+  {
+   "id": 127,
+   "bodies": 3,
+   "spacing": 0.0172,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 128,
+   "bodies": 4,
+   "spacing": 0.0317,
+   "worstSolid": 0.0187,
+   "worstSolidPair": "dark-outline-on-rounded-wiper-head x white-wiper-frame-contact-witness",
+   "worstCoaxial": 0.1196,
+   "openMeshes": 0
+  },
+  {
+   "id": 129,
+   "bodies": 4,
+   "spacing": 0.0299,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 130,
+   "bodies": 4,
+   "spacing": 0.0249,
+   "worstSolid": 0.11,
+   "worstSolidPair": "left-foot-under-eccentric-cam-bearing x circular-cam-offset-from-input-shaft",
+   "worstCoaxial": 0.17,
+   "openMeshes": 0
+  },
+  {
+   "id": 131,
+   "bodies": 4,
+   "spacing": 0.0546,
+   "worstSolid": 0.195,
+   "worstSolidPair": "continuous-input-shaft-through-crank-disk x single-straight-ended-slot-in-sector-arm",
+   "worstCoaxial": 0.2494,
+   "openMeshes": 0
+  },
+  {
+   "id": 132,
+   "bodies": 7,
+   "spacing": 0.0349,
+   "worstSolid": 0.1596,
+   "worstSolidPair": "one-of-two-equal-oblique-toggle-bars/BoxGeometry x one-of-two-equal-oblique-toggle-bars/SphereGeometry",
+   "worstCoaxial": 0.0205,
+   "openMeshes": 0
+  },
+  {
+   "id": 133,
+   "bodies": 5,
+   "spacing": 0.0229,
+   "worstSolid": 0.0517,
+   "worstSolidPair": "fixed-vertical-guide-along-platen-edge x hand-crank-rigidly-fixed-to-pinion-shaft/BoxGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 134,
+   "bodies": 15,
+   "spacing": 0.0184,
+   "worstSolid": 0.0263,
+   "worstSolidPair": "single-wrapped-and-two-free-span-rope-mesh x white-material-marker-on-single-capstan-rope",
+   "worstCoaxial": 0.0001,
+   "openMeshes": 2
+  },
+  {
+   "id": 135,
+   "bodies": 3,
+   "spacing": 0.034,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 136,
+   "bodies": 3,
+   "spacing": 0.0334,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 137,
+   "bodies": 10,
+   "spacing": 0.0279,
+   "worstSolid": 0.1512,
+   "worstSolidPair": "circular-expansion-eccentric-offset-from-shaft x outer-bow-rigidly-joining-both-fork-arms",
+   "worstCoaxial": 0.2433,
+   "openMeshes": 3
+  },
+  {
+   "id": 138,
+   "bodies": 3,
+   "spacing": 0.035,
+   "worstSolid": 0.092,
+   "worstSolidPair": "seven-circular-arc-variable-motion-cam-profile x sharp-point-resting-directly-on-cam-edge",
+   "worstCoaxial": 0.169,
+   "openMeshes": 0
+  },
+  {
+   "id": 139,
+   "bodies": 13,
+   "spacing": 0.0543,
+   "worstSolid": 0.1137,
+   "worstSolidPair": "structural-ring-of-internal-oblong-rack x twelve-tooth-input-pinion-body",
+   "worstCoaxial": 0.1367,
+   "openMeshes": 0
+  },
+  {
+   "id": 140,
+   "bodies": 8,
+   "spacing": 0.0353,
+   "worstSolid": 0.1601,
+   "worstSolidPair": "lever-to-toggle-knee-horizontal-connecting-link/BoxGeometry x lever-to-toggle-knee-horizontal-connecting-link/SphereGeometry",
+   "worstCoaxial": 0.1953,
+   "openMeshes": 0
+  },
+  {
+   "id": 141,
+   "bodies": 61,
+   "spacing": 0.0233,
+   "worstSolid": 0.0108,
+   "worstSolidPair": "lower-driving-saw-wheel-open-rim-and-band-contact-tread x moving-tooth-on-endless-saw-band",
+   "worstCoaxial": 0.0777,
+   "openMeshes": 4
+  },
+  {
+   "id": 142,
+   "bodies": 7,
+   "spacing": 0.0323,
+   "worstSolid": 0.13,
+   "worstSolidPair": "fixed-shoe-retaining-nonrotating-output-slider x finite-connecting-rod-from-planet-crank-to-guide-slider/SphereGeometry",
+   "worstCoaxial": 0.1447,
+   "openMeshes": 2
+  },
+  {
+   "id": 143,
+   "bodies": 7,
+   "spacing": 0.0234,
+   "worstSolid": 0.08,
+   "worstSolidPair": "long-fixed-axial-position-input-shaft x short-core-of-axially-sliding-worm",
+   "worstCoaxial": 0.1295,
+   "openMeshes": 2
+  },
+  {
+   "id": 144,
+   "bodies": 23,
+   "spacing": 0.0267,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 145,
+   "bodies": 8,
+   "spacing": 0.0279,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 146,
+   "bodies": 3,
+   "spacing": 0.0403,
+   "worstSolid": 0.2864,
+   "worstSolidPair": "front-outline-of-straight-yoke-groove x fixed-axis-shaft-through-disk-and-rear-bearing",
+   "worstCoaxial": 0.287,
+   "openMeshes": 0
+  },
+  {
+   "id": 147,
+   "bodies": 7,
+   "spacing": 0.039,
+   "worstSolid": 0.9487,
+   "worstSolidPair": "continuous-vertical-engine-governor-shaft x heavy-bulb-providing-crosshead-return-and-governor-load",
+   "worstCoaxial": 0.1197,
+   "openMeshes": 2
+  },
+  {
+   "id": 148,
+   "bodies": 6,
+   "spacing": 0.0413,
+   "worstSolid": 0.1066,
+   "worstSolidPair": "fixed-large-gear-center-shaft/CylinderGeometry x short-rigid-crank-between-gear-pin-and-floating-joint/BoxGeometry",
+   "worstCoaxial": 0.2204,
+   "openMeshes": 0
+  },
+  {
+   "id": 149,
+   "bodies": 8,
+   "spacing": 0.0227,
+   "worstSolid": 0.0675,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.17,
+   "openMeshes": 0
+  },
+  {
+   "id": 150,
+   "bodies": 6,
+   "spacing": 0.0248,
+   "worstSolid": 0.1375,
+   "worstSolidPair": "throw-4-working-cam-plate x white-no-slip-follower-index",
+   "worstCoaxial": 0.1318,
+   "openMeshes": 0
+  },
+  {
+   "id": 151,
+   "bodies": 5,
+   "spacing": 0.0284,
+   "worstSolid": 0.0799,
+   "worstSolidPair": "fixed-straight-guide-preventing-both-nuts-from-rotating x left-shoe-sliding-on-fixed-straight-guide",
+   "worstCoaxial": 0.1046,
+   "openMeshes": 6
+  },
+  {
+   "id": 152,
+   "bodies": 3,
+   "spacing": 0.029,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0687,
+   "openMeshes": 0
+  },
+  {
+   "id": 153,
+   "bodies": 9,
+   "spacing": 0.0262,
+   "worstSolid": 0.1432,
+   "worstSolidPair": "disk-fixed-striking-stud/CylinderGeometry x disk-stud-driven-lower-input-arm/BoxGeometry",
+   "worstCoaxial": 0.22,
+   "openMeshes": 0
+  },
+  {
+   "id": 154,
+   "bodies": 6,
+   "spacing": 0.0261,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.22,
+   "openMeshes": 1
+  },
+  {
+   "id": 155,
+   "bodies": 5,
+   "spacing": 0.028,
+   "worstSolid": 0.1477,
+   "worstSolidPair": "source-outline-elbow-lever-body x slider-pin-engaged-in-elbow-slot",
+   "worstCoaxial": 0.3008,
+   "openMeshes": 0
+  },
+  {
+   "id": 156,
+   "bodies": 6,
+   "spacing": 0.039,
+   "worstSolid": 0.1332,
+   "worstSolidPair": "uniformly-rotating-input-shaft x one-open-radial-slot-in-bell-crank-arm",
+   "worstCoaxial": 0.2595,
+   "openMeshes": 1
+  },
+  {
+   "id": 157,
+   "bodies": 9,
+   "spacing": 0.0404,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1827,
+   "openMeshes": 1
+  },
+  {
+   "id": 158,
+   "bodies": 6,
+   "spacing": 0.024,
+   "worstSolid": 0.0333,
+   "worstSolidPair": "dark-outline-of-output-disk x pin-joining-rod-to-treadle",
+   "worstCoaxial": 0.1556,
+   "openMeshes": 1
+  },
+  {
+   "id": 159,
+   "bodies": 9,
+   "spacing": 0.0352,
+   "worstSolid": 0.0465,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1445,
+   "openMeshes": 1
+  },
+  {
+   "id": 160,
+   "bodies": 8,
+   "spacing": 0.0314,
+   "worstSolid": 0.0497,
+   "worstSolidPair": "open-pulley-rim x fixed-material-band-marker-2",
+   "worstCoaxial": 0.1494,
+   "openMeshes": 1
+  },
+  {
+   "id": 161,
+   "bodies": 13,
+   "spacing": 0.0366,
+   "worstSolid": 0.2347,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.609,
+   "openMeshes": 0
+  },
+  {
+   "id": 162,
+   "bodies": 16,
+   "spacing": 0.0436,
+   "worstSolid": 0.242,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.2281,
+   "openMeshes": 1
+  },
+  {
+   "id": 163,
+   "bodies": 30,
+   "spacing": 0.0486,
+   "worstSolid": 0.1887,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.2056,
+   "openMeshes": 2
+  },
+  {
+   "id": 164,
+   "bodies": 5,
+   "spacing": 0.0376,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.378,
+   "openMeshes": 0
+  },
+  {
+   "id": 165,
+   "bodies": 6,
+   "spacing": 0.0412,
+   "worstSolid": 0.275,
+   "worstSolidPair": "six-wave-lower-face-of-upright-shaft-cam x source-size-roller-held-against-waved-face",
+   "worstCoaxial": 0.2788,
+   "openMeshes": 1
+  },
+  {
+   "id": 166,
+   "bodies": 4,
+   "spacing": 0.0387,
+   "worstSolid": 0.1777,
+   "worstSolidPair": "fixed-horizontal-crosshead-guide-rail x source-tapered-pitman-body",
+   "worstCoaxial": 0.3398,
+   "openMeshes": 0
+  },
+  {
+   "id": 167,
+   "bodies": 3,
+   "spacing": 0.0296,
+   "worstSolid": 0.189,
+   "worstSolidPair": "fixed-vertical-guide-for-input-crosshead x rigid-crosshead-carrying-the-horizontal-stud",
+   "worstCoaxial": 0.1133,
+   "openMeshes": 0
+  },
+  {
+   "id": 168,
+   "bodies": 6,
+   "spacing": 0.025,
+   "worstSolid": 0.1139,
+   "worstSolidPair": "dark-recess-visible-through-main-crank-slot x pitman-pin-sliding-radially-in-the-main-crank-slot",
+   "worstCoaxial": 0.1953,
+   "openMeshes": 0
+  },
+  {
+   "id": 169,
+   "bodies": 9,
+   "spacing": 0.0243,
+   "worstSolid": 0.1024,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1841,
+   "openMeshes": 0
+  },
+  {
+   "id": 170,
+   "bodies": 13,
+   "spacing": 0.0364,
+   "worstSolid": 0.1392,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.6598,
+   "openMeshes": 1
+  },
+  {
+   "id": 171,
+   "bodies": 9,
+   "spacing": 0.0231,
+   "worstSolid": 0.0281,
+   "worstSolidPair": "astern-eccentric-rod-pin-behind-link-slot/CylinderGeometry x finite-die-output-rod-to-vertically-guided-curved-slide/ExtrudeGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 172,
+   "bodies": 4,
+   "spacing": 0.0224,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 173,
+   "bodies": 5,
+   "spacing": 0.0257,
+   "worstSolid": 0.136,
+   "worstSolidPair": "disk-fixed-lead-screw-end-bearing x single-right-hand-lead-screw-carried-by-disk/SphereGeometry",
+   "worstCoaxial": 0.1611,
+   "openMeshes": 2
+  },
+  {
+   "id": 174,
+   "bodies": 6,
+   "spacing": 0.019,
+   "worstSolid": 0.0857,
+   "worstSolidPair": "single-board-whose-leftward-push-clamps-its-sides x visible-lower-jaw-board-contact-marker",
+   "worstCoaxial": 0.0665,
+   "openMeshes": 0
+  },
+  {
+   "id": 175,
+   "bodies": 5,
+   "spacing": 0.0175,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 176,
+   "bodies": 2,
+   "spacing": 0.0155,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 177,
+   "bodies": 2,
+   "spacing": 0.0142,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 178,
+   "bodies": 6,
+   "spacing": 0.0533,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0638,
+   "openMeshes": 0
+  },
+  {
+   "id": 179,
+   "bodies": 8,
+   "spacing": 0.0342,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0686,
+   "openMeshes": 0
+  },
+  {
+   "id": 180,
+   "bodies": 4,
+   "spacing": 0.0193,
+   "worstSolid": 0.099,
+   "worstSolidPair": "visible-board-contact-with-fixed-side-piece x one-fixed-straight-side-piece-opposite-pivoted-clamp",
+   "worstCoaxial": 0.0888,
+   "openMeshes": 1
+  },
+  {
+   "id": 181,
+   "bodies": 8,
+   "spacing": 0.0197,
+   "worstSolid": 0.01,
+   "worstSolidPair": "moving-piston-rod x source-projecting-piston-rod-tappet-shoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 182,
+   "bodies": 8,
+   "spacing": 0.0234,
+   "worstSolid": 0.01,
+   "worstSolidPair": "moving-piston-rod x source-projecting-piston-rod-tappet-shoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 183,
+   "bodies": 6,
+   "spacing": 0.0215,
+   "worstSolid": 0.2224,
+   "worstSolidPair": "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate x source-projecting-piston-rod-tappet-shoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 184,
+   "bodies": 6,
+   "spacing": 0.0202,
+   "worstSolid": 0.2222,
+   "worstSolidPair": "lower-backweighted-quadrant-valve-handle-curved-piston-tappet-arm-plate x source-projecting-piston-rod-tappet-shoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 185,
+   "bodies": 16,
+   "spacing": 0.0305,
+   "worstSolid": 0.0943,
+   "worstSolidPair": "moving-upper-suspension-rod-pin x finite-link-lifting-suspension-rod/BoxGeometry",
+   "worstCoaxial": 0.0845,
+   "openMeshes": 1
+  },
+  {
+   "id": 186,
+   "bodies": 56,
+   "spacing": 0.0313,
+   "worstSolid": 0.0733,
+   "worstSolidPair": "lower-working-lip-of-notch-a/SphereGeometry x white-index-on-spring-latch-tip",
+   "worstCoaxial": 0.1043,
+   "openMeshes": 1
+  },
+  {
+   "id": 187,
+   "bodies": 6,
+   "spacing": 0.0305,
+   "worstSolid": 0.0949,
+   "worstSolidPair": "curved-cam-and-upper-lifting-handle x visible-upper-cam-to-valve-shoe-contact",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 188,
+   "bodies": 56,
+   "spacing": 0.0328,
+   "worstSolid": 0.1094,
+   "worstSolidPair": "round-valve-gear-pin-serving-as-gab-capture-and-direct-cam-follower x source-visible-upper-back-of-direct-pin-cam",
+   "worstCoaxial": 0.1193,
+   "openMeshes": 6
+  },
+  {
+   "id": 189,
+   "bodies": 6,
+   "spacing": 0.0342,
+   "worstSolid": 0.1038,
+   "worstSolidPair": "source-hatched-valve-rockshaft-boss x source-raised-outer-gab-crown",
+   "worstCoaxial": 0.1619,
+   "openMeshes": 1
+  },
+  {
+   "id": 190,
+   "bodies": 5,
+   "spacing": 0.0218,
+   "worstSolid": 0.1583,
+   "worstSolidPair": "fixed-central-fulcrum-standard-and-lower-threaded-arm x one-sided-radial-screw-turning-handle",
+   "worstCoaxial": 0.0283,
+   "openMeshes": 2
+  },
+  {
+   "id": 191,
+   "bodies": 3,
+   "spacing": 0.0213,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0246,
+   "openMeshes": 0
+  },
+  {
+   "id": 192,
+   "bodies": 7,
+   "spacing": 0.0175,
+   "worstSolid": 0.083,
+   "worstSolidPair": "vibrating-telescopic-shaft-through-universal-joint/BoxGeometry x moving-pinion-side-universal-yoke",
+   "worstCoaxial": 0.083,
+   "openMeshes": 1
+  },
+  {
+   "id": 193,
+   "bodies": 7,
+   "spacing": 0.0177,
+   "worstSolid": 0.083,
+   "worstSolidPair": "vibrating-telescopic-shaft-through-universal-joint/BoxGeometry x moving-pinion-side-universal-yoke",
+   "worstCoaxial": 0.083,
+   "openMeshes": 1
+  },
+  {
+   "id": 194,
+   "bodies": 7,
+   "spacing": 0.0189,
+   "worstSolid": 0.0747,
+   "worstSolidPair": "large-travel-telescopic-shaft-through-universal-joint/BoxGeometry x moving-pinion-side-universal-yoke",
+   "worstCoaxial": 0.083,
+   "openMeshes": 1
+  },
+  {
+   "id": 195,
+   "bodies": 3,
+   "spacing": 0.0173,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 196,
+   "bodies": 4,
+   "spacing": 0.0135,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0673,
+   "openMeshes": 0
+  },
+  {
+   "id": 197,
+   "bodies": 5,
+   "spacing": 0.0218,
+   "worstSolid": 0.0643,
+   "worstSolidPair": "rear-rack-frame-web x vertically-free-pinion-shaft/CylinderGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 198,
+   "bodies": 11,
+   "spacing": 0.0308,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0721,
+   "openMeshes": 0
+  },
+  {
+   "id": 199,
+   "bodies": 7,
+   "spacing": 0.019,
+   "worstSolid": 0,
+   "worstSolidPair": "square-frame-body-with-opposed-capsule-opening x open-pulley-rim",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 200,
+   "bodies": 4,
+   "spacing": 0.0172,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 201,
+   "bodies": 18,
+   "spacing": 0.0219,
+   "worstSolid": 0.1399,
+   "worstSolidPair": "fixed-input-shaft-bearing-bridge/BoxGeometry x solid-pulley-drum",
+   "worstCoaxial": 0.2243,
+   "openMeshes": 0
+  },
+  {
+   "id": 202,
+   "bodies": 2,
+   "spacing": 0.0166,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 203,
+   "bodies": 2,
+   "spacing": 0.0222,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 204,
+   "bodies": 3,
+   "spacing": 0.0253,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 205,
+   "bodies": 6,
+   "spacing": 0.0269,
+   "worstSolid": 0.0543,
+   "worstSolidPair": "painted-index-at-single-cam-tip x common-wheel-body-between-two-tooth-rows",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 206,
+   "bodies": 5,
+   "spacing": 0.021,
+   "worstSolid": 0.045,
+   "worstSolidPair": "forty-four-tooth-clockwise-double-stroke-ratchet-wheel/ExtrudeGeometry x left-curved-pawl-driving-while-common-pin-rises/CylinderGeometry",
+   "worstCoaxial": 0.1089,
+   "openMeshes": 0
+  },
+  {
+   "id": 207,
+   "bodies": 3,
+   "spacing": 0.0151,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 208,
+   "bodies": 5,
+   "spacing": 0.0171,
+   "worstSolid": 0.0807,
+   "worstSolidPair": "inner-slow-axial-drive-pin-0 x selected-ring-nominal-pitch-contact-marker",
+   "worstCoaxial": 0.0397,
+   "openMeshes": 0
+  },
+  {
+   "id": 209,
+   "bodies": 3,
+   "spacing": 0.0161,
+   "worstSolid": 0.0119,
+   "worstSolidPair": "forked-catch-rigid-stem x instantaneous-common-pitch-contact",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 210,
+   "bodies": 4,
+   "spacing": 0.0191,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.022,
+   "openMeshes": 0
+  },
+  {
+   "id": 211,
+   "bodies": 3,
+   "spacing": 0.0219,
+   "worstSolid": 0.016,
+   "worstSolidPair": "driver-tooth-shoulder-and-plain-rim-outline x curved-entry-guide-body",
+   "worstCoaxial": 0.0841,
+   "openMeshes": 0
+  },
+  {
+   "id": 212,
+   "bodies": 3,
+   "spacing": 0.0237,
+   "worstSolid": 0,
+   "worstSolidPair": "single-finger-locking-rim-geneva-driver-A x five-slot-four-pocket-wheel-with-one-convex-stop-sector",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 213,
+   "bodies": 3,
+   "spacing": 0.0266,
+   "worstSolid": 0.0436,
+   "worstSolidPair": "single-round-face-pin-indexing-driver x face-pin-to-uncut-rim-hard-stop-contact-marker",
+   "worstCoaxial": 0.085,
+   "openMeshes": 0
+  },
+  {
+   "id": 214,
+   "bodies": 3,
+   "spacing": 0.0348,
+   "worstSolid": 0,
+   "worstSolidPair": "right-ten-tooth-winding-input-integral-rigid-stop-finger x left-twelve-tooth-stop-counterwheel-integral-rigid-stop-finger",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 215,
+   "bodies": 3,
+   "spacing": 0.0314,
+   "worstSolid": 0,
+   "worstSolidPair": "front-raised-crescent-locking-cam-with-square-bore x six-radial-slots-five-concave-locks-one-convex-terminal-sector",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 216,
+   "bodies": 3,
+   "spacing": 0.0292,
+   "worstSolid": 0.1135,
+   "worstSolidPair": "rear-web-rigidly-joining-center-sector-and-internal-ring x reversing-pinion-shaft/CylinderGeometry",
+   "worstCoaxial": 0.11,
+   "openMeshes": 0
+  },
+  {
+   "id": 217,
+   "bodies": 7,
+   "spacing": 0.046,
+   "worstSolid": 0.1573,
+   "worstSolidPair": "outer-heart-cam-land-with-actual-groove-hole x H-detaching-roller-shaft",
+   "worstCoaxial": 0.2193,
+   "openMeshes": 2
+  },
+  {
+   "id": 218,
+   "bodies": 5,
+   "spacing": 0.016,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1594,
+   "openMeshes": 2
+  },
+  {
+   "id": 219,
+   "bodies": 3,
+   "spacing": 0.0295,
+   "worstSolid": 0.0009,
+   "worstSolidPair": "root/BufferGeometry x sliding-involute-crown-pinion/ExtrudeGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 220,
+   "bodies": 2,
+   "spacing": 0.0154,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 221,
+   "bodies": 4,
+   "spacing": 0.0337,
+   "worstSolid": 0.1391,
+   "worstSolidPair": "driver-shaft-hub-d x thirty-two-tooth-outer-wheel-b/ExtrudeGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 222,
+   "bodies": 5,
+   "spacing": 0.0297,
+   "worstSolid": 0.1005,
+   "worstSolidPair": "twenty-four-tooth-eccentric-driver-c/ExtrudeGeometry x twenty-four-tooth-irregular-output-a/ExtrudeGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 223,
+   "bodies": 3,
+   "spacing": 0.0255,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.009,
+   "openMeshes": 0
+  },
+  {
+   "id": 224,
+   "bodies": 9,
+   "spacing": 0.0223,
+   "worstSolid": 0.0714,
+   "worstSolidPair": "fixed-radial-guide-2/BoxGeometry x slot-captive-arm-stud-2",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 225,
+   "bodies": 6,
+   "spacing": 0.0167,
+   "worstSolid": 0.0548,
+   "worstSolidPair": "rounded-pawl-working-nose x active-pawl-tooth-contact-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 226,
+   "bodies": 6,
+   "spacing": 0.0215,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0145,
+   "openMeshes": 0
+  },
+  {
+   "id": 227,
+   "bodies": 23,
+   "spacing": 0.0281,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 228,
+   "bodies": 45,
+   "spacing": 0.0287,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 229,
+   "bodies": 30,
+   "spacing": 0.0317,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 230,
+   "bodies": 4,
+   "spacing": 0.0282,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 231,
+   "bodies": 4,
+   "spacing": 0.0151,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 232,
+   "bodies": 10,
+   "spacing": 0.0177,
+   "worstSolid": 0.0299,
+   "worstSolidPair": "232-short-tip-through-axle x sliding-pawl-C-tooth-corner-contact-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 233,
+   "bodies": 7,
+   "spacing": 0.0266,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0675,
+   "openMeshes": 0
+  },
+  {
+   "id": 234,
+   "bodies": 2,
+   "spacing": 0.0247,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0,
+   "stale": true
+  },
+  {
+   "id": 235,
+   "bodies": 7,
+   "spacing": 0.0179,
+   "worstSolid": 0.0514,
+   "worstSolidPair": "rounded-working-and-click-over-nose x active-drive-face-contact-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 236,
+   "bodies": 5,
+   "spacing": 0.0217,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 237,
+   "bodies": 6,
+   "spacing": 0.0172,
+   "worstSolid": 0.0449,
+   "worstSolidPair": "round-crown-tooth-contact-nose x active-crown-drive-face-contact",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 238,
+   "bodies": 3,
+   "spacing": 0.0164,
+   "worstSolid": 0,
+   "worstSolidPair": "seven-point-source-star-wheel-body-D x B-finite-one-sided-lock-and-impulse-face",
+   "worstCoaxial": 0.04,
+   "openMeshes": 0
+  },
+  {
+   "id": 239,
+   "bodies": 2,
+   "spacing": 0.0267,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0682,
+   "openMeshes": 0
+  },
+  {
+   "id": 240,
+   "bodies": 17,
+   "spacing": 0.0215,
+   "worstSolid": 0.042,
+   "worstSolidPair": "spring-pawl-stop-source-shaped-body x spring-pawl-curved-leaf-spring/CylinderGeometry",
+   "worstCoaxial": 0.0699,
+   "openMeshes": 0
+  },
+  {
+   "id": 241,
+   "bodies": 4,
+   "spacing": 0.0186,
+   "worstSolid": 0,
+   "worstSolidPair": "source-ratchet-wheel-A-body x one-source-shaped-curved-driving-tooth",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 242,
+   "bodies": 3,
+   "spacing": 0.0187,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.055,
+   "openMeshes": 0
+  },
+  {
+   "id": 243,
+   "bodies": 19,
+   "spacing": 0.0194,
+   "worstSolid": 0.0299,
+   "worstSolidPair": "single-flat-spatial-power-band x constant-arclength-band-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 244,
+   "bodies": 2,
+   "spacing": 0.0169,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 245,
+   "bodies": 2,
+   "spacing": 0.0143,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 246,
+   "bodies": 9,
+   "spacing": 0.0243,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 247,
+   "bodies": 9,
+   "spacing": 0.0278,
+   "worstSolid": 0.1664,
+   "worstSolidPair": "probe-lower-guide-block x seabed-contact-foot",
+   "worstCoaxial": 0.0588,
+   "openMeshes": 5
+  },
+  {
+   "id": 248,
+   "bodies": 3,
+   "spacing": 0.0223,
+   "worstSolid": 0.0859,
+   "worstSolidPair": "flat-annular-pipe-seat-shell x matching-three-turn-internal-thread-in-nut-B",
+   "worstCoaxial": 0,
+   "openMeshes": 21
+  },
+  {
+   "id": 249,
+   "bodies": 2,
+   "spacing": 0.0271,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 17
+  },
+  {
+   "id": 250,
+   "bodies": 4,
+   "spacing": 0.0448,
+   "worstSolid": 0.0169,
+   "worstSolidPair": "white-supported-journal-speed-index x right-exact-rolling-contact-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 251,
+   "bodies": 10,
+   "spacing": 0.0367,
+   "worstSolid": 0.2873,
+   "worstSolidPair": "left-half-of-top-frame-around-slot-b x horizontal-lifting-head-gripped-by-hooks",
+   "worstCoaxial": 0.0971,
+   "openMeshes": 0
+  },
+  {
+   "id": 252,
+   "bodies": 4,
+   "spacing": 0.0291,
+   "worstSolid": 0.005,
+   "worstSolidPair": "piece-d-right-oblique-slotted-arm x roller-b-plain-front-flange-without-orientation-mark",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 253,
+   "bodies": 65,
+   "spacing": 0.028,
+   "worstSolid": 0.165,
+   "worstSolidPair": "load-side-rope-drum x visible-torsional-shock-spring-between-flange-and-load-side-drum/CylinderGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 254,
+   "bodies": 1,
+   "spacing": 0.0208,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 255,
+   "bodies": 1,
+   "spacing": 0.0225,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 256,
+   "bodies": 1,
+   "spacing": 0.0232,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 257,
+   "bodies": 1,
+   "spacing": 0.0231,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 258,
+   "bodies": 1,
+   "spacing": 0.0231,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 259,
+   "bodies": 1,
+   "spacing": 0.0229,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 260,
+   "bodies": 4,
+   "spacing": 0.0198,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 261,
+   "bodies": 22,
+   "spacing": 0.0162,
+   "worstSolid": 0.0634,
+   "worstSolidPair": "fixed-material-cord-D-marker-10 x cord-D-tangent-on-drum-B",
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 262,
+   "bodies": 5,
+   "spacing": 0.0224,
+   "worstSolid": 0.0251,
+   "worstSolidPair": "fixed-spring-abutment-over-roller-C x source-permitted-spring-pressing-roller-C-against-cone-B",
+   "worstCoaxial": 0.0575,
+   "openMeshes": 1
+  },
+  {
+   "id": 263,
+   "bodies": 5,
+   "spacing": 0.0224,
+   "worstSolid": 0.0251,
+   "worstSolidPair": "fixed-spring-abutment-over-roller-C x source-permitted-spring-pressing-roller-C-against-cone-B",
+   "worstCoaxial": 0.0575,
+   "openMeshes": 1
+  },
+  {
+   "id": 264,
+   "bodies": 3,
+   "spacing": 0.0155,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 265,
+   "bodies": 3,
+   "spacing": 0.018,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 266,
+   "bodies": 3,
+   "spacing": 0.0143,
+   "worstSolid": 0.02,
+   "worstSolidPair": "movable-bearing-foot-sliding-on-base-guides x rear-fixed-linear-bearing-guide/BoxGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 267,
+   "bodies": 39,
+   "spacing": 0.0162,
+   "worstSolid": 0.072,
+   "worstSolidPair": "fixed-to-carrier-eccentric-arm-pivot-pin x spring-holding-eccentric-arm-toward-rim/CylinderGeometry",
+   "worstCoaxial": 0.035,
+   "openMeshes": 2
+  },
+  {
+   "id": 268,
+   "bodies": 5,
+   "spacing": 0.0187,
+   "worstSolid": 0.0501,
+   "worstSolidPair": "guide-roller-working-tread x exact-moving-rod-guide-roller-contact",
+   "worstCoaxial": 0.01,
+   "openMeshes": 0
+  },
+  {
+   "id": 269,
+   "bodies": 3,
+   "spacing": 0.0193,
+   "worstSolid": 0.12,
+   "worstSolidPair": "closed-right-end-of-translating-rack-frame x working-tooth-of-complete-output-spur-gear",
+   "worstCoaxial": 0.1,
+   "openMeshes": 0
+  },
+  {
+   "id": 270,
+   "bodies": 19,
+   "spacing": 0.017,
+   "worstSolid": 0.045,
+   "worstSolidPair": "stationary-inner-race-and-pulley-journal x moving-inner-race-contact-of-reference-roller",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 271,
+   "bodies": 7,
+   "spacing": 0.0219,
+   "worstSolid": 0.0128,
+   "worstSolidPair": "continuous-asymmetric-sawtooth-rack-profile x short-pawl-active-contact-marker",
+   "worstCoaxial": 0.1292,
+   "openMeshes": 1
+  },
+  {
+   "id": 272,
+   "bodies": 4,
+   "spacing": 0.0268,
+   "worstSolid": 0.0699,
+   "worstSolidPair": "solid-circular-disk-with-oblique-front-face x visible-bevel-to-shoe-contact-marker",
+   "worstCoaxial": 0.078,
+   "openMeshes": 1
+  },
+  {
+   "id": 273,
+   "bodies": 9,
+   "spacing": 0.0296,
+   "worstSolid": 0.0138,
+   "worstSolidPair": "rigid-rhombus-link-D-to-A x fixed-horizontal-split-guide-for-A-depth-retaining-strap",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 274,
+   "bodies": 9,
+   "spacing": 0.0205,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0603,
+   "openMeshes": 4
+  },
+  {
+   "id": 275,
+   "bodies": 2,
+   "spacing": 0.0169,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 276,
+   "bodies": 5,
+   "spacing": 0.0282,
+   "worstSolid": 0.0375,
+   "worstSolidPair": "white-bar-translation-index x fixed-left-straight-bar-guide-upper-shoe",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 277,
+   "bodies": 21,
+   "spacing": 0.0232,
+   "worstSolid": 0.1392,
+   "worstSolidPair": "dog-a-pivot-on-hammer-tumbler x spring-biased-rigid-indexing-dog-a/BoxGeometry",
+   "worstCoaxial": 0.5775,
+   "openMeshes": 1
+  },
+  {
+   "id": 278,
+   "bodies": 49,
+   "spacing": 0.0255,
+   "worstSolid": 0.0232,
+   "worstSolidPair": "transverse-leaf-spring-c-pressing-pin-down/CylinderGeometry x transverse-leaf-spring-c-pressing-pin-down/CylinderGeometry",
+   "worstCoaxial": 0.1492,
+   "openMeshes": 0
+  },
+  {
+   "id": 279,
+   "bodies": 4,
+   "spacing": 0.0303,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 280,
+   "bodies": 8,
+   "spacing": 0.0286,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.48,
+   "openMeshes": 0
+  },
+  {
+   "id": 281,
+   "bodies": 3,
+   "spacing": 0.018,
+   "worstSolid": 0.0667,
+   "worstSolidPair": "white-disk-rotation-index x fixed-pin-sliding-in-disk-face-groove",
+   "worstCoaxial": 0.22,
+   "openMeshes": 0
+  },
+  {
+   "id": 282,
+   "bodies": 28,
+   "spacing": 0.0183,
+   "worstSolid": 0.05,
+   "worstSolidPair": "white-disk-phase-and-crank-radius-index/BoxGeometry x upright-slotted-vibrating-bar",
+   "worstCoaxial": 0.0332,
+   "openMeshes": 0
+  },
+  {
+   "id": 283,
+   "bodies": 4,
+   "spacing": 0.0334,
+   "worstSolid": 0.1248,
+   "worstSolidPair": "manual-handle-grip x right-rack-bar",
+   "worstCoaxial": 0.025,
+   "openMeshes": 1
+  },
+  {
+   "id": 284,
+   "bodies": 12,
+   "spacing": 0.0263,
+   "worstSolid": 0.2182,
+   "worstSolidPair": "fixed-lower-input-shaft-bearing x crank-to-bellcrank-connecting-rod/BoxGeometry",
+   "worstCoaxial": 0.1792,
+   "openMeshes": 0
+  },
+  {
+   "id": 285,
+   "bodies": 3,
+   "spacing": 0.0231,
+   "worstSolid": 0.0343,
+   "worstSolidPair": "one-continuous-visible-right-hand-leadscrew-thread x active-screw-nut-contact-marker",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 286,
+   "bodies": 4,
+   "spacing": 0.0277,
+   "worstSolid": 0,
+   "worstSolidPair": "engraving-proportioned-rocking-toe-body x flat-horizontal-toe-contact-shoe",
+   "worstCoaxial": 0.296,
+   "openMeshes": 1
+  },
+  {
+   "id": 287,
+   "bodies": 6,
+   "spacing": 0.0251,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 288,
+   "bodies": 4,
+   "spacing": 0.0378,
+   "worstSolid": 0.0642,
+   "worstSolidPair": "white-index-on-escape-wheel-tooth-zero x solid-pallet-behind-working-face",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 289,
+   "bodies": 4,
+   "spacing": 0.0258,
+   "worstSolid": 0.144,
+   "worstSolidPair": "white-index-on-deadbeat-wheel-tooth-zero x source-profiled-deadbeat-anchor-body-H-L-K",
+   "worstCoaxial": 0.0996,
+   "openMeshes": 4
+  },
+  {
+   "id": 290,
+   "bodies": 4,
+   "spacing": 0.0243,
+   "worstSolid": 0.0257,
+   "worstSolidPair": "seven-source-counted-broad-ratchet-teeth-E-through-H x left-inward-pallet-B-nonconcentric-recoil-face",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 291,
+   "bodies": 40,
+   "spacing": 0.0307,
+   "worstSolid": 0.1374,
+   "worstSolidPair": "main-detent-leaf-spring-A-fixed-at-b-segment-14 x stop-d-under-main-spring-locks-successive-teeth",
+   "worstCoaxial": 0.22,
+   "openMeshes": 3
+  },
+  {
+   "id": 292,
+   "bodies": 4,
+   "spacing": 0.0379,
+   "worstSolid": 0.0344,
+   "worstSolidPair": "rear-face-escape-wheel-stud x white-marker-on-active-stud-contact",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 293,
+   "bodies": 3,
+   "spacing": 0.0384,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 294,
+   "bodies": 3,
+   "spacing": 0.032,
+   "worstSolid": 0.1035,
+   "worstSolidPair": "raised-pallet-stem-foot-connected-to-wheel-rim x two-end-pivots-with-clear-hollow-working-band",
+   "worstCoaxial": 0.1194,
+   "openMeshes": 0
+  },
+  {
+   "id": 295,
+   "bodies": 3,
+   "spacing": 0.0232,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1194,
+   "openMeshes": 0
+  },
+  {
+   "id": 296,
+   "bodies": 4,
+   "spacing": 0.0274,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 297,
+   "bodies": 3,
+   "spacing": 0.0292,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 298,
+   "bodies": 4,
+   "spacing": 0.0342,
+   "worstSolid": 0.0701,
+   "worstSolidPair": "axial-contrate-train-tooth x fixed-contrate-to-escape-pinion-contact",
+   "worstCoaxial": 0.082,
+   "openMeshes": 1,
+   "stale": true
+  },
+  {
+   "id": 299,
+   "bodies": 2,
+   "spacing": 0.0217,
+   "worstSolid": 0,
+   "worstSolidPair": "axial-saw-tooth x right-pallet-A-contact-face",
+   "worstCoaxial": 0,
+   "openMeshes": 0,
+   "stale": true
+  },
+  {
+   "id": 300,
+   "bodies": 4,
+   "spacing": 0.0302,
+   "worstSolid": 0.298,
+   "worstSolidPair": "debaufre-undercut-ratchet-tooth x single-d-section-frictional-rest-pallet",
+   "worstCoaxial": 0,
+   "openMeshes": 0,
+   "stale": true
+  },
+  {
+   "id": 301,
+   "bodies": 4,
+   "spacing": 0.0302,
+   "worstSolid": 0.298,
+   "worstSolidPair": "debaufre-undercut-ratchet-tooth x single-d-section-frictional-rest-pallet",
+   "worstCoaxial": 0,
+   "openMeshes": 0,
+   "stale": true
+  },
+  {
+   "id": 302,
+   "bodies": 2,
+   "spacing": 0.028,
+   "worstSolid": 0,
+   "worstSolidPair": "axial-saw-tooth x right-pallet-A-contact-face",
+   "worstCoaxial": 0,
+   "openMeshes": 1,
+   "stale": true
+  },
+  {
+   "id": 303,
+   "bodies": 2,
+   "spacing": 0.0273,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 4,
+   "stale": true
+  },
+  {
+   "id": 304,
+   "bodies": 4,
+   "spacing": 0.0309,
+   "worstSolid": 0.1176,
+   "worstSolidPair": "preferred-B-quarter-arc-working-body x higher-outer-arm-to-working-bit-bridge",
+   "worstCoaxial": 0.3089,
+   "openMeshes": 6
+  },
+  {
+   "id": 305,
+   "bodies": 3,
+   "spacing": 0.0184,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1144,
+   "openMeshes": 0
+  },
+  {
+   "id": 306,
+   "bodies": 3,
+   "spacing": 0.0153,
+   "worstSolid": 0.149,
+   "worstSolidPair": "single-opening-upper-lower-pallet-plate x three-legged-wheel-arm-and-working-tooth",
+   "worstCoaxial": 0.0011,
+   "openMeshes": 0
+  },
+  {
+   "id": 307,
+   "bodies": 3,
+   "spacing": 0.0203,
+   "worstSolid": 0.07,
+   "worstSolidPair": "hardened-impulse-pallet-A x short-inner-backward-pointing-impulse-pin",
+   "worstCoaxial": 0.04,
+   "openMeshes": 0
+  },
+  {
+   "id": 308,
+   "bodies": 7,
+   "spacing": 0.0236,
+   "worstSolid": 0.1182,
+   "worstSolidPair": "sixty-pin-wheel-bearing x pendulum-P-rod",
+   "worstCoaxial": 0.0267,
+   "openMeshes": 1
+  },
+  {
+   "id": 309,
+   "bodies": 8,
+   "spacing": 0.0269,
+   "worstSolid": 0.2,
+   "worstSolidPair": "escape-wheel-hub x right-A-P-independent-half-fork",
+   "worstCoaxial": 0.19,
+   "openMeshes": 4,
+   "stale": true
+  },
+  {
+   "id": 310,
+   "bodies": 8,
+   "spacing": 0.0308,
+   "worstSolid": 0.2428,
+   "worstSolidPair": "single-three-legged-wheel-hub x left-B-D-inverted-inner-pallet-tail",
+   "worstCoaxial": 0.16,
+   "openMeshes": 10,
+   "stale": true
+  },
+  {
+   "id": 311,
+   "bodies": 8,
+   "spacing": 0.0294,
+   "worstSolid": 0.0836,
+   "worstSolidPair": "common-double-wheel-escape-arbor x double-gravity-escapement-pendulum-rod",
+   "worstCoaxial": 0.1293,
+   "openMeshes": 8,
+   "stale": true
+  },
+  {
+   "id": 312,
+   "bodies": 8,
+   "spacing": 0.0262,
+   "worstSolid": 0.0792,
+   "worstSolidPair": "common-two-wheel-arbor-bearing x left-A-E-plane-radial-inner-pallet-face",
+   "worstCoaxial": 0.1443,
+   "openMeshes": 6,
+   "stale": true
+  },
+  {
+   "id": 313,
+   "bodies": 4,
+   "spacing": 0.0294,
+   "worstSolid": 0.0669,
+   "worstSolidPair": "visible-radial-working-face-of-pallet-P x visible-contact-marker-at-sole-impulse-pallet-P",
+   "worstCoaxial": 0.0926,
+   "openMeshes": 1
+  },
+  {
+   "id": 314,
+   "bodies": 7,
+   "spacing": 0.0341,
+   "worstSolid": 0.1176,
+   "worstSolidPair": "white-index-on-lever-chronometer-wheel x rigid-arm-from-lever-pivot-to-pallet-B",
+   "worstCoaxial": 0.1098,
+   "openMeshes": 8
+  },
+  {
+   "id": 315,
+   "bodies": 2,
+   "spacing": 0.0315,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.228,
+   "openMeshes": 0
+  },
+  {
+   "id": 316,
+   "bodies": 8,
+   "spacing": 0.0289,
+   "worstSolid": 0.2415,
+   "worstSolidPair": "visible-thread-on-pendulum-adjustment-rod x threaded-jar-height-adjuster-block",
+   "worstCoaxial": 0.0258,
+   "openMeshes": 3
+  },
+  {
+   "id": 317,
+   "bodies": 46,
+   "spacing": 0.0406,
+   "worstSolid": 0.2659,
+   "worstSolidPair": "thermally-expanding-steel-pendulum-rod x center-clamp-C-brazed-to-pendulum-rod",
+   "worstCoaxial": 0.275,
+   "openMeshes": 1
+  },
+  {
+   "id": 318,
+   "bodies": 176,
+   "spacing": 0.0341,
+   "worstSolid": 0.009,
+   "worstSolidPair": "flat-spiral-balance-spring-segment x staff-keyed-balance-spring-collet",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 319,
+   "bodies": 287,
+   "spacing": 0.0297,
+   "worstSolid": 0.0926,
+   "worstSolidPair": "outer-brass-layer-of-compound-balance-arm x timing-screw-threaded-stem",
+   "worstCoaxial": 0.119,
+   "openMeshes": 0
+  },
+  {
+   "id": 320,
+   "bodies": 22,
+   "spacing": 0.0244,
+   "worstSolid": 0.0392,
+   "worstSolidPair": "roughened-ratchet-pulley-p-symmetric-rotation-index x finite-bored-clock-click",
+   "worstCoaxial": 0.005,
+   "openMeshes": 0
+  },
+  {
+   "id": 321,
+   "bodies": 93,
+   "spacing": 0.0277,
+   "worstSolid": 0.1388,
+   "worstSolidPair": "fixed-length-maintaining-spring-S-S-prime-segment x common-going-barrel-arbor",
+   "worstCoaxial": 0.1086,
+   "openMeshes": 1
+  },
+  {
+   "id": 322,
+   "bodies": 2,
+   "spacing": 0.0181,
+   "worstSolid": 0,
+   "worstSolidPair": "upper-left-right-triangle-A-solid-with-through-handling-hole x lower-right-right-triangle-B-solid-with-through-handling-hole",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 323,
+   "bodies": 2,
+   "spacing": 0.0211,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 324,
+   "bodies": 7,
+   "spacing": 0.0203,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 325,
+   "bodies": 4,
+   "spacing": 0.0214,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 326,
+   "bodies": 5,
+   "spacing": 0.0335,
+   "worstSolid": 0.053,
+   "worstSolidPair": "source-fifteen-unit-flywheel-rim x left-rear-planed-slide-cheek",
+   "worstCoaxial": 0.0685,
+   "openMeshes": 0
+  },
+  {
+   "id": 327,
+   "bodies": 7,
+   "spacing": 0.0345,
+   "worstSolid": 0.0744,
+   "worstSolidPair": "white-index-fixed-to-flywheel-rim x right-outer-engine-frame-post",
+   "worstCoaxial": 0.108,
+   "openMeshes": 0
+  },
+  {
+   "id": 328,
+   "bodies": 9,
+   "spacing": 0.037,
+   "worstSolid": 0.0535,
+   "worstSolidPair": "white-index-fixed-to-input-flywheel x fixed-upper-bed-carrying-both-equal-wheels-C",
+   "worstCoaxial": 0.0523,
+   "openMeshes": 1
+  },
+  {
+   "id": 329,
+   "bodies": 4,
+   "spacing": 0.0326,
+   "worstSolid": 0.049,
+   "worstSolidPair": "white-index-fast-with-plate-C x right-A-frame-support-leg",
+   "worstCoaxial": 0.058,
+   "openMeshes": 0
+  },
+  {
+   "id": 330,
+   "bodies": 4,
+   "spacing": 0.025,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 331,
+   "bodies": 3,
+   "spacing": 0.0257,
+   "worstSolid": 0.1186,
+   "worstSolidPair": "lower-engine-crossbase-from-official-model x white-index-rigid-on-flywheel-rim",
+   "worstCoaxial": 0.12,
+   "openMeshes": 1
+  },
+  {
+   "id": 332,
+   "bodies": 11,
+   "spacing": 0.017,
+   "worstSolid": 0.067,
+   "worstSolidPair": "fixed-side-lever-pivot-A-bedplate x side-lever-lower-taper-line",
+   "worstCoaxial": 0.0832,
+   "openMeshes": 0
+  },
+  {
+   "id": 333,
+   "bodies": 11,
+   "spacing": 0.0175,
+   "worstSolid": 0.1446,
+   "worstSolidPair": "left-pivot-O-fixed-bearing-housing x left-P-piston-link-joint-boss",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 334,
+   "bodies": 23,
+   "spacing": 0.0241,
+   "worstSolid": 0.017,
+   "worstSolidPair": "working-tooth-of-thirty-unit-sector-C x piston-rod-and-solid-back-of-rack-B",
+   "worstCoaxial": 0.0584,
+   "openMeshes": 0
+  },
+  {
+   "id": 335,
+   "bodies": 10,
+   "spacing": 0.0242,
+   "worstSolid": 0.1429,
+   "worstSolidPair": "fixed-shaft-through-radius-pivot-F x rectangular-piston-crosshead-at-E",
+   "worstCoaxial": 0.1684,
+   "openMeshes": 0
+  },
+  {
+   "id": 336,
+   "bodies": 11,
+   "spacing": 0.0214,
+   "worstSolid": 0.105,
+   "worstSolidPair": "ten-unit-side-rod-R-S-through-N-bored-constant-length-shank x wide-marine-engine-piston-head",
+   "worstCoaxial": 0.1975,
+   "openMeshes": 0
+  },
+  {
+   "id": 337,
+   "bodies": 7,
+   "spacing": 0.0254,
+   "worstSolid": 0.09,
+   "worstSolidPair": "fixed-piston-rod-guide-rail-1 x beam-left-end-pin-boss-B",
+   "worstCoaxial": 0.1875,
+   "openMeshes": 0
+  },
+  {
+   "id": 338,
+   "bodies": 7,
+   "spacing": 0.0251,
+   "worstSolid": 0.1,
+   "worstSolidPair": "fixed-piston-guide-rail-1 x beam-right-pin-boss-R",
+   "worstCoaxial": 0.1888,
+   "openMeshes": 0
+  },
+  {
+   "id": 339,
+   "bodies": 9,
+   "spacing": 0.0277,
+   "worstSolid": 0.1408,
+   "worstSolidPair": "fixed-radius-bar-bearing-F x source-length-vertical-piston-rod-below-C",
+   "worstCoaxial": 0.1516,
+   "openMeshes": 0
+  },
+  {
+   "id": 340,
+   "bodies": 8,
+   "spacing": 0.0279,
+   "worstSolid": 0.04,
+   "worstSolidPair": "fixed-radius-bearing-E x output-C-guided-crosshead",
+   "worstCoaxial": 0.1894,
+   "openMeshes": 0
+  },
+  {
+   "id": 341,
+   "bodies": 11,
+   "spacing": 0.0243,
+   "worstSolid": 0.1786,
+   "worstSolidPair": "fixed-shaft-through-E x beam-station-boss-L",
+   "worstCoaxial": 0.1547,
+   "openMeshes": 0
+  },
+  {
+   "id": 342,
+   "bodies": 33,
+   "spacing": 0.0333,
+   "worstSolid": 0.0255,
+   "worstSolidPair": "fixed-piston-rod-guide-1 x piston-rod-chain-connection-eye",
+   "worstCoaxial": 0.048,
+   "openMeshes": 0
+  },
+  {
+   "id": 343,
+   "bodies": 10,
+   "spacing": 0.0354,
+   "worstSolid": 0.0437,
+   "worstSolidPair": "upright-engine-piston-rod-below-C x common-working-pin-D",
+   "worstCoaxial": 0.0759,
+   "openMeshes": 0
+  },
+  {
+   "id": 344,
+   "bodies": 5,
+   "spacing": 0.0218,
+   "worstSolid": 0.1,
+   "worstSolidPair": "fixed-mid-height-trunnion-rail x oscillating-cylinder-side-wall-1",
+   "worstCoaxial": 0.186,
+   "openMeshes": 0
+  },
+  {
+   "id": 345,
+   "bodies": 5,
+   "spacing": 0.0229,
+   "worstSolid": 0.1,
+   "worstSolidPair": "fixed-upper-pendulum-engine-trunnion-rail x pendulum-cylinder-side-wall-1",
+   "worstCoaxial": 0.18,
+   "openMeshes": 0
+  },
+  {
+   "id": 346,
+   "bodies": 4,
+   "spacing": 0.0197,
+   "worstSolid": 0.07,
+   "worstSolidPair": "fixed-table-bed-top-edge x parallel-crank-pin-boss-1-P",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 347,
+   "bodies": 5,
+   "spacing": 0.0274,
+   "worstSolid": 0.2279,
+   "worstSolidPair": "rotating-crank-arm-O-P x moving-ball-in-crank-pin-socket-P",
+   "worstCoaxial": 0.2274,
+   "openMeshes": 6
+  },
+  {
+   "id": 348,
+   "bodies": 5,
+   "spacing": 0.0189,
+   "worstSolid": 0.0464,
+   "worstSolidPair": "disk-A-white-rotation-index x primary-pivoted-slide-c-in-disk-local-x-slot-pivot-pin-to-rod-B",
+   "worstCoaxial": 0.0406,
+   "openMeshes": 0
+  },
+  {
+   "id": 349,
+   "bodies": 7,
+   "spacing": 0.0168,
+   "worstSolid": 0,
+   "worstSolidPair": "upper-parallel-ruler-end-solid-body x lower-parallel-ruler-end-solid-body",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 350,
+   "bodies": 4,
+   "spacing": 0.0282,
+   "worstSolid": 0.095,
+   "worstSolidPair": "fixed-wide-base x lower-actual-slot-for-moving-pin-D",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 351,
+   "bodies": 3,
+   "spacing": 0.0382,
+   "worstSolid": 0.1256,
+   "worstSolidPair": "installed-mutilated-pinion-tooth-6 x single-sided-rack-tooth--5",
+   "worstCoaxial": 0.1043,
+   "openMeshes": 0
+  },
+  {
+   "id": 352,
+   "bodies": 19,
+   "spacing": 0.0255,
+   "worstSolid": 0.1099,
+   "worstSolidPair": "left-inclined-A-frame-leg/BoxGeometry x free-hand-grip-on-windlass-crank",
+   "worstCoaxial": 0.04,
+   "openMeshes": 2
+  },
+  {
+   "id": 353,
+   "bodies": 3,
+   "spacing": 0.025,
+   "worstSolid": 0.0773,
+   "worstSolidPair": "triangular-wiper-with-counter-clockwise-leading-radial-working-face x single-rigid-helve-crossing-fulcrum-between-head-and-input",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 354,
+   "bodies": 3,
+   "spacing": 0.0335,
+   "worstSolid": 0.0075,
+   "worstSolidPair": "front-face-of-central-input-hub x source-proportioned-capsule-crosshead-plate",
+   "worstCoaxial": 0.1362,
+   "openMeshes": 0
+  },
+  {
+   "id": 355,
+   "bodies": 3,
+   "spacing": 0.0232,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0325,
+   "openMeshes": 1
+  },
+  {
+   "id": 356,
+   "bodies": 3,
+   "spacing": 0.0217,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.06,
+   "openMeshes": 1
+  },
+  {
+   "id": 357,
+   "bodies": 16,
+   "spacing": 0.0295,
+   "worstSolid": 0.1281,
+   "worstSolidPair": "top-bridge-supporting-valve-rod-guide x nonrotating-vertically-moving-valve-rod-D",
+   "worstCoaxial": 0.15,
+   "openMeshes": 4
+  },
+  {
+   "id": 358,
+   "bodies": 5,
+   "spacing": 0.0353,
+   "worstSolid": 0.0192,
+   "worstSolidPair": "carriage-wheel-rolling-without-slip/BoxGeometry x carriage-mounted-fusee-bearing-frame/BoxGeometry",
+   "worstCoaxial": 0.06,
+   "openMeshes": 1
+  },
+  {
+   "id": 359,
+   "bodies": 3,
+   "spacing": 0.0175,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 360,
+   "bodies": 16,
+   "spacing": 0.0169,
+   "worstSolid": 0.0003,
+   "worstSolidPair": "loose-drum-cord-groove x fixed-material-drive-cord-marker",
+   "worstCoaxial": 0.115,
+   "openMeshes": 4
+  },
+  {
+   "id": 361,
+   "bodies": 19,
+   "spacing": 0.0138,
+   "worstSolid": 0.1026,
+   "worstSolidPair": "fixed-operating-lever-pivot x fork-arm-running-in-shift-collar-groove/BoxGeometry",
+   "worstCoaxial": 0.1283,
+   "openMeshes": 0
+  },
+  {
+   "id": 362,
+   "bodies": 3,
+   "spacing": 0.0161,
+   "worstSolid": 0.03,
+   "worstSolidPair": "middle-two-level-bearing-post x dark-end-rim-on-traversing-upper-drum",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 363,
+   "bodies": 2,
+   "spacing": 0.0171,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 364,
+   "bodies": 11,
+   "spacing": 0.0202,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1049,
+   "openMeshes": 0
+  },
+  {
+   "id": 365,
+   "bodies": 10,
+   "spacing": 0.0162,
+   "worstSolid": 0,
+   "worstSolidPair": "white-longitudinal-index-showing-oblique-roller-spin-rate x long-cylindrical-rod-driven-between-two-oblique-rollers",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 366,
+   "bodies": 9,
+   "spacing": 0.0174,
+   "worstSolid": 0.0222,
+   "worstSolidPair": "pitch-cone-bevel-gear-body x longitudinal-feather-key-sliding-in-pinion-groove",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 367,
+   "bodies": 4,
+   "spacing": 0.013,
+   "worstSolid": 0.0797,
+   "worstSolidPair": "through-pin-of-parallel-link x fixed-to-lower-blade-brass-arc-crossing-graduated-scale",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 368,
+   "bodies": 4,
+   "spacing": 0.0201,
+   "worstSolid": 0.0438,
+   "worstSolidPair": "white-input-shaft-spin-index x horizontal-input-shaft-bearing-post",
+   "worstCoaxial": 0.0706,
+   "openMeshes": 1
+  },
+  {
+   "id": 369,
+   "bodies": 52,
+   "spacing": 0.0146,
+   "worstSolid": 0.0517,
+   "worstSolidPair": "dashed-reference-of-bob-cycloidal-path x pendulum-bob-mass",
+   "worstCoaxial": 0.2038,
+   "openMeshes": 4
+  },
+  {
+   "id": 370,
+   "bodies": 9,
+   "spacing": 0.0187,
+   "worstSolid": 0.1189,
+   "worstSolidPair": "actual-crankshaft-through-fixed-bearing x rigid-long-sliding-oscillating-bar-body",
+   "worstCoaxial": 0.0716,
+   "openMeshes": 0
+  },
+  {
+   "id": 371,
+   "bodies": 4,
+   "spacing": 0.0217,
+   "worstSolid": 0.0159,
+   "worstSolidPair": "white-input-shaft-index-proving-uniform-spin x sliding-bearing-collar-following-terminal-crossover-path",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 372,
+   "bodies": 5,
+   "spacing": 0.0198,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 373,
+   "bodies": 6,
+   "spacing": 0.0205,
+   "worstSolid": 0,
+   "worstSolidPair": "wagon-load-bed x didactic-removable-test-weight-showing-load-change",
+   "worstCoaxial": 0.0696,
+   "openMeshes": 4
+  },
+  {
+   "id": 374,
+   "bodies": 5,
+   "spacing": 0.021,
+   "worstSolid": 0.135,
+   "worstSolidPair": "broad-foot-pad-at-free-end-of-treadle x fixed-base-of-treadle-drive-demonstrator",
+   "worstCoaxial": 0.085,
+   "openMeshes": 4
+  },
+  {
+   "id": 375,
+   "bodies": 5,
+   "spacing": 0.0213,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0343,
+   "openMeshes": 0
+  },
+  {
+   "id": 376,
+   "bodies": 11,
+   "spacing": 0.0189,
+   "worstSolid": 0.0499,
+   "worstSolidPair": "horse-hoof x horse-hoof",
+   "worstCoaxial": 0.0562,
+   "openMeshes": 2
+  },
+  {
+   "id": 377,
+   "bodies": 8,
+   "spacing": 0.02,
+   "worstSolid": 0.1506,
+   "worstSolidPair": "stylized-person-torso x person-upper-leg",
+   "worstCoaxial": 0.0543,
+   "openMeshes": 3
+  },
+  {
+   "id": 378,
+   "bodies": 10,
+   "spacing": 0.0254,
+   "worstSolid": 0.3723,
+   "worstSolidPair": "one-of-crosscut-saw-teeth x lying-tree-bark-cylinder",
+   "worstCoaxial": 0.0825,
+   "openMeshes": 4
+  },
+  {
+   "id": 379,
+   "bodies": 3,
+   "spacing": 0.0155,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 380,
+   "bodies": 3,
+   "spacing": 0.0156,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 381,
+   "bodies": 3,
+   "spacing": 0.0157,
+   "worstSolid": 0,
+   "worstSolidPair": "one-of-two-fixed-wedge-formed-cheeks x one-of-two-sliding-dovetail-retained-clamping-wedges",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 382,
+   "bodies": 3,
+   "spacing": 0.0171,
+   "worstSolid": 0.1281,
+   "worstSolidPair": "socket-lock-screw-core x rounded-mirror-frame-horizontal-edge",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 383,
+   "bodies": 13,
+   "spacing": 0.0199,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.03,
+   "openMeshes": 3
+  },
+  {
+   "id": 384,
+   "bodies": 3,
+   "spacing": 0.038,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 385,
+   "bodies": 7,
+   "spacing": 0.0184,
+   "worstSolid": 0.1,
+   "worstSolidPair": "fixed-door-frame-lintel x door-pin-socket-bracket",
+   "worstCoaxial": 0.1143,
+   "openMeshes": 1
+  },
+  {
+   "id": 386,
+   "bodies": 7,
+   "spacing": 0.0224,
+   "worstSolid": 0.0342,
+   "worstSolidPair": "left-half-of-closed-round-pole-shell x right-upper-complement-forming-full-pole-end",
+   "worstCoaxial": 0.0475,
+   "openMeshes": 1
+  },
+  {
+   "id": 387,
+   "bodies": 12,
+   "spacing": 0.0314,
+   "worstSolid": 0.0703,
+   "worstSolidPair": "floating-vertical-end-frame-lower-stringer-pivot x constant-length-tread-suspension-rod-bored-constant-length-shank",
+   "worstCoaxial": 0.1292,
+   "openMeshes": 0
+  },
+  {
+   "id": 388,
+   "bodies": 3,
+   "spacing": 0.0453,
+   "worstSolid": 0.0125,
+   "worstSolidPair": "radial-work-gripping-feed-tooth x white-fed-workpiece-material-index",
+   "worstCoaxial": 0.05,
+   "openMeshes": 0
+  },
+  {
+   "id": 389,
+   "bodies": 7,
+   "spacing": 0.0181,
+   "worstSolid": 0.0587,
+   "worstSolidPair": "white-rack-vertical-lift-index x root/BoxGeometry",
+   "worstCoaxial": 0.1225,
+   "openMeshes": 0
+  },
+  {
+   "id": 390,
+   "bodies": 13,
+   "spacing": 0.0176,
+   "worstSolid": 0.0128,
+   "worstSolidPair": "semicircular-piece-band-groove x crossed-band-D-fixed-material-marker",
+   "worstCoaxial": 0.1294,
+   "openMeshes": 5
+  },
+  {
+   "id": 391,
+   "bodies": 7,
+   "spacing": 0.032,
+   "worstSolid": 0.1097,
+   "worstSolidPair": "fixed-guide-groove-support-standard/BoxGeometry x right-rack-A1-pin-running-in-fixed-guide-groove-b",
+   "worstCoaxial": 0.0885,
+   "openMeshes": 0
+  },
+  {
+   "id": 392,
+   "bodies": 65,
+   "spacing": 0.0255,
+   "worstSolid": 0.0763,
+   "worstSolidPair": "short-rigid-render-segment-of-flexing-leaf-spring/SphereGeometry x fixed-right-hand-anchor-of-leaf-spring",
+   "worstCoaxial": 0.1267,
+   "openMeshes": 0
+  },
+  {
+   "id": 393,
+   "bodies": 3,
+   "spacing": 0.02,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 394,
+   "bodies": 3,
+   "spacing": 0.0265,
+   "worstSolid": 0.0786,
+   "worstSolidPair": "closed-oblong-body-of-endless-rack x fixed-guide-for-reciprocating-input-rod",
+   "worstCoaxial": 0.015,
+   "openMeshes": 0
+  },
+  {
+   "id": 395,
+   "bodies": 20,
+   "spacing": 0.0293,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1129,
+   "openMeshes": 3
+  },
+  {
+   "id": 396,
+   "bodies": 4,
+   "spacing": 0.0272,
+   "worstSolid": 0.1978,
+   "worstSolidPair": "escape-wheel-spindle-a x balance-wheel-B-rim",
+   "worstCoaxial": 0.05,
+   "openMeshes": 1
+  },
+  {
+   "id": 397,
+   "bodies": 5,
+   "spacing": 0.0255,
+   "worstSolid": 0.0571,
+   "worstSolidPair": "output-rod-to-slider-pin x fixed-horizontal-shuttle-guide-rail",
+   "worstCoaxial": 0.03,
+   "openMeshes": 0
+  },
+  {
+   "id": 398,
+   "bodies": 5,
+   "spacing": 0.0355,
+   "worstSolid": 0.0959,
+   "worstSolidPair": "white-index-showing-constant-cam-rotation x cam-contact-roller-constrained-to-horizontal-line",
+   "worstCoaxial": 0.12,
+   "openMeshes": 0
+  },
+  {
+   "id": 399,
+   "bodies": 4,
+   "spacing": 0.0167,
+   "worstSolid": 0.0174,
+   "worstSolidPair": "upper-unbroken-u-shaped-body x right-lower-carried-visible-female-thread-bore",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 400,
+   "bodies": 5,
+   "spacing": 0.0236,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1191,
+   "openMeshes": 1
+  },
+  {
+   "id": 401,
+   "bodies": 5,
+   "spacing": 0.02,
+   "worstSolid": 0.0025,
+   "worstSolidPair": "faceplate-spin-reference-spoke x crank-wrist-pin-fixed-on-tangent-slide",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 402,
+   "bodies": 6,
+   "spacing": 0.0233,
+   "worstSolid": 0.0729,
+   "worstSolidPair": "upper-external-mesh-balance-rim x left-internal-mesh-white-balance-angular-index",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 403,
+   "bodies": 3,
+   "spacing": 0.0301,
+   "worstSolid": 0.0254,
+   "worstSolidPair": "right-fixed-chord-end-guide-pin-white-cap x fastened-crossing-of-the-two-sloping-rules",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 404,
+   "bodies": 5,
+   "spacing": 0.019,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.055,
+   "openMeshes": 1
+  },
+  {
+   "id": 405,
+   "bodies": 5,
+   "spacing": 0.0185,
+   "worstSolid": 0.0469,
+   "worstSolidPair": "given-lower-hyperbola-vertex x moving-pencil-conical-tip",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 406,
+   "bodies": 5,
+   "spacing": 0.0197,
+   "worstSolid": 0.0533,
+   "worstSolidPair": "fixed-focus-pin-axle x taut-thread-segment-from-pencil-bight-along-blade-to-anchor",
+   "worstCoaxial": 0.0732,
+   "openMeshes": 1
+  },
+  {
+   "id": 407,
+   "bodies": 3,
+   "spacing": 0.0207,
+   "worstSolid": 0.0526,
+   "worstSolidPair": "selected-left-half-of-pointed-arch x moving-pointed-arch-pencil-tip",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 408,
+   "bodies": 2,
+   "spacing": 0.018,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 409,
+   "bodies": 5,
+   "spacing": 0.0135,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0498,
+   "openMeshes": 0
+  },
+  {
+   "id": 410,
+   "bodies": 7,
+   "spacing": 0.0215,
+   "worstSolid": 0.065,
+   "worstSolidPair": "sliding-right-parallel-cheek-body x visible-thumb-screw-head",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 411,
+   "bodies": 15,
+   "spacing": 0.0212,
+   "worstSolid": 0.0473,
+   "worstSolidPair": "right-no-slip-survey-wheel-white-no-slip-rotation-index x curved-carriage-frame-governed-by-isosceles-triangle",
+   "worstCoaxial": 0.0486,
+   "openMeshes": 2
+  },
+  {
+   "id": 412,
+   "bodies": 6,
+   "spacing": 0.0232,
+   "worstSolid": 0.0025,
+   "worstSolidPair": "equal-fixed-axis-idler-pinion-3-on-carrier/ExtrudeGeometry x white-annulus-output-rotation-index",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 413,
+   "bodies": 6,
+   "spacing": 0.0177,
+   "worstSolid": 0.1295,
+   "worstSolidPair": "upper-wheel-A-shaft x right-flank-of-v-edged-rubber-disk",
+   "worstCoaxial": 0.0175,
+   "openMeshes": 0
+  },
+  {
+   "id": 414,
+   "bodies": 3,
+   "spacing": 0.018,
+   "worstSolid": 0.0001,
+   "worstSolidPair": "long-radial-pinion-input-shaft x bevel-like-sliding-pinion-B-body",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 415,
+   "bodies": 12,
+   "spacing": 0.0202,
+   "worstSolid": 0.15,
+   "worstSolidPair": "single-smooth-internal-friction-rim-of-wheel-D x constant-length-input-connecting-rod",
+   "worstCoaxial": 0.1091,
+   "openMeshes": 0
+  },
+  {
+   "id": 416,
+   "bodies": 5,
+   "spacing": 0.0211,
+   "worstSolid": 0.1084,
+   "worstSolidPair": "constant-length-pitman-from-crank-B-to-treadle x crankshaft-through-fixed-bearing",
+   "worstCoaxial": 0.077,
+   "openMeshes": 0
+  },
+  {
+   "id": 417,
+   "bodies": 5,
+   "spacing": 0.0214,
+   "worstSolid": 0.1069,
+   "worstSolidPair": "straight-bearing-portion-of-shaft-A x constant-length-oblique-double-socket-rod-B",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 418,
+   "bodies": 5,
+   "spacing": 0.0197,
+   "worstSolid": 0.0802,
+   "worstSolidPair": "vertical-adjustment-screw-for-arcs-D x upper-pin-vertical-slider-block",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 419,
+   "bodies": 13,
+   "spacing": 0.0221,
+   "worstSolid": 0.0181,
+   "worstSolidPair": "flexible-band-C-left-limb-over-wheel-B-flexible-segment x flexible-band-D-right-limb-over-wheel-B-flexible-segment",
+   "worstCoaxial": 0.108,
+   "openMeshes": 1
+  },
+  {
+   "id": 420,
+   "bodies": 28,
+   "spacing": 0.0207,
+   "worstSolid": 0.1034,
+   "worstSolidPair": "flexing-segment-of-return-leaf-spring x sliding-contact-of-leaf-spring-under-hammer",
+   "worstCoaxial": 0.06,
+   "openMeshes": 0
+  },
+  {
+   "id": 421,
+   "bodies": 6,
+   "spacing": 0.0148,
+   "worstSolid": 0.1175,
+   "worstSolidPair": "fixed-horizontal-crankshaft-axis x constant-length-pitman-entering-hollow-trunk",
+   "worstCoaxial": 0.1193,
+   "openMeshes": 2
+  },
+  {
+   "id": 422,
+   "bodies": 5,
+   "spacing": 0.0181,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.1099,
+   "openMeshes": 3
+  },
+  {
+   "id": 423,
+   "bodies": 9,
+   "spacing": 0.0363,
+   "worstSolid": 0.2249,
+   "worstSolidPair": "bottom-quadrant-cylinder-end-wall x single-common-crank-pin-D-shared-by-both-connecting-rods",
+   "worstCoaxial": 0.2787,
+   "openMeshes": 8
+  },
+  {
+   "id": 424,
+   "bodies": 8,
+   "spacing": 0.0271,
+   "worstSolid": 0,
+   "worstSolidPair": "horizontally-sliding-square-frame-piston-B-left-wall x horizontal-body-of-piston-C",
+   "worstCoaxial": 0.2076,
+   "openMeshes": 1
+  },
+  {
+   "id": 425,
+   "bodies": 6,
+   "spacing": 0.0325,
+   "worstSolid": 0.0275,
+   "worstSolidPair": "outer-sealing-tongue-of-piston-C-that-passes-abutment-D x instantaneous-sealing-contact-between-C-and-D",
+   "worstCoaxial": 0.346,
+   "openMeshes": 2
+  },
+  {
+   "id": 426,
+   "bodies": 6,
+   "spacing": 0.0271,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 427,
+   "bodies": 6,
+   "spacing": 0.0284,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 428,
+   "bodies": 17,
+   "spacing": 0.0291,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.269,
+   "openMeshes": 2
+  },
+  {
+   "id": 429,
+   "bodies": 3,
+   "spacing": 0.0292,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 430,
+   "bodies": 21,
+   "spacing": 0.0293,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 10
+  },
+  {
+   "id": 431,
+   "bodies": 15,
+   "spacing": 0.0283,
+   "worstSolid": 0.0118,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.2197,
+   "openMeshes": 0
+  },
+  {
+   "id": 432,
+   "bodies": 26,
+   "spacing": 0.0323,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.2197,
+   "openMeshes": 13
+  },
+  {
+   "id": 433,
+   "bodies": 19,
+   "spacing": 0.0304,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 434,
+   "bodies": 26,
+   "spacing": 0.0265,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 435,
+   "bodies": 26,
+   "spacing": 0.0281,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0749,
+   "openMeshes": 8
+  },
+  {
+   "id": 436,
+   "bodies": 26,
+   "spacing": 0.0305,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 437,
+   "bodies": 28,
+   "spacing": 0.0315,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 438,
+   "bodies": 31,
+   "spacing": 0.0314,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 439,
+   "bodies": 22,
+   "spacing": 0.0288,
+   "worstSolid": 0.1007,
+   "worstSolidPair": "right-straight-part-of-single-rope x material-marker-moving-continuously-on-single-rope",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 440,
+   "bodies": 12,
+   "spacing": 0.0236,
+   "worstSolid": 0,
+   "worstSolidPair": "right-compartment-floor x fixed-right-trough-travel-stop",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 441,
+   "bodies": 39,
+   "spacing": 0.0263,
+   "worstSolid": 0.0747,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 442,
+   "bodies": 39,
+   "spacing": 0.0284,
+   "worstSolid": 0.47,
+   "worstSolidPair": "outer-bottom-of-pot-8 x rightward-current-partly-immersing-peripheral-pots",
+   "worstCoaxial": 0.4699,
+   "openMeshes": 4
+  },
+  {
+   "id": 443,
+   "bodies": 17,
+   "spacing": 0.0312,
+   "worstSolid": 0.0249,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 444,
+   "bodies": 29,
+   "spacing": 0.0259,
+   "worstSolid": 0.0536,
+   "worstSolidPair": "right-weight-held-open-waste-impulse-valve/CylinderGeometry x intermittent-waste-efflux-while-right-valve-open",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 445,
+   "bodies": 25,
+   "spacing": 0.0225,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 446,
+   "bodies": 25,
+   "spacing": 0.0225,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 447,
+   "bodies": 5,
+   "spacing": 0.0354,
+   "worstSolid": 0.0982,
+   "worstSolidPair": "single-taut-anchor-rope x anchor-rope-swivel-ball",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 448,
+   "bodies": 13,
+   "spacing": 0.0215,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-lower-foot-valve-seat x lower-check-valve-opening-only-on-upstroke",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 449,
+   "bodies": 14,
+   "spacing": 0.0187,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-lower-check-valve-seat x lower-check-opening-on-upstroke",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 450,
+   "bodies": 14,
+   "spacing": 0.0196,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-outlet-check-seat x outlet-check-opening-only-on-piston-downstroke",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 451,
+   "bodies": 18,
+   "spacing": 0.0245,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-pump-delivery-check-seat x delivery-check-opening-on-piston-downstroke",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 452,
+   "bodies": 12,
+   "spacing": 0.0243,
+   "worstSolid": 0.0597,
+   "worstSolidPair": "root/CylinderGeometry x root/SphereGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 453,
+   "bodies": 24,
+   "spacing": 0.0262,
+   "worstSolid": 0.0528,
+   "worstSolidPair": "fixed-left-lantern-bellows-bottom-plate x left-flexible-lantern-bellows-with-eight-visible-pleats/CylinderGeometry",
+   "worstCoaxial": 0.0675,
+   "openMeshes": 8
+  },
+  {
+   "id": 454,
+   "bodies": 11,
+   "spacing": 0.0254,
+   "worstSolid": 0.0485,
+   "worstSolidPair": "flexing-diaphragm-concentric-seam-4 x fixed-left-standard-supporting-hand-lever-pivot/BoxGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 455,
+   "bodies": 4,
+   "spacing": 0.0252,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0872,
+   "openMeshes": 0
+  },
+  {
+   "id": 456,
+   "bodies": 4,
+   "spacing": 0.027,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-heart-shaped-cam-a-surrounding-axle-A x cam-driven-sliding-piston-c-2/CylinderGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 457,
+   "bodies": 3,
+   "spacing": 0.0281,
+   "worstSolid": 0.0438,
+   "worstSolidPair": "unequal-arm-well-sweep-rocking-about-fixed-fulcrum/ExtrudeGeometry x constant-length-rope-hanging-vertically-from-long-arm-tip",
+   "worstCoaxial": 0.1289,
+   "openMeshes": 1
+  },
+  {
+   "id": 458,
+   "bodies": 6,
+   "spacing": 0.0242,
+   "worstSolid": 0.0206,
+   "worstSolidPair": "single-rope-left-vertical-leg x left-well-bucket-at-one-end-of-common-rope/TubeGeometry",
+   "worstCoaxial": 0,
+   "openMeshes": 3
+  },
+  {
+   "id": 459,
+   "bodies": 14,
+   "spacing": 0.0285,
+   "worstSolid": 0.1049,
+   "worstSolidPair": "fixed-tappet-pivot x arm-linking-vibrating-tappet-to-traversing-worm-step",
+   "worstCoaxial": 0.16,
+   "openMeshes": 6
+  },
+  {
+   "id": 460,
+   "bodies": 4,
+   "spacing": 0.0246,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 461,
+   "bodies": 22,
+   "spacing": 0.0271,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 462,
+   "bodies": 27,
+   "spacing": 0.0184,
+   "worstSolid": 0.0398,
+   "worstSolidPair": "one-continuous-endless-chain-around-two-equal-wheels x chain-carrier-cross-shaft",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 463,
+   "bodies": 6,
+   "spacing": 0.0196,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0173,
+   "openMeshes": 1
+  },
+  {
+   "id": 464,
+   "bodies": 4,
+   "spacing": 0.0181,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 465,
+   "bodies": 10,
+   "spacing": 0.0216,
+   "worstSolid": 0,
+   "worstSolidPair": "left-functional-inlet-check-disk x finite-inlet-check-seat",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 466,
+   "bodies": 10,
+   "spacing": 0.0226,
+   "worstSolid": 0.0437,
+   "worstSolidPair": "small-pump-plunger x bored-delivery-chamber-outlet",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 467,
+   "bodies": 10,
+   "spacing": 0.0188,
+   "worstSolid": 0.0114,
+   "worstSolidPair": "thumb-screw-conical-return-valve-tip x finite-pump-to-internal-pipe-feed",
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 468,
+   "bodies": 7,
+   "spacing": 0.0397,
+   "worstSolid": 0.0425,
+   "worstSolidPair": "18-inch-winch-rotor/BoxGeometry x 18-inch-north-bank-winch/BoxGeometry",
+   "worstCoaxial": 0.2391,
+   "openMeshes": 0
+  },
+  {
+   "id": 469,
+   "bodies": 20,
+   "spacing": 0.02,
+   "worstSolid": 0.0994,
+   "worstSolidPair": "cold-bath-thermometer/SphereGeometry x cold-temperature-column",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 470,
+   "bodies": 6,
+   "spacing": 0.0152,
+   "worstSolid": 0.0426,
+   "worstSolidPair": "valve-rocking-hand-lever/BoxGeometry x constant-length-valve-pitman",
+   "worstCoaxial": 0.1043,
+   "openMeshes": 0
+  },
+  {
+   "id": 471,
+   "bodies": 7,
+   "spacing": 0.0181,
+   "worstSolid": 0.0451,
+   "worstSolidPair": "moving-cylinder-end-ring-1 x root/BufferGeometry",
+   "worstCoaxial": 0.1045,
+   "openMeshes": 0
+  },
+  {
+   "id": 472,
+   "bodies": 16,
+   "spacing": 0.017,
+   "worstSolid": 0.105,
+   "worstSolidPair": "root/BoxGeometry x hammer-piston-A",
+   "worstCoaxial": 0.0792,
+   "openMeshes": 4
+  },
+  {
+   "id": 473,
+   "bodies": 16,
+   "spacing": 0.0179,
+   "worstSolid": 0.0436,
+   "worstSolidPair": "left-hand-operating-lever x left-constant-length-bell-suspension-rope",
+   "worstCoaxial": 0.0542,
+   "openMeshes": 2
+  },
+  {
+   "id": 474,
+   "bodies": 36,
+   "spacing": 0.0221,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 12
+  },
+  {
+   "id": 475,
+   "bodies": 34,
+   "spacing": 0.022,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 5
+  },
+  {
+   "id": 476,
+   "bodies": 30,
+   "spacing": 0.0208,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 5
+  },
+  {
+   "id": 477,
+   "bodies": 23,
+   "spacing": 0.0215,
+   "worstSolid": 0,
+   "worstSolidPair": "fixed-rounded-diaphragm-reaction-cap x flexible-bottom-diaphragm-of-valve-D-resting-on-bridge",
+   "worstCoaxial": 0.0724,
+   "openMeshes": 0
+  },
+  {
+   "id": 478,
+   "bodies": 23,
+   "spacing": 0.0237,
+   "worstSolid": 0.1194,
+   "worstSolidPair": "front-cutaway-rim-of-sphere-C x rigid-horizontal-plunger-rod-through-stuffing-box",
+   "worstCoaxial": 0.0494,
+   "openMeshes": 1
+  },
+  {
+   "id": 479,
+   "bodies": 22,
+   "spacing": 0.0263,
+   "worstSolid": 0.0897,
+   "worstSolidPair": "rope-lug-on-A-1 x taut-inner-rope-segment-1-to-A",
+   "worstCoaxial": 0.0626,
+   "openMeshes": 3
+  },
+  {
+   "id": 480,
+   "bodies": 17,
+   "spacing": 0.0247,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 481,
+   "bodies": 11,
+   "spacing": 0.0205,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0338,
+   "openMeshes": 1
+  },
+  {
+   "id": 482,
+   "bodies": 16,
+   "spacing": 0.0211,
+   "worstSolid": 0.1875,
+   "worstSolidPair": "left-quicksilver-seat-volume-for-D x valve-D-skirt-corner-1",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 483,
+   "bodies": 57,
+   "spacing": 0.0225,
+   "worstSolid": 0.062,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.06,
+   "openMeshes": 2
+  },
+  {
+   "id": 484,
+   "bodies": 27,
+   "spacing": 0.0219,
+   "worstSolid": 0.0691,
+   "worstSolidPair": "single-one-turn-radial-helical-ribbon x axial-current-marker-path-3-2",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 485,
+   "bodies": 26,
+   "spacing": 0.0231,
+   "worstSolid": 0.0577,
+   "worstSolidPair": "radial-stock-of-sail-3 x axial-wind-marker-path-4-3",
+   "worstCoaxial": 0.1041,
+   "openMeshes": 20
+  },
+  {
+   "id": 486,
+   "bodies": 36,
+   "spacing": 0.0207,
+   "worstSolid": 0.0977,
+   "worstSolidPair": "vertical-hinge-pin-of-sail-1 x negative-z-wind-marker-path-6-2",
+   "worstCoaxial": 0.0427,
+   "openMeshes": 0
+  },
+  {
+   "id": 487,
+   "bodies": 22,
+   "spacing": 0.0301,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 6
+  },
+  {
+   "id": 488,
+   "bodies": 18,
+   "spacing": 0.0256,
+   "worstSolid": 0.2399,
+   "worstSolidPair": "fixed-bearing-pedestal-2 x negative-x-wake-marker-3-4",
+   "worstCoaxial": 0,
+   "openMeshes": 4
+  },
+  {
+   "id": 489,
+   "bodies": 27,
+   "spacing": 0.0292,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.056,
+   "openMeshes": 6
+  },
+  {
+   "id": 490,
+   "bodies": 19,
+   "spacing": 0.03,
+   "worstSolid": 0.0299,
+   "worstSolidPair": "single-rope-winding-barrel-on-handwheel-shaft x material-marker-on-single-steering-rope-8",
+   "worstCoaxial": 0.0183,
+   "openMeshes": 1
+  },
+  {
+   "id": 491,
+   "bodies": 20,
+   "spacing": 0.0226,
+   "worstSolid": 0.022,
+   "worstSolidPair": "one-continuous-cable-hauled-tangentially-onto-capstan-barrel x white-material-marker-on-capstan-cable-6",
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 492,
+   "bodies": 42,
+   "spacing": 0.0272,
+   "worstSolid": 0.1041,
+   "worstSolidPair": "release-rope-attached-to-lower-lever-2/CylinderGeometry x reconstructed-common-crossbar-pulling-both-release-ropes",
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 493,
+   "bodies": 6,
+   "spacing": 0.0239,
+   "worstSolid": 0.0562,
+   "worstSolidPair": "source-profiled-stone-with-open-front-sectional-bore x left-wall-contact-index",
+   "worstCoaxial": 0.0583,
+   "openMeshes": 1
+  },
+  {
+   "id": 494,
+   "bodies": 10,
+   "spacing": 0.0263,
+   "worstSolid": 0.0784,
+   "worstSolidPair": "hoist-shackle-ring x fixed-overhead-hoist-eye",
+   "worstCoaxial": 0.0589,
+   "openMeshes": 2
+  },
+  {
+   "id": 495,
+   "bodies": 4,
+   "spacing": 0.0239,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0841,
+   "openMeshes": 0
+  },
+  {
+   "id": 496,
+   "bodies": 30,
+   "spacing": 0.0191,
+   "worstSolid": 0.023,
+   "worstSolidPair": "visible-helical-yarn-package-on-bobbin x continuous-yarn-from-front-rolls-through-flyer-eye-to-bobbin/CylinderGeometry",
+   "worstCoaxial": 0.0517,
+   "openMeshes": 3
+  },
+  {
+   "id": 497,
+   "bodies": 26,
+   "spacing": 0.0312,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 498,
+   "bodies": 5,
+   "spacing": 0.0249,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 2
+  },
+  {
+   "id": 499,
+   "bodies": 11,
+   "spacing": 0.0262,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0897,
+   "openMeshes": 3
+  },
+  {
+   "id": 500,
+   "bodies": 6,
+   "spacing": 0.0255,
+   "worstSolid": 0.0791,
+   "worstSolidPair": "fixed-pivot-bearing-of-sector-e x c-shaped-counterweight-shown-opposite-pointer",
+   "worstCoaxial": 0.0647,
+   "openMeshes": 4
+  },
+  {
+   "id": 501,
+   "bodies": 7,
+   "spacing": 0.0274,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 1
+  },
+  {
+   "id": 502,
+   "bodies": 5,
+   "spacing": 0.0141,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 5
+  },
+  {
+   "id": 503,
+   "bodies": 4,
+   "spacing": 0.0133,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.007,
+   "openMeshes": 0
+  },
+  {
+   "id": 504,
+   "bodies": 6,
+   "spacing": 0.0146,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0,
+   "openMeshes": 0
+  },
+  {
+   "id": 505,
+   "bodies": 4,
+   "spacing": 0.0198,
+   "worstSolid": 0,
+   "worstSolidPair": null,
+   "worstCoaxial": 0.0052,
+   "openMeshes": 0
+  },
+  {
+   "id": 506,
+   "bodies": 6,
+   "spacing": 0.0224,
+   "worstSolid": 0.1291,
+   "worstSolidPair": "twenty-four-tooth-upper-driver-bevel-h/LatheGeometry x forty-tooth-lower-loose-bevel-b/LatheGeometry",
+   "worstCoaxial": 0.0746,
+   "openMeshes": 0
+  },
+  {
+   "id": 507,
+   "bodies": 6,
+   "spacing": 0.0262,
+   "worstSolid": 0.0379,
+   "worstSolidPair": "crown-wheel-C-spoke-1/BoxGeometry x ten-tooth-upper-bevel-wheel-A/BufferGeometry",
+   "worstCoaxial": 0.0819,
+   "openMeshes": 0
+  }
+ ]
+}
