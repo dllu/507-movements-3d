@@ -11,6 +11,7 @@ import { carrierPawlFlank225, carrierPawlClearance225, installCarrierPawl225 } f
 import {finishLiftDrawPawl232} from './lift-draw-pawl-232-working-parts.js';
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
 import { correctGearFingerStop } from './gear-finger-stop-working-parts.js';
+import snapCounterCuts from './baked/intermittent-63-211-snap-counter-cuts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -95,23 +96,6 @@ function makeStarWheel({
   );
   hub.rotation.x = Math.PI / 2;
   rotor.add(hub);
-  const faceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(gapRadius * 0.42, 0.04, 8, 48),
-    matte(PALETTE.ink, { metalness: 0.15, roughness: 0.55 }),
-  );
-  faceRing.position.z = depth / 2 + 0.022;
-  rotor.add(faceRing);
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(outerRadius * 0.48, 0.055, 0.025),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  indicator.position.set(
-    Math.cos(mountPhase) * outerRadius * 0.72,
-    Math.sin(mountPhase) * outerRadius * 0.72,
-    depth / 2 + 0.038,
-  );
-  indicator.rotation.z = mountPhase;
-  rotor.add(indicator);
 
   root.userData.depth = depth;
   root.userData.gapAngles = gapAngles;
@@ -142,12 +126,6 @@ function makePinnedDriver({
   disk.rotation.x = Math.PI / 2;
   disk.userData.driverDisk = true;
   rotor.add(disk);
-  const faceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(radius * 0.78, 0.035, 8, 64),
-    matte(PALETTE.ink, { metalness: 0.14, roughness: 0.56 }),
-  );
-  faceRing.position.z = depth / 2 + 0.02;
-  rotor.add(faceRing);
 
   const pinMaterial = matte(PALETTE.brass, { metalness: 0.18, roughness: 0.52 });
   const pinPitch = Math.PI * 2 / pinCount;
@@ -177,12 +155,6 @@ function makePinnedDriver({
   );
   hub.rotation.x = Math.PI / 2;
   rotor.add(hub);
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 0.58, 0.055, 0.025),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  indicator.position.set(radius * 0.47, 0, depth / 2 + 0.035);
-  rotor.add(indicator);
 
   root.userData.depth = depth;
   root.userData.pinCount = pinCount;
@@ -195,9 +167,59 @@ function makePinnedDriver({
   return markShadows(root);
 }
 
-function makeSpringDrop({ depth, pawlPivotLocal, springAttachmentLocal }) {
-  const root = makePlanarRotor();
-  const rotor = root.userData.rotor;
+function flatCenteredExtrusion(shapes, depth) {
+  const geometry = new THREE.ExtrudeGeometry(shapes, {
+    bevelEnabled: false,
+    curveSegments: 18,
+    depth,
+    steps: 1,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+
+function circleRing(radius, segments, clockwise = false) {
+  const ring = Array.from({ length: segments }, (_, index) => {
+    const angle = index * Math.PI * 2 / segments;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+  });
+  return clockwise ? ring.reverse() : ring;
+}
+
+// Rings use polygon-clipping's multipolygon layout: [[outer, ...holes], ...].
+function shapesFromMultiPolygon(multiPolygon) {
+  return multiPolygon.map(([outer, ...holes]) => {
+    const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)));
+    for (const hole of holes) {
+      shape.holes.push(new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y))));
+    }
+    return shape;
+  });
+}
+
+function snapCounterPawlOutline({ bossRadius, length }) {
+  const lowerBossAngle = -Math.asin(0.1 / bossRadius);
+  const upperBossAngle = Math.asin(0.12 / bossRadius);
+  const outline = [
+    [Math.cos(lowerBossAngle) * bossRadius, -0.1],
+    [length * 0.68, -0.1],
+    [length * 0.83, -0.24],
+    [length, 0],
+    [length + 0.04, 0.2],
+    [length * 0.9, 0.34],
+    [length * 0.68, 0.12],
+    [Math.cos(upperBossAngle) * bossRadius, 0.12],
+  ];
+  const arcSegments = 24;
+  const arcSpan = lowerBossAngle + Math.PI * 2 - upperBossAngle;
+  for (let index = 1; index < arcSegments; index += 1) {
+    const angle = upperBossAngle + arcSpan * index / arcSegments;
+    outline.push([Math.cos(angle) * bossRadius, Math.sin(angle) * bossRadius]);
+  }
+  return outline;
+}
+
+function snapCounterDropOutline() {
   const shape = new THREE.Shape();
   shape.moveTo(-1.18, -0.34);
   shape.quadraticCurveTo(-0.96, -0.52, -0.72, -0.5);
@@ -217,13 +239,58 @@ function makeSpringDrop({ depth, pawlPivotLocal, springAttachmentLocal }) {
   shape.lineTo(-0.76, -0.08);
   shape.lineTo(-1.05, -0.18);
   shape.quadraticCurveTo(-1.26, -0.23, -1.18, -0.34);
-  shape.closePath();
-  const body = new THREE.Mesh(
-    centeredExtrusion(shape, depth),
+  const points = shape.getPoints(12).map((point) => [point.x, point.y]);
+  const [first] = points;
+  const last = points.at(-1);
+  if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 1e-9) points.pop();
+  return points.filter((point, index) => {
+    const previous = points[(index + points.length - 1) % points.length];
+    return Math.hypot(point[0] - previous[0], point[1] - previous[1]) > 1e-9;
+  });
+}
+
+function fingerprintValues(values) {
+  let hash = 0x811c9dc5;
+  const text = JSON.stringify(values, (key, value) => (
+    typeof value === 'number' ? Math.round(value * 1e7) / 1e7 : value
+  ));
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+function makeSpringDrop({
+  depth,
+  pawlPivotLocal,
+  pivotBoreRadius,
+  rearDepth,
+  springAttachmentLocal,
+}) {
+  const root = makePlanarRotor();
+  const rotor = root.userData.rotor;
+  const outline = snapCounterDropOutline();
+  const bore = circleRing(pivotBoreRadius + 0.01, 40, true);
+  const frontDepth = depth - rearDepth;
+  const front = new THREE.Mesh(
+    flatCenteredExtrusion(shapesFromMultiPolygon([[outline, bore]]), frontDepth),
     matte(PALETTE.brass, { metalness: 0.1, roughness: 0.65 }),
   );
-  body.userData.springDropBody = true;
-  rotor.add(body);
+  front.position.z = depth / 2 - frontDepth / 2;
+  front.userData.springDropBody = true;
+  rotor.add(front);
+  // The back of the drop is relieved where the pawl works flush against it.
+  const rear = new THREE.Mesh(
+    flatCenteredExtrusion(
+      shapesFromMultiPolygon([[outline, bore]]),
+      rearDepth,
+    ),
+    front.material,
+  );
+  rear.position.z = -depth / 2 + rearDepth / 2;
+  rear.userData.springDropRelievedBack = true;
+  rotor.add(rear);
 
   const pivotRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.28, 0.065, 10, 40),
@@ -251,46 +318,55 @@ function makeSpringDrop({ depth, pawlPivotLocal, springAttachmentLocal }) {
 
   root.userData.depth = depth;
   root.userData.lobeContactLocal = new THREE.Vector3(2.03, -0.91, 0);
+  root.userData.outline = outline;
+  root.userData.boreRing = bore;
   root.userData.pawlPivotLocal = pawlPivotLocal.clone();
   root.userData.pawlPivotStud = pawlPivotStud;
+  root.userData.rearDepth = rearDepth;
+  root.userData.rearMesh = rear;
   root.userData.springAttachmentLocal = springAttachmentLocal.clone();
   root.userData.strikerStud = strikerStud;
   return markShadows(root);
 }
 
-function makePawl({ depth, length }) {
+// The shank runs in front of the star's face; a nose block behind its point
+// steps back into the star plane to work in the spaces.
+function makePawl({ boreRadius, bossRadius, depth, length, shankDepth }) {
   const root = new THREE.Group();
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.08, 0.12);
-  shape.lineTo(length * 0.68, 0.12);
-  shape.lineTo(length * 0.82, 0.24);
-  shape.lineTo(length, 0);
-  shape.lineTo(length * 0.83, -0.24);
-  shape.lineTo(length * 0.68, -0.1);
-  shape.lineTo(-0.08, -0.1);
-  shape.closePath();
+  const outline = snapCounterPawlOutline({ bossRadius, length });
+  const noseOutline = [
+    [length - 0.45, -0.1],
+    [length + 0.02, -0.02],
+    [length + 0.16, 0.3],
+    [length, 0.46],
+    [length - 0.35, 0.42],
+  ];
+  const bore = circleRing(boreRadius + 0.01, 32, true);
+  const material = matte(PALETTE.accent, { metalness: 0.08, roughness: 0.67 });
   const body = new THREE.Mesh(
-    centeredExtrusion(shape, depth),
-    matte(PALETTE.accent, { metalness: 0.08, roughness: 0.67 }),
+    flatCenteredExtrusion(shapesFromMultiPolygon([[outline, bore]]), shankDepth),
+    material,
   );
+  body.position.z = depth / 2 - shankDepth / 2;
   body.userData.pawlBody = true;
-  root.add(body);
-  const pivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.14, 0.04, 8, 32),
-    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.52 }),
+  const noseDepth = depth - shankDepth;
+  const nose = new THREE.Mesh(
+    flatCenteredExtrusion(shapesFromMultiPolygon([[noseOutline]]), noseDepth),
+    material,
   );
-  pivotRing.position.z = depth / 2 + 0.02;
-  root.add(pivotRing);
-  const tipMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 14, 10),
-    matte(PALETTE.white, { roughness: 0.5 }),
-  );
-  tipMarker.position.set(length * 0.92, 0, depth / 2 + 0.035);
-  tipMarker.userData.pawlTipMarker = true;
-  root.add(tipMarker);
+  nose.position.z = -depth / 2 + noseDepth / 2;
+  nose.userData.pawlNose = true;
+  root.add(body, nose);
   root.userData.axis = Z_AXIS.clone();
+  root.userData.body = body;
+  root.userData.boreRing = bore;
   root.userData.depth = depth;
   root.userData.length = length;
+  root.userData.nose = nose;
+  root.userData.noseDepth = noseDepth;
+  root.userData.noseOutline = noseOutline;
+  root.userData.outline = outline;
+  root.userData.shankDepth = shankDepth;
   root.userData.pivotLocal = new THREE.Vector3(0, 0, 0);
   root.userData.tipLocal = new THREE.Vector3(length, 0, 0);
   return markShadows(root);
@@ -474,243 +550,6 @@ function makeOpenRimTappetDriver({
   root.userData.tappetDepth = tappetDepth;
   root.userData.tappetHalfWidth = tappetHalfWidth;
   root.userData.tappetLength = tappetLength;
-  return markShadows(root);
-}
-
-function makeGuardRimTappetDriver({
-  baseDepth,
-  basePlaneZ,
-  baseRadius,
-  enteringNotchEnd,
-  enteringNotchStart,
-  guardDepth,
-  guardInnerRadius,
-  guardOuterRadius,
-  guardPlaneZ,
-  leavingNotchEnd,
-  leavingNotchStart,
-  tappetDepth,
-  tappetHalfWidth,
-  tappetLength,
-}) {
-  const root = makePlanarRotor();
-  const rotor = root.userData.rotor;
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(baseRadius, baseRadius, baseDepth, 84),
-    matte(PALETTE.driver, { metalness: 0.1, roughness: 0.66 }),
-  );
-  body.rotation.x = Math.PI / 2;
-  body.position.z = basePlaneZ;
-  body.userData.driverWheelBBody = true;
-  rotor.add(body);
-
-  const makeGuardSegment = (startAngle, endAngle, index) => {
-    const samples = Math.max(
-      18,
-      Math.ceil((endAngle - startAngle) / (Math.PI * 2) * 144),
-    );
-    const outerArc = Array.from({ length: samples + 1 }, (_, sample) => {
-      const angle = THREE.MathUtils.lerp(
-        startAngle,
-        endAngle,
-        sample / samples,
-      );
-      return new THREE.Vector2(
-        Math.cos(angle) * guardOuterRadius,
-        Math.sin(angle) * guardOuterRadius,
-      );
-    });
-    const innerArc = Array.from({ length: samples + 1 }, (_, sample) => {
-      const angle = THREE.MathUtils.lerp(
-        endAngle,
-        startAngle,
-        sample / samples,
-      );
-      return new THREE.Vector2(
-        Math.cos(angle) * guardInnerRadius,
-        Math.sin(angle) * guardInnerRadius,
-      );
-    });
-    const shape = new THREE.Shape();
-    for (const [pointIndex, point] of [...outerArc, ...innerArc].entries()) {
-      if (pointIndex === 0) shape.moveTo(point.x, point.y);
-      else shape.lineTo(point.x, point.y);
-    }
-    shape.closePath();
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: false,
-      curveSegments: 1,
-      depth: guardDepth,
-    });
-    geometry.translate(0, 0, -guardDepth / 2);
-    const segment = new THREE.Mesh(
-      geometry,
-      matte(PALETTE.driver, { metalness: 0.12, roughness: 0.61 }),
-    );
-    segment.position.z = guardPlaneZ;
-    segment.userData.endAngle = endAngle;
-    segment.userData.guardRimSegment = true;
-    segment.userData.index = index;
-    segment.userData.innerArc = innerArc;
-    segment.userData.outerArc = outerArc;
-    segment.userData.startAngle = startAngle;
-    rotor.add(segment);
-    return segment;
-  };
-  const guardSegments = [
-    makeGuardSegment(enteringNotchEnd, leavingNotchStart, 0),
-    makeGuardSegment(
-      leavingNotchEnd,
-      enteringNotchStart + Math.PI * 2,
-      1,
-    ),
-  ];
-
-  const tappetShape = new THREE.Shape();
-  tappetShape.moveTo(0.2, -tappetHalfWidth);
-  tappetShape.lineTo(tappetLength, -tappetHalfWidth);
-  tappetShape.quadraticCurveTo(
-    tappetLength + tappetHalfWidth * 0.46,
-    0,
-    tappetLength - tappetHalfWidth * 0.3,
-    tappetHalfWidth,
-  );
-  tappetShape.lineTo(0.24, tappetHalfWidth * 1.55);
-  tappetShape.quadraticCurveTo(0.14, 0.04, 0.2, -tappetHalfWidth);
-  tappetShape.closePath();
-  const tappet = new THREE.Mesh(
-    centeredExtrusion(tappetShape, tappetDepth),
-    matte(PALETTE.brass, { metalness: 0.12, roughness: 0.58 }),
-  );
-  tappet.position.z = guardPlaneZ;
-  tappet.userData.contactFaceOffset = -tappetHalfWidth;
-  tappet.userData.fixedTappetA = true;
-  tappet.userData.role = 'single-radial-tappet-A';
-  rotor.add(tappet);
-
-  const bridgeStart = basePlaneZ - baseDepth / 2;
-  const bridgeEnd = guardPlaneZ + guardDepth / 2 + 0.06;
-  const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.23, 0.23, bridgeEnd - bridgeStart, 30),
-    matte(PALETTE.ink, { metalness: 0.25, roughness: 0.47 }),
-  );
-  hub.rotation.x = Math.PI / 2;
-  hub.position.z = (bridgeStart + bridgeEnd) / 2;
-  rotor.add(hub);
-  const faceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(baseRadius * 0.47, 0.036, 8, 52),
-    matte(PALETTE.ink, { metalness: 0.14, roughness: 0.55 }),
-  );
-  faceRing.position.z = basePlaneZ + baseDepth / 2 + 0.022;
-  rotor.add(faceRing);
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(guardOuterRadius * 0.31, 0.052, 0.025),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  indicator.position.set(
-    0,
-    guardOuterRadius * 0.78,
-    guardPlaneZ + guardDepth / 2 + 0.04,
-  );
-  indicator.rotation.z = Math.PI / 2;
-  indicator.userData.driverRotationIndicator = true;
-  rotor.add(indicator);
-
-  root.userData.baseDepth = baseDepth;
-  root.userData.basePlaneZ = basePlaneZ;
-  root.userData.baseRadius = baseRadius;
-  root.userData.body = body;
-  root.userData.enteringNotchEnd = enteringNotchEnd;
-  root.userData.enteringNotchStart = enteringNotchStart;
-  root.userData.guardDepth = guardDepth;
-  root.userData.guardInnerRadius = guardInnerRadius;
-  root.userData.guardOuterRadius = guardOuterRadius;
-  root.userData.guardPlaneZ = guardPlaneZ;
-  root.userData.guardSegments = guardSegments;
-  root.userData.indicator = indicator;
-  root.userData.leavingNotchEnd = leavingNotchEnd;
-  root.userData.leavingNotchStart = leavingNotchStart;
-  root.userData.role = 'driving-wheel-B-with-internal-guard-and-two-notches';
-  root.userData.tappet = tappet;
-  root.userData.tappetDepth = tappetDepth;
-  root.userData.tappetHalfWidth = tappetHalfWidth;
-  root.userData.tappetLength = tappetLength;
-  return markShadows(root);
-}
-
-function makeStuddedIndexDisk({
-  depth,
-  radius,
-  studCount,
-  studLength,
-  studMountPhase,
-  studOrbitRadius,
-  studRadius,
-}) {
-  const root = makePlanarRotor();
-  const rotor = root.userData.rotor;
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, depth, 72),
-    matte(PALETTE.driven, { metalness: 0.1, roughness: 0.66 }),
-  );
-  body.rotation.x = Math.PI / 2;
-  body.userData.studdedIndexDiskBody = true;
-  rotor.add(body);
-
-  const studMaterial = matte(PALETTE.ink, { metalness: 0.23, roughness: 0.49 });
-  const studPitch = Math.PI * 2 / studCount;
-  const studs = Array.from({ length: studCount }, (_, index) => {
-    const mountAngle = studMountPhase + index * studPitch;
-    const stud = new THREE.Mesh(
-      new THREE.CylinderGeometry(studRadius, studRadius, studLength, 22),
-      studMaterial,
-    );
-    stud.rotation.x = Math.PI / 2;
-    stud.position.set(
-      Math.cos(mountAngle) * studOrbitRadius,
-      Math.sin(mountAngle) * studOrbitRadius,
-      depth / 2 + studLength / 2 - 0.018,
-    );
-    stud.userData.index = index;
-    stud.userData.indexingStud = true;
-    stud.userData.mountAngle = mountAngle;
-    stud.userData.orbitRadius = studOrbitRadius;
-    stud.userData.radius = studRadius;
-    rotor.add(stud);
-    return stud;
-  });
-
-  const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.21, 0.21, depth + 0.2, 28),
-    studMaterial,
-  );
-  hub.rotation.x = Math.PI / 2;
-  hub.position.z = 0.04;
-  rotor.add(hub);
-  const faceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(radius * 0.53, 0.034, 8, 48),
-    matte(PALETTE.ink, { metalness: 0.14, roughness: 0.55 }),
-  );
-  faceRing.position.z = depth / 2 + 0.022;
-  rotor.add(faceRing);
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 0.48, 0.052, 0.025),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  indicator.position.set(radius * 0.42, 0, depth / 2 + 0.04);
-  indicator.userData.drivenRotationIndicator = true;
-  rotor.add(indicator);
-
-  root.userData.depth = depth;
-  root.userData.indicator = indicator;
-  root.userData.radius = radius;
-  root.userData.studCount = studCount;
-  root.userData.studLength = studLength;
-  root.userData.studMountPhase = studMountPhase;
-  root.userData.studOrbitRadius = studOrbitRadius;
-  root.userData.studPitch = studPitch;
-  root.userData.studRadius = studRadius;
-  root.userData.studs = studs;
   return markShadows(root);
 }
 
@@ -1273,12 +1112,59 @@ function makePullingRatchetPawl({
   return markShadows(root);
 }
 
+function taperedLinkShape(start, startRadius, end, endRadius, holes = []) {
+  const axis = end.clone().sub(start);
+  const axisAngle = Math.atan2(axis.y, axis.x);
+  const tangentAngle = Math.acos(
+    THREE.MathUtils.clamp((startRadius - endRadius) / axis.length(), -1, 1),
+  );
+  const shape = new THREE.Shape();
+  shape.moveTo(
+    start.x + Math.cos(axisAngle + tangentAngle) * startRadius,
+    start.y + Math.sin(axisAngle + tangentAngle) * startRadius,
+  );
+  shape.absarc(
+    start.x,
+    start.y,
+    startRadius,
+    axisAngle + tangentAngle,
+    axisAngle + Math.PI * 2 - tangentAngle,
+    false,
+  );
+  shape.lineTo(
+    end.x + Math.cos(axisAngle - tangentAngle) * endRadius,
+    end.y + Math.sin(axisAngle - tangentAngle) * endRadius,
+  );
+  shape.absarc(
+    end.x,
+    end.y,
+    endRadius,
+    axisAngle - tangentAngle,
+    axisAngle + tangentAngle,
+    false,
+  );
+  shape.closePath();
+  for (const { center, radius } of holes) {
+    const hole = new THREE.Path();
+    hole.absarc(center.x, center.y, radius, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
+  return shape;
+}
+
 function makeCurvedSharedPivotPawl({
   bend,
   catchDepth,
   depth,
   length,
   role,
+  bandHalfWidth = 0.075,
+  bandStart = 0,
+  boreRadius = 0,
+  fingerRadius = null,
+  hubDepth = depth * 1.9,
+  hubRadius = 0.105,
+  markers = true,
 }) {
   const root = new THREE.Group();
   const pawlMaterial = matte(PALETTE.accent, {
@@ -1290,12 +1176,15 @@ function makeCurvedSharedPivotPawl({
     roughness: 0.49,
   });
   const sampleCount = 36;
-  const halfThickness = 0.075;
+  const halfThickness = bandHalfWidth;
   const centerlinePoints = [];
   const upperEdge = [];
   const lowerEdge = [];
+  const startFraction = bandStart / length;
+  const noseFloor = fingerRadius === null ? 0 : fingerRadius / halfThickness;
   for (let index = 0; index <= sampleCount; index += 1) {
-    const fraction = index / sampleCount;
+    const fraction = startFraction
+      + (1 - startFraction) * index / sampleCount;
     const inverse = 1 - fraction;
     const point = new THREE.Vector2(
       length * fraction,
@@ -1311,7 +1200,7 @@ function makeCurvedSharedPivotPawl({
     ).normalize();
     const noseTaper = fraction <= 0.84
       ? 1
-      : Math.max(0, (1 - fraction) / 0.16);
+      : Math.max(noseFloor, (1 - fraction) / 0.16);
     const localHalfThickness = halfThickness * noseTaper;
     centerlinePoints.push(point);
     upperEdge.push(point.clone().addScaledVector(
@@ -1340,7 +1229,9 @@ function makeCurvedSharedPivotPawl({
   root.add(body);
 
   const contactFinger = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.027, 0.045, catchDepth, 20),
+    fingerRadius === null
+      ? new THREE.CylinderGeometry(0.027, 0.045, catchDepth, 20)
+      : new THREE.CylinderGeometry(fingerRadius, fingerRadius, catchDepth, 24),
     darkMaterial,
   );
   contactFinger.rotation.x = Math.PI / 2;
@@ -1353,27 +1244,32 @@ function makeCurvedSharedPivotPawl({
   root.add(contactFinger);
 
   const pivotHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.105, 0.105, depth * 1.9, 26),
+    boreRadius > 0
+      ? makeAnnulusGeometry(boreRadius, hubRadius, hubDepth)
+      : new THREE.CylinderGeometry(hubRadius, hubRadius, hubDepth, 26),
     darkMaterial,
   );
-  pivotHub.rotation.x = Math.PI / 2;
+  if (boreRadius === 0) pivotHub.rotation.x = Math.PI / 2;
   pivotHub.userData.pawlPivotHub = true;
   root.add(pivotHub);
-  const pivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.128, 0.03, 8, 30),
-    matte(PALETTE.white, { roughness: 0.49 }),
-  );
-  pivotRing.position.z = depth * 0.72;
-  pivotRing.userData.pawlPivotIndicator = true;
-  root.add(pivotRing);
+  let tipMarker = null;
+  if (markers) {
+    const pivotRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.128, 0.03, 8, 30),
+      matte(PALETTE.white, { roughness: 0.49 }),
+    );
+    pivotRing.position.z = depth * 0.72;
+    pivotRing.userData.pawlPivotIndicator = true;
+    root.add(pivotRing);
 
-  const tipMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.043, 16, 11),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  tipMarker.position.set(length, 0, depth / 2 + 0.018);
-  tipMarker.userData.pointedPawlTip = true;
-  root.add(tipMarker);
+    tipMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.043, 16, 11),
+      matte(PALETTE.white, { roughness: 0.48 }),
+    );
+    tipMarker.position.set(length, 0, depth / 2 + 0.018);
+    tipMarker.userData.pointedPawlTip = true;
+    root.add(tipMarker);
+  }
 
   root.userData.axis = Z_AXIS.clone();
   root.userData.bend = bend;
@@ -2094,7 +1990,10 @@ function snapActionStarCounter() {
   const driverAngularSpeed = 0.78;
   const eventPeriod = pinPitch / driverAngularSpeed;
   const starCenter = new THREE.Vector3(-0.8, -0.65, 0);
-  const driverCenter = new THREE.Vector3(1.05, 0, -0.04);
+  // Brown draws the star over the pin disk, so the disk runs behind it. The
+  // pins cross the star's plane, so the centre distance keeps their circle
+  // clear of the star points.
+  const driverCenter = new THREE.Vector3(1.23, 0.06, -0.5);
   const dropPivot = new THREE.Vector3(-1.35, 1.72, 0.39);
   const springAnchor = new THREE.Vector3(-3.05, 1.17, 0.39);
   const pawlPlaneZ = 0.22;
@@ -2106,7 +2005,7 @@ function snapActionStarCounter() {
   const pinOrbitRadius = 0.79;
   const pinRadius = 0.105;
   const pawlPivotLocal = new THREE.Vector3(0.95, -0.27, 0);
-  const springAttachmentLocal = new THREE.Vector3(-1, -0.55, 0);
+  const springAttachmentLocal = new THREE.Vector3(-1.15, -0.27, 0);
   const approachEnd = 0.28;
   const liftEnd = 0.58;
   const pawlReleaseEnd = 0.68;
@@ -2132,7 +2031,7 @@ function snapActionStarCounter() {
     color: PALETTE.driver,
     depth: 0.34,
     pinCount,
-    pinLength: 0.52,
+    pinLength: 0.95,
     pinMountPhase,
     pinOrbitRadius,
     pinRadius,
@@ -2141,13 +2040,15 @@ function snapActionStarCounter() {
   driver.position.copy(driverCenter);
   driver.userData.role = 'continuous-three-pin-driving-disk';
   const driverShaft = makeShaft({ length: 1.2, radius: 0.085 });
-  driverShaft.position.copy(driverCenter).setZ(0);
+  driverShaft.position.copy(driverCenter);
   driverShaft.userData.radius = 0.085;
   driverShaft.userData.role = 'continuous-input-shaft';
 
   const drop = makeSpringDrop({
     depth: 0.22,
     pawlPivotLocal,
+    pivotBoreRadius: 0.105,
+    rearDepth: 0.05,
     springAttachmentLocal,
   });
   drop.position.copy(dropPivot);
@@ -2204,8 +2105,33 @@ function snapActionStarCounter() {
     nextGapTarget.y - pawlPivotLifted.y,
     nextGapTarget.x - pawlPivotLifted.x,
   );
-  const pawlClearanceAngle = -1.25;
-  const pawl = makePawl({ depth: 0.18, length: pawlLength });
+  // While lifted, the pawl is swung so its point clears the star points: it
+  // rises to this radius early in the lift and falls into the next space.
+  const pawlClearTipRadius = starOuterRadius + 0.15;
+  const pawlLiftRiseFraction = 0.5;
+  const pawlAngleForTipRadius = (pivot, radius) => {
+    const farthest = Math.atan2(pivot.y - starCenter.y, pivot.x - starCenter.x);
+    let low = farthest - Math.PI;
+    let high = farthest;
+    for (let iteration = 0; iteration < 80; iteration += 1) {
+      const middle = (low + high) / 2;
+      const tipRadius = Math.hypot(
+        pivot.x + Math.cos(middle) * pawlLength - starCenter.x,
+        pivot.y + Math.sin(middle) * pawlLength - starCenter.y,
+      );
+      if (tipRadius < radius) low = middle;
+      else high = middle;
+    }
+    return (low + high) / 2;
+  };
+  const pawlClearanceAngle = pawlAngleForTipRadius(pawlPivotLifted, pawlClearTipRadius);
+  const pawl = makePawl({
+    boreRadius: 0.1,
+    bossRadius: 0.22,
+    depth: 0.18,
+    length: pawlLength,
+    shankDepth: 0.08,
+  });
   pawl.position.copy(pawlPivotDown);
   pawl.userData.role = 'drop-attached-star-wheel-pawl';
 
@@ -2228,46 +2154,7 @@ function snapActionStarCounter() {
   springClamp.position.copy(springAnchor).add(new THREE.Vector3(-0.12, 0, -0.03));
   springClamp.userData.springClamp = true;
 
-  const rearZ = -0.48;
-  const baseY = -2.05;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.35, baseY, rearZ),
-    new THREE.Vector3(2.35, baseY, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.14 },
-  );
-  const leftPost = makeBeam(
-    new THREE.Vector3(-2.15, baseY, rearZ),
-    new THREE.Vector3(-2.15, dropPivot.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const dropBracket = makeBeam(
-    new THREE.Vector3(-2.15, dropPivot.y, rearZ),
-    new THREE.Vector3(dropPivot.x, dropPivot.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const starBracket = makeBeam(
-    new THREE.Vector3(-2.15, starCenter.y, rearZ),
-    new THREE.Vector3(starCenter.x, starCenter.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const rightPost = makeBeam(
-    new THREE.Vector3(2.15, baseY, rearZ),
-    new THREE.Vector3(2.15, driverCenter.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const driverBracket = makeBeam(
-    new THREE.Vector3(driverCenter.x, driverCenter.y, rearZ),
-    new THREE.Vector3(2.15, driverCenter.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-
   root.add(
-    baseRail,
-    leftPost,
-    dropBracket,
-    starBracket,
-    rightPost,
-    driverBracket,
     starShaft,
     driverShaft,
     dropPivotShaft,
@@ -2372,23 +2259,40 @@ function snapActionStarCounter() {
     let pawlAngle = postDrivePawlAngle;
     let pawlAngularSpeed = 0;
     let pawlGapTarget = postDriveTarget;
-    if (stage === 'lifting') {
-      pawlAngle = THREE.MathUtils.lerp(
-        postDrivePawlAngle,
-        pawlClearanceAngle,
-        lift.value,
+    if (stage === 'lifting' || stage === 'pawl-release') {
+      let tipRadius;
+      let tipRadiusRate;
+      if (stage === 'lifting') {
+        const rise = THREE.MathUtils.clamp(
+          (phase - approachEnd) / (liftEnd - approachEnd) / pawlLiftRiseFraction,
+          0,
+          1,
+        );
+        tipRadius = starGapRadius + (pawlClearTipRadius - starGapRadius) * smoothStep01(rise);
+        tipRadiusRate = rise < 1
+          ? (pawlClearTipRadius - starGapRadius) * 6 * rise * (1 - rise)
+            * phaseRate / ((liftEnd - approachEnd) * pawlLiftRiseFraction)
+          : 0;
+      } else {
+        tipRadius = pawlClearTipRadius + (starGapRadius - pawlClearTipRadius) * release.value;
+        tipRadiusRate = (starGapRadius - pawlClearTipRadius) * release.derivative * phaseRate;
+      }
+      pawlAngle = pawlAngleForTipRadius(pawlPivotPosition, tipRadius);
+      const fromStar = new THREE.Vector3(
+        pawlPivotPosition.x + Math.cos(pawlAngle) * pawlLength - starCenter.x,
+        pawlPivotPosition.y + Math.sin(pawlAngle) * pawlLength - starCenter.y,
+        0,
       );
-      pawlAngularSpeed = (pawlClearanceAngle - postDrivePawlAngle)
-        * lift.derivative * phaseRate;
-      pawlGapTarget = null;
-    } else if (stage === 'pawl-release') {
-      pawlAngle = THREE.MathUtils.lerp(
-        pawlClearanceAngle,
-        nextGapPawlAngle,
-        release.value,
+      const pivotOffset = pawlPivotPosition.clone().sub(dropPivot);
+      const pivotVelocity = new THREE.Vector3(
+        -pivotOffset.y * dropAngularSpeed,
+        pivotOffset.x * dropAngularSpeed,
+        0,
       );
-      pawlAngularSpeed = (nextGapPawlAngle - pawlClearanceAngle)
-        * release.derivative * phaseRate;
+      const swing = new THREE.Vector3(-Math.sin(pawlAngle), Math.cos(pawlAngle), 0)
+        .multiplyScalar(pawlLength);
+      pawlAngularSpeed = (tipRadius * tipRadiusRate - fromStar.dot(pivotVelocity))
+        / fromStar.dot(swing);
       pawlGapTarget = null;
     } else if (stage === 'drop-held') {
       pawlAngle = nextGapPawlAngle;
@@ -2478,22 +2382,17 @@ function snapActionStarCounter() {
   };
 
   root.userData.mechanism = 'three-pin-spring-drop-ten-point-star-counter';
+  root.userData.hideGround = true;
   root.userData.blocks = {
-    baseRail,
     driver,
-    driverBracket,
     driverShaft,
     drop,
-    dropBracket,
     dropPivotShaft,
-    leftPost,
     pawl,
-    rightPost,
     springClamp,
     springLeafA,
     springLeafB,
     star,
-    starBracket,
     starShaft,
   };
   root.userData.geometry = {
@@ -2508,7 +2407,9 @@ function snapActionStarCounter() {
     liftEnd,
     nextGapPawlAngle,
     pawlClearanceAngle,
+    pawlClearTipRadius,
     pawlLength,
+    pawlLiftRiseFraction,
     pawlPivotLocal,
     pawlPlaneZ,
     pawlReleaseEnd,
@@ -2529,6 +2430,91 @@ function snapActionStarCounter() {
     starTeeth,
   };
   root.userData.stateAtTime = stateAtTime;
+
+  // The drop's striker pin stands beside the pawl shank's upper edge at the
+  // pawl's farthest swing towards it, so the pawl rests just clear of it.
+  let strikerRelativeAngle = -Infinity;
+  for (let index = 0; index <= 512; index += 1) {
+    const state = stateAtTime(eventPeriod * index / 512);
+    strikerRelativeAngle = Math.max(strikerRelativeAngle, state.pawlAngle - state.dropAngle);
+  }
+  const strikerStud = drop.userData.strikerStud;
+  const strikerPawlLocal = new THREE.Vector2(
+    0.55,
+    0.12 + strikerStud.geometry.parameters.radiusTop + 0.015,
+  ).rotateAround(new THREE.Vector2(), strikerRelativeAngle);
+  strikerStud.position.x = pawlPivotLocal.x + strikerPawlLocal.x;
+  strikerStud.position.y = pawlPivotLocal.y + strikerPawlLocal.y;
+
+  // The pawl's scheduled swing, the star, striker and pins are cut from the
+  // pawl blank offline, and the swept pawl from the drop's relieved back.
+  const motionSampleCount = 64;
+  const sweptCutInputs = {
+    clearance: 0.012,
+    dropBoreRing: drop.userData.boreRing,
+    dropOutline: drop.userData.outline,
+    dropPivot: [dropPivot.x, dropPivot.y],
+    dropPivotShaftRadius: dropPivotShaft.userData.radius,
+    driverCenter: [driverCenter.x, driverCenter.y],
+    eventPeriod,
+    motion: Array.from({ length: motionSampleCount + 1 }, (_, index) => {
+      const state = stateAtTime(eventPeriod * index / motionSampleCount);
+      return [
+        state.driverAngle,
+        state.dropAngle,
+        state.pawlAngle,
+        state.pawlPivotPosition.x,
+        state.pawlPivotPosition.y,
+        state.starAngle,
+      ];
+    }),
+    pawlBoreRing: pawl.userData.boreRing,
+    pawlNoseOutline: pawl.userData.noseOutline,
+    pawlOutline: pawl.userData.outline,
+    pinMountPhase,
+    pinOrbitRadius,
+    pinPitch,
+    pinRadius,
+    starBevel: Math.min(0.025, star.userData.depth * 0.12),
+    starCenter: [starCenter.x, starCenter.y],
+    starGapRadius,
+    starHubRadius: 0.24,
+    starMountPhase,
+    starOuterRadius,
+    starTeeth,
+    strikerLocal: [
+      drop.userData.strikerStud.position.x,
+      drop.userData.strikerStud.position.y,
+    ],
+    strikerRadius: drop.userData.strikerStud.geometry.parameters.radiusTop,
+  };
+  const sweptCutFingerprint = fingerprintValues(sweptCutInputs);
+  const bakedCuts = snapCounterCuts.fingerprint === sweptCutFingerprint
+    ? snapCounterCuts
+    : null;
+  if (bakedCuts) {
+    pawl.userData.body.geometry.dispose();
+    pawl.userData.body.geometry = flatCenteredExtrusion(
+      shapesFromMultiPolygon(bakedCuts.pawl),
+      pawl.userData.shankDepth,
+    );
+    pawl.userData.nose.geometry.dispose();
+    pawl.userData.nose.geometry = flatCenteredExtrusion(
+      shapesFromMultiPolygon(bakedCuts.pawlNose),
+      pawl.userData.noseDepth,
+    );
+    drop.userData.rearMesh.geometry.dispose();
+    drop.userData.rearMesh.geometry = flatCenteredExtrusion(
+      shapesFromMultiPolygon(bakedCuts.dropRear),
+      drop.userData.rearDepth,
+    );
+  }
+  root.userData.sweptCut = {
+    applied: Boolean(bakedCuts),
+    fingerprint: sweptCutFingerprint,
+    inputs: sweptCutInputs,
+  };
+  root.userData.reconstructionNote = 'The pin lift of the drop and pawl, the pawl release swing and the spring snap follow a scheduled law; the pins do not bear on the drop or pawl. The pawl shank runs in front of the star; its nose block steps back into the star plane. Both are the blanks less the swept star, striker, hub and pins, and the drop back is relieved for the swept shank.';
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -2565,7 +2551,7 @@ function snapActionStarCounter() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.6, 8.8));
+  return finish(root, update, new THREE.Vector3(1.2, 0.9, 12.4));
 }
 
 
@@ -2585,474 +2571,519 @@ function internalGuardTappetStudIndex() {
   const fullTurn = Math.PI * 2;
   const studCount = 10;
   const studPitch = fullTurn / studCount;
-  const halfStudPitch = studPitch / 2;
+  // Proportions of Brown's plate as fractions of the B–C centre distance:
+  // C's disk 0.790, stud orbit 0.662, B's outer circle 0.861, stud 0.038.
   const centerDistance = 2.25;
-  const drivenCenter = new THREE.Vector3(-1.08, -0.06, 0);
-  const driverCenter = drivenCenter.clone().add(new THREE.Vector3(
-    centerDistance,
-    0,
-    0,
-  ));
-  const axis = Z_AXIS.clone();
-  const drivenDepth = 0.24;
-  const drivenRadius = 1.28;
-  const studOrbitRadius = 1.08;
-  const studRadius = 0.09;
-  const studLength = 0.38;
-  const studMountPhase = halfStudPitch;
-  const tappetHalfWidth = 0.055;
+  const drivenRadius = 0.79 * centerDistance;
+  const studOrbitRadius = 0.662 * centerDistance;
+  const studRadius = 0.038 * centerDistance;
+  const guardOuterRadius = 0.861 * centerDistance;
+  const tappetHalfWidth = 0.04 * centerDistance;
   const tappetContactOffset = tappetHalfWidth + studRadius;
-  const studAngleForDriverAngle = (driverAngle) => {
-    const sineArgument = (
-      tappetContactOffset + centerDistance * Math.sin(driverAngle)
-    ) / studOrbitRadius;
-    const angle = driverAngle + Math.PI + Math.asin(
-      THREE.MathUtils.clamp(sineArgument, -1, 1),
-    );
-    return Math.atan2(Math.sin(angle), Math.cos(angle));
-  };
-  const solveDriverAngleForStudAngle = (target, lowStart, highStart) => {
-    let low = lowStart;
-    let high = highStart;
-    for (let iteration = 0; iteration < 64; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (studAngleForDriverAngle(middle) > target) low = middle;
-      else high = middle;
+  // Three of C's studs lie inside B's rim during dwell: the struck middle stud
+  // and the two lock studs one pitch either side of it.
+  const restStudAngle = THREE.MathUtils.degToRad(1.2);
+  const releaseStudAngle = restStudAngle - studPitch;
+  const studDistance = (angle) => Math.sqrt(
+    centerDistance ** 2 + studOrbitRadius ** 2
+      - 2 * centerDistance * studOrbitRadius * Math.cos(angle),
+  );
+  const tappetLength = studDistance(releaseStudAngle) - tappetContactOffset;
+  const guardInnerRadius = studDistance(restStudAngle + studPitch) + studRadius;
+  const lockPlay = studDistance(restStudAngle + studPitch)
+    - studDistance(restStudAngle - studPitch);
+  const layoutTilt = THREE.MathUtils.degToRad(7.7);
+  const driverLayoutX = 0.98;
+  const layout = new THREE.Group();
+  layout.rotation.z = layoutTilt;
+  layout.position.set(0.12, -0.12, 0);
+  const axis = Z_AXIS.clone();
+
+  // Planar kinematics in layout coordinates relative to B's centre. C sits at
+  // (-centerDistance, 0); φ is the direction of the tappet's centre line.
+  const studFromDriver = (angle) => new THREE.Vector2(
+    -centerDistance + studOrbitRadius * Math.cos(angle),
+    studOrbitRadius * Math.sin(angle),
+  );
+  const wrapNear = (angle, reference) => reference + Math.atan2(
+    Math.sin(angle - reference),
+    Math.cos(angle - reference),
+  );
+  const windowCenter = restStudAngle - studPitch / 2;
+  const pushCandidates = (driverAngle) => {
+    const direction = new THREE.Vector2(Math.cos(driverAngle), Math.sin(driverAngle));
+    const candidates = [];
+    const flankSine = (tappetContactOffset - centerDistance * Math.sin(driverAngle))
+      / studOrbitRadius;
+    if (Math.abs(flankSine) <= 1) {
+      for (const base of [Math.asin(flankSine), Math.PI - Math.asin(flankSine)]) {
+        const angle = wrapNear(driverAngle + base, windowCenter);
+        const projection = studFromDriver(angle).dot(direction);
+        if (projection >= 0 && projection <= tappetLength + 1e-9) {
+          candidates.push({ angle, kind: 'flank', projection });
+        }
+      }
     }
-    return (low + high) / 2;
-  };
-  const contactStartDriverAngle = solveDriverAngleForStudAngle(
-    halfStudPitch,
-    Math.PI - 0.35,
-    Math.PI,
-  );
-  const contactEndDriverAngle = solveDriverAngleForStudAngle(
-    -halfStudPitch,
-    Math.PI,
-    Math.PI + 0.7,
-  );
-  const contactDriverAngleSpan = contactEndDriverAngle
-    - contactStartDriverAngle;
-  const contactPhaseSpan = contactDriverAngleSpan / fullTurn;
-  const tappetProjectionAt = (driverAngle, studAngle) => {
-    const studFromDriver = new THREE.Vector2(
-      drivenCenter.x + Math.cos(studAngle) * studOrbitRadius - driverCenter.x,
-      drivenCenter.y + Math.sin(studAngle) * studOrbitRadius - driverCenter.y,
+    const fromTip = new THREE.Vector2(
+      -centerDistance - tappetLength * direction.x,
+      -tappetLength * direction.y,
     );
-    return studFromDriver.dot(new THREE.Vector2(
-      Math.cos(driverAngle),
-      Math.sin(driverAngle),
+    const tipDistance = fromTip.length();
+    const tipCosine = (tappetContactOffset ** 2 - tipDistance ** 2
+      - studOrbitRadius ** 2) / (2 * studOrbitRadius * tipDistance);
+    if (Math.abs(tipCosine) <= 1) {
+      const heading = Math.atan2(fromTip.y, fromTip.x);
+      for (const sign of [-1, 1]) {
+        const angle = wrapNear(heading + sign * Math.acos(tipCosine), windowCenter);
+        const projection = studFromDriver(angle).dot(direction);
+        if (projection >= tappetLength - 1e-9) {
+          candidates.push({ angle, kind: 'tip', projection });
+        }
+      }
+    }
+    return candidates.filter(({ angle }) => (
+      angle >= releaseStudAngle - 1e-9 && angle <= restStudAngle + 1e-9
     ));
   };
-  const tappetLength = Math.max(
-    tappetProjectionAt(contactStartDriverAngle, halfStudPitch),
-    tappetProjectionAt(contactEndDriverAngle, -halfStudPitch),
-  ) + 0.035;
-
-  const lockedStudCenterDistance = Math.hypot(
-    centerDistance - studOrbitRadius * Math.cos(halfStudPitch),
-    studOrbitRadius * Math.sin(halfStudPitch),
+  const flankGap = (driverAngle) => centerDistance * Math.sin(driverAngle)
+    + studOrbitRadius * Math.sin(restStudAngle - driverAngle)
+    - tappetContactOffset;
+  let low = Math.PI / 2;
+  let high = Math.PI;
+  for (let iteration = 0; iteration < 80; iteration += 1) {
+    const middle = (low + high) / 2;
+    if (flankGap(middle) > 0) low = middle;
+    else high = middle;
+  }
+  const contactStartDriverAngle = (low + high) / 2;
+  const releasePoint = studFromDriver(releaseStudAngle);
+  const contactEndDriverAngle = wrapNear(
+    Math.atan2(releasePoint.y, releasePoint.x),
+    contactStartDriverAngle + Math.PI / 2,
   );
-  const guardInnerRadius = lockedStudCenterDistance + studRadius;
-  const guardOuterRadius = guardInnerRadius + 0.19;
-  const notchProfileSamples = 720;
-  const notchAngularClearance = 0.004;
+  const contactDriverAngleSpan = contactEndDriverAngle - contactStartDriverAngle;
+  const pushState = (driverAngle) => {
+    if (driverAngle <= contactStartDriverAngle) {
+      return { angle: restStudAngle, kind: 'guard', projection: null };
+    }
+    if (driverAngle >= contactEndDriverAngle) {
+      return { angle: releaseStudAngle, kind: 'guard', projection: null };
+    }
+    const candidates = pushCandidates(driverAngle);
+    if (candidates.length === 0) {
+      throw new Error(`movement 71 lost tappet contact at ${driverAngle}`);
+    }
+    return candidates.reduce((best, candidate) => (
+      candidate.angle < best.angle ? candidate : best
+    ));
+  };
+  const pushRate = (driverAngle, push) => {
+    if (push.kind === 'guard') return 0;
+    const stud = studFromDriver(push.angle);
+    const studTangent = new THREE.Vector2(
+      -studOrbitRadius * Math.sin(push.angle),
+      studOrbitRadius * Math.cos(push.angle),
+    );
+    if (push.kind === 'flank') {
+      const normal = new THREE.Vector2(-Math.sin(driverAngle), Math.cos(driverAngle));
+      const normalRate = centerDistance * Math.cos(driverAngle)
+        - studOrbitRadius * Math.cos(push.angle - driverAngle);
+      return -normalRate / studTangent.dot(normal);
+    }
+    const tip = new THREE.Vector2(Math.cos(driverAngle), Math.sin(driverAngle))
+      .multiplyScalar(tappetLength);
+    const tipVelocity = new THREE.Vector2(-tip.y, tip.x);
+    const separation = stud.clone().sub(tip);
+    return separation.dot(tipVelocity) / separation.dot(studTangent);
+  };
+
+  const notchProfileSamples = 1440;
+  const notchAngularClearance = 0.012;
   const notchRanges = {
     entering: { end: -Infinity, start: Infinity },
     leaving: { end: -Infinity, start: Infinity },
   };
   for (let sample = 0; sample <= notchProfileSamples; sample += 1) {
-    const eventFraction = sample / notchProfileSamples;
-    const driverAngle = THREE.MathUtils.lerp(
-      contactStartDriverAngle,
-      contactEndDriverAngle,
-      eventFraction,
-    );
-    const activeStudAngle = studAngleForDriverAngle(driverAngle);
-    const drivenAdvanceAngle = activeStudAngle - halfStudPitch;
-    for (const [kind, studOffset] of [['leaving', -1], ['entering', 1]]) {
-      const studAngle = halfStudPitch + studOffset * studPitch
-        + drivenAdvanceAngle;
-      const relative = new THREE.Vector2(
-        drivenCenter.x + Math.cos(studAngle) * studOrbitRadius - driverCenter.x,
-        drivenCenter.y + Math.sin(studAngle) * studOrbitRadius - driverCenter.y,
-      ).rotateAround(new THREE.Vector2(), -driverAngle);
-      const distance = relative.length();
+    const driverAngle = contactStartDriverAngle
+      + contactDriverAngleSpan * sample / notchProfileSamples;
+    const advance = pushState(driverAngle).angle - restStudAngle;
+    for (const [kind, offset] of [['leaving', -1], ['entering', 2]]) {
+      const local = studFromDriver(restStudAngle + offset * studPitch + advance)
+        .rotateAround(new THREE.Vector2(), -driverAngle);
+      const distance = local.length();
       if (
-        distance + studRadius >= guardInnerRadius - 1e-12
-        && distance - studRadius <= guardOuterRadius + 1e-12
+        distance + studRadius >= guardInnerRadius
+        && distance - studRadius <= guardOuterRadius
       ) {
-        const centerAngle = Math.atan2(relative.y, relative.x);
-        const angularExtent = Math.asin(studRadius / distance);
-        notchRanges[kind].start = Math.min(
-          notchRanges[kind].start,
-          centerAngle - angularExtent,
-        );
-        notchRanges[kind].end = Math.max(
-          notchRanges[kind].end,
-          centerAngle + angularExtent,
-        );
+        const center = Math.atan2(local.y, local.x);
+        const extent = Math.asin(studRadius / distance);
+        notchRanges[kind].start = Math.min(notchRanges[kind].start, center - extent);
+        notchRanges[kind].end = Math.max(notchRanges[kind].end, center + extent);
       }
     }
   }
-  const enteringNotchStart = notchRanges.entering.start
-    - notchAngularClearance;
-  const enteringNotchEnd = notchRanges.entering.end
-    + notchAngularClearance;
-  const leavingNotchStart = notchRanges.leaving.start
-    - notchAngularClearance;
-  const leavingNotchEnd = notchRanges.leaving.end
-    + notchAngularClearance;
-  const baseDepth = 0.2;
-  const basePlaneZ = -0.27;
-  const driverBaseRadius = 1.64;
-  const guardDepth = 0.16;
-  const guardPlaneZ = 0.28;
-  const tappetDepth = 0.14;
-  const studContactPlaneZ = guardPlaneZ;
+  const enteringNotchStart = notchRanges.entering.start - notchAngularClearance;
+  const enteringNotchEnd = notchRanges.entering.end + notchAngularClearance;
+  const leavingNotchStart = notchRanges.leaving.start - notchAngularClearance;
+  const leavingNotchEnd = notchRanges.leaving.end + notchAngularClearance;
 
-  const driver = makeGuardRimTappetDriver({
-    baseDepth,
-    basePlaneZ,
-    baseRadius: driverBaseRadius,
+  const drivenDepth = 0.24;
+  const studBaseZ = drivenDepth / 2 - 0.02;
+  const studLength = 0.46;
+  const rimBackZ = 0.17;
+  const plateBackZ = studBaseZ + studLength + 0.03;
+  const plateDepth = 0.14;
+  const tappetBackZ = 0.2;
+  const tappetDepth = plateBackZ - tappetBackZ;
+  const studContactPlaneZ = (tappetBackZ + plateBackZ) / 2;
+  const driverMaterial = matte(PALETTE.driver, { metalness: 0.1, roughness: 0.64 });
+  const drivenMaterial = matte(PALETTE.driven, { metalness: 0.1, roughness: 0.66 });
+  const inkMaterial = matte(PALETTE.ink, { metalness: 0.23, roughness: 0.49 });
+
+  const arcPoints = (radius, start, end, circumscribe) => {
+    const segments = Math.max(8, Math.ceil(Math.abs(end - start) / fullTurn * 720));
+    const step = (end - start) / segments;
+    const vertexRadius = circumscribe ? radius / Math.cos(step / 2) : radius;
+    const points = [new THREE.Vector2(Math.cos(start) * radius, Math.sin(start) * radius)];
+    for (let index = 0; index < segments; index += 1) {
+      const angle = start + step * (index + 0.5);
+      points.push(new THREE.Vector2(
+        Math.cos(angle) * vertexRadius,
+        Math.sin(angle) * vertexRadius,
+      ));
+    }
+    points.push(new THREE.Vector2(Math.cos(end) * radius, Math.sin(end) * radius));
+    return points;
+  };
+  const flatExtrusion = (points, depth, holes = []) => {
+    const shape = new THREE.Shape(points);
+    shape.holes.push(...holes);
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth,
+    });
+    return geometry;
+  };
+  const circlePath = (radius) => {
+    const path = new THREE.Path();
+    path.absarc(0, 0, radius, 0, fullTurn, true);
+    return path;
+  };
+
+  const driver = makePlanarRotor();
+  driver.position.set(driverLayoutX, 0, 0);
+  driver.userData.role = 'continuous-driving-wheel-B-with-internal-guard';
+  const driverRotor = driver.userData.rotor;
+  const driverShaftRadius = 0.11 * centerDistance;
+  const driverBoss = 0.16 * centerDistance;
+  const ahead = (angle, from) => from
+    + THREE.MathUtils.euclideanModulo(angle - from, fullTurn);
+  const shortSpanStart = enteringNotchEnd;
+  const shortSpanEnd = ahead(leavingNotchStart, shortSpanStart);
+  const longSpanStart = ahead(leavingNotchEnd, shortSpanEnd);
+  const longSpanEnd = ahead(enteringNotchStart, longSpanStart);
+  const guardSpans = [
+    [shortSpanStart, shortSpanEnd],
+    [longSpanStart, longSpanEnd],
+  ];
+  const guardSegments = guardSpans.map(([startAngle, endAngle], index) => {
+    const outerArc = arcPoints(guardOuterRadius, startAngle, endAngle, false);
+    const innerArc = arcPoints(guardInnerRadius, endAngle, startAngle, true);
+    const segment = new THREE.Mesh(
+      flatExtrusion([...outerArc, ...innerArc], plateBackZ - rimBackZ),
+      driverMaterial,
+    );
+    segment.position.z = rimBackZ;
+    Object.assign(segment.userData, {
+      endAngle,
+      guardRimSegment: true,
+      index,
+      innerArc,
+      outerArc,
+      role: `B-internal-guard-rim-arc-${index}`,
+      startAngle,
+    });
+    driverRotor.add(segment);
+    return segment;
+  });
+  const plateOutline = [
+    ...arcPoints(guardOuterRadius, shortSpanStart, shortSpanEnd, false),
+    ...arcPoints(guardInnerRadius, shortSpanEnd, longSpanStart, false),
+    ...arcPoints(guardOuterRadius, longSpanStart, longSpanEnd, false),
+    ...arcPoints(guardInnerRadius, longSpanEnd, shortSpanStart + fullTurn, false),
+  ];
+  const driverBody = new THREE.Mesh(
+    flatExtrusion(plateOutline, plateDepth, [circlePath(driverShaftRadius + 0.01)]),
+    driverMaterial,
+  );
+  driverBody.position.z = plateBackZ;
+  driverBody.userData.driverWheelBBody = true;
+  driverBody.userData.role = 'B-front-plate-carrying-guard-rim';
+  driverRotor.add(driverBody);
+  const driverHubRing = new THREE.Mesh(
+    flatExtrusion(arcPoints(driverBoss, 0, fullTurn, false), 0.05,
+      [circlePath(driverShaftRadius + 0.01)]),
+    inkMaterial,
+  );
+  driverHubRing.position.z = plateBackZ + plateDepth;
+  driverRotor.add(driverHubRing);
+  const tappetShape = new THREE.Shape();
+  tappetShape.moveTo(0, -tappetHalfWidth);
+  tappetShape.lineTo(tappetLength, -tappetHalfWidth);
+  tappetShape.absarc(tappetLength, 0, tappetHalfWidth, -Math.PI / 2, Math.PI / 2, false);
+  tappetShape.lineTo(0, tappetHalfWidth);
+  tappetShape.absarc(0, 0, tappetHalfWidth, Math.PI / 2, Math.PI * 1.5, false);
+  const tappet = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(tappetShape, {
+      bevelEnabled: false,
+      curveSegments: 32,
+      depth: tappetDepth,
+    }),
+    matte(PALETTE.brass, { metalness: 0.12, roughness: 0.58 }),
+  );
+  tappet.position.z = tappetBackZ;
+  tappet.userData.contactFaceOffset = tappetHalfWidth;
+  tappet.userData.fixedTappetA = true;
+  tappet.userData.role = 'single-radial-tappet-A';
+  driverRotor.add(tappet);
+  const tappetHub = new THREE.Mesh(
+    flatExtrusion(arcPoints(driverBoss, 0, fullTurn, false), tappetDepth,
+      [circlePath(driverShaftRadius + 0.01)]),
+    tappet.material,
+  );
+  tappetHub.position.z = tappetBackZ;
+  driverRotor.add(tappetHub);
+  const driverIndicator = new THREE.Object3D();
+  driverIndicator.position.set(0, guardOuterRadius * 0.8, plateBackZ + plateDepth);
+  driverIndicator.userData.driverRotationIndicator = true;
+  driverRotor.add(driverIndicator);
+  Object.assign(driver.userData, {
     enteringNotchEnd,
     enteringNotchStart,
-    guardDepth,
     guardInnerRadius,
     guardOuterRadius,
-    guardPlaneZ,
     leavingNotchEnd,
     leavingNotchStart,
-    tappetDepth,
-    tappetHalfWidth,
-    tappetLength,
   });
-  driver.position.copy(driverCenter);
-  driver.userData.role = 'continuous-driving-wheel-B-with-internal-guard';
-  const driverBody = driver.userData.body;
-  const driverIndicator = driver.userData.indicator;
-  const guardSegments = driver.userData.guardSegments;
-  const tappet = driver.userData.tappet;
-  const driverShaft = makeShaft({ length: 1.5, radius: 0.09 });
-  driverShaft.position.copy(driverCenter).setZ(-0.02);
-  driverShaft.userData.radius = 0.09;
+  const driverShaft = makeShaft({ length: 1.5, radius: driverShaftRadius });
+  driverShaft.position.set(driverLayoutX, 0, 0.3);
+  driverShaft.userData.radius = driverShaftRadius;
   driverShaft.userData.role = 'continuous-input-shaft-B';
 
-  const driven = makeStuddedIndexDisk({
-    depth: drivenDepth,
-    radius: drivenRadius,
-    studCount,
-    studLength,
-    studMountPhase,
-    studOrbitRadius,
-    studRadius,
-  });
-  driven.position.copy(drivenCenter);
+  const drivenX = driverLayoutX - centerDistance;
+  const driven = makePlanarRotor();
+  driven.position.set(drivenX, 0, 0);
   driven.userData.role = 'clockwise-intermittent-ten-stud-wheel-C';
-  const drivenBody = driven.userData.rotor.children.find(
-    (object) => object.userData.studdedIndexDiskBody,
+  const drivenRotor = driven.userData.rotor;
+  const drivenShaftRadius = 0.075 * centerDistance;
+  const drivenBody = new THREE.Mesh(
+    flatExtrusion(arcPoints(drivenRadius, 0, fullTurn, false), drivenDepth,
+      [circlePath(drivenShaftRadius + 0.01)]),
+    drivenMaterial,
   );
-  const drivenIndicator = driven.userData.indicator;
-  const studs = driven.userData.studs;
-  const drivenShaft = makeShaft({ length: 1.42, radius: 0.09 });
-  drivenShaft.position.copy(drivenCenter);
-  drivenShaft.userData.radius = 0.09;
+  drivenBody.position.z = -drivenDepth / 2;
+  drivenBody.userData.studdedIndexDiskBody = true;
+  drivenRotor.add(drivenBody);
+  const drivenHubRing = new THREE.Mesh(
+    flatExtrusion(arcPoints(0.12 * centerDistance, 0, fullTurn, false), 0.05,
+      [circlePath(drivenShaftRadius + 0.01)]),
+    inkMaterial,
+  );
+  drivenHubRing.position.z = drivenDepth / 2;
+  drivenRotor.add(drivenHubRing);
+  const studMountPhase = restStudAngle;
+  const studs = Array.from({ length: studCount }, (_, index) => {
+    const mountAngle = studMountPhase + index * studPitch;
+    const stud = new THREE.Mesh(
+      new THREE.CylinderGeometry(studRadius, studRadius, studLength, 28),
+      inkMaterial,
+    );
+    stud.rotation.x = Math.PI / 2;
+    stud.position.set(
+      Math.cos(mountAngle) * studOrbitRadius,
+      Math.sin(mountAngle) * studOrbitRadius,
+      studBaseZ + studLength / 2,
+    );
+    Object.assign(stud.userData, {
+      index,
+      indexingStud: true,
+      mountAngle,
+      orbitRadius: studOrbitRadius,
+      radius: studRadius,
+    });
+    drivenRotor.add(stud);
+    return stud;
+  });
+  const drivenIndicator = new THREE.Object3D();
+  drivenIndicator.position.set(drivenRadius * 0.5, 0, drivenDepth / 2);
+  drivenIndicator.userData.drivenRotationIndicator = true;
+  drivenRotor.add(drivenIndicator);
+  Object.assign(driven.userData, { studCount, studPitch, studs });
+  const drivenShaft = makeShaft({ length: 0.9, radius: drivenShaftRadius });
+  drivenShaft.position.set(drivenX, 0, 0.05);
+  drivenShaft.userData.radius = drivenShaftRadius;
   drivenShaft.userData.role = 'intermittent-output-shaft-C';
 
   const driverAngularSpeed = 0.85;
   const driverCyclePeriod = fullTurn / driverAngularSpeed;
-  const contactStartPhase = 0.15;
-  const contactEndPhase = contactStartPhase + contactPhaseSpan;
-  const initialCyclePhase = 0.08;
-  const driverPhaseAtCycleZero = contactStartDriverAngle
-    - contactStartPhase * fullTurn;
-  const boundaryEpsilon = 1e-12;
-  const normalizedTurnCoordinate = (coordinate) => {
-    const nearest = Math.round(coordinate);
-    return Math.abs(coordinate - nearest) < 1e-12 ? nearest : coordinate;
-  };
-  const stageForPhase = (cyclePhase) => {
-    if (cyclePhase < contactStartPhase - boundaryEpsilon) {
-      return 'guard-locked-before-index';
-    }
-    if (cyclePhase <= contactEndPhase + boundaryEpsilon) {
-      return 'tappet-index';
-    }
-    return 'guard-locked-after-index';
-  };
-  const angleInsideNotch = (angle) => (
-    (angle >= enteringNotchStart && angle <= enteringNotchEnd)
-      || (angle >= leavingNotchStart && angle <= leavingNotchEnd)
+  const cycleBoundaryDriverAngle = contactStartDriverAngle - 1;
+  const initialDriverAngle = contactStartDriverAngle - 0.14;
+  const toWorld = (planar, z) => layout.localToWorld(
+    new THREE.Vector3(planar.x + driverLayoutX, planar.y, z),
   );
+  const toWorldDirection = (planar) => new THREE.Vector3(planar.x, planar.y, 0)
+    .applyAxisAngle(Z_AXIS, layoutTilt);
+  const cross = (a, b) => a.x * b.y - a.y * b.x;
   const stateAtTime = (time) => {
-    const inputTravelAngle = driverAngularSpeed * time;
-    const cycleCoordinate = normalizedTurnCoordinate(
-      initialCyclePhase + inputTravelAngle / fullTurn,
-    );
-    const cycleIndex = Math.floor(cycleCoordinate);
-    const cyclePhase = cycleCoordinate - cycleIndex;
-    const driverAngle = driverPhaseAtCycleZero + cycleCoordinate * fullTurn;
-    const stage = stageForPhase(cyclePhase);
-    const indexing = stage === 'tappet-index';
-    const eventFraction = indexing
-      ? THREE.MathUtils.clamp(
-        (cyclePhase - contactStartPhase) / contactPhaseSpan,
-        0,
-        1,
-      )
-      : stage === 'guard-locked-after-index' ? 1 : 0;
-    let activeStudWorldAngle;
-    let drivenAdvanceAngle;
-    let drivenAngularSpeed;
-    if (indexing) {
-      activeStudWorldAngle = studAngleForDriverAngle(driverAngle);
-      drivenAdvanceAngle = activeStudWorldAngle - halfStudPitch;
-      const sineArgument = (
-        tappetContactOffset + centerDistance * Math.sin(driverAngle)
-      ) / studOrbitRadius;
-      const derivative = 1 + centerDistance * Math.cos(driverAngle)
-        / (studOrbitRadius * Math.sqrt(1 - sineArgument ** 2));
-      drivenAngularSpeed = driverAngularSpeed * derivative;
-    } else {
-      drivenAdvanceAngle = stage === 'guard-locked-after-index'
-        ? -studPitch
-        : 0;
-      drivenAngularSpeed = 0;
-      activeStudWorldAngle = stage === 'guard-locked-after-index'
-        ? -halfStudPitch
-        : halfStudPitch;
-    }
+    const driverAngle = initialDriverAngle + driverAngularSpeed * time;
+    const cycleIndex = Math.floor((driverAngle - cycleBoundaryDriverAngle) / fullTurn);
+    const cycleDriverAngle = driverAngle - cycleIndex * fullTurn;
+    const push = pushState(cycleDriverAngle);
+    const drivenAdvanceAngle = push.angle - restStudAngle;
     const drivenAngle = -cycleIndex * studPitch + drivenAdvanceAngle;
-    const drivenTravelAngle = drivenAngle;
-    const activeStudIndex = THREE.MathUtils.euclideanModulo(
-      cycleIndex,
-      studCount,
+    const drivenAngularSpeed = driverAngularSpeed * pushRate(cycleDriverAngle, push);
+    const indexing = push.kind !== 'guard';
+    const activeStudIndex = THREE.MathUtils.euclideanModulo(cycleIndex, studCount);
+    const leavingStudIndex = THREE.MathUtils.euclideanModulo(cycleIndex - 1, studCount);
+    const enteringStudIndex = THREE.MathUtils.euclideanModulo(cycleIndex + 2, studCount);
+    const planarStud = (index) => studFromDriver(
+      studMountPhase + index * studPitch + drivenAngle,
     );
-    const studWorldAngle = (index) => studMountPhase + index * studPitch
-      + drivenAngle;
-    const studWorldPosition = (index) => drivenCenter.clone().add(
-      new THREE.Vector3(
-        Math.cos(studWorldAngle(index)) * studOrbitRadius,
-        Math.sin(studWorldAngle(index)) * studOrbitRadius,
-        studContactPlaneZ,
-      ),
-    );
-    const activeStudCenter = studWorldPosition(activeStudIndex);
-    const tappetDirection = new THREE.Vector3(
-      Math.cos(driverAngle),
-      Math.sin(driverAngle),
-      0,
-    );
-    const tappetNormal = new THREE.Vector3(
-      -tappetDirection.y,
-      tappetDirection.x,
-      0,
-    );
-    const tappetContactProjection = activeStudCenter.clone()
-      .sub(driverCenter)
-      .setZ(0)
-      .dot(tappetDirection);
-    const tappetFaceContactPoint = driverCenter.clone()
-      .addScaledVector(tappetDirection, tappetContactProjection)
-      .addScaledVector(tappetNormal, -tappetHalfWidth)
-      .setZ(studContactPlaneZ);
-    const studTappetContactPoint = activeStudCenter.clone()
-      .addScaledVector(tappetNormal, studRadius)
-      .setZ(studContactPlaneZ);
-    const tappetContactError = indexing
-      ? tappetFaceContactPoint.distanceTo(studTappetContactPoint)
-      : null;
-    const tappetContactVelocity = new THREE.Vector3(
-      -(tappetFaceContactPoint.y - driverCenter.y) * driverAngularSpeed,
-      (tappetFaceContactPoint.x - driverCenter.x) * driverAngularSpeed,
-      0,
-    );
-    const studContactVelocity = new THREE.Vector3(
-      -(studTappetContactPoint.y - drivenCenter.y) * drivenAngularSpeed,
-      (studTappetContactPoint.x - drivenCenter.x) * drivenAngularSpeed,
-      0,
-    );
-    const tappetNormalVelocityError = indexing
-      ? Math.abs(studContactVelocity.clone().sub(tappetContactVelocity)
-        .dot(tappetNormal))
-      : null;
-
-    const guardCandidateStudIndices = indexing
-      ? []
-      : stage === 'guard-locked-before-index'
-        ? [
-          THREE.MathUtils.euclideanModulo(activeStudIndex - 1, studCount),
-          activeStudIndex,
-        ]
-        : [
-          activeStudIndex,
-          THREE.MathUtils.euclideanModulo(activeStudIndex + 1, studCount),
-        ];
-    const guardStudContacts = guardCandidateStudIndices.map((index) => {
-      const studCenter = studWorldPosition(index);
-      const radial = studCenter.clone().sub(driverCenter).setZ(0);
-      const direction = radial.clone().normalize();
-      const driverLocalAngle = Math.atan2(
-        Math.sin(Math.atan2(radial.y, radial.x) - driverAngle),
-        Math.cos(Math.atan2(radial.y, radial.x) - driverAngle),
-      );
-      const guardPoint = driverCenter.clone()
-        .addScaledVector(direction, guardInnerRadius)
-        .setZ(studContactPlaneZ);
-      const studPoint = studCenter.clone()
-        .addScaledVector(direction, studRadius)
-        .setZ(studContactPlaneZ);
-      return {
-        driverLocalAngle,
-        error: guardPoint.distanceTo(studPoint),
-        guardPoint,
-        index,
-        studCenter,
-        studPoint,
+    const direction = new THREE.Vector2(Math.cos(driverAngle), Math.sin(driverAngle));
+    const normal = new THREE.Vector2(-direction.y, direction.x);
+    let contact = null;
+    if (indexing) {
+      const stud = planarStud(activeStudIndex);
+      const forceDirection = push.kind === 'flank'
+        ? normal.clone()
+        : stud.clone().sub(direction.clone().multiplyScalar(tappetLength)).normalize();
+      const studPoint = stud.clone().addScaledVector(forceDirection, -studRadius);
+      const tappetPoint = push.kind === 'flank'
+        ? direction.clone().multiplyScalar(push.projection)
+          .addScaledVector(normal, tappetHalfWidth)
+        : direction.clone().multiplyScalar(tappetLength)
+          .addScaledVector(forceDirection, tappetHalfWidth);
+      const fromDriven = studPoint.clone().add(new THREE.Vector2(centerDistance, 0));
+      const tappetVelocity = new THREE.Vector2(-tappetPoint.y, tappetPoint.x)
+        .multiplyScalar(driverAngularSpeed);
+      const studVelocity = new THREE.Vector2(-fromDriven.y, fromDriven.x)
+        .multiplyScalar(drivenAngularSpeed);
+      contact = {
+        driverTorque: cross(tappetPoint, forceDirection.clone().negate()),
+        error: studPoint.distanceTo(tappetPoint),
+        forceDirection: toWorldDirection(forceDirection),
+        kind: push.kind,
+        normalVelocityError: Math.abs(
+          studVelocity.clone().sub(tappetVelocity).dot(forceDirection),
+        ),
+        outputTorque: cross(fromDriven, forceDirection),
+        projection: push.projection,
+        studPoint: toWorld(studPoint, studContactPlaneZ),
+        tappetPoint: toWorld(tappetPoint, studContactPlaneZ),
       };
-    }).filter(({ driverLocalAngle }) => !angleInsideNotch(driverLocalAngle));
-    const guardLockStudIndices = guardStudContacts.map(({ index }) => index);
-    const leavingStudIndex = THREE.MathUtils.euclideanModulo(
-      activeStudIndex - 1,
-      studCount,
-    );
-    const enteringStudIndex = THREE.MathUtils.euclideanModulo(
-      activeStudIndex + 1,
-      studCount,
-    );
+    }
+    const guardStudContacts = indexing ? [] : [
+      cycleDriverAngle < contactStartDriverAngle ? activeStudIndex + 1 : activeStudIndex + 2,
+    ].map((raw) => {
+      const index = THREE.MathUtils.euclideanModulo(raw, studCount);
+      const stud = planarStud(index);
+      const radial = stud.clone().normalize();
+      return {
+        error: Math.abs(stud.length() + studRadius - guardInnerRadius),
+        guardPoint: toWorld(radial.clone().multiplyScalar(guardInnerRadius), studContactPlaneZ),
+        index,
+        studPoint: toWorld(stud.clone().addScaledVector(radial, studRadius), studContactPlaneZ),
+      };
+    });
     return {
-      activeStudCenter,
       activeStudIndex,
-      activeStudWorldAngle,
-      cycleCoordinate,
+      contact,
       cycleIndex,
-      cyclePhase,
       drivenAdvanceAngle,
       drivenAngle,
       drivenAngularSpeed,
-      drivenLocked: !indexing && guardStudContacts.length > 0,
-      drivenStudPitchesAdvanced: -drivenTravelAngle / studPitch,
-      drivenTravelAngle,
+      drivenLocked: !indexing,
       driverAngle,
       driverAngularSpeed,
-      driverInputRevolutions: inputTravelAngle / fullTurn,
       enteringStudIndex,
-      eventFraction,
-      guardCandidateStudIndices,
-      guardLockEngaged: !indexing && guardStudContacts.length > 0,
-      guardLockStudIndices,
       guardStudContacts,
       indexing,
-      inputTravelAngle,
       leavingStudIndex,
-      stage,
-      studTappetContactPoint,
-      tappetContactError,
-      tappetContactProjection,
-      tappetFaceContactPoint,
-      tappetNormal,
-      tappetNormalVelocityError,
-      tappetStudEngaged: indexing,
+      planarStud,
+      stage: indexing ? `tappet-${push.kind}-push` : 'guard-locked',
     };
   };
 
-  const rearZ = -0.68;
-  const baseY = -1.78;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.72, baseY, rearZ),
-    new THREE.Vector3(2.92, baseY, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.14 },
-  );
-  const drivenPost = makeBeam(
-    new THREE.Vector3(drivenCenter.x, baseY, rearZ),
-    new THREE.Vector3(drivenCenter.x, drivenCenter.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const driverPost = makeBeam(
-    new THREE.Vector3(driverCenter.x, baseY, rearZ),
-    new THREE.Vector3(driverCenter.x, driverCenter.y, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-  );
-  const shaftRail = makeBeam(
-    new THREE.Vector3(-2.45, -0.06, rearZ),
-    new THREE.Vector3(2.7, -0.06, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.12 },
-  );
-  root.add(
-    baseRail,
-    drivenPost,
-    driverPost,
-    shaftRail,
-    drivenShaft,
-    driverShaft,
-    driven,
-    driver,
-  );
-
-  root.userData.mechanism = 'internal-guard-two-notch-tappet-ten-stud-index';
+  layout.add(drivenShaft, driverShaft, driven, driver);
+  root.add(layout);
+  root.userData.mechanism = 'internal-guard-three-stud-tappet-ten-stud-index';
+  root.userData.hideGround = true;
   root.userData.blocks = {
-    baseRail,
     driven,
     drivenBody,
     drivenIndicator,
-    drivenPost,
     drivenShaft,
     driver,
     driverBody,
     driverIndicator,
-    driverPost,
     driverShaft,
     guardSegments,
-    shaftRail,
+    layout,
     studs,
     tappet,
+    tappetHub,
   };
   root.userData.geometry = {
     axis,
-    baseDepth,
-    basePlaneZ,
     centerDistance,
     contactDriverAngleSpan,
     contactEndDriverAngle,
-    contactEndPhase,
-    contactPhaseSpan,
     contactStartDriverAngle,
-    contactStartPhase,
-    drivenCenter,
+    cycleBoundaryDriverAngle,
     drivenDepth,
     drivenRadius,
     driverAngularSpeed,
-    driverBaseRadius,
-    driverCenter,
     driverCyclePeriod,
-    driverPhaseAtCycleZero,
+    driverLayoutX,
     enteringNotchEnd,
     enteringNotchStart,
     fullTurn,
-    guardDepth,
     guardInnerRadius,
     guardOuterRadius,
-    guardPlaneZ,
-    halfStudPitch,
-    initialCyclePhase,
+    initialDriverAngle,
+    layoutTilt,
     leavingNotchEnd,
     leavingNotchStart,
-    lockedStudCenterDistance,
+    lockPlay,
     notchAngularClearance,
-    notchProfileSamples,
+    plateBackZ,
+    releaseStudAngle,
+    restStudAngle,
+    rimBackZ,
     studContactPlaneZ,
     studCount,
+    studDistance,
     studLength,
     studMountPhase,
     studOrbitRadius,
     studPitch,
     studRadius,
+    tappetBackZ,
     tappetContactOffset,
     tappetDepth,
     tappetHalfWidth,
     tappetLength,
   };
+  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Brown draws the interior studs through B; here B\'s plate is solid so they are hidden from the front.';
   root.userData.stateAtTime = stateAtTime;
+  root.userData.sectionView = false;
+  root.userData.fullCameraDirection = new THREE.Vector3(1.2, 0.9, 12.4);
+  root.userData.setSectionView = (enabled) => {
+    root.userData.sectionView = Boolean(enabled);
+    driverBody.visible = !enabled;
+    driverHubRing.visible = !enabled;
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -3061,28 +3092,15 @@ function internalGuardTappetStudIndex() {
     setSpin(driven, state.drivenAngle);
     setSpin(drivenShaft, state.drivenAngle);
     root.userData.contacts = {
-      guardStuds: {
-        contacts: state.guardStudContacts.map((contact) => ({
-          error: contact.error,
-          guardPoint: contact.guardPoint.clone(),
-          index: contact.index,
-          studPoint: contact.studPoint.clone(),
-        })),
-        engaged: state.guardLockEngaged,
-      },
-      tappetStud: {
-        engaged: state.tappetStudEngaged,
-        error: state.tappetContactError,
-        facePoint: state.tappetFaceContactPoint.clone(),
-        normalVelocityError: state.tappetNormalVelocityError,
-        studIndex: state.activeStudIndex,
-        studPoint: state.studTappetContactPoint.clone(),
-      },
+      guardStuds: { contacts: state.guardStudContacts, engaged: !state.indexing },
+      tappetStud: state.contact
+        ? { engaged: true, studIndex: state.activeStudIndex, ...state.contact }
+        : { engaged: false, studIndex: state.activeStudIndex },
     };
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.6, 9));
+  return finish(root, update, new THREE.Vector3(1.2, 0.9, 12.4));
 }
 
 function springPressedRatchetIndex() {
@@ -3126,7 +3144,12 @@ function springPressedRatchetIndex() {
   ratchet.position.z = 0.08;
   ratchet.userData.role = 'clockwise-intermittent-ratchet-wheel-A';
   const ratchetBody = ratchet.userData.body;
-  const ratchetIndicator = ratchet.userData.indicator;
+  ratchet.userData.rotor.remove(ratchet.userData.indicator);
+  const ratchetIndicator = new THREE.Object3D();
+  ratchetIndicator.position.copy(ratchet.userData.indicator.position);
+  ratchetIndicator.userData.ratchetRotationIndicator = true;
+  ratchet.userData.rotor.add(ratchetIndicator);
+  ratchet.userData.indicator = ratchetIndicator;
   const ratchetShaft = makeShaft({ length: 1.34, radius: 0.09 });
   ratchetShaft.position.z = 0.08;
   ratchetShaft.userData.radius = 0.09;
@@ -3256,31 +3279,34 @@ function springPressedRatchetIndex() {
   const driverRadius = 1.5;
   const driverDepth = 0.18;
   const driverPlaneZ = -0.3;
+  const driverBoreRadius = 0.15;
+  const driverShape = new THREE.Shape();
+  driverShape.absarc(0, 0, driverRadius, 0, fullTurn, false);
+  const driverBore = new THREE.Path();
+  driverBore.absarc(0, 0, driverBoreRadius, 0, fullTurn, true);
+  driverShape.holes.push(driverBore);
+  const driverGeometry = new THREE.ExtrudeGeometry(driverShape, {
+    bevelEnabled: false,
+    curveSegments: 96,
+    depth: driverDepth,
+  });
+  driverGeometry.translate(0, 0, -driverDepth / 2);
   const driverBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(driverRadius, driverRadius, driverDepth, 84),
+    driverGeometry,
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.68 }),
   );
-  driverBody.rotation.x = Math.PI / 2;
   driverBody.position.z = driverPlaneZ;
   driverBody.userData.drivingWheelDBody = true;
   driverRotor.add(driverBody);
-  const driverFaceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(driverRadius * 0.87, 0.035, 8, 72),
-    matte(PALETTE.ink, { metalness: 0.14, roughness: 0.55 }),
-  );
-  driverFaceRing.position.z = driverPlaneZ + driverDepth / 2 + 0.024;
-  driverRotor.add(driverFaceRing);
+  // D turns loose on A's shaft; its sleeve stops short of A's bevelled back.
   const driverSleeve = new THREE.Mesh(
-    makeAnnulusGeometry(0.115, 0.23, 0.74),
+    makeAnnulusGeometry(driverBoreRadius + 0.025, 0.27, 0.34),
     matte(PALETTE.ink, { metalness: 0.24, roughness: 0.47 }),
   );
-  driverSleeve.position.z = -0.12;
+  driverSleeve.position.z = -0.29;
   driverSleeve.userData.hollowDriverSleeveD = true;
   driverRotor.add(driverSleeve);
-  const driverIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 0.52, 0.024),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
+  const driverIndicator = new THREE.Object3D();
   driverIndicator.position.set(
     0,
     -driverRadius * 0.72,
@@ -3299,29 +3325,33 @@ function springPressedRatchetIndex() {
   const leafRadius = 0.035;
   const catchMountLocal = new THREE.Vector3(0, -1.31, catchSpringPlaneZ);
   const relaxedCatchCenterLocal = new THREE.Vector2(-1.33, 0);
+  // B runs round D outside the crest that C's stop rides, then turns in to
+  // its tip, so it never sweeps over C while carrying a tooth.
+  const catchArcRadius = 1.32;
+  const catchApproachLead = 0.2;
+  const catchMountAngle = Math.atan2(catchMountLocal.y, catchMountLocal.x);
+  const unwrapBelow = (angle, reference) => reference
+    - THREE.MathUtils.euclideanModulo(reference - angle, fullTurn);
   const catchCurveLocalAt = (deflection, tipOverride = null) => {
     const eased = smoothStep01(THREE.MathUtils.clamp(deflection, 0, 1));
-    const controlA = new THREE.Vector3(-0.55, -1.23, catchSpringPlaneZ);
-    const controlB = new THREE.Vector3(-1.16, -0.72, catchSpringPlaneZ)
-      .lerp(new THREE.Vector3(-1.25, 0.05, catchSpringPlaneZ), eased);
-    const tip = new THREE.Vector3(
-      relaxedCatchCenterLocal.x,
-      relaxedCatchCenterLocal.y,
+    const tip = tipOverride
+      ? new THREE.Vector2(tipOverride.x, tipOverride.y)
+      : relaxedCatchCenterLocal.clone().lerp(deflectedCatchCenterLocal, eased);
+    const tipAngle = unwrapBelow(Math.atan2(tip.y, tip.x), catchMountAngle - 0.3);
+    const approachAngle = tipAngle + catchApproachLead;
+    const approachRadius = THREE.MathUtils.lerp(catchArcRadius + 0.01, 1.3, eased);
+    const polar = (radius, angle) => new THREE.Vector3(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
       catchSpringPlaneZ,
-    ).lerp(new THREE.Vector3(
-      deflectedCatchCenterLocal.x,
-      deflectedCatchCenterLocal.y,
-      catchSpringPlaneZ,
-    ), eased);
-    if (tipOverride) {
-      tip.set(tipOverride.x, tipOverride.y, catchSpringPlaneZ);
-    }
-    return new THREE.CubicBezierCurve3(
-      catchMountLocal.clone(),
-      controlA,
-      controlB,
-      tip,
     );
+    return new THREE.CatmullRomCurve3([
+      catchMountLocal.clone(),
+      polar(catchArcRadius, THREE.MathUtils.lerp(catchMountAngle, approachAngle, 1 / 3)),
+      polar(catchArcRadius, THREE.MathUtils.lerp(catchMountAngle, approachAngle, 2 / 3)),
+      polar(approachRadius, approachAngle),
+      new THREE.Vector3(tip.x, tip.y, catchSpringPlaneZ),
+    ], false, 'centripetal');
   };
   const catchSpring = makeDynamicLeafSpring(catchCurveLocalAt(0), {
     color: PALETTE.brass,
@@ -3331,7 +3361,7 @@ function springPressedRatchetIndex() {
   catchSpring.userData.catchSpringB = true;
   catchSpring.userData.role = 'driver-carried-bent-catch-spring-B';
   driverRotor.add(catchSpring);
-  const catchPadLength = 0.34;
+  const catchPadLength = 0.3;
   const catchPad = new THREE.Mesh(
     new THREE.CylinderGeometry(
       catchPadRadius,
@@ -3345,16 +3375,19 @@ function springPressedRatchetIndex() {
   catchPad.position.set(
     relaxedCatchCenterLocal.x,
     relaxedCatchCenterLocal.y,
-    0.17,
+    0.16,
   );
   catchPad.userData.catchSpringTipB = true;
   catchPad.userData.radius = catchPadRadius;
   driverRotor.add(catchPad);
+  const catchClampBack = driverPlaneZ + driverDepth / 2;
+  const catchClampFront = catchSpringPlaneZ + leafRadius - 0.01;
   const catchClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.15, 0.16),
+    new THREE.BoxGeometry(0.24, 0.15, catchClampFront - catchClampBack),
     matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
   );
-  catchClamp.position.copy(catchMountLocal).setZ(catchSpringPlaneZ);
+  catchClamp.position.copy(catchMountLocal)
+    .setZ((catchClampBack + catchClampFront) / 2);
   catchClamp.userData.catchSpringClamp = true;
   driverRotor.add(catchClamp);
 
@@ -3431,41 +3464,16 @@ function springPressedRatchetIndex() {
   );
   stopPad.userData.radius = stopPadRadius;
   stopPad.userData.strongSpringStopTipC = true;
+  // Brown's hatched block at lower left, with C rising from its corner.
   const strongSpringClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.42, 0.3),
+    new THREE.BoxGeometry(0.9, 0.62, 0.5),
     matte(PALETTE.frame, { metalness: 0.14, roughness: 0.64 }),
   );
   strongSpringClamp.position.copy(strongSpringAnchor)
-    .add(new THREE.Vector3(-0.12, -0.05, -0.18));
+    .add(new THREE.Vector3(-0.42, -0.28, 0));
   strongSpringClamp.userData.fixedStrongSpringClamp = true;
 
-  const rearZ = -0.66;
-  const baseY = -1.86;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.25, baseY, rearZ),
-    new THREE.Vector3(2.15, baseY, rearZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.16 },
-  );
-  const centerPost = makeBeam(
-    new THREE.Vector3(0, baseY, rearZ),
-    new THREE.Vector3(0, 0, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.15 },
-  );
-  const shaftBridge = makeBeam(
-    new THREE.Vector3(-0.62, 0, rearZ),
-    new THREE.Vector3(0.62, 0, rearZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.14 },
-  );
-  const springPost = makeBeam(
-    new THREE.Vector3(strongSpringAnchor.x, baseY, rearZ),
-    new THREE.Vector3(strongSpringAnchor.x, strongSpringAnchor.y, rearZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.17 },
-  );
   root.add(
-    baseRail,
-    centerPost,
-    shaftBridge,
-    springPost,
     strongSpringClamp,
     driver,
     ratchetShaft,
@@ -3709,20 +3717,17 @@ function springPressedRatchetIndex() {
       ),
     );
 
-    const catchWorldControls = [
-      catchCurveLocal.v0,
-      catchCurveLocal.v1,
-      catchCurveLocal.v2,
-      catchCurveLocal.v3,
-    ].map((point) => {
+    const catchWorldControls = catchCurveLocal.points.map((point) => {
       const planar = new THREE.Vector2(point.x, point.y).rotateAround(
         new THREE.Vector2(),
         driverAngle,
       );
       return new THREE.Vector3(planar.x, planar.y, catchSpringPlaneZ);
     });
-    const catchCurveWorld = new THREE.CubicBezierCurve3(
-      ...catchWorldControls,
+    const catchCurveWorld = new THREE.CatmullRomCurve3(
+      catchWorldControls,
+      false,
+      'centripetal',
     );
     let springPressContactFraction = null;
     let springPressInfluence = 0;
@@ -3822,12 +3827,11 @@ function springPressedRatchetIndex() {
   };
 
   root.userData.mechanism = 'spring-pressed-eight-tooth-ratchet-index';
+  root.userData.hideGround = true;
   root.userData.blocks = {
-    baseRail,
     catchClamp,
     catchPad,
     catchSpring,
-    centerPost,
     driver,
     driverBody,
     driverIndicator,
@@ -3836,8 +3840,6 @@ function springPressedRatchetIndex() {
     ratchetBody,
     ratchetIndicator,
     ratchetShaft,
-    shaftBridge,
-    springPost,
     stopPad,
     strongSpring,
     strongSpringClamp,
@@ -3851,6 +3853,7 @@ function springPressedRatchetIndex() {
     deflectedCatchCenterLocal,
     driveFaceFraction,
     driverAngularSpeed,
+    driverBoreRadius,
     driverCyclePeriod,
     driverDepth,
     driverPlaneZ,
@@ -3893,7 +3896,7 @@ function springPressedRatchetIndex() {
     catchPad.position.set(
       state.catchCenterLocal.x,
       state.catchCenterLocal.y,
-      0.17,
+      0.16,
     );
     strongSpring.userData.setCurve(state.strongCurve);
     stopPad.position.set(
@@ -3953,7 +3956,7 @@ function springPressedRatchetIndex() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.2, 4.5, 8.8));
+  return finish(root, update, new THREE.Vector3(1.3, 1.0, 12.4));
 }
 
 
@@ -7899,14 +7902,23 @@ function sharedPivotDoubleStrokeRatchet() {
     Math.cos(toothPitch) * ratchetRootRadius,
     Math.sin(toothPitch) * ratchetRootRadius,
   );
+  // The finger surface, not its axis, bears on the tooth face.
+  const pawlFingerRadius = 0.045;
+  const unmountedFaceTangent = unmountedNextRoot.clone()
+    .sub(unmountedOuterEnd)
+    .normalize();
+  const unmountedFaceNormal = new THREE.Vector2(
+    unmountedFaceTangent.y,
+    -unmountedFaceTangent.x,
+  );
   const leftUnmountedDrivePoint = unmountedOuterEnd.clone().lerp(
     unmountedNextRoot,
     leftFaceFraction,
-  );
+  ).addScaledVector(unmountedFaceNormal, pawlFingerRadius);
   const rightUnmountedDrivePoint = unmountedOuterEnd.clone().lerp(
     unmountedNextRoot,
     rightFaceFraction,
-  );
+  ).addScaledVector(unmountedFaceNormal, pawlFingerRadius);
   const leftContactOrbitRadius = leftUnmountedDrivePoint.length();
   const rightContactOrbitRadius = rightUnmountedDrivePoint.length();
   const ratchetMountPhase = leftSourceContactAngle - Math.atan2(
@@ -7929,24 +7941,23 @@ function sharedPivotDoubleStrokeRatchet() {
     'forty-four-tooth-clockwise-double-stroke-ratchet-wheel';
   const ratchetBody = ratchet.userData.body;
   const ratchetHub = ratchet.userData.hub;
-  const ratchetIndicator = ratchet.userData.indicator;
-  ratchetIndicator.userData.role =
-    'painted-index-showing-clockwise-ratchet-advance';
-  const ratchetShaft = makeShaft({ length: 1.34, radius: 0.11 });
+  ratchet.userData.rotor.remove(ratchet.userData.indicator);
+  delete ratchet.userData.indicator;
+  const ratchetShaft = makeShaft({ length: 0.62, radius: 0.19 });
   ratchetShaft.position.z = 0.04;
-  ratchetShaft.userData.radius = 0.11;
+  ratchetShaft.userData.radius = 0.19;
   ratchetShaft.userData.role = 'clockwise-output-shaft-keyed-to-ratchet';
 
   const leftDriveFace = ratchet.userData.toothFaces[0];
   const leftDrivePointLocal = leftDriveFace.outer.clone().lerp(
     leftDriveFace.root,
     leftFaceFraction,
-  );
+  ).addScaledVector(leftDriveFace.outwardNormal, pawlFingerRadius);
   const rightDriveFace = ratchet.userData.toothFaces[0];
   const rightDrivePointOnToothZero = rightDriveFace.outer.clone().lerp(
     rightDriveFace.root,
     rightFaceFraction,
-  );
+  ).addScaledVector(rightDriveFace.outwardNormal, pawlFingerRadius);
   const rightDrivePointLocal = rightDrivePointOnToothZero.clone()
     .rotateAround(origin, rightToothOffset * toothPitch);
   const rightDrivePointLocalAngle = Math.atan2(
@@ -8107,7 +8118,9 @@ function sharedPivotDoubleStrokeRatchet() {
 
   const rocker = makePlanarRotor();
   const rockerRotor = rocker.userData.rotor;
-  const rockerPlaneZ = 0.84;
+  // Brown draws only the wheel, the two pawls on their common pin and the
+  // lever on its hatched fulcrum; there is no stand or painted index.
+  const rockerPlaneZ = 0.76;
   rocker.position.set(
     fixedLeverPivot.x,
     fixedLeverPivot.y,
@@ -8115,161 +8128,121 @@ function sharedPivotDoubleStrokeRatchet() {
   );
   rocker.userData.role =
     'vibrating-input-lever-carrying-one-common-pawl-pin';
-  const rockerBody = makeBeam(
-    new THREE.Vector3(-pawlCarrierRadius - 0.06, 0, 0),
-    new THREE.Vector3(handleLength + 0.12, 0, 0),
-    { color: PALETTE.driver, depth: 0.17, thickness: 0.16 },
+  const fulcrumRadius = 0.15;
+  const leverDepth = 0.16;
+  const leverBevel = Math.min(0.025, leverDepth * 0.12);
+  const leverMaterial = matte(PALETTE.driver, {
+    metalness: 0.12,
+    roughness: 0.6,
+  });
+  const fulcrumCenter = new THREE.Vector2(0, 0);
+  const pinCenter = new THREE.Vector2(-pawlCarrierRadius, 0);
+  const handleEndCenter = new THREE.Vector2(handleLength - 0.07, 0);
+  const fulcrumBore = {
+    center: fulcrumCenter,
+    radius: fulcrumRadius + leverBevel + 0.006,
+  };
+  const rockerBody = new THREE.Mesh(
+    centeredExtrusion(
+      taperedLinkShape(pinCenter, 0.17, fulcrumCenter, 0.29, [fulcrumBore]),
+      leverDepth,
+    ),
+    leverMaterial,
   );
   rockerBody.userData.vibratingLeverBody = true;
   rockerRotor.add(rockerBody);
-  const rockerHub = new THREE.Mesh(
-    makeAnnulusGeometry(0.105, 0.23, 0.22),
-    matte(PALETTE.driver, { metalness: 0.13, roughness: 0.58 }),
+  const rockerHandle = new THREE.Mesh(
+    centeredExtrusion(
+      taperedLinkShape(
+        fulcrumCenter,
+        0.285,
+        handleEndCenter,
+        0.075,
+        [fulcrumBore],
+      ),
+      leverDepth - 0.01,
+    ),
+    leverMaterial,
   );
-  rockerHub.position.z = 0.015;
-  rockerHub.userData.fixedLeverPivotHub = true;
-  rockerRotor.add(rockerHub);
-  const rockerPivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.25, 0.04, 8, 40),
-    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
-  );
-  rockerPivotRing.position.z = 0.145;
-  rockerRotor.add(rockerPivotRing);
+  rockerHandle.userData.vibratingLeverHandle = true;
+  rockerRotor.add(rockerHandle);
+  const rockerHub = rockerBody;
   const commonPawlJoint = new THREE.Group();
   commonPawlJoint.position.x = -pawlCarrierRadius;
   commonPawlJoint.userData.commonMovingPawlPivot = true;
   commonPawlJoint.userData.role =
     'single-moving-pin-carrying-two-independent-pawls';
+  const commonPawlStudLength = 0.7;
   const commonPawlStud = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 0.76, 24),
+    new THREE.CylinderGeometry(0.085, 0.085, commonPawlStudLength, 24),
     matte(PALETTE.ink, { metalness: 0.23, roughness: 0.47 }),
   );
   commonPawlStud.rotation.x = Math.PI / 2;
-  commonPawlStud.position.z = -0.22;
+  commonPawlStud.position.z = leverDepth / 2 + 0.05 - commonPawlStudLength / 2;
   commonPawlStud.userData.commonPawlPivotStud = true;
-  const commonPawlRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.115, 0.027, 8, 30),
-    matte(PALETTE.white, { roughness: 0.48 }),
+  const commonPawlHead = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, 0.05, 28),
+    matte(PALETTE.ink, { metalness: 0.23, roughness: 0.47 }),
   );
-  commonPawlRing.position.z = 0.13;
-  commonPawlJoint.add(commonPawlStud, commonPawlRing);
+  commonPawlHead.rotation.x = Math.PI / 2;
+  commonPawlHead.position.z = leverDepth / 2 + leverBevel + 0.03;
+  commonPawlJoint.add(commonPawlStud, commonPawlHead);
   rockerRotor.add(commonPawlJoint);
-  const handleIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.052, 0.026),
-    matte(PALETTE.white, { roughness: 0.47 }),
-  );
-  handleIndicator.position.x = handleLength * 0.73;
-  handleIndicator.position.z = 0.11;
-  handleIndicator.userData.inputVibrationIndex = true;
-  rockerRotor.add(handleIndicator);
 
-  const leftPawlPlaneZ = 0.45;
-  const rightPawlPlaneZ = 0.68;
+  const pawlDepth = 0.13;
+  const pawlHubDepth = 0.16;
+  const pawlHubBevel = Math.min(0.025, pawlHubDepth * 0.12);
+  const leftPawlPlaneZ = 0.3;
+  const rightPawlPlaneZ = 0.53;
+  const pawlFingerBackZ = ratchet.position.z - ratchetDepth / 2 + 0.035;
+  const pawlOptions = {
+    bandHalfWidth: 0.115,
+    bandStart: 0.1,
+    boreRadius: 0.085 + pawlHubBevel + 0.006,
+    depth: pawlDepth,
+    fingerRadius: pawlFingerRadius,
+    hubDepth: pawlHubDepth,
+    hubRadius: 0.2,
+    markers: false,
+  };
   const leftPawl = makeCurvedSharedPivotPawl({
+    ...pawlOptions,
     bend: -0.48,
-    catchDepth: 0.26,
-    depth: 0.13,
+    catchDepth: leftPawlPlaneZ - pawlFingerBackZ - pawlDepth / 2 + 0.012,
     length: leftPawlLength,
     role: 'left-curved-pawl-driving-while-common-pin-rises',
   });
   const rightPawl = makeCurvedSharedPivotPawl({
+    ...pawlOptions,
     bend: 0.5,
-    catchDepth: 0.47,
-    depth: 0.13,
+    catchDepth: rightPawlPlaneZ - pawlFingerBackZ - pawlDepth / 2 + 0.012,
     length: rightPawlLength,
     role: 'right-curved-pawl-driving-while-common-pin-falls',
   });
   const leftPawlBody = leftPawl.userData.body;
   const leftPawlContactFinger = leftPawl.userData.contactFinger;
   const leftPawlPivotHub = leftPawl.userData.pivotHub;
-  const leftPawlTipMarker = leftPawl.userData.tipMarker;
   const rightPawlBody = rightPawl.userData.body;
   const rightPawlContactFinger = rightPawl.userData.contactFinger;
   const rightPawlPivotHub = rightPawl.userData.pivotHub;
-  const rightPawlTipMarker = rightPawl.userData.tipMarker;
 
-  const frameZ = -0.42;
-  const baseY = -2.68;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.65, baseY, frameZ),
-    new THREE.Vector3(2.38, baseY, frameZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.18 },
-  );
-  baseRail.userData.fixedBaseRail = true;
-  const wheelPost = makeBeam(
-    new THREE.Vector3(0, baseY, frameZ),
-    new THREE.Vector3(0, 0, frameZ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.17 },
-  );
-  wheelPost.userData.fixedWheelPost = true;
-  const leverPost = makeBeam(
-    new THREE.Vector3(1.88, baseY, frameZ),
-    new THREE.Vector3(
-      fixedLeverPivot.x,
-      fixedLeverPivot.y,
-      frameZ,
-    ),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.17 },
-  );
-  leverPost.userData.fixedLeverPost = true;
-  const wheelBearingBridge = makeBeam(
-    new THREE.Vector3(-0.46, 0, frameZ + 0.03),
-    new THREE.Vector3(0.46, 0, frameZ + 0.03),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.15 },
-  );
-  wheelBearingBridge.userData.fixedWheelBearingBridge = true;
-  const wheelBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.29, 0.06, 9, 40),
-    matte(PALETTE.frame, { metalness: 0.16, roughness: 0.6 }),
-  );
-  wheelBearing.position.z = frameZ + 0.14;
-  wheelBearing.userData.fixedWheelBearing = true;
-  const fixedLeverShaft = makeShaft({ length: 1.1, radius: 0.105 });
+  const fixedLeverShaft = makeShaft({ length: 0.36, radius: fulcrumRadius });
   fixedLeverShaft.position.set(
     fixedLeverPivot.x,
     fixedLeverPivot.y,
-    0.41,
+    rockerPlaneZ + 0.04,
   );
   fixedLeverShaft.userData.fixedPivot = true;
+  fixedLeverShaft.userData.radius = fulcrumRadius;
   fixedLeverShaft.userData.role = 'fixed-fulcrum-of-vibrating-lever';
-  const leverBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.26, 0.06, 9, 40),
-    matte(PALETTE.frame, { metalness: 0.16, roughness: 0.6 }),
-  );
-  leverBearing.position.set(
-    fixedLeverPivot.x,
-    fixedLeverPivot.y,
-    frameZ + 0.14,
-  );
-  leverBearing.userData.fixedLeverBearing = true;
-  const cameraFitGuide = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 8, 6),
-    new THREE.MeshBasicMaterial({
-      color: PALETTE.paper,
-      depthWrite: false,
-      opacity: 0,
-      transparent: true,
-    }),
-  );
-  cameraFitGuide.position.set(2.16, 3.42, rockerPlaneZ);
-  cameraFitGuide.castShadow = false;
-  cameraFitGuide.receiveShadow = false;
-  cameraFitGuide.userData.cameraFitGuide = true;
 
   root.add(
-    baseRail,
-    wheelPost,
-    leverPost,
-    wheelBearingBridge,
-    wheelBearing,
-    leverBearing,
     ratchetShaft,
     ratchet,
     fixedLeverShaft,
     leftPawl,
     rightPawl,
     rocker,
-    cameraFitGuide,
   );
 
   const pointInsideRatchet = (point) => {
@@ -8592,36 +8565,26 @@ function sharedPivotDoubleStrokeRatchet() {
   root.userData.variant =
     'left-pawl-rising-right-pawl-falling-with-one-tooth-per-complete-vibration';
   root.userData.blocks = {
-    baseRail,
-    cameraFitGuide,
+    commonPawlHead,
     commonPawlJoint,
-    commonPawlRing,
     commonPawlStud,
     fixedLeverShaft,
-    handleIndicator,
     leftPawl,
     leftPawlBody,
     leftPawlContactFinger,
     leftPawlPivotHub,
-    leftPawlTipMarker,
-    leverBearing,
-    leverPost,
     ratchet,
     ratchetBody,
     ratchetHub,
-    ratchetIndicator,
     ratchetShaft,
     rightPawl,
     rightPawlBody,
     rightPawlContactFinger,
     rightPawlPivotHub,
-    rightPawlTipMarker,
     rocker,
     rockerBody,
+    rockerHandle,
     rockerHub,
-    wheelBearing,
-    wheelBearingBridge,
-    wheelPost,
   };
   root.userData.canonicalCyclePhases = {
     fallingMidpoint: 0.75,
@@ -8664,6 +8627,7 @@ function sharedPivotDoubleStrokeRatchet() {
     lowAnchor: lowAnchor.clone(),
     pawlCarrierMeanAngle,
     pawlCarrierRadius,
+    pawlFingerRadius,
     ratchetDepth,
     ratchetMountPhase,
     ratchetOuterRadius,
@@ -8801,7 +8765,7 @@ function sharedPivotDoubleStrokeRatchet() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.1, 3.2, 10.4));
+  return finish(root, update, new THREE.Vector3(1.5, 1.1, 12.4));
 }
 
 function pinGuidedHalfToothIntermittentLockingDrive() {
@@ -9153,14 +9117,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     roughness: 0.52,
     side: THREE.DoubleSide,
   });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.14,
-    roughness: 0.67,
-  });
-  const whiteMaterial = matte(PALETTE.white, {
-    metalness: 0.02,
-    roughness: 0.48,
-  });
 
   const driver = makePlanarRotor();
   driver.position.set(driverCenter.x, driverCenter.y, 0);
@@ -9192,12 +9148,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   );
   driverHub.position.z = driverDepth / 2 + 0.025;
   driverHub.userData.role = 'driver-front-hub-ring';
-  const driverIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.05, 0.055, 0.026),
-    whiteMaterial,
-  );
-  driverIndex.position.set(0.73, 0, driverDepth / 2 + 0.075);
-  driverIndex.userData.role = 'driver-radial-speed-index';
   const driverIndexTip = new THREE.Object3D();
   driverIndexTip.position.set(1.255, 0, driverDepth / 2 + 0.075);
   driverIndexTip.userData.role = 'driver-index-tip';
@@ -9218,30 +9168,12 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     driverDepth / 2 + driverPinLength / 2 - 0.015,
   );
   driverPin.userData.role = 'single-entry-driving-pin';
-  const driverPinCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      driverPinRadius * 0.58,
-      driverPinRadius * 0.58,
-      0.018,
-      24,
-    ),
-    whiteMaterial,
-  );
-  driverPinCap.rotation.x = Math.PI / 2;
-  driverPinCap.position.set(
-    driverPinLocal.x,
-    driverPinLocal.y,
-    driverDepth / 2 + driverPinLength - 0.006,
-  );
-  driverPinCap.userData.role = 'entry-pin-face-index';
   driver.userData.rotor.add(
     driverBody,
     driverEdge,
     driverHub,
-    driverIndex,
     driverIndexTip,
     driverPin,
-    driverPinCap,
   );
 
   const pinion = makePlanarRotor();
@@ -9274,18 +9206,14 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   );
   pinionHub.position.z = pinionDepth / 2 + 0.026;
   pinionHub.userData.role = 'pinion-front-hub-ring';
-  const pinionIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.052, 0.025),
-    whiteMaterial,
-  );
-  pinionIndex.position.set(0.4, 0, pinionDepth / 2 + 0.075);
-  pinionIndex.userData.role = 'pinion-radial-intermittent-index';
   const pinionIndexTip = new THREE.Object3D();
   pinionIndexTip.position.set(0.64, 0, pinionDepth / 2 + 0.075);
   pinionIndexTip.userData.role = 'pinion-index-tip';
 
+  // The guide stands proud of the pinion face so it clears the driver's
+  // rim outline where it overhangs the plain rim.
   const guideDepth = 0.14;
-  const guideZ = pinionDepth / 2 + guideDepth / 2 - 0.02;
+  const guideZ = pinionDepth / 2 + guideDepth / 2 + 0.005;
   const guidePiece = new THREE.Group();
   guidePiece.position.z = guideZ;
   guidePiece.userData.rigidWithPinion = true;
@@ -9295,101 +9223,37 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     brassMaterial,
   );
   guideBody.userData.role = 'curved-entry-guide-body';
-  const guideEdge = makeProfileTube(
-    guideOutline,
-    guideDepth / 2 + 0.009,
-    0.011,
-    inkMaterial,
-    'curved-entry-guide-outline',
-  );
-  guidePiece.add(guideBody, guideEdge);
+  guidePiece.add(guideBody);
   pinion.userData.rotor.add(
     pinionBody,
     pinionEdge,
     pinionHub,
-    pinionIndex,
     pinionIndexTip,
     guidePiece,
   );
 
   const driverShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.5,
-    radius: 0.085,
+    length: 1.1,
+    radius: 0.21,
   });
   driverShaft.position.set(driverCenter.x, driverCenter.y, 0);
   driverShaft.userData.role = 'continuous-input-shaft';
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.5,
-    radius: 0.082,
+    length: 1.1,
+    radius: 0.21,
   });
   pinionShaft.position.set(pinionCenter.x, pinionCenter.y, 0);
   pinionShaft.userData.role = 'intermittent-output-shaft';
 
-  const pitchContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.052, 16, 12),
-    whiteMaterial,
-  );
-  pitchContactMarker.position.set(
-    -driverPitchRadius,
-    0,
-    Math.max(driverDepth, pinionDepth) / 2 + 0.065,
-  );
-  pitchContactMarker.userData.role = 'active-pitch-contact-marker';
-
-  const rearZ = -0.74;
-  const baseY = -2.79;
-  const baseRail = makeBeam(
-    new THREE.Vector3(-4.18, baseY, rearZ),
-    new THREE.Vector3(2.55, baseY, rearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.14 },
-  );
-  baseRail.userData.role = 'fixed-two-shaft-base-rail';
-  const bearingPosts = [pinionCenter.x, driverCenter.x].map((x, index) => {
-    const post = makeBeam(
-      new THREE.Vector3(x, baseY, rearZ),
-      new THREE.Vector3(x, 0, rearZ),
-      { color: PALETTE.frame, depth: 0.17, thickness: 0.13 },
-    );
-    post.userData.role = index === 0
-      ? 'fixed-pinion-bearing-post'
-      : 'fixed-driver-bearing-post';
-    return post;
-  });
-  const bearings = [pinionCenter.x, driverCenter.x].map((x, index) => {
-    const bearing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.18, 0.052, 10, 38),
-      frameMaterial,
-    );
-    bearing.position.set(x, 0, rearZ + 0.045);
-    bearing.userData.fixed = true;
-    bearing.userData.role = index === 0
-      ? 'fixed-pinion-shaft-bearing'
-      : 'fixed-driver-shaft-bearing';
-    return bearing;
-  });
-  const baseFeet = [-3.9, 2.27].map((x, index) => {
-    const foot = makeBeam(
-      new THREE.Vector3(x, baseY, rearZ - 0.42),
-      new THREE.Vector3(x, baseY, 0.32),
-      { color: PALETTE.frame, depth: 0.16, thickness: 0.13 },
-    );
-    foot.userData.role = index === 0
-      ? 'fixed-left-transverse-foot'
-      : 'fixed-right-transverse-foot';
-    return foot;
-  });
+  // Brown draws the two wheels, the pin and the guide only: no stand,
+  // bearings or painted indexes.
   root.add(
     driver,
     pinion,
     driverShaft,
     pinionShaft,
-    pitchContactMarker,
-    baseRail,
-    ...bearingPosts,
-    ...bearings,
-    ...baseFeet,
   );
 
   const driverPlainArcStart = 0.03458;
@@ -9723,30 +9587,21 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   root.userData.variant =
     'one-output-turn-during-one-half-input-turn-followed-by-one-half-turn-positive-lock-dwell';
   root.userData.blocks = {
-    baseFeet,
-    baseRail,
-    bearingPosts,
-    bearings,
     driver,
     driverBody,
     driverEdge,
     driverHub,
-    driverIndex,
     driverIndexTip,
     driverPin,
-    driverPinCap,
     driverShaft,
     guideBody,
-    guideEdge,
     guidePiece,
     pinion,
     pinionBody,
     pinionEdge,
     pinionHub,
-    pinionIndex,
     pinionIndexTip,
     pinionShaft,
-    pitchContactMarker,
   };
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
@@ -9857,7 +9712,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     setSpin(driverShaft, state.driverAngle);
     setSpin(pinion, state.pinionAngle);
     setSpin(pinionShaft, state.pinionAngle);
-    pitchContactMarker.visible = state.gearMesh.active;
     driver.userData.angularSpeed = state.driverAngularSpeed;
     driverShaft.userData.angularSpeed = state.driverAngularSpeed;
     pinion.userData.angularSpeed = state.pinionAngularSpeed;
@@ -9871,7 +9725,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(4.8, 4.1, 9.6));
+  return finish(root, update, new THREE.Vector3(1.4, 1.0, 12.4));
 }
 
 function fiveSlotGenevaWindingStop() {

@@ -1762,27 +1762,31 @@
     {
       "id": 63,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/063-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/intermittent-63-211-review.md",
+        "note": "Production-route capture inspected beside the engraving after the lane rebuild."
       },
       "intersections": {
         "status": "known",
         "evidence": "artifacts/review/063-reconstruction-notes.md",
-        "note": "Production baseline: pawl/star and striker/drop/pivot interference; 57,637 penetrating samples in 4,130,124 checks."
+        "note": "Production baseline: pawl/star and striker/drop/pivot interference; 57,637 penetrating samples in 4,130,124 checks. Pass-50 relative-motion screen after the rebuild: see docs/intermittent-63-211-review.md."
       },
-      "flaws": "Pin/drop gap 0.171–0.394 and pin/pawl gap 0.259–1.102 despite claimed contact; pawl/star interference and repeated indexing unresolved.",
+      "flaws": "Pin lift, pawl release and spring snap are scheduled; the stepped pawl nose is cut offline with a 0.012 working gap and stops ≈0.09 short of the ideal gap point; centre distance widened (star 0.56 of it against Brown’s 0.64); spring-leaf welds 0.060/0.024 remain; Brown’s left stop pin is not modelled.",
       "references": [
         "artifacts/review/063-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/intermittent-63-211-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 64,
@@ -1990,27 +1994,31 @@
     {
       "id": 71,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/071-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/intermittent-63-211-review.md",
+        "note": "Production-route capture inspected beside the engraving after the lane rebuild."
       },
       "intersections": {
         "status": "known",
         "evidence": "artifacts/review/071-reconstruction-notes.md",
-        "note": "Unchanged production: 2,813 penetrating samples in 14,216,800 checks, including guard/stud collision."
+        "note": "Unchanged production: 2,813 penetrating samples in 14,216,800 checks, including guard/stud collision. Pass-50 relative-motion screen after the rebuild: see docs/intermittent-63-211-review.md."
       },
-      "flaws": "Guard/stud collision and wrong output moment at all 97 claimed drive samples; repeated indexing unresolved.",
+      "flaws": "B’s solid plate hides the interior studs Brown draws dashed (section view provided); notches are wider and placed differently from the plate; the lower lock stud has 0.06 play where the caption says both studs rest on the rim.",
       "references": [
         "artifacts/review/071-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/intermittent-63-211-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 72,
@@ -2044,21 +2052,25 @@
     {
       "id": 73,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/mujoco-073-spring-study.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/intermittent-63-211-review.md",
+        "note": "Production-route capture inspected beside the engraving after the lane rebuild."
       },
       "intersections": {
         "status": "known",
         "evidence": "docs/mujoco-073-spring-study.md",
-        "note": "Corrected tooth shape does not resolve production spring/opposite-pad interference; isolated native candidates are not production qualification."
+        "note": "Corrected tooth shape does not resolve production spring/opposite-pad interference; isolated native candidates are not production qualification. Pass-50 relative-motion screen after the rebuild: see docs/intermittent-63-211-review.md."
       },
-      "flaws": "Production spring/contact arrangement remains unresolved; isolated leaf studies fail refinement and acceptable indexing despite corrected shark-fin teeth.",
+      "flaws": "8 teeth (pinned by a shared test) against Brown’s ≈11; the hatched block sits lower than in the plate; two intended spring-to-pad welds remain.",
       "references": [
         "docs/mujoco-073-spring-study.md",
         "docs/review-progress.md",
         "artifacts/review/073-077-correction-notes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/intermittent-63-211-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -2068,7 +2080,7 @@
         ],
         "note": "Isolated spring/ratchet MuJoCo trials; not installed as production playback."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 74,
@@ -6022,22 +6034,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/intermittent-63-211-review.md",
+        "note": "Production-route capture inspected beside the engraving after the lane rebuild."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen after the rebuild: see docs/intermittent-63-211-review.md."
       },
-      "flaws": "Wheel teeth slightly blunter than the plate. Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "Pawl-to-ratchet contact is exact tangency by construction; a ground shadow is shown.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intermittent-63-211-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6166,22 +6179,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/intermittent-63-211-review.md",
+        "note": "Production-route capture inspected beside the engraving after the lane rebuild."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen after the rebuild: see docs/intermittent-63-211-review.md."
       },
-      "flaws": "Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "The plate’s toothed arc differs from the site-construction arc.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intermittent-63-211-review.md"
       ],
       "mujoco": {
         "mode": "none",

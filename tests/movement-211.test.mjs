@@ -519,7 +519,6 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
       state.pinionAngle, 0, 'rendered pinion angle');
     near(blocks.pinionShaft.userData.rotor.rotation.z,
       state.pinionAngle, 0, 'rendered output shaft angle');
-    assert.equal(blocks.pitchContactMarker.visible, state.gearMesh.active);
     assert.equal(blocks.guidePiece.userData.angularSpeed,
       state.pinionAngularSpeed);
     near(
@@ -530,7 +529,7 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
       ),
       1.255,
       2e-15,
-      'driver white index remains rigid',
+      'driver index anchor remains rigid',
     );
     const pinionWorldCenter = new THREE.Vector3(
       geometry.pinionCenter.x,
@@ -545,7 +544,7 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
       ),
       0.64,
       2e-15,
-      'pinion white index remains rigid',
+      'pinion index anchor remains rigid',
     );
     const renderedPinCenter = blocks.driverPin.getWorldPosition(
       new THREE.Vector3(),
@@ -568,21 +567,23 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
   assert.equal(model.root.userData.contacts.toothedMesh, null);
 
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
-  assert.ok(sweptSize.x > 7.2, 'two wheels and their frame fill the width');
-  assert.ok(sweptSize.y > 5.8, 'partial wheel profiles sweep real height');
-  assert.ok(sweptSize.z > 1.9, 'shafts, bodies, pin, and guide use real depth');
-  assert.ok(sweptBounds.min.x < -4.1);
-  assert.ok(sweptBounds.max.x > 3);
-  assert.ok(sweptBounds.min.y < -3);
-  assert.ok(sweptBounds.max.y > 2.8);
+  assert.ok(sweptSize.x > 6, 'two wheels fill the width');
+  assert.ok(sweptSize.y > 4.4, 'partial wheel profiles sweep real height');
+  assert.ok(sweptSize.z > 1.05, 'shafts, bodies, pin, and guide use real depth');
+  assert.ok(sweptBounds.min.x < -3.7);
+  assert.ok(sweptBounds.max.x > 2.2);
+  assert.ok(sweptBounds.min.y < -2.2);
+  assert.ok(sweptBounds.max.y > 2.2);
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
+    assert.doesNotMatch(object.userData.role ?? '', /frame|post|rail|foot|bearing|marker|radial-.*index|face-index/,
+      'Brown draws no stand, bearings or painted indexes');
   });
-  assert.ok(meshCount >= 30);
+  assert.equal(meshCount, 10);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x);
+  assert.ok(model.cameraDirection.z > model.cameraDirection.x * 6, 'near-front elevation like the plate');
 
   const movement210 = createMovementModel(catalog.movements[209]);
   const movement212 = createMovementModel(catalog.movements[211]);

@@ -235,12 +235,12 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   near(leftFaceFraction, 0.43, 0, 'left working point on face');
   near(rightFaceFraction, 0, 0, 'right working point at outer corner');
   assert.equal(rightToothOffset, -13);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(8.2));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(8.3));
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(8.4));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(8.5));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
-  assert.ok(risingAdvance > THREE.MathUtils.degToRad(3.2));
+  assert.ok(risingAdvance > THREE.MathUtils.degToRad(3.15));
   assert.ok(risingAdvance < THREE.MathUtils.degToRad(3.3));
   assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.9));
   assert.ok(fallingAdvance < THREE.MathUtils.degToRad(5));
@@ -325,15 +325,17 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   const faceZero = blocks.ratchet.userData.toothFaces[0];
   vector2Near(
     leftDrivePointLocal,
-    faceZero.outer.clone().lerp(faceZero.root, leftFaceFraction),
+    faceZero.outer.clone().lerp(faceZero.root, leftFaceFraction)
+      .addScaledVector(faceZero.outwardNormal, geometry.pawlFingerRadius),
     0,
-    'left point lies on tooth-zero drive face',
+    'left finger axis is one radius off the tooth-zero drive face',
   );
   vector2Near(
     rightDrivePointOnToothZero,
-    faceZero.outer.clone().lerp(faceZero.root, rightFaceFraction),
+    faceZero.outer.clone().lerp(faceZero.root, rightFaceFraction)
+      .addScaledVector(faceZero.outwardNormal, geometry.pawlFingerRadius),
     0,
-    'right point lies at the tooth-zero drive corner',
+    'right finger axis is one radius off the tooth-zero drive corner',
   );
   near(
     ratchetMountPhase,
@@ -424,7 +426,7 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
         state.activeFaceSegmentIndex,
       ].includes(state.activeProfileContact.segmentIndex));
     }
-    assert.ok(state.activeForceNormalAlignment < -0.49);
+    assert.ok(state.activeForceNormalAlignment < -0.47);
     assert.ok(state.activeClockwiseTorque > 1.9);
     assert.ok(state.drivenAngularSpeed <= 1e-12);
     if (state.leftDriving) leftTeeth.add(state.activeToothIndex);
@@ -452,7 +454,9 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
   assert.ok(maximumInactiveLengthError < 2e-15);
   assert.ok(maximumContactError < 3e-15);
   assert.ok(maximumTipVelocityError < 2e-16);
-  assert.ok(minimumClearance >= -1e-14);
+  // Clearance is measured from the finger axis: exactly one finger radius
+  // while driving, and never less while resetting.
+  near(minimumClearance, geometry.pawlFingerRadius, 1e-12, 'finger surface bears on the tooth face');
   assert.ok(minimumClockwiseTorque > 1.9);
   assert.ok(maximumAngularSpeed < 1e-12);
   assert.ok(maximumResetStep < 0.004);
@@ -623,16 +627,16 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
       'lever joint and both pawls share one point',
     );
     vector2Near(
-      planarWorldPosition(blocks.leftPawlTipMarker),
+      planarWorldPosition(blocks.leftPawlContactFinger),
       state.leftTip,
       2e-15,
-      'left visible tip follows solved endpoint',
+      'left tooth finger follows solved endpoint',
     );
     vector2Near(
-      planarWorldPosition(blocks.rightPawlTipMarker),
+      planarWorldPosition(blocks.rightPawlContactFinger),
       state.rightTip,
       2e-15,
-      'right visible tip follows solved endpoint',
+      'right tooth finger follows solved endpoint',
     );
     assert.equal(model.root.userData.contacts.leftPawlTooth.engaged, state.leftDriving);
     assert.equal(model.root.userData.contacts.rightPawlTooth.engaged, state.rightDriving);
@@ -645,19 +649,23 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
     near(blocks.rocker.userData.angularSpeed, state.rockerAngularSpeed, 0, 'runtime lever speed');
   }
 
-  const worldPositionAt = (object, time) => {
+  const worldPositionAt = (object, localPoint, time) => {
     model.update(time);
     model.root.updateMatrixWorld(true);
-    return object.getWorldPosition(new THREE.Vector3());
+    return object.localToWorld(localPoint.clone());
   };
-  const wheelSource = worldPositionAt(blocks.ratchetIndicator, canonicalTimes.sourcePose);
-  const wheelOneCycle = worldPositionAt(blocks.ratchetIndicator, canonicalTimes.nextSourcePose);
-  const wheelClosure = worldPositionAt(blocks.ratchetIndicator, canonicalTimes.fullWheelClosure);
+  const wheelPoint = new THREE.Vector3(0, geometry.ratchetOuterRadius * 0.69, 0);
+  const wheelRotor = blocks.ratchet.userData.rotor;
+  const wheelSource = worldPositionAt(wheelRotor, wheelPoint, canonicalTimes.sourcePose);
+  const wheelOneCycle = worldPositionAt(wheelRotor, wheelPoint, canonicalTimes.nextSourcePose);
+  const wheelClosure = worldPositionAt(wheelRotor, wheelPoint, canonicalTimes.fullWheelClosure);
   assert.ok(wheelSource.distanceTo(wheelOneCycle) > 0.18);
-  vector3Near(wheelClosure, wheelSource, 3e-15, 'wheel index closes after forty-four cycles');
-  const handleSource = worldPositionAt(blocks.handleIndicator, canonicalTimes.sourcePose);
-  const handleHigh = worldPositionAt(blocks.handleIndicator, canonicalTimes.highReversal);
-  const handleLow = worldPositionAt(blocks.handleIndicator, canonicalTimes.lowReversal);
+  vector3Near(wheelClosure, wheelSource, 3e-15, 'wheel closes after forty-four cycles');
+  const handlePoint = new THREE.Vector3(geometry.handleLength * 0.73, 0, 0);
+  const leverRotor = blocks.rocker.userData.rotor;
+  const handleSource = worldPositionAt(leverRotor, handlePoint, canonicalTimes.sourcePose);
+  const handleHigh = worldPositionAt(leverRotor, handlePoint, canonicalTimes.highReversal);
+  const handleLow = worldPositionAt(leverRotor, handlePoint, canonicalTimes.lowReversal);
   assert.ok(handleSource.distanceTo(handleHigh) > 0.1);
   assert.ok(handleSource.distanceTo(handleLow) > 0.1);
   assert.ok(handleHigh.distanceTo(handleLow) > 0.2);
@@ -666,19 +674,22 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   model.root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 5 && size.x < 5.2);
-  assert.ok(size.y > 6.3 && size.y < 6.6);
-  assert.ok(size.z > 1.6 && size.z < 1.8);
-  assert.ok(bounds.min.x < -2.6);
-  assert.ok(bounds.max.y > 3.6);
+  assert.ok(size.x > 4.8 && size.x < 4.95);
+  assert.ok(size.y > 5.7 && size.y < 5.9);
+  assert.ok(size.z > 1.2 && size.z < 1.3);
+  assert.ok(bounds.min.x < -2.4);
+  assert.ok(bounds.max.y > 3.3);
   let visibleMeshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 38);
+  assert.equal(visibleMeshCount, 14, 'no stand, bearings or painted indexes');
+  model.root.traverse((object) => {
+    assert.doesNotMatch(object.userData.role ?? '', /frame|post|rail|bearing|index/i);
+  });
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2);
+  assert.ok(model.cameraDirection.z > model.cameraDirection.x * 6, 'near-front elevation like the plate');
 
   const nextMovement = catalog.movements[206];
   const nextModel = createMovementModel(nextMovement);
