@@ -68,23 +68,26 @@ export function makePulley({
   grooves = 1,
   spokes = 4,
   axis = new THREE.Vector3(0, 0, 1),
+  bore = 0,
 } = {}) {
   const root = rotorRoot(axis);
   const rotor = root.userData.rotor;
   const material = matte(color);
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
+  const annulus = (inner, outer, length, segments) => new THREE.LatheGeometry([
+    new THREE.Vector2(inner, -length / 2),
+    new THREE.Vector2(outer, -length / 2),
+    new THREE.Vector2(outer, length / 2),
+    new THREE.Vector2(inner, length / 2),
+    new THREE.Vector2(inner, -length / 2),
+  ], segments);
 
   const spokeDepth = width * 0.62;
   const innerRadius = radius * 0.82;
   const rimGeometry = spokes > 0
-    ? new THREE.LatheGeometry([
-      new THREE.Vector2(innerRadius, -width / 2),
-      new THREE.Vector2(radius, -width / 2),
-      new THREE.Vector2(radius, width / 2),
-      new THREE.Vector2(innerRadius, width / 2),
-      new THREE.Vector2(innerRadius, -width / 2),
-    ], 80)
-    : new THREE.CylinderGeometry(radius, radius, width, 80);
+    ? annulus(innerRadius, radius, width, 80)
+    : bore > 0 ? annulus(bore, radius, width, 80)
+      : new THREE.CylinderGeometry(radius, radius, width, 80);
   const sheave = new THREE.Mesh(
     rimGeometry,
     material,
@@ -103,8 +106,12 @@ export function makePulley({
     rotor.add(rim);
   }
 
+  // A bored hub keeps a wall around its pin even on small sheaves.
+  const boredHubRadius = Math.max(radius * 0.26, bore + 0.03);
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.26, radius * 0.26, hubLength, 40),
+    bore > 0
+      ? annulus(bore, boredHubRadius, hubLength, 40)
+      : new THREE.CylinderGeometry(radius * 0.26, radius * 0.26, hubLength, 40),
     darkMaterial,
   );
   hub.rotation.x = Math.PI / 2;
@@ -140,17 +147,18 @@ export function makePulley({
   // Put the more legible index on both faces as well as the tread. The two
   // face marks remain visible from either side and make pulley ratios easy to
   // compare without waiting for a spoke to pass a particular angle.
+  const faceInner = bore > 0 ? Math.max(radius * 0.34, boredHubRadius + 0.005) : radius * 0.34;
   const faceIndicators = [-1, 1].map((side) => {
     const faceIndicator = new THREE.Mesh(
       new THREE.BoxGeometry(
-        radius * 0.42,
+        bore > 0 ? radius * 0.76 - faceInner : radius * 0.42,
         radius * 0.065,
         0.008,
       ),
       matte(PALETTE.white, { roughness: 0.5 }),
     );
     faceIndicator.position.set(
-      radius * 0.55,
+      bore > 0 ? (radius * 0.76 + faceInner) / 2 : radius * 0.55,
       0,
       side * ((spokes > 0 ? spokeDepth : width) / 2 + 0.004),
     );

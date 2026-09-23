@@ -78,6 +78,15 @@ function addAxle(root, position, length = 1.5, axis = Z_AXIS) {
   return shaft;
 }
 
+// A pulley keyed to its shaft turns the shaft with it, so the shaft is carried
+// by the pulley rotor rather than passing through an unbored rotating hub.
+function addKeyedShaft(pulley, length = 1.5, radius = 0.075) {
+  const shaft = makeShaft({ length, radius, color: PALETTE.ink });
+  shaft.userData.role = 'keyed-shaft';
+  pulley.userData.rotor.add(shaft);
+  return shaft;
+}
+
 function setBeltActive(belt, active) {
   belt.visible = active;
   belt.userData.active = active;
@@ -208,12 +217,11 @@ function simpleBeltTransmission(crossed = false) {
     crossed
       ? beltCurveCrossed(upperCenter, lowerCenter, radius, radius)
       : beltCurveOpen(upperCenter, lowerCenter, radius, radius),
-    { width: 0.18, thickness: 0.024, markerCount: 6 },
+    { width: 0.18, thickness: 0.024, markerCount: 0 },
   );
   root.add(driver, driven, belt);
-  addAxle(root, driver.position);
-  addAxle(root, driven.position);
-  addBackdropFrame(root, 3.4, 5.4);
+  addKeyedShaft(driver);
+  addKeyedShaft(driven);
   const angularSpeed = 1.55;
   const beltSpeed = angularSpeed * radius;
   root.userData.mechanism = crossed
@@ -251,8 +259,8 @@ function rightAngleGuides() {
   const driverRadius = 0.74;
   const guideRadius = 0.44;
   const driven = makePulley({ radius: drivenRadius - 0.012, width: 0.38, color: PALETTE.driven, axis: Z_AXIS });
-  const driver = makePulley({ radius: driverRadius - 0.012, width: 1.35, hubLength: 1.45,
-    spokes: 0, color: PALETTE.driver, axis: X_AXIS });
+  const driver = makePulley({ radius: driverRadius - 0.012, width: 1.55, hubLength: 1.65,
+    spokes: 0, grooves: 0, color: PALETTE.driver, axis: X_AXIS });
   driven.position.copy(drivenCenter);
   driver.position.copy(driverCenter);
 
@@ -352,15 +360,15 @@ function rightAngleGuides() {
   guideA.position.copy(firstGuide.center);
   guideB.position.copy(secondGuide.center);
   const belt = makeMovingBelt(beltCurve, {
-    width: 0.15, thickness: 0.024, markerCount: 6,
+    width: 0.15, thickness: 0.024, markerCount: 0,
     widthDirection: contactWidthDirection(beltCurve,
       [null, firstGuide.axis, null, X_AXIS, null, secondGuide.axis, null, Z_AXIS]),
   });
   root.add(driver, driven, guideA, guideB, belt);
-  addAxle(root, driver.position, 1.65, X_AXIS);
-  addAxle(root, driven.position, 1.45, Z_AXIS);
-  addAxle(root, guideA.position, 0.50, firstGuide.axis);
-  addAxle(root, guideB.position, 0.50, secondGuide.axis);
+  addKeyedShaft(driver, 1.85);
+  addKeyedShaft(driven, 1.45);
+  addKeyedShaft(guideA, 0.32);
+  addKeyedShaft(guideB, 0.32);
   root.userData.mechanism = 'right-angle-guide-pulley-drive';
   root.userData.blocks = { driver, driven, guideA, guideB, belt };
   root.userData.cameraFov = 18;
@@ -389,8 +397,8 @@ function rightAngleCrossed() {
   const root = new THREE.Group();
   const driverCenter = new THREE.Vector3(0, 2.1, 0);
   const drivenCenter = new THREE.Vector3(0, -2.55, 0);
-  const leftVertex = new THREE.Vector3(-2.65, drivenCenter.y, 0);
-  const rightVertex = new THREE.Vector3(2.65, drivenCenter.y, 0);
+  const leftVertex = new THREE.Vector3(-3.3, drivenCenter.y, 0);
+  const rightVertex = new THREE.Vector3(3.3, drivenCenter.y, 0);
   const driverRadius = 0.88;
   const drivenRadius = 0.58;
   const guideRadius = 0.48;
@@ -402,7 +410,7 @@ function rightAngleCrossed() {
   });
   const driven = makePulley({
     radius: drivenRadius - 0.05,
-    width: 0.72,
+    width: 0.5,
     color: PALETTE.driven,
     grooves: 1,
     axis: Y_AXIS,
@@ -461,7 +469,7 @@ function rightAngleCrossed() {
     drivenLeftTangent.clone().sub(drivenCenter),
     Y_AXIS,
     wrapSweep,
-    0.42,
+    0.30,
   );
   const driverArc = circularArcThrough(
     driverCenter,
@@ -481,12 +489,23 @@ function rightAngleCrossed() {
   };
   const wrapStart = drivenWrap.getPoint(0);
   const wrapEnd = drivenWrap.getPoint(1);
+  // The leaves bow apart axially where their projections cross.
+  const crossingParameters = (() => {
+    const p = driverLeftTangent;
+    const r = leftGuideContact.start.clone().sub(p);
+    const q = rightGuideContact.end;
+    const s = driverRightTangent.clone().sub(q);
+    const cross = (a, b) => a.x * b.y - a.y * b.x;
+    const d = q.clone().sub(p);
+    return [cross(d, s) / cross(r, s), cross(d, r) / cross(r, s)];
+  })();
   const beltCurve = new THREE.CurvePath();
   beltCurve.add(new BowedSpanCurve3(
     driverLeftTangent,
     leftGuideContact.start,
     0.22,
     Z_AXIS,
+    crossingParameters[0],
   ));
   beltCurve.add(leftGuideContact.arc);
   beltCurve.add(tangentTransition(
@@ -508,6 +527,7 @@ function rightAngleCrossed() {
     driverRightTangent,
     -0.22,
     Z_AXIS,
+    crossingParameters[1],
   ));
   beltCurve.add(driverArc);
 
@@ -527,12 +547,12 @@ function rightAngleCrossed() {
   });
   guideLeft.position.copy(leftGuideContact.center);
   guideRight.position.copy(rightGuideContact.center);
-  const belt = makeMovingBelt(beltCurve, { radius: 0.05, markerCount: 12 });
+  const belt = makeMovingBelt(beltCurve, { radius: 0.05, markerCount: 0 });
   root.add(driver, driven, guideLeft, guideRight, belt);
-  addAxle(root, driver.position, 1.5, Z_AXIS);
-  addAxle(root, driven.position, 1.15, Y_AXIS);
-  addAxle(root, guideLeft.position, 0.74, leftGuideContact.axis);
-  addAxle(root, guideRight.position, 0.74, rightGuideContact.axis);
+  addKeyedShaft(driver, 1.5);
+  addKeyedShaft(driven, 1.15);
+  addKeyedShaft(guideLeft, 0.74);
+  addKeyedShaft(guideRight, 0.74);
   root.userData.mechanism = 'crossed-right-angle-guide-drive';
   root.userData.drivenWrapTurns = Math.abs(wrapSweep) / (Math.PI * 2);
   root.userData.crossoverClearance = 0.44;
@@ -579,7 +599,7 @@ function tighteningPulley() {
   const halfThickness = 0.012;
   const driver = makePulley({ radius: driverRadius - halfThickness, color: PALETTE.driver });
   const driven = makePulley({ radius: drivenRadius - halfThickness, color: PALETTE.driven });
-  const idler = makePulley({ radius: idlerRadius - halfThickness, width: 0.26, spokes: 0, color: PALETTE.accent });
+  const idler = makePulley({ radius: idlerRadius - halfThickness, width: 0.26, spokes: 0, color: PALETTE.accent, bore: 0.082 });
   driver.position.copy(top).setZ(0);
   driven.position.copy(bottom).setZ(0);
   const pivot = new THREE.Vector3(-1.57, -0.78, -0.25);
@@ -663,14 +683,16 @@ function tighteningPulley() {
     previousPath = path;
     return path;
   };
-  const belt = makeDynamicMovingBelt(pathAt(1).curve, { width: 0.16, thickness: 2 * halfThickness, markerCount: 6 });
+  const belt = makeDynamicMovingBelt(pathAt(1).curve, { width: 0.16, thickness: 2 * halfThickness, markerCount: 0 });
   belt.userData.mechanismBelt = true;
   const arm = makeDynamicLink({ thickness: 0.085, depth: 0.12, color: PALETTE.frame, jointRadius: 0.085 });
   root.add(driver, driven, idler, belt, arm);
-  addAxle(root, driver.position, 0.85);
-  addAxle(root, driven.position, 0.75);
+  addKeyedShaft(driver, 0.85);
+  addKeyedShaft(driven, 0.75);
+  // Both pins belong to the rigid lever: the idler turns on its pin, and the
+  // lever turns with its pivot journal in the unshown bracket.
   const idlerPin = addAxle(root, sourceIdler.clone().setZ(-0.08), 0.62);
-  addAxle(root, pivot, 0.35);
+  const pivotPin = addAxle(root, pivot, 0.35);
   const driverAngularSpeed = 1.35;
   const phaseOffset = 4.5;
   const transmissionIntegral = (time) => {
@@ -707,6 +729,10 @@ function tighteningPulley() {
     idler.position.copy(path.center).setZ(0);
     idlerPin.position.copy(path.center).setZ(-0.08);
     arm.userData.setEndpoints(pivot, path.center.clone().setZ(pivot.z));
+    const armAngle = Math.atan2(path.center.y - pivot.y, path.center.x - pivot.x);
+    for (const joint of arm.children.slice(1)) joint.quaternion.copy(arm.children[0].quaternion);
+    setSpin(idlerPin, armAngle);
+    setSpin(pivotPin, armAngle);
     const beltSpeed = driverAngularSpeed * driverRadius * transmission;
     const beltDistance = driverAngularSpeed * driverRadius
       * (transmissionIntegral(time + phaseOffset) - transmissionIntegral(phaseOffset));
@@ -775,12 +801,10 @@ function oscillatingSector() {
   }
   const leftAttachmentLocal = new THREE.Vector3(-sectorRadius, 0, beltZ);
   const rightAttachmentLocal = new THREE.Vector3(sectorRadius, 0, beltZ);
-  const anchorMaterial = matte(PALETTE.white, { roughness: 0.5 });
-  const leftAnchor = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, 0.18), anchorMaterial);
-  const rightAnchor = leftAnchor.clone();
-  leftAnchor.position.copy(leftAttachmentLocal);
-  rightAnchor.position.copy(rightAttachmentLocal);
-  sector.add(sectorPlate, lever, hub, leftAnchor, rightAnchor);
+  const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 1.4, 22),
+    matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 }));
+  sectorShaft.rotation.x = Math.PI / 2;
+  sector.add(sectorPlate, lever, hub, sectorShaft);
   for (const x of [-2.2, 2.2]) {
     const grip = new THREE.Mesh(new THREE.SphereGeometry(0.115, 20, 12), matte(PALETTE.ink));
     grip.position.x = x;
@@ -862,16 +886,14 @@ function oscillatingSector() {
   const initialPath = makeBeltCurve(0);
   const belt = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
-    markerCount: 6,
+    markerCount: 0,
     width: 0.16,
     thickness: 0.024,
   });
   belt.userData.mechanismBelt = true;
   root.add(sector, leftPulley, rightPulley, belt);
-  addAxle(root, sectorPivot, 1.4);
-  addAxle(root, leftPulley.position, 1.2);
-  addAxle(root, rightPulley.position, 1.2);
-  addBackdropFrame(root, 5.4, 5.4);
+  addKeyedShaft(leftPulley, 1.2);
+  addKeyedShaft(rightPulley, 1.2);
   root.userData.mechanism = 'vibrating-sector-belt-drive';
   root.userData.nominalBeltLength = initialPath.curve.getLength();
   root.userData.blocks = { sector, sectorPlate, leftPulley, rightPulley, belt };
@@ -935,7 +957,10 @@ function reversingBevelDrive() {
   const roles = ['hollow-shaft-b', 'loose-neutral', 'inner-shaft-a'];
   const lowerColors = [PALETTE.driven, PALETTE.muted, PALETTE.accent];
 
-  const makeStackPulley = (y, level, color) => {
+  // B is keyed on the hollow sleeve; the loose middle pulley and A's pulley
+  // are bored for the inner shaft that passes through them.
+  const stackBores = [0.13, 0.085, 0.085];
+  const makeStackPulley = (y, level, color, bore) => {
     const pulley = makePulley({
       radius: pitchRadius - 0.012,
       width: 0.25,
@@ -944,6 +969,7 @@ function reversingBevelDrive() {
       grooves: 0,
       spokes: 0,
       axis: X_AXIS,
+      bore,
     });
     pulley.position.set(stackX + level, y, 0);
     return pulley;
@@ -955,7 +981,7 @@ function reversingBevelDrive() {
   driverDrum.position.set(stackX, upperY, 0);
   const driverPulleys = [driverDrum];
   const lowerPulleys = levels.map((level, index) => {
-    const pulley = makeStackPulley(lowerY, level, lowerColors[index]);
+    const pulley = makeStackPulley(lowerY, level, lowerColors[index], stackBores[index]);
     pulley.userData.role = roles[index];
     return pulley;
   });
@@ -967,7 +993,7 @@ function reversingBevelDrive() {
   const planarLower = new THREE.Vector2(0, lowerY);
   const belt = makeMovingBelt(
     beltCurveOpen(planarUpper, planarLower, pitchRadius, pitchRadius),
-    { width: 0.18, thickness: 0.024, markerCount: 6 },
+    { width: 0.18, thickness: 0.024, markerCount: 0 },
   );
   belt.userData.selectorBelt = true;
   belt.userData.active = true;
@@ -997,6 +1023,7 @@ function reversingBevelDrive() {
     teeth: 18,
     color: PALETTE.driven,
     axis: X_AXIS,
+    boreRadius: 0.085,
   });
   const outputGear = makeMiterGear({
     innerDistance: outputOuterDistance * 0.68,
@@ -1024,7 +1051,7 @@ function reversingBevelDrive() {
   innerShaft.position.set((rightPulleyX + 0.25 + innerShaftStart) / 2, lowerY, 0);
   innerShaft.userData.role = 'inner-shaft-a';
   const hollowStart = gearIntersection.x + sideOuterDistance * 0.68 - 0.1;
-  const hollowEnd = leftPulleyX + 0.25;
+  const hollowEnd = leftPulleyX + 0.135;
   const hollowLength = hollowEnd - hollowStart;
   const sleeveGeometry = new THREE.LatheGeometry([
     new THREE.Vector2(0.095, -hollowLength / 2),
@@ -1042,8 +1069,7 @@ function reversingBevelDrive() {
   hollowShaft.quaternion.setFromUnitVectors(Z_AXIS, X_AXIS);
   hollowShaft.position.set((hollowStart + hollowEnd) / 2, lowerY, 0);
   hollowShaft.userData.role = 'hollow-shaft-b';
-  const driverShaft = makeShaft({ length: 2.05, radius: 0.085, axis: X_AXIS });
-  driverShaft.position.set(stackX, upperY, 0);
+  addKeyedShaft(driverDrum, 2.05, 0.085);
   const outputShaft = makeShaft({ length: 2.295, radius: 0.09, axis: Y_AXIS });
   outputShaft.position.copy(gearIntersection).addScaledVector(Y_AXIS, 1.4475);
   outputShaft.userData.role = 'upright-output-shaft';
@@ -1057,7 +1083,6 @@ function reversingBevelDrive() {
     outputGear,
     innerShaft,
     hollowShaft,
-    driverShaft,
     outputShaft,
   );
 
@@ -1101,7 +1126,6 @@ function reversingBevelDrive() {
     outputAngle += outputAngularSpeed * stepDelta;
 
     driverPulleys.forEach((pulley) => setSpin(pulley, driverAngle));
-    setSpin(driverShaft, driverAngle);
     lowerPulleys.forEach((pulley, index) => setSpin(pulley, lowerAngles[index]));
     setSpin(hollowShaft, lowerAngles[0]);
     setSpin(gearB, lowerAngles[0] + Math.PI / 2);
@@ -1189,7 +1213,7 @@ function steppedSpeedDrive() {
     const z = (index - (radii.length - 1) / 2) * stepWidth;
     const belt = makeMovingBelt(
       beltCurveOpen(left, right, radius + halfThickness, oppositeRadius + halfThickness, z),
-      { width: 0.20, thickness: 2 * halfThickness, markerCount: 6 },
+      { width: 0.20, thickness: 2 * halfThickness, markerCount: 0 },
     );
     belt.userData.selectorBelt = true;
     belt.userData.level = index;
@@ -1197,8 +1221,8 @@ function steppedSpeedDrive() {
     return belt;
   });
   root.add(driver, driven);
-  addAxle(root, driver.position, 2.1);
-  addAxle(root, driven.position, 2.1);
+  addKeyedShaft(driver, 2.1);
+  addKeyedShaft(driven, 2.1);
   const shiftPeriod = 4.2;
   const rampFraction = 0.16;
   const rampTime = shiftPeriod * rampFraction;
@@ -1279,7 +1303,7 @@ function coneSpeedDrive(nonlinear = false) {
   const root = new THREE.Group();
   const left = new THREE.Vector2(-2.56, 0);
   const right = new THREE.Vector2(2.56, 0);
-  const length = nonlinear ? 2.9 : 2.5;
+  const length = 2.5;
   const beltOffset = 0.012;
   const beltWidth = 0.16;
   const profile = nonlinear ? 'concave' : 'linear';
@@ -1328,14 +1352,12 @@ function coneSpeedDrive(nonlinear = false) {
       const corners = sectionAt(u);
       return corners[1].clone().sub(corners[0]);
     },
-    markerCount: 6,
+    markerCount: 0,
   });
   belt.userData.selectorBelt = true;
   belt.userData.active = true;
   belt.userData.mechanismBelt = true;
   root.add(driver, driven, belt);
-  addAxle(root, driver.position, 3.4);
-  addAxle(root, driven.position, 3.4);
   let driverAngle = 0;
   let drivenAngle = 0;
   let beltDistance = 0;
@@ -1433,6 +1455,19 @@ function addCeiling(root, width = 4.8, y = 2.25) {
   ));
 }
 
+// Brown hangs a fixed sheave by an open hook from a staple under the hatched
+// ceiling. The staple links through the hook curl above the hanger shoulder.
+function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0 } = {}) {
+  const stapleY = shoulder + 0.433;
+  const staple = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 12, 40), matte(PALETTE.ink));
+  staple.rotation.y = Math.PI / 2;
+  staple.position.set(x, stapleY, 0);
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(width, 0.12, 0.55), matte(PALETTE.frame));
+  ceiling.position.set(x + offset, stapleY + 0.097 + 0.06, 0);
+  parent.add(staple, ceiling);
+  return { staple, ceiling, underside: stapleY + 0.097 };
+}
+
 function rightAngleWithoutGuides() {
   const root = new THREE.Group();
   const topCenter = new THREE.Vector3(-0.68, 2.25, 0);
@@ -1445,6 +1480,7 @@ function rightAngleWithoutGuides() {
     color: PALETTE.driver,
     axis: X_AXIS,
     spokes: 0,
+    grooves: 0,
   });
   const driven = makePulley({
     radius: bottomPitchRadius - 0.012,
@@ -1522,14 +1558,13 @@ function rightAngleWithoutGuides() {
   beltCurve.add(backSpan);
   beltCurve.add(topArc);
   const belt = makeMovingBelt(beltCurve, {
-    width: 0.16, thickness: 0.024, markerCount: 6,
+    width: 0.16, thickness: 0.024, markerCount: 0,
     widthDirection: contactWidthDirection(beltCurve, [null, Z_AXIS, null, X_AXIS]),
   });
   belt.userData.mechanismBelt = true;
   root.add(driver, driven, belt);
-  addAxle(root, driver.position, 2.15, X_AXIS);
-  addAxle(root, driven.position, 1.5, Z_AXIS);
-  baseRailForPulley(root);
+  addKeyedShaft(driver, 2.15);
+  addKeyedShaft(driven, 1.5);
   root.userData.mechanism = 'twisted-right-angle-belt-drive';
   root.userData.cameraFov = 18;
   root.userData.blocks = { driver, driven, belt };
@@ -1567,8 +1602,10 @@ function fixedHoist() {
   const pulley = makePulley({
     radius: pitchRadius - 0.042,
     width: 0.34,
+    hubLength: 0.46,
     color: PALETTE.driver,
     spokes: 0,
+    bore: 0.072,
   });
   pulley.position.copy(center);
   const weight = new THREE.Group();
@@ -1583,8 +1620,6 @@ function fixedHoist() {
   tie.position.y = 0.23;
   weight.add(bag, tie);
   markShadows(weight);
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.25, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -Math.PI / 4;
   const leftContactAngle = Math.PI * 0.75;
   const leftContact = center.clone().add(new THREE.Vector3(
     Math.cos(leftContactAngle) * pitchRadius,
@@ -1623,27 +1658,16 @@ function fixedHoist() {
   const initialPath = makeRopePath(0);
   const rope = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
-    markerCount: 7,
+    markerCount: 0,
     radius: 0.042,
   });
   rope.userData.mechanismRope = true;
-  root.add(pulley, rope, weight, handle);
-  const pin = addAxle(root, pulley.position, 0.74);
-  const suspension = new THREE.Group();
-  for (const z of [-0.32, 0.32]) {
-    suspension.add(makeBeam(new THREE.Vector3(0, center.y, z), new THREE.Vector3(0, 2.04, z),
-      { thickness: 0.075, depth: 0.065, color: PALETTE.ink }));
-  }
-  suspension.add(makeBeam(new THREE.Vector3(0, 2.04, -0.32), new THREE.Vector3(0, 2.04, 0.32),
-    { thickness: 0.075, depth: 0.075, color: PALETTE.ink }));
-  suspension.add(makeBeam(new THREE.Vector3(0, 2.04, 0), new THREE.Vector3(0, 2.32, 0),
-    { thickness: 0.075, depth: 0.075, color: PALETTE.ink }));
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 12, 48), matte(PALETTE.ink));
-  hook.position.set(0, 2.46, 0);
-  suspension.add(hook);
-  const support = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.55), matte(PALETTE.frame));
-  support.position.set(0, 2.72, 0);
-  suspension.add(support);
+  root.add(pulley, rope, weight);
+  const suspension = makeSheaveHanger({ radius: pitchRadius, width: 0.34, openHook: true });
+  suspension.position.copy(center);
+  const { pin } = suspension.userData;
+  const { staple: hook, ceiling: support } = addHookStaple(suspension,
+    pitchRadius + 0.15, { width: 2.4, offset: -0.2 });
   root.add(markShadows(suspension));
   root.userData.blocks = { pulley, rope, weight, suspension, pin, hook, support };
   root.userData.cameraFov = 18;
@@ -1664,7 +1688,6 @@ function fixedHoist() {
     const ropeSpeed = -motionSpeed;
     rope.userData.setCurve(path.curve);
     rope.userData.updateDistance(ropeTravel);
-    handle.position.copy(path.effortEnd);
     weight.position.copy(path.loadAttachment).add(new THREE.Vector3(0, -0.39, 0));
     setSpin(pulley, Math.sign(contactArc.sweep) * ropeTravel / pitchRadius);
     root.userData.attachments = {
@@ -1699,14 +1722,18 @@ function singleMovableHoist() {
   const fixedPulley = makePulley({
     radius: fixedPitchRadius - 0.04,
     width: 0.3,
+    hubLength: 0.42,
     color: PALETTE.driver,
     spokes: 0,
+    bore: 0.072,
   });
   const movablePulley = makePulley({
     radius: movablePitchRadius - 0.04,
     width: 0.32,
+    hubLength: 0.44,
     color: PALETTE.driven,
     spokes: 0,
+    bore: 0.072,
   });
   fixedPulley.position.copy(fixedCenter);
   movablePulley.position.copy(movableBase);
@@ -1726,9 +1753,11 @@ function singleMovableHoist() {
     Z_AXIS,
     effortDirection,
   );
+  const fixedShoulder = fixedPitchRadius + 0.15;
+  const ceilingUnderside = fixedCenter.y + fixedShoulder + 0.433 + 0.097;
   const anchor = new THREE.Vector3(
     movableBase.x + movablePitchRadius,
-    2.55,
+    ceilingUnderside - 0.17,
     ropeZ,
   );
   const baseEffortLength = 0.98;
@@ -1764,25 +1793,19 @@ function singleMovableHoist() {
   const initialPath = makeRopePath(0);
   const rope = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
-    markerCount: 8,
+    markerCount: 0,
     radius: 0.04,
   });
   rope.userData.mechanismRope = true;
   const weight = makeHoistLoad({ radius: 0.46, height: 0.62 });
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.16, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -Math.PI / 4;
-  const fixedHanger = makeSheaveHanger({ radius: fixedPitchRadius, width: 0.3 });
+  const fixedHanger = makeSheaveHanger({ radius: fixedPitchRadius, width: 0.3, openHook: true });
   fixedHanger.position.copy(fixedCenter);
+  const { ceiling: support } = addHookStaple(fixedHanger, fixedShoulder,
+    { width: 2.65, offset: 0.78 });
   const movableHanger = makeSheaveHanger({ radius: movablePitchRadius, width: 0.32, direction: -1 });
-  const support = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.12, 0.5), matte(PALETTE.frame));
-  support.position.set(0.2, 2.78, 0);
   const anchorEye = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.025, 12, 40), matte(PALETTE.ink));
   anchorEye.position.copy(anchor).add(new THREE.Vector3(0, 0.085, 0));
-  root.add(fixedPulley, movablePulley, rope, weight, handle, fixedHanger, movableHanger,
-    support, anchorEye);
-  root.add(makeBeam(new THREE.Vector3(fixedCenter.x, 2.68, 0),
-    new THREE.Vector3(fixedCenter.x, 2.74, 0),
-    { thickness: 0.05, depth: 0.05, color: PALETTE.ink }));
+  root.add(fixedPulley, movablePulley, rope, weight, fixedHanger, movableHanger, anchorEye);
   root.userData.blocks = { fixedPulley, movablePulley, fixedHanger, movableHanger,
     rope, weight, support, anchorEye };
   root.userData.cameraFov = 18;
@@ -1810,7 +1833,6 @@ function singleMovableHoist() {
     movableHanger.position.copy(movablePulley.position);
     weight.position.copy(movableHanger.position).add(movableHanger.userData.attachment)
       .add(new THREE.Vector3(0, -0.20, 0));
-    handle.position.copy(path.effortEnd);
     const fixedAngularSpeed = -Math.sign(fixedArc.sweep) * effortSpeed / fixedPitchRadius;
     const movableAngularSpeed = -loadSpeed / movablePitchRadius;
     setSpin(fixedPulley, -Math.sign(fixedArc.sweep) * effortTravel / fixedPitchRadius);
@@ -1917,6 +1939,7 @@ function blockAndTackle() {
       width: 0.22,
       color: PALETTE.driver,
       spokes: 0,
+      bore: 0.072,
     });
     pulley.position.z = z;
     topGroup.add(pulley);
@@ -1928,6 +1951,7 @@ function blockAndTackle() {
       width: 0.22,
       color: PALETTE.driven,
       spokes: 0,
+      bore: 0.072,
     });
     pulley.position.z = z;
     bottomGroup.add(pulley);
@@ -2039,10 +2063,9 @@ function blockAndTackle() {
     radius: 0.034,
   });
   rope.userData.mechanismRope = true;
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.14, 8, 16), matte(PALETTE.accent));
   const anchorPin = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.025, 12, 40), matte(PALETTE.ink));
   anchorPin.position.copy(anchor).add(new THREE.Vector3(0, 0.065, 0));
-  root.add(topGroup, bottomGroup, rope, handle, anchorPin);
+  root.add(topGroup, bottomGroup, rope, anchorPin);
   root.add(makeBeam(
     new THREE.Vector3(topX, topY + 0.455, levels[0]),
     anchorPin.position.clone(),
@@ -2075,7 +2098,6 @@ function blockAndTackle() {
     const effortSpeed = effortPerLoad * loadSpeed;
     bottomGroup.position.y = path.bottomY;
     rope.userData.setCurve(path.curve);
-    handle.position.copy(path.effortEnd);
     const bottomAngularSpeeds = [1, 3, 5].map((factor) => -factor * loadSpeed / pitchRadius);
     const topAngularSpeeds = [2, 4, 6].map((factor) => -factor * loadSpeed / pitchRadius);
     bottomPulleys.forEach((pulley, index) => {
@@ -2203,12 +2225,14 @@ function compensatedMovableDrive() {
     width: 0.18,
     color: PALETTE.accent,
     spokes: 0,
+    bore: 0.082,
   });
   const compensatorFront = makePulley({
     radius: compensatorRadius - 0.045,
     width: 0.18,
     color: PALETTE.accent,
     spokes: 0,
+    bore: 0.082,
   });
   driver.position.set(driverCenter.x, driverCenter.y, 0);
   movable.position.set(movableBase.x, movableBase.y, 0);
@@ -2414,6 +2438,7 @@ function compensatedMovableDrive() {
       width: 0.2,
       color: PALETTE.muted,
       spokes: 0,
+      bore: 0.082,
     });
     guide.position.copy(center);
     return guide;
@@ -2480,8 +2505,8 @@ function compensatedMovableDrive() {
     suspension,
     weight,
   );
-  const driverAxle = addAxle(root, driver.position, 0.80);
-  const movableAxle = addAxle(root, movable.position, 0.80);
+  const driverAxle = addKeyedShaft(driver, 0.80);
+  const movableAxle = addKeyedShaft(movable, 0.80);
   const compensatorAxle = addAxle(
     root,
     new THREE.Vector3(compensatorBase.x, compensatorBase.y, 0.07),
@@ -2536,7 +2561,6 @@ function compensatedMovableDrive() {
     const beltDistance = time * beltSpeed;
 
     movable.position.y = movableY;
-    movableAxle.position.y = movableY;
     compensatorRear.position.y = compensatorY;
     compensatorFront.position.y = compensatorY;
     compensatorAxle.position.y = compensatorY;

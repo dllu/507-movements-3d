@@ -8,7 +8,7 @@ export function makeHoistBlock({ radius, color, ropeRadius = 0.032, width = 0.24
   upperEyeZ = null, upperEyeScale = 1, lowerEyeZ = null, lowerEyeScale = 1,
   pinBecketZ = null, lowerHook = false, lowerHookScale = 1 }) {
   const block = makePulley({ radius: radius - ropeRadius, width,
-    hubLength: Math.min(width * 1.45, width + 0.13), color, spokes: 0 });
+    hubLength: Math.min(width * 1.45, width + 0.13), color, spokes: 0, bore: 0.072 });
   const frame = new THREE.Group();
   const cheekZ = width / 2 + 0.105;
   const pinMin = Math.min(-cheekZ - 0.055, pinBecketZ === null ? 0 : pinBecketZ - 0.04);

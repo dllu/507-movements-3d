@@ -16,6 +16,7 @@ export function whitePulleys() {
   const bottomPitchRadii = bottomFactors.map((factor) => factor * basePitchRadius);
   const ropeRadius = 0.028;
   const stepWidth = 0.2;
+  const boreRadius = 0.072;
   const levels = [stepWidth, 0, -stepWidth];
   const compound = (radii, color) => {
     const pulley = makeSteppedPulley({
@@ -27,7 +28,7 @@ export function whitePulleys() {
       const grooveClearance = 0.02;
       const grooveRadius = ropeRadius + grooveClearance;
       const outerRadius = radius + grooveClearance + 0.004;
-      const profile = [new THREE.Vector2(0, -stepWidth / 2),
+      const profile = [new THREE.Vector2(boreRadius, -stepWidth / 2),
         new THREE.Vector2(outerRadius - 0.012, -stepWidth / 2),
         new THREE.Vector2(outerRadius, -stepWidth / 2), new THREE.Vector2(outerRadius, -0.065)];
       for (let sample = 0; sample <= 64; sample += 1) {
@@ -36,9 +37,11 @@ export function whitePulleys() {
       }
       profile.push(new THREE.Vector2(outerRadius, 0.065),
         new THREE.Vector2(outerRadius, stepWidth / 2),
-        new THREE.Vector2(outerRadius - 0.012, stepWidth / 2), new THREE.Vector2(0, stepWidth / 2));
+        new THREE.Vector2(outerRadius - 0.012, stepWidth / 2), new THREE.Vector2(boreRadius, stepWidth / 2),
+        new THREE.Vector2(boreRadius, -stepWidth / 2));
       // The groove is part of one closed solid, avoiding coincident black
       // torus/cylinder surfaces and their mottled shading at the visible rim.
+      // The bore clears the hanger's fixed pin, on which the compound turns.
       step.geometry.dispose();
       step.geometry = new THREE.LatheGeometry(profile, 96);
       const caps = [];
@@ -46,7 +49,7 @@ export function whitePulleys() {
       const indices = step.geometry.index.array;
       for (let sector = 0; sector < 96; sector += 1) {
         for (let face = 0; face < profile.length - 1; face += 1) {
-          const group = face === 0 || face === profile.length - 2 ? caps : runningFaces;
+          const group = face === 0 || face >= profile.length - 3 ? caps : runningFaces;
           const start = (sector * (profile.length - 1) + face) * 6;
           for (let i = start; i < start + 6; i += 1) group.push(indices[i]);
         }
@@ -57,6 +60,14 @@ export function whitePulleys() {
       step.material = [step.material, matte(PALETTE.ink)];
       step.userData.pitchRadius = radius;
     });
+    for (const indicator of pulley.userData.rotor.children) {
+      if (steps.includes(indicator)) continue;
+      const length = indicator.geometry.parameters.width;
+      const inner = boreRadius + 0.012;
+      const outer = Math.max(length, inner + 0.6 * (length / 0.7 - inner));
+      indicator.scale.x = (outer - inner) / length;
+      indicator.position.x = (outer + inner) / 2;
+    }
     pulley.userData.groovedSteps = steps;
     return pulley;
   };
@@ -117,9 +128,7 @@ export function whitePulleys() {
   const nominalRopeLength = initialPath.curve.getLength();
   const rope = makeDynamicMovingBelt(initialPath.curve, { closed: false, radius: ropeRadius, markerCount: 0 });
   rope.userData.mechanismRope = true;
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.12, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -0.12;
-  root.add(top, bottom, topHanger, bottomHanger, rope, handle);
+  root.add(top, bottom, topHanger, bottomHanger, rope);
   root.userData.mechanism = 'whites-six-part-pulley';
   root.userData.cameraFov = 18;
   root.userData.nominalRopeLength = nominalRopeLength;
@@ -144,7 +153,6 @@ export function whitePulleys() {
     bottom.position.y = path.bottomY;
     bottomHanger.position.copy(bottom.position);
     rope.userData.setCurve(path.curve);
-    handle.position.copy(path.effortEnd);
     setSpin(top, travel / basePitchRadius);
     setSpin(bottom, travel / basePitchRadius);
     root.userData.attachments = { anchor: anchor.clone(), effort: path.effortEnd,

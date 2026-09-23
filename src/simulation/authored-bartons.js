@@ -96,9 +96,7 @@ function spanishBarton(nominalAdvantage) {
   secondary.userData.mechanismRope = true;
   primary.userData.ropeStage = five ? 'primary' : 'hauling';
   secondary.userData.ropeStage = five ? 'secondary' : 'interblock';
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.16, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = five ? 0.30 : 0;
-  root.add(primary, secondary, handle);
+  root.add(primary, secondary);
   const contactDefinitions = {
     load: { rope: 'primary', index: 1 },
     fixed: { rope: five ? 'primary' : 'secondary', index: five ? 3 : 1 },
@@ -115,7 +113,7 @@ function spanishBarton(nominalAdvantage) {
   root.userData.ropes = five ? { primary, secondary } : { hauling: primary, interblock: secondary };
   root.userData.nominalRopeLengths = five ? nominalRopeLengths
     : { hauling: nominalRopeLengths.primary, interblock: nominalRopeLengths.secondary };
-  root.userData.blocks = { fixed, load, carrier, weight, ceiling, anchorEye, handle };
+  root.userData.blocks = { fixed, load, carrier, weight, ceiling, anchorEye };
   root.userData.contactDefinitions = contactDefinitions;
   root.userData.geometry = { radius, fixedY, loadBaseY, carrierBaseY, loadX, carrierX, fixedX,
     planeSeparation, effortDirection: effortDirection.clone() };
@@ -142,7 +140,6 @@ function spanishBarton(nominalAdvantage) {
     weight.position.copy(load.position).add(load.userData.lowerAttachment).add(new THREE.Vector3(0, -0.20, 0));
     primary.userData.setCurve(path.primary);
     secondary.userData.setCurve(path.secondary);
-    handle.position.copy(path.effort);
     const haulPerLoad = effortDerivative.dot(effortDirection);
     const becketVerticalFraction = path.carrierArc.getTangent(0).y;
     const primaryTensionOverEffort = five ? becketVerticalFraction - effortDirection.y : 1;

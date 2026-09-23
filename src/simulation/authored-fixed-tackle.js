@@ -8,7 +8,7 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 export function twoFixedOneMovable() {
   const root = new THREE.Group();
   const upperRadius = 0.48;
-  const lowerFixedRadius = 0.30;
+  const lowerFixedRadius = 0.32;
   const movableRadius = 0.36;
   const upperY = 1.85;
   const lowerFixedY = 0.78;
@@ -36,9 +36,7 @@ export function twoFixedOneMovable() {
   const mountingStem = makeBeam(upperFixed.position.clone().add(upperFixed.userData.upperAttachment),
     new THREE.Vector3(upperX, 2.75, 0), { thickness: 0.055, depth: 0.055, color: PALETTE.ink });
   const weight = makeHoistLoad({ radius: 0.31, height: 0.48 });
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.14, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -0.32;
-  root.add(upperFixed, lowerFixed, movable, support, mountingStem, weight, handle);
+  root.add(upperFixed, lowerFixed, movable, support, mountingStem, weight);
   const effortDirection = new THREE.Vector3(-Math.sin(0.32), -Math.cos(0.32), 0);
   const upperExit = upperFixed.position.clone().add(new THREE.Vector3(
     -Math.cos(0.32) * upperRadius, Math.sin(0.32) * upperRadius, 0));
@@ -87,7 +85,7 @@ export function twoFixedOneMovable() {
   root.userData.nominalRopeLength = nominalRopeLength;
   root.userData.pulleys = { upperFixed, lowerFixed, movable };
   root.userData.ropes = { rope };
-  root.userData.blocks = { upperFixed, lowerFixed, movable, weight, support, handle, rope, links };
+  root.userData.blocks = { upperFixed, lowerFixed, movable, weight, support, rope, links };
   root.userData.contactDefinitions = definitions;
   root.userData.geometry = { upperRadius, lowerFixedRadius, movableRadius, becketZ, movableBaseY,
     effortDirection: effortDirection.clone() };
@@ -112,7 +110,6 @@ export function twoFixedOneMovable() {
     movable.position.copy(path.movableCenter);
     weight.position.copy(movable.position).add(movable.userData.lowerAttachment).add(new THREE.Vector3(0, -0.2, 0));
     rope.userData.setCurve(path.curve);
-    handle.position.copy(path.effort);
     const haulPerLoad = effortDerivative.dot(effortDirection);
     const becketVerticalFraction = path.becketSpan.getTangent(0).y;
     root.userData.attachments = { effort: path.effort, load: path.movableCenter, loadBecket: path.becket };

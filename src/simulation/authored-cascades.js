@@ -53,9 +53,7 @@ function loadAnchoredCascade(id) {
   support.position.set(fixed.position.x, ceilingY, 0);
   const stem = makeBeam(upperAttachment, new THREE.Vector3(fixed.position.x, ceilingY - 0.04, 0),
     { thickness: 0.055, depth: 0.055, color: PALETTE.ink });
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.14, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -angle;
-  root.add(load, support, stem, handle);
+  root.add(load, support, stem);
 
   const pathsAt = (travel) => upperPulleys.map((pulley, index) => {
     const center = new THREE.Vector3(xs[index], baseYs[index] + factors[index] * travel, 0);
@@ -97,7 +95,7 @@ function loadAnchoredCascade(id) {
   root.userData.nominalRopeLengths = initialPaths.map((path) => path.curve.getLength());
   root.userData.pulleys = Object.fromEntries(upperPulleys.map((pulley, index) => [`upper${index}`, pulley]));
   root.userData.ropes = ropes;
-  root.userData.blocks = { upperPulleys, load, loadAnchorPins: eyes, support, handle };
+  root.userData.blocks = { upperPulleys, load, loadAnchorPins: eyes, support };
   root.userData.contactDefinitions = definitions;
   root.userData.geometry = { effortDirection: effortDirection.clone(), anchorLift };
   const update = (time) => {
@@ -113,7 +111,6 @@ function loadAnchoredCascade(id) {
       setSpin(upperPulleys[index], rotationFromContact(paths[index].curve, 1, radii[index], definition.initial));
       ropes[index].userData.setCurve(paths[index].curve);
     }
-    handle.position.copy(paths[0].end);
     root.userData.attachments = { effort: paths[0].end, load: new THREE.Vector3(centerX, load.position.y, 0),
       stageStarts: paths.map((path) => path.start), stageEnds: paths.map((path) => path.end) };
     root.userData.contacts = paths.map((path, index) => ({ upperArc: path.upperArc, radius: radii[index] }));
@@ -179,9 +176,7 @@ export function sixPulleyCascade() {
     { thickness: 0.055, depth: 0.055, color: PALETTE.ink });
   const angle = 0.36;
   const effortDirection = new THREE.Vector3(-Math.sin(angle), -Math.cos(angle), 0);
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.14, 8, 16), matte(PALETTE.accent));
-  handle.rotation.z = -angle;
-  root.add(load, support, stem, handle);
+  root.add(load, support, stem);
   const pathsAt = (travel) => upperPulleys.map((pulley, index) => {
     const upperCenter = new THREE.Vector3(xs[index], baseYs[index] + factors[index] * travel, 0);
     const lowerCenter = lowerPulleys[index].position.clone().add(new THREE.Vector3(0, loadBaseY + travel, 0));
@@ -232,7 +227,7 @@ export function sixPulleyCascade() {
   root.userData.pulleys = pulleys;
   root.userData.ropes = ropes;
   root.userData.contactDefinitions = definitions;
-  root.userData.blocks = { load, upperPulleys, lowerPulleys, weight, loadAnchorPins: eyes, support, handle };
+  root.userData.blocks = { load, upperPulleys, lowerPulleys, weight, loadAnchorPins: eyes, support };
   root.userData.nominalRopeLengths = initial.map((path) => path.curve.getLength());
   root.userData.geometry = { effortDirection: effortDirection.clone() };
   const update = (time) => {
@@ -246,7 +241,6 @@ export function sixPulleyCascade() {
         definition.radius, definition.initial));
     }
     ropes.forEach((rope, index) => rope.userData.setCurve(paths[index].curve));
-    handle.position.copy(paths[0].end);
     root.userData.attachments = { effort: paths[0].end, load: new THREE.Vector3(centerX, load.position.y, 0),
       stageStarts: paths.map((path) => path.start), stageEnds: paths.map((path) => path.end) };
     root.userData.contacts = paths.map((path, index) => ({ lowerArc: path.lowerArc, upperArc: path.upperArc,
@@ -300,8 +294,7 @@ export function ceilingAnchoredEightToOneCascade() {
     return eye;
   });
   const weight = makeHoistLoad({ radius: 0.56, height: 0.5 });
-  const handle = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.14, 8, 16), matte(PALETTE.accent));
-  root.add(guide, support, stem, weight, handle);
+  root.add(guide, support, stem, weight);
   const pathsAt = (travel) => movingPulleys.map((pulley, index) => {
     const center = new THREE.Vector3(xs[index], baseYs[index] + factors[index] * travel, 0);
     const left = center.clone().add(new THREE.Vector3(-movingRadius, 0, 0));
@@ -344,7 +337,7 @@ export function ceilingAnchoredEightToOneCascade() {
   root.userData.cameraFov = 18;
   root.userData.pulleys = pulleys;
   root.userData.ropes = ropes;
-  root.userData.blocks = { movingPulleys, guide, weight, anchorPins, support, handle };
+  root.userData.blocks = { movingPulleys, guide, weight, anchorPins, support };
   root.userData.contactDefinitions = definitions;
   root.userData.nominalRopeLengths = initial.map((path) => path.curve.getLength());
   root.userData.geometry = { effortDirection: new THREE.Vector3(0, -1, 0) };
@@ -358,7 +351,6 @@ export function ceilingAnchoredEightToOneCascade() {
         definition.radius, definition.initial));
     }
     ropes.forEach((rope, index) => rope.userData.setCurve(paths[index].curve));
-    handle.position.copy(paths[2].end);
     weight.position.copy(movingPulleys[0].position).add(movingPulleys[0].userData.lowerAttachment)
       .add(new THREE.Vector3(0, -0.2, 0));
     root.userData.attachments = { anchors: paths.map((path) => path.anchor), effort: paths[2].end,

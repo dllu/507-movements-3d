@@ -6,171 +6,196 @@
     {
       "id": 1,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Scoped actual band/tread/flange checks pass; not a whole-assembly continuous proof. Pass-49 relative-motion screen reports 0.012 solid overlap (root/BufferGeometry x root/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Scoped actual band/tread/flange checks pass; not a whole-assembly continuous proof. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Prescribed no-slip band; elastic tension and friction are not solved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 2,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Scoped actual band/tread/flange checks pass; not a whole-assembly continuous proof. Pass-49 relative-motion screen reports 0.012 solid overlap (root/BufferGeometry x root/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Scoped actual band/tread/flange checks pass; not a whole-assembly continuous proof. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Prescribed crossed-band motion; elastic tension and friction are not solved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 3,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Finite guide separation and ribbon checks pass; free ribbon elasticity unqualified. Pass-49 relative-motion screen reports 0.0165 solid overlap (root/BufferGeometry x root/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Finite guide separation and ribbon checks pass; free ribbon elasticity unqualified. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
-      "flaws": "Twisted free ribbon leaves are geometric shapes, not solved elastic equilibrium.",
+      "flaws": "The weight drum reads large in perspective. Twisted free ribbon leaves are geometric shapes, not solved elastic equilibrium.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 4,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Former intermediate flange/winding interference corrected; documented scoped rope/flange checks. Pass-49 relative-motion screen reports 0.0476 solid overlap (root/TubeGeometry x root/CylinderGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Former intermediate flange/winding interference corrected; documented scoped rope/flange checks. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Helical capstan winding still needs an axial-slip/friction review.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 5,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Finite idler wrap and band/flange checks pass; illustrative slack dynamics separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Finite idler wrap and band/flange checks pass; illustrative slack dynamics separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Slack buckle and engagement ramp are illustrative; no coupled belt mass/friction model.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 6,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Sector crossover and band/flange clearances checked at sampled poses."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Sector crossover and band/flange clearances checked at sampled poses. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
-      "flaws": "Prescribed sector/band transfer; belt force and compliance are idealized.",
+      "flaws": "Belt ends are buried 0.07 in the lever bar where they attach. Prescribed sector/band transfer; belt force and compliance are idealized.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 7,
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "unknown",
-        "evidence": "docs/review-progress.md",
-        "note": "Band/pulley clearance documented, but the complete shifted bevel/contact phases remain explicitly unreviewed."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Band/pulley clearance documented, but the complete shifted bevel/contact phases remain explicitly unreviewed. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Vertical shaft C has no visible support. Selector transition slip and torque use engagement weights; loaded shifting remains unqualified.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -182,121 +207,138 @@
     {
       "id": 8,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Working band clears step surfaces; shoulders are crossed only during stopped reconfiguration. Pass-49 relative-motion screen reports 0.0119 solid overlap (root/BufferGeometry x root/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Working band clears step surfaces; shoulders are crossed only during stopped reconfiguration. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Steps are reselected at rest; manual re-reeving over shoulders is not simulated.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 9,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Finite cone-edge/band checks documented; elastic tracking not established."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Finite cone-edge/band checks documented; elastic tracking not established. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Opposed cones retain small belt-length variation; shifting tension is not solved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 10,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Finite cone-edge/band checks documented; elastic tracking not established."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Finite cone-edge/band checks documented; elastic tracking not established. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Opposed curved cones retain small belt-length variation; shifting tension is not solved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 11,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Quarter-turn band geometry checked; no blanket full assembly claim. Pass-49 relative-motion screen reports 0.0113 solid overlap (root/BufferGeometry x root/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Quarter-turn band geometry checked; no blanket full assembly claim. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Quarter-turn ribbon shape is reconstructed, not solved elastic equilibrium.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 12,
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "unknown",
-        "evidence": "docs/review-progress.md",
-        "note": "Source/hardware and frame changes documented; no sufficiently specific whole-interface finite audit found."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Source/hardware and frame changes documented; no sufficiently specific whole-interface finite audit found. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
-      "flaws": "Source hand replaced by a schematic grip. Effort grip is schematic and the source hand is omitted; loaded rope dynamics are unverified.",
+      "flaws": "Brown’s hand is not modelled; the free rope end hangs loose. Loaded rope dynamics are unverified.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -308,266 +350,310 @@
     {
       "id": 13,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal rope/sheave motion; elasticity, friction and unrestricted load swinging are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 14,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Finite fleet angles make nominal parallel-strand ratios approximate; elastic rope contact is unsolved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 15,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
-      "flaws": "Source says seven supporting parts, reconstructed topology has six; retained contact-speed error is below 3% in tested poses.",
+      "flaws": "The rope cuts 0.031 into a groove edge where it leaves at an angle. Source says seven supporting parts, reconstructed topology has six; retained contact-speed error is below 3% in tested poses.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 16,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 17,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 18,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 19,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 20,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 21,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 22,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 23,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Actual belt/rope meshes clear all six sheave bodies/flanges in 32 poses; other pairings not exhaustively certified."
+        "evidence": "docs/belts-1-23-review.md",
+        "note": "Actual belt/rope meshes clear all six sheave bodies/flanges in 32 poses; other pairings not exhaustively certified. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
       "flaws": "Two independently rotating A sheaves are inferred; helical wraps retain axial sliding and approximate circumferential tracking.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/belts-1-23-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 24,

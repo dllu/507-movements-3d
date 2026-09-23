@@ -191,12 +191,21 @@ test('sector-band material advances once with wrap transfer and has clearance at
   const model = modelFor(6);
   model.update(0);
   const { belt } = model.root.userData.blocks;
-  const marker = belt.children.find((child) => child.userData.isFlowMarker && child.position.y < -2.45 && Math.abs(child.position.x) < 1.4);
-  assert.ok(marker, 'a material stripe is on the straight lower leaf');
-  const before = marker.position.clone();
+  // The band ends are fixed to the sector, so arc length from the first
+  // anchor is a material coordinate even though no flow stripes are drawn.
+  const materialPoint = (s) => belt.userData.curve.getPointAt(s / belt.userData.curve.getLength());
+  const length = belt.userData.curve.getLength();
+  let material = null;
+  for (let i = 0; i <= 400 && material === null; i += 1) {
+    const point = materialPoint(length * i / 400);
+    if (point.y < -2.45 && Math.abs(point.x) < 1.4) material = length * i / 400;
+  }
+  assert.ok(material !== null, 'a material point is on the straight lower leaf');
+  const before = materialPoint(material);
   const speed = model.root.userData.kinematics.beltSpeed;
   model.update(0.0001);
-  assert.ok(Math.abs(marker.position.distanceTo(before) / 0.0001 - speed) < 0.001);
+  assert.ok(Math.abs(belt.userData.curve.getLength() - length) < 1e-9);
+  assert.ok(Math.abs(materialPoint(material).distanceTo(before) / 0.0001 - speed) < 0.001);
   const outgoing = belt.userData.curve.curves[1];
   const returning = belt.userData.curve.curves[5];
   const a = outgoing.getPoint(outgoing.peak);

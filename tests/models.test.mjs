@@ -513,22 +513,21 @@ test('movement 8 renders one belt and obeys the active pulley ratio', () => {
     assert.ok(Math.abs(Math.abs(state.beltSpeed) - Math.abs(state.drivenAngularSpeed) * state.drivenRadius) < 1e-10);
   }
 
-  // A marker advances by physical distance, not by the local parameter of a
-  // line or pulley arc.  Sampling every join permanently guards against the
-  // visible speed jump that occurs when a marker is parameterized per segment.
+  // Band material advances by physical distance, not by the local parameter
+  // of a line or pulley arc.  The source draws no flow stripes, so the
+  // arc-length parameterization they would follow is sampled directly.
   const selectorBelts = model.root.children.filter(
     (child) => child.userData.selectorBelt,
   );
   for (const [beltIndex, belt] of selectorBelts.entries()) {
-    const marker = belt.children[1];
+    assert.equal(belt.children.filter((child) => child.userData.isFlowMarker).length, 0);
     const sampleCount = 4096;
     const expectedStep = belt.userData.length / sampleCount;
     let previous = null;
     let minimumStep = Infinity;
     let maximumStep = 0;
     for (let index = 0; index <= sampleCount; index += 1) {
-      belt.userData.update(index / sampleCount);
-      const current = marker.position.clone();
+      const current = belt.userData.curve.getPointAt(index / sampleCount);
       if (previous) {
         const step = current.distanceTo(previous);
         minimumStep = Math.min(minimumStep, step);
