@@ -11861,7 +11861,7 @@
         "evidence": "src/simulation/authored-capstan-wheelwork.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 413,
@@ -11910,7 +11910,7 @@
         "evidence": "src/simulation/authored-scroll-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 415,
@@ -13905,7 +13905,7 @@
         "evidence": "src/simulation/authored-entwistle-gearing.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 496,
@@ -14110,7 +14110,7 @@
         "evidence": "src/simulation/authored-epicyclic-trains.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 504,
@@ -14138,7 +14138,7 @@
         "evidence": "src/simulation/authored-epicyclic-trains.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 505,
