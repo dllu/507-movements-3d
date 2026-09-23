@@ -79,7 +79,7 @@ test('039 actual involute flanks remain engaged and clear while the planet rocks
 
 test('039 has clear carrier bores and separate planes for the flywheel, gears, rod and arm', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft, sunShaft } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   const initialRodTransform = new THREE.Matrix4();
   for (let sample = 0; sample < 65; sample += 1) {
@@ -94,8 +94,12 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
     const armBounds = new THREE.Box3().setFromObject(arm);
     const rodBounds = new THREE.Box3().setFromObject(connectingRod);
     const bossBounds = new THREE.Box3().setFromObject(rodBoss);
-    assert.ok(armBounds.min.z - rodBounds.max.z > 0.0299, 'the arm sweeps in front of the rod');
-    assert.ok(armBounds.min.z - bossBounds.max.z > 0.0099, 'the arm clears the planet/rod attachment boss');
+    // The rod crosses the sun axis once per orbit, so it must run outboard
+    // of the arm and of the sun-shaft end on which the arm pivots.
+    assert.ok(rodBounds.min.z - armBounds.max.z > 0.0149, 'the rod sweeps in front of the arm');
+    assert.ok(bossBounds.min.z - armBounds.max.z > 0.0099, 'the arm clears the planet/rod attachment boss');
+    assert.ok(rodBounds.min.z - new THREE.Box3().setFromObject(sunShaft).max.z > 0.0199,
+      'the sun shaft ends inside the arm, behind the rod');
     assert.ok(rodBounds.min.z - new THREE.Box3().setFromObject(sun.userData.flange).max.z > 0.0149,
       'the inclined rod passes in front of the rotating sun flange');
     for (const x of [0, g.centerDistance]) {
@@ -103,7 +107,7 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
         // Probe face interiors; an exact polygon vertex can fall between
         // two floating-point ray/triangle edge tests.
         const angle = 2 * Math.PI * (ray + 0.317) / 16;
-        const origin = new THREE.Vector3(x, 0, 0.32).applyMatrix4(carrier.matrixWorld);
+        const origin = new THREE.Vector3(x, 0, 0.205).applyMatrix4(carrier.matrixWorld);
         const direction = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0).transformDirection(carrier.matrixWorld);
         const hits = new THREE.Raycaster(origin, direction, 0, 0.3).intersectObject(arm, false);
         assert.ok(hits.length > 0 && hits[0].distance - g.axleRadius > 0.0059,
@@ -118,5 +122,29 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
     }
   }
   assert.equal(flywheel.geometry.parameters.shapes.holes.length, 4,
-    'the rim, hub and four tapered spokes are one solid with four real openings');
+    'the recessed web is one solid with four real radial slits');
+});
+
+test('039 flywheel web is parted by four narrow slits, not opened into thin spokes', () => {
+  const model = createMovementModel(catalog.movements[38]);
+  const { flywheel, flywheelRim } = model.root.userData.blocks;
+  const g = model.root.userData.geometry;
+  const slitArea = (hole) => Math.abs(THREE.ShapeUtils.area(hole.getPoints(48)));
+  const webArea = Math.PI * (g.flywheelInnerRadius ** 2 - g.flywheelHubRadius ** 2);
+  const openArea = flywheel.geometry.parameters.shapes.holes.reduce((sum, hole) => sum + slitArea(hole), 0);
+  assert.ok(openArea / webArea < 0.12, `plate 39 web is mostly solid (open fraction ${openArea / webArea})`);
+  // Negative control: the replaced four-spoke web left most of the annulus open.
+  const spokeHalfAngle = Math.asin(0.085 / g.flywheelInnerRadius);
+  const oldOpenFraction = 1 - 4 * 2 * spokeHalfAngle / (2 * Math.PI);
+  assert.ok(oldOpenFraction > 0.8);
+  const rimBounds = new THREE.Box3().setFromObject(flywheelRim);
+  const webBounds = new THREE.Box3().setFromObject(flywheel);
+  assert.ok(rimBounds.max.z - webBounds.max.z > 0.035, 'the web is recessed behind the rim face');
+  for (const hole of flywheel.geometry.parameters.shapes.holes) {
+    const radii = hole.getPoints(48).map((point) => point.length());
+    assert.ok(Math.max(...radii) <= g.flywheelInnerRadius + 1e-9, 'each slit stops at the continuous rim');
+    const innerEnd = Math.min(...radii);
+    assert.ok(innerEnd > g.flangeRadius && innerEnd < g.pitchRadius - 1.1 * g.module,
+      'each slit ends inward behind the solid sun-gear body, outside its hub flange');
+  }
 });

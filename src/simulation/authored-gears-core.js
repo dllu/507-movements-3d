@@ -69,6 +69,41 @@ function finish(root, update, cameraDirection = new THREE.Vector3(6.5, 4.2, 8.2)
   return { root, update, cameraDirection };
 }
 
+// Brown's gear plates carry no painted rotation indices or white index teeth;
+// their teeth, arms and spirals already show the turning. Opt-in per plate,
+// so movements outside 24-46 keep the shared primitives' index marks.
+function removeSourceAbsentIndices(root) {
+  const white = new THREE.Color(PALETTE.white);
+  const marks = [];
+  root.traverse((part) => {
+    if (part.isMesh && part.material?.color?.equals(white)) marks.push(part);
+  });
+  for (const mark of marks) {
+    if (mark.userData.bevelTooth) {
+      const plainTooth = mark.parent.children.find((part) => part.userData.bevelTooth
+        && !part.material.color.equals(white));
+      mark.material.dispose();
+      mark.material = plainTooth.material;
+      continue;
+    }
+    mark.removeFromParent();
+    mark.geometry.dispose();
+    mark.material.dispose();
+  }
+  root.userData.sourceAbsentIndicesRemoved = marks.length;
+  return marks.length;
+}
+
+function removeRotorParts(gear, predicate) {
+  const rotor = gear.userData.rotor;
+  for (const part of [...rotor.children]) {
+    if (!predicate(part)) continue;
+    rotor.remove(part);
+    part.geometry.dispose();
+    part.material.dispose();
+  }
+}
+
 function radialDistanceToAxis(point, origin, axis) {
   const offset = point.clone().sub(origin);
   return offset.addScaledVector(axis, -offset.dot(axis)).length();
@@ -174,9 +209,11 @@ function makeCrownWheel({
 
 function spurGears() {
   const root = new THREE.Group();
-  const driverTeeth = 40;
-  const drivenTeeth = 50;
-  const moduleScale = 0.025;
+  // Plate 24 shows about 7.5 teeth per quadrant on the left wheel and 9 on
+  // the right, with a measured pitch-radius ratio of 1.19: a 30:36 pair.
+  const driverTeeth = 30;
+  const drivenTeeth = 36;
+  const moduleScale = 1 / 30;
   const driverRadius = driverTeeth * moduleScale;
   const drivenRadius = drivenTeeth * moduleScale;
   const toothHeight = 2.25 * 2 * moduleScale;
@@ -212,15 +249,21 @@ function spurGears() {
       matte(PALETTE.ink, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
     ring.position.z = 0.19 + 0.008 + 0.0001;
     rotor.add(ring);
-    const indicator = rotor.children.find((part) => part.geometry?.type === 'BoxGeometry');
-    indicator.position.z = 0.19 + 0.008 + 0.012;
+    // The plate draws a plain boss ring about 0.43 of the pitch radius around
+    // a sectioned shaft about 0.26 of it. The shaft is keyed to its wheel.
+    const hub = rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
+    hub.geometry.dispose();
+    hub.geometry = new THREE.CylinderGeometry(radius * 0.43, radius * 0.43, 0.46, 64);
+    hub.material.color.set(gear === driver ? PALETTE.driver : PALETTE.driven);
+    const shaft = makeShaft({ length: 0.64, radius: radius * 0.26, axis: Z_AXIS });
+    shaft.userData.keyedToGear = true;
+    rotor.add(shaft);
+    gear.userData.shaft = shaft;
+    gear.userData.hubRadius = radius * 0.43;
   }
+  removeSourceAbsentIndices(root.add(driver, driven));
   driver.position.set(-centerDistance / 2, 0, 0);
   driven.position.set(centerDistance / 2, 0, 0);
-  root.add(driver, driven);
-  addAxle(root, driver.position, 0.64);
-  addAxle(root, driven.position, 0.64);
-  addRail(root, -1.75, 5.4);
   const drivenToothPitch = Math.PI * 2 / drivenTeeth;
   // A driver tooth on the line of centers faces the midpoint of a driven
   // tooth space. A correct speed ratio alone does not set this mesh phase.
@@ -294,27 +337,34 @@ function bevelGears() {
   });
   driver.position.copy(apex);
   driven.position.copy(apex);
-  const shaftA = addAxle(
-    root,
-    apex.clone().addScaledVector(driverAxis, 1.12),
-    1.02,
-    driverAxis,
-  );
-  const shaftB = addAxle(
-    root,
-    apex.clone().addScaledVector(drivenAxis, 1.29),
-    1.36,
-    drivenAxis,
-  );
+  // Plate 25 shows plain wheels on shafts about 0.11 in radius that end in
+  // the toe hubs; no back ring, face index or painted index tooth.
+  for (const gear of [driver, driven]) {
+    removeRotorParts(gear, (part) => part === gear.userData.inset);
+  }
+  const shaftRadius = 0.11;
+  const hubToeDistance = 0.70;
+  const makeBevelShaft = (axis, outerEnd) => {
+    const shaft = makeShaft({ length: outerEnd - hubToeDistance, radius: shaftRadius, axis });
+    shaft.position.copy(apex).addScaledVector(axis, (outerEnd + hubToeDistance) / 2);
+    root.add(shaft);
+    return shaft;
+  };
+  const shaftA = makeBevelShaft(driverAxis, 1.63);
+  const shaftB = makeBevelShaft(drivenAxis, 1.97);
   root.add(driver, driven);
-  for (const [axis, distance, radius] of [
-    [drivenAxis, 1.22, 0.2], [drivenAxis, 1.62, 0.2],
-    [driverAxis, 1.22, 0.2],
+  const collars = [];
+  for (const [axis, distance, radius, shaft] of [
+    [drivenAxis, 1.22, 0.2, shaftB], [drivenAxis, 1.62, 0.2, shaftB],
+    [driverAxis, 1.22, 0.2, shaftA],
   ]) {
     const collar = makeShaft({ length: 0.08, radius, axis, color: PALETTE.frame });
     collar.position.copy(apex).addScaledVector(axis, distance);
+    collar.userData.fixedToShaft = shaft;
     root.add(collar);
+    collars.push(collar);
   }
+  removeSourceAbsentIndices(root);
   addRail(root, -1.65, 4.8);
   const contactDistance = (innerDistance + outerDistance) / 2;
   const contactPoint = new THREE.Vector3(
@@ -332,7 +382,7 @@ function bevelGears() {
   const driverAngularSpeed = 1.12;
   const drivenAngularSpeed = -driverAngularSpeed;
   root.userData.mechanism = 'equal-miter-bevel-gear-pair';
-  root.userData.blocks = { driven, driver, shaftA, shaftB };
+  root.userData.blocks = { collars, driven, driver, shaftA, shaftB };
   root.userData.gearContact = {
     apex: apex.clone(),
     contactPoint,
@@ -350,6 +400,9 @@ function bevelGears() {
     setSpin(driven, drivenAngle);
     setSpin(shaftA, driverAngle);
     setSpin(shaftB, drivenAngle);
+    for (const collar of collars) {
+      setSpin(collar, collar.userData.fixedToShaft === shaftA ? driverAngle : drivenAngle);
+    }
     const driverSurfaceVelocity = new THREE.Vector3()
       .crossVectors(driverAxis, contactPoint.clone().sub(apex))
       .multiplyScalar(driverAngularSpeed);
@@ -430,6 +483,9 @@ function crownAndSpur() {
     spurAxis,
   );
   root.add(crown, spur);
+  removeRotorParts(spur, (part) => part.geometry?.type === 'TorusGeometry');
+  removeRotorParts(crown, (part) => part.geometry?.type === 'TorusGeometry');
+  removeSourceAbsentIndices(root);
   addRail(root, -1.72, 5.4, -0.78);
 
   const spurToothPitch = Math.PI * 2 / spurTeeth;
@@ -483,7 +539,9 @@ function crownAndSpur() {
   };
   update(0);
   root.userData.cameraFov = 18;
-  return finish(root, update, new THREE.Vector3(-0.25, 0.12, 10));
+  // Plate 26 is a true side elevation: the crown's plane and the spur's
+  // plane both pass near the eye, so each wheel reads edge-on.
+  return finish(root, update, new THREE.Vector3(0.65, 0.95, 10));
 }
 
 function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.56, slotWidth = 0.3 } = {}) {
@@ -610,12 +668,17 @@ function makeTriangularRollerCarrier({
   rotor.add(hub, indicator);
 
   const rollers = [];
+  const pinRadius = 0.035;
   for (let index = 0; index < 3; index += 1) {
     const localPinAngle = index * Math.PI * 2 / 3;
+    // Each roller turns on its carrier pin, so it is bored with running
+    // clearance and its hub stays within the roller face width.
     const roller = makePulley({
       axis: Z_AXIS,
+      bore: pinRadius + 0.002,
       color: PALETTE.brass,
       grooves: 0,
+      hubLength: 0.28,
       radius: rollerRadius,
       spokes: 0,
       width: 0.28,
@@ -632,7 +695,7 @@ function makeTriangularRollerCarrier({
         child.material.dispose();
       }
     }
-    const pin = makeShaft({ radius: 0.035, length: 0.38 });
+    const pin = makeShaft({ radius: pinRadius, length: 0.38 });
     pin.position.set(roller.position.x, roller.position.y, -0.085);
     rotor.add(pin);
     roller.userData.localPinAngle = localPinAngle;
@@ -696,9 +759,12 @@ function multipleGearing() {
   );
   addRail(root, -2.02, 5.4, -0.72);
 
-  const driverPhase = 0.34;
+  // Plate 27 has rollers near 27, 147 and 267 degrees about the driver and
+  // the slot centerlines near 30 + 60k degrees, which this phase reproduces.
+  const driverPhase = 0.47;
   const driverAngularSpeed = 1.08;
   const drivenAngularSpeed = driverAngularSpeed / 2;
+  removeSourceAbsentIndices(root);
   root.userData.mechanism = 'three-pin-six-slot-multiple-gear';
   root.userData.blocks = {
     driven,
@@ -802,7 +868,9 @@ function multipleGearing() {
   };
   update(0);
   root.userData.cameraFov = 18;
-  return finish(root, update, new THREE.Vector3(3.2, 2.0, 10));
+  // The plate is seen from upper left: the rear driven stub emerges at
+  // upper left and the driver shaft projects toward the lower right.
+  return finish(root, update, new THREE.Vector3(-3.2, 1.4, 10));
 }
 
 function makeBrushDisk({
@@ -829,10 +897,22 @@ function makeBrushDisk({
   rubber.position.z = bodyThickness / 2 + rubberThickness / 2;
   rotor.add(body, rubber);
 
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.17, 0.48, 48),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.5 }));
+  // Plate 28 turns the boss as a concave trumpet: 0.56 under the disk,
+  // flaring in to a short 0.40 collar about 0.53 lower.
+  const hubHeight = 0.53;
+  const hubProfile = [new THREE.Vector2(0, -hubHeight / 2), new THREE.Vector2(0.40, -hubHeight / 2),
+    new THREE.Vector2(0.40, -hubHeight / 2 + 0.06)];
+  for (let step = 1; step <= 16; step += 1) {
+    const t = step / 16;
+    hubProfile.push(new THREE.Vector2(0.40 + 0.16 * t ** 2.4,
+      -hubHeight / 2 + 0.06 + (hubHeight - 0.06) * t));
+  }
+  hubProfile.push(new THREE.Vector2(0, hubHeight / 2));
+  const hub = new THREE.Mesh(new THREE.LatheGeometry(hubProfile, 64),
+    matte(PALETTE.driven, { metalness: 0.1, roughness: 0.68 }));
+  hub.userData.role = 'concave-trumpet-boss';
   hub.rotation.x = Math.PI / 2;
-  hub.position.z = -bodyThickness / 2 - 0.24;
+  hub.position.z = -bodyThickness / 2 - hubHeight / 2;
   const indicator = new THREE.Mesh(
     new THREE.PlaneGeometry(radius * 0.55, 0.065),
     matte(PALETTE.white, { roughness: 0.5 }),
@@ -898,18 +978,13 @@ function brushWheels() {
   roller.userData.rotor.add(rollerFaceIndicator);
   root.add(disk, roller);
 
-  const diskShaft = addAxle(
-    root,
-    new THREE.Vector3(0, -1.42, 0),
-    2.0,
-    Y_AXIS,
-  );
-  const rollerShaft = addAxle(
-    root,
-    new THREE.Vector3(0.42, diskSurfaceY + rollerRadius, 0),
-    1.25,
-    X_AXIS,
-  );
+  // The plate's lower shaft is about 0.21 in radius and runs about 2.2
+  // below the boss; the upper wheel's shaft is about 0.11.
+  const diskShaft = makeShaft({ length: 2.5, radius: 0.21, axis: Y_AXIS });
+  diskShaft.position.set(0, -1.75, 0);
+  const rollerShaft = makeShaft({ length: 1.25, radius: 0.11, axis: X_AXIS });
+  rollerShaft.position.set(0.42, diskSurfaceY + rollerRadius, 0);
+  root.add(diskShaft, rollerShaft);
   addRail(root, -2.48, 5.2, -0.72);
 
   const contactRadii = [0.55, 0.9, 1.24];
@@ -3243,30 +3318,58 @@ function sunAndPlanet() {
   const flywheelRadius = 1.27;
   const flywheelInnerRadius = 1.10;
   const flywheelHubRadius = 0.48;
+  // Plate 39 draws the flywheel as a continuous rim around four broad web
+  // quarters parted by narrow radial slits, not four thin spokes. The web
+  // is set back from the rim face, giving the drawn rim/web line.
+  const webRecess = 0.04;
   const flywheelShape = new THREE.Shape();
-  flywheelShape.absarc(0, 0, flywheelRadius, 0, 2 * Math.PI, false);
-  const innerHalfAngle = Math.asin(0.05 / flywheelHubRadius);
-  const outerHalfAngle = Math.asin(0.085 / flywheelInnerRadius);
+  // The web runs under the rim, which closes the outer ends of the slits.
+  flywheelShape.absarc(0, 0, flywheelInnerRadius + 0.05, 0, 2 * Math.PI, false);
+  const slitHalfWidth = 0.075;
+  const slitInnerRadius = 0.6;
+  const slitOuterHalfAngle = Math.asin(slitHalfWidth / flywheelInnerRadius);
   for (let quadrant = 0; quadrant < 4; quadrant += 1) {
     const angle = quadrant * Math.PI / 2;
+    const along = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
+    const across = new THREE.Vector2(-along.y, along.x);
+    const point = (radial, lateral) => along.clone().multiplyScalar(radial)
+      .addScaledVector(across, lateral);
     const hole = new THREE.Path();
-    hole.absarc(0, 0, flywheelInnerRadius, angle + Math.PI / 2 - outerHalfAngle,
-      angle + outerHalfAngle, true);
-    hole.lineTo(flywheelHubRadius * Math.cos(angle + innerHalfAngle),
-      flywheelHubRadius * Math.sin(angle + innerHalfAngle));
-    hole.absarc(0, 0, flywheelHubRadius, angle + innerHalfAngle,
-      angle + Math.PI / 2 - innerHalfAngle, false);
+    const start = point(slitInnerRadius, -slitHalfWidth);
+    const outerStart = point(flywheelInnerRadius * Math.cos(slitOuterHalfAngle), -slitHalfWidth);
+    hole.moveTo(start.x, start.y);
+    hole.lineTo(outerStart.x, outerStart.y);
+    hole.absarc(0, 0, flywheelInnerRadius, angle - slitOuterHalfAngle,
+      angle + slitOuterHalfAngle, false);
+    const end = point(slitInnerRadius, slitHalfWidth);
+    hole.lineTo(end.x, end.y);
     hole.closePath();
     flywheelShape.holes.push(hole);
   }
   const flywheelGeometry = new THREE.ExtrudeGeometry(flywheelShape, {
-    depth: 0.10, bevelEnabled: true, bevelSegments: 1,
+    depth: 0.10 - webRecess, bevelEnabled: true, bevelSegments: 1,
     bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 64,
   });
   flywheelGeometry.translate(0, 0, -0.225);
   const flywheel = new THREE.Mesh(flywheelGeometry,
     matte(0x5e6666, { metalness: 0.18, roughness: 0.61 }));
-  flywheel.userData.spokeCount = 4;
+  const rimShape = new THREE.Shape();
+  rimShape.absarc(0, 0, flywheelRadius, 0, 2 * Math.PI, false);
+  const rimBore = new THREE.Path();
+  rimBore.absarc(0, 0, flywheelInnerRadius, 0, 2 * Math.PI, true);
+  rimShape.holes.push(rimBore);
+  const rimGeometry = new THREE.ExtrudeGeometry(rimShape, {
+    depth: 0.10, bevelEnabled: true, bevelSegments: 1,
+    bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 96,
+  });
+  rimGeometry.translate(0, 0, -0.225);
+  const flywheelRim = new THREE.Mesh(rimGeometry,
+    matte(0x5e6666, { metalness: 0.18, roughness: 0.61 }));
+  flywheelRim.userData.flywheelRim = true;
+  sun.userData.rotor.add(flywheelRim);
+  flywheel.userData.webSlitCount = 4;
+  flywheel.userData.slitHalfWidth = slitHalfWidth;
+  flywheel.userData.slitInnerRadius = slitInnerRadius;
   flywheel.userData.annularFlywheel = true;
   sun.userData.rotor.add(flywheel);
 
@@ -3286,7 +3389,10 @@ function sunAndPlanet() {
   const armGeometry = new THREE.ExtrudeGeometry(armShape, {
     depth: 0.10, bevelEnabled: false, curveSegments: 64,
   });
-  armGeometry.translate(0, 0, 0.27);
+  // The plate draws the arm over the rod, but the rod sweeps across the
+  // sun axis once per orbit; the arm must pivot on the sun-shaft end behind
+  // the rod, so the rod is carried outboard of the arm.
+  armGeometry.translate(0, 0, 0.155);
   const arm = new THREE.Mesh(armGeometry, matte(PALETTE.brass, { metalness: 0.16, roughness: 0.63 }));
   arm.userData.centerDistanceArm = true;
   carrier.add(arm);
@@ -3302,25 +3408,26 @@ function sunAndPlanet() {
   const rodGeometry = new THREE.ExtrudeGeometry(rodShape, {
     depth: 0.08, bevelEnabled: false, curveSegments: 32,
   });
-  rodGeometry.translate(0, 0, 0.16);
+  rodGeometry.translate(0, 0, 0.27);
   const connectingRod = new THREE.Mesh(rodGeometry, matte(PALETTE.frame, { roughness: 0.64 }));
   connectingRod.userData.rigidToPlanet = true;
   connectingRod.userData.croppedContinuation = true;
-  const rodBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.15, 64),
+  const rodBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.10, 64),
     matte(PALETTE.frame, { roughness: 0.6 }));
   rodBoss.rotation.x = Math.PI / 2;
-  rodBoss.position.z = 0.185;
+  rodBoss.position.z = 0.32;
   planet.userData.rotor.add(rodBoss);
-  const sunShaft = makeShaft({ length: 0.68, radius: axleRadius, axis: Z_AXIS });
-  sunShaft.position.z = 0.07;
-  const planetShaft = makeShaft({ length: 0.515, radius: axleRadius, axis: Z_AXIS });
-  planetShaft.position.z = 0.1525;
+  const sunShaftFront = 0.25;
+  const sunShaft = makeShaft({ length: sunShaftFront + 0.27, radius: axleRadius, axis: Z_AXIS });
+  sunShaft.position.z = (sunShaftFront - 0.27) / 2;
+  const planetShaft = makeShaft({ length: 0.465, radius: axleRadius, axis: Z_AXIS });
+  planetShaft.position.z = 0.1275;
   root.add(sun, planet, carrier, connectingRod, sunShaft, planetShaft);
   const carrierAngularSpeed = 0.62;
   const orbitPeriod = 2 * Math.PI / carrierAngularSpeed;
   root.userData.mechanism = 'watts-equal-gear-sun-and-planet';
   root.userData.blocks = { sun, planet, carrier, arm, connectingRod, rodBoss,
-    flywheel, sunShaft, planetShaft };
+    flywheel, flywheelRim, sunShaft, planetShaft };
   root.userData.geometry = {
     teeth, module, pitchRadius, angularPitch, circularPitch: Math.PI * module,
     centerDistance, sunCenter, sunPhase, planetPhase, gearDepth, flangeRadius,
@@ -3340,7 +3447,7 @@ function sunAndPlanet() {
     const sunAngle = sunPhase + 2 * carrierAngle - rodAngle;
     const sunAngularSpeed = 2 * carrierAngularSpeed - rodAngularSpeed;
     planet.position.set(px, py, 0);
-    planetShaft.position.set(px, py, 0.1525);
+    planetShaft.position.set(px, py, 0.1275);
     connectingRod.position.set(px, py, 0);
     connectingRod.rotation.z = rodAngle;
     carrier.rotation.z = carrierAngle;
@@ -3514,10 +3621,11 @@ function angularBevelGears() {
   driver.position.copy(apex);
   driven.position.copy(apex);
   root.add(driver, driven);
+  // The plate carries the upper shaft well past the rim at upper left.
   const driverShaft = addAxle(
     root,
-    apex.clone().addScaledVector(driverAxis, 1.2),
-    1.7,
+    apex.clone().addScaledVector(driverAxis, 1.525),
+    2.35,
     driverAxis,
   );
   const drivenShaft = addAxle(
@@ -3615,7 +3723,10 @@ function angularBevelGears() {
     };
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(6.8, 0.1, 8.6));
+  // Plate 43 keeps the lower wheel nearly edge-on while the upper wheel's
+  // toothed face and hub turn toward the eye: the view is rotated about
+  // the driven axis, which projects at 45 degrees down to the left.
+  return finish(root, update, new THREE.Vector3(4.1, -4.1, 8.2));
 }
 
 function crossedHelicalGears() {
@@ -33994,6 +34105,13 @@ function pairedStopsForSpurGear(movement) {
   return finishOpposedSpur239(finish(root, update, new THREE.Vector3(0.4, 0.3, 15)));
 }
 
+// Plain friction surfaces (28, 32, 45) keep their indices: without them the
+// turning of an axisymmetric wheel is invisible.
+function sourceIndexFree(model) {
+  removeSourceAbsentIndices(model.root);
+  return model;
+}
+
 export function createAuthoredGearCoreMovement(movement) {
   switch (movement.id) {
     case 24: return spurGears();
@@ -34001,12 +34119,12 @@ export function createAuthoredGearCoreMovement(movement) {
     case 26: return crownAndSpur();
     case 27: return multipleGearing();
     case 28: return brushWheels();
-    case 29: return diskSpiralDrive();
-    case 30: return rectangularGears();
-    case 31: return wormAndWheel();
+    case 29: return sourceIndexFree(diskSpiralDrive());
+    case 30: return sourceIndexFree(rectangularGears());
+    case 31: return sourceIndexFree(wormAndWheel());
     case 32: return frictionWheels();
-    case 33: return ellipticalGears();
-    case 34: return internalGearDrive();
+    case 33: return sourceIndexFree(ellipticalGears());
+    case 34: return sourceIndexFree(internalGearDrive());
     case 35: return ellipticalSlidingPinion();
     case 36: return mangleWheel();
     case 37: return conicalStudGear();
@@ -34015,7 +34133,7 @@ export function createAuthoredGearCoreMovement(movement) {
     case 40: return helicalGears(true);
     case 41: return helicalGears(false);
     case 42: return crossedHelicalGears();
-    case 43: return angularBevelGears();
+    case 43: return sourceIndexFree(angularBevelGears());
     case 44: return steppedGears();
     case 45: return groovedFrictionGears();
     case 46: return fuseeDrive();

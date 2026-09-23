@@ -658,47 +658,52 @@
     {
       "id": 24,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Corrected phase clears actual involute outlines, with flank gap below 0.0015 over sampled tooth cycle."
+        "note": "Corrected phase clears actual involute outlines, with flank gap below 0.0015 over sampled tooth cycle. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "Finite involute mesh is prescribed; loaded tooth compliance/backlash are not simulated.",
+      "flaws": "Involute teeth where the plate draws square ones. Finite involute mesh is prescribed; loaded tooth compliance/backlash are not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 25,
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "unknown",
         "evidence": "docs/review-progress.md",
-        "note": "Initial proportions/shared primitive tests are not a movement-specific finite engagement audit."
+        "note": "Initial proportions/shared primitive tests are not a movement-specific finite engagement audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Final source projection and finite bevel engagement are not established by the initial proportion correction.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -710,154 +715,181 @@
     {
       "id": 26,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Bidirectional rendered crown/pinion queries show no sampled penetration and working gap below 0.003."
+        "note": "Bidirectional rendered crown/pinion queries show no sampled penetration and working gap below 0.003. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Generated numerical crown profile has finite clearance; manufacturing and loaded contact are not qualified.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 27,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Actual roller/wall/floor queries clear in 48 poses; ideal zero-clearance channel."
+        "note": "Actual roller/wall/floor queries clear in 48 poses; ideal zero-clearance channel. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Zero-clearance ideal slot constraint; roller spin during central disengagement is prescribed.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 28,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Actual crowned roller vertices clear disk in 80 sampled poses."
+        "note": "Actual crowned roller vertices clear disk in 80 sampled poses. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "Crowned friction roller has geometric contact; traction/slip and adjustment loads are not solved.",
+      "flaws": "At rest the roller sits at radius 0.55 against the plate’s ≈0.97. Crowned friction roller has geometric contact; traction/slip and adjustment loads are not solved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 29,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "69-pose generated spiral/wheel audit clears both directions; gap below 0.004."
+        "note": "69-pose generated spiral/wheel audit clears both directions; gap below 0.004. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Round spiral section is inferred; backlash take-up, compliance and contact force are not dynamically solved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 30,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Generated actual tooth outlines pass sampled contact checks; scoped working surfaces only."
+        "note": "Generated actual tooth outlines pass sampled contact checks; scoped working surfaces only. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Generated noncircular teeth and pitch law are reconstructed; loaded contact is not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 31,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/031-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/031-reconstruction-notes.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
+        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "29-tooth worm geometry, pressure angle and hidden dimensions are reconstructed; source outline residuals remain.",
       "references": [
         "artifacts/review/031-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 32,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -867,69 +899,81 @@
       "flaws": "Friction transmission assumes ideal geometric rolling rather than calibrated traction.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 33,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "192-pose generated oval outline audit clears; working gap below 0.0025."
+        "note": "192-pose generated oval outline audit clears; working gap below 0.0025. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Centered conjugate ovals replace literal ellipses; dimensions and generated tooth form are inferred.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 34,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Scoped internal tooth and carrier geometry checks documented; no continuous proof."
+        "note": "Scoped internal tooth and carrier geometry checks documented; no continuous proof. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
       "flaws": "Internal gearing uses reconstructed compatible tooth profiles; loaded compliance is not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 35,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -939,21 +983,25 @@
       "flaws": "Inward spring and contact loads are prescribed despite finite sliding/mesh geometry checks.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 36,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -963,21 +1011,25 @@
       "flaws": "88/12 tooth counts and recessed guide dimensions are a conjugate reconstruction, not source dimensions.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 37,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -987,21 +1039,25 @@
       "flaws": "Working gap reaches 0.177659 near spiral seam; matching faces and end-to-end handoff remain unresolved.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 38,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1011,46 +1067,54 @@
       "flaws": "Reconstructed stepped gears and transition teeth; loaded transfer and manufacturing tolerances remain idealized.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 39,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-49 relative-motion screen reports 0.1019 solid overlap (root/ExtrudeGeometry x root/CylinderGeometry); unclassified, may be intended contact."
+        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "Sun-and-planet linkage/support depths are reconstructed; gear compliance and bearing loads are not solved.",
+      "flaws": "The rod lies in front of the arm where the plate draws the arm over it; the slits are slightly wide. Sun-and-planet linkage/support depths are reconstructed; gear compliance and bearing loads are not solved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 40,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1060,21 +1124,25 @@
       "flaws": "Finite helical involutes use inferred geometry; manufacturing conjugacy and loaded contact remain idealized.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 41,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1084,21 +1152,25 @@
       "flaws": "Finite helical involutes use inferred geometry; manufacturing conjugacy and loaded contact remain idealized.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 42,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1108,45 +1180,53 @@
       "flaws": "Shallow skew involute reconstruction retains an inferred shaft-angle/source interpretation.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 43,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source comparisons or geometry tests are documented; capture generation alone does not establish later independent Astra visual inspection."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
-        "note": "Actual shortened shafts clear each other; this is not qualification of all bevel tooth contacts."
+        "note": "Actual shortened shafts clear each other; this is not qualification of all bevel tooth contacts. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "Exact shaft-angle interpretation and final source projection remain open; shaft clearance is not bevel-mesh qualification.",
+      "flaws": "The plate’s shafts cross past the apex; the model stops them short. Exact shaft-angle interpretation and final source projection remain open; shaft clearance is not bevel-mesh qualification.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 44,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1156,21 +1236,25 @@
       "flaws": "Staggered spur-row phasing is prescribed; loaded tooth sharing is not simulated.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 45,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1180,21 +1264,25 @@
       "flaws": "Grooved friction faces are geometrically reconstructed; traction and pressure sharing remain idealized.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 46,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/review-progress.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/gears-24-46-review.md",
+        "note": "Production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1204,14 +1292,15 @@
       "flaws": "Fusee/chain geometry and spring properties are inferred; physical chain articulation and material response remain model assumptions.",
       "references": [
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/gears-24-46-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 47,

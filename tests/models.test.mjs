@@ -1496,15 +1496,15 @@ test('movement 23 uses one smooth belt over both same-side compensator sheaves',
   disposeModel(model.root);
 });
 
-test('movement 24 meshes the source 40:50 spur gears at an exact -0.8 ratio', () => {
+test('movement 24 meshes the plate-counted 30:36 spur gears at an exact -5/6 ratio', () => {
   const model = createMovementModel(catalog.movements[23]);
   assert.equal(model.root.userData.mechanism, 'external-spur-gear-pair');
   const { driven, driver } = model.root.userData.blocks;
   const contact = model.root.userData.gearContact;
-  assert.equal(driver.userData.teeth, 40);
-  assert.equal(driven.userData.teeth, 50);
-  assert.equal(contact.driverTeeth, 40);
-  assert.equal(contact.drivenTeeth, 50);
+  assert.equal(driver.userData.teeth, 30);
+  assert.equal(driven.userData.teeth, 36);
+  assert.equal(contact.driverTeeth, 30);
+  assert.equal(contact.drivenTeeth, 36);
   assert.ok(Math.abs(contact.driverRadius / contact.driverTeeth
     - contact.drivenRadius / contact.drivenTeeth) < 1e-12,
   'both gears use the same circular pitch/module');
@@ -1532,10 +1532,10 @@ test('movement 24 meshes the source 40:50 spur gears at an exact -0.8 ratio', ()
   for (const time of [0, 0.37, 1.2, 2.8, 5.1]) {
     model.update(time, 0.016);
     const state = model.root.userData.kinematics;
-    assert.equal(state.driverTeeth, 40);
-    assert.equal(state.drivenTeeth, 50);
-    assert.equal(state.gearRatio, -0.8);
-    assert.ok(Math.abs(state.drivenAngularSpeed / state.driverAngularSpeed + 0.8) < 1e-12);
+    assert.equal(state.driverTeeth, 30);
+    assert.equal(state.drivenTeeth, 36);
+    assert.ok(Math.abs(state.gearRatio + 5 / 6) < 1e-12);
+    assert.ok(Math.abs(state.drivenAngularSpeed / state.driverAngularSpeed + 5 / 6) < 1e-12);
     assert.ok(state.driverAngularSpeed * state.drivenAngularSpeed < 0);
     assert.ok(Math.abs(state.driverPitchLineSpeed + state.drivenPitchLineSpeed) < 1e-12,
       'contact pitch-line velocities are equal and opposite');
@@ -2936,7 +2936,7 @@ test('movement 39 couples a rocking planet and finite connecting rod to two sun 
   assert.equal(sun.userData.teeth, 24);
   assert.equal(planet.userData.teeth, 24);
   assert.equal(flywheel.parent, sun.userData.rotor);
-  assert.equal(flywheel.userData.spokeCount, 4);
+  assert.equal(flywheel.userData.webSlitCount, 4, 'plate 39 parts the flywheel web with four slits');
   assert.equal(flywheel.geometry.parameters.shapes.holes.length, 4);
   assert.equal(arm.geometry.parameters.shapes.holes.length, 2);
   assert.equal(connectingRod.userData.croppedContinuation, true);
