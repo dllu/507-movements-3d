@@ -245,11 +245,17 @@ export class MovementEngine {
     const bounds = authoredFitBounds?.isBox3
       ? authoredFitBounds.clone()
       : new THREE.Box3().setFromObject(this.model.root, true);
-    if (fitsMotion && !authoredFitBounds?.isBox3) {
-      bounds.union(new THREE.Box3(
-        new THREE.Vector3().fromArray(sampledMotionBounds.min),
-        new THREE.Vector3().fromArray(sampledMotionBounds.max),
-      ));
+    const motionBox = fitsMotion ? new THREE.Box3(
+      new THREE.Vector3().fromArray(sampledMotionBounds.min),
+      new THREE.Vector3().fromArray(sampledMotionBounds.max),
+    ) : null;
+    if (motionBox && !authoredFitBounds?.isBox3) bounds.union(motionBox);
+    // Authored boxes predate source-presentation removals; shrink them to what
+    // remains while keeping any deliberate authored crop.
+    if (motionBox && authoredFitBounds?.isBox3
+      && this.model.root.userData.sourcePresentation?.removedRoles?.length) {
+      const remaining = bounds.clone().intersect(motionBox);
+      if (!remaining.isEmpty()) bounds.copy(remaining);
     }
     if (bounds.isEmpty()) {
       bounds.setFromCenterAndSize(new THREE.Vector3(), new THREE.Vector3(4, 4, 4));

@@ -326,3 +326,34 @@ registry.
 | 281 | Faithful cam disk and swinging frame. |
 | 282 | Faithful frame, lever, sector and weight. |
 | 283 | Faithful rack, pinion and pump barrels. |
+
+## Pass 50 batch: 284–315 escapements and governors
+
+The engine now shrinks an authored camera-fit box to the measured motion bounds
+when source presentation removes parts, and source presentation carries its
+rotation into that box. Every entry with an authored box (142–314 in the table
+of `src/data/source-presentation.js`) was recaptured; each now frames what
+remains instead of the removed frames.
+
+| Movement | Observation |
+| --- | --- |
+| 284 | Faithful ratchet, pawls and frame. |
+| 285 | Faithful screw and frame; the frame is drawn in the plate. |
+| 287 | Faithful governor and brake. |
+| 288 | Presented without the undrawn clock plate standard and base; faithful wheel and anchor H, L, K. |
+| 289 | Presented without the undrawn plate standard and base; faithful dead-beat wheel and anchor. |
+| 290 | Presented without the undrawn standard and base; faithful annular frame and wheel D. |
+| 291 | Presented without the undrawn watch plate, standards and base; faithful wheel B, balance and detent. |
+| 292 | Presented without the undrawn plate standard and base. Only one gravity arm is modelled where Brown draws arms G and H from F. |
+| 293 | Presented without the undrawn plate, bridge and base; faithful duplex wheel and roller. |
+| 294 | Reduced to the cylinder Brown draws; the wheel, balance and watch frame belong to 295. Viewed side-on with the half-shell passage cut to raster x 352 and a stepped balance collet. The left end of the cut is square where Brown rounds it. |
+| 295 | A full wheel replaces Brown's partial arc; acceptable. |
+| 296 | Presented without the undrawn plate, bridge and base; faithful wheel A and lever B, C. |
+| 297 | Presented without the undrawn base. The wheel has spokes where Brown draws a plain disc with pin holes. |
+| 305 | Presented without the undrawn clock upright and brackets; faithful pallet plate and single-pin disc. |
+| 306 | Presented without the undrawn frame bridge and strut; the dashed end straps remain as drawn. |
+| 307 | Presented without the undrawn upright and brackets; faithful pallet plate and wheel. |
+| 308 | Presented without the undrawn upright and brackets. The face-on pin wheel, long pendulum rod and bob do not reproduce Brown's view of the curved pendulum pieces P, P and the small hooked wheel under a cock; needs reconstruction. |
+| 313 | Presented without the undrawn watch frame and standards; faithful wheel, balance V and spring detent D. |
+| 314 | Presented without the undrawn frame members and base; faithful wheel, lever A, B and balance roller C with banking pins. |
+| 315 | Faithful conical pendulum and seat. |

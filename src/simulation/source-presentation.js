@@ -11,6 +11,8 @@ export function applySourcePresentation(model, movement) {
   const entry = sourcePresentation[movement.id];
   if (!entry) return model;
   const root = model.root;
+  root.updateMatrixWorld(true);
+  const unpresentedWorld = root.matrixWorld.clone();
   if (entry.rotate) {
     root.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...entry.rotate)));
     root.updateMatrixWorld(true);
@@ -20,6 +22,11 @@ export function applySourcePresentation(model, movement) {
     // three.js flips face winding for negative-determinant transforms.
     root.scale.multiply(new THREE.Vector3(...entry.scale));
     root.updateMatrixWorld(true);
+  }
+  // Authored fit bounds are world boxes of the unpresented model.
+  const fitBounds = root.userData.cameraFitBounds;
+  if (fitBounds?.isBox3 && (entry.rotate || entry.scale)) {
+    fitBounds.applyMatrix4(root.matrixWorld.clone().multiply(unpresentedWorld.invert()));
   }
   if (entry.camera) model.cameraDirection = new THREE.Vector3(...entry.camera);
   const removedRoles = [];

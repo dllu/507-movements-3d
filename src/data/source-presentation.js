@@ -146,6 +146,75 @@ export default {
     remove: ['fixed-(?:left|right)-crosshead-guide-post', 'fixed-crosshead-display-base'],
     note: 'The Clayton journal box in its sliding frame on the rod; no base or posts are drawn.',
   },
+  288: {
+    remove: ['rear-clock-plate-standard', 'fixed-clock-frame-base'],
+    note: 'Face view of the escape wheel and anchor H, L, K; no clock plate or base is drawn.',
+  },
+  289: {
+    remove: ['rear-deadbeat-clock-plate-standard', 'fixed-deadbeat-clock-frame-base'],
+    note: 'Face view of the dead-beat wheel A and anchor; no clock plate or base is drawn.',
+  },
+  290: {
+    remove: ['rear-clock-frame-standard', 'fixed-annular-escapement-frame-base'],
+    note: 'Face view of the wheel D inside the annular pallet frame; no clock plate or base is drawn.',
+  },
+  291: {
+    remove: ['fixed-watch-plate-base', 'fixed-balance-arbor-standard', 'fixed-escape-wheel-arbor-standard'],
+    note: 'The escape wheel B, balance a and detent; no watch plate, standards or base is drawn.',
+  },
+  292: {
+    remove: ['fixed-rear-clock-plate-standard', 'fixed-large-clock-frame-base'],
+    note: 'The wheel, gravity arms and pallets; no clock plate or base is drawn.',
+  },
+  293: {
+    remove: ['fixed-rear-duplex-watch-plate-standard', 'fixed-duplex-watch-frame-base', 'rear-bridge-between-watch-journals'],
+    note: 'The duplex wheel and roller; no watch plate, bridge or base is drawn.',
+  },
+  294: {
+    rotate: [0, 0, Math.PI / 2],
+    camera: [-1, 0.28, 0.1],
+    remove: [
+      'invisible-envelope-for-complete-cylinder-escapement', 'fixed-parallel-arbor-watch-frame',
+      'stepping-cylinder-escape-wheel-rotor', 'fixed-cylinder-escape-wheel-arbor',
+      'cylinder-balance-spoke-\\d', 'balance-wheel-attached-to-top-of-cylinder',
+      'white-index-on-cylinder-balance-wheel', 'bored-hub-joining-balance-spokes-to-end-pivot',
+      '(generated-(entry|exit)-lip-working-contact|(outside|inside)-cylinder-frictional-rest)-trace',
+      'white-marker-on-active-cylinder-escapement-contact',
+    ],
+    note: 'Brown draws only the cylinder in perspective (295 shows the wheel); the escape wheel, balance and watch frame are not drawn.',
+  },
+  296: {
+    remove: ['fixed-rear-lever-watch-plate-standard', 'fixed-lever-escapement-frame-base', 'rear-bridge-between-watch-journals'],
+    note: 'Face view of the escape wheel A and lever B, C; no watch plate, bridge or base is drawn.',
+  },
+  297: {
+    remove: ['fixed-lantern-escapement-base'],
+    note: 'Face view of the pin wheel and pallets; no base is drawn.',
+  },
+  305: {
+    remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
+    note: 'The pendulum pallet plate and single-pin disc; no clock frame or brackets are drawn.',
+  },
+  306: {
+    remove: ['rear-frame-cross-bridge', 'bored-back-strut-joining-wheel-arbor-to-frame-bridge'],
+    note: 'The three-legged wheel inside the pendulum pallet plate; no frame bridge or strut is drawn.',
+  },
+  307: {
+    remove: ['rear-clock-frame-upright', 'pendulum-pallet-pivot-bracket', 'three-leg-wheel-arbor-bracket'],
+    note: 'The long-tooth pallet plate and the three-leg wheel; no clock frame or brackets are drawn.',
+  },
+  308: {
+    remove: ['clock-frame-upright', 'sixty-pin-wheel-bearing-bracket', 'pendulum-crutch-bearing-bracket', 'Q-detent-bearing-bracket'],
+    note: 'The pin wheel, click C, detent Q and pendulum P; no clock frame upright or bearing brackets are drawn.',
+  },
+  313: {
+    remove: ['fixed-watch-frame-base', 'escape-wheel-arbor-standard', 'balance-staff-standard'],
+    note: 'The escape wheel, balance V and spring detent D; no watch frame is drawn.',
+  },
+  314: {
+    remove: ['fixed-wheel-to-lever-frame-member', 'fixed-lever-to-balance-frame-member', 'fixed-frame-member-behind-banking-tail', 'fixed-lever-chronometer-frame-base'],
+    note: 'The escape wheel, locking lever A, B and balance roller C with its banking pins; no frame is drawn.',
+  },
   309: {
     remove: ['fixed-Mudge-escapement-frame'],
     note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q; no clock frame, crossbars or bearing brackets are drawn.',

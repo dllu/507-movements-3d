@@ -1,6 +1,8 @@
 import cylinderContactData from './baked/cylinder-contact.js';
 import {installCylinderContact} from './cylinder-contact-motion.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {correctCylinderWorkingParts, finishCylinderReview} from './cylinder-escapement-working-parts.js';
 import {
   PALETTE,
@@ -1451,8 +1453,49 @@ function cylinderEscapementActionDiagram(movement) {
   };
 }
 
+// Brown's 294 cuts the front half of the tube away from the working band to
+// raster x 352, so the inside of the back half shows through; the balance end
+// is a flat stepped collet rather than a taper. The staff is two end pivots.
+function shapePlate294Cylinder(model) {
+  const { blocks: b, geometry: g } = model.root.userData;
+  const passageEndZ = (352 - 271) * g.sourceAxialScale;
+  const outer = g.cylinderOuterRadius;
+  const inner = g.cylinderInnerRadius;
+  const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  replace(b.rightTube, centeredExtrusion(annularShape(outer, inner), g.cylinderBodyEndZ - passageEndZ, 0.004));
+  b.rightTube.position.z = (passageEndZ + g.cylinderBodyEndZ) / 2;
+  const workingBandEndZ = g.workingBandEndZ;
+  const passageShell = new THREE.Mesh(
+    centeredExtrusion(annularSectorShape(outer, inner, Math.PI, Math.PI), passageEndZ - workingBandEndZ, 0.003),
+    b.rightTube.material,
+  );
+  passageShell.position.z = (workingBandEndZ + passageEndZ) / 2;
+  passageShell.userData.role = 'half-shell-passage-cut-above-working-band';
+  b.cylinderAssembly.add(passageShell);
+  const collet = boredLatheGeometry([
+    { axial: -0.20, radial: outer * 1.32 }, { axial: -0.09, radial: outer * 1.32 },
+    { axial: -0.09, radial: outer * 0.55 }, { axial: 0.11, radial: outer * 0.55 },
+    { axial: 0.11, radial: outer * 0.33 }, { axial: 0.20, radial: outer * 0.33 },
+  ], 0.108, 64);
+  collet.rotateX(Math.PI / 2);
+  replace(b.upperCone, collet);
+  b.upperCone.rotation.set(0, 0, 0);
+  b.upperCone.userData.role = 'upper-stepped-balance-collet';
+  const pivots = [[-2.60, g.workingBandStartZ - 0.025], [passageEndZ + 0.025, 2.23]].map(([lo, hi]) => {
+    const pivot = new THREE.CylinderGeometry(0.105, 0.105, hi - lo, 32);
+    pivot.rotateX(Math.PI / 2);
+    pivot.translate(0, 0, (lo + hi) / 2);
+    return pivot;
+  });
+  replace(b.balanceStaff, mergeGeometries(pivots));
+  for (const pivot of pivots) pivot.dispose();
+  b.passageShell = passageShell;
+  g.passageEndZ = passageEndZ;
+  return model;
+}
+
 export function createAuthoredCylinderEscapementMovement(movement) {
-  if (movement.id === 294) return finishCylinderReview(installCylinderContact(cylinderEscapementPerspective(movement),294),294);
+  if (movement.id === 294) return finishCylinderReview(installCylinderContact(shapePlate294Cylinder(cylinderEscapementPerspective(movement)),294),294);
   if (movement.id === 295) return finishCylinderReview(installCylinderContact(cylinderEscapementActionDiagram(movement),295),295);
   return null;
 }
