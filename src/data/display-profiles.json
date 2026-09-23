@@ -4691,21 +4691,21 @@
       }
     },
     "246": {
-      "peakAngularSpeed": 0.1779987933005118,
-      "peakVisibleAngularSpeed": 0.1779987933005118,
+      "peakAngularSpeed": 0.17799879330328733,
+      "peakVisibleAngularSpeed": 0.17799879330328733,
       "sustainedVisibleAngularSpeed": 0.12474323485470562,
-      "floorY": -0.09000000014901162,
-      "fastestPart": "Mesh",
+      "floorY": -0.02000000238418581,
+      "fastestPart": "rigid-lower-arm-through-fixed-slide-C-lower-joint-and-right-joint-bored",
       "motionBounds": {
         "min": [
-          -3.700000047683716,
-          -0.09000000014901162,
-          -3.5199999046325683
+          -2.650000011920929,
+          -0.02000000238418581,
+          -3.223012531572498
         ],
         "max": [
-          3.700000047683716,
-          0.9600000095367431,
-          2.6799999046325684
+          2.498636299829428,
+          1.0600000059604646,
+          1.750000011920929
         ]
       }
     },

@@ -281,3 +281,23 @@ registry.
 | 241 | Faithful ratchet wheel, pawl and eccentric. |
 | 242 | Presented without the undrawn base and posts; faithful brake wheel, strap and lever. |
 | 243 | Faithful belt pulleys and idlers. |
+
+## Pass 50 batch: 244–263
+
+| Movement | Observation |
+| --- | --- |
+| 244 | Faithful steelyard beam, drum and scale pan. |
+| 245 | Faithful bayonet socket A and pin B. |
+| 246 | Presented without the undrawn drawing board. The arms stop at A and C, where Brown's run on past them. |
+| 247 | Faithful sounding rod, catch and weight. The seabed plate is not drawn but is kept: the caption's probe strikes it and the released weight rests on it. |
+| 248 | Faithful sectioned socket joint A, B, C. |
+| 249 | Faithful ball-and-socket joint. |
+| 250 | Faithful wheels on the A-frame. |
+| 251 | Faithful pile-driver frame, nippers and weight W. |
+| 252 | Faithful twin rollers, triangular frame and D. |
+| 253 | Faithful disk A, levers and band B. |
+| 254–259 | Faithful pulley and roller faces (plain, V, round and ribbed). |
+| 260 | Faithful gears, shafts and frame. |
+| 261 | Faithful pulleys, links and weight W. |
+| 262 | Drum B faithful; the frame is simplified. |
+| 263 | Faithful cone, bearings and screw. |

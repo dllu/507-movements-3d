@@ -113,14 +113,6 @@ export default {
     remove: ['rear-frame-post', 'rear-frame-top', 'base'],
     note: 'Face view of the grooved heart cam C, D, B, e with the notch wheel F and catch G; no frame is drawn.',
   },
-  239: {
-    remove: ['fixed-spur-stop-support-rail', 'fixed-spur-gear-bearing-post', '(?:left|right|output)-journal-support-post'],
-    note: 'The spur wheel between its two pivoted stops; no rail or posts are drawn.',
-  },
-  242: {
-    remove: ['brake-demonstration-base', 'fixed-brake-wheel-bearing-post', 'fixed-lever-fulcrum-post'],
-    note: 'The brake wheel, strap and lever; no base or posts are drawn.',
-  },
   233: {
     remove: ['lantern-stop-rear-support-frame-beam'],
     note: 'Face view of the lantern wheel with its roller stop and latch; no frame is drawn.',
@@ -129,6 +121,18 @@ export default {
     rotate: [-Math.PI / 2, 0, 0],
     camera: [2.2, 4.6, 9],
     note: 'Oblique view from above: crown wheel horizontal with its arbor hanging down and verge S across the top; no frame or bearings are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
+  },
+  239: {
+    remove: ['fixed-spur-stop-support-rail', 'fixed-spur-gear-bearing-post', '(?:left|right|output)-journal-support-post'],
+    note: 'The spur wheel between its two pivoted stops; no rail or posts are drawn.',
+  },
+  242: {
+    remove: ['brake-demonstration-base', 'fixed-brake-wheel-bearing-post', 'fixed-lever-fulcrum-post'],
+    note: 'The brake wheel, strap and lever; no base or posts are drawn.',
+  },
+  246: {
+    remove: ['common-drawing-plane-for-tracer-and-pencil', 'drawing-sheet-outline'],
+    note: 'The pantograph arms, fixed point C, tracer B and pencil A over a blank ground; no drawing board is drawn.',
   },
   309: {
     remove: ['fixed-Mudge-escapement-frame'],
