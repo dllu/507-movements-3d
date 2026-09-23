@@ -735,18 +735,18 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
   model.root.updateMatrixWorld(true);
   const physicalBounds = new THREE.Box3().setFromObject(model.root);
   const size = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 7.6);
-  assert.ok(size.y > 4.3);
+  assert.ok(size.x > 7.1, 'rollers fill real width once the undrawn base is presented away');
+  assert.ok(size.y > 3.7);
   assert.ok(size.z > 4.4);
-  assert.ok(physicalBounds.min.x < -3.8);
-  assert.ok(physicalBounds.max.x > 3.8);
-  assert.ok(physicalBounds.min.y < -2.4);
+  assert.ok(physicalBounds.min.x < -3.5);
+  assert.ok(physicalBounds.max.x > 3.5);
+  assert.ok(physicalBounds.min.y < -1.9);
   assert.ok(physicalBounds.max.y > 1.9);
   let visibleMeshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 45);
+  assert.ok(visibleMeshCount >= 24, 'the undrawn base and posts are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 4);

@@ -41660,15 +41660,18 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
   }
 
   assert.equal(fixedFrame.userData.fixed, true);
+  // Source presentation removes the base and posts Brown does not draw.
   for (const component of [
     ...baseRails,
     ...baseTies,
     ...camBearingPosts,
-    ...camBearingRings,
     leverPivotPost,
+  ]) assert.ok(component.parent === null, `${component.userData.role} is presented away`);
+  for (const component of [
+    ...camBearingRings,
     fixedLeverPivotShaft,
     valveGuide,
-  ]) assert.equal(component.parent, fixedFrame);
+  ]) assert.ok(component.parent === fixedFrame, `${component.userData.role} stays on the fixed frame`);
   assert.equal(valveGuide.userData.fixed, true);
   for (const cheek of valveGuideCheeks) assert.equal(cheek.parent, valveGuide);
   for (const component of [

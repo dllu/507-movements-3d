@@ -231,3 +231,53 @@ registry.
 | 199 | Faithful toothed yoke, mutilated wheel and guide wheels. |
 | 200 | Faithful bevel reversing pair. |
 | 201 | Presented without the undrawn base, post and bearing bridges; faithful eccentric gears, belt and rod A. |
+
+## Pass 50 batch: 202–223 (excluding 206, 211)
+
+| Movement | Observation |
+| --- | --- |
+| 202 | Faithful worm and wheel. |
+| 203 | Faithful spiral slot cam and lever. |
+| 204 | Presented without the undrawn base and posts; faithful hyperboloidal rollers. |
+| 205 | Faithful pin wheel and heart cam. |
+| 207 | Faithful paired worm wheels on one shaft. |
+| 208 | Faithful pin disk and pinion. |
+| 209 | Faithful mutilated gears and catch. |
+| 210 | Faithful S-cam on the guided rod. |
+| 212 | Presented without the undrawn frame and shaft supports; faithful driver A and stop wheel B. |
+| 213 | Presented without the undrawn frame; faithful split stop ring and ratchet wheel. |
+| 214 | Presented without the undrawn frame and supports. The finger-stop wheels have rounded lobes where Brown draws square teeth. |
+| 215 | Presented without the undrawn frame and supports; faithful crescent driver and six-slot wheel. |
+| 216 | Presented face-on without the undrawn frame; faithful internal ring and pinions. |
+| 217 | Presented face-on without the undrawn frame. The groove does not follow Brown's heart cam C, D, B, e, and 218's notch wheel F is included. |
+| 218 | Faithful notch wheel F, catch G and rocker. |
+| 219 | Faithful crown wheel and pinion. |
+| 220 | Faithful slotted link and crank. |
+| 221 | Faithful elliptical driver, pinion B, arm and the elliptical guide g, h from the caption. |
+| 222 | Faithful gear train and link; the dashed circle is omitted. |
+| 223 | Faithful paired toothed sectors. |
+
+## Pass 50 batch: 224–243
+
+| Movement | Observation |
+| --- | --- |
+| 224 | Faithful sun-and-planet hoist wheel and arms. |
+| 225 | Faithful ratchet wheel, lever and pawl rod. |
+| 226 | Faithful reversing bevels, clutch and frame A. |
+| 227 | Faithful chain sprocket and chain. |
+| 228 | Faithful chain wheel and chain. |
+| 229 | Faithful toothed wheel and pitch chain. |
+| 230 | Faithful pulleys and link bands. |
+| 231 | Faithful triangular linkage and rods. |
+| 232 | Faithful stop wheel, catch A and levers B, C. |
+| 233 | Wheel, pins, crank and latch faithful. Its unnamed rectangular frame, not drawn by Brown, is left while the intermittent-motion lane owns the factory. |
+| 234 | Faithful crown wheel and verge; the row keeps its pass-49 review, which followed the user's corrections. |
+| 235 | Faithful star wheel and pawl lever. |
+| 236 | Faithful ratchet wheel and paired pawls. |
+| 237 | Faithful crown ratchet and pawl. |
+| 238 | Faithful star wheel and cam plate. |
+| 239 | Presented without the undrawn rail and posts. The spur wheel has rounded lobes where Brown draws square teeth. |
+| 240 | Faithful ratchet wheel, pawls and catch. |
+| 241 | Faithful ratchet wheel, pawl and eccentric. |
+| 242 | Presented without the undrawn base and posts; faithful brake wheel, strap and lever. |
+| 243 | Faithful belt pulleys and idlers. |

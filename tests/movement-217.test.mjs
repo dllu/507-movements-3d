@@ -513,7 +513,7 @@ test('movement 217 runtime matches D, shares 218, and leaves 269 authored', () =
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 12.4);
   assert.ok(size.y > 12.4);
-  assert.ok(size.z > 2);
+  assert.ok(size.z > 1.9, 'the cam wheel uses depth without the undrawn frame');
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   const movement218 = createMovementModel(catalog.movements[217]);

@@ -734,12 +734,12 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 5.6);
   assert.ok(sweptSize.y > 7.2);
-  assert.ok(sweptSize.z > 2.1);
+  assert.ok(sweptSize.z > 1.7, 'the separated planes use depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 32);
+  assert.ok(meshCount >= 24, 'the undrawn frame is presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

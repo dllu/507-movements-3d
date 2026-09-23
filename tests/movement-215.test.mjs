@@ -842,12 +842,12 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 9);
   assert.ok(sweptSize.y > 7.5);
-  assert.ok(sweptSize.z > 2);
+  assert.ok(sweptSize.z > 1.65, 'the planes use depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 35);
+  assert.ok(meshCount >= 20, 'the undrawn frame is presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

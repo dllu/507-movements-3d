@@ -486,12 +486,12 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 9);
   assert.ok(sweptSize.y > 9);
-  assert.ok(sweptSize.z > 2);
+  assert.ok(sweptSize.z > 1.7, 'the carrier uses depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 70);
+  assert.ok(meshCount >= 64, 'the undrawn frame is presented away');
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   disposeModel(model.root);
 });

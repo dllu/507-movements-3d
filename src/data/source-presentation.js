@@ -83,6 +83,44 @@ export default {
     remove: ['fixed-base-rail', 'fixed-rear-support-post', 'fixed-(?:output-pivot|input-shaft)-bearing-bridge'],
     note: 'The eccentric gears, belt, pulley and the guided rod A; no base, post or bearing bridges are drawn.',
   },
+  204: {
+    remove: ['fixed-(?:longitudinal|transverse)-base-rail', '(?:driver|driven)-shaft-bearing-post'],
+    note: 'The two hyperboloidal rollers on their shafts; no base or posts are drawn.',
+  },
+  212: {
+    remove: ['geneva-stop-fixed-base-rail', 'geneva-stop-fixed-bearing-upright', '(?:driver-A|stop-wheel-B)-rear-bearing-arm', 'geneva-stop-(?:left|right)-transverse-foot', '212-bored-fixed-shaft-support-\\d'],
+    note: 'Face view of driver A and stop wheel B; no frame is drawn.',
+  },
+  213: {
+    remove: ['friction-stop-fixed-base-rail', 'friction-stop-fixed-bearing-upright', '(?:winding-arbor|split-stop-stud)-rear-bearing-arm', 'friction-stop-(?:left|right)-transverse-foot'],
+    note: 'Face view of the split stop ring and the ratchet wheel; no frame is drawn.',
+  },
+  214: {
+    remove: ['gear-finger-stop-base-rail', '(?:left-stop-counterwheel|right-winding-input)-bearing-upright', 'gear-finger-stop-(?:left|right)-foot', '(?:driven|driver)-bored-fixed-support'],
+    note: 'Face view of the two finger-stop wheels; no frame is drawn.',
+  },
+  215: {
+    remove: ['crescent-stop-base-rail', '(?:crescent-driver|six-slot-wheel)-bearing-upright', 'crescent-stop-(?:left|right)-foot', '215-bored-fixed-shaft-support-\\d'],
+    note: 'Face view of the crescent driver and the six-slot wheel; no frame is drawn.',
+  },
+  216: {
+    camera: [0.15, 0.12, 1],
+    remove: ['mutilated-compound-drive-base-rail', 'common-centerline-bearing-spine', 'mutilated-drive-(?:left|right)-foot'],
+    note: 'Face view of the internal ring and the two pinions; no frame is drawn.',
+  },
+  217: {
+    camera: [0.15, 0.12, 1],
+    remove: ['rear-frame-post', 'rear-frame-top', 'base'],
+    note: 'Face view of the grooved heart cam C, D, B, e with the notch wheel F and catch G; no frame is drawn.',
+  },
+  239: {
+    remove: ['fixed-spur-stop-support-rail', 'fixed-spur-gear-bearing-post', '(?:left|right|output)-journal-support-post'],
+    note: 'The spur wheel between its two pivoted stops; no rail or posts are drawn.',
+  },
+  242: {
+    remove: ['brake-demonstration-base', 'fixed-brake-wheel-bearing-post', 'fixed-lever-fulcrum-post'],
+    note: 'The brake wheel, strap and lever; no base or posts are drawn.',
+  },
   234: {
     rotate: [-Math.PI / 2, 0, 0],
     camera: [2.2, 4.6, 9],

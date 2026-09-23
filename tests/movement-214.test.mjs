@@ -654,12 +654,12 @@ test('movement 214 renders coplanar meshing gears, legible rigid rate indices, t
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 9);
   assert.ok(sweptSize.y > 8);
-  assert.ok(sweptSize.z > 2);
+  assert.ok(sweptSize.z > 1.7, 'the gears use depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 25);
+  assert.ok(meshCount >= 23, 'the undrawn frame is presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
