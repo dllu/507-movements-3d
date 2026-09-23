@@ -203,24 +203,30 @@ async function worker(id) {
 if (value('--worker')) {
   await worker(Number(value('--worker')));
 } else {
-  for (const arg of args) if (!/^--(ids|out|timeout-ms|samples|spacing)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
+  for (const arg of args) if (!/^--(ids|out|timeout-ms|samples|spacing|jobs)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
   const ids = expandIds(value('--ids') ?? '1-507');
-  const timeout = Number(value('--timeout-ms') ?? 120000);
+  const timeout = Number(value('--timeout-ms') ?? 600000);
+  const jobs = Number(value('--jobs') ?? 1);
   const out = resolve(value('--out') ?? '/dev/shm/507-body-intersections.json');
   const extra = args.filter((arg) => /^--(samples|spacing)=/.test(arg));
   const report = { generatedAt: new Date().toISOString(), scope: 'Rendered closed-mesh penetration between distinct rigid bodies at sampled phases; open shells are not targets; triage, not certification.', movements: [] };
   await mkdir(dirname(out), { recursive: true });
-  for (const id of ids) {
-    let result;
-    try {
-      const { stdout } = await promisify(execFile)(process.execPath, [fileURLToPath(import.meta.url), `--worker=${id}`, ...extra], { timeout, maxBuffer: 16 * 1024 * 1024 });
-      result = JSON.parse(stdout.trim().split('\n').at(-1));
-    } catch (error) {
-      result = { id, status: error.killed ? 'timeout' : 'error', error: String(error.stderr || error.message).slice(0, 800) };
+  const queue = [...ids];
+  const run = async () => {
+    for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+      let result;
+      try {
+        const { stdout } = await promisify(execFile)(process.execPath, [fileURLToPath(import.meta.url), `--worker=${id}`, ...extra], { timeout, maxBuffer: 16 * 1024 * 1024 });
+        result = JSON.parse(stdout.trim().split('\n').at(-1));
+      } catch (error) {
+        result = { id, status: error.killed ? 'timeout' : 'error', error: String(error.stderr || error.message).slice(0, 800) };
+      }
+      report.movements.push(result);
+      report.movements.sort((a, b) => a.id - b.id);
+      await writeFile(out, `${JSON.stringify(report, null, 2)}\n`);
+      const top = result.pairs?.find((row) => row.kind === 'solid');
+      console.log(`${id}: ${result.status ?? `${result.bodies} bodies, worst solid ${(result.worstSolidDepth ?? 0).toFixed(4)}${top ? ` (${top.pair} @${top.time.toFixed(2)})` : ''}; coaxial ${(result.worstCoaxialDepth ?? 0).toFixed(4)}; open ${result.openMeshes?.length ?? 0}`}`);
     }
-    report.movements.push(result);
-    await writeFile(out, `${JSON.stringify(report, null, 2)}\n`);
-    const top = result.pairs?.find((row) => row.kind === 'solid');
-    console.log(`${id}: ${result.status ?? `${result.bodies} bodies, worst solid ${(result.worstSolidDepth ?? 0).toFixed(4)}${top ? ` (${top.pair} @${top.time.toFixed(2)})` : ''}; coaxial ${(result.worstCoaxialDepth ?? 0).toFixed(4)}; open ${result.openMeshes?.length ?? 0}`}`);
-  }
+  };
+  await Promise.all(Array.from({ length: jobs }, run));
 }
