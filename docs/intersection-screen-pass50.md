@@ -16,7 +16,7 @@ Rows stay `unknown` or `known`; these screens are not clearance certificates.
 | 347 | Central ball 0.487 into the conical heads (screened as fluid); crank socket and rod 0.230; crank arm 0.228 into the pin ball; open casing meshes. | Recorded. |
 | 255–259 | Single rigid body; nothing to screen. | Rows stay `unknown`. |
 | 137 | Fork boss 0.250 over its fixed shaft; rolling wheels 0.232 over their pins and 0.240 into the lower link; fork arms 0.184 into the shaft. | Recorded; the invisible stroke envelope is excluded as a fluid. |
-| 138 | Cam-bearing arm 0.169 over the input shaft; resting point 0.093 into the cam edge. | Recorded; the invisible stroke envelope is excluded as a fluid. |
+| 138 | Before: cam-bearing arm 0.169 over the input shaft. After: resting point 0.093 into the cam edge at one pose. | The arm ends at its bearing ring; the invisible stroke envelope is excluded as a fluid. |
 | 215 | 0.001 driver-pin graze; an open decorative highlight is excluded. | Clear at the sampled poses. |
 | 445, 446 | No solid overlaps; the water shapes overlap each other by up to 0.40. | Clear for solids. |
 | 496 | Before: white roll indices 0.010 into the bearing bridge. After: the yarn meets its package by 0.024 where it winds on; rolls 0.005 in the bridge. | The undrawn roll indices are removed. |

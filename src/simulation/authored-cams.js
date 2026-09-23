@@ -9838,7 +9838,7 @@ function sevenArcVariableMotionPointFollower() {
   supportPost.userData.role = 'fixed-rear-post-supporting-cam-and-guides';
   const shaftBearingArm = makeBeam(
     new THREE.Vector3(supportX, shaftCenter.y, supportZ),
-    new THREE.Vector3(shaftCenter.x, shaftCenter.y, -0.42),
+    new THREE.Vector3(shaftCenter.x + 0.3, shaftCenter.y, -0.43),
     { thickness: 0.14, depth: 0.2, color: PALETTE.frame },
   );
   shaftBearingArm.userData.role = 'fixed-arm-to-seven-arc-cam-bearing';

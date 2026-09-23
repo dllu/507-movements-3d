@@ -3993,9 +3993,9 @@
       "intersections": {
         "status": "known",
         "evidence": "docs/movement-138.md",
-        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm runs 0.169 coaxially over the input shaft without a bore; the resting point enters the cam edge by 0.093. The invisible stroke envelope is excluded as a fluid."
+        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm now ends at its bearing ring instead of running 0.169 into the input shaft; the resting point still enters the cam edge by 0.093 at one sampled pose. The invisible stroke envelope is excluded as a fluid."
       },
-      "flaws": "The screen shows an unbored cam-bearing arm and the resting point 0.093 into the cam. Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
+      "flaws": "The resting point enters the cam edge by 0.093 at one sampled pose. Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
       "references": [
         "docs/movement-138.md",
         "docs/review-progress.md",
