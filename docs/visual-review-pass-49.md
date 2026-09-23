@@ -591,3 +591,10 @@ The engines lane (`docs/engines-326-345-review.md`) reshaped these parts and rem
 | 341 | Faithful beam, footings, cylinder and links A, B. |
 | 344 | Faithful oscillating cylinder, crank, rod and trunnion rails. |
 | 345 | Faithful pendulum cylinder, crank, rod and trunnion rail. |
+
+## Pass 50 batch: 329 and 331
+
+| Movement | Observation |
+| --- | --- |
+| 329 | Faithful flywheel, internal wheel C, pinion B, crank A, legs and cylinder. |
+| 331 | Faithful flywheel, framing D, slotted crosshead A, crank B and rod C. |

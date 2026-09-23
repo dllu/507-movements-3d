@@ -9569,9 +9569,12 @@
     {
       "id": 329,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-guide-329-331-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Source/default/front/rear browser review on port 43940 has no errors or viewport clipping. Final full-cycle maximum absolute NDC is 0.9259 / 0.8602 for 329 / 331, including the pin-length and gland-support corrections. Chrome is closed. Bulk review images remain outside Git at…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9582,14 +9585,15 @@
       "references": [
         "docs/piston-guide-329-331-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-epicyclic-piston-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 330,
@@ -9618,9 +9622,12 @@
     {
       "id": 331,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-guide-329-331-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Source/default/front/rear browser review on port 43940 has no errors or viewport clipping. Final full-cycle maximum absolute NDC is 0.9259 / 0.8602 for 329 / 331, including the pin-length and gland-support corrections. Chrome is closed. Bulk review images remain outside Git at…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9631,14 +9638,15 @@
       "references": [
         "docs/piston-guide-329-331-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-slotted-crosshead-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 332,
