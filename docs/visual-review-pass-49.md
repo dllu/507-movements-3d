@@ -27,3 +27,24 @@ change a row's intersection status or physics qualification.
 | 445 | Channel, chamber and valve read as a tank above a cone chamber rather than Brown's section layout; translucent fluid envelopes. |
 | 446 | As 445 with the rising jet; layout differs from Brown's section. |
 | 496 | Rollers A/B, flyer and bobbin follow the plate; rollers are fluted and the flyer is larger than drawn. |
+
+## Pass 50 batch: 47–62
+
+| Movement | Observation |
+| --- | --- |
+| 047 | Faithful sectioned friction clutch, shaft and lever. |
+| 048 | Jaw clutch, shaft and lever faithful; the end gear is wider and carries a mating pinion larger than drawn. |
+| 049 | Faithful double-bevel reversing gear and pedestals. |
+| 050 | Faithful Hooke joint forks and cross from Brown's oblique view. |
+| 051 | Faithful joint rings and shafts. |
+| 052 | Faithful stud clutch, sleeve and lever. |
+| 053 | Faithful bevel reverser with jaw clutch and lever. |
+| 054 | Faithful face-toothed wheel with pinions A and B. |
+| 055 | Internal gear C with A and B read correctly, but an undrawn grey backing disk fills the ring. |
+| 056 | Faithful lathe gear engagement, lever and bed. |
+| 057 | Faithful crossed band, internal ring and inner gears. |
+| 058 | Faithful stepped gear pairs, drums and belt. |
+| 059 | Faithful selector gearing, drums and belt. |
+| 060 | Faithful two belt pairs. |
+| 061 | Faithful belt drive with sectioned bevel box and lever. |
+| 062 | Faithful stepped pulleys with sectioned bevel box. |
