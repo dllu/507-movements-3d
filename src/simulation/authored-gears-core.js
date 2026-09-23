@@ -32270,12 +32270,16 @@ function compoundMutilatedExternalInternalGearReverser() {
   });
   compoundShaft.position.set(compoundCenter.x, compoundCenter.y, -0.08);
   compoundShaft.userData.role = 'compound-input-shaft';
+  // The rear web turns past the pinion axis, so the pinion shaft stops in front of it.
+  const pinionShaftRearZ = carrierCenterZ + carrierDepth / 2 + 0.02;
+  const pinionShaftFrontZ = 0.72;
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.58,
+    length: pinionShaftFrontZ - pinionShaftRearZ,
     radius: 0.115,
   });
-  pinionShaft.position.set(pinionCenter.x, pinionCenter.y, -0.07);
+  pinionShaft.position.set(pinionCenter.x, pinionCenter.y,
+    (pinionShaftFrontZ + pinionShaftRearZ) / 2);
   pinionShaft.userData.role = 'reversing-pinion-shaft';
   const externalContactPoint = new THREE.Vector2(0, -1);
   const internalContactPoint = new THREE.Vector2(0, -3);

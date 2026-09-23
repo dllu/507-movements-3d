@@ -6328,16 +6328,17 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "sampled-clear",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses) after ending the pinion shaft in front of the rotating rear web: only a 0.0014 transition-tooth graze remains, below the screen spacing."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Internal teeth only on the working arc. Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "The pinion's front support is not modelled; its shaft ends in front of the rotating web. Undrawn fixed supports are removed by source presentation. Internal teeth only on the working arc. Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8070,17 +8071,18 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "known",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the cylinder body runs 0.578 coaxially over its arbor and support post without a bore; the hammer shaft passes 0.151 through its bearing arm; dog A overlaps ratchet B by 0.126 and the receiver lock by 0.12; the lock overlaps the cylinder by 0.07."
       },
-      "flaws": "Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
+      "flaws": "The screen shows unbored cylinder and hammer bearings and dog, ratchet and lock overlaps up to 0.126. Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8857,16 +8859,17 @@
         "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "known",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the pallet arbor passes 0.309 through the upper bearing plate and 0.304 through its bracket; the pin-wheel hub and spokes run 0.300 coaxially over the fixed arbor; the pins and quarter-arc pass through the pallets and arm bridges by up to 0.119."
       },
-      "flaws": "Thin V pallet instead of Brown’s broad plate on a disk; white index markers at hub and pallet tip. Finite pin/pallet intersections not audited.",
+      "flaws": "The screen shows unbored bearings and pins passing through the pallets by up to 0.119. Thin V pallet instead of Brown’s broad plate on a disk; white index markers at hub and pallet tip. Finite pin/pallet intersections not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10101,16 +10104,17 @@
         "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "known",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the central ball overlaps the conical heads by 0.487 (screened as fluid, uncertain); the crank socket and piston rod overlap coaxially by 0.230; the crank arm overlaps the pin-socket ball by 0.228; several fixed casing parts are open meshes and cannot be targets."
       },
-      "flaws": "Translucent drum instead of Brown’s conical-head section; crank/flywheel correct. Finite disk/seat intersections not audited.",
+      "flaws": "The screen shows ball, socket and crank-arm overlaps up to 0.23, and open casing meshes. Translucent drum instead of Brown’s conical-head section; crank/flywheel correct. Finite disk/seat intersections not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",

@@ -491,7 +491,7 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 64, 'the undrawn frame is presented away');
+  assert.ok(meshCount >= 63, 'the undrawn frame is presented away');
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   disposeModel(model.root);
 });

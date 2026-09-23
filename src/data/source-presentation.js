@@ -105,7 +105,7 @@ export default {
   },
   216: {
     camera: [0.15, 0.12, 1],
-    remove: ['mutilated-compound-drive-base-rail', 'common-centerline-bearing-spine', 'mutilated-drive-(?:left|right)-foot'],
+    remove: ['mutilated-compound-drive-base-rail', 'common-centerline-bearing-spine', 'mutilated-drive-(?:left|right)-foot', 'fixed-reversing-pinion-bearing'],
     note: 'Face view of the internal ring and the two pinions; no frame is drawn.',
   },
   217: {
