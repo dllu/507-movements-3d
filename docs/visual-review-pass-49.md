@@ -270,7 +270,7 @@ registry.
 | 230 | Faithful pulleys and link bands. |
 | 231 | Faithful triangular linkage and rods. |
 | 232 | Faithful stop wheel, catch A and levers B, C. |
-| 233 | Wheel, pins, crank and latch faithful. Its unnamed rectangular frame, not drawn by Brown, is left while the intermittent-motion lane owns the factory. |
+| 233 | Wheel, pins, crank and latch faithful. The undrawn frame beams are now removed by source presentation. |
 | 234 | Faithful crown wheel and verge; the row keeps its pass-49 review, which followed the user's corrections. |
 | 235 | Faithful star wheel and pawl lever. |
 | 236 | Faithful ratchet wheel and paired pawls. |

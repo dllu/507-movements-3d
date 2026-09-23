@@ -6818,7 +6818,7 @@
         "evidence": "docs/lantern-stop-233-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Final source/default/oblique Chrome views load without errors or clipping. The 17-pose visible-vertex sweep has maximum normalized extent .900; default rendering uses 82 draws and 44800 triangles including shadows. The production build passes in 23.46 seconds, and both 233/239 packaged desktop/playback/mobile checks pass in 7.6 seconds. Their construction/update screens have…"
       },
-      "flaws": "An unnamed rectangular frame, not drawn by the plate, remains. Stop withdrawal, wheel strokes and reseating prescribed; yielding detent crosses zero-moment configurations, so passive holding/return not established.",
+      "flaws": "Undrawn frame beams are removed by source presentation. Stop withdrawal, wheel strokes and reseating prescribed; yielding detent crosses zero-moment configurations, so passive holding/return not established.",
       "references": [
         "docs/lantern-stop-233-contact-review.md",
         "docs/minimal-interface-review.md",

@@ -15991,6 +15991,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
       { color: PALETTE.frame, depth: 0.24, thickness: 0.2 },
     ),
   ];
+  for (const beam of frameBeams) beam.userData.role = 'lantern-stop-rear-support-frame-beam';
   root.add(...frameBeams);
 
   const rollerStop = new THREE.Group();

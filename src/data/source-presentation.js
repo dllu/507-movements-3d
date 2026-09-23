@@ -121,6 +121,10 @@ export default {
     remove: ['brake-demonstration-base', 'fixed-brake-wheel-bearing-post', 'fixed-lever-fulcrum-post'],
     note: 'The brake wheel, strap and lever; no base or posts are drawn.',
   },
+  233: {
+    remove: ['lantern-stop-rear-support-frame-beam'],
+    note: 'Face view of the lantern wheel with its roller stop and latch; no frame is drawn.',
+  },
   234: {
     rotate: [-Math.PI / 2, 0, 0],
     camera: [2.2, 4.6, 9],
