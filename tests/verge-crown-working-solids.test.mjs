@@ -48,7 +48,7 @@ function worstPenetration(model, phases = 97) {
   return worst;
 }
 
-for (const id of [234, 298, 299, 302]) {
+for (const id of [234, 299, 302]) {
   test(`${id} verge pallets and crown saw teeth only touch at the working tip`, () => {
     const model = createMovementModel(catalog.movements[id - 1]);
     const worst = worstPenetration(model);

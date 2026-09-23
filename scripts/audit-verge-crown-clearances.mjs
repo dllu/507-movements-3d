@@ -1,4 +1,4 @@
-// Finite verge/crown-wheel audit for Movements 234, 298, 299 and 302. Every
+// Finite verge/crown-wheel audit for Movements 234, 299 and 302. Every
 // visible mesh carried by the verge is compared with every visible mesh on the
 // crown-wheel rotor in both directions, using densely sampled rendered
 // surfaces rather than the model's own tip/pallet contact equations.
@@ -13,7 +13,7 @@ const options = Object.fromEntries(process.argv.slice(2).map((arg) => {
   if (!match) throw new Error('Use --ids=234,298 --samples=513 [--out=/dev/shm/verge.json]');
   return match.slice(1);
 }));
-const ids = (options.ids ?? '234,298,299,302').split(',').map(Number);
+const ids = (options.ids ?? '234,299,302').split(',').map(Number);
 const samples = Number(options.samples ?? 513);
 const spacing = Number(options.spacing ?? 0.03);
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));

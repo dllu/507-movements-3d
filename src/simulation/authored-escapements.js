@@ -4677,7 +4677,6 @@ export function createAuthoredEscapementMovement(movement) {
     // Brown's plate shows no frame or bearings for this verge.
     case 234: return vergeAndCrownWheelEscapement(movement, { includeFrame: false });
     case 238: return sevenToothAnchorEscapement(movement);
-    case 298: return classicWatchVergeEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);
     case 300: return debaufreFrictionalRestEscapement(movement);
     case 301: return debaufreFrictionalRestEscapement(movement, {

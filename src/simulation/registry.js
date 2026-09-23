@@ -201,6 +201,7 @@ import { createAuthoredDiagonalCatchMovement } from './authored-diagonal-catches
 import { createAuthoredEngineCouplingMovement } from './authored-engine-couplings.js';
 import { createAuthoredEngineReverserMovement } from './authored-engine-reversers.js';
 import { createAuthoredEscapementMovement } from './authored-escapements.js';
+import { createAuthoredGearedBalanceVergeMovement } from './authored-geared-balance-verge.js';
 import { createAuthoredFreeEscapementMovement } from './authored-free-escapements.js';
 import { createAuthoredExpandingPulleyMovement } from './authored-expanding-pulleys.js';
 import { createAuthoredEccentricCrownGearMovement } from './authored-eccentric-crown-gears.js';
@@ -485,6 +486,7 @@ export function createMovementModel(movement) {
     ?? createAuthoredGearCoreMovement(movement)
     ?? createAuthoredGearMovement(movement)
     ?? createAuthoredGearLinkageMovement(movement)
+    ?? createAuthoredGearedBalanceVergeMovement(movement)
     ?? createAuthoredEscapementMovement(movement)
     ?? createAuthoredIntermittentCoreMovement(movement)
     ?? createAuthoredIntermittentMovement(movement)

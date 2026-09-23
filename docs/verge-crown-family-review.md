@@ -138,8 +138,9 @@ unknown; these notes record what was visible.
 - **298 is the wrong mechanism.** Its plate shows a geared crown wheel like
   Movement 26 (rectangular teeth on a drum) meshing a pinion under balance C,
   on the arbor that carries two loop pallets over a face-on saw-tooth escape
-  wheel. The model reuses 234's verge-on-crown escapement. The reconstruction
-  is queued pending how the loop pallets act on the escape wheel.
+  wheel. It was rebuilt as its own mechanism; see the
+  [298 review](geared-balance-verge-298-review.md). This family is now 234,
+  299 and 302.
 
 The 513-phase verge audit and all 39 family tests still pass after these
 changes.
