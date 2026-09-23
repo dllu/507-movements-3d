@@ -64,20 +64,20 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
     blocks.crossedBand,
     blocks.crossedCarrier,
     blocks.flywheelRotor,
-    blocks.frame,
     blocks.openBand,
     blocks.openCarrier,
     blocks.pivotPin,
     blocks.rockingSector,
-  ]) assert.equal(component.parent, model.root);
-  assert.equal(blocks.crossedRatchet.parent, blocks.flywheelRotor);
-  assert.equal(blocks.openRatchet.parent, blocks.flywheelRotor);
-  assert.equal(blocks.flywheelRim.parent, blocks.flywheelRotor);
-  assert.equal(blocks.flywheelIndex.parent, blocks.flywheelRotor);
-  assert.equal(blocks.crossedPawl.parent, blocks.crossedCarrier);
-  assert.equal(blocks.openPawl.parent, blocks.openCarrier);
-  assert.equal(blocks.sectorArc.parent, blocks.rockingSector);
-  assert.equal(blocks.topLever.parent, blocks.rockingSector);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.frame.parent === null, 'source presentation removes frame');
+  assert.ok(blocks.crossedRatchet.parent === blocks.flywheelRotor, 'blocks.crossedRatchet parent');
+  assert.ok(blocks.openRatchet.parent === blocks.flywheelRotor, 'blocks.openRatchet parent');
+  assert.ok(blocks.flywheelRim.parent === blocks.flywheelRotor, 'blocks.flywheelRim parent');
+  assert.ok(blocks.flywheelIndex.parent === blocks.flywheelRotor, 'blocks.flywheelIndex parent');
+  assert.ok(blocks.crossedPawl.parent === blocks.crossedCarrier, 'blocks.crossedPawl parent');
+  assert.ok(blocks.openPawl.parent === blocks.openCarrier, 'blocks.openPawl parent');
+  assert.ok(blocks.sectorArc.parent === blocks.rockingSector, 'blocks.sectorArc parent');
+  assert.ok(blocks.topLever.parent === blocks.rockingSector, 'blocks.topLever parent');
   assert.equal(blocks.anchorKnots.length, 4);
   assert.equal(blocks.openBandMarkers.length, 6);
   assert.equal(blocks.crossedBandMarkers.length, 6);

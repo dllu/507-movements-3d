@@ -74,29 +74,29 @@ test('movement 384 is one fixed-centre screw helicograph with one threaded rolli
   for (const component of [
     blocks.fixedPivot,
     blocks.orbitingArm,
-    blocks.paperAssembly,
-  ]) assert.equal(component.parent, model.root);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.paperAssembly.parent === null, 'source presentation removes paperAssembly');
   for (const component of [
     blocks.centerMark,
     blocks.drawingPaper,
     blocks.liveContact,
     blocks.transferredTrace,
     blocks.transferPaper,
-  ]) assert.equal(component.parent, blocks.paperAssembly);
+  ]) assert.ok(component.parent === blocks.paperAssembly, `${component.userData.role} parent`);
   for (const component of [
     blocks.needle,
     blocks.pivotKnob,
     blocks.pivotKnobIndex,
     blocks.pivotSleeve,
-  ]) assert.equal(component.parent, blocks.fixedPivot);
+  ]) assert.ok(component.parent === blocks.fixedPivot, `${component.userData.role} parent`);
   for (const component of [
     blocks.bridge,
     blocks.screwCore,
     blocks.screwThread,
     blocks.shaftEnd,
     blocks.threadedWheel,
-  ]) assert.equal(component.parent, blocks.orbitingArm);
-  assert.equal(blocks.wheelRotor.parent, blocks.threadedWheel);
+  ]) assert.ok(component.parent === blocks.orbitingArm, `${component.userData.role} parent`);
+  assert.ok(blocks.wheelRotor.parent === blocks.threadedWheel, 'blocks.wheelRotor parent');
   assert.equal(blocks.wheelSpokes.length, 8);
   assert.equal(blocks.fixedPivot.userData.fixed, true);
   assert.equal(blocks.paperAssembly.userData.fixed, true);
@@ -119,12 +119,14 @@ test('movement 384 is one fixed-centre screw helicograph with one threaded rolli
     'female-threaded-wheel-hub',
     'visible-edge-of-single-start-female-hub-thread',
     'paper-contacting-milled-wheel-rim',
-    'transfer-paper-colored-side-downward',
-    'drawing-paper-receiving-transferred-line',
-    'completed-logarithmic-spiral-transferred-to-drawing-paper',
     'white-wheel-spin-index-on-near-face',
     'white-wheel-spin-index-on-tread',
   ]) assert.ok(roles.includes(role), role);
+  for (const role of [
+    'transfer-paper-colored-side-downward',
+    'drawing-paper-receiving-transferred-line',
+    'completed-logarithmic-spiral-transferred-to-drawing-paper',
+  ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   disposeModel(model.root);
 });
 

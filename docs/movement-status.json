@@ -10959,9 +10959,12 @@
     {
       "id": 380,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/drill-feed-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. 366's corrected upper-pinion layout was also reviewed in default, front and full-feed poses; its maximum projected coordinate remains 0.813, with no browser errors."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10971,45 +10974,53 @@
       "flaws": "Feed schedules, screw dimensions and thrust capture inferred; cutting forces, workpiece removal and full fastener/support load paths unvalidated.",
       "references": [
         "docs/drill-feed-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cramp-drills.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 381,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/adjustment-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default/front/advanced review reported no browser errors or full-cycle clipping (17 poses, maximum absolute projected coordinate 0.866, 0.829 and 0.859 respectively). Final board length, screw-tip shortening, radial-opening clearance and hinge thread engagement…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/adjustment-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Chrome source/default/front/advanced review reported no browser errors or full-cycle clipping (17 poses, maximum absolute projected coordinate 0.866, 0.829 and 0.859 respectively). Final board length, screw-tip shortening, radial-opening clearance and hinge thread engagement edits remain inside those bounds and are covered by the finite checks. Review captures and fetched…"
       },
-      "flaws": "Wedge motion prescribed; frictional self-locking, clamp force, wood compression and elastic deformation unvalidated.",
+      "flaws": "The plate’s transverse section is not reproduced; the default camera shows the plan. Wedge motion prescribed; frictional self-locking, clamp force, wood compression and elastic deformation unvalidated.",
       "references": [
         "docs/adjustment-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-wedge-clamps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 382,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/adjustment-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default/front/advanced review reported no browser errors or full-cycle clipping (17 poses, maximum absolute projected coordinate 0.866, 0.829 and 0.859 respectively). Final board length, screw-tip shortening, radial-opening clearance and hinge thread engagement…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11020,21 +11031,25 @@
       "references": [
         "docs/adjustment-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-adjustable-stands.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 383,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/textile-planer-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Both full-cycle visible-vertex bounds checks pass at 33 poses. Scene counts, geometry objects and position arrays remain stable across updates. No simulation or collision mesh is generated during playback. Measured visible geometry is 15,150 triangles for 383 and 13,944 for 388,…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11044,95 +11059,111 @@
       "flaws": "Zero-thickness cloth and constant winding radii; source animation ratio itself conjectural. Bristle deformation, tension and winding buildup unsolved.",
       "references": [
         "docs/textile-planer-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-textile-dressing.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 384,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/helicograph-working-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The model has 21,238 visible triangles before shadows. Local construction measured 121 milliseconds on the first call and 39–69 milliseconds warm. These are ordinary analytic solids; no expensive contour extraction, live physics or runtime mesh regeneration is introduced. Final…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/helicograph-working-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The selected thread/hardware studies issue about 9.95 million bounded triangle queries. Shaft checks include intersections with interior bearing planes so shaft endpoints outside a thin bearing cannot conceal an interference. Tests also cover the downward needle point, spoke direction, spindle/knob attachment, outward thread and trace winding, all visible vertices inside the…"
       },
-      "flaws": "Radial advance causes axial scrub despite ideal rolling; hand force, friction, slip and loaded tracing unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Radial advance causes axial scrub despite ideal rolling; hand force, friction, slip and loaded tracing unvalidated.",
       "references": [
         "docs/helicograph-working-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-helicographs.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 385,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/door-closer-working-joints-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The model retains geometry buffers during playback, disables ground/fog, uses full-cycle visible bounds and a more frontal camera, and requests a minimum ten-second display cycle. Root performs the integrated source/default/oblique browser review."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/door-closer-working-joints-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The eight existing law/source/render tests and six new finite tests cover socket bores, rotating pins, fork ears and bridges, both toggle links, the central axle/retainers, the suspension, and the adjacent weight eye/neck/body. Finite pair sweeps sample 97 poses through the complete cycle with a `2e-6` penetration tolerance. Separate axis checks verify that the actual link… Pass-49 relative-motion screen reports 0.1 solid overlap (fixed-door-frame-lintel x door-pin-socket-bracket); unclassified, may be intended contact."
       },
-      "flaws": "Toggle motion and spring deformation prescribed; closing torque, preload, damping, impact and passive door response unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Toggle motion and spring deformation prescribed; closing torque, preload, damping, impact and passive door response unvalidated.",
       "references": [
         "docs/door-closer-working-joints-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-door-closers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 386,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/folding-pipe-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final browser review captured source/default/front/advanced views without errors or clipping; 17-pose maximum projected extents were 0.912, 0.884 and 0.912 for 386, 387 and 468. The cheap 49-update CPU screen reported no scene growth or new playback geometry, with update P95 of…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/folding-pipe-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. These are kinematic reconstructions, not structural or load-bearing qualifications. No ladder latch, hand force, buoyancy, pin friction or joint wear is solved. The 468 installation path and prepared bed are prescribed; hauling forces and seabed contact are not simulated. Its spherical seats include geometric clearance without a modeled gasket, pressure seal or fluid solver.… Pass-49 relative-motion screen reports 0.0342 solid overlap (left-half-of-closed-round-pole-shell x right-upper-complement-forming-full-pole-end); unclassified, may be intended contact."
       },
-      "flaws": "Kinematic folding/joint reconstruction; latch action, hand force, buoyancy, friction, wear and structural strength not solved.",
+      "flaws": "One ladder where the plate draws three views. Kinematic folding/joint reconstruction; latch action, hand force, buoyancy, friction, wear and structural strength not solved.",
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-folding-ladders.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 387,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/folding-pipe-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final browser review captured source/default/front/advanced views without errors or clipping; 17-pose maximum projected extents were 0.912, 0.884 and 0.912 for 386, 387 and 468. The cheap 49-update CPU screen reported no scene growth or new playback geometry, with update P95 of…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11143,21 +11174,25 @@
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-tide-ladders.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 388,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/textile-planer-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Both full-cycle visible-vertex bounds checks pass at 33 poses. Scene counts, geometry objects and position arrays remain stable across updates. No simulation or collision mesh is generated during playback. Measured visible geometry is 15,150 triangles for 383 and 13,944 for 388,…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "known",
@@ -11165,24 +11200,28 @@
         "note": "Prescribed roller/material indentation of 0.034–0.050; not a rigid-solid clearance or validated deformation solution.",
         "kind": "contact-overlap"
       },
-      "flaws": "Upper teeth intentionally indent rigid displayed wood by 0.034–0.050; compliant grip, local slip, traction and loaded feed unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Upper teeth intentionally indent rigid displayed wood by 0.034–0.050; compliant grip, local slip, traction and loaded feed unvalidated.",
       "references": [
         "docs/textile-planer-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-planer-feeds.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 389,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/jack-389-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The final source/default/front/reverse browser review, including the steeper upper stop and joined saddle, found no errors or clipping over 65 full-cycle poses (maximum absolute screen NDC 0.92593). Bulk screenshots and diagnostic outputs remain in `/dev/shm`."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11193,32 +11232,37 @@
       "references": [
         "docs/jack-389-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eccentric-jacks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 390,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/dual-band-390-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The final source/default/front/rear browser capture reported zero errors or clipped vertices, maximum absolute projected coordinate 0.88327. The rear pawl lies behind the front pulley in the default source view; its distinct axial layer can be inspected by orbiting toward the…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/dual-band-390-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. `dual-band-pawl-contact.js` derives the driving phase from the finite circular toe and actual working flank. The unit reaction normal gives output moment **+0.288703** and pawl seating moment **+0.020986**. A small reverse displacement penetrates the working flank, demonstrating the lock direction; the contact is about 41% along the finite flank, not perched on a crest. The… Pass-49 relative-motion screen reports 0.0128 solid overlap (semicircular-piece-band-groove x crossed-band-D-fixed-material-marker); unclassified, may be intended contact."
       },
-      "flaws": "Band/pawl geometry qualified for prescribed drive; shaft keys/supports schematic, passive loading, friction and impact unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Band/pawl geometry qualified for prescribed drive; shaft keys/supports schematic, passive loading, friction and impact unvalidated.",
       "references": [
         "docs/dual-band-390-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -11228,64 +11272,75 @@
         ],
         "note": "Experimental MuJoCo flywheel study; production remains prescribed."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 391,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/weighted-rack-selector-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. - The previous 257-pose rack/weight/pinion and 65-pose guide/input/bearing sweeps still pass with the reversed sequence. No teeth were shortened or removed. - The additional 257-pose actual-solid sweep covers cam/roller, cam/outboard guide pin, cam/lug and rack body, the bored…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/weighted-rack-selector-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - The previous 257-pose rack/weight/pinion and 65-pose guide/input/bearing sweeps still pass with the reversed sequence. No teeth were shortened or removed. - The additional 257-pose actual-solid sweep covers cam/roller, cam/outboard guide pin, cam/lug and rack body, the bored pivot, roller axle, spring stud, stop and bracket interfaces. - Independent nearest-triangle normals… Pass-49 relative-motion screen reports 0.1097 solid overlap (fixed-guide-groove-support-standard/BoxGeometry x right-rack-A1-pin-running-in-fixed-guide-groove-b); unclassified, may be intended contact."
       },
-      "flaws": "Rack trajectories and guide-corner timing prescribed; selector contact direction checked, but branch force equilibrium and passive load response unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Rack trajectories and guide-corner timing prescribed; selector contact direction checked, but branch force equilibrium and passive load response unsolved.",
       "references": [
         "docs/weighted-rack-selector-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-alternating-weighted-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 392,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/reciprocating-cord-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three use source-facing views, suppress ground/fog, and enforce readable minimum display periods of 8, 9, and 5 seconds. Initial browser review found no errors or cycle clipping (maximum NDC extents .730, .843 and .902). The final 374 review covers its restored face marks…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/reciprocating-cord-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The unchanged legacy movement tests and `tests/reciprocating-cord-working-solids.test.mjs` passed 32/32 checks. After the final rod stand-off correction, all 11 affected 392 checks passed. The eight focused checks also cover both 359 cord branches against one another and the 374 treadle against its fixed standard, and the 392 rod against the nearby guide cheeks with both pins… Pass-49 relative-motion screen reports 0.0763 solid overlap (short-rigid-render-segment-of-flexing-leaf-spring/SphereGeometry x fixed-right-hand-anchor-of-leaf-spring); unclassified, may be intended contact."
       },
-      "flaws": "Spring preload is a path-length display proxy; elastic force, blade tension, cutting loads and passive dynamics unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Spring preload is a path-length display proxy; elastic force, blade tension, cutting loads and passive dynamics unsolved.",
       "references": [
         "docs/reciprocating-cord-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gig-saws.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 393,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/polishing-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Serialized Chrome source/default/front/advanced review reported no errors. Full-cycle maximum absolute screen coordinates were 0.885 for 370 and 0.765 for 393, within the viewport. Rendered geometry including shadow passes: 16,856 triangles / 58 calls and 86,072 triangles / 60…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11295,100 +11350,112 @@
       "flaws": "Working motion prescribed; polishing pressure, friction, elastic belt/pad response, wear and material removal unvalidated.",
       "references": [
         "docs/polishing-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lens-polishers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 394,
       "visual": {
         "status": "yes",
-        "reviewer": "GPT-6 Astra — primary agent",
-        "reviewedRevision": "3d4f991",
-        "evidence": "docs/reversing-transmission-tooth-contact-review.md",
-        "note": "Primary-agent source/default and oblique comparison during family pass 46. Scoped visual review, not complete fidelity qualification."
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/reversing-transmission-tooth-contact-review.md",
         "note": "Selected rendered surfaces and shifted poses pass the scoped review tolerances; no general continuous all-pairs guarantee. Pass-49 relative-motion screen reports 0.0786 solid overlap (closed-oblong-body-of-endless-rack x fixed-guide-for-reciprocating-input-rod); unclassified, may be intended contact."
       },
-      "flaws": "Shortened terminal rack teeth and inferred guides; flange friction handoff remains prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Shortened terminal rack teeth and inferred guides; flange friction handoff remains prescribed.",
       "references": [
         "docs/reversing-transmission-tooth-contact-review.md",
         "docs/reversing-transmission-371-394-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-parsons-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 395,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/cock-ferry-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Camera comparisons, final packaged desktop/mobile checks and the production build are recorded in `review-progress.md`; bulk captures remain in `/dev/shm`. The 23 focused checks pass. Final serial Chrome source comparisons report no errors or clipping over 17 poses, with maximum…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/cock-ferry-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The 17 existing tests retain routing, rigid transforms, cycle closure, exact tether length and analytical motion derivatives. Six scoped tests in `cock-ferry-working-solids.test.mjs` independently probe channel cavities and floors, check flow-marker containment, sample finite rotating interfaces in both directions, verify hull immersion/dry compartment floors/rudder depth and…"
       },
-      "flaws": "Valve rotation and flow markers prescribed; pressure, leakage, sealing contact and hydraulic transients not solved.",
+      "flaws": "One cock with four pipes where the plate draws two sectional positions of the plug. Valve rotation and flow markers prescribed; pressure, leakage, sealing contact and hydraulic transients not solved.",
       "references": [
         "docs/cock-ferry-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-four-way-cocks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 396,
       "visual": {
         "status": "yes",
-        "reviewer": "GPT-6 Astra — primary agent",
-        "reviewedRevision": "3d4f991",
-        "evidence": "docs/reed-396-finite-contact-review.md",
-        "note": "Primary-agent source/default and oblique comparison during family pass 46. Scoped visual review, not complete fidelity qualification."
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/reed-396-finite-contact-review.md",
         "note": "Selected rendered surfaces and shifted poses pass the scoped review tolerances; no general continuous all-pairs guarantee. Pass-49 relative-motion screen reports 0.1978 solid overlap (escape-wheel-spindle-a x balance-wheel-B-rim); unclassified, may be intended contact."
       },
-      "flaws": "F still receives work instead of acting strictly as a detent; fork coupling, spring action and impacts prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. F still receives work instead of acting strictly as a detent; fork coupling, spring action and impacts prescribed.",
       "references": [
         "docs/reed-396-finite-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-reed-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 397,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/groove-drive-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The tests cover source motion, actual finite surface proximity/penetration, rod/journal interfaces, continuity, readable playback, and stable descendant/geometry identities under repeated state queries and updates. These bounded surface samples are not an exhaustive collision…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11399,46 +11466,54 @@
       "references": [
         "docs/groove-drive-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-shuttle-drives.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 398,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/groove-drive-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. The tests cover source motion, actual finite surface proximity/penetration, rod/journal interfaces, continuity, readable playback, and stable descendant/geometry identities under repeated state queries and updates. These bounded surface samples are not an exhaustive collision…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/groove-drive-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The tests cover source motion, actual finite surface proximity/penetration, rod/journal interfaces, continuity, readable playback, and stable descendant/geometry identities under repeated state queries and updates. These bounded surface samples are not an exhaustive collision proof. Bulk diagnostic traces and screenshots belong in `/dev/shm`, not Git. Root integration performs… Pass-49 relative-motion screen reports 0.0959 solid overlap (white-index-showing-constant-cam-rotation x cam-contact-roller-constrained-to-horizontal-line); unclassified, may be intended contact."
       },
-      "flaws": "Ideal follower law crosses running clearance by prescription; loaded flank selection, backlash and friction unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Ideal follower law crosses running clearance by prescription; loaded flank selection, backlash and friction unsolved.",
       "references": [
         "docs/groove-drive-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cam-rocking-drives.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 399,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/adjustment-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default/front/advanced review reported no browser errors or full-cycle clipping (17 poses, maximum absolute projected coordinate 0.866, 0.829 and 0.859 respectively). Final board length, screw-tip shortening, radial-opening clearance and hinge thread engagement…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11449,62 +11524,71 @@
       "references": [
         "docs/adjustment-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-chain-repair-links.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 400,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/movement-400.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. This remains a quasistatic geometric reconstruction. Gravity and spring preload are assumed; friction, inertia, impact, fabric forces, spring stiffness and possible loss of contact are not solved. The radial follower uses the ideal offset curve with a documented tiny mesh…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-400.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The tests cover the finite sphere/triangle support at both faces and edges, independent mesh tangency, useful reaction directions, full-stroke follower/cam, fork/B, pivot, shaft/bearing and feeder/work-plate clearance, cyclic motion, and feed direction. A negative control restores the nominal axial point-follower law and detects more than 0.03 penetration. Both floor and fog…"
       },
-      "flaws": "Four-motion feed geometry qualified; follower preload, friction, contact forces, fabric traction and loaded sewing behavior unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Cam C is much larger than the plate’s. Four-motion feed geometry qualified; follower preload, friction, contact forces, fabric traction and loaded sewing behavior unvalidated.",
       "references": [
         "docs/movement-400.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-four-motion-feeds.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 401,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/dead-center-socket-cradle-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final Chrome default/front captures were compared with the engravings, with no browser errors. Seventeen sampled full-cycle poses fit the default viewport; maximum absolute projected coordinates were 0.876, 0.819 and 0.869 for 401, 417 and 419. Review images and browser reports…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/dead-center-socket-cradle-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. 419's cradle angle still uses a disclosed effective-radius band relation. Tangent routing and finite tread clearance do **not** prove inextensible closure of both bands. Across 257 sampled poses, their combined displayed length varies from approximately 4.0613 to 4.0696 (0.2%); the band forces, material uptake and elasticity are not solved. The official canvas also prescribes…"
       },
-      "flaws": "Spring deflection and treadle pressure prescribed; inertia, elastic force, fastener retention and loaded dead-center crossing unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Spring deflection and treadle pressure prescribed; inertia, elastic force, fastener retention and loaded dead-center crossing unvalidated.",
       "references": [
         "docs/dead-center-socket-cradle-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-dead-center-cranks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 402,

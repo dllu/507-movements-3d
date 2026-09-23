@@ -276,4 +276,54 @@ export default {
     camera: [0.05, 0.08, 1],
     note: 'Front elevation of the saw frame, its guides and the log, as Brown draws it.',
   },
+  381: {
+    camera: [0, 1, 0.12],
+    note: "Plan of the bed, cheeks and wedges, as Brown's lower figure draws it.",
+  },
+  384: {
+    camera: [0, 0.1, 1],
+    remove: ['stationary-drawing-and-transfer-paper'],
+    note: 'Side view of the point, screw-threaded arm and small wheel; no paper is drawn.',
+  },
+  385: {
+    remove: ['fixed-wall-beside-door-opening', 'fixed-vertical-door-jamb', 'fixed-door-frame-lintel', '(frame|door)-pin-socket-bracket', 'moving-door-panel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', 'one-of-three-fixed-axis-door-hinge-barrels'],
+    note: 'The two pins, toggle links and weight; the door and its frame are not drawn.',
+  },
+  388: {
+    remove: ['fixed-planer-feed-roller-bearing-frame'],
+    note: 'The smooth and toothed rollers and the board between them; no bearing frame is drawn.',
+  },
+  390: {
+    remove: ['fixed-two-shaft-rectifier-bearing-frame'],
+    note: 'The semicircular piece A on fulcrum a, flywheel B and bands C, D; no bearing frame is drawn.',
+  },
+  391: {
+    remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing'],
+    note: 'The guides b, racks A, A1, cog wheel and elbow lever C; no frame is drawn.',
+  },
+  392: {
+    remove: ['fixed-gig-saw-machine-bed'],
+    note: 'The saw, its guides and table, the crank wheel and the spring; no machine bed is drawn.',
+  },
+  394: {
+    remove: ['fixed-Parsons-device-machine-bed', 'fixed-central-pinion-bearing-standard', 'connected-input-guide-support'],
+    note: 'The endless rack, flanged pinion and rod guide; no bed or standards are drawn.',
+  },
+  396: {
+    remove: ['fixed-watch-escapement-base', 'rear-watch-plate-bearing-standard'],
+    note: 'The wheel A, balance B, crooked lever C and banking pins l; no watch plate base is drawn.',
+  },
+  398: {
+    remove: ['fixed-mechanism-bearing-support', 'fixed-base-for-cam-guides-and-output-shaft'],
+    note: 'The cam C, crosshead in its guide and output wheel; no base or supports are drawn.',
+  },
+  400: {
+    camera: [0, 0.08, 1],
+    remove: ['fixed-four-motion-feed-base', 'fixed-camshaft-bearing-support'],
+    note: 'Side elevation of the bars A, B, cam C and work plate; no base or bearing supports are drawn.',
+  },
+  401: {
+    remove: ['fixed-floor-base', 'fixed-wheel-shaft-standard', 'fixed-treadle-pivot-standard'],
+    note: 'The faceplate wheel, tangent slide A, B, pitman and treadle; no floor or standards are drawn.',
+  },
 };

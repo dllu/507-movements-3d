@@ -410,3 +410,33 @@ remains instead of the removed frames.
 | 377 | Faithful treadwheel and steps. |
 | 378 | Front elevation, as Brown draws it; faithful saw frame, guides, log and pole. |
 | 379 | Faithful clamp frame, screw and drill. |
+
+## Pass 50 batch: 380–401
+
+Movement 130's plate-shears bake was re-recorded and rebaked because its provenance
+hashes `primitives.js`; loop points, seam and native comparison are unchanged.
+
+| Movement | Observation |
+| --- | --- |
+| 380 | Faithful clamp frame, screw and drill. |
+| 381 | Plan view, as Brown's lower figure; faithful bed, cheeks and wedges. The transverse section is not reproduced. |
+| 382 | Faithful mirror frame and stand. |
+| 383 | Faithful frame and three rollers. |
+| 384 | Side view without the undrawn paper; faithful point, screw arm and wheel. |
+| 385 | Presented without the undrawn door, frame and brackets; faithful pins, toggle links and weight. |
+| 386 | One ladder where Brown draws three views. |
+| 387 | Faithful bridge, links and pier. |
+| 388 | Presented without the undrawn bearing frame; faithful rollers and board. |
+| 389 | Faithful rack, pawl and base. |
+| 390 | Presented without the undrawn bearing frame; faithful piece A, flywheel B and bands C, D. |
+| 391 | Presented without the undrawn frame; faithful guides b, racks A, A1, wheel and lever C. |
+| 392 | Presented without the undrawn bed; faithful saw, guides, table, crank wheel and spring. |
+| 393 | Faithful bracket, bell and hammer. |
+| 394 | Presented without the undrawn bed and standards; faithful rack, pinion and rod guide. |
+| 395 | One cock with its four pipes where Brown draws two sectional positions of the plug. |
+| 396 | Presented without the undrawn base; faithful wheel A, balance B, lever C and banking pins. |
+| 397 | Faithful bar, curved lever and fulcrum. |
+| 398 | Presented without the undrawn base and supports; faithful cam C, crosshead guide and output wheel. |
+| 399 | Faithful links and pins. |
+| 400 | Side elevation without the undrawn base and supports. Cam C is much larger than Brown's. |
+| 401 | Presented without the undrawn floor and standards; faithful faceplate, slide A, B, pitman and treadle. |

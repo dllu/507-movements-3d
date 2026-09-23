@@ -59,15 +59,15 @@ test('movement 396 is Reed’s one escape wheel, one balance, and opposite-side 
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 1);
   assert.match(degreesOfFreedom.inputs[0], /balance-wheel vibration/);
-  assert.equal(blocks.escapeWheel.parent, model.root);
-  assert.equal(blocks.balance.parent, model.root);
-  assert.equal(blocks.lever.parent, model.root);
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.palletF.parent, blocks.lever);
-  assert.equal(blocks.palletG.parent, blocks.lever);
-  assert.equal(blocks.roller.parent, blocks.balance);
-  assert.equal(blocks.rollerPin.parent, blocks.balance);
-  assert.equal(blocks.chronometerPalletJ.parent, blocks.balance);
+  assert.ok(blocks.escapeWheel.parent === model.root, 'blocks.escapeWheel parent');
+  assert.ok(blocks.balance.parent === model.root, 'blocks.balance parent');
+  assert.ok(blocks.lever.parent === model.root, 'blocks.lever parent');
+  assert.ok(blocks.fixedFrame.parent === model.root, 'blocks.fixedFrame parent');
+  assert.ok(blocks.palletF.parent === blocks.lever, 'blocks.palletF parent');
+  assert.ok(blocks.palletG.parent === blocks.lever, 'blocks.palletG parent');
+  assert.ok(blocks.roller.parent === blocks.balance, 'blocks.roller parent');
+  assert.ok(blocks.rollerPin.parent === blocks.balance, 'blocks.rollerPin parent');
+  assert.ok(blocks.chronometerPalletJ.parent === blocks.balance, 'blocks.chronometerPalletJ parent');
   assert.equal(blocks.bankingPins.length, 2);
 
   const roles = [];

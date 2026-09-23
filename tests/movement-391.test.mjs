@@ -64,7 +64,6 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
   for (const component of [
     blocks.crosshead,
     blocks.elbowLever,
-    blocks.fixedFrame,
     blocks.leftGuide,
     blocks.leftRack,
     blocks.outputGear,
@@ -72,9 +71,10 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
     blocks.rightRack,
     blocks.spring,
     blocks.springAnchorBoss,
-  ]) assert.equal(component.parent, model.root);
-  assert.equal(blocks.crossheadBeam.parent, blocks.crosshead);
-  assert.equal(blocks.pistonRod.parent, blocks.crosshead);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.fixedFrame.parent === null, 'source presentation removes fixedFrame');
+  assert.ok(blocks.crossheadBeam.parent === blocks.crosshead, 'blocks.crossheadBeam parent');
+  assert.ok(blocks.pistonRod.parent === blocks.crosshead, 'blocks.pistonRod parent');
   assert.equal(blocks.leftRack.userData.teeth.length, 17);
   assert.equal(blocks.rightRack.userData.teeth.length, 17);
   assert.equal(blocks.outputGear.userData.toothCount, 20);

@@ -77,20 +77,20 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     blocks.fixedFrame,
     blocks.framePinAssembly,
     blocks.frameToggleLink,
-    ...blocks.hingeBarrels,
     blocks.suspension,
     blocks.toggleJoint,
     blocks.weight,
-  ]) assert.equal(component.parent, model.root);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.doorPinAssembly.parent === blocks.doorAssembly, 'door pin parent');
   for (const component of [
     blocks.doorHandle,
     blocks.doorPanel,
-    blocks.doorPinAssembly,
     blocks.doorSocketBracket,
     ...blocks.doorTrim,
-  ]) assert.equal(component.parent, blocks.doorAssembly);
-  assert.equal(blocks.doorPinRotor.parent, blocks.doorPinAssembly);
-  assert.equal(blocks.framePinRotor.parent, blocks.framePinAssembly);
+    ...blocks.hingeBarrels,
+  ]) assert.ok(component.parent === null, `source presentation removes ${component.userData.role}`);
+  assert.ok(blocks.doorPinRotor.parent === blocks.doorPinAssembly, 'blocks.doorPinRotor parent');
+  assert.ok(blocks.framePinRotor.parent === blocks.framePinAssembly, 'blocks.framePinRotor parent');
   assert.equal(blocks.doorTrim.length, 4);
   assert.equal(blocks.hingeBarrels.length, 3);
   assert.equal(blocks.fixedFrame.userData.fixed, true);
@@ -103,7 +103,6 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
   });
   assert.deepEqual(belts, []);
   for (const role of [
-    'moving-door-panel',
     'door-turning-about-fixed-vertical-hinge',
     'frame-side-socket-fixed-to-support',
     'door-side-socket-fixed-to-support',
@@ -117,6 +116,9 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     'white-toggle-height-index',
     'white-weight-height-index',
   ]) assert.ok(roles.includes(role), role);
+  for (const role of [
+    'moving-door-panel',
+  ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   disposeModel(model.root);
 });
 
