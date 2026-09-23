@@ -425,4 +425,38 @@ export default {
     camera: [0.08, 0.05, 1],
     note: 'Sectional elevation of the supply, air vessel and jet, as Brown draws it.',
   },
+  452: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-double-acting-pump-foundation'],
+    note: 'Sectional elevation of the double-acting cylinder, passages and valves 1–4; no foundation is drawn.',
+  },
+  453: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-double-bellows-pump-foundation'],
+    note: 'Elevation of the two lantern bellows, valve chest and rocking beam; no foundation is drawn.',
+  },
+  454: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-diaphragm-pump-foundation'],
+    note: 'Sectional elevation of the diaphragm chamber, valves and hand lever; no foundation is drawn.',
+  },
+  455: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-old-rotary-pump-foundation'],
+    note: 'Sectional elevation of the casing, folding valves and apertures; no foundation is drawn.',
+  },
+  456: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-cary-pump-foundation'],
+    note: 'Sectional elevation of the cylinder, heart cam a, sliders and pipes F, H; no foundation is drawn.',
+  },
+  462: {
+    remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
+    note: 'The chain wheels, disks, pipe and spout; no frame is drawn.',
+  },
+  467: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-ground-plate-under-robertson-jack'],
+    note: 'Sectional elevation of the jack, ram, pump and lever; no ground plate is drawn.',
+  },
 };

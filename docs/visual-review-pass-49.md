@@ -494,3 +494,30 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 444 | Sectional elevation; faithful supply, air vessel, jet and valve. |
 | 445 | Faithful sectional supply, chamber and valve. |
 | 446 | Faithful sectional supply, chamber and valve. |
+
+## Pass 50 batch: 447–468
+
+| Movement | Observation |
+| --- | --- |
+| 447 | Faithful boat, rope and anchor in the stream. |
+| 448 | Faithful sectioned lift pump, bucket and handle. |
+| 449 | Faithful sectioned force pump and air vessel. |
+| 450 | Faithful sectioned pump and handle. |
+| 451 | Faithful sectioned pump, air vessel and handle. |
+| 452 | Sectional elevation without the undrawn foundation; faithful cylinder and passages. |
+| 453 | Elevation without the undrawn foundation; faithful bellows, valve chest and beam. |
+| 454 | Sectional elevation without the undrawn foundation; faithful diaphragm chamber, valves and lever. |
+| 455 | Sectional elevation without the undrawn foundation; faithful casing, folding valves and apertures. |
+| 456 | Sectional elevation without the undrawn foundation; faithful cylinder, heart cam a, sliders and pipes. |
+| 457 | Faithful sweep, bucket and well. |
+| 458 | Faithful well house, pulley and buckets. |
+| 459 | Faithful frame, wheels, buckets and trough. |
+| 460 | Faithful scoop, lever and banks. |
+| 461 | Faithful zigzag troughs and water. |
+| 462 | Presented without the undrawn frame; faithful chain wheels, disks, pipe and spout. |
+| 463 | Faithful gates and water. |
+| 464 | Faithful frame, bowl and jet. |
+| 465 | Faithful frame, lever and pumps. |
+| 466 | Faithful press, pump and lever. |
+| 467 | Sectional elevation without the undrawn ground plate; faithful jack, ram, pump and lever. |
+| 468 | Faithful pipes and joints; Brown draws a section and a plan. |

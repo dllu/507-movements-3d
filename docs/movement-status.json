@@ -12874,9 +12874,12 @@
     {
       "id": 447,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/cock-ferry-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Camera comparisons, final packaged desktop/mobile checks and the production build are recorded in `review-progress.md`; bulk captures remain in `/dev/shm`. The 23 focused checks pass. Final serial Chrome source comparisons report no errors or clipping over 17 poses, with maximum…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12887,21 +12890,25 @@
       "references": [
         "docs/cock-ferry-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-reaction-ferries.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 448,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/lift-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12911,21 +12918,25 @@
       "flaws": "Valve lifts/flap timing prescribed; dynamic seating, seal compression, leakage, priming, pressure losses and pumping forces unvalidated.",
       "references": [
         "docs/lift-pump-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lift-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 449,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/lift-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12935,21 +12946,25 @@
       "flaws": "Valve lifts/flap timing prescribed; dynamic seating, seal compression, leakage, priming, pressure losses and pumping forces unvalidated.",
       "references": [
         "docs/lift-pump-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lift-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 450,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/force-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12959,21 +12974,25 @@
       "flaws": "Valve timing prescribed; pressure-induced opening, priming/leakage and seal forces unsolved. Fluid volumes omit some immersed solid displacement.",
       "references": [
         "docs/force-pump-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-force-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 451,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/force-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12983,144 +13002,168 @@
       "flaws": "Valve timing prescribed; pressure-induced opening, priming/leakage and seal forces unsolved. Fluid volumes omit some immersed solid displacement.",
       "references": [
         "docs/force-pump-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-force-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 452,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/flexible-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default, front and reverse-oblique views were reviewed. The final default framing sweeps contain every visible vertex at 65 poses for all three models. A final fixed-axle extension in 453 closes the rear-standard gap without changing motion. Bulk screenshots and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/flexible-pump-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Bellows skins and the diaphragm remain prescribed thin rendering surfaces; material thickness, elastic stresses, buckling and fatigue are not solved. The water volumes and tracers are schematic. In particular, 454's average-height water cylinder does not conform to the local membrane profile. The port and valve clearances do not constitute a watertight or pressure-qualified… Pass-49 relative-motion screen reports 0.0597 solid overlap (root/CylinderGeometry x root/SphereGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
       "references": [
         "docs/flexible-pump-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-double-acting-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 453,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/flexible-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default, front and reverse-oblique views were reviewed. The final default framing sweeps contain every visible vertex at 65 poses for all three models. A final fixed-axle extension in 453 closes the rear-standard gap without changing motion. Bulk screenshots and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/flexible-pump-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Bellows skins and the diaphragm remain prescribed thin rendering surfaces; material thickness, elastic stresses, buckling and fatigue are not solved. The water volumes and tracers are schematic. In particular, 454's average-height water cylinder does not conform to the local membrane profile. The port and valve clearances do not constitute a watertight or pressure-qualified… Pass-49 relative-motion screen reports 0.0528 solid overlap (fixed-left-lantern-bellows-bottom-plate x left-flexible-lantern-bellows-with-eight-visible-pleats/CylinderGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
       "references": [
         "docs/flexible-pump-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lantern-bellows-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 454,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/flexible-pump-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default, front and reverse-oblique views were reviewed. The final default framing sweeps contain every visible vertex at 65 poses for all three models. A final fixed-axle extension in 453 closes the rear-standard gap without changing motion. Bulk screenshots and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/flexible-pump-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Bellows skins and the diaphragm remain prescribed thin rendering surfaces; material thickness, elastic stresses, buckling and fatigue are not solved. The water volumes and tracers are schematic. In particular, 454's average-height water cylinder does not conform to the local membrane profile. The port and valve clearances do not constitute a watertight or pressure-qualified… Pass-49 relative-motion screen reports 0.0485 solid overlap (flexing-diaphragm-concentric-seam-4 x fixed-left-standard-supporting-hand-lever-pivot/BoxGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
       "references": [
         "docs/flexible-pump-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-diaphragm-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 455,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/old-rotary-pump-455-contact-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/old-rotary-pump-455-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. A 361-pose rendered-solid sweep measures these minimum separations:"
       },
-      "flaws": "Contact branch has velocity corners; hold/return prescribed without a validated return load. Pressure, elastic sealing and impact unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Contact branch has velocity corners; hold/return prescribed without a validated return load. Pressure, elastic sealing and impact unsolved.",
       "references": [
         "docs/old-rotary-pump-455-contact-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-old-rotary-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 456,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/rotary-pump-455-456-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser review compared default, front and rear views with each engraving. After correcting the 456 camera distance, both models have zero clipped vertices over 65 sampled poses in an 850-pixel square viewport. Review screenshots and scripts remain in `/dev/shm`."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/rotary-pump-455-456-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. `node --test tests/movement-455.test.mjs tests/movement-456.test.mjs tests/rotary-pump-455-456-solids.test.mjs`: **26 tests pass**. Tests cover prescribed kinematics, finite working clearances, bores, cycle continuity, display timing and repeated state/update calls preserving scene objects and geometry identities."
       },
-      "flaws": "Vane motion imposed with assumed return load; pressure, leakage, cavitation, elastic sealing and contact forces unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Vane motion imposed with assumed return load; pressure, leakage, cavitation, elastic sealing and contact forces unsolved.",
       "references": [
         "docs/rotary-pump-455-456-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cary-rotary-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 457,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/well-bucket-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13131,21 +13174,25 @@
       "references": [
         "docs/well-bucket-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-counterbalanced-well-sweeps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 458,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/well-bucket-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13156,21 +13203,25 @@
       "references": [
         "docs/well-bucket-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-two-bucket-well-pulleys.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 459,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/well-scoop-gutter-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three retain their authored analytic laws and enforce their complete 9.0, 7.6 and 5.8 second cycles through `minimumDisplayCycleSeconds`. Viewer ground is hidden and materials ignore fog. Source/default/front/advanced Chrome reviews report no errors; 17-pose framing sweeps…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13181,21 +13232,25 @@
       "references": [
         "docs/well-scoop-gutter-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-reciprocating-well-lifts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 460,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/well-scoop-gutter-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three retain their authored analytic laws and enforce their complete 9.0, 7.6 and 5.8 second cycles through `minimumDisplayCycleSeconds`. Viewer ground is hidden and materials ignore fog. Source/default/front/advanced Chrome reviews report no errors; 17-pose framing sweeps…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13205,21 +13260,25 @@
       "flaws": "Water stays inside scoop but fill/empty amount is prescribed; volume conservation, slosh and pumping forces unsolved.",
       "references": [
         "docs/well-scoop-gutter-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-bailing-scoops.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 461,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/well-scoop-gutter-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three retain their authored analytic laws and enforce their complete 9.0, 7.6 and 5.8 second cycles through `minimumDisplayCycleSeconds`. Viewer ground is hidden and materials ignore fog. Source/default/front/advanced Chrome reviews report no errors; 17-pose framing sweeps…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13229,46 +13288,54 @@
       "flaws": "Flap timing/water transport prescribed; finite openings do not prove sealing or hydraulic rectification.",
       "references": [
         "docs/well-scoop-gutter-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-swinging-gutter-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 462,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/chain-weir-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final serialized Chrome source/default/front/open review showed no errors or clipping. Maximum full-cycle screen extent was 0.862 for 462 and 0.797 for 463. Rendered geometry including shadows: 118,252 triangles / 231 calls, and 10,656 triangles / 45 calls. Current screenshots…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/chain-weir-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. 25 tests pass. Across 65 full-cycle poses offset from the generator sample grid, selected rendered-surface checks evaluate 57,696,600 chain-pump and 536,400 weir point/solid pairs, with penetration tolerance 1e-5. Cross-shaft samples include the actual cheek depth planes, not only shaft endcaps. Covered pairs include shaft/hub/bearing bores, carrier shaft/wheel pockets,… Pass-49 relative-motion screen reports 0.0398 solid overlap (one-continuous-endless-chain-around-two-equal-wheels x chain-carrier-cross-shaft); unclassified, may be intended contact."
       },
-      "flaws": "Continuous chain lacks rigid-link/chordal dynamics; tension, slack and tooth forces unsolved. Disk/riser clearance is not a leak-tight seal.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Continuous chain lacks rigid-link/chordal dynamics; tension, slack and tooth forces unsolved. Disk/riser clearance is not a leak-tight seal.",
       "references": [
         "docs/chain-weir-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-chain-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 463,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/chain-weir-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final serialized Chrome source/default/front/open review showed no errors or clipping. Maximum full-cycle screen extent was 0.862 for 462 and 0.797 for 463. Rendered geometry including shadows: 118,252 triangles / 231 calls, and 10,656 triangles / 45 calls. Current screenshots…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13278,21 +13345,25 @@
       "flaws": "Weir motion prescribed; water head, flow rate, leakage, buoyancy and operating forces unvalidated.",
       "references": [
         "docs/chain-weir-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-self-acting-weirs.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 464,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/fountain-balance-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Source/default/oblique browser review found no page errors. Full-cycle framing stays inside normalized screen coordinates .881/.888 for 464/465 respectively."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13302,21 +13373,25 @@
       "flaws": "Prescribed transfer and ideal isothermal pressure; solid displacement omitted and hidden loop reset nonphysical. Jets not solved fluid trajectories.",
       "references": [
         "docs/fountain-balance-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-herons-fountains.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 465,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/fountain-balance-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Source/default/oblique browser review found no page errors. Full-cycle framing stays inside normalized screen coordinates .881/.888 for 464/465 respectively."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13326,21 +13401,25 @@
       "flaws": "Water-driven tipping/balance sequence prescribed; fluid mass transport, torque, impact and passive switching unvalidated.",
       "references": [
         "docs/fountain-balance-family-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-balance-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 466,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/hydraulic-force-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser source/default/front/advanced views and a 17-pose full-geometry framing sweep had no errors or clipping (maximum absolute screen coordinate 0.877 for 466, 0.876 for 467). Final hidden port-crossing corrections preserve those bounds. Review images and diagnostic reports…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13351,64 +13430,73 @@
       "references": [
         "docs/hydraulic-force-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-hydrostatic-presses.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 467,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/hydraulic-force-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser source/default/front/advanced views and a 17-pose full-geometry framing sweep had no errors or clipping (maximum absolute screen coordinate 0.877 for 466, 0.876 for 467). Final hidden port-crossing corrections preserve those bounds. Review images and diagnostic reports…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/hydraulic-force-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. This is a finite-geometry correction with the existing ideal hydraulic animation. Checks, pressure-driven displacement, load compression and return metering remain prescribed. There is no solution of valve forces, compressibility, seal leakage, pressure losses, load dynamics or structural deflection. The reconstructed check chambers and pipe branches explain the route but are… Pass-49 relative-motion screen reports 0.0114 solid overlap (thumb-screw-conical-return-valve-tip x finite-pump-to-internal-pipe-feed); unclassified, may be intended contact."
       },
-      "flaws": "Checks, displacement and return metering prescribed; valve force, compressibility, seal leakage, load dynamics and structure not solved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Checks, displacement and return metering prescribed; valve force, compressibility, seal leakage, load dynamics and structure not solved.",
       "references": [
         "docs/hydraulic-force-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-robertson-jacks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 468,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/folding-pipe-family-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final browser review captured source/default/front/advanced views without errors or clipping; 17-pose maximum projected extents were 0.912, 0.884 and 0.912 for 386, 387 and 468. The cheap 49-update CPU screen reported no scene growth or new playback geometry, with update P95 of…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/folding-pipe-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. These are kinematic reconstructions, not structural or load-bearing qualifications. No ladder latch, hand force, buoyancy, pin friction or joint wear is solved. The 468 installation path and prepared bed are prescribed; hauling forces and seabed contact are not simulated. Its spherical seats include geometric clearance without a modeled gasket, pressure seal or fluid solver.… Pass-49 relative-motion screen reports 0.0425 solid overlap (18-inch-winch-rotor/BoxGeometry x 18-inch-north-bank-winch/BoxGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Installation/bed path prescribed; hauling forces, seabed contact, pressure sealing, joint wear and pipe strength unvalidated.",
+      "flaws": "The plate draws a section and a plan; the model shows one assembled view. Installation/bed path prescribed; hauling forces, seabed contact, pressure sealing, joint wear and pipe strength unvalidated.",
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-flexible-water-mains.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 469,
