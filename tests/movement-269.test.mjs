@@ -192,12 +192,18 @@ test('movement 269 matches the measured source proportions and source pose', () 
     0.42,
     'source frame left reach',
   );
-  near(
-    modelSourceRight / geometry.pinionOuterRadius,
-    (plate.rasterFrameOuterBounds.right - plate.rasterPinionCenter.x)
-      / plate.rasterPinionOuterRadius,
-    0.16,
+  // Brown's closed end is one tooth past the last rack, too close for a full gear to reach it.
+  assert.ok(
+    modelSourceRight / geometry.pinionOuterRadius
+      > (plate.rasterFrameOuterBounds.right - plate.rasterPinionCenter.x)
+        / plate.rasterPinionOuterRadius,
     'source frame right reach',
+  );
+  assert.ok(
+    geometry.frameRight - geometry.frameRightBridgeWidth
+      - geometry.contactCoordinateMaximum
+      >= geometry.pinionOuterRadius + 0.05,
+    'closed right end clears the gear tips at the stroke limit',
   );
   near(
     modelDriveRodEnd / geometry.pinionOuterRadius,
@@ -245,11 +251,12 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     geometry.pinionPitchRadius - geometry.pinionToothHeight / 2,
     1e-15, 'pinion root radius');
   near(geometry.rackToothRootY,
-    geometry.pinionPitchRadius + geometry.pinionToothHeight / 2,
+    geometry.pinionOuterRadius + geometry.rackRadialClearance,
     1e-15, 'rack root line');
   near(geometry.rackToothTipY,
-    geometry.pinionPitchRadius - geometry.pinionToothHeight / 2,
+    geometry.pinionRootRadius + geometry.rackRadialClearance,
     1e-15, 'rack tip line');
+  assert.ok(geometry.rackRadialClearance > 0, 'radial tip clearance');
   assert.equal(blocks.rackTeeth.length, 16);
   assert.equal(blocks.upperRackTeeth.length, 10);
   assert.equal(blocks.lowerRackTeeth.length, 6);

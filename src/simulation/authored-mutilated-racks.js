@@ -127,26 +127,30 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     contactCoordinateMaximum - contactCoordinateMinimum
   ) / 2;
   const handoffHalfWidth = circularPitch * 0.56;
-  const rackToothRootHalfWidth = circularPitch * 0.42;
-  const rackToothTipHalfWidth = circularPitch * 0.2;
-  const rackToothRootY = pinionPitchRadius + pinionToothHeight / 2;
-  const rackToothTipY = pinionPitchRadius - pinionToothHeight / 2;
+  const rackToothRootHalfWidth = circularPitch * 0.34;
+  const rackToothTipHalfWidth = circularPitch * 0.12;
+  const rackRadialClearance = 0.03;
+  const rackToothRootY = pinionOuterRadius + rackRadialClearance;
+  const rackToothTipY = pinionRootRadius + rackRadialClearance;
   const relievedToothHeightScale = 0.48;
   const rackDepth = 0.38;
 
   const frameLeft = contactCoordinateMinimum - circularPitch * 0.45;
-  const frameRight = contactCoordinateMaximum + circularPitch * 2;
+  const frameRightBridgeClearance = 0.06;
+  const frameRightBridgeWidth = 0.24;
+  // Brown closes the frame one tooth past the last rack; the gear needs its full tip radius.
+  const frameRight = contactCoordinateMaximum + pinionOuterRadius
+    + frameRightBridgeClearance + frameRightBridgeWidth;
   const frameOuterHalfHeight = 1.46;
   const frameRailHeight = frameOuterHalfHeight - rackToothRootY;
   const frameRailCenterY = (
     frameOuterHalfHeight + rackToothRootY
   ) / 2;
   const frameDepth = 0.42;
-  const frameRightBridgeWidth = 0.24;
-  const driveRodLength = 1.9;
-  const driveRodRadius = 0.12;
-  const driveCollarRadius = 0.4;
-  const driveCollarWidth = 0.25;
+  const driveRodLength = 1.18;
+  const driveRodRadius = 0.24;
+  const driveCollarRadius = 0.78;
+  const driveCollarWidth = 0.34;
 
   const sourceContactCoordinate = 3 * circularPitch;
   const sourceFrameX = -sourceContactCoordinate;
@@ -430,8 +434,8 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   );
   pinionRim.userData.role = 'annular-root-rim-of-complete-output-pinion';
 
-  const toothRootHalfAngle = pinionAngularPitch * 0.43;
-  const toothTipHalfAngle = pinionAngularPitch * 0.2;
+  const toothRootHalfAngle = pinionAngularPitch * 0.34;
+  const toothTipHalfAngle = pinionAngularPitch * 0.14;
   const pointAt = (radius, angle) => new THREE.Vector2(
     Math.cos(angle) * radius,
     Math.sin(angle) * radius,
@@ -493,7 +497,7 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     32,
   );
   pinionHub.userData.role = 'hub-fixed-to-alternating-output-shaft';
-  const pinionShaft = cylinderAlongZ(0.105, 1.08, darkMaterial, 30);
+  const pinionShaft = cylinderAlongZ(0.105, 0.86, darkMaterial, 30);
   pinionShaft.userData.role = 'alternating-output-shaft-fixed-to-pinion';
   const pinionIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.052, 18, 12),
@@ -774,6 +778,7 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     frameRailHeight,
     frameRailLength,
     frameRight,
+    frameRightBridgeClearance,
     frameRightBridgeWidth,
     handoffHalfWidth,
     installedRackToothCount,
@@ -787,6 +792,7 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     pinionTeeth,
     pinionToothHeight,
     rackDepth,
+    rackRadialClearance,
     rackToothRootHalfWidth,
     rackToothRootY,
     rackToothTipHalfWidth,

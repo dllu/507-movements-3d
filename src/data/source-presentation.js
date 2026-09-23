@@ -512,4 +512,8 @@ export default {
     camera: [0.05, 0.08, 1],
     note: 'Front elevation of the wheels E, F, G, H, the worm C and the arm m n, as Brown draws it.',
   },
+  269: {
+    remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft'],
+    note: 'The frame, racks and spur gear; no post or bearing is drawn.',
+  },
 };

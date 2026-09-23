@@ -7838,17 +7838,18 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence."
+        "status": "known",
+        "evidence": "docs/intersection-screen-pass50.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the frame end, input rod and shaft now clear the gear. The rack and gear teeth still overlap by up to 0.069 during the three rack handoffs, where the gear blends between opposite rolling laws."
       },
-      "flaws": "Faithful; added gear stand. Finite rack/tooth handoff not audited.",
+      "flaws": "The frame's closed end sits farther right than Brown draws it so the gear can reach the last rack teeth; the rack and gear teeth overlap by up to 0.069 during handoffs. Faithful; added gear stand. Finite rack/tooth handoff not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
