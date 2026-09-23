@@ -521,3 +521,30 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 466 | Faithful press, pump and lever. |
 | 467 | Sectional elevation without the undrawn ground plate; faithful jack, ram, pump and lever. |
 | 468 | Faithful pipes and joints; Brown draws a section and a plan. |
+
+## Pass 50 batch: 469–490
+
+| Movement | Observation |
+| --- | --- |
+| 469 | Sectional elevation, as Brown draws it; faithful tanks, wheel and pipe. |
+| 470 | Faithful steam hammer, frame and valve gear. |
+| 471 | Faithful hammer frame and cylinder. |
+| 472 | Faithful frame, cylinders and gear. |
+| 473 | Faithful press frame, tub and levers. |
+| 474 | Presented without the undrawn hearth, fire and foundation; faithful boiler, risers and globe. The legs are straight where Brown curves them. |
+| 475 | Presented without the undrawn bilge well; faithful chamber D, pipes B, C and jet A. |
+| 476 | Presented without the undrawn basin; faithful fork B, pipe C and jet A. |
+| 477 | Faithful sectioned casing and valves. |
+| 478 | Faithful pipe A, sphere C and lever D on the base. |
+| 479 | Faithful gasholder A, pulleys and weights C in tank B. |
+| 480 | Faithful gasholder, pipes and tank. |
+| 481 | Faithful drum, float chambers and dial. |
+| 482 | Faithful sectioned meter case and float. |
+| 483 | Faithful bellows A, valves and dials. |
+| 484 | Faithful helical wheel on its stands. |
+| 485 | Faithful windmill, sails and tail. |
+| 486 | Faithful horizontal windmill arms and vanes. |
+| 487 | Presented without the undrawn trestles, base and water; faithful wheel and paddles. |
+| 488 | Presented without the undrawn pedestals, base and water; faithful screw propeller. |
+| 489 | Front elevation without the undrawn stand, base and water; faithful eccentric e, ring d, cranks c and buckets a. |
+| 490 | Faithful band, pulleys and lever. |

@@ -87,15 +87,17 @@ test('movement 474 is Brown’s twin-pivot four-nozzle horizontal-axis aeolipile
     ...blocks.rotatingTrunnions, ...blocks.nozzlePipes,
     ...blocks.nozzleSteamCores, ...blocks.nozzleCollars,
     ...blocks.exhaustPlumes, ...blocks.exhaustMarkers]) {
-    assert.equal(rotating.parent, blocks.rotor);
+    assert.ok(rotating.parent === blocks.rotor, `${rotating.userData.role} parent`);
   }
   for (const fixed of [blocks.boiler, blocks.boilerLid,
     blocks.boilerRim, blocks.boilerWater, blocks.boilerSteamSpace,
     ...blocks.fixedFeedPipes, ...blocks.fixedFeedSteamCores,
     ...blocks.stationaryBearingCollars, ...blocks.boilerHandles,
-    blocks.hearthRing, ...blocks.flames, ...blocks.standLegs,
-    blocks.foundation, ...blocks.feedMarkers]) {
-    assert.equal(fixed.parent, model.root);
+    ...blocks.standLegs, ...blocks.feedMarkers]) {
+    assert.ok(fixed.parent === model.root, `${fixed.userData.role} parent`);
+  }
+  for (const removed of [blocks.hearthRing, ...blocks.flames, blocks.foundation]) {
+    assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
   }
 
   const roles = [];

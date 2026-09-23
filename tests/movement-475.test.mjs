@@ -66,12 +66,15 @@ test('movement 475 is one stationary A-D-B-C Brear bilge ejector with two fluid 
   assert.equal(blocks.waterMarkers.length,
     geometry.waterPathCount * geometry.waterMarkersPerPath);
 
-  for (const block of [blocks.bilgeBasin, blocks.bilgeWater,
+  for (const removed of [blocks.bilgeBasin, blocks.bilgeWater]) {
+    assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
+  }
+  for (const block of [
     blocks.chamber, blocks.dischargeCollar, blocks.dischargePipe,
     blocks.nozzle, blocks.steamJet, blocks.steamPipe,
     blocks.steamPipeCore, blocks.suctionCollar, blocks.suctionPipe,
     ...blocks.waterStreams, ...blocks.steamMarkers,
-    ...blocks.waterMarkers]) assert.equal(block.parent, model.root);
+    ...blocks.waterMarkers]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
 
   const roles = [];
   const belts = [];

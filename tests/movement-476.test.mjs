@@ -70,12 +70,15 @@ test('movement 476 is one stationary Lansdell Y-fork with two B suctions, centra
   assert.equal(degreesOfFreedom.mechanicalMovingParts, 0);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 0);
   assert.equal(degreesOfFreedom.prescribedAdvectiveFlowPhases, 2);
-  for (const block of [blocks.basin, blocks.basinWater,
+  for (const removed of [blocks.basin, blocks.basinWater]) {
+    assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
+  }
+  for (const block of [
     ...blocks.branchCollars, blocks.dischargeCollar,
     blocks.dischargePipe, blocks.steamCore, blocks.steamJet,
     blocks.steamPipe, ...blocks.suctionBranches,
     ...blocks.waterStreams, ...blocks.steamMarkers,
-    ...blocks.waterMarkers]) assert.equal(block.parent, model.root);
+    ...blocks.waterMarkers]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
 
   const roles = [];
   const belts = [];

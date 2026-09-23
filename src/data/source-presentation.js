@@ -459,4 +459,33 @@ export default {
     remove: ['fixed-ground-plate-under-robertson-jack'],
     note: 'Sectional elevation of the jack, ram, pump and lever; no ground plate is drawn.',
   },
+  469: {
+    camera: [0.05, 0.05, 1],
+    note: 'Sectional elevation of the two tanks, wheel and pipe, as Brown draws it.',
+  },
+  474: {
+    remove: ['fixed-hearth-ring-below-boiler', 'fixed-fire-flame-\\d-of-seven', 'fixed-aeolipile-foundation'],
+    note: 'The boiler on its legs, the hollow risers and the revolving sphere; no hearth, fire or foundation is drawn.',
+  },
+  475: {
+    remove: ['bilge-water-source-at-foot-of-B', 'stationary-bilge-well-surrounding-suction-B'],
+    note: 'The ejector body D, pipes B, C and steam jet A; no bilge well is drawn.',
+  },
+  476: {
+    remove: ['fixed-water-source-basin-under-two-B-mouths', 'water-surface-feeding-both-suction-branches'],
+    note: 'The forked ejector B, C and steam pipe A; no water basin or surface is drawn.',
+  },
+  487: {
+    remove: ['fixed-bearing-A-frame-\\d-leg-(left|right)', 'fixed-bearing-base-rail-\\d', 'fixed-water-volume-intersecting-lower-paddles', 'fixed-waterline-plane', 'fixed-backward-water-path-\\d'],
+    note: 'The paddle wheel and its radial paddles; no trestles, base or water is drawn.',
+  },
+  488: {
+    remove: ['fixed-bearing-pedestal-(1|2)', 'fixed-propeller-demonstration-base', 'fixed-water-volume-around-screw-propeller', 'fixed-axial-helical-wake-path-\\d'],
+    note: 'The screw propeller on its shaft; no pedestals, base or water is drawn.',
+  },
+  489: {
+    camera: [0.05, 0.05, 1],
+    remove: ['fixed-main-bearing-support-leg-(left|right)', 'fixed-feathering-wheel-base', 'fixed-water-volume-under-feathering-buckets', 'fixed-waterline-crossed-edgewise-by-upright-buckets', 'fixed-negative-x-feathering-wheel-wake-path-\\d', 'negative-x-water-marker-\\d-\\d'],
+    note: 'Front elevation of the feathering wheel, eccentric e, ring d and cranks c; no stand, base or water is drawn.',
+  },
 };
