@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
-import { fitPistonGuide } from './piston-guide-parts.js';
+import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -357,106 +357,23 @@ function midpointVibratingRodParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
 
+  // Brown's plate shows only the beam boss and shaft end at O and a bare
+  // pin at F; the engine bed, standards and piston guides are not drawn.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role =
-    'fixed-beam-bearing-O-radius-pivot-F-and-piston-guide-frame';
-  const framePlaneZ = -0.54;
-  const baseStart = new THREE.Vector3(
-    -20.1 * sourceScale,
-    -15.0 * sourceScale,
-    framePlaneZ,
-  );
-  const baseEnd = new THREE.Vector3(
-    1.5 * sourceScale,
-    -15.0 * sourceScale,
-    framePlaneZ,
-  );
-  const baseRail = beamBetween3D(
-    baseStart,
-    baseEnd,
-    0.45 * sourceScale,
-    0.68,
-    frameMaterial,
-  );
-  baseRail.userData.fixed = true;
-  baseRail.userData.role = 'fixed-lower-engine-bed-rail';
-  const beamStandard = beamBetween3D(
-    new THREE.Vector3(0, -15 * sourceScale, framePlaneZ),
-    new THREE.Vector3(0, -1.15 * sourceScale, framePlaneZ),
-    0.55 * sourceScale,
-    0.62,
-    frameMaterial,
-  );
-  beamStandard.userData.fixed = true;
-  beamStandard.userData.role = 'fixed-upright-for-beam-bearing-O';
-  const beamBearing = cylinderAlongZ(1.25 * sourceScale, 0.66,
-    frameMaterial, 46);
-  beamBearing.position.set(0, 0, -0.30);
-  beamBearing.userData.fixed = true;
-  beamBearing.userData.role = 'fixed-large-beam-fulcrum-bearing-O';
-  const beamShaft = cylinderAlongZ(0.42 * sourceScale, 1.28,
-    darkMaterial, 34);
-  beamShaft.position.set(0, 0, -0.02);
+  fixedFrame.userData.role = 'fixed-beam-shaft-O-and-radius-pin-F';
+  const beamShaftRadius = 0.62 * sourceScale;
+  const beamBoreRadius = beamShaftRadius + 0.02;
+  const beamShaft = cylinderAlongZ(beamShaftRadius, 0.62, darkMaterial, 40);
+  beamShaft.position.set(0, 0, 0.04);
   beamShaft.userData.fixed = true;
   beamShaft.userData.role = 'fixed-shaft-through-beam-fulcrum-O';
-
-  const radiusStandard = beamBetween3D(
-    new THREE.Vector3(radiusPivotF.x, -15 * sourceScale, framePlaneZ),
-    new THREE.Vector3(radiusPivotF.x,
-      radiusPivotF.y - 0.50 * sourceScale, framePlaneZ),
-    0.45 * sourceScale,
-    0.56,
-    frameMaterial,
-  );
-  radiusStandard.userData.fixed = true;
-  radiusStandard.userData.role = 'fixed-upright-for-radius-pivot-F';
-  const radiusBearing = cylinderAlongZ(0.56 * sourceScale, 0.54,
-    frameMaterial, 40);
-  radiusBearing.position.set(radiusPivotF.x, radiusPivotF.y, -0.26);
-  radiusBearing.userData.fixed = true;
-  radiusBearing.userData.role = 'fixed-radius-rod-bearing-F';
-  const radiusShaft = cylinderAlongZ(0.23 * sourceScale, 1.72,
+  const radiusShaft = cylinderAlongZ(0.23 * sourceScale, 0.34,
     darkMaterial, 32);
-  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, -0.01);
+  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, 0.70);
   radiusShaft.userData.fixed = true;
-  radiusShaft.userData.role = 'fixed-shaft-through-radius-pivot-F';
-
-  const guideCenterY = -8.05 * sourceScale;
-  const guideHeight = 12.8 * sourceScale;
-  const guideRails = [-0.48, 0.48].map((sourceOffset, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, guideHeight, 0.38),
-      frameMaterial,
-    );
-    rail.position.set(
-      nominalPistonLineX + sourceOffset * sourceScale,
-      guideCenterY,
-      -0.24,
-    );
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-piston-rod-guide-rail-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
-  const guideFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(1.45 * sourceScale, 0.40 * sourceScale, 0.62),
-    frameMaterial,
-  );
-  guideFoot.position.set(nominalPistonLineX, -14.45 * sourceScale,
-    framePlaneZ);
-  guideFoot.userData.fixed = true;
-  guideFoot.userData.role = 'fixed-foot-under-piston-rod-guides';
-  fixedFrame.add(
-    baseRail,
-    beamStandard,
-    beamBearing,
-    beamShaft,
-    radiusStandard,
-    radiusBearing,
-    radiusShaft,
-    guideFoot,
-  );
+  radiusShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
+  fixedFrame.add(beamShaft, radiusShaft);
   root.add(fixedFrame);
 
   const beam = new THREE.Group();
@@ -464,26 +381,25 @@ function midpointVibratingRodParallelMotion(movement) {
   beam.userData.role = 'twenty-unit-rocking-beam-with-left-pin-B';
   const beamShape = new THREE.Shape();
   beamShape.moveTo(-10.04 * sourceScale, -0.50 * sourceScale);
-  beamShape.lineTo(-0.10 * sourceScale, -1.25 * sourceScale);
+  beamShape.lineTo(-0.10 * sourceScale, -1.10 * sourceScale);
   beamShape.lineTo(10.04 * sourceScale, -0.50 * sourceScale);
   beamShape.lineTo(10.04 * sourceScale, 0.50 * sourceScale);
-  beamShape.lineTo(0.10 * sourceScale, 1.25 * sourceScale);
+  beamShape.lineTo(0.10 * sourceScale, 1.10 * sourceScale);
   beamShape.lineTo(-10.04 * sourceScale, 0.50 * sourceScale);
   beamShape.closePath();
+  const beamFulcrumHole = new THREE.Path();
+  beamFulcrumHole.absarc(0, 0, beamBoreRadius, 0, FULL_TURN, true);
+  beamShape.holes.push(beamFulcrumHole);
   const beamBody = new THREE.Mesh(
     centeredExtrusion(beamShape, 0.28, 0.009),
     beamMaterial,
   );
   beamBody.position.z = 0.04;
   beamBody.userData.role = 'source-tapered-rocking-beam-body';
-  const beamPivotBoss = cylinderAlongZ(1.25 * sourceScale, 0.38,
-    beamMaterial, 44);
+  const beamPivotBoss = boredJournal(1.35 * sourceScale, beamBoreRadius,
+    0.38, beamMaterial);
   beamPivotBoss.position.z = 0.04;
   beamPivotBoss.userData.role = 'large-moving-beam-boss-O';
-  const beamPivotBore = cylinderAlongZ(0.42 * sourceScale, 0.405,
-    darkMaterial, 34);
-  beamPivotBore.position.z = 0.045;
-  beamPivotBore.userData.role = 'beam-working-bore-at-O';
   const pointBBoss = cylinderAlongZ(0.50 * sourceScale, 0.36,
     beamMaterial, 38);
   pointBBoss.position.set(-beamPinRadius, 0, 0.04);
@@ -492,12 +408,6 @@ function midpointVibratingRodParallelMotion(movement) {
     beamMaterial, 38);
   farEndBoss.position.set(beamPinRadius, 0, 0.04);
   farEndBoss.userData.role = 'opposite-beam-end-boss-beyond-source-view';
-  const beamIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0 * sourceScale, 0.055, 0.035),
-    whiteMaterial,
-  );
-  beamIndex.position.set(-0.62 * sourceScale, 0, 0.245);
-  beamIndex.userData.role = 'visible-index-on-rocking-beam';
   const pointBAnchor = new THREE.Object3D();
   pointBAnchor.position.set(-beamPinRadius, 0, 0.04);
   pointBAnchor.userData.role = 'analytic-beam-pin-B';
@@ -507,10 +417,8 @@ function midpointVibratingRodParallelMotion(movement) {
   beam.add(
     beamBody,
     beamPivotBoss,
-    beamPivotBore,
     pointBBoss,
     farEndBoss,
-    beamIndex,
     pointBAnchor,
     beamPivotAnchor,
   );
@@ -543,57 +451,48 @@ function midpointVibratingRodParallelMotion(movement) {
   });
   root.add(radiusParts.rod);
 
+  // The piston rod runs in front of the radius-rod plane so that it passes
+  // clear of the pin at D, which it overlaps in elevation near mid-stroke.
   const output = new THREE.Group();
   output.userData.rotationDegreesOfFreedom = 0;
   output.userData.role = 'piston-rod-attached-to-vibrating-rod-midpoint-C';
-  const crossheadBoss = cylinderAlongZ(0.36 * sourceScale, 0.25,
+  const outputPlaneZ = 0.90;
+  const crossheadBoss = cylinderAlongZ(0.36 * sourceScale, 0.16,
     outputMaterial, 34);
-  crossheadBoss.position.z = 0.57;
+  crossheadBoss.position.z = outputPlaneZ;
   crossheadBoss.userData.role = 'piston-crosshead-boss-at-C';
-  const crossheadPin = cylinderAlongZ(0.17 * sourceScale, 0.035,
-    whiteMaterial, 28);
-  crossheadPin.position.z = 0.715;
-  crossheadPin.userData.role = 'white-working-pin-face-at-C';
   const visiblePistonRodLength = 10 * sourceScale;
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30 * sourceScale, visiblePistonRodLength, 0.17),
+    new THREE.BoxGeometry(0.30 * sourceScale, visiblePistonRodLength, 0.12),
     outputMaterial,
   );
-  pistonRod.position.set(0, -visiblePistonRodLength / 2, 0.55);
+  pistonRod.position.set(0, -visiblePistonRodLength / 2, outputPlaneZ);
   pistonRod.userData.role = 'vertical-piston-rod-continuing-below-C';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(1.65 * sourceScale, 0.46 * sourceScale, 0.52),
-    outputMaterial,
-  );
-  pistonHead.position.set(0, -10.1 * sourceScale, 0.39);
-  pistonHead.userData.role = 'piston-head-at-lower-visible-rod-end';
-  const outputIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 1.55 * sourceScale, 0.035),
-    whiteMaterial,
-  );
-  outputIndex.position.set(0, -4.7 * sourceScale, 0.655);
-  outputIndex.userData.role = 'visible-index-on-nearly-vertical-piston-rod';
   const outputAnchor = new THREE.Object3D();
-  outputAnchor.position.z = 0.57;
+  outputAnchor.position.z = outputPlaneZ;
   outputAnchor.userData.role = 'analytic-piston-point-C';
   output.add(
     crossheadBoss,
-    crossheadPin,
     pistonRod,
-    pistonHead,
-    outputIndex,
     outputAnchor,
   );
   root.add(output);
 
+  // Each working pin is rigid with one member and turns in true bores of the
+  // others: B in the beam, C in the crosshead and D in the radius rod.
   const jointPins = {
     B: cylinderAlongZ(0.22 * sourceScale, 0.55, whiteMaterial, 30),
-    C: cylinderAlongZ(0.20 * sourceScale, 0.45, whiteMaterial, 30),
-    D: cylinderAlongZ(0.22 * sourceScale, 0.66, whiteMaterial, 30),
+    C: cylinderAlongZ(0.20 * sourceScale, 0.70, whiteMaterial, 30),
+    D: cylinderAlongZ(0.22 * sourceScale, 0.52, whiteMaterial, 30),
   };
+  jointPins.B.position.set(-beamPinRadius, 0, 0.26);
+  beam.add(jointPins.B);
+  jointPins.C.position.set(0, 0, 0.63);
+  output.add(jointPins.C);
+  jointPins.D.position.set(radiusRodLength, 0, 0.545);
+  radiusParts.rod.add(jointPins.D);
   Object.entries(jointPins).forEach(([name, pin]) => {
     pin.userData.role = `common-working-pin-${name}`;
-    root.add(pin);
   });
 
   const contacts = {
@@ -650,11 +549,8 @@ function midpointVibratingRodParallelMotion(movement) {
       state.pointCAcceleration.y,
       0,
     );
-    jointPins.B.position.set(state.pointB.x, state.pointB.y, 0.26);
-    jointPins.C.position.set(state.pointC.x, state.pointC.y, 0.51);
-    jointPins.D.position.set(state.pointD.x, state.pointD.y, 0.55);
     contacts.beamAtB.point.set(state.pointB.x, state.pointB.y, 0.30);
-    contacts.pistonAtC.point.set(state.pointC.x, state.pointC.y, 0.52);
+    contacts.pistonAtC.point.set(state.pointC.x, state.pointC.y, 0.63);
     contacts.radiusAtD.point.set(state.pointD.x, state.pointD.y, 0.55);
     root.userData.kinematics = state;
   };
@@ -678,21 +574,19 @@ function midpointVibratingRodParallelMotion(movement) {
   root.userData.archetype =
     'beam-midpoint-vibrating-rod-and-fixed-radius-parallel-motion';
   root.userData.blocks = {
-    baseRail,
     beam,
     beamBody,
     beamPivotAnchor,
     beamPivotBoss,
+    beamShaft,
     fixedFrame,
-    guideRails,
     jointPins,
     output,
     outputAnchor,
-    pistonHead,
     pistonRod,
     pointBAnchor,
     pointCAnchor,
-    radiusBearing,
+    radiusShaft,
     radiusRod: radiusParts.rod,
     radiusRodEndAnchor: radiusParts.endAnchor,
     radiusRodStartAnchor: radiusParts.startAnchor,
@@ -701,11 +595,6 @@ function midpointVibratingRodParallelMotion(movement) {
     vibratingRodMidpointAnchor: pointCAnchor,
     vibratingRodStartAnchor: vibratingParts.startAnchor,
   };
-  root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.90, -4.50, -0.98),
-    new THREE.Vector3(0.96, 2.40, 1.08),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -792,9 +681,16 @@ function midpointVibratingRodParallelMotion(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown's view stops just beyond fulcrum O and below pin D; the far half of
+  // the beam and the rest of the piston rod continue out of frame as drawn.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(radiusPivotF.x - 0.30, -3.15, -0.25),
+    new THREE.Vector3(0.55, 0.55, 1.00),
+  );
+  root.userData.cameraDistanceScale = 0.98;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };
@@ -1100,87 +996,23 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
 
+  // As in 337, Brown draws only the beam boss and shaft at O and a bare pin
+  // at F; no bed, standards or piston guides appear on the plate.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role =
-    'fixed-beam-bearing-O-upper-radius-pivot-F-and-piston-guides';
-  const framePlaneZ = -0.52;
-  const baseRail = new THREE.Mesh(
-    new THREE.BoxGeometry(11.2 * sourceScale, 0.42 * sourceScale, 0.72),
-    frameMaterial,
-  );
-  baseRail.position.set(4.0 * sourceScale, -5.45 * sourceScale, framePlaneZ);
-  baseRail.userData.fixed = true;
-  baseRail.userData.role = 'fixed-lower-engine-bed-rail';
-  const beamStandard = beamBetween3D(
-    new THREE.Vector3(0, -5.35 * sourceScale, framePlaneZ),
-    new THREE.Vector3(0, -0.85 * sourceScale, framePlaneZ),
-    0.42 * sourceScale,
-    0.58,
-    frameMaterial,
-  );
-  beamStandard.userData.fixed = true;
-  beamStandard.userData.role = 'fixed-upright-for-beam-pivot-O';
-  const beamBearing = cylinderAlongZ(0.75 * sourceScale, 0.62,
-    frameMaterial, 44);
-  beamBearing.position.set(0, 0, -0.28);
-  beamBearing.userData.fixed = true;
-  beamBearing.userData.role = 'fixed-beam-bearing-O';
-  const beamShaft = cylinderAlongZ(0.30 * sourceScale, 1.22,
-    darkMaterial, 34);
-  beamShaft.position.set(0, 0, -0.01);
+  fixedFrame.userData.role = 'fixed-beam-shaft-O-and-upper-radius-pin-F';
+  const beamShaftRadius = 0.36 * sourceScale;
+  const beamBoreRadius = beamShaftRadius + 0.02;
+  const beamShaft = cylinderAlongZ(beamShaftRadius, 0.62, darkMaterial, 36);
+  beamShaft.position.set(0, 0, 0.04);
   beamShaft.userData.fixed = true;
   beamShaft.userData.role = 'fixed-shaft-through-beam-pivot-O';
-
-  const radiusStandard = beamBetween3D(
-    new THREE.Vector3(radiusPivotF.x, -5.35 * sourceScale, framePlaneZ),
-    new THREE.Vector3(radiusPivotF.x,
-      radiusPivotF.y - 0.46 * sourceScale, framePlaneZ),
-    0.38 * sourceScale,
-    0.52,
-    frameMaterial,
-  );
-  radiusStandard.userData.fixed = true;
-  radiusStandard.userData.role = 'fixed-standard-to-upper-radius-pivot-F';
-  const radiusBearing = cylinderAlongZ(0.42 * sourceScale, 0.52,
-    frameMaterial, 38);
-  radiusBearing.position.set(radiusPivotF.x, radiusPivotF.y, -0.24);
-  radiusBearing.userData.fixed = true;
-  radiusBearing.userData.role = 'fixed-upper-radius-bar-bearing-F';
-  const radiusShaft = cylinderAlongZ(0.20 * sourceScale, 1.72,
+  const radiusShaft = cylinderAlongZ(0.20 * sourceScale, 0.34,
     darkMaterial, 32);
-  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, 0);
+  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, 0.70);
   radiusShaft.userData.fixed = true;
-  radiusShaft.userData.role = 'fixed-shaft-through-upper-radius-pivot-F';
-
-  const guideRails = [7.62, 8.38].map((sourceX, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 5.5 * sourceScale, 0.36),
-      frameMaterial,
-    );
-    rail.position.set(sourceX * sourceScale, -3.0 * sourceScale, -0.22);
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-piston-guide-rail-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
-  const guideFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(1.30 * sourceScale, 0.34 * sourceScale, 0.58),
-    frameMaterial,
-  );
-  guideFoot.position.set(8 * sourceScale, -5.62 * sourceScale, framePlaneZ);
-  guideFoot.userData.fixed = true;
-  guideFoot.userData.role = 'fixed-foot-under-piston-guides';
-  fixedFrame.add(
-    baseRail,
-    beamStandard,
-    beamBearing,
-    beamShaft,
-    radiusStandard,
-    radiusBearing,
-    radiusShaft,
-    guideFoot,
-  );
+  radiusShaft.userData.role = 'fixed-pin-at-upper-radius-pivot-F';
+  fixedFrame.add(beamShaft, radiusShaft);
   root.add(fixedFrame);
 
   const beam = new THREE.Group();
@@ -1188,36 +1020,29 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   beam.userData.role = 'sixteen-unit-rocking-beam-with-right-pin-R';
   const beamShape = new THREE.Shape();
   beamShape.moveTo(-8.02 * sourceScale, -0.31 * sourceScale);
-  beamShape.lineTo(-0.04 * sourceScale, -0.75 * sourceScale);
+  beamShape.lineTo(-0.04 * sourceScale, -0.66 * sourceScale);
   beamShape.lineTo(8.02 * sourceScale, -0.31 * sourceScale);
   beamShape.lineTo(8.02 * sourceScale, 0.31 * sourceScale);
-  beamShape.lineTo(0.04 * sourceScale, 0.75 * sourceScale);
+  beamShape.lineTo(0.04 * sourceScale, 0.66 * sourceScale);
   beamShape.lineTo(-8.02 * sourceScale, 0.31 * sourceScale);
   beamShape.closePath();
+  const beamFulcrumHole = new THREE.Path();
+  beamFulcrumHole.absarc(0, 0, beamBoreRadius, 0, FULL_TURN, true);
+  beamShape.holes.push(beamFulcrumHole);
   const beamBody = new THREE.Mesh(
     centeredExtrusion(beamShape, 0.28, 0.009),
     beamMaterial,
   );
   beamBody.position.z = 0.04;
   beamBody.userData.role = 'source-tapered-blue-rocking-beam';
-  const beamPivotBoss = cylinderAlongZ(0.75 * sourceScale, 0.38,
-    beamMaterial, 42);
+  const beamPivotBoss = boredJournal(0.75 * sourceScale, beamBoreRadius,
+    0.38, beamMaterial);
   beamPivotBoss.position.z = 0.04;
   beamPivotBoss.userData.role = 'moving-beam-fulcrum-boss-O';
-  const beamPivotBore = cylinderAlongZ(0.30 * sourceScale, 0.405,
-    darkMaterial, 34);
-  beamPivotBore.position.z = 0.045;
-  beamPivotBore.userData.role = 'beam-working-bore-O';
   const pointRBoss = cylinderAlongZ(0.3125 * sourceScale, 0.36,
     beamMaterial, 36);
   pointRBoss.position.set(beamHalfRadius, 0, 0.04);
   pointRBoss.userData.role = 'beam-right-pin-boss-R';
-  const beamIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.72 * sourceScale, 0.055, 0.035),
-    whiteMaterial,
-  );
-  beamIndex.position.set(-0.42 * sourceScale, 0, 0.245);
-  beamIndex.userData.role = 'visible-index-on-rocking-beam';
   const beamNegativeAnchor = new THREE.Object3D();
   beamNegativeAnchor.position.set(-beamHalfRadius, 0, 0.04);
   beamNegativeAnchor.userData.role = 'analytic-hidden-beam-driver-point';
@@ -1230,9 +1055,7 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   beam.add(
     beamBody,
     beamPivotBoss,
-    beamPivotBore,
     pointRBoss,
-    beamIndex,
     beamNegativeAnchor,
     beamPointRAnchor,
     beamPivotAnchor,
@@ -1269,54 +1092,42 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   const output = new THREE.Group();
   output.userData.rotationDegreesOfFreedom = 0;
   output.userData.role = 'piston-rod-carried-by-lower-vibrating-rod-end-L';
-  const outputBoss = cylinderAlongZ(0.32 * sourceScale, 0.24,
+  const outputBoss = cylinderAlongZ(0.32 * sourceScale, 0.16,
     outputMaterial, 34);
   outputBoss.position.z = 0.57;
   outputBoss.userData.role = 'piston-crosshead-boss-at-L';
-  const outputPin = cylinderAlongZ(0.16 * sourceScale, 0.035,
-    whiteMaterial, 28);
-  outputPin.position.z = 0.71;
-  outputPin.userData.role = 'white-working-pin-face-at-L';
-  const visiblePistonRodLength = 4.2 * sourceScale;
+  const visiblePistonRodLength = 3.2 * sourceScale;
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28 * sourceScale, visiblePistonRodLength, 0.17),
+    new THREE.BoxGeometry(0.28 * sourceScale, visiblePistonRodLength, 0.12),
     outputMaterial,
   );
-  pistonRod.position.set(0, -visiblePistonRodLength / 2, 0.55);
+  pistonRod.position.set(0, -visiblePistonRodLength / 2, 0.57);
   pistonRod.userData.role = 'vertical-piston-rod-continuing-below-L';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(1.45 * sourceScale, 0.42 * sourceScale, 0.50),
-    outputMaterial,
-  );
-  pistonHead.position.set(0, -4.30 * sourceScale, 0.39);
-  pistonHead.userData.role = 'piston-head-at-lower-visible-rod-end';
-  const outputIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 1.25 * sourceScale, 0.035),
-    whiteMaterial,
-  );
-  outputIndex.position.set(0, -2.0 * sourceScale, 0.655);
-  outputIndex.userData.role = 'visible-index-on-nearly-vertical-piston-rod';
   const outputAnchor = new THREE.Object3D();
   outputAnchor.position.z = 0.57;
   outputAnchor.userData.role = 'analytic-piston-point-L';
   output.add(
     outputBoss,
-    outputPin,
     pistonRod,
-    pistonHead,
-    outputIndex,
     outputAnchor,
   );
   root.add(output);
 
+  // Pins are rigid with one member and pass through true bores of the rest:
+  // L in the crosshead, R in the beam and U in the radius bar.
   const jointPins = {
-    L: cylinderAlongZ(0.19 * sourceScale, 0.45, whiteMaterial, 30),
+    L: cylinderAlongZ(0.19 * sourceScale, 0.38, whiteMaterial, 30),
     R: cylinderAlongZ(0.22 * sourceScale, 0.55, whiteMaterial, 30),
     U: cylinderAlongZ(0.20 * sourceScale, 0.67, whiteMaterial, 30),
   };
+  jointPins.L.position.set(0, 0, 0.47);
+  output.add(jointPins.L);
+  jointPins.R.position.set(beamHalfRadius, 0, 0.36);
+  beam.add(jointPins.R);
+  jointPins.U.position.set(radiusBarLength, 0, 0.55);
+  radiusParts.rod.add(jointPins.U);
   Object.entries(jointPins).forEach(([name, pin]) => {
     pin.userData.role = `common-working-pin-${name}`;
-    root.add(pin);
   });
 
   const contacts = {
@@ -1373,9 +1184,6 @@ function upperRadiusVibratingRodParallelMotion(movement) {
       state.pointLAcceleration.y,
       0,
     );
-    jointPins.L.position.set(state.pointL.x, state.pointL.y, 0.51);
-    jointPins.R.position.set(state.beamPointR.x, state.beamPointR.y, 0.36);
-    jointPins.U.position.set(state.pointU.x, state.pointU.y, 0.55);
     contacts.beamAtR.point.set(state.beamPointR.x,
       state.beamPointR.y, 0.35);
     contacts.pistonAtL.point.set(state.pointL.x, state.pointL.y, 0.52);
@@ -1402,34 +1210,27 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   root.userData.archetype =
     'beam-centered-vibrating-rod-with-upper-fixed-radius-parallel-motion';
   root.userData.blocks = {
-    baseRail,
     beam,
     beamBody,
     beamNegativeAnchor,
     beamPivotAnchor,
     beamPivotBoss,
     beamPointRAnchor,
+    beamShaft,
     fixedFrame,
-    guideRails,
     jointPins,
     output,
     outputAnchor,
-    pistonHead,
     pistonRod,
     radiusBar: radiusParts.rod,
     radiusBarEndAnchor: radiusParts.endAnchor,
     radiusBarStartAnchor: radiusParts.startAnchor,
-    radiusBearing,
+    radiusShaft,
     vibratingMidpointAnchor,
     vibratingRod: vibratingParts.rod,
     vibratingRodEndAnchor: vibratingParts.endAnchor,
     vibratingRodStartAnchor: vibratingParts.startAnchor,
   };
-  root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.06, -2.92, -0.96),
-    new THREE.Vector3(4.71, 2.90, 1.08),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -1525,9 +1326,15 @@ function upperRadiusVibratingRodParallelMotion(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown's view begins just behind fulcrum O and ends below piston pin L.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-0.75, -2.85, -0.25),
+    new THREE.Vector3(4.55, 1.35, 0.95),
+  );
+  root.userData.cameraDistanceScale = 0.98;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };

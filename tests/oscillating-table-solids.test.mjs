@@ -5,41 +5,49 @@ import { createAuthoredOscillatingEngineMovement } from '../src/simulation/autho
 import { createAuthoredTableEngineMovement } from '../src/simulation/authored-table-engines.js';
 import { disposeObject3D } from '../src/simulation/dispose-model.js';
 
-for (const id of [344, 345]) test(`${id}: piston rod clears the actual cover and gland passages for the full stroke`, () => {
+for (const id of [344, 345]) test(`${id}: round piston rod clears the actual cover and gland bores for the full stroke`, () => {
   const { root, update } = createAuthoredOscillatingEngineMovement({ id });
   const b = root.userData.blocks;
+  const rodRadius = b.pistonRod.geometry.parameters.radiusTop;
+  const axisZ = b.pistonRod.position.z;
   const ray = new THREE.Raycaster();
   for (let i = 0; i <= 64; i += 1) {
     update(4 * i / 64); root.updateMatrixWorld(true);
     const direction = new THREE.Vector3(0, -1, 0).transformDirection(b.cylinderAssembly.matrixWorld);
-    for (const x of [-1, 0, 1]) for (const z of [-1, 0, 1]) {
-      const origin = new THREE.Vector3(x * 0.15625 * root.userData.geometry.sourceScale,
-        10, 0.42 + z * 0.10).applyMatrix4(b.cylinderAssembly.matrixWorld);
+    for (let n = -1; n < 12; n += 1) {
+      const radius = n < 0 ? 0 : rodRadius;
+      const origin = new THREE.Vector3(radius * Math.cos(n * Math.PI / 6), 10,
+        axisZ + radius * Math.sin(n * Math.PI / 6)).applyMatrix4(b.cylinderAssembly.matrixWorld);
       ray.set(origin, direction);
       for (const cover of [...b.glandCollars, b.cylinderEndPlates[1]]) {
         assert.equal(ray.intersectObject(cover, false).length, 0, `rod clears ${cover.userData.role}`);
       }
     }
+    // Negative control: just outside the bore the same ray meets solid metal.
+    ray.set(new THREE.Vector3(rodRadius + 0.02, 10, axisZ).applyMatrix4(b.cylinderAssembly.matrixWorld), direction);
+    for (const cover of [...b.glandCollars, b.cylinderEndPlates[1]]) {
+      assert.ok(ray.intersectObject(cover, false).length > 0, `${cover.userData.role} is solid beside the bore`);
+    }
   }
   disposeObject3D(root);
 });
 
-for (const id of [344, 345]) test(`${id}: stub trunnions and rear crank leave the complete piston layer clear`, () => {
+for (const id of [344, 345]) test(`${id}: trunnion stubs stay outside the bore and the rear crank clears the piston rod`, () => {
   const { root, update } = createAuthoredOscillatingEngineMovement({ id });
   const b = root.userData.blocks;
   for (let i = 0; i <= 64; i += 1) {
     update(4 * i / 64); root.updateMatrixWorld(true);
     const head = new THREE.Box3().setFromObject(b.pistonHead);
-    const index = new THREE.Box3().setFromObject(b.pistonHeadIndex);
+    let stubs = 0;
     b.cylinderTrunnion.traverse(stub => {
       if (!stub.isMesh) return;
+      stubs += 1;
       const bounds = new THREE.Box3().setFromObject(stub);
-      assert.ok(bounds.max.z < head.min.z || bounds.min.z > index.max.z);
+      assert.ok(bounds.max.z < head.min.z || bounds.min.z > head.max.z,
+        `${stub.userData.role} must not enter the piston's bore`);
     });
+    assert.equal(stubs, 2);
     const rod = new THREE.Box3().setFromObject(b.pistonRod);
-    const bridge = b.cylinderAssembly.children.find(part => part.userData.role === 'front-trunnion-bridge-clear-of-piston-stroke');
-    const frontBearing = new THREE.Box3().setFromObject(b.trunnionBearingFront);
-    assert.ok(new THREE.Box3().setFromObject(bridge).max.z < frontBearing.min.z);
     const ray = new THREE.Raycaster();
     const eyeCenter = b.pistonCrankEye.getWorldPosition(new THREE.Vector3());
     const pinRadius = b.crankPin.geometry.parameters.radiusTop;
@@ -48,10 +56,20 @@ for (const id of [344, 345]) test(`${id}: stub trunnions and rear crank leave th
         eyeCenter.y + pinRadius * Math.sin(n * Math.PI / 8), 10), new THREE.Vector3(0, 0, -1));
       assert.equal(ray.intersectObject(b.pistonCrankEye, false).length, 0);
     }
-    for (const object of [b.crankDisk, b.crankHub, b.crankArm, b.crankShaft]) {
+    ray.set(new THREE.Vector3(eyeCenter.x + pinRadius + 0.02, eyeCenter.y, 10), new THREE.Vector3(0, 0, -1));
+    assert.ok(ray.intersectObject(b.pistonCrankEye, false).length > 0, 'negative control: eye wall is solid');
+    for (const object of [b.crankArm, b.crankShaft]) {
       assert.ok(new THREE.Box3().setFromObject(object).max.z < rod.min.z,
         `${object.userData.role} is behind the swept piston rod`);
     }
+    for (const rail of [b.upperRail, b.crankBearing, b.trunnionBearingBack]) {
+      assert.ok(new THREE.Box3().setFromObject(rail).max.z < new THREE.Box3().setFromObject(b.crankArm).min.z,
+        `${rail.userData.role} stays behind the crank`);
+    }
+    const casing = new THREE.Box3();
+    for (const part of [b.barrel, ...b.cylinderEndPlates]) casing.union(new THREE.Box3().setFromObject(part));
+    assert.ok(new THREE.Box3().setFromObject(b.trunnionBearingBack).max.z < casing.min.z,
+      'trunnion rail runs behind the closed cylinder as Brown dashes it');
   }
   disposeObject3D(root);
 });

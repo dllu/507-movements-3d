@@ -483,13 +483,13 @@ test('movement 340 renderer binds D, B, A, C, F, and E in real layers', () => {
       new THREE.Vector3(state.pointC.x, state.pointC.y, 0), 0,
     `rendered piston rod C at ${time}`);
     vector3Near(contacts.beamAtB.point,
-      new THREE.Vector3(state.pointB.x, state.pointB.y, 0.36), 0,
+      new THREE.Vector3(state.pointB.x, state.pointB.y, blocks.jointPins.B.position.z), 0,
     `contact B at ${time}`);
     vector3Near(contacts.beamAtA.point,
-      new THREE.Vector3(state.pointA.x, state.pointA.y, 0.67), 0,
+      new THREE.Vector3(state.pointA.x, state.pointA.y, blocks.jointPins.A.position.z), 0,
     `contact A at ${time}`);
     vector3Near(contacts.beamAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.42), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, blocks.jointPins.C.position.z), 0,
     `contact C at ${time}`);
   }
 
@@ -498,16 +498,19 @@ test('movement 340 renderer binds D, B, A, C, F, and E in real layers', () => {
   near(blocks.radiusBar.userData.nominalLength,
     geometry.physicalRadiusBarLength, 0,
   'rendered corrected E-A bar length');
-  assert.equal(blocks.inputGuideRails.length, 2);
-  assert.equal(blocks.pistonGuideRails.length, 2);
+  for (const pin of Object.values(blocks.jointPins)) assert.equal(pin.parent, blocks.beam);
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /bed|standard|guide-rail|flare/.test(role)), false,
+    'Brown draws no bed, pillar standard, rod guides or pillar flare');
   assert.notEqual(blocks.inputRod, blocks.pistonRod);
   assert.notEqual(blocks.pillar, blocks.radiusBar);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 7.1);
   assert.ok(size.y > 8.3);
-  assert.ok(size.z > 2.2,
-    'frame, pillar, beam, radius, rods, and pins occupy real depth');
+  assert.ok(size.z > 1.4,
+    'wall, pillar, rods, beam, radius bar and bracket occupy real depth');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

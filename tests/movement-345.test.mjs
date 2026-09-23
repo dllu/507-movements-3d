@@ -91,7 +91,10 @@ test('movement 345 is the upper-end-trunnion inverted pendulum engine', () => {
   assert.equal(blocks.inputCrank.parent, model.root);
   assert.equal(blocks.cylinderAssembly.parent, model.root);
   assert.equal(blocks.pistonAssembly.parent, model.root);
-  assert.equal(blocks.crankPin.parent, model.root);
+  assert.ok(blocks.crankPin.parent === blocks.inputCrank,
+    'the crank carries its own pin P');
+  assert.ok(blocks.crankShaft.parent === blocks.inputCrank,
+    'the live shaft turns with the crank in the block bearing');
   assert.equal(blocks.crankArm.parent, blocks.inputCrank);
   assert.equal(blocks.crankPinAnchor.parent, blocks.inputCrank);
   assert.equal(blocks.cylinderPivotAnchor.parent,
@@ -102,10 +105,15 @@ test('movement 345 is the upper-end-trunnion inverted pendulum engine', () => {
   assert.equal(blocks.pistonHeadAnchor.parent, blocks.pistonAssembly);
   assert.equal(blocks.pistonHead.parent, blocks.pistonAssembly);
   assert.equal(blocks.pistonRod.parent, blocks.pistonAssembly);
-  assert.equal(blocks.cylinderWalls.length, 2);
+  assert.equal(blocks.cylinderWalls.length, 1);
+  assert.ok(blocks.cylinderWalls[0] === blocks.barrel);
   assert.equal(blocks.cylinderEndPlates.length, 2);
   assert.equal(blocks.glandCollars.length, 3);
-  assert.equal(blocks.lowerStandards.length, 2);
+  for (const undrawn of ['boreBack', 'crankDisk', 'crankHub', 'crankIndex',
+    'crankPedestal', 'crankPinBoss', 'lowerStandards', 'pistonHeadIndex',
+    'trunnionBearingFront', 'trunnionCenterCap']) {
+    assert.equal(blocks[undrawn], undefined, `${undrawn} is not in Brown's plate`);
+  }
   assert.equal(contacts.crankBearingO.fixedMember, blocks.fixedFrame);
   assert.equal(contacts.crankBearingO.movingMember, blocks.inputCrank);
   assert.equal(contacts.crankPinP.members[1], blocks.pistonAssembly);
@@ -121,12 +129,14 @@ test('movement 345 is the upper-end-trunnion inverted pendulum engine', () => {
   assert.equal(roles.filter((role) => role ===
     'lower-two-point-two-five-unit-direct-acting-crank-O-P').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'upper-end-trunnion-open-pendulum-cylinder').length, 1);
+    'upper-end-trunnion-closed-pendulum-cylinder').length, 1);
   assert.equal(roles.filter((role) => role ===
     'inverted-fixed-length-piston-rod-and-head-rooted-at-lower-crank-pin-P')
     .length, 1);
   assert.equal(roles.filter((role) => role ===
-    'sliding-head-inside-pendulum-cylinder').length, 1);
+    'lower-enclosed-piston-head').length, 1);
+  assert.equal(roles.some((role) => /index|transparent|open-/i.test(role)), false,
+    'Brown draws a closed cylinder without index marks');
   assert.equal(roles.some((role) => /crosshead|slider-guide/i.test(role)),
     false, 'the direct piston rod has no guide');
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
@@ -485,7 +495,7 @@ test('movement 345 renderer binds the lower crank to the hanging cylinder axis',
       1e-15,
       `downward cylinder axis ${time}`,
     );
-    worldXYNear(blocks.crankPin, state.pointP, 0,
+    worldXYNear(blocks.crankPin, state.pointP, 8e-16,
       `visible common pin ${time}`);
     vector2Near(new THREE.Vector2(contacts.crankPinP.point.x,
       contacts.crankPinP.point.y), state.pointP, 0,
@@ -513,12 +523,12 @@ test('movement 345 renderer binds the lower crank to the hanging cylinder axis',
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 29);
+  assert.ok(meshCount >= 14);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.1);
+  assert.ok(size.x > 3.9, 'broken-off rail and crank block as Brown draws them');
   assert.ok(size.y > 7.7);
-  assert.ok(size.z > 2,
+  assert.ok(size.z > 2.6,
     'upper trunnion, bore, piston, crank, and foundation occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

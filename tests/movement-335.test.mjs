@@ -415,65 +415,72 @@ test('movement 335 renderer binds every beam station and lower-link pin', () => 
       `rendered E-Q angle at ${time}`);
     vector3Near(blocks.beamLeftStationAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointA.x, state.pointA.y, 0.10,
+        state.pointA.x, state.pointA.y, 0.56,
       ), 2e-15, `beam station A at ${time}`);
     vector3Near(blocks.beamMiddleStationAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointB.x, state.pointB.y, 0.10,
+        state.pointB.x, state.pointB.y, 0.56,
       ), 1e-15, `beam station B at ${time}`);
     vector3Near(blocks.leftDropLinkStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointA.x, state.pointA.y, 0.37,
+        state.pointA.x, state.pointA.y, 0.34,
       ), 0, `left drop at A at ${time}`);
     vector3Near(blocks.leftDropLinkEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointE.x, state.pointE.y, 0.37,
+        state.pointE.x, state.pointE.y, 0.34,
       ), 7e-16, `left drop at E at ${time}`);
     vector3Near(blocks.middleDropLinkStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointB.x, state.pointB.y, 0.40,
+        state.pointB.x, state.pointB.y, 0.34,
       ), 0, `middle drop at B at ${time}`);
     vector3Near(blocks.middleDropLinkEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointQ.x, state.pointQ.y, 0.40,
+        state.pointQ.x, state.pointQ.y, 0.34,
       ), 6e-16, `middle drop at Q at ${time}`);
     vector3Near(blocks.fixedRadiusEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointQ.x, state.pointQ.y, 0.62,
+        state.pointQ.x, state.pointQ.y, -0.12,
       ), 8e-16, `fixed radius at Q at ${time}`);
     vector3Near(blocks.crossbarStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointE.x, state.pointE.y, 0.84,
+        state.pointE.x, state.pointE.y, 0.04,
       ), 0, `crossbar at E at ${time}`);
     vector3Near(blocks.crossbarEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointQ.x, state.pointQ.y, 0.84,
+        state.pointQ.x, state.pointQ.y, 0.04,
       ), 8e-16, `crossbar at Q at ${time}`);
     vector3Near(blocks.pistonPointAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointE.x, state.pointE.y, 0.02,
+        state.pointE.x, state.pointE.y, 0.18,
       ), 0, `piston point E at ${time}`);
     vector3Near(contacts.leftDropAtA.point,
-      new THREE.Vector3(state.pointA.x, state.pointA.y, 0.28), 0,
+      new THREE.Vector3(state.pointA.x, state.pointA.y, blocks.jointPins.A.position.z), 0,
     `live A contact at ${time}`);
     vector3Near(contacts.middleDropAtB.point,
-      new THREE.Vector3(state.pointB.x, state.pointB.y, 0.29), 0,
+      new THREE.Vector3(state.pointB.x, state.pointB.y, blocks.jointPins.B.position.z), 0,
     `live B contact at ${time}`);
     vector3Near(contacts.crossbarAtE.point,
-      new THREE.Vector3(state.pointE.x, state.pointE.y, 0.43), 0,
+      new THREE.Vector3(state.pointE.x, state.pointE.y, blocks.jointPins.E.getWorldPosition(new THREE.Vector3()).z), 0,
     `live E contact at ${time}`);
     vector3Near(contacts.fourMembersAtQ.point,
-      new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.59), 0,
+      new THREE.Vector3(state.pointQ.x, state.pointQ.y, blocks.jointPins.Q.getWorldPosition(new THREE.Vector3()).z), 0,
     `live Q contact at ${time}`);
     assert.ok(blocks.fixedFrame.matrixWorld.equals(fixedFrameMatrix));
   }
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 7.7);
-  assert.ok(size.y > 5.3);
-  assert.ok(size.z > 1.85,
-    'beam, four lower links, piston, guides, and two pivots occupy real layers');
+  assert.ok(size.x > 5.7, 'beam from A past fulcrum O; Brown draws no left guide rails');
+  assert.ok(size.y > 5.1);
+  assert.ok(size.z > 1.0,
+    'radius bar, crossbar, piston rod, drop links, beam and stubs occupy separate layers');
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /guide|pedestal|crosshead|index|bearing/.test(role)), false,
+    'Brown draws only the beam, sectioned shaft O, links, bars, pins and plain piston rod');
+  for (const name of ['A', 'B']) assert.equal(blocks.jointPins[name].parent, blocks.beam);
+  assert.equal(blocks.jointPins.E.parent, blocks.leftDropLink);
+  assert.equal(blocks.jointPins.Q.parent, blocks.middleDropLink);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

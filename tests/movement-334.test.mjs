@@ -100,8 +100,8 @@ test('movement 334 is the single-acting beam rack-sector parallel motion', () =>
     'working-tooth-of-straight-piston-rack-B').length, 17);
   assert.equal(roles.filter((role) => role ===
     'articulated-link-of-D-suspension-chain').length, 10);
-  assert.equal(roles.filter((role) => role ===
-    'visible-radial-index-on-roller-A').length, 1);
+  assert.equal(roles.some((role) => /index/i.test(role)), false,
+    'Brown draws a plain roller A and rack B without index marks');
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
   disposeModel(model.root);
 });
@@ -559,9 +559,15 @@ test('movement 334 renderer binds all teeth, rods, links, and live contacts', ()
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 7.3);
-  assert.ok(size.y > 6.0);
-  assert.ok(size.z > 1.60,
-    'rack, open sector, roller, chain, rods, and frame occupy real layers');
+  assert.ok(size.y > 5.0, 'rack B and the shortened drawn chain rod span the plate height');
+  assert.ok(size.z > 1.40,
+    'bed, rack, open sector, roller, plate chain and rods occupy real layers');
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /guide-rail|index-on-rocking-beam|pivot-bore-at-F/.test(role)), false,
+    'Brown draws one bed timber and a plain bored beam boss at F');
+  blocks.chainLinks.forEach(({ link }, index) =>
+    assert.equal(link.userData.outerLink, index % 2 === 0, 'outer and inner links alternate'));
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

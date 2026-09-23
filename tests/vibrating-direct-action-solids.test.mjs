@@ -75,8 +75,11 @@ test('339: the finite slider occupies the guide depth and its pin clears the blo
         'the whole slider thickness sits inside the rails');
       assert.ok(block.min.x > rail.min.x && block.max.x < rail.max.x);
     }
-    const center = b.jointPins.B.position;
+    const center = b.jointPins.B.getWorldPosition(new THREE.Vector3());
     const radius = b.jointPins.B.geometry.parameters.radiusTop;
+    ray.set(new THREE.Vector3(center.x + 0.5 * block.getSize(new THREE.Vector3()).x * 0.9, center.y, 10),
+      new THREE.Vector3(0, 0, -1));
+    assert.equal(ray.intersectObject(b.sliderBlock, false).length > 0, true, 'negative control: the block face is solid');
     for (let i = 0; i < 16; i += 1) {
       ray.set(new THREE.Vector3(center.x + radius * Math.cos(i * Math.PI / 8),
         center.y + radius * Math.sin(i * Math.PI / 8), 10), new THREE.Vector3(0, 0, -1));
@@ -93,7 +96,8 @@ for (const id of [339, 340, 341]) test(`${id}: fixed radius bearing clears the r
     update(4 * i / 16); root.updateMatrixWorld(true);
     const bearing = new THREE.Box3().setFromObject(b.radiusBearing);
     const rod = new THREE.Box3().setFromObject(b.radiusBar);
-    assert.ok(bearing.max.z < rod.min.z);
+    assert.ok(bearing.max.z < rod.min.z || bearing.min.z > rod.max.z,
+      'the fixed bearing or bracket lies wholly behind or in front of the bar');
   }
   disposeObject3D(root);
 });

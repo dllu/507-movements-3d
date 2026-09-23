@@ -440,7 +440,7 @@ test('movement 341 renderer binds P, I, L, M, W, E, and R in distinct layers', (
     model.update(time);
     model.root.updateMatrixWorld(true);
     vector3Near(worldPosition(blocks.crankPinAnchor),
-      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.10), 8e-16,
+      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.12), 8e-16,
     `rendered crank pin P at ${time}`);
     vector3Near(worldPosition(blocks.connectingRodStartAnchor),
       new THREE.Vector3(state.pointP.x, state.pointP.y, 0.30), 1e-15,
@@ -455,40 +455,40 @@ test('movement 341 renderer binds P, I, L, M, W, E, and R in distinct layers', (
       ['W', state.pointW],
     ]) {
       vector3Near(worldPosition(blocks.beamAnchors[name]),
-        new THREE.Vector3(point.x, point.y, 0.48), 3e-15,
+        new THREE.Vector3(point.x, point.y, 0), 3e-15,
       `rendered beam station ${name} at ${time}`);
     }
     vector3Near(worldPosition(blocks.pillarStartAnchor),
       new THREE.Vector3(geometry.pillarPivotR.x,
-        geometry.pillarPivotR.y, 0.08), 1e-15,
+        geometry.pillarPivotR.y, 0.30), 1e-15,
     `rendered pillar pivot R at ${time}`);
     vector3Near(worldPosition(blocks.pillarEndAnchor),
-      new THREE.Vector3(state.pointW.x, state.pointW.y, 0.08), 3e-15,
+      new THREE.Vector3(state.pointW.x, state.pointW.y, 0.30), 3e-15,
     `rendered pillar joint W at ${time}`);
     vector3Near(worldPosition(blocks.radiusBarStartAnchor),
       new THREE.Vector3(geometry.radiusPivotE.x,
-        geometry.radiusPivotE.y, 0.78), 1e-15,
+        geometry.radiusPivotE.y, -0.30), 1e-15,
     `rendered radius pivot E at ${time}`);
     vector3Near(worldPosition(blocks.radiusBarEndAnchor),
-      new THREE.Vector3(state.pointM.x, state.pointM.y, 0.78), 3e-15,
+      new THREE.Vector3(state.pointM.x, state.pointM.y, -0.30), 3e-15,
     `rendered radius joint M at ${time}`);
     vector3Near(worldPosition(blocks.pistonAnchor),
-      new THREE.Vector3(state.pointL.x, state.pointL.y, 0.16), 2e-15,
+      new THREE.Vector3(state.pointL.x, state.pointL.y, 0.30), 2e-15,
     `rendered piston pin L at ${time}`);
     vector3Near(contacts.crankAtP.point,
-      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.34), 0,
+      new THREE.Vector3(state.pointP.x, state.pointP.y, blocks.jointPins.P.position.z), 0,
     `contact P at ${time}`);
     vector3Near(contacts.beamAtI.point,
-      new THREE.Vector3(state.pointI.x, state.pointI.y, 0.43), 0,
+      new THREE.Vector3(state.pointI.x, state.pointI.y, blocks.jointPins.I.position.z), 0,
     `contact I at ${time}`);
     vector3Near(contacts.beamAtL.point,
-      new THREE.Vector3(state.pointL.x, state.pointL.y, 0.42), 0,
+      new THREE.Vector3(state.pointL.x, state.pointL.y, blocks.jointPins.L.position.z), 0,
     `contact L at ${time}`);
     vector3Near(contacts.beamAtM.point,
-      new THREE.Vector3(state.pointM.x, state.pointM.y, 0.69), 0,
+      new THREE.Vector3(state.pointM.x, state.pointM.y, blocks.jointPins.M.position.z), 0,
     `contact M at ${time}`);
     vector3Near(contacts.beamAtW.point,
-      new THREE.Vector3(state.pointW.x, state.pointW.y, 0.40), 0,
+      new THREE.Vector3(state.pointW.x, state.pointW.y, blocks.jointPins.W.position.z), 0,
     `contact W at ${time}`);
   }
 
@@ -498,17 +498,25 @@ test('movement 341 renderer binds P, I, L, M, W, E, and R in distinct layers', (
     geometry.pillarLength, 0, 'rendered rocking-pillar length');
   near(blocks.radiusBar.userData.nominalLength,
     geometry.radiusBarLength, 0, 'rendered corrected radius-bar length');
-  assert.equal(blocks.pistonGuideRails.length, 2);
+  for (const name of ['I', 'L', 'M', 'W']) assert.equal(blocks.jointPins[name].parent, blocks.beam);
+  assert.equal(blocks.jointPins.P.parent, blocks.inputCrank);
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /engine-bed|guide-rail|cylinder-side|piston-head/.test(role)), false,
+    'Brown draws a closed cylinder on separate feet, with no bed, frame sides or guides');
+  const radiusBarBox = new THREE.Box3().setFromObject(blocks.radiusBar);
+  const beamBox = new THREE.Box3().setFromObject(blocks.beamBody);
+  assert.ok(radiusBarBox.max.z < beamBox.min.z, 'radius bar B runs behind the beam as dashed in the plate');
   assert.equal(Object.keys(blocks.beamAnchors).length, 4);
   assert.equal(Object.keys(blocks.jointPins).length, 5);
   assert.notEqual(blocks.connectingRod, blocks.pillar);
   assert.notEqual(blocks.pillar, blocks.radiusBar);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 7.2);
+  assert.ok(size.x > 6.4, 'cylinder at the left to pillar pedestal R at the right');
   assert.ok(size.y > 5.8);
-  assert.ok(size.z > 2.2,
-    'frame, crank, rods, beam, piston, and pins occupy real depth');
+  assert.ok(size.z > 1.6,
+    'wall, bracket, radius bar, beam, rods, cylinder and pins occupy real depth');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
@@ -542,7 +550,7 @@ test('movement 341 closes exactly and leaves movement 507 as the next draft', ()
   model.update(canonicalTimes.cycleClosure);
   model.root.updateMatrixWorld(true);
   vector3Near(worldPosition(blocks.beamAnchors.L),
-    new THREE.Vector3(start.pointL.x, start.pointL.y, 0.48), 1e-15,
+    new THREE.Vector3(start.pointL.x, start.pointL.y, 0), 1e-15,
   'rendered piston-pin closure');
 
   const movement507 = catalog.movements[506];

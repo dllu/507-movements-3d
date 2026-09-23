@@ -360,8 +360,12 @@ test('movement 326 keeps the flywheel, shaft, and crank as one indexed 15 rpm ro
   assert.equal(blocks.crankDisk.parent, blocks.flywheel);
   assert.equal(blocks.flywheelHub.parent, blocks.flywheel);
   assert.equal(blocks.liveShaft.parent, blocks.flywheel);
-  assert.equal(blocks.flywheelRotationIndex.parent, blocks.flywheel);
-  assert.equal(blocks.crankRotationIndex.parent, blocks.flywheel);
+  assert.equal(blocks.flywheelRotationIndex, undefined,
+    'the plate draws no rotation index marks');
+  assert.equal(blocks.crankRotationIndex, undefined);
+  assert.equal(blocks.slideIndex, undefined);
+  assert.equal(blocks.crankPinShaft.parent, blocks.flywheel);
+  assert.equal(blocks.wristPinShaft.parent, blocks.slideA);
 
   for (const time of [0, 0.37, 1, 1.64, 2.5, 3.22, 4]) {
     const state = stateAtTime(time);
@@ -430,13 +434,16 @@ test('movement 326 renderer binds the crank, rod, slide, piston-rod, and guide t
       state.sliderY,
       geometry.connectingRodPlaneZ,
     ), 5e-16, `rendered slide wrist pin at ${time}`);
-    near(blocks.crankPinShaft.position.x, state.crankPin.x, 0,
+    const crankPinWorld = blocks.crankPinShaft.getWorldPosition(
+      new THREE.Vector3());
+    near(crankPinWorld.x, state.crankPin.x, 2e-15,
       `rendered crank shaft x at ${time}`);
-    near(blocks.crankPinShaft.position.y, state.crankPin.y, 0,
+    near(crankPinWorld.y, state.crankPin.y, 2e-15,
       `rendered crank shaft y at ${time}`);
-    near(blocks.wristPinShaft.position.x, 0, 0,
-      `rendered wrist shaft x at ${time}`);
-    near(blocks.wristPinShaft.position.y, state.sliderY, 0,
+    const wristPinWorld = blocks.wristPinShaft.getWorldPosition(
+      new THREE.Vector3());
+    near(wristPinWorld.x, 0, 0, `rendered wrist shaft x at ${time}`);
+    near(wristPinWorld.y, state.sliderY, 0,
       `rendered wrist shaft y at ${time}`);
     near(contacts.leftPlanedSlidingPair.relativeSlidingSpeed,
       state.sliderVelocityY, 0, `left sliding speed at ${time}`);
@@ -459,7 +466,7 @@ test('movement 326 renderer binds the crank, rod, slide, piston-rod, and guide t
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > geometry.flywheelOuterRadius * 2);
-  assert.ok(size.y > 10);
+  assert.ok(size.y > 9, 'the piston rod no longer hangs below the drawn foot');
   assert.ok(size.z > 1.4,
     'flywheel, frame, captured shoes, crank, and rod use distinct depths');
   assert.ok(model.cameraDirection.x > 0);

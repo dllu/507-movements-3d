@@ -1,4 +1,5 @@
 import { makeBoredLinkRod } from './bored-link-rod.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -26,34 +27,6 @@ function cylinderAlongZ(radius, depth, material, segments = 36) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function centeredExtrusion(shape, depth, bevelSize = 0.008) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: bevelSize > 0,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 32,
-    depth,
-    steps: 1,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
-
-function beamBetween3D(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.quaternion.setFromUnitVectors(
-    new THREE.Vector3(1, 0, 0),
-    delta.clone().normalize(),
-  );
-  return beam;
 }
 
 function circleCircleIntersections(centerA, radiusA, centerB, radiusB) {
@@ -136,174 +109,6 @@ function rigidLinkRates(vector, velocity, acceleration) {
 }
 
 const makeRigidRod = makeBoredLinkRod;
-
-function makeSideLever({
-  darkMaterial,
-  drivenMaterial,
-  length,
-  midDistance,
-  planeZ,
-  scale,
-  whiteMaterial,
-}) {
-  const lever = new THREE.Group();
-  lever.userData.axis = Z_AXIS.clone();
-  lever.userData.role = 'rocking-side-lever-pivoted-at-A';
-
-  const visibleBackExtension = 1.15 * scale;
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      length + visibleBackExtension,
-      0.42 * scale,
-      0.20,
-    ),
-    drivenMaterial,
-  );
-  body.position.set((length - visibleBackExtension) / 2, 0, planeZ);
-  body.userData.role = 'source-eight-unit-side-lever-body';
-  const lowerEdge = body.clone();
-  lowerEdge.scale.y = 0.20;
-  lowerEdge.position.y = -0.31 * scale;
-  lowerEdge.userData.role = 'side-lever-lower-taper-line';
-
-  const pivotA = cylinderAlongZ(1.00 * scale, 0.30,
-    drivenMaterial, 44);
-  pivotA.position.z = planeZ;
-  pivotA.userData.role = 'large-side-lever-pivot-A';
-  const pivotABore = cylinderAlongZ(0.56 * scale, 0.325,
-    darkMaterial, 38);
-  pivotABore.position.z = planeZ + 0.004;
-  pivotABore.userData.role = 'fixed-bearing-bore-at-A';
-  const pivotAIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38 * scale, 0.050, 0.032),
-    whiteMaterial,
-  );
-  pivotAIndex.position.set(0.25 * scale, 0, planeZ + 0.175);
-  pivotAIndex.userData.role = 'white-rocking-index-at-A';
-
-  const midBoss = cylinderAlongZ(0.28 * scale, 0.26,
-    drivenMaterial, 34);
-  midBoss.position.set(midDistance, 0, planeZ);
-  midBoss.userData.role = 'side-lever-four-unit-middle-pin';
-  const rightBoss = cylinderAlongZ(0.50 * scale, 0.28,
-    drivenMaterial, 38);
-  rightBoss.position.set(length, 0, planeZ);
-  rightBoss.userData.role = 'side-lever-eight-unit-right-pin';
-  const rightIndex = cylinderAlongZ(0.22 * scale, 0.032,
-    whiteMaterial, 30);
-  rightIndex.position.set(length, 0, planeZ + 0.165);
-  rightIndex.userData.role = 'white-index-at-side-lever-right-pin';
-
-  const midAnchor = new THREE.Object3D();
-  midAnchor.position.set(midDistance, 0, planeZ);
-  midAnchor.userData.role = 'analytic-four-unit-side-lever-pin';
-  const rightAnchor = new THREE.Object3D();
-  rightAnchor.position.set(length, 0, planeZ);
-  rightAnchor.userData.role = 'analytic-eight-unit-side-lever-pin';
-  const hiddenInputAnchor = new THREE.Object3D();
-  hiddenInputAnchor.position.set(-length, 0, planeZ);
-  hiddenInputAnchor.userData.role =
-    'analytic-hidden-negative-eight-unit-animation-driver-point';
-  lever.add(
-    body,
-    lowerEdge,
-    pivotA,
-    pivotABore,
-    pivotAIndex,
-    midBoss,
-    rightBoss,
-    rightIndex,
-    midAnchor,
-    rightAnchor,
-    hiddenInputAnchor,
-  );
-  return {
-    body,
-    hiddenInputAnchor,
-    lever,
-    midAnchor,
-    midBoss,
-    pivotA,
-    pivotABore,
-    pivotAIndex,
-    rightAnchor,
-    rightBoss,
-    rightIndex,
-  };
-}
-
-function makeOutputCrosshead({
-  darkMaterial,
-  outputMaterial,
-  planeZ,
-  scale,
-  whiteMaterial,
-}) {
-  const output = new THREE.Group();
-  output.userData.role = 'crosshead-E-piston-rod-and-piston-output';
-  output.userData.rotationDegreesOfFreedom = 0;
-
-  const housingShape = new THREE.Shape();
-  housingShape.moveTo(-0.50 * scale, -0.75 * scale);
-  housingShape.lineTo(0.50 * scale, -0.75 * scale);
-  housingShape.lineTo(0.50 * scale, 0.75 * scale);
-  housingShape.absarc(0, 0.75 * scale, 0.375 * scale,
-    0, Math.PI, false);
-  housingShape.lineTo(-0.50 * scale, -0.75 * scale);
-  housingShape.closePath();
-  const jointHole = new THREE.Path();
-  jointHole.absarc(0, 0, 0.23 * scale, 0, FULL_TURN, true);
-  jointHole.closePath();
-  housingShape.holes.push(jointHole);
-  const housing = new THREE.Mesh(
-    centeredExtrusion(housingShape, 0.24, 0.008),
-    outputMaterial,
-  );
-  housing.position.z = planeZ;
-  housing.userData.realJointBore = true;
-  housing.userData.role = 'source-crosshead-E-with-real-joint-bore';
-
-  const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.375 * scale, 8.25 * scale, 0.18),
-    outputMaterial,
-  );
-  pistonRod.position.set(0, -4.875 * scale, planeZ - 0.02);
-  pistonRod.userData.role = 'piston-rod-rigidly-carried-by-crosshead-E';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(4.50 * scale, 1.00 * scale, 0.58),
-    outputMaterial,
-  );
-  pistonHead.position.set(0, -9.50 * scale, planeZ - 0.15);
-  pistonHead.userData.role = 'side-lever-engine-piston-head';
-  const jointFace = cylinderAlongZ(0.20 * scale, 0.035,
-    whiteMaterial, 30);
-  jointFace.position.z = planeZ + 0.145;
-  jointFace.userData.role = 'white-crosshead-E-joint-index';
-  const jointBore = new THREE.Mesh(
-    new THREE.TorusGeometry(0.23 * scale, 0.035, 8, 30),
-    darkMaterial,
-  );
-  jointBore.position.z = planeZ + 0.142;
-  jointBore.userData.role = 'crosshead-E-working-pin-bore-outline';
-  const anchor = new THREE.Object3D();
-  anchor.position.z = planeZ;
-  anchor.userData.role = 'analytic-crosshead-E-center';
-  const pistonAnchor = new THREE.Object3D();
-  pistonAnchor.position.set(0, -9.50 * scale, planeZ);
-  pistonAnchor.userData.role = 'analytic-piston-center';
-  output.add(housing, pistonRod, pistonHead, jointFace, jointBore,
-    anchor, pistonAnchor);
-  return {
-    anchor,
-    housing,
-    jointBore,
-    jointFace,
-    output,
-    pistonAnchor,
-    pistonHead,
-    pistonRod,
-  };
-}
 
 function sideLeverRockshaftParallelMotion(movement) {
   const root = new THREE.Group();
@@ -678,205 +483,137 @@ function sideLeverRockshaftParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
 
+  // Brown's elevation: a casing with bands and flanges behind the lever and
+  // side rod, a standard carrying rockshaft F, one diagonal frame member,
+  // the forked side lever on a bare sectioned shaft O, and no piston guides.
+  const s = sourceScale;
+  const pinClearance = 0.012;
+  const leverPlaneZ = 0.04;
+  const leverHalfDepth = 0.14;
+  const radiusArmPlaneZ = -0.05;
+  const casingHalfDepth = 0.35;
+  const cylinderAxisZ = -0.52;
+  const casingFrontZ = cylinderAxisZ + casingHalfDepth;
+  const pistonLineX = verticalStrokeLineX;
+  const pistonRodRadius = 0.16 * s;
+  const pistonBore = pistonRodRadius + pinClearance;
+
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
-    'fixed-marine-engine-frame-beam-bearing-guides-and-F-rockshaft';
-  const framePlaneZ = -0.48;
-  const deck = new THREE.Mesh(
-    new THREE.BoxGeometry(6.5 * sourceScale, 0.34 * sourceScale, 0.66),
-    frameMaterial,
-  );
-  deck.position.set(10 * sourceScale, 5 * sourceScale, framePlaneZ);
-  deck.userData.fixed = true;
-  deck.userData.role = 'fixed-marine-engine-deck-at-source-y-five';
-  const lowerBed = new THREE.Mesh(
-    new THREE.BoxGeometry(6.5 * sourceScale, 0.42 * sourceScale, 0.78),
-    frameMaterial,
-  );
-  lowerBed.position.set(10 * sourceScale, -2.25 * sourceScale, framePlaneZ);
-  lowerBed.userData.fixed = true;
-  lowerBed.userData.role = 'fixed-lower-marine-engine-bedplate';
-  const framePosts = [7, 13].map((sourceX, index) => {
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30 * sourceScale, 7.25 * sourceScale, 0.54),
-      frameMaterial,
-    );
-    post.position.set(sourceX * sourceScale, 1.375 * sourceScale, framePlaneZ);
-    post.userData.fixed = true;
-    post.userData.role = `fixed-engine-frame-post-${index + 1}`;
-    fixedFrame.add(post);
-    return post;
-  });
-  const cylinderBack = new THREE.Mesh(
-    new THREE.BoxGeometry(5.55 * sourceScale, 6.45 * sourceScale, 0.20),
-    frameMaterial,
-  );
-  cylinderBack.position.set(10 * sourceScale, 1.42 * sourceScale, -0.78);
-  cylinderBack.userData.fixed = true;
-  cylinderBack.userData.role = 'recessed-fixed-cylinder-and-frame-backplate';
+    'fixed-marine-cylinder-casing-standard-F-rockshaft-and-shaft-O';
+  const fixedPart = (mesh, role) => {
+    mesh.userData.fixed = true;
+    mesh.userData.role = role;
+    fixedFrame.add(mesh);
+    return mesh;
+  };
+  // Extruded along y so the piston rod can pass a vertical bore.
+  const casingBlock = (xMin, xMax, yLow, yHigh, halfDepth, bore, role,
+    zCenter = cylinderAxisZ) => {
+    const outline = poly([[xMin * s, -halfDepth], [xMax * s, -halfDepth],
+      [xMax * s, halfDepth], [xMin * s, halfDepth]]);
+    const geometry = plate(bore
+      ? clip.difference(outline, poly(circle([pistonLineX, 0], bore, 48)))
+      : outline, yLow * s, yHigh * s);
+    geometry.rotateX(-Math.PI / 2);
+    const mesh = fixedPart(new THREE.Mesh(geometry, frameMaterial), role);
+    mesh.position.z = zCenter;
+    return mesh;
+  };
+  const cylinderBack = casingBlock(4.0, 12.9, -1.2, 5.0, casingHalfDepth,
+    pistonBore, 'fixed-cylinder-and-valve-casing');
+  const cylinderTopFlange = casingBlock(6.6, 13.2, 5.0, 5.6,
+    casingHalfDepth + 0.02, pistonBore, 'fixed-cylinder-top-flange');
+  const lowerBed = casingBlock(3.9, 13.2, -1.84, -1.2, casingHalfDepth + 0.02,
+    0, 'fixed-cylinder-bottom-flange');
+  const cylinderCover = casingBlock(8.9, 11.1, 5.6, 5.8, 0.22, pistonBore,
+    'fixed-cylinder-cover-plate');
+  const stuffingBox = casingBlock(9.3, 10.7, 5.8, 6.15, 0.16, pistonBore,
+    'fixed-piston-rod-stuffing-box');
+  const casingBands = [[4.4, 4.7], [-0.15, 0.15]].map(([low, high], index) =>
+    casingBlock(4.0, 12.9, low, high, 0.02, 0,
+      `fixed-cylinder-band-${index + 1}`, casingFrontZ + 0.02));
 
-  const guideHeight = 8.3 * sourceScale;
-  const guideRails = [9.45, 10.55].map((sourceX, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, guideHeight, 0.36),
-      darkMaterial,
-    );
-    rail.position.set(sourceX * sourceScale, 10.15 * sourceScale, -0.22);
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-piston-crosshead-guide-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
-  const guideTop = new THREE.Mesh(
-    new THREE.BoxGeometry(1.65 * sourceScale, 0.22 * sourceScale, 0.48),
-    frameMaterial,
-  );
-  guideTop.position.set(10 * sourceScale, 14.25 * sourceScale, -0.28);
-  guideTop.userData.fixed = true;
-  guideTop.userData.role = 'fixed-cap-over-piston-crosshead-guides';
+  const standardLow = -0.62;
+  const standardHigh = -0.30;
+  const rockshaftStandard = fixedPart(new THREE.Mesh(plate(poly([
+    [4.34, 10.7], [5.88, 10.7], [5.88, 7.3], [6.25, 6.4], [7.0, 5.6],
+    [5.2, 5.0], [4.9, 6.2], [4.34, 7.35],
+  ].map(([x, y]) => [x * s, y * s])), standardLow, standardHigh),
+  frameMaterial), 'fixed-standard-on-cylinder-carrying-rockshaft-F');
+  const diagonalStart = new THREE.Vector2(-1.6, 11.2);
+  const diagonalEnd = new THREE.Vector2(6.9, 6.2);
+  const diagonalNormal = diagonalEnd.clone().sub(diagonalStart).normalize()
+    .rotateAround(new THREE.Vector2(), Math.PI / 2).multiplyScalar(0.40);
+  const diagonalFrame = fixedPart(new THREE.Mesh(plate(poly([
+    diagonalStart.clone().add(diagonalNormal),
+    diagonalEnd.clone().add(diagonalNormal),
+    diagonalEnd.clone().sub(diagonalNormal),
+    diagonalStart.clone().sub(diagonalNormal),
+  ].map((point) => [point.x * s, point.y * s])), standardLow, standardHigh),
+  frameMaterial), 'fixed-diagonal-engine-frame-member');
+  const rockshaftSupports = [rockshaftStandard, diagonalFrame];
+  const rockshaftBearings = [rockshaftStandard];
 
-  const beamBearing = cylinderAlongZ(1.125 * sourceScale, 0.62,
-    frameMaterial, 46);
-  beamBearing.position.set(0, 0, -0.27);
-  beamBearing.userData.fixed = true;
-  beamBearing.userData.role = 'fixed-large-side-lever-bearing-O';
-  const beamShaft = cylinderAlongZ(0.37 * sourceScale, 1.20,
-    darkMaterial, 34);
-  beamShaft.position.set(0, 0, -0.02);
-  beamShaft.userData.fixed = true;
-  beamShaft.userData.role = 'fixed-side-lever-shaft-through-O';
-  const beamBearingBed = new THREE.Mesh(
-    new THREE.BoxGeometry(2.75 * sourceScale, 0.56 * sourceScale, 0.82),
-    frameMaterial,
-  );
-  beamBearingBed.position.set(0, -1.15 * sourceScale, -0.43);
-  beamBearingBed.userData.fixed = true;
-  beamBearingBed.userData.role = 'fixed-bed-under-side-lever-bearing-O';
-
-  const supportFootA = new THREE.Vector3(
-    6.40 * sourceScale,
-    5.10 * sourceScale,
-    -0.52,
-  );
-  const supportFootB = new THREE.Vector3(
-    5.85 * sourceScale,
-    5.10 * sourceScale,
-    1.18,
-  );
-  const supportTopA = new THREE.Vector3(
-    rockshaftPivotF.x,
-    rockshaftPivotF.y,
-    -0.52,
-  );
-  const supportTopB = new THREE.Vector3(
-    rockshaftPivotF.x,
-    rockshaftPivotF.y,
-    1.18,
-  );
-  const rockshaftSupports = [
-    beamBetween3D(supportFootA, supportTopA,
-      0.28 * sourceScale, 0.24, frameMaterial),
-    beamBetween3D(supportFootB, supportTopB,
-      0.28 * sourceScale, 0.24, frameMaterial),
-  ];
-  rockshaftSupports.forEach((support, index) => {
-    support.userData.fixed = true;
-    support.userData.role = `fixed-rockshaft-bearing-standard-${index + 1}`;
-  });
-  const rockshaft = cylinderAlongZ(0.19 * sourceScale, 2.16,
-    darkMaterial, 34);
-  rockshaft.position.set(rockshaftPivotF.x, rockshaftPivotF.y, 0.34);
-  rockshaft.userData.fixed = true;
-  rockshaft.userData.role = 'transverse-fixed-axis-rockshaft-F';
-  const rockshaftBearings = [-0.63, 1.31].map((z, index) => {
-    const bearing = cylinderAlongZ(0.48 * sourceScale, 0.27,
-      frameMaterial, 38);
-    bearing.position.set(rockshaftPivotF.x, rockshaftPivotF.y, z);
-    bearing.userData.fixed = true;
-    bearing.userData.role = `fixed-rockshaft-bearing-${index + 1}`;
-    fixedFrame.add(bearing);
-    return bearing;
-  });
-  fixedFrame.add(
-    deck,
-    lowerBed,
-    cylinderBack,
-    guideTop,
-    beamBearing,
-    beamShaft,
-    beamBearingBed,
-    ...rockshaftSupports,
-    rockshaft,
-  );
+  const beamShaftLow = leverPlaneZ - leverHalfDepth - 0.14;
+  const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.02;
+  const beamShaft = fixedPart(cylinderAlongZ(0.37 * s,
+    beamShaftHigh - beamShaftLow, darkMaterial, 34),
+  'fixed-sectioned-side-lever-shaft-O');
+  beamShaft.position.z = (beamShaftLow + beamShaftHigh) / 2;
+  const rockshaftLow = standardLow;
+  const rockshaftHigh = radiusArmPlaneZ + 0.095;
+  const rockshaft = fixedPart(cylinderAlongZ(0.19 * s,
+    rockshaftHigh - rockshaftLow, darkMaterial, 34),
+  'transverse-fixed-axis-rockshaft-F');
+  rockshaft.position.set(rockshaftPivotF.x, rockshaftPivotF.y,
+    (rockshaftLow + rockshaftHigh) / 2);
   root.add(fixedFrame);
 
   const sideLever = new THREE.Group();
   sideLever.userData.axis = Z_AXIS.clone();
   sideLever.userData.role =
     'ten-unit-side-lever-O-R-with-three-unit-parallel-rod-station-M';
-  const leverShape = new THREE.Shape();
-  leverShape.moveTo(-0.48 * sourceScale, -0.82 * sourceScale);
-  leverShape.lineTo(2.2 * sourceScale, -0.69 * sourceScale);
-  leverShape.lineTo(9.35 * sourceScale, -0.39 * sourceScale);
-  leverShape.lineTo(10.05 * sourceScale, -0.20 * sourceScale);
-  leverShape.lineTo(10.05 * sourceScale, 0.20 * sourceScale);
-  leverShape.lineTo(9.35 * sourceScale, 0.39 * sourceScale);
-  leverShape.lineTo(2.2 * sourceScale, 0.69 * sourceScale);
-  leverShape.lineTo(-0.48 * sourceScale, 0.82 * sourceScale);
-  leverShape.closePath();
-  const leverSlot = new THREE.Path();
-  leverSlot.moveTo(1.55 * sourceScale, -0.26 * sourceScale);
-  leverSlot.lineTo(8.70 * sourceScale, -0.16 * sourceScale);
-  leverSlot.lineTo(8.70 * sourceScale, 0.16 * sourceScale);
-  leverSlot.lineTo(1.55 * sourceScale, 0.26 * sourceScale);
-  leverSlot.closePath();
-  leverShape.holes.push(leverSlot);
-  const sideLeverBody = new THREE.Mesh(
-    centeredExtrusion(leverShape, 0.28, 0.009),
-    leverMaterial,
+  const leverBores = [
+    { x: 0, y: 0, radius: 0.37 * s + pinClearance },
+  ];
+  const leverOutline = clip.difference(
+    clip.union(
+      poly([
+        [-2.6, -1.35], [0, -1.45], [2.2, -1.00], [9.35, -0.45],
+        [10.05, -0.25], [10.05, 0.25], [9.35, 0.45], [2.2, 1.05],
+        [0, 1.60], [-2.6, 1.55],
+      ].map(([x, y]) => [x * s, y * s])),
+      poly(circle([0, 0], 1.125 * s, 72)),
+      poly(circle([sideLeverRightRadius, 0], 0.875 * s, 64)),
+    ),
+    poly([[1.55, -0.26], [8.70, -0.16], [8.70, 0.16], [1.55, 0.26]]
+      .map(([x, y]) => [x * s, y * s])),
+    ...leverBores.map((bore) => poly(circle([bore.x, bore.y], bore.radius, 64))),
   );
-  sideLeverBody.position.z = 0.04;
+  const sideLeverBody = new THREE.Mesh(plate(clip.union(leverOutline,
+    clip.difference(poly(circle([sideLeverMidRadius, 0], 0.34 * s, 48)),
+      poly(circle([sideLeverMidRadius, 0], 0.001, 8))))
+    , leverPlaneZ - leverHalfDepth, leverPlaneZ + leverHalfDepth),
+  leverMaterial);
+  sideLeverBody.userData.bores = leverBores;
   sideLeverBody.userData.role = 'slotted-tapered-rigid-side-lever-body';
-  const sideLeverPivotBoss = cylinderAlongZ(1.125 * sourceScale, 0.38,
-    leverMaterial, 44);
-  sideLeverPivotBoss.position.z = 0.04;
-  sideLeverPivotBoss.userData.role = 'large-moving-side-lever-boss-O';
-  const sideLeverPivotBore = cylinderAlongZ(0.37 * sourceScale, 0.405,
-    darkMaterial, 34);
-  sideLeverPivotBore.position.z = 0.045;
-  sideLeverPivotBore.userData.role = 'side-lever-working-bore-at-O';
-  const sideLeverMidBoss = cylinderAlongZ(0.30 * sourceScale, 0.33,
-    leverMaterial, 34);
-  sideLeverMidBoss.position.set(sideLeverMidRadius, 0, 0.04);
-  sideLeverMidBoss.userData.role = 'side-lever-three-unit-pin-boss-M';
-  const sideLeverRightBoss = cylinderAlongZ(0.875 * sourceScale, 0.38,
-    leverMaterial, 42);
-  sideLeverRightBoss.position.set(sideLeverRightRadius, 0, 0.04);
-  sideLeverRightBoss.userData.role = 'side-lever-ten-unit-pin-boss-R';
-  const leverIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.88 * sourceScale, 0.055, 0.035),
-    whiteMaterial,
-  );
-  leverIndex.position.set(0.52 * sourceScale, 0, 0.245);
-  leverIndex.userData.role = 'visible-index-on-rocking-side-lever';
+  const sideLeverPivotBoss = sideLeverBody;
+  const sideLeverMidBoss = sideLeverBody;
+  const sideLeverRightBoss = sideLeverBody;
   const beamMidAnchor = new THREE.Object3D();
-  beamMidAnchor.position.set(sideLeverMidRadius, 0, 0.04);
+  beamMidAnchor.position.set(sideLeverMidRadius, 0, leverPlaneZ);
   beamMidAnchor.userData.role = 'analytic-side-lever-station-M';
   const beamRightAnchor = new THREE.Object3D();
-  beamRightAnchor.position.set(sideLeverRightRadius, 0, 0.04);
+  beamRightAnchor.position.set(sideLeverRightRadius, 0, leverPlaneZ);
   beamRightAnchor.userData.role = 'analytic-side-lever-end-R';
   const beamNegativeAnchor = new THREE.Object3D();
-  beamNegativeAnchor.position.set(-hiddenDrivenBeamRadius, 0, 0.04);
+  beamNegativeAnchor.position.set(-hiddenDrivenBeamRadius, 0, leverPlaneZ);
   beamNegativeAnchor.userData.role =
     'analytic-hidden-side-lever-driver-station';
   sideLever.add(
     sideLeverBody,
-    sideLeverPivotBoss,
-    sideLeverPivotBore,
-    sideLeverMidBoss,
-    sideLeverRightBoss,
-    leverIndex,
     beamMidAnchor,
     beamRightAnchor,
     beamNegativeAnchor,
@@ -901,15 +638,7 @@ function sideLeverRockshaftParallelMotion(movement) {
     role: 'ten-unit-side-rod-R-S-through-N',
     width: 0.34 * sourceScale,
   });
-  const sideRodIntermediateBoss = cylinderAlongZ(0.28 * sourceScale, 0.21,
-    rodMaterial, 32);
-  sideRodIntermediateBoss.position.set(
-    sideRodIntermediateDistance,
-    0,
-    0.40,
-  );
-  sideRodIntermediateBoss.userData.role =
-    'side-rod-eight-and-one-half-unit-intermediate-pin-N';
+  const sideRodIntermediateBoss = null;
   const sideRodIntermediateAnchor = new THREE.Object3D();
   sideRodIntermediateAnchor.position.set(
     sideRodIntermediateDistance,
@@ -930,10 +659,10 @@ function sideLeverRockshaftParallelMotion(movement) {
   });
   const radiusArmParts = makeRigidRod({
     bodyMaterial: leverMaterial,
-    depth: 0.19,
+    depth: 0.16,
     eyeMaterial: darkMaterial,
     length: radiusArmLength,
-    planeZ: 0.94,
+    planeZ: radiusArmPlaneZ,
     role: 'one-point-seven-five-seven-five-five-six-unit-rockshaft-arm-F-Q',
     boreRadius: 0.24 * sourceScale + 0.005,
     width: 0.46 * sourceScale,
@@ -955,62 +684,59 @@ function sideLeverRockshaftParallelMotion(movement) {
   crossheadShape.absarc(0, 0.65 * sourceScale, 0.34 * sourceScale,
     0, Math.PI, false);
   crossheadShape.closePath();
-  const crossheadHousing = new THREE.Mesh(
-    centeredExtrusion(crossheadShape, 0.29, 0.008),
-    outputMaterial,
-  );
-  crossheadHousing.position.z = 0.59;
-  crossheadHousing.userData.role = 'orange-piston-crosshead-housing-at-S';
+  const crossheadLow = cylinderAxisZ - 0.25;
+  const crossheadHigh = 0.30;
+  const crossheadGeometry = new THREE.ExtrudeGeometry(crossheadShape, {
+    bevelEnabled: false,
+    curveSegments: 16,
+    depth: crossheadHigh - crossheadLow,
+  });
+  crossheadGeometry.translate(0, 0, crossheadLow);
+  const crossheadHousing = new THREE.Mesh(crossheadGeometry, outputMaterial);
+  crossheadHousing.userData.role =
+    'orange-transverse-crosshead-joining-piston-rod-to-side-rod-at-S';
+  const pistonRodTop = -0.70 * s;
+  const pistonRodBottom = -7.6 * s;
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32 * sourceScale, 8.0 * sourceScale, 0.18),
+    new THREE.CylinderGeometry(pistonRodRadius, pistonRodRadius,
+      pistonRodTop - pistonRodBottom, 24),
     outputMaterial,
   );
-  pistonRod.position.set(0, -4.35 * sourceScale, 0.55);
+  pistonRod.position.set(0, (pistonRodTop + pistonRodBottom) / 2,
+    cylinderAxisZ);
   pistonRod.userData.role = 'piston-rod-rigidly-suspended-from-S';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(4.45 * sourceScale, 0.60 * sourceScale, 0.55),
-    outputMaterial,
-  );
-  pistonHead.position.set(0, -8.45 * sourceScale, 0.38);
-  pistonHead.userData.role = 'wide-marine-engine-piston-head';
-  const crossheadPinFace = cylinderAlongZ(0.22 * sourceScale, 0.035,
-    whiteMaterial, 30);
-  crossheadPinFace.position.z = 0.755;
-  crossheadPinFace.userData.role = 'white-working-pin-face-at-S';
-  const crossheadPinOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(0.24 * sourceScale, 0.028, 8, 30),
-    darkMaterial,
-  );
-  crossheadPinOutline.position.z = 0.752;
-  crossheadPinOutline.userData.role = 'working-pin-bore-outline-at-S';
   const crossheadAnchor = new THREE.Object3D();
-  crossheadAnchor.position.z = 0.59;
   crossheadAnchor.userData.role = 'analytic-crosshead-point-S';
   const pistonHeadAnchor = new THREE.Object3D();
-  pistonHeadAnchor.position.set(0, -8.45 * sourceScale, 0.38);
-  pistonHeadAnchor.userData.role = 'analytic-marine-piston-center';
+  pistonHeadAnchor.position.set(0, pistonRodBottom, cylinderAxisZ);
+  pistonHeadAnchor.userData.role = 'analytic-hidden-piston-rod-end';
   output.add(
     crossheadHousing,
     pistonRod,
-    pistonHead,
-    crossheadPinFace,
-    crossheadPinOutline,
     crossheadAnchor,
     pistonHeadAnchor,
   );
   root.add(output);
 
-  const jointPins = {
-    M: cylinderAlongZ(0.22 * sourceScale, 0.56, whiteMaterial, 30),
-    N: cylinderAlongZ(0.22 * sourceScale, 0.47, whiteMaterial, 30),
-    Q: cylinderAlongZ(0.24 * sourceScale, 0.84, whiteMaterial, 30),
-    R: cylinderAlongZ(0.24 * sourceScale, 0.56, whiteMaterial, 30),
-    S: cylinderAlongZ(0.24 * sourceScale, 0.43, whiteMaterial, 30),
-  };
-  Object.entries(jointPins).forEach(([name, pin]) => {
+  const pinOn = (parent, name, radius, x, low, high) => {
+    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 30);
+    pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
-    root.add(pin);
-  });
+    parent.add(pin);
+    return pin;
+  };
+  const leverBack = leverPlaneZ - leverHalfDepth - 0.02;
+  const jointPins = {
+    M: pinOn(sideLever, 'M', 0.22 * s, sideLeverMidRadius, leverBack, 0.475),
+    N: pinOn(sideRodParts.rod, 'N', 0.22 * s, sideRodIntermediateDistance,
+      0.295, 0.785),
+    Q: pinOn(parallelRodParts.rod, 'Q', 0.24 * s, parallelRodLength,
+      radiusArmPlaneZ - 0.10, 0.785),
+    R: pinOn(sideLever, 'R', 0.24 * s, sideLeverRightRadius, leverBack, 0.505),
+    S: pinOn(output, 'S', 0.24 * s, 0, crossheadHigh - 0.02, 0.505),
+  };
+  crossheadAnchor.position.z = jointPins.S.position.z;
+  const pinWorld = (name) => jointPins[name].getWorldPosition(new THREE.Vector3());
 
   const contacts = {
     crossbarAtN: {
@@ -1040,14 +766,14 @@ function sideLeverRockshaftParallelMotion(movement) {
       point: new THREE.Vector3(
         rockshaftPivotF.x,
         rockshaftPivotF.y,
-        0.94,
+        radiusArmPlaneZ,
       ),
       type: 'fixed-revolute-pair-on-transverse-rockshaft-F',
     },
     sideLeverPivotO: {
       fixedMember: fixedFrame,
       movingMember: sideLever,
-      point: new THREE.Vector3(0, 0, 0.04),
+      point: new THREE.Vector3(0, 0, leverPlaneZ),
       type: 'fixed-revolute-pair-O',
     },
     sideRodAtR: {
@@ -1084,24 +810,19 @@ function sideLeverRockshaftParallelMotion(movement) {
       state.pointSAcceleration.y,
       0,
     );
-
-    jointPins.M.position.set(state.beamMidPoint.x,
-      state.beamMidPoint.y, 0.25);
-    jointPins.R.position.set(state.beamRightPoint.x,
-      state.beamRightPoint.y, 0.25);
-    jointPins.Q.position.set(state.pointQ.x, state.pointQ.y, 0.62);
-    jointPins.N.position.set(state.pointN.x, state.pointN.y, 0.54);
-    jointPins.S.position.set(state.pointS.x, state.pointS.y, 0.57);
     contacts.parallelRodAtM.point.set(state.beamMidPoint.x,
-      state.beamMidPoint.y, 0.35);
+      state.beamMidPoint.y, jointPins.M.position.z);
     contacts.sideRodAtR.point.set(state.beamRightPoint.x,
-      state.beamRightPoint.y, 0.37);
+      state.beamRightPoint.y, jointPins.R.position.z);
     contacts.radiusAndCrossbarAtQ.point.set(state.pointQ.x,
-      state.pointQ.y, 0.67);
-    contacts.crossbarAtN.point.set(state.pointN.x, state.pointN.y, 0.56);
-    contacts.crossheadAtS.point.set(state.pointS.x, state.pointS.y, 0.57);
+      state.pointQ.y, jointPins.Q.position.z);
+    contacts.crossbarAtN.point.set(state.pointN.x, state.pointN.y,
+      jointPins.N.position.z);
+    contacts.crossheadAtS.point.set(state.pointS.x, state.pointS.y,
+      jointPins.S.position.z);
     root.userData.kinematics = state;
   };
+
 
   const officialViewMinimum = new THREE.Vector2(-3.310402, -3.896792);
   const officialViewWidth = 18;
@@ -1131,16 +852,20 @@ function sideLeverRockshaftParallelMotion(movement) {
     crosshead: output,
     crossheadAnchor,
     crossheadHousing,
-    deck,
+    cylinderBack,
+    cylinderCover,
+    cylinderTopFlange,
+    casingBands,
+    diagonalFrame,
+    beamShaft,
+    rockshaftStandard,
+    stuffingBox,
     fixedFrame,
-    framePosts,
-    guideRails,
     jointPins,
     lowerBed,
     parallelRod: parallelRodParts.rod,
     parallelRodEndAnchor: parallelRodParts.endAnchor,
     parallelRodStartAnchor: parallelRodParts.startAnchor,
-    pistonHead,
     pistonHeadAnchor,
     pistonRod,
     radiusArm: radiusArmParts.rod,
@@ -1159,11 +884,6 @@ function sideLeverRockshaftParallelMotion(movement) {
     sideRodIntermediateAnchor,
     sideRodStartAnchor: sideRodParts.startAnchor,
   };
-  root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.22, -1.38, -1.02),
-    new THREE.Vector3(5.15, 4.98, 1.46),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -1258,7 +978,7 @@ function sideLeverRockshaftParallelMotion(movement) {
     parallelogram:
       'M-R-N-Q is exact: both upright rods remain parallel and Q-N remains parallel to the seven-unit M-R segment',
     rockshaft:
-      'short fixed-radius arm F-Q rocks the transverse shaft carried in two fixed bearings',
+      'short fixed-radius arm F-Q rocks on the transverse shaft carried by the fixed standard on the cylinder',
     straightness:
       'the rockshaft correction makes extrapolated piston point S nearly vertical; its small lateral deviation is measured rather than forced away',
   };
@@ -1266,18 +986,16 @@ function sideLeverRockshaftParallelMotion(movement) {
   update(0);
   root.userData.hideGround = true;
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
-  const sweptBounds = new THREE.Box3();
-  for (let sample = 0; sample <= 64; sample += 1) {
-    update(cyclePeriod * sample / 64);
-    root.updateMatrixWorld(true);
-    sweptBounds.union(new THREE.Box3().setFromObject(root));
-  }
-  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
-  root.userData.cameraDistanceScale = 1.02;
+  // Brown's plate crops the lever just left of O and the frame at the top.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.8 * sourceScale, -2.3 * sourceScale, -0.90),
+    new THREE.Vector3(13.4 * sourceScale, 11.8 * sourceScale, 0.80),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };
@@ -1595,101 +1313,135 @@ function sideLeverMarineParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
 
-  const frameCenterZ = -0.34;
+  // Brown's elevation: side lever A on a sectioned shaft, the vessel and its
+  // lid behind the right link, and a gooseneck bracket on the lid carrying F.
+  // There is no deck, frame post or bedplate in the plate.
+  const s = sourceScale;
+  const pinClearance = 0.012;
+  const leverPlaneZ = 0.02;
+  const leverHalfDepth = 0.12;
+  const vesselRadius = 2.4 * s;
+  const vesselAxisZ = leverPlaneZ - leverHalfDepth - 0.035 - vesselRadius;
+  const pistonLineX = 8 * s;
+  const pistonRodRadius = 0.16 * s;
+  const pistonBore = pistonRodRadius + pinClearance;
+  const lidLow = 4.0 * s;
+  const lidHigh = 4.4 * s;
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-side-lever-marine-engine-frame-and-radius-pivot-F';
+  const fixedPart = (mesh, role) => {
+    mesh.userData.fixed = true;
+    mesh.userData.role = role;
+    fixedFrame.add(mesh);
+    return mesh;
+  };
 
-  const deck = new THREE.Mesh(
-    new THREE.BoxGeometry(7 * sourceScale, 0.50 * sourceScale, 0.66),
-    frameMaterial,
-  );
-  deck.position.set(8 * sourceScale, 3.75 * sourceScale, frameCenterZ);
-  deck.userData.fixed = true;
-  deck.userData.role = 'official-4.5-to-11.5-engine-deck';
-  const deckTop = new THREE.Mesh(
-    new THREE.BoxGeometry(7 * sourceScale, 0.12 * sourceScale, 0.72),
-    darkMaterial,
-  );
-  deckTop.position.set(8 * sourceScale, 4 * sourceScale, frameCenterZ + 0.02);
-  deckTop.userData.fixed = true;
-  deckTop.userData.role = 'engine-deck-working-top-line';
+  // The vessel is taller than drawn so the 5.5-unit official stroke keeps the
+  // piston rod inside it; its lid, lid height and gooseneck follow the plate.
+  const vesselBottom = -1.55 * s;
+  const vesselBoreBottom = -1.45 * s;
+  const vessel = fixedPart(new THREE.Mesh(new THREE.LatheGeometry([
+    [0, vesselBottom - 0.45 * s],
+    [0.62 * vesselRadius, vesselBottom - 0.38 * s],
+    [0.92 * vesselRadius, vesselBottom - 0.18 * s],
+    [vesselRadius, vesselBottom],
+    [vesselRadius, lidLow],
+    [pistonBore, lidLow],
+    [pistonBore, vesselBoreBottom],
+    [0, vesselBoreBottom],
+  ].map(([radius, y]) => new THREE.Vector2(radius, y)), 72), frameMaterial),
+  'fixed-round-bottomed-cylinder-vessel-under-E');
+  vessel.position.set(pistonLineX, 0, vesselAxisZ);
+  const lidHalfDepth = vesselRadius + 0.07;
+  const lidOutline = poly([[5.0 * s, -lidHalfDepth], [11.95 * s, -lidHalfDepth],
+    [11.95 * s, lidHalfDepth], [5.0 * s, lidHalfDepth]]);
+  const lidGeometry = plate(clip.difference(lidOutline,
+    poly(circle([pistonLineX, 0], pistonBore, 48))), lidLow, lidHigh);
+  lidGeometry.rotateX(-Math.PI / 2);
+  const deck = fixedPart(new THREE.Mesh(lidGeometry, frameMaterial),
+    'fixed-cylinder-lid-flange-with-piston-rod-bore');
+  deck.position.z = vesselAxisZ;
 
-  const framePosts = [5.5, 5.75, 10.25, 10.5].map((sourceX, index) => {
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13 * sourceScale, 10 * sourceScale, 0.34),
-      index === 0 || index === 3 ? frameMaterial : darkMaterial,
-    );
-    post.position.set(
-      sourceX * sourceScale,
-      -1.5 * sourceScale,
-      frameCenterZ,
-    );
-    post.userData.fixed = true;
-    post.userData.role = `engine-frame-upright-${index + 1}`;
-    return post;
-  });
-
-  const radiusSupportFoot = new THREE.Vector3(
-    10.45 * sourceScale,
-    4 * sourceScale,
-    frameCenterZ,
-  );
-  const radiusSupportTop = new THREE.Vector3(
-    radiusPivotF.x,
-    radiusPivotF.y,
-    frameCenterZ,
-  );
-  const radiusSupport = beamBetween3D(
-    radiusSupportFoot,
-    radiusSupportTop,
-    0.38 * sourceScale,
-    0.42,
-    frameMaterial,
-  );
-  radiusSupport.userData.fixed = true;
-  radiusSupport.userData.role = 'curved-source-support-approximated-by-rigid-F-pedestal';
-  const fixedPivotF = cylinderAlongZ(0.50 * sourceScale, 0.56,
-    frameMaterial, 40);
-  fixedPivotF.position.set(radiusPivotF.x, radiusPivotF.y, frameCenterZ + 0.08);
-  fixedPivotF.userData.fixed = true;
-  fixedPivotF.userData.role = 'fixed-radius-bar-pivot-F';
-  const fixedPivotFBore = cylinderAlongZ(0.25 * sourceScale, 1.66,
-    darkMaterial, 34);
-  fixedPivotFBore.position.set(radiusPivotF.x, radiusPivotF.y,
-    0.18);
-  fixedPivotFBore.userData.fixed = true;
-  fixedPivotFBore.userData.role = 'fixed-bearing-bore-at-F';
-
-  const pivotABase = new THREE.Mesh(
-    new THREE.BoxGeometry(2.70 * sourceScale, 0.55 * sourceScale, 0.88),
-    frameMaterial,
-  );
-  pivotABase.position.set(0, -1.05 * sourceScale, -0.20);
-  pivotABase.userData.fixed = true;
-  pivotABase.userData.role = 'fixed-side-lever-pivot-A-bedplate';
-  fixedFrame.add(
-    deck,
-    deckTop,
-    ...framePosts,
-    radiusSupport,
-    fixedPivotF,
-    fixedPivotFBore,
-    pivotABase,
-  );
+  const bracketLow = vesselAxisZ + lidHalfDepth - 0.30;
+  const bracketHigh = 0.78;
+  const gooseneck = [];
+  for (let step = 0; step <= 12; step += 1) {
+    const angle = Math.PI * step / 24;
+    gooseneck.push([
+      radiusPivotF.x - 1.35 * s + 1.35 * s * Math.sin(angle),
+      lidHigh + (radiusPivotF.y - lidHigh - 0.2 * s) * (1 - Math.cos(angle)),
+    ]);
+  }
+  const radiusSupport = fixedPart(new THREE.Mesh(plate(clip.union(
+    poly([
+      [radiusPivotF.x - 1.6 * s, lidHigh - 0.1 * s],
+      [radiusPivotF.x + 0.25 * s, lidHigh - 0.1 * s],
+      [radiusPivotF.x + 0.42 * s, radiusPivotF.y],
+      [radiusPivotF.x - 0.42 * s, radiusPivotF.y],
+      ...gooseneck.reverse(),
+    ]),
+    poly(circle([radiusPivotF.x, radiusPivotF.y], 0.45 * s, 48)),
+  ), bracketLow, bracketHigh), frameMaterial),
+  'fixed-gooseneck-bracket-on-cylinder-lid-carrying-F');
+  const fixedPivotFLow = bracketHigh - 0.30;
+  const fixedPivotFHigh = 1.01;
+  const fixedPivotF = fixedPart(cylinderAlongZ(0.25 * s,
+    fixedPivotFHigh - fixedPivotFLow, darkMaterial, 34),
+  'fixed-radius-bar-pivot-F');
+  fixedPivotF.position.set(radiusPivotF.x, radiusPivotF.y,
+    (fixedPivotFLow + fixedPivotFHigh) / 2);
+  const pivotAShaftLow = leverPlaneZ - leverHalfDepth - 0.03;
+  const pivotAShaftHigh = leverPlaneZ + leverHalfDepth + 0.025;
+  const pivotAShaft = fixedPart(cylinderAlongZ(0.62 * s,
+    pivotAShaftHigh - pivotAShaftLow, darkMaterial, 40),
+  'fixed-sectioned-side-lever-shaft-A');
+  pivotAShaft.position.z = (pivotAShaftLow + pivotAShaftHigh) / 2;
   root.add(fixedFrame);
 
-  const sideLeverParts = makeSideLever({
-    darkMaterial,
-    drivenMaterial: blueMaterial,
-    length: sideLeverRadius,
-    midDistance: sideLeverMidRadius,
-    planeZ: 0.02,
-    scale: sourceScale,
-    whiteMaterial,
-  });
-  root.add(sideLeverParts.lever);
+  const sideLever = new THREE.Group();
+  sideLever.userData.axis = Z_AXIS.clone();
+  sideLever.userData.role = 'rocking-side-lever-pivoted-at-A';
+  const leverBores = [{ x: 0, y: 0, radius: 0.62 * s + pinClearance }];
+  const leverBody = new THREE.Mesh(plate(clip.difference(
+    clip.union(
+      poly([[-3.2, -1.35], [0, -1.33], [7.4, -0.78], [7.4, 0.78],
+        [0, 1.33], [-3.2, 1.35]].map(([x, y]) => [x * s, y * s])),
+      poly(circle([0, 0], 1.65 * s, 72)),
+      poly(circle([sideLeverRadius, 0], 0.80 * s, 56)),
+    ),
+    poly(circle([0, 0], leverBores[0].radius, 56)),
+  ), leverPlaneZ - leverHalfDepth, leverPlaneZ + leverHalfDepth),
+  blueMaterial);
+  leverBody.userData.bores = leverBores;
+  leverBody.userData.role =
+    'tapered-eight-unit-side-lever-with-bosses-A-and-end-pin';
+  const leverRib = new THREE.Mesh(plate(poly([
+    [1.75 * s, -0.06 * s], [7.0 * s, -0.06 * s],
+    [7.0 * s, 0.06 * s], [1.75 * s, 0.06 * s],
+  ]), leverPlaneZ + leverHalfDepth - 0.01, leverPlaneZ + leverHalfDepth + 0.012),
+  darkMaterial);
+  leverRib.userData.role = 'side-lever-centre-web-line';
+  const leverAnchor = (x, role) => {
+    const anchor = new THREE.Object3D();
+    anchor.position.set(x, 0, leverPlaneZ);
+    anchor.userData.role = role;
+    return anchor;
+  };
+  const sideLeverParts = {
+    hiddenInputAnchor: leverAnchor(-sideLeverRadius,
+      'analytic-hidden-negative-eight-unit-animation-driver-point'),
+    lever: sideLever,
+    midAnchor: leverAnchor(sideLeverMidRadius,
+      'analytic-four-unit-side-lever-pin'),
+    pivotA: leverBody,
+    rightAnchor: leverAnchor(sideLeverRadius,
+      'analytic-eight-unit-side-lever-pin'),
+  };
+  sideLever.add(leverBody, leverRib, sideLeverParts.midAnchor,
+    sideLeverParts.rightAnchor, sideLeverParts.hiddenInputAnchor);
+  root.add(sideLever);
 
   const leftLinkParts = makeRigidRod({
     bodyMaterial: greenMaterial,
@@ -1700,10 +1452,6 @@ function sideLeverMarineParallelMotion(movement) {
     role: 'left-eight-unit-parallel-motion-link-through-C',
     width: 0.34 * sourceScale,
   });
-  const pointCBoss = cylinderAlongZ(0.28 * sourceScale, 0.22,
-    greenMaterial, 34);
-  pointCBoss.position.set(leftLinkPointCDistance, 0, 0.36);
-  pointCBoss.userData.role = 'point-C-six-units-up-left-link';
   const pointCAnchor = new THREE.Object3D();
   pointCAnchor.position.set(leftLinkPointCDistance, 0, 0.36);
   pointCAnchor.userData.role = 'analytic-point-C-on-left-link';
@@ -1744,50 +1492,84 @@ function sideLeverMarineParallelMotion(movement) {
   });
   root.add(radiusBarParts.rod);
 
-  const outputParts = makeOutputCrosshead({
-    darkMaterial,
-    outputMaterial,
-    planeZ: 0.73,
-    scale: sourceScale,
-    whiteMaterial,
+  // The crosshead sits behind the links and carries pin E forward to them.
+  const crossheadOutput = new THREE.Group();
+  crossheadOutput.userData.role = 'crosshead-E-piston-rod-and-piston-output';
+  crossheadOutput.userData.rotationDegreesOfFreedom = 0;
+  const housingShape = new THREE.Shape();
+  housingShape.moveTo(-0.50 * s, -0.60 * s);
+  housingShape.lineTo(0.50 * s, -0.60 * s);
+  housingShape.lineTo(0.50 * s, 0.75 * s);
+  housingShape.absarc(0, 0.75 * s, 0.375 * s, 0, Math.PI, false);
+  housingShape.closePath();
+  const crossheadLow = vesselAxisZ - 0.12;
+  const crossheadHigh = 0.29;
+  const housingGeometry = new THREE.ExtrudeGeometry(housingShape, {
+    bevelEnabled: false,
+    curveSegments: 16,
+    depth: crossheadHigh - crossheadLow,
   });
-  root.add(outputParts.output);
-
-  const jointPins = {
-    beamMid: cylinderAlongZ(0.22 * sourceScale, 0.62,
-      whiteMaterial, 32),
-    beamRight: cylinderAlongZ(0.24 * sourceScale, 0.64,
-      whiteMaterial, 32),
-    pointC: cylinderAlongZ(0.22 * sourceScale, 0.76,
-      whiteMaterial, 32),
-    pointD: cylinderAlongZ(0.22 * sourceScale, 0.40,
-      whiteMaterial, 32),
-    pointE: cylinderAlongZ(0.24 * sourceScale, 0.44,
-      whiteMaterial, 32),
+  housingGeometry.translate(0, 0, crossheadLow);
+  const crossheadHousing = new THREE.Mesh(housingGeometry, outputMaterial);
+  crossheadHousing.userData.role = 'source-crosshead-E-with-rounded-cap';
+  const pistonRodTop = -0.55 * s;
+  const pistonRodBottom = -6.5 * s;
+  const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(pistonRodRadius,
+    pistonRodRadius, pistonRodTop - pistonRodBottom, 24), outputMaterial);
+  pistonRod.position.set(0, (pistonRodTop + pistonRodBottom) / 2, vesselAxisZ);
+  pistonRod.userData.role = 'piston-rod-rigidly-carried-by-crosshead-E';
+  const crossheadAnchor = new THREE.Object3D();
+  crossheadAnchor.userData.role = 'analytic-crosshead-E-center';
+  const pistonAnchor = new THREE.Object3D();
+  pistonAnchor.position.set(0, pistonRodBottom, vesselAxisZ);
+  pistonAnchor.userData.role = 'analytic-hidden-piston-rod-end';
+  crossheadOutput.add(crossheadHousing, pistonRod, crossheadAnchor,
+    pistonAnchor);
+  const outputParts = {
+    anchor: crossheadAnchor,
+    housing: crossheadHousing,
+    output: crossheadOutput,
+    pistonAnchor,
+    pistonRod,
   };
-  jointPins.beamMid.userData.role = 'common-pin-side-lever-to-left-link';
-  jointPins.beamRight.userData.role = 'common-pin-side-lever-to-right-link';
-  jointPins.pointC.userData.role = 'common-pin-left-link-to-radius-bar-at-C';
-  jointPins.pointD.userData.role = 'common-pin-left-link-to-parallel-bar-at-D';
-  jointPins.pointE.userData.role =
-    'common-pin-right-link-parallel-bar-and-crosshead-E';
-  root.add(...Object.values(jointPins));
+  root.add(crossheadOutput);
+
+  const pinOn = (parent, radius, x, low, high, role) => {
+    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 32);
+    pin.position.set(x, 0, (low + high) / 2);
+    pin.userData.role = role;
+    parent.add(pin);
+    return pin;
+  };
+  const jointPins = {
+    beamMid: pinOn(sideLever, 0.22 * s, sideLeverMidRadius, leverPlaneZ, 0.46,
+      'common-pin-side-lever-to-left-link'),
+    beamRight: pinOn(sideLever, 0.24 * s, sideLeverRadius, leverPlaneZ, 0.49,
+      'common-pin-side-lever-to-right-link'),
+    pointC: pinOn(leftLinkParts.rod, 0.22 * s, leftLinkPointCDistance, 0.26,
+      1.01, 'common-pin-left-link-to-radius-bar-at-C'),
+    pointD: pinOn(leftLinkParts.rod, 0.22 * s, leftLinkLength, 0.26, 0.76,
+      'common-pin-left-link-to-parallel-bar-at-D'),
+    pointE: pinOn(crossheadOutput, 0.24 * s, 0, crossheadHigh - 0.02, 0.76,
+      'common-pin-right-link-parallel-bar-and-crosshead-E'),
+  };
+  crossheadAnchor.position.z = jointPins.pointE.position.z;
 
   const contacts = {
     beamPivotA: {
       fixedMember: fixedFrame,
-      movingMember: sideLeverParts.lever,
-      point: new THREE.Vector3(0, 0, 0.02),
+      movingMember: sideLever,
+      point: new THREE.Vector3(0, 0, leverPlaneZ),
       type: 'fixed-revolute-pair',
     },
     beamMidToLeftLink: {
-      memberA: sideLeverParts.lever,
+      memberA: sideLever,
       memberB: leftLinkParts.rod,
       point: new THREE.Vector3(),
       type: 'revolute-pin',
     },
     beamRightToRightLink: {
-      memberA: sideLeverParts.lever,
+      memberA: sideLever,
       memberB: rightLinkParts.rod,
       point: new THREE.Vector3(),
       type: 'revolute-pin',
@@ -1799,7 +1581,7 @@ function sideLeverMarineParallelMotion(movement) {
       type: 'revolute-pin-D',
     },
     linksToCrossheadE: {
-      members: [rightLinkParts.rod, parallelBarParts.rod, outputParts.output],
+      members: [rightLinkParts.rod, parallelBarParts.rod, crossheadOutput],
       point: new THREE.Vector3(),
       type: 'common-revolute-pin-E',
     },
@@ -1823,30 +1605,22 @@ function sideLeverMarineParallelMotion(movement) {
   };
   const update = (time) => {
     const state = stateAtTime(time);
-    sideLeverParts.lever.rotation.z = state.beamAngle;
+    sideLever.rotation.z = state.beamAngle;
     setRodPose(leftLinkParts.rod, state.beamMidPoint, state.leftLink);
     setRodPose(rightLinkParts.rod, state.beamRightPoint, state.rightLink);
     setRodPose(parallelBarParts.rod, state.pointE, state.parallelBar);
     setRodPose(radiusBarParts.rod, radiusPivotF, state.radiusBar);
-    outputParts.output.position.set(state.pointE.x, state.pointE.y, 0);
-
-    jointPins.beamMid.position.set(state.beamMidPoint.x,
-      state.beamMidPoint.y, 0.25);
-    jointPins.beamRight.position.set(state.beamRightPoint.x,
-      state.beamRightPoint.y, 0.26);
-    jointPins.pointC.position.set(state.pointC.x, state.pointC.y, 0.62);
-    jointPins.pointD.position.set(state.pointD.x, state.pointD.y, 0.52);
-    jointPins.pointE.position.set(state.pointE.x, state.pointE.y, 0.61);
+    crossheadOutput.position.set(state.pointE.x, state.pointE.y, 0);
     contacts.beamMidToLeftLink.point.set(state.beamMidPoint.x,
-      state.beamMidPoint.y, 0.36);
+      state.beamMidPoint.y, jointPins.beamMid.position.z);
     contacts.beamRightToRightLink.point.set(state.beamRightPoint.x,
-      state.beamRightPoint.y, 0.39);
+      state.beamRightPoint.y, jointPins.beamRight.position.z);
     contacts.leftLinkToParallelBarD.point.set(state.pointD.x,
-      state.pointD.y, 0.56);
+      state.pointD.y, jointPins.pointD.position.z);
     contacts.linksToCrossheadE.point.set(state.pointE.x,
-      state.pointE.y, 0.61);
+      state.pointE.y, jointPins.pointE.position.z);
     contacts.radiusBarAtC.point.set(state.pointC.x,
-      state.pointC.y, 0.66);
+      state.pointC.y, jointPins.pointC.position.z);
     root.userData.kinematics = state;
   };
 
@@ -1898,8 +1672,9 @@ function sideLeverMarineParallelMotion(movement) {
     deck,
     fixedFrame,
     fixedPivotF,
-    fixedPivotFBore,
-    framePosts,
+    radiusSupport,
+    pivotAShaft,
+    vessel,
     jointPins,
     leftLink: leftLinkParts.rod,
     leftLinkEndAnchor: leftLinkParts.endAnchor,
@@ -1908,7 +1683,6 @@ function sideLeverMarineParallelMotion(movement) {
     parallelBarED: parallelBarParts.rod,
     parallelBarEndAnchor: parallelBarParts.endAnchor,
     parallelBarStartAnchor: parallelBarParts.startAnchor,
-    pistonHead: outputParts.pistonHead,
     pistonRod: outputParts.pistonRod,
     pointCAnchor,
     radiusBarFC: radiusBarParts.rod,
@@ -1923,11 +1697,6 @@ function sideLeverMarineParallelMotion(movement) {
     sideLeverPivotA: sideLeverParts.pivotA,
     sideLeverRightAnchor: sideLeverParts.rightAnchor,
   };
-  root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.63, -2.18, -0.78),
-    new THREE.Vector3(4.22, 3.72, 1.18),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -2019,76 +1788,18 @@ function sideLeverMarineParallelMotion(movement) {
   update(0);
   root.userData.hideGround = true;
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
-  const sweptBounds = new THREE.Box3();
-  for (let sample = 0; sample <= 64; sample += 1) {
-    update(cyclePeriod * sample / 64);
-    root.updateMatrixWorld(true);
-    sweptBounds.union(new THREE.Box3().setFromObject(root));
-  }
-  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
-  root.userData.cameraDistanceScale = 1.02;
+  // Brown's plate crops the lever left of A and frames F at the right edge.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.2 * sourceScale, -2.6 * sourceScale, -1.0),
+    new THREE.Vector3(12.4 * sourceScale, 11.0 * sourceScale, 1.0),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
-  };
-}
-
-function makeExplanatoryPiston({
-  darkMaterial,
-  outputMaterial,
-  planeZ,
-  rolePrefix,
-  scale,
-  whiteMaterial,
-}) {
-  const output = new THREE.Group();
-  output.userData.rotationDegreesOfFreedom = 0;
-  output.userData.role =
-    `${rolePrefix}-explanatory-piston-added-by-source-animation`;
-  const jointBoss = cylinderAlongZ(0.30 * scale, 0.19,
-    outputMaterial, 34);
-  jointBoss.position.z = planeZ;
-  jointBoss.userData.role = `${rolePrefix}-piston-link-joint-boss`;
-  const jointFace = cylinderAlongZ(0.16 * scale, 0.025,
-    whiteMaterial, 28);
-  jointFace.position.z = planeZ + 0.108;
-  jointFace.userData.role = `${rolePrefix}-piston-joint-index`;
-  const rod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.375 * scale, 7.46 * scale, 0.13),
-    outputMaterial,
-  );
-  rod.position.set(0, -3.895 * scale, planeZ - 0.01);
-  rod.userData.role = `${rolePrefix}-straight-piston-rod`;
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * scale, 0.375 * scale, 0.42),
-    outputMaterial,
-  );
-  head.position.set(0, -7.8125 * scale, planeZ - 0.08);
-  head.userData.role = `${rolePrefix}-piston-head`;
-  const bore = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18 * scale, 0.026, 8, 28),
-    darkMaterial,
-  );
-  bore.position.z = planeZ + 0.105;
-  bore.userData.role = `${rolePrefix}-joint-bore-outline`;
-  const jointAnchor = new THREE.Object3D();
-  jointAnchor.position.z = planeZ;
-  jointAnchor.userData.role = `${rolePrefix}-analytic-output-point`;
-  const pistonAnchor = new THREE.Object3D();
-  pistonAnchor.position.set(0, -7.8125 * scale, planeZ);
-  pistonAnchor.userData.role = `${rolePrefix}-analytic-piston-center`;
-  output.add(jointBoss, jointFace, rod, head, bore,
-    jointAnchor, pistonAnchor);
-  return {
-    head,
-    jointAnchor,
-    jointBoss,
-    output,
-    pistonAnchor,
-    rod,
   };
 }
 
@@ -2396,151 +2107,193 @@ function doubleParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
 
+  // Brown's plate: a broad beam P-M-W with a large boss at M, plain bars, two
+  // small bearings on hatched ground, and a cut-off rod below P. The official
+  // canvas's two explanatory piston rods are not drawn in the plate.
+  const s = sourceScale;
+  const pinClearance = 0.012;
+  const beamPlaneZ = 0.10;
+  const beamHalfDepth = 0.09;
+  const linkWidth = 0.46 * s;
+  const pinRadius = { M: 0.27 * s, N: 0.20 * s, P: 0.20 * s, Q: 0.23 * s,
+    W: 0.23 * s, fixed: 0.25 * s };
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'two-fixed-pedestals-O-and-R';
-  const makePedestal = (point, name) => {
+  const makePedestal = (point, name, low, high, pinLow, pinHigh) => {
     const group = new THREE.Group();
     group.position.set(point.x, point.y, 0);
     group.userData.fixed = true;
     group.userData.role = `fixed-${name}-pedestal`;
-    const bearing = cylinderAlongZ(0.50 * sourceScale, 0.62,
-      frameMaterial, 42);
-    bearing.position.z = -0.20;
+    const bearing = new THREE.Mesh(plate(clip.difference(clip.union(
+      poly(circle([0, 0], 0.72 * s, 48)),
+      poly([[-0.72 * s, 0], [0.72 * s, 0], [1.10 * s, -1.0 * s],
+        [-1.10 * s, -1.0 * s]]),
+    ), poly(circle([0, 0], pinRadius.fixed + pinClearance, 40))), low, high),
+    frameMaterial);
     bearing.userData.fixed = true;
-    bearing.userData.role = `${name}-fixed-bearing-housing`;
-    const bore = cylinderAlongZ(0.25 * sourceScale, 1.70,
+    bearing.userData.role = `${name}-fixed-bearing-bracket`;
+    const bore = cylinderAlongZ(pinRadius.fixed, pinHigh - pinLow,
       darkMaterial, 34);
-    bore.position.z = 0.30;
+    bore.position.z = (pinLow + pinHigh) / 2;
     bore.userData.fixed = true;
-    bore.userData.role = `${name}-fixed-bearing-bore`;
-    const neck = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36 * sourceScale, 0.70 * sourceScale, 0.50),
-      frameMaterial,
-    );
-    neck.position.set(0, -0.55 * sourceScale, -0.20);
-    neck.userData.fixed = true;
-    neck.userData.role = `${name}-pedestal-neck`;
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(3.35 * sourceScale, 0.45 * sourceScale, 0.75),
-      frameMaterial,
-    );
-    foot.position.set(0, -1.00 * sourceScale, -0.20);
+    bore.userData.role = `${name}-fixed-bearing-pin`;
+    const foot = new THREE.Mesh(plate(poly([
+      [-1.65 * s, -1.0 * s], [1.65 * s, -1.0 * s],
+      [1.65 * s, -1.32 * s], [-1.65 * s, -1.32 * s],
+    ]), low - 0.08, high), darkMaterial);
     foot.userData.fixed = true;
-    foot.userData.role = `${name}-hatched-ground-foot`;
-    group.add(bearing, bore, neck, foot);
+    foot.userData.role = `${name}-hatched-ground`;
+    group.add(bearing, bore, foot);
     group.userData.bearing = bearing;
     group.userData.bore = bore;
     group.userData.foot = foot;
     return group;
   };
-  const leftPedestalO = makePedestal(leftPivotO, 'left-pivot-O');
-  const rightPedestalR = makePedestal(rightPivotR, 'right-pivot-R');
+  // O sits in front of its radius bar because P's rod sweeps past O behind.
+  const leftPedestalO = makePedestal(leftPivotO, 'left-pivot-O',
+    0.47, 0.62, 0.26, 0.62);
+  const rightPedestalR = makePedestal(rightPivotR, 'right-pivot-R',
+    0.18, 0.48, 0.18, 1.08);
   fixedFrame.add(leftPedestalO, rightPedestalR);
   root.add(fixedFrame);
 
-  const longLinkParts = makeRigidRod({
-    bodyMaterial: blueMaterial,
-    depth: 0.18,
-    eyeMaterial: darkMaterial,
-    length: longLinkLength,
-    planeZ: 0.10,
-    role: 'sixteen-unit-long-ternary-link-P-M-W',
-    width: 0.36 * sourceScale,
-  });
-  const pointMBoss = cylinderAlongZ(0.55 * sourceScale, 0.25,
-    blueMaterial, 40);
-  pointMBoss.position.set(longLinkMidpointDistance, 0, 0.10);
-  pointMBoss.userData.role = 'large-midpoint-M-boss-on-long-link';
-  const pointMAnchor = new THREE.Object3D();
-  pointMAnchor.position.set(longLinkMidpointDistance, 0, 0.10);
-  pointMAnchor.userData.role = 'analytic-midpoint-M-on-long-link';
-  longLinkParts.rod.userData.addPinEye(longLinkMidpointDistance, 0.27 * sourceScale + 0.005, 0.55 * sourceScale);
-  longLinkParts.rod.add(pointMAnchor);
-  root.add(longLinkParts.rod);
+  const longLink = new THREE.Group();
+  longLink.userData.role = 'sixteen-unit-long-ternary-link-P-M-W';
+  const beamBores = [
+    { x: 0, y: 0, radius: pinRadius.P + pinClearance },
+    { x: longLinkMidpointDistance, y: 0, radius: pinRadius.M + pinClearance },
+    { x: longLinkLength, y: 0, radius: pinRadius.W + pinClearance },
+  ];
+  const beamEdge = [];
+  for (let step = 0; step <= 16; step += 1) {
+    const x = longLinkLength * step / 16;
+    const bulge = Math.sin(Math.PI * step / 16);
+    beamEdge.push([x, (0.46 + 0.12 * bulge) * s]);
+  }
+  const beamBody = new THREE.Mesh(plate(clip.difference(
+    clip.union(
+      poly([...beamEdge, ...beamEdge.map(([x, y]) => [x, -y]).reverse()]),
+      poly(circle([0, 0], 0.55 * s, 40)),
+      poly(circle([longLinkMidpointDistance, 0], 1.20 * s, 64)),
+      poly(circle([longLinkLength, 0], 0.55 * s, 40)),
+    ),
+    ...beamBores.map((bore) => poly(circle([bore.x, bore.y], bore.radius, 40))),
+  ), beamPlaneZ - beamHalfDepth, beamPlaneZ + beamHalfDepth), blueMaterial);
+  beamBody.userData.bores = beamBores;
+  beamBody.userData.role = 'broad-beam-P-M-W-with-large-boss-at-M';
+  const beamAnchor = (x, role) => {
+    const anchor = new THREE.Object3D();
+    anchor.position.set(x, 0, beamPlaneZ);
+    anchor.userData.role = role;
+    return anchor;
+  };
+  const pointMAnchor = beamAnchor(longLinkMidpointDistance,
+    'analytic-midpoint-M-on-long-link');
+  const longLinkParts = {
+    endAnchor: beamAnchor(longLinkLength, 'analytic-long-link-end-W'),
+    rod: longLink,
+    startAnchor: beamAnchor(0, 'analytic-long-link-start-P'),
+  };
+  longLink.add(beamBody, longLinkParts.startAnchor, pointMAnchor,
+    longLinkParts.endAnchor);
+  root.add(longLink);
 
   const leftRadiusParts = makeRigidRod({
     bodyMaterial: redMaterial,
+    boreRadius: pinRadius.M + pinClearance,
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: leftRadiusLength,
     planeZ: 0.36,
     role: 'left-eight-unit-radius-bar-O-M',
-    width: 0.32 * sourceScale,
+    startBoreRadius: pinRadius.fixed + pinClearance,
+    width: linkWidth,
   });
   root.add(leftRadiusParts.rod);
 
   const rightUpperParts = makeRigidRod({
     bodyMaterial: greenMaterial,
+    boreRadius: pinRadius.W + pinClearance,
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: rightUpperRockerLength,
     planeZ: 0.58,
     role: 'right-upper-6.006189-unit-rocker-R-W',
-    width: 0.32 * sourceScale,
+    startBoreRadius: pinRadius.fixed + pinClearance,
+    width: linkWidth,
   });
   root.add(rightUpperParts.rod);
 
   const centerLinkParts = makeRigidRod({
     bodyMaterial: greenMaterial,
+    boreRadius: pinRadius.Q + pinClearance,
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: centerLinkLength,
     planeZ: 0.77,
     role: 'six-unit-center-ternary-link-M-N-Q',
-    width: 0.32 * sourceScale,
+    startBoreRadius: pinRadius.M + pinClearance,
+    width: linkWidth,
   });
-  const pointNBoss = cylinderAlongZ(0.30 * sourceScale, 0.22,
-    greenMaterial, 34);
-  pointNBoss.position.set(centerLinkMidpointDistance, 0, 0.77);
-  pointNBoss.userData.role = 'midpoint-N-boss-on-center-link';
   const pointNAnchor = new THREE.Object3D();
   pointNAnchor.position.set(centerLinkMidpointDistance, 0, 0.77);
   pointNAnchor.userData.role = 'analytic-midpoint-N-on-center-link';
-  centerLinkParts.rod.userData.addPinEye(centerLinkMidpointDistance, 0.20 * sourceScale + 0.005);
+  centerLinkParts.rod.userData.addPinEye(centerLinkMidpointDistance,
+    pinRadius.N + pinClearance);
   centerLinkParts.rod.add(pointNAnchor);
   root.add(centerLinkParts.rod);
 
   const rightLowerParts = makeRigidRod({
     bodyMaterial: redMaterial,
+    boreRadius: pinRadius.Q + pinClearance,
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: rightLowerRadiusLength,
     planeZ: 0.98,
     role: 'right-lower-eight-unit-radius-bar-R-Q',
-    width: 0.32 * sourceScale,
+    startBoreRadius: pinRadius.fixed + pinClearance,
+    width: linkWidth,
   });
   root.add(rightLowerParts.rod);
 
-  const leftPistonParts = makeExplanatoryPiston({
-    darkMaterial,
-    outputMaterial,
-    planeZ: -0.10,
-    rolePrefix: 'left-P',
-    scale: sourceScale,
-    whiteMaterial,
-  });
-  const centerPistonParts = makeExplanatoryPiston({
-    darkMaterial,
-    outputMaterial,
-    planeZ: -0.07,
-    rolePrefix: 'center-N',
-    scale: sourceScale,
-    whiteMaterial,
-  });
-  root.add(leftPistonParts.output, centerPistonParts.output);
-
-  const jointPins = {
-    M: cylinderAlongZ(0.27 * sourceScale, 0.92, whiteMaterial, 32),
-    N: cylinderAlongZ(0.20 * sourceScale, 0.42, whiteMaterial, 30),
-    P: cylinderAlongZ(0.20 * sourceScale, 0.34, whiteMaterial, 30),
-    Q: cylinderAlongZ(0.23 * sourceScale, 0.44, whiteMaterial, 30),
-    W: cylinderAlongZ(0.23 * sourceScale, 0.56, whiteMaterial, 30),
+  const leftPiston = new THREE.Group();
+  leftPiston.userData.role = 'cut-off-rod-guided-by-point-P';
+  leftPiston.userData.rotationDegreesOfFreedom = 0;
+  const leftPistonPlaneZ = -0.10;
+  const leftPistonRod = new THREE.Mesh(plate(clip.union(
+    poly([[-0.22 * s, 0], [0.22 * s, 0], [0.22 * s, -3.0 * s],
+      [-0.22 * s, -3.15 * s]]),
+    poly(circle([0, 0], 0.50 * s, 40)),
+  ), leftPistonPlaneZ - 0.05, leftPistonPlaneZ + 0.05), outputMaterial);
+  leftPistonRod.userData.role = 'left-P-rod-shown-cut-off-as-in-the-plate';
+  const leftPistonPointAnchor = new THREE.Object3D();
+  leftPistonPointAnchor.position.z = leftPistonPlaneZ;
+  leftPistonPointAnchor.userData.role = 'analytic-left-P-rod-joint';
+  leftPiston.add(leftPistonRod, leftPistonPointAnchor);
+  const leftPistonParts = {
+    head: leftPistonRod,
+    jointAnchor: leftPistonPointAnchor,
+    output: leftPiston,
   };
-  for (const [name, pin] of Object.entries(jointPins)) {
+  root.add(leftPiston);
+
+  const pinOn = (parent, name, x, low, high) => {
+    const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);
+    pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
-  }
-  root.add(...Object.values(jointPins));
+    parent.add(pin);
+    return pin;
+  };
+  const beamBack = beamPlaneZ - beamHalfDepth;
+  const jointPins = {
+    M: pinOn(longLink, 'M', longLinkMidpointDistance, beamBack, 0.87),
+    N: pinOn(centerLinkParts.rod, 'N', centerLinkMidpointDistance, 0.67, 0.89),
+    P: pinOn(leftPiston, 'P', 0, leftPistonPlaneZ - 0.05,
+      beamPlaneZ + beamHalfDepth + 0.02),
+    Q: pinOn(centerLinkParts.rod, 'Q', centerLinkLength, 0.67, 1.08),
+    W: pinOn(longLink, 'W', longLinkLength, beamBack, 0.68),
+  };
 
   const contacts = {
     leftRadiusPivotO: {
@@ -2593,15 +2346,12 @@ function doubleParallelMotion(movement) {
     setRodPose(rightLowerParts.rod, rightPivotR,
       state.rightLowerRadius);
     leftPistonParts.output.position.set(state.pointP.x, state.pointP.y, 0);
-    centerPistonParts.output.position.set(state.pointN.x, state.pointN.y, 0);
-    jointPins.P.position.set(state.pointP.x, state.pointP.y, 0.08);
-    jointPins.M.position.set(state.pointM.x, state.pointM.y, 0.58);
-    jointPins.W.position.set(state.pointW.x, state.pointW.y, 0.35);
-    jointPins.N.position.set(state.pointN.x, state.pointN.y, 0.72);
-    jointPins.Q.position.set(state.pointQ.x, state.pointQ.y, 0.88);
-    contacts.longLinkAtM.point.set(state.pointM.x, state.pointM.y, 0.53);
-    contacts.longLinkAtW.point.set(state.pointW.x, state.pointW.y, 0.34);
-    contacts.centerLinkAtQ.point.set(state.pointQ.x, state.pointQ.y, 0.87);
+    contacts.longLinkAtM.point.set(state.pointM.x, state.pointM.y,
+      jointPins.M.position.z);
+    contacts.longLinkAtW.point.set(state.pointW.x, state.pointW.y,
+      jointPins.W.position.z);
+    contacts.centerLinkAtQ.point.set(state.pointQ.x, state.pointQ.y,
+      jointPins.Q.position.z);
     root.userData.kinematics = state;
   };
 
@@ -2652,14 +2402,12 @@ function doubleParallelMotion(movement) {
     centerLink: centerLinkParts.rod,
     centerLinkEndAnchor: centerLinkParts.endAnchor,
     centerLinkStartAnchor: centerLinkParts.startAnchor,
-    centerPiston: centerPistonParts.output,
-    centerPistonHead: centerPistonParts.head,
-    centerPistonPointAnchor: centerPistonParts.jointAnchor,
     fixedFrame,
     jointPins,
     leftPedestalO,
     leftPiston: leftPistonParts.output,
-    leftPistonHead: leftPistonParts.head,
+    leftPistonRod: leftPistonParts.head,
+    longLinkBody: beamBody,
     leftPistonPointAnchor: leftPistonParts.jointAnchor,
     leftRadiusBar: leftRadiusParts.rod,
     leftRadiusEndAnchor: leftRadiusParts.endAnchor,
@@ -2677,11 +2425,6 @@ function doubleParallelMotion(movement) {
     rightUpperRockerEndAnchor: rightUpperParts.endAnchor,
     rightUpperRockerStartAnchor: rightUpperParts.startAnchor,
   };
-  root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.78, -3.92, -0.66),
-    new THREE.Vector3(5.32, 1.65, 1.22),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -2689,7 +2432,7 @@ function doubleParallelMotion(movement) {
     input: 'one prescribed rocking angle of radius bar O-M',
     mechanism: 1,
     outputs:
-      'near-vertical points P and N, shown by two explanatory piston rods',
+      'near-vertical points P and N; P carries the cut-off rod drawn in the plate',
   };
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;
@@ -2766,7 +2509,7 @@ function doubleParallelMotion(movement) {
     input:
       'radius bar O-M rocks with the smooth phase law inferred from the official added P-piston drive',
     outputs:
-      'P and N carry the two explanatory piston rods on independently quantified near-straight loci',
+      'P carries the plate\'s cut-off rod and N is a marked pin, both on independently quantified near-straight loci',
     topology:
       'the two parallel-motion cells share M and the fixed right pivot R',
   };
@@ -2774,18 +2517,16 @@ function doubleParallelMotion(movement) {
   update(0);
   root.userData.hideGround = true;
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
-  const sweptBounds = new THREE.Box3();
-  for (let sample = 0; sample <= 64; sample += 1) {
-    update(cyclePeriod * sample / 64);
-    root.updateMatrixWorld(true);
-    sweptBounds.union(new THREE.Box3().setFromObject(root));
-  }
-  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
-  root.userData.cameraDistanceScale = 1.02;
+  // Brown's plate frames O and R at the edges with the beam near the top.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.0 * sourceScale, -7.6 * sourceScale, -0.30),
+    new THREE.Vector3(16.8 * sourceScale, 5.2 * sourceScale, 1.10),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };

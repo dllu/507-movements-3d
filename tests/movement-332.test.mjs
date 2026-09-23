@@ -80,7 +80,13 @@ test('movement 332 is the side-lever marine-engine parallel motion', () => {
   assert.equal(blocks.crossheadE.parent, model.root);
   assert.equal(blocks.crossheadEHousing.parent, blocks.crossheadE);
   assert.equal(blocks.pistonRod.parent, blocks.crossheadE);
-  assert.equal(blocks.pistonHead.parent, blocks.crossheadE);
+  assert.equal(blocks.pistonHead, undefined,
+    'the piston stays hidden in the drawn vessel');
+  assert.equal(blocks.jointPins.beamMid.parent, blocks.sideLever);
+  assert.equal(blocks.jointPins.beamRight.parent, blocks.sideLever);
+  assert.equal(blocks.jointPins.pointC.parent, blocks.leftLink);
+  assert.equal(blocks.jointPins.pointD.parent, blocks.leftLink);
+  assert.equal(blocks.jointPins.pointE.parent, blocks.crossheadE);
   assert.equal(contacts.beamPivotA.movingMember, blocks.sideLever);
   assert.equal(contacts.radiusBarPivotF.fixedMember, blocks.fixedPivotF);
   assert.equal(contacts.radiusBarPivotF.movingMember, blocks.radiusBarFC);
@@ -437,13 +443,15 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
       new THREE.Vector3()), new THREE.Vector3(
         state.pointE.x,
         state.pointE.y,
-        0.73,
+        blocks.jointPins.pointE.position.z,
       ), 0, `crosshead E at ${time}`);
     vector3Near(contacts.radiusBarAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.66), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y,
+        blocks.jointPins.pointC.position.z), 0,
     `live C contact at ${time}`);
     vector3Near(contacts.linksToCrossheadE.point,
-      new THREE.Vector3(state.pointE.x, state.pointE.y, 0.61), 0,
+      new THREE.Vector3(state.pointE.x, state.pointE.y,
+        blocks.jointPins.pointE.position.z), 0,
     `live E contact at ${time}`);
     assert.ok(blocks.fixedFrame.matrixWorld.equals(fixedFrameMatrix));
   }
@@ -451,7 +459,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.3);
-  assert.ok(size.y > 5.1);
+  assert.ok(size.y > 3.5, 'the undrawn frame posts below the deck are gone');
   assert.ok(size.z > 1.60,
     'frame, lever, paired links, E-D, F-C, and piston occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
@@ -463,7 +471,15 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
   assert.notEqual(model331.root.userData.archetype,
     model.root.userData.archetype);
   assert.equal(model331.root.userData.blocks.flywheelSpokes.length, 6);
-  assert.equal(blocks.framePosts.length, 4);
+  assert.equal(blocks.framePosts, undefined,
+    'the plate shows no frame posts or bedplate');
+  const undrawn = [];
+  model.root.traverse((object) => {
+    if (/frame-upright|bedplate|piston-head|deck-working/.test(object.userData.role ?? '')) {
+      undrawn.push(object.userData.role);
+    }
+  });
+  assert.deepEqual(undrawn, []);
   disposeModel(model331.root);
   disposeModel(model.root);
 });

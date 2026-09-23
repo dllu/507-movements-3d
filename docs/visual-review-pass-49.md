@@ -570,3 +570,24 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 505 | Faithful annulus, wheels A, B and the arm D. |
 | 506 | Faithful frame, bevel wheels and handle A. |
 | 507 | Front elevation, as Brown draws it; faithful wheels E, F, G, H, the wheel C and the arm m n. |
+
+## Pass 50 batch: engines 326–345
+
+The engines lane (`docs/engines-326-345-review.md`) reshaped these parts and removed undrawn ones. Its captures were inspected here beside the engravings. `scripts/show-body-intersections.mjs ID --spacing=0.01 --samples=129` was rerun independently: only 0.0000 contacts remain, on 326's guide shoes, 327's rollers and 334's backing roller.
+
+| Movement | Observation |
+| --- | --- |
+| 326 | Faithful flywheel, hollow standard, slot guide and crank. |
+| 327 | Faithful flywheel, beam, columns, guides A and crosshead rollers. |
+| 332 | Faithful lever A, vessel, links C, D, E and radius F. |
+| 333 | Faithful beam, links and fixed pivots over hatched ground. |
+| 334 | Faithful rack B, roller A, sector C, chain arc D and strap F on the bed. |
+| 335 | Faithful beam and parallel links; the left radius rod is short. |
+| 336 | Faithful cylinder casing, lever, links and rocking standard F. |
+| 337 | Faithful beam, links and piston rod. |
+| 338 | Faithful beam, links and piston rod. |
+| 339 | Faithful bell casting, slot box D, links A, B, C and radius F. |
+| 340 | Faithful beam, pillar F, wall bracket E and links A, C, D. |
+| 341 | Faithful beam, footings, cylinder and links A, B. |
+| 344 | Faithful oscillating cylinder, crank, rod and trunnion rails. |
+| 345 | Faithful pendulum cylinder, crank, rod and trunnion rail. |

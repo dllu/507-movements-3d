@@ -80,7 +80,9 @@ test('movement 338 is the upper-radius vibrating-rod parallel motion', () => {
   assert.equal(blocks.beamBody.parent, blocks.beam);
   assert.equal(blocks.vibratingMidpointAnchor.parent, blocks.vibratingRod);
   assert.equal(blocks.pistonRod.parent, blocks.output);
-  assert.equal(blocks.pistonHead.parent, blocks.output);
+  assert.equal(blocks.jointPins.L.parent, blocks.output);
+  assert.equal(blocks.jointPins.R.parent, blocks.beam);
+  assert.equal(blocks.jointPins.U.parent, blocks.radiusBar);
   assert.equal(contacts.beamPivotO.movingMember, blocks.beam);
   assert.equal(contacts.radiusPivotF.movingMember, blocks.radiusBar);
   assert.deepEqual(contacts.beamAtR.members,
@@ -428,11 +430,14 @@ test('movement 338 renderer binds L, R, U, and the above-beam radius', () => {
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.4);
-  assert.ok(size.y > 4.9);
-  assert.ok(size.z > 1.76,
-    'beam, centered rod, upper radius, piston, bearings, and guides use depth');
-  assert.equal(blocks.guideRails.length, 2);
+  assert.ok(size.x > 7.6, 'whole sixteen-unit beam, bosses included');
+  assert.ok(size.y > 3.0);
+  assert.ok(size.z > 1.1,
+    'beam, centered rod, upper radius bar and piston use depth');
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /bed-rail|upright|standard|guide-rail|piston-head|foot/.test(role)), false,
+    'Brown draws no engine bed, standards, piston guides or piston head');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

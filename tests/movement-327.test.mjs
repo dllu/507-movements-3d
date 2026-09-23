@@ -334,7 +334,7 @@ test('movement 327 analytic crank, crosshead, rod, and roller rates match finite
   disposeModel(model.root);
 });
 
-test('movement 327 renderer gives both no-slip rollers independent visible spin', () => {
+test('movement 327 renderer gives both no-slip rollers independent spin', () => {
   const model = createMovementModel(catalog.movements[326]);
   const {
     animationTiming,
@@ -347,10 +347,9 @@ test('movement 327 renderer gives both no-slip rollers independent visible spin'
   assert.equal(animationTiming.authoredCyclePeriod, 4);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  assert.equal(blocks.leftRoller.userData.rotationIndex.parent,
-    blocks.leftRoller);
-  assert.equal(blocks.rightRoller.userData.rotationIndex.parent,
-    blocks.rightRoller);
+  assert.equal(blocks.leftRoller.userData.rotationIndex, undefined,
+    'Brown draws plain rollers without index marks');
+  assert.equal(blocks.rightRoller.userData.rotationIndex, undefined);
   assert.equal(blocks.leftRoller.userData.tread.parent,
     blocks.leftRoller);
   assert.equal(blocks.rightRoller.userData.tread.parent,
@@ -401,6 +400,19 @@ test('movement 327 renderer gives both no-slip rollers independent visible spin'
       state.crankPin.y,
       geometry.crankPlaneZ,
     ), 7e-16, `rendered crank pin at ${time}`);
+    const crankPinShaftCenter = blocks.crankPinShaft.getWorldPosition(
+      new THREE.Vector3(),
+    );
+    near(crankPinShaftCenter.x, state.crankPin.x, 2e-15,
+      `crank pin shaft x at ${time}`);
+    near(crankPinShaftCenter.y, state.crankPin.y, 2e-15,
+      `crank pin shaft y at ${time}`);
+    const wristPinShaftCenter = blocks.wristPinShaft.getWorldPosition(
+      new THREE.Vector3(),
+    );
+    near(wristPinShaftCenter.x, 0, 0, `wrist pin shaft x at ${time}`);
+    near(wristPinShaftCenter.y, state.sliderY, 2e-15,
+      `wrist pin shaft y at ${time}`);
     near(contacts.leftRollerOnGuideBarA.relativeSlipSpeed, 0, 3e-16,
       `rendered left rolling slip at ${time}`);
     near(contacts.rightRollerOnGuideBarA.relativeSlipSpeed, 0, 3e-16,
@@ -425,6 +437,22 @@ test('movement 327 has a fully spatial frame, bearing, cylinder, guides, and lin
   assert.equal(blocks.liveShaft.parent, blocks.flywheel);
   assert.equal(blocks.flywheelSpokes.length, 4);
   assert.equal(blocks.rollerAxles.length, 2);
+  assert.equal(blocks.crankPinShaft.parent, blocks.flywheel,
+    'crank pin is carried by the crank, not re-posed by the frame');
+  assert.equal(blocks.wristPinShaft.parent, blocks.crosshead);
+  for (const undrawn of ['outerFramePosts', 'lowerCrossBase', 'crossheadIndex',
+    'flywheelRotationIndex', 'crankRotationIndex']) {
+    assert.equal(blocks[undrawn], undefined, `${undrawn} is not in Brown's plate`);
+  }
+  model.root.traverse((object) => {
+    assert.doesNotMatch(object.userData.role ?? '', /index|outer-engine-frame-post/);
+  });
+  model.root.updateMatrixWorld(true);
+  const rimBox = new THREE.Box3().setFromObject(blocks.flywheelRim);
+  for (const fixed of [blocks.topBeam, blocks.leftGuideBarA, blocks.rightGuideBarA]) {
+    assert.ok(rimBox.max.z < new THREE.Box3().setFromObject(fixed).min.z,
+      'flywheel runs wholly behind the crossbeam and columns');
+  }
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());

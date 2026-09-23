@@ -1,6 +1,7 @@
 import { involute } from './band-epicyclic-geometry.js';
 import { makeBoredLinkRod } from './bored-link-rod.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -202,11 +203,12 @@ function makeBeamAndSectors({
   beam.userData.role =
     'one-rigid-rocking-beam-D-with-toothed-sector-C-and-chain-shoe';
 
+  // The plate carries the box beam out to just short of sector C.
   const bodyPoints = [
-    new THREE.Vector2(-15.984680, 0.700000),
+    new THREE.Vector2(-26.200000, 0.700000),
     new THREE.Vector2(11.000000, 0.700000),
     new THREE.Vector2(11.000000, 4.700000),
-    new THREE.Vector2(-13.187494, 4.700000),
+    new THREE.Vector2(-25.000000, 4.700000),
   ].map((point) => point.multiplyScalar(sourceScale));
   const body = new THREE.Mesh(
     centeredExtrusion(polygonShape(bodyPoints), 0.25, 0.008),
@@ -249,15 +251,18 @@ function makeBeamAndSectors({
     return tooth;
   });
 
+  // Brown's bracing: a radial strut from the beam's lower corner to the foot
+  // of the sector, a diagonal brace back under the beam, and a short strut
+  // from the sector's upper end down to the beam top.
   const spokeEnds = [
-    new THREE.Vector2(-27.50, -7.483315),
-    new THREE.Vector2(-27.50, -6.177907),
-    new THREE.Vector2(-26.50, 4.70),
+    new THREE.Vector2(-27.60, -7.60),
+    new THREE.Vector2(-27.60, -7.60),
+    new THREE.Vector2(-27.10, 7.40),
   ].map((point) => point.multiplyScalar(sourceScale));
   const spokeStarts = [
-    new THREE.Vector2(-17.827491, 0.632884),
-    new THREE.Vector2(-19.303229, 0.700000),
-    new THREE.Vector2(-13.187494, 4.700000),
+    new THREE.Vector2(-26.00, 1.10),
+    new THREE.Vector2(-14.00, 0.90),
+    new THREE.Vector2(-24.80, 4.40),
   ].map((point) => point.multiplyScalar(sourceScale));
   const sectorSpokes = spokeEnds.map((end, index) => {
     const spoke = beamBetween(
@@ -281,31 +286,33 @@ function makeBeamAndSectors({
       16 * sourceScale,
       shoeStart,
       shoeEnd,
-    ), 0.20, 0.005),
+    ), 0.17, 0.005),
     beamMaterial,
   );
-  chainShoe.position.z = 0.42;
+  chainShoe.position.z = 0.385;
   chainShoe.userData.guideRadius = chainGuideRadius;
   chainShoe.userData.role =
     'curved-chain-suspension-shoe-concentric-with-pivot-F';
   beam.add(chainShoe);
 
-  const pivotBoss = cylinderAlongZ(0.70 * sourceScale, 0.34,
-    beamMaterial, 42);
-  pivotBoss.position.z = beamPlaneZ;
+  const gudgeonStrap = new THREE.Mesh(plate(clip.union(
+    poly([[-0.40, 0.90], [0.40, 0.90], [0.40, 5.30], [-0.40, 5.30]]
+      .map(([x, y]) => [x * sourceScale, y * sourceScale])),
+    poly([[-0.90, 5.30], [0.90, 5.30], [0.90, 5.80], [-0.90, 5.80]]
+      .map(([x, y]) => [x * sourceScale, y * sourceScale])),
+  ), beamPlaneZ + 0.125, beamPlaneZ + 0.17), beamMaterial);
+  gudgeonStrap.userData.role = 'gudgeon-strap-and-nut-over-F-on-beam-D';
+  beam.add(gudgeonStrap);
+  const pivotBoreRadius = geometry.pivotShaftRadius + 0.012;
+  const pivotBoss = new THREE.Mesh(plate(clip.difference(
+    poly(circle([0, 0], 0.70 * sourceScale, 64)),
+    poly(circle([0, 0], pivotBoreRadius, 64)),
+  ), beamPlaneZ - 0.17, beamPlaneZ + 0.17), beamMaterial);
+  pivotBoss.userData.bores = [{ x: 0, y: 0, radius: pivotBoreRadius }];
   pivotBoss.userData.role = 'beam-D-working-pivot-boss-at-F';
-  const pivotBore = cylinderAlongZ(0.31 * sourceScale, 0.37,
-    darkMaterial, 34);
-  pivotBore.position.z = beamPlaneZ + 0.004;
-  pivotBore.userData.role = 'beam-D-pivot-bore-at-F';
-  const rotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.8 * sourceScale, 0.055, 0.035),
-    whiteMaterial,
-  );
-  rotationIndex.position.set(-0.9 * sourceScale, 0, beamPlaneZ + 0.20);
-  rotationIndex.userData.role = 'visible-index-on-rocking-beam-D';
+  const pivotBore = pivotBoss;
 
-  const chainAttachmentBoss = cylinderAlongZ(0.34 * sourceScale, 0.25,
+  const chainAttachmentBoss = cylinderAlongZ(0.34 * sourceScale, 0.20,
     beamMaterial, 34);
   chainAttachmentBoss.position.set(
     chainAttachment.x,
@@ -313,6 +320,11 @@ function makeBeamAndSectors({
     0.42,
   );
   chainAttachmentBoss.userData.role = 'chain-attachment-boss-on-beam-D';
+  const chainAttachmentPin = cylinderAlongZ(geometry.chainPinRadius,
+    geometry.chainOuterHigh - 0.33, darkMaterial, 22);
+  chainAttachmentPin.position.set(chainAttachment.x, chainAttachment.y,
+    (geometry.chainOuterHigh + 0.33) / 2);
+  chainAttachmentPin.userData.role = 'chain-end-pin-on-beam-D';
   const chainAttachmentAnchor = new THREE.Object3D();
   chainAttachmentAnchor.position.set(
     chainAttachment.x,
@@ -323,9 +335,8 @@ function makeBeamAndSectors({
     'analytic-chain-attachment-on-beam-D';
   beam.add(
     pivotBoss,
-    pivotBore,
-    rotationIndex,
     chainAttachmentBoss,
+    chainAttachmentPin,
     chainAttachmentAnchor,
   );
 
@@ -334,10 +345,10 @@ function makeBeamAndSectors({
     body,
     chainAttachmentAnchor,
     chainAttachmentBoss,
+    chainAttachmentPin,
     chainShoe,
     pivotBore,
     pivotBoss,
-    rotationIndex,
     sectorSpokes,
     sectorTeeth,
     sectorWeb,
@@ -363,7 +374,8 @@ function makeRack({
   rack.userData.role = 'straight-toothed-piston-rod-rack-B';
 
   const bodyLeft = -0.833333 * sourceScale;
-  const bodyRight = 0.166667 * sourceScale;
+  // The solid back ends at the tooth root line, clear of the sector tips.
+  const bodyRight = 0;
   const bodyTop = 9.059854 * sourceScale;
   const toothedBottom = -10.242505 * sourceScale;
   const visibleRodBottom = -27.0 * sourceScale;
@@ -411,16 +423,6 @@ function makeRack({
     rackMaterial, 30);
   topCap.position.set(toothTipX, toothedBottom, rackPlaneZ);
   topCap.userData.role = 'rounded-upper-end-of-rack-B';
-  const lowerRodIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 2.2 * sourceScale, 0.03),
-    whiteMaterial,
-  );
-  lowerRodIndex.position.set(
-    (bodyLeft + bodyRight) / 2,
-    visibleRodBottom + 1.5 * sourceScale,
-    rackPlaneZ + 0.145,
-  );
-  lowerRodIndex.userData.role = 'visible-index-on-translating-rack-B';
   const backWearStrip = new THREE.Mesh(
     new THREE.BoxGeometry(
       0.045,
@@ -444,7 +446,6 @@ function makeRack({
   backLineAnchor.userData.role = 'analytic-back-line-of-rack-B';
   rack.add(
     topCap,
-    lowerRodIndex,
     backWearStrip,
     originAnchor,
     backLineAnchor,
@@ -453,7 +454,6 @@ function makeRack({
     backLineAnchor,
     backWearStrip,
     body,
-    lowerRodIndex,
     originAnchor,
     rack,
     rackTeeth,
@@ -461,64 +461,82 @@ function makeRack({
   };
 }
 
+// Links alternate as in a plate chain: inner links carry one central bored
+// plate, outer links straddle them with two side plates and own both pins.
 function makeFlexibleChainLink({
   chainMaterial,
   darkMaterial,
-  depth,
+  geometry,
   nominalPitch,
+  outer,
   width,
 }) {
+  const { chainInnerHalfDepth, chainLineZ, chainOuterHigh, chainOuterLow,
+    chainPinRadius } = geometry;
   const link = new THREE.Group();
   link.userData.flexibleChainElement = true;
   link.userData.nominalArcPitch = nominalPitch;
+  link.userData.outerLink = outer;
   link.userData.role = 'articulated-link-of-D-suspension-chain';
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(nominalPitch, width * 0.54, depth),
-    chainMaterial,
+  const eyeRadius = width * 0.47;
+  const boreRadius = chainPinRadius + 0.008;
+  const outline = clip.union(
+    poly([[0, -width * 0.27], [nominalPitch, -width * 0.27],
+      [nominalPitch, width * 0.27], [0, width * 0.27]]),
+    poly(circle([0, 0], eyeRadius, 48)),
+    poly(circle([nominalPitch, 0], eyeRadius, 48)),
   );
+  const bored = clip.difference(outline,
+    poly(circle([0, 0], boreRadius, 48)),
+    poly(circle([nominalPitch, 0], boreRadius, 48)));
+  const plateSpans = outer
+    ? [[chainOuterLow, chainOuterLow + 0.04], [chainOuterHigh - 0.04, chainOuterHigh]]
+    : [[chainLineZ - chainInnerHalfDepth, chainLineZ + chainInnerHalfDepth]];
+  const plates = plateSpans.map(([low, high]) => {
+    const mesh = new THREE.Mesh(plate(outer ? outline : bored, low, high),
+      chainMaterial);
+    mesh.position.x = -nominalPitch / 2;
+    if (!outer) {
+      mesh.userData.bores = [
+        { x: 0, y: 0, radius: boreRadius },
+        { x: nominalPitch, y: 0, radius: boreRadius },
+      ];
+    }
+    mesh.userData.role = outer
+      ? 'chain-outer-side-plate'
+      : 'chain-inner-bored-plate';
+    return mesh;
+  });
+  const body = new THREE.Group();
   body.position.x = nominalPitch / 2;
   body.userData.role = 'chain-side-plate-between-adjacent-pins';
-  const startBoss = cylinderAlongZ(width * 0.47, depth * 1.10,
-    chainMaterial, 26);
-  const endBoss = cylinderAlongZ(width * 0.47, depth * 1.10,
-    chainMaterial, 26);
-  endBoss.position.x = nominalPitch;
-  const startPin = cylinderAlongZ(width * 0.16, depth * 1.18,
-    darkMaterial, 22);
-  const endPin = cylinderAlongZ(width * 0.16, depth * 1.18,
-    darkMaterial, 22);
-  endPin.position.x = nominalPitch;
-  for (const part of [body, startBoss, endBoss, startPin, endPin]) {
-    part.position.z = 0.58;
-  }
-  startBoss.userData.role = 'chain-link-start-eye';
-  endBoss.userData.role = 'chain-link-end-eye';
-  startPin.userData.role = 'chain-link-start-pin';
-  endPin.userData.role = 'chain-link-end-pin';
+  body.add(...plates);
+  const pins = outer ? [0, nominalPitch].map((x) => {
+    const pin = cylinderAlongZ(chainPinRadius,
+      chainOuterHigh - chainOuterLow, darkMaterial, 22);
+    pin.position.set(x - nominalPitch / 2, 0,
+      (chainOuterHigh + chainOuterLow) / 2);
+    pin.userData.role = x === 0 ? 'chain-link-start-pin' : 'chain-link-end-pin';
+    body.add(pin);
+    return pin;
+  }) : [null, null];
   const startAnchor = new THREE.Object3D();
-  startAnchor.position.z = 0.58;
+  startAnchor.position.z = chainLineZ;
   startAnchor.userData.role = 'analytic-chain-link-start';
   const endAnchor = new THREE.Object3D();
-  endAnchor.position.set(nominalPitch, 0, 0.58);
+  endAnchor.position.set(nominalPitch, 0, chainLineZ);
   endAnchor.userData.role = 'analytic-chain-link-end';
-  link.add(
-    body,
-    startBoss,
-    endBoss,
-    startPin,
-    endPin,
-    startAnchor,
-    endAnchor,
-  );
+  link.add(body, startAnchor, endAnchor);
   return {
     body,
     endAnchor,
-    endBoss,
-    endPin,
+    endBoss: plates[0],
+    endPin: pins[1],
     link,
+    plates,
     startAnchor,
-    startBoss,
-    startPin,
+    startBoss: plates[0],
+    startPin: pins[0],
   };
 }
 
@@ -593,6 +611,12 @@ function singleActingBeamRackParallelMotion(movement) {
     beamHalfSwing,
     beamPivotF,
     beamPlaneZ,
+    chainInnerHalfDepth: 0.045,
+    chainLineZ: 0.58,
+    chainOuterHigh: 0.675,
+    chainOuterLow: 0.485,
+    chainPinRadius: 0.16 * 0.94 * sourceScale,
+    pivotShaftRadius: 0.30 * sourceScale,
     chainAttachment,
     chainAttachmentRadialResidual,
     chainGuideRadius,
@@ -812,58 +836,40 @@ function singleActingBeamRackParallelMotion(movement) {
   const frameMaximumX = 11.235839 * sourceScale;
   const frameLength = frameMaximumX - frameMinimumX;
   const frameCenterX = (frameMinimumX + frameMaximumX) / 2;
-  const frameRails = [-2, 2].map((sourceY, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(frameLength, 0.09, 0.48),
-      frameMaterial,
-    );
-    rail.position.set(frameCenterX, sourceY * sourceScale, -0.48);
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-engine-guide-rail-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
+  // Brown draws one timber bed behind the rack, sector and chain rod, a
+  // half-round seat under F, and no guide rails.
+  const bedTop = -1.15 * sourceScale;
+  const bedBottom = -4.85 * sourceScale;
+  const frameRails = [];
   const lowerBed = new THREE.Mesh(
-    new THREE.BoxGeometry(frameLength, 3 * sourceScale, 0.64),
+    new THREE.BoxGeometry(frameLength, bedTop - bedBottom, 0.50),
     frameMaterial,
   );
-  lowerBed.position.set(frameCenterX, -2.5 * sourceScale, -0.62);
+  lowerBed.position.set(frameCenterX, (bedTop + bedBottom) / 2, -0.37);
   lowerBed.userData.fixed = true;
-  lowerBed.userData.role = 'fixed-foundation-bed-below-rack-and-rods';
+  lowerBed.userData.role = 'fixed-timber-bed-behind-rack-and-chain';
   fixedFrame.add(lowerBed);
 
   const pivotPedestal = new THREE.Group();
   pivotPedestal.position.set(0, 0, 0);
   pivotPedestal.userData.fixed = true;
   pivotPedestal.userData.role = 'fixed-pedestal-and-bearing-F';
-  const pivotShaft = cylinderAlongZ(0.30 * sourceScale, 1.25,
-    darkMaterial, 38);
-  pivotShaft.position.z = -0.12;
+  const pivotShaftLow = -0.47;
+  const pivotShaftHigh = beamPlaneZ + 0.19;
+  const pivotShaft = cylinderAlongZ(geometry.pivotShaftRadius,
+    pivotShaftHigh - pivotShaftLow, darkMaterial, 38);
+  pivotShaft.position.z = (pivotShaftLow + pivotShaftHigh) / 2;
   pivotShaft.userData.fixed = true;
   pivotShaft.userData.role = 'fixed-shaft-through-beam-pivot-F';
-  const pivotBearing = cylinderAlongZ(0.82 * sourceScale, 0.34,
-    frameMaterial, 42);
-  pivotBearing.position.z = -0.36;
+  const seatRadius = 1.6 * sourceScale;
+  const pivotBearing = new THREE.Mesh(plate(clip.intersection(
+    poly(circle([0, bedTop], seatRadius, 96)),
+    poly([[-seatRadius, bedTop], [seatRadius, bedTop],
+      [seatRadius, bedTop + seatRadius], [-seatRadius, bedTop + seatRadius]]),
+  ), -0.45, -0.17), frameMaterial);
   pivotBearing.userData.fixed = true;
-  pivotBearing.userData.role = 'fixed-bearing-housing-F';
-  const pedestalFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(4.0 * sourceScale, 0.55 * sourceScale, 0.72),
-    frameMaterial,
-  );
-  pedestalFoot.position.set(0, -2.25 * sourceScale, -0.52);
-  pedestalFoot.userData.fixed = true;
-  pedestalFoot.userData.role = 'fixed-foot-under-bearing-F';
-  const pedestalPost = beamBetween(
-    new THREE.Vector2(0, -2.05 * sourceScale),
-    new THREE.Vector2(0, -0.45 * sourceScale),
-    0.34,
-    0.55,
-    frameMaterial,
-    -0.50,
-  );
-  pedestalPost.userData.fixed = true;
-  pedestalPost.userData.role = 'fixed-post-under-bearing-F';
-  pivotPedestal.add(pivotShaft, pivotBearing, pedestalFoot, pedestalPost);
+  pivotBearing.userData.role = 'fixed-half-round-seat-and-bearing-F';
+  pivotPedestal.add(pivotShaft, pivotBearing);
   fixedFrame.add(pivotPedestal);
 
   const rollerStand = new THREE.Group();
@@ -898,13 +904,7 @@ function singleActingBeamRackParallelMotion(movement) {
     darkMaterial, 32);
   rollerHub.position.z = 0.295;
   rollerHub.userData.role = 'hub-of-free-backing-roller-A';
-  const rollerIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.45 * rollerRadius, 0.05, 0.035),
-    whiteMaterial,
-  );
-  rollerIndex.position.set(0.28 * rollerRadius, 0, 0.50);
-  rollerIndex.userData.role = 'visible-radial-index-on-roller-A';
-  rollerA.add(rollerDisk, rollerIndex);
+  rollerA.add(rollerDisk);
   root.add(rollerA);
 
   const beamParts = makeBeamAndSectors({
@@ -928,26 +928,27 @@ function singleActingBeamRackParallelMotion(movement) {
   chainRod.userData.axis = new THREE.Vector3(0, 1, 0);
   chainRod.userData.role = 'vertical-rod-suspended-from-articulated-chain-D';
   const chainRodBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30 * sourceScale, 20 * sourceScale, 0.15),
+    new THREE.BoxGeometry(0.30 * sourceScale, 12 * sourceScale,
+      2 * geometry.chainInnerHalfDepth),
     chainMaterial,
   );
-  chainRodBody.position.set(0, -10 * sourceScale, 0.58);
+  chainRodBody.position.set(0, -6 * sourceScale, 0.58);
   chainRodBody.userData.role = 'straight-output-rod-below-chain-D';
-  const chainRodTopBoss = cylinderAlongZ(0.47 * sourceScale, 0.17,
-    chainMaterial, 30);
+  const chainRodTopBoss = new THREE.Mesh(plate(clip.difference(
+    poly(circle([0, 0], 0.47 * sourceScale, 48)),
+    poly(circle([0, 0], geometry.chainPinRadius + 0.008, 48)),
+  ), -geometry.chainInnerHalfDepth, geometry.chainInnerHalfDepth), chainMaterial);
+  chainRodTopBoss.userData.bores = [
+    { x: 0, y: 0, radius: geometry.chainPinRadius + 0.008 },
+  ];
   chainRodTopBoss.position.z = 0.58;
   chainRodTopBoss.userData.role = 'top-eye-of-chain-suspended-rod';
-  const chainRodTopPin = cylinderAlongZ(0.15 * sourceScale, 0.20,
-    darkMaterial, 24);
-  chainRodTopPin.position.z = 0.58;
-  chainRodTopPin.userData.role = 'pin-joining-chain-to-suspended-rod';
   const chainRodTopAnchor = new THREE.Object3D();
   chainRodTopAnchor.position.z = 0.58;
   chainRodTopAnchor.userData.role = 'analytic-top-of-chain-suspended-rod';
   chainRod.add(
     chainRodBody,
     chainRodTopBoss,
-    chainRodTopPin,
     chainRodTopAnchor,
   );
   root.add(chainRod);
@@ -956,26 +957,15 @@ function singleActingBeamRackParallelMotion(movement) {
     const parts = makeFlexibleChainLink({
       chainMaterial,
       darkMaterial,
-      depth: 0.13,
+      geometry,
       nominalPitch: chainLinkPitch,
+      outer: index % 2 === 0,
       width: 0.94 * sourceScale,
     });
     parts.link.userData.index = index;
     root.add(parts.link);
     return parts;
   });
-  const chainTerminalConnector = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      constantChainPathLength - chainLinkCount * chainLinkPitch,
-      0.08,
-      0.12,
-    ),
-    chainMaterial,
-  );
-  chainTerminalConnector.position.z = 0.58;
-  chainTerminalConnector.userData.role =
-    'short-terminal-connector-from-last-chain-link-to-beam-D';
-  root.add(chainTerminalConnector);
 
   const pitchContactAnchor = new THREE.Object3D();
   pitchContactAnchor.position.set(-sectorPitchRadius, 0, 0.25);
@@ -1029,18 +1019,6 @@ function singleActingBeamRackParallelMotion(movement) {
     },
   };
 
-  const placeSpan = (mesh, start, end) => {
-    const delta = end.clone().sub(start);
-    mesh.position.set(
-      (start.x + end.x) / 2,
-      (start.y + end.y) / 2,
-      0.58,
-    );
-    mesh.rotation.z = Math.atan2(delta.y, delta.x);
-    mesh.scale.x = delta.length()
-      / (constantChainPathLength - chainLinkCount * chainLinkPitch);
-  };
-
   const update = (time) => {
     const state = stateAtTime(time);
     beamParts.beam.rotation.z = state.beamAngle;
@@ -1075,8 +1053,6 @@ function singleActingBeamRackParallelMotion(movement) {
       parts.link.rotation.z = Math.atan2(delta.y, delta.x);
       parts.body.scale.x = chordLength / chainLinkPitch;
       parts.body.position.x = chordLength / 2;
-      parts.endBoss.position.x = chordLength;
-      parts.endPin.position.x = chordLength;
       parts.endAnchor.position.x = chordLength;
       parts.link.userData.chordLength = chordLength;
       parts.link.userData.startCurve = chainPointAtDistance(
@@ -1088,12 +1064,6 @@ function singleActingBeamRackParallelMotion(movement) {
         (index + 1) * chainLinkPitch,
       ).curve;
     });
-    const lastChainPoint = chainPointAtDistance(
-      state,
-      chainLinkCount * chainLinkPitch,
-    ).point;
-    placeSpan(chainTerminalConnector,
-      lastChainPoint, state.chainAttachmentPoint);
 
     contacts.chainAtBeamD.point.set(
       state.chainAttachmentPoint.x,
@@ -1169,19 +1139,14 @@ function singleActingBeamRackParallelMotion(movement) {
     beamBody: beamParts.body,
     beamChainAttachmentAnchor: beamParts.chainAttachmentAnchor,
     beamChainAttachmentBoss: beamParts.chainAttachmentBoss,
-    beamPivotBore: beamParts.pivotBore,
     beamPivotBoss: beamParts.pivotBoss,
-    beamRotationIndex: beamParts.rotationIndex,
     chainLinks,
     chainRod,
     chainRodBody,
     chainRodTopAnchor,
     chainRodTopBoss,
-    chainRodTopPin,
     chainShoe: beamParts.chainShoe,
-    chainTerminalConnector,
     fixedFrame,
-    frameRails,
     lowerBed,
     pitchContactAnchor,
     pivotFAnchor,
@@ -1197,7 +1162,6 @@ function singleActingBeamRackParallelMotion(movement) {
     rollerContactAnchor,
     rollerDisk,
     rollerHub,
-    rollerIndex,
     rollerShaft,
     rollerStand,
     sectorSpokes: beamParts.sectorSpokes,
@@ -1326,12 +1290,17 @@ function singleActingBeamRackParallelMotion(movement) {
     root.updateMatrixWorld(true);
     sweptBounds.union(new THREE.Box3().setFromObject(root));
   }
-  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
-  root.userData.cameraDistanceScale = 1.02;
+  // Brown's plate is a straight elevation cropped from roller A to just
+  // past F, from the top of rack B to the lower ends of both rods.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-37.5 * sourceScale, -21.5 * sourceScale, -0.65),
+    new THREE.Vector3(9.0 * sourceScale, 18.5 * sourceScale, 0.70),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };
@@ -1705,181 +1674,121 @@ function stationaryBeamEngineParallelMotion(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
 
+  // Brown shows only the tapered beam with its large fulcrum boss and
+  // sectioned shaft O, the pins, the drop links, the lower bars and a plain
+  // piston rod. Planes run back to front so pin E never reaches the radius
+  // bar or stub F that it passes over.
+  const radiusPlaneZ = -0.12;
+  const crossbarPlaneZ = 0.04;
+  const pistonPlaneZ = 0.18;
+  const dropPlaneZ = 0.34;
+  const beamPlaneZ = 0.56;
+  const barHalfDepth = 0.06;
+  const beamHalfDepth = 0.12;
+  const s = sourceScale;
+  const pinClearance = 0.012;
+  const pinRadius = { A: 0.13, B: 0.12, E: 0.12, Q: 0.12 };
+  const fixedPinRadius = 0.11;
+
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role = 'fixed-beam-fulcrum-O-radius-pivot-F-and-guide';
-  const frameRails = [-4.125, -2.875].map((sourceY, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(6.2 * sourceScale, 0.10, 0.48),
-      frameMaterial,
-    );
-    rail.position.set(-15.1 * sourceScale, sourceY * sourceScale, -0.50);
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-left-crosshead-guide-rail-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
-  const outputGuideBack = new THREE.Mesh(
-    new THREE.BoxGeometry(1.65 * sourceScale, 7.4 * sourceScale, 0.55),
-    frameMaterial,
-  );
-  outputGuideBack.position.set(
-    strokeLineX,
-    -6.9 * sourceScale,
-    -0.62,
-  );
-  outputGuideBack.userData.fixed = true;
-  outputGuideBack.userData.role =
-    'fixed-rear-guide-for-near-vertical-piston-rod';
-
-  const pivotOBearing = cylinderAlongZ(1.50 * sourceScale, 0.42,
-    frameMaterial, 46);
-  pivotOBearing.position.z = -0.34;
-  pivotOBearing.userData.fixed = true;
-  pivotOBearing.userData.role = 'fixed-large-fulcrum-bearing-O';
-  const pivotOShaft = cylinderAlongZ(0.38 * sourceScale, 1.18,
+  fixedFrame.userData.role = 'fixed-beam-fulcrum-shaft-O-and-radius-pin-F';
+  const pivotOShaftLow = beamPlaneZ - beamHalfDepth - 0.12;
+  const pivotOShaftHigh = beamPlaneZ + beamHalfDepth + 0.02;
+  const pivotOShaft = cylinderAlongZ(0.38 * s, pivotOShaftHigh - pivotOShaftLow,
     darkMaterial, 34);
-  pivotOShaft.position.z = -0.04;
+  pivotOShaft.position.z = (pivotOShaftLow + pivotOShaftHigh) / 2;
   pivotOShaft.userData.fixed = true;
-  pivotOShaft.userData.role = 'fixed-shaft-through-beam-fulcrum-O';
-  const pivotOPost = new THREE.Mesh(
-    new THREE.BoxGeometry(1.10 * sourceScale, 5.0 * sourceScale, 0.65),
-    frameMaterial,
-  );
-  pivotOPost.position.set(0, -3.9 * sourceScale, -0.56);
-  pivotOPost.userData.fixed = true;
-  pivotOPost.userData.role = 'fixed-pedestal-under-fulcrum-O';
-
-  const pivotFBearing = cylinderAlongZ(0.625 * sourceScale, 0.38,
-    frameMaterial, 40);
-  pivotFBearing.position.set(
-    fixedRadiusPivotF.x,
-    fixedRadiusPivotF.y,
-    -0.32,
-  );
-  pivotFBearing.userData.fixed = true;
-  pivotFBearing.userData.role = 'fixed-radius-bar-bearing-F';
-  const pivotFShaft = cylinderAlongZ(0.25 * sourceScale, 1.50,
-    darkMaterial, 32);
-  pivotFShaft.position.set(
-    fixedRadiusPivotF.x,
-    fixedRadiusPivotF.y,
-    0.02,
-  );
+  pivotOShaft.userData.role = 'fixed-sectioned-shaft-through-beam-fulcrum-O';
+  const pivotFShaftLow = radiusPlaneZ - barHalfDepth - 0.16;
+  const pivotFShaftHigh = radiusPlaneZ + barHalfDepth + 0.015;
+  const pivotFShaft = cylinderAlongZ(fixedPinRadius,
+    pivotFShaftHigh - pivotFShaftLow, darkMaterial, 32);
+  pivotFShaft.position.set(fixedRadiusPivotF.x, fixedRadiusPivotF.y,
+    (pivotFShaftLow + pivotFShaftHigh) / 2);
   pivotFShaft.userData.fixed = true;
-  pivotFShaft.userData.role = 'fixed-shaft-through-radius-pivot-F';
-  fixedFrame.add(
-    outputGuideBack,
-    pivotOBearing,
-    pivotOShaft,
-    pivotOPost,
-    pivotFBearing,
-    pivotFShaft,
-  );
+  pivotFShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
+  fixedFrame.add(pivotOShaft, pivotFShaft);
   root.add(fixedFrame);
 
   const beam = new THREE.Group();
   beam.userData.axis = Z_AXIS.clone();
   beam.userData.role = 'twelve-six-unit-ternary-stationary-engine-beam';
-  const beamBodyPoints = [
-    new THREE.Vector2(-12.041667, -0.498261),
-    new THREE.Vector2(-0.125, -1.494783),
-    new THREE.Vector2(3.1, -1.10),
-    new THREE.Vector2(3.1, 1.10),
-    new THREE.Vector2(0.125, 1.494783),
-    new THREE.Vector2(-12.041667, 0.498261),
-  ].map((point) => point.multiplyScalar(sourceScale));
-  const beamBody = new THREE.Mesh(
-    centeredExtrusion(polygonShape(beamBodyPoints), 0.26, 0.008),
-    beamMaterial,
+  const beamBores = [
+    { x: -beamLeftStationRadius, y: 0, radius: pinRadius.A + pinClearance },
+    { x: -beamMiddleStationRadius, y: 0, radius: pinRadius.B + pinClearance },
+    { x: 0, y: 0, radius: 0.38 * s + pinClearance },
+  ];
+  const beamOutline = clip.union(
+    poly([
+      [-12.041667, -0.62], [-0.125, -1.40], [3.1, -1.10],
+      [3.1, 1.10], [0.125, 1.30], [-12.041667, 0.62],
+    ].map(([x, y]) => [x * s, y * s])),
+    poly(circle([-beamLeftStationRadius, 0], 0.78 * s, 64)),
+    poly(circle([0, 0], 1.90 * s, 96)),
   );
-  beamBody.position.z = 0.10;
+  const beamBody = new THREE.Mesh(plate(clip.difference(beamOutline,
+    ...beamBores.map((bore) => poly(circle([bore.x, bore.y], bore.radius, 64)))),
+  beamPlaneZ - beamHalfDepth, beamPlaneZ + beamHalfDepth), beamMaterial);
+  beamBody.userData.bores = beamBores;
   beamBody.userData.role = 'rigid-tapered-stationary-engine-beam-body';
-  const makeBeamBoss = (sourceX, sourceRadius, role) => {
-    const boss = cylinderAlongZ(sourceRadius * sourceScale, 0.34,
-      beamMaterial, 38);
-    boss.position.set(sourceX * sourceScale, 0, 0.10);
-    boss.userData.role = role;
-    return boss;
-  };
-  const leftBossOuter = makeBeamBoss(-12, 0.50,
-    'beam-left-station-A-large-boss');
-  const leftBossInner = makeBeamBoss(-12, 0.25,
-    'beam-left-station-A-pin-face');
-  const middleBoss = makeBeamBoss(-6, 0.25,
-    'beam-middle-station-B-boss');
-  const pivotBoss = makeBeamBoss(0, 1.50,
-    'large-beam-fulcrum-boss-O');
-  const pivotBore = cylinderAlongZ(0.38 * sourceScale, 0.38,
-    darkMaterial, 34);
-  pivotBore.position.z = 0.105;
-  pivotBore.userData.role = 'beam-fulcrum-bore-O';
-  const rotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.8 * sourceScale, 0.055, 0.035),
-    whiteMaterial,
-  );
-  rotationIndex.position.set(-0.70 * sourceScale, 0, 0.31);
-  rotationIndex.userData.role = 'visible-index-on-rocking-engine-beam';
+  const leftBossOuter = beamBody;
+  const leftBossInner = beamBody;
+  const middleBoss = beamBody;
+  const pivotBoss = beamBody;
+  const pivotBore = beamBody;
   const pointAAnchor = new THREE.Object3D();
-  pointAAnchor.position.set(-beamLeftStationRadius, 0, 0.10);
+  pointAAnchor.position.set(-beamLeftStationRadius, 0, beamPlaneZ);
   pointAAnchor.userData.role = 'analytic-beam-left-station-A';
   const pointBAnchor = new THREE.Object3D();
-  pointBAnchor.position.set(-beamMiddleStationRadius, 0, 0.10);
+  pointBAnchor.position.set(-beamMiddleStationRadius, 0, beamPlaneZ);
   pointBAnchor.userData.role = 'analytic-beam-middle-station-B';
   const pivotOAnchor = new THREE.Object3D();
-  pivotOAnchor.position.z = 0.10;
+  pivotOAnchor.position.z = beamPlaneZ;
   pivotOAnchor.userData.role = 'analytic-fixed-beam-pivot-O';
-  beam.add(
-    beamBody,
-    leftBossOuter,
-    leftBossInner,
-    middleBoss,
-    pivotBoss,
-    pivotBore,
-    rotationIndex,
-    pointAAnchor,
-    pointBAnchor,
-    pivotOAnchor,
-  );
+  beam.add(beamBody, pointAAnchor, pointBAnchor, pivotOAnchor);
   root.add(beam);
 
+  const barWidth = 0.13;
   const leftDropParts = makePinnedRod({
     bodyMaterial: linkMaterial,
-    depth: 0.17,
-    eyeMaterial: darkMaterial,
+    boreRadius: pinRadius.E + pinClearance,
+    depth: 2 * barHalfDepth,
     length: dropLinkLength,
-    planeZ: 0.37,
+    planeZ: dropPlaneZ,
     role: 'left-three-and-one-half-unit-link-A-E',
-    boreRadius: 0.166,
-    width: 0.18,
+    startBoreRadius: pinRadius.A + pinClearance,
+    width: barWidth,
   });
   const middleDropParts = makePinnedRod({
     bodyMaterial: linkMaterial,
-    depth: 0.17,
-    eyeMaterial: darkMaterial,
+    boreRadius: pinRadius.Q + pinClearance,
+    depth: 2 * barHalfDepth,
     length: dropLinkLength,
-    planeZ: 0.40,
+    planeZ: dropPlaneZ,
     role: 'middle-three-and-one-half-unit-link-B-Q',
-    width: 0.18,
+    startBoreRadius: pinRadius.B + pinClearance,
+    width: barWidth,
   });
   const fixedRadiusParts = makePinnedRod({
     bodyMaterial: radiusMaterial,
-    depth: 0.17,
-    eyeMaterial: darkMaterial,
+    boreRadius: pinRadius.Q + pinClearance,
+    depth: 2 * barHalfDepth,
     length: fixedRadiusLength,
-    planeZ: 0.62,
+    planeZ: radiusPlaneZ,
     role: 'six-unit-fixed-radius-bar-F-Q',
-    startBoreRadius: 0.25 * sourceScale + 0.005,
-    width: 0.17,
+    startBoreRadius: fixedPinRadius + pinClearance,
+    width: barWidth,
   });
   const crossbarParts = makePinnedRod({
     bodyMaterial: beamMaterial,
-    depth: 0.17,
-    eyeMaterial: darkMaterial,
+    boreRadius: pinRadius.Q + pinClearance,
+    depth: 2 * barHalfDepth,
     length: crossbarLength,
-    planeZ: 0.84,
+    planeZ: crossbarPlaneZ,
     role: 'six-unit-crossbar-E-Q',
-    width: 0.17,
+    startBoreRadius: pinRadius.E + pinClearance,
+    width: barWidth,
   });
   root.add(
     leftDropParts.rod,
@@ -1891,40 +1800,43 @@ function stationaryBeamEngineParallelMotion(movement) {
   const piston = new THREE.Group();
   piston.userData.rotationDegreesOfFreedom = 0;
   piston.userData.role = 'near-vertical-piston-rod-carried-by-point-E';
-  const crosshead = new THREE.Mesh(
-    new THREE.BoxGeometry(1.125 * sourceScale, 1.625 * sourceScale, 0.30),
-    outputMaterial,
-  );
-  crosshead.position.z = -0.08;
-  crosshead.userData.role = 'rectangular-piston-crosshead-at-E';
-  const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.375 * sourceScale, 7.2 * sourceScale, 0.17),
-    outputMaterial,
-  );
-  pistonRod.position.set(0, -4.4 * sourceScale, -0.09);
+  const pistonHalfWidth = 0.1875 * s;
+  const pistonEyeRadius = pinRadius.E + pinClearance + 0.035;
+  const pistonBore = pinRadius.E + pinClearance;
+  const pistonRod = new THREE.Mesh(plate(clip.difference(
+    clip.union(
+      poly([[-pistonHalfWidth, -7.2 * s], [pistonHalfWidth, -7.2 * s],
+        [pistonHalfWidth, 0], [-pistonHalfWidth, 0]]),
+      poly(circle([0, 0], pistonEyeRadius, 64)),
+    ),
+    poly(circle([0, 0], pistonBore, 64)),
+  ), pistonPlaneZ - barHalfDepth, pistonPlaneZ + barHalfDepth), outputMaterial);
+  pistonRod.userData.bores = [{ x: 0, y: 0, radius: pistonBore }];
   pistonRod.userData.role = 'straight-piston-rod-below-E';
-  const pistonIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 1.55 * sourceScale, 0.035),
-    whiteMaterial,
-  );
-  pistonIndex.position.set(0, -4.0 * sourceScale, 0.08);
-  pistonIndex.userData.role = 'visible-index-on-translating-piston-rod';
   const pointEAnchor = new THREE.Object3D();
-  pointEAnchor.position.z = 0.02;
+  pointEAnchor.position.z = pistonPlaneZ;
   pointEAnchor.userData.role = 'analytic-piston-point-E';
-  piston.add(crosshead, pistonRod, pistonIndex, pointEAnchor);
+  piston.add(pistonRod, pointEAnchor);
   root.add(piston);
 
-  const jointPins = {
-    A: cylinderAlongZ(0.16, 0.48, whiteMaterial, 30),
-    B: cylinderAlongZ(0.13, 0.48, whiteMaterial, 30),
-    E: cylinderAlongZ(0.14, 0.90, whiteMaterial, 30),
-    Q: cylinderAlongZ(0.14, 0.72, whiteMaterial, 30),
-  };
-  Object.entries(jointPins).forEach(([name, pin]) => {
+  const pinOn = (parent, name, x, low, high) => {
+    const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);
+    pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
-    root.add(pin);
-  });
+    parent.add(pin);
+    return pin;
+  };
+  const jointPins = {
+    A: pinOn(beam, 'A', -beamLeftStationRadius, dropPlaneZ - barHalfDepth - 0.02,
+      beamPlaneZ + beamHalfDepth + 0.02),
+    B: pinOn(beam, 'B', -beamMiddleStationRadius, dropPlaneZ - barHalfDepth - 0.02,
+      beamPlaneZ + beamHalfDepth + 0.02),
+    E: pinOn(leftDropParts.rod, 'E', dropLinkLength,
+      crossbarPlaneZ - barHalfDepth - 0.02, dropPlaneZ + barHalfDepth + 0.02),
+    Q: pinOn(middleDropParts.rod, 'Q', dropLinkLength,
+      radiusPlaneZ - barHalfDepth - 0.02, dropPlaneZ + barHalfDepth + 0.02),
+  };
+  const pinZ = (name) => jointPins[name].position.z;
 
   const setRodPose = (rod, start, rates) => {
     rod.position.set(start.x, start.y, 0);
@@ -1934,7 +1846,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     beamPivotO: {
       fixedMember: fixedFrame,
       movingMember: beam,
-      point: new THREE.Vector3(0, 0, 0.10),
+      point: new THREE.Vector3(0, 0, beamPlaneZ),
       type: 'fixed-revolute-pair-O',
     },
     crossbarAtE: {
@@ -1964,7 +1876,7 @@ function stationaryBeamEngineParallelMotion(movement) {
       point: new THREE.Vector3(
         fixedRadiusPivotF.x,
         fixedRadiusPivotF.y,
-        0.62,
+        radiusPlaneZ,
       ),
       type: 'fixed-revolute-pair-F',
     },
@@ -1985,16 +1897,13 @@ function stationaryBeamEngineParallelMotion(movement) {
       state.pointEVelocity.y,
       0,
     );
-    jointPins.A.position.set(state.pointA.x, state.pointA.y, 0.31);
-    jointPins.B.position.set(state.pointB.x, state.pointB.y, 0.32);
-    jointPins.E.position.set(state.pointE.x, state.pointE.y, 0.44);
-    jointPins.Q.position.set(state.pointQ.x, state.pointQ.y, 0.60);
-    contacts.leftDropAtA.point.set(state.pointA.x, state.pointA.y, 0.28);
-    contacts.middleDropAtB.point.set(state.pointB.x, state.pointB.y, 0.29);
-    contacts.crossbarAtE.point.set(state.pointE.x, state.pointE.y, 0.43);
-    contacts.fourMembersAtQ.point.set(state.pointQ.x, state.pointQ.y, 0.59);
+    contacts.leftDropAtA.point.set(state.pointA.x, state.pointA.y, pinZ('A'));
+    contacts.middleDropAtB.point.set(state.pointB.x, state.pointB.y, pinZ('B'));
+    contacts.crossbarAtE.point.set(state.pointE.x, state.pointE.y, pinZ('E'));
+    contacts.fourMembersAtQ.point.set(state.pointQ.x, state.pointQ.y, pinZ('Q'));
     root.userData.kinematics = state;
   };
+
 
   const officialViewMinimum = new THREE.Vector2(-14.951954, -10.75);
   const officialViewWidth = 18;
@@ -2021,16 +1930,13 @@ function stationaryBeamEngineParallelMotion(movement) {
     beamMiddleStationAnchor: pointBAnchor,
     beamPivotAnchor: pivotOAnchor,
     beamPivotBoss: pivotBoss,
-    beamRotationIndex: rotationIndex,
     crossbar: crossbarParts.rod,
     crossbarEndAnchor: crossbarParts.endAnchor,
     crossbarStartAnchor: crossbarParts.startAnchor,
-    crosshead,
     fixedFrame,
     fixedRadiusBar: fixedRadiusParts.rod,
     fixedRadiusEndAnchor: fixedRadiusParts.endAnchor,
     fixedRadiusStartAnchor: fixedRadiusParts.startAnchor,
-    frameRails,
     jointPins,
     leftDropLink: leftDropParts.rod,
     leftDropLinkEndAnchor: leftDropParts.endAnchor,
@@ -2038,13 +1944,10 @@ function stationaryBeamEngineParallelMotion(movement) {
     middleDropLink: middleDropParts.rod,
     middleDropLinkEndAnchor: middleDropParts.endAnchor,
     middleDropLinkStartAnchor: middleDropParts.startAnchor,
-    outputGuideBack,
     piston,
     pistonPointAnchor: pointEAnchor,
     pistonRod,
-    pivotOBearing,
     pivotOShaft,
-    pivotFBearing,
     pivotFShaft,
   };
   root.userData.cameraDistanceScale = 1.06;
@@ -2160,12 +2063,17 @@ function stationaryBeamEngineParallelMotion(movement) {
     root.updateMatrixWorld(true);
     sweptBounds.union(new THREE.Box3().setFromObject(root));
   }
-  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.025);
-  root.userData.cameraDistanceScale = 1.02;
+  // Frame Brown's crop: the beam cut just past the fulcrum boss O on the
+  // right, and the piston rod running off the foot of the plate.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-19.8 * sourceScale, -11.7 * sourceScale, -0.40),
+    new THREE.Vector3(2.4 * sourceScale, 10.4 * sourceScale, 0.72),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };

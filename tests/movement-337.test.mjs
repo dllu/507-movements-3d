@@ -78,7 +78,9 @@ test('movement 337 is the midpoint vibrating-rod parallel motion', () => {
   assert.equal(blocks.output.parent, model.root);
   assert.equal(blocks.beamBody.parent, blocks.beam);
   assert.equal(blocks.pistonRod.parent, blocks.output);
-  assert.equal(blocks.pistonHead.parent, blocks.output);
+  assert.equal(blocks.jointPins.B.parent, blocks.beam);
+  assert.equal(blocks.jointPins.C.parent, blocks.output);
+  assert.equal(blocks.jointPins.D.parent, blocks.radiusRod);
   assert.equal(blocks.vibratingRodMidpointAnchor.parent,
     blocks.vibratingRod);
   assert.equal(contacts.beamPivotO.movingMember, blocks.beam);
@@ -394,13 +396,13 @@ test('movement 337 renderer binds B, midpoint C, D, and both fixed pivots', () =
     new THREE.Vector3(state.pointD.x, state.pointD.y, 0.70),
     3e-15, `radius rod at D at ${time}`);
     vector3Near(blocks.outputAnchor.getWorldPosition(new THREE.Vector3()),
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.57),
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.90),
     0, `piston point C at ${time}`);
     vector3Near(contacts.beamAtB.point,
       new THREE.Vector3(state.pointB.x, state.pointB.y, 0.30), 0,
     `live B contact at ${time}`);
     vector3Near(contacts.pistonAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.52), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.63), 0,
     `live C contact at ${time}`);
     vector3Near(contacts.radiusAtD.point,
       new THREE.Vector3(state.pointD.x, state.pointD.y, 0.55), 0,
@@ -410,11 +412,14 @@ test('movement 337 renderer binds B, midpoint C, D, and both fixed pivots', () =
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.7);
-  assert.ok(size.y > 4.7);
-  assert.ok(size.z > 1.75,
-    'beam, short rod, radius rod, piston, bearings, and guides occupy depth');
-  assert.equal(blocks.guideRails.length, 2);
+  assert.ok(size.x > 8.4, 'radius pin F through the far beam boss');
+  assert.ok(size.y > 3.9, 'beam top through the lower piston-rod end');
+  assert.ok(size.z > 1.2,
+    'beam, short rod, radius rod and front piston rod occupy depth');
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /bed-rail|upright|guide-rail|piston-head|foot/.test(role)), false,
+    'Brown draws no engine bed, standards, piston guides or piston head');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

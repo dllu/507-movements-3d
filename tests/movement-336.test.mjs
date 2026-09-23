@@ -86,7 +86,14 @@ test('movement 336 is the side-lever rockshaft parallel motion', () => {
   assert.equal(blocks.rockshaft.parent, blocks.fixedFrame);
   assert.equal(blocks.crossheadHousing.parent, blocks.crosshead);
   assert.equal(blocks.pistonRod.parent, blocks.crosshead);
-  assert.equal(blocks.pistonHead.parent, blocks.crosshead);
+  assert.equal(blocks.pistonHead, undefined,
+    'the piston is hidden inside the casing, as in Brown\'s elevation');
+  for (const name of ['M', 'R']) {
+    assert.equal(blocks.jointPins[name].parent, blocks.sideLever);
+  }
+  assert.equal(blocks.jointPins.Q.parent, blocks.parallelRod);
+  assert.equal(blocks.jointPins.N.parent, blocks.sideRod);
+  assert.equal(blocks.jointPins.S.parent, blocks.crosshead);
   assert.equal(contacts.sideLeverPivotO.movingMember, blocks.sideLever);
   assert.equal(contacts.rockshaftPivotF.fixedMember, blocks.rockshaft);
   assert.equal(contacts.rockshaftPivotF.movingMember, blocks.radiusArm);
@@ -455,19 +462,23 @@ test('movement 336 renderer binds all five pins and real 3D layers', () => {
     1.8e-15, `crossbar at N at ${time}`);
     vector3Near(blocks.radiusArmEndAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.94),
+    new THREE.Vector3(state.pointQ.x, state.pointQ.y, -0.05),
     3.5e-15, `rockshaft arm at Q at ${time}`);
     vector3Near(blocks.crossheadAnchor.getWorldPosition(new THREE.Vector3()),
-      new THREE.Vector3(state.pointS.x, state.pointS.y, 0.59),
+      new THREE.Vector3(state.pointS.x, state.pointS.y,
+        blocks.jointPins.S.position.z),
     0, `crosshead at S at ${time}`);
     vector3Near(contacts.radiusAndCrossbarAtQ.point,
-      new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.67), 0,
+      new THREE.Vector3(state.pointQ.x, state.pointQ.y,
+        blocks.jointPins.Q.position.z), 0,
     `live Q contact at ${time}`);
     vector3Near(contacts.crossbarAtN.point,
-      new THREE.Vector3(state.pointN.x, state.pointN.y, 0.56), 0,
+      new THREE.Vector3(state.pointN.x, state.pointN.y,
+        blocks.jointPins.N.position.z), 0,
     `live N contact at ${time}`);
     vector3Near(contacts.crossheadAtS.point,
-      new THREE.Vector3(state.pointS.x, state.pointS.y, 0.57), 0,
+      new THREE.Vector3(state.pointS.x, state.pointS.y,
+        blocks.jointPins.S.position.z), 0,
     `live S contact at ${time}`);
     assert.ok(blocks.fixedFrame.matrixWorld.equals(fixedFrameMatrix));
   }
@@ -475,13 +486,18 @@ test('movement 336 renderer binds all five pins and real 3D layers', () => {
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.1);
-  assert.ok(size.y > 6.4);
-  assert.ok(size.z > 2.3,
-    'frame, side lever, upright rods, crossbar, output, and shaft use real depth');
-  assert.equal(blocks.framePosts.length, 2);
-  assert.equal(blocks.guideRails.length, 2);
-  assert.equal(blocks.rockshaftBearings.length, 2);
+  assert.ok(size.y > 5.3, 'the plate crops the frame above F; the old undrawn deck is gone');
+  assert.ok(size.z > 1.5,
+    'casing, standard, side lever, upright rods, crossbar and pins use real depth');
+  assert.equal(blocks.rockshaftBearings.length, 1);
   assert.equal(blocks.rockshaftSupports.length, 2);
+  const undrawn = [];
+  model.root.traverse((object) => {
+    if (/guide-rail|deck|frame-post|piston-head/.test(object.userData.role ?? '')) {
+      undrawn.push(object.userData.role);
+    }
+  });
+  assert.deepEqual(undrawn, [], 'no guides, deck or posts absent from the plate');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
-import { plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -51,6 +52,197 @@ export function rectangularRodPassageGeometry(width, height, depth, halfX, halfZ
     rectangle(-halfX, offsetZ - halfZ, halfX, offsetZ + halfZ)), -height / 2, height / 2);
   geometry.rotateX(Math.PI / 2);
   return geometry;
+}
+
+// Brown draws the engine rails as bars broken off at both ends.
+function brokenRailOutline(x0, x1, yTop, yBottom, jag) {
+  const h = yTop - yBottom;
+  return poly([
+    [x0, yTop], [x1, yTop],
+    [x1 - jag, yTop - h * 0.35], [x1 + jag * 0.6, yTop - h * 0.7], [x1, yBottom],
+    [x0, yBottom],
+    [x0 + jag * 0.6, yBottom + h * 0.3], [x0 - jag, yBottom + h * 0.65],
+  ]);
+}
+
+// Shared solid construction for Movements 344 and 345. Source lengths are in
+// official animation units; `towardP` is the sign of the cylinder's local Y
+// that points from trunnion T toward crank pin P. The barrel is a closed,
+// round, bored casting, so the piston is enclosed exactly as Brown shows it.
+function buildSourceOscillatingEngine(o) {
+  const s = o.sourceScale;
+  const u = (value) => value * s;
+  const towardP = o.towardP;
+  const axisZ = 0.42;
+  const crankLow = 0.06;
+  const crankHigh = 0.26;
+  const rodRadius = u(o.pistonRodHalfWidth);
+  const rodBore = rodRadius + 0.006;
+  const pinRadius = u(0.17);
+  const shaftRadius = u(0.25);
+
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.14, roughness: 0.69 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.25, roughness: 0.47 });
+  const crankMaterial = matte(PALETTE.driver, { metalness: 0.10, roughness: 0.57 });
+  const cylinderMaterial = matte(PALETTE.driven, { metalness: 0.10, roughness: 0.57 });
+  const pistonMaterial = matte(0x4d8963, { metalness: 0.09, roughness: 0.59 });
+
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.fixed = true;
+  fixedFrame.userData.role = o.frameRole;
+  const rails = o.rails.map(({ bores, high, low, outline, role }) => {
+    let shape = outline;
+    for (const bore of bores) {
+      shape = clip.difference(shape, poly(circle(bore.center, bore.radius, 96)));
+    }
+    const rail = new THREE.Mesh(plate(shape, low, high), frameMaterial);
+    rail.userData.fixed = true;
+    rail.userData.role = role;
+    rail.userData.bores = bores.map(({ center, radius }) => ({ x: center[0], y: center[1], radius }));
+    fixedFrame.add(rail);
+    return rail;
+  });
+
+  const inputCrank = new THREE.Group();
+  inputCrank.position.set(o.crankCenter.x, o.crankCenter.y, 0);
+  inputCrank.userData.axis = Z_AXIS.clone();
+  inputCrank.userData.role = o.crankRole;
+  const r = o.crankRadius;
+  const bossO = u(0.80);
+  const bossP = u(0.55);
+  const crankOutline = clip.union(
+    poly(circle([0, 0], bossO, 96)),
+    poly(circle([r, 0], bossP, 96)),
+    poly([[0, bossO * 0.82], [r, bossP * 0.82], [r, -bossP * 0.82], [0, -bossO * 0.82]]),
+  );
+  const crankArm = new THREE.Mesh(plate(crankOutline, crankLow, crankHigh), crankMaterial);
+  crankArm.userData.role = `${o.rolePrefix}link-shaped-crank-O-P`;
+  const shaftBack = o.crankRailLow - 0.04;
+  const shaftFront = crankHigh + 0.02;
+  const crankShaft = cylinderAlongZ(shaftRadius, shaftFront - shaftBack, darkMaterial, 34);
+  crankShaft.position.z = (shaftFront + shaftBack) / 2;
+  crankShaft.userData.role = `${o.rolePrefix}live-crankshaft-O`;
+  const pinFront = axisZ + 0.10 + 0.06;
+  const crankPin = cylinderAlongZ(pinRadius, pinFront - crankLow, darkMaterial, 30);
+  crankPin.position.set(r, 0, (pinFront + crankLow) / 2);
+  crankPin.userData.role = `${o.rolePrefix}crank-pin-P-carried-by-crank`;
+  const crankPinAnchor = new THREE.Object3D();
+  crankPinAnchor.position.set(r, 0, axisZ);
+  crankPinAnchor.userData.role = `analytic-${o.rolePrefix}direct-crank-pin-P`;
+  inputCrank.add(crankArm, crankShaft, crankPin, crankPinAnchor);
+
+  const cylinderAssembly = new THREE.Group();
+  cylinderAssembly.position.set(o.cylinderPivot.x, o.cylinderPivot.y, 0);
+  cylinderAssembly.userData.axis = Z_AXIS.clone();
+  cylinderAssembly.userData.role = o.cylinderRole;
+  const localY = (sourceU) => towardP * u(sourceU);
+  const axialSpan = (from, to) => [localY(from), localY(to)].sort((a, b) => a - b);
+  const [boreLow, boreHigh] = axialSpan(o.boreFrom, o.boreTo);
+  const barrel = new THREE.Mesh(boredLatheGeometry([
+    { axial: boreLow, radial: u(o.barrelOuterRadius) },
+    { axial: boreHigh, radial: u(o.barrelOuterRadius) },
+  ], u(o.barrelInnerRadius), 72), cylinderMaterial);
+  barrel.position.z = axisZ;
+  barrel.userData.role = `${o.rolePrefix}closed-round-cylinder-barrel`;
+  const cylinderEndPlates = o.covers.map(({ from, passage, role, to }) => {
+    const [low, high] = axialSpan(from, to);
+    const cover = new THREE.Mesh(passage
+      ? boredLatheGeometry([{ axial: low, radial: u(o.coverRadius) },
+        { axial: high, radial: u(o.coverRadius) }], rodBore, 72)
+      : new THREE.CylinderGeometry(u(o.coverRadius), u(o.coverRadius), high - low, 72),
+    cylinderMaterial);
+    if (!passage) cover.position.y = (low + high) / 2;
+    cover.position.z = axisZ;
+    cover.userData.role = role;
+    return cover;
+  });
+  const glandCollars = o.collars.map(({ height, radius, u: at }, index) => {
+    const [low, high] = axialSpan(at - height / 2, at + height / 2);
+    const collar = new THREE.Mesh(boredLatheGeometry([
+      { axial: low, radial: u(radius) },
+      { axial: high, radial: u(radius) },
+    ], rodBore, 60), cylinderMaterial);
+    collar.position.z = axisZ;
+    collar.userData.role = `${o.rolePrefix}cylinder-gland-collar-${index + 1}`;
+    return collar;
+  });
+  const cylinderTrunnion = new THREE.Group();
+  const rearStubFront = axisZ - u(o.barrelOuterRadius) + 0.03;
+  const rearStubBack = o.trunnionRailLow - 0.04;
+  const rearStub = cylinderAlongZ(u(0.30), rearStubFront - rearStubBack, cylinderMaterial, 38);
+  rearStub.position.z = (rearStubFront + rearStubBack) / 2;
+  rearStub.userData.role = `${o.rolePrefix}rear-trunnion-stub-in-rail-bearing`;
+  const frontBossBack = axisZ + u(o.barrelOuterRadius) - 0.03;
+  const frontBossFront = axisZ + u(o.frontBossSurfaceRadius) + 0.08;
+  const frontBoss = cylinderAlongZ(u(0.36), frontBossFront - frontBossBack, cylinderMaterial, 38);
+  frontBoss.position.z = (frontBossFront + frontBossBack) / 2;
+  frontBoss.userData.role = `${o.rolePrefix}front-trunnion-boss`;
+  cylinderTrunnion.add(rearStub, frontBoss);
+  cylinderTrunnion.userData.role = o.trunnionRole;
+  const cylinderPivotAnchor = new THREE.Object3D();
+  cylinderPivotAnchor.position.z = axisZ;
+  cylinderPivotAnchor.userData.role = `analytic-${o.rolePrefix}cylinder-pivot-T`;
+  const cylinderAxisAnchor = new THREE.Object3D();
+  cylinderAxisAnchor.position.set(0, o.axisRayLocalY, axisZ);
+  cylinderAxisAnchor.userData.role = `analytic-${o.rolePrefix}cylinder-axis-ray`;
+  cylinderAssembly.add(barrel, ...cylinderEndPlates, ...glandCollars,
+    cylinderTrunnion, cylinderPivotAnchor, cylinderAxisAnchor);
+
+  const pistonAssembly = new THREE.Group();
+  pistonAssembly.userData.axis = Z_AXIS.clone();
+  pistonAssembly.userData.role = o.pistonRole;
+  const visibleRodLength = o.pistonRodLength / s
+    - o.pistonHeadThickness / 2 - o.pistonRodCrankClearance;
+  const pistonRod = new THREE.Mesh(
+    new THREE.CylinderGeometry(rodRadius, rodRadius, u(visibleRodLength), 28),
+    pistonMaterial,
+  );
+  pistonRod.position.set(0, -towardP * u(
+    o.pistonRodCrankClearance + o.pistonRodLength / s - o.pistonHeadThickness / 2,
+  ) / 2, axisZ);
+  pistonRod.userData.role = `${o.rolePrefix}round-piston-rod-from-P`;
+  const pistonHead = new THREE.Mesh(
+    new THREE.CylinderGeometry(u(o.barrelInnerRadius) - 0.012,
+      u(o.barrelInnerRadius) - 0.012, u(o.pistonHeadThickness), 60),
+    pistonMaterial,
+  );
+  pistonHead.position.set(0, -towardP * o.pistonRodLength, axisZ);
+  pistonHead.userData.role = `${o.rolePrefix}enclosed-piston-head`;
+  const pistonCrankEye = boredJournal(u(0.36), pinRadius + 0.006, 0.20, pistonMaterial);
+  pistonCrankEye.position.z = axisZ;
+  pistonCrankEye.userData.role = `${o.rolePrefix}piston-rod-eye-at-P`;
+  const pistonCrankAnchor = new THREE.Object3D();
+  pistonCrankAnchor.position.z = axisZ;
+  pistonCrankAnchor.userData.role = `analytic-${o.rolePrefix}piston-rod-crank-end-P`;
+  const pistonHeadAnchor = new THREE.Object3D();
+  pistonHeadAnchor.position.set(0, -towardP * o.pistonRodLength, axisZ);
+  pistonHeadAnchor.userData.role = `analytic-${o.rolePrefix}piston-head-center-H`;
+  pistonAssembly.add(pistonRod, pistonHead, pistonCrankEye,
+    pistonCrankAnchor, pistonHeadAnchor);
+
+  return {
+    axisZ,
+    barrel,
+    crankArm,
+    crankPin,
+    crankPinAnchor,
+    crankShaft,
+    cylinderAssembly,
+    cylinderAxisAnchor,
+    cylinderEndPlates,
+    cylinderPivotAnchor,
+    cylinderTrunnion,
+    fixedFrame,
+    glandCollars,
+    inputCrank,
+    pistonAssembly,
+    pistonCrankAnchor,
+    pistonCrankEye,
+    pistonHead,
+    pistonHeadAnchor,
+    pistonRod,
+    rails,
+  };
 }
 
 function oscillatingCylinderEngine(movement) {
@@ -362,310 +554,97 @@ function oscillatingCylinderEngine(movement) {
     sourceScale,
   };
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.14,
-    roughness: 0.69,
+  // Brown's plate: the crank bearing rail and the trunnion rail are both
+  // broken-off bars behind the moving parts; the middle rail and its bearing
+  // boss are dashed where the closed cylinder hides them.
+  const shaftBore = 0.25 * sourceScale + 0.012;
+  const upperRailOutline = clip.union(
+    brokenRailOutline(-2.65 * sourceScale, 2.5 * sourceScale,
+      -0.28 * sourceScale, -0.82 * sourceScale, 0.18 * sourceScale),
+    poly(circle([crankCenter.x, crankCenter.y], 0.62 * sourceScale, 96)),
+  );
+  const middleRailOutline = clip.union(
+    brokenRailOutline(-2.87 * sourceScale, 3.17 * sourceScale,
+      cylinderPivot.y + 0.15 * sourceScale, cylinderPivot.y - 0.54 * sourceScale,
+      0.18 * sourceScale),
+    poly(circle([cylinderPivot.x, cylinderPivot.y], 0.78 * sourceScale, 96)),
+  );
+  const crankRailLow = -0.62;
+  const trunnionRailLow = -1.20;
+  const parts = buildSourceOscillatingEngine({
+    axisRayLocalY: sourceCylinderDirectionRay.y * sourceScale,
+    barrelInnerRadius: sourceCylinderWallInnerX,
+    barrelOuterRadius: sourceCylinderWallOuterX,
+    boreFrom: -sourceCylinderBoreEnd,
+    boreTo: sourceCylinderBoreEnd,
+    collars: [
+      { height: 0.125, radius: 0.50, u: 3.1875 },
+      { height: 0.125, radius: 0.25, u: 3.3125 },
+      { height: 0.125, radius: 0.50, u: 3.4375 },
+    ],
+    coverRadius: sourceCylinderOuterHalfWidth,
+    covers: [
+      { from: -sourceCylinderShellEnd, passage: false, role: 'oscillating-cylinder-bottom-cover', to: -sourceCylinderBoreEnd },
+      { from: sourceCylinderBoreEnd, passage: true, role: 'oscillating-cylinder-top-cover', to: sourceCylinderShellEnd },
+    ],
+    crankCenter,
+    crankRadius,
+    crankRailLow,
+    crankRole: 'two-point-two-five-unit-direct-acting-crank-O-P',
+    cylinderPivot,
+    cylinderRole: 'mid-trunnion-closed-oscillating-cylinder',
+    frameRole: 'fixed-upper-crank-bearing-and-mid-cylinder-trunnion-frame',
+    frontBossSurfaceRadius: sourceCylinderWallOuterX,
+    pistonHeadThickness: sourcePistonHeadThickness,
+    pistonRodCrankClearance: sourcePistonRodCrankClearance,
+    pistonRodHalfWidth: sourcePistonRodHalfWidth,
+    pistonRodLength,
+    pistonRole: 'fixed-length-piston-rod-and-head-rooted-at-crank-pin-P',
+    rails: [
+      {
+        bores: [{ center: [crankCenter.x, crankCenter.y], radius: shaftBore }],
+        high: -0.22,
+        low: crankRailLow,
+        outline: upperRailOutline,
+        role: 'fixed-upper-engine-frame-rail-and-crank-bearing',
+      },
+      {
+        bores: [{ center: [cylinderPivot.x, cylinderPivot.y], radius: 0.30 * sourceScale + 0.012 }],
+        high: -0.76,
+        low: trunnionRailLow,
+        outline: middleRailOutline,
+        role: 'fixed-mid-height-trunnion-rail-behind-cylinder',
+      },
+    ],
+    rolePrefix: '',
+    sourceScale,
+    towardP: 1,
+    trunnionRailLow,
+    trunnionRole: 'moving-cylinder-midpoint-trunnion',
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.25,
-    roughness: 0.47,
-  });
-  const crankMaterial = matte(PALETTE.driver, {
-    metalness: 0.10,
-    roughness: 0.57,
-  });
-  const cylinderMaterial = matte(PALETTE.driven, {
-    metalness: 0.10,
-    roughness: 0.57,
-  });
-  const pistonMaterial = matte(0x4d8963, {
-    metalness: 0.09,
-    roughness: 0.59,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.46 });
-  const boreMaterial = matte(0x74a4b5, {
-    opacity: 0.14,
-    roughness: 0.70,
-    transparent: true,
-  });
-
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role =
-    'fixed-upper-crank-bearing-and-mid-cylinder-trunnion-frame';
-  const upperRail = new THREE.Mesh(
-    new THREE.BoxGeometry(8 * sourceScale, 0.50 * sourceScale, 0.64),
-    frameMaterial,
-  );
-  upperRail.position.set(0, -0.625 * sourceScale, -0.61);
-  upperRail.userData.fixed = true;
-  upperRail.userData.role = 'fixed-upper-engine-frame-rail';
-  const lowerRail = new THREE.Mesh(
-    new THREE.BoxGeometry(8 * sourceScale, 0.75 * sourceScale, 0.68),
-    frameMaterial,
-  );
-  lowerRail.position.set(0, -7.125 * sourceScale, -0.66);
-  lowerRail.userData.fixed = true;
-  lowerRail.userData.role = 'fixed-mid-height-trunnion-rail';
-  const upperBearingPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(2.45 * sourceScale, 0.46 * sourceScale, 0.76),
-    frameMaterial,
-  );
-  upperBearingPedestal.position.set(0, -0.16 * sourceScale, -0.50);
-  upperBearingPedestal.userData.fixed = true;
-  upperBearingPedestal.userData.role = 'fixed-crank-pillow-block';
-  const crankBearing = cylinderAlongZ(0.62 * sourceScale, 0.72,
-    frameMaterial, 44);
-  crankBearing.position.set(crankCenter.x, crankCenter.y, -0.39);
-  crankBearing.userData.fixed = true;
-  crankBearing.userData.role = 'fixed-upper-crankshaft-bearing';
-  const crankShaft = cylinderAlongZ(0.25 * sourceScale, 1.10,
-    darkMaterial, 34);
-  crankShaft.position.set(crankCenter.x, crankCenter.y, -0.25);
-  crankShaft.userData.fixed = true;
-  crankShaft.userData.role = 'fixed-crankshaft-axis-O';
-  const trunnionBearingBack = boredJournal(0.75 * sourceScale, 0.30 * sourceScale + 0.006, 0.44,
-    frameMaterial);
-  trunnionBearingBack.position.set(cylinderPivot.x, cylinderPivot.y, -0.36);
-  trunnionBearingBack.userData.fixed = true;
-  trunnionBearingBack.userData.role = 'fixed-rear-cylinder-trunnion-bearing';
-  const trunnionBearingFront = new THREE.Mesh(
-    new THREE.TorusGeometry(0.41 * sourceScale, 0.10 * sourceScale,
-      10, 42),
-    darkMaterial,
-  );
-  trunnionBearingFront.position.set(cylinderPivot.x, cylinderPivot.y, 0.89);
-  trunnionBearingFront.userData.fixed = true;
-  trunnionBearingFront.userData.role = 'fixed-front-cylinder-trunnion-bearing';
-  const trunnionCenterCap = cylinderAlongZ(0.16 * sourceScale, 0.18,
-    whiteMaterial, 30);
-  trunnionCenterCap.position.set(cylinderPivot.x, cylinderPivot.y, 1.04);
-  trunnionCenterCap.userData.fixed = true;
-  trunnionCenterCap.userData.role = 'fixed-trunnion-axis-index';
-  fixedFrame.add(
-    upperRail,
-    lowerRail,
-    upperBearingPedestal,
-    crankBearing,
-    crankShaft,
-    trunnionBearingBack,
-    trunnionBearingFront,
-    trunnionCenterCap,
-  );
-  root.add(fixedFrame);
-
-  const inputCrank = new THREE.Group();
-  inputCrank.position.set(crankCenter.x, crankCenter.y, 0);
-  inputCrank.userData.axis = Z_AXIS.clone();
-  inputCrank.userData.role =
-    'two-point-two-five-unit-direct-acting-crank-O-P';
-  const crankDisk = cylinderAlongZ(0.75 * sourceScale, 0.24,
-    crankMaterial, 48);
-  crankDisk.position.z = 0.12;
-  crankDisk.userData.role = 'moving-upper-crank-disk';
-  const crankHub = cylinderAlongZ(0.375 * sourceScale, 0.30,
-    darkMaterial, 38);
-  crankHub.position.z = 0.13;
-  crankHub.userData.role = 'moving-crankshaft-hub-O';
-  const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.34 * sourceScale, 0.24),
-    crankMaterial,
-  );
-  crankArm.position.set(crankRadius / 2, 0, 0.12);
-  crankArm.userData.role = 'solid-direct-crank-arm-O-P';
-  const crankPinBoss = cylinderAlongZ(0.375 * sourceScale, 0.28,
-    crankMaterial, 38);
-  crankPinBoss.position.set(crankRadius, 0, 0.14);
-  crankPinBoss.userData.role = 'moving-crank-pin-boss-P';
-  const crankPinAnchor = new THREE.Object3D();
-  crankPinAnchor.position.set(crankRadius, 0, 0.38);
-  crankPinAnchor.userData.role = 'analytic-direct-crank-pin-P';
-  const crankIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius * 0.53,
-      0.08 * sourceScale, 0.035),
-    whiteMaterial,
-  );
-  crankIndex.position.set(crankRadius * 0.28, 0, 0.26);
-  crankIndex.userData.role = 'crank-face-angular-index';
-  inputCrank.add(
-    crankDisk,
-    crankHub,
+  const {
+    barrel,
     crankArm,
-    crankPinBoss,
+    crankPin,
     crankPinAnchor,
-    crankIndex,
-  );
-  root.add(inputCrank);
-
-  const cylinderAssembly = new THREE.Group();
-  cylinderAssembly.position.set(cylinderPivot.x, cylinderPivot.y, 0);
-  cylinderAssembly.userData.axis = Z_AXIS.clone();
-  cylinderAssembly.userData.role =
-    'mid-trunnion-open-oscillating-cylinder';
-  const cylinderWallThickness = (
-    sourceCylinderWallOuterX - sourceCylinderWallInnerX
-  ) * sourceScale;
-  const cylinderWalls = [-1, 1].map((side, index) => {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        cylinderWallThickness,
-        sourceCylinderBoreEnd * 2 * sourceScale,
-        1.00,
-      ),
-      cylinderMaterial,
-    );
-    wall.position.set(
-      side * (sourceCylinderWallOuterX + sourceCylinderWallInnerX)
-        * sourceScale / 2,
-      0,
-      0.08,
-    );
-    wall.userData.role = `oscillating-cylinder-side-wall-${index + 1}`;
-    cylinderAssembly.add(wall);
-    return wall;
-  });
-  const cylinderEndPlates = [-1, 1].map((side, index) => {
-    const plate = new THREE.Mesh(
-      (side === 1 ? rectangularRodPassageGeometry : (w, h, d) => new THREE.BoxGeometry(w, h, d))(
-        sourceCylinderOuterHalfWidth * 2 * sourceScale,
-        (sourceCylinderShellEnd - sourceCylinderBoreEnd) * sourceScale,
-        0.94, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.106, 0.34,
-      ),
-      cylinderMaterial,
-    );
-    plate.position.set(0,
-      side * (sourceCylinderShellEnd + sourceCylinderBoreEnd)
-        * sourceScale / 2,
-      0.08);
-    plate.userData.role =
-      `oscillating-cylinder-${index === 0 ? 'bottom' : 'top'}-cover`;
-    cylinderAssembly.add(plate);
-    return plate;
-  });
-  const boreBack = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceCylinderWallInnerX * 2 * sourceScale,
-      sourceCylinderBoreEnd * 2 * sourceScale,
-      0.05,
-    ),
-    boreMaterial,
-  );
-  boreBack.position.z = -0.15;
-  boreBack.userData.role = 'transparent-open-cylinder-bore';
-  cylinderAssembly.add(boreBack);
-  const glandCollars = [
-    { width: 1.0, height: 0.125, y: 3.1875 },
-    { width: 0.50, height: 0.125, y: 3.3125 },
-    { width: 1.0, height: 0.125, y: 3.4375 },
-  ].map((specification, index) => {
-    const collar = new THREE.Mesh(
-      rectangularRodPassageGeometry(
-        specification.width * sourceScale,
-        specification.height * sourceScale,
-        0.86, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.106, 0.30,
-      ),
-      cylinderMaterial,
-    );
-    collar.position.set(0, specification.y * sourceScale, 0.12);
-    collar.userData.role = `oscillating-cylinder-gland-collar-${index + 1}`;
-    cylinderAssembly.add(collar);
-    return collar;
-  });
-  const cylinderTrunnion = new THREE.Group();
-  for (const [lowZ, highZ] of [[-0.70, 0.10], [0.56, 1.00]]) {
-    const stub = cylinderAlongZ(0.30 * sourceScale, highZ - lowZ, cylinderMaterial, 38);
-    stub.position.z = (lowZ + highZ) / 2;
-    cylinderTrunnion.add(stub);
-  }
-  cylinderTrunnion.userData.role = 'moving-cylinder-midpoint-trunnion';
-  const trunnionBridge = new THREE.Mesh(new THREE.BoxGeometry(
-    sourceCylinderWallOuterX * 2 * sourceScale, 0.30 * sourceScale, 0.18), cylinderMaterial);
-  trunnionBridge.position.z = 0.65;
-  trunnionBridge.userData.role = 'front-trunnion-bridge-clear-of-piston-stroke';
-  cylinderAssembly.add(trunnionBridge);
-  const cylinderPivotAnchor = new THREE.Object3D();
-  cylinderPivotAnchor.position.z = 0.08;
-  cylinderPivotAnchor.userData.role = 'analytic-cylinder-pivot-T';
-  const cylinderTopAxisAnchor = new THREE.Object3D();
-  cylinderTopAxisAnchor.position.set(0,
-    sourceCylinderDirectionRay.y * sourceScale, 0.08);
-  cylinderTopAxisAnchor.userData.role = 'analytic-cylinder-axis-ray';
-  cylinderAssembly.add(
-    cylinderTrunnion,
+    crankShaft,
+    cylinderAssembly,
+    cylinderEndPlates,
     cylinderPivotAnchor,
-    cylinderTopAxisAnchor,
-  );
-  root.add(cylinderAssembly);
-
-  const pistonAssembly = new THREE.Group();
-  pistonAssembly.userData.axis = Z_AXIS.clone();
-  pistonAssembly.userData.role =
-    'fixed-length-piston-rod-and-head-rooted-at-crank-pin-P';
-  const sourceVisibleRodLength = sourcePistonRodLength
-    - sourcePistonHeadThickness / 2
-    - sourcePistonRodCrankClearance;
-  const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonRodHalfWidth * 2 * sourceScale,
-      sourceVisibleRodLength * sourceScale,
-      0.20,
-    ),
-    pistonMaterial,
-  );
-  pistonRod.position.set(
-    0,
-    -(
-      sourcePistonRodCrankClearance
-        + sourcePistonRodLength
-        - sourcePistonHeadThickness / 2
-    ) * sourceScale / 2,
-    0.42,
-  );
-  pistonRod.userData.role = 'constant-length-piston-rod-from-P';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonHeadHalfWidth * 2 * sourceScale,
-      sourcePistonHeadThickness * sourceScale,
-      0.36,
-    ),
-    pistonMaterial,
-  );
-  pistonHead.position.set(0, -pistonRodLength, 0.34);
-  pistonHead.userData.role = 'sliding-piston-head-inside-oscillating-cylinder';
-  const pistonHeadIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonHeadHalfWidth * 1.72 * sourceScale,
-      0.045 * sourceScale,
-      0.025,
-    ),
-    whiteMaterial,
-  );
-  pistonHeadIndex.position.set(0, -pistonRodLength, 0.535);
-  pistonHeadIndex.userData.role = 'visible-piston-face-index';
-  const pistonCrankEye = boredJournal(0.36 * sourceScale,
-    0.17 * sourceScale + 0.006, 0.20, pistonMaterial);
-  pistonCrankEye.position.z = 0.42;
-  pistonCrankEye.userData.role = 'piston-rod-eye-at-crank-pin-P';
-  const pistonCrankAnchor = new THREE.Object3D();
-  pistonCrankAnchor.position.z = 0.42;
-  pistonCrankAnchor.userData.role = 'analytic-piston-rod-crank-end-P';
-  const pistonHeadAnchor = new THREE.Object3D();
-  pistonHeadAnchor.position.set(0, -pistonRodLength, 0.34);
-  pistonHeadAnchor.userData.role = 'analytic-piston-head-center-H';
-  pistonAssembly.add(
-    pistonRod,
-    pistonHead,
-    pistonHeadIndex,
-    pistonCrankEye,
+    cylinderTrunnion,
+    fixedFrame,
+    glandCollars,
+    inputCrank,
+    pistonAssembly,
     pistonCrankAnchor,
+    pistonCrankEye,
+    pistonHead,
     pistonHeadAnchor,
-  );
-  root.add(pistonAssembly);
-
-  const crankPin = cylinderAlongZ(0.17 * sourceScale, 0.82,
-    whiteMaterial, 30);
-  crankPin.userData.role = 'common-crank-to-piston-rod-pin-P';
-  root.add(crankPin);
+    pistonRod,
+  } = parts;
+  const [upperRail, lowerRail] = parts.rails;
+  const cylinderTopAxisAnchor = parts.cylinderAxisAnchor;
+  root.add(fixedFrame, inputCrank, cylinderAssembly, pistonAssembly);
 
   const contacts = {
     crankBearingO: {
@@ -719,8 +698,7 @@ function oscillatingCylinderEngine(movement) {
     pistonAssembly.userData.relativeTravel = state.piston.travel;
     pistonAssembly.userData.relativeVelocity = state.piston.velocity;
     pistonAssembly.userData.relativeAcceleration = state.piston.acceleration;
-    crankPin.position.set(state.pointP.x, state.pointP.y, 0.59);
-    contacts.crankPinP.point.set(state.pointP.x, state.pointP.y, 0.59);
+    contacts.crankPinP.point.set(state.pointP.x, state.pointP.y, parts.axisZ);
     contacts.pistonInCylinder.axis.set(
       state.cylinder.axis.x,
       state.cylinder.axis.y,
@@ -729,7 +707,7 @@ function oscillatingCylinderEngine(movement) {
     contacts.pistonInCylinder.point.set(
       state.piston.head.x,
       state.piston.head.y,
-      0.34,
+      parts.axisZ,
     );
     contacts.pistonInCylinder.signedTravel = state.piston.travel;
     contacts.pistonRodAtGland.axis.copy(contacts.pistonInCylinder.axis);
@@ -760,22 +738,18 @@ function oscillatingCylinderEngine(movement) {
   root.userData.archetype =
     'mid-trunnion-oscillating-cylinder-direct-crank-engine';
   root.userData.blocks = {
-    boreBack,
+    barrel,
     crankArm,
-    crankBearing,
-    crankDisk,
-    crankHub,
-    crankIndex,
+    crankBearing: upperRail,
     crankPin,
     crankPinAnchor,
-    crankPinBoss,
     crankShaft,
     cylinderAssembly,
     cylinderEndPlates,
     cylinderPivotAnchor,
     cylinderTopAxisAnchor,
     cylinderTrunnion,
-    cylinderWalls,
+    cylinderWalls: [barrel],
     fixedFrame,
     glandCollars,
     inputCrank,
@@ -785,19 +759,10 @@ function oscillatingCylinderEngine(movement) {
     pistonCrankEye,
     pistonHead,
     pistonHeadAnchor,
-    pistonHeadIndex,
     pistonRod,
-    trunnionBearingBack,
-    trunnionBearingFront,
-    trunnionCenterCap,
-    upperBearingPedestal,
+    trunnionBearingBack: lowerRail,
     upperRail,
   };
-  root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-6.6 * sourceScale, -10.45 * sourceScale, -1.12),
-    new THREE.Vector3(6.6 * sourceScale, 2.8 * sourceScale, 1.08),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -852,7 +817,7 @@ function oscillatingCylinderEngine(movement) {
         'both official add_rot_to transforms share the exact T-P axis, and the fixed 6.75-unit piston rod remains physically compatible with the mid-trunnion cylinder through the full crank cycle',
     },
     referenceScope:
-      'official 2.25-unit crank, mid-length trunnion T, open cylinder shell and gland, fixed-length direct piston rod and head, frame, source view, phase, and 15 rpm timing',
+      'official 2.25-unit crank, mid-length trunnion T, cylinder shell and gland (closed as in Brown\'s plate), fixed-length direct piston rod and head, source phase, and 15 rpm timing; rails, crank outline, and view follow the plate',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -894,9 +859,17 @@ function oscillatingCylinderEngine(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown's crop: just above the crank, just below the lower cover, with
+  // both rails running off the plate's sides.
+  root.userData.sweptBounds = root.userData.cameraFitBounds;
+  root.userData.cameraDistanceScale = 0.96;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-5.4 * sourceScale, -10.2 * sourceScale, -1.2),
+    new THREE.Vector3(5.4 * sourceScale, 0.9 * sourceScale, 1.5),
+  );
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };
@@ -1205,330 +1178,99 @@ function invertedPendulumEngine(movement) {
     sourceScale,
   };
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.14,
-    roughness: 0.69,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.25,
-    roughness: 0.47,
-  });
-  const crankMaterial = matte(PALETTE.driver, {
-    metalness: 0.10,
-    roughness: 0.57,
-  });
-  const cylinderMaterial = matte(PALETTE.driven, {
-    metalness: 0.10,
-    roughness: 0.57,
-  });
-  const pistonMaterial = matte(0x4d8963, {
-    metalness: 0.09,
-    roughness: 0.59,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.46 });
-  const boreMaterial = matte(0x74a4b5, {
-    opacity: 0.14,
-    roughness: 0.70,
-    transparent: true,
-  });
-
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role =
-    'fixed-upper-end-trunnion-rail-and-lower-crank-standard';
-  const upperRail = new THREE.Mesh(
-    new THREE.BoxGeometry(7 * sourceScale, 0.75 * sourceScale, 0.68),
-    frameMaterial,
+  // Brown's plate: a broken-off rail behind the top cover carries trunnion T
+  // (its bearing boss shows above the cover), and the crank bearing O sits on
+  // a plain block whose rounded pedestal is hidden behind the crank boss.
+  const shaftBore = 0.25 * sourceScale + 0.012;
+  const upperRailOutline = clip.union(
+    brokenRailOutline(-2.9 * sourceScale, 3.5 * sourceScale,
+      cylinderPivot.y - 0.12 * sourceScale, cylinderPivot.y - 0.98 * sourceScale,
+      0.18 * sourceScale),
+    poly(circle([cylinderPivot.x, cylinderPivot.y], 0.55 * sourceScale, 96)),
   );
-  upperRail.position.set(0, 9.875 * sourceScale, -0.66);
-  upperRail.userData.fixed = true;
-  upperRail.userData.role = 'fixed-upper-pendulum-engine-trunnion-rail';
-  const lowerFoundation = new THREE.Mesh(
-    new THREE.BoxGeometry(6.8 * sourceScale, 0.42 * sourceScale, 0.72),
-    frameMaterial,
+  const lowerBlockOutline = clip.union(
+    poly([
+      [-2.9 * sourceScale, -0.49 * sourceScale], [3.0 * sourceScale, -0.49 * sourceScale],
+      [3.0 * sourceScale, -2.6 * sourceScale], [-2.9 * sourceScale, -2.6 * sourceScale],
+    ]),
+    poly(circle([crankCenter.x, crankCenter.y - 0.35 * sourceScale], 0.95 * sourceScale, 96)),
   );
-  lowerFoundation.position.set(0, -1.85 * sourceScale, -0.66);
-  lowerFoundation.userData.fixed = true;
-  lowerFoundation.userData.role = 'fixed-lower-crank-foundation';
-  const lowerStandards = [-1, 1].map((side, index) => {
-    const standard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34 * sourceScale, 2.05 * sourceScale, 0.62),
-      frameMaterial,
-    );
-    standard.position.set(side * 2.5 * sourceScale,
-      -0.825 * sourceScale, -0.62);
-    standard.userData.fixed = true;
-    standard.userData.role = `fixed-lower-crank-standard-${index + 1}`;
-    fixedFrame.add(standard);
-    return standard;
+  const crankRailLow = -0.62;
+  const trunnionRailLow = -1.22;
+  const parts = buildSourceOscillatingEngine({
+    axisRayLocalY: sourceCylinderDirectionRay.y * sourceScale,
+    barrelInnerRadius: sourceCylinderWallInnerX,
+    barrelOuterRadius: sourceCylinderWallOuterX,
+    boreFrom: 0,
+    boreTo: sourceCylinderBoreLength,
+    collars: [
+      { height: 0.125, radius: 0.50, u: 5.6875 },
+      { height: 0.125, radius: 0.25, u: 5.8125 },
+      { height: 0.125, radius: 0.50, u: 5.9375 },
+    ],
+    coverRadius: sourceCylinderOuterHalfWidth,
+    covers: [
+      { from: -(sourceCylinderShellEnd - sourceCylinderBoreLength), passage: false, role: 'pendulum-cylinder-pivot-end-cover', to: 0 },
+      { from: sourceCylinderBoreLength, passage: true, role: 'pendulum-cylinder-rod-end-cover', to: sourceCylinderShellEnd },
+    ],
+    crankCenter,
+    crankRadius,
+    crankRailLow,
+    crankRole: 'lower-two-point-two-five-unit-direct-acting-crank-O-P',
+    cylinderPivot,
+    cylinderRole: 'upper-end-trunnion-closed-pendulum-cylinder',
+    frameRole: 'fixed-upper-end-trunnion-rail-and-lower-crank-block',
+    frontBossSurfaceRadius: sourceCylinderOuterHalfWidth,
+    pistonHeadThickness: sourcePistonHeadThickness,
+    pistonRodCrankClearance: sourcePistonRodCrankClearance,
+    pistonRodHalfWidth: sourcePistonRodHalfWidth,
+    pistonRodLength,
+    pistonRole: 'inverted-fixed-length-piston-rod-and-head-rooted-at-lower-crank-pin-P',
+    rails: [
+      {
+        bores: [{ center: [cylinderPivot.x, cylinderPivot.y], radius: 0.30 * sourceScale + 0.012 }],
+        high: -0.80,
+        low: trunnionRailLow,
+        outline: upperRailOutline,
+        role: 'fixed-upper-pendulum-engine-trunnion-rail-behind-cylinder',
+      },
+      {
+        bores: [{ center: [crankCenter.x, crankCenter.y], radius: shaftBore }],
+        high: -0.22,
+        low: crankRailLow,
+        outline: lowerBlockOutline,
+        role: 'fixed-lower-crank-block-and-bearing-O',
+      },
+    ],
+    rolePrefix: 'lower-',
+    sourceScale,
+    towardP: -1,
+    trunnionRailLow,
+    trunnionRole: 'moving-upper-end-cylinder-trunnion',
   });
-  const crankPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(2.15 * sourceScale, 0.50 * sourceScale, 0.76),
-    frameMaterial,
-  );
-  crankPedestal.position.set(0, -0.20 * sourceScale, -0.50);
-  crankPedestal.userData.fixed = true;
-  crankPedestal.userData.role = 'fixed-lower-crank-pillow-block';
-  const crankBearing = cylinderAlongZ(0.62 * sourceScale, 0.72,
-    frameMaterial, 44);
-  crankBearing.position.set(crankCenter.x, crankCenter.y, -0.39);
-  crankBearing.userData.fixed = true;
-  crankBearing.userData.role = 'fixed-lower-crankshaft-bearing-O';
-  const crankShaft = cylinderAlongZ(0.25 * sourceScale, 1.10,
-    darkMaterial, 34);
-  crankShaft.position.set(crankCenter.x, crankCenter.y, -0.25);
-  crankShaft.userData.fixed = true;
-  crankShaft.userData.role = 'fixed-lower-crankshaft-axis-O';
-  const trunnionBearingBack = boredJournal(0.75 * sourceScale, 0.30 * sourceScale + 0.006, 0.44,
-    frameMaterial);
-  trunnionBearingBack.position.set(cylinderPivot.x, cylinderPivot.y, -0.36);
-  trunnionBearingBack.userData.fixed = true;
-  trunnionBearingBack.userData.role = 'fixed-rear-upper-trunnion-bearing';
-  const trunnionBearingFront = new THREE.Mesh(
-    new THREE.TorusGeometry(0.42 * sourceScale, 0.10 * sourceScale,
-      10, 42),
-    darkMaterial,
-  );
-  trunnionBearingFront.position.set(cylinderPivot.x, cylinderPivot.y, 0.89);
-  trunnionBearingFront.userData.fixed = true;
-  trunnionBearingFront.userData.role = 'fixed-front-upper-trunnion-bearing';
-  const trunnionCenterCap = cylinderAlongZ(0.16 * sourceScale, 0.18,
-    whiteMaterial, 30);
-  trunnionCenterCap.position.set(cylinderPivot.x, cylinderPivot.y, 1.04);
-  trunnionCenterCap.userData.fixed = true;
-  trunnionCenterCap.userData.role = 'fixed-upper-trunnion-axis-index';
-  fixedFrame.add(
-    upperRail,
-    lowerFoundation,
-    crankPedestal,
-    crankBearing,
-    crankShaft,
-    trunnionBearingBack,
-    trunnionBearingFront,
-    trunnionCenterCap,
-  );
-  root.add(fixedFrame);
-
-  const inputCrank = new THREE.Group();
-  inputCrank.position.set(crankCenter.x, crankCenter.y, 0);
-  inputCrank.userData.axis = Z_AXIS.clone();
-  inputCrank.userData.role =
-    'lower-two-point-two-five-unit-direct-acting-crank-O-P';
-  const crankDisk = cylinderAlongZ(0.75 * sourceScale, 0.24,
-    crankMaterial, 48);
-  crankDisk.position.z = 0.12;
-  crankDisk.userData.role = 'moving-lower-crank-disk';
-  const crankHub = cylinderAlongZ(0.375 * sourceScale, 0.30,
-    darkMaterial, 38);
-  crankHub.position.z = 0.13;
-  crankHub.userData.role = 'moving-lower-crankshaft-hub-O';
-  const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.34 * sourceScale, 0.24),
-    crankMaterial,
-  );
-  crankArm.position.set(crankRadius / 2, 0, 0.12);
-  crankArm.userData.role = 'solid-lower-direct-crank-arm-O-P';
-  const crankPinBoss = cylinderAlongZ(0.375 * sourceScale, 0.28,
-    crankMaterial, 38);
-  crankPinBoss.position.set(crankRadius, 0, 0.14);
-  crankPinBoss.userData.role = 'moving-lower-crank-pin-boss-P';
-  const crankPinAnchor = new THREE.Object3D();
-  crankPinAnchor.position.set(crankRadius, 0, 0.38);
-  crankPinAnchor.userData.role = 'analytic-lower-direct-crank-pin-P';
-  const crankIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius * 0.53,
-      0.08 * sourceScale, 0.035),
-    whiteMaterial,
-  );
-  crankIndex.position.set(crankRadius * 0.28, 0, 0.26);
-  crankIndex.userData.role = 'lower-crank-face-angular-index';
-  inputCrank.add(
-    crankDisk,
-    crankHub,
+  const {
+    barrel,
     crankArm,
-    crankPinBoss,
+    crankPin,
     crankPinAnchor,
-    crankIndex,
-  );
-  root.add(inputCrank);
-
-  const cylinderAssembly = new THREE.Group();
-  cylinderAssembly.position.set(cylinderPivot.x, cylinderPivot.y, 0);
-  cylinderAssembly.userData.axis = Z_AXIS.clone();
-  cylinderAssembly.userData.role =
-    'upper-end-trunnion-open-pendulum-cylinder';
-  const cylinderWallThickness = (
-    sourceCylinderWallOuterX - sourceCylinderWallInnerX
-  ) * sourceScale;
-  const cylinderWalls = [-1, 1].map((side, index) => {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        cylinderWallThickness,
-        cylinderBoreLength,
-        1.00,
-      ),
-      cylinderMaterial,
-    );
-    wall.position.set(
-      side * (sourceCylinderWallOuterX + sourceCylinderWallInnerX)
-        * sourceScale / 2,
-      -cylinderBoreLength / 2,
-      0.08,
-    );
-    wall.userData.role = `pendulum-cylinder-side-wall-${index + 1}`;
-    cylinderAssembly.add(wall);
-    return wall;
-  });
-  const cylinderTopPlate = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceCylinderOuterHalfWidth * 2 * sourceScale,
-      0.375 * sourceScale,
-      0.50,
-    ),
-    cylinderMaterial,
-  );
-  cylinderTopPlate.position.set(0, 0.1875 * sourceScale, 0.08);
-  cylinderTopPlate.userData.role = 'pendulum-cylinder-pivot-end-cover';
-  const cylinderBottomPlate = new THREE.Mesh(
-    rectangularRodPassageGeometry(
-      sourceCylinderOuterHalfWidth * 2 * sourceScale,
-      (sourceCylinderShellEnd - sourceCylinderBoreLength) * sourceScale,
-      0.94, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.106, 0.34,
-    ),
-    cylinderMaterial,
-  );
-  cylinderBottomPlate.position.set(0,
-    -(sourceCylinderShellEnd + sourceCylinderBoreLength)
-      * sourceScale / 2,
-    0.08);
-  cylinderBottomPlate.userData.role = 'pendulum-cylinder-rod-end-cover';
-  const cylinderEndPlates = [cylinderTopPlate, cylinderBottomPlate];
-  const boreBack = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceCylinderWallInnerX * 2 * sourceScale,
-      cylinderBoreLength,
-      0.05,
-    ),
-    boreMaterial,
-  );
-  boreBack.position.set(0, -cylinderBoreLength / 2, -0.15);
-  boreBack.userData.role = 'transparent-pendulum-cylinder-bore';
-  const glandCollars = [
-    { width: 1.0, height: 0.125, y: -5.6875 },
-    { width: 0.50, height: 0.125, y: -5.8125 },
-    { width: 1.0, height: 0.125, y: -5.9375 },
-  ].map((specification, index) => {
-    const collar = new THREE.Mesh(
-      rectangularRodPassageGeometry(
-        specification.width * sourceScale,
-        specification.height * sourceScale,
-        0.86, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.106, 0.30,
-      ),
-      cylinderMaterial,
-    );
-    collar.position.set(0, specification.y * sourceScale, 0.12);
-    collar.userData.role = `pendulum-cylinder-gland-collar-${index + 1}`;
-    cylinderAssembly.add(collar);
-    return collar;
-  });
-  const cylinderTrunnion = new THREE.Group();
-  for (const [lowZ, highZ] of [[-0.70, 0.10], [0.56, 1.00]]) {
-    const stub = cylinderAlongZ(0.30 * sourceScale, highZ - lowZ, cylinderMaterial, 38);
-    stub.position.z = (lowZ + highZ) / 2;
-    cylinderTrunnion.add(stub);
-  }
-  cylinderTrunnion.userData.role = 'moving-upper-end-cylinder-trunnion';
-  const trunnionBridge = new THREE.Mesh(new THREE.BoxGeometry(
-    sourceCylinderWallOuterX * 2 * sourceScale, 0.30 * sourceScale, 0.18), cylinderMaterial);
-  trunnionBridge.position.z = 0.65;
-  trunnionBridge.userData.role = 'front-trunnion-bridge-clear-of-piston-stroke';
-  cylinderAssembly.add(trunnionBridge);
-  const cylinderPivotAnchor = new THREE.Object3D();
-  cylinderPivotAnchor.position.z = 0.08;
-  cylinderPivotAnchor.userData.role = 'analytic-upper-cylinder-pivot-T';
-  const cylinderBottomAxisAnchor = new THREE.Object3D();
-  cylinderBottomAxisAnchor.position.set(0,
-    sourceCylinderDirectionRay.y * sourceScale, 0.08);
-  cylinderBottomAxisAnchor.userData.role = 'analytic-downward-cylinder-axis-ray';
-  cylinderAssembly.add(
-    cylinderTopPlate,
-    cylinderBottomPlate,
-    boreBack,
-    cylinderTrunnion,
+    crankShaft,
+    cylinderAssembly,
+    cylinderEndPlates,
     cylinderPivotAnchor,
-    cylinderBottomAxisAnchor,
-  );
-  root.add(cylinderAssembly);
-
-  const pistonAssembly = new THREE.Group();
-  pistonAssembly.userData.axis = Z_AXIS.clone();
-  pistonAssembly.userData.role =
-    'inverted-fixed-length-piston-rod-and-head-rooted-at-lower-crank-pin-P';
-  const sourceVisibleRodLength = sourcePistonRodLength
-    - sourcePistonHeadThickness / 2
-    - sourcePistonRodCrankClearance;
-  const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonRodHalfWidth * 2 * sourceScale,
-      sourceVisibleRodLength * sourceScale,
-      0.20,
-    ),
-    pistonMaterial,
-  );
-  pistonRod.position.set(
-    0,
-    (
-      sourcePistonRodCrankClearance
-        + sourcePistonRodLength
-        - sourcePistonHeadThickness / 2
-    ) * sourceScale / 2,
-    0.42,
-  );
-  pistonRod.userData.role = 'constant-length-inverted-piston-rod-from-P';
-  const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonHeadHalfWidth * 2 * sourceScale,
-      sourcePistonHeadThickness * sourceScale,
-      0.36,
-    ),
-    pistonMaterial,
-  );
-  pistonHead.position.set(0, pistonRodLength, 0.34);
-  pistonHead.userData.role = 'sliding-head-inside-pendulum-cylinder';
-  const pistonHeadIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonHeadHalfWidth * 1.72 * sourceScale,
-      0.045 * sourceScale,
-      0.025,
-    ),
-    whiteMaterial,
-  );
-  pistonHeadIndex.position.set(0, pistonRodLength, 0.535);
-  pistonHeadIndex.userData.role = 'visible-inverted-piston-face-index';
-  const pistonCrankEye = boredJournal(0.36 * sourceScale,
-    0.17 * sourceScale + 0.006, 0.20, pistonMaterial);
-  pistonCrankEye.position.z = 0.42;
-  pistonCrankEye.userData.role = 'inverted-piston-rod-eye-at-P';
-  const pistonCrankAnchor = new THREE.Object3D();
-  pistonCrankAnchor.position.z = 0.42;
-  pistonCrankAnchor.userData.role = 'analytic-inverted-piston-crank-end-P';
-  const pistonHeadAnchor = new THREE.Object3D();
-  pistonHeadAnchor.position.set(0, pistonRodLength, 0.34);
-  pistonHeadAnchor.userData.role = 'analytic-inverted-piston-head-center-H';
-  pistonAssembly.add(
-    pistonRod,
-    pistonHead,
-    pistonHeadIndex,
-    pistonCrankEye,
+    cylinderTrunnion,
+    fixedFrame,
+    glandCollars,
+    inputCrank,
+    pistonAssembly,
     pistonCrankAnchor,
+    pistonCrankEye,
+    pistonHead,
     pistonHeadAnchor,
-  );
-  root.add(pistonAssembly);
-
-  const crankPin = cylinderAlongZ(0.17 * sourceScale, 0.82,
-    whiteMaterial, 30);
-  crankPin.userData.role = 'common-lower-crank-to-piston-rod-pin-P';
-  root.add(crankPin);
+    pistonRod,
+  } = parts;
+  const [upperRail, lowerFoundation] = parts.rails;
+  const cylinderBottomAxisAnchor = parts.cylinderAxisAnchor;
+  root.add(fixedFrame, inputCrank, cylinderAssembly, pistonAssembly);
 
   const contacts = {
     crankBearingO: {
@@ -1581,8 +1323,7 @@ function invertedPendulumEngine(movement) {
     pistonAssembly.userData.relativeTravel = state.piston.travel;
     pistonAssembly.userData.relativeVelocity = state.piston.velocity;
     pistonAssembly.userData.relativeAcceleration = state.piston.acceleration;
-    crankPin.position.set(state.pointP.x, state.pointP.y, 0.59);
-    contacts.crankPinP.point.set(state.pointP.x, state.pointP.y, 0.59);
+    contacts.crankPinP.point.set(state.pointP.x, state.pointP.y, parts.axisZ);
     contacts.pistonInCylinder.axis.set(
       state.cylinder.axis.x,
       state.cylinder.axis.y,
@@ -1591,7 +1332,7 @@ function invertedPendulumEngine(movement) {
     contacts.pistonInCylinder.point.set(
       state.piston.head.x,
       state.piston.head.y,
-      0.34,
+      parts.axisZ,
     );
     contacts.pistonInCylinder.signedTravel = state.piston.travel;
     contacts.pistonRodAtGland.axis.copy(contacts.pistonInCylinder.axis);
@@ -1622,45 +1363,31 @@ function invertedPendulumEngine(movement) {
   root.userData.archetype =
     'upper-end-trunnion-inverted-oscillating-pendulum-engine';
   root.userData.blocks = {
-    boreBack,
+    barrel,
     crankArm,
-    crankBearing,
-    crankDisk,
-    crankHub,
-    crankIndex,
-    crankPedestal,
+    crankBearing: lowerFoundation,
     crankPin,
     crankPinAnchor,
-    crankPinBoss,
     crankShaft,
     cylinderAssembly,
     cylinderBottomAxisAnchor,
     cylinderEndPlates,
     cylinderPivotAnchor,
     cylinderTrunnion,
-    cylinderWalls,
+    cylinderWalls: [barrel],
     fixedFrame,
     glandCollars,
     inputCrank,
     lowerFoundation,
-    lowerStandards,
     pistonAssembly,
     pistonCrankAnchor,
     pistonCrankEye,
     pistonHead,
     pistonHeadAnchor,
-    pistonHeadIndex,
     pistonRod,
-    trunnionBearingBack,
-    trunnionBearingFront,
-    trunnionCenterCap,
+    trunnionBearingBack: upperRail,
     upperRail,
   };
-  root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-6.6 * sourceScale, -2.25 * sourceScale, -1.12),
-    new THREE.Vector3(6.6 * sourceScale, 11.95 * sourceScale, 1.08),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -1715,7 +1442,7 @@ function invertedPendulumEngine(movement) {
         'both official add_rot_to transforms share the exact T-P axis, and the fixed 7.75-unit piston rod remains inside the five-unit end-pivot cylinder with positive clearance throughout the cycle',
     },
     referenceScope:
-      'official lower 2.25-unit crank, upper-end trunnion T, hanging open cylinder and lower gland, fixed-length inverted piston rod and head, frame, source view, phase, and 15 rpm timing',
+      'official lower 2.25-unit crank, upper-end trunnion T, hanging cylinder (closed as in Brown\'s plate) and lower gland, fixed-length inverted piston rod and head, source phase, and 15 rpm timing; rail, crank block, crank outline, and view follow the plate',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -1757,9 +1484,16 @@ function invertedPendulumEngine(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown's crop: just above the trunnion boss, cutting through the crank block.
+  root.userData.sweptBounds = root.userData.cameraFitBounds;
+  root.userData.cameraDistanceScale = 0.96;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-5.5 * sourceScale, -1.0 * sourceScale, -1.2),
+    new THREE.Vector3(5.7 * sourceScale, 11.0 * sourceScale, 1.5),
+  );
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };

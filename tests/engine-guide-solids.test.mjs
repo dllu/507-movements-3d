@@ -32,7 +32,8 @@ for(const id of [326,327])test(`${id}: real rod and bearing bores, clear shaft e
       const shaftRadius=b.liveShaft.geometry.parameters.radiusTop;
       for(const part of [b.bearingHousing,b.bearingBore])clearBore(part,new THREE.Vector3(),shaftRadius);
       assert.ok(bounds(b.liveShaft).max.z<bounds(b.connectingRod).min.z,'shaft end enters swinging rod');
-      assert.ok(m.root.userData.cameraFitBounds.containsBox(bounds(m.root)),'full stroke outside camera bounds');
+      const sweep=m.root.userData.sweptBounds??m.root.userData.cameraFitBounds;
+      assert.ok(sweep.containsBox(bounds(m.root)),'full stroke outside swept bounds');
     }
     assert.equal(m.root.userData.hideGround,true);
     m.root.traverse(o=>{for(const material of [].concat(o.material??[]))assert.equal(material.fog,false);});
@@ -42,8 +43,15 @@ for(const id of [326,327])test(`${id}: real rod and bearing bores, clear shaft e
 test('326: translating piston rod clears the standard and its deep foot',()=>{
   const m=createMovementModel(movements[325]);
   try {
-    const {blocks:b}=m.root.userData;m.root.updateMatrixWorld(true);
-    for(const fixed of [b.framePlate,b.foundationFoot])assert.ok(bounds(b.pistonRod).min.z>bounds(fixed).max.z);
+    const {blocks:b,geometry:g,animationTiming}=m.root.userData;m.root.updateMatrixWorld(true);
+    // Brown shows the rod only through the slot: it runs behind the standard.
+    for(const fixed of [b.framePlate,b.foundationFoot])assert.ok(bounds(b.pistonRod).max.z<bounds(fixed).min.z);
+    for(let i=0;i<=32;i++) {
+      m.update(animationTiming.authoredCyclePeriod*i/32);m.root.updateMatrixWorld(true);
+      assert.ok(bounds(b.pistonRod).min.y>=g.frameBaseBottomY,'rod end stays hidden above the foot bottom');
+      assert.ok(bounds(b.pistonRod).min.z>bounds(b.flywheelRim).max.z,'rod clears the flywheel');
+    }
+    m.update(0);m.root.updateMatrixWorld(true);
     assert.ok(bounds(b.pistonRod).intersectsBox(bounds(b.lowerSlideBridge)),'piston rod must join slide');
     for(const shoe of [b.leftSlideShoe,b.rightSlideShoe])assert.ok(bounds(shoe).intersectsBox(bounds(b.lowerSlideBridge)),'lower bridge joins both shoes');
     for(const [shoe,face] of [[b.leftSlideShoe,b.leftPlanedFace],[b.rightSlideShoe,b.rightPlanedFace]]) {

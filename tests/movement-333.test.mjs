@@ -77,7 +77,20 @@ test('movement 333 is the coupled double parallel motion', () => {
   assert.equal(blocks.centerLink.parent, model.root);
   assert.equal(blocks.rightLowerRadiusBar.parent, model.root);
   assert.equal(blocks.leftPiston.parent, model.root);
-  assert.equal(blocks.centerPiston.parent, model.root);
+  assert.equal(blocks.centerPiston, undefined,
+    'the plate draws no rod at N');
+  assert.equal(blocks.jointPins.M.parent, blocks.longLink);
+  assert.equal(blocks.jointPins.W.parent, blocks.longLink);
+  assert.equal(blocks.jointPins.P.parent, blocks.leftPiston);
+  assert.equal(blocks.jointPins.N.parent, blocks.centerLink);
+  assert.equal(blocks.jointPins.Q.parent, blocks.centerLink);
+  const explanatory = [];
+  model.root.traverse((object) => {
+    if (/explanatory|piston-head|neck/.test(object.userData.role ?? '')) {
+      explanatory.push(object.userData.role);
+    }
+  });
+  assert.deepEqual(explanatory, []);
   assert.deepEqual(contacts.longLinkAtM.members,
     [blocks.longLink, blocks.leftRadiusBar, blocks.centerLink]);
   assert.deepEqual(contacts.longLinkAtW.members,
@@ -95,9 +108,9 @@ test('movement 333 is the coupled double parallel motion', () => {
   assert.equal(roles.filter((role) => role ===
     'six-unit-center-ternary-link-M-N-Q').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'left-P-explanatory-piston-added-by-source-animation').length, 1);
-  assert.equal(roles.filter((role) => role ===
-    'center-N-explanatory-piston-added-by-source-animation').length, 1);
+    'cut-off-rod-guided-by-point-P').length, 1);
+  assert.equal(roles.some((role) => /explanatory/.test(role)), false,
+    'the official canvas\'s explanatory pistons are not in the plate');
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
   disposeModel(model.root);
 });
@@ -444,18 +457,17 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
       new THREE.Vector3()), new THREE.Vector3(
         state.pointP.x, state.pointP.y, -0.10,
       ), 0, `left piston at P at ${time}`);
-    vector3Near(blocks.centerPistonPointAnchor.getWorldPosition(
-      new THREE.Vector3()), new THREE.Vector3(
-        state.pointN.x, state.pointN.y, -0.07,
-      ), 0, `center piston at N at ${time}`);
     vector3Near(contacts.longLinkAtM.point,
-      new THREE.Vector3(state.pointM.x, state.pointM.y, 0.53), 0,
+      new THREE.Vector3(state.pointM.x, state.pointM.y,
+        blocks.jointPins.M.position.z), 0,
     `live M contact at ${time}`);
     vector3Near(contacts.longLinkAtW.point,
-      new THREE.Vector3(state.pointW.x, state.pointW.y, 0.34), 0,
+      new THREE.Vector3(state.pointW.x, state.pointW.y,
+        blocks.jointPins.W.position.z), 0,
     `live W contact at ${time}`);
     vector3Near(contacts.centerLinkAtQ.point,
-      new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.87), 0,
+      new THREE.Vector3(state.pointQ.x, state.pointQ.y,
+        blocks.jointPins.Q.position.z), 0,
     `live Q contact at ${time}`);
     assert.ok(blocks.fixedFrame.matrixWorld.equals(fixedFrameMatrix));
   }
@@ -463,9 +475,9 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.5);
-  assert.ok(size.y > 3.85);
-  assert.ok(size.z > 1.65,
-    'five rigid bars, two pistons, and both fixed bearings occupy real layers');
+  assert.ok(size.y > 2.6, 'no explanatory piston rods extend below the plate');
+  assert.ok(size.z > 1.2,
+    'five rigid bars, the P rod and both fixed bearings occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
@@ -510,9 +522,6 @@ test('movement 333 closes exactly and leaves movement 507 as the next draft', ()
   vector3Near(blocks.leftPiston.position,
     new THREE.Vector3(start.pointP.x, start.pointP.y, 0), 0,
   'rendered left-piston closure');
-  vector3Near(blocks.centerPiston.position,
-    new THREE.Vector3(start.pointN.x, start.pointN.y, 0), 0,
-  'rendered center-piston closure');
 
   const movement507 = catalog.movements[506];
   const model507 = createMovementModel(movement507);

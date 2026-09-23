@@ -401,26 +401,26 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
       new THREE.Vector3(state.pointP.x, state.pointP.y, 0.12), 8e-16,
     `rendered crank pin P at ${time}`);
     vector3Near(worldPosition(blocks.connectingRodStartAnchor),
-      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.35), 1e-15,
+      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.45), 1e-15,
     `connecting-rod start P at ${time}`);
     vector3Near(worldPosition(blocks.connectingRodEndAnchor),
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.35), 2e-15,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.45), 2e-15,
     `connecting-rod end C at ${time}`);
     vector3Near(worldPosition(blocks.barBCStartAnchor),
-      new THREE.Vector3(state.pointB.x, state.pointB.y, 0.62), 2e-15,
+      new THREE.Vector3(state.pointB.x, state.pointB.y, -0.02), 2e-15,
     `bar start B at ${time}`);
     vector3Near(worldPosition(blocks.barBCMidpointAnchor),
-      new THREE.Vector3(state.pointA.x, state.pointA.y, 0.62), 2e-15,
+      new THREE.Vector3(state.pointA.x, state.pointA.y, -0.02), 2e-15,
     `bar midpoint A at ${time}`);
     vector3Near(worldPosition(blocks.barBCEndAnchor),
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.62), 2e-15,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, -0.02), 2e-15,
     `bar end C at ${time}`);
     vector3Near(worldPosition(blocks.radiusBarStartAnchor),
       new THREE.Vector3(geometry.radiusPivotF.x,
-        geometry.radiusPivotF.y, 0.91), 1e-15,
+        geometry.radiusPivotF.y, -0.28), 1e-15,
     `radius start F at ${time}`);
     vector3Near(worldPosition(blocks.radiusBarEndAnchor),
-      new THREE.Vector3(state.pointA.x, state.pointA.y, 0.91), 2e-15,
+      new THREE.Vector3(state.pointA.x, state.pointA.y, -0.28), 2e-15,
     `radius end A at ${time}`);
     vector3Near(blocks.sliderB.position,
       new THREE.Vector3(state.pointB.x, state.pointB.y, 0), 0,
@@ -429,13 +429,13 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
       new THREE.Vector3(state.pointC.x, state.pointC.y, 0), 0,
     `rendered piston C at ${time}`);
     vector3Near(contacts.crankAtP.point,
-      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.38), 0,
+      new THREE.Vector3(state.pointP.x, state.pointP.y, 0.2675), 1e-15,
     `contact P at ${time}`);
     vector3Near(contacts.midpointAtA.point,
-      new THREE.Vector3(state.pointA.x, state.pointA.y, 0.84), 0,
+      new THREE.Vector3(state.pointA.x, state.pointA.y, -0.15), 1e-15,
     `contact A at ${time}`);
     vector3Near(contacts.barAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.40), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.2175), 1e-15,
     `contact C at ${time}`);
   }
 
@@ -448,14 +448,17 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
   assert.notEqual(blocks.connectingRod, blocks.barBC);
   assert.notEqual(blocks.barBC, blocks.radiusBar);
   assert.equal(blocks.slotRails.length, 2);
-  assert.equal(blocks.pistonGuideRails.length, 2);
-  assert.equal(blocks.archMembers.length, 9);
+  assert.deepEqual(blocks.archMembers, [blocks.casting]);
+  const drawnRoles = [];
+  model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
+  assert.equal(drawnRoles.some((role) => /engine-bed|piston-guide-rail|piston-head|arch-member/.test(role)), false,
+    'the parallel motion alone guides C: Brown draws no bed, guide rails or exposed piston');
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.8);
-  assert.ok(size.y > 9.0);
+  assert.ok(size.y > 8.5, 'crank pedestal to the broken-off cylinder');
   assert.ok(size.z > 2.3,
-    'frame, crank, connecting rod, piston, B-C, and F-A occupy real layers');
+    'casting, radius bar, B-C, crosshead, connecting rod and round cylinder occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
@@ -484,7 +487,7 @@ test('movement 339 closes exactly and leaves movement 507 as the next draft', ()
   model.update(canonicalTimes.cycleClosure);
   model.root.updateMatrixWorld(true);
   vector3Near(worldPosition(blocks.barBCMidpointAnchor),
-    new THREE.Vector3(start.pointA.x, start.pointA.y, 0.62), 3e-16,
+    new THREE.Vector3(start.pointA.x, start.pointA.y, -0.02), 3e-16,
   'rendered midpoint closure');
 
   const movement507 = catalog.movements[506];
