@@ -70,14 +70,14 @@ test('movement 304 is one thirty-pin wheel and one same-plane two-pallet Le Paut
   assert.match(transmission.deadbeat, /exactly zero/);
   assert.equal(transmission.recoil, 'none');
 
-  assert.equal(blocks.escapeWheel.parent, model.root);
-  assert.equal(blocks.palletAssembly.parent, model.root);
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.contactMarker.parent, model.root);
-  assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
-  assert.equal(blocks.wheelRim.parent, blocks.wheelRotor);
-  assert.equal(blocks.outerPallet.parent, blocks.palletAssembly);
-  assert.equal(blocks.innerPallet.parent, blocks.palletAssembly);
+  assert.ok(blocks.escapeWheel.parent === model.root, 'escapeWheel parent');
+  assert.ok(blocks.palletAssembly.parent === model.root, 'palletAssembly parent');
+  assert.ok(blocks.fixedFrame.parent === model.root, 'fixedFrame parent');
+  assert.ok(blocks.contactMarker.parent === null, 'undrawn contact marker removed');
+  assert.ok(blocks.wheelRotor.parent === blocks.escapeWheel, 'wheelRotor parent');
+  assert.ok(blocks.wheelRim.parent === blocks.wheelRotor, 'wheelRim parent');
+  assert.ok(blocks.outerPallet.parent === blocks.palletAssembly, 'outerPallet parent');
+  assert.ok(blocks.innerPallet.parent === blocks.palletAssembly, 'innerPallet parent');
   assert.equal(blocks.pinMeshes.length, 30);
   assert.equal(blocks.preferredPins.length, 15);
   assert.equal(blocks.legacyPins.length, 15);

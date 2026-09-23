@@ -526,4 +526,9 @@ export default {
     remove: ['fixed-colt-indexing-display-base', 'fixed-cylinder-arbor-support-post', 'fixed-hammer-bearing-arm', 'fixed-rear-hammer-bearing-post', 'white-(?:cylinder-step|hammer-cocking|dog-ratchet-contact)-index'],
     note: 'Side elevation of the cylinder, ratchet b, dog a, spring c and hammer; no base or bearing posts are drawn.',
   },
+  304: {
+    camera: [0.05, 0.05, 1],
+    remove: ['white-index-on-pin-wheel-(?:spoke|pallet-arbor)', 'white-active-pin-wheel-contact', 'pin-wheel-clock-frame-base'],
+    note: 'Front elevation of the pin wheel, pallets and right standard; the base, white indices and contact marker are not drawn.',
+  },
 };

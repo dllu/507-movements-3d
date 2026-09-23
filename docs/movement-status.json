@@ -8861,9 +8861,9 @@
       "intersections": {
         "status": "known",
         "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the pallet arbor passes 0.309 through the upper bearing plate and 0.304 through its bracket; the pin-wheel hub and spokes run 0.300 coaxially over the fixed arbor; the pins and quarter-arc pass through the pallets and arm bridges by up to 0.119."
+        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the upper bearing plate and pin-wheel hub are now bored, the spokes start at the hub and the bracket stops at the plate rim. Remaining: the preferred-B pins and rivets pass 0.120 through the outer arm-to-bit bridge and 0.079 through the inner offset post and working block; the pallet working faces are open meshes and cannot be targets."
       },
-      "flaws": "The screen shows unbored bearings and pins passing through the pallets by up to 0.119. Thin V pallet instead of Brown’s broad plate on a disk; white index markers at hub and pallet tip. Finite pin/pallet intersections not audited.",
+      "flaws": "The preferred-B pins pass through the outer pallet bridge by 0.120 and the inner pallet by 0.079. Thin V pallet instead of Brown’s broad plate on a disk; white index markers at hub and pallet tip. Finite pin/pallet intersections not audited.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",

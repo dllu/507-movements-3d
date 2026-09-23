@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { correctAnnularStudEscapement } from './annular-stud-working-parts.js';
 import {
   PALETTE,
@@ -12,6 +13,18 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 function cylinderAlongZ(radius, length, material, segments = 30) {
   const cylinder = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, length, segments),
+    material,
+  );
+  cylinder.rotation.x = Math.PI / 2;
+  return cylinder;
+}
+
+function boredCylinderAlongZ(radius, length, boreRadius, material, segments = 30) {
+  const cylinder = new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -length / 2, radial: radius },
+      { axial: length / 2, radial: radius },
+    ], boreRadius, segments),
     material,
   );
   cylinder.rotation.x = Math.PI / 2;
@@ -1243,12 +1256,12 @@ function lePautePinWheelEscapement(movement) {
   for (let spokeIndex = 0; spokeIndex < 5; spokeIndex += 1) {
     const angle = Math.PI + spokeIndex * FULL_TURN / 5;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(2.12, 0.22, wheelDepth * 0.82),
+      new THREE.BoxGeometry(1.76, 0.22, wheelDepth * 0.82),
       wheelMaterial,
     );
     spoke.position.set(
-      Math.cos(angle) * 1.06,
-      Math.sin(angle) * 1.06,
+      Math.cos(angle) * 1.24,
+      Math.sin(angle) * 1.24,
       0,
     );
     spoke.rotation.z = angle;
@@ -1257,10 +1270,12 @@ function lePautePinWheelEscapement(movement) {
     spokeMeshes.push(spoke);
     wheelRotor.add(spoke);
   }
-  const wheelHub = cylinderAlongZ(0.43, 0.78, darkMaterial, 38);
+  const wheelArborRadius = 0.13;
+  const wheelHub = boredCylinderAlongZ(0.43, 0.78, wheelArborRadius + 0.012,
+    darkMaterial, 38);
   wheelHub.userData.role = 'pin-wheel-central-arbor-hub';
   wheelRotor.add(wheelHub);
-  const wheelShaft = cylinderAlongZ(0.13, 1.45, darkMaterial, 34);
+  const wheelShaft = cylinderAlongZ(wheelArborRadius, 1.45, darkMaterial, 34);
   wheelShaft.userData.role = 'fixed-pin-wheel-arbor';
   escapeWheel.add(wheelShaft);
 
@@ -1516,9 +1531,10 @@ function lePautePinWheelEscapement(movement) {
   );
   palletBearing.position.set(palletPivot.x, palletPivot.y, -0.42);
   palletBearing.userData.role = 'fixed-upper-pallet-arbor-bearing';
-  const palletSupportDisk = cylinderAlongZ(
+  const palletSupportDisk = boredCylinderAlongZ(
     0.64,
     0.18,
+    0.31 + 0.012,
     frameMaterial,
     48,
   );
@@ -1547,7 +1563,7 @@ function lePautePinWheelEscapement(movement) {
   );
   rightStandard.userData.role = 'source-right-pallet-frame-standard';
   const topBracket = beamBetween(
-    new THREE.Vector3(palletPivot.x - 0.10, palletPivot.y, -0.66),
+    new THREE.Vector3(palletPivot.x + 0.5, palletPivot.y, -0.66),
     new THREE.Vector3(palletPivot.x + 0.78, palletPivot.y, -0.66),
     0.24,
     0.30,
