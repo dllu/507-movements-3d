@@ -74,6 +74,67 @@ function segmentProgress(cyclePhase, start, end) {
   };
 }
 
+// One crown tooth cut from the wheel's cylindrical rim: a curved wall segment
+// with the rim's own inner and outer radii, a top ramping helically from the
+// root at the back to the tip, and a radial axial face at the tip. Walls carry
+// radial normals so the tooth shades continuously with the band below it.
+function curvedSawToothGeometry({
+  backAngle,
+  baseZ,
+  innerRadius,
+  outerRadius,
+  rootZ,
+  tipAngle,
+  tipZ,
+}) {
+  const segments = Math.max(8, Math.ceil(backAngle / 0.02));
+  const start = tipAngle - backAngle;
+  const positions = [];
+  const normals = [];
+  const polar = (radius, angle, z) => new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
+  const topZ = (angle) => rootZ + (tipZ - rootZ) * (angle - start) / backAngle;
+  const triangle = (points, desired, vertexNormals = null) => {
+    const [a, b, c] = points;
+    const geometric = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+    const flip = geometric.dot(desired) < 0;
+    const ordered = flip ? [a, c, b] : [a, b, c];
+    const orderedNormals = vertexNormals ? (flip ? [vertexNormals[0], vertexNormals[2], vertexNormals[1]] : vertexNormals) : null;
+    const faceNormal = geometric.normalize().multiplyScalar(flip ? -1 : 1);
+    ordered.forEach((p, k) => {
+      positions.push(p.x, p.y, p.z);
+      const n = orderedNormals ? orderedNormals[k] : faceNormal;
+      normals.push(n.x, n.y, n.z);
+    });
+  };
+  const quad = (a, b, c, d, desired, vertexNormals) => {
+    triangle([a, b, c], desired, vertexNormals && [vertexNormals[0], vertexNormals[1], vertexNormals[2]]);
+    triangle([a, c, d], desired, vertexNormals && [vertexNormals[0], vertexNormals[2], vertexNormals[3]]);
+  };
+  for (let i = 0; i < segments; i += 1) {
+    const a0 = start + backAngle * i / segments, a1 = start + backAngle * (i + 1) / segments;
+    const mid = (a0 + a1) / 2;
+    const out0 = new THREE.Vector3(Math.cos(a0), Math.sin(a0), 0), out1 = new THREE.Vector3(Math.cos(a1), Math.sin(a1), 0);
+    const outward = new THREE.Vector3(Math.cos(mid), Math.sin(mid), 0);
+    quad(polar(outerRadius, a0, baseZ), polar(outerRadius, a1, baseZ), polar(outerRadius, a1, topZ(a1)), polar(outerRadius, a0, topZ(a0)),
+      outward, [out0, out1, out1, out0]);
+    const in0 = out0.clone().negate(), in1 = out1.clone().negate();
+    quad(polar(innerRadius, a0, baseZ), polar(innerRadius, a1, baseZ), polar(innerRadius, a1, topZ(a1)), polar(innerRadius, a0, topZ(a0)),
+      outward.clone().negate(), [in0, in1, in1, in0]);
+    const up = new THREE.Vector3(0, 0, 1);
+    quad(polar(outerRadius, a0, topZ(a0)), polar(outerRadius, a1, topZ(a1)), polar(innerRadius, a1, topZ(a1)), polar(innerRadius, a0, topZ(a0)), up);
+    quad(polar(outerRadius, a0, baseZ), polar(outerRadius, a1, baseZ), polar(innerRadius, a1, baseZ), polar(innerRadius, a0, baseZ), up.clone().negate());
+  }
+  const tangent = (angle) => new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0);
+  quad(polar(innerRadius, start, baseZ), polar(outerRadius, start, baseZ), polar(outerRadius, start, rootZ), polar(innerRadius, start, rootZ),
+    tangent(start).negate());
+  quad(polar(innerRadius, tipAngle, baseZ), polar(outerRadius, tipAngle, baseZ), polar(outerRadius, tipAngle, tipZ), polar(innerRadius, tipAngle, tipZ),
+    tangent(tipAngle));
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  return geometry;
+}
+
 function makeCrownEscapeWheel({
   bodyDepth,
   bodyRadius,
@@ -140,53 +201,26 @@ function makeCrownEscapeWheel({
   hub.userData.role = 'crown-wheel-hub';
   rotor.add(hub);
 
-  // Saw teeth: an axial leading face in the counterclockwise running
-  // direction and an inclined back, as in Brown's crown wheels. A radial tip
-  // edge is oblique to both pallet planes, and its outer corner is always the
-  // first point to reach them, so that corner lies on the contact orbit.
-  const toothBackWidth = contactRadius * Math.sin(toothPitch * 0.62);
+  // Saw teeth cut from the rim: an axial leading face in the counterclockwise
+  // running direction and a helically inclined back, as in Brown's crown
+  // wheels. A radial tip edge is oblique to both pallet planes, and its outer
+  // corner is always the first point to reach them, so that corner lies on
+  // the contact orbit.
+  const toothBackAngle = toothPitch * 0.8;
   const toothMeshes = [];
   const toothTips = [];
-  const point = (angle, radial, tangent, z) => [
-    Math.cos(angle) * radial - Math.sin(angle) * tangent,
-    Math.sin(angle) * radial + Math.cos(angle) * tangent,
-    z,
-  ];
 
   for (let index = 0; index < toothCount; index += 1) {
     const angle = mountPhase + index * toothPitch;
-    const vertices = [
-      ...point(angle, innerRadius, -toothBackWidth, toothBaseZ),
-      ...point(angle, innerRadius, 0, toothBaseZ),
-      ...point(angle, innerRadius, 0, toothTipZ),
-      ...point(angle, outerRadius, -toothBackWidth, toothBaseZ),
-      ...point(angle, outerRadius, 0, toothBaseZ),
-      ...point(angle, outerRadius, 0, toothTipZ),
-    ];
-    // Closed triangular prism, wound outward and unshared so every flat face
-    // shades with its own normal.
-    const faces = [
-      [0, 2, 1],
-      [3, 4, 5],
-      [0, 1, 4], [0, 4, 3],
-      [1, 2, 5], [1, 5, 4],
-      [2, 0, 3], [2, 3, 5],
-    ];
-    const corner = (i) => new THREE.Vector3(vertices[3 * i], vertices[3 * i + 1], vertices[3 * i + 2]);
-    const centroid = [0, 1, 2, 3, 4, 5].reduce((sum, i) => sum.add(corner(i)), new THREE.Vector3()).divideScalar(6);
-    const positions = [];
-    for (const face of faces) {
-      const [a, b, c] = face.map(corner);
-      const normal = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
-      const ordered = normal.dot(a.clone().sub(centroid)) >= 0 ? [a, b, c] : [a, c, b];
-      for (const p of ordered) positions.push(p.x, p.y, p.z);
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(positions, 3),
-    );
-    geometry.computeVertexNormals();
+    const geometry = curvedSawToothGeometry({
+      backAngle: toothBackAngle,
+      baseZ: toothBaseZ - 0.01,
+      innerRadius,
+      outerRadius,
+      rootZ: toothBaseZ,
+      tipAngle: angle,
+      tipZ: toothTipZ,
+    });
     const tooth = new THREE.Mesh(geometry, toothMaterial);
     tooth.userData.index = index;
     tooth.userData.mountAngle = angle;
@@ -4921,7 +4955,8 @@ function debaufreFrictionalRestEscapement(
 export function createAuthoredEscapementMovement(movement) {
   switch (movement.id) {
     // Brown's plate shows no frame or bearings for this verge.
-    case 234: return vergeAndCrownWheelEscapement(movement, { includeFrame: false });
+    // Brown's cup wall below the teeth is about half the tooth height.
+    case 234: return vergeAndCrownWheelEscapement(movement, { bodyDepth: 0.5, includeFrame: false });
     case 238: return sevenToothAnchorEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);
     case 300: return debaufreFrictionalRestEscapement(movement);

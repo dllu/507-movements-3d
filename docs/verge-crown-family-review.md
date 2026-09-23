@@ -127,14 +127,17 @@ unknown; these notes record what was visible.
 - **Tooth shading:** tooth prisms shared vertices, so averaged normals shaded
   the flat saw faces like cones. Each face now has its own outward-wound
   triangles and flat normal; the double-sided material is gone.
-- **Handedness:** the tooth/flank relationship is unchanged and conventional:
-  the front (axial) flank drives the pallet and the back flank only lets the
-  pallet pass (Roess, *Theory of the Verge & Foliot Clock*, 2018). Brown's 234
-  draws the near teeth with their axial faces on the left, i.e. a wheel turning
-  clockwise from above; the model turned the other way. The 234 source
-  presentation now mirrors the model to the plate's handedness (verified:
-  tooth 0 moves clockwise seen from above). 302's arrow already matches the
-  unmirrored handedness.
+- **Handedness:** the front (axial) flank drives the pallet and the back
+  flank only lets the pallet pass (Roess, *Theory of the Verge & Foliot Clock*,
+  2018). A brief mirror of 234 came from misreading the plate; a close crop of
+  Brown's near-side teeth shows each rising to the right and dropping
+  vertically on the right, which is the unmirrored model. The mirror is removed
+  and the wheel turns counterclockwise seen from above.
+- **Teeth cut from the rim:** the flat triangular wedges left chordal gaps on
+  the curved band. Each tooth is now a curved segment of the rim itself (same
+  inner and outer radii, helical top, radial axial face), with radial wall
+  normals so it shades continuously with the band. 234's band is deepened to
+  about half the tooth height, as drawn.
 - **298 is the wrong mechanism.** Its plate shows a geared crown wheel like
   Movement 26 (rectangular teeth on a drum) meshing a pinion under balance C,
   on the arbor that carries two loop pallets over a face-on saw-tooth escape
