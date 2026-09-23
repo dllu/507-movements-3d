@@ -1647,25 +1647,23 @@
       }
     },
     "86": {
-      "peakAngularSpeed": 12.356316301869306,
-      "peakVisibleAngularSpeed": 12.356316301869306,
-      "sustainedVisibleAngularSpeed": 1.5707963267948966,
-      "floorY": -5.350001023841858,
-      "fastestPart": "hookedCatchB",
+      "peakAngularSpeed": 4.518921145830515,
+      "peakVisibleAngularSpeed": 4.518921145830515,
+      "sustainedVisibleAngularSpeed": 1.5707963267947789,
+      "floorY": -5.350000023841858,
+      "fastestPart": "Group",
       "motionBounds": {
         "min": [
-          -2.467177832303438,
-          -5.350001023841858,
-          -1.4300009475479125
+          -2.2980797290802,
+          -5.350000023841858,
+          -1.4299999475479126
         ],
         "max": [
-          5.672923549196133,
-          2.2660074419706175,
-          0.6000010238418579
+          1.7977536916732788,
+          2.2357614040374756,
+          0.6000000238418579
         ]
-      },
-      "motionBoundsMethod": "Union of continuous bounds for all 41 rigid bodies and 130 rope regions, padded by 1e-6. The completed rear input and guided output are included.",
-      "speedMethod": "Maximum world angular speed on every compressed interval, with duration-weighted 75th percentile over the complete retained trajectory. No small-part visibility discount."
+      }
     },
     "87": {
       "peakAngularSpeed": 9.007089878594325,
@@ -1710,25 +1708,23 @@
       "speedMethod": "Maximum angular speed on every retained playback interval; duration-weighted 75th percentile. No small-part visibility discount."
     },
     "89": {
-      "peakAngularSpeed": 1.5707963267948966,
-      "peakVisibleAngularSpeed": 1.5707963267948966,
-      "sustainedVisibleAngularSpeed": 1.5707963267948966,
-      "floorY": -2.7605464113272813,
-      "fastestPart": "input-shaft",
+      "peakAngularSpeed": 1.5707963267992195,
+      "peakVisibleAngularSpeed": 1.5707963267992195,
+      "sustainedVisibleAngularSpeed": 1.5707963267936684,
+      "floorY": -2.342573937367737,
+      "fastestPart": "Group",
       "motionBounds": {
         "min": [
-          -1.9212021482504993,
-          -2.7605464113272813,
-          -0.7505464208640247
+          -1.9106557044513126,
+          -2.342573937367737,
+          -0.7400000095367432
         ],
         "max": [
-          5.975582326702037,
-          2.2742420000205366,
-          0.49054640059844545
+          4.77500232483639,
+          2.2636955554749,
+          0.4300000071525574
         ]
-      },
-      "motionBoundsMethod": "512 cycle samples expanded by a conservative maximum material-point speed times half the sample interval, plus 1e-6 for rounding. Offset-rod vertical travel is included.",
-      "speedMethod": "Prescribed shaft angular speed exceeds the exact strap swing rate over the full cycle."
+      }
     },
     "90": {
       "peakAngularSpeed": 0.9600000000054468,
@@ -1795,12 +1791,12 @@
       "fastestPart": "source-four-radius-solid-crank-disk",
       "motionBounds": {
         "min": [
-          -2.7760000029802328,
+          -2.1270008087158203,
           -4.9199999982118605,
           -1.1299999976158142
         ],
         "max": [
-          2.7760000029802328,
+          2.1270008087158203,
           5.319999998211861,
           0.9850000008642674
         ]
@@ -2576,12 +2572,12 @@
         "min": [
           -2.674999952316284,
           -2.5649999523162843,
-          -0.8600000035762787
+          -0.7749999998882413
         ],
         "max": [
           2.674999952316284,
           2.284999952316284,
-          0.602
+          0.491
         ]
       }
     },

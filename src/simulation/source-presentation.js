@@ -28,12 +28,12 @@ export function applySourcePresentation(model, movement) {
     const doomed = [];
     root.traverse((object) => {
       if (object === root || doomed.some((parent) => isAncestor(parent, object))) return;
-      const role = object.userData.role;
-      if (typeof role === 'string' && patterns.some((pattern) => pattern.test(role))) doomed.push(object);
+      const role = presentationRole(object);
+      if (role && patterns.some((pattern) => pattern.test(role))) doomed.push(object);
     });
     const kept = resourcesOf(root, new Set(doomed));
     for (const object of doomed) {
-      removedRoles.push(object.userData.role);
+      removedRoles.push(presentationRole(object));
       object.removeFromParent();
       const own = resourcesOf(object);
       for (const resource of own) if (!kept.has(resource)) resource.dispose();
@@ -47,6 +47,13 @@ export function applySourcePresentation(model, movement) {
     scale: entry.scale ?? null,
   };
   return model;
+}
+
+// Older factories name parts without assigning a role.
+function presentationRole(object) {
+  const role = object.userData.role;
+  if (typeof role === 'string' && role) return role;
+  return object.name || null;
 }
 
 function isAncestor(parent, object) {

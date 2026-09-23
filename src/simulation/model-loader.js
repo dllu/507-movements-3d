@@ -1,8 +1,9 @@
 import {loadAuthoredMovement} from './authored-loader.js';
+import {applySourcePresentation} from './source-presentation.js';
 
 // Migrate a movement by registering its factory here. Existing authored models
 // remain available while each replacement's geometry and contacts are checked.
-const physicsFactories = {
+export const physicsFactories = {
   82: () => import('./mujoco-treadle/visual.js').then(module => module.makeMujocoTreadle),
   83: () => import('./mujoco-spring-sector/visual.js').then(module => module.makeMujocoSpringSector),
   90: () => import('./mujoco-eccentric-yoke/visual.js').then(module => module.makeMujocoEccentricYoke),
@@ -44,6 +45,14 @@ const physicsFactories = {
 };
 
 export async function loadMovementModel(movement) {
+  const model = await loadUnpresentedModel(movement);
+  // Authored models were presented during display timing; presenting twice
+  // would compound the rotation.
+  if (!model.root.userData.sourcePresentation) applySourcePresentation(model, movement);
+  return model;
+}
+
+async function loadUnpresentedModel(movement) {
   if (movement.id === 181 || movement.id === 182) {
     const {makeBakedDiagonalCatch} = await import('./baked/diagonal-catch.js');
     const model = await makeBakedDiagonalCatch(movement.id);

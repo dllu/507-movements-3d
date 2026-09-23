@@ -69,3 +69,85 @@ change a row's intersection status or physics qualification.
 | 079 | Faithful internal ratchet, pawls and toggle links. |
 | 080 | Faithful slotted rack and crossed catches. |
 | 081 | Faithful spring rack and eccentric. |
+
+## Pass 50 batch: 82–101 (excluding 90, 91, 95, 96)
+
+Captures come from the production routes; MuJoCo movements load their live
+physics models. Earlier batch sheets in this pass halved image height, which
+distorted the model and engraving alike, so the side-by-side comparisons
+still hold. These checks used true-aspect sheets.
+
+The source-presentation layer now also presents MuJoCo and baked models,
+which previously bypassed it. Removal patterns fall back to object names
+when a part has no role.
+
+| Movement | Observation |
+| --- | --- |
+| 082 | Faithful treadle ratchet wheel, pawl links and pump rods. |
+| 083 | Faithful spring sector C on rack D with arm A. |
+| 084 | Faithful double internal racks and pinion. |
+| 085 | Faithful bracket, spindle and cam A. |
+| 086 | Presented without the undrawn belt drive, remote pulley and rear pulley. Wheel A, catch B, cam C and the stop now match. The rope descends to a guided pump rod at the left; the plate shows only hatched rope runs. |
+| 087 | Faithful bevel reversing gear and lever. |
+| 088 | Faithful disk-wheel B, stops C, D and cam A. |
+| 089 | Presented without the undrawn crosshead, guides, bed and shaft support. The strap, bolts and rod flange match; the rod ends in its bored eye where Brown breaks it off. |
+| 092 | Faithful spoked crank wheel and slide. |
+| 093 | The production MuJoCo model is presented without its undrawn frame, crossbars, posts and stem guides. The synchronous registry model keeps its reconstructed frame for offline checks. |
+| 094 | Faithful slotted disk and spiral groove. |
+| 097 | Faithful grooved heart cam and follower. |
+| 098 | Faithful endless groove and rod. |
+| 099 | Faithful spiral groove and guided follower. |
+| 100 | Faithful quick-return slotted lever. |
+| 101 | Faithful slotted bar and guide blocks. |
+
+## Pass 50 batch: 102–121
+
+Captures come from the production MuJoCo routes, on true-aspect sheets.
+
+| Movement | Observation |
+| --- | --- |
+| 102 | Faithful bolt and nut. |
+| 103 | Faithful bracket, leadscrew and slide; the bed is a closed box where Brown breaks it off. |
+| 104 | Faithful worm, wheel and saddle. |
+| 105 | Faithful screw press and handle. |
+| 106 | Faithful barrel cam groove and forked follower. |
+| 107 | Faithful serpentine groove and follower. |
+| 108 | Faithful crossed right- and left-hand grooves, frame and follower. |
+| 109 | Faithful paired screws, nut bar and base gears. |
+| 110 | Faithful thread-cutting screws, frame and handle. |
+| 111 | Faithful differential screw pair. |
+| 112 | Faithful Persian drill with its nut. |
+| 113 | Faithful rack on rollers and pinion. |
+| 114 | Faithful mutilated pinion in the double-rack frame. |
+| 115 | Faithful paired pinions in the equal-rack frame. |
+| 116 | Faithful pinions and double rack, the two racks in different planes. |
+| 117 | Faithful roller yoke, cam and guides. |
+| 118 | Faithful stroke-doubling racks and pinion. |
+| 119 | Faithful oblong endless rack, pinion and slotted guide. |
+| 120 | Faithful segment clamp jaws, sector and pinion. |
+| 121 | Faithful reversible click wheel, pawl and lever. |
+
+## Pass 50 batch: 122–141
+
+| Movement | Observation |
+| --- | --- |
+| 122 | Faithful gear pair, links and crank. |
+| 123 | Faithful double rack and toothed sectors. |
+| 124 | Faithful bow drill. |
+| 125 | Faithful cascaded beams and three wheels. |
+| 126 | Faithful rope pulley and bell cranks. |
+| 127 | Faithful pinion between opposed racks and rod. |
+| 128 | Faithful three-arm pin wheel in its slotted yoke. |
+| 129 | Faithful differential windlass, pulley and hook. |
+| 130 | Faithful shears and eccentric. |
+| 131 | Faithful slotted lever, sector and rack. |
+| 132 | Faithful toggle-bar press; the frame is simplified. |
+| 133 | Faithful press frame, sector and pinion. |
+| 134 | Presented without the undrawn rear pedestal, foot and bearing: the spoked drum and separator plates stand on the rope run as in the plate. |
+| 135 | Faithful yoke, triangular cam and disk. |
+| 136 | Faithful serrated wheel, spring rod and bracket. |
+| 137 | Faithful cam, rollers and yoke. |
+| 138 | Faithful three-lobed cam and guided rod. |
+| 139 | Faithful rack frame, pinion, links and carriage. |
+| 140 | Faithful toggle press links and lever. |
+| 141 | Faithful band saw frame, pulleys and table. |
