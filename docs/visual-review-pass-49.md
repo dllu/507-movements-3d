@@ -357,3 +357,29 @@ remains instead of the removed frames.
 | 313 | Presented without the undrawn watch frame and standards; faithful wheel, balance V and spring detent D. |
 | 314 | Presented without the undrawn frame members and base; faithful wheel, lever A, B and balance roller C with banking pins. |
 | 315 | Faithful conical pendulum and seat. |
+
+## Pass 50 batch: 316–325 and 346–357
+
+| Movement | Observation |
+| --- | --- |
+| 316 | Presented without the undrawn upper suspension plate; faithful jar, bracket and adjusting screw. |
+| 317 | Presented without the undrawn upper suspension plate; faithful compound bar C, weights W and bob M. |
+| 318 | Faithful balance, spring and regulator arc. |
+| 319 | Faithful balance bar and compensation arcs b, b′. |
+| 320 | Presented without the undrawn clock frame; faithful pulleys, weights and endless chain. |
+| 321 | Faithful wheels, ratchet, spring T and weight. |
+| 322 | Faithful plate and holes A, B. |
+| 323 | Faithful shaft and bearings A, A. |
+| 324 | Faithful lazy-tongs bars and slotted guides A. |
+| 325 | Faithful parallel links c between bars A and B. |
+| 346 | Faithful cylinder, guides and crank; the bed is a legged table where Brown draws a solid plinth. |
+| 348 | Presented without the undrawn stand, base and external guide; faithful disk A, slides c and bar B. |
+| 349 | Faithful toggle links and wedge. |
+| 350 | Presented without the undrawn base; faithful slotted link, guides a, a and output bar. |
+| 351 | Presented without the undrawn base, anvil and workpiece; faithful rack stamp and mutilated pinion. |
+| 352 | Faithful shear-legs, pulleys, windlass and weight. |
+| 353 | Faithful tilt hammer, cam wheel and anvil. |
+| 354 | Presented without the undrawn support rails and brackets; faithful crosshead, input disk and stem guides. |
+| 355 | Faithful gyroscope, ring and stand. |
+| 356 | Faithful rings A, A′ and globe B on its stand. |
+| 357 | Faithful front elevation of the Anderson governor. |

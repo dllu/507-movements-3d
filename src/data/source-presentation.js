@@ -223,4 +223,32 @@ export default {
     remove: ['fixed-bloxam-support-frame'],
     note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn.',
   },
+  316: {
+    remove: ['fixed-upper-suspension-plate'],
+    note: 'The jar pendulum, its suspension bracket and adjusting screw; no upper suspension plate is drawn.',
+  },
+  317: {
+    remove: ['fixed-upper-suspension-plate'],
+    note: 'The rod, compound bar C, weights W and bob M; no upper suspension plate is drawn.',
+  },
+  320: {
+    remove: ['fixed-clock-frame'],
+    note: 'The pulleys P and p, the weights and the endless chain; no clock frame is drawn.',
+  },
+  348: {
+    remove: ['fixed-shaft-pedestal-leg-\\d', 'fixed-base', 'fixed-base-edge', 'fixed-external-guide-rail-(left|right)', 'fixed-external-guide-support-\\d', 'fixed-external-guide-top-bridge', 'fixed-rear-shaft-bearing-bridge'],
+    note: 'The disk A with its crossed slots and slides c, and the bar B; no stand, base or external guide is drawn.',
+  },
+  350: {
+    remove: ['fixed-wide-base', 'fixed-base-edge'],
+    note: 'The slotted link, guides a, a and the output bar; no base is drawn.',
+  },
+  351: {
+    remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop'],
+    note: 'The rack stamp, its guides and the mutilated pinion; no base, anvil or workpiece is drawn.',
+  },
+  354: {
+    remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket'],
+    note: 'The grooved crosshead, input disk and the stem guides; no support rails or brackets are drawn.',
+  },
 };

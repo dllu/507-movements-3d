@@ -379,7 +379,7 @@ test('movement 354 renderer binds disk, wrist, crosshead, and fixed guides', () 
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 30);
+  assert.ok(meshCount >= 28);
   disposeModel(model.root);
 });
 

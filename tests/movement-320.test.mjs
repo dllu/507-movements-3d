@@ -75,16 +75,18 @@ test('movement 320 is Brown’s one-chain maintaining-power train', () => {
     ['p', 'b', 'w', 'a', 'P', 'd', 'W', 'c', 'p']);
   assert.match(transmission.noSlipLaw, /material-coordinate travel/);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.chain.parent, model.root);
-  assert.equal(blocks.ratchetPulley.parent, model.root);
-  assert.equal(blocks.goingPulley.parent, model.root);
-  assert.equal(blocks.smallCarrier.parent, model.root);
-  assert.equal(blocks.largeCarrier.parent, model.root);
-  assert.equal(blocks.smallPulley.parent, blocks.smallCarrier);
-  assert.equal(blocks.largePulley.parent, blocks.largeCarrier);
-  assert.equal(blocks.smallWeight.parent, blocks.smallCarrier);
-  assert.equal(blocks.largeWeight.parent, blocks.largeCarrier);
+  assert.ok(blocks.fixedFrame.parent === null, 'source presentation removes the undrawn clock frame');
+  for (const [child, parent, name] of [
+    [blocks.chain, model.root, 'chain'],
+    [blocks.ratchetPulley, model.root, 'ratchet pulley'],
+    [blocks.goingPulley, model.root, 'going pulley'],
+    [blocks.smallCarrier, model.root, 'small carrier'],
+    [blocks.largeCarrier, model.root, 'large carrier'],
+    [blocks.smallPulley, blocks.smallCarrier, 'small pulley'],
+    [blocks.largePulley, blocks.largeCarrier, 'large pulley'],
+    [blocks.smallWeight, blocks.smallCarrier, 'small weight'],
+    [blocks.largeWeight, blocks.largeCarrier, 'large weight'],
+  ]) assert.ok(child.parent === parent, `${name} parent`);
   assert.equal(blocks.chainMarkers.length, 21);
 
   const roles = [];
