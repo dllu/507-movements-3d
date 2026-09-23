@@ -72,24 +72,28 @@ test('movement 330 is Brown’s prolonged-rod and forked-connecting-rod guide', 
   assert.equal(degreesOfFreedom.pistonRodTranslationAxes, 1);
   assert.equal(degreesOfFreedom.pistonRodRotation, 0);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.topBeam.parent, blocks.fixedFrame);
-  assert.equal(blocks.bearingHousing.parent, blocks.fixedFrame);
-  assert.equal(blocks.guideA.parent, blocks.fixedFrame);
-  assert.equal(blocks.guideCollar.parent, blocks.guideA);
-  assert.equal(blocks.guideBracket.parent, blocks.guideA);
-  assert.equal(blocks.cylinderBody.parent, blocks.fixedFrame);
-  assert.equal(blocks.crankRotor.parent, model.root);
-  assert.equal(blocks.crankArm.parent, blocks.crankRotor);
-  assert.equal(blocks.crankPinAnchor.parent, blocks.crankRotor);
-  assert.equal(blocks.forkedConnectingRod.parent, model.root);
-  assert.equal(blocks.forkCrankAnchor.parent,
+  assert.ok(blocks.fixedFrame.parent === model.root);
+  assert.equal(blocks.topBeam, undefined, 'plate draws no gallows beam');
+  assert.ok(blocks.frameColumn.parent === blocks.fixedFrame);
+  assert.ok(blocks.columnCapital.parent === blocks.fixedFrame);
+  assert.ok(blocks.flywheelRim.parent === blocks.crankRotor);
+  assert.ok(blocks.liveShaft.parent === blocks.crankRotor);
+  assert.ok(blocks.bearingHousing.parent === blocks.fixedFrame);
+  assert.ok(blocks.guideA.parent === blocks.fixedFrame);
+  assert.ok(blocks.guideCollar.parent === blocks.guideA);
+  assert.ok(blocks.guideBracket.parent === blocks.guideA);
+  assert.ok(blocks.cylinderBody.parent === blocks.fixedFrame);
+  assert.ok(blocks.crankRotor.parent === model.root);
+  assert.ok(blocks.crankArm.parent === blocks.crankRotor);
+  assert.ok(blocks.crankPinAnchor.parent === blocks.crankRotor);
+  assert.ok(blocks.forkedConnectingRod.parent === model.root);
+  assert.ok(blocks.forkCrankAnchor.parent ===
     blocks.forkedConnectingRod);
-  assert.equal(blocks.forkCenterWristAnchor.parent,
+  assert.ok(blocks.forkCenterWristAnchor.parent ===
     blocks.forkedConnectingRod);
-  assert.equal(blocks.pistonAssembly.parent, model.root);
-  assert.equal(blocks.pistonRod.parent, blocks.pistonAssembly);
-  assert.equal(blocks.commonWristPin.parent, blocks.pistonAssembly);
+  assert.ok(blocks.pistonAssembly.parent === model.root);
+  assert.ok(blocks.pistonRod.parent === blocks.pistonAssembly);
+  assert.ok(blocks.commonWristPin.parent === blocks.pistonAssembly);
   assert.equal(contacts.crankPinToForkedRod.crankMember,
     blocks.crankRotor);
   assert.equal(contacts.crankPinToForkedRod.rodMember,
@@ -447,9 +451,22 @@ test('movement 330 renderer binds the crank, fork, guide, and piston in 3D', () 
   assert.ok(size.y > 8.8);
   assert.ok(size.z > 2,
     'bearing, crank, depth fork, piston, and frame are spatially separated');
-  assert.ok(model.cameraDirection.x > 0);
+  // Brown's side view looks along the crank plane, so the camera faces +x.
+  assert.ok(model.cameraDirection.x > 10 * Math.abs(model.cameraDirection.z));
   assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x);
+  const crop = model.root.userData.cameraFitBounds;
+  const columnBox = new THREE.Box3().setFromObject(blocks.frameColumn);
+  const flywheelBox = new THREE.Box3().setFromObject(blocks.flywheelRim);
+  const cylinderTopBox = new THREE.Box3().setFromObject(blocks.cylinderTop);
+  assert.ok(columnBox.max.z < geometry.connectingRodPlaneZ
+    && columnBox.min.z > flywheelBox.max.z,
+    'plate order: fork, column, flywheel along the shaft');
+  assert.ok(crop.min.z < flywheelBox.min.z && crop.max.z > geometry.connectingRodPlaneZ);
+  assert.ok(crop.min.y < flywheelBox.min.y && crop.max.y < flywheelBox.max.y,
+    'only the flywheel lower rim is inside the plate');
+  assert.ok(crop.min.y < cylinderTopBox.min.y
+    && crop.min.y > new THREE.Box3().setFromObject(blocks.cylinderBody).min.y,
+    'plate shows only the cylinder top');
 
   const model329 = createMovementModel(catalog.movements[328]);
   assert.equal(model329.root.userData.fidelity, 'authored');

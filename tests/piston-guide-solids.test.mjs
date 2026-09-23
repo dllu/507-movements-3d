@@ -45,9 +45,11 @@ test('328: rods and stationary bearings clear finite pins; piston attachment and
   assert.ok(box(b.pistonBoss).intersectsBox(box(b.crossheadBar)));
   assert.ok(box(b.glandNeck).intersectsBox(box(b.pistonGland)));
   assert.ok(box(b.glandNeck).intersectsBox(box(b.cylinderTop)));
+  assert.ok(box(b.stuffingBox).intersectsBox(box(b.cylinderTop)));
   assert.ok(box(b.cylinderBody).intersectsBox(box(b.cylinderTop)));
+  for(const bearing of [b.leftBearing,b.rightBearing])assert.ok(box(bearing).intersectsBox(box(b.upperBeam)),'pillow block stands on the bed');
   const center=b.pistonRodB.getWorldPosition(new THREE.Vector3()),radius=Math.hypot(.25*g.sourceScale,.075);
-  for(const part of [b.cylinderBody,b.cylinderTop,b.pistonGland,b.glandNeck])openDisc(part,center,radius,new THREE.Vector3(0,1,0));
+  for(const part of [b.cylinderBody,b.cylinderTop,b.stuffingBox,b.pistonGland,b.glandNeck])openDisc(part,center,radius,new THREE.Vector3(0,1,0));
  } finally {disposeMovementModel(m);}
 });
 
@@ -86,13 +88,14 @@ test('330: fork eyes are bored and all fork solids clear piston, crosshead and f
    assert.ok(head.intersectsBox(box(b.pistonRod)),'piston rod detached from piston');
   }
   const center=b.pistonRod.getWorldPosition(new THREE.Vector3()),radius=Math.hypot(g.pistonRodHalfWidth,g.pistonRodDepth/2);
-  for(const part of [b.guideA,b.cylinderTop,b.gland])openDisc(part,center,radius,new THREE.Vector3(0,1,0));
+  for(const part of [b.guideA,b.cylinderTop,b.gland,...b.glandFlanges])openDisc(part,center,radius,new THREE.Vector3(0,1,0));
   openDisc(b.cylinderBody,center,.58,new THREE.Vector3(0,1,0));
-  for(const part of [b.bearingHousing,b.bearingBore])openDisc(part,new THREE.Vector3(g.crankCenter.x,g.crankCenter.y,0),.13);
+  const shaftRadius=b.liveShaft.geometry.parameters.radiusTop;
+  for(const part of [b.bearingHousing,b.bearingBore])openDisc(part,new THREE.Vector3(g.crankCenter.x,g.crankCenter.y,0),shaftRadius);
  }finally{disposeMovementModel(m);}
 });
 
-for(const id of [328,330])test(`${id}: full-stroke bounds and no ground/fog`,()=>{
+for(const id of [328,330])test(`${id}: full-stroke swept bounds, plate crop and no ground/fog`,()=>{
  const m=make(id);try {
   assert.equal(m.root.userData.hideGround,true);
   m.root.traverse(o=>{for(const material of [].concat(o.material??[]))assert.equal(material.fog,false);});
@@ -100,7 +103,9 @@ for(const id of [328,330])test(`${id}: full-stroke bounds and no ground/fog`,()=
   assert.ok(Number.isFinite(period)&&period>0);
   for(let i=0;i<=32;i++) {
    m.update(period*i/32);m.root.updateMatrixWorld(true);
-   assert.ok(m.root.userData.cameraFitBounds.containsBox(box(m.root)));
+   assert.ok(m.root.userData.sweptBounds.containsBox(box(m.root)));
   }
+  assert.ok(m.root.userData.cameraDistanceScale<1);
+  assert.ok(!m.root.userData.sweptBounds.equals(m.root.userData.cameraFitBounds));
  }finally{disposeMovementModel(m);}
 });

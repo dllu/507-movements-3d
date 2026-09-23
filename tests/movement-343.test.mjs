@@ -511,13 +511,13 @@ test('movement 343 renderer keeps every visible rod and common pin on the analyt
       `crosspiece D ${time}`);
     worldXYNear(blocks.pistonTopAnchor, state.pointC, 7e-16,
       `piston top C ${time}`);
-    worldXYNear(blocks.jointPins.P, state.pointP, 0,
+    worldXYNear(blocks.jointPins.P, state.pointP, 8e-16,
       `visible pin P ${time}`);
-    worldXYNear(blocks.jointPins.C, state.pointC, 0,
+    worldXYNear(blocks.jointPins.C, state.pointC, 8e-16,
       `visible pin C ${time}`);
-    worldXYNear(blocks.jointPins.U, state.pointU, 0,
+    worldXYNear(blocks.jointPins.U, state.pointU, 8e-16,
       `visible pin U ${time}`);
-    worldXYNear(blocks.jointPins.D, state.pointD, 0,
+    worldXYNear(blocks.jointPins.D, state.pointD, 8e-16,
       `visible pin D ${time}`);
     vector2Near(new THREE.Vector2(
       contacts.crankAtP.point.x,
@@ -555,6 +555,27 @@ test('movement 343 renderer keeps every visible rod and common pin on the analyt
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2);
+  assert.ok(blocks.jointPins.P.parent === blocks.inputCrank, 'pin P fast in crank');
+  assert.ok(blocks.jointPins.C.parent === blocks.pistonOutput, 'pin C fast in piston');
+  assert.ok(blocks.jointPins.U.parent === blocks.topRadiusRod, 'pin U fast in upper A');
+  assert.ok(blocks.jointPins.D.parent === blocks.bottomRadiusRod, 'pin D fast in lower A');
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  assert.deepEqual(roles.filter((role) => /foundation|piston-rod-guide|cylinder-wall|depth-foot/.test(role)), [],
+    'plate draws no base stand, feet, box walls or rod guides');
+  const { sourceScale } = model.root.userData.geometry;
+  const crop = model.root.userData.cameraFitBounds;
+  near(crop.min.x, -15 * sourceScale, 1e-12, 'plate crop left');
+  near(crop.max.x, 15 * sourceScale, 1e-12, 'plate crop right');
+  near(crop.min.y, -26 * sourceScale, 1e-12, 'plate crop bottom');
+  near(crop.max.y, 4 * sourceScale, 1e-12, 'plate crop top');
+  const flywheelBox = new THREE.Box3().setFromObject(blocks.flywheel);
+  assert.ok(flywheelBox.max.y > crop.max.y && flywheelBox.min.x < crop.min.x,
+    'only part of the flywheel is in the plate');
+  const coverBox = new THREE.Box3().setFromObject(blocks.cylinderTop);
+  assert.ok(crop.containsPoint(new THREE.Vector3(0, coverBox.max.y, 0)));
+  assert.ok(new THREE.Box3().setFromObject(blocks.cylinderBody).min.y < crop.min.y,
+    'only the cylinder top is in the plate');
   disposeModel(model.root);
 });
 

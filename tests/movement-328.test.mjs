@@ -71,21 +71,21 @@ test('movement 328 is Cartwright’s geared twin-crank parallel motion', () => {
   assert.equal(degreesOfFreedom.crossheadTranslationAxes, 1);
   assert.equal(degreesOfFreedom.crossheadRotation, 0);
 
-  assert.equal(blocks.inputFlywheel.parent, model.root);
-  assert.equal(blocks.inputPinion.parent, blocks.inputFlywheel);
-  assert.equal(blocks.leftGearBody.parent.parent, model.root);
-  assert.equal(blocks.rightGearBody.parent.parent, model.root);
-  assert.equal(blocks.leftWheelC.parent, blocks.leftGearBody);
-  assert.equal(blocks.rightWheelC.parent, blocks.rightGearBody);
-  assert.equal(blocks.leftCrankA.parent, blocks.leftGearBody);
-  assert.equal(blocks.rightCrankA.parent, blocks.rightGearBody);
-  assert.equal(blocks.leftCrankPinAnchor.parent, blocks.leftGearBody);
-  assert.equal(blocks.rightCrankPinAnchor.parent, blocks.rightGearBody);
-  assert.equal(blocks.leftRod.parent, model.root);
-  assert.equal(blocks.rightRod.parent, model.root);
-  assert.equal(blocks.crosshead.parent, model.root);
-  assert.equal(blocks.pistonRodB.parent, blocks.crosshead);
-  assert.equal(blocks.upperBeam.parent, blocks.fixedFrame);
+  assert.ok(blocks.inputFlywheel.parent === model.root);
+  assert.ok(blocks.inputPinion.parent === blocks.inputFlywheel);
+  assert.ok(blocks.leftGearBody.parent.parent === model.root);
+  assert.ok(blocks.rightGearBody.parent.parent === model.root);
+  assert.ok(blocks.leftWheelC.parent === blocks.leftGearBody);
+  assert.ok(blocks.rightWheelC.parent === blocks.rightGearBody);
+  assert.ok(blocks.leftCrankA.parent === blocks.leftGearBody);
+  assert.ok(blocks.rightCrankA.parent === blocks.rightGearBody);
+  assert.ok(blocks.leftCrankPinAnchor.parent === blocks.leftGearBody);
+  assert.ok(blocks.rightCrankPinAnchor.parent === blocks.rightGearBody);
+  assert.ok(blocks.leftRod.parent === model.root);
+  assert.ok(blocks.rightRod.parent === model.root);
+  assert.ok(blocks.crosshead.parent === model.root);
+  assert.ok(blocks.pistonRodB.parent === blocks.crosshead);
+  assert.ok(blocks.upperBeam.parent === blocks.fixedFrame);
   assert.equal(contacts.inputPinionToRightWheelC.driver,
     blocks.inputPinion);
   assert.equal(contacts.inputPinionToRightWheelC.driven,
@@ -452,13 +452,29 @@ test('movement 328 has a spatial engine frame and is distinct from 327', () => {
   const model = createMovementModel(catalog.movements[327]);
   const { blocks, geometry } = model.root.userData;
 
-  assert.equal(blocks.leftBearing.parent, blocks.fixedFrame);
-  assert.equal(blocks.rightBearing.parent, blocks.fixedFrame);
-  assert.equal(blocks.cylinderBody.parent, blocks.fixedFrame);
-  assert.equal(blocks.cylinderTop.parent, blocks.fixedFrame);
-  assert.equal(blocks.pistonGland.parent, blocks.fixedFrame);
-  assert.equal(blocks.lowerCrossBase.parent, blocks.fixedFrame);
-  assert.equal(blocks.framePosts.length, 2);
+  for (const name of ['leftBearing', 'rightBearing', 'cylinderBody',
+    'cylinderTop', 'stuffingBox', 'glandNeck', 'pistonGland', 'upperBeam']) {
+    assert.ok(blocks[name].parent === blocks.fixedFrame, `${name} is fixed`);
+  }
+  assert.equal(blocks.framePosts, undefined, 'plate draws no stand legs');
+  assert.equal(blocks.lowerCrossBase, undefined, 'plate draws no crossbase');
+  const undrawn = [];
+  model.root.traverse((object) => {
+    const role = object.userData.role ?? '';
+    if (/white|index|post|cross-base|band/.test(role)) undrawn.push(role);
+  });
+  assert.deepEqual(undrawn, [], 'no undrawn stand, bands or indices remain');
+  const bedBox = new THREE.Box3().setFromObject(blocks.upperBeam);
+  for (const wheel of [blocks.leftWheelC, blocks.rightWheelC]) {
+    const wheelBox = new THREE.Box3().setFromObject(wheel);
+    assert.ok(bedBox.min.z > wheelBox.max.z, 'bed passes in front of wheels C');
+  }
+  const crop = model.root.userData.cameraFitBounds;
+  const capBox = new THREE.Box3().setFromObject(blocks.cylinderTop);
+  assert.ok(crop.min.y < capBox.min.y, 'plate crop includes the cylinder top');
+  assert.ok(crop.min.y > new THREE.Box3().setFromObject(blocks.cylinderBody).min.y,
+    'plate crop shows only the top of the cylinder');
+  assert.ok(crop.min.x < bedBox.min.x && crop.max.x > capBox.max.x);
   assert.equal(blocks.crossheadPins.length, 2);
   assert.equal(blocks.inputFlywheelSpokes.length, 4);
 
@@ -478,7 +494,7 @@ test('movement 328 has a spatial engine frame and is distinct from 327', () => {
   assert.ok(size.x > geometry.flywheelOuterRadius * 2);
   assert.ok(size.y > 8);
   assert.ok(size.z > 1.3,
-    'rear flywheel, frame, gears, cranks, and front rods use real depth');
+    'rear flywheel, gears, front bed, cranks, and rods use real depth');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

@@ -48,12 +48,26 @@ function annulusGeometry(outerRadius, innerRadius, depth) {
   return centeredExtrusion(shape, depth);
 }
 
+function taperedCrankGeometry(hubRadius, pinRadius, length, pinBore, depth) {
+  const lean = Math.asin((hubRadius - pinRadius) / length);
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, hubRadius, Math.PI / 2 - lean, Math.PI * 3 / 2 + lean, false);
+  shape.absarc(length, 0, pinRadius, -Math.PI / 2 + lean, Math.PI / 2 - lean, false);
+  shape.closePath();
+  const bore = new THREE.Path();
+  bore.absarc(length, 0, pinBore, 0, FULL_TURN, true);
+  shape.holes.push(bore);
+  return centeredExtrusion(shape, depth, 0);
+}
+
 function clearGuideGearFlanks(gear) {
   // Tiny tooth-thickness allowance for polygonal involute chords. Keep pitch,
   // root and tip radii unchanged; both flanks move towards the tooth center.
   const backlash=.0001,halfPitch=Math.PI/gear.userData.teeth;
   const body=gear.userData.rotor.children[0],p=body.geometry.parameters;
-  const points=p.shapes.getPoints(1).map(point=>{
+  const outline=p.shapes.getPoints(1);
+  if(outline.length>1&&outline[0].distanceTo(outline.at(-1))<1e-9)outline.pop();
+  const points=outline.map(point=>{
     const radius=point.length(),angle=Math.atan2(point.y,point.x);
     const local=positiveModulo(angle+halfPitch,2*halfPitch)-halfPitch;
     const shifted=Math.abs(local)<halfPitch-1e-8
@@ -61,8 +75,13 @@ function clearGuideGearFlanks(gear) {
     return new THREE.Vector2(radius*Math.cos(shifted),radius*Math.sin(shifted));
   });
   body.geometry.dispose();
-  body.geometry=new THREE.ExtrudeGeometry(new THREE.Shape(points),p.options).translate(0,0,-p.options.depth/2);
+  body.geometry=new THREE.ExtrudeGeometry(new THREE.Shape(points),{...p.options,bevelEnabled:false}).translate(0,0,-p.options.depth/2);
   gear.userData.runningBacklash=backlash;
+  // The plate draws plain wheels: no face ring or rotation index.
+  for(const child of [...gear.userData.rotor.children]) {
+    if(child.geometry?.type!=='TorusGeometry'&&child.geometry?.type!=='BoxGeometry')continue;
+    child.removeFromParent();child.geometry.dispose();
+  }
 }
 
 function openWheelBody(gear,boreRadius) {
@@ -85,7 +104,6 @@ function openWheelBody(gear,boreRadius) {
   body.geometry=new THREE.ExtrudeGeometry(shape,{...p.options,curveSegments:24,bevelEnabled:false}).translate(0,0,-p.options.depth/2);
   const hp=hub.geometry.parameters;hub.geometry.dispose();
   hub.geometry=boredCylinderGeometry(hp.radiusTop,boreRadius,hp.height);
-  const inset=rotor.children[2];inset.removeFromParent();inset.geometry.dispose();
   gear.userData.sourceSpokeCount=4;
 }
 
@@ -130,7 +148,7 @@ function makeInputFlywheelPinion({
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
         spokeLength,
-        1.0 * scale,
+        1.25 * scale,
         flywheelDepth * 0.76,
       ),
       driverMaterial,
@@ -176,20 +194,6 @@ function makeInputFlywheelPinion({
   shaft.position.z = (pinionPlaneZ + .21 + flywheelPlaneZ - .18) / 2;
   shaft.userData.axis = Z_AXIS.clone();
   shaft.userData.role = 'input-flywheel-and-pinion-shaft';
-  const rotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.34 * scale,
-      (flywheelOuterRadius - flywheelInnerRadius) * 0.78,
-      0.035,
-    ),
-    whiteMaterial,
-  );
-  rotationIndex.position.set(
-    0,
-    (flywheelOuterRadius + flywheelInnerRadius) / 2,
-    flywheelPlaneZ + flywheelDepth / 2 + 0.026,
-  );
-  rotationIndex.userData.role = 'white-index-fixed-to-input-flywheel';
   const centerAnchor = new THREE.Object3D();
   centerAnchor.position.z = pinionPlaneZ;
   centerAnchor.userData.role = 'analytic-input-pinion-center';
@@ -200,7 +204,6 @@ function makeInputFlywheelPinion({
     hub,
     pinion,
     shaft,
-    rotationIndex,
     centerAnchor,
   );
   return {
@@ -208,7 +211,6 @@ function makeInputFlywheelPinion({
     hub,
     pinion,
     rim,
-    rotationIndex,
     rotor,
     shaft,
     spokes,
@@ -260,44 +262,20 @@ function makeCrankedEqualGear({
   );
   crankDisk.position.z = crankPlaneZ;
   crankDisk.userData.role = `${role}-crank-center-disk`;
+  // Brown's cranks A are fat tapered arms, rounded at both ends, with the
+  // rod pin running in a bore at the outer end.
+  const pinBore = 0.25 * scale + .012;
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      crankRadius,
-      0.72 * scale,
-      crankDepth,
-    ),
+    taperedCrankGeometry(1.0 * scale, 0.62 * scale, crankRadius, pinBore,
+      crankDepth),
     drivenMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, crankPlaneZ);
+  crankArm.position.z = crankPlaneZ;
   crankArm.userData.role = `${role}-equal-radius-crank-A`;
-  const crankPinBoss = cylinderAlongZ(
-    0.25 * scale,
-    crankDepth * 1.24,
-    drivenMaterial,
-    32,
-  );
+  const crankPinBoss = boredJournal(0.52 * scale, pinBore, crankDepth * 1.24,
+    drivenMaterial, 32);
   crankPinBoss.position.set(crankRadius, 0, crankPlaneZ);
   crankPinBoss.userData.role = `${role}-crank-A-moving-pin-boss`;
-  const crankPinRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.19 * scale, 0.055 * scale, 8, 32),
-    darkMaterial,
-  );
-  crankPinRing.position.set(
-    crankRadius,
-    0,
-    crankPlaneZ + crankDepth / 2 + 0.018,
-  );
-  crankPinRing.userData.role = `${role}-crank-A-pin-eye`;
-  const crankIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius * 0.62, 0.12 * scale, 0.032),
-    whiteMaterial,
-  );
-  crankIndex.position.set(
-    crankRadius * 0.35,
-    0,
-    crankPlaneZ + crankDepth / 2 + 0.028,
-  );
-  crankIndex.userData.role = `${role}-white-crank-A-index`;
   const shaft = cylinderAlongZ(
     0.47 * scale,
     crankPlaneZ + .12 + .33,
@@ -318,8 +296,6 @@ function makeCrankedEqualGear({
     crankDisk,
     crankArm,
     crankPinBoss,
-    crankPinRing,
-    crankIndex,
     shaft,
     crankPinAnchor,
     centerAnchor,
@@ -331,7 +307,6 @@ function makeCrankedEqualGear({
     centerAnchor,
     crankArm,
     crankDisk,
-    crankIndex,
     crankPinAnchor,
     gear,
     rotatingBody,
@@ -438,8 +413,12 @@ function CartwrightParallelMotion(movement) {
     gearCenterY);
   const rightGearCenter = new THREE.Vector2(0, gearCenterY);
   const pistonAxisX = -equalGearCenterSpacing / 2;
-  const flywheelOuterRadius = sourceFlywheelOuterRadius * sourceScale;
-  const flywheelInnerRadius = sourceFlywheelInnerRadius * sourceScale;
+  // Brown's flywheel rim is thin and about 1.36 wheel-C spacings in radius,
+  // smaller than the official canvas ring; the linkage does not depend on it.
+  const plateFlywheelOuterRadius = 13.6;
+  const plateFlywheelInnerRadius = 12.9;
+  const flywheelOuterRadius = plateFlywheelOuterRadius * sourceScale;
+  const flywheelInnerRadius = plateFlywheelInnerRadius * sourceScale;
   const crossheadSpan = sourceCrossheadSpan * sourceScale;
   const pistonRodTopLocalY = sourcePistonRodTopLocalY * sourceScale;
   const pistonRodBottomLocalY = sourcePistonRodBottomLocalY * sourceScale;
@@ -453,12 +432,11 @@ function CartwrightParallelMotion(movement) {
   const inputPinionDepth = 0.28;
   const equalGearPlaneZ = .51;
   const equalGearDepth = 0.28;
-  const crankPlaneZ = .81;
+  const crankPlaneZ = 1.10;
   const crankDepth = 0.18;
-  const rodPlaneZ = 1.05;
+  const rodPlaneZ = 1.34;
   const rodDepth = 0.14;
   const crossheadPlaneZ = 0.55;
-  const frameDepth = 0.46;
 
   const inputPinionToothOffset = Math.PI / inputPinionTeeth;
   const rightGearToothOffset = Math.PI / equalGearTeeth;
@@ -489,59 +467,51 @@ function CartwrightParallelMotion(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'fixed-Cartwright-engine-frame';
+  // Brown draws the bed in front of both wheels C, hiding their mesh with the
+  // pinion, with a pillow block on its top face under each wheel shaft.
+  const bedFrontZ = 0.96;
+  const bedBackZ = equalGearPlaneZ + 0.21;
+  const bedBottomY = 1.7 * sourceScale;
+  const bedTopY = 4.3 * sourceScale;
+  const bedLeftX = -16.1 * sourceScale;
+  const bedRightX = 11.1 * sourceScale;
   const upperBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(36 * sourceScale, 2.5 * sourceScale, 0.62),
+    new THREE.BoxGeometry(bedRightX - bedLeftX, bedTopY - bedBottomY,
+      bedFrontZ - bedBackZ),
     frameMaterial,
   );
-  upperBeam.position.set(0, 4.25 * sourceScale, -0.06);
+  upperBeam.position.set((bedLeftX + bedRightX) / 2, (bedTopY + bedBottomY) / 2,
+    (bedFrontZ + bedBackZ) / 2);
   upperBeam.userData.fixed = true;
   upperBeam.userData.role = 'fixed-upper-bed-carrying-both-equal-wheels-C';
-  const upperBeamBands = [3, 5.5].map((sourceY, index) => {
-    const band = new THREE.Mesh(
-      new THREE.BoxGeometry(36 * sourceScale, 0.028, 0.66),
-      darkMaterial,
-    );
-    band.position.set(0, sourceY * sourceScale, -0.06);
-    band.userData.fixed = true;
-    band.userData.role = `source-upper-bed-line-${index + 1}`;
-    return band;
-  });
 
+  const shaftBore = .47 * sourceScale + .012;
   const makeBearingPedestal = (center, role) => {
     const group = new THREE.Group();
     group.position.set(center.x, center.y, 0);
     group.userData.fixed = true;
     group.userData.role = role;
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(2.5 * sourceScale, 2.75 * sourceScale,
-        frameDepth),
-      frameMaterial,
-    );
-    post.position.y = -1.25 * sourceScale - .135;
-    post.userData.fixed = true;
-    post.userData.role = `${role}-bearing-standard`;
-    const housing = boredJournal(
-      1.02 * sourceScale, .13,
-      0.54,
-      frameMaterial,
-      44,
-    );
-    housing.position.z = 0.01;
-    housing.userData.fixed = true;
-    housing.userData.role = `${role}-fixed-bearing-housing`;
-    const bore = boredJournal(
-      .13, .47 * sourceScale + .004,
-      0.57,
-      darkMaterial,
-      36,
-    );
-    bore.position.z = 0.015;
-    bore.userData.fixed = true;
-    bore.userData.role = `${role}-bearing-bore`;
-    group.add(post, housing, bore);
-    group.userData.bore = bore;
-    group.userData.housing = housing;
-    group.userData.post = post;
+    const foot = bedTopY - center.y - .002;
+    const shape = new THREE.Shape([
+      new THREE.Vector2(-1.5 * sourceScale, foot),
+      new THREE.Vector2(1.5 * sourceScale, foot),
+      new THREE.Vector2(1.5 * sourceScale, foot + 0.9 * sourceScale),
+      new THREE.Vector2(1.05 * sourceScale, foot + 0.9 * sourceScale),
+      new THREE.Vector2(1.05 * sourceScale, 0.95 * sourceScale),
+      new THREE.Vector2(-1.05 * sourceScale, 0.95 * sourceScale),
+      new THREE.Vector2(-1.05 * sourceScale, foot + 0.9 * sourceScale),
+      new THREE.Vector2(-1.5 * sourceScale, foot + 0.9 * sourceScale),
+    ]);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, shaftBore, 0, FULL_TURN, true);
+    shape.holes.push(hole);
+    const block = new THREE.Mesh(centeredExtrusion(shape, bedFrontZ - bedBackZ, 0),
+      frameMaterial);
+    block.position.z = (bedFrontZ + bedBackZ) / 2;
+    block.userData.fixed = true;
+    block.userData.role = `${role}-pillow-block-on-bed`;
+    group.add(block);
+    group.userData.housing = block;
     return group;
   };
   const leftBearing = makeBearingPedestal(
@@ -553,64 +523,61 @@ function CartwrightParallelMotion(movement) {
     'right-wheel-C-fixed-bearing',
   );
 
-  const framePosts = [leftGearCenter.x, rightGearCenter.x].map(
-    (x, index) => {
-      const topY = -16.875 * sourceScale;
-      const post = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, topY - frameBottomY, 0.54),
-        frameMaterial,
-      );
-      post.position.set(x, (topY + frameBottomY) / 2, -0.20);
-      post.userData.fixed = true;
-      post.userData.role = `${index === 0 ? 'left' : 'right'}-lower-frame-post`;
-      return post;
-    },
-  );
-  const lowerCrossBase = new THREE.Mesh(
-    new THREE.BoxGeometry(13 * sourceScale, 1.0 * sourceScale, 1.08),
-    frameMaterial,
-  );
-  lowerCrossBase.position.set(
-    pistonAxisX,
-    -17.375 * sourceScale,
-    -0.12,
-  );
-  lowerCrossBase.userData.fixed = true;
-  lowerCrossBase.userData.role = 'fixed-lower-cylinder-crossbase';
-  const cylinderBody = new THREE.Mesh(
-    boredCylinderGeometry(1.48*sourceScale,.20,3.7),
-    frameMaterial,
-  );
-  cylinderBody.position.set(pistonAxisX,-17*sourceScale-1.85,crossheadPlaneZ);
-  cylinderBody.userData.fixed = true;
-  cylinderBody.userData.role = 'fixed-upright-cylinder-below-piston-rod-B';
+  // Only the cylinder top shows at the foot of the plate: a cover as wide as
+  // the crosshead, a stuffing box, neck and gland under piston-rod B.
+  const rodBore = .10;
+  const coverTopY = -15.3 * sourceScale;
   const cylinderTop = new THREE.Mesh(
-    boredCylinderGeometry(1.92*sourceScale,.10,.13),
-    darkMaterial,
+    boredCylinderGeometry(5.0 * sourceScale, rodBore, 1.1 * sourceScale),
+    frameMaterial,
   );
-  cylinderTop.position.set(pistonAxisX, -17.0 * sourceScale, crossheadPlaneZ);
+  cylinderTop.position.set(pistonAxisX, coverTopY - 0.55 * sourceScale,
+    crossheadPlaneZ);
   cylinderTop.userData.fixed = true;
   cylinderTop.userData.role = 'fixed-cylinder-top-cap';
+  const cylinderBodyTop = coverTopY - 1.0 * sourceScale;
+  const cylinderBodyBottom = -34.6 * sourceScale;
+  const cylinderBody = new THREE.Mesh(
+    boredCylinderGeometry(4.2 * sourceScale, .20,
+      cylinderBodyTop - cylinderBodyBottom),
+    frameMaterial,
+  );
+  cylinderBody.position.set(pistonAxisX,
+    (cylinderBodyTop + cylinderBodyBottom) / 2, crossheadPlaneZ);
+  cylinderBody.userData.fixed = true;
+  cylinderBody.userData.role = 'fixed-upright-cylinder-below-piston-rod-B';
+  const stuffingBox = new THREE.Mesh(
+    boredCylinderGeometry(.95 * sourceScale, rodBore, .9 * sourceScale),
+    frameMaterial,
+  );
+  stuffingBox.position.set(pistonAxisX, coverTopY + .45 * sourceScale,
+    crossheadPlaneZ);
+  stuffingBox.userData.fixed = true;
+  stuffingBox.userData.role = 'fixed-piston-rod-B-stuffing-box';
+  const glandNeck = new THREE.Mesh(
+    boredCylinderGeometry(.55 * sourceScale, rodBore, 1.5 * sourceScale),
+    frameMaterial,
+  );
+  glandNeck.position.set(pistonAxisX, coverTopY + .75 * sourceScale,
+    crossheadPlaneZ);
+  glandNeck.userData.fixed = true;
+  glandNeck.userData.role = 'hollow-neck-joining-cylinder-cap-to-gland';
   const pistonGland = new THREE.Mesh(
-    boredCylinderGeometry(.70*sourceScale,.10,.19),
+    boredCylinderGeometry(.70 * sourceScale, rodBore, .8 * sourceScale),
     drivenMaterial,
   );
-  pistonGland.position.set(pistonAxisX, -15.8 * sourceScale, crossheadPlaneZ);
+  pistonGland.position.set(pistonAxisX, coverTopY + 1.8 * sourceScale,
+    crossheadPlaneZ);
   pistonGland.userData.fixed = true;
   pistonGland.userData.role = 'fixed-piston-rod-B-gland';
-  const glandNeck=new THREE.Mesh(boredCylinderGeometry(.12,.10,.30),frameMaterial);
-  glandNeck.position.set(pistonAxisX,(-17-15.8)*sourceScale/2,crossheadPlaneZ);
-  glandNeck.userData.role='hollow-neck-joining-cylinder-cap-to-gland';
   fixedFrame.add(
     glandNeck,
     upperBeam,
-    ...upperBeamBands,
     leftBearing,
     rightBearing,
-    ...framePosts,
-    lowerCrossBase,
     cylinderBody,
     cylinderTop,
+    stuffingBox,
     pistonGland,
   );
 
@@ -728,12 +695,6 @@ function CartwrightParallelMotion(movement) {
     crossheadPlaneZ,
   );
   pistonRod.userData.role = 'vertical-piston-rod-B-rigid-with-crosshead';
-  const pistonIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, 0.040, 0.032),
-    whiteMaterial,
-  );
-  pistonIndex.position.z = crossheadPlaneZ + .104;
-  pistonIndex.userData.role = 'white-index-on-crosshead-and-piston-rod-B';
   const leftWristAnchor = new THREE.Object3D();
   leftWristAnchor.position.set(-crossheadSpan / 2, 0, rodPlaneZ);
   leftWristAnchor.userData.role = 'analytic-left-crosshead-wrist';
@@ -751,7 +712,6 @@ function CartwrightParallelMotion(movement) {
     pistonRod,
     crossheadBar,
     ...crossheadPins,
-    pistonIndex,
     leftWristAnchor,
     rightWristAnchor,
     pistonAxisAnchor,
@@ -1057,7 +1017,6 @@ function CartwrightParallelMotion(movement) {
     flywheelOuterRadius,
     flywheelPlaneZ,
     frameBottomY,
-    frameDepth,
     gearCenterY,
     inputAngularSpeed,
     inputCyclePeriod,
@@ -1166,7 +1125,6 @@ function CartwrightParallelMotion(movement) {
     cylinderBody,
     cylinderTop,
     fixedFrame,
-    framePosts,
     inputFlywheel: inputParts.rotor,
     inputFlywheelRim: inputParts.rim,
     inputFlywheelSpokes: inputParts.spokes,
@@ -1181,7 +1139,7 @@ function CartwrightParallelMotion(movement) {
     leftRodCrankAnchor: leftRodParts.crankAnchor,
     leftRodWristAnchor: leftRodParts.wristAnchor,
     leftWheelC: leftGearParts.gear,
-    lowerCrossBase,
+    stuffingBox,
     pistonAxisAnchor,
     pistonGland,
     glandNeck,
@@ -1197,13 +1155,7 @@ function CartwrightParallelMotion(movement) {
     rightRodWristAnchor: rightRodParts.wristAnchor,
     rightWheelC: rightGearParts.gear,
     upperBeam,
-    upperBeamBands,
   };
-  root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.38, frameBottomY - 0.10, -0.76),
-    new THREE.Vector3(3.38, 3.34, 1.04),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -1308,9 +1260,18 @@ function CartwrightParallelMotion(movement) {
   };
 
   fitPistonGuide(root,update,assemblyClosurePeriod);
+  root.userData.sweptBounds = root.userData.cameraFitBounds;
+  // Brown crops from the bed's left end to the flywheel's right rim, and from
+  // the rim top down to the cylinder cover.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-17.2 * sourceScale, -16.9 * sourceScale, -0.6),
+    new THREE.Vector3(14.5 * sourceScale, 13.4 * sourceScale, 1.45),
+  );
+  root.userData.cameraDistanceScale = 0.96;
+  root.userData.cameraFov = 8;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(.8,.5,14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };

@@ -9553,27 +9553,32 @@
     {
       "id": 328,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-guide-328-330-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Both models disable ground/fog and fit their whole stroke. Default and advanced oblique source comparisons show no browser errors; 17 projected poses stay in frame, with maximum absolute coordinates 0.883 and 0.829. 328 has a nearly frontal initial view, while 330 retains enough…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/piston-guide-328-330-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. `node --test tests/movement-328.test.mjs tests/movement-330.test.mjs tests/piston-guide-solids.test.mjs` passes 21 tests. The new tests check finite rendered pin/rod cross-sections, gear engagement and sampled working teeth, connected rod/gland attachments, fork clearance against the piston/crosshead/fixed guide, piston containment, and complete camera bounds. Existing tests… Pass-49 relative-motion screen reports 0.0535 solid overlap (white-index-fixed-to-input-flywheel x fixed-upper-bed-carrying-both-equal-wheels-C); unclassified, may be intended contact."
+        "evidence": "docs/engines-328-343-review.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. `node --test tests/movement-328.test.mjs tests/movement-330.test.mjs tests/piston-guide-solids.test.mjs` passes 21 tests. The new tests check finite rendered pin/rod cross-sections, gear engagement and sampled working teeth, connected rod/gland attachments, fork clearance against the piston/crosshead/fixed guide, piston containment, and complete camera bounds. Existing tests… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps and no open meshes remain."
       },
-      "flaws": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
+      "flaws": "Undrawn frames, bases and indices are removed. The flywheel shaft has no bearing because none is drawn; the default pose keeps the official phase rather than the plate's; the cover and gland sit slightly low to clear the crosshead at the bottom of its stroke. Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
       "references": [
         "docs/piston-guide-328-330-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/engines-328-343-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cartwright-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 329,
@@ -9607,26 +9612,31 @@
     {
       "id": 330,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-guide-328-330-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Both models disable ground/fog and fit their whole stroke. Default and advanced oblique source comparisons show no browser errors; 17 projected poses stay in frame, with maximum absolute coordinates 0.883 and 0.829. 328 has a nearly frontal initial view, while 330 retains enough…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/piston-guide-328-330-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. `node --test tests/movement-328.test.mjs tests/movement-330.test.mjs tests/piston-guide-solids.test.mjs` passes 21 tests. The new tests check finite rendered pin/rod cross-sections, gear engagement and sampled working teeth, connected rod/gland attachments, fork clearance against the piston/crosshead/fixed guide, piston containment, and complete camera bounds. Existing tests…"
+        "evidence": "docs/engines-328-343-review.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. `node --test tests/movement-328.test.mjs tests/movement-330.test.mjs tests/piston-guide-solids.test.mjs` passes 21 tests. The new tests check finite rendered pin/rod cross-sections, gear engagement and sampled working teeth, connected rod/gland attachments, fork clearance against the piston/crosshead/fixed guide, piston containment, and complete camera bounds. Existing tests… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps and no open meshes remain."
       },
-      "flaws": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
+      "flaws": "Undrawn frames, bases and indices are removed. The crank's sideways offset cannot be checked from the side view; the gland sits about 12 px low to clear the fork at bottom dead centre; fork and rim proportions are assumed; the column and cylinder end below the crop with no base. Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
       "references": [
         "docs/piston-guide-328-330-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/engines-328-343-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-forked-piston-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 331,
@@ -9960,52 +9970,62 @@
     {
       "id": 342,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/beam-upright-engine-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/beam-upright-engine-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Pass-49 relative-motion screen reports 0.0255 solid overlap (fixed-piston-rod-guide-1 x piston-rod-chain-connection-eye); unclassified, may be intended contact."
+        "evidence": "docs/engines-328-343-review.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. Only the last chain eye seats on its terminal connector at 0.0000."
       },
-      "flaws": "Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
+      "flaws": "Undrawn frames, bases and indices are removed. Only the beam's cylinder end is modelled, as drawn; the far end and pump rod are omitted. The beam falls to the right at the default pose where Brown's rises, and a king post with one stay replaces the plate's crossed stays. The chain follows a scripted path. Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
       "references": [
         "docs/beam-upright-engine-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/engines-328-343-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-atmospheric-beam-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 343,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/beam-upright-engine-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/beam-upright-engine-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Pass-49 relative-motion screen reports 0.0437 solid overlap (upright-engine-piston-rod-below-C x common-working-pin-D); unclassified, may be intended contact."
+        "evidence": "docs/engines-328-343-review.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps and no open meshes remain."
       },
-      "flaws": "Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
+      "flaws": "Undrawn frames, bases and indices are removed. The official radius-rod pivots, vibrating-piece length and crank radius (about 3.5 against the plate's 4.3) are kept; the columns and cylinder end below the crop; spoke angles are estimated. Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
       "references": [
         "docs/beam-upright-engine-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/engines-328-343-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-upright-engine-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 344,

@@ -78,24 +78,28 @@ test('movement 342 is the atmospheric single-acting chain beam engine', () => {
   assert.match(transmission.input, /pump-rod weight/);
   assert.equal(degreesOfFreedom.mechanism, 1);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.beam.parent, model.root);
-  assert.equal(blocks.piston.parent, model.root);
-  assert.equal(blocks.weightedPumpRod.parent, model.root);
-  assert.equal(blocks.chainTerminalConnector.parent, model.root);
-  assert.equal(blocks.pressureVolume.parent, model.root);
-  assert.equal(blocks.chainShoe.parent, blocks.beam);
-  assert.equal(blocks.chainAttachmentAnchor.parent, blocks.beam);
-  assert.equal(blocks.pumpJointAnchor.parent, blocks.beam);
-  assert.equal(blocks.pistonTopAnchor.parent, blocks.piston);
-  assert.equal(blocks.pumpRodTopAnchor.parent, blocks.weightedPumpRod);
+  assert.ok(blocks.fixedFrame.parent === model.root, 'fixed frame on root');
+  assert.ok(blocks.beam.parent === model.root, 'beam on root');
+  assert.ok(blocks.piston.parent === model.root, 'piston on root');
+  assert.ok(blocks.chainTerminalConnector.parent === model.root,
+    'terminal connector on root');
+  assert.ok(blocks.chainShoe.parent === blocks.beam, 'segment head on beam');
+  assert.ok(blocks.kingPost.parent === blocks.beam, 'king post on beam');
+  assert.ok(blocks.stays.every(({ stay }) => stay.parent === blocks.beam),
+    'three stays ride on the beam');
+  assert.equal(blocks.stays.length, 3);
+  assert.ok(blocks.chainAttachmentAnchor.parent === blocks.beam,
+    'chain anchor on beam');
+  assert.ok(blocks.pistonTopAnchor.parent === blocks.piston,
+    'piston anchor on piston');
   assert.equal(blocks.chainLinks.length, 10);
-  blocks.chainLinks.forEach(({ link }) => assert.equal(link.parent, model.root));
-  assert.equal(contacts.beamPivot.fixedMember, blocks.fixedFrame);
-  assert.equal(contacts.beamPivot.movingMember, blocks.beam);
-  assert.equal(contacts.chainAtPiston.members[0], blocks.piston);
-  assert.equal(contacts.chainAtBeam.members[0], blocks.beam);
-  assert.equal(contacts.pumpRodAtBeam.members[1], blocks.weightedPumpRod);
+  assert.ok(blocks.chainLinks.every(({ link }) => link.parent === model.root),
+    'chain links on root');
+  assert.ok(contacts.beamPivot.fixedMember === blocks.fixedFrame, 'pivot fixed member');
+  assert.ok(contacts.beamPivot.movingMember === blocks.beam, 'pivot moving member');
+  assert.ok(contacts.chainAtPiston.members[0] === blocks.piston, 'chain at piston');
+  assert.ok(contacts.chainAtBeam.members[0] === blocks.beam, 'chain at beam');
+  assert.equal(contacts.pumpRodAtBeam, undefined);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -104,8 +108,9 @@ test('movement 342 is the atmospheric single-acting chain beam engine', () => {
     .length, 1);
   assert.equal(roles.filter((role) => role ===
     'vertical-piston-and-rod-in-open-top-atmospheric-cylinder').length, 1);
-  assert.equal(roles.filter((role) => role ===
-    'gravity-hanging-pump-rod-at-opposite-end-of-beam').length, 1);
+  assert.equal(roles.filter((role) =>
+    /pump-rod|pump-weight|pressure|steam|support-column|foundation|piston-rod-guide/
+      .test(role)).length, 0, 'plate-undrawn engine parts are absent');
   assert.equal(roles.filter((role) => role ===
     'articulated-atmospheric-engine-chain-link').length, 10);
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
@@ -478,7 +483,7 @@ test('movement 342 analytic beam, piston, pump-rod, and chain rates match finite
   disposeModel(model.root);
 });
 
-test('movement 342 renderer binds the beam, chain, piston, and weighted pump rod in 3D', () => {
+test('movement 342 renderer binds the beam, chain, and piston in the plate crop', () => {
   const model = createMovementModel(catalog.movements[341]);
   const {
     blocks,
@@ -499,18 +504,12 @@ test('movement 342 renderer binds the beam, chain, piston, and weighted pump rod
       new THREE.Vector3(state.chain.attachmentPoint.x,
         state.chain.attachmentPoint.y, 0.76), 3e-15,
     `rendered chain attachment at ${time}`);
-    vector3Near(worldPosition(blocks.pumpJointAnchor),
-      new THREE.Vector3(state.pumpRodTop.x, state.pumpRodTop.y, 0.20),
-      2e-15, `rendered far beam joint at ${time}`);
     vector3Near(worldPosition(blocks.pistonTopAnchor),
       new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, 0.42),
       1e-15, `rendered piston-chain pin at ${time}`);
     vector3Near(worldPosition(blocks.pistonHeadAnchor),
       new THREE.Vector3(state.pistonHead.x, state.pistonHead.y, .42),
       1e-15, `rendered piston head at ${time}`);
-    vector3Near(worldPosition(blocks.pumpRodTopAnchor),
-      new THREE.Vector3(state.pumpRodTop.x, state.pumpRodTop.y, 0.20),
-      1e-15, `rendered weighted pump rod at ${time}`);
 
     blocks.chainLinks.forEach((parts, index) => {
       const expectedStart = chainPointAtDistance(
@@ -552,9 +551,6 @@ test('movement 342 renderer binds the beam, chain, piston, and weighted pump rod
       new THREE.Vector3(state.chain.attachmentPoint.x,
         state.chain.attachmentPoint.y, 0.76), 0,
     `beam-chain contact at ${time}`);
-    vector3Near(contacts.pumpRodAtBeam.point,
-      new THREE.Vector3(state.pumpRodTop.x, state.pumpRodTop.y, 0.20), 0,
-    `pump-rod contact at ${time}`);
     vector3Near(contacts.chainAtShoeTangent.surfaceVelocityError,
       new THREE.Vector3(), 0, `rendered no-slip tangent at ${time}`);
     near(contacts.chainAtShoeTangent.pathLength,
@@ -562,21 +558,18 @@ test('movement 342 renderer binds the beam, chain, piston, and weighted pump rod
     `rendered constant chain at ${time}`);
   }
 
-  model.update(1);
-  assert.equal(blocks.pressureVolume.material.color.getHex(), 0x4a93a8);
-  model.update(3);
-  assert.equal(blocks.pressureVolume.material.color.getHex(), 0xd89a55);
-  assert.equal(blocks.cylinderWalls.length, 2);
-  assert.equal(blocks.cylinderLip.length, 2);
-  assert.equal(blocks.pistonGuides.length, 2);
-  assert.equal(blocks.shoeIndexBosses.length, 3);
-  assert.equal(blocks.weightedPumpRod.rotation.z, 0);
+  assert.equal(blocks.shoeIndexBosses.length, 4);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.6);
+  assert.ok(size.x > 6.4);
   assert.ok(size.y > 8.6);
   assert.ok(size.z > 2.0,
-    'frame, beam, chain, piston, pressure volume, and pump weight have depth');
+    'pier, floor beam, beam, chain and open cylinder have depth');
+  const crop = model.root.userData.cameraFitBounds;
+  assert.ok(crop.containsPoint(new THREE.Vector3(geometry.pistonLineX, -2, 0.4)),
+    'plate crop contains the chain line');
+  assert.ok(crop.max.x < 0.3 * geometry.pitchRadius,
+    'plate crop stops just past the king post');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

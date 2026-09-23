@@ -598,3 +598,14 @@ The engines lane (`docs/engines-326-345-review.md`) reshaped these parts and rem
 | --- | --- |
 | 329 | Faithful flywheel, internal wheel C, pinion B, crank A, legs and cylinder. |
 | 331 | Faithful flywheel, framing D, slotted crosshead A, crank B and rod C. |
+
+## Pass 50 batch: engines 328, 330, 342 and 343
+
+The second engines lane (`docs/engines-328-343-review.md`) rebuilt these to the plates. Its captures were inspected here beside the engravings, and `scripts/show-body-intersections.mjs ID --spacing=0.01 --samples=129` was rerun independently.
+
+| Movement | Observation |
+| --- | --- |
+| 328 | Faithful wheels C, C, cranks A, A, rods, crosshead B, bed beam and cylinder top. |
+| 330 | Side elevation along the crankshaft, as Brown draws it; faithful column, guide A, forked rod, flywheel and cylinder. |
+| 342 | Close-up of the beam's cylinder end, as Brown draws it; faithful arched segment, chain, stays, pier and cylinder top. The beam leans the other way at the default pose. |
+| 343 | Faithful framing, flywheel, radius rods A, A, vibrating piece and cylinder. |

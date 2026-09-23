@@ -560,61 +560,65 @@ function opposedRadiusRodUprightEngine(movement) {
     metalness: 0.08,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-upright-engine-frame-crank-bearing-and-opposed-radius-pivots';
+  // Brown's plate is the official 30 x 30 view: a double cross-beam over two
+  // columns with capitals, the crank box on the beam, and the cylinder top.
   const framePlaneZ = -0.66;
-  const baseRail = new THREE.Mesh(
-    new THREE.BoxGeometry(34 * sourceScale, 0.72 * sourceScale, 0.92),
+  const frameDepth = 0.78;
+  const frameBox = (minX, maxX, minY, maxY, depth, role) => {
+    const part = new THREE.Mesh(
+      new THREE.BoxGeometry((maxX - minX) * sourceScale,
+        (maxY - minY) * sourceScale, depth),
+      frameMaterial,
+    );
+    part.position.set((minX + maxX) / 2 * sourceScale,
+      (minY + maxY) / 2 * sourceScale, framePlaneZ);
+    part.userData.fixed = true;
+    part.userData.role = role;
+    fixedFrame.add(part);
+    return part;
+  };
+  const frameTopRails = [
+    [-2.40, -1.71, 'fixed-upper-cross-beam-carrying-crank-box'],
+    [-5.03, -4.57, 'fixed-lower-cross-beam-on-column-capitals'],
+  ].map(([minY, maxY, role]) => frameBox(-16.5, 16.5, minY, maxY, frameDepth, role));
+  const columnCenterX = 7.45;
+  const columnHalfWidth = 1.3;
+  const columnBottomY = -27.0;
+  const framePillars = [-1, 1].map((side, index) => frameBox(
+    side * columnCenterX - columnHalfWidth, side * columnCenterX + columnHalfWidth,
+    columnBottomY, -5.03, 0.84, `fixed-upright-engine-column-${index + 1}`));
+  const columnCapitals = [-1, 1].map((side, index) => frameBox(
+    side * columnCenterX - 1.8, side * columnCenterX + 1.8, -4.57, -2.40,
+    frameDepth, `fixed-column-capital-between-cross-beams-${index + 1}`));
+  const crankBoxShape = new THREE.Shape([
+    new THREE.Vector2(-3.0 * sourceScale, -1.71 * sourceScale),
+    new THREE.Vector2(2.9 * sourceScale, -1.71 * sourceScale),
+    new THREE.Vector2(2.9 * sourceScale, 2.46 * sourceScale),
+    new THREE.Vector2(-3.0 * sourceScale, 2.46 * sourceScale),
+  ]);
+  const crankBoxBore = new THREE.Path();
+  crankBoxBore.absarc(0, 0, .42 * sourceScale + .004, 0, FULL_TURN, true);
+  crankBoxShape.holes.push(crankBoxBore);
+  const crankBearing = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(crankBoxShape, {
+      bevelEnabled: false, curveSegments: 40, depth: 0.82,
+    }).translate(0, 0, -0.41),
     frameMaterial,
   );
-  baseRail.position.set(0, -32.0 * sourceScale, framePlaneZ);
-  baseRail.userData.fixed = true;
-  baseRail.userData.role = 'fixed-upright-engine-foundation';
-  fixedFrame.add(baseRail);
-
-  const framePillars = [-7.12, 7.12].map((sourceX, index) => {
-    const pillar = new THREE.Mesh(
-      new THREE.BoxGeometry(1.72 * sourceScale, 29.0 * sourceScale, 0.84),
-      frameMaterial,
-    );
-    pillar.position.set(sourceX * sourceScale, -17.4 * sourceScale,
-      framePlaneZ);
-    pillar.userData.fixed = true;
-    pillar.userData.role = `fixed-upright-engine-side-pillar-${index + 1}`;
-    fixedFrame.add(pillar);
-    return pillar;
-  });
-  const frameTopRails = [-1.75, -3.5].map((sourceY, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(33 * sourceScale, 0.38 * sourceScale, 0.78),
-      frameMaterial,
-    );
-    rail.position.set(0, sourceY * sourceScale, framePlaneZ);
-    rail.userData.fixed = true;
-    rail.userData.role = `fixed-upper-frame-rail-${index + 1}`;
-    fixedFrame.add(rail);
-    return rail;
-  });
-  const crankBearing = cylinderAlongZ(1.24 * sourceScale, 0.82,
-    frameMaterial, 44);
   crankBearing.position.set(0, 0, -0.28);
-  crankBearing.geometry.dispose();
-  crankBearing.geometry = boredCylinderGeometry(1.24 * sourceScale, .42 * sourceScale + .004, .82);
   crankBearing.userData.fixed = true;
-  crankBearing.userData.role = 'fixed-main-crank-bearing';
+  crankBearing.userData.role = 'fixed-crank-box-on-upper-cross-beam';
   const crankShaft = cylinderAlongZ(0.42 * sourceScale, 2.3,
     darkMaterial, 36);
   crankShaft.position.set(0, 0, -.65);
   crankShaft.userData.fixed = true;
   crankShaft.userData.role = 'fixed-crankshaft-axis';
-  const crankPedestal = new THREE.Mesh(new THREE.BoxGeometry(.30, .20, .72), frameMaterial);
-  crankPedestal.position.set(0, -.33, -.38);
-  crankPedestal.userData.role = 'main-bearing-pedestal-on-upper-frame-rail';
-  fixedFrame.add(crankBearing, crankShaft, crankPedestal);
+  fixedFrame.add(crankBearing, crankShaft);
 
   const makePivotBearing = (center, prefix, planeZ) => {
     const bearing = cylinderAlongZ(0.78 * sourceScale, 0.64,
@@ -640,94 +644,100 @@ function opposedRadiusRodUprightEngine(movement) {
   const bottomPivotBearing = makePivotBearing(bottomPivotB,
     'lower-radius-pivot-B', 0.73);
 
-  const cylinderTopY = -21.1 * sourceScale;
+  // Only the cylinder top is in the plate: gland, neck and cover on a round
+  // barrel whose lower end is below the plate edge.
+  const cylinderAxisZ = 1.40;
+  const rodBore = Math.hypot(.19 * sourceScale, .11) + .012;
+  const pistonBore = 3.05 * sourceScale + .012;
+  const cylinderTopY = -22.0 * sourceScale;
+  const coverBottomY = -23.14 * sourceScale;
   const cylinderBottomY = -31.9 * sourceScale;
-  const cylinderHalfWidth = 3.5 * sourceScale;
-  const cylinderWalls = [-1, 1].map((side, index) => {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35 * sourceScale,
-        cylinderTopY - cylinderBottomY, 0.76),
+  const cylinderPart = (radius, bore, topY, bottomY, role) => {
+    const part = new THREE.Mesh(
+      boredCylinderGeometry(radius * sourceScale, bore, topY - bottomY),
       frameMaterial,
     );
-    wall.position.set(side * cylinderHalfWidth,
-      (cylinderTopY + cylinderBottomY) / 2, framePlaneZ);
-    wall.userData.fixed = true;
-    wall.userData.role = `upright-engine-cylinder-wall-${index + 1}`;
-    fixedFrame.add(wall);
-    return wall;
-  });
-  const cylinderTopLips = [-1, 1].map((side, index) => {
-    const lip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62 * sourceScale, 0.48 * sourceScale, 0.94),
-      frameMaterial,
-    );
-    lip.position.set(side * cylinderHalfWidth, cylinderTopY, framePlaneZ);
-    lip.userData.fixed = true;
-    lip.userData.role = `upright-cylinder-top-lip-${index + 1}`;
-    fixedFrame.add(lip);
-    return lip;
-  });
+    part.position.set(0, (topY + bottomY) / 2, cylinderAxisZ);
+    part.userData.fixed = true;
+    part.userData.role = role;
+    fixedFrame.add(part);
+    return part;
+  };
+  const cylinderGland = cylinderPart(1.7, rodBore, -20.0 * sourceScale,
+    -21.14 * sourceScale, 'upright-cylinder-piston-rod-gland');
+  const cylinderNeck = cylinderPart(1.0, rodBore, -21.14 * sourceScale + .01,
+    cylinderTopY - .01, 'upright-cylinder-gland-neck');
+  const cylinderTop = cylinderPart(5.43, rodBore, cylinderTopY, coverBottomY,
+    'upright-engine-cylinder-top-cover');
+  const cylinderBody = cylinderPart(4.3, pistonBore, coverBottomY + .01,
+    cylinderBottomY, 'upright-engine-cylinder-barrel');
   const cylinderBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(7.5 * sourceScale, 0.64 * sourceScale, 0.86),
+    new THREE.CylinderGeometry(4.3 * sourceScale, 4.3 * sourceScale, .14, 64),
     frameMaterial,
   );
-  cylinderBottom.position.set(0, cylinderBottomY, framePlaneZ);
+  cylinderBottom.position.set(0, cylinderBottomY - .07, cylinderAxisZ);
   cylinderBottom.userData.fixed = true;
-  cylinderBottom.userData.role = 'upright-engine-cylinder-bottom';
+  cylinderBottom.userData.role = 'upright-engine-cylinder-bottom-below-plate';
   fixedFrame.add(cylinderBottom);
-  const pistonGuides = [-0.72, 0.72].map((sourceX, index) => {
-    const guide = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18 * sourceScale, 4.5 * sourceScale, 0.44),
-      frameMaterial,
-    );
-    guide.position.set(sourceX * sourceScale, -18.7 * sourceScale, -0.34);
-    guide.userData.fixed = true;
-    guide.userData.role = `upright-piston-rod-guide-${index + 1}`;
-    fixedFrame.add(guide);
-    return guide;
-  });
   root.add(fixedFrame);
 
   const inputCrank = new THREE.Group();
   inputCrank.userData.axis = Z_AXIS.clone();
   inputCrank.userData.role =
     'three-point-five-unit-crank-and-large-upright-engine-flywheel';
+  // The plate's flywheel rim is a flat band about 13-14.8 units out, seen
+  // only below the beam and at the top corners; its four arms sit at these
+  // angles from crank A in the plate pose.
+  const flywheelPlaneZ = -1.3;
+  const flywheelInnerRadius = 13.0 * sourceScale;
+  const flywheelOuterRadius = 14.8 * sourceScale;
+  const flywheelShape = new THREE.Shape();
+  flywheelShape.absarc(0, 0, flywheelOuterRadius, 0, FULL_TURN, false);
+  const flywheelHole = new THREE.Path();
+  flywheelHole.absarc(0, 0, flywheelInnerRadius, 0, FULL_TURN, true);
+  flywheelShape.holes.push(flywheelHole);
   const flywheel = new THREE.Mesh(
-    new THREE.TorusGeometry(11.25 * sourceScale, 0.48 * sourceScale,
-      12, 96),
+    new THREE.ExtrudeGeometry(flywheelShape, {
+      bevelEnabled: false, curveSegments: 128, depth: 0.20,
+    }).translate(0, 0, -0.10),
     crankMaterial,
   );
-  flywheel.position.z = -1.3;
-  flywheel.userData.role = 'large-twelve-unit-upright-engine-flywheel';
+  flywheel.position.z = flywheelPlaneZ;
+  flywheel.userData.role = 'large-upright-engine-flywheel-rim';
   const flywheelHub = cylinderAlongZ(1.50 * sourceScale, 0.48,
     crankMaterial, 42);
-  flywheelHub.position.z = -1.3;
+  flywheelHub.position.z = flywheelPlaneZ;
   flywheelHub.geometry.dispose();
-  flywheelHub.geometry = boredCylinderGeometry(1.50 * sourceScale, .42 * sourceScale + .004, .48);
+  flywheelHub.geometry = boredCylinderGeometry(1.50 * sourceScale, .42 * sourceScale + .012, .48);
   flywheelHub.userData.role = 'moving-flywheel-hub';
-  const flywheelSpokes = Array.from({ length: 8 }, (_, index) => {
-    const angle = FULL_TURN * index / 8;
-    const inner = new THREE.Vector3(
-      1.6 * sourceScale * Math.cos(angle),
-      1.6 * sourceScale * Math.sin(angle),
-      -1.3,
-    );
-    const outer = new THREE.Vector3(
-      10.7 * sourceScale * Math.cos(angle),
-      10.7 * sourceScale * Math.sin(angle),
-      -1.3,
-    );
-    const spoke = beamBetween3D(inner, outer, 0.34 * sourceScale,
-      0.18, crankMaterial);
-    spoke.userData.role = `flywheel-spoke-${index + 1}`;
+  const flywheelSpokes = [-30, 60, 150, -120].map((degrees, index) => {
+    const angle = THREE.MathUtils.degToRad(degrees);
+    const direction = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0);
+    const spoke = beamBetween3D(
+      direction.clone().multiplyScalar(1.4 * sourceScale).setZ(flywheelPlaneZ),
+      direction.clone().multiplyScalar(13.2 * sourceScale).setZ(flywheelPlaneZ),
+      1.0 * sourceScale, 0.16, crankMaterial);
+    spoke.userData.role = `flywheel-arm-${index + 1}`;
     inputCrank.add(spoke);
     return spoke;
   });
+  const crankLean = Math.asin((1.0 - 0.6) * sourceScale / crankRadius);
+  const crankShape = new THREE.Shape();
+  crankShape.absarc(0, 0, 1.0 * sourceScale, Math.PI / 2 - crankLean,
+    Math.PI * 3 / 2 + crankLean, false);
+  crankShape.absarc(crankRadius, 0, 0.6 * sourceScale, -Math.PI / 2 + crankLean,
+    Math.PI / 2 - crankLean, false);
+  crankShape.closePath();
+  const crankArmHole = new THREE.Path();
+  crankArmHole.absarc(0, 0, .42 * sourceScale + .012, 0, FULL_TURN, true);
+  crankShape.holes.push(crankArmHole);
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius - .14, 0.58 * sourceScale, 0.28),
+    new THREE.ExtrudeGeometry(crankShape, {
+      bevelEnabled: false, curveSegments: 32, depth: 0.28,
+    }).translate(0, 0, -0.14),
     crankMaterial,
   );
-  crankArm.position.set(crankRadius / 2 + .07, 0, 0.37);
+  crankArm.position.z = 0.37;
   crankArm.userData.role = 'crank-arm-from-O-to-P';
   const crankPinBoss = cylinderAlongZ(0.52 * sourceScale, 0.42,
     crankMaterial, 34);
@@ -745,7 +755,7 @@ function opposedRadiusRodUprightEngine(movement) {
   );
   const crankHub = cylinderAlongZ(.22, .28, crankMaterial);
   crankHub.geometry.dispose();
-  crankHub.geometry = boredCylinderGeometry(.22, .42 * sourceScale + .004, .28);
+  crankHub.geometry = boredCylinderGeometry(.22, .42 * sourceScale + .012, .28);
   crankHub.position.z = .37;
   crankHub.userData.role = 'bored-crank-hub-joining-arm-to-main-shaft';
   inputCrank.add(crankHub);
@@ -757,7 +767,7 @@ function opposedRadiusRodUprightEngine(movement) {
     eyeMaterial: darkMaterial,
     length: connectingRodLength,
     planeZ: .70,
-    boreRadius: .19 * sourceScale + .004,
+    boreRadius: .19 * sourceScale + .012,
     role: 'ten-point-seven-five-unit-connecting-rod-P-C',
     width: 0.48 * sourceScale,
   });
@@ -769,8 +779,8 @@ function opposedRadiusRodUprightEngine(movement) {
     eyeMaterial: darkMaterial,
     length: radiusRodLength,
     planeZ: .92,
-    boreRadius: .18 * sourceScale + .004,
-    startBoreRadius: .27 * sourceScale + .004,
+    boreRadius: .18 * sourceScale + .012,
+    startBoreRadius: .27 * sourceScale + .012,
     role: 'upper-equal-radius-rod-A-from-fixed-T-to-U',
     width: 0.44 * sourceScale,
   });
@@ -782,8 +792,8 @@ function opposedRadiusRodUprightEngine(movement) {
     eyeMaterial: darkMaterial,
     length: radiusRodLength,
     planeZ: .92,
-    boreRadius: .18 * sourceScale + .004,
-    startBoreRadius: .27 * sourceScale + .004,
+    boreRadius: .18 * sourceScale + .012,
+    startBoreRadius: .27 * sourceScale + .012,
     role: 'lower-equal-radius-rod-A-from-fixed-B-to-D',
     width: 0.44 * sourceScale,
   });
@@ -800,7 +810,7 @@ function opposedRadiusRodUprightEngine(movement) {
   const crosspieceOutline = clip.union(capsule([0, -crosspieceHalfLength], [0, crosspieceHalfLength], .34 * sourceScale),
     ...[-crosspieceHalfLength, 0, crosspieceHalfLength].map(y => poly(circle([0, y], .58 * sourceScale, 64))));
   crosspieceBody.geometry = plate(clip.difference(crosspieceOutline,
-    ...[-crosspieceHalfLength, 0, crosspieceHalfLength].map(y => poly(circle([0, y], .19 * sourceScale + .004, 64)))), -.09, .09);
+    ...[-crosspieceHalfLength, 0, crosspieceHalfLength].map(y => poly(circle([0, y], .19 * sourceScale + .012, 64)))), -.09, .09);
   crosspieceBody.position.z = 1.15;
   crosspieceBody.userData.role = 'rigid-upright-engine-vibrating-piece';
   const crosspieceAnchors = {};
@@ -813,7 +823,7 @@ function opposedRadiusRodUprightEngine(movement) {
     const boss = cylinderAlongZ((name === 'C' ? 0.58 : 0.48) * sourceScale,
       .18, crosspieceMaterial, 32);
     boss.geometry.dispose();
-    boss.geometry = boredCylinderGeometry((name === 'C' ? .58 : .48) * sourceScale, .19 * sourceScale + .004, .18);
+    boss.geometry = boredCylinderGeometry((name === 'C' ? .58 : .48) * sourceScale, .19 * sourceScale + .012, .18);
     boss.position.set(0, y, 1.15);
     boss.userData.role = `vibrating-crosspiece-boss-${name}`;
     const anchor = new THREE.Object3D();
@@ -837,7 +847,8 @@ function opposedRadiusRodUprightEngine(movement) {
   pistonRod.position.set(0, (pistonHeadOffset - .09) / 2, 1.40);
   pistonRod.userData.role = 'upright-engine-piston-rod-below-C';
   const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(6.1 * sourceScale, 0.92 * sourceScale, 0.68),
+    new THREE.CylinderGeometry(3.05 * sourceScale, 3.05 * sourceScale,
+      0.92 * sourceScale, 64),
     pistonMaterial,
   );
   pistonHead.position.set(0, pistonHeadOffset, 1.40);
@@ -860,23 +871,25 @@ function opposedRadiusRodUprightEngine(movement) {
   pistonTopEye.position.z = 1.40;
   pistonTopEye.userData.role = 'bored-piston-top-eye-at-C';
   pistonOutput.add(pistonTopEye);
-  for (const part of [...cylinderWalls, ...cylinderTopLips, cylinderBottom, ...pistonGuides]) part.position.z = 1.40;
-  const cylinderFeet = [-1, 1].map(side => {
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(.22, .10, 2.1), frameMaterial);
-    foot.position.set(side * cylinderHalfWidth, -32 * sourceScale, .37);
-    foot.userData.role = 'depth-foot-joining-cylinder-to-foundation'; fixedFrame.add(foot); return foot;
-  });
   root.add(pistonOutput);
 
+  // Each pin is fast in one member and runs in bores of the others.
   const jointPins = {
-    C: cylinderAlongZ(0.19 * sourceScale, 1.10, whiteMaterial, 26),
-    D: cylinderAlongZ(0.18 * sourceScale, .60, whiteMaterial, 26),
-    P: cylinderAlongZ(0.19 * sourceScale, .70, whiteMaterial, 26),
-    U: cylinderAlongZ(0.18 * sourceScale, .60, whiteMaterial, 26),
+    C: cylinderAlongZ(0.19 * sourceScale, .98, darkMaterial, 26),
+    D: cylinderAlongZ(0.18 * sourceScale, .42, darkMaterial, 26),
+    P: cylinderAlongZ(0.19 * sourceScale, .56, darkMaterial, 26),
+    U: cylinderAlongZ(0.18 * sourceScale, .42, darkMaterial, 26),
   };
+  jointPins.P.position.set(crankRadius, 0, .58);
+  inputCrank.add(jointPins.P);
+  jointPins.C.position.set(0, 0, 1.03);
+  pistonOutput.add(jointPins.C);
+  jointPins.U.position.set(radiusRodLength, 0, 1.05);
+  topRadiusParts.rod.add(jointPins.U);
+  jointPins.D.position.set(radiusRodLength, 0, 1.05);
+  bottomRadiusParts.rod.add(jointPins.D);
   Object.entries(jointPins).forEach(([name, pin]) => {
     pin.userData.role = `common-working-pin-${name}`;
-    root.add(pin);
   });
 
   const contacts = {
@@ -946,15 +959,6 @@ function opposedRadiusRodUprightEngine(movement) {
       state.pointCAcceleration.y,
       0,
     );
-    const points = {
-      C: [state.pointC, 1.05],
-      D: [state.pointD, 1.08],
-      P: [state.pointP, .55],
-      U: [state.pointU, 1.08],
-    };
-    Object.entries(points).forEach(([name, [point, z]]) => {
-      jointPins[name].position.set(point.x, point.y, z);
-    });
     contacts.crankAtP.point.set(state.pointP.x, state.pointP.y, 0.43);
     contacts.crosspieceAtC.point.set(state.pointC.x, state.pointC.y, 0.65);
     contacts.crosspieceAtD.point.set(state.pointD.x, state.pointD.y, 0.80);
@@ -981,7 +985,6 @@ function opposedRadiusRodUprightEngine(movement) {
   root.userData.archetype =
     'opposed-equal-radius-rods-vibrating-crosspiece-upright-engine-parallel-motion';
   root.userData.blocks = {
-    baseRail,
     bottomPivotBearing,
     bottomRadiusRod: bottomRadiusParts.rod,
     bottomRadiusRodEndAnchor: bottomRadiusParts.endAnchor,
@@ -1000,10 +1003,12 @@ function opposedRadiusRodUprightEngine(movement) {
     crosspieceAnchors,
     crosspieceBody,
     crosspieceBosses,
+    columnCapitals,
+    cylinderBody,
     cylinderBottom,
-    cylinderFeet,
-    cylinderTopLips,
-    cylinderWalls,
+    cylinderGland,
+    cylinderNeck,
+    cylinderTop,
     fixedFrame,
     flywheel,
     flywheelHub,
@@ -1012,7 +1017,6 @@ function opposedRadiusRodUprightEngine(movement) {
     frameTopRails,
     inputCrank,
     jointPins,
-    pistonGuides,
     pistonHead,
     pistonHeadAnchor,
     pistonOutput,
@@ -1023,11 +1027,6 @@ function opposedRadiusRodUprightEngine(movement) {
     topRadiusRodEndAnchor: topRadiusParts.endAnchor,
     topRadiusRodStartAnchor: topRadiusParts.startAnchor,
   };
-  root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-16.8 * sourceScale, -32.8 * sourceScale, -1.15),
-    new THREE.Vector3(16.8 * sourceScale, 12.8 * sourceScale, 1.18),
-  );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
@@ -1127,10 +1126,17 @@ function opposedRadiusRodUprightEngine(movement) {
   };
 
   fitPistonGuide(root, update, cyclePeriod);
+  root.userData.sweptBounds = root.userData.cameraFitBounds;
+  // Brown's plate is the official 30 x 30 view, x -15..15 and y -26..4.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-15 * sourceScale, -26 * sourceScale, -1.45),
+    new THREE.Vector3(15 * sourceScale, 4 * sourceScale, 2.7),
+  );
+  root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFov = 8;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(.6, .3, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
     update,
   };
