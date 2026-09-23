@@ -301,3 +301,28 @@ registry.
 | 261 | Faithful pulleys, links and weight W. |
 | 262 | Drum B faithful; the frame is simplified. |
 | 263 | Faithful cone, bearings and screw. |
+
+## Pass 50 batch: 264–283
+
+| Movement | Observation |
+| --- | --- |
+| 264 | Faithful wheels, pinion and rods. |
+| 265 | Faithful cone, disk and inclined shaft. |
+| 266 | Faithful screw, nut and handle; the bed is a closed frame where Brown draws a bench line. |
+| 267 | Faithful spider arms and rim; the direction arrow is larger than Brown's. |
+| 268 | Faithful lever, roller and crank disk. |
+| 269 | Faithful double rack frame and pinion. |
+| 270 | One wheel and band faithful; Brown draws two views. |
+| 271 | Faithful rack, pawls and lever. |
+| 272 | Presented without the undrawn base, post and backing rail. The cam is a bevelled cylinder where Brown draws a wavy-profiled plate. |
+| 273 | Faithful rhombic linkage and guides. |
+| 274 | Faithful governor arms and balls K. |
+| 275 | Faithful rack and helical cam. |
+| 276 | Presented without the undrawn base, posts and bearing arm; faithful cam and rollers. |
+| 277 | Faithful drum, pawl and trip lever. |
+| 278 | Faithful safety catch frame, springs and pawls d. |
+| 279 | Presented without the undrawn base and posts; faithful journal box in its frame. |
+| 280 | Faithful ratchet wheel, pawls and lever. |
+| 281 | Faithful cam disk and swinging frame. |
+| 282 | Faithful frame, lever, sector and weight. |
+| 283 | Faithful rack, pinion and pump barrels. |

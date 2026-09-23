@@ -567,11 +567,12 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.equal(meshCount, 33);
+  // The undrawn base, post and backing rail are presented away.
+  assert.equal(meshCount, 15);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
-  assert.ok(size.x > 7);
-  assert.ok(size.y > 6.5);
+  assert.ok(size.x > 6.9);
+  assert.ok(size.y > 5.8);
   assert.ok(size.z > 4.1);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   assert.ok(model.cameraDirection.x < 0, 'default view exposes the working bevel and shoe');

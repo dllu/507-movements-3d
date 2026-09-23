@@ -241,7 +241,8 @@ test('movement 279 keeps its output rod captured by both fixed guides', () => {
 
   assert.equal(blocks.crossheadRod.parent, blocks.crosshead);
   assert.ok(blocks.guideBlocks.every((guide) => guide.parent === model.root));
-  assert.ok(blocks.guidePosts.every((post) => post.parent === model.root));
+  assert.ok(blocks.guidePosts.every((post) => post.parent === null),
+    'the undrawn guide posts are presented away');
   for (let index = 0; index <= 4096; index += 1) {
     const state = stateAtCrankAngle(Math.PI * 2 * index / 4096);
     minimumCoverage = Math.min(minimumCoverage,

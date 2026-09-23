@@ -134,6 +134,18 @@ export default {
     remove: ['common-drawing-plane-for-tracer-and-pencil', 'drawing-sheet-outline'],
     note: 'The pantograph arms, fixed point C, tracer B and pencil A over a blank ground; no drawing board is drawn.',
   },
+  272: {
+    remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide'],
+    note: 'The bevelled cam on its shaft and the inclined rod in its guides; no base, post or backing rail is drawn.',
+  },
+  276: {
+    remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post'],
+    note: 'The three-lobed cam between the rollers of the sliding bar; no base, posts or bearing arm are drawn.',
+  },
+  279: {
+    remove: ['fixed-(?:left|right)-crosshead-guide-post', 'fixed-crosshead-display-base'],
+    note: 'The Clayton journal box in its sliding frame on the rod; no base or posts are drawn.',
+  },
   309: {
     remove: ['fixed-Mudge-escapement-frame'],
     note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q; no clock frame, crossbars or bearing brackets are drawn.',
