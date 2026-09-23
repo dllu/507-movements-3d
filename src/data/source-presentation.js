@@ -497,8 +497,8 @@ export default {
     note: 'The disengaging hooks, tongues and levers on their standards; no boat deck or rails are drawn.',
   },
   496: {
-    remove: ['fixed-throstle-bed', 'fixed-drawing-roll-bearing-standard'],
-    note: 'The drawing rolls A, B and the flyer spindle; no bed or standards are drawn.',
+    remove: ['fixed-throstle-bed', 'fixed-drawing-roll-bearing-standard', '(?:upper|lower)-(?:back|front)-drawing-roll-[AB]-visible-index'],
+    note: 'The drawing rolls A, B and the flyer spindle; no bed, standards or roll indices are drawn.',
   },
   501: {
     remove: ['fixed-barometer-support-base', 'fixed-barometer-back-support'],

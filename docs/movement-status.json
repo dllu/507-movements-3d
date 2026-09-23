@@ -3961,16 +3961,17 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "known",
         "evidence": "docs/movement-137.md",
-        "note": "Interpolated contact clearance is tested, but a complete independently documented assembly intersection audit was not found."
+        "note": "Interpolated contact clearance is tested, but a complete independently documented assembly intersection audit was not found. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fork boss runs 0.250 coaxially over its fixed shaft; the rolling wheels overlap their pins by 0.232 and the lower link by 0.240; the fork arms overlap the shaft by 0.184. The invisible stroke envelope is excluded as a fluid."
       },
-      "flaws": "Right-hand eye and hanging rod reduced to a pivot disk. Rollers shifted 12 pixels outward each to clear cam; hidden cam arcs, inertia and unloaded valve rod inferred.",
+      "flaws": "The screen shows an unbored fork boss and rollers overlapping by up to 0.25. Right-hand eye and hanging rod reduced to a pivot disk. Rollers shifted 12 pixels outward each to clear cam; hidden cam arcs, inertia and unloaded valve rod inferred.",
       "references": [
         "docs/movement-137.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -3990,16 +3991,17 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "known",
         "evidence": "docs/movement-138.md",
-        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review."
+        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm runs 0.169 coaxially over the input shaft without a bore; the resting point enters the cam edge by 0.093. The invisible stroke envelope is excluded as a fluid."
       },
-      "flaws": "Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
+      "flaws": "The screen shows an unbored cam-bearing arm and the resting point 0.093 into the cam. Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
       "references": [
         "docs/movement-138.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6300,15 +6302,16 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "sampled-clear",
         "evidence": "docs/geneva-stop-215-contact-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. Finite forward branch corrected; reverse motion requires assisting bias, and passive branch selection/impact remain unvalidated."
+        "note": "Working-interface collision freedom is not established by the available evidence. Finite forward branch corrected; reverse motion requires assisting bias, and passive branch selection/impact remain unvalidated. Pass-50 relative-motion screen (0.01 spacing, 129 poses): only a 0.001 driver-pin graze in the slots and a 0.0000 cam-on-lock contact among solids; an open decorative highlight is excluded."
       },
       "flaws": "Undrawn fixed supports are removed by source presentation. Finite forward branch corrected; reverse motion requires assisting bias, and passive branch selection/impact remain unvalidated.",
       "references": [
         "docs/geneva-stop-215-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12911,15 +12914,16 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "sampled-clear",
         "evidence": "docs/oscillating-column-family-review.md",
-        "note": "Selected solid/water-on-plate checks pass, but the review allows fluid cone/curtain/plume/reservoir envelopes to overlap and does not establish their mutual clearance."
+        "note": "Selected solid/water-on-plate checks pass, but the review allows fluid cone/curtain/plume/reservoir envelopes to overlap and does not establish their mutual clearance. Pass-50 relative-motion screen (0.01 spacing, 129 poses): no solid or coaxial overlaps; the water cone, column and reservoir shapes overlap each other by up to 0.40, as the flow intends."
       },
       "flaws": "Tank-over-cone layout differs from Brown’s section. Fluid cone/curtain/plume meshes may overlap; scalar flow bookkeeping is not a conserved fluid/free-surface solution.",
       "references": [
         "docs/oscillating-column-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12939,15 +12943,16 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "sampled-clear",
         "evidence": "docs/oscillating-column-family-review.md",
-        "note": "Selected solid/water-on-plate checks pass, but the review allows fluid cone/curtain/plume/reservoir envelopes to overlap and does not establish their mutual clearance."
+        "note": "Selected solid/water-on-plate checks pass, but the review allows fluid cone/curtain/plume/reservoir envelopes to overlap and does not establish their mutual clearance. Pass-50 relative-motion screen (0.01 spacing, 129 poses): no solid or coaxial overlaps; the water cone, column and reservoir shapes overlap each other by up to 0.40, as the flow intends."
       },
       "flaws": "Tank-over-cone layout differs from Brown’s section. Rendered fluid envelopes may overlap; scalar flow bookkeeping does not validate free surfaces, pressure recovery, water hammer or fluid stability.",
       "references": [
         "docs/oscillating-column-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14367,15 +14372,16 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
+        "status": "sampled-clear",
         "evidence": "docs/spinning-fan-family-review.md",
-        "note": "Selected hardware checks pass, but live-yarn versus fixed decorative turns is excluded and may overlap; complete clearance unknown."
+        "note": "Selected hardware checks pass, but live-yarn versus fixed decorative turns is excluded and may overlap; complete clearance unknown. Pass-50 relative-motion screen (0.01 spacing, 129 poses) after removing the undrawn roll indices: the yarn meets its package by 0.024 where it winds on, the yarn segments meet each other by 0.021, and the rolls sit 0.005 in their bridge, below the screen spacing."
       },
       "flaws": "Undrawn fixed supports and context are removed by source presentation. Fluted rollers and a larger flyer than drawn. Yarn is not deposited into the fixed package and may cross decorative turns; package growth/traverse, grip, tension and bobbin drag unsolved.",
       "references": [
         "docs/spinning-fan-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
