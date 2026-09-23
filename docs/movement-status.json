@@ -1612,9 +1612,12 @@
     {
       "id": 64,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/064-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1625,46 +1628,54 @@
       "references": [
         "artifacts/review/064-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/spring-jump-cam.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 65,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/065-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/065-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Irregular studs regularized; strike impulses, loaded inertia and bearings remain idealized.",
+      "flaws": "D’s pin holes render as long streaks rather than round holes. Irregular studs regularized; strike impulses, loaded inertia and bearings remain idealized.",
       "references": [
         "artifacts/review/065-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/tappet-stud-stop.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 66,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/066-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1675,21 +1686,25 @@
       "references": [
         "artifacts/review/066-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/gravity-jump-weight.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 67,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/067-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1700,21 +1715,25 @@
       "references": [
         "artifacts/review/067-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/gravity-tumbler.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 68,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/068-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1725,21 +1744,25 @@
       "references": [
         "artifacts/review/068-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/single-tooth-index.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 69,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/069-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1750,39 +1773,44 @@
       "references": [
         "artifacts/review/069-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/small-single-tooth-index.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 70,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/070-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/070-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Short resisted pause and engagement impacts are idealized; source stud spacing/tip were adjusted.",
+      "flaws": "Disk C is opaque where Brown draws an overlapping outline. Short resisted pause and engagement impacts are idealized; source stud spacing/tip were adjusted.",
       "references": [
         "artifacts/review/070-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/open-rim-tappet.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 71,
@@ -1812,9 +1840,12 @@
     {
       "id": 72,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/072-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1825,14 +1856,15 @@
       "references": [
         "artifacts/review/072-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/tilt-hammer.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 73,
@@ -1866,9 +1898,12 @@
     {
       "id": 74,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/074-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1879,21 +1914,25 @@
       "references": [
         "artifacts/review/074-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/mutilated-bevel.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 75,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/075-continuous-motion-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1905,47 +1944,55 @@
         "artifacts/review/075-continuous-motion-notes.md",
         "docs/review-progress.md",
         "artifacts/review/073-077-correction-notes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/reciprocating-pawl.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 76,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/076-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/076-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Complete background wheel now shown; hidden construction and dynamic load assumptions remain reconstructed.",
+      "flaws": "Large wheel drawn complete with spokes; Brown shows only rim segment D. Complete background wheel now shown; hidden construction and dynamic load assumptions remain reconstructed.",
       "references": [
         "artifacts/review/076-reconstruction-notes.md",
         "docs/review-progress.md",
         "artifacts/review/073-077-correction-notes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/jointed-tappet.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 77,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/073-077-correction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1956,21 +2003,25 @@
       "references": [
         "artifacts/review/073-077-correction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/alternating-peg-pawl.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 78,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/078-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1981,21 +2032,25 @@
       "references": [
         "artifacts/review/078-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/pull-pawl.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 79,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/079-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2006,21 +2061,25 @@
       "references": [
         "artifacts/review/079-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/opposed-arm.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 80,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/080-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2031,21 +2090,25 @@
       "references": [
         "artifacts/review/080-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/crossed-rack.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 81,
       "visual": {
-        "status": "unverified",
-        "evidence": "artifacts/review/081-reconstruction-notes.md",
-        "note": "Source/render inspection is documented or referenced, but reviewer model and independence from the original author are not established; Astra visual approval is unverified."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2056,14 +2119,15 @@
       "references": [
         "artifacts/review/081-reconstruction-notes.md",
         "docs/review-progress.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/spring-rack.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 82,
