@@ -383,3 +383,30 @@ remains instead of the removed frames.
 | 355 | Faithful gyroscope, ring and stand. |
 | 356 | Faithful rings A, A′ and globe B on its stand. |
 | 357 | Faithful front elevation of the Anderson governor. |
+
+## Pass 50 batch: 358–379
+
+| Movement | Observation |
+| --- | --- |
+| 358 | Faithful cone, rope, crank and frame. |
+| 359 | Faithful pump-drill spindle, crossbar and flywheel. |
+| 360 | Faithful sectors, chains, weight and wheel. |
+| 361 | Faithful frame, pulleys and cranks. |
+| 362 | Faithful drums, shafts and frame. |
+| 363 | Faithful beam, stand and seats. |
+| 364 | Presented without the undrawn stand and bed, in Brown's side elevation: pin wheel face-on beside the grooved drum. |
+| 365 | Faithful crossed rollers and upright shaft. |
+| 366 | Faithful frame, bevel wheels, drill and levers. |
+| 367 | Faithful bars, links and spring. |
+| 368 | Faithful bevel wheels, rack and sectioned cylinder. |
+| 369 | Faithful bracket, cycloidal cheeks and pendulum. |
+| 370 | Faithful rails, pendulum arm and crank. |
+| 371 | Presented without the undrawn base and bearing post; faithful mangle wheel and shifting pinion. |
+| 372 | Front elevation, as Brown draws it. A hanging plumb stands where Brown draws a turned spindle below the wheels. |
+| 373 | Faithful wheel, band, car and dial. |
+| 374 | Presented without the undrawn base and standards; faithful eccentric pulley, band and treadle. |
+| 375 | Front elevation, as Brown draws it; faithful runners, pan and bevel drive. |
+| 376 | Faithful treadwheel, cross-bracing and horse. |
+| 377 | Faithful treadwheel and steps. |
+| 378 | Front elevation, as Brown draws it; faithful saw frame, guides, log and pole. |
+| 379 | Faithful clamp frame, screw and drill. |

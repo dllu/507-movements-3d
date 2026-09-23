@@ -84,15 +84,15 @@ test('movement 371 contains one open four-spoke wheel, opposed face teeth, one r
   for (const component of [
     blocks.outputRotor,
     blocks.pinionCarrier,
-    blocks.base,
-    blocks.bearingPost,
     blocks.fixedBearing,
     blocks.frontContactMarker,
     blocks.rearContactMarker,
     blocks.terminalContactMarker,
     ...blocks.guideRails,
     ...blocks.guideCrossbars,
-  ]) assert.equal(component.parent, model.root);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.base.parent === null, 'source presentation removes base');
+  assert.ok(blocks.bearingPost.parent === null, 'source presentation removes bearingPost');
   for (const component of [
     blocks.wheelBody,
     blocks.wheelWeb,
@@ -102,15 +102,15 @@ test('movement 371 contains one open four-spoke wheel, opposed face teeth, one r
     blocks.outputIndex,
     ...blocks.frontFaceTeeth,
     ...blocks.rearFaceTeeth,
-  ]) assert.equal(component.parent, blocks.outputRotor);
+  ]) assert.ok(component.parent === blocks.outputRotor, `${component.userData.role} parent`);
   for (const component of [
     blocks.pinion,
     blocks.inputShaftRotor,
     blocks.carrierCollar,
     blocks.carrierBridge,
-  ]) assert.equal(component.parent, blocks.pinionCarrier);
-  assert.equal(blocks.inputShaft.parent, blocks.inputShaftRotor);
-  assert.equal(blocks.shaftIndex.parent, blocks.inputShaftRotor);
+  ]) assert.ok(component.parent === blocks.pinionCarrier, `${component.userData.role} parent`);
+  assert.ok(blocks.inputShaft.parent === blocks.inputShaftRotor, 'blocks.inputShaft parent');
+  assert.ok(blocks.shaftIndex.parent === blocks.inputShaftRotor, 'blocks.shaftIndex parent');
   assert.equal(blocks.pinion.userData.teeth, geometry.pinionTeeth);
   assert.equal(blocks.pinion.userData.axis.distanceTo(X_AXIS), 0);
 

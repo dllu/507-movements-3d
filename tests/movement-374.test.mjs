@@ -71,33 +71,33 @@ test('movement 374 is one right-pivoted treadle roller driving one round shaft e
   assert.match(degreesOfFreedom.input, /parameterized by continuous shaft angle/);
 
   for (const component of [
-    blocks.base,
     blocks.belt,
-    blocks.pivotPost,
     blocks.shaftBearing,
-    blocks.shaftPost,
     blocks.shaftRotor,
     blocks.treadle,
     blocks.treadlePivotBearing,
     blocks.treadlePivotPin,
-  ]) assert.equal(component.parent, model.root);
+  ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  assert.ok(blocks.base.parent === null, 'source presentation removes base');
+  assert.ok(blocks.shaftPost.parent === null, 'source presentation removes shaftPost');
+  assert.ok(blocks.pivotPost.parent === null, 'source presentation removes pivotPost');
   for (const component of [
     blocks.eccentricPulley,
     blocks.shaftIndex,
     blocks.shaftPin,
-  ]) assert.equal(component.parent, blocks.shaftRotor);
+  ]) assert.ok(component.parent === blocks.shaftRotor, `${component.userData.role} parent`);
   for (const component of [
     blocks.footPad,
     blocks.rollerAxle,
     blocks.treadleBeam,
     blocks.treadleRoller,
-  ]) assert.equal(component.parent, blocks.treadle);
+  ]) assert.ok(component.parent === blocks.treadle, `${component.userData.role} parent`);
   for (const component of [
     blocks.eccentricWrap,
     blocks.lowerStraightRun,
     blocks.rollerWrap,
     blocks.upperStraightRun,
-  ]) assert.equal(component.parent, blocks.belt);
+  ]) assert.ok(component.parent === blocks.belt, `${component.userData.role} parent`);
 
   const belts = [];
   const beltBeads = [];

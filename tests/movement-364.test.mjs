@@ -66,9 +66,9 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
   assert.match(degreesOfFreedom.note, /only one roller/);
   assert.match(degreesOfFreedom.note, /dwells/);
 
-  assert.equal(blocks.frame.parent, model.root);
-  assert.equal(blocks.driverRotor.parent, model.root);
-  assert.equal(blocks.outputRotor.parent, model.root);
+  assert.ok(blocks.frame.parent === null, 'source presentation removes the undrawn stand');
+  assert.ok(blocks.driverRotor.parent === model.root, 'blocks.driverRotor parent');
+  assert.ok(blocks.outputRotor.parent === model.root, 'blocks.outputRotor parent');
   assert.equal(blocks.frame.userData.fixed, true);
   vectorNear(blocks.driverRotor.userData.axis, Z_AXIS, 0,
     'driver axis');
@@ -90,7 +90,7 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
     blocks.driverShaft,
     ...blocks.driverRims,
     ...blocks.rollerMounts,
-  ]) assert.equal(component.parent, blocks.driverRotor);
+  ]) assert.ok(component.parent === blocks.driverRotor, `${component.userData.role} parent`);
   for (const component of [
     blocks.outputWheel,
     blocks.outputHub,
@@ -100,7 +100,7 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
     ...blocks.outputEndRims,
     ...blocks.grooveFlanks,
     ...blocks.grooveEntries,
-  ]) assert.equal(component.parent, blocks.outputRotor);
+  ]) assert.ok(component.parent === blocks.outputRotor, `${component.userData.role} parent`);
   assert.equal(blocks.rollerMounts.length, 8);
   assert.equal(blocks.radialStuds.length, 8);
   assert.equal(blocks.rollerBodies.length, 8);

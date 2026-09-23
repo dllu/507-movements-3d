@@ -189,7 +189,7 @@ export default {
   },
   297: {
     remove: ['fixed-lantern-escapement-base'],
-    note: 'Face view of the pin wheel and pallets; no base is drawn.',
+    note: 'Face view of the pin wheel and pallets; no base or bearing post is drawn.',
   },
   305: {
     remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
@@ -241,7 +241,7 @@ export default {
   },
   350: {
     remove: ['fixed-wide-base', 'fixed-base-edge'],
-    note: 'The slotted link, guides a, a and the output bar; no base is drawn.',
+    note: 'The slotted link, guides a, a and the output bar; no base or bearing post is drawn.',
   },
   351: {
     remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop'],
@@ -250,5 +250,30 @@ export default {
   354: {
     remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket'],
     note: 'The grooved crosshead, input disk and the stem guides; no support rails or brackets are drawn.',
+  },
+  364: {
+    camera: [0, 0.06, 1],
+    remove: ['fixed-two-axis-bearing-stand'],
+    note: 'Side elevation of the pin wheel face-on beside the helically grooved drum on its upright shaft; no stand or bed is drawn.',
+  },
+  371: {
+    remove: ['fixed-base-beneath-mangle-wheel', 'rear-output-bearing-post'],
+    note: 'The mangle wheel and its shifting pinion; no base or bearing post is drawn.',
+  },
+  372: {
+    camera: [0.05, 0.08, 1],
+    note: 'Front elevation of the bevel wheels between the frame standards, as Brown draws it.',
+  },
+  374: {
+    remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard'],
+    note: 'The eccentric pulley, band and treadle roller; no base or standards are drawn.',
+  },
+  375: {
+    camera: [0.05, 0.08, 1],
+    note: 'Front elevation of the edge-runner mill and its bevel drive, as Brown draws it.',
+  },
+  378: {
+    camera: [0.05, 0.08, 1],
+    note: 'Front elevation of the saw frame, its guides and the log, as Brown draws it.',
   },
 };
