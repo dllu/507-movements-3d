@@ -354,4 +354,75 @@ export default {
     remove: ['marine-trunk-engine-foundation', 'rear-crankshaft-support-column', 'rear-crankshaft-bearing-arm'],
     note: 'The sectioned cylinder, trunk piston, pitman and crank; no foundation or crank supports are drawn.',
   },
+  425: {
+    camera: [0.08, 0.05, 1],
+    note: 'Front elevation of the casing, piston C and abutment, as Brown draws it.',
+  },
+  426: {
+    camera: [0.08, 0.05, 1],
+    note: 'Front elevation of the casing, drum B and sliding abutments A, as Brown draws it.',
+  },
+  427: {
+    camera: [0.08, 0.05, 1],
+    note: 'Front elevation of the casing, drum B and pivoted pistons a, as Brown draws it.',
+  },
+  428: {
+    camera: [0.08, 0.05, 1],
+    note: 'Front elevation of the casing, arms B and rollers A, as Brown draws it.',
+  },
+  429: {
+    camera: [0.08, 0.05, 1],
+    note: 'Front elevation of the two-lobed casing and its toothed pistons, as Brown draws it.',
+  },
+  430: {
+    camera: [0.08, 0.05, 1],
+    note: 'Side elevation of the overshot wheel and flume, as Brown draws it.',
+  },
+  431: {
+    camera: [0.08, 0.05, 1],
+    note: 'Side elevation of the undershot wheel, sluice and race, as Brown draws it.',
+  },
+  432: {
+    camera: [0.08, 0.05, 1],
+    note: 'Side elevation of the breast wheel, sluice and race, as Brown draws it.',
+  },
+  433: {
+    camera: [0.1, 0.2, 1],
+    note: 'Side elevation of the tub wheel, shaft and spout, as Brown draws it.',
+  },
+  434: {
+    camera: [0, 1, 0.12],
+    note: 'Plan of the turbine wheel A inside the guide ring B, as Brown draws it.',
+  },
+  435: {
+    camera: [0, 1, 0.12],
+    note: 'Plan of the inner guides b and outer wheel a, as Brown draws it.',
+  },
+  436: {
+    camera: [0.08, 0.05, 1],
+    note: 'Sectional elevation of the case b, wheel a and step c, as Brown draws it.',
+  },
+  437: {
+    camera: [0, 1, 0.12],
+    remove: ['fixed-foundation-under-volute-wheel', 'fixed-upper-bearing-of-volute-wheel-shaft', 'bored-upper-bearing-crossbeam', 'upper-bearing-support-post'],
+    note: 'Plan of the scroll case and wheel with its guides a and floats c, as Brown draws it; no foundation or upper bearing bridge is drawn.',
+  },
+  438: {
+    camera: [0.08, 0.05, 1],
+    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it.",
+  },
+  439: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-overhead-pulley-support-beam', 'bored-pulley-shaft-hanger', 'fixed-pulley-support-post', 'fixed-ground-beneath-bucket'],
+    note: 'The pulley, rope, bucket, counterweight and water stream; no gallows frame or ground is drawn.',
+  },
+  441: {
+    camera: [0.08, 0.05, 1],
+    remove: ['fixed-persian-wheel-base', 'fixed-hollow-shaft-bearing-standard', 'fixed-stream-bed-beneath-wheel', 'fixed-stationary-trip-pin-bracket', 'fixed-trip-pin-support-post', 'fixed-high-level-trough-receiving-tipped-bucket-water', 'fixed-outboard-receiver-standard', 'fixed-receiver-to-standard-bridge'],
+    note: 'Front elevation of the Persian wheel, its buckets and the stream; no base, standards, bed, trip-pin post or trough is drawn.',
+  },
+  444: {
+    camera: [0.08, 0.05, 1],
+    note: 'Sectional elevation of the supply, air vessel and jet, as Brown draws it.',
+  },
 };

@@ -12251,9 +12251,12 @@
     {
       "id": 425,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-engine-424-426-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three disable fog and ground. Default/front/advanced views were inspected alongside the engravings; 65-pose default-camera sweeps found zero clipped visible vertices."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12264,21 +12267,25 @@
       "references": [
         "docs/piston-engine-424-426-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eccentric-rotary-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 426,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/piston-engine-424-426-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. All three disable fog and ground. Default/front/advanced views were inspected alongside the engravings; 65-pose default-camera sweeps found zero clipped visible vertices."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12288,21 +12295,25 @@
       "flaws": "Unspecified outward load maintains radial followers; contact forces, return, friction, wear and leakage not simulated.",
       "references": [
         "docs/piston-engine-424-426-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-radial-piston-rotary-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 427,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/rotary-engine-427-429-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser review compared default, front and rear quarter-cycle views to each engraving. A 65-pose projection sweep found zero visible vertices outside the default viewport for all three. Bulk screenshots and logs remain outside Git in `/dev/shm/rotary-engine-427-*`,…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12312,21 +12323,25 @@
       "flaws": "Rotor/packing motion prescribed; steam-tight sealing, pressure loads, friction, wear and efficiency unvalidated.",
       "references": [
         "docs/rotary-engine-427-429-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eccentric-shaft-radial-piston-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 428,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/rotary-engine-427-429-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser review compared default, front and rear quarter-cycle views to each engraving. A 65-pose projection sweep found zero visible vertices outside the default viewport for all three. Bulk screenshots and logs remain outside Git in `/dev/shm/rotary-engine-427-*`,…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12336,21 +12351,25 @@
       "flaws": "Rotor/packing motion prescribed; steam-tight sealing, pressure loads, friction, wear and efficiency unvalidated.",
       "references": [
         "docs/rotary-engine-427-429-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-rubber-lined-rotary-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 429,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/holly-mating-profile-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Browser default/oblique inspection compared the corrected model with the source. A 17-pose framing sweep found no clipped vertices (maximum absolute projected coordinate 0.832) and no browser errors. Bulk captures and exports stay in `/dev/shm`."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12360,21 +12379,25 @@
       "flaws": "Relieved mate gap reaches 0.013372; nonpenetration does not establish steam-tight or continuously loaded conjugacy. Pressure/leakage unsolved.",
       "references": [
         "docs/holly-mating-profile-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-double-elliptical-rotary-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 430,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-wheel-430-432-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Thirty existing tests plus five finite-geometry tests pass. The added checks sample rotating solid surfaces against fixed bearing supports, gates, flumes and channel parts over 65 poses, bound spoke radii, and inspect visible water vertices against bucket/cell solids over 97…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12384,21 +12407,25 @@
       "flaws": "Cell fill and streams illustrative, not conserved water/free surfaces; hydraulic torque, losses, gate sealing and loaded regulation unvalidated.",
       "references": [
         "docs/water-wheel-430-432-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-overshot-water-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 431,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-wheel-430-432-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Thirty existing tests plus five finite-geometry tests pass. The added checks sample rotating solid surfaces against fixed bearing supports, gates, flumes and channel parts over 65 poses, bound spoke radii, and inspect visible water vertices against bucket/cell solids over 97…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12409,21 +12436,25 @@
       "references": [
         "docs/water-wheel-430-432-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-undershot-water-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 432,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-wheel-430-432-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Thirty existing tests plus five finite-geometry tests pass. The added checks sample rotating solid surfaces against fixed bearing supports, gates, flumes and channel parts over 65 poses, bound spoke radii, and inspect visible water vertices against bucket/cell solids over 97…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12433,21 +12464,25 @@
       "flaws": "Cell fill and streams illustrative, not conserved water/free surfaces; hydraulic torque, losses, gate sealing and loaded regulation unvalidated.",
       "references": [
         "docs/water-wheel-430-432-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-breast-water-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 433,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/horizontal-water-wheel-433-435-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final verification: **34 tests pass** (27 existing plus seven new), in 1.86 seconds. The three playback regressions exercise 300 repeated input-state queries, time-state queries and updates for each model, requiring unchanged scene descendant and geometry identities. They…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12457,21 +12492,25 @@
       "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/horizontal-water-wheel-433-435-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-horizontal-overshot-water-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 434,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/horizontal-water-wheel-433-435-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final verification: **34 tests pass** (27 existing plus seven new), in 1.86 seconds. The three playback regressions exercise 300 repeated input-state queries, time-state queries and updates for each model, requiring unchanged scene descendant and geometry identities. They…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12481,21 +12520,25 @@
       "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/horizontal-water-wheel-433-435-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-fourneyron-turbines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 435,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/horizontal-water-wheel-433-435-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final verification: **34 tests pass** (27 existing plus seven new), in 1.86 seconds. The three playback regressions exercise 300 repeated input-state queries, time-state queries and updates for each model, requiring unchanged scene descendant and geometry identities. They…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12505,21 +12548,25 @@
       "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/horizontal-water-wheel-433-435-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-warren-central-discharge-turbines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 436,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/fluid-rotor-436-438-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final default/plan/rear comparisons and 65-pose projection sweeps found zero vertices outside the default viewport for all three models. Review artifacts stay outside Git under `/dev/shm/turbine-436-*`, `/dev/shm/turbine-437-*`, `/dev/shm/turbine-438-*` and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12529,94 +12576,110 @@
       "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/fluid-rotor-436-438-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-jonval-turbines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 437,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/fluid-rotor-436-438-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final default/plan/rear comparisons and 65-pose projection sweeps found zero vertices outside the default viewport for all three models. Review artifacts stay outside Git under `/dev/shm/turbine-436-*`, `/dev/shm/turbine-437-*`, `/dev/shm/turbine-438-*` and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/fluid-rotor-436-438-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The models retain analytical prescribed rotation. Flow tubes and dots illustrate direction and may cross working surfaces; they are not solved fluid trajectories. Pressure, free-surface shape, continuity of mass flow, leakage, viscous/nozzle losses, cavitation, efficiency, inertia, bearing loads and load-dependent speed are not validated. In particular, the drawn torque…"
       },
-      "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The inlet enters diagonally at the left where the plate’s runs in horizontally at the top. Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/fluid-rotor-436-438-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-volute-water-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 438,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/fluid-rotor-436-438-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Final default/plan/rear comparisons and 65-pose projection sweeps found zero vertices outside the default viewport for all three models. Review artifacts stay outside Git under `/dev/shm/turbine-436-*`, `/dev/shm/turbine-437-*`, `/dev/shm/turbine-438-*` and…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/fluid-rotor-436-438-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The models retain analytical prescribed rotation. Flow tubes and dots illustrate direction and may cross working surfaces; they are not solved fluid trajectories. Pressure, free-surface shape, continuity of mass flow, leakage, viscous/nozzle losses, cavitation, efficiency, inertia, bearing loads and load-dependent speed are not validated. In particular, the drawn torque…"
       },
-      "flaws": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
+      "flaws": "The floor plate is not drawn in the plate. Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
       "references": [
         "docs/fluid-rotor-436-438-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-barker-reaction-mills.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 439,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-mechanism-439-440-444-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome default/source, front and reverse-oblique views were inspected. All three default cameras have zero out-of-frustum visible vertices over 65 sampled poses. Bulk captures and logs remain in `/dev/shm`, outside Git."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/water-mechanism-439-440-444-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The focused test checks actual moving mesh surface samples against stationary solid interiors over 65 poses, checks the rendered 439 stem/anvil constraint and inlet termination, and checks 440 water vertices against compartment boundaries. Repeated state queries and updates preserve all scene object and geometry identities. The finite test is a sampled clearance regression,… Pass-49 relative-motion screen reports 0.1007 solid overlap (right-straight-part-of-single-rope x material-marker-moving-continuously-on-single-rope); unclassified, may be intended contact."
       },
-      "flaws": "Bucket fill/drain/travel and counterweight return prescribed; rope tension, tipping, impact and fluid mass balance unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Bucket fill/drain/travel and counterweight return prescribed; rope tension, tipping, impact and fluid mass balance unsolved.",
       "references": [
         "docs/water-mechanism-439-440-444-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-water-bucket-reciprocators.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 440,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-mechanism-439-440-444-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome default/source, front and reverse-oblique views were inspected. All three default cameras have zero out-of-frustum visible vertices over 65 sampled poses. Bulk captures and logs remain in `/dev/shm`, outside Git."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12626,46 +12689,54 @@
       "flaws": "Tipping threshold/timing and water load prescribed; passive instability, impact, slosh and drainage unvalidated.",
       "references": [
         "docs/water-mechanism-439-440-444-review.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-tipping-water-meters.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 441,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/persian-bucket-trip-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. No documented attributable independent Astra source/render inspection; authoring/tests alone do not qualify."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/persian-bucket-trip-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. Validation combines 10,001 input angles for analytic pin/shoe separation (including actual blocking of the unrotated shoe), 97 poses with bidirectional actual mesh-surface checks against trip hardware, receiver and shaft supports, and 513 poses checking mouth-to-receiver discharge placement. Existing bucket law and object/geometry identity regressions are retained.… Pass-49 relative-motion screen reports 0.0747 solid overlap (null); unclassified, may be intended contact."
       },
-      "flaws": "Upright hanging and departure/gravity-return schedule imposed; free pendulum motion, contact forces, impacts and hydraulic drive not solved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Upright hanging and departure/gravity-return schedule imposed; free pendulum motion, contact forces, impacts and hydraulic drive not solved.",
       "references": [
         "docs/persian-bucket-trip-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-persian-irrigation-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 442,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-lifting-441-443-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default, front and reverse-oblique views were reviewed. Full-cycle default framing sweeps contain all visible vertices. Bulk captures and diagnostic logs stay in `/dev/shm`. No new live solver or native process is used; the remaining unknowns concern trip contact…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12676,21 +12747,25 @@
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eisach-pot-wheels.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 443,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-lifting-441-443-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome source/default, front and reverse-oblique views were reviewed. Full-cycle default framing sweeps contain all visible vertices. Bulk captures and diagnostic logs stay in `/dev/shm`. No new live solver or native process is used; the remaining unknowns concern trip contact…"
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12701,21 +12776,25 @@
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-stream-driven-archimedes-screws.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 444,
       "visual": {
-        "status": "unverified",
-        "evidence": "docs/water-mechanism-439-440-444-review.md",
-        "note": "Historical source/render inspection documented; reviewer/model identity is not independently attributable to Astra. Chrome default/source, front and reverse-oblique views were inspected. All three default cameras have zero out-of-frustum visible vertices over 65 sampled poses. Bulk captures and logs remain in `/dev/shm`, outside Git."
+        "status": "yes",
+        "reviewer": "Claude Opus 5.5 — primary agent",
+        "reviewPass": 50,
+        "reviewedOn": "2026-09-23",
+        "evidence": "docs/visual-review-pass-49.md",
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12726,24 +12805,25 @@
       "references": [
         "docs/water-mechanism-439-440-444-review.md",
         "docs/minimal-interface-review.md",
-        "docs/validation/body-intersection-screen-pass49.json"
+        "docs/validation/body-intersection-screen-pass49.json",
+        "docs/visual-review-pass-49.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-hydraulic-rams.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-18"
+      "updatedOn": "2026-09-23"
     },
     {
       "id": 445,
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "unknown",
@@ -12768,10 +12848,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 50,
         "reviewedOn": "2026-09-23",
         "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
         "status": "unknown",

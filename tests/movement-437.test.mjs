@@ -75,11 +75,14 @@ test('movement 437 combines eight upper radial vanes with four lower inclined bu
   assert.equal(blocks.escapeMarkers.length, 12);
   for (const part of [...blocks.radialVanes, ...blocks.lowerBuckets,
     blocks.runnerFloor, blocks.runnerHub, blocks.shaft,
-    blocks.rotationMarker]) assert.equal(part.parent, blocks.runner);
+    blocks.rotationMarker]) assert.ok(part.parent === blocks.runner, `${part.userData.role} parent`);
   for (const fixed of [blocks.outerScrollWall, blocks.innerScrollWall,
     blocks.scrollWater, blocks.inletFlume, blocks.inletWater,
-    blocks.lowerBasin, blocks.casingFloor, blocks.upperBearing,
-    ...blocks.escapeFlowTubes]) assert.equal(fixed.parent, model.root);
+    blocks.lowerBasin,
+    ...blocks.escapeFlowTubes]) assert.ok(fixed.parent === model.root, `${fixed.userData.role} parent`);
+  for (const removed of [blocks.casingFloor, blocks.upperBearing]) {
+    assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
+  }
   assert.ok(geometry.radialVaneCenterY > geometry.lowerBucketCenterY,
     'inclined outlet buckets are below the radial vanes');
 

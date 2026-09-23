@@ -467,3 +467,30 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 422 | Faithful scale frame, pointer B and pivot C. |
 | 423 | Faithful frame, arms B and cam D. |
 | 424 | Faithful frames A, B and crank plate C. |
+
+## Pass 50 batch: 425–446
+
+| Movement | Observation |
+| --- | --- |
+| 425 | Front elevation, as Brown draws it; faithful casing, piston C and abutment. |
+| 426 | Front elevation; faithful casing, drum B and abutments A. |
+| 427 | Front elevation; faithful casing, drum B and pistons a. |
+| 428 | Front elevation; faithful casing, arms B and rollers A. |
+| 429 | Front elevation; faithful two-lobed casing and toothed pistons. |
+| 430 | Side elevation; faithful overshot wheel and flume. |
+| 431 | Side elevation; faithful undershot wheel, sluice and race. |
+| 432 | Side elevation; faithful breast wheel, sluice and race. |
+| 433 | Side elevation; faithful tub wheel, shaft and spout. |
+| 434 | Plan, as Brown draws it; faithful wheel A inside guide ring B. |
+| 435 | Plan; faithful guides b and outer wheel a. |
+| 436 | Sectional elevation; faithful case b, wheel a and step c. |
+| 437 | Plan without the undrawn foundation and upper bearing bridge; faithful scroll case, guides a and floats c. The inlet enters diagonally at the left where Brown's runs in horizontally at the top. |
+| 438 | Elevation; faithful arms, hollow shaft and funnel. The floor plate is not drawn by Brown. |
+| 439 | Presented without the undrawn gallows frame and ground; faithful pulley, rope, bucket and counterweight. |
+| 440 | Faithful trough, trestle and spout. |
+| 441 | Front elevation without the undrawn base, standards, trip-pin post and trough; faithful curved arms, buckets and stream. |
+| 442 | Faithful wheel, trestle and race. |
+| 443 | Faithful inclined screw, floats and trough. |
+| 444 | Sectional elevation; faithful supply, air vessel, jet and valve. |
+| 445 | Faithful sectional supply, chamber and valve. |
+| 446 | Faithful sectional supply, chamber and valve. |
