@@ -516,4 +516,9 @@ export default {
     remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft'],
     note: 'The frame, racks and spur gear; no post or bearing is drawn.',
   },
+  281: {
+    camera: [0.05, 0.06, 1],
+    remove: ['white-disk-rotation-index', 'white-lever-vibration-index'],
+    note: 'Front elevation of the grooved disk, follower pin and lever; the white indices are not drawn.',
+  },
 };

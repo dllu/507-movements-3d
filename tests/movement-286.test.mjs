@@ -67,8 +67,8 @@ test('movement 286 is one rocking toe lifting one guided poppet-valve train', ()
   assert.equal(blocks.toe.parent, model.root);
   assert.equal(blocks.toeBody.parent, blocks.toe);
   assert.equal(blocks.workingFlank.parent, blocks.toe);
-  assert.equal(blocks.shaftCollar.parent, blocks.toe);
-  assert.equal(blocks.rockShaft.parent, model.root);
+  assert.ok(blocks.shaftCollar.parent === blocks.toe, 'collar on the toe');
+  assert.ok(blocks.rockShaft.parent === blocks.toe, 'rock shaft rigid with the toe');
   assert.equal(blocks.lifter.parent, model.root);
   assert.equal(blocks.lifterBody.parent, blocks.lifter);
   assert.equal(blocks.followerShoe.parent, blocks.lifter);

@@ -385,11 +385,22 @@ function groovedDiskFollower(movement) {
   lever.userData.axis = Z_AXIS.clone();
   lever.userData.role = 'fixed-pivot-groove-driven-vibrating-lever';
   root.add(lever);
-  const leverBody = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(localLeverGrip.x, localLeverGrip.y, 0),
-    { color: PALETTE.driven, depth: 0.26, thickness: 0.25 },
+  const leverPivotPinRadius = 0.24;
+  const leverGripAngle = Math.atan2(localLeverGrip.y, localLeverGrip.x);
+  const leverLength = Math.hypot(localLeverGrip.x, localLeverGrip.y);
+  const leverOutline = polygonClipping.difference(
+    polygonClipping.union(
+      poly(circle([0, 0], leverPivotPinRadius + 0.13, 64)),
+      poly([[0, -0.125], [leverLength, -0.125], [leverLength, 0.125], [0, 0.125]]),
+      poly(circle([leverLength, 0], 0.125, 32)),
+    ),
+    poly(circle([0, 0], leverPivotPinRadius + 0.012, 64)),
   );
+  const leverBody = new THREE.Mesh(
+    plate(leverOutline, -0.13, 0.13),
+    drivenMaterial,
+  );
+  leverBody.rotation.z = leverGripAngle;
   leverBody.userData.role = 'long-rigid-output-lever';
   lever.add(leverBody);
   const bodyYAtPin = localLeverGrip.y * followerArmLength
@@ -423,7 +434,7 @@ function groovedDiskFollower(movement) {
   leverIndex.rotation.z = Math.atan2(localLeverGrip.y, localLeverGrip.x);
   leverIndex.userData.role = 'white-lever-vibration-index';
   lever.add(leverIndex);
-  const leverPivotPin = cylinderAlongZ(0.24, 0.88,
+  const leverPivotPin = cylinderAlongZ(leverPivotPinRadius, 0.88,
     darkMaterial, 36);
   leverPivotPin.position.set(leverPivot.x, leverPivot.y, 0.32);
   leverPivotPin.userData.role = 'fixed-output-lever-fulcrum';

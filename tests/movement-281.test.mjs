@@ -67,7 +67,7 @@ test('movement 281 is one revolving face groove driving one fixed-pivot lever', 
   assert.equal(blocks.grooveOuter.parent, blocks.diskRotor);
   assert.equal(blocks.grooveFloor.parent, blocks.diskRotor);
   assert.equal(blocks.lever.parent, model.root);
-  assert.equal(blocks.leverBody.parent, blocks.lever);
+  assert.ok(blocks.leverBody.parent === blocks.lever, 'lever body on the lever');
   assert.equal(blocks.followerBracket.parent, blocks.lever);
   assert.equal(blocks.followerPin.parent, blocks.lever);
   assert.equal(blocks.leverPivotPin.parent, model.root);
@@ -318,8 +318,8 @@ test('movement 281 renderer binds disk, groove, follower pin, lever, and indexes
   assert.equal(animationTiming.authoredCyclePeriod, 4);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  assert.equal(blocks.diskIndex.parent, blocks.diskRotor);
-  assert.equal(blocks.leverIndex.parent, blocks.lever);
+  assert.ok(blocks.diskIndex.parent === null, 'undrawn disk index removed');
+  assert.ok(blocks.leverIndex.parent === null, 'undrawn lever index removed');
   assert.equal(blocks.followerHead.parent, blocks.lever);
   const renderedBounds = new THREE.Box3();
 

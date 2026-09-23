@@ -8185,15 +8185,16 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/movement-281-286.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. - 281: 513 poses bound lateral wall clearance within 0.0001 of the retained 0.035; pin-to-floor/walls/disk/rim checks confirm no sampled intersection. The floor and shared wall depth are checked, with an uncut-disk negative control. - 286: 513 poses compare the visible shoe underside with the…"
+        "status": "sampled-clear",
+        "evidence": "docs/intersection-screen-pass50.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. Pass-50 relative-motion screen (0.01 spacing, 129 poses) after boring the lever eye and removing the undrawn white disk index: no overlaps."
       },
-      "flaws": "Lever passes in front of the disk where Brown dashes it behind. Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking.",
+      "flaws": "The lever lies in front of the disk where Brown dashes it behind; the lever now has a real bore at its fulcrum. Lever passes in front of the disk where Brown dashes it behind. Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking.",
       "references": [
         "docs/movement-281-286.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8329,15 +8330,16 @@
         "note": "Default production-route capture inspected beside the engraving."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/movement-281-286.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. - 281: 513 poses bound lateral wall clearance within 0.0001 of the retained 0.035; pin-to-floor/walls/disk/rim checks confirm no sampled intersection. The floor and shared wall depth are checked, with an uncut-disk negative control. - 286: 513 poses compare the visible shoe underside with the…"
+        "status": "sampled-clear",
+        "evidence": "docs/intersection-screen-pass50.md",
+        "note": "Selected interfaces only; no global/continuous collision certificate. Pass-50 relative-motion screen (0.01 spacing, 129 poses) after making the rock shaft rigid with the toe: only 0.0000 toe-on-shoe, toe-on-lifter and seated-valve contacts remain."
       },
       "flaws": "Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking.",
       "references": [
         "docs/movement-281-286.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/intersection-screen-pass50.md"
       ],
       "mujoco": {
         "mode": "none",

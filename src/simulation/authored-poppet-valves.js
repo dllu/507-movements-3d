@@ -372,7 +372,7 @@ function rockShaftToeAndPoppetLifter(movement) {
   const rockShaft = cylinderAlongZ(0.31, 1.06, darkMaterial, 38);
   rockShaft.position.z = 0.04;
   rockShaft.userData.role = 'fixed-axis-rock-shaft';
-  root.add(rockShaft);
+  toe.add(rockShaft);
   const shaftCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.43, 0.075, 11, 46),
     driverMaterial,
