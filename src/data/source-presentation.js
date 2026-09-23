@@ -326,4 +326,32 @@ export default {
     remove: ['fixed-floor-base', 'fixed-wheel-shaft-standard', 'fixed-treadle-pivot-standard'],
     note: 'The faceplate wheel, tangent slide A, B, pitman and treadle; no floor or standards are drawn.',
   },
+  406: {
+    remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border'],
+    note: 'The straightedge, square, thread and pencil describing the parabola; no drawing board is drawn.',
+  },
+  407: {
+    remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'mirrored-right-jamb-reference-for-complete-arch', 'mirrored-right-half-completing-pointed-arch', 'given-right-springing-point'],
+    note: 'The slotted bar, elastic bar, cord and the half-arch it draws; no drawing board or mirrored half is drawn.',
+  },
+  413: {
+    remove: ['fixed-two-shaft-friction-gear-frame'],
+    note: 'The adjustable wheel A and the V-grooved wheel B on their shafts; no frame is drawn.',
+  },
+  415: {
+    remove: ['fixed-coaxial-wheel-and-lever-bearing-frame'],
+    note: 'The wheel D, lever A with its pawls and the rod; no frame is drawn.',
+  },
+  416: {
+    remove: ['fixed-flywheel-and-treadle-bearing-frame'],
+    note: 'The flywheel and crank B, spring A, pitman and treadle; no frame is drawn.',
+  },
+  418: {
+    remove: ['fixed-tapered-guide-support-standard'],
+    note: 'The casing, guide D, valve A, rod B and roller C; no outside standards are drawn.',
+  },
+  421: {
+    remove: ['marine-trunk-engine-foundation', 'rear-crankshaft-support-column', 'rear-crankshaft-bearing-arm'],
+    note: 'The sectioned cylinder, trunk piston, pitman and crank; no foundation or crank supports are drawn.',
+  },
 };

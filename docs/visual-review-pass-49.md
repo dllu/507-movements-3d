@@ -440,3 +440,30 @@ hashes `primitives.js`; loop points, seam and native comparison are unchanged.
 | 399 | Faithful links and pins. |
 | 400 | Side elevation without the undrawn base and supports. Cam C is much larger than Brown's. |
 | 401 | Presented without the undrawn floor and standards; faithful faceplate, slide A, B, pitman and treadle. |
+
+## Pass 50 batch: 403–424
+
+| Movement | Observation |
+| --- | --- |
+| 403 | Faithful crossed rafters, tie and arc. |
+| 404 | Faithful bow, screw and beam. |
+| 405 | Faithful hyperbolas, ruler and thread. |
+| 406 | Presented without the undrawn drawing board; faithful straightedge, square, thread and pencil. |
+| 407 | Presented without the undrawn drawing board and mirrored half-arch; faithful slotted bar, elastic bar and cord. |
+| 408 | Faithful centrolinead arms and blade. |
+| 409 | Faithful proportional compasses. |
+| 410 | Faithful plank, clamp and screws. |
+| 411 | Faithful carriage, rollers and handle. |
+| 412 | Faithful planet train and annulus. The outside band and its two levers are not modelled. |
+| 413 | Presented without the undrawn frame; faithful wheels A and B on their shafts. |
+| 414 | Faithful spiral face wheel and pinion B. |
+| 415 | Presented without the undrawn frame; faithful wheel D, lever A, pawls and rod. |
+| 416 | Presented without the undrawn frame; faithful flywheel, crank B, spring A, pitman and treadle. |
+| 417 | Faithful frame, arm A, rod B and base. |
+| 418 | Presented without the undrawn outside standards. The casing is an open trapezoid frame where Brown sections a conical casing. |
+| 419 | Faithful frame, wheels A, B, cords and rocker E. |
+| 420 | Faithful bell, hammer and trip on the board. |
+| 421 | Presented without the undrawn foundation and crank supports; faithful sectioned cylinder, trunk and pitman. |
+| 422 | Faithful scale frame, pointer B and pivot C. |
+| 423 | Faithful frame, arms B and cam D. |
+| 424 | Faithful frames A, B and crank plate C. |

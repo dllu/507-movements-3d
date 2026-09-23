@@ -96,8 +96,8 @@ test('movement 407 is one elastic arch bar, one slotted base and locked slide, o
     'upper-working-edge-tangent-to-jamb-and-meeting-apex',
     'pencil-secured-at-elastic-bar-and-cord-connection',
     'selected-left-half-of-pointed-arch',
-    'mirrored-right-half-completing-pointed-arch',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.includes('mirrored-right-half-completing-pointed-arch'), 'source presentation removes the undrawn mirrored half');
   disposeModel(model.root);
 });
 

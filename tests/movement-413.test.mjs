@@ -58,17 +58,17 @@ test('movement 413 is one nut-compressed V-edged rubber wheel between two metal 
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedomWhenTightened, 1);
   assert.equal(degreesOfFreedom.simultaneouslyActiveCoordinates, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
-  assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.upperRotor.parent, model.root);
-  assert.equal(blocks.lowerRotor.parent, model.root);
-  assert.equal(blocks.rubberRotor.parent, blocks.upperRotor);
-  assert.equal(blocks.leftClampPlate.parent, blocks.upperRotor);
-  assert.equal(blocks.rightClampPlate.parent, blocks.upperRotor);
-  assert.equal(blocks.adjustmentNut.parent, blocks.upperRotor);
-  assert.equal(blocks.leftRubberHalf.parent, blocks.rubberRotor);
-  assert.equal(blocks.rightRubberHalf.parent, blocks.rubberRotor);
-  assert.equal(blocks.lowerLeftHalf.parent, blocks.lowerRotor);
-  assert.equal(blocks.lowerRightHalf.parent, blocks.lowerRotor);
+  assert.ok(blocks.fixedFrame.parent === null, 'source presentation removes the undrawn frame');
+  assert.ok(blocks.upperRotor.parent === model.root, 'blocks.upperRotor parent');
+  assert.ok(blocks.lowerRotor.parent === model.root, 'blocks.lowerRotor parent');
+  assert.ok(blocks.rubberRotor.parent === blocks.upperRotor, 'blocks.rubberRotor parent');
+  assert.ok(blocks.leftClampPlate.parent === blocks.upperRotor, 'blocks.leftClampPlate parent');
+  assert.ok(blocks.rightClampPlate.parent === blocks.upperRotor, 'blocks.rightClampPlate parent');
+  assert.ok(blocks.adjustmentNut.parent === blocks.upperRotor, 'blocks.adjustmentNut parent');
+  assert.ok(blocks.leftRubberHalf.parent === blocks.rubberRotor, 'blocks.leftRubberHalf parent');
+  assert.ok(blocks.rightRubberHalf.parent === blocks.rubberRotor, 'blocks.rightRubberHalf parent');
+  assert.ok(blocks.lowerLeftHalf.parent === blocks.lowerRotor, 'blocks.lowerLeftHalf parent');
+  assert.ok(blocks.lowerRightHalf.parent === blocks.lowerRotor, 'blocks.lowerRightHalf parent');
   assert.equal(blocks.contactIndicators.length, 2);
   assert.equal(blocks.nutHandleEnds.length, 2);
 
