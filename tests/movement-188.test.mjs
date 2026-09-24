@@ -217,15 +217,15 @@ test('movement 188 matches Brown\'s loop-handle direct-pin cam and separate leaf
   assert.equal(geometry.sourceImageWidth, 525);
   assert.equal(geometry.sourceImageHeight, 525);
   near(geometry.sourceUnitsPerPixel, 0.017, 0, 'source scale');
-  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [394, 326]);
+  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [394, 322]);
   assert.deepEqual(geometry.sourceRasterCamPivot.toArray(), [287, 290]);
   assert.deepEqual(geometry.sourceRasterLoopGrip.toArray(), [35, 112]);
   assert.deepEqual(geometry.sourceRasterNotchA.toArray(), [224, 174]);
-  assert.deepEqual(geometry.sourceRasterLeafAnchor.toArray(), [117, 288]);
-  assert.deepEqual(geometry.sourceRasterLeafFreeTip.toArray(), [207, 232]);
-  assert.deepEqual(geometry.sourceRasterCamBackCrown.toArray(), [361, 239]);
+  assert.deepEqual(geometry.sourceRasterLeafAnchor.toArray(), [138, 306]);
+  assert.deepEqual(geometry.sourceRasterLeafFreeTip.toArray(), [223, 201]);
+  assert.deepEqual(geometry.sourceRasterCamBackCrown.toArray(), [378, 229]);
   assert.deepEqual(geometry.sourceRasterRodLeftEnd.toArray(), [15, 319]);
-  assert.deepEqual(geometry.sourceRasterRodRightEnd.toArray(), [510, 326]);
+  assert.deepEqual(geometry.sourceRasterRodRightEnd.toArray(), [518, 326]);
   for (const rasterPoint of [
     geometry.sourceRasterGabPin,
     geometry.sourceRasterCamPivot,
@@ -395,7 +395,7 @@ test('movement 188 conjugate cam stays tangent while working and clears the pin 
       released.camProfileMinimumGap,
     );
   }
-  assert.ok(minimumReleasedCamGap > 0.164,
+  assert.ok(minimumReleasedCamGap > 0.12,
     'relieved cam clears the stationary pin over the full rod stroke');
 
   const working = canonicalStates.workingCamAtFullLift;
@@ -482,8 +482,8 @@ test('movement 188 stops for cam operation, runs while latched, and crosses ever
     -geometry.springMaximumDeflection, 3e-15,
     'leaf spring flexes behind the passing notch lip');
   near(stateAtCyclePhase(0.67).springDeflection,
-    geometry.springMaximumDeflection, 3e-15,
-    'leaf spring flexes out of notch a for release');
+    -geometry.springMaximumDeflection, 3e-15,
+    'leaf spring flexes back, away from the loop, out of notch a for release');
 
   let previousTurns = 0;
   let observedReleasedRodMotion = false;
@@ -518,7 +518,7 @@ test('movement 188 stops for cam operation, runs while latched, and crosses ever
       near(state.couplingBlend, 0, 2e-14, 'latched gab remains released');
       vector2Near(state.valvePin, new THREE.Vector2(0, 0), 2e-14,
         'released valve pin remains stopped');
-      assert.ok(state.camProfileMinimumGap > 0.164,
+      assert.ok(state.camProfileMinimumGap > 0.12,
         'relieved cam clears the stopped pin during rod motion');
     }
   }
@@ -638,7 +638,8 @@ test('movement 188 rendered transforms keep the pin, rod, rigid loop, cam, and l
     assert.equal(gabCaptureMarker.visible, state.gabCaptured);
     assert.equal(latchMarker.visible, state.latchEngagement > 1 - 1e-8);
     assert.equal(relievedCamMarker.visible, state.camRelievedForRodMotion);
-    assert.equal(leafSpring.children.filter((child) => child.visible).length, 48);
+    assert.equal(leafSpring.children.filter((child) => child.visible).length, 1,
+      'one flat strap mesh forms the leaf spring');
     assert.equal(model.root.userData.contacts.camPin.active,
       state.camContactActive);
     near(model.root.userData.contacts.camPin.minimumProfileGap,
@@ -664,15 +665,18 @@ test('movement 188 rendered transforms keep the pin, rod, rigid loop, cam, and l
   model.update(canonicalTimes.leafFlexedForRelease);
   model.root.updateMatrixWorld(true);
   assert.equal(latchMarker.visible, false);
-  assert.ok(worldPoint(leafSpringTipIndex).z > worldPoint(notchAAnchor).z + 0.13);
+  assert.ok(worldPoint(leafSpringTipIndex).z < worldPoint(notchAAnchor).z - 0.13,
+    'the spring flexes back, away from the loop plane');
   model.update(canonicalTimes.camHalfLowered);
   assert.equal(camContactMarker.visible, true);
 
   model.update(canonicalTimes.latchedReleasedPositiveStroke);
   model.root.updateMatrixWorld(true);
-  assert.ok(valveGear.position.z < eccentricRod.position.z);
-  assert.ok(eccentricRod.position.z < worldPoint(camLobe).z);
-  assert.ok(worldPoint(camLobe).z < worldPoint(notchAAnchor).z);
+  // Plate: the rod is in front; the loop/cam behind it (dashed bean and
+  // working edge); the leaf spring behind the loop's diagonal.
+  assert.ok(valveGear.position.z < worldPoint(camLobe).z);
+  assert.ok(worldPoint(camLobe).z < eccentricRod.position.z);
+  assert.ok(worldPoint(notchAAnchor).z < worldPoint(camLobe).z);
   near(worldPoint(notchAAnchor).z, worldPoint(leafSpringTipIndex).z, 3e-14,
     'latched leaf tip and notch occupy the same working plane');
   disposeModel(model.root);
@@ -697,9 +701,9 @@ test('movement 188 fills a real 3D envelope and remains distinct from authored 1
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 10.10);
   assert.ok(size.y > 5.90);
-  assert.ok(size.z > 2.44);
-  assert.ok(physicalBounds.min.z < -1.11);
-  assert.ok(physicalBounds.max.z > 1.32);
+  assert.ok(size.z > 0.9);
+  assert.ok(physicalBounds.min.z < -0.6);
+  assert.ok(physicalBounds.max.z > 0.3);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.6);

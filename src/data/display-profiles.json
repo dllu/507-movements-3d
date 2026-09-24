@@ -3503,31 +3503,31 @@
         "min": [
           -2.71167828142643,
           -3.750000004172325,
-          -0.7399999904632568
+          -0.8000000262260437
         ],
         "max": [
-          2.044073140451162,
+          1.9924229047739241,
           3.6250000476837156,
-          0.9100000014901162
+          1.1500000014901162
         ]
       }
     },
     "184": {
       "peakAngularSpeed": 0.6666023627368209,
-      "peakVisibleAngularSpeed": 0.6666023627359882,
-      "sustainedVisibleAngularSpeed": 0.3027321405651706,
+      "peakVisibleAngularSpeed": 0.6666023627351555,
+      "sustainedVisibleAngularSpeed": 0.30273214056503184,
       "floorY": -3.750000004172325,
       "fastestPart": "upper-handle-rigid-hollow-quadrant-white-sector-index",
       "motionBounds": {
         "min": [
           -2.71167828142643,
           -3.750000004172325,
-          -0.7399999904632568
+          -0.8000000262260437
         ],
         "max": [
-          2.04404616046164,
+          1.992525693905337,
           3.6250000476837156,
-          0.9100000014901162
+          1.1500000014901162
         ]
       }
     },
@@ -3551,11 +3551,11 @@
       }
     },
     "186": {
-      "peakAngularSpeed": 0.7667266867507055,
-      "peakVisibleAngularSpeed": 0.7667266867507055,
+      "peakAngularSpeed": 0.7667266867574362,
+      "peakVisibleAngularSpeed": 0.7667266867574362,
       "sustainedVisibleAngularSpeed": 0.3404330454313067,
       "floorY": -3.9499999046325684,
-      "fastestPart": "fixed-axis-valve-gab-lever-carrying-the-engagement-pin",
+      "fastestPart": "rigid-valve-lever-from-rockshaft-to-gab-pin",
       "motionBounds": {
         "min": [
           -4.55,
@@ -3563,18 +3563,18 @@
           -1.5
         ],
         "max": [
-          4.833527256264245,
+          4.45,
           4.249999904632569,
           1.5
         ]
       }
     },
     "187": {
-      "peakAngularSpeed": 1.1278341006362076,
-      "peakVisibleAngularSpeed": 1.1278341006358952,
-      "sustainedVisibleAngularSpeed": 0.45032323306689936,
+      "peakAngularSpeed": 1.143755670458448,
+      "peakVisibleAngularSpeed": 1.143755670458448,
+      "sustainedVisibleAngularSpeed": 0.45744253653326383,
       "floorY": -2.679999952316284,
-      "fastestPart": "axial-neck-joining-rear-cam-toe-to-visible-handle",
+      "fastestPart": "separate-upper-cam-handle-pivoted-on-the-eccentric-rod",
       "motionBounds": {
         "min": [
           -5.960000095367432,
@@ -3582,8 +3582,8 @@
           -1.5499999523162842
         ],
         "max": [
-          3.8400000953674316,
-          3.9199999523162843,
+          3.8452476534770454,
+          4.250159091263237,
           1.5499999523162842
         ]
       }
@@ -3596,7 +3596,7 @@
       "fastestPart": "single-rigid-loop-handle-with-direct-pin-cam-and-notch-a",
       "motionBounds": {
         "min": [
-          -7.357899123023078,
+          -7.659962463591789,
           -2.3000000953674316,
           -1.600000023841858
         ],
@@ -3610,7 +3610,7 @@
     "189": {
       "peakAngularSpeed": 0.767336444939956,
       "peakVisibleAngularSpeed": 0.767336444939956,
-      "sustainedVisibleAngularSpeed": 0.4346393692365061,
+      "sustainedVisibleAngularSpeed": 0.4243996231208948,
       "floorY": -1.9500000000000002,
       "fastestPart": "valve-gear-pin-captured-by-eccentric-rod-gab",
       "motionBounds": {
@@ -3621,8 +3621,8 @@
         ],
         "max": [
           3.95,
-          6.1279990031443585,
-          1.7100000286102295
+          6.067998750697505,
+          1.7000000476837158
         ]
       }
     },

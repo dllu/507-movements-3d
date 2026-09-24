@@ -20,8 +20,8 @@
   "bounds": {
     "min": [
       -1.333687878750618,
-      -3.4066743267215984,
-      -0.6899999952316285
+      -3.3566744040140226,
+      -0.660000023841858
     ],
     "max": [
       4.474204714286234,
@@ -31,8 +31,8 @@
   },
   "focus": [
     1.570258417767808,
-    -0.7055978384801325,
-    -0.10499998927116397
+    -0.6805978771263446,
+    -0.09000000357627871
   ],
   "cameraDirection": [
     0.12,
@@ -70,7 +70,7 @@
     "geometrySources": [
       {
         "file": "src/simulation/mujoco-expansion-eccentric/geometry.js",
-        "sha256": "52353d1c505ba49f27cfa4b8162686c18438c0e7c5d50e325fae9ac01d8020c7"
+        "sha256": "13deba81049abf2499e329a5d524e788d13406e51a675bb623c67a67e151298f"
       },
       {
         "file": "scripts/bake-expansion-eccentric.mjs",
@@ -88,6 +88,6 @@
     "maximumPenetrationPixels": 0.07254944064269964
   },
   "samples": 15875,
-  "bytes": 1023991,
-  "assetSha256": "1bc95bf21291178d17250948cc32b22d873812fd803a2d90eb1ad9f13c024136"
+  "bytes": 1017225,
+  "assetSha256": "2a9793e91f6fa6313e3c731369d939cea2ea13144369266fc455979759124e3d"
 }

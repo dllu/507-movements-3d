@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {matte, PALETTE, markShadows} from '../primitives.js';
 import {expansionEccentricProfile} from '../expansion-eccentric-profile.js';
 
-/** Traced front outlines; hidden depths, rear mounting and roller spacing inferred. */
+/** Traced front outlines; hidden depths, fork-support depth and roller spacing inferred. */
 export function makeExpansionEccentricGeometry({samples=384,spread=12}={}) {
   const root=new THREE.Group(),cam=new THREE.Group(),fork=new THREE.Group();
   root.add(cam,fork);fork.position.set(3.67,-.04,0);
@@ -51,16 +51,28 @@ export function makeExpansionEccentricGeometry({samples=384,spread=12}={}) {
     fork.add(extrude(circle(x,y,.10,.065),front-.04,.04,PALETTE.ink));
   }
   const rod=new THREE.Group();rod.position.set(...locations.lower.slice(0,2),0);fork.add(rod);blocks.rod=rod;
+  // Plate: a round-ended strap with parallel sides, a shoulder, then a
+  // narrower slotted valve rod broken off below the view.
   const r=new THREE.Shape();r.moveTo(-.17,0);r.absarc(0,0,.17,Math.PI,0,true);
-  r.lineTo(.13,-1.05);r.lineTo(.075,-1.85);r.lineTo(-.075,-1.85);r.lineTo(-.13,-1.05);r.closePath();bore(r,0,0,.068);
+  r.lineTo(.17,-.94);r.lineTo(.14,-.98);r.lineTo(.11,-1.80);r.lineTo(-.11,-1.80);r.lineTo(-.14,-.98);r.lineTo(-.17,-.94);r.closePath();bore(r,0,0,.068);
+  const slot=new THREE.Path();slot.moveTo(-.025,-1.06);slot.lineTo(.025,-1.06);slot.lineTo(.025,-1.36);slot.lineTo(-.025,-1.36);slot.closePath();r.holes.push(slot);
   rod.add(extrude(r,.235,.12,PALETTE.accent));
-  // A rear mounting plate connects both bored bearings without crossing the cam plane.
-  const frame=new THREE.Shape();frame.moveTo(.30,-.12);frame.lineTo(3.52,-.16);frame.lineTo(3.52,.08);frame.lineTo(.30,.12);frame.closePath();
-  root.add(extrude(frame,-.62,.18,PALETTE.frame));
-  root.add(extrude(circle(0,0,.40,.293),-.62,.18,PALETTE.frame));
-  root.add(extrude(circle(3.67,-.04,.25,.13),-.62,.18,PALETTE.frame));
-  pin(root,3.67,-.04,.125,-.63,.42);
-  root.add(extrude(circle(3.67,-.04,.20,.127),-.235,.025,PALETTE.ink));
+  // The plate shows no rear frame. The fork pivots in the eye of a fixed
+  // hanging support drawn in front of the arm at the right; its socket and
+  // tapered stem are cut off below, as engraved.
+  pin(root,3.67,-.04,.125,-.44,.425);
+  const eye=circle(3.67,-.04,.35,.13);
+  root.add(extrude(eye,-.22,.2,PALETTE.frame));
+  const stem=new THREE.Shape();
+  stem.moveTo(3.45,-.30);stem.lineTo(3.89,-.30);stem.lineTo(3.89,-.70);stem.lineTo(3.45,-.70);stem.closePath();
+  root.add(extrude(stem,-.22,.2,PALETTE.frame));
+  const stemBand=new THREE.Shape();
+  stemBand.moveTo(3.46,-.70);stemBand.lineTo(3.88,-.70);stemBand.lineTo(3.88,-.74);stemBand.lineTo(3.46,-.74);stemBand.closePath();
+  root.add(extrude(stemBand,-.21,.18,PALETTE.ink));
+  const hanger=new THREE.Shape();
+  hanger.moveTo(3.48,-.74);hanger.lineTo(3.86,-.74);hanger.lineTo(3.81,-1.80);hanger.lineTo(3.56,-1.82);hanger.closePath();
+  root.add(extrude(hanger,-.20,.16,PALETTE.frame));
+  root.add(extrude(circle(3.67,-.04,.20,.17),-.02,.012,PALETTE.ink));
   markShadows(root);root.traverse(o=>{if(o.material)o.material.fog=false;});root.updateMatrixWorld(true);
   root.userData={blocks};return {root};
 }

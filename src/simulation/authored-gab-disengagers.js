@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {makeBoredPlanarLink, boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
+import {capsule, circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -150,6 +150,62 @@ function makeTube(points, radius, material, z = 0, closed = false) {
   );
 }
 
+// A flat spring strap of rectangular section, Brown's double-line strap. Its
+// centerline is rebuilt each frame; the width lies in the drawing plane.
+function makeFlatStrap(maxPoints, width, depth, material) {
+  const faces = 4, perRing = faces * 2;
+  const positions = new Float32Array((maxPoints * perRing + 8) * 3);
+  const index = [];
+  for (let i = 0; i < maxPoints - 1; i++) for (let f = 0; f < faces; f++) {
+    const a = i * perRing + f * 2, b = a + 1, c = a + perRing, d = b + perRing;
+    index.push(a, c, b, b, c, d);
+  }
+  const capStart = maxPoints * perRing;
+  index.push(capStart, capStart + 1, capStart + 2, capStart, capStart + 2, capStart + 3);
+  index.push(capStart + 4, capStart + 6, capStart + 5, capStart + 4, capStart + 7, capStart + 6);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setIndex(index);
+  const mesh = new THREE.Mesh(geometry, material);
+  const corner = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  mesh.userData.setPoints = (points) => {
+    if (points.length !== maxPoints) throw new RangeError('Strap point count changed');
+    const rings = points.map((point, i) => {
+      const previous = points[Math.max(0, i - 1)], next = points[Math.min(points.length - 1, i + 1)];
+      const tx = next.x - previous.x, ty = next.y - previous.y, length = Math.hypot(tx, ty) || 1;
+      const nx = -ty / length, ny = tx / length;
+      return corner.map(([s, t]) => [point.x + nx * s * width / 2, point.y + ny * s * width / 2, point.z + t * depth / 2]);
+    });
+    rings.forEach((ring, i) => {
+      for (let f = 0; f < faces; f++) for (let k = 0; k < 2; k++) {
+        positions.set(ring[(f + k) % 4], (i * perRing + f * 2 + k) * 3);
+      }
+    });
+    [rings[0], rings.at(-1)].forEach((ring, e) => ring.forEach((p, k) => positions.set(p, (capStart + e * 4 + k) * 3)));
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  };
+  return mesh;
+}
+
+// Extrude an outline traced in source raster pixels into a finite plate.
+function sourcePlate(outlines, toLocal, low, high, material, holes = [], smooth = false) {
+  const smoothRing = (points) => new THREE.CatmullRomCurve3(
+    points.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal',
+  ).getSpacedPoints(Math.max(96, points.length * 6)).slice(0, -1).map((p) => [p.x, p.y]);
+  const toRing = (points) => (smooth ? smoothRing(points) : points).map((point) => {
+    const local = toLocal(new THREE.Vector2(point[0], point[1]));
+    return [local.x, local.y];
+  });
+  let shape = polygonClipping.union(...outlines.map((outline) => (
+    Array.isArray(outline[0]?.[0]?.[0]) ? outline : poly(toRing(outline))
+  )));
+  if (holes.length) shape = polygonClipping.difference(shape, ...holes);
+  return new THREE.Mesh(plate(shape, low, high), material);
+}
+
 function distanceToRectangle(point, minimum, maximum) {
   const dx = Math.max(minimum.x - point.x, 0, point.x - maximum.x);
   const dy = Math.max(minimum.y - point.y, 0, point.y - maximum.y);
@@ -165,15 +221,15 @@ function springHandleGabDisengager() {
   // physical plates and the through-pins that join them.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
-  const sourceRasterGabPin = new THREE.Vector2(266, 254);
-  const sourceRasterValvePivot = new THREE.Vector2(261, 57);
-  const sourceRasterCamPivot = new THREE.Vector2(340, 207);
-  const sourceRasterHandleGrip = new THREE.Vector2(470, 213);
+  const sourceRasterGabPin = new THREE.Vector2(270, 250);
+  const sourceRasterValvePivot = new THREE.Vector2(260, 62);
+  const sourceRasterCamPivot = new THREE.Vector2(341, 242);
+  const sourceRasterHandleGrip = new THREE.Vector2(485, 212);
   const sourceRasterCamContact = new THREE.Vector2(285, 151);
   const sourceRasterNotchA = new THREE.Vector2(480, 319);
-  const sourceRasterSpringAnchor = new THREE.Vector2(358, 240);
-  const sourceRasterSpringBottom = new THREE.Vector2(436, 482);
-  const sourceRasterSpringFreeTip = new THREE.Vector2(418, 319);
+  const sourceRasterSpringAnchor = new THREE.Vector2(358, 266);
+  const sourceRasterSpringBottom = new THREE.Vector2(450, 494);
+  const sourceRasterSpringFreeTip = new THREE.Vector2(468, 321);
   const sourceUnitsPerPixel = 0.015;
   const sourcePointFromRaster = (point) => new THREE.Vector2(
     (point.x - sourceRasterGabPin.x) * sourceUnitsPerPixel,
@@ -194,6 +250,9 @@ function springHandleGabDisengager() {
   const maximumHandleAngle = 0.75;
   const camToeRadius = .145;
   const camSupportHalfLength = .82;
+  // Sampled toe travel spans -1.044..0.265 along the shoulder.
+  const camSupportRearReach = 1.10;
+  const camSupportFrontReach = .32;
   const sourceCamContact = sourcePointFromRaster(sourceRasterCamContact);
   const camContactLocal = sourceCamContact.clone().sub(camPivotLocal);
   const camContactSourceHeight = camPivotLocal.y + camContactLocal.y;
@@ -205,24 +264,33 @@ function springHandleGabDisengager() {
   );
   const springRestPathLocal = [
     sourceRasterSpringAnchor,
-    new THREE.Vector2(374, 287),
-    new THREE.Vector2(402, 365),
-    new THREE.Vector2(420, 449),
+    new THREE.Vector2(398, 290),
+    new THREE.Vector2(428, 345),
+    new THREE.Vector2(458, 440),
     sourceRasterSpringBottom,
-    new THREE.Vector2(458, 467),
-    new THREE.Vector2(468, 425),
-    new THREE.Vector2(453, 361),
+    new THREE.Vector2(412, 470),
+    new THREE.Vector2(390, 400),
+    new THREE.Vector2(392, 352),
+    new THREE.Vector2(410, 331),
+    new THREE.Vector2(440, 324),
     sourceRasterSpringFreeTip,
   ].map(sourcePointFromRaster);
+  // Rod-local depth of each rest point: the strap from the rod lies in front;
+  // the free end passes behind it into the plane of notch a.
+  const springRestDepths = [.75, .75, .75, .75, .75, .75, .73, .68, .63, .62, .62];
   const springRestTipLocal = springRestPathLocal.at(-1).clone();
   const springMaximumDeflection = 0.14;
+  const springStrapPoints = 49;
+  const rodCrownRadius = 0.795;
 
-  const gabPinRadius = 0.18;
-  const gabInnerHalfWidth = gabPinRadius + 0.06;
-  const gabJawWidth = 0.17;
-  const gabMouthDepth = 0.48;
-  const gabTopBridgeMinimumY = 0.22;
-  const gabTopBridgeMaximumY = 0.43;
+  // Plate: a 19-pixel pin in a slot cut up through the rod (y 230-268)
+  // into its round crown; the rod bar itself forms both jaws.
+  const gabPinRadius = 0.26;
+  const gabInnerHalfWidth = gabPinRadius + 0.04;
+  const gabJawWidth = 0.5;
+  const gabMouthDepth = 0.27;
+  const gabTopBridgeMinimumY = 0.30;
+  const gabTopBridgeMaximumY = 0.79;
   const fullClearCouplingStart = gabMouthDepth + gabPinRadius + 0.04;
   const fullClearCouplingEnd = fullClearCouplingStart + 0.06;
 
@@ -448,7 +516,7 @@ function springHandleGabDisengager() {
       return new THREE.Vector3(
         restPoint.x + tipDisplacement.x * bendWeight,
         restPoint.y + tipDisplacement.y * bendWeight,
-        0.62 + springDeflection * bendWeight,
+        springRestDepths[index] + springDeflection * bendWeight,
       );
     });
   };
@@ -716,47 +784,47 @@ function springHandleGabDisengager() {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
+  // Source-traced visible bodies. Pixel outlines are measured on Brown's
+  // 525-pixel plate and share the model's 0.015-unit pixel scale.
+  const rodFromRaster = (point) => sourcePointFromRaster(point);
+  const camFromRaster = (point) => sourcePointFromRaster(point).sub(camPivotLocal);
   const valveRocker = new THREE.Group();
   valveRocker.position.set(valvePivot.x, valvePivot.y, -.48);
   valveRocker.userData.axis = Z_AXIS.clone();
   valveRocker.userData.role =
     'fixed-axis-valve-gab-lever-carrying-the-engagement-pin';
-  const valveShaft = cylinderAlongZ(0.34, 1.66, darkMaterial, 40);
+  const valveShaft = cylinderAlongZ(0.45, 1.66, darkMaterial, 48);
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = boredBoss(0.58, 0.22, 0.352, drivenMaterial);
-  valveShaftFace.position.z = 0.46;
+  const valveShaftFace = boredBoss(0.78, 0.22, 0.462, drivenMaterial);
+  valveShaftFace.position.z = 0.28;
   valveShaftFace.userData.role = 'source-round-valve-rockshaft-boss';
+  // The tapered lever ends in the round boss seen below the rod.
   const valveArm = boredGabLever(valvePinLocal, {
-    startRadius: 0.58, endRadius: gabPinRadius + .16,
-    startBore: 0.352, endBore: gabPinRadius + .012, depth: 0.32,
+    startRadius: 0.78, endRadius: 0.795, startBore: 0.462,
+    endBore: gabPinRadius + .012, depth: 0.32, width: 1.08,
   }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
-  const valvePin = cylinderAlongZ(gabPinRadius, 1.78, brassMaterial, 32);
-  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.50);
+  const valvePin = cylinderAlongZ(gabPinRadius, 1.04, brassMaterial, 40);
+  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.36);
   valvePin.userData.role = 'valve-gear-pin-captured-by-eccentric-rod-gab';
-  const valvePinIndex = new THREE.Mesh(
-    new THREE.TorusGeometry(gabPinRadius * 0.67, 0.032, 8, 28),
-    whiteMaterial,
-  );
-  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 1.41);
-  valvePinIndex.userData.role = 'white-index-on-valve-gear-pin';
+  const valvePinIndex = new THREE.Group();
+  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 0.88);
+  valvePinIndex.userData.role = 'valve-gear-pin-face-anchor';
   const valvePinAnchor = new THREE.Group();
   valvePinAnchor.position.set(valvePinLocal.x, valvePinLocal.y, 0);
   valvePinAnchor.userData.role = 'exact-valve-pin-center-anchor';
-  const valveShaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 0.075, 0.04),
-    whiteMaterial,
-  );
-  valveShaftIndex.position.set(0.25, 0, 0.61);
-  valveShaftIndex.userData.role = 'white-index-on-valve-rockshaft';
+  const valveShaftIndex = new THREE.Group();
+  valveShaftIndex.userData.role = 'valve-rockshaft-angle-anchor';
+  // Hidden shoulder behind the cam hook (the plate's dashed lobe); it is
+  // only as long as the toe's sampled travel requires.
   const camSupportShoe = makeBeam(
     new THREE.Vector3(
-      camSupportValveLocal.x - camSupportHalfLength,
+      camSupportValveLocal.x - camSupportRearReach,
       camSupportValveLocal.y,
       .23,
     ),
     new THREE.Vector3(
-      camSupportValveLocal.x + camSupportHalfLength,
+      camSupportValveLocal.x + camSupportFrontReach,
       camSupportValveLocal.y,
       .23,
     ),
@@ -794,88 +862,42 @@ function springHandleGabDisengager() {
   eccentricRod.position.z = 0.18;
   eccentricRod.userData.role =
     'reciprocating-eccentric-rod-with-downward-opening-gab';
-  const rodLeftEnd = -3.72;
-  const rodLeftBody = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.abs(rodLeftEnd) - gabInnerHalfWidth - gabJawWidth + 0.12,
-      0.30,
-      0.34,
+  // One plate: the broken-off rod bar (y 230-268), its round crown about
+  // the gab, and the gab slot cut up from the bar's lower edge.
+  const rodBarBottom = -gabMouthDepth;
+  const rodBody = sourcePlate([
+    [[18, 230], [383, 230], [383, 268], [18, 268]],
+    polygonClipping.intersection(
+      poly(circle([0, 0], rodCrownRadius, 128)),
+      poly([[-1, rodBarBottom], [1, rodBarBottom], [1, 1], [-1, 1]]),
     ),
-    driverMaterial,
-  );
-  rodLeftBody.position.set(
-    (rodLeftEnd - gabInnerHalfWidth - gabJawWidth) / 2,
-    0.22,
-    0,
-  );
-  rodLeftBody.userData.role = 'off-frame-eccentric-rod-body';
-  const rodRightBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.62, 0.30, 0.34),
-    driverMaterial,
-  );
-  rodRightBody.position.set(0.95, 0.22, 0);
-  rodRightBody.userData.role = 'gab-crown-to-cam-pivot-rod-body';
-  const gabTopBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * (gabInnerHalfWidth + gabJawWidth),
-      gabTopBridgeMaximumY - gabTopBridgeMinimumY,
-      0.42,
-    ),
-    driverMaterial,
-  );
-  gabTopBridge.position.set(
-    0,
-    (gabTopBridgeMinimumY + gabTopBridgeMaximumY) / 2,
-    0.02,
-  );
-  gabTopBridge.userData.role = 'closed-crown-of-eccentric-rod-gab';
+  ], rodFromRaster, -0.17, 0.17, driverMaterial, [
+    poly([[-gabInnerHalfWidth, rodBarBottom - .1], [gabInnerHalfWidth, rodBarBottom - .1],
+      [gabInnerHalfWidth, gabTopBridgeMinimumY], [-gabInnerHalfWidth, gabTopBridgeMinimumY]]),
+  ]);
+  rodBody.userData.role = 'eccentric-rod-with-round-crown-and-gab-slot';
+  const rodLeftBody = rodBody;
+  const rodRightBody = rodBody;
+  const gabTopBridge = rodBody;
   const gabJaws = [-1, 1].map((sign) => {
-    const jaw = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        gabJawWidth,
-        gabMouthDepth + gabTopBridgeMaximumY,
-        0.42,
-      ),
-      driverMaterial,
-    );
-    jaw.position.set(
-      sign * (gabInnerHalfWidth + gabJawWidth / 2),
-      (gabTopBridgeMaximumY - gabMouthDepth) / 2,
-      0.02,
-    );
-    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-open-bottom-gab-jaw`;
+    const jaw = new THREE.Group();
+    jaw.position.set(sign * (gabInnerHalfWidth + gabJawWidth / 2), 0, 0);
+    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-jaw-of-rod-bar`;
     eccentricRod.add(jaw);
     return jaw;
   });
   const gabContactShoes = [-1, 1].map((sign) => {
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, gabMouthDepth * 0.72, 0.50),
-      brassMaterial,
-    );
-    shoe.position.set(
-      sign * gabInnerHalfWidth,
-      -gabMouthDepth * 0.28,
-      0.08,
-    );
-    shoe.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-contact-shoe`;
+    const shoe = new THREE.Group();
+    shoe.position.set(sign * gabInnerHalfWidth, 0, 0);
+    shoe.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-slot-face`;
     eccentricRod.add(shoe);
     return shoe;
   });
   const gabCenterAnchor = new THREE.Group();
   gabCenterAnchor.userData.role = 'exact-center-of-eccentric-rod-gab';
-  const offFrameRodIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.075, 0.04),
-    whiteMaterial,
-  );
-  offFrameRodIndex.position.set(-2.82, 0.40, 0.24);
-  offFrameRodIndex.userData.role = 'white-index-on-moving-eccentric-rod';
-  eccentricRod.add(
-    rodLeftBody,
-    rodRightBody,
-    gabTopBridge,
-    gabCenterAnchor,
-    offFrameRodIndex,
-  );
+  const offFrameRodIndex = new THREE.Group();
+  offFrameRodIndex.userData.role = 'eccentric-rod-stroke-anchor';
+  eccentricRod.add(rodBody, gabCenterAnchor, offFrameRodIndex);
   root.add(eccentricRod);
 
   const camLever = new THREE.Group();
@@ -883,78 +905,59 @@ function springHandleGabDisengager() {
   camLever.userData.axis = Z_AXIS.clone();
   camLever.userData.role =
     'upper-cam-lever-pivoted-independently-on-the-eccentric-rod';
-  const camLeverPath = [
-    camContactLocal.clone(),
-    new THREE.Vector2(-0.72, 1.22),
-    new THREE.Vector2(-0.42, 1.52),
-    new THREE.Vector2(-0.10, 1.38),
-    new THREE.Vector2(0.10, 0.72),
-    new THREE.Vector2(0, 0),
-    new THREE.Vector2(0.55, -0.13),
-    new THREE.Vector2(1.15, -0.24),
-    new THREE.Vector2(1.70, -0.18),
-    handleGripLocal.clone(),
-  ];
-  const camLeverBody = boredCamHandle(camLeverPath, .115, .127, accentMaterial);
+  // Traced hook, pivot lobe, arm and forked head of the upper lever.
+  const camLeverBody = sourcePlate([[
+    [263, 152], [270, 146], [284, 145], [300, 150], [318, 160], [335, 177],
+    [349, 198], [358, 218], [364, 237], [380, 246], [400, 251], [418, 251],
+    [435, 246], [452, 238], [465, 229], [471, 219], [470, 206], [466, 199],
+    [476, 193], [492, 200], [505, 208], [502, 226], [494, 233], [482, 243],
+    [467, 253], [447, 261], [425, 266], [400, 267], [378, 264], [362, 258],
+    [345, 257], [330, 255], [322, 247], [317, 235], [316, 222], [313, 205],
+    [305, 187], [293, 170], [279, 159],
+  ]], camFromRaster, -0.15, 0.03, accentMaterial, [
+    poly(circle([0, 0], .127, 48)),
+  ], true);
   camLeverBody.userData.role = 'curved-cam-and-upper-pull-handle';
-  const camPivotPin = cylinderAlongZ(0.115, 1.18, darkMaterial, 28);
-  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, 0.42);
+  // The pivot pin passes through the rod to a rear cheek, the plate's
+  // dashed lobe, which carries the round toe onto the valve-lever shoulder
+  // entirely behind the rod and its crown.
+  const camPivotPin = cylinderAlongZ(0.115, 0.82, darkMaterial, 28);
+  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, 0.09);
   camPivotPin.userData.role = 'cam-lever-pivot-fixed-in-eccentric-rod';
-  camLeverBody.position.z = .18;
   const camContactNose = cylinderAlongZ(camToeRadius, .16, accentMaterial, 128);
   camContactNose.position.set(camContactLocal.x, camContactLocal.y, -.81);
-  const camToeNeck = cylinderAlongZ(.10, 1.02, accentMaterial, 32);
-  camToeNeck.userData.role = 'axial-neck-joining-rear-cam-toe-to-visible-handle';
-  camToeNeck.position.set(camContactLocal.x, camContactLocal.y, -.315);
+  const camToeNeck = new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(
+    capsule([0, 0], [camContactLocal.x, camContactLocal.y], .10, 32),
+    poly(circle([0, 0], .20, 48)),
+  ), poly(circle([0, 0], .127, 48))), -.73, -.63), accentMaterial);
+  camToeNeck.userData.role = 'rear-cheek-carrying-hidden-cam-toe';
   camLever.add(camToeNeck);
   camContactNose.userData.role = 'finite-round-cam-toe-bearing-on-valve-gear-shoulder';
-  const upperHandleGrip = cylinderAlongZ(0.15, 0.60, darkMaterial, 28);
-  upperHandleGrip.position.set(handleGripLocal.x, handleGripLocal.y, 0.10);
+  const upperHandleGrip = cylinderAlongZ(0.15, 0.39, accentMaterial, 28);
+  upperHandleGrip.position.set(handleGripLocal.x, handleGripLocal.y, 0.045);
   upperHandleGrip.userData.role = 'source-upper-handle-grip';
-  const camLatchTangPath = [
-    handleGripLocal.clone(),
-    new THREE.Vector2(2.15, -0.38),
-    new THREE.Vector2(2.25, -0.86),
-    new THREE.Vector2(2.23, -1.30),
-    new THREE.Vector2(camNotchALocal.x + 0.14, camNotchALocal.y + 0.10),
-  ];
-  const camLatchTang = makeTube(
-    camLatchTangPath,
-    0.075,
-    accentMaterial,
-    0.19,
-  );
+  // The tang hangs from the forked head. Notch a is a square mouth cut
+  // toward the upper left, so that at the latched lever angle it faces the
+  // arriving spring tip.
+  const notchAxis = new THREE.Vector2(Math.cos(2.13), Math.sin(2.13));
+  const notchNormal = new THREE.Vector2(-notchAxis.y, notchAxis.x);
+  const notchCorner = (along, across) => {
+    const point = camNotchALocal.clone().addScaledVector(notchAxis, along).addScaledVector(notchNormal, across);
+    return [point.x, point.y];
+  };
+  const camLatchTang = sourcePlate([[
+    [476, 222], [497, 222], [501, 250], [502, 280], [501, 305], [499, 334],
+    [488, 339], [476, 334], [473, 315], [474, 300], [477, 275], [477, 250],
+  ]], camFromRaster, 0.14, 0.24, accentMaterial, [poly([
+    notchCorner(-.14, -.12), notchCorner(.8, -.12), notchCorner(.8, .12), notchCorner(-.14, .12),
+  ])]);
   camLatchTang.userData.role =
     'cam-lever-spring-catch-tang-containing-notch-a';
-  const notchLipUpper = makeBeam(
-    new THREE.Vector3(
-      camNotchALocal.x + 0.17,
-      camNotchALocal.y + 0.11,
-      0.19,
-    ),
-    new THREE.Vector3(camNotchALocal.x, camNotchALocal.y, 0.19),
-    {
-      color: PALETTE.accent,
-      depth: 0.11,
-      jointRadius: 0.001,
-      thickness: 0.09,
-    },
-  );
+  const notchLipUpper = new THREE.Group();
+  notchLipUpper.position.set(camNotchALocal.x, camNotchALocal.y + .09, 0.19);
   notchLipUpper.userData.role = 'upper-working-lip-of-notch-a';
-  const notchLipLower = makeBeam(
-    new THREE.Vector3(camNotchALocal.x, camNotchALocal.y, 0.19),
-    new THREE.Vector3(
-      camNotchALocal.x - 0.22,
-      camNotchALocal.y + 0.02,
-      0.19,
-    ),
-    {
-      color: PALETTE.accent,
-      depth: 0.11,
-      jointRadius: 0.001,
-      thickness: 0.09,
-    },
-  );
+  const notchLipLower = new THREE.Group();
+  notchLipLower.position.set(camNotchALocal.x, camNotchALocal.y - .09, 0.19);
   notchLipLower.userData.role = 'lower-working-lip-of-notch-a';
   const notchAAnchor = new THREE.Group();
   notchAAnchor.position.set(camNotchALocal.x, camNotchALocal.y, 0.19);
@@ -970,80 +973,49 @@ function springHandleGabDisengager() {
   );
   eccentricRod.add(camLever, camPivotPin);
 
-  const springHandle = makeDynamicCable({
-    color: PALETTE.brass,
-    maxSegments: 64,
-    radius: 0.075,
-  });
+  const springHandle = new THREE.Group();
+  const springStrap = makeFlatStrap(springStrapPoints, 0.13, 0.10, brassMaterial);
+  springStrap.userData.role = 'flat-loop-spring-strap';
+  springHandle.add(springStrap);
   springHandle.userData.role =
     'separate-rod-mounted-flexible-loop-spring-handle-pulled-up-to-notch-a';
   const springHandleAnchor = cylinderAlongZ(
-    0.105,
-    0.86,
+    0.09,
+    0.57,
     darkMaterial,
     28,
   );
   springHandleAnchor.position.set(
     springHandleAnchorLocal.x,
     springHandleAnchorLocal.y,
-    0.38,
+    0.385,
   );
   springHandleAnchor.userData.role =
     'fixed-root-of-spring-handle-in-eccentric-rod';
-  const springTipIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
+  const springTipIndex = new THREE.Group();
   springTipIndex.position.set(
     springRestTipLocal.x,
     springRestTipLocal.y,
     0.62,
   );
-  springTipIndex.userData.role = 'white-index-on-spring-latch-tip';
+  springTipIndex.userData.role = 'spring-latch-tip-anchor';
   eccentricRod.add(springHandle, springHandleAnchor, springTipIndex);
 
   const frame = new THREE.Group();
   frame.userData.role = 'fixed-frame-supporting-valve-rockshaft';
-  const frameBeams = [
-    [new THREE.Vector3(-1.24, -1.18, -0.98), new THREE.Vector3(-1.24, 3.44, -0.98)],
-    [new THREE.Vector3(-1.24, 3.44, -0.98), new THREE.Vector3(1.18, 3.44, -0.98)],
-    [new THREE.Vector3(1.18, 3.44, -0.98), new THREE.Vector3(0.44, 2.95, -0.98)],
-    [new THREE.Vector3(-4.02, -1.18, -0.98), new THREE.Vector3(3.88, -1.18, -0.98)],
-  ].map(([start, end], index) => {
-    const beam = makeBeam(start, end, {
-      color: PALETTE.frame,
-      depth: 0.20,
-      jointRadius: 0.001,
-      thickness: index === 3 ? 0.19 : 0.16,
-    });
-    beam.userData.role = `fixed-frame-member-${index + 1}`;
-    frame.add(beam);
-    return beam;
-  });
-  const valveBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.47, 0.10, 12, 42),
-    frameMaterial,
-  );
-  valveBearing.position.set(valvePivot.x, valvePivot.y, -0.82);
+  const frameBeams = [];
+  const valveBearing = new THREE.Group();
   valveBearing.userData.role = 'rear-valve-rockshaft-bearing';
   frame.add(valveBearing);
   root.add(frame);
 
-  const camContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 20, 14),
-    whiteMaterial,
-  );
-  camContactMarker.userData.role = 'visible-cam-lifting-contact';
-  const gabCaptureMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  gabCaptureMarker.userData.role = 'visible-gab-pin-capture';
-  const latchMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 20, 14),
-    whiteMaterial,
-  );
-  latchMarker.userData.role = 'visible-spring-handle-notch-a-capture';
+  // State markers are anchors only: the plate draws no contact dots.
+  const camContactMarker = new THREE.Group();
+  camContactMarker.userData.role = 'cam-lifting-contact-anchor';
+  const gabCaptureMarker = new THREE.Group();
+  gabCaptureMarker.userData.role = 'gab-pin-capture-anchor';
+  const latchMarker = new THREE.Group();
+  latchMarker.userData.role = 'spring-handle-notch-a-capture-anchor';
   root.add(camContactMarker, gabCaptureMarker, latchMarker);
 
   const cameraEnvelope = new THREE.Mesh(
@@ -1085,9 +1057,11 @@ function springHandleGabDisengager() {
     notchLipLower,
     notchLipUpper,
     offFrameRodIndex,
+    rodBody,
     rodLeftBody,
     rodRightBody,
     springHandle,
+    springStrap,
     springHandleAnchor,
     springTipIndex,
     upperHandleGrip,
@@ -1160,7 +1134,7 @@ function springHandleGabDisengager() {
       false,
       'centripetal',
     );
-    springHandle.userData.setPoints(springCurve.getSpacedPoints(48));
+    springStrap.userData.setPoints(springCurve.getSpacedPoints(springStrapPoints - 1));
     springTipIndex.position.copy(state.springLatchTipLocal);
     camContactMarker.position.set(
       state.camSurfacePoint.x,
@@ -1277,15 +1251,15 @@ function twoHandleGabDisengager() {
   // its rod-mounted pivot, so the reaction lifts the rod and its open gab.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
-  const sourceRasterGabPin = new THREE.Vector2(313, 242);
+  const sourceRasterGabPin = new THREE.Vector2(313, 238);
   const sourceRasterValvePivot = new THREE.Vector2(313, 111);
   const sourceRasterCamPivot = new THREE.Vector2(320, 198);
-  const sourceRasterCamContact = new THREE.Vector2(283, 175);
+  const sourceRasterCamContact = new THREE.Vector2(276, 179);
   const sourceRasterUpperGrip = new THREE.Vector2(474, 195);
   const sourceRasterLowerGrip = new THREE.Vector2(474, 245);
   const sourceRasterRodLeftEnd = new THREE.Vector2(15, 242);
-  const sourceRasterSupportLeft = new THREE.Vector2(258, 175);
-  const sourceRasterSupportRight = new THREE.Vector2(370, 175);
+  const sourceRasterSupportLeft = new THREE.Vector2(258, 179);
+  const sourceRasterSupportRight = new THREE.Vector2(370, 179);
   const sourceUnitsPerPixel = 0.018;
   const sourcePointFromRaster = (point) => new THREE.Vector2(
     (point.x - sourceRasterGabPin.x) * sourceUnitsPerPixel,
@@ -1318,13 +1292,17 @@ function twoHandleGabDisengager() {
 
   const rodStroke = 0.30;
   const maximumHandleAngle = 0.92;
-  const camToeRadius = .16;
-  const gabPinRadius = 0.22;
+  const camToeRadius = .12;
+  // Plate: a 16.5-pixel pin in a slot cut up from the rod's lower edge,
+  // 21.5 pixels below the pin center, into a 55-pixel round crown.
+  const gabPinRadius = 0.25;
   const gabInnerHalfWidth = gabPinRadius + 0.05;
-  const gabJawWidth = 0.17;
-  const gabMouthDepth = 0.36;
-  const gabTopBridgeMinimumY = 0.36;
-  const gabTopBridgeMaximumY = 0.52;
+  const gabJawWidth = 0.5;
+  const gabMouthDepth = 0.387;
+  // The rocking pin rises up to 0.02 in the level rod's slot.
+  const gabTopBridgeMinimumY = 0.33;
+  const gabTopBridgeMaximumY = 0.99;
+  const rodCrownRadius = 0.99;
   const fullClearCouplingStart = gabMouthDepth + gabPinRadius + 0.03;
   const fullClearCouplingEnd = gabMouthDepth + gabPinRadius + 0.07;
 
@@ -1711,39 +1689,40 @@ function twoHandleGabDisengager() {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
+  // Source-traced visible bodies (Brown's 525-pixel plate, 0.018 units per
+  // pixel). Front to back: the rod with its round crown and integral lower
+  // handle; the upper handle pivoted behind the crown; the valve lever.
+  const rodFromRaster = (point) => sourcePointFromRaster(point);
+  const camFromRaster = (point) => sourcePointFromRaster(point).sub(camPivotLocal);
   const valveRocker = new THREE.Group();
   valveRocker.position.set(valvePivot.x, valvePivot.y, -.54);
   valveRocker.userData.axis = Z_AXIS.clone();
   valveRocker.userData.role =
     'top-pivoted-valve-lever-carrying-the-gab-pin-and-cam-support';
-  const valveShaft = cylinderAlongZ(0.32, 1.72, darkMaterial, 40);
+  // The shaft and its boss end behind the upper handle's plane, which
+  // swings past them when raised.
+  const valveShaft = cylinderAlongZ(0.32, 1.17, darkMaterial, 40);
+  valveShaft.position.z = -0.275;
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = boredBoss(0.56, 0.24, 0.332, drivenMaterial);
-  valveShaftFace.position.z = 0.48;
+  const valveShaftFace = boredBoss(0.63, 0.14, 0.332, drivenMaterial);
+  valveShaftFace.position.z = 0.24;
   valveShaftFace.userData.role = 'source-round-valve-rockshaft-boss';
   const valveArm = boredGabLever(valvePinLocal, {
-    startRadius: 0.56, endRadius: gabPinRadius + .16,
-    startBore: 0.332, endBore: gabPinRadius + .012, depth: 0.34,
+    startRadius: 0.63, endRadius: 0.85,
+    startBore: 0.332, endBore: gabPinRadius + .012, depth: 0.34, width: 0.76,
   }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
-  const valvePin = cylinderAlongZ(gabPinRadius, 1.82, brassMaterial, 32);
-  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.62);
+  const valvePin = cylinderAlongZ(gabPinRadius, 1.09, brassMaterial, 40);
+  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.375);
   valvePin.userData.role = 'round-valve-gear-pin-captured-by-the-open-gab';
   const valvePinAnchor = new THREE.Group();
   valvePinAnchor.position.set(valvePinLocal.x, valvePinLocal.y, 0);
   valvePinAnchor.userData.role = 'exact-valve-pin-center-anchor';
-  const valvePinIndex = new THREE.Mesh(
-    new THREE.TorusGeometry(gabPinRadius * 0.67, 0.033, 8, 28),
-    whiteMaterial,
-  );
-  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 1.54);
-  valvePinIndex.userData.role = 'white-index-on-valve-gear-pin';
-  const valveShaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 0.075, 0.04),
-    whiteMaterial,
-  );
-  valveShaftIndex.position.set(0.24, 0, 0.62);
-  valveShaftIndex.userData.role = 'white-index-on-valve-rockshaft';
+  const valvePinIndex = new THREE.Group();
+  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 0.92);
+  valvePinIndex.userData.role = 'valve-gear-pin-face-anchor';
+  const valveShaftIndex = new THREE.Group();
+  valveShaftIndex.userData.role = 'valve-rockshaft-angle-anchor';
   const camSupportShoe = makeBeam(
     new THREE.Vector3(supportLeftLocal.x, supportLeftLocal.y, .23),
     new THREE.Vector3(supportRightLocal.x, supportRightLocal.y, .23),
@@ -1781,152 +1760,88 @@ function twoHandleGabDisengager() {
   eccentricRod.position.z = 0.14;
   eccentricRod.userData.role =
     'reciprocating-eccentric-rod-with-open-gab-and-integral-lower-grip';
-  const rodLeftBody = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.abs(rodLeftEndLocal.x) - gabInnerHalfWidth - gabJawWidth + 0.12,
-      0.30,
-      0.36,
+  // One plate: the broken-off rod (y 225.5-259.5), the 55-pixel round crown
+  // about the gab, the integral lower handle and the gab slot.
+  const rodBarBottom = -gabMouthDepth;
+  const rodBody = sourcePlate([
+    [[15, 225.5], [262, 225.5], [300, 200], [355, 205], [362, 214], [375, 228],
+      [400, 236], [450, 238], [500, 239], [506, 242], [510, 250], [507, 257],
+      [500, 259.5], [15, 259.5]],
+    polygonClipping.intersection(
+      poly(circle([0, 0], rodCrownRadius, 128)),
+      poly([[-2, rodBarBottom], [2, rodBarBottom], [2, 2], [-2, 2]]),
     ),
-    driverMaterial,
-  );
-  rodLeftBody.position.set(
-    (rodLeftEndLocal.x - gabInnerHalfWidth - gabJawWidth) / 2,
-    0.18,
-    0,
-  );
-  rodLeftBody.userData.role = 'off-frame-eccentric-rod-body';
-  const rodCrownBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.28, 0.30, 0.38),
-    driverMaterial,
-  );
-  rodCrownBody.position.set(0.77, 0.18, 0);
-  rodCrownBody.userData.role = 'gab-crown-to-handle-pivot-rod-body';
-  const gabTopBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * (gabInnerHalfWidth + gabJawWidth),
-      gabTopBridgeMaximumY - gabTopBridgeMinimumY,
-      0.46,
-    ),
-    driverMaterial,
-  );
-  gabTopBridge.position.set(
-    0,
-    (gabTopBridgeMinimumY + gabTopBridgeMaximumY) / 2,
-    0.02,
-  );
-  gabTopBridge.userData.role = 'closed-crown-of-downward-opening-gab';
+  ], rodFromRaster, -0.19, 0.19, driverMaterial, [
+    poly([[-gabInnerHalfWidth, rodBarBottom - .1], [gabInnerHalfWidth, rodBarBottom - .1],
+      [gabInnerHalfWidth, gabTopBridgeMinimumY], [-gabInnerHalfWidth, gabTopBridgeMinimumY]]),
+  ]);
+  rodBody.userData.role = 'eccentric-rod-with-round-crown-gab-slot-and-lower-handle';
+  const rodLeftBody = rodBody;
+  const rodCrownBody = rodBody;
+  const gabTopBridge = rodBody;
   const gabJaws = [-1, 1].map((sign) => {
-    const jaw = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        gabJawWidth,
-        gabMouthDepth + gabTopBridgeMaximumY,
-        0.46,
-      ),
-      driverMaterial,
-    );
-    jaw.position.set(
-      sign * (gabInnerHalfWidth + gabJawWidth / 2),
-      (gabTopBridgeMaximumY - gabMouthDepth) / 2,
-      0.02,
-    );
-    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-open-bottom-gab-jaw`;
+    const jaw = new THREE.Group();
+    jaw.position.set(sign * (gabInnerHalfWidth + gabJawWidth / 2), 0, 0);
+    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-jaw-of-rod-bar`;
     eccentricRod.add(jaw);
     return jaw;
   });
   const gabContactShoes = [-1, 1].map((sign) => {
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, gabMouthDepth * 0.74, 0.54),
-      brassMaterial,
-    );
-    shoe.position.set(
-      sign * gabInnerHalfWidth,
-      -gabMouthDepth * 0.24,
-      0.08,
-    );
-    shoe.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-driving-shoe`;
-    eccentricRod.add(shoe);
-    return shoe;
+    const face = new THREE.Group();
+    face.position.set(sign * gabInnerHalfWidth, 0, 0);
+    face.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-slot-face`;
+    eccentricRod.add(face);
+    return face;
   });
-  const lowerHandlePath = [
-    new THREE.Vector2(0.48, 0.12),
-    new THREE.Vector2(0.88, 0.02),
-    new THREE.Vector2(1.44, -0.04),
-    new THREE.Vector2(2.05, -0.05),
-    lowerGripLocal.clone(),
-  ];
-  const lowerHandle = makeTube(
-    lowerHandlePath,
-    0.16,
-    driverMaterial,
-    0,
-  );
-  lowerHandle.userData.role =
-    'rigid-lower-reaction-handle-integral-with-the-eccentric-rod';
-  const lowerHandleGrip = cylinderAlongZ(0.18, 0.54, darkMaterial, 28);
-  lowerHandleGrip.position.set(lowerGripLocal.x, lowerGripLocal.y, 0.02);
-  lowerHandleGrip.userData.role = 'source-lower-rigid-handle-grip';
+  const lowerHandle = rodBody;
+  const lowerHandleGrip = new THREE.Group();
+  lowerHandleGrip.position.set(lowerGripLocal.x, lowerGripLocal.y, 0);
+  lowerHandleGrip.userData.role = 'source-lower-rigid-handle-grip-anchor';
   const lowerGripAnchor = new THREE.Group();
   lowerGripAnchor.position.set(lowerGripLocal.x, lowerGripLocal.y, 0);
   lowerGripAnchor.userData.role = 'exact-integral-lower-grip-center';
   const gabCenterAnchor = new THREE.Group();
   gabCenterAnchor.userData.role = 'exact-center-of-eccentric-rod-gab';
-  const offFrameRodIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.075, 0.04),
-    whiteMaterial,
-  );
-  offFrameRodIndex.position.set(-4.15, 0.36, 0.24);
-  offFrameRodIndex.userData.role = 'white-index-on-moving-eccentric-rod';
+  const offFrameRodIndex = new THREE.Group();
+  offFrameRodIndex.userData.role = 'eccentric-rod-stroke-anchor';
   eccentricRod.add(
     gabCenterAnchor,
-    gabTopBridge,
     lowerGripAnchor,
-    lowerHandle,
     lowerHandleGrip,
     offFrameRodIndex,
-    rodCrownBody,
-    rodLeftBody,
+    rodBody,
   );
   root.add(eccentricRod);
 
   const upperCamHandle = new THREE.Group();
-  upperCamHandle.position.set(camPivotLocal.x, camPivotLocal.y, 0.42);
+  upperCamHandle.position.set(camPivotLocal.x, camPivotLocal.y, -0.285);
   upperCamHandle.userData.axis = Z_AXIS.clone();
   upperCamHandle.userData.role =
     'separate-upper-cam-handle-pivoted-on-the-eccentric-rod';
-  const upperCamPath = [
-    camContactLocal.clone(),
-    new THREE.Vector2(-0.60, 0.28),
-    new THREE.Vector2(-0.43, 0.13),
-    new THREE.Vector2(-0.18, 0.03),
-    new THREE.Vector2(0, 0),
-    new THREE.Vector2(0.48, 0.03),
-    new THREE.Vector2(1.00, 0.13),
-    new THREE.Vector2(1.62, 0.10),
-    upperGripLocal.clone(),
-  ];
-  const upperCamBody = boredCamHandle(upperCamPath, .145, .132, accentMaterial);
+  // Traced upper handle; its lower left edge is the plate's dashed line
+  // behind the crown. The round toe sits on its rear face.
+  const upperCamBody = sourcePlate([[
+    [270, 172], [360, 172], [370, 179], [380, 184], [395, 187], [430, 184],
+    [500, 184], [507, 190], [508, 200], [500, 207], [450, 206], [410, 204],
+    [395, 204], [380, 208], [368, 214], [358, 220], [330, 222], [305, 218],
+    [290, 210], [276, 198], [270, 188],
+  ]], camFromRaster, -0.075, 0.075, accentMaterial, [
+    poly(circle([0, 0], .132, 48)),
+  ]);
   upperCamBody.userData.role = 'curved-cam-and-upper-lifting-handle';
-  upperCamBody.position.z = .12;
-  const camContactNose = cylinderAlongZ(camToeRadius, .16, accentMaterial, 128);
-  camContactNose.position.set(camContactLocal.x, camContactLocal.y, -.82);
-  const camToeNeck = cylinderAlongZ(.10, 1.02, accentMaterial, 32);
-  camToeNeck.userData.role = 'axial-neck-joining-rear-cam-toe-to-visible-handle';
-  camToeNeck.position.set(camContactLocal.x, camContactLocal.y, -.345);
-  upperCamHandle.add(camToeNeck);
+  const camContactNose = cylinderAlongZ(camToeRadius, .14, accentMaterial, 128);
+  camContactNose.position.set(camContactLocal.x, camContactLocal.y, -.14);
+  const camToeNeck = camContactNose;
   camContactNose.userData.role =
     'finite-round-cam-toe-bearing-on-rear-valve-lever-shoulder';
-  const upperHandleGrip = cylinderAlongZ(0.18, 0.56, darkMaterial, 28);
-  upperHandleGrip.position.set(upperGripLocal.x, upperGripLocal.y, 0.02);
-  upperHandleGrip.userData.role = 'source-upper-moving-handle-grip';
+  const upperHandleGrip = new THREE.Group();
+  upperHandleGrip.position.set(upperGripLocal.x, upperGripLocal.y, 0);
+  upperHandleGrip.userData.role = 'source-upper-moving-handle-grip-anchor';
   const upperGripAnchor = new THREE.Group();
   upperGripAnchor.position.set(upperGripLocal.x, upperGripLocal.y, 0);
   upperGripAnchor.userData.role = 'exact-upper-moving-grip-center';
-  const upperHandleIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.07, 0.04),
-    whiteMaterial,
-  );
-  upperHandleIndex.position.set(1.72, 0.10, 0.19);
-  upperHandleIndex.userData.role = 'white-index-on-upper-cam-handle';
+  const upperHandleIndex = new THREE.Group();
+  upperHandleIndex.userData.role = 'upper-cam-handle-angle-anchor';
   upperCamHandle.add(
     camContactNose,
     upperCamBody,
@@ -1934,53 +1849,27 @@ function twoHandleGabDisengager() {
     upperHandleGrip,
     upperHandleIndex,
   );
-  const camPivotPin = cylinderAlongZ(0.12, 1.26, darkMaterial, 30);
-  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, 0.36);
+  const camPivotPin = cylinderAlongZ(0.12, 0.55, darkMaterial, 30);
+  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, -0.085);
   camPivotPin.userData.role =
     'independent-upper-handle-pivot-fixed-through-the-eccentric-rod';
   eccentricRod.add(camPivotPin, upperCamHandle);
 
   const frame = new THREE.Group();
   frame.userData.role = 'fixed-frame-supporting-the-valve-rockshaft';
-  const frameBeams = [
-    [new THREE.Vector3(-1.08, -1.10, -1.00), new THREE.Vector3(-1.08, 2.92, -1.00)],
-    [new THREE.Vector3(-1.08, 2.92, -1.00), new THREE.Vector3(0.62, 2.92, -1.00)],
-    [new THREE.Vector3(-5.64, -1.10, -1.00), new THREE.Vector3(3.26, -1.10, -1.00)],
-  ].map(([start, end], index) => {
-    const beam = makeBeam(start, end, {
-      color: PALETTE.frame,
-      depth: 0.20,
-      jointRadius: 0.001,
-      thickness: index === 2 ? 0.19 : 0.16,
-    });
-    beam.userData.role = `fixed-frame-member-${index + 1}`;
-    frame.add(beam);
-    return beam;
-  });
-  const valveBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.46, 0.10, 12, 42),
-    frameMaterial,
-  );
-  valveBearing.position.set(valvePivot.x, valvePivot.y, -0.82);
+  const frameBeams = [];
+  const valveBearing = new THREE.Group();
   valveBearing.userData.role = 'rear-valve-rockshaft-bearing';
   frame.add(valveBearing);
   root.add(frame);
 
-  const camContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  camContactMarker.userData.role = 'visible-upper-cam-to-valve-shoe-contact';
-  const gabCaptureMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.072, 20, 14),
-    whiteMaterial,
-  );
-  gabCaptureMarker.userData.role = 'visible-gab-pin-capture';
-  const heldClearMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.068, 20, 14),
-    whiteMaterial,
-  );
-  heldClearMarker.userData.role = 'visible-operator-held-gab-clearance';
+  // State markers are anchors only: the plate draws no contact dots.
+  const camContactMarker = new THREE.Group();
+  camContactMarker.userData.role = 'upper-cam-to-valve-shoe-contact-anchor';
+  const gabCaptureMarker = new THREE.Group();
+  gabCaptureMarker.userData.role = 'gab-pin-capture-anchor';
+  const heldClearMarker = new THREE.Group();
+  heldClearMarker.userData.role = 'operator-held-gab-clearance-anchor';
   root.add(camContactMarker, gabCaptureMarker, heldClearMarker);
 
   const cameraEnvelope = new THREE.Mesh(
@@ -2019,6 +1908,7 @@ function twoHandleGabDisengager() {
     lowerHandle,
     lowerHandleGrip,
     offFrameRodIndex,
+    rodBody,
     rodCrownBody,
     rodLeftBody,
     upperCamBody,
@@ -2205,15 +2095,16 @@ function loopHandlePinCamGabDisengager() {
   // the released rod can reciprocate without striking the stationary pin.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
-  const sourceRasterGabPin = new THREE.Vector2(394, 326);
+  const sourceRasterGabPin = new THREE.Vector2(394, 322);
   const sourceRasterCamPivot = new THREE.Vector2(287, 290);
   const sourceRasterLoopGrip = new THREE.Vector2(35, 112);
   const sourceRasterNotchA = new THREE.Vector2(224, 174);
-  const sourceRasterLeafAnchor = new THREE.Vector2(117, 288);
-  const sourceRasterLeafFreeTip = new THREE.Vector2(207, 232);
-  const sourceRasterCamBackCrown = new THREE.Vector2(361, 239);
+  // The screw root sits within the rod's silhouette, below the loop's sweep.
+  const sourceRasterLeafAnchor = new THREE.Vector2(138, 306);
+  const sourceRasterLeafFreeTip = new THREE.Vector2(223, 201);
+  const sourceRasterCamBackCrown = new THREE.Vector2(378, 229);
   const sourceRasterRodLeftEnd = new THREE.Vector2(15, 319);
-  const sourceRasterRodRightEnd = new THREE.Vector2(510, 326);
+  const sourceRasterRodRightEnd = new THREE.Vector2(518, 326);
   const sourceUnitsPerPixel = 0.017;
   const sourcePointFromRaster = (point) => new THREE.Vector2(
     (point.x - sourceRasterGabPin.x) * sourceUnitsPerPixel,
@@ -2237,9 +2128,9 @@ function loopHandlePinCamGabDisengager() {
     .sub(camPivotLocal);
   const leafRestPathLocal = [
     sourceRasterLeafAnchor,
-    new THREE.Vector2(140, 286),
-    new THREE.Vector2(164, 274),
-    new THREE.Vector2(188, 250),
+    new THREE.Vector2(180, 283),
+    new THREE.Vector2(206, 262),
+    new THREE.Vector2(221, 232),
     sourceRasterLeafFreeTip,
   ].map(sourcePointFromRaster);
 
@@ -2249,15 +2140,26 @@ function loopHandlePinCamGabDisengager() {
   const workingHandleFraction = workingCamEndAngle / maximumHandleAngle;
   const maximumGabLift = 0.68;
   const maximumCamRelief = 0.38;
-  const gabPinRadius = 0.23;
+  // Plate: a 17-pixel pin in a slot cut up from the rod's lower edge into
+  // the raised crown, whose top is 62 pixels above the pin center.
+  const gabPinRadius = 0.28;
   const gabInnerHalfWidth = gabPinRadius + 0.05;
-  const gabJawWidth = 0.17;
-  const gabMouthDepth = 0.28;
-  const gabTopBridgeMinimumY = 0.36;
-  const gabTopBridgeMaximumY = 0.56;
+  const gabJawWidth = 0.5;
+  const gabMouthDepth = 0.30;
+  const gabTopBridgeMinimumY = 0.33;
+  const gabTopBridgeMaximumY = 1.05;
   const fullClearCouplingStart = gabMouthDepth + gabPinRadius + 0.03;
   const fullClearCouplingEnd = gabMouthDepth + gabPinRadius + 0.07;
   const springMaximumDeflection = 0.14;
+  const leafStrapPoints = 49;
+  const leafSpringRestZ = -0.53;
+  // Measured at the latched pose so the mouth faces the arriving spring tip.
+  const notchMouthAngle = -2.13;
+  const loopStrapPoints = [
+    [272, 282], [245, 258], [215, 228], [185, 197], [150, 165], [110, 155],
+    [70, 150], [35, 140], [20, 118], [30, 95], [60, 82], [100, 76],
+    [140, 78], [180, 90], [208, 108], [225, 132], [232, 158], [228, 176],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
 
   const camLawAtHandleAngle = (handleAngle) => {
     const angle = THREE.MathUtils.clamp(
@@ -2518,7 +2420,7 @@ function loopHandlePinCamGabDisengager() {
         phase,
         sequenceBreaks.latchedRunEnd,
         sequenceBreaks.springReleaseEnd,
-        springMaximumDeflection,
+        -springMaximumDeflection,
       );
     }
 
@@ -2594,7 +2496,7 @@ function loopHandlePinCamGabDisengager() {
       return new THREE.Vector3(
         restPoint.x + tipDisplacement.x * bendWeight,
         restPoint.y + tipDisplacement.y * bendWeight,
-        0.64 + springDeflection * bendWeight,
+        leafSpringRestZ + springDeflection * bendWeight,
       );
     });
   };
@@ -2853,36 +2755,35 @@ function loopHandlePinCamGabDisengager() {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
+  // Source-traced visible bodies (0.017 units per plate pixel). Front to
+  // back: the rod with its raised crown and tail; the rigid loop/cam, whose
+  // bean and descending working edge the plate dashes behind the rod; the
+  // leaf spring, which the loop's diagonal crosses in front of.
+  const rodFromRaster = (point) => sourcePointFromRaster(point);
+  const camFromRaster = (point) => sourcePointFromRaster(point).sub(camPivotLocal);
   const valveGear = new THREE.Group();
   valveGear.position.z = -0.30;
   valveGear.userData.role =
     'locally-rendered-guided-valve-gear-carrier-with-gab-pin';
-  const valvePin = cylinderAlongZ(gabPinRadius, 1.86, brassMaterial, 34);
-  valvePin.position.z = 0.66;
+  const valvePin = cylinderAlongZ(gabPinRadius, 0.97, brassMaterial, 40);
+  valvePin.position.z = 0.165;
   valvePin.userData.role =
     'round-valve-gear-pin-serving-as-gab-capture-and-direct-cam-follower';
-  const valvePinBoss = boredBoss(0.38, 0.20, gabPinRadius + .012, drivenMaterial);
-  valvePinBoss.position.z = 0.12;
+  const valvePinBoss = boredBoss(0.34, 0.12, gabPinRadius + .012, drivenMaterial);
+  valvePinBoss.position.z = -0.26;
   valvePinBoss.userData.role = 'rear-boss-of-guided-valve-gear-pin';
   const valvePinAnchor = new THREE.Group();
   valvePinAnchor.userData.role = 'exact-valve-pin-center-anchor';
-  const valvePinIndex = new THREE.Mesh(
-    new THREE.TorusGeometry(gabPinRadius * 0.66, 0.033, 8, 28),
-    whiteMaterial,
-  );
-  valvePinIndex.position.z = 1.60;
-  valvePinIndex.userData.role = 'white-index-on-valve-gear-pin';
-  const valveCarrierTongue = new THREE.Mesh(
-    new THREE.BoxGeometry(1.32, 0.20, 0.30),
-    drivenMaterial,
-  );
-  valveCarrierTongue.position.set(0, -0.53, -0.08);
-  valveCarrierTongue.userData.role = 'rear-guided-valve-gear-pin-carrier';
+  const valvePinIndex = new THREE.Group();
+  valvePinIndex.position.z = 0.65;
+  valvePinIndex.userData.role = 'valve-gear-pin-face-anchor';
+  const valveCarrierTongue = new THREE.Group();
+  valveCarrierTongue.userData.role = 'rear-guided-valve-gear-pin-carrier-anchor';
   const valveCarrierWeb = new THREE.Mesh(plate(polygonClipping.difference(
-    poly([[-.10, -.49], [.10, -.49], [.10, -.08], [-.10, -.08]]),
-    poly(circle([0, 0], gabPinRadius + .012, 64))), -.14, .14), drivenMaterial);
-  valveCarrierWeb.position.z = -.08;
-  valveCarrierWeb.userData.role = 'valve-pin-carrier-web';
+    poly(circle([0, 0], .34, 64)),
+    poly(circle([0, 0], gabPinRadius + .012, 64))), -.03, .03), drivenMaterial);
+  valveCarrierWeb.position.z = -.17;
+  valveCarrierWeb.userData.role = 'valve-pin-carrier-collar';
   valveGear.add(
     valveCarrierTongue,
     valveCarrierWeb,
@@ -2897,230 +2798,117 @@ function loopHandlePinCamGabDisengager() {
   eccentricRod.position.z = 0.12;
   eccentricRod.userData.role =
     'reciprocating-eccentric-rod-with-downward-gab-loop-cam-and-leaf-latch';
-  const rodLeftBody = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.abs(rodLeftEndLocal.x) - gabInnerHalfWidth - gabJawWidth + 0.08,
-      0.32,
-      0.38,
-    ),
-    driverMaterial,
-  );
-  rodLeftBody.position.set(
-    (rodLeftEndLocal.x - gabInnerHalfWidth - gabJawWidth) / 2,
-    0.12,
-    0,
-  );
-  rodLeftBody.userData.role = 'off-frame-eccentric-rod-body';
-  const rodMiddleBody = new THREE.Mesh(
-    new THREE.BoxGeometry(2.48, 0.32, 0.40),
-    driverMaterial,
-  );
-  rodMiddleBody.position.set(-1.48, 0.12, 0);
-  rodMiddleBody.userData.role = 'rod-body-supporting-loop-handle-pivot';
-  const rodRightTail = makeTube(
-    [
-      new THREE.Vector2(0.40, 0.20),
-      new THREE.Vector2(0.76, 0.14),
-      new THREE.Vector2(1.22, 0.03),
-      rodRightEndLocal.clone(),
-    ],
-    0.15,
-    driverMaterial,
-    0,
-  );
-  rodRightTail.userData.role = 'source-short-tail-beyond-gab';
-  const gabTopBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * (gabInnerHalfWidth + gabJawWidth),
-      gabTopBridgeMaximumY - gabTopBridgeMinimumY,
-      0.48,
-    ),
-    driverMaterial,
-  );
-  gabTopBridge.position.set(
-    0,
-    (gabTopBridgeMinimumY + gabTopBridgeMaximumY) / 2,
-    0.02,
-  );
-  gabTopBridge.userData.role = 'closed-crown-of-downward-opening-gab';
-  const gabCrownArch = makeTube(
-    [
-      new THREE.Vector2(-0.56, 0.23),
-      new THREE.Vector2(-0.38, 0.65),
-      new THREE.Vector2(0, 0.87),
-      new THREE.Vector2(0.38, 0.67),
-      new THREE.Vector2(0.57, 0.25),
-    ],
-    0.145,
-    driverMaterial,
-    0.01,
-  );
-  gabCrownArch.userData.role = 'source-raised-outer-gab-crown';
+  const rodBarBottom = -gabMouthDepth;
+  const rodBottomRaster = sourceRasterGabPin.y + gabMouthDepth / sourceUnitsPerPixel;
+  const rodBody = sourcePlate([[
+    [15, 297], [362, 297], [364, 280], [372, 267], [397, 260], [420, 267],
+    [440, 287], [450, 305], [460, 313], [483, 315], [512, 317], [518, 322],
+    [518, rodBottomRaster - 6], [512, rodBottomRaster], [15, rodBottomRaster],
+  ]], rodFromRaster, -0.19, 0.19, driverMaterial, [
+    poly([[-gabInnerHalfWidth, rodBarBottom - .1], [gabInnerHalfWidth, rodBarBottom - .1],
+      [gabInnerHalfWidth, gabTopBridgeMinimumY], [-gabInnerHalfWidth, gabTopBridgeMinimumY]]),
+  ]);
+  rodBody.userData.role = 'eccentric-rod-with-raised-crown-gab-slot-and-tail';
+  const rodLeftBody = rodBody;
+  const rodMiddleBody = rodBody;
+  const rodRightTail = rodBody;
+  const gabTopBridge = rodBody;
+  const gabCrownArch = rodBody;
   const gabJaws = [-1, 1].map((sign) => {
-    const jaw = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        gabJawWidth,
-        gabMouthDepth + gabTopBridgeMaximumY,
-        0.48,
-      ),
-      driverMaterial,
-    );
-    jaw.position.set(
-      sign * (gabInnerHalfWidth + gabJawWidth / 2),
-      (gabTopBridgeMaximumY - gabMouthDepth) / 2,
-      0.02,
-    );
-    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-open-bottom-gab-jaw`;
+    const jaw = new THREE.Group();
+    jaw.position.set(sign * (gabInnerHalfWidth + gabJawWidth / 2), 0, 0);
+    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-jaw-of-rod-bar`;
     eccentricRod.add(jaw);
     return jaw;
   });
   const gabContactShoes = [-1, 1].map((sign) => {
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, gabMouthDepth * 0.74, 0.56),
-      brassMaterial,
-    );
-    shoe.position.set(
-      sign * gabInnerHalfWidth,
-      -gabMouthDepth * 0.22,
-      0.09,
-    );
-    shoe.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-driving-shoe`;
-    eccentricRod.add(shoe);
-    return shoe;
+    const face = new THREE.Group();
+    face.position.set(sign * gabInnerHalfWidth, 0, 0);
+    face.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-slot-face`;
+    eccentricRod.add(face);
+    return face;
   });
   const gabCenterAnchor = new THREE.Group();
   gabCenterAnchor.userData.role = 'exact-center-of-eccentric-rod-gab';
-  const offFrameRodIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.075, 0.04),
-    whiteMaterial,
-  );
-  offFrameRodIndex.position.set(-5.30, 0.31, 0.24);
-  offFrameRodIndex.userData.role = 'white-index-on-moving-eccentric-rod';
-  eccentricRod.add(
-    gabCenterAnchor,
-    gabCrownArch,
-    gabTopBridge,
-    offFrameRodIndex,
-    rodLeftBody,
-    rodMiddleBody,
-    rodRightTail,
-  );
+  const offFrameRodIndex = new THREE.Group();
+  offFrameRodIndex.userData.role = 'eccentric-rod-stroke-anchor';
+  eccentricRod.add(gabCenterAnchor, offFrameRodIndex, rodBody);
   root.add(eccentricRod);
 
   const loopCamHandle = new THREE.Group();
-  loopCamHandle.position.set(camPivotLocal.x, camPivotLocal.y, 0.42);
+  loopCamHandle.position.set(camPivotLocal.x, camPivotLocal.y, -0.32);
   loopCamHandle.userData.axis = Z_AXIS.clone();
   loopCamHandle.userData.role =
     'single-rigid-loop-handle-with-direct-pin-cam-and-notch-a';
-  const loopCenterPath = [
-    new THREE.Vector2(-0.46, 0.34),
-    new THREE.Vector2(-1.05, 1.35),
-    new THREE.Vector2(-1.45, 3.10),
-    new THREE.Vector2(-2.75, 3.76),
-    new THREE.Vector2(-4.10, 3.12),
-    new THREE.Vector2(-4.16, 2.54),
-    new THREE.Vector2(-3.50, 2.24),
-    new THREE.Vector2(-2.45, 2.04),
-    new THREE.Vector2(-1.14, 0.86),
-  ];
-  const loopHandleBody = makeTube(
-    loopCenterPath,
-    0.115,
-    accentMaterial,
-    0,
-    true,
-  );
-  loopHandleBody.userData.role = 'source-rigid-hollow-loop-handle';
-  const handleStem = makeTube(
-    [
-      new THREE.Vector2(0, 0),
-      new THREE.Vector2(-0.20, 0.10),
-      new THREE.Vector2(-0.46, 0.34),
-    ],
-    0.13,
-    accentMaterial,
-    0,
-  );
-  handleStem.userData.role = 'rigid-stem-joining-loop-to-cam-pivot';
-
+  // Traced flat loop: from the cam boss up the diagonal, round the loop and
+  // down its right side to notch a.
+  const loopCurvePoints = new THREE.CatmullRomCurve3(loopStrapPoints.map((point) => {
+    const local = camFromRaster(point);
+    return new THREE.Vector3(local.x, local.y, 0);
+  }), false, 'centripetal').getSpacedPoints(120);
+  const loopHandleBody = makeFlatStrap(loopCurvePoints.length, .17, .18, accentMaterial);
+  loopHandleBody.userData.setPoints(loopCurvePoints);
+  loopHandleBody.userData.role = 'source-rigid-flat-loop-handle';
+  const handleStem = new THREE.Group();
+  handleStem.userData.role = 'rigid-stem-joining-loop-to-cam-pivot-anchor';
   const camLobe = new THREE.Group();
   camLobe.userData.role =
     'slender-conjugate-direct-pin-cam-with-overtravel-relief';
-  const camBackArm = makeTube(
-    [
-      new THREE.Vector2(0, 0),
-      new THREE.Vector2(0.18, 0.34),
-      new THREE.Vector2(0.72, 0.88),
-      camBackCrownLocal.clone(),
-      new THREE.Vector2(1.54, 0.76),
-      new THREE.Vector2(1.63, 0.24),
-      camProfilePointsLocal[0].clone(),
-    ],
-    0.12,
-    accentMaterial,
-    -0.10,
-  );
+  // Bean-shaped boss and the upper back rising to the plate's crown point.
+  const camBackArm = sourcePlate([[
+    [258, 298], [261, 284], [271, 276], [287, 271], [300, 269], [315, 261],
+    [330, 248], [345, 236], [360, 230], [sourceRasterCamBackCrown.x, sourceRasterCamBackCrown.y],
+    [386, 236], [389, 255], [386, 285], [380, 304], [372, 313], [364, 308],
+    [366, 290], [370, 262], [366, 248], [356, 252], [345, 262], [335, 278],
+    [330, 292], [320, 304], [300, 307], [270, 302],
+  ]], camFromRaster, -0.09, 0.09, accentMaterial, [
+    poly(circle([0, 0], .132, 48)),
+  ]);
   camBackArm.userData.role = 'source-visible-upper-back-of-direct-pin-cam';
+  // The working rail's inner surface is the conjugate profile itself.
+  const camRailRadius = .085;
   const camWorkingRail = makeTube(
-    camProfilePointsLocal,
-    0.085,
+    camProfilePointsLocal.map((point, index) => point.clone().addScaledVector(
+      camProfileAtHandleAngle(maximumHandleAngle * index / camProfileSampleCount)
+        .profileNormalLocal,
+      camRailRadius,
+    )),
+    camRailRadius,
     accentMaterial,
-    -0.46,
+    0,
   );
   camWorkingRail.userData.role =
     'hidden-conjugate-working-rail-bearing-directly-on-valve-pin';
-  const camWorkingEdge = makeTube(
-    camProfilePointsLocal,
-    0.025,
-    brassMaterial,
-    -0.28,
-  );
-  camWorkingEdge.userData.role =
-    'visible-working-and-relieved-edge-of-direct-pin-cam';
+  const camWorkingEdge = new THREE.Group();
+  camWorkingEdge.userData.role = 'working-edge-of-direct-pin-cam-anchor';
   camLobe.add(camBackArm, camWorkingRail);
-  const notchLipUpper = makeBeam(
-    new THREE.Vector3(
-      notchALocal.x - 0.18,
-      notchALocal.y + 0.09,
-      0.22,
-    ),
-    new THREE.Vector3(notchALocal.x, notchALocal.y, 0.22),
-    {
-      color: PALETTE.accent,
-      depth: 0.10,
-      jointRadius: 0.001,
-      thickness: 0.085,
-    },
-  );
+  // A tab at the loop's end reaches back into the spring plane; notch a is a
+  // square mouth that faces the arriving leaf-spring tip when latched.
+  const notchAxis = new THREE.Vector2(Math.cos(notchMouthAngle), Math.sin(notchMouthAngle));
+  const notchNormal = new THREE.Vector2(-notchAxis.y, notchAxis.x);
+  const notchCorner = (along, across) => {
+    const point = notchALocal.clone().addScaledVector(notchAxis, along).addScaledVector(notchNormal, across);
+    return [point.x, point.y];
+  };
+  const notchTab = new THREE.Mesh(plate(polygonClipping.difference(
+    poly(circle([notchALocal.x, notchALocal.y], .20, 48)),
+    poly([notchCorner(-.10, -.14), notchCorner(.6, -.14), notchCorner(.6, .14), notchCorner(-.10, .14)]),
+  ), -0.19, 0.0), accentMaterial);
+  notchTab.userData.role = 'loop-tab-containing-notch-a';
+  const notchLipUpper = new THREE.Group();
+  notchLipUpper.position.copy(new THREE.Vector3(...notchCorner(0, .14), -0.21));
   notchLipUpper.userData.role = 'upper-working-lip-of-notch-a';
-  const notchLipLower = makeBeam(
-    new THREE.Vector3(notchALocal.x, notchALocal.y, 0.22),
-    new THREE.Vector3(
-      notchALocal.x + 0.17,
-      notchALocal.y - 0.10,
-      0.22,
-    ),
-    {
-      color: PALETTE.accent,
-      depth: 0.10,
-      jointRadius: 0.001,
-      thickness: 0.085,
-    },
-  );
+  const notchLipLower = new THREE.Group();
+  notchLipLower.position.copy(new THREE.Vector3(...notchCorner(0, -.14), -0.21));
   notchLipLower.userData.role = 'lower-working-lip-of-notch-a';
   const notchAAnchor = new THREE.Group();
-  notchAAnchor.position.set(notchALocal.x, notchALocal.y, 0.22);
+  notchAAnchor.position.set(notchALocal.x, notchALocal.y, -0.21);
   notchAAnchor.userData.role = 'exact-moving-center-of-notch-a';
   const loopGripAnchor = new THREE.Group();
   loopGripAnchor.position.set(loopGripLocal.x, loopGripLocal.y, 0);
   loopGripAnchor.userData.role = 'source-center-of-rigid-loop-grip';
-  const handleIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.07, 0.04),
-    whiteMaterial,
-  );
-  handleIndex.position.set(-2.83, 3.71, 0.18);
-  handleIndex.rotation.z = -0.46;
-  handleIndex.userData.role = 'white-index-on-rigid-loop-handle';
+  const handleIndex = new THREE.Group();
+  handleIndex.userData.role = 'rigid-loop-handle-angle-anchor';
   loopCamHandle.add(
     camLobe,
     camWorkingEdge,
@@ -3131,93 +2919,56 @@ function loopHandlePinCamGabDisengager() {
     notchAAnchor,
     notchLipLower,
     notchLipUpper,
+    notchTab,
   );
-  const camPivotPin = cylinderAlongZ(0.12, 1.30, darkMaterial, 30);
-  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, 0.36);
+  const camPivotPin = cylinderAlongZ(0.12, 0.62, darkMaterial, 30);
+  camPivotPin.position.set(camPivotLocal.x, camPivotLocal.y, -0.12);
   camPivotPin.userData.role =
     'loop-handle-cam-pivot-fixed-through-eccentric-rod';
   eccentricRod.add(camPivotPin, loopCamHandle);
-
-  const leafSpring = makeDynamicCable({
-    color: PALETTE.brass,
-    maxSegments: 64,
-    radius: 0.07,
-  });
+  const leafSpring = new THREE.Group();
+  const leafStrap = makeFlatStrap(leafStrapPoints, .15, .10, brassMaterial);
+  leafStrap.userData.role = 'flat-leaf-spring-strap';
+  leafSpring.add(leafStrap);
   leafSpring.userData.role =
     'separate-rod-mounted-leaf-spring-catching-moving-notch-a';
-  const leafSpringAnchor = cylinderAlongZ(0.105, 0.88, darkMaterial, 28);
+  const leafSpringAnchor = cylinderAlongZ(0.09, 0.47, darkMaterial, 28);
   leafSpringAnchor.position.set(
     leafAnchorLocal.x,
     leafAnchorLocal.y,
-    0.49,
+    -0.345,
   );
   leafSpringAnchor.userData.role = 'fixed-screw-root-of-leaf-spring';
-  const leafSpringTipIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.072, 20, 14),
-    whiteMaterial,
-  );
+  const leafSpringTipIndex = new THREE.Group();
   leafSpringTipIndex.position.set(
     leafRestTipLocal.x,
     leafRestTipLocal.y,
-    0.64,
+    leafSpringRestZ,
   );
-  leafSpringTipIndex.userData.role = 'white-index-on-leaf-spring-catch-tip';
+  leafSpringTipIndex.userData.role = 'leaf-spring-catch-tip-anchor';
   eccentricRod.add(leafSpring, leafSpringAnchor, leafSpringTipIndex);
-
   const frame = new THREE.Group();
   frame.userData.role = 'fixed-frame-and-valve-carrier-guide';
-  const frameBeams = [
-    [new THREE.Vector3(-6.55, -1.15, -1.02), new THREE.Vector3(2.52, -1.15, -1.02)],
-    [new THREE.Vector3(-0.92, -0.82, -0.90), new THREE.Vector3(0.92, -0.82, -0.90)],
-    [new THREE.Vector3(-0.92, -1.02, -0.90), new THREE.Vector3(-0.92, -0.48, -0.90)],
-    [new THREE.Vector3(0.92, -1.02, -0.90), new THREE.Vector3(0.92, -0.48, -0.90)],
-  ].map(([start, end], index) => {
-    const beam = makeBeam(start, end, {
-      color: PALETTE.frame,
-      depth: 0.20,
-      jointRadius: 0.001,
-      thickness: index === 0 ? 0.19 : 0.14,
-    });
-    beam.userData.role = `fixed-frame-member-${index + 1}`;
-    frame.add(beam);
-    return beam;
-  });
-  const valveGuideRail = new THREE.Mesh(
-    new THREE.BoxGeometry(1.86, 0.12, 0.26),
-    frameMaterial,
-  );
-  valveGuideRail.position.set(0, -0.53, -0.64);
+  const frameBeams = [];
+  const valveGuideRail = new THREE.Group();
   valveGuideRail.userData.role = 'rear-horizontal-guide-for-valve-pin-carrier';
   frame.add(valveGuideRail);
   root.add(frame);
-
-  const camContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.070, 20, 14),
-    whiteMaterial,
-  );
-  camContactMarker.userData.role = 'visible-direct-cam-to-valve-pin-contact';
-  const gabCaptureMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.070, 20, 14),
-    whiteMaterial,
-  );
-  gabCaptureMarker.userData.role = 'visible-gab-pin-capture';
-  const latchMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.050, 20, 14),
-    whiteMaterial,
-  );
-  latchMarker.userData.role = 'visible-leaf-spring-notch-a-capture';
-  const relievedCamMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.058, 20, 14),
-    whiteMaterial,
-  );
-  relievedCamMarker.userData.role = 'visible-relieved-cam-clear-of-valve-pin';
+  // State markers are anchors only: the plate draws no contact dots.
+  const camContactMarker = new THREE.Group();
+  camContactMarker.userData.role = 'direct-cam-to-valve-pin-contact-anchor';
+  const gabCaptureMarker = new THREE.Group();
+  gabCaptureMarker.userData.role = 'gab-pin-capture-anchor';
+  const latchMarker = new THREE.Group();
+  latchMarker.userData.role = 'leaf-spring-notch-a-capture-anchor';
+  const relievedCamMarker = new THREE.Group();
+  relievedCamMarker.userData.role = 'relieved-cam-clear-of-valve-pin-anchor';
   root.add(
     camContactMarker,
     gabCaptureMarker,
     latchMarker,
     relievedCamMarker,
   );
-
   const cameraEnvelope = new THREE.Mesh(
     new THREE.BoxGeometry(10.4, 7.3, 3.2),
     new THREE.MeshBasicMaterial({
@@ -3254,6 +3005,9 @@ function loopHandlePinCamGabDisengager() {
     handleStem,
     latchMarker,
     leafSpring,
+    leafStrap,
+    notchTab,
+    rodBody,
     leafSpringAnchor,
     leafSpringTipIndex,
     loopCamHandle,
@@ -3331,7 +3085,7 @@ function loopHandlePinCamGabDisengager() {
       false,
       'centripetal',
     );
-    leafSpring.userData.setPoints(springCurve.getSpacedPoints(48));
+    leafStrap.userData.setPoints(springCurve.getSpacedPoints(leafStrapPoints - 1));
     leafSpringTipIndex.position.copy(state.leafSpringTipLocal);
     camContactMarker.position.set(
       state.pinSurfacePoint.x,
@@ -3468,11 +3222,11 @@ function bellCrankHangerGabDisengager() {
   // center of the source gab pin as their common origin.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
-  const sourceRasterGabPin = new THREE.Vector2(342, 406);
+  const sourceRasterGabPin = new THREE.Vector2(342, 401);
   const sourceRasterValvePivot = new THREE.Vector2(327, 282);
   const sourceRasterOperatingPivot = new THREE.Vector2(401, 235);
   const sourceRasterCrankPin = new THREE.Vector2(471, 235);
-  const sourceRasterRodHangerPin = new THREE.Vector2(470, 404);
+  const sourceRasterRodHangerPin = new THREE.Vector2(470, 401);
   const sourceRasterOperatingHandleTop = new THREE.Vector2(400, 28);
   const sourceRasterEccentricJoint = new THREE.Vector2(15, 399);
   const sourceRasterRodRightEnd = new THREE.Vector2(511, 407);
@@ -3518,9 +3272,11 @@ function bellCrankHangerGabDisengager() {
   const gabPinRadius = 0.20;
   const gabInnerHalfWidth = gabPinRadius + 0.07;
   const gabJawWidth = 0.18;
-  const gabMouthDepth = 0.38;
+  // Plate: the rod's lower edge is 15 pixels below the pin center and its
+  // raised crown 48 pixels above it.
+  const gabMouthDepth = 0.24;
   const gabTopBridgeMinimumY = 0.23;
-  const gabTopBridgeMaximumY = 0.43;
+  const gabTopBridgeMaximumY = 0.77;
   const fullClearCouplingStart = 0.54;
   const fullClearCouplingEnd = 0.62;
 
@@ -3991,39 +3747,39 @@ function bellCrankHangerGabDisengager() {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
+  // Source-traced bodies (0.016 units per plate pixel). Front to back: the
+  // bell crank, the rod with its crown, fork and tail, the hanging link (the
+  // plate draws both eyes whole over its ends) and the valve lever. Pins end
+  // at the faces they join.
+  const rodFromRaster = (point) => sourcePointFromRaster(point);
   const valveRocker = new THREE.Group();
   valveRocker.position.set(valvePivot.x, valvePivot.y, -0.32);
   valveRocker.userData.axis = Z_AXIS.clone();
   valveRocker.userData.role =
     'fixed-axis-valve-gab-lever-carrying-the-engagement-pin';
-  const valveShaft = cylinderAlongZ(0.31, 1.62, darkMaterial, 40);
+  // The shaft and boss end behind the rod, which rocks up past them.
+  const valveShaft = cylinderAlongZ(0.36, 1.11, darkMaterial, 40);
+  valveShaft.position.z = -0.255;
   valveShaft.userData.role = 'fixed-valve-rockshaft';
-  const valveShaftFace = boredBoss(0.53, 0.23, 0.322, drivenMaterial);
-  valveShaftFace.position.z = 0.48;
+  const valveShaftFace = boredBoss(0.58, 0.23, 0.372, drivenMaterial);
+  valveShaftFace.position.z = -0.035;
   valveShaftFace.userData.role = 'source-hatched-valve-rockshaft-boss';
   const valveArm = boredGabLever(valvePinLocal, {
-    startRadius: 0.53, endRadius: gabPinRadius + .16,
-    startBore: 0.322, endBore: gabPinRadius + .012, depth: 0.34,
+    startRadius: 0.58, endRadius: 0.58,
+    startBore: 0.372, endBore: gabPinRadius + .012, depth: 0.34, width: 0.72,
   }, drivenMaterial);
   valveArm.userData.role = 'rigid-valve-lever-from-rockshaft-to-gab-pin';
-  const valvePin = cylinderAlongZ(gabPinRadius, 1.82, brassMaterial, 34);
-  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.55);
+  const valvePin = cylinderAlongZ(gabPinRadius, 0.73, brassMaterial, 34);
+  valvePin.position.set(valvePinLocal.x, valvePinLocal.y, 0.195);
   valvePin.userData.role = 'valve-gear-pin-captured-by-eccentric-rod-gab';
-  const valvePinIndex = new THREE.Mesh(
-    new THREE.TorusGeometry(gabPinRadius * 0.66, 0.031, 8, 28),
-    whiteMaterial,
-  );
-  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 1.49);
-  valvePinIndex.userData.role = 'white-index-on-valve-gear-pin';
+  const valvePinIndex = new THREE.Group();
+  valvePinIndex.position.set(valvePinLocal.x, valvePinLocal.y, 0.56);
+  valvePinIndex.userData.role = 'valve-gear-pin-face-anchor';
   const valvePinAnchor = new THREE.Group();
   valvePinAnchor.position.set(valvePinLocal.x, valvePinLocal.y, 0);
   valvePinAnchor.userData.role = 'exact-valve-pin-center-anchor';
-  const valveShaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 0.075, 0.04),
-    whiteMaterial,
-  );
-  valveShaftIndex.position.set(0.25, 0, 0.62);
-  valveShaftIndex.userData.role = 'white-index-on-valve-rockshaft';
+  const valveShaftIndex = new THREE.Group();
+  valveShaftIndex.userData.role = 'valve-rockshaft-angle-anchor';
   valveRocker.add(
     valveArm,
     valvePin,
@@ -4039,126 +3795,54 @@ function bellCrankHangerGabDisengager() {
   eccentricRod.position.z = 0.10;
   eccentricRod.userData.role =
     'rigid-eccentric-rod-with-downward-gab-and-hanger-pin';
-  const rodLeftBody = makeBeam(
-    new THREE.Vector3(eccentricJointLocal.x + 0.62, 0.09, 0),
-    new THREE.Vector3(-0.48, 0.09, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.42,
-      jointRadius: 0.001,
-      thickness: 0.30,
-    },
-  );
-  rodLeftBody.userData.role = 'long-source-eccentric-rod-body';
+  // One plate: forked left end, bar (y 383-416), raised crown, the lower
+  // tail to the right end, its hanger eye, and the gab slot.
+  const rodBarBottom = -gabMouthDepth;
+  const rodBottomRaster = sourceRasterGabPin.y + gabMouthDepth / sourceUnitsPerPixel;
+  const rodBody = sourcePlate([
+    [[12, 383], [290, 383], [301, 376], [318, 358], [340, 353], [360, 359],
+      [378, 372], [388, 387], [398, 398], [512, 403], [518, 409], [512, rodBottomRaster],
+      [12, rodBottomRaster]],
+    poly(circle(rodHangerPinLocal.toArray(), .22, 48)),
+  ], rodFromRaster, -0.11, 0.11, driverMaterial, [
+    poly([[-gabInnerHalfWidth, rodBarBottom - .1], [gabInnerHalfWidth, rodBarBottom - .1],
+      [gabInnerHalfWidth, gabTopBridgeMinimumY], [-gabInnerHalfWidth, gabTopBridgeMinimumY]]),
+    poly(circle(rodHangerPinLocal.toArray(), .132, 48)),
+    // The slot between the forked end's two prongs.
+    poly([[5, 392], [118, 392], [118, 406], [5, 406]].map(([x, y]) => {
+      const local = rodFromRaster(new THREE.Vector2(x, y));
+      return [local.x, local.y];
+    })),
+  ]);
+  rodBody.userData.role = 'eccentric-rod-with-fork-crown-gab-slot-and-tail';
+  const rodLeftBody = rodBody;
   const leftForkProngs = [-1, 1].map((sign) => {
-    const prong = makeBeam(
-      new THREE.Vector3(
-        eccentricJointLocal.x,
-        eccentricJointLocal.y + sign * 0.12,
-        0.01,
-      ),
-      new THREE.Vector3(
-        eccentricJointLocal.x + 0.78,
-        0.09 + sign * 0.12,
-        0.01,
-      ),
-      {
-        color: PALETTE.driver,
-        depth: 0.43,
-        jointRadius: 0.001,
-        thickness: 0.10,
-      },
-    );
-    prong.userData.role = `${sign < 0 ? 'lower' : 'upper'}-off-frame-eccentric-fork-prong`;
+    const prong = new THREE.Group();
+    prong.userData.role = `${sign < 0 ? 'lower' : 'upper'}-off-frame-eccentric-fork-prong-anchor`;
     return prong;
   });
-  const tailCurve = new THREE.SplineCurve([
-    new THREE.Vector2(.40, .18), new THREE.Vector2(.72, .10),
-    new THREE.Vector2(1.44, .02), rodRightEndLocal.clone(),
-  ]);
-  const tailLeft = [], tailRight = [];
-  for (let i = 0; i <= 48; i++) {
-    const point = tailCurve.getPoint(i / 48), tangent = tailCurve.getTangent(i / 48);
-    tailLeft.push([point.x - .11 * tangent.y, point.y + .11 * tangent.x]);
-    tailRight.push([point.x + .11 * tangent.y, point.y - .11 * tangent.x]);
-  }
-  const tailProfile = polygonClipping.union(poly([...tailLeft, ...tailRight.reverse()]),
-    poly(circle(rodHangerPinLocal.toArray(), .25, 64)));
-  const rodRightTail = new THREE.Mesh(plate(polygonClipping.difference(tailProfile,
-    poly(circle(rodHangerPinLocal.toArray(), .132, 64))), -.11, .11), driverMaterial);
-  rodRightTail.userData.role = 'source-tail-beyond-gab-to-hanger-pin';
-  const gabTopBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * (gabInnerHalfWidth + gabJawWidth),
-      gabTopBridgeMaximumY - gabTopBridgeMinimumY,
-      0.48,
-    ),
-    driverMaterial,
-  );
-  gabTopBridge.position.set(
-    0,
-    (gabTopBridgeMinimumY + gabTopBridgeMaximumY) / 2,
-    0.02,
-  );
-  gabTopBridge.userData.role = 'closed-crown-of-downward-opening-gab';
-  const gabCrownArch = makeTube(
-    [
-      new THREE.Vector2(-0.58, 0.26),
-      new THREE.Vector2(-0.38, 0.66),
-      new THREE.Vector2(0, 0.85),
-      new THREE.Vector2(0.39, 0.66),
-      new THREE.Vector2(0.58, 0.24),
-    ],
-    0.14,
-    driverMaterial,
-    0.01,
-  );
-  gabCrownArch.userData.role = 'source-raised-outer-gab-crown';
+  const rodRightTail = rodBody;
+  const gabTopBridge = rodBody;
+  const gabCrownArch = rodBody;
   const gabJaws = [-1, 1].map((sign) => {
-    const jaw = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        gabJawWidth,
-        gabMouthDepth + gabTopBridgeMaximumY,
-        0.48,
-      ),
-      driverMaterial,
-    );
-    jaw.position.set(
-      sign * (gabInnerHalfWidth + gabJawWidth / 2),
-      (gabTopBridgeMaximumY - gabMouthDepth) / 2,
-      0.02,
-    );
-    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-open-bottom-gab-jaw`;
+    const jaw = new THREE.Group();
+    jaw.position.set(sign * (gabInnerHalfWidth + gabJawWidth / 2), 0, 0);
+    jaw.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-jaw-of-rod-bar`;
     eccentricRod.add(jaw);
     return jaw;
   });
   const gabContactShoes = [-1, 1].map((sign) => {
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, gabMouthDepth * 0.74, 0.56),
-      brassMaterial,
-    );
-    shoe.position.set(
-      sign * gabInnerHalfWidth,
-      -gabMouthDepth * 0.22,
-      0.09,
-    );
-    shoe.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-driving-shoe`;
-    eccentricRod.add(shoe);
-    return shoe;
+    const face = new THREE.Group();
+    face.position.set(sign * gabInnerHalfWidth, 0, 0);
+    face.userData.role = `${sign < 0 ? 'left' : 'right'}-gab-slot-face`;
+    eccentricRod.add(face);
+    return face;
   });
-  const rodHangerBoss = boredBoss(0.25, 0.52, .132, driverMaterial);
-  rodHangerBoss.position.set(
-    rodHangerPinLocal.x,
-    rodHangerPinLocal.y,
-    0.18,
-  );
-  rodHangerBoss.userData.role = 'source-boss-around-rod-hanger-pin';
-  const rodHangerPin = cylinderAlongZ(0.12, 1.48, darkMaterial, 30);
-  rodHangerPin.position.set(
-    rodHangerPinLocal.x,
-    rodHangerPinLocal.y,
-    0.57,
-  );
+  const rodHangerBoss = boredBoss(0.22, 0.22, .132, driverMaterial);
+  rodHangerBoss.position.set(rodHangerPinLocal.x, rodHangerPinLocal.y, 0);
+  rodHangerBoss.userData.role = 'source-eye-around-rod-hanger-pin';
+  const rodHangerPin = cylinderAlongZ(0.12, 0.51, darkMaterial, 30);
+  rodHangerPin.position.set(rodHangerPinLocal.x, rodHangerPinLocal.y, -0.145);
   rodHangerPin.userData.role = 'through-pin-joining-hanger-to-eccentric-rod';
   const rodHangerPinAnchor = new THREE.Group();
   rodHangerPinAnchor.position.set(
@@ -4177,46 +3861,39 @@ function bellCrankHangerGabDisengager() {
   );
   eccentricJointAnchor.userData.role =
     'exact-remote-eccentric-connection-of-rigid-rod';
-  const rodIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.075, 0.04),
-    whiteMaterial,
-  );
-  rodIndex.position.set(-4.52, 0.29, 0.24);
-  rodIndex.userData.role = 'white-index-on-moving-eccentric-rod';
+  const rodIndex = new THREE.Group();
+  rodIndex.userData.role = 'eccentric-rod-stroke-anchor';
   eccentricRod.add(
     eccentricJointAnchor,
     gabCenterAnchor,
-    gabCrownArch,
-    gabTopBridge,
     ...leftForkProngs,
     rodHangerBoss,
     rodHangerPin,
     rodHangerPinAnchor,
     rodIndex,
-    rodLeftBody,
-    rodRightTail,
+    rodBody,
   );
   root.add(eccentricRod);
 
   const operatingLever = new THREE.Group();
-  operatingLever.position.set(operatingPivot.x, operatingPivot.y, 0.62);
+  operatingLever.position.set(operatingPivot.x, operatingPivot.y, 0.52);
   operatingLever.userData.axis = Z_AXIS.clone();
   operatingLever.userData.role =
     'single-rigid-operating-handle-and-short-lifting-crank';
   const operatingHandleStem = boredGabLever(operatingHandleTopLocal, {
-    startRadius: .31, endRadius: .08, startBore: .162, endBore: 0, depth: .30, width: .16,
+    startRadius: .32, endRadius: .10, startBore: .162, endBore: 0, depth: .16, width: .21,
   }, accentMaterial);
   operatingHandleStem.userData.role = 'source-long-upright-operating-handle';
   const operatingCrankArm = boredGabLever(operatingCrankLocal, {
-    startRadius: .31, endRadius: .23, startBore: .162, endBore: .132, depth: .34, width: .25,
+    startRadius: .32, endRadius: .22, startBore: .162, endBore: .132, depth: .16, width: .14,
   }, accentMaterial);
   operatingCrankArm.userData.role =
     'source-short-crank-rigid-with-operating-handle';
-  const crankPin = cylinderAlongZ(0.12, 1.44, darkMaterial, 30);
+  const crankPin = cylinderAlongZ(0.12, 0.90, darkMaterial, 30);
   crankPin.position.set(
     operatingCrankLocal.x,
     operatingCrankLocal.y,
-    0.37,
+    -0.37,
   );
   crankPin.userData.role = 'through-pin-joining-short-crank-to-hanger';
   const crankPinAnchor = new THREE.Group();
@@ -4234,18 +3911,8 @@ function bellCrankHangerGabDisengager() {
   );
   operatingHandleTopAnchor.userData.role =
     'source-top-center-of-operating-handle';
-  const handleIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.42, 0.04),
-    whiteMaterial,
-  );
-  handleIndex.position.copy(
-    new THREE.Vector3(
-      operatingHandleTopLocal.x * 0.72,
-      operatingHandleTopLocal.y * 0.72,
-      0.24,
-    ),
-  );
-  handleIndex.userData.role = 'white-index-on-operating-handle';
+  const handleIndex = new THREE.Group();
+  handleIndex.userData.role = 'operating-handle-angle-anchor';
   operatingLever.add(
     crankPin,
     crankPinAnchor,
@@ -4256,18 +3923,18 @@ function bellCrankHangerGabDisengager() {
   );
   root.add(operatingLever);
 
-  const operatingPivotPin = cylinderAlongZ(0.15, 1.72, darkMaterial, 34);
+  const operatingPivotPin = cylinderAlongZ(0.15, 0.87, darkMaterial, 34);
   operatingPivotPin.position.set(
     operatingPivot.x,
     operatingPivot.y,
-    0.40,
+    0.185,
   );
   operatingPivotPin.userData.role = 'fixed-pivot-of-operating-bell-crank';
-  const operatingPivotFace = boredBoss(.31, .18, .162, accentMaterial);
+  const operatingPivotFace = boredBoss(.31, .16, .162, accentMaterial);
   operatingPivotFace.position.set(
     operatingPivot.x,
     operatingPivot.y,
-    1.20,
+    0.33,
   );
   operatingPivotFace.userData.role = 'source-round-operating-pivot-boss';
   const operatingPivotAnchor = new THREE.Group();
@@ -4276,7 +3943,7 @@ function bellCrankHangerGabDisengager() {
   root.add(operatingPivotAnchor, operatingPivotFace, operatingPivotPin);
 
   const hangerLink = makeBoredPlanarLink({
-    length: hangerLength, width: .16, eyeRadius: .22, boreRadius: .132, depth: .24,
+    length: hangerLength, width: .22, eyeRadius: .22, boreRadius: .132, depth: .16,
   }, brassMaterial);
   hangerLink.userData.role =
     'single-finite-hanger-link-between-crank-and-eccentric-rod';
@@ -4300,7 +3967,7 @@ function bellCrankHangerGabDisengager() {
     frame.add(beam);
     return beam;
   });
-  const frameValveBearing = boredBoss(0.39, 0.22, .322, frameMaterial);
+  const frameValveBearing = boredBoss(0.46, 0.22, .372, frameMaterial);
   frameValveBearing.position.set(valvePivot.x, valvePivot.y, 0.10);
   frameValveBearing.userData.role = 'rear-valve-rockshaft-frame-bearing';
   const frameOperatingBearing = boredBoss(.36, .22, .162, frameMaterial);
@@ -4313,16 +3980,11 @@ function bellCrankHangerGabDisengager() {
   frame.add(frameOperatingBearing, frameValveBearing);
   root.add(frame);
 
-  const gabCaptureMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.066, 20, 14),
-    whiteMaterial,
-  );
-  gabCaptureMarker.userData.role = 'visible-gab-pin-capture';
-  const fullClearMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.056, 20, 14),
-    whiteMaterial,
-  );
-  fullClearMarker.userData.role = 'visible-gab-fully-clear-of-valve-pin';
+  // State markers are anchors only: the plate draws no contact dots.
+  const gabCaptureMarker = new THREE.Group();
+  gabCaptureMarker.userData.role = 'gab-pin-capture-anchor';
+  const fullClearMarker = new THREE.Group();
+  fullClearMarker.userData.role = 'gab-fully-clear-of-valve-pin-anchor';
   root.add(fullClearMarker, gabCaptureMarker);
 
   const cameraEnvelope = new THREE.Mesh(
@@ -4371,6 +4033,7 @@ function bellCrankHangerGabDisengager() {
     rodHangerPin,
     rodHangerPinAnchor,
     rodIndex,
+    rodBody,
     rodLeftBody,
     rodRightTail,
     valveArm,
@@ -4437,11 +4100,11 @@ function bellCrankHangerGabDisengager() {
     eccentricRod.rotation.z = state.rodAngle;
     operatingLever.rotation.z = state.operatingAngle;
     hangerLink.userData.setEndpoints(
-      new THREE.Vector3(state.crankPin.x, state.crankPin.y, 0.96),
+      new THREE.Vector3(state.crankPin.x, state.crankPin.y, -0.22),
       new THREE.Vector3(
         state.rodHangerPin.x,
         state.rodHangerPin.y,
-        0.96,
+        -0.22,
       ),
     );
     gabCaptureMarker.position.set(

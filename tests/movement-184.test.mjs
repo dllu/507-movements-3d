@@ -708,15 +708,21 @@ test('movement 184 preserves the shifted top-pose illustration and prescribed re
     - geometry.lowerQuadrantDepth / 2;
   const lowerQuadrantTopZ = geometry.lowerQuadrantPlaneZ
     + geometry.lowerQuadrantDepth / 2;
-  const weightBottomZ = geometry.weightForegroundZ - 0.12;
+  // Plate: the upper back-weight rod passes behind its quadrant; each rod
+  // hangs just behind its own handle's eye.
+  const upperRodFrontZ = geometry.weightRodPlaneZ.upper + 0.05;
+  const lowerRodFrontZ = geometry.weightRodPlaneZ.lower + 0.05;
   assert.ok(handleBottomZ > frameFrontZ,
     'both handles clear the fixed rear frame');
   assert.ok(handleTopZ < upperQuadrantBottomZ,
     'upper quadrant clears its handle plate');
   assert.ok(upperQuadrantTopZ < lowerQuadrantBottomZ,
     'crossing quadrants remain in separate depth layers');
-  assert.ok(lowerQuadrantTopZ < weightBottomZ,
-    'foreground weights clear both quadrants');
+  assert.ok(upperRodFrontZ < handleBottomZ && upperRodFrontZ > frameFrontZ,
+    'upper weight rod lies behind both handles and clear of the rear frame');
+  assert.ok(lowerRodFrontZ < geometry.lowerHandlePlaneZ - geometry.handleDepth / 2
+    && lowerRodFrontZ < upperQuadrantBottomZ,
+    'lower weight rod lies behind its handle and both quadrants');
   assert.ok(tappet.geometry.parameters.depth > geometry.handleDepth,
     'projecting tappet spans the handle contact plane');
   const bounds = new THREE.Box3().setFromObject(model.root);

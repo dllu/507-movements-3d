@@ -44,22 +44,22 @@ export default {
     note: 'The disk, rod, bell crank, link and output rod; no base, posts or guide rails are drawn.',
   },
   186: {
-    camera: [0.2, 0.15, 1],
+    camera: [0.03, 0.02, 1],
     remove: ['fixed-frame-supporting-valve-rockshaft'],
     note: 'The rockshaft, gab lever, eccentric rod and spring loop handle; no frame is drawn.',
   },
   187: {
-    camera: [0.2, 0.15, 1],
+    camera: [0.03, 0.02, 1],
     remove: ['fixed-frame-supporting-the-valve-rockshaft'],
     note: 'The rockshaft, valve lever, eccentric rod and upper handle; no frame is drawn.',
   },
   188: {
-    camera: [0.2, 0.15, 1],
+    camera: [0.03, 0.02, 1],
     remove: ['fixed-frame-and-valve-carrier-guide'],
     note: 'The eccentric rod with its loop handle a and leaf spring; no frame or guide is drawn.',
   },
   189: {
-    camera: [0.2, 0.15, 1],
+    camera: [0.03, 0.02, 1],
     remove: ['fixed-support-frame-behind-source-linkage'],
     note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn.',
   },

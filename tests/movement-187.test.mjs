@@ -200,15 +200,15 @@ test('movement 187 matches Brown\'s rigid-lower-grip and pivoted-upper-cam topol
   assert.equal(geometry.sourceImageWidth, 525);
   assert.equal(geometry.sourceImageHeight, 525);
   near(geometry.sourceUnitsPerPixel, 0.018, 0, 'source scale');
-  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [313, 242]);
+  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [313, 238]);
   assert.deepEqual(geometry.sourceRasterValvePivot.toArray(), [313, 111]);
-  assert.deepEqual(geometry.sourceRasterCamContact.toArray(), [283, 175]);
+  assert.deepEqual(geometry.sourceRasterCamContact.toArray(), [276, 179]);
   assert.deepEqual(geometry.sourceRasterCamPivot.toArray(), [320, 198]);
   assert.deepEqual(geometry.sourceRasterUpperGrip.toArray(), [474, 195]);
   assert.deepEqual(geometry.sourceRasterLowerGrip.toArray(), [474, 245]);
   assert.deepEqual(geometry.sourceRasterRodLeftEnd.toArray(), [15, 242]);
-  assert.deepEqual(geometry.sourceRasterSupportLeft.toArray(), [258, 175]);
-  assert.deepEqual(geometry.sourceRasterSupportRight.toArray(), [370, 175]);
+  assert.deepEqual(geometry.sourceRasterSupportLeft.toArray(), [258, 179]);
+  assert.deepEqual(geometry.sourceRasterSupportRight.toArray(), [370, 179]);
   for (const rasterPoint of [
     geometry.sourceRasterGabPin,
     geometry.sourceRasterValvePivot,
@@ -599,9 +599,10 @@ test('movement 187 fills a real 3D envelope and remains distinct from authored 1
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 8.95);
   assert.ok(size.y > 5.15);
-  assert.ok(size.z > 2.40);
+  // Rod in front, upper handle behind its crown, valve lever behind both.
+  assert.ok(size.z > 1.70);
   assert.ok(physicalBounds.min.z < -1.17);
-  assert.ok(physicalBounds.max.z > blocks.eccentricRod.position.z + .5);
+  assert.ok(physicalBounds.max.z > blocks.eccentricRod.position.z + .2);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.4);

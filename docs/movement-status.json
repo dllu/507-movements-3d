@@ -3975,23 +3975,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default production capture inspected beside the plate: right-hand eye with hanging stem, strap valve rod with slotted lower rod; undrawn rear mounting removed."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/movement-137.md",
-        "note": "Interpolated contact clearance is tested, but a complete independently documented assembly intersection audit was not found. Pass-50 relative-motion screen (0.01 spacing, 129 poses) of the synchronous authored-cams model, not the production baked geometry from src/simulation/mujoco-expansion-eccentric/geometry.js: after boring its fork boss and rollers, the fork arms still run 0.184 into the pivot shaft, the eccentric overlaps the outer bow by 0.151, and the stretchable valve link overlaps itself and the wrist pin by up to 0.171. The production baked geometry is not screened."
+        "status": "sampled-clear",
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Production baked bundle screened over the settled loop and recorded startup: only working cam/roller contact ≤0.0004 and 0.005 pin-in-bore clearance. The unused synchronous model still overlaps (fork boss 0.18, eccentric/bow 0.15)."
       },
-      "flaws": "The synchronous model's fork arms, eccentric and valve link overlap by up to 0.184; the production baked geometry is unscreened. Right-hand eye and hanging rod reduced to a pivot disk. Rollers shifted 12 pixels outward each to clear cam; hidden cam arcs, inertia and unloaded valve rod inferred.",
+      "flaws": "Hidden cam arcs, the 12-pixel roller offset, support depth and stem are inferred; the synchronous offline model keeps its overlaps; inertia and unloaded valve rod inferred.",
       "references": [
         "docs/movement-137.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4005,23 +4006,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default production capture inspected beside the plate: cam, rod and clamped guides match."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/movement-138.md",
-        "note": "Finite-tip/guide checks documented; no complete assembly intersection audit established in this read-only review. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the fixed cam-bearing arm now ends at its bearing ring instead of running 0.169 into the input shaft; the resting point still enters the cam edge by 0.093 at one sampled pose. The invisible stroke envelope is excluded as a fluid. Rebaked with the saved options (timestep 0.00025, period 8, 128 samples per arc); the motion is unchanged (9301 samples, 0.063 px penetration)."
+        "status": "sampled-clear",
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Production baked bundle screened: working point contact only (0.0001). The 0.093 figure is the synchronous offline model's."
       },
-      "flaws": "The resting point enters the cam edge by 0.093 at one sampled pose. Engraving cam differs from oracle by up to 14.46 pixels in trajectory; lift-off and physical scale/load assumptions retained.",
+      "flaws": "Hidden rear post and guide arms and a small hub key are not drawn; the synchronous model keeps a 0.093 point overlap; the engraving cam differs from the oracle by up to 14.46 pixels in trajectory; lift-off and load assumptions retained.",
       "references": [
         "docs/movement-138.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4461,24 +4463,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default production capture inspected beside the plate: rebaked without the undrawn base rail, posts and bar guides."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/movement-153.md",
-        "note": "Current sampled soft contact penetration up to 0.0000541 world unit; other assembly interfaces pass.",
-        "kind": "contact-overlap"
+        "status": "sampled-clear",
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Production baked bundle screened: working contacts only (0.0001); assembly reports regenerated with 0 failing pairs."
       },
-      "flaws": "The baked fixed body still carries an undrawn base rail and posts; removing them needs a rebake. Stepped arm relief, resistance, stop and guide hardware inferred; contact response is parameter-dependent.",
+      "flaws": "Stepped arm relief, elbow stop and bracket, and shaft supports are inferred; the bar guide is an ideal constraint; contact response is parameter-dependent.",
       "references": [
         "docs/movement-153.md",
         "docs/review-progress.md",
         "docs/validation/153-baked-assembly.json",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5390,22 +5392,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: hanging rods replace the undrawn weights; the quadrants remain solid plain sectors where Brown draws cast webs, and rims are about twice the plate's thickness."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/quadrant-catch-finite-review.md",
-        "note": "Bores, joints and crossed handles corrected; working pin/band and rounded-tip/tappet intrusion remains, with finite witnesses measured through the shared cycle."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): rod/tappet 0.090 fixed; arm/tappet 0.2225, tip/tappet ≈0.18–0.21, pin/band 0.1217 and pin/arm 0.103 remain."
       },
-      "flaws": "Retaining-pin/band intrusion up to 0.08699 and tip/tappet up to 0.18615; synchronized transfer law unresolved. Rims too thick and contours simplified.",
+      "flaws": "Prescribed transfer law unresolved (arm/tip into tappet up to 0.2225, pin/band 0.1217); quadrant rims about twice the plate's thickness and plain sectors instead of cast webs; layout differs from the plate.",
       "references": [
         "docs/movement-183.md",
         "docs/quadrant-catch-finite-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5422,22 +5425,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: hanging rods replace the undrawn weights; the quadrants remain solid plain sectors where Brown draws cast webs."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/quadrant-catch-finite-review.md",
-        "note": "Bores, joints and crossed handles corrected; working pin/band and rounded-tip/tappet intrusion remains, with finite witnesses measured through the shared cycle."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): rod/tappet 0.090 fixed; arm/tappet 0.2225, tip/tappet ≈0.18–0.21, pin/band 0.1217 and pin/arm 0.103 remain."
       },
-      "flaws": "Retaining-pin/band intrusion up to 0.08699 and tip/tappet up to 0.18615; synchronized transfer law unresolved. Rims too thick and contours simplified.",
+      "flaws": "Prescribed transfer law unresolved (arm/tip into tappet up to 0.2225, pin/band 0.1217); quadrant rims about twice the plate's thickness and plain sectors instead of cast webs; layout differs from the plate.",
       "references": [
         "docs/movement-183.md",
         "docs/quadrant-catch-finite-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5483,21 +5487,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: near-true elevation with the lever, crown, gab slot and flat loop spring traced; the loop hangs lower and farther left than Brown's."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/movement-186-189.md",
-        "note": "Known residual: Gab-pin/rod-crown and pin/spring overlap remain; cam-toe neighborhood corrected, latch/spring dynamics prescribed."
+        "status": "sampled-clear",
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): spring/root 0.104 and pin/crown 0.023 fixed; no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The spring loop handle hangs lower than the plate’s a. Gab-pin/rod-crown and pin/spring overlap remain; cam-toe neighborhood corrected, latch/spring dynamics prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The spring loop hangs lower than the plate's a; a hidden shoulder shows as a small ledge left of the rocker arm; spring bend interpolated; latch and cam motion prescribed.",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5511,21 +5516,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: upper handle behind the rod crown, lower handle part of the rod plate, as drawn."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/movement-186-189.md",
-        "note": "Known residual: Gab-pin/rod-crown overlap remains; corrected cam contact does not validate spring capture or gab drive."
+        "status": "sampled-clear",
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): cam/marker 0.096 and pin/crown 0.089 fixed; no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Gab-pin/rod-crown overlap remains; corrected cam contact does not validate spring capture or gab drive.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Hidden shoulder contact inferred; spring capture and gab drive prescribed.",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5539,22 +5545,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: flat loop and cam behind the rod; the loop's shape only roughly follows the plate's."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-186-189.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Validation: the complete family command plus `tests/gab-cam-contact.test.mjs` passes **26 tests**. The new test checks 1,025 poses per mechanism against the actual polygonal toe and shoe: no overlap, less than 0.00005 model units of facet gap, a tangent inside the finite shoe, and positive axial overlap. A control that suppresses the solved handle rocking restores penetration.… Pass-49 relative-motion screen reports 0.1094 solid overlap (round-valve-gear-pin-serving-as-gab-capture-and-direct-cam-follower x source-visible-upper-back-of-direct-pin-cam); unclassified, may be intended contact."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): pairs up to 0.119 fixed; the working cam rail is an open tube, so only the rail-into-pin direction is checked."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The loop handle rises at a different angle from the plate’s. Thin cam rail, spring capture and gab-drive contact remain inferred/prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The loop's curve only roughly follows the plate; the conjugate cam rail hangs below the rod at the engaged pose where Brown's dashed edge lies above the pin; handle direction inferred; spring root hidden inside the rod.",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5568,22 +5575,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Default capture inspected beside the plate: rod plate with forked end and hanger eye, link behind both eyes."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-186-189.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Validation: the complete family command plus `tests/gab-cam-contact.test.mjs` passes **26 tests**. The new test checks 1,025 poses per mechanism against the actual polygonal toe and shoe: no overlap, less than 0.00005 model units of facet gap, a tangent inside the finite shoe, and positive axial overlap. A control that suppresses the solved handle rocking restores penetration.… Pass-49 relative-motion screen reports 0.1038 solid overlap (source-hatched-valve-rockshaft-boss x source-raised-outer-gab-crown); unclassified, may be intended contact."
+        "evidence": "docs/lane5-cams-catches-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): boss/crown 0.104 fixed; no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Spring capture/gab-drive contact and source support-frame fidelity remain unqualified.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Spring capture and gab-drive contact prescribed.",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane5-cams-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",

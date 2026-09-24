@@ -215,7 +215,7 @@ test('movement 189 matches Brown\'s fixed operating lever, short crank, hanger, 
   assert.equal(geometry.sourceImageWidth, 525);
   assert.equal(geometry.sourceImageHeight, 525);
   near(geometry.sourceUnitsPerPixel, 0.016, 0, 'source scale');
-  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [342, 406]);
+  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [342, 401]);
   assert.deepEqual(geometry.sourceRasterValvePivot.toArray(), [327, 282]);
   assert.deepEqual(
     geometry.sourceRasterOperatingPivot.toArray(),
@@ -224,7 +224,7 @@ test('movement 189 matches Brown\'s fixed operating lever, short crank, hanger, 
   assert.deepEqual(geometry.sourceRasterCrankPin.toArray(), [471, 235]);
   assert.deepEqual(
     geometry.sourceRasterRodHangerPin.toArray(),
-    [470, 404],
+    [470, 401],
   );
   assert.deepEqual(
     geometry.sourceRasterOperatingHandleTop.toArray(),
@@ -578,9 +578,11 @@ test('movement 189 rendered transforms keep the valve lever, rod, bell crank, an
 
   model.update(canonicalTimes.heldClearPositiveStroke);
   model.root.updateMatrixWorld(true);
-  assert.ok(valveRocker.position.z < eccentricRod.position.z);
+  // Plate: both hanger eyes are drawn whole over the link, so the link lies
+  // behind the rod and the crank; the valve lever is furthest back.
+  assert.ok(valveRocker.position.z < new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z);
+  assert.ok(new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z < eccentricRod.position.z);
   assert.ok(eccentricRod.position.z < operatingLever.position.z);
-  assert.ok(operatingLever.position.z < new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z);
   near(new THREE.Vector3().applyMatrix4(hangerLink.matrixWorld).z, new THREE.Vector3(hangerLength, 0, 0).applyMatrix4(hangerLink.matrixWorld).z, 1e-15,
     'both hanger pins share one working plane');
   assert.equal(cameraEnvelope.material.colorWrite, false);
@@ -609,9 +611,10 @@ test('movement 189 fills a real 3D envelope and remains distinct from authored 1
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 8.85);
   assert.ok(size.y > 7.10);
-  assert.ok(size.z > 2.25);
+  // Flush pins keep the sectional stack thinner than the former protruding ones.
+  assert.ok(size.z > 1.6);
   assert.ok(physicalBounds.min.z < -1.00);
-  assert.ok(physicalBounds.max.z > 1.25);
+  assert.ok(physicalBounds.max.z > 0.55);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.4);

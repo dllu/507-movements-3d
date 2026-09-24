@@ -72,7 +72,8 @@ for (const id of [183, 184]) {
     for(let i=0;i<=64;i++){
       m.update(d.geometry.cyclePeriod*i/64);m.root.updateMatrixWorld(true);
       const rod=new THREE.Box3().setFromObject(b.pistonRod),tappet=new THREE.Box3().setFromObject(b.tappet);
-      assert.ok(rod.intersectsBox(tappet),'finite rod connects to shoe');
+      // The shoe seats on the rod's front face (touching, not interpenetrating).
+      assert.ok(rod.clone().expandByScalar(1e-6).intersectsBox(tappet),'finite rod connects to shoe');
       if(extent)assert.ok(rod.min.distanceTo(extent.min)<1e-10&&rod.max.distanceTo(extent.max)<1e-10);extent=rod;
       m.root.traverseVisible(o=>{const a=o.geometry?.attributes.position;if(a)for(let j=0;j<a.count;j++)assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a,j).applyMatrix4(o.matrixWorld)));});
     }

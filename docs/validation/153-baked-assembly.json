@@ -50,7 +50,7 @@
     },
     {
       "file": "src/simulation/baked/assets/153.json.gz",
-      "sha256": "9ead2f5ba4866101e2dbe2202fd87c528bc053d32d7aa1f3a41e694b5d8ac1e2"
+      "sha256": "ce195d8bf4a647124abab9bf0bec77720e17bb0e1c5345e1eb15eb6b53dd4810"
     },
     {
       "file": "src/simulation/baked/playback.js",
@@ -62,7 +62,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

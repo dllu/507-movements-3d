@@ -24,6 +24,12 @@ try{
  }
  const closure=last.map((x,i)=>x-first[i]-turns[i]);closure.forEach(x=>assert.ok(Math.abs(x)<1e-6));motion[motion.length-1]=[12,...first.map((x,i)=>x+turns[i])];
  for(const object of [b.cameraEnvelope,b.directContactMarker,b.returnInputContactMarker,b.returnOutputContactMarker])object.removeFromParent();
+ // Brown shows only the bar on its two rollers, the disk and the elbow. The
+ // base rail, rear posts and C-shaped bar guides are undrawn visual supports
+ // (the native bar guide is an ideal constraint), so they are not baked.
+ // Shafts and the physical elbow stop remain.
+ const undrawn=[];b.fixedFrame.traverse(o=>{if(o.isMesh&&/^(fixed-base-rail|fixed-rear-support-post|bar-guide-)/.test(o.name||o.userData.role||''))undrawn.push(o);});
+ assert.equal(undrawn.length,15);for(const mesh of undrawn){mesh.removeFromParent();mesh.geometry.dispose();}
  const bounds=new THREE.Box3();for(const row of motion){syncStudReverser(v,{qpos:row.slice(1,4)});bounds.union(new THREE.Box3().setFromObject(v.root,true));}bounds.expandByScalar(.02);
  syncStudReverser(v,{qpos:[0,0,0]});
  const bodies=[b.diskRotor,b.slidingBar,b.lever,...b.guideRollers.map(g=>g.userData.rotor)];names.forEach((n,i)=>bodies[i].name='body:'+n);

@@ -32903,10 +32903,9 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
   );
   assert.equal(camBody.geometry.parameters.radiusTop, geometry.camRadius);
   assert.equal(camBody.geometry.parameters.radiusBottom, geometry.camRadius);
-  assert.equal(upperRollerWheel.geometry.parameters.radiusTop,
-    geometry.rollerRadius);
-  assert.equal(lowerRollerWheel.geometry.parameters.radiusTop,
-    geometry.rollerRadius);
+  // The rollers are bored lathe solids; their working radius is recorded.
+  assert.equal(upperRollerWheel.userData.radius, geometry.rollerRadius);
+  assert.equal(lowerRollerWheel.userData.radius, geometry.rollerRadius);
   assert.ok(geometry.eccentricity > 0);
   assert.ok(geometry.eccentricity < geometry.camRadius);
   assert.ok(geometry.handoffHalfAngle < Math.PI / 100);

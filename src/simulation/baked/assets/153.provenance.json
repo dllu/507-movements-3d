@@ -19,20 +19,20 @@
   "loopEnd": 12,
   "bounds": {
     "min": [
-      -4.245000190734863,
-      -2.0500000035762787,
-      -0.5900000059604644
+      -3.955309815955008,
+      -1.6580000466039198,
+      -0.5600000262260437
     ],
     "max": [
       4.208604413940576,
-      2.6020000171661377,
+      2.5199599486328763,
       1.0780000042915345
     ]
   },
   "focus": [
-    -0.018197888397143203,
-    0.27600000679492953,
-    0.24399999916553505
+    0.12664729899278404,
+    0.4309799510144783,
+    0.2589999890327454
   ],
   "cameraDirection": [
     0.02,
@@ -42,7 +42,7 @@
   "sources": [
     {
       "file": "scripts/bake-stud-reverser.mjs",
-      "sha256": "aad1c246ee0613e55edd3cc248134191ccf82684c217705fe4083efb224536a2"
+      "sha256": "52070e4c258cbc5c5e561719bf6d356cd8c9cdff3fb0bbcc709b7092c3fa8861"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
@@ -70,11 +70,11 @@
     },
     {
       "file": "docs/validation/153-assembly.json",
-      "sha256": "36a3edb0175c5920e5688b65cb39103fdfbd624c09ef00fa2c8137bd8604dec6"
+      "sha256": "5059309db85dc177d6885b679f70977d4b8e30305a1a040c82718eee0c6f85a0"
     },
     {
       "file": "docs/validation/153-moving-volumes.json",
-      "sha256": "669f68339fa1c00dcbe86080f6489056a511f3b0779cfa9173df0feb9f73e9be"
+      "sha256": "f5b4e5b8e16e25a1d75c7969f93d1a8cd21d14b2244d07e5c5846f2911df705e"
     }
   ],
   "closure": [
@@ -85,8 +85,8 @@
     -6.876942487687998e-10
   ],
   "sourceTime": 60,
-  "bytes": 298839,
-  "sha256": "9ead2f5ba4866101e2dbe2202fd87c528bc053d32d7aa1f3a41e694b5d8ac1e2",
+  "bytes": 292440,
+  "sha256": "ce195d8bf4a647124abab9bf0bec77720e17bb0e1c5345e1eb15eb6b53dd4810",
   "samples": 6001,
   "meshes": 15
 }

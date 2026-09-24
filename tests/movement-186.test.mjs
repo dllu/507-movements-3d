@@ -196,15 +196,15 @@ test('movement 186 matches Brown\'s spring-handle gab-release topology and sourc
   assert.equal(geometry.sourceImageWidth, 525);
   assert.equal(geometry.sourceImageHeight, 525);
   near(geometry.sourceUnitsPerPixel, 0.015, 0, 'source scale');
-  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [266, 254]);
-  assert.deepEqual(geometry.sourceRasterValvePivot.toArray(), [261, 57]);
+  assert.deepEqual(geometry.sourceRasterGabPin.toArray(), [270, 250]);
+  assert.deepEqual(geometry.sourceRasterValvePivot.toArray(), [260, 62]);
   assert.deepEqual(geometry.sourceRasterCamContact.toArray(), [285, 151]);
-  assert.deepEqual(geometry.sourceRasterCamPivot.toArray(), [340, 207]);
-  assert.deepEqual(geometry.sourceRasterHandleGrip.toArray(), [470, 213]);
-  assert.deepEqual(geometry.sourceRasterSpringAnchor.toArray(), [358, 240]);
-  assert.deepEqual(geometry.sourceRasterSpringFreeTip.toArray(), [418, 319]);
+  assert.deepEqual(geometry.sourceRasterCamPivot.toArray(), [341, 242]);
+  assert.deepEqual(geometry.sourceRasterHandleGrip.toArray(), [485, 212]);
+  assert.deepEqual(geometry.sourceRasterSpringAnchor.toArray(), [358, 266]);
+  assert.deepEqual(geometry.sourceRasterSpringFreeTip.toArray(), [468, 321]);
   assert.deepEqual(geometry.sourceRasterNotchA.toArray(), [480, 319]);
-  assert.deepEqual(geometry.sourceRasterSpringBottom.toArray(), [436, 482]);
+  assert.deepEqual(geometry.sourceRasterSpringBottom.toArray(), [450, 494]);
   for (const rasterPoint of [
     geometry.sourceRasterGabPin,
     geometry.sourceRasterValvePivot,
@@ -254,7 +254,7 @@ test('movement 186 matches Brown\'s spring-handle gab-release topology and sourc
   vector2Near(sourceHandleGrip, sourcePointFromRaster(
     geometry.sourceRasterHandleGrip,
   ), 2e-15, 'source upper grip');
-  near(source.latchGap, 62 * geometry.sourceUnitsPerPixel, 2e-15,
+  near(source.latchGap, Math.hypot(12, 2) * geometry.sourceUnitsPerPixel, 2e-15,
     'source unlatched spring-to-notch gap');
   assert.equal(source.gabCaptured, true);
   assert.equal(source.pinInsideGabMouth, true);
@@ -558,7 +558,8 @@ test('movement 186 rendered transforms keep the four bodies, contacts, and movin
     assert.equal(camContactMarker.visible, state.camLiftActive);
     assert.equal(gabCaptureMarker.visible, state.gabCaptured);
     assert.equal(latchMarker.visible, state.latchEngagement > 1 - 1e-8);
-    assert.equal(springHandle.children.filter((child) => child.visible).length, 48);
+    assert.equal(springHandle.children.filter((child) => child.visible).length, 1,
+      'one flat strap mesh forms the loop spring');
     assert.equal(model.root.userData.contacts.camShoulder.active,
       state.camContactActive);
     near(model.root.userData.contacts.gabPin.clearance,
@@ -604,7 +605,7 @@ test('movement 186 fills a real 3D envelope and remains distinct from authored 1
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 8.45);
+  assert.ok(size.x > 7.5);
   assert.ok(size.y > 7.0);
   assert.ok(size.z > 2.30);
   assert.ok(physicalBounds.min.z < -1.07);

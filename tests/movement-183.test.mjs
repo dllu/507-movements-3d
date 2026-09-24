@@ -885,15 +885,21 @@ test('movement 183 preserves prescribed two-quadrant source poses and kinematics
     - geometry.lowerQuadrantDepth / 2;
   const lowerQuadrantTopZ = geometry.lowerQuadrantPlaneZ
     + geometry.lowerQuadrantDepth / 2;
-  const weightBottomZ = geometry.weightForegroundZ - 0.12;
+  // Plate: the upper back-weight rod passes behind its quadrant; each rod
+  // hangs just behind its own handle's eye.
+  const upperRodFrontZ = geometry.weightRodPlaneZ.upper + 0.05;
+  const lowerRodFrontZ = geometry.weightRodPlaneZ.lower + 0.05;
   assert.ok(handleBottomZ > frameFrontZ,
     'both handles clear the fixed rear frame');
   assert.ok(handleTopZ < upperQuadrantBottomZ,
     'upper quadrant clears its owning handle plate');
   assert.ok(upperQuadrantTopZ < lowerQuadrantBottomZ,
     'the two crossing quadrants occupy separate depth layers');
-  assert.ok(lowerQuadrantTopZ < weightBottomZ,
-    'foreground hanging weights clear both quadrant plates');
+  assert.ok(upperRodFrontZ < handleBottomZ && upperRodFrontZ > frameFrontZ,
+    'upper weight rod lies behind both handles and clear of the rear frame');
+  assert.ok(lowerRodFrontZ < geometry.lowerHandlePlaneZ - geometry.handleDepth / 2
+    && lowerRodFrontZ < upperQuadrantBottomZ,
+    'lower weight rod lies behind its handle and both quadrants');
   assert.ok(tappet.geometry.parameters.depth > geometry.handleDepth,
     'projecting tappet spans the handle contact plane');
   model.update(0, 0);
