@@ -1040,6 +1040,37 @@ function lanternWheelEscapement(movement) {
   // Neither the index marks nor a contact marker appear on the plate.
   blocks.wheelIndex.visible = false;
   blocks.rimIndex.visible = false;
+  // Brown dashes arm A and its pivot as hidden lines behind the plate; only
+  // the hatched pallets B and C are drawn solid. Replace the arm, its pivot
+  // hub, arbor and pallet mounts by dashed outlines that follow them.
+  const hiddenLineMaterial = new THREE.LineDashedMaterial({
+    color: PALETTE.ink,
+    dashSize: 0.16,
+    fog: false,
+    gapSize: 0.10,
+  });
+  const hiddenParts = [
+    blocks.armA,
+    blocks.armHub,
+    root.userData.lanternWorkingParts.armArbor,
+    ...[blocks.palletB, blocks.palletC].flatMap((group) => group.children
+      .filter((child) => child.isMesh
+        && /rigid-mount|axial-pallet-.-mount/.test(child.userData.role ?? ''))),
+  ].filter(Boolean);
+  blocks.hiddenArmOutlines = hiddenParts.map((part) => {
+    const outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(part.geometry, 25),
+      hiddenLineMaterial,
+    );
+    outline.position.copy(part.position);
+    outline.quaternion.copy(part.quaternion);
+    outline.scale.copy(part.scale);
+    outline.computeLineDistances();
+    outline.userData.role = `dashed-hidden-outline-of-${part.userData.role}`;
+    part.parent.add(outline);
+    part.visible = false;
+    return outline;
+  });
   const plainDiscUpdate = (time) => {
     finiteUpdate(time);
     blocks.contactMarker.visible = false;

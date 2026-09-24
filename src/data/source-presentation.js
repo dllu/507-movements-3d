@@ -295,8 +295,8 @@ export default {
     note: 'Face view of the escape wheel A and lever B, C; no watch plate, bridge or base is drawn.',
   },
   297: {
-    remove: ['fixed-lantern-escapement-base'],
-    note: 'Face view of the pin wheel and pallets; no base or bearing post is drawn.',
+    remove: ['fixed-lantern-escapement-base', 'fixed-bored-rear-plate-joining-both-arbor-bearings', 'fixed-(?:rocking-arm-bearing-A|lantern-wheel-bearing)'],
+    note: 'Face view of the pin wheel with the hatched pallets B and C; arm A and its pivot are dashed hidden lines. No base, rear plate or bearings are drawn.',
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
@@ -317,8 +317,8 @@ export default {
     note: 'Face view of the Graham wheel with its four crossings as a leaning X under anchor D, C, E, the pendulum rod marked only by the dot F; no frame, bob, index marks or highlighted pallet faces are drawn.',
   },
   305: {
-    remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
-    note: 'The pendulum pallet plate and single-pin disc; no clock frame or brackets are drawn.',
+    remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket', 'pendulum-angle-index', 'disc-half-turn-index'],
+    note: 'The pendulum pallet plate and single-pin disc; no clock frame, brackets or index marks are drawn.',
   },
   306: {
     remove: ['rear-frame-cross-bridge', 'bored-back-strut-joining-wheel-arbor-to-frame-bridge'],

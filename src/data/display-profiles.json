@@ -6078,17 +6078,17 @@
       "peakAngularSpeed": 2.7684725973480404,
       "peakVisibleAngularSpeed": 2.7415555153900835,
       "sustainedVisibleAngularSpeed": 2.374688302229889,
-      "floorY": -4.57505141307836,
+      "floorY": -4.575051392812783,
       "fastestPart": "inner-steel-layer-of-compound-balance-arm",
       "motionBounds": {
         "min": [
           -4.450963073398575,
-          -4.57505141307836,
+          -4.575051392812783,
           -0.8800000190734864
         ],
         "max": [
           4.450963073398575,
-          4.57505141307836,
+          4.575051392812783,
           1.0800000190734864
         ]
       }
@@ -6097,12 +6097,12 @@
       "peakAngularSpeed": 0.7219928568250004,
       "peakVisibleAngularSpeed": 0.7219928568238901,
       "sustainedVisibleAngularSpeed": 0.41652070673205965,
-      "floorY": -4.51999997307389,
+      "floorY": -4.5499999730738905,
       "fastestPart": "ratchet-click-tip",
       "motionBounds": {
         "min": [
           -2.466666618982951,
-          -4.51999997307389,
+          -4.5499999730738905,
           -0.3999999761581421
         ],
         "max": [

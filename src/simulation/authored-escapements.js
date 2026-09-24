@@ -16,6 +16,9 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const FULL_TURN = Math.PI * 2;
 
+// Box-fit camera distance for 301's cropped side bounds (fov 20, square view).
+const EXPECTED_301_FIT_DISTANCE = 19.5;
+
 function finish(
   root,
   update,
@@ -3303,6 +3306,8 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     root.userData.kinematics = state;
   };
   update(0);
+  // Brown's 302 is a flat elevation with no ground line.
+  root.userData.hideGround = true;
   markShadows(root);
   return finish(root, update, new THREE.Vector3(0, 0, 1));
 }
@@ -4902,12 +4907,18 @@ function debaufreFrictionalRestEscapement(
     // staff axis so the staff reads end-on instead of as a receding rod.
     root.userData.cameraFov = 20;
     root.userData.cameraDistanceScale = 1;
+    // Brown breaks both wheels off a little above the arbor (about 0.18 of
+    // the arbor-to-pallet distance), so the view is cropped there.
+    const cropTop = wheelCenterY + 0.18 * (wheelCenterY - palletCenterY);
     root.userData.cameraFitBounds = new THREE.Box3(
       new THREE.Vector3(-3.45, palletBottom, -1.45),
-      new THREE.Vector3(3.45, wheelTop, 1.45),
+      new THREE.Vector3(3.45, cropTop, 1.45),
     );
-    const fitCenterY = (palletBottom + wheelTop) / 2;
-    const expectedDistance = 27;
+    root.userData.cameraFitCropsSource = true;
+    // Brown's side elevation has no ground line.
+    root.userData.hideGround = true;
+    const fitCenterY = (palletBottom + cropTop) / 2;
+    const expectedDistance = EXPECTED_301_FIT_DISTANCE;
     cameraDirection = new THREE.Vector3(
       1,
       (palletCenterY - fitCenterY) / expectedDistance,

@@ -8643,21 +8643,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: seven hooked teeth in the ring."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: seven hooked teeth inside the annulus."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: tooth against pallet B at landing 0.026."
+        "status": "sampled-clear",
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen and a 129-step fine scan: the 0.026 tooth/pallet-B overlap is fixed."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. A 0.026 tooth/pallet overlap at landing remains. Prescribed annulus/escape motion.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Pallets read as small lugs on carriers, not Brown's square notches. Motion prescribed.",
       "references": [
         "docs/annular-stud-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8673,21 +8674,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: plain notched balance disc."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: stop d, spring f and stud i repositioned on leaf A."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: leaf, stud and stop overlaps up to 0.22 (pre-existing; the earlier 'none in scoped checks' did not cover them)."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: stop d/A 0.14 → 0.024 (seat), f/A 0.05 → 0; stud a pushes 0.104 into hook k during the prescribed lift; notch g/hook k 0.055; tooth/notch g 0.046."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Leaf, stud and stop overlaps up to 0.22 remain. Finite stops follow prescribed oscillation and release.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Stud a pushes 0.104 into hook k while the detent is held up; notch/hook and tooth/notch overlaps (0.055, 0.046) remain. Finite stops follow prescribed oscillation and release.",
       "references": [
         "docs/free-escapement-291-313-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8703,20 +8705,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Default capture inspected beside the plate: arms G and H follow the plate; the full wheel is shown where Brown crops it."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: cropped to Brown's close-up with triangular studs."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane4-escapements-misc-review.md",
         "note": "2049-pose stud sweep +0.00021 clearance (was −0.0016); pass-51 relative-motion screen (0.01 spacing, 129 poses) clear."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The full wheel is shown where Brown crops it; studs are cylinders where Brown draws triangles; timing is prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Handoff timing is prescribed.",
       "references": [
         "docs/annular-stud-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8852,22 +8855,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Default capture inspected beside the plate: plain bored disc with light pins; arm A is drawn solid where Brown dashes it."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: arm A, hub and arbor drawn as dashed hidden lines as Brown draws them."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane4-escapements-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Arm A is drawn solid in front where Brown dashes it as hidden. Prescribed arm and drive torque; B shifted 0.25 model units and swing enlarged to ±18°. Passive regulation and impact loads unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Pallets float in front of the disc on the dashed arm. Prescribed arm and drive torque; B shifted 0.25 model units and swing enlarged to ±18°.",
       "references": [
         "docs/lantern-escapement-review.md",
         "docs/remaining-movement-passes.md",
         "docs/lantern-297-finite-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -8981,22 +8985,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane3-escapements-review.md",
-        "note": "Default capture inspected beside the plate: side view starting with D level."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: cropped above the arbor where Brown breaks the wheels off; ground hidden."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane3-escapements-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Frames the whole wheel where Brown breaks it off above the arbor; spacer drum radius read from one line. Same impulse lift-off and pallet thickness as 300.",
+      "flaws": "The spacer still reads as a dark drum; the wheel edges read busier than Brown's strip. Same impulse lift-off and pallet thickness as 300.",
       "references": [
         "docs/debaufre-300-301-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/lane3-escapements-review.md"
+        "docs/lane3-escapements-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9012,8 +9017,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: flat front elevation, crown edge-on as a saw-toothed band, arbor vertical, weights above and below, blades A/B at C."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate with the ground shadow hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9027,7 +9032,8 @@
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/lane3-escapements-review.md",
-        "docs/lane2-intermittent-review.md"
+        "docs/lane2-intermittent-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9103,21 +9109,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate with the white stripe and index tick removed."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/pin-escapement-family-review.md",
-        "note": "Known residual: Release-corner penetration about 0.000601 and dead-face separation up to 0.00970; upright impulse alone qualified."
+        "status": "sampled-clear",
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: clear apart from the documented release-corner contact (≈0.0006)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Release-corner penetration about 0.000601 and dead-face separation up to 0.00970; upright impulse alone qualified.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Release-corner contact ≈0.0006 and dead-face separation up to 0.00970; upright impulse alone qualified.",
       "references": [
         "docs/pin-escapement-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9231,7 +9238,7 @@
         "evidence": "docs/lane8-escapements-engines-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; plates rebaked after display re-measure."
       },
-      "flaws": "Swept cut removes nearly all of each locking nib, so locking comes from the motion law; the pendulum rod is drawn in front where Brown omits it. Motion prescribed.",
+      "flaws": "Swept cut removes nearly all of each locking nib, so locking comes from the motion law. Motion prescribed.",
       "references": [
         "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
@@ -9239,7 +9246,8 @@
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9255,15 +9263,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: bob removed so it is no longer cut off; ground hidden."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: the pendulum rod is a dashed centre line as Brown draws it."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane8-escapements-engines-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Stops D/E reduced to about 9% of their area by the cut; locking comes from the motion law; legs are straight bars; pendulum rod shown in front where Brown dashes it. Motion prescribed.",
+      "flaws": "Stops D/E reduced to about 9% of their area by the cut; locking comes from the motion law. Motion prescribed.",
       "references": [
         "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
@@ -9271,7 +9279,8 @@
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9351,21 +9360,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: web wheel and plain notched roller."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: detent spring bowed clear of the teeth; bank E behind the wheel."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: tooth against detent 0.093 (pre-existing; the earlier scoped claim did not cover it)."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: tooth/detent 0.093 fixed; tooth into pallet P at impulse start 0.019 and jewel V/spring 0.011 remain."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. A 0.093 tooth/detent overlap remains. Preload, friction, impacts and passive timekeeping unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The tooth enters pallet P by 0.019 at impulse start and jewel V touches the passing spring by 0.011. Preload, friction and passive timekeeping unvalidated.",
       "references": [
         "docs/chronometer-313-return-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -9384,21 +9394,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: windowed escape wheel and plain balance disk."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: the lever lies across the teeth with a pivot ring."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: lever arbor against pallet C 0.119 (pre-existing)."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: lever arbor/pallet C 0.119 → 0.037; tooth/C during impulse up to ≈0.08 on a fine scan (pre-existing)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. A 0.119 lever-arbor/pallet-C overlap remains. Detent and impulse timing prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Tooth/pallet-C overlap during impulse up to ≈0.08; B's lock is shown only in front of the teeth. Detent and impulse timing prescribed.",
       "references": [
         "docs/detached-chronometer-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9532,21 +9543,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: beads, screw slots and the undrawn balance spring removed."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: timing-screw stems start at the arm faces."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: arm against timing screw 0.093 (pre-existing)."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: arm/timing screw 0.093 fixed; the steel arm root seated 0.049 into the bar end and segment joins remain."
       },
-      "flaws": "A 0.093 arm/timing-screw overlap remains. Spring ribbon deformed kinematically; elastic strip shape and passive rate response unvalidated.",
+      "flaws": "The steel arm root is seated 0.049 into the bar end. Spring ribbon deformed kinematically.",
       "references": [
         "docs/watch-balance-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9562,21 +9574,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: rotation indices and chain markers removed."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: undrawn demonstration handle removed."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: chain against the demonstration handle 0.051 (pre-existing)."
+        "status": "sampled-clear",
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: the 0.051 chain/handle overlap is fixed."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The chain passes 0.051 into the demonstration handle. Prescribed output/load and click bias; moving chain dominates CPU cost.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Prescribed output/load and click bias.",
       "references": [
         "docs/maintaining-clock-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9592,21 +9605,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: top frame beam and indices removed."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Default capture inspected beside the plate: spring loops left of B clear of the arbor; decorative ring and index removed."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: the spring passes through the arbor by 0.139 (pre-existing)."
+        "evidence": "docs/w3b-escapements-review.md",
+        "note": "Pass-51 screen: spring/arbor 0.139 fixed; only segment joins at bends (0.034) and seated spring ends remain."
       },
-      "flaws": "The spring passes 0.139 through the arbor. Prescribed output/load, click bias and winding energy.",
+      "flaws": "Spring segment joins overlap 0.034 at bends. Prescribed output/load, click bias and winding energy.",
       "references": [
         "docs/maintaining-clock-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3b-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",

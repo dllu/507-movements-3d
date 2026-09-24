@@ -389,6 +389,8 @@ function arnoldFreeEscapement(movement) {
     ) + lift * progress ** 2,
     0.31,
   );
+  const stopDLeafProgress = (lockingPoint.x - fixedSpringAnchor.x)
+    / (mainSpringFreeBase.x - fixedSpringAnchor.x);
   const mainSpringPointsAtLift = (lift, pointCount = 17) => Array.from(
     { length: pointCount },
     (_, index) => mainSpringPointAtProgress(
@@ -396,6 +398,8 @@ function arnoldFreeEscapement(movement) {
       index / (pointCount - 1),
     ),
   );
+  // f lies just in front of A (A spans z 0.20..0.42), not through it.
+  const passingSpringPlaneZ = 0.49;
   const passingSpringPointsAtState = ({
     detentLift,
     outwardPassingDeflection,
@@ -406,14 +410,14 @@ function arnoldFreeEscapement(movement) {
       passingSpringAnchorBase.x,
       passingSpringAnchorBase.y
         + detentLift * anchorLiftFraction,
-      0.43,
+      passingSpringPlaneZ,
     );
     const free = new THREE.Vector3(
       hookBase.x - 0.03,
       hookBase.y + detentLift
         - outwardPassingDeflection
         + returnPassingDeflection,
-      0.43,
+      passingSpringPlaneZ,
     );
     return Array.from({ length: pointCount }, (_, index) => {
       const progress = index / (pointCount - 1);
@@ -432,10 +436,12 @@ function arnoldFreeEscapement(movement) {
   ) / (fixedSpringAnchor.x - mainSpringFreeBase.x);
   const passingStudPoseAtState = (state) => {
     const passingTop = passingSpringPointsAtState(state)[0];
+    // The stud stands on A's upper edge (half of A's 0.10 width above its
+    // centre line) rather than sinking to the centre line.
     const mainBottom = mainSpringPointAtProgress(
       state.detentLift,
       passingStudMainProgress,
-    );
+    ).add(new THREE.Vector3(0, 0.045, 0));
     return {
       bottom: mainBottom,
       center: passingTop.clone().add(mainBottom).multiplyScalar(0.5),
@@ -711,8 +717,10 @@ function arnoldFreeEscapement(movement) {
   );
   hookLip.position.set(0.10, -0.04, 0);
   hookK.add(hookVertical, hookLip);
+  // 0.29 tall: its top meets the underside of A (0.28 above the locking
+  // face) with a 0.01 seat instead of standing 0.06 up through the leaf.
   const detentStopD = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.34, 0.38),
+    new THREE.BoxGeometry(0.28, 0.29, 0.38),
     accentMaterial,
   );
   detentStopD.userData.role =
@@ -1003,12 +1011,15 @@ function arnoldFreeEscapement(movement) {
     passingStudI.position.set(
       passingStudPose.center.x,
       passingStudPose.center.y,
-      0.36,
+      0.38,
     );
     passingStudI.scale.y = passingStudPose.length;
+    // d is fixed under the leaf, so it rises with the leaf at its own station
+    // (lift x progress^2), not with the free end; the old full-lift offset
+    // drove d 0.13 up through A when the detent was raised.
     detentStopD.position.set(
       lockingPoint.x,
-      lockingPoint.y + 0.17 + state.detentLift,
+      lockingPoint.y + 0.145 + state.detentLift * stopDLeafProgress ** 2,
       0.38,
     );
     lockMarker.visible = state.wheelLocked;
@@ -1535,23 +1546,31 @@ function earnshawSpringDetentEscapement(movement) {
   );
   const detentDisplacementAtLift = (lift) => lockNormal.clone()
     .multiplyScalar(lift);
+  // The spring ends at the pipe that carries T, just outside the tip circle,
+  // and bows outward past the wheel's widest point (Brown draws D clear of
+  // the teeth) instead of inward through the passing tooth tips.
+  const detentPipeOffset = 0.20;
+  const detentSpringEnd = lockingPoint.clone().addScaledVector(
+    lockNormal,
+    detentPipeOffset,
+  );
   const mainDetentPointsAtLift = (lift, pointCount = 23) => {
     const displacement = detentDisplacementAtLift(lift);
     return Array.from({ length: pointCount }, (_, index) => {
       const progress = index / (pointCount - 1);
       const bendWeight = smootherStep01(progress);
       const point = fixedSpringAnchor.clone().lerp(
-        lockingPoint,
+        detentSpringEnd,
         progress,
       );
-      point.x -= 0.13 * Math.sin(Math.PI * progress);
+      point.x += 0.16 * Math.sin(Math.PI * progress ** 3.1);
       point.addScaledVector(displacement, bendWeight);
       return new THREE.Vector3(point.x, point.y, -0.02);
     });
   };
   const detentBodyPointsAtLift = (lift, pointCount = 12) => {
     const displacement = detentDisplacementAtLift(lift);
-    const start = lockingPoint.clone().add(displacement);
+    const start = detentSpringEnd.clone().add(displacement);
     const end = detentNoseBase.clone().addScaledVector(
       displacement,
       1.10,
@@ -2044,8 +2063,10 @@ function earnshawSpringDetentEscapement(movement) {
   );
   unlockingJewelArm.userData.role =
     'discharging-roller-arm-to-jewel-V';
+  // Radius 0.085 so the yielded gold spring tip, held 0.12 from V's axis on
+  // the return passage, clears the jewel instead of cutting into it.
   const unlockingJewelV = cylinderAlongZ(
-    0.105,
+    0.085,
     0.24,
     jewelMaterial,
     24,
@@ -2145,21 +2166,24 @@ function earnshawSpringDetentEscapement(movement) {
   lockingPipe.userData.role = 'detent-pipe-carrying-locking-stone-T';
   const bankingHeel = cylinderAlongZ(
     bankingHeelRadius,
-    0.22,
+    0.50,
     detentMaterial,
     24,
   );
   bankingHeel.userData.role = 'moving-detent-heel-banked-at-E';
+  // Bank E sits inside the tooth-tip circle, so it stands behind the wheel
+  // (z -0.62..-0.22, the wheel's back face is -0.18) and the heel reaches
+  // back from the detent to meet it.
   const bankingPinE = cylinderAlongZ(
     bankingPinRadius,
-    0.55,
+    0.40,
     darkMaterial,
     26,
   );
   bankingPinE.position.set(
     bankingPinCenter.x,
     bankingPinCenter.y,
-    -0.16,
+    -0.42,
   );
   bankingPinE.userData.fixed = true;
   bankingPinE.userData.role = 'fixed-banking-stop-E';
@@ -2342,8 +2366,8 @@ function earnshawSpringDetentEscapement(movement) {
       0.08,
     );
     lockingPipe.position.set(
-      movingLockPoint.x + lockNormal.x * 0.08,
-      movingLockPoint.y + lockNormal.y * 0.08,
+      movingLockPoint.x + lockNormal.x * detentPipeOffset,
+      movingLockPoint.y + lockNormal.y * detentPipeOffset,
       -0.15,
     );
     const movingHeelPoint = bankingHeelBase.clone().addScaledVector(
@@ -2353,7 +2377,7 @@ function earnshawSpringDetentEscapement(movement) {
     bankingHeel.position.set(
       movingHeelPoint.x,
       movingHeelPoint.y,
-      -0.16,
+      -0.33,
     );
 
     lockMarker.visible = state.wheelLocked;

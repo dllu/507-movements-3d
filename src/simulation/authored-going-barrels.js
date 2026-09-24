@@ -245,8 +245,11 @@ function harrisonGoingBarrel(movement) {
   const springOuterBaseAngle = Math.atan2(0.50, -2.55);
   const springInnerBaseAngle = Math.atan2(1.65, -1.10);
   const springOuterTangentOffset = -springOuterBaseAngle;
-  const springInnerTangentOffset = 2.40 - springInnerBaseAngle;
-  const referenceSpringHandle = 3.20;
+  // The inner tangent and handle keep the fixed-length spring at least 0.35
+  // from the axis through the whole cycle, looping clear of arbor B as Brown
+  // draws it rather than passing through the arbor.
+  const springInnerTangentOffset = 2.60 - springInnerBaseAngle;
+  const referenceSpringHandle = 2.70;
   const springSegmentCount = 80;
   const springPreload = 2.20;
   const springStiffness = 0.60;
@@ -535,6 +538,16 @@ function harrisonGoingBarrel(movement) {
   });
   greatWheel.position.z = -0.28;
   greatWheel.userData.role = 'great-going-wheel-G';
+  // Brown draws G plain: drop the generic gear's decorative face ring (it
+  // stood into the larger ratchet) and its white face index bar.
+  for (const part of [...greatWheel.userData.rotor.children]) {
+    if (part.geometry?.type === 'TorusGeometry'
+      || (part.geometry?.type === 'BoxGeometry'
+        && part.material?.color?.getHex() === PALETTE.white)) {
+      greatWheel.userData.rotor.remove(part);
+      part.geometry.dispose();
+    }
+  }
   const greatIndexMaterial = matte(PALETTE.white, { roughness: 0.48 });
   const greatWheelIndices = [];
   for (let index = 0; index < 6; index += 1) {

@@ -2423,6 +2423,24 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   pendulumRod.userData.role = 'pendulum-rod-between-alternating-beat-pins';
   pendulumAssembly.add(pendulumRod);
+  // Brown draws this rod only as a dashed centre line; the solid rod stays
+  // as the working body but is not rendered.
+  pendulumRod.visible = false;
+  const pendulumRodDashedLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -0.16, 0),
+      new THREE.Vector3(0, -pendulumLength, 0),
+    ]),
+    new THREE.LineDashedMaterial({
+      color: PALETTE.ink,
+      dashSize: 0.16,
+      fog: false,
+      gapSize: 0.11,
+    }),
+  );
+  pendulumRodDashedLine.computeLineDistances();
+  pendulumRodDashedLine.userData.role = 'dashed-pendulum-rod-centre-line';
+  pendulumAssembly.add(pendulumRodDashedLine);
   const pendulumPivotEye = new THREE.Mesh(
     new THREE.TorusGeometry(0.20, 0.057, 10, 36),
     pendulumMaterial,

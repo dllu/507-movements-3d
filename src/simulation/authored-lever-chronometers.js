@@ -1,6 +1,7 @@
 import {correctDetachedChronometer} from './detached-chronometer-working-parts.js';
 import * as THREE from 'three';
 import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -195,9 +196,15 @@ function leverChronometerEscapement(movement) {
   const palletReleaseHalfPhase = 0.455;
   const nextPalletLandingHalfPhase = pinDisengagementHalfPhase;
 
-  const leverPlaneZ = 0.25;
+  // The lever (z 0.18..0.46) lies just in front of the wheel (front face
+  // 0.16), as Brown draws B across the teeth; only short locking nibs reach
+  // back into the wheel plane (added after the finite-part corrections).
+  const leverPlaneZ = 0.32;
   const leverDepth = 0.28;
-  const directPalletPlaneZ = 0.05;
+  // C sweeps past the lever pivot, so it and its carrier run in the rear half
+  // of the wheel plane (z -0.15..0.09), below the lever arms, pallets and fork
+  // (z >= 0.10); the lever's hub and arbor start in front of that layer.
+  const directPalletPlaneZ = -0.03;
   const directPalletDepth = 0.22;
   const rollerPlaneZ = 0.58;
   const balancePlaneZ = 1.12;
@@ -1477,6 +1484,66 @@ function leverChronometerEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   correctDetachedChronometer(root, 314, update);
+  const palletNibs = [];
+  root.userData.blocks.palletNibs = palletNibs;
+  {
+    // The lever pivot sits on pallet C's orbit, so its hub and arbor are kept
+    // in front of C's layer and the arbor runs forward to a front journal
+    // (Brown shows only the arbor end at the top of A).
+    const { arbor } = root.userData.detachedChronometerParts;
+    const tube = (outer, inner, length) => boredLatheGeometry([
+      { radial: outer, axial: -length / 2 },
+      { radial: outer, axial: length / 2 },
+    ], inner, 64);
+    const hubBack = 0.12;
+    const hubFront = leverPlaneZ + 0.36;
+    leverPivotHub.geometry.dispose();
+    leverPivotHub.geometry = tube(0.22, 0.126, hubFront - hubBack);
+    leverPivotHub.position.z = (hubBack + hubFront) / 2;
+    const arborFront = 1.00;
+    arbor.geometry.dispose();
+    arbor.geometry = new THREE.CylinderGeometry(0.12, 0.12,
+      arborFront - hubBack, 48);
+    arbor.position.z = (hubBack + arborFront) / 2;
+    leverBearing.position.z = arborFront - 0.10;
+    // Locking nibs: the part of each pallet strip that stays outside radius
+    // (tip - 0.28) from the wheel axis at both lever banks, extruded back into
+    // the wheel plane; the rest of each long curved pallet stays in front.
+    // B's strip swings deep inside the wheel while A locks, so B gets no nib
+    // and its lock is shown in front of the teeth only.
+    palletNibs.length = 0;
+    const bankTimes = [0, balancePeriod * 0.5];
+    for (const [index, name] of ['A', 'B'].entries()) {
+      const stripWidth = name === 'A' ? 0.31 : 0.37;
+      const points = palletProfiles[name];
+      const inner = points.map((point) => point.clone().multiplyScalar(
+        Math.max(point.length() - stripWidth, 0.08) / point.length()));
+      let nibShape = poly([...points, ...inner.reverse()]
+        .map((v) => v.toArray()));
+      for (const time of bankTimes) {
+        update(time);
+        const axis = rotate2(wheelCenter.clone().sub(leverPivot),
+          -palletLever.rotation.z);
+        nibShape = polygonClipping.difference(nibShape,
+          poly(circle(axis.toArray(), wheelToothTipRadius - 0.28, 256)));
+      }
+      if (!nibShape.length) continue;
+      const nib = new THREE.Mesh(plate(nibShape, -0.02, 0.20),
+        palletBlocks[index].material);
+      nib.userData.role = `locking-nib-of-pallet-${name}-in-wheel-plane`;
+      palletLever.add(nib);
+      palletNibs.push(nib);
+    }
+    update(0);
+    arbor.userData.role = 'locking-lever-arbor-through-front-journal';
+    root.updateMatrixWorld(true);
+    leverBearing.geometry.computeBoundingBox();
+    root.userData.cameraFitBounds.union(
+      leverBearing.geometry.boundingBox.clone()
+        .applyMatrix4(leverBearing.matrixWorld)
+        .expandByScalar(0.15),
+    );
+  }
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

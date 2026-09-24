@@ -88,10 +88,16 @@ for (const [id, make] of [[290, annular], [292, stud]]) test(`${id}: stable geom
   m.root.traverse(o => { if (o.geometry) resources.push([o, o.geometry, o.geometry.attributes.position.array]);
     for (const mat of [].concat(o.material ?? [])) assert.equal(mat.fog, false); });
   const point = new THREE.Vector3();
+  // 292 deliberately crops the wheel to Brown's close-up; its pallets, arms,
+  // F and the working rim arc must still lie inside the crop.
+  const framed = id === 292
+    ? [d.blocks.frontPallet.group ?? d.blocks.frontPallet, d.blocks.rearPallet.group ?? d.blocks.rearPallet, d.blocks.palletPivotHub]
+    : [m.root];
+  if (id === 292) assert.equal(d.cameraFitCropsSource, true);
   for (let i = 0; i <= 64; i++) {
     m.update(d.geometry.pendulumPeriod * i / 64); m.root.updateMatrixWorld(true);
-    m.root.traverseVisible(o => { const a = o.geometry?.attributes.position; if (a) for (let j = 0; j < a.count; j++)
-      assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld))); });
+    for (const object of framed) object.traverseVisible(o => { const a = o.geometry?.attributes.position; if (a) for (let j = 0; j < a.count; j++)
+      assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld)), `${id}: ${o.userData.role} framed`); });
   }
   for (const [o, geometry, array] of resources) { assert.equal(o.geometry, geometry); assert.equal(o.geometry.attributes.position.array, array); }
   assert.equal(d.hideGround, true); assert.equal(d.minimumDisplayCycleSeconds, 4);

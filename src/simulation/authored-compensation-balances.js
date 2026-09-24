@@ -838,6 +838,18 @@ function compensationBalance(movement) {
   };
 
   correctCompensationBalance(root);
+  // Brown's timing screws t, t' stand on the bar ends above the roots of the
+  // compound arms. Start each stem at the outer face of the brass layer
+  // (0.1075 beyond the bar end) instead of running it down through the arm
+  // root; the outer end is unchanged.
+  for (const [side, screw] of [[1, topTimingScrew], [-1, bottomTimingScrew]]) {
+    const innerEnd = -timingScrewOffset + 0.115;
+    const outerEnd = 0.02 + 0.55;
+    screw.stem.geometry.dispose();
+    screw.stem.geometry = new THREE.CylinderGeometry(
+      0.095, 0.095, outerEnd - innerEnd, 24);
+    screw.stem.position.y = side * (outerEnd + innerEnd) / 2;
+  }
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)

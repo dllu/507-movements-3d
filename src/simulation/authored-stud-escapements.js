@@ -337,12 +337,24 @@ function studEscapement(movement) {
     const angle = studIndex * studPitch;
     const front = studIndex % 2 === 0;
     const axialSign = front ? 1 : -1;
-    const stud = cylinderAlongZ(
-      studRadius,
-      studLength,
+    // Brown draws the studs as small triangles on the rim face. Each is a
+    // triangular prism inscribed in the stud circle the pallet faces were
+    // generated for, its apex leading in the clockwise direction of travel.
+    const studShape = new THREE.Shape(Array.from({ length: 3 }, (_, k) => {
+      const vertexAngle = -Math.PI / 2 + k * FULL_TURN / 3;
+      return new THREE.Vector2(
+        Math.cos(vertexAngle) * studRadius,
+        Math.sin(vertexAngle) * studRadius,
+      );
+    }));
+    const stud = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(studShape, {
+        bevelEnabled: false,
+        depth: studLength,
+      }).translate(0, 0, -studLength / 2),
       driverMaterial,
-      22,
     );
+    stud.rotation.z = angle;
     stud.position.set(
       Math.cos(angle) * studOrbitRadius,
       Math.sin(angle) * studOrbitRadius,
@@ -1098,6 +1110,15 @@ function studEscapement(movement) {
     });
   }
   root.userData.cameraFitBounds = armBounds.expandByScalar(0.15);
+  // Brown's 292 is a close-up: F at the top, the pallets and the upper-right
+  // rim arc, the hub at the bottom edge; the rest of the wheel runs off the
+  // plate. Frame about the plate's extent (source pixels 10..530 x 20..520 at
+  // 0.015 per pixel about F, B's swing kept inside) rather than the whole wheel.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(palletPivot.x - 3.24, palletPivot.y - 6.87, -1.9),
+    new THREE.Vector3(palletPivot.x + 4.6, palletPivot.y + 0.63, 1.2),
+  );
+  root.userData.cameraFitCropsSource = true;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

@@ -146,6 +146,7 @@ function annularPendulumEscapement(movement) {
   const toothRootRadius = 1.32;
   // The back leaves the point just inside it so the tip stays a clear hook.
   const toothBackRadius = 1.56;
+  const frontRootLag = 0.31;
   const toothTipRadius = sourceRasterWheelTipRadius * sourceScale;
   const wheelDepth = 0.38;
   const annulusMajorRadius = (
@@ -282,10 +283,13 @@ function annularPendulumEscapement(movement) {
   const wheelShape = new THREE.Shape();
   for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
     const centerAngle = toothIndex * toothPitch;
+    // Brown's points hook forward: the front flank's root trails the tip, so
+    // the working faces, which run inward from the tip at full recoil, never
+    // cut into the tooth behind it.
     const outlinePoints = [
       new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.49) * toothRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.49) * toothRootRadius,
+        Math.cos(centerAngle - toothPitch * frontRootLag) * toothRootRadius,
+        Math.sin(centerAngle - toothPitch * frontRootLag) * toothRootRadius,
       ),
       new THREE.Vector2(
         Math.cos(centerAngle - toothPitch * 0.37) * toothTipRadius,

@@ -954,7 +954,8 @@ function endlessChainMaintainingPower(movement) {
     new THREE.BoxGeometry(1.48, 1.05, 0.62),
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.72 }),
   );
-  largeWeight.position.set(0, -1.77, -0.05);
+  // Top face just below the flange of L (radius 1.25), not cut into it.
+  largeWeight.position.set(0, -1.80, -0.05);
   largeWeight.userData.role = 'large-driving-weight-W';
   largeCarrier.add(largeHanger, largeWeight);
 
@@ -1027,14 +1028,12 @@ function endlessChainMaintainingPower(movement) {
   const pawlBaseAngle = Math.atan2(pawlDirection.y, pawlDirection.x);
   pawl.rotation.z = pawlBaseAngle;
 
+  // Brown draws no winding handle; part b is simply pulled down. The empty
+  // group only keeps the winding-point tracker available for inspection (an
+  // earlier ring threaded on the chain passed into the chain itself).
   const windingHandle = new THREE.Group();
-  windingHandle.userData.role = 'demonstration-handle-pulling-part-b-down';
-  const handleRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.055, 9, 28),
-    matte(PALETTE.driver, { metalness: 0.10, roughness: 0.60 }),
-  );
-  handleRing.rotation.x = Math.PI / 2;
-  windingHandle.add(handleRing);
+  windingHandle.userData.role = 'undrawn-winding-point-on-part-b';
+  windingHandle.visible = false;
 
   root.add(
     fixedFrame,
@@ -1058,7 +1057,6 @@ function endlessChainMaintainingPower(movement) {
     setRotorAngle(smallPulley, state.pulleys.S.angle);
     setRotorAngle(largePulley, state.pulleys.L.angle);
     pawl.rotation.z = pawlBaseAngle + state.pawlLift;
-    windingHandle.visible = state.isWinding;
     if (state.isWinding) {
       const handleFraction = THREE.MathUtils.lerp(
         0.28,
