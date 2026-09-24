@@ -8887,21 +8887,21 @@
       }
     },
     "467": {
-      "peakAngularSpeed": 7.889941794800741,
-      "peakVisibleAngularSpeed": 7.889941794800741,
-      "sustainedVisibleAngularSpeed": 2.94918751481841,
-      "floorY": -1.159999997317791,
-      "fastestPart": "thumb-screw-threaded-shaft",
+      "peakAngularSpeed": 7.009708410845289,
+      "peakVisibleAngularSpeed": 7.009708410845289,
+      "sustainedVisibleAngularSpeed": 2.116721777928702,
+      "floorY": -1.100000023841858,
+      "fastestPart": "threaded-thumb-screw-metering-return-at-bottom-of-ram-pipe",
       "motionBounds": {
         "min": [
-          -1.8849908376179427,
-          -1.159999997317791,
-          -1.1200000047683716
+          -1.8053831438880463,
+          -1.100000023841858,
+          -0.8999999761581421
         ],
         "max": [
-          1.6999495029449463,
-          2.53029348330102,
-          1.1500000047683716
+          2.4577577598141107,
+          4.7693428467118,
+          0.7084615230560303
         ]
       }
     },
@@ -8984,18 +8984,18 @@
     "472": {
       "peakAngularSpeed": 3.9269908170090235,
       "peakVisibleAngularSpeed": 3.9269908170079137,
-      "sustainedVisibleAngularSpeed": 3.9269908169873746,
-      "floorY": -1.959999998807907,
+      "sustainedVisibleAngularSpeed": 3.9269908169879306,
+      "floorY": -1.920000001490116,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -2.125,
-          -1.959999998807907,
-          -1.5
+          -3.2890000343322754,
+          -1.920000001490116,
+          -0.8600000143051147
         ],
         "max": [
-          2.125,
-          3.3899999829109326,
+          3.2890000343322754,
+          4.019999980926514,
           0.8600000143051147
         ]
       }

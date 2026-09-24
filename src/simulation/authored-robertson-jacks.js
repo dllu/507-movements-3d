@@ -1,5 +1,21 @@
 import * as THREE from 'three';
-import {correctHydraulicForceParts} from './hydraulic-force-parts.js';
+import {sidePortedShell} from './hydraulic-force-parts.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+  sector,
+} from './finite-plate-geometry.js';
+import {
+  horizontalPlate,
+  horizontalRing,
+  horizontalTurned,
+} from './horizontal-turbine-solids.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
+import {helicalThread, threadAngles} from './mujoco-screw/thread-geometry.js';
+import {boredPlanarLinkGeometry} from './bored-planar-link.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -7,7 +23,6 @@ import {
 } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function addRole(object, role) {
   object.userData.role = role;
@@ -33,126 +48,175 @@ function smootherStepSecondDerivative(value) {
   return 60 * x * (1 - x) * (1 - 2 * x);
 }
 
-function setRodBetween(mesh, start, end) {
-  const delta = end.clone().sub(start);
-  const length = Math.max(0.001, delta.length());
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.scale.y = length;
-  mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
+// Brown's plate 467 is a sectional elevation of a narrow column. The hollow
+// ram stands on a small hollow base only a little wider than the sliding
+// cylinder, and the pump works inside the foot of the ram. Reading of the
+// plate: the long hand lever is pinned at the upper eye to a plunger that
+// passes through the gland (the two square blocks on the ram's left face)
+// into an oblique barrel in the ram; its fulcrum is the lower eye, carried on
+// a short swinging link from a lug at the base's upper-left corner (hidden
+// behind the thumb-screw wing), so the plunger pin runs on a straight line.
+// Positions are measured on the 525 px plate (ram centre x 275 px, ground
+// 500 px); depths, the pump barrel's hidden end, check valves and all ratios
+// are reconstruction choices.
+const PLATE_UNITS_PER_PIXEL = 0.42 / 32.5;
+const PLATE_RAM_CENTRE_PX = 275;
+const PLATE_GROUND_PX = 500;
+const JACK_GROUND_Y = -1.10;
+function plateXY(px, py) {
+  return new THREE.Vector2(
+    (px - PLATE_RAM_CENTRE_PX) * PLATE_UNITS_PER_PIXEL,
+    (PLATE_GROUND_PX - py) * PLATE_UNITS_PER_PIXEL + JACK_GROUND_Y,
+  );
 }
 
 function robertsonJack(movement) {
   const root = new THREE.Group();
-  const cycleDuration = 12.4;
+  const cycleDuration = 14;
   const operationEndPhase = 0.64;
   const loweringStartPhase = 0.70;
   const loweringEndPhase = 0.88;
-  const pumpCycleCount = 8;
+  // The view opens in the hold after pumping: the cylinder raised as Brown
+  // draws it and the plunger home in its barrel.
+  const sourcePhase = 0.67;
+  const pumpCycleCount = 12;
   const maximumStrokeAngle = pumpCycleCount * FULL_TURN;
-  const pumpLeverAmplitude = THREE.MathUtils.degToRad(20);
-  const pumpLeverPivot = new THREE.Vector3(-1.32, 1.05, 0.78);
-  const pumpLeverPinRadius = 0.42;
-  const pumpSliderX = -0.90;
-  const pumpPitmanLength = 0.72;
-  const pumpPistonRodOffset = 0.50;
-  const pumpPlungerRadius = 0.10;
+  const groundY = JACK_GROUND_Y;
+
+  // Linkage, measured on the plate.
+  const plungerPinHome = plateXY(205, 355.5);
+  const leverFulcrumHome = plateXY(150, 401);
+  const swingLinkPivot = plateXY(195, 442);
+  const glandCentre = plateXY(233, 400);
+  const plungerAxis = glandCentre.clone().sub(plungerPinHome).normalize();
+  const plungerNormal = new THREE.Vector2(-plungerAxis.y, plungerAxis.x);
+  if (plungerNormal.x < 0) plungerNormal.negate();
+  const leverShortArm = leverFulcrumHome.distanceTo(plungerPinHome);
+  const swingLinkLength = leverFulcrumHome.distanceTo(swingLinkPivot);
+  const leverHandleLength = 4.30;
+  const leverBandDistance = 3.11;
+  const leverZ = -0.75;
+  const swingLinkZ = -0.50;
+  const pumpStrokeLength = 0.32;
+  const pumpPlungerRadius = 0.09;
+  const plungerTipDistance = 0.94;
+  const glandStart = 0.58;
+  const barrelStart = 0.86;
+  const barrelEnd = 1.02;
+  const barrelCapEnd = 1.04;
+  const barrelInnerRadius = pumpPlungerRadius + 0.004;
+  const barrelOuterRadius = 0.125;
+  const deliveryPortDistance = 0.975;
+
   const fixedRamRadius = 0.42;
+  const fixedRamBoreRadius = 0.30;
+  const baseLeftX = plateXY(207, 0).x;
+  const baseRightX = plateXY(336, 0).x;
+  const baseTopY = plateXY(0, 430).y;
+  const baseWall = 0.16;
+  const baseFloor = 0.17;
+  const baseHalfDepth = 0.62;
+  const baseTopHoleRadius = 0.37;
+  const fixedRamBaseY = baseTopY;
+  const fixedRamTopY = plateXY(0, 190).y;
+  const fixedRamHeight = fixedRamTopY - fixedRamBaseY;
+  const ramCapThickness = 0.14;
+  const returnSeatY = -0.66;
+  const pipeBottomY = returnSeatY + 0.20;
+
   const pumpPlungerArea = Math.PI * pumpPlungerRadius ** 2;
   const fixedRamArea = Math.PI * fixedRamRadius ** 2;
   const hydraulicAreaRatio = fixedRamArea / pumpPlungerArea;
-  const baseWaterCapacity = 2.40;
-  const baseInitialWaterVolume = 2.10;
-  const fixedRamBaseY = -0.54;
-  const fixedRamTopY = 1.46;
-  const fixedRamHeight = fixedRamTopY - fixedRamBaseY;
-  const movingCylinderBottomY = -0.20;
-  const movingCylinderTopY = 1.72;
+  const maximumDeliveredVolume = pumpCycleCount
+    * pumpPlungerArea * pumpStrokeLength;
+  const maximumCylinderLift = maximumDeliveredVolume / fixedRamArea;
+
+  // Moving cylinder as drawn (raised by the full lift).
+  const drawnCylinderBottomY = plateXY(0, 355).y;
+  const drawnBoreTopY = plateXY(0, 112.5).y;
+  const drawnCapTopY = plateXY(0, 100).y;
+  const drawnHeadTopY = plateXY(0, 55).y;
+  const cylinderInnerRadius = fixedRamRadius + 0.004;
+  const cylinderOuterRadius = plateXY(327.5, 0).x;
+  const movingCylinderBottomY = drawnCylinderBottomY - maximumCylinderLift;
+  const movingCylinderTopY = drawnBoreTopY - maximumCylinderLift;
   const movingCylinderHeight = movingCylinderTopY - movingCylinderBottomY;
-  const initialPressureChamberHeight = movingCylinderTopY - 0.16 - fixedRamTopY;
+  const initialPressureChamberHeight = movingCylinderTopY - fixedRamTopY;
+
+  const cavity = {
+    minX: baseLeftX + baseWall,
+    maxX: baseRightX - baseWall,
+    minY: groundY + baseFloor,
+    maxY: baseTopY - baseWall,
+    halfDepth: baseHalfDepth - baseWall,
+  };
+  const baseWaterCapacity = (cavity.maxX - cavity.minX)
+    * (cavity.maxY - cavity.minY) * 2 * cavity.halfDepth;
+  const baseInitialWaterVolume = 0.78 * baseWaterCapacity;
+
   const thumbScrewPitch = 0.045;
   const thumbScrewMaximumTurns = 1;
   const thumbScrewMaximumAngle = thumbScrewMaximumTurns * FULL_TURN;
   const thumbScrewMaximumRetreat = thumbScrewPitch
     * thumbScrewMaximumTurns;
-  const groundY = -1.10;
+  const thumbScrewClosedX = -0.66;
 
+  const pointOnAxis = (distance, withdrawal = 0) => plungerPinHome.clone()
+    .addScaledVector(plungerAxis, distance - withdrawal);
+
+  const fulcrumForPin = (pin) => {
+    const delta = swingLinkPivot.clone().sub(pin);
+    const distance = delta.length();
+    const along = (distance ** 2 + leverShortArm ** 2
+      - swingLinkLength ** 2) / (2 * distance);
+    const height = Math.sqrt(Math.max(0, leverShortArm ** 2 - along ** 2));
+    const unit = delta.divideScalar(distance);
+    return pin.clone().addScaledVector(unit, along)
+      .add(new THREE.Vector2(unit.y * height, -unit.x * height));
+  };
+
+  // The prescribed input is the plunger's withdrawal along its fixed axis;
+  // the lever and swing link follow by exact closure.
   const pumpKinematics = (
     strokeAngle,
     strokeAngularVelocity = 0,
     strokeAngularAcceleration = 0,
   ) => {
-    const leverAngle = pumpLeverAmplitude * Math.cos(strokeAngle);
-    const leverAngularVelocity = -pumpLeverAmplitude
-      * Math.sin(strokeAngle) * strokeAngularVelocity;
-    const leverAngularAcceleration = -pumpLeverAmplitude * (
+    const half = pumpStrokeLength / 2;
+    const withdrawal = half * (1 - Math.cos(strokeAngle));
+    const pistonVelocity = half * Math.sin(strokeAngle)
+      * strokeAngularVelocity;
+    const pistonAcceleration = half * (
       Math.cos(strokeAngle) * strokeAngularVelocity ** 2
       + Math.sin(strokeAngle) * strokeAngularAcceleration
     );
-    const cosine = Math.cos(leverAngle);
-    const sine = Math.sin(leverAngle);
-    const leverPin = new THREE.Vector3(
-      pumpLeverPivot.x + pumpLeverPinRadius * cosine,
-      pumpLeverPivot.y + pumpLeverPinRadius * sine,
-      pumpLeverPivot.z,
+    const pin2 = pointOnAxis(0, withdrawal);
+    const fulcrum2 = fulcrumForPin(pin2);
+    const tip2 = pointOnAxis(plungerTipDistance, withdrawal);
+    const leverAngle = Math.atan2(pin2.y - fulcrum2.y, pin2.x - fulcrum2.x);
+    const swingLinkAngle = Math.atan2(
+      fulcrum2.y - swingLinkPivot.y,
+      fulcrum2.x - swingLinkPivot.x,
     );
-    const horizontalOffset = pumpSliderX - leverPin.x;
-    const verticalDrop = Math.sqrt(Math.max(
-      0,
-      pumpPitmanLength ** 2 - horizontalOffset ** 2,
-    ));
-    const crosshead = new THREE.Vector3(
-      pumpSliderX,
-      leverPin.y - verticalDrop,
-      pumpLeverPivot.z,
-    );
-    const piston = new THREE.Vector3(
-      pumpSliderX,
-      crosshead.y - pumpPistonRodOffset,
-      pumpLeverPivot.z,
-    );
-    const offsetDerivative = pumpLeverPinRadius * sine;
-    const offsetSecondDerivative = pumpLeverPinRadius * cosine;
-    const product = horizontalOffset * offsetDerivative;
-    const productDerivative = offsetDerivative ** 2
-      + horizontalOffset * offsetSecondDerivative;
-    const crossheadDerivativeByLeverAngle = pumpLeverPinRadius * cosine
-      + product / verticalDrop;
-    const crossheadSecondDerivativeByLeverAngle = -pumpLeverPinRadius * sine
-      + productDerivative / verticalDrop
-      + product ** 2 / verticalDrop ** 3;
-    const pistonVelocity = crossheadDerivativeByLeverAngle
-      * leverAngularVelocity;
-    const pistonAcceleration = crossheadSecondDerivativeByLeverAngle
-      * leverAngularVelocity ** 2
-      + crossheadDerivativeByLeverAngle * leverAngularAcceleration;
     return {
-      crosshead,
-      crossheadDerivativeByLeverAngle,
-      crossheadSecondDerivativeByLeverAngle,
-      horizontalOffset,
       leverAngle,
-      leverAngularAcceleration,
-      leverAngularVelocity,
-      leverPin,
-      piston,
+      leverFulcrum: new THREE.Vector3(fulcrum2.x, fulcrum2.y, 0),
+      piston: new THREE.Vector3(tip2.x, tip2.y, 0),
       pistonAcceleration,
       pistonVelocity,
+      plungerPin: new THREE.Vector3(pin2.x, pin2.y, 0),
+      plungerWithdrawal: withdrawal,
       strokeAngle,
       strokeAngularAcceleration,
       strokeAngularVelocity,
-      verticalDrop,
+      swingLinkAngle,
     };
   };
 
-  const topPumpState = pumpKinematics(0);
-  const bottomPumpState = pumpKinematics(Math.PI);
-  const pumpStrokeLength = topPumpState.piston.y
-    - bottomPumpState.piston.y;
-  const maximumDeliveredVolume = pumpCycleCount
-    * pumpPlungerArea * pumpStrokeLength;
-  const maximumCylinderLift = maximumDeliveredVolume / fixedRamArea;
   const nominalPistonSpeed = pumpStrokeLength * 4.4;
 
+  // Each turn of the stroke angle is one suction (withdrawal) half and one
+  // delivery (return) half; only the returning plunger delivers.
   const deliveredLengthAtStrokeAngle = (unclampedStrokeAngle, pump) => {
     const strokeAngle = THREE.MathUtils.clamp(
       unclampedStrokeAngle,
@@ -164,9 +228,9 @@ function robertsonJack(movement) {
     }
     const completedCycles = Math.floor(strokeAngle / FULL_TURN);
     const withinCycle = positiveModulo(strokeAngle, FULL_TURN);
-    const currentDelivery = withinCycle <= Math.PI
-      ? topPumpState.piston.y - pump.piston.y
-      : pumpStrokeLength;
+    const currentDelivery = withinCycle >= Math.PI
+      ? pumpStrokeLength - pump.plungerWithdrawal
+      : 0;
     return completedCycles * pumpStrokeLength + currentDelivery;
   };
 
@@ -190,7 +254,7 @@ function robertsonJack(movement) {
         * smootherStepDerivative(local) / timeScale;
       strokeAngularAcceleration = maximumStrokeAngle
         * smootherStepSecondDerivative(local) / timeScale ** 2;
-      regime = 'physical-pump-strokes-raise-cylinder-and-claw-on-fixed-ram';
+      regime = 'lever-strokes-plunger-in-ram-and-raise-cylinder-and-claw';
     } else if (phase < loweringStartPhase) {
       regime = 'load-held-by-trapped-water-with-thumb-screw-seated';
     } else if (phase < loweringEndPhase) {
@@ -267,7 +331,8 @@ function robertsonJack(movement) {
     };
   };
 
-  const stateAtTime = (time) => stateAtPhase(time / cycleDuration);
+  const stateAtTime = (time) => stateAtPhase(time / cycleDuration
+    + sourcePhase);
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.18,
@@ -281,6 +346,11 @@ function robertsonJack(movement) {
     metalness: 0.14,
     roughness: 0.53,
   });
+  const leverMaterial = fixedRamMaterial.clone();
+  // Only the ram is ghosted, to show its pipe and pump barrel.
+  const ghostRamMaterial = fixedRamMaterial.clone();
+  ghostRamMaterial.transparent = true;
+  ghostRamMaterial.opacity = 0.42;
   const movingMaterial = matte(PALETTE.driven, {
     metalness: 0.15,
     roughness: 0.52,
@@ -310,323 +380,314 @@ function robertsonJack(movement) {
     transparent: true,
   });
   waterMaterial.depthWrite = false;
+  const mesh = (parent, geometry, material, role) => {
+    const object = addRole(new THREE.Mesh(geometry, material), role);
+    parent.add(object);
+    return object;
+  };
 
-  const foundation = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(5.8, 0.16, 3.0),
-    frameMaterial,
-  ), 'fixed-ground-plate-under-robertson-jack');
-  foundation.position.set(0, groundY + 0.08, 0);
-  root.add(foundation);
+  const foundation = mesh(root,
+    new THREE.BoxGeometry(2.6, 0.16, 1.6).translate(0, groundY - 0.08, 0),
+    frameMaterial, 'fixed-ground-plate-under-robertson-jack');
 
+  // Small hollow base: the reservoir.
   const hollowBase = addRole(new THREE.Group(),
     'fixed-hollow-water-reservoir-base-supporting-stationary-ram');
   root.add(hollowBase);
-  const baseShell = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.75, 0.72, 2.12),
-    glassMaterial,
-  ), 'transparent-hollow-base-shell');
-  baseShell.position.set(0, -0.70, 0);
-  hollowBase.add(baseShell);
-  const baseWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.48, 1, 1.84),
-    waterMaterial,
-  ), 'water-reservoir-inside-hollow-base');
-  hollowBase.add(baseWater);
-  for (const y of [-1.04, -0.35]) {
-    const rim = new THREE.Mesh(
-      new THREE.BoxGeometry(2.90, 0.10, 2.24),
-      frameMaterial,
-    );
-    rim.position.set(0, y, 0);
-    hollowBase.add(rim);
-  }
+  const baseMidX = (baseLeftX + baseRightX) / 2;
+  const baseWidth = baseRightX - baseLeftX;
+  const sideY = (cavity.minY + cavity.maxY) / 2;
+  const sideHeight = cavity.maxY - cavity.minY;
+  const leftWall = plate(polygonClipping.difference(
+    poly([[-baseHalfDepth, cavity.minY], [baseHalfDepth, cavity.minY],
+      [baseHalfDepth, cavity.maxY], [-baseHalfDepth, cavity.maxY]]),
+    poly(circle([0, returnSeatY], 0.10, 64)),
+  ), -baseWall / 2, baseWall / 2).rotateY(Math.PI / 2)
+    .translate(baseLeftX + baseWall / 2, 0, 0);
+  const baseShell = mesh(hollowBase, mergePassageParts([
+    leftWall,
+    new THREE.BoxGeometry(baseWall, sideHeight, 2 * baseHalfDepth)
+      .translate(baseRightX - baseWall / 2, sideY, 0),
+    new THREE.BoxGeometry(baseWidth - 2 * baseWall, sideHeight, baseWall)
+      .translate(baseMidX, sideY, -baseHalfDepth + baseWall / 2),
+    new THREE.BoxGeometry(baseWidth - 2 * baseWall, sideHeight, baseWall)
+      .translate(baseMidX, sideY, baseHalfDepth - baseWall / 2),
+  ]), glassMaterial, 'transparent-hollow-base-shell');
+  const baseFloorPlate = mesh(hollowBase,
+    new THREE.BoxGeometry(baseWidth, baseFloor, 2 * baseHalfDepth)
+      .translate(baseMidX, groundY + baseFloor / 2, 0),
+    frameMaterial, 'hollow-base-floor');
+  const baseTopPlate = mesh(hollowBase, plate(polygonClipping.difference(
+    poly([[baseLeftX, -baseHalfDepth], [baseRightX, -baseHalfDepth],
+      [baseRightX, baseHalfDepth], [baseLeftX, baseHalfDepth]]),
+    poly(circle([0, 0], baseTopHoleRadius, 96)),
+  ), baseTopY - baseWall, baseTopY).rotateX(Math.PI / 2)
+    .translate(0, 2 * baseTopY - baseWall, 0),
+  frameMaterial, 'hollow-base-top-open-to-ram-bore');
+  const baseWater = mesh(hollowBase,
+    new THREE.BoxGeometry(cavity.maxX - cavity.minX - 0.02, 1,
+      2 * cavity.halfDepth - 0.02),
+    waterMaterial, 'water-reservoir-inside-hollow-base');
+  baseWater.position.x = (cavity.minX + cavity.maxX) / 2;
 
+  // Hollow ram with a window at its foot for the pump barrel.
   const fixedRam = addRole(new THREE.Group(),
     'stationary-hollow-ram-fixed-rigidly-to-base');
   root.add(fixedRam);
-  const fixedRamBody = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      fixedRamRadius,
-      fixedRamRadius,
-      fixedRamHeight,
-      42,
-      1,
-      true,
-      Math.PI * 0.22,
-      Math.PI * 1.56,
-    ),
-    fixedRamMaterial,
-  ), 'stationary-front-cutaway-hollow-ram-body');
-  fixedRamBody.position.set(
-    0,
-    (fixedRamBaseY + fixedRamTopY) / 2,
-    0,
-  );
-  fixedRam.add(fixedRamBody);
-  const internalPressurePipe = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, fixedRamHeight + 0.14, 20),
-    waterMaterial,
-  ), 'water-pipe-running-up-inside-stationary-ram');
-  internalPressurePipe.position.copy(fixedRamBody.position);
-  fixedRam.add(internalPressurePipe);
-  const ramBaseCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.58, 0.58, 0.20, 38),
-    frameMaterial,
-  );
-  ramBaseCollar.position.set(0, fixedRamBaseY, 0);
-  fixedRam.add(ramBaseCollar);
+  const windowTopY = 0.30;
+  const windowHalfAngle = 0.56;
+  const fixedRamBody = mesh(fixedRam, mergePassageParts([
+    horizontalPlate(sector(fixedRamBoreRadius, fixedRamRadius,
+      -Math.PI + windowHalfAngle, Math.PI - windowHalfAngle),
+    fixedRamBaseY, windowTopY),
+    horizontalRing(fixedRamBoreRadius, fixedRamRadius, windowTopY,
+      fixedRamTopY - ramCapThickness),
+    horizontalRing(0.105, fixedRamRadius, fixedRamTopY - ramCapThickness,
+      fixedRamTopY),
+  ]), ghostRamMaterial, 'stationary-hollow-ram-body-with-pump-window');
+  const internalPipeWall = mesh(fixedRam,
+    horizontalRing(0.077, 0.10, pipeBottomY, fixedRamTopY + 0.06),
+    darkMaterial, 'finite-internal-pressure-pipe-wall');
+  const internalPressurePipe = mesh(fixedRam,
+    new THREE.CylinderGeometry(0.075, 0.075,
+      fixedRamTopY + 0.06 - pipeBottomY, 20)
+      .translate(0, (fixedRamTopY + 0.06 + pipeBottomY) / 2, 0),
+    waterMaterial, 'water-pipe-running-up-inside-stationary-ram');
 
+  // Pump barrel and gland on the oblique plunger axis (local y along it,
+  // local x toward the pipe side).
+  const pumpBarrel = addRole(new THREE.Group(),
+    'oblique-pump-barrel-in-foot-of-ram');
+  pumpBarrel.matrixAutoUpdate = false;
+  pumpBarrel.matrix.makeBasis(
+    new THREE.Vector3(plungerNormal.x, plungerNormal.y, 0),
+    new THREE.Vector3(plungerAxis.x, plungerAxis.y, 0),
+    new THREE.Vector3(0, 0, -1),
+  ).setPosition(plungerPinHome.x, plungerPinHome.y, 0);
+  root.add(pumpBarrel);
+  const squareBore = (half, low, high) => horizontalPlate(
+    polygonClipping.difference(
+      poly([[-half, -half], [half, -half], [half, half], [-half, half]]),
+      poly(circle([0, 0], barrelInnerRadius, 64)),
+    ), low, high);
+  const gland = mesh(pumpBarrel, mergePassageParts([
+    squareBore(0.135, glandStart, glandStart + 0.08),
+    squareBore(0.12, glandStart + 0.08, barrelStart),
+  ]), frameMaterial, 'square-gland-and-packing-nut-on-ram');
+  const pumpCylinder = mesh(pumpBarrel, sidePortedShell(
+    barrelInnerRadius, barrelOuterRadius, barrelStart, barrelEnd,
+    deliveryPortDistance, 0.035, 1, 0.90,
+  ), frameMaterial, 'small-pump-barrel-inside-ram');
+  const inletSeat = mesh(pumpBarrel,
+    horizontalRing(0.03, barrelOuterRadius, barrelEnd, barrelCapEnd),
+    frameMaterial, 'bored-pump-barrel-end-and-inlet-seat');
+  const inletValve = mesh(pumpBarrel,
+    new THREE.CylinderGeometry(0.06, 0.06, 0.02, 48),
+    brassMaterial, 'functional-ram-bore-to-pump-inlet-check-disk');
+  const portCentre = pointOnAxis(deliveryPortDistance);
+  const feedCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(portCentre.x + plungerNormal.x * 0.10,
+      portCentre.y + plungerNormal.y * 0.10, 0),
+    new THREE.Vector3(portCentre.x + plungerNormal.x * 0.15,
+      portCentre.y + plungerNormal.y * 0.15, 0),
+    new THREE.Vector3(-0.101, portCentre.y + plungerNormal.y * 0.15 + 0.01, 0),
+  ]);
+  const feedPipe = mesh(root, curvedPipeWall(feedCurve, 0.015, 0.024, 32, 20),
+    frameMaterial, 'finite-pump-to-internal-pipe-feed');
+  const deliveryValveHome = feedCurve.getPoint(0.8);
+  const deliveryValveDirection = feedCurve.getTangent(0.8);
+  const deliveryValve = mesh(root, new THREE.SphereGeometry(0.012, 16, 10),
+    brassMaterial, 'functional-pump-to-internal-ram-pipe-delivery-check-ball');
+
+  // Plunger with its crosshead eye (Brown's upper eye).
+  const plunger = addRole(new THREE.Group(),
+    'plunger-and-upper-eye-on-straight-oblique-axis');
+  root.add(plunger);
+  const plungerEye = mesh(plunger,
+    new THREE.CylinderGeometry(0.18, 0.18, 0.12, 64).rotateX(Math.PI / 2),
+    brassMaterial, 'upper-eye-crosshead-on-plunger');
+  const pumpPiston = mesh(plunger, new THREE.CylinderGeometry(
+    pumpPlungerRadius, pumpPlungerRadius, plungerTipDistance - 0.07, 48)
+    .translate(0, (plungerTipDistance + 0.07) / 2, 0)
+    .applyMatrix4(new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(plungerNormal.x, plungerNormal.y, 0),
+      new THREE.Vector3(plungerAxis.x, plungerAxis.y, 0),
+      new THREE.Vector3(0, 0, -1),
+    )), darkMaterial, 'small-hand-pump-plunger');
+  const plungerPin = mesh(plunger,
+    new THREE.CylinderGeometry(0.06, 0.06, 0.90, 32).rotateX(Math.PI / 2)
+      .translate(0, 0, -0.37),
+    darkMaterial, 'upper-eye-pin-joining-lever-and-plunger');
+
+  // Swing link carrying the lever's fulcrum (Brown's lower eye).
+  const swingLink = addRole(new THREE.Group(),
+    'swing-link-carrying-lever-fulcrum-from-base-lug');
+  swingLink.position.set(swingLinkPivot.x, swingLinkPivot.y, 0);
+  root.add(swingLink);
+  const swingLinkBar = mesh(swingLink, boredPlanarLinkGeometry({
+    length: swingLinkLength, width: 0.11, eyeRadius: 0.15,
+    boreRadius: 0.064, depth: 0.08,
+  }).translate(0, 0, swingLinkZ), darkMaterial, 'fixed-length-swing-link');
+  const fulcrumPin = mesh(swingLink,
+    new THREE.CylinderGeometry(0.06, 0.06, 0.38, 32).rotateX(Math.PI / 2)
+      .translate(swingLinkLength, 0, -0.63),
+    darkMaterial, 'lower-eye-fulcrum-pin');
+  const baseLug = mesh(root, new THREE.BoxGeometry(0.25, 0.18, 0.12)
+    .translate(baseLeftX - 0.125, swingLinkPivot.y, -0.36),
+  frameMaterial, 'lug-on-base-carrying-swing-link');
+  const swingLinkAxle = mesh(root,
+    new THREE.CylinderGeometry(0.06, 0.06, 0.28, 32).rotateX(Math.PI / 2)
+      .translate(swingLinkPivot.x, swingLinkPivot.y, -0.44),
+    darkMaterial, 'fixed-swing-link-pivot-pin');
+
+  // Long straight lever behind the cylinder: fulcrum, plunger pin, handle.
+  const pumpLever = addRole(new THREE.Group(),
+    'hand-pump-lever-operating-from-side-of-jack');
+  root.add(pumpLever);
+  const leverShape = polygonClipping.difference(
+    polygonClipping.union(
+      poly([[-leverShortArm, -0.055], [leverBandDistance, -0.055],
+        [leverBandDistance, 0.055], [-leverShortArm, 0.055]]),
+      poly(circle([0, 0], 0.19, 64)),
+      poly(circle([-leverShortArm, 0], 0.19, 64)),
+    ),
+    poly(circle([0, 0], 0.064, 64)),
+    poly(circle([-leverShortArm, 0], 0.064, 64)),
+  );
+  const leverBar = mesh(pumpLever, plate(leverShape, leverZ - 0.05,
+    leverZ + 0.05), leverMaterial, 'straight-hand-lever-with-two-eyes');
+  const leverBand = mesh(pumpLever, new THREE.CylinderGeometry(0.075, 0.075,
+    0.06, 32).rotateZ(Math.PI / 2).translate(leverBandDistance, 0, leverZ),
+  darkMaterial, 'lever-ferrule-band');
+  const handle = mesh(pumpLever, new THREE.CapsuleGeometry(0.15,
+    leverHandleLength - leverBandDistance - 0.30, 6, 24)
+    .rotateZ(Math.PI / 2)
+    .translate((leverBandDistance + leverHandleLength) / 2 + 0.02, 0, leverZ),
+  darkMaterial, 'long-hand-grip-on-pump-lever');
+
+  // Rising cylinder with Brown's cupped head and J-claw.
   const movingCylinder = addRole(new THREE.Group(),
     'moving-cylinder-top-saddle-and-side-claw-rigid-assembly');
   root.add(movingCylinder);
-  const cylinderShell = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      fixedRamRadius + 0.12,
-      fixedRamRadius + 0.12,
-      movingCylinderHeight,
-      44,
-      1,
-      true,
-    ),
-    movingShellMaterial,
-  ), 'outer-cylinder-sliding-around-fixed-ram');
-  cylinderShell.position.set(
-    0,
-    (movingCylinderBottomY + movingCylinderTopY) / 2,
-    0,
-  );
-  movingCylinder.add(cylinderShell);
-  const cylinderTopCap = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      fixedRamRadius + 0.12,
-      fixedRamRadius + 0.12,
-      0.16,
-      42,
-    ),
-    movingMaterial,
-  ), 'closed-moving-cylinder-cap-acted-on-by-water-pressure');
-  cylinderTopCap.position.set(0, movingCylinderTopY - 0.08, 0);
-  movingCylinder.add(cylinderTopCap);
-  const cylinderSealBand = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(fixedRamRadius + 0.12, 0.055, 10, 44),
-    brassMaterial,
-  ), 'moving-cylinder-lower-guide-and-seal-band');
-  cylinderSealBand.rotation.x = Math.PI / 2;
-  cylinderSealBand.position.set(0, movingCylinderBottomY + 0.11, 0);
-  movingCylinder.add(cylinderSealBand);
+  const drop = -maximumCylinderLift;
+  const cylinderShell = mesh(movingCylinder, horizontalRing(
+    cylinderInnerRadius, cylinderOuterRadius, movingCylinderBottomY,
+    movingCylinderTopY,
+  ), movingShellMaterial, 'outer-cylinder-sliding-around-fixed-ram');
+  const cylinderTopCap = mesh(movingCylinder, new THREE.CylinderGeometry(
+    cylinderOuterRadius, cylinderOuterRadius, drawnCapTopY - drawnBoreTopY,
+    64,
+  ).translate(0, (drawnCapTopY + drawnBoreTopY) / 2 + drop, 0),
+  movingMaterial, 'closed-moving-cylinder-cap-acted-on-by-water-pressure');
+  const cylinderSealBand = mesh(movingCylinder, new THREE.TorusGeometry(
+    cylinderOuterRadius, 0.03, 10, 64,
+  ).rotateX(Math.PI / 2).translate(0, movingCylinderBottomY + 0.08, 0),
+  brassMaterial, 'moving-cylinder-lower-guide-and-seal-band');
   const topSaddle = addRole(new THREE.Group(),
     'upper-saddle-attached-to-moving-cylinder');
+  topSaddle.position.y = drop;
   movingCylinder.add(topSaddle);
-  const saddleStem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.78, 0.48, 0.92),
-    movingMaterial,
-  );
-  saddleStem.position.set(0, 1.98, 0);
-  topSaddle.add(saddleStem);
-  for (const x of [-0.48, 0.48]) {
-    const horn = new THREE.Mesh(
-      new THREE.BoxGeometry(0.40, 0.50, 1.02),
-      movingMaterial,
-    );
-    horn.position.set(x, 2.23, 0);
-    horn.rotation.z = x < 0
-      ? THREE.MathUtils.degToRad(-18)
-      : THREE.MathUtils.degToRad(18);
-    topSaddle.add(horn);
-  }
+  const headShape = new THREE.Shape();
+  const flare = 0.92;
+  headShape.moveTo(-cylinderOuterRadius, drawnCapTopY);
+  headShape.lineTo(cylinderOuterRadius, drawnCapTopY);
+  headShape.quadraticCurveTo(0.66, drawnHeadTopY - 0.20, flare,
+    drawnHeadTopY - 0.03);
+  headShape.lineTo(flare, drawnHeadTopY);
+  headShape.lineTo(0.43, drawnHeadTopY);
+  headShape.absarc(0, drawnHeadTopY + 0.08, 0.44, -0.184,
+    -Math.PI + 0.184, true);
+  headShape.lineTo(-flare, drawnHeadTopY);
+  headShape.lineTo(-flare, drawnHeadTopY - 0.03);
+  headShape.quadraticCurveTo(-0.66, drawnHeadTopY - 0.20,
+    -cylinderOuterRadius, drawnCapTopY);
+  const saddleHead = mesh(topSaddle, new THREE.ExtrudeGeometry(headShape, {
+    depth: 1.0, bevelEnabled: false, curveSegments: 24,
+  }).translate(0, 0, -0.5), movingMaterial,
+  'cast-cupped-head-on-moving-cylinder');
   const sideClaw = addRole(new THREE.Group(),
     'right-side-lifting-claw-attached-to-moving-cylinder');
+  sideClaw.position.y = drop;
   movingCylinder.add(sideClaw);
-  const clawArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 1.20, 0.68),
-    movingMaterial,
-  );
-  clawArm.position.set(0.69, 0.86, 0);
-  sideClaw.add(clawArm);
-  const clawToe = new THREE.Mesh(
-    new THREE.BoxGeometry(0.76, 0.22, 0.74),
-    movingMaterial,
-  );
-  clawToe.position.set(0.98, 0.30, 0);
-  sideClaw.add(clawToe);
+  const clawTop = plateXY(0, 285).y;
+  const clawCentreX = plateXY(320, 0).x;
+  const clawRadius = 66 * PLATE_UNITS_PER_PIXEL;
+  const notchCentreX = plateXY(345, 0).x;
+  const notchRadius = notchCentreX - cylinderOuterRadius;
+  const hookShape = new THREE.Shape();
+  hookShape.moveTo(0.55, clawTop);
+  hookShape.lineTo(cylinderOuterRadius, clawTop);
+  hookShape.absarc(notchCentreX, clawTop, notchRadius, Math.PI, 0, false);
+  hookShape.lineTo(clawCentreX + clawRadius, clawTop);
+  hookShape.absarc(clawCentreX, clawTop, clawRadius, 0, -Math.PI / 2, true);
+  hookShape.lineTo(0.55, clawTop - clawRadius);
+  hookShape.closePath();
+  const clawHook = mesh(sideClaw, new THREE.ExtrudeGeometry(hookShape, {
+    depth: 0.68, bevelEnabled: false, curveSegments: 24,
+  }).translate(0, 0, -0.34), movingMaterial,
+  'cast-J-claw-hook-on-moving-cylinder');
 
-  const pressureChamber = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      fixedRamRadius * 0.92,
-      fixedRamRadius * 0.92,
-      1,
-      38,
-    ),
+  const pressureChamber = mesh(root,
+    new THREE.CylinderGeometry(fixedRamRadius * 0.95, fixedRamRadius * 0.95,
+      1, 48),
     waterMaterial,
-  ), 'variable-water-chamber-between-fixed-ram-top-and-moving-cap');
-  root.add(pressureChamber);
+    'variable-water-chamber-between-fixed-ram-top-and-moving-cap');
 
-  const pumpCylinder = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pumpPlungerRadius + 0.07,
-      pumpPlungerRadius + 0.07,
-      0.58,
-      30,
-      1,
-      true,
-    ),
-    glassMaterial,
-  ), 'small-pump-cylinder-taking-water-from-hollow-base');
-  pumpCylinder.position.set(pumpSliderX, 0.25, pumpLeverPivot.z);
-  root.add(pumpCylinder);
-  const pumpPiston = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pumpPlungerRadius,
-      pumpPlungerRadius,
-      0.09,
-      26,
-    ),
-    fixedRamMaterial,
-  ), 'small-hand-pump-plunger');
-  root.add(pumpPiston);
-  const pumpCrosshead = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.14, 0.30),
-    fixedRamMaterial,
-  ), 'small-pump-vertical-crosshead');
-  root.add(pumpCrosshead);
-  const pumpPitman = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 1, 16),
-    darkMaterial,
-  ), 'fixed-length-pump-lever-pitman');
-  root.add(pumpPitman);
-  const pumpPistonRod = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.040, 0.040, 1, 16),
-    darkMaterial,
-  ), 'small-pump-plunger-rod');
-  root.add(pumpPistonRod);
-
-  const pumpLever = addRole(new THREE.Group(),
-    'hand-pump-lever-operating-from-side-of-jack');
-  pumpLever.position.copy(pumpLeverPivot);
-  root.add(pumpLever);
-  const leverBar = new THREE.Mesh(
-    new THREE.BoxGeometry(2.55, 0.12, 0.18),
-    fixedRamMaterial,
-  );
-  leverBar.position.x = 0.84;
-  pumpLever.add(leverBar);
-  const handle = addRole(new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.10, 0.34, 4, 12),
-    darkMaterial,
-  ), 'long-hand-grip-on-pump-lever');
-  handle.rotation.z = Math.PI / 2;
-  handle.position.x = 2.15;
-  pumpLever.add(handle);
-  const pumpLeverPin = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 0.34, 20),
-    brassMaterial,
-  ), 'short-pump-lever-pin');
-  pumpLeverPin.rotation.x = Math.PI / 2;
-  pumpLeverPin.position.x = pumpLeverPinRadius;
-  pumpLever.add(pumpLeverPin);
-  const pumpLeverAxle = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 0.46, 22),
-    darkMaterial,
-  ), 'fixed-pump-lever-fulcrum');
-  pumpLeverAxle.rotation.x = Math.PI / 2;
-  pumpLeverAxle.position.copy(pumpLeverPivot);
-  root.add(pumpLeverAxle);
-  const pumpStand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 1.62, 0.28),
-    frameMaterial,
-  );
-  pumpStand.position.set(pumpLeverPivot.x, 0.22, pumpLeverPivot.z - 0.24);
-  root.add(pumpStand);
-
-  const inletValve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.04, 22),
-    brassMaterial,
-  ), 'functional-base-reservoir-to-pump-inlet-check-disk');
-  inletValve.position.set(pumpSliderX, -0.05, pumpLeverPivot.z);
-  root.add(inletValve);
-  const deliveryValve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.04, 22),
-    brassMaterial,
-  ), 'functional-pump-to-internal-ram-pipe-delivery-check-disk');
-  deliveryValve.position.set(-0.56, -0.15, pumpLeverPivot.z);
-  root.add(deliveryValve);
-
+  // Winged thumb screw through the base's left wall to the pipe's foot.
   const thumbScrew = addRole(new THREE.Group(),
     'threaded-thumb-screw-metering-return-at-bottom-of-ram-pipe');
-  thumbScrew.position.set(-0.62, -0.63, 1.17);
+  thumbScrew.position.set(thumbScrewClosedX, returnSeatY, 0);
   root.add(thumbScrew);
-  const screwShaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 0.76, 22),
-    brassMaterial,
-  ), 'thumb-screw-threaded-shaft');
-  screwShaft.rotation.z = Math.PI / 2;
-  thumbScrew.add(screwShaft);
-  const threadCurve = new THREE.CatmullRomCurve3(
-    Array.from({ length: 49 }, (_, index) => {
-      const fraction = index / 48;
-      const angle = fraction * FULL_TURN * 4;
-      return new THREE.Vector3(
-        -0.30 + 0.60 * fraction,
-        0.086 * Math.cos(angle),
-        0.086 * Math.sin(angle),
-      );
-    }),
-  );
-  const screwThread = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(threadCurve, 96, 0.012, 7, false),
-    darkMaterial,
-  ), 'visible-four-turn-helical-thumb-screw-thread');
-  thumbScrew.add(screwThread);
-  const screwTip = addRole(new THREE.Mesh(
-    new THREE.ConeGeometry(0.105, 0.24, 24),
-    brassMaterial,
-  ), 'thumb-screw-conical-return-valve-tip');
-  screwTip.rotation.z = -Math.PI / 2;
-  screwTip.position.x = 0.47;
-  thumbScrew.add(screwTip);
-  const screwWings = [-1, 1].map((sign, index) => {
-    const wing = addRole(new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 20, 14),
-      fixedRamMaterial,
-    ), index === 0 ? 'thumb-screw-wing-one' : 'thumb-screw-wing-two');
-    wing.position.set(-0.47, sign * 0.24, 0);
-    thumbScrew.add(wing);
-    return wing;
-  });
-  const screwWingBar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 0.48, 16),
-    fixedRamMaterial,
-  );
-  screwWingBar.position.x = -0.47;
-  thumbScrew.add(screwWingBar);
-
-  const returnCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, fixedRamBaseY + 0.10, 0),
-    new THREE.Vector3(-0.30, -0.56, 0.36),
-    new THREE.Vector3(-0.55, -0.63, 0.82),
-    new THREE.Vector3(-0.84, -0.72, 1.03),
-  ]);
-  const returnPassage = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(returnCurve, 36, 0.075, 10, false),
-    frameMaterial,
-  ), 'return-passage-from-ram-pipe-valve-to-hollow-base');
-  root.add(returnPassage);
+  const screwShaft = mesh(thumbScrew, new THREE.CylinderGeometry(0.075, 0.075,
+    0.79, 48).rotateZ(Math.PI / 2).translate(-0.005, 0, 0),
+  brassMaterial, 'thumb-screw-threaded-shaft');
+  const thread = {
+    inner: 0.075, outer: 0.095, low: -0.30, high: 0.30, width: 0.018,
+    lead: thumbScrewPitch / (2 * Math.PI), phase: 0,
+  };
+  const screwThread = mesh(thumbScrew,
+    helicalThread(thread, threadAngles(thread, 64)).rotateY(Math.PI / 2),
+    darkMaterial, 'visible-four-turn-helical-thumb-screw-thread');
+  const screwTip = mesh(thumbScrew, new THREE.ConeGeometry(0.105, 0.24, 64)
+    .rotateZ(-Math.PI / 2).translate(0.51, 0, 0),
+  brassMaterial, 'thumb-screw-conical-return-valve-tip');
+  const screwWings = [-1, 1].map((sign, index) => mesh(thumbScrew,
+    new THREE.SphereGeometry(0.12, 20, 14).translate(-0.47, sign * 0.24, 0),
+    fixedRamMaterial, index === 0 ? 'thumb-screw-wing-one'
+      : 'thumb-screw-wing-two'));
+  mesh(thumbScrew, new THREE.CylinderGeometry(0.045, 0.045, 0.48, 16)
+    .translate(-0.47, 0, 0), fixedRamMaterial, 'thumb-screw-wing-bar');
+  const returnSeat = mesh(root, horizontalTurned([[-0.20, 0.074375],
+    [-0.20, 0.16], [-0.10, 0.16], [-0.10, 0.030625]]).rotateZ(-Math.PI / 2)
+    .translate(0, returnSeatY, 0),
+  frameMaterial, 'finite-conical-thumb-screw-return-seat');
+  const returnPoints = [new THREE.Vector3(0, pipeBottomY, 0),
+    new THREE.Vector3(0, returnSeatY + 0.10, 0)];
+  for (let i = 1; i <= 24; i += 1) {
+    const angle = Math.PI * i / 48;
+    returnPoints.push(new THREE.Vector3(-0.10 + 0.10 * Math.cos(angle),
+      returnSeatY + 0.10 - 0.10 * Math.sin(angle), 0));
+  }
+  const returnCurve = new THREE.CatmullRomCurve3(returnPoints);
+  const returnPassage = mesh(root, curvedPipeWall(returnCurve, 0.065, 0.09,
+    48, 24), frameMaterial,
+  'return-passage-from-ram-pipe-valve-to-hollow-base');
   const returnWaterMaterial = waterMaterial.clone();
-  const returnWater = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(returnCurve, 36, 0.040, 8, false),
+  const returnWater = mesh(root,
+    new THREE.TubeGeometry(returnCurve, 48, 0.040, 10, false),
     returnWaterMaterial,
-  ), 'metered-return-water-through-open-thumb-screw-valve');
-  root.add(returnWater);
+    'metered-return-water-through-open-thumb-screw-valve');
 
   const update = (time) => {
     const state = stateAtTime(time);
+    plunger.position.copy(state.plungerPin);
+    pumpLever.position.copy(state.plungerPin);
     pumpLever.rotation.z = state.leverAngle;
-    pumpCrosshead.position.copy(state.crosshead);
-    pumpPiston.position.copy(state.piston);
-    setRodBetween(pumpPitman, state.leverPin, state.crosshead);
-    setRodBetween(pumpPistonRod, state.crosshead, state.piston);
-    inletValve.position.y = -0.82 + 0.065 * state.inletOpenAmount;
-    deliveryValve.position.y = -0.43 + 0.065 * state.deliveryOpenAmount;
+    swingLink.rotation.z = state.swingLinkAngle;
+    inletValve.position.y = barrelEnd - 0.01 - 0.015 * state.inletOpenAmount;
+    deliveryValve.position.copy(deliveryValveHome)
+      .addScaledVector(deliveryValveDirection,
+        0.004 * state.deliveryOpenAmount);
     movingCylinder.position.y = state.cylinderLift;
     pressureChamber.scale.y = state.pressureChamberHeight;
     pressureChamber.position.set(
@@ -634,18 +695,17 @@ function robertsonJack(movement) {
       fixedRamTopY + state.pressureChamberHeight / 2,
       0,
     );
-    const baseWaterHeight = 0.52 * state.baseWaterVolume
-      / baseInitialWaterVolume;
+    const baseWaterHeight = (cavity.maxY - cavity.minY - 0.02)
+      * state.baseWaterVolume / baseWaterCapacity;
     baseWater.scale.y = baseWaterHeight;
-    baseWater.position.y = -1.00 + baseWaterHeight / 2;
+    baseWater.position.y = cavity.minY + 0.01 + baseWaterHeight / 2;
     thumbScrew.rotation.x = state.thumbScrewAngle;
-    thumbScrew.position.x = -1.25 - state.thumbScrewRetreat;
-    root.userData.updateSolids?.(state);
+    thumbScrew.position.x = thumbScrewClosedX - state.thumbScrewRetreat;
     returnWater.visible = state.returnFlowRate > 1e-5;
     returnWaterMaterial.opacity = 0.16 + 0.50 * state.screwOpenAmount;
   };
 
-  const sourceState = stateAtPhase(0.48);
+  const sourceState = stateAtPhase(sourcePhase);
   const geometry = {
     baseInitialWaterVolume,
     baseWaterCapacity,
@@ -655,9 +715,12 @@ function robertsonJack(movement) {
     fixedRamHeight,
     fixedRamRadius,
     fixedRamTopY,
+    glandStart,
     groundY,
     hydraulicAreaRatio,
     initialPressureChamberHeight,
+    leverHandleLength,
+    leverShortArm,
     loweringEndPhase,
     loweringStartPhase,
     maximumCylinderLift,
@@ -668,16 +731,18 @@ function robertsonJack(movement) {
     movingCylinderTopY,
     nominalPistonSpeed,
     operationEndPhase,
+    plungerAxis: plungerAxis.clone(),
+    plungerPinHome: plungerPinHome.clone(),
+    plungerTipDistance,
     pumpCycleCount,
-    pumpLeverAmplitude,
-    pumpLeverPinRadius,
-    pumpLeverPivot,
-    pumpPistonRodOffset,
-    pumpPitmanLength,
     pumpPlungerArea,
     pumpPlungerRadius,
-    pumpSliderX,
     pumpStrokeLength,
+    returnSeatY,
+    sourcePhase,
+    swingLinkLength,
+    swingLinkPivot: swingLinkPivot.clone(),
+    thumbScrewClosedX,
     thumbScrewMaximumAngle,
     thumbScrewMaximumRetreat,
     thumbScrewMaximumTurns,
@@ -687,35 +752,51 @@ function robertsonJack(movement) {
     archetype:
       'robertson-hydrostatic-jack-with-fixed-hollow-ram-rising-cylinder-claw-internal-feed-and-thumb-screw-return',
     blocks: {
+      baseFloorPlate,
+      baseLug,
       baseShell,
+      baseTopPlate,
       baseWater,
+      clawHook,
       cylinderSealBand,
       cylinderShell,
       cylinderTopCap,
       deliveryValve,
+      feedPipe,
       fixedRam,
       fixedRamBody,
       foundation,
+      fulcrumPin,
+      gland,
       handle,
       hollowBase,
+      inletSeat,
       inletValve,
+      internalPipeWall,
       internalPressurePipe,
+      leverBand,
+      leverBar,
       movingCylinder,
+      plunger,
+      plungerEye,
+      plungerPin,
       pressureChamber,
-      pumpCrosshead,
+      pumpBarrel,
       pumpCylinder,
       pumpLever,
-      pumpLeverAxle,
       pumpPiston,
-      pumpPistonRod,
-      pumpPitman,
       returnPassage,
+      returnSeat,
       returnWater,
+      saddleHead,
       screwShaft,
       screwThread,
       screwTip,
       screwWings,
       sideClaw,
+      swingLink,
+      swingLinkAxle,
+      swingLinkBar,
       thumbScrew,
       topSaddle,
     },
@@ -733,16 +814,16 @@ function robertsonJack(movement) {
       loweringModel:
         'One full thumb-screw turn retracts the conical tip by one thread pitch while the trapped volume returns with a C2 metered profile. After lowering, the unloaded screw turns back onto its seat before the loop closes.',
       volumeModel:
-        'Downward small-plunger travel adds A_pump times travel to the chamber above the stationary ram; the complete moving cylinder and claw assembly rises by that volume divided by fixed-ram area.',
+        'Each return stroke of the small plunger adds A_pump times travel to the chamber above the stationary ram; the complete moving cylinder and claw assembly rises by that volume divided by fixed-ram area.',
     },
     fidelity: 'authored',
     geometry,
     mechanism:
-      'The central hollow ram is rigidly fixed to the water-filled base. A hand pump draws from that hollow base and delivers through a passage running inside the ram into the chamber beneath the closed cap of the outer cylinder. Pressure raises the cylinder, top saddle and side claw as one rigid assembly around the stationary ram. Turning the bottom thumb-screw off its seat meters the same water back into the base and gradually lowers the assembly.',
+      'The central hollow ram is rigidly fixed to the small hollow base. The hand lever is pinned at its upper eye to a plunger working obliquely through a gland into a barrel in the foot of the ram, and its fulcrum (the lower eye) rides on a swing link from the base, so the plunger pin runs straight. The withdrawing plunger draws water from the base up the ram bore; the returning plunger delivers it into the pipe inside the ram and so beneath the closed cap of the outer cylinder. Pressure raises the cylinder, cupped head and claw as one rigid assembly. Turning the bottom thumb-screw off its seat meters the same water back into the base and gradually lowers the assembly.',
     motion: {
       cycleDuration,
       motionType:
-        'eight-volume-accumulating-pump-strokes-hold-one-turn-threaded-metered-lowering-and-screw-reseat',
+        'twelve-volume-accumulating-plunger-strokes-hold-one-turn-threaded-metered-lowering-and-screw-reseat',
     },
     pumpKinematics,
     sourceAnimation: {
@@ -755,6 +836,7 @@ function robertsonJack(movement) {
     sourcePose: {
       cylinderLift: sourceState.cylinderLift,
       leverAngle: sourceState.leverAngle,
+      phase: sourcePhase,
       pistonPosition: sourceState.piston.clone(),
       thumbScrewAngle: sourceState.thumbScrewAngle,
     },
@@ -767,6 +849,12 @@ function robertsonJack(movement) {
         imageHeight: 525,
         imageWidth: 525,
         measurementUncertaintyPixels: 15,
+        measuredLinkagePixels: {
+          glandCentre: [233, 400],
+          leverFulcrumLowerEye: [150, 401],
+          plungerPinUpperEye: [205, 355.5],
+          swingLinkBasePivot: [195, 442],
+        },
       },
       constructionEvidence: {
         explicitInBrownDescription: [
@@ -777,9 +865,9 @@ function robertsonJack(movement) {
           'a bottom thumb-screw valve lets water back to lower gradually',
         ],
         engravingEvidence:
-          'Brown shows a broad hollow base, a central fixed inner member with an internal passage, a tall outer sliding body carrying both an upper saddle and side claw, an offset pump linkage, and a winged horizontal return screw at the internal pipe foot.',
+          'Brown shows a narrow sectioned column: a small hollow base little wider than the cylinder, a central fixed hollow ram with an internal pipe, a tall outer sliding body carrying a cupped head and a J-claw, a long hand lever whose upper and lower eyes sit at the lower left with square gland blocks on the ram, and a winged horizontal return screw at the internal pipe foot.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, area ratio, stroke, pump count, thread pitch, screw turns, return coefficient, load or timing. A 4.2:1 radius ratio, eight exact pump strokes, one 0.045-pitch screw turn, C2 metered lowering and reseating, colors and a 12.4-second cycle are independently engineered.',
+          'Brown gives no dimensions, area ratio, stroke, pump count, thread pitch, screw turns, return coefficient, load or timing, and does not show the pump barrel. The reading of the lower-left linkage as a plunger pinned at the upper eye with a floating fulcrum on a swing link, the oblique barrel in the ram foot, a 4.67:1 ram/plunger radius ratio, twelve exact plunger strokes, one 0.045-pitch screw turn, C2 metered lowering and reseating, depths, colors and a 14-second cycle are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 467',
@@ -788,61 +876,28 @@ function robertsonJack(movement) {
     stateAtTime,
     transmission: {
       internalFeed:
-        'hollow base reservoir -> small pump checks -> pipe inside fixed ram -> variable chamber under moving cylinder cap',
+        'hollow base reservoir -> ram bore -> inlet check -> oblique plunger barrel in ram foot -> delivery check -> pipe inside fixed ram -> variable chamber under moving cylinder cap',
+      linkage:
+        'lever fulcrum on swing link (|fulcrum-pivot| fixed), lever pinned to plunger at fixed short arm, plunger pin on a straight axis',
       movingMembers:
-        'outer cylinder + upper saddle + side claw share exactly one translation; fixed ram and base remain stationary',
+        'outer cylinder + cupped head + side claw share exactly one translation; fixed ram and base remain stationary',
       screw:
         'axial retreat=pitch*rotation/(2*pi); opening meters chamber water back to the hollow base',
       volume:
-        'A_pump*sum(delivery downstrokes)=A_fixed_ram*cylinder lift',
+        'A_pump*sum(delivery return strokes)=A_fixed_ram*cylinder lift',
     },
     update,
+    solidReview: {
+      status: 'qualified-geometry',
+      residual: 'Ideal hydraulic volume law and prescribed checks/return retained. Conical screw seat is geometric; passive valve forces, seals, leakage, pressure losses and load dynamics are not solved.',
+    },
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.08, groundY - 0.02, -1.58),
-    new THREE.Vector3(3.08, 2.82, 1.58),
-  );
-  root.userData.cameraDistanceScale = 1.02;
-  root.userData.cameraDirection = new THREE.Vector3(4.8, 2.8, 11.8);
   root.userData.groundFloorY = groundY;
-  correctHydraulicForceParts(root,467);
-  // Brown's cast head is one flared saddle with a hollow cup (no cube ears),
-  // and the claw is a single J-hook cast on the cylinder's right side.
-  for (const group of [topSaddle, sideClaw]) {
-    for (const child of [...group.children]) {
-      group.remove(child);
-      child.geometry.dispose();
-    }
-  }
-  const headShape = new THREE.Shape();
-  headShape.moveTo(-0.34, movingCylinderTopY);
-  headShape.lineTo(0.34, movingCylinderTopY);
-  headShape.quadraticCurveTo(0.40, 2.05, 0.74, 2.14);
-  headShape.lineTo(0.74, 2.40);
-  headShape.lineTo(0.40, 2.40);
-  headShape.absarc(0, 2.62, 0.46, -0.5164, -Math.PI + 0.5164, true);
-  headShape.lineTo(-0.74, 2.40);
-  headShape.lineTo(-0.74, 2.14);
-  headShape.quadraticCurveTo(-0.40, 2.05, -0.34, movingCylinderTopY);
-  const headGeometry = new THREE.ExtrudeGeometry(headShape, { depth: 0.92, bevelEnabled: false, curveSegments: 24 });
-  headGeometry.translate(0, 0, -0.46);
-  const saddleHead = addRole(new THREE.Mesh(headGeometry, movingMaterial), 'cast-cupped-head-on-moving-cylinder');
-  topSaddle.add(saddleHead);
-  const hookShape = new THREE.Shape();
-  hookShape.moveTo(0.46, 1.25);
-  hookShape.lineTo(0.80, 1.25);
-  hookShape.lineTo(0.80, 0.45);
-  hookShape.absarc(1.12, 0.45, 0.32, Math.PI, Math.PI * 2 + 0.3, false);
-  hookShape.lineTo(1.12 + 0.58 * Math.cos(0.3), 0.45 + 0.58 * Math.sin(0.3));
-  hookShape.absarc(1.12, 0.45, 0.58, 0.3, -Math.PI, true);
-  hookShape.lineTo(0.46, 0.45);
-  hookShape.closePath();
-  const hookGeometry = new THREE.ExtrudeGeometry(hookShape, { depth: 0.68, bevelEnabled: false, curveSegments: 24 });
-  hookGeometry.translate(0, 0, -0.34);
-  const clawHook = addRole(new THREE.Mesh(hookGeometry, movingMaterial), 'cast-J-claw-hook-on-moving-cylinder');
-  sideClaw.add(clawHook);
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  fitPistonGuide(root, update, cycleDuration);
   // Brown's section is a flat elevation.
   root.userData.cameraFov = 10;
+  root.userData.cameraDirection = new THREE.Vector3(0, 0.3, 15);
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [baseWater, internalPressurePipe, pressureChamber,

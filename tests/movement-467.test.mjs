@@ -65,7 +65,13 @@ test('movement 467 is Robertson’s jack with a fixed hollow ram and one moving 
   assert.equal(blocks.sideClaw.parent, blocks.movingCylinder);
   assert.equal(blocks.thumbScrew.parent, model.root);
   assert.equal(blocks.screwThread.parent, blocks.thumbScrew);
-  assert.equal(blocks.pumpCylinder.parent, model.root);
+  assert.equal(blocks.pumpBarrel.parent, model.root);
+  assert.equal(blocks.pumpCylinder.parent, blocks.pumpBarrel);
+  assert.equal(blocks.gland.parent, blocks.pumpBarrel);
+  assert.equal(blocks.plunger.parent, model.root);
+  assert.equal(blocks.pumpPiston.parent, blocks.plunger);
+  assert.equal(blocks.pumpLever.parent, model.root);
+  assert.equal(blocks.swingLink.parent, model.root);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.fixedRamTranslates, false);
@@ -107,29 +113,45 @@ test('movement 467 source record preserves every explicitly described moving, fi
   disposeModel(model.root);
 });
 
-test('movement 467 small pump keeps exact pitman closure and a fixed vertical plunger axis', () => {
+test('movement 467 lever keeps exact floating-fulcrum closure and a fixed straight oblique plunger axis', () => {
   const { model } = movementModel();
   const { geometry, pumpKinematics } = model.root.userData;
+  const axis = geometry.plungerAxis;
+  const home = geometry.plungerPinHome;
+  let lowAngle = Infinity;
+  let highAngle = -Infinity;
 
   for (let sample = 0; sample <= 200; sample += 1) {
     const strokeAngle = FULL_TURN * sample / 50;
     const state = pumpKinematics(strokeAngle);
-    near(state.leverPin.distanceTo(state.crosshead),
-      geometry.pumpPitmanLength, 2e-12,
-      `pitman length at ${strokeAngle}`);
-    near(state.crosshead.x, geometry.pumpSliderX, 1e-12,
-      `crosshead axis at ${strokeAngle}`);
-    near(state.piston.x, geometry.pumpSliderX, 1e-12,
-      `plunger axis at ${strokeAngle}`);
-    near(state.crosshead.y - state.piston.y,
-      geometry.pumpPistonRodOffset, 1e-12,
-      `plunger rod length at ${strokeAngle}`);
-    assert.ok(Math.abs(state.horizontalOffset) < geometry.pumpPitmanLength);
+    const pin = new THREE.Vector2(state.plungerPin.x, state.plungerPin.y);
+    const fulcrum = new THREE.Vector2(state.leverFulcrum.x,
+      state.leverFulcrum.y);
+    near(pin.distanceTo(fulcrum), geometry.leverShortArm, 1e-12,
+      `lever short arm at ${strokeAngle}`);
+    near(fulcrum.distanceTo(geometry.swingLinkPivot),
+      geometry.swingLinkLength, 1e-12, `swing link at ${strokeAngle}`);
+    const offset = pin.clone().sub(home);
+    near(offset.x * axis.y - offset.y * axis.x, 0, 1e-12,
+      `plunger pin stays on its axis at ${strokeAngle}`);
+    near(-offset.dot(axis), state.plungerWithdrawal, 1e-12,
+      `withdrawal along axis at ${strokeAngle}`);
+    near(state.piston.distanceTo(state.plungerPin),
+      geometry.plungerTipDistance, 1e-12, `plunger length at ${strokeAngle}`);
+    near(Math.atan2(pin.y - fulcrum.y, pin.x - fulcrum.x),
+      state.leverAngle, 1e-12, `straight lever at ${strokeAngle}`);
+    assert.ok(state.plungerWithdrawal >= -1e-12
+      && state.plungerWithdrawal <= geometry.pumpStrokeLength + 1e-12);
+    lowAngle = Math.min(lowAngle, state.leverAngle);
+    highAngle = Math.max(highAngle, state.leverAngle);
   }
+  // Brown's lower eye sits almost in line with the upper eye and handle.
+  assert.ok(highAngle - lowAngle > THREE.MathUtils.degToRad(12));
+  assert.ok(highAngle - lowAngle < THREE.MathUtils.degToRad(30));
   disposeModel(model.root);
 });
 
-test('movement 467 analytic pump-plunger velocity and acceleration match finite differences', () => {
+test('movement 467 analytic plunger velocity and acceleration match finite differences', () => {
   const { model } = movementModel();
   const { pumpKinematics } = model.root.userData;
   const speed = 4.31;
@@ -144,11 +166,11 @@ test('movement 467 analytic pump-plunger velocity and acceleration match finite 
       + 0.5 * acceleration * timeStep ** 2;
     const before = pumpKinematics(beforeAngle);
     const after = pumpKinematics(afterAngle);
-    near((after.piston.y - before.piston.y) / (2 * timeStep),
-      center.pistonVelocity, 5e-8,
-      `plunger velocity at ${angle}`);
-    near((after.piston.y - 2 * center.piston.y + before.piston.y)
-      / timeStep ** 2,
+    near((after.plungerWithdrawal - before.plungerWithdrawal)
+      / (2 * timeStep), center.pistonVelocity, 5e-8,
+    `plunger velocity at ${angle}`);
+    near((after.plungerWithdrawal - 2 * center.plungerWithdrawal
+      + before.plungerWithdrawal) / timeStep ** 2,
     center.pistonAcceleration, 1e-6,
     `plunger acceleration at ${angle}`);
   }
@@ -165,18 +187,18 @@ test('movement 467 counts only delivery downstrokes and converts their exact vol
   } = model.root.userData;
 
   for (let cycle = 0; cycle < geometry.pumpCycleCount; cycle += 1) {
-    const top = cycle * FULL_TURN;
-    const bottom = top + Math.PI;
-    const nextTop = top + FULL_TURN;
-    near(deliveredLengthAtStrokeAngle(top, pumpKinematics(top)),
+    const home = cycle * FULL_TURN;
+    const withdrawn = home + Math.PI;
+    const nextHome = home + FULL_TURN;
+    near(deliveredLengthAtStrokeAngle(home, pumpKinematics(home)),
       cycle * geometry.pumpStrokeLength, 2e-11,
-      `top delivery count ${cycle}`);
-    near(deliveredLengthAtStrokeAngle(bottom, pumpKinematics(bottom)),
+      `home delivery count ${cycle}`);
+    near(deliveredLengthAtStrokeAngle(withdrawn, pumpKinematics(withdrawn)),
+      cycle * geometry.pumpStrokeLength, 2e-11,
+      `suction withdrawal adds no delivery ${cycle}`);
+    near(deliveredLengthAtStrokeAngle(nextHome, pumpKinematics(nextHome)),
       (cycle + 1) * geometry.pumpStrokeLength, 2e-11,
-      `bottom delivery count ${cycle}`);
-    near(deliveredLengthAtStrokeAngle(nextTop, pumpKinematics(nextTop)),
-      (cycle + 1) * geometry.pumpStrokeLength, 2e-11,
-      `suction adds no delivery ${cycle}`);
+      `return stroke delivers ${cycle}`);
   }
   near(geometry.maximumDeliveredVolume,
     geometry.pumpCycleCount * geometry.pumpPlungerArea
@@ -335,9 +357,22 @@ test('movement 467 renderer moves only the outer cylinder assembly and maps cham
       screwClosedX - state.thumbScrewRetreat, 1e-12,
       `thumb-screw axial position at phase ${phase}`);
     assert.equal(blocks.returnWater.visible, state.returnFlowRate > 1e-5);
-    near(blocks.pumpPitman.scale.y, geometry.pumpPitmanLength, 1e-12,
-      `pump pitman length at phase ${phase}`);
+    vectorNear(blocks.plunger.position, state.plungerPin, 1e-12,
+      `plunger at phase ${phase}`);
+    near(blocks.pumpLever.rotation.z, state.leverAngle, 1e-12,
+      `lever at phase ${phase}`);
+    model.root.updateMatrixWorld(true);
+    const fulcrumPin = new THREE.Box3().setFromObject(blocks.fulcrumPin)
+      .getCenter(new THREE.Vector3());
+    near(Math.hypot(fulcrumPin.x - state.leverFulcrum.x,
+      fulcrumPin.y - state.leverFulcrum.y), 0, 1e-6,
+    `swing link carries the lever fulcrum at phase ${phase}`);
   }
+  // The view opens on Brown's pose: the cylinder raised, the plunger home.
+  const opening = stateAtTime(0);
+  near(opening.cylinderLift, geometry.maximumCylinderLift, 1e-12,
+    'source pose raised');
+  near(opening.plungerWithdrawal, 0, 1e-12, 'source pose plunger home');
   disposeModel(model.root);
 });
 

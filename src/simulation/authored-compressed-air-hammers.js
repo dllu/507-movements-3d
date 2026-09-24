@@ -1,5 +1,5 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
-import {plate, poly, polygonClipping, spline} from './finite-plate-geometry.js';
+import {plate, poly, circle, polygonClipping, spline} from './finite-plate-geometry.js';
 import {mergePassageParts} from './finite-fluid-passages.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
@@ -58,49 +58,76 @@ function tubeThrough(points, radius, material, role, segments = 48) {
   return mesh;
 }
 
-// Brown's frame C is one broad cast standard in the plane of the drawing:
-// a base flange, a pocket carrying pump D, and a column that sweeps up and
-// over to the head carrying cylinder B and shaft E. It is hollow (the air
-// reservoir), which Brown indicates by the inner curve running up the
-// column; here that cavity is a recessed channel in the plate. The plate
-// stands behind the working parts, which are carried on short brackets.
-function buildBroadHollowFrame(root, groundY, shaftCenter) {
+// Brown's frame C is one broad casting in the plane of the working parts:
+// a flat bed, a pocket holding pump D, a slender S-curved neck up to the
+// head carrying shaft E, a slender hollow arm (the air reservoir) sweeping
+// down from the valve chest to the bed, a yoke round cylinder B, and the
+// arched anvil pedestal. Outlines are traced from the doubled plate in
+// pixels; the casting is 0.60 deep with the parts on its mid-plane, so the
+// pump, friction wheel and cylinder stand in windows through it and the
+// shaft runs in bored bosses.
+function buildBroadHollowFrame(root, bx, by, shaftCenter) {
   const blocks = root.userData.blocks;
-  const back = -1.50;
-  const face = -1.12;
-  const recess = -1.30;
-  const outline = poly([
-    [-2.05, groundY], [2.05, groundY], [2.05, -1.74], [0.80, -1.74],
-    ...spline([[0.80, -1.74], [0.62, -1.20], [0.52, -0.30], [0.58, 0.50],
-      [0.80, 1.10], [1.10, 1.36], [1.72, 1.42]]).slice(1),
-    [1.72, 2.80], [-0.95, 2.80], [-0.95, 2.62],
-    ...spline([[-0.95, 2.62], [-0.55, 2.40], [-0.36, 1.80], [-0.28, 1.00],
-      [-0.36, 0.20], [-0.58, -0.30]]).slice(1),
-    [-2.05, -0.30],
-  ]);
-  const centre = spline([[0.06, -1.50], [0.10, -0.40], [0.20, 0.60],
-    [0.50, 1.25], [0.95, 1.62], [1.40, 1.78]]);
-  const halfWidth = 0.12;
+  const geometry = root.userData.geometry;
+  const half = 0.30;
+  const map = (points) => points.map(([x, y]) => [bx(x), by(y)]);
+  const rect = (x0, y0, x1, y1) => poly(map([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]));
+  const outline = poly(map([
+    [80, 965], [80, 888], [115, 888], [115, 752], [135, 722], [175, 705],
+    [350, 700], [352, 760], [368, 780], [392, 778], [420, 748], [447, 695],
+    [457, 660], [462, 600], [460, 555], [445, 505], [425, 440], [417, 380],
+    [413, 300], [410, 232], [485, 232], [485, 380], [690, 380], [690, 232],
+    [715, 232], [715, 194], [765, 194], [752, 300], [735, 400], [720, 435],
+    [650, 475], [610, 510], [587, 560], [585, 610], [595, 660], [620, 720],
+    [650, 785], [670, 830], [697, 820], [730, 700], [785, 668], [785, 645],
+    [900, 645], [905, 668], [930, 700], [945, 800], [965, 868], [1000, 900],
+    [1000, 965],
+  ]));
+  const opening = poly(map([
+    [455, 410], [690, 404], [650, 420], [600, 465], [570, 520], [557, 590],
+    [562, 650], [590, 710], [640, 760], [660, 888], [400, 888], [405, 860],
+    [420, 810], [445, 760], [475, 690], [487, 620], [485, 570], [465, 490],
+    [452, 440],
+  ]));
+  const arch = poly(map([
+    [722, 888], [735, 780], [760, 720], [810, 693], [870, 698], [905, 730],
+    [925, 800], [935, 888],
+  ]));
+  // The shaft bosses are cut out here and added below with real bores.
+  const bosses = [[405, 486], [689, 716]];
+  let body = polygonClipping.difference(outline, opening, arch,
+    ...bosses.map(([x0, x1]) => rect(x0, 228, x1, 348)));
+  // Pump D rises through a round-cornered gap in the pocket's top wall.
+  const pocketWindow = polygonClipping.union(rect(150, 718, 336, 888),
+    rect(203, 690, 309, 720));
+  // Reservoir C: a recessed channel along the hollow arm's mid-line.
+  const centre = spline(map([[740, 212], [741, 300], [727, 410], [685, 443],
+    [630, 473], [598, 515], [578, 565], [572, 610], [580, 660], [605, 715],
+    [645, 772], [667, 812]]));
+  const channelHalfWidth = 0.05;
   const sides = [[], []];
   centre.forEach((point, index) => {
     const a = centre[Math.max(0, index - 1)];
     const b = centre[Math.min(centre.length - 1, index + 1)];
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const normal = [-(b[1] - a[1]) / length, (b[0] - a[0]) / length];
-    sides[0].push([point[0] + normal[0] * halfWidth, point[1] + normal[1] * halfWidth]);
-    sides[1].push([point[0] - normal[0] * halfWidth, point[1] - normal[1] * halfWidth]);
+    sides[0].push([point[0] + normal[0] * channelHalfWidth, point[1] + normal[1] * channelHalfWidth]);
+    sides[1].push([point[0] - normal[0] * channelHalfWidth, point[1] - normal[1] * channelHalfWidth]);
   });
   const channel = poly([...sides[0], ...sides[1].reverse()]);
+  const recess = half - 0.07;
+  const front = polygonClipping.difference(body, pocketWindow);
   const frame = blocks.hollowReservoirFrame;
   frame.geometry.dispose();
   frame.geometry = mergePassageParts([
-    plate(outline, back, recess),
-    plate(polygonClipping.difference(outline, channel), recess, face),
+    plate(front, -half, recess),
+    plate(polygonClipping.difference(front, channel), recess, half),
+    // The pocket's back wall stands behind pump D.
+    plate(polygonClipping.intersection(body, rect(115, 700, 352, 888)), -0.52, -half),
   ]);
   frame.position.set(0, 0, 0);
   frame.rotation.set(0, 0, 0);
   frame.scale.set(1, 1, 1);
-  // The reservoir air fills the recessed channel.
   const air = blocks.reservoirAir;
   air.geometry.dispose();
   air.geometry = plate(channel, recess + 0.005, recess + 0.02);
@@ -108,56 +135,120 @@ function buildBroadHollowFrame(root, groundY, shaftCenter) {
   air.rotation.set(0, 0, 0);
   air.scale.set(1, 1, 1);
   air.material.opacity = 0.35;
-  const frameMaterial = frame.material;
-  // Pump D stands in the frame's lower-left pocket.
-  const pocket = blocks.reservoirFoot;
-  pocket.geometry.dispose();
-  pocket.geometry = new THREE.BoxGeometry(1.45, -0.31 - groundY, 0.30 - face)
-    .translate(-1.275, (groundY - 0.31) / 2, (0.30 + face) / 2);
-  pocket.position.set(0, 0, 0);
-  pocket.userData.role = 'pump-D-pocket-of-frame-C';
-  // Cylinder B is bolted to the head by a bracket behind it.
-  const bracket = blocks.hammerSupport;
-  bracket.geometry.dispose();
-  bracket.geometry = new THREE.BoxGeometry(0.60, 0.90, -0.40 - face)
-    .translate(1.25, 1.75, (face - 0.40) / 2);
-  bracket.position.set(0, 0, 0);
-  bracket.userData.role = 'cylinder-B-bracket-on-frame-head';
-  // Shaft E runs in a bearing on a short bracket from the frame's top.
-  const bearing = new THREE.Mesh(
-    boredLatheGeometry([{radial: 0.16, axial: -0.10}, {radial: 0.16, axial: 0.10}], 0.095, 64),
-    frameMaterial,
+  const material = frame.material;
+  const extra = [];
+  const add = (geometry, role) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = role;
+    root.add(mesh);
+    extra.push(mesh);
+    return mesh;
+  };
+  // Bosses in the head's left column and right wall, bored for shaft E.
+  const boss = (x0, x1, role) => {
+    const profile = polygonClipping.difference(
+      poly([[-half, by(348)], [half, by(348)], [half, by(228)], [-half, by(228)]]),
+      poly(circle([0, shaftCenter.y], 0.092, 64)),
+    );
+    return add(plate(profile, bx(x0), bx(x1)).rotateY(Math.PI / 2), role);
+  };
+  // rotateY(+90) maps plate z to world x and plate x to world -z; the
+  // profile is symmetric in z, so only the extrusion range matters.
+  blocks.shaftBosses = [
+    boss(410, 485, 'shaft-E-bored-boss-in-head-column-of-frame-C'),
+    boss(690, 715, 'shaft-E-bored-boss-in-head-right-wall-of-frame-C'),
+  ];
+  // The horizontal disk turns on a stud rising from the head column.
+  const stud = add(new THREE.CylinderGeometry(0.05, 0.05, 1, 32),
+    'fixed-stud-carrying-horizontal-disk-M');
+  const studBottom = by(228);
+  const studTop = geometry.frictionDiskCenter.y + 0.125;
+  stud.scale.y = studTop - studBottom;
+  stud.position.set(geometry.frictionDiskCenter.x, (studTop + studBottom) / 2, 0);
+  // Yoke round cylinder B: a top bar over the valve chest, the right wall,
+  // and a bored bottom bar on which B's lower head sits.
+  const chestTop = geometry.valveLinkageY + 0.15;
+  const yokeRight = bx(915);
+  add(new THREE.BoxGeometry(yokeRight - bx(693), 0.12, 2 * half)
+    .translate((yokeRight + bx(693)) / 2, chestTop + 0.06, 0), 'yoke-top-bar-of-frame-C-over-valve-chest');
+  const barTop = geometry.hammerCylinderInnerBottomY - 0.08;
+  const barBottom = barTop - 0.08;
+  add(new THREE.BoxGeometry(0.10, chestTop + 0.12 - barBottom, 2 * half)
+    .translate(yokeRight - 0.05, (chestTop + 0.12 + barBottom) / 2, 0), 'yoke-right-wall-of-frame-C');
+  const barProfile = polygonClipping.difference(
+    poly([[bx(790), -half], [yokeRight - 0.10, -half], [yokeRight - 0.10, half], [bx(790), half]]),
+    poly(circle([geometry.hammerAxisX, 0], 0.075, 64)),
   );
-  bearing.rotation.z = Math.PI / 2;
-  bearing.position.set(-0.80, shaftCenter.y, shaftCenter.z);
-  bearing.userData.role = 'shaft-E-bearing-on-frame-C';
-  root.add(bearing);
-  const bearingBracket = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 0.14, shaftCenter.z - 0.13 - face)
-      .translate(0, 0, (shaftCenter.z - 0.13 + face) / 2),
-    frameMaterial,
-  );
-  bearingBracket.position.set(-0.80, shaftCenter.y, 0);
-  bearingBracket.userData.role = 'shaft-E-bearing-bracket';
-  root.add(bearingBracket);
-  blocks.frameBrackets = [bracket, bearing, bearingBracket, pocket];
+  add(plate(barProfile, -barTop, -barBottom).rotateX(Math.PI / 2), 'yoke-bottom-bar-of-frame-C-bored-for-hammer-rod');
+  // Brown's port passages: the lower one curls down B's left side, the
+  // upper one drops straight into B's top head.
+  const chestBottom = geometry.valveLinkageY - 0.15;
+  const portMaterial = blocks.valveConnectingRod.material;
+  const cylinderOuter = geometry.hammerInnerRadius + 0.085;
+  const lowerPort = tubeThrough([
+    new THREE.Vector3(1.66, chestBottom + 0.01, 0),
+    new THREE.Vector3(1.70, chestBottom - 0.40, 0),
+    new THREE.Vector3(1.715, 2.60, 0),
+    new THREE.Vector3(1.72, geometry.hammerCylinderInnerBottomY + 0.22, 0),
+    new THREE.Vector3(geometry.hammerAxisX - cylinderOuter + 0.01,
+      geometry.hammerCylinderInnerBottomY + 0.12, 0),
+  ], 0.04, portMaterial, 'valve-chest-port-passage-to-bottom-of-cylinder-B', 64);
+  root.add(lowerPort);
+  const upperPort = tubeThrough([
+    new THREE.Vector3(2.36, chestBottom + 0.01, 0),
+    new THREE.Vector3(2.36, (chestBottom + geometry.hammerCylinderInnerTopY) / 2 + 0.04, 0),
+    new THREE.Vector3(2.36, geometry.hammerCylinderInnerTopY + 0.07, 0),
+  ], 0.04, portMaterial, 'valve-chest-port-passage-to-top-of-cylinder-B', 16);
+  root.add(upperPort);
+  // Pump D stands on a closed foot on the bed.
+  const pumpFoot = add(new THREE.CylinderGeometry(0.40, 0.40, 1, 64),
+    'closed-foot-of-pump-D-on-frame-bed');
+  const footTop = geometry.pumpCylinderInnerBottomY - 0.08;
+  pumpFoot.scale.y = footTop - by(888);
+  pumpFoot.position.set(geometry.pumpAxisX, (footTop + by(888)) / 2, geometry.pumpAxisZ);
+  // Brown draws two collars on shaft E beside the friction wheel.
+  blocks.shaftCollars = [578, 612].map((pixel) => {
+    const collar = new THREE.Mesh(
+      boredLatheGeometry([{radial: 0.28, axial: -0.075}, {radial: 0.28, axial: 0.075}], 0.087, 64),
+      blocks.driveShaft.material,
+    );
+    collar.rotation.z = Math.PI / 2;
+    collar.position.x = bx(pixel);
+    collar.userData.role = 'collar-on-shaft-E';
+    blocks.driveAssembly.add(collar);
+    return collar;
+  });
+  blocks.frameBrackets = extra;
+  blocks.portPassages = [lowerPort, upperPort];
 }
 
 function grimshawCompressedAirHammer(movement) {
   const root = new THREE.Group();
+  // Layout follows Brown's plate: 0.00715 units per pixel of the doubled
+  // 1050-pixel engraving, x from the plate's column 540, y up from the
+  // underside of the bed. Cylinder B's drawn bore then equals Grimshaw's
+  // 4.5 inches at 0.135 units per inch.
+  const groundY = -1.92;
+  const brownUnitsPerPixel = 0.00715;
+  const bx = (pixel) => (pixel - 540) * brownUnitsPerPixel;
+  const by = (pixel) => (965 - pixel) * brownUnitsPerPixel + groundY;
   const visualUnitsPerSourceInch = 0.135;
   const sourcePumpBoreInch = 8;
   const sourcePumpStrokeInch = 8;
   const sourceHammerPistonBoreInch = 4.5;
   const sourceHammerStrokeInch = 10;
-  const pumpInnerRadius = sourcePumpBoreInch
-    * visualUnitsPerSourceInch / 2;
+  // Brown draws pump D about as wide as cylinder B, not Grimshaw's 8-inch
+  // bore: the drawn barrel (about 0.71 across outside) sets the bore.
+  const brownPumpBorePixels = 75.5;
+  const pumpInnerRadius = brownPumpBorePixels * brownUnitsPerPixel / 2;
   const pumpStroke = sourcePumpStrokeInch * visualUnitsPerSourceInch;
   const pumpCrankRadius = pumpStroke / 2;
   const hammerInnerRadius = sourceHammerPistonBoreInch
     * visualUnitsPerSourceInch / 2;
-  const hammerStroke = sourceHammerStrokeInch
-    * visualUnitsPerSourceInch;
+  // Brown's short cylinder B, deep piston A and high anvil leave room for
+  // about 77 drawn pixels of travel, not Grimshaw's 10-inch stroke.
+  const brownHammerStrokePixels = 77;
+  const hammerStroke = brownHammerStrokePixels * brownUnitsPerPixel;
   const sourceMainShaftRpm = 180;
   const sourceHammerBlowsPerMinute = 270;
   const frictionSpeedRatio = sourceHammerBlowsPerMinute
@@ -182,27 +273,31 @@ function grimshawCompressedAirHammer(movement) {
     sourceHammerPistonBoreInch * sourceInchMetre / 2
   ) ** 2;
 
-  const shaftCenter = new THREE.Vector3(0, 2.73, -0.42);
-  const pumpAxisX = -1.25;
+  const shaftCenter = new THREE.Vector3(0, by(285), 0);
+  const pumpAxisX = -2.03;
   const pumpAxisZ = shaftCenter.z;
-  const pumpConnectingRodLength = 2.03;
   const pumpPistonThickness = 0.16;
   const pumpWristOffset = 0.21;
-  const pumpCylinderInnerBottomY = 0.04 - pumpWristOffset;
-  const pumpCylinderInnerTopY = 1.36 - pumpWristOffset;
+  // Pump D stands on the bed in the frame's pocket, its open top at the
+  // drawn height (plate y 615); the rod reaches the crank on shaft E.
+  const pumpCylinderInnerBottomY = -1.02;
+  const pumpCylinderInnerTopY = 0.54;
+  const pumpConnectingRodLength = shaftCenter.y + pumpCrankRadius
+    - pumpWristOffset - (pumpCylinderInnerTopY - 0.10 - pumpPistonThickness / 2);
   const pumpPistonArea = Math.PI * pumpInnerRadius ** 2;
   const pumpDeliveredVolumePerDriveRevolution = 2
     * pumpPistonArea * pumpStroke;
 
-  const hammerAxisX = 1.25;
+  const hammerAxisX = bx(842);
   const hammerAxisZ = 0;
-  const hammerPistonThickness = 0.15;
-  const hammerPistonBottomCenterY = 0.60;
-  const hammerCylinderInnerBottomY = 0.42;
-  const hammerCylinderInnerTopY = 2.25;
+  const hammerPistonThickness = 0.64;
+  const hammerCylinderInnerBottomY = by(430);
+  const hammerCylinderInnerTopY = by(240);
+  const hammerPistonBottomCenterY = hammerCylinderInnerBottomY + 0.06
+    + hammerPistonThickness / 2;
   const hammerPistonArea = Math.PI * hammerInnerRadius ** 2;
-  const hammerHeadHeight = 0.42;
-  const anvilTopY = -1.47;
+  const hammerHeadHeight = 0.34;
+  const anvilTopY = by(585);
   const hammerHeadBottomCenterY = anvilTopY + hammerHeadHeight / 2;
   const lowerAdmissionStartPhase = 0.02;
   const lowerCutoffPhase = 0.42;
@@ -211,19 +306,27 @@ function grimshawCompressedAirHammer(movement) {
   const impactSpeedVisualUnitsPerSecond = 3 * hammerStroke
     / (0.5 * hammerCycleDuration);
 
-  const frictionWheelRadius = 0.28;
+  const frictionWheelRadius = 0.43;
   const frictionContactRadius = frictionWheelRadius
     / frictionSpeedRatio;
-  const frictionDiskCenter = new THREE.Vector3(0.05, 2.40, -0.42);
+  const frictionDiskThickness = 0.25;
+  // Brown's horizontal disk lies on top of the frame head; the wheel on
+  // shaft E bears on its underside.
+  const frictionDiskCenter = new THREE.Vector3(
+    bx(462),
+    shaftCenter.y + frictionWheelRadius + frictionDiskThickness / 2,
+    0,
+  );
   const frictionWheelCenter = new THREE.Vector3(
     frictionDiskCenter.x + frictionContactRadius,
     shaftCenter.y,
     frictionDiskCenter.z,
   );
   const valveCrankRadius = 0.22;
-  const valveConnectingRodLength = 1.20;
+  const valveConnectingRodLength = 2.51;
   const valveSliderAxisZ = frictionDiskCenter.z;
-  const valveLinkageY = frictionDiskCenter.y + 0.10;
+  const valveLinkageY = frictionDiskCenter.y + 0.253;
+  const valveChestX = 1.90;
   const valveNeutralSliderX = frictionDiskCenter.x + Math.sqrt(
     valveConnectingRodLength ** 2 - valveCrankRadius ** 2,
   );
@@ -492,9 +595,14 @@ function grimshawCompressedAirHammer(movement) {
     };
   };
 
+  // Brown draws piston A raised at the top of B, so playback starts at the
+  // top of the hammer stroke (half a hammer cycle after impact). The offset
+  // is a constant shift, so the two-turn loop stays continuous.
+  const sourcePoseTimeOffset = 0.5 * hammerCycleDuration;
   const stateAtTime = (time) => {
-    const unwrappedDrivePhase = time / driveCycleDuration;
-    const unwrappedHammerPhase = time / hammerCycleDuration;
+    const shiftedTime = time + sourcePoseTimeOffset;
+    const unwrappedDrivePhase = shiftedTime / driveCycleDuration;
+    const unwrappedHammerPhase = shiftedTime / hammerCycleDuration;
     const pump = pumpStateAtDrivePhase(unwrappedDrivePhase);
     const pneumatic = pneumaticStateAtHammerPhase(unwrappedHammerPhase);
     const friction = {
@@ -572,7 +680,6 @@ function grimshawCompressedAirHammer(movement) {
   });
   cylinderMaterial.depthWrite = false;
 
-  const groundY = -1.92;
   const foundation = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(4.25, 0.20, 1.72),
     frameMaterial,
@@ -612,31 +719,31 @@ function grimshawCompressedAirHammer(movement) {
     frameMaterial,
   );
   reservoirFoot.position.set(-0.25, -0.73, -0.24);
-  root.add(reservoirFoot);
 
   const hammerSupport = new THREE.Mesh(
     new THREE.BoxGeometry(0.48, 0.42, 0.72),
     frameMaterial,
   );
   hammerSupport.position.set(1.03, 2.13, -0.22);
-  root.add(hammerSupport);
 
   const driveAssembly = addRole(new THREE.Group(),
     'constant-speed-rotary-driving-shaft-E');
   driveAssembly.position.copy(shaftCenter);
   root.add(driveAssembly);
   const driveShaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 3.70, 26),
+    new THREE.CylinderGeometry(0.085, 0.085, 3.13, 26),
     darkMaterial,
   ), 'rotary-driving-shaft-E');
+  // Overhung at the left: the shaft ends in the pump crank, outboard of E.
   driveShaft.rotation.z = Math.PI / 2;
+  driveShaft.position.x = -0.365;
   driveAssembly.add(driveShaft);
   const drivePulley = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.47, 0.47, 0.20, 42),
     driveMaterial,
   ), 'belt-driving-pulley-E');
   drivePulley.rotation.z = Math.PI / 2;
-  drivePulley.position.x = -1.72;
+  drivePulley.position.x = bx(315);
   driveAssembly.add(drivePulley);
   const drivePulleyRim = new THREE.Mesh(
     new THREE.TorusGeometry(0.48, 0.045, 9, 52),
@@ -644,29 +751,27 @@ function grimshawCompressedAirHammer(movement) {
   );
   drivePulleyRim.rotation.y = Math.PI / 2;
   drivePulleyRim.position.x = -1.83;
-  driveAssembly.add(drivePulleyRim);
   const driveIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.035, 0.08, 0.32),
     matte(PALETTE.white, { roughness: 0.48 }),
   );
   driveIndex.position.set(-1.84, 0.31, 0);
-  driveAssembly.add(driveIndex);
   const pumpCrankArm = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.12, pumpCrankRadius, 0.10),
     driveMaterial,
   ), 'pump-D-crank-on-shaft-E');
-  pumpCrankArm.position.set(pumpAxisX, pumpCrankRadius / 2, 0);
+  pumpCrankArm.position.set(-1.88, pumpCrankRadius / 2, 0);
   driveAssembly.add(pumpCrankArm);
   const pumpCrankPinVisual = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.08, 0.24, 22),
     rodMaterial,
   );
   pumpCrankPinVisual.rotation.z = Math.PI / 2;
-  pumpCrankPinVisual.position.set(pumpAxisX, pumpCrankRadius, 0);
+  pumpCrankPinVisual.position.set(-1.99, pumpCrankRadius, 0);
   driveAssembly.add(pumpCrankPinVisual);
 
   const pumpCylinder = addRole(new THREE.Group(),
-    'double-acting-eight-inch-air-pump-D');
+    'double-acting-air-pump-D');
   root.add(pumpCylinder);
   const pumpShell = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(
@@ -695,7 +800,6 @@ function grimshawCompressedAirHammer(movement) {
     ), `pump-D-end-ring-${index + 1}`);
     ring.rotation.x = Math.PI / 2;
     ring.position.set(pumpAxisX, y, pumpAxisZ);
-    pumpCylinder.add(ring);
     return ring;
   });
   const pumpPistonAssembly = addRole(new THREE.Group(),
@@ -742,7 +846,6 @@ function grimshawCompressedAirHammer(movement) {
     darkMaterial,
   ), 'pump-D-four-check-valve-chest');
   pumpValveChest.position.set(-0.48, 0.70, pumpAxisZ);
-  root.add(pumpValveChest);
   const pumpCheckValves = [
     ['lowerInletValveOpen', 0.45, -0.13],
     ['lowerDeliveryValveOpen', 0.45, 0.13],
@@ -755,7 +858,6 @@ function grimshawCompressedAirHammer(movement) {
     ), `pump-D-${stateKey}`);
     valve.position.set(-0.70, y, pumpAxisZ + z);
     valve.userData.stateKey = stateKey;
-    root.add(valve);
     return valve;
   });
 
@@ -764,7 +866,6 @@ function grimshawCompressedAirHammer(movement) {
     new THREE.Vector3(-0.12, 0.48, -0.12),
     new THREE.Vector3(-0.20, -0.08, -0.18),
   ], 0.072, rodMaterial, 'pump-D-delivery-pipe-to-reservoir-C', 36);
-  root.add(deliveryPipe);
 
   const frictionWheelAssembly = addRole(new THREE.Group(),
     'sliding-leather-faced-friction-wheel-N');
@@ -786,14 +887,16 @@ function grimshawCompressedAirHammer(movement) {
     matte(PALETTE.white, { roughness: 0.48 }),
   );
   frictionWheelIndex.position.y = frictionWheelRadius * 0.79;
-  frictionWheelAssembly.add(frictionWheelIndex);
 
   const frictionDiskAssembly = addRole(new THREE.Group(),
     'horizontal-variable-speed-friction-disk-M');
   frictionDiskAssembly.position.copy(frictionDiskCenter);
   root.add(frictionDiskAssembly);
   const frictionDisk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.40, 0.40, 0.10, 42),
+    boredLatheGeometry([
+      {radial: 0.66, axial: -frictionDiskThickness / 2},
+      {radial: 0.66, axial: frictionDiskThickness / 2},
+    ], 0.056, 96),
     brassMaterial,
   );
   frictionDiskAssembly.add(frictionDisk);
@@ -805,10 +908,10 @@ function grimshawCompressedAirHammer(movement) {
   frictionContactTrack.position.y = 0.058;
   frictionDiskAssembly.add(frictionContactTrack);
   const valveCrankPinVisual = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.065, 0.065, 0.20, 20),
+    new THREE.CylinderGeometry(0.065, 0.065, 0.26, 32),
     driveMaterial,
   ), 'valve-disk-M-crank-pin');
-  valveCrankPinVisual.position.set(valveCrankRadius, 0.10, 0);
+  valveCrankPinVisual.position.set(valveCrankRadius, 0.255, 0);
   frictionDiskAssembly.add(valveCrankPinVisual);
 
   const frictionShiftLever = addRole(new THREE.Mesh(
@@ -821,15 +924,26 @@ function grimshawCompressedAirHammer(movement) {
     frictionWheelCenter.z + 0.25,
   );
   frictionShiftLever.rotation.x = -0.16;
-  root.add(frictionShiftLever);
 
   const valveConnectingRod = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.052, 0.052, 1, 18),
     rodMaterial,
   ), 'forked-connecting-rod-from-disk-M-to-slide-valve');
   root.add(valveConnectingRod);
+  // The slide valve is forked: the rod's eye enters a slot from the left
+  // and turns on a vertical pin across it.
+  const box = (x0, x1, y0, y1, z0, z1) => new THREE.BoxGeometry(
+    x1 - x0, y1 - y0, z1 - z0,
+  ).translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
   const slideValve = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.16, 0.36),
+    mergePassageParts([
+      box(-0.17, 0.17, 0.046, 0.08, -0.18, 0.18),
+      box(-0.17, 0.17, -0.08, -0.046, -0.18, 0.18),
+      box(0.125, 0.17, -0.046, 0.046, -0.18, 0.18),
+      box(-0.17, 0.125, -0.046, 0.046, 0.135, 0.18),
+      box(-0.17, 0.125, -0.046, 0.046, -0.18, -0.135),
+      new THREE.CylinderGeometry(0.066, 0.066, 0.092, 32),
+    ]),
     driveMaterial,
   ), 'reciprocating-slide-valve-G');
   root.add(slideValve);
@@ -849,7 +963,6 @@ function grimshawCompressedAirHammer(movement) {
       2.61,
       hammerAxisZ,
     );
-    root.add(slide);
     return slide;
   });
 
@@ -858,7 +971,6 @@ function grimshawCompressedAirHammer(movement) {
     new THREE.Vector3(0.98, 2.34, -0.20),
     new THREE.Vector3(hammerAxisX, 2.39, 0),
   ], 0.065, rodMaterial, 'reservoir-C-supply-pipe-to-slide-valve', 30);
-  root.add(reservoirSupplyPipe);
 
   const fixedHammerCylinder = addRole(new THREE.Group(),
     'fixed-hammer-cylinder-B');
@@ -898,7 +1010,6 @@ function grimshawCompressedAirHammer(movement) {
     ), `hammer-cylinder-B-end-ring-${index + 1}`);
     ring.rotation.x = Math.PI / 2;
     ring.position.set(hammerAxisX, y, hammerAxisZ);
-    fixedHammerCylinder.add(ring);
     return ring;
   });
 
@@ -937,13 +1048,13 @@ function grimshawCompressedAirHammer(movement) {
   hammerPistonRod.position.y = (pistonRodTopY + pistonRodBottomY) / 2;
   hammerAssembly.add(hammerPistonRod);
   const hammerHead = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.29, 0.25, hammerHeadHeight, 34),
+    new THREE.CylinderGeometry(0.20, 0.20, hammerHeadHeight, 48),
     driveMaterial,
   ), 'compressed-air-hammer-head');
   hammerHead.position.y = hammerHeadOffsetY;
   hammerAssembly.add(hammerHead);
   const hammerFace = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.27, 0.27, 0.045, 34),
+    new THREE.CylinderGeometry(0.19, 0.19, 0.045, 48),
     darkMaterial,
   ), 'compressed-air-hammer-striking-face');
   hammerFace.position.y = hammerHeadOffsetY - hammerHeadHeight / 2;
@@ -980,18 +1091,19 @@ function grimshawCompressedAirHammer(movement) {
     hammerCylinderCenterY,
     hammerAxisZ,
   );
-  root.add(exhaustPort);
 
   const anvil = addRole(new THREE.Group(), 'fixed-grimshaw-anvil');
   root.add(anvil);
+  // Brown's anvil is a tapered block seated in the arched pedestal's top.
+  const anvilBodyHeight = anvilTopY - 0.05 - by(645);
   const anvilBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.48, 0.44, 36),
+    new THREE.CylinderGeometry(0.32, 0.44, anvilBodyHeight, 48),
     brassMaterial,
   );
-  anvilBody.position.set(hammerAxisX, anvilTopY - 0.27, 0);
+  anvilBody.position.set(hammerAxisX, anvilTopY - 0.05 - anvilBodyHeight / 2, 0);
   anvil.add(anvilBody);
   const anvilFace = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.38, 0.38, 0.05, 38),
+    new THREE.CylinderGeometry(0.32, 0.32, 0.05, 48),
     darkMaterial,
   ), 'fixed-grimshaw-anvil-face');
   anvilFace.position.set(hammerAxisX, anvilTopY - 0.025, 0);
@@ -1001,7 +1113,6 @@ function grimshawCompressedAirHammer(movement) {
     frameMaterial,
   );
   anvilStand.position.set(hammerAxisX, groundY + 0.20, 0);
-  anvil.add(anvilStand);
 
   const throttleTreadle = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.78, 0.10, 0.24),
@@ -1009,11 +1120,9 @@ function grimshawCompressedAirHammer(movement) {
   ), 'foot-treadle-K-throttle-control');
   throttleTreadle.position.set(0.48, groundY + 0.28, 0.58);
   throttleTreadle.rotation.z = -0.14;
-  root.add(throttleTreadle);
   const safetyValve = addRole(new THREE.Group(),
     'adjustable-reservoir-safety-valve');
   safetyValve.position.set(-0.13, 0.20, 0.06);
-  root.add(safetyValve);
   const safetyStem = new THREE.Mesh(
     new THREE.CylinderGeometry(0.045, 0.045, 0.42, 16),
     brassMaterial,
@@ -1153,15 +1262,21 @@ function grimshawCompressedAirHammer(movement) {
     valveConnectingRodLength,
     valveCrankRadius,
     valveDiskAngularVelocity,
+    valveChestX,
     valveLeftSliderX,
     valveLinkageY,
     valveNeutralSliderX,
     valveRightSliderX,
     valveSliderAxisZ,
     visualUnitsPerSourceInch,
+    sourcePoseTimeOffset,
+    brownUnitsPerPixel,
+    brownPumpBorePixels,
+    brownHammerStrokePixels,
+    frictionDiskThickness,
   };
 
-  const sourceState = stateAtTime(0.75 * hammerCycleDuration);
+  const sourceState = stateAtTime(0);
   root.userData = {
     animationTiming: {
       // Two shaft turns equal three valve/hammer cycles, returning every
@@ -1309,7 +1424,7 @@ function grimshawCompressedAirHammer(movement) {
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 472',
       reconstructionDisclosure:
-        'The 1865 paper supplies principal bores, strokes, pressure and operating-speed ranges but not every plate dimension, valve-lap curve, piston mass, port area, loss coefficient or contact setting. Brown’s proportions determine the layout. The selected 180 rpm shaft, 270 blows/minute 1.5:1 friction setting, 20 psi gauge plenum, 1.35 expansion exponent, cutoff phases, display slowdown, colors and ideal impact are explicit reconstruction choices.',
+        'The 1865 paper supplies principal bores, strokes, pressure and operating-speed ranges but not every plate dimension, valve-lap curve, piston mass, port area, loss coefficient or contact setting. Brown’s proportions determine the layout: one broad cast frame C in the plane of the parts, a small pump D in its base pocket, cylinder B in a yoke at the head, and the anvil on an arched pedestal. Pump D’s bore and piston A’s travel follow the plate (about 4 in and 4.1 in at the 4.5-in hammer-bore scale), not the paper’s 8-in pump bore and 10-in stroke. The four pump checks, safety valve, throttle treadle, speed lever and exhaust port, which Brown does not draw, are not shown. The selected 180 rpm shaft, 270 blows/minute 1.5:1 friction setting, 20 psi gauge plenum, 1.35 expansion exponent, cutoff phases, display slowdown, colors and ideal impact are explicit reconstruction choices.',
     },
     stateAtTime,
     transmission: {
@@ -1326,10 +1441,10 @@ function grimshawCompressedAirHammer(movement) {
     valveKinematicsAtHammerPhase,
   };
   correctHammerWorkingParts(root, 472);
-  buildBroadHollowFrame(root, groundY, shaftCenter);
+  buildBroadHollowFrame(root, bx, by, shaftCenter);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.32, groundY - 0.10, -1.55),
-    new THREE.Vector3(2.15, 3.50, 1.10),
+    new THREE.Vector3(bx(78), groundY - 0.02, -1.10),
+    new THREE.Vector3(bx(1002), 4.08, 1.10),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);

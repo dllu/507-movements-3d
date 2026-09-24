@@ -55,7 +55,6 @@ export function correctHammerWorkingParts(root,id){
   const pin=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.64,32),b.crankPinVisual.material);pin.rotation.x=Math.PI/2;pin.position.set(0,-g.cylinderDriveAttachmentOffsetY,.76);b.movingCylinder.add(pin);b.cylinderJointPin=pin;
   d.reconstructionNote='The crank drives the cylinder through a bored connecting rod; the longer hammer rod keeps its head below the cylinder throughout the stroke. The hammer trajectory and trapped-air pressure curves are prescribed illustrations. They do not solve the passive piston force balance or impact, rebound, leakage and valve timing.';
  }else{
-  replace(b.reservoirFoot,new THREE.BoxGeometry(1.45,1.32,1.16));b.reservoirFoot.position.y=-1.18;
   replace(b.pumpShell,tube(g.pumpInnerRadius+.085,g.pumpCylinderInnerTopY-g.pumpCylinderInnerBottomY+.16,g.pumpInnerRadius));
   replace(b.hammerCylinderShell,tube(g.hammerInnerRadius+.085,g.hammerCylinderInnerTopY-g.hammerCylinderInnerBottomY+.16,g.hammerInnerRadius));
   b.workingCaps=ends(root,g.hammerAxisX,g.hammerAxisZ,g.hammerCylinderInnerBottomY,g.hammerCylinderInnerTopY,g.hammerInnerRadius+.085,.068,b.hammerCylinderRings[0].material);
@@ -64,11 +63,12 @@ export function correctHammerWorkingParts(root,id){
   const pin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.22,32),b.pumpConnectingRod.material);pin.rotation.z=Math.PI/2;pin.position.y=g.pumpWristOffset;replace(pin,new THREE.CylinderGeometry(.08,.08,.40,32));b.pumpPistonAssembly.add(pin);b.pumpWristPin=pin;
   b.pumpForks=[];for(const x of[-.11,.11]){const eye=new THREE.Mesh(tube(.12,.06,.082),pin.material);eye.rotation.z=Math.PI/2;eye.position.set(x,g.pumpWristOffset,0);b.pumpPistonAssembly.add(eye);b.pumpForks.push(eye);
    const foot=new THREE.Mesh(new THREE.BoxGeometry(.06,.055,.12),pin.material);foot.position.set(x,.09,0);b.pumpPistonAssembly.add(foot);b.pumpForks.push(foot);}
-  b.pumpCrankArm.position.x-=.15;
-  const crankPin=b.driveAssembly.children.find(o=>o.geometry?.parameters.radiusTop===.08);replace(crankPin,new THREE.CylinderGeometry(.08,.08,.40,32));b.pumpCrankPin=crankPin;
-  replace(b.frictionWheel,tube(g.frictionWheelRadius,.16,.087));replace(b.drivePulley,tube(.47,.20,.087));
+  const crankPin=b.driveAssembly.children.find(o=>o.geometry?.parameters.radiusTop===.08);replace(crankPin,new THREE.CylinderGeometry(.08,.08,.22,32));b.pumpCrankPin=crankPin;
+  replace(b.frictionWheel,tube(g.frictionWheelRadius,.16,.087));replace(b.drivePulley,tube(.73,.36,.087));
   b.frictionContactTrack.visible=false;
-  const slot=clip.difference(rect(.64,.30),rect(.364,.164));replace(b.valveChest,plate(slot,-.59,.59).rotateY(Math.PI/2));b.valveChest.position.set(g.hammerAxisX,g.valveLinkageY,g.valveSliderAxisZ);
+  const slot=clip.difference(rect(.64,.30),rect(.364,.164));replace(b.valveChest,plate(slot,-.65,.65).rotateY(Math.PI/2));b.valveChest.position.set(g.valveChestX,g.valveLinkageY,g.valveSliderAxisZ);
+  // A bored forked rod rides on the disk's vertical crank pin.
+  replace(b.valveConnectingRod,link(g.valveConnectingRodLength,.072,.11,.07,.06,'x'));
   d.reconstructionNote='The air pump, reservoir, friction drive and hammer retain their source arrangement and imposed timing ratio. Finite rod passages and striking surfaces are corrected. Hammer motion, air pressures and impact stopping remain prescribed; the trunk-piston pump entrance, valve porting, pressure seals, friction slip and rebound are not dynamically validated.';
  }
  d.minimumDisplayCycleSeconds=id===470?g.cycleDuration:id===471?5.6:9.6;

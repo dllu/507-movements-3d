@@ -830,7 +830,7 @@ export default {
   467: {
     camera: [0, 0.02, 1],
     remove: ['fixed-ground-plate-under-robertson-jack'],
-    note: 'Sectional elevation of the jack, ram, pump and lever; no ground plate is drawn.',
+    note: 'Sectional elevation of the narrow jack: small hollow base, ram with the pump in its foot, rising cylinder with cupped head and claw, and the lever on its two eyes at the lower left; no ground plate is drawn.',
   },
   468: {
     camera: [0.015, 0.012, 1],

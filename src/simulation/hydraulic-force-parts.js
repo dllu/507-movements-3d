@@ -1,16 +1,15 @@
 import * as THREE from 'three';
-import {plate,poly,circle,capsule,ring,polygonClipping as clip} from './finite-plate-geometry.js';
-import {horizontalTurned,horizontalRing} from './horizontal-turbine-solids.js';
+import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
+import {horizontalRing} from './horizontal-turbine-solids.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
-import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
+import {curvedPipeWall} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const mesh=(parent,g,material,role)=>{const o=new THREE.Mesh(g,material);o.userData.role=role;parent.add(o);return o;};
 
 // backHalf keeps only the z<0 half, closed at the cut, as Brown sections
 // the cylinders through their axes.
-function sidePortedShell(inner,outer,low,high,portY,halfHeight,side=1,minCos=.982,backHalf=false) {
+export function sidePortedShell(inner,outer,low,high,portY,halfHeight,side=1,minCos=.982,backHalf=false) {
   const n=128,levels=[low,portY-halfHeight,portY+halfHeight,high],positions=[];
   const active=(i,j)=>j>=0&&j<3&&!(j===1&&Math.cos((i+.5)*2*Math.PI/n)*side>minCos)&&!(backHalf&&Math.sin((i+.5)*2*Math.PI/n)>0);
   const point=(r,y,i)=>new THREE.Vector3(r*Math.cos(i*2*Math.PI/n),y,r*Math.sin(i*2*Math.PI/n));
@@ -76,40 +75,6 @@ export function correctHydraulicForceParts(root,id) {
     b.reservoirWater.position.y=-.18;
     update=state=>{const bottom=g.ramCylinderBottomY+.08,top=-.13+state.ramLift,height=top-bottom;replaceWaterHeight(b.ramCylinderWater,height,(top+bottom)/2);};
     d.solidReview={status:'qualified-geometry',residual:'Ideal Pascal area/volume laws and prescribed checks/load compression remain; valve sealing, fluid pressure losses and force equilibrium are not dynamically solved.'};
-  } else {
-    replace(b.fixedRamBody,horizontalRing(.105,g.fixedRamRadius,-g.fixedRamHeight/2,g.fixedRamHeight/2));
-    // Only the ram is ghosted to show its pipe; the lever and screw share its paint.
-    b.fixedRamBody.material=b.fixedRamBody.material.clone();b.fixedRamBody.material.transparent=true;b.fixedRamBody.material.opacity=.42;
-    replace(b.cylinderShell,horizontalRing(g.fixedRamRadius+.004,g.fixedRamRadius+.12,-g.movingCylinderHeight/2,g.movingCylinderHeight/2));
-    const collar=b.fixedRam.children[2];replace(collar,horizontalRing(.105,.58,-.10,.10));collar.position.y=-.50;
-    b.internalPipeWall=mesh(b.fixedRam,horizontalRing(.077,.10,-g.fixedRamHeight/2-.07,g.fixedRamHeight/2),b.pumpPistonRod.material,'finite-internal-pressure-pipe-wall');b.internalPipeWall.position.copy(b.fixedRamBody.position);
-    b.sideClaw.children[0].geometry.dispose();b.sideClaw.children[0].geometry=new THREE.BoxGeometry(.30,1.20,.68);b.sideClaw.children[0].position.x=.64;
-    b.topSaddle.children[0].position.y=1.96;
-    // Brown's base box is only a little wider than the cylinder: its right wall
-    // stands just outside the cylinder seal; the left keeps the pump and screw.
-    const rightX=.80,leftX=-1.335;
-    const leftBaseWall=plate(clip.difference(poly([[-1.06,-.36],[1.06,-.36],[1.06,.36],[-1.06,.36]]),poly(circle([0,-.10],.100,64))),-.04,.04).rotateY(Math.PI/2).translate(leftX,0,0);
-    const span=rightX-leftX-.08,mid=(rightX+leftX)/2;
-    replace(b.baseShell,mergePassageParts([leftBaseWall,new THREE.BoxGeometry(.08,.72,2.12).translate(rightX,0,0),new THREE.BoxGeometry(span,.72,.08).translate(mid,0,-1.02),new THREE.BoxGeometry(span,.72,.08).translate(mid,0,1.02)]));
-    const top=b.hollowBase.children.at(-1),bottom=b.hollowBase.children.at(-2);
-    replace(bottom,new THREE.BoxGeometry(rightX-leftX+.23,.10,2.24));bottom.position.x=mid;
-    replace(b.baseWater,new THREE.BoxGeometry(rightX-leftX-.12,1,1.84));b.baseWater.position.x=mid;
-    const lid=clip.difference(poly([[-1.45,-1.12],[rightX+.115,-1.12],[rightX+.115,1.12],[-1.45,1.12]]),poly(circle([0,0],g.fixedRamRadius+.004,64)),poly(circle([g.pumpSliderX,z],g.pumpPlungerRadius+.077,64)),poly(circle([valveX,z],chamberOuter+.004,64)),poly(circle([-.35,.65],.105,64)));
-    replace(top,plate(lid,-.05,.05).rotateX(Math.PI/2));
-    // The feed runs in along +z to the ram pipe's foot so it clears the thumb-screw tip.
-    b.feedPipe=pipe(root,[[valveX,-.16,z],[-.35,-.16,.65],[-.35,-.40,.65],[-.30,-.64,.65],[-.06,-.72,.62],[0,-.72,.40],[0,-.72,.18],[0,-.67,.03],[0,-.60,0]],.062,.085,b.foundation.material,'finite-pump-to-internal-pipe-feed');
-    b.inletPipe=pipe(root,[[g.pumpSliderX,-.94,z],[g.pumpSliderX,-.885,z]],.068,.095,b.foundation.material,'finite-base-reservoir-inlet');
-    b.thumbScrew.position.set(-1.25,-.80,0);
-    replace(b.screwShaft,new THREE.CylinderGeometry(.075,.075,1.40,48));b.screwShaft.position.x=.30;
-    replace(b.screwTip,new THREE.ConeGeometry(.105,.24,64));b.screwTip.position.x=1.10;
-    const thread={inner:.075,outer:.095,low:-.30,high:.30,width:.018,lead:g.thumbScrewPitch/(2*Math.PI),phase:0};
-    replace(b.screwThread,helicalThread(thread,threadAngles(thread,64)).rotateY(Math.PI/2));
-    b.returnSeat=mesh(root,horizontalTurned([[-.20,.074375],[-.20,.16],[-.10,.16],[-.10,.030625]]).rotateZ(-Math.PI/2),b.foundation.material,'finite-conical-thumb-screw-return-seat');b.returnSeat.position.set(0,-.80,0);
-    const returnPoints=[new THREE.Vector3(0,-.60,0),new THREE.Vector3(0,-.70,0)];
-    for(let i=1;i<=24;i++){const a=Math.PI*i/48;returnPoints.push(new THREE.Vector3(-.10+.10*Math.cos(a),-.70-.10*Math.sin(a),0));}
-    const returnCurve=new THREE.CatmullRomCurve3(returnPoints);
-    replace(b.returnPassage,curvedPipeWall(returnCurve,.065,.09,48,24));replace(b.returnWater,new THREE.TubeGeometry(returnCurve,48,.040,10,false));
-    d.solidReview={status:'qualified-geometry',residual:'Ideal hydraulic volume law and prescribed checks/return retained. Conical screw seat is geometric; passive valve forces, seals, leakage, pressure losses and load dynamics are not solved.'};
   }
   d.updateSolids=state=>{b.pumpPitman.position.z=z+.28;b.crossheadPin.position.copy(state.crosshead);update(state);};
   d.minimumDisplayCycleSeconds=g.cycleDuration;fitPistonGuide(root,d.update,g.cycleDuration);d.cameraDirection=new THREE.Vector3(2.3,1.9,15);

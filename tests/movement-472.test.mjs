@@ -126,20 +126,33 @@ test('movement 472 source record preserves Brown and Grimshaw primary-source con
   disposeModel(model.root);
 });
 
-test('movement 472 preserves the primary-source bore, stroke, pressure, and selected operating-speed ratios', () => {
+test('movement 472 keeps Brown’s drawn proportions with the primary-source pump stroke, hammer bore, pressure, and operating-speed ratios', () => {
   const { model } = movementModel();
   const { geometry } = model.root.userData;
 
-  near(2 * geometry.pumpInnerRadius / geometry.visualUnitsPerSourceInch,
-    geometry.sourcePumpBoreInch, 1e-12, 'pump bore scale');
+  // Brown draws pump D about as wide as cylinder B and a short hammer
+  // travel; both follow the plate, not Grimshaw's 8-inch bore and 10-inch
+  // stroke, which remain recorded as source values.
+  near(2 * geometry.pumpInnerRadius / geometry.brownUnitsPerPixel,
+    geometry.brownPumpBorePixels, 1e-9, 'pump bore from the plate');
+  assert.ok(2 * geometry.pumpInnerRadius
+    < geometry.sourcePumpBoreInch * geometry.visualUnitsPerSourceInch);
   near(geometry.pumpStroke / geometry.visualUnitsPerSourceInch,
     geometry.sourcePumpStrokeInch, 1e-12, 'pump stroke scale');
   near(2 * geometry.hammerInnerRadius
     / geometry.visualUnitsPerSourceInch,
   geometry.sourceHammerPistonBoreInch, 1e-12,
   'hammer-piston bore scale');
-  near(geometry.hammerStroke / geometry.visualUnitsPerSourceInch,
-    geometry.sourceHammerStrokeInch, 1e-12, 'hammer stroke scale');
+  // Cylinder B's drawn bore (85 doubled-plate pixels) is the same 4.5 in.
+  near(2 * geometry.hammerInnerRadius / geometry.brownUnitsPerPixel, 85,
+    0.1, 'hammer-piston bore on the plate');
+  near(geometry.hammerStroke / geometry.brownUnitsPerPixel,
+    geometry.brownHammerStrokePixels, 1e-9, 'hammer stroke from the plate');
+  // The stroke fits between B's lower head and the anvil with the head.
+  assert.ok(geometry.anvilTopY + geometry.hammerStroke
+    + geometry.hammerHeadHeight < geometry.hammerCylinderInnerBottomY - 0.08);
+  assert.ok(geometry.hammerPistonBottomCenterY + geometry.hammerStroke
+    + geometry.hammerPistonThickness / 2 < geometry.hammerCylinderInnerTopY);
   near(geometry.frictionSpeedRatio,
     geometry.sourceHammerBlowsPerMinute / geometry.sourceMainShaftRpm,
     1e-12, 'selected valve-drive ratio');
@@ -320,7 +333,7 @@ test('movement 472 piston A, rod, head, and face preserve one rigid translation 
       `hammer penetrates anvil at ${phase}`);
   }
   near(hammerKinematicsAtPhase(0.5).lift,
-    geometry.hammerStroke, 1e-12, 'ten-inch top of stroke');
+    geometry.hammerStroke, 1e-12, 'top of stroke');
   const epsilon = 1e-9;
   const preImpact = hammerKinematicsAtPhase(1 - epsilon);
   const impact = hammerKinematicsAtPhase(0);
@@ -385,6 +398,22 @@ test('movement 472 valve admission alternates reservoir pressure and exact cutof
     assert.ok(state.lowerChamberHeight > 0);
     assert.ok(state.upperChamberHeight > 0);
   }
+  disposeModel(model.root);
+});
+
+test('movement 472 playback opens with piston A raised as Brown draws it and the impact half a hammer cycle later', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  model.update(0);
+  near(stateAtTime(0).hammer.lift, geometry.hammerStroke, 1e-12,
+    'top of stroke at t=0');
+  near(blocks.hammerAssembly.position.y,
+    geometry.hammerPistonBottomCenterY + geometry.hammerStroke, 1e-12,
+    'rendered piston raised at t=0');
+  const impact = stateAtTime(geometry.hammerCycleDuration
+    - geometry.sourcePoseTimeOffset);
+  assert.equal(impact.hammer.impactContact, true);
+  near(impact.hammer.hammerFaceY, geometry.anvilTopY, 1e-12, 'impact face');
   disposeModel(model.root);
 });
 

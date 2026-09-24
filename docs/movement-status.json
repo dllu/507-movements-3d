@@ -4532,7 +4532,8 @@
         "docs/lane5-cams-catches-review.md",
         "docs/u2-cams-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m3-mujoco-cams-review.md"
+        "docs/m3-mujoco-cams-review.md",
+        "docs/m13-rebuilds-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4540,7 +4541,7 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's sharper dimples are rounded into three lobes, since no two-roller fork can follow them.",
+      "visibleFlaws": "Brown's dimples are softened into three rounded lobes: they sit almost opposite each other, and a fork driven by both rollers spans one fixed width, so both cannot be kept (smaller rollers or play do not help).",
       "limits": "Roller spread and hidden arcs inferred.",
       "assessment": "minor",
       "userReported": "2026-09-24"
@@ -15677,8 +15678,8 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3e-418-504-review.md",
-        "note": "Pass-51 screen: 0.0134 → 0.0000."
+        "evidence": "docs/m13-rebuilds-review.md",
+        "note": "Pass-51 m13 screen: only seated contacts (conical screw tip on its seat, inlet disk on the barrel end), 0.0000."
       },
       "references": [
         "docs/hydraulic-force-family-review.md",
@@ -15688,7 +15689,8 @@
         "docs/w2h-401-507-review.md",
         "docs/w3e-418-504-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m13-rebuilds-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15696,8 +15698,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The base is wider than Brown's because it houses the pump, which Brown puts inside the ram.",
-      "limits": "Checks and displacement prescribed.",
+      "visibleFlaws": "Ram and cylinder are see-through rather than hatched, so the lever shows faintly through the cylinder where Brown hides it; the wing is a two-ball bar, not his heart-shaped wing.",
+      "limits": "Lever read as a plunger at the upper eye with a fulcrum on a swing link; hidden barrel, checks and depths inferred; checks and displacement prescribed; lift small (0.18).",
       "assessment": "minor"
     },
     {
@@ -15849,8 +15851,8 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/hammer-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 39 tests pass. Finite tests sample 65 cycle poses plus each exact impact event. They check piston/rod/head against the cylinder walls and heads; finite hammer/anvil faces; repaired shaft, disk, connecting-rod and lug interfaces; steam pipe/barrel port; pump rod/cylinder, piston/fork/crank-web clearances; and friction roller/disk and slide/chest interfaces. Roughly 4.43 million… Pass-49 relative-motion screen reports 0.105 solid overlap (root/BoxGeometry x hammer-piston-A); unclassified, may be intended contact."
+        "evidence": "docs/m13-rebuilds-review.md",
+        "note": "Pass-51 m13 screen 0.086 → 0.0000 (seated friction contact, impact face and display air only)."
       },
       "references": [
         "docs/hammer-family-review.md",
@@ -15858,7 +15860,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m13-rebuilds-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15866,9 +15869,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The frame stands behind the working parts on brackets and is taller than Brown's.",
-      "limits": "Open trunk-piston entrance lacks pressure-tight gland; hammer/pump forces prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Cylinder and pump walls are see-through; pump D bore and A travel follow the plate, not Grimshaw's 8 in and 10 in; no gland at the piston entrance; pump checks state-only; forces prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 473,
@@ -16923,7 +16926,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/m13-rebuilds-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16931,7 +16935,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The arm's full turn is framed, so the train reads small and off-centre.",
+      "visibleFlaws": "Keeping the arm's full turn in view needs about ±4 units about C while the resting train lies to the right, so it reads small and off-centre; Brown draws one static pose and crops nothing.",
       "limits": "Generated tooth thicknesses and supports inferred.",
       "assessment": "minor"
     },
