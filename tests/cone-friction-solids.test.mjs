@@ -26,11 +26,14 @@ function openBore(object,center,axis,radius){
  }
 }
 
-test('262/263: finite cone, thread/nut and reconstructed guide clear through a full traverse',()=>{
+test('262/263: finite cone, thread/nut, footed standard E and roller C clear through a full traverse',()=>{
  const m=make(263);try{
   const b=m.root.userData.blocks,cache=new Map();
-  const pairs=[...b.guideRails,...b.carriageBlocks,b.carriageBridge,b.nut,b.nutThread,b.nutPost,b.guideTop,b.base,b.rollerAxle,b.rollerBody,b.rollerFaceRim].map(o=>[b.coneBody,o]);
-  pairs.push([b.screwThread,b.nutThread],[b.screwThread,b.nut],[b.screwThread,b.nutPost],[b.screwThread,b.carriageBridge],[b.screwThread,b.rollerAxle],[b.rightScrewCore,b.rollerBody],[b.rollerBody,b.rollerAxle]);
+  // The plates draw no guide, spring or base; only standard E is fixed.
+  for(const key of['base','guideRails','guideTop','carriageBlocks','carriageBridge','contactSpring'])assert.equal(b[key],undefined,key);
+  const pairs=[b.nut,b.nutThread,b.nutPost,b.rollerAxle,b.rollerBody,b.rollerFaceRim].map(o=>[b.coneBody,o]);
+  pairs.push(...b.eccentricConnectors.map(o=>[o,b.nutPost]),...b.coneRims.map(o=>[o,b.nutPost]));
+  pairs.push([b.screwThread,b.nutThread],[b.screwThread,b.nut],[b.screwThread,b.nutPost],[b.screwThread,b.rollerAxle],[b.rightScrewCore,b.rollerBody],[b.rollerBody,b.rollerAxle]);
   const cone=solidSurface(b.coneBody.geometry),roller=solidSurface(b.rollerBody.geometry);
   for(let i=0;i<=64;i++){
    m.update(i*12/64);m.root.updateMatrixWorld(true);
@@ -38,12 +41,7 @@ test('262/263: finite cone, thread/nut and reconstructed guide clear through a f
    const point=m.root.localToWorld(m.root.userData.kinematics.contactPoint.clone());
    assert.ok(cone.distance(b.coneBody.worldToLocal(point.clone()))<.001,'roller lifted clear of cone');
    assert.ok(roller.distance(b.rollerBody.worldToLocal(point.clone()))<.001,'nominal contact outside actual roller');
-   for(const block of b.carriageBlocks){
-    assert.ok(box(block).intersectsBox(box(b.carriageBridge)),'slide detached from bridge');
-    openBore(block,block.getWorldPosition(new THREE.Vector3()),new THREE.Vector3(0,1,0),.055*.78);
-   }
-   assert.ok(box(b.carriageBridge).intersectsBox(box(b.rollerAxle)),'axle detached from bridge');
-   assert.ok(box(b.contactSpring).intersectsBox(box(b.carriageBlocks[1])),'spring detached from carriage');
+   assert.ok(box(b.rollerAxle).intersectsBox(box(b.rollerBody)),'roller C detached from its axle');
   }
   assert.ok(box(b.nutPost).intersectsBox(box(b.nut)),'nut unsupported');
   assert.ok(b.screwThread.geometry.userData.thread,'solid helical thread missing');
@@ -57,7 +55,8 @@ test('265: finite roller and hub clear their guide and remain on the cone',()=>{
   for(let i=0;i<=64;i++){
    m.update(i*8/64);m.root.updateMatrixWorld(true);
    for(const part of[b.rollerBody,b.rollerTread,b.rollerHub])assertClear(b.coneBody,part,cache,`265 roller/cone at ${i}`);
-   for(const part of[b.rollerBody,b.rollerHub])openBore(part,b.roller.getWorldPosition(new THREE.Vector3()),g.coneGeneratorAxis,.057*.88);
+   // The concave drum tilts the roller axle to the local generator.
+   for(const part of[b.rollerBody,b.rollerHub])openBore(part,b.roller.getWorldPosition(new THREE.Vector3()),m.root.userData.kinematics.generatorAxis,.057*.88);
    const point=m.root.localToWorld(m.root.userData.kinematics.contactPoint.clone());
    assert.ok(cone.distance(b.coneBody.worldToLocal(point.clone()))<.001);
    assert.ok(tread.distance(b.rollerTread.worldToLocal(point.clone()))<.002);

@@ -725,25 +725,16 @@ function seabedTriggeredSoundingWeight(movement) {
   const seabedMaterial = matte(0xc8b792, { roughness: 0.94 });
 
   const seabed = new THREE.Group();
+  // Brown draws no sea bottom. The probe and the dropped weight still need
+  // a contact plane, so it is kept as a thin line just wider than the weight.
   const seabedSlab = new THREE.Mesh(
-    new THREE.BoxGeometry(5.2, 0.16, 4.2),
+    new THREE.BoxGeometry(3.4, 0.03, 0.5),
     seabedMaterial,
   );
-  seabedSlab.position.y = seabedY - 0.08;
+  seabedSlab.position.y = seabedY - 0.015;
   seabedSlab.userData.role = 'sea-bottom-contact-plane';
-  const seabedRings = [0.9, 1.55, 2.15].map((radius, index) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, 0.018, 6, 64),
-      matte(index % 2 === 0 ? 0xa89672 : 0xb4a27f, {
-        roughness: 0.96,
-      }),
-    );
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = seabedY + 0.012;
-    ring.userData.role = 'seabed-impact-reference-ring';
-    return ring;
-  });
-  seabed.add(seabedSlab, ...seabedRings);
+  const seabedRings = [];
+  seabed.add(seabedSlab);
   seabed.userData.fixed = true;
   seabed.userData.role = 'fixed-seabed';
   root.add(seabed);
@@ -1254,6 +1245,16 @@ export function createAuthoredSoundingWeightMovement(movement) {
     // stem it joins.
     const bridge = model.root.userData.releaseWorkingParts?.bridge;
     if (bridge) bridge.position.z = 0.42;
+    // Fit the camera to the instrument's own travel and the minimal bottom
+    // line rather than the stale measured envelope of the former wide slab.
+    const { root } = model;
+    const fitBounds = new THREE.Box3();
+    for (let sample = 0; sample <= 96; sample += 1) {
+      model.update(root.userData.timeline.cycleClosure * sample / 96);
+      root.updateMatrixWorld(true);
+      fitBounds.union(new THREE.Box3().setFromObject(root, true));
+    }
+    root.userData.cameraFitBounds = fitBounds.expandByScalar(0.05);
     model.update(0);
     return model;
   }

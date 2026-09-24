@@ -577,10 +577,13 @@ function ellipticalDriverCompoundIdler(movement) {
   const driverGearDepth = 0.28;
   const circularGearZ = -0.18;
   const circularGearDepth = 0.28;
-  const carrierZ = 0.48;
-  const guideFloorZ = -0.62;
+  // The grooved plate g-h sits in front of the arm, open toward it, so shaft
+  // D never passes through the plane that B's large wheel sweeps. It is
+  // rendered faint with a dashed groove, as Brown draws it.
+  const carrierZ = 0.42;
+  const guideFloorZ = 0.68;
   const guideFloorDepth = 0.1;
-  const guideRailZ = -0.5;
+  const guideRailZ = 0.57;
   const guideRailDepth = 0.12;
   const grooveHalfWidth = 0.145;
   const guideRollerRadius = 0.095;
@@ -803,7 +806,7 @@ function ellipticalDriverCompoundIdler(movement) {
     whiteMaterial,
     30,
   );
-  guideRoller.position.set(carrierLength, 0, guideRailZ + 0.015);
+  guideRoller.position.set(carrierLength, 0, guideRailZ);
   guideRoller.userData.guideFollower = true;
   guideRoller.userData.role = 'roller-concentric-with-b-in-guide-g-h';
   carrier.add(guideRoller);
@@ -888,7 +891,7 @@ function ellipticalDriverCompoundIdler(movement) {
     outputShaft,
     smallMeshMarker,
   };
-  root.userData.cameraDistanceScale = 0.93;
+  root.userData.cameraDistanceScale = 0.99;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.5, -4.62, -1.05),
     new THREE.Vector3(3.35, 4.75, 1.05),
@@ -1041,6 +1044,78 @@ function ellipticalDriverCompoundIdler(movement) {
   update(0);
   correctVariableIdler(root, movement.id, update);
   markShadows(root);
+  // Brown draws no phase stripes, and draws the guide groove g-h only as a
+  // dashed path behind C. Keep the attached grooved plate as a faint
+  // translucent body and trace both groove walls as dashed ink lines.
+  driverIndex.visible = false;
+  for (const gear of [outputGear, compoundOuterGear, compoundPinion]) {
+    gear.userData.rotor.children[3].visible = false;
+  }
+  const ghostGuideMaterial = matte(PALETTE.brass, {
+    opacity: 0.05,
+    roughness: 0.8,
+    side: THREE.DoubleSide,
+    transparent: true,
+  });
+  ghostGuideMaterial.depthWrite = false;
+  for (const mesh of [guideFloor, guideOuterRail, guideInnerIsland]) {
+    mesh.material = ghostGuideMaterial;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+  }
+  guideRoller.material = inkMaterial;
+  const dashedGrooveMaterial = new THREE.LineDashedMaterial({
+    color: PALETTE.ink,
+    dashSize: 0.16,
+    gapSize: 0.1,
+  });
+  const grooveDashes = [grooveOuterPoints, grooveInnerPoints].map((points, index) => {
+    const line = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(
+        points.map((point) => new THREE.Vector3(
+          point.x,
+          point.y,
+          guideFloorZ + guideFloorDepth / 2 + 0.004,
+        )),
+      ),
+      dashedGrooveMaterial,
+    );
+    line.computeLineDistances();
+    line.userData.role = index === 0
+      ? 'dashed-outer-edge-of-hidden-groove-g-h'
+      : 'dashed-inner-edge-of-hidden-groove-g-h';
+    line.userData.nonSolid = true;
+    driverRotor.add(line);
+    return line;
+  });
+  root.userData.blocks.grooveDashes = grooveDashes;
+  // Re-seat the shafts for the front guide plate: D runs only from C to the
+  // plate, B's spindle from its rear wheel to the roller, A's up to the arm.
+  carrierBeam.userData.boredMesh.position.z = carrierZ;
+  const setShaftSpan = (mesh, back, front) => {
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.CylinderGeometry(0.105, 0.105, front - back, 48);
+    return (back + front) / 2;
+  };
+  driverShaft.position.z = setShaftSpan(
+    driverShaft.userData.rotor.children[0],
+    driverGearZ - driverGearDepth / 2 - 0.02,
+    guideFloorZ + guideFloorDepth / 2 + 0.03,
+  );
+  driverHub.scale.y = (guideRailZ - guideRailDepth / 2
+    - (driverGearZ - driverGearDepth / 2)) / 1.08;
+  driverHub.position.z = (guideRailZ - guideRailDepth / 2
+    + driverGearZ - driverGearDepth / 2) / 2;
+  compoundSpindle.position.z = setShaftSpan(
+    compoundSpindle,
+    circularGearZ - circularGearDepth / 2 - 0.02,
+    guideRailZ + guideRailDepth / 2 - 0.01,
+  );
+  outputShaft.position.z = setShaftSpan(
+    outputShaft.userData.rotor.children[0],
+    circularGearZ - circularGearDepth / 2 - 0.08,
+    carrierZ + 0.065,
+  );
   return {
     root,
     update,

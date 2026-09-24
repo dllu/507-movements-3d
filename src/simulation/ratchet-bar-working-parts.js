@@ -36,7 +36,7 @@ export function boredLeverPlate(anchors, handle) {
 // C2 imposed return: rise before the first crest, descend only after the final
 // crest. The finite gap at pickup supplies the otherwise missing overtravel.
 export function pawlReturnLift(fraction) {
-  const start = 0, riseEnd = 0.40, fallStart = 0.80, end = 1;
+  const start = 0, riseEnd = 0.50, fallStart = 0.80, end = 1;
   if (fraction <= start || fraction >= end) return { value: 0, first: 0, second: 0 };
   if (fraction >= riseEnd && fraction <= fallStart) return { value: 1, first: 0, second: 0 };
   const rising = fraction < riseEnd, width = rising ? riseEnd : end - fallStart;
@@ -61,24 +61,45 @@ export function finishRatchetBarSupports(root) {
     const center = pin.userData.role === 'fixed-middle-fulcrum-pin';
     pin.geometry = new THREE.CylinderGeometry(center ? 0.13 : 0.085, center ? 0.13 : 0.085, 0.64, 64);
     pin.position.z = 0;
+    // The lever turns on the stationary fulcrum shaft; a second, rotating
+    // copy of that shaft would occupy the same solid.
+    if (center) pin.visible = false;
   }
+  // Brown's post stands on the ground line beside the table.
+  const groundY = (246 - 377) * 0.018;
   b.pivotStand.geometry.dispose();
-  b.pivotStand.geometry = new THREE.BoxGeometry(0.42, 2.02, 0.7);
-  b.pivotStand.position.y = -1.21;
+  b.pivotStand.geometry = new THREE.BoxGeometry(0.42, -0.2 - groundY, 0.7);
+  b.pivotStand.position.y = (-0.2 + groundY) / 2;
   const bearing = new THREE.Mesh(ring(0.134, 0.25, -0.69, 0.01, 96), matte(PALETTE.frame));
   bearing.userData.role = 'bored-stationary-fulcrum-bearing';
   root.add(bearing);
+  // The plate draws a plank table on two block legs, not a bed rail with
+  // guide pedestals and keepers: the thin bar simply lies on the table top.
   for (const { post, cap } of b.guidePosts) {
-    post.position.z = -0.58;
-    post.geometry.dispose(); post.geometry = new THREE.BoxGeometry(0.54, 0.92, 0.5);
-    cap.position.set(post.position.x, g.rackBaseBottomY - 0.075, 0.02);
-    cap.geometry.dispose(); cap.geometry = new THREE.BoxGeometry(0.74, 0.13, 0.75);
-    cap.userData.role = 'finite-ratchet-bar-lower-guide-shoe';
-    const keeper = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.32, 0.12), matte(PALETTE.frame));
-    keeper.position.set(post.position.x, g.rackBaseBottomY + 0.13, 0.32);
-    keeper.userData.role = 'finite-ratchet-bar-front-keeper';
-    root.add(keeper);
+    root.remove(post, cap);
+    post.geometry.dispose(); cap.geometry.dispose();
   }
-  // Include the entire finite bar: its periodic display reset stays explicit.
-  root.userData.cameraFitBounds.set(new THREE.Vector3(-5.85, -2.34, -0.85), new THREE.Vector3(2.06, 1.62, 1.1));
+  root.remove(b.baseRail);
+  b.baseRail.geometry.dispose();
+  delete b.baseRail;
+  delete b.guidePosts;
+  const frameMaterial = b.pivotStand.material;
+  const sourceX = x => (x - 432) * 0.018, sourceY = y => (246 - y) * 0.018;
+  const tableTop = g.rackBaseBottomY - 0.002, tableBottom = sourceY(342);
+  const table = new THREE.Mesh(new THREE.BoxGeometry(sourceX(413) - sourceX(135), tableTop - tableBottom, 0.6), frameMaterial);
+  table.position.set((sourceX(135) + sourceX(413)) / 2, (tableTop + tableBottom) / 2, -0.06);
+  table.userData.role = 'source-plank-table-carrying-the-ratchet-bar';
+  root.add(table);
+  b.table = table;
+  b.tableLegs = [[147, 190], [318, 360]].map(([left, right], index) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(sourceX(right) - sourceX(left), tableBottom - groundY, 0.6), frameMaterial);
+    leg.position.set((sourceX(left) + sourceX(right)) / 2, (tableBottom + groundY) / 2, -0.06);
+    leg.userData.role = `source-table-block-leg-${index + 1}`;
+    root.add(leg);
+    return leg;
+  });
+  // Brown draws no white bar marks or contact dots.
+  for (const marker of b.rackIndexes) marker.visible = false;
+  // Include the entire finite bar, the left pulley and its hanging cord.
+  root.userData.cameraFitBounds.set(new THREE.Vector3(-7.72, -2.9, -0.85), new THREE.Vector3(2.06, 1.62, 1.1));
 }

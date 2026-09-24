@@ -89,19 +89,28 @@ test('271 pawl roots, lever and fixed bearing contain real shaft bores', () => {
   assert.ok(fixedField.signedDistance(new THREE.Vector3(0.13, 0, -0.1)) > 0.0038);
 });
 
-test('271 support channels clear the finite rack, including its front markers', () => {
+test('271 bar lies on the source table, clears the post, and carries no drawn markers', () => {
   const model = create(), { blocks: b } = model.root.userData;
+  // Brown draws a plank table on two block legs, with no guide pedestals.
+  assert.equal(b.guidePosts, undefined);
+  assert.equal(b.baseRail, undefined);
+  assert.equal(b.tableLegs.length, 2);
   for (const phase of [0, 0.25, 0.5, 0.75, 0.999999]) {
     at(model, phase);
     const body = new THREE.Box3().setFromObject(b.rackBody);
-    for (const { post, cap } of b.guidePosts) {
-      const postBounds = new THREE.Box3().setFromObject(post), capBounds = new THREE.Box3().setFromObject(cap);
-      assert.ok(body.min.z - postBounds.max.z > 0.1199);
-      assert.ok(body.min.y - capBounds.max.y > 0.0099);
+    const table = new THREE.Box3().setFromObject(b.table);
+    const gap = body.min.y - table.max.y;
+    assert.ok(gap > 0.0009 && gap < 0.0031, `bar rests on the table: ${gap}`);
+    assert.ok(body.min.x > table.min.x - 0.6, 'bar stays over the table');
+    for (const leg of b.tableLegs) {
+      assert.ok(new THREE.Box3().setFromObject(leg).max.y <= table.min.y + 1e-9);
     }
     const stand = new THREE.Box3().setFromObject(b.pivotStand);
     assert.ok(stand.min.x - body.max.x > 0.0599);
-    for (const marker of b.rackIndexes) assert.ok(new THREE.Box3().setFromObject(marker).max.z < 0.255);
+    for (const marker of b.rackIndexes) assert.equal(marker.visible, false);
+    // The cord's free span always reaches from the pulley to the bar end.
+    const cord = new THREE.Box3().setFromObject(b.cordSpan);
+    assert.ok(Math.abs(cord.max.x - body.min.x) < 1e-6);
   }
 });
 

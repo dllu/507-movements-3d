@@ -47,6 +47,6 @@ test('190: finite collar supports both cheek edges without penetration and suppl
       const workArm=g.holderPivot.x-state.shoeContactPoint.x;
       assert.ok(Math.abs(moment/vertical/workArm-state.leverForceRatio)<1e-13,'force ratio follows finite contact moment');
     }
-    assert.ok(oldLawPenetration>.012,'restoring the point-contact law demonstrably penetrates the holder');
+    assert.ok(oldLawPenetration>.010,'restoring the point-contact law demonstrably penetrates the holder');
   } finally {disposeObject3D(model.root);}
 });

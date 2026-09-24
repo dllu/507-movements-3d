@@ -1,16 +1,16 @@
 {
   "movement": 181,
   "poses": 129,
-  "meshes": 49,
-  "pairs": 1002,
+  "meshes": 40,
+  "pairs": 659,
   "queries": 8690134,
   "intersections": {
-    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/source-fitted-s-shaped-diagonal-catch-backbone-plate#21": 0.09953490932183286,
-    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#17/source-fitted-s-shaped-diagonal-catch-backbone-plate#21": 0.10141595245656053,
-    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#17/diagonal-catch-back-weight-arm-plate#22": 0.10264989445437449,
-    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/upper-hook-pocket-holding-upper-valve-handle#23": 0.10381870120649973,
-    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#17/lower-hook-pocket-holding-lower-valve-handle#24": 0.10331931324995099,
-    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#17/back-weight-rod-hinge-pin#27": 0.022948629933688746
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.09953490932183286,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.10141595245656053,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/diagonal-catch-back-weight-arm-plate#20": 0.10264989445437449,
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/upper-hook-pocket-holding-upper-valve-handle#21": 0.10381870120649973,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/lower-hook-pocket-holding-lower-valve-handle#22": 0.10331931324995099,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/back-weight-rod-hinge-pin#25": 0.022948629933688746
   },
   "samples": [
     {
@@ -103,7 +103,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+      "sha256": "77f54e7f3ed70bf4b756a447e57a145685d3d1c53702db9f867edf636301812f"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
@@ -115,7 +115,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

@@ -17,9 +17,11 @@ function barGeometry(length, holes, thickness) {
 }
 
 // A slide needs both the longitudinal rail passage and the vertical pin bore.
-function slideParts(parent, oldBody, width, depth, height, bore) {
+// A round slide (radius > 0) reads as Brown's plain circular knob at C.
+function slideParts(parent, oldBody, width, depth, height, bore, round = 0) {
   oldBody.visible = false;
-  const parts = [], outline = clip.difference(rectangle(-width/2, width/2, -depth/2, depth/2),
+  const parts = [], outline = clip.difference(round > 0 ? poly(circle([0,0], round, 96))
+    : rectangle(-width/2, width/2, -depth/2, depth/2),
     poly(circle([0,0], bore, 96)));
   const add = (geometry, role) => {
     const mesh = new THREE.Mesh(geometry, oldBody.material);
@@ -52,11 +54,13 @@ export function correctPantographParts(model) {
     mesh.userData.holes = holes; mesh.userData.length = length; root.add(mesh);
     return {legacy,mesh};
   });
-  const fixedSlide = slideParts(b.fixedSlideC, b.fixedSlideC.children[0], .40, .37, g.lowerLayerY, .099);
+  const fixedSlide = slideParts(b.fixedSlideC, b.fixedSlideC.children[0], .40, .37, g.lowerLayerY, .099, .29);
   const pencilSlide = slideParts(b.pencilAssembly, b.pencilCarrier, .44, .37, g.upperLayerY, .076);
   const [,post,oldRing] = b.fixedPivot.children;
   replace(post, new THREE.CylinderGeometry(.095,.095,.60-g.paperTopY,64));
   post.position.y = (.60+g.paperTopY)/2;
+  // Brown draws C as a plain round knob, without a dark pin end.
+  post.material = oldRing.material;
   replace(oldRing, boredCylinderGeometry(.18,.099,.025));
   oldRing.rotation.set(0,0,0); oldRing.position.y = g.lowerLayerY-.13;
   const fixedCap = new THREE.Mesh(boredCylinderGeometry(.14,.092,.025),oldRing.material);

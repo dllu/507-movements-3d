@@ -176,7 +176,7 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   );
   vector2Near(
     geometry.sourceHandleTip,
-    new THREE.Vector2(460, 260),
+    new THREE.Vector2(460, 238),
     1e-15,
     'source handle tip',
   );
@@ -260,12 +260,12 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   assert.deepEqual(screwThreads, [internalThread, externalThread]);
   assert.deepEqual(forbiddenRoles, []);
 
-  near(geometry.openHolderAngle, -0.14, 1e-15, 'open holder angle');
+  near(geometry.openHolderAngle, -0.10, 1e-15, 'open holder angle');
   near(geometry.clampedHolderAngle, 0, 1e-15, 'source holder angle');
-  assert.ok(geometry.screwAxialTravel > 0.252);
-  assert.ok(geometry.screwAxialTravel < 0.253);
-  assert.ok(geometry.screwTighteningTurns < -1.48);
-  assert.ok(geometry.screwTighteningTurns > -1.49);
+  assert.ok(geometry.screwAxialTravel > 0.178);
+  assert.ok(geometry.screwAxialTravel < 0.179);
+  assert.ok(geometry.screwTighteningTurns < -1.05);
+  assert.ok(geometry.screwTighteningTurns > -1.06);
   near(geometry.threadLead, geometry.threadPitch, 1e-15,
     'single-start lead equals pitch');
   near(
@@ -291,8 +291,8 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   near(sourceState.shoeContactGap, 0, 1e-15, 'source shoe contact');
   assert.equal(sourceState.clamped, true);
   assert.equal(openState.clamped, false);
-  assert.ok(openState.shoeContactGap > 0.277);
-  assert.ok(openState.shoeContactGap < 0.278);
+  assert.ok(openState.shoeContactGap > 0.198);
+  assert.ok(openState.shoeContactGap < 0.199);
   vector2Near(
     sourceState.shoePinPoint,
     sourcePointToModel(geometry.sourceShoePin),
@@ -484,8 +484,8 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
   }
 
   near(minimumGap, 0, 2e-15, 'minimum work clearance');
-  assert.ok(maximumGap > 0.277);
-  assert.ok(maximumGap < 0.278);
+  assert.ok(maximumGap > 0.198);
+  assert.ok(maximumGap < 0.199);
   assert.ok(maximumThreadError < 4e-14);
   assert.ok(maximumLeadError < 5e-16);
   assert.ok(maximumScrewAxisError < 4e-16);
@@ -588,8 +588,8 @@ test('movement 190 loosens, dwells open, tightens, and returns across C2 event b
     );
   }
   assert.deepEqual(seenStages, expectedStages);
-  assert.ok(maximumAngularSpeed > 3.4);
-  assert.ok(maximumAxialSpeed > 0.09);
+  assert.ok(maximumAngularSpeed > 2.69);
+  assert.ok(maximumAxialSpeed > 0.072);
 
   const boundaryExpectations = [
     [0, 1],
@@ -747,18 +747,17 @@ test('movement 190 rendered transforms preserve both pin joints, the screw axis,
   assert.equal(externalThread.parent, screwRotor);
   assert.equal(internalThread.parent, model.root);
   assert.equal(frameOutline.parent, model.root);
-  assert.equal(holderIndex.parent, holder);
-  assert.equal(handleIndex.parent, screwRotor);
-  assert.equal(shoeContactIndex.parent, shoe);
+  // Brown draws no index marks: source presentation detaches them.
+  for (const unshown of [holderIndex, handleIndex, shoeContactIndex,
+    threadContactMarker, workContactMarker, thrustContactMarker]) {
+    assert.equal(unshown.parent, null);
+  }
   assert.equal(fulcrumPin.userData.fixed, true);
   assert.equal(nutBody.userData.fixed, true);
-  assert.equal(threadContactMarker.parent, model.root);
-  assert.equal(threadContactMarker.material.color.getHex(), 0xfaf9f5);
-  assert.equal(workContactMarker.material.color.getHex(), 0xfaf9f5);
-  assert.equal(thrustContactMarker.material.color.getHex(), 0xfaf9f5);
-  assert.ok(model.cameraDirection.x > 0);
+  // Flat side elevation, as the plate.
+  assert.ok(Math.abs(model.cameraDirection.x) < 1e-12);
   assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2.9);
+  assert.ok(model.cameraDirection.z > model.cameraDirection.y * 50);
   disposeModel(model.root);
 });
 
@@ -786,14 +785,17 @@ test('movement 190 occupies a real 3D envelope and remains distinct as the revie
   assert.ok(size.y > 3.35);
   assert.ok(size.z > 1.75);
   assert.ok(physicalBounds.min.z < -0.89);
-  assert.ok(physicalBounds.max.z > 0.89);
+  // With 1.05 tightening turns the canonical handle azimuths lie near the
+  // elevation plane, so the front of the bench plank bounds +z.
+  assert.ok(physicalBounds.max.z > 0.73);
   let meshCount = 0;
   let threadCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
     if (object.userData.screwThread) threadCount += 1;
   });
-  assert.ok(meshCount >= 29);
+  // Eight undrawn white indices and contact markers are presented away.
+  assert.ok(meshCount >= 21);
   assert.equal(threadCount, 2);
 
   const movement189 = createMovementModel(catalog.movements[188]);

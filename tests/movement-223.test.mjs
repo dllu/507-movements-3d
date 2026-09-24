@@ -353,10 +353,12 @@ test('movement 223 runtime binds both shafts while 262 remains authored', () => 
     near(blocks.outputAssembly.userData.angularSpeed,
       state.outputAngularSpeed, 0, `time ${time} output speed`);
     assert.equal(
-      blocks.contactMarkers.filter((marker) => marker.visible).length,
+      blocks.contactMarkers.filter((marker) => marker.userData.active).length,
       1,
     );
-    assert.equal(blocks.contactMarkers[state.activePairIndex].visible, true);
+    assert.equal(blocks.contactMarkers[state.activePairIndex].userData.active, true);
+    assert.ok(blocks.contactMarkers.every((marker) => !marker.visible),
+      'undrawn contact markers stay hidden');
   }
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());

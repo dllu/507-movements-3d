@@ -77,11 +77,14 @@ function expandingPulley(movement) {
   const slotHalfWidth = 0.09;
   const adjustmentAmplitude = 0.31;
   const studRadius = 0.075;
-  const studLength = 0.7;
-  const studCenterZ = 0.15;
+  const studLength = 0.6;
+  // Brown draws wheel c in front: the six arms slide behind it and their
+  // studs project forward through its curved slots.
+  const armZ = -0.55;
+  const studCenterZ = -0.28;
   const rimMidRadius = 2.84;
-  const rimInnerRadius = 2.61;
-  const rimOuterRadius = 3.03;
+  const rimInnerRadius = 2.76;
+  const rimOuterRadius = 2.92;
   const rimHalfAngle = THREE.MathUtils.degToRad(24.5);
   const wheelAngularFrequency = 0.72;
   const cyclePeriod = FULL_TURN / wheelAngularFrequency;
@@ -241,13 +244,13 @@ function expandingPulley(movement) {
     const slider = new THREE.Group();
     slider.rotation.z = angle;
     const arm = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.16, 0.13), drivenMaterial);
-    arm.position.set(1.72, 0, 0.5);
+    arm.position.set(1.72, 0, armZ);
     arm.userData.role = `pulley-arm-${index}`;
     const rim = new THREE.Mesh(
       centeredExtrusion(annularSegmentShape(rimInnerRadius, rimOuterRadius, rimHalfAngle), 0.2),
       drivenMaterial,
     );
-    rim.position.z = 0.5;
+    rim.position.z = armZ;
     rim.userData.role = `expanding-pulley-rim-segment-${index}`;
     const stud = new THREE.Mesh(
       new THREE.CylinderGeometry(
@@ -270,12 +273,12 @@ function expandingPulley(movement) {
     root.add(slider);
   }
 
-  const centerShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 1.45, radius: 0.12 });
-  centerShaft.position.z = 0.03;
+  const centerShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.9, radius: 0.12 });
+  centerShaft.position.z = -0.4;
   centerShaft.userData.role = 'expanding-pulley-main-shaft';
   root.add(centerShaft);
-  const pinionShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.85, radius: 0.09 });
-  pinionShaft.position.set(0, gearCenterDistance, -0.12);
+  const pinionShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.62, radius: 0.09 });
+  pinionShaft.position.set(0, gearCenterDistance, -0.25);
   pinionShaft.userData.role = 'pinion-d-adjusting-shaft';
   root.add(pinionShaft);
 
@@ -340,6 +343,27 @@ function expandingPulley(movement) {
   };
   update(0);
   correctVariableFaceGear(root, 224);
+  // Move the shared guide channels behind wheel c with the arms, narrow the
+  // front lips, and drop undrawn phase marks.
+  const guideShift = armZ - 0.5;
+  for (const guide of guides) {
+    for (const [index, part] of guide.children.entries()) {
+      part.position.z += guideShift;
+      // Brown's channels run from wheel c's teeth out toward the rim.
+      const size = part.geometry.parameters;
+      part.geometry.dispose();
+      part.geometry = new THREE.BoxGeometry(
+        1.1,
+        index >= 3 ? 0.05 : size.height,
+        size.depth,
+      );
+      part.position.x = 1.85;
+      if (index >= 3) part.position.y = Math.sign(part.position.y) * 0.108;
+    }
+  }
+  for (const slider of sliders) slider.children[3].visible = false;
+  wheelGear.userData.rotor.children[3].visible = false;
+  pinion.userData.rotor.children[3].visible = false;
   markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(1.6, -2, 12) };
 }

@@ -212,7 +212,8 @@ function unionPipeCoupling(movement) {
   const pipeBoreRadius = 0.54;
   const pipeAOuterRadius = 0.84;
   const pipeAMinimumY = 1.3;
-  const pipeAMaximumY = 4.5;
+  // Brown's A and C stand out of nut B by under half the nut's width.
+  const pipeAMaximumY = 3.1;
   const flangeBottomY = 1;
   const flangeTopY = 1.3;
   const flangeRadius = 1.18;
@@ -221,7 +222,7 @@ function unionPipeCoupling(movement) {
   const spigotMaximumY = flangeBottomY;
   const pipeCSeatY = flangeBottomY;
   const pipeCBodyOuterRadius = 0.9;
-  const pipeCBodyMinimumY = -3;
+  const pipeCBodyMinimumY = -2;
   const pipeCBodyMaximumY = spigotMinimumY - 0.03;
   const counterboreRadius = 0.76;
   const spigotRadialClearance = counterboreRadius - spigotOuterRadius;

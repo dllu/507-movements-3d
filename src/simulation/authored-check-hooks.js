@@ -313,14 +313,18 @@ function centrifugalMineDrumCheckHooks(movement) {
       z: fixedBackingZ + 0.11,
     });
     fixedFrame.add(support);
+    // Brown's studs stand directly on framework A, so each stud runs back
+    // to the plate instead of relying on the undrawn radial support.
+    const studBackZ = fixedBackingZ + fixedBackingDepth / 2;
+    const studFrontZ = 0.52;
     const stud = makeAxialCylinder({
-      depth: 1.12,
+      depth: studFrontZ - studBackZ,
       material: studMaterial,
       radius: studRadius,
       role: `fixed-stud-d-${index + 1}`,
       segments: 48,
     });
-    stud.position.set(studCenter.x, studCenter.y, -0.04);
+    stud.position.set(studCenter.x, studCenter.y, (studFrontZ + studBackZ) / 2);
     stud.userData.fixedCenter = studCenter.clone();
     studs.push(stud);
     fixedFrame.add(stud);

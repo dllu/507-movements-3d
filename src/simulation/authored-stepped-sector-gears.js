@@ -698,7 +698,9 @@ function steppedFourPlaneSectorGears(movement) {
     setSpin(outputAssembly, state.outputAngle);
     setSpin(outputShaft, state.outputAngle);
     contactMarkers.forEach((marker, pairIndex) => {
-      marker.visible = pairIndex === state.activePairIndex;
+      // Brown draws no contact marker; keep it as a hidden pitch anchor.
+      marker.userData.active = pairIndex === state.activePairIndex;
+      marker.visible = false;
       marker.scale.setScalar(state.transitionReliefActive ? 0.72 : 1);
     });
     driverAssembly.userData.angularSpeed = state.driverAngularSpeed;
@@ -720,6 +722,9 @@ function steppedFourPlaneSectorGears(movement) {
   };
   update(0);
   correctVariableSectors(root);
+  // Brown draws no white phase indices on either shaft.
+  driverFaceIndex.visible = false;
+  outputFaceIndex.visible = false;
   markShadows(root);
   return {
     root,

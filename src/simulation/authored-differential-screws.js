@@ -641,12 +641,67 @@ function twoPitchDifferentialScrew(movement) {
     root.userData.kinematics = state;
   };
   correctDifferentialThreads(root, 266);
+  // Plate 266 is a side elevation of a solid plank whose left upright carries
+  // the fixed nut; the crank is a single arm with a grip, not a T handle.
+  // The open rail frame, diagonal strut and white indices are undrawn.
+  for (const object of [
+    ...baseRails,
+    ...baseCrossbars,
+    fixedSupport,
+    handleIndex,
+    movingIndex,
+  ]) object.visible = false;
+  const plankTopY = baseY + 0.04;
+  const plank = new THREE.Mesh(
+    new THREE.BoxGeometry(4.67, 0.22, 1.24),
+    frameMaterial,
+  );
+  // The plank starts flush with the fixed upright, as drawn.
+  plank.position.set(fixedBearingX - fixedBearingDepth / 2 + 4.67 / 2,
+    plankTopY - 0.11, 0);
+  plank.userData.role = 'source-solid-plank-carrying-both-bearings';
+  const uprightBottom = plankTopY;
+  const uprightTop = -0.516;
+  const fixedUpright = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      fixedBearingDepth,
+      uprightTop - uprightBottom,
+      0.7,
+    ),
+    frameMaterial,
+  );
+  fixedUpright.position.set(
+    fixedBearingX,
+    (uprightTop + uprightBottom) / 2,
+    0,
+  );
+  fixedUpright.userData.role = 'source-plank-upright-under-fixed-nut';
+  frameMaterial.fog = false;
+  root.add(plank, fixedUpright);
+  handleBar.geometry.dispose();
+  handleBar.geometry = new THREE.CylinderGeometry(0.06, 0.06, 0.62, 24)
+    .translate(0, 0.31, 0);
+  handleBar.userData.role = 'single-crank-arm-rigid-with-screw-shaft';
+  const handleGrip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.075, 0.095, 0.4, 24)
+      .rotateX(Math.PI / 2),
+    shaftMaterial,
+  );
+  handleGrip.position.set(0, 0.62, -2.72 - 0.26);
+  handleGrip.userData.role = 'crank-grip-pointing-outboard';
+  shaftRotor.add(handleGrip);
+  Object.assign(root.userData.blocks, { fixedUpright, handleGrip, plank });
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.2, -1.3, -0.7),
+    new THREE.Vector3(3.2, 0.9, 0.7),
+  );
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(-2.2, 3.8, 11.5),
+    // Plate 266 is a flat side elevation along the plank.
+    cameraDirection: new THREE.Vector3(0, 0.03, 1),
   };
 }
 

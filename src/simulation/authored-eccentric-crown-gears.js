@@ -114,10 +114,12 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   const eccentricity = 0.64;
   const crownTeethCount = 40;
   const pinionTeethCount = 8;
-  const crownInnerRadius = 1.76;
+  // Brown draws a shallow drum: a narrow rim carrying the crown teeth on its
+  // upper edge and a four-armed cross below them.
+  const crownInnerRadius = 2.2;
   const crownBodyOuterRadius = 2.57;
-  const crownBodyDepth = 0.24;
-  const crownBodyCenterZ = 0.12;
+  const crownBodyDepth = 0.6;
+  const crownBodyCenterZ = -0.06;
   const crownBodyTopZ = crownBodyCenterZ + crownBodyDepth / 2;
   const crownToothHeight = 0.3;
   const crownPitchPlaneZ = crownBodyTopZ + crownToothHeight / 2;
@@ -155,7 +157,11 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   const pinionToothHeight = module * 1.8;
   const pinionOuterRadius = pinionPitchRadius + pinionToothHeight / 2;
   const pinionRootRadius = pinionPitchRadius - pinionToothHeight / 2;
-  const pinionDepth = crownToothRadialDepth * 0.9;
+  // The plate's pinion is a long pinion: its teeth run along the shaft over
+  // the whole range of relative radius, so it stays axially fixed while the
+  // contact travels along its face.
+  const pinionDepth = 2 * eccentricity + crownToothRadialDepth + 0.1;
+  const pinionAxialCenterX = crownPitchCircleRadius;
   const pinionCenterZ = crownPitchPlaneZ + pinionPitchRadius;
   const pinionPhase = Math.PI / pinionTeethCount;
   const inputCyclePeriod = FULL_TURN / inputAngularSpeed;
@@ -210,10 +216,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   for (let toothIndex = 0; toothIndex < crownTeethCount; toothIndex += 1) {
     const bodyAngle = toothBodyAngles[toothIndex];
     const pitchRadius = pitchRadiusAtBodyAngle(bodyAngle);
-    const tooth = new THREE.Mesh(
-      toothGeometry,
-      toothIndex === 0 ? whiteMaterial : driverMaterial,
-    );
+    const tooth = new THREE.Mesh(toothGeometry, driverMaterial);
     tooth.position.set(
       Math.cos(bodyAngle) * pitchRadius,
       Math.sin(bodyAngle) * pitchRadius,
@@ -235,11 +238,12 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     inkMaterial,
   );
   crownHub.rotation.x = Math.PI / 2;
-  crownHub.position.z = crownBodyCenterZ;
+  const spokeZ = crownBodyTopZ - 0.12;
+  crownHub.position.z = spokeZ;
   crownHub.userData.role = 'eccentric-crown-wheel-arbor-hub';
   crownRotor.add(crownHub);
 
-  const spokeAngles = [0.12, 0.12 + FULL_TURN / 3, 0.12 + 2 * FULL_TURN / 3];
+  const spokeAngles = [0.12, 0.12 + FULL_TURN / 4, 0.12 + FULL_TURN / 2, 0.12 + 3 * FULL_TURN / 4];
   const crownSpokes = [];
   for (const [index, angle] of spokeAngles.entries()) {
     const innerIntersection = eccentricity * Math.cos(angle) + Math.sqrt(
@@ -256,14 +260,13 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     const spoke = beamBetween(
       start,
       end,
-      0.42,
+      0.3,
       0.17,
-      crownBodyCenterZ,
-      index === 0 ? whiteMaterial : driverMaterial,
+      spokeZ,
+      driverMaterial,
     );
-    spoke.userData.role = index === 0
-      ? 'crown-wheel-face-index-spoke'
-      : 'crown-wheel-spoke';
+    spoke.userData.role = 'crown-wheel-cross-arm';
+    spoke.userData.index = index;
     crownRotor.add(spoke);
     crownSpokes.push(spoke);
   }
@@ -286,9 +289,9 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     teeth: pinionTeethCount,
     toothHeight: pinionToothHeight,
   });
-  pinion.userData.axiallySliding = true;
+  pinion.userData.axiallySliding = false;
   pinion.userData.keyedToShaft = true;
-  pinion.userData.role = 'sliding-involute-crown-pinion';
+  pinion.userData.role = 'long-involute-crown-pinion';
   root.add(pinion);
 
   const pinionCollar = new THREE.Mesh(
@@ -296,7 +299,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     drivenMaterial,
   );
   pinionCollar.rotation.x = Math.PI / 2;
-  pinionCollar.userData.role = 'sliding-keyed-pinion-collar';
+  pinionCollar.userData.role = 'hidden-keyed-pinion-bore-sleeve';
   pinion.userData.rotor.add(pinionCollar);
 
   const shaftLength = 4.1;
@@ -312,17 +315,14 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   pinionShaft.userData.role = 'fixed-axis-rotating-splined-pinion-shaft';
   root.add(pinionShaft);
 
-  const splineLength = (
-    crownPitchCircleRadius + eccentricity
-      - (crownPitchCircleRadius - eccentricity)
-  ) + 0.8;
-  const splineCenterX = crownPitchCircleRadius;
+  const splineLength = pinionDepth;
+  const splineCenterX = pinionAxialCenterX;
   const pinionSplineRibs = [];
   for (let index = 0; index < 4; index += 1) {
     const angle = index * Math.PI / 2;
     const rib = new THREE.Mesh(
       new THREE.BoxGeometry(0.027, 0.027, splineLength),
-      index === 0 ? whiteMaterial : inkMaterial,
+      inkMaterial,
     );
     rib.position.set(
       Math.cos(angle) * shaftRadius * 1.02,
@@ -330,9 +330,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
       splineCenterX - shaftCenterX,
     );
     rib.rotation.z = angle;
-    rib.userData.role = index === 0
-      ? 'pinion-shaft-visible-rotation-index'
-      : 'pinion-shaft-longitudinal-spline';
+    rib.userData.role = 'pinion-shaft-key-under-long-pinion';
     pinionShaft.userData.rotor.add(rib);
     pinionSplineRibs.push(rib);
   }
@@ -385,9 +383,13 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
       crownAngularSpeed ** 2 * radiusDerivative
       + crownAngularAcceleration * pitchRadius
     ) / pinionPitchRadius;
-    const pinionAxialSpeed = crownAngularSpeed * radiusDerivative;
-    const pinionAxialAcceleration = crownAngularSpeed ** 2
+    // The contact travels along the fixed long pinion's face; neither body
+    // slides axially at the pitch point.
+    const contactAxialSpeed = crownAngularSpeed * radiusDerivative;
+    const contactAxialAcceleration = crownAngularSpeed ** 2
       * radiusSecondDerivative + crownAngularAcceleration * radiusDerivative;
+    const pinionAxialSpeed = 0;
+    const pinionAxialAcceleration = 0;
     const eccentricCenter = new THREE.Vector3(
       Math.cos(crownAngle) * eccentricity,
       Math.sin(crownAngle) * eccentricity,
@@ -399,7 +401,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
       crownPitchPlaneZ,
     );
     const pinionCenter = new THREE.Vector3(
-      pitchRadius,
+      pinionAxialCenterX,
       0,
       pinionCenterZ,
     );
@@ -428,6 +430,9 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
 
     return {
       axialSlidingSpeed: pinionAxialSpeed,
+      contactAxialAcceleration,
+      contactAxialPosition: pitchRadius,
+      contactAxialSpeed,
       bodyContactAngle,
       bodyContactPitchTravel,
       centeredMeshPitchInvariant,
@@ -467,13 +472,15 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
       shaftToCrownBody: (
         pinionCenterZ - shaftRadius
       ) - crownBodyTopZ,
-      splinedTravelMargin: Math.min(
+      pinionFaceMargin: Math.min(
+        state.pitchRadius - crownToothRadialDepth / 2
+          - (pinionAxialCenterX - pinionDepth / 2),
+        pinionAxialCenterX + pinionDepth / 2
+          - state.pitchRadius - crownToothRadialDepth / 2,
+      ),
+      shaftTravelMargin: Math.min(
         state.pitchRadius - (shaftCenterX - shaftLength / 2),
         shaftCenterX + shaftLength / 2 - state.pitchRadius,
-      ),
-      splineTravelMargin: Math.min(
-        state.pitchRadius - (splineCenterX - splineLength / 2),
-        splineCenterX + splineLength / 2 - state.pitchRadius,
       ),
     };
   };
@@ -485,6 +492,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     secondMeanCrossing: inputCyclePeriod * 3 / 4,
     cycleClosure: inputCyclePeriod,
   });
+  // The catalog archetype name predates the long-pinion correction.
   root.userData.archetype = 'eccentric-circular-crown-wheel-sliding-involute-pinion';
   root.userData.blocks = {
     contactMarker,
@@ -528,6 +536,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     module,
     pinionCenterZ,
     pinionDepth,
+    pinionAxialCenterX,
     pinionOuterRadius,
     pinionPhase,
     pinionPitchRadius,
@@ -544,7 +553,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     toothBodyAngles,
     toothPitchTravels,
   };
-  root.userData.mechanism = 'eccentric-crown-wheel-with-axially-sliding-pinion';
+  root.userData.mechanism = 'eccentric-crown-wheel-with-long-fixed-pinion';
   root.userData.pitchRadiusAtBodyAngle = pitchRadiusAtBodyAngle;
   root.userData.pitchTravelFromZero = pitchTravelFromZero;
   root.userData.solidClearanceAtInputTravel = solidClearanceAtInputTravel;
@@ -594,6 +603,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     crownShaft.userData.angularSpeed = state.crownAngularSpeed;
     pinion.userData.angularSpeed = state.pinionAngularSpeed;
     pinion.userData.axialSpeed = state.pinionAxialSpeed;
+    pinion.userData.contactAxialSpeed = state.contactAxialSpeed;
     pinionShaft.userData.angularSpeed = state.pinionAngularSpeed;
     root.userData.contact = {
       contactPoint: state.contactPoint,
@@ -606,6 +616,11 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   };
   update(0);
   correctVariableFaceGear(root, 219);
+  // Brown draws no phase stripe, sliding collar or pitch marker.
+  pinion.userData.rotor.children[1].visible = false;
+  pinion.userData.rotor.children[3].visible = false;
+  pinionCollar.visible = false;
+  root.userData.reconstructionNote = 'An eccentric crown wheel drives a long pinion whose teeth span the whole range of relative radius, as Brown draws it; the contact travels along the fixed pinion. Equal accumulated pitch gives five pinion turns per crown revolution. Dimensions and finite tooth profiles are inferred.';
   root.rotation.z = THREE.MathUtils.degToRad(55);
   root.userData.cameraFitBounds.set(new THREE.Vector3(-3.23, -3.23, -2.27), new THREE.Vector3(3.35, 4.70, 1.46));
   markShadows(root);

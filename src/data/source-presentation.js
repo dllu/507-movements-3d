@@ -63,6 +63,11 @@ export default {
     remove: ['fixed-support-frame-behind-source-linkage'],
     note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn.',
   },
+  190: {
+    camera: [0, 0.01, 1],
+    remove: ['white-index-.*', 'white-marker-at-.*'],
+    note: 'Flat side elevation: the bench is drawn as a plank section under the work, standard, holder, shoe and screw; no index marks are drawn.',
+  },
   191: {
     remove: ['rear-fixed-bearing-standard', 'fixed-support-foot'],
     note: 'Face view of the two notched wheels; no standard or foot is drawn.',
@@ -136,12 +141,19 @@ export default {
     note: 'The brake wheel, strap and lever; no base or posts are drawn.',
   },
   246: {
-    remove: ['common-drawing-plane-for-tracer-and-pencil', 'drawing-sheet-outline'],
-    note: 'The pantograph arms, fixed point C, tracer B and pencil A over a blank ground; no drawing board is drawn.',
+    remove: ['common-drawing-plane-for-tracer-and-pencil', 'drawing-sheet-outline', 'small-source-locus-traced-by-point-B', 'two-times-linear-copy-drawn-by-pencil-A'],
+    note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    remove: ['seabed-impact-reference-ring'],
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the sea bottom is not drawn, so only a plain contact slab (seen edge-on) is kept for the probe to strike and the released weight to rest on.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the sea bottom is not drawn, so only a thin contact line just wider than the weight is kept for the probe to strike and the released weight to rest on.',
+  },
+  248: {
+    remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
+    note: 'Section through pipe A with its flange, nut B and the screwed end of pipe C; the nut is drawn plain, without grip ribs or an index.',
+  },
+  253: {
+    remove: ['check-hook-\\d-torsion-return-spring', 'visible-torsional-shock-spring-between-flange-and-load-side-drum', 'white-flange-b-speed-index', 'white-load-side-drum-speed-index', 'framework-a-stud-d-\\d-radial-support'],
+    note: 'Framework A with studs D, flange B with its three hooks, the drum and the rope; Brown recommends a drum spring but draws none, so the hook and drum springs, speed indices and stud supports are not shown.',
   },
   272: {
     remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide', 'fixed-bearing-for-horizontal-cam-shaft'],

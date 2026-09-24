@@ -3,11 +3,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-eccentric-crown-gears.js",
-      "sha256": "91320406774bf777fe578179b4526767d1f76e17a99048b6f0f2e7bb92b9fcca"
+      "sha256": "e7300568cc6c5e2f7d94cab90e83d30f503dbc756f882ec5c3331ada386ae357"
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",
-      "sha256": "c64481b6ac450be7662fb48dce75298eff7a54a55f8d72d70f82fe8095a5b02d"
+      "sha256": "64bf3ea5aee5c0b3369d053073a0f2ba2aabecd02d81f1ca90fb4392462d774c"
     },
     {
       "file": "src/simulation/authored-scroll-gears.js",
@@ -19,7 +19,7 @@
     },
     {
       "file": "src/simulation/generated-variable-face-gears.js",
-      "sha256": "0b8dc60a0285a82bc99941febc7204dcb271872a0ccee95f2bb1097618802bda"
+      "sha256": "5cd9df24495097abeb2ae6e52c726d534ae5058c24daf317e1ae12c2619023a2"
     },
     {
       "file": "src/simulation/band-epicyclic-geometry.js",
@@ -50,10 +50,10 @@
     {
       "id": 219,
       "poses": 17,
-      "tested": 1110604,
+      "tested": 1575508,
       "inside": 0,
       "maxPenetration": 0,
-      "maxWorkingGap": 0.0023826424422577347,
+      "maxWorkingGap": 0.00310805718314524,
       "categories": {
         "gear": 0
       }

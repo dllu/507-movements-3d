@@ -585,10 +585,10 @@ function differentialScrewDrive(movement) {
     wheelD,
     wheelE,
   };
-  root.userData.cameraDistanceScale = 1.02;
+  root.userData.cameraDistanceScale = 0.84;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, -3.45, -2.65),
-    new THREE.Vector3(4.25, 2.65, 2.65),
+    new THREE.Vector3(-3.55, -3.45, -0.9),
+    new THREE.Vector3(4.25, 2.65, 0.9),
   );
   root.userData.canonicalTimes = {
     closure: demonstrationPeriod,
@@ -723,12 +723,18 @@ function differentialScrewDrive(movement) {
     root.userData.kinematics = state;
   };
   correctDifferentialThreads(root, 260);
+  // Brown draws neither shaft index bar; keep the roles for the kinematic
+  // tests but do not render them.
+  inputShaftIndex.visible = false;
+  screwEndIndex.visible = false;
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(3.4, 3.2, 12.4),
+    // Plate 260 is a side elevation with both shafts horizontal and every
+    // gear plane seen edge-on.
+    cameraDirection: new THREE.Vector3(0, 0.02, 1),
   };
 }
 

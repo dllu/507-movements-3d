@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring, plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {circle, ring, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 
 function replace(mesh, geometry) {
@@ -131,9 +131,101 @@ function correctRollerBearing(root) {
   };
 }
 
+// Brown's plate 270 draws two figures: the assembled pulley on the left, with
+// a cover over the bearing showing six pin holes and a fluted journal end,
+// and the exposed rollers on the right. The working cutaway stays at the
+// origin as the right figure; the left figure shares its geometry and motion.
+function addAssembledView(model) {
+  const root = model.root;
+  const {blocks: b, geometry: g, sourceReference} = root.userData;
+  const view = sourceReference.plate270;
+  const pixel = g.pulleyOuterRadius / view.assembledView.pulleyOuterRadius;
+  const offsetX = (view.assembledView.centerX - view.cutawayView.centerX) * pixel;
+  const coverRadius = view.assembledView.coverRadius * pixel;
+  const pinHoleCircle = 40 * pixel;
+  const front = g.pulleyDepth / 2;
+  const figure = new THREE.Group();
+  figure.position.x = offsetX;
+  figure.userData.role = 'assembled-left-view-of-the-same-pulley-bearing';
+  const pulleyRotor = new THREE.Group();
+  pulleyRotor.userData.role = 'assembled-view-pulley-rotor';
+  for (const part of [b.pulleyWeb, b.pulleyRim, b.pulleyFrontFlange, b.pulleyRearFlange]) {
+    pulleyRotor.add(part.clone());
+  }
+  const face = new THREE.Mesh(
+    ring(coverRadius + 0.004, g.pulleyWebOuterRadius - 0.121, front + 0.001, front + 0.05, 256),
+    b.pulleyWeb.material,
+  );
+  face.userData.role = 'assembled-view-pulley-front-face';
+  pulleyRotor.add(face);
+  const cover = new THREE.Group();
+  cover.userData.role = 'assembled-view-roller-retainer-cover';
+  let section = polygonClipping.difference(
+    poly(circle([0, 0], coverRadius, 256)),
+    poly(circle([0, 0], g.innerRaceRadius + 0.004, 256)),
+  );
+  for (let index = 0; index < 6; index += 1) {
+    const angle = Math.PI / 2 + index * Math.PI / 3;
+    section = polygonClipping.difference(section,
+      poly(circle([pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle)], 0.075, 48)));
+  }
+  const coverPlate = new THREE.Mesh(plate(section, front + 0.001, front + 0.05), b.cagePlate.material);
+  coverPlate.userData.role = 'assembled-view-cover-with-six-pin-holes';
+  cover.add(coverPlate);
+  // Roller pin ends seen through the holes, flush-seated behind the cover.
+  for (let index = 0; index < 6; index += 1) {
+    const angle = Math.PI / 2 + index * Math.PI / 3;
+    const pinEnd = new THREE.Mesh(
+      ring(0, 0.07, front - 0.03, front + 0.001, 48),
+      b.innerRace.material,
+    );
+    pinEnd.position.set(pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle), 0);
+    pinEnd.userData.role = `assembled-view-roller-pin-end-${index + 1}`;
+    cover.add(pinEnd);
+  }
+  const journal = new THREE.Mesh(b.innerRace.geometry, b.innerRace.material);
+  journal.position.copy(b.innerRace.position);
+  journal.rotation.copy(b.innerRace.rotation);
+  journal.userData.role = 'assembled-view-stationary-journal';
+  const star = new THREE.Shape();
+  for (let index = 0; index <= 96; index += 1) {
+    const angle = index * Math.PI * 2 / 96;
+    const radius = g.innerRaceRadius * (0.72 + 0.16 * Math.cos(6 * angle));
+    if (index === 0) star.moveTo(radius, 0);
+    else star.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
+  }
+  const starMesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(star, {bevelEnabled: false, depth: 0.04, curveSegments: 1}),
+    b.innerRaceFrontRing.material,
+  );
+  starMesh.position.z = b.innerRace.position.z + g.innerRaceDepth / 2;
+  starMesh.userData.role = 'assembled-view-fluted-journal-end';
+  figure.add(b.belt.clone(), pulleyRotor, cover, journal, starMesh);
+  root.add(figure);
+  Object.assign(b, {assembledCover: cover, assembledFigure: figure, assembledPulleyRotor: pulleyRotor});
+  root.userData.bearingInterpretation.consolidatedView =
+    'Brown’s assembled left view and exposed right view are shown side by side; the left figure shares the right figure’s pulley and retainer motion';
+  const baseUpdate = model.update;
+  model.update = (time) => {
+    baseUpdate(time);
+    pulleyRotor.rotation.z = b.pulleyRotor.rotation.z;
+    cover.rotation.z = b.rollerCarrier.rotation.z;
+    for (const marker of b.beltMarkers) marker.visible = false;
+  };
+  model.update(0);
+}
+
 export function correctBearingParts(model, id) {
   if (id === 250) correctWheelBearing(model.root);
   else correctRollerBearing(model.root);
+  // Brown draws no white phase marks, contact dots or belt beads.
+  model.root.traverse((object) => {
+    if (object.isMesh && /white-.*index|contact-marker|belt-marker|contact-of-reference-roller/
+      .test(object.userData.role ?? '')) {
+      object.visible = false;
+    }
+  });
+  if (id === 270) addAssembledView(model);
   fitPistonGuide(model.root, model.update, model.root.userData.minimumDisplayCycleSeconds);
   model.cameraDirection = new THREE.Vector3(.45, .55, 15);
 }

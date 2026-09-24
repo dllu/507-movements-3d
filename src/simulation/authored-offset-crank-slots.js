@@ -74,8 +74,10 @@ function parallelOffsetSlottedCranks(movement) {
   const inputCrankRadius = 1.72;
   const inputCenter = new THREE.Vector2(-centerDistance / 2, 0);
   const outputCenter = new THREE.Vector2(centerDistance / 2, 0);
-  const inputPlaneZ = -0.31;
-  const outputPlaneZ = 0.31;
+  // Brown views from the plain crank's side: its shaft runs toward the
+  // viewer and the wrist pin reaches back through the slotted crank.
+  const inputPlaneZ = 0.31;
+  const outputPlaneZ = -0.31;
   const crankDepth = 0.2;
   const sourceInputAngle = Math.PI / 3;
   const inputAngularSpeed = 0.82;
@@ -167,18 +169,27 @@ function parallelOffsetSlottedCranks(movement) {
     new THREE.BoxGeometry(0.5, 0.055, 0.025),
     whiteMaterial,
   );
+  outputIndex.visible = false;
   outputIndex.position.set(outputBodyEnd - 0.35, outputBodyHalfWidth + 0.024, outputPlaneZ);
   outputIndex.userData.role = 'output-crank-face-index';
   outputRotor.add(outputIndex);
 
-  const wristPinLength = outputPlaneZ - inputPlaneZ + crankDepth * 1.6;
+  // The plate's wrist pin projects well beyond the slotted crank.
+  const wristPinBeyondSlot = 0.45;
+  const wristPinLength = Math.abs(outputPlaneZ - inputPlaneZ)
+    + crankDepth * 0.8 + wristPinBeyondSlot;
   const wristPin = cylinderAlongZ(
     wristPinRadius,
     wristPinLength,
     inkMaterial,
     28,
   );
-  wristPin.position.set(inputCrankRadius, 0, 0);
+  wristPin.position.set(
+    inputCrankRadius,
+    0,
+    inputPlaneZ + Math.sign(inputPlaneZ) * crankDepth * 0.4
+      - Math.sign(inputPlaneZ) * wristPinLength / 2,
+  );
   wristPin.userData.axis = Z_AXIS.clone();
   wristPin.userData.parallelCouplingWrist = true;
   wristPin.userData.role = 'input-wrist-pin-through-output-slot';
@@ -186,7 +197,7 @@ function parallelOffsetSlottedCranks(movement) {
   const slotFollowerRoller = cylinderAlongZ(
     slotHalfWidth * 0.72,
     crankDepth * 0.72,
-    whiteMaterial,
+    inkMaterial,
     28,
   );
   slotFollowerRoller.position.set(inputCrankRadius, 0, outputPlaneZ);
@@ -194,13 +205,13 @@ function parallelOffsetSlottedCranks(movement) {
   inputRotor.add(slotFollowerRoller);
 
   const inputShaft = makeCouplingShaft({
-    color: PALETTE.ink, radius: 0.105, startZ: -1.915, endZ: -0.165,
+    color: PALETTE.ink, radius: 0.105, startZ: 0.165, endZ: 1.915,
   });
   inputShaft.position.x = inputCenter.x;
   inputShaft.userData.role = 'first-offset-parallel-crank-shaft';
   root.add(inputShaft);
   const outputShaft = makeCouplingShaft({
-    color: PALETTE.ink, radius: 0.105, startZ: 0.165, endZ: 1.915,
+    color: PALETTE.ink, radius: 0.105, startZ: -1.915, endZ: -0.165,
   });
   outputShaft.position.x = outputCenter.x;
   outputShaft.userData.role = 'second-offset-parallel-slotted-crank-shaft';
@@ -352,8 +363,7 @@ function parallelOffsetSlottedCranks(movement) {
   const solidClearanceAtInputTravel = (inputTravel) => {
     const state = stateAtInputTravel(inputTravel);
     return {
-      crankPlaneClearance: outputPlaneZ - crankDepth / 2
-        - (inputPlaneZ + crankDepth / 2),
+      crankPlaneClearance: Math.abs(outputPlaneZ - inputPlaneZ) - crankDepth,
       innerSlotTravelMargin: state.slotRadius - slotStartRadius,
       outerSlotTravelMargin: slotEndRadius - state.slotRadius,
       wristToSlotSideClearance: slotHalfWidth - wristPinRadius,
@@ -483,7 +493,7 @@ function parallelOffsetSlottedCranks(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(-6.4, -3.8, 10),
+    cameraDirection: new THREE.Vector3(7, 5.5, 9),
   };
 }
 

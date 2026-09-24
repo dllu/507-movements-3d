@@ -478,7 +478,7 @@ test('movement 262 renders exact rates, closes smoothly, and leaves 269 authored
       `rendered roller rotation at ${time}`);
     near(blocks.contactMarker.position.distanceTo(state.contactPoint), 0, 0,
       `rendered contact point at ${time}`);
-    assert.ok(blocks.contactSpring.scale.y > 0);
+    assert.equal(blocks.contactSpring, undefined);
   }
   near(animationTiming.authoredCyclePeriod, 12, 0, 'authored cycle period');
   near(animationTiming.targetCycleDuration, 2, 0, 'display period');

@@ -1631,8 +1631,10 @@ function screwThrustLeverClamp() {
   const sourceShoeContact = new THREE.Vector2(159, 333);
   const sourceScrewAxis = new THREE.Vector2(372, 326);
   const sourceHolderBearingFaceY = 326;
-  const sourceHandleCenter = new THREE.Vector2(372, 260);
-  const sourceHandleTip = new THREE.Vector2(460, 260);
+  // The plate's handle bar sits at y 245-263; its centre is raised to 238 so
+  // the full-turn handle clears the holder crest when the screw backs off.
+  const sourceHandleCenter = new THREE.Vector2(372, 238);
+  const sourceHandleTip = new THREE.Vector2(460, 238);
   const sourceNutCenter = new THREE.Vector2(372, 358);
   const sourceBenchTopY = 374;
   const sourceBenchBottomY = 424;
@@ -1746,7 +1748,9 @@ function screwThrustLeverClamp() {
   };
 
   const clampedHolderAngle = 0;
-  const openHolderAngle = -0.14;
+  // A 0.10 rad release keeps the backed-off collar above the lower arm and
+  // the swinging handle above the holder crest.
+  const openHolderAngle = -0.10;
   const collarThickness = 0.14;
   const collarHalfThickness = collarThickness / 2;
   const openBearing = holderBearingAtAngle(openHolderAngle);
@@ -1769,10 +1773,11 @@ function screwThrustLeverClamp() {
   const internalThreadRadius = 0.235;
   const internalThreadTubeRadius = 0.020;
   const threadLocalMinimumY = -0.61;
-  const threadLocalMaximumY = 1.04;
   const screwCoreLocalMinimumY = -0.70;
-  const screwCoreLocalMaximumY = 1.28;
   const handleLocalY = clampedHandleCenterY - clampedScrewOriginY;
+  const screwCoreLocalMaximumY = handleLocalY + 0.09;
+  // Brown hatches the screw right up to the handle block.
+  const threadLocalMaximumY = handleLocalY - 0.14;
   const nutThreadMinimumY = nutCenterY - 0.17;
   const nutThreadMaximumY = nutCenterY + 0.17;
   const internalThreadPhaseAtMinimum = (
@@ -2661,6 +2666,9 @@ function screwThrustLeverClamp() {
     workpieceTopWitness,
   };
   root.userData.cameraDistanceScale = 1.03;
+  // Brown draws 190 as a flat side elevation; a narrow field keeps the
+  // bench plank a section instead of showing its top face.
+  root.userData.cameraFov = 10;
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.closureLawAtCycleTime = closureLawAtCycleTime;

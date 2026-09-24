@@ -2042,7 +2042,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+      "sha256": "77f54e7f3ed70bf4b756a447e57a145685d3d1c53702db9f867edf636301812f"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",

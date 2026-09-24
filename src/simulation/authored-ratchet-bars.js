@@ -6,6 +6,7 @@ import {
 } from './primitives.js';
 
 import { makeSteppedRatchetPawl, finishRatchetBarSupports, pawlReturnLift } from './ratchet-bar-working-parts.js';
+import { ring } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -181,14 +182,17 @@ function alternatingPawlRatchetBar(movement) {
   const measuredShortNoseAtSource = sourceToModel(sourceShortNosePixels);
   const measuredHandleEndAtSource = sourceToModel(sourceHandleEndPixels);
 
-  const rackPitch = 14 * sourceScale;
+  // Brown engraves about 22 small teeth, 10.5 px apart; they are cut 10 px deep so the
+  // finite hooks clear the next ramp at pickup. They sit on a
+  // thin bar lying on a table; the short pawl sits eight pitches behind.
+  const rackPitch = 10.5 * sourceScale;
   const toothTipY = measuredLongNoseAtSource.y;
   const noseRadius = 0.035;
-  const contactY = toothTipY - 0.055;
+  const contactY = toothTipY - 0.045;
   const pickupTravel = 0.05;
   const pawlStroke = rackPitch + pickupTravel;
-  const toothRootY = sourceToModel(new THREE.Vector2(432, 300)).y;
-  const rackBaseBottomY = sourceToModel(new THREE.Vector2(432, 337)).y;
+  const toothRootY = sourceToModel(new THREE.Vector2(432, 294)).y;
+  const rackBaseBottomY = sourceToModel(new THREE.Vector2(432, 296)).y;
   const longPawlLength = measuredLongAnchorAtSource.distanceTo(
     new THREE.Vector2(measuredLongNoseAtSource.x, contactY),
   );
@@ -227,7 +231,7 @@ function alternatingPawlRatchetBar(movement) {
   const longEndAnchor = rotateVector(longAnchorLocal, leverAmplitude);
   const longStartTipX = tipXAt(longStartAnchor, longPawlLength);
   const longEndTipX = tipXAt(longEndAnchor, longPawlLength);
-  const shortFaceOffset = 6;
+  const shortFaceOffset = 8;
   const shortStartTipX = longEndTipX + shortFaceOffset * rackPitch + pickupTravel;
 
   const shortTravelForSourceY = (sourceY) => {
@@ -522,11 +526,11 @@ function alternatingPawlRatchetBar(movement) {
   const rack = makeRatchetRack({
     baseBottomY: rackBaseBottomY,
     baseFace,
-    baseLeft: -5.2,
+    baseLeft: sourceToModel(new THREE.Vector2(128, 0)).x,
     baseRight: -0.23,
     depth: 0.46,
-    faceIndexMaximum: 12,
-    faceIndexMinimum: -4,
+    faceIndexMaximum: 16,
+    faceIndexMinimum: -6,
     pitch: rackPitch,
     toothRootY,
     toothTipY,
@@ -718,11 +722,21 @@ function alternatingPawlRatchetBar(movement) {
         nose: { x: 202, y: 284 },
       },
       rasterRack: {
-        approximateToothCount: 18,
-        pitchPixels: 14,
-        rootY: 300,
+        approximateToothCount: 22,
+        barBottomY: 296,
+        barLeftX: 128,
+        pitchPixels: 10.5,
+        rootY: 294,
         tipY: 284,
       },
+      rasterTable: {
+        bottomY: 342,
+        groundY: 377,
+        leftX: 135,
+        legs: [{ left: 147, right: 190 }, { left: 318, right: 360 }],
+        rightX: 413,
+      },
+      rasterLeftPulley: { center: { x: 38, y: 319 }, hubRadius: 8, radius: 26 },
       rasterShortPawl: {
         anchor: { x: 440, y: 267 },
         nose: { x: 286, y: 284 },
@@ -765,9 +779,82 @@ function alternatingPawlRatchetBar(movement) {
   };
 
   finishRatchetBarSupports(root);
+  // Brown's cord runs from the bar's left end over a free pulley and hangs
+  // down the left edge of the plate; the pulley's bearing is not drawn.
+  const pulleyCenter = sourceToModel(new THREE.Vector2(38, 319));
+  const pulleyRadius = 26 * sourceScale;
+  const cordRadius = 0.025;
+  const cordCenterRadius = pulleyRadius + cordRadius;
+  const cordY = pulleyCenter.y + cordCenterRadius;
+  const cordBottomY = -2.85;
+  const barLeftX = sourceToModel(new THREE.Vector2(128, 0)).x;
+  const pulleyMaterial = matte(PALETTE.brass, { metalness: 0.14, roughness: 0.56 });
+  const cordMaterial = matte(PALETTE.belt, { metalness: 0.04, roughness: 0.72 });
+  const leftPulley = new THREE.Group();
+  leftPulley.position.set(pulleyCenter.x, pulleyCenter.y, 0.02);
+  leftPulley.userData.axis = Z_AXIS.clone();
+  leftPulley.userData.role = 'free-left-cord-pulley';
+  const pulleyWheel = new THREE.Mesh(
+    ring(0.075, pulleyRadius, -0.1, 0.1, 128),
+    pulleyMaterial,
+  );
+  pulleyWheel.userData.role = 'left-pulley-wheel-with-hub-bore';
+  const pulleyHub = new THREE.Mesh(
+    ring(0.075, 8 * sourceScale, 0.1, 0.13, 64),
+    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
+  );
+  pulleyHub.userData.role = 'left-pulley-hub-face';
+  leftPulley.add(pulleyWheel, pulleyHub);
+  const pulleyAxle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, 0.4, 32).rotateX(Math.PI / 2),
+    matte(PALETTE.ink, { metalness: 0.25, roughness: 0.46 }),
+  );
+  pulleyAxle.position.set(pulleyCenter.x, pulleyCenter.y, 0.02);
+  pulleyAxle.userData.role = 'fixed-left-pulley-axle';
+  const cordSpan = new THREE.Mesh(
+    new THREE.CylinderGeometry(cordRadius, cordRadius, 1, 16)
+      .rotateZ(Math.PI / 2).translate(0.5, 0, 0),
+    cordMaterial,
+  );
+  cordSpan.position.set(pulleyCenter.x, cordY, 0.02);
+  cordSpan.userData.role = 'cord-from-bar-end-to-pulley';
+  const cordWrap = new THREE.Mesh(
+    new THREE.TorusGeometry(cordCenterRadius, cordRadius, 10, 32, Math.PI / 2)
+      .rotateZ(Math.PI / 2),
+    cordMaterial,
+  );
+  cordWrap.position.set(pulleyCenter.x, pulleyCenter.y, 0.02);
+  cordWrap.userData.role = 'cord-wrapped-over-pulley';
+  const cordDrop = new THREE.Mesh(
+    new THREE.CylinderGeometry(cordRadius, cordRadius, pulleyCenter.y - cordBottomY, 16),
+    cordMaterial,
+  );
+  cordDrop.position.set(
+    pulleyCenter.x - cordCenterRadius,
+    (pulleyCenter.y + cordBottomY) / 2,
+    0.02,
+  );
+  cordDrop.userData.role = 'cord-hanging-from-pulley';
+  root.add(leftPulley, pulleyAxle, cordSpan, cordWrap, cordDrop);
+  Object.assign(root.userData.blocks, {
+    cordDrop,
+    cordSpan,
+    cordWrap,
+    leftPulley,
+    pulleyAxle,
+  });
+  Object.assign(root.userData.geometry, {
+    barLeftX,
+    cordCenterRadius,
+    pulleyCenter,
+    pulleyRadius,
+  });
+  // Brown draws no contact dots; the markers only keep their positions.
   const update = (time) => {
     const state = stateAtTime(time);
     rack.position.x = state.renderedBarDisplacement;
+    cordSpan.scale.x = barLeftX + state.renderedBarDisplacement - pulleyCenter.x;
+    leftPulley.rotation.z = -state.barDisplacement / cordCenterRadius;
     leverRotor.rotation.z = state.leverAngle;
     longPawl.position.x = state.longAnchor.x;
     longPawl.position.y = state.longAnchor.y;
@@ -775,8 +862,8 @@ function alternatingPawlRatchetBar(movement) {
     shortPawl.position.x = state.shortAnchor.x;
     shortPawl.position.y = state.shortAnchor.y;
     shortPawl.rotation.z = state.shortPawlAngle;
-    longContactMarker.visible = state.longDriving && state.engaged;
-    shortContactMarker.visible = state.shortDriving && state.engaged;
+    longContactMarker.visible = false;
+    shortContactMarker.visible = false;
     longContactMarker.position.x = state.longTip.x - noseRadius;
     longContactMarker.position.y = state.longTip.y;
     shortContactMarker.position.x = state.shortTip.x - noseRadius;
@@ -820,7 +907,8 @@ function alternatingPawlRatchetBar(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(1.2, 0.8, 16),
+    // Plate 271 is a flat side elevation.
+    cameraDirection: new THREE.Vector3(0, 0, 1),
   };
 }
 

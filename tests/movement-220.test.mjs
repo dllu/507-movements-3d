@@ -399,14 +399,15 @@ test('movement 220 has one real open radial slot with safe axial and lateral cle
     'outer radial limit',
   );
   assert.ok(geometry.slotHalfWidth > geometry.wristPinRadius);
-  assert.ok(geometry.outputPlaneZ > geometry.inputPlaneZ);
+  assert.ok(geometry.inputPlaneZ > geometry.outputPlaneZ,
+    'the plain crank is the near plane in Brown\'s view');
   const clearance = solidClearanceAtInputTravel(0);
   near(clearance.crankPlaneClearance, 0.42, 0,
     'two crank-arm planes stay disjoint');
   near(clearance.wristToSlotSideClearance, 0.06, 0,
     'wrist has visible lateral running clearance');
   assert.ok(geometry.wristPinLength
-    > geometry.outputPlaneZ - geometry.inputPlaneZ + geometry.crankDepth,
+    > geometry.inputPlaneZ - geometry.outputPlaneZ + geometry.crankDepth,
   'the one axial wrist physically reaches through both crank planes');
   disposeModel(model.root);
 });

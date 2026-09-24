@@ -64,7 +64,7 @@ function signedGeometryVolume(geometry) {
   return volume;
 }
 
-test('movement 219 is one eccentric crown wheel and one keyed sliding pinion', () => {
+test('movement 219 is one eccentric crown wheel and one keyed long pinion', () => {
   const movement = catalog.movements[218];
   const model = createMovementModel(movement);
   const {
@@ -92,7 +92,7 @@ test('movement 219 is one eccentric crown wheel and one keyed sliding pinion', (
   assert.equal(archetype, movement.archetype);
   assert.equal(
     mechanism,
-    'eccentric-crown-wheel-with-axially-sliding-pinion',
+    'eccentric-crown-wheel-with-long-fixed-pinion',
   );
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.sourceUrl, movement.sourceUrl);
@@ -100,7 +100,7 @@ test('movement 219 is one eccentric crown wheel and one keyed sliding pinion', (
   assert.equal(blocks.crownRing.parent, blocks.crownAssembly.userData.rotor);
   assert.equal(blocks.crownHub.parent, blocks.crownAssembly.userData.rotor);
   assert.equal(blocks.crownShaft.parent, blocks.crownAssembly.userData.rotor);
-  assert.equal(blocks.crownSpokes.length, 3);
+  assert.equal(blocks.crownSpokes.length, 4);
   assert.ok(blocks.crownSpokes.every(
     (spoke) => spoke.parent === blocks.crownAssembly.userData.rotor,
   ));
@@ -115,7 +115,10 @@ test('movement 219 is one eccentric crown wheel and one keyed sliding pinion', (
   assert.ok(blocks.pinionSplineRibs.every(
     (rib) => rib.parent === blocks.pinionShaft.userData.rotor,
   ));
-  assert.equal(blocks.pinion.userData.axiallySliding, true);
+  assert.equal(blocks.pinion.userData.axiallySliding, false);
+  assert.ok(geometry.pinionDepth > geometry.maximumPitchRadius
+    - geometry.minimumPitchRadius + geometry.crownToothRadialDepth,
+    'the long pinion face spans the whole relative-radius range');
   assert.equal(blocks.pinion.userData.keyedToShaft, true);
   assert.ok(blocks.pinion.userData.axis.distanceTo(X_AXIS) < 1e-12);
   assert.ok(blocks.pinionShaft.userData.axis.distanceTo(X_AXIS) < 1e-12);
@@ -201,7 +204,7 @@ test('movement 219 preserves the official eccentric source construction', () => 
   );
   assert.ok(Math.hypot(blocks.crownHub.position.x, blocks.crownHub.position.y) < 1e-12,
     'the hub remains at the true arbor, not the crown-circle center');
-  assert.ok(sourceState.pinionCenter.x < geometry.averagePitchRadius);
+  assert.ok(sourceState.contactAxialPosition < geometry.averagePitchRadius);
   assert.ok(sourceState.contactPoint.x > 0);
   assert.ok(sourceState.contactPoint.y === 0);
   disposeModel(model.root);
@@ -340,13 +343,15 @@ test('movement 219 preserves eccentric contact and exact rolling through 32,769 
     vectorNear(
       state.pinionCenter,
       new THREE.Vector3(
-        state.pitchRadius,
+        geometry.pinionAxialCenterX,
         0,
         geometry.pinionCenterZ,
       ),
       0,
-      `sliding pinion center ${index}`,
+      `fixed long-pinion center ${index}`,
     );
+    near(state.contactAxialPosition, state.pitchRadius, 0,
+      `contact travels along the pinion face ${index}`);
     near(
       state.pinionCenter.z - state.contactPoint.z,
       geometry.pinionPitchRadius,
@@ -370,8 +375,8 @@ test('movement 219 preserves eccentric contact and exact rolling through 32,769 
     near(state.crownSurfaceVelocity.y,
       state.pinionRotationalSurfaceVelocity.y, 5e-16,
       `transverse rolling velocity ${index}`);
-    near(state.pinionSurfaceVelocity.x, state.pinionAxialSpeed, 0,
-      `permitted tooth-length slide ${index}`);
+    near(state.pinionSurfaceVelocity.x, 0, 0,
+      `no axial slip at the pitch point ${index}`);
     maximumMeshPitchError = Math.max(
       maximumMeshPitchError,
       state.centeredMeshPitchInvariant,
@@ -383,8 +388,8 @@ test('movement 219 preserves eccentric contact and exact rolling through 32,769 
     const clearances = solidClearanceAtInputTravel(inputTravel);
     assert.ok(clearances.pinionRootToCrownBody > 0.25);
     assert.ok(clearances.shaftToCrownBody > 0.52);
-    assert.ok(clearances.splinedTravelMargin > 0.3);
-    assert.ok(clearances.splineTravelMargin > 0.39);
+    assert.ok(clearances.pinionFaceMargin > 0.04);
+    assert.ok(clearances.shaftTravelMargin > 0.3);
   }
 
   near(minimumRadius, geometry.minimumPitchRadius, 3e-16,
@@ -433,7 +438,7 @@ test('movement 219 analytic rates, axial travel, and five-turn closure agree exa
     const finitePinionDerivative = (after.pinionAngle - before.pinionAngle)
       / (2 * step);
     const finiteAxialAcceleration = (
-      after.pinionAxialSpeed - before.pinionAxialSpeed
+      after.contactAxialSpeed - before.contactAxialSpeed
     ) / (2 * step / geometry.inputAngularSpeed);
     maximumRadiusDerivativeError = Math.max(
       maximumRadiusDerivativeError,
@@ -448,7 +453,7 @@ test('movement 219 analytic rates, axial travel, and five-turn closure agree exa
     );
     maximumAxialAccelerationError = Math.max(
       maximumAxialAccelerationError,
-      Math.abs(finiteAxialAcceleration - state.pinionAxialAcceleration),
+      Math.abs(finiteAxialAcceleration - state.contactAxialAcceleration),
     );
   }
   assert.ok(maximumRadiusDerivativeError < 4e-10);
@@ -462,10 +467,10 @@ test('movement 219 analytic rates, axial travel, and five-turn closure agree exa
     'nearest-radius reversal speed');
   near(farthest.pitchRadiusDerivative, 0, 3e-16,
     'farthest-radius reversal speed');
-  near(source.pinionAxialSpeed, 0, 1.3e-16,
-    'source axial reversal');
-  near(farthest.pinionAxialSpeed, 0, 2e-16,
-    'far axial reversal');
+  near(source.contactAxialSpeed, 0, 1.3e-16,
+    'source contact-travel reversal');
+  near(farthest.contactAxialSpeed, 0, 2e-16,
+    'far contact-travel reversal');
   near(closure.crownAngle - source.crownAngle, FULL_TURN, 0,
     'one crown turn');
   near(
@@ -475,7 +480,7 @@ test('movement 219 analytic rates, axial travel, and five-turn closure agree exa
     'five-turn pinion pitch closure',
   );
   near(closure.pinionCenter.x, source.pinionCenter.x, 0,
-    'sliding-pinion closure');
+    'fixed-pinion closure');
   near(
     pitchTravelFromZero(geometry.sourcePoseAngle + FULL_TURN)
       - pitchTravelFromZero(geometry.sourcePoseAngle),
@@ -507,7 +512,7 @@ test('movement 219 runtime binds every rigid transform while 262 remains authore
     near(blocks.crownAssembly.userData.rotor.rotation.z, state.crownAngle, 0,
       'rendered crown angle');
     vectorNear(blocks.pinion.position, state.pinionCenter, 0,
-      'rendered sliding-pinion center');
+      'rendered long-pinion center');
     near(blocks.pinion.userData.rotor.rotation.z, state.pinionAngle, 0,
       'rendered pinion angle');
     near(blocks.pinionShaft.userData.rotor.rotation.z, state.pinionAngle, 0,

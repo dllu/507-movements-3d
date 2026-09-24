@@ -449,15 +449,16 @@ function combinationWeightDrive(movement) {
     new THREE.Vector3(2.17, fixedPivotG.y, -0.28),
   );
   topBearingArm.userData.role = 'fixed-top-rocker-bearing-arm';
+  // The arm stops at the rear face of B's hub instead of entering the disk.
   const diskBearingArm = makeDynamicLink({
     color: PALETTE.frame,
-    depth: 0.34,
+    depth: 0.29,
     jointRadius: 0.001,
     thickness: 0.18,
   });
   diskBearingArm.userData.setEndpoints(
-    new THREE.Vector3(diskCenter.x, diskCenter.y, -0.28),
-    new THREE.Vector3(2.17, diskCenter.y, -0.28),
+    new THREE.Vector3(diskCenter.x, diskCenter.y, -0.306),
+    new THREE.Vector3(2.17, diskCenter.y, -0.306),
   );
   diskBearingArm.userData.role = 'fixed-disk-bearing-arm';
   frame.add(base, rightPost, topBearingArm, diskBearingArm);
@@ -886,12 +887,48 @@ function combinationWeightDrive(movement) {
     cord.userData.centerlineLengthError = configuration.cordLengthError;
     root.userData.kinematics = state;
   };
+  // Plate 261 hangs everything from a wall: no floor slab, and neither the
+  // disk, pulley nor cord carries white index marks.
+  base.removeFromParent();
+  diskIndex.visible = false;
+  pulleyIndex.visible = false;
+  for (const marker of [...cordMarkers, ...cordContactMarkers]) {
+    marker.visible = false;
+  }
+  // Brown braces the disk-B arm to the wall with a concave cast gusset.
+  const braceSize = 0.9;
+  const wallX = 2.17 - 0.11;
+  const armUnderside = diskCenter.y - 0.09;
+  const braceShape = new THREE.Shape();
+  braceShape.moveTo(wallX - braceSize, armUnderside);
+  braceShape.lineTo(wallX, armUnderside);
+  braceShape.lineTo(wallX, armUnderside - braceSize);
+  braceShape.absarc(
+    wallX - braceSize,
+    armUnderside - braceSize,
+    braceSize,
+    0,
+    Math.PI / 2,
+    false,
+  );
+  const diskArmBrace = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(braceShape, {
+      bevelEnabled: false,
+      curveSegments: 32,
+      depth: 0.2,
+    }).translate(0, 0, -0.38),
+    frameMaterial,
+  );
+  diskArmBrace.userData.role = 'source-concave-gusset-under-disk-bearing-arm';
+  frame.add(diskArmBrace);
+  root.userData.blocks.diskArmBrace = diskArmBrace;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(2.5, 1.8, 12),
+    // Plate 261 is a flat front elevation.
+    cameraDirection: new THREE.Vector3(0, 0.03, 1),
   };
 }
 

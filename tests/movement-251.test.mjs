@@ -430,7 +430,9 @@ test('movement 251 renderer binds separate head, hooks, hammer, guides, and pile
 
   const hammerRailClearance =
     geometry.frameRailInnerHalfWidth - geometry.hammerHalfWidth;
-  assert.ok(hammerRailClearance > 1.24);
+  // W fills the space between the rails, as Brown draws it, with a small
+  // running clearance.
+  assert.ok(hammerRailClearance > 0.3 && hammerRailClearance < 0.4);
   let minimumHookRailClearance = Infinity;
   for (let sample = 0; sample <= 1024; sample += 1) {
     const opening = geometry.releaseHookAngle * sample / 1024;
@@ -496,7 +498,8 @@ test('movement 251 renderer binds separate head, hooks, hammer, guides, and pile
       `rendered left hook angle at ${time}`);
     near(blocks.rightHook.rotation.z, state.rightHookAngle, 0,
       `rendered right hook angle at ${time}`);
-    assert.equal(blocks.impactMarker.visible, state.impactContact);
+    // The pile head is below the plate crop; its impact ring is never shown.
+    assert.equal(blocks.impactMarker.visible, false);
     for (const fixed of fixedTransforms) {
       vectorNear(fixed.object.position, fixed.position, 0,
         `fixed position at ${time}`);

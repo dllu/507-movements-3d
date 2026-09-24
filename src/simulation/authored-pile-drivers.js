@@ -165,9 +165,11 @@ function pileDriverReleasingHooks(movement) {
   const headRelativeY = 2.19;
   const headBarHalfWidth = 2.64;
   const headBarHalfHeight = 0.19;
-  const hammerHalfWidth = 2.2;
-  const hammerHeight = 3.8;
-  const hammerCenterBelowPivot = 2.35;
+  // Brown's W is a tall block filling the space between the guide rails,
+  // with rounded side notches; its top stays just below the hook pivots.
+  const hammerHalfWidth = 3.12;
+  const hammerHeight = 5.6;
+  const hammerCenterBelowPivot = 0.45 + hammerHeight / 2;
   const hammerBottomBelowPivot =
     hammerCenterBelowPivot + hammerHeight / 2;
   const pileHeadTopY = impactPivotY - hammerBottomBelowPivot;
@@ -261,7 +263,9 @@ function pileDriverReleasingHooks(movement) {
   const frame = new THREE.Group();
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-pile-driver-frame-with-converging-slot-b';
-  const railHeight = 13.4;
+  // The rails run from the top frame down to the pile-head level.
+  const railTopY = 6.15;
+  const railHeight = railTopY - pileHeadTopY;
   const railWidth = 0.58;
   const rails = [-1, 1].map((side) => {
     const rail = new THREE.Mesh(
@@ -270,7 +274,7 @@ function pileDriverReleasingHooks(movement) {
     );
     rail.position.set(
       side * (frameRailInnerHalfWidth + railWidth / 2),
-      -0.55,
+      railTopY - railHeight / 2,
       -0.32,
     );
     rail.userData.fixed = true;
@@ -286,7 +290,9 @@ function pileDriverReleasingHooks(movement) {
     guideSurfaceStart.clone().add(new THREE.Vector2(-0.12, -0.45)),
     new THREE.Vector2(-4.3, 4.45),
   ], 1.32, frameMaterial, 'left-half-of-top-frame-around-slot-b');
-  leftTopBeam.position.z = -0.32;
+  // Set the cheeks behind the lifting-head plane so the rising head passes
+  // in front of them; the dark guide faces still reach the hook plane.
+  leftTopBeam.position.z = -1.25;
   leftTopBeam.userData.fixed = true;
   const rightTopBeam = leftTopBeam.clone();
   rightTopBeam.scale.x = -1;
@@ -316,10 +322,22 @@ function pileDriverReleasingHooks(movement) {
     -guideSurfaceEnd.x,
     guideSurfaceEnd.y,
   );
-  const upperTie = new THREE.Mesh(
-    new THREE.BoxGeometry(8.6, 0.34, 1.42),
-    frameMaterial,
-  );
+  // The tie carries slot B, a real passage for the hoisting rope.
+  const tieShapes = [-1, 1].map((side) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(side * 0.13, -0.17);
+    shape.lineTo(side * 4.3, -0.17);
+    shape.lineTo(side * 4.3, 0.17);
+    shape.lineTo(side * 0.13, 0.17);
+    shape.closePath();
+    return shape;
+  });
+  const tieGeometry = new THREE.ExtrudeGeometry(tieShapes, {
+    bevelEnabled: false,
+    depth: 1.42,
+  });
+  tieGeometry.translate(0, 0, -0.71);
+  const upperTie = new THREE.Mesh(tieGeometry, frameMaterial);
   upperTie.position.set(0, 7.55, -0.32);
   upperTie.userData.fixed = true;
   upperTie.userData.role = 'fixed-upper-frame-tie-above-slot-b';
@@ -342,6 +360,10 @@ function pileDriverReleasingHooks(movement) {
   pile.position.y = pileHeadTopY - 1.175;
   pile.userData.fixed = true;
   pile.userData.role = 'pile-below-impact-head';
+  // Brown's plate is cropped through W; the pile and its head lie below the
+  // crop, so they stay as the impact reference but are not displayed.
+  anvil.visible = false;
+  pile.visible = false;
   pileHead.add(anvil, pile);
   root.add(frame, pileHead);
 
@@ -417,17 +439,30 @@ function pileDriverReleasingHooks(movement) {
 
   const weightAssembly = new THREE.Group();
   weightAssembly.userData.role = 'falling-hammer-w-with-two-pivoted-hooks-a';
+  const notchRadius = 0.3;
+  const notchCenters = [hammerHeight / 2 - 1.05, -hammerHeight / 2 + 1.05];
+  const sideProfile = (side) => {
+    const points = [];
+    const ordered = side > 0 ? notchCenters : [...notchCenters].reverse();
+    for (const centerY of ordered) {
+      for (let index = 0; index <= 12; index += 1) {
+        const angle = Math.PI / 2 - Math.PI * index / 12;
+        const y = centerY + notchRadius * Math.sin(angle) * (side > 0 ? 1 : -1);
+        points.push(new THREE.Vector2(
+          side * (hammerHalfWidth - notchRadius * Math.cos(angle)),
+          y,
+        ));
+      }
+    }
+    return points;
+  };
   const hammerProfile = [
     new THREE.Vector2(-hammerHalfWidth, hammerHeight / 2),
     new THREE.Vector2(hammerHalfWidth, hammerHeight / 2),
-    new THREE.Vector2(hammerHalfWidth, 0.8),
-    new THREE.Vector2(hammerHalfWidth - 0.18, 0.58),
-    new THREE.Vector2(hammerHalfWidth, 0.36),
+    ...sideProfile(1),
     new THREE.Vector2(hammerHalfWidth, -hammerHeight / 2),
     new THREE.Vector2(-hammerHalfWidth, -hammerHeight / 2),
-    new THREE.Vector2(-hammerHalfWidth, 0.36),
-    new THREE.Vector2(-hammerHalfWidth + 0.18, 0.58),
-    new THREE.Vector2(-hammerHalfWidth, 0.8),
+    ...sideProfile(-1),
   ];
   const hammer = extrudedPolygon(
     hammerProfile,
@@ -442,6 +477,8 @@ function pileDriverReleasingHooks(movement) {
   );
   hammerIndex.position.set(0.9, -hammerCenterBelowPivot, 0.86);
   hammerIndex.userData.role = 'white-falling-weight-motion-index';
+  // Brown draws W plain, without a motion index.
+  hammerIndex.visible = false;
   const yoke = extrudedPolygon([
     new THREE.Vector2(-1.72, 0.24),
     new THREE.Vector2(1.72, 0.24),
@@ -1076,7 +1113,8 @@ function pileDriverReleasingHooks(movement) {
         state.rightLatchContact,
       ][index].gap < 1e-10;
     });
-    impactMarker.visible = state.impactContact;
+    // The pile head lies below the plate crop, so its impact ring stays hidden.
+    impactMarker.visible = false;
     root.userData.contacts = {
       guideSlotB: {
         active: state.guideContactActive,
@@ -1096,6 +1134,20 @@ function pileDriverReleasingHooks(movement) {
     root.userData.kinematics = state;
   };
   correctPileHookSurfaces(root);
+  // Fit the displayed parts over the whole cycle; the undrawn pile below the
+  // plate's crop is excluded.
+  const fitBounds = new THREE.Box3();
+  for (let sample = 0; sample <= 64; sample += 1) {
+    update(cycleDuration * sample / 64);
+    root.updateMatrixWorld(true);
+    root.traverseVisible((object) => {
+      if (!object.isMesh) return;
+      object.geometry.computeBoundingBox();
+      fitBounds.union(object.geometry.boundingBox.clone()
+        .applyMatrix4(object.matrixWorld));
+    });
+  }
+  root.userData.cameraFitBounds = fitBounds.expandByScalar(0.02);
   update(0);
   markShadows(root);
   return {

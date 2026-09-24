@@ -252,7 +252,7 @@ test('movement 263 renderer binds the shared side-view assembly exactly', () => 
       `side-view roller phase at ${time}`);
     near(blocks.contactMarker.position.distanceTo(state.contactPoint), 0, 0,
       `side-view contact marker at ${time}`);
-    assert.ok(blocks.contactSpring.scale.y > 0);
+    assert.equal(blocks.contactSpring, undefined);
   }
   assert.equal(timeline.forwardTraverseEnd, 6);
   assert.equal(timeline.reverseReturnEnd, 12);

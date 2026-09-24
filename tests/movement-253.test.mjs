@@ -350,12 +350,19 @@ test('movement 253 renderer binds both rotors, all hooks, spring, and contacts',
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
 
   assert.equal(blocks.ropeEdges.length, 2);
-  assert.ok(roles.includes('white-flange-b-speed-index'));
-  assert.ok(roles.includes('white-load-side-drum-speed-index'));
-  assert.ok(roles.includes(
+  // Brown draws no springs or speed indices; the source presentation removes
+  // them from the display while the kinematic spring law stays in the model.
+  const removed = model.root.userData.sourcePresentation.removedRoles;
+  for (const role of [
+    'white-flange-b-speed-index',
+    'white-load-side-drum-speed-index',
     'visible-torsional-shock-spring-between-flange-and-load-side-drum',
-  ));
-  assert.equal(roles.filter((role) => /torsion-return-spring/.test(role)).length, 3);
+  ]) {
+    assert.ok(!roles.includes(role), role);
+    assert.ok(removed.includes(role), role);
+  }
+  assert.equal(roles.filter((role) => /torsion-return-spring/.test(role)).length, 0);
+  assert.equal(removed.filter((role) => /torsion-return-spring/.test(role)).length, 3);
 
   for (const time of [0, 2.8, 4.4, timeline.catchTime, 4.82, 5.5, 6.6, 7.4, 9.3, 11.2]) {
     model.update(time);

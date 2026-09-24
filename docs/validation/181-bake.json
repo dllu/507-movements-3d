@@ -22,19 +22,19 @@
   "bounds": {
     "min": [
       -2.554869249920498,
-      -5.450361750318572,
+      -4.9903617079992735,
       -0.8260000029206276
     ],
     "max": [
       2.2168385044240693,
       2.7224999046325684,
-      0.849999997317791
+      0.8249999976158142
     ]
   },
   "focus": [
     -0.16901537274821443,
-    -1.3639309228430017,
-    0.011999997198581691
+    -1.1339309016833525,
+    -0.0005000026524066836
   ],
   "inputHash": "5106a997e9bf657b1f338781f36335c1e8d7da89e879d0da7e64ebf5cfef7f34",
   "sources": [
@@ -56,7 +56,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "4ec146e5e593919f7e34a637dc6a53157abc33c0568ccbf6556ebcc99467b63f"
+      "sha256": "77f54e7f3ed70bf4b756a447e57a145685d3d1c53702db9f867edf636301812f"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -64,11 +64,11 @@
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "5b0dc1c88e15ee9a3a0b6fb781317f9081812d2814e02de17aa6265606b9af93"
+      "sha256": "503a39148f6690ecfc6e01143422b85b0e9262e43ab13eb4d662578f7ab8ab66"
     }
   ],
   "keys": 9001,
-  "bytes": 520179,
-  "sha256": "906cdf86bc1479fedfd1c9473829bedb21375f2c5473f2c356ab3c82a6b0dfea",
+  "bytes": 519218,
+  "sha256": "6257d2d311c6e885f3809649907315df4fd87ad65a9c5d47d77b39174a40a738",
   "status": "baked-assembly-source-review-open"
 }

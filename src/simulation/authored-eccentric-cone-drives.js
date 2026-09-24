@@ -85,6 +85,55 @@ const GAUSS_WEIGHTS = [
   0.2369268850561891,
 ];
 
+// Closed solid whose rectangular section flares from a neck to a foot, so the
+// same pedestal reads as Brown's footed cradle in end view (262) and as the
+// flared standard E in side view (263).
+function flaredPedestalGeometry({
+  bottomY,
+  footHalfX,
+  footHalfZ,
+  footTopY,
+  neckHalfX,
+  neckHalfZ,
+  neckBottomY,
+  topY,
+  flankSteps = 14,
+}) {
+  const levels = [[bottomY, footHalfX, footHalfZ], [footTopY, footHalfX, footHalfZ]];
+  for (let step = 1; step <= flankSteps; step += 1) {
+    const t = step / flankSteps;
+    const flare = (1 - t) ** 2;
+    levels.push([
+      footTopY + (neckBottomY - footTopY) * t,
+      neckHalfX + (footHalfX - neckHalfX) * flare,
+      neckHalfZ + (footHalfZ - neckHalfZ) * flare,
+    ]);
+  }
+  levels.push([topY, neckHalfX, neckHalfZ]);
+  const corners = ([y, hx, hz]) => [
+    [-hx, y, -hz], [hx, y, -hz], [hx, y, hz], [-hx, y, hz],
+  ];
+  const positions = [];
+  const quad = (a, b, c, d) => positions.push(...a, ...b, ...c, ...a, ...c, ...d);
+  for (let index = 0; index < levels.length - 1; index += 1) {
+    const lower = corners(levels[index]);
+    const upper = corners(levels[index + 1]);
+    for (let side = 0; side < 4; side += 1) {
+      const next = (side + 1) % 4;
+      quad(lower[side], lower[next], upper[next], upper[side]);
+    }
+  }
+  const bottom = corners(levels[0]);
+  const top = corners(levels[levels.length - 1]);
+  quad(bottom[0], bottom[3], bottom[2], bottom[1]);
+  quad(top[0], top[1], top[2], top[3]);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position',
+    new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function integrateFivePoint(integrand, start, end) {
   if (start === end) return 0;
   const midpoint = (start + end) / 2;
@@ -891,9 +940,50 @@ function eccentricConeFrictionReverser(movement) {
   contactMarker.visible = false;
   // The raised generator line protruded into the roller's working surface.
   coneGeneratorIndex.removeFromParent();
+  // Plates 262-263 draw no base slab, roller guide posts, spring or white
+  // marks: only the cone, the screw, roller C on a short axle and the footed
+  // standard E. The spring (or weight) that presses C on the cone is
+  // described but not drawn, so its load remains an unrendered assumption.
+  for (const object of [
+    base,
+    ...guideRails,
+    guideTop,
+    ...carriageBlocks,
+    carriageBridge,
+    contactSpring,
+  ]) {
+    object.removeFromParent();
+    object.geometry?.dispose();
+  }
+  for (const key of [
+    'base',
+    'carriageBlocks',
+    'carriageBridge',
+    'contactSpring',
+    'guideRails',
+    'guideTop',
+  ]) delete root.userData.blocks[key];
+  rollerIndex.visible = false;
+  rollerAxle.geometry.dispose();
+  rollerAxle.geometry = cylinderAlongX(0.065, 0.62, darkMaterial, 30).geometry;
+  rollerAxle.position.x = 0;
+  rollerAxle.userData.role = 'short-axle-of-friction-roller-C';
+  nutPost.geometry.dispose();
+  nutPost.geometry = flaredPedestalGeometry({
+    bottomY: -1.34,
+    footHalfX: 0.5,
+    footHalfZ: 0.95,
+    footTopY: -1.27,
+    neckBottomY: -0.72,
+    neckHalfX: 0.13,
+    neckHalfZ: 0.2,
+    topY: -0.309,
+  });
+  nutPost.position.set(nutAxialPosition, 0, 0);
+  nutPost.userData.role = 'source-footed-standard-E-carrying-nut';
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
-  root.userData.reconstructionNote = 'The eccentric cone changes and reverses the roller speed. The guide and spring are reconstructed. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
+  root.userData.reconstructionNote = 'The eccentric cone changes and reverses the roller speed. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {

@@ -563,13 +563,24 @@ function crankTangentOscillatingRod(movement) {
     };
     root.userData.kinematics = state;
   };
+  // Brown draws the roller free on its axle with no standard, and no white
+  // index marks or contact dot.
+  guideBearingFoot.removeFromParent();
+  for (const mark of [
+    crankPinCap,
+    crankFaceIndex,
+    guideIndex,
+    rodIndex,
+    contactMarker,
+  ]) mark.visible = false;
   update(0);
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
+    // Plate 268 is a flat elevation.
+    cameraDirection: new THREE.Vector3(0, 0, 1),
   };
 }
 

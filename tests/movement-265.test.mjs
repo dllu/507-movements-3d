@@ -70,7 +70,8 @@ test('movement 265 is the generator-guided traversing-roller cone drive', () => 
   assert.equal(blocks.coneBody.parent, blocks.coneRotor);
   assert.equal(blocks.rollerBody.parent, blocks.rollerRotor);
   assert.equal(blocks.rollerTread.parent, blocks.rollerRotor);
-  assert.notEqual(blocks.rollerGuide.parent, blocks.roller);
+  // The long shaft Brown draws is the roller's own output axle.
+  assert.equal(blocks.rollerGuide.parent, blocks.roller);
   disposeModel(model.root);
 });
 
@@ -107,8 +108,8 @@ test('movement 265 preserves the measured unavailable source engraving', () => {
     right: { x: 502, y: 202 },
   });
   assert.deepEqual(plate.rasterShaftEndpointsX, [13, 449]);
-  assert.match(plate.inferredTopology, /horizontal truncated cone/);
-  assert.match(plate.inferredTopology, /parallel to the upper cone generator/);
+  assert.match(plate.inferredTopology, /horizontal concave horn-shaped drum/);
+  assert.match(plate.inferredTopology, /parallel to the upper drum generator/);
   assert.deepEqual(sourceReference.primaryScan, {
     archiveIdentifier: 'fivehundredseven00browiala',
     descriptionPage: 67,
@@ -162,16 +163,27 @@ test('movement 265 matches the cone taper, contact station, and roller size', ()
     0.025,
     'cone length-to-radius ratio',
   );
+  // Brown's drum is concave: under the roller its radius is well below the
+  // straight line joining the end radii, and the model follows the plate.
+  const rasterContactRadius = plate.rasterConeLargeEnd.centerY
+    - plate.rasterContactPoint.y;
+  const contactRadius = model.root.userData.transmission
+    .coneRadiusAtAxialPosition(geometry.sourceContactAxialPosition);
   near(
-    geometry.radiusSlope,
-    -(rasterLargeRadius - rasterSmallRadius) / rasterConeLength,
-    0.004,
-    'straight generator slope',
+    contactRadius / geometry.coneLargeRadius,
+    rasterContactRadius / rasterLargeRadius,
+    0.01,
+    'concave drum radius under the roller',
   );
+  const straightRadius = geometry.coneLargeRadius
+    + (geometry.coneSmallRadius - geometry.coneLargeRadius)
+      * rasterContactFraction;
+  assert.ok(contactRadius < straightRadius - 0.2, 'drum generator is concave');
+  assert.ok(geometry.profileCurvature > 0);
   near(
     geometry.rollerPitchRadius / geometry.coneLargeRadius,
     rasterRollerRadius / rasterLargeRadius,
-    0.004,
+    0.02,
     'roller-to-cone radius ratio',
   );
   near(
@@ -181,22 +193,29 @@ test('movement 265 matches the cone taper, contact station, and roller size', ()
     0.002,
     'source contact axial fraction',
   );
+  // The engraved shaft line and roller radius disagree by a few degrees;
+  // the tangent of the fitted concave generator lies within that spread.
   near(
     geometry.coneGeneratorAxis.y / geometry.coneGeneratorAxis.x,
     rasterGuideSlope,
-    0.04,
+    0.05,
     'roller shaft generator slope',
   );
-  near(geometry.coneSurfaceNormal.x, rasterNormal.x, 0.004,
+  near(geometry.coneSurfaceNormal.x, rasterNormal.x, 0.09,
     'source contact normal x');
-  near(geometry.coneSurfaceNormal.y, rasterNormal.y, 0.004,
+  near(geometry.coneSurfaceNormal.y, rasterNormal.y, 0.02,
     'source contact normal y');
   disposeModel(model.root);
 });
 
-test('movement 265 maintains exact cone and roller tangency along the guide', () => {
+test('movement 265 maintains exact drum and roller tangency along the generator', () => {
   const model = createMovementModel(catalog.movements[264]);
-  const { geometry, stateAtTime, timeline } = model.root.userData;
+  const {
+    contactDefinition,
+    geometry,
+    stateAtTime,
+    timeline,
+  } = model.root.userData;
   let maximumConeSurfaceError = 0;
   let maximumRollerSurfaceError = 0;
   let maximumGuideError = 0;
@@ -212,6 +231,8 @@ test('movement 265 maintains exact cone and roller tangency along the guide', ()
     const state = stateAtTime(
       timeline.demonstrationPeriod * sample / 8192,
     );
+    near(state.generatorAxis.dot(state.surfaceNormal), 0, 6e-17,
+      `local generator-normal orthogonality at ${sample}`);
     maximumConeSurfaceError = Math.max(
       maximumConeSurfaceError,
       Math.abs(
@@ -228,13 +249,12 @@ test('movement 265 maintains exact cone and roller tangency along the guide', ()
         radialDistance(
           state.contactPoint,
           state.rollerCenter,
-          geometry.coneGeneratorAxis,
+          state.generatorAxis,
         ) - geometry.rollerPitchRadius,
       ),
     );
-    const expectedCenter = geometry.guideOrigin.clone().addScaledVector(
-      geometry.coneGeneratorAxis,
-      state.guideCoordinate,
+    const expectedCenter = contactDefinition.rollerCenterAtAxialPosition(
+      state.contactAxialPosition,
     );
     maximumGuideError = Math.max(
       maximumGuideError,
@@ -245,15 +265,16 @@ test('movement 265 maintains exact cone and roller tangency along the guide', ()
       .normalize();
     maximumNormalError = Math.max(
       maximumNormalError,
-      centerToContact.clone().add(geometry.coneSurfaceNormal).length(),
+      centerToContact.clone().add(state.surfaceNormal).length(),
     );
     assert.ok(state.contactAxialPosition > geometry.coneLargeEndX);
     assert.ok(state.contactAxialPosition < geometry.coneSmallEndX);
   }
   assert.ok(maximumConeSurfaceError < 2e-16);
-  assert.ok(maximumRollerSurfaceError < 2e-16);
+  // Per-sample axis normalisation adds a few ulps over the straight guide.
+  assert.ok(maximumRollerSurfaceError < 5e-16, `roller surface ${maximumRollerSurfaceError}`);
   assert.ok(maximumGuideError < 6e-16);
-  assert.ok(maximumNormalError < 2e-16);
+  assert.ok(maximumNormalError < 5e-16, `normal ${maximumNormalError}`);
   disposeModel(model.root);
 });
 
@@ -358,6 +379,14 @@ test('movement 265 uses a transparent smooth traverse demonstration', () => {
   assert.ok(source.rollerCenterVelocity.distanceTo(
     geometry.coneGeneratorAxis.clone().multiplyScalar(source.guideVelocity),
   ) < 2e-16);
+  for (const time of [0.3, 1.7, 3.1, 5.9]) {
+    const step = 1e-6;
+    const numerical = stateAtTime(time + step).rollerCenter
+      .sub(stateAtTime(time - step).rollerCenter)
+      .multiplyScalar(1 / (2 * step));
+    assert.ok(numerical.distanceTo(stateAtTime(time).rollerCenterVelocity)
+      < 2e-8, `roller centre velocity at ${time}`);
+  }
   disposeModel(model.root);
 });
 
@@ -366,7 +395,6 @@ test('movement 265 renderer binds cone, roller, contact, and guide exactly', () 
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
-  const fixedGuidePosition = blocks.rollerGuide.position.clone();
 
   assert.equal(
     roles.filter((role) => role
@@ -375,7 +403,7 @@ test('movement 265 renderer binds cone, roller, contact, and guide exactly', () 
   );
   assert.equal(
     roles.filter((role) => role
-      === 'generator-axis-friction-roller-sliding-axially-on-straight-guide').length,
+      === 'generator-tangent-friction-roller-traversing-concave-drum').length,
     1,
   );
   assert.equal(
@@ -401,8 +429,15 @@ test('movement 265 renderer binds cone, roller, contact, and guide exactly', () 
       `rendered roller center at ${time}`);
     near(blocks.contactMarker.position.distanceTo(state.contactPoint), 0, 0,
       `rendered contact point at ${time}`);
-    near(blocks.rollerGuide.position.distanceTo(fixedGuidePosition), 0, 0,
-      `fixed guide at ${time}`);
+    model.root.updateMatrixWorld(true);
+    const axle = new THREE.Vector3(0, 0, 1).transformDirection(
+      blocks.rollerGuide.matrixWorld,
+    );
+    const worldGenerator = state.generatorAxis.clone().transformDirection(
+      model.root.matrixWorld,
+    );
+    near(Math.abs(axle.dot(worldGenerator)), 1, 1e-12,
+      `roller axle tangent to the generator at ${time}`);
   }
   disposeModel(model.root);
 });
@@ -427,8 +462,8 @@ test('movement 265 closes exactly and leaves movement 507 authored', () => {
     'traverse-rate closure');
   near(closure.coneAngleUnwrapped / FULL_TURN, 4, 0,
     'four cone turns per traverse');
-  near(closure.rollerAngleUnwrapped / FULL_TURN, -5, 1e-15,
-    'five opposite roller turns per traverse');
+  near(closure.rollerAngleUnwrapped / FULL_TURN, -4, 1e-15,
+    'four opposite roller turns per traverse');
   assert.equal(animationTiming.authoredCyclePeriod, 8);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);

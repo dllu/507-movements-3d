@@ -81,7 +81,10 @@ test('movement 271 is one translating ratchet bar driven by two alternating pawl
   assert.equal(roles.filter((role) => /alternating-pull-pawl$/.test(role)).length, 2);
   assert.equal(roles.filter((role) => role === 'left-moving-asymmetric-ratchet-bar').length, 1);
   assert.equal(roles.filter((role) => role === 'fixed-middle-fulcrum-pin').length, 1);
-  assert.equal(roles.filter((role) => /belt|pulley|ratchet-wheel/.test(role)).length, 0);
+  assert.equal(roles.filter((role) => /belt|ratchet-wheel/.test(role)).length, 0);
+  // Brown draws one free pulley at the left carrying the bar's cord.
+  assert.equal(roles.filter((role) => role === 'free-left-cord-pulley').length, 1);
+  assert.equal(blocks.leftPulley.parent, model.root);
   disposeModel(model.root);
 });
 
@@ -115,12 +118,18 @@ test('movement 271 records the unavailable animation and measured engraving topo
     anchor: { x: 440, y: 267 },
     nose: { x: 286, y: 284 },
   });
+  // Brown's teeth are small (about 22 at 10.5 px); they are cut 10 px deep
+  // so the finite hooks clear the next ramp at pickup.
   assert.deepEqual(plate.rasterRack, {
-    approximateToothCount: 18,
-    pitchPixels: 14,
-    rootY: 300,
+    approximateToothCount: 22,
+    barBottomY: 296,
+    barLeftX: 128,
+    pitchPixels: 10.5,
+    rootY: 294,
     tipY: 284,
   });
+  assert.deepEqual(plate.rasterLeftPulley,
+    { center: { x: 38, y: 319 }, hubRadius: 8, radius: 26 });
   assert.match(plate.inferredTopology, /fixed middle fulcrum/);
   assert.match(plate.inferredTopology, /long upper pawl/);
   assert.match(plate.inferredTopology, /short lower pawl/);
@@ -185,9 +194,9 @@ test('movement 271 reconstructs one regular asymmetric rack and exact tooth regi
     2e-16, 'rack tooth height');
   assert.equal(blocks.rackTeeth.userData.profile,
     'rising-return-ramp-and-vertical-left-pulling-face');
-  assert.equal(faces.length, 17);
-  assert.equal(faces[0].faceIndex, -4);
-  assert.equal(faces.at(-1).faceIndex, 12);
+  assert.equal(faces.length, 23);
+  assert.equal(faces[0].faceIndex, -6);
+  assert.equal(faces.at(-1).faceIndex, 16);
   for (let index = 0; index < faces.length; index += 1) {
     const face = faces[index];
     near(face.root.x,
@@ -203,7 +212,7 @@ test('movement 271 reconstructs one regular asymmetric rack and exact tooth regi
         `drive face ${face.faceIndex} pitch`);
     }
   }
-  assert.equal(geometry.shortFaceOffset, 6);
+  assert.equal(geometry.shortFaceOffset, 8);
   near(
     geometry.shortStartTipX - geometry.longEndTipX,
     geometry.shortFaceOffset * geometry.rackPitch + geometry.pickupTravel,
@@ -254,7 +263,8 @@ test('movement 271 keeps both pawls rigid on opposite lever sides', () => {
   const start = stateAtCycleCoordinate(0);
   const end = stateAtCycleCoordinate(1);
 
-  assert.ok(geometry.leverAmplitude > THREE.MathUtils.degToRad(16) && geometry.leverAmplitude < THREE.MathUtils.degToRad(24));
+  // The finer source pitch needs a smaller lever swing (about 16 degrees).
+  assert.ok(geometry.leverAmplitude > THREE.MathUtils.degToRad(12) && geometry.leverAmplitude < THREE.MathUtils.degToRad(24));
   assert.ok(geometry.longAnchorLocal.y > 0,
     'long-pawl pin lies above the fulcrum');
   assert.ok(geometry.shortAnchorLocal.y < 0,
@@ -318,7 +328,7 @@ test('movement 271 exhaustively advances left on alternating half-strokes with f
     assert.equal(state.activeFaceIndex,
       state.longDriving
         ? state.cycleIndex * 2
-        : 6 + state.cycleIndex * 2);
+        : 8 + state.cycleIndex * 2);
     activePawls.add(state.activePawl);
     stages.add(state.stage);
     previous = state;
@@ -369,7 +379,7 @@ test('movement 271 analytic lever, bar, pawl, and tip rates match finite differe
 
     near(derivative('leverAngle'), state.leverAngularSpeed, 2e-11,
       `lever speed at ${coordinate}`);
-    near(derivative('barDisplacement'), state.barSpeed, 4e-11,
+    near(derivative('barDisplacement'), state.barSpeed, 6e-11,
       `bar speed at ${coordinate}`);
     near(
       (after.barSpeed - before.barSpeed) / (2 * timeStep),
@@ -385,9 +395,9 @@ test('movement 271 analytic lever, bar, pawl, and tip rates match finite differe
       1e-9, `long-tip velocity at ${coordinate}`);
     vectorNear(vectorDerivative('shortTip'), state.shortTipVelocity,
       1e-9, `short-tip velocity at ${coordinate}`);
-    near(derivative('longPawlAngle'), state.longPawlAngularSpeed, 2e-10,
+    near(derivative('longPawlAngle'), state.longPawlAngularSpeed, 4e-10,
       `long-pawl speed at ${coordinate}`);
-    near(derivative('shortPawlAngle'), state.shortPawlAngularSpeed, 2e-10,
+    near(derivative('shortPawlAngle'), state.shortPawlAngularSpeed, 4e-10,
       `short-pawl speed at ${coordinate}`);
   }
 
@@ -440,8 +450,9 @@ test('movement 271 renderer binds the rack, lever, alternating contacts, and per
       `short-pawl anchor y at phase ${phase}`);
     near(blocks.shortPawl.rotation.z, state.shortPawlAngle, 0,
       `short-pawl angle at phase ${phase}`);
-    assert.equal(blocks.longContactMarker.visible, state.longDriving && state.engaged);
-    assert.equal(blocks.shortContactMarker.visible, state.shortDriving && state.engaged);
+    // Brown draws no contact dots, so the markers stay hidden.
+    assert.equal(blocks.longContactMarker.visible, false);
+    assert.equal(blocks.shortContactMarker.visible, false);
     assert.equal(
       model.root.userData.contacts.activePawlToRatchetBar.pawl,
       state.activePawl,

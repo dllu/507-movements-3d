@@ -798,10 +798,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     metalness: 0.14,
     roughness: 0.58,
   });
-  const weightMaterial = matte(PALETTE.brass, {
-    metalness: 0.18,
-    roughness: 0.56,
-  });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
 
   const frameSpine = new THREE.Mesh(
@@ -1198,15 +1194,9 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     const head = cylinderAlongZ(0.20, 0.13, darkMaterial, 36);
     head.position.z = shaftTop + 0.02;
     head.userData.role = `${role}-fixed-round-head`;
-    const slot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.045, 0.026),
-      whiteMaterial,
-    );
-    slot.position.z = shaftTop + 0.095;
-    slot.rotation.z = Math.PI / 2;
-    slot.userData.role = `${role}-fixed-white-slot`;
-    group.add(shaft, head, slot);
-    return { group, head, shaft, slot };
+    // Brown draws a plain boss over each pivot, with no slotted screw head.
+    group.add(shaft, head);
+    return { group, head, shaft };
   };
   const upperPivotParts = makePivotHardware(
     upperPivot,
@@ -1232,15 +1222,11 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     rod.position.y = -(rodLength+.12) / 2;
     rod.userData.role = `${role}-vertical-rod`;
-    const weight = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, 0.46, 0.24),
-      weightMaterial,
-    );
-    weight.position.y = -rodLength - 0.23;
-    weight.userData.role = `${role}-gravity-weight`;
+    // The plate runs each rod out of the picture; the weights it carries
+    // below are not drawn, so the rod simply ends.
     const eye=new THREE.Mesh(ring(.105,.14,-.035,.035,64),darkMaterial);
-    eye.userData.role=`${role}-bored-rod-eye`;group.add(rod,weight,eye);
-    return { group, rod, weight };
+    eye.userData.role=`${role}-bored-rod-eye`;group.add(rod,eye);
+    return { group, rod };
   };
   const upperWeightParts = makeHangingWeight(
     'upper-handle-hanging-back-weight',
@@ -1259,9 +1245,10 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   );
   for(const[parent,point,z]of [[upperHandleParts.group,upperWeightLocal,0],
     [lowerHandleParts.group,lowerWeightLocal,lowerWeightPlaneZ-lowerHandlePlaneZ],[catchGroup,catchWeightLocal,0]]){
-    const pin=cylinderAlongZ(.10,.33,darkMaterial,48),head=cylinderAlongZ(.135,.035,darkMaterial,48);
-    pin.position.set(point.x,point.y,z+.135);head.position.set(point.x,point.y,z+.3175);
-    pin.userData.role='back-weight-rod-hinge-pin';head.userData.role='back-weight-rod-retaining-head';parent.add(pin,head);
+    // Brown draws a small open eye with its pin; no solid retaining head.
+    const pin=cylinderAlongZ(.10,.33,darkMaterial,48);
+    pin.position.set(point.x,point.y,z+.135);
+    pin.userData.role='back-weight-rod-hinge-pin';parent.add(pin);
   }
 
   const tappetContactMarker = new THREE.Mesh(
@@ -1487,8 +1474,6 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     catchPivot: catchPivotParts.group,
     catchPivotHead: catchPivotParts.head,
     catchPivotShaft: catchPivotParts.shaft,
-    catchPivotSlot: catchPivotParts.slot,
-    catchWeight: catchWeightParts.weight,
     catchWeightAnchor,
     catchWeightAssembly: catchWeightParts.group,
     catchWeightArm: catchWeightArm.group,
@@ -1512,9 +1497,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     lowerPivot: lowerPivotParts.group,
     lowerPivotHead: lowerPivotParts.head,
     lowerPivotShaft: lowerPivotParts.shaft,
-    lowerPivotSlot: lowerPivotParts.slot,
     lowerSeatAnchor,
-    lowerWeight: lowerWeightParts.weight,
     lowerWeightAssembly: lowerWeightParts.group,
     lowerWeightRod: lowerWeightParts.rod,
     pistonGroup,
@@ -1542,9 +1525,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     upperPivot: upperPivotParts.group,
     upperPivotHead: upperPivotParts.head,
     upperPivotShaft: upperPivotParts.shaft,
-    upperPivotSlot: upperPivotParts.slot,
     upperSeatAnchor,
-    upperWeight: upperWeightParts.weight,
     upperWeightAssembly: upperWeightParts.group,
     upperWeightRod: upperWeightParts.rod,
   };

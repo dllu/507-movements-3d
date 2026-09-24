@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-elliptical-idler-gears.js",
-      "sha256": "1360c491103a6331bb8847639db38dbf446a87a07e718a4337b1cef32693d9fd"
+      "sha256": "5bb0a03ad435c223ce74e62597d38323b4088c012a980feac4065b1596dbb4ff"
     },
     {
       "file": "src/simulation/authored-stepped-sector-gears.js",
-      "sha256": "205aa061bd9f4eb19ed560091dcaa2be2764172c72370e7d0ccf1ff13be29826"
+      "sha256": "acf3b312da12995c0f7ff69010002b172bab141a38f396a09c895946a8c87f65"
     },
     {
       "file": "src/simulation/variable-idler-gear-parts.js",

@@ -806,6 +806,8 @@ function oneRevolutionPerPistonStrokeCrank(reference = false) {
   markShadows(root);
   crankOrbitWitness.castShadow = false;
   crankOrbitWitness.receiveShadow = false;
+  // Brown's elevation draws no shadow of the crank and rod across the frame face.
+  framePlate.receiveShadow = false;
   return {
     cameraDirection: new THREE.Vector3(0, 0, 1),
     reset: () => update(0),

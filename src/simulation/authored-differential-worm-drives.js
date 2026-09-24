@@ -678,6 +678,11 @@ function twinWormWheelDifferential(movement) {
     root.userData.kinematics = state;
   };
   for (const object of [baseRail, ...wheelBearingPosts, ...wheelBearings, ...wormBearingPosts, ...wormBearings, wheel100ContactMarker, wheel101ContactMarker]) object.removeFromParent();
+  // Brown draws plain needles, wheels and worm: no white rate indices.
+  wormIndex.visible = false;
+  root.traverse(o => {
+    if (/white-(output-rate|wheel-rate)-index$/.test(o.userData.role ?? '')) o.visible = false;
+  });
   root.traverse(o => {for (const material of (Array.isArray(o.material) ? o.material : [o.material])) if (material) material.fog = false;});
   root.userData.hideGround = true;
   root.userData.materialsIgnoreSceneFog = true;
@@ -690,7 +695,9 @@ function twinWormWheelDifferential(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(3.2, 1.4, 12),
+    // Plate 264 looks straight down the worm axis: the worm is a circle
+    // and both wheels and needles are seen edge-on.
+    cameraDirection: new THREE.Vector3(0, 0.02, 1),
   };
 }
 

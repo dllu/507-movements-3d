@@ -304,10 +304,13 @@ test('movement 221 uses one common pitch and a real recessed parallel guide', ()
     - (geometry.circularGearZ + geometry.circularGearDepth / 2);
   near(meshPlaneClearance, 0.08, 5e-17,
     'small-pinion plane clears compound outer-wheel plane');
-  const guideToRearGearClearance = geometry.circularGearZ
-    - geometry.circularGearDepth / 2
-    - (geometry.guideRailZ + geometry.guideRailDepth / 2);
-  assert.ok(guideToRearGearClearance > 0.11);
+  // The grooved plate sits in front of the arm so shaft D never crosses the
+  // plane swept by B's large wheel.
+  const guideToFrontPinionClearance = geometry.guideRailZ
+    - geometry.guideRailDepth / 2
+    - (geometry.driverGearZ + geometry.driverGearDepth / 2);
+  assert.ok(guideToFrontPinionClearance > 0.11);
+  assert.ok(geometry.guideFloorZ > geometry.guideRailZ);
   disposeModel(model.root);
 });
 
@@ -569,7 +572,7 @@ test('movement 221 runtime binds both planes and leaves movement 507 authored', 
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 7.7);
   assert.ok(size.y > 8.6);
-  assert.ok(size.z > 1.4);
+  assert.ok(size.z > 1.1, 'shafts stop at the planes they carry');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;

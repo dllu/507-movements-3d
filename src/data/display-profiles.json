@@ -3342,21 +3342,21 @@
       }
     },
     "175": {
-      "peakAngularSpeed": 1.57079632680033,
-      "peakVisibleAngularSpeed": 1.57079632680033,
-      "sustainedVisibleAngularSpeed": 1.5707963267928358,
-      "floorY": -3.813999891281128,
-      "fastestPart": "output-crank-fixed-center-boss",
+      "peakAngularSpeed": 1.5707963267981093,
+      "peakVisibleAngularSpeed": 1.5707963267981093,
+      "sustainedVisibleAngularSpeed": 1.5707963267931133,
+      "floorY": -3.059999942779541,
+      "fastestPart": "single-output-crank-rotor",
       "motionBounds": {
         "min": [
-          -1.1999971298816654,
-          -3.813999891281128,
-          -0.6299999856948852
+          -0.8040000200271606,
+          -3.059999942779541,
+          -0.6350000071525574
         ],
         "max": [
-          2.4202868938446045,
-          3.613860607147217,
-          0.6499999856948853
+          2.98799991607666,
+          2.682807445526123,
+          0.5899999952316284
         ]
       }
     },
@@ -3456,40 +3456,40 @@
       }
     },
     "181": {
-      "peakAngularSpeed": 0.6295026873938354,
-      "peakVisibleAngularSpeed": 0.6295026873938354,
-      "sustainedVisibleAngularSpeed": 0.020672540741454654,
-      "floorY": -3.8300000041723252,
+      "peakAngularSpeed": 1.0191341834200984,
+      "peakVisibleAngularSpeed": 1.0191341834200984,
+      "sustainedVisibleAngularSpeed": 0.39434920725224865,
+      "floorY": -4.921851163213882,
       "fastestPart": "upper-backweighted-steam-eduction-valve-handle",
       "motionBounds": {
         "min": [
-          -2.6868067153873096,
-          -3.8300000041723252,
-          -0.74
+          -2.4540476082638243,
+          -4.921851163213882,
+          -0.7660000029206276
         ],
         "max": [
-          2.0727651364783277,
-          4.112500095367432,
-          0.6180000002682209
+          2.069832953799784,
+          2.6624999046325684,
+          0.7649999976158143
         ]
       }
     },
     "182": {
-      "peakAngularSpeed": 0.6295074620930848,
-      "peakVisibleAngularSpeed": 0.6295074620930848,
-      "sustainedVisibleAngularSpeed": 0.020738136455870464,
-      "floorY": -3.8300000041723252,
-      "fastestPart": "upper-backweighted-steam-eduction-valve-handle-source-scale-rocking-hub",
+      "peakAngularSpeed": 1.0248481400320946,
+      "peakVisibleAngularSpeed": 1.0248481400320946,
+      "sustainedVisibleAngularSpeed": 0.38403076675381304,
+      "floorY": -4.921851163213882,
+      "fastestPart": "upper-backweighted-steam-eduction-valve-handle",
       "motionBounds": {
         "min": [
-          -2.6868067153873096,
-          -3.8300000041723252,
-          -0.74
+          -2.4540476082638243,
+          -4.921851163213882,
+          -0.7660000029206276
         ],
         "max": [
-          2.0727921919622383,
-          4.112500095367432,
-          0.6180000002682209
+          2.0699733848057065,
+          2.6624999046325684,
+          0.7649999976158143
         ]
       }
     },
@@ -3627,21 +3627,21 @@
       }
     },
     "190": {
-      "peakAngularSpeed": 3.8005218133362817,
-      "peakVisibleAngularSpeed": 3.8005218133362817,
-      "sustainedVisibleAngularSpeed": 2.7533839103010154,
+      "peakAngularSpeed": 2.6934800631341282,
+      "peakVisibleAngularSpeed": 2.6934800631341282,
+      "sustainedVisibleAngularSpeed": 1.9371213690256066,
       "floorY": -2.125000011920929,
       "fastestPart": "screw-thread-handle-and-thrust-collar-common-rotor",
       "motionBounds": {
         "min": [
           -4.097000085830689,
           -2.125000011920929,
-          -1.609242638483507
+          -1.6097808667428124
         ],
         "max": [
           3.723000085830688,
-          1.2479999868869784,
-          1.610034986300634
+          1.6219999868869786,
+          1.6086059399710946
         ]
       }
     },
@@ -4178,21 +4178,21 @@
       }
     },
     "219": {
-      "peakAngularSpeed": 5.030663227892798,
-      "peakVisibleAngularSpeed": 5.030663227892798,
-      "sustainedVisibleAngularSpeed": 4.6491145703368355,
-      "floorY": -3.2450046144454476,
+      "peakAngularSpeed": 5.030663227894601,
+      "peakVisibleAngularSpeed": 5.030663227894601,
+      "sustainedVisibleAngularSpeed": 4.64911457033628,
+      "floorY": -3.244695075562095,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -3.2450046144454476,
-          -3.2450046144454476,
+          -3.244695075562095,
+          -3.244695075562095,
           -2.2450000476837157
         ],
         "max": [
-          5.549999952316284,
-          3.2450046144454476,
-          1.4387523329897725
+          3.261168502170695,
+          4.600783472664357,
+          1.4269686232418959
         ]
       }
     },
@@ -4225,12 +4225,12 @@
         "min": [
           -5.307001619030604,
           -4.463971115680633,
-          -0.8949999761581421
+          -0.5499999986588955
         ],
         "max": [
           4.463971115680633,
           6.241696077424842,
-          0.85
+          0.7600000047683717
         ]
       }
     },
@@ -4276,18 +4276,18 @@
       "peakAngularSpeed": 0.7142399956875993,
       "peakVisibleAngularSpeed": 0.7142399956875992,
       "sustainedVisibleAngularSpeed": 0.6598815565348904,
-      "floorY": -3.2097887466827726,
+      "floorY": -3.100295150767544,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -3.2515568522458307,
-          -3.2097887466827726,
-          -0.6950000238418579
+          -3.1415567187314264,
+          -3.100295150767544,
+          -0.8499999880790711
         ],
         "max": [
-          3.2515568522458307,
-          3.209788746682773,
-          0.7550000238418579
+          3.1415567187314264,
+          3.100295150767544,
+          0.5699999995529652
         ]
       }
     },
@@ -4717,32 +4717,32 @@
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -2.5999999046325684,
+          -1.7000000476837158,
           -0.5,
-          -2.0999999046325684
+          -1.5
         ],
         "max": [
-          2.5999999046325684,
+          1.7000000476837158,
           8.68,
-          2.0999999046325684
+          1.2546939849853516
         ]
       }
     },
     "248": {
-      "peakAngularSpeed": 14.12572338530889,
+      "peakAngularSpeed": 14.125723385306669,
       "peakVisibleAngularSpeed": 14.125723385306669,
       "sustainedVisibleAngularSpeed": 5.354878384589345,
-      "floorY": -3,
-      "fastestPart": "raised-grip-rib-on-nut-B",
+      "floorY": -2,
+      "fastestPart": "rotating-captive-union-nut-B-with-internal-right-hand-thread",
       "motionBounds": {
         "min": [
           -1.819997863277993,
-          -3,
+          -2,
           -1.8200000524520874
         ],
         "max": [
           1.8199978632779927,
-          7.08,
+          5.679999904632568,
           1.819997656171848
         ]
       }
@@ -4770,18 +4770,18 @@
       "peakAngularSpeed": 1.0000000000024434,
       "peakVisibleAngularSpeed": 1.0000000000024434,
       "sustainedVisibleAngularSpeed": 0.9999999999980024,
-      "floorY": -6.265000001251696,
+      "floorY": -9.10699999666214,
       "fastestPart": "main-flywheel-and-supported-shaft-journal",
       "motionBounds": {
         "min": [
           -6.377328200990057,
-          -6.265000001251696,
+          -9.10699999666214,
           -0.9590000000000001
         ],
         "max": [
           6.377328200990057,
-          2.800000008996038,
-          0.8609999987483025
+          2.799999944,
+          1.4559999987483023
         ]
       }
     },
@@ -4789,13 +4789,13 @@
       "peakAngularSpeed": 0.628221257011119,
       "peakVisibleAngularSpeed": 0.628221257011119,
       "sustainedVisibleAngularSpeed": 0,
-      "floorY": -6.7640000181198126,
+      "floorY": -8.132000018119813,
       "fastestPart": "left-pivoted-releasing-hook-a",
       "motionBounds": {
         "min": [
           -3.3021998405456543,
-          -6.7640000181198126,
-          -0.7827999836921692
+          -8.132000018119813,
+          -1.4857999873161316
         ],
         "max": [
           3.3021998405456543,
@@ -4826,14 +4826,14 @@
     "253": {
       "peakAngularSpeed": 4.7511884035953384,
       "peakVisibleAngularSpeed": 4.7511884035953384,
-      "sustainedVisibleAngularSpeed": 1.6822453530670232,
+      "sustainedVisibleAngularSpeed": 1.677592685683677,
       "floorY": -3.9779999999999998,
       "fastestPart": "centrifugal-check-hook-1",
       "motionBounds": {
         "min": [
           -3.9168000411987305,
           -3.9779999999999998,
-          -0.6120000002145776
+          -0.6120000002145767
         ],
         "max": [
           3.9168000411987305,
@@ -4976,58 +4976,58 @@
       }
     },
     "261": {
-      "peakAngularSpeed": 1.7827101072668061,
-      "peakVisibleAngularSpeed": 1.7827101072668061,
+      "peakAngularSpeed": 1.78244057838541,
+      "peakVisibleAngularSpeed": 1.78244057838541,
       "sustainedVisibleAngularSpeed": 1.557596096264622,
-      "floorY": -2.9689453388999922,
+      "floorY": -2.9684997903867707,
       "fastestPart": "no-slip-moving-pulley-E-rotor",
       "motionBounds": {
         "min": [
           -1.9999999942779543,
-          -2.9689453388999922,
-          -0.631999979019165
+          -2.9684997903867707,
+          -0.41599999570846563
         ],
         "max": [
-          1.899999923706055,
-          3.242253389526324,
-          0.6232000003457069
+          1.8239999995231628,
+          3.2422570688520755,
+          0.7759999990463258
         ]
       }
     },
     "262": {
       "peakAngularSpeed": 12.18345617662547,
-      "peakVisibleAngularSpeed": 11.450159521280176,
-      "sustainedVisibleAngularSpeed": 9.158664763373883,
-      "floorY": -1.6614000027894975,
+      "peakVisibleAngularSpeed": 12.18345617662547,
+      "sustainedVisibleAngularSpeed": 9.745208402868958,
+      "floorY": -1.4936996726884773,
       "fastestPart": "freely-rolling-friction-roller-C-rotor",
       "motionBounds": {
         "min": [
           -2.971799985119416,
-          -1.6614000027894975,
+          -1.4936996726884773,
           -1.491782824464145
         ],
         "max": [
           5.038799918171478,
-          1.9187999989539384,
+          1.6113240105996005,
           1.491782824464145
         ]
       }
     },
     "263": {
       "peakAngularSpeed": 12.18345617662547,
-      "peakVisibleAngularSpeed": 11.450159521280176,
-      "sustainedVisibleAngularSpeed": 9.158664763373883,
-      "floorY": -1.6614000027894975,
+      "peakVisibleAngularSpeed": 12.18345617662547,
+      "sustainedVisibleAngularSpeed": 9.745208402868958,
+      "floorY": -1.4936996726884773,
       "fastestPart": "freely-rolling-friction-roller-C-rotor",
       "motionBounds": {
         "min": [
           -2.971799985119416,
-          -1.6614000027894975,
+          -1.4936996726884773,
           -1.491782824464145
         ],
         "max": [
           5.038799918171478,
-          1.9187999989539384,
+          1.6113240105996005,
           1.491782824464145
         ]
       }
@@ -5052,21 +5052,21 @@
       }
     },
     "265": {
-      "peakAngularSpeed": 5.274961244698817,
-      "peakVisibleAngularSpeed": 5.274961244698817,
-      "sustainedVisibleAngularSpeed": 4.860364400551648,
-      "floorY": -1.2759997900893658,
+      "peakAngularSpeed": 4.686980179811478,
+      "peakVisibleAngularSpeed": 4.686980179811478,
+      "sustainedVisibleAngularSpeed": 4.0474820182875035,
+      "floorY": -1.275949852416614,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
           -2.1999999999999993,
-          -1.2759997900893658,
-          -1.2759997900893658
+          -1.275949852416614,
+          -1.275949852416614
         ],
         "max": [
-          2.530972441402858,
-          2.499183095388797,
-          1.2759997900893654
+          3.7906294571628107,
+          2.362236851858553,
+          1.2759498524166135
         ]
       }
     },
@@ -5074,18 +5074,18 @@
       "peakAngularSpeed": 5.89048619488608,
       "peakVisibleAngularSpeed": 5.89048619488608,
       "sustainedVisibleAngularSpeed": 5.176909017754811,
-      "floorY": -1.125000000268221,
+      "floorY": -1.2239999994635582,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
-          -2.591999905585942,
-          -1.125000000268221,
-          -0.5588863269584254
+          -2.8620000026819086,
+          -1.2239999994635582,
+          -0.6434680578194757
         ],
         "max": [
           2.915999905585942,
-          0.6164999978542328,
-          0.5588863269584254
+          0.6434999989271164,
+          0.6434680578194745
         ]
       }
     },
@@ -5112,18 +5112,18 @@
       "peakAngularSpeed": 1.6365221452851106,
       "peakVisibleAngularSpeed": 1.6365221452851106,
       "sustainedVisibleAngularSpeed": 1.5241808013577223,
-      "floorY": -0.9592000020980835,
+      "floorY": -0.8799221764651703,
       "fastestPart": "passive-no-slip-guide-roller",
       "motionBounds": {
         "min": [
-          -4.5816205933917695,
-          -0.9592000020980835,
-          -0.33000000000000007
+          -4.582089678903399,
+          -0.8799221764651703,
+          -0.40479998950958257
         ],
         "max": [
           3.1679221764651704,
           1.078477378831797,
-          0.49940000016391284
+          0.5720000020980835
         ]
       }
     },
@@ -5147,40 +5147,40 @@
       }
     },
     "270": {
-      "peakAngularSpeed": 1.6289739685346323,
-      "peakVisibleAngularSpeed": 1.6289739685346323,
-      "sustainedVisibleAngularSpeed": 1.6289739685296363,
-      "floorY": -3.308800003361702,
-      "fastestPart": "cylindrical-working-body-of-roller-3",
+      "peakAngularSpeed": 1.6289739685351876,
+      "peakVisibleAngularSpeed": 1.6289739685351876,
+      "sustainedVisibleAngularSpeed": 1.6289739685285263,
+      "floorY": -2.9892,
+      "fastestPart": "cylindrical-working-body-of-roller-6",
       "motionBounds": {
         "min": [
-          -2.0548401021957394,
-          -3.308800003361702,
-          -0.7801999938368798
+          -6.244262009654424,
+          -2.9892,
+          -0.423000006723404
         ],
         "max": [
-          2.0548401021957394,
-          2.05484167098999,
+          2.04920006275177,
+          2.04920006275177,
           0.4770500008404255
         ]
       }
     },
     "271": {
-      "peakAngularSpeed": 0.370662201614316,
-      "peakVisibleAngularSpeed": 0.37066220161098534,
-      "sustainedVisibleAngularSpeed": 0.3424204841535251,
-      "floorY": -2.279999998211861,
-      "fastestPart": "lower-pawl-pin-arm",
+      "peakAngularSpeed": 0.35021716092766436,
+      "peakVisibleAngularSpeed": 0.35021716092766425,
+      "sustainedVisibleAngularSpeed": 0.3235332043092617,
+      "floorY": -2.85000000667572,
+      "fastestPart": "long-upper-pawl-pin-on-lever",
       "motionBounds": {
         "min": [
-          -7.927471124330864,
-          -2.279999998211861,
-          -0.6899999940395356
+          -7.61000000667572,
+          -2.85000000667572,
+          -0.6899999976158142
         ],
         "max": [
-          1.914173652452161,
-          1.2490870631469413,
-          1.1150000029802323
+          2.002039209972344,
+          1.269958955202147,
+          1.0399999928474426
         ]
       }
     },
