@@ -57,7 +57,7 @@ test('108 candidate preserves closed crossing lands and a finite curved shoe in 
    const cs=p.data.contact;
    for(let j=0;j<cs.size();j++){const c=cs.get(j);assert.ok(c.dist>-.0001,'nominal shoe pose intersects the machined material');c.delete();}cs.delete();
   }
-  p.data.qpos.set([0,0,f.initialTilt+.3]);mujoco.mj_forward(p.model,p.data);let coreContacts=0;const cs=p.data.contact;
+  p.data.qpos.set([0,0,f.initialTilt+.3*Math.sign(f.initialTilt)]);mujoco.mj_forward(p.model,p.data);let coreContacts=0;const cs=p.data.contact;
   for(let j=0;j<cs.size();j++){const c=cs.get(j);if((c.geom1===core||c.geom2===core)&&c.dist<0)coreContacts++;c.delete();}cs.delete();
   assert.ok(coreContacts>0,'a deflected shoe must contact the actual barrel core');
   t.diagnostic(JSON.stringify({compiledVertices:vertices,geoms:p.model.ngeom,solids:Object.keys(u.parts).length}));

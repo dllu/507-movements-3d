@@ -1,15 +1,18 @@
 import source from './source.js';
-export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=.25,shoeRadius=.05,reversalAngle=3.5,workingInset=.065,workingThickness=.025,curvedShoe=true,shoeSegments=24,optimizeTilt=true,optimizeReversalTilt=true,coreRadius=.42,convexStrips=true,roundReversals=true,conformalShoe=true,starts=2}={}) {
+export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=.25,shoeRadius=.05,reversalAngle=3.9,workingInset=.065,workingThickness=.025,curvedShoe=true,shoeSegments=24,optimizeTilt=true,optimizeReversalTilt=true,coreRadius=.42,convexStrips=true,roundReversals=true,conformalShoe=true,starts=2,traverseTurns=starts===2?3:source.turns,crossingShift=starts===2?3.2:0}={}) {
  const e=source.edges,axis=[(e.barrelLeft+e.barrelRight)/2,(e.barrelTop+e.barrelBottom)/2],radius=(e.barrelRight-e.barrelLeft)/200;
  // Brown's crossings sit at the front centre and at both silhouette edges, a
  // double-start pattern: each hand has two starts, so the source crossing pitch
  // is half the lead and his steep straight slopes need no other projection.
- if(!Number.isInteger(starts)||starts<1||(source.turns*2)%starts)throw new RangeError('Invalid 108 thread starts');
- const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=starts*pitch/(2*Math.PI),half=source.turns/starts*2*Math.PI,period=half*2,d=reversalAngle;
- // One start puts its reversals and self-crossings at the front and back.
- // Two starts put them at the silhouette edges; each front crossing is then
- // between the two starts, and the reversals turn out of sight at the sides.
- const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),firstFront=starts===2?Math.PI/2:Math.PI,top=y(source.fit.firstCrossing)+lead*(firstFront-endOffset),phase=firstFront;
+ if(!Number.isInteger(starts)||starts<1||starts>2||!Number.isInteger(2*traverseTurns)||traverseTurns<=0)throw new RangeError('Invalid 108 thread starts or turns');
+ const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=starts*pitch/(2*Math.PI),half=traverseTurns*2*Math.PI,period=half*2,d=reversalAngle;
+ // Front crossings are self-crossings, one pitch apart and alternating
+ // between the starts; the crossings between the two starts fall at the
+ // silhouette edges. With two starts, three turns per traverse give Brown's
+ // five front crossings, and each reversal turns about half a pitch beyond the
+ // last crossing (at the front for one start, at the back for the other), so
+ // the grooves run out towards the barrel ends as on the plate.
+ const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),top=y(source.fit.firstCrossing+crossingShift)+lead*(Math.PI-endOffset),phase=starts===2?0:Math.PI;
  const end=t=>{const u=t/d;return roundReversals?{s:2*lead*d/Math.PI*(1-Math.cos(Math.PI*u/2)),derivative:lead*Math.sin(Math.PI*u/2)}:{s:lead*d*(u**3-u**4/2),derivative:lead*(3*u*u-2*u**3)};};
  const law=a=>{const b=((a%period)+period)%period,t=Math.min(b,period-b);let s,derivative;
   if(t<d){({s,derivative}=end(t));}
@@ -21,7 +24,7 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
  const shoeZ=(u,side)=>curvedShoe?Math.sqrt((radius-.01)**2-u*u)-(side?0:workingThickness):side?workingHigh:workingLow;
  // A radial spindle lets the elongated shoe swivel between the two helices.
  const contactAngle=-Math.PI/2;
- const pathLanes=source.turns*2/starts;
+ const pathLanes=2*traverseTurns;
  const initialParameter=Array.from({length:pathLanes},(_,k)=>contactAngle-phase+2*Math.PI*k).sort((a,b)=>Math.abs(law(a).y-y(source.tip[1]))-Math.abs(law(b).y-y(source.tip[1])))[0];
  const initialY=law(initialParameter).y;
  let contour=(length=shoeLength,r=shoeRadius)=>Array.from({length:34},(_,i)=>{
@@ -118,7 +121,7 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
   cache.set(angle,result);return result;
  }
  return{source,axis,x,y,radius,pitch,lead,half,period,stroke,top,phase,law,segments,clearance,shoeLength,shoeRadius,contour,
-  starts,pathLanes,workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,conformalShoe,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
+  starts,traverseTurns,pathLanes,workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,conformalShoe,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
   bottom:y(e.barrelBottom),ceiling:y(e.barrelTop),shaftRadius:(e.shaftRight-e.shaftLeft)/200,
   guideX:x((e.guideLeft+e.guideRight)/2),guideRadius:(e.guideRight-e.guideLeft)/200};
 }

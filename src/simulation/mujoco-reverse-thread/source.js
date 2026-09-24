@@ -46,5 +46,5 @@ export default {
     271
   ],
   "turns": 5,
-  "qualification": "Five visible front crossings, with further crossings at both silhouette edges, read as a double-start groove: two starts per hand, so the measured crossing pitch is half the lead and the traverse takes 2.5 turns. That lead gives the steep, nearly straight slopes the source draws. End joins and the swiveling shoe are reconstructed."
+  "qualification": "Five visible front crossings, with further crossings at both silhouette edges, read as a double-start groove: two starts per hand, so the measured crossing pitch is half the lead. Three turns per traverse place the five front crossings between reversals about half a pitch beyond the end crossings, so the grooves run out towards the barrel ends as drawn. That lead gives the steep, nearly straight slopes the source draws. End joins and the swiveling shoe are reconstructed."
 };

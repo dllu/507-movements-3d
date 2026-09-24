@@ -13,6 +13,6 @@ export function makeMujocoReverseThread(mujoco,options={}) {
  const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
  const bounds=new THREE.Box3(new THREE.Vector3(-1.8,-1.95,-.9),new THREE.Vector3(.9,1.85,.9));
  Object.assign(u,{mechanism:'mujoco-reverse-thread',cameraFov:14,simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,cameraFitBounds:bounds,
-  sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'A swiveling shoe follows the intersecting grooves through each return. The double-start groove (two starts per hand, two and a half barrel turns per traverse, five front crossings), the circular barrel, shoe, depths and ideal bearings are reconstructed.',animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
+  sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'A swiveling shoe follows the intersecting grooves through each return. The double-start groove (two starts per hand, three barrel turns per traverse, five front crossings), the circular barrel, shoe, depths and ideal bearings are reconstructed.',animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
  try{sync();}catch(error){dispose();throw error;}return{...visual,physics,sync,...playback,dispose};
 }
