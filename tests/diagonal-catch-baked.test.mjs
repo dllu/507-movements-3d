@@ -69,3 +69,31 @@ test('serialized working solids stay inside the qualified planar contact envelop
   }
  }finally{model.dispose();}
 });
+
+for(const id of [181,182])test(`${id} synchronous registry route plays the same baked assembly with rods cut at the drawing edge`,async()=>{
+ const {createAuthoredDiagonalCatchMovement}=await import('../src/simulation/authored-diagonal-catches.js');
+ const {diagonalCatchKeys}=await import('../src/simulation/baked/diagonal-catch-keys.js');
+ const {DIAGONAL_CATCH_ROD_EDGE_Y}=await import('../src/simulation/mujoco-diagonal-catch/update-solids.js');
+ const {createHash}=await import('node:crypto');
+ assert.equal(diagonalCatchKeys.assetSha256,createHash('sha256').update(fs.readFileSync(new URL('../src/simulation/baked/assets/181.json.gz',import.meta.url))).digest('hex'));
+ const live=createAuthoredDiagonalCatchMovement({id}),baked=makeBakedDiagonalCatchModel(bundle,id);
+ try{
+  const a=live.root.userData.parts,b=baked.root.userData.parts;
+  assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort());
+  assert.ok(!Object.keys(a).some(n=>/roller|hook-pocket/.test(n)),'no nominal latch rollers or pockets');
+  const point=new THREE.Vector3(),other=new THREE.Vector3();let worst=0;
+  for(let i=0;i<=720;i++){
+   const time=i*18/720;live.update(time);baked.update(time);
+   for(const name of Object.keys(a)){
+    const pa=a[name].geometry.attributes.position,pb=b[name].geometry.attributes.position;
+    for(let j=0;j<pa.count;j+=Math.max(1,pa.count>>3)){
+     point.fromBufferAttribute(pa,j).applyMatrix4(a[name].matrixWorld);other.fromBufferAttribute(pb,j).applyMatrix4(b[name].matrixWorld);
+     worst=Math.max(worst,point.distanceTo(other));
+    }
+   }
+   for(const rod of Object.values(a).filter(m=>/vertical-rod/.test(m.name)))
+    assert.ok(Math.abs(new THREE.Box3().setFromObject(rod).min.y-DIAGONAL_CATCH_ROD_EDGE_Y)<1e-6,'rod ends at the drawing edge');
+  }
+  assert.ok(worst<3e-4,`compact keys follow the bake: ${worst}`);
+ }finally{baked.dispose();live.dispose();}
+});

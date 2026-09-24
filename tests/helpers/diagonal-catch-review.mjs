@@ -1,18 +1,19 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createMovementModel} from '../../src/simulation/registry.js';
+import {createDiagonalCatchScaffold} from '../../src/simulation/authored-diagonal-catches.js';
 import {disposeObject3D} from '../../src/simulation/dispose-model.js';
 import {poly,circle,polygonClipping as clip} from '../../src/simulation/finite-plate-geometry.js';
-import fs from 'node:fs';
-const catalog=JSON.parse(fs.readFileSync(new URL('../../src/data/movements.json',import.meta.url)));
 const area=polygons=>polygons.reduce((sum,polygon)=>sum+polygon.reduce((total,ring,index)=>{
  const a=Math.abs(ring.reduce((v,p,i)=>{const q=ring[(i+1)%ring.length];return v+p[0]*q[1]-q[0]*p[1];},0))/2;
  return total+(index===0?a:-a);
 },0),0);
 const world=o=>o.getWorldPosition(new THREE.Vector3());
 
+// Reviews the fitted construction scaffold that the contact study and bake
+// build on (the displayed route plays the baked assembly; see
+// tests/diagonal-catch-baked.test.mjs).
 export function reviewDiagonalCatch(id){
- const m=createMovementModel(catalog.movements[id-1]),u=m.root.userData,b=u.blocks,g=u.geometry;
+ const m=createDiagonalCatchScaffold({id}),u=m.root.userData,b=u.blocks,g=u.geometry;
  try{
   assert.equal(u.reconstructionStatus,'under-review','the unfinished catch is not qualified');
   assert.equal(u.hideGround,true);assert.equal(u.materialsIgnoreSceneFog,true);

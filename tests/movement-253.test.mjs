@@ -376,7 +376,8 @@ test('movement 253 renderer binds both rotors, all hooks, spring, and contacts',
         `rendered hook ${index + 1} angle at ${time}`);
     });
     blocks.contactMarkers.forEach((marker) => {
-      assert.equal(marker.visible, state.contactActive);
+      // The plate draws no contact markers; contacts remain in userData.
+      assert.equal(marker.visible, false);
     });
     const springPoints = blocks.shockSpring.userData.currentPoints;
     vectorNear(springPoints[0], state.springPoints[0], 0,

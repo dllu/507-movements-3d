@@ -176,7 +176,7 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   );
   vector2Near(
     geometry.sourceHandleTip,
-    new THREE.Vector2(460, 238),
+    new THREE.Vector2(460, 254),
     1e-15,
     'source handle tip',
   );
@@ -260,12 +260,13 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   assert.deepEqual(screwThreads, [internalThread, externalThread]);
   assert.deepEqual(forbiddenRoles, []);
 
-  near(geometry.openHolderAngle, -0.10, 1e-15, 'open holder angle');
+  near(geometry.openHolderAngle, -0.04, 1e-15, 'open holder angle');
   near(geometry.clampedHolderAngle, 0, 1e-15, 'source holder angle');
-  assert.ok(geometry.screwAxialTravel > 0.178);
-  assert.ok(geometry.screwAxialTravel < 0.179);
-  assert.ok(geometry.screwTighteningTurns < -1.05);
-  assert.ok(geometry.screwTighteningTurns > -1.06);
+  assert.ok(geometry.screwAxialTravel > 0.0708);
+  assert.ok(geometry.screwAxialTravel < 0.0709);
+  // A part turn: the plate-height handle must not swing over the crest.
+  assert.ok(geometry.screwTighteningTurns < -0.416);
+  assert.ok(geometry.screwTighteningTurns > -0.417);
   near(geometry.threadLead, geometry.threadPitch, 1e-15,
     'single-start lead equals pitch');
   near(
@@ -291,8 +292,8 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   near(sourceState.shoeContactGap, 0, 1e-15, 'source shoe contact');
   assert.equal(sourceState.clamped, true);
   assert.equal(openState.clamped, false);
-  assert.ok(openState.shoeContactGap > 0.198);
-  assert.ok(openState.shoeContactGap < 0.199);
+  assert.ok(openState.shoeContactGap > 0.0795);
+  assert.ok(openState.shoeContactGap < 0.0796);
   vector2Near(
     sourceState.shoePinPoint,
     sourcePointToModel(geometry.sourceShoePin),
@@ -484,8 +485,8 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
   }
 
   near(minimumGap, 0, 2e-15, 'minimum work clearance');
-  assert.ok(maximumGap > 0.198);
-  assert.ok(maximumGap < 0.199);
+  assert.ok(maximumGap > 0.0795);
+  assert.ok(maximumGap < 0.0796);
   assert.ok(maximumThreadError < 4e-14);
   assert.ok(maximumLeadError < 5e-16);
   assert.ok(maximumScrewAxisError < 4e-16);
@@ -588,8 +589,8 @@ test('movement 190 loosens, dwells open, tightens, and returns across C2 event b
     );
   }
   assert.deepEqual(seenStages, expectedStages);
-  assert.ok(maximumAngularSpeed > 2.69);
-  assert.ok(maximumAxialSpeed > 0.072);
+  assert.ok(maximumAngularSpeed > 1.06);
+  assert.ok(maximumAxialSpeed > 0.0286);
 
   const boundaryExpectations = [
     [0, 1],
@@ -785,7 +786,7 @@ test('movement 190 occupies a real 3D envelope and remains distinct as the revie
   assert.ok(size.y > 3.35);
   assert.ok(size.z > 1.75);
   assert.ok(physicalBounds.min.z < -0.89);
-  // With 1.05 tightening turns the canonical handle azimuths lie near the
+  // With 0.42 tightening turns the canonical handle azimuths lie near the
   // elevation plane, so the front of the bench plank bounds +z.
   assert.ok(physicalBounds.max.z > 0.73);
   let meshCount = 0;

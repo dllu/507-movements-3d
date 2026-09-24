@@ -21,42 +21,42 @@
   ],
   "bounds": {
     "min": [
-      -2.554869249920498,
-      -4.9903617079992735,
+      -2.5548711316844464,
+      -3.4097860431671143,
       -0.8260000029206276
     ],
     "max": [
-      2.2168385044240693,
+      2.2168385005391564,
       2.7224999046325684,
       0.8249999976158142
     ]
   },
   "focus": [
-    -0.16901537274821443,
-    -1.1339309016833525,
+    -0.16901631557264496,
+    -0.34364306926727295,
     -0.0005000026524066836
   ],
-  "inputHash": "5106a997e9bf657b1f338781f36335c1e8d7da89e879d0da7e64ebf5cfef7f34",
+  "inputHash": "186ae7de358aa4361e0fb7a141f4afa8da2f319469898ba989fc580518df6ef1",
   "sources": [
     {
       "file": "scripts/bake-diagonal-catch.mjs",
-      "sha256": "6c9e549601da217152e318f6fff22cda2fe353186d845da4fb9ab842e0a19574"
+      "sha256": "8e5c42739d24e88675bd6e42618da2bad3d14630aab6b0973b0756da8e29fc98"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/assembly.js",
-      "sha256": "6054491cd5fb61a99b4742a8bcce195cbddc8ecbd05f18d50140c14477c29b11"
+      "sha256": "64c9f0623209c718e0e8aaa5acb9e6bf1b1bee0058d7e2b65bf41a47b1079c93"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
-      "sha256": "65a1c432c69a928372c2f06d50add706db4041a324496b055b8a607204571920"
+      "sha256": "36bfc2a8a8b836c67ab234de177fcabacd751c7383281cf405988bc9c4be594c"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
-      "sha256": "faaf088f4a07fe65d77c50be3ee6e9bd595360f6bf9ad7bd0c9ac818b07bdab2"
+      "sha256": "addb36f76a8643caf3a6f7c9b98bc70cad796fecf712dbb18c885ebdf87df8a2"
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "77f54e7f3ed70bf4b756a447e57a145685d3d1c53702db9f867edf636301812f"
+      "sha256": "9e0863ed965367880f5bb8b71381165ae5def02f142161f0bf1ded3c1764057e"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -64,11 +64,14 @@
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "503a39148f6690ecfc6e01143422b85b0e9262e43ab13eb4d662578f7ab8ab66"
+      "sha256": "2bc04871401dd4894be67183fab276bb4621644959f369037e924f1ac3f84106"
     }
   ],
   "keys": 9001,
-  "bytes": 519218,
-  "sha256": "6257d2d311c6e885f3809649907315df4fd87ad65a9c5d47d77b39174a40a738",
+  "bytes": 524011,
+  "sha256": "aae3a45ddb05ace679741e8c2608520ef4bcc078f103c7aff32d1055e19a3be6",
+  "compactKeysModule": "src/simulation/baked/diagonal-catch-keys.js",
+  "compactKeys": 777,
+  "compactKeysSha256": "00c87141026ff98826520ea0b997da8ea9d8850cf96f084730bb2d9e28eb610d",
   "status": "baked-assembly-source-review-open"
 }

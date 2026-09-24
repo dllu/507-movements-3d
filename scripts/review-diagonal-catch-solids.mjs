@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../src/simulation/authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../src/simulation/authored-diagonal-catches.js';
 import {solidSurface,surfacePoints} from '../tests/helpers/solid-surface.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
-const model=createAuthoredDiagonalCatchMovement({id:181}),u=model.root.userData,b=u.blocks;
+const model=createDiagonalCatchScaffold({id:181}),u=model.root.userData,b=u.blocks;
 const groups=['upperHandle','lowerHandle','catchGroup','pistonGroup','upperWeightAssembly','lowerWeightAssembly','catchWeightAssembly'],parts=[];
 model.root.traverse(mesh=>{
  if(!mesh.isMesh)return;

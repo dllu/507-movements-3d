@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import {plate as finitePlate, poly, circle, ring, polygonClipping as clip} from './finite-plate-geometry.js';
 import {fitDiagonalHandle,fitWorkingPoint} from './mujoco-diagonal-catch/handle-fit.js';
 import {tappetEnvelope} from './mujoco-diagonal-catch/tappet-envelope.js';
+import {createDiagonalCatchAssembly} from './mujoco-diagonal-catch/assembly.js';
+import {makeDiagonalCatchPlayback} from './baked/diagonal-catch-playback.js';
+import {diagonalCatchKeys} from './baked/diagonal-catch-keys.js';
 import {
   PALETTE,
   markShadows,
@@ -1590,9 +1593,27 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
   };
 }
 
-export function createAuthoredDiagonalCatchMovement(movement) {
+// Prescribed construction scaffold: fitted handle/catch geometry and a legacy
+// kinematic law. The contact studies and the bake build on it; it is not the
+// displayed mechanism (its nominal latch rollers and pockets are removed).
+export function createDiagonalCatchScaffold(movement) {
   if (movement.id === 181 || movement.id === 182) {
     return sourceScaledDiagonalCatchHandGear({ movementId: movement.id });
   }
   return null;
+}
+
+// Synchronous route (offline reviews and screens): the same finished assembly
+// and baked projected-contact motion the browser loads from the bake.
+export function createAuthoredDiagonalCatchMovement(movement) {
+  if (movement.id !== 181 && movement.id !== 182) return null;
+  const model = makeDiagonalCatchPlayback(
+    createDiagonalCatchAssembly().root,
+    diagonalCatchKeys,
+    movement.id,
+  );
+  model.root.userData.mechanism = movement.id === 182
+    ? 'top-position-descending-piston-tappet-trips-upper-valve-handle-diagonal-catch-releases-lower-backweighted-handle-and-restores-four-valves'
+    : 'ascending-piston-tappet-trips-lower-valve-handle-diagonal-catch-releases-upper-backweighted-handle-and-reverses-four-valves';
+  return model;
 }

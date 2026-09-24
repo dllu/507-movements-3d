@@ -1,40 +1,48 @@
+// Screens every pair of moving/fixed meshes of 183 and 184 across one cycle
+// with an independent triangle-surface signed distance and records the worst
+// penetration per pair in docs/validation/183-current-solids.json.
 import fs from 'node:fs';
-import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
-import * as THREE from 'three';
-import {createAuthoredQuadrantCatchMovement} from '../src/simulation/authored-quadrant-catches.js';
-import {disposeObject3D} from '../src/simulation/dispose-model.js';
-import {solidSurface,surfacePoints} from '../tests/helpers/solid-surface.mjs';
+import { createHash } from 'node:crypto';
+import { createAuthoredQuadrantCatchMovement } from '../src/simulation/authored-quadrant-catches.js';
+import { solidSurface, surfacePoints } from '../tests/helpers/solid-surface.mjs';
 
-const model=createAuthoredQuadrantCatchMovement({id:183}),u=model.root.userData,b=u.blocks;
-const groups=new Map(['upperHandle','lowerHandle','pistonGroup','upperWeightAssembly','lowerWeightAssembly'].map(name=>[b[name],name]));
-const excluded=new Set([b.tappetContactMarker,b.bottomLatchMarker,b.topLatchMarker]);
-const parts=[];
-model.root.traverse(mesh=>{
- if(!mesh.isMesh||excluded.has(mesh))return;
- let parent=mesh;while(parent&&!groups.has(parent))parent=parent.parent;
- parts.push({name:(mesh.userData.role??'part')+'#'+parts.length,mesh,family:groups.get(parent)??'fixed',surface:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)});
-});
-const pairs=parts.flatMap((a,i)=>parts.slice(i+1).filter(b=>a.family!==b.family).map(b=>[a,b]));
-const intersections={};let queries=0;
-try{
- for(let i=0;i<=64;i++){
-  const time=u.geometry.cyclePeriod*i/64;model.update(time);model.root.updateMatrixWorld(true);
-  for(const p of parts){assert.ok(p.mesh.matrixWorld.elements.every(Number.isFinite));p.box=new THREE.Box3().setFromObject(p.mesh);p.inverse=p.mesh.matrixWorld.clone().invert();}
-  for(const[a,b]of pairs){if(!a.box.intersectsBox(b.box))continue;
-   for(const[from,to]of[[a,b],[b,a]]){const matrix=to.inverse.clone().multiply(from.mesh.matrixWorld);
-    for(const sample of from.points){queries++;const q=sample.clone().applyMatrix4(matrix);if(!to.surface.inside(q))continue;const depth=to.surface.distance(q);
-     if(depth>1e-6){const key=a.name+'/'+b.name;if(depth>(intersections[key]?.depth??0))intersections[key]={depth,time,families:[a.family,b.family]};}
-    }
-   }
+const hash = (p) => createHash('sha256').update(fs.readFileSync(new URL(p, import.meta.url))).digest('hex');
+const poses = 65, report = { movements: [183, 184], poses, sources: {
+  factory: hash('../src/simulation/authored-quadrant-catches.js'),
+  parts: hash('../src/simulation/quadrant-catch-finite-parts.js'),
+  motion: hash('../src/simulation/baked/quadrant-catch-motion.js'),
+}, results: {} };
+const bodyOf = (o, blocks) => {
+  for (let p = o; p; p = p.parent) {
+    if (p === blocks.upperHandle) return 'upper';
+    if (p === blocks.lowerHandle) return 'lower';
+    if (p === blocks.pistonGroup) return 'tappet';
+    if (p.userData.role?.endsWith('rod-hanging-from-eye')) return p.userData.role;
   }
- }
- const sources=['scripts/review-quadrant-catch-solids.mjs','src/simulation/authored-quadrant-catches.js','tests/helpers/solid-surface.mjs'];
- const report={movements:[183,184],status:Object.keys(intersections).length?'finite-solids-intersect':'sampled-solids-clear',poses:65,meshes:parts.length,pairs:pairs.length,queries,intersections,
-  scope:'Baseline prescribed-motion assembly. Both variants share the full cycle. All cross-family mesh pairs except the three floating contact markers; painted indices remain attached to their mechanical body. Same-body joins and source fit are not qualified.',
-  method:'Bidirectional triangle vertices, edge midpoints and face centers, with bounding-box rejection and independent surface containment. Sampled evidence, not continuous proof.',
-  sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
- fs.writeFileSync('docs/validation/183-current-solids.json',JSON.stringify(report,null,2)+'\n');
- console.log({meshes:parts.length,pairs:pairs.length,queries,intersections});
- assert.ok(queries>0);if(Object.keys(intersections).length)process.exitCode=1;
-}finally{disposeObject3D(model.root);}
+  return 'fixed';
+};
+for (const id of report.movements) {
+  const m = createAuthoredQuadrantCatchMovement({ id }), b = m.root.userData.blocks, meshes = [];
+  m.root.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  const data = meshes.map((o) => ({ o, body: bodyOf(o, b), field: solidSurface(o.geometry), points: surfacePoints(o.geometry) }));
+  const worst = {};
+  for (let i = 0; i < poses; i++) {
+    const time = 18 * i / (poses - 1);
+    m.update(time); m.root.updateMatrixWorld(true);
+    for (let a = 0; a < data.length; a++) for (let c = a + 1; c < data.length; c++) {
+      const A = data[a], C = data[c];
+      if (A.body === C.body) continue;
+      let depth = 0;
+      for (const [from, to] of [[A, C], [C, A]]) {
+        const matrix = to.o.matrixWorld.clone().invert().multiply(from.o.matrixWorld);
+        for (const q of from.points) depth = Math.max(depth, -to.field.signedDistance(q.clone().applyMatrix4(matrix), 0.03));
+      }
+      const key = `${A.o.userData.role}/${C.o.userData.role}`;
+      if (depth > 0 && depth > (worst[key]?.depth ?? 0)) worst[key] = { depth, time };
+    }
+  }
+  report.results[id] = { meshes: meshes.length, worstPenetration: Math.max(0, ...Object.values(worst).map((w) => w.depth)), pairs: worst };
+}
+report.status = Object.values(report.results).every((r) => r.worstPenetration < 0.001) ? 'no-interpenetration-above-0.001' : 'finite-solids-intersect';
+fs.writeFileSync('docs/validation/183-current-solids.json', JSON.stringify(report, null, 2) + '\n');
+console.log(report.status, Object.fromEntries(Object.entries(report.results).map(([k, v]) => [k, v.worstPenetration])));

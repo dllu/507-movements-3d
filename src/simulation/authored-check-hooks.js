@@ -973,7 +973,8 @@ function centrifugalMineDrumCheckHooks(movement) {
         hookCenter.y + normal.y * hookBarRadius,
         0.3,
       );
-      marker.visible = state.contactActive;
+      // Contacts stay in userData; Brown draws no contact markers.
+      marker.visible = false;
     });
     root.userData.contacts = {
       active: state.contactActive,
@@ -988,7 +989,8 @@ function centrifugalMineDrumCheckHooks(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(1.2, -1.4, 14),
+    // Brown draws a flat face view of framework A and flange B.
+    cameraDirection: new THREE.Vector3(0, 0, 1),
   };
 }
 

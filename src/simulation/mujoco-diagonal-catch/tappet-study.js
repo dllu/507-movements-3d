@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 import {convexProfilePieces} from '../mujoco-bench-clamp/profile.js';
 import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
@@ -11,7 +11,7 @@ import {disposeObject3D} from '../dispose-model.js';
 export function makeTappetStudy(m,{side='lower',timestep=.00025,contacts=true,extraTravel=0}={}){
  if(!['lower','upper'].includes(side))throw new RangeError('Unknown handle side');
  if(!Number.isFinite(extraTravel)||extraTravel<0)throw new RangeError('Invalid extra travel');
- const visual=createAuthoredDiagonalCatchMovement({id:181}),u=visual.root.userData,g=u.geometry,b=u.blocks;
+ const visual=createDiagonalCatchScaffold({id:181}),u=visual.root.userData,g=u.geometry,b=u.blocks;
  const lower=side==='lower',prefix=lower?'lower':'upper';
  const working=b[prefix+'HandleWorkingArm'].children[0],tip=b[prefix+'HandleWorkingTip'];
  const shape=clip.union(working.geometry.userData.plate.polygons,poly(circle([tip.position.x,tip.position.y],.10,64)));

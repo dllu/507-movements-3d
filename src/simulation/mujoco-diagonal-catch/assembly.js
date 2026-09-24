@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
@@ -21,7 +21,7 @@ function lowerBacking(finger){
 // Their depths are inferred; audit the serialized assembly separately from
 // the isolated contact trajectory whenever this geometry changes.
 export function createDiagonalCatchAssembly(){
- const legacy=createAuthoredDiagonalCatchMovement({id:181}),root=legacy.root,b=root.userData.blocks,g=root.userData.geometry;
+ const legacy=createDiagonalCatchScaffold({id:181}),root=legacy.root,b=root.userData.blocks,g=root.userData.geometry;
  const catchMaterial=b.catchHub.material,handleMaterial=b.upperHandleHub.material;
  const remove=object=>{object.removeFromParent();object.traverse(o=>o.geometry?.dispose());};
  for(const name of ['catchBackbone','catchWeightArm','upperHook','lowerHook',
@@ -56,7 +56,8 @@ export function createDiagonalCatchAssembly(){
   for(const [index,polygon]of finger.polygons.entries()){
    const points=polygon[0].slice(0,-1),center=points.reduce((s,p)=>[s[0]+p[0]/points.length,s[1]+p[1]/points.length],[0,0]);
    const web=points.map(p=>p.map((v,i)=>center[i]+(v-center[i])*.5));
-   const stem=new THREE.Mesh(plate(poly(web),backHigh-.01,front-.08),handleMaterial);
+   // Keep the axial web inside its (possibly non-convex) finger outline.
+   const stem=new THREE.Mesh(plate(clip.intersection(poly(web),[polygon]),backHigh-.01,front-.08),handleMaterial);
    stem.userData.role=side+'-finger-axial-web-'+index;body.add(stem);
   }
  }
@@ -70,6 +71,10 @@ export function createDiagonalCatchAssembly(){
   const left=Math.max(-halfWidth,-halfHeight-offset),right=Math.min(halfWidth,halfHeight-offset);
   if(right>left)for(const x of [left,right])hatchPoints.push(new THREE.Vector3(b.tappet.position.x+x,x+offset,.2805));
  }
+ // The shoe is fixed to the rod's front face (z=-.27): seat it there rather
+ // than burying .01 of it in the sectioned rod it slides past.
+ {const p=b.tappet.geometry.parameters;b.tappet.geometry.dispose();
+  b.tappet.geometry=new THREE.BoxGeometry(p.width,p.height,.55);b.tappet.position.z=.005;}
  b.tappet.material=b.tappet.material.clone();b.tappet.material.color.set('#f59a76');
  const hatching=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(hatchPoints),new THREE.LineBasicMaterial({color:'#49352d'}));
  hatching.name='tappet-face-hatching';b.pistonGroup.add(hatching);

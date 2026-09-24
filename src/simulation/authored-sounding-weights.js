@@ -300,7 +300,9 @@ function seabedTriggeredSoundingWeight(movement) {
 
   const seabedY = 0;
   const housingRadius = 0.43;
-  const boreRadius = 0.52;
+  // Bore radius leaves the bell-crank roller (outer x 0.505 at z 0.18) clear
+  // of the bore wall while the loaded weight sits on the catch.
+  const boreRadius = 0.545;
   const boreRadialClearance = boreRadius - housingRadius;
   const weightOuterRadius = 1.5;
   const weightCutawayHalfAngle = 0.58;
@@ -1129,14 +1131,15 @@ function seabedTriggeredSoundingWeight(movement) {
       ),
     ]);
 
+    // The sling runs in front of the rod (radius 0.43), not through it.
     const slingJunction = new THREE.Vector3(
       0,
       state.weightCenterY + weightOuterRadius + 0.38,
-      0.34,
+      0.62,
     );
-    const slingAnchor = new THREE.Vector3(0, 8.68, 0.34);
+    const slingAnchor = new THREE.Vector3(0, 8.68, 0.62);
     const shoulderY = state.weightCenterY
-      + Math.sqrt(weightOuterRadius ** 2 - 0.82 ** 2);
+      + Math.sqrt((weightOuterRadius + 0.03) ** 2 - 0.82 ** 2 - 0.18 ** 2);
     const leftShoulder = new THREE.Vector3(-0.82, shoulderY, 0.18);
     const rightShoulder = new THREE.Vector3(0.82, shoulderY, 0.18);
     slingMain.userData.setPoints([slingAnchor, slingJunction]);

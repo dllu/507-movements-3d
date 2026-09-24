@@ -221,8 +221,9 @@ test('movement 188 matches Brown\'s loop-handle direct-pin cam and separate leaf
   assert.deepEqual(geometry.sourceRasterCamPivot.toArray(), [287, 290]);
   assert.deepEqual(geometry.sourceRasterLoopGrip.toArray(), [35, 112]);
   assert.deepEqual(geometry.sourceRasterNotchA.toArray(), [224, 174]);
-  assert.deepEqual(geometry.sourceRasterLeafAnchor.toArray(), [138, 306]);
-  assert.deepEqual(geometry.sourceRasterLeafFreeTip.toArray(), [223, 201]);
+  assert.deepEqual(geometry.sourceRasterLeafAnchor.toArray(), [152, 291]);
+  assert.deepEqual(geometry.sourceRasterLeafScrew.toArray(), [126, 306]);
+  assert.deepEqual(geometry.sourceRasterLeafFreeTip.toArray(), [227, 193]);
   assert.deepEqual(geometry.sourceRasterCamBackCrown.toArray(), [378, 229]);
   assert.deepEqual(geometry.sourceRasterRodLeftEnd.toArray(), [15, 319]);
   assert.deepEqual(geometry.sourceRasterRodRightEnd.toArray(), [518, 326]);
@@ -628,8 +629,8 @@ test('movement 188 rendered transforms keep the pin, rod, rigid loop, cam, and l
     vector2Near(worldPoint(notchAAnchor), state.notchA, 4e-14,
       'rendered moving notch a');
     vector2Near(worldPoint(leafSpringAnchor), state.gabCenter.clone().add(
-      model.root.userData.geometry.leafAnchorLocal,
-    ), 4e-14, 'rendered fixed leaf-spring root');
+      model.root.userData.geometry.leafScrewLocal,
+    ), 4e-14, 'rendered fixed leaf-spring clamp screw');
     vector2Near(worldPoint(leafSpringTipIndex), state.leafSpringTip, 4e-14,
       'rendered flexible leaf-spring tip');
     near(loopCamHandle.rotation.z, state.handleAngle, 2e-15,

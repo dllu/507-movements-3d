@@ -415,11 +415,11 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/tappet-study.js",
-      "sha256": "f9aa8b9d2dbe04d383d633d691e2c4f93da472647bf572f100982a0814536723"
+      "sha256": "a3eaf32b90f475d1f9a565b46d3173f18b3038dcca86f434f625d622722c0c45"
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "9b790471a2502345f88f099e6aac45ee4365fc56d5e4c743914d9fbd3cefb122"
+      "sha256": "9e0863ed965367880f5bb8b71381165ae5def02f142161f0bf1ded3c1764057e"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",

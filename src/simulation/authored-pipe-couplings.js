@@ -216,7 +216,10 @@ function unionPipeCoupling(movement) {
   const pipeAMaximumY = 3.1;
   const flangeBottomY = 1;
   const flangeTopY = 1.3;
-  const flangeRadius = 1.18;
+  // Brown's "small flange": it passes inside the nut's internal thread
+  // (minor radius 1.024) so B can be unscrewed while A stays seated on C,
+  // and is retained only by the nut's inward shoulder.
+  const flangeRadius = 1.012;
   const spigotOuterRadius = 0.72;
   const spigotMinimumY = 0.28;
   const spigotMaximumY = flangeBottomY;
@@ -253,7 +256,7 @@ function unionPipeCoupling(movement) {
   const nutOuterBodyRadius = 1.65;
   const nutOuterCollarRadius = 1.82;
   const nutCavityRadius = 1.3;
-  const nutShoulderBoreRadius = 0.94;
+  const nutShoulderBoreRadius = 0.9;
   const nutMinimumLocalY = -1.02;
   const nutCollarTopLocalY = -0.55;
   const nutMaximumLocalY = 0.86;
@@ -269,7 +272,8 @@ function unionPipeCoupling(movement) {
     - pipeAOuterRadius;
   const flangeToNutCavityRadialClearance = nutCavityRadius - flangeRadius;
   const captiveShoulderOverlap = flangeRadius - nutShoulderBoreRadius;
-  const separationTravel = 1.5;
+  // Enough lift to show A clear of C without shrinking the assembled view.
+  const separationTravel = 0.8;
 
   const cyclePeriod = 12;
   const timeline = Object.freeze({
@@ -961,7 +965,8 @@ function unionPipeCoupling(movement) {
   markShadows(root);
 
   return {
-    cameraDirection: new THREE.Vector3(.8,1.3,11.4),
+    // Nearly straight elevation into the front section cutaway.
+    cameraDirection: new THREE.Vector3(0,.55,11.4),
     root,
     update,
   };

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../src/simulation/authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../src/simulation/authored-diagonal-catches.js';
 import {solidSurface} from './helpers/solid-surface.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 for(const id of [181,182])test(`${id} has bored pivots, separate handle planes and retained weight rods`,()=>{
- const m=createAuthoredDiagonalCatchMovement({id}),u=m.root.userData,b=u.blocks;
+ const m=createDiagonalCatchScaffold({id}),u=m.root.userData,b=u.blocks;
  try{
   for(const hub of [b.upperHandleHub,b.lowerHandleHub,b.catchHub]){
    const surface=solidSurface(hub.geometry);assert.equal(surface.inside(new THREE.Vector3()),false);

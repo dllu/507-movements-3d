@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {disposeObject3D} from '../dispose-model.js';
 import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {convexProfilePieces} from '../mujoco-bench-clamp/profile.js';
@@ -9,7 +9,7 @@ import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 // not prescribe latch events or drive either handle: it only separates finite
 // contact surfaces by a small clearance, starting from the simulated pose.
 export function createDiagonalContactProjector({gap=.00003}={}){
- const model=createAuthoredDiagonalCatchMovement({id:181}),g=model.root.userData.geometry,b=model.root.userData.blocks;
+ const model=createDiagonalCatchScaffold({id:181}),g=model.root.userData.geometry,b=model.root.userData.blocks;
  const parts=[];
  const add=(name,body,pivot,polygons)=>{
   const pieces=polygons.map(p=>p[0]).flatMap(ring=>{

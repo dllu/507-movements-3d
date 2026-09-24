@@ -228,7 +228,7 @@ function springHandleGabDisengager() {
   const sourceRasterCamContact = new THREE.Vector2(285, 151);
   const sourceRasterNotchA = new THREE.Vector2(480, 319);
   const sourceRasterSpringAnchor = new THREE.Vector2(358, 266);
-  const sourceRasterSpringBottom = new THREE.Vector2(450, 494);
+  const sourceRasterSpringBottom = new THREE.Vector2(452, 489);
   const sourceRasterSpringFreeTip = new THREE.Vector2(468, 321);
   const sourceUnitsPerPixel = 0.015;
   const sourcePointFromRaster = (point) => new THREE.Vector2(
@@ -264,13 +264,14 @@ function springHandleGabDisengager() {
   );
   const springRestPathLocal = [
     sourceRasterSpringAnchor,
-    new THREE.Vector2(398, 290),
-    new THREE.Vector2(428, 345),
-    new THREE.Vector2(458, 440),
+    // Centerline between the plate's double strap lines.
+    new THREE.Vector2(400, 290),
+    new THREE.Vector2(432, 345),
+    new THREE.Vector2(463, 440),
     sourceRasterSpringBottom,
-    new THREE.Vector2(412, 470),
-    new THREE.Vector2(390, 400),
-    new THREE.Vector2(392, 352),
+    new THREE.Vector2(418, 473),
+    new THREE.Vector2(395, 400),
+    new THREE.Vector2(395, 352),
     new THREE.Vector2(410, 331),
     new THREE.Vector2(440, 324),
     sourceRasterSpringFreeTip,
@@ -974,7 +975,8 @@ function springHandleGabDisengager() {
   eccentricRod.add(camLever, camPivotPin);
 
   const springHandle = new THREE.Group();
-  const springStrap = makeFlatStrap(springStrapPoints, 0.13, 0.10, brassMaterial);
+  // As wide as notch a's mouth allows (0.24): Brown's strap is broad.
+  const springStrap = makeFlatStrap(springStrapPoints, 0.17, 0.10, brassMaterial);
   springStrap.userData.role = 'flat-loop-spring-strap';
   springHandle.add(springStrap);
   springHandle.userData.role =
@@ -2099,9 +2101,13 @@ function loopHandlePinCamGabDisengager() {
   const sourceRasterCamPivot = new THREE.Vector2(287, 290);
   const sourceRasterLoopGrip = new THREE.Vector2(35, 112);
   const sourceRasterNotchA = new THREE.Vector2(224, 174);
-  // The screw root sits within the rod's silhouette, below the loop's sweep.
-  const sourceRasterLeafAnchor = new THREE.Vector2(138, 306);
-  const sourceRasterLeafFreeTip = new THREE.Vector2(223, 201);
+  // The leaf rises from its foot on top of the rod, right of the screwed
+  // clamp block Brown draws at x 105-140, to its free end just under a.
+  const sourceRasterLeafAnchor = new THREE.Vector2(152, 291);
+  const sourceRasterLeafFreeTip = new THREE.Vector2(227, 193);
+  // The block's screw passes into the rod behind the rod's silhouette,
+  // below the loop's sweep.
+  const sourceRasterLeafScrew = new THREE.Vector2(126, 306);
   const sourceRasterCamBackCrown = new THREE.Vector2(378, 229);
   const sourceRasterRodLeftEnd = new THREE.Vector2(15, 319);
   const sourceRasterRodRightEnd = new THREE.Vector2(518, 326);
@@ -2126,13 +2132,16 @@ function loopHandlePinCamGabDisengager() {
   const rodRightEndLocal = sourcePointFromRaster(sourceRasterRodRightEnd);
   const camBackCrownLocal = sourcePointFromRaster(sourceRasterCamBackCrown)
     .sub(camPivotLocal);
+  // Centerline between the plate's inner and outer leaf lines.
   const leafRestPathLocal = [
     sourceRasterLeafAnchor,
-    new THREE.Vector2(180, 283),
-    new THREE.Vector2(206, 262),
-    new THREE.Vector2(221, 232),
+    new THREE.Vector2(178, 285),
+    new THREE.Vector2(200, 267),
+    new THREE.Vector2(217, 243),
+    new THREE.Vector2(226, 214),
     sourceRasterLeafFreeTip,
   ].map(sourcePointFromRaster);
+  const leafScrewLocal = sourcePointFromRaster(sourceRasterLeafScrew);
 
   const rodStroke = 0.28;
   const maximumHandleAngle = 0.70;
@@ -2846,7 +2855,8 @@ function loopHandlePinCamGabDisengager() {
     const local = camFromRaster(point);
     return new THREE.Vector3(local.x, local.y, 0);
   }), false, 'centripetal').getSpacedPoints(120);
-  const loopHandleBody = makeFlatStrap(loopCurvePoints.length, .17, .18, accentMaterial);
+  // Brown's strap is 13-15 plate pixels wide between its two lines.
+  const loopHandleBody = makeFlatStrap(loopCurvePoints.length, .22, .18, accentMaterial);
   loopHandleBody.userData.setPoints(loopCurvePoints);
   loopHandleBody.userData.role = 'source-rigid-flat-loop-handle';
   const handleStem = new THREE.Group();
@@ -2927,15 +2937,22 @@ function loopHandlePinCamGabDisengager() {
     'loop-handle-cam-pivot-fixed-through-eccentric-rod';
   eccentricRod.add(camPivotPin, loopCamHandle);
   const leafSpring = new THREE.Group();
-  const leafStrap = makeFlatStrap(leafStrapPoints, .15, .10, brassMaterial);
+  const leafStrap = makeFlatStrap(leafStrapPoints, .20, .10, brassMaterial);
   leafStrap.userData.role = 'flat-leaf-spring-strap';
   leafSpring.add(leafStrap);
   leafSpring.userData.role =
     'separate-rod-mounted-leaf-spring-catching-moving-notch-a';
+  // Clamp block on the rod's top edge, in the leaf plane behind the loop;
+  // its foot runs down behind the rod to the screw into the rod's back.
+  const leafClampBlock = sourcePlate([[
+    [104, 312], [104, 289], [112, 289], [112, 279], [140, 279],
+    [140, 288], [158, 288], [158, 312],
+  ]], rodFromRaster, leafSpringRestZ - 0.07, leafSpringRestZ + 0.09, brassMaterial);
+  leafClampBlock.userData.role = 'screwed-clamp-block-holding-leaf-spring-foot';
   const leafSpringAnchor = cylinderAlongZ(0.09, 0.47, darkMaterial, 28);
   leafSpringAnchor.position.set(
-    leafAnchorLocal.x,
-    leafAnchorLocal.y,
+    leafScrewLocal.x,
+    leafScrewLocal.y,
     -0.345,
   );
   leafSpringAnchor.userData.role = 'fixed-screw-root-of-leaf-spring';
@@ -2946,7 +2963,7 @@ function loopHandlePinCamGabDisengager() {
     leafSpringRestZ,
   );
   leafSpringTipIndex.userData.role = 'leaf-spring-catch-tip-anchor';
-  eccentricRod.add(leafSpring, leafSpringAnchor, leafSpringTipIndex);
+  eccentricRod.add(leafSpring, leafClampBlock, leafSpringAnchor, leafSpringTipIndex);
   const frame = new THREE.Group();
   frame.userData.role = 'fixed-frame-and-valve-carrier-guide';
   const frameBeams = [];
@@ -3004,6 +3021,7 @@ function loopHandlePinCamGabDisengager() {
     handleIndex,
     handleStem,
     latchMarker,
+    leafClampBlock,
     leafSpring,
     leafStrap,
     notchTab,
@@ -3047,6 +3065,8 @@ function loopHandlePinCamGabDisengager() {
     gabTopBridgeMinimumY,
     inputTurnsPerCycle,
     leafAnchorLocal: leafAnchorLocal.clone(),
+    leafScrewLocal: leafScrewLocal.clone(),
+    sourceRasterLeafScrew: sourceRasterLeafScrew.clone(),
     leafRestPathLocal: leafRestPathLocal.map((point) => point.clone()),
     leafRestTipLocal: leafRestTipLocal.clone(),
     loopGripLocal: loopGripLocal.clone(),

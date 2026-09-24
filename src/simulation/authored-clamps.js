@@ -1631,10 +1631,11 @@ function screwThrustLeverClamp() {
   const sourceShoeContact = new THREE.Vector2(159, 333);
   const sourceScrewAxis = new THREE.Vector2(372, 326);
   const sourceHolderBearingFaceY = 326;
-  // The plate's handle bar sits at y 245-263; its centre is raised to 238 so
-  // the full-turn handle clears the holder crest when the screw backs off.
-  const sourceHandleCenter = new THREE.Vector2(372, 238);
-  const sourceHandleTip = new THREE.Vector2(460, 238);
+  // The plate's handle bar sits at y 245-263, level with the holder crest.
+  // The release is limited to a part turn so the bar never swings over the
+  // crest: it stays right of the screw or clear of the cheeks in depth.
+  const sourceHandleCenter = new THREE.Vector2(372, 254);
+  const sourceHandleTip = new THREE.Vector2(460, 254);
   const sourceNutCenter = new THREE.Vector2(372, 358);
   const sourceBenchTopY = 374;
   const sourceBenchBottomY = 424;
@@ -1748,9 +1749,10 @@ function screwThrustLeverClamp() {
   };
 
   const clampedHolderAngle = 0;
-  // A 0.10 rad release keeps the backed-off collar above the lower arm and
-  // the swinging handle above the holder crest.
-  const openHolderAngle = -0.10;
+  // A 0.04 rad release (about 0.42 turn of the screw) lifts the shoe clear
+  // of the work while the handle, level with the crest as Brown draws it,
+  // turns less than 160 degrees and so never crosses over the holder.
+  const openHolderAngle = -0.04;
   const collarThickness = 0.14;
   const collarHalfThickness = collarThickness / 2;
   const openBearing = holderBearingAtAngle(openHolderAngle);
@@ -1802,7 +1804,8 @@ function screwThrustLeverClamp() {
 
   if (
     screwAxialTravel <= 0
-      || screwTighteningTurns >= -1
+      || screwTighteningTurns >= -0.25
+      || screwTighteningTurns <= -160 / 360
       || clampedLeverForceRatio <= 0
   ) {
     throw new RangeError('Movement 190 source geometry cannot form a clamp.');
@@ -2035,6 +2038,15 @@ function screwThrustLeverClamp() {
     holes = [],
     modelPoints,
   }) => {
+    if (bevel <= 0) {
+      // Clipped finite plate: bores are true holes with outward-facing
+      // walls, so pins seated in them read as clear rather than inside.
+      const outline = poly(modelPoints.map((point) => [point.x, point.y]));
+      return plate(holes.length
+        ? polygonClipping.difference(outline, ...holes.map(({ center, radius }) => (
+          poly(circle([center.x, center.y], radius, 96)))))
+        : outline, -depth / 2, depth / 2);
+    }
     const shape = new THREE.Shape();
     modelPoints.forEach((point, index) => {
       if (index === 0) shape.moveTo(point.x, point.y);
@@ -2051,7 +2063,8 @@ function screwThrustLeverClamp() {
       bevelSegments: 1,
       bevelSize: bevel,
       bevelThickness: bevel,
-      curveSegments: 4,
+      // Round bores need true arcs: a coarse polygon would pinch the pins.
+      curveSegments: 64,
       depth,
     });
     geometry.translate(0, 0, -depth / 2);
@@ -2210,10 +2223,13 @@ function screwThrustLeverClamp() {
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-central-fulcrum-standard-and-lower-threaded-arm';
+  // A fine ink line held between the screw thread crest (r 0.224), which it
+  // crosses at the lower arm, and the front holder cheek (z 0.26).
   const frameOutline = outlineTube(
     frameModelPoints,
-    frameDepth / 2 + 0.026,
+    frameDepth / 2 + 0.029,
     darkMaterial,
+    0.014,
   );
   frameOutline.userData.role = 'dark-source-outline-of-fixed-clamp-frame';
 
@@ -2278,9 +2294,12 @@ function screwThrustLeverClamp() {
     (point.x - sourceShoePin.x) * sourceScale,
     (sourceShoePin.y - point.y) * sourceScale,
   ));
-  const shoeDepth = 0.46;
+  // The shoe sits between the holder cheeks (inner faces at z = 0.26) with
+  // its ink outline clear of them; no bevel, so the sole seats flush.
+  const shoeDepth = 0.40;
   const shoePlate = new THREE.Mesh(
     extrudeModelOutline({
+      bevel: 0,
       depth: shoeDepth,
       holes: [{ center: new THREE.Vector2(0, 0), radius: 0.14 }],
       modelPoints: shoeLocalPoints,
@@ -2288,8 +2307,14 @@ function screwThrustLeverClamp() {
     shoeMaterial,
   );
   shoePlate.userData.role = 'source-profiled-swiveling-pressure-shoe';
+  // The ink line along the sole is lifted by its tube radius so it does not
+  // sink into the work it presses.
   const shoeOutline = outlineTube(
-    shoeLocalPoints,
+    shoeLocalPoints.map((point) => (
+      Math.abs(point.y - shoeContactLocal.y) < 1e-9
+        ? new THREE.Vector2(point.x, point.y + 0.021)
+        : point
+    )),
     shoeDepth / 2 + 0.024,
     darkMaterial,
   );

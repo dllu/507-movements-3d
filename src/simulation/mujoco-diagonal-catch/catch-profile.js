@@ -59,6 +59,16 @@ export function diagonalLatchFinger(side,{registered=true}={}) {
   // Fill between them in both collision and display geometry, rather than
   // using disjoint contact pads and a thin rear bridge.
   polygons=poly(convexOutline([...points,...heel]));
+  // Plate 181 ends the horn in a point at (330,286); only the top working
+  // edge from that point to the heel corner ever meets the catch. Trim the
+  // unused lower-left of the hull (at least 0.02 clear of the catch in the
+  // baked cycle) so the beak does not bulge past the drawn horn.
+  if(registered){
+   const cut=[[305.5,277.8],[326,299],[322,325],[285,330],[285,270]]
+    .map(([x,y])=>[(x-271)*.0125-fit.pivot[0],(234-y)*.0125-fit.pivot[1]]);
+   polygons=clip.difference(polygons,poly(cut)).map(rings=>rings.map(ring=>
+    ring.filter((p,i)=>i===0||Math.hypot(p[0]-ring[i-1][0],p[1]-ring[i-1][1])>1e-9)));
+  }
  }
  return {raster,heelRaster,points,polygons,fit,angle,registered};
 }

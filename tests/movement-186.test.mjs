@@ -204,7 +204,7 @@ test('movement 186 matches Brown\'s spring-handle gab-release topology and sourc
   assert.deepEqual(geometry.sourceRasterSpringAnchor.toArray(), [358, 266]);
   assert.deepEqual(geometry.sourceRasterSpringFreeTip.toArray(), [468, 321]);
   assert.deepEqual(geometry.sourceRasterNotchA.toArray(), [480, 319]);
-  assert.deepEqual(geometry.sourceRasterSpringBottom.toArray(), [450, 494]);
+  assert.deepEqual(geometry.sourceRasterSpringBottom.toArray(), [452, 489]);
   for (const rasterPoint of [
     geometry.sourceRasterGabPin,
     geometry.sourceRasterValvePivot,

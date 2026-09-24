@@ -278,7 +278,9 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
     assert.equal(state.weightExternallySupported, false);
   }
   assert.ok(minimumBoreClearance > 0.016);
-  assert.ok(minimumProbeClearance > 0.096 - 1e-12);
+  // The wider 0.545 bore (roller clearance) needs a deeper held retraction,
+  // which brings the pusher about 1 mm closer than the old 0.096.
+  assert.ok(minimumProbeClearance > 0.094);
   assert.ok(maximumGroundedWeightError < 2e-15);
 
   const recovered = stateAtTime(timeline.rodRecovered + 1e-9);

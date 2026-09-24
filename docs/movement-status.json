@@ -5408,15 +5408,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture of the rebaked bundle inspected beside the plate: undrawn weights and slotted pivot heads removed."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default production capture inspected beside the plate: back-weight rods end at the plate edge, tappet on the rod face, lower finger trimmed toward the horn."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: roller-in-catch rows up to 0.110 and a seated rod/tappet pair (0.010) remain; this pass did not re-clear them."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen on the baked production assembly: the 0.110 rows were on an unshown construction scaffold; now 0.0000."
       },
-      "flaws": "Roller-in-catch overlaps up to 0.110 remain; rod ends are cut at fixed lengths rather than at the plate edge. Lower catch/finger contour remains wider than source.",
+      "flaws": "The lower finger edge lies ≈20 px past 181's horn tip (the two plates disagree); the upper arm is ≈20 px off near its hub; eyes read as solid discs.",
       "references": [
         "docs/movement-181.md",
         "docs/review-progress.md",
@@ -5424,7 +5424,8 @@
         "docs/validation/181-current-solids.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5440,15 +5441,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture of the rebaked bundle inspected beside the plate: undrawn weights and slotted pivot heads removed."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default production capture inspected beside the plate: rods end at the plate edge; same passive catch as 181."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: roller-in-catch rows up to 0.110 and a seated rod/tappet pair (0.010) remain; this pass did not re-clear them."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen on the baked production assembly: 0.0000."
       },
-      "flaws": "Roller-in-catch overlaps up to 0.110 remain; rod ends are cut at fixed lengths rather than at the plate edge. Same passive catch as 181, phase shifted; lower finger/head fit incomplete.",
+      "flaws": "Same passive catch as 181, phase shifted; the lower finger and upper arm differ from the plate by ≈20 px; eyes read as solid discs.",
       "references": [
         "docs/movement-181.md",
         "docs/review-progress.md",
@@ -5456,7 +5457,8 @@
         "docs/validation/181-current-solids.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5472,21 +5474,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Default capture inspected beside the plate: hanging rods replace the undrawn weights; the quadrants remain solid plain sectors where Brown draws cast webs, and rims are about twice the plate's thickness."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: rebuilt from plate measurements with narrow cast quadrants, windows, toe and nose, layered as drawn."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): rod/tappet 0.090 fixed; arm/tappet 0.2225, tip/tappet ≈0.18–0.21, pin/band 0.1217 and pin/arm 0.103 remain."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: arm/tappet 0.2225 and pin/band 0.1217 are gone; only seated stud/rim contacts (0.0002). Transfer baked from a quasistatic solve checked against a geometry hash."
       },
-      "flaws": "Prescribed transfer law unresolved (arm/tip into tappet up to 0.2225, pin/band 0.1217); quadrant rims about twice the plate's thickness and plain sectors instead of cast webs; layout differs from the plate.",
+      "flaws": "The upper hook is a round knob, not Brown's curl; the lower nose reaches slightly over the rod; the upper stud shows through the open area left of the lower web. Weight-driven motion is a quasistatic solve; forces are not solved.",
       "references": [
         "docs/movement-183.md",
         "docs/quadrant-catch-finite-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5505,21 +5508,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Default capture inspected beside the plate: hanging rods replace the undrawn weights; the quadrants remain solid plain sectors where Brown draws cast webs."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: the same rebuilt gear at the top of the stroke."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): rod/tappet 0.090 fixed; arm/tappet 0.2225, tip/tappet ≈0.18–0.21, pin/band 0.1217 and pin/arm 0.103 remain."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: only seated stud/rim contacts (0.0002)."
       },
-      "flaws": "Prescribed transfer law unresolved (arm/tip into tappet up to 0.2225, pin/band 0.1217); quadrant rims about twice the plate's thickness and plain sectors instead of cast webs; layout differs from the plate.",
+      "flaws": "Brown's two plates are not rigid rotations of each other, so 184's swings are smaller than drawn; the upper hook is a round knob. Weight-driven motion is a quasistatic solve.",
       "references": [
         "docs/movement-183.md",
         "docs/quadrant-catch-finite-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5567,20 +5571,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Default capture inspected beside the plate: near-true elevation with the lever, crown, gab slot and flat loop spring traced; the loop hangs lower and farther left than Brown's."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: loop centred in Brown's double lines on the plate path."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane5-cams-catches-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): spring/root 0.104 and pin/crown 0.023 fixed; no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The spring loop hangs lower than the plate's a; a hidden shoulder shows as a small ledge left of the rocker arm; spring bend interpolated; latch and cam motion prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The rocker shoulder sits ≈13 px left of the arm; the catch tang is solid where Brown draws a thin spring; latch and cam motion prescribed.",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5625,21 +5630,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Default capture inspected beside the plate: flat loop and cam behind the rod; the loop's shape only roughly follows the plate's."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: loop, leaf and clamp block follow the plate."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane5-cams-catches-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): pairs up to 0.119 fixed; the working cam rail is an open tube, so only the rail-into-pin direction is checked."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The loop's curve only roughly follows the plate; the conjugate cam rail hangs below the rod at the engaged pose where Brown's dashed edge lies above the pin; handle direction inferred; spring root hidden inside the rod.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The cam rail hangs below the rod at the engaged pose (matching Brown's dashed edge would reverse the latch).",
       "references": [
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5685,21 +5691,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: flat side elevation with the bench as a plank section; handle raised ≈15 px to clear the standard."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: flat elevation with the handle level with the crest."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen (0.01 spacing, 129 poses): 0.159 reduced to 0.017, plus a 0.028 shoe pin/bore pair."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: shoe pin/bore 0.028 and shoe outline 0.017 → only seated shoe/work contact."
       },
-      "flaws": "A 0.017 handle graze and a 0.028 shoe pin/bore overlap remain; the handle sits ≈15 px above the plate's position. Screw motion prescribed; friction and loaded reversal unvalidated.",
+      "flaws": "The plank has no grain; the post through the plank is not drawn. Screw motion prescribed.",
       "references": [
         "docs/movement-190-285-solid-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7359,22 +7366,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: frontal section; the seabed is now a thin line, though the subject sits high to leave room for the weight's drop."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: front section matches, but the subject is tiny and high because the frame includes the drop to the seabed."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane8-escapements-engines-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): 0.1664 reduced to a ≤0.012 roller graze in the weight bore at manual reseat and 0.009 spring-on-arm contact; the earlier scoped 'none' did not cover these pairs."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: the 0.012 roller graze and 0.175 sling-hook overlap are fixed."
       },
-      "flaws": "The seabed is kept as a thin line because the probe strikes it; the subject sits high in frame; a ≤0.012 roller graze in the weight bore at reseat remains. Detent actuation, drag and impact idealized.",
+      "flaws": "The subject is framed tiny and high because the frame includes the weight's drop to the seabed line. Detent actuation, drag and impact idealized.",
       "references": [
         "docs/release-mechanism-247-278-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7390,21 +7398,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: pipe lengths as drawn and a plain nut; 3D cutaway rather than a flat section."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: near-straight elevation of the coupling."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen reports a 0.086 flange/thread hit on the cutaway meshes; pipe-coupling-solids passes, so the pair is unresolved."
+        "status": "sampled-clear",
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: the 0.086 flange/thread hit is fixed (cutaway shells are open meshes, so less certain there)."
       },
-      "flaws": "A 0.086 flange/thread hit on the cutaway meshes is unresolved. Square-thread section and assembly timing inferred; thread friction and sealing unsolved.",
+      "flaws": "A wedge cutaway where Brown draws a half-section. Thread friction and sealing unsolved.",
       "references": [
         "docs/pipe-coupling-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7478,21 +7487,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: weight W fills the rails with notched sides; undrawn anvil and pile hidden."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: slotted top beam, hook horns and taller W in front elevation."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: 0.287 → 0.07, the rope seated in the head (intended)."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: markers 0.105 and rope 0.081 → only seated toe/shelf contact."
       },
-      "flaws": "Quasistatic support normal approaches horizontal at release; actual loaded release time/acceleration unresolved.",
+      "flaws": "Hooks are straighter than Brown's bulged horns; release is quasistatic.",
       "references": [
         "docs/lifting-check-hook-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7536,21 +7546,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: undrawn springs, indices and stud supports removed."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Default capture inspected beside the plate: flat face view; markers hidden."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: only contact-marker spheres overlap."
+        "evidence": "docs/w3a-catches-review.md",
+        "note": "Pass-51 screen: 0.129 → none."
       },
-      "flaws": "Hook operation and lift prescribed; contact forces, friction and passive load retention unvalidated.",
+      "flaws": "Hooks are short curled bars where Brown draws long barbed bars; disk A reads translucent. Hook operation and lift prescribed.",
       "references": [
         "docs/lifting-check-hook-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3a-catches-review.md"
       ],
       "mujoco": {
         "mode": "none",

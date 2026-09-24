@@ -95,7 +95,8 @@ export function correctPileHookSurfaces(root) {
     const curve=new THREE.CatmullRomCurve3(control.map(p=>new THREE.Vector3(p.x,p.y,0)),false,'centripetal');
     const points=curve.getPoints(32).map(p=>[p.x,p.y]);
     // The load toe is carried on the rear face of a bored flat hook cheek.
-    let outer=polygonClipping.union(...points.slice(1).map((p,i)=>capsule(points[i],p,.18,12)),
+    // The stock widens over the last quarter to the 0.24 round horn end.
+    let outer=polygonClipping.union(...points.slice(1).map((p,i)=>capsule(points[i],p,.18+.06*Math.max(0,(i-23)/8),12)),
       poly(circle([0,0],.45,96)), capsule([side*1.53,2],[side*1.29,2],.18,24));
     outer=polygonClipping.difference(outer,poly(circle([0,0],.314,96)));
     const body=new THREE.Mesh(plate(outer,.85,1.01),old.material); body.userData.role='bored-flat-pile-hook';
@@ -104,6 +105,8 @@ export function correctPileHookSurfaces(root) {
     const toe=new THREE.Mesh(disk(.15,.34,1.01,96),old.material);
     toe.position.set(side*1.29,2,0);toe.userData.role='finite-load-bearing-hook-toe';
     const tip=hook.children.find(o=>o.userData.role?.includes('guide-contact-tip'));tip.position.z=.93;
+    // A flat rounded horn end in the hook plate, not a ball knob.
+    tip.geometry.dispose();tip.geometry=disk(.24,-.08,.08,96);
     hook.add(body,toe);bodies.push(body);toes.push(toe);
     const at=curve.getPoint(1/6),tangent=curve.getTangent(1/6);
     const outward=new THREE.Vector3(side<0?-tangent.y:tangent.y,side<0?tangent.x:-tangent.x,0);

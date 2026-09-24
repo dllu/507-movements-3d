@@ -99,11 +99,11 @@
   "sources": [
     {
       "file": "scripts/review-diagonal-catch-solids.mjs",
-      "sha256": "1165893632f30c55cc65111aaedb012666c063c88a4c8548f0aae5cd81c285dd"
+      "sha256": "af8631ae1e5d75273a94bf0a2190e4f7f975f87ea114a01aaf3a1ae50562db5e"
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "77f54e7f3ed70bf4b756a447e57a145685d3d1c53702db9f867edf636301812f"
+      "sha256": "9e0863ed965367880f5bb8b71381165ae5def02f142161f0bf1ded3c1764057e"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",

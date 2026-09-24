@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAuthoredDiagonalCatchMovement} from '../authored-diagonal-catches.js';
+import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 import {convexProfilePieces} from '../mujoco-bench-clamp/profile.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
@@ -9,7 +9,7 @@ import {poly,circle,polygonClipping as clip} from '../finite-plate-geometry.js';
 // Both weighted handles and the catch are passive. Only the piston is driven.
 // Axial contact layers separate the working arms from the latch fingers.
 export function makeDiagonalContactStudy(m,{timestep=.00025,catchMass=.17,contacts=true,period=18,registered=true,contactTimeConstant=.003,contactMargin=.0002}={}){
- const visual=createAuthoredDiagonalCatchMovement({id:181}),g=visual.root.userData.geometry,b=visual.root.userData.blocks;
+ const visual=createDiagonalCatchScaffold({id:181}),g=visual.root.userData.geometry,b=visual.root.userData.blocks;
  let assets='',next=0;
  const collision=(rings,mask,affinity,z)=>{
   let geoms='';for(const ring of rings){const points=ring.slice(0,-1).map(p=>new THREE.Vector2(...p));

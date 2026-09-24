@@ -168,13 +168,14 @@ function pileDriverReleasingHooks(movement) {
   // Brown's W is a tall block filling the space between the guide rails,
   // with rounded side notches; its top stays just below the hook pivots.
   const hammerHalfWidth = 3.12;
-  const hammerHeight = 5.6;
+  // Plate W is about 1.2 times as tall as it is wide.
+  const hammerHeight = 7.4;
   const hammerCenterBelowPivot = 0.45 + hammerHeight / 2;
   const hammerBottomBelowPivot =
     hammerCenterBelowPivot + hammerHeight / 2;
   const pileHeadTopY = impactPivotY - hammerBottomBelowPivot;
   const frameRailInnerHalfWidth = 3.45;
-  const ropeTopY = 8.1;
+  const ropeTopY = 7.2;
   const leftHookTipLocal = new THREE.Vector2(-1.15, 4.2);
   const rightHookTipLocal = new THREE.Vector2(1.15, 4.2);
   const leftLatchBearingLocal = new THREE.Vector2(-1.29, 2);
@@ -284,11 +285,12 @@ function pileDriverReleasingHooks(movement) {
   frame.add(...rails);
 
   const leftTopBeam = extrudedPolygon([
-    new THREE.Vector2(-4.3, 7.35),
-    new THREE.Vector2(-1.52, 7.35),
+    // Brown draws one plain top beam pierced by the tapered slot B; its
+    // depth only spans the squeezing stroke of the hook tips.
+    new THREE.Vector2(-4.3, guideSurfaceEnd.y + 0.45),
     guideSurfaceEnd.clone().add(new THREE.Vector2(0, 0.45)),
     guideSurfaceStart.clone().add(new THREE.Vector2(-0.12, -0.45)),
-    new THREE.Vector2(-4.3, 4.45),
+    new THREE.Vector2(-4.3, guideSurfaceStart.y - 0.45),
   ], 1.32, frameMaterial, 'left-half-of-top-frame-around-slot-b');
   // Set the cheeks behind the lifting-head plane so the rising head passes
   // in front of them; the dark guide faces still reach the hook plane.
@@ -341,6 +343,8 @@ function pileDriverReleasingHooks(movement) {
   upperTie.position.set(0, 7.55, -0.32);
   upperTie.userData.fixed = true;
   upperTie.userData.role = 'fixed-upper-frame-tie-above-slot-b';
+  // Only the one slotted beam is drawn above the rails.
+  upperTie.visible = false;
   frame.add(leftTopBeam, rightTopBeam, leftGuide, rightGuide, upperTie);
 
   const pileHead = new THREE.Group();
@@ -470,7 +474,8 @@ function pileDriverReleasingHooks(movement) {
     hammerMaterial,
     'drop-hammer-weight-w-with-side-guide-notches',
   );
-  hammer.position.set(0, -hammerCenterBelowPivot, -0.04);
+  // Front bevel face (z 0.835) stays behind the flat hook cheeks (z 0.85).
+  hammer.position.set(0, -hammerCenterBelowPivot, -0.07);
   const hammerIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.18, 1.2, 0.05),
     whiteMaterial,
@@ -571,6 +576,8 @@ function pileDriverReleasingHooks(movement) {
     index.position.set(side * hookPivotHalfSpacing, 0, 1.21);
     index.userData.role =
       `${side < 0 ? 'left' : 'right'}-white-hook-angle-index`;
+    // Brown draws plain pivot pins, without angle indices.
+    index.visible = false;
     return index;
   });
   weightAssembly.add(...pivotPins, ...pivotIndexes);
@@ -1092,7 +1099,8 @@ function pileDriverReleasingHooks(movement) {
     liftHead.position.y = state.liftHeadY;
     rope.userData.setPoints([
       new THREE.Vector3(0, ropeTopY, 0.08),
-      new THREE.Vector3(0, state.liftHeadY + 1.24, 0.08),
+      // The rope ends on top of its eye ring (0.34 ring + 0.085 tube).
+      new THREE.Vector3(0, state.liftHeadY + 1.24 + 0.425, 0.08),
     ]);
     const guidePoints = [
       state.guideContactPoints.left,
@@ -1100,7 +1108,8 @@ function pileDriverReleasingHooks(movement) {
     ];
     guideContactMarkers.forEach((marker, index) => {
       marker.position.set(guidePoints[index].x, guidePoints[index].y, 0.98);
-      marker.visible = state.guideContactActive;
+      // Contact points stay in userData; Brown draws no marker spheres.
+      marker.visible = false;
     });
     const latchPoints = [
       state.leftLatchContact.hookPoint,
@@ -1108,10 +1117,7 @@ function pileDriverReleasingHooks(movement) {
     ];
     latchContactMarkers.forEach((marker, index) => {
       marker.position.set(latchPoints[index].x, latchPoints[index].y, 1.02);
-      marker.visible = [
-        state.leftLatchContact,
-        state.rightLatchContact,
-      ][index].gap < 1e-10;
+      marker.visible = false;
     });
     // The pile head lies below the plate crop, so its impact ring stays hidden.
     impactMarker.visible = false;
@@ -1153,7 +1159,8 @@ function pileDriverReleasingHooks(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(0.8, 1.1, 10),
+    // Brown draws a flat front elevation.
+    cameraDirection: new THREE.Vector3(0, 0, 1),
   };
 }
 
