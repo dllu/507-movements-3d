@@ -547,7 +547,9 @@ test('movement 234 renderer binds the wheel, verge, pallets, and contacts', () =
   assert.ok(size.z > 4.2);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 30);
+  // Brown's plain flags carry no dark lips, and the presentation drops the
+  // undrawn journal caps and witness marks.
+  assert.ok(meshCount >= 20);
   disposeModel(model.root);
 });
 

@@ -84,7 +84,7 @@ function gearedBalanceVergeEscapement(movement) {
   const releaseAngle = THREE.MathUtils.degToRad(6);
   const catchAngle = THREE.MathUtils.degToRad(18);
   const helixPitch = 0.62;
-  const palletThickness = 0.07;
+  const palletThickness = 0.09;
   const palletClearance = 0.002;
   const palletMargin = THREE.MathUtils.degToRad(5);
 
@@ -257,18 +257,60 @@ function gearedBalanceVergeEscapement(movement) {
   arbor.add(arborRod);
   const topTipHeight = arborY - (escapeCenter.y + tipRadius);
   const palletReach = topTipHeight + 0.09;
+  // Wire-loop pallets: band width, the lowest the non-working part of a loop
+  // may reach below the arbor axis, and its innermost radius (just inside the
+  // arbor rod, so the loop is carried by it).
+  const loopWireWidth = 0.1;
+  const loopFloor = topTipHeight - 0.05;
+  const loopInnerLimit = arborRadius - 0.01;
+  const loopTopRadius = palletReach + 0.1;
+  const loopBlendArc = 0.25;
+  const loopGap = 0.004;
+  const loopReturnSegments = 96;
+  const normalizeAngle = (angle) => Math.atan2(Math.sin(angle), Math.cos(angle));
   const makePallet = (side, center) => {
     // The release edge is the corner angle at the release pose; the other end
     // carries a margin past the recoil extreme.
     const releaseCorner = cornerAngle(tipAt(side, -side * releaseAngle));
     const deltaMin = side > 0 ? releaseCorner - releaseAngle : -releaseCorner - arborAmplitude - palletMargin;
     const deltaMax = side > 0 ? releaseCorner + arborAmplitude + palletMargin : -releaseCorner + releaseAngle;
-    // The rendered face stands a running clearance behind the exact helix, so
-    // its chords never cross the tooth corner that rides the analytic face.
-    const geometry = parametricSolid(6, 36, (u, v, w) => {
-      const rho = THREE.MathUtils.lerp(arborRadius * 0.6, palletReach, u);
-      const delta = THREE.MathUtils.lerp(deltaMin, deltaMax, v);
-      const x = center + side * helixPitch * delta - palletClearance - w * palletThickness;
+    // Brown draws each pallet as a wire loop hung on the arbor. The loop is a
+    // flat band of constant radial width closed around the arbor: across the
+    // working arc its face is the exact helix (standing a running clearance
+    // behind it, so its chords never cross the tooth corner that rides the
+    // analytic face) and it reaches down to the tooth corners; over the rest
+    // of the turn it returns to its starting x and stays above the teeth for
+    // any arbor swing, rising again to the loop's full radius over the top.
+    const workingSpan = deltaMax - deltaMin;
+    const returnSpan = FULL_TURN - workingSpan - loopGap;
+    const workingFraction = 36 / (36 + loopReturnSegments);
+    const smooth = (s) => s * s * (3 - 2 * s);
+    const clearOuter = (delta) => {
+      // Largest radius whose lowest point, over the full arbor swing, stays
+      // above loopFloor.
+      const tilt = Math.max(0, Math.abs(normalizeAngle(delta)) - arborAmplitude);
+      return tilt >= Math.PI / 2 ? loopTopRadius : Math.min(loopTopRadius, loopFloor / Math.cos(tilt));
+    };
+    const geometry = parametricSolid(4, 36 + loopReturnSegments, (u, v, w) => {
+      let delta, helixDelta, outer;
+      if (v <= workingFraction) {
+        delta = deltaMin + workingSpan * (v / workingFraction);
+        helixDelta = delta;
+        outer = palletReach;
+      } else {
+        const s = (v - workingFraction) / (1 - workingFraction);
+        delta = deltaMax + returnSpan * s;
+        helixDelta = deltaMax + (deltaMin - deltaMax) * smooth(s);
+        // Past the recoil end the loop leaves the working radius over a short
+        // arc; at the release edge it steps up at once, clear of the escaping
+        // tooth corner.
+        const recoilArc = side > 0 ? s * returnSpan : (1 - s) * returnSpan;
+        const releaseArc = side > 0 ? (1 - s) * returnSpan : s * returnSpan;
+        const blend = releaseArc < loopGap * 2 ? 1 : Math.min(1, recoilArc / loopBlendArc);
+        outer = THREE.MathUtils.lerp(palletReach, clearOuter(delta), smooth(blend));
+      }
+      const rho = Math.max(loopInnerLimit, outer - loopWireWidth) + (outer - Math.max(loopInnerLimit, outer - loopWireWidth)) * u;
+      const x = center + side * helixPitch * helixDelta - palletClearance - w * palletThickness;
       return new THREE.Vector3(x, -rho * Math.cos(delta), rho * Math.sin(delta));
     });
     const mesh = new THREE.Mesh(geometry, brass);
@@ -412,7 +454,7 @@ function gearedBalanceVergeEscapement(movement) {
   };
   root.userData.reconstruction = {
     drawn: 'balance C, vertical staff and pinion, 26-style crown wheel on a horizontal arbor, two tilted loops on that arbor over a face-on saw-tooth wheel, arrow rising on the wheel’s right',
-    inferred: 'the loops are opposite-handed helical pallets pushed by the top teeth and released by swinging out of the wheel plane; tooth counts 20/30/12, helix pitch, swing and drop schedule; the escape wheel sits 0.25 lower than drawn to clear the arbor',
+    inferred: 'the loops are opposite-handed helical pallets pushed by the top teeth and released by swinging out of the wheel plane; tooth counts 20/30/12, helix pitch, swing and drop schedule; each loop is a flat wire band whose working arc is the helical face and whose return over the arbor is shaped only to clear the teeth',
   };
   update(0);
   markShadows(root);

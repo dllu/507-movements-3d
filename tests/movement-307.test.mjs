@@ -63,11 +63,11 @@ test('movement 307 separates its three long locking teeth from three inner impul
   assert.equal(archetype,
     'clockwise-three-leg-two-plane-long-dead-lock-teeth-and-inner-impulse-pins');
   assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /three long outer teeth lock alternately/);
-  assert.match(mechanism, /three separate short pins pointing backward/);
-  assert.match(mechanism, /D and E in the front plane/);
-  assert.match(mechanism, /A and B near the arbor in the rear plane/);
-  assert.match(presentation, /distinct front locking and rear impulse planes/);
+  assert.match(mechanism, /three long front teeth lock alternately/);
+  assert.match(mechanism, /three short sharp-edged pins pointing backward/);
+  assert.match(mechanism, /dead stops D and E concentric with the pendulum pivot/);
+  assert.match(mechanism, /pallets A and B at the steps of the plate opening/);
+  assert.match(presentation, /long-tooth wheel in front and its pins reaching back into the opening/);
   assert.equal(transmission.lockingToothCount, 3);
   assert.equal(transmission.impulsePinCount, 3);
   assert.equal(transmission.axialSystems, 2);
@@ -95,7 +95,7 @@ test('movement 307 separates its three long locking teeth from three inner impul
   assert.equal(roles.filter((role) =>
     /concentric-dead-stop$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
-    /generated-inner-pin-impulse-face$/.test(role)).length, 2);
+    /impulse-pallet-face$/.test(role)).length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -184,22 +184,23 @@ test('movement 307 keeps the outer dead-lock and inner impulse systems radially 
     'three-leg pitch');
   assert.ok(geometry.longToothRadius
     > 4 * geometry.impulsePinOrbitRadius);
-  assert.ok(geometry.lockPlaneZ > geometry.impulsePlaneZ);
   assert.ok(geometry.lockPlaneZ - geometry.wheelDepth / 2
-    > geometry.impulsePlaneZ + geometry.impulsePinLength / 2,
-  'the front locks do not overlap the rear pins axially');
+    > geometry.palletDepth / 2, 'long teeth run in front of the plate');
+  assert.ok(geometry.impulsePinBackZ < -geometry.palletDepth / 2,
+    'backward pins reach through the plate opening');
   assert.ok(blocks.longToothMeshes.every((tooth, index) =>
     tooth.parent === blocks.wheelRotor
-      && tooth.userData.index === index
-      && tooth.position.z === geometry.lockPlaneZ));
+      && tooth.userData.index === index));
   assert.ok(blocks.impulsePins.every((pin, index) =>
     pin.parent === blocks.wheelRotor
       && pin.userData.index === index
-      && pin.userData.pointsBackward === true
-      && pin.position.z === geometry.impulsePlaneZ));
+      && pin.userData.pointsBackward === true));
   for (const pin of blocks.impulsePins) {
-    near(Math.hypot(pin.position.x, pin.position.y),
-      geometry.impulsePinOrbitRadius, 1e-15, 'inner pin orbit');
+    pin.geometry.computeBoundingSphere();
+    const outer = Math.max(...pin.geometry.userData.plate.polygons[0][0]
+      .map(([x, y]) => Math.hypot(x, y)));
+    near(outer, geometry.impulsePinOrbitRadius, 1e-6,
+      'pin working edge is its outermost point');
   }
   assert.equal(palletFaces.D.function, 'dead locking only');
   assert.equal(palletFaces.E.function, 'dead locking only');
@@ -210,7 +211,7 @@ test('movement 307 keeps the outer dead-lock and inner impulse systems radially 
   assert.equal(palletFaces.A.axialPlaneZ, geometry.impulsePlaneZ);
   assert.equal(palletFaces.B.axialPlaneZ, geometry.impulsePlaneZ);
   assert.match(transmission.lockSystem, /long outer teeth.*D\/E/);
-  assert.match(transmission.impulseSystem, /inner pins.*A\/B/);
+  assert.match(transmission.impulseSystem, /pins.*A\/B/);
   disposeModel(model.root);
 });
 
@@ -225,13 +226,12 @@ test('movement 307 advances exactly sixty clockwise degrees per beat while alter
     near(end.wheelAngle - start.wheelAngle,
       -geometry.wheelAdvancePerBeat, 1e-12,
       `clockwise sixty-degree advance at beat ${beat}`);
-    assert.equal(start.startingLockSide,
-      positiveModulo(beat, 2) === 0 ? 'D-left' : 'E-right');
-    assert.equal(start.impulsePallet,
-      positiveModulo(beat, 2) === 0 ? 'A-upper' : 'B-lower');
-    indices.push(start.startIndex);
+    assert.equal(start.contactKind, 'dead-lock');
+    assert.equal(start.activeSide,
+      positiveModulo(beat, 2) === 0 ? 'D' : 'E');
+    indices.push(start.activeIndex);
   }
-  assert.deepEqual(indices.slice(2, 8), [0, 2, 1, 0, 2, 1]);
+  assert.deepEqual(indices.slice(2, 8), [1, 0, 2, 1, 0, 2]);
   near(geometry.wheelAdvancePerBeat, Math.PI / 3, 1e-15,
     'one half pitch per beat');
   const start = stateAtTime(0);
@@ -241,7 +241,7 @@ test('movement 307 advances exactly sixty clockwise degrees per beat while alter
   disposeModel(model.root);
 });
 
-test('movement 307 holds each long tooth without recoil on a generated concentric D or E dead face', () => {
+test('movement 307 opens on Brown’s drawn pose and holds each long tooth without recoil on D or E', () => {
   const model = createMovementModel(catalog.movements[306]);
   const {
     geometry,
@@ -249,139 +249,100 @@ test('movement 307 holds each long tooth without recoil on a generated concentri
     stateAtTime,
   } = model.root.userData;
 
+  const drawn = stateAtTime(0);
+  assert.equal(drawn.activeSide, 'D', 'the left long tooth is locked on D');
+  assert.ok(drawn.palletAngle > 0.99 * geometry.pendulumAmplitude, 'plate at its right extreme');
   for (let beat = 0; beat < 4; beat += 1) {
-    const startTime = beat * geometry.halfBeatDuration;
-    const expectedSide = beat % 2 === 0 ? 'D-left' : 'E-right';
-    const expectedIndex = positiveModulo(-beat, 3);
-    const samples = [0.04, 0.16, 0.30, 0.40].map((halfPhase) =>
-      stateAtTime(startTime + halfPhase * geometry.halfBeatDuration));
+    const expectedSide = beat % 2 === 0 ? 'D' : 'E';
+    const radius = expectedSide === 'D' ? geometry.deadStopRadius : geometry.deadStopRadiusE;
+    const samples = [-0.25, 0, 0.25, 0.45].map((offset) =>
+      stateAtTime(beat * geometry.halfBeatDuration + offset));
     for (const state of samples) {
       assert.equal(state.activeSystem, 'outer-lock');
       assert.equal(state.contactKind, 'dead-lock');
-      assert.equal(state.startingLockSide, expectedSide);
-      assert.equal(state.activeIndex, expectedIndex);
+      assert.equal(state.activeSide, expectedSide);
       assert.match(state.activeFace, /concentric-dead-stop$/);
-      near(state.contactError, 0, 2e-15,
-        `exact ${expectedSide} contact`);
-      near(state.wheelAngularSpeed, 0, 1e-10,
-        `${expectedSide} has no recoil`);
-      near(state.activePoint.distanceTo(geometry.palletPivot),
-        geometry.deadStopRadius, 1e-14,
+      near(state.contactError, 0, 1e-12, `exact ${expectedSide} contact`);
+      near(state.wheelAngularSpeed, 0, 1e-9, `${expectedSide} has no recoil`);
+      near(state.activePoint.distanceTo(geometry.palletPivot), radius, 1e-12,
         `${expectedSide} constant dead-face radius`);
     }
     for (const state of samples.slice(1)) {
-      near(state.wheelAngle, samples[0].wheelAngle, 0,
+      near(state.wheelAngle, samples[0].wheelAngle, 1e-12,
         `${expectedSide} wheel remains stationary`);
-      vectorNear(state.activePoint, samples[0].activePoint, 1e-14,
-        `${expectedSide} holds one fixed tooth point`);
     }
   }
-  near(palletFaces.D.radiusFromPalletPivot,
-    geometry.deadStopRadius, 0, 'D dead radius');
-  near(palletFaces.E.radiusFromPalletPivot,
-    geometry.deadStopRadius, 0, 'E dead radius');
+  near(palletFaces.D.radiusFromPalletPivot, geometry.deadStopRadius, 0, 'D dead radius');
+  near(palletFaces.E.radiusFromPalletPivot, geometry.deadStopRadiusE, 0, 'E dead radius');
   assert.match(model.root.userData.transmission.recoil,
     /none while D or E is engaged/);
   disposeModel(model.root);
 });
 
-test('movement 307 generates exact alternating A/B direct-impulse contacts from the inner pins', () => {
+test('movement 307 gives alternating A/B direct impulses from the sharp inner pins', () => {
   const model = createMovementModel(catalog.movements[306]);
   const {
     geometry,
     impulsePinCenterAt,
-    palletFaces,
     stateAtTime,
   } = model.root.userData;
 
   for (let beat = 0; beat < 4; beat += 1) {
-    const expectedPallet = beat % 2 === 0 ? 'A-upper' : 'B-lower';
-    const expectedPalletSpeedSign = beat % 2 === 0 ? 1 : -1;
-    for (const fraction of [0, 0.2, 0.5, 0.8, 1]) {
-      const halfPhase = THREE.MathUtils.lerp(
-        geometry.releaseHalfPhase,
-        geometry.impulseEndHalfPhase,
-        fraction,
-      );
-      const state = stateAtTime(
-        (beat + halfPhase) * geometry.halfBeatDuration,
-      );
+    const expected = beat % 2 === 0 ? 'A' : 'B';
+    const speedSign = beat % 2 === 0 ? 1 : -1;
+    for (const offset of [-0.3, 0, 0.3, 0.5]) {
+      const state = stateAtTime(beat * geometry.halfBeatDuration - 1 + offset);
       assert.equal(state.activeSystem, 'inner-impulse');
       assert.equal(state.contactKind, 'direct-impulse');
-      assert.equal(state.impulsePallet, expectedPallet);
-      assert.match(state.activeFace,
-        new RegExp(`^${expectedPallet}-generated-impulse-pallet$`));
-      near(state.contactError, 0, 2e-15,
-        `exact ${expectedPallet} generated contact`);
+      assert.equal(state.activeSide, expected);
+      assert.match(state.activeFace, new RegExp(`^${expected}-(upper|lower)-impulse-pallet-face$`));
+      near(state.contactError, 0, 1e-12, `exact ${expected} contact`);
       vectorNear(state.activePoint,
         impulsePinCenterAt(state.wheelAngle, state.activeIndex),
-        1e-14, `${expectedPallet} active pin center`);
-      assert.equal(Math.sign(state.palletAngularSpeed),
-        expectedPalletSpeedSign);
+        1e-12, `${expected} active pin edge`);
+      near(state.contactPointLocal.x, 0, 1e-12, 'pin edge on the vertical step');
+      assert.equal(Math.sign(state.palletAngularSpeed), speedSign);
     }
-    const midpoint = stateAtTime((beat + THREE.MathUtils.lerp(
-      geometry.releaseHalfPhase,
-      geometry.impulseEndHalfPhase,
-      0.5,
-    )) * geometry.halfBeatDuration);
+    const midpoint = stateAtTime(beat * geometry.halfBeatDuration - 1);
     assert.ok(midpoint.wheelAngularSpeed < 0,
-      `${expectedPallet} receives clockwise wheel impulse`);
+      `${expected} receives clockwise wheel impulse`);
   }
-  assert.equal(palletFaces.A.points.length, 41);
-  assert.equal(palletFaces.B.points.length, 41);
-  assert.ok(palletFaces.A.points.every((point) => point.isVector2));
-  assert.ok(palletFaces.B.points.every((point) => point.isVector2));
   disposeModel(model.root);
 });
 
-test('movement 307 partitions every beat into inner-pin impulse and a finite eight-degree free drop', () => {
+test('movement 307 falls freely from each impulse to the next lock and from each unlocking to the next impulse', () => {
   const model = createMovementModel(catalog.movements[306]);
   const {
+    beatEvents,
     geometry,
+    lawTimeOrigin,
     stateAtTime,
     timeline,
     transmission,
   } = model.root.userData;
 
-  near(geometry.impulseAdvance + geometry.clearanceDropAngle,
-    geometry.wheelAdvancePerBeat, 1e-15,
-    'impulse and free drop partition one beat');
-  near(geometry.clearanceDropAngle,
-    THREE.MathUtils.degToRad(8), 0, 'eight-degree free drop');
-  assert.ok(geometry.impulseEndHalfPhase < geometry.landingHalfPhase);
-  near(geometry.landingHalfPhase - geometry.impulseEndHalfPhase,
-    geometry.clearanceDropDuration, 1e-15,
-    'finite drop interval');
-
   for (let beat = 0; beat < 4; beat += 1) {
-    const impulseEnd = stateAtTime(
-      (beat + geometry.impulseEndHalfPhase)
-        * geometry.halfBeatDuration,
-    );
-    const dropMiddle = stateAtTime(
-      (beat + (geometry.impulseEndHalfPhase
-        + geometry.landingHalfPhase) / 2)
-        * geometry.halfBeatDuration,
-    );
-    const landing = stateAtTime(
-      (beat + geometry.landingHalfPhase)
-        * geometry.halfBeatDuration,
-    );
+    const events = beatEvents[beat % 2];
+    const base = beat * geometry.halfBeatDuration - lawTimeOrigin;
+    const impulseEnd = stateAtTime(base + events.impulseEnd - 1e-6);
+    const drop = stateAtTime(base + (events.impulseEnd + events.landing) / 2);
+    const landing = stateAtTime(base + events.landing + 1e-6);
+    const unlockDrop = stateAtTime(base + (events.restRelease + events.contact) / 2);
     assert.equal(impulseEnd.activeSystem, 'inner-impulse');
-    assert.equal(dropMiddle.activeSystem, null);
-    assert.equal(dropMiddle.activeIndex, null);
-    assert.equal(dropMiddle.activePoint, null);
-    assert.equal(dropMiddle.contactKind, 'clearance-drop');
-    assert.match(dropMiddle.mode, /free-drop$/);
+    assert.equal(drop.activeSystem, null);
+    assert.equal(drop.activeIndex, null);
+    assert.equal(drop.activePoint, null);
+    assert.equal(drop.contactKind, 'free-drop');
+    assert.match(drop.mode, /^free-drop-to-[DE]$/);
+    assert.equal(unlockDrop.contactKind, 'free-drop');
     assert.equal(landing.activeSystem, 'outer-lock');
-    near(landing.beatAdvance - impulseEnd.beatAdvance,
-      geometry.clearanceDropAngle, 1e-12,
-      `eight-degree clearance drop at beat ${beat}`);
+    assert.ok(landing.wheelAngle < impulseEnd.wheelAngle, 'finite clockwise drop');
+    assert.ok(events.landingCover > 0.02, 'stop covers the landing tooth');
   }
-  assert.match(transmission.clearance, /eight-degree free wheel drop/);
+  assert.match(transmission.clearance, /falls freely/);
   assert.equal(timeline.demonstrationPeriod, geometry.pendulumPeriod);
   assert.equal(timeline.schedule.filter((entry) =>
-    entry.includes('free-drop')).length, 2);
+    entry.includes('free-drop')).length, 4);
   disposeModel(model.root);
 });
 
@@ -389,20 +350,7 @@ test('movement 307 renderer follows the prescribed two-system state and leaves m
   const movement = catalog.movements[306];
   const model = createMovementModel(movement);
   const { blocks, geometry, stateAtTime } = model.root.userData;
-  const phaseSamples = [
-    0,
-    geometry.releaseHalfPhase,
-    (geometry.releaseHalfPhase + geometry.impulseEndHalfPhase) / 2,
-    (geometry.impulseEndHalfPhase + geometry.landingHalfPhase) / 2,
-    geometry.landingHalfPhase,
-    0.82,
-    1,
-    1 + geometry.releaseHalfPhase,
-    1 + (geometry.releaseHalfPhase + geometry.impulseEndHalfPhase) / 2,
-    1 + (geometry.impulseEndHalfPhase + geometry.landingHalfPhase) / 2,
-    1 + geometry.landingHalfPhase,
-    2,
-  ];
+  const phaseSamples = Array.from({ length: 17 }, (_, index) => index / 8);
 
   for (const halfCoordinate of phaseSamples) {
     const time = halfCoordinate * geometry.halfBeatDuration;

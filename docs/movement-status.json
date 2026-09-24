@@ -6840,22 +6840,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Re-inspected (default, oblique, near-tooth crop) after cutting the teeth from the curved rim and removing a mistaken mirror; tooth slant and cup match the plate."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: flush toothed plate on a shallow band, plain flags A on a round S falling right; viewed from slightly higher than Brown."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "513-phase verge audit and pass-51 relative-motion screen (0.01 spacing, 129 poses): tangent working contact only. Not a continuous proof."
       },
-      "flaws": "Crown teeth taller than drawn (about 0.45 vs 0.28 of the radius); plain pallets instead of hooked flags A. Prescribed verge motion with ideal drops; impact and friction unsolved.",
+      "flaws": "Flags A are about 0.23 of the radius long against Brown's 0.44 (the verge law fixes their length); the view looks down more steeply than the plate. Prescribed verge motion with ideal drops; impact and friction unsolved.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6955,21 +6956,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate after removing the motion indices; the star reads larger relative to the anchor than drawn."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/seven-tooth-238-loaded-branch-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. This verifies the selected B finite geometric impulse branch, not a freely running escapement. The oscillator, dwell and drops remain prescribed, as do impacts at faceted joints and capture. Friction, preload, energy transfer and sustained oscillation have not been simulated. C retains the prior supporting-tip geometry with approximately 0.0005 clearance from its nominal…"
+        "status": "known",
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the pallet hub sits 0.04 inside its fixed journal at A and the anchor body 0.01 against it; B contact is tangent."
       },
-      "flaws": "Actual B impulse corrected; oscillator/drop/impacts prescribed and C support retains small clearance rather than solved force transfer.",
+      "flaws": "Star wheel about 20% larger relative to the anchor than Brown draws; the bearing fit at A overlaps by 0.04. Oscillator/drop/impacts prescribed and C support retains small clearance rather than solved force transfer.",
       "references": [
         "docs/seven-tooth-238-loaded-branch-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8678,23 +8680,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/geared-balance-verge-298-review.md",
-        "note": "Default and oblique production views inspected beside the plate after the geared-balance rebuild."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: wire-loop pallets on the verge rod; escape-wheel height re-measured against the plate."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/geared-balance-verge-298-review.md",
-        "note": "Relative-motion screen at 0.015 spacing over 257 phases and a 97-phase focused test: escape wheel, pallet arbor and balance staff clear."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen at 129 and 513 samples: no solid pairs."
       },
-      "flaws": "Helical pallets, tooth counts and drop schedule inferred; loops read as small blades, not rings; escape wheel 0.25 lower than drawn; crown teeth carry 0.03 backlash. Balance, impulse and drops prescribed.",
+      "flaws": "Helical pallets, tooth counts and drop schedule inferred; each loop is about 0.5 long along the arbor against Brown's 0.35 (set by the helix pitch); crown teeth carry 0.03 backlash. Balance, impulse and drops prescribed.",
       "references": [
         "docs/geared-balance-verge-298-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8708,22 +8711,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default/oblique production views inspected beside the edge-on engraving after the saw-tooth and pallet-side correction."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: near-edge-on close view along the verge; the crop overflows the frame and the blade pallets read small, so it only loosely reproduces Brown's two-tooth section."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "513-phase verge audit: tangent working contact only."
       },
-      "flaws": "Oblique full crown does not reproduce Brown’s edge-on two-tooth section. Prescribed foliot motion with ideal drops; impact and friction unsolved.",
+      "flaws": "The close crop overflows the view and does not yet reproduce Brown's arc of band with two raked teeth and prominent pallets; teeth taller than Brown's so the 45° foliot swing clears them. Prescribed foliot motion with ideal drops; impact and friction unsolved.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8737,23 +8741,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/debaufre-300-301-review.md",
-        "note": "Default and oblique production views inspected beside the plate after the thin hooked-tooth and carved-pallet correction."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: lobed boss, two spokes and long barbed stems; Brown's boss sits above the arbor with the spokes rising to it."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/debaufre-300-301-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases: escape wheels and swept-cut D pallet clear; focused 161-phase test with an uncarved-pallet negative control."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Tip lifts off the carved flange by up to 0.04 late in each impulse (prescribed easing); pallet 0.67 thick vs Brown’s about 0.28; lobed hub boss omitted. Motion prescribed.",
+      "flaws": "Pallet 0.67 thick against Brown's about 0.28 (thickness equals the impulse chord); tip lifts off the carved flange by up to about 0.04 at the end of each impulse; spacer drum reads as a dark disk behind the boss. Motion prescribed.",
       "references": [
         "docs/debaufre-300-301-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8767,23 +8772,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/debaufre-300-301-review.md",
-        "note": "Side-on default view inspected beside the plate: close wheel pair, spacer drum and end-on D pallet."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: side view starting with D level."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/debaufre-300-301-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases: escape wheels and swept-cut D pallet clear; focused 161-phase test with an uncarved-pallet negative control."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "D pallet tilted −42° at time 0 instead of level; spacer drum radius read from one line; perspective camera approximates the plate. Same impulse lift-off and pallet thickness as 300.",
+      "flaws": "Frames the whole wheel where Brown breaks it off above the arbor; spacer drum radius read from one line. Same impulse lift-off and pallet thickness as 300.",
       "references": [
         "docs/debaufre-300-301-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8797,22 +8803,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default view and crown-tooth crop inspected beside the engraving; re-inspected after the cup crown change (no flange below the teeth)."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: single brass blades; the wheel is seen obliquely from above where Brown draws a flat elevation, so the teeth read as castellations."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "513-phase dense rendered-surface audit of every visible verge mesh against every visible crown-rotor mesh: only the working tip touches its face (< 1e-5). Crown arbor, frame and train are outside this scope."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Verge audit: tangent working contact only."
       },
-      "flaws": "Pallets A/B are small blocks, not drawn blades; lower weight arrangement inferred. Prescribed balance motion; lower pinion outside the audit.",
+      "flaws": "View is oblique rather than Brown's flat elevation; blades are about 0.5 long against Brown's 0.72 (set by the verge law) and one hides behind the collar at t=0; lower weight arrangement inferred. Prescribed balance motion; lower pinion outside the audit.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8914,22 +8921,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: stepped S-shaped opening, narrow bent legs and pendulum strips as drawn."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/three-leg-306-307-contact-review.md",
-        "note": "Working geometry unchanged; actual tooth/plate witness is -0.125 at t=.92, with earlier larger penetration retained as historical evidence. Diagnostic tip spheres hidden."
+        "status": "sampled-clear",
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses) and a 257-phase test with a negative control: working contact only (0.149 intrusion fixed by a face-driven wheel law)."
       },
-      "flaws": "Undrawn frame bridge and strut are removed by source presentation. Tooth/plate intrusion remains (earlier 0.149; current witness 0.125). Broad arms differ from source; aperture and motion law need reconstruction.",
+      "flaws": "Pendulum prescribed with ideal drops; forces not solved; escape angle 0.68° rather than Beckett's 1°; opening proportions reconstructed.",
       "references": [
         "docs/pin-escapement-family-review.md",
         "docs/three-leg-306-307-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8943,22 +8951,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Default capture inspected beside the plate: broken-off neck, slot, spears and stops D, E as drawn at Brown's locked pose."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/three-leg-306-307-contact-review.md",
-        "note": "Concentric dead rests sampled clear with resisting normals; actual release intrusion witness .04177 and inner-pin/backing .06908 remain. Not a working escapement qualification."
+        "status": "sampled-clear",
+        "evidence": "docs/lane3-escapements-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): working contact only (was 0.070 pallet/pins, 0.058 stop/tooth, 0.020 arbor/pallet)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Release intrusion .04177 and pin/backing .06908 persist; hooked tips and rounded aperture differ from source. Contact-selected timing/sharp rear drivers unresolved.",
+      "flaws": "Pendulum prescribed with ideal drops; the slot sits lower than drawn, spears are broad near the hub, and pins A and B are mostly hidden behind the hub.",
       "references": [
         "docs/pin-escapement-family-review.md",
         "docs/three-leg-306-307-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane3-escapements-review.md"
       ],
       "mujoco": {
         "mode": "none",

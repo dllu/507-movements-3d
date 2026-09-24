@@ -118,9 +118,14 @@ export default {
     note: 'Face view of the lantern wheel with its roller stop and latch; no frame is drawn.',
   },
   234: {
-    rotate: [-Math.PI / 2, 0, 0],
-    camera: [2.2, 4.6, 9],
-    note: 'Oblique view from above: crown wheel horizontal with its arbor hanging down and verge S across the top; no frame or bearings are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
+    rotate: [-Math.PI / 2, 0, Math.PI],
+    camera: [6.2, 4.9, 6.9],
+    remove: ['verge-end-journal', 'verge-rotation-witness', 'crown-wheel-rotation-witness'],
+    note: 'Oblique view from above, verge S falling to the right at about 22° across the wheel: a flush toothed plate on a shallow band with its arbor hanging down, and two plain flags A on the round spindle; no frame, bearings, journal caps or witness marks are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
+  },
+  238: {
+    remove: ['white-escape-wheel-rotation-index', 'white-pallet-carrier-motion-index'],
+    note: 'Face view of the seven-point wheel D in the notch of the anchor, B below it and C at the hooked tip, pivoted at A; no witness marks are drawn.',
   },
   239: {
     remove: ['fixed-spur-stop-support-rail', 'fixed-spur-gear-bearing-post', '(?:left|right|output)-journal-support-post'],
@@ -191,17 +196,31 @@ export default {
     remove: ['fixed-lantern-escapement-base'],
     note: 'Face view of the pin wheel and pallets; no base or bearing post is drawn.',
   },
+  299: {
+    rotate: [Math.PI / 2, Math.PI / 2, 0],
+    camera: [0, 0.035, -1],
+    remove: ['weighted-horizontal-foliot-regulator'],
+    note: 'Close, nearly edge-on detail: the crown band upright under its teeth and the verge journal end-on with its two pallets radiating about 100° apart. Brown crops the foliot out of the detail, so it is not shown.',
+  },
+  300: {
+    remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],
+    note: 'Front elevation: the barbed wheel with its lobed boss and two spokes over the edge-on pallet on the horizontal balance staff; no witness marks are drawn.',
+  },
+  301: {
+    remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],
+    note: 'Side elevation along the balance staff: the two wheels edge-on on their common arbor and the level D pallet below with the staff end-on; no witness marks are drawn.',
+  },
   305: {
     remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
     note: 'The pendulum pallet plate and single-pin disc; no clock frame or brackets are drawn.',
   },
   306: {
     remove: ['rear-frame-cross-bridge', 'bored-back-strut-joining-wheel-arbor-to-frame-bridge'],
-    note: 'The three-legged wheel inside the pendulum pallet plate; no frame bridge or strut is drawn.',
+    note: 'The three bent legs inside the stepped opening of the pendulum plate, which is screwed to the two pendulum-rod strips; no frame bridge or strut is drawn.',
   },
   307: {
-    remove: ['rear-clock-frame-upright', 'pendulum-pallet-pivot-bracket', 'three-leg-wheel-arbor-bracket'],
-    note: 'The long-tooth pallet plate and the three-leg wheel; no clock frame or brackets are drawn.',
+    remove: ['rear-clock-frame-upright', 'three-leg-wheel-arbor-bracket'],
+    note: 'The bottle plate, broken off at its neck, with its stepped slot, pallets A/B and stops D/E, and the long-tooth wheel with its backward pins; no clock frame or bracket is drawn.',
   },
   308: {
     remove: ['clock-frame-upright', 'sixty-pin-wheel-bearing-bracket', 'pendulum-crutch-bearing-bracket', 'Q-detent-bearing-bracket'],

@@ -27,9 +27,11 @@ test('305 pin, arbor, bored disk and suspension clear their independent neighbou
 test('306/307 have bored moving hubs and connected pin/arbor supports',()=>{
  const [m306,m307]=models.slice(1),b306=m306.root.userData.blocks,b307=m307.root.userData.blocks;
  for(let i=0;i<=64;i++){m306.update(i/16);m307.update(i/16);m306.root.updateMatrixWorld(true);m307.root.updateMatrixWorld(true);
-  for(const[a,c]of[[b306.fixedArbor,b306.wheelHub],[b306.fixedArbor,b306.arborSupport],...b306.screwMeshes.map(s=>[s,b306.plate]),[role(m307.root,'three-leg-wheel-arbor'),b307.wheelHub],[role(m307.root,'pendulum-pallet-pivot'),b307.pivotEye],[role(m307.root,'pendulum-pallet-pivot'),b307.plate],[b307.impulsePinCarrier,b307.plate],[b307.impulsePinCarrier,b307.palletA],[b307.impulsePinCarrier,b307.palletB]])assert.ok(clearance(a,c)>-2e-6,`${a.userData.role}/${c.userData.role}`);
+  for(const[a,c]of[[b306.fixedArbor,b306.wheelHub],[b306.fixedArbor,b306.arborSupport],...b306.screwMeshes.map(s=>[s,b306.plate]),[role(m307.root,'three-leg-wheel-arbor'),b307.wheelHub],[role(m307.root,'three-leg-wheel-arbor'),b307.plate],[role(m307.root,'three-leg-wheel-arbor'),b307.palletA],[role(m307.root,'three-leg-wheel-arbor'),b307.palletB],[b307.wheelHub,b307.plate],...b307.longToothMeshes.map(t=>[t,b307.plate])])assert.ok(clearance(a,c)>-2e-6,`${a.userData.role}/${c.userData.role}`);
  }
- m307.update(0);m307.root.updateMatrixWorld(true);for(const pin of b307.impulsePins){const point=pin.getWorldPosition(new T.Vector3());point.z=-.14;assert.ok(insideWorld(pin,point)&&insideWorld(b307.impulsePinCarrier,point),'rear pin has a finite carrier connection');}
+ // Each backward pin is set into its long tooth in the front (locking) plane.
+ m307.update(0);m307.root.updateMatrixWorld(true);const g307=m307.root.userData.geometry;
+ for(const pin of b307.impulsePins){const i=pin.userData.index,a=i*g307.toothPitch+g307.impulsePinPhaseOffset,point=b307.wheelRotor.localToWorld(new T.Vector3((g307.impulsePinOrbitRadius-.06)*Math.cos(a)-.05*Math.sin(a),(g307.impulsePinOrbitRadius-.06)*Math.sin(a)+.05*Math.cos(a),g307.lockPlaneZ-.02));assert.ok(insideWorld(pin,point)&&insideWorld(b307.longToothMeshes[i],point),'backward pin is set into its long tooth');}
  const bridge=role(m306.root,'rear-frame-cross-bridge'),point=new T.Vector3(0,1.36,-.47);assert.ok(insideWorld(bridge,point)&&insideWorld(b306.arborSupport,point),'arbor support meets the frame bridge');
 });
 test('305 pin carrier and pallet stand-offs have finite attachment overlap',()=>{

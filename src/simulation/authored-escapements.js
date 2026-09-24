@@ -139,6 +139,7 @@ function makeCrownEscapeWheel({
   bodyDepth,
   bodyRadius,
   contactRadius,
+  floorAtToothBase = false,
   mountPhase,
   toothBaseZ,
   toothCount,
@@ -185,21 +186,41 @@ function makeCrownEscapeWheel({
     wheelMaterial,
   );
   floor.rotation.x = Math.PI / 2;
-  floor.position.z = toothBaseZ - bodyDepth + floorThickness / 2;
+  // Brown's 234 shows the plate flush with the top of the band, where the
+  // teeth start, pierced only by the arbor; the others close the cup below.
+  const floorTopZ = floorAtToothBase
+    ? toothBaseZ
+    : toothBaseZ - bodyDepth + floorThickness;
+  floor.position.z = floorTopZ - floorThickness / 2;
   floor.userData.role = 'crown-wheel-floor';
   const body = new THREE.Group();
   body.add(band, floor);
   body.userData.role = 'crown-wheel-body';
   rotor.add(body);
 
+  // With a flush plate the arbor only shows as its bore: the hub stays under
+  // the plate and a dark disk stands for the hole drawn at its centre.
+  const hubDepth = floorAtToothBase ? bodyDepth * 0.9 : bodyDepth * 1.9;
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, bodyDepth * 1.9, 32),
+    new THREE.CylinderGeometry(0.28, 0.28, hubDepth, 32),
     darkMaterial,
   );
   hub.rotation.x = Math.PI / 2;
-  hub.position.z = toothBaseZ - bodyDepth * 0.18;
+  hub.position.z = floorAtToothBase
+    ? floorTopZ - floorThickness - hubDepth / 2 + 0.002
+    : toothBaseZ - bodyDepth * 0.18;
   hub.userData.role = 'crown-wheel-hub';
   rotor.add(hub);
+  if (floorAtToothBase) {
+    const bore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.17, 0.17, 0.012, 32),
+      darkMaterial,
+    );
+    bore.rotation.x = Math.PI / 2;
+    bore.position.z = floorTopZ + 0.004;
+    bore.userData.role = 'crown-wheel-arbor-bore';
+    rotor.add(bore);
+  }
 
   // Saw teeth cut from the rim: an axial leading face in the counterclockwise
   // running direction and a helically inclined back, as in Brown's crown
@@ -240,7 +261,7 @@ function makeCrownEscapeWheel({
     new THREE.BoxGeometry(innerRadius * 0.5, 0.075, 0.035),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  indicator.position.set(innerRadius * 0.45, 0, toothBaseZ - bodyDepth + floorThickness + 0.0175);
+  indicator.position.set(innerRadius * 0.45, 0, floorTopZ + 0.0175);
   indicator.userData.role = 'crown-wheel-rotation-witness';
   rotor.add(indicator);
 
@@ -262,7 +283,13 @@ function vergeAndCrownWheelEscapement(
   movement,
   {
     bodyDepth = 0.34,
+    flagPallets = false,
+    floorAtToothBase = false,
     includeFrame = true,
+    palletWidth = 0.5,
+    roundSpindle = false,
+    spindleLength = 7.25,
+    toothRadialDepth = 0.34,
     toothTipZ = 1,
   } = {},
 ) {
@@ -276,7 +303,6 @@ function vergeAndCrownWheelEscapement(
   const contactRadius = 2.2;
   const bodyRadius = 2.52;
   const toothBaseZ = 0;
-  const toothRadialDepth = 0.34;
   const palletIncludedAngle = THREE.MathUtils.degToRad(100);
   const palletHalfAngle = palletIncludedAngle / 2;
   const vergeAmplitude = THREE.MathUtils.degToRad(25);
@@ -348,13 +374,13 @@ function vergeAndCrownWheelEscapement(
   const palletCenterX = contactRadius * (
     Math.cos(dropContactAngle) + Math.cos(releaseContactAngle)
   ) / 2;
-  const palletWidth = 0.5;
   const palletThickness = 0.105;
 
   const crownWheel = makeCrownEscapeWheel({
     bodyDepth,
     bodyRadius,
     contactRadius,
+    floorAtToothBase,
     mountPhase,
     toothBaseZ,
     toothCount,
@@ -363,8 +389,9 @@ function vergeAndCrownWheelEscapement(
   });
   root.add(crownWheel);
 
-  const crownShaft = makeShaft({ length: 3.25, radius: 0.14 });
-  crownShaft.position.z = -1.3;
+  const crownShaft = makeShaft({ length: 3.25, radius: floorAtToothBase ? 0.2 : 0.14 });
+  // A flush plate hides the arbor end, so the shaft stops under the plate.
+  crownShaft.position.z = floorAtToothBase ? -0.1 - 3.25 / 2 : -1.3;
   crownShaft.userData.role = 'vertical-crown-wheel-arbor';
   root.add(crownShaft);
 
@@ -383,13 +410,17 @@ function vergeAndCrownWheelEscapement(
     metalness: 0.25,
     roughness: 0.46,
   });
+  // Brown's 234 draws S as a plain round rod.
   const spindle = new THREE.Mesh(
-    new THREE.BoxGeometry(7.25, 0.14, 0.13),
+    roundSpindle
+      ? new THREE.CylinderGeometry(0.075, 0.075, spindleLength, 24)
+      : new THREE.BoxGeometry(spindleLength, 0.14, 0.13),
     vergeMaterial,
   );
+  if (roundSpindle) spindle.rotation.z = Math.PI / 2;
   spindle.userData.role = 'oscillating-spindle-S';
   verge.add(spindle);
-  for (const x of [-3.56, 3.56]) {
+  for (const x of [-(spindleLength / 2 - 0.065), spindleLength / 2 - 0.065]) {
     const endCap = new THREE.Mesh(
       new THREE.CylinderGeometry(0.12, 0.12, 0.22, 24),
       darkMaterial,
@@ -417,11 +448,15 @@ function vergeAndCrownWheelEscapement(
     // local -y, so each pallet body lies on the side away from the teeth.
     const bodySide = side === 'right' ? 1 : -1;
     pallet.userData.bodySide = bodySide;
+    // Brown's flags A are plain plates hung from the spindle: the neck then
+    // continues the face at its full width and thickness.
+    const neckWidth = flagPallets ? palletWidth : palletWidth * 0.62;
+    const neckThickness = flagPallets ? palletThickness : 0.16;
     const neck = new THREE.Mesh(
-      new THREE.BoxGeometry(palletWidth * 0.62, 0.16, palletRootDistance),
-      vergeMaterial,
+      new THREE.BoxGeometry(neckWidth, neckThickness, palletRootDistance),
+      flagPallets ? palletMaterial : vergeMaterial,
     );
-    neck.position.set(x, bodySide * 0.08, -palletRootDistance / 2);
+    neck.position.set(x, bodySide * neckThickness / 2, -palletRootDistance / 2);
     neck.userData.role = `${side}-pallet-neck`;
     pallet.add(neck);
     const face = new THREE.Mesh(
@@ -450,7 +485,8 @@ function vergeAndCrownWheelEscapement(
       -palletTipDistance + 0.02,
     );
     tipEdge.userData.role = `${side}-pallet-release-edge`;
-    pallet.add(tipEdge);
+    // The flags have no separate dark lip.
+    if (!flagPallets) pallet.add(tipEdge);
     verge.add(pallet);
     return { face, neck, pallet, tipEdge };
   };
@@ -854,9 +890,10 @@ function vergeAndCrownWheelEscapement(
     verge,
     vergeWitness,
   };
+  const fitHalfX = Math.max(3.85, spindleLength / 2 + 0.1);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.85, -2.8, -2.85),
-    new THREE.Vector3(3.85, 2.8, 1.85),
+    new THREE.Vector3(-fitHalfX, -2.8, -2.85),
+    new THREE.Vector3(fitHalfX, 2.8, 1.85),
   );
   root.userData.canonicalTimes = {
     firstFreeDropMidpoint: cyclePeriod * (
@@ -2809,11 +2846,11 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   drivePinion.position.z = -2.72;
   drivePinion.userData.role = 'coaxial-lower-drive-pinion';
 
-  const visualPalletThickness = 0.25;
-  const palletCarrierMaterial = matte(PALETTE.driver, {
-    metalness: 0.1,
-    roughness: 0.6,
-  });
+  // Brown's A and B are plain blades radiating from the collar at C. Each
+  // pallet is one brass blade: the carrier continues the working face at its
+  // own width and thickness up to the arbor, replacing the narrower neck, and
+  // there is no separate dark lip.
+  const visualPalletThickness = 0.15;
   const palletCarriers = [];
   for (const pallet of [
     inheritedBlocks.leftPallet,
@@ -2823,15 +2860,22 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     pallet.face.scale.y = visualPalletThickness
       / inheritedGeometry.palletThickness;
     pallet.face.position.y = bodySide * visualPalletThickness / 2;
-    pallet.neck.scale.y = 1.45;
-    pallet.neck.position.y = bodySide * 0.16 * 1.45 / 2;
-    pallet.tipEdge.scale.y = 1.7;
-    pallet.tipEdge.position.y = bodySide * (visualPalletThickness + 0.02);
+    pallet.neck.visible = false;
+    pallet.tipEdge.visible = false;
+    const rootDistance = -pallet.neck.position.z * 2;
     const carrier = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 0.2, 0.42),
-      palletCarrierMaterial,
+      new THREE.BoxGeometry(
+        inheritedGeometry.palletWidth,
+        visualPalletThickness,
+        rootDistance,
+      ),
+      pallet.face.material,
     );
-    carrier.position.set(pallet.face.position.x, bodySide * 0.125, -0.21);
+    carrier.position.set(
+      pallet.face.position.x,
+      bodySide * visualPalletThickness / 2,
+      -rootDistance / 2,
+    );
     carrier.userData.role = `${pallet.pallet.userData.side}-pallet-carrier-arm`;
     pallet.pallet.add(carrier);
     palletCarriers.push(carrier);
@@ -3253,8 +3297,13 @@ function oldFashionedClockVergeEscapement(movement) {
   // hidden depth relationship is explicit: the vertical verge and its
   // weighted foliot stand at right angles to the horizontal crown-wheel
   // arbor, and only one pallet can meet an axial crown tooth at a time.
+  // Brown's teeth are about 1.4 times as wide at the root as they are tall
+  // (0.6 here); 0.8 is the lowest tip that keeps the 45-degree foliot swing's
+  // dipping pallet clear of the tooth backs. The pallets are plain blades.
   const base = vergeAndCrownWheelEscapement(movement, {
+    flagPallets: true,
     includeFrame: false,
+    toothTipZ: 0.8,
   });
   const root = base.root;
   const blocks = root.userData.blocks;
@@ -3358,8 +3407,10 @@ function oldFashionedClockVergeEscapement(movement) {
     pallet.tipEdge.position.z = -palletReleaseDistance + 0.02;
   }
 
-  const vergeStaffLength = 10.2;
-  const vergeStaffCenter = 0.25;
+  // The staff ends just outside the lower pallet in the journal Brown draws
+  // end-on, and runs up past the upper pallet to the foliot.
+  const vergeStaffLength = 7.35;
+  const vergeStaffCenter = 1.125;
   const vergeStaff = new THREE.Mesh(
     new THREE.CylinderGeometry(0.11, 0.11, vergeStaffLength, 30),
     matte(PALETTE.ink, { metalness: 0.27, roughness: 0.45 }),
@@ -3369,6 +3420,14 @@ function oldFashionedClockVergeEscapement(movement) {
   vergeStaff.userData.axis = X_AXIS.clone();
   vergeStaff.userData.role = 'vertical-clock-verge-staff';
   blocks.verge.add(vergeStaff);
+  const journalCollar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.18, 0.12, 36),
+    matte(PALETTE.driver, { metalness: 0.14, roughness: 0.57 }),
+  );
+  journalCollar.rotation.z = Math.PI / 2;
+  journalCollar.position.x = vergeStaffCenter - vergeStaffLength / 2 + 0.1;
+  journalCollar.userData.role = 'verge-journal-collar';
+  blocks.verge.add(journalCollar);
 
   const foliotPositionOnStaff = 4.65;
   const foliotBarLength = 9.2;
@@ -3429,9 +3488,18 @@ function oldFashionedClockVergeEscapement(movement) {
   foliot.add(foliotIndex);
   blocks.verge.add(foliot);
 
-  // An open iron crown is period-correct and keeps both working pallets
-  // visible from the useful three-quarter camera angle.
-  blocks.crownWheel.userData.body.visible = false;
+  // Brown draws the rim as a solid hatched band under the teeth, so the
+  // crown keeps its band; the open rim and crossing spokes of an iron clock
+  // crown stay inside and under it.
+  // Keep the crown hub inside the cup, below the teeth, so it does not stand
+  // under the verge journal in the edge-on view.
+  blocks.crownWheel.userData.rotor.traverse((object) => {
+    if (object.userData.role !== 'crown-wheel-hub') return;
+    const height = object.geometry.parameters.height;
+    object.position.z = baseGeometry.toothBaseZ - 0.02 - height / 2;
+  });
+  blocks.crownShaft.position.z = baseGeometry.toothBaseZ - 0.05
+    - blocks.crownShaft.userData.length / 2;
   const crownRim = new THREE.Mesh(
     new THREE.TorusGeometry(blocks.crownWheel.userData.toothBandRadius, 0.14, 12, 96),
     matte(PALETTE.driven, { metalness: 0.13, roughness: 0.6 }),
@@ -3794,10 +3862,15 @@ function oldFashionedClockVergeEscapement(movement) {
     verge: blocks.verge,
     vergeStaff,
   };
+  // Brown's 299 is a close, nearly orthographic detail: the verge journal
+  // end-on over two crown teeth and the top of the band. Crop to that region
+  // (local crown height -0.35..1.4 and about two pitches across the verge),
+  // expressed in this unpresented world frame, with a narrow field.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.2, -3.15, -3.15),
-    new THREE.Vector3(2.2, 3.25, 3.15),
+    new THREE.Vector3(-0.35 * displayScale, -2.3 * displayScale, -1.25 * displayScale),
+    new THREE.Vector3(1.4 * displayScale, 2.3 * displayScale, 1.25 * displayScale),
   );
+  root.userData.cameraFov = 8;
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,
     firstFreeDropMidpoint: cyclePeriod * (
@@ -4070,7 +4143,7 @@ function makeDebaufreRatchetWheel({
   const rotor = new THREE.Group();
   const toothPitch = FULL_TURN / toothCount;
   const rimWidth = 0.17;
-  const hubRadius = 0.36;
+  const hubRadius = 0.3;
   const wheelMaterial = matte(color, {
     metalness: 0.18,
     roughness: 0.57,
@@ -4105,13 +4178,31 @@ function makeDebaufreRatchetWheel({
   hub.userData.role = 'debaufre-ratchet-wheel-hub';
   rotor.add(hub);
 
+  // Brown's 300 boss: a lobed plate, flat-topped and cut back in an arc
+  // between the two spokes, around the ringed collet (drawn at wheel angle 0).
+  const bossOutline = [
+    [-0.58, 0.3], [-0.2, 0.36], [0.5, 0.38], [0.58, -0.18],
+    [0.36, -0.44], [0.12, -0.5], [-0.14, -0.5], [-0.34, -0.45], [-0.54, -0.3],
+  ];
+  const bossShape = new THREE.Shape(
+    bossOutline.map(([x, y]) => new THREE.Vector2(x, y)),
+  );
+  const bossBore = new THREE.Path();
+  bossBore.absarc(0, 0, hubRadius - 0.01, 0, FULL_TURN, true);
+  bossShape.holes.push(bossBore);
+  const boss = new THREE.Mesh(debaufrePrism(bossShape, depth, 36), wheelMaterial);
+  boss.userData.role = 'debaufre-ratchet-wheel-lobed-boss';
+  rotor.add(boss);
+
+  // Two spokes, as drawn, run down-left and down-right from the boss.
   const spokeInner = hubRadius - 0.04;
   const spokeOuter = rimRadius - rimWidth + 0.04;
   const spokes = [];
-  for (let index = 0; index < 3; index += 1) {
-    const spokeAngle = mountPhase + index * FULL_TURN / 3;
+  const spokeAngles = [-Math.PI / 2 - 0.96, -Math.PI / 2 + 0.96];
+  for (let index = 0; index < spokeAngles.length; index += 1) {
+    const spokeAngle = spokeAngles[index];
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(spokeOuter - spokeInner, 0.15, depth * 0.8),
+      new THREE.BoxGeometry(spokeOuter - spokeInner, 0.2, depth * 0.8),
       wheelMaterial,
     );
     spoke.position.set(
@@ -4156,11 +4247,11 @@ function makeDebaufreRatchetWheel({
     matte(PALETTE.white, { roughness: 0.46 }),
   );
   indicator.position.set(
-    Math.cos(mountPhase) * (hubRadius + indicatorLength / 2 + 0.12),
-    Math.sin(mountPhase) * (hubRadius + indicatorLength / 2 + 0.12),
+    Math.cos(spokeAngles[0]) * (hubRadius + indicatorLength / 2 + 0.12),
+    Math.sin(spokeAngles[0]) * (hubRadius + indicatorLength / 2 + 0.12),
     depth * 0.4 + 0.008,
   );
-  indicator.rotation.z = mountPhase;
+  indicator.rotation.z = spokeAngles[0];
   indicator.userData.role = 'debaufre-wheel-rotation-witness';
   rotor.add(indicator);
 
@@ -4197,7 +4288,9 @@ function debaufreFrictionalRestEscapement(
   const dropAngle = halfToothPitch * 0.22;
   const impulseAdvance = halfToothPitch - dropAngle;
   const wheelContactRadius = 3.3;
-  const wheelRimRadius = 2.3;
+  // Brown's 300 rim circle is about 1.78 inside, so the barbed stems run
+  // from about 1.9 out to the 3.3 contact radius.
+  const wheelRimRadius = 1.95;
   // Brown's side elevation (301) sets the plane spacing, D radius, arbor and
   // collet sizes: 344 px there spans the escape arbor to the pallet journal.
   const wheelPlaneOffset = 0.62;
@@ -4726,7 +4819,14 @@ function debaufreFrictionalRestEscapement(
     };
   };
 
-  const stateAtTime = (time) => stateAtCycleCoordinate(time / cyclePeriod);
+  // Brown's 301 draws the D level, flat side up, which happens mid-impulse
+  // (pallet angle zero at a quarter cycle). The side elevation therefore
+  // starts its clock there; the shared mechanism state per cycle coordinate
+  // is unchanged, so 300 and 301 remain the same mechanism.
+  const displayCycleOffset = presentation === 'side' ? 0.25 : 0;
+  const stateAtTime = (time) => stateAtCycleCoordinate(
+    time / cyclePeriod + displayCycleOffset,
+  );
   const blocks = {
     balanceStaff,
     commonEscapeArbor,
@@ -4795,9 +4895,19 @@ function debaufreFrictionalRestEscapement(
     ) * cyclePeriod / 2,
     sourcePose: 0,
   };
+  if (displayCycleOffset !== 0) {
+    for (const [key, time] of Object.entries(root.userData.canonicalTimes)) {
+      if (key === 'sourcePose' || key === 'cycleClosure') continue;
+      root.userData.canonicalTimes[key] = positiveModulo(
+        time / cyclePeriod - displayCycleOffset,
+        1,
+      ) * cyclePeriod;
+    }
+  }
   root.userData.geometry = {
     cyclePeriod,
     cyclesPerSecond,
+    displayCycleOffset,
     dropAngle,
     dropDurationInCycles,
     firstCatchPhase,
@@ -4956,7 +5066,20 @@ export function createAuthoredEscapementMovement(movement) {
   switch (movement.id) {
     // Brown's plate shows no frame or bearings for this verge.
     // Brown's cup wall below the teeth is about half the tooth height.
-    case 234: return vergeAndCrownWheelEscapement(movement, { bodyDepth: 0.5, includeFrame: false });
+    case 234: return vergeAndCrownWheelEscapement(movement, {
+      // Brown's 234: a flush plate on a shallow band (about 0.2 of the
+      // radius), a thin rim cut into teeth about a third of the radius high,
+      // plain flags A on a round spindle S longer than the wheel.
+      bodyDepth: 0.44,
+      flagPallets: true,
+      floorAtToothBase: true,
+      includeFrame: false,
+      palletWidth: 0.56,
+      roundSpindle: true,
+      spindleLength: 8.4,
+      toothRadialDepth: 0.14,
+      toothTipZ: 0.72,
+    });
     case 238: return sevenToothAnchorEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);
     case 300: return debaufreFrictionalRestEscapement(movement);

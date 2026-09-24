@@ -68,7 +68,11 @@ test('movement 299 is one clock verge, weighted foliot, and perpendicular crown 
   assert.equal(blocks.crownShaft.parent, model.root);
   assert.equal(blocks.verge.parent, model.root);
   assert.equal(blocks.vergeStaff.parent, blocks.verge);
-  assert.equal(blocks.foliot.parent, blocks.verge);
+  // The foliot is built on the verge, but Brown's cropped detail does not
+  // show it, so the source presentation detaches it.
+  assert.equal(blocks.foliot.parent, null);
+  assert.deepEqual(model.root.userData.sourcePresentation.removedRoles,
+    ['weighted-horizontal-foliot-regulator']);
   assert.equal(blocks.foliotBar.parent, blocks.foliot);
   assert.equal(blocks.rightPallet.pallet.parent, blocks.verge);
   assert.equal(blocks.leftPallet.pallet.parent, blocks.verge);
@@ -89,7 +93,9 @@ test('movement 299 is one clock verge, weighted foliot, and perpendicular crown 
   assert.equal(roles.filter((role) =>
     /pallet-A-contact-face$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
-    /adjustable-foliot-weight$/.test(role)).length, 2);
+    /adjustable-foliot-weight$/.test(role)).length, 0);
+  assert.equal(blocks.foliotWeights.filter((weight) =>
+    /adjustable-foliot-weight$/.test(weight.userData.role)).length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -194,7 +200,8 @@ test('movement 299 builds an adjustable two-weight foliot and an open odd-tooth 
   assert.equal(blocks.crownWheel.userData.teeth, 13);
   assert.equal(blocks.crownWheel.userData.toothMeshes.length, 13);
   assert.equal(blocks.crownWheel.userData.toothTips.length, 13);
-  assert.equal(blocks.crownWheel.userData.body.visible, false);
+  // Brown draws the solid band under the teeth.
+  assert.equal(blocks.crownWheel.userData.body.visible, true);
   assert.equal(blocks.crownRim.parent,
     blocks.crownWheel.userData.rotor);
   assert.equal(blocks.crownSpokes.length, 4);

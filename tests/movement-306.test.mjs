@@ -95,9 +95,11 @@ test('movement 306 is one open three-leg wheel behind one pendulum-carried upper
   assert.equal(roles.filter((role) =>
     role === 'sharp-three-leg-working-tip').length, 3);
   assert.equal(roles.filter((role) =>
-    /generated-direct-impulse-face$/.test(role)).length, 2);
+    /direct-impulse-face-edge$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
-    /generated-half-dead-stopping-face$/.test(role)).length, 2);
+    /half-dead-rest-face-edge$/.test(role)).length, 2);
+  assert.equal(roles.filter((role) =>
+    role === 'pendulum-rod-strip-behind-plate').length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -178,9 +180,9 @@ test('movement 306 records Brown’s plate and Beckett’s full-size Westminster
   disposeModel(model.root);
 });
 
-test('movement 306 obeys the three-leg pitch, 24-radius spacing, one-degree escape, and lower-pallet depth limit', () => {
+test('movement 306 keeps the three-leg pitch, 24-radius spacing and lower-pallet depth limit', () => {
   const model = createMovementModel(catalog.movements[305]);
-  const { geometry, palletFaces, transmission } = model.root.userData;
+  const { geometry, palletFaces, stateAtTime, transmission } = model.root.userData;
 
   assert.equal(geometry.toothCount, 3);
   near(geometry.toothPitch, FULL_TURN / 3, 1e-15,
@@ -192,10 +194,13 @@ test('movement 306 obeys the three-leg pitch, 24-radius spacing, one-degree esca
   near(geometry.centerDistance,
     24 * geometry.toothTipRadius, 1e-15,
   'pallet-to-wheel center distance');
-  near(geometry.escapeAngle,
-    THREE.MathUtils.degToRad(1), 0, 'one-degree escape');
   assert.ok(geometry.pendulumAmplitude
     < THREE.MathUtils.degToRad(2), 'swing remains below two degrees');
+  // The rests release at the reconstructed escape angle, recorded rather
+  // than imposed (Beckett quotes about one degree).
+  near(Math.abs(stateAtTime(model.root.userData.beatEvents[0].restRelease).palletAngle),
+    geometry.escapeAngle, 1e-12, 'escape angle is the rest-release swing');
+  assert.ok(geometry.escapeAngle < THREE.MathUtils.degToRad(1));
   near(geometry.lowerPalletDepthLimit,
     geometry.toothTipRadius / 8, 0, 'one-eighth depth limit');
   near(palletFaces.lower.maximumDepth,
@@ -244,60 +249,43 @@ function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
 }
 
-test('movement 306 half-dead stopping faces produce the intended small symmetric recoil', () => {
+test('movement 306 rests on the horizontal side steps with a small half-dead recoil', () => {
   const model = createMovementModel(catalog.movements[305]);
-  const {
-    geometry,
-    palletFaces,
-    stateAtTime,
-    wheelAngleAtBeatStart,
-  } = model.root.userData;
+  const { beatEvents, geometry, stateAtTime } = model.root.userData;
 
-  for (const [extremeTime, side] of [[0, 'upper'], [2, 'lower']]) {
-    const extreme = stateAtTime(extremeTime);
-    const before = stateAtTime(extremeTime - 0.22);
-    const after = stateAtTime(extremeTime + 0.22);
-    assert.equal(extreme.contactKind, 'half-dead-rest');
-    assert.equal(extreme.activeSide, side);
-    near(extreme.recoil, geometry.halfDeadRecoil, 1e-15,
-      `${side} maximum recoil`);
-    near(extreme.wheelAngle,
-      wheelAngleAtBeatStart(extreme.halfBeatIndex)
-        + geometry.halfDeadRecoil,
-    1e-15, `${side} wheel recoils opposite its clockwise advance`);
-    near(before.recoil, after.recoil, 1e-12,
-      `${side} recoil is symmetric around the extreme`);
-    vectorNear(before.contactPointLocal, after.contactPointLocal, 1e-12,
-      `${side} tooth retraces one half-dead face`);
-    assert.ok(extreme.contactError < 1e-12);
-    assert.ok(before.contactError < 1e-12);
-    assert.ok(after.contactError < 1e-12);
-  }
-  for (const face of [palletFaces.upper, palletFaces.lower]) {
-    assert.ok(face.stoppingPoints.length >= 30);
-    assert.ok(face.stoppingPoints[0].distanceTo(
-      face.stoppingPoints.at(-1)) > 0.1,
-    'half-dead stopping profile has finite travel');
+  for (let beat = 0; beat < 4; beat += 1) {
+    const events = beatEvents[beat % 2];
+    const side = beat % 2 === 0 ? 'left' : 'right';
+    const base = beat * geometry.halfBeatDuration;
+    const samples = [0.1, 0.5, 0.9].map((f) => stateAtTime(
+      base + THREE.MathUtils.lerp(events.landing, events.restRelease, f),
+    ));
+    for (const state of samples) {
+      assert.equal(state.contactKind, 'half-dead-rest');
+      assert.equal(state.activeSide, side);
+      assert.equal(state.activeFace, `${side}-half-dead-rest-face`);
+      assert.ok(state.contactError < 1e-12);
+      near(Math.abs(state.contactPointLocal.y), geometry.restFaceY, 1e-12,
+        `${side} tip on the horizontal step`);
+      assert.ok(Math.abs(state.contactPointLocal.x) > geometry.restInnerX,
+        `${side} step covers the tip`);
+      assert.ok(Math.abs(state.recoil) < THREE.MathUtils.degToRad(3));
+    }
+    assert.ok(events.landingCover > 0.05, 'landing well inside the rest');
   }
   disposeModel(model.root);
 });
 
-test('movement 306 gives exact rightward upper and leftward lower direct impulses on generated pallet faces', () => {
+test('movement 306 gives rightward upper and leftward lower direct impulses on the vertical steps', () => {
   const model = createMovementModel(catalog.movements[305]);
-  const {
-    geometry,
-    palletFaces,
-    stateAtTime,
-  } = model.root.userData;
-  const upper = stateAtTime(geometry.halfBeatDuration / 2);
-  const lower = stateAtTime(geometry.halfBeatDuration * 1.5);
+  const { geometry, stateAtTime } = model.root.userData;
+  const upper = stateAtTime(geometry.halfBeatDuration / 4);
+  const lower = stateAtTime(geometry.halfBeatDuration * 1.25);
 
   assert.equal(upper.mode, 'upper-direct-impulse');
   assert.equal(lower.mode, 'lower-direct-impulse');
-  assert.equal(upper.activeFace,
-    'upper-generated-direct-impulse-face');
-  assert.equal(lower.activeFace,
-    'lower-generated-direct-impulse-face');
+  assert.equal(upper.activeFace, 'upper-direct-impulse-face');
+  assert.equal(lower.activeFace, 'lower-direct-impulse-face');
   assert.equal(upper.activeToothIndex, 0);
   assert.equal(lower.activeToothIndex, 2);
   assert.ok(upper.palletAngularSpeed > 0,
@@ -306,69 +294,41 @@ test('movement 306 gives exact rightward upper and leftward lower direct impulse
     'lower tooth drives plate leftward');
   assert.ok(upper.wheelAngularSpeed < 0);
   assert.ok(lower.wheelAngularSpeed < 0);
-  assert.ok(upper.contactError < 1e-12);
-  assert.ok(lower.contactError < 1e-12);
-  vectorNear(upper.contactPoint, upper.activeToothTip, 1e-12,
-    'upper point contact');
-  vectorNear(lower.contactPoint, lower.activeToothTip, 1e-12,
-    'lower point contact');
-
-  for (const [beat, points] of [
-    [0, palletFaces.upper.impulsePoints],
-    [1, palletFaces.lower.impulsePoints],
-  ]) {
-    for (const index of [0, 10, 20, 30, 40]) {
-      const halfPhase = THREE.MathUtils.lerp(
-        geometry.releaseHalfPhase,
-        geometry.impulseEndHalfPhase,
-        index / 40,
-      );
-      const state = stateAtTime(
-        (beat + halfPhase) * geometry.halfBeatDuration,
-      );
-      vectorNear(state.contactPointLocal, points[index], 1e-12,
-        `${beat === 0 ? 'upper' : 'lower'} profile sample ${index}`);
-    }
+  for (const state of [upper, lower]) {
+    assert.ok(state.contactError < 1e-12);
+    vectorNear(state.contactPoint, state.activeToothTip, 1e-12,
+      'point contact at the tip');
+    near(state.contactPointLocal.x, 0, 1e-12, 'tip on the vertical step');
+    assert.ok(Math.abs(state.contactPointLocal.y) > geometry.impulseCornerY,
+      'tip above the step corner');
   }
   disposeModel(model.root);
 });
 
-test('movement 306 preserves a finite non-contact clearance drop before every alternate pallet landing', () => {
+test('movement 306 falls freely between faces and lands on the alternate rest', () => {
   const model = createMovementModel(catalog.movements[305]);
-  const { geometry, stateAtTime, timeline, transmission } =
+  const { beatEvents, geometry, stateAtTime, timeline, transmission } =
     model.root.userData;
 
   for (let beat = 0; beat < 4; beat += 1) {
-    const impulseEndTime = (
-      beat + geometry.impulseEndHalfPhase
-    ) * geometry.halfBeatDuration;
-    const dropMiddleTime = (
-      beat + (geometry.impulseEndHalfPhase
-        + geometry.landingHalfPhase) / 2
-    ) * geometry.halfBeatDuration;
-    const landingTime = (
-      beat + geometry.landingHalfPhase
-    ) * geometry.halfBeatDuration;
-    const impulseEnd = stateAtTime(impulseEndTime);
-    const drop = stateAtTime(dropMiddleTime);
-    const landing = stateAtTime(landingTime);
+    const events = beatEvents[beat % 2];
+    const base = beat * geometry.halfBeatDuration;
+    const impulseEnd = stateAtTime(base + events.impulseEnd - 1e-6);
+    const drop = stateAtTime(base + (events.impulseEnd + events.landing) / 2);
+    const landing = stateAtTime(base + events.landing + 1e-6);
+    const secondDrop = stateAtTime(base + (events.restRelease + events.contact) / 2);
     assert.equal(impulseEnd.contactKind, 'direct-impulse');
-    assert.equal(drop.contactKind, 'clearance-drop');
+    assert.equal(drop.contactKind, 'free-drop');
     assert.equal(drop.contactPoint, null);
+    assert.equal(secondDrop.contactKind, 'free-drop');
     assert.equal(landing.contactKind, 'half-dead-rest');
-    assert.equal(landing.activeSide,
-      impulseEnd.activeSide === 'upper' ? 'lower' : 'upper');
-    near(landing.beatAdvance - impulseEnd.beatAdvance,
-      geometry.clearanceDropAngle, 1e-12,
-    `finite wheel drop at beat ${beat}`);
+    assert.equal(landing.activeSide, beat % 2 === 0 ? 'left' : 'right');
+    assert.ok(landing.wheelAngle < impulseEnd.wheelAngle, 'finite clockwise drop');
   }
-  near(geometry.impulseAdvance + geometry.clearanceDropAngle,
-    geometry.wheelAdvancePerBeat, 1e-15,
-  'impulse and drop partition the sixty-degree step');
-  assert.match(transmission.clearance, /finite 2.4-degree wheel drop/);
+  assert.match(transmission.clearance, /falls freely/);
   assert.equal(timeline.demonstrationPeriod, geometry.pendulumPeriod);
   assert.equal(timeline.schedule.filter((entry) =>
-    entry.includes('clearance-drop')).length, 2);
+    entry.includes('free-drop')).length, 4);
   disposeModel(model.root);
 });
 

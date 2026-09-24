@@ -29,27 +29,23 @@ export function correctSinglePinParts(root){
  d.workingPartsReview={scope:'Finite straight impulse faces, concentric rests, correct Z-opening handedness, pin/arbor stack and support bores.',qualification:'Upright impulse contact and positive work are checked against actual finite faces. Prescribed release/landing has a small corner interference and short gaps from the dead faces; passive operation is not qualified.',measuredBaseline:{pinPalletPenetration:.061,arborPalletPenetration:.108},contactMarkersSuppressed:true};
 }
 
+// Movement 306 only; 307 builds its own finite parts.
 export function correctThreeLegParts(root,id){
+ if(id!==306)throw new Error(`correctThreeLegParts is specific to 306, not ${id}`);
  const d=root.userData,b=d.blocks,g=d.geometry;
  for(const edge of b.faceEdges)edge.visible=false;
  if(id===306){
-  shaft(b.fixedArbor,.09,1.16,-.08);replace(b.wheelHub,bore(.20,.093,.70));
+  // Brown shows only a small boss at the wheel centre: a short bored hub just
+  // proud of the legs on an arbor ending at its face.
+  shaft(b.fixedArbor,.09,.82,-.21);replace(b.wheelHub,bore(.14,.093,.36));b.wheelHub.position.z=.04;
   const strut=mesh(b.fixedFrame,plate(clip.difference(clip.union(capsule([0,0],[0,1.38],.12,32),poly(circle([0,0],.22,64))),poly(circle([0,0],.093,64))),-.09,.09),b.fixedFrame.children[0].material,'bored-back-strut-joining-wheel-arbor-to-frame-bridge');strut.position.z=-.47;
   b.arborSupport=strut;
   // Actual screw bores are outside the working aperture.
   const shape=b.plate.geometry.parameters.shapes;
   for(const screw of b.screwMeshes){const hole=new T.Path();hole.absarc(screw.position.x,screw.position.y,.123,0,2*Math.PI,true);shape.holes.push(hole);}
   const geometry=new T.ExtrudeGeometry(shape,{depth:g.palletDepth,bevelEnabled:false,curveSegments:12});geometry.translate(0,0,-g.palletDepth/2);replace(b.plate,geometry);
- }else{
-  shaft(role(root,'three-leg-wheel-arbor'),.078,.96,-.06);shaft(role(root,'pendulum-pallet-pivot'),.078,.96,-.06);
-  replace(b.wheelHub,bore(.20,.082,1.12));replace(b.pivotEye,bore(.345,.083,.18));b.pivotEye.rotation.x=Math.PI/2;
-  const outline=b.plate.geometry.parameters.shapes.extractPoints(16);
-  replace(b.plate,plate(clip.difference(clip.union(poly(outline.shape.map(p=>p.toArray())),poly(circle([0,0],.345,64))),...outline.holes.map(h=>poly(h.map(p=>p.toArray()))),poly(circle([0,0],.083,64))),-g.palletDepth/2,g.palletDepth/2));
-  // The backward impulse pins need a physical carrier on their rear plane;
-  // their old ends stopped well short of the long front locking arms.
-  const carrier=mesh(b.wheelRotor,bore(.47,.082,.12),b.longToothMeshes[0].material,'rear-disk-carrying-three-backward-impulse-pins');carrier.rotation.x=Math.PI/2;carrier.position.z=-.10;b.impulsePinCarrier=carrier;
  }
- d.workingPartsReview={scope:'Actual wheel and suspension journals, pin carriers and fixed supports; original working material retained.',qualification:'Generated point traces do not qualify the finite plate or backing faces. Tooth/pallet interference remains unresolved; the motion is prescribed and no passive contact solution is claimed.',measuredBaseline:id===306?{toothPlatePenetration:.149}:{longToothStopPenetration:.0933,pinBackingPenetration:.0698},contactMarkersSuppressed:true};
+ d.workingPartsReview={scope:'Bored wheel hub on its fixed arbor, screwed plate and the finite opening faces that select every wheel event.',qualification:'The wheel follows the finite upper/lower impulse steps and the horizontal side rests and falls freely between them; the pendulum is prescribed and forces are not solved.',contactMarkersSuppressed:true};
 }
 
 export function finishPinEscapement(model){

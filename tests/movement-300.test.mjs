@@ -198,8 +198,9 @@ test('movement 300 builds one half-pitch pair on a common arbor around one palle
   assert.equal(blocks.rearWheel.userData.teeth, 12);
   assert.equal(blocks.frontWheel.userData.toothMeshes.length, 12);
   assert.equal(blocks.rearWheel.userData.toothMeshes.length, 12);
-  assert.equal(blocks.frontWheel.userData.spokes.length, 3);
-  assert.equal(blocks.rearWheel.userData.spokes.length, 3);
+  // Brown draws two spokes running down from the lobed boss.
+  assert.equal(blocks.frontWheel.userData.spokes.length, 2);
+  assert.equal(blocks.rearWheel.userData.spokes.length, 2);
   near(blocks.frontWheel.position.z,
     geometry.wheelPlaneOffset, 0, 'front wheel plane');
   near(blocks.rearWheel.position.z,
