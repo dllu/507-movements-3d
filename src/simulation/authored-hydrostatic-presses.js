@@ -384,10 +384,13 @@ function hydrostaticPress(movement) {
     'open-water-reservoir-feeding-small-hand-pump');
   root.add(pumpReservoir);
   const reservoirWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.05, 0.72, 1.72),
+    new THREE.BoxGeometry(2.05, 0.72, 0.62),
     waterMaterial,
   ), 'hand-pump-reservoir-water');
-  reservoirWater.position.set(1.70, -0.24, 0);
+  // Brown rules the reservoir water on the section plane behind the pump; the
+  // sheet stands behind the half-section barrel, so no water column is
+  // drawn over the pump, its checks or its plunger.
+  reservoirWater.position.set(1.70, -0.24, -0.57);
   pumpReservoir.add(reservoirWater);
   for (const x of [0.62, 2.78]) {
     const wall = new THREE.Mesh(

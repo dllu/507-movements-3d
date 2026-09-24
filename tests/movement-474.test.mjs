@@ -85,9 +85,12 @@ test('movement 474 is Brown’s twin-pivot four-nozzle horizontal-axis aeolipile
   for (const rotating of [blocks.globe, blocks.globeSteam,
     blocks.pivotManifold, blocks.rotationBand,
     ...blocks.rotatingTrunnions, ...blocks.nozzlePipes,
-    ...blocks.nozzleSteamCores, ...blocks.nozzleCollars,
-    ...blocks.exhaustPlumes]) {
+    ...blocks.nozzleSteamCores, ...blocks.nozzleCollars]) {
     assert.ok(rotating.parent === blocks.rotor, `${rotating.userData.role} parent`);
+  }
+  // Brown draws no steam plumes; the source presentation removes them.
+  for (const plume of blocks.exhaustPlumes) {
+    assert.equal(plume.parent, null, `${plume.userData.role} not presented`);
   }
   for (const fixed of [blocks.boiler, blocks.boilerLid,
     blocks.boilerRim, blocks.boilerWater, blocks.boilerSteamSpace,

@@ -130,10 +130,9 @@ function reciprocatingWellLift(movement) {
   const axialPitch = FULL_TURN * wheelPitchRadius / wheelTeeth;
   const wormLength = 1.12;
   const pulleyRadius = 0.62;
-  // A third of a turn per lift: four worm turns, so at the display's
-  // one-turn-per-second ceiling a full two-bucket cycle takes about 12 s,
-  // and the lowered bucket stays within view at the well mouth.
-  const pulleyTravelAngle = FULL_TURN / 3;
+  // Half a pulley turn per lift (six worm turns) lowers the empty bucket
+  // down the well past Brown's ground line, where his plate crops the rope.
+  const pulleyTravelAngle = FULL_TURN / 2;
   const bucketStroke = pulleyRadius * pulleyTravelAngle;
   const engagementShift = 0.075;
   const wheelCenterX = wheelPitchRadius + wormPitchRadius
@@ -1165,13 +1164,14 @@ function reciprocatingWellLift(movement) {
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,459);
-  // Brown's plate stops at the ground line by the well curbs, and the
-  // long-lens elevation shows the wind wheel edge-on. The frame reaches just
-  // below the lowered bucket at the well mouth (bail at lowBailY, bottom
-  // about 1.16 lower), so neither bucket leaves the view. Set after the
-  // shared fit, which would otherwise frame the whole well.
+  // Brown's plate stops just below the ground line by the well curbs, and
+  // his lowered rope runs out of the picture into the well; the long-lens
+  // elevation shows the wind wheel edge-on. The frame likewise ends a little
+  // below the dumping bucket, so the lowered bucket sinks out of view at the
+  // bottom of each stroke as Brown crops it. Set after the shared fit, which
+  // would otherwise frame the whole well.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.10, lowBailY - bucketCenterOffset - bucketHeight / 2 - 0.12, -1.65),
+    new THREE.Vector3(-3.10, highBailY - bucketCenterOffset - bucketHeight / 2 - 0.72, -1.65),
     new THREE.Vector3(3.10, 4.45, 1.65),
   );
   root.userData.cameraFov = 12;

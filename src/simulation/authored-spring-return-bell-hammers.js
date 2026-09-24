@@ -121,7 +121,8 @@ function springReturnBellHammer(movement) {
   const springPreload = 0.08;
   const springStiffness = 4.6;
   const bellLipRadius = 0.92;
-  const bellHeight = 1.90;
+  // Brown's bell is a little shorter than its lip is wide.
+  const bellHeight = 1.62;
   const strikeHeadCenter = new THREE.Vector3(
     pivot.x + hammerArmLength * Math.cos(strikeAngle),
     pivot.y + hammerArmLength * Math.sin(strikeAngle),
@@ -290,12 +291,19 @@ function springReturnBellHammer(movement) {
 
   const pivotStand = new THREE.Group();
   pivotStand.userData.role = 'fixed-hammer-pivot-bracket';
+  // Brown's bracket: an upright standard whose right edge slopes out to a
+  // foot flange on the plank; its face stands just behind the hammer hub and
+  // tail swinging past it.
+  const pedestalShape = new THREE.Shape([
+    [-1.80, -1.67], [-0.70, -1.67], [-0.70, -1.585], [-0.84, -1.585],
+    [-0.99, -0.56], [-1.67, -0.56], [-1.67, -1.585], [-1.80, -1.585],
+  ].map(([x, y]) => new THREE.Vector2(x, y)));
   const pedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.74, 1.18, 0.72),
+    new THREE.ExtrudeGeometry(pedestalShape, { depth: 0.72, bevelEnabled: false })
+      .translate(0, 0, -0.36),
     frameMaterial,
   );
-  // Its face stands just behind the hammer hub and tail swinging past it.
-  pedestal.position.set(pivot.x, -1.15, -0.04);
+  pedestal.position.set(0, 0, -0.04);
   pedestal.userData.role = 'pedestal-below-hammer-pivot';
   pivotStand.add(pedestal);
   const bearing = cylinderAlongZ(0.25, 0.96, darkMaterial, 36);
@@ -326,7 +334,12 @@ function springReturnBellHammer(movement) {
     new THREE.BoxGeometry(hammerTailLength, 0.16, 0.26),
     hammerMaterial,
   );
-  hammerTail.position.set(-hammerTailLength / 2, 0, 0);
+  // Brown's hammer is a bent lever: the pull tail runs level to the left
+  // from the pivot while the arm rises to the head (at the rest pose).
+  const tailDirection = Math.PI - restAngle;
+  hammerTail.position.set(Math.cos(tailDirection) * hammerTailLength / 2,
+    Math.sin(tailDirection) * hammerTailLength / 2, 0);
+  hammerTail.rotation.z = tailDirection - Math.PI;
   boreBoxAtLocalPoint(hammerTail, [hammerTailLength/2, 0], 0.108);
   const hammerHub = addZJournal(hammer, 0.21, 0.108, 0.26, hammerMaterial, new THREE.Vector3(), 'bored-hammer-pivot-hub');
   hammerTail.userData.role = 'abstract-actuating-tail-of-hammer';
@@ -374,16 +387,16 @@ function springReturnBellHammer(movement) {
   const bellPivot = new THREE.Group();
   bellPivot.position.set(bellCenterX, bellTopY, pivot.z);
   bellPivot.userData.role = 'small-post-impact-bell-vibration-pivot';
+  // Brown's shouldered bell: domed crown, near-straight waist, flared sound
+  // bow and lip, with two raised bands at the shoulder and one above the lip.
   const bellProfile = [
-    new THREE.Vector2(0.18, bellHeight),
-    new THREE.Vector2(0.28, bellHeight - 0.13),
-    new THREE.Vector2(0.34, bellHeight - 0.34),
-    new THREE.Vector2(0.36, bellHeight - 0.72),
-    new THREE.Vector2(0.43, bellHeight - 1.02),
-    new THREE.Vector2(0.60, bellHeight - 1.36),
-    new THREE.Vector2(0.82, bellHeight - 1.72),
-    new THREE.Vector2(bellLipRadius, 0),
-  ];
+    [0.20, 0], [0.36, 0.03], [0.47, 0.09], [0.54, 0.18], [0.57, 0.28],
+    [0.575, 0.33], [0.60, 0.335], [0.60, 0.365], [0.578, 0.37],
+    [0.58, 0.41], [0.605, 0.415], [0.605, 0.445], [0.582, 0.45],
+    [0.60, 0.80], [0.64, 1.00], [0.72, 1.18], [0.80, 1.31],
+    [0.84, 1.36], [0.87, 1.365], [0.885, 1.40], [0.86, 1.405],
+    [0.89, 1.50], [bellLipRadius, bellHeight],
+  ].map(([r, depth]) => new THREE.Vector2(r, bellHeight - depth));
   const bellBody = new THREE.Mesh(
     new THREE.LatheGeometry([...bellProfile,
       ...bellProfile.slice().reverse().map(p => new THREE.Vector2(p.x - 0.055, p.y)), bellProfile[0]].reverse(), 96),

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { correctDoubleActingParts } from './flexible-pump-working-parts.js';
+import { horizontalPlate } from './horizontal-turbine-solids.js';
+import { mergePassageParts } from './finite-fluid-passages.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -8,63 +10,55 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 
-function horizontalRing(radius, tubeRadius, material) {
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, tubeRadius, 12, 48),
-    material,
-  );
-  ring.rotation.x = Math.PI / 2;
-  return ring;
-}
-
 function addRole(object, role) {
   object.userData.role = role;
   return object;
 }
-
-function setVerticalExtent(mesh, bottom, top) {
-  const height = Math.max(0.001, top - bottom);
-  mesh.position.y = (bottom + top) / 2;
-  mesh.scale.y = height;
-  mesh.visible = top > bottom;
-}
-
 function positiveC2Lobe(value) {
   return Math.max(0, value) ** 3;
-}
-
-function makeTube(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  const tube = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 72, radius, 16, false),
-    material,
-  ), role);
-  tube.userData.curve = curve;
-  return tube;
 }
 
 function doubleActingPump(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4.9;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const pistonCenterY = 0.22;
-  const pistonAmplitude = 0.72;
-  const pistonThickness = 0.24;
-  const pistonRadius = 0.79;
-  const chamberWaterRadius = 0.72;
-  const chamberArea = Math.PI * chamberWaterRadius ** 2;
-  const lowerChamberEndY = -1.48;
-  const upperChamberEndY = 1.91;
-  const rodLength = 3.20;
-  const stuffingBoxY = 2.14;
+  // Brown's section, measured on the 525-pixel plate: x=(px-272.5)/72 and
+  // y=(276.5-py)/72, so the bore between the two cored jackets is 1.58 wide.
+  const PX = 1 / 72;
+  const sx = (px) => (px - 272.5) * PX;
+  const sy = (py) => (276.5 - py) * PX;
+  const pistonCenterY = 0;
+  const pistonAmplitude = 1.05;
+  const pistonThickness = 0.64;
+  const pistonRadius = 0.772;
+  const boreHalfWidth = 0.79;
+  const casingHalfDepth = 0.62;
+  const pistonHalfDepth = 0.53;
+  const chamberWaterRadius = boreHalfWidth;
+  const chamberArea = 2 * boreHalfWidth * 2 * pistonHalfDepth;
+  const lowerChamberEndY = sy(442);
+  const upperChamberEndY = sy(114);
+  const rodLength = 3.75;
+  const rodRadius = 0.085;
+  const stuffingBoxY = sy(104);
   const maximumValveLift = 0.16;
+  const maximumFlapAngle = 0.62;
+  const hingeDrop = 0.045;
+  // Hinges of the four flaps: 1 and 4 hang from the top wall, 3 from the
+  // underside of the left jacket and 2 from the lip of the right jacket.
   const valveSeats = Object.freeze({
-    lowerDischarge3: new THREE.Vector3(-1.45, -1.12, 0),
-    lowerSuction2: new THREE.Vector3(1.45, -1.12, 0),
-    upperDischarge4: new THREE.Vector3(-1.45, 1.57, 0),
-    upperSuction1: new THREE.Vector3(1.45, 1.57, 0),
+    lowerDischarge3: new THREE.Vector3(sx(200), sy(408) - hingeDrop, 0),
+    lowerSuction2: new THREE.Vector3(sx(372), sy(415) - hingeDrop, 0),
+    upperDischarge4: new THREE.Vector3(sx(210), sy(114) - hingeDrop, 0),
+    upperSuction1: new THREE.Vector3(sx(372), sy(114) - hingeDrop, 0),
   });
-  const groundY = -2.62;
+  const flapLengths = {
+    lowerDischarge3: sy(408) - sy(442) - hingeDrop - 0.05,
+    lowerSuction2: sy(415) - sy(442) - hingeDrop - 0.05,
+    upperDischarge4: sy(114) - sy(145) - hingeDrop - 0.05,
+    upperSuction1: sy(114) - sy(137) - hingeDrop - 0.05,
+  };
+  const groundY = sy(500);
 
   const stateAtInputAngle = (
     inputAngle,
@@ -172,306 +166,209 @@ function doubleActingPump(movement) {
     metalness: 0.18,
     roughness: 0.52,
   });
-  const shellMaterial = matte(PALETTE.muted, {
-    opacity: 0.27,
-    roughness: 0.72,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  shellMaterial.depthWrite = false;
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.72,
-    roughness: 0.32,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  waterMaterial.depthWrite = false;
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  const interiorMaterial = matte(PALETTE.white, { roughness: 0.82 });
+
+  // Planar section pieces: polygons in plate pixels, extruded through the
+  // casing depth with the cut face towards the viewer.
+  const px = (points) => points.map(([x, y]) => [sx(x), sy(y)]);
+  const rect = (x0, y0, x1, y1) => poly(px([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]));
+  const arcPoints = (cx, cy, radius, start, end, count = 32) => Array.from(
+    { length: count + 1 },
+    (_, i) => {
+      const angle = start + (end - start) * i / count;
+      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+    },
+  );
+  const bend = (cx, cy, inner, outer, start, end) => poly(px([
+    ...arcPoints(cx, cy, outer, start, end),
+    ...arcPoints(cx, cy, inner, end, start),
+  ]));
+  const wall = (...polygons) => plate(
+    polygonClipping.union(...polygons),
+    -casingHalfDepth,
+    casingHalfDepth,
+  );
+  const roundedLeftBox = (x0, y0, x1, y1, radius) => poly(px([
+    ...arcPoints(x0 + radius, y0 + radius, radius, Math.PI, 1.5 * Math.PI, 12),
+    [x1, y0], [x1, y1],
+    ...arcPoints(x0 + radius, y1 - radius, radius, 0.5 * Math.PI, Math.PI, 12),
+  ]));
 
   const base = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(6.8, 0.16, 3.3),
     frameMaterial,
   ), 'fixed-double-acting-pump-foundation');
-  base.position.set(0, groundY + 0.08, 0);
+  base.position.set(0, groundY - 0.3, 0);
   root.add(base);
 
-  const barrel = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(1.00, 1.00, 3.72, 64, 1, true),
-    shellMaterial,
-  ), 'closed-double-acting-cylinder');
-  barrel.position.y = 0.22;
-  root.add(barrel);
-  const lowerCover = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.99, 0.99, 0.14, 56),
-    frameMaterial,
-  ), 'fixed-closed-lower-cylinder-end');
-  lowerCover.position.y = -1.64;
+  // Discharge B: the pipe mouth and the outer wall of the left passage,
+  // which wraps round the left jacket to valves 4 and 3.
+  const dischargeManifold = addRole(new THREE.Mesh(wall(
+    rect(112, 42, 122, 417),
+    rect(155, 42, 165, 84),
+    bend(185, 84, 20, 30, Math.PI, 0.5 * Math.PI),
+  ), frameMaterial), 'common-discharge-pipe-B-receiving-two-outlet-checks');
+  root.add(dischargeManifold);
+  // Suction A: the pipe rising up the right passage to valves 2 and 1.
+  const suctionManifold = addRole(new THREE.Mesh(wall(
+    rect(408, 145, 418, 500),
+    bend(377, 145, 31, 41, -0.5 * Math.PI, 0),
+  ), frameMaterial), 'common-suction-pipe-A-feeding-two-inlet-checks');
+  root.add(suctionManifold);
+  // Lower cover: the bottom of the casing, closing the lower chamber and
+  // turning down as the inner wall of pipe A.
+  const lowerCover = addRole(new THREE.Mesh(wall(
+    bend(147, 417, 25, 35, 0.5 * Math.PI, Math.PI),
+    rect(147, 442, 378, 452),
+    rect(368, 442, 378, 500),
+  ), frameMaterial), 'fixed-closed-lower-cylinder-end');
   root.add(lowerCover);
-  const upperCover = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.99, 0.99, 0.14, 56),
-    frameMaterial,
-  ), 'fixed-closed-upper-cylinder-end');
-  upperCover.position.y = 2.08;
+  // Upper cover: the straight top wall, bored for the rod.
+  const rodBore = poly(circle([0, 0], rodRadius + 0.012, 96));
+  const upperCover = addRole(new THREE.Mesh(horizontalPlate(
+    polygonClipping.difference(
+      poly([[sx(185), -casingHalfDepth], [sx(377), -casingHalfDepth],
+        [sx(377), casingHalfDepth], [sx(185), casingHalfDepth]]),
+      rodBore,
+    ),
+    sy(114),
+    sy(104),
+  ), frameMaterial), 'fixed-closed-upper-cylinder-end');
   root.add(upperCover);
-  for (const y of [-1.57, 2.01]) {
-    const rim = horizontalRing(1.00, 0.075, darkMaterial);
-    rim.position.y = y;
-    root.add(rim);
-  }
+  // The cylinder: two cored jackets whose inner faces are the bore, with the
+  // right jacket's lips forming the seats of valves 1 and 2.
+  const barrel = addRole(new THREE.Mesh(wall(
+    polygonClipping.difference(
+      roundedLeftBox(150, 145, 216, 408, 22),
+      roundedLeftBox(159, 154, 207, 399, 13),
+    ),
+    polygonClipping.difference(rect(330, 145, 376, 408), rect(339, 154, 367, 399)),
+    rect(368, 137, 376, 145),
+    rect(368, 408, 376, 415),
+  ), frameMaterial), 'closed-double-acting-cylinder');
+  root.add(barrel);
+  const backPlate = addRole(new THREE.Mesh(plate(poly(px([
+    [112, 42], [112, 417],
+    ...arcPoints(147, 417, 35, Math.PI, 0.5 * Math.PI, 16),
+    [368, 452], [368, 500], [418, 500], [418, 145],
+    ...arcPoints(377, 145, 41, 0, -0.5 * Math.PI, 16),
+    ...arcPoints(185, 84, 20, 0.5 * Math.PI, Math.PI, 16),
+    [165, 42],
+  ])), -casingHalfDepth - 0.08, -casingHalfDepth), interiorMaterial),
+  'rear-half-of-sectioned-pump-casing');
+  root.add(backPlate);
   const barrelRails = addRole(new THREE.Group(),
     'fixed-cutaway-double-acting-cylinder-outline');
-  for (const x of [-0.73, 0.73]) {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 3.55, 0.11),
-      frameMaterial,
-    );
-    rail.position.set(x, 0.22, -0.76);
-    barrelRails.add(rail);
-  }
   root.add(barrelRails);
 
   const stuffingBox = addRole(new THREE.Group(),
     'fixed-stuffing-box-at-upper-cylinder-end');
-  stuffingBox.position.y = stuffingBoxY;
   root.add(stuffingBox);
-  const stuffingBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.34, 0.42, 36),
-    suctionValveMaterial,
-  );
-  stuffingBody.position.y = 0.18;
+  const glandDepth = 0.32;
+  const glandRect = (x0, x1) => poly([[x0, -glandDepth], [x1, -glandDepth],
+    [x1, glandDepth], [x0, glandDepth]]);
+  const stuffingBody = new THREE.Mesh(mergePassageParts([
+    horizontalPlate(polygonClipping.difference(glandRect(sx(250), sx(315)), rodBore),
+      stuffingBoxY, sy(76)),
+    horizontalPlate(polygonClipping.union(
+      polygonClipping.difference(glandRect(sx(250), sx(282)), rodBore),
+      glandRect(sx(302), sx(315)),
+    ), sy(76), sy(70)),
+  ]), frameMaterial);
+  stuffingBody.userData.role = 'bored-stuffing-box-gland';
   stuffingBox.add(stuffingBody);
-  const stuffingBore = horizontalRing(0.14, 0.045, darkMaterial);
-  stuffingBore.position.y = 0.39;
-  stuffingBox.add(stuffingBore);
 
   const piston = addRole(new THREE.Group(),
     'solid-double-acting-piston-separating-upper-and-lower-chambers');
   root.add(piston);
   const pistonBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pistonRadius,
-      pistonRadius,
-      pistonThickness,
-      52,
-    ),
+    new THREE.BoxGeometry(2 * pistonRadius, pistonThickness, 2 * pistonHalfDepth),
     pistonMaterial,
   );
   piston.add(pistonBody);
-  for (const y of [-pistonThickness / 2, pistonThickness / 2]) {
-    const rim = horizontalRing(pistonRadius, 0.05, darkMaterial);
-    rim.position.y = y;
-    piston.add(rim);
-  }
+  const pistonNut = new THREE.Mesh(
+    new THREE.BoxGeometry(0.36, 0.06, 0.36),
+    darkMaterial,
+  );
+  pistonNut.position.y = -pistonThickness / 2 - 0.03;
+  piston.add(pistonNut);
   const pistonRod = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.07, rodLength, 20),
+    new THREE.CylinderGeometry(rodRadius, rodRadius, rodLength, 32),
     darkMaterial,
   ), 'piston-rod-sliding-through-one-end-stuffing-box');
   root.add(pistonRod);
   const rodTopMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.10, 18, 12),
-    whiteMaterial,
+    new THREE.CylinderGeometry(rodRadius, rodRadius, 0.001, 16),
+    darkMaterial,
   );
+  rodTopMarker.visible = false;
   root.add(rodTopMarker);
 
-  const lowerWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      chamberWaterRadius,
-      chamberWaterRadius,
-      1,
-      48,
-    ),
-    waterMaterial,
-  ), 'water-in-lower-double-acting-chamber');
-  root.add(lowerWater);
-  const upperWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      chamberWaterRadius,
-      chamberWaterRadius,
-      1,
-      48,
-    ),
-    waterMaterial,
-  ), 'water-in-upper-double-acting-chamber');
-  root.add(upperWater);
-
-  const suctionManifold = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.31, 0.31, 4.65, 36, 1, true),
-    shellMaterial,
-  ), 'common-suction-pipe-A-feeding-two-inlet-checks');
-  suctionManifold.position.set(2.40, -0.18, 0);
-  root.add(suctionManifold);
-  const suctionManifoldWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.21, 0.21, 4.63, 32),
-    waterMaterial,
-  );
-  suctionManifoldWater.position.copy(suctionManifold.position);
-  root.add(suctionManifoldWater);
-  const suctionMouth = horizontalRing(0.31, 0.05, darkMaterial);
-  suctionMouth.position.set(2.40, -2.50, 0);
-  root.add(suctionMouth);
-
-  const dischargeManifold = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.31, 0.31, 4.80, 36, 1, true),
-    shellMaterial,
-  ), 'common-discharge-pipe-B-receiving-two-outlet-checks');
-  dischargeManifold.position.set(-2.40, 0.48, 0);
-  root.add(dischargeManifold);
-  const dischargeManifoldWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.21, 0.21, 4.78, 32),
-    waterMaterial,
-  );
-  dischargeManifoldWater.position.copy(dischargeManifold.position);
-  root.add(dischargeManifoldWater);
-  const dischargeMouth = horizontalRing(0.31, 0.05, darkMaterial);
-  dischargeMouth.position.set(-2.40, 2.88, 0);
-  root.add(dischargeMouth);
-
-  const upperSuctionBranch = makeTube([
-    new THREE.Vector3(2.40, 1.78, 0),
-    new THREE.Vector3(1.60, 1.79, 0),
-    new THREE.Vector3(1.45, 1.57, 0),
-    new THREE.Vector3(0.86, 1.47, 0),
-  ], 0.25, shellMaterial,
-  'upper-suction-branch-through-valve-1');
-  root.add(upperSuctionBranch);
-  const lowerSuctionBranch = makeTube([
-    new THREE.Vector3(2.40, -1.31, 0),
-    new THREE.Vector3(1.58, -1.32, 0),
-    new THREE.Vector3(1.45, -1.12, 0),
-    new THREE.Vector3(0.86, -1.03, 0),
-  ], 0.25, shellMaterial,
-  'lower-suction-branch-through-valve-2');
-  root.add(lowerSuctionBranch);
-  const lowerDischargeBranch = makeTube([
-    new THREE.Vector3(-0.86, -1.03, 0),
-    new THREE.Vector3(-1.45, -1.12, 0),
-    new THREE.Vector3(-1.58, -1.32, 0),
-    new THREE.Vector3(-2.40, -1.31, 0),
-  ], 0.25, shellMaterial,
-  'lower-discharge-branch-through-valve-3');
-  root.add(lowerDischargeBranch);
-  const upperDischargeBranch = makeTube([
-    new THREE.Vector3(-0.86, 1.47, 0),
-    new THREE.Vector3(-1.45, 1.57, 0),
-    new THREE.Vector3(-1.60, 1.79, 0),
-    new THREE.Vector3(-2.40, 1.78, 0),
-  ], 0.25, shellMaterial,
-  'upper-discharge-branch-through-valve-4');
-  root.add(upperDischargeBranch);
-
-  const branchWaters = [
-    [upperSuctionBranch, 'water-through-upper-suction-valve-1'],
-    [lowerSuctionBranch, 'water-through-lower-suction-valve-2'],
-    [lowerDischargeBranch, 'water-through-lower-discharge-valve-3'],
-    [upperDischargeBranch, 'water-through-upper-discharge-valve-4'],
-  ].map(([branch, role]) => {
-    const water = addRole(new THREE.Mesh(
-      new THREE.TubeGeometry(branch.userData.curve, 72, 0.16, 14, false),
-      waterMaterial,
-    ), role);
-    root.add(water);
-    return water;
-  });
-
-  const valveBodyMaterial = shellMaterial.clone();
-  valveBodyMaterial.opacity = 0.38;
+  // Hinged flaps 1–4: each hangs from a fixed knuckle block and swings its
+  // lower edge to the left (into the chamber for suction 1 and 2, into
+  // passage B for discharge 3 and 4). Brown's small round stops sit beside
+  // each hinge.
   const makeValve = (name, material, role) => {
-    const position = valveSeats[name];
+    const length = flapLengths[name];
     const group = addRole(new THREE.Group(), role);
-    group.position.copy(position);
+    group.position.copy(valveSeats[name]);
+    const mountTop = name === 'lowerSuction2' ? sy(415)
+      : name === 'lowerDischarge3' ? sy(408) : sy(114);
     const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.40, 0.40, 0.42, 36, 1, true),
-      valveBodyMaterial,
+      new THREE.BoxGeometry(0.09, mountTop - valveSeats[name].y - 0.04,
+        2 * pistonHalfDepth),
+      frameMaterial,
     );
+    body.position.y = (mountTop - valveSeats[name].y + 0.04) / 2;
+    body.userData.role = 'fixed-flap-hinge-block';
     group.add(body);
-    const seat = horizontalRing(0.31, 0.055, darkMaterial);
-    seat.position.y = -0.11;
-    group.add(seat);
-    const disk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.30, 0.30, 0.08, 34),
+    const stop = new THREE.Mesh(
+      plate(poly([...arcPoints(0, 0, 0.05, Math.PI, 2 * Math.PI, 16)]),
+        -pistonHalfDepth, pistonHalfDepth),
+      frameMaterial,
+    );
+    stop.position.set(-0.14, mountTop - valveSeats[name].y, 0);
+    stop.userData.role = 'fixed-flap-stop';
+    group.add(stop);
+    const disk = new THREE.Group();
+    const knuckle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, 2 * pistonHalfDepth, 24),
       material,
     );
-    disk.position.y = -0.04;
+    knuckle.rotation.x = Math.PI / 2;
+    disk.add(knuckle);
+    const flap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, length - 0.02, 2 * pistonHalfDepth - 0.02),
+      material,
+    );
+    flap.position.y = -0.02 - length / 2;
+    disk.add(flap);
     group.add(disk);
     group.userData.disk = disk;
+    group.userData.flapLength = length;
     root.add(group);
     return group;
   };
-  const upperSuctionValve1 = makeValve(
-    'upperSuction1',
-    suctionValveMaterial,
-    'number-1-upper-suction-check',
-  );
-  const lowerSuctionValve2 = makeValve(
-    'lowerSuction2',
-    suctionValveMaterial,
-    'number-2-lower-suction-check',
-  );
-  const lowerDischargeValve3 = makeValve(
-    'lowerDischarge3',
-    dischargeValveMaterial,
-    'number-3-lower-discharge-check',
-  );
-  const upperDischargeValve4 = makeValve(
-    'upperDischarge4',
-    dischargeValveMaterial,
-    'number-4-upper-discharge-check',
-  );
+  const upperSuctionValve1 = makeValve('upperSuction1', suctionValveMaterial,
+    'number-1-upper-suction-check');
+  const lowerSuctionValve2 = makeValve('lowerSuction2', suctionValveMaterial,
+    'number-2-lower-suction-check');
+  const lowerDischargeValve3 = makeValve('lowerDischarge3', dischargeValveMaterial,
+    'number-3-lower-discharge-check');
+  const upperDischargeValve4 = makeValve('upperDischarge4', dischargeValveMaterial,
+    'number-4-upper-discharge-check');
 
-  const branchDefinitions = [
-    [upperSuctionBranch.userData.curve, 'upperSuctionFlowRate'],
-    [lowerSuctionBranch.userData.curve, 'lowerSuctionFlowRate'],
-    [lowerDischargeBranch.userData.curve, 'lowerDischargeFlowRate'],
-    [upperDischargeBranch.userData.curve, 'upperDischargeFlowRate'],
-  ];
-  const flowMarkerGroups = branchDefinitions.map(([curve, flowKey], branch) => {
-    return Array.from({ length: 3 }, (_, index) => {
-      const marker = addRole(new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 16, 10),
-        whiteMaterial,
-      ), 'double-acting-port-flow-tracer');
-      marker.userData = { branch, curve, flowKey, index };
-      root.add(marker);
-      return marker;
-    });
-  });
-
+  const flapAngleFor = (open) => -maximumFlapAngle * open;
   const update = (time) => {
     const state = stateAtTime(time);
     piston.position.y = state.pistonY;
     pistonRod.position.y = (state.rodBottomY + state.rodTopY) / 2;
     rodTopMarker.position.set(0, state.rodTopY, 0);
-    setVerticalExtent(
-      lowerWater,
-      lowerChamberEndY,
-      state.pistonBottomY - 0.04,
-    );
-    setVerticalExtent(
-      upperWater,
-      state.pistonTopY + 0.04,
-      upperChamberEndY,
-    );
-    upperSuctionValve1.userData.disk.position.y = -0.04
-      + state.upperSuction1Lift;
-    lowerSuctionValve2.userData.disk.position.y = -0.04
-      + state.lowerSuction2Lift;
-    lowerDischargeValve3.userData.disk.position.y = -0.04
-      + state.lowerDischarge3Lift;
-    upperDischargeValve4.userData.disk.position.y = -0.04
-      + state.upperDischarge4Lift;
-    flowMarkerGroups.flat().forEach((marker) => {
-      const { curve, flowKey, index } = marker.userData;
-      const flow = state[flowKey];
-      const travel = THREE.MathUtils.euclideanModulo(
-        index / 3 + state.phase * 2,
-        1,
-      );
-      marker.position.copy(curve.getPoint(travel));
-      marker.position.z = 0.21;
-      marker.visible = flow > 0.002;
-    });
+    upperSuctionValve1.userData.disk.rotation.z = flapAngleFor(state.upperSuction1Open);
+    lowerSuctionValve2.userData.disk.rotation.z = flapAngleFor(state.lowerSuction2Open);
+    lowerDischargeValve3.userData.disk.rotation.z = flapAngleFor(state.lowerDischarge3Open);
+    upperDischargeValve4.userData.disk.rotation.z = flapAngleFor(state.upperDischarge4Open);
   };
-
   const sourceState = stateAtInputAngle(0);
   const geometry = {
     chamberArea,
@@ -480,6 +377,10 @@ function doubleActingPump(movement) {
     groundY,
     inputAngularSpeed,
     lowerChamberEndY,
+    boreHalfWidth,
+    casingHalfDepth,
+    flapLengths,
+    maximumFlapAngle,
     maximumValveLift,
     pistonAmplitude,
     pistonCenterY,
@@ -498,32 +399,23 @@ function doubleActingPump(movement) {
     archetype:
       'closed-double-acting-pump-with-stuffing-box-four-numbered-checks-opposite-chamber-suction-and-discharge',
     blocks: {
+      backPlate,
       barrel,
       barrelRails,
       base,
-      branchWaters,
       dischargeManifold,
-      dischargeManifoldWater,
-      flowMarkerGroups,
       lowerCover,
-      lowerDischargeBranch,
       lowerDischargeValve3,
-      lowerSuctionBranch,
       lowerSuctionValve2,
-      lowerWater,
       piston,
       pistonBody,
       pistonRod,
       rodTopMarker,
       stuffingBox,
       suctionManifold,
-      suctionManifoldWater,
       upperCover,
-      upperDischargeBranch,
       upperDischargeValve4,
-      upperSuctionBranch,
       upperSuctionValve1,
-      upperWater,
     },
     degreesOfFreedom: {
       independentPrescribedInputs: 1,
@@ -537,7 +429,7 @@ function doubleActingPump(movement) {
       fullPressureWaveValveImpactLeakageRodAreaDifferenceCavitationAndDriveForceModeled:
         false,
       checkValveModel:
-        'Each stroke pair uses a C2 cubic velocity lobe. Valves 1 and 3 share the downstroke lobe; valves 2 and 4 share the disjoint upstroke lobe; all four seat at dead center.',
+        'Each stroke pair uses a C2 cubic lobe that swings its hinged flaps open by up to 0.62 rad. Valves 1 and 3 share the downstroke lobe; valves 2 and 4 share the disjoint upstroke lobe; all four seat at dead center.',
       flowModel:
         'Both closed cylinder chambers are treated as primed and incompressible with equal effective areas. Rod displacement, pressure losses and leakage are neglected, so one suction and the opposite discharge have exactly equal flow on every moving stroke.',
     },
@@ -591,9 +483,9 @@ function doubleActingPump(movement) {
           'upstroke opens lower suction 2 and upper discharge 4',
         ],
         engravingEvidence:
-          'Brown’s section shows a central closed vertical cylinder and solid piston, a rod through the top packing, right suction manifold A, left discharge manifold B, and the four checks in their numbered upper-right, lower-right, lower-left and upper-left positions. Its arrow depicts the piston moving downward.',
+          'Brown’s section shows a central closed vertical cylinder and solid piston, a rod through the top packing, right suction manifold A, left discharge manifold B, and the four checks in their numbered upper-right, lower-right, lower-left and upper-left positions. The cylinder bore is formed by two cored jackets; passage A rises up the right side to flaps 2 and 1, and passage B wraps round the left jacket from flaps 3 and 4. Its arrow depicts the piston moving downward.',
         reconstructionDisclosure:
-          'Brown gives no bore, stroke, rod area, valve lift, manifold size, water source level, pressure, losses, leakage, drive, or timing. Those values, equal effective chamber areas, sinusoidal stroke, C2 check lobes, transparent cutaway, colors, tracers, and 4.9-second cycle are independently engineered. The two closed ends, stuffing box, four numbered ports, common A/B pipes, and diagonal stroke-pair sequence are source-grounded.',
+          'Brown gives no bore, stroke, rod area, valve lift, manifold size, water source level, pressure, losses, leakage, drive, or timing. Those values, equal effective chamber areas, sinusoidal stroke, C2 flap lobes and 0.62-rad flap swing, the planar section depth, colors, and 4.9-second cycle are independently engineered. The two closed ends, stuffing box, four numbered ports, common A/B pipes, and diagonal stroke-pair sequence are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 452',
@@ -610,14 +502,26 @@ function doubleActingPump(movement) {
     },
     update,
   };
+  // Frame Brown's section: pipe mouths B and A at top and bottom; the rod
+  // runs out of the top of the picture as he draws it.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.50, groundY, -1.72),
-    new THREE.Vector3(3.50, 4.32, 1.72),
+    new THREE.Vector3(sx(100), sy(506), -1.0),
+    new THREE.Vector3(sx(430), sy(28), 1.0),
   );
-  root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraDirection = new THREE.Vector3(6.0, 4.7, 10.4);
+  root.userData.cameraDistanceScale = 1.0;
+  root.userData.cameraFov = 14;
+  root.userData.cameraDirection = new THREE.Vector3(0.08, 0.05, 1);
   root.userData.groundFloorY = groundY;
-  correctDoubleActingParts(root);
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.userData.solidReview = {
+    qualification: 'Planar section: bored top wall and gland, piston clearance in the jacketed bore, and hinged flaps clear of their knuckle blocks, stops and seats. Flap swings and primed-fluid displacement remain prescribed; pressure, valve impact and sealing losses are not solved.',
+  };
+  root.traverse((object) => {
+    for (const material of object.material ? [].concat(object.material) : []) {
+      material.fog = false;
+    }
+  });
   markShadows(root);
   base.receiveShadow = true;
   update(0);

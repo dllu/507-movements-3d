@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {horizontalVane,horizontalRing,horizontalPlate,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
@@ -63,7 +64,9 @@ function horizontalOvershotWaterWheel(movement) {
   const sourcePoseBladeOffset = 0;
   const hubRadius = 0.48;
   const shaftRadius = 0.19;
-  const impactAngle = THREE.MathUtils.degToRad(45);
+  // The jet strikes the far side of the runner, so its spout climbs across
+  // Brown's view to the upper right with its open trough facing the viewer.
+  const impactAngle = THREE.MathUtils.degToRad(112.5);
   const impactRadius = 2.12;
   const impactHeight = 0.34;
   const jetForceMagnitudeNormalized = 18;
@@ -81,9 +84,11 @@ function horizontalOvershotWaterWheel(movement) {
   const tangentialJetForceNormalized = jetForce.dot(impactTangent);
   const impulseTorqueNormalized = new THREE.Vector3()
     .crossVectors(impactPoint, jetForce).y;
+  // Brown's spout mouth sits well below the overhead beam, about two-fifths
+  // of the way up from the runner.
   const nozzlePoint = impactPoint.clone()
-    .addScaledVector(impactTangent, -2.34)
-    .add(new THREE.Vector3(0, 2.42, 0));
+    .addScaledVector(impactTangent, -2.2)
+    .add(new THREE.Vector3(0, 1.72, 0));
   const flumeUpstreamPoint = nozzlePoint.clone()
     .addScaledVector(impactTangent, -1.62)
     .add(new THREE.Vector3(0, 1.22, 0));
@@ -268,6 +273,13 @@ function horizontalOvershotWaterWheel(movement) {
     catchingLip.userData.role =
       `upturned-catching-lip-of-horizontal-scoop-${bladeIndex + 1}`;
     bladeGroup.add(catchingLip);
+    // Brown draws broad flat radial boards, pitched about their radial axis
+    // so their faces show from his raised viewpoint; no scoop lips.
+    bladeFloor.geometry.dispose();
+    bladeFloor.geometry = horizontalVane([new THREE.Vector3(bladeInnerRadius, 0, 0),
+      new THREE.Vector3(bladeOuterRadius, 0, 0)], .04, -.36, .36).rotateX(-.62);
+    bladeFloor.position.y = .16;
+    catchingLip.visible = false;
     rotor.add(bladeGroup);
     bladeGroups.push(bladeGroup);
   }
@@ -325,7 +337,11 @@ function horizontalOvershotWaterWheel(movement) {
     frameMaterial,
   );
   overheadBeam.geometry.dispose();overheadBeam.geometry=horizontalPlate(polygonClipping.difference(poly([[-3.8,-.35],[3.8,-.35],[3.8,.35],[-3.8,.35]]),poly(circle([.10,-.18],.194,128))),-.14,.14);
-  overheadBeam.position.set(-0.10, 4.20, -0.18);
+  // Turned about the shaft axis to run straight across the source view,
+  // which looks in from 31 degrees round from +z (source-presentation).
+  overheadBeam.geometry.translate(-0.10, 0, -0.18);
+  overheadBeam.position.set(0, 4.20, 0);
+  overheadBeam.rotation.y = Math.atan2(0.6, 1);
   overheadBeam.userData.role = 'fixed-overhead-bearing-beam';
   root.add(overheadBeam);
   const bearingCone = new THREE.Mesh(
@@ -345,6 +361,17 @@ function horizontalOvershotWaterWheel(movement) {
     frameMaterial,
     'inclined-fixed-headrace-flume-above-horizontal-wheel',
   );
+  // Brown's spout is a long, narrow open trough (a floor and two side walls)
+  // running up out of his frame.
+  const spoutExtension = 1.4;
+  {
+    const length = flume.geometry.parameters.width + spoutExtension;
+    const parts = [new THREE.BoxGeometry(length, .05, .56).translate(-spoutExtension / 2, -.075, 0),
+      ...[-1, 1].map(side => new THREE.BoxGeometry(length, .24, .05).translate(-spoutExtension / 2, .02, side * .255))];
+    flume.geometry.dispose();
+    flume.geometry = mergeGeometries(parts);
+    parts.forEach(part => part.dispose());
+  }
   root.add(flume);
   const flumeWaterStart = flumeUpstreamPoint.clone()
     .add(new THREE.Vector3(0, 0.14, 0));
@@ -358,6 +385,12 @@ function horizontalOvershotWaterWheel(movement) {
     paleWaterMaterial,
     'water-approaching-horizontal-wheel-through-headrace',
   );
+  {
+    const length = flumeWater.geometry.parameters.width + spoutExtension;
+    flumeWater.geometry.dispose();
+    flumeWater.geometry = new THREE.BoxGeometry(length, .07, .44).translate(-spoutExtension / 2, 0, 0);
+  }
+  flumeWater.position.y -= .15;
   root.add(flumeWater);
 
   const jetControlPoint = nozzlePoint.clone().lerp(impactPoint, 0.50)
@@ -373,6 +406,22 @@ function horizontalOvershotWaterWheel(movement) {
     waterMaterial,
     'falling-tangential-jet-striking-horizontal-scoop-wheel',
   );
+  // Brown draws the jet as a sheet of fine spray lines leaving the spout,
+  // not a solid hose: a fan of thin streams across the trough mouth.
+  {
+    const across = new THREE.Vector3().crossVectors(impactTangent, new THREE.Vector3(0, 1, 0)).normalize();
+    const streams = [-2, -1, 0, 1, 2].map(k => {
+      const offset = across.clone().multiplyScalar(.09 * k);
+      const spread = across.clone().multiplyScalar(.16 * k);
+      const curve = new THREE.QuadraticBezierCurve3(nozzlePoint.clone().add(offset),
+        jetControlPoint.clone().add(offset).add(spread.clone().multiplyScalar(.5)),
+        impactPoint.clone().add(spread));
+      return new THREE.TubeGeometry(curve, 48, .028 + .01 * (k === 0), 6, false);
+    });
+    jet.geometry.dispose();
+    jet.geometry = mergeGeometries(streams);
+    streams.forEach(stream => stream.dispose());
+  }
   root.add(jet);
   const jetMarkers = [];
   for (let markerIndex = 0; markerIndex < 9; markerIndex += 1) {
@@ -565,9 +614,11 @@ function horizontalOvershotWaterWheel(movement) {
     },
     update,
   };
+  // Frame the runner, shaft and bearing; like Brown, the overhead beam and
+  // the spout run on out of the picture.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.25, -0.88, -3.35),
-    new THREE.Vector3(4.92, 4.42, 3.48),
+    new THREE.Vector3(-2.85, -0.95, -2.85),
+    new THREE.Vector3(2.85, 4.45, 2.85),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 5.2, 10.5);

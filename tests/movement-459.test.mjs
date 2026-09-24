@@ -294,10 +294,10 @@ test('movement 459 obeys the single-start worm ratio and pitch-line velocity in 
   near(geometry.axialPitch,
     FULL_TURN * geometry.wheelPitchRadius / geometry.wheelTeeth, 0,
   'worm axial pitch matches wheel circular pitch');
-  // A third of a pulley turn per lift keeps the wind wheel at a readable
-  // display rate: four worm turns per lift.
-  near(geometry.wormTurnsPerLift, 4, 1e-15, 'four worm turns per lift');
-  near(geometry.wormTurnsPerCycle, 8, 1e-15, 'integer cycle closure');
+  // Half a pulley turn per lift lowers the bucket into the well past
+  // Brown's ground line: six worm turns per lift.
+  near(geometry.wormTurnsPerLift, 6, 1e-15, 'six worm turns per lift');
+  near(geometry.wormTurnsPerCycle, 12, 1e-15, 'integer cycle closure');
 
   for (let sample = 0; sample < 16000; sample += 1) {
     const phase = sample / 16000;
@@ -324,7 +324,7 @@ test('movement 459 obeys the single-start worm ratio and pitch-line velocity in 
   }
   const closure = stateAtInputAngle(FULL_TURN - 1e-12);
   near(THREE.MathUtils.euclideanModulo(closure.wormAngle, FULL_TURN),
-    0, 3e-13, 'worm returns to its angular datum after 8 turns');
+    0, 3e-13, 'worm returns to its angular datum after 12 turns');
   disposeModel(model.root);
 });
 

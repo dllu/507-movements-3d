@@ -6,13 +6,7 @@ import {
 } from './primitives.js';
 
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
-
-function lowerSeatGeometry() {
- const p=[];
- for(let i=0;i<=32;i++){const a=Math.PI/2+Math.PI/2*i/32;p.push(new THREE.Vector2(.205*Math.sin(a),.205*Math.cos(a)));}
- for(let i=32;i>=0;i--){const a=Math.PI/2+Math.PI/2*i/32;p.push(new THREE.Vector2(.166*Math.sin(a),.166*Math.cos(a)));}
- p.push(p[0].clone());return new THREE.LatheGeometry(p,64);
-}
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -23,15 +17,6 @@ function cylinderAlongX(radius, length, material, segments = 40) {
     material,
   );
   cylinder.rotation.z = Math.PI / 2;
-  return cylinder;
-}
-
-function cylinderAlongZ(radius, length, material, segments = 40) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
   return cylinder;
 }
 
@@ -46,36 +31,34 @@ function cylinderBetween(start, end, radius, material, segments = 20) {
   return cylinder;
 }
 
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
+// Brown's rod B stands square to head A, which turns on the inclined bent
+// end of shaft A. Half a turn tips the bent end from down-left to up-left, so
+// B leans the other way (his dotted overlay). With B square to the bent end,
+// B's lower end can stay on C's single guide only if B slides through the
+// swivel socket in C, so the engaged length of B varies slightly.
+function sphericalZone(radius, inner, fromPolar, toPolar, segments = 64) {
+  const points = [];
+  for (let i = 0; i <= 24; i += 1) {
+    const a = fromPolar + (toPolar - fromPolar) * i / 24;
+    points.push(new THREE.Vector2(radius * Math.sin(a), radius * Math.cos(a)));
+  }
+  for (let i = 24; i >= 0; i -= 1) {
+    const a = fromPolar + (toPolar - fromPolar) * i / 24;
+    points.push(new THREE.Vector2(inner * Math.sin(a), inner * Math.cos(a)));
+  }
+  points.push(points[0].clone());
+  return new THREE.LatheGeometry(points.reverse(), segments);
 }
 
-function makeDynamicRod(radius, material, role) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 22),
-    material,
-  );
-  rod.userData.role = role;
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
-}
-
-function torusNormalToX(majorRadius, tubeRadius, material, segments = 80) {
-  const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(majorRadius, tubeRadius, 12, segments),
-    material,
-  );
-  torus.rotation.y = Math.PI / 2;
-  return torus;
+function boredBall(radius, bore, segments = 64) {
+  const points = [];
+  const start = Math.asin(bore / radius);
+  for (let i = 0; i <= 32; i += 1) {
+    const a = start + (Math.PI - 2 * start) * i / 32;
+    points.push(new THREE.Vector2(radius * Math.sin(a), radius * Math.cos(a)));
+  }
+  points.push(new THREE.Vector2(bore, points[0].y));
+  return new THREE.LatheGeometry(points.reverse(), segments);
 }
 
 function bentShaftSlide(movement) {
@@ -84,22 +67,32 @@ function bentShaftSlide(movement) {
   const shaftAngularSpeed = FULL_TURN / cycleDuration;
   const shaftAxisY = 1.25;
   const shaftAxisZ = 0;
-  const bentJournalX = -0.65;
-  const crankRadius = 0.52;
+  const bendX = 1.40;
+  const bentEndInclination = THREE.MathUtils.degToRad(14);
+  const sinA = Math.sin(bentEndInclination);
+  const cosA = Math.cos(bentEndInclination);
+  const rodRootOnBentEnd = 0.20;
+  const headStart = 0.08;
+  const headEnd = 1.10;
+  const bentEndLength = 1.22;
   const slideAxisY = -1.25;
   const slideAxisZ = 0;
-  const socketRodLength = 3.20;
   const sourceShaftAngle = 0;
   const transverseCenterDistance = shaftAxisY - slideAxisY;
-  const minimumTransverseDistance = transverseCenterDistance - crankRadius;
-  const maximumTransverseDistance = transverseCenterDistance + crankRadius;
-  const slideMaximumX = bentJournalX + Math.sqrt(
-    socketRodLength ** 2 - minimumTransverseDistance ** 2,
-  );
-  const slideMinimumX = bentJournalX + Math.sqrt(
-    socketRodLength ** 2 - maximumTransverseDistance ** 2,
-  );
+  const harmonicAmplitude = transverseCenterDistance * sinA / cosA;
+  const slideMaximumX = bendX + (transverseCenterDistance * sinA - rodRootOnBentEnd) / cosA;
+  const slideMinimumX = bendX + (-transverseCenterDistance * sinA - rodRootOnBentEnd) / cosA;
   const slideStroke = slideMaximumX - slideMinimumX;
+  const engagedLength = (x) => Math.sqrt((x - bendX) ** 2
+    + transverseCenterDistance ** 2 - rodRootOnBentEnd ** 2);
+  const rodEngagedLengthMinimum = engagedLength(bendX);
+  const rodEngagedLengthMaximum = engagedLength(slideMinimumX);
+  const rodTipBeyondSocket = 0.03;
+  const rodTipLength = rodEngagedLengthMaximum + rodTipBeyondSocket;
+  const bendPoint = new THREE.Vector3(bendX, shaftAxisY, shaftAxisZ);
+
+  const bentEndDirection = (angle) => new THREE.Vector3(
+    -cosA, -sinA * Math.cos(angle), -sinA * Math.sin(angle));
 
   const stateAtShaftAngle = (
     shaftAngle,
@@ -108,81 +101,45 @@ function bentShaftSlide(movement) {
   ) => {
     const cosine = Math.cos(shaftAngle);
     const sine = Math.sin(shaftAngle);
-    const upperSocket = new THREE.Vector3(
-      bentJournalX,
-      shaftAxisY - crankRadius * cosine,
-      shaftAxisZ - crankRadius * sine,
-    );
-    const upperSocketVelocity = new THREE.Vector3(
-      0,
-      crankRadius * shaftSpeed * sine,
-      -crankRadius * shaftSpeed * cosine,
-    );
-    const upperSocketAcceleration = new THREE.Vector3(
-      0,
-      crankRadius * (
-        shaftAcceleration * sine + shaftSpeed ** 2 * cosine
-      ),
-      crankRadius * (
-        -shaftAcceleration * cosine + shaftSpeed ** 2 * sine
-      ),
-    );
-    const transverseY = slideAxisY - upperSocket.y;
-    const transverseZ = slideAxisZ - upperSocket.z;
-    const transverseDistanceSquared = transverseY ** 2
-      + transverseZ ** 2;
-    const longitudinalSeparation = Math.sqrt(
-      socketRodLength ** 2 - transverseDistanceSquared,
-    );
-    const slideX = bentJournalX + longitudinalSeparation;
-    const lowerSocket = new THREE.Vector3(
-      slideX,
-      slideAxisY,
-      slideAxisZ,
-    );
-    const slideSpeed = (
-      transverseY * upperSocketVelocity.y
-      + transverseZ * upperSocketVelocity.z
-    ) / longitudinalSeparation;
-    const slideAcceleration = (
-      -(slideSpeed ** 2)
-      - upperSocketVelocity.y ** 2
-      - upperSocketVelocity.z ** 2
-      + transverseY * upperSocketAcceleration.y
-      + transverseZ * upperSocketAcceleration.z
-    ) / longitudinalSeparation;
+    const bentEnd = bentEndDirection(shaftAngle);
+    const bentEndRate = new THREE.Vector3(0, sinA * sine, -sinA * cosine);
+    const bentEndSecond = new THREE.Vector3(0, sinA * cosine, sinA * sine);
+    const upperSocket = bendPoint.clone().addScaledVector(bentEnd, rodRootOnBentEnd);
+    const upperSocketVelocity = bentEndRate.clone()
+      .multiplyScalar(rodRootOnBentEnd * shaftSpeed);
+    const upperSocketAcceleration = bentEndSecond.clone()
+      .multiplyScalar(rodRootOnBentEnd * shaftSpeed ** 2)
+      .addScaledVector(bentEndRate, rodRootOnBentEnd * shaftAcceleration);
+    // B square to the bent end: (C - bend).u = rodRoot, C on its guide.
+    const slideX = bendX + (transverseCenterDistance * sinA * cosine
+      - rodRootOnBentEnd) / cosA;
+    const slideSpeed = -harmonicAmplitude * sine * shaftSpeed;
+    const slideAcceleration = -harmonicAmplitude
+      * (cosine * shaftSpeed ** 2 + sine * shaftAcceleration);
+    const lowerSocket = new THREE.Vector3(slideX, slideAxisY, slideAxisZ);
     const lowerSocketVelocity = new THREE.Vector3(slideSpeed, 0, 0);
-    const lowerSocketAcceleration = new THREE.Vector3(
-      slideAcceleration,
-      0,
-      0,
-    );
+    const lowerSocketAcceleration = new THREE.Vector3(slideAcceleration, 0, 0);
     const rodVector = lowerSocket.clone().sub(upperSocket);
+    const rodEngagedLength = rodVector.length();
     const relativeSocketVelocity = lowerSocketVelocity.clone()
       .sub(upperSocketVelocity);
-    const relativeSocketAcceleration = lowerSocketAcceleration.clone()
-      .sub(upperSocketAcceleration);
+    const bentEndVelocity = bentEndRate.clone().multiplyScalar(shaftSpeed);
     return {
+      bentEnd,
       halfTurnPose: Math.cos(shaftAngle - sourceShaftAngle) >= 0
         ? 'near-bold-source-half'
         : 'near-dotted-opposite-half',
-      longitudinalSeparation,
       lowerSocket,
       lowerSocketAcceleration,
       lowerSocketVelocity,
-      relativeSocketAcceleration,
       relativeSocketVelocity,
-      rodLengthResidual: rodVector.length() - socketRodLength,
-      rodPositionConstraintResidual:
-        longitudinalSeparation ** 2 + transverseDistanceSquared
-          - socketRodLength ** 2,
+      rodEngagedLength,
+      rodLeanFromVertical: Math.atan2(rodVector.x, -rodVector.y),
+      rodSquarenessResidual: rodVector.dot(bentEnd),
+      rodSquarenessRateResidual: relativeSocketVelocity.dot(bentEnd)
+        + rodVector.dot(bentEndVelocity),
+      rodTipBeyondSocket: rodTipLength - rodEngagedLength,
       rodVector,
-      rodVelocityConstraintResidual: rodVector.dot(
-        relativeSocketVelocity,
-      ),
-      rodAccelerationConstraintResidual:
-        relativeSocketVelocity.lengthSq()
-          + rodVector.dot(relativeSocketAcceleration),
       shaftAcceleration,
       shaftAngle,
       shaftSpeed,
@@ -195,10 +152,6 @@ function bentShaftSlide(movement) {
       slideDisplacement: slideX - slideMinimumX,
       slideSpeed,
       slideX,
-      transverseDistance: Math.sqrt(transverseDistanceSquared),
-      transverseDistanceSquared,
-      transverseY,
-      transverseZ,
       upperSocket,
       upperSocketAcceleration,
       upperSocketVelocity,
@@ -217,11 +170,18 @@ function bentShaftSlide(movement) {
   };
 
   const geometry = {
-    bentJournalX,
-    crankRadius,
+    bendX,
+    bentEndInclination,
+    bentEndLength,
     cycleDuration,
-    maximumTransverseDistance,
-    minimumTransverseDistance,
+    headEnd,
+    headStart,
+    harmonicAmplitude,
+    rodEngagedLengthMaximum,
+    rodEngagedLengthMinimum,
+    rodRootOnBentEnd,
+    rodTipBeyondSocket,
+    rodTipLength,
     shaftAngularSpeed,
     shaftAxisY,
     shaftAxisZ,
@@ -230,7 +190,6 @@ function bentShaftSlide(movement) {
     slideMaximumX,
     slideMinimumX,
     slideStroke,
-    socketRodLength,
     sourceShaftAngle,
     transverseCenterDistance,
   };
@@ -262,7 +221,7 @@ function bentShaftSlide(movement) {
   // the plank with B's socket between its two blocks. No rails are drawn.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-bearing-D-and-slide-C-guide-frame';
-  const plankTopY = slideAxisY - .25;
+  const plankTopY = slideAxisY - .30;
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(6.10, 0.30, 1.10),
     frameMaterial,
@@ -306,7 +265,7 @@ function bentShaftSlide(movement) {
   const shaftRotor = new THREE.Group();
   shaftRotor.position.set(0, shaftAxisY, shaftAxisZ);
   shaftRotor.userData.role = 'continuous-horizontal-shaft-A-rotor';
-  const shaftLeft = -0.20;
+  const shaftLeft = bendX;
   const shaftRight = bearingX + bearingHalfLength + .38;
   const mainShaft = cylinderAlongX(0.13, shaftRight - shaftLeft, driverMaterial, 38);
   mainShaft.position.x = (shaftLeft + shaftRight) / 2;
@@ -328,30 +287,39 @@ function bentShaftSlide(movement) {
   crankKnob.position.set(crankX + .62, crankArmLength, 0);
   crankKnob.userData.role = 'input-crank-handle-knob';
   shaftRotor.add(crankKnob);
-  const bentWeb = cylinderBetween(
-    new THREE.Vector3(-0.20, 0, 0),
-    new THREE.Vector3(-0.20, -crankRadius, 0),
-    0.12,
-    driverMaterial,
-    24,
-  );
-  bentWeb.userData.role = 'radial-bend-at-end-of-shaft-A';
+  // The bend: a knuckle at the end of the straight shaft, a collar just
+  // inboard of it (Brown's collar at A), and the inclined bent end.
+  const bentWeb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 20), driverMaterial);
+  bentWeb.position.set(bendX, 0, 0);
+  bentWeb.userData.role = 'knuckle-at-bend-of-shaft-A';
   shaftRotor.add(bentWeb);
-  // The journal runs on through the full length of head A to its washer.
-  const journalLeft = bentJournalX - .62, journalRight = -.20;
-  const bentJournal = cylinderAlongX(0.12, journalRight - journalLeft, darkMaterial, 32);
-  bentJournal.position.set((journalLeft + journalRight) / 2, -crankRadius, 0);
-  bentJournal.userData.role = 'offset-parallel-bent-journal-of-shaft-A';
+  const shaftCollar = cylinderAlongX(0.21, 0.20, driverMaterial, 40);
+  shaftCollar.position.x = bendX + 0.18;
+  shaftCollar.userData.role = 'collar-at-bend-of-shaft-A';
+  shaftRotor.add(shaftCollar);
+  const bentEndLocal = new THREE.Vector3(-cosA, -sinA, 0);
+  const bentJournal = cylinderBetween(
+    new THREE.Vector3(bendX, 0, 0),
+    new THREE.Vector3(bendX, 0, 0).addScaledVector(bentEndLocal, bentEndLength),
+    0.12, darkMaterial, 32);
+  bentJournal.userData.role = 'inclined-bent-end-of-shaft-A';
   shaftRotor.add(bentJournal);
+  const bentEndWasher = cylinderBetween(
+    new THREE.Vector3(bendX, 0, 0).addScaledVector(bentEndLocal, headEnd + 0.02),
+    new THREE.Vector3(bendX, 0, 0).addScaledVector(bentEndLocal, headEnd + 0.10),
+    0.22, driverMaterial, 40);
+  bentEndWasher.userData.role = 'washer-retaining-head-A-on-bent-end';
+  shaftRotor.add(bentEndWasher);
   root.add(shaftRotor);
 
   // Slide C: Brown's sectioned bar, two blocks either side of B's socket,
-  // joined under the seat; it lies on the plank bed.
+  // joined behind the seat (the gap in front is open, where B's end dips);
+  // it lies on the plank bed.
   const slideC = new THREE.Group();
   slideC.position.set(slideMaximumX, slideAxisY, slideAxisZ);
   slideC.userData.role = 'rectilinearly-reciprocating-slide-C';
   const slideTop = .20;
-  const slideBottom = -.25;
+  const slideBottom = -.30;
   const slideBody = new THREE.Mesh(
     new THREE.BoxGeometry(1.55, slideTop - slideBottom, 0.70),
     drivenMaterial,
@@ -365,76 +333,67 @@ function bentShaftSlide(movement) {
   slideFront.position.set(.23 + .31, (slideTop + slideBottom) / 2, 0);
   slideFront.userData.role = 'rigid-body-of-slide-C';
   const slideBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(.68, .045, 0.70),
+    new THREE.BoxGeometry(.68, slideTop - slideBottom, 0.16),
     drivenMaterial,
   );
-  slideBridge.position.set((-.45 + .23) / 2, slideBottom + .0225, 0);
+  slideBridge.position.set((-.45 + .23) / 2, (slideTop + slideBottom) / 2, -.27);
   slideBridge.userData.role = 'rigid-body-of-slide-C';
   slideC.add(slideBody, slideFront, slideBridge);
-  const lowerBall = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 18),
-    whiteMaterial,
-  );
-  lowerBall.position.y = 0;
-  lowerBall.userData.role = 'white-lower-ball-in-slide-C-socket';
+  // The swivel ball turns with B, which slides through its bore.
+  const lowerBall = new THREE.Mesh(boredBall(0.17, 0.105), whiteMaterial);
+  lowerBall.userData.role = 'white-lower-swivel-ball-B-slides-through';
   slideC.add(lowerBall);
-  const lowerSocketCup = new THREE.Mesh(lowerSeatGeometry(),socketMaterial);
+  // Seat: a spherical band round the ball's equator, carried by the web.
+  const lowerSocketCup = new THREE.Mesh(sphericalZone(0.215, 0.176, Math.PI / 3, Math.PI * 2 / 3), socketMaterial);
   lowerSocketCup.userData.role = 'lower-universal-socket-in-slide-C';
   slideC.add(lowerSocketCup);
+  const socketWeb = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.14, 0.06), socketMaterial);
+  socketWeb.position.set(0, 0, -0.23);
+  socketWeb.userData.role = 'web-carrying-socket-from-back-of-slide-C';
+  slideC.add(socketWeb);
   root.add(slideC);
 
-  const rodB = makeDynamicRod(
-    0.085,
-    drivenMaterial,
-    'constant-length-oblique-double-socket-rod-B',
-  );
-  // Only the exposed shank is drawn; the analytic center-to-center length is
-  // unchanged. It starts inside head A's boss, clear of the bent journal.
-  const shankStart = .40, shankEnd = .10;
-  rodB.geometry.dispose();
-  rodB.geometry = new THREE.CylinderGeometry(.085,.085,1-(shankStart+shankEnd)/socketRodLength,32);
-  rodB.geometry.translate(0,(shankStart-shankEnd)/2/socketRodLength,0);
-  root.add(rodB);
-  // Rod B keeps its local X in the plane of B and the bent journal, so the
-  // journal only swings about B's local Z inside head A (by ±half the range
-  // of B's inclination to the shaft) and never twists across it.
-  const inclination = (distance) => Math.acos(Math.sqrt(socketRodLength ** 2 - distance ** 2) / socketRodLength);
-  const minimumInclination = inclination(minimumTransverseDistance);
-  const maximumInclination = inclination(maximumTransverseDistance);
-  const meanInclination = (minimumInclination + maximumInclination) / 2;
-  const headSwing = (maximumInclination - minimumInclination) / 2;
-  geometry.headAxisInclinationToRodB = meanInclination;
-  geometry.journalSwingInHeadA = headSwing;
-  // Brown's head A: the thick, tapered socket block at B's upper end turning
-  // on the bent end of A, with a collar towards D and a washer at its outer
-  // end. Its hourglass bore clears the journal through the whole swing.
-  const boreAt = (axial) => .14 + Math.tan(headSwing) * 1.03 * Math.abs(axial);
+  // Rod B: its root is square to head A on the bent end; only the exposed
+  // shank is drawn from the head's underside to its rounded tip.
+  const rodBody = new THREE.Group();
+  rodBody.userData.role = 'rod-B-rigid-with-head-A';
+  root.add(rodBody);
+  const rodRadius = 0.10;
+  const shankStart = 0.30;
+  const rodGeometry = new THREE.CylinderGeometry(rodRadius, rodRadius, rodTipLength - shankStart, 32);
+  rodGeometry.translate(0, (rodTipLength + shankStart) / 2, 0);
+  const rodB = new THREE.Mesh(rodGeometry, drivenMaterial);
+  rodB.userData.role = 'square-rod-B-sliding-through-socket-in-C';
+  rodBody.add(rodB);
+  // Head A: Brown's thick sleeve turning on the bent end, a collar at its
+  // outer end; B leaves its underside near the bend.
   const headProfile = [
-    [.40,-.62],[.40,-.55],[.36,-.54],[.42,.06],[.44,.07],[.44,.20],
-  ].map(([r,y])=>new THREE.Vector2(r,y));
-  for (let i = 0; i <= 32; i += 1) {
-    const axial = .20 - .82 * i / 32;
-    headProfile.push(new THREE.Vector2(boreAt(axial), axial));
-  }
-  headProfile.push(headProfile[0].clone());
-  const headGeometry = new THREE.LatheGeometry(headProfile, 64);
-  headGeometry.rotateZ(-meanInclination);
+    [0.34, headStart - rodRootOnBentEnd],
+    [0.34, headEnd - rodRootOnBentEnd - 0.10],
+    [0.40, headEnd - rodRootOnBentEnd - 0.10],
+    [0.40, headEnd - rodRootOnBentEnd],
+  ].map(([radius, axial]) => ({ axial, radial: radius }));
+  const headGeometry = boredLatheGeometry(headProfile, 0.135, 64);
+  // Lathe axis Y becomes rod-local -X (the bent end runs out along it).
+  headGeometry.rotateZ(Math.PI / 2);
   const upperSocketCup = new THREE.Mesh(headGeometry, drivenMaterial);
-  upperSocketCup.userData.role='upper-universal-socket-of-rod-B';
-  root.add(upperSocketCup);
-  // The boss joining head A to B's shank; it starts far enough down B to
-  // clear the journal at B's steepest inclination to it.
-  const bossGeometry = new THREE.CylinderGeometry(.095, .15, .29, 32);
-  bossGeometry.translate(0, .41 + .145, 0);
+  upperSocketCup.userData.role = 'head-A-turning-on-bent-end';
+  rodBody.add(upperSocketCup);
+  const bossGeometry = new THREE.CylinderGeometry(.13, .17, .16, 32);
+  bossGeometry.translate(0, .30 + .08, 0);
   const headBoss = new THREE.Mesh(bossGeometry, drivenMaterial);
   headBoss.userData.role = 'boss-of-head-A-joining-rod-B';
-  root.add(headBoss);
-  // The journal's bearing bush inside head A (hidden by the head).
-  const upperBall = new THREE.Mesh(boredCylinderGeometry(.128,.124,.07),darkMaterial);
+  rodBody.add(headBoss);
+  const rodTip = new THREE.Mesh(new THREE.SphereGeometry(rodRadius, 24, 16), drivenMaterial);
+  rodTip.position.y = rodTipLength;
+  rodTip.userData.role = 'rounded-lower-end-of-rod-B';
+  rodBody.add(rodTip);
+  // The head's bush on the bent end (hidden inside the head).
+  const upperBall = new THREE.Mesh(boredCylinderGeometry(.134,.1235,.20),darkMaterial);
   upperBall.rotation.z=Math.PI/2;
-  upperBall.userData.role='bearing-bush-of-head-A-on-bent-journal';
+  upperBall.userData.role='bush-of-head-A-on-bent-end';
+  rodBody.add(upperBall);
 
-  root.add(upperBall);
   const rodBasis = new THREE.Matrix4();
   const rodAxis = new THREE.Vector3();
   const rodSide = new THREE.Vector3();
@@ -444,21 +403,14 @@ function bentShaftSlide(movement) {
     const state = stateAtTime(time);
     shaftRotor.rotation.x = state.shaftAngle;
     slideC.position.x = state.slideX;
-    const rodStart = state.upperSocket.clone();
-    const rodEnd = state.lowerSocket.clone();
-    rodB.userData.setEndpoints(rodStart, rodEnd);
-    rodAxis.copy(rodEnd).sub(rodStart).normalize();
-    rodSide.set(1, 0, 0).addScaledVector(rodAxis, -rodAxis.x).normalize();
+    // Rod-local +Y runs down B to C, +X back along the bent end to the bend.
+    rodAxis.copy(state.rodVector).normalize();
+    rodSide.copy(state.bentEnd).negate();
     rodNormal.crossVectors(rodSide, rodAxis);
-    rodB.quaternion.setFromRotationMatrix(rodBasis.makeBasis(rodSide, rodAxis, rodNormal));
-    upperBall.position.copy(state.upperSocket);
-    upperSocketCup.position.copy(state.upperSocket);
-    upperSocketCup.quaternion.copy(rodB.quaternion);
-    headBoss.position.copy(state.upperSocket);
-    headBoss.quaternion.copy(rodB.quaternion);
-    // The lower ball is forged on rod B's end: it turns with the rod in its
-    // socket in C (slide C does not rotate, so the local turn is the rod's).
-    lowerBall.quaternion.copy(rodB.quaternion);
+    rodBody.position.copy(state.upperSocket);
+    rodBody.quaternion.setFromRotationMatrix(rodBasis.makeBasis(rodSide, rodAxis, rodNormal));
+    // The swivel ball turns with B.
+    lowerBall.quaternion.copy(rodBody.quaternion);
   };
 
   const sourceState = stateAtTime(0);
@@ -466,31 +418,37 @@ function bentShaftSlide(movement) {
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 6,
+      targetCycleDuration: 2,
     },
     archetype:
       'horizontal-bent-shaft-transverse-crank-journal-double-ball-socket-oblique-rod-to-single-axis-slide',
     blocks: {
       bearingD, bearingBore, bearingPost, base, slideBody, slideFront, slideBridge, crankHandle, crankKnob,
+      bentEndWasher,
       bentJournal,
       bentWeb,
       fixedFrame,
+      headBoss,
       inputWheel,
       lowerBall,
       lowerSocketCup,
       mainShaft,
       rodB,
+      rodBody,
+      rodTip,
+      shaftCollar,
       shaftRotor,
       slideC,
+      socketWeb,
       upperBall,
       upperSocketCup,
-      headBoss,
     },
     degreesOfFreedom: {
       independentPrescribedInputs: 1,
       lowerSocketRotationIndependent: false,
       operatingDegreesOfFreedom: 1,
       rodOrientationIndependent: false,
+      rodSlideInSocketIndependent: false,
       slidePositionIndependent: false,
       storedEnergyStates: 0,
       upperSocketRotationIndependent: false,
@@ -502,7 +460,7 @@ function bentShaftSlide(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Horizontal shaft A rotates in fixed bearing D. Its bent end carries a parallel offset journal whose center travels in the transverse YZ circle. The upper end of constant-length rod B turns and swivels on that journal; B’s lower end swivels in slide C. Constraining C to one X-directed guide gives exact rectilinear reciprocation from the spatial square-root closure.',
+      'Horizontal shaft A rotates in fixed bearing D. Its end is bent at a small angle, and head A at the upper end of rod B turns on that inclined bent end with B held square to it. As A turns, the bent end tips from down-left to up-left, so B leans one way and then the other, as Brown’s bold and dotted poses show. B’s lower end slides through a swivel socket in slide C, constrained to one X-directed guide; the squareness of B gives exact simple-harmonic rectilinear reciprocation of C.',
     motion: {
       cycleDuration,
       shaftAngularSpeed,
@@ -519,11 +477,13 @@ function bentShaftSlide(movement) {
     },
     sourcePose: {
       bold: {
+        rodLeanFromVertical: sourceState.rodLeanFromVertical,
         shaftAngle: sourceState.shaftAngle,
         slideX: sourceState.slideX,
         upperSocket: sourceState.upperSocket.clone(),
       },
       dottedAfterHalfRevolution: {
+        rodLeanFromVertical: oppositeState.rodLeanFromVertical,
         shaftAngle: oppositeState.shaftAngle,
         slideX: oppositeState.slideX,
         upperSocket: oppositeState.upperSocket.clone(),
@@ -550,9 +510,9 @@ function bentShaftSlide(movement) {
           'the dotted pose is exactly half a shaft revolution from the bold pose',
         ],
         engravingEvidence:
-          'Brown’s bold view shows a horizontal shaft in the upright bearing D, an offset parallel journal at its left bent end, an oblique rod B descending to slide C, and one horizontal guide. The dotted overlay moves the journal through the opposite transverse half-turn and places B and C in the other extreme pose.',
+          'Brown’s bold view shows a horizontal shaft in the upright bearing D, a thick head A on its bent left end tipped slightly down, rod B leaving the head’s underside and leaning a little to the right down to slide C, and one horizontal guide. The dotted overlay tips head A up to the left and shows B leaning the other way to C’s left position.',
         reconstructionDisclosure:
-          'Brown fixes the spatial topology and half-turn pose relation but gives no dimensions, socket clearances, speed, stroke, or proportions. The shaft height, 0.52 crank radius, 3.20 rod length, plank and T-standard proportions, crank handle, and six-second uniform source cycle are independently engineered; exact three-dimensional rod closure determines C.',
+          'Brown fixes the topology and the half-turn pose relation but gives no dimensions, bend angle, socket clearances, speed or stroke. The 14 degree bend, head and rod proportions, the swivel socket through which B slides, the plank and T-standard proportions, crank handle, and six-second uniform source cycle are independently engineered; B held square to the bent end determines C exactly.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 417',
@@ -561,20 +521,16 @@ function bentShaftSlide(movement) {
     stateAtTime,
     transmission: {
       positionConstraint:
-        '(slideX-journalX)^2+(slideY-upperY)^2+(slideZ-upperZ)^2=rodLength^2',
+        '(C - bend).u = rodRoot, with u the bent-end direction and C on its guide',
       slideLaw:
-        'slideX=journalX+sqrt(rodLength^2-transverseDistance^2)',
+        'slideX = bendX + (h sin(alpha) cos(theta) - rodRoot) / cos(alpha)',
       socketConstraint:
-        'both ends of B are spherical sockets, so B changes spatial orientation without constraining A or C to a common plane',
+        'B turns with head A about the bent end and slides through a swivel ball in C, so its engaged length varies between the stated minimum and maximum',
       velocityConstraint:
-        'rodVector dot (lowerSocketVelocity-upperSocketVelocity)=0',
+        'd/dt[(lowerSocket - upperSocket).u] = 0',
     },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.55, -2.28, -1.48),
-    new THREE.Vector3(2.75, 2.55, 1.48),
-  );
   root.userData.cameraDistanceScale = 1.04;
   // Brown draws a flat side elevation.
   root.userData.cameraDirection = new THREE.Vector3(0, 0.06, 1);

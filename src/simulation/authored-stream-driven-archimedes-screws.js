@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
 import { ring } from './finite-plate-geometry.js';
@@ -12,6 +13,28 @@ import {
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+// A tube swept along a curve with flat end caps, so it is a closed solid.
+function cappedTube(curve, tubularSegments, radius, radialSegments) {
+  const tube = new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false).toNonIndexed();
+  const ringSize = radialSegments + 1;
+  const tubeIndex = new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false);
+  const ringPoint = (ring, j) => new THREE.Vector3().fromBufferAttribute(tubeIndex.attributes.position, ring * ringSize + j);
+  const caps = [];
+  for (const [ring, t, flip] of [[0, 0, true], [tubularSegments, 1, false]]) {
+    const center = curve.getPoint(t);
+    for (let j = 0; j < radialSegments; j += 1) {
+      const a = ringPoint(ring, j), b = ringPoint(ring, j + 1);
+      caps.push(...(flip ? [center, b, a] : [center, a, b]));
+    }
+  }
+  const cap = new THREE.BufferGeometry().setFromPoints(caps);
+  cap.computeVertexNormals();
+  cap.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(caps.length * 2), 2));
+  const merged = mergeGeometries([tube, cap]);
+  [tube, tubeIndex, cap].forEach(g => g.dispose());
+  return merged;
+}
 
 function smoothStep5(value) {
   const clamped = THREE.MathUtils.clamp(value, 0, 1);
@@ -98,7 +121,8 @@ function streamDrivenArchimedesScrew(movement) {
   const waterPocketCount = helixTurns;
   const waterPocketFadeFraction = 0.08;
   const wheelLocalY = -screwLength / 2 - 0.18;
-  const waterWheelRadius = 1.34;
+  // Brown's paddle disc is well over twice the casing's diameter.
+  const waterWheelRadius = 1.6;
   const waterWheelPaddleCount = 8;
   const streamSurfaceY = -1.34;
   const streamVelocityZ = 1.34;
@@ -348,13 +372,14 @@ function streamDrivenArchimedesScrew(movement) {
     const paddleCarrier = new THREE.Group();
     paddleCarrier.rotation.y = angle;
     waterWheel.add(paddleCarrier);
-    // A flat board in the plane of the axis: radial 0.56, axial 0.40,
-    // 0.06 thick, seated on the disc's lower face (joined stock).
+    // A flat board in the plane of the axis: radial 0.62, axial 0.50,
+    // 0.08 thick, joined through the disc rim.
     const paddle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.56, 0.40, 0.06),
+      new THREE.BoxGeometry(0.62, 0.50, 0.08),
       wheelMaterial,
     );
-    paddle.position.set(waterWheelRadius + 0.03, -0.06 - 0.20, 0);
+    // Brown's boards stand through the disc edge, showing on both faces.
+    paddle.position.set(waterWheelRadius + 0.03, 0, 0);
     paddle.userData.role = `stream-driven-lower-paddle-${index + 1}`;
     paddleCarrier.add(paddle);
     paddles.push(paddle);
@@ -399,7 +424,8 @@ function streamDrivenArchimedesScrew(movement) {
     support.position.set(
       bearing.position.x,
       groundY + height / 2,
-      index === 0 ? -1.82 : 1.82,
+      // Outside the enlarged paddle boards' sweep.
+      index === 0 ? -2.12 : 2.12,
     );
     support.userData.role = `fixed-oblique-bearing-support-${index + 1}`;
     root.add(support);
@@ -408,9 +434,9 @@ function streamDrivenArchimedesScrew(movement) {
 
   const bearingBridges = bearings.map((bearing, index) => {
     const sign = index === 0 ? -1 : 1;
-    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.98,24),frameMaterial);
+    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,1.28,24),frameMaterial);
     bridge.rotation.x = Math.PI/2;
-    bridge.position.set(bearing.position.x,bearing.position.y,sign*1.33);
+    bridge.position.set(bearing.position.x,bearing.position.y,sign*1.48);
     bridge.userData.role = `finite-bearing-to-post-bridge-${index + 1}`;
     root.add(bridge);
     return bridge;
@@ -427,22 +453,33 @@ function streamDrivenArchimedesScrew(movement) {
   upperStubBearing.position.copy(worldFromAssemblyLocal(new THREE.Vector3(0, screwLength / 2 + 0.22, 0)));
   upperStubBearing.userData.role = 'fixed-bracket-bearing-on-upper-shaft-stub';
   root.add(upperStubBearing);
-  const bracketNormal = new THREE.Vector3(-axisDirection.y, axisDirection.x, 0);
-  if (bracketNormal.y < 0) bracketNormal.negate();
-  const bracketFoot = upperStubBearing.position.clone().addScaledVector(bracketNormal, 0.27);
-  const bracketElbow = upperStubBearing.position.clone().addScaledVector(bracketNormal, 0.78);
-  const upperBracketArms = [
-    [bracketFoot, bracketElbow],
-    [bracketElbow, new THREE.Vector3(-5.30, bracketElbow.y, 0)],
-  ].map(([start, end]) => {
-    const delta = end.clone().sub(start);
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(delta.length() + 0.08, 0.16, 0.16), frameMaterial);
-    arm.position.copy(start).add(end).multiplyScalar(0.5);
-    arm.rotation.z = Math.atan2(delta.y, delta.x);
-    arm.userData.role = 'fixed-upper-shaft-bracket-arm';
-    root.add(arm);
-    return arm;
-  });
+  // Brown's bracket is a bent gooseneck bar: it comes in from the left edge,
+  // dips to a knuckle over the top of the casing and turns down along the
+  // axis as a stud into the head bearing round the shaft stub.
+  const axisPoint = (distance) => worldFromAssemblyLocal(new THREE.Vector3(0, screwLength / 2 + distance, 0));
+  const headSleeve = new THREE.Mesh(ring(centralShaftRadius + 0.004, 0.22, 0.06, 0.44), frameMaterial);
+  headSleeve.quaternion.setFromUnitVectors(Z_AXIS, axisDirection);
+  headSleeve.position.copy(axisPoint(0.22));
+  headSleeve.userData.role = 'fixed-bracket-bearing-on-upper-shaft-stub';
+  root.add(headSleeve);
+  const knuckle = axisPoint(0.72);
+  const gooseneck = new THREE.CatmullRomCurve3([
+    axisPoint(0.60), knuckle,
+    knuckle.clone().add(new THREE.Vector3(0.02, 0.36, 0)),
+    knuckle.clone().add(new THREE.Vector3(-0.55, 0.62, 0)),
+    knuckle.clone().add(new THREE.Vector3(-1.35, 0.50, 0)),
+    new THREE.Vector3(-4.2, knuckle.y + 0.36, 0),
+    new THREE.Vector3(-5.3, knuckle.y + 0.44, 0),
+  ], false, 'centripetal');
+  const bracketArm = new THREE.Mesh(cappedTube(gooseneck, 96, 0.09, 12), frameMaterial);
+  bracketArm.userData.role = 'fixed-upper-shaft-bracket-arm';
+  root.add(bracketArm);
+  const bracketStud = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 32), frameMaterial);
+  bracketStud.quaternion.copy(upperStubBearing.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
+  bracketStud.position.copy(axisPoint(0.56));
+  bracketStud.userData.role = 'fixed-upper-shaft-bracket-arm';
+  root.add(bracketStud);
+  const upperBracketArms = [bracketArm, bracketStud, headSleeve];
 
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(8.20, 0.24, 5.20),
@@ -453,10 +490,10 @@ function streamDrivenArchimedesScrew(movement) {
   root.add(base);
   // Thin enough to clear the lowest paddle board's sweep.
   const streamBed = new THREE.Mesh(
-    new THREE.BoxGeometry(4.10, 0.08, 4.92),
+    new THREE.BoxGeometry(4.10, 0.03, 4.92),
     frameMaterial,
   );
-  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.28, 0);
+  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.255, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
   // Brown rules the stream surface with broken strokes running with the
@@ -466,6 +503,33 @@ function streamDrivenArchimedesScrew(movement) {
       .rotateX(-Math.PI / 2).rotateY(Math.PI / 2),
     ruledWaterMaterial(),
   );
+  // Brown rules the stream with long, gently wavering strokes running across
+  // the picture, not short straight dashes: replace the shared dashes with
+  // deterministic wavy strokes in the same surface plane.
+  {
+    let state = 443;
+    const random = () => { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
+    const strokes = [];
+    for (let row = 0; row < 32; row += 1) {
+      const z = -3.1 + row * 0.2 + (random() - 0.5) * 0.06;
+      let x = -7.4 + random() * 0.8;
+      while (x < 3.6) {
+        const length = Math.min(3.6 - x, 1.2 + random() * 2.4);
+        if (length > 0.3) {
+          const phase = random() * FULL_TURN, wave = 0.9 + random() * 0.8;
+          const points = Array.from({ length: 25 }, (_, i) => {
+            const px = x + length * i / 24;
+            return new THREE.Vector3(px, 0, z + 0.05 * Math.sin(FULL_TURN * px / wave + phase) + 0.03 * (px - x));
+          });
+          strokes.push(cappedTube(new THREE.CatmullRomCurve3(points), 36, 0.018, 5));
+        }
+        x += length + 0.25 + random() * 0.7;
+      }
+    }
+    streamWater.geometry.dispose();
+    streamWater.geometry = mergeGeometries(strokes);
+    strokes.forEach(stroke => stroke.dispose());
+  }
   streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY, 0);
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';

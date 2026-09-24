@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
@@ -560,6 +561,9 @@ function hydraulicRam(movement) {
     waterMaterial,
     'intermittent-waste-efflux-while-right-valve-open',
   );
+  // Its own material: fading the intermittent efflux must not fade the head
+  // box and tank water that share the common water material.
+  wasteWater.material = waterMaterial.clone();
   root.add(wasteWater);
 
   const outputPipe = new THREE.Mesh(
@@ -574,7 +578,10 @@ function hydraulicRam(movement) {
     new THREE.CylinderGeometry(0.105, 0.105, 2.84, 22),
     paleWaterMaterial,
   );
-  outputWater.position.set(chamberCenter.x, 2.22, 0);
+  // The water column fills the riser to its mouth; the jet continues above.
+  outputWater.geometry.dispose();
+  outputWater.geometry = new THREE.CylinderGeometry(0.105, 0.105, 2.12, 22);
+  outputWater.position.set(chamberCenter.x, 1.86, 0);
   outputWater.userData.role =
     'continuous-uniform-upward-efflux-from-air-cushion';
   root.add(outputWater);
@@ -585,7 +592,37 @@ function hydraulicRam(movement) {
   fountainTop.position.set(chamberCenter.x, 3.62, 0);
   fountainTop.rotation.z = Math.PI;
   fountainTop.userData.role = 'continuous-high-level-water-jet-crown';
+  // Brown's jet: a solid column rising well above the nozzle that breaks into
+  // a plume of arcs falling away on every side; droplets run down the arcs.
+  const jetBaseY = 2.90, jetTopY = 4.05;
+  const sprayArcs = [];
+  for (let index = 0; index < 14; index += 1) {
+    const azimuth = (index + 0.5) * FULL_TURN / 14;
+    const reach = 0.55 + 0.25 * ((index * 5) % 7) / 6;
+    const out = new THREE.Vector3(Math.cos(azimuth), 0, Math.sin(azimuth) * 0.6);
+    const top = new THREE.Vector3(chamberCenter.x, jetTopY, 0);
+    sprayArcs.push(new THREE.QuadraticBezierCurve3(top,
+      top.clone().addScaledVector(out, reach * 0.55).add(new THREE.Vector3(0, 0.34, 0)),
+      top.clone().addScaledVector(out, reach).add(new THREE.Vector3(0, -0.95 - 0.2 * (index % 3), 0))));
+  }
+  {
+    const parts = [new THREE.CylinderGeometry(0.075, 0.105, jetTopY - jetBaseY, 20)
+      .translate(chamberCenter.x, (jetBaseY + jetTopY) / 2, 0),
+      ...sprayArcs.map(curve => new THREE.TubeGeometry(curve, 24, 0.022, 5, false))];
+    fountainTop.geometry.dispose();
+    const flat = parts.map(part => part.toNonIndexed());
+    fountainTop.geometry = mergeGeometries(flat);
+    [...parts, ...flat].forEach(part => part.dispose());
+    fountainTop.position.set(0, 0, 0);
+    fountainTop.rotation.set(0, 0, 0);
+  }
   root.add(fountainTop);
+  const sprayDroplets = Array.from({ length: 28 }, (_, index) => {
+    const droplet = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), paleWaterMaterial);
+    droplet.userData.role = `falling-jet-spray-droplet-${index + 1}`;
+    root.add(droplet);
+    return droplet;
+  });
 
   const driveMarkers = [];
   for (let index = 0; index < 11; index += 1) {
@@ -662,6 +699,11 @@ function hydraulicRam(movement) {
         state.deliveryValveOpen
           * Math.sqrt(Math.sin(Math.PI * progress)),
       );
+    });
+    sprayDroplets.forEach((droplet, index) => {
+      const progress = THREE.MathUtils.euclideanModulo(time * 0.9 + index * 0.37, 1);
+      droplet.position.copy(sprayArcs[index % sprayArcs.length].getPoint(progress));
+      droplet.scale.setScalar(0.5 + 0.5 * Math.sin(Math.PI * progress));
     });
     outputMarkers.forEach((marker, index) => {
       const progress = THREE.MathUtils.euclideanModulo(

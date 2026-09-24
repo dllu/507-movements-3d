@@ -106,15 +106,24 @@ function buildLoopColumn(root, frame, material, groundY, {
   frame.add(column);
   // The hidden undrawn foundation slab is dropped from the scene entirely.
   root.userData.blocks.foundation.removeFromParent();
-  // The crank-A bearing and shaft stub sit clear in front of the descending
-  // cylinder's end ring; an L bracket seats the bearing on the column's
-  // right side.
+  // The crank-A bearing and shaft stub sit clear behind the descending
+  // cylinder's end ring; an L bracket seats the bearing on the back of the
+  // column's right side. The crank-side parts placed by the shared hammer
+  // helper for a front crank are mirrored to the back here.
   const blocks = root.userData.blocks;
+  const side = Math.sign(root.userData.geometry.crankCenter.z);
+  for (const object of [blocks.crankDisk, blocks.crankPinVisual,
+    ...blocks.crankAssembly.children.filter((child) => child.geometry?.type === 'BoxGeometry')]) {
+    object.position.z = -side * Math.abs(object.position.z);
+  }
+  for (const object of [blocks.cylinderDriveLug, blocks.cylinderJointPin]) {
+    object.position.z = side * Math.abs(object.position.z);
+  }
   const bearing = blocks.crankBearing;
   const bearingLength = 0.14;
-  bearing.position.z = 0.615;
+  bearing.position.z = side * 0.615;
   bearing.scale.y = bearingLength / 0.18;
-  blocks.fixedDriveShaft.position.z = 0.75;
+  blocks.fixedDriveShaft.position.z = side * 0.75;
   const brackets = root.children.filter((object) =>
     object.isMesh && !object.userData.role
     && object.geometry?.type === 'BoxGeometry');
@@ -123,7 +132,7 @@ function buildLoopColumn(root, frame, material, groundY, {
   const footX = axisX + inner + 0.04;
   const shapes = [
     [[armEnd - armStart, 0.10, bearingLength], [(armStart + armEnd) / 2, bearing.position.z]],
-    [[armEnd - footX, 0.10, 0.62 - (front - 0.02)], [(footX + armEnd) / 2, (0.62 + front - 0.02) / 2]],
+    [[armEnd - footX, 0.10, 0.62 - (front - 0.02)], [(footX + armEnd) / 2, side * (0.62 + front - 0.02) / 2]],
   ];
   brackets.forEach((bracket, index) => {
     const [size, [x, z]] = shapes[index];
@@ -157,7 +166,9 @@ function atmosphericHammer(movement) {
   const crankRadius = 0.68;
   const connectingRodLength = 1.55;
   const cylinderAxisX = 0.38;
-  const crankCenter = new THREE.Vector3(cylinderAxisX, 0.39, 1.0);
+  // Brown dots crank A and rod D: they run behind the hammer line, so the
+  // crank plane lies behind the column rather than in front of hammer C.
+  const crankCenter = new THREE.Vector3(cylinderAxisX, 0.39, -1.0);
   const cylinderDrivePinBottomY = 1.05;
   const cylinderDriveAttachmentOffsetY = 0.42;
   const bottomHorizontalOffset = cylinderAxisX - crankCenter.x;
@@ -905,8 +916,8 @@ function atmosphericHammer(movement) {
     cylinderOuterRadius,
   });
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(cylinderAxisX - 1.85, groundY - 0.05, -1.12),
-    new THREE.Vector3(cylinderAxisX + 1.85, 5.08, 1.22),
+    new THREE.Vector3(cylinderAxisX - 1.85, groundY - 0.05, -1.22),
+    new THREE.Vector3(cylinderAxisX + 1.85, 5.08, 1.12),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);

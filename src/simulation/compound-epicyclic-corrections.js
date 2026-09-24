@@ -112,7 +112,8 @@ export function correctCompoundEpicyclic(root,id){
   Object.assign(b.gearC.userData,{radius:2.5,pitchConeAngle:Math.atan(10),coneApexLocal:new THREE.Vector3(-.25,0,0),outerDistance:.25,innerDistance:.205,toothProfile:'ratio-derived-back-cone-involute-approximation'});
   for(const [gear,bore]of[[b.gearE,.106],[b.gearH,.136],[b.gearF,.106],[b.gearG,.106]])fullSpur(gear,bore);
   for(const gear of[b.gearF,b.gearG]){gear.userData.rotor.children[0].geometry.rotateZ(-Math.PI/49);gear.userData.geometryPhase=-Math.PI/49;}
-  const arm=clip.difference(poly([[-.065,-.095],[2.215,-.095],[2.215,.095],[-.065,.095]]),poly(circle([0,0],.106,64)));
+  const armEnd=root.userData.geometry.carrierPinSpacing+.065;
+  const arm=clip.difference(poly([[-.065,-.095],[armEnd,-.095],[armEnd,.095],[-.065,.095]]),poly(circle([0,0],.106,64)));
   replace(b.carrierArm,plate(arm,-.095,.095).rotateX(Math.PI/2));b.carrierArm.position.set(0,4.17,0);
   // The engraving shows a vertical output bearing under the horizontal shaft.
   b.outputBearing.position.z=0;b.outputBearingArm.position.z=0;b.outputBearingArm.scale.z=.18;

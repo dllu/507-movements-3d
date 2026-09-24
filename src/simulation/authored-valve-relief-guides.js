@@ -381,34 +381,40 @@ function valveReliefGuide(movement) {
   // B's upper pin and spreads at the foot into the curved slot whose upper
   // and lower edges are the two arcs D bearing on roller C.
   const slotHalfWidth = rollerRadius + guideClearance;
-  const bandPoints = (offset) => {
+  // Brown's slot is a long slender arc, square-ended and reaching well past
+  // C's travel, separated from the bell-shaped window above by a thin web.
+  // Both edges follow the exact roller locus, extended beyond the stroke.
+  const slotEndValveX = 1.45;
+  const bandPoints = (offset, end = slotEndValveX) => {
     const points = [];
     for (let index = 0; index <= 96; index += 1) {
-      const valveX = THREE.MathUtils.lerp(-valveAmplitude, valveAmplitude,
-        index / 96);
+      const valveX = THREE.MathUtils.lerp(-end, end, index / 96);
       const center = rollerCenterAtValveX(valveX);
       const normal = centerPathUnitNormalAtValveX(valveX);
       points.push([center.x + normal.x * offset, center.y + normal.y * offset]);
     }
     return points;
   };
-  const endCenters = [-valveAmplitude, valveAmplitude]
-    .map(valveX => rollerCenterAtValveX(valveX));
-  const arcSlot = clip.union(
-    poly([...bandPoints(slotHalfWidth), ...bandPoints(-slotHalfWidth).reverse()]),
-    ...endCenters.map(c => poly(circle([c.x, c.y], slotHalfWidth, 64))),
-  );
+  const arcSlot = poly([...bandPoints(slotHalfWidth),
+    ...bandPoints(-slotHalfWidth).reverse()]);
   const upperPinSlotHalfWidth = 0.155;
   const upperPinSlotTop = valvePinY + rodLength + 0.21 + 0.03;
-  const windowRight = [[0.80, 0.24], [0.52, 0.42], [0.36, 0.80], [0.26, 1.35],
+  const windowFoot = bandPoints(slotHalfWidth + 0.12, 1.52)
+    .filter(([x]) => x >= 0);
+  const [footX, footY] = windowFoot.at(-1);
+  const windowRight = [...windowFoot, [footX, footY + 0.12],
+    [0.84, 0.62], [0.58, 0.78], [0.40, 1.02], [0.28, 1.40],
     [upperPinSlotHalfWidth, 2.00], [upperPinSlotHalfWidth, upperPinSlotTop]];
   const rodWindow = poly([...windowRight,
-    ...windowRight.map(([x, y]) => [-x, y]).reverse()]);
+    ...windowRight.slice(1).map(([x, y]) => [-x, y]).reverse()]);
   const upperPinSlotCap = poly(circle([0, upperPinSlotTop], upperPinSlotHalfWidth, 48));
   const guideHeadY = 3.02;
+  // Brown's casting foot arches up under the slot, parallel to it.
+  const castingFoot = bandPoints(-(slotHalfWidth + 0.16), 1.62).reverse();
   const castingOutline = poly([
-    [-0.90, guideHeadY], [0.90, guideHeadY], [1.30, 0.62], [1.30, -0.22],
-    [1.10, -0.45], [-1.10, -0.45], [-1.30, -0.22], [-1.30, 0.62],
+    [-0.90, guideHeadY], [0.90, guideHeadY], [1.30, 0.62],
+    [1.30, castingFoot[0][1]], ...castingFoot,
+    [-1.30, castingFoot.at(-1)[1]], [-1.30, 0.62],
   ]);
   const castingDepth = [0.335, 0.625];
   const slottedCastingD = new THREE.Mesh(plate(clip.difference(castingOutline,

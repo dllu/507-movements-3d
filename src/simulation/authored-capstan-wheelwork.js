@@ -941,6 +941,7 @@ function capstanWheelwork(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.8, 6.2, 10.4);
   root.userData.groundFloorY = 0;
   correctCapstanWheelwork(root);
+  broadenCarrierWeb(root);
   addSourceBandAndLevers(root, frameMaterial);
   // Brown draws no white rotation indices on the wheels.
   const blocks = root.userData.blocks;
@@ -952,6 +953,44 @@ function capstanWheelwork(movement) {
   foundation.receiveShadow = true;
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
+}
+
+// Brown draws the carrier as a broad three-lobed plate: each lobe carries a
+// planet and scalloped concave edges run between neighbouring planets close
+// to the sun, so the web shows in the gaps. Replace the shared helper's small
+// hub-and-bar web (hidden under the gears) with that outline, same plane and
+// bores.
+function broadenCarrierWeb(root) {
+  const b = root.userData.blocks, g = root.userData.geometry;
+  const centers = g.planetAngles.map(a =>
+    [g.planetCenterRadius * Math.cos(a), g.planetCenterRadius * Math.sin(a)]);
+  const lobeRadius = g.planetPitchRadius;
+  const points = centers.flatMap(([x, z]) => Array.from({ length: 72 }, (_, i) => {
+    const a = 2 * Math.PI * i / 72;
+    return [x + lobeRadius * Math.cos(a), z + lobeRadius * Math.sin(a)];
+  })).sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cross = (o, a, c) => (a[0] - o[0]) * (c[1] - o[1]) - (a[1] - o[1]) * (c[0] - o[0]);
+  const half = list => {
+    const out = [];
+    for (const p of list) {
+      while (out.length >= 2 && cross(out.at(-2), out.at(-1), p) <= 0) out.pop();
+      out.push(p);
+    }
+    return out.slice(0, -1);
+  };
+  const hull = [...half(points), ...half([...points].reverse())];
+  const sunTip = g.sunPitchRadius + g.module;
+  const scallopRadius = 1.05, scallopReach = sunTip + 0.24;
+  const scallops = g.planetAngles.map(a => {
+    const m = a + Math.PI / 3, d = scallopReach + scallopRadius;
+    return poly(circle([d * Math.cos(m), d * Math.sin(m)], scallopRadius, 96));
+  });
+  const web = clip.difference(poly(hull), ...scallops,
+    poly(circle([0, 0], .232, 64)), ...centers.map(c => poly(circle(c, .112, 48))));
+  const arm = b.carrierArms[0];
+  arm.geometry.dispose();
+  arm.geometry = plate(web, -.07, .07).rotateX(Math.PI / 2);
+  arm.userData.role = 'three-lobed-bored-common-planet-carrier';
 }
 
 // Brown's plan draws a band close outside the annulus whose two ends leave it

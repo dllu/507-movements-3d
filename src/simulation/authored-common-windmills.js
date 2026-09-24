@@ -141,8 +141,10 @@ function commonWindmill(movement) {
   const bladeSegments = 36;
   const rootRadiusSceneUnit = 0.34;
   const tipRadiusSceneUnit = 1.82;
-  const rootChordSceneUnit = 0.20;
-  const tipChordSceneUnit = 0.74;
+  // Brown's lattice sails are broad trapezoids, about two thirds as wide at
+  // the tip as they are long.
+  const rootChordSceneUnit = 0.34;
+  const tipChordSceneUnit = 1.00;
   const rootPitchRadian = THREE.MathUtils.degToRad(17);
   const tipPitchRadian = THREE.MathUtils.degToRad(8);
   const rotorCenter = new THREE.Vector3(0, 1.19, 1.14);
@@ -331,8 +333,10 @@ function commonWindmill(movement) {
     return window;
   });
 
+  // The tail beam starts inside the dome just behind the windshaft's rear
+  // end (z -0.16), clear of the turning shaft instead of running along it.
   const tailRod = cylinderBetween(
-    new THREE.Vector3(0, 1.20, 0.18),
+    new THREE.Vector3(0, 1.23, -0.24),
     new THREE.Vector3(0, 1.40, -2.42),
     0.065,
     darkMaterial,
@@ -743,9 +747,52 @@ function commonWindmill(movement) {
       new THREE.Vector3(-2.15, -2.05, -4.25),
       new THREE.Vector3(2.15, 3.25, 1.55),
     );
+    // Brown draws two small round-headed windows high on the tower, one near
+    // the middle and one toward its right edge, and a round-headed door at
+    // the foot right of centre, all set flush in the tapered wall.
+    const towerRadiusAt = (y) => 0.72 + 0.30 * (0.95 - y) / 2.84;
+    const taper = Math.atan2(0.30, 2.84);
+    const arch = (width, height) => {
+      const half = width / 2;
+      const shape = new THREE.Shape();
+      shape.moveTo(-half, 0);
+      shape.lineTo(half, 0);
+      shape.lineTo(half, height - half);
+      shape.absarc(0, height - half, half, 0, Math.PI, false);
+      shape.lineTo(-half, 0);
+      return new THREE.ExtrudeGeometry(shape, {
+        bevelEnabled: false,
+        curveSegments: 16,
+        depth: 0.04,
+      }).translate(0, 0, -0.025);
+    };
+    const setOpening = (mesh, geometry, azimuthDegrees, bottomY) => {
+      mesh.geometry.dispose();
+      mesh.geometry = geometry;
+      const azimuth = THREE.MathUtils.degToRad(azimuthDegrees);
+      const radius = towerRadiusAt(bottomY);
+      mesh.position.set(Math.sin(azimuth) * radius, bottomY, Math.cos(azimuth) * radius);
+      mesh.rotation.set(-taper, azimuth, 0, 'YXZ');
+    };
+    // Brown shows no whips running past the sail tips: end each stock at
+    // its sail's tip bar.
+    for (const { stock } of sails) {
+      stock.geometry.dispose();
+      stock.geometry = new THREE.BoxGeometry(0.115, tipRadiusSceneUnit, 0.105);
+      stock.position.y = tipRadiusSceneUnit / 2;
+      // Drawn as one more dark lattice bar, as Brown shades it.
+      stock.material = darkMaterial;
+    }
+    {
+      const { door, windows } = root.userData.blocks;
+      setOpening(door, arch(0.34, 0.66), 14, -1.87);
+      setOpening(windows[0], arch(0.15, 0.34), -12, -0.42);
+      setOpening(windows[1], arch(0.15, 0.34), 38, -0.42);
+    }
     // The tower door and windows face the viewer while the cap has turned the
-    // windshaft toward the left front, as in the plate.
-    const facing = THREE.MathUtils.degToRad(45);
+    // windshaft toward the left front, so the four sails open out beside the
+    // tower nearly face-on, as in the plate.
+    const facing = THREE.MathUtils.degToRad(34);
     const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), facing);
     const { door, windows } = root.userData.blocks;
     for (const opening of [door, ...windows]) {

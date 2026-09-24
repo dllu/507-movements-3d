@@ -42,15 +42,18 @@ function cylinderBetween(start, end, radius, material, role, sides = 32) {
   return cylinder;
 }
 
-// Brown draws both hollow risers as straight uprights standing in the
-// boiler lid near its rim (here within about 5 degrees of plumb, the most the
-// lid radius and the pivot collars allow) and hooking inward only at the globe's pivot ends.
-// The finite working-parts correction bends them in from lid ports near the
-// centre; replace only that lower crank, keeping its reducer, neck, trunnions
-// and bearings.
-const RISER_FOOT_X = 1.40;
+// Brown draws both hollow risers as plumb uprights standing in the boiler
+// lid well inside its rim and hooking inward only at the globe's pivot ends.
+// A plumb riser must clear the fixed pivot collar (outer x 1.47) by its own
+// radius, so it stands at x = 1.60; Brown's bowl is widest at its lidded rim,
+// so the boiler flares out to a 1.82 rim that seats those risers inside the
+// lid (at about nine tenths of its radius). The finite working-parts
+// correction bends them in from lid ports near the centre; replace only that
+// lower crank, keeping its reducer, neck, trunnions and bearings.
+const RISER_FOOT_X = 1.60;
 const RISER_UPPER_X = 1.60;
 const RISER_UPPER_Y = 2.42;
+const BOILER_RIM_RADIUS = 1.82;
 const LID_PORT_RADIUS = 0.12;
 function straightenSourceRisers(root) {
   const d = root.userData;
@@ -97,8 +100,32 @@ function straightenSourceRisers(root) {
     core.geometry.dispose();
     core.geometry = new THREE.TubeGeometry(full, 128, 0.045, 12, false);
   }
+  // Flare the finite boiler shell out to Brown's wide lidded rim.
+  const outer = [[-1.40, 0.48], [-1.30, 0.95], [-1.02, 1.42], [-0.53, 1.70],
+    [0.08, 1.80], [0.38, BOILER_RIM_RADIUS]];
+  const inner = outer.map(([y, r]) => [y + 0.06, r - 0.07]);
+  b.boiler.geometry.dispose();
+  b.boiler.geometry = turned(
+    [[-1.40, 0], ...outer, ...inner.reverse(), [-1.34, 0]],
+    256,
+  ).rotateX(-Math.PI / 2);
+  b.boilerRim.geometry.dispose();
+  b.boilerRim.geometry = new THREE.TorusGeometry(
+    BOILER_RIM_RADIUS + 0.02, 0.075, 10, 96);
+  const handleCurves = [-1, 1].map((side) =>
+    new THREE.CubicBezierCurve3(
+      new THREE.Vector3(side * 1.76, 0.10, -0.18),
+      new THREE.Vector3(side * 2.34, 0.08, -0.18),
+      new THREE.Vector3(side * 2.30, -0.72, -0.18),
+      new THREE.Vector3(side * 1.60, -0.78, -0.18),
+    ));
+  b.boilerHandles.forEach((handle, index) => {
+    handle.geometry.dispose();
+    handle.geometry = new THREE.TubeGeometry(
+      handleCurves[index], 48, 0.085, 10, false);
+  });
   const lid = polygonClipping.difference(
-    poly(circle([0, 0], 1.52, 256)),
+    poly(circle([0, 0], BOILER_RIM_RADIUS + 0.01, 256)),
     ...[-1, 1].map((side) =>
       poly(circle([side * portCenterX, 0], LID_PORT_RADIUS, 96))),
   );

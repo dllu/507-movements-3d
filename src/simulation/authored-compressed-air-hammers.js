@@ -1,4 +1,7 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
+import {plate, poly, polygonClipping, spline} from './finite-plate-geometry.js';
+import {mergePassageParts} from './finite-fluid-passages.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -53,6 +56,91 @@ function tubeThrough(points, radius, material, role, segments = 48) {
   ), role);
   mesh.userData.curve = curve;
   return mesh;
+}
+
+// Brown's frame C is one broad cast standard in the plane of the drawing:
+// a base flange, a pocket carrying pump D, and a column that sweeps up and
+// over to the head carrying cylinder B and shaft E. It is hollow (the air
+// reservoir), which Brown indicates by the inner curve running up the
+// column; here that cavity is a recessed channel in the plate. The plate
+// stands behind the working parts, which are carried on short brackets.
+function buildBroadHollowFrame(root, groundY, shaftCenter) {
+  const blocks = root.userData.blocks;
+  const back = -1.50;
+  const face = -1.12;
+  const recess = -1.30;
+  const outline = poly([
+    [-2.05, groundY], [2.05, groundY], [2.05, -1.74], [0.80, -1.74],
+    ...spline([[0.80, -1.74], [0.62, -1.20], [0.52, -0.30], [0.58, 0.50],
+      [0.80, 1.10], [1.10, 1.36], [1.72, 1.42]]).slice(1),
+    [1.72, 2.80], [-0.95, 2.80], [-0.95, 2.62],
+    ...spline([[-0.95, 2.62], [-0.55, 2.40], [-0.36, 1.80], [-0.28, 1.00],
+      [-0.36, 0.20], [-0.58, -0.30]]).slice(1),
+    [-2.05, -0.30],
+  ]);
+  const centre = spline([[0.06, -1.50], [0.10, -0.40], [0.20, 0.60],
+    [0.50, 1.25], [0.95, 1.62], [1.40, 1.78]]);
+  const halfWidth = 0.12;
+  const sides = [[], []];
+  centre.forEach((point, index) => {
+    const a = centre[Math.max(0, index - 1)];
+    const b = centre[Math.min(centre.length - 1, index + 1)];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const normal = [-(b[1] - a[1]) / length, (b[0] - a[0]) / length];
+    sides[0].push([point[0] + normal[0] * halfWidth, point[1] + normal[1] * halfWidth]);
+    sides[1].push([point[0] - normal[0] * halfWidth, point[1] - normal[1] * halfWidth]);
+  });
+  const channel = poly([...sides[0], ...sides[1].reverse()]);
+  const frame = blocks.hollowReservoirFrame;
+  frame.geometry.dispose();
+  frame.geometry = mergePassageParts([
+    plate(outline, back, recess),
+    plate(polygonClipping.difference(outline, channel), recess, face),
+  ]);
+  frame.position.set(0, 0, 0);
+  frame.rotation.set(0, 0, 0);
+  frame.scale.set(1, 1, 1);
+  // The reservoir air fills the recessed channel.
+  const air = blocks.reservoirAir;
+  air.geometry.dispose();
+  air.geometry = plate(channel, recess + 0.005, recess + 0.02);
+  air.position.set(0, 0, 0);
+  air.rotation.set(0, 0, 0);
+  air.scale.set(1, 1, 1);
+  air.material.opacity = 0.35;
+  const frameMaterial = frame.material;
+  // Pump D stands in the frame's lower-left pocket.
+  const pocket = blocks.reservoirFoot;
+  pocket.geometry.dispose();
+  pocket.geometry = new THREE.BoxGeometry(1.45, -0.31 - groundY, 0.30 - face)
+    .translate(-1.275, (groundY - 0.31) / 2, (0.30 + face) / 2);
+  pocket.position.set(0, 0, 0);
+  pocket.userData.role = 'pump-D-pocket-of-frame-C';
+  // Cylinder B is bolted to the head by a bracket behind it.
+  const bracket = blocks.hammerSupport;
+  bracket.geometry.dispose();
+  bracket.geometry = new THREE.BoxGeometry(0.60, 0.90, -0.40 - face)
+    .translate(1.25, 1.75, (face - 0.40) / 2);
+  bracket.position.set(0, 0, 0);
+  bracket.userData.role = 'cylinder-B-bracket-on-frame-head';
+  // Shaft E runs in a bearing on a short bracket from the frame's top.
+  const bearing = new THREE.Mesh(
+    boredLatheGeometry([{radial: 0.16, axial: -0.10}, {radial: 0.16, axial: 0.10}], 0.095, 64),
+    frameMaterial,
+  );
+  bearing.rotation.z = Math.PI / 2;
+  bearing.position.set(-0.80, shaftCenter.y, shaftCenter.z);
+  bearing.userData.role = 'shaft-E-bearing-on-frame-C';
+  root.add(bearing);
+  const bearingBracket = new THREE.Mesh(
+    new THREE.BoxGeometry(0.20, 0.14, shaftCenter.z - 0.13 - face)
+      .translate(0, 0, (shaftCenter.z - 0.13 + face) / 2),
+    frameMaterial,
+  );
+  bearingBracket.position.set(-0.80, shaftCenter.y, 0);
+  bearingBracket.userData.role = 'shaft-E-bearing-bracket';
+  root.add(bearingBracket);
+  blocks.frameBrackets = [bracket, bearing, bearingBracket, pocket];
 }
 
 function grimshawCompressedAirHammer(movement) {
@@ -1238,8 +1326,9 @@ function grimshawCompressedAirHammer(movement) {
     valveKinematicsAtHammerPhase,
   };
   correctHammerWorkingParts(root, 472);
+  buildBroadHollowFrame(root, groundY, shaftCenter);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.32, groundY - 0.10, -1.18),
+    new THREE.Vector3(-2.32, groundY - 0.10, -1.55),
     new THREE.Vector3(2.15, 3.50, 1.10),
   );
   root.userData.cameraDistanceScale = 1.00;

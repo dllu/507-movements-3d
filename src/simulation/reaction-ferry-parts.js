@@ -4,6 +4,7 @@ import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
 import {hollowPipeBall} from './folding-joint-parts.js';
 import {mergePassageParts} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
+import {bowDrillTube} from './mujoco-bow-drill/geometry.js';
 const rectangle=(x0,y0,x1,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const add=(parent,geometry,material,role,position)=>{const o=new T.Mesh(geometry,material);o.userData.role=role;if(position)o.position.copy(position);parent.add(o);return o;};
@@ -49,6 +50,15 @@ export function correctReactionFerry(root){
   points[0].x=0;points.push(new T.Vector2(bore,0),new T.Vector2(0,0));
   const geometry=new T.LatheGeometry(points,48);
   b.ropeStartMarker.geometry.dispose();b.ropeStartMarker.geometry=geometry;b.ropeEndMarker.geometry=geometry;
+ }
+ // Brown draws the line slack: a thin rope with two gentle plan-view waves.
+ // Its chord stays the tether length, and both ends run straight into the
+ // swivel bores; tension and sag are not modelled.
+ {
+  const L=g.tetherLength,n=161,amplitude=.075,points=[];
+  for(let i=0;i<n;i++){const s=i/(n-1),w=Math.sin(Math.PI*s)**2;points.push([amplitude*Math.sin(4*Math.PI*s)*w,(s-.5)*L,0]);}
+  const geometry=bowDrillTube(points,points.map(()=>.034),{sides:14});geometry.scale(1,1/L,1);
+  b.rope.geometry.dispose();b.rope.geometry=geometry;
  }
  // A slim mounting foot joins the bow socket to the hull behind the line entry.
  const bowFoot=add(b.boat,new T.BoxGeometry(.20,.09,.10),post.material,'bow-swivel-mount',new T.Vector3(.13,-.17,0));

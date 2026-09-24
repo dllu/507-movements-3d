@@ -85,7 +85,8 @@ test('movement 507 has fixed shaft m-p, three rigid compounds, carrier input, an
   assert.equal(blocks.gearC.userData.output, true);
   assert.equal(blocks.gearC.parent, blocks.outputCAssembly);
   assert.equal(blocks.outputShaftA.parent, blocks.outputCAssembly);
-  assert.equal(blocks.outputIndex.parent, blocks.outputCAssembly);
+  // Brown draws no white index on C; the source presentation removes it.
+  assert.equal(blocks.outputIndex.parent, null);
   assert.deepEqual(Object.keys(blocks.labels).sort(),
     ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'a', 'm', 'n', 'p']);
   assert.equal(degreesOfFreedom.independentCarrierInputs, 1);
@@ -256,7 +257,10 @@ test('movement 507 derives Brown’s 25,000 ratio from the 2501-to-2499 product 
 
 test('movement 507 satisfies every mesh phase and has zero spur pitch slip', () => {
   const { model } = movementModel();
-  const { stateAtTime, transmission } = model.root.userData;
+  const { geometry, stateAtTime, transmission } = model.root.userData;
+  // Pitch-line speeds scale with the arm n-m; allow about one rounding step
+  // at that magnitude.
+  const pitchTolerance = 1.05 * Number.EPSILON * geometry.carrierPinSpacing;
 
   assert.match(transmission.aggregateCarrierLaw,
     /NE \* NG.*omegaDE - omegaCarrier.*NH \* NF.*omegaAH - omegaCarrier/);
@@ -274,9 +278,9 @@ test('movement 507 satisfies every mesh phase and has zero spur pitch slip', () 
     )) {
       near(residual, 0, 2e-11, `${pair} tooth phase ${sample}`);
     }
-    near(state.pitchVelocityResiduals.EF, 0, 5e-16,
+    near(state.pitchVelocityResiduals.EF, 0, pitchTolerance,
       `E-F pitch velocity ${sample}`);
-    near(state.pitchVelocityResiduals.HG, 0, 5e-16,
+    near(state.pitchVelocityResiduals.HG, 0, pitchTolerance,
       `H-G pitch velocity ${sample}`);
   }
   disposeModel(model.root);
@@ -285,6 +289,8 @@ test('movement 507 satisfies every mesh phase and has zero spur pitch slip', () 
 test('movement 507 renderer preserves the sleeves and compound planet exactly', () => {
   const { model } = movementModel();
   const { blocks, geometry, stateAtTime, transmission } = model.root.userData;
+  // Planet centres lie on the arm n-m; their rounding scales with its length.
+  const planetTolerance = 2.75 * Number.EPSILON * geometry.carrierPinSpacing;
 
   for (let sample = 0; sample <= 900; sample += 1) {
     const time = transmission.nominalCarrierPeriod * 5 * sample / 900;
@@ -313,7 +319,7 @@ test('movement 507 renderer preserves the sleeves and compound planet exactly', 
         new THREE.Vector3(0, 1, 0),
         geometry.layerY.EF,
       ),
-      1.3e-15,
+      planetTolerance,
       `F center ${sample}`,
     );
     vectorNear(blocks.gearG.getWorldPosition(new THREE.Vector3()),
@@ -321,7 +327,7 @@ test('movement 507 renderer preserves the sleeves and compound planet exactly', 
         new THREE.Vector3(0, 1, 0),
         geometry.layerY.GH,
       ),
-      1.3e-15,
+      planetTolerance,
       `G center ${sample}`,
     );
   }

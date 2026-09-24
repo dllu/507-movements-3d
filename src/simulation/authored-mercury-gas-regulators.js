@@ -203,7 +203,10 @@ function powersMercuryRegulator(movement) {
     return (lowerPressure + upperPressure) / 2;
   };
 
-  const leverPivot = new THREE.Vector3(0.25, 0.95, .70);
+  // The lever works in a plane just in front of valve D (front face z 0.60):
+  // its bored stand and the pin seats of H and D sit at z 0.61-0.73, the lever
+  // at 0.74-0.88, clear of both D and the front skirt of H (z 0.90).
+  const leverPivot = new THREE.Vector3(0.25, 0.95, 0.81);
   const cupConnectorX = -0.90;
   const valveCenterX = 1.0;
   const innerMercurySurfaceY = -0.33;
@@ -957,11 +960,102 @@ function powersMercuryRegulator(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.6, 4.5, 12.2);
   root.userData.groundFloorY = -2.70;
   correctGasMeterParts(root,482,update);
+  {
+    // Move the stand, pin seats and tie of the finite correction into the
+    // lever's plane and shorten the pins and fulcrum to span it, so neither
+    // strikes the front of valve D nor the front skirt of cup H.
+    const b = root.userData.blocks;
+    const seatZ = 0.67;
+    b.leverStand.position.z = seatZ;
+    for (const seat of b.sliderSeats) seat.position.z = seatZ;
+    b.cupH.traverse((object) => {
+      if (object.userData.role === 'rigid-cup-roof-to-sliding-pin-seat') {
+        object.position.z = seatZ;
+      }
+    });
+    for (const pin of [b.cupLeverPin, b.valveLeverPin]) {
+      pin.geometry.dispose();
+      pin.geometry = new THREE.CylinderGeometry(0.070, 0.070, 0.25, 48)
+        .translate(0, -0.055, 0);
+    }
+    b.leverFulcrum.geometry.dispose();
+    b.leverFulcrum.geometry = new THREE.CylinderGeometry(0.16, 0.16, 0.26, 28)
+      .translate(0, -0.06, 0);
+  }
   // Brown's regulator is a flat section; view it square to the cut.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;
   addDomedCover(root, frameMaterial, cupConnectorX);
+  // Brown cuts the regulator through its middle: cup H is a thin inverted U
+  // whose two rims dip into the left and right quicksilver channels, and
+  // valve D's skirt dips into the channel round E. The finite ring troughs,
+  // their quicksilver and cup H stay whole (they are what the contact checks
+  // use) but are drawn cut at the section plane z = SECTION_Z: the troughs
+  // and quicksilver show only their section faces, so their front and rear
+  // runs no longer read as one dark slab, and cup H shows its cut top and
+  // rims without a tinted front skirt. The quicksilver is a light, visible
+  // liquid, and the back of the section is left plain paper-white.
+  const SECTION_Z = 0.30;
+  const frontCut = [new THREE.Plane(new THREE.Vector3(0, 0, -1), SECTION_Z)];
+  const hideRuns = [
+    new THREE.Plane(new THREE.Vector3(0, 0, 1), SECTION_Z),
+  ];
+  const blocks = root.userData.blocks;
+  const box = (x0, x1, y0, y1) =>
+    poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+  const mirrored = (x0, x1, y0, y1, cx = 0) =>
+    [box(cx - x1, cx - x0, y0, y1), box(cx + x0, cx + x1, y0, y1)];
+  const sectionFace = (parts, material, role) => {
+    const face = new THREE.Mesh(
+      plate(polygonClipping.union(...parts), SECTION_Z - 0.006, SECTION_Z),
+      material,
+    );
+    face.userData.role = role;
+    root.add(face);
+    return face;
+  };
+  // Outer ring trough (walls 2.14-2.26 and 1.75-1.80, floor below) and its
+  // quicksilver (1.80-2.14), as rebuilt by correctGasMeterParts.
+  const troughFaceMaterial = matte(PALETTE.frame, { roughness: 0.6 });
+  const troughFace = sectionFace([
+    ...mirrored(2.14, 2.26, -0.96, -0.16),
+    ...mirrored(1.75, 1.80, -0.96, -0.16),
+    ...mirrored(1.75, 2.26, -1.02, -0.96),
+    // Channel round E: walls 0.72-0.815 and 0.335-0.395 about D's axis.
+    ...mirrored(0.72, 0.815, -0.95, -0.24, valveCenterX),
+    ...mirrored(0.335, 0.395, -0.95, -0.24, valveCenterX),
+  ], troughFaceMaterial, 'section-face-of-fixed-quicksilver-troughs');
+  const quicksilverFaceMaterial = matte(0xb9c3c6, {
+    metalness: 0.3,
+    opacity: 0.55,
+    roughness: 0.3,
+    transparent: true,
+  });
+  quicksilverFaceMaterial.depthWrite = false;
+  const quicksilverFace = sectionFace([
+    ...mirrored(1.80, 2.14, -0.955, -0.205),
+    ...mirrored(0.395, 0.72, -0.94, innerMercurySurfaceY, valveCenterX),
+  ], quicksilverFaceMaterial, 'section-face-of-quicksilver-seals');
+  blocks.sectionFaces = [troughFace, quicksilverFace];
+  const trough = blocks.outerMercuryChannels[0].trough;
+  trough.material.clippingPlanes = frontCut.concat(hideRuns);
+  mercuryMaterial.color.setHex(0xb9c3c6);
+  mercuryMaterial.opacity = 0.55;
+  mercuryMaterial.clippingPlanes = frontCut.concat(hideRuns);
+  cupMaterial.clippingPlanes = frontCut;
+  for (const skirt of blocks.cupCrossSkirts ?? []) {
+    skirt.material.clippingPlanes = frontCut;
+    skirt.material.opacity = 0.02;
+  }
+  cupHPressureVolume.material.clippingPlanes = frontCut;
+  cupHPressureVolume.material.opacity = 0.012;
+  housingShell.material = matte(PALETTE.paper, {
+    roughness: 0.95,
+    side: THREE.DoubleSide,
+  });
+  root.userData.localClippingEnabled = true;
   markShadows(root);
+  housingShell.receiveShadow = false;
   housingShell.castShadow = false;
   cupHPressureVolume.castShadow = false;
   for (const channel of outerMercuryChannels) {

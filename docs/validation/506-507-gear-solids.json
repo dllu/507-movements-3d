@@ -11,13 +11,13 @@
       "pairs": [
         {
           "pair": "a-b",
-          "maximumSampledGap": 0.008294633582965439,
-          "minimumSampledGap": 0.008269251604885225
+          "maximumSampledGap": 0.00829463358296809,
+          "minimumSampledGap": 0.008269251604882238
         },
         {
           "pair": "h-g",
-          "maximumSampledGap": 0.008288201614654423,
-          "minimumSampledGap": 0.00826997848903298
+          "maximumSampledGap": 0.008288201614654407,
+          "minimumSampledGap": 0.00826997848903599
         },
         {
           "pair": "c-d",
@@ -34,7 +34,7 @@
     {
       "id": 507,
       "poses": 33,
-      "queries": 1629206,
+      "queries": 1482837,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
@@ -51,13 +51,13 @@
         },
         {
           "pair": "E-F",
-          "maximumSampledGap": 0.00014614035643858785,
-          "minimumSampledGap": 0.0001412094112621383
+          "maximumSampledGap": 0.00014930021224390235,
+          "minimumSampledGap": 0.0001416538200313235
         },
         {
           "pair": "H-G",
-          "maximumSampledGap": 0.00015319490995227715,
-          "minimumSampledGap": 0.00014113863584507203
+          "maximumSampledGap": 0.00015913612585473352,
+          "minimumSampledGap": 0.00014228722241572798
         }
       ]
     }
@@ -69,7 +69,7 @@
       {
         "id": 507,
         "poses": 33,
-        "queries": 1620523,
+        "queries": 1470875,
         "penetrations": 0,
         "maxDepth": 0,
         "worst": null,
@@ -86,13 +86,13 @@
           },
           {
             "pair": "E-F",
-            "maximumSampledGap": 0.00014593362378885545,
-            "minimumSampledGap": 0.00014103990533327198
+            "maximumSampledGap": 0.00014930021224390235,
+            "minimumSampledGap": 0.00014134895044919218
           },
           {
             "pair": "H-G",
-            "maximumSampledGap": 0.00015319490995227715,
-            "minimumSampledGap": 0.0001409854190781739
+            "maximumSampledGap": 0.0001595624535695103,
+            "minimumSampledGap": 0.00014114493501971517
           }
         ]
       }
@@ -102,15 +102,15 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "e47c5c80451963855a386c4b37a3342d3d0721803a8a23baffefc4f8303d00a2"
+      "sha256": "72b967f7462fee1f5704bb38bfa79e318f90519bcfee423f088e46bf42e57efc"
     },
     {
       "file": "src/simulation/compound-epicyclic-corrections.js",
-      "sha256": "1beed54309d3da67bdf48af0353f9e52156d978f8ff9216211739511ba29e68c"
+      "sha256": "f2da63c7e0eacd248512f9d726135b518d8c104500da084b5f8ad47127f0b777"
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",
-      "sha256": "7216704f70d8ef89ab95c02fd719d6e73638dbff7a6a1ad4c29507efc89e6518"
+      "sha256": "f7c2127087bb96e7bed10f4c0ac891a0f1c4ea6e13d63d453e02ce03ed0b6fef"
     },
     {
       "file": "scripts/review-compound-epicyclic-teeth.mjs",

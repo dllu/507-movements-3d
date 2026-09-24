@@ -758,12 +758,28 @@ function wetGasMeter(movement) {
   waterSurfaceLine.userData.role = 'stationary-level-water-surface-line';
   root.add(waterSurfaceLine);
   root.userData.blocks.waterSurfaceLine = waterSurfaceLine;
+  // Brown leaves the gas space above the water plain white: back the section
+  // with an opaque paper-white case head instead of a grey tinted one, so the
+  // space above the line reads blank and the water below reads against white.
+  rearCaseHead.material = matte(PALETTE.paper, {
+    roughness: 0.95,
+    side: THREE.DoubleSide,
+  });
+  // The finite ported drum heads stay as closed solids but are drawn as
+  // clear as the section Brown cuts through them, not as a grey veil.
+  for (const head of root.userData.blocks.drumHeads ?? []) {
+    head.material = head.material.clone();
+    head.material.color.setHex(PALETTE.paper);
+    head.material.opacity = 0.04;
+  }
   // Brown's plate is a flat end section of case and drum.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;
   markShadows(root);
   caseShell.castShadow = false;
   rearCaseHead.castShadow = false;
+  // No partition shadows on the blank paper-white back of the section.
+  rearCaseHead.receiveShadow = false;
   caseWater.castShadow = false;
   drumShell.castShadow = false;
   update(0);

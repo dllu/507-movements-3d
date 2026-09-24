@@ -606,6 +606,27 @@ function caryRotaryPump(movement) {
   root.userData.cameraDirection = new THREE.Vector3(5.9, 4.7, 11.7);
   root.userData.groundFloorY = groundY;
   correctCaryPump(root);
+  // Brown's section is drawn clear: no water or front cover washes over the
+  // cam and sliders. Drum B and pipe H are solid walls; the rear spider stays
+  // a faint backing so the fixed cam reads against it.
+  for (const object of [frontCover, annularWater, inletWater, dischargeH.water]) {
+    object.visible = false;
+  }
+  const spiderMaterial = drumMaterial.clone();
+  spiderMaterial.opacity = 0.22;
+  root.userData.blocks.rearSpider.material = spiderMaterial;
+  drumMaterial.transparent = false;
+  drumMaterial.opacity = 1;
+  drumMaterial.depthWrite = true;
+  drumMaterial.side = THREE.FrontSide;
+  dischargeH.shell.material = frameMaterial;
+  // The flattened black face rings would paint the drum face black.
+  for (const ring of drum.children.filter((child) => child.geometry?.type === 'TorusGeometry')) {
+    ring.visible = false;
+  }
+  inletShell.geometry.dispose();
+  inletShell.geometry = new THREE.BoxGeometry(0.66, 1.58, 0.06)
+    .translate(0, 0, -0.3834);
   markShadows(root);
   base.receiveShadow = true;
   update(0);

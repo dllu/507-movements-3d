@@ -87,8 +87,9 @@ function createRectangularBellows({
   role,
 }) {
   const group = addRole(new THREE.Group(), role);
-  const stationScales = [0.94, 1.05, 0.84, 1.05, 0.84,
-    1.05, 0.84, 1.05, 0.94];
+  // Brown draws each chamber as one closed leather bellows whose top and
+  // bottom outlines dip in two deep V folds between full-height boards.
+  const stationScales = [1.0, 0.70, 1.0, 0.70, 1.0];
   const stationFractions = stationScales.map(
     (_, index) => index / (stationScales.length - 1),
   );
@@ -1194,7 +1195,35 @@ function dryGasMeter(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.8, 4.8, 12.5);
   root.userData.groundFloorY = -2.25;
   correctGasMeterParts(root,483,update);
+  // Brown's chambers A, A' are closed, opaque pleated bellows: draw the skin
+  // solid (its faceted folds shade as pleats) and the fold rings in a darker
+  // tone of the same leather rather than as black loose plates.
+  for (const [bellows, material] of [[bellowsA, bellowsAMaterial],
+    [bellowsAPrime, bellowsAPrimeMaterial]]) {
+    material.opacity = 1;
+    material.transparent = false;
+    material.depthWrite = true;
+    const ringMaterial = matte(
+      material.color.clone().multiplyScalar(0.72).getHex(),
+      { roughness: 0.5 },
+    );
+    for (const frame of bellows.stationFrames) {
+      frame.traverse((object) => {
+        if (object.isMesh) object.material = ringMaterial;
+      });
+    }
+  }
+  // Brown's plate is a flat front elevation: a long, narrow-angle view
+  // square to the case, so the roof and floor do not open out in perspective.
+  root.userData.cameraDirection = new THREE.Vector3(0.6, 0.5, 15);
+  root.userData.cameraFov = 10;
+  // The back of Brown's section is plain white paper.
+  housingShell.material = matte(PALETTE.paper, {
+    roughness: 0.95,
+    side: THREE.DoubleSide,
+  });
   markShadows(root);
+  housingShell.receiveShadow = false;
   housingShell.castShadow = false;
   centerPartition.castShadow = false;
   gasA.castShadow = false;

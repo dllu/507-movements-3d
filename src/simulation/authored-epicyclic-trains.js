@@ -3085,7 +3085,12 @@ function twentyFiveThousandToOneEpicyclic(movement) {
     C: teeth.C * bevelModule / 2,
     D: teeth.D * bevelModule / 2,
   });
-  const carrierPinSpacing = 2.15;
+  // Brown's upper train spans most of the plate: the arm n-m is about 1.4
+  // times the radius of wheel C, so F-E and G-H reach well past C's height.
+  // The spur radii follow from this centre distance and the tooth counts;
+  // 2530 * 11 / 8192 (about 3.40) keeps both layer modules, 253/4096 and
+  // 605/8192, exact binary fractions so the pitch radii sum exactly.
+  const carrierPinSpacing = 2530 * 11 / 8192;
   const layerModules = Object.freeze({
     EF: 2 * carrierPinSpacing / (teeth.E + teeth.F),
     GH: 2 * carrierPinSpacing / (teeth.G + teeth.H),
@@ -3255,28 +3260,32 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   });
   const crownSpokes = Array.from({ length: 6 }, (_, index) => {
     const angle = FULL_TURN * index / 6;
+    // The spokes lie within the thin conical rim (local x -0.005 to 0.049)
+    // and end just inside its 1.97 inner edge, clear of pinions A and D.
     const inner = new THREE.Vector3(
-      -0.05,
+      0.022,
       Math.cos(angle) * 0.38,
       Math.sin(angle) * 0.38,
     );
     const outer = new THREE.Vector3(
-      -0.05,
-      Math.cos(angle) * (bevelPitchRadii.C - 0.20),
-      Math.sin(angle) * (bevelPitchRadii.C - 0.20),
+      0.022,
+      Math.cos(angle) * 2.0,
+      Math.sin(angle) * 2.0,
     );
     return addRole(makeBeam(inner, outer, {
       color: PALETTE.driven,
-      depth: 0.10,
+      depth: 0.05,
       jointRadius: 0.001,
       thickness: 0.085,
     }), `crown-wheel-C-spoke-${index + 1}`);
   });
+  // The hub stops 0.01 short of the long D-E sleeve on the main shaft.
   const crownHub = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.35, 0.35, 0.26, 34),
+    new THREE.CylinderGeometry(0.35, 0.35, 0.235, 34),
     outputMaterial,
   ), 'crown-wheel-C-hub');
   crownHub.rotation.z = Math.PI / 2;
+  crownHub.position.x = 0.0125;
   const outputShaftA = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.13, 0.13, 2.72, 30),
     darkMaterial,
@@ -3719,9 +3728,11 @@ function twentyFiveThousandToOneEpicyclic(movement) {
     spurContactMarkers,
     supportBase,
   };
+  // The planet wheels F, G orbit m out to about 4.98 (5.62 by the
+  // conservative per-mesh boxes the orbit check uses).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.65, -3.48, -3.65),
-    new THREE.Vector3(4.00, 4.70, 3.65),
+    new THREE.Vector3(-5.65, -3.48, -5.65),
+    new THREE.Vector3(5.65, 4.70, 5.65),
   );
   root.userData.canonicalTimes = {
     carrierHalfTurn: nominalCarrierPeriod / 2,
@@ -3866,6 +3877,23 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctCompoundEpicyclic(root, movement.id);
+  // Brown draws no white speed or phase indices: drop the wheel, sleeve,
+  // carrier and output indices from the scene (their blocks stay for review).
+  {
+    const indices = [outputIndex, longSleeveIndex, shortSleeveIndex,
+      carrierIndex, planetIndex];
+    for (const gear of [gearA, gearD, gearE, gearF, gearG, gearH]) {
+      const rotor = gear.userData.rotor ?? gear;
+      for (const child of rotor.children) {
+        if (child.isMesh && !child.userData.role
+          && child.geometry?.type === 'BoxGeometry'
+          && child.material?.color?.getHex() === PALETTE.white) {
+          indices.push(child);
+        }
+      }
+    }
+    for (const index of indices) index?.removeFromParent();
+  }
   // Brown's flat front elevation: a narrow view avoids looking down on E-H.
   root.userData.cameraFov = 10;
   markShadows(root);

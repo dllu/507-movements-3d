@@ -362,10 +362,15 @@ function reactionFerry(movement) {
 
     const ropeVector = state.bowPoint.clone().sub(anchorPoint);
     rope.position.copy(anchorPoint).add(state.bowPoint).multiplyScalar(0.5);
-    rope.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      ropeVector.clone().normalize(),
-    );
+    // Local y runs along the line and local x stays level, so the plan-view
+    // slack drawn into the rope geometry lies in the water plane.
+    const ropeAxis = ropeVector.clone().normalize();
+    const ropeSide = new THREE.Vector3(0, 1, 0).cross(ropeAxis).normalize();
+    rope.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+      ropeSide,
+      ropeAxis,
+      ropeSide.clone().cross(ropeAxis),
+    ));
     rope.scale.set(1, ropeVector.length(), 1);
     ropeStartMarker.position.copy(anchorPoint);
     ropeEndMarker.position.copy(state.bowPoint);

@@ -1,5 +1,7 @@
 import {correctBisectingGauge,finishDrawingGauge} from './drawing-gauge-parts.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {plate as platePrism,poly,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -827,8 +829,57 @@ function bisectingGauge(movement) {
   exactCenterline.castShadow = false;
   fittedCenterWitness.castShadow = false;
   correctBisectingGauge(root);
+  archBrownCheeks(root);
   // Isometric view from the adjustable cheek's side and the near board end.
   return finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(1,1.05,1));
+}
+
+// Brown's cheeks are tall blocks with a segmental arched top, the cross-bar
+// passing through their lower middle and the thumb screw rising from the
+// crown of the sliding cheek. Rebuild the shared-helper notched cheek
+// locally: same crossbar window, link slot and footprint, taller arched top.
+function archBrownCheeks(root) {
+  const b = root.userData.blocks, g = root.userData.geometry;
+  const rect = (y0, z0, y1, z1) => poly([[y0, z0], [y1, z0], [y1, z1], [y0, z1]]);
+  const half = 0.47, bottom = -0.25, springing = 0.95, crown = 1.12;
+  const radius = (half ** 2 + (crown - springing) ** 2) / (2 * (crown - springing));
+  const centerZ = crown - radius;
+  const outline = [[-half, bottom], [half, bottom]];
+  for (let i = 0; i <= 48; i++) {
+    const y = half - 2 * half * i / 48;
+    outline.push([y, centerZ + Math.sqrt(radius ** 2 - y ** 2)]);
+  }
+  const arched = poly(outline);
+  const toCheek = new THREE.Matrix4().set(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1);
+  const t = g.cheekThickness / 2;
+  for (const [i, cheek] of [b.fixedCheek, b.adjustableCheek].entries()) {
+    const linkZ = i ? 0.13 : -0.02;
+    let body = polygonClipping.difference(arched, rect(-0.178, 0.302, 0.178, 0.558),
+      rect(-0.51, linkZ - 0.071, -0.02, linkZ + 0.071));
+    const parts = [];
+    if (i) {
+      // Square vertical passage for the thumb-screw stem through the crown.
+      const band = rect(-0.08, 0.558, 0.08, crown + 0.1);
+      const crownBand = polygonClipping.intersection(body, band);
+      body = polygonClipping.difference(body, band);
+      parts.push(platePrism(crownBand, -t, -0.08), platePrism(crownBand, 0.08, t));
+    }
+    parts.push(platePrism(body, -t, t));
+    const merged = mergeGeometries(parts);
+    parts.forEach(part => part.dispose());
+    merged.applyMatrix4(toCheek);
+    cheek.plate.geometry.dispose();
+    cheek.plate.geometry = merged;
+    cheek.plate.position.z = 0;
+  }
+  // Stem from the crossbar top up through the crown; knob just above it.
+  const stem = b.thumbScrew.children[0];
+  stem.geometry.dispose();
+  stem.geometry = new THREE.CylinderGeometry(0.075, 0.075, 0.66, 32);
+  stem.position.z = 0.06 + 0.33;
+  const head = b.thumbScrew.children[1];
+  head.position.z = 0.78;
+  root.userData.reconstructionNote = `${root.userData.reconstructionNote} Cheeks are Brown's tall blocks with arched tops.`;
 }
 
 export function createAuthoredBisectingGaugeMovement(movement) {

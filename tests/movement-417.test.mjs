@@ -55,8 +55,8 @@ test('movement 417 is one bent shaft A in bearing D, one double-socket rod B, an
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
   assert.match(data.mechanism, /Horizontal shaft A rotates in fixed bearing D/);
-  assert.match(data.mechanism, /parallel offset journal/);
-  assert.match(data.mechanism, /spatial square-root closure/);
+  assert.match(data.mechanism, /inclined bent end with B held square to it/);
+  assert.match(data.mechanism, /slides through a swivel socket in slide C/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.slidePositionIndependent, false);
@@ -69,9 +69,12 @@ test('movement 417 is one bent shaft A in bearing D, one double-socket rod B, an
   assert.equal(blocks.bentJournal.parent, blocks.shaftRotor);
   assert.equal(blocks.inputWheel.parent, blocks.shaftRotor);
   assert.equal(blocks.bearingD.parent, blocks.fixedFrame);
-  assert.equal(blocks.rodB.parent, model.root);
+  assert.equal(blocks.shaftCollar.parent, blocks.shaftRotor);
+  assert.equal(blocks.rodB.parent, blocks.rodBody);
+  assert.equal(blocks.upperSocketCup.parent, blocks.rodBody);
+  assert.equal(blocks.rodBody.parent, model.root);
   assert.equal(blocks.slideC.parent, model.root);
-  assert.equal(blocks.upperBall.parent, model.root);
+  assert.equal(blocks.upperBall.parent, blocks.rodBody);
   assert.equal(blocks.lowerBall.parent, blocks.slideC);
 
   const roles = [];
@@ -84,10 +87,11 @@ test('movement 417 is one bent shaft A in bearing D, one double-socket rod B, an
   for (const role of [
     'continuous-horizontal-shaft-A-rotor',
     'fixed-bearing-D-around-shaft-A',
-    'radial-bend-at-end-of-shaft-A',
-    'offset-parallel-bent-journal-of-shaft-A',
-    'constant-length-oblique-double-socket-rod-B',
-    'upper-universal-socket-of-rod-B',
+    'knuckle-at-bend-of-shaft-A',
+    'collar-at-bend-of-shaft-A',
+    'inclined-bent-end-of-shaft-A',
+    'square-rod-B-sliding-through-socket-in-C',
+    'head-A-turning-on-bent-end',
     'lower-universal-socket-in-slide-C',
     'rectilinearly-reciprocating-slide-C',
     'fixed-plank-bed-and-guide-for-slide-C',
@@ -140,9 +144,9 @@ test('movement 417 records Brown’s shaft, sockets, slide, half-turn overlay, a
     [[159, 169], [241, 388]]);
   assert.equal(evidence.explicitInBrownDescription.length, 7);
   assert.match(evidence.engravingEvidence,
-    /horizontal shaft.*offset parallel journal.*oblique rod B/);
+    /head A on its bent left end.*leaning a little to the right.*leaning the other way/);
   assert.match(evidence.reconstructionDisclosure,
-    /exact three-dimensional rod closure determines C/);
+    /B held square to the bent end determines C exactly/);
   near(
     sourcePose.dottedAfterHalfRevolution.shaftAngle
       - sourcePose.bold.shaftAngle,
@@ -153,87 +157,80 @@ test('movement 417 records Brown’s shaft, sockets, slide, half-turn overlay, a
   disposeModel(model.root);
 });
 
-test('movement 417 bent journal follows one transverse circle while slide C remains on one exact X guide', () => {
+test('movement 417 rod root turns on the inclined bent end while slide C remains on one exact X guide', () => {
   const model = createMovementModel(catalog.movements[416]);
   const { geometry, stateAtShaftAngle } = model.root.userData;
-  const shaftAxisPoint = new THREE.Vector3(
-    geometry.bentJournalX,
-    geometry.shaftAxisY,
-    geometry.shaftAxisZ,
-  );
-  let minimumZ = Infinity;
-  let maximumZ = -Infinity;
+  const bend = new THREE.Vector3(geometry.bendX, geometry.shaftAxisY,
+    geometry.shaftAxisZ);
+  const axis = new THREE.Vector3(1, 0, 0);
 
   for (let sample = -30000; sample <= 60000; sample += 1) {
     const state = stateAtShaftAngle(Math.PI * 2 * sample / 30000);
-    near(state.upperSocket.x, geometry.bentJournalX, 0,
-      'journal x fixed');
-    near(state.upperSocket.distanceTo(shaftAxisPoint),
-      geometry.crankRadius, 3e-16,
-      'journal transverse circle');
+    near(state.bentEnd.length(), 1, 3e-16, 'unit bent-end direction');
+    near(Math.acos(-state.bentEnd.dot(axis)),
+      geometry.bentEndInclination, 2e-8, 'constant bend angle');
+    vectorNear(state.upperSocket,
+      bend.clone().addScaledVector(state.bentEnd, geometry.rodRootOnBentEnd),
+      5e-16, 'rod root on the bent end');
     near(state.lowerSocket.x, state.slideX, 0, 'lower socket follows C');
-    near(state.lowerSocket.y, geometry.slideAxisY, 0,
-      'slide guide y');
-    near(state.lowerSocket.z, geometry.slideAxisZ, 0,
-      'slide guide z');
-    minimumZ = Math.min(minimumZ, state.upperSocket.z);
-    maximumZ = Math.max(maximumZ, state.upperSocket.z);
+    near(state.lowerSocket.y, geometry.slideAxisY, 0, 'slide guide y');
+    near(state.lowerSocket.z, geometry.slideAxisZ, 0, 'slide guide z');
   }
-  near(minimumZ, -geometry.crankRadius, 0,
-    'journal front transverse extreme');
-  near(maximumZ, geometry.crankRadius, 0,
-    'journal rear transverse extreme');
   disposeModel(model.root);
 });
 
-test('movement 417 exact spatial square-root law preserves rod B and reaches Brown’s opposed half-turn slide extremes', () => {
+test('movement 417 rod B stays square to the bent end, leans opposite ways in Brown’s bold and dotted poses and reaches both slide extremes', () => {
   const model = createMovementModel(catalog.movements[416]);
-  const { geometry, stateAtShaftAngle } = model.root.userData;
-  let maximumLengthResidual = 0;
-  let maximumPositionResidual = 0;
+  const { geometry, stateAtShaftAngle, sourcePose } = model.root.userData;
+  let maximumSquareness = 0;
+  let minimumTip = Infinity;
+  let maximumTip = -Infinity;
 
   for (let sample = 0; sample <= 80000; sample += 1) {
     const state = stateAtShaftAngle(Math.PI * 2 * sample / 80000);
-    maximumLengthResidual = Math.max(maximumLengthResidual,
-      Math.abs(state.rodLengthResidual));
-    maximumPositionResidual = Math.max(maximumPositionResidual,
-      Math.abs(state.rodPositionConstraintResidual));
-    near(state.slideX,
-      geometry.bentJournalX + Math.sqrt(
-        geometry.socketRodLength ** 2
-          - state.transverseDistanceSquared,
-      ), 0, 'spatial slide law');
+    maximumSquareness = Math.max(maximumSquareness,
+      Math.abs(state.rodSquarenessResidual));
+    near(state.slideX, geometry.bendX + (geometry.transverseCenterDistance
+      * Math.sin(geometry.bentEndInclination) * Math.cos(state.shaftAngle)
+      - geometry.rodRootOnBentEnd) / Math.cos(geometry.bentEndInclination),
+    0, 'harmonic slide law');
+    assert.ok(state.rodEngagedLength >= geometry.rodEngagedLengthMinimum - 1e-12);
+    assert.ok(state.rodEngagedLength <= geometry.rodEngagedLengthMaximum + 1e-12);
+    minimumTip = Math.min(minimumTip, state.rodTipBeyondSocket);
+    maximumTip = Math.max(maximumTip, state.rodTipBeyondSocket);
   }
-  assert.ok(maximumLengthResidual < 5e-16);
-  assert.ok(maximumPositionResidual < 1.8e-15);
+  assert.ok(maximumSquareness < 1e-15);
+  near(minimumTip, geometry.rodTipBeyondSocket, 1e-9, 'B never leaves the socket');
+  assert.ok(maximumTip < 0.22, 'B end stays inside C, above the plank');
   const bold = stateAtShaftAngle(geometry.sourceShaftAngle);
   const dotted = stateAtShaftAngle(geometry.sourceShaftAngle + Math.PI);
-  near(bold.slideX, geometry.slideMaximumX, 0,
-    'bold-pose slide extreme');
-  near(dotted.slideX, geometry.slideMinimumX, 0,
-    'dotted-pose slide extreme');
+  near(bold.slideX, geometry.slideMaximumX, 0, 'bold-pose slide extreme');
+  near(dotted.slideX, geometry.slideMinimumX, 0, 'dotted-pose slide extreme');
   near(bold.slideX - dotted.slideX, geometry.slideStroke, 0,
     'full slide stroke');
-  near(bold.upperSocket.y, geometry.shaftAxisY - geometry.crankRadius,
-    0, 'bold lower journal position');
-  near(dotted.upperSocket.y,
-    geometry.shaftAxisY + geometry.crankRadius,
-    0, 'dotted upper journal position');
+  near(geometry.slideStroke, 2 * geometry.harmonicAmplitude, 1e-15,
+    'stroke is twice the harmonic amplitude');
+  // Brown: B leans a little right in bold, the other way in dotted.
+  near(bold.rodLeanFromVertical, geometry.bentEndInclination, 1e-12,
+    'bold lean equals the bend angle, lower end to the right');
+  near(dotted.rodLeanFromVertical, -geometry.bentEndInclination, 1e-12,
+    'dotted lean mirrors it');
+  near(sourcePose.bold.rodLeanFromVertical, bold.rodLeanFromVertical, 0,
+    'recorded bold lean');
+  assert.ok(bold.upperSocket.y < geometry.shaftAxisY, 'bold head tipped down');
+  assert.ok(dotted.upperSocket.y > geometry.shaftAxisY, 'dotted head tipped up');
   disposeModel(model.root);
 });
 
-test('movement 417 differentiated position law satisfies rod velocity and acceleration constraints throughout', () => {
+test('movement 417 differentiated laws satisfy the squareness rate constraint throughout', () => {
   const model = createMovementModel(catalog.movements[416]);
   const { stateAtShaftAngle } = model.root.userData;
-  let maximumVelocityResidual = 0;
-  let maximumAccelerationResidual = 0;
+  let maximumRateResidual = 0;
 
   for (let sample = -40000; sample <= 80000; sample += 1) {
     const state = stateAtShaftAngle(Math.PI * 2 * sample / 40000);
-    maximumVelocityResidual = Math.max(maximumVelocityResidual,
-      Math.abs(state.rodVelocityConstraintResidual));
-    maximumAccelerationResidual = Math.max(maximumAccelerationResidual,
-      Math.abs(state.rodAccelerationConstraintResidual));
+    maximumRateResidual = Math.max(maximumRateResidual,
+      Math.abs(state.rodSquarenessRateResidual));
     vectorNear(state.lowerSocketVelocity,
       new THREE.Vector3(state.slideSpeed, 0, 0), 0,
       'lower socket velocity follows X guide');
@@ -241,8 +238,7 @@ test('movement 417 differentiated position law satisfies rod velocity and accele
       new THREE.Vector3(state.slideAcceleration, 0, 0), 0,
       'lower socket acceleration follows X guide');
   }
-  assert.ok(maximumVelocityResidual < 3.4e-16);
-  assert.ok(maximumAccelerationResidual < 5e-16);
+  assert.ok(maximumRateResidual < 1e-15);
   disposeModel(model.root);
 });
 
@@ -270,31 +266,27 @@ test('movement 417 slide moves monotonically between its two reversals and retur
     'bold-pose reversal speed');
   near(Math.abs(stateAtShaftAngle(Math.PI).slideSpeed), 0, 2e-16,
     'dotted-pose reversal speed');
-  assert.ok(geometry.slideStroke > 1.45);
+  assert.ok(geometry.slideStroke > 1.2);
   disposeModel(model.root);
 });
 
-test('movement 417 socket geometry is truly spatial rather than a disguised planar crank-slider', () => {
+test('movement 417 bent end is truly spatial: the rod root swings to either side of the plane at quarter turns', () => {
   const model = createMovementModel(catalog.movements[416]);
   const { geometry, stateAtShaftAngle } = model.root.userData;
   const front = stateAtShaftAngle(Math.PI / 2);
   const rear = stateAtShaftAngle(Math.PI * 3 / 2);
+  const depth = geometry.rodRootOnBentEnd * Math.sin(geometry.bentEndInclination);
 
-  near(front.upperSocket.z, -geometry.crankRadius, 0,
-    'front journal excursion');
-  near(rear.upperSocket.z, geometry.crankRadius, 0,
-    'rear journal excursion');
-  near(front.slideX, rear.slideX, 0,
+  near(front.upperSocket.z, -depth, 1e-15, 'front root excursion');
+  near(rear.upperSocket.z, depth, 1e-15, 'rear root excursion');
+  near(front.slideX, rear.slideX, 1e-15,
     'equal slide position at opposed depth poses');
-  near(front.rodVector.z, geometry.crankRadius, 0,
-    'front rod depth component');
-  near(rear.rodVector.z, -geometry.crankRadius, 0,
-    'rear rod depth component');
-  assert.ok(Math.abs(front.rodVector.z) > 0.5);
+  near(front.rodVector.z, depth, 1e-15, 'front rod depth component');
+  near(rear.rodVector.z, -depth, 1e-15, 'rear rod depth component');
   disposeModel(model.root);
 });
 
-test('movement 417 analytic journal and slide derivatives match finite differences', () => {
+test('movement 417 analytic root and slide derivatives match finite differences', () => {
   const model = createMovementModel(catalog.movements[416]);
   const { stateAtShaftAngle } = model.root.userData;
   const angularStep = 1e-5;
@@ -313,17 +305,22 @@ test('movement 417 analytic journal and slide derivatives match finite differenc
     const numericalUpperVelocity = after.upperSocket.clone()
       .sub(before.upperSocket)
       .multiplyScalar(1 / (2 * timeStep));
+    const numericalUpperAcceleration = after.upperSocketVelocity.clone()
+      .sub(before.upperSocketVelocity)
+      .multiplyScalar(1 / (2 * timeStep));
     near(numericalSlideSpeed, state.slideSpeed, 4e-10,
       `slide speed at ${angle}`);
     near(numericalSlideAcceleration, state.slideAcceleration, 8e-10,
       `slide acceleration at ${angle}`);
     vectorNear(numericalUpperVelocity, state.upperSocketVelocity, 5e-11,
       `upper socket velocity at ${angle}`);
+    vectorNear(numericalUpperAcceleration, state.upperSocketAcceleration, 5e-10,
+      `upper socket acceleration at ${angle}`);
   }
   disposeModel(model.root);
 });
 
-test('movement 417 update binds shaft rotation, slide translation, rod length, and moving upper socket to one state', () => {
+test('movement 417 update binds shaft rotation, slide translation, rod B square to the bent end, and head A to one state', () => {
   const model = createMovementModel(catalog.movements[416]);
   const { blocks, geometry, stateAtTime } = model.root.userData;
 
@@ -334,12 +331,22 @@ test('movement 417 update binds shaft rotation, slide translation, rod length, a
       'shaft A update');
     near(blocks.slideC.position.x, state.slideX, 0,
       'slide C update');
-    near(blocks.rodB.scale.y, geometry.socketRodLength, 5e-16,
-      'rod B rendered length');
-    vectorNear(blocks.upperBall.position, state.upperSocket, 0,
-      'upper ball update');
-    vectorNear(blocks.upperSocketCup.position, state.upperSocket, 0,
-      'upper socket cup update');
+    model.root.updateMatrixWorld(true);
+    vectorNear(blocks.rodBody.position, state.upperSocket, 0,
+      'rod root update');
+    const rodAxis = new THREE.Vector3(0, 1, 0)
+      .applyQuaternion(blocks.rodBody.quaternion);
+    const headAxis = new THREE.Vector3(-1, 0, 0)
+      .applyQuaternion(blocks.rodBody.quaternion);
+    vectorNear(rodAxis, state.rodVector.clone().normalize(), 1e-15,
+      'rod B points at C');
+    vectorNear(headAxis, state.bentEnd, 1e-15, 'head A along the bent end');
+    const tip = new THREE.Vector3(0, geometry.rodTipLength, 0)
+      .applyMatrix4(blocks.rodBody.matrixWorld);
+    near(tip.distanceTo(state.upperSocket), geometry.rodTipLength, 1e-14,
+      'rigid rod length');
+    near(tip.distanceTo(state.lowerSocket), state.rodTipBeyondSocket, 1e-14,
+      'rod passes through the socket');
   }
   const source = stateAtTime(0);
   const closure = stateAtTime(geometry.cycleDuration);

@@ -569,6 +569,21 @@ function oldRotaryPump(movement) {
   root.userData.cameraDirection = new THREE.Vector3(5.8, 4.6, 11.8);
   root.userData.groundFloorY = groundY;
   correctOldPump(root);
+  // Brown's section is drawn clear: no water fill or front cover washes over
+  // the rotor and valves, and each aperture shows only its back wall.
+  for (const object of [annularWater, inletWater, outletWater, frontCover]) {
+    object.visible = false;
+  }
+  rearCover.material = matte(PALETTE.white, { roughness: 0.8 });
+  rearCover.material.fog = false;
+  for (const [shell, width, height] of [
+    [inlet.children[0], 0.78, 1.42],
+    [outlet.children[0], 1.48, 0.78],
+  ]) {
+    shell.geometry.dispose();
+    shell.geometry = new THREE.BoxGeometry(width, height, 0.06)
+      .translate(0, 0, -0.38);
+  }
   markShadows(root);
   base.receiveShadow = true;
   update(0);

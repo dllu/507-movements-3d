@@ -37,7 +37,7 @@ test('401 finite guide slots, pitman eyes and shaft bearings clear their pins fo
  assert.ok(Math.abs(b.slideStop.position.x-.06-g.slideHalfLength)<1e-12);
 });
 
-test('417 ball centers match analytic sockets and the captured slide clears every guide face',()=>{
+test('417 socket centres match the analytic state and the captured slide clears every guide face',()=>{
  const {root,update}=createMovementModel(catalog[416]),d=root.userData,b=d.blocks;
  for(let i=0;i<=128;i++){
   update(i*6/128);root.updateMatrixWorld(true);const state=d.stateAtTime(i*6/128);
@@ -47,10 +47,11 @@ test('417 ball centers match analytic sockets and the captured slide clears ever
   const slide=bounds(b.slideBody).union(bounds(b.slideFront)).union(bounds(b.slideBridge)),plank=bounds(b.base);
   assert.ok(slide.min.y>=plank.max.y-1e-6&&slide.min.y-plank.max.y<.02);
   assert.ok(slide.min.x>plank.min.x&&slide.max.x<bounds(b.bearingD).getCenter(new THREE.Vector3()).x-.42,'slide clears the foot of standard D');
-  assert.ok(bounds(b.lowerSocketCup).min.y>=bounds(b.slideBridge).max.y-1e-6);
   assert.ok(bounds(b.lowerSocketCup).min.x>bounds(b.slideBody).max.x&&bounds(b.lowerSocketCup).max.x<bounds(b.slideFront).min.x);
+  // B's rounded end stays above the plank.
+  assert.ok(bounds(b.rodTip).min.y>plank.max.y+.005);
  }
- // Real annular journal bore and spherical seat gaps, measured from meshes.
+ // Real annular journal bore, bush and head bores, measured from meshes.
  for(const mesh of [b.bearingD,b.bearingBore]){
   const p=mesh.geometry.attributes.position;let minimum=Infinity;
   for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getX(i),p.getZ(i)));
@@ -61,14 +62,35 @@ test('417 ball centers match analytic sockets and the captured slide clears ever
   for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getX(i),p.getZ(i)));
   assert.ok(minimum>.12);
  }
- // Head A's hourglass bore, measured about its own axis in rod B's frame,
- // clears the 0.12 journal swung through ±journalSwingInHeadA at every depth.
  {
-  const g=d.geometry,m=g.headAxisInclinationToRodB,axis=new THREE.Vector3(Math.sin(m),Math.cos(m),0);
-  const p=b.upperSocketCup.geometry.attributes.position,v=new THREE.Vector3();
-  for(let i=0;i<p.count;i++){
-   v.fromBufferAttribute(p,i);const axial=v.dot(axis),radial=v.clone().addScaledVector(axis,-axial).length();
-   assert.ok(radial>.12/Math.cos(g.journalSwingInHeadA)+Math.abs(axial)*Math.tan(g.journalSwingInHeadA),`${axial} ${radial}`);
+  // Head A's bore about its own (rod-local X) axis clears the 0.12 bent end.
+  const p=b.upperSocketCup.geometry.attributes.position;let minimum=Infinity;
+  for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getY(i),p.getZ(i)));
+  assert.ok(minimum>.13);
+ }
+ // The swivel ball's bore clears B's shank.
+ {
+  const p=b.lowerBall.geometry.attributes.position;let minimum=Infinity;
+  for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getX(i),p.getZ(i)));
+  assert.ok(minimum>.10);
+ }
+});
+
+test('417 rod B and head A clear the rotating shaft, collar, standard D, slide blocks and socket over the full orbit',async()=>{
+ const {solidSurface,surfacePoints}=await import('./helpers/solid-surface.mjs');
+ const {root,update}=createMovementModel(catalog[416]),b=root.userData.blocks;
+ const targets=[b.bearingPost,b.bearingD,b.slideBody,b.slideFront,b.slideBridge,b.lowerSocketCup,b.socketWeb,b.lowerBall,b.base];
+ b.shaftRotor.traverse(o=>{if(o.geometry)targets.push(o);});
+ const moving=[b.rodB,b.headBoss,b.rodTip,b.upperSocketCup].map(o=>[o,surfacePoints(o.geometry)]);
+ const surfaces=targets.map(o=>[o,solidSurface(o.geometry)]);
+ for(let i=0;i<=128;i++){
+  update(i*6/128);root.updateMatrixWorld(true);
+  for(const [part,points] of moving)for(const [mesh,surface] of surfaces){
+   const transform=mesh.matrixWorld.clone().invert().multiply(part.matrixWorld);
+   for(const point of points){
+    const p=point.clone().applyMatrix4(transform);
+    if(surface.box.containsPoint(p))assert.ok(surface.signedDistance(p)>=-1e-6,`${part.userData.role} into ${mesh.userData.role}`);
+   }
   }
  }
 });

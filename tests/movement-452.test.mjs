@@ -257,10 +257,10 @@ test('movement 452 rod stays coaxial through the fixed stuffing box across the w
   disposeModel(model.root);
 });
 
-test('movement 452 update maps piston, rod, water chambers, and four disks while all covers and manifolds remain fixed', () => {
+test('movement 452 update maps piston, rod and four hinged flaps while all covers and manifolds remain fixed', () => {
   const model = createMovementModel(catalog.movements[451]);
   const { blocks, geometry, stateAtTime, update } = model.root.userData;
-  const fixedBlocks = [blocks.barrel, blocks.barrelRails, blocks.base,
+  const fixedBlocks = [blocks.backPlate, blocks.barrel, blocks.barrelRails, blocks.base,
     blocks.dischargeManifold, blocks.lowerCover,
     blocks.lowerDischargeValve3, blocks.lowerSuctionValve2,
     blocks.stuffingBox, blocks.suctionManifold, blocks.upperCover,
@@ -277,18 +277,16 @@ test('movement 452 update maps piston, rod, water chambers, and four disks while
     near(blocks.pistonRod.position.y,
       (state.rodBottomY + state.rodTopY) / 2, 0,
     `rod transform at ${phase}`);
-    near(blocks.upperSuctionValve1.userData.disk.position.y,
-      -0.04 + state.upperSuction1Lift, 0,
-    `valve 1 lift at ${phase}`);
-    near(blocks.lowerSuctionValve2.userData.disk.position.y,
-      -0.04 + state.lowerSuction2Lift, 0,
-    `valve 2 lift at ${phase}`);
-    near(blocks.lowerDischargeValve3.userData.disk.position.y,
-      -0.04 + state.lowerDischarge3Lift, 0,
-    `valve 3 lift at ${phase}`);
-    near(blocks.upperDischargeValve4.userData.disk.position.y,
-      -0.04 + state.upperDischarge4Lift, 0,
-    `valve 4 lift at ${phase}`);
+    for (const [key, open] of [
+      ['upperSuctionValve1', 'upperSuction1Open'],
+      ['lowerSuctionValve2', 'lowerSuction2Open'],
+      ['lowerDischargeValve3', 'lowerDischarge3Open'],
+      ['upperDischargeValve4', 'upperDischarge4Open'],
+    ]) {
+      near(blocks[key].userData.disk.rotation.z,
+        -geometry.maximumFlapAngle * state[open], 0,
+        `${key} flap swing at ${phase}`);
+    }
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],

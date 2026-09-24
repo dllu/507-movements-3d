@@ -601,7 +601,7 @@ export default {
   },
   402: {
     remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-\\d', 'escape-wheel-spoke-\\d', 'visible-active-escape-tooth-pallet-contact'],
-    note: 'Face view of the two plain balance discs with their pinions, the lever B carrying both toothed sectors and anchor A, and the escape wheel; no frame bars, spokes or white indices are drawn.',
+    note: 'Face view of the two open balance rims (their joining webs only a faint film) crossing so both racks show, with their pinions, the lever B carrying both toothed sectors and anchor A, and the escape wheel; no frame bars, spokes or white indices are drawn.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge'],
@@ -716,9 +716,9 @@ export default {
     note: 'Side elevation of the breast wheel, sluice and race, as Brown draws it; no pedestals or flow beads are drawn.',
   },
   433: {
-    camera: [0.1, 0.2, 1],
+    camera: [0.6, 0.42, 1],
     remove: ['falling-jet-motion-marker-\\d+'],
-    note: 'Side elevation of the tub wheel, shaft and spout, as Brown draws it; the runner hangs free above its spray with no floor disc, basin or jet beads.',
+    note: 'Raised side view of the flat-bladed runner on its hanging shaft, the open spout climbing out of the picture to the upper right and its spray striking the far blades, as Brown draws it; no floor disc, basin or jet beads.',
   },
   434: {
     camera: [0, 1, 0.12],
@@ -843,8 +843,8 @@ export default {
   },
   474: {
     camera: [6.8, 2.0, 9.4],
-    remove: ['fixed-hearth-ring-below-boiler', 'fixed-fire-flame-\\d-of-seven', 'fixed-aeolipile-foundation', 'visible-globe-rotation-marker-\\d', 'steam-feed-\\d-marker-\\d+', 'exhaust-\\d-marker-\\d+'],
-    note: 'The boiler on its legs, the upright hollow risers and the revolving sphere, seen from a little above the lid as Brown draws it; no hearth, fire, foundation or white steam beads are drawn.',
+    remove: ['fixed-hearth-ring-below-boiler', 'fixed-fire-flame-\\d-of-seven', 'fixed-aeolipile-foundation', 'visible-globe-rotation-marker-\\d', 'steam-feed-\\d-marker-\\d+', 'exhaust-\\d-marker-\\d+', 'quasi-steady-tangential-steam-plume-\\d-of-four'],
+    note: 'The boiler on its legs, the plumb hollow risers standing inside the wide lidded rim and the revolving sphere, seen from a little above the lid as Brown draws it; no hearth, fire, foundation, white steam beads or steam plumes are drawn.',
   },
   475: {
     remove: ['bilge-water-source-at-foot-of-B', 'stationary-bilge-well-surrounding-suction-B'],
@@ -941,12 +941,12 @@ export default {
     note: 'Elevation of the bevel wheels C, D on shaft A, the block F carrying the stub axle and wheel B, and the head G; Brown draws no index marks.',
   },
   504: {
-    camera: [0, 0.3, 1],
-    note: 'Side elevation of the wheels A, B, the pinions and the arm as Brown draws it, raised about 17° so the arm\'s turn about A reads and framed on that whole turn.',
+    camera: [0, 0, 1],
+    note: 'Pure side elevation of the wheels A, B, the pinions E, F, G and the arm C-D as Brown draws it, framed on the arm\'s whole turn about A (which sweeps B and the pinions out to either side, so the train fills only part of that width).',
   },
   507: {
     camera: [0.02, 0.03, 1],
-    note: 'Front elevation of the wheels E, F, G, H, the worm C and the arm m n, as Brown draws it.',
+    note: 'Front elevation of the arm n m, the wheels F, E and G, H spanning most of the plate above the bevel wheels A, D and the tall crown wheel C, as Brown draws it; Brown draws no white speed or phase indices.',
   },
   269: {
     remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft', '(?:upper|lower)-rack-active-pitch-contact', 'visible-no-full-depth-contact-marker-during-relieved-tooth-handoff', 'white-index-exposing-output-reversals', 'white-index-showing-frame-translation-without-rotation'],
