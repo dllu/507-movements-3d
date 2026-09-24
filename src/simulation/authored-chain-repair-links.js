@@ -271,7 +271,9 @@ function chainRepairLink(movement) {
     metalness: 0.30,
     roughness: 0.40,
   });
-  const threadMaterial = matte(0xc8c4b7, {
+  // Steel grey rather than near-white, so the exposed threads do not read
+  // as white stripes the plate lacks.
+  const threadMaterial = matte(PALETTE.muted, {
     metalness: 0.42,
     roughness: 0.34,
   });

@@ -72,7 +72,9 @@ function pendulumTreeSaw(movement) {
   const counterweightMeanY = 0.18;
   const counterweightRopeTopOffset = 0.25;
   const pulleyStartAngles = [0.19, -0.27];
-  const logCenter = new THREE.Vector3(1.36, -1.24, 0);
+  // Centred under the mean blade span (0.34..3.08 over the stroke), as
+  // Brown draws the log beneath the middle of the saw.
+  const logCenter = new THREE.Vector3(1.71, -1.24, 0);
   const logRadius = 0.67;
   const logLength = 2.62;
 

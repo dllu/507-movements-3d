@@ -26,7 +26,7 @@ export function correctGearFingerStop(model){
     // Keep the source's stop faces in the same common plane, without bevel
     // growth. The square passage continues through gear, finger and clamp hub.
     replace(assembly.fingerBody,plate(clip.difference(poly(g[`${key}FingerLocal`].map(p=>p.toArray())),poly(bore.map(p=>p.toArray()))),-g.fingerDepth/2,g.fingerDepth/2));
-    replace(assembly.hub,plate(clip.difference(poly(circle([0,0],.73,96)),poly(bore.map(p=>p.toArray()))),-.17,g.fingerPlaneZ+.13));
+    replace(assembly.hub,plate(clip.difference(poly(circle([0,0],.73,96)),poly(bore.map(p=>p.toArray()))),-.17,g.fingerPlaneZ));
     assembly.hub.rotation.set(0,0,0);assembly.hub.position.z=0;
     // Exact keyed shape instead of an axis-aligned block floating in the hole.
     const arbor=b.squareArbors[index===0?1:0];
@@ -34,9 +34,11 @@ export function correctGearFingerStop(model){
     replace(arbor,plate(clip.difference(poly(keyed.map(p=>p.toArray())),poly(circle([0,0],.124,96))),-.18,.72));
     arbor.position.z=0;
     assembly.boreRing.visible=false;
-    // Brown outlines each teardrop over its wheel; a lighter tint keeps the
-    // coplanar finger legible against the same-coloured gear face.
-    assembly.fingerBody.material.color.lerp(new THREE.Color(0xfaf9f5),.25);
+    // Brown outlines each solid teardrop over its wheel; a darker, fully
+    // opaque shade keeps the finger legible against the same-coloured gear
+    // face (a light tint read as a translucent ghost cone).
+    assembly.fingerBody.material.color.lerp(new THREE.Color(0x151a1c),.38);
+    assembly.fingerBody.material.transparent=false;assembly.fingerBody.material.opacity=1;
     // Brown draws no rate index on the fingers.
     assembly.motionIndex.visible=false;
     const old=b.uprights[index];old.visible=false;

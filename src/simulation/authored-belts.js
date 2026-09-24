@@ -808,6 +808,15 @@ function oscillatingSector() {
     spoke.rotation.z = angle;
     sector.add(spoke);
   }
+  // Brown's sector has four arms: the two diagonals and two more running
+  // out along the underside of the lever bar to the rim's ends.
+  for (const side of [-1, 1]) {
+    const length = innerRadius - 0.18;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(length + 0.02, 0.08, 0.20), matte(PALETTE.ink));
+    arm.position.set(side * (0.18 + length / 2), -0.115, 0);
+    arm.userData.role = 'sector-arm-under-lever';
+    sector.add(arm);
+  }
   // The belt ends are fastened to the rim just under the lever bar (half
   // height 0.07) rather than inside it.
   const attachmentDrop = Math.asin(0.074 / sectorRadius);
@@ -950,6 +959,8 @@ function oscillatingSector() {
     };
   };
   update(0);
+  // Brown draws the sector and pulleys with no ground below them.
+  root.userData.hideGround = true;
 
   return {
     root,
@@ -2136,6 +2147,8 @@ function blockAndTackle() {
     };
   };
   update(0);
+  // Brown hangs the tackle in open space: no ground or shadow below.
+  root.userData.hideGround = true;
   // Slightly raised, as the plate shows the upper block's top mortises.
   return { root, update, cameraDirection: new THREE.Vector3(8, 1.8, 5.8) };
 }
@@ -7518,9 +7531,11 @@ function alternatingPlaneLinkChainPulley(movement) {
   // (chain-drive-profiles.js) carves each flank to the flat links' end loops,
   // which the tooth drives. (The animation's petals survive only as numbers.)
   const toothValleyRadius = 1.66;
-  const toothBaseHalfAngle = THREE.MathUtils.degToRad(15);
-  const toothFlankControlHalfAngle = THREE.MathUtils.degToRad(12);
-  const toothFlankControlRadius = 2.2;
+  // Brown's teeth are broad-based with concave flanks; the offline sweep
+  // trims this blank to clear the plate-link ends.
+  const toothBaseHalfAngle = THREE.MathUtils.degToRad(25);
+  const toothFlankControlHalfAngle = THREE.MathUtils.degToRad(17);
+  const toothFlankControlRadius = 2.15;
   const sprocketShape = new THREE.Shape();
   for (let index = 0; index < sprocketToothCount; index += 1) {
     const centerAngle = toothCenterPhase + index * toothStep;
@@ -7592,29 +7607,34 @@ function alternatingPlaneLinkChainPulley(movement) {
   shaft.position.copy(wheelCenter);
   shaft.userData.role = 'chain-pulley-input-shaft';
 
+  // Brown draws flat plate links. The links standing across the teeth are
+  // flat loops whose rounded ends reach exactly to the joint centres, so
+  // each end bar passes straight through a small round eye in the plate links
+  // either side, which he draws as rivet dots.
   const makeLinkLoopGeometry = () => {
-    const topLeft = new THREE.Vector3(0, linkLoopHalfWidth, 0);
-    const topRight = new THREE.Vector3(linkPitch, linkLoopHalfWidth, 0);
-    const bottomRight = new THREE.Vector3(linkPitch, -linkLoopHalfWidth, 0);
-    const bottomLeft = new THREE.Vector3(0, -linkLoopHalfWidth, 0);
+    const r = linkLoopHalfWidth;
+    const topLeft = new THREE.Vector3(r, r, 0);
+    const topRight = new THREE.Vector3(linkPitch - r, r, 0);
+    const bottomRight = new THREE.Vector3(linkPitch - r, -r, 0);
+    const bottomLeft = new THREE.Vector3(r, -r, 0);
     const path = new THREE.CurvePath();
     path.add(new THREE.LineCurve3(topLeft, topRight));
     path.add(new CircularArcCurve3(
-      new THREE.Vector3(linkPitch, 0, 0),
-      new THREE.Vector3(0, linkLoopHalfWidth, 0),
+      new THREE.Vector3(linkPitch - r, 0, 0),
+      new THREE.Vector3(0, r, 0),
       Z_AXIS,
       -Math.PI,
     ));
     path.add(new THREE.LineCurve3(bottomRight, bottomLeft));
     path.add(new CircularArcCurve3(
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, -linkLoopHalfWidth, 0),
+      new THREE.Vector3(r, 0, 0),
+      new THREE.Vector3(0, -r, 0),
       Z_AXIS,
       -Math.PI,
     ));
     const geometry = new THREE.TubeGeometry(
       path,
-      60,
+      72,
       linkWireRadius,
       9,
       true,
@@ -7631,40 +7651,42 @@ function alternatingPlaneLinkChainPulley(movement) {
     metalness: 0.18,
     roughness: 0.5,
   });
-  const maximumRenderedLinks = chainTailLinkCount * 2 + 7;
+  // An even slot count keeps each slot's parity, and so its link plane and
+  // geometry, fixed as the chain advances.
+  const maximumRenderedLinks = chainTailLinkCount * 2 + 8;
   const chain = new THREE.Group();
   chain.userData.alternatingLinkPlanes = true;
   chain.userData.role = 'one-articulated-alternating-plane-chain';
-  // Brown draws the links lying in the pulley plane as flat plates pierced
-  // near each end. A thin web fills such a loop, seated on its inner wire,
-  // and stops short of each joint by the neighbouring perpendicular link's
-  // wire sweep (radius linkLoopHalfWidth about the joint) plus clearance, so
-  // the interlocked wire passes through the resulting end eyes at any
-  // articulation. Links standing across the teeth stay open wire loops.
-  const webHalfWidth = linkLoopHalfWidth - linkWireRadius;
-  const webEyeRadius = linkLoopHalfWidth + linkWireRadius + 0.012;
-  const webEndX = Math.sqrt(webEyeRadius ** 2 - webHalfWidth ** 2);
-  const webEyeAngle = Math.atan2(webHalfWidth, webEndX);
-  const webShape = new THREE.Shape();
-  webShape.moveTo(webEndX, webHalfWidth);
-  webShape.lineTo(linkPitch - webEndX, webHalfWidth);
-  webShape.absarc(linkPitch, 0, webEyeRadius, Math.PI - webEyeAngle, Math.PI + webEyeAngle, false);
-  webShape.lineTo(webEndX, -webHalfWidth);
-  webShape.absarc(0, 0, webEyeRadius, -webEyeAngle, webEyeAngle, false);
-  webShape.closePath();
-  const webGeometry = new THREE.ExtrudeGeometry(webShape, {
-    bevelEnabled: false, curveSegments: 20, depth: 2 * linkWireRadius, steps: 1,
+  // Links in the pulley plane are flat plates: a narrow round-ended bar
+  // pierced at each joint by an eye just larger than the neighbouring loop's
+  // end bar (whose centreline leans only 0.003 across the plate thickness).
+  const plateLinkEndRadius = 0.12;
+  const plateLinkEyeRadius = 0.048;
+  const plateLinkShape = new THREE.Shape();
+  plateLinkShape.absarc(linkPitch, 0, plateLinkEndRadius, -Math.PI / 2, Math.PI / 2, false);
+  plateLinkShape.absarc(0, 0, plateLinkEndRadius, Math.PI / 2, 3 * Math.PI / 2, false);
+  plateLinkShape.closePath();
+  for (const x of [0, linkPitch]) {
+    const eye = new THREE.Path();
+    eye.absarc(x, 0, plateLinkEyeRadius, 0, fullTurn, true);
+    plateLinkShape.holes.push(eye);
+  }
+  const plateLinkGeometry = new THREE.ExtrudeGeometry(plateLinkShape, {
+    bevelEnabled: false, curveSegments: 40, depth: 2 * linkWireRadius, steps: 1,
   });
-  webGeometry.translate(0, 0, -linkWireRadius);
+  plateLinkGeometry.translate(0, 0, -linkWireRadius);
+  plateLinkGeometry.computeVertexNormals();
   const links = Array.from({ length: maximumRenderedLinks }, (_, index) => {
     const material = index % 2 === 0 ? chainMaterial : chainMaterialAlternate;
-    const link = new THREE.Mesh(linkGeometry, material);
+    const link = new THREE.Mesh(
+      index % 2 === 1 ? linkGeometry : plateLinkGeometry,
+      material,
+    );
     link.userData.chainLink = true;
     link.userData.renderSlot = index;
-    const web = new THREE.Mesh(webGeometry, material);
-    web.userData.role = 'flat-plate-web-of-link-in-pulley-plane';
-    link.add(web);
-    link.userData.web = web;
+    link.userData.role = index % 2 === 1
+      ? 'edge-on-flat-loop-link-across-tooth'
+      : 'flat-plate-link-in-pulley-plane';
     chain.add(link);
     return link;
   });
@@ -7920,6 +7942,8 @@ function alternatingPlaneLinkChainPulley(movement) {
     linkPitch,
     linkWireRadius,
     pitchRadius,
+    plateLinkEndRadius,
+    plateLinkEyeRadius,
     shaftHoleRadius,
     sourceChainEndY,
     sourceLinkHalfWidth,
@@ -7980,6 +8004,8 @@ function alternatingPlaneLinkChainPulley(movement) {
     sprocketRotor.rotation.z = state.sprocketAngle;
     links.forEach((object) => {
       object.visible = false;
+      object.userData.materialIndex = null;
+      object.userData.stateIndex = null;
     });
     state.chainLinks.forEach((link, stateIndex) => {
       const renderSlot = THREE.MathUtils.euclideanModulo(
@@ -7992,10 +8018,8 @@ function alternatingPlaneLinkChainPulley(movement) {
       object.material = Math.abs(link.materialIndex % 2) === 0
         ? chainMaterial
         : chainMaterialAlternate;
-      object.userData.web.material = object.material;
       linkAlignment.setFromAxisAngle(Z_AXIS, link.angle);
       object.quaternion.copy(linkAlignment);
-      object.userData.web.visible = link.plane !== 'perpendicular-to-sprocket';
       if (link.plane === 'perpendicular-to-sprocket') {
         object.quaternion.multiply(alternatePlane);
       }
@@ -11390,7 +11414,7 @@ function pronyBrakeDynamometer(movement) {
 // still read the positions the removed marks would have had. Marks a factory
 // already hides stay as its invisible kinematic references.
 const UNDRAWN_WHITE_INDEX_IDS = new Set([
-  ...Array.from({ length: 23 }, (_, index) => index + 1), 134, 227, 228, 229, 243,
+  ...Array.from({ length: 23 }, (_, index) => index + 1), 134, 227, 228, 229, 242, 243, 244,
 ]);
 const WHITE_INDEX_COLOR = new THREE.Color(PALETTE.white);
 

@@ -11,11 +11,21 @@ export function makeKneePress(){
  const point=([x,y])=>[(x-239)*.018,4+(73-y)*.018];
  const shape=(draw,origin)=>{const s=new THREE.Shape(),api={move:(x,y)=>s.moveTo(x,y),line:(x,y)=>s.lineTo(x,y),curve:(...p)=>s.bezierCurveTo(...p)};draw(api);s.closePath();return poly(s.getPoints(24).map(p=>{const q=point([p.x,p.y]);return[q[0]-origin[0],q[1]-origin[1]];}));};
  const add=(name,geometry,family,color,position=[0,0,0])=>{if(!materials.has(color)){const m=matte(color);m.fog=false;materials.set(color,m);}const mesh=new THREE.Mesh(geometry,materials.get(color));mesh.name=name;mesh.position.set(...position);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;};
- add('base',new THREE.BoxGeometry(6.768,.36,.96),'fixed',PALETTE.frame,[point([235,491])[0],point([235,491])[1]-.18,-.16]);
+ // Brown draws the ground and the pressed platen as hatched lines, not slabs:
+ // a ground line with 45-degree hatch strokes on the side away from the lever.
+ const hatchedLine=(name,family,width,height,center,hatchBelow)=>{
+  const g0=new THREE.BoxGeometry(width,.045,.96);g0.translate(0,hatchBelow?height/2-.0225:-height/2+.0225,0);
+  const line=add(name,g0,family,PALETTE.ink,center);
+  const count=Math.round(width/.16),length=(height-.045)*Math.SQRT2;
+  for(let i=0;i<count;i++){const stroke=new THREE.Mesh(new THREE.BoxGeometry(.022,length,.02),line.material);
+   stroke.position.set(-width/2+(height/2)+(width-height)*i/(count-1),hatchBelow?-.0225:.0225,.47);stroke.rotation.z=Math.PI/4;
+   stroke.name=name+'HatchStroke';line.add(stroke);}
+  return line;};
+ hatchedLine('base','fixed',6.768,.36,[point([235,491])[0],point([235,491])[1]-.18,-.16],true);
  const blockOutline=poly([[202,454],[279,454],[279,491],[202,491]].map(point)),cup=clip.union(poly(circle(g.foot,.184,96)),poly([[g.foot[0]-.159,g.foot[1]-.092],[g.foot[0]+.159,g.foot[1]-.092],[g.foot[0]+.34,g.foot[1]+.15],[g.foot[0]-.34,g.foot[1]+.15]]));
  add('footCup',plate(clip.difference(blockOutline,cup),-.44,-.12),'fixed',PALETTE.frame);
  add('cupRear',plate(blockOutline,-.54,-.46),'fixed',PALETTE.frame);
- add('topPlate',new THREE.BoxGeometry(4.86,.40,.78),'top',PALETTE.frame,[.072,.56,0]);
+ hatchedLine('topPlate','top',4.86,.40,[.072,.56,0],false);
  const cheek=shape(p=>{p.move(218,53);p.line(270,53);p.curve(266,80,256,97,239,98);p.curve(222,98,210,87,216,70);p.line(218,53);},g.top);
  const cheeks=clip.difference(cheek,poly(circle([0,0],.174,96)));
  add('upperCheekFront',plate(cheeks,.18,.32),'top',PALETTE.driven);add('upperCheekRear',plate(cheeks,-.32,-.18),'top',PALETTE.driven);

@@ -243,33 +243,37 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   crownHub.userData.role = 'eccentric-crown-wheel-arbor-hub';
   crownRotor.add(crownHub);
 
-  const spokeAngles = [0.12, 0.12 + FULL_TURN / 4, 0.12 + FULL_TURN / 2, 0.12 + 3 * FULL_TURN / 4];
+  // Brown draws the face inside the toothed rim as a solid web plate, cut
+  // by one slot that runs from the arbor boss through the wheel's geometric
+  // centre toward the far rim. No spokes or crossbars are drawn.
+  const spokeAngles = [];
   const crownSpokes = [];
-  for (const [index, angle] of spokeAngles.entries()) {
-    const innerIntersection = eccentricity * Math.cos(angle) + Math.sqrt(
-      crownInnerRadius ** 2 - eccentricity ** 2 * Math.sin(angle) ** 2,
-    );
-    const start = new THREE.Vector2(
-      Math.cos(angle) * 0.29,
-      Math.sin(angle) * 0.29,
-    );
-    const end = new THREE.Vector2(
-      Math.cos(angle) * (innerIntersection + 0.12),
-      Math.sin(angle) * (innerIntersection + 0.12),
-    );
-    const spoke = beamBetween(
-      start,
-      end,
-      0.3,
-      0.17,
-      spokeZ,
-      driverMaterial,
-    );
-    spoke.userData.role = 'crown-wheel-cross-arm';
-    spoke.userData.index = index;
-    crownRotor.add(spoke);
-    crownSpokes.push(spoke);
-  }
+  const webDepth = 0.17;
+  const webSlotHalfWidth = 0.15;
+  const webSlotStart = 0.62;
+  const webSlotEnd = eccentricity + crownInnerRadius - 0.42;
+  const webShape = new THREE.Shape();
+  webShape.absarc(eccentricity, 0, crownInnerRadius + 0.06, 0, FULL_TURN, false);
+  const webBore = new THREE.Path();
+  webBore.absarc(0, 0, 0.345, 0, FULL_TURN, true);
+  webShape.holes.push(webBore);
+  const webSlot = new THREE.Path();
+  webSlot.moveTo(webSlotStart, -webSlotHalfWidth);
+  webSlot.absarc(webSlotStart, 0, webSlotHalfWidth, -Math.PI / 2, -3 * Math.PI / 2, true);
+  webSlot.lineTo(webSlotEnd, webSlotHalfWidth);
+  webSlot.absarc(webSlotEnd, 0, webSlotHalfWidth, Math.PI / 2, -Math.PI / 2, true);
+  webSlot.closePath();
+  webShape.holes.push(webSlot);
+  const webGeometry = new THREE.ExtrudeGeometry(webShape, {
+    bevelEnabled: false,
+    curveSegments: 96,
+    depth: webDepth,
+    steps: 1,
+  });
+  webGeometry.translate(0, 0, spokeZ - webDepth / 2);
+  const crownWeb = new THREE.Mesh(webGeometry, driverMaterial);
+  crownWeb.userData.role = 'crown-wheel-solid-web-with-slot';
+  crownRotor.add(crownWeb);
 
   const crownShaft = makeShaft({
     axis: Z_AXIS,
@@ -502,6 +506,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     crownShaft,
     crownSpokes,
     crownTeeth,
+    crownWeb,
     pinion,
     pinionCollar,
     pinionShaft,
@@ -628,7 +633,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(0, -10, 6),
+    cameraDirection: new THREE.Vector3(0, -10, 5.2),
   };
 }
 

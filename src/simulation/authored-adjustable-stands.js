@@ -157,9 +157,10 @@ function adjustableMirrorStand(movement) {
     metalness: 0.12,
     roughness: 0.58,
   });
-  const glassMaterial = matte(0xa8d7e0, {
-    metalness: 0.58,
-    roughness: 0.19,
+  // Opaque silvered glass: a cool grey, highly metallic face.
+  const glassMaterial = matte(0xc3ced2, {
+    metalness: 0.78,
+    roughness: 0.14,
   });
   const screwMaterial = matte(PALETTE.accent, {
     metalness: 0.24,
@@ -349,7 +350,9 @@ function adjustableMirrorStand(movement) {
   );
   centerHingeBarrel.geometry.dispose();
   centerHingeBarrel.geometry=boredCylinderGeometry(.155,.080,.32);
-  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,1.03),mirrorFrameMaterial);
+  // Dark iron, not the frame's orange: seen against the glass, an orange
+  // bracket read as blocks showing through the mirror.
+  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,1.03),darkMaterial);
   mirrorBackBracket.position.z=-.665;
   mirrorTiltPivot.add(mirrorBackBracket);
   centerHingeBarrel.userData.role =

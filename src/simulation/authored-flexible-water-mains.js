@@ -6,6 +6,8 @@ import {
 } from './primitives.js';
 
 import {hollowPipeBall} from './folding-joint-parts.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {plate, poly, circle, sector, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry, boredJournal, fitPistonGuide} from './piston-guide-parts.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -98,6 +100,173 @@ function hingeArmBetween(start, pivot, radius, material) {
   // Attach to the outside of the bored journal, never fill its axle passage.
   const end = pivot.clone().lerp(start, .105 / start.distanceTo(pivot));
   return rodBetween(start, end, radius, material);
+}
+
+// Brown's plate draws one flexible joint twice: a sectional elevation above,
+// flexed as the frames follow the bed, and a plan below. Each figure is the
+// same rigid two-frame assembly about the ball centre: the downstream frame
+// carries the spherical socket and the transverse trunnion pin; the upstream
+// frame carries the hollow ball and swings about that pin. Dimensions are
+// normalized reconstructions read from the plate, not Robison's sizes.
+const FIGURE = {
+  pipeOuter: 0.26,
+  pipeInner: 0.20,
+  ballOuter: 0.40,
+  ballCavity: 0.34,
+  socketInner: 0.41,
+  socketOuter: 0.47,
+  socketMouthAxial: -0.13,
+  upstreamEnd: -1.55,
+  downstreamEnd: 1.95,
+  logHalfWidth: 0.12,
+  logCenterY: -0.52,
+  logCenterZ: 0.76,
+  logGap: 0.16,
+  tieTopY: -0.28,
+  pinRadius: 0.055,
+  pinBore: 0.059,
+  upstreamPlateZ: [0.885, 0.925],
+  downstreamPlateZ: [0.595, 0.635],
+};
+
+function lathedAlongX(profile, bore, material, role) {
+  const mesh = new THREE.Mesh(
+    boredLatheGeometry(profile, bore, 72).rotateZ(-Math.PI / 2),
+    material,
+  );
+  return addRole(mesh, role);
+}
+
+function hingePlateGeometry(side, [low, high]) {
+  const f = FIGURE;
+  // An upright strap from the ball centre down to the log, turned along it.
+  const x0 = Math.min(0, side * 0.60), x1 = Math.max(0, side * 0.60);
+  const outline = clip.union(
+    poly([[x0, f.logCenterY - 0.10], [x1, f.logCenterY - 0.10],
+      [x1, f.logCenterY + 0.10], [x0, f.logCenterY + 0.10]]),
+    poly([[-0.075, f.logCenterY - 0.10], [0.075, f.logCenterY - 0.10],
+      [0.075, 0], [-0.075, 0]]),
+    poly(circle([0, 0], 0.12, 48)),
+  );
+  return plate(clip.difference(outline, poly(circle([0, 0], f.pinBore, 48))),
+    low, high);
+}
+
+function buildPlateJointFigure(materials, name) {
+  const f = FIGURE;
+  const figure = addRole(new THREE.Group(), `plate-${name}-figure-of-one-flexible-joint`);
+  const downstream = addRole(new THREE.Group(), `plate-${name}-downstream-socket-frame`);
+  const upstream = addRole(new THREE.Group(), `plate-${name}-upstream-ball-frame`);
+  figure.add(downstream, upstream);
+
+  // Upstream pipe: open collared mouth, plain barrel, hollow ball.
+  const ballGeometry = hollowPipeBall(f.ballOuter, f.ballCavity, f.pipeInner);
+  const ballEnd = ballGeometry.userData.outerEnd;
+  upstream.add(lathedAlongX([
+    { axial: f.upstreamEnd, radial: 0.34 },
+    { axial: f.upstreamEnd + 0.20, radial: 0.34 },
+    { axial: f.upstreamEnd + 0.20, radial: f.pipeOuter },
+    { axial: -ballEnd - 0.004, radial: f.pipeOuter },
+  ], f.pipeInner, materials.pipe, `plate-${name}-collared-upstream-pipe`));
+  upstream.add(addRole(new THREE.Mesh(ballGeometry, materials.ball),
+    `plate-${name}-hollow-pipe-ball`));
+
+  // Downstream pipe: spherical socket seat opening into the barrel.
+  const mouth = f.socketMouthAxial;
+  const seatEnd = Math.sqrt(f.socketInner ** 2 - f.pipeInner ** 2);
+  const profile = [];
+  for (let i = 0; i <= 24; i += 1) {
+    const x = mouth + (0.30 - mouth) * i / 24;
+    profile.push(new THREE.Vector2(Math.sqrt(f.socketOuter ** 2 - x ** 2), x));
+  }
+  profile.push(new THREE.Vector2(f.pipeOuter, 0.62),
+    new THREE.Vector2(f.pipeOuter, f.downstreamEnd),
+    new THREE.Vector2(f.pipeInner, f.downstreamEnd),
+    new THREE.Vector2(f.pipeInner, seatEnd));
+  for (let i = 1; i <= 24; i += 1) {
+    const x = seatEnd + (mouth - seatEnd) * i / 24;
+    profile.push(new THREE.Vector2(Math.sqrt(f.socketInner ** 2 - x ** 2), x));
+  }
+  profile.push(profile[0].clone());
+  const socketMaterial = materials.socket.clone();
+  socketMaterial.side = THREE.DoubleSide;
+  downstream.add(addRole(new THREE.Mesh(
+    new THREE.LatheGeometry(profile, 72).rotateZ(-Math.PI / 2),
+    socketMaterial,
+  ), `plate-${name}-spherical-socket-and-downstream-pipe`));
+
+  // Paired longitudinal logs, one cross tie and one pipe strap per frame.
+  const frameParts = (group, side) => {
+    const start = side < 0 ? f.upstreamEnd - 0.20 : f.logGap;
+    const end = side < 0 ? -f.logGap : f.downstreamEnd;
+    for (const z of [-1, 1]) {
+      const log = addRole(new THREE.Mesh(
+        new THREE.BoxGeometry(end - start, 2 * f.logHalfWidth, 2 * f.logHalfWidth),
+        materials.wood,
+      ), `plate-${name}-${side < 0 ? 'upstream' : 'downstream'}-frame-log`);
+      log.position.set((start + end) / 2, f.logCenterY, z * f.logCenterZ);
+      group.add(log);
+    }
+    const tieX = side < 0 ? -1.05 : 1.30;
+    const tieBottom = f.logCenterY + 0.02;
+    const tie = addRole(new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, f.tieTopY - tieBottom,
+        2 * (f.logCenterZ - f.logHalfWidth) - 0.004),
+      materials.wood,
+    ), `plate-${name}-frame-cross-tie`);
+    tie.position.set(tieX, (f.tieTopY + tieBottom) / 2, 0);
+    group.add(tie);
+    const strapRadius = f.pipeOuter + 0.036;
+    const hoop = addRole(new THREE.Mesh(
+      plate(sector(strapRadius - 0.03, strapRadius + 0.03, 0, Math.PI, 40),
+        -0.03, 0.03),
+      materials.strap,
+    ), `plate-${name}-pipe-strap`);
+    hoop.rotation.y = Math.PI / 2;
+    hoop.position.x = tieX;
+    group.add(hoop);
+    for (const z of [-1, 1]) {
+      const leg = addRole(new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, -f.tieTopY, 12),
+        materials.strap,
+      ), `plate-${name}-pipe-strap-leg`);
+      leg.position.set(tieX, f.tieTopY / 2, z * strapRadius);
+      group.add(leg);
+    }
+    for (const z of [-1, 1]) {
+      const range = side < 0 ? f.upstreamPlateZ : f.downstreamPlateZ;
+      const hingePlate = addRole(new THREE.Mesh(
+        hingePlateGeometry(side, z > 0 ? range : [-range[1], -range[0]]),
+        materials.iron,
+      ), `plate-${name}-${side < 0 ? 'ball' : 'socket'}-frame-hinge-strap`);
+      group.add(hingePlate);
+    }
+  };
+  frameParts(upstream, -1);
+  frameParts(downstream, 1);
+
+  // Transverse trunnion pin through the ball centre, carried by the socket.
+  for (const z of [-1, 1]) {
+    const inner = f.socketOuter;
+    const outer = f.upstreamPlateZ[1] + 0.035;
+    const pin = addRole(new THREE.Mesh(
+      new THREE.CylinderGeometry(f.pinRadius, f.pinRadius, outer - inner, 24),
+      materials.iron,
+    ), `plate-${name}-transverse-trunnion-pin`);
+    pin.rotation.x = Math.PI / 2;
+    pin.position.z = z * (inner + outer) / 2;
+    downstream.add(pin);
+    const head = addRole(new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, 0.04, 24),
+      materials.iron,
+    ), `plate-${name}-trunnion-pin-head`);
+    head.rotation.x = Math.PI / 2;
+    head.position.z = z * (outer + 0.02);
+    downstream.add(head);
+  }
+  figure.userData.upstream = upstream;
+  figure.userData.downstream = downstream;
+  return figure;
 }
 
 function flexibleWaterMain(movement) {
@@ -939,21 +1108,69 @@ function flexibleWaterMain(movement) {
     socket.castShadow = false;
   });
   fitPistonGuide(root, update, cycleDuration);
-  // Brown draws one ball-and-socket joint close up, straight in plan and
-  // flexed in elevation. The default view closes on the front 18-inch main's
-  // middle joint, which flexes most as the pipe settles into the trench;
-  // zooming out shows both mains, the banks and the winches. Set after the
-  // shared fit, which would otherwise frame the whole crossing.
+  // Brown draws one ball-and-socket joint, not the crossing: a sectional
+  // elevation above and a plan below. The analytic crossing (two mains, banks,
+  // winches) stays as the hidden motion source; both figures show its front
+  // 18-inch main's middle joint, whose deflection they reproduce. The figures
+  // start at the installed pose Brown draws (source phase 0.61).
+  const crossing = [...root.children];
+  crossing.forEach((object) => { object.visible = false; });
+  const figureMaterials = {
+    ball: jointMaterials[1],
+    iron: hingeMaterial,
+    pipe: ironMaterials[1],
+    socket: ironMaterials[1],
+    strap: strapMaterial,
+    wood: woodMaterial,
+  };
+  const elevation = buildPlateJointFigure(figureMaterials, 'elevation');
+  elevation.position.set(0, 1.0, 0);
+  const plan = buildPlateJointFigure(figureMaterials, 'plan');
+  plan.position.set(0, -0.96, 0);
+  plan.rotation.x = Math.PI / 2;
+  root.add(elevation, plan);
+  const figureJointIndex = 1;
+  const figureSourcePhase = 0.61;
+  const figureDeflectionAtTime = (time) => stateAtPhase(
+    time / cycleDuration + figureSourcePhase,
+  ).chain.jointDeflections[figureJointIndex].angle;
+  const updateAll = (time) => {
+    update(time);
+    const deflection = figureDeflectionAtTime(time);
+    for (const figure of [elevation, plan]) {
+      figure.userData.upstream.rotation.z = -deflection;
+    }
+  };
+  markShadows(elevation);
+  markShadows(plan);
+  // The elevation sits above the plan on the page; it must not shade it.
+  elevation.traverse((object) => { object.castShadow = false; });
+  elevation.traverse((object) => { if (object.material) object.material.fog = false; });
+  plan.traverse((object) => { if (object.material) object.material.fog = false; });
+  root.userData.blocks.crossing = crossing;
+  root.userData.blocks.plateFigures = { elevation, plan };
+  root.userData.plateFigures = {
+    figureDeflectionAtTime,
+    figureJointIndex,
+    figureSourcePhase,
+    geometry: { ...FIGURE },
+    presentation:
+      'two figures of one joint as Brown draws it: sectional elevation above, plan below; the crossing is the hidden analytic motion source',
+  };
+  root.userData.update = updateAll;
+  updateAll(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.85, -0.30, 0.55),
-    new THREE.Vector3(1.45, 1.95, 1.85),
+    new THREE.Vector3(-1.92, -1.98, -1.02),
+    new THREE.Vector3(2.00, 1.98, 1.02),
   );
+  root.userData.cameraDirection = new THREE.Vector3(0.25, 0.2, 16);
+  root.userData.cameraFov = 12;
   root.userData.cameraMaxDistance = 40;
   root.userData.cameraDistanceScale = 1.0;
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: updateAll,
   };
 }
 

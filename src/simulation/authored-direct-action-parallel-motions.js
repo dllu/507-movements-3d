@@ -2384,7 +2384,8 @@ function grasshopperBeamEngine(movement) {
     metalness: 0.10,
     roughness: 0.59,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Brown draws the working pins P, I, L, M and W as plain dark pins.
+  const workingPinMaterial = darkMaterial;
 
   // Planes follow the plate: the radius bar B is dashed behind the beam, so
   // its wall bracket and pin E stay behind the beam, while the connecting rod,
@@ -2535,7 +2536,7 @@ function grasshopperBeamEngine(movement) {
   const crankPinLow = crankPlaneZ - 0.06;
   const crankPinHigh = rodPlaneZ + rodHalfDepth + 0.04;
   const crankPin = cylinderAlongZ(workingPinRadius, crankPinHigh - crankPinLow,
-    whiteMaterial, 30);
+    workingPinMaterial, 30);
   crankPin.position.set(crankRadius, 0, (crankPinLow + crankPinHigh) / 2);
   inputCrank.add(crankArm, crankShaft, crankPinAnchor, crankPin);
   root.add(inputCrank);
@@ -2661,7 +2662,7 @@ function grasshopperBeamEngine(movement) {
   root.add(pistonOutput);
 
   const beamPin = (name, radius, low, high) => {
-    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(radius, high - low, workingPinMaterial, 30);
     pin.position.set(beamStations[name], 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
     beam.add(pin);

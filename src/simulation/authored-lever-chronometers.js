@@ -745,7 +745,7 @@ function leverChronometerEscapement(movement) {
   const balancePin = cylinderAlongZ(
     balancePinRadius,
     0.74,
-    indexMaterial,
+    darkMaterial,
     24,
   );
   balancePin.position.set(

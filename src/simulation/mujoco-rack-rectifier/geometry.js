@@ -17,7 +17,9 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  const body=clip.difference(poly(path.getPoints(24).map(p=>local(p.toArray()))),poly(inner));
  const circleY=tipY+corner,circleX=pitch/4-1.25*m*Math.tan(alpha)-corner*(1/Math.cos(alpha)-Math.tan(alpha)),tooth=[[-(pitch/4+(.95*m-clearance)*Math.tan(alpha)),rootY]];
  for(let i=0;i<=16;i++){const a=Math.PI+alpha+(Math.PI/2-alpha)*i/16;tooth.push([-circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([circleX,tipY]);for(let i=1;i<=16;i++){const a=-Math.PI/2+(Math.PI/2-alpha)*i/16;tooth.push([circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([pitch/4+(.95*m-clearance)*Math.tan(alpha),rootY]);
- const rackShapes={};for(const [name,side,z,color]of [['upper',1,-f.gearZ,PALETTE.driver],['lower',-1,f.gearZ,PALETTE.accent]]){
+ // Brown draws one solid pinion: the front one is a single strong colour that
+ // stands apart from its brass ratchet, the rear one a muted grey behind it.
+ const rackShapes={};for(const [name,side,z,color]of [['upper',1,-f.gearZ,PALETTE.muted],['lower',-1,f.gearZ,PALETTE.driver]]){
   const rack=[];for(let i=0;i<12;i++)rack.push(poly(tooth.map(([x,y])=>[x+s.pinion.origins[name]+i*pitch,side*y])));
   // Each rack and its full outer frame slab form one connected solid.
   rackShapes[name]=clip.union(body,...rack);

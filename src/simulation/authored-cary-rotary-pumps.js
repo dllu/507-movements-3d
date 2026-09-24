@@ -446,7 +446,7 @@ function caryRotaryPump(movement) {
     new THREE.Vector3(0, 1, 0),
     new THREE.Vector3(-0.72, -3.57, casingDepth * 0.57),
     0.82,
-    PALETTE.white,
+    PALETTE.ink,
     0.24,
     0.15,
   ), 'source-direction-up-suction-F-to-port-L');
@@ -455,7 +455,7 @@ function caryRotaryPump(movement) {
     new THREE.Vector3(0, -1, 0),
     new THREE.Vector3(3.86, 1.89, casingDepth * 0.57),
     0.76,
-    PALETTE.white,
+    PALETTE.ink,
     0.24,
     0.15,
   ), 'source-direction-down-outlet-of-discharge-H');

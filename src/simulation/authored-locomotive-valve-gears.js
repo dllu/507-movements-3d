@@ -1003,7 +1003,96 @@ function locomotiveStephensonExpansionLinkValveGear() {
     reversingQuadrant.add(notch);
     return notch;
   });
+  // Brown draws the quadrant as a broad curved plate with rectangular notches
+  // cut into its outer edge, not a rod with ticks: cut the nine notches into
+  // one finite sector plate and keep the notch records as cut positions.
+  {
+    const bandOuter = quadrantRadius + 0.08;
+    const bandInner = quadrantRadius - 0.14;
+    let bandOutline = sector(
+      bandInner,
+      bandOuter,
+      Math.PI - quadrantHalfAngle,
+      Math.PI + quadrantHalfAngle,
+      160,
+    );
+    for (let index = 0; index < 9; index += 1) {
+      const angle = Math.PI - maximumReversingAngle
+        + 2 * maximumReversingAngle * index / 8;
+      const cut = [
+        [bandOuter - 0.075, -0.035],
+        [bandOuter + 0.05, -0.035],
+        [bandOuter + 0.05, 0.035],
+        [bandOuter - 0.075, 0.035],
+      ].map((point) => [
+        point[0] * Math.cos(angle) - point[1] * Math.sin(angle),
+        point[0] * Math.sin(angle) + point[1] * Math.cos(angle),
+      ]);
+      bandOutline = clip.difference(bandOutline, poly(cut));
+    }
+    quadrantBand.geometry.dispose();
+    quadrantBand.geometry = plate(bandOutline, -0.07, 0.07);
+    for (const notch of quadrantNotches) {
+      notch.removeFromParent();
+      notch.userData.role += '-cut-into-quadrant-plate';
+    }
+  }
   root.add(reversingQuadrant);
+
+  // Brown sections the engine wall under the reversing handle: a hatched
+  // top band and a hatched right-hand band, open inside. It stands behind
+  // every moving part.
+  const sectionedWall = new THREE.Group();
+  sectionedWall.userData.role = 'fixed-hatched-sectioned-engine-wall';
+  {
+    const wallFrontZ = -0.5;
+    const wallBackZ = -1.0;
+    // Light section face so Brown's hatch lines read as drawn.
+    const wallMaterial = matte(0xcfcabf, { roughness: 0.8 });
+    const hatchMaterial = matte(PALETTE.ink, { roughness: 0.6 });
+    const topLeft = sourcePointFromRaster(new THREE.Vector2(60, 86));
+    const bottomRight = sourcePointFromRaster(new THREE.Vector2(187, 220));
+    const bandBottom = sourcePointFromRaster(new THREE.Vector2(0, 105)).y;
+    const bandLeft = sourcePointFromRaster(new THREE.Vector2(165, 0)).x;
+    const bands = [
+      [topLeft.x, bandBottom, bottomRight.x, topLeft.y],
+      [bandLeft, bottomRight.y, bottomRight.x, bandBottom],
+    ];
+    bands.forEach(([x0, y0, x1, y1], bandIndex) => {
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(x1 - x0, y1 - y0, wallFrontZ - wallBackZ),
+        wallMaterial,
+      );
+      band.position.set((x0 + x1) / 2, (y0 + y1) / 2, (wallFrontZ + wallBackZ) / 2);
+      band.userData.role = bandIndex === 0
+        ? 'hatched-top-band-of-sectioned-wall'
+        : 'hatched-right-band-of-sectioned-wall';
+      sectionedWall.add(band);
+      // 45-degree hatch lines x - y = c, clipped to the band rectangle.
+      const spacing = 0.11;
+      for (let c = x0 - y1 + spacing / 2; c < x1 - y0; c += spacing) {
+        const start = [Math.max(x0, c + y0), 0];
+        start[1] = start[0] - c;
+        const end = [Math.min(x1, c + y1), 0];
+        end[1] = end[0] - c;
+        const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
+        if (length < 0.03) continue;
+        const stroke = new THREE.Mesh(
+          new THREE.BoxGeometry(length, 0.026, 0.01),
+          hatchMaterial,
+        );
+        stroke.position.set(
+          (start[0] + end[0]) / 2,
+          (start[1] + end[1]) / 2,
+          wallFrontZ + 0.006,
+        );
+        stroke.rotation.z = Math.PI / 4;
+        stroke.userData.role = 'sectioned-wall-hatch-stroke';
+        sectionedWall.add(stroke);
+      }
+    });
+  }
+  root.add(sectionedWall);
 
   const suspensionRod = makeDynamicLink({
     color: PALETTE.driver,
@@ -1146,7 +1235,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   chestOpening.position.set(-2.52, valveGuideY, -0.04);
   chestOpening.userData.role = 'visible-valve-chest-opening';
-  valveGuide.add(guideBarrel, steamChest, chestOpening);
+  // The hatched wall replaces the invented steam-chest box; only the gland
+  // barrel on the wall face is drawn.
+  valveGuide.add(guideBarrel);
   root.add(valveGuide);
 
   const fixedFrame = new THREE.Group();
@@ -1236,6 +1327,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
     reversingPivotShaft,
     reversingQuadrant,
     rockerIndex,
+    sectionedWall,
     shaftIndex,
     steamChest,
     suspensionLug,
@@ -1423,6 +1515,19 @@ function locomotiveStephensonExpansionLinkValveGear() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
   root.remove(fixedFrame, cameraEnvelope);
+  // Brown draws no index marks, and each eccentric shows one strap outline
+  // over its sheave, not a second painted rim.
+  for (const mark of [
+    forwardSheave.userData.index,
+    backwardSheave.userData.index,
+    forwardSheave.userData.rim,
+    backwardSheave.userData.rim,
+    shaftIndex,
+    handleIndex,
+    rockerIndex,
+    dieIndex,
+    valveIndex,
+  ]) mark.removeFromParent();
   root.userData.hideGround = true;
   root.userData.reconstruction = {
     correctedFiniteParts: ['die within free slot', 'die axle bore', 'eccentric rods terminate at straps', 'coaxial bored valve guide'],

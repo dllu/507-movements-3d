@@ -276,10 +276,19 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   inputRotor.userData.role = 'one-rigid-input-rotor';
   input.add(inputRotor);
 
+  // Brown draws the disk as an open outline with the stem and groove dashed
+  // through it; a translucent body stands in for those hidden lines.
+  const diskGlassMaterial = matte(PALETTE.driver, {
+    metalness: 0.16,
+    roughness: 0.59,
+  });
+  diskGlassMaterial.transparent = true;
+  diskGlassMaterial.opacity = 0.38;
+  diskGlassMaterial.depthWrite = false;
   const diskBody = cylinderAlongZ(
     diskRadius,
     diskDepth,
-    driverMaterial,
+    diskGlassMaterial,
     128,
   );
   diskBody.position.z = diskCenterZ;
@@ -300,7 +309,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       { radial: diskRadius, axial: -0.03 },
       { radial: diskRadius, axial: 0.03 },
     ], diskRadius * 0.79, 128),
-    driverMaterial,
+    diskGlassMaterial,
   );
   diskFaceRim.rotation.x = Math.PI / 2;
   diskFaceRim.position.z = diskCenterZ - diskDepth / 2 - 0.029;
@@ -381,7 +390,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const wristCap = cylinderAlongZ(
     wristRadius * 1.22,
     wristCapDepth,
-    indexMaterial,
+    wristMaterial,
     48,
   );
   wristCap.position.set(

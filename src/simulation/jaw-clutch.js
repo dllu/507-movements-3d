@@ -65,7 +65,8 @@ export function makeJawClutch() {
   const shaftBody = turned([[-0.56, 0], [-0.56, shaftRadius], [3.99, shaftRadius], [3.99, 0]], PALETTE.ink);
   const keyLeft = 0.93, keyRight = 3.87, keyBottom = 0.145, keyTop = 0.187, featherHalfWidth = 0.025;
   const feather = new THREE.Mesh(new THREE.BoxGeometry(2 * featherHalfWidth, keyTop - keyBottom, keyRight - keyLeft),
-    matte(PALETTE.brass)); feather.position.set(0, (keyBottom + keyTop) / 2, (keyLeft + keyRight) / 2);
+    // Shaft-coloured: Brown draws no separate key strip along the shaft.
+    matte(PALETTE.ink)); feather.position.set(0, (keyBottom + keyTop) / 2, (keyLeft + keyRight) / 2);
   shaft.userData.rotor.add(shaftBody, feather);
   const lever = new THREE.Group(); lever.position.set(p.pivotX, p.pivotY, 0);
   // The lever plate stands clear in front of the sliding collar and its
@@ -114,7 +115,8 @@ export function makeJawClutch() {
     root.userData.clutchState = state; root.userData.kinematics = state;
   };
   root.userData = { fidelity: 'authored', mechanism: 'tapered-jaw-clutch-with-positive-flank-contact', hideGround: true,
-    cameraFov: 11, fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8), motion,
+    // A little margin keeps the pinion above the loose gear off the view edge.
+    cameraFov: 11, cameraDistanceScale: 4, fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8), motion,
     blocks: { input, output, shaft, pinion, inputBody, outputBody, gearBody, pinionBody, shaftBody, feather,
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,

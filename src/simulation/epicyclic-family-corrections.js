@@ -59,7 +59,11 @@ export function correctEpicyclicFamily(root,id){
   boredCylinder(b.carrierPivots[0],.131);boredCylinder(b.compoundSleeve,.091);
   spindle(b.carrierC,0,g.compoundCenterRadius,.06,.09,1.1,'z',b.compoundSleeve.material);
   spindle(b.carrierC,0,g.outerOutputCenterRadius,.36,.09,.64,'z',b.compoundSleeve.material);
-  root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-4.08,-4.08,-.76),new THREE.Vector3(4.08,4.08,.83));
+  // Brown draws the carrier upright (B over F over A/D); frame that pose and
+  // keep the carrier's full turn as sweptBounds. The white speed index is not drawn.
+  root.userData.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.08,-4.08,-.76),new THREE.Vector3(4.08,4.08,.83));
+  root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-1.2,-1.1,-.76),new THREE.Vector3(1.2,4.0,.83));
+  b.carrierIndex.visible=false;
  }else if(id===503){
   for(const gear of[b.lowerC,b.upperD])boreBevel(gear,.116,g.bevelDepth);boreBevel(b.planetB,.106,g.bevelDepth);
   replaceGeometry(b.carrierShaftA,new THREE.CylinderGeometry(.115,.115,3.30,48));
@@ -93,7 +97,7 @@ export function correctEpicyclicFamily(root,id){
  // source views unnecessarily small, especially the shallow 504 gear stack.
  if(id!==505){
   root.userData.cameraFov=12;
-  const bounds=root.userData.cameraFitBounds;
+  const bounds=root.userData.sweptBounds??root.userData.cameraFitBounds;
   root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
  }
  root.userData.cameraDistanceScale=1;

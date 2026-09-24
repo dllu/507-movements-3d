@@ -2323,6 +2323,7 @@ function snapActionStarCounter() {
     middle.clone().multiplyScalar(2).sub(start.clone().add(end).multiplyScalar(0.5)),
     end.clone(),
   );
+  const springLeafPlaneZ = springAnchor.z - 0.17;
   const springLeaf = makeDynamicLeafSpring(
     springCurveThrough(
       springAnchor,
@@ -2332,13 +2333,16 @@ function snapActionStarCounter() {
     {
       band: { halfWidthAt: () => 0.0375 },
       color: PALETTE.muted,
-      planeZ: springAnchor.z,
+      // Brown draws the tail lying over the spring: the leaf runs just
+      // behind the drop's back face, along the tail's underside, and ends
+      // hidden behind the drop instead of stopping short at the tail tip.
+      planeZ: springLeafPlaneZ,
       radius: 0.0475,
       tubularSegments: 48,
     },
   );
-  const springLeafEndLocal = springAttachmentLocal.clone()
-    .add(new THREE.Vector3(0, -0.03, 0));
+  springLeaf.position.z = springLeafPlaneZ - springAnchor.z;
+  const springLeafEndLocal = new THREE.Vector3(-0.45, -0.76, 0);
   springLeaf.userData.flexibleLeafSpring = true;
   springLeaf.userData.role = 'flat-leaf-spring-on-drop-tail';
   const springClamp = new THREE.Mesh(
@@ -2385,10 +2389,20 @@ function snapActionStarCounter() {
       stopPinHigh = middle;
     }
   }
+  // Brown draws this pin as a small open circle: a pale stud with an inked
+  // rim, not a black pellet.
   const stopPin = new THREE.Mesh(
     new THREE.CylinderGeometry(stopPinRadius, stopPinRadius, 0.42, 24),
-    matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 }),
+    matte(PALETTE.white, { metalness: 0.12, roughness: 0.5 }),
   );
+  const stopPinRim = new THREE.Mesh(
+    new THREE.TorusGeometry(stopPinRadius - 0.012, 0.012, 8, 32),
+    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
+  );
+  stopPinRim.rotation.x = -Math.PI / 2;
+  stopPinRim.position.y = 0.21;
+  stopPinRim.userData.surfaceMarking = true;
+  stopPin.add(stopPinRim);
   stopPin.rotation.x = Math.PI / 2;
   stopPin.position.set(stopPinX, stopPinLow, 0.37);
   stopPin.userData.fixed = true;
@@ -3743,13 +3757,11 @@ function springPressedRatchetIndex() {
   );
   stopPad.userData.radius = stopPadRadius;
   stopPad.userData.strongSpringStopTipC = true;
-  // Brown's hatched block at lower left, with C rising from its corner. The
-  // plate shows only that corner: the block runs out of the picture to the
-  // left and below. It is kept pale with its section hatched on the face,
-  // and extends well past the view so no free edge shows; the camera frames
-  // the mechanism (cameraFitBounds below), not the block.
-  const clampWidth = 6.0;
-  const clampHeight = 6.0;
+  // Brown's small hatched block at lower left, with C rising from its
+  // corner: about two thirds of D's radius square, its top level with D's
+  // lower rim. It is kept pale with its section hatched on the face.
+  const clampWidth = 1.0;
+  const clampHeight = 1.1;
   const clampDepth = 0.26;
   const strongSpringClamp = new THREE.Mesh(
     new THREE.BoxGeometry(clampWidth, clampHeight, clampDepth),
@@ -10645,7 +10657,8 @@ function fiveSlotGenevaWindingStop() {
     z: driverDepth / 2 + 0.062,
   });
   const driverHub = new THREE.Mesh(
-    makeAnnulusGeometry(driverBoreRadius, 1.45 * constructionScale, 0.08),
+    // Brown's hub rings are about a quarter of each wheel's width.
+    makeAnnulusGeometry(driverBoreRadius, 0.95 * constructionScale, 0.08),
     inkMaterial,
   );
   driverHub.position.z = driverDepth / 2 + 0.026;
@@ -10731,7 +10744,7 @@ function fiveSlotGenevaWindingStop() {
   const stopWheelHub = new THREE.Mesh(
     makeAnnulusGeometry(
       stopWheelBoreRadius,
-      1.48 * constructionScale,
+      0.97 * constructionScale,
       0.082,
     ),
     inkMaterial,
@@ -15304,6 +15317,8 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   );
   baseFoot.position.set(carrierPivot.x, carrierPivot.y - 0.24, -0.03);
   baseFoot.userData.role = 'small-source-floor-foot';
+  // Brown draws only the bearing lug on hatched ground, no base block.
+  baseFoot.visible = false;
   root.add(bottomBearing, baseFoot);
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 18, 12),
@@ -15824,13 +15839,11 @@ function parallelogramLiftAndDrawPawlRatchet(movement) {
   });
   upperPivotPin.position.set(0, groundLength, 0.35);
   const inputCouplerPin = makePin({
-    color: PALETTE.white,
     length: 0.36,
     radius: 0.07,
     role: 'arm-B-to-vertical-coupler-pin',
   });
   const pawlCouplerPin = makePin({
-    color: PALETTE.white,
     length: 0.58,
     radius: 0.07,
     role: 'pawl-C-to-vertical-coupler-pin',
@@ -19120,15 +19133,20 @@ function coaxialArmCrownRatchet(movement) {
   const verticalAxis = new THREE.Vector3(0, 1, 0);
   const toothCount = 20;
   const toothPitch = fullTurn / toothCount;
-  const wheelInnerRadius = 1.36;
-  const wheelOuterRadius = 1.82;
+  // Brown's crown is a thin open cup: the saw teeth stand upright on a
+  // narrow rim, whose band still contains the pawl nose's whole radial path
+  // (centre radius 1.552-1.594, nose radius 0.055); the inner edge keeps
+  // the ramp-triangle crease clear of the climbing path.
+  const wheelInnerRadius = 1.46;
+  const wheelOuterRadius = 1.64;
   const wheelBodyThickness = 0.52;
   const wheelToothHeight = 0.46;
   const wheelBaseHeight = 0;
   const wheelTipHeight = wheelBaseHeight + wheelToothHeight;
   const armPivotHeight = 1.02;
   const armPawlPivotRadius = 1.5;
-  const armHandleRadius = 2.55;
+  // Plate proportion: handle end 1.40 wheel radii from the fulcrum.
+  const armHandleRadius = wheelOuterRadius * 2.55 / 1.82;
   const pawlTipTangent = -0.4;
   const pawlTipVertical = -0.62;
   const pawlNoseRadius = 0.055;
@@ -21550,7 +21568,44 @@ function singleToothContinuousRatchetIndex(movement) {
   return finishSingleTooth241(finish(root, update, new THREE.Vector3(0.5, 0.5, 14)));
 }
 
+// Brown draws no phase indices, contact markers, witness dots or sector
+// highlights on these plates. Parts keep their roles (tests and kinematics
+// still read them) but are hidden, whatever their colour; real pins stay.
+const PLATE_MARKER_ROLE = /(?:^|-)(?:index|indicator|marker|witness|highlight|endpoint)(?:-|$)/;
+const MARKER_FREE_IDS = new Set([212, 213, 214, 225, 232, 235, 236, 237, 240, 241]);
+const UNSHADOWED_ARBOR_IDS = new Set([212, 213, 241]);
+function hidePlateMarkers(model, id) {
+  model.root.traverse((object) => {
+    if (!object.isMesh) return;
+    // Thin arbors seen end-on otherwise cast long dark stripes across the
+    // wheel faces, reading as index marks the plate does not draw.
+    const cylinder = object.geometry?.parameters;
+    const role = object.userData.role ?? object.name ?? '';
+    if (UNSHADOWED_ARBOR_IDS.has(id) && (object.geometry?.type === 'CylinderGeometry' && cylinder.radiusTop < 0.2
+      || /(?:^|-)(?:hub|arbor|shaft)(?:-|$)/.test(role))) {
+      object.castShadow = false;
+    }
+    if (PLATE_MARKER_ROLE.test(role) || object.userData.ratchetRotationIndicator) {
+      // A hidden material survives updates that toggle contact markers.
+      object.material = [].concat(object.material).map((material) => {
+        const hidden = material.clone();
+        hidden.visible = false;
+        return hidden;
+      });
+      if (object.material.length === 1) object.material = object.material[0];
+      object.visible = false;
+      object.userData.hiddenReason = 'marker not drawn on the plate';
+    }
+  });
+  return model;
+}
+
 export function createAuthoredIntermittentCoreMovement(movement) {
+  const model = createIntermittentCoreModel(movement);
+  return model && MARKER_FREE_IDS.has(movement.id) ? hidePlateMarkers(model, movement.id) : model;
+}
+
+function createIntermittentCoreModel(movement) {
   switch (movement.id) {
     case 63: return snapActionStarCounter();
     case 71: return internalGuardTappetStudIndex();

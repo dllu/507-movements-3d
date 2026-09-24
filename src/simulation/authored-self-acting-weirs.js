@@ -1,6 +1,7 @@
 import {correctWeir} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -575,6 +576,42 @@ function selfActingWeir(movement) {
     body.geometry = plate(polygonClipping.difference(polygonClipping.union(plank,
       poly(circle([0, 0], 0.16, 64))), poly(circle([0, 0], 0.097, 64))),
     -gateWidth / 2, gateWidth / 2);
+  }
+  // Brown's section rules the head and tail water as horizontal strokes
+  // over a hatched bed. The unit head volumes stay as hidden state carriers;
+  // the drawn water is ruled lines, the upstream rows shown up to the
+  // current level.
+  {
+    const lineMaterial = ruledWaterMaterial();
+    const spacing = 0.1, lowestRow = channelFloorY + 0.07;
+    const upstreamRows = Math.floor((floodWaterLevel - lowestRow) / spacing) + 1;
+    const upstreamLines = addRole(new THREE.Mesh(ruledWaterLines({
+      xMin: -3.30, xMax: -0.25, surfaceY: lowestRow + (upstreamRows - 1) * spacing, rows: upstreamRows,
+      spacing, thickness: 0.028, dash: [0.6, 1.9], gap: [0.05, 0.22], seed: 4631, bottomUp: true,
+    }), lineMaterial), 'upstream-head-water-ruled-lines');
+    root.add(upstreamLines);
+    const downstreamRows = Math.floor((downstreamWaterLevel - lowestRow) / spacing) + 1;
+    const downstreamLines = addRole(new THREE.Mesh(ruledWaterLines({
+      xMin: 0.40, xMax: 3.40, surfaceY: lowestRow + (downstreamRows - 1) * spacing, rows: downstreamRows,
+      spacing, thickness: 0.028, dash: [0.6, 1.9], gap: [0.05, 0.22], seed: 4632,
+    }), lineMaterial), 'downstream-tail-water-ruled-lines');
+    root.add(downstreamLines);
+    const bed = addRole(new THREE.Mesh(plate(poly([[-3.45, channelFloorY - 0.16], [3.45, channelFloorY - 0.16],
+      [3.45, channelFloorY - 0.045], [-3.45, channelFloorY - 0.045]]), -gateWidth / 2, gateWidth / 2),
+    matte(PALETTE.frame, { roughness: 0.7 })), 'fixed-channel-bed-under-weir');
+    bed.material.fog = false;
+    root.add(bed);
+    upstreamWater.visible = false;
+    downstreamWater.visible = false;
+    const rowTops = upstreamLines.geometry.userData.rowTops;
+    const shared = root.userData.updateWorkingParts;
+    root.userData.updateWorkingParts = (state) => {
+      shared?.(state);
+      let count = 0;
+      for (const row of rowTops) if (row.y <= state.waterLevel - 0.02) count = row.vertexCount;
+      upstreamLines.geometry.setDrawRange(0, count);
+    };
+    Object.assign(root.userData.blocks, { upstreamLines, downstreamLines, bed });
   }
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.65, groundY - 0.02, -1.86),

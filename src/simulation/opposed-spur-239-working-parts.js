@@ -7,6 +7,34 @@ import { stopOutlines239 } from './baked/opposed-spur-239-outlines.js';
 // Plate 239 draws square teeth. Their parallel flanks are 0.447 wide, the
 // width the former involute had where the two stop noses bear (radii 2.17
 // and 2.32), so the stops trap the same free play.
+// Brown breaks the wheel off below the hub with an irregular line. The break
+// is fixed in the world while the wheel turns, so fragments below a wavy
+// world-space line are discarded instead of cutting the geometry (the same
+// technique as movement 233's lantern wheel).
+export const WHEEL_BREAK_239 = { amplitude: 0.1, level: -0.82, wavelength: 1.7 };
+function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
+  const broken = material.clone();
+  broken.side = THREE.DoubleSide;
+  broken.userData.worldBreakBelow = { amplitude, level, wavelength };
+  broken.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvBreakWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+        {
+          float k = 6.28318530718 / ${wavelength.toFixed(6)};
+          float breakY = ${level.toFixed(6)}
+            + ${amplitude.toFixed(6)} * (0.65 * sin(k * vBreakWorld.x + 0.7)
+              + 0.35 * sin(2.3 * k * vBreakWorld.x + 2.1));
+          if (vBreakWorld.y < breakY) discard;
+        }`);
+  };
+  broken.customProgramCacheKey = () => `world-break-${level}-${amplitude}-${wavelength}`;
+  return broken;
+}
+
 export const SQUARE_TOOTH_WIDTH_239 = 0.447;
 export function spurStopProfile239({ teeth, pitchRadius, rootRadius, outerRadius }) {
   const square = squareToothOutline({ teeth, radius: pitchRadius, addendum: outerRadius - pitchRadius,
@@ -69,8 +97,20 @@ export function finishOpposedSpur239(model) {
     post.userData.role = `${name}-journal-support-post`; root.add(journal, post); journals.push(journal); posts.push(post);
   }
   b.bearingPost.visible = false;
+  // The plate breaks the wheel off just below its hub; the fixed journals
+  // and rail behind it are not drawn, and no index mark is drawn on the wheel.
+  for (const mesh of [b.gearBody, b.gearHub, b.gearHubRing]) {
+    const original = mesh.material;
+    mesh.material = applyWorldBreakBelow(original, WHEEL_BREAK_239);
+    original.dispose();
+  }
+  b.gearIndicator.removeFromParent();
+  d.wheelBreak = { ...WHEEL_BREAK_239 };
   d.workingParts239 = { sourceOutlines, journals, posts };
-  d.cameraFitBounds.set(new THREE.Vector3(-3.7, -3.55, -0.68), new THREE.Vector3(5, 3.25, 0.65));
+  // The full turning wheel is kept as sweptBounds; the camera fits the
+  // plate's crop, which ends at the break line below the hub.
+  d.sweptBounds = new THREE.Box3(new THREE.Vector3(-3.7, -3.55, -0.68), new THREE.Vector3(5, 3.25, 0.65));
+  d.cameraFitBounds.set(new THREE.Vector3(-3.7, -1.05, -0.68), new THREE.Vector3(5, 3.25, 0.65));
   d.minimumDisplayCycleSeconds = 6;
   d.hideGround = true;
   d.reconstructionNote = 'Opposed finite stops limit the gear to its small trapped clearance. The alternating test torque and seated stops are prescribed; gravity seating, hinge reactions, friction and holding strength are not dynamically solved.';

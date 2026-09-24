@@ -13,7 +13,6 @@ function mesh(parent,geometry,material,role){const m=new T.Mesh(geometry,materia
 export function correctFriction267(model){
  const d=model.root.userData,b=d.blocks,g=d.geometry;
  replace(b.rim,bore(g.rimOuterRadius,g.rimInnerRadius,.72,768).rotateX(Math.PI/2));b.rim.position.z=.06;b.innerLiner.visible=false;
- replace(b.rimIndex,new T.BoxGeometry(.14,.055,.03));b.rimIndex.position.set(2.10,0,.425);b.rimTreadIndex.visible=false;
  const shape=b.arms[0].children[0].geometry.parameters.shapes.extractPoints(24).shape.map(p=>p.toArray());
  const region=clip.difference(clip.intersection(clip.union(poly(shape),poly(circle([0,0],.18,64)),poly(circle(g.tipCenterRelative.toArray(),g.armEndHalfWidth,64))),poly(circle([-g.pivotRadius,0],g.rimInnerRadius,512))),poly(circle([0,0],g.pivotBossRadius+.004,64)));
  for(const arm of b.arms)replace(arm.children[0],plate(region,-g.armDepth/2,g.armDepth/2));

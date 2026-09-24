@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { FEATHERING_WHEEL_UNDRAWN_ROLE } from '../src/simulation/authored-feathering-paddle-wheels.js';
+import sourcePresentation from '../src/data/source-presentation.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -354,13 +356,32 @@ test('movement 489 fixed eccentric stays still and wake markers move smoothly ba
 test('movement 489 fits every feathering pose and leaves spinning movement 507 as the frontier', () => {
   const { model } = movementModel();
   const { geometry } = model.root.userData;
+  // The fit covers every part Brown draws; the stand, base, water, wake,
+  // arrows and white indices are removed by source presentation.
   const union = new THREE.Box3();
+  const drawn = (object) => {
+    for (let o = object; o && o !== model.root; o = o.parent) {
+      if (FEATHERING_WHEEL_UNDRAWN_ROLE.test(o.userData.role ?? '')) return false;
+    }
+    return true;
+  };
   for (let sample = 0; sample <= 360; sample += 1) {
     model.update(geometry.cycleDuration * sample / 360);
     model.root.updateMatrixWorld(true);
-    union.union(new THREE.Box3().setFromObject(model.root));
+    model.root.traverse((object) => {
+      if (object.isMesh && drawn(object)) union.expandByObject(object, true);
+    });
   }
+  assert.ok(!union.isEmpty());
   assert.ok(model.root.userData.cameraFitBounds.containsBox(union));
+  const presentation = sourcePresentation[489].remove
+    .map((pattern) => new RegExp(`^(?:${pattern})$`));
+  model.root.traverse((object) => {
+    const role = object.userData.role ?? '';
+    if (FEATHERING_WHEEL_UNDRAWN_ROLE.test(role)) {
+      assert.ok(presentation.some((pattern) => pattern.test(role)), role);
+    }
+  });
   assert.ok(model.root.userData.cameraDistanceScale >= 1);
   const waterBounds = new THREE.Box3().setFromObject(
     model.root.userData.blocks.waterVolume,

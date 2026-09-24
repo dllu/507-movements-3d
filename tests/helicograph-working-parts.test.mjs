@@ -132,7 +132,13 @@ test('384 thread and flat trace normals face outwards; full-cycle fit and alloca
   for (let i = 0; i <= 32; i++) {
     model.update(d.timeline.cycleDuration * i / 32); model.root.updateMatrixWorld(true);
     model.root.traverseVisible(o => { const p = o.geometry?.attributes.position; if (!p) return;
-      for (let j = 0; j < p.count; j++) assert.ok(d.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld)), o.userData.role);
+      for (let j = 0; j < p.count; j++) {
+        const point = new THREE.Vector3().fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld);
+        // The full sweep stays in sweptBounds; the plate crop holds the opening pose.
+        assert.ok(d.sweptBounds.containsPoint(point), o.userData.role);
+        // Paper, trace and indices are not drawn on the plate (source presentation).
+        if (i === 0 && !/paper|transferred|index/.test(o.userData.role ?? '')) assert.ok(d.cameraFitBounds.containsPoint(point), `crop ${o.userData.role}`);
+      }
     });
   }
   let count = 0; model.root.traverse(o => { if (o.geometry) count++; }); assert.equal(count, saved.length);

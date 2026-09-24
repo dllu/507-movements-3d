@@ -86,7 +86,6 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
   for (const component of [
     blocks.driverDisk,
     blocks.driverHub,
-    blocks.driverIndex,
     blocks.driverShaft,
     ...blocks.driverRims,
     ...blocks.rollerMounts,
@@ -94,13 +93,17 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
   for (const component of [
     blocks.outputWheel,
     blocks.outputHub,
-    blocks.outputIndex,
     blocks.outputShaft,
-    blocks.indexedGrooveMarker,
     ...blocks.outputEndRims,
     ...blocks.grooveFlanks,
     ...blocks.grooveEntries,
   ]) assert.ok(component.parent === blocks.outputRotor, `${component.userData.role} parent`);
+  // Brown draws no white indices or groove marker; the source presentation
+  // detaches them.
+  for (const component of [blocks.driverIndex, blocks.outputIndex,
+    blocks.indexedGrooveMarker, ...blocks.rollerSpinIndexes]) {
+    assert.ok(component.parent === null, `${component.userData.role} removed`);
+  }
   assert.equal(blocks.rollerMounts.length, 8);
   assert.equal(blocks.radialStuds.length, 8);
   assert.equal(blocks.rollerBodies.length, 8);
@@ -126,9 +129,9 @@ test('movement 364 has eight radial friction rollers driving eight oblique rim g
     'friction-roller-on-one-of-eight-radial-driver-studs',
     'large-horizontal-output-wheel-with-cylindrical-working-face',
     'vertical-output-shaft-fixed-to-intermittent-large-wheel',
-    'white-face-index-showing-continuous-driver-angle-and-rate',
-    'white-top-face-index-showing-output-dwell-and-index-rate',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => role.startsWith('white-')),
+    'Brown draws no white indices');
   assert.equal(belts.length, 0);
   assert.equal(toothedObjects.length, 0);
   disposeModel(model.root);

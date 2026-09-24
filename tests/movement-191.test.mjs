@@ -168,8 +168,9 @@ test('movement 191 matches Brown\'s one fixed-center pair of complementary scrol
   assert.equal(blocks.drivenRotor.parent, blocks.driven);
   assert.equal(blocks.driverBody.parent, blocks.driverRotor);
   assert.equal(blocks.drivenBody.parent, blocks.drivenRotor);
-  assert.equal(blocks.driverRadialSeam.parent, blocks.driverRotor);
-  assert.equal(blocks.drivenRadialSeam.parent, blocks.drivenRotor);
+  // Brown draws no seam outline; source presentation removes the ink seams.
+  assert.equal(blocks.driverRadialSeam.parent, null);
+  assert.equal(blocks.drivenRadialSeam.parent, null);
   blocks.driverTeeth.forEach((tooth) => {
     assert.equal(tooth.parent, blocks.driverRotor);
     assert.equal(tooth.userData.role, 'lower-scroll-gear-tooth');
@@ -548,6 +549,11 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
   let previousState = null;
   let driverIndexStart = null;
   let drivenIndexStart = null;
+  const toothCentre = (tooth) => {
+    tooth.geometry.computeBoundingBox();
+    return tooth.geometry.boundingBox.getCenter(new THREE.Vector3())
+      .applyMatrix4(tooth.matrixWorld);
+  };
   for (const [index, time] of times.entries()) {
     model.update(time);
     model.root.updateMatrixWorld(true);
@@ -602,8 +608,9 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
       ));
     }
     if (index === 0) {
-      driverIndexStart = worldPoint(blocks.driverFaceIndex);
-      drivenIndexStart = worldPoint(blocks.drivenFaceIndex);
+      // The white face indices are not drawn; a tooth on each rotor tracks turn.
+      driverIndexStart = toothCentre(blocks.driverTeeth[0]);
+      drivenIndexStart = toothCentre(blocks.drivenTeeth[0]);
     }
     previousState = state;
   }
@@ -615,8 +622,10 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
 
   model.update(canonicalTimes.halfTurn);
   model.root.updateMatrixWorld(true);
-  assert.ok(worldPoint(blocks.driverFaceIndex).distanceTo(driverIndexStart) > 1.5);
-  assert.ok(worldPoint(blocks.drivenFaceIndex).distanceTo(drivenIndexStart) > 1.2);
+  assert.ok(toothCentre(blocks.driverTeeth[0]).distanceTo(driverIndexStart) > 1.5);
+  assert.ok(toothCentre(blocks.drivenTeeth[0]).distanceTo(drivenIndexStart) > 1.2);
+  assert.equal(blocks.driverFaceIndex.parent, null);
+  assert.equal(blocks.drivenFaceIndex.parent, null);
   near(
     canonicalStates.sourcePose.driverPitchRadius,
     geometry.minimumDriverRadius,
@@ -652,8 +661,9 @@ test('movement 191 remains distinct as the sequential review queue advances thro
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.05);
   assert.ok(size.y > 7.1);
-  // The shafts stop just proud of the bosses, as Brown's hatched sections.
-  assert.ok(size.z > 1.0);
+  // The shafts stop just proud of the bosses, as Brown's hatched sections;
+  // with the undrawn seam outlines removed they set the full 1.0 depth.
+  assert.ok(size.z > 0.99);
   assert.ok(physicalBounds.min.z < -0.69);
   assert.ok(physicalBounds.max.z > 0.25);
   let meshCount = 0;
@@ -664,7 +674,8 @@ test('movement 191 remains distinct as the sequential review queue advances thro
       scrollToothCount += 1;
     }
   });
-  assert.ok(meshCount >= 90);
+  // 20 seam-outline and index meshes are removed as undrawn.
+  assert.ok(meshCount >= 80);
   assert.equal(scrollToothCount, 72);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

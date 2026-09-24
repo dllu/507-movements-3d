@@ -739,8 +739,9 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
       fixedGuideRollerCount += 1;
     }
   });
-  // Undrawn white pulley indices and markers are hidden.
-  assert.ok(visibleMeshCount >= 102);
+  // Undrawn white pulley indices and markers are hidden, and the guide
+  // rollers are plain discs without spokes.
+  assert.ok(visibleMeshCount >= 86);
   assert.equal(rackToothCount, 36);
   assert.equal(suspensionRodCount, 2);
   assert.equal(fixedGuideRollerCount, 4);

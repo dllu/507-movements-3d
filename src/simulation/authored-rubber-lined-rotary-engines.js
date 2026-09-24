@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {ring} from './finite-plate-geometry.js';
+import {circle, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
+import {castFootGeometry, portNeckFillets} from './rotary-engine-cast-feet.js';
 import {
   PALETTE,
   markShadows,
@@ -263,7 +264,20 @@ function rubberLinedRotaryEngine(movement) {
     ),
     frameMaterial,
   );
-  rearHousing.geometry.dispose();rearHousing.geometry=ring(housingInnerRadius,housingOuterRadius,-0.42,0.90,1024);
+  // Brown's casing is round but blends in concave fillets into the two port
+  // necks; the bore stays the exact circle the liner E rests on.
+  const portHalfHeight = 0.52;
+  const portPassages = [poly([[-4.5,-0.24],[-2.9,-0.24],[-2.9,0.24],[-4.5,0.24]]),
+    poly([[2.9,-0.24],[4.5,-0.24],[4.5,0.24],[2.9,0.24]])];
+  const cutRing = (inner, outer, low, high) => plate(polygonClipping.difference(
+    poly(circle([0,0],outer,1024)), poly(circle([0,0],inner,1024)), ...portPassages), low, high);
+  rearHousing.geometry.dispose();rearHousing.geometry=plate(polygonClipping.difference(
+    polygonClipping.union(poly(circle([0,0],housingOuterRadius,1024)),
+      ...portNeckFillets(housingOuterRadius,portHalfHeight,-1).map(p=>[p]),
+      ...portNeckFillets(housingOuterRadius,portHalfHeight,1).map(p=>[p])),
+    poly(circle([0,0],housingInnerRadius,1024)),
+    // The port passages open through the wall to the space outside E.
+    ...portPassages),-0.42,0.90);
   rearHousing.position.z = 0;
   rearHousing.userData.role =
     'fixed-rigid-cylinder-surrounding-flexible-lining';
@@ -272,7 +286,7 @@ function rubberLinedRotaryEngine(movement) {
     new THREE.TorusGeometry(housingInnerRadius, 0.095, 10, 96),
     frameMaterial,
   );
-  innerHousingWall.geometry.dispose();innerHousingWall.geometry=ring(housingInnerRadius,housingInnerRadius+0.095,0.90,0.94,1024);
+  innerHousingWall.geometry.dispose();innerHousingWall.geometry=cutRing(housingInnerRadius,housingInnerRadius+0.095,0.90,0.94);
   innerHousingWall.position.z = 0;
   innerHousingWall.userData.role =
     'fixed-inner-wall-containing-steam-outside-liner-E';
@@ -281,24 +295,27 @@ function rubberLinedRotaryEngine(movement) {
     new THREE.TorusGeometry(housingOuterRadius, 0.12, 10, 96),
     frameMaterial,
   );
-  outerHousingWall.geometry.dispose();outerHousingWall.geometry=ring(housingOuterRadius-0.12,housingOuterRadius,0.90,0.94,1024);
+  outerHousingWall.geometry.dispose();outerHousingWall.geometry=cutRing(housingOuterRadius-0.12,housingOuterRadius,0.90,0.94);
   outerHousingWall.position.z = 0;
   outerHousingWall.userData.role = 'fixed-outer-cylinder-wall';
   root.add(outerHousingWall);
 
+  // Brown stands the casing on one cast foot with concave flanks, not a bed slab.
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(8.25, 0.30, 1.45),
+    castFootGeometry({casingRadius: housingOuterRadius, padHalfWidth: 3.05, neckHalfWidth: 2.25, footY: -housingOuterRadius - 0.30}, -0.42, 0.90),
     frameMaterial,
   );
-  foundation.position.set(0, -housingOuterRadius-0.15, -0.18);
-  foundation.userData.role = 'fixed-foundation-of-rubber-lined-engine';
+  foundation.userData.role = 'fixed-cast-foot-under-cylinder';
   root.add(foundation);
   for (const side of [-1, 1]) {
+    // Each port is an open neck: two walls either side of the passage.
     const port = new THREE.Mesh(
-      new THREE.BoxGeometry(1.34, 1.04, 0.95),
+      plate(polygonClipping.difference(
+        poly([[3.30, -portHalfHeight], [4.39, -portHalfHeight], [4.39, portHalfHeight], [3.30, portHalfHeight]]),
+        poly([[3.36, -0.24], [4.45, -0.24], [4.45, 0.24], [3.36, 0.24]]),
+      ).map(polygon => polygon.map(r => r.map(([x, y]) => [side * x, y]))), -0.42, 0.90),
       frameMaterial,
     );
-    port.position.set(side * 3.72, 0, -0.10);
     port.userData.role = side < 0
       ? 'left-induction-port-to-space-outside-rubber-liner'
       : 'right-eduction-port-from-space-outside-rubber-liner';
@@ -341,7 +358,8 @@ function rubberLinedRotaryEngine(movement) {
   const shaftB = cylinderAlongZ(0.27, 1.32, darkMaterial, 36);
   shaftB.position.z = 0.44;
   shaftB.userData.role = 'main-shaft-B-in-fixed-cylinder-bearings';
-  root.add(shaftB);
+  // The carrier hub and arms are fast on B, so B turns with them.
+  rotor.add(shaftB);
 
   const rollerParts = [];
   for (let rollerIndex = 0; rollerIndex < rollerCount;
@@ -379,8 +397,9 @@ function rubberLinedRotaryEngine(movement) {
     roller.rotation.set(0,0,0);roller.position.z = 0.46;
     roller.userData.role = `working-roller-A-${rollerIndex + 1}`;
     rollerGroup.add(roller);
-    const rollerPin = cylinderAlongZ(0.16, 1.02, darkMaterial, 28);
-    rollerPin.position.z = 0.48;
+    // The axle stands in front of its arm's face.
+    const rollerPin = cylinderAlongZ(0.16, 0.98, darkMaterial, 28);
+    rollerPin.position.z = 0.50;
     rollerPin.userData.role = `roller-A-${rollerIndex + 1}-axle-pin`;
     rollerGroup.add(rollerPin);
     const spinMarker = new THREE.Mesh(

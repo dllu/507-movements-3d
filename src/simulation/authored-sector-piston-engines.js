@@ -291,10 +291,10 @@ function sectorPistonEngine(movement) {
   rockshaftRotor.add(outputCrankArm);
   const outputCrankPin = new THREE.Mesh(
     new THREE.SphereGeometry(0.13, 24, 18),
-    whiteMaterial,
+    darkMaterial,
   );
   outputCrankPin.position.set(0, -outputCrankRadius, 0.52);
-  outputCrankPin.userData.role = 'white-output-crank-pin-on-C';
+  outputCrankPin.userData.role = 'output-crank-pin-on-C';
   rockshaftRotor.add(outputCrankPin);
   root.add(rockshaftRotor);
 

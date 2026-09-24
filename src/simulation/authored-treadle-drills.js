@@ -617,8 +617,9 @@ function treadleBevelDrillingMachine(movement) {
   const frameRearZ = -0.68;
   const frameBaseY = -1.05;
   const frameColumnX = 1.52;
-  // Brown draws a closed rectangular frame around the bevel wheels, from
-  // the lower spindle guide up to the head, with no bed beneath it.
+  // Brown draws a C-bracket: a right-hand column (the crank shaft passes
+  // through it) with upper and lower arms reaching left past the drill
+  // shaft, open on the left, and no bed beneath it.
   const frameLeftX = -0.74;
   const frameBottomY = 0.48;
   const frameBase = makeBeam(
@@ -626,7 +627,7 @@ function treadleBevelDrillingMachine(movement) {
     new THREE.Vector3(frameColumnX + 0.11, frameBottomY, frameRearZ),
     { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
   );
-  frameBase.userData.role = 'lower-bar-of-closed-drill-frame';
+  frameBase.userData.role = 'lower-arm-of-drill-c-frame';
   frame.add(frameBase);
   const frameColumn = makeBeam(
     new THREE.Vector3(frameColumnX, frameBottomY, frameRearZ),
@@ -635,13 +636,6 @@ function treadleBevelDrillingMachine(movement) {
   );
   frameColumn.userData.role = 'right-upright-of-drill-c-frame';
   frame.add(frameColumn);
-  const frameLeftUpright = makeBeam(
-    new THREE.Vector3(frameLeftX, frameBottomY, frameRearZ),
-    new THREE.Vector3(frameLeftX, 3.25, frameRearZ),
-    { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
-  );
-  frameLeftUpright.userData.role = 'left-upright-of-closed-drill-frame';
-  frame.add(frameLeftUpright);
   const frameTop = makeBeam(
     new THREE.Vector3(frameLeftX - 0.09, 3.25, frameRearZ),
     new THREE.Vector3(frameColumnX, 3.25, frameRearZ),
@@ -908,7 +902,6 @@ function treadleBevelDrillingMachine(movement) {
       frame,
       frameBase,
       frameColumn,
-      frameLeftUpright,
       frameTop,
       inputBearing,
       inputBearingBridge,

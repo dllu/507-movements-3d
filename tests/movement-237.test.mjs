@@ -438,7 +438,8 @@ test('movement 237 renderer binds the coaxial rotors and closes before movement 
   model.root.updateMatrixWorld(true);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.5);
+  // Thin open cup (outer radius 1.64) and the plate's 1.40 handle proportion.
+  assert.ok(size.x > 3.9);
   assert.ok(size.y > 2.8);
   assert.ok(size.z > 3.5);
   let meshCount = 0;

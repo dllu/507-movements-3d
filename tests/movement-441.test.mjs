@@ -104,8 +104,12 @@ test('movement 441 has six rigid curved floats, one hollow shaft, and six separa
     /^gravity-suspended-pin-tipped-bucket-/.test(role)).length, 6);
   assert.ok(roles.includes(
     'rotating-hollow-shaft-receiving-float-lifted-water'));
-  assert.ok(roles.includes(
-    'fixed-pin-tilting-each-bucket-at-high-station'));
+  // The caption's stationary pin is kept for the tipping law; Brown does not
+  // draw it, so the source presentation removes it from the displayed scene.
+  assert.equal(blocks.stationaryTripPin.userData.role,
+    'fixed-pin-tilting-each-bucket-at-high-station');
+  assert.equal(roles.includes(
+    'fixed-pin-tilting-each-bucket-at-high-station'), false);
   disposeModel(model.root);
 });
 

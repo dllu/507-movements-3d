@@ -1519,6 +1519,27 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   rightFloorLedge.position.set(3.25, floorY - 0.06, -0.52);
   rightFloorLedge.userData.role = 'fixed-right-ground-ledge-and-slider-bed';
+  // Brown draws the ground as an inked line with diagonal hatching below,
+  // broken only by the wheel pit, not as two grey slabs.
+  const hatchedGroundMaterial = matte(PALETTE.paper, { metalness: 0.02, roughness: 0.9 });
+  for (const ledge of [leftFloorLedge, rightFloorLedge]) {
+    ledge.material = hatchedGroundMaterial;
+    const { width, height, depth } = ledge.geometry.parameters;
+    const line = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, depth + 0.004), darkMaterial);
+    line.position.y = height / 2 - 0.0125;
+    line.userData.surfaceMarking = true;
+    ledge.add(line);
+    const strokeLength = (height - 0.025) * Math.SQRT2;
+    const count = Math.max(2, Math.round(width / 0.09));
+    for (let index = 0; index < count; index += 1) {
+      const stroke = new THREE.Mesh(new THREE.BoxGeometry(0.014, strokeLength, 0.004), darkMaterial);
+      const inset = (height - 0.025) / 2;
+      stroke.position.set(-width / 2 + inset + (width - 2 * inset) * index / (count - 1), -0.0125, depth / 2 + 0.003);
+      stroke.rotation.z = Math.PI / 4;
+      stroke.userData.surfaceMarking = true;
+      ledge.add(stroke);
+    }
+  }
   const sliderGuideRail = new THREE.Mesh(
     new THREE.BoxGeometry(
       sliderMaximumX - sliderMinimumX + 1.30,

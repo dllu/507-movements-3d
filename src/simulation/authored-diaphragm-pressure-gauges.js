@@ -1,5 +1,6 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
+import {plate, poly, circle, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -125,6 +126,119 @@ function makeArcTube({ center, material, radius, role, start, end, z }) {
     new THREE.TubeGeometry(curve, 96, 0.024, 8, false),
     material,
   ), role);
+}
+
+// Closed thin strip of in-plane half-width w and depth 2d along an open
+// polyline. Its vertex topology is fixed, so the diaphragm section can be
+// reshaped in place every frame.
+function sectionStrip(count, w, d) {
+  const geometry = new THREE.BufferGeometry();
+  const quads = (count - 1) * 4 + 2;
+  geometry.setAttribute('position',
+    new THREE.Float32BufferAttribute(new Float32Array(quads * 18), 3));
+  const setPoints = (points) => {
+    const edge = points.map((p, i) => {
+      const a = points[Math.max(0, i - 1)], b = points[Math.min(count - 1, i + 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty);
+      const nx = -ty / l * w, ny = tx / l * w;
+      return [[p[0] + nx, p[1] + ny], [p[0] - nx, p[1] - ny]];
+    });
+    const out = geometry.attributes.position.array;
+    let k = 0;
+    const quad = (a, b, c, e) => {
+      for (const v of [a, b, c, a, c, e]) { out[k++] = v[0]; out[k++] = v[1]; out[k++] = v[2]; }
+    };
+    const v = (i, side, z) => [edge[i][side][0], edge[i][side][1], z];
+    for (let i = 0; i < count - 1; i += 1) {
+      quad(v(i, 0, d), v(i, 1, d), v(i + 1, 1, d), v(i + 1, 0, d));
+      quad(v(i, 1, -d), v(i, 0, -d), v(i + 1, 0, -d), v(i + 1, 1, -d));
+      quad(v(i, 0, -d), v(i, 0, d), v(i + 1, 0, d), v(i + 1, 0, -d));
+      quad(v(i + 1, 1, -d), v(i + 1, 1, d), v(i, 1, d), v(i, 1, -d));
+    }
+    quad(v(0, 1, -d), v(0, 1, d), v(0, 0, d), v(0, 0, -d));
+    const n = count - 1;
+    quad(v(n, 0, -d), v(n, 0, d), v(n, 1, d), v(n, 1, -d));
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  };
+  return { geometry, setPoints };
+}
+
+// Brown's plate pairs the face view with a vertical section to its right:
+// the shallow case with its front lip and glass, corrugated disk A clamped at
+// its rim, sector e and the pointer pinion ahead of it, and the pressure
+// passage running down the back of the case to the foot. This figure follows
+// the plate's section proportions (plate pixels mapped at the face view's
+// scale). The gauge front is on the left, as Brown draws it, and disk A bows
+// toward the front with the same prescribed pressure fraction.
+function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, inkMaterial }) {
+  const s = 6.9 / 318;
+  const P = ([x, y]) => [(x - 1029) * s, (375 - y) * s];
+  const region = (points) => poly(points.map(P));
+  const group = addRole(new THREE.Group(), 'brown-section-view-beside-face');
+  const caseRegion = clip.union(
+    region([[1200, 213], [1312, 213], [1312, 223], [1210, 223], [1210, 236], [1200, 236]]),
+    region([[1302, 223], [1312, 223], [1312, 345], [1352, 383], [1352, 600], [1340, 600], [1340, 391], [1302, 353]]),
+    region([[1313, 398], [1325, 404], [1325, 600], [1313, 600]]),
+    region([[1200, 515], [1313, 515], [1313, 525], [1200, 525]]),
+    region([[1200, 498], [1210, 498], [1210, 515], [1200, 515]]),
+    region([[1266, 236], [1302, 236], [1302, 249], [1266, 249]]),
+    region([[1266, 489], [1302, 489], [1302, 502], [1266, 502]]),
+    region([[1300, 600], [1366, 600], [1366, 610], [1300, 610]]),
+  );
+  const caseSection = addRole(new THREE.Mesh(plate(caseRegion, -0.10, 0.10), frameMaterial),
+    'fixed-case-of-diaphragm-gauge-in-section');
+  const glass = addRole(new THREE.Mesh(plate(region([[1213, 236], [1217, 236], [1217, 498], [1213, 498]]), -0.06, 0.06), inkMaterial),
+    'front-glass-in-section');
+  const dial = addRole(new THREE.Mesh(plate(region([[1221, 262], [1224, 262], [1224, 474], [1221, 474]]), -0.06, 0.06), inkMaterial),
+    'dial-plate-in-section');
+  const spindle = addRole(new THREE.Mesh(plate(region([[1224, 362], [1238, 362], [1238, 366], [1224, 366]]), -0.04, 0.04), inkMaterial),
+    'pointer-spindle-in-section');
+  const pinion = addRole(new THREE.Mesh(plate(region([[1238, 356], [1246, 356], [1246, 372], [1238, 372]]), -0.07, 0.07), inkMaterial),
+    'pointer-pinion-edge-on-in-section');
+  const pivot = new THREE.Vector3(...P([1256, 398]), 0);
+  const sectorE = addRole(new THREE.Group(), 'sector-e-in-section');
+  sectorE.position.copy(pivot);
+  const local = (x, y) => { const [a, b] = P([x, y]); return [a - pivot.x, b - pivot.y]; };
+  const sectorShape = clip.difference(clip.union(
+    poly([local(1246, 378), local(1251, 375), local(1259, 394), local(1253, 399)]),
+    poly([local(1254, 394), local(1260, 380), local(1265, 383), local(1259, 399)]),
+    poly(circle([0, 0], 5 * s, 32)),
+  ), poly(circle([0, 0], 2 * s, 24)));
+  const sectorBody = addRole(new THREE.Mesh(plate(sectorShape, -0.05, 0.05), sectorMaterial),
+    'sector-e-lever-in-section');
+  sectorE.add(sectorBody);
+  const sectorPinLocal = new THREE.Vector3(...local(1262, 382), 0);
+  const diaphragmSamples = 97;
+  const diaphragmStrip = sectionStrip(diaphragmSamples, 2 * s, 0.08);
+  const diaphragmSection = addRole(new THREE.Mesh(diaphragmStrip.geometry, diaphragmMaterial),
+    'corrugated-disk-A-in-section');
+  const rodStrip = sectionStrip(2, 1.4 * s, 0.03);
+  const rod = addRole(new THREE.Mesh(rodStrip.geometry, inkMaterial),
+    'rod-from-disk-A-to-sector-e-in-section');
+  group.add(caseSection, glass, dial, spindle, pinion, sectorE, diaphragmSection, rod);
+  const top = 251, bottom = 487, middle = (top + bottom) / 2, half = (bottom - top) / 2;
+  const update = (state) => {
+    const bow = 6 + 12 * state.pressureFraction;
+    const points = Array.from({ length: diaphragmSamples }, (_, i) => {
+      const y = top + (bottom - top) * i / (diaphragmSamples - 1);
+      const r = Math.abs(y - middle) / half;
+      const dish = r < 0.28 ? 1 : (1 - ((r - 0.28) / 0.72) ** 2) ** 2;
+      const ripple = r < 0.28 ? 0 : 3 * Math.sin(4 * Math.PI * (r - 0.28) / 0.72) * (1 - r);
+      return P([1290 - bow * dish - ripple, y]);
+    });
+    diaphragmStrip.setPoints(points);
+    sectorE.rotation.z = state.sectorAngle;
+    const pin = sectorPinLocal.clone().applyAxisAngle(Z_AXIS, state.sectorAngle).add(pivot);
+    const centre = P([1290 - bow - 2.6, middle]);
+    const toward = new THREE.Vector3(centre[0] - pin.x, centre[1] - pin.y, 0).normalize();
+    // The rod meets the arm's face at the pin rather than passing into it.
+    const end = pin.clone().addScaledVector(toward, 3.5 * s);
+    rodStrip.setPoints([centre, [end.x, end.y]]);
+  };
+  return { group, update, blocks: { caseSection, diaphragmSection, rod, sectorE, pinion, spindle, glass, dial } };
 }
 
 function diaphragmPressureGauge(movement) {
@@ -462,6 +576,13 @@ function diaphragmPressureGauge(movement) {
     pinion,
     pointer,
   );
+  const sectionView = brownSectionView({
+    diaphragmMaterial,
+    frameMaterial,
+    inkMaterial,
+    sectorMaterial,
+  });
+  root.add(sectionView.group);
 
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
@@ -557,6 +678,7 @@ function diaphragmPressureGauge(movement) {
     sectorInputArm,
     sectorRim,
     sectorTeeth,
+    sectionView: sectionView.blocks,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.62, -4.18, -1.18),
@@ -647,17 +769,42 @@ function diaphragmPressureGauge(movement) {
     inletPressureCore.material.opacity = 0.10
       + 0.48 * state.pressureFraction;
     pressureFill.userData.gaugePressurePascal = state.gaugePressurePascal;
+    sectionView.update(state);
     root.userData.kinematics = state;
   };
   update(0);
   root.userData.fidelity = 'authored';
   correctElasticGaugeParts(root,500,update);
+  // The fixed journal stops just behind the pointer hub: the pointer is keyed
+  // to the pinion it carries, so the journal no longer runs through the
+  // unbored hub, needle and counterweight arm.
+  {
+    const { pinionShaft, pointerHub } = root.userData.blocks;
+    root.updateMatrixWorld(true);
+    const back = pinionShaft.position.z - pinionShaft.geometry.parameters.height / 2;
+    const front = new THREE.Box3().setFromObject(pointerHub).min.z - 0.005;
+    pinionShaft.geometry.dispose();
+    pinionShaft.geometry = new THREE.CylinderGeometry(0.056, 0.056, front - back, 48);
+    pinionShaft.position.z = (front + back) / 2;
+  }
+  // The sector's pivot sleeve stopped past the pointer plane, where the
+  // pointer's counterweight swept through it; it now ends short of that plane.
+  {
+    const hub = root.userData.blocks.sectorHub;
+    const back = hub.position.z - hub.geometry.parameters.height / 2;
+    const front = 0.52;
+    hub.geometry.dispose();
+    hub.geometry = new THREE.CylinderGeometry(0.08, 0.08, front - back, 48);
+    hub.position.z = (front + back) / 2;
+  }
   markShadows(root);
   dialFace.castShadow = false;
   chamber.castShadow = false;
   chamberBack.castShadow = false;
   pressureFill.castShadow = false;
   inletPressureCore.castShadow = false;
+  // Brown's dial carries no shadow copy of the pointer or scale.
+  dialFace.receiveShadow = false;
   return {
     root,
     update,

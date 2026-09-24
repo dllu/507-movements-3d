@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { crown237Return as bake } from './baked/crown-pawl-237-return.js';
-import { plate, circle, ring } from './finite-plate-geometry.js';
+import { plate, circle, ring, turned } from './finite-plate-geometry.js';
 export { crown237Return } from './baked/crown-pawl-237-return.js';
 const values = bake.samples, count = values.length - 1, step = bake.armSwing / count;
 const slopes = values.map((v, i) => {
@@ -50,10 +50,27 @@ export function installCrown237Parts(root) {
   // Bored eye around a distinct arm-fixed pin.
   replace(b.pawlHingeBarrel, new THREE.CylinderGeometry(0.10, 0.10, 0.26, 48));
   replace(b.pawlHingeRing, ring(0.104, 0.165, -0.085, 0.085, 64));
-  replace(b.crownWheelBody, ring(0.104, g.wheelOuterRadius, -g.wheelBodyThickness, 0, 96));
+  // Open cup: a thin wall under the rim teeth and a thin floor at the bottom,
+  // bored for the output shaft (profile is [axial, radial]).
+  const floor = 0.08, low = -g.wheelBodyThickness;
+  replace(b.crownWheelBody, turned([[low, 0.104], [low, g.wheelOuterRadius], [0, g.wheelOuterRadius], [0, g.wheelInnerRadius],
+    [low + floor, g.wheelInnerRadius], [low + floor, 0.104]], 192));
   b.crownWheelBody.rotation.x = 0; b.crownWheelBody.position.z = 0;
-  replace(b.outputBearing, ring(0.104, 0.25, -0.09, 0.09, 64).rotateX(Math.PI / 2));
-  b.crownWheelIndicator.position.z = 0.013;
+  // Brown draws no hub, face ring, bearing collar, white indices or contact markers.
+  for (const part of [b.crownWheelIndicator, b.crownWheelHub, b.crownWheel.userData.faceInset, b.outputBearing,
+    b.armIndicator, b.driveContactMarker, b.rampContactMarker]) {
+    part.visible = false; part.userData.hiddenReason = 'not drawn on plate 237';
+  }
+  // The shaft rises through the floor bore; the stud continues from the floor to the arm boss.
+  const shaftMesh = shaft => shaft.userData.rotor.children.find(o => o.isMesh);
+  shaftMesh(b.outputShaft).geometry.dispose();
+  // Shaft top and stud foot stop 0.01 apart inside the floor bore.
+  const shaftTop = low + floor - 0.04, studFoot = low + floor - 0.03;
+  shaftMesh(b.outputShaft).geometry = new THREE.CylinderGeometry(0.1, 0.1, shaftTop + 2.61, 32);
+  b.outputShaft.position.y = (-2.61 + shaftTop) / 2;
+  shaftMesh(b.armFulcrumShaft).geometry.dispose();
+  shaftMesh(b.armFulcrumShaft).geometry = new THREE.CylinderGeometry(0.075, 0.075, 0.7 - studFoot, 32);
+  b.armFulcrumShaft.position.y = (0.7 + studFoot) / 2;
   // Painted crest indices stay inside the ramp; they must not become obstacles.
   for (const tick of b.crownWheel.userData.driveFaceTicks) tick.visible = false;
   const toothMaterial = b.crownWheel.userData.crownTeeth[0].material.clone();

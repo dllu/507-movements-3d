@@ -315,14 +315,40 @@ function twoPitchDifferentialScrew(movement) {
   );
   movingFoot.position.y = baseY + 0.11;
   movingFoot.userData.role = 'movable-bearing-foot-sliding-on-base-guides';
+  // Brown draws the movable bearing as one upright as wide as the nut,
+  // swept into its foot plate by concave fillets (an inverted T).
+  const movingStandardMaterial = matte(PALETTE.driven, {
+    metalness: 0.12,
+    roughness: 0.65,
+  });
   const movingStandard = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.58, 0.34),
-    matte(PALETTE.driven, { metalness: 0.12, roughness: 0.65 }),
+    new THREE.BoxGeometry(0.40, 0.58, 0.66),
+    movingStandardMaterial,
   );
   movingStandard.position.y = -0.76;
   movingStandard.userData.role =
     'movable-bearing-standard-rigidly-joining-bearing-to-sliding-foot';
-  movingBearing.add(movingFoot, movingStandard);
+  const footTopY = movingFoot.position.y + 0.07;
+  const filletRadius = 0.16;
+  const movingStandardFillets = [-1, 1].map((side) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, footTopY - 0.01);
+    shape.lineTo(0, footTopY + filletRadius);
+    shape.quadraticCurveTo(0, footTopY, filletRadius, footTopY);
+    shape.lineTo(filletRadius, footTopY - 0.01);
+    const fillet = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, {
+        bevelEnabled: false,
+        curveSegments: 12,
+        depth: 0.66,
+      }).translate(0.199, 0, -0.33),
+      movingStandardMaterial,
+    );
+    fillet.scale.x = side;
+    fillet.userData.role = 'movable-bearing-standard-foot-fillet';
+    return fillet;
+  });
+  movingBearing.add(movingFoot, movingStandard, ...movingStandardFillets);
   const movingIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 18, 12),
     whiteMaterial,

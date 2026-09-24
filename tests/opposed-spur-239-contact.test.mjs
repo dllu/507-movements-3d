@@ -107,7 +107,7 @@ test('239 source-facing full-sweep bounds fit finite vertices and updates retain
     for(const[o,g]of meshes) {
       assert.equal(o.geometry,g); assert.equal(o.material.fog,false);
       if(!o.visible)continue;
-      for(let j=0;j<g.attributes.position.count;j++) {p.fromBufferAttribute(g.attributes.position,j).applyMatrix4(o.matrixWorld);assert.ok(d.cameraFitBounds.containsPoint(p),`${o.userData.role}: ${p.toArray()}`);}
+      for(let j=0;j<g.attributes.position.count;j++) {p.fromBufferAttribute(g.attributes.position,j).applyMatrix4(o.matrixWorld);assert.ok(d.sweptBounds.containsPoint(p),`${o.userData.role}: ${p.toArray()}`);if(p.y>d.wheelBreak.level+d.wheelBreak.amplitude)assert.ok(d.cameraFitBounds.containsPoint(p),`drawn ${o.userData.role}: ${p.toArray()}`);}
     }
   }
   assert.equal(d.minimumDisplayCycleSeconds,6);assert.equal(d.hideGround,true);assert.equal(d.sourceAnimation.available,false);

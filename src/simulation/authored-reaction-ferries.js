@@ -217,19 +217,38 @@ function reactionFerry(movement) {
     bank.add(edge);
   }
 
-  const flowArrows = [-1.70, 1.70].map((z) => {
-    const arrow = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(-1.20, 0.10, z),
-      2.10,
-      PALETTE.white,
-      0.38,
-      0.22,
-    );
-    arrow.userData.role = 'fixed-downstream-current-direction-indicator';
-    root.add(arrow);
-    return arrow;
-  });
+  // Brown draws one feathered current arrow just above the line, between the
+  // anchor and the bow; it is kept as a flat dark mark on the water surface.
+  const currentArrow = addRole(new THREE.Group(),
+    'fixed-downstream-current-arrow-drawn-by-brown');
+  currentArrow.position.set(-2.80, waterY + 0.03, -0.66);
+  const arrowShaft = new THREE.Mesh(
+    new THREE.BoxGeometry(1.14, 0.03, 0.045),
+    darkMaterial,
+  );
+  arrowShaft.position.x = 0.57;
+  currentArrow.add(arrowShaft);
+  const arrowHead = new THREE.Mesh(
+    new THREE.ConeGeometry(0.11, 0.28, 3),
+    darkMaterial,
+  );
+  arrowHead.rotation.z = -Math.PI / 2;
+  arrowHead.scale.z = 0.25;
+  arrowHead.position.x = 1.26;
+  currentArrow.add(arrowHead);
+  for (const x of [0.04, 0.14, 0.24]) {
+    for (const side of [-1, 1]) {
+      const feather = new THREE.Mesh(
+        new THREE.BoxGeometry(0.19, 0.03, 0.03),
+        darkMaterial,
+      );
+      feather.position.set(x + 0.06, 0, side * 0.055);
+      feather.rotation.y = side * 0.75;
+      currentArrow.add(feather);
+    }
+  }
+  root.add(currentArrow);
+  const flowArrows = [currentArrow];
 
   const anchor = addRole(new THREE.Group(),
     'fixed-anchor-center-of-ferry-arc');
@@ -253,30 +272,6 @@ function reactionFerry(movement) {
     arm.rotation.y = angle;
     anchor.add(arm);
   }
-
-  const arcPoints = Array.from({ length: 65 }, (_, index) => {
-    const angle = THREE.MathUtils.lerp(
-      -maximumTraverseAngle,
-      maximumTraverseAngle,
-      index / 64,
-    );
-    return anchorPoint.clone().add(new THREE.Vector3(
-      tetherLength * Math.cos(angle),
-      -0.21,
-      tetherLength * Math.sin(angle),
-    ));
-  });
-  const trajectoryArc = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(arcPoints, false, 'centripetal'),
-      128,
-      0.025,
-      8,
-      false,
-    ),
-    whiteMaterial,
-  ), 'bow-circular-trajectory-centered-on-anchor');
-  root.add(trajectoryArc);
 
   const boat = addRole(new THREE.Group(),
     'reaction-ferry-moving-on-anchor-centered-arc');
@@ -325,19 +320,6 @@ function reactionFerry(movement) {
   );
   rudderTip.position.x = 0.98;
   rudderPivot.add(rudderTip);
-
-  const wakeLines = [-0.38, 0.38].map((z) => {
-    const line = beamBetween(
-      new THREE.Vector3(2.18, 0.03, z),
-      new THREE.Vector3(3.35, 0.03, z * 1.38),
-      0.025,
-      0.025,
-      whiteMaterial,
-    );
-    line.userData.role = 'boat-attached-wake-indicator';
-    boat.add(line);
-    return line;
-  });
 
   const rope = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.055, 0.055, 1, 16),
@@ -416,8 +398,6 @@ function reactionFerry(movement) {
       ropeStartMarker,
       rudderBlade,
       rudderPivot,
-      trajectoryArc,
-      wakeLines,
     },
     constraints: {
       anchorFixed: true,
@@ -490,7 +470,7 @@ function reactionFerry(movement) {
         engravingEvidence:
           'Brown’s plan engraving shows two river banks, a downstream current arrow, one fixed anchor at left, one line from anchor to the pointed bow, a two-compartment boat, and an oblique stern rudder.',
         reconstructionDisclosure:
-          'Brown gives no river width, anchor offset, rope length, boat dimensions, current speed, rudder angle, hull heading, mass, drag, lift, bank clearance, cable elasticity, or timing. Those values, the radial hull-heading convention, sinusoidal traverse, cosine steering schedule, colors, wake marks, and 6.2-second cycle are independently engineered. The fixed anchor, single tether, circular path, downstream restraint, current, rudder, and shore-to-shore function are source-grounded.',
+          'Brown gives no river width, anchor offset, rope length, boat dimensions, current speed, rudder angle, hull heading, mass, drag, lift, bank clearance, cable elasticity, or timing. Those values, the radial hull-heading convention, sinusoidal traverse, cosine steering schedule, colors, and 6.2-second cycle are independently engineered. The fixed anchor, single tether, circular path, downstream restraint, current, rudder, and shore-to-shore function are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 447',

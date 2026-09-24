@@ -1832,12 +1832,16 @@ function fergusonMechanicalParadox(movement) {
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
   correctEpicyclic503504(root, movement.id);
-  // Brown's side elevation: the arm swings a full turn about A, but its
-  // screen extent never exceeds its length, so the fit keeps the full x sweep
-  // and only a shallow depth; the whole-sweep box made the train tiny.
+  // Brown's side elevation shows the arm at rest along +x, from A's pedestal
+  // to the outer end D. The default view crops to that pose; the arm's full
+  // turn about A is kept separately as sweptBounds.
+  root.userData.sweptBounds = new THREE.Box3(
+    new THREE.Vector3(-4.31, -1.86, -4.31),
+    new THREE.Vector3(4.31, 1.45, 4.31),
+  );
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.31, -1.86, -0.95),
-    new THREE.Vector3(4.31, 1.45, 0.95),
+    new THREE.Vector3(-1.00, -1.72, -1.00),
+    new THREE.Vector3(4.22, 0.84, 1.00),
   );
   markShadows(root);
   return {
@@ -3052,11 +3056,14 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctCompoundEpicyclic(root, movement.id);
+  // Brown's 506 is a level elevation: a narrow field and a nearly level
+  // direction keep the base from reading as a raised top face.
+  root.userData.cameraFov = 12;
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(0.4, 0.6, 16.0),
+    cameraDirection: new THREE.Vector3(0.3, 0.15, 16.0),
   };
 }
 

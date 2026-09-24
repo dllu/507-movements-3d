@@ -46,5 +46,6 @@ export function makeSegmentClampGeometry(options={}){
  const bounds=new THREE.Box3();for(let i=0;i<=32;i++){const a=1.95*i/32;blocks.external.rotation.z=-f.externalRatio*a;blocks.internal.rotation.z=f.internalRatio*a;blocks.input.rotation.z=a;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}
  for(const block of Object.values(blocks))block.rotation.z=0;root.updateMatrixWorld(true);bounds.expandByScalar(.08);
  Object.assign(root.userData,{source,profile:f,parts,blocks,families,cells,contactApproximation,hideGround:true,cameraFitBounds:bounds,shadowCameraHalfExtent:5,shadowNormalBias:.01,shadowBias:-.00002,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()}});
- markShadows(root);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(2,1,10)};
+ // Brown draws the clamp flat, face-on.
+ markShadows(root);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.15,.1,10)};
 }

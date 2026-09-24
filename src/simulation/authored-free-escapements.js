@@ -462,7 +462,8 @@ function arnoldFreeEscapement(movement) {
     metalness: 0.18,
     roughness: 0.50,
   });
-  const passingMaterial = matte(PALETTE.white, {
+  // Brown draws spring f and stud a in plain line; no white parts.
+  const passingMaterial = matte(PALETTE.brass, {
     metalness: 0.16,
     roughness: 0.45,
   });
@@ -586,7 +587,7 @@ function arnoldFreeEscapement(movement) {
   studArm.userData.role = 'balance-arm-carrying-operating-stud-a';
   const operatingStud = new THREE.Mesh(
     new THREE.SphereGeometry(0.115, 18, 14),
-    indexMaterial,
+    darkMaterial,
   );
   operatingStud.position.set(balanceRadius * 0.92, 0, 0.20);
   operatingStud.userData.role =
@@ -1763,7 +1764,8 @@ function earnshawSpringDetentEscapement(movement) {
     metalness: 0.34,
     roughness: 0.40,
   });
-  const jewelMaterial = matte(PALETTE.white, {
+  // Jewels read as plain set stones on the plate, not white markers.
+  const jewelMaterial = matte(PALETTE.muted, {
     metalness: 0.10,
     roughness: 0.38,
   });

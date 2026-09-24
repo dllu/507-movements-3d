@@ -770,7 +770,6 @@ function modernLiftingPump(movement) {
   const flowMaterial = waterMaterial.clone();
   flowMaterial.color.setHex(0x2d819c);
   flowMaterial.opacity = 0.88;
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
 
   const base = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(5.7, 0.16, 3.0),
@@ -895,12 +894,6 @@ function modernLiftingPump(movement) {
     darkMaterial,
   ), 'piston-rod-sliding-through-stuffing-box');
   root.add(pumpRod);
-  const rodTopMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.10, 18, 12),
-    whiteMaterial,
-  );
-  root.add(rodTopMarker);
-
   const lowerChamberWater = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(
       barrelWaterRadius,
@@ -976,16 +969,6 @@ function modernLiftingPump(movement) {
   flapHinge.rotation.x = Math.PI / 2;
   deliveryFlapPivot.add(flapHinge);
 
-  const deliveryMarkers = Array.from({ length: 7 }, (_, index) => {
-    const marker = addRole(new THREE.Mesh(
-      new THREE.SphereGeometry(0.065, 16, 10),
-      whiteMaterial,
-    ), 'upward-delivery-flow-tracer');
-    marker.userData.index = index;
-    root.add(marker);
-    return marker;
-  });
-
   const update = (time) => {
     const state = stateAtTime(time);
     piston.position.y = state.pistonY;
@@ -994,7 +977,6 @@ function modernLiftingPump(movement) {
     footValveDisk.position.y = footValveSeatY + 0.08
       + state.footValveLift;
     pumpRod.position.y = (state.rodBottomY + state.rodTopY) / 2;
-    rodTopMarker.position.set(0, state.rodTopY, 0);
     deliveryFlapPivot.rotation.z = state.deliveryFlapAngle;
     setVerticalExtent(
       lowerChamberWater,
@@ -1006,17 +988,6 @@ function modernLiftingPump(movement) {
       state.pistonTopY + 0.04,
       upperChamberTopY,
     );
-    const flowing = state.dischargeFlowRate > 0.002;
-    deliveryMarkers.forEach((marker, index) => {
-      const travel = THREE.MathUtils.euclideanModulo(
-        index / deliveryMarkers.length + state.phase * 2,
-        1,
-      );
-      const point = deliveryCurve.getPoint(travel);
-      marker.position.copy(point);
-      marker.position.z = 0.22;
-      marker.visible = flowing;
-    });
     root.userData.updateSolids?.(state);
   };
 
@@ -1054,7 +1025,6 @@ function modernLiftingPump(movement) {
       deliveryFlap,
       deliveryFlapPivot,
       deliveryFlapSeat,
-      deliveryMarkers,
       deliveryPipe,
       deliveryWater,
       footValveDisk,
@@ -1065,7 +1035,6 @@ function modernLiftingPump(movement) {
       pistonValveDisk,
       pistonValveSeat,
       pumpRod,
-      rodTopMarker,
       sourceWater,
       sourceWell,
       stuffingBox,

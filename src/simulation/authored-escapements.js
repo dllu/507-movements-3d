@@ -5123,11 +5123,17 @@ function debaufreFrictionalRestEscapement(
   return finish(root, update, cameraDirection);
 }
 
+// Brown draws 234 floating on the page with no ground, so no ground shadow.
+function hideGroundFor234(model) {
+  model.root.userData.hideGround = true;
+  return model;
+}
+
 export function createAuthoredEscapementMovement(movement) {
   switch (movement.id) {
     // Brown's plate shows no frame or bearings for this verge.
     // Brown's cup wall below the teeth is about half the tooth height.
-    case 234: return vergeAndCrownWheelEscapement(movement, {
+    case 234: return hideGroundFor234(vergeAndCrownWheelEscapement(movement, {
       // Brown's 234: a flush plate on a shallow band (about 0.2 of the
       // radius), a thin rim cut into teeth about a third of the radius high,
       // plain flags A on a round spindle S longer than the wheel.
@@ -5140,7 +5146,7 @@ export function createAuthoredEscapementMovement(movement) {
       spindleLength: 8.4,
       toothRadialDepth: 0.14,
       toothTipZ: 0.72,
-    });
+    }));
     case 238: return sevenToothAnchorEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);
     case 300: return debaufreFrictionalRestEscapement(movement);

@@ -683,7 +683,9 @@ function atmosphericChainBeamPumpingEngine(movement) {
     metalness: 0.12,
     roughness: 0.72,
   });
-  const masonryMaterial = matte(0xb9b1a2, { roughness: 0.9 });
+  // A mid stone tone: the pale 0xb9b1a2 read washed-out beside the plate's
+  // firmly drawn pier.
+  const masonryMaterial = matte(0x7d776d, { roughness: 0.9 });
   const timberMaterial = matte(0x9a8466, { roughness: 0.85 });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.24,

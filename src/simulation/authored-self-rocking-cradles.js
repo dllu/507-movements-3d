@@ -481,7 +481,9 @@ function selfRockingCradle(movement) {
     metalness: 0.08,
     roughness: 0.63,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
+  // Brown draws the crank pins as small ringed circles and the band ends as
+  // small caps on the post heads: no white index dots.
+  const pinMaterial = matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 });
 
   // Brown's floor is a hatched ground line, not a slab.
   const ground = new THREE.Mesh(
@@ -534,11 +536,11 @@ function selfRockingCradle(movement) {
   inputWheelA.userData.rotor.add(inputCrankArm);
   const inputPinMarker = new THREE.Mesh(
     new THREE.CylinderGeometry(.07,.07,.48,32),
-    whiteMaterial,
+    pinMaterial,
   );
   inputPinMarker.rotation.x=Math.PI/2;
   inputPinMarker.position.set(inputCrankRadius, 0, .39);
-  inputPinMarker.userData.role = 'white-crank-pin-of-wheel-A';
+  inputPinMarker.userData.role = 'crank-pin-of-wheel-A';
   inputWheelA.userData.rotor.add(inputPinMarker);
   root.add(inputWheelA);
 
@@ -562,11 +564,11 @@ function selfRockingCradle(movement) {
   outputWheelB.userData.rotor.add(outputCrankArm);
   const outputPinMarker = new THREE.Mesh(
     new THREE.CylinderGeometry(.07,.07,.48,32),
-    whiteMaterial,
+    pinMaterial,
   );
   outputPinMarker.rotation.x=Math.PI/2;
   outputPinMarker.position.set(outputPinRadius, 0, .39);
-  outputPinMarker.userData.role = 'white-oscillating-pin-of-wheel-B';
+  outputPinMarker.userData.role = 'oscillating-pin-of-wheel-B';
   outputWheelB.userData.rotor.add(outputPinMarker);
   root.add(outputWheelB);
 
@@ -618,7 +620,7 @@ function selfRockingCradle(movement) {
       ? 'left-band-standard-attached-to-rocker-E'
       : 'right-band-standard-attached-to-rocker-E';
     cradleE.add(standard);
-    const anchor = cylinderAlongZ(.115, .88, whiteMaterial, 24);
+    const anchor = cylinderAlongZ(.115, .88, cradleMaterial, 24);
     anchor.position.set(side * 2.02, 1.05, .05);
     anchor.userData.role = side < 0
       ? 'attachment-of-flexible-band-C-to-E'

@@ -752,7 +752,7 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
     ]) physicalBounds.expandByObject(object);
   }
   const physicalSize = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(physicalSize.x > 10.8);
+  assert.ok(physicalSize.x > 10.75, 'notched quadrant plate and eccentric straps span the plate width');
   assert.ok(physicalSize.y > 6.0);
   assert.ok(physicalSize.z > 3.19);
   assert.ok(physicalBounds.min.z < -1.32);

@@ -6,6 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {castFootGeometry} from './rotary-engine-cast-feet.js';
 
 const FULL_TURN = Math.PI * 2;
 const HALF_TURN = Math.PI;
@@ -397,10 +398,14 @@ function radialPistonRotaryEngine(movement) {
     };
   };
 
+  // Brown draws the diametral pistons A standing nearly upright, reaching the
+  // casing wall top and bottom (plate tips ≈(243,94) and (280,438)); the
+  // cycle starts from that pose rather than at the retracted abutment pass.
+  const sourceRotorAngle = Math.atan2(438 - 94, 243 - 280);
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
+      ...stateAtInputAngle(sourceRotorAngle + inputAngularSpeed * cycleTime),
       cycleTime,
       phase: cycleTime / cycleDuration,
     };
@@ -428,6 +433,7 @@ function radialPistonRotaryEngine(movement) {
     sourceMinimumRoot,
     sourcePistonBodyEnd,
     sourcePistonHalfWidth,
+    sourceRotorAngle,
     sourceScale,
   };
 
@@ -489,12 +495,12 @@ function radialPistonRotaryEngine(movement) {
   lowerInnerWall.userData.role = 'fixed-lower-inner-wall-of-cylinder';
   root.add(topHousingBack,bottomHousingBack,upperInnerWall,lowerInnerWall);
 
+  // Brown stands the casing on one cast foot with concave flanks, not a bed slab.
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(6.40, 0.28, 1.44),
+    castFootGeometry({casingRadius: cylinderOuterRadius, padHalfWidth: 2.75, neckHalfWidth: 2.0, footY: -cylinderOuterRadius - 0.28}, -0.24, 0.83),
     frameMaterial,
   );
-  foundation.position.set(0, -cylinderOuterRadius-0.14, -0.14);
-  foundation.userData.role = 'fixed-foundation-of-radial-piston-engine';
+  foundation.userData.role = 'fixed-cast-foot-under-cylinder';
   root.add(foundation);
 
   const makeStationaryAbutment = (side) => {
@@ -635,7 +641,7 @@ function radialPistonRotaryEngine(movement) {
     negativePowerIndicator.scale.setScalar(simultaneousPulse);
   };
 
-  const sourceState = stateAtInputAngle(0);
+  const sourceState = stateAtInputAngle(sourceRotorAngle);
   root.userData = {
     animationTiming: {
       authoredCyclePeriod: cycleDuration,

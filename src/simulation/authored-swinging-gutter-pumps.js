@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
+import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -569,7 +571,7 @@ function swingingGutterPump(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.65, groundY, -1.75),
+    new THREE.Vector3(-3.65, -2.50, -1.75),
     new THREE.Vector3(3.65, 3.78, 1.75),
   );
   root.userData.cameraDistanceScale = 1.08;
@@ -578,6 +580,23 @@ function swingingGutterPump(movement) {
   root.userData.cameraFov = 10;
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,461);
+  {
+    // Brown draws the gutters as slender pipes with small elbow boxes, not
+    // broad troughs: rebuild the finite channel walls on a narrower bore.
+    const b=root.userData.blocks,g=root.userData.geometry;
+    const segments=g.localPathPoints.slice(0,-1).map((p,i)=>[[p.x,p.y],[g.localPathPoints[i+1].x,g.localPathPoints[i+1].y]]);
+    const square=(p,r)=>poly([[p.x-r,p.y-r],[p.x+r,p.y-r],[p.x+r,p.y+r],[p.x-r,p.y+r]]);
+    const inside=clip.union(...segments.map(([a,c])=>capsule(a,c,.085,12)),...g.junctionLocalPoints.map(p=>square(p,.22)));
+    const outside=clip.union(...segments.map(([a,c])=>capsule(a,c,.12,12)),...g.junctionLocalPoints.map(p=>square(p,.255)));
+    const openEnds=[g.localPathPoints[0],g.localPathPoints.at(-1)].map(p=>poly(circle([p.x,p.y],.20,64)));
+    for(const [mesh,geometry] of [[b.conduitBack,plate(outside,-.22,-.18)],[b.conduitWalls,plate(clip.difference(outside,inside,...openEnds),-.18,.18)]]){mesh.geometry.dispose();mesh.geometry=geometry;}
+    // Brown rules the water below as close horizontal strokes, not a
+    // translucent slab.
+    b.reservoir.geometry.dispose();
+    b.reservoir.geometry=ruledWaterLines({xMin:-3.45,xMax:3.45,surfaceY:0,rows:12,spacing:.1,thickness:.03,dash:[.7,2.2],gap:[.06,.22],seed:461});
+    b.reservoir.material=ruledWaterMaterial();
+    b.reservoir.position.set(0,reservoirSurfaceY,-.9);
+  }
   markShadows(root);
   base.receiveShadow = true;
   update(0);

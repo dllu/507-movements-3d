@@ -23,6 +23,9 @@ export function makePumpCatchDrive(){
   for(const name of ['pumpRope','inputDriveBand'])u.parts[name].material.clipShadows=true;
   u.localClippingEnabled=true;
   u.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-2.31,plinthBottom,-1.43),new THREE.Vector3(plateRight,2.25,.6));
+  // The engine fits the plate window edge to edge; this scale on its generic
+  // distance keeps the overhead beam and left post clear of the view edges.
+  u.cameraDistanceScale=6;
   model.update=time=>{const state=motion.sample(time);model.setState(state);Object.assign(u.kinematics,state);};
   model.update(0);return model;
 }

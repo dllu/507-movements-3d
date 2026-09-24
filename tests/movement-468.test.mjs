@@ -411,17 +411,33 @@ test('movement 468 has finite render bounds and movement 507 remains the next au
     assert.ok(bounds.max.x > bounds.min.x);
     assert.ok(bounds.max.y > bounds.min.y);
     assert.ok(bounds.max.z > bounds.min.z);
-    // Brown's close view of one joint: the default fit is a deliberate crop
-    // inside the whole crossing that keeps the front main's middle joint.
-    assert.ok(bounds.containsBox(fitBounds) || bounds.intersectsBox(fitBounds));
-    assert.ok(fitBounds.getSize(new THREE.Vector3()).x
-      < 0.5 * bounds.getSize(new THREE.Vector3()).x);
-    const joints = model468.root.userData.blocks.ballJoints
-      .map((joint) => joint.getWorldPosition(new THREE.Vector3()))
-      .filter((position) => position.z > 0);
-    const framed = joints.filter((position) => fitBounds.containsPoint(position));
-    assert.equal(framed.length, 1, `one framed joint at phase ${phase}`);
+    // Brown draws two figures of one joint (elevation above, plan below).
+    // The analytic crossing stays hidden; the visible figures fill the fit.
+    const blocks = model468.root.userData.blocks;
+    for (const object of blocks.crossing) assert.equal(object.visible, false);
+    const { elevation, plan } = blocks.plateFigures;
+    const visible = new THREE.Box3();
+    for (const figure of [elevation, plan]) {
+      figure.traverseVisible((object) => {
+        if (!object.isMesh) return;
+        object.geometry.computeBoundingBox();
+        visible.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+      });
+    }
+    assert.ok(fitBounds.clone().expandByScalar(0.01).containsBox(visible), `figures fit at ${phase}: ${JSON.stringify([visible.min, visible.max])}`);
+    const elevationBox = new THREE.Box3().setFromObject(elevation);
+    const planBox = new THREE.Box3().setFromObject(plan);
+    assert.ok(elevationBox.min.y > planBox.max.y, 'elevation drawn above plan');
+    // Both figures reproduce the front main's middle-joint deflection.
+    const time = phase * model468.root.userData.geometry.cycleDuration;
+    const deflection = model468.root.userData.plateFigures.figureDeflectionAtTime(time);
+    near(elevation.userData.upstream.rotation.z, -deflection, 1e-12, 'elevation deflection');
+    near(plan.userData.upstream.rotation.z, -deflection, 1e-12, 'plan deflection');
+    assert.ok(Math.abs(deflection) <= model468.root.userData.geometry.socketAngularCapacity);
   }
+  // The default pose is Brown's flexed elevation.
+  model468.update(0);
+  assert.ok(model468.root.userData.plateFigures.figureDeflectionAtTime(0) > THREE.MathUtils.degToRad(20));
   assert.equal(movement468.fidelity, 'authored');
   assert.equal(movement507.id, 507);
   assert.equal(movement507.fidelity, 'authored');

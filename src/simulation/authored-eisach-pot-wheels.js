@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ring, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -431,14 +432,15 @@ function eisachPotWheel(movement) {
   streamBed.position.set(0, groundY + 0.34, 0);
   streamBed.userData.role = 'fixed-river-bed-under-pot-wheel';
   root.add(streamBed);
-  // A shallow band of stream between the banks, as Brown hatches it.
+  // Brown rules the stream as broken strokes running with the current under
+  // the wheel, not as a water box: thin lines lying in the surface plane.
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(7.72, 0.55, 2.60),
-    waterMaterial,
+    ruledWaterLines({ xMin: -3.85, xMax: 3.85, surfaceY: 1.30, rows: 13, spacing: 0.215, thickness: 0.035, depth: 0.012, dash: [0.5, 1.6], gap: [0.15, 0.5], seed: 442 }).rotateX(-Math.PI / 2),
+    ruledWaterMaterial(),
   );
-  streamWater.position.set(0, streamSurfaceY - 0.275, 0);
+  streamWater.position.set(0, streamSurfaceY, 0);
   streamWater.userData.role =
-    'rightward-current-partly-immersing-peripheral-pots';
+    'rightward-stream-surface-lines-partly-immersing-peripheral-pots';
   root.add(streamWater);
   const currentMarkers = [];
   for (let index = 0; index < 15; index += 1) {
@@ -700,10 +702,12 @@ function eisachPotWheel(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.14, groundY, -3.05),
-    new THREE.Vector3(4.10, 3.20, 3.78),
+    // Brown looks along the wheel plane, so the depth along the current
+    // need not widen the fit.
+    new THREE.Vector3(-2.60, groundY, -3.05),
+    new THREE.Vector3(2.60, 3.10, 3.35),
   );
-  root.userData.cameraDistanceScale = 1.08;
+  root.userData.cameraDistanceScale = 0.9;
   root.userData.cameraDirection = new THREE.Vector3(5.8, 4.3, 11.8);
   root.userData.groundFloorY = groundY;
   root.userData.hideGround = true;

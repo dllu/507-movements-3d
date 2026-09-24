@@ -362,15 +362,15 @@ test('movement 235 renderer binds the arm, tappet, spring, wheel, and two contac
     'rendered indexed wheel angle');
   near(blocks.holdingClick.rotation.z, state.holdingClickAngle, 0,
     'rendered lifted holding click');
-  assert.equal(blocks.driveContactMarker.visible, true);
-  assert.equal(blocks.holdingContactMarker.visible, state.holdingClickEngaged);
-  assert.equal(blocks.returnContactMarker.visible, false);
+  assert.ok([].concat(blocks.driveContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
+  assert.ok([].concat(blocks.holdingContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
+  assert.ok([].concat(blocks.returnContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
 
   model.update(timeline.cyclePeriod * 0.6);
   state = model.root.userData.kinematics;
-  assert.equal(blocks.driveContactMarker.visible, false);
-  assert.equal(blocks.returnContactMarker.visible, state.returnContact?.engaged === true);
-  assert.equal(blocks.holdingContactMarker.visible, state.holdingClickEngaged);
+  assert.ok([].concat(blocks.driveContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
+  assert.ok([].concat(blocks.returnContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
+  assert.ok([].concat(blocks.holdingContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
   vectorNear(
     new THREE.Vector2(
       blocks.returnContactMarker.position.x,
@@ -384,19 +384,20 @@ test('movement 235 renderer binds the arm, tappet, spring, wheel, and two contac
   model.update(timeline.cyclePeriod * 0.8);
   state = model.root.userData.kinematics;
   assert.equal(state.stage, 'spring-returning-tappet-to-stop');
-  assert.equal(blocks.returnContactMarker.visible, false);
+  assert.ok([].concat(blocks.returnContactMarker.material).every((material) => material.visible === false), 'contact markers are not drawn on the plate');
   assert.ok(blocks.tappetSpring.userData.curve);
   assert.equal(blocks.ratchet.userData.indicator.userData.role,
     'ratchet-wheel-face-index');
   model.root.updateMatrixWorld(true);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
-  assert.ok(size.x > 6.2);
-  assert.ok(size.y > 3.7);
+  // Without the undrawn base block the drawn parts span about 6.06 × 3.62.
+  assert.ok(size.x > 5.9);
+  assert.ok(size.y > 3.5);
   assert.ok(size.z > 0.8);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 22);
+  assert.ok(meshCount >= 21); // the undrawn base block is no longer built
   disposeModel(model.root);
 });
 

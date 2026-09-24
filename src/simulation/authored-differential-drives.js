@@ -723,6 +723,36 @@ function differentialScrewDrive(movement) {
     root.userData.kinematics = state;
   };
   correctDifferentialThreads(root, 260);
+  // Brown draws the short standard as a knee bracket whose outboard edge
+  // sweeps out to the bed below the screw, not a flat post. Each side bar
+  // gets a concave flared web on its outboard face.
+  {
+    const bars = root.userData.blocks.rightStandardBars;
+    const barBox = new THREE.Box3().setFromObject(bars[0]);
+    const inverse = root.matrixWorld.clone().invert();
+    barBox.applyMatrix4(inverse);
+    const x0 = barBox.max.x;
+    const top = barBox.max.y;
+    const bottom = barBox.min.y;
+    const flare = new THREE.Shape();
+    flare.moveTo(x0, top);
+    flare.quadraticCurveTo(x0 + 0.04, bottom + 0.18, x0 + 0.86, bottom);
+    flare.lineTo(x0 - 0.004, bottom);
+    flare.lineTo(x0 - 0.004, top);
+    root.userData.blocks.rightStandardFlares = bars.map((bar) => {
+      const web = new THREE.Mesh(
+        new THREE.ExtrudeGeometry(flare, {
+          bevelEnabled: false,
+          curveSegments: 24,
+          depth: 0.3,
+        }).translate(0, 0, bar.position.z - 0.15),
+        bar.material,
+      );
+      web.userData.role = 'right-short-standard-flared-knee';
+      bar.parent.add(web);
+      return web;
+    });
+  }
   // Brown draws neither shaft index bar; keep the roles for the kinematic
   // tests but do not render them.
   inputShaftIndex.visible = false;

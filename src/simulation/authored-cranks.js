@@ -7075,15 +7075,18 @@ function twinObliqueRodTogglePressMotion() {
   upperBearingCollar.userData.role =
     'fixed-collar-around-upper-rotor-shaft';
 
+  // Brown's bed is a low block on the ground between the column feet,
+  // about 0.42 of the column spacing wide and a fourteenth of it high.
+  const bedHeight = 0.14 * columnHalfSpan;
   const bed = new THREE.Mesh(
     new THREE.BoxGeometry(
-      platenHalfWidth * 1.18,
-      0.32,
+      0.83 * columnHalfSpan,
+      bedHeight,
       platenDepth * 1.12,
     ),
     frameMaterial,
   );
-  bed.position.set(0, bedTopY - 0.16, 0);
+  bed.position.set(0, bedTopY - bedHeight / 2, 0);
   bed.userData.role = 'fixed-bed-below-moving-platen';
 
   const workpiece = new THREE.Mesh(
@@ -14828,16 +14831,28 @@ function quadratureTwinCrankShaftCoupling() {
     group.userData.role = role;
     group.userData.nominalLength = centerDistance;
     group.userData.planeZ = planeZ;
+    // Brown draws the coupling rods as slender bars ending in small eyes,
+    // so the bar between the eyes is much narrower than the eye bosses.
+    const rodShape = new THREE.Shape();
+    const barHalfWidth = 0.075;
+    const eyeTangent = Math.asin(barHalfWidth / rodEyeOuterRadius);
+    const eyeInset = rodEyeOuterRadius * Math.cos(eyeTangent);
+    const halfSpan = centerDistance / 2;
+    rodShape.moveTo(-halfSpan + eyeInset, barHalfWidth);
+    rodShape.lineTo(halfSpan - eyeInset, barHalfWidth);
+    rodShape.absarc(halfSpan, 0, rodEyeOuterRadius,
+      Math.PI - eyeTangent, -Math.PI + eyeTangent, true);
+    rodShape.lineTo(-halfSpan + eyeInset, -barHalfWidth);
+    rodShape.absarc(-halfSpan, 0, rodEyeOuterRadius,
+      -eyeTangent, eyeTangent, true);
+    for (const sideSign of [-1, 1]) {
+      const hole = new THREE.Path();
+      // The outline runs clockwise, so the bores run counter-clockwise.
+      hole.absarc(sideSign * halfSpan, 0, rodEyeInnerRadius, 0, fullTurn, false);
+      rodShape.holes.push(hole);
+    }
     const body = new THREE.Mesh(
-      centeredExtrusion(
-        twoEyePlateShape(
-          centerDistance,
-          rodEyeOuterRadius,
-          rodEyeInnerRadius,
-        ),
-        connectingRodDepth,
-        0.007,
-      ),
+      centeredExtrusion(rodShape, connectingRodDepth, 0.007),
       rodMaterial,
     );
     body.userData.role = `${role}-rigid-two-eye-plate`;
@@ -14914,6 +14929,8 @@ function quadratureTwinCrankShaftCoupling() {
       frontDiskCenterZ + frontDiskDepth / 2 + 0.048,
     );
     frontRotationIndex.userData.role = `${role}-visible-front-disk-rotation-index`;
+    // Brown draws plain disks with no index stripe.
+    frontRotationIndex.visible = false;
 
     const frontPin = cylinderAlongZ(
       crankPinRadius,
@@ -16033,7 +16050,14 @@ function dragLinkDoubleCrankMotion() {
     });
   }
   update(0);
-  root.userData.cameraFitBounds = bounds.expandByScalar(.03);
+  bounds.expandByScalar(.03);
+  // The fit projects the world box's corners, which overshoot this oblique
+  // view's silhouette and left the linkage small; tighten the box about its
+  // centre so the swept parts fill the frame without leaving it.
+  const fitCenter = bounds.getCenter(new THREE.Vector3());
+  bounds.min.sub(fitCenter).multiplyScalar(0.8).add(fitCenter);
+  bounds.max.sub(fitCenter).multiplyScalar(0.8).add(fitCenter);
+  root.userData.cameraFitBounds = bounds;
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraFov = 12;
   root.userData.reconstructionNote = 'Exact ideal double-crank linkage with reconstructed Grashof lengths and layered joints. The view follows the engraved shaft direction; link proportions remain approximate. Backlash, loads and elastic deflection are not simulated.';

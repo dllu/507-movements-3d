@@ -1081,6 +1081,30 @@ function sourceScaledSingleEngineReverser() {
   const foundationCenter=sourceRasterPointToModel(new THREE.Vector2(105,380.5));
   baseRail.position.set(foundationCenter.x,foundationCenter.y,baseZ);
   baseRail.userData.role = 'engraved-foundation-under-hand-lever';
+  {
+    // Brown draws this foundation as a ground line with diagonal hatching,
+    // not a solid slab: keep the slab's extent but render the line and
+    // hatch strokes only.
+    const width = 170 * sourceScale;
+    const height = 21 * sourceScale;
+    baseRail.geometry.dispose();
+    baseRail.geometry = new THREE.BoxGeometry(width, 0.05, 0.5);
+    baseRail.geometry.translate(0, height / 2 - 0.025, 0);
+    baseRail.material = darkMaterial;
+    const strokeLength = height / Math.sin(Math.PI / 4) - 0.05;
+    const strokeCount = 17;
+    for (let index = 0; index < strokeCount; index += 1) {
+      const stroke = new THREE.Mesh(
+        new THREE.BoxGeometry(0.028, strokeLength, 0.04),
+        darkMaterial,
+      );
+      const x = -width / 2 + height / 2 + (width - height) * index / (strokeCount - 1);
+      stroke.position.set(x, -0.025, 0.23);
+      stroke.rotation.z = Math.PI / 4;
+      stroke.userData.role = 'foundation-hatch-stroke';
+      baseRail.add(stroke);
+    }
+  }
   const leverPedestal = new THREE.Mesh(
     ring(.26,.36,-.10,.10,96),
     frameMaterial,
@@ -1463,6 +1487,8 @@ function sourceScaledSingleEngineReverser() {
     const head=cylinderAlongZ(radius,.04,darkMaterial,64);head.position.set(x,0,z);
     head.userData.role=name;parent.add(head);root.userData.blocks[name]=head;
   }
+  // Brown draws no phase indices on the eccentric, shaft lug or gab pin.
+  for (const index of [eccentricPhaseIndex, shaftLugIndex, gabPinIndex]) index.visible = false;
   for (const decoration of [eccentricCenterMark, stopContactMarker, gabContactMarker, ...stopEndPads,
     ...gabJaws, ...gabContactShoes]) {
     decoration.removeFromParent();decoration.geometry.dispose();

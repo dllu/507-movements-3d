@@ -79,6 +79,18 @@ function finish198(root) {
   b.guideRollers.forEach((roller, i) => {
     const oldY = roller.position.y;
     const rotor = roller.userData.rotor;
+    // Brown draws the four guide rollers as plain discs with a small centre;
+    // the open spoked rim becomes a solid web out to the tread.
+    const rim = rotor.children.find(o => o.userData.role === 'open-pulley-rim');
+    if (rim) {
+      rim.updateMatrix();
+      const box = new THREE.Box3().setFromBufferAttribute(rim.geometry.attributes.position).applyMatrix4(rim.matrix);
+      const outer = (box.max.x - box.min.x) / 2;
+      replace(rim, ring(g.guideRollerRadius * 0.26 - 0.002, outer, box.min.z, box.max.z, 128));
+      rim.rotation.set(0, 0, 0);
+      rim.userData.role = 'plain-disc-guide-roller-web';
+      for (const spoke of rotor.children.filter(o => o.userData.role === 'radial-pulley-spoke')) { spoke.geometry.dispose(); rotor.remove(spoke); }
+    }
     const patch = rotor.children.find(o => o.geometry?.type === 'BoxGeometry' && !o.userData.role && o.position.z === 0);
     if (patch) patch.position.x -= 0.006;
     const hub = roller.userData.hub;
@@ -110,8 +122,22 @@ export function finishMangleRackWorkingParts(root, update, id) {
     const p = o.geometry.attributes.position;
     for (let j = 0; j < p.count; j++) bounds.expandByPoint(point.fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld));
   }); }
-  d.cameraFitBounds = bounds.expandByScalar(0.05); d.cameraDistanceScale = 1.02;
+  // The whole sweep is kept as sweptBounds. The frame travels most of its own
+  // length, so fitting that sweep left the plate's subject small and off
+  // centre; the camera instead fits the source pose, as Brown frames it, and
+  // the far end of the frame runs out of view near the ends of its stroke.
+  d.sweptBounds = bounds.expandByScalar(0.05);
+  const pose = new THREE.Box3();
+  wrappedUpdate(0); root.updateMatrixWorld(true); root.traverse(o => {
+    if (!o.isMesh || !o.visible || !o.material.visible) return;
+    const p = o.geometry.attributes.position;
+    for (let j = 0; j < p.count; j++) pose.expandByPoint(point.fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld));
+  });
+  d.cameraFitBounds = pose.expandByScalar(0.12); d.cameraDistanceScale = 1.02;
   root.traverse(o => { for (const material of [].concat(o.material ?? [])) material.fog = false; });
   wrappedUpdate(0); markShadows(root);
+  // Brown draws the rack pins as plain circles on the rack face; their long
+  // stems otherwise throw a row of diagonal stripes across it.
+  if (id === 197) for (const pin of [...d.blocks.rackPins, ...d.blocks.rackPinRims]) pin.traverse(o => { o.castShadow = false; });
   return { root, update: wrappedUpdate, cameraDirection: new THREE.Vector3(1.2, 0.7, 18) };
 }

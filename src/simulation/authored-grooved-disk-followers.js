@@ -418,10 +418,11 @@ function groovedDiskFollower(movement) {
   followerPin.position.set(followerArmLength, 0, -0.28);
   followerPin.userData.role = 'fixed-pin-sliding-in-disk-face-groove';
   lever.add(followerPin);
+  // Brown draws the pin head as a plain stud, not a white marker.
   const followerHead = cylinderAlongZ(0.14, 0.12,
-    whiteMaterial, 28);
+    brassMaterial, 28);
   followerHead.position.set(followerArmLength, 0, 0.19);
-  followerHead.userData.role = 'white-visible-groove-follower-head';
+  followerHead.userData.role = 'visible-groove-follower-head';
   lever.add(followerHead);
   const leverIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.54, 0.055, 0.035),

@@ -669,11 +669,38 @@ function featheringPaddleWheel(movement) {
     marker.castShadow = false;
   });
   fitPistonGuide(root, update, cycleDuration);
+  // Frame only what Brown draws: the stand, base, water, wake, flow arrows
+  // and white indices are removed by source presentation.
+  root.userData.cameraFitBounds = drawnMotionBounds(root, update, cycleDuration);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
     update,
   };
+}
+
+export const FEATHERING_WHEEL_UNDRAWN_ROLE =
+  /^(?:fixed-main-bearing-support-leg-(?:left|right)|fixed-feathering-wheel-base|fixed-water-volume-under-feathering-buckets|fixed-waterline-crossed-edgewise-by-upright-buckets|fixed-negative-x-feathering-wheel-wake-path-\d|negative-x-water-marker-\d-\d|fixed-(?:negative-x-water-reaction|positive-x-vessel-thrust)-arrow|white-index-(?:on-fixed-eccentric-center|fixed-to-main-shaft|fixed-to-control-ring-d))$/;
+
+function drawnMotionBounds(root, update, period) {
+  const bounds = new THREE.Box3();
+  const drawn = (object) => {
+    for (let o = object; o && o !== root; o = o.parent) {
+      if (FEATHERING_WHEEL_UNDRAWN_ROLE.test(o.userData.role ?? '')) return false;
+    }
+    return true;
+  };
+  for (let i = 0; i <= 64; i += 1) {
+    update(period * i / 64);
+    root.updateMatrixWorld(true);
+    root.traverse((object) => {
+      if (!object.isMesh || !drawn(object)) return;
+      object.geometry.computeBoundingBox();
+      bounds.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+    });
+  }
+  update(0);
+  return bounds.expandByScalar(0.03);
 }
 
 export function createAuthoredFeatheringPaddleWheelMovement(movement) {

@@ -497,7 +497,7 @@ test('movement 273 analytic slider and link rates match finite differences', () 
   disposeModel(model.root);
 });
 
-test('movement 273 renderer binds four rods, pins, links, visible indices, and fixed guides', () => {
+test('movement 273 renderer binds four rods, pins, links and fixed guides without undrawn indices', () => {
   const model = createMovementModel(catalog.movements[272]);
   const {
     blocks,
@@ -517,13 +517,15 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
     assert.equal(guide.userData.jaws.length, 2);
     assert.ok(guide.userData.innerHalfGap > geometry.rodRadius);
   }
+  // Brown draws no white slider stripes or pin dots; the source
+  // presentation detaches them.
   for (const rod of Object.values(blocks.rods)) {
-    assert.equal(rod.userData.blocks.index.parent, rod);
+    assert.equal(rod.userData.blocks.index.parent, null);
     assert.match(rod.userData.blocks.index.userData.role,
       /white-translation-index/);
   }
   for (const pin of Object.values(blocks.pins)) {
-    assert.equal(pin.userData.blocks.frontIndex.parent, pin);
+    assert.equal(pin.userData.blocks.frontIndex.parent, null);
     assert.match(pin.userData.blocks.frontIndex.userData.role,
       /white-motion-index/);
   }
@@ -583,7 +585,7 @@ test('movement 273 renderer binds four rods, pins, links, visible indices, and f
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.equal(meshCount, 48);
+  assert.equal(meshCount, 40);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 7.5);

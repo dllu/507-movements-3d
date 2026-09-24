@@ -401,7 +401,7 @@ function proportionalCompasses(movement) {
     name: 'left-upper-right-lower',
     paperMaterial: whiteMaterial,
     planeZ: 0.06,
-    scaleMaterial: whiteMaterial,
+    scaleMaterial: darkMaterial, // Brown engraves the graduations as ink lines.
     showScale: true,
   });
   const legB = makeLeg({
@@ -412,7 +412,7 @@ function proportionalCompasses(movement) {
     name: 'right-upper-left-lower',
     paperMaterial: whiteMaterial,
     planeZ: -0.12,
-    scaleMaterial: whiteMaterial,
+    scaleMaterial: darkMaterial,
     showScale: false,
   });
   root.add(legB.group, legA.group);
@@ -463,6 +463,7 @@ function proportionalCompasses(movement) {
   );
   pivotIndex.position.set(0, 0, 0.45);
   pivotIndex.userData.role = 'white-common-pivot-center-index';
+  pivotIndex.visible = false; // Brown draws no index dot on the screw.
   pivotAssembly.add(
     lowerPivotWasher,
     pivotCollar,

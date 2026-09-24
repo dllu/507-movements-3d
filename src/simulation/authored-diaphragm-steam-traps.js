@@ -1,5 +1,7 @@
 import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
@@ -47,6 +49,76 @@ function diaphragmGeometry(radius, depth) {
     ));
   }
   return new THREE.LatheGeometry(profile, 64, 0, FULL_TURN);
+}
+
+// Rear half of a body of revolution about Y from a closed (radius, y)
+// section, closed by the two cut faces that Brown's sectional view shows.
+function halfLatheSolid(section, segments = 160) {
+  let area = 0;
+  section.forEach(([r, y], i) => {
+    const [r2, y2] = section[(i + 1) % section.length];
+    area += r * y2 - r2 * y;
+  });
+  const ordered = area < 0 ? [...section].reverse() : section;
+  const points = [...ordered, ordered[0]]
+    .map(([r, y]) => new THREE.Vector2(r, y));
+  const lathe = new THREE.LatheGeometry(points, segments, Math.PI / 2,
+    Math.PI).toNonIndexed();
+  lathe.deleteAttribute('uv');
+  const shape = new THREE.Shape(ordered.map(([r, y]) => new THREE.Vector2(r, y)));
+  const right = new THREE.ShapeGeometry(shape).toNonIndexed();
+  right.deleteAttribute('uv');
+  const left = right.clone();
+  left.scale(-1, 1, 1);
+  const q = left.attributes.position;
+  for (let i = 0; i < q.count; i += 3) {
+    for (let k = 0; k < 3; k += 1) {
+      const t = q.getComponent(i + 1, k);
+      q.setComponent(i + 1, k, q.getComponent(i + 2, k));
+      q.setComponent(i + 2, k, t);
+    }
+  }
+  const geometry = mergeGeometries([lathe, right, left]);
+  [lathe, right, left].forEach((part) => part.dispose());
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Brown draws a round cast casing in section: a cup body with a flanged
+// cover carrying inlet A and a bottom boss carrying outlet B. The former open
+// square frame is replaced by the rear half of that casing, so the cut faces
+// read as Brown's hatched walls and the valve stays visible inside.
+function flangedCastCasing(root) {
+  const d = root.userData, b = d.blocks;
+  const material = b.caseWalls[0].material;
+  const casing = new THREE.Mesh(halfLatheSolid([
+    [0.765, -1.90], [1.78, -1.90], [2.00, -1.84], [2.10, -1.70],
+    [2.10, 1.58], [2.42, 1.58], [2.42, 1.96], [0.745, 1.96],
+    [0.745, 1.78], [1.91, 1.78], [1.91, -1.60], [1.83, -1.68],
+    [0.765, -1.68],
+  ]), material);
+  casing.userData.role = 'fixed-flanged-cast-casing-in-section';
+  for (const wall of b.caseWalls) {
+    wall.removeFromParent();
+    wall.geometry.dispose();
+  }
+  b.fixedCase.add(casing);
+  b.caseWalls = [casing];
+  // A and B are cast pipes drawn in the same section.
+  b.inletPipeA.geometry.dispose();
+  b.inletPipeA.geometry = halfLatheSolid([
+    [0.66, 1.96], [0.74, 1.96], [0.74, 3.76], [0.66, 3.76],
+  ], 96);
+  b.inletPipeA.position.y = 0;
+  b.inletPipeA.material = material;
+  b.outletPipeB.geometry.dispose();
+  b.outletPipeB.geometry = halfLatheSolid([
+    [0.68, -3.185], [0.76, -3.185], [0.76, -1.735], [0.68, -1.735],
+  ], 96);
+  b.outletPipeB.position.y = 0;
+  b.outletPipeB.material = material;
+  // Brown ends A and B as broken pipe; the dark mouth rims are not drawn.
+  for (const rim of [b.inletTopRim, b.outletBottomRim]) rim.removeFromParent();
 }
 
 function thermalDiaphragmSteamTrap(movement) {
@@ -739,6 +811,8 @@ function thermalDiaphragmSteamTrap(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.4, 2.7, 10.4);
   root.userData.groundFloorY = -3.34;
   correctEjectorTrapParts(root,477,update);
+  flangedCastCasing(root);
+  fitPistonGuide(root, update, cycleDuration);
   // Brown draws a flat section; a narrow view keeps the cut case flat.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;

@@ -424,7 +424,8 @@ test('movement 239 renderer binds both limits and leaves movement 507 authored',
   assert.ok(size.z > 1.05);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 18);
+  // The undrawn white index bar is removed.
+  assert.ok(meshCount >= 17);
 
   const movement507 = catalog.movements[506];
   const model289 = createMovementModel(movement507);

@@ -22,10 +22,15 @@ export function makeAlternatingPegPawlDrive(){
  attach('wheelBody',plate(wheelShape,-.055,.055),'wheel',PALETTE.driven);
  attach('wheelFrontHub',ring(.14,.197,.055,.085),'wheel',PALETTE.driven);
  attach('wheelRearHub',ring(.14,.197,-.115,-.055),'wheel',PALETTE.driven);
- const pegGeometry=disk(pinRadius,.055,.185),capGeometry=disk(pinRadius+.006,.185,.205),pinCenters=[];
+ const pegGeometry=disk(pinRadius,.055,.185),capGeometry=disk(pinRadius+.006,.185,.205),pinCenters=[],
+  pegRimGeometry=ring(pinRadius-.006,pinRadius+.006,.205,.207),pegRimMaterial=matte(PALETTE.ink,{metalness:.16,roughness:.61});
  for(let i=0;i<24;i++){
   const center=motion.pinAt(i,0);pinCenters.push(center);
-  attach('wheelPin'+i,pegGeometry,'wheel',PALETTE.muted,[...center,0]);attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.ink,[...center,0]);
+  attach('wheelPin'+i,pegGeometry,'wheel',PALETTE.muted,[...center,0]);
+  // Brown draws each peg end-on as a small open circle: a pale face inside an
+  // inked rim (a surface marking on the cap, not a separate part).
+  const cap=attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.white,[...center,0]),rim=new THREE.Mesh(pegRimGeometry,pegRimMaterial);
+  rim.userData.surfaceMarking=true;cap.add(rim);
  }
  attach('wheelAxle',disk(.137,-.32,.10),'fixed',PALETTE.muted);
  attach('wheelAxleCap',disk(.15,.10,.12),'fixed',PALETTE.muted);
@@ -63,5 +68,8 @@ export function makeAlternatingPegPawlDrive(){
   animationTiming:{authoredCyclePeriod:profile.playbackPeriod},minimumDisplayCycleSeconds:profile.playbackPeriod,
   idealConstraints:'The prescribed rocking lever drives two freely hinged finite pawls. Gravity, inertia and inelastic pin contact determine the cached wheel and pawl motion. Common density, absolute angular damping and bidirectional dry-friction output resistance are reconstruction assumptions. The eight-second physical cycle is displayed in four seconds. The initial drawing pose settles into a one-pitch repeat; tiny physical rollback is retained. The 24 evenly spaced pins regularize the engraving, with phase fitted to its engaged pair.'};
  const stateAtTime=time=>sampleAlternatingPegMotion(time),update=time=>{const state=stateAtTime(time);setState(state);Object.assign(root.userData.kinematics,state);};
- root.userData.stateAtTime=stateAtTime;update(0);markShadows(root);return{root,setState,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
+ root.userData.stateAtTime=stateAtTime;update(0);markShadows(root);
+ // The face-on pegs would streak long shadows over the wheel the plate does not draw.
+ for(let i=0;i<24;i++)for(const name of ['wheelPin'+i,'wheelPinCap'+i])parts[name].traverse(o=>{o.castShadow=false;});
+ return{root,setState,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
 }

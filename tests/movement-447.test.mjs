@@ -82,7 +82,7 @@ test('movement 447 has one fixed anchor, one taut rope, a ferry, and a stream-de
     'operator-reversed-rudder-pivot',
     'stream-deflecting-rudder-blade',
     'river-current-driving-rudder-downstream',
-    'bow-circular-trajectory-centered-on-anchor',
+    'fixed-downstream-current-arrow-drawn-by-brown',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

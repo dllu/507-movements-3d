@@ -31,7 +31,12 @@ export function makeVariableCrankGeometry({segments=384,frontOpacity=.76,clearan
     ...tailPieces,poly(circle(capCenter,source.terminalCap.radius/100,96)));
   const shaftRadius=source.shaftRadius/100,diskRadius=source.diskRadius/100,hubRadius=source.hubRadius/100;
   const inputProfile=clip.difference(poly(circle([0,0],diskRadius,256)),poly(circle([0,0],shaftRadius+.0015,128)),groove);
-  attach('spiralPlate',plate(inputProfile,-.18,0),'input',PALETTE.driver);
+  const spiralPlate=attach('spiralPlate',plate(inputProfile,-.18,0),'input',PALETTE.driver);
+  // Presentation only: a thin floor behind the washer closes the through-cut
+  // groove, so the slots show the groove's dark channel rather than white
+  // gaps. It is a child, not a part: masses and contact walls are unchanged.
+  const grooveFloor=new THREE.Mesh(ring(shaftRadius+.0015,diskRadius,-.30,-.265,256),matte(0x9c3f2b,{metalness:.12,roughness:.7}));
+  grooveFloor.name='groove-floor-behind-washer';spiralPlate.add(grooveFloor);
   attach('rearHub',ring(shaftRadius+.0015,hubRadius,-.26,-.18,128),'input',PALETTE.driver);
   attach('shaft',disk(shaftRadius,-.8,.28,128),'input',PALETTE.ink);
   const slots=source.slots.map(s=>({...s,ends:s.ends.map(x=>x/100),halfWidth:Math.max(s.halfWidth/100,boltRadius+clearance)}));

@@ -7,8 +7,8 @@ const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
   centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
-  halfHeight: 1.1, teeth: 12, studCount: 10, studRadius: 0.055,
-  studFront: 0.18, studBack: 0.30,
+  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.03,
+  studFront: 0.12, studBack: 0.20,
 });
 
 /** An end-to-end spiral with equal axial steps, as in the engraving.

@@ -401,7 +401,7 @@ function oldRotaryPump(movement) {
     new THREE.Vector3(0, 1, 0),
     new THREE.Vector3(0, -3.52, casingDepth * 0.58),
     0.82,
-    PALETTE.white,
+    PALETTE.ink,
     0.24,
     0.15,
   ), 'upward-flow-direction-at-lower-entrance');
@@ -419,7 +419,7 @@ function oldRotaryPump(movement) {
       casingDepth * 0.58,
     ),
     0.90,
-    PALETTE.white,
+    PALETTE.ink,
     0.24,
     0.15,
   ), 'outward-flow-direction-at-upper-exit');

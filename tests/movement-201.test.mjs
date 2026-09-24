@@ -108,7 +108,8 @@ test('movement 201 is Brown\'s eccentric gear, carried pinion, one open belt, ro
   assert.equal(blocks.outputShaft.parent, model.root);
   assert.equal(blocks.rod.parent, model.root);
   assert.equal(blocks.rodGuide.parent, model.root);
-  assert.equal(blocks.letterA.parent, model.root);
+  // Brown's letter A is caption lettering, not a part; presentation removes it.
+  assert.equal(blocks.letterA.parent, null);
   assert.equal(blocks.carrierBody.parent, blocks.carrier);
   assert.equal(blocks.slotRails.length, 2);
   assert.equal(blocks.armJunctions.length, 2);

@@ -232,8 +232,10 @@ function foldingLibraryLadder(movement) {
   const endFillLength = closedVerticalOffset - 0.07;
   const shellOuterRadius = 0.36;
   const shellInnerRadius = 0.26;
-  // Brown draws the rounds as broad slats; 0.19 still folds inside the pole bore.
-  const roundThickness = 0.19;
+  // Brown draws the rounds as broad slats; 0.23 is the widest that still
+  // folds inside the pole bore without adjacent rounds touching near closure
+  // (0.25 overlaps 0.0125 at t=4.06).
+  const roundThickness = 0.23;
   const roundDepth = 0.105;
   const roundJointRadius = 0.099;
   const cycleDuration = 10;

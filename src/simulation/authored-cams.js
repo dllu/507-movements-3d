@@ -7278,6 +7278,13 @@ function reuleauxCarrierDiskValveMotion() {
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.animationTiming = {authoredCyclePeriod: cyclePeriod};
   for (const marker of [carrierFaceIndex, translationIndex, lowerContactMarker, upperContactMarker]) marker.visible = false;
+  // Brown draws no guide rods, base, bearing standard or guide shoes: the
+  // yoke simply straddles the disk. Keep the ideal guides for the checks but
+  // hide them, and let the rail liners read as the frame's own inner edges.
+  for (const undrawn of [...guideRails, ...guideShoes, ...guideArms, baseRail, ...bearingSupports, rearBearing]) {
+    undrawn.visible = false;
+  }
+  for (const liner of [lowerRailLiner, upperRailLiner]) liner.material = drivenMaterial;
   root.userData.blocks = {
     attachmentLugs,
     baseRail,
@@ -8032,8 +8039,68 @@ function toothedAxialFaceCamSpringFollower() {
     };
   };
 
+  // Brown draws only one upright plate carrying the rod, a curved bracket
+  // and hatched ground; the shaft is unsupported in the engraving. Keep the
+  // measured support blocks for the hardware checks but hide the undrawn
+  // pedestal, bearing, base rail, brace and feet, and draw the post, bracket
+  // and hatched ground as the plate does.
+  for (const undrawn of [baseRail, shaftPedestal, shaftBearing, guideBrace, guideFrontFoot, guideBaseFoot]) {
+    undrawn.visible = false;
+  }
+  const sourcePlate = new THREE.Group();
+  sourcePlate.userData.role = 'engraved-upright-bracket-and-hatched-ground';
+  const postWidth = 14 * sourceScale;
+  const postTop = contactY + 50 * sourceScale;
+  const groundY = baseY;
+  const hatchDepth = 60 * sourceScale;
+  const plateZ = contactZ;
+  const upperPost = makeBeam(
+    new THREE.Vector3(fixedGuideX, contactY + .31, plateZ),
+    new THREE.Vector3(fixedGuideX, postTop, plateZ),
+    { thickness: postWidth, depth: 0.24, color: PALETTE.frame },
+  );
+  upperPost.userData.role = 'upright-plate-above-rod-guide';
+  const lowerPost = makeBeam(
+    new THREE.Vector3(fixedGuideX, groundY - hatchDepth, plateZ),
+    new THREE.Vector3(fixedGuideX, groundY, plateZ),
+    { thickness: postWidth, depth: 0.24, color: PALETTE.frame },
+  );
+  lowerPost.userData.role = 'upright-plate-let-into-ground';
+  const gussetShape = new THREE.Shape();
+  const gussetRun = 110 * sourceScale, gussetRise = 130 * sourceScale;
+  gussetShape.moveTo(0, 0);
+  gussetShape.lineTo(-gussetRun, 0);
+  gussetShape.quadraticCurveTo(-0.18 * gussetRun, 0.12 * gussetRise, 0, gussetRise);
+  gussetShape.closePath();
+  const gusset = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(gussetShape, { depth: 0.05, bevelEnabled: false, curveSegments: 32 })
+      .translate(0, 0, -0.025),
+    frameMaterial,
+  );
+  gusset.position.set(fixedGuideX - postWidth / 2, groundY, plateZ);
+  gusset.userData.role = 'curved-bracket-stiffening-upright';
+  const groundLeftX = wheelCenter.x + baseBackX + (20 - sourceBaseBackX) * sourceScale;
+  const groundRightX = fixedGuideX - postWidth / 2;
+  const groundWidth = groundRightX - groundLeftX;
+  const groundLine = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, 0.04, 0.3), darkMaterial);
+  groundLine.position.set((groundLeftX + groundRightX) / 2, groundY - 0.02, plateZ);
+  groundLine.userData.role = 'engraved-ground-line';
+  sourcePlate.add(upperPost, lowerPost, gusset, groundLine);
+  const strokeLength = hatchDepth / Math.sin(Math.PI / 4);
+  const strokeCount = Math.round(groundWidth / 0.16);
+  for (let index = 0; index < strokeCount; index += 1) {
+    const stroke = new THREE.Mesh(new THREE.BoxGeometry(0.022, strokeLength, 0.02), darkMaterial);
+    const x = groundLeftX + hatchDepth / 2 + (groundWidth - hatchDepth) * index / (strokeCount - 1);
+    stroke.position.set(x, groundY - hatchDepth / 2 - 0.04, plateZ);
+    stroke.rotation.z = Math.PI / 4;
+    stroke.userData.role = 'ground-hatch-stroke';
+    sourcePlate.add(stroke);
+  }
+  root.add(sourcePlate);
+
   root.userData.mechanism = 'sixteen-tooth-axial-face-cam-spring-follower';
   root.userData.cameraDistanceScale = 1.03;
+  root.userData.cameraFov = 10;
   root.userData.hideGround = true;
   root.userData.supportsRestart = true;
   root.userData.minimumDisplayCycleSeconds = toothCount;
@@ -8174,7 +8241,7 @@ function toothedAxialFaceCamSpringFollower() {
     root.userData.kinematics = state;
   };
   update(0);
-  const model = finish(root, update, new THREE.Vector3(.3, .2, 15));
+  const model = finish(root, update, new THREE.Vector3(0, 0, 15));
   for (const object of [cameraEnvelope, contactMarker]) {
     object.castShadow = false;
     object.receiveShadow = false;

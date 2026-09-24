@@ -795,7 +795,36 @@ function frictionWindlass(movement) {
     { color: PALETTE.frame, depth: 0.38, thickness: 0.26 },
   );
   base.userData.role = 'fixed-windlass-display-base';
-  root.add(wheelPost, rightPost, slopingBrace, base);
+  // Brown frames the wheel with a broad timber standard behind its right
+  // half and a second post behind the travelling jaw, joined at the top
+  // where the sloping brace lands. They stand behind the barrel's rear end,
+  // and a short block carries the brace foot back to them.
+  const standardMaterial = matte(PALETTE.frame, {
+    metalness: 0.12,
+    roughness: 0.68,
+  });
+  const standardZ = -1.60;
+  const standardDepth = 0.30;
+  const standardBox = (minX, maxX, minY, maxY, minZ, maxZ, role) => {
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(maxX - minX, maxY - minY, maxZ - minZ),
+      standardMaterial,
+    );
+    box.position.set((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    box.userData.role = role;
+    return box;
+  };
+  const rearStandards = [
+    standardBox(0.24, 1.24, -2.12, 1.76, standardZ - standardDepth / 2,
+      standardZ + standardDepth / 2, 'fixed-broad-standard-behind-wheel'),
+    standardBox(1.70, 2.62, -2.12, 1.76, standardZ - standardDepth / 2,
+      standardZ + standardDepth / 2, 'fixed-post-behind-travelling-jaw'),
+    standardBox(0.24, 2.62, 1.76, 2.04, standardZ - standardDepth / 2,
+      standardZ + standardDepth / 2, 'fixed-head-joining-rear-standards'),
+    standardBox(0.24, 0.62, 1.76, 2.04, standardZ + standardDepth / 2,
+      -0.98, 'fixed-block-carrying-sloping-brace-foot'),
+  ];
+  root.add(wheelPost, rightPost, slopingBrace, base, ...rearStandards);
 
   const modelToSourcePixel = (point) => new THREE.Vector2(
     point.x / sourceScale + sourceRasterWheelCenter.x,

@@ -190,12 +190,12 @@ function trunkEngine(movement) {
     metalness: 0.23,
     roughness: 0.43,
   });
+  // Brown sections the cylinder and trunk: their back halves are solid
+  // interior walls, not glass.
   const shellMaterial = matte(0x6f7b7b, {
     metalness: 0.20,
-    opacity: 0.34,
     roughness: 0.52,
     side: THREE.DoubleSide,
-    transparent: true,
   });
   const highSteamMaterial = matte(0xde6b52, {
     opacity: 0.16,
@@ -240,7 +240,7 @@ function trunkEngine(movement) {
     (cylinderHeadY + cylinderBottomY) / 2,
     0,
   );
-  backShell.userData.role = 'transparent-back-half-cylinder-wall';
+  backShell.userData.role = 'sectioned-back-half-cylinder-wall';
   fixedCylinder.add(backShell);
   for (const side of [-1, 1]) {
     const wall = new THREE.Mesh(
@@ -300,18 +300,14 @@ function trunkEngine(movement) {
     post.userData.role = 'rear-crankshaft-support-column';
     rearCrankSupport.add(post);
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(1.55, 0.18, 0.24),
+      new THREE.BoxGeometry(1.39, 0.18, 0.24),
       frameMaterial,
     );
-    arm.position.set(side * 0.78, crankCenter.y, -0.72);
+    // Stops short of the turning crankshaft (these supports are not drawn).
+    arm.position.set(side * 0.86, crankCenter.y, -0.72);
     arm.userData.role = 'rear-crankshaft-bearing-arm';
     rearCrankSupport.add(arm);
   }
-  const crankAxle = cylinderAlongZ(0.12, 1.72, darkMaterial, 30);
-  crankAxle.position.copy(crankCenter);
-  crankAxle.position.z = -0.10;
-  crankAxle.userData.role = 'fixed-horizontal-crankshaft-axis';
-  rearCrankSupport.add(crankAxle);
   root.add(rearCrankSupport);
 
   const crankWheel = new THREE.Group();
@@ -326,11 +322,35 @@ function trunkEngine(movement) {
   crankArm.position.set(crankRadius / 2, 0, -0.20);
   crankArm.userData.role = 'crank-throw-to-pitman';
   crankWheel.userData.rotor.add(crankArm);
+  // The crankshaft turns with its throw and ends behind the pitman's plane.
+  const crankAxle = cylinderAlongZ(0.12, 0.84, darkMaterial, 30);
+  crankAxle.position.z = -0.50;
+  crankAxle.userData.role = 'horizontal-crankshaft-turning-with-crank';
+  crankWheel.userData.rotor.add(crankAxle);
   const crankPinMarker = cylinderAlongZ(0.085, 0.43, whiteMaterial);
   crankPinMarker.position.set(crankRadius, 0, -0.12);
   crankPinMarker.userData.role = 'white-upper-crank-pin';
   crankWheel.userData.rotor.add(crankPinMarker);
   root.add(crankWheel);
+  // Brown's dotted circle: the crank-pin path round the crank centre, drawn
+  // as short dashes behind the crank throw.
+  const dottedCrankCircle = new THREE.Group();
+  dottedCrankCircle.userData.role = 'dotted-crank-pin-path-circle';
+  const dashCount = 28;
+  for (let index = 0; index < dashCount; index += 1) {
+    const angle = FULL_TURN * (index + 0.25) / dashCount;
+    const dash = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, crankRadius * FULL_TURN / dashCount * 0.5, 6),
+      darkMaterial,
+    );
+    dash.position.set(crankRadius * Math.cos(angle), crankRadius * Math.sin(angle), 0);
+    dash.rotation.z = angle;
+    dash.userData.role = 'dotted-crank-pin-path-circle';
+    dottedCrankCircle.add(dash);
+  }
+  dottedCrankCircle.position.copy(crankCenter);
+  dottedCrankCircle.position.z = -0.52;
+  root.add(dottedCrankCircle);
 
   const pistonAndTrunk = new THREE.Group();
   pistonAndTrunk.userData.role =

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {circle, poly, polygonClipping} from './finite-plate-geometry.js';
+import {capsule, circle, poly, polygonClipping} from './finite-plate-geometry.js';
 import {woolComberNotch} from '../data/wool-comber-notch.js';
 import {
   PALETTE,
@@ -197,6 +197,28 @@ function trimSingleCutterUndercut(points) {
     points: points.map((point) => point.clone()),
     secondSegmentIndex: null,
   };
+}
+
+function flatBandShape(controlPoints, halfWidth, extras = [], holes = []) {
+  const path = new THREE.CatmullRomCurve3(
+    controlPoints.map((point) => new THREE.Vector3(point.x, point.y, 0)),
+  ).getPoints(96);
+  const sideA = [];
+  const sideB = [];
+  path.forEach((point, index) => {
+    const next = path[Math.min(index + 1, path.length - 1)];
+    const previous = path[Math.max(index - 1, 0)];
+    const tangent = new THREE.Vector2(next.x - previous.x, next.y - previous.y).normalize();
+    sideA.push([point.x - tangent.y * halfWidth, point.y + tangent.x * halfWidth]);
+    sideB.push([point.x + tangent.y * halfWidth, point.y - tangent.x * halfWidth]);
+  });
+  const outline = polygonClipping.union(poly([...sideA, ...sideB.reverse()]), ...extras);
+  if (outline.length !== 1) throw new Error('Flat wool-comber band must be one piece');
+  const shape = shapeFromPoints(outline[0][0].slice(0, -1).map((point) => new THREE.Vector2(...point)));
+  for (const {center, radius} of holes) {
+    shape.holes.push(pathFromPoints(circlePoints(radius, 48).map((point) => point.clone().add(center)).reverse()));
+  }
+  return {path, shape};
 }
 
 function groovedCamWoolComberRollerMotion(movementId) {
@@ -705,7 +727,13 @@ function groovedCamWoolComberRollerMotion(movementId) {
   notchWheel.userData.role = 'F-solid-nine-notch-wheel';
   outputRotor.add(notchWheel);
 
-  const outputHub = cylinderAlongZ(0.39, 0.40, darkMaterial, 40);
+  // Plate 218 draws H as an open ring round a bored shaft, not a black boss.
+  const outputHub = cylinderAlongZ(
+    outputPlateFocus ? 0.34 : 0.39,
+    0.40,
+    outputPlateFocus ? drivenMaterial : darkMaterial,
+    40,
+  );
   outputHub.position.z = wheelCenterZ;
   outputHub.userData.role = 'F-wheel-hub';
   outputRotor.add(outputHub);
@@ -715,6 +743,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   outputHubRing.position.z = wheelCenterZ + wheelDepth / 2 + 0.075;
   outputHubRing.userData.role = 'H-source-face-bearing-ring';
+  outputHubRing.visible = !outputPlateFocus;
   outputRotor.add(outputHubRing);
   const outputShaft = cylinderAlongZ(0.16, 1.62, darkMaterial, 36);
   outputShaft.position.z = 0.34;
@@ -726,6 +755,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   wheelIndex.position.set(0.73, 0, wheelCenterZ + wheelDepth / 2 + 0.025);
   wheelIndex.userData.role = 'F-wheel-rotation-index';
+  wheelIndex.visible = !outputPlateFocus;
   outputRotor.add(wheelIndex);
 
   const rocker = new THREE.Group();
@@ -741,11 +771,47 @@ function groovedCamWoolComberRollerMotion(movementId) {
     .multiplyScalar(0.5)
     .addScaledVector(rockerNormal, 0.34);
   const rockerBody = curvedTube2D(
-    [followerLocal, rockerMidpoint, catchPivotLocal],
+    outputPlateFocus
+      ? [
+        followerLocal,
+        followerLocal.clone().multiplyScalar(0.5).addScaledVector(rockerNormal, -0.1),
+        new THREE.Vector2(0, 0),
+        catchPivotLocal.clone().multiplyScalar(0.5).addScaledVector(rockerNormal, -0.12),
+        catchPivotLocal,
+      ]
+      : [followerLocal, rockerMidpoint, catchPivotLocal],
     0.51,
     0.12,
     drivenMaterial,
   );
+  if (outputPlateFocus) {
+    // Plate 218 draws the lever as a flat shallow S through boss H, bored
+    // for the H shaft and eyed at A and G.
+    rockerBody.geometry.dispose();
+    const origin = new THREE.Vector2(0, 0);
+    const {shape: rockerShape} = flatBandShape(
+      [
+        followerLocal,
+        followerLocal.clone().multiplyScalar(0.5).addScaledVector(rockerNormal, -0.1),
+        origin,
+        catchPivotLocal.clone().multiplyScalar(0.5).addScaledVector(rockerNormal, -0.12),
+        catchPivotLocal,
+      ],
+      0.1,
+      [
+        poly(circle([0, 0], 0.3, 64)),
+        poly(circle([followerLocal.x, followerLocal.y], 0.19, 48)),
+        poly(circle([catchPivotLocal.x, catchPivotLocal.y], 0.2, 48)),
+      ],
+      [
+        {center: origin, radius: 0.175},
+        {center: followerLocal, radius: 0.06},
+      ],
+    );
+    rockerBody.geometry = extrudedShape(rockerShape, 0.1, 0, drivenMaterial).geometry;
+    rockerBody.material = driverMaterial;
+    rockerBody.position.z = 0.52;
+  }
   rockerBody.userData.role = 'curved-rocker-link-A-to-G';
   rocker.add(rockerBody);
 
@@ -763,9 +829,15 @@ function groovedCamWoolComberRollerMotion(movementId) {
   followerAxle.userData.role = 'A-follower-axle';
   rocker.add(followerAxle);
 
-  const rockerPivot = cylinderAlongZ(0.27, 0.20, darkMaterial, 36);
+  const rockerPivot = cylinderAlongZ(
+    0.27,
+    0.20,
+    outputPlateFocus ? drivenMaterial : darkMaterial,
+    36,
+  );
   rockerPivot.position.z = 0.52;
   rockerPivot.userData.role = 'rocker-bearing-about-H';
+  rockerPivot.visible = !outputPlateFocus;
   rocker.add(rockerPivot);
   const catchPivotBearing = cylinderAlongZ(0.15, 0.25, darkMaterial, 32);
   catchPivotBearing.position.set(
@@ -777,7 +849,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   rocker.add(catchPivotBearing);
   const catchPivotRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.17, 0.035, 10, 40),
-    whiteMaterial,
+    outputPlateFocus ? darkMaterial : whiteMaterial,
   );
   catchPivotRing.position.set(
     catchPivotLocal.x,
@@ -813,6 +885,29 @@ function groovedCamWoolComberRollerMotion(movementId) {
     0.095,
     catchMaterial,
   );
+  if (outputPlateFocus) {
+    // Plate 218 draws G as a broad flat arched bar whose free end turns down
+    // into a lug that drops into F's notch, not as a round wire.
+    catchBar.geometry.dispose();
+    const radial = engagedHookLocal.clone().normalize();
+    const lugTop = catchLinkLocal.clone().addScaledVector(radial, 0.3);
+    const lugBase = catchTripBossRelativeLocal.clone().lerp(lugTop, 0.999);
+    const endTangent = lugTop.clone().sub(lugBase).normalize();
+    const lugTip = catchLinkLocal.clone().addScaledVector(endTangent, 0.08);
+    const {shape: barShape} = flatBandShape(
+      [new THREE.Vector2(0, 0), catchTripBossRelativeLocal, lugTop],
+      0.1,
+      [
+        poly(circle([0, 0], 0.24, 48)),
+        poly(circle([lugTop.x, lugTop.y], 0.15, 48)),
+        capsule([lugTop.x, lugTop.y], [lugTip.x, lugTip.y], 0.13, 24),
+        poly(circle([catchLinkLocal.x, catchLinkLocal.y], 0.1, 32)),
+      ],
+      [{center: new THREE.Vector2(0, 0), radius: 0.155}],
+    );
+    catchBar.geometry = extrudedShape(barShape, 0.12, 0, catchMaterial).geometry;
+    catchBar.position.z = 1.05;
+  }
   catchBar.userData.role = 'catch-G-curved-arm';
   catchLink.add(catchBar);
   const hookTongueEndLocal = catchLinkLocal.clone().addScaledVector(
@@ -824,7 +919,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
     hookTongueEndLocal,
     1.05,
     catchHookRadius,
-    darkMaterial,
+    outputPlateFocus ? catchMaterial : darkMaterial,
   );
   catchHookTongue.userData.role = 'G-visible-hook-tongue';
   catchLink.add(catchHookTongue);
@@ -833,7 +928,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const catchHook = cylinderAlongZ(
     catchHookRadius,
     catchHookLength,
-    darkMaterial,
+    outputPlateFocus ? catchMaterial : darkMaterial,
     28,
   );
   catchHook.position.set(
@@ -864,6 +959,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   catchIndex.position.set(catchLinkLocal.x, catchLinkLocal.y, 1.11);
   catchIndex.userData.role = 'catch-contact-index';
+  catchIndex.visible = !outputPlateFocus;
   catchLink.add(catchIndex);
 
   const followerContactMarker = new THREE.Mesh(
@@ -872,6 +968,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   followerContactMarker.position.z = 0.54;
   followerContactMarker.userData.role = 'groove-contact-marker';
+  followerContactMarker.visible = !outputPlateFocus;
   root.add(followerContactMarker);
   const catchContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 18, 12),
@@ -1136,7 +1233,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
     followerContactMarker.position.y = state.followerWorld.y;
     catchContactMarker.position.x = state.catchHookWorld.x;
     catchContactMarker.position.y = state.catchHookWorld.y;
-    catchContactMarker.visible = state.catchEngaged;
+    catchContactMarker.visible = !outputPlateFocus && state.catchEngaged;
     tripContactMarker.position.x = (
       state.tripLugWorld.x + state.catchTripBossWorld.x
     ) / 2;
@@ -1196,7 +1293,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   }
   return {
     cameraDirection: outputPlateFocus
-      ? new THREE.Vector3(5.2, 2.8, 14.5)
+      ? new THREE.Vector3(0, 0, 15)
       : new THREE.Vector3(7.8, 4.8, 15.5),
     root,
     update,

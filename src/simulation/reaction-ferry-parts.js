@@ -32,7 +32,8 @@ export function correctReactionFerry(root){
  replace(b.rudderBlade,new T.BoxGeometry(.91,.54,.10));b.rudderBlade.position.set(.685,-.48,0);
  const bladeBracket=add(b.rudderPivot,new T.BoxGeometry(.42,.08,.08),post.material,'submerged-rudder-blade-bracket',new T.Vector3(.18,-.70,0));
  const tiller=add(b.rudderPivot,new T.BoxGeometry(1.12,.07,.12),b.rudderBlade.material,'rudder-tiller',new T.Vector3(.50,.08,0));
- b.rudderPivot.children[2].position.set(.98,.08,0);
+ // Brown's tiller ends flat; the former white ball tip is not drawn.
+ const rudderTip=b.rudderPivot.children[2];b.rudderPivot.remove(rudderTip);rudderTip.geometry.dispose();
  const bearing=add(b.boat,horizontalRing(.075,.135,-.07,.07,64),post.material,'bored-rudder-stock-bearing',new T.Vector3(g.sternFromBow,-.20,0));
  // Inferred compact swivels join the taut line to fixed anchor and bow.
  const anchorPost=b.anchor.children[0];replace(anchorPost,new T.CylinderGeometry(.12,.15,.42,32));anchorPost.position.y=-.335;
@@ -41,7 +42,6 @@ export function correctReactionFerry(root){
  b.ropeStartMarker.userData.role='anchor-rope-swivel-ball';b.ropeEndMarker.userData.role='bow-rope-swivel-ball';
  // A slim mounting foot joins the bow socket to the hull behind the line entry.
  const bowFoot=add(b.boat,new T.BoxGeometry(.20,.09,.10),post.material,'bow-swivel-mount',new T.Vector3(.13,-.17,0));
- for(const line of b.wakeLines)line.position.y=-.255;
  d.ferryWorkingParts={post,bearing,tiller,bladeBracket,anchorPost,anchorEye,bowFoot};
  d.minimumDisplayCycleSeconds=g.cycleDuration;
  d.reconstructionNote='The upstream tether fixes the bow to a circular path. The rudder reverses for the return crossing. This demonstration prescribes the crossing and steering; current forces, cable tension and buoyancy are not solved.';

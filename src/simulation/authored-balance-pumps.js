@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctBalancePumps} from './fountain-balance-working-parts.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -162,8 +163,11 @@ function balancePumps(movement) {
     };
   };
 
+  // Playback starts from Brown's engraved diagonal pose (the source pose,
+  // left end raised) rather than from the level beam.
+  const sourceInputAngle = -Math.PI / 4;
   const stateAtTime = (time) => stateAtInputAngle(
-    inputAngularSpeed * time,
+    inputAngularSpeed * time + sourceInputAngle,
     inputAngularSpeed,
     0,
   );
@@ -600,6 +604,34 @@ function balancePumps(movement) {
   root.userData.cameraDirection = new THREE.Vector3(4.7, 2.8, 12.4);
   root.userData.groundFloorY = groundY;
   correctBalancePumps(root);
+  {
+    // Brown sets the pumps in a well between two masonry banks and rules its
+    // water with a few strokes: no foundation slab, water box or rim.
+    const bankMaterial = foundation.material;
+    foundation.geometry.dispose();
+    const banks = [-1, 1].map((side) => {
+      const bankTopY = -0.10;
+      const bank = new THREE.BoxGeometry(1.60, bankTopY - groundY, 2.40);
+      bank.translate(side * 2.75, (groundY + bankTopY) / 2, 0);
+      return bank.toNonIndexed();
+    });
+    const merged = banks[0].clone();
+    for (const name of Object.keys(merged.attributes)) {
+      const a = banks[0].attributes[name], b = banks[1].attributes[name];
+      const array = new a.array.constructor(a.array.length + b.array.length);
+      array.set(a.array); array.set(b.array, a.array.length);
+      merged.setAttribute(name, new THREE.BufferAttribute(array, a.itemSize));
+    }
+    banks.forEach((bank) => bank.dispose());
+    foundation.geometry = merged;
+    foundation.material = bankMaterial;
+    foundation.position.set(0, 0, 0);
+    reservoir.geometry.dispose();
+    reservoir.geometry = ruledWaterLines({ xMin: -1.93, xMax: 1.93, surfaceY: 0, rows: 4, spacing: 0.1, thickness: 0.03, dash: [0.6, 1.8], gap: [0.06, 0.2], seed: 465 });
+    reservoir.material = ruledWaterMaterial();
+    reservoir.position.set(0, reservoirSurfaceY, -0.95);
+    reservoirRim.visible = false;
+  }
   markShadows(root);
   foundation.receiveShadow = true;
   reservoir.castShadow = false;

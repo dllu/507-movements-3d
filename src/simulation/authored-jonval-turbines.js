@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
-import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
+import {poly,circle,polygonClipping,rotate,plate} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
 import {
   PALETTE,
@@ -373,10 +373,10 @@ function jonvalTurbine(movement) {
   runnerFloor.userData.role = 'rotating-lower-support-plate-of-runner-c';
   runner.add(runnerFloor);
   const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 5.62, 36),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 7.10, 36),
     darkMaterial,
   );
-  shaft.position.y = 1.11;
+  shaft.position.y = 1.85;
   shaft.userData.role = 'vertical-shaft-fast-on-jonval-runner-c';
   runner.add(shaft);
   const runnerHub = new THREE.Mesh(
@@ -407,12 +407,14 @@ function jonvalTurbine(movement) {
     ),
     casingMaterial,
   );
-  casing.geometry.dispose();casing.geometry=horizontalRing(annulusOuterRadius+.24,annulusOuterRadius+.30,-1.71,1.71);
-  casing.position.y = 0.28;
+  // Brown's trunk b rises well above the wheel to the top cover and runs down
+  // past the runner to the bridge carrying step c.
+  casing.geometry.dispose();casing.geometry=horizontalRing(annulusOuterRadius+.24,annulusOuterRadius+.30,-2.80,2.80);
+  casing.position.y = 0.65;
   casing.userData.role = 'fixed-trunk-or-casing-b-around-both-vane-rows';
   root.add(casing);
   const casingRings = [];
-  for (const height of [-1.44, 1.99]) {
+  for (const height of [-2.03, 3.33]) {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(annulusOuterRadius + 0.30, 0.12, 10, 104),
       frameMaterial,
@@ -427,10 +429,10 @@ function jonvalTurbine(movement) {
   const casingPosts = [];
   for (const side of [-1, 1]) {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.20, 3.42, 0.24),
+      new THREE.BoxGeometry(0.20, 5.60, 0.24),
       frameMaterial,
     );
-    post.position.set(side * (annulusOuterRadius + 0.24), 0.28, -0.18);
+    post.position.set(side * (annulusOuterRadius + 0.24), 0.65, -0.18);
     post.userData.role =
       `${side < 0 ? 'left' : 'right'}-fixed-casing-cutaway-post`;
     root.add(post);
@@ -442,23 +444,26 @@ function jonvalTurbine(movement) {
     frameMaterial,
   );
   upperBearing.geometry.dispose();upperBearing.geometry=horizontalRing(shaftRadius+.004,.38,-.21,.21);
-  upperBearing.position.y = 3.84;
+  upperBearing.position.y = 3.83;
   upperBearing.userData.role = 'fixed-upper-bearing-for-runner-shaft';
   root.add(upperBearing);
   const upperBeam = new THREE.Mesh(
     new THREE.BoxGeometry(5.96, 0.24, 0.74),
     frameMaterial,
   );
-  upperBeam.geometry.dispose();upperBeam.geometry=horizontalPlate(polygonClipping.difference(poly([[-2.98,-.37],[2.98,-.37],[2.98,.37],[-2.98,.37]]),poly(circle([0,0],shaftRadius+.004,128))),-.12,.12);
-  upperBeam.position.y = 3.98;
-  upperBeam.userData.role = 'fixed-beam-supporting-upper-bearing';
+  // Brown closes trunk b with a flat top cover (drawn hatched in section),
+  // the shaft passing through its bore to the collars above; there is no
+  // overhead beam.
+  upperBeam.geometry.dispose();upperBeam.geometry=horizontalRing(shaftRadius+.004,annulusOuterRadius+.42,-.08,.08);
+  upperBeam.position.y = 3.53;
+  upperBeam.userData.role = 'fixed-top-cover-of-trunk-b-carrying-upper-bearing';
   root.add(upperBeam);
   const lowerBearing = new THREE.Mesh(
     new THREE.CylinderGeometry(0.38, 0.38, 0.34, 36),
     frameMaterial,
   );
   lowerBearing.geometry.dispose();lowerBearing.geometry=horizontalRing(shaftRadius+.004,.38,-.17,.17);
-  lowerBearing.position.y = -1.72;
+  lowerBearing.position.y = -1.74;
   lowerBearing.userData.role = 'fixed-lower-thrust-bearing-below-runner';
   root.add(lowerBearing);
 
@@ -466,16 +471,41 @@ function jonvalTurbine(movement) {
     new THREE.BoxGeometry(3.40, 0.26, 1.28),
     frameMaterial,
   );
-  inletFlume.position.set(3.52, 2.41, 0.08);
-  inletFlume.rotation.z = 0.35;
+  // Brown's broad rectangular chute enters the side of trunk b under the top
+  // cover, rising away to the upper right; drawn in section as a hatched
+  // floor and roof over the back wall.
+  {
+    const x0 = annulusOuterRadius + 0.35, run = 3.5, rise = Math.tan(0.45) * run;
+    const floorY = 1.16, roofY = 3.16, wall = 0.14, halfWidth = 1.0;
+    const band = (y0, y1) => poly([[x0, y0], [x0 + run, y0 + rise], [x0 + run, y1 + rise], [x0, y1]]);
+    inletFlume.geometry.dispose();
+    inletFlume.geometry = mergePassageParts([
+      plate(band(floorY - wall, floorY), -halfWidth, halfWidth),
+      plate(band(roofY, roofY + wall), -halfWidth, halfWidth),
+      plate(band(floorY - wall, roofY + wall), -halfWidth - 0.10, -halfWidth),
+    ]);
+    // Carry the slope on the mesh itself: its local x runs up the chute.
+    inletFlume.geometry.translate(-x0, -floorY, 0).rotateZ(-0.45);
+    inletFlume.position.set(x0, floorY, 0);
+    inletFlume.rotation.z = 0.45;
+  }
   inletFlume.userData.role = 'fixed-sloping-inlet-flume-to-casing-b';
   root.add(inletFlume);
   const inletWater = new THREE.Mesh(
     new THREE.BoxGeometry(3.22, 0.14, 0.90),
     waterMaterial,
   );
-  inletWater.position.set(3.48, 2.55, 0.08);
-  inletWater.rotation.z = 0.35;
+  {
+    const x0 = annulusOuterRadius + 0.35, run = 3.5, rise = Math.tan(0.45) * run;
+    inletWater.geometry.dispose();
+    inletWater.geometry = plate(poly([[x0, 1.16], [x0 + run, 1.16 + rise], [x0 + run, 1.22 + rise], [x0, 1.22]]), -0.9, 0.9);
+    inletWater.geometry.translate(-x0, -1.16, 0).rotateZ(-0.45);
+    inletWater.position.set(x0, 1.16, 0);
+    inletWater.rotation.z = 0.45;
+  }
+  // Brown draws the chute empty with only an arrow; the thin sheet stays for
+  // offline checks and is hidden in the presentation.
+  inletWater.visible = false;
   inletWater.userData.role = 'water-descending-inlet-flume-into-casing';
   root.add(inletWater);
   const lowerBasin = new THREE.Mesh(
@@ -484,14 +514,21 @@ function jonvalTurbine(movement) {
   );
   lowerBasin.position.y = -1.52;
   lowerBasin.userData.role = 'tailwater-basin-below-axial-runner-discharge';
+  lowerBasin.visible = false; // Brown draws no tailwater disc under the case.
   root.add(lowerBasin);
   const foundation = new THREE.Mesh(
     new THREE.CylinderGeometry(3.26, 3.26, 0.22, 80),
     frameMaterial,
   );
-  foundation.geometry.dispose();foundation.geometry=horizontalRing(shaftRadius+.004,3.26,-.11,.11);
-  foundation.position.y = -1.73;
-  foundation.userData.role = 'fixed-jonval-casing-foundation';
+  // No base disc: Brown draws a cranked bridge across the foot of trunk b
+  // carrying step c.
+  foundation.geometry.dispose();
+  foundation.geometry = plate(poly([
+    [-2.58, -1.62], [-2.30, -1.62], [-0.90, -1.91], [0.90, -1.91], [2.30, -1.62], [2.58, -1.62],
+    [2.58, -1.78], [2.26, -1.78], [0.88, -2.07], [-0.88, -2.07], [-2.26, -1.78], [-2.58, -1.78],
+  ]), -0.30, 0.30);
+  foundation.position.y = 0;
+  foundation.userData.role = 'fixed-bridge-carrying-step-c-across-trunk-b';
   root.add(foundation);
 
   const flowCurves = [];
@@ -678,14 +715,14 @@ function jonvalTurbine(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.30, -1.96, -3.06),
-    new THREE.Vector3(5.34, 4.32, 3.06),
+    new THREE.Vector3(-2.95, -2.20, -1.2),
+    new THREE.Vector3(6.35, 5.00, 1.2),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.0, 4.8, 11.0);
   // Brown's sectional elevation is flat: a narrow field keeps the rings edge-on.
   root.userData.cameraFov = 8;
-  root.userData.groundFloorY = -1.96;
+  root.userData.groundFloorY = -2.20;
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});

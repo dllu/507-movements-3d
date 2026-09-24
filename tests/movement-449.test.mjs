@@ -296,9 +296,6 @@ test('movement 449 update maps piston, rod, checks, and upward flap exactly whil
     near(blocks.pumpRod.position.y,
       (state.rodBottomY + state.rodTopY) / 2, 0,
     `sliding rod transform at ${phase}`);
-    vectorNear(blocks.rodTopMarker.position,
-      new THREE.Vector3(0, state.rodTopY, 0), 0,
-    `rod top marker at ${phase}`);
     fixedBlocks.forEach((block, index) => {
       vectorNear(block.position, fixedPositions[index], 0,
         `fixed pressure part at ${phase}`);

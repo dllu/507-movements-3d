@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {hatchHeader} from './hatched-header.js';
 import source from './source.js';
 import {makeBarrelCamProfile} from './profile.js';
 import {barrelLand} from './groove.js';
@@ -21,7 +22,7 @@ export function makeBarrelCamGeometry(options={}) {
   add('floor',ring(f.shaftRadius,f.floor,f.left,f.right,f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   add('shaft',disk(f.shaftRadius,f.x(source.shaftEnds[0]),f.x(source.shaftEnds[1]),f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   const header=[[104,e.ceilingBottom],[129,92],[418,92],[430,e.ceilingBottom]].map(([x,y])=>[f.x(x),f.y(y)]);
-  add('header',plate(poly(header),-.20,.20),'frame',PALETTE.frame);
+  hatchHeader(add('header',plate(poly(header),-.20,.20),'frame',PALETTE.frame),header);
   for(const side of ['left','right']) {
     const outline=rectangle(f.y(e[side+'GuideBottom']),-.12,f.y(e.ceilingBottom),.12);
     const bore=rectangle(f.rodY-f.rodHalfHeight-.003,-f.rodHalfDepth-.003,f.rodY+f.rodHalfHeight+.003,f.rodHalfDepth+.003);

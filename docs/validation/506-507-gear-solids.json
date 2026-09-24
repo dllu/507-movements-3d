@@ -102,15 +102,15 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "b815bcf06bb8dd01a10a533db77c9924c94d535c247c36b7c3975d0f33bb67e4"
+      "sha256": "e47c5c80451963855a386c4b37a3342d3d0721803a8a23baffefc4f8303d00a2"
     },
     {
       "file": "src/simulation/compound-epicyclic-corrections.js",
-      "sha256": "03eba1a7e46837190d63cefa0a32b0f2db20e35d152d93b2eab41991c0ca386e"
+      "sha256": "1beed54309d3da67bdf48af0353f9e52156d978f8ff9216211739511ba29e68c"
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",
-      "sha256": "d9e9bef716d7510952893fdb952bf2e76053a0eff546350daa5b7477d8040566"
+      "sha256": "7216704f70d8ef89ab95c02fd719d6e73638dbff7a6a1ad4c29507efc89e6518"
     },
     {
       "file": "scripts/review-compound-epicyclic-teeth.mjs",

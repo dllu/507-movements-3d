@@ -1,4 +1,4 @@
-import {correctVariableIdler} from './variable-idler-gear-parts.js';
+import {correctVariableIdler, idlerCircularGeometry} from './variable-idler-gear-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1775,6 +1775,28 @@ function eccentricSpurDriverLinkedIdler(movement) {
   };
   update(0);
   correctVariableIdler(root, movement.id, update);
+  // C's eccentric sweep (Brown's dashed circle) passes over A's teeth, so C
+  // and A must run in different planes. A sits one gear depth behind C and
+  // the idler B is a double-width wheel spanning both planes, as the plate's
+  // overlapping outlines imply.
+  const idlerBody = idlerGear.userData.rotor.children[0];
+  idlerBody.geometry.dispose();
+  idlerBody.geometry = idlerCircularGeometry(
+    idlerPitchRadius,
+    idlerTeeth,
+    2 * gearDepth + 0.02,
+    0.092,
+  );
+  idlerGear.position.z = gearZ - gearDepth / 2 - 0.01;
+  outputGear.position.z = gearZ - gearDepth - 0.02;
+  // Plate 222 draws no face index stripes or pitch markers, and D is a plain
+  // dark stud in the face of C rather than a white ring.
+  for (const gear of [driverGear, idlerGear, outputGear]) {
+    gear.userData.rotor.children[3].visible = false;
+  }
+  driverContactMarker.visible = false;
+  outputContactMarker.visible = false;
+  driverShaftCollar.material = inkMaterial;
   markShadows(root);
   return {
     root,

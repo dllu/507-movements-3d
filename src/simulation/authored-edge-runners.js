@@ -577,6 +577,9 @@ function pairedEdgeRunnerMill(movement) {
     new THREE.Vector3(3.02, 2.94, 2.48),
   );
   root.userData.groundFloorY = -1.94;
+  // Brown's plate is a flat front elevation; a narrow field keeps the pan
+  // rim and runner faces from opening up as if seen from above.
+  root.userData.cameraFov = 16;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(6.5, 4.8, 8.6),

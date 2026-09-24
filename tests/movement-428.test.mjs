@@ -68,7 +68,8 @@ test('movement 428 has one flexible liner E, exactly three visible rollers A, th
   assert.equal(blocks.rollersA.length, 3);
   assert.equal(blocks.spinMarkers.length, 3);
   assert.equal(blocks.rotor.parent, model.root);
-  assert.equal(blocks.shaftB.parent, model.root);
+  // Arms and hub are fast on B, so B turns in the rotor with them.
+  assert.equal(blocks.shaftB.parent, blocks.rotor);
   assert.equal(blocks.linerE.parent, model.root);
   for (let index = 0; index < 3; index += 1) {
     assert.equal(blocks.rollerArms[index].parent, blocks.rotor);

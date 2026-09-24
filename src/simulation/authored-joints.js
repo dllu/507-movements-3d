@@ -568,6 +568,8 @@ function bayonetJoint(movement) {
   );
   maleIndex.position.set(0, 0.78, maleRadius + 0.018);
   maleIndex.userData.role = 'visible-rotation-index-on-part-A';
+  // Brown draws plain part A with no index stripe; keep the record only.
+  maleIndex.visible = false;
   maleAssembly.add(maleIndex);
 
   const pinInnerRadius = maleRadius - 0.04;
@@ -921,7 +923,9 @@ function bayonetJoint(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(2.8,2.0,11),
+    // Brown draws a flat front elevation looking square onto the L slot:
+    // aim level at the middle of the slot's turn so pin B shows end-on.
+    cameraDirection: new THREE.Vector3(Math.sin(0.5), 0, Math.cos(0.5)),
   };
 }
 

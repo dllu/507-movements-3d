@@ -298,7 +298,19 @@ test('movement 502 runs continuously through carrier revolutions, fits its orbit
     model.root.updateMatrixWorld(true);
     swept.union(new THREE.Box3().setFromObject(model.root));
   }
-  assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
+  // The default view crops to Brown's upright carrier pose; the full turn is
+  // recorded as sweptBounds.
+  assert.ok(model.root.userData.sweptBounds.containsBox(swept));
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const pose = new THREE.Box3();
+  model.root.traverseVisible((object) => {
+    if (!object.isMesh) return;
+    object.geometry.computeBoundingBox();
+    pose.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+  });
+  assert.ok(model.root.userData.cameraFitBounds.containsBox(pose));
+  assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).x < 0.4 * (swept.max.x - swept.min.x));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

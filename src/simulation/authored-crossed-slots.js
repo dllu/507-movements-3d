@@ -257,13 +257,15 @@ function equalOppositeCrossedSlotTraverse(movement) {
   bottomRail.userData.role = 'fixed-slot-c-lower-rail';
   fixedSlotFrame.add(bottomRail);
 
+  // Brown draws the fixed head as a tall broken-off standard, about 2.4
+  // slot heights tall, whose face swells in concave flares onto both rails.
   const leftMountShape = new THREE.Shape();
-  leftMountShape.moveTo(-7.05, pinY - 1.58);
-  leftMountShape.lineTo(-6.6, pinY - 1.58);
-  leftMountShape.quadraticCurveTo(-6.42, pinY - 1.2, -6.34, pinY - 0.84);
-  leftMountShape.lineTo(-6.34, pinY + 0.84);
-  leftMountShape.quadraticCurveTo(-6.42, pinY + 1.2, -6.6, pinY + 1.58);
-  leftMountShape.lineTo(-7.05, pinY + 1.58);
+  leftMountShape.moveTo(-7.75, pinY - 2.6);
+  leftMountShape.lineTo(-7.05, pinY - 2.6);
+  leftMountShape.quadraticCurveTo(-6.95, pinY - 1.2, -6.34, pinY - 0.9);
+  leftMountShape.lineTo(-6.34, pinY + 0.9);
+  leftMountShape.quadraticCurveTo(-6.95, pinY + 1.2, -7.05, pinY + 2.6);
+  leftMountShape.lineTo(-7.75, pinY + 2.6);
   leftMountShape.closePath();
   const leftMount = new THREE.Mesh(
     centeredExtrusion(leftMountShape, fixedFrameDepth, 0.018),
@@ -284,7 +286,8 @@ function equalOppositeCrossedSlotTraverse(movement) {
     end: leftSlotTop,
     holeRadius: movingSlotRadius,
     material: driverMaterial,
-    outerRadius: 0.91,
+    // Brown's arm bands are slender loops round the slots.
+    outerRadius: 0.82,
     role: 'piece-d-left-oblique-slotted-arm',
     start: leftSlotBottom,
     z: movingYokePlaneZ,
@@ -294,7 +297,8 @@ function equalOppositeCrossedSlotTraverse(movement) {
     end: rightSlotTop,
     holeRadius: movingSlotRadius,
     material: driverMaterial,
-    outerRadius: 0.91,
+    // Brown's arm bands are slender loops round the slots.
+    outerRadius: 0.82,
     role: 'piece-d-right-oblique-slotted-arm',
     start: rightSlotBottom,
     z: movingYokePlaneZ,

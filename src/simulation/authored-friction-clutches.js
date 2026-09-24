@@ -179,8 +179,8 @@ function radialSpoke({
 
 function clockwiseArrow({ material, radius, z }) {
   const points = [];
-  const startAngle = THREE.MathUtils.degToRad(68);
-  const endAngle = THREE.MathUtils.degToRad(-26);
+  const startAngle = THREE.MathUtils.degToRad(55);
+  const endAngle = THREE.MathUtils.degToRad(20);
   const samples = 42;
   for (let index = 0; index <= samples; index += 1) {
     const angle = THREE.MathUtils.lerp(
@@ -197,7 +197,7 @@ function clockwiseArrow({ material, radius, z }) {
   const curve = new THREE.CatmullRomCurve3(points);
   const group = new THREE.Group();
   const arc = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 80, 0.035, 8, false),
+    new THREE.TubeGeometry(curve, 48, 0.022, 8, false),
     material,
   );
   arc.userData.role = 'fixed-source-clockwise-freewheel-direction-arrow';
@@ -208,10 +208,10 @@ function clockwiseArrow({ material, radius, z }) {
     0,
   ).normalize();
   const arrowhead = new THREE.Mesh(
-    new THREE.ConeGeometry(0.13, 0.34, 20),
+    new THREE.ConeGeometry(0.075, 0.22, 20),
     material,
   );
-  arrowhead.position.copy(end).addScaledVector(tangent, 0.08);
+  arrowhead.position.copy(end).addScaledVector(tangent, 0.05);
   arrowhead.quaternion.setFromUnitVectors(Y_AXIS, tangent);
   arrowhead.userData.role = 'clockwise-freewheel-arrowhead';
   group.add(arc, arrowhead);
@@ -289,7 +289,6 @@ function springBiasedOverrunningPulley(movement) {
     metalness: 0.25,
     roughness: 0.46,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.4 });
 
   const outerRotor = new THREE.Group();
   outerRotor.userData.axis = new THREE.Vector3(0, 0, 1);
@@ -339,24 +338,12 @@ function springBiasedOverrunningPulley(movement) {
     spoke.userData.role = 'rear-loose-pulley-web-spoke';
     return spoke;
   });
-  const rimIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.075, 0.055),
-    whiteMaterial,
-  );
-  rimIndex.position.set(2.09, 0, rimDepth / 2 + 0.045);
-  rimIndex.userData.role = 'white-rim-face-rotation-index';
-  const rimTreadIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.34, 0.18),
-    whiteMaterial,
-  );
-  rimTreadIndex.position.set(rimOuterRadius - 0.04, 0, 0);
-  rimTreadIndex.userData.role = 'white-rim-tread-rotation-index';
+  // Brown draws no index marks on the rim, shaft or arm tips; the white
+  // rotation indices were removed in the pass-51 wave-4 review.
   outerRotor.add(
     rim,
     innerLiner,
     looseHub,
-    rimIndex,
-    rimTreadIndex,
     ...spokes,
   );
 
@@ -390,13 +377,7 @@ function springBiasedOverrunningPulley(movement) {
   );
   shaftFace.position.z = 0.625;
   shaftFace.userData.role = 'driven-output-shaft-front-face';
-  const carrierIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 18, 12),
-    whiteMaterial,
-  );
-  carrierIndex.position.set(0.34, 0.08, 0.66);
-  carrierIndex.userData.role = 'white-output-shaft-rotation-index';
-  carrierRotor.add(carrier, shaft, shaftFace, carrierIndex);
+  carrierRotor.add(carrier, shaft, shaftFace);
 
   const contactRadial = new THREE.Vector2(
     Math.cos(contactLeadAngle),
@@ -427,7 +408,6 @@ function springBiasedOverrunningPulley(movement) {
   });
   const arms = [];
   const pivotBosses = [];
-  const contactMarkers = [];
   const springs = [];
   const springDefinitions = [];
 
@@ -447,19 +427,8 @@ function springBiasedOverrunningPulley(movement) {
     arm.userData.contactLeadAngle = contactLeadAngle;
     arm.userData.eccentricArm = true;
     arm.userData.role = 'curved-eccentric-friction-arm-body';
-    const contactMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.045, 16, 10),
-      whiteMaterial,
-    );
-    contactMarker.position.set(
-      tipCenterRelative.x,
-      tipCenterRelative.y,
-      armDepth / 2 + 0.035,
-    );
-    contactMarker.userData.role = 'white-eccentric-arm-working-tip-index';
-    armGroup.add(arm, contactMarker);
+    armGroup.add(arm);
     arms.push(armGroup);
-    contactMarkers.push(contactMarker);
     carrierRotor.add(armGroup);
 
     const boss = new THREE.Mesh(
@@ -496,7 +465,9 @@ function springBiasedOverrunningPulley(movement) {
 
   const directionArrow = clockwiseArrow({
     material: darkMaterial,
-    radius: 2.62,
+    // Brown's short feathered arrow sits just outside the rim between
+    // roughly 1 and 2 o'clock (plate raster 396,79 -> 466,194).
+    radius: 2.42,
     z: 0.48,
   });
   root.add(outerRotor, carrierRotor, directionArrow);
@@ -650,17 +621,13 @@ function springBiasedOverrunningPulley(movement) {
   root.userData.blocks = {
     arms,
     carrier,
-    carrierIndex,
     carrierRotor,
-    contactMarkers,
     directionArrow,
     innerLiner,
     looseHub,
     outerRotor,
     pivotBosses,
     rim,
-    rimIndex,
-    rimTreadIndex,
     shaft,
     shaftFace,
     spokes,

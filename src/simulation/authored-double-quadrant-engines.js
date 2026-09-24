@@ -659,8 +659,9 @@ function doubleQuadrantEngine(movement) {
     sealingHead.position.set(0, 0, z);
     sealingHead.userData.role = `${rolePrefix}-outer-sealing-head-of-piston-B`;
     group.add(sealingHead);
-    const wristBearing = cylinderAlongZ(0.22, 1.25, whiteMaterial, 28);
-    wristBearing.position.set(pistonRockerRadius, 0, 0.55);
+    // Starts in front of the curved cylinder wall the piston head sweeps past.
+    const wristBearing = cylinderAlongZ(0.22, 0.975, whiteMaterial, 28);
+    wristBearing.position.set(pistonRockerRadius, 0, 0.6875);
     wristBearing.userData.role = `${rolePrefix}-piston-wrist-bearing`;
     group.add(wristBearing);
     return { arm, group, sealingHead, wristBearing };
@@ -692,26 +693,42 @@ function doubleQuadrantEngine(movement) {
   const crankRotor = new THREE.Group();
   crankRotor.position.copy(crankCenter);
   crankRotor.userData.role = 'continuously-rotating-common-crank-D';
-  const crankDisk = cylinderAlongZ(1.05, 0.30, darkMaterial, 48);
+  // Brown dots the flywheel circle round D rather than drawing a disc.
+  const crankDisk = new THREE.Group();
+  for (let index = 0; index < 36; index += 1) {
+    const angle = Math.PI * 2 * (index + 0.25) / 36;
+    const dash = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 1.05 * Math.PI / 36, 6),
+      darkMaterial,
+    );
+    dash.position.set(1.05 * Math.cos(angle), 1.05 * Math.sin(angle), 0);
+    dash.rotation.z = angle;
+    dash.userData.role = 'dotted-flywheel-circle-behind-crank-D';
+    crankDisk.add(dash);
+  }
+  crankDisk.position.copy(crankCenter);
   crankDisk.position.z = -0.30;
-  crankDisk.userData.role = 'flywheel-reference-disk-behind-crank-D';
+  crankDisk.userData.role = 'dotted-flywheel-circle-behind-crank-D';
   root.add(crankDisk);
+  // The throw and pin run in front of the bottom cylinder's end wall.
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.24, 0.44),
+    new THREE.BoxGeometry(crankRadius, 0.24, 0.30),
     rodMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, 0.39);
+  crankArm.position.set(crankRadius / 2, 0, 0.48);
   crankArm.userData.role = 'arm-of-common-crank-D';
   crankRotor.add(crankArm);
-  const commonCrankPin = cylinderAlongZ(0.23, 1.42, whiteMaterial, 28);
-  commonCrankPin.position.set(crankRadius, 0, 0.68);
+  const commonCrankPin = cylinderAlongZ(0.23, 1.07, whiteMaterial, 28);
+  commonCrankPin.position.set(crankRadius, 0, 0.855);
   commonCrankPin.userData.role =
     'single-common-crank-pin-D-shared-by-both-connecting-rods';
   crankRotor.add(commonCrankPin);
-  const crankShaft = cylinderAlongZ(0.28, 1.08, darkMaterial, 32);
-  crankShaft.position.set(0, 0, 0.18);
-  crankShaft.userData.role = 'fixed-axis-of-common-crank-D';
-  root.add(crankRotor, crankShaft);
+  // The crankshaft turns with D and ends behind the connecting rods.
+  const crankShaft = cylinderAlongZ(0.28, 0.98, darkMaterial, 32);
+  crankShaft.position.set(0, 0, 0.13);
+  crankShaft.userData.role = 'shaft-of-common-crank-D';
+  crankRotor.add(crankShaft);
+  root.add(crankRotor);
 
   const topConnectingRod = engineRod(connectingRodLength, 0.20, 0.34, 0.235, 0.16,
     rodMaterial, 'top-connecting-rod-from-B-to-common-crank-pin-D');
@@ -735,8 +752,9 @@ function doubleQuadrantEngine(movement) {
   valveBlade.position.set(valveBladeLength / 2, 0, 0.36);
   valveBlade.userData.role = 'port-selecting-blade-of-induction-valve-a';
   inductionValveA.add(valveBlade);
-  const valveHub = cylinderAlongZ(0.23, 0.80, darkMaterial, 30);
-  valveHub.position.z = 0.28;
+  // The valve spindle stands in front of its chest face.
+  const valveHub = cylinderAlongZ(0.23, 0.66, darkMaterial, 30);
+  valveHub.position.z = 0.35;
   valveHub.userData.role = 'fixed-axis-of-induction-valve-a';
   inductionValveA.add(valveHub);
   root.add(inductionValveA);

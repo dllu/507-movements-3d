@@ -19,14 +19,13 @@ for(const id of [227,228,229]){
  let shape=id===228?clip.intersection(poly(circle([0,0],g.toothTipRadius,384)),wedge):clip.intersection([d.chainDriveParts.originalWheelPolygons],wedge);
  let localCut;
  if(id===227){
-  const w=g.linkLoopHalfWidth,r=g.linkWireRadius+clearance;
-  const flat=clip.difference(capsule([0,0],[g.linkPitch,0],w+r,32),capsule([0,0],[g.linkPitch,0],w-r,32));
-  // Projection of the wire torus inside the finite wheel slab, not the entire
-  // perpendicular link (whose central opening must remain open to the tooth).
-  const h=g.sprocketDepth/2+clearance,outline=[];
-  for(let i=0;i<=48;i++){const y=-r+2*r*i/48,t=Math.sqrt(Math.max(0,r*r-y*y));outline.push([w+t,y]);}
-  for(let i=48;i>=0;i--){const y=-r+2*r*i/48,t=Math.sqrt(Math.max(0,r*r-y*y));outline.push([Math.sqrt(Math.max(0,(w-t)**2-h*h)),y]);}
-  const perpendicular=clip.union(transform(poly(outline),0,[g.linkPitch,0]),transform(poly(outline),Math.PI));
+  // Flat plate links: solid round-ended bars (their eyes are filled by the
+  // neighbouring loops' end bars). Edge-on loops: only the end bars, whose
+  // centreline stays within an arc apex at each joint, cross the wheel slab.
+  const e=g.plateLinkEndRadius+clearance,w=g.linkLoopHalfWidth,r=g.linkWireRadius+clearance,h=g.sprocketDepth/2+clearance+r;
+  const flat=capsule([0,0],[g.linkPitch,0],e,48);
+  const reach=w-Math.sqrt(Math.max(0,w*w-h*h));
+  const perpendicular=clip.union(capsule([0,0],[reach,0],r,24),capsule([g.linkPitch-reach,0],[g.linkPitch,0],r,24));
   localCut={flat,perpendicular};
  }else if(id===229){
   const outline=b.plates[0].geometry.parameters.shapes.extractPoints(32).shape.map(p=>p.toArray());

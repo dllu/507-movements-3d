@@ -161,8 +161,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Default capture inspected beside the plate after removing every undrawn white index stripe, tread patch, belt marker and rope bead; a ground shadow remains under the view."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: ground hidden; Brown's extra arms under the lever added."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -175,7 +175,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/lane1-belts-gears-review.md",
-        "docs/w2b-belts-clutches-review.md"
+        "docs/w2b-belts-clutches-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -401,8 +402,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Default capture inspected beside the plate: solid slotted four-over-three blocks as engraved."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with the ground hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -414,7 +415,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
-        "docs/w2b-belts-clutches-review.md"
+        "docs/w2b-belts-clutches-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -749,10 +751,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with the ground hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -763,7 +765,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -834,10 +837,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with the ground hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -848,7 +851,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -862,10 +866,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with the ground hidden; gears are rounded squares where Brown draws sharp squares (rolling gears need rounded corners)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -876,7 +880,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -892,22 +897,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: thin-ribbed worm as drawn."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: the worm still reads coarse beside Brown's fine ribs."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/031-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "Ribs are slightly trapezoidal on the loaded side; 29-tooth geometry and pressure angle reconstructed.",
+      "flaws": "The worm thread reads coarser than Brown's fine ribs (a thinner idle flank fails the hob-conjugacy contact test; slimming further needs a rebake shared with 202). 29-tooth geometry reconstructed.",
       "references": [
         "artifacts/review/031-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/gears-24-46-review.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1064,20 +1070,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: flatter cone slope and a flat-topped frustum stud body."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: 24 fine flutes and 20 studs on a truncated stud frustum."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
         "note": "128-pose stud/tooth minimum clearance 0.000382 and tooth/body 0.016003; large engagement gap remains, so not mechanically qualified."
       },
-      "flaws": "Speed ratio now ≈6.7:1; the working gap near the spiral seam and end-to-end handoff remain unresolved.",
+      "flaws": "Studs are short pegs rather than flush dots (they must engage the teeth); the working gap reaches 0.075 and end-to-end handoff is unresolved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/gears-24-46-review.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1319,10 +1326,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: lower camera, no ground."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1333,7 +1340,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1377,8 +1385,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Default capture inspected beside the plate: stripes removed, rounded jaw crests; the jaws are not Brown's symmetric waves."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: framing margin and a shaft-coloured feather key."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1391,7 +1399,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane1-belts-gears-review.md",
-        "docs/w2b-belts-clutches-review.md"
+        "docs/w2b-belts-clutches-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1814,8 +1823,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3g-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: one continuous flat steel leaf runs in from the left under the tail."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: the spring runs behind the tail; the stop pin is Brown's open circle."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1830,7 +1839,8 @@
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/w2c-intermittent-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2111,15 +2121,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3g-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: B a broad flat band along D's rim; the hatched block shows only as a corner running out of the picture."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: a small hatched corner block as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w3g-intermittent-review.md",
         "note": "Pass-51 screen: the spring-pad welds (0.040/0.033) are gone; the leaves end at the pad surfaces."
       },
-      "flaws": "Tooth backs slightly fin-like; the block's side face shows as a thin edge strip.",
+      "flaws": "Tooth backs slightly fin-like.",
       "references": [
         "docs/mujoco-073-spring-study.md",
         "docs/review-progress.md",
@@ -2128,7 +2138,8 @@
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -2235,10 +2246,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: pale peg caps with inked rims read as Brown's holes."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2250,7 +2261,8 @@
         "artifacts/review/073-077-correction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2473,8 +2485,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: undrawn anvil removed."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with framing margin."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2487,7 +2499,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2503,8 +2516,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: pump rod and guides removed, rope into the base, hatched band runs restored."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate with framing margin; the band runs past the plate edge as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2517,7 +2530,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2590,22 +2604,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: the rod is broken off past the flanges."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/089-source-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Undrawn crosshead, guides, bed and shaft support are removed by source presentation; the rod ends in its reconstructed wrist eye. Depths, bearings and completed output/support construction remain inferred.",
+      "flaws": "Undrawn crosshead, guides, bed and shaft support are removed by source presentation. Depths, bearings and completed output construction inferred.",
       "references": [
         "artifacts/review/089-source-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2740,8 +2755,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate: undrawn lugs and supports removed; the translucent plate stands in for Brown's dashed groove."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: groove/slot crossings occluded."
       },
       "intersections": {
         "status": "known",
@@ -2749,13 +2764,14 @@
         "note": "Intended visible bolt-neck/groove overlap up to 0.01744 source pixel; other sampled hardware clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "The translucent plate stands in for Brown's dashed groove; slot/groove crossings show as white gaps. Crank adjustment uses reconstructed groove and bolt/slot fits; force convergence unqualified.",
+      "flaws": "The translucent plate stands in for Brown's dashed groove. Crank adjustment uses reconstructed groove and bolt/slot fits.",
       "references": [
         "docs/mujoco-094-variable-crank.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3102,10 +3118,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: a thin hatched ceiling beam as drawn."
       },
       "intersections": {
         "status": "known",
@@ -3118,7 +3134,8 @@
         "docs/mujoco-106-barrel-cam.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3132,10 +3149,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: hatched ceiling beam; the groove is a sharp zigzag where Brown draws a sinuous wave."
       },
       "intersections": {
         "status": "known",
@@ -3143,12 +3160,13 @@
         "note": "Intended visible pin/land overlap up to 0.002334 source pixel; other sampled pairs clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "Repeated cam count, narrowed working pin and guides are inferred; finite contact-speed residuals remain.",
+      "flaws": "The groove keeps constant-slope flanks for the captioned uniform motion, where Brown draws a sinuous wave; narrowed working pin and guides inferred.",
       "references": [
         "docs/mujoco-107-serpentine-cam.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3406,8 +3424,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default production capture inspected beside the plate: face-on, the sliding frame stays in view."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: the pinion reads as one solid gear."
       },
       "intersections": {
         "status": "known",
@@ -3421,7 +3439,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3529,10 +3548,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: face-on camera."
       },
       "intersections": {
         "status": "known",
@@ -3545,7 +3564,8 @@
         "docs/mujoco-120-segment-clamp.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3890,23 +3910,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: a low bed block; a stray block remains below the frame."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-132.md",
         "note": "Actual ball/socket/rod-mouth and frame clearances pass through 721 phases; ideal retention remains. Pass-49 relative-motion screen reports 0.1596 solid overlap (one-of-two-equal-oblique-toggle-bars/BoxGeometry x one-of-two-equal-oblique-toggle-bars/SphereGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Retraction retention supplied by ideal spherical joints without detailed retaining lips; hidden bearings/load behavior unqualified.",
+      "flaws": "A 0.17 toggle bar/sphere pair (pre-existing) and a low bed block below the frame; retraction retention supplied by ideal spherical joints.",
       "references": [
         "docs/movement-132.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3981,10 +4002,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: undrawn guide rods, arms, rail and rear bearing hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3996,7 +4017,8 @@
         "docs/movement-135.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4010,10 +4032,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: exact side elevation with the edge-on cam, the single post with a curved bracket and hatched ground."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4025,7 +4047,8 @@
         "docs/movement-136.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4287,8 +4310,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate: one-armed beam on a hatched shaft at its right end; centre post removed."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default capture inspected beside the plate: hatched ground replaces the floating slabs."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4301,7 +4324,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4539,8 +4563,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane5-cams-catches-review.md",
-        "note": "Default production capture inspected beside the plate: rebaked without the undrawn base rail, posts and bar guides."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: undrawn elbow stop hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4554,7 +4578,8 @@
         "docs/validation/153-baked-assembly.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4568,23 +4593,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4a-1-160-review.md",
+        "note": "Default production capture inspected beside the plate: rear frame and gallows hidden; front pedestals and hatched ground as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-154.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
       },
-      "flaws": "Physical return stop, ideal guide and eight-pixel weight offset inferred; impact refinement limitations remain.",
+      "flaws": "Physical return stop, ideal guide and eight-pixel weight offset inferred; the hidden rear frame remains in the bake.",
       "references": [
         "docs/movement-154.md",
         "docs/review-progress.md",
         "docs/validation/154-baked-assembly.json",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4a-1-160-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4877,10 +4903,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: hatched ground lines instead of slabs."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4893,7 +4919,8 @@
         "docs/review-progress.md",
         "docs/validation/164-solid-clearance.json",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5008,8 +5035,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate with a slimmer pitman and rocker."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: rocker kept in frame."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5024,7 +5051,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5102,10 +5130,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index marks hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5120,7 +5148,8 @@
         "docs/user-display-followup-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5347,10 +5376,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: hatched ground line instead of a slab; indices hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5363,7 +5392,8 @@
         "docs/review-progress.md",
         "docs/validation/179-current-solids.json",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5545,22 +5575,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: hatched wall, one notched quadrant plate, no doubled eccentric discs or indices."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/valve-linkage-family-review.md",
         "note": "Selected finite interfaces sampled in the cited review; broader pairs and continuous-time collision freedom unverified. The exact constant-length rod and orthogonal lower/upper pin constraints remain unchanged. The official animation supports the roller's one-third position along the rod. Guide offsets and a prescribed sinusoidal valve input remain engineered assumptions. Roller spin still illustrates a selected… Pass-49 relative-motion screen reports 0.0943 solid overlap (moving-upper-suspension-rod-pin x finite-link-lifting-suspension-rod/BoxGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Valve input and roller loaded-wall convention prescribed; clearance take-up, pressure reversal and friction unvalidated. Guide offsets inferred.",
+      "flaws": "The valve head passes over the wall in the front view. Valve input and roller loaded-wall convention prescribed.",
       "references": [
         "docs/valve-linkage-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5727,8 +5758,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: bearing rings behind the bosses."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: white notch rectangle removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5741,7 +5772,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5815,22 +5847,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: the hub is no longer filled black."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/radial-pin-mangle-contact-review.md",
-        "note": "Selected finite interfaces sampled in cited review; no global or continuous collision certificate. Finite radial-pin envelope corrected; small working gaps, load transfer, friction and reversal dynamics remain unvalidated. Pass-49 relative-motion screen reports 0.0747 solid overlap (large-travel-telescopic-shaft-through-universal-joint/BoxGeometry x moving-pinion-side-universal-yoke); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: universal-joint overlaps up to 0.066 (the earlier sampled-clear claim was stale)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Finite radial-pin envelope corrected; small working gaps, load transfer, friction and reversal dynamics remain unvalidated.",
+      "flaws": "Universal-joint overlaps up to 0.066 remain. Finite radial-pin envelope corrected; working gaps and load transfer unvalidated.",
       "references": [
         "docs/radial-pin-mangle-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5904,22 +5937,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: framed large and face-on at the plate's pose."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/mangle-rack-197-198-contact-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The profile audit checks the newly loaded side, with maximum nearby driving clearance `0.00098570` and opposing moment magnitude at least `0.65758`. The original penetrating witness is checked at its complementary cycle time. All **20 affected checks pass**, including unchanged 198 regressions and a new independent finite-difference check of translational and rotational… Pass-49 relative-motion screen reports 0.0643 solid overlap (rear-rack-frame-web x vertically-free-pinion-shaft/CylinderGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Guide clearance may change the loaded path; motor torque, guide reactions, compliance and passive branch selection unsolved.",
+      "flaws": "A 0.070 overlap remains in the unpresented model. Guide clearance may change the loaded path.",
       "references": [
         "docs/mangle-rack-197-198-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5933,21 +5967,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: framed large and face-on; plain disc rollers."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/mangle-rack-197-198-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The profile audit checks the newly loaded side, with maximum nearby driving clearance `0.00098570` and opposing moment magnitude at least `0.65758`. The original penetrating witness is checked at its complementary cycle time. All **20 affected checks pass**, including unchanged 198 regressions and a new independent finite-difference check of translational and rotational…"
+        "status": "known",
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: a 0.075 post/link overlap (the earlier sampled-clear claim was stale)."
       },
-      "flaws": "Reconstructed suspension assumes rigid links and ideal joints; contact-force selection, backlash take-up and reversal dynamics unsolved.",
+      "flaws": "A 0.075 post/link overlap remains. Rigid links and ideal joints assumed.",
       "references": [
         "docs/mangle-rack-197-198-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6024,8 +6059,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: one solid tapered arm ending in a short oval eye; bored pulley."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: 3D label removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6039,7 +6074,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6092,12 +6128,13 @@
         "evidence": "docs/slot-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. 203 retains the official animation's abrupt changes between constant-speed strokes and dwells. 210 retains a smooth prescribed rocker and the existing illustrative loaded-wall rolling law; the engraving does not determine load, friction or which wall carries the roller. The small rendered clearance means that law is not a solved physical contact trajectory. 252's unindexed…"
       },
-      "flaws": "The slot is longer and the lower lobe broader than drawn to carry the 218° stroke. Analytical slot/linkage motion retained.",
+      "flaws": "The slot needs a 180° sweep to cover the pin's stroke, which makes the broad C body; a narrow J arm like Brown's needs a different slot law. Analytical slot/linkage motion retained.",
       "references": [
         "docs/slot-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6141,8 +6178,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: narrow bar teeth alternating long and short."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: dark shaft-shadow stripes removed; shafts trimmed to the hubs."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6156,7 +6193,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6353,10 +6391,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: markers hidden, smaller hubs."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6367,7 +6405,8 @@
       "references": [
         "docs/geneva-212-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6383,8 +6422,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: opens at the plate's pose with a narrow parallel slot at the top; markers removed."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: shaft-shadow stripes removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6398,7 +6437,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6414,8 +6454,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane9-residuals-review.md",
-        "note": "Default capture inspected beside the plate: square straight-flanked teeth and teardrop fingers in the plate's pose."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: opaque teardrop fingers."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6428,7 +6468,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane2-intermittent-review.md",
-        "docs/lane9-residuals-review.md"
+        "docs/lane9-residuals-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6536,21 +6577,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: face-on; markers removed; catch G a broad arched bar with an end lug."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-217-218.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. This is an analytical geometry correction, not a validated passive MuJoCo model. Output rotation, catch lift and return are still prescribed. In particular, the rear cam projection touches the catch boss only at the release instant; its finite profile has not been shown to supply the whole lifting stroke. Gravity/spring return, output holding torque during dwell, loads and…"
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: coaxial 0.159/0.090 → clear."
       },
-      "flaws": "Cam projection only touches release boss at one instant; complete lifting stroke and dwell holding are not established.",
+      "flaws": "Nine V-notches where Brown draws eight square ones. Cam projection only touches the release boss at one instant.",
       "references": [
         "docs/movement-217-218.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6566,21 +6608,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: an eight-stave lantern pinion."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: a solid slotted disc face and lower camera."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2e-181-271-review.md",
         "note": "Pass-51 screen: 0.0016 → clear; contact report regenerated."
       },
-      "flaws": "The lantern is larger than Brown's because of the fixed tooth counts. Loaded mesh unvalidated.",
+      "flaws": "The starting pose is rotated from the plate's; the lantern is larger than Brown's.",
       "references": [
         "docs/variable-face-gear-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6654,22 +6697,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate with markers removed."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/variable-idler-gear-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. `tests/variable-idler-solids.test.mjs` also checks actual finite surfaces at 17 input poses: 221 roller/spindle/shaft versus the groove and carrier; 222 eccentric bore, link eyes, shafts and link separation; and 223 shaft bores. This is selected interference evidence, not an exhaustive collision proof for every accessory or a force/durability study. The original continuous… Pass-49 relative-motion screen reports 0.1005 solid overlap (twenty-four-tooth-eccentric-driver-c/ExtrudeGeometry x twenty-four-tooth-irregular-output-a/ExtrudeGeometry); unclassified, may be intended contact."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: a real 0.107 solid overlap (previously listed as none) is fixed."
       },
       "flaws": "Gear motion prescribed; finite running gaps do not establish loaded mesh, backlash take-up, elastic tooth response or exact historical profiles.",
       "references": [
         "docs/variable-idler-gear-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6742,22 +6786,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: base block, indices and contact marker hidden."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/carrier-pawl-225-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. - Actual rendered driving triangles have the expected normal, positive output moment and zero prescribed relative normal velocity at 33 drive poses. - The full circular nose versus the complete rendered tooth outline has minimum clearance **0.0001999925** over 1,025 poses; the existing 32,769-state motion check also passes. - Rendered nose/wheel surface checks at 65 poses… Pass-49 relative-motion screen reports 0.0548 solid overlap (rounded-pawl-working-nose x active-pawl-tooth-contact-marker); unclassified, may be intended contact."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: marker overlaps 0.055 → clear."
       },
       "flaws": "Pawl return bias and wheel holding imposed; initial hinge reaction requires suitable gravity/spring bias. Passive engagement and load capacity unvalidated.",
       "references": [
         "docs/carrier-pawl-225-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6802,21 +6847,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: round sprocket with six concave-flanked teeth and flat links between them."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: flat riveted plate links and broader sprocket teeth."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/chain-drive-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The chain follows a prescribed open path. The tests qualify selected finite interfaces at sampled poses; they do not establish a continuous collision proof or load-bearing dynamics. The small working gaps require backlash take-up before force transfer. Tension, joint play, gravity-induced sag, elastic stretch, friction, load sharing and transient tooth loading are not…"
       },
-      "flaws": "Tooth phase is 15° off Brown's pose; small sweep notches on the exit flanks. Chain follows a prescribed path.",
+      "flaws": "Links standing across the teeth read as thin wires edge-on. Chain follows a prescribed path.",
       "references": [
         "docs/chain-drive-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6889,10 +6935,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: slender coupling rods; indices hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6903,7 +6949,8 @@
       "references": [
         "docs/coupling-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6919,8 +6966,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate: slimmer links and the long output rod."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: tighter framing."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6932,7 +6979,8 @@
         "docs/analytic-linkage-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6946,22 +6994,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: lever dots now dark pins; markers hidden."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lift-draw-pawl-232-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. - Actual main tip, axle, C body and retaining parts against the wheel through 193 poses over two cycles: minimum sampled signed clearance `+0.00000970`. - Actual draw witnesses over 65 poses: maximum surface distance `0.00001787`, below the `0.000021` circular-mesh tolerance, and nonzero clockwise contact torque. - Retaining contact and actual blocked rollback. - Twenty… Pass-49 relative-motion screen reports 0.0299 solid overlap (232-short-tip-through-axle x sliding-pawl-C-tooth-corner-contact-marker); unclassified, may be intended contact."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: 0.030 → clear."
       },
       "flaws": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial.",
       "references": [
         "docs/lift-draw-pawl-232-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -7010,8 +7059,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane3-escapements-review.md",
-        "note": "Default capture inspected beside the plate: flush toothed plate on a shallow band, plain flags A on a round S falling right; viewed from slightly higher than Brown."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: ground shadow off."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7024,7 +7073,8 @@
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/lane3-escapements-review.md"
+        "docs/lane3-escapements-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7038,22 +7088,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: indices and contact markers hidden."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/star-tappet-235-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The model has 12,088 visible triangles. One isolated Node measurement gave 105 ms first construction, 16–24 ms warm construction, and 0.25 ms per update over 1,000 updates. Tests preserve position-buffer identity, including the existing in-place leaf-spring updater. These measurements are illustrative CPU costs, not browser guarantees. Pass-49 relative-motion screen reports 0.0514 solid overlap (rounded-working-and-click-over-nose x active-drive-face-contact-marker); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: only the return spring seated in its anchors (0.089/0.028, intended)."
       },
-      "flaws": "Tappet return, holding preload and wheel loading prescribed; impact, friction and passive handoff unsolved despite finite clearance.",
+      "flaws": "The return spring is welded into its anchors (0.089). Tappet return and holding preload prescribed.",
       "references": [
         "docs/star-tappet-235-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7067,10 +7118,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index marks hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7081,7 +7132,8 @@
       "references": [
         "docs/alternating-pawl-236-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7097,13 +7149,13 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3g-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: arm on a low boss on the stud rising to the pawl at the rim."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: a thin open cup with upright rim teeth, lower camera; pawl return rebaked."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Pass-51 screen: markers 0.0449 → clear."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: clear."
       },
       "flaws": "Prescribed crest hold and drop; passive holding, impact and bias unsolved.",
       "references": [
@@ -7112,7 +7164,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7158,20 +7211,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane1-belts-gears-review.md",
-        "note": "Default capture inspected beside the plate: square-toothed spur wheel between its two stops."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: wheel broken off below the hub as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane1-belts-gears-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.068 hub/journal overlap is fixed; stop pockets re-cut from 257 positions."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Stops seated by prescription; gravity seating, hinge reactions, impact and holding strength unsolved.",
+      "flaws": "The break line is smoother than Brown's jagged edge. Stops seated by prescription; gravity seating and holding strength unsolved.",
       "references": [
         "docs/opposed-spur-239-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane1-belts-gears-review.md"
+        "docs/lane1-belts-gears-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7185,10 +7239,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index marks hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7200,7 +7254,8 @@
         "docs/ratchet-stop-240-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7214,10 +7269,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index marks hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7228,7 +7283,8 @@
       "references": [
         "docs/single-tooth-241-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7242,10 +7298,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index marks hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7256,7 +7312,8 @@
       "references": [
         "docs/band-drive-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7300,10 +7357,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: index stripe and the undrawn post joining C and C' removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7314,7 +7371,8 @@
       "references": [
         "docs/clamp-governor-brake-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7328,10 +7386,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: level front elevation; index hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7342,7 +7400,8 @@
       "references": [
         "docs/pipe-coupling-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7358,8 +7417,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: traced figures removed, C a plain knob, arms run past A and C."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: pivot B no longer a white ball."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7372,7 +7431,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7509,13 +7569,13 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3a-catches-review.md",
-        "note": "Default capture inspected beside the plate: slotted top beam, hook horns and taller W in front elevation."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: continuous top beam B across the posts."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3a-catches-review.md",
-        "note": "Pass-51 screen: markers 0.105 and rope 0.081 → only seated toe/shelf contact."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Pass-51 screen: 0.105 → seated contact only."
       },
       "flaws": "Hooks are straighter than Brown's bulged horns; release is quasistatic.",
       "references": [
@@ -7524,7 +7584,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7538,10 +7599,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4b-164-253-review.md",
+        "note": "Default capture inspected beside the plate: tall fixed head and slimmer arms."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7552,7 +7613,8 @@
       "references": [
         "docs/slot-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4b-164-253-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7772,8 +7834,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: edge-on side elevation with index bars hidden."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: curved knee flares on the right standard."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7785,7 +7847,8 @@
         "docs/movement-260-266-275.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7952,8 +8015,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: plank and upright with a single crank handle."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: wide movable-bearing upright with filleted foot."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7966,7 +8029,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7980,10 +8044,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed; the large arrow reduced to Brown's short feathered arc."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7995,7 +8059,8 @@
         "docs/friction-drive-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8163,10 +8228,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8178,7 +8243,8 @@
         "docs/tangent-rhombus-journal-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8376,8 +8442,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3d-255-287-review.md",
-        "note": "Default capture inspected beside the plate: thinner eccentric shoe."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: the standard, post and head behind the wheel added."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8390,7 +8456,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3d-255-287-review.md"
+        "docs/w3d-255-287-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8406,8 +8473,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane6-engines-misc-review.md",
-        "note": "Default capture inspected beside the plate: lever in front of the grooved disk (Brown's dashed bar is its other extreme), A-frame without a standard under the lever."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working parts recoloured from white."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8420,7 +8487,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane6-engines-misc-review.md"
+        "docs/lane6-engines-misc-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8707,8 +8775,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Default capture inspected beside the plate: stop d, spring f and stud i repositioned on leaf A."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working parts recoloured from white."
       },
       "intersections": {
         "status": "known",
@@ -8722,7 +8790,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8858,8 +8927,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane8-escapements-engines-review.md",
-        "note": "Default capture inspected beside the plate: broad thorn teeth and a web with three lens windows between curved spokes."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working parts recoloured from white."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8872,7 +8941,8 @@
         "docs/lever-296-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane8-escapements-engines-review.md"
+        "docs/lane8-escapements-engines-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9393,8 +9463,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Default capture inspected beside the plate: detent spring bowed clear of the teeth; bank E behind the wheel."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working parts recoloured from white."
       },
       "intersections": {
         "status": "known",
@@ -9408,7 +9478,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -9427,8 +9498,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Default capture inspected beside the plate: the lever lies across the teeth with a pivot ring."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working parts recoloured from white."
       },
       "intersections": {
         "status": "known",
@@ -9442,7 +9513,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9929,10 +10001,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9944,7 +10016,8 @@
         "docs/piston-guide-329-331-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10232,10 +10305,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: working pins recoloured from white."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10248,7 +10321,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10264,8 +10338,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: undrawn wall removed, plank over the pier."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: pier in a mid stone tone."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10280,7 +10354,8 @@
         "docs/engines-328-343-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/w2g-341-400-review.md"
+        "docs/w2g-341-400-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10511,8 +10586,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Default capture inspected beside the plate: deeper bar through flanged guides a with lips."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: broad round-topped standard behind pin O."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10526,7 +10601,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10550,13 +10626,14 @@
         "evidence": "docs/w3c-343-417-review.md",
         "note": "Pass-51 screen: clear."
       },
-      "flaws": "The frame covers the full fall so the subject is smaller than Brown's. Rack contact after release is prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The frame covers the stamp's 3.47 fall, so the subject is smaller than Brown's; rack contact after release is prescribed.",
       "references": [
         "docs/stamp-trip-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane4-escapements-misc-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -10636,8 +10713,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: rimmed disk in front, single-block guides."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: see-through disk and rim read as Brown's open ring with the dashed stem."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10649,7 +10726,8 @@
         "docs/double-traverse-groove-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2g-341-400-review.md"
+        "docs/w2g-341-400-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10665,8 +10743,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Default capture inspected beside the plate: smaller pintle rim; the subject is small."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: framing cropped to the plate pose with the full motion in sweptBounds."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10679,7 +10757,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10812,10 +10891,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white and cord markers removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10826,7 +10905,8 @@
       "references": [
         "docs/one-way-clutch-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10931,10 +11011,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10945,7 +11025,8 @@
       "references": [
         "docs/groove-drive-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10990,8 +11071,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Default capture inspected beside the plate: keyed pinion as a proper cone."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: C-bracket frame open on the left."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11005,7 +11086,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11261,8 +11343,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: front elevation, tall edge-on runners, flared pan."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: level camera with a narrower field."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11274,7 +11356,8 @@
         "docs/runner-treadwheel-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2g-341-400-review.md"
+        "docs/w2g-341-400-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11321,22 +11404,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: end view with notched spur wheel and A-frame; the treadmill rail floats."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: level camera nearer the side with the man at the far end and the rail at head height."
       },
       "intersections": {
         "status": "known",
         "evidence": "docs/w2g-341-400-review.md",
         "note": "Pass-51 screen: figure self-overlap 0.151; frame pairs gone."
       },
-      "flaws": "The figure self-overlaps (0.151); the man stands on top of the drum where Brown shows him climbing at its side, and the drum is shorter than drawn.",
+      "flaws": "Brown mixes an end view of the gear with a side view of the drum, so the camera sits between; the man stands above the drum top (lowering him passes his legs through the boards); figure self-overlap 0.151.",
       "references": [
         "docs/treadmill-377-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11352,8 +11436,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Default capture inspected beside the plate: a kerf in the log; carriage and counterweights clear."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: log under the middle of the blade's travel."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11367,7 +11451,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11410,10 +11495,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11424,7 +11509,8 @@
       "references": [
         "docs/drill-feed-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11470,8 +11556,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Default capture inspected beside the plate: the mirror starts at full back tilt as drawn."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: opaque silvered mirror glass, dark iron bracket."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11485,7 +11571,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11530,8 +11617,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: indices removed; the subject fills only about half the frame."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: framing cropped to the plate pose with the full motion in sweptBounds."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11543,7 +11630,8 @@
         "docs/helicograph-working-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2g-341-400-review.md"
+        "docs/w2g-341-400-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11589,8 +11677,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane6-engines-misc-review.md",
-        "note": "Default capture inspected beside the plate: open ladder with broad slat rungs as in Brown's main figure."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: broad slat rungs (0.23, the widest that folds cleanly)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11603,7 +11691,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane6-engines-misc-review.md"
+        "docs/lane6-engines-misc-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11835,8 +11924,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2g-341-400-review.md",
-        "note": "Default capture inspected beside the plate: rod guide and indices removed."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: undrawn flange-guide walls removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11850,7 +11939,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2g-341-400-review.md"
+        "docs/w2g-341-400-review.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11985,10 +12075,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4c-254-400-review.md",
+        "note": "Default capture inspected beside the plate: white marks removed; steel-grey threads."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12000,7 +12090,8 @@
         "docs/adjustment-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4c-254-400-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12252,8 +12343,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: graduation ticks and extra pins removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: Brown's construction figure drawn in ink; white markers removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12265,7 +12356,8 @@
         "docs/drawing-gauge-408-410-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12281,8 +12373,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: extra lines removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: graduations in dark ink; white pivot dot hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12294,7 +12386,8 @@
         "docs/drawing-gauge-408-410-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12370,8 +12463,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate after adding the outside band and its two eyed levers."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: white stripes and ring index hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12383,7 +12476,8 @@
         "docs/movement-412-495.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12517,22 +12611,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: side elevation with plank bed, T-standard D and crank handle."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: head A a thick tapered block."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w3c-343-417-review.md",
-        "note": "Pass-51 screen: rod/journal 0.063; a 0.0079 ball/seat report is a tool false positive (0.006 clearance)."
+        "status": "sampled-clear",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.063 → 0.008 seated ball."
       },
-      "flaws": "A 0.063 rod/journal overlap remains; Brown's angled bent end is an offset crank journal so rod B slants more than drawn.",
+      "flaws": "Offset crank journal, so rod B slants more than drawn.",
       "references": [
         "docs/dead-center-socket-cradle-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3c-343-417-review.md"
+        "docs/w3c-343-417-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12548,8 +12643,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3e-418-504-review.md",
-        "note": "Default capture inspected beside the plate: solid slotted casting D, rod B in front, lipped recess, broad low valve A."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: second slab removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12563,7 +12658,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/lane7-hydraulic-misc-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12583,9 +12679,9 @@
         "note": "Default capture inspected beside the plate: plain disc wheels, post and slab removed."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/dead-center-socket-cradle-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 419's cradle angle still uses a disclosed effective-radius band relation. Tangent routing and finite tread clearance do **not** prove inextensible closure of both bands. Across 257 sampled poses, their combined displayed length varies from approximately 4.0613 to 4.0696 (0.2%); the band forces, material uptake and elasticity are not solved. The official canvas also prescribes… Pass-49 relative-motion screen reports 0.0181 solid overlap (flexible-band-C-left-limb-over-wheel-B-flexible-segment x flexible-band-D-right-limb-over-wheel-B-flexible-segment); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.108 intended band seating."
       },
       "flaws": "Combined displayed band length varies; effective-radius rocking law does not establish both inextensible bands.",
       "references": [
@@ -12593,7 +12689,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12613,17 +12710,18 @@
         "note": "Default capture inspected beside the plate: bell hung without the gallows or slab."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/spring-pivot-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The smooth sphere/torus contact law reaches zero at the strike; tessellation leaves the small positive finite-mesh gap above. The lip reaction has the correct opposing moment (greater than 0.8 per unit normal force), and the upward spring reaction gives a positive return moment throughout the stroke. Pin/eye checks also require finite axial overlap, avoiding a false clearance… Pass-49 relative-motion screen reports 0.1034 solid overlap (flexing-segment-of-return-leaf-spring x sliding-contact-of-leaf-spring-under-hammer); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.103 intended spring seats; the pedestal/hammer overlaps are gone."
       },
-      "flaws": "Spring shapes/deflections prescribed; elastic stress, preload, joint force, contact response and fatigue unvalidated.",
+      "flaws": "The bracket is a block; spring seats overlap 0.103. Toggle motion prescribed.",
       "references": [
         "docs/spring-pivot-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12644,15 +12742,16 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/steam-engine-421-423-working-solids.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The new regression queries actual rendered triangle surfaces in both directions over 65 poses for the gland/trunk/rod, sector vane/head/end-wall, valve/chest, rod layering, pins and piston hubs. These selected interfaces show no sampled penetration beyond 0.00002 model units. It also checks actual bored-eye locations against the pins, continuous framing, and fog/ground… Pass-49 relative-motion screen reports 0.1175 solid overlap (fixed-horizontal-crankshaft-axis x constant-length-pitman-entering-hollow-trunk); unclassified, may be intended contact."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.119 → clear."
       },
       "flaws": "Undrawn fixed supports are removed by source presentation. Steam/valve motion prescribed; pressure forces, leakage, seal compression, friction and thermodynamic performance unvalidated.",
       "references": [
         "docs/steam-engine-421-423-working-solids.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12668,8 +12767,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: vase-shaped casing on its foot."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: white parts recoloured; translucent sector back removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12681,7 +12780,8 @@
         "docs/steam-engine-421-423-working-solids.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12697,22 +12797,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: closed casing outline; the casing top is cropped."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: translucent fans and disc removed; dotted circle for D."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/steam-engine-421-423-working-solids.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The new regression queries actual rendered triangle surfaces in both directions over 65 poses for the gland/trunk/rod, sector vane/head/end-wall, valve/chest, rod layering, pins and piston hubs. These selected interfaces show no sampled penetration beyond 0.00002 model units. It also checks actual bored-eye locations against the pins, continuous framing, and fog/ground… Pass-49 relative-motion screen reports 0.2249 solid overlap (bottom-quadrant-cylinder-end-wall x single-common-crank-pin-D-shared-by-both-connecting-rods); unclassified, may be intended contact."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.279 → clear."
       },
-      "flaws": "Steam/valve motion prescribed; pressure forces, leakage, seal compression, friction and thermodynamic performance unvalidated.",
+      "flaws": "Steam/valve motion prescribed.",
       "references": [
         "docs/steam-engine-421-423-working-solids.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12786,8 +12887,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: floating spheres removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: plate upright pose with vanes to the wall; cast foot."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12799,7 +12900,8 @@
         "docs/piston-engine-424-426-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12815,8 +12917,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: undrawn coil springs removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: cast foot."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12828,7 +12930,8 @@
         "docs/rotary-engine-427-429-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12849,14 +12952,15 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/rotary-engine-427-429-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. **429 follow-up:** The original-profile penetration measured in this pass is resolved by the subsequent swept mating correction. The corrected right rotor retains 99.75% of source area and has no sampled finite overlap. Its varying clearance still does not establish pressure sealing or continuous loaded transmission. The previous 0.0135 penetration allowance has been removed…"
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.269 → clear."
       },
       "flaws": "Rotor/packing motion prescribed; steam-tight sealing, pressure loads, friction, wear and efficiency unvalidated.",
       "references": [
         "docs/rotary-engine-427-429-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13072,8 +13176,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: level sectional camera."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: top cover, bridge step and a broad chute."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13085,7 +13189,8 @@
         "docs/fluid-rotor-436-438-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13160,8 +13265,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: floating stop and index removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: the striking anvil hidden."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13174,7 +13279,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13190,8 +13296,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: level camera, slab removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: near side-on camera; stop blocks hidden; wedge trough."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13203,7 +13309,8 @@
         "docs/water-mechanism-439-440-444-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13227,14 +13334,15 @@
         "evidence": "docs/w3e-418-504-review.md",
         "note": "Pass-51 screen: 0.0747 → no solid pairs; buckets dipping in the stream are intended."
       },
-      "flaws": "The stream is a heavy translucent band where Brown draws a few ruled lines. Upright hanging and gravity return imposed.",
+      "flaws": "Upright hanging and gravity return imposed.",
       "references": [
         "docs/persian-bucket-trip-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13254,18 +13362,19 @@
         "note": "Default capture inspected beside the plate: pointed lozenge pots along the axle."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Pass-51 screen: pots dipping in the water 0.275 (intended)."
+        "status": "sampled-clear",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.275 → clear."
       },
-      "flaws": "The stream box remains. Pot filling and wheel speed prescribed.",
+      "flaws": "Pot filling and wheel speed prescribed.",
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13289,14 +13398,15 @@
         "evidence": "docs/water-lifting-441-443-review.md",
         "note": "Selected finite interfaces sampled in cited review; no global or continuous collision certificate. Screw rotation and water motion illustrative; leakage, hydraulic torque, fluid transport and seal forces not solved. Pass-49 relative-motion screen reports 0.0249 solid overlap (null); unclassified, may be intended contact."
       },
-      "flaws": "The vertical support post remains; the paddle wheel is a ring with spokes where Brown draws a solid disc. Screw rotation and water motion illustrative.",
+      "flaws": "The disc reads as boards around a hub; the bracket is reconstructed.",
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13409,16 +13519,17 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/cock-ferry-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The 17 existing tests retain routing, rigid transforms, cycle closure, exact tether length and analytical motion derivatives. Six scoped tests in `cock-ferry-working-solids.test.mjs` independently probe channel cavities and floors, check flow-marker containment, sample finite rotating interfaces in both directions, verify hull immersion/dry compartment floors/rudder depth and… Pass-49 relative-motion screen reports 0.0982 solid overlap (single-taut-anchor-rope x anchor-rope-swivel-ball); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.239 → 0.098 intended rope ties."
       },
-      "flaws": "Ferry yaw and tether motion prescribed; water forces, drag, rope tension, steering equilibrium and loaded response unsolved.",
+      "flaws": "The river is a solid blue sheet where Brown draws banks and ruled water; rope ties overlap 0.098.",
       "references": [
         "docs/cock-ferry-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13460,10 +13571,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: white beads removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13474,7 +13585,8 @@
       "references": [
         "docs/lift-pump-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13633,8 +13745,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: undrawn legs and arrows removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: flow arrows drawn black as Brown draws them."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13646,7 +13758,8 @@
         "docs/old-rotary-pump-455-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13662,8 +13775,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: undrawn legs and arrows removed."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: flow arrows drawn black as Brown draws them."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13675,7 +13788,8 @@
         "docs/rotary-pump-455-456-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13815,12 +13929,13 @@
         "evidence": "docs/well-scoop-gutter-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The scoped regressions check stable object/geometry identities; exact rope tangent directions; finite rope/groove, hub/axle and bucket/receiver clearances; 65-pose bidirectional scoop/ground/journal and gutter/flap/support interfaces; actual notch openings; and a separate 129-pose test that refreshes the changing water surface before checking the scoop floor and sides. These…"
       },
-      "flaws": "Flap timing/water transport prescribed; finite openings do not prove sealing or hydraulic rectification.",
+      "flaws": "The frame stands upright where Brown tilts it. Flap timing prescribed.",
       "references": [
         "docs/well-scoop-gutter-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13873,13 +13988,14 @@
         "evidence": "docs/w2h-401-507-review.md",
         "note": "Pass-51 screen: 0.0174 coaxial → clear."
       },
-      "flaws": "The layout only loosely follows Brown's section (water drawn as blocks). Weir motion prescribed.",
+      "flaws": "One animated weir stands for Brown's two figures.",
       "references": [
         "docs/chain-weir-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13921,10 +14037,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: engraved diagonal pose, two banks, ruled water."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13935,7 +14051,8 @@
       "references": [
         "docs/fountain-balance-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14013,22 +14130,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3e-418-504-review.md",
-        "note": "Default capture inspected beside the plate: an oblique close-up of the front main's joint that does not resemble Brown's plan and elevation of one joint."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: Brown's two figures of one ball-and-socket joint, elevation above plan, face-on and flexing."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/folding-pipe-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. These are kinematic reconstructions, not structural or load-bearing qualifications. No ladder latch, hand force, buoyancy, pin friction or joint wear is solved. The 468 installation path and prepared bed are prescribed; hauling forces and seabed contact are not simulated. Its spherical seats include geometric clearance without a modeled gasket, pressure seal or fluid solver.… Pass-49 relative-motion screen reports 0.0425 solid overlap (18-inch-winch-rotor/BoxGeometry x 18-inch-north-bank-winch/BoxGeometry); unclassified, may be intended contact."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: the drawn figures have no pairs; winch/cable overlaps (0.239) belong to the hidden crossing that drives the motion."
       },
-      "flaws": "The default view is a cropped oblique close-up of the mains, not Brown's separate plan and elevation of one flexible joint; winch cable/rotor coaxial fits up to 0.239. Installation path prescribed.",
+      "flaws": "Figures are schematic (no bolt holes, X-marked tie ends or hatching); the hidden crossing drives the motion.",
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14284,16 +14402,17 @@
         "note": "Default capture inspected beside the plate: section camera."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/ejector-trap-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Geometry does not solve fluid dynamics. Ejector chamber pressure is supplied by the existing steady reconstruction; vacuum startup, condensation, turbulence, diffuser recovery, cavitation and losses are not simulated. Trap temperature histories and quasi-static expansion/contact are prescribed; heat transfer, valve inertia, friction, leakage, condensate inventory and pressure…"
+        "status": "known",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: valve D clamp 0.072 (unchanged)."
       },
-      "flaws": "Temperature and quasi-static expansion/contact prescribed; heat transfer, valve inertia, friction, leakage and condensate inventory unsolved.",
+      "flaws": "Valve D's shape differs from Brown's; clamp overlap 0.072.",
       "references": [
         "docs/ejector-trap-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14575,10 +14694,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: arrows and beads removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14589,7 +14708,8 @@
       "references": [
         "docs/marine-rotor-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14633,10 +14753,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: arrows removed; framed on the drawn parts."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14647,7 +14767,8 @@
       "references": [
         "docs/spatial-linkage-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14871,10 +14992,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: arrows and white indices removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14885,7 +15006,8 @@
       "references": [
         "docs/spinning-fan-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14928,10 +15050,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: shadow ghost removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14942,7 +15064,8 @@
       "references": [
         "docs/elastic-gauge-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14962,16 +15085,17 @@
         "note": "Default production-route capture inspected beside the engraving at true aspect."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/elastic-gauge-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. `tests/elastic-gauge-working-solids.test.mjs` checks selected actual rendered solids in both directions over 33 cycle poses: gear teeth, journal bores, spherical eyes/balls/studs, shanks and nearby sector material. It also requires the finite gear surfaces to remain close through the entire sweep; merely separating the gears does not pass. Independent hollow-passage checks… Pass-49 relative-motion screen reports 0.0791 solid overlap (fixed-pivot-bearing-of-sector-e x c-shaped-counterweight-shown-opposite-pointer); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Pass-51 screen: 0.079 cleared; a 0.065 seated ball joint remains."
       },
-      "flaws": "Pressure and elastic displacement prescribed; stress, hysteresis, sealing, gear backlash, joint preload and pressure transients unsolved.",
+      "flaws": "The added section is schematic.",
       "references": [
         "docs/elastic-gauge-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15014,10 +15138,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: framed at Brown's upright carrier pose; full sweep in sweptBounds."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15029,7 +15153,8 @@
         "docs/movement-502-505.md",
         "docs/epicyclic-source-pose-followup.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15084,14 +15209,15 @@
         "evidence": "docs/movement-503-504-contact.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - 503: 409,058 surface queries, zero sampled penetrations; maximum closest-surface gap 0.003011. The back-cone approximation gives contact ratio 1.638936. - 504: 852,549 surface queries, zero sampled penetrations. Maximum closest-surface gaps are 0.000582 for A–B and B–F, 0.000600 for B–E, and 0.000596 for B–G. - Focused tests also check actual 503 hub/sleeve/head surfaces…"
       },
-      "flaws": "The train is framed small and centred on shaft A because the view covers the arm's full sweep. Generated tooth thicknesses and supports inferred.",
+      "flaws": "Generated tooth thicknesses and supports inferred.",
       "references": [
         "docs/movement-503-504-contact.md",
         "docs/epicyclic-source-pose-followup.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/w3e-418-504-review.md"
+        "docs/w3e-418-504-review.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15135,10 +15261,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w4d-401-507-review.md",
+        "note": "Default capture inspected beside the plate: level camera."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15151,7 +15277,8 @@
         "docs/compound-epicyclic-source-support-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w4d-401-507-review.md"
       ],
       "mujoco": {
         "mode": "none",

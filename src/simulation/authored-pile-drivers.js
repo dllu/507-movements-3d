@@ -327,24 +327,26 @@ function pileDriverReleasingHooks(movement) {
   // The tie carries slot B, a real passage for the hoisting rope.
   const tieShapes = [-1, 1].map((side) => {
     const shape = new THREE.Shape();
-    shape.moveTo(side * 0.13, -0.17);
-    shape.lineTo(side * 4.3, -0.17);
-    shape.lineTo(side * 4.3, 0.17);
-    shape.lineTo(side * 0.13, 0.17);
+    shape.moveTo(side * 0.13, -0.3);
+    shape.lineTo(side * 4.3, -0.3);
+    shape.lineTo(side * 4.3, 0.3);
+    shape.lineTo(side * 0.13, 0.3);
     shape.closePath();
     return shape;
   });
   const tieGeometry = new THREE.ExtrudeGeometry(tieShapes, {
     bevelEnabled: false,
-    depth: 1.42,
+    depth: 1.32,
   });
-  tieGeometry.translate(0, 0, -0.71);
+  tieGeometry.translate(0, 0, -0.66);
   const upperTie = new THREE.Mesh(tieGeometry, frameMaterial);
-  upperTie.position.set(0, 7.55, -0.32);
+  // Brown's beam B runs unbroken across both posts: this cap closes the top
+  // of the slotted cheeks so the beam reads as one bar, leaving only a
+  // narrow bore for the hoisting rope. The hook tips stop below the cheek
+  // tops (the release point), so the cap never meets them.
+  upperTie.position.set(0, guideSurfaceEnd.y + 0.45 + 0.3 - 0.02, -1.25);
   upperTie.userData.fixed = true;
   upperTie.userData.role = 'fixed-upper-frame-tie-above-slot-b';
-  // Only the one slotted beam is drawn above the rails.
-  upperTie.visible = false;
   frame.add(leftTopBeam, rightTopBeam, leftGuide, rightGuide, upperTie);
 
   const pileHead = new THREE.Group();

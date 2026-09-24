@@ -686,9 +686,23 @@ function bourdonPressureGauge(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctElasticGaugeParts(root,499,update);
+  // The fixed journal stops just behind the pointer hub: the pointer is keyed
+  // to the pinion it carries, so the journal no longer runs through the
+  // unbored hub, needle and counterweight arm.
+  {
+    const { pinionShaft, pointerHub } = root.userData.blocks;
+    root.updateMatrixWorld(true);
+    const back = pinionShaft.position.z - pinionShaft.geometry.parameters.height / 2;
+    const front = new THREE.Box3().setFromObject(pointerHub).min.z - 0.005;
+    pinionShaft.geometry.dispose();
+    pinionShaft.geometry = new THREE.CylinderGeometry(0.056, 0.056, front - back, 48);
+    pinionShaft.position.z = (front + back) / 2;
+  }
   markShadows(root);
   dialFace.castShadow = false;
   pressureCore.castShadow = false;
+  // Brown's dial carries no shadow copy of the tube, scale or needle.
+  dialFace.receiveShadow = false;
   return {
     root,
     update,

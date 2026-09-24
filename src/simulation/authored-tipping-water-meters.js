@@ -92,7 +92,7 @@ function tippingWaterMeter(movement) {
   const floorTopLocalY = floorLocalY + floorThickness / 2;
   const sideWallHeight = 0.72;
   const sideWallThickness = 0.12;
-  const dividerHeight = 0.84;
+  const dividerHeight = 1.15;
   const dividerTopLocalY = floorTopLocalY + dividerHeight;
   const compartmentWaterCenterX = 1.12;
   const maximumWaterDepth = 0.43;
@@ -354,9 +354,18 @@ function tippingWaterMeter(movement) {
         ),
         troughMaterial,
       );
+      // Brown's compartments are wedges: each side wall rises from its
+      // outer end to a peak at the central divider.
+      const inner = -sign * troughHalfLength / 2, outer = sign * troughHalfLength / 2;
+      wall.geometry.dispose();
+      const profile = [
+        [outer, floorTopLocalY], [inner, floorTopLocalY],
+        [inner, floorTopLocalY + dividerHeight], [outer, floorTopLocalY + sideWallHeight],
+      ];
+      wall.geometry = plate(poly(sign > 0 ? profile.reverse() : profile), -sideWallThickness / 2, sideWallThickness / 2);
       wall.position.set(
         0,
-        floorTopLocalY + sideWallHeight / 2,
+        0,
         zSign * (troughWidth - sideWallThickness) / 2,
       );
       wall.userData.role =
@@ -433,6 +442,16 @@ function tippingWaterMeter(movement) {
     new THREE.BoxGeometry(5.70, 0.25, 2.74),
     frameMaterial,
   );
+  // Brown's base is an open plank frame (two sills, end and middle cross
+  // planks under the standards), not a slab.
+  base.geometry.dispose();
+  base.geometry = plate(polygonClipping.difference(
+    poly([[-2.85, -1.10], [2.85, -1.10], [2.85, 1.10], [-2.85, 1.10]]),
+    poly([[-2.49, -0.74], [-0.18, -0.74], [-0.18, 0.74], [-2.49, 0.74]]),
+    // Offset a hair so no hole edge is collinear with the other's (keeps
+    // the triangulated caps watertight).
+    poly([[0.18, -0.745], [2.49, -0.745], [2.49, 0.745], [0.18, 0.745]]),
+  ), -0.125, 0.125).rotateX(-Math.PI / 2);
   base.position.set(0, groundY + 0.125, 0);
   base.userData.role = 'fixed-water-meter-base';
   root.add(base);
@@ -507,17 +526,17 @@ function tippingWaterMeter(movement) {
   flume.userData.role = 'fixed-flume-providing-continuous-fall';
   root.add(flume);
   const flumeBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(flumeLength, 0.16, 1.04),
+    new THREE.BoxGeometry(flumeLength, 0.08, 0.80),
     frameMaterial,
   );
   flumeBottom.userData.role = 'fixed-inlet-flume-bottom';
   flume.add(flumeBottom);
   const flumeRails = [-1, 1].map((sign) => {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(flumeLength, 0.38, 0.10),
+      new THREE.BoxGeometry(flumeLength, 0.26, 0.07),
       frameMaterial,
     );
-    rail.position.set(0, 0.19, sign * 0.47);
+    rail.position.set(0, 0.17, sign * 0.365);
     rail.userData.role = 'fixed-inlet-flume-side';
     flume.add(rail);
     return rail;
@@ -759,8 +778,8 @@ function tippingWaterMeter(movement) {
     waterStateAtPhase,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.10, groundY, -1.72),
-    new THREE.Vector3(4.00, 4.12, 1.72),
+    new THREE.Vector3(-3.10, groundY, -1.20),
+    new THREE.Vector3(4.00, 4.12, 1.20),
   );
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(6.1, 7.2, 10.8);

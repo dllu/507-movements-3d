@@ -64,13 +64,14 @@ test('movement 360 separates the loose oscillating drum from the shaft-fast ratc
   assert.equal(blocks.flywheelRotor.parent, model.root);
   assert.notEqual(blocks.looseDrum, blocks.flywheelRotor);
   assert.equal(blocks.drumBody.parent, blocks.looseDrum);
-  assert.equal(blocks.drumIndex.parent, blocks.looseDrum);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.equal(blocks.drumIndex.parent, null);
   assert.equal(blocks.pawlHinge.parent, blocks.looseDrum);
   assert.equal(blocks.pawlArm.parent, blocks.pawlHinge);
   assert.equal(blocks.pawlTip.parent, blocks.pawlHinge);
   assert.equal(blocks.ratchetWheel.parent, blocks.flywheelRotor);
   assert.equal(blocks.flywheelRim.parent, blocks.flywheelRotor);
-  assert.equal(blocks.flywheelIndex.parent, blocks.flywheelRotor);
+  assert.equal(blocks.flywheelIndex.parent, null);
   assert.equal(blocks.rockingBeam.parent, model.root);
   assert.equal(blocks.driveCord.parent, model.root);
   assert.equal(blocks.counterweightCord.parent, model.root);
@@ -92,9 +93,9 @@ test('movement 360 separates the loose oscillating drum from the shaft-fast ratc
     'heavy-continuously-rotating-flywheel-rim',
     'one-inextensible-beam-to-drum-drive-cord',
     'hanging-balance-weight-on-left-cord',
-    'white-oscillating-drum-index',
-    'white-continuous-flywheel-index',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => role.startsWith('white-')),
+    'Brown draws no white indices');
   disposeModel(model.root);
 });
 

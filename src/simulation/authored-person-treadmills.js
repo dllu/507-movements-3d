@@ -64,7 +64,9 @@ function externalPersonTreadmill(movement) {
   const personMass = 1.0;
   const gravity = 9.81;
   const personCenterOfMass = wheelCenter.clone().add(
-    new THREE.Vector3(1.95, 1.90, 0.60),
+    // Brown's man climbs on the descending side toward the far end of the
+    // drum, right of the diagonal side bar in the level side view.
+    new THREE.Vector3(1.95, 1.90, -0.45),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
@@ -303,8 +305,10 @@ function externalPersonTreadmill(movement) {
   cap.userData.role = 'source-visible-person-cap';
   person.add(cap);
   const arms = [];
-  const handRailY = personCenterOfMass.y + 0.57;
-  const handRailX = personCenterOfMass.x + 0.35;
+  // He faces the drum and holds a rail at head height in front of him,
+  // Brown's topmost horizontal line running the length of the drum.
+  const handRailY = personCenterOfMass.y + 0.82;
+  const handRailX = personCenterOfMass.x - 0.30;
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
       0,
@@ -436,7 +440,7 @@ function externalPersonTreadmill(movement) {
   const handRailEnd = new THREE.Vector3(
     handRailX,
     handRailY,
-    personCenterOfMass.z + 0.52,
+    drumWidth / 2,
   );
   const handRail = tubeBetween(
     handRailStart,

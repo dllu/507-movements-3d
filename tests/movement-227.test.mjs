@@ -67,8 +67,9 @@ test('movement 227 is one six-tooth pulley carrying one alternating-plane chain'
   assert.equal(mechanism, archetype);
   assert.equal(blocks.sprocket.userData.teeth, 6);
   assert.equal(blocks.chain.userData.alternatingLinkPlanes, true);
-  assert.equal(blocks.links.length, 21);
-  assert.equal(new Set(blocks.links).size, 21);
+  // One spare slot keeps each slot's parity (plate or loop) fixed.
+  assert.equal(blocks.links.length, 22);
+  assert.equal(new Set(blocks.links).size, 22);
   assert.equal(sourceAnimation.available, true);
   assert.equal(sourceAnimation.cyclesPerMinute, 15);
   assert.equal(sourceAnimation.chainPositionsPerPulleyTurn, 12);
@@ -332,7 +333,7 @@ test('movement 227 has smooth straight-to-pulley handoffs and exact full-turn ad
   disposeModel(model.root);
 });
 
-test('movement 227 renders interlocked oval links in genuinely orthogonal planes', () => {
+test('movement 227 renders interlocked plate and loop links in genuinely orthogonal planes', () => {
   const model = createMovementModel(catalog.movements[226]);
   const { blocks, geometry, stateAtTime } = model.root.userData;
   let sphereCount = 0;
@@ -340,7 +341,12 @@ test('movement 227 renders interlocked oval links in genuinely orthogonal planes
     if (object.geometry?.type === 'SphereGeometry') sphereCount += 1;
   });
   assert.equal(sphereCount, 0);
-  assert.equal(blocks.links[0].geometry.type, 'TubeGeometry');
+  // Brown draws flat plate links pierced at each joint; the links standing
+  // across the teeth are flat loops seen edge-on.
+  assert.equal(blocks.links.length % 2, 0);
+  assert.equal(blocks.links[1].geometry.type, 'TubeGeometry');
+  assert.equal(blocks.links[0].geometry.type, 'ExtrudeGeometry');
+  assert.equal(blocks.links[0].geometry.parameters.shapes.holes.length, 2);
   assert.ok(geometry.linkLoopHalfWidth > geometry.linkWireRadius * 2.8);
   assert.ok(geometry.sprocketDepth < geometry.linkLoopHalfWidth * 2);
 

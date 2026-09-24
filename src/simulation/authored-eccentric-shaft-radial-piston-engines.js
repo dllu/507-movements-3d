@@ -6,6 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {castFootGeometry} from './rotary-engine-cast-feet.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -316,12 +317,12 @@ function eccentricShaftRadialPistonEngine(movement) {
   innerCylinderWall.userData.role = 'fixed-inner-sealing-wall-of-cylinder';
   root.add(innerCylinderWall);
 
+  // Brown stands the casing on one cast foot with concave flanks, not a bed slab.
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(7.80, 0.28, 1.42),
+    castFootGeometry({casingRadius: cylinderOuterRadius, padHalfWidth: 2.75, neckHalfWidth: 2.1, footY: -cylinderOuterRadius - 0.28}, -0.38, 0.98),
     frameMaterial,
   );
-  foundation.position.set(0, -cylinderOuterRadius-0.14, -0.14);
-  foundation.userData.role = 'fixed-foundation-of-eccentric-shaft-engine';
+  foundation.userData.role = 'fixed-cast-foot-under-cylinder';
   root.add(foundation);
 
   for (const side of [-1, 1]) {

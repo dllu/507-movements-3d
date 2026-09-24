@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
 import { ring } from './finite-plate-geometry.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -328,14 +329,15 @@ function streamDrivenArchimedesScrew(movement) {
   waterWheel.userData.role =
     'lower-stream-wheel-rigidly-fixed-to-screw-shaft';
   rotor.add(waterWheel);
-  const wheelRims = [-0.18, 0.18].map((offset) => {
+  // Brown draws the wheel as one solid disc with the paddle boards set
+  // round its edge, not a spoked double rim.
+  const wheelRims = [0].map((offset) => {
     const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(waterWheelRadius, 0.075, 9, 64),
+      horizontalRing(centralShaftRadius + 0.004, waterWheelRadius, -0.06, 0.06),
       darkMaterial,
     );
-    rim.rotation.x = Math.PI / 2;
     rim.position.y = offset;
-    rim.userData.role = 'lower-water-wheel-rim';
+    rim.userData.role = 'lower-water-wheel-solid-disc';
     waterWheel.add(rim);
     return rim;
   });
@@ -345,12 +347,6 @@ function streamDrivenArchimedesScrew(movement) {
     const paddleCarrier = new THREE.Group();
     paddleCarrier.rotation.y = angle;
     waterWheel.add(paddleCarrier);
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(waterWheelRadius * 1.65, 0.09, 0.09),
-      darkMaterial,
-    );
-    spoke.position.x = waterWheelRadius * 0.42;
-    paddleCarrier.add(spoke);
     const paddle = new THREE.Mesh(
       new THREE.BoxGeometry(0.52, 0.34, 0.68),
       wheelMaterial,
@@ -417,6 +413,34 @@ function streamDrivenArchimedesScrew(movement) {
     return bridge;
   });
 
+  // Brown holds the top of the shaft in a bracket reaching in from the upper
+  // left: a bearing round the shaft stub above the casing, its arm rising
+  // clear of the casing and running off to the left.
+  const upperStubBearing = new THREE.Mesh(
+    ring(centralShaftRadius + 0.004, 0.30, -0.08, 0.08),
+    frameMaterial,
+  );
+  upperStubBearing.quaternion.setFromUnitVectors(Z_AXIS, axisDirection);
+  upperStubBearing.position.copy(worldFromAssemblyLocal(new THREE.Vector3(0, screwLength / 2 + 0.22, 0)));
+  upperStubBearing.userData.role = 'fixed-bracket-bearing-on-upper-shaft-stub';
+  root.add(upperStubBearing);
+  const bracketNormal = new THREE.Vector3(-axisDirection.y, axisDirection.x, 0);
+  if (bracketNormal.y < 0) bracketNormal.negate();
+  const bracketFoot = upperStubBearing.position.clone().addScaledVector(bracketNormal, 0.27);
+  const bracketElbow = upperStubBearing.position.clone().addScaledVector(bracketNormal, 0.78);
+  const upperBracketArms = [
+    [bracketFoot, bracketElbow],
+    [bracketElbow, new THREE.Vector3(-5.30, bracketElbow.y, 0)],
+  ].map(([start, end]) => {
+    const delta = end.clone().sub(start);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(delta.length() + 0.08, 0.16, 0.16), frameMaterial);
+    arm.position.copy(start).add(end).multiplyScalar(0.5);
+    arm.rotation.z = Math.atan2(delta.y, delta.x);
+    arm.userData.role = 'fixed-upper-shaft-bracket-arm';
+    root.add(arm);
+    return arm;
+  });
+
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(8.20, 0.24, 5.20),
     frameMaterial,
@@ -431,12 +455,14 @@ function streamDrivenArchimedesScrew(movement) {
   streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.34, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
-  // Only a shallow sheet of stream is drawn, as Brown hatches its surface.
+  // Brown rules the stream surface with broken strokes running with the
+  // current (local z) round the wheel, not a water box.
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(3.90, 0.45, 4.70),
-    waterMaterial,
+    ruledWaterLines({ xMin: -2.7, xMax: 2.7, surfaceY: 3.9, rows: 29, spacing: 0.23, thickness: 0.035, depth: 0.012, dash: [0.5, 1.7], gap: [0.15, 0.5], seed: 443 })
+      .rotateX(-Math.PI / 2).rotateY(Math.PI / 2),
+    ruledWaterMaterial(),
   );
-  streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY - 0.225, 0);
+  streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY, 0);
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';
   root.add(streamWater);
@@ -562,6 +588,8 @@ function streamDrivenArchimedesScrew(movement) {
       bearings,
       bearingSupports,
       bearingBridges,
+      upperStubBearing,
+      upperBracketArms,
       casing,
       casingEndRings,
       casingIndex,
@@ -672,8 +700,10 @@ function streamDrivenArchimedesScrew(movement) {
     worldFromAssemblyLocal,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.52, groundY, -2.72),
-    new THREE.Vector3(4.10, 3.48, 2.72),
+    // Brown's close view: the trough and bracket run off the left edge and
+    // the stream fills the foot of the plate.
+    new THREE.Vector3(-3.20, -2.40, -1.70),
+    new THREE.Vector3(3.70, 3.30, 1.70),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 4.8, 10.8);

@@ -31,8 +31,15 @@ export function correctGyroscopeParts(root,id) {
       for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.supportCupRim,b.pintle,b.curvedNeck])pair(moving,fixed);
     }
     d.cameraDirection=new THREE.Vector3(7,3.8,12);
-    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-4.75,-2.48,-1.5),new THREE.Vector3(4.75,3.10,1.5));
-    d.cameraFramingScope='View-fit proxy, not a world swept bounding box; checked against all visible vertices through full precession.';
+    // Plate crop: Brown frames the pillar and the ring at one precession
+    // angle, filling the plate. Fit the opening pose (t = 0) so the ring
+    // leaves the frame briefly as it precesses round the pillar. The depth
+    // range is a view-fit proxy (the ring's full depth inflates the box's
+    // projected corners and framed the figure small).
+    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-1.0,-2.45,-1.1),new THREE.Vector3(4.75,3.55,0.9));
+    // The full precession sweep, kept separately from the plate crop.
+    d.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.75,-2.48,-4.75),new THREE.Vector3(4.75,3.55,4.75));
+    d.cameraFramingScope='Plate crop of the opening pose; sweptBounds holds the full precession sweep.';
     d.minimumDisplayCycleSeconds=12;
     d.reconstructionNote='The disk and ring follow ideal steady horizontal precession, with twelve rotor turns per precession. Masses and dimensions are inferred. Nutation, release transients, bearing friction and stability under disturbance are not simulated.';
     d.dynamics.validationScope='Prescribed horizontal regular-precession solution and spin-angular-momentum balance; no release or contact-dynamics validation.';

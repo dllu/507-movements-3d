@@ -3,6 +3,7 @@ import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
 import { horizontalTurned } from './horizontal-turbine-solids.js';
 import { ring, capsule, plate } from './finite-plate-geometry.js';
 import { makePersianBucketTrip } from './persian-bucket-trip.js';
+import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -355,6 +356,11 @@ function persianIrrigationWheel(movement) {
   shaftIndex.userData.role = 'visible-hollow-shaft-rotation-index';
   wheel.add(shaftIndex);
 
+  // Brown draws a light circular rim through the float tips and bucket
+  // pivots.
+  const outerRim = new THREE.Mesh(ring(bucketPivotRadius - 0.03, bucketPivotRadius + 0.03, -0.03, 0.03), darkMaterial);
+  outerRim.userData.role = 'light-outer-rim-through-bucket-pivots';
+  wheel.add(outerRim);
   const arms = [];
   const buckets = [];
   const bucketWaters = [];
@@ -490,7 +496,7 @@ function persianIrrigationWheel(movement) {
       new THREE.CylinderGeometry(0.085, 0.065, 1, 14),
       paleWaterMaterial,
     );
-    spill.userData.role = `high-level-bucket-discharge-${index + 1}`;
+    spill.userData.role = `high-level-bucket-discharge-stream-${index + 1}`;
     root.add(spill);
     bucketSpills.push(spill);
   }
@@ -556,14 +562,14 @@ function persianIrrigationWheel(movement) {
   streamBed.position.set(0, groundY + 0.36, 0);
   streamBed.userData.role = 'fixed-stream-bed-beneath-wheel';
   root.add(streamBed);
-  // Brown rules the stream as open water running off both sides and below
-  // the plate, not as a bounded tank, so the band spans past the frame.
-  const streamBottomY = groundY - 2.2;
+  // Brown rules the stream as broken horizontal strokes from the surface
+  // down, across the width of the plate and behind the lowest bucket, not as
+  // a water body.
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(14.0, streamSurfaceY - streamBottomY, 2.82),
-    waterMaterial,
+    ruledWaterLines({ xMin: -3.75, xMax: 3.75, surfaceY: streamSurfaceY, rows: 9, spacing: 0.2, thickness: 0.04, seed: 441 }),
+    ruledWaterMaterial(),
   );
-  streamWater.position.set(0, (streamSurfaceY + streamBottomY) / 2, 0);
+  streamWater.position.set(0, 0, -1.30);
   streamWater.userData.role =
     'moving-stream-partly-immersing-curved-floats';
   root.add(streamWater);

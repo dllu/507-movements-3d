@@ -37,11 +37,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "a1747d7b680ce9e0ac739e9d383269fa422fef7fef4d83edc5d1b0cd4463273d"
+      "sha256": "e47c5c80451963855a386c4b37a3342d3d0721803a8a23baffefc4f8303d00a2"
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",
-      "sha256": "4bc07d8758df20b42167795cfffb0770db508f1ddd019c386f773436b8ea9eb6"
+      "sha256": "7216704f70d8ef89ab95c02fd719d6e73638dbff7a6a1ad4c29507efc89e6518"
     },
     {
       "file": "src/data/planetary-505-profiles.js",

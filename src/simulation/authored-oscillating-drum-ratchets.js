@@ -707,6 +707,12 @@ function oscillatingDrumRatchet(movement) {
   leftCordKnot.userData.role =
     'counterweight-cord-end-fixed-to-left-sector';
   rockingBeam.add(leftCordKnot);
+  // Brown draws the cords running over the sector ends and onto the drum
+  // with no ball fastenings: the knots stay as the cords' anchor frames but
+  // are not rendered.
+  for (const knot of [drumCordKnot, rightCordKnot, leftCordKnot]) {
+    knot.visible = false;
+  }
   root.add(rockingBeam);
 
   const beamPivotPin = cylinderAlongZ(0.095, 0.92, brassMaterial, 24);

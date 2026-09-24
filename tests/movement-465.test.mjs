@@ -349,7 +349,9 @@ test('movement 465 closes exactly after one rocking cycle', () => {
       1e-12, `delivery ${index} closure`);
   });
   model.update(geometry.cycleDuration);
-  near(blocks.beam.rotation.z, 0, 1e-12, 'rendered beam closure');
+  // Playback starts from the engraved diagonal source pose.
+  near(blocks.beam.rotation.z, source.beamAngle, 1e-12, 'rendered beam closure');
+  near(source.beamAngle, model.root.userData.sourcePose.beamAngle, 1e-12, 'playback starts at the source pose');
   disposeModel(model.root);
 });
 

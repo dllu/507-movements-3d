@@ -322,13 +322,16 @@ test('movement 426 source rate maps four control seconds to 1.5 pi hub advance a
   const sourceControlEnd = stateAtTime(4);
   const fullTurn = stateAtTime(geometry.cycleDuration);
 
-  near(sourceControlEnd.inputAngle, 1.5 * Math.PI, 9e-16,
+  const start = stateAtTime(0);
+  near(start.inputAngle, geometry.sourceRotorAngle, 0,
+    'cycle starts at Brown’s upright piston pose');
+  near(sourceControlEnd.inputAngle - start.inputAngle, 1.5 * Math.PI, 9e-16,
     'four-second source hub advance');
-  near(sourceControlEnd.sourceCamControlPhase, 1, 3e-16,
-    'source control phase');
+  near(sourceControlEnd.sourceCamControlPhase - start.sourceCamControlPhase,
+    1, 5e-16, 'source control phase');
   near(geometry.cycleDuration, 16 / 3, 0,
     'one-shaft-turn cycle duration');
-  near(fullTurn.inputAngle, 0, 0,
+  near(fullTurn.inputAngle, geometry.sourceRotorAngle, 0,
     'stateAtTime full-turn modulo closure');
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.cycleDuration);

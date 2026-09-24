@@ -701,7 +701,7 @@ function leverEscapement(movement) {
     Math.cos(balancePinMountAngle) * balancePinOrbitRadius,
     Math.sin(balancePinMountAngle) * balancePinOrbitRadius,
   );
-  const impulsePin = cylinderAlongZ(0.085, 0.62, indexMaterial, 22);
+  const impulsePin = cylinderAlongZ(0.085, 0.62, darkMaterial, 22);
   impulsePin.position.set(
     pinOffset.x,
     pinOffset.y,

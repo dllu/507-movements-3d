@@ -624,6 +624,8 @@ function crownAndSpur() {
   };
   update(0);
   root.userData.cameraFov = 18;
+  // Brown draws no ground under this elevation.
+  root.userData.hideGround = true;
   // Plate 26 is a true side elevation: the crown's plane and the spur's
   // plane both pass near the eye, so each wheel reads edge-on.
   return finish(root, update, new THREE.Vector3(0.65, 0.95, 10));
@@ -1438,6 +1440,8 @@ function diskSpiralDrive() {
   };
   update(0);
   root.userData.cameraFov = 18;
+  // Brown draws no ground under this elevation.
+  root.userData.hideGround = true;
   return finish(root, update, new THREE.Vector3(0.12, 0.16, 10));
 }
 
@@ -1725,6 +1729,8 @@ function rectangularGears() {
   };
   update(0);
   root.userData.cameraFov = 18;
+  // Brown draws no ground under the pair.
+  root.userData.hideGround = true;
   return finish(root, update, new THREE.Vector3(0.12, 0.10, 10));
 }
 
@@ -4237,7 +4243,9 @@ function fuseeDrive() {
   };
   update(0);
   root.userData.cameraFov = 18;
-  return finish(root, update, new THREE.Vector3(0.03, 3.1, 10));
+  // Brown's eye is only a little above the spool tops and he draws no ground.
+  root.userData.hideGround = true;
+  return finish(root, update, new THREE.Vector3(0.03, 2.2, 10));
 }
 
 function makeAxialRotor(axis = X_AXIS) {
@@ -20942,6 +20950,24 @@ function singleCircleEqualSpeedMangleWheel() {
   fitRadialPinManglePinion(root);
   const model = finishReversingMangleGuides(root, update, 194);
   discloseRadialPinMangleContact(root);
+  // Brown draws the wheel face plain, with the groove as a narrow channel:
+  // the lands (outer wall with its central hub lobe) take the wheel colour
+  // and only the groove floor reads dark.
+  {
+    const blocks = root.userData.blocks;
+    const faceMaterial = blocks.wheelBody.material;
+    blocks.guideGrooveOuter.material.dispose();
+    blocks.guideGrooveOuter.material = faceMaterial;
+    blocks.guideGrooveRecess.material = faceMaterial;
+    blocks.wheelBody.material = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
+    blocks.wheelBody.material.fog = false;
+    blocks.wheelHub.material = faceMaterial;
+    // The long through-shaft otherwise throws a dark index-like stripe
+    // across the face; the plate shows only the cut shaft end in the boss,
+    // so the shaft now stops just proud of the hub (z -0.8 to 0.26).
+    blocks.wheelShaft.scale.z = 1.06 / 1.6;
+    blocks.wheelShaft.position.z = -0.27;
+  }
   return model;
 }
 
@@ -31528,10 +31554,12 @@ function splitTwoCamInvolutePinionDrive() {
     wheelRotationIndex,
   );
 
+  // Brown cuts both shafts off at the hub faces; longer stubs cast dark
+  // index-like shadow stripes across the plain wheel and cam faces.
   const inputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 2.18,
+    length: 0.9,
     radius: 0.09,
   });
   inputShaft.position.copy(driverCenter);
@@ -31540,7 +31568,7 @@ function splitTwoCamInvolutePinionDrive() {
   const outputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 2.22,
+    length: 0.84,
     radius: 0.1,
   });
   outputShaft.position.copy(wheelCenter);

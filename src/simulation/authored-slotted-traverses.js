@@ -652,6 +652,41 @@ function slottedTraverse(movement) {
       return marker;
     },
   );
+  // Brown draws a broad, round-topped standard rising from the bar behind
+  // the lever centre and past pin O. It rides behind the fixed pin's
+  // bearing and rear support (world z -0.76..-0.58), joined to the rail's
+  // back face by a web below the lever.
+  const railTopLocalY = sourceOutputRailYFromC * sourceScale
+    + plateOutputRailHeight / 2;
+  const railBottomLocalY = sourceOutputRailYFromC * sourceScale
+    - plateOutputRailHeight / 2;
+  const standardHalfWidth = 0.32;
+  const standardArcCenterY = 1.0;
+  const standardShape = new THREE.Shape();
+  standardShape.moveTo(-standardHalfWidth, railBottomLocalY + 0.02);
+  standardShape.lineTo(standardHalfWidth, railBottomLocalY + 0.02);
+  standardShape.lineTo(standardHalfWidth, standardArcCenterY);
+  standardShape.absarc(0, standardArcCenterY, standardHalfWidth, 0, Math.PI, false);
+  standardShape.lineTo(-standardHalfWidth, railBottomLocalY + 0.02);
+  const broadStandard = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(standardShape, {
+      bevelEnabled: false,
+      curveSegments: 32,
+      depth: 0.18,
+    }).translate(0, 0, -0.79),
+    barMaterial,
+  );
+  broadStandard.userData.role = 'broad-round-topped-standard-on-output-bar';
+  const standardWeb = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      standardHalfWidth * 2,
+      railTopLocalY - railBottomLocalY - 0.04,
+      0.53,
+    ),
+    barMaterial,
+  );
+  standardWeb.position.set(0, (railTopLocalY + railBottomLocalY) / 2, -0.345);
+  standardWeb.userData.role = 'web-joining-broad-standard-to-rail-back';
   outputBar.add(
     outputRail,
     outputRiser,
@@ -659,6 +694,8 @@ function slottedTraverse(movement) {
     riserToRail,
     outputJointBoss,
     outputJointAnchor,
+    broadStandard,
+    standardWeb,
   );
   root.add(outputBar);
 

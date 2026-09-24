@@ -55,6 +55,12 @@ export function makeVariableRadiusCrank() {
   const bounds = new THREE.Box3();
   for (let i = 0; i <= 128; i++) { update(g.period * i / 128); bounds.union(new THREE.Box3().setFromObject(root, true)); }
   bounds.expandByScalar(.04); update(0); markShadows(root);
+  // The initial fit measures posed vertices only; an unrendered envelope of
+  // the whole swing keeps the rocker inside the frame later in the cycle.
+  const envelope = new THREE.Mesh(new THREE.BoxGeometry(...bounds.getSize(new THREE.Vector3()).multiplyScalar(.999).toArray()),
+    new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, transparent: true, opacity: 0, fog: false}));
+  envelope.position.copy(bounds.getCenter(new THREE.Vector3())); envelope.name = 'invisible-swept-camera-envelope';
+  envelope.userData.cameraFitGuide = true; envelope.castShadow = envelope.receiveShadow = false; root.add(envelope);
   Object.assign(root.userData, {parts, families, blocks, geometry: g, mechanism: 'source-variable-radius-crank',
     simulationBackend: 'analytic', fidelity: 'authored', reconstructionStatus: 'reconstructed', supportsRestart: true,
     hideGround: true, cameraFitBounds: bounds, cameraFov: 8,

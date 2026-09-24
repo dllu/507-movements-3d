@@ -275,7 +275,9 @@ function springReturnBellHammer(movement) {
     roughness: 0.31,
     side: THREE.DoubleSide,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
+  // Brown draws the pivot pin, striker nub and spring tip in plain line: no
+  // white index dots.
+  const pinMaterial = matte(PALETTE.ink, { metalness: 0.30, roughness: 0.42 });
 
   // Brown's plank runs under the hammer bracket and ends below the bell.
   const foundation = new THREE.Mesh(
@@ -289,10 +291,11 @@ function springReturnBellHammer(movement) {
   const pivotStand = new THREE.Group();
   pivotStand.userData.role = 'fixed-hammer-pivot-bracket';
   const pedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.74, 1.18, 0.78),
+    new THREE.BoxGeometry(0.74, 1.18, 0.72),
     frameMaterial,
   );
-  pedestal.position.set(pivot.x, -1.15, 0.02);
+  // Its face stands just behind the hammer hub and tail swinging past it.
+  pedestal.position.set(pivot.x, -1.15, -0.04);
   pedestal.userData.role = 'pedestal-below-hammer-pivot';
   pivotStand.add(pedestal);
   const bearing = cylinderAlongZ(0.25, 0.96, darkMaterial, 36);
@@ -301,10 +304,10 @@ function springReturnBellHammer(movement) {
   boreZCylinder(bearing, 0.25, 0.108, 0.50);
   bearing.userData.role = 'fixed-bearing-at-hammer-pivot';
   pivotStand.add(bearing);
-  const pivotPin = cylinderAlongZ(0.105, 1.18, whiteMaterial, 28);
+  const pivotPin = cylinderAlongZ(0.105, 1.18, pinMaterial, 28);
   pivotPin.position.copy(pivot);
   pivotPin.position.z = 0.18;
-  pivotPin.userData.role = 'white-hammer-pivot-axis-index';
+  pivotPin.userData.role = 'hammer-pivot-pin';
   pivotStand.add(pivotPin);
   root.add(pivotStand);
 
@@ -338,7 +341,7 @@ function springReturnBellHammer(movement) {
   hammer.add(hammerHead);
   const strikerFace = new THREE.Mesh(
     new THREE.SphereGeometry(strikerRadius, 26, 20),
-    whiteMaterial,
+    hammerMaterial,
   );
   strikerFace.position.set(hammerArmLength, 0, 0);
   strikerFace.userData.role = 'rounded-bell-contact-face';
@@ -362,7 +365,7 @@ function springReturnBellHammer(movement) {
   root.add(returnLeafSpring);
   const springContactPad = new THREE.Mesh(
     new THREE.SphereGeometry(0.105, 22, 16),
-    whiteMaterial,
+    springMaterial,
   );
   springContactPad.userData.role =
     'sliding-contact-of-leaf-spring-under-hammer';

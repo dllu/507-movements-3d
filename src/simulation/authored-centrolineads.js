@@ -50,6 +50,72 @@ function lineTube(points, radius, material) {
   );
 }
 
+// Brown's inset beside the instrument: the construction circle, the dashed
+// rays from its vanishing point through the two pins and the joint, the dashed
+// pin chord, and the two solid working lines meeting at the joint. It is a
+// static ink drawing, not a working part; proportions are read from the plate.
+function addPlateConstructionInset(root, material) {
+  const inset = new THREE.Group();
+  inset.userData.role = 'brown-inset-construction-circle-rays-and-working-lines';
+  const center = new THREE.Vector2(1.67, 1.61);
+  const radius = 0.80;
+  const at = (x, y) => center.clone().add(new THREE.Vector2(x * radius, y * radius));
+  const onCircle = (angle) => at(Math.cos(angle), Math.sin(angle));
+  const left = at(-1, 0);
+  const right = at(1, 0);
+  const upperPin = onCircle(Math.PI / 4);
+  const lowerPin = onCircle(-Math.PI / 3);
+  const line = (start, end, width) => {
+    const delta = end.clone().sub(start);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(delta.length(), width, 0.01),
+      material,
+    );
+    mesh.position.set((start.x + end.x) / 2, (start.y + end.y) / 2, 0);
+    mesh.rotation.z = Math.atan2(delta.y, delta.x);
+    inset.add(mesh);
+    return mesh;
+  };
+  const dashed = (start, end, dash = 0.11, gap = 0.08) => {
+    const length = end.distanceTo(start);
+    const direction = end.clone().sub(start).normalize();
+    for (let along = 0; along < length - 0.02; along += dash + gap) {
+      line(
+        start.clone().addScaledVector(direction, along),
+        start.clone().addScaledVector(direction, Math.min(length, along + dash)),
+        0.024,
+      );
+    }
+  };
+  const extend = (start, through, endX) => {
+    const direction = through.clone().sub(start);
+    return start.clone().addScaledVector(direction, (endX - start.x) / direction.x);
+  };
+  const circle = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, 0.014, 6, 128),
+    material,
+  );
+  circle.position.set(center.x, center.y, 0);
+  inset.add(circle);
+  dashed(left, extend(left, upperPin, center.x + 2.9 * radius));
+  dashed(left, at(3.0, 0));
+  dashed(left, extend(left, lowerPin, center.x + 2.35 * radius));
+  dashed(upperPin, lowerPin, 0.07, 0.06);
+  const solid = (through, endY) => {
+    const direction = through.clone().sub(right);
+    line(right, right.clone().addScaledVector(direction, (endY - right.y) / direction.y), 0.03);
+  };
+  solid(upperPin, center.y + 1.7 * radius);
+  solid(lowerPin, center.y - 1.6 * radius);
+  inset.position.z = -0.22;
+  inset.traverse((object) => {
+    object.castShadow = false;
+    object.receiveShadow = false;
+  });
+  root.add(inset);
+  return inset;
+}
+
 function centrolinead(movement) {
   const root = new THREE.Group();
   const vanishingDistance = 4.50;
@@ -619,6 +685,15 @@ function centrolinead(movement) {
   board.receiveShadow = true;
   constructionCircleArc.castShadow = false;
   fixedPinChord.castShadow = false;
+  root.userData.blocks.plateConstructionInset =
+    addPlateConstructionInset(root, darkMaterial);
+  // Brown draws no white index dots or blade graduations.
+  for (const index of [
+    jointIndex,
+    ...bladeTicks,
+    ...Object.values(fixedPins).map((pin) => pin.index),
+    ...Object.values(legs).map((leg) => leg.clamp.children[1]),
+  ]) index.visible = false;
   correctCentrolinead(root);
   return finishDrawingGauge(root,update,cycleDuration);
 }

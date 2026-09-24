@@ -89,7 +89,6 @@ test('movement 380 is a C-frame drill whose inner spindle passes through a separ
     blocks.feedHandleBar,
     blocks.feedHandleHub,
     ...blocks.feedHandleKnobs,
-    blocks.feedIndex,
     blocks.feedThread,
     blocks.hollowSleeve,
     ...blocks.sleeveEndRings,
@@ -101,9 +100,11 @@ test('movement 380 is a C-frame drill whose inner spindle passes through a separ
     blocks.drillCrankArm,
     blocks.drillCrankHub,
     blocks.drillCrankKnob,
-    blocks.drillIndex,
     blocks.drillSpindle,
   ]) assert.equal(component.parent, blocks.drillRotor);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.equal(blocks.feedIndex.parent, null);
+  assert.equal(blocks.drillIndex.parent, null);
   assert.equal(blocks.feedHandleKnobs.length, 2);
   assert.equal(blocks.sleeveEndRings.length, 2);
   assert.equal(blocks.crampFrame.userData.fixed, true);

@@ -90,8 +90,13 @@ test('movement 423 is two opposed single-acting pistons B joined by two rods to 
     'bottom-connecting-rod-from-B-to-common-crank-pin-D',
     'continuously-rotating-common-crank-D',
     'single-rocking-induction-valve-a-for-both-outer-spaces',
-    'common-central-exhaust-space-between-the-two-pistons',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no translucent steam fans or exhaust disc.
+  model.root.traverse((object) => {
+    for (const material of [object.material].flat()) {
+      if (material) assert.ok(!material.transparent, object.userData.role);
+    }
+  });
   disposeModel(model.root);
 });
 

@@ -102,8 +102,16 @@ test('movement 218 is the independently authored output plate of 217', () => {
   assert.equal(blocks.catchHookTongue.parent, blocks.catchLink);
   assert.equal(blocks.catchHook.parent, blocks.catchLink);
   assert.equal(blocks.tripRoller.parent, blocks.catchLink);
-  assert.equal(blocks.rockerBody.geometry.type, 'TubeGeometry');
-  assert.equal(blocks.catchBar.geometry.type, 'TubeGeometry');
+  // Plate 218 draws the lever and catch G as flat bars: an S lever bored at
+  // H and a broad arched catch ending in a notch lug.
+  assert.equal(blocks.rockerBody.geometry.type, 'ExtrudeGeometry');
+  assert.equal(blocks.rockerBody.geometry.parameters.shapes.holes.length, 2);
+  assert.equal(blocks.catchBar.geometry.type, 'ExtrudeGeometry');
+  assert.equal(blocks.catchBar.geometry.parameters.shapes.holes.length, 1);
+  assert.equal(blocks.outputHubRing.visible, false);
+  assert.equal(blocks.wheelIndex.visible, false);
+  assert.equal(blocks.catchIndex.visible, false);
+  assert.equal(blocks.followerContactMarker.visible, false);
   assert.equal(geometry.notchCount, 9);
   assert.equal(
     blocks.notchWheel.geometry.parameters.shapes.holes.length,
@@ -396,7 +404,8 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
   );
   assert.equal(blocks.camRotor.visible, false);
   assert.equal(blocks.followerSourceRing.visible, true);
-  assert.equal(blocks.catchContactMarker.visible, true);
+  // Brown draws no contact markers; the contact itself is still reported.
+  assert.equal(blocks.catchContactMarker.visible, false);
   assert.equal(blocks.tripContactMarker.visible, false);
   assert.ok(model.root.userData.contacts.catchToNotch);
 
@@ -410,9 +419,9 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
     'F is visibly stopped during e-to-C return');
   assert.ok(model.root.userData.kinematics.catchSolidClearance > 0.16);
   model.update(canonicalTimes.nextCReengagement);
-  assert.equal(blocks.catchContactMarker.visible, true);
+  assert.equal(blocks.catchContactMarker.visible, false);
   assert.ok(model.root.userData.contacts.catchToNotch);
-  assert.ok(model.cameraDirection.z > 2 * model.cameraDirection.x);
+  assert.deepEqual(model.cameraDirection.toArray(), [0, 0, 15]);
   assert.equal(geometry.outputPlateFocus, true);
 
   const movement217 = createMovementModel(catalog.movements[216]);

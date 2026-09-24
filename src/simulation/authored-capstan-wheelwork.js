@@ -942,6 +942,12 @@ function capstanWheelwork(movement) {
   root.userData.groundFloorY = 0;
   correctCapstanWheelwork(root);
   addSourceBandAndLevers(root, frameMaterial);
+  // Brown draws no white rotation indices on the wheels.
+  const blocks = root.userData.blocks;
+  blocks.annulusIndex.visible = false;
+  for (const gear of [blocks.sunGear, ...blocks.planets]) {
+    gear.userData.rotor.children[3].visible = false;
+  }
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

@@ -360,7 +360,7 @@ test('movement 267 arm, rim, and output derivatives are smooth and analytic', ()
   disposeModel(model.root);
 });
 
-test('movement 267 renderer keeps rim and shaft independent with rigid indices', () => {
+test('movement 267 renderer keeps rim and shaft independent without undrawn indices', () => {
   const model = createMovementModel(catalog.movements[266]);
   const { blocks, stateAtTime } = model.root.userData;
   const arrowPosition = blocks.directionArrow.position.clone();
@@ -378,18 +378,10 @@ test('movement 267 renderer keeps rim and shaft independent with rigid indices',
       === 'spring-holding-eccentric-arm-toward-rim').length,
     4,
   );
+  // Brown draws no white index marks; none are rendered.
   assert.equal(
-    roles.filter((role) => role
-      === 'white-eccentric-arm-working-tip-index').length,
-    4,
-  );
-  assert.equal(
-    roles.filter((role) => role === 'white-rim-face-rotation-index').length,
-    1,
-  );
-  assert.equal(
-    roles.filter((role) => role === 'white-output-shaft-rotation-index').length,
-    1,
+    roles.filter((role) => role.startsWith('white-')).length,
+    0,
   );
 
   for (const time of [0, 1.3, 3.5, 4.6, 6.4, 8.4, 9.2]) {

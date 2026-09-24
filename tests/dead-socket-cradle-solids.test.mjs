@@ -56,10 +56,20 @@ test('417 ball centers match analytic sockets and the captured slide clears ever
   for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getX(i),p.getZ(i)));
   assert.ok(minimum>.13);
  }
- for(const [mesh,radius] of [[b.upperBall,.12],[b.upperSocketCup,.12]]){
-  const p=mesh.geometry.attributes.position;let minimum=Infinity;
+ {
+  const p=b.upperBall.geometry.attributes.position;let minimum=Infinity;
   for(let i=0;i<p.count;i++)minimum=Math.min(minimum,Math.hypot(p.getX(i),p.getZ(i)));
-  assert.ok(minimum>radius);
+  assert.ok(minimum>.12);
+ }
+ // Head A's hourglass bore, measured about its own axis in rod B's frame,
+ // clears the 0.12 journal swung through ±journalSwingInHeadA at every depth.
+ {
+  const g=d.geometry,m=g.headAxisInclinationToRodB,axis=new THREE.Vector3(Math.sin(m),Math.cos(m),0);
+  const p=b.upperSocketCup.geometry.attributes.position,v=new THREE.Vector3();
+  for(let i=0;i<p.count;i++){
+   v.fromBufferAttribute(p,i);const axial=v.dot(axis),radial=v.clone().addScaledVector(axis,-axial).length();
+   assert.ok(radial>.12/Math.cos(g.journalSwingInHeadA)+Math.abs(axial)*Math.tan(g.journalSwingInHeadA),`${axial} ${radial}`);
+  }
  }
 });
 

@@ -76,6 +76,10 @@ export function correctPantographParts(model) {
   }
   b.tracerTip.position.y = g.paperTopY+.047;
   b.tracerKnob.position.y = g.paperTopY+.93;
+  // Brown draws B as a ringed pivot like the other joints, not a white ball.
+  replace(b.tracerKnob, boredCylinderGeometry(.16,.06,.05));
+  b.tracerKnob.material = b.tracerTip.material;
+  b.tracerShaft.material = b.tracerTip.material;
   replace(b.tracerShaft,new THREE.CylinderGeometry(.055,.055,.82-.055,32));
   b.tracerShaft.position.y = g.paperTopY+(.82+.055)/2;
   b.pencilTip.position.y = g.paperTopY+.085;
