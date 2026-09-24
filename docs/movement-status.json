@@ -8310,7 +8310,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8318,9 +8319,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Still framed small because the view includes the drop to the seabed.",
-      "limits": "Detent actuation, drag and impact idealized.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The view follows the lowered rod, so the sea bottom rises to meet it rather than the rod falling; detent, drag and impact idealized.",
+      "assessment": "reasonable"
     },
     {
       "id": 248,
@@ -8795,7 +8796,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8803,8 +8805,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "B dips behind the feet as it swings: the caption's reversals need an eccentric of 0.57R where Brown draws ≈0.25R.",
-      "limits": "The pressing spring is not drawn, so not rendered.",
+      "visibleFlaws": "Stand E shows only as a dark foot slab below B; Brown draws its legs beside the disc.",
+      "limits": "D sits 13/55 of B's radius off centre as drawn, so roller C turns one way at a speed varying about twofold and rises and falls twice a turn (the caption's unequal strokes); the pressing spring is not drawn; C's rolling is ideal; the screw returns after three turns.",
       "assessment": "minor"
     },
     {
@@ -8827,16 +8829,17 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eccentric-cone-drives.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The pressing spring is not drawn, so not rendered; axial adjustment scrubs along the cone; friction capacity and slip unsolved.",
+      "limits": "Shares 262's reading at Brown's proportions: C rises and falls on its spring with unequal strokes; the pressing spring is not drawn; axial adjustment scrubs along the cone; friction capacity and slip unsolved.",
       "assessment": "reasonable"
     },
     {
@@ -9088,16 +9091,17 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3d-255-287-review.md"
+        "docs/w3d-255-287-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-ratchet-bars.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Teeth are cut deeper than engraved so the pawl hooks clear; the bar and cord jump back two teeth each cycle; the pulley bearing is not drawn; holding and load transfer imposed.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Teeth are cut deeper than engraved so the pawl hooks clear; the bar and cord jump back two teeth each cycle.",
+      "limits": "The pulley bearing is not drawn (Brown omits it too); holding and load transfer imposed.",
       "assessment": "minor"
     },
     {
@@ -9286,7 +9290,8 @@
         "docs/lane4-escapements-misc-review.md",
         "docs/w3d-255-287-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9294,8 +9299,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The hook works ≈0.86 lower than drawn, making dog a a broad wedge, and the teeth are shallow (at Brown's hook height the ratchet turns only 11–18°).",
-      "limits": "An undrawn detent is assumed.",
+      "visibleFlaws": "The hook works about 0.86 below Brown's tip and the ratchet teeth are shallow.",
+      "limits": "A dog in the page plane can turn the face ratchet a full sixth only within about 0.35 of the axis for the hammer's roughly 0.6 lift.",
       "assessment": "minor"
     },
     {
@@ -11575,7 +11580,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane6-engines-misc-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11583,8 +11589,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The crank pedestal is a large grey block where Brown draws a small bracket.",
-      "limits": "The cylinder is closed, so the piston is hidden; pressure sealing, steam forces, friction and bearing loads unvalidated.",
+      "visibleFlaws": "The crank block shows as a tall grey box where Brown crops a low base at the bottom of the plate.",
+      "limits": "The crank's full turn dips 1.5 units below Brown's crop, so cropping at his line would cut off the crank pin for a quarter turn.",
       "assessment": "minor"
     },
     {
@@ -11678,7 +11684,8 @@
         "docs/w2g-341-400-review.md",
         "docs/w5c-333-400-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/m8-framing-ropes-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11686,9 +11693,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A grey guide block Brown does not draw shows above the disk.",
-      "limits": "The hidden guide sits 65 units above the pivots rather than the official 25.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Rod B runs out of the view as Brown breaks it off.",
+      "assessment": "reasonable"
     },
     {
       "id": 349,

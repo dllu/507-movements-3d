@@ -63,7 +63,7 @@ test('movement 263 is the side view of the paired eccentric cone reverser', () =
     'movements-262-263-eccentric-screw-cone-friction-reverser',
   );
   assert.match(mechanism, /one-lead-per-turn-translation/);
-  assert.match(mechanism, /reverses-roller-C/);
+  assert.match(mechanism, /reciprocates-it-with-unequal-rise-and-fall/);
   disposeModel(model.root);
 });
 
@@ -84,8 +84,9 @@ test('movements 262 and 263 share one mechanism but use distinct source views', 
     > Math.abs(endView.cameraDirection.z));
   assert.ok(Math.abs(sideView.cameraDirection.z)
     > Math.abs(sideView.cameraDirection.x) * 4);
-  // 262 looks along the screw from its outer (small-cone) end, as Brown draws D.
-  assert.ok(endView.cameraDirection.x > 0);
+  // 262 looks along the screw at B's large end: D's boss on B's face and
+  // standard E behind B with only its feet showing, as Brown draws them.
+  assert.ok(endView.cameraDirection.x < 0);
   assert.ok(sideView.cameraDirection.z > 0);
   disposeModel(sideView.root);
   disposeModel(endView.root);
@@ -198,7 +199,7 @@ test('movement 263 side view exposes the parallel axes and clear contact edge', 
   disposeModel(model.root);
 });
 
-test('movement 263 retains all six no-slip roller reversals', () => {
+test('movement 263 keeps six reversals of the roller\'s rise and fall', () => {
   const model = createMovementModel(catalog.movements[262]);
   const {
     geometry,
@@ -220,8 +221,8 @@ test('movement 263 retains all six no-slip roller reversals', () => {
     maximumRatio = Math.max(maximumRatio, configuration.rollerAngularRatio);
   }
   assert.ok(maximumNoSlipError < 7e-16);
-  assert.ok(minimumRatio < -3.7);
-  assert.ok(maximumRatio > 0.25);
+  assert.ok(minimumRatio < -3.6);
+  assert.ok(maximumRatio < -1.8);
   assert.equal(strokeAnalysis.directionChangeAngles.length, 6);
   for (let turn = 0; turn < 3; turn += 1) {
     const roots = strokeAnalysis.directionChangeAngles.filter((angle) => (
@@ -230,8 +231,8 @@ test('movement 263 retains all six no-slip roller reversals', () => {
     assert.equal(roots.length, 2);
   }
   assert.ok(
-    strokeAnalysis.shorterDirectionAngularTravel
-      < strokeAnalysis.longerDirectionAngularTravel,
+    strokeAnalysis.shorterDirectionTravel
+      < strokeAnalysis.longerDirectionTravel,
   );
   disposeModel(model.root);
 });

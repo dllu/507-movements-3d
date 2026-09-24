@@ -59,7 +59,7 @@ test('movement 262 is the end-view eccentric screw-cone friction reverser', () =
   assert.equal(archetype, movement.archetype);
   assert.match(mechanism, /fixed-nut-E/);
   assert.match(mechanism, /eccentric-cone-B/);
-  assert.match(mechanism, /reverses-roller-C/);
+  assert.match(mechanism, /reciprocates-it-with-unequal-rise-and-fall/);
   assert.equal(blocks.coneBody.parent, blocks.screwConeAssembly);
   assert.equal(blocks.screwCore.parent, blocks.screwConeAssembly);
   assert.equal(blocks.leftInputJournal.parent, blocks.screwCore);
@@ -94,11 +94,11 @@ test('movement 262 preserves the unavailable paired end and side source views', 
   assert.equal(plate.measurementUncertaintyPixels, 6);
   assert.equal(plate.officialAnimationAvailable, false);
   assert.deepEqual(plate.rasterEndView, {
-    coneCenterB: { x: 69, y: 146 },
+    coneCenterB: { x: 67, y: 164 },
     coneOuterRadius: 55,
     rollerCenterC: { x: 70, y: 95 },
     rollerOuterRadius: 16,
-    screwCenterD: { x: 69, y: 176 },
+    screwCenterD: { x: 67, y: 177 },
   });
   assert.deepEqual(plate.rasterSideView, {
     coneLargeEndX: 166,
@@ -157,8 +157,8 @@ test('movement 262 matches the measured cone, eccentric, roller, and lead propor
     0.001,
     'screw-lead-to-cone-length ratio',
   );
-  assert.ok(geometry.coneSmallRadius < geometry.coneEccentricity);
-  assert.ok(geometry.coneLargeRadius > geometry.coneEccentricity);
+  // Brown's offset keeps screw D inside every section of the cone.
+  assert.ok(geometry.coneEccentricity < geometry.coneSmallRadius);
   disposeModel(model.root);
 });
 
@@ -271,7 +271,7 @@ test('movement 262 maintains exact cone-to-roller edge contact without collision
     assert.ok(configuration.contactAxialFraction <= 1);
   }
   assert.ok(maximumCoincidenceError < 5e-16);
-  assert.ok(maximumTransformError < 1.3e-15);
+  assert.ok(maximumTransformError < 2.5e-15);
   assert.ok(maximumConeRadiusError < 5e-16);
   assert.ok(maximumRollerRadiusError < 4e-16);
   assert.ok(maximumNormalLengthError < 3e-16);
@@ -285,7 +285,7 @@ test('movement 262 maintains exact cone-to-roller edge contact without collision
   disposeModel(model.root);
 });
 
-test('movement 262 obeys the exact signed rolling law through every reversal', () => {
+test('movement 262 obeys the exact rolling law and lifts C less than it lowers it', () => {
   const model = createMovementModel(catalog.movements[261]);
   const {
     geometry,
@@ -323,18 +323,23 @@ test('movement 262 obeys the exact signed rolling law through every reversal', (
     maximumRatio = Math.max(maximumRatio, configuration.rollerAngularRatio);
   }
   assert.ok(maximumNoSlipError < 7e-16);
-  assert.ok(maximumRatioError < 6e-9);
-  assert.ok(minimumRatio < 0);
-  assert.ok(maximumRatio > 0);
+  assert.ok(maximumRatioError < 1e-8);
+  // Roller C turns one way throughout at a speed varying about twofold.
+  assert.ok(maximumRatio < 0);
+  assert.ok(minimumRatio < 1.8 * maximumRatio);
+  assert.equal(strokeAnalysis.rollerSpinReverses, false);
+  // Its spring-loaded height reverses twice a turn.
+  assert.equal(strokeAnalysis.reciprocation,
+    'spring-loaded-vertical-travel-of-roller-C');
   assert.equal(strokeAnalysis.directionChangeAngles.length, 6);
   assert.equal(strokeAnalysis.directionIntervals.length, 7);
   strokeAnalysis.directionIntervals.forEach((interval, index) => {
     assert.equal(interval.direction, index % 2 === 0 ? -1 : 1);
   });
-  assert.ok(strokeAnalysis.shorterDirectionAngularTravel > 0);
+  assert.ok(strokeAnalysis.shorterDirectionTravel > 0);
   assert.ok(
-    strokeAnalysis.shorterDirectionAngularTravel
-      < strokeAnalysis.longerDirectionAngularTravel,
+    strokeAnalysis.shorterDirectionTravel
+      < strokeAnalysis.longerDirectionTravel,
   );
   assert.equal(
     transmission.rollingLaw,
@@ -390,11 +395,10 @@ test('movement 262 traces one screw-pitch spiral while C stays in its guide plan
         < turnConfigurations[turn].coneRadiusAtContact,
     );
   }
-  assert.ok(
-    driveSchedule.demonstrationBeginsAtAxialFraction
-      > driveSchedule.sourceIllustratedContactAxialFraction,
-  );
-  assert.match(driveSchedule.reasonForLaterConeStation, /direction reversals/);
+  near(driveSchedule.demonstrationBeginsAtAxialFraction,
+    driveSchedule.sourceIllustratedContactAxialFraction, 0.001,
+    'demonstration starts at Brown\'s roller station');
+  assert.match(driveSchedule.reasonForConeStation, /side view/);
   assert.equal(driveSchedule.sourcePrescribesUniformForwardInput, true);
   assert.equal(driveSchedule.sourcePrescribesReturnReversal, false);
   disposeModel(model.root);

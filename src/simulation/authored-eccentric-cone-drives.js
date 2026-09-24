@@ -177,7 +177,13 @@ function eccentricConeFrictionReverser(movement) {
   const coneLength = 4.4;
   const coneLargeRadius = 1.2;
   const coneSmallRadius = 0.54;
-  const coneEccentricity = 0.68;
+  // Brown's end view puts screw D 13 of B's 55 raster pixels below B's
+  // centre (0.24 of the large radius). That is well inside every section of
+  // the cone, so roller C never reverses its spin; it rides up and down once
+  // per turn, and because the contact spirals toward the small end each
+  // descent is longer than the rise before it: the caption's reciprocation
+  // with one stroke shorter than the other.
+  const coneEccentricity = coneLargeRadius * 13 / 55;
   const rollerRadius = 0.36;
   const rollerWidth = 0.16;
   const screwLead = 0.19;
@@ -192,7 +198,8 @@ function eccentricConeFrictionReverser(movement) {
   const leftInputJournalXStart = -3.24;
   const leftInputJournalXEnd = -2.2;
   const nutAxialPosition = 2.82;
-  const initialContactAxialFraction = 0.82;
+  // Brown's side view sets roller C a quarter of the way from the large end.
+  const initialContactAxialFraction = 0.25;
   const inputForwardTurns = 3;
   const maximumInputAngle = inputForwardTurns * FULL_TURN;
   const demonstrationPeriod = 12;
@@ -384,20 +391,27 @@ function eccentricConeFrictionReverser(movement) {
     };
   };
 
+  // Reversals of roller C's reciprocating (spring-loaded vertical) travel.
+  const rollerVerticalRateAtInputAngle = (inputAngle) => (
+    contactScalarsAtInputAngle(inputAngle).rollerCenterDerivativePerInputRadian
+  );
+  const rollerHeightAtInputAngle = (inputAngle) => (
+    contactScalarsAtInputAngle(inputAngle).rollerCenterY
+  );
   const directionChangeAngles = [];
   const rootScanCount = 12288;
   let previousAngle = 0;
-  let previousRatio = rollerAngularRatioAtInputAngle(0);
+  let previousRatio = rollerVerticalRateAtInputAngle(0);
   for (let sample = 1; sample <= rootScanCount; sample += 1) {
     const inputAngle = maximumInputAngle * sample / rootScanCount;
-    const ratio = rollerAngularRatioAtInputAngle(inputAngle);
+    const ratio = rollerVerticalRateAtInputAngle(inputAngle);
     if (ratio * previousRatio < 0) {
       let lower = previousAngle;
       let upper = inputAngle;
       let lowerRatio = previousRatio;
       for (let iteration = 0; iteration < 60; iteration += 1) {
         const midpoint = (lower + upper) / 2;
-        const midpointRatio = rollerAngularRatioAtInputAngle(midpoint);
+        const midpointRatio = rollerVerticalRateAtInputAngle(midpoint);
         if (midpointRatio * lowerRatio <= 0) upper = midpoint;
         else {
           lower = midpoint;
@@ -410,8 +424,8 @@ function eccentricConeFrictionReverser(movement) {
     previousRatio = ratio;
   }
   const directionIntervals = [];
-  let shorterDirectionAngularTravel = 0;
-  let longerDirectionAngularTravel = 0;
+  let shorterDirectionTravel = 0;
+  let longerDirectionTravel = 0;
   const intervalBounds = [
     0,
     ...directionChangeAngles,
@@ -421,14 +435,23 @@ function eccentricConeFrictionReverser(movement) {
     const start = intervalBounds[index];
     const end = intervalBounds[index + 1];
     const midpoint = (start + end) / 2;
-    const signedTravel = rollerAngleAtInputAngle(end)
-      - rollerAngleAtInputAngle(start);
+    const signedTravel = rollerHeightAtInputAngle(end)
+      - rollerHeightAtInputAngle(start);
     const direction = Math.sign(
-      rollerAngularRatioAtInputAngle(midpoint),
+      rollerVerticalRateAtInputAngle(midpoint),
     );
     directionIntervals.push({ direction, end, signedTravel, start });
-    if (direction > 0) shorterDirectionAngularTravel += signedTravel;
-    else longerDirectionAngularTravel -= signedTravel;
+    if (direction > 0) shorterDirectionTravel += signedTravel;
+    else longerDirectionTravel -= signedTravel;
+  }
+  let minimumRollerAngularRatio = Infinity;
+  let maximumRollerAngularRatio = -Infinity;
+  for (let sample = 0; sample <= 1536; sample += 1) {
+    const ratio = rollerAngularRatioAtInputAngle(
+      maximumInputAngle * sample / 1536,
+    );
+    minimumRollerAngularRatio = Math.min(minimumRollerAngularRatio, ratio);
+    maximumRollerAngularRatio = Math.max(maximumRollerAngularRatio, ratio);
   }
 
   const frame = new THREE.Group();
@@ -796,9 +819,9 @@ function eccentricConeFrictionReverser(movement) {
       'three-turn-uniform-forward-traverse-with-short-end-ramps-and-exact-reverse-return',
     demonstrationBeginsAtAxialFraction: initialContactAxialFraction,
     purpose:
-      'show-three-successive-reversals-and-close-without-teleporting-the-screw',
-    reasonForLaterConeStation:
-      'the source-described direction reversals occur after the spiral reaches the small-radius end of the eccentric cone',
+      'show-three-rises-and-falls-of-roller-C-and-close-without-teleporting-the-screw',
+    reasonForConeStation:
+      'Brown\'s side view sets roller C a quarter of the cone length from the large end',
     sourceIllustratedContactAxialFraction: (
       207 - 166
     ) / (330 - 166),
@@ -840,7 +863,7 @@ function eccentricConeFrictionReverser(movement) {
     translationDerivativePerInputRadian,
   };
   root.userData.mechanism =
-    'fixed-nut-E-converts-uniform-screw-D-rotation-to-one-lead-per-turn-translation-of-eccentric-cone-B-whose-changing-signed-contact-radius-friction-drives-and-reverses-roller-C';
+    'fixed-nut-E-converts-uniform-screw-D-rotation-to-one-lead-per-turn-translation-of-eccentric-cone-B-which-friction-drives-roller-C-at-changing-speed-and-reciprocates-it-with-unequal-rise-and-fall';
   root.userData.pairedMechanismKey =
     'movements-262-263-eccentric-screw-cone-friction-reverser';
   root.userData.presentationView = presentationView;
@@ -865,11 +888,11 @@ function eccentricConeFrictionReverser(movement) {
       measurementUncertaintyPixels: 6,
       officialAnimationAvailable: false,
       rasterEndView: {
-        coneCenterB: { x: 69, y: 146 },
+        coneCenterB: { x: 67, y: 164 },
         coneOuterRadius: 55,
         rollerCenterC: { x: 70, y: 95 },
         rollerOuterRadius: 16,
-        screwCenterD: { x: 69, y: 176 },
+        screwCenterD: { x: 67, y: 177 },
       },
       rasterSideView: {
         coneLargeEndX: 166,
@@ -898,10 +921,15 @@ function eccentricConeFrictionReverser(movement) {
   root.userData.strokeAnalysis = {
     directionChangeAngles,
     directionIntervals,
-    longerDirectionAngularTravel,
-    shorterDirectionAngularTravel,
+    longerDirectionTravel,
+    maximumRollerAngularRatio,
+    minimumRollerAngularRatio,
+    reciprocation: 'spring-loaded-vertical-travel-of-roller-C',
+    rollerSpinReverses: minimumRollerAngularRatio < 0
+      && maximumRollerAngularRatio > 0,
+    shorterDirectionTravel,
     sourceRequiredInequality:
-      'roller-angular-travel-in-one-direction-is-shorter-than-in-the-other',
+      'roller-C-rises-less-than-it-falls-as-the-contact-spirals-toward-the-small-end',
   };
   root.userData.timeline = {
     cycleClosure: demonstrationPeriod,
@@ -969,21 +997,19 @@ function eccentricConeFrictionReverser(movement) {
   rollerAxle.position.x = 0;
   rollerAxle.userData.role = 'short-axle-of-friction-roller-C';
   nutPost.geometry.dispose();
-  // Plate 262 draws E as a low footed cradle whose feet stand only about a
-  // sixth of B's diameter below B's rim; plate 263 keeps its own standard.
+  // Plate 262 draws E as a low footed cradle whose foot plate lies just
+  // below B's rim; plate 263 keeps its own standard.
   nutPost.geometry = flaredPedestalGeometry(presentationView === 'end-view'
     ? {
-      // Seen along the screw, z is the visible width: a thin neck hidden
-      // behind nut E, concave flares and a foot plate as wide and thick as
-      // Brown's. The caption's reversals need the cone ≈0.57 of its radius
-      // off the screw (Brown draws ≈0.25), so B's rim sweeps up to 2e below
-      // this drawn pose and passes behind the foot; a standard tall enough
-      // to clear that sweep would no longer read as Brown's low cradle.
-      bottomY: -0.97,
+      // Seen along the screw from the large end, z is the visible width. The
+      // neck stands behind B and only the concave flares and the foot plate
+      // show under B's rim, at Brown's depth below B's centre (73 px of B's
+      // 55 px radius to the foot's underside, 64 px to its top).
+      bottomY: coneEccentricity - coneLargeRadius * 73 / 55,
       footHalfX: 0.5,
       footHalfZ: 0.8,
-      footTopY: -0.83,
-      neckBottomY: -0.36,
+      footTopY: coneEccentricity - coneLargeRadius * 64 / 55,
+      neckBottomY: coneEccentricity - coneLargeRadius * 56 / 55,
       neckHalfX: 0.13,
       neckHalfZ: 0.08,
       topY: -0.309,
@@ -998,44 +1024,47 @@ function eccentricConeFrictionReverser(movement) {
       neckHalfZ: 0.2,
       topY: -0.309,
     });
+  let largeEndBoss = null;
   if (presentationView === 'end-view') {
-    // Seen along the screw, the small-end carrier bar and its joint balls
-    // lay over B's face, which Brown leaves plain. A flat web in B's own
-    // finish keeps the same rigid screw-to-cone connection: its face lies
-    // flush on B and its stub off the rim hides behind nut E.
-    const smallEndCarrier = eccentricConnectors[1];
-    smallEndCarrier.traverse((object) => object.geometry?.dispose());
-    smallEndCarrier.clear();
-    const web = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, coneEccentricity + 0.1, 0.2),
-      inputMaterial,
+    // Seen from the large end, the carrier bar and its joint balls would lie
+    // across B's face. Brown draws a plain face with one circle round D (18
+    // of B's 55 px) and D's end as a dot, so the large-end carrier becomes a
+    // round boss on the screw, flush on B, with a dark outline.
+    const largeEndCarrier = eccentricConnectors[0];
+    largeEndCarrier.traverse((object) => object.geometry?.dispose());
+    largeEndCarrier.clear();
+    const bossRadius = coneLargeRadius * 18 / 55;
+    largeEndBoss = cylinderAlongX(bossRadius, 0.07, inputMaterial, 72);
+    largeEndBoss.userData.role = 'round-large-end-boss-round-screw-D';
+    const bossRim = new THREE.Mesh(
+      new THREE.TorusGeometry(bossRadius, 0.025, 8, 72),
+      darkMaterial,
     );
-    web.position.y = coneEccentricity / 2;
-    web.userData.role = 'flush-small-end-eccentric-web-in-cone-B-finish';
-    smallEndCarrier.add(web);
-    smallEndCarrier.userData.setEndpoints = () => {};
-    smallEndCarrier.position.set(coneLength / 2 + 0.035, 0, 0);
-    smallEndCarrier.rotation.set(0, 0, 0);
+    bossRim.rotation.y = Math.PI / 2;
+    bossRim.position.x = -0.035;
+    bossRim.userData.role = 'dark-outline-of-large-end-boss';
+    largeEndCarrier.add(largeEndBoss, bossRim);
+    largeEndCarrier.userData.setEndpoints = () => {};
+    largeEndCarrier.position.set(-coneLength / 2 - 0.035, 0, 0);
+    largeEndCarrier.rotation.set(0, 0, 0);
   }
   nutPost.position.set(nutAxialPosition, 0, 0);
   nutPost.userData.role = 'source-footed-standard-E-carrying-nut';
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
-  root.userData.reconstructionNote = 'The eccentric cone changes and reverses the roller speed. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
+  root.userData.reconstructionNote = 'The eccentric cone, at Brown\'s offset of about a quarter of its radius, drives roller C at a changing speed and lifts and lowers it once per turn; as the contact spirals toward the small end each fall is longer than the rise before it. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
-  // The flush web must not print a stripe of shadow across B's plain face.
-  if (presentationView === 'end-view') {
-    eccentricConnectors[1].children[0].castShadow = false;
-  }
+  // The flush boss must not print a ring of shadow on B's plain face.
+  if (largeEndBoss) largeEndBoss.castShadow = false;
   return {
     root,
     update,
-    // Plate 262 looks along the screw from its outer end: the screw end D
-    // shows below B's centre, standard E is the footed cradle in front, and
-    // roller C (which rides nearer the small end) stands whole over B's rim.
+    // Plate 262 looks along the screw at B's large end: D's boss shows below
+    // B's centre, standard E stands behind B with only its feet below the
+    // rim, and roller C rides over B's rim.
     cameraDirection: presentationView === 'end-view'
-      ? new THREE.Vector3(14, .12, 0)
+      ? new THREE.Vector3(-14, .12, 0)
       : new THREE.Vector3(-.5, .2, 14),
   };
 }

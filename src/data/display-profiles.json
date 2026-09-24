@@ -4720,7 +4720,7 @@
         ],
         "max": [
           1.7000000476837158,
-          8.68,
+          11.824907179440569,
           1.2546939849853516
         ]
       }
@@ -4992,40 +4992,40 @@
       }
     },
     "262": {
-      "peakAngularSpeed": 12.18345617662547,
-      "peakVisibleAngularSpeed": 12.18345617662547,
-      "sustainedVisibleAngularSpeed": 9.745208402868958,
-      "floorY": -1.4936996726884773,
-      "fastestPart": "freely-rolling-friction-roller-C-rotor",
+      "peakAngularSpeed": 12.007409137454259,
+      "peakVisibleAngularSpeed": 12.007409137453706,
+      "sustainedVisibleAngularSpeed": 10.744495618233598,
+      "floorY": -1.1845361063807185,
+      "fastestPart": "thin-roller-C-touching-cone-at-large-end-side-edge",
       "motionBounds": {
         "min": [
           -2.971799985119416,
-          -1.4936996726884773,
-          -1.491782824464145
+          -1.1845361063807185,
+          -1.1836957419482712
         ],
         "max": [
           5.038799918171478,
-          1.6113240105996005,
-          1.491782824464145
+          1.595596374235964,
+          1.1836957419482712
         ]
       }
     },
     "263": {
-      "peakAngularSpeed": 12.18345617662547,
-      "peakVisibleAngularSpeed": 12.18345617662547,
-      "sustainedVisibleAngularSpeed": 9.745208402868958,
-      "floorY": -1.4936996726884773,
-      "fastestPart": "freely-rolling-friction-roller-C-rotor",
+      "peakAngularSpeed": 12.007409137454259,
+      "peakVisibleAngularSpeed": 12.007409137453706,
+      "sustainedVisibleAngularSpeed": 10.744495618233598,
+      "floorY": -1.1845361063807185,
+      "fastestPart": "thin-roller-C-touching-cone-at-large-end-side-edge",
       "motionBounds": {
         "min": [
           -2.971799985119416,
-          -1.4936996726884773,
-          -1.491782824464145
+          -1.1845361063807185,
+          -1.1836957419482712
         ],
         "max": [
           5.038799918171478,
-          1.6113240105996005,
-          1.491782824464145
+          1.595596374235964,
+          1.1836957419482712
         ]
       }
     },
@@ -5279,12 +5279,12 @@
     "277": {
       "peakAngularSpeed": 4.119433760634956,
       "peakVisibleAngularSpeed": 4.119433760634956,
-      "sustainedVisibleAngularSpeed": 0.7866528088101237,
+      "sustainedVisibleAngularSpeed": 0.7866528088099849,
       "floorY": -1.2783082776296641,
       "fastestPart": "cylinder-longitudinal-index-strip-2",
       "motionBounds": {
         "min": [
-          -3.288164428263903,
+          -4.488164428263904,
           -1.2783082776296641,
           -2.064892530441284
         ],

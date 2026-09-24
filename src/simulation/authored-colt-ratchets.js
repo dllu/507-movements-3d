@@ -254,15 +254,28 @@ function coltCylinderRatchet(movement) {
   const dogRightEdge = dogRasterRightEdge.map(rasterToModel);
   const dogRasterUpperLeft = [143, 240];
   const dogRasterLeftEdge = [[198, 383], [160, 349]];
+  // Brown's slender finger (its traced left and right edges) keeps its own
+  // outline; the working hook is a short spur off its left edge at the
+  // height where the lift can turn the ratchet, instead of a broad wedge
+  // filling the whole span between the finger and the ratchet face.
+  const brownLeftEdgeAt = (rasterY) => {
+    const [[x0, y0], [x1, y1]] = [dogRasterUpperLeft, dogRasterLeftEdge[1]];
+    return rasterToModel([x0 + (x1 - x0) * (rasterY - y0) / (y1 - y0), rasterY]);
+  };
+  const hookRasterY = sourceRasterHammerPivot.y - hookTop[1] / sourceScale;
+  const spurUpper = brownLeftEdgeAt(hookRasterY - 14);
+  const spurLower = brownLeftEdgeAt(hookRasterY + 20);
   const dogWorldOutline = polygonClipping.union(
     poly([
       [hookTop[0], hookTop[1] - 0.02],
       hookTop,
       hookShoulder,
+      spurUpper,
       rasterToModel(dogRasterUpperLeft),
       ...dogRightEdge,
       [pivot[0], pivot[1]],
       ...dogRasterLeftEdge.map(rasterToModel),
+      spurLower,
       hookUnder,
     ]),
     [[circle(pivot, eyeRadius, 96)]],
@@ -764,10 +777,14 @@ function coltCylinderRatchet(movement) {
   cylinder.add(cylinderRotor);
   root.add(cylinder);
 
+  // Brown breaks the cylinder off at the plate's left edge: it runs on past
+  // the view's left crop instead of ending in a finished front face.
+  const cylinderRunOff = 1.2;
   const cylinderBody = new THREE.Mesh(
     boredLatheGeometry([
+      // The lathe axis maps to -x once turned onto the cylinder axis.
       { axial: -cylinderLength / 2, radial: cylinderRadius },
-      { axial: cylinderLength / 2, radial: cylinderRadius },
+      { axial: cylinderLength / 2 + cylinderRunOff, radial: cylinderRadius },
     ], cylinderBoreRadius, 72),
     drivenMaterial,
   );
@@ -776,7 +793,8 @@ function coltCylinderRatchet(movement) {
   cylinderRotor.add(cylinderBody);
   const cylinderEndRings = [-1, 1].map((side) => {
     const ring = torusAroundX(cylinderRadius * 0.985, 0.055, darkMaterial, 64);
-    ring.position.x = side * cylinderLength / 2;
+    ring.position.x = side * cylinderLength / 2
+      - (side < 0 ? cylinderRunOff : 0);
     ring.userData.role = side > 0
       ? 'rear-cylinder-edge-ring'
       : 'front-cylinder-edge-ring';
@@ -786,11 +804,11 @@ function coltCylinderRatchet(movement) {
   const chamberStrips = Array.from({ length: ratchetTeeth }, (_, index) => {
     const phase = index * ratchetPitch;
     const strip = new THREE.Mesh(
-      new THREE.BoxGeometry(cylinderLength * 0.91, 0.045, 0.13),
+      new THREE.BoxGeometry(cylinderLength * 0.91 + cylinderRunOff, 0.045, 0.13),
       darkMaterial,
     );
     strip.position.set(
-      0,
+      -cylinderRunOff / 2,
       cylinderRadius * 0.96 * Math.cos(phase),
       cylinderRadius * 0.96 * Math.sin(phase),
     );
@@ -1013,8 +1031,9 @@ function coltCylinderRatchet(movement) {
   };
   // Brown draws the parts floating on white: no ground shadow.
   root.userData.hideGround = true;
+  // Left edge: Brown's crop through the cylinder (raster x = 7).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.78, -1.55, -2.28),
+    new THREE.Vector3(cylinderFrontX, -1.55, -2.28),
     // The hammer sweeps farther right when fully cocked than in Brown's rest
     // pose; include that whole envelope.
     new THREE.Vector3(4.56, 4.08, 2.26),

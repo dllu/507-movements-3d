@@ -1522,6 +1522,9 @@ function invertedPendulumEngine(movement) {
     new THREE.Vector3(5.7 * sourceScale, 11.0 * sourceScale, 1.5),
   );
   markShadows(root);
+  // Brown draws the crank block as a plain outline; the crank's cast shadow
+  // made its exposed face read as a large dark mass.
+  lowerFoundation.traverse((object) => { object.receiveShadow = false; });
   return {
     cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,

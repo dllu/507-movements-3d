@@ -45,8 +45,9 @@ for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E
   }
   assert.ok(box(b.nutPost).intersectsBox(box(b.nut)),'nut unsupported');
   assert.ok(b.screwThread.geometry.userData.thread,'solid helical thread missing');
-  // Plate 262: low footed cradle, and no carrier bar or joint balls on B's face.
-  if(id===262){assert.ok(box(b.nutPost).min.y>-.98*m.root.scale.y,'cradle E too tall');const web=b.eccentricConnectors[1];assert.equal(web.children.length,1);assert.equal(web.children[0].material,b.coneBody.material);}
+  // Plate 262: low footed cradle whose foot lies just under B's rim, and a
+  // plain round boss (no carrier bar or joint balls) on B's large-end face.
+  if(id===262){const g=m.root.userData.geometry;assert.ok(box(b.nutPost).min.y>(g.coneEccentricity-1.4*g.coneLargeRadius)*m.root.scale.y,'cradle E too tall');const boss=b.eccentricConnectors[0];assert.equal(boss.children.length,2);assert.equal(boss.children[0].material,b.coneBody.material);}
  }finally{disposeMovementModel(m);}
 });
 

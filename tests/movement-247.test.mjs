@@ -362,7 +362,8 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
       `rendered weight position at ${time}`);
     vectorNear(
       localSupport.clone().applyMatrix4(blocks.catchAssembly.matrixWorld),
-      state.catchSupportPosition,
+      state.catchSupportPosition.clone()
+        .applyMatrix4(model.root.userData.displayFrame247.matrixWorld),
       4e-15,
       `rigid catch support point at ${time}`,
     );

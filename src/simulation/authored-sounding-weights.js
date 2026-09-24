@@ -1248,26 +1248,49 @@ export function createAuthoredSoundingWeightMovement(movement) {
     // stem it joins.
     const bridge = model.root.userData.releaseWorkingParts?.bridge;
     if (bridge) bridge.position.z = 0.42;
-    // Fit the camera to the instrument's own travel and the minimal bottom
-    // line rather than the stale measured envelope of the former wide slab.
-    // Only visible parts count: hidden reference solids used to widen the box.
-    // Brown breaks the rod off above the weight, so the rod's upper end and
-    // the reload sling may pass out of the top of the frame; everything else,
-    // down to the bottom line, stays in view.
+    // Brown draws the instrument alone, filling the plate, with no sea
+    // bottom. Display it in the rod's own frame, as if the view follows the
+    // lowered rod: the rod, catch and loaded weight stay where the plate
+    // draws them while the contact line rises to meet the probe, and after
+    // release the line and the dropped weight sink out of the bottom of the
+    // view as the rod is recovered. The sling brings the weight back up.
+    // Relative motion, contacts and all model-frame kinematics are unchanged;
+    // only this display frame is offset.
     const { root } = model;
+    const displayFrame = new THREE.Group();
+    displayFrame.userData.role = 'rod-following-display-frame';
+    for (const child of [...root.children]) displayFrame.add(child);
+    root.add(displayFrame);
+    const { recoveredBodyY } = root.userData.geometry;
+    const frameUpdate = model.update;
+    model.update = (time) => {
+      frameUpdate(time);
+      displayFrame.position.y = recoveredBodyY
+        - root.userData.kinematics.bodyPositionY;
+    };
+    root.userData.displayFrame247 = displayFrame;
+    // Fit the plate pose: rod broken off above the weight, weight, window
+    // and probe foot, with the contact line just in view at its highest
+    // (probe compressed). The dropped weight and the line leave through the
+    // bottom edge during recovery and the sling passes out of the top.
     const fitBounds = new THREE.Box3();
     const partBounds = new THREE.Box3();
-    for (let sample = 0; sample <= 96; sample += 1) {
-      model.update(root.userData.timeline.cycleClosure * sample / 96);
-      root.updateMatrixWorld(true);
-      root.traverseVisible((object) => {
-        if (!object.geometry) return;
-        fitBounds.union(partBounds.setFromObject(object, true));
-      });
-    }
+    model.update(0);
+    root.updateMatrixWorld(true);
+    root.traverseVisible((object) => {
+      if (!object.geometry) return;
+      if (object.userData.role === 'sea-bottom-contact-plane') return;
+      fitBounds.union(partBounds.setFromObject(object, true));
+    });
     const { loadedWeightCenterY, weightOuterRadius } = root.userData.geometry;
     fitBounds.max.y = Math.min(fitBounds.max.y,
-      loadedWeightCenterY + weightOuterRadius + 0.85);
+      loadedWeightCenterY + weightOuterRadius + 1.2);
+    let lineTop = -Infinity;
+    for (let sample = 0; sample <= 96; sample += 1) {
+      model.update(root.userData.timeline.cycleClosure * sample / 96);
+      lineTop = Math.max(lineTop, displayFrame.position.y);
+    }
+    fitBounds.min.y = Math.min(fitBounds.min.y, lineTop - 0.03);
     root.userData.cameraFitBounds = fitBounds.expandByScalar(0.05);
     model.update(0);
     return model;

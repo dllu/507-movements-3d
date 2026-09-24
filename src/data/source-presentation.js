@@ -243,7 +243,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the sea bottom is not drawn, so only a thin contact line just wider than the weight is kept for the probe to strike and the released weight to rest on.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so the thin contact line (Brown draws no sea bottom) rises from below for the probe to strike, and the dropped weight sinks away with it as the rod is recovered.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -959,7 +959,7 @@ export default {
   },
   277: {
     camera: [-0.12, 0.05, 1],
-    note: 'Side elevation of the cylinder, ratchet b, dog a, spring c in its hatched block and hammer; the model builds no base, bearing posts, cylinder lock or index markers because the plate draws none.',
+    note: 'Side elevation of the cylinder (broken off at the left edge as on the plate), ratchet b, the slender dog a, spring c in its hatched block and hammer; the model builds no base, bearing posts, cylinder lock or index markers because the plate draws none.',
   },
   304: {
     camera: [0.05, 0.05, 1],
