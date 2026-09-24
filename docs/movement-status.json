@@ -15684,7 +15684,7 @@
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/m13-rebuilds-review.md",
-        "note": "Pass-51 m13 screen: only seated contacts (conical screw tip on its seat, inlet disk on the barrel end), 0.0000."
+        "note": "Pass-51 m13 screen (129 samples): only seated contacts (screw tip on seat, inlet disk on barrel end), 0.0000; hatched cut faces are presentation-only."
       },
       "references": [
         "docs/hydraulic-force-family-review.md",
@@ -15703,9 +15703,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Ram and cylinder are see-through rather than hatched, so the lever shows faintly through the cylinder where Brown hides it; the wing is a two-ball bar, not his heart-shaped wing.",
-      "limits": "Lever read as a plunger at the upper eye with a fulcrum on a swing link; hidden barrel, checks and depths inferred; checks and displacement prescribed; lift small (0.18).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Lever read as a plunger at the upper eye with a floating fulcrum on a swing link; pump barrel, check valves, bore and depths inferred; ram shown as a hollow bore rather than Brown's slotted solid; checks and displacement prescribed; small lift (0.18) set by the plunger/ram area ratio.",
+      "assessment": "reasonable"
     },
     {
       "id": 468,

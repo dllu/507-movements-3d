@@ -444,3 +444,36 @@ test('movement 467 has finite render bounds and movement 507 remains the next au
   disposeModel(model467.root);
   disposeModel(model507.root);
 });
+
+test('movement 467 is drawn as Brown’s section: back half-shells, hatched cut faces at z=0 and a butterfly wing', () => {
+  const { model } = movementModel();
+  const { blocks } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  for (const shell of [blocks.fixedRamBody, blocks.cylinderShell,
+    blocks.cylinderTopCap, blocks.saddleHead, blocks.clawHook,
+    blocks.baseShell, blocks.baseFloorPlate, blocks.baseTopPlate]) {
+    const box = new THREE.Box3().setFromObject(shell);
+    assert.ok(box.max.z <= 1e-6, `${shell.userData.role} keeps only z<0`);
+    assert.equal(shell.material.transparent, false,
+      `${shell.userData.role} is opaque`);
+  }
+  for (const section of [blocks.ramSection, blocks.cylinderSection,
+    blocks.baseSection]) {
+    assert.equal(section.children.length, 2);
+    for (const face of section.children) {
+      assert.equal(face.userData.presentationOnly, true);
+      assert.equal(face.castShadow, false);
+      const box = new THREE.Box3().setFromObject(face);
+      assert.ok(box.min.z >= -1e-6 && box.max.z <= 0.0071);
+    }
+  }
+  // The lever passes behind the column, hidden by the back half-shells.
+  const lever = new THREE.Box3().setFromObject(blocks.leverBar);
+  const shell = new THREE.Box3().setFromObject(blocks.cylinderShell);
+  assert.ok(lever.max.z < shell.min.z + 0.1 && lever.max.z < -0.6);
+  assert.equal(blocks.screwWings.length, 1);
+  const wing = new THREE.Box3().setFromObject(blocks.screwWings[0]);
+  assert.ok(wing.max.y - wing.min.y > 0.4 && wing.max.z - wing.min.z < 0.08,
+    'flat two-lobed wing across the screw');
+  disposeModel(model.root);
+});

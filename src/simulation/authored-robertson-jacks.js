@@ -48,6 +48,56 @@ function smootherStepSecondDerivative(value) {
   return 60 * x * (1 - x) * (1 - 2 * x);
 }
 
+// Brown hatches the cut faces of his section with parallel 45-degree lines.
+// A thin paper face with ink stripes lies on the cut plane z = 0, facing +Z,
+// in front of the back half-shells. Presentation only: no working surface.
+function hatchedSectionPolygons(polygons, name, { spacing = 0.07,
+  width = 0.014, slope = 1 } = {}) {
+  const group = new THREE.Group();
+  group.name = name;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const polygon of polygons) for (const ring of polygon) {
+    for (const [x, y] of ring) {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+    }
+  }
+  const bands = [];
+  // Lines x - slope*y = c at 45 degrees, spaced perpendicular by `spacing`
+  // (slope -1 hatches the other way, as Brown does for adjoining parts).
+  const step = spacing * Math.SQRT2;
+  const w = width * Math.SQRT2 / 2;
+  const low = Math.min(minX - slope * minY, minX - slope * maxY);
+  const high = Math.max(maxX - slope * minY, maxX - slope * maxY);
+  for (let c = Math.floor(low / step) * step; c <= high; c += step) {
+    bands.push(poly([[c + slope * minY - w, minY], [c + slope * minY + w, minY],
+      [c + slope * maxY + w, maxY], [c + slope * maxY - w, maxY]]));
+  }
+  const lines = polygonClipping.intersection(polygonClipping.union(...bands),
+    polygons);
+  const materials = [PALETTE.paper, PALETTE.ink].map((color) => {
+    const material = matte(color, { roughness: 0.65, metalness: 0.05 });
+    material.fog = false;
+    return material;
+  });
+  const face = new THREE.Mesh(plate(polygons, 0, 0.004), materials[0]);
+  face.name = `${name}-face`;
+  const ink = new THREE.Mesh(plate(lines, 0.004, 0.007), materials[1]);
+  ink.name = `${name}-lines`;
+  for (const object of [face, ink]) {
+    object.userData.presentationOnly = true;
+    object.castShadow = false;
+    object.receiveShadow = true;
+    group.add(object);
+  }
+  return group;
+}
+const rectangle = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1],
+  [x0, y1]]);
+
 // Brown's plate 467 is a sectional elevation of a narrow column. The hollow
 // ram stands on a small hollow base only a little wider than the sliding
 // cylinder, and the pump works inside the foot of the ram. Reading of the
@@ -347,10 +397,6 @@ function robertsonJack(movement) {
     roughness: 0.53,
   });
   const leverMaterial = fixedRamMaterial.clone();
-  // Only the ram is ghosted, to show its pipe and pump barrel.
-  const ghostRamMaterial = fixedRamMaterial.clone();
-  ghostRamMaterial.transparent = true;
-  ghostRamMaterial.opacity = 0.42;
   const movingMaterial = matte(PALETTE.driven, {
     metalness: 0.15,
     roughness: 0.52,
@@ -359,20 +405,6 @@ function robertsonJack(movement) {
     metalness: 0.22,
     roughness: 0.45,
   });
-  const glassMaterial = matte(PALETTE.muted, {
-    opacity: 0.25,
-    roughness: 0.30,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  glassMaterial.depthWrite = false;
-  const movingShellMaterial = matte(PALETTE.driven, {
-    opacity: 0.48,
-    roughness: 0.32,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  movingShellMaterial.depthWrite = false;
   const waterMaterial = matte(PALETTE.fluid, {
     opacity: 0.44,
     roughness: 0.24,
@@ -398,37 +430,49 @@ function robertsonJack(movement) {
   const baseWidth = baseRightX - baseLeftX;
   const sideY = (cavity.minY + cavity.maxY) / 2;
   const sideHeight = cavity.maxY - cavity.minY;
+  // Brown sections the base, ram and cylinder through their axes: only the
+  // back halves (z < 0) are built, and hatched faces close the cut.
   const leftWall = plate(polygonClipping.difference(
-    poly([[-baseHalfDepth, cavity.minY], [baseHalfDepth, cavity.minY],
-      [baseHalfDepth, cavity.maxY], [-baseHalfDepth, cavity.maxY]]),
+    poly([[0, cavity.minY], [baseHalfDepth, cavity.minY],
+      [baseHalfDepth, cavity.maxY], [0, cavity.maxY]]),
     poly(circle([0, returnSeatY], 0.10, 64)),
   ), -baseWall / 2, baseWall / 2).rotateY(Math.PI / 2)
     .translate(baseLeftX + baseWall / 2, 0, 0);
   const baseShell = mesh(hollowBase, mergePassageParts([
     leftWall,
-    new THREE.BoxGeometry(baseWall, sideHeight, 2 * baseHalfDepth)
-      .translate(baseRightX - baseWall / 2, sideY, 0),
+    new THREE.BoxGeometry(baseWall, sideHeight, baseHalfDepth)
+      .translate(baseRightX - baseWall / 2, sideY, -baseHalfDepth / 2),
     new THREE.BoxGeometry(baseWidth - 2 * baseWall, sideHeight, baseWall)
       .translate(baseMidX, sideY, -baseHalfDepth + baseWall / 2),
-    new THREE.BoxGeometry(baseWidth - 2 * baseWall, sideHeight, baseWall)
-      .translate(baseMidX, sideY, baseHalfDepth - baseWall / 2),
-  ]), glassMaterial, 'transparent-hollow-base-shell');
+  ]), frameMaterial, 'sectioned-hollow-base-walls');
   const baseFloorPlate = mesh(hollowBase,
-    new THREE.BoxGeometry(baseWidth, baseFloor, 2 * baseHalfDepth)
-      .translate(baseMidX, groundY + baseFloor / 2, 0),
+    new THREE.BoxGeometry(baseWidth, baseFloor, baseHalfDepth)
+      .translate(baseMidX, groundY + baseFloor / 2, -baseHalfDepth / 2),
     frameMaterial, 'hollow-base-floor');
   const baseTopPlate = mesh(hollowBase, plate(polygonClipping.difference(
     poly([[baseLeftX, -baseHalfDepth], [baseRightX, -baseHalfDepth],
-      [baseRightX, baseHalfDepth], [baseLeftX, baseHalfDepth]]),
+      [baseRightX, 0], [baseLeftX, 0]]),
     poly(circle([0, 0], baseTopHoleRadius, 96)),
   ), baseTopY - baseWall, baseTopY).rotateX(Math.PI / 2)
     .translate(0, 2 * baseTopY - baseWall, 0),
   frameMaterial, 'hollow-base-top-open-to-ram-bore');
   const baseWater = mesh(hollowBase,
     new THREE.BoxGeometry(cavity.maxX - cavity.minX - 0.02, 1,
-      2 * cavity.halfDepth - 0.02),
+      cavity.halfDepth - 0.01),
     waterMaterial, 'water-reservoir-inside-hollow-base');
-  baseWater.position.x = (cavity.minX + cavity.maxX) / 2;
+  baseWater.position.set((cavity.minX + cavity.maxX) / 2, 0,
+    -(cavity.halfDepth - 0.01) / 2);
+  const baseSection = hatchedSectionPolygons(polygonClipping.union(
+    rectangle(baseLeftX, groundY, baseRightX, cavity.minY),
+    polygonClipping.difference(
+      rectangle(baseLeftX, cavity.minY, baseLeftX + baseWall, cavity.maxY),
+      rectangle(baseLeftX, returnSeatY - 0.10, baseLeftX + baseWall,
+        returnSeatY + 0.10)),
+    rectangle(baseRightX - baseWall, cavity.minY, baseRightX, cavity.maxY),
+    rectangle(baseLeftX, cavity.maxY, -baseTopHoleRadius, baseTopY),
+    rectangle(baseTopHoleRadius, cavity.maxY, baseRightX, baseTopY),
+  ), 'hatched-cut-face-of-hollow-base');
+  hollowBase.add(baseSection);
 
   // Hollow ram with a window at its foot for the pump barrel.
   const fixedRam = addRole(new THREE.Group(),
@@ -438,13 +482,23 @@ function robertsonJack(movement) {
   const windowHalfAngle = 0.56;
   const fixedRamBody = mesh(fixedRam, mergePassageParts([
     horizontalPlate(sector(fixedRamBoreRadius, fixedRamRadius,
-      -Math.PI + windowHalfAngle, Math.PI - windowHalfAngle),
-    fixedRamBaseY, windowTopY),
-    horizontalRing(fixedRamBoreRadius, fixedRamRadius, windowTopY,
-      fixedRamTopY - ramCapThickness),
-    horizontalRing(0.105, fixedRamRadius, fixedRamTopY - ramCapThickness,
+      0, Math.PI - windowHalfAngle), fixedRamBaseY, windowTopY),
+    horizontalPlate(sector(fixedRamBoreRadius, fixedRamRadius, 0, Math.PI),
+      windowTopY, fixedRamTopY - ramCapThickness),
+    horizontalPlate(sector(0.105, fixedRamRadius, 0, Math.PI),
+      fixedRamTopY - ramCapThickness, fixedRamTopY),
+  ]), fixedRamMaterial, 'sectioned-hollow-ram-body-with-pump-window');
+  const ramSection = hatchedSectionPolygons(polygonClipping.union(
+    rectangle(fixedRamBoreRadius, fixedRamBaseY, fixedRamRadius,
       fixedRamTopY),
-  ]), ghostRamMaterial, 'stationary-hollow-ram-body-with-pump-window');
+    rectangle(-fixedRamRadius, windowTopY, -fixedRamBoreRadius,
+      fixedRamTopY),
+    rectangle(-fixedRamRadius, fixedRamTopY - ramCapThickness, -0.105,
+      fixedRamTopY),
+    rectangle(0.105, fixedRamTopY - ramCapThickness, fixedRamRadius,
+      fixedRamTopY),
+  ), 'hatched-cut-face-of-ram', { slope: -1 });
+  fixedRam.add(ramSection);
   const internalPipeWall = mesh(fixedRam,
     horizontalRing(0.077, 0.10, pipeBottomY, fixedRamTopY + 0.06),
     darkMaterial, 'finite-internal-pressure-pipe-wall');
@@ -570,19 +624,16 @@ function robertsonJack(movement) {
     'moving-cylinder-top-saddle-and-side-claw-rigid-assembly');
   root.add(movingCylinder);
   const drop = -maximumCylinderLift;
-  const cylinderShell = mesh(movingCylinder, horizontalRing(
-    cylinderInnerRadius, cylinderOuterRadius, movingCylinderBottomY,
-    movingCylinderTopY,
-  ), movingShellMaterial, 'outer-cylinder-sliding-around-fixed-ram');
-  const cylinderTopCap = mesh(movingCylinder, new THREE.CylinderGeometry(
-    cylinderOuterRadius, cylinderOuterRadius, drawnCapTopY - drawnBoreTopY,
-    64,
-  ).translate(0, (drawnCapTopY + drawnBoreTopY) / 2 + drop, 0),
-  movingMaterial, 'closed-moving-cylinder-cap-acted-on-by-water-pressure');
-  const cylinderSealBand = mesh(movingCylinder, new THREE.TorusGeometry(
-    cylinderOuterRadius, 0.03, 10, 64,
-  ).rotateX(Math.PI / 2).translate(0, movingCylinderBottomY + 0.08, 0),
-  brassMaterial, 'moving-cylinder-lower-guide-and-seal-band');
+  const cylinderShell = mesh(movingCylinder, horizontalPlate(sector(
+    cylinderInnerRadius, cylinderOuterRadius, 0, Math.PI),
+  movingCylinderBottomY, movingCylinderTopY,
+  ), movingMaterial, 'outer-cylinder-sliding-around-fixed-ram');
+  const halfDisc = (radius) => poly(Array.from({ length: 65 }, (_, i) => [
+    radius * Math.cos(Math.PI * i / 64), radius * Math.sin(Math.PI * i / 64),
+  ]));
+  const cylinderTopCap = mesh(movingCylinder, horizontalPlate(
+    halfDisc(cylinderOuterRadius), drawnBoreTopY + drop, drawnCapTopY + drop,
+  ), movingMaterial, 'closed-moving-cylinder-cap-acted-on-by-water-pressure');
   const topSaddle = addRole(new THREE.Group(),
     'upper-saddle-attached-to-moving-cylinder');
   topSaddle.position.y = drop;
@@ -602,7 +653,7 @@ function robertsonJack(movement) {
   headShape.quadraticCurveTo(-0.66, drawnHeadTopY - 0.20,
     -cylinderOuterRadius, drawnCapTopY);
   const saddleHead = mesh(topSaddle, new THREE.ExtrudeGeometry(headShape, {
-    depth: 1.0, bevelEnabled: false, curveSegments: 24,
+    depth: 0.5, bevelEnabled: false, curveSegments: 24,
   }).translate(0, 0, -0.5), movingMaterial,
   'cast-cupped-head-on-moving-cylinder');
   const sideClaw = addRole(new THREE.Group(),
@@ -623,13 +674,26 @@ function robertsonJack(movement) {
   hookShape.lineTo(0.55, clawTop - clawRadius);
   hookShape.closePath();
   const clawHook = mesh(sideClaw, new THREE.ExtrudeGeometry(hookShape, {
-    depth: 0.68, bevelEnabled: false, curveSegments: 24,
+    depth: 0.34, bevelEnabled: false, curveSegments: 24,
   }).translate(0, 0, -0.34), movingMaterial,
   'cast-J-claw-hook-on-moving-cylinder');
+  const shapePolygon = (shape, dy) => poly(shape.getPoints(24)
+    .map((point) => [point.x, point.y + dy]));
+  const cylinderSection = hatchedSectionPolygons(polygonClipping.union(
+    rectangle(cylinderInnerRadius, movingCylinderBottomY,
+      cylinderOuterRadius, movingCylinderTopY),
+    rectangle(-cylinderOuterRadius, movingCylinderBottomY,
+      -cylinderInnerRadius, movingCylinderTopY),
+    rectangle(-cylinderOuterRadius, drawnBoreTopY + drop,
+      cylinderOuterRadius, drawnCapTopY + drop + 0.001),
+    shapePolygon(headShape, drop),
+    shapePolygon(hookShape, drop),
+  ), 'hatched-cut-face-of-rising-cylinder-head-and-claw');
+  movingCylinder.add(cylinderSection);
 
   const pressureChamber = mesh(root,
     new THREE.CylinderGeometry(fixedRamRadius * 0.95, fixedRamRadius * 0.95,
-      1, 48),
+      1, 48, 1, false, Math.PI / 2, Math.PI),
     waterMaterial,
     'variable-water-chamber-between-fixed-ram-top-and-moving-cap');
 
@@ -651,12 +715,16 @@ function robertsonJack(movement) {
   const screwTip = mesh(thumbScrew, new THREE.ConeGeometry(0.105, 0.24, 64)
     .rotateZ(-Math.PI / 2).translate(0.51, 0, 0),
   brassMaterial, 'thumb-screw-conical-return-valve-tip');
-  const screwWings = [-1, 1].map((sign, index) => mesh(thumbScrew,
-    new THREE.SphereGeometry(0.12, 20, 14).translate(-0.47, sign * 0.24, 0),
-    fixedRamMaterial, index === 0 ? 'thumb-screw-wing-one'
-      : 'thumb-screw-wing-two'));
-  mesh(thumbScrew, new THREE.CylinderGeometry(0.045, 0.045, 0.48, 16)
-    .translate(-0.47, 0, 0), fixedRamMaterial, 'thumb-screw-wing-bar');
+  // Brown's flat butterfly wing: two rounded lobes above and below the
+  // screw, notched between them like a heart laid on its side.
+  const wingOutline = polygonClipping.union(
+    poly(circle([-0.53, 0.105], 0.115, 64)),
+    poly(circle([-0.53, -0.105], 0.115, 64)),
+    poly([[-0.56, -0.07], [-0.37, -0.05], [-0.37, 0.05], [-0.56, 0.07]]),
+  );
+  const screwWing = mesh(thumbScrew, plate(wingOutline, -0.035, 0.035),
+    fixedRamMaterial, 'thumb-screw-butterfly-wing');
+  const screwWings = [screwWing];
   const returnSeat = mesh(root, horizontalTurned([[-0.20, 0.074375],
     [-0.20, 0.16], [-0.10, 0.16], [-0.10, 0.030625]]).rotateZ(-Math.PI / 2)
     .translate(0, returnSeatY, 0),
@@ -754,11 +822,12 @@ function robertsonJack(movement) {
     blocks: {
       baseFloorPlate,
       baseLug,
+      baseSection,
       baseShell,
       baseTopPlate,
       baseWater,
       clawHook,
-      cylinderSealBand,
+      cylinderSection,
       cylinderShell,
       cylinderTopCap,
       deliveryValve,
@@ -785,6 +854,7 @@ function robertsonJack(movement) {
       pumpCylinder,
       pumpLever,
       pumpPiston,
+      ramSection,
       returnPassage,
       returnSeat,
       returnWater,
@@ -902,6 +972,9 @@ function robertsonJack(movement) {
   foundation.receiveShadow = true;
   for (const object of [baseWater, internalPressurePipe, pressureChamber,
     returnWater]) object.castShadow = false;
+  for (const section of [baseSection, ramSection, cylinderSection]) {
+    for (const face of section.children) face.castShadow = false;
+  }
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

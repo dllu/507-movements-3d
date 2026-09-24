@@ -117,3 +117,20 @@ a fork that both rollers drive.
 `expansion-eccentric-profile`, `expansion-eccentric-bake`, `movement-504`: 79 pass, 0 fail.
 No `docs/validation` generator fingerprints the changed files. The 503-504 report is
 unaffected because `authored-epicyclic-trains.js` is unchanged.
+
+## 467 follow-up (after 3ec1272)
+
+- **Opaque section.** The ram, cylinder, cap, cupped head, J-claw and base now keep only
+  their back halves (z <= 0). Hatched cut faces close them at z=0: paper with 45-degree ink
+  stripes, from a local `hatchedSectionPolygons()` helper. The cylinder, head and claw are
+  hatched one way and the ram the other. The faces are presentation-only.
+- **Removed:** the see-through materials, and the brass seal band, which Brown does not draw.
+- **Kept whole, as in Brown's section:** the pipe, plunger, gland and barrel.
+- **Lever depth.** The lever (z -0.75) now passes behind the column, as Brown hides it.
+- **Thumb screw.** The wing is a flat two-lobed butterfly plate.
+- **Intersections:** unchanged. Only the seated screw tip and inlet disk touch (0.0000). The
+  cut faces add no pairs.
+- **Tests:** movement-467 (one new section/wing test), hydraulic-force-solids, movement-466
+  and source-presentation pass 30/30.
+- **Framing.** The 467 display profile still needs re-measuring (stale bounds give
+  maxNdc 1.95; patched, 0.90).
