@@ -104,7 +104,8 @@ test('movement 228 preserves the six-interval half-wrap visible in the source pl
   assert.ok(geometry.diskRadius < geometry.pitchRadius);
   assert.ok(geometry.toothRootRadius < geometry.diskRadius);
   assert.ok(geometry.toothTipRadius > geometry.pitchRadius);
-  assert.ok(geometry.toothDepth > geometry.diskDepth);
+  // As engraved, the wedges stand on a broad rim; their roots are buried in it.
+  assert.ok(geometry.toothDepth < geometry.diskDepth);
   assert.ok(
     geometry.sidePlaneOffset - geometry.sidePlaneAlternation
       > geometry.toothDepth / 2,

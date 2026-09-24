@@ -12,9 +12,12 @@ import { stopOutlines239 } from './baked/opposed-spur-239-outlines.js';
 // world-space line are discarded instead of cutting the geometry (the same
 // technique as movement 233's lantern wheel).
 export const WHEEL_BREAK_239 = { amplitude: 0.1, level: -0.82, wavelength: 1.7 };
+const JAG_STEP_239 = 0.32;
 function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
   const broken = material.clone();
-  broken.side = THREE.DoubleSide;
+  // Front faces only: the back walls seen through the ragged cut otherwise
+  // print a second, offset break line just below it.
+  broken.side = THREE.FrontSide;
   broken.userData.worldBreakBelow = { amplitude, level, wavelength };
   broken.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
@@ -25,13 +28,20 @@ function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
         {
           float k = 6.28318530718 / ${wavelength.toFixed(6)};
+          // Brown's break is ragged: a slow wave plus straight zigzags from
+          // three incommensurate triangle waves.
+          float jagX = vBreakWorld.x / ${JAG_STEP_239.toFixed(6)};
+          float jag = (abs(fract(jagX + 0.13) - 0.5) * 4.0 - 1.0) * 0.5
+            + (abs(fract(1.73 * jagX + 0.41) - 0.5) * 4.0 - 1.0) * 0.3
+            + (abs(fract(2.91 * jagX + 0.77) - 0.5) * 4.0 - 1.0) * 0.2;
           float breakY = ${level.toFixed(6)}
-            + ${amplitude.toFixed(6)} * (0.65 * sin(k * vBreakWorld.x + 0.7)
-              + 0.35 * sin(2.3 * k * vBreakWorld.x + 2.1));
+            + ${amplitude.toFixed(6)} * (0.5 * sin(k * vBreakWorld.x + 0.7)
+              + 0.15 * sin(2.3 * k * vBreakWorld.x + 2.1)
+              + 0.4 * jag);
           if (vBreakWorld.y < breakY) discard;
         }`);
   };
-  broken.customProgramCacheKey = () => `world-break-${level}-${amplitude}-${wavelength}`;
+  broken.customProgramCacheKey = () => `world-break-jagged-${level}-${amplitude}-${wavelength}`;
   return broken;
 }
 

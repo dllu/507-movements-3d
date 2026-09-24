@@ -76,7 +76,10 @@ for(const id of [227,228,229])test(`${id}: stable buffers, readable timing, comp
  const m=create({id}),d=m.root.userData,saved=[];let triangles=0;
  m.root.traverse(o=>{if(o.geometry){saved.push([o,o.geometry,o.geometry.attributes.position.array]);}for(const material of[].concat(o.material??[]))assert.equal(material.fog,false);});
  for(let i=0;i<=16;i++){
-  m.update(4*i/16);m.root.updateMatrixWorld(true);m.root.traverseVisible(o=>{const position=o.geometry?.attributes.position;if(!position)return;for(let j=0;j<position.count;j++)assert.ok(d.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(position,j).applyMatrix4(o.matrixWorld)),`${id} frame misses a vertex`);});
+  m.update(4*i/16);m.root.updateMatrixWorld(true);m.root.traverseVisible(o=>{const position=o.geometry?.attributes.position;if(!position)return;
+   // 229 cuts its chain legs with fixed clipping planes; clipped vertices are not drawn.
+   const cuts=[].concat(o.material??[]).flatMap(material=>material.clippingPlanes??[]);
+   for(let j=0;j<position.count;j++){const point=new THREE.Vector3().fromBufferAttribute(position,j).applyMatrix4(o.matrixWorld);if(cuts.some(plane=>plane.distanceToPoint(point)<0))continue;assert.ok(d.cameraFitBounds.containsPoint(point),`${id} frame misses a vertex`);}});
  }
  let count=0;m.root.traverse(o=>{if(o.geometry)count++;});assert.equal(count,saved.length);
  for(const[o,g,a]of saved){assert.equal(o.geometry,g);assert.equal(o.geometry.attributes.position.array,a);}

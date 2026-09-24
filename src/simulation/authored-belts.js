@@ -5,6 +5,7 @@ import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
 import {correctClampParts} from './clamp-working-parts.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
 import { makeMiterGear } from './miter-gear.js';
 import { whitePulleys } from './authored-white-pulleys.js';
@@ -1679,7 +1680,8 @@ function fixedHoist() {
     Z_AXIS,
     effortDirection,
   );
-  const baseEffortLength = 2.55;
+  // Brown's hand grips the rope about 3.3 sheave radii below the pulley.
+  const baseEffortLength = 2.2;
   const baseLoadLength = 2.65;
   const makeRopePath = (motion) => {
     const effortLength = baseEffortLength + motion;
@@ -1712,7 +1714,9 @@ function fixedHoist() {
   const { staple: hook, ceiling: support } = addHookStaple(suspension,
     pitchRadius + 0.15, { width: 2.4, offset: -0.2 });
   root.add(markShadows(suspension));
-  root.userData.blocks = { pulley, rope, weight, suspension, pin, hook, support };
+  const hand = makeHaulingHand(effortDirection, 0.042);
+  root.add(hand);
+  root.userData.blocks = { pulley, rope, weight, suspension, pin, hook, support, hand };
   root.userData.cameraFov = 18;
   root.userData.mechanism = 'fixed-pulley-hoist';
   root.userData.ropeContact = {
@@ -1732,6 +1736,7 @@ function fixedHoist() {
     rope.userData.setCurve(path.curve);
     rope.userData.updateDistance(ropeTravel);
     weight.position.copy(path.loadAttachment).add(new THREE.Vector3(0, -0.39, 0));
+    hand.position.copy(path.effortEnd);
     setSpin(pulley, Math.sign(contactArc.sweep) * ropeTravel / pitchRadius);
     root.userData.attachments = {
       effort: path.effortEnd,
@@ -1751,10 +1756,111 @@ function fixedHoist() {
       supportingSegments: 1,
     };
   };
+  // Fit the swept silhouette (hand, tail and bag travel), not the stale
+  // pre-hand profile box.
+  const fit = new THREE.Box3();
+  for (let i = 0; i < 24; i += 1) {
+    update(i * 2 * Math.PI / (0.72 * 24));
+    root.updateMatrixWorld(true);
+    fit.union(new THREE.Box3().setFromObject(root, true));
+  }
+  root.userData.cameraFitBounds = fit;
   update(0);
   // Brown hangs the pulley from a hatched ceiling with no ground below.
   root.userData.hideGround = true;
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
+}
+
+// Plate 12's hauling hand: a fist bored for the rope (no rope overlap), a
+// thumb over the fingers, a forearm and cuff entering from the lower left,
+// and the loose rope tail hanging below the fist. The group origin is the
+// rope's effort end; local +X runs up the rope toward the pulley.
+function makeHaulingHand(ropeDirection, ropeRadius) {
+  const hand = new THREE.Group();
+  hand.name = 'plate-12-hauling-hand';
+  const skin = matte(0xe2b48e, { roughness: 0.8 });
+  const grip = new THREE.Group();
+  grip.rotation.z = Math.atan2(ropeDirection.y, ropeDirection.x);
+  const bore = ropeRadius + 0.014;
+  const section = new THREE.Shape();
+  const [y0, y1, z0, z1, r] = [-0.12, 0.2, -0.115, 0.115, 0.07];
+  section.moveTo(y0 + r, z0);
+  section.lineTo(y1 - r, z0);
+  section.quadraticCurveTo(y1, z0, y1, z0 + r);
+  section.lineTo(y1, z1 - r);
+  section.quadraticCurveTo(y1, z1, y1 - r, z1);
+  section.lineTo(y0 + r, z1);
+  section.quadraticCurveTo(y0, z1, y0, z1 - r);
+  section.lineTo(y0, z0 + r);
+  section.quadraticCurveTo(y0, z0, y0 + r, z0);
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, bore, 0, Math.PI * 2, true);
+  section.holes.push(hole);
+  const fistLength = 0.3;
+  const fistGeometry = new THREE.ExtrudeGeometry(section, {
+    depth: fistLength - 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.012,
+    bevelSegments: 3, curveSegments: 20,
+  });
+  // Cyclic axis swap: extrusion (z) -> grip X, shape x -> Y, shape y -> Z.
+  fistGeometry.translate(0, 0, -(fistLength - 0.06) / 2);
+  fistGeometry.applyMatrix4(new THREE.Matrix4().set(
+    0, 0, 1, 0,
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 0, 1));
+  const fist = new THREE.Mesh(fistGeometry, skin);
+  fist.name = 'hand-fist';
+  // Knuckle ridges across the fingers on the side away from the wrist.
+  for (let i = 0; i < 4; i += 1) {
+    const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), skin);
+    knuckle.scale.set(1, 0.8, 0.9);
+    knuckle.position.set(-0.105 + i * 0.07, -0.115, 0.05);
+    knuckle.name = 'hand-knuckle';
+    grip.add(knuckle);
+  }
+  // An elongated sphere, not a capsule grip handle.
+  const thumb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), skin);
+  thumb.scale.set(0.036, 0.1, 0.036);
+  thumb.position.set(0.12, 0.02, 0.118);
+  thumb.rotation.z = Math.PI / 2 - 0.5;
+  thumb.name = 'hand-thumb';
+  grip.add(fist, thumb);
+  // Brown's fist is about 0.45 of the sheave diameter; the rope bore scales
+  // with it, so the rope stays clear.
+  const body = new THREE.Group();
+  body.scale.setScalar(1.35);
+  body.add(grip);
+  hand.add(body);
+  // Forearm, leaving the heel of the fist steeply toward the lower left.
+  const wrist = new THREE.Vector3(-0.03, 0.17, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), grip.rotation.z);
+  const armDirection = new THREE.Vector3(-0.62, -0.78, 0).normalize();
+  const armLength = 0.5;
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.115, armLength, 20), skin);
+  arm.position.copy(wrist).addScaledVector(armDirection, armLength / 2);
+  arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), armDirection);
+  arm.name = 'hand-forearm';
+  const cuffMaterial = matte(0xe9e1d2, { roughness: 0.85 });
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.16, 20), cuffMaterial);
+  cuff.position.copy(wrist).addScaledVector(armDirection, armLength + 0.07);
+  cuff.quaternion.copy(arm.quaternion);
+  cuff.name = 'hand-cuff';
+  // The loose end of the rope below the fist, drooping toward vertical.
+  const tailPoints = [
+    ropeDirection.clone().multiplyScalar(0.15),
+    ropeDirection.clone().multiplyScalar(-0.24),
+    new THREE.Vector3(-0.27, -0.42, 0),
+    new THREE.Vector3(-0.3, -0.7, 0),
+    new THREE.Vector3(-0.27, -1.0, 0),
+    new THREE.Vector3(-0.2, -1.25, 0),
+  ];
+  const tail = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tailPoints), 48, ropeRadius, 10, false),
+    matte(PALETTE.belt, { roughness: 0.76 }));
+  tail.name = 'loose-rope-tail';
+  body.add(arm, cuff);
+  hand.add(tail);
+  markShadows(hand);
+  return hand;
 }
 
 function singleMovableHoist() {
@@ -7691,6 +7797,8 @@ function alternatingPlaneLinkChainPulley(movement) {
   });
   plateLinkGeometry.translate(0, 0, -linkWireRadius);
   plateLinkGeometry.computeVertexNormals();
+  const edgeOnStrapGeometry = new THREE.BoxGeometry(
+    linkPitch - 2 * linkLoopHalfWidth, 2 * linkWireRadius, 2 * plateLinkEndRadius - 0.02);
   const links = Array.from({ length: maximumRenderedLinks }, (_, index) => {
     const material = index % 2 === 0 ? chainMaterial : chainMaterialAlternate;
     const link = new THREE.Mesh(
@@ -7702,6 +7810,18 @@ function alternatingPlaneLinkChainPulley(movement) {
     link.userData.role = index % 2 === 1
       ? 'edge-on-flat-loop-link-across-tooth'
       : 'flat-plate-link-in-pulley-plane';
+    if (index % 2 === 1) {
+      // Brown draws the links across the teeth as strips as broad as the
+      // plate links, not thin wires: the loop's two side bars are flat
+      // straps standing radially (the tooth passes between them), while
+      // the round end bars still pass through the plate links' eyes.
+      for (const side of [-1, 1]) {
+        const strap = new THREE.Mesh(edgeOnStrapGeometry, material);
+        strap.position.set(linkPitch / 2, side * linkLoopHalfWidth, 0);
+        strap.userData.role = 'edge-on-link-side-strap';
+        link.add(strap);
+      }
+    }
     chain.add(link);
     return link;
   });
@@ -8033,6 +8153,7 @@ function alternatingPlaneLinkChainPulley(movement) {
       object.material = Math.abs(link.materialIndex % 2) === 0
         ? chainMaterial
         : chainMaterialAlternate;
+      for (const strap of object.children) strap.material = object.material;
       linkAlignment.setFromAxisAngle(Z_AXIS, link.angle);
       object.quaternion.copy(linkAlignment);
       if (link.plane === 'perpendicular-to-sprocket') {
@@ -8071,10 +8192,11 @@ function ladderRungChainPulley() {
   const pitchRadius = 2.05;
   const linkPitch = 2 * pitchRadius * Math.sin(chainNodeStep / 2);
   const wheelCenter = new THREE.Vector3(0, 0.68, 0);
-  // Brown's disc is a thin plate reaching almost to the rungs, with small
-  // wedges standing proud of its rim between them.
+  // Brown's disc reaches almost to the rungs, with a rim broad enough to
+  // carry the small wedges standing proud of it between them; the wedges'
+  // roots are buried in the rim.
   const diskRadius = 1.95;
-  const diskDepth = 0.18;
+  const diskDepth = 0.32;
   const toothRootRadius = 1.68;
   const toothTipRadius = 2.17;
   // Small wedges, a third of the rung length, not broad cogs.
@@ -9317,8 +9439,38 @@ function toothedLinkChainWheel() {
 
   const drawnLeftLegDepth = 1.12;
   const drawnRightLegDepth = 0.7;
+  // Brown draws short legs: the left one ends about a pitch radius below the
+  // wheel centre and the right one runs off the plate well above the wheel
+  // bottom. The full chain keeps running beyond these cut-offs; rather than
+  // popping whole links in and out as they pass (a one-link jump each
+  // pitch), each leg is cut square at a fixed line across it, so the links
+  // slide continuously out of view. The cuts sit at Brown's leg ends: the
+  // left about a pitch radius below the wheel centre, the right where the
+  // plate crops it.
+  const legCutPoint = (tangentPoint, direction, depth, overshoot) => {
+    const y = wheelCenter.y - pitchRadius * depth;
+    return tangentPoint.clone()
+      .addScaledVector(direction, (y - tangentPoint.y) / direction.y + overshoot);
+  };
+  const leftCut = legCutPoint(leftTangentPoint, incomingDirection, drawnLeftLegDepth, 0.12);
+  const rightCut = legCutPoint(rightTangentPoint, outgoingDirection, drawnRightLegDepth, 0.1);
+  // Keep points upstream of the left cut and upstream of the right cut.
+  const localLegCuts = [
+    new THREE.Plane().setFromNormalAndCoplanarPoint(incomingDirection.clone(), leftCut),
+    new THREE.Plane().setFromNormalAndCoplanarPoint(outgoingDirection.clone().negate(), rightCut),
+  ];
+  const legCuts = localLegCuts.map((plane) => plane.clone());
+  for (const material of [linkMaterial, linkMaterialAlternate, pivotMaterial]) {
+    material.clippingPlanes = legCuts;
+    material.clipShadows = true;
+  }
+  root.userData.localClippingEnabled = true;
+  root.userData.chainLegCuts = { left: leftCut, right: rightCut, planes: legCuts };
   const update = (time) => {
     const state = stateAtTime(time);
+    // Clipping planes are world-space; follow any placement of the root.
+    root.updateMatrixWorld();
+    legCuts.forEach((plane, index) => plane.copy(localLegCuts[index]).applyMatrix4(root.matrixWorld));
     wheelRotor.rotation.z = state.sprocketAngle;
     links.forEach((object) => {
       object.visible = false;
@@ -9332,14 +9484,9 @@ function toothedLinkChainWheel() {
       );
       const object = links[renderSlot];
       const parity = Math.abs(link.materialIndex % 2);
-      // Brown draws short legs: the left one ends about a pitch radius below
-      // the wheel centre and the right one well above the wheel bottom. The
-      // full source-animation chain keeps running beyond these cut-offs, but
-      // links whose lower end passes them are not drawn.
-      const lowerEnd = Math.min(link.start.position.y, link.end.position.y);
-      const legCutoff = wheelCenter.y - pitchRadius
-        * (link.start.position.x < wheelCenter.x ? drawnLeftLegDepth : drawnRightLegDepth);
-      object.visible = lowerEnd >= legCutoff - 1e-9;
+      // Links wholly beyond a leg cut are hidden; the rest are clipped.
+      object.visible = localLegCuts.every((plane) => plane.distanceToPoint(link.start.position) > -0.2
+        || plane.distanceToPoint(link.end.position) > -0.2);
       object.position.copy(link.start.position);
       object.rotation.set(0, 0, link.angle);
       object.userData.plate.position.z = parity === 0
@@ -11445,6 +11592,38 @@ function removeUndrawnWhiteIndexMarks(root) {
   root.userData.removedWhiteIndexMarks = doomed.length;
 }
 
+// Brown draws A's shaft cut in section: a hatched circle inside the smooth
+// pulley. The hatching turns with the shaft, the only visible sign of the
+// drum's rotation (the lever and scale stay balanced at rest by design).
+// The shaft's front stub is set back flush with the hub face, as a section.
+function addProny244ShaftSection(root) {
+  const { blocks } = root.userData;
+  const rotor = blocks.drum.parent;
+  const hubFrontZ = 0.35;
+  blocks.drumShaft.position.z = hubFrontZ - 0.63;
+  const radius = 0.165;
+  const face = new THREE.Mesh(
+    plate(poly(circle([0, 0], radius, 96)), hubFrontZ + 0.002, hubFrontZ + 0.01),
+    matte(0xe9e1d2, { roughness: 0.85 }));
+  face.userData.role = 'hatched-shaft-section-A-face';
+  const strips = [];
+  const direction = [Math.SQRT1_2, Math.SQRT1_2];
+  const normal = [-Math.SQRT1_2, Math.SQRT1_2];
+  for (let offset = -0.13; offset <= 0.1301; offset += 0.052) {
+    const half = 0.011;
+    const corner = (u, v) => [direction[0] * u + normal[0] * v, direction[1] * u + normal[1] * v];
+    strips.push(...poly([corner(-0.3, offset - half), corner(0.3, offset - half),
+      corner(0.3, offset + half), corner(-0.3, offset + half)]));
+  }
+  const hatch = new THREE.Mesh(
+    plate(polygonClipping.intersection(poly(circle([0, 0], radius - 0.012, 96)), polygonClipping.union(...strips.map((strip) => [strip]))),
+      hubFrontZ + 0.01, hubFrontZ + 0.014),
+    matte(PALETTE.ink));
+  hatch.userData.role = 'hatched-shaft-section-A-hatching';
+  rotor.add(face, hatch);
+  blocks.shaftSection = { face, hatch };
+}
+
 export function createAuthoredBeltMovement(movement) {
   let result;
   switch (movement.id) {
@@ -11481,7 +11660,7 @@ export function createAuthoredBeltMovement(movement) {
     case 229: result = toothedLinkChainWheel(); correctChainDrive(result, 229); break;
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
-    case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); break;
+    case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); addProny244ShaftSection(result.root); break;
     default: return null;
   }
   if (UNDRAWN_WHITE_INDEX_IDS.has(movement.id)) removeUndrawnWhiteIndexMarks(result.root, movement.id);

@@ -11,11 +11,19 @@ const turn = 2 * Math.PI;
  * `loadedSide` (+1/-1) selects which axial side of the section is loaded.
  */
 export function thinRibWormGeometry({ pitchRadius, module, length, pressureAngle, angularSteps = 160,
-  loadedSide = 1, tipWidth = 0.34 * module, idleFlankLean = 0.12 * module }) {
+  loadedSide = 1, tipWidth = 0.34 * module, idleFlankLean = 0.12 * module,
+  coreRadius = null, crestRadius = null }) {
   // Reuse the reference hob's section numbers so the loaded flank coincides.
   const reference = cylindricalWormGeometry({ pitchRadius, module, length: Math.PI * module, pressureAngle, angularSteps: 3 });
-  const { pitch, rootRadius, tipRadius, rootHalfWidth, tipHalfWidth } = reference.userData;
+  const { pitch } = reference.userData;
+  let { rootRadius, tipRadius, rootHalfWidth, tipHalfWidth } = reference.userData;
   reference.dispose();
+  // Brown's ribs stand on a thick core and are shallower than a full hob
+  // tooth: a raised core and lowered crest keep the loaded flank on the same
+  // hob line, trimmed to the shorter radial interval.
+  const hobHalfWidth = (radius) => pitch / 4 - (radius - pitchRadius) * Math.tan(pressureAngle);
+  if (coreRadius !== null) { rootRadius = coreRadius; rootHalfWidth = hobHalfWidth(coreRadius); }
+  if (crestRadius !== null) { tipRadius = crestRadius; tipHalfWidth = hobHalfWidth(crestRadius); }
   const s = loadedSide;
   // Section in the local axial coordinate u (loaded side positive after the
   // sign flip below): loaded flank from (rootHalfWidth, root) to

@@ -7,18 +7,19 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 export function twoFixedOneMovable() {
   const root = new THREE.Group();
-  // Plate 18's three sheaves measure about 1 : 0.77 : 0.73 (upper, middle
-  // fixed, movable). The reconstruction keeps both side strands vertical, so
-  // the right strand from the movable sheave to the upper one must pass
-  // outside the middle sheave: middle 0.73 and movable 0.81 of the upper.
+  // Plate 18's three sheaves measure about 1 : 0.74 : 0.70 (upper, middle
+  // fixed, movable): the movable sheave is the smallest. The left strand
+  // stays vertical; as on the plate, the right strand leans slightly outward
+  // on the common tangent from the movable sheave up to the wider upper
+  // sheave, so it clears the middle sheave.
   const upperRadius = 0.48;
   const lowerFixedRadius = 0.35;
-  const movableRadius = 0.39;
+  const movableRadius = 0.335;
   const upperY = 1.85;
   const lowerFixedY = 0.78;
   const movableBaseY = -1.85;
   const movableX = 0;
-  const upperX = movableX + movableRadius - upperRadius;
+  const upperX = movableX + movableRadius + 0.145 - upperRadius;
   const lowerFixedX = movableX - movableRadius + lowerFixedRadius;
   const becketZ = 0;
   const upperFixed = makeHoistBlock({ radius: upperRadius, color: PALETTE.driver, upperEyeZ: 0 });
@@ -44,7 +45,16 @@ export function twoFixedOneMovable() {
   const effortDirection = new THREE.Vector3(-Math.sin(0.32), -Math.cos(0.32), 0);
   const upperExit = upperFixed.position.clone().add(new THREE.Vector3(
     -Math.cos(0.32) * upperRadius, Math.sin(0.32) * upperRadius, 0));
-  const upperRight = upperFixed.position.clone().add(new THREE.Vector3(upperRadius, 0, 0));
+  // Right-hand external common tangent from circle (c1, r1) up to (c2, r2).
+  const rightTangent = (c1, r1, c2, r2) => {
+    const v = c2.clone().sub(c1).setZ(0);
+    const distance = v.length();
+    const u = v.multiplyScalar(1 / distance);
+    const perp = new THREE.Vector3(u.y, -u.x, 0);
+    const along = (r1 - r2) / distance;
+    const normal = u.clone().multiplyScalar(along).addScaledVector(perp, Math.sqrt(1 - along * along));
+    return [c1.clone().addScaledVector(normal, r1), c2.clone().addScaledVector(normal, r2)];
+  };
   const lowerLeft = lowerFixed.position.clone().add(new THREE.Vector3(-lowerFixedRadius, 0, 0));
   const effortBaseLength = 1.32;
   const pathAt = (travel, targetLength = null) => {
@@ -55,7 +65,7 @@ export function twoFixedOneMovable() {
     const lowerArc = circularRopeArc(lowerFixed.position, lowerEntry, lowerLeft, Z_AXIS,
       lowerEntry.clone().sub(becket).setZ(0).normalize());
     const movableLeft = movableCenter.clone().add(new THREE.Vector3(-movableRadius, 0, 0));
-    const movableRight = movableCenter.clone().add(new THREE.Vector3(movableRadius, 0, 0));
+    const [movableRight, upperRight] = rightTangent(movableCenter, movableRadius, upperFixed.position, upperRadius);
     const movableArc = circularRopeArc(movableCenter, movableLeft, movableRight, Z_AXIS, new THREE.Vector3(0, -1, 0));
     const upperArc = circularRopeArc(upperFixed.position, upperRight, upperExit, Z_AXIS, new THREE.Vector3(0, 1, 0));
     const curve = new THREE.CurvePath();
@@ -134,5 +144,7 @@ export function twoFixedOneMovable() {
   };
   update(0);
   markShadows(root);
+  // Brown hangs the tackle from a hatched ceiling with no ground below.
+  root.userData.hideGround = true;
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
 }

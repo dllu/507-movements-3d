@@ -374,9 +374,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate with the ground removed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -391,7 +391,8 @@
         "docs/lane1-belts-gears-review.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -399,9 +400,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's hand is not modelled; the free rope end sticks out stiffly as a straight diagonal.",
-      "limits": "Loaded rope dynamics are unverified.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The hand is a simple stylised fist; loaded rope dynamics unverified.",
+      "assessment": "reasonable"
     },
     {
       "id": 13,
@@ -571,9 +572,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Default capture inspected beside the plate: middle sheave no longer half size."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -585,7 +586,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -593,9 +595,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The movable sheave is slightly larger than the middle one, the reverse of the plate.",
+      "visibleFlaws": "",
       "limits": "Ideal massless ropes/sheaves; stretch and friction not simulated.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 19,
@@ -987,9 +989,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4a-1-160-review.md",
-        "note": "Default capture inspected beside the plate: the worm still reads coarse beside Brown's fine ribs."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1004,7 +1006,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1012,9 +1015,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The worm thread reads coarser than Brown's fine ribs.",
+      "visibleFlaws": "",
       "limits": "29-tooth geometry reconstructed.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 32,
@@ -4025,9 +4028,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3h-mujoco-review.md",
-        "note": "Default production capture inspected beside the plate: larger framing; the rack leaves the frame at its stroke ends."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "known",
@@ -4042,7 +4045,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3h-mujoco-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4050,9 +4054,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The sliding rack runs out of frame at its stroke ends.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Keeping the full rack stroke in view makes the subject smaller than on the plate.",
+      "assessment": "reasonable"
     },
     {
       "id": 124,
@@ -6404,8 +6408,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/u3-gears-review.md",
-        "note": "Default capture inspected beside the plate: the hooked toothed path and parallel groove traced from the plate."
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6420,7 +6424,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u3-gears-review.md"
+        "docs/u3-gears-review.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6428,9 +6433,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The working pinion, kept though Brown omits it, overhangs the wheel edge on the rim run.",
-      "limits": "Teeth rounded rather than square; reversal and contact forces not validated.",
-      "assessment": "minor",
+      "visibleFlaws": "",
+      "limits": "Disc margin ≈14% wider than Brown's to carry the pinion he omits.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -6505,9 +6510,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default capture inspected beside the plate with indices hidden; the worm-cut scalloped valleys differ from Brown's rectangular slots."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6520,7 +6525,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6528,7 +6534,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The upper wheel's teeth are scalloped notches cut into the face where Brown draws square slots.",
+      "visibleFlaws": "Scalloped tooth spaces instead of square slots (a worm across the face generates slanted, curved spaces; square slots would span ≈77% of the pitch).",
       "limits": "Finite running gaps, backlash take-up, friction and loaded sharing unvalidated.",
       "assessment": "minor"
     },
@@ -6574,8 +6580,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/u7-flawed-review.md",
-        "note": "Default capture inspected beside the plate: the frame's full travel stays in view."
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6589,7 +6595,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6597,9 +6604,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The subject reads smaller in a square view.",
-      "limits": "Guide clearance may change the loaded path; a 0.070 overlap remains in the unpresented model.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The frame travels ≈0.8 of its width each way, so it fills about half a square view.",
+      "assessment": "reasonable"
     },
     {
       "id": 198,
@@ -6744,9 +6751,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: face-on with the flared worm framed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6758,7 +6765,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6766,7 +6774,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The worm is more flared than the plate's and the wheel teeth are small.",
+      "visibleFlaws": "Wheel teeth are narrow nubs rather than Brown's deep sawtooth; the worm is slightly more flared.",
       "limits": "Worm-end relief uses a coarse generated field.",
       "assessment": "minor"
     },
@@ -6945,9 +6953,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: face-on with no pin streak shadows; detents hidden."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "known",
@@ -6962,7 +6970,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6970,7 +6979,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The pinion is a thin slotted web rather than Brown's lantern strip.",
+      "visibleFlaws": "The pinion is a thin slotted web where Brown draws a lantern strip (a lantern-width web would strike the neighbouring pin rings).",
       "limits": "A 0.0535 pin/pinion-web overlap is geometric (pins must reach the slots over the neighbouring ring).",
       "assessment": "minor"
     },
@@ -7214,9 +7223,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: face-on with shafts reading as sections; the internal teeth cover only the upper arc where Brown draws the full ring."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7232,7 +7241,8 @@
         "docs/lane1-belts-gears-review.md",
         "docs/lane9-residuals-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7240,9 +7250,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Internal teeth cover about half the ring where Brown draws them further round.",
-      "limits": "24 teeth over 180° would leave no hand-off gap; tooth form comes from the animation.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Brown's 180° + 180° teeth would engage the pinion from both sides at each hand-off, so the ring keeps 22 teeth over 165°.",
+      "assessment": "reasonable"
     },
     {
       "id": 217,
@@ -7582,9 +7592,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: flat riveted plate links and broader sprocket teeth."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7598,7 +7608,8 @@
         "docs/w2b-belts-clutches-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7606,9 +7617,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Links standing across the teeth read as thin wires edge-on.",
-      "limits": "Chain follows a prescribed path.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The straps cross in front of the tooth tips.",
+      "assessment": "reasonable"
     },
     {
       "id": 228,
@@ -7617,8 +7628,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5a-gears-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: smaller wedges on a slightly larger disc; it still reads partly as a toothed wheel."
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7632,7 +7643,8 @@
         "docs/w2b-belts-clutches-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7640,7 +7652,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Wedges are blocky prisms rather than Brown's small triangular wedges.",
+      "visibleFlaws": "The wedges still read as small blocks on the rim rather than Brown's slender triangular wedges.",
       "limits": "Chain follows a prescribed path.",
       "assessment": "minor"
     },
@@ -7650,9 +7662,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Default capture inspected beside the plate: short chain legs as drawn."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7664,7 +7676,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7672,9 +7685,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The chain end jumps one link as links pass the cut-off.",
-      "limits": "Chain follows a prescribed path; tension and pickup unsolved.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The left leg ends in a square cut where Brown draws a rounded end link.",
+      "assessment": "reasonable"
     },
     {
       "id": 230,
@@ -7985,9 +7998,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: wheel broken off below the hub as drawn."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8000,7 +8013,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane1-belts-gears-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8008,9 +8022,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The break line is smoother than Brown's jagged edge.",
+      "visibleFlaws": "",
       "limits": "Stops seated by prescription; gravity seating and holding strength unsolved.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 240,
@@ -8148,9 +8162,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: index stripe and the undrawn post joining C and C' removed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8162,7 +8176,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8170,9 +8185,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Nothing in the view visibly moves: the plain pulley shows no rotation and the lever and scale pan stay still, so the animation looks frozen.",
-      "limits": "Brake friction, torque balance and dissipation not solved.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Only shaft section A shows motion; the lever and pan rest at balance.",
+      "assessment": "reasonable"
     },
     {
       "id": 245,

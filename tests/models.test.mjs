@@ -690,7 +690,7 @@ test('movement 12 is a fixed 1:1 hoist with one constant-length rope', () => {
     assert.equal(state.supportingSegments, 1);
     assert.equal(state.effortForceOverLoad, 1);
     assert.ok(Math.abs(state.effortDisplacement - state.loadDisplacement) < 1e-10);
-    assert.ok(Math.abs(state.effortLength + state.loadLength - 5.2) < 1e-10);
+    assert.ok(Math.abs(state.effortLength + state.loadLength - 4.85) < 1e-10);
     assert.ok(Math.abs(Math.abs(state.pulleyAngularSpeed) * state.pitchRadius - Math.abs(state.ropeSpeed)) < 1e-10);
     assert.ok(contact.object.position.distanceTo(fixedCenter) < 1e-10, 'the pulley remains fixed');
   }
@@ -1094,15 +1094,19 @@ test('movement 18 reeves one rope through two fixed pulleys and a 3:1 moving blo
     assert.equal(state.supportingSegments, 3);
     assert.equal(state.nominalEffortForceOverLoad, 1 / 3);
     const becketVertical = curve.curves[0].getTangent(0).y;
-    assert.ok(Math.abs(state.effortForceOverLoad * (2 + becketVertical) - 1) < 1e-8,
+    // The left strand is vertical; as engraved, the right strand leans
+    // slightly outward from the smaller movable sheave to the upper one.
+    const rightVertical = curve.curves[4].getTangent(0).y;
+    assert.ok(rightVertical > 0.998 && rightVertical < 1, 'the right strand leans only slightly');
+    assert.ok(Math.abs(state.effortForceOverLoad * (1 + rightVertical + becketVertical) - 1) < 1e-8,
       'actual tension components balance the load');
-    assert.ok(Math.abs(state.haulPerLoad - (2 + becketVertical)) < 1e-8,
+    assert.ok(Math.abs(state.haulPerLoad - (1 + rightVertical + becketVertical)) < 1e-8,
       'actual rope travel satisfies virtual work');
     assert.ok(Math.abs(state.haulPerLoad - 3) < 0.04,
       'the diagonal becket strand stays close to the nominal 3:1 travel law');
     assert.ok(Math.abs(state.upperFixedAngularSpeed * state.upperRadius
       - state.haulSpeed) < 1e-8);
-    assert.ok(Math.abs(state.loadSpeed + state.loadAngularSpeed * state.movableRadius
+    assert.ok(Math.abs(rightVertical * state.loadSpeed + state.loadAngularSpeed * state.movableRadius
       - state.haulSpeed) < 1e-8);
     assert.ok(Math.abs(state.loadSpeed - state.loadAngularSpeed * state.movableRadius
       + becketVertical * state.loadSpeed) < 1e-8);

@@ -37,7 +37,9 @@ test('031 actual loaded-flank normals deliver positive wheel torque with the syn
     model.update(2 * Math.PI / 2.2 * (i + 0.173) / 9);
     model.root.updateMatrixWorld(true);
     const closest = meshPairDistance(wormTree, workingTree, wheel.matrixWorld.clone().invert().multiply(worm.matrixWorld), 0.01);
-    assert.ok(closest.witness && closest.distance > 1e-6 && closest.distance < 0.00004,
+    // Brown's wheel tips are trimmed short of the worm's thick core, so the
+    // nearest loaded-flank witness now lies nearer the pitch circle (≈5e-5).
+    assert.ok(closest.witness && closest.distance > 1e-6 && closest.distance < 0.00007,
       `pose ${i}: a finite positive loaded-flank clearance`);
     const a = new THREE.Vector3().fromArray(closest.witness.a).applyMatrix4(wheel.matrixWorld);
     const b = new THREE.Vector3().fromArray(closest.witness.b).applyMatrix4(wheel.matrixWorld);

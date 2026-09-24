@@ -1762,8 +1762,11 @@ export function wormAndWheel(options = {}) {
   // cut the baked wheel and pull the idle flank in (thin-rib-worm-geometry).
   const threadGeometry = options.thinRib
     ? thinRibWormGeometry({
-      pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
-      angularSteps: options.wormAngularSteps ?? 640, loadedSide: options.thinRib,
+      pitchRadius: wormPitchRadius, module, length: options.ribTurns ? axialPitch * options.ribTurns : wormLength,
+      pressureAngle, angularSteps: options.wormAngularSteps ?? 640, loadedSide: options.thinRib,
+      ...(options.ribTipWidth ? { tipWidth: options.ribTipWidth } : {}),
+      ...(options.wormCoreRadius ? { coreRadius: options.wormCoreRadius } : {}),
+      ...(options.wormCrestRadius ? { crestRadius: options.wormCrestRadius } : {}),
     })
     : cylindricalWormGeometry({
       pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
@@ -1772,6 +1775,20 @@ export function wormAndWheel(options = {}) {
   const thread = new THREE.Mesh(threadGeometry, matte(PALETTE.driver, { metalness: 0.15, roughness: 0.58 }));
   thread.userData.screwThread = true;
   wormRotor.add(thread);
+  if (options.ribTurns && options.wormCoreRadius) {
+    // Brown's plain sleeve runs a little past the ribs at each end.
+    const collarLength = axialPitch * 0.3;
+    for (const side of [-1, 1]) {
+      const collar = new THREE.Mesh(
+        new THREE.CylinderGeometry(options.wormCoreRadius, options.wormCoreRadius, collarLength, 64),
+        thread.material,
+      );
+      collar.rotation.x = Math.PI / 2;
+      collar.position.z = side * (axialPitch * options.ribTurns / 2 + collarLength / 2);
+      collar.userData.wormSleeveEnd = true;
+      wormRotor.add(collar);
+    }
+  }
   Object.assign(worm.userData, { rotor: wormRotor, thread, starts: wormStarts,
     turns: wormTurns, length: wormLength, pitch: axialPitch, radius: wormPitchRadius,
     axis: X_AXIS.clone(), handedness: wormHandedness });
@@ -1785,6 +1802,23 @@ export function wormAndWheel(options = {}) {
     wormLength, depth: wheelDepth, pressureAngle,
   }, { profile: options.profile ?? null }), matte(PALETTE.driven, { metalness: 0.11, roughness: 0.68 }));
   toothMesh.userData.wormGeneratedWheel = true;
+  if (options.wheelTipRadius) {
+    // Brown's wheel teeth stop short of the worm's thick core: trim the
+    // generated tips to a flat land (removes material only).
+    const positions = toothMesh.geometry.attributes.position;
+    for (let index = 0; index < positions.count; index += 1) {
+      const x = positions.getX(index), y = positions.getY(index);
+      const radius = Math.hypot(x, y);
+      if (radius > options.wheelTipRadius) {
+        positions.setXY(index, x * options.wheelTipRadius / radius, y * options.wheelTipRadius / radius);
+      }
+    }
+    positions.needsUpdate = true;
+    toothMesh.geometry.computeVertexNormals();
+    toothMesh.geometry.computeBoundingBox();
+    toothMesh.geometry.computeBoundingSphere();
+    toothMesh.geometry.userData.outerRadius = options.wheelTipRadius;
+  }
   wheelRotor.add(toothMesh);
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.32, 48), matte(PALETTE.ink));
   hub.rotation.x = Math.PI / 2;
@@ -18335,8 +18369,12 @@ function eccentricVariableSpeedMangleWheel() {
   const pinionPitchRadius = module * pinionTeeth / 2;
   const toothHeight = module * 2.05;
   const wheelDepth = 0.28;
-  // Brown's rim sits close outside the groove; keep a finite outer wall.
-  const wheelRadius = 236 * sourceScale;
+  // Brown's rim sits close outside the groove (236 source px), but the
+  // working pinion he omits would then overhang the disc edge on the rim run
+  // (its tips reach ≈255 px, ≈263 px in the view as they stand proud of the
+  // face). Widen the plain margin just enough to keep the
+  // whole pinion on the face.
+  const wheelRadius = 270 * sourceScale;
   const wheelFaceZ = wheelDepth / 2;
   const pinionPlaneZ = .37;
   const pinionAngularSpeed = 3;
@@ -19235,8 +19273,10 @@ function eccentricVariableSpeedMangleWheel() {
   // The pinion passes close under the shaft on the hub lobe, so the boss
   // stays a low ring on the plain face, below the pinion plane.
   wheelHub.position.z = 0.17 - 0.19;
-  // Brown draws the wheel in a flat face view.
+  // Brown draws the wheel in a flat face view. A narrow lens keeps the
+  // raised pinion from projecting past the disc edge on the rim run.
   model.cameraDirection = new THREE.Vector3(0.02, 0.015, 1);
+  root.userData.cameraFov = 16;
   return model;
 }
 
@@ -23440,7 +23480,9 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
       pin.material = plainPin.material;
     }
   }
-  root.userData.cameraFov = 10;
+  // A very narrow lens keeps the off-centre pinion edge-on, as Brown draws
+  // it, instead of turning its slotted face toward the camera.
+  root.userData.cameraFov = 5;
   pinHidden(contactMarker);
   // Brown draws no shaft detents; the selector collar alone marks the
   // pinion's position (the hidden rings also no longer cross the collar bore).
@@ -30379,7 +30421,9 @@ function eccentricGearCarriedPinionRocker() {
 function globoidalWormAndWheel() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
-  const wheelTeeth = 60;
+  // Brown's wheel carries about 48 coarse sawtooth teeth (a ring count of
+  // the engraving gives 44-50), much deeper than 60 would allow.
+  const wheelTeeth = 48;
   const wormStarts = 1;
   const wormHandedness = 1;
   const wheelPitchRadius = 2.1;
@@ -30524,7 +30568,7 @@ function globoidalWormAndWheel() {
   });
   wheel.position.copy(wheelCenter);
   wheel.userData.envelopedByHourglassWorm = true;
-  wheel.userData.role = 'sixty-tooth-wheel-enveloped-by-hourglass-worm';
+  wheel.userData.role = 'forty-eight-tooth-wheel-enveloped-by-hourglass-worm';
   const wormShaft = makeShaft({
     axis: X_AXIS,
     color: PALETTE.ink,
@@ -30679,7 +30723,7 @@ function globoidalWormAndWheel() {
   );
   const sourceState = stateAtWormAngle(wormPhase);
 
-  const maximumContactMarkers = 13;
+  const maximumContactMarkers = 11;
   const contactMarkerMaterial = matte(PALETTE.white, {
     metalness: 0.02,
     roughness: 0.5,
@@ -30770,7 +30814,7 @@ function globoidalWormAndWheel() {
   root.userData.archetype =
     'single-start-globoidal-worm-multi-contact-enveloping-wheel';
   root.userData.mechanism =
-    'single-start-hourglass-Hindley-worm-envelops-sixty-tooth-wheel-at-eleven-or-twelve-simultaneous-contacts';
+    'single-start-hourglass-Hindley-worm-envelops-forty-eight-tooth-wheel-at-nine-or-ten-simultaneous-contacts';
   root.userData.variant =
     'concave-pitch-meridian-generated-from-wheel-circle-for-steady-high-power-line-contact';
   root.userData.blocks = {
@@ -30844,8 +30888,8 @@ function globoidalWormAndWheel() {
   root.userData.stateAtWormAngle = stateAtWormAngle;
   root.userData.threadPointAt = threadPointAt;
   root.userData.transmission = {
-    maximumSimultaneousContacts: 12,
-    minimumSimultaneousContacts: 11,
+    maximumSimultaneousContacts: 10,
+    minimumSimultaneousContacts: 9,
     nominalRatio: wormHandedness * wormStarts / wheelTeeth,
     oneStartAdvancesWheelTeethPerInputTurn: 1,
     slidingContact: true,
@@ -34923,7 +34967,9 @@ function createGearCoreModel(movement) {
     case 28: return brushWheels();
     case 29: return sourceIndexFree(diskSpiralDrive());
     case 30: return sourceIndexFree(rectangularGears());
-    case 31: return sourceIndexFree(wormAndWheel({ thinRib: -1 }));
+    // Brown's 31: three thin ribs on a thick core, wheel tips short of it.
+    case 31: return sourceIndexFree(wormAndWheel({ thinRib: -1, ribTurns: 3, ribTipWidth: 0.07,
+      wormCoreRadius: 0.15, wormCrestRadius: 0.25, wheelTipRadius: 1.287 }));
     case 32: return frictionWheels();
     case 33: return sourceIndexFree(ellipticalGears());
     case 34: return sourceIndexFree(internalGearDrive());

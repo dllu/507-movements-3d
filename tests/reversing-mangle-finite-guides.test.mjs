@@ -67,7 +67,9 @@ for(const id of [192,193,194]) {
        for(let j=0;j<positions.count;j++)assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(positions,j).applyMatrix4(object.matrixWorld)), 'actual visible swept vertex stays framed');
      });
    }
-   assert.ok(d.cameraFitBounds.max.x<2.1 && d.cameraFitBounds.min.x> -2.1,'avoid inflated rotated wheel boxes');
+   // 192's disc is widened to 270 source px so the working pinion stays on its face.
+   const halfWidth=id===192?2.3:2.1;
+   assert.ok(d.cameraFitBounds.max.x<halfWidth && d.cameraFitBounds.min.x> -halfWidth,'avoid inflated rotated wheel boxes');
    const after=[];model.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);
    assert.equal(d.minimumDisplayCycleSeconds,d.transmission.cyclePeriod);
    assert.equal(d.sourceAnimation.officialCanvasModelPresent,false);

@@ -7,9 +7,10 @@ export async function makeBakedSectorHandoff(){
  root.userData.setSectionView(false);
  // Brown draws the sectors and double rack in a flat face view.
  visual.cameraDirection.set(.02,.015,1);
- // Fit the sectors, spur gears and the rack's source-pose length. The rack
- // runs partly out of frame at the ends of its sweep instead of shrinking
- // the subject to the whole recorded travel.
- const fit=root.userData.cameraFitBounds;fit.min.y=Math.max(fit.min.y,-3.25);fit.max.y=Math.min(fit.max.y,3.1);
+ // Brown draws the whole double rack, so keep its full recorded sweep in
+ // view; fit that tall silhouette box directly (not its bounding sphere).
+ root.userData.cameraDistanceScale=.01;
+ // The generic fit margin leaves ≈13% slack at the stroke ends; trim it.
+ const fit=root.userData.cameraFitBounds;fit.min.y+=.35;fit.max.y-=.35;
  return visual;
 }

@@ -162,9 +162,10 @@ test('belts-1-23: 004 guide sheaves stand wide of the driver as engraved', () =>
 test('belts-1-23: 018 middle and movable sheaves are sized near the engraved three-quarters of the top', () => {
   const { upperRadius, lowerFixedRadius, movableRadius } = modelFor(18).root.userData.geometry;
   const ratio = lowerFixedRadius / upperRadius;
-  assert.ok(ratio > 0.70 && ratio < 0.80, `middle/upper ratio ${ratio} (engraving ~0.77)`);
+  assert.ok(ratio > 0.70 && ratio < 0.80, `middle/upper ratio ${ratio} (engraving ~0.74)`);
   const movableRatio = movableRadius / upperRadius;
-  assert.ok(movableRatio > 0.70 && movableRatio < 0.85, `movable/upper ratio ${movableRatio} (engraving ~0.73)`);
+  assert.ok(movableRatio > 0.66 && movableRatio < 0.74, `movable/upper ratio ${movableRatio} (engraving ~0.70)`);
+  assert.ok(movableRadius < lowerFixedRadius, 'the movable sheave is the smallest, as engraved');
 });
 
 test('belts-1-23: 012 and 013 fixed sheaves hang by an open hook from a ceiling staple', () => {
