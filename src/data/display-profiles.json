@@ -1194,7 +1194,7 @@
       }
     },
     "63": {
-      "peakAngularSpeed": 4.638098098531813,
+      "peakAngularSpeed": 4.38282348778086,
       "peakVisibleAngularSpeed": 4.38282348778086,
       "sustainedVisibleAngularSpeed": 0.8256367820016765,
       "floorY": -1.8851292970676838,
@@ -1387,12 +1387,12 @@
       "peakAngularSpeed": 0.7200000000030292,
       "peakVisibleAngularSpeed": 0.7200000000030292,
       "sustainedVisibleAngularSpeed": 0.7199999999996985,
-      "floorY": -2.2950000238418578,
+      "floorY": -7.095,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
-          -2.515,
-          -2.2950000238418578,
+          -7.515000000000001,
+          -7.095,
           -0.5900000166893006
         ],
         "max": [
@@ -3928,20 +3928,20 @@
       }
     },
     "206": {
-      "peakAngularSpeed": 0.39729940063741415,
-      "peakVisibleAngularSpeed": 0.3972994006357488,
-      "sustainedVisibleAngularSpeed": 0.2755959472814993,
-      "floorY": -2.3799993770796957,
-      "fastestPart": "Mesh",
+      "peakAngularSpeed": 0.3860631161651751,
+      "peakVisibleAngularSpeed": 0.3860631161651751,
+      "sustainedVisibleAngularSpeed": 0.27603760283977785,
+      "floorY": -2.379999965137648,
+      "fastestPart": "left-curved-pawl-driving-while-common-pin-rises",
       "motionBounds": {
         "min": [
-          -2.3799993770796957,
-          -2.3799993770796957,
+          -2.3799998667058557,
+          -2.379999965137648,
           -0.27000000238418587
         ],
         "max": [
-          2.3799993770796957,
-          3.2818715321449985,
+          2.3799999313014744,
+          3.257707200905505,
           0.9800000071525574
         ]
       }
@@ -4529,8 +4529,8 @@
           -1.8209816176425722
         ],
         "max": [
-          2.5509999940922645,
-          1.5100000166893004,
+          2.5752321351654786,
+          1.4548627177032283,
           1.8209816176425722
         ]
       }

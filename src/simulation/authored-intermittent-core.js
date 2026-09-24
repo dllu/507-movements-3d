@@ -37,6 +37,38 @@ function finish(root, update, cameraDirection = new THREE.Vector3(6.4, 4.4, 8.6)
   return { root, update, cameraDirection };
 }
 
+// Brown breaks some rotating parts off with an irregular line. The break is
+// fixed in the world while the part turns, so it is drawn by discarding
+// fragments below a wavy world-space line rather than by cutting geometry.
+function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
+  const broken = material.clone();
+  broken.side = THREE.DoubleSide;
+  broken.userData.worldBreakBelow = { amplitude, level, wavelength };
+  broken.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
+      .replace(
+        '#include <project_vertex>',
+        '#include <project_vertex>\nvBreakWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
+      .replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+        {
+          float k = 6.28318530718 / ${wavelength.toFixed(6)};
+          float breakY = ${level.toFixed(6)}
+            + ${amplitude.toFixed(6)} * (0.65 * sin(k * vBreakWorld.x + 0.7)
+              + 0.35 * sin(2.3 * k * vBreakWorld.x + 2.1));
+          if (vBreakWorld.y < breakY) discard;
+        }`,
+      );
+  };
+  broken.customProgramCacheKey = () => `world-break-${level}-${amplitude}-${wavelength}`;
+  return broken;
+}
+
 function centeredExtrusion(shape, depth) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: true,
@@ -1487,12 +1519,130 @@ function makeJointedTappetPawl({
   return markShadows(root);
 }
 
+// A flat leaf of rectangular section swept along a planar curve: its face is
+// in the curve's plane, so a face-on view shows Brown's double-lined band
+// rather than a round wire. `halfWidthAt(u)` gives the in-plane half width
+// along the curve; the axial half depth is fixed.
+function makeFlatBandGeometry(curve, segments, halfWidthAt, halfDepth, endTrim = 0) {
+  const rings = segments + 1;
+  const vertexCount = rings * 8 + 8;
+  const positions = new Float32Array(vertexCount * 3);
+  const normals = new Float32Array(vertexCount * 3);
+  const indices = [];
+  // Sides: 0 outer (+n), 1 back (-z), 2 inner (-n), 3 front (+z); two
+  // vertices per side per ring so the faces shade flat.
+  for (let ring = 0; ring < segments; ring += 1) {
+    for (let side = 0; side < 4; side += 1) {
+      const a = ring * 8 + side * 2;
+      const b = a + 1;
+      const c = a + 8;
+      const d = b + 8;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+  const capStart = rings * 8;
+  indices.push(capStart, capStart + 1, capStart + 2, capStart, capStart + 2, capStart + 3);
+  indices.push(capStart + 4, capStart + 6, capStart + 5, capStart + 4, capStart + 7, capStart + 6);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geometry.setIndex(indices);
+  const fill = (source) => {
+    const point = new THREE.Vector3();
+    const tangent = new THREE.Vector3();
+    const set = (index, x, y, z, nx, ny, nz) => {
+      positions.set([x, y, z], index * 3);
+      normals.set([nx, ny, nz], index * 3);
+    };
+    // An end trim stops the leaf where it meets a round tip pad instead of
+    // running into the pad's centre.
+    const endFraction = endTrim > 0
+      ? Math.max(0.5, 1 - endTrim / source.getLength())
+      : 1;
+    for (let ring = 0; ring < rings; ring += 1) {
+      const u = ring / segments * endFraction;
+      source.getPointAt(u, point);
+      source.getTangentAt(u, tangent);
+      const length = Math.hypot(tangent.x, tangent.y) || 1;
+      const nx = -tangent.y / length;
+      const ny = tangent.x / length;
+      const w = halfWidthAt(u);
+      const corners = [
+        [w, halfDepth], [w, -halfDepth], [w, -halfDepth], [-w, -halfDepth],
+        [-w, -halfDepth], [-w, halfDepth], [-w, halfDepth], [w, halfDepth],
+      ];
+      const sideNormals = [[nx, ny, 0], [0, 0, -1], [-nx, -ny, 0], [0, 0, 1]];
+      for (let corner = 0; corner < 8; corner += 1) {
+        const [offset, z] = corners[corner];
+        const normal = sideNormals[corner >> 1];
+        set(
+          ring * 8 + corner,
+          point.x + nx * offset,
+          point.y + ny * offset,
+          point.z + z,
+          ...normal,
+        );
+      }
+      if (ring === 0 || ring === segments) {
+        const cap = ring === 0 ? capStart : capStart + 4;
+        const sign = ring === 0 ? -1 : 1;
+        const tx = (tangent.x / length) * sign;
+        const ty = (tangent.y / length) * sign;
+        [[w, halfDepth], [w, -halfDepth], [-w, -halfDepth], [-w, halfDepth]]
+          .forEach(([offset, z], corner) => set(
+            cap + corner,
+            point.x + nx * offset,
+            point.y + ny * offset,
+            point.z + z,
+            tx,
+            ty,
+            0,
+          ));
+      }
+    }
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.normal.needsUpdate = true;
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  };
+  fill(curve);
+  geometry.userData.refill = fill;
+  return geometry;
+}
+
 function makeDynamicLeafSpring(initialCurve, {
   color,
   planeZ,
   radius,
   tubularSegments = 72,
+  band = null,
 }) {
+  if (band) {
+    const root = new THREE.Group();
+    const halfWidthAt = band.halfWidthAt ?? (() => radius);
+    const mesh = new THREE.Mesh(
+      makeFlatBandGeometry(
+        initialCurve,
+        tubularSegments,
+        halfWidthAt,
+        radius,
+        band.endTrim ?? 0,
+      ),
+      matte(color, { metalness: 0.1, roughness: 0.58 }),
+    );
+    mesh.userData.flexibleLeafSpring = true;
+    mesh.userData.flatBandSection = true;
+    root.add(mesh);
+    root.userData.curve = initialCurve;
+    root.userData.mesh = mesh;
+    root.userData.planeZ = planeZ;
+    root.userData.radius = radius;
+    root.userData.setCurve = (curve) => {
+      mesh.geometry.userData.refill(curve);
+      root.userData.curve = curve;
+    };
+    return markShadows(root);
+  }
   const root = new THREE.Group();
   const mesh = new THREE.Mesh(
     new THREE.TubeGeometry(
@@ -2165,19 +2315,32 @@ function snapActionStarCounter() {
   pawl.position.copy(pawlPivotDown);
   pawl.userData.role = 'drop-attached-star-wheel-pawl';
 
-  // A steel blade as broad as Brown's double-lined spring, not a black wire.
-  const springLeafA = makeBeam(springAnchor, springAnchor, {
-    color: PALETTE.muted,
-    depth: 0.095,
-    thickness: 0.075,
-  });
-  const springLeafB = makeBeam(springAnchor, springAnchor, {
-    color: PALETTE.muted,
-    depth: 0.095,
-    thickness: 0.075,
-  });
-  springLeafA.userData.flexibleLeafSpring = true;
-  springLeafB.userData.flexibleLeafSpring = true;
+  // A steel blade as broad as Brown's double-lined spring, not a black wire:
+  // one continuous flat leaf bent through its deflected middle, so there is
+  // no joint where two straight pieces would overlap.
+  const springCurveThrough = (start, middle, end) => new THREE.QuadraticBezierCurve3(
+    start.clone(),
+    middle.clone().multiplyScalar(2).sub(start.clone().add(end).multiplyScalar(0.5)),
+    end.clone(),
+  );
+  const springLeaf = makeDynamicLeafSpring(
+    springCurveThrough(
+      springAnchor,
+      springAnchor.clone().add(new THREE.Vector3(0.5, 0, 0)),
+      springAnchor.clone().add(new THREE.Vector3(1, 0, 0)),
+    ),
+    {
+      band: { halfWidthAt: () => 0.0375 },
+      color: PALETTE.muted,
+      planeZ: springAnchor.z,
+      radius: 0.0475,
+      tubularSegments: 48,
+    },
+  );
+  const springLeafEndLocal = springAttachmentLocal.clone()
+    .add(new THREE.Vector3(0, -0.03, 0));
+  springLeaf.userData.flexibleLeafSpring = true;
+  springLeaf.userData.role = 'flat-leaf-spring-on-drop-tail';
   const springClamp = new THREE.Mesh(
     new THREE.BoxGeometry(0.25, 0.42, 0.28),
     matte(PALETTE.frame, { metalness: 0.14, roughness: 0.64 }),
@@ -2240,8 +2403,7 @@ function snapActionStarCounter() {
     driver,
     drop,
     pawl,
-    springLeafA,
-    springLeafB,
+    springLeaf,
     springClamp,
   );
 
@@ -2468,8 +2630,7 @@ function snapActionStarCounter() {
     dropPivotShaft,
     pawl,
     springClamp,
-    springLeafA,
-    springLeafB,
+    springLeaf,
     star,
     starShaft,
     stopPin,
@@ -2606,8 +2767,13 @@ function snapActionStarCounter() {
     pawl.rotation.z = state.pawlAngle;
     const springMiddle = springAnchor.clone().lerp(state.springAttachment, 0.5);
     springMiddle.y += state.springDeflection * 0.12;
-    springLeafA.userData.setEndpoints(springAnchor, springMiddle);
-    springLeafB.userData.setEndpoints(springMiddle, state.springAttachment);
+    // The leaf's end seats against the tail's underside rather than
+    // entering it: its drawn end stops a little below the attachment.
+    springLeaf.userData.setCurve(springCurveThrough(
+      springAnchor,
+      springMiddle,
+      rotateLocal(springLeafEndLocal, state.dropAngle),
+    ));
     root.userData.springPath = {
       anchor: springAnchor.clone(),
       attachment: state.springAttachment.clone(),
@@ -3422,6 +3588,7 @@ function springPressedRatchetIndex() {
   const catchSpringPlaneZ = 0.28;
   const strongSpringPlaneZ = 0.35;
   const leafRadius = 0.035;
+  const catchBandHalfWidth = 0.06;
   const catchMountLocal = new THREE.Vector3(0, -1.31, catchSpringPlaneZ);
   const relaxedCatchCenterLocal = new THREE.Vector2(-1.33, 0);
   // B runs round D outside the crest that C's stop rides, then turns in to
@@ -3452,7 +3619,17 @@ function springPressedRatchetIndex() {
       new THREE.Vector3(tip.x, tip.y, catchSpringPlaneZ),
     ], false, 'centripetal');
   };
+  // Brown draws B as a broad flat band along D's rim; it narrows to the
+  // pad's width where it turns in to the teeth.
   const catchSpring = makeDynamicLeafSpring(catchCurveLocalAt(0), {
+    band: {
+      halfWidthAt: (u) => THREE.MathUtils.lerp(
+        catchBandHalfWidth,
+        leafRadius,
+        THREE.MathUtils.smoothstep(u, 0.55, 0.8),
+      ),
+      endTrim: catchPadRadius + 0.001,
+    },
     color: PALETTE.brass,
     planeZ: catchSpringPlaneZ,
     radius: leafRadius,
@@ -3540,6 +3717,7 @@ function springPressedRatchetIndex() {
   const strongSpring = makeDynamicLeafSpring(
     strongCurveAt({ tipCenter: restStopContact.center }),
     {
+      band: { endTrim: stopPadRadius + 0.001 },
       color: PALETTE.muted,
       planeZ: strongSpringPlaneZ,
       radius: leafRadius,
@@ -3566,11 +3744,12 @@ function springPressedRatchetIndex() {
   stopPad.userData.radius = stopPadRadius;
   stopPad.userData.strongSpringStopTipC = true;
   // Brown's hatched block at lower left, with C rising from its corner. The
-  // plate shows only a corner of it, about 0.7 R wide above the frame line,
-  // so the slab is kept thin and pale with its section hatched on the face
-  // rather than reading as a deep solid box in front of D.
-  const clampWidth = 1.0;
-  const clampHeight = 1.2;
+  // plate shows only that corner: the block runs out of the picture to the
+  // left and below. It is kept pale with its section hatched on the face,
+  // and extends well past the view so no free edge shows; the camera frames
+  // the mechanism (cameraFitBounds below), not the block.
+  const clampWidth = 6.0;
+  const clampHeight = 6.0;
   const clampDepth = 0.26;
   const strongSpringClamp = new THREE.Mesh(
     new THREE.BoxGeometry(clampWidth, clampHeight, clampDepth),
@@ -3986,6 +4165,12 @@ function springPressedRatchetIndex() {
   };
 
   root.userData.mechanism = 'spring-pressed-eleven-tooth-ratchet-index';
+  // The extent the camera framed while the block was a 1.0 x 1.2 slab: D,
+  // the springs and the block's corner, with the rest of the block cropped.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.52, -2.3, -0.59),
+    new THREE.Vector3(1.5, 1.5, 0.75),
+  );
   root.userData.hideGround = true;
   root.userData.blocks = {
     catchClamp,
@@ -8002,10 +8187,14 @@ function sharedPivotDoubleStrokeRatchet() {
   const root = new THREE.Group();
   const origin = new THREE.Vector2();
   const fullTurn = Math.PI * 2;
-  const toothCount = 44;
+  // Brown draws about 52 fine, shallow teeth. 53 (0.27 deep) lets the
+  // right pawl bear on its face at the engraved contact angle (within 0.07
+  // degrees), keeps both drive forces within 60 degrees of the face normal,
+  // and lets both fingers clear the finer teeth as they reset.
+  const toothCount = 53;
   const toothPitch = fullTurn / toothCount;
   const ratchetOuterRadius = 2.38;
-  const ratchetRootRadius = 2.08;
+  const ratchetRootRadius = 2.11;
   const toothOuterStartPhase = 0.04;
   const toothOuterEndPhase = 0.28;
   const sourceWheelCenter = new THREE.Vector2(261, 303);
@@ -8047,8 +8236,8 @@ function sharedPivotDoubleStrokeRatchet() {
     leftSourceContact.x,
   );
   const leftFaceFraction = 0.43;
-  const rightFaceFraction = 0;
-  const rightToothOffset = -13;
+  const rightFaceFraction = 0.2;
+  const rightToothOffset = -16;
   const cyclesPerSecond = 0.3;
   const inputCyclePeriod = 1 / cyclesPerSecond;
   const initialCyclePhase = 0.25;
@@ -8097,7 +8286,7 @@ function sharedPivotDoubleStrokeRatchet() {
   });
   ratchet.position.z = 0.04;
   ratchet.userData.role =
-    'forty-four-tooth-clockwise-double-stroke-ratchet-wheel';
+    'fifty-three-tooth-clockwise-double-stroke-ratchet-wheel';
   const ratchetBody = ratchet.userData.body;
   const ratchetHub = ratchet.userData.hub;
   ratchet.userData.rotor.remove(ratchet.userData.indicator);
@@ -8271,7 +8460,7 @@ function sharedPivotDoubleStrokeRatchet() {
     ),
   );
   const leftResetSwing = -0.18;
-  const rightResetSwing = 0.08;
+  const rightResetSwing = 0.15;
   const returnedPawlAngleAt = ({
     endAngle,
     fraction,
@@ -16324,9 +16513,22 @@ function rollerAndLatchStopsForLanternWheel(movement) {
     metalness: 0.26,
     roughness: 0.48,
   });
+  // Brown breaks the wheel off below with an irregular line about 0.7 of
+  // its radius under the centre; the plates, rims and trundles stop there.
+  const wheelBreak = {
+    amplitude: 0.07,
+    level: -0.7 * wheelRadius,
+    wavelength: 1.15,
+  };
+  const brokenWheelMaterial = applyWorldBreakBelow(wheelMaterial, wheelBreak);
+  const brokenRimMaterial = applyWorldBreakBelow(darkMaterial, wheelBreak);
+  const brokenTrundleMaterial = applyWorldBreakBelow(
+    trundleMaterial,
+    wheelBreak,
+  );
   const rearPlate = new THREE.Mesh(
     new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.2, 80),
-    wheelMaterial,
+    brokenWheelMaterial,
   );
   rearPlate.rotation.x = Math.PI / 2;
   rearPlate.position.z = -0.24;
@@ -16338,7 +16540,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   for (const z of [-0.34, 0.28]) {
     const rim = new THREE.Mesh(
       new THREE.TorusGeometry(wheelRadius, 0.055, 10, 80),
-      darkMaterial,
+      brokenRimMaterial,
     );
     rim.position.z = z;
     wheelRotor.add(rim);
@@ -16352,7 +16554,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
         0.92,
         24,
       ),
-      trundleMaterial,
+      brokenTrundleMaterial,
     );
     trundle.rotation.x = Math.PI / 2;
     trundle.position.set(
@@ -19175,24 +19377,55 @@ function coaxialArmCrownRatchet(movement) {
   arm.userData.axis = verticalAxis.clone();
   arm.userData.role = 'coaxial-reciprocating-top-arm';
   const armRotor = arm.userData.rotor;
-  const armBody = makeBeam(
-    new THREE.Vector3(0.2, 0, 0),
-    new THREE.Vector3(armHandleRadius, 0, 0),
+  // Brown's boss sits low on the stud, about a tooth height above the face;
+  // the straight arm rises from it through the pawl hinge (which keeps its
+  // height over the teeth) to the handle end.
+  const armBossHeight = 0.5;
+  const armBossLocalZ = armBossHeight - armPivotHeight;
+  const armRiseAt = (radius) => armBossLocalZ
+    * (1 - radius / armPawlPivotRadius);
+  // Through the pawl eye the bar runs level, so the inclined arm stays
+  // inside the eye's bore; the kink (under 0.03) is hidden in the eye.
+  const armEyeHalfSpan = 0.17;
+  const armSegment = (startRadius, startZ, endRadius, endZ) => makeBeam(
+    new THREE.Vector3(startRadius, 0, startZ),
+    new THREE.Vector3(endRadius, 0, endZ),
     { color: PALETTE.driver, depth: 0.15, thickness: 0.12 },
   );
+  const armBody = armSegment(
+    0.2,
+    armRiseAt(0.2),
+    armPawlPivotRadius - armEyeHalfSpan + 0.02,
+    armRiseAt(armPawlPivotRadius - armEyeHalfSpan + 0.02),
+  );
   armBody.userData.role = 'source-radial-top-arm-and-handle';
-  armRotor.add(armBody);
+  const armEyeBar = armSegment(
+    armPawlPivotRadius - armEyeHalfSpan,
+    0,
+    armPawlPivotRadius + armEyeHalfSpan,
+    0,
+  );
+  armEyeBar.userData.role = 'source-radial-top-arm-and-handle';
+  const armHandle = armSegment(
+    armPawlPivotRadius + armEyeHalfSpan - 0.02,
+    armRiseAt(armPawlPivotRadius + armEyeHalfSpan - 0.02),
+    armHandleRadius,
+    armRiseAt(armHandleRadius),
+  );
+  armHandle.userData.role = 'source-radial-top-arm-and-handle';
+  armRotor.add(armBody, armEyeBar, armHandle);
   const armHub = new THREE.Mesh(
     makeAnnulusGeometry(0.105, 0.31, 0.2),
     matte(PALETTE.driver, { metalness: 0.13, roughness: 0.59 }),
   );
+  armHub.position.z = armBossLocalZ;
   armHub.userData.role = 'loose-top-arm-hub-on-fixed-stud';
   armRotor.add(armHub);
   const armHubRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.31, 0.035, 9, 38),
     matte(PALETTE.ink, { metalness: 0.21, roughness: 0.5 }),
   );
-  armHubRing.position.z = 0.115;
+  armHubRing.position.z = armBossLocalZ + 0.115;
   armHubRing.userData.role = 'top-arm-bearing-outline';
   armRotor.add(armHubRing);
   const armIndicator = new THREE.Mesh(
@@ -19268,15 +19501,15 @@ function coaxialArmCrownRatchet(movement) {
   armRotor.add(pawl);
   root.add(arm);
 
-  // The fixed stud stands up from the wheel's centre boss through the arm
-  // eye, as Brown draws it, rather than floating above the face.
+  // The fixed stud stands up from the centre of the face through the low
+  // arm boss, as Brown draws it; it passes clear through the wheel's bore.
   const armFulcrumShaft = makeShaft({
     axis: verticalAxis,
     color: PALETTE.ink,
-    length: 1.34,
+    length: armBossHeight + 0.2 - 0.01,
     radius: 0.075,
   });
-  armFulcrumShaft.position.y = 0.84;
+  armFulcrumShaft.position.y = (armBossHeight + 0.2 + 0.01) / 2;
   armFulcrumShaft.userData.role = 'fixed-coaxial-top-arm-fulcrum-stud';
   root.add(armFulcrumShaft);
 

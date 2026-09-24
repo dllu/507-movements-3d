@@ -3745,8 +3745,7 @@ test('movement 63 snaps a ten-point counter star once for each of three driver p
     dropPivotShaft,
     pawl,
     springClamp,
-    springLeafA,
-    springLeafB,
+    springLeaf,
     star,
     starShaft,
   } = model.root.userData.blocks;
@@ -3808,8 +3807,8 @@ test('movement 63 snaps a ten-point counter star once for each of three driver p
   assert.equal(drop.userData.pawlPivotStud.userData.pawlPivotStud, true);
   assert.equal(drop.userData.strikerStud.userData.dropStrikerStud, true);
   assert.equal(pawl.userData.length, geometry.pawlLength);
-  assert.equal(springLeafA.userData.flexibleLeafSpring, true);
-  assert.equal(springLeafB.userData.flexibleLeafSpring, true);
+  assert.equal(springLeaf.userData.flexibleLeafSpring, true);
+  assert.equal(springLeaf.userData.mesh.userData.flatBandSection, true);
   assert.equal(springClamp.userData.springClamp, true);
 
   const starFront = star.position.z + star.userData.depth / 2;

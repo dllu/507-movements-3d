@@ -1811,22 +1811,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: the spring is a wider steel blade running in from the left."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: one continuous flat steel leaf runs in from the left under the tail."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): spring welds 0.060/0.024 reduced to the leaf seated on the drop (0.0025) and the leaf-to-leaf joint (0.013); the falling-drop/escaped-pin collision (0.034) is fixed."
+        "status": "sampled-clear",
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Pass-51 screen: leaf/leaf 0.0121, joint spheres 0.0024 and leaf-on-drop 0.0021 → clear."
       },
-      "flaws": "Pin lift, pawl release and spring snap are scheduled (pins do not bear on the drop, gap ≥0.18); the pawl nose stops ≈0.09 short of the ideal gap point; centre distance widened (star 0.56 of it against Brown’s 0.64); the arm top near the pawl boss sits ≈0.15 above Brown's line.",
+      "flaws": "Pin lift, pawl release and spring snap are scheduled; the pawl nose stops ≈0.09 short of the ideal gap point; centre distance widened (star 0.56 of it against Brown's 0.64) so the pins clear the star points; the arm top sits ≈0.15 above Brown's line (lowering it needs a rebake of the swept cuts).",
       "references": [
         "artifacts/review/063-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2107,15 +2108,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane9-residuals-review.md",
-        "note": "Default capture inspected beside the plate: shallow teeth (root 0.80 R) and a thin hatched block."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: B a broad flat band along D's rim; the hatched block shows only as a corner running out of the picture."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane9-residuals-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only the two intended spring-to-pad welds, 0.040 and 0.033."
+        "status": "sampled-clear",
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Pass-51 screen: the spring-pad welds (0.040/0.033) are gone; the leaves end at the pad surfaces."
       },
-      "flaws": "B is a round rod, not Brown's flat band; tooth backs slightly fin-like; the block is a free-standing slab, not the plate's hatched corner; two intended spring-to-pad welds remain.",
+      "flaws": "Tooth backs slightly fin-like; the block's side face shows as a thin edge strip.",
       "references": [
         "docs/mujoco-073-spring-study.md",
         "docs/review-progress.md",
@@ -2123,7 +2124,8 @@
         "docs/minimal-interface-review.md",
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
-        "docs/lane9-residuals-review.md"
+        "docs/lane9-residuals-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6162,15 +6164,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: a low rim step draws the inner face circle."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: 53 fine shallow teeth; the right pawl bears at the engraved angle."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only zero-depth working contact."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Pass-51 screen: no penetrating pairs."
       },
-      "flaws": "44 teeth 0.30 deep where Brown draws about 52 shallower (52 teeth pushed a pawl finger 0.046 into a tooth); the pawl bands are thinner than drawn. Contact is exact tangency by construction.",
+      "flaws": "Pawl bands thinner than drawn; teeth less hooked than Brown's; contact exact by construction; the catalog archetype still says forty-four teeth.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -6178,7 +6180,8 @@
         "docs/visual-review-pass-49.md",
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6318,7 +6321,7 @@
         "evidence": "docs/lane9-residuals-review.md",
         "note": "Pass-51 relative-motion screen at 129 and 517 samples: no solid pairs after the rebuild."
       },
-      "flaws": "Arc spans 99° at 58–157° against the plate's ≈80° at 92–165°; pinion has 16 positions against ≈18; guide tongue curves upward where Brown's is straighter; about 22° of relocking is prescribed.",
+      "flaws": "Arc spans 99° at 58–157° against the plate's ≈80° at 92–165° (Brown's arc with ≈18 pinion positions does not close kinematically); pinion has 16 positions; guide tongue curves upward where Brown's is straighter; ≈22° of relocking is prescribed.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
@@ -6326,7 +6329,8 @@
         "docs/visual-review-pass-49.md",
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
-        "docs/lane9-residuals-review.md"
+        "docs/lane9-residuals-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6378,13 +6382,14 @@
         "evidence": "docs/w2c-intermittent-review.md",
         "note": "Pass-51 screen: pin/marker 0.0436 → clear."
       },
-      "flaws": "The five stop teeth are rounded pin-cut notches where Brown draws square teeth. Frictional retention and load capacity prescribed.",
+      "flaws": "The five stop teeth are rounded pin-cut notches: square teeth of Brown's height cannot pass the pin (the only square profile that solved was ≈40% of Brown's height). Frictional retention and load capacity prescribed.",
       "references": [
         "docs/split-rim-213-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6430,21 +6435,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: opens at the plate's pose; gold strip and markers removed."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: opens at the plate's pose; star ≈0.87× the driver, as on the plate."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Pass-51 screen: gold-strip overlaps removed; the known pin/slot-mouth handoff overlap ≈0.0015 remains."
+        "status": "sampled-clear",
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Pass-51 screen: the entry mouth beside the terminal sector is relieved along the pin path; 0.0015 → clear."
       },
-      "flaws": "Pin/slot-mouth handoff overlap ≈0.0015; proportions follow the site animation (driven star about the driver's size, where Brown's is ≈0.6×) and slot mouths end in pointed horns. Reverse motion requires assisting bias.",
+      "flaws": "The concave locks meet the slot mouths in pointed horns where Brown draws rounded ears (rounding breaks the handoff contact checks). Reverse motion needs assisting bias.",
       "references": [
         "docs/geneva-stop-215-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6960,20 +6966,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: arm-rest blocks and markers removed; Brown breaks the disk off below where the model draws it whole."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: wheel broken off below as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2c-intermittent-review.md",
         "note": "Pass-51 screen: 0.0691/0.0100 → clear."
       },
-      "flaws": "The disk is drawn whole where Brown breaks it off below. Stop withdrawal, wheel strokes and reseating prescribed.",
+      "flaws": "Undrawn frame beams are removed by source presentation. Stop withdrawal, wheel strokes and reseating prescribed.",
       "references": [
         "docs/lantern-stop-233-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7076,21 +7083,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: camera from above-left, shaft below the drum, fixed stud on the boss."
+        "evidence": "docs/w3g-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: arm on a low boss on the stud rising to the pawl at the rim."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2c-intermittent-review.md",
         "note": "Pass-51 screen: markers 0.0449 → clear."
       },
-      "flaws": "The arm sits higher above the face than Brown's low boss. Prescribed crest hold/drop; passive holding, impact and bias unsolved.",
+      "flaws": "Prescribed crest hold and drop; passive holding, impact and bias unsolved.",
       "references": [
         "docs/crown-pawl-237-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/w3g-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",

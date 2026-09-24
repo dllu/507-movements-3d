@@ -202,8 +202,8 @@ export default {
   },
   237: {
     camera: [-4, 6.5, 9],
-    remove: ['fixed-lower-output-bearing', 'crown-wheel-face-inset', 'top-arm-bearing-outline', 'white-crown-wheel-rotation-index', 'white-top-arm-motion-index', 'white-pawl-lift-index', 'active-crown-(?:drive-face|ramp-return)-contact'],
-    note: 'Oblique view from about 35 degrees above: the shallow crown drum with saw teeth round its upper rim, the output shaft hanging below, and the top arm on the stud rising from the centre, pointing away to the right with the pawl at the rim; no lower bearing collar, face ring, hub outline, white indices or contact markers are drawn.',
+    remove: ['fixed-lower-output-bearing', 'crown-wheel-face-inset', 'crown-wheel-output-hub', 'top-arm-bearing-outline', 'white-crown-wheel-rotation-index', 'white-top-arm-motion-index', 'white-pawl-lift-index', 'active-crown-(?:drive-face|ramp-return)-contact'],
+    note: 'Oblique view from about 35 degrees above: the shallow crown drum with saw teeth round its upper rim, the output shaft hanging below, and the top arm on a low boss on the stud rising from the centre of the face, pointing away and upward to the right with the pawl at the rim; no lower bearing collar, face collar, face ring, hub outline, white indices or contact markers are drawn.',
   },
   238: {
     remove: ['white-escape-wheel-rotation-index', 'white-pallet-carrier-motion-index'],

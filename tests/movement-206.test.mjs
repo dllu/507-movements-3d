@@ -68,7 +68,7 @@ function planarWorldPosition(object) {
   return new THREE.Vector2(point.x, point.y);
 }
 
-test('movement 206 is one lever carrying two independent curved pawls around one forty-four-tooth ratchet', () => {
+test('movement 206 is one lever carrying two independent curved pawls around one fifty-three-tooth ratchet', () => {
   const movement = catalog.movements[205];
   const model = createMovementModel(movement);
   const {
@@ -118,23 +118,23 @@ test('movement 206 is one lever carrying two independent curved pawls around one
   assert.equal(blocks.rightPawl.userData.centerlinePoints.length, 37);
   assert.ok(blocks.leftPawl.userData.bend < 0);
   assert.ok(blocks.rightPawl.userData.bend > 0);
-  assert.equal(blocks.ratchet.userData.teeth, 44);
-  assert.equal(blocks.ratchet.userData.profilePoints.length, 132);
-  assert.equal(blocks.ratchet.userData.toothFaces.length, 44);
+  assert.equal(blocks.ratchet.userData.teeth, 53);
+  assert.equal(blocks.ratchet.userData.profilePoints.length, 159);
+  assert.equal(blocks.ratchet.userData.toothFaces.length, 53);
   assert.equal(blocks.ratchet.userData.rotor.children.includes(
     blocks.ratchetBody,
   ), true);
 
-  assert.equal(transmission.toothCount, 44);
+  assert.equal(transmission.toothCount, 53);
   assert.equal(transmission.risingPawl, 'left');
   assert.equal(transmission.fallingPawl, 'right');
   assert.equal(transmission.clockwiseOutput, true);
   assert.equal(transmission.continuousAcrossBothInputStrokes, true);
   assert.equal(transmission.wheelPitchesPerInputCycle, 1);
-  assert.equal(transmission.wheelClosureInputCycles, 44);
+  assert.equal(transmission.wheelClosureInputCycles, 53);
   near(
     transmission.outputTurnsPerInputCycle,
-    -1 / 44,
+    -1 / 53,
     0,
     'one clockwise tooth per vibration',
   );
@@ -142,7 +142,7 @@ test('movement 206 is one lever carrying two independent curved pawls around one
   assert.equal(sourceAnimation.available, false);
   assert.deepEqual(sourceRaster.imageSize.toArray(), [525, 525]);
   assert.equal(sourceRaster.sourceUrl, movement.sourceUrl);
-  assert.equal(sourceRaster.wheelToothCount, 44);
+  assert.equal(sourceRaster.wheelToothCount, 53);
   assert.equal(sourceRaster.wheelToothTipRadiusPixels, 211);
   assert.deepEqual(sourceAnchors.wheelCenter.toArray(), [261, 303]);
   assert.deepEqual(sourceAnchors.fixedLeverPivot.toArray(), [338, 49]);
@@ -169,7 +169,7 @@ test('movement 206 is one lever carrying two independent curved pawls around one
     if (/curved-pawl-driving-while-common-pin/.test(role)) {
       counts.curvedPawls += 1;
     }
-    if (/forty-four-tooth-clockwise-double-stroke-ratchet-wheel/.test(role)) {
+    if (/fifty-three-tooth-clockwise-double-stroke-ratchet-wheel/.test(role)) {
       counts.ratchets += 1;
     }
     if (/vibrating-input-lever-carrying-one-common-pawl-pin/.test(role)) {
@@ -226,24 +226,24 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
     toothPitch,
   } = geometry;
 
-  assert.equal(toothCount, 44);
-  near(toothPitch, FULL_TURN / 44, 0, 'ratchet tooth pitch');
+  assert.equal(toothCount, 53);
+  near(toothPitch, FULL_TURN / 53, 0, 'ratchet tooth pitch');
   near(ratchetOuterRadius, 2.38, 0, 'ratchet tooth-tip radius');
-  near(ratchetRootRadius, 2.08, 0, 'ratchet root radius');
+  near(ratchetRootRadius, 2.11, 0, 'ratchet root radius');
   near(toothOuterStartPhase, 0.04, 0, 'short rising-face phase');
   near(toothOuterEndPhase, 0.28, 0, 'outer corner phase');
   near(leftFaceFraction, 0.43, 0, 'left working point on face');
-  near(rightFaceFraction, 0, 0, 'right working point at outer corner');
-  assert.equal(rightToothOffset, -13);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(8.4));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(8.5));
+  near(rightFaceFraction, 0.2, 0, 'right working point just below the outer corner');
+  assert.equal(rightToothOffset, -16);
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(6.8));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(6.95));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
-  assert.ok(risingAdvance > THREE.MathUtils.degToRad(3.15));
-  assert.ok(risingAdvance < THREE.MathUtils.degToRad(3.3));
-  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.9));
-  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(5));
+  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.5));
+  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.65));
+  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.15));
+  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.3));
 
   vector2Near(
     sourcePointToModel(sourceAnchors.fixedLeverPivot),
@@ -448,20 +448,21 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
     previousRightTip = state.rightTip;
   }
 
-  assert.equal(leftTeeth.size, 44);
-  assert.equal(rightTeeth.size, 44);
+  assert.equal(leftTeeth.size, 53);
+  assert.equal(rightTeeth.size, 53);
   assert.ok(maximumActiveLengthError < 3e-15);
   assert.ok(maximumInactiveLengthError < 2e-15);
-  assert.ok(maximumContactError < 3e-15);
+  assert.ok(maximumContactError < 4e-15);
   assert.ok(maximumTipVelocityError < 2e-16);
   // Clearance is measured from the finger axis: exactly one finger radius
   // while driving, and never less while resetting.
   near(minimumClearance, geometry.pawlFingerRadius, 1e-12, 'finger surface bears on the tooth face');
   assert.ok(minimumClockwiseTorque > 1.9);
   assert.ok(maximumAngularSpeed < 1e-12);
-  assert.ok(maximumResetStep < 0.004);
+  // Samples span 53 cycles, so each step covers 53/32768 of a cycle.
+  assert.ok(maximumResetStep < 0.005);
 
-  for (let cycleIndex = 0; cycleIndex < 44; cycleIndex += 1) {
+  for (let cycleIndex = 0; cycleIndex < 53; cycleIndex += 1) {
     const start = stateAtCycleCoordinate(cycleIndex);
     const handoff = stateAtCycleCoordinate(cycleIndex + 0.5);
     const end = stateAtCycleCoordinate(cycleIndex + 1);
@@ -485,11 +486,11 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
     );
   }
   near(
-    stateAtCycleCoordinate(44).drivenAngle
+    stateAtCycleCoordinate(53).drivenAngle
       - stateAtCycleCoordinate(0).drivenAngle,
     -FULL_TURN,
     1e-15,
-    'forty-four-cycle wheel closure',
+    'fifty-three-cycle wheel closure',
   );
   disposeModel(model.root);
 });
@@ -537,7 +538,7 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
     assert.ok(state.drivenAngularSpeed < 0);
   }
 
-  for (const reversal of [0, 0.5, 1, 12.5, 44]) {
+  for (const reversal of [0, 0.5, 1, 12.5, 53]) {
     const state = stateAtCycleCoordinate(reversal);
     near(state.rockerAngularSpeed, 0, 2e-16, `rocker reversal ${reversal}`);
     near(state.drivenAngularSpeed, 0, 2e-16, `wheel reversal ${reversal}`);
@@ -545,7 +546,7 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
   }
 
   const handoffEpsilon = 1e-8;
-  for (const handoff of [0, 0.5, 1, 17.5, 44]) {
+  for (const handoff of [0, 0.5, 1, 17.5, 53]) {
     const before = stateAtCycleCoordinate(handoff - handoffEpsilon);
     const exact = stateAtCycleCoordinate(handoff);
     const after = stateAtCycleCoordinate(handoff + handoffEpsilon);
@@ -571,16 +572,16 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
     'mean cycle ratio',
   );
   near(
-    stateAtCycleCoordinate(44).rockerAngle,
+    stateAtCycleCoordinate(53).rockerAngle,
     stateAtCycleCoordinate(0).rockerAngle,
     0,
     'input closes every vibration',
   );
   near(
-    stateAtCycleCoordinate(44).drivenAngle,
+    stateAtCycleCoordinate(53).drivenAngle,
     stateAtCycleCoordinate(0).drivenAngle - FULL_TURN,
     1e-15,
-    'output closes after forty-four vibrations',
+    'output closes after fifty-three vibrations',
   );
   disposeModel(model.root);
 });
@@ -660,15 +661,17 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const wheelOneCycle = worldPositionAt(wheelRotor, wheelPoint, canonicalTimes.nextSourcePose);
   const wheelClosure = worldPositionAt(wheelRotor, wheelPoint, canonicalTimes.fullWheelClosure);
   assert.ok(wheelSource.distanceTo(wheelOneCycle) > 0.18);
-  vector3Near(wheelClosure, wheelSource, 3e-15, 'wheel closes after forty-four cycles');
+  vector3Near(wheelClosure, wheelSource, 3e-15, 'wheel closes after fifty-three cycles');
   const handlePoint = new THREE.Vector3(geometry.handleLength * 0.73, 0, 0);
   const leverRotor = blocks.rocker.userData.rotor;
   const handleSource = worldPositionAt(leverRotor, handlePoint, canonicalTimes.sourcePose);
   const handleHigh = worldPositionAt(leverRotor, handlePoint, canonicalTimes.highReversal);
   const handleLow = worldPositionAt(leverRotor, handlePoint, canonicalTimes.lowReversal);
-  assert.ok(handleSource.distanceTo(handleHigh) > 0.1);
-  assert.ok(handleSource.distanceTo(handleLow) > 0.1);
-  assert.ok(handleHigh.distanceTo(handleLow) > 0.2);
+  // One vibration advances one of Brown's 53 fine teeth, so the lever's
+  // swing is small (about 6.9 degrees each way).
+  assert.ok(handleSource.distanceTo(handleHigh) > 0.08);
+  assert.ok(handleSource.distanceTo(handleLow) > 0.08);
+  assert.ok(handleHigh.distanceTo(handleLow) > 0.16);
 
   model.update(canonicalTimes.sourcePose);
   model.root.updateMatrixWorld(true);
