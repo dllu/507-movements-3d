@@ -3722,6 +3722,30 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.61);
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;
+    // Brown draws only the connecting rod, broken off at raster (37.5,157.5)
+    // left of its eye at (295,77). The tool slide, its guide, end stops and
+    // stroke witness lie beyond the drawing: the slide group stays as the
+    // kinematic output point but carries no visible solids.
+    for (const object of [...outputGuideRails, ...outputGuideEndStops, outputStrokeWitness, inputRotationIndex]) {
+      object.removeFromParent();
+      object.geometry.dispose();
+    }
+    for (const child of [...outputSlide.children]) {
+      if (!child.isMesh) continue;
+      child.removeFromParent();
+      child.geometry.dispose();
+    }
+    const drawnRodLength = sourceRasterPointToModel(new THREE.Vector2(295, 77))
+      .distanceTo(sourceRasterPointToModel(new THREE.Vector2(37.5, 157.5)));
+    const rodStart = -0.5 + .32 / connectingRodLength;
+    const rodEnd = -0.5 + drawnRodLength / connectingRodLength;
+    connectingRodBeam.geometry.dispose();
+    connectingRodBeam.geometry = new THREE.BoxGeometry(rodEnd - rodStart,
+      connectingRodThickness, connectingRodDepth)
+      .translate((rodStart + rodEnd) / 2, 0, 0);
+    connectingRodOutputEye.removeFromParent();
+    connectingRodOutputEye.geometry.dispose();
+    root.userData.geometry.drawnConnectingRodLength = drawnRodLength;
     root.remove(cameraEnvelope);
     cameraEnvelope.geometry.dispose();
     cameraEnvelope.material.dispose();
@@ -3734,7 +3758,7 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     root.userData.cameraFov = 8;
     root.userData.sourceFit = 'engraving';
     root.userData.reconstructionStatus = 'reconstructed';
-    root.userData.reconstructionNote = 'The eccentric circular guide varies the crank reach. Dimensions follow the engraving; the full connecting rod and remote tool guide are inferred from its visible direction. Pins, guide fits and steady input speed are ideal constraints.';
+    root.userData.reconstructionNote = 'The eccentric circular guide varies the crank reach. Dimensions follow the engraving; the connecting rod is drawn broken off as on the plate, and its full length and the remote tool guide are inferred off the drawing from its visible direction. Pins, guide fits and steady input speed are ideal constraints.';
   }
   update(0);
   root.traverse((object) => {

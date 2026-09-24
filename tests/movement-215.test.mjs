@@ -208,7 +208,8 @@ test('movement 215 is one layered crescent face-pin driver and one six-slot conv
   assert.ok(roles.includes(
     'six-radial-slots-five-concave-locks-one-convex-terminal-sector',
   ));
-  assert.ok(roles.includes('uncut-convex-terminal-sector-highlight'));
+  assert.ok(!roles.includes('uncut-convex-terminal-sector-highlight'),
+    'the gold sector strip Brown does not draw is presented away');
   assert.equal(
     roles.some((role) => /belt|pulley|spur-gear|pawl|ratchet/.test(role)),
     false,
@@ -718,17 +719,17 @@ test('movement 215 runtime stops at every engagement boundary, reverses continuo
     );
   }
 
-  model.update(canonicalTimes.forwardStopMidHold);
+  model.update(canonicalTimes.forwardStopMidHold - model.root.userData.displayTimeOffset);
   assert.equal(model.root.userData.contacts.convexTerminalSector.side,
     'forward');
   assert.equal(blocks.forwardContactMarker.visible, true);
   assert.equal(blocks.reverseContactMarker.visible, false);
-  model.update(canonicalTimes.reverseStopMidHold);
+  model.update(canonicalTimes.reverseStopMidHold - model.root.userData.displayTimeOffset);
   assert.equal(model.root.userData.contacts.convexTerminalSector.side,
     'reverse');
   assert.equal(blocks.forwardContactMarker.visible, false);
   assert.equal(blocks.reverseContactMarker.visible, true);
-  model.update(canonicalTimes.sourcePose);
+  model.update(canonicalTimes.sourcePose - model.root.userData.displayTimeOffset);
   near(blocks.driver.userData.rotor.rotation.z, 0, 0,
     'rendered crescent source orientation');
   near(blocks.stopWheel.userData.rotor.rotation.z, 0, 0,
@@ -747,7 +748,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
     geometry,
     stateAtInputTravel,
   } = model.root.userData;
-  model.update(canonicalTimes.sourcePose);
+  model.update(canonicalTimes.sourcePose - model.root.userData.displayTimeOffset);
   model.root.updateMatrixWorld(true);
 
   const driverBounds = new THREE.Box3().setFromObject(blocks.driverBody);
@@ -811,12 +812,12 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   const sourcePin = model.root.userData.pinCenterAtInputTravel(0);
   near(pinWorld.x, sourcePin.x, 2e-16, 'rendered source pin x');
   near(pinWorld.y, sourcePin.y, 2e-16, 'rendered source pin y');
-  model.update(canonicalTimes.firstIndexComplete);
+  model.update(canonicalTimes.firstIndexComplete - model.root.userData.displayTimeOffset);
   near(blocks.driver.userData.rotor.rotation.z, -STEP_ANGLE, 2e-15,
     'driver turns clockwise through the first index');
   near(blocks.stopWheel.userData.rotor.rotation.z, model.root.userData.stopWheelAngleAtInputTravel(STEP_ANGLE), 2e-15,
     'six-slot wheel renders the finite handoff pose');
-  model.update(canonicalTimes.forwardStopMidHold);
+  model.update(canonicalTimes.forwardStopMidHold - model.root.userData.displayTimeOffset);
   assert.equal(blocks.forwardContactMarker.visible, true);
   const forwardMarkerWorld = new THREE.Vector3();
   blocks.forwardContactMarker.getWorldPosition(forwardMarkerWorld);
@@ -824,7 +825,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
     2e-16, 'forward marker x');
   near(forwardMarkerWorld.y, geometry.forwardStopContact.contactPoint.y,
     2e-16, 'forward marker y');
-  model.update(canonicalTimes.reverseStopMidHold);
+  model.update(canonicalTimes.reverseStopMidHold - model.root.userData.displayTimeOffset);
   assert.equal(blocks.reverseContactMarker.visible, true);
   const reverseMarkerWorld = new THREE.Vector3();
   blocks.reverseContactMarker.getWorldPosition(reverseMarkerWorld);
@@ -835,7 +836,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
 
   const sweptBounds = new THREE.Box3();
   for (const time of Object.values(canonicalTimes)) {
-    model.update(time);
+    model.update(time - model.root.userData.displayTimeOffset);
     model.root.updateMatrixWorld(true);
     sweptBounds.union(new THREE.Box3().setFromObject(model.root));
   }
@@ -847,7 +848,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 20, 'the undrawn frame is presented away');
+  assert.ok(meshCount >= 10, 'the undrawn frame, strip, indices and markers are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

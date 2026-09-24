@@ -14,7 +14,7 @@ export function makeMujocoThreadCutting(mujoco,options={}) {
  const playback=createPhysicsPlayback(physics,sync);let disposed=false;
  const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
  const bounds=new THREE.Box3(new THREE.Vector3(-1.6,-1.9,-1.4),new THREE.Vector3(1.6,1.7,1.4));
- Object.assign(u,{mechanism:'mujoco-thread-cutting',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,cameraFitBounds:bounds,
+ Object.assign(u,{mechanism:'mujoco-thread-cutting',cameraFov:14,simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'under-review',supportsRestart:true,cameraFitBounds:bounds,
   sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},reconstructionNote:'Change gears set the pitch cut by the guided tool. The shaft depth offset and coarser, opposite-handed cut correct the drawing. Bearings, gears and screw feed are ideal; material removal is shown geometrically.',
   animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
  try{sync();}catch(error){dispose();throw error;}return {...visual,physics,sync,...playback,dispose};

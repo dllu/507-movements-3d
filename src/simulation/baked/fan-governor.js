@@ -14,9 +14,9 @@ export function makeFanGovernorModel(bundle){
   blocks.collar.position.y=lift;blocks.lever.rotation.z=-Math.atan2(lift,3);
   root.updateMatrixWorld(true);root.userData.state={time,shaft,lift,yaw,roll0,roll1};
  };
- Object.assign(root.userData,{blocks,mechanism:'air-drag-fan-inclined-plane-governor',simulationBackend:'baked-mujoco',fidelity:'authored',reconstructionStatus:'candidate',supportsRestart:true,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:bundle.bounds,
+ Object.assign(root.userData,{blocks,mechanism:'air-drag-fan-inclined-plane-governor',simulationBackend:'baked-mujoco',fidelity:'authored',reconstructionStatus:'candidate',supportsRestart:true,hideGround:true,cameraFov:12,cameraFitBounds:bounds,sampledMotionBounds:bundle.bounds,
   animationTiming:{authoredCyclePeriod:bundle.period,displayCycleDuration:bundle.period,playbackTimeScale:1},
   reconstructionNote:'Air drag retards the heavy fan carrier, causing its rollers to climb the rotating ramps. Motion is baked from passive contact dynamics. Ramp curvature, depths, drag and uniform density are reconstructed. The collar and slotted regulating lever follow the lift without a valve load.'});
- update(0);return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.05,.03,15),dispose:()=>{if(!disposed){disposed=true;disposeObject3D(root);}}};
+ update(0);return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(0,0,1),dispose:()=>{if(!disposed){disposed=true;disposeObject3D(root);}}};
 }
 export async function makeBakedFanGovernor(){return makeFanGovernorModel(await loadBakedBundle(new URL('./assets/147.json.gz',import.meta.url)));}

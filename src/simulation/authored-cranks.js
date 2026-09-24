@@ -15360,12 +15360,13 @@ function dragLinkDoubleCrankMotion() {
   const crankDepth = 0.18;
   const groundDepth = 0.12;
   const couplerDepth = 0.20;
-  const groundEyeOuterRadius = 0.285;
-  const crankEyeOuterRadius = 0.255;
-  const couplerEyeOuterRadius = 0.285;
-  const shaftRadius = 0.16;
+  // Brown draws slender bars; the shafts and pins are slimmed with them.
+  const groundEyeOuterRadius = 0.205;
+  const crankEyeOuterRadius = 0.19;
+  const couplerEyeOuterRadius = 0.17;
+  const shaftRadius = 0.105;
   const pivotEyeInnerRadius = shaftRadius + 0.045;
-  const crankPinRadius = 0.105;
+  const crankPinRadius = 0.075;
   const pinBearingClearance = 0.014;
   const movingEyeInnerRadius = crankPinRadius + pinBearingClearance + 0.034;
   const inputCrankPinCenterZ = 0.125;
@@ -15377,9 +15378,12 @@ function dragLinkDoubleCrankMotion() {
   const inputShaftCenterZ = -0.77;
   const outputShaftCenterZ = 0.70;
   const shaftLength = 1.65;
-  const pivotHubRadius = 0.27;
+  const pivotHubRadius = 0.18;
   const pivotHubDepth = 0.20;
-  const bearingRadius = 0.34;
+  const bearingRadius = 0.24;
+  // The engraving's long exposed rod: the output shaft runs on forward
+  // beyond its crank and the coupler layer.
+  const outputShaftExtensionLength = 2.6;
   const inputBearingZ = groundPlaneZ;
   const outputBearingZ = groundPlaneZ;
   const axialClearances = {
@@ -15479,7 +15483,7 @@ function dragLinkDoubleCrankMotion() {
 
   const fixedBearings = [inputPivot, outputPivot].map((pivot, index) => {
     const bearing = new THREE.Mesh(
-      new THREE.TorusGeometry(bearingRadius, 0.07, 10, 44),
+      new THREE.TorusGeometry(bearingRadius, 0.05, 10, 44),
       frameMaterial,
     );
     bearing.position.set(
@@ -15597,6 +15601,16 @@ function dragLinkDoubleCrankMotion() {
   });
   const inputRotor = inputShaft.userData.rotor;
   const outputRotor = outputShaft.userData.rotor;
+  const outputShaftExtension = cylinderAlongZ(
+    shaftRadius,
+    outputShaftExtensionLength,
+    darkMaterial,
+    36,
+  );
+  outputShaftExtension.position.z = outputShaftCenterZ + shaftLength / 2
+    + outputShaftExtensionLength / 2;
+  outputShaftExtension.userData.role = 'output-drag-link-crankshaft-forward-rod';
+  outputRotor.add(outputShaftExtension);
 
   const coupler = new THREE.Group();
   coupler.userData.role = 'hanging-rigid-drag-link-coupler';

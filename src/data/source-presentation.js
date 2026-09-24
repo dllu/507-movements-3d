@@ -7,9 +7,17 @@
 // in for a missing role) of parts the plate does not show. `note` records what the engraving shows. Re-measure display
 // profiles (scripts/measure-display-profiles.mjs ID) after changing an entry.
 export default {
+  83: {
+    remove: ['base', '(?:front|rear)RockshaftBearing', 'outputBearing', 'inputGuidePost.*', 'input(?:Upper|Lower)Guide', 'inputFork(?:Back|Front|Bridge)', 'remotePin(?:Head|Nut)?', 'inputStem'],
+    note: 'Side elevation of rod A, rockshaft B, the pierced ratchet sectors C and the crown wheel D on its upright shaft, rod A broken off to the upper right; no frame, posts, base, bearings or rod guide are drawn. Only the production MuJoCo model is presented; its physics keeps the reconstructed supports and input guide, and the synchronous registry model keeps them visible for offline checks.',
+  },
+  85: {
+    remove: ['strikingBed'],
+    note: 'Side elevation of the curved standard with its two guide brackets, the twin wiper A and the stamp rod with projection B; the stamp head hangs above the ground line and no anvil or striking bed is drawn.',
+  },
   86: {
-    remove: ['remote(?:BearingStandard|BearingLip|Base|DriveRim|DriveWeb|DriveHub|InputShaft)', 'rearDrive(?:Rim|Web|Hub)', 'rearShaftExtension', 'inputDriveBand'],
-    note: 'Front elevation of the loose wheel A on its A-frame standard with catch B, cam C and the overhead stop; no belt drive or second driving pulley is drawn.',
+    remove: ['remote(?:BearingStandard|BearingLip|Base|DriveRim|DriveWeb|DriveHub|InputShaft)', 'rearDrive(?:Web|Hub)', 'pumpGuide(?:Left|Right|Crossbar|PillarLeft|PillarRight)', 'pumpLowerBed', 'pumpCrosshead', 'pumpOutputRod', 'ropeLoadFerrule'],
+    note: 'Front elevation of the loose wheel A on its A-frame standard with catch B, cam C, the post and the overhead stop, cut at the ground line: the rope runs down into the plinth and the hatched upper and lower runs of the driving band leave the plate to the right (the factory clips both at the plate edge). The band\'s own pulley sits hidden behind A (only its rim is kept, so the spoke openings stay clear); the second pulley, pump rod, crosshead and rod guides are not drawn.',
   },
   89: {
     remove: ['bored-crosshead-cheek', 'crosshead-bridge-clear-of-swinging-eye', 'wrist-pin-(?:shank|retaining-head)', 'output-valve-stem', 'fixed-horizontal-crosshead-channel', 'base-rail', 'guide-support-\\d', 'bored-rear-shaft-support'],
@@ -19,6 +27,32 @@ export default {
     remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
     note: 'Front elevation of the crank disk behind the slotted yoke and its stems; no frame, brackets or stem guides are drawn. Only the production MuJoCo model is presented; the synchronous registry model keeps its reconstructed frame for offline checks.',
   },
+  94: {
+    remove: ['tab\\d', 'bracket\\d', 'shaftSupport'],
+    note: 'Face view of the slotted radial plate over the spiral-grooved plate with the bolt; no rim lugs, brackets or shaft support are drawn.',
+  },
+  95: {
+    camera: [0, 0, 1],
+    remove: ['guide', 'upperBracket', 'post', 'lowerBracket'],
+    note: 'Flat side elevation: the inclined disk edge-on, the forked rod and roller above it, the shaft bearing bolted to a hatched wall corner; no rod guide or gantry is drawn.',
+  },
+  98: {
+    camera: [0, 0, -1],
+    scale: [-1, 1, 1],
+    note: 'Viewed from the disk side, the grooved arm dashed behind the disk and its sectioned pivot shaft on the right; mirrored so the rear view keeps the plate layout. The disk is translucent in place of the dashed hidden lines; no frame is drawn (the factory omits it).',
+  },
+  105: {
+    remove: ['anvil', 'blank'],
+    note: 'Front elevation of the weighted handle, screw, nut and ram in the frame, broken off below the ram guide; no lower jaw, anvil or blank is drawn. The ram presses an invisible reconstructed blank.',
+  },
+  108: {
+    camera: [0, 0, 1],
+    note: 'Flat front elevation of the crossing-groove barrel between its top and bottom rails, the swivel shoe arm on the left guide rod and the gear at the foot.',
+  },
+  109: {
+    camera: [0, 0, 1],
+    note: 'Flat front elevation of the lead screw and the cut work between the top and bottom rails, the carriage arm reaching across and the change gears at the foot.',
+  },
   134: {
     remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub'],
     note: 'Front elevation of the spoked rope drum with its rim separators, the rope running off along the ground line; no pedestal or bearing is drawn.',
@@ -27,17 +61,28 @@ export default {
     remove: ['rear-post', 'output-guide-rail', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base'],
     note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the guided slider stem below; no base, pedestal or slider rails are drawn.',
   },
+  145: {
+    remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-bearing-post-behind-flywheel', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
+    note: 'Side elevation of the spoked flywheel in its pit, the tied rod to the small standard, the upright rod and the one-armed beam turning on the hatched shaft at its right end; no beam column, wheel post, rail or index marks are drawn.',
+  },
+  149: {
+    remove: ['rear-bearing-frame', 'guide\\d--?1', 'guide-back\\d', 'slider\\d', 'slider-pin\\d', 'slider-retainer\\d'],
+    note: 'The two cams, the two levers on their common pivot and the two rods broken off below; no rear bearing bar, rod guides or slides are drawn.',
+  },
   150: {
-    remove: ['fixed-longitudinal-base-rail', 'fixed-transverse-base-tie', 'fixed-camshaft-bearing-post', 'fixed-post-under-right-lever-fulcrum', 'output-guide-(?:-1|1|back|foot)'],
-    note: 'The sliding cam series, rocking lever on its right-hand fulcrum and the valve rod; no base, posts or rod guide are drawn.',
+    rotate: [0, Math.PI, 0],
+    scale: [-1, 1, 1],
+    camera: [0.2, 0.02, 1],
+    remove: ['fixed-camshaft-bearing-ring', 'fixed-longitudinal-base-rail', 'fixed-transverse-base-tie', 'fixed-camshaft-bearing-post', 'fixed-post-under-right-lever-fulcrum', 'output-guide-(?:-1|1|back|foot)', 'throw-\\d-white-lobe-index', 'throw-\\d-identity-tick', 'sliding-carrier-end-collar', 'invisible-full-selection-and-valve-stroke-envelope', 'white-no-slip-follower-index', 'white-valve-translation-index', 'white-longitudinal-key-and-rotation-index'],
+    note: 'Nearly end-on view down the camshaft: the hatched shaft end in front of the sliding cam series, the rocking lever on its right-hand fulcrum and the valve rod; no base, posts, rod guide or index marks are drawn.',
   },
   151: {
-    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'bearing-(?:post|foot)-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)'],
-    note: 'The opposite-hand screw shaft between its end bearings, the two nuts and the upper worm and hand wheel; no base, posts or upright are drawn.',
+    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'bearing-(?:post|foot)-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)', 'input-shaft-rotation-mark'],
+    note: 'The opposite-hand screw shaft between its end bearings, the two nuts and the upper worm shaft end-on in its bearing ring; no base, posts, upright or index mark are drawn.',
   },
   156: {
-    remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBack', 'guideRail.*', 'guideBackArm.*', 'guideStandoff.*'],
-    note: 'The disk, slotted bell crank, link and output rod; no base, posts or guide rails are drawn.',
+    remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBack', 'guideRail.*', 'guideBackArm.*', 'guideStandoff.*', 'crosshead', 'sliderPin', 'sliderRetainer'],
+    note: 'The disk, slotted bell crank, link and the output rod broken off below its eye; no base, posts, guide rails or crosshead are drawn.',
   },
   157: {
     remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBack', 'guideRail.*', 'guideBackArm.*', 'guideStandoff.*'],
@@ -88,6 +133,10 @@ export default {
     remove: ['fixed-base-rail', 'fixed-rear-support-post', 'fixed-(?:output-pivot|input-shaft)-bearing-bridge'],
     note: 'The eccentric gears, belt, pulley and the guided rod A; no base, post or bearing bridges are drawn.',
   },
+  203: {
+    remove: ['white-index-showing-(?:curved-arm-input|variable-output-arm)-angle'],
+    note: 'Face view of the hooked arm with its J-shaped slot and the straight arm whose pinned end passes behind it (dashed on the plate); no index marks are drawn.',
+  },
   204: {
     remove: ['fixed-(?:longitudinal|transverse)-base-rail', '(?:driver|driven)-shaft-bearing-post'],
     note: 'The two hyperboloidal rollers on their shafts; no base or posts are drawn.',
@@ -97,16 +146,16 @@ export default {
     note: 'Face view of driver A and stop wheel B; no frame is drawn.',
   },
   213: {
-    remove: ['friction-stop-fixed-base-rail', 'friction-stop-fixed-bearing-upright', '(?:winding-arbor|split-stop-stud)-rear-bearing-arm', 'friction-stop-(?:left|right)-transverse-foot'],
-    note: 'Face view of the split stop ring and the ratchet wheel; no frame is drawn.',
+    remove: ['friction-stop-fixed-base-rail', 'friction-stop-fixed-bearing-upright', '(?:winding-arbor|split-stop-stud)-rear-bearing-arm', 'friction-stop-(?:left|right)-transverse-foot', 'winding-ratchet-radial-speed-index', 'split-stop-wheel-radial-speed-index', 'face-pin-front-motion-index', 'moving-face-pin-to-partial-tooth-contact-marker', 'face-pin-to-uncut-rim-hard-stop-contact-marker'],
+    note: 'Face view of the split stop ring above the ratchet wheel at Brown\'s pose: the narrow slot at the top, the five teeth below and the face pin between the middle teeth; no frame, white speed indices or contact markers are drawn.',
   },
   214: {
     remove: ['gear-finger-stop-base-rail', '(?:left-stop-counterwheel|right-winding-input)-bearing-upright', 'gear-finger-stop-(?:left|right)-foot', '(?:driven|driver)-bored-fixed-support'],
     note: 'Face view of the two finger-stop wheels; no frame is drawn.',
   },
   215: {
-    remove: ['crescent-stop-base-rail', '(?:crescent-driver|six-slot-wheel)-bearing-upright', 'crescent-stop-(?:left|right)-foot', '215-bored-fixed-shaft-support-\\d'],
-    note: 'Face view of the crescent driver and the six-slot wheel; no frame is drawn.',
+    remove: ['crescent-stop-base-rail', '(?:crescent-driver|six-slot-wheel)-bearing-upright', 'crescent-stop-(?:left|right)-foot', '215-bored-fixed-shaft-support-\\d', 'uncut-convex-terminal-sector-highlight', '(?:crescent-driver|six-slot-wheel)-angular-rate-index', 'visible-face-pin-contact-cap', '(?:forward|reverse)-convex-sector-to-(?:upper|lower)-crescent-cusp-contact'],
+    note: 'Face view of the crescent driver and the six-slot wheel at Brown\'s pose, the pin on the line of centres in the left slot; no frame, gold sector strip, white rate indices or contact markers are drawn.',
   },
   216: {
     camera: [0.15, 0.12, 1],
@@ -118,15 +167,24 @@ export default {
     remove: ['rear-frame-post', 'rear-frame-top', 'base', 'F-.*', 'H-.*', 'A-.*', 'hinged-catch-G', '.*contact.*marker', 'cam-rotation-index-at-e', 'rear-projection-lifting-catch-at-e', 'cam-frame-bearing'],
     note: 'Face view of the grooved cam C, D, B, e alone, as Brown draws it; the notch wheel F, lever, stud A and catch G belong to plate 218, and no frame is drawn.',
   },
+  231: {
+    remove: ['(?:input|output)-drag-link-crankshaft-visible-rotation-index'],
+    note: 'Oblique view of the two slender cranks, the hanging link and the bearing link, with the long output rod running off to the right; no index marks are drawn.',
+  },
   233: {
-    remove: ['lantern-stop-rear-support-frame-beam'],
-    note: 'Face view of the lantern wheel with its roller stop and latch; no frame is drawn.',
+    remove: ['lantern-stop-rear-support-frame-beam', '(?:roller-arm|latch)-inward-travel-stop-block', 'lantern-wheel-rotation-witness', 'stop-roller-rotation-witness', '(?:roller|latch)-stop-to-trundle-contact-marker'],
+    note: 'Face view of the lantern wheel with its roller stop and latch; no frame, arm rest blocks, white rotation witnesses or contact markers are drawn.',
   },
   234: {
     rotate: [-Math.PI / 2, 0, Math.PI],
     camera: [6.2, 4.9, 6.9],
     remove: ['verge-end-journal', 'verge-rotation-witness', 'crown-wheel-rotation-witness'],
     note: 'Oblique view from above, verge S falling to the right at about 22° across the wheel: a flush toothed plate on a shallow band with its arbor hanging down, and two plain flags A on the round spindle; no frame, bearings, journal caps or witness marks are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
+  },
+  237: {
+    camera: [-4, 6.5, 9],
+    remove: ['fixed-lower-output-bearing', 'crown-wheel-face-inset', 'top-arm-bearing-outline', 'white-crown-wheel-rotation-index', 'white-top-arm-motion-index', 'white-pawl-lift-index', 'active-crown-(?:drive-face|ramp-return)-contact'],
+    note: 'Oblique view from about 35 degrees above: the shallow crown drum with saw teeth round its upper rim, the output shaft hanging below, and the top arm on the stud rising from the centre, pointing away to the right with the pawl at the rim; no lower bearing collar, face ring, hub outline, white indices or contact markers are drawn.',
   },
   238: {
     remove: ['white-escape-wheel-rotation-index', 'white-pallet-carrier-motion-index'],

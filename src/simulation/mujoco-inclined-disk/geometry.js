@@ -41,6 +41,13 @@ export function makeInclinedDiskGeometry({segments=192}={}) {
   const bearingProfile=clip.difference(clip.union(poly(circle([0,0],x(source.axis[0])-x(164),96)),poly([[0,-.26],[x(282),-.26],[x(282),.26],[0,.26]])),poly(circle([0,0],shaftRadius+.003,96)));
   attach('bearingBracket',plate(bearingProfile,y(373),y(319)),'frame',PALETTE.muted).rotation.x=-Math.PI/2;
   attach('wall',new THREE.BoxGeometry(x(477)-x(282),y(286)-y(510),.6),'frame',PALETTE.muted,[(x(477)+x(282))/2,(y(286)+y(510))/2,0]);
+  // Brown draws the wall as a hatched corner section; hatch an L band on its
+  // front face. Lines are presentation-only and are not registered as parts.
+  {const x0=x(282),x1=x(477),y0=y(510),y1=y(286),z=.3015,w=.28,step=.065,points=[];
+    const clipLine=(c,[l,b,r,t])=>{const lo=Math.max(l,b+c),hi=Math.min(r,t+c);if(hi>lo)points.push(lo,lo-c,z,hi,hi-c,z);};
+    for(let c=x0-y1;c<=x1-y0;c+=step){clipLine(c,[x0,y1-w,x1,y1]);clipLine(c,[x0,y0,x0+w,y1-w]);}
+    const hatch=new THREE.BufferGeometry();hatch.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+    const lines=new THREE.LineSegments(hatch,new THREE.LineBasicMaterial({color:PALETTE.ink}));lines.name='wallHatch';lines.userData.presentationOnly=true;blocks.frame.add(lines);}
   attach('thrustCollar',ring(shaftRadius+.0015,.24,y(382),y(373)-.002,96),'input',PALETTE.driver).rotation.x=-Math.PI/2;
   for(const [i,yy] of [336,355].entries())attach('fastener'+i,disk(.045,.26,.29,6),'frame',PALETTE.ink,[x(263),y(yy),0]);
   const guideY=1,guideHalfLength=.08,rodRadius=px(source.rodRadius),backZ=-1.7,postX=1.95;

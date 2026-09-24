@@ -8,7 +8,7 @@
     },
     {
       "file": "src/simulation/framed-yoke.js",
-      "sha256": "891035515cc623ac3b4e528982db19955e490d2052ce589e6f132475f008b2b9"
+      "sha256": "0afbba0d5b38a08997e02eae42cb9d2bffd108d8bd1649e955abae8af069974c"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -16,14 +16,14 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ],
   "summary": {
     "poses": 129,
-    "parts": 7,
-    "pairs": 15,
-    "checks": 2323290,
+    "parts": 5,
+    "pairs": 7,
+    "checks": 1292838,
     "failingPairs": 0
   },
   "failures": {}

@@ -8,7 +8,7 @@
     },
     {
       "file": "src/simulation/authored-linkages.js",
-      "sha256": "08b4f751d2f12656ad1555ef47eae3547121aebfacc5925078bdad30e1e32a98"
+      "sha256": "4a77bbb89f4f11fc0b11d1a8a59ae69363d40ed5c1e5d21263f968f08faa95cc"
     },
     {
       "file": "src/simulation/bored-scissor-link.js",
@@ -20,14 +20,14 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ],
   "summary": {
     "poses": 129,
-    "parts": 44,
-    "pairs": 762,
-    "checks": 4812732,
+    "parts": 33,
+    "pairs": 416,
+    "checks": 4377486,
     "failingPairs": 0
   },
   "failures": {}

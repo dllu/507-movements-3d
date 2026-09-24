@@ -40,8 +40,12 @@ export function makeBeltGovernorSolids({beltSeamSpacing=2.4}={}){
   add(name+'ElbowPin',disk(.06,-.09,.25,64),name+'Upper',PALETTE.ink,[0,-g.elbowArm,0]);
   add(name+'SleevePin',disk(.05,-.10,.25,64),'sleeve',PALETTE.ink,[sign*g.sleeveRadius,0,0]);
  }
- // Source frame stands in front of the belt, with a true open center.
- const frameShape=poly([[-1.89,pixelY(390)],[1.98,pixelY(390)],[1.98,pixelY(510)],[1.566,pixelY(510)],[1.566,pixelY(414)],[-1.476,pixelY(414)],[-1.476,pixelY(518)],[-1.89,pixelY(518)]]);
+ // Source frame stands in front of the belt: Brown draws two nested,
+ // slender inverted-U brackets (outer legs under the top bar, an inner U
+ // below it) with a true open center, not a broad legged table.
+ const box=(x0,x1,y0,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
+ const frameShape=clip.union(box(-2.047,-1.867,pixelY(517),pixelY(390)),box(1.967,2.147,pixelY(517),pixelY(390)),
+  box(-1.636,-1.476,pixelY(510),pixelY(412)),box(1.566,1.726,pixelY(510),pixelY(412)),box(-1.636,1.726,pixelY(422),pixelY(412)));
  add('frame',plate(frameShape,.98,1.16),'fixed',PALETTE.frame);
  add('frameTop',new THREE.BoxGeometry(4.194,.26,.5),'fixed',PALETTE.frame,[.05,pixelY(383),.91]);
  const mount=poly([[g.bellX-.43,pixelY(378)],[g.bellX+.43,pixelY(378)],[g.bellX+.24,g.bellY-.20],[g.bellX-.24,g.bellY-.20]]);

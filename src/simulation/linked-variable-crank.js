@@ -27,15 +27,17 @@ export function makeLinkedVariableCrank() {
   add('auxiliaryCrank', plate(auxiliaryShape, .58, .76), 'auxiliary', PALETTE.brass);
   add('auxiliaryShaft', disk(.10, .50, .90, 96), 'fixed', PALETTE.ink);
   const L = g.leftSpan, R = g.rightSpan;
-  const pitmanOutline = clip.union(poly([[-L, -.14], [0, -.324], [R, -.16], [R, .16], [0, .324], [-L, .14]]),
-    hole([-L, 0], .14), hole([0, 0], .324), hole([R, 0], .24));
+  // Brown's pitman is a slender tapered bar with a modest boss at the
+  // auxiliary pin, not a broad plate.
+  const pitmanOutline = clip.union(poly([[-L, -.10], [0, -.20], [R, -.13], [R, .13], [0, .20], [-L, .10]]),
+    hole([-L, 0], .14), hole([0, 0], .22), hole([R, 0], .20));
   add('pitman', plate(clip.difference(pitmanOutline, hole([-L, 0], .104), hole([0, 0], .104), hole([R, 0], .114)), .30, .46), 'pitman', PALETTE.driver);
   add('pitmanEndPin', disk(.10, 0, .50, 96), 'pitman', PALETTE.ink, [-L, 0, 0]);
   add('auxiliaryPin', disk(.10, .28, .80, 96), 'pitman', PALETTE.ink);
   add('wristPin', disk(.11, 0, .50, 96), 'pitman', PALETTE.ink, [R, 0, 0]);
   // Only the source-visible lower length is drawn; the hidden pivot closes
   // the rigid rocker mathematically, without an invented external frame.
-  const rockerOutline = clip.union(hole([0, 0], .24), poly([[0, -.18], [1.36, -.23], [1.36, .23], [0, .18]]));
+  const rockerOutline = clip.union(hole([0, 0], .20), poly([[0, -.14], [1.36, -.18], [1.36, .18], [0, .14]]));
   add('powerRocker', plate(clip.difference(rockerOutline, hole([0, 0], .114)), .02, .20), 'rocker', PALETTE.driven);
   const update = time => {
     const angle = g.phase + 2 * Math.PI * time / g.period, s = linkedVariableCrankAtAngle(angle, g);

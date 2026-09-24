@@ -44,6 +44,16 @@ export function makeSmallSingleToothIndex({ profile = defaultProfile } = {}) {
     shadowCameraHalfExtent: 6, shadowBias: -.00012, shadowNormalBias: .005,
     animationTiming: { authoredCyclePeriod: p.period }, minimumDisplayCycleSeconds: 3,
     idealConstraints: 'Fixed bearings and uniform input rotation are ideal. Finite contact surfaces drive two of thirty teeth per turn under a resisting load. Passive bearing resistance holds the short internal pause; engagement impacts and hidden thicknesses are idealized.' };
+  // Frame the swept envelope with a margin like the plate's, so the ratchet
+  // teeth do not run to the viewport edge.
+  const envelope = new THREE.Box3();
+  for (let i = 0; i < 48; i += 1) {
+    update(p.period * i / 48); root.updateMatrixWorld(true);
+    envelope.union(new THREE.Box3().setFromObject(root, true));
+  }
+  const pad = .07 * Math.max(envelope.max.x - envelope.min.x, envelope.max.y - envelope.min.y);
+  envelope.min.x -= pad; envelope.min.y -= pad; envelope.max.x += pad; envelope.max.y += pad;
+  root.userData.cameraFitBounds = envelope;
   update(0); markShadows(root);
   return { root, update, motion, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

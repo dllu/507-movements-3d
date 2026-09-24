@@ -6,6 +6,7 @@ import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
 
 export function makeEndlessGrooveGeometry(options={}) {
+  const {diskOpacity=.72}=options;
   const root=new THREE.Group(),parts={},families={},blocks={},profile=makeEndlessGrooveProfile(options),f=profile;
   const attach=(name,geometry,family,color,position=[0,0,0])=>{
     if(!blocks[family]){blocks[family]=new THREE.Group();root.add(blocks[family]);}
@@ -13,7 +14,11 @@ export function makeEndlessGrooveGeometry(options={}) {
     mesh.name=name;mesh.position.fromArray(position);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;
   };
   const shaftRadius=source.shaftRadius/100,pivotShaftRadius=source.pivotShaftRadius/100;
-  attach('disk',ring(shaftRadius,source.diskRadius/100,-.50,-.30,256),'input',PALETTE.driver);
+  // Brown views the disk from its own side and dashes the grooved arm behind
+  // it; source presentation mirrors and reverses the view, so the translucent
+  // disk stands in for those hidden lines. Physics is unaffected.
+  const diskMesh=attach('disk',ring(shaftRadius,source.diskRadius/100,-.50,-.30,256),'input',PALETTE.driver);
+  if(diskOpacity<1)Object.assign(diskMesh.material,{transparent:true,opacity:diskOpacity,depthWrite:false});diskMesh.renderOrder=1;
   attach('rearHub',ring(shaftRadius,source.hubRadius/100,-.62,-.50,128),'input',PALETTE.driver);
   attach('frontHub',ring(shaftRadius,source.hubRadius/100,-.30,-.26,128),'input',PALETTE.driver);
   attach('shaft',disk(shaftRadius,-.98,-.23,128),'input',PALETTE.ink);
@@ -26,10 +31,9 @@ export function makeEndlessGrooveGeometry(options={}) {
   attach('outer',plate(clip.difference(outline,f.outer),-.12,.14),'rocker',PALETTE.driven);
   attach('inner',plate(f.inner,-.12,.14),'rocker',PALETTE.driven);
   attach('cover',plate(outline,.14,.24),'rocker',PALETTE.driven);
-  attach('pivotShaft',disk(pivotShaftRadius,-.98,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
-  const rearOutline=clip.union(capsule(f.inputCenter,f.pivot,.085,32),poly(circle(f.inputCenter,.26,96)),poly(circle(f.pivot,.32,96)));
-  const rear=clip.difference(rearOutline,poly(circle(f.inputCenter,shaftRadius+.003,128)),poly(circle(f.pivot,pivotShaftRadius+.003,128)));
-  attach('rearFrame',plate(rear,-.85,-.70),'frame',PALETTE.muted);
+  // Brown sections the pivot shaft just behind the arm and draws no frame
+  // joining the two shafts; neither is part of the native model.
+  attach('pivotShaft',disk(pivotShaftRadius,-.34,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
   blocks.rocker.position.set(...f.pivot,0);blocks.rocker.rotation.z=f.initialAngle;blocks.input.rotation.z=f.phase;blocks.input.position.set(...f.inputCenter,0);
   const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.cover.visible=!enabled;};
   Object.assign(root.userData,{parts,families,blocks,source,profile,hideGround:true,setSectionView,

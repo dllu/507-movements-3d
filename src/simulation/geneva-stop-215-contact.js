@@ -30,6 +30,11 @@ export function finishGeneva215Contact(model){
  const pin=b.facePin.geometry,pinParameters=pin.parameters;b.facePin.geometry=new T.CylinderGeometry(pinParameters.radiusTop,pinParameters.radiusBottom,pinParameters.height,256);pin.dispose();
  d.reconstructionNote='The relieved slot mouths and baked contact branch remove the handoff collision while preserving the interior load faces and terminal stops. A positive output-contact bias selects the branch; reverse playback requires assisting preload. Input motion, impact, friction and loading remain prescribed. Final lock capture is within the 0.000022 profile tolerance.';
  d.sourceAnimation.runtimeReconstructsFiniteMouthHandoffs=true;
- model.update=t=>{oldUpdate(t);const s=d.stateAtTime(t);for(const part of[b.stopWheel,b.stopWheelShaft]){part.userData.rotor.rotation.z=s.stopWheelAngle;part.userData.angularSpeed=s.stopWheelAngularSpeed;}d.contacts={convexTerminalSector:s.limit.stopContact,crescentLockingPocket:s.lock.active?s.lock:null,facePinSlot:s.engagement.active?s.engagement:null};d.kinematics=s;};
+ // Brown draws the first index half done: the pin on the line of centres
+ // inside the left slot, the crescent's mouth facing the wheel. The display
+ // loop opens there; state queries keep phase time.
+ {let low=0,high=d.canonicalTimes.firstIndexComplete;for(let i=0;i<80;i++){const mid=(low+high)/2;if(d.stateAtTime(mid).inputTravel<step/2)low=mid;else high=mid;}
+  d.canonicalTimes.platePose=(low+high)/2;d.canonicalStates.platePose=d.stateAtTime(d.canonicalTimes.platePose);d.displayTimeOffset=d.canonicalTimes.platePose;}
+ model.update=displayTime=>{const t=displayTime+d.displayTimeOffset;oldUpdate(t);const s=d.stateAtTime(t);for(const part of[b.stopWheel,b.stopWheelShaft]){part.userData.rotor.rotation.z=s.stopWheelAngle;part.userData.angularSpeed=s.stopWheelAngularSpeed;}d.contacts={convexTerminalSector:s.limit.stopContact,crescentLockingPocket:s.lock.active?s.lock:null,facePinSlot:s.engagement.active?s.engagement:null};d.kinematics=s;};
  model.update(0);return model;
 }

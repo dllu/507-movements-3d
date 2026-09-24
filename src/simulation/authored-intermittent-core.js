@@ -2025,7 +2025,7 @@ function snapActionStarCounter() {
   const driverCenter = new THREE.Vector3(1.23, 0.06, -0.5);
   const dropPivot = new THREE.Vector3(-1.35, 1.72, 0.39);
   // Brown's flat spring runs in from the left edge under the drop's tail.
-  const springAnchor = new THREE.Vector3(-3.0, 0.98, 0.39);
+  const springAnchor = new THREE.Vector3(-3.4, 0.98, 0.39);
   const pawlPlaneZ = 0.22;
   const starOuterRadius = 1.2;
   const starGapRadius = 0.82;
@@ -2165,15 +2165,16 @@ function snapActionStarCounter() {
   pawl.position.copy(pawlPivotDown);
   pawl.userData.role = 'drop-attached-star-wheel-pawl';
 
+  // A steel blade as broad as Brown's double-lined spring, not a black wire.
   const springLeafA = makeBeam(springAnchor, springAnchor, {
-    color: PALETTE.ink,
+    color: PALETTE.muted,
     depth: 0.095,
-    thickness: 0.055,
+    thickness: 0.075,
   });
   const springLeafB = makeBeam(springAnchor, springAnchor, {
-    color: PALETTE.ink,
+    color: PALETTE.muted,
     depth: 0.095,
-    thickness: 0.055,
+    thickness: 0.075,
   });
   springLeafA.userData.flexibleLeafSpring = true;
   springLeafB.userData.flexibleLeafSpring = true;
@@ -8101,6 +8102,15 @@ function sharedPivotDoubleStrokeRatchet() {
   const ratchetHub = ratchet.userData.hub;
   ratchet.userData.rotor.remove(ratchet.userData.indicator);
   delete ratchet.userData.indicator;
+  // Brown's inner face circle: a low rim step just inside the tooth roots,
+  // clear of the pawl fingers, which bear no nearer the axis than 2.035.
+  const ratchetFaceStep = new THREE.Mesh(
+    makeAnnulusGeometry(1.94, 2.03, 0.02),
+    ratchetBody.material,
+  );
+  ratchetFaceStep.position.z = ratchetDepth / 2 + 0.01;
+  ratchetFaceStep.userData.role = 'ratchet-face-rim-step';
+  ratchet.userData.rotor.add(ratchetFaceStep);
   const ratchetShaft = makeShaft({ length: 0.62, radius: 0.19 });
   ratchetShaft.position.z = 0.04;
   ratchetShaft.userData.radius = 0.19;
@@ -11737,8 +11747,10 @@ function splitRimFacePinWindingStop() {
   });
   driverShaft.position.set(driverCenter.x, driverCenter.y, -0.08);
   driverShaft.userData.role = 'square-arbor-winding-input-shaft';
+  // The arbor square fills Brown's square bore with a 0.01 side clearance.
+  const driverSquareSide = 2 * squareBoreHalfSize - 0.02;
   const driverSquare = new THREE.Mesh(
-    new THREE.BoxGeometry(0.31, 0.31, 0.48),
+    new THREE.BoxGeometry(driverSquareSide, driverSquareSide, 0.48),
     inkMaterial,
   );
   driverSquare.position.set(0, 0, driverPlaneZ + 0.03);
@@ -14145,12 +14157,20 @@ function crescentPinSixSlotWindingStop() {
   });
   stopWheelShaft.position.set(stopWheelCenter.x, stopWheelCenter.y, -0.07);
   stopWheelShaft.userData.role = 'six-slot-stop-wheel-shaft';
+  // The arbor fills Brown's square bore: the bore's corners lie at 24.3
+  // degrees plus quarter turns, so the box (corners at 45 degrees to its
+  // faces) turns 45 degrees less, with a 0.01 side clearance.
+  const squareArborSide = sourceDriverBore[0].distanceTo(sourceDriverBore[1])
+    * sourceScale - 0.02;
   const squareArbor = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.52, 1.05),
+    new THREE.BoxGeometry(squareArborSide, squareArborSide, 1.05),
     inkMaterial,
   );
   squareArbor.position.z = 0.15;
-  squareArbor.rotation.z = THREE.MathUtils.degToRad(24.3);
+  squareArbor.rotation.z = Math.atan2(
+    sourceDriverBore[2].y,
+    sourceDriverBore[2].x,
+  ) - Math.PI / 4;
   squareArbor.userData.role = 'square-winding-arbor';
   driver.userData.rotor.add(squareArbor);
   const stopHub = new THREE.Mesh(
@@ -16359,6 +16379,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   );
   wheelIndicator.position.set(0.9, 0, 0.315);
   wheelIndicator.userData.rotationWitness = true;
+  wheelIndicator.userData.role = 'lantern-wheel-rotation-witness';
   wheelRotor.add(wheelIndicator);
   wheel.userData.depth = 0.62;
   wheel.userData.pinCount = trundleCount;
@@ -16431,6 +16452,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   );
   rollerWitness.position.set(rollerRadius * 0.42, 0, 0.115);
   rollerWitness.userData.rollerRotationWitness = true;
+  rollerWitness.userData.role = 'stop-roller-rotation-witness';
   rollerRotor.add(rollerWitness);
   rollerWheel.userData.rotor = rollerRotor;
   rollerStop.add(rollerWheel);
@@ -16496,6 +16518,8 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   const latchRestBlock = rollerRestBlock.clone();
   latchRestBlock.position.set(4.12, 1.77, 0.42);
   latchRestBlock.rotation.z = -0.22;
+  rollerRestBlock.userData.role = 'roller-arm-inward-travel-stop-block';
+  latchRestBlock.userData.role = 'latch-inward-travel-stop-block';
   root.add(rollerRestBlock, latchRestBlock);
 
   const rollerContactMarker = new THREE.Mesh(
@@ -16506,6 +16530,8 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   rollerContactMarker.userData.contactMarker = 'roller-stop-to-trundle';
   const latchContactMarker = rollerContactMarker.clone();
   latchContactMarker.userData.contactMarker = 'latch-stop-to-trundle';
+  rollerContactMarker.userData.role = 'roller-stop-to-trundle-contact-marker';
+  latchContactMarker.userData.role = 'latch-stop-to-trundle-contact-marker';
   root.add(rollerContactMarker, latchContactMarker);
 
   const stateAtCycleCoordinate = (cycleCoordinate) => {
@@ -19125,13 +19151,14 @@ function coaxialArmCrownRatchet(movement) {
   const crownWheel = makeCrownWheel();
   const contactTriangles = crown237Triangles(crownWheel);
   root.add(crownWheel);
+  // Brown draws the output shaft hanging well below the drum.
   const outputShaft = makeShaft({
     axis: verticalAxis,
     color: PALETTE.ink,
-    length: 1.52,
+    length: 2.62,
     radius: 0.1,
   });
-  outputShaft.position.y = -0.75;
+  outputShaft.position.y = -1.3;
   outputShaft.userData.role = 'vertical-crown-wheel-output-shaft';
   root.add(outputShaft);
   const outputBearing = new THREE.Mesh(
@@ -19241,13 +19268,15 @@ function coaxialArmCrownRatchet(movement) {
   armRotor.add(pawl);
   root.add(arm);
 
+  // The fixed stud stands up from the wheel's centre boss through the arm
+  // eye, as Brown draws it, rather than floating above the face.
   const armFulcrumShaft = makeShaft({
     axis: verticalAxis,
     color: PALETTE.ink,
-    length: 0.74,
+    length: 1.34,
     radius: 0.075,
   });
-  armFulcrumShaft.position.y = 1.14;
+  armFulcrumShaft.position.y = 0.84;
   armFulcrumShaft.userData.role = 'fixed-coaxial-top-arm-fulcrum-stud';
   root.add(armFulcrumShaft);
 

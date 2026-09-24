@@ -17,7 +17,17 @@ export function splitRim213Motion(input,pitch,reverse=false){
 }
 export function finishSplitRim213(root,legacyUpdate){
  const d=root.userData,b=d.blocks,g=d.geometry,legacyState=d.stateAtInputTravel;
- const shape=new THREE.Shape(bake.outline.map(p=>new THREE.Vector2(...p)));
+ // Brown cuts the split as a narrow parallel-sided slot from the rim to the
+ // inner circle. The baked contact outline keeps its wedge (the pin never
+ // reaches it); the displayed ring trims the wedge to a constant-width slot.
+ const slotHalfWidth=.13,outerR=Math.hypot(...bake.outline[0]),innerR=Math.hypot(...bake.outline.at(-1)),
+  arc=(r,a0,a1,n)=>Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return[r*Math.cos(a),r*Math.sin(a)];}),
+  outerHalf=Math.asin(slotHalfWidth/outerR),innerHalf=Math.asin(slotHalfWidth/innerR),
+  bakedOuter=bake.outline.slice(0,bake.outline.length-bake.outline.slice().reverse().findIndex(q=>Math.abs(Math.hypot(...q)-outerR)<1e-6)),
+  startAngle=Math.atan2(bakedOuter[0][1],bakedOuter[0][0]),endAngle=Math.atan2(bakedOuter.at(-1)[1],bakedOuter.at(-1)[0]),
+  displayOutline=[...arc(outerR,Math.PI/2+outerHalf,startAngle,6).slice(0,-1),...bakedOuter,...arc(outerR,endAngle,Math.PI/2-outerHalf,6).slice(1),
+   ...arc(innerR,Math.PI/2-innerHalf,Math.PI/2+innerHalf-2*Math.PI,512)];
+ const shape=new THREE.Shape(displayOutline.map(p=>new THREE.Vector2(...p)));
  b.stopWheelBody.geometry.dispose();b.stopWheelBody.geometry=new THREE.ExtrudeGeometry(shape,{depth:g.stopWheelDepth,bevelEnabled:false,steps:1,curveSegments:1}).translate(0,0,-g.stopWheelDepth/2);
  b.facePin.geometry.dispose();b.facePin.geometry=new THREE.CylinderGeometry(g.facePinRadius,g.facePinRadius,.9,128);
  b.stopWheelOutline.visible=false;for(const part of [...b.stopToothHighlights,...b.stopShoulderHighlights])part.visible=false;
@@ -45,6 +55,11 @@ export function finishSplitRim213(root,legacyUpdate){
  d.minimumDisplayCycleSeconds=18;d.hideGround=true;d.cameraFov=8;
  d.reconstructionNote='The full pin follows separately baked clockwise and reverse retaining branches of a finite five-tooth profile. The reconstructed teeth are shorter than the first tracing (tip radius 1.870 versus 2.124). Reversal takes up 0.00109 radians before indexing; later turns advance one pitch. The split rim and both terminal stops remain. Contact geometry and continuity are checked; spring friction, impacts and load capacity are not dynamically solved.';
  root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});
- const update=time=>{legacyUpdate(time);const s=d.stateAtTime(time);b.stopWheel.userData.rotor.rotation.z=s.stopWheelAngle;b.stopWheel.userData.angularSpeed=s.stopWheelAngularSpeed;b.activeContactMarker.visible=s.engagement.active;if(s.engagement.active){b.activeContactMarker.position.x=s.engagement.contactPoint.x;b.activeContactMarker.position.y=s.engagement.contactPoint.y;}d.contacts.facePinTooth=s.engagement.active?s.engagement:null;d.kinematics=s;};
+ // The display loop opens at Brown's pose (third index in progress, slot at the
+ // top, the pin between the middle teeth); state queries keep phase time.
+ d.displayTimeOffset=d.canonicalTimes.sourcePose;
+ // The static friction band reads as Brown's single inner circle, not a brass ring.
+ b.frictionBand.material=b.frictionDrum.material;
+ const update=displayTime=>{const time=displayTime+d.displayTimeOffset;legacyUpdate(time);const s=d.stateAtTime(time);b.stopWheel.userData.rotor.rotation.z=s.stopWheelAngle;b.stopWheel.userData.angularSpeed=s.stopWheelAngularSpeed;b.activeContactMarker.visible=s.engagement.active;if(s.engagement.active){b.activeContactMarker.position.x=s.engagement.contactPoint.x;b.activeContactMarker.position.y=s.engagement.contactPoint.y;}d.contacts.facePinTooth=s.engagement.active?s.engagement:null;d.kinematics=s;};
  markShadows(root);d.fidelity='authored';update(0);return{root,update,cameraDirection:new THREE.Vector3(.2,.15,15)};
 }

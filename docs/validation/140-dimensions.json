@@ -85,7 +85,6 @@
     "maximumRamReversal": 0
   },
   "caveat": "Engraving-fitted unequal links close analytically but require a larger lever swing than the source animation. No force or material-cutting simulation is claimed. This dimensional report does not test rendered hardware; see the separate clearance report.",
-  "sourceCommit": "c761c2f8e05f1d15209223f3f0c5f8f5078cc289",
   "sources": [
     {
       "file": "src/data/toggle-punch-dimensions.js",
@@ -97,7 +96,7 @@
     },
     {
       "file": "src/simulation/authored-cranks.js",
-      "sha256": "b629230dbdac885f2cf3d2a95a93d817c8a1d2c18bde928cc95729cfdf3b4a36"
+      "sha256": "3a87ef026a2fa7ca5f6018115f95a4803b89b57aa2bc34c4dc168d31422d8235"
     },
     {
       "file": "scripts/review-toggle-punch.mjs",

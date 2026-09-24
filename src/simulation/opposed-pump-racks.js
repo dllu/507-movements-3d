@@ -26,12 +26,15 @@ export function makeOpposedPumpRacks(){
  body.geometry.translate(0,0,-d.depth/2);
  // Generic face indices and decorative torus are absent from the engraving.
  rotor.children.slice(2).forEach(o=>{o.visible=false;});
- const lever=makeBeam(new THREE.Vector3(-d.leverHalfLength,0,-.23),new THREE.Vector3(d.leverHalfLength,0,-.23),
-  {color:PALETTE.driver,depth:.10,thickness:.12});
- const leverGroup=new THREE.Group();leverGroup.rotation.z=d.leverAngle;leverGroup.add(lever);
+ // Brown hides the lever behind the pinion and racks: its two arms are
+ // seated on the back face of the pinion rim, so nothing crosses the pierced
+ // web, and they emerge beyond the racks.
+ const leverGroup=new THREE.Group();leverGroup.rotation.z=d.leverAngle;
  for(const sign of [-1,1]){
+  const arm=makeBeam(new THREE.Vector3(sign*.6,0,-.145),new THREE.Vector3(sign*d.leverHalfLength,0,-.145),
+   {color:PALETTE.driver,depth:.10,thickness:.12});
   const knob=new THREE.Mesh(new THREE.SphereGeometry(.13,24,16),matte(PALETTE.ink));
-  knob.position.set(sign*d.leverHalfLength,0,-.23);leverGroup.add(knob);
+  knob.position.set(sign*d.leverHalfLength,0,-.23);leverGroup.add(arm,knob);
  }
  rotor.add(leverGroup);root.add(pinion);
  const profiles=[];

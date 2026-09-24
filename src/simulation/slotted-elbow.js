@@ -24,7 +24,10 @@ export function makeSlottedElbow(){
  add('leverSleeve',ring(.304,.45,.24,.30,128),'lever',PALETTE.driven);
  place('outputPin',disk(.20,.52,.88,128),'lever',outputLocal,PALETTE.ink);
  place('outputRetainer',ring(.20,.24,.824,.88,128),'lever',outputLocal,PALETTE.ink);
- const rodShape=clip.difference(clip.union(poly(circle([0,0],.42,128)),poly([[0,-.21],[.95,-.21],[1.05,-.10],[g.rodLength,-.10],[g.rodLength,.10],[1.05,.10],[.95,.21],[0,.21]]),poly(circle([g.rodLength,0],.22,128))),poly(circle([0,0],.204,128)),poly(circle([g.rodLength,0],.104,128)));
+ // Brown breaks the rod off 205 raster pixels below its eye; its guided
+ // lower end (the kinematic rod length) lies beyond the drawing.
+ const drawnRodLength=205*source.scale;
+ const rodShape=clip.difference(clip.union(poly(circle([0,0],.42,128)),poly([[0,-.21],[.95,-.21],[1.05,-.10],[drawnRodLength-.04,-.10],[drawnRodLength+.03,-.03],[drawnRodLength,.02],[drawnRodLength+.04,.10],[1.05,.10],[.95,.21],[0,.21]])),poly(circle([0,0],.204,128)));
  add('connectingRod',plate(rodShape,.66,.82),'rod',PALETTE.brass);
  add('crosshead',plate(rectangle(-.28,.28,-.16,.16),.32,.62),'slider',PALETTE.brass);
  add('sliderPin',disk(.10,.62,.88,128),'slider',PALETTE.ink);
@@ -49,8 +52,8 @@ export function makeSlottedElbow(){
  }
  let disposed=false;
  const update=time=>{if(disposed)throw new Error('Movement has been disposed');const s=slottedElbowState(time,g);blocks.input.rotation.z=s.driverAngle;blocks.lever.position.set(...g.pivot,0);blocks.lever.rotation.z=s.slotAngle;blocks.rod.position.set(...s.output,0);blocks.rod.rotation.z=s.rodAngle;blocks.slider.position.set(...s.slider,0);root.userData.state=s;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{blocks,parts,families,geometry:g,source,hideGround:true,cameraFov:18,supportsRestart:true,mechanism:'source-slotted-elbow-variable-reciprocator',fidelity:'authored',reconstructionStatus:'reconstructed',reconstructionNote:'The disk pin slides along the elbow slot, and the pinned rod moves the guided output. The linkage follows the engraving; the lower rod length, guide and rear supports are reconstructed. Motion uses ideal pin and slot constraints.',animationTiming:{authoredCyclePeriod:g.period,displayCycleDuration:g.period,playbackTimeScale:1}});
+ Object.assign(root.userData,{blocks,parts,families,geometry:g,source,hideGround:true,cameraFov:18,supportsRestart:true,mechanism:'source-slotted-elbow-variable-reciprocator',fidelity:'authored',reconstructionStatus:'reconstructed',reconstructionNote:'The disk pin slides along the elbow slot, and the pinned rod moves the guided output. The linkage follows the engraving; the rod is drawn broken off as on the plate, and its lower length, guide and rear supports are reconstructed off the drawing. Motion uses ideal pin and slot constraints.',animationTiming:{authoredCyclePeriod:g.period,displayCycleDuration:g.period,playbackTimeScale:1}});
  root.traverse(o=>{if(o.material)o.material.fog=false;});
- markShadows(root);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.period*i/128);bounds.union(new THREE.Box3().setFromObject(root,true));}bounds.expandByScalar(.03);root.userData.cameraFitBounds=bounds;root.userData.shadowCameraHalfExtent=8;update(0);
+ markShadows(root);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.period*i/128);for(const name of ['input','lever','rod'])bounds.union(new THREE.Box3().setFromObject(blocks[name],true));}bounds.expandByScalar(.03);root.userData.cameraFitBounds=bounds;root.userData.shadowCameraHalfExtent=8;update(0);
  return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.02,.03,15),update,reset:()=>update(0),dispose:()=>{if(disposed)return;disposed=true;disposeObject3D(root);}};
 }

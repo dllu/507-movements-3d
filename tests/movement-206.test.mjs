@@ -683,7 +683,7 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.equal(visibleMeshCount, 14, 'no stand, bearings or painted indexes');
+  assert.equal(visibleMeshCount, 15, 'no stand, bearings or painted indexes; one face rim step');
   model.root.traverse((object) => {
     assert.doesNotMatch(object.userData.role ?? '', /frame|post|rail|bearing|index/i);
   });

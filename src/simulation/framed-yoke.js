@@ -6,8 +6,10 @@ import {disposeObject3D} from './dispose-model.js';
 export const framedYokeDimensions = {
   scale:2.35/119, diskRadius:2.35, period:7,
   sourceCenter:[267,307], sourceWrist:[259,214],
-  upperStem:[40*2.35/119,5.4], lowerStem:[-6.9,-118*2.35/119],
-  guides:[3.05,-4.6], stemHalfWidth:12*2.35/119,
+  // Stems end where Brown breaks them off (raster rows 50 and 485); their
+  // guides lie beyond the plate and are not drawn.
+  upperStem:[40*2.35/119,(214-50)*2.35/119], lowerStem:[(214-485)*2.35/119,-118*2.35/119],
+  stemHalfWidth:12*2.35/119,
 };
 const g=framedYokeDimensions;
 g.crankRadius=Math.hypot(8,93)*g.scale;
@@ -52,18 +54,12 @@ export function makeFramedYoke(){
     rect(-g.stemHalfWidth,g.upperStem[0],g.stemHalfWidth,g.upperStem[1]),
     rect(-g.stemHalfWidth,g.lowerStem[0],g.stemHalfWidth,g.lowerStem[1]));
   xy('framed-grooved-yoke',clip.difference(frame,slot),-.47,-.17,'yoke','driven');
-  for(const [i,y]of g.guides.entries()){
-    // A rectangular sliding bearing around the complete stem cross section.
-    const section=clip.difference(rect(-.45,-.62,.45,-.02),
-      rect(-g.stemHalfWidth-.005,-.475,g.stemHalfWidth+.005,-.165));
-    add('stem-guide-'+i,plate(section,-y-.2,-y+.2).rotateX(Math.PI/2),'fixed','frame');
-  }
-  const bounds=new THREE.Box3(new THREE.Vector3(-3.55,-8.85,-.7),new THREE.Vector3(3.55,7.35,.95));
+  const bounds=new THREE.Box3(new THREE.Vector3(-3.55,-7.3,-.7),new THREE.Vector3(3.55,5.2,.95));
   let disposed=false;
   const update=time=>{if(disposed)throw new Error('Movement disposed');const state=framedYokeAtTime(time);blocks.input.rotation.z=state.angle;blocks.yoke.position.y=state.y;root.updateMatrixWorld(true);root.userData.state=state;};
   Object.assign(root.userData,{parts,blocks,mechanism:'measured-front-disk-framed-yoke',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'verified',hideGround:true,supportsRestart:true,cameraFitBounds:bounds,
     animationTiming:{authoredCyclePeriod:g.period,displayCycleDuration:g.period,playbackTimeScale:1},
-    reconstructionNote:'Measured crank and broad yoke, with a straight hidden groove. Stems are extended to remain in their guides. Bearing and guides represent fixed external supports; their mounting structure is omitted. The shaft is supported in front to clear the rear yoke.'});
+    reconstructionNote:'Measured crank and broad yoke, with a straight hidden groove. The stems stop where the engraving breaks them off; their guides lie beyond the drawing and are not modelled. The front bearing represents a fixed external support whose mounting is omitted; the shaft is supported in front to clear the rear yoke.'});
   markShadows(root);update(0);
   return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.06,.04,15),dispose:()=>{if(!disposed){disposed=true;disposeObject3D(root);}}};
 }

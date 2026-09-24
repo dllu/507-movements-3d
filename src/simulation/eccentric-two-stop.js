@@ -16,7 +16,11 @@ export function makeEccentricTwoStop() {
     bounds.expandByPoint(new THREE.Vector3(center[0]+radius,center[1]+radius,high));
   }
   const update=time=>{const state=motion.atTime(time);model.setCoordinates(state.inputAngle,state.outputAngle);u.kinematics=state;};
-  Object.assign(u,{profile,motion,stateAtTime:motion.atTime,cameraFitBounds:bounds,
+  // Brown leaves a clear margin round disk B; framing the tight envelope
+  // alone lets its rim run to the viewport edges.
+  const pad=.08*Math.max(bounds.max.x-bounds.min.x,bounds.max.y-bounds.min.y),
+    framed=bounds.clone();framed.min.x-=pad;framed.min.y-=pad;framed.max.x+=pad;framed.max.y+=pad;
+  Object.assign(u,{profile,motion,stateAtTime:motion.atTime,cameraFitBounds:framed,
     fidelity:'authored',mechanism:'eccentric-center-two-stop-half-turn-cam-index',reconstructionStatus:'under-review',
     playbackPeriod:profile.displayPeriod,minimumDisplayCycleSeconds:profile.displayPeriod,
     animationTiming:{authoredCyclePeriod:profile.displayPeriod},

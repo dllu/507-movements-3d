@@ -21,7 +21,7 @@
   "poses": 133,
   "meshes": 50,
   "pairs": 1103,
-  "queries": 40079650,
+  "queries": 40102222,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers at 129 off-key interpolated times plus four endpoint/seam poses, using the original visible solids and baked native motion. Same rigid-family joins excluded. Includes soft-contact penetration and native joint-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/baked/assets/163.json.gz",
-      "sha256": "43b3d87169909c5322b91d4b07568b0560f9bad2a49627f01c93d016668d4807"
+      "sha256": "b3244222edcdddb30ba2c304575fa2b67cd0c8469b552fe2002dcc8a5ad74bce"
     },
     {
       "file": "src/simulation/baked/playback.js",
@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-belt-governor/solids.js",
-      "sha256": "5d53ff25212485a0b3827e6d4df4cf6e74351329e41f19d5e9853935f1c33d2d"
+      "sha256": "2529d9aeff98f2b8286f5065049bec49abd7a3d556259b1a04602e5b24e5da0c"
     },
     {
       "file": "src/simulation/mujoco-belt-governor/update-solids.js",
@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
@@ -84,7 +84,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

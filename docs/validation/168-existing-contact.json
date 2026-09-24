@@ -150,11 +150,11 @@
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "55688f458778c4db242d5d9741e82a62114c47a61456d1c9b92abad31af3358e"
+      "sha256": "6abb2e187a328b1816a7a7bfbb4919ce597896d63f56887c35d007e4f6d25a7d"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

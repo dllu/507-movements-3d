@@ -4,7 +4,7 @@
   "parts": 31,
   "pairs": 312,
   "poses": 129,
-  "checks": 6214504,
+  "checks": 4906702,
   "failures": {},
   "sources": [
     {
@@ -13,7 +13,7 @@
     },
     {
       "file": "src/simulation/slotted-elbow.js",
-      "sha256": "85720822c061a4567309a12a8a723e3e0e9e00609ca44ac0a2fdfd952c4fdc7f"
+      "sha256": "c4423ff6d206be6480165732597428c2a1991d216c3efe35a4645d5823d66eca"
     },
     {
       "file": "src/simulation/slotted-elbow-motion.js",
@@ -21,7 +21,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

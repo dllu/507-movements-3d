@@ -1514,10 +1514,10 @@ function rockingBeamTieRodFlywheelMotion() {
   leftFloorLedge.position.set(-2.11, floorY - 0.06, -0.52);
   leftFloorLedge.userData.role = 'fixed-left-ground-ledge-beside-wheel-pit';
   const rightFloorLedge = new THREE.Mesh(
-    new THREE.BoxGeometry(5.25, 0.16, 0.92),
+    new THREE.BoxGeometry(3.40, 0.16, 0.92),
     frameMaterial,
   );
-  rightFloorLedge.position.set(4.18, floorY - 0.06, -0.52);
+  rightFloorLedge.position.set(3.25, floorY - 0.06, -0.52);
   rightFloorLedge.userData.role = 'fixed-right-ground-ledge-and-slider-bed';
   const sliderGuideRail = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -1768,11 +1768,15 @@ function rockingBeamTieRodFlywheelMotion() {
   const beamRotor = new THREE.Group();
   beamAssembly.add(beamRotor);
   beamAssembly.userData.rotor = beamRotor;
+  // Brown draws a one-armed beam: a small eye for the upright rod at its
+  // left end, widening to a squared right end whose boss turns on the
+  // fixed (hatched) shaft. The kinematic pivot and 13-unit arm are unchanged.
   const beamBody = new THREE.Mesh(
     plate(clip.difference(clip.union(
-      poly([[-beamRadius,.16],[0,.32],[beamRadius,.16],[beamRadius,-.16],[0,-.32],[-beamRadius,-.16]]),
-      ...[-beamRadius,0,beamRadius].map(x => poly(circle([x,0],x === 0 ? .32 : .16,64)))),
-      ...[-beamRadius,0,beamRadius].map(x => poly(circle([x,0],.108,64)))),
+      poly([[-beamRadius,.13],[.34,.27],[.34,-.27],[-beamRadius,-.13]]),
+      poly(circle([-beamRadius,0],.17,64)),
+      poly(circle([0,0],.30,64))),
+      ...[-beamRadius,0].map(x => poly(circle([x,0],.108,64)))),
     -beamDepth / 2, beamDepth / 2),
     driverMaterial,
   );
@@ -1889,7 +1893,7 @@ function rockingBeamTieRodFlywheelMotion() {
   };
 
   const cameraEnvelope = new THREE.Mesh(
-    new THREE.BoxGeometry(8.65, 5.18, 2.42),
+    new THREE.BoxGeometry(6.75, 5.40, 2.42),
     new THREE.MeshBasicMaterial({
       color: PALETTE.paper,
       colorWrite: false,
@@ -1898,7 +1902,7 @@ function rockingBeamTieRodFlywheelMotion() {
       transparent: true,
     }),
   );
-  cameraEnvelope.position.set(2.16, 0.84, -0.08);
+  cameraEnvelope.position.set(1.625, 0.95, -0.08);
   cameraEnvelope.userData.cameraFramingEnvelope = true;
   cameraEnvelope.userData.role =
     'invisible-full-rocking-beam-flywheel-motion-envelope';
@@ -2570,8 +2574,48 @@ function curvedSlottedArmVariableVibration() {
   plateShape.holes.push(inputBore);
 
   const plateDepth = 0.28;
+  // Brown's arm is a J-shaped hook: its top limb runs on to the right as a
+  // straight band with a rounded end, and the slot continues along it
+  // tangent to the working circle. The pin never leaves the circular part;
+  // the straight run only reproduces the drawn slot.
+  const shapeRing = (path) => {
+    const points = path.getPoints(96).map((point) => [point.x, point.y]);
+    const first = points[0];
+    const last = points.at(-1);
+    if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 1e-9) points.pop();
+    return poly(points);
+  };
+  const topLimbY = slotCenterLocal.y + slotRadius;
+  const topLimbStartX = plateArcs.topBodyCap.center.x;
+  const topLimbHalfWidth = plateArcs.topBodyCap.radius;
+  const topLimbCapX = 3.2 * sourceScale;
+  const topSlotStartX = slotCenterLocal.x
+    + slotRadius * Math.cos(slotStartAngle);
+  const topSlotEndX = 3.1 * sourceScale;
+  const topSlotY = slotCenterLocal.y + slotRadius;
+  const curvedPlatePolygons = clip.difference(
+    clip.union(
+      shapeRing(new THREE.Shape(plateShape.getPoints(96))),
+      poly([
+        [topLimbStartX, topLimbY - topLimbHalfWidth],
+        [topLimbCapX, topLimbY - topLimbHalfWidth],
+        [topLimbCapX, topLimbY + topLimbHalfWidth],
+        [topLimbStartX, topLimbY + topLimbHalfWidth],
+      ]),
+      poly(circle([topLimbCapX, topLimbY], topLimbHalfWidth, 96)),
+    ),
+    shapeRing(slotHole),
+    poly([
+      [topSlotStartX, topSlotY - slotHalfWidth],
+      [topSlotEndX, topSlotY - slotHalfWidth],
+      [topSlotEndX, topSlotY + slotHalfWidth],
+      [topSlotStartX, topSlotY + slotHalfWidth],
+    ]),
+    poly(circle([topSlotEndX, topSlotY], slotHalfWidth, 64)),
+    poly(circle([0, 0], sourceScale, 96)),
+  );
   const curvedPlate = new THREE.Mesh(
-    centeredExtrusion(plateShape, plateDepth, 0),
+    plate(curvedPlatePolygons, -plateDepth / 2, plateDepth / 2),
     driverMaterial,
   );
   curvedPlate.userData.actualThroughSlot = true;
@@ -2654,7 +2698,8 @@ function curvedSlottedArmVariableVibration() {
     new THREE.Vector2(-12.02, -0.79975),
     new THREE.Vector2(-1.323243, -1.067252),
   ].map((point) => point.multiplyScalar(sourceScale));
-  const outputArmPlaneZ = 0.39;
+  // The plate dashes the arm's end: it passes behind the hooked arm.
+  const outputArmPlaneZ = -0.39;
   const outputArmDepth = 0.2;
   const outputArmBody = new THREE.Mesh(
     plate(clip.difference(poly(sourceArmOutline.map(point => point.toArray())),
@@ -2695,14 +2740,14 @@ function curvedSlottedArmVariableVibration() {
     indexMaterial,
   );
   followerPin.rotation.x = Math.PI / 2;
-  followerPin.position.set(-outputArmLength, 0, 0.23);
+  followerPin.position.set(-outputArmLength, 0, -0.23);
   followerPin.userData.fitsCircularSlot = true;
   followerPin.userData.role = 'single-pin-sliding-in-curved-arm-slot';
   const followerPinRim = new THREE.Mesh(
     new THREE.TorusGeometry(followerPinRadius, 0.026, 8, 38),
     inkMaterial,
   );
-  followerPinRim.position.set(-outputArmLength, 0, 0.715);
+  followerPinRim.position.set(-outputArmLength, 0, 0.24);
   followerPinRim.userData.role = 'front-rim-of-single-slot-follower-pin';
   const outputRotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 18, 12),

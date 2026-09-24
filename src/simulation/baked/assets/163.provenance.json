@@ -213,7 +213,7 @@
     },
     {
       "file": "src/simulation/mujoco-belt-governor/solids.js",
-      "sha256": "5d53ff25212485a0b3827e6d4df4cf6e74351329e41f19d5e9853935f1c33d2d"
+      "sha256": "2529d9aeff98f2b8286f5065049bec49abd7a3d556259b1a04602e5b24e5da0c"
     },
     {
       "file": "src/simulation/mujoco-belt-governor/update-solids.js",
@@ -233,7 +233,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
@@ -245,6 +245,6 @@
     }
   ],
   "samples": 1761,
-  "bytes": 675832,
-  "sha256": "43b3d87169909c5322b91d4b07568b0560f9bad2a49627f01c93d016668d4807"
+  "bytes": 676492,
+  "sha256": "b3244222edcdddb30ba2c304575fa2b67cd0c8469b552fe2002dcc8a5ad74bce"
 }

@@ -57,10 +57,16 @@ export function makeScrewPressGeometry(options={}) {
     [innerX-.20*100,f.axis[1]-100*baseTop],
     ...cubic([innerX-20,f.axis[1]-100*baseTop],[innerX,f.axis[1]-100*baseTop],[innerX,470],[innerX,435]).slice(1),
     [innerX,326],...cubic([innerX,326],[innerX,298],[278,e.nutBottom],[left,e.nutBottom]).slice(1)].map(f.world);
-  add('frame',plate(poly(contour),-f.frameDepth,f.frameDepth),'frame',PALETTE.frame);
+  // Brown breaks the frame off below the ram guide; the lower jaw, anvil and
+  // blank are reconstructed for the stroke. The presented frame ends at the
+  // engraving's last ink row (source y 451); the full contour stays available.
+  const brokenAt=451,brokenContour=[...outer.filter(([,py])=>py<brokenAt),[outerX,brokenAt],[innerX,brokenAt],
+    [innerX,326],...cubic([innerX,326],[innerX,298],[278,e.nutBottom],[left,e.nutBottom]).slice(1)].map(f.world);
+  const presentedContour=options.lowerJaw?contour:brokenContour;
+  add('frame',plate(poly(presentedContour),-f.frameDepth,f.frameDepth),'frame',PALETTE.frame);
   add('anvil',alongY(disk(.35,f.anvilBottom,f.workBottom,192)),'frame',PALETTE.frame);
   add('blank',alongY(disk(.23,f.workBottom,f.workTop,192)),'frame',PALETTE.accent);
-  Object.assign(root.userData,{source,profile:f,parts,families,blocks,screwAngles,nutAngles,frameContour:contour,
+  Object.assign(root.userData,{source,profile:f,parts,families,blocks,screwAngles,nutAngles,frameContour:contour,presentedFrameContour:presentedContour,
     hideGround:true,shadowCameraHalfExtent:3,shadowBias:-.00002,shadowNormalBias:.001});
   const section=makeScrewPressSection(root,parts,blocks,f,housingProfile,ramProfile);
   Object.assign(root.userData,{section,setSectionView:section.set,localClippingEnabled:true});

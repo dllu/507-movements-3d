@@ -30,7 +30,9 @@ export function makeThreadCuttingGeometry(options={}) {
   add(name+'Gear',alongY(g).rotateY(phase).translate(0,f.gearY,0),name,color);
  }
  for(const [name,left,right,bottom,top]of [['topRail',e.topLeft,e.topRight,e.topBottom,e.topTop],['bottomRail',e.bottomLeft,e.bottomRight,e.bottomBottom,e.bottomTop]]) {
-  const l=f.x(left),r=f.x(right),beam=poly([[l,-f.beamZ(l)-.26],[r,-f.beamZ(r)-.26],[r,-f.beamZ(r)+.26],[l,-f.beamZ(l)+.26]]);
+  // Brown draws each rail as a flat bar across both shafts. A square bar deep
+  // enough for the offset shaft bores keeps that elevation in every view.
+  const l=f.x(left),r=f.x(right),beam=rectangle(l,-f.leadZ-.26,r,-f.workZ+.26);
   const support=rectangle(f.leadX-.16,-f.leadZ+.15,f.leadX+.16,-f.leadZ+.77);
   const bores=clip.union(...[[f.leadX,f.leadZ],[f.workX,f.workZ]].map(([x,z],i)=>poly(circle([x,-z],f.shaftRadii[i]+f.clearance,128))));
   add(name,alongY(plate(clip.difference(clip.union(beam,support),bores),f.y(bottom),f.y(top))),'frame',PALETTE.frame);

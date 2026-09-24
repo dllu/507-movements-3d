@@ -37841,23 +37841,28 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     tiePin,
   ]) assert.equal(rootBlock.parent, model.root);
   for (const fixedPart of [
-    beamColumnFoot,
-    beamPivotBackColumn,
     beamPivotFrontRing,
     beamPivotPin,
-    flywheelBearingPost,
     flywheelBearingRing,
     leftFloorLedge,
     rightFloorLedge,
-    sliderGuideRail,
   ]) assert.equal(fixedPart.parent, fixedFrame);
+  // Brown draws no beam column, wheel post, slider rail or index marks;
+  // source presentation removes them.
+  for (const undrawn of [
+    beamColumnFoot,
+    beamPivotBackColumn,
+    flywheelBearingPost,
+    sliderGuideRail,
+    flywheelRotationIndex,
+    beamMotionIndex,
+  ]) assert.equal(undrawn.parent, null);
   assert.equal(flywheelRotor.parent, flywheelAssembly);
   for (const rotorPart of [
     crankArm,
     crankPin,
     flywheelHub,
     flywheelRim,
-    flywheelRotationIndex,
     flywheelShaft,
     ...flywheelSpokes,
   ]) assert.equal(rotorPart.parent, flywheelRotor);
@@ -37865,7 +37870,6 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
   for (const beamPart of [
     beamBody,
     beamCenterHub,
-    beamMotionIndex,
     ...beamEndHubs,
   ]) assert.equal(beamPart.parent, beamRotor);
   for (const standardPart of [
@@ -38569,8 +38573,9 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
   assert.ok(model.root.userData.kinematics.crankPin.position.distanceTo(
     sourceState.crankPin.position) < 1e-15);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
-  assert.equal(cameraEnvelope.geometry.parameters.width, 8.65);
-  assert.equal(cameraEnvelope.geometry.parameters.height, 5.18);
+  // Framed on the one-armed beam and drawn parts only.
+  assert.equal(cameraEnvelope.geometry.parameters.width, 6.75);
+  assert.equal(cameraEnvelope.geometry.parameters.height, 5.40);
   assert.equal(cameraEnvelope.geometry.parameters.depth, 2.42);
   assert.equal(cameraEnvelope.material.opacity, 0);
   assert.equal(cameraEnvelope.material.transparent, true);
@@ -41230,6 +41235,12 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     valveGuideCheeks,
     valveSlider,
   } = blocks;
+  // Source presentation turns 150 end-for-end (a z mirror) for Brown's
+  // end-on view; check the mechanism in its own frame.
+  assert.deepEqual(model.root.userData.sourcePresentation.scale, [-1, 1, 1]);
+  model.root.quaternion.identity();
+  model.root.scale.set(1, 1, 1);
+  model.root.updateMatrixWorld(true);
   const fullTurn = Math.PI * 2;
 
   assert.equal(model.root.userData.fidelity, 'authored');
@@ -41248,7 +41259,6 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     'the demonstration returns from the source cam after visiting every throw');
 
   for (const component of [
-    cameraEnvelope,
     fixedFrame,
     camInput,
     lever,
@@ -41261,9 +41271,19 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
   for (const component of [
     commonBaseSleeve,
     carrierHub,
-    ...carrierEndCollars,
   ]) assert.equal(component.parent, slidingCarrier);
-  for (const component of [rotatingShaft, shaftKeyIndex]) {
+  // Brown draws no end collars, bearing rings or white index marks, and the
+  // framing envelope is dropped with the undrawn base; presentation removes them.
+  for (const component of [
+    cameraEnvelope,
+    ...carrierEndCollars,
+    shaftKeyIndex,
+    ...camBearingRings,
+    followerRoller.index,
+    valveSlider.rodIndex,
+    ...camRecords.flatMap((record) => [record.lobeIndex, ...record.throwTicks]),
+  ]) assert.ok(component.parent === null, `${component.userData.role} is presented away`);
+  for (const component of [rotatingShaft]) {
     assert.equal(component.parent, camRotor,
       'the keyed shaft rotates with, but does not slide with, the cam carrier');
     assert.notEqual(component.parent, slidingCarrier);
@@ -41274,8 +41294,6 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     for (const component of [
       record.plate,
       record.outline,
-      record.lobeIndex,
-      ...record.throwTicks,
     ]) assert.equal(component.parent, record.assembly);
     assert.equal(record.assembly.position.z, geometry.localCamPlanes[index]);
     assert.equal(record.assembly.rotation.z, geometry.phaseOffset);
@@ -41298,7 +41316,6 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     leverPivotPost,
   ]) assert.ok(component.parent === null, `${component.userData.role} is presented away`);
   for (const component of [
-    ...camBearingRings,
     fixedLeverPivotShaft,
     valveGuide,
   ]) assert.ok(component.parent === fixedFrame, `${component.userData.role} stays on the fixed frame`);
@@ -41319,16 +41336,14 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     followerRoller.tread,
     followerRoller.face,
     followerRoller.cap,
-    followerRoller.index,
   ]) assert.equal(component.parent, followerRoller.rotor);
   assert.ok(followerRoller.root.userData.axis.distanceTo(Z_AXIS) < 1e-15);
   for (const component of [
     valveSlider.rod,
-    valveSlider.rodIndex,
     ...valveSlider.slotCheeks,
     ...valveSlider.slotRails,
   ]) assert.equal(component.parent, valveSlider.root);
-  assert.equal(valveSlider.root.children.length, 6,
+  assert.equal(valveSlider.root.children.length, 5,
     'four head rails leave a real open horizontal slot around the lever pin');
   assert.ok(valveSlider.root.userData.axis.distanceTo(Y_AXIS) < 1e-15);
 
@@ -41952,7 +41967,8 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     ) < 2e-15);
   });
 
-  assert.deepEqual(model.cameraDirection.toArray(), [8, 0.2, 15]);
+  // Nearly end-on down the camshaft, as the plate views it.
+  assert.deepEqual(model.cameraDirection.toArray(), [0.2, 0.02, 1]);
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 7.4);
   assert.equal(cameraEnvelope.geometry.parameters.height, 5.0);

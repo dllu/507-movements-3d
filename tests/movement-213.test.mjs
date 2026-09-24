@@ -619,9 +619,13 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   ];
   const sweptBounds = new THREE.Box3();
 
+  // The display loop opens at Brown's pose; phase time = display time + offset.
+  const displayTime = (time) => time - model.root.userData.displayTimeOffset;
+  near(model.root.userData.displayTimeOffset, canonicalTimes.sourcePose, 0,
+    'the display opens at the engraving pose');
   for (const time of renderedTimes) {
     const state = stateAtTime(time);
-    model.update(time);
+    model.update(displayTime(time));
     model.root.updateMatrixWorld(true);
     near(blocks.driver.userData.rotor.rotation.z,
       state.driverAngle, 0, 'rendered winding-ratchet angle');
@@ -677,7 +681,7 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
     sweptBounds.union(new THREE.Box3().setFromObject(model.root));
   }
 
-  model.update(canonicalTimes.sourcePose);
+  model.update(displayTime(canonicalTimes.sourcePose));
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.directRatchetToStopWheelMesh,
     null);
@@ -695,13 +699,13 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
     'active marker sits on the moving face-pin/tooth contact',
   );
 
-  model.update(canonicalTimes.fifthIndexComplete);
+  model.update(displayTime(canonicalTimes.fifthIndexComplete));
   assert.equal(model.root.userData.contacts.facePinTooth, null);
   assert.equal(
     model.root.userData.contacts.selfHoldingSplitRingFriction.active,
     true,
   );
-  model.update(canonicalTimes.finalStop);
+  model.update(displayTime(canonicalTimes.finalStop));
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.finalUncutRimStop.side, 'final');
   assert.equal(model.root.userData.contacts.initialUncutRimStop, null);
@@ -739,7 +743,7 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 24, 'the undrawn frame is presented away');
+  assert.ok(meshCount >= 19, 'the undrawn frame, white indices and contact markers are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
