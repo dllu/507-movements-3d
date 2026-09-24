@@ -3,7 +3,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-eccentric-crown-gears.js",
-      "sha256": "e7300568cc6c5e2f7d94cab90e83d30f503dbc756f882ec5c3331ada386ae357"
+      "sha256": "a9c175120a3652bc7a1a3f0c1de921600c9580610731122adff293e1246193b6"
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",

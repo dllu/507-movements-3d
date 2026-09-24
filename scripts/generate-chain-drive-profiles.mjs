@@ -15,7 +15,7 @@ function simplify(ring){
 const transform=(shape,a,t=[0,0])=>shape.map(p=>p.map(r=>r.map(v=>{const q=rotate(v,a);return q.map((x,i)=>Math.round((x+t[i])*1e9)/1e9);}))); 
 for(const id of [227,228,229]){
  const model=create({id}),d=model.root.userData,g=d.geometry,b=d.blocks,period=id===227?g.toothStep:g.chainNodeStep,half=period/2,
-  center=id===228?g.toothCenterPhase:0,wedge=poly([[0,0],rotate([5,0],center-half),rotate([5,0],center+half)]);
+  center=id===229?0:g.toothCenterPhase,wedge=poly([[0,0],rotate([5,0],center-half),rotate([5,0],center+half)]);
  let shape=id===228?clip.intersection(poly(circle([0,0],g.toothTipRadius,384)),wedge):clip.intersection([d.chainDriveParts.originalWheelPolygons],wedge);
  let localCut;
  if(id===227){

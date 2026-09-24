@@ -52,7 +52,9 @@ for(const id of [227,228,229])test(`${id}: an engaged finite flank stays close a
  const profiles=targets.map(target=>{const {polygons,low,high}=target.geometry.userData.plate,edges=[];for(const polygon of polygons)for(const ring of polygon)for(let i=0;i<ring.length-1;i++){const a=new THREE.Vector2(...ring[i]),v=new THREE.Vector2(...ring[i+1]).sub(a),normal=new THREE.Vector2(v.y,-v.x).normalize();edges.push({a,v,normal,length:v.lengthSq()});}return{target,edges,low,high};});
  for(let i=0;i<=64;i++){
   m.update(4*i/64);m.root.updateMatrixWorld(true);let closest=.2,bestReaction=0;
-  const engaged=new Set(d.kinematics.engagements.map(e=>e.linkMaterialIndex??e.rungMaterialIndex));
+  // 227: as Brown draws it, each tooth stands through an edge-on link and
+  // drives the end loops of the two flat links on either side of it.
+  const engaged=new Set(d.kinematics.engagements.flatMap(e=>id===227?[e.linkMaterialIndex-1,e.linkMaterialIndex+1]:[e.linkMaterialIndex??e.rungMaterialIndex]));
   const links=(b.links??b.sections).filter(o=>o.visible&&engaged.has(o.userData.materialIndex));
   for(const link of links){const source=id===227?link:id===228?link.userData.rung:link.userData.plate;if(!points.has(source.geometry))points.set(source.geometry,surfacePoints(source.geometry));
    for(const {target,edges,low,high}of profiles){const matrix=target.matrixWorld.clone().invert().multiply(source.matrixWorld);for(const p0 of points.get(source.geometry)){const p=p0.clone().applyMatrix4(matrix);if(p.z<low||p.z>high)continue;

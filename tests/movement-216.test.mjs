@@ -496,14 +496,16 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 9);
   assert.ok(sweptSize.y > 9);
-  assert.ok(sweptSize.z > 1.7, 'the carrier uses depth without the undrawn frame');
+  // Shafts now stop at the boss faces, as Brown cuts them in section.
+  assert.ok(sweptSize.z > 1.15, 'the carrier uses depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
   // 30 teeth, 16 pinion teeth and the bodies, hubs and shafts remain once
-  // the undrawn frame, rate indices and contact markers are presented away.
-  assert.ok(meshCount >= 55, 'the undrawn frame is presented away');
+  // the undrawn frame, both bearings, rate indices and contact markers are
+  // presented away.
+  assert.ok(meshCount >= 54, 'the undrawn frame is presented away');
   const removedRoles = model.root.userData.sourcePresentation.removedRoles;
   for (const role of [
     'compound-input-angular-rate-index',

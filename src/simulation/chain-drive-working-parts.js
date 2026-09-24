@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import profiles from './chain-drive-profiles.js';
-import {plate,ring} from './finite-plate-geometry.js';
+import {plate,ring,polygonClipping as clip} from './finite-plate-geometry.js';
+const TAPER_SIDE_228=1;
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 export function correctChainDrive(model,id){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
@@ -9,7 +10,15 @@ export function correctChainDrive(model,id){
  d.chainDriveParts={originalWheelPolygons};
  if(profiles[id]){
   if(wheel)replace(wheel,plate(profiles[id],-(g.sprocketDepth??g.wheelDepth)/2,(g.sprocketDepth??g.wheelDepth)/2));
-  else {const geometry=plate(profiles[id],-g.toothDepth/2,g.toothDepth/2);for(const tooth of b.teeth)replace(tooth,geometry);}
+  else {
+   // 228: Brown draws small, spaced wedges on the rim, not a continuous band;
+   // trim the generated rung-clearance profile to a tapering wedge.
+   // Only the idle flank is trimmed; the driving flank keeps its generated
+   // rung clearance.
+   const s=TAPER_SIDE_228,wide=Math.tan(.3),taper=[[[[1.55,-1.55*(s>0?wide:Math.tan(.15))],[2.3,-2.3*(s>0?wide:Math.tan(.035))],[2.3,2.3*(s<0?wide:Math.tan(.035))],[1.55,1.55*(s<0?wide:Math.tan(.15))],[1.55,-1.55*(s>0?wide:Math.tan(.15))]]]];
+   const outline=id===228?clip.intersection(profiles[id],taper):profiles[id];
+   const geometry=plate(outline,-g.toothDepth/2,g.toothDepth/2);for(const tooth of b.teeth)replace(tooth,geometry);
+  }
  }
  if(id===228){
   replace(b.disk,ring(g.shaftRadius+.003,g.diskRadius,-g.diskDepth/2,g.diskDepth/2,96));b.disk.rotation.set(0,0,0);

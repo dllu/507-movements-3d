@@ -89,7 +89,8 @@ test('031 has a closed, axially straight-flanked screw with integral end caps', 
   const model = createMovementModel(catalog.movements[30]);
   const mesh = model.root.userData.blocks.worm.userData.thread;
   const geometry = mesh.geometry;
-  const { pitch, pitchRadius, pressureAngle, tipRadius, rootRadius, length } = geometry.userData;
+  const { pitch, pitchRadius, pressureAngle, tipRadius, rootRadius, length, section, loadedSide } = geometry.userData;
+  assert.equal(geometry.userData.profile, 'thin-rib-loaded-flank-worm');
   const positions = geometry.attributes.position;
   const normals = geometry.attributes.normal;
   const edges = new Map();
@@ -111,9 +112,21 @@ test('031 has a closed, axially straight-flanked screw with integral end caps', 
       const radius = Math.hypot(point.x, point.y);
       if (radius < rootRadius - 1e-5 || Math.abs(point.z) > length / 2 - 1e-6) continue;
       const axial = point.z - Math.atan2(point.y, point.x) * pitch / (2 * Math.PI);
-      const offset = Math.abs(THREE.MathUtils.euclideanModulo(axial + pitch / 2, pitch) - pitch / 2);
-      const sectionRadius = THREE.MathUtils.clamp(pitchRadius + (pitch / 4 - offset) / Math.tan(pressureAngle), rootRadius, tipRadius);
-      assert.ok(Math.abs(radius - sectionRadius) < 2e-6, 'screw vertices follow the specified axial trapezoid');
+      const signed = THREE.MathUtils.euclideanModulo(axial + pitch / 2, pitch) - pitch / 2;
+      const offset = Math.abs(signed);
+      const hobRadius = THREE.MathUtils.clamp(pitchRadius + (pitch / 4 - offset) / Math.tan(pressureAngle), rootRadius, tipRadius);
+      // Brown's thin rib: the loaded flank stays on the hob's straight flank;
+      // the idle flank follows the thinned section (checked along its radius
+      // because it is nearly radial).
+      const k = section.findIndex(([u], j) => j < section.length - 1 && signed >= u - 1e-9 && signed <= section[j + 1][0] + 1e-9);
+      const [[u0, r0], [u1, r1]] = [section[k], section[k + 1]];
+      if (Math.sign(signed) === loadedSide) {
+        assert.ok(Math.abs(radius - hobRadius) < 2e-6, 'loaded-flank vertices follow the hob trapezoid that cut the wheel');
+      } else {
+        const expectedAxial = r1 === r0 ? signed : u0 + (u1 - u0) * (radius - r0) / (r1 - r0);
+        assert.ok(radius <= tipRadius + 2e-6 && radius >= rootRadius - 2e-6);
+        assert.ok(Math.abs(signed - expectedAxial) < 2e-6, 'idle-flank vertices follow the thin-rib section');
+      }
     }
   }
   for (const count of edges.values()) assert.equal(count, 2, 'every nondegenerate boundary edge has two incident faces');
@@ -181,7 +194,10 @@ test('031 generated worm wheel clears both screw flanks and remains engaged thro
       const normalGap = gap / normal.length();
       // A tangent extrapolated past the crest is not a point on the finite
       // flank. Select contact candidates inside its working radial interval.
-      if (radius < tipRadius - 0.01 && sectionRadius > rootRadius + 0.01 && normalGap < closestGap) {
+      // The thin rib keeps only the loaded flank on the hob; the idle flank
+      // is pulled back inside the hob envelope checked above.
+      if (Math.sign(signedOffset) === thread.geometry.userData.loadedSide
+        && radius < tipRadius - 0.01 && sectionRadius > rootRadius + 0.01 && normalGap < closestGap) {
         closestGap = normalGap;
         closest.copy(point);
         closestNormal.copy(normal).normalize();

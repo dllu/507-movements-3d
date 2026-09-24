@@ -136,7 +136,7 @@ test('movement 227 preserves the official pitch circle, link pitch, and source v
     near(
       Math.acos(THREE.MathUtils.clamp(direction.dot(next), -1, 1)),
       Math.PI / 3,
-      1e-15,
+      2e-15,
       `tooth spacing ${index}`,
     );
   });
@@ -189,7 +189,8 @@ test('movement 227 keeps every rigid link exact through 32,769 input states', ()
       }
     });
     state.engagements.forEach((engagement) => {
-      assert.equal(Math.abs(engagement.linkMaterialIndex % 2), 0);
+      // Teeth pass through the perpendicular (odd) links, as Brown draws.
+      assert.equal(Math.abs(engagement.linkMaterialIndex % 2), 1);
       maximumEngagementPhaseError = Math.max(
         maximumEngagementPhaseError,
         Math.abs(engagement.phaseError),

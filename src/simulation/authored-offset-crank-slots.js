@@ -398,11 +398,14 @@ function parallelOffsetSlottedCranks(movement) {
   };
   root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 0.88;
-  // The slotted arm makes a complete revolution, including its lower half.
+  // Brown frames the figure with the slotted arm raised, filling about two
+  // thirds of the plate; fitting the arm's whole revolution framed it small.
+  // The fit keeps the upper sweep and the shafts, so the arm's tip leaves
+  // the frame briefly only while it points down (a deliberate plate crop).
   const sweptRadius = outputBodyEnd + outputBodyHalfWidth + 0.025;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(outputCenter.x - sweptRadius, -sweptRadius, -1.915),
-    new THREE.Vector3(outputCenter.x + sweptRadius, sweptRadius, 1.915),
+    new THREE.Vector3(outputCenter.x - sweptRadius * 0.75, -sweptRadius * 0.35, -1.915),
+    new THREE.Vector3(outputCenter.x + sweptRadius * 0.75, sweptRadius, 1.915),
   );
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.driverAngleAtOutputAngle = driverAngleAtOutputAngle;

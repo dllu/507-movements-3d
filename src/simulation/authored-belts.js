@@ -256,13 +256,18 @@ function rightAngleGuides() {
   const driverCenter = new THREE.Vector3(-1.8, -2.65, 0);
   const guideVertex = new THREE.Vector3(driverCenter.x, 2.36, 0);
   const drivenRadius = 0.88;
-  const driverRadius = 0.74;
+  // Brown's drum is as tall as it is wide, about 0.92 of the wheel's diameter.
+  const driverRadius = 0.81;
+  const driverWidth = 2 * driverRadius;
   const guideRadius = 0.44;
   const driven = makePulley({ radius: drivenRadius - 0.012, width: 0.38, color: PALETTE.driven, axis: Z_AXIS });
-  const driver = makePulley({ radius: driverRadius - 0.012, width: 1.55, hubLength: 1.65,
+  const driver = makePulley({ radius: driverRadius - 0.012, width: driverWidth, hubLength: driverWidth + 0.1,
     spokes: 0, grooves: 0, color: PALETTE.driver, axis: X_AXIS });
   driven.position.copy(drivenCenter);
   driver.position.copy(driverCenter);
+  // The rope winds on right of the drum's middle, as Brown draws it; the
+  // drum's axis is X, so sliding it along X leaves the belt path unchanged.
+  driver.position.x -= 0.09 * driverWidth;
 
   const drivenTangents = tangentPointsFromExternal(
     drivenCenter,
@@ -365,7 +370,7 @@ function rightAngleGuides() {
       [null, firstGuide.axis, null, X_AXIS, null, secondGuide.axis, null, Z_AXIS]),
   });
   root.add(driver, driven, guideA, guideB, belt);
-  addKeyedShaft(driver, 1.85);
+  addKeyedShaft(driver, driverWidth + 0.3);
   addKeyedShaft(driven, 1.45);
   addKeyedShaft(guideA, 0.32);
   addKeyedShaft(guideB, 0.32);
@@ -1721,6 +1726,8 @@ function fixedHoist() {
     };
   };
   update(0);
+  // Brown hangs the pulley from a hatched ceiling with no ground below.
+  root.userData.hideGround = true;
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
 }
 
@@ -7468,7 +7475,11 @@ function alternatingPlaneLinkChainPulley(movement) {
   const linkPitch = 2 * pitchRadius * Math.sin(chainNodeStep / 2);
   const sourceScaledLinkPitch = sourceLinkPitch * sourceScale;
   const wheelCenter = new THREE.Vector3(0, 0.38, 0);
-  const toothCenterPhase = Math.PI / 4;
+  // Brown's teeth pass through the edge-on (perpendicular) links and stand
+  // out beyond the chain, while the flat links lie on the arcs between
+  // teeth; so each tooth is centred on a perpendicular link, one node step
+  // on from the animation's flat-link phase.
+  const toothCenterPhase = Math.PI / 4 + chainNodeStep;
   const toothRootRadius = (sourcePitchRadius - 2.28819) * sourceScale;
   const toothShoulderRadius = Math.hypot(2.287868, 4.117995)
     * sourceScale;
@@ -7501,33 +7512,36 @@ function alternatingPlaneLinkChainPulley(movement) {
     Math.cos(angle) * radius,
     Math.sin(angle) * radius,
   );
+  // Brown's pulley is a round body with six concave-flanked teeth standing
+  // out through the edge-on links; the flat links rest on the arcs between
+  // them. The blank is broad at the pitch circle so the offline sweep
+  // (chain-drive-profiles.js) carves each flank to the flat links' end loops,
+  // which the tooth drives. (The animation's petals survive only as numbers.)
+  const toothValleyRadius = 1.66;
+  const toothBaseHalfAngle = THREE.MathUtils.degToRad(15);
+  const toothFlankControlHalfAngle = THREE.MathUtils.degToRad(12);
+  const toothFlankControlRadius = 2.2;
   const sprocketShape = new THREE.Shape();
   for (let index = 0; index < sprocketToothCount; index += 1) {
     const centerAngle = toothCenterPhase + index * toothStep;
-    const start = pointOnRadius(centerAngle - toothStep / 2, toothRootRadius);
-    const enteringShoulder = pointOnRadius(
-      centerAngle - toothStep * 0.24,
-      toothShoulderRadius,
-    );
+    const start = pointOnRadius(centerAngle - toothStep / 2, toothValleyRadius);
     const tip = pointOnRadius(centerAngle, toothTipRadius);
-    const leavingShoulder = pointOnRadius(
-      centerAngle + toothStep * 0.24,
-      toothShoulderRadius,
+    const enteringControl = pointOnRadius(
+      centerAngle - toothFlankControlHalfAngle,
+      toothFlankControlRadius,
     );
-    const end = pointOnRadius(centerAngle + toothStep / 2, toothRootRadius);
+    const leavingControl = pointOnRadius(
+      centerAngle + toothFlankControlHalfAngle,
+      toothFlankControlRadius,
+    );
+    const baseEnd = pointOnRadius(centerAngle + toothBaseHalfAngle, toothValleyRadius);
     if (index === 0) sprocketShape.moveTo(start.x, start.y);
-    sprocketShape.quadraticCurveTo(
-      enteringShoulder.x,
-      enteringShoulder.y,
-      tip.x,
-      tip.y,
-    );
-    sprocketShape.quadraticCurveTo(
-      leavingShoulder.x,
-      leavingShoulder.y,
-      end.x,
-      end.y,
-    );
+    sprocketShape.absarc(0, 0, toothValleyRadius, centerAngle - toothStep / 2,
+      centerAngle - toothBaseHalfAngle, false);
+    sprocketShape.quadraticCurveTo(enteringControl.x, enteringControl.y, tip.x, tip.y);
+    sprocketShape.quadraticCurveTo(leavingControl.x, leavingControl.y, baseEnd.x, baseEnd.y);
+    sprocketShape.absarc(0, 0, toothValleyRadius, centerAngle + toothBaseHalfAngle,
+      centerAngle + toothStep / 2, false);
   }
   sprocketShape.closePath();
   const shaftHoleRadius = 0.27;
@@ -7825,7 +7839,7 @@ function alternatingPlaneLinkChainPulley(movement) {
       .filter((link) => (
         link.start.section === 'arc'
         && link.end.section === 'arc'
-        && Math.abs(link.materialIndex % 2) === 0
+        && Math.abs(link.materialIndex % 2) === 1
       ))
       .map((link) => {
         const radial = link.center.clone().sub(wheelCenter);
@@ -8018,11 +8032,13 @@ function ladderRungChainPulley() {
   const pitchRadius = 2.05;
   const linkPitch = 2 * pitchRadius * Math.sin(chainNodeStep / 2);
   const wheelCenter = new THREE.Vector3(0, 0.68, 0);
-  const diskRadius = 1.82;
-  const diskDepth = 0.34;
+  // Brown's disc is a thin plate reaching almost to the rungs, with small
+  // wedges standing proud of its rim between them.
+  const diskRadius = 1.9;
+  const diskDepth = 0.18;
   const toothRootRadius = 1.68;
   const toothTipRadius = 2.17;
-  const toothDepth = 0.7;
+  const toothDepth = 0.5;
   const toothCenterPhase = chainNodeStep / 2;
   const hubRadius = 0.39;
   const hubDepth = 0.58;

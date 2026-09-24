@@ -223,6 +223,7 @@ test('movement 205 builds exact twenty-degree involutes and half-pitch alternati
     combinedAngularPitch,
     driverCenter,
     flankSampleCount,
+    idleFlankShift,
     involuteAngle,
     involuteAtPitch,
     module,
@@ -338,23 +339,30 @@ test('movement 205 builds exact twenty-degree involutes and half-pitch alternati
     0,
     'wheel tip half-tooth angle',
   );
+  near(idleFlankShift, 0.07, 0, 'idle flank thinning');
   assert.equal(wheelToothLowerFlank.length, flankSampleCount + 1);
   assert.equal(wheelToothUpperFlank.length, flankSampleCount + 1);
   wheelToothLowerFlank.forEach((lowerPoint, index) => {
     const parameter = wheelTipInvoluteParameter * index / flankSampleCount;
     const radius = wheelRadiusAtInvoluteParameter(parameter);
     const halfAngle = wheelHalfToothAngleAtParameter(parameter);
-    vector2Near(
-      lowerPoint,
-      new THREE.Vector2(radius * Math.cos(-halfAngle), radius * Math.sin(-halfAngle)),
-      2e-16,
-      `wheel lower flank ${index}`,
-    );
+    // The driven upper flank is the exact involute; the idle lower flank is
+    // the mirrored involute rotated by idleFlankShift to thin Brown's bars.
+    const upperPoint = new THREE.Vector2(radius * Math.cos(halfAngle), radius * Math.sin(halfAngle));
     vector2Near(
       wheelToothUpperFlank[index],
-      new THREE.Vector2(lowerPoint.x, -lowerPoint.y),
+      upperPoint,
       2e-16,
       `wheel upper flank ${index}`,
+    );
+    vector2Near(
+      lowerPoint,
+      new THREE.Vector2(
+        radius * Math.cos(-halfAngle + idleFlankShift),
+        radius * Math.sin(-halfAngle + idleFlankShift),
+      ),
+      2e-16,
+      `wheel lower flank ${index}`,
     );
   });
 

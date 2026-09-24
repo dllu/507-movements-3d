@@ -33,6 +33,7 @@ import { crownToothGeometry } from './face-gear-geometry.js';
 import { spiralWheelGeometry } from './spiral-wheel-geometry.js';
 import { rackGeneratedOutline } from './noncircular-gear-geometry.js';
 import { cylindricalWormGeometry, wormWheelGeometry } from './worm-gear-geometry.js';
+import { thinRibWormGeometry } from './thin-rib-worm-geometry.js';
 import { conicalStudMotion, conicalStudToothGeometry, conicalStudHeadGeometry, conicalStudParameters } from './conical-stud-geometry.js';
 import { steppedSectorCut, steppedSectorMotion } from './stepped-sector-geometry.js';
 import { mangleToothOutline } from './mangle-gear-geometry.js';
@@ -1751,10 +1752,18 @@ export function wormAndWheel(options = {}) {
   const wormRotor = new THREE.Group();
   worm.add(wormRotor);
   worm.quaternion.setFromUnitVectors(Z_AXIS, X_AXIS);
-  const thread = new THREE.Mesh(cylindricalWormGeometry({
-    pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
-    angularSteps: options.wormAngularSteps ?? 640,
-  }), matte(PALETTE.driver, { metalness: 0.15, roughness: 0.58 }));
+  // Movement 31 draws thin parallel ribs: keep the loaded Type-I flank that
+  // cut the baked wheel and pull the idle flank in (thin-rib-worm-geometry).
+  const threadGeometry = options.thinRib
+    ? thinRibWormGeometry({
+      pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
+      angularSteps: options.wormAngularSteps ?? 640, loadedSide: options.thinRib,
+    })
+    : cylindricalWormGeometry({
+      pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
+      angularSteps: options.wormAngularSteps ?? 640,
+    });
+  const thread = new THREE.Mesh(threadGeometry, matte(PALETTE.driver, { metalness: 0.15, roughness: 0.58 }));
   thread.userData.screwThread = true;
   wormRotor.add(thread);
   Object.assign(worm.userData, { rotor: wormRotor, thread, starts: wormStarts,
@@ -17819,7 +17828,9 @@ function progressiveSpeedScrollGears() {
       new THREE.TorusGeometry(0.245, 0.058, 10, 32),
       bearingMaterial,
     );
-    bearing.position.set(center.x, center.y, -gearDepth / 2 - 0.085);
+    // Seated just behind the boss (hub back face at -0.66 depth) with a
+    // small running gap instead of overlapping the rotating hub.
+    bearing.position.set(center.x, center.y, -gearDepth * 0.66 - 0.058 - 0.006);
     bearing.userData.fixed = true;
     bearing.userData.role = role;
     root.add(bearing);
@@ -18762,12 +18773,16 @@ function eccentricVariableSpeedMangleWheel() {
   // Cut off just proud of the boss, as the plate's hatched shaft section.
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, -0.03), 1.0, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-oscillating-wheel-shaft';
+  // The journal ends at the moving yoke instead of running through it.
+  const movingYokeRadius = 0.085;
+  const jointGap = 0.001;
+  const pinionShaftLength = .8 - movingYokeRadius - jointGap;
   const pinionShaft = makeShaft({
-    length: .8,
+    length: pinionShaftLength,
     radius: .055,
     axis: Z_AXIS,
   });
-  pinionShaft.position.z = .4;
+  pinionShaft.position.z = pinionShaftLength / 2;
   pinionShaft.userData.role = 'groove-guided-vibrating-pinion-shaft';
   const guideFollower = new THREE.Mesh(
     new THREE.TorusGeometry(0.082, 0.027, 10, 28),
@@ -18801,34 +18816,49 @@ function eccentricVariableSpeedMangleWheel() {
   });
   universalSlipShaft.userData.role =
     'vibrating-telescopic-shaft-through-universal-joint';
+  // The link's own end balls would sit inside both joints; the beam instead
+  // runs between the two joint surfaces (endpoint children keep the centres).
+  universalSlipShaft.children[1].visible = false;
+  universalSlipShaft.children[2].visible = false;
+  const trimSlipShaftToJoints = () => {
+    const [beam, start, end] = universalSlipShaft.children;
+    const direction = end.position.clone().sub(start.position);
+    const length = direction.length();
+    direction.divideScalar(length);
+    const from = start.position.clone().addScaledVector(direction, fixedJointRadius + jointGap);
+    const to = end.position.clone().addScaledVector(direction, -(movingYokeRadius + jointGap));
+    beam.position.copy(from).add(to).multiplyScalar(0.5);
+    beam.scale.x = from.distanceTo(to);
+    universalSlipShaft.userData.jointCentreDistance = length;
+  };
   const fixedUniversalCross = new THREE.Group();
-  const universalRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.12, 0.027, 8, 24),
+  // A compact joint centre: the telescopic shaft and the rear input shaft
+  // both end at its surface, so neither crosses the other or a trunnion.
+  const fixedJointRadius = 0.1;
+  const universalCentre = new THREE.Mesh(
+    new THREE.SphereGeometry(fixedJointRadius, 24, 16),
     inkMaterial,
   );
-  universalRing.rotation.x = Math.PI / 2;
-  const universalTrunnion = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.025, 0.025, 0.27, 12),
-    inkMaterial,
-  );
-  universalTrunnion.rotation.z = Math.PI / 2;
-  fixedUniversalCross.add(universalRing, universalTrunnion);
+  universalCentre.userData.role = 'fixed-universal-joint-centre';
+  fixedUniversalCross.add(universalCentre);
   fixedUniversalCross.position.copy(fixedUniversalPoint);
   fixedUniversalCross.userData.fixed = true;
   fixedUniversalCross.userData.role = 'fixed-universal-joint-for-pinion-drive';
+  const rearShaftStart = fixedUniversalPoint.z + fixedJointRadius + jointGap;
+  const rearShaftEnd = 2.04;
   const rearInputShaft = makeShaft({
-    length: 0.72,
+    length: rearShaftEnd - rearShaftStart,
     radius: 0.066,
     axis: Z_AXIS,
   });
   rearInputShaft.position.set(
     fixedUniversalPoint.x,
     fixedUniversalPoint.y,
-    1.68,
+    (rearShaftStart + rearShaftEnd) / 2,
   );
   rearInputShaft.userData.role = 'fixed-rear-input-shaft';
   const movingUniversalJoint = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 18, 12),
+    new THREE.SphereGeometry(movingYokeRadius, 18, 12),
     frameMaterial,
   );
   movingUniversalJoint.userData.role = 'moving-pinion-side-universal-yoke';
@@ -19012,7 +19042,7 @@ function eccentricVariableSpeedMangleWheel() {
     pinionShaft.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      .4,
+      pinionShaftLength / 2,
     );
     guideFollower.position.set(
       state.pinionCenter.x,
@@ -19029,6 +19059,7 @@ function eccentricVariableSpeedMangleWheel() {
       fixedUniversalPoint,
       movingUniversalPoint,
     );
+    trimSlipShaftToJoints();
     setSpin(pinion, state.pinionAngle);
     setSpin(pinionShaft, state.pinionAngle);
     setSpin(rearInputShaft, state.pinionAngle);
@@ -23232,9 +23263,16 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   }
   root.userData.cameraFov = 10;
   pinHidden(contactMarker);
+  // Brown draws no shaft detents; the selector collar alone marks the
+  // pinion's position (the hidden rings also no longer cross the collar bore).
+  for (const detent of selectorDetents) detent.visible = false;
   // Brown looks straight at the pin face, so the pins read as circles and
   // the slotted pinion is seen edge-on across the shaft.
-  return finish(root, update, new THREE.Vector3(0.02, 0.015, 1));
+  const model = finish(root, update, new THREE.Vector3(0.02, 0.015, 1));
+  // The low key light otherwise throws a long streak from every pin across
+  // the disc face; Brown's pins are plain circles.
+  for (const ring of pinRings) for (const pin of ring.userData.pins) pin.castShadow = false;
+  return model;
 }
 
 function rollingContactEllipsesWithToothedContinuation() {
@@ -29409,7 +29447,9 @@ function eccentricGearCarriedPinionRocker() {
       new THREE.TorusGeometry(0.23, 0.055, 10, 44),
       matte(PALETTE.ink, { metalness: 0.2, roughness: 0.52 }),
     );
-    hubRing.position.z = depth * 0.56;
+    // Proud of the gear face so the carried pinion clears it when the
+    // eccentric brings the shaft next to the mesh.
+    hubRing.position.z = depth / 2 + 0.06;
     hubRing.userData.role = 'eccentric-input-shaft-hub-ring';
     const indicator = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.065, 0.026),
@@ -29463,16 +29503,19 @@ function eccentricGearCarriedPinionRocker() {
     depth: 0.16,
     steps: 1,
   });
-  carrierBodyGeometry.translate(0, 0, 0.04);
+  // Behind the pinion (z 0.14-0.48) and in front of the pulleys.
+  carrierBodyGeometry.translate(0, 0, -0.06);
   const carrierBody = new THREE.Mesh(
     carrierBodyGeometry,
     matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 }),
   );
   carrierBody.userData.role = 'rigid-tapered-pinion-carrier';
 
+  // Brown draws a short oval eye at the end of a solid arm, not a slot along
+  // the whole arm. The roller only travels 2.40-2.48 from the pivot.
   const slotRailOffset = 0.17;
-  const slotRailStart = -2.65;
-  const slotRailEnd = -0.34;
+  const slotRailStart = -2.56;
+  const slotRailEnd = -2.36;
   const slotRails = [-1, 1].map((side) => {
     const rail = makeBeam(
       new THREE.Vector3(slotRailStart, side * slotRailOffset, 0.22),
@@ -29486,12 +29529,23 @@ function eccentricGearCarriedPinionRocker() {
     rail.userData.role = 'side-of-horizontal-follower-slot';
     return rail;
   });
-  const slotEndRing = new THREE.Mesh(
-    new THREE.TorusGeometry(slotRailOffset, 0.044, 9, 40),
-    matte(PALETTE.frame, { metalness: 0.1, roughness: 0.68 }),
-  );
+  // Half rings close each end of the eye without crossing the roller's path.
+  const slotCapShape = new THREE.Shape();
+  slotCapShape.absarc(0, 0, slotRailOffset + 0.044, 0, Math.PI, false);
+  slotCapShape.absarc(0, 0, slotRailOffset - 0.044, Math.PI, 0, true);
+  slotCapShape.closePath();
+  const slotCapGeometry = new THREE.ExtrudeGeometry(slotCapShape, {
+    bevelEnabled: false, curveSegments: 24, depth: 0.088,
+  }).translate(0, 0, -0.044);
+  const slotCapMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.68 });
+  const slotEndRing = new THREE.Mesh(slotCapGeometry, slotCapMaterial);
   slotEndRing.position.set(slotRailStart, 0, 0.22);
+  slotEndRing.rotation.z = Math.PI / 2;
   slotEndRing.userData.role = 'rounded-outer-end-of-horizontal-slot';
+  const slotInnerEnd = new THREE.Mesh(slotCapGeometry, slotCapMaterial);
+  slotInnerEnd.position.set(slotRailEnd, 0, 0.22);
+  slotInnerEnd.rotation.z = -Math.PI / 2;
+  slotInnerEnd.userData.role = 'rounded-inner-end-of-horizontal-slot';
   const pivotCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.38, 0.105, 12, 52),
     matte(PALETTE.frame, { metalness: 0.13, roughness: 0.64 }),
@@ -29499,15 +29553,22 @@ function eccentricGearCarriedPinionRocker() {
   pivotCollar.position.z = 0.2;
   pivotCollar.userData.looseOnOutputShaft = true;
   pivotCollar.userData.role = 'loose-rocker-pivot-collar';
+  // Two mirrored halves form one solid arm tapering from the pivot boss to
+  // the eye, as Brown draws it.
+  const armMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.68 });
+  const armStartX = slotRailEnd + slotRailOffset + 0.02;
   const armJunctions = [-1, 1].map((side) => {
-    const junction = makeBeam(
-      new THREE.Vector3(slotRailEnd, side * slotRailOffset, 0.22),
-      new THREE.Vector3(-0.05, side * 0.29, 0.22),
-      {
-        color: PALETTE.frame,
-        depth: 0.13,
-        thickness: 0.09,
-      },
+    const half = new THREE.Shape([
+      new THREE.Vector2(armStartX, 0),
+      new THREE.Vector2(armStartX, side * 0.085),
+      // Ends inside the pivot collar ring, clear of the pivot shaft.
+      new THREE.Vector2(-0.33, side * 0.2),
+      new THREE.Vector2(-0.33, 0),
+    ]);
+    const junction = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(half, { bevelEnabled: false, depth: 0.13 })
+        .translate(0, 0, 0.22 - 0.065),
+      armMaterial,
     );
     junction.userData.role = 'slot-to-pivot-arm-junction';
     return junction;
@@ -29516,6 +29577,7 @@ function eccentricGearCarriedPinionRocker() {
     carrierBody,
     ...slotRails,
     slotEndRing,
+    slotInnerEnd,
     pivotCollar,
     ...armJunctions,
   );
@@ -29558,6 +29620,8 @@ function eccentricGearCarriedPinionRocker() {
     radius: largePulleyRadius,
     spokes: 0,
     width: 0.31,
+    // Loose on the stationary pivot shaft (radius 0.105).
+    bore: 0.115,
   });
   largePulley.position.set(0, 0, -0.42);
   largePulley.userData.looseOnCarrierPivotShaft = true;
@@ -29574,17 +29638,19 @@ function eccentricGearCarriedPinionRocker() {
   largePulleyFaceIndex.userData.role =
     'front-face-rotation-index-on-large-belt-pulley';
   largePulley.userData.rotor.add(largePulleyFaceIndex);
+  // The belt's centreline rides one belt radius outside each tread.
+  const beltRadius = 0.047;
   const beltCurve = beltCurveOpen(
     new THREE.Vector2(0, 0),
     new THREE.Vector2(0, carrierLength),
-    largePulleyRadius,
-    smallPulleyRadius,
+    largePulleyRadius + beltRadius + 0.001,
+    smallPulleyRadius + beltRadius + 0.001,
     -0.42,
   );
   const belt = makeMovingBelt(beltCurve, {
     color: PALETTE.belt,
     markerCount: 12,
-    radius: 0.047,
+    radius: beltRadius,
   });
   belt.userData.active = true;
   belt.userData.beltCount = 1;
@@ -29613,7 +29679,8 @@ function eccentricGearCarriedPinionRocker() {
     length: 1.75,
     radius: 0.06,
   });
-  rodStem.position.set(0, -0.78, 0.28);
+  // In front of the slot sides (front face z 0.285) rather than through them.
+  rodStem.position.set(0, -0.78, 0.36);
   rodStem.userData.role = 'rod-A-stem';
   const slotFollower = new THREE.Mesh(
     new THREE.CylinderGeometry(0.165, 0.165, 0.36, 30),
@@ -29638,12 +29705,12 @@ function eccentricGearCarriedPinionRocker() {
     new THREE.TorusGeometry(0.13, 0.045, 9, 32),
     matte(PALETTE.frame, { metalness: 0.14, roughness: 0.62 }),
   );
-  guideRing.position.set(rodGuideX, guideY, 0.28);
+  guideRing.position.set(rodGuideX, guideY, 0.36);
   guideRing.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
   guideRing.userData.role = 'fixed-guide-bushing-around-rod-A';
   const guideBracket = makeBeam(
     new THREE.Vector3(rodGuideX - 0.42, guideY, -0.28),
-    new THREE.Vector3(rodGuideX, guideY, 0.28),
+    new THREE.Vector3(rodGuideX - 0.13, guideY, 0.36),
     { color: PALETTE.frame, depth: 0.13, thickness: 0.1 },
   );
   guideBracket.userData.role = 'rod-guide-support-bracket';
@@ -31076,6 +31143,8 @@ function skewHyperboloidFrictionDrive() {
   return finish(root, update, new THREE.Vector3(2.7, 4.7, 13.2));
 }
 
+const SPLIT_CAM_IDLE_FLANK_SHIFT = 0.07;
+
 function splitTwoCamInvolutePinionDrive() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
@@ -31305,6 +31374,10 @@ function splitTwoCamInvolutePinionDrive() {
   });
   driverRotor.add(...camMeshes, ...camHubs, ...camTipIndexes);
 
+  // Brown's teeth are narrow bars. The upper (driven) flank keeps its exact
+  // involute; the idle lower flank is the same involute rotated towards it,
+  // so the cam's working contact is unchanged and the tooth is thinner.
+  const idleFlankShift = SPLIT_CAM_IDLE_FLANK_SHIFT;
   const wheelToothLowerFlank = [];
   const wheelToothUpperFlank = [];
   for (let index = 0; index <= flankSampleCount; index += 1) {
@@ -31313,8 +31386,8 @@ function splitTwoCamInvolutePinionDrive() {
     const radius = wheelRadiusAtInvoluteParameter(parameter);
     const halfAngle = wheelHalfToothAngleAtParameter(parameter);
     wheelToothLowerFlank.push(new THREE.Vector2(
-      radius * Math.cos(-halfAngle),
-      radius * Math.sin(-halfAngle),
+      radius * Math.cos(-halfAngle + idleFlankShift),
+      radius * Math.sin(-halfAngle + idleFlankShift),
     ));
     wheelToothUpperFlank.push(new THREE.Vector2(
       radius * Math.cos(halfAngle),
@@ -31323,8 +31396,8 @@ function splitTwoCamInvolutePinionDrive() {
   }
   const wheelToothShape = new THREE.Shape();
   wheelToothShape.moveTo(
-    wheelRootRadius * Math.cos(-wheelBaseHalfToothAngle),
-    wheelRootRadius * Math.sin(-wheelBaseHalfToothAngle),
+    wheelRootRadius * Math.cos(-wheelBaseHalfToothAngle + idleFlankShift),
+    wheelRootRadius * Math.sin(-wheelBaseHalfToothAngle + idleFlankShift),
   );
   wheelToothShape.lineTo(
     wheelToothLowerFlank[0].x,
@@ -31338,7 +31411,7 @@ function splitTwoCamInvolutePinionDrive() {
   }
   for (let index = 1; index <= toothTipSampleCount; index += 1) {
     const angle = THREE.MathUtils.lerp(
-      -wheelTipHalfToothAngle,
+      -wheelTipHalfToothAngle + idleFlankShift,
       wheelTipHalfToothAngle,
       index / toothTipSampleCount,
     );
@@ -31356,7 +31429,7 @@ function splitTwoCamInvolutePinionDrive() {
   for (let index = 1; index <= toothTipSampleCount; index += 1) {
     const angle = THREE.MathUtils.lerp(
       wheelBaseHalfToothAngle,
-      -wheelBaseHalfToothAngle,
+      -wheelBaseHalfToothAngle + idleFlankShift,
       index / toothTipSampleCount,
     );
     wheelToothShape.lineTo(
@@ -31892,6 +31965,7 @@ function splitTwoCamInvolutePinionDrive() {
     wheelRootRadius,
     wheelTipHalfToothAngle,
     wheelTipInvoluteParameter,
+    idleFlankShift,
     wheelToothLowerFlank,
     wheelToothUpperFlank,
   };
@@ -31966,7 +32040,9 @@ function splitTwoCamInvolutePinionDrive() {
   // hides. Each front tooth carries a thin face bar in front of the cam
   // plane: its outer part is fused to the tooth, its inner part clears the
   // front cam, which reaches in to radius 2.53 between the teeth.
-  const faceBarWidth = 2 * wheelOuterRadius * Math.sin(wheelTipHalfToothAngle);
+  // The bar follows the thinned tooth (idle flank rotated by idleFlankShift).
+  const faceBarWidth = 2 * wheelOuterRadius
+    * Math.sin(wheelTipHalfToothAngle - SPLIT_CAM_IDLE_FLANK_SHIFT / 2);
   const faceBarOuter = wheelOuterRadius - 0.04;
   const faceBarInner = wheelRootRadius - 0.38;
   const faceBarFront = toothDepth / 2 + 0.045;
@@ -31974,7 +32050,8 @@ function splitTwoCamInvolutePinionDrive() {
     { inner: wheelRootRadius, outer: faceBarOuter, back: toothDepth / 2 - 0.005 },
     { inner: faceBarInner, outer: wheelRootRadius, back: toothDepth / 2 + 0.007 },
   ].map(({ inner, outer, back }) => new THREE.BoxGeometry(outer - inner, faceBarWidth, faceBarFront - back)
-    .translate((inner + outer) / 2, 0, (faceBarFront + back) / 2));
+    .translate((inner + outer) / 2, 0, (faceBarFront + back) / 2)
+    .rotateZ(SPLIT_CAM_IDLE_FLANK_SHIFT / 2));
   // A lighter shade keeps the long front series legible against the face.
   const frontSeriesMaterial = matte(PALETTE.brass, { metalness: 0.16, roughness: 0.6 });
   frontSeriesMaterial.fog = false;
@@ -32487,20 +32564,26 @@ function compoundMutilatedExternalInternalGearReverser() {
     pinionIndex,
   );
 
+  // Brown draws each shaft as a hatched section filling its boss ring, cut
+  // at the boss face: a shaft that fills the 0.3 bore and stops there.
+  const shaftRadius = shaftBoreRadius - 0.005;
+  const shaftFrontZ = gearDepth / 2 + 0.04;
+  const compoundShaftRearZ = -0.94;
   const compoundShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.72,
-    radius: 0.115,
+    length: shaftFrontZ - compoundShaftRearZ,
+    radius: shaftRadius,
   });
-  compoundShaft.position.set(compoundCenter.x, compoundCenter.y, -0.08);
+  compoundShaft.position.set(compoundCenter.x, compoundCenter.y,
+    (shaftFrontZ + compoundShaftRearZ) / 2);
   compoundShaft.userData.role = 'compound-input-shaft';
   // The rear web turns past the pinion axis, so the pinion shaft stops in front of it.
   const pinionShaftRearZ = carrierCenterZ + carrierDepth / 2 + 0.02;
-  const pinionShaftFrontZ = 0.72;
+  const pinionShaftFrontZ = shaftFrontZ;
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
     length: pinionShaftFrontZ - pinionShaftRearZ,
-    radius: 0.115,
+    radius: shaftRadius,
   });
   pinionShaft.position.set(pinionCenter.x, pinionCenter.y,
     (pinionShaftFrontZ + pinionShaftRearZ) / 2);
@@ -33030,6 +33113,8 @@ function compoundMutilatedExternalInternalGearReverser() {
     root.userData.kinematics = state;
   };
   update(0);
+  // Brown draws the face view without a ground.
+  root.userData.hideGround = true;
   return finish(root, update, new THREE.Vector3(6.6, 5.2, 11.8));
 }
 
@@ -34429,7 +34514,7 @@ function createGearCoreModel(movement) {
     case 28: return brushWheels();
     case 29: return sourceIndexFree(diskSpiralDrive());
     case 30: return sourceIndexFree(rectangularGears());
-    case 31: return sourceIndexFree(wormAndWheel());
+    case 31: return sourceIndexFree(wormAndWheel({ thinRib: -1 }));
     case 32: return frictionWheels();
     case 33: return sourceIndexFree(ellipticalGears());
     case 34: return sourceIndexFree(internalGearDrive());

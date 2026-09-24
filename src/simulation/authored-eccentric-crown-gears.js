@@ -616,6 +616,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   };
   update(0);
   correctVariableFaceGear(root, 219);
+  replaceSpurWithLantern(root, drivenMaterial);
   // Brown draws no phase stripe, sliding collar or pitch marker.
   pinion.userData.rotor.children[1].visible = false;
   pinion.userData.rotor.children[3].visible = false;
@@ -629,6 +630,107 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     update,
     cameraDirection: new THREE.Vector3(0, -10, 6),
   };
+}
+
+// Brown draws the long pinion as a lantern: parallel round staves running
+// the length of the shaft between two end discs. Each stave is the largest
+// round bar inscribed in a tooth of the generated spur (the cutter that
+// shaped the crown teeth), so the staves clear the crown wherever the spur
+// did and carry the same pitch timing; the spur body itself is hidden.
+function replaceSpurWithLantern(root, material) {
+  const { blocks, geometry } = root.userData;
+  const rotor = blocks.pinion.userData.rotor;
+  const spurBody = rotor.children[0];
+  const outline = root.userData.faceCutter.outline.map(([x, y]) => new THREE.Vector2(x, y));
+  const distanceToOutline = (point) => {
+    let minimum = Infinity;
+    for (let index = 0; index < outline.length; index += 1) {
+      const a = outline[index];
+      const b = outline[(index + 1) % outline.length];
+      const segment = b.clone().sub(a);
+      if (segment.lengthSq() < 1e-18) continue;
+      const t = THREE.MathUtils.clamp(point.clone().sub(a).dot(segment) / segment.lengthSq(), 0, 1);
+      minimum = Math.min(minimum, point.distanceTo(a.clone().addScaledVector(segment, t)));
+    }
+    return minimum;
+  };
+  // Tooth centre lines: the tip points of the outline, grouped per tooth.
+  const teeth = geometry.pinionTeethCount;
+  const tipRadius = Math.max(...outline.map((point) => point.length()));
+  const tipAngles = outline.filter((point) => point.length() > tipRadius - 1e-4)
+    .map((point) => Math.atan2(point.y, point.x));
+  const pitchAngle = FULL_TURN / teeth;
+  const phase = Math.atan2(
+    tipAngles.reduce((sum, angle) => sum + Math.sin(teeth * angle), 0),
+    tipAngles.reduce((sum, angle) => sum + Math.cos(teeth * angle), 0),
+  ) / teeth;
+  // Slender staves as far out as the tooth allows, nearest the pitch circle.
+  const staveRadius = 0.058;
+  const clearance = 0.004;
+  let best = null;
+  for (let centreRadius = geometry.pinionPitchRadius * 0.7; centreRadius <= geometry.pinionPitchRadius * 1.05; centreRadius += 0.001) {
+    const radius = Math.min(...Array.from({ length: teeth }, (_, index) => distanceToOutline(new THREE.Vector2(
+      Math.cos(phase + index * pitchAngle) * centreRadius,
+      Math.sin(phase + index * pitchAngle) * centreRadius,
+    ))));
+    if (radius >= staveRadius + clearance) best = { radius, centreRadius };
+  }
+  if (!best) throw new Error('No lantern stave fits inside the spur cutter teeth');
+  // Crown-tooth corners reach about 0.013 past the pinion ends at the extreme
+  // radii, so the end discs stand 0.022 clear and the staves reach them.
+  const endGap = 0.022;
+  const staveGeometry = new THREE.CylinderGeometry(staveRadius, staveRadius, geometry.pinionDepth + 2 * endGap, 20);
+  staveGeometry.rotateX(Math.PI / 2);
+  const staves = Array.from({ length: teeth }, (_, index) => {
+    const angle = phase + index * pitchAngle;
+    const stave = new THREE.Mesh(staveGeometry, material);
+    stave.position.set(Math.cos(angle) * best.centreRadius, Math.sin(angle) * best.centreRadius, 0);
+    stave.userData.role = `long-lantern-pinion-stave-${index}`;
+    return stave;
+  });
+  // Each end is a light star of arms from the hub to the staves, which is
+  // how Brown's small end-on star reads, rather than a solid disc.
+  const discThickness = 0.045;
+  const discRadius = best.centreRadius + staveRadius;
+  const hubRadius = 0.19;
+  const armWidth = 0.075;
+  const armLength = best.centreRadius - hubRadius + 0.02;
+  const discs = [-1, 1].map((side) => {
+    const star = new THREE.Group();
+    star.position.z = side * (geometry.pinionDepth / 2 + endGap + discThickness / 2);
+    star.userData.role = side < 0 ? 'lantern-pinion-inner-end-star' : 'lantern-pinion-outer-end-star';
+    for (let index = 0; index < teeth; index += 1) {
+      const angle = phase + index * pitchAngle;
+      const arm = new THREE.Mesh(
+        new THREE.BoxGeometry(armLength, armWidth, discThickness)
+          .translate(hubRadius - 0.02 + armLength / 2, 0, 0),
+        material,
+      );
+      arm.rotation.z = angle;
+      arm.userData.role = `${star.userData.role}-arm-${index}`;
+      star.add(arm);
+    }
+    const bossShape = new THREE.Shape().absarc(0, 0, hubRadius, 0, FULL_TURN, false);
+    bossShape.holes.push(new THREE.Path().absarc(0, 0, 0.115, 0, FULL_TURN, true));
+    const boss = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(bossShape, { bevelEnabled: false, depth: discThickness, curveSegments: 32 })
+        .translate(0, 0, -discThickness / 2),
+      material,
+    );
+    boss.userData.role = `${star.userData.role}-boss`;
+    star.add(boss);
+    return star;
+  });
+  spurBody.visible = false;
+  spurBody.userData.role = 'hidden-spur-cutter-that-shaped-the-crown-teeth';
+  rotor.add(...staves, ...discs);
+  Object.assign(blocks, { lanternStaves: staves, lanternDiscs: discs });
+  Object.assign(geometry, {
+    lanternStaveCentreRadius: best.centreRadius,
+    lanternStaveRadius: staveRadius,
+    lanternDiscRadius: discRadius,
+  });
+  blocks.pinion.userData.role = 'long-lantern-crown-pinion';
 }
 
 export function createAuthoredEccentricCrownGearMovement(movement) {

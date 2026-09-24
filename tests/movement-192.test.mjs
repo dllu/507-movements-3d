@@ -594,11 +594,13 @@ test('movement 192 rendered transforms keep the pinion captured while the wheel 
       2e-13,
       `${name} moving universal endpoint`,
     );
+    // The beam runs between the fixed joint centre's surface (r 0.1) and the
+    // moving yoke's surface (r 0.085), each with a 0.001 running gap.
     near(
       blocks.universalSlipShaft.children[0].scale.x,
-      couplingStart.distanceTo(couplingEnd),
+      couplingStart.distanceTo(couplingEnd) - 0.1 - 0.085 - 0.002,
       2e-13,
-      `${name} telescopic shaft closes`,
+      `${name} telescopic shaft closes between the joints`,
     );
     near(
       blocks.wheel.userData.angularSpeed,

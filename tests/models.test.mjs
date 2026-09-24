@@ -2151,8 +2151,8 @@ test('movement 31 matches a single-start worm lead to one wheel-tooth pitch', ()
     if (object.userData.screwThread) threadMeshes.push(object);
   });
   assert.equal(threadMeshes.length, 1, 'the worm has exactly one continuous helical start');
-  assert.equal(worm.userData.thread.geometry.userData.profile, 'axial-straight-flanked-worm',
-    'the helical flanks and root form a solid screw rather than a wire coil');
+  assert.equal(worm.userData.thread.geometry.userData.profile, 'thin-rib-loaded-flank-worm',
+    'the helical flanks and root form a solid screw with Brown\'s thin ribs rather than a wire coil');
   assert.equal(wheel.userData.toothProfile, 'worm-generated');
 
   const radialDistanceToLine = (point, center, axis) => {
