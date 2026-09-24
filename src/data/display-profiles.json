@@ -3700,11 +3700,11 @@
       }
     },
     "194": {
-      "peakAngularSpeed": 3.123596621290726,
-      "peakVisibleAngularSpeed": 3.123596621290726,
+      "peakAngularSpeed": 3.0000000000031095,
+      "peakVisibleAngularSpeed": 3.0000000000031095,
       "sustainedVisibleAngularSpeed": 2.999999999995338,
       "floorY": -2.0220000090641035,
-      "fastestPart": "Mesh",
+      "fastestPart": "Group",
       "motionBounds": {
         "min": [
           -1.9031689944663668,
@@ -3714,7 +3714,7 @@
         "max": [
           1.9031689944663668,
           1.9031689944663668,
-          2.0500000047683713
+          0.7099999892711639
         ]
       }
     },
@@ -4175,21 +4175,21 @@
       }
     },
     "219": {
-      "peakAngularSpeed": 5.030663227894601,
-      "peakVisibleAngularSpeed": 5.030663227894601,
-      "sustainedVisibleAngularSpeed": 4.64911457033628,
-      "floorY": -3.244695075562095,
-      "fastestPart": "Mesh",
+      "peakAngularSpeed": 5.0303405684126155,
+      "peakVisibleAngularSpeed": 5.030340568411783,
+      "sustainedVisibleAngularSpeed": 4.629460270920776,
+      "floorY": -3.2450046144454476,
+      "fastestPart": "lantern-pinion-inner-end-star-arm-0",
       "motionBounds": {
         "min": [
-          -3.244695075562095,
-          -3.244695075562095,
+          -3.2450046144454476,
+          -3.2450046144454476,
           -2.2450000476837157
         ],
         "max": [
-          3.261168502170695,
-          4.600783472664357,
-          1.4269686232418959
+          3.2611685386093385,
+          4.600783498178972,
+          1.4269686354025097
         ]
       }
     },

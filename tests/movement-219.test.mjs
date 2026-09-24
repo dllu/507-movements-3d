@@ -180,12 +180,28 @@ test('movement 219 preserves the official eccentric source construction', () => 
   assert.ok(rasterPinionRay.dot(rasterShaftRay) > 0.9,
     'the source pinion lies on the long sliding-shaft direction');
 
-  model.update(canonicalTimes.sourcePoseNearestRadius);
-  const sourceState = model.root.userData.kinematics;
+  // Input travel 0 is the exact nearest-radius reference; playback starts
+  // at the plate's pose, about 100 degrees earlier.
+  const sourceState = model.root.userData.stateAtInputTravel(0);
   near(sourceState.crownAngle, geometry.sourcePoseAngle, 0,
-    'source crown angle');
+    'nearest-radius crown angle');
   near(sourceState.pitchRadius, geometry.minimumPitchRadius, 3e-16,
-    'source pinion is at the nearest eccentric radius');
+    'reference pinion is at the nearest eccentric radius');
+  model.update(canonicalTimes.nearestRadius);
+  near(model.root.userData.kinematics.pitchRadius, geometry.minimumPitchRadius, 1e-12,
+    'nearest-radius canonical time');
+  model.update(canonicalTimes.sourcePose);
+  model.root.updateMatrixWorld(true);
+  const platePose = model.root.userData.kinematics;
+  const presentedCenter = platePose.eccentricCenter.clone()
+    .applyEuler(model.root.rotation);
+  const rasterCenterOffset = plate.rasterCrownGeometricCenter.clone()
+    .sub(plate.rasterShaftCenter);
+  // The raster ellipse is foreshortened about 0.57 in height.
+  const plateCenterAngle = Math.atan2(-rasterCenterOffset.y / 0.57, rasterCenterOffset.x);
+  const presentedCenterAngle = Math.atan2(presentedCenter.y, presentedCenter.x);
+  assert.ok(Math.abs(presentedCenterAngle - plateCenterAngle) < 0.12,
+    `plate pose puts the crown centre far left of the arbor (${presentedCenterAngle} vs ${plateCenterAngle})`);
   vectorNear(
     sourceState.eccentricCenter,
     new THREE.Vector3(

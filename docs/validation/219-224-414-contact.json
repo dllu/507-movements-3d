@@ -3,7 +3,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-eccentric-crown-gears.js",
-      "sha256": "7a2bc0edafe52b3a3eafdb1931cdf59ab4272e464948f7c6447b9d81a2176ada"
+      "sha256": "145a3a600158172c59ba4345f4b3a78e23041b41146dd1c5a529e3fb86863cb7"
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",
@@ -50,10 +50,10 @@
     {
       "id": 219,
       "poses": 17,
-      "tested": 1575508,
+      "tested": 1523852,
       "inside": 0,
       "maxPenetration": 0,
-      "maxWorkingGap": 0.00310805718314524,
+      "maxWorkingGap": 0.0029378007877607472,
       "categories": {
         "gear": 0
       }

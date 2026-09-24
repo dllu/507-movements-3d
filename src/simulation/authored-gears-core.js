@@ -20608,7 +20608,9 @@ function singleCircleEqualSpeedMangleWheel() {
     new THREE.TorusGeometry(wheelRadius - 0.06, 0.052, 9, 112),
     inkMaterial,
   );
-  wheelRim.position.z = wheelFaceZ + 0.015;
+  // Sunk so its bead stays under the pinion's lower face (z 0.185) when the
+  // pinion runs over the rim on the outer branch.
+  wheelRim.position.z = wheelFaceZ - 0.035;
   wheelRim.userData.role = 'outer-rim-of-equal-speed-mangle-wheel';
   const wheelHub = new THREE.Mesh(
     new THREE.CylinderGeometry(0.2, 0.2, 0.4, 36),
@@ -20637,12 +20639,13 @@ function singleCircleEqualSpeedMangleWheel() {
   pinion.userData.module = module;
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.6, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-equal-speed-oscillating-wheel-shaft';
+  // The pinion shaft stops just under the moving yoke ball.
   const pinionShaft = makeShaft({
-    length: .8,
+    length: .71,
     radius: .055,
     axis: Z_AXIS,
   });
-  pinionShaft.position.z = .4;
+  pinionShaft.position.z = .355;
   pinionShaft.userData.role = 'groove-guided-large-travel-pinion-shaft';
   const guideFollower = new THREE.Mesh(
     new THREE.TorusGeometry(0.075, 0.024, 10, 28),
@@ -20672,30 +20675,39 @@ function singleCircleEqualSpeedMangleWheel() {
   });
   universalSlipShaft.userData.role =
     'large-travel-telescopic-shaft-through-universal-joint';
+  // The joint ring lies across the shafts, so the slip shaft swings through
+  // its bore and the rear shaft enters it from above.  The trunnion stubs run
+  // tangentially, square to the only plane the slip shaft leans in (the
+  // pinion stays on the fixed radial guide line), so no stock crosses.
+  universalSlipShaft.children.slice(1).forEach((joint) => { joint.visible = false; });
   const fixedUniversalCross = new THREE.Group();
   const universalRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.027, 8, 24),
     inkMaterial,
   );
-  universalRing.rotation.x = Math.PI / 2;
-  const universalTrunnion = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.025, 0.025, 0.27, 12),
-    inkMaterial,
-  );
-  universalTrunnion.rotation.z = Math.PI / 2;
-  fixedUniversalCross.add(universalRing, universalTrunnion);
+  const universalTrunnions = [-1, 1].map((side) => {
+    const stub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 0.07, 12),
+      inkMaterial,
+    );
+    stub.rotation.z = Math.PI / 2;
+    stub.position.x = side * 0.1;
+    return stub;
+  });
+  fixedUniversalCross.add(universalRing, ...universalTrunnions);
   fixedUniversalCross.position.copy(fixedUniversalPoint);
+  fixedUniversalCross.rotation.z = stationaryGuideAngle + Math.PI / 2;
   fixedUniversalCross.userData.fixed = true;
   fixedUniversalCross.userData.role = 'fixed-universal-joint-required-by-brown';
   const rearInputShaft = makeShaft({
-    length: 0.74,
+    length: 0.64,
     radius: 0.067,
     axis: Z_AXIS,
   });
   rearInputShaft.position.set(
     fixedUniversalPoint.x,
     fixedUniversalPoint.y,
-    1.68,
+    1.73,
   );
   rearInputShaft.userData.role = 'fixed-rear-unidirectional-input-shaft';
   const movingUniversalJoint = new THREE.Mesh(
@@ -20900,7 +20912,7 @@ function singleCircleEqualSpeedMangleWheel() {
     pinionShaft.position.set(
       state.pinionCenter.x,
       state.pinionCenter.y,
-      .4,
+      .355,
     );
     guideFollower.position.set(
       state.pinionCenter.x,
@@ -20913,9 +20925,12 @@ function singleCircleEqualSpeedMangleWheel() {
       .8,
     );
     movingUniversalJoint.position.copy(movingUniversalPoint);
+    // The slip shaft seats on the moving yoke's surface rather than running
+    // into the ball.
     universalSlipShaft.userData.setEndpoints(
       fixedUniversalPoint,
-      movingUniversalPoint,
+      movingUniversalPoint.clone().add(fixedUniversalPoint.clone()
+        .sub(movingUniversalPoint).setLength(0.09)),
     );
     setSpin(pinion, state.pinionAngle);
     setSpin(pinionShaft, state.pinionAngle);
@@ -28257,7 +28272,20 @@ function fixedPinionLiftedMangleRack() {
   };
   update(0);
   finish(root, update);
-  return finishMangleRackWorkingParts(root, update, 198);
+  const model = finishMangleRackWorkingParts(root, update, 198);
+  // Brown draws the suspension rods passing under the ends of the front
+  // cross-tie.  Its end mounts therefore stand on the rack's root rail, just
+  // outside the pinion's tip path and just inside the rods' sweep, instead of
+  // rising through the rod plane at the tie's ends.
+  for (const post of root.userData.blocks.rackCarrier.children
+    .filter((child) => child.userData.role === 'front-cross-tie-end-mount')) {
+    const side = Math.sign(post.position.y);
+    post.geometry.dispose();
+    post.geometry = new THREE.BoxGeometry(0.08, 0.065, 0.66);
+    post.position.y = side * 1.1125;
+    post.position.z = 0.49;
+  }
+  return model;
 }
 
 function partialLanternPinionMangleRack() {

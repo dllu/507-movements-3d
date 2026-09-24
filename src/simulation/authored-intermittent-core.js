@@ -1226,6 +1226,7 @@ function makeCurvedSharedPivotPawl({
   hubDepth = depth * 1.9,
   hubRadius = 0.105,
   markers = true,
+  noseLength = 0.16,
 }) {
   const root = new THREE.Group();
   const pawlMaterial = matte(PALETTE.accent, {
@@ -1259,9 +1260,9 @@ function makeCurvedSharedPivotPawl({
       -derivative.y,
       derivative.x,
     ).normalize();
-    const noseTaper = fraction <= 0.84
+    const noseTaper = fraction <= 1 - noseLength
       ? 1
-      : Math.max(noseFloor, (1 - fraction) / 0.16);
+      : Math.max(noseFloor, (1 - fraction) / noseLength);
     const localHalfThickness = halfThickness * noseTaper;
     centerlinePoints.push(point);
     upperEdge.push(point.clone().addScaledVector(
@@ -8565,7 +8566,7 @@ function sharedPivotDoubleStrokeRatchet() {
   const rightPawlPlaneZ = 0.53;
   const pawlFingerBackZ = ratchet.position.z - ratchetDepth / 2 + 0.035;
   const pawlOptions = {
-    bandHalfWidth: 0.115,
+    bandHalfWidth: 0.14,
     bandStart: 0.1,
     boreRadius: 0.085 + pawlHubBevel + 0.006,
     depth: pawlDepth,
@@ -8573,6 +8574,8 @@ function sharedPivotDoubleStrokeRatchet() {
     hubDepth: pawlHubDepth,
     hubRadius: 0.2,
     markers: false,
+    // Brown's bands stay broad to square-cut ends over the teeth.
+    noseLength: 0.03,
   };
   const leftPawl = makeCurvedSharedPivotPawl({
     ...pawlOptions,

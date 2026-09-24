@@ -149,8 +149,8 @@ export default {
     note: 'Face view of the concentric mangle wheel and its pinion; no standard or foot is drawn.',
   },
   194: {
-    remove: ['rear-wheel-bearing-standard', 'fixed-equal-speed-mangle-wheel-support-foot', 'white-index-showing-equal-opposite-wheel-speeds'],
-    note: 'Face view of the pin mangle wheel and its pinion on a plain face with its hub boss; no standard, foot or index mark is drawn.',
+    remove: ['rear-wheel-bearing-standard', 'fixed-equal-speed-mangle-wheel-support-foot', 'white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc', 'fixed-universal-joint-required-by-brown', 'fixed-rear-unidirectional-input-shaft', 'large-travel-telescopic-shaft-through-universal-joint', 'moving-pinion-side-universal-yoke'],
+    note: 'Face view of the pin mangle wheel and its pinion on a plain face with its hub boss; the pins stand free with no pitch-circle line, and the pinion shows only its shaft end. No standard, foot, index mark or the captioned universal joint and slip shaft (which would stand end-on in front of the pinion) are drawn; the factory still builds the joint (its blocks remain for offline checks).',
   },
   197: {
     camera: [0.02, 0.01, 1],

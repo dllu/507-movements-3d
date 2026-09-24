@@ -125,6 +125,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   const crownPitchPlaneZ = crownBodyTopZ + crownToothHeight / 2;
   const crownToothRadialDepth = 0.31;
   const inputAngularSpeed = 0.78;
+  // Input travel 0 is the nearest-radius reference pose (crown angle pi).
   const sourcePoseAngle = Math.PI;
 
   const pitchRadiusAtBodyAngle = (bodyAngle) => {
@@ -466,7 +467,15 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
       speedRatio: pinionAngularSpeed / crownAngularSpeed,
     };
   };
-  const stateAtTime = (time) => stateAtInputTravel(time * inputAngularSpeed);
+  // Brown's plate shows the crown about 100 degrees short of the
+  // nearest-radius pose: its broad bar (the slot axis here, from the arbor
+  // through the geometric centre) points to the far left while the pinion
+  // meets the rim at the far right. Playback starts there; input travel 0
+  // stays the nearest-radius reference for the kinematic tables.
+  const displayStartTravel = THREE.MathUtils.degToRad(260);
+  const stateAtTime = (time) => stateAtInputTravel(
+    displayStartTravel + time * inputAngularSpeed,
+  );
   const solidClearanceAtInputTravel = (inputTravel) => {
     const state = stateAtInputTravel(inputTravel);
     return {
@@ -489,11 +498,17 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     };
   };
 
+  const nearestRadiusTime = (FULL_TURN - displayStartTravel) / inputAngularSpeed;
+  const afterNearest = (fraction) => positiveModulo(
+    nearestRadiusTime + inputCyclePeriod * fraction,
+    inputCyclePeriod,
+  );
   const canonicalTimes = Object.freeze({
-    sourcePoseNearestRadius: 0,
-    firstMeanCrossing: inputCyclePeriod / 4,
-    farthestRadius: inputCyclePeriod / 2,
-    secondMeanCrossing: inputCyclePeriod * 3 / 4,
+    sourcePose: 0,
+    nearestRadius: nearestRadiusTime,
+    firstMeanCrossing: afterNearest(1 / 4),
+    farthestRadius: afterNearest(1 / 2),
+    secondMeanCrossing: afterNearest(3 / 4),
     cycleClosure: inputCyclePeriod,
   });
   // The catalog archetype name predates the long-pinion correction.
@@ -554,6 +569,7 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
     splineCenterX,
     splineLength,
     sourcePoseAngle,
+    displayStartTravel,
     spokeAngles,
     toothBodyAngles,
     toothPitchTravels,

@@ -38,9 +38,24 @@ const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 // Hold a flat band parallel to each pulley axis on its wrap, and distribute
 // the quarter-turn twist over the free leaves between perpendicular shafts.
-function contactWidthDirection(curve, axes) {
+function contactWidthDirection(curve, rawAxes) {
   const lengths = curve.getCurveLengths();
   const total = lengths.at(-1);
+  // Sign the contact axes consistently around the loop. Negating only a free
+  // leaf's end (as before) left the next wrap using the opposite sign, so one
+  // belt section flipped inside out there: a crossed quad in the rendered band.
+  const axes = rawAxes.map((axis) => axis?.clone() ?? null);
+  let previousAxis = null;
+  for (const axis of axes) {
+    if (!axis) continue;
+    if (previousAxis && axis.dot(previousAxis) < 0) axis.negate();
+    previousAxis = axis;
+  }
+  const firstAxis = axes.find(Boolean);
+  if (firstAxis && previousAxis && firstAxis.dot(previousAxis) < 0) {
+    // An odd half-twist cannot be signed consistently; keep the raw axes.
+    rawAxes.forEach((axis, index) => { axes[index] = axis; });
+  }
   return (u) => {
     const distance = curve.getUtoTmapping(u) * total;
     let index = lengths.findIndex((length) => distance <= length);
@@ -8058,11 +8073,12 @@ function ladderRungChainPulley() {
   const wheelCenter = new THREE.Vector3(0, 0.68, 0);
   // Brown's disc is a thin plate reaching almost to the rungs, with small
   // wedges standing proud of its rim between them.
-  const diskRadius = 1.9;
+  const diskRadius = 1.95;
   const diskDepth = 0.18;
   const toothRootRadius = 1.68;
   const toothTipRadius = 2.17;
-  const toothDepth = 0.5;
+  // Small wedges, a third of the rung length, not broad cogs.
+  const toothDepth = 0.3;
   const toothCenterPhase = chainNodeStep / 2;
   const hubRadius = 0.39;
   const hubDepth = 0.58;
