@@ -26,9 +26,28 @@ export function makeSteppedRatchetPawl({ color, length, role, rootZ, noseRadius 
   return pawl;
 }
 
+// Brown draws a small triangular plate round the three holes, with the
+// handle springing from it: the hull of the three bosses, not an X of arms.
+function convexHull(points) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = list => {
+    const out = [];
+    for (const point of list) {
+      while (out.length > 1 && cross(out.at(-2), out.at(-1), point) <= 0) out.pop();
+      out.push(point);
+    }
+    return out.slice(0, -1);
+  };
+  const hull = [...half(sorted), ...half([...sorted].reverse())];
+  return [[[...hull, hull[0]]]];
+}
+
 export function boredLeverPlate(anchors, handle) {
-  const outline = polygonClipping.union(poly(circle([0, 0], 0.22, 64)),
-    ...[...anchors, handle].map(point => capsule([0, 0], point.toArray(), 0.1, 32)));
+  const bosses = [[[0, 0], 0.22], ...anchors.map(point => [point.toArray(), 0.17])]
+    .flatMap(([center, radius]) => circle(center, radius, 48));
+  const outline = polygonClipping.union(convexHull(bosses),
+    capsule([0, 0], handle.toArray(), 0.1, 32));
   const holes = [poly(circle([0, 0], 0.134, 64)), ...anchors.map(point => poly(circle(point.toArray(), 0.088, 64)))];
   return plate(polygonClipping.difference(outline, ...holes), -0.1, 0.1);
 }

@@ -275,7 +275,7 @@ function flangedFlatBeltPulley(movement) {
 
   const flangeRims = [-1, 1].map((side) => {
     const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(flangeRadius, 0.075, 12, 104),
+      new THREE.TorusGeometry(flangeRadius - 0.085, 0.055, 12, 104),
       darkMaterial,
     );
     rim.rotation.y = Math.PI / 2;
@@ -1523,20 +1523,29 @@ export function createAuthoredPulleyFormMovement(movement) {
   result.root.userData.fidelity = 'authored';
   result.root.userData.hideGround = true;
   const { blocks, geometry } = result.root.userData;
-  const outerFace = geometry.flangeOuterFaceOffset
-    ?? geometry.treadHalfWidth ?? geometry.pulleyHalfWidth;
-  // A painted index belongs on the face, not floating visibly in front of it.
-  blocks.faceIndex.scale.x = 0.012 / 0.055;
-  blocks.faceIndex.position.x = outerFace + 0.007;
-  blocks.faceIndex.userData.surfaceDecoration = true;
+  // Brown draws plain ink outlines and no painted speed indices; drop the
+  // indices so only the drawn pulley, hub and shaft remain.
+  for (const key of ['faceIndex', 'treadIndex', 'rimIndex']) {
+    const entry = blocks[key];
+    if (!entry) continue;
+    for (const mesh of Array.isArray(entry) ? entry : [entry]) {
+      mesh.removeFromParent();
+      mesh.geometry.dispose();
+    }
+    delete blocks[key];
+  }
+  result.root.userData.removedUndrawnDecorations = ['white face and rim/tread speed indices'];
   result.root.traverse((object) => {
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (material) material.fog = false;
     }
   });
-  // The engraving is an edge elevation; a small reveal keeps the groove readable
-  // while avoiding the old enlarged circular face and diagonal shaft.
-  result.cameraDirection.set(0.8, 0.35, 12);
+  // The engraving is a true edge elevation: the groove reads from the rim
+  // silhouette and both hub collars show symmetrically, as Brown draws them.
+  // A narrow field keeps the near rim from swelling in perspective and hiding
+  // the hub collars that Brown draws standing proud of both faces.
+  result.cameraDirection.set(0, 0, 1);
+  result.root.userData.cameraFov = 8;
   result.root.updateMatrixWorld(true);
   const fitBounds = new THREE.Box3().setFromObject(result.root, true);
   const radius = Math.max(Math.abs(fitBounds.min.y), Math.abs(fitBounds.max.y),

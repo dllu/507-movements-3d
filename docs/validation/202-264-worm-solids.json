@@ -21,21 +21,21 @@
     {
       "id": 264,
       "side": 0,
-      "queries": 998352,
+      "queries": 980274,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.00043630719374165465,
-      "maximumClosestGap": 0.0005459953317537788,
+      "minimumGap": 0.0003386795437358244,
+      "maximumClosestGap": 0.0005320663791858397,
       "worst": null
     },
     {
       "id": 264,
       "side": 1,
-      "queries": 1006386,
+      "queries": 984391,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.000351815273154646,
-      "maximumClosestGap": 0.0004257821099198486,
+      "minimumGap": 0.0002020241557106306,
+      "maximumClosestGap": 0.0004220799058590912,
       "worst": null
     }
   ],
@@ -46,11 +46,11 @@
     },
     {
       "file": "src/simulation/special-worm-parameters.js",
-      "sha256": "8bc4fad8b283d4f027766d7ac7f29fd4c1c507e50538d61bbc28db4cdcc79ef5"
+      "sha256": "d3cf03bde0706ee77f15ffd2dbf9f7e1331761d3ba1f4bb35e728bb6fb39f636"
     },
     {
       "file": "src/data/special-worm-wheel-profiles.js",
-      "sha256": "7b3073805b092d91f0bdbfcc9878a007a1fe4da92ad228531b1c685f38208d75"
+      "sha256": "5ac7965ef5a86461deae594393fe28e54f93454103b8e964972554f1c25c488c"
     },
     {
       "file": "src/simulation/solid-worm.js",
@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "97911963759e639420ef49dede1c59f6db616187046ec9068ea6226f4814c5c2"
+      "sha256": "a98840df6e8cd344a61003b3938f35cb2a041947668a96ed023e55015a7b9065"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -70,7 +70,7 @@
     },
     {
       "file": "src/simulation/authored-differential-worm-drives.js",
-      "sha256": "1368757062fa573988b323e12bfb0fd4b2d301b9dc8cba28840501360b85b65e"
+      "sha256": "a57da36d14cfd92139608ee638abee54a458133052082eebeb70be2aca131c73"
     },
     {
       "file": "src/simulation/instanced-worm-wheel.js",

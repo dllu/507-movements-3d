@@ -884,8 +884,8 @@ export default {
     note: 'Front elevation of the wheels E, F, G, H, the worm C and the arm m n, as Brown draws it.',
   },
   269: {
-    remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft'],
-    note: 'The frame, racks and spur gear; no post or bearing is drawn.',
+    remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft', '(?:upper|lower)-rack-active-pitch-contact', 'visible-no-full-depth-contact-marker-during-relieved-tooth-handoff', 'white-index-exposing-output-reversals', 'white-index-showing-frame-translation-without-rotation'],
+    note: 'The frame, racks and spur gear; no post, bearing, contact marker or index is drawn.',
   },
   281: {
     camera: [0.03, 0.01, 1],

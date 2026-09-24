@@ -6,7 +6,7 @@ import {specialWormParameters} from '../src/simulation/special-worm-parameters.j
 const angularSteps=64,phaseSteps=1200,radialSteps=36;
 const results={};
 for(const [id,p] of Object.entries(specialWormParameters)){
- const axialSteps=p.globoidal?16:8,clearance=.0025;
+ const axialSteps=p.globoidal?16:8,clearance=p.clearance??.0025;
  const started=Date.now(),N=p.teeth,lead=p.wormPitch/(2*Math.PI),module=p.wormPitch/Math.PI,tangent=Math.tan(Math.PI/9);
  const root=p.wormRadius-1.25*module,tip=p.wormRadius+module;
  const sweep=p.globoidal?.72:.45,step=2*sweep/phaseSteps;

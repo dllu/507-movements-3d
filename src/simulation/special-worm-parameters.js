@@ -5,8 +5,8 @@ export const specialWormParameters = {
     distance: 2.5, wheelPhase: -2*Math.PI/60*7/8, offset: 0, globoidal: true },
   264100: { teeth: 100, pitchRadius: 1.7, outerRadius: 1.735, depth: .3,
     wormRadius: .5, wormPitch: 2*Math.PI*1.7/100, wormLength: 1.1,
-    distance: 1.7+Math.sqrt(.5**2-.19**2), wheelPhase: 0, offset: .19 },
+    distance: 1.7+Math.sqrt(.5**2-.265**2), wheelPhase: 0, offset: .265, clearance: .0035 },
   264101: { teeth: 101, pitchRadius: 1.7, outerRadius: 1.735, depth: .3,
     wormRadius: .5, wormPitch: 2*Math.PI*1.7/100, wormLength: 1.1,
-    distance: 1.7+Math.sqrt(.5**2-.19**2), wheelPhase: 0, offset: -.19 },
+    distance: 1.7+Math.sqrt(.5**2-.265**2), wheelPhase: 0, offset: -.265, clearance: .0035 },
 };

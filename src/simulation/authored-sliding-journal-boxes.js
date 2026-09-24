@@ -12,13 +12,13 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
-function centeredExtrusion(shape, depth, bevel = 0.012) {
+function centeredExtrusion(shape, depth, bevel = 0.012, curveSegments = 1) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: true,
     bevelSegments: 1,
     bevelSize: bevel,
     bevelThickness: bevel,
-    curveSegments: 1,
+    curveSegments,
     depth,
   });
   geometry.translate(0, 0, -depth / 2);
@@ -278,15 +278,28 @@ function claytonSlidingJournalBox(movement) {
   crankRotor.userData.role = 'rigid-crank-rotor';
   crank.add(crankRotor);
   root.add(crank);
-  const crankArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(crankRadius, 0, 0),
-    { color: PALETTE.driver, depth: 0.28, thickness: 0.32 },
+  // Brown draws the crank as one lobed throw plate behind the crosshead: its
+  // rounded boss end shows solid in the open slot below the box, while its
+  // sides beside the gibs and the shaft behind it are dashed (hidden). The
+  // shaft hub and its bearing therefore sit wholly behind the plate.
+  const crankBossRadius = 0.46;
+  const crankWristEndRadius = 0.66;
+  const crankTangent = Math.acos(
+    -(crankWristEndRadius - crankBossRadius) / crankRadius,
   );
-  crankArm.userData.role = 'rigid-crank-arm';
+  const crankShape = new THREE.Shape();
+  crankShape.absarc(crankRadius, 0, crankWristEndRadius,
+    crankTangent, -crankTangent, true);
+  crankShape.absarc(0, 0, crankBossRadius,
+    -crankTangent, crankTangent, true);
+  const crankArm = new THREE.Mesh(
+    centeredExtrusion(crankShape, 0.28, 0.01, 24),
+    driverMaterial,
+  );
+  crankArm.userData.role = 'rigid-lobed-crank-throw-plate';
   crankRotor.add(crankArm);
-  const mainHub = cylinderAlongZ(0.54, 0.60, driverMaterial, 48);
-  mainHub.position.z = -0.11;
+  const mainHub = cylinderAlongZ(0.36, 0.41, driverMaterial, 48);
+  mainHub.position.z = -0.205;
   mainHub.userData.role = 'crank-main-shaft-hub';
   crankRotor.add(mainHub);
   const crankWrist = cylinderAlongZ(wristRadius, 0.96, darkMaterial, 52);
@@ -309,7 +322,7 @@ function claytonSlidingJournalBox(movement) {
   );
   wristRotationIndex.userData.role = 'white-crank-wrist-rotation-index';
   crankRotor.add(wristRotationIndex);
-  const fixedCrankBearing = boredJournal(0.675, 0.546, 0.15, frameMaterial);
+  const fixedCrankBearing = boredJournal(0.44, 0.366, 0.15, frameMaterial);
   fixedCrankBearing.position.z = -0.75;
   fixedCrankBearing.userData.role = 'fixed-crank-shaft-bearing';
   root.add(fixedCrankBearing);

@@ -270,7 +270,7 @@ test('movement 257 does not fabricate the absent round-band route or mate', () =
   disposeModel(model.root);
 });
 
-test('movement 257 renderer spins one rigid cut-profile body with two indexes', () => {
+test('movement 257 renderer spins one rigid cut-profile body without undrawn painted indexes', () => {
   const model = createMovementModel(catalog.movements[256]);
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
@@ -278,11 +278,11 @@ test('movement 257 renderer spins one rigid cut-profile body with two indexes', 
 
   assert.equal(
     roles.filter((role) => role === 'white-concave-pulley-face-speed-index').length,
-    1,
+    0,
   );
   assert.equal(
     roles.filter((role) => role === 'white-concave-pulley-rim-speed-index').length,
-    1,
+    0,
   );
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   for (const time of [0, 0.4, 1.25, 2.5, 3.8, 4.99, 7.4]) {

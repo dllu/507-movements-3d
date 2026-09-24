@@ -33,11 +33,16 @@ test('264: independent nested journals connect the rear wheel to the inner shaft
  const model=create(264),b=model.root.userData.blocks;
  assert.ok(b.wheel101.position.x<b.wheel100.position.x);
  actualBore(b.outerSleeve,'z',.07);
- for(const [name,shaftRadius]of[['wheel100',.116],['wheel101',.07]]){
+ // Both wheel hubs journal on the inner shaft; the front needle's collar rides on the sleeve.
+ const sleeveRadius=b.outerSleeve.userData.outerRadius;
+ for(const [name,shaftRadius,collarShaft]of[['wheel100',.07,sleeveRadius],['wheel101',.07,.07]]){
   const wheel=b[name],hub=wheel.userData.rotor.children.find(o=>o.userData.role?.endsWith('independent-bored-hub'));
   actualBore(hub,'z',shaftRadius);
-  const collar=b[`${name}Pointer`].children.find(o=>o.userData.role==='pointer-output-shaft-collar');actualBore(collar,'z',shaftRadius);
-  const arm=b[`${name}Pointer`].children[0];arm.geometry.computeBoundingBox();assert.ok(arm.position.y+arm.geometry.boundingBox.min.y>.116);
+  const collar=b[`${name}Pointer`].children.find(o=>o.userData.role==='pointer-output-shaft-collar');actualBore(collar,'z',collarShaft);
+  // Plate needles run through the shaft; the spike and its tail stop clear of the shaft it rides on.
+  const arm=b[`${name}Pointer`].children[0],position=arm.geometry.attributes.position;arm.geometry.computeBoundingBox();
+  assert.ok(arm.geometry.boundingBox.min.y<-.3,'needle tail below the axis');
+  for(let i=0;i<position.count;i++)assert.ok(Math.abs(arm.position.y+position.getY(i))>collarShaft,'needle clears its shaft');
  }
  const backHub=b.wheel101.userData.rotor.children.find(o=>o.userData.role?.endsWith('independent-bored-hub'));backHub.geometry.computeBoundingBox();
  const sleeveStart=b.outerSleeve.position.z-b.outerSleeve.geometry.parameters.options.depth/2+b.wheel100.position.x;

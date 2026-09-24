@@ -7592,21 +7592,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: edge-on elevation with hub collars on both faces; undrawn white speed indices removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/pulley-family-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. `node --test tests/pulley-family-review.test.mjs tests/movement-25[5-9].test.mjs` passes 47 tests. The new checks raycast through the actual triangulated bores, check solid annular caps, compare 255 axial dimensions with its source, and sample full-turn framing. Existing checks retain the groove…"
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 relative-motion screen: each pulley is one rigid rotor (0 pairs); bores covered by pulley-family-review. No rope is drawn or modelled."
       },
-      "flaws": "Bores/caps and analytical groove laws checked; finite rope/sheave contact, tension, slip and loaded behavior not comprehensively qualified.",
+      "flaws": "Belt contact, tension and slip are not qualified because no belt is drawn; dark face rings sit slightly into the faces; without indices the smooth pulley's spin is hard to see.",
       "references": [
         "docs/pulley-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7620,21 +7621,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: edge-on elevation with hub collars on both faces; undrawn white speed indices removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/pulley-family-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. `node --test tests/pulley-family-review.test.mjs tests/movement-25[5-9].test.mjs` passes 47 tests. The new checks raycast through the actual triangulated bores, check solid annular caps, compare 255 axial dimensions with its source, and sample full-turn framing. Existing checks retain the groove…"
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 relative-motion screen: each pulley is one rigid rotor (0 pairs); bores covered by pulley-family-review. No rope is drawn or modelled."
       },
-      "flaws": "Bores/caps and analytical groove laws checked; finite rope/sheave contact, tension, slip and loaded behavior not comprehensively qualified.",
+      "flaws": "Belt contact, tension and slip are not qualified because no belt is drawn; dark face rings sit slightly into the faces; without indices the smooth pulley's spin is hard to see.",
       "references": [
         "docs/pulley-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7648,21 +7650,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: edge-on elevation with hub collars on both faces; undrawn white speed indices removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/pulley-family-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. `node --test tests/pulley-family-review.test.mjs tests/movement-25[5-9].test.mjs` passes 47 tests. The new checks raycast through the actual triangulated bores, check solid annular caps, compare 255 axial dimensions with its source, and sample full-turn framing. Existing checks retain the groove…"
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 relative-motion screen: each pulley is one rigid rotor (0 pairs); bores covered by pulley-family-review. No rope is drawn or modelled."
       },
-      "flaws": "Bores/caps and analytical groove laws checked; finite rope/sheave contact, tension, slip and loaded behavior not comprehensively qualified.",
+      "flaws": "Belt contact, tension and slip are not qualified because no belt is drawn; dark face rings sit slightly into the faces; without indices the smooth pulley's spin is hard to see.",
       "references": [
         "docs/pulley-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7676,21 +7679,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: edge-on elevation with hub collars on both faces; undrawn white speed indices removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/pulley-family-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. `node --test tests/pulley-family-review.test.mjs tests/movement-25[5-9].test.mjs` passes 47 tests. The new checks raycast through the actual triangulated bores, check solid annular caps, compare 255 axial dimensions with its source, and sample full-turn framing. Existing checks retain the groove…"
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 relative-motion screen: each pulley is one rigid rotor (0 pairs); bores covered by pulley-family-review. No rope is drawn or modelled."
       },
-      "flaws": "Bores/caps and analytical groove laws checked; finite rope/sheave contact, tension, slip and loaded behavior not comprehensively qualified.",
+      "flaws": "Belt contact, tension and slip are not qualified because no belt is drawn; dark face rings sit slightly into the faces; without indices the smooth pulley's spin is hard to see.",
       "references": [
         "docs/pulley-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7704,21 +7708,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: edge-on elevation with hub collars on both faces; undrawn white speed indices removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/pulley-family-review.md",
-        "note": "Working-interface collision freedom is not established by the available evidence. `node --test tests/pulley-family-review.test.mjs tests/movement-25[5-9].test.mjs` passes 47 tests. The new checks raycast through the actual triangulated bores, check solid annular caps, compare 255 axial dimensions with its source, and sample full-turn framing. Existing checks retain the groove…"
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 relative-motion screen: each pulley is one rigid rotor (0 pairs); bores covered by pulley-family-review. No rope is drawn or modelled."
       },
-      "flaws": "Bores/caps and analytical groove laws checked; finite rope/sheave contact, tension, slip and loaded behavior not comprehensively qualified.",
+      "flaws": "Belt contact, tension and slip are not qualified because no belt is drawn; dark face rings sit slightly into the faces; without indices the smooth pulley's spin is hard to see.",
       "references": [
         "docs/pulley-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7763,21 +7768,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: wall-hung elevation without the slab, with the gusset under B's arm."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: A over E, C over B, drum and cord D behind B."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: arm/disk and arm/hub 0.05 fixed; pre-existing crank pin seated in B (0.12), cord D crossing the crank pin (0.117) and cord eye (0.03) remain."
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 screen: crank pin in B 0.12 and cord D through the pin 0.117 fixed; only the tied cord eye (0.030) and cord on drum (0.0007), both intended."
       },
-      "flaws": "Cord D passes through the crank pin (0.117); link C and the drum would need different depth stacking. Disk timing and demonstration reset prescribed.",
+      "flaws": "The drum-side strand of D ends at B's rim where Brown carries it to the inner circle. Disk timing and demonstration reset prescribed.",
       "references": [
         "docs/spatial-linkage-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7793,21 +7799,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: end view on a flared footed standard; pulley C only peeks over the drum where Brown draws it fully above."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: viewed along the screw with C whole above B."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2e-181-271-review.md",
         "note": "Pass-51 screen: spring and guide pairs up to 0.062 removed; only cone/roller working contact."
       },
-      "flaws": "C barely shows above the drum; the spring or weight pressing C onto the cone is described but not drawn, so not rendered; the eccentric carrier is a bar. Friction capacity and slip unsolved.",
+      "flaws": "Stand E is taller than Brown's low cradle; the eccentric carrier bar shows; the pressing spring or weight is not drawn, so not rendered. Friction and slip unsolved.",
       "references": [
         "docs/cone-friction-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7853,20 +7860,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: end-on worm with the wheels edge-on and needles."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: remeasured wheel gap, long tapered needles and shaft ends."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen clear; worm report regenerated."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 screen clear; worm report regenerated (33 poses, 0 penetrations)."
       },
-      "flaws": "No visible gap between the two wheels; the needles are shorter than drawn. Generated worm mate includes intentional cutter clearance; loaded conjugacy unvalidated.",
+      "flaws": "Perspective shows one wheel's inner face. Generated worm mate has intentional cutter clearance; loaded meshing unvalidated.",
       "references": [
         "docs/movement-202-264.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8000,15 +8008,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Default capture inspected beside the plate: square-toothed pinion in the frame; the subject reads small and rack teeth near every handoff are visibly cut back."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: flat elevation, tapered teeth in 4/4/7/2 groups; the subject is still small."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0685 rack/tooth overlap is fixed by swept-pinion relief (minimum clearance 0.0038, generator-checked by test)."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 screen: clear, minimum tooth clearance 0.0048."
       },
-      "flaws": "Rack teeth near every handoff are cut back unlike the plate; the frame's closed end sits farther right than drawn; the default framing leaves the subject small.",
+      "flaws": "The two teeth at each handoff are stubs (Brown's spacing would jam); the closed end sits farther right than drawn; the subject is smaller than on the plate and the rod leaves the view at the stroke limit.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
@@ -8016,7 +8024,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8062,8 +8071,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: fine ratchet on a plank table, left pulley and cord, flat elevation."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: triangular three-hole lever plate as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8076,7 +8085,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8239,15 +8249,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Default capture inspected beside the plate: rigid dog a on a bored eye, six-tooth ratchet b, leaf spring c under the hatched block; receiver lock and base removed."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: hammer belly retraced, 42.3° stroke, ground hidden."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane4-escapements-misc-review.md",
         "note": "Pass-51 relative-motion screen at 0.01 and 0.005 spacing: the 0.139 dog/ratchet/spring overlaps are fixed."
       },
-      "flaws": "An undrawn detent is assumed; the hook works lower than drawn; ratchet teeth are shallow; the hammer stroke is 30° instead of 42.3°; the spring turns as a rigid piece.",
+      "flaws": "The hook works ≈0.86 lower than drawn and ratchet teeth are shallow (a higher hook pulls off the teeth; deeper teeth let the dog cut in); an undrawn detent is assumed; the spring turns as a rigid piece.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
@@ -8255,7 +8265,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8271,21 +8282,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: open inverted-U platform B, cropped uprights and rope stub a."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: tongue plate with rope eye; leaf spring seated under B's head; anchor blocks removed."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: 0.149 → only the spring seated in its anchors (intended weld)."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 screen: spring/anchor 0.110 and spring/pin 0.005 removed; only seated pawl/tooth contact and segment joins remain."
       },
-      "flaws": "The rope eye is a ring, not Brown's tongue plate; the spring is welded into its anchors. Spring force, loaded arrest and manual reset prescribed.",
+      "flaws": "The spring seat collar and B's head block are inferred; spring force, loaded arrest and manual reset prescribed.",
       "references": [
         "docs/release-mechanism-247-278-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8301,20 +8313,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: close crop on the crosshead box, guides removed."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: lobed crank throw below the box; hidden parts concealed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/tangent-rhombus-journal-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. 268 imposes the selected tangent and no-slip rolling kinematically; separation, friction limits and force balance are not dynamically validated. 273's timing differs from the official animation as described above. 279's screws depict static wear adjustment; screw-driven wedge travel, preload, wear and bearing forces are not simulated. Other fixed-support details remain…"
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The crank disk is solid where Brown dashes it. Wedge travel, preload and friction not simulated.",
+      "flaws": "Hidden edges are not drawn dashed; the lobe below the box is solid where Brown partly dashes it; rods run off the frame deliberately.",
       "references": [
         "docs/tangent-rhombus-journal-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8330,20 +8343,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: ratchet moved behind the web so the wheel shows a plain rim; base and index removed."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: thinner eccentric shoe."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Pass-51 screen: 0.48 → 0.010 (jaw pivot against shoe, from a shared helper)."
+        "status": "sampled-clear",
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Pass-51 screen: the 0.010 jaw-pivot/shoe overlap is fixed."
       },
-      "flaws": "A 0.010 jaw-pivot/shoe overlap remains. Prescribed squeeze and backstop seating do not validate loaded frictional drive.",
+      "flaws": "Ratchet teeth peek out at the rim's upper right; posts thinner than drawn; the grip is a block where Brown draws a turned handle. Loaded frictional drive unvalidated.",
       "references": [
         "docs/friction-drive-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8479,21 +8493,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: flat side view, wheel edge-on, one casting with an octagonal window (the caption's wheel kept where the plate shows a small crank)."
+        "evidence": "docs/w3d-255-287-review.md",
+        "note": "Default capture inspected beside the plate: the plate's T-crank bar with a turned grip."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2f-274-333-review.md",
         "note": "Pass-51 screen: 0.034 → clear."
       },
-      "flaws": "A handwheel is kept per the caption where the plate draws a small T crank. Screw motion prescribed; friction and loaded reversal unvalidated.",
+      "flaws": "The catalog title still says handwheel; the quill clamp lever is a flat bar. Screw motion prescribed.",
       "references": [
         "docs/movement-190-285-solid-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/w3d-255-287-review.md"
       ],
       "mujoco": {
         "mode": "none",

@@ -84,7 +84,8 @@ test('movements 262 and 263 share one mechanism but use distinct source views', 
     > Math.abs(endView.cameraDirection.z));
   assert.ok(Math.abs(sideView.cameraDirection.z)
     > Math.abs(sideView.cameraDirection.x) * 4);
-  assert.ok(endView.cameraDirection.x < 0);
+  // 262 looks along the screw from its outer (small-cone) end, as Brown draws D.
+  assert.ok(endView.cameraDirection.x > 0);
   assert.ok(sideView.cameraDirection.z > 0);
   disposeModel(sideView.root);
   disposeModel(endView.root);

@@ -291,7 +291,7 @@ test('movement 258 keeps the source groove smooth and fabricates no band drive',
   disposeModel(model.root);
 });
 
-test('movement 258 renderer spins one rigid V-grooved body with two indexes', () => {
+test('movement 258 renderer spins one rigid V-grooved body without undrawn painted indexes', () => {
   const model = createMovementModel(catalog.movements[257]);
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
@@ -299,11 +299,11 @@ test('movement 258 renderer spins one rigid V-grooved body with two indexes', ()
 
   assert.equal(
     roles.filter((role) => role === 'white-smooth-v-pulley-face-speed-index').length,
-    1,
+    0,
   );
   assert.equal(
     roles.filter((role) => role === 'white-smooth-v-pulley-rim-speed-index').length,
-    1,
+    0,
   );
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   for (const time of [0, 0.4, 1.3, 2.6, 3.8, 5.19, 7.4]) {

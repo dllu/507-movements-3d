@@ -226,7 +226,9 @@ function coltCylinderRatchet(movement) {
   const clearance = 0.005;
 
   // Hammer motion law: rest, cock, hold at full cock, fall, rest.
-  const hammerStroke = THREE.MathUtils.degToRad(30);
+  // Full cock: the 42.3-degree stroke of the earlier closed-hand
+  // reconstruction (a Colt hammer comes back about 40-45 degrees); 30 was short.
+  const hammerStroke = THREE.MathUtils.degToRad(42.3);
   const inputCyclePeriod = 4;
   const fullCylinderPeriod = ratchetTeeth * inputCyclePeriod;
   const cockStart = 0.16;
@@ -494,7 +496,9 @@ function coltCylinderRatchet(movement) {
   // cylinder only as far as needed to keep clearance. During the fall the
   // cylinder is held, the hook's sloped underside rides up the next tooth's
   // back and the dog snaps back onto the land behind that tooth.
-  const cycleSamples = 600;
+  // Dense enough that interpolating the table keeps the hook clear at the
+  // faster 42.3-degree stroke.
+  const cycleSamples = 1000;
   const dogSpringTarget = 1.5;
   const dogReturnStep = 0.004;
   const springTarget = springRestAngle - 0.4;
@@ -772,9 +776,12 @@ function coltCylinderRatchet(movement) {
     [462, 43], [500, 32], [515, 42], [507, 61], [487, 92],
     [471, 126], [454, 157], [429, 179], [424, 215], [408, 251],
     [386, 287], [365, 322], [383, 347], [405, 374], [419, 407],
-    [419, 436], [407, 456], [382, 467], [347, 465], [314, 454],
-    [281, 434], [260, 409], [249, 392], [229, 381], [210, 354],
-    [211, 330], [224, 303], [240, 280], [260, 269], [286, 264],
+    // Lower belly retraced pass 51: Brown's round bottom reaches y 477 and
+    // passes behind dog a's eye to the tumbler notch at x 196.
+    [419, 436], [415, 443], [405, 454], [385, 465], [365, 472],
+    [345, 477], [305, 476], [285, 472], [265, 467], [245, 457],
+    [225, 443], [210, 432], [199, 418], [197, 400], [199, 378],
+    [205, 352], [211, 330], [224, 303], [240, 280], [260, 269], [286, 264],
     [307, 247], [320, 218], [329, 185], [330, 154], [320, 124],
     [302, 101], [275, 85], [243, 78],
   ];
@@ -919,6 +926,8 @@ function coltCylinderRatchet(movement) {
     springAnchorBlock,
     springPivot,
   };
+  // Brown draws the parts floating on white: no ground shadow.
+  root.userData.hideGround = true;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.78, -1.55, -2.28),
     // The hammer sweeps farther right when fully cocked than in Brown's rest

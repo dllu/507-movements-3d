@@ -304,7 +304,7 @@ test('movement 259 fabricates neither a round-band route nor a mate pulley', () 
   disposeModel(model.root);
 });
 
-test('movement 259 renderer spins the notches and shaft as one indexed rotor', () => {
+test('movement 259 renderer spins the notches and shaft as one rotor without painted indexes', () => {
   const model = createMovementModel(catalog.movements[258]);
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
@@ -312,11 +312,11 @@ test('movement 259 renderer spins the notches and shaft as one indexed rotor', (
 
   assert.equal(
     roles.filter((role) => role === 'white-notched-v-pulley-face-speed-index').length,
-    1,
+    0,
   );
   assert.equal(
     roles.filter((role) => role === 'white-notched-v-pulley-rim-speed-index').length,
-    1,
+    0,
   );
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   for (const time of [0, 0.4, 1.35, 2.7, 4.1, 5.39, 7.4]) {

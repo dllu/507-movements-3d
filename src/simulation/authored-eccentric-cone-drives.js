@@ -989,8 +989,11 @@ function eccentricConeFrictionReverser(movement) {
   return {
     root,
     update,
+    // Plate 262 looks along the screw from its outer end: the screw end D
+    // shows below B's centre, standard E is the footed cradle in front, and
+    // roller C (which rides nearer the small end) stands whole over B's rim.
     cameraDirection: presentationView === 'end-view'
-      ? new THREE.Vector3(-14, .12, .5)
+      ? new THREE.Vector3(14, .12, 0)
       : new THREE.Vector3(-.5, .2, 14),
   };
 }

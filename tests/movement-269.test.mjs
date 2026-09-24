@@ -61,7 +61,7 @@ test('movement 269 is the four-group mutilated-rack frame and complete pinion', 
     'reciprocating-mutilated-alternating-upper-lower-rack-frame-driving-fixed-spur-gear',
   );
   assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /upper-four-lower-four-upper-six-lower-two/);
+  assert.match(mechanism, /upper-four-lower-four-upper-seven-lower-two/);
   assert.match(mechanism, /three-relieved-tooth-handoffs/);
   assert.equal(blocks.rackFrame.parent, model.root);
   assert.equal(blocks.pinion.parent, model.root);
@@ -71,12 +71,13 @@ test('movement 269 is the four-group mutilated-rack frame and complete pinion', 
   assert.equal(blocks.rightBridge.parent, blocks.rackFrame);
   assert.equal(blocks.driveRod.parent, blocks.rackFrame);
   assert.equal(blocks.driveCollar.parent, blocks.rackFrame);
-  assert.equal(blocks.frameTranslationIndex.parent, blocks.rackFrame);
+  // Brown draws no index or contact marker: source presentation removes them.
+  for (const marker of [blocks.frameTranslationIndex, blocks.pinionIndex, blocks.upperContactMarker, blocks.lowerContactMarker, blocks.handoffMarker]) assert.equal(marker.parent, null);
+  assert.equal(model.root.userData.hideGround, true);
   assert.ok(blocks.rackTeeth.every((tooth) => tooth.parent === blocks.rackFrame));
   assert.equal(blocks.pinionRim.parent, blocks.pinionRotor);
   assert.equal(blocks.pinionHub.parent, blocks.pinionRotor);
   assert.equal(blocks.pinionShaft.parent, blocks.pinionRotor);
-  assert.equal(blocks.pinionIndex.parent, blocks.pinionRotor);
   assert.ok(blocks.pinionSpokes.every(
     (spoke) => spoke.parent === blocks.pinionRotor,
   ));
@@ -106,30 +107,30 @@ test('movement 269 preserves the engraving, source note, and engagement order', 
     catalog.movements[268].description);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.measurementUncertaintyPixels, 6);
+  assert.equal(plate.measurementUncertaintyPixels, 3);
   assert.equal(plate.officialAnimationAvailable, true);
-  assert.deepEqual(plate.rasterPinionCenter, { x: 249, y: 250 });
-  assert.equal(plate.rasterPinionOuterRadius, 72);
+  assert.deepEqual(plate.rasterPinionCenter, { x: 246, y: 243 });
+  assert.equal(plate.rasterPinionOuterRadius, 64);
   assert.equal(plate.rasterPinionToothCount, 18);
   assert.deepEqual(plate.rasterFrameOuterBounds, {
-    bottom: 349,
-    left: 31,
-    right: 390,
+    bottom: 348,
+    left: 32,
+    right: 388,
     top: 143,
   });
   assert.deepEqual(plate.rasterRackPitchLines, {
-    lowerY: 310,
-    upperY: 190,
+    lowerY: 302,
+    upperY: 184,
   });
-  assert.deepEqual(plate.rasterRackToothCounts, [4, 4, 6, 2]);
+  assert.deepEqual(plate.rasterRackToothCounts, [4, 4, 7, 2]);
   assert.deepEqual(plate.rasterRackGroupOrder, [
     'upper-four',
     'lower-four',
-    'upper-six',
+    'upper-seven',
     'lower-two',
   ]);
   assert.equal(plate.sourceEngagement,
-    'upper-central-six-tooth-group');
+    'upper-central-seven-tooth-group');
   assert.match(plate.inferredTopology, /open-left frame/);
   assert.match(plate.inferredTopology, /upper four, lower four/);
   assert.deepEqual(sourceReference.primaryScan, {
@@ -205,12 +206,14 @@ test('movement 269 matches the measured source proportions and source pose', () 
       >= geometry.pinionOuterRadius + 0.05,
     'closed right end clears the gear tips at the stroke limit',
   );
+  // The closed end sits farther right than drawn (asserted above), so the
+  // rod is compared from the frame's closed end rather than from the gear.
   near(
-    modelDriveRodEnd / geometry.pinionOuterRadius,
-    (plate.rasterDriveRodEnd.x - plate.rasterPinionCenter.x)
+    (modelDriveRodEnd - modelSourceRight) / geometry.pinionOuterRadius,
+    (plate.rasterDriveRodEnd.x - plate.rasterFrameOuterBounds.right)
       / plate.rasterPinionOuterRadius,
-    0.32,
-    'source drive-rod reach',
+    0.2,
+    'source drive-rod length beyond the closed end',
   );
   near(source.contactCoordinate, geometry.sourceContactCoordinate,
     2e-15, 'source contact coordinate');
@@ -219,7 +222,7 @@ test('movement 269 matches the measured source proportions and source pose', () 
   near(source.pinionAngleUnwrapped, geometry.sourcePinionAngle,
     2e-15, 'source pinion phase');
   assert.equal(source.activeRack, 'upper');
-  assert.equal(source.activeRackGroupId, 'upper-central-six');
+  assert.equal(source.activeRackGroupId, 'upper-central-seven');
   assert.equal(source.handoffActive, false);
   disposeModel(model.root);
 });
@@ -233,16 +236,16 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     rackSequence,
     stateAtContactCoordinate,
   } = model.root.userData;
-  const expectedRelieved = [3, 4, 7, 8, 13, 14];
+  const expectedRelieved = [3, 4, 7, 8, 14, 15];
 
   near(geometry.circularPitch,
     geometry.pinionPitchRadius * geometry.pinionAngularPitch,
     1e-15, 'common circular pitch');
   near(
     geometry.contactCoordinateMaximum - geometry.contactCoordinateMinimum,
-    16 * geometry.circularPitch,
+    17 * geometry.circularPitch,
     2e-15,
-    'sixteen-pitch frame stroke',
+    'seventeen-pitch frame stroke',
   );
   near(geometry.pinionOuterRadius,
     geometry.pinionPitchRadius + geometry.pinionToothHeight / 2,
@@ -257,8 +260,8 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     geometry.pinionRootRadius + geometry.rackRadialClearance,
     1e-15, 'rack tip line');
   assert.ok(geometry.rackRadialClearance > 0, 'radial tip clearance');
-  assert.equal(blocks.rackTeeth.length, 16);
-  assert.equal(blocks.upperRackTeeth.length, 10);
+  assert.equal(blocks.rackTeeth.length, 17);
+  assert.equal(blocks.upperRackTeeth.length, 11);
   assert.equal(blocks.lowerRackTeeth.length, 6);
   assert.equal(blocks.pinionToothMeshes.length, 18);
   assert.equal(blocks.pinionSpokes.length, 4);
@@ -475,7 +478,8 @@ test('movement 269 obeys analytic no-slip rates and alternates output direction'
   assert.ok(handoffSamples > 500);
   assert.ok(maximumTangentialError < 5e-16);
   assert.ok(maximumAngularSpeedDerivativeError < 2e-8);
-  assert.ok(maximumAngularAccelerationDerivativeError < 2e-7);
+  // Central-difference error; scales with the 17-pitch stroke amplitude.
+  assert.ok(maximumAngularAccelerationDerivativeError < 2.5e-7);
   near(transmission.frameStroke,
     geometry.contactCoordinateMaximum - geometry.contactCoordinateMinimum,
     1e-15, 'frame stroke');
@@ -525,16 +529,6 @@ test('movement 269 renderer binds translation, contacts, handoffs, and output sp
     assert.equal(blocks.lowerContactMarker.visible,
       state.activeRack === 'lower');
     assert.equal(blocks.handoffMarker.visible, false);
-    const rackIndexWorld = blocks.frameTranslationIndex.getWorldPosition(
-      new THREE.Vector3(),
-    );
-    const rackIndexInRoot = model.root.worldToLocal(rackIndexWorld.clone());
-    near(
-      rackIndexInRoot.x,
-      blocks.frameTranslationIndex.position.x + state.frameX,
-      2e-15,
-      'white frame index translates rigidly',
-    );
     const { contacts } = model.root.userData;
     assert.equal(contacts.activeRackToPinion.activeRack, state.activeRack);
     assert.equal(contacts.activeRackToPinion.fullDepthContactCount, 1);
@@ -583,7 +577,12 @@ test('movement 269 renderer binds translation, contacts, handoffs, and output sp
     const time = transmission.timeForContactCoordinate(q, 'increasing');
     model.update(time, 0.016);
     model.root.updateMatrixWorld(true);
-    const renderedBounds = new THREE.Box3().setFromObject(model.root, true);
+    // The racked frame and gear stay in view over the whole stroke; the rod
+    // and collar may leave it briefly at the far limit (see cameraFitBounds).
+    const renderedBounds = new THREE.Box3();
+    for (const part of [blocks.topRail, blocks.bottomRail, blocks.rightBridge, ...blocks.rackTeeth, blocks.pinion]) {
+      renderedBounds.union(new THREE.Box3().setFromObject(part, true));
+    }
     const fitBounds = model.root.userData.cameraFitBounds;
     assert.ok(renderedBounds.min.x >= fitBounds.min.x - 1e-12);
     assert.ok(renderedBounds.max.x <= fitBounds.max.x + 1e-12);

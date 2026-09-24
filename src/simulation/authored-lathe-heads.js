@@ -429,45 +429,42 @@ function latheTailstockScrewFeed(movement) {
   handwheel.userData.axis = X_AXIS.clone();
   handwheel.userData.role = 'rear-handwheel-rigid-with-leadscrew';
   screw.add(handwheel);
+  // Brown's plate draws the turning member as one straight bar across the
+  // screw axis (a T crank seen along its broad face edge-on) with a boss on
+  // the frame side and a bulbous grip at its upper end, not a spoked wheel.
+  // The historical block names (handwheel, wheelRim) are kept for callers.
+  const crankBarThickness = 0.16;
+  const crankBarWidth = 0.24;
   const wheelRim = new THREE.Mesh(
-    new THREE.TorusGeometry(handwheelRadius, 0.105, 11, 64),
+    new THREE.BoxGeometry(
+      crankBarThickness,
+      handwheelRadius * 2,
+      crankBarWidth,
+    ),
     driverMaterial,
   );
-  wheelRim.rotation.y = Math.PI / 2;
-  wheelRim.userData.role = 'tailstock-handwheel-rim';
+  wheelRim.userData.role = 'tailstock-t-crank-bar';
   handwheel.add(wheelRim);
-  for (let index = 0; index < 4; index += 1) {
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, handwheelRadius * 1.52, 0.12),
-      driverMaterial,
-    );
-    spoke.rotation.x = index * Math.PI / 4;
-    spoke.userData.role = 'tailstock-handwheel-spoke';
-    handwheel.add(spoke);
-  }
-  const wheelHub = cylinderAlongX(0.22, 0.54, darkMaterial, 32);
-  wheelHub.userData.role = 'tailstock-handwheel-hub';
-  handwheel.add(wheelHub);
-  const handwheelGripRadius = sourceHandwheelGrip.distanceTo(handwheelCenter);
+  // The fixed-to-screw thrust collar doubles as the crank boss drawn
+  // between the frame end and the bar; the screw end is the outer stub.
   const handwheelGripAngle = Math.atan2(
     sourceHandwheelGrip.y - handwheelCenter.y,
     0.34,
   );
   const gripCarrier = new THREE.Group();
-  gripCarrier.position.set(
-    0,
-    sourceHandwheelGrip.y - handwheelCenter.y,
-    Math.sqrt(Math.max(
-      0,
-      handwheelGripRadius ** 2
-        - (sourceHandwheelGrip.y - handwheelCenter.y) ** 2,
-    )),
-  );
-  gripCarrier.userData.role = 'handwheel-crank-handle-carrier';
+  gripCarrier.position.set(0, sourceHandwheelGrip.y - handwheelCenter.y, 0);
+  gripCarrier.userData.role = 't-crank-handle-carrier';
   handwheel.add(gripCarrier);
-  const handwheelGrip = cylinderAlongX(0.115, 0.62, darkMaterial, 28);
-  handwheelGrip.position.x = 0.28;
-  handwheelGrip.userData.role = 'tailstock-handwheel-turning-grip';
+  const gripProfile = [
+    [0, 0.0], [0.07, 0.0], [0.07, 0.1], [0.06, 0.16], [0.1, 0.28],
+    [0.14, 0.42], [0.13, 0.52], [0.08, 0.58], [0, 0.6],
+  ].map(([radius, height]) => new THREE.Vector2(radius, height));
+  const handwheelGrip = new THREE.Mesh(
+    new THREE.LatheGeometry(gripProfile, 28).rotateZ(-Math.PI / 2),
+    darkMaterial,
+  );
+  handwheelGrip.position.x = crankBarThickness / 2 - 0.001;
+  handwheelGrip.userData.role = 'tailstock-t-crank-turning-grip';
   gripCarrier.add(handwheelGrip);
   const wheelIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 18, 12),

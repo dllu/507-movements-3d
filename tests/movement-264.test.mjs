@@ -101,22 +101,24 @@ test('movement 264 preserves the measured unavailable source engraving', () => {
   assert.equal(sourceReference.officialDescription, movement.description);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.measurementUncertaintyPixels, 7);
+  assert.equal(plate.measurementUncertaintyPixels, 3);
   assert.equal(plate.officialAnimationAvailable, false);
   assert.equal(plate.rasterCommonAxisY, 296);
-  assert.deepEqual(plate.rasterWheelRimCenterXs, [244, 284]);
-  assert.deepEqual(plate.rasterWormCenter, { x: 270, y: 85 });
-  assert.equal(plate.rasterWormOuterRadius, 54);
-  assert.equal(plate.rasterWormBoreRadius, 25);
-  assert.deepEqual(plate.rasterShaftEndpointsX, [47, 407]);
+  assert.deepEqual(plate.rasterWheelRimCenterXs, [241, 296]);
+  assert.deepEqual(plate.rasterWheelFaceEdgesX, [[223, 259], [280, 312]]);
+  assert.deepEqual(plate.rasterWormCenter, { x: 267, y: 69 });
+  assert.equal(plate.rasterWormOuterRadius, 51);
+  assert.equal(plate.rasterWormBoreRadius, 24);
+  assert.deepEqual(plate.rasterShaftEndpointsX, [86, 388]);
   assert.deepEqual(plate.rasterPointerRoots, [
-    { x: 342, y: 296 },
-    { x: 374, y: 296 },
+    { x: 340, y: 296 },
+    { x: 367, y: 296 },
   ]);
   assert.deepEqual(plate.rasterPointerTips, [
-    { x: 342, y: 132 },
-    { x: 374, y: 111 },
+    { x: 340, y: 84 },
+    { x: 367, y: 51 },
   ]);
+  assert.deepEqual(plate.rasterPointerTailYs, [329, 337]);
   assert.match(plate.inferredTopology, /one end-on common worm/);
   assert.match(plate.inferredTopology, /separate long output pointers/);
   assert.deepEqual(sourceReference.primaryScan, {

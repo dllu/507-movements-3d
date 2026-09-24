@@ -58,7 +58,8 @@ export function correctFriction280(model){
  const arm=clip.difference(clip.union(capsule([0,0],[L,0],.115,32),capsule([0,0],center,.105,48),poly(circle([0,0],.215,64)),poly(circle([L,0],.21,64))),poly(circle([0,0],.174,96)),poly(circle([L,0],.174,96)),poly(circle([-P,0],R+.001,512)));
  b.shortLeverBody.visible=false;b.shortLeverBody=mesh(b.shortLever,plate(arm,-.10,.10),b.clampShoe.material,'bored-eccentric-short-lever');b.shortLeverBody.position.set(0,0,0);b.shortLeverBody.rotation.set(0,0,0);b.shortLeverBody.scale.set(1,1,1);
  const shoe=clip.difference(poly(circle(center,.085,96)),poly(circle([-P,0],R,512)));
- replace(b.clampShoe,plate(shoe,-.14,.14));b.clampShoe.position.set(0,0,0);
+ // The shoe stays 0.01 inside the two jaw journals (their faces at |z|=.13).
+ replace(b.clampShoe,plate(shoe,-.12,.12));b.clampShoe.position.set(0,0,0);
  // A real bored rod bridges the front plane of both link pins.
  b.connectingRod.visible=false;const link=mesh(root,boredPlanarLinkGeometry({length:C,width:.17,eyeRadius:.23,boreRadius:.174,depth:.16}),b.wheelDisk.material,'bored-coupler-closing-handle-to-travelling-jaw');b.finiteCoupler=link;
  replace(b.lowerLinkPin,new T.CylinderGeometry(.17,.17,1.90,48));b.lowerLinkPin.position.z=.30;

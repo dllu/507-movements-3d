@@ -11,13 +11,13 @@ import {
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
-function centeredExtrusion(shape, depth, bevel = 0.01) {
+function centeredExtrusion(shape, depth, bevel = 0.01, curveSegments = 1) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
+    bevelEnabled: bevel > 0,
     bevelSegments: 1,
     bevelSize: bevel,
     bevelThickness: bevel,
-    curveSegments: 1,
+    curveSegments,
     depth,
   });
   geometry.translate(0, 0, -depth / 2);
@@ -79,8 +79,8 @@ function otisSafetyStop(movement) {
   const sourceRasterRightLowerJoint = new THREE.Vector2(364, 318);
   const sourceRasterLeftPawlTip = new THREE.Vector2(88, 318);
   const sourceRasterRightPawlTip = new THREE.Vector2(440, 318);
-  const sourceRasterLeftSpringAnchor = new THREE.Vector2(124, 229);
-  const sourceRasterRightSpringAnchor = new THREE.Vector2(410, 229);
+  const sourceRasterLeftSpringAnchor = new THREE.Vector2(165, 197);
+  const sourceRasterRightSpringAnchor = new THREE.Vector2(363, 197);
   const sourceRasterPlatformLeftTop = new THREE.Vector2(88, 151);
   const sourceRasterPlatformRightTop = new THREE.Vector2(440, 151);
   const sourceRasterPlatformLeftBottom = new THREE.Vector2(88, 475);
@@ -138,17 +138,27 @@ function otisSafetyStop(movement) {
   const sourcePlatformY = 0;
   const hoistHeight = 1.20;
   const sourceRopeEyeY = sourcePointToModel(sourceRasterRopeEye).y;
+  // Brown's leaf spring c hangs from the underside of B's head: its two
+  // upturned tips meet the head, and its middle, crossing pin b about 0.5
+  // above the eye, bears on a small seat collar on the pin (inferred). The leaf is modelled as a round wire of radius 0.045
+  // parted around pin b (the leaf's slot) so the pin does not pass through it.
+  const springWireRadius = 0.045;
+  const springLayerZ = 0.50;
+  const springTipY = sourcePointToModel({ x: 264, y: 197 }).y
+    - springWireRadius;
   const springLeftAnchor = new THREE.Vector3(
     sourcePointToModel(sourceRasterLeftSpringAnchor).x,
-    sourcePointToModel(sourceRasterLeftSpringAnchor).y,
-    0.56,
+    springTipY,
+    springLayerZ,
   );
   const springRightAnchor = new THREE.Vector3(
     sourcePointToModel(sourceRasterRightSpringAnchor).x,
-    sourcePointToModel(sourceRasterRightSpringAnchor).y,
-    0.56,
+    springTipY,
+    springLayerZ,
   );
-  const springContactOffset = sourcePointToModel({ x: 264, y: 250 }).y;
+  const springContactOffset = sourcePointToModel({ x: 264, y: 226 }).y;
+  const springSeatTopY = springContactOffset - springWireRadius - 0.0005;
+  const springPinSlotHalfWidth = 0.06 + springWireRadius + 0.012;
   const ropeEyeOffset = sourceRopeEyeY;
 
   const cyclePeriod = 8;
@@ -157,7 +167,9 @@ function otisSafetyStop(movement) {
   const hoistEnd = 3.4;
   const normalLowerEnd = 4.5;
   const catchTime = 5.7;
-  const upperRopeAnchor = new THREE.Vector3(0, 5.2, 0.58);
+  const ropeTongueDepth = 0.10;
+  const ropeLayerZ = 0.44 + ropeTongueDepth / 2 + 0.052 + 0.001;
+  const upperRopeAnchor = new THREE.Vector3(0, 5.2, ropeLayerZ);
   const maximumRopeGap = 0.48;
 
   const leftLowerJointAtAngle = (angle) => new THREE.Vector3(
@@ -313,12 +325,13 @@ function otisSafetyStop(movement) {
     const springContact = new THREE.Vector3(
       0,
       pinEyeY + springContactOffset,
-      0.56,
+      springLayerZ,
     );
+    // The rope's thimble bears on the front face of tongue b at its eye.
     const ropeEye = new THREE.Vector3(
       0,
       platformY + pinEyeY + ropeEyeOffset,
-      0.58,
+      ropeLayerZ,
     );
     // The break lies above Brown's crop, which shows only the stub a.
     const breakCenter = ropeEye.clone().lerp(upperRopeAnchor, 0.85);
@@ -419,10 +432,6 @@ function otisSafetyStop(movement) {
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.12,
     roughness: 0.68,
-  });
-  const brassMaterial = matte(PALETTE.brass, {
-    metalness: 0.22,
-    roughness: 0.54,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.44 });
 
@@ -645,11 +654,33 @@ function otisSafetyStop(movement) {
   );
   slidingEye.position.y = 0;
   slidingEye.userData.role = 'eye-c-containing-overlapping-lever-arms';
+  // Brown's b is a flat tongue: a round eyed head for the rope a tapering
+  // down into the pin, which then passes (dashed) through B's head. In the
+  // arrested pose its lower end rests on top of B.
+  const tongueHeadRadius = 0.27;
+  const tongueHoleRadius = 0.11;
+  // The arrested eye is the source origin, so B's top face is at this height
+  // above the eye when the tongue rests on it; 0.0005 play is left.
+  const tongueBottomY = platformTopY + 0.0005;
+  const tongueShape = new THREE.Shape();
+  const tongueFootHalfWidth = 0.075;
+  const tongueFlare = Math.asin(
+    (tongueHeadRadius - tongueFootHalfWidth)
+      / (ropeEyeOffset - tongueBottomY),
+  );
+  tongueShape.moveTo(-tongueFootHalfWidth, tongueBottomY);
+  tongueShape.lineTo(tongueFootHalfWidth, tongueBottomY);
+  tongueShape.absarc(0, ropeEyeOffset, tongueHeadRadius,
+    -tongueFlare, Math.PI + tongueFlare, false);
+  tongueShape.closePath();
+  const tongueHole = new THREE.Path();
+  tongueHole.absarc(0, ropeEyeOffset, tongueHoleRadius, 0, Math.PI * 2,
+    true);
+  tongueShape.holes.push(tongueHole);
   const ropeEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.055, 10, 30),
+    centeredExtrusion(tongueShape, ropeTongueDepth, 0, 24),
     darkMaterial,
   );
-  ropeEye.position.y = ropeEyeOffset;
   ropeEye.userData.role = 'hoisting-rope-eye-a';
   const pinMotionIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.08, 0.52, 0.035),
@@ -657,30 +688,77 @@ function otisSafetyStop(movement) {
   );
   pinMotionIndex.position.set(0.14, 0.72, 0.18);
   pinMotionIndex.userData.role = 'white-pin-and-spring-motion-index';
-  pinAssembly.add(verticalPin, slidingEye, ropeEye, pinMotionIndex);
+  const springSeat = new THREE.Mesh(
+    new THREE.BoxGeometry(0.40, 0.08, 0.20),
+    darkMaterial,
+  );
+  springSeat.position.set(0, springSeatTopY - 0.04, 0);
+  springSeat.userData.role = 'spring-c-seat-collar-on-pin-b';
+  pinAssembly.add(verticalPin, slidingEye, ropeEye, pinMotionIndex,
+    springSeat);
   carriage.add(pinAssembly);
 
-  const spring = makeDynamicCable({
-    color: PALETTE.brass,
-    maxSegments: 24,
-    radius: 0.045,
+  const spring = new THREE.Group();
+  const springHalves = ['left', 'right'].map((side) => {
+    const half = makeDynamicCable({
+      color: PALETTE.brass,
+      maxSegments: 12,
+      radius: springWireRadius,
+    });
+    half.userData.role = `${side}-half-of-leaf-spring-c`;
+    spring.add(half);
+    return half;
   });
   spring.userData.role = 'transverse-leaf-spring-c-pressing-pin-down';
+  spring.userData.setPoints = (points) => {
+    // Part the wire where it crosses the pin's slot in the leaf; the
+    // points run monotonically from the left tip to the right tip.
+    const w = springPinSlotHalfWidth;
+    const crossing = (a, b, x) => a.clone().lerp(b, (x - a.x) / (b.x - a.x));
+    const lastLeft = points.findLastIndex((point) => point.x <= -w);
+    const firstRight = points.findIndex((point) => point.x >= w);
+    springHalves[0].userData.setPoints([
+      ...points.slice(0, lastLeft + 1),
+      crossing(points[lastLeft], points[lastLeft + 1], -w),
+    ]);
+    springHalves[1].userData.setPoints([
+      crossing(points[firstRight - 1], points[firstRight], w),
+      ...points.slice(firstRight),
+    ]);
+  };
   carriage.add(spring);
-  const springAnchors = [springLeftAnchor, springRightAnchor].map(
-    (position, index) => {
-      const block = new THREE.Mesh(
-        new THREE.BoxGeometry(0.36, 0.22, 0.34),
-        brassMaterial,
-      );
-      block.position.copy(position);
-      block.userData.role = index === 0
-        ? 'fixed-left-leaf-spring-anchor'
-        : 'fixed-right-leaf-spring-anchor';
-      carriage.add(block);
-      return block;
-    },
-  );
+  // The leaf's tips seat under B's head; B's head is carried forward over
+  // the lever layers (as the solid head Brown draws) with a slot for pin b.
+  const springAnchors = [];
+  const headFrontZ = 0.62;
+  const headRearZ = -0.29;
+  const headInnerHalfWidth = -(platformLeftX - platformLegOutset
+    + platformLegWidth);
+  const pinSlotHalfWidth = 0.075;
+  const pinFrontZ = 0.44 + 0.08;
+  const pinRearZ = 0.44 - 0.08;
+  const headSpan = platformTopY - platformHeadBottomY;
+  const headForward = [
+    [-headInnerHalfWidth, -pinSlotHalfWidth, headRearZ, headFrontZ],
+    [pinSlotHalfWidth, headInnerHalfWidth, headRearZ, headFrontZ],
+    [-pinSlotHalfWidth, pinSlotHalfWidth, pinFrontZ + 0.012, headFrontZ],
+    [-pinSlotHalfWidth, pinSlotHalfWidth, headRearZ, pinRearZ - 0.012],
+  ].map(([x0, x1, z0, z1], index) => {
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(x1 - x0, headSpan, z1 - z0),
+      driverMaterial,
+    );
+    block.position.set((x0 + x1) / 2,
+      (platformTopY + platformHeadBottomY) / 2, (z0 + z1) / 2);
+    block.userData.role = [
+      'platform-B-head-forward-left-of-pin-slot',
+      'platform-B-head-forward-right-of-pin-slot',
+      'platform-B-head-in-front-of-pin-b',
+      'platform-B-head-behind-pin-b',
+    ][index];
+    carriage.add(block);
+    return block;
+  });
 
   const pawlGuides = [-1, 1].flatMap((side) => [-1, 1].map((verticalSide) => {
     const guide = new THREE.Mesh(
@@ -824,6 +902,8 @@ function otisSafetyStop(movement) {
     slidingEye,
     spring,
     springAnchors,
+    headForward,
+    springSeat,
     topCrosshead,
     topRopeAnchor,
     upperRope,
@@ -856,6 +936,7 @@ function otisSafetyStop(movement) {
     sourcePlatformY,
     sourceScale,
     springContactOffset,
+    tongueBottomY,
     springLeftAnchor: springLeftAnchor.clone(),
     springRightAnchor: springRightAnchor.clone(),
     trippedLeverAngle,
@@ -1141,6 +1222,12 @@ function otisSafetyStop(movement) {
 export function createAuthoredSafetyStopMovement(movement) {
   if (movement.id !== 278) return null;
   const result = finishOtis278Parts(otisSafetyStop(movement));
+  // Pin b ends inside tongue b's foot, not up through its rope hole.
+  const { blocks: finished, geometry: finishedGeometry } = result.root.userData;
+  finished.verticalPin.userData.setEndpoints(
+    new THREE.Vector3(0, 0.175, 0),
+    new THREE.Vector3(0, finishedGeometry.tongueBottomY + 0.25, 0),
+  );
   // Brown draws no index marks on the pin, platform or rack seats.
   const whiteIndices = [];
   result.root.traverse((object) => {

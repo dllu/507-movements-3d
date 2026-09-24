@@ -43,8 +43,10 @@ function makePointer({
   axialPosition,
   color,
   length,
+  tailLength,
   rootAxialPosition,
   boreRadius,
+  collarRadius = 0.17,
 }) {
   const pointer = new THREE.Group();
   pointer.position.z = axialPosition - rootAxialPosition;
@@ -52,15 +54,31 @@ function makePointer({
   pointer.userData.role = 'source-style-long-output-pointer';
 
   const material = matte(color, { metalness: 0.14, roughness: 0.54 });
-  const arm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.075, length - 0.24, 0.055),
-    material,
-  );
-  arm.position.y = length / 2 + 0.02;
+  // Plate 264 draws each needle as one straight spike through its shaft:
+  // a long pointed arm above the axis and a short tail below it.
+  // The collar hides the join, so the spike is cut away around the shaft.
+  const inner = collarRadius - 0.015;
+  const needle = new THREE.Shape();
+  needle.moveTo(-0.03, inner);
+  needle.lineTo(0.03, inner);
+  needle.lineTo(0.022, length * 0.55);
+  needle.lineTo(0, length);
+  needle.lineTo(-0.022, length * 0.55);
+  needle.closePath();
+  const tail = new THREE.Shape();
+  tail.moveTo(-0.03, -tailLength);
+  tail.lineTo(0.03, -tailLength);
+  tail.lineTo(0.03, -inner);
+  tail.lineTo(-0.03, -inner);
+  tail.closePath();
+  const armGeometry = new THREE.ExtrudeGeometry([needle, tail], {bevelEnabled: false, depth: 0.05});
+  armGeometry.translate(0, 0, -0.025);
+  armGeometry.rotateY(Math.PI / 2);
+  const arm = new THREE.Mesh(armGeometry, material);
   arm.userData.role = 'radial-pointer-arm-rigid-with-worm-wheel';
 
   const collar = new THREE.Mesh(
-    annularGeometry({depth: .12, innerRadius: boreRadius, outerRadius: .17}),
+    annularGeometry({depth: .12, innerRadius: boreRadius, outerRadius: collarRadius}),
     matte(PALETTE.ink, { metalness: 0.24, roughness: 0.46 }),
   );
   collar.userData.boreRadius = boreRadius;
@@ -71,6 +89,7 @@ function makePointer({
     matte(PALETTE.white, { roughness: 0.42 }),
   );
   tip.position.y = length - 0.1;
+  tip.visible = false;
   tip.userData.role = 'white-output-rate-index';
   pointer.add(arm, collar, tip);
   return { arm, collar, pointer, tip };
@@ -85,8 +104,10 @@ function makeWormWheel({
   pitchRadius,
   pointerAxialPosition,
   pointerLength,
+  pointerTailLength,
   teeth,
   toothHeight,
+  sleeveOuterRadius,
 }) {
   const root = new THREE.Group();
   const rotor = new THREE.Group();
@@ -129,7 +150,7 @@ function makeWormWheel({
   const hub = new THREE.Mesh(
     annularGeometry({
       depth: faceWidth + 0.04,
-      innerRadius: teeth === 100 ? .117 : .071,
+      innerRadius: .071,
       outerRadius: 0.31,
     }),
     inkMaterial,
@@ -153,8 +174,10 @@ function makeWormWheel({
     axialPosition: pointerAxialPosition,
     color,
     length: pointerLength,
+    tailLength: pointerTailLength,
     rootAxialPosition: axialCenter,
-    boreRadius: teeth === 100 ? .118 : .071,
+    boreRadius: teeth === 100 ? sleeveOuterRadius + .002 : .071,
+    collarRadius: teeth === 100 ? sleeveOuterRadius + .03 : .12,
   });
   rotor.add(pointerParts.pointer);
 
@@ -220,7 +243,9 @@ function twinWormWheelDifferential(movement) {
   const wheelPitchRadius = 1.7;
   const wheelToothHeight = 0.07;
   const wheelFaceWidth = 0.3;
-  const wheelAxialSeparation = 0.38;
+  // Plate 264 rim centres are 55 px apart for a 179.5 px wheel radius, so a
+  // clear gap about two-thirds of a face width separates the wheels.
+  const wheelAxialSeparation = 0.53;
   const wheel100AxialCenter = wheelAxialSeparation / 2;
   const wheel101AxialCenter = -wheelAxialSeparation / 2;
   const wormStarts = 1;
@@ -256,10 +281,13 @@ function twinWormWheelDifferential(movement) {
     0,
   );
   const helicalToothAngle = THREE.MathUtils.degToRad(13);
-  const wheel100PointerLength = 1.55;
-  const wheel101PointerLength = 1.72;
-  const wheel100PointerAxialPosition = 0.78;
-  const wheel101PointerAxialPosition = 1.09;
+  const wheel100PointerLength = 2.0;
+  const wheel101PointerLength = 2.32;
+  const wheel100PointerTailLength = 0.32;
+  const wheel101PointerTailLength = 0.4;
+  const wheel100PointerAxialPosition = 0.69;
+  const wheel101PointerAxialPosition = 0.95;
+  const sleeveOuterRadius = 0.2;
 
   const wheel100 = makeWormWheel({
     axialCenter: wheel100AxialCenter,
@@ -270,6 +298,8 @@ function twinWormWheelDifferential(movement) {
     pitchRadius: wheelPitchRadius,
     pointerAxialPosition: wheel100PointerAxialPosition,
     pointerLength: wheel100PointerLength,
+    pointerTailLength: wheel100PointerTailLength,
+    sleeveOuterRadius,
     teeth: wheel100Teeth,
     toothHeight: wheelToothHeight,
   });
@@ -282,24 +312,28 @@ function twinWormWheelDifferential(movement) {
     pitchRadius: wheelPitchRadius,
     pointerAxialPosition: wheel101PointerAxialPosition,
     pointerLength: wheel101PointerLength,
+    pointerTailLength: wheel101PointerTailLength,
+    sleeveOuterRadius,
     teeth: wheel101Teeth,
     toothHeight: wheelToothHeight,
   });
 
+  // Plate shaft runs from x 86 to the rounded end at x 388.
   const innerShaft = makeShaft({
     axis: X_AXIS,
-    length: 3.8,
+    length: 2.92,
     radius: 0.07,
   });
-  innerShaft.position.x = 0.18;
+  innerShaft.position.x = -0.3;
   innerShaft.userData.role =
     'inner-output-shaft-rigid-with-101-tooth-wheel';
-  const sleeveStart = wheel100AxialCenter - wheelFaceWidth * 0.2;
+  // The plate draws a thick sleeve from the front wheel to its needle.
+  const sleeveStart = wheel100AxialCenter + (wheelFaceWidth + 0.04) / 2;
   const sleeveEnd = wheel100PointerAxialPosition + 0.08;
   const outerSleeve = makeAnnularSleeve({
     depth: sleeveEnd - sleeveStart,
     innerRadius: 0.084,
-    outerRadius: 0.116,
+    outerRadius: sleeveOuterRadius,
     role: 'hollow-output-sleeve-rigid-with-100-tooth-wheel',
     z: (sleeveStart + sleeveEnd) / 2 - wheel100AxialCenter,
   });
@@ -610,23 +644,26 @@ function twinWormWheelDifferential(movement) {
       imageWidth: 525,
       inferredTopology:
         'one end-on common worm above two side-by-side equal-diameter worm-wheel rims with separate long output pointers',
-      measurementUncertaintyPixels: 7,
+      // Remeasured pass 51 from public/engravings/mm_264.png dark pixels.
+      measurementUncertaintyPixels: 3,
       officialAnimationAvailable: false,
       rasterCommonAxisY: 296,
+      rasterPointerTailYs: [329, 337],
       rasterPointerRoots: [
-        { x: 342, y: 296 },
-        { x: 374, y: 296 },
+        { x: 340, y: 296 },
+        { x: 367, y: 296 },
       ],
       rasterPointerTips: [
-        { x: 342, y: 132 },
-        { x: 374, y: 111 },
+        { x: 340, y: 84 },
+        { x: 367, y: 51 },
       ],
-      rasterShaftEndpointsX: [47, 407],
+      rasterShaftEndpointsX: [86, 388],
+      rasterWheelFaceEdgesX: [[223, 259], [280, 312]],
       rasterWheelOuterRadius: sourceRasterWheelRadius,
-      rasterWheelRimCenterXs: [244, 284],
-      rasterWormBoreRadius: 25,
-      rasterWormCenter: { x: 270, y: 85 },
-      rasterWormOuterRadius: 54,
+      rasterWheelRimCenterXs: [241, 296],
+      rasterWormBoreRadius: 24,
+      rasterWormCenter: { x: 267, y: 69 },
+      rasterWormOuterRadius: 51,
     },
     primaryScan: {
       archiveIdentifier: 'fivehundredseven00browiala',
@@ -687,7 +724,7 @@ function twinWormWheelDifferential(movement) {
   root.userData.hideGround = true;
   root.userData.materialsIgnoreSceneFog = true;
   root.userData.minimumDisplayCycleSeconds = 240;
-  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.9, -1.76, -.92), new THREE.Vector3(2.2, 2.72, .92));
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.85, -1.76, -.92), new THREE.Vector3(1.45, 2.72, .92));
   root.userData.reconstructionNote = 'One worm turn advances each wheel one tooth. The 100/101 pointers separate by one turn after 10,100 input turns (6 h 44 min at this speed). Equal outside diameters use separately generated flanks, not equal operating pitches.';
   root.userData.contactQualification = {method: 'independent offline envelopes of the same finite common worm', clearance: .0025, nominalPitchRadiiAreReferenceOnly: true};
   update(0);

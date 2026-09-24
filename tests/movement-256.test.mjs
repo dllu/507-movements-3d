@@ -247,7 +247,7 @@ test('movement 256 does not fabricate the absent belt route or mate pulley', () 
   disposeModel(model.root);
 });
 
-test('movement 256 renderer spins one rigid assembly with two legible indexes', () => {
+test('movement 256 renderer spins one rigid assembly without undrawn painted indexes', () => {
   const model = createMovementModel(catalog.movements[255]);
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
@@ -255,11 +255,11 @@ test('movement 256 renderer spins one rigid assembly with two legible indexes', 
 
   assert.equal(
     roles.filter((role) => role === 'white-plain-pulley-face-speed-index').length,
-    1,
+    0,
   );
   assert.equal(
     roles.filter((role) => role === 'white-plain-pulley-tread-speed-index').length,
-    1,
+    0,
   );
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   for (const time of [0, 0.4, 1.2, 2.4, 3.8, 4.79, 7.4]) {
