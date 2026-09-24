@@ -2,25 +2,25 @@
   "movement": 150,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native-physics poses in the third demonstration, spanning all selections. Soft carrier/roller contact reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 53,
-    "pairs": 934,
+    "parts": 57,
+    "pairs": 1138,
     "poses": 65,
     "checks": 21979484,
     "failingPairs": 0
   },
   "failures": {},
   "workingContacts": {
-    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-43": {
+    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-47": {
       "firstPose": 10,
       "points": 9,
       "maximumDepth": 0.000013415894371091905
     },
-    "throw-3-working-cam-plate-24/working-roller-tread-on-selected-cam-43": {
+    "throw-3-working-cam-plate-24/working-roller-tread-on-selected-cam-47": {
       "firstPose": 42,
       "points": 16,
       "maximumDepth": 0.00002616643346622999
     },
-    "throw-4-working-cam-plate-30/working-roller-tread-on-selected-cam-43": {
+    "throw-4-working-cam-plate-30/working-roller-tread-on-selected-cam-47": {
       "firstPose": 59,
       "points": 9,
       "maximumDepth": 0.00002434172551140579
@@ -33,7 +33,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "264d306e29ec033485f81395d2029ecd9bc616c08bb5ffe438d1e9f2235dd63a"
+      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",
@@ -45,11 +45,11 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     },
     {
       "file": "src/simulation/mujoco-selectable-cam/physics.js",
-      "sha256": "5bc972ae9e85755ac63e0a469b40fad9d53601f15aa7811eb6c842ab57b3c0df"
+      "sha256": "dc9cf7fbea6b68796f07cf87ea5b50b9e3c373e3993fe102032a1dc931ce0f3a"
     },
     {
       "file": "src/simulation/mujoco-selectable-cam/sync.js",

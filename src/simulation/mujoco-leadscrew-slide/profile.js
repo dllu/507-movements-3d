@@ -10,7 +10,7 @@ export function makeLeadscrewSlideProfile({segments=256,contactSegments=128,clea
   const footBottom=y(e.footBottom),railTop=footBottom-.002,railBottom=y(e.railBottom);
   return {world,x,y,segments,contactSegments,clearance,pitch,lead,coreRadius,crestRadius,phase,carriageBase,neckHalf,external,internal,
     headLeft:x(e.headLeft),headRight:0,headTop:y(e.headTop),headBottom:y(e.baseBottom),headDepth:.36,
-    baseTop:y(e.baseTop),baseBottom:y(e.baseBottom),bedEnd:x(source.bedEnd),railEnd:x(385),
+    baseTop:y(e.baseTop),baseBottom:y(e.baseBottom),bedEnd:x(source.bedEnd),railEnd:x(396),
     neckTop:y(e.neckTop),neckBottom:y(267),neckDepth:.30,footBottom,footTop:y(source.footTop),footDepth:.30,
     footLeft:x(e.footLeft)-carriageBase,footRight:x(e.footRight)-carriageBase,
     railTop,railBottom,railBackTop:y(e.railBackTop),railFront:.34,railBack:-.43,

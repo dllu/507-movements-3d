@@ -106,7 +106,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "264d306e29ec033485f81395d2029ecd9bc616c08bb5ffe438d1e9f2235dd63a"
+      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",
@@ -114,7 +114,7 @@
     },
     {
       "file": "src/simulation/engine.js",
-      "sha256": "a3f11cb54a31b2030fd09c6f90548e91b4e18ca7e3c5304dc45dfcb3547bc581"
+      "sha256": "07db6ec470dd40435a646d116cf8e150309ecbf90a397e1191b77c515b6bece3"
     }
   ]
 }

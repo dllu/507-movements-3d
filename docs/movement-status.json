@@ -2614,22 +2614,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: smooth oval yoke, hatched shaft end; undrawn guides and base removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/mujoco-090-eccentric-yoke.md",
-        "note": "Native contact/timestep bounds documented, but no independent full visible-assembly no-intersection conclusion established in inspected record."
+        "status": "sampled-clear",
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen (scripts/screen-production-intersections.mjs, 0.01 spacing, 129 poses): worst 0.00001, working contact only."
       },
-      "flaws": "Yoke outer outline is lumpy where an ideal oval is intended. Yoke opening rectified by up to 5.7 pixels; impact/soft-contact peaks do not converge monotonically.",
+      "flaws": "Rod stubs are longer than Brown's because they run to the hidden guides; impact/soft-contact peaks do not converge monotonically.",
       "references": [
         "docs/mujoco-090-eccentric-yoke.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -2643,22 +2644,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: flat view; undrawn guide frame and posts removed."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/mujoco-091-triangular-eccentric.md",
-        "note": "Native soft-contact bounds and opening geometry checks documented; global visible intersection status not established here."
+        "status": "sampled-clear",
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen: worst 0.00031, intended liner/cam contact."
       },
-      "flaws": "Guide frame added. Opening corrected by up to 3.36 pixels; ideal guides and hidden small arc/supports inferred.",
+      "flaws": "Rod stubs are longer than Brown's because they run to the hidden guides; opening corrected by up to 3.36 pixels; hidden small arc/supports inferred.",
       "references": [
         "docs/mujoco-091-triangular-eccentric.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -2768,9 +2770,9 @@
         "note": "Default production capture inspected beside the plate: flat side elevation, gantry removed, hatched wall corner."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/mujoco-095-inclined-disk.md",
-        "note": "Native contact bounds documented; whole visible-assembly intersection conclusion not located in this audit."
+        "status": "sampled-clear",
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen (0.01 spacing, 129 poses): worst 0.00002, working contact only."
       },
       "flaws": "The wall is a block behind a hatched band and the disk is drawn complete. Roller reconstructed; ideal guide/bearings assumed.",
       "references": [
@@ -2778,7 +2780,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -2792,22 +2795,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: flat camera; undrawn spring, seat and guides presented away (physics keeps the spring)."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/mujoco-096-heart-cam.md",
-        "note": "Native contact bounds documented; whole visible-assembly intersection conclusion not located in this audit."
+        "status": "sampled-clear",
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen: worst 0.00006, working contact only."
       },
-      "flaws": "Follower return spring not drawn by Brown. Corrected heart cam uses smoothed reversals and inferred return spring/guide.",
+      "flaws": "Brown's disk with dashed construction circles is not drawn; physics keeps the undrawn return spring; smoothed reversals.",
       "references": [
         "docs/mujoco-096-heart-cam.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3002,23 +3006,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: bed broken off with a jagged line and a recessed window."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/mujoco-103-leadscrew-slide.md",
-        "note": "Intended visible thread overlap up to 0.002350 source pixel; scoped audit otherwise clear.",
-        "kind": "contact-overlap"
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen: thread contact only (0.00015)."
       },
-      "flaws": "The slide bed is modelled as a closed box where Brown breaks it off. Matching screw threads retain reconstructed friction, guides and bearing assumptions.",
+      "flaws": "Matching screw threads retain reconstructed friction, guides and bearing assumptions.",
       "references": [
         "docs/mujoco-103-leadscrew-slide.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3160,17 +3164,17 @@
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/mujoco-108-reverse-thread-candidate.md",
-        "note": "Current visible shoe/land overlap up to 0.36663 source pixel in 485 long-run poses; other sampled hardware clear, robustness unresolved.",
-        "kind": "contact-overlap"
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen reproduces the documented soft-contact peak (0.0037 model units at 94.76 s; 0.36663 source px); other hardware clear."
       },
-      "flaws": "The groove reads as stacked chevrons rather than Brown's crossing diamonds; long-run shoe/land penetration reaches 0.36663 pixels.",
+      "flaws": "The groove reads as stacked chevrons rather than Brown's crossing diamonds (five turns per traverse cannot cross at Brown's angle without a new lead and rebake); long-run soft shoe/land penetration 0.37 px.",
       "references": [
         "docs/mujoco-108-reverse-thread-candidate.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3186,22 +3190,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default production capture inspected beside the plate: flat elevation with straight rails."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: shallower rails and a narrower view."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/mujoco-109-thread-cutting.md",
-        "note": "73-pose rendered-solid audit reports no unintended intersections above 0.0001 source pixel. Pass-49 relative-motion screen reports 0.0879 solid overlap (fixed-hidden-keyway-preventing-cutter-nut-rotation x bored-cutter-nut-surrounding-left-lead-screw); unclassified, may be intended contact."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Production-route screen: no overlaps."
       },
-      "flaws": "Rails deeper than drawn. Thread-cutting contact/force assumptions remain.",
+      "flaws": "A thin rail underside remains visible. Thread-cutting contact/force assumptions remain.",
       "references": [
         "docs/mujoco-109-thread-cutting.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3457,8 +3462,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default production capture inspected beside the plate: face-on; the subject stays small because the upper rack travels twice the stroke."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: larger framing; the sliding rack leaves the frame at its stroke ends."
       },
       "intersections": {
         "status": "known",
@@ -3466,13 +3471,14 @@
         "note": "Intended tooth overlap up to 0.00105252 source pixel; nonworking hardware separately clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "The subject is small in frame because the fit covers the doubled stroke. Native doubled stroke uses regular involutes and ideal bearings/guides.",
+      "flaws": "The sliding rack runs out of frame at its stroke ends. Native doubled stroke uses regular involutes and ideal bearings/guides.",
       "references": [
         "docs/mujoco-118-stroke-doubler.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3488,8 +3494,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default production capture inspected beside the plate: face-on; the fit ignores Brown's broken-off rod so the rack and beams read larger."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: larger framing; the rack leaves the frame at its stroke ends."
       },
       "intersections": {
         "status": "known",
@@ -3497,13 +3503,14 @@
         "note": "Intended tooth overlap up to 0.01083340 source pixel; no unintended intersections in 33-pose audit.",
         "kind": "contact-overlap"
       },
-      "flaws": "The rod ends leave the frame at the stroke extremes. Tooth count, guide and depth reconstruction remain.",
+      "flaws": "The sliding rack runs out of frame at its stroke ends. Tooth count, guide and depth reconstruction remain.",
       "references": [
         "docs/mujoco-119-endless-rack.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3609,8 +3616,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default production capture inspected beside the plate: face-on; rack travel keeps the subject small."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default production capture inspected beside the plate: larger framing; the rack leaves the frame at its stroke ends."
       },
       "intersections": {
         "status": "known",
@@ -3618,13 +3625,14 @@
         "note": "Intended tooth/stop-cam overlap up to 0.040147 source pixel; 51-pose full hardware audit otherwise clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "The subject is small because the rack travel sets the scale. Relieved sector ends and cam rephase are source corrections.",
+      "flaws": "The sliding rack runs out of frame at its stroke ends; sector webs are solid where Brown pierces them.",
       "references": [
         "docs/mujoco-123-sector-handoff.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4428,15 +4436,15 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate: nearly end-on down the camshaft; the cam stack reads as dark stacked discs rather than Brown's hatched section."
+        "evidence": "docs/w3h-mujoco-review.md",
+        "note": "Default capture inspected beside the plate: hatched shaft ends; the end-on cam stack still reads murky and the shaft oversized."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-150.md",
         "note": "Current pinned-valve and working cam/roller scoped audits clear above 1e-6; source fit/passive bake still open. Pass-49 relative-motion screen reports 0.1375 solid overlap (throw-4-working-cam-plate x white-no-slip-follower-index); unclassified, may be intended contact."
       },
-      "flaws": "The shaft end is dark rather than hatched and the stack reads murky; cam-face/depth interpretation unresolved; source projection has 16.55-pixel RMS joint error.",
+      "flaws": "The cam stack reads murky and the hatched shaft is oversized; cam-face/depth interpretation unresolved; source projection has 16.55-pixel RMS joint error.",
       "references": [
         "docs/movement-150.md",
         "docs/review-progress.md",
@@ -4444,7 +4452,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/w3h-mujoco-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",

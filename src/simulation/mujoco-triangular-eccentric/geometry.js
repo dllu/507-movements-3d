@@ -4,6 +4,7 @@ import {triangularEccentricProfile} from '../triangular-eccentric-profile.js';
 import {triangularEccentricEnvelope} from './envelope.js';
 import {cubicPolyline} from '../cubic-polyline.js';
 import {plate,poly,circle,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {hatchedSectionFace} from '../section-hatch.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 
 export {THREE};
@@ -41,6 +42,9 @@ export function makeTriangularEccentricGeometry({chordTolerance=.00001}={}) {
   attach('yoke',plate(clip.difference(outer,hole),-bodyDepth/2,bodyDepth/2),'yoke',PALETTE.driven);
   attach('cam',plate(clip.difference(poly(outline),poly(circle([0,0],radius+.001,128))),-depth/2,depth/2),'input',PALETTE.driver);
   attach('shaft',disk(radius,-.76,.31,128),'input',PALETTE.ink);
+  // Brown hatches the exposed shaft end as a section. Presentation only: it
+  // is not a mass-bearing part.
+  {const face=hatchedSectionFace(radius);face.position.z=.31;blocks.input.add(face);}
   attach('collar',ring(radius+.001,source.collarRadius/100,.15,.30,128),'input',PALETTE.driver);
   const bearingHalfSpacing=profile.width/2+clearance,bearingHalfWidth=profile.height+.04;
   const holeY=[source.upperHoleY,source.lowerHoleY].map(y=>(originY-y)/100);

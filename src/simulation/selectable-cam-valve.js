@@ -3,6 +3,7 @@ import {createAuthoredSelectableCamMovement} from './authored-selectable-cams.js
 import {plate,poly,circle,disk,ring,polygonClipping as clip} from './finite-plate-geometry.js';
 import {matte,PALETTE,markShadows} from './primitives.js';
 import {disposeObject3D} from './dispose-model.js';
+import {hatchedSectionFace} from './section-hatch.js';
 
 export function makeSelectableCamValve(){
  const model=createAuthoredSelectableCamMovement({id:150}),{root}=model,b=root.userData.blocks,g=root.userData.geometry;
@@ -42,6 +43,15 @@ export function makeSelectableCamValve(){
  b.followerRoller.tread.geometry.dispose();b.followerRoller.tread.geometry=ring(.094,g.rollerRadius,-g.rollerWidth/2,g.rollerWidth/2,96);b.followerRoller.tread.rotation.set(0,0,0);
  b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-.15,.017,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
  add('roller-axle-retainer',disk(.13,.017,.027,96).translate(g.leverLength,0,0),b.lever,'brass');
+ // Brown sections the shaft end nearest the viewer with parallel hatching.
+ // Thin paper faces with ink section lines replace the dark ends; they turn
+ // with the shaft and add no working surface.
+ let shaft;root.traverse(o=>{if(o.userData.role==='long-keyed-shaft-through-sliding-cam-series')shaft=o;});
+ for(const side of [-1,1]){
+  // Source presentation turns the model end for end: local -Z faces the viewer.
+  const face=hatchedSectionFace(shaft.geometry.parameters.radiusTop,{name:'hatched-shaft-end-'+(side<0?'front':'rear')});
+  face.position.z=side*shaft.geometry.parameters.height/2;if(side<0)face.rotation.y=Math.PI;shaft.parent.add(face);
+ }
  const rod=new THREE.Group(),slider=new THREE.Group();root.add(rod,slider);
  const rodOutline=clip.union(poly(circle([0,0],.17,96)),poly([[-.09,0],[.09,0],[.09,-.34],[.045,-.34],[.045,-rodLength],[-.045,-rodLength],[-.045,-.34],[-.09,-.34]]),poly(circle([0,-pinDistance],.12,96)));
  add('pinned-valve-rod',plate(clip.difference(rodOutline,poly(circle([0,0],.074,96)),poly(circle([0,-pinDistance],.064,96))),-.08,.08),rod,'brass');

@@ -10,7 +10,8 @@ export function makeSelectableCamPhysics(mujoco,{ticksPerPeriod=60000,gravity=9.
  const parts={},families={};
  visual.root.updateMatrixWorld(true);
  visual.root.traverse(mesh=>{
-  if(!mesh.isMesh||mesh.material.opacity===0)return;
+  // Presentation-only section faces add no mass.
+  if(!mesh.isMesh||mesh.material.opacity===0||mesh.userData.presentationOnly)return;
   let parent=mesh,body;while(parent&&!body){if(groups.has(parent))body=parent;else parent=parent.parent;}
   if(!body)return;
   const geometry=mesh.geometry.clone().applyMatrix4(body.matrixWorld.clone().invert().multiply(mesh.matrixWorld));

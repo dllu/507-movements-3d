@@ -23,6 +23,16 @@ export default {
     remove: ['bored-crosshead-cheek', 'crosshead-bridge-clear-of-swinging-eye', 'wrist-pin-(?:shank|retaining-head)', 'output-valve-stem', 'fixed-horizontal-crosshead-channel', 'base-rail', 'guide-support-\\d', 'bored-rear-shaft-support'],
     note: 'Front elevation of the sheave, strap and bolted rod flange, the rod broken off to the right; no crosshead, guides or bed are drawn.',
   },
+  90: {
+    camera: [0, 0, 1],
+    remove: ['guide\\d', 'shaftSupport', 'base'],
+    note: 'Flat front elevation of the oval yoke with its two rod stubs broken off, the eccentric disk and the hatched shaft; no pedestal, rod guides or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+  },
+  91: {
+    camera: [0, 0, 1],
+    remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
+    note: 'Flat front elevation of the yoke with its upper and lower rods broken off, the triangular eccentric and the hatched shaft; no guide frame, collars or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+  },
   93: {
     remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
     note: 'Front elevation of the crank disk behind the slotted yoke and its stems; no frame, brackets or stem guides are drawn. Only the production MuJoCo model is presented; the synchronous registry model keeps its reconstructed frame for offline checks.',
@@ -35,6 +45,11 @@ export default {
     camera: [0, 0, 1],
     remove: ['guide', 'upperBracket', 'post', 'lowerBracket'],
     note: 'Flat side elevation: the inclined disk edge-on, the forked rod and roller above it, the shaft bearing bolted to a hatched wall corner; no rod guide or gantry is drawn.',
+  },
+  96: {
+    camera: [0, 0, 1],
+    remove: ['spring', 'springSeat', 'guide\\d', 'rearFrame'],
+    note: 'Flat face view of the heart cam on its shaft and the roller-ended bar running off to the right; no return spring, spring seat, bar guides or frame are drawn. Only the production MuJoCo model is presented; its physics keeps the inferred return spring and ideal guide.',
   },
   98: {
     camera: [0, 0, -1],

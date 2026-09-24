@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import source from './source.js';
 import {cubicPolyline} from '../cubic-polyline.js';
 import {plate, poly, circle, capsule, disk, ring, polygonClipping as clip} from '../finite-plate-geometry.js';
+import {hatchedSectionFace} from '../section-hatch.js';
 import {PALETTE, matte, markShadows} from '../primitives.js';
 
 export {THREE};
@@ -32,21 +33,37 @@ export function makeEccentricYokeGeometry() {
   const yokePoint = ([x,y]) => [(x-cx)/scale,(sy-y)/scale];
   const rodRoots = source.rodRoots.map(x => (x-cx)/scale);
   const tracedHole = outline(source.inner.map(yokePoint));
-  // Rectify the working faces to parallel planes throughout the center's
-  // vertical sweep, with a small end margin. Retain the larger engraved lobes.
-  // The bowed ink otherwise both interferes with the disk and introduces a
-  // variable clearance. Machining these faces is a reconstruction assumption.
+  // Brown draws both yoke outlines as smooth ovals. Each is an ellipse split
+  // at its waist by a straight run: the inner run is the machined working
+  // face, parallel through the eccentric center's vertical sweep with a
+  // small end margin, and its elliptic ends contain the swept circle. The
+  // hand-traced ink (kept as profiles.tracedHole) is lumpy and bowed.
   const workingHalfHeight = eccentricity+.01, workingRadius = radius+clearance;
-  const sweptHole = capsule([0,-workingHalfHeight],[0,workingHalfHeight],workingRadius,128);
-  const straightWidth = poly([[-workingRadius,-3],[workingRadius,-3],[workingRadius,3],[-workingRadius,3]]);
-  const hole = clip.union(clip.intersection(tracedHole,straightWidth),sweptHole);
-  const outer = clip.intersection(outline(source.outer.map(yokePoint)),
+  const extent = (points,k) => points.map(yokePoint).map(p=>p[k]);
+  const oval = (halfWidth,top,bottom,straight,center=0,n=192) => {
+    const points = [];
+    for (const [sign,end] of [[1,top],[-1,bottom]]) {
+      const reach = Math.abs(end)-straight;
+      for (let i = 0; i <= n; i++) {
+        const a = (sign>0?0:Math.PI)+Math.PI*i/n;
+        points.push([center+halfWidth*Math.cos(a),sign*straight+reach*Math.sin(a)]);
+      }
+    }
+    return poly(points);
+  };
+  const innerY = extent(source.inner,1), outerX = extent(source.outer,0), outerY = extent(source.outer,1);
+  const hole = oval(workingRadius,Math.max(...innerY),Math.min(...innerY),workingHalfHeight);
+  const outerCenter = (Math.max(...outerX)+Math.min(...outerX))/2;
+  const outer = clip.intersection(oval((Math.max(...outerX)-Math.min(...outerX))/2,Math.max(...outerY),Math.min(...outerY),.30,outerCenter),
     poly([[rodRoots[0],-3],[rodRoots[1],-3],[rodRoots[1],3],[rodRoots[0],3]]));
   const yokeProfile = clip.difference(outer,hole);
   attach('yoke',plate(yokeProfile,-depth/2,depth/2),'yoke',PALETTE.brass);
   const sheaveProfile = clip.difference(poly(circle(offset,radius,256)),poly(circle([0,0],shaftRadius+.001,128)));
   attach('sheave',plate(sheaveProfile,-depth/2,depth/2),'input',PALETTE.driver);
   attach('shaft',disk(shaftRadius,-.82,.30,128),'input',PALETTE.ink);
+  // Brown hatches the exposed shaft end as a section. Presentation only: it
+  // is not a mass-bearing part.
+  {const face=hatchedSectionFace(shaftRadius);face.position.z=.30;blocks.input.add(face);}
   attach('collar',ring(shaftRadius+.001,source.collarRadius/scale,depth/2,.28,128),'input',PALETTE.driver);
 
   const guideHalfLength = .11, guideCenter = Math.max(...rodRoots.map(Math.abs))+eccentricity+guideHalfLength+.07;

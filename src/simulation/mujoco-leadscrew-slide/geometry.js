@@ -37,9 +37,17 @@ export function makeLeadscrewSlideGeometry(options={}) {
   }
   attach('tip',aroundX(turned([[f.external.high,0],[f.external.high,f.coreRadius],[f.external.high+.045,f.coreRadius*.82],[f.external.high+.045,0]],256)),'screw',PALETTE.driver);
   attach('headstock',alongX(clip.difference(rectangle(f.headBottom,-f.headDepth,f.headTop,f.headDepth),poly(circle([0,0],f.coreRadius+.003,256))),f.headLeft,f.headRight),'frame',PALETTE.frame);
-  attach('base',plate(rectangle(f.headRight,f.baseBottom,f.bedEnd,f.baseTop),-.43,.34),'frame',PALETTE.frame);
+  // Brown breaks the bed off at the right with a jagged line and draws the
+  // bar beneath the guide as a recessed panel, not an open window.
+  const breakLine=[[398,source.edges.railBottom],[391,330],[399,341],[389,352],[400,source.edges.baseTop],[392,375],[401,383],[394,source.edges.baseBottom]]
+    .map(([px,py])=>f.world([px,py]));
+  const brokenEnd=(left,top,bottom)=>{
+    const edge=breakLine.filter(([,y])=>y<=top+1e-9&&y>=bottom-1e-9),at=y=>{for(let i=1;i<breakLine.length;i++){const [x0,y0]=breakLine[i-1],[x1,y1]=breakLine[i];if(y<=y0+1e-9&&y>=y1-1e-9)return x0+(x1-x0)*(y-y0)/(y1-y0);}return breakLine.at(-1)[0];};
+    return poly([[left,bottom],[at(bottom),bottom],...edge.filter(([,y])=>y>bottom+1e-9&&y<top-1e-9).reverse(),[at(top),top],[left,top]]);
+  };
+  attach('base',plate(brokenEnd(f.headRight,f.baseTop,f.baseBottom),-.43,.34),'frame',PALETTE.frame);
   attach('bedShoulder',plate(rectangle(0,f.baseTop,f.x(127),f.railBottom),-.43,.34),'frame',PALETTE.frame);
-  attach('endSupport',plate(rectangle(f.railEnd-.08,f.baseTop,f.bedEnd,f.railBottom),-.43,.34),'frame',PALETTE.frame);
+  attach('bedPanel',plate(brokenEnd(f.x(127),f.railBottom,f.baseTop),-.43,.27),'frame',PALETTE.frame);
   // The raised rear edge follows the engraving. A lower running surface
   // supports the foot; its hidden T-slot retains the slide in depth.
   const slot=poly([[f.railTop+.01,-.063],[f.railTop+.01,.063],[f.railTop-.043,.063],[f.railTop-.043,.123],
