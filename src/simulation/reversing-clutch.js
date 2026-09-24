@@ -50,7 +50,7 @@ export function makeReversingClutch() {
     const body = turned(profile, color), toothMeshes = [];
     cone.add(body);
     for (let i = 0; i < p.teeth; i += 1) {
-      const mesh = new THREE.Mesh(tooth, matte(i === 0 ? PALETTE.white : color, { metalness: 0.16, roughness: 0.58 }));
+      const mesh = new THREE.Mesh(tooth, matte(color, { metalness: 0.16, roughness: 0.58 }));
       mesh.rotation.z = 2 * Math.PI * i / p.teeth; mesh.userData.bevelTooth = true; cone.add(mesh); toothMeshes.push(mesh);
     }
     Object.assign(gear.userData, { cone, body, toothMeshes, bore }); return gear;
@@ -75,6 +75,9 @@ export function makeReversingClutch() {
       phase: workingPhase, jawCount: p.jawCount,
       jawHeight: p.jawHeight, boreRadius: keyed ? p.slidingBore : p.looseBore,
       keyHalfWidth: keyed ? p.keyHalfWidth : 0, keywayTop: keyed ? p.keywayTop : 0, smoothProfileIndices: smoothed, color });
+    // Brown draws no index marks: repaint the generator's light rim stripe.
+    const base = new THREE.Color(color), colors = geometry.attributes.color;
+    for (let i = 0; i < colors.count; i += 1) colors.setXYZ(i, base.r, base.g, base.b);
     const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.18, roughness: 0.60 }));
     mesh.userData.crownJaw = true; return mesh;
   };
@@ -83,7 +86,7 @@ export function makeReversingClutch() {
   const rightCrown = crown([[p.gearFaceDistance, p.looseBore], [p.gearFaceDistance, p.crownRadius], [0.82, p.crownRadius], [0.82, p.looseBore]],
     [0, 1], -1, p.rightCrownPhase, PALETTE.driver);
   leftGear.userData.rotor.add(leftCrown); rightGear.userData.rotor.add(rightCrown);
-  const shaft = rotor(), shaftBody = turned([[-1.32, 0], [-1.32, p.shaftRadius], [1.32, p.shaftRadius], [1.32, 0]], PALETTE.ink, { paintIndex: true });
+  const shaft = rotor(), shaftBody = turned([[-1.32, 0], [-1.32, p.shaftRadius], [1.32, p.shaftRadius], [1.32, 0]], PALETTE.ink);
   const feather = new THREE.Mesh(new THREE.BoxGeometry(2 * p.featherHalfWidth, p.featherTop - p.featherBottom, 2 * p.featherHalfLength), matte(PALETTE.brass));
   feather.position.y = (p.featherTop + p.featherBottom) / 2; shaft.userData.rotor.add(shaftBody, feather);
   const verticalShaft = rotor(new THREE.Vector3(0, 1, 0));
@@ -137,7 +140,8 @@ export function makeReversingClutch() {
     root.userData.kinematics = s;
   };
   root.userData = { fidelity: 'authored', mechanism: 'equal-bevel-gears-and-keyed-reversing-crown-clutch',
-    cameraFov: 17, hideGround: true, shadowCameraHalfExtent: 2, shadowBias: -0.00003,
+    // A narrow field keeps the plate's near-orthographic front elevation.
+    cameraFov: 8, hideGround: true, shadowCameraHalfExtent: 2, shadowBias: -0.00003,
     fullCameraDirection: new THREE.Vector3(4, 3, 8),
     geometry: p, stateAtTime: motion.stateAtTime, rawStateAtTime: motion.rawStateAtTime,
     blocks: { leftGear, rightGear, inputGear, shaft, verticalShaft, sliding, lever, shoe, pivot, rod },

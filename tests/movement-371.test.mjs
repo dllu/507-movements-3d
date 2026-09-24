@@ -125,7 +125,7 @@ test('movement 371 contains one open four-spoke wheel, opposed face teeth, one r
   });
   for (const role of [
     'open-annular-body-carrying-two-opposed-face-tooth-rows',
-    'four-broad-spoke-web-of-open-mangle-wheel',
+    'four-curved-spoke-web-of-open-mangle-wheel',
     'front-face-radial-tooth-of-mangle-wheel',
     'rear-face-radial-tooth-of-mangle-wheel',
     'front-face-terminal-tooth-for-pinion-crossover',

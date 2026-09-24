@@ -23,19 +23,19 @@ export function makeDualInputDifferential() {
   };
   const drum = (radius, bore, [low, high], color, paintIndex = false) => turned([[low, bore], [low, radius], [high, radius], [high, bore]], color, paintIndex);
   add('driverShaft', drum(p.driverShaftRadius, 0, p.driverShaftSpan, PALETTE.muted), driver, 'driver');
-  add('driverDrum', drum(p.driverRadius, p.driverShaftRadius, p.driverSpan, PALETTE.driver, true), driver, 'driver');
-  add('sideDriverDrum', drum(p.sideDriverRadius, p.driverShaftRadius, p.sideDriverSpan, PALETTE.driver, true), driver, 'driver');
+  add('driverDrum', drum(p.driverRadius, p.driverShaftRadius, p.driverSpan, PALETTE.driver), driver, 'driver');
+  add('sideDriverDrum', drum(p.sideDriverRadius, p.driverShaftRadius, p.sideDriverSpan, PALETTE.driver), driver, 'driver');
   add('outputShaft', drum(p.outputShaftRadius, 0, p.outputShaftSpan, PALETTE.muted), output, 'output');
   add('loosePulley', drum(p.pulleyRadius, p.looseBore,
-    p.pulleySpans[0], PALETTE.muted, true), loose, 'loose');
+    p.pulleySpans[0], PALETTE.muted), loose, 'loose');
   const [directLow, directHigh] = p.pulleySpans[1];
   sectioned.push(add('directPulley', turned([[directLow, p.outputShaftRadius], [directLow, p.pulleyRadius],
     [directHigh, p.pulleyRadius], [directHigh, p.rimInnerRadius], [p.directWebEnd, p.rimInnerRadius],
-    [p.directWebEnd, p.outputShaftRadius]], PALETTE.driven, true), output, 'output'));
+    [p.directWebEnd, p.outputShaftRadius]], PALETTE.driven), output, 'output'));
   const [carrierLow, carrierHigh] = p.pulleySpans[2];
   sectioned.push(add('carrierPulley', turned([[carrierLow, p.rimInnerRadius], [carrierLow, p.pulleyRadius],
     [carrierHigh, p.pulleyRadius], [carrierHigh, p.carrierBore], [p.carrierWebStart, p.carrierBore],
-    [p.carrierWebStart, p.rimInnerRadius]], PALETTE.brass, true), carrier, 'carrier'));
+    [p.carrierWebStart, p.rimInnerRadius]], PALETTE.brass), carrier, 'carrier'));
   const makeGear = (name, parent, family, axis, teeth, innerDistance, outerDistance, pitchConeAngle, bore, hubEnd, color) => {
     const group = new THREE.Group(); group.position.z = p.bevelCenterZ;
     group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), axis); parent.add(group);
@@ -64,7 +64,7 @@ export function makeDualInputDifferential() {
   const planetToe = planetGear.userData.profile[0][0];
   add('innerSpindleCollar', drum(0.095, p.planetSpindleRadius, [planetToe - 0.026, planetToe - 0.006], PALETTE.brass), planetAxis, 'carrier');
   add('outerSpindleCollar', drum(0.095, p.planetSpindleRadius, [p.planetHubEnd + 0.006, p.planetHubEnd + 0.026], PALETTE.brass), planetAxis, 'carrier');
-  add('sidePulley', drum(p.pulleyRadius, p.sideHubRadius, p.pulleySpans[3], PALETTE.muted, true), side, 'side');
+  add('sidePulley', drum(p.pulleyRadius, p.sideHubRadius, p.pulleySpans[3], PALETTE.muted), side, 'side');
   const mainCurve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.driverPitchRadius, p.pulleyPitchRadius, 0);
   const segments = 2048;
   const bandGeometry = curve => {
@@ -135,11 +135,13 @@ export function makeDualInputDifferential() {
   root.userData = { geometry: p, parts, families, blocks: { driver, output, loose, carrier, side, planet, planetAxis },
     gears: { outputGear, sideGear, planetGear }, motion, sectioned, sectionCaps, setSectionView, setConfiguration, configuration: 'open',
     configurationLabel: 'Auxiliary belt', configurations: [{ id: 'open', label: 'Open' }, { id: 'crossed', label: 'Crossed' }],
-    sectionView: true, localClippingEnabled: true, hideGround: true, cameraFov: 7,
+    sectionView: false, localClippingEnabled: true, hideGround: true, cameraFov: 7,
     fullCameraDirection: new THREE.Vector3(-8, 3, 6), shadowCameraHalfExtent: 5, shadowBias: -0.00003,
     fidelity: 'authored', mechanism: 'enclosed-dual-input-bevel-differential', reconstructionStatus: 'contact-verified-reconstruction', animationTiming: { authoredCyclePeriod: p.cycleDuration },
     idealConstraints: 'Shaft bearings and axial retention are ideal constraints. The carrier runs on the auxiliary-input sleeve. The input is stopped in neutral and during selector shifts. Open and crossed bands are separate installed configurations; manual re-reeving is not animated. Free differential dynamics, transient friction, belt elasticity and inertia are not solved. The two-sided crossed flat band has prescribed smooth axial bows between exact cylindrical wraps.' };
-  update(0); markShadows(root); setSectionView(true);
+  // Brown draws the pulleys as a closed drum (bevels only dotted inside);
+  // the cutaway is offered through the section-view control.
+  update(0); markShadows(root); setSectionView(false);
   sectionCaps.traverse(mesh => { mesh.castShadow = false; });
   return { root, update, cameraDirection: new THREE.Vector3(-10, 0, 0) };
 }

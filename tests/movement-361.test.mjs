@@ -93,10 +93,9 @@ test('movement 361 keeps the belt pulley loose from the axially separate pin-clu
     'single-radial-pin-fast-on-lower-shaft',
     'fork-groove-collar-moving-pulley-axially',
     'source-shown-operating-lever-with-sliding-fork-contact',
-    'white-upper-driving-pulley-index',
-    'white-lower-free-pulley-index',
-    'white-lower-output-shaft-index',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no white phase indices and no base under the uprights.
+  assert.ok(!roles.some((role) => /^white-|frame-base/.test(role)));
   disposeModel(model.root);
 });
 

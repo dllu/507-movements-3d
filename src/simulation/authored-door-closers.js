@@ -115,19 +115,22 @@ function makeHangingWeight({ material, whiteMaterial }) {
   const group = new THREE.Group();
   group.userData.role = 'gravity-closing-suspended-weight';
 
+  // Brown's weight is a small pear-shaped bulb, about a quarter of a link
+  // length tall, hanging close under its neck.
   const profile = [
-    new THREE.Vector2(0.10, -0.47),
-    new THREE.Vector2(0.30, -0.43),
-    new THREE.Vector2(0.42, -0.23),
-    new THREE.Vector2(0.39, 0.03),
-    new THREE.Vector2(0.28, 0.24),
-    new THREE.Vector2(0.14, 0.37),
-    new THREE.Vector2(0.09, 0.43),
+    new THREE.Vector2(0.062, -0.291),
+    new THREE.Vector2(0.186, -0.267),
+    new THREE.Vector2(0.260, -0.143),
+    new THREE.Vector2(0.242, 0.019),
+    new THREE.Vector2(0.174, 0.149),
+    new THREE.Vector2(0.100, 0.229),
+    new THREE.Vector2(0.090, 0.267),
   ];
   const body = new THREE.Mesh(
     new THREE.LatheGeometry(profile, 48),
     material,
   );
+  body.position.y = 0.138;
   body.userData.role = 'pear-shaped-door-closing-weight';
   group.add(body);
 

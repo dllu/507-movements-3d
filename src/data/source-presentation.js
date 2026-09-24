@@ -370,25 +370,40 @@ export default {
     note: 'Flywheel with plate C, wheel B inside the fixed internal gear D, piston rod A and the A-frame legs, cropped at the cylinder cover as the plate is; no white indices are drawn.',
   },
   348: {
-    remove: ['fixed-shaft-pedestal-leg-\\d', 'fixed-base', 'fixed-base-edge', 'fixed-external-guide-rail-(left|right)', 'fixed-external-guide-support-\\d', 'fixed-external-guide-top-bridge', 'fixed-rear-shaft-bearing-bridge'],
-    note: 'The disk A with its crossed slots and slides c, and the bar B; no stand, base or external guide is drawn.',
+    remove: ['fixed-shaft-pedestal-leg-\\d', 'fixed-base', 'fixed-base-edge', 'fixed-external-guide-rail-(left|right)', 'fixed-external-guide-support-\\d', 'fixed-external-guide-top-bridge', 'fixed-rear-shaft-bearing-bridge', 'rod-B-circular-pin-sliding-in-explicit-vertical-guide', 'guide-pin-white-center-index', 'disk-A-white-rotation-index', 'rod-B-white-rocking-index'],
+    note: 'The disk A with its crossed slots at about 29 degrees and slides c, and the bar B broken off above the disk; no stand, base, external guide, guide pin or white indices are drawn.',
   },
   350: {
-    remove: ['fixed-wide-base', 'fixed-base-edge'],
-    note: 'The slotted link, guides a, a and the output bar; no base or bearing post is drawn.',
+    remove: ['fixed-wide-base', 'fixed-base-edge', 'lower-input-direction-dash-\\d+', 'fixed-horizontal-guide-for-driven-lower-pin-D', 'lower-input-horizontal-guide-shoe', 'fixed-upper-pin-rear-support', 'white-traverse-index-on-output-bar', 'output-bar-motion-rib-\\d', 'moving-pin-D-green-front-index'],
+    note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so no input guide, shoe, dashes, base, pin post or indices are drawn.',
   },
   351: {
     remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop'],
     note: 'The rack stamp, its guides and the mutilated pinion; no base, anvil or workpiece is drawn.',
   },
+  355: {
+    camera: [7, 10, 12],
+    note: 'Raised three-quarter view of pillar G on its flared foot, pintle F in the top bearing, ring A seen as a broad ellipse and disk C nearly edge-on; the factory hides the white indices Brown does not draw.',
+  },
   354: {
-    remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket'],
-    note: 'The grooved crosshead, input disk and the stem guides; no support rails or brackets are drawn.',
+    scale: [1, 1, -1],
+    remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket', 'fixed-bearing-for-input-shaft', 'visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
+    note: 'The rimmed disk in front, the grooved crosshead and its stem dashed behind it, the stems cropped at the plate edges through their guides; no support rails, brackets, bearing or white indices are drawn. The depth mirror puts the disk in front as Brown draws it.',
+  },
+  363: {
+    camera: [0, 0.03, 1],
+    scale: [-1, 1, 1],
+    note: 'Front elevation of the see-saw with its left end raised (the official t=0 pose mirrored), a shoe with end board, rounded heel and cleat at each plank end, the post with its concave buttresses and straight braces on the base; no handholds are drawn.',
   },
   364: {
     camera: [0, 0.06, 1],
     remove: ['fixed-two-axis-bearing-stand'],
     note: 'Side elevation of the pin wheel face-on beside the helically grooved drum on its upright shaft; no stand or bed is drawn.',
+  },
+  368: {
+    camera: [0, 0.03, 1],
+    scale: [1, 1, -1],
+    note: 'Flat elevation from the rack side, mirrored front-to-back to the plate: the table edge-on, the horizontal bevel wheel on the left driven by the upright bevel on the crank shaft, the rack in front of its spur pinion, the crank on the right, and the plain cylinder below with its spiral line and the rack-borne marking arm.',
   },
   371: {
     remove: ['fixed-base-beneath-mangle-wheel', 'rear-output-bearing-post'],
@@ -410,58 +425,98 @@ export default {
     note: 'Front elevation of the four bevel wheels with the broad hoop standing edgewise in front, the shaft through two tall standards tied by a turned stretcher; the weighing band, weights, base and white indices are not drawn.',
   },
   374: {
-    remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard'],
-    note: 'The eccentric pulley, band and treadle roller; no base or standards are drawn.',
+    remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard', 'white-index-showing-continuous-output-shaft-rotation', 'white-face-spin-index', 'broad-foot-pad-at-free-end-of-treadle'],
+    note: 'The eccentric pulley, band and the diagonal treadle rising leftward from its right-hand fulcrum past the roller; no base, standards, foot pad or white index are drawn.',
   },
   375: {
-    camera: [0.05, 0.08, 1],
-    note: 'Front elevation of the edge-runner mill and its bevel drive, as Brown draws it.',
+    camera: [0, 0.07, 1],
+    remove: ['fixed-foundation-beneath-annular-pan', 'lower-bearing-for-vertical-runner-shaft', 'white-index-.*'],
+    note: 'Front elevation of the edge-runner mill: the two tall runners edge-on in the flared pan inside the rectangular standard, the large bevel wheel above it and the pinion on the right-hand upright; no foundation slab, lower bearing or white indices are drawn.',
+  },
+  376: {
+    camera: [0, 0, 1],
+    remove: ['fixed-bearing-standard-outside-wheel-cage', 'fixed-overhung-arm-carrying-wheel-bearing', 'fixed-base-rail-for-treadwheel-frame', 'white-index-.*'],
+    note: 'Face view of the treadwheel: the riveted rim, the square lattice of crossing bars round the sectioned axle and the horse walking inside; no trestle, base rails or white index are drawn.',
+  },
+  377: {
+    camera: [0.42, 0.06, 0.9],
+    remove: ['fixed-treadmill-foundation', 'fixed-hand-rail-support', 'white-index-.*'],
+    note: 'Brown\'s view along the treadmill: the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the broad drum receding to the right with the man stepping up its boards holding the rail; no foundation slab, rail posts or white index are drawn.',
   },
   378: {
     camera: [0.05, 0.08, 1],
-    note: 'Front elevation of the saw frame, its guides and the log, as Brown draws it.',
+    remove: ['common-fixed-foundation-rail', 'pendulum-a-frame-base', 'white-pendulum-angle-index'],
+    note: 'Front elevation of the pendulum on its A-frame, the saw frame hung in its guides between the footed posts, and the log; the ground line alone carries the feet, so no foundation rails, A-frame base or white index are drawn.',
+  },
+  379: {
+    remove: ['white-drill-spindle-rotation-index', 'white-feed-screw-rotation-index'],
+    note: 'Side elevation of the C-frame with the drill spindle and its crank handle above and the opposed feed screw, rest and two-ball tommy bar below; no white indices are drawn.',
   },
   381: {
     camera: [1, 0.06, 0.03],
     remove: ['white-.*', 'workpiece-longitudinal-grain-line'],
     note: "End elevation matching Brown's upper transverse section: the bed, the flush dovetailed cheeks and wedges, and the board standing on edge between them; Brown's lower figure, the plan of the diverging cheeks and wedges, is the top view. The white datums and grain lines are not drawn.",
   },
+  382: {
+    remove: ['white-stem-height-and-yaw-index', 'white-mirror-orientation-index'],
+    note: 'The broad rounded mirror frame on its hinge and stem above the turned baluster pillar and stepped foot; no white indices are drawn.',
+  },
+  383: {
+    remove: ['white-winding-roll-rotation-index', 'white-dressing-cylinder-rotation-index', 'moving-transverse-cloth-material-registration-stripe'],
+    note: 'End elevation of the broad arched strap frame with its crossbars, the two winding rolls and the brush cylinder between them, the cloth running on its S path; no white indices or cloth stripes are drawn.',
+  },
   384: {
     camera: [0, 0.1, 1],
-    remove: ['stationary-drawing-and-transfer-paper'],
-    note: 'Side view of the point, screw-threaded arm and small wheel; no paper is drawn.',
+    remove: ['stationary-drawing-and-transfer-paper', 'white-wheel-spin-index-on-(?:near-face|tread)', 'stationary-reference-index'],
+    note: 'Side view of the point, screw-threaded arm and small milled wheel; no paper or white indices are drawn.',
   },
   385: {
-    remove: ['fixed-wall-beside-door-opening', 'fixed-vertical-door-jamb', 'fixed-door-frame-lintel', '(frame|door)-pin-socket-bracket', 'moving-door-panel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', 'one-of-three-fixed-axis-door-hinge-barrels'],
-    note: 'The two pins, toggle links and weight; the door and its frame are not drawn.',
+    remove: ['fixed-wall-beside-door-opening', 'fixed-vertical-door-jamb', 'fixed-door-frame-lintel', '(frame|door)-pin-socket-bracket', 'moving-door-panel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', 'one-of-three-fixed-axis-door-hinge-barrels', '(frame|door)-side-socket-fixed-to-support', '(frame|door)-side-socket-upper-lip', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
+    note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex; the door, its frame, the pin sockets and white indices are not drawn.',
+  },
+  387: {
+    remove: ['white-.*'],
+    note: 'Side elevation of the wharf ladder, its floating end frame, parallel rails and level treads; the white rail and tread indices are not drawn.',
   },
   388: {
-    remove: ['fixed-planer-feed-roller-bearing-frame'],
-    note: 'The smooth and toothed rollers and the board between them; no bearing frame is drawn.',
+    remove: ['fixed-planer-feed-roller-bearing-frame', 'white-.*'],
+    note: 'The smooth and toothed rollers and the board between them; no bearing frame or white indices are drawn.',
+  },
+  389: {
+    remove: ['white-.*', 'fixed-front-rack-guide-strap'],
+    note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with the eccentric strap pawl and upper stop; the white indices and the front rack straps cut away by the section are not drawn.',
   },
   390: {
-    remove: ['fixed-two-shaft-rectifier-bearing-frame'],
-    note: 'The semicircular piece A on fulcrum a, flywheel B and bands C, D; no bearing frame is drawn.',
+    remove: ['fixed-two-shaft-rectifier-bearing-frame', 'white-.*', 'piece-A-rigid-radial-web', '.*-fixed-material-marker'],
+    note: 'The semicircular piece A on fulcrum a, flywheel B and bands C, D; no bearing frame, web inside A, band markers or white indices are drawn.',
   },
   391: {
-    remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing'],
-    note: 'The guides b, racks A, A1, cog wheel and elbow lever C; no frame is drawn.',
+    remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing', '(?:.*-)?white-.*', 'reciprocating-input-piston-rod'],
+    note: 'The D-shaped guides b, racks A, A1 on their weighted crosshead, cog wheel and elbow lever C; no frame, input rod or white indices are drawn.',
   },
   392: {
-    remove: ['fixed-gig-saw-machine-bed'],
-    note: 'The saw, its guides and table, the crank wheel and the spring; no machine bed is drawn.',
+    remove: ['fixed-gig-saw-machine-bed', 'white-.*'],
+    note: 'The saw, its guides and table, the crank wheel and the spring; no machine bed or white index is drawn.',
+  },
+  393: {
+    remove: ['white-.*', 'fixed-overhead-bearing-standard', 'fixed-overhead-shaft-bearing-arm', 'fixed-bearing-around-upright-rotating-shaft'],
+    note: 'The upright spindle and its head, bent carrier, ball joint and cup on the lens, which rests on the table plank; no overhead standard or bearing is drawn.',
   },
   394: {
-    remove: ['fixed-Parsons-device-machine-bed', 'fixed-central-pinion-bearing-standard', 'connected-input-guide-support'],
-    note: 'The endless rack, flanged pinion and rod guide; no bed or standards are drawn.',
+    remove: ['fixed-Parsons-device-machine-bed', 'fixed-central-pinion-bearing-standard', 'connected-input-guide-support', 'fixed-guide-for-reciprocating-input-rod', 'white-.*'],
+    note: 'The endless rack, flanged pinion and the rod with its end collar; no bed, standards, rod guide or white indices are drawn.',
   },
   396: {
-    remove: ['fixed-watch-escapement-base', 'rear-watch-plate-bearing-standard'],
-    note: 'The wheel A, balance B, crooked lever C and banking pins l; no watch plate base is drawn.',
+    remove: ['fixed-watch-escapement-base', 'rear-watch-plate-bearing-standard', 'white-.*'],
+    note: 'The wheel A, plain-rimmed balance B, straight lever C with its crook d and banking pins l; no watch plate base or white indices are drawn.',
+  },
+  397: {
+    remove: ['white-.*', 'fixed-machine-base', 'fixed-horizontal-shuttle-guide-rail'],
+    note: 'The flat shuttle bar, its link, the slotted S-rocker on its foot pivot and the crank; no machine base or guide rails are drawn.',
   },
   398: {
-    remove: ['fixed-mechanism-bearing-support', 'fixed-base-for-cam-guides-and-output-shaft'],
-    note: 'The cam C, crosshead in its guide and output wheel; no base or supports are drawn.',
+    remove: ['fixed-mechanism-bearing-support', 'fixed-base-for-cam-guides-and-output-shaft', 'white-.*'],
+    note: 'The cam C, crosshead in its guide and the plain output disc with its crank; no base, supports or white indices are drawn.',
   },
   386: {
     camera: [0.08, 0.05, 1],

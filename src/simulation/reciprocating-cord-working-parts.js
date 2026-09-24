@@ -29,14 +29,16 @@ export function correctReciprocatingCordParts(root,id,update){
   // The solid eccentric disk is keyed to the offset shaft through a rear drive arm.
   const arm=add(b.shaftRotor,new T.BoxGeometry(g.eccentricity+.28,.23,.16),b.shaftPin.material,'eccentric-shaft-to-sheave-drive-arm');arm.position.set(-g.eccentricity/2,0,0);
   for(const [bearing,r,bore,length]of[[b.shaftBearing,.23,.109,.30],[b.treadlePivotBearing,.20,.079,.22]]){replace(bearing,ring(r,bore,length));bearing.rotation.x=Math.PI/2;}
-  b.shaftBearing.position.z=-.15;b.treadlePivotBearing.position.z=-.21;
+  b.shaftBearing.position.z=-.15;b.treadlePivotBearing.position.z=-.27;
   replace(b.shaftPin,new T.CylinderGeometry(.105,.105,.90,40));replace(b.treadlePivotPin,new T.CylinderGeometry(.075,.075,.92,32));
   // Shorten the standards to support journal undersides instead of blocking the bores.
   for(const [post,axisY,r]of[[b.shaftPost,g.shaftCenter.y,.23],[b.pivotPost,g.treadlePivot.y,.20]]){
-   const bottom=-2.57,top=axisY-r+.025,height=top-bottom;replace(post,new T.BoxGeometry(.24,height,.38));post.position.set(post.position.x,(bottom+top)/2,-.24);
+   const top=axisY-r+.025,bottom=Math.min(-2.57,top-.5),height=top-bottom;replace(post,new T.BoxGeometry(.24,height,.38));post.position.set(post.position.x,(bottom+top)/2,-.24);
   }
   const treadleBody=b.treadleBeam;
-  const web=clip.difference(poly([[-.30,-.085],[g.treadleRadius+1.26,-.085],[g.treadleRadius+1.26,.085],[-.30,.085]]),poly(circle([0,0],.079,64)),poly(circle([g.treadleRadius,0],.074,64)));
+  // Brown's treadle tapers from the fulcrum toward its free left end.
+  const tail=g.treadleBehindPivot??.30,reach=g.treadleRadius+(g.treadleBeyondRoller??1.26);
+  const web=clip.difference(poly([[-tail,-.085],[reach,-.055],[reach,.055],[-tail,.085]]),poly(circle([0,0],.079,64)),poly(circle([g.treadleRadius,0],.074,64)));
   replace(treadleBody,plate(web,-.15,.15));treadleBody.position.x=0;
   replace(b.rollerAxle,new T.CylinderGeometry(.070,.070,.62,32));b.rollerAxle.position.z=.22;
   // Pin is behind the treadle web; the web's local fulcrum receives a real bearing eye.

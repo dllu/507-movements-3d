@@ -603,11 +603,9 @@ function rollingCarriageFrictionExperiment(movement) {
   for (let index = 0; index < 24; index += 1) {
     const angle = index / 24 * FULL_TURN;
     const tick = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        index % 3 === 0 ? 0.13 : 0.085,
-        0.025,
-        0.026,
-      ),
+      // Brown graduates a band between two circles, each division
+      // crossing the whole band.
+      new THREE.BoxGeometry(0.13, 0.022, 0.026),
       darkMaterial,
     );
     tick.position.set(
@@ -621,6 +619,18 @@ function rollingCarriageFrictionExperiment(movement) {
     dialTicks.push(tick);
     root.add(tick);
   }
+  const dialInnerCircle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.405, 0.016, 8, 80),
+    darkMaterial,
+  );
+  dialInnerCircle.position.set(
+    indicatorCenter.x,
+    indicatorCenter.y,
+    indicatorCenter.z + 0.15,
+  );
+  dialInnerCircle.userData.fixed = true;
+  dialInnerCircle.userData.role = 'inner-circle-of-graduated-indicator-band';
+  root.add(dialInnerCircle);
   const pointerPivot = new THREE.Group();
   pointerPivot.position.set(
     indicatorCenter.x,

@@ -1,5 +1,6 @@
 import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -22,136 +23,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
-class PlanarArcCurve3 extends THREE.Curve {
-  constructor(center, radius, startAngle, sweep, z) {
-    super();
-    this.center = center.clone();
-    this.radius = radius;
-    this.startAngle = startAngle;
-    this.sweep = sweep;
-    this.z = z;
-  }
-
-  getPoint(parameter, target = new THREE.Vector3()) {
-    const angle = this.startAngle + this.sweep * parameter;
-    return target.set(
-      this.center.x + this.radius * Math.cos(angle),
-      this.center.y + this.radius * Math.sin(angle),
-      this.z,
-    );
-  }
-
-  getPointAt(parameter, target = new THREE.Vector3()) {
-    return this.getPoint(parameter, target);
-  }
-
-  getTangent(parameter, target = new THREE.Vector3()) {
-    const angle = this.startAngle + this.sweep * parameter;
-    const direction = Math.sign(this.sweep) || 1;
-    return target.set(
-      -Math.sin(angle) * direction,
-      Math.cos(angle) * direction,
-      0,
-    );
-  }
-
-  getTangentAt(parameter, target = new THREE.Vector3()) {
-    return this.getTangent(parameter, target);
-  }
-
-  getLength() {
-    return Math.abs(this.sweep) * this.radius;
-  }
-
-  getLengths(divisions = 200) {
-    const length = this.getLength();
-    return Array.from(
-      { length: divisions + 1 },
-      (_, index) => length * index / divisions,
-    );
-  }
-
-  getUtoTmapping(value) {
-    return value;
-  }
-}
-
-function tangentPoint(point, center, radius, angleOffsetSign) {
-  const displacement = point.clone().sub(center);
-  const distance = displacement.length();
-  if (distance <= radius) {
-    throw new RangeError('Gig-saw spring endpoint entered its bend circle.');
-  }
-  const baseAngle = Math.atan2(displacement.y, displacement.x);
-  const offset = Math.acos(radius / distance);
-  const angle = baseAngle + angleOffsetSign * offset;
-  return {
-    angle,
-    point: new THREE.Vector3(
-      center.x + radius * Math.cos(angle),
-      center.y + radius * Math.sin(angle),
-      point.z,
-    ),
-  };
-}
-
-function flexibleLeafCurve({
-  bendCenter,
-  bendRadius,
-  fixedEnd,
-  movingEnd,
-}) {
-  const startTangent = tangentPoint(
-    movingEnd,
-    bendCenter,
-    bendRadius,
-    -1,
-  );
-  const endTangent = tangentPoint(
-    fixedEnd,
-    bendCenter,
-    bendRadius,
-    1,
-  );
-  let sweep = endTangent.angle - startTangent.angle;
-  while (sweep > 0) sweep -= FULL_TURN;
-  const firstSpan = new THREE.LineCurve3(
-    movingEnd.clone(),
-    startTangent.point,
-  );
-  const bend = new PlanarArcCurve3(
-    bendCenter,
-    bendRadius,
-    startTangent.angle,
-    sweep,
-    movingEnd.z,
-  );
-  const lastSpan = new THREE.LineCurve3(
-    endTangent.point,
-    fixedEnd.clone(),
-  );
-  const curve = new THREE.CurvePath();
-  curve.add(firstSpan);
-  curve.add(bend);
-  curve.add(lastSpan);
-  curve.userData = {
-    bendCenter: bendCenter.clone(),
-    bendRadius,
-    endTangentAngle: endTangent.angle,
-    endTangentPoint: endTangent.point.clone(),
-    fixedEnd: fixedEnd.clone(),
-    joinTangentDots: [
-      firstSpan.getTangent(1).dot(bend.getTangent(0)),
-      bend.getTangent(1).dot(lastSpan.getTangent(0)),
-    ],
-    movingEnd: movingEnd.clone(),
-    startTangentAngle: startTangent.angle,
-    startTangentPoint: startTangent.point.clone(),
-    sweep,
-  };
-  return curve;
-}
-
 function makeCrankFlywheel({
   crankRadius,
   darkMaterial,
@@ -162,10 +33,12 @@ function makeCrankFlywheel({
 }) {
   const rotor = new THREE.Group();
   rotor.userData.role = 'uniformly-rotating-gig-saw-crank-flywheel';
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelRadius, 0.115, 14, 80),
-    material,
-  );
+  // Brown draws a broad flat flywheel rim on four spokes.
+  const rim = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.115, radial: wheelRadius + 0.11 },
+    { axial: 0.115, radial: wheelRadius + 0.11 },
+  ], wheelRadius - 0.17, 96), material);
+  rim.rotation.x = Math.PI / 2;
   rim.userData.role = 'four-unit-source-radius-flywheel-rim';
   rotor.add(rim);
   const spokes = [];
@@ -370,6 +243,40 @@ function makeFlexibleSpringSegments({
   return markShadows(spring);
 }
 
+// Brown draws the upper spring as one straight leaf clamped level at its
+// right-hand anchor.  Loaded at its free end by the blade, it takes the
+// elastic line of an end-loaded cantilever: w(u)=d*u^2*(3L-u)/(2L^3), where u
+// is measured from the clamp, so it always leaves the clamp level and is
+// straight when the blade tip is level with the clamp.
+class CantileverLeafCurve extends THREE.Curve {
+  constructor(movingEnd, fixedEnd) {
+    super();
+    this.movingEnd = movingEnd.clone();
+    this.fixedEnd = fixedEnd.clone();
+    this.span = fixedEnd.x - movingEnd.x;
+    this.deflection = fixedEnd.y - movingEnd.y;
+    this.userData = {
+      deflection: this.deflection,
+      fixedEnd: this.fixedEnd.clone(),
+      movingEnd: this.movingEnd.clone(),
+      span: this.span,
+    };
+  }
+
+  getPoint(parameter, target = new THREE.Vector3()) {
+    const t = THREE.MathUtils.clamp(parameter, 0, 1);
+    const u = (1 - t) * this.span;
+    const shape = u ** 2 * (3 * this.span - u) / (2 * this.span ** 3);
+    if (t === 0) return target.copy(this.movingEnd);
+    if (t === 1) return target.copy(this.fixedEnd);
+    return target.set(
+      this.movingEnd.x + t * this.span,
+      this.fixedEnd.y - this.deflection * shape,
+      this.fixedEnd.z,
+    );
+  }
+}
+
 function gigSawWithTensionSpring(movement) {
   const root = new THREE.Group();
 
@@ -402,19 +309,16 @@ function gigSawWithTensionSpring(movement) {
   const lowerGuideTop = 11.02988 * sourceScale + originY;
   const upperGuideBottom = 14.27988 * sourceScale + originY;
   const upperGuideTop = 20.27988 * sourceScale + originY;
-  const springBendCenter = new THREE.Vector3(
-    11.121157 * sourceScale,
-    13.17988 * sourceScale + originY,
-    0.33,
-  );
-  const springBendRadius = 13 * sourceScale;
-  const springFixedEnd = new THREE.Vector3(
-    13.121157 * sourceScale,
-    26.12988 * sourceScale + originY,
-    0.33,
-  );
   const sliderLowY = originY + connectingRodLength - crankRadius;
   const sliderHighY = originY + connectingRodLength + crankRadius;
+  // Brown draws the leaf straight with the crank pin level, the pose at t=0.
+  const sliderAtSourcePose = originY
+    + Math.sqrt(connectingRodLength ** 2 - crankRadius ** 2);
+  const springFixedEnd = new THREE.Vector3(
+    13.121157 * sourceScale,
+    sliderAtSourcePose + springAttachmentY,
+    0.33,
+  );
   const sliderStroke = sliderHighY - sliderLowY;
 
   const driverMaterial = matte(PALETTE.driver, {
@@ -559,20 +463,13 @@ function gigSawWithTensionSpring(movement) {
   springFixedBoss.userData.role = 'fixed-right-hand-anchor-of-leaf-spring';
   root.add(springFixedBoss);
 
-  const springCurveAtSlider = (sliderY) => flexibleLeafCurve({
-    bendCenter: springBendCenter,
-    bendRadius: springBendRadius,
-    fixedEnd: springFixedEnd,
-    movingEnd: new THREE.Vector3(
-      0,
-      sliderY + springAttachmentY,
-      springFixedEnd.z,
-    ),
-  });
-  const minimumSpringLength = springCurveAtSlider(sliderHighY).getLength();
-  const maximumSpringLength = springCurveAtSlider(sliderLowY).getLength();
+  const springCurveAtSlider = (sliderY) => new CantileverLeafCurve(
+    new THREE.Vector3(0, sliderY + springAttachmentY, springFixedEnd.z),
+    springFixedEnd,
+  );
+  // Unloaded, the leaf is set up 0.10 above its upper-dead-centre line, so
+  // it still pulls the blade up at the top of the stroke.
   const springPreloadExtension = 0.10;
-  const springNaturalLength = minimumSpringLength - springPreloadExtension;
   const springRateProxy = 1;
 
   const stateAtTime = (time) => {
@@ -603,7 +500,7 @@ function gigSawWithTensionSpring(movement) {
     const wrist = new THREE.Vector3(0, sliderY, crankPin.z);
     const springCurve = springCurveAtSlider(sliderY);
     const springLength = springCurve.getLength();
-    const springExtension = springLength - springNaturalLength;
+    const springExtension = springPreloadExtension + sliderHighY - sliderY;
     return {
       bladeBottomY: sliderY + bladeBottom,
       bladeTopY: sliderY + bladeTop,
@@ -677,13 +574,13 @@ function gigSawWithTensionSpring(movement) {
           - sourceCrankRadius ** 2 - sourceInitialWristY ** 2,
       sliderStroke: sliderStroke - 2 * crankRadius,
       springMaximumOrdering:
-        maximumSpringLength > minimumSpringLength ? 0 : 1,
+        sliderHighY > sliderLowY ? 0 : 1,
     },
     constraints: {
       crankSlider:
         'The lower wrist is the upper intersection of the crank-pin circle of connecting-rod length with the fixed vertical line x=0.',
       leafSpring:
-        'The flexing spring runs from the moving blade top to a tangent on the source 13-unit bend circle, clockwise around that circle, then tangent to its fixed right anchor.',
+        'The leaf spring is clamped level at its right anchor and bends as an end-loaded cantilever to the moving blade top; it is straight in the source pose with the crank pin level, as Brown draws it.',
       noGate:
         'Only the narrow blade and its two sliding blocks reciprocate; the separated upper/lower guide cheeks and work table are fixed.',
       sawRigidity:
@@ -694,7 +591,7 @@ function gigSawWithTensionSpring(movement) {
         'vertical saw-wrist position',
         'connecting-rod obliquity',
         'rigid blade translation',
-        'upper leaf-spring tangent point and wrap angle',
+        'upper leaf-spring tip deflection',
       ],
       independentPrescribedInputs: 1,
       inputs: ['uniform crankshaft angle'],
@@ -706,7 +603,7 @@ function gigSawWithTensionSpring(movement) {
       idealizations: [
         'rigid crank, connecting rod, blade, and guide blocks',
         'zero-clearance frictionless straight guides',
-        'quasi-static flexing leaf represented by its source tangent-circle construction',
+        'quasi-static flexing leaf represented by the small-deflection end-loaded cantilever elastic line',
         'positive preload retained throughout the stroke',
         'cutting force, flywheel inertia, vibration, and material removal omitted',
       ],
@@ -722,14 +619,9 @@ function gigSawWithTensionSpring(movement) {
       crankRadius,
       lowerGuideBottom,
       lowerGuideTop,
-      maximumSpringLength,
-      minimumSpringLength,
       sourceScale,
       springAttachmentY,
-      springBendCenter: springBendCenter.clone(),
-      springBendRadius,
       springFixedEnd: springFixedEnd.clone(),
-      springNaturalLength,
       springPreloadExtension,
       sliderHighY,
       sliderLowY,
@@ -785,7 +677,7 @@ function gigSawWithTensionSpring(movement) {
           'no gate surrounds the blade',
         ],
         reconstructionDisclosure:
-          'The official canvas construction is available; this Three.js model independently re-solves its circle-line slider and tangent-circle spring geometry rather than copying its rendering code.',
+          'The official canvas construction is available; this Three.js model independently re-solves its circle-line slider rather than copying its rendering code. The canvas routes the spring around a 13-unit bend circle to a raised anchor; the model follows Brown\'s plate instead, a straight leaf clamped level at the right.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 392',
@@ -799,11 +691,11 @@ function gigSawWithTensionSpring(movement) {
     },
     transmission: {
       bladeTensionLaw:
-        'T_proxy=k*(leaf path length-natural length)>0 over the complete stroke',
+        'T_proxy=k*(preload+y_upperDeadCentre-y_blade)>0 over the complete stroke',
       crankSliderLaw:
         'L^2=(0-x_crank)^2+(y_wrist-y_crank)^2',
       springPathLaw:
-        'moving point-tangent span + clockwise 13-unit circular bend + tangent span-fixed point',
+        'end-loaded cantilever y=y_anchor-d*u^2*(3L-u)/(2L^3), u measured from the level right-hand clamp',
     },
     update,
   };

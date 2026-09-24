@@ -47,6 +47,17 @@ test('013 and 014 ropes clear the rendered sheave flanges and the block plates t
               'the fleeting rope remains outside the enclosing cheek plate');
           }
         }
+        const { skin } = casing.userData;
+        const inverse = skin.matrixWorld.clone().invert();
+        skin.geometry.computeBoundingBox();
+        const bounds = skin.geometry.boundingBox;
+        for (let index = 0; index < positions.count; index += 1) {
+          const p = new THREE.Vector3().fromBufferAttribute(positions, index).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
+          if (p.z < bounds.min.z || p.z > bounds.max.z) continue;
+          if (p.y < bounds.min.y || p.y > bounds.max.y || p.x < bounds.min.x || p.x > bounds.max.x) continue;
+          assert.ok(Math.hypot(p.x, p.y) < skin.userData.innerRadius,
+            `${id}, phase ${sample}: the rope passes inside the block's crown skin`);
+        }
       }
     }
   }

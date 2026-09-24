@@ -731,11 +731,10 @@ function atmosphericChainBeamPumpingEngine(movement) {
   const masonryPier = fixedBox(new THREE.Vector2(-1.6, -13.6),
     new THREE.Vector2(1.78, wallTopY), -1.4, 0, masonryMaterial,
     'fixed-masonry-bob-wall-pier-behind-beam');
-  const masonryWall = fixedBox(new THREE.Vector2(1.78, -13.6),
-    new THREE.Vector2(4.6, wallTopY), -1.4, -0.1, masonryMaterial,
-    'fixed-masonry-wall-beyond-pier');
+  // Brown's plank runs the full plate width over the pier; nothing is
+  // drawn beside the pier.
   const floorBeam = fixedBox(new THREE.Vector2(-14.66, wallTopY),
-    new THREE.Vector2(-1.6, -1.39), -1.0, -0.45, timberMaterial,
+    new THREE.Vector2(6.0, -1.39), -1.0, -0.55, timberMaterial,
     'fixed-horizontal-floor-beam-behind-engine');
   const bearingPedestal = fixedBox(new THREE.Vector2(-0.75, wallTopY),
     new THREE.Vector2(0.75, -0.8), -0.54, -0.10, frameMaterial,
@@ -752,7 +751,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
   pivotShaft.position.set(0, 0, -0.01);
   pivotShaft.userData.fixed = true;
   pivotShaft.userData.role = 'fixed-main-beam-shaft';
-  fixedFrame.add(masonryPier, masonryWall, floorBeam, bearingPedestal,
+  fixedFrame.add(masonryPier, floorBeam, bearingPedestal,
     pivotBearing, pivotShaft);
 
   const cylinderZ = .42;
@@ -1191,7 +1190,6 @@ function atmosphericChainBeamPumpingEngine(movement) {
     kingPost,
     lowerBeam,
     masonryPier,
-    masonryWall,
     openCylinder,
     piston,
     pistonCrosshead,

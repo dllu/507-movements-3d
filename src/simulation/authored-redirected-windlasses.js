@@ -534,7 +534,10 @@ function redirectedChineseWindlass(movement) {
   const frame = new THREE.Group();
   frame.userData.role =
     'fixed-A-frame-carrying-windlass-and-two-redirect-sheaves';
-  const frameRearZ = -0.78;
+  // Brown draws the legs straight down past the shaft line; the shaft runs
+  // in bearings seated on the legs' front faces, with no base, crossmember
+  // or sheave posts.
+  const frameRearZ = -0.33;
   const frameBottomY = -3.18;
   const frameCrownY = 3.72;
   const leftLeg = makeBeam(
@@ -556,36 +559,26 @@ function redirectedChineseWindlass(movement) {
   crown.position.set(0, frameCrownY - 0.30, frameRearZ);
   crown.rotation.z = 0;
   crown.userData.role = 'arched-A-frame-crown';
-  const baseRail = new THREE.Mesh(
-    new THREE.BoxGeometry(6.7, 0.17, 0.74),
-    frameMaterial,
-  );
-  baseRail.position.set(0, frameBottomY + 0.08, frameRearZ);
-  baseRail.userData.role = 'fixed-windlass-frame-base-rail';
-  const shaftSupport = makeBeam(
-    new THREE.Vector3(-2.56, shaftY, frameRearZ),
-    new THREE.Vector3(2.56, shaftY, frameRearZ),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.16 },
-  );
-  shaftSupport.userData.role = 'rear-crossmember-at-windlass-shaft';
+  // Each sheave hangs from a short hook bracket on the inside of its leg.
+  const legXAtY = (y) => 3.0 - (y - frameBottomY)
+    / (frameCrownY - 0.32 - frameBottomY) * (3.0 - 0.66);
+  const hookY = fixedGuideY + 0.36;
   const leftGuideSupport = makeBeam(
-    new THREE.Vector3(-1.64, 2.45, frameRearZ),
+    new THREE.Vector3(-legXAtY(hookY) + 0.05, hookY, frameRearZ),
     leftFixedCenter.clone().addScaledVector(pulleyAxis, -0.38),
-    { color: PALETTE.frame, depth: 0.15, thickness: 0.13 },
+    { color: PALETTE.frame, depth: 0.10, thickness: 0.09 },
   );
   leftGuideSupport.userData.role = 'left-fixed-sheave-support';
   const rightGuideSupport = makeBeam(
-    new THREE.Vector3(1.64, 2.45, frameRearZ),
+    new THREE.Vector3(legXAtY(hookY) - 0.05, hookY, frameRearZ),
     rightFixedCenter.clone().addScaledVector(pulleyAxis, -0.38),
-    { color: PALETTE.frame, depth: 0.15, thickness: 0.13 },
+    { color: PALETTE.frame, depth: 0.10, thickness: 0.09 },
   );
   rightGuideSupport.userData.role = 'right-fixed-sheave-support';
   frame.add(
     leftLeg,
     rightLeg,
     crown,
-    baseRail,
-    shaftSupport,
     leftGuideSupport,
     rightGuideSupport,
   );
@@ -611,13 +604,15 @@ function redirectedChineseWindlass(movement) {
   inputShaft.userData.role = 'common-horizontal-windlass-shaft';
   const largeBarrelWidth = 1.28;
   const smallBarrelWidth = 0.78;
+  // Brown's large barrel runs on past the rope pack to the handspike.
+  const largeBarrelExtension = 0.48;
   const largeBarrel = cylinderAlongX(
     largeBarrelPitchRadius - ropeRadius * 1.12,
-    largeBarrelWidth,
+    largeBarrelWidth + largeBarrelExtension,
     driverMaterial,
     52,
   );
-  largeBarrel.position.x = largeRopeExit.x;
+  largeBarrel.position.x = largeRopeExit.x - largeBarrelExtension / 2;
   largeBarrel.userData.pitchRadius = largeBarrelPitchRadius;
   largeBarrel.userData.role = 'larger-winding-barrel';
   const smallBarrel = cylinderAlongX(
@@ -659,16 +654,16 @@ function redirectedChineseWindlass(movement) {
     0,
   );
   shaftIndicator.userData.role = 'white-common-shaft-spin-index';
-  const crankRadius = 0.74;
+  // Brown turns the windlass by a handspike through the large barrel.
+  const crankRadius = 0.84;
+  const handspikeX = largeRopeExit.x - largeBarrelWidth / 2
+    - largeBarrelExtension + 0.2;
   const crankArm = makeBeam(
-    new THREE.Vector3(-2.72, 0, 0),
-    new THREE.Vector3(-2.72, crankRadius, 0),
-    { color: PALETTE.driver, depth: 0.16, thickness: 0.16 },
+    new THREE.Vector3(handspikeX, -crankRadius, 0),
+    new THREE.Vector3(handspikeX, crankRadius, 0),
+    { color: PALETTE.frame, depth: 0.075, thickness: 0.075 },
   );
-  crankArm.userData.role = 'hand-crank-fast-to-windlass-shaft';
-  const crankHandle = cylinderAlongX(0.10, 0.48, inkMaterial, 24);
-  crankHandle.position.set(-2.96, crankRadius, 0);
-  crankHandle.userData.role = 'free-hand-grip-on-windlass-crank';
+  crankArm.userData.role = 'handspike-through-large-barrel';
   windlassRotor.add(
     inputShaft,
     largeBarrel,
@@ -676,7 +671,6 @@ function redirectedChineseWindlass(movement) {
     ...barrelFlanges,
     shaftIndicator,
     crankArm,
-    crankHandle,
   );
   root.add(windlass);
 
@@ -1206,10 +1200,8 @@ function redirectedChineseWindlass(movement) {
     'redirected-single-rope-Chinese-differential-windlass';
   root.userData.blocks = {
     barrelFlanges,
-    baseRail,
     contactMarkers,
     crankArm,
-    crankHandle,
     crown,
     frame,
     hanger,
@@ -1231,7 +1223,6 @@ function redirectedChineseWindlass(movement) {
     ropeMesh,
     shaftBearings,
     shaftIndicator,
-    shaftSupport,
     smallBarrel,
     windlass,
     windlassRotor,

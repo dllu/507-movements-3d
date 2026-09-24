@@ -7,9 +7,13 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 export function twoFixedOneMovable() {
   const root = new THREE.Group();
+  // Plate 18's three sheaves measure about 1 : 0.77 : 0.73 (upper, middle
+  // fixed, movable). The reconstruction keeps both side strands vertical, so
+  // the right strand from the movable sheave to the upper one must pass
+  // outside the middle sheave: middle 0.73 and movable 0.81 of the upper.
   const upperRadius = 0.48;
-  const lowerFixedRadius = 0.32;
-  const movableRadius = 0.36;
+  const lowerFixedRadius = 0.35;
+  const movableRadius = 0.39;
   const upperY = 1.85;
   const lowerFixedY = 0.78;
   const movableBaseY = -1.85;

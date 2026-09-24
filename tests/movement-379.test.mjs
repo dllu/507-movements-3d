@@ -91,11 +91,12 @@ test('movement 379 is a C-frame portable drill with separate coaxial upper drill
     blocks.drillCrankArm,
     blocks.drillCrankHub,
     blocks.drillCrankKnob,
-    blocks.drillIndex,
     blocks.drillSpindle,
   ]) assert.equal(component.parent, blocks.drillRotor);
+  // Brown draws no white indices.
+  assert.equal(blocks.drillIndex.parent, null);
+  assert.equal(blocks.feedIndex.parent, null);
   for (const component of [
-    blocks.feedIndex,
     blocks.feedScrewCore,
     blocks.feedThread,
     ...blocks.handwheelArms,
@@ -103,8 +104,8 @@ test('movement 379 is a C-frame portable drill with separate coaxial upper drill
     ...blocks.handwheelKnobs,
     blocks.workRest,
   ]) assert.equal(component.parent, blocks.feedScrewRotor);
-  assert.equal(blocks.handwheelArms.length, 3);
-  assert.equal(blocks.handwheelKnobs.length, 3);
+  assert.equal(blocks.handwheelArms.length, 2);
+  assert.equal(blocks.handwheelKnobs.length, 2);
   assert.equal(blocks.crampFrame.userData.fixed, true);
   assert.equal(
     blocks.fixedFeedNut.userData.fixedAgainstRotationAndTranslation,

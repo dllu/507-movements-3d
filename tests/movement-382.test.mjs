@@ -100,8 +100,10 @@ test('movement 382 is one socketed elevating/yawing stem carrying one independen
   for (const component of [
     blocks.hingeYoke,
     blocks.stemCore,
-    blocks.stemHeightIndex,
   ]) assert.equal(component.parent, blocks.stem);
+  // Brown draws no white indices.
+  assert.equal(blocks.stemHeightIndex.parent, null);
+  assert.equal(blocks.mirrorNormalIndex.parent, null);
   for (const component of [
     ...blocks.hingeOuterBarrels,
     blocks.hingeSetScrew,
@@ -112,11 +114,10 @@ test('movement 382 is one socketed elevating/yawing stem carrying one independen
   for (const component of [
     ...blocks.mirrorFrameBars,
     blocks.mirrorGlass,
-    blocks.mirrorNormalIndex,
   ]) assert.equal(component.parent, blocks.mirrorAssembly);
   assert.equal(blocks.baseTiers.length, 3);
   assert.equal(blocks.hingeOuterBarrels.length, 2);
-  assert.equal(blocks.mirrorFrameBars.length, 4);
+  assert.equal(blocks.mirrorFrameBars.length, 1, 'one broad rounded frame');
   assert.equal(blocks.base.userData.fixed, true);
   assert.equal(blocks.socketSetScrew.userData.fixed, true);
 

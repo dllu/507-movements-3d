@@ -201,11 +201,13 @@ function intermittentShuttleDrive(movement) {
   const outputSlider = new THREE.Group();
   outputSlider.userData.role =
     'intermittently-reciprocating-horizontal-shuttle-carriage';
+  // Brown draws the shuttle as one flat bar that runs from just behind the
+  // link lug to beyond the rocker head.
   const shuttleBar = new THREE.Mesh(
-    new THREE.BoxGeometry(3.70, 0.22, 0.28),
+    new THREE.BoxGeometry(4.34, 0.22, 0.28),
     outputMaterial,
   );
-  shuttleBar.position.set(-0.48, 0.27, 0);
+  shuttleBar.position.set(1.10, 0.27, 0);
   shuttleBar.userData.role = 'sewing-machine-or-printing-press-output-slide';
   const sliderJoint = cylinderAlongZ(0.14, 0.58, darkMaterial, 28);
   sliderJoint.position.z = 0.28;
@@ -234,7 +236,8 @@ function intermittentShuttleDrive(movement) {
   rockerBoss.position.set(rockerPivot.x, rockerPivot.y, -0.24);
   rockerBoss.userData.role = 'fixed-rocker-bearing-boss';
   const crankBoss = cylinderAlongZ(0.30, 0.20, frameMaterial, 34);
-  crankBoss.position.set(crankCenter.x, crankCenter.y, -0.24);
+  // Set back clear of the crank disk's rear face.
+  crankBoss.position.set(crankCenter.x, crankCenter.y, -0.28);
   crankBoss.userData.role = 'fixed-crank-bearing-boss';
   fixedFrame.add(rockerBoss, crankBoss);
   for(const boss of [rockerBoss,crankBoss]){boss.geometry.dispose();boss.geometry=boredCylinderGeometry(.30,.144,.20);}
@@ -502,11 +505,11 @@ function intermittentShuttleDrive(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.10, -2.62, -0.72),
-    new THREE.Vector3(4.00, 2.50, 1.08),
+    new THREE.Vector3(-3.45, -2.62, -0.72),
+    new THREE.Vector3(5.25, 2.50, 1.08),
   );
   root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraDirection = new THREE.Vector3(2.5, 1.2, 16);
+  root.userData.cameraDirection = new THREE.Vector3(0.25, 0.2, 16);
   root.userData.groundFloorY = -2.48;
   root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=cycleDuration;
   root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});

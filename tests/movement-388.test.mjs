@@ -62,12 +62,18 @@ test('movement 388 is one toothed upper feed roller, one smooth lower support ro
   assert.match(degreesOfFreedom.note, /zero slip/);
 
   for (const component of [
-    blocks.lowerContactIndex,
     blocks.lowerRoller,
-    blocks.upperContactIndex,
     blocks.upperRoller,
     blocks.workpiece,
   ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
+  // Brown draws no white indices; the source presentation detaches them.
+  for (const index of [
+    blocks.lowerContactIndex,
+    blocks.upperContactIndex,
+    ...blocks.lowerFaceIndexes,
+    ...blocks.upperFaceIndexes,
+    ...blocks.workpieceIndexes,
+  ]) assert.ok(index.parent === null, `${index.userData.role} removed`);
   assert.ok(blocks.frame.parent === null, 'source presentation removes frame');
   assert.ok(blocks.lowerRotor.parent === blocks.lowerRoller, 'blocks.lowerRotor parent');
   assert.ok(blocks.upperRotor.parent === blocks.upperRoller, 'blocks.upperRotor parent');
@@ -78,12 +84,6 @@ test('movement 388 is one toothed upper feed roller, one smooth lower support ro
   assert.ok(blocks.workpieceIndexes.length > 20);
   for (const tooth of blocks.upperTeeth) {
     assert.ok(tooth.parent === blocks.upperRotor, 'tooth parent');
-  }
-  for (const index of blocks.lowerFaceIndexes) {
-    assert.ok(index.parent === blocks.lowerRotor, 'index parent');
-  }
-  for (const index of blocks.upperFaceIndexes) {
-    assert.ok(index.parent === blocks.upperRotor, 'index parent');
   }
 
   const roles = [];
@@ -99,12 +99,12 @@ test('movement 388 is one toothed upper feed roller, one smooth lower support ro
     'smooth-lower-supporting-feed-roller',
     'smooth-cylindrical-workpiece-support-surface',
     'wood-plank-between-feed-rollers',
-    'white-fed-workpiece-material-index',
-    'white-roller-face-spin-index',
   ]) assert.ok(roles.includes(role), role);
   for (const role of [
     'fixed-planer-feed-roller-bearing-frame',
     'roller-shaft-bearing-block',
+    'white-fed-workpiece-material-index',
+    'white-roller-face-spin-index',
   ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   disposeModel(model.root);
 });

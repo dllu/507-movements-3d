@@ -14,7 +14,8 @@ export function correctDoorCloserParts(model){
  for(const prefix of['frame-side','door-side']){
   const socket=find(root,`${prefix}-socket-fixed-to-support`),pin=find(root,`${prefix}-vertical-turning-pin`),rotor=pin.parent;
   replace(socket,ring(.19,.089,.25));
-  const bottom=socket.position.y-.125+.055,top=g.endpointY-.18;
+  // Brown draws each pin as a long upright bar below its eye.
+  const bottom=socket.position.y-.55,top=g.endpointY-.18;
   replace(pin,new T.CylinderGeometry(.085,.085,top-bottom,64));pin.position.y=(top+bottom)/2;
   const oldEye=find(root,`${prefix}-link-end-eye`),oldTab=find(root,`${prefix}-pin-orientation-yoke`),index=find(root,`${prefix}-white-pin-turn-index`);
   oldEye.visible=false;oldTab.visible=false;
@@ -39,7 +40,7 @@ export function correctDoorCloserParts(model){
  const centerPin=axle(b.toggleJoint,b.toggleEye.material,'central-toggle-transverse-axle',.43);
  const centerCaps=[];for(const z of[-.2275,.2275]){const cap=add(b.toggleJoint,ring(.12,.077,.025).rotateX(Math.PI/2),b.toggleEye.material,'central-toggle-axle-retainer');cap.position.z=z;centerCaps.push(cap);}
  // Separate the weight eye and suspension plate on the same finite lower pin.
- b.weightEye.position.z=.10;find(root,'weight-neck').position.z=.13;
+ b.weightEye.position.z=.15;find(root,'weight-neck').position.z=.13;
  const weightPin=axle(b.weight,b.toggleEye.material,'weight-eye-transverse-suspension-pin',.29);weightPin.position.set(0,g.weightEyeOffsetY,.045);
  const weightCap=add(b.weight,ring(.115,.077,.025).rotateX(Math.PI/2),b.toggleEye.material,'weight-suspension-pin-retainer');weightCap.position.set(0,g.weightEyeOffsetY,.2025);
  function place(mesh,start,end,normal,offset){const x=end.clone().sub(start).normalize(),y=new T.Vector3().crossVectors(normal,x);mesh.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(x,y,normal));mesh.position.copy(start).addScaledVector(normal,offset);}

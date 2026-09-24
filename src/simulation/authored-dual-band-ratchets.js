@@ -1,6 +1,8 @@
 import { dualBandPawlDimensions, pawl390Angle, install390Pawls } from './dual-band-pawl-contact.js';
 import { correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   beltCurveCrossed,
@@ -462,8 +464,15 @@ function dualBandOscillationRectifier(movement) {
     groove.userData.role = 'semicircular-piece-band-groove';
     rockingSector.add(groove);
   }
+  // Bar with Brown's round boss at fulcrum a, bored for the fixed pin.
   const topLever = new THREE.Mesh(
-    new THREE.BoxGeometry(4.45, 0.16, 0.38),
+    plate(clip.difference(
+      clip.union(
+        poly([[-2.225, -0.08], [2.225, -0.08], [2.225, 0.08], [-2.225, 0.08]]),
+        poly(circle([0, 0], 0.25, 96)),
+      ),
+      poly(circle([0, 0], 0.137, 96)),
+    ), -0.19, 0.19),
     driverMaterial,
   );
   topLever.position.z = 0.49;
@@ -530,10 +539,12 @@ function dualBandOscillationRectifier(movement) {
   flywheelRotor.position.set(lowerCenter.x, lowerCenter.y, 0);
   flywheelRotor.userData.role = 'continuous-one-direction-flywheel-B-shaft';
   root.add(flywheelRotor);
-  const flywheelRim = new THREE.Mesh(
-    new THREE.TorusGeometry(flywheelRadius, 0.12, 14, 88),
-    drivenMaterial,
-  );
+  // Brown draws flywheel B with a broad flat rim on four spokes.
+  const flywheelRim = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.12, radial: flywheelRadius + 0.12 },
+    { axial: 0.12, radial: flywheelRadius + 0.12 },
+  ], flywheelRadius - 0.30, 128), drivenMaterial);
+  flywheelRim.rotation.x = Math.PI / 2;
   flywheelRim.position.z = -0.42;
   flywheelRim.userData.role = 'heavy-flywheel-B-rim-fast-on-shaft';
   flywheelRotor.add(flywheelRim);
@@ -608,7 +619,7 @@ function dualBandOscillationRectifier(movement) {
 
   const openBand = makeDynamicMovingBelt(initialOpenCurve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.ink,
     markerColor: PALETTE.white,
     markerCount: 6,
     radius: 0.034,
@@ -941,7 +952,7 @@ function dualBandOscillationRectifier(movement) {
   finishAlternatingDrive(root, update, cycleDuration);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.4, 1.1, 12),
+    cameraDirection: new THREE.Vector3(0.15, 0.12, 12),
     root,
     update,
   };

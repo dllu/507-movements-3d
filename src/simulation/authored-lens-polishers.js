@@ -249,6 +249,28 @@ function eccentricLensPolisher(movement) {
   table.position.set(0, tableTopY - 0.12, 0);
   table.userData.role = 'fixed-polishing-machine-work-table';
   frame.add(table);
+  // Brown draws the table as a plank on a square leg with one diagonal brace.
+  const tableBottomY = tableTopY - 0.24;
+  const legBottomY = tableBottomY - 2.85;
+  const tableLeg = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, tableBottomY - legBottomY, 0.34),
+    frameMaterial,
+  );
+  tableLeg.position.set(-1.86, (tableBottomY + legBottomY) / 2, 1.30);
+  tableLeg.userData.role = 'fixed-work-table-leg';
+  frame.add(tableLeg);
+  const braceStart = new THREE.Vector3(-1.65, tableBottomY - 1.55, 1.30);
+  const braceEnd = new THREE.Vector3(0.90, tableBottomY - 0.02, 1.30);
+  const braceLength = braceStart.distanceTo(braceEnd);
+  const tableBrace = new THREE.Mesh(
+    new THREE.BoxGeometry(braceLength, 0.22, 0.26),
+    frameMaterial,
+  );
+  tableBrace.position.copy(braceStart).add(braceEnd).multiplyScalar(0.5);
+  tableBrace.rotation.z = Math.atan2(braceEnd.y - braceStart.y,
+    braceEnd.x - braceStart.x);
+  tableBrace.userData.role = 'fixed-work-table-diagonal-brace';
+  frame.add(tableBrace);
   const rearPost = new THREE.Mesh(
     new THREE.BoxGeometry(0.30, 4.35, 0.40),
     frameMaterial,
@@ -573,16 +595,16 @@ function eccentricLensPolisher(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.85, -0.62, -2.05),
+    new THREE.Vector3(-2.85, -3.30, -2.05),
     new THREE.Vector3(2.85, 4.65, 2.05),
   );
   root.userData.cameraDistanceScale = 1.12;
-  root.userData.cameraDirection = new THREE.Vector3(7.8, 4.1, 9.8);
-  root.userData.groundFloorY = -0.43;
+  root.userData.cameraDirection = new THREE.Vector3(0.2, 0.4, 12);
+  root.userData.groundFloorY = -3.26;
   correctLensPolisher(root);
   markShadows(root);
   update(0);
-  return { root, update, cameraDirection: new THREE.Vector3(1.8, 2.4, 12) };
+  return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 
 export function createAuthoredLensPolisherMovement(movement) {

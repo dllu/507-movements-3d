@@ -65,7 +65,8 @@ test('movement 358 is one carriage-mounted fusee constrained by two opposed cord
   assert.equal(blocks.firstCord.parent, model.root);
   assert.equal(blocks.secondCord.parent, model.root);
   assert.notEqual(blocks.firstCord, blocks.secondCord);
-  assert.equal(blocks.carriageWheels.length, 4);
+  // Brown's plan draws two axles, each carrying one edge-on wheel.
+  assert.equal(blocks.carriageWheels.length, 2);
   blocks.carriageWheels.forEach((wheel) => {
     assert.equal(wheel.parent, blocks.carriage);
   });
@@ -155,7 +156,7 @@ test('movement 358 turns Sureda’s ten observations into one monotone fusee pro
   near(
     FULL_TURN * profile.sampledRadii.reduce((sum, value) => sum + value, 0),
     geometry.carriageStroke,
-    3e-15,
+    3e-16 * geometry.carriageStroke,
     'full profile integral',
   );
   for (let index = 0; index < geometry.revolutionCount; index += 1) {
@@ -191,7 +192,7 @@ test('movement 358 turns Sureda’s ten observations into one monotone fusee pro
   }
   near(stateAtDriveTurns(0).displacement, 0, 0, 'zero payout');
   near(stateAtDriveTurns(10).displacement,
-    geometry.carriageStroke, 3e-15, 'full payout');
+    geometry.carriageStroke, 3e-16 * geometry.carriageStroke, 'full payout');
   near(stateAtDriveTurns(0).localRadius,
     geometry.largeRadius, 0, 'large-end radius');
   near(stateAtDriveTurns(10).localRadius,
@@ -330,7 +331,7 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
     near(contacts.fuseeCords.commonTakeoffSeparation,
       .040, 1e-14, `finite separated takeoffs ${index}`);
     near(contacts.fuseeCords.tangentialVelocityError,
-      0, 1e-15, `cord no-slip contact ${index}`);
+      0, 1e-16 * geometry.carriageStroke, `cord no-slip contact ${index}`);
     cords.forEach((cord, cordIndex) => {
       assert.ok(Number.isFinite(cord.userData.length));
       minimumLengths[cordIndex] = Math.min(
@@ -357,13 +358,17 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
     previousMarkers = markers;
   }
   maximumLengths.forEach((maximumLength, index) => {
-    assert.ok(maximumLength - minimumLengths[index] < 0.03,
+    // The carriage law uses the pitch radius only; on Brown's steep cone
+    // the ignored helical lay changes the rendered length by about 0.37%.
+    assert.ok(maximumLength - minimumLengths[index] < 0.004 * maximumLength,
       `cord ${index} remains effectively inextensible`);
   });
-  assert.ok(maximumMarkerStep < 0.09,
+  // Per-sample travel scales with the carriage stroke (0.09 per 10 units).
+  assert.ok(maximumMarkerStep < 0.009 * geometry.carriageStroke,
     `arc-length markers have no path-transition jump: ${maximumMarkerStep}`);
 
-  model.update(2.5);
+  // The rendered cycle opens mid-stroke, as Brown draws it.
+  model.update(2.5 - geometry.displayTimeOffset);
   near(data.cordState.firstWrappedProgress, 0.5, 2e-15,
     'first cord half wound');
   near(data.cordState.secondWrappedProgress, 0.5, 2e-15,

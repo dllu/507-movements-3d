@@ -103,10 +103,15 @@ function pairedEdgeRunnerMill(movement) {
 
   const carrierPeriod = 4;
   const carrierAngularSpeed = FULL_TURN / carrierPeriod;
-  const carrierStartAngle = THREE.MathUtils.degToRad(8);
-  const trackRadius = 1.44;
-  const runnerRadius = 0.72;
-  const runnerWidth = 0.46;
+  // Brown draws both runners exactly edge-on at the sides of the pan.
+  const carrierStartAngle = 0;
+  // The plate's runners stand nearly as tall as the frame opening: their
+  // radius about equals the track radius (97 px against 110 px) and their
+  // width is about 0.3 of their diameter, so one carrier turn is one runner
+  // counter-turn.
+  const trackRadius = 1.20;
+  const runnerRadius = 1.20;
+  const runnerWidth = 0.66;
   const runnerRadiusRatio = trackRadius / runnerRadius;
   const panFloorY = -1.40;
   const runnerCenterY = panFloorY + runnerRadius;
@@ -244,7 +249,7 @@ function pairedEdgeRunnerMill(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
 
-  const panInnerRadius = 0.96;
+  const panInnerRadius = 0.78;
   const panOuterRadius = 1.92;
   const panLipY = panFloorY + 0.34;
   const pan = new THREE.Mesh(
@@ -383,13 +388,14 @@ function pairedEdgeRunnerMill(movement) {
   upperFrame.userData.role = 'fixed-overhead-frame-supporting-right-angle-drive';
   root.add(upperFrame);
   const frameTop = new THREE.Mesh(
-    new THREE.BoxGeometry(4.92, 0.18, 0.52),
+    new THREE.BoxGeometry(5.08, 0.18, 0.52),
     frameMaterial,
   );
-  frameTop.position.set(0.38, 1.48, -0.38);
+  frameTop.position.set(0, 1.48, -0.38);
   upperFrame.add(frameTop);
   const framePosts = [];
-  for (const x of [-2.00, 2.76]) {
+  // Brown's rectangular standard is symmetric about the runner shaft.
+  for (const x of [-2.45, 2.45]) {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(0.18, 3.42, 0.48),
       frameMaterial,
@@ -400,7 +406,7 @@ function pairedEdgeRunnerMill(movement) {
     upperFrame.add(post);
   }
   const inputBearing = cylinderAlongX(0.16, 0.34, frameMaterial, 28);
-  inputBearing.position.set(2.76, bevelApex.y, 0);
+  inputBearing.position.set(2.45, bevelApex.y, 0);
   inputBearing.userData.role = 'fixed-bearing-for-horizontal-input-shaft';
   upperFrame.add(inputBearing);
   const lowerBase = new THREE.Mesh(

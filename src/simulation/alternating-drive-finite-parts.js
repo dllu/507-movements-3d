@@ -9,10 +9,38 @@ export const boredAxialCylinder=(radius,bore,length)=>boredLatheGeometry([
 // Swept finite pin opening, including the sharp branch junctions. A solid tube
 // on the centerline is not a slot. The small radial allowance covers the sampled
 // centerline chords and the polygonal circular offsets.
-export function guideChannelGeometry(curve,low,high) {
+function guideStroke(curve,radius) {
   const points=Array.from({length:193},(_,i)=>{const p=curve.getPoint(i/192);return[p.x,p.y];});
-  const stroke=radius=>clip.union(...points.slice(1).map((p,i)=>capsule(points[i],p,radius,8)));
-  return plate(clip.difference(stroke(.18),stroke(.125)),low,high);
+  return clip.union(...points.slice(1).map((p,i)=>capsule(points[i],p,radius,8)));
+}
+
+// Brown draws each guide b as a D-shaped plate, straight on the side facing
+// the wheel and rounded outboard, with the closed groove cut through it.
+function guideOutline(curve) {
+  const xs=[],ys=[];
+  for(let i=0;i<192;i+=1){const p=curve.getPoint(i/192);xs.push(p.x);ys.push(p.y);}
+  const margin=.30,x0=Math.min(...xs)-margin,x1=Math.max(...xs)+margin,
+    y0=Math.min(...ys)-margin,y1=Math.max(...ys)+margin;
+  const outboard=(x0+x1)/2<0?-1:1,big=Math.min(.95,(x1-x0)*.62),small=.10;
+  const corners=[[x0,y0,Math.PI],[x1,y0,1.5*Math.PI],[x1,y1,0],[x0,y1,.5*Math.PI]];
+  const points=[];
+  for(const [cx,cy,start] of corners){
+    const r=Math.sign(cx-(x0+x1)/2)===outboard?big:small;
+    const ox=cx+(cx===x0?r:-r),oy=cy+(cy===y0?r:-r);
+    for(let i=0;i<=16;i+=1){const a=start+Math.PI/2*i/16;points.push([ox+r*Math.cos(a),oy+r*Math.sin(a)]);}
+  }
+  return poly(points);
+}
+
+// Swept finite pin opening, including the sharp branch junctions. A solid tube
+// on the centerline is not a slot. The small radial allowance covers the sampled
+// centerline chords and the polygonal circular offsets.
+export function guideChannelGeometry(curve,low,high) {
+  return plate(clip.difference(guideOutline(curve),guideStroke(curve,.125)),low,high);
+}
+
+export function guideLipGeometry(curve,low,high) {
+  return plate(clip.difference(guideStroke(curve,.18),guideStroke(curve,.125)),low,high);
 }
 
 export function correctWeightedRackInterfaces(root) {
@@ -21,8 +49,7 @@ export function correctWeightedRackInterfaces(root) {
     const geometry=guideChannelGeometry(guide.userData.centerline,g.guidePlaneZ-.13,g.guidePlaneZ+.13);
     replace(guide.userData.casting,geometry);
     // The dark lip surrounds the same opening, rather than plugging it.
-    const lip=geometry.clone().scale(1,1,.012/.26)
-      .translate(0,0,g.guidePlaneZ+.136-g.guidePlaneZ*.012/.26);
+    const lip=guideLipGeometry(guide.userData.centerline,g.guidePlaneZ+.13,g.guidePlaneZ+.142);
     replace(guide.userData.slot,lip);guide.userData.slot.position.z=0;
   }
   for(const rack of[b.leftRack,b.rightRack]) {
@@ -38,7 +65,10 @@ export function correctWeightedRackInterfaces(root) {
   replace(guide,boredAxialCylinder(.31,.108,.50));
   if(g.rackRootExtension){
     // The extended racks turn on pins ahead of the crosshead, not through its web.
-    replace(b.crossheadBeam,new THREE.BoxGeometry(2.42,.18,.20));b.crossheadBeam.position.z=-.30;
+    // The pins pass through bored bosses on the crosshead, not solid stock.
+    const pivots=[d.stateAtTime(0).leftRack.pivot.x,d.stateAtTime(0).rightRack.pivot.x];
+    const beamOutline=clip.union(poly([[-1.21,-.09],[1.21,-.09],[1.21,.09],[-1.21,.09]]),...pivots.map(x=>poly(circle([x,0],.16,64))));
+    replace(b.crossheadBeam,plate(clip.difference(beamOutline,...pivots.map(x=>poly(circle([x,0],.0875,64)))),-.10,.10));b.crossheadBeam.position.z=-.30;
     for(const rack of[b.leftRack,b.rightRack]){
       replace(rack.userData.pivotBore,new THREE.CylinderGeometry(.085,.085,.94,32));rack.userData.pivotBore.position.z=-.10;
       replace(rack.userData.guidePin,new THREE.CylinderGeometry(.115,.115,1.30,32));rack.userData.guidePin.position.z=-.05;

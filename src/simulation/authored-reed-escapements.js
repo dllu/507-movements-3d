@@ -1,5 +1,6 @@
 import {finishReed396Parts} from './reed-396-working-parts.js';
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -161,10 +162,16 @@ function makeBalance({
   const balance = new THREE.Group();
   balance.userData.role =
     'oscillating-balance-B-with-roller-h-pin-i-and-direct-pallet-j';
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(balanceRadius, 0.105, 12, 96),
-    material,
-  );
+  // Brown draws balance B as a plain broad rim, two concentric circles with
+  // no arms, whose edge passes just short of escape-wheel staff a (his rim
+  // radius is 0.82 of the centre distance).  Arms would sweep through that
+  // staff over the 120-degree vibration.
+  const rimOuterRadius = balanceRadius * 0.87;
+  const rim = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.08, radial: rimOuterRadius },
+    { axial: 0.08, radial: rimOuterRadius },
+  ], rimOuterRadius - 0.22, 160), material);
+  rim.rotation.x = Math.PI / 2;
   rim.position.z = -0.28;
   rim.userData.role = 'balance-wheel-B-rim';
   balance.add(rim);
@@ -172,16 +179,6 @@ function makeBalance({
   hub.position.z = 0.03;
   hub.userData.role = 'balance-staff-b';
   balance.add(hub);
-  for (let index = 0; index < 2; index += 1) {
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(balanceRadius * 1.84, 0.10, 0.12),
-      material,
-    );
-    spoke.rotation.z = index * Math.PI / 2;
-    spoke.position.z = -0.28;
-    spoke.userData.role = 'balance-wheel-B-spoke';
-    balance.add(spoke);
-  }
 
   const roller = cylinderAlongZ(rollerRadius, 0.16, darkMaterial, 40);
   roller.position.z = 0.48;
@@ -245,24 +242,21 @@ function makeLever({
     new THREE.Vector2(rollerRadius * 0.78, 0),
   );
   const forkCenterLocal = forkCenterWorld.clone().sub(leverPivot);
-  const pathPointsWorld = [
-    leverPivot,
-    new THREE.Vector2(1.38, 0.02),
-    new THREE.Vector2(0.72, 0.03),
-    new THREE.Vector2(0.36, -0.35),
-    new THREE.Vector2(-0.34, -0.44),
-    new THREE.Vector2(-1.08, -0.18),
-    forkCenterWorld.clone().add(new THREE.Vector2(0.24, 0)),
-  ];
-  const crookCurve = new THREE.CatmullRomCurve3(
-    pathPointsWorld.map((point) => new THREE.Vector3(
-      point.x - leverPivot.x,
-      point.y - leverPivot.y,
-      0.53,
-    )),
-    false,
-    'centripetal',
-  );
+  // Brown draws lever C straight along the line of centres, bowing in one
+  // small half-round crook d beneath escape-wheel staff a.
+  const crookRadius = 0.44;
+  const crookPath = new THREE.CurvePath();
+  const local = (x, y) => new THREE.Vector3(x - leverPivot.x, y - leverPivot.y, 0.53);
+  crookPath.add(new THREE.LineCurve3(local(leverPivot.x, leverPivot.y),
+    local(crookRadius, 0)));
+  const crookArc = new THREE.EllipseCurve(0, 0, crookRadius, crookRadius,
+    0, -Math.PI, true);
+  const arcPoints = crookArc.getPoints(40).map((point) => local(point.x, point.y));
+  crookPath.add(new THREE.CatmullRomCurve3(arcPoints));
+  const forkEnd = forkCenterWorld.clone().add(new THREE.Vector2(0.24, 0));
+  crookPath.add(new THREE.LineCurve3(local(-crookRadius, 0),
+    local(forkEnd.x, forkEnd.y)));
+  const crookCurve = crookPath;
   const crook = new THREE.Mesh(
     new THREE.TubeGeometry(crookCurve, 88, 0.085, 10, false),
     material,

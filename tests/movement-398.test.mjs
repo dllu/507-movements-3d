@@ -75,8 +75,9 @@ test('movement 398 is one cam, one roller crosshead, one finite rod, and one roc
     'single-finite-connecting-rod-from-crosshead-to-output-crank',
     'intermittently-rocking-output-wheel-with-offset-crank-pin',
     'output-crank-pin-driven-by-finite-rod',
-    'white-radial-index-showing-output-rocking-angle',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.ok(!roles.some((role) => /^white-/.test(role)), 'no white indices remain');
   assert.equal(blocks.cam.userData.contactEdges.length, 1);
   assert.equal(blocks.cam.userData.offsetEdges.length, 1);
   disposeModel(model.root);

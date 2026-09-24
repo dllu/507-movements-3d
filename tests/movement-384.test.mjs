@@ -86,7 +86,6 @@ test('movement 384 is one fixed-centre screw helicograph with one threaded rolli
   for (const component of [
     blocks.needle,
     blocks.pivotKnob,
-    blocks.pivotKnobIndex,
     blocks.pivotSleeve,
   ]) assert.ok(component.parent === blocks.fixedPivot, `${component.userData.role} parent`);
   for (const component of [
@@ -119,10 +118,11 @@ test('movement 384 is one fixed-centre screw helicograph with one threaded rolli
     'female-threaded-wheel-hub',
     'visible-edge-of-single-start-female-hub-thread',
     'paper-contacting-milled-wheel-rim',
-    'white-wheel-spin-index-on-near-face',
-    'white-wheel-spin-index-on-tread',
   ]) assert.ok(roles.includes(role), role);
   for (const role of [
+    'white-wheel-spin-index-on-near-face',
+    'white-wheel-spin-index-on-tread',
+    'stationary-reference-index',
     'transfer-paper-colored-side-downward',
     'drawing-paper-receiving-transferred-line',
     'completed-logarithmic-spiral-transferred-to-drawing-paper',

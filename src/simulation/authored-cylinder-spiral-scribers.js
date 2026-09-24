@@ -140,7 +140,7 @@ function makePitchConeGear({
     geometry.computeVertexNormals();
     const tooth = new THREE.Mesh(
       geometry,
-      index === indexTooth ? indexMaterial : toothMaterial,
+      toothMaterial,
     );
     tooth.userData.bevelTooth = true;
     tooth.userData.index = index;
@@ -993,11 +993,24 @@ function spiralCylinderScriber(movement) {
   };
 
   update(0);
+  // Brown crops the rack's upper travel at the top edge of the plate; the
+  // view frames the table, gearing and cylinder instead.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.28, -1.57, -1.15),
-    new THREE.Vector3(2.53, 6.42, 1.15),
+    new THREE.Vector3(-2.33, -1.57, -1.15),
+    new THREE.Vector3(2.58, 4.10, 1.15),
   );
   correctScriberDynamometer(root, 368);
+  // Brown draws plain wheels, a plain cylinder and no phase indices; those
+  // cues stay allocated for the kinematic checks but are not presented.
+  for (const part of [
+    ...cylinderRims,
+    ...cylinderIndexes,
+    shaftIndex,
+    driverBevel.userData.faceRing,
+    driverBevel.userData.faceIndex,
+    drivenBevel.userData.faceRing,
+    drivenBevel.userData.faceIndex,
+  ]) if (part) part.visible = false;
   root.userData.groundFloorY = -1.56;
   markShadows(root);
   return {

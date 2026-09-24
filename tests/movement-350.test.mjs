@@ -527,7 +527,8 @@ test('movement 350 renderer binds every pin to its solved slot and guide', () =>
       -state.movingPin.coordinate, 0,
     `lower rendered slot coordinate ${time}`);
     contacts.outputBarInGuidesAA.points.forEach((point, index) => {
-      near(point.x, [-6, 6][index] * geometry.sourceScale, 0,
+      // Guides a, a stand where Brown's plate draws them, closer than the site animation's.
+      near(point.x, [-4, 4][index] * geometry.sourceScale, 0,
         `fixed guide a x ${index} ${time}`);
       near(point.y,
         geometry.worldOffsetY + (

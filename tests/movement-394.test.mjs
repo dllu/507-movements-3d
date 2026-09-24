@@ -87,8 +87,9 @@ test('movement 394 is one closed endless rack, one fixed-axis pinion, two side g
     'smaller-concentric-flange-driving-three-pitch-left-handoff',
     'right-large-flange-side-groove-for-concentric-flange',
     'left-small-flange-side-groove-for-concentric-flange',
-    'white-index-making-unidirectional-pinion-spin-legible',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.ok(!roles.some((role) => /^white-/.test(role)), 'no white indices remain');
   disposeModel(model.root);
 });
 

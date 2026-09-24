@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { fitPistonGuide } from './piston-guide-parts.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -224,8 +225,9 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const diskCenterZ = -0.23;
   const diskFrontZ = diskCenterZ + diskDepth / 2;
   const shaftRadius = hubRadius * 0.67;
-  const shaftLength = 1.10;
-  const shaftCenterZ = -0.47;
+  // The shaft ends inside the disk: Brown draws no shaft end or bearing.
+  const shaftLength = 0.47;
+  const shaftCenterZ = -0.155;
   const wristLength = 0.95;
   const wristCenterZ = 0.17;
   const wristFrontZ = wristCenterZ + wristLength / 2;
@@ -291,6 +293,26 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   diskRim.position.z = diskFrontZ + 0.014;
   diskRim.userData.role = 'visible-outline-of-input-disk';
   inputRotor.add(diskRim);
+  // Brown draws the disk's far face as a broad raised rim; the presentation
+  // mirrors depth so this face, with the stem dashed behind it, faces out.
+  const diskFaceRim = new THREE.Mesh(
+    boredLatheGeometry([
+      { radial: diskRadius, axial: -0.03 },
+      { radial: diskRadius, axial: 0.03 },
+    ], diskRadius * 0.79, 128),
+    driverMaterial,
+  );
+  diskFaceRim.rotation.x = Math.PI / 2;
+  diskFaceRim.position.z = diskCenterZ - diskDepth / 2 - 0.029;
+  diskFaceRim.userData.role = 'raised-rim-on-far-face-of-input-disk';
+  inputRotor.add(diskFaceRim);
+  const diskFaceRimEdge = new THREE.Mesh(
+    new THREE.TorusGeometry(diskRadius * 0.79 + 0.02, 0.028, 8, 128),
+    darkMaterial,
+  );
+  diskFaceRimEdge.position.z = diskFaceRim.position.z - 0.02;
+  diskFaceRimEdge.userData.role = 'inner-edge-of-raised-disk-rim';
+  inputRotor.add(diskFaceRimEdge);
 
   const inputShaft = cylinderAlongZ(
     shaftRadius,
@@ -304,11 +326,12 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
 
   const shaftHub = cylinderAlongZ(
     hubRadius,
-    diskDepth + 0.18,
+    diskDepth + 0.115,
     darkMaterial,
     48,
   );
-  shaftHub.position.z = diskCenterZ + 0.035;
+  // Ends inside the far face, where Brown draws no hub.
+  shaftHub.position.z = diskCenterZ + 0.0675;
   shaftHub.userData.role = 'central-input-hub';
   inputRotor.add(shaftHub);
 
@@ -318,7 +341,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     driverMaterial,
     40,
   );
-  hubFace.position.z = diskFrontZ + 0.12;
+  hubFace.position.z = diskFrontZ + 0.11;
   hubFace.userData.role = 'front-face-of-central-input-hub';
   inputRotor.add(hubFace);
 
@@ -502,6 +525,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   });
 
   const guideCheeks = [];
+  const guideBridges = [];
   for (const sideY of [-1, 1]) {
     for (const sideX of [-1, 1]) {
       const innerX = guideInnerHalfWidth;
@@ -525,6 +549,16 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       cheek.userData.sideY = sideY;
       guideCheeks.push(cheek);
     }
+    // Brown draws each guide as one block across the stem: a bridge joins
+    // the cheeks on the face the presentation turns toward the viewer.
+    const bridge = new THREE.Mesh(
+      new THREE.BoxGeometry(guideHalfWidth * 2, guideHalfHeight * 2, 0.07),
+      frameMaterial,
+    );
+    bridge.position.set(0, shaftCenter.y + sideY * guideCenter,
+      stemPlaneZ - 0.21 + 0.035);
+    bridge.userData.role = 'fixed-guide-bridge-across-output-stem';
+    guideBridges.push(bridge);
   }
 
   const rearFrameRails = [
@@ -603,6 +637,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     ...bearingBrackets,
     rearBearing,
     ...guideCheeks,
+    ...guideBridges,
     input,
     yoke,
   );
@@ -985,6 +1020,11 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
 
   update(0);
   fitPistonGuide(root, update, inputCyclePeriod);
+  // Brown crops the stems at the plate edges, framing the crosshead and disk.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(shaftCenter.x - 3.4, shaftCenter.y - 3.3, -0.9),
+    new THREE.Vector3(shaftCenter.x + 3.4, shaftCenter.y + 3.7, 0.9),
+  );
   markShadows(root);
   for (const line of grooveEdges) {
     line.castShadow = false;

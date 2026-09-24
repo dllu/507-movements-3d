@@ -12,7 +12,6 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 // Sureda measured the distance covered by a skilled spinner's carriage in
 // each of ten successive wheel revolutions.  Borgnis printed the observations
@@ -263,13 +262,27 @@ function fuseeCarriageTraverse(movement) {
   const root = new THREE.Group();
 
   const revolutionCount = 10;
-  const carriageStroke = 10;
+  // Brown's plan draws a stubby fusee (large diameter about 1.2 times its
+  // length); a 28-unit stroke gives Sureda's radii that proportion.
+  const carriageStroke = 28;
   const fuseeHeight = 1.52;
   const fuseeCenterY = 0.93;
   const fuseeTopY = fuseeCenterY + fuseeHeight / 2;
   const fuseeBottomY = fuseeCenterY - fuseeHeight / 2;
   const trackHalfLength = carriageStroke / 2 + 1.42;
-  const wheelRadius = 0.23;
+  const wheelRadius = 0.42;
+  // Brown's plan: the carriage frame bars run along the traverse, the two
+  // wheel axles lie parallel to the fusee shaft, and each axle carries one
+  // wheel seen edge-on. The rail lies directly beneath the wheels.
+  const truckAxleX = 1.75;
+  const truckWheelY = -0.675;
+  const frameZ = -0.43;
+  const railTopZ = frameZ - wheelRadius;
+  const supportX = 1.12;
+  const crankRadius = 1.3;
+  // The rendered cycle starts mid-stroke, where Brown draws the band
+  // crossing the middle of the fusee and both remote anchors lie off-plate.
+  const displayTimeOffset = 2.5;
   const contactPhase = Math.PI / 2;
   const cyclePeriod = 12;
   const strokeDuration = 5;
@@ -302,21 +315,21 @@ function fuseeCarriageTraverse(movement) {
 
   const track = new THREE.Group();
   track.userData.role = 'fixed-parallel-carriage-rails';
-  for (const z of [-0.48, 0.48]) {
+  {
     const rail = new THREE.Mesh(
       new THREE.BoxGeometry(trackHalfLength * 2 + 0.8, 0.10, 0.10),
-      darkMaterial,
+      frameMaterial,
     );
-    rail.position.set(0, -0.67, z);
+    rail.position.set(0, truckWheelY, railTopZ - 0.05);
     rail.userData.role = 'fixed-carriage-guide-rail';
     track.add(rail);
   }
   for (const x of [-trackHalfLength - 0.25, trackHalfLength + 0.25]) {
     const sleeper = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.12, 1.36),
+      new THREE.BoxGeometry(0.18, 1.36, 0.12),
       frameMaterial,
     );
-    sleeper.position.set(x, -0.75, 0);
+    sleeper.position.set(x, truckWheelY, railTopZ - 0.16);
     sleeper.userData.role = 'rail-end-cross-tie';
     track.add(sleeper);
   }
@@ -325,45 +338,49 @@ function fuseeCarriageTraverse(movement) {
   const carriage = new THREE.Group();
   carriage.userData.role = 'fusee-bearing-traversing-carriage';
   const carriageBed = new THREE.Mesh(
-    new THREE.BoxGeometry(1.56, 0.16, 1.28),
+    new THREE.BoxGeometry(2 * truckAxleX + 0.5, 0.13, 0.13),
     matte(PALETTE.driven, { metalness: 0.12, roughness: 0.62 }),
   );
-  carriageBed.position.y = -0.28;
+  carriageBed.position.set(0, 2 * truckWheelY + 0.25, frameZ);
   carriageBed.userData.role = 'traversing-carriage-bed';
   carriage.add(carriageBed);
 
   const carriageWheels = [];
-  for (const x of [-0.57, 0.57]) {
-    for (const z of [-0.48, 0.48]) {
-      const wheel = makePulley({
-        axis: Z_AXIS,
-        color: PALETTE.driven,
-        grooves: 0,
-        radius: wheelRadius,
-        spokes: 4,
-        width: 0.14,
-      });
-      wheel.position.set(x, -0.49, z);
-      wheel.userData.role = 'carriage-wheel-rolling-without-slip';
-      carriage.add(wheel);
-      carriageWheels.push(wheel);
+  for (const x of [-truckAxleX, truckAxleX]) {
+    // Axis -Y rolls the wheel forward on the rail beneath it (-Z).
+    const wheel = makePulley({
+      axis: new THREE.Vector3(0, -1, 0),
+      bore: 0.042,
+      color: PALETTE.driven,
+      grooves: 0,
+      radius: wheelRadius,
+      spokes: 0,
+      width: 0.13,
+    });
+    wheel.position.set(x, truckWheelY, frameZ);
+    // Brown's edge-on wheels carry no white index patches.
+    for (const mark of [...wheel.userData.rotor.children]) {
+      if (mark.geometry?.type === 'BoxGeometry') wheel.userData.rotor.remove(mark);
     }
+    wheel.userData.role = 'carriage-wheel-rolling-without-slip';
+    carriage.add(wheel);
+    carriageWheels.push(wheel);
   }
 
-  const rearSupportZ = -0.43;
+  const rearSupportZ = frameZ;
   const supportLeft = makeBeam(
-    new THREE.Vector3(-0.48, -0.20, rearSupportZ),
-    new THREE.Vector3(-0.48, 2.02, rearSupportZ),
+    new THREE.Vector3(-supportX, -0.25, rearSupportZ),
+    new THREE.Vector3(-supportX, 2.02, rearSupportZ),
     { color: PALETTE.frame, depth: 0.13, thickness: 0.14 },
   );
   const supportRight = makeBeam(
-    new THREE.Vector3(0.48, -0.20, rearSupportZ),
-    new THREE.Vector3(0.48, 2.02, rearSupportZ),
+    new THREE.Vector3(supportX, -0.25, rearSupportZ),
+    new THREE.Vector3(supportX, 2.02, rearSupportZ),
     { color: PALETTE.frame, depth: 0.13, thickness: 0.14 },
   );
   const supportCrown = makeBeam(
-    new THREE.Vector3(-0.48, 2.02, rearSupportZ),
-    new THREE.Vector3(0.48, 2.02, rearSupportZ),
+    new THREE.Vector3(-supportX, 2.02, rearSupportZ),
+    new THREE.Vector3(supportX, 2.02, rearSupportZ),
     { color: PALETTE.frame, depth: 0.13, thickness: 0.14 },
   );
   for (const support of [supportLeft, supportRight, supportCrown]) {
@@ -371,11 +388,11 @@ function fuseeCarriageTraverse(movement) {
     carriage.add(support);
   }
 
-  const fuseeShaft = cylinderAlongY(0.065, 2.28, darkMaterial, 24);
-  fuseeShaft.position.y = 1.05;
+  const fuseeShaft = cylinderAlongY(0.065, 2.44, darkMaterial, 24);
+  fuseeShaft.position.y = 0.90; // Ends below the crank hub.
   fuseeShaft.userData.role = 'vertical-fusee-and-crank-shaft';
   carriage.add(fuseeShaft);
-  for (const y of [0.08, 2.02]) {
+  for (const y of [-0.25, 2.02]) {
     const bearing = ringAroundY(0.15, 0.052, frameMaterial, 28);
     bearing.position.y = y;
     bearing.userData.role = 'carriage-mounted-fusee-shaft-bearing';
@@ -438,13 +455,13 @@ function fuseeCarriageTraverse(movement) {
   crankHub.position.y = 2.19;
   crankHub.userData.role = 'fusee-crank-hub';
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.10, 0.10),
+    new THREE.BoxGeometry(crankRadius + 0.1, 0.10, 0.10),
     fuseeMaterial,
   );
-  crankArm.position.set(0.31, 2.20, 0);
+  crankArm.position.set(-crankRadius / 2, 2.20, 0);
   crankArm.userData.role = 'source-visible-fusee-crank-arm';
   const crankHandle = cylinderAlongY(0.075, 0.34, darkMaterial, 20);
-  crankHandle.position.set(0.64, 2.36, 0);
+  crankHandle.position.set(-crankRadius, 2.36, 0);
   crankHandle.userData.role = 'source-visible-fusee-crank-handle';
   fuseeRotor.add(crankHub, crankArm, crankHandle);
   carriage.add(fuseeRotor);
@@ -466,12 +483,13 @@ function fuseeCarriageTraverse(movement) {
     ['right-upper', rightAnchor],
   ]) {
     const stand = new THREE.Group();
-    const postHeight = point.y + 0.67;
+    // Off-plate anchor post standing on the rail bed beneath the plan.
+    const postHeight = point.z - 0.11 - (railTopZ - 0.22);
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, postHeight, 0.18),
+      new THREE.BoxGeometry(0.13, 0.18, postHeight),
       frameMaterial,
     );
-    post.position.set(point.x, -0.67 + postHeight / 2, point.z - 0.16);
+    post.position.set(point.x, point.y, railTopZ - 0.22 + postHeight / 2);
     const eye = new THREE.Mesh(
       new THREE.TorusGeometry(0.105, 0.035, 9, 28),
       brassMaterial,
@@ -678,7 +696,7 @@ function fuseeCarriageTraverse(movement) {
     };
   };
 
-  const initialState = stateAtTime(0);
+  const initialState = stateAtTime(displayTimeOffset);
   const leftCord = makeDynamicMovingBelt(
     makeCordCurve(initialState, 'left'),
     {
@@ -722,7 +740,7 @@ function fuseeCarriageTraverse(movement) {
   };
 
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayTimeOffset);
     carriage.position.x = state.carriagePosition;
     if (root.userData.followCarriage) root.position.y = -state.carriagePosition;
     fuseeRotor.rotation.y = state.shaftAngle;
@@ -781,6 +799,7 @@ function fuseeCarriageTraverse(movement) {
     geometry: {
       carriageStroke,
       cyclePeriod,
+      displayTimeOffset,
       fuseeBottomY,
       fuseeHeight,
       fuseeTopY,

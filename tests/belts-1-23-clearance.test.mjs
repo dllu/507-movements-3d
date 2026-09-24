@@ -126,6 +126,19 @@ test('belts-1-23: no undrawn flow stripes or effort grips are added to 1-23', ()
   }
 });
 
+test('belts-1-23: no undrawn white index stripes, rim patches or belt markers remain in 1-23', () => {
+  const white = new THREE.Color(0xfaf9f5);
+  for (const id of IDS) {
+    const model = modelFor(id);
+    const marks = [];
+    model.root.traverse((object) => {
+      if (object.isMesh && [object.material].flat().every((material) => material?.color?.equals(white))) marks.push(object);
+    });
+    assert.equal(marks.length, 0, `movement ${id} still draws ${marks.length} white index marks`);
+    assert.ok(model.root.userData.removedWhiteIndexMarks >= 0);
+  }
+});
+
 test('belts-1-23: 003 and 011 drums are plain cylinders as engraved, without flange rings', () => {
   for (const id of [3, 11]) {
     const { driver } = modelFor(id).root.userData.blocks;
@@ -146,10 +159,12 @@ test('belts-1-23: 004 guide sheaves stand wide of the driver as engraved', () =>
   }
 });
 
-test('belts-1-23: 018 middle sheave is sized nearer the engraved two-thirds of the top sheave', () => {
-  const { upperRadius, lowerFixedRadius } = modelFor(18).root.userData.geometry;
+test('belts-1-23: 018 middle and movable sheaves are sized near the engraved three-quarters of the top', () => {
+  const { upperRadius, lowerFixedRadius, movableRadius } = modelFor(18).root.userData.geometry;
   const ratio = lowerFixedRadius / upperRadius;
-  assert.ok(ratio > 0.64 && ratio < 0.72, `ratio ${ratio}`);
+  assert.ok(ratio > 0.70 && ratio < 0.80, `middle/upper ratio ${ratio} (engraving ~0.77)`);
+  const movableRatio = movableRadius / upperRadius;
+  assert.ok(movableRatio > 0.70 && movableRatio < 0.85, `movable/upper ratio ${movableRatio} (engraving ~0.73)`);
 });
 
 test('belts-1-23: 012 and 013 fixed sheaves hang by an open hook from a ceiling staple', () => {

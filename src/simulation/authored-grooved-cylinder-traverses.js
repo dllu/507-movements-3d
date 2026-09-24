@@ -582,6 +582,18 @@ function rotatingObliqueGrooveTraverse(movement) {
   );
   root.userData.groundFloorY = -1.67;
   correctCordTraverseParts(root,362,update);
+  // Brown draws both drums as plain cylinders seen in flat front elevation:
+  // no end flanges or rims and no white phase indices.  They stay allocated
+  // (hidden) so kinematic checks keep their references.
+  for (const part of [
+    ...cylinderEndRims,
+    ...upperDrumEndRims,
+    lowerRotationIndex,
+    upperTranslationIndex,
+    shaftTranslationIndex,
+  ]) part.visible = false;
+  root.userData.cameraDirection = new THREE.Vector3(0, 0.02, 1);
+  root.userData.cameraFov = 14;
   markShadows(root);
   return {
     cameraDirection: root.userData.cameraDirection,

@@ -73,7 +73,8 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
   assert.ok(blocks.crossedRatchet.parent === blocks.flywheelRotor, 'blocks.crossedRatchet parent');
   assert.ok(blocks.openRatchet.parent === blocks.flywheelRotor, 'blocks.openRatchet parent');
   assert.ok(blocks.flywheelRim.parent === blocks.flywheelRotor, 'blocks.flywheelRim parent');
-  assert.ok(blocks.flywheelIndex.parent === blocks.flywheelRotor, 'blocks.flywheelIndex parent');
+  // Brown draws no white indices or band markers; the presentation detaches them.
+  assert.ok(blocks.flywheelIndex.parent === null, 'flywheel index removed');
   assert.ok(blocks.crossedPawl.parent === blocks.crossedCarrier, 'blocks.crossedPawl parent');
   assert.ok(blocks.openPawl.parent === blocks.openCarrier, 'blocks.openPawl parent');
   assert.ok(blocks.sectorArc.parent === blocks.rockingSector, 'blocks.sectorArc parent');
@@ -81,6 +82,9 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
   assert.equal(blocks.anchorKnots.length, 4);
   assert.equal(blocks.openBandMarkers.length, 6);
   assert.equal(blocks.crossedBandMarkers.length, 6);
+  for (const marker of [...blocks.openBandMarkers, ...blocks.crossedBandMarkers]) {
+    assert.ok(marker.parent === null, 'band marker removed');
+  }
 
   const belts = [];
   const roles = [];
@@ -104,9 +108,8 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
     'open-band-ratchet-wheel-fast-on-flywheel-shaft',
     'crossed-band-ratchet-wheel-fast-on-flywheel-shaft',
     'continuous-one-direction-flywheel-B-shaft',
-    'white-loose-pulley-spin-index',
-    'white-continuous-flywheel-spin-index',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => /^white-/.test(role)), 'no white indices remain');
   disposeModel(model.root);
 });
 

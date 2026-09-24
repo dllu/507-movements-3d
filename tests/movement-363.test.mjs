@@ -78,7 +78,8 @@ test('movement 363 is one rigid seesaw on one fixed central transverse axle', ()
   assert.equal(blocks.seats.length, 2);
   assert.equal(blocks.handlePosts.length, 2);
   assert.equal(blocks.handleBars.length, 2);
-  assert.equal(blocks.endpointIndexes.length, 2);
+  assert.equal(blocks.endpointIndexes.length, 0);
+  assert.equal(blocks.buttresses.length, 2);
   assert.equal(blocks.frameLegs.length, 4);
   assert.equal(blocks.apexCaps.length, 2);
   assert.equal(blocks.axleCaps.length, 2);
@@ -94,13 +95,15 @@ test('movement 363 is one rigid seesaw on one fixed central transverse axle', ()
   });
   for (const role of [
     'single-straight-balanced-seesaw-plank',
-    'end-seat-rigidly-fastened-to-seesaw-beam',
-    'upright-handhold-post-on-moving-beam',
-    'transverse-handgrip-on-moving-beam',
+    'rounded-shoe-heel-fastened-in-plank-end',
+    'shoe-end-board-square-to-plank',
+    'foot-cleat-inboard-of-shoe',
     'fixed-fulcrum-axle-through-moving-beam',
     'inclined-leg-of-fixed-a-frame',
-    'white-index-at-seesaw-beam-end',
+    'concave-cast-buttress-beside-fulcrum-post',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws shoes, not handholds, and no white end indices.
+  assert.ok(!roles.some((role) => /handhold|handgrip|^white-/.test(role)));
   assert.equal(belts.length, 0);
   assert.equal(toothedObjects.length, 0);
   disposeModel(model.root);

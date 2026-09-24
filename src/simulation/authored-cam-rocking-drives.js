@@ -305,30 +305,12 @@ function makeOutputWheel({
   wheel.userData.role =
     'intermittently-rocking-output-wheel-with-offset-crank-pin';
 
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.12, 14, 88),
-    drivenMaterial,
-  );
+  // Brown draws the output wheel as a plain disc, not a spoked rim.
+  const rim = cylinderAlongZ(radius + 0.12, 0.24, drivenMaterial, 96);
   rim.position.z = 0.10;
   rim.userData.role = 'rocking-output-wheel-rim';
   wheel.add(rim);
-
-  const spokes = Array.from({ length: 5 }, (_, index) => {
-    const spokeAngle = index * FULL_TURN / 5;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(radius * 0.78, 0.14, 0.22),
-      drivenMaterial,
-    );
-    spoke.position.set(
-      Math.cos(spokeAngle) * radius * 0.48,
-      Math.sin(spokeAngle) * radius * 0.48,
-      0.10,
-    );
-    spoke.rotation.z = spokeAngle;
-    spoke.userData.role = 'rocking-output-wheel-spoke';
-    wheel.add(spoke);
-    return spoke;
-  });
+  const spokes = [];
 
   const hub = cylinderAlongZ(0.31, 0.56, darkMaterial, 32);
   hub.position.z = 0.10;
@@ -883,7 +865,7 @@ function camRockingDrive(movement) {
     new THREE.Vector3(6.05, 2.50, 1.15),
   );
   root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraDirection = new THREE.Vector3(2.5, 1.2, 16);
+  root.userData.cameraDirection = new THREE.Vector3(0.25, 0.2, 16);
   root.userData.reconstructionNote = 'The cam arcs and follower/link closure reproduce the official 2D animation. Finite recessed walls add small running clearance around its ideal contact law. Input motion and follower branch are prescribed; loads, friction and backlash are not dynamically solved.';
   finishGrooveDrive(root,cycleDuration);
   root.userData.groundFloorY = -2.66;

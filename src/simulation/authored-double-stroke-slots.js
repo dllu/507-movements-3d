@@ -159,6 +159,8 @@ function makeSlotSlide({
   frontInspectionFace.position.z = frontFaceZ;
   frontInspectionFace.userData.role =
     `${role}-front-inspection-face-rigid-with-slide`;
+  // Brown dashes the slides behind rod B, so their front faces stay hidden.
+  frontInspectionFace.visible = false;
 
   const pivotAnchor = new THREE.Object3D();
   pivotAnchor.position.z = jointPlaneZ - slidePlaneZ;
@@ -870,8 +872,11 @@ function snyderDoubleStrokeSlotDrive(movement) {
     },
   };
 
+  // The rendered cycle opens at Brown's pose: slots at 29 degrees, both
+  // slides right of the axis and rod B leaning slightly left.
+  const displayTimeOffset = 1.322;
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayTimeOffset);
     diskAssembly.rotation.z = state.disk.angle;
     diskAssembly.userData.angularSpeed = state.disk.angularVelocity;
     diskAssembly.userData.angularAcceleration =
@@ -1082,6 +1087,13 @@ function snyderDoubleStrokeSlotDrive(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown breaks rod B off about two disk radii above the axis; the crop is
+  // inset by the engine's fit margin.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.86, 0.23, -0.9),
+    new THREE.Vector3(1.86, 3.95, 0.7),
+  );
+  root.userData.displayTimeOffset = displayTimeOffset;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(1.2, 0.6, 14),

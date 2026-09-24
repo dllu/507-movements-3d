@@ -141,7 +141,6 @@ function seesawMovement(movement) {
     metalness: 0.28,
     roughness: 0.43,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
   const baseY = 0;
   const frame = new THREE.Group();
@@ -176,6 +175,30 @@ function seesawMovement(movement) {
       frameLegs.push(leg);
     }
   }
+  // Brown's stand has two concave cast buttresses flanking the post, with
+  // the straight braces seen inside them; the webs sit in the post's
+  // mid-plane, clear of the braces in the two outer planes.
+  const buttresses = [-1, 1].map((side) => {
+    const footX = 1.81;
+    const topY = 2.15;
+    const outline = [[0.17, baseY + 0.18], [footX, baseY + 0.18], [footX, baseY + 0.27]];
+    for (let i = 1; i <= 32; i += 1) {
+      const t = Math.PI / 2 * i / 32;
+      outline.push([
+        footX - (footX - 0.27) * Math.sin(t),
+        topY - (topY - baseY - 0.27) * Math.cos(t),
+      ]);
+    }
+    outline.push([0.17, topY]);
+    const web = new THREE.Mesh(
+      plate(poly(outline.map(([x, y]) => [side * x, y])), -0.16, 0.16),
+      frameMaterial,
+    );
+    web.userData.role = 'concave-cast-buttress-beside-fulcrum-post';
+    web.userData.side = side;
+    frame.add(web);
+    return web;
+  });
   const cheekOutline = [[-.25, .09], [.25, .09], [.25, pivot.y]];
   for (let i = 1; i <= 48; i++) {
     const angle = Math.PI * i / 48;
@@ -224,46 +247,62 @@ function seesawMovement(movement) {
   pivotBoss.userData.role = 'moving-beam-bearing-boss-around-fixed-axle';
   beamRotor.add(pivotBoss);
 
+  // Brown ends each plank in a shoe: an end board square to the plank with a
+  // rounded heel piece filling the corner, and a small cleat inboard of it.
+  // There are no handholds and no white end indices on the plate.
   const seats = [];
   const handlePosts = [];
   const handleBars = [];
   const endpointIndexes = [];
+  const shoeReach = 0.46;
+  const endBoardThickness = 0.07;
   for (const side of [-1, 1]) {
-    const seat = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62, 0.13, 0.72),
-      seatMaterial,
-    );
-    seat.position.set(side * seatStation, 0.14, 0);
-    seat.userData.role = 'end-seat-rigidly-fastened-to-seesaw-beam';
+    const endX = beamHalfLength - endBoardThickness;
+    const heelOutline = [[endX, beamThickness / 2], [endX - shoeReach, beamThickness / 2]];
+    for (let i = 1; i < 24; i += 1) {
+      const t = Math.PI / 2 * i / 24;
+      // Convex heel: a quarter ellipse bulging away from the corner.
+      heelOutline.push([
+        endX - shoeReach * Math.cos(t),
+        beamThickness / 2 + shoeReach * Math.sin(t),
+      ]);
+    }
+    heelOutline.push([endX, beamThickness / 2 + shoeReach]);
+    const seatGeometry = plate(poly(heelOutline.map(([x, y]) => [side * x, y])), -0.26, 0.26);
+    const seat = new THREE.Mesh(seatGeometry, seatMaterial);
+    seat.userData.role = 'rounded-shoe-heel-fastened-in-plank-end';
     seat.userData.side = side;
     beamRotor.add(seat);
     seats.push(seat);
 
-    const handlePost = cylinderAlongY(0.055, 0.46,
-      accentMaterial, 24);
-    handlePost.position.set(side * handleStation, 0.29, 0);
-    handlePost.userData.role = 'upright-handhold-post-on-moving-beam';
-    handlePost.userData.side = side;
-    beamRotor.add(handlePost);
-    handlePosts.push(handlePost);
-
-    const handleBar = cylinderAlongZ(0.060, 0.70,
-      darkMaterial, 24);
-    handleBar.position.set(side * handleStation, 0.50, 0);
-    handleBar.userData.role = 'transverse-handgrip-on-moving-beam';
-    handleBar.userData.side = side;
-    beamRotor.add(handleBar);
-    handleBars.push(handleBar);
-
-    const endpointIndex = new THREE.Mesh(
-      new THREE.SphereGeometry(0.085, 20, 14),
-      whiteMaterial,
+    const boardHeight = shoeReach + 0.12;
+    const endBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(endBoardThickness, boardHeight, 0.56),
+      seatMaterial,
     );
-    endpointIndex.position.set(side * beamHalfLength, 0, 0.20);
-    endpointIndex.userData.role = 'white-index-at-seesaw-beam-end';
-    endpointIndex.userData.side = side;
-    beamRotor.add(endpointIndex);
-    endpointIndexes.push(endpointIndex);
+    endBoard.position.set(
+      side * (beamHalfLength - endBoardThickness / 2),
+      beamThickness / 2 + boardHeight / 2,
+      0,
+    );
+    endBoard.userData.role = 'shoe-end-board-square-to-plank';
+    endBoard.userData.side = side;
+    beamRotor.add(endBoard);
+    handlePosts.push(endBoard);
+
+    const cleat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.07, 0.11, 0.52),
+      seatMaterial,
+    );
+    cleat.position.set(
+      side * (beamHalfLength - 0.78),
+      beamThickness / 2 + 0.055,
+      0,
+    );
+    cleat.userData.role = 'foot-cleat-inboard-of-shoe';
+    cleat.userData.side = side;
+    beamRotor.add(cleat);
+    handleBars.push(cleat);
   }
   root.add(beamRotor);
 
@@ -306,6 +345,7 @@ function seesawMovement(movement) {
     archetype: 'single-pivot-rigid-seesaw',
     blocks: {
       apexCaps,
+      buttresses,
       axleCaps,
       base,
       beamRotor,

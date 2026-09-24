@@ -79,9 +79,11 @@ test('movement 383 is one S-path textile web between two winding rolls and one i
     blocks.dressingCylinder,
     blocks.fixedFrame,
     blocks.webRibbon,
-    ...blocks.webMarkers,
     ...blocks.windingRollers,
   ]) assert.equal(component.parent, model.root);
+  // Brown draws no cloth stripes or white roll indices.
+  for (const marker of blocks.webMarkers) assert.equal(marker.parent, null);
+  assert.equal(blocks.dressingIndex.parent, null);
   for (const component of [
     ...blocks.bearingBars,
     ...blocks.bearingBlocks,
@@ -92,7 +94,6 @@ test('movement 383 is one S-path textile web between two winding rolls and one i
     ...blocks.brushBars,
     blocks.dressingAxle,
     blocks.dressingCore,
-    blocks.dressingIndex,
   ]) assert.equal(component.parent, blocks.dressingCylinder);
   assert.equal(blocks.windingRollers.length, 2);
   assert.equal(blocks.brushBars.length, 12);
@@ -114,9 +115,6 @@ test('movement 383 is one S-path textile web between two winding rolls and one i
     'interposed-brush-armed-dressing-cylinder',
     'one-of-dressing-cylinder-brush-bars',
     'one-continuous-cloth-or-warp-web-on-tangent-s-path',
-    'moving-transverse-cloth-material-registration-stripe',
-    'white-winding-roll-rotation-index',
-    'white-dressing-cylinder-rotation-index',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

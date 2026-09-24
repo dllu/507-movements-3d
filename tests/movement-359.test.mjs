@@ -84,8 +84,9 @@ test('movement 359 is one cord, one sliding crossbar, and one common drill rotor
     'heavy-momentum-flywheel-fixed-to-spindle',
     'source-labeled-drill-socket-E',
     'bidirectionally-cutting-drill-point-G',
-    'white-flywheel-direction-and-rate-index',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no white rotation indices on the fly or the drill.
+  assert.ok(!roles.some((role) => /^white-/.test(role)));
   disposeModel(model.root);
 });
 

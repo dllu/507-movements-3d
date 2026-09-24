@@ -104,8 +104,6 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
   assert.deepEqual(belts, []);
   for (const role of [
     'door-turning-about-fixed-vertical-hinge',
-    'frame-side-socket-fixed-to-support',
-    'door-side-socket-fixed-to-support',
     'frame-side-pin-turning-in-socket',
     'door-side-pin-turning-in-socket',
     'fixed-frame-pin-to-weighted-toggle-link',
@@ -113,11 +111,13 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     'weighted-central-toggle-joint',
     'gravity-closing-suspended-weight',
     'vertical-link-from-toggle-joint-to-weight-eye',
-    'white-toggle-height-index',
-    'white-weight-height-index',
   ]) assert.ok(roles.includes(role), role);
   for (const role of [
     'moving-door-panel',
+    'frame-side-socket-fixed-to-support',
+    'door-side-socket-fixed-to-support',
+    'white-toggle-height-index',
+    'white-weight-height-index',
   ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   disposeModel(model.root);
 });

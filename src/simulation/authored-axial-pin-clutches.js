@@ -289,13 +289,8 @@ function addGroovedPulley({
   const hub = cylinderAlongX(0.17, width + 0.18, darkMaterial, 40);
   hub.userData.role = `${rolePrefix}-hub`;
   group.add(hub);
-  const index = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  index.position.set(width / 2 + 0.045, radius * 0.66, 0);
-  index.userData.role = indexRole;
-  group.add(index);
+  // Brown draws no phase index on the pulleys.
+  const index = null;
   return {
     flanges,
     groove,
@@ -528,13 +523,7 @@ function axialPinPulleyClutch(movement) {
 
   const frame = new THREE.Group();
   frame.userData.role = 'fixed-two-level-bearing-frame';
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(3.25, 0.17, 0.72),
-    frameMaterial,
-  );
-  base.position.set(0, -1.62, -0.34);
-  base.userData.role = 'source-visible-frame-base';
-  frame.add(base);
+  // Brown's uprights run off the foot of the plate; no base is drawn.
   const framePosts = [-1.38, 1.38].map((x, index) => {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(0.22, 3.12, 0.30),
@@ -589,26 +578,29 @@ function axialPinPulleyClutch(movement) {
     whiteMaterial,
     width: pulleyWidth,
   });
-  const handwheelRim = torusNormalToX(0.63, 0.075, driverMaterial, 88);
+  // Brown draws the hand wheel edge-on as a heavy disk with a rounded rim
+  // (about 0.9 radius and 0.3 thick at the plate's scale), not a spoked wheel.
+  const handwheelRadius = 0.90;
+  const handwheelThickness = 0.30;
+  const handwheelProfile = [new THREE.Vector2(0, -handwheelThickness / 2)];
+  for (let step = 0; step <= 12; step += 1) {
+    const angle = -Math.PI / 2 + Math.PI * step / 12;
+    handwheelProfile.push(new THREE.Vector2(
+      handwheelRadius - handwheelThickness / 2
+        + handwheelThickness / 2 * Math.cos(angle),
+      handwheelThickness / 2 * Math.sin(angle),
+    ));
+  }
+  handwheelProfile.push(new THREE.Vector2(0, handwheelThickness / 2));
+  const handwheelRim = new THREE.Mesh(
+    new THREE.LatheGeometry(handwheelProfile, 96),
+    driverMaterial,
+  );
+  handwheelRim.rotation.z = Math.PI / 2;
   handwheelRim.position.x = -1.76;
   handwheelRim.userData.role = 'left-handwheel-fast-on-upper-shaft';
   driverRotor.add(handwheelRim);
   const handwheelSpokes = [];
-  for (let index = 0; index < 4; index += 1) {
-    const angle = index * Math.PI / 2;
-    const spoke = makeBeam(
-      new THREE.Vector3(-1.76, 0, 0),
-      new THREE.Vector3(
-        -1.76,
-        0.56 * Math.cos(angle),
-        0.56 * Math.sin(angle),
-      ),
-      { color: PALETTE.driver, depth: 0.075, thickness: 0.075 },
-    );
-    spoke.userData.role = 'handwheel-spoke-fast-on-upper-shaft';
-    driverRotor.add(spoke);
-    handwheelSpokes.push(spoke);
-  }
   const crankArm = makeBeam(
     new THREE.Vector3(1.78, 0, 0),
     new THREE.Vector3(1.78, 0.44, 0),
@@ -645,13 +637,7 @@ function axialPinPulleyClutch(movement) {
   shaftDog.scale.x = shaftDogAxialWidth / 0.12;
   shaftDog.userData.role = 'single-radial-pin-fast-on-lower-shaft';
   outputRotor.add(shaftDog);
-  const outputIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.070, 20, 14),
-    whiteMaterial,
-  );
-  outputIndex.position.set(1.76, 0.15, 0);
-  outputIndex.userData.role = 'white-lower-output-shaft-index';
-  outputRotor.add(outputIndex);
+  const outputIndex = null;
   root.add(outputRotor);
 
   const slidingPulley = new THREE.Group();
@@ -738,6 +724,9 @@ function axialPinPulleyClutch(movement) {
   belt.userData.markers = belt.children.slice(0, beltMarkerCount);
   belt.userData.markers.forEach((marker) => {
     marker.userData.role = 'fixed-material-marker-on-the-one-open-belt';
+    // Material markers stay allocated for continuity checks; Brown's band
+    // carries no white spots.
+    marker.visible = false;
   });
   belt.userData.role =
     'single-open-belt-linking-upper-and-lower-equal-pitch-pulleys';
@@ -941,6 +930,14 @@ function axialPinPulleyClutch(movement) {
 }
 
 export function createAuthoredAxialPinClutchMovement(movement) {
-  if (movement.id === 361) return finishOneWayFamily(correctAxialPinParts(axialPinPulleyClutch(movement)), 361);
+  if (movement.id === 361) {
+    const model = finishOneWayFamily(correctAxialPinParts(axialPinPulleyClutch(movement)), 361);
+    // Brown's plate is a flat front elevation of the frame, shafts and band.
+    model.cameraDirection = new THREE.Vector3(-0.10, 0.02, 1);
+    model.root.userData.cameraDirection = model.cameraDirection;
+    // A long lens keeps the outboard hand wheel edge-on as Brown draws it.
+    model.root.userData.cameraFov = 14;
+    return model;
+  }
   return null;
 }

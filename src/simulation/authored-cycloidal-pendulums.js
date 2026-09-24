@@ -514,6 +514,10 @@ function cycloidalIsochronousPendulum(movement) {
   bobIndex.userData.role = 'white-bob-position-index';
   bob.add(bobIndex);
   root.add(bob);
+  // Brown draws neither a tangency dot nor a mark on the bob; both remain
+  // allocated for the constraint checks but are not presented.
+  contactBead.visible = false;
+  bobIndex.visible = false;
 
   const cordPointsAtState = (state) => {
     const points = [];
@@ -709,7 +713,7 @@ function cycloidalIsochronousPendulum(movement) {
   };
 
   root.userData.minimumDisplayCycleSeconds = 6;
-  root.userData.reconstructionNote = 'The physical cheek faces are offset from the ideal cycloidal cord centerline by the visible cord radius, with 0.0006 discretization clearance. The white tangency dot sits in front as an annotation. The cord is massless and the bob is a point mass for the exact Huygens motion law.';
+  root.userData.reconstructionNote = 'The physical cheek faces are offset from the ideal cycloidal cord centerline by the visible cord radius, with 0.0006 discretization clearance. The tangency annotation dot and bob mark are hidden, as Brown draws neither. The cord is massless and the bob is a point mass for the exact Huygens motion law.';
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.52, -1.16, -0.38),

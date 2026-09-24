@@ -92,8 +92,9 @@ test('242 new end pins span bored strap eyes and lever layers without cutting th
   console.log({ id: 242, ...a.report() });
 });
 
-test('243 finite belt surfaces and moving registration patches clear all five actual pulleys', () => {
+test('243 finite belt surfaces clear all five actual pulleys; undrawn band markers are not rendered', () => {
   const m = create({ id: 243 }), d = m.root.userData, b = d.blocks, a = audit();
+  assert.ok(b.belt.userData.markers.every((marker) => marker.parent === null), 'Brown draws no marks on the band');
   const pulleys = [b.driver, b.leftGuide, b.rightGuide, b.leftVertical, b.rightVertical], ribbon = b.belt.userData.ribbon;
   let maximumWorkingGap = 0;
   for (let i = 0; i <= 32; i++) {
@@ -103,7 +104,6 @@ test('243 finite belt surfaces and moving registration patches clear all five ac
       assert.ok(gap < .0015, `${pulley.userData.role}: ${gap}`);
       for (const solid of visibleMeshes(pulley)) {
         a.check(ribbon, solid, 'belt/pulley');
-        for (const marker of b.belt.userData.markers) a.check(marker, solid, 'marker/pulley');
       }
     }
   }

@@ -114,6 +114,14 @@ test('movement 362 is one rotating lower grooved cylinder driving one nonrotatin
   ]) assert.ok(roles.includes(role), role);
   assert.equal(belts.length, 0);
   assert.equal(gears.length, 0);
+  // Brown's drums are plain: rims and white indices are not presented.
+  for (const hidden of [
+    ...blocks.cylinderEndRims,
+    ...blocks.upperDrumEndRims,
+    blocks.lowerRotationIndex,
+    blocks.upperTranslationIndex,
+    blocks.shaftTranslationIndex,
+  ]) assert.equal(hidden.visible, false);
   disposeModel(model.root);
 });
 

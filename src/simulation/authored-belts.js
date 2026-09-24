@@ -971,8 +971,10 @@ function reversingBevelDrive() {
   const stackBores = [0.13, 0.085, 0.085];
   const makeStackPulley = (y, level, color, bore) => {
     const pulley = makePulley({
+      // Brown draws the three lower pulleys as one continuous faced block
+      // with the belt on the middle (loose) one; they nearly abut here.
       radius: pitchRadius - 0.012,
-      width: 0.25,
+      width: 0.272,
       hubLength: 0.23,
       color,
       grooves: 0,
@@ -1168,7 +1170,7 @@ function reversingBevelDrive() {
   };
   root.userData.mechanism = 'reversing-bevel-selector';
   root.userData.blocks = { driver: driverDrum, lowerPulleys, belt, innerShaft, hollowShaft, gearA, gearB, outputGear };
-  root.userData.cameraFov = 18;
+  root.userData.cameraFov = 10;
   root.userData.coaxialDrive = {
     axis: X_AXIS.clone(),
     gearA,
@@ -1185,7 +1187,8 @@ function reversingBevelDrive() {
 
   return {
     root,
-    cameraDirection: new THREE.Vector3(0.5, 0.2, 10),
+    // Plate 7 is a flat front elevation of the shafts.
+    cameraDirection: new THREE.Vector3(0, 0, 1),
     update,
   };
 }
@@ -1931,6 +1934,12 @@ function movableHoist(variant = 0) {
 }
 
 function blockAndTackle() {
+  // Plate 14 draws a four-sheave upper block over a three-sheave lower block,
+  // both solid round-ended wooden shells with mortise slots. With four over
+  // three, the only reeving that uses every sheave makes the standing part
+  // fast to a becket on the lower block: becket, U1, L1, U2, L2, U3, L3, U4,
+  // then the fall. Seven parts carry the lower block, so the ideal advantage
+  // is 7; Brown's rule of twice the lower sheaves (6) ignores the becket part.
   const root = new THREE.Group();
   const topGroup = new THREE.Group();
   const bottomGroup = new THREE.Group();
@@ -1939,111 +1948,91 @@ function blockAndTackle() {
   const topX = -0.13;
   const bottomX = 0.13;
   const pitchRadius = 0.34;
-  const levels = [0.42, 0, -0.42];
+  const ropeRadius = 0.034;
+  const topLevels = [0.63, 0.21, -0.21, -0.63];
+  const bottomLevels = [0.42, 0, -0.42];
   topGroup.position.set(topX, topY, 0);
   bottomGroup.position.set(bottomX, bottomBaseY, 0);
-  const topPulleys = levels.map((z) => {
+  const makeSheaves = (levels, group, color) => levels.map((z) => {
     const pulley = makePulley({
-      radius: pitchRadius - 0.034,
+      radius: pitchRadius - ropeRadius,
       width: 0.22,
-      color: PALETTE.driver,
+      color,
       spokes: 0,
       bore: 0.072,
     });
     pulley.position.z = z;
-    topGroup.add(pulley);
+    group.add(pulley);
     return pulley;
   });
-  const bottomPulleys = levels.map((z) => {
-    const pulley = makePulley({
-      radius: pitchRadius - 0.034,
-      width: 0.22,
-      color: PALETTE.driven,
-      spokes: 0,
-      bore: 0.072,
-    });
-    pulley.position.z = z;
-    bottomGroup.add(pulley);
-    return pulley;
-  });
-  const topCase = makeTackleCase({ levels, radius: pitchRadius, width: 0.22, direction: 1 });
-  const bottomCase = makeTackleCase({ levels, radius: pitchRadius, width: 0.22, direction: -1 });
+  const topPulleys = makeSheaves(topLevels, topGroup, PALETTE.driver);
+  const bottomPulleys = makeSheaves(bottomLevels, bottomGroup, PALETTE.driven);
+  const topCase = makeTackleCase({ levels: topLevels, radius: pitchRadius, width: 0.22, direction: 1 });
+  const bottomCase = makeTackleCase({ levels: bottomLevels, radius: pitchRadius, width: 0.22, direction: -1 });
   topGroup.add(topCase);
   bottomGroup.add(bottomCase);
   const weight = makeHoistLoad({ radius: 0.26, round: true });
   bottomGroup.add(weight);
   weight.position.copy(bottomCase.userData.attachment).add(new THREE.Vector3(0, -0.2, 0));
 
+  // All upper sheaves share one axle line and all lower ones another, so the
+  // four tangent points in the XY projection are common to every pair.
+  const tangentOffsets = (bottomY) => {
+    const centerDirection = new THREE.Vector3(topX - bottomX, topY - bottomY, 0).normalize();
+    const right = new THREE.Vector3(centerDirection.y, -centerDirection.x, 0).multiplyScalar(pitchRadius);
+    return { centerDirection, right, left: right.clone().negate() };
+  };
   const topCenterAt = (z) => new THREE.Vector3(topX, topY, z);
   const bottomCenterAt = (z, bottomY) => new THREE.Vector3(bottomX, bottomY, z);
-  const contactGeometryAt = (z, bottomY) => {
-    const topCenter = topCenterAt(z);
-    const bottomCenter = bottomCenterAt(z, bottomY);
-    const centerDirection = topCenter.clone().sub(bottomCenter).normalize();
-    const rightNormal = new THREE.Vector3(
-      centerDirection.y,
-      -centerDirection.x,
-      0,
-    );
-    const leftNormal = rightNormal.clone().negate();
-    return {
-      bottomCenter,
-      bottomLeft: bottomCenter.clone().addScaledVector(leftNormal, pitchRadius),
-      bottomRight: bottomCenter.clone().addScaledVector(rightNormal, pitchRadius),
-      topCenter,
-      topLeft: topCenter.clone().addScaledVector(leftNormal, pitchRadius),
-      topRight: topCenter.clone().addScaledVector(rightNormal, pitchRadius),
-    };
-  };
-  const initialFirstContact = contactGeometryAt(levels[0], bottomBaseY);
-  const anchor = new THREE.Vector3(
-    initialFirstContact.bottomRight.x + 0.08,
-    topY + 0.64,
-    levels[0],
-  );
+  // The becket eye stands on the lower block's front end cheek, on the line of
+  // the first rising part so that part leaves it straight.
+  const becketZ = bottomCase.userData.edges.at(-1);
+  const becketRise = 0.45;
+  const becketLocal = (() => {
+    const { centerDirection, left } = tangentOffsets(bottomBaseY);
+    return left.clone().addScaledVector(centerDirection, becketRise).setZ(becketZ);
+  })();
+  const becketEye = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.018, 12, 40), matte(PALETTE.ink));
+  becketEye.position.copy(becketLocal).add(new THREE.Vector3(0, -0.05, 0));
+  becketEye.userData.role = 'becket-eye-on-lower-block';
+  bottomGroup.add(becketEye);
   const baseEffortLength = 2.15;
   const makeRopePath = (travel, targetLength = null) => {
     const bottomY = bottomBaseY + travel;
+    const { left, right } = tangentOffsets(bottomY);
     const curve = new THREE.CurvePath();
+    const anchor = bottomCenterAt(0, bottomY).add(becketLocal);
     let current = anchor.clone();
     const bottomArcs = [];
     const topArcs = [];
-    levels.forEach((z, index) => {
-      const contacts = contactGeometryAt(z, bottomY);
-      const incoming = contacts.bottomRight.clone().sub(current).normalize();
-      const bottomArc = circularArcThrough(
-        contacts.bottomCenter,
-        contacts.bottomRight,
-        contacts.bottomLeft,
-        Z_AXIS,
-        incoming,
-      );
-      const risingSpan = new THREE.LineCurve3(
-        contacts.bottomLeft,
-        contacts.topLeft,
-      );
-      const topArc = circularArcThrough(
-        contacts.topCenter,
-        contacts.topLeft,
-        index === levels.length - 1
-          ? contacts.topRight.clone().sub(contacts.topCenter)
-            .applyAxisAngle(Z_AXIS, 0.4).add(contacts.topCenter)
-          : contacts.topRight,
-        Z_AXIS,
-        risingSpan.getTangent(1),
-      );
-      curve.add(new THREE.LineCurve3(current, contacts.bottomRight));
-      curve.add(bottomArc);
-      curve.add(risingSpan);
+    topLevels.forEach((topZ, index) => {
+      const topCenter = topCenterAt(topZ);
+      const topLeft = topCenter.clone().add(left);
+      const rising = new THREE.LineCurve3(current, topLeft);
+      const last = index === topLevels.length - 1;
+      const topRight = topCenter.clone().add(right);
+      const topEnd = last
+        ? right.clone().applyAxisAngle(Z_AXIS, 0.4).add(topCenter)
+        : topRight;
+      const topArc = circularArcThrough(topCenter, topLeft, topEnd, Z_AXIS, rising.getTangent(1));
+      curve.add(rising);
       curve.add(topArc);
-      bottomArcs.push(bottomArc);
       topArcs.push(topArc);
       current = topArc.getPoint(1);
+      if (last) return;
+      const bottomCenter = bottomCenterAt(bottomLevels[index], bottomY);
+      const bottomRight = bottomCenter.clone().add(right);
+      const bottomLeft = bottomCenter.clone().add(left);
+      const falling = new THREE.LineCurve3(current, bottomRight);
+      const bottomArc = circularArcThrough(bottomCenter, bottomRight, bottomLeft, Z_AXIS, falling.getTangent(1));
+      curve.add(falling);
+      curve.add(bottomArc);
+      bottomArcs.push(bottomArc);
+      current = bottomLeft;
     });
-    // The slightly staggered blocks make every fleet span genuinely diagonal.
-    // Solve the free end from the remaining rope length instead of imposing the
-    // idealized 6x vertical displacement; this keeps the rendered rope taut at
-    // every pose even though the small fleet angles change span lengths.
+    // The small fleet angles make the spans slightly longer than their
+    // vertical projections; solve the free end from the remaining rope length
+    // so the rope stays taut at every pose.
     const internalLength = curve.getLength();
     const effortLength = targetLength === null
       ? baseEffortLength
@@ -2055,6 +2044,7 @@ function blockAndTackle() {
     const effortEnd = effortStart.clone().addScaledVector(topArcs.at(-1).getTangent(1), effortLength);
     curve.add(new THREE.LineCurve3(effortStart, effortEnd));
     return {
+      anchor,
       bottomArcs,
       bottomY,
       curve,
@@ -2069,21 +2059,15 @@ function blockAndTackle() {
   const rope = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
     markerCount: 0,
-    radius: 0.034,
+    radius: ropeRadius,
   });
   rope.userData.mechanismRope = true;
-  const anchorPin = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.025, 12, 40), matte(PALETTE.ink));
-  anchorPin.position.copy(anchor).add(new THREE.Vector3(0, 0.065, 0));
-  root.add(topGroup, bottomGroup, rope, anchorPin);
-  root.add(makeBeam(
-    new THREE.Vector3(topX, topY + 0.455, levels[0]),
-    anchorPin.position.clone(),
-    { thickness: 0.06, depth: 0.07, color: PALETTE.ink },
-  ));
+  root.add(topGroup, bottomGroup, rope);
   root.userData.cameraFov = 18;
-  root.userData.mechanism = 'six-part-block-and-tackle';
+  root.userData.mechanism = 'seven-part-block-and-tackle';
   root.userData.nominalRopeLength = nominalRopeLength;
   root.userData.blocks = {
+    becketEye,
     bottom: bottomGroup,
     bottomPulleys,
     top: topGroup,
@@ -2093,6 +2077,8 @@ function blockAndTackle() {
     rope,
     weight,
   };
+  const topFactors = [1, 3, 5, 7];
+  const bottomFactors = [2, 4, 6];
   const update = (time) => {
     const frequency = 0.56;
     const travel = Math.sin(time * frequency) * 0.2;
@@ -2107,16 +2093,18 @@ function blockAndTackle() {
     const effortSpeed = effortPerLoad * loadSpeed;
     bottomGroup.position.y = path.bottomY;
     rope.userData.setCurve(path.curve);
-    const bottomAngularSpeeds = [1, 3, 5].map((factor) => -factor * loadSpeed / pitchRadius);
-    const topAngularSpeeds = [2, 4, 6].map((factor) => -factor * loadSpeed / pitchRadius);
+    // Rope speed relative to each sheave: the n-th sheave met from the becket
+    // passes n load speeds of rope (upper sheaves odd, lower ones even).
+    const bottomAngularSpeeds = bottomFactors.map((factor) => -factor * loadSpeed / pitchRadius);
+    const topAngularSpeeds = topFactors.map((factor) => -factor * loadSpeed / pitchRadius);
     bottomPulleys.forEach((pulley, index) => {
-      setSpin(pulley, -[1, 3, 5][index] * travel / pitchRadius);
+      setSpin(pulley, -bottomFactors[index] * travel / pitchRadius);
     });
     topPulleys.forEach((pulley, index) => {
-      setSpin(pulley, -[2, 4, 6][index] * travel / pitchRadius);
+      setSpin(pulley, -topFactors[index] * travel / pitchRadius);
     });
     root.userData.attachments = {
-      anchor: anchor.clone(),
+      anchor: path.anchor,
       effort: path.effortEnd,
       load: new THREE.Vector3(bottomX, path.bottomY, 0),
     };
@@ -2127,20 +2115,22 @@ function blockAndTackle() {
     root.userData.kinematics = {
       bottomAngularSpeeds,
       effortDisplacement: effortTravel,
-      effortForceOverLoad: 1 / 6,
+      effortForceOverLoad: 1 / 7,
       effortPerLoad,
       effortSpeed,
       loadDisplacement: travel,
       loadSpeed,
-      mechanicalAdvantage: 6,
+      mechanicalAdvantage: 7,
+      nominalBrownRuleAdvantage: 6,
       pitchRadius,
       ropeLength: path.curve.getLength(),
-      supportingSegments: 6,
+      supportingSegments: 7,
       topAngularSpeeds,
     };
   };
   update(0);
-  return { root, update, cameraDirection: new THREE.Vector3(8, 0.25, 5.8) };
+  // Slightly raised, as the plate shows the upper block's top mortises.
+  return { root, update, cameraDirection: new THREE.Vector3(8, 1.8, 5.8) };
 }
 
 function cascadePulleys(variant) {
@@ -7631,13 +7621,36 @@ function alternatingPlaneLinkChainPulley(movement) {
   const chain = new THREE.Group();
   chain.userData.alternatingLinkPlanes = true;
   chain.userData.role = 'one-articulated-alternating-plane-chain';
+  // Brown draws the links lying in the pulley plane as flat plates pierced
+  // near each end. A thin web fills such a loop, seated on its inner wire,
+  // and stops short of each joint by the neighbouring perpendicular link's
+  // wire sweep (radius linkLoopHalfWidth about the joint) plus clearance, so
+  // the interlocked wire passes through the resulting end eyes at any
+  // articulation. Links standing across the teeth stay open wire loops.
+  const webHalfWidth = linkLoopHalfWidth - linkWireRadius;
+  const webEyeRadius = linkLoopHalfWidth + linkWireRadius + 0.012;
+  const webEndX = Math.sqrt(webEyeRadius ** 2 - webHalfWidth ** 2);
+  const webEyeAngle = Math.atan2(webHalfWidth, webEndX);
+  const webShape = new THREE.Shape();
+  webShape.moveTo(webEndX, webHalfWidth);
+  webShape.lineTo(linkPitch - webEndX, webHalfWidth);
+  webShape.absarc(linkPitch, 0, webEyeRadius, Math.PI - webEyeAngle, Math.PI + webEyeAngle, false);
+  webShape.lineTo(webEndX, -webHalfWidth);
+  webShape.absarc(0, 0, webEyeRadius, -webEyeAngle, webEyeAngle, false);
+  webShape.closePath();
+  const webGeometry = new THREE.ExtrudeGeometry(webShape, {
+    bevelEnabled: false, curveSegments: 20, depth: 2 * linkWireRadius, steps: 1,
+  });
+  webGeometry.translate(0, 0, -linkWireRadius);
   const links = Array.from({ length: maximumRenderedLinks }, (_, index) => {
-    const link = new THREE.Mesh(
-      linkGeometry,
-      index % 2 === 0 ? chainMaterial : chainMaterialAlternate,
-    );
+    const material = index % 2 === 0 ? chainMaterial : chainMaterialAlternate;
+    const link = new THREE.Mesh(linkGeometry, material);
     link.userData.chainLink = true;
     link.userData.renderSlot = index;
+    const web = new THREE.Mesh(webGeometry, material);
+    web.userData.role = 'flat-plate-web-of-link-in-pulley-plane';
+    link.add(web);
+    link.userData.web = web;
     chain.add(link);
     return link;
   });
@@ -7965,8 +7978,10 @@ function alternatingPlaneLinkChainPulley(movement) {
       object.material = Math.abs(link.materialIndex % 2) === 0
         ? chainMaterial
         : chainMaterialAlternate;
+      object.userData.web.material = object.material;
       linkAlignment.setFromAxisAngle(Z_AXIS, link.angle);
       object.quaternion.copy(linkAlignment);
+      object.userData.web.visible = link.plane !== 'perpendicular-to-sprocket';
       if (link.plane === 'perpendicular-to-sprocket') {
         object.quaternion.multiply(alternatePlane);
       }
@@ -9244,6 +9259,8 @@ function toothedLinkChainWheel() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
 
+  const drawnLeftLegDepth = 1.12;
+  const drawnRightLegDepth = 0.7;
   const update = (time) => {
     const state = stateAtTime(time);
     wheelRotor.rotation.z = state.sprocketAngle;
@@ -9259,7 +9276,14 @@ function toothedLinkChainWheel() {
       );
       const object = links[renderSlot];
       const parity = Math.abs(link.materialIndex % 2);
-      object.visible = true;
+      // Brown draws short legs: the left one ends about a pitch radius below
+      // the wheel centre and the right one well above the wheel bottom. The
+      // full source-animation chain keeps running beyond these cut-offs, but
+      // links whose lower end passes them are not drawn.
+      const lowerEnd = Math.min(link.start.position.y, link.end.position.y);
+      const legCutoff = wheelCenter.y - pitchRadius
+        * (link.start.position.x < wheelCenter.x ? drawnLeftLegDepth : drawnRightLegDepth);
+      object.visible = lowerEnd >= legCutoff - 1e-9;
       object.position.copy(link.start.position);
       object.rotation.set(0, 0, link.angle);
       object.userData.plate.position.z = parity === 0
@@ -10338,7 +10362,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     axis: Z_AXIS,
     color: PALETTE.driver,
     radius: driverRadius - beltThickness / 2 - .0006,
-    spokes: 5,
+    spokes: 0,
     width: 0.36,
   });
   driver.position.copy(driverCenter);
@@ -10348,7 +10372,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     axis: Z_AXIS,
     color: PALETTE.accent,
     radius: guideRadius - beltThickness / 2 - .0006,
-    spokes: 3,
+    spokes: 0,
     width: 0.27,
   });
   leftGuide.position.copy(leftGuideCenter);
@@ -10358,7 +10382,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     axis: Z_AXIS,
     color: PALETTE.accent,
     radius: guideRadius - beltThickness / 2 - .0006,
-    spokes: 3,
+    spokes: 0,
     width: 0.27,
   });
   rightGuide.position.copy(rightGuideCenter);
@@ -10368,7 +10392,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     axis: Y_AXIS,
     color: PALETTE.driven,
     radius: verticalRadius - beltThickness / 2 - .0006,
-    spokes: 4,
+    spokes: 0,
     width: 0.38,
   });
   leftVertical.position.copy(leftVerticalCenter);
@@ -10378,7 +10402,7 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     axis: Y_AXIS,
     color: PALETTE.driven,
     radius: verticalRadius - beltThickness / 2 - .0006,
-    spokes: 4,
+    spokes: 0,
     width: 0.38,
   });
   rightVertical.position.copy(rightVerticalCenter);
@@ -10605,7 +10629,23 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     };
     root.userData.kinematics = state;
   };
-  for (const [pulley, shaftRadius] of [[driver, .105], [leftGuide, .07], [rightGuide, .07], [leftVertical, .095], [rightVertical, .095]]) correctSpatialPulley(pulley, shaftRadius);
+  for (const [pulley, shaftRadius] of [[driver, .105], [leftGuide, .07], [rightGuide, .07], [leftVertical, .095], [rightVertical, .095]]) {
+    correctSpatialPulley(pulley, shaftRadius);
+    // Brown draws all five pulleys as plain discs with a hub, not spoked
+    // wheels: the web is an annulus seated on the bored hub's outer wall.
+    const { tread, hub, radius, width } = pulley.userData;
+    const hubRadius = Math.max(...hub.geometry.userData.outerProfile.map((point) => point.radial));
+    const web = new THREE.LatheGeometry([
+      new THREE.Vector2(hubRadius, -width / 2),
+      new THREE.Vector2(radius, -width / 2),
+      new THREE.Vector2(radius, width / 2),
+      new THREE.Vector2(hubRadius, width / 2),
+      new THREE.Vector2(hubRadius, -width / 2),
+    ], 80);
+    tread.geometry.dispose();
+    tread.geometry = web;
+    tread.userData.role = 'plain-disc-pulley-web';
+  }
   finishBandDrive(root, 6, 'One band follows two quarter twists and a rear return to drive both vertical shafts. Ratios use the belt neutral-line radii; the inner running surfaces lie half a belt thickness below them. Belt stretch, tracking, tension and transmitted torque are not simulated.');
   update(0);
   return {
@@ -11326,6 +11366,29 @@ function pronyBrakeDynamometer(movement) {
   };
 }
 
+// Brown draws the belts, ropes and sheaves of these plates without the white
+// phase-index stripes, rim patches, belt markers or rope beads the shared
+// pulley and belt primitives add for legibility, and none of these movements
+// has a white part the plate does draw. Visible marks are detached (not
+// hidden) so framing ignores them; their userData handles stay so motion checks
+// still read the positions the removed marks would have had. Marks a factory
+// already hides stay as its invisible kinematic references.
+const UNDRAWN_WHITE_INDEX_IDS = new Set([
+  ...Array.from({ length: 23 }, (_, index) => index + 1), 134, 227, 228, 229, 243,
+]);
+const WHITE_INDEX_COLOR = new THREE.Color(PALETTE.white);
+
+function removeUndrawnWhiteIndexMarks(root) {
+  const doomed = [];
+  root.traverse((object) => {
+    if (!object.isMesh || !object.visible || object.userData.keepWhite) return;
+    const materials = [object.material].flat();
+    if (materials.every((material) => material?.color?.equals(WHITE_INDEX_COLOR))) doomed.push(object);
+  });
+  for (const object of doomed) object.removeFromParent();
+  root.userData.removedWhiteIndexMarks = doomed.length;
+}
+
 export function createAuthoredBeltMovement(movement) {
   let result;
   switch (movement.id) {
@@ -11365,6 +11428,7 @@ export function createAuthoredBeltMovement(movement) {
     case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); break;
     default: return null;
   }
+  if (UNDRAWN_WHITE_INDEX_IDS.has(movement.id)) removeUndrawnWhiteIndexMarks(result.root, movement.id);
   markShadows(result.root);
   result.root.traverse((object) => {
     if (!object.userData.cameraFramingEnvelope && !object.userData.noShadow) {

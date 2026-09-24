@@ -1129,10 +1129,13 @@ function opposedRadiusRodUprightEngine(movement) {
 
   fitPistonGuide(root, update, cyclePeriod);
   root.userData.sweptBounds = root.userData.cameraFitBounds;
-  // Brown's plate is the official 30 x 30 view, x -15..15 and y -26..4.
+  // Brown's plate crops just above the crank box, through the flywheel,
+  // and just below the cylinder cover (75.8 plate px per unit, measured
+  // from the column spacing: x -3.43..3.5, y -5.97..0.86); the box is
+  // inset by the engine's fit margin and depth allowance (about 1.125).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-15 * sourceScale, -26 * sourceScale, -1.45),
-    new THREE.Vector3(15 * sourceScale, 4 * sourceScale, 2.7),
+    new THREE.Vector3(-3.05, -5.59, -1.45),
+    new THREE.Vector3(3.11, 0.48, 2.7),
   );
   root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFov = 8;

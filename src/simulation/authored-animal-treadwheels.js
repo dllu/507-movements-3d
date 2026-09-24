@@ -39,7 +39,9 @@ function animalInteriorTreadwheel(movement) {
   const wheelWidth = 1.16;
   const wheelPeriod = 4;
   const wheelAngularSpeed = FULL_TURN / wheelPeriod;
-  const wheelStartAngle = THREE.MathUtils.degToRad(7);
+  // The plate's lattice stands about 17 degrees clockwise of square.
+  const wheelStartAngle = THREE.MathUtils.degToRad(-17);
+  const latticeOffset = 0.40;
   const treadCount = 16;
   const treadPitch = FULL_TURN / treadCount;
   const gaitCyclesPerWheelTurn = treadCount / 2;
@@ -169,17 +171,27 @@ function animalInteriorTreadwheel(movement) {
     ring.userData.role = 'one-of-two-rigid-side-rings-of-treadwheel';
     sideRings.push(ring);
     wheelRotor.add(ring);
+    // Brown draws each face as a square lattice: two pairs of parallel
+    // chord bars crossing at right angles around a square about the axle,
+    // not radial spokes.
     for (let index = 0; index < 4; index += 1) {
+      const direction = index < 2 ? 0 : Math.PI / 2;
+      const offset = (index % 2 === 0 ? -1 : 1) * latticeOffset;
+      const halfLength = Math.sqrt(
+        (wheelRadius - 0.07) ** 2 - offset ** 2,
+      );
       const spoke = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          wheelRadius * 1.76,
-          0.075,
-          0.060,
-        ),
+        new THREE.BoxGeometry(2 * halfLength, 0.12, 0.060),
         wheelMaterial,
       );
-      spoke.rotation.z = index * Math.PI / 4;
-      spoke.position.z = side * wheelWidth / 2;
+      spoke.rotation.z = direction;
+      spoke.position.set(
+        -Math.sin(direction) * offset,
+        Math.cos(direction) * offset,
+        side * wheelWidth / 2,
+      );
+      spoke.userData.halfLength = halfLength;
+      spoke.userData.latticeOffset = offset;
       spoke.userData.index = index;
       spoke.userData.side = side;
       spoke.userData.role = 'radial-cage-wheel-side-spoke';
@@ -551,6 +563,9 @@ function animalInteriorTreadwheel(movement) {
     new THREE.Vector3(2.62, 2.37, 1.26),
   );
   root.userData.groundFloorY = -2.27;
+  // A narrow field keeps the face-on plate view flat: the rear rim and the
+  // tread ends stay hidden behind the front rim band.
+  root.userData.cameraFov = 16;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(2.8, 2.0, 11.8),

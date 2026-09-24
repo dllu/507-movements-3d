@@ -86,12 +86,24 @@ function treadleEccentricBandDrive(movement) {
   const eccentricity = sourceEccentricity * sourceScale;
   const eccentricPulleyRadius = sourceEccentricRadius * sourceScale;
   const treadleRollerRadius = sourceTreadleRollerRadius * sourceScale;
+  // Brown draws the treadle diagonal, the roller left of the shaft and the
+  // right-hand fulcrum below it; the official animation levels the treadle.
+  // The plate's measured centres (89 px pulley radius = 5 source units) set
+  // the rest pose, so the treadle slopes up to the left as engraved.
+  const platePixelsPerUnit = 89 / sourceEccentricRadius;
+  const plateShaft = new THREE.Vector2(293, 101);
+  const plateUnits = (x, y) => new THREE.Vector2(
+    (x - plateShaft.x) / platePixelsPerUnit,
+    (plateShaft.y - y) / platePixelsPerUnit,
+  );
+  const plateTreadlePivot = plateUnits(417, 425);
+  const plateRestRollerCenter = plateUnits(238, 386);
   const treadlePivot = shaftCenter.clone().addScaledVector(
-    sourceTreadlePivot,
+    plateTreadlePivot,
     sourceScale,
   );
   const restRollerCenter = shaftCenter.clone().addScaledVector(
-    sourceRestRollerCenter,
+    plateRestRollerCenter,
     sourceScale,
   );
   const restEccentricCenter = shaftCenter.clone().addScaledVector(
@@ -395,8 +407,8 @@ function treadleEccentricBandDrive(movement) {
   treadle.userData.role =
     'oscillating-treadle-pivoted-at-right-hand-fixed-fulcrum';
   root.add(treadle);
-  const treadleBehindPivot = 0.30;
-  const treadleBeyondRoller = 1.26;
+  const treadleBehindPivot = 0.12;
+  const treadleBeyondRoller = 2.60;
   const treadleLength = treadleBehindPivot
     + treadleRadius + treadleBeyondRoller;
   const treadleBeam = new THREE.Mesh(
@@ -518,7 +530,7 @@ function treadleEccentricBandDrive(movement) {
     new THREE.BoxGeometry(0.24, 1.12, 0.42),
     frameMaterial,
   );
-  pivotPost.position.set(treadlePivot.x, -2.10, -0.18);
+  pivotPost.position.set(treadlePivot.x, treadlePivot.y - 0.73, -0.18);
   pivotPost.userData.fixed = true;
   pivotPost.userData.role = 'right-hand-fixed-treadle-pivot-standard';
   root.add(pivotPost);
@@ -645,6 +657,8 @@ function treadleEccentricBandDrive(movement) {
       shaftStartAngle,
       shaftTurnsPerDemonstration,
       sourceScale,
+      treadleBehindPivot,
+      treadleBeyondRoller,
       treadlePivot,
       treadleRadius,
       treadleRollerRadius,
@@ -719,8 +733,8 @@ function treadleEccentricBandDrive(movement) {
 
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.70, -2.86, -0.60),
-    new THREE.Vector3(3.12, 2.91, 0.88),
+    new THREE.Vector3(-4.05, -2.95, -0.60),
+    new THREE.Vector3(1.30, 2.75, 0.88),
   );
   root.userData.groundFloorY = -2.73;
   markShadows(root);

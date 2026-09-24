@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring, turned, sector, plate} from './finite-plate-geometry.js';
+import {ring, turned, sector, plate, poly, circle, polygonClipping} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
 
 function replace(mesh, geometry) {
@@ -28,10 +28,22 @@ function correctSkewRollers(root) {
   for (const body of b.rollerBodies)
     replace(body, new THREE.CylinderGeometry(g.rollerRadius, g.rollerRadius, g.rollerBodyLength, 256));
   for (const rim of b.rollerEndRims) rim.visible = false;
-  for (const index of b.rollerFaceIndexes)
+  for (const index of b.rollerFaceIndexes) {
     index.position.y = index.userData.side * (g.rollerBodyLength / 2 + .014);
-  for (const index of b.rollerTreadIndexes) paintCylinder(index, g.rollerRadius, g.rollerBodyLength * .62, 0, .10);
-  for (const marker of b.rodMarkers) paintCylinder(marker, g.rodRadius, .060, marker.userData.baseAngle, .22);
+    // Brown draws plain roller ends; the face dots are not shown.
+    index.visible = false;
+  }
+  // Brown shades the stock and rollers with dark lengthwise hatching, so the
+  // feed and spin cues are painted as dark grain streaks rather than white.
+  const grain = new THREE.MeshStandardMaterial({color: 0x23262b, roughness: .6, metalness: .1});
+  for (const index of b.rollerTreadIndexes) {
+    paintCylinder(index, g.rollerRadius, g.rollerBodyLength * .62, 0, .10);
+    index.material = grain;
+  }
+  for (const marker of b.rodMarkers) {
+    paintCylinder(marker, g.rodRadius, .060, marker.userData.baseAngle, .22);
+    marker.material = grain;
+  }
   root.userData.updateWorkingParts = () => {
     for (const marker of b.rodMarkers) marker.scale.y = Math.max(0, Math.min(1,
       (marker.position.y - g.lowerMarkerWrapY) / .10,
@@ -65,6 +77,8 @@ function rebuildWheel(wheel, radius, bore, width, spokes, phase = 0) {
     index.rotation.z = phase;
     index.position.set(Math.cos(phase) * radius * .36, Math.sin(phase) * radius * .36, width * .29 + .017);
   } else index.position.z = width / 2 + .009;
+  // Brown draws plain wheels; the white spin index stays allocated but hidden.
+  index.visible = false;
   rotor.add(index);
   wheel.userData.workingParts = {rim, hub, spokes: radialSpokes};
   for (const part of old) if (part !== index) part.geometry.dispose();
@@ -78,9 +92,25 @@ function correctExperiment(root) {
   // A real groove at the belt plane: the .034-radius cord touches its bottom
   // and clears both walls, including the straight tangent runs.
   const z = g.beltPlaneZ - b.drivePulley.position.z;
-  const profile = [[z - .09,.116],[z - .09,.53],[z - .045,.53],
-    [z - .038,.466],[z + .038,.466],[z + .045,.53],[z + .09,.53],[z + .09,.116]];
+  // Brown's pulley is an open wheel: a grooved rim on four curved-sided
+  // arms around a hub, like the web of 371.
+  const rimInner = .40;
+  const profile = [[z - .09,rimInner],[z - .09,.53],[z - .045,.53],
+    [z - .038,.466],[z + .038,.466],[z + .045,.53],[z + .09,.53],[z + .09,rimInner]];
   b.workingPulley = mesh(pulleyRotor, turned(profile, 256), material, 'bored-pulley-with-finite-belt-channel');
+  const openings = [];
+  const openingRim = rimInner - .012, halfSpan = Math.PI / 4 - Math.asin(.05 / openingRim), apex = .20;
+  const cornerX = openingRim * Math.cos(halfSpan), cornerY = openingRim * Math.sin(halfSpan);
+  const arcCentre = (cornerX ** 2 + cornerY ** 2 - apex ** 2) / (2 * (cornerX - apex)), arcRadius = arcCentre - apex;
+  const cornerAngle = Math.atan2(cornerY, cornerX - arcCentre);
+  for (let k = 0; k < 4; k++) {
+    const centre = Math.PI / 4 + k * Math.PI / 2, c = Math.cos(centre), s = Math.sin(centre), local = [];
+    for (let i = 0; i <= 32; i++) {const a = -halfSpan + 2 * halfSpan * i / 32; local.push([openingRim * Math.cos(a), openingRim * Math.sin(a)]);}
+    for (let i = 1; i < 48; i++) {const a = cornerAngle + (2 * Math.PI - 2 * cornerAngle) * i / 48; local.push([arcCentre + arcRadius * Math.cos(a), arcRadius * Math.sin(a)]);}
+    openings.push(poly(local.map(([x, y]) => [x * c - y * s, x * s + y * c])));
+  }
+  b.pulleyWeb = mesh(pulleyRotor, plate(polygonClipping.difference(poly(circle([0, 0], rimInner, 192)), poly(circle([0, 0], .116, 96)), ...openings), z - .035, z + .035), material, 'four-curved-arm-web-of-drive-pulley');
+  b.pulleyHub = mesh(pulleyRotor, ring(.116, .17, z - .09, z + .09, 128), material, 'bored-hub-of-drive-pulley');
   replace(b.chassis, new THREE.BoxGeometry(1.62, .13, .18));
   b.chassis.position.z = -.19;
   b.axleHangers = [];
@@ -111,6 +141,8 @@ function correctExperiment(root) {
   b.dialFace.position.z = .455;
   b.dialRim.position.z = .46;
   b.spiralSpring.visible = false;
+  // Rolling-contact annotation dots are not drawn by Brown.
+  for (const marker of b.contactMarkers) marker.visible = false;
   // Leave a small angular opening on the left for the tether.
   const shape = sector(.51, .55, -Math.PI + .075, Math.PI - .075, 128);
   const housing = mesh(root, plate(shape, 0, .19), b.dialRim.material,

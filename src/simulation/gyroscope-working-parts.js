@@ -24,6 +24,7 @@ export function correctGyroscopeParts(root,id) {
   if(id===355){
     ring(b.ringBody,'support355');b.ringOutline.visible=false;
     b.leftSpindleCap.visible=false; // The short left end terminates inside its journal.
+    for(const o of[b.pillarIndex,b.ringIndex,...b.spinIndexes])o.visible=false; // Brown draws no white indices.
     b.bearingHousings.forEach(h=>bearing(h,b.spindle,g.bearingOuterRadius,g.bearingLength,.096));
     // The original oversized ring intersects the spinning rim at both crossings.
     for(const moving of[b.diskBody,b.diskRim,b.spindle,b.hub,...b.spinIndexes,b.rightSpindleKnob,b.knobBulb]){

@@ -437,7 +437,8 @@ test('movement 348 renderer keeps each visible slide aligned to its own disk slo
     vector3Near(secondaryRenderedAxis,
       state.secondarySlide.slotDirection, 1e-15,
       `secondary block follows perpendicular slot ${time}`);
-    near(primaryRenderedAxis.dot(secondaryRenderedAxis), 0, 5e-16,
+    // Rendered poses start at Brown's phase offset; round-off matches the 1e-15 axis checks.
+    near(primaryRenderedAxis.dot(secondaryRenderedAxis), 0, 1e-15,
       `rendered slide blocks remain perpendicular ${time}`);
     vector3Near(contacts.guidePointTInFixedVerticalSlot.point,
       state.guide.pointT, 0, `guide contact ${time}`);

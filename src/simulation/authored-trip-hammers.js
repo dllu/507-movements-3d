@@ -416,12 +416,28 @@ function firstOrderTripHammer(movement) {
   const wiperProfiles = [];
   for (let index = 0; index < lobeCount; index += 1) {
     const leadingAngle = leadingFaceMountAngle + index * lobePitch;
-    const trailingAngle = leadingAngle - wiperAngularWidth;
+    // Brown draws slender fins: a radial working face and a concave back.
+    const trailingAngle = leadingAngle - wiperAngularWidth * 0.7;
+    const trailingBase = new THREE.Vector2(
+      Math.cos(trailingAngle) * camBaseRadius * 0.96,
+      Math.sin(trailingAngle) * camBaseRadius * 0.96,
+    );
+    const tipPoint = new THREE.Vector2(
+      Math.cos(leadingAngle) * wiperTipRadius,
+      Math.sin(leadingAngle) * wiperTipRadius,
+    );
+    const backControlAngle = leadingAngle - wiperAngularWidth * 0.3;
+    const backControl = new THREE.Vector2(
+      Math.cos(backControlAngle) * camBaseRadius * 1.12,
+      Math.sin(backControlAngle) * camBaseRadius * 1.12,
+    );
+    const backCurve = [0.25, 0.5, 0.75].map((t) => new THREE.Vector2()
+      .addScaledVector(trailingBase, (1 - t) ** 2)
+      .addScaledVector(backControl, 2 * (1 - t) * t)
+      .addScaledVector(tipPoint, t ** 2));
     const wiperPoints = [
-      new THREE.Vector2(
-        Math.cos(trailingAngle) * camBaseRadius * 0.96,
-        Math.sin(trailingAngle) * camBaseRadius * 0.96,
-      ),
+      trailingBase,
+      ...backCurve,
       new THREE.Vector2(
         Math.cos(leadingAngle) * wiperTipRadius,
         Math.sin(leadingAngle) * wiperTipRadius,
@@ -532,16 +548,23 @@ function firstOrderTripHammer(movement) {
   );
   helveOutline.userData.role = 'dark-source-profile-helve-outline';
 
+  // Brown's head is a straight-sided block with a rounded top.
+  const headBottomLeft = new THREE.Vector2(-3.79, 0.04);
+  const headBottomRight = new THREE.Vector2(-3.18, -0.17);
+  const headUp = new THREE.Vector2(0.29, 1.86).normalize();
+  const headHalfWidth = headBottomLeft.distanceTo(headBottomRight) / 2;
+  const headArcCenter = headBottomLeft.clone().add(headBottomRight)
+    .multiplyScalar(0.5).addScaledVector(headUp, 1.62);
+  const headAcross = headBottomRight.clone().sub(headBottomLeft).normalize();
   const headPoints = [
-    new THREE.Vector2(-3.50, 1.90),
-    new THREE.Vector2(-3.21, 1.98),
-    new THREE.Vector2(-2.88, 1.80),
-    new THREE.Vector2(-2.66, 1.43),
-    new THREE.Vector2(-2.65, 1.22),
-    new THREE.Vector2(-2.94, 0.50),
-    new THREE.Vector2(-3.18, -0.17),
-    new THREE.Vector2(-3.79, 0.04),
-    new THREE.Vector2(-3.66, 1.15),
+    headBottomRight.clone(),
+    ...Array.from({ length: 17 }, (_, index) => {
+      const angle = Math.PI * index / 16;
+      return headArcCenter.clone()
+        .addScaledVector(headAcross, Math.cos(angle) * headHalfWidth)
+        .addScaledVector(headUp, Math.sin(angle) * headHalfWidth);
+    }),
+    headBottomLeft.clone(),
   ];
   const hammerHead = new THREE.Mesh(
     centeredExtrusion(polygonShape(headPoints), 0.68),

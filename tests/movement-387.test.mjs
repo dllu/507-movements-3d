@@ -68,13 +68,14 @@ test('movement 387 is a tide-driven two-stringer ladder with seven independently
     blocks.fixedEndFrame,
     blocks.floatAssembly,
     ...blocks.lowerStringers,
-    ...blocks.railIndexes,
     ...blocks.suspensionRods.flat(),
     ...blocks.treads,
     ...blocks.upperHandrails,
     blocks.water,
     blocks.wharf,
   ]) assert.equal(component.parent, model.root);
+  // Brown draws no white rail indices; the source presentation detaches them.
+  for (const index of blocks.railIndexes) assert.equal(index.parent, null);
   assert.equal(blocks.floatingEndFrame.parent, blocks.floatAssembly);
   for (const component of [
     ...blocks.floatingLowerPins,
@@ -107,9 +108,10 @@ test('movement 387 is a tide-driven two-stringer ladder with seven independently
     'tread-rear-edge-stringer-pivot-axle',
     'tread-front-edge-suspension-axle',
     'constant-length-tread-suspension-rod',
-    'white-horizontal-tread-level-index',
     'moving-tide-water-level-reference',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => /^white-/.test(role)),
+    'no undrawn white indices remain');
   disposeModel(model.root);
 });
 

@@ -22,7 +22,7 @@ function checkPairs(model,pairs,dynamic=[],steps=16){
   }
  }
 }
-test('352 finite rope clears both barrels, four flanges, three working grooves and hanger',()=>{
+test('352 finite rope clears both plain barrels, three working grooves and hanger',()=>{
  const m=models.get(352),b=m.root.userData.blocks;
  checkPairs(m,[b.largeBarrel,b.smallBarrel,...b.barrelFlanges,b.leftGuide.pulley.userData.workingGroove,b.rightGuide.pulley.userData.workingGroove,b.movingPulley.userData.workingGroove,b.hanger].map(o=>[b.ropeMesh,o]),[b.ropeMesh]);
 });
@@ -56,10 +56,10 @@ test('352 and 358 deform closed cords without replacing geometry or growing scen
 });
 test('358 follows the unchanged ten-turn carriage law while retaining the complete track and travel marks',()=>{
  const m=models.get(358),d=m.root.userData,b=d.blocks;
- assert.equal(d.geometry.revolutionCount,10);assert.equal(d.cameraMaxDistance,48);
+ assert.equal(d.geometry.revolutionCount,10);assert.equal(d.cameraMaxDistance,4.8*d.geometry.carriageStroke);
  assert.ok(b.track.children.filter(o=>o.userData.role==='rail-travel-reference-mark').length>=20);
  for(let i=0;i<=24;i++){m.update(i/2);m.root.updateMatrixWorld(true);assert.ok(Math.abs(b.carriage.getWorldPosition(new T.Vector3()).y)<1e-12);assert.ok(Math.abs(b.carriage.position.x-d.currentState.carriagePosition)<1e-12);}
- const size=d.cameraFitBounds.getSize(new T.Vector3());assert.ok(size.y<4,'carriage closeup excludes remote track ends');
+ const size=d.cameraFitBounds.getSize(new T.Vector3());assert.ok(size.y<6&&size.y<d.geometry.trackHalfLength,'carriage closeup excludes remote track ends');
 });
 test('352 adjacent finite rope turns stay separated through the changing wound packs',()=>{
  const m=models.get(352),d=m.root.userData;
@@ -77,8 +77,10 @@ test('352 adjacent finite rope turns stay separated through the changing wound p
 });
 test('358 carriage wheels rest above rails and their axles pass actual hub bores',()=>{
  const m=models.get(358),b=m.root.userData.blocks,axles=b.carriage.children.filter(o=>o.userData.role==='fixed-carriage-wheel-axle');
+ const rail=b.track.children.find(o=>o.userData.role==='fixed-carriage-guide-rail'),railTop=rail.position.z+rail.geometry.parameters.depth/2;
  const pairs=b.carriageWheels.map(w=>[w.userData.hub,axles.find(a=>a.position.x===w.position.x)]);
- for(const w of b.carriageWheels)assert.ok(Math.abs(w.position.y-.23-(-.62))<1e-12,'wheel bottom meets rail top');
+ // Brown's plan: gravity runs into the page, so each wheel sits on the rail beneath it.
+ for(const w of b.carriageWheels){assert.ok(Math.abs(w.position.z-m.root.userData.geometry.wheelRadius-railTop)<1e-12,'wheel bottom meets rail top');assert.equal(w.position.y,rail.position.y);}
  checkPairs(m,pairs,[],4);
 });
 test('all three models have readable cycle minimums, no fog or ground, and explicit mechanics residuals',()=>{

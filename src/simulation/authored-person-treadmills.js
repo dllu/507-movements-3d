@@ -2,6 +2,12 @@ import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working
 import { treadmillLegState } from './treadmill-gait.js';
 import * as THREE from 'three';
 import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
+import {
   PALETTE,
   markShadows,
   matte,
@@ -214,7 +220,7 @@ function externalPersonTreadmill(movement) {
       wheelRotor.add(lug);
     }
   }
-  const axle = cylinderAlongZ(0.13, drumWidth + 0.72,
+  const axle = cylinderAlongZ(0.13, drumWidth + 1.10,
     darkMaterial, 30);
   axle.userData.role = 'coaxial-output-shaft-rigid-with-treadmill-drum';
   wheelRotor.add(axle);
@@ -226,6 +232,43 @@ function externalPersonTreadmill(movement) {
   wheelIndex.userData.role =
     'white-index-showing-clockwise-treadmill-output-rotation';
   wheelRotor.add(wheelIndex);
+
+  // Brown's near end shows a notched spur wheel on the axle, outboard of
+  // the drum: a broad rim with round tooth spaces, a crossed pair of arms
+  // and a hub, smaller than the tread circle.
+  const gearRadius = 1.16;
+  const gearNotchCount = 16;
+  const gearNotchRadius = 0.105;
+  const gearFaceZ = drumWidth / 2 + 0.14;
+  const gearThickness = 0.10;
+  const notches = Array.from({ length: gearNotchCount }, (_, index) => {
+    const angle = (index + 0.5) * FULL_TURN / gearNotchCount;
+    return poly(circle(
+      [Math.cos(angle) * gearRadius, Math.sin(angle) * gearRadius],
+      gearNotchRadius,
+      48,
+    ));
+  });
+  const gearWeb = polygonClipping.union(
+    polygonClipping.difference(
+      poly(circle([0, 0], gearRadius, 256)),
+      poly(circle([0, 0], gearRadius * 0.70, 192)),
+      ...notches,
+    ),
+    poly([[-0.84, -0.06], [0.84, -0.06], [0.84, 0.06], [-0.84, 0.06]]),
+    poly([[-0.06, -0.84], [0.06, -0.84], [0.06, 0.84], [-0.06, 0.84]]),
+    poly(circle([0, 0], 0.26, 96)),
+  );
+  const endGear = new THREE.Mesh(
+    plate(
+      polygonClipping.difference(gearWeb, poly(circle([0, 0], 0.13, 96))),
+      gearFaceZ,
+      gearFaceZ + gearThickness,
+    ),
+    wheelMaterial,
+  );
+  endGear.userData.role = 'source-visible-notched-spur-wheel-on-treadmill-axle';
+  wheelRotor.add(endGear);
 
   const person = new THREE.Group();
   person.position.set(
@@ -332,22 +375,40 @@ function externalPersonTreadmill(movement) {
   fixedFrame.userData.role =
     'fixed-bearing-pedestal-diagonal-guard-and-handrail';
   root.add(fixedFrame);
+  // Brown's bearing standard stands in front of the spur wheel: a flared
+  // A-frame whose legs spread to a plank on the ground.
+  const pedestalZ = gearFaceZ + gearThickness + 0.20;
+  const pedestalFootY = -1.96 - wheelCenter.y;
+  const pedestalTopY = -0.22;
   const rearPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 1.44, 0.46),
+    plate(
+      polygonClipping.difference(
+        poly([
+          [-0.86, pedestalFootY],
+          [0.86, pedestalFootY],
+          [0.20, pedestalTopY],
+          [-0.20, pedestalTopY],
+        ]),
+        poly([
+          [-0.56, pedestalFootY - 0.01],
+          [0.56, pedestalFootY - 0.01],
+          [0.07, pedestalTopY - 0.52],
+          [-0.07, pedestalTopY - 0.52],
+        ]),
+      ),
+      -0.09,
+      0.09,
+    ),
     frameMaterial,
   );
-  rearPedestal.position.set(
-    wheelCenter.x,
-    wheelCenter.y - 0.92,
-    -drumWidth / 2 - 0.24,
-  );
+  rearPedestal.position.set(wheelCenter.x, wheelCenter.y, pedestalZ);
   rearPedestal.userData.role = 'source-visible-end-bearing-pedestal';
   fixedFrame.add(rearPedestal);
   const bearing = cylinderAlongZ(0.23, 0.32, frameMaterial, 30);
   bearing.position.set(
     wheelCenter.x,
     wheelCenter.y,
-    -drumWidth / 2 - 0.20,
+    pedestalZ,
   );
   bearing.userData.role = 'fixed-treadmill-end-bearing';
   fixedFrame.add(bearing);
@@ -358,15 +419,24 @@ function externalPersonTreadmill(movement) {
   base.position.set(0.02, -2.05, 0);
   base.userData.role = 'fixed-treadmill-foundation';
   fixedFrame.add(base);
+  const pedestalPlank = new THREE.Mesh(
+    new THREE.BoxGeometry(2.30, 0.12, 0.46),
+    frameMaterial,
+  );
+  pedestalPlank.position.set(wheelCenter.x, -2.02, pedestalZ);
+  pedestalPlank.userData.role = 'source-visible-plank-under-bearing-standard';
+  fixedFrame.add(pedestalPlank);
   const handRailStart = new THREE.Vector3(
     handRailX,
     handRailY,
     -drumWidth / 2 - 0.20,
   );
+  // The rail runs away from the viewer beyond the man's near hand, as
+  // Brown draws it running off the plate to the right.
   const handRailEnd = new THREE.Vector3(
     handRailX,
     handRailY,
-    drumWidth / 2 + 0.72,
+    personCenterOfMass.z + 0.52,
   );
   const handRail = tubeBetween(
     handRailStart,
@@ -390,11 +460,29 @@ function externalPersonTreadmill(movement) {
     0.085,
     frameMaterial,
   );
+  // Brown draws this side bar as a broad flat plank, not a round rod.
+  {
+    const start = new THREE.Vector3(
+      wheelCenter.x - 0.30,
+      wheelCenter.y + wheelRadius + 0.35,
+      drumWidth / 2 + 0.54,
+    );
+    const end = new THREE.Vector3(wheelCenter.x + 1.58, -2.00, start.z);
+    diagonalGuard.geometry.dispose();
+    diagonalGuard.geometry = new THREE.BoxGeometry(
+      0.22,
+      start.distanceTo(end),
+      0.09,
+    );
+    diagonalGuard.position.copy(start).add(end).multiplyScalar(0.5);
+    diagonalGuard.rotation.z = Math.atan2(end.y - start.y, end.x - start.x)
+      - Math.PI / 2;
+  }
   diagonalGuard.userData.role =
     'source-visible-fixed-diagonal-side-frame';
   fixedFrame.add(diagonalGuard);
   const railPosts = [];
-  for (const z of [-drumWidth / 2 - 0.16, drumWidth / 2 + 0.68]) {
+  for (const z of [-drumWidth / 2 - 0.16, personCenterOfMass.z + 0.48]) {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(0.14, 2.12, 0.14),
       frameMaterial,
@@ -437,6 +525,7 @@ function externalPersonTreadmill(movement) {
       bearing,
       cap,
       diagonalGuard,
+      endGear,
       endRings,
       endSpokes,
       feet,
@@ -447,6 +536,7 @@ function externalPersonTreadmill(movement) {
       legRoots,
       lowerLegs,
       outerLugs,
+      pedestalPlank,
       person,
       railPosts,
       rearPedestal,
@@ -561,6 +651,9 @@ function externalPersonTreadmill(movement) {
     new THREE.Vector3(2.26, 2.18, 2.06),
   );
   root.userData.groundFloorY = -2.15;
+  // A narrow field keeps the drum's boards and rail near-parallel, as the
+  // plate draws them.
+  root.userData.cameraFov = 20;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(5.6, 3.2, 8.8),

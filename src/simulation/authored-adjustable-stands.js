@@ -7,7 +7,7 @@ import {
 
 import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
-import {plate,sector} from './finite-plate-geometry.js';
+import {plate,poly,polygonClipping,sector} from './finite-plate-geometry.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -22,6 +22,23 @@ function cylinderAlongX(radius, length, material, segments = 32) {
   );
   cylinder.rotation.z = Math.PI / 2;
   return cylinder;
+}
+
+function roundedRectangle(width, height, radius, count = 16) {
+  const points = [];
+  const corners = [
+    [width / 2 - radius, height / 2 - radius, 0],
+    [-width / 2 + radius, height / 2 - radius, Math.PI / 2],
+    [-width / 2 + radius, -height / 2 + radius, Math.PI],
+    [width / 2 - radius, -height / 2 + radius, 1.5 * Math.PI],
+  ];
+  for (const [x, y, start] of corners) {
+    for (let index = 0; index <= count; index += 1) {
+      const angle = start + Math.PI / 2 * index / count;
+      points.push([x + radius * Math.cos(angle), y + radius * Math.sin(angle)]);
+    }
+  }
+  return poly(points);
 }
 
 function adjustableMirrorStand(movement) {
@@ -40,11 +57,14 @@ function adjustableMirrorStand(movement) {
   const yawPhaseOffset = Math.PI / 2;
   const tiltFrequencyRatio = 2;
   const tiltPhaseOffset = -Math.PI / 4;
-  const mirrorCenterLocal = new THREE.Vector3(0, 0.28, -0.82);
+  // The frame stands far enough behind the hinge that its lower edge clears
+  // the socket collar and set screw at full inclination.
+  const mirrorCenterLocal = new THREE.Vector3(0, 0.62, -1.18);
   const mirrorOuterWidth = 2.48;
   const mirrorOuterHeight = 2.86;
-  const mirrorGlassWidth = 2.28;
-  const mirrorGlassHeight = 2.66;
+  // The glass fills the broad frame's rounded opening (0.30 border).
+  const mirrorGlassWidth = 1.876;
+  const mirrorGlassHeight = 2.256;
   const socketRadialClearance = 0.055;
   const stemRadius = 0.145;
   const socketBoreRadius = stemRadius + socketRadialClearance;
@@ -171,10 +191,13 @@ function adjustableMirrorStand(movement) {
     base.add(tier);
   }
   const pillar = new THREE.Mesh(
-    boredLatheGeometry([
-      {axial:-1.015,radial:.62},{axial:-.75,radial:.46},
-      {axial:0,radial:.27},{axial:.51,radial:.38},
-    ],socketBoreRadius,64),
+    // Brown's pillar is a turned baluster: a foot, a swelling vase and a
+    // slender neck rising to the socket collar.
+    boredLatheGeometry(new THREE.SplineCurve([
+      [-1.015,.40],[-.93,.29],[-.78,.33],[-.52,.44],
+      [-.24,.38],[.02,.27],[.30,.235],[.51,.24],
+    ].map(([axial,radial])=>new THREE.Vector2(axial,radial)))
+      .getPoints(48).map(({x,y})=>({axial:x,radial:y})),socketBoreRadius,64),
     frameMaterial,
   );
   pillar.position.y = 0;
@@ -324,8 +347,8 @@ function adjustableMirrorStand(movement) {
   );
   centerHingeBarrel.geometry.dispose();
   centerHingeBarrel.geometry=boredCylinderGeometry(.155,.080,.32);
-  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,.67),mirrorFrameMaterial);
-  mirrorBackBracket.position.z=-.485;
+  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,1.03),mirrorFrameMaterial);
+  mirrorBackBracket.position.z=-.665;
   mirrorTiltPivot.add(mirrorBackBracket);
   centerHingeBarrel.userData.role =
     'mirror-side-center-hinge-barrel';
@@ -336,33 +359,33 @@ function adjustableMirrorStand(movement) {
   mirrorAssembly.userData.role =
     'tilting-rectangular-framed-mirror-or-camera-platform';
   mirrorTiltPivot.add(mirrorAssembly);
-  const mirrorFrameBars = [];
-  for (const x of [-mirrorOuterWidth / 2, mirrorOuterWidth / 2]) {
-    const side = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.13, mirrorOuterHeight - 0.26, 8, 20),
-      mirrorFrameMaterial,
-    );
-    side.position.x = x;
-    side.userData.role = 'rounded-mirror-frame-side';
-    mirrorFrameBars.push(side);
-    mirrorAssembly.add(side);
-  }
-  for (const y of [-mirrorOuterHeight / 2, mirrorOuterHeight / 2]) {
-    const edge = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.13, mirrorOuterWidth - 0.26, 8, 20),
-      mirrorFrameMaterial,
-    );
-    edge.position.y = y;
-    edge.rotation.z = Math.PI / 2;
-    edge.userData.role = 'rounded-mirror-frame-horizontal-edge';
-    mirrorFrameBars.push(edge);
-    mirrorAssembly.add(edge);
-  }
+  // Brown draws a broad flat rounded frame round the glass, not a thin
+  // tubular rim; the glass fills the frame's rounded opening.
+  const mirrorFrameBorder = 0.30;
+  const mirrorOpeningWidth = mirrorOuterWidth - 2 * mirrorFrameBorder;
+  const mirrorOpeningHeight = mirrorOuterHeight - 2 * mirrorFrameBorder;
+  const mirrorFrame = new THREE.Mesh(
+    plate(
+      polygonClipping.difference(
+        roundedRectangle(mirrorOuterWidth, mirrorOuterHeight, 0.42),
+        roundedRectangle(mirrorOpeningWidth, mirrorOpeningHeight, 0.18),
+      ),
+      -0.12,
+      0.12,
+    ),
+    mirrorFrameMaterial,
+  );
+  mirrorFrame.userData.role = 'broad-rounded-mirror-frame';
+  mirrorAssembly.add(mirrorFrame);
+  const mirrorFrameBars = [mirrorFrame];
   const mirrorGlass = new THREE.Mesh(
-    new THREE.BoxGeometry(mirrorGlassWidth, mirrorGlassHeight, 0.075),
+    plate(
+      roundedRectangle(mirrorGlassWidth, mirrorGlassHeight, 0.176),
+      -0.0525,
+      0.0225,
+    ),
     glassMaterial,
   );
-  mirrorGlass.position.z = -0.015;
   mirrorGlass.userData.role = 'glass-or-camera-mounting-plane';
   mirrorAssembly.add(mirrorGlass);
   const mirrorNormalIndex = new THREE.Mesh(

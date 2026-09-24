@@ -6,6 +6,7 @@ import {
 } from './primitives.js';
 
 import { boredRollGeometry, boredBlockGeometry, textileBrushGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+import { plate } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -296,8 +297,30 @@ function textileDressingElements(movement) {
     new THREE.Vector3(1.52, 0.20, -1.12),
     new THREE.Vector3(1.78, -2.64, -1.12),
   ]);
+  // Brown draws the side frame as a broad flat arched strap (paired outer
+  // and inner outlines), not a round tube.
+  const archStrapHalfWidth = 0.15;
+  const archPoints = archCurve.getSpacedPoints(120);
+  const archOuter = [];
+  const archInner = [];
+  for (let index = 0; index < archPoints.length; index += 1) {
+    const before = archPoints[Math.max(0, index - 1)];
+    const after = archPoints[Math.min(archPoints.length - 1, index + 1)];
+    const tangent = new THREE.Vector2(after.x - before.x, after.y - before.y)
+      .normalize();
+    const outward = new THREE.Vector2(-tangent.y, tangent.x);
+    const point = archPoints[index];
+    archOuter.push([
+      point.x + outward.x * archStrapHalfWidth,
+      point.y + outward.y * archStrapHalfWidth,
+    ]);
+    archInner.push([
+      point.x - outward.x * archStrapHalfWidth,
+      point.y - outward.y * archStrapHalfWidth,
+    ]);
+  }
   const arch = new THREE.Mesh(
-    new THREE.TubeGeometry(archCurve, 100, 0.10, 11, false),
+    plate([[[...archOuter, ...archInner.reverse(), archOuter[0]]]], -1.18, -1.06),
     frameMaterial,
   );
   arch.userData.role = 'source-arched-side-frame';
@@ -328,8 +351,10 @@ function textileDressingElements(movement) {
   for (const y of [centerSpacing, 0, -centerSpacing]) {
     const bearing = cylinderAlongZ(0.19, 0.30, darkMaterial, 28);
     bearing.geometry.dispose();
-    bearing.geometry = boredRollGeometry(0.19, 0.30, y === 0 ? 0.134 : 0.114);
-    bearing.position.set(0, y, -1.08);
+    // The dressing-cylinder bearing is shorter so its face clears the
+    // rotating core's end.
+    bearing.geometry = boredRollGeometry(0.19, y === 0 ? 0.24 : 0.30, y === 0 ? 0.134 : 0.114);
+    bearing.position.set(0, y, y === 0 ? -1.11 : -1.08);
     bearing.userData.role = 'fixed-parallel-axis-bearing';
     bearingBlocks.push(bearing);
     fixedFrame.add(bearing);

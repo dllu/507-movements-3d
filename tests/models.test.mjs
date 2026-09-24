@@ -746,18 +746,19 @@ test('movement 13 is a two-support movable hoist with exact 2:1 travel', () => {
   disposeModel(model.root);
 });
 
-test('movement 14 reeves one rope through three-sheave blocks for a 6:1 tackle', () => {
+test('movement 14 reeves one rope through the engraved four-over-three blocks from a lower becket', () => {
   const model = createMovementModel(catalog.movements[13]);
-  assert.equal(model.root.userData.mechanism, 'six-part-block-and-tackle');
+  assert.equal(model.root.userData.mechanism, 'seven-part-block-and-tackle');
   const blocks = model.root.userData.blocks;
-  assert.equal(blocks.topPulleys.length, 3);
-  assert.equal(blocks.bottomPulleys.length, 3);
-  assert.deepEqual(blocks.topPulleys.map((pulley) => pulley.position.z), [0.42, 0, -0.42]);
+  assert.equal(blocks.topPulleys.length, 4, 'the plate draws four sheaves in the upper block');
+  assert.equal(blocks.bottomPulleys.length, 3, 'and three in the lower block');
+  assert.deepEqual(blocks.topPulleys.map((pulley) => pulley.position.z), [0.63, 0.21, -0.21, -0.63]);
   assert.deepEqual(blocks.bottomPulleys.map((pulley) => pulley.position.z), [0.42, 0, -0.42]);
   assert.ok(blocks.top.position.x < blocks.bottom.position.x,
     'the two blocks are staggered so every fleet span is visibly diagonal');
+  assert.ok(blocks.becketEye.parent === blocks.bottom, 'the standing part is made fast to the lower block');
   for (const pulley of [...blocks.topPulleys, ...blocks.bottomPulleys]) {
-    assert.equal(pulley.position.x, 0, 'each three-sheave block uses a common axle line');
+    assert.equal(pulley.position.x, 0, 'each block uses a common axle line');
     const axis = Z_AXIS.clone().applyQuaternion(pulley.quaternion).normalize();
     assert.ok(axis.dot(Z_AXIS) > 1 - 1e-10);
   }
@@ -769,10 +770,10 @@ test('movement 14 reeves one rope through three-sheave blocks for a 6:1 tackle',
     model.root.traverse((object) => {
       if (object.userData.mechanismRope) ropes.push(object);
     });
-    assert.equal(ropes.length, 1, 'all six parts belong to one reeved rope');
+    assert.equal(ropes.length, 1, 'all seven parts belong to one reeved rope');
     const curve = ropes[0].userData.curve;
-    assert.equal(curve.curves.length, 13,
-      'three lower wraps and three upper wraps are joined directly without kinked crossover stubs');
+    assert.equal(curve.curves.length, 15,
+      'becket part, four upper wraps, three lower wraps and the fall are joined directly');
     assert.ok(curve.getPoint(0).distanceTo(model.root.userData.attachments.anchor) < 1e-10);
     assert.ok(curve.getPoint(1).distanceTo(model.root.userData.attachments.effort) < 1e-10);
     for (let index = 0; index < curve.curves.length - 1; index += 1) {
@@ -781,13 +782,13 @@ test('movement 14 reeves one rope through three-sheave blocks for a 6:1 tackle',
       assert.ok(tangentDot > 0.97,
         `movement 14 join ${index + 1} has only the small physical fleet angle`);
     }
-    const freeSpans = [0, 2, 4, 6, 8, 10];
-    assert.ok(freeSpans.every((index) => {
+    const supportingSpans = [0, 2, 4, 6, 8, 10, 12];
+    assert.ok(supportingSpans.every((index) => {
       const tangent = curve.curves[index].getTangent(0);
-      return Math.abs(tangent.x) > 0.02 || Math.abs(tangent.z) > 0.02;
-    }), 'all six supporting parts fleet diagonally instead of bending vertically into a sheave');
+      return Math.abs(tangent.y) > 0.95 && (Math.abs(tangent.x) > 0.02 || Math.abs(tangent.z) > 0.02);
+    }), 'all seven supporting parts fleet diagonally instead of bending vertically into a sheave');
     const contacts = model.root.userData.contacts;
-    assert.equal(contacts.topArcs.length, 3);
+    assert.equal(contacts.topArcs.length, 4);
     assert.equal(contacts.bottomArcs.length, 3);
     for (const arc of [...contacts.topArcs, ...contacts.bottomArcs]) {
       assert.ok(Math.abs(arc.radialStart.length() - 0.34) < 1e-10);
@@ -798,15 +799,16 @@ test('movement 14 reeves one rope through three-sheave blocks for a 6:1 tackle',
       'the free effort leaf leaves the last sheave diagonally toward the right');
     const state = model.root.userData.kinematics;
     lengths.push(state.ropeLength);
-    assert.equal(state.mechanicalAdvantage, 6);
-    assert.equal(state.supportingSegments, 6);
-    assert.equal(state.effortForceOverLoad, 1 / 6);
-    assert.ok(Math.abs(state.effortPerLoad - 6) < 0.1,
-      'the small fleet angle preserves the nominal 6:1 travel to within one percent');
-    state.bottomAngularSpeeds.forEach((speed, index) => {
+    assert.equal(state.mechanicalAdvantage, 7);
+    assert.equal(state.supportingSegments, 7);
+    assert.equal(state.nominalBrownRuleAdvantage, 6);
+    assert.equal(state.effortForceOverLoad, 1 / 7);
+    assert.ok(Math.abs(state.effortPerLoad - 7) < 0.1,
+      'the small fleet angle preserves the nominal 7:1 travel to within about one percent');
+    state.topAngularSpeeds.forEach((speed, index) => {
       assert.ok(Math.abs(speed * state.pitchRadius + (2 * index + 1) * state.loadSpeed) < 1e-10);
     });
-    state.topAngularSpeeds.forEach((speed, index) => {
+    state.bottomAngularSpeeds.forEach((speed, index) => {
       assert.ok(Math.abs(speed * state.pitchRadius + 2 * (index + 1) * state.loadSpeed) < 1e-10);
     });
     assert.ok(Math.abs(blocks.bottom.position.y - model.root.userData.attachments.load.y) < 1e-10);

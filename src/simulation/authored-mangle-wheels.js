@@ -1,4 +1,5 @@
-import {mangle371Web,finishMangle371} from './reversing-transmission-working-parts.js';
+import {finishMangle371} from './reversing-transmission-working-parts.js';
+import {circle,plate,poly,polygonClipping} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -85,10 +86,51 @@ function makeOpenAnnularSector({
   return rim;
 }
 
+// Brown's web has four curved-sided arms: each opening is bounded by the
+// rim and one arc bulging toward the hub, which leaves the rim parallel to
+// the arm, so the arms keep their width outboard and flare into the hub.
+function curvedSpokeWebGeometry(depth) {
+  const webRadius = 1.35;
+  const openingRim = 1.29;
+  // Arms 0.32 wide at the rim (0.16 half-width) and openings reaching to
+  // 0.52 of the web radius, as measured on the plate.
+  const halfSpan = Math.PI / 4 - Math.asin(0.16 / openingRim);
+  const apexRadius = 0.70;
+  // Circle (centre on the opening's bisector) through both rim corners
+  // and the inner apex.
+  const cornerX = openingRim * Math.cos(halfSpan);
+  const cornerY = openingRim * Math.sin(halfSpan);
+  const arcCentre = (cornerX ** 2 + cornerY ** 2 - apexRadius ** 2)
+    / (2 * (cornerX - apexRadius));
+  const arcRadius = arcCentre - apexRadius;
+  const cornerAngle = Math.atan2(cornerY, cornerX - arcCentre);
+  const openings = [];
+  for (let index = 0; index < 4; index += 1) {
+    const centre = Math.PI / 4 + index * Math.PI / 2;
+    const cos = Math.cos(centre);
+    const sin = Math.sin(centre);
+    const local = [];
+    for (let step = 0; step <= 48; step += 1) {
+      const angle = -halfSpan + 2 * halfSpan * step / 48;
+      local.push([openingRim * Math.cos(angle), openingRim * Math.sin(angle)]);
+    }
+    for (let step = 1; step < 64; step += 1) {
+      const angle = cornerAngle + (2 * Math.PI - 2 * cornerAngle) * step / 64;
+      local.push([arcCentre + arcRadius * Math.cos(angle), arcRadius * Math.sin(angle)]);
+    }
+    openings.push(poly(local.map(([x, y]) => [x * cos - y * sin, x * sin + y * cos])));
+  }
+  return plate(polygonClipping.difference(
+    poly(circle([0, 0], webRadius, 192)),
+    poly(circle([0, 0], 0.11, 96)),
+    ...openings,
+  ), -depth / 2, depth / 2);
+}
+
 function makeFourLobedWeb({ depth, hubRadius, material, spokeRadius }) {
-  const web = new THREE.Mesh(mangle371Web(depth), material);
+  const web = new THREE.Mesh(curvedSpokeWebGeometry(depth), material);
   web.userData.lobeCount = 4;
-  web.userData.role = 'four-broad-spoke-web-of-open-mangle-wheel';
+  web.userData.role = 'four-curved-spoke-web-of-open-mangle-wheel';
   return web;
 }
 
@@ -762,7 +804,11 @@ function dualFaceGapTransferMangleWheel(movement) {
   );
   root.userData.groundFloorY = -2.37;
   markShadows(root);
-  return finishMangle371(root, update);
+  const model = finishMangle371(root, update);
+  // Brown draws no white phase marks; they stay allocated for the checks.
+  outputIndex.visible = false;
+  shaftIndex.visible = false;
+  return model;
 }
 
 export function createAuthoredMangleWheelMovement(movement) {

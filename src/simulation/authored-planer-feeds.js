@@ -625,7 +625,7 @@ function woodworthPlanerFeed(movement) {
   root.userData.groundFloorY = -1.69;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(2.1, 1.2, 16),
+    cameraDirection: new THREE.Vector3(0.1, 0.08, 16),
     root,
     update,
   };

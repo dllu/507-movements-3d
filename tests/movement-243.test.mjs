@@ -352,6 +352,7 @@ test('movement 243 has one non-self-intersecting flat band and one marker set', 
     geometry.markerCount,
   );
   markers.forEach((marker) => {
+    assert.equal(marker.parent, null, 'the phase markers are tracked but not drawn, as in the plate');
     assert.equal(marker.userData.role, 'constant-arclength-band-marker');
   });
 

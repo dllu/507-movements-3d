@@ -74,7 +74,8 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
   ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
   assert.ok(blocks.fixedFrame.parent === null, 'source presentation removes fixedFrame');
   assert.ok(blocks.crossheadBeam.parent === blocks.crosshead, 'blocks.crossheadBeam parent');
-  assert.ok(blocks.pistonRod.parent === blocks.crosshead, 'blocks.pistonRod parent');
+  // Brown's plate stops at the crosshead; the presentation detaches the input rod.
+  assert.ok(blocks.pistonRod.parent === null, 'source presentation removes pistonRod');
   assert.equal(blocks.leftRack.userData.teeth.length, 17);
   assert.equal(blocks.rightRack.userData.teeth.length, 17);
   assert.equal(blocks.outputGear.userData.toothCount, 20);
@@ -95,8 +96,8 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
     'one-reciprocating-piston-rod-crosshead-carrying-both-rack-pivots',
     'spring-returned-elbow-lever-C-for-right-upper-guide-angle',
     'tension-spring-d-returning-elbow-lever-C',
-    'white-index-making-continuous-output-rotation-legible',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => /(?:^|-)white-/.test(role)), 'no white indices remain');
   disposeModel(model.root);
 });
 

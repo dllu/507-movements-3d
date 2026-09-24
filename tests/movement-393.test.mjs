@@ -70,9 +70,10 @@ test('movement 393 is one concentric upright shaft, one bent carrier, one ball j
     blocks.bentArmLower,
     blocks.bentArmUpper,
     blocks.shaft,
-    blocks.shaftIndex,
     blocks.tiltFrame,
   ]) assert.equal(component.parent, blocks.shaftRotor);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.equal(blocks.shaftIndex.parent, null);
   assert.equal(blocks.cupRotor.parent, blocks.tiltFrame);
 
   const roles = [];
@@ -90,9 +91,13 @@ test('movement 393 is one concentric upright shaft, one bent carrier, one ball j
     'ball-and-socket-axis-kept-radial-to-spherical-work',
     'freely-spinning-eccentric-polishing-cup-on-ball-and-socket',
     'inner-polishing-material-facing-stationary-lens',
+  ]) assert.ok(roles.includes(role), role);
+  for (const role of [
     'white-material-index-exposing-cup-spin-about-own-axis',
     'white-fixed-index-on-stationary-lens',
-  ]) assert.ok(roles.includes(role), role);
+    'fixed-overhead-bearing-standard',
+    'fixed-overhead-shaft-bearing-arm',
+  ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   disposeModel(model.root);
 });
 
@@ -292,9 +297,11 @@ test('movement 393 update binds carrier orbit and passive axial cup spin to the 
       4e-16,
       'ball-joint visual orbit',
     );
+    // The white index itself is detached by the source presentation; its
+    // cup-fixed point still carries the passive spin.
     vectorNear(
-      blocks.cupRotor.userData.materialIndex.getWorldPosition(
-        new THREE.Vector3(),
+      blocks.cupRotor.localToWorld(
+        blocks.cupRotor.userData.materialIndex.position.clone(),
       ),
       expected.materialIndexWorld,
       5e-16,
@@ -321,7 +328,8 @@ test('movement 393 stationary lens indexes never inherit either shaft or cup rot
     indexes.forEach((marker, index) => {
       vectorNear(marker.position, initial[index], 0,
         'stationary work-surface index');
-      assert.equal(marker.parent, data.blocks.lens);
+      // Detached by the source presentation, so never reparented to a rotor.
+      assert.equal(marker.parent, null);
     });
   }
   disposeModel(model.root);

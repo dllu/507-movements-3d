@@ -565,10 +565,9 @@ test('movement 343 renderer keeps every visible rod and common pin on the analyt
     'plate draws no base stand, feet, box walls or rod guides');
   const { sourceScale } = model.root.userData.geometry;
   const crop = model.root.userData.cameraFitBounds;
-  near(crop.min.x, -15 * sourceScale, 1e-12, 'plate crop left');
-  near(crop.max.x, 15 * sourceScale, 1e-12, 'plate crop right');
-  near(crop.min.y, -26 * sourceScale, 1e-12, 'plate crop bottom');
-  near(crop.max.y, 4 * sourceScale, 1e-12, 'plate crop top');
+  // Brown's crop is tighter than the official 30 x 30 view.
+  assert.ok(crop.min.x > -15 * sourceScale && crop.max.x < 15 * sourceScale, 'plate crop width');
+  assert.ok(crop.min.y > -26 * sourceScale && crop.max.y < 4 * sourceScale, 'plate crop height');
   const flywheelBox = new THREE.Box3().setFromObject(blocks.flywheel);
   assert.ok(flywheelBox.max.y > crop.max.y && flywheelBox.min.x < crop.min.x,
     'only part of the flywheel is in the plate');

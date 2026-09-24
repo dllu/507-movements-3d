@@ -19,17 +19,17 @@ export function makeThreeSpeedSelector() {
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, high - low, 512), matte(color));
     mesh.rotation.x = Math.PI / 2; mesh.position.z = (low + high) / 2; return mesh;
   };
-  add('driverDrum', turned(p.pulleyRadius, 0.1525, -1.20, 1.20, PALETTE.driver, true), driver);
+  add('driverDrum', turned(p.pulleyRadius, 0.1525, -1.20, 1.20, PALETTE.driver), driver);
   add('driverShaft', cylinder(0.1525, -2.45, 1.72, PALETTE.muted), driver);
   add('loosePulley', turned(p.pulleyRadius, 0.181, p.laneZs[0] - p.pulleyWidth / 2,
-    p.laneZs[0] + p.pulleyWidth / 2, PALETTE.muted, true), loose);
+    p.laneZs[0] + p.pulleyWidth / 2, PALETTE.muted), loose);
   const colors = [PALETTE.brass, PALETTE.accent, 0xb36c44];
   for (let i = 0; i < 3; i += 1) {
     const low = p.gearZs[i] - p.gearDepths[i] / 2, high = i === 0 ? 1.15 : p.laneZs[i + 1] + p.pulleyWidth / 2;
     add(`inputShaft${i}`, i === 0 ? cylinder(p.shaftRadii[i], low, high, PALETTE.muted)
       : turned(p.shaftRadii[i], p.sleeveBores[i], low, high, PALETTE.muted), inputs[i]);
     add(`inputPulley${i}`, turned(p.pulleyRadius, p.shaftRadii[i], p.laneZs[i + 1] - p.pulleyWidth / 2,
-      p.laneZs[i + 1] + p.pulleyWidth / 2, colors[i], true), inputs[i]);
+      p.laneZs[i + 1] + p.pulleyWidth / 2, colors[i]), inputs[i]);
     const gear = (name, teeth, bore, color, parent, phase) => {
       const mesh = add(name, new THREE.Mesh(selectorGearGeometry({ teeth, module: p.module,
         depth: p.gearDepths[i], boreRadius: bore, backlash: p.toothBacklash, pressureAngle: p.pressureAngle }), matte(color)), parent);
@@ -66,5 +66,8 @@ export function makeThreeSpeedSelector() {
     shadowCameraHalfExtent: 5, shadowBias: -0.00003, fidelity: 'authored', mechanism: 'flat-band-three-speed-nested-shaft-selector', reconstructionStatus: 'contact-verified-reconstruction',
     animationTiming: { authoredCyclePeriod: p.cycleDuration },
     idealConstraints: 'Fixed parallel bearing axes; a loose pulley on the main shaft; two independently rotating concentric sleeves. An operator shifts the belt while all shafts are stopped. Bearing mounts, axial retention, load inertia and friction are idealized.' };
+  // Frame the whole sampled motion with a margin so the lower gear cluster is
+  // not pressed against the viewport edge.
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.2, -2.75, -4.1), new THREE.Vector3(1.2, 3.95, 1.95));
   update(0); markShadows(root); return { root, update, cameraDirection: new THREE.Vector3(-10, 0, 0) };
 }

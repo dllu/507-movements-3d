@@ -264,9 +264,11 @@ function pumpDrill(movement) {
   const connectorDrop = 0.09;
   const crossbarLowY = -0.28;
   const tangentTransitionAngle = 0.42;
-  const flywheelRadius = 1.40;
-  const flywheelY = -0.88;
-  const flywheelThickness = 0.25;
+  // Brown draws the fly as a heavy disk wider than the crossbar
+  // (427 px against the crossbar's 383 px) with a thick rounded edge.
+  const flywheelRadius = 1.81;
+  const flywheelY = -0.90;
+  const flywheelThickness = 0.50;
 
   const kinematics = makePumpDrillKinematics({
     anchorY,
@@ -337,7 +339,6 @@ function pumpDrill(movement) {
     metalness: 0.30,
     roughness: 0.43,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
   const spindleRotor = new THREE.Group();
   spindleRotor.userData.axis = Y_AXIS.clone();
@@ -364,37 +365,25 @@ function pumpDrill(movement) {
   eyePin.userData.role = 'transverse-cord-anchoring-eye';
   spindleRotor.add(eyePin);
 
-  const flywheel = cylinderAlongY(
-    flywheelRadius,
-    flywheelThickness,
+  // A disk with a fully rounded (semicircular) rim, as the plate shades it.
+  const flywheelProfile = [new THREE.Vector2(0, -flywheelThickness / 2)];
+  const edgeRadius = flywheelThickness / 2;
+  const edgeCentre = flywheelRadius - edgeRadius;
+  for (let step = 0; step <= 16; step += 1) {
+    const angle = -Math.PI / 2 + Math.PI * step / 16;
+    flywheelProfile.push(new THREE.Vector2(
+      edgeCentre + edgeRadius * Math.cos(angle),
+      edgeRadius * Math.sin(angle),
+    ));
+  }
+  flywheelProfile.push(new THREE.Vector2(0, flywheelThickness / 2));
+  const flywheel = new THREE.Mesh(
+    new THREE.LatheGeometry(flywheelProfile, 96),
     flywheelMaterial,
-    64,
   );
   flywheel.position.y = flywheelY;
   flywheel.userData.role = 'heavy-momentum-flywheel-fixed-to-spindle';
   spindleRotor.add(flywheel);
-
-  const flywheelRim = ringAroundY(
-    flywheelRadius,
-    0.055,
-    darkMaterial,
-    64,
-  );
-  flywheelRim.position.y = flywheelY + flywheelThickness / 2 + 0.012;
-  flywheelRim.userData.role = 'flywheel-rim';
-  spindleRotor.add(flywheelRim);
-
-  const flywheelIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(flywheelRadius * 0.78, 0.032, 0.075),
-    whiteMaterial,
-  );
-  flywheelIndex.position.set(
-    flywheelRadius * 0.43,
-    flywheelY + flywheelThickness / 2 + 0.024,
-    0,
-  );
-  flywheelIndex.userData.role = 'white-flywheel-direction-and-rate-index';
-  spindleRotor.add(flywheelIndex);
 
   const flywheelHub = cylinderAlongY(0.19, 0.34, darkMaterial, 32);
   flywheelHub.position.y = flywheelY;
@@ -426,14 +415,6 @@ function pumpDrill(movement) {
   drillBit.userData.role = 'bidirectionally-cutting-drill-point-G';
   spindleRotor.add(drillBit);
 
-  const bitIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.035, 0.30, 0.025),
-    whiteMaterial,
-  );
-  bitIndex.position.set(0.09, -2.01, 0.025);
-  bitIndex.rotation.z = -0.42;
-  bitIndex.userData.role = 'white-drill-rotation-index';
-  spindleRotor.add(bitIndex);
   root.add(spindleRotor);
 
   const crossbar = new THREE.Group();
@@ -529,13 +510,11 @@ function pumpDrill(movement) {
   root.userData = {
     archetype: 'single-cord-flywheel-pump-drill',
     blocks: {
-      bitIndex,
       cordBranches,
       crossbar,
       drillBit,
       drillSocket,
       flywheel,
-      flywheelIndex,
       singleCord,
       spindle,
       spindleRotor,
@@ -652,6 +631,10 @@ function pumpDrill(movement) {
   );
   root.userData.groundFloorY = -2.23;
   correctReciprocatingCordParts(root,359,update);
+  // Brown draws a level side elevation with the fly seen edge-on; a long
+  // lens keeps the flywheel faces from opening into an ellipse.
+  root.userData.cameraDirection = new THREE.Vector3(0.12, 0.02, 15);
+  root.userData.cameraFov = 16;
   markShadows(root);
   return {
     cameraDirection: root.userData.cameraDirection,

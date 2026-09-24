@@ -126,13 +126,17 @@ export function makeHoistLoad({ radius = 0.42, height = 0.62, round = false } = 
   return markShadows(group);
 }
 
+// A round-ended wooden block (movement 14) drawn as Brown's slotted barrel:
+// thick end cheeks and partitions share the barrel's circular outline, and a
+// continuous skin over the hook side joins them, leaving the mortise slots
+// open on the front, back and rope side so the sheaves show as in the plate.
 export function makeTackleCase({ levels, radius, width, direction }) {
   const group = new THREE.Group();
-  const plateDepth = 0.045;
-  const halfWidth = radius + 0.08;
-  const halfHeight = radius + 0.18;
+  const plateDepth = 0.07;
+  const outerRadius = radius + 0.2;
+  const skinThickness = 0.06;
   const plateShape = new THREE.Shape();
-  plateShape.absellipse(0, 0, halfWidth, halfHeight, 0, Math.PI * 2, false, 0);
+  plateShape.absarc(0, 0, outerRadius, 0, Math.PI * 2, false);
   const hole = new THREE.Path();
   hole.absarc(0, 0, 0.068, 0, Math.PI * 2, true);
   plateShape.holes.push(hole);
@@ -143,27 +147,40 @@ export function makeTackleCase({ levels, radius, width, direction }) {
   const edges = [orderedLevels[0] - width / 2 - 0.11,
     ...orderedLevels.slice(1).map((z, index) => (orderedLevels[index] + z) / 2),
     orderedLevels.at(-1) + width / 2 + 0.11];
+  const material = matte(PALETTE.frame);
   const plates = edges.map((z) => {
-    const plate = new THREE.Mesh(geometry, matte(PALETTE.frame));
+    const plate = new THREE.Mesh(geometry, material);
     plate.position.z = z;
+    plate.userData.role = 'solid-block-cheek';
     group.add(plate);
     return plate;
   });
-  for (const sign of [-1, 1]) {
-    group.add(makeBeam(new THREE.Vector3(0, sign * (halfHeight - 0.065), edges[0]),
-      new THREE.Vector3(0, sign * (halfHeight - 0.065), edges.at(-1)),
-      { thickness: 0.085, depth: 0.1, color: PALETTE.ink }));
-  }
+  const skinCenter = direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+  const skinHalfAngle = THREE.MathUtils.degToRad(62);
+  const skinShape = new THREE.Shape();
+  skinShape.absarc(0, 0, outerRadius, skinCenter - skinHalfAngle, skinCenter + skinHalfAngle, false);
+  skinShape.absarc(0, 0, outerRadius - skinThickness, skinCenter + skinHalfAngle, skinCenter - skinHalfAngle, true);
+  skinShape.closePath();
+  const skinLength = edges.at(-1) - edges[0] - plateDepth;
+  const skinGeometry = new THREE.ExtrudeGeometry(skinShape,
+    { depth: skinLength, bevelEnabled: false, curveSegments: 32 });
+  skinGeometry.translate(0, 0, edges[0] + plateDepth / 2);
+  const skin = new THREE.Mesh(skinGeometry, material);
+  skin.userData.role = 'solid-block-crown-skin';
+  skin.userData.innerRadius = outerRadius - skinThickness;
+  group.add(skin);
   const pin = makeShaft({ length: edges.at(-1) - edges[0] + 0.12, radius: 0.065 });
   pin.position.z = (edges[0] + edges.at(-1)) / 2;
   group.add(pin);
   const hook = makeHoistHook();
-  hook.position.y = direction * (halfHeight - 0.065);
+  hook.position.y = direction * (outerRadius - 0.02);
   if (direction > 0) hook.rotation.z = Math.PI;
   group.add(hook);
   group.userData.plates = plates;
+  group.userData.skin = skin;
+  group.userData.edges = edges;
   group.userData.pin = pin;
   group.userData.hook = hook;
-  group.userData.attachment = new THREE.Vector3(0, direction * (halfHeight + 0.285), 0);
+  group.userData.attachment = new THREE.Vector3(0, direction * (outerRadius + 0.33), 0);
   return markShadows(group);
 }

@@ -50,12 +50,14 @@ export function correctTripHammerParts(model){
  b.frontPivotBearing.userData.role='fixed-fulcrum-shaft-end-retainer';
  for(const name of['movingJournalBlock']){const o=b[name],p=o.geometry.parameters;replace(o,plate(clip.difference(rect(p.width,p.height),poly(circle([0,0],.123,64))),-p.depth/2,p.depth/2));}
  // The helve crosses the same fulcrum and therefore needs the same bore.
- const outer=poly(hull([[-3.04,.54],[-2.74,.28],[-2.83,.72],...circle(g.followerCenterLocal.toArray(),g.followerRadius,96)]));replace(b.helve,plate(clip.difference(outer,poly(circle([0,0],.123,64))),-g.hammerDepth/2,g.hammerDepth/2));
+ const outer=poly(hull([[-3.26,.39],[-3.26,.82],...circle(g.followerCenterLocal.toArray(),g.followerRadius,96)]));replace(b.helve,plate(clip.difference(outer,poly(circle([0,0],.123,64))),-g.hammerDepth/2,g.hammerDepth/2));
  // The round wear nose projects from the helve face; coincident caps flicker.
  b.helve.position.z=.14;
  const head=b.hammerHead.geometry.parameters,headOutline=poly(head.shapes.extractPoints(32).shape.map(p=>p.toArray())),a=g.impactHammerAngle,y=g.anvilTopY-g.hammerPivot.y,rotate=(x,y)=>[x*Math.cos(a)+y*Math.sin(a),-x*Math.sin(a)+y*Math.cos(a)],above=poly([rotate(-10,y),rotate(10,y),rotate(10,10),rotate(-10,10)]);
  replace(b.hammerHead,plate(clip.intersection(headOutline,above),-.34,.34));
- for(const o of[b.base,b.contactMarker,b.impactMarker,b.camFaceRing,b.camIndicator,b.hammerIndicator,b.helveOutline,b.headOutline,b.movingPivotRing])o.visible=false;
+ for(const o of[b.base,b.contactMarker,b.impactMarker,b.camFaceRing,b.camIndicator,b.hammerIndicator,b.helveOutline,b.headOutline,b.movingPivotRing,b.pivotPost])o.visible=false;
+ // Brown draws no fulcrum post: a minimal bearing block stays hidden behind the journal block.
+ replace(b.pivotBridge,plate(clip.difference(rect(.62,.24),poly(circle([0,0],.123,64))),-.30,.30));
  const oldUpdate=model.update;model.update=time=>{oldUpdate(time);b.contactMarker.visible=false;b.impactMarker.visible=false;};model.update(0);
  d.stampTripParts={};
  d.reconstructionNote='The radial wiper face lifts the rounded tail of a first-order lever. The released hammer follows an assumed compound-pendulum mass model and an ideal inelastic stop. Pickup impulses, contact compliance and rebound are not solved.';

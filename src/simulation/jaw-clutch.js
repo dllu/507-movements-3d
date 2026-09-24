@@ -6,6 +6,15 @@ import { makeJawClutchMotion } from './jaw-clutch-motion.js';
 
 const LEVER_STANDOFF = 0.035;
 
+// Repaint a vertex-coloured solid in its base colour, removing the generator's
+// light phase-index stripe.
+export function unpainted(geometry, color) {
+  const base = new THREE.Color(color), colors = geometry.attributes.color;
+  for (let i = 0; i < colors.count; i += 1) colors.setXYZ(i, base.r, base.g, base.b);
+  colors.needsUpdate = true;
+  return geometry;
+}
+
 export function makeJawClutch() {
   const root = new THREE.Group(), motion = makeJawClutchMotion(), p = motion.parameters;
   const shaftRadius = 0.15, boreRadius = 0.161, keyHalfWidth = 0.028, keywayTop = 0.193;
@@ -32,11 +41,14 @@ export function makeJawClutch() {
   const outputProfile = [[1.47, boreRadius], [1.47, boreRadius], [1.47, 0.54], [1.47, 0.54],
     ...shoulder, [2.35, 0.45],
     [2.35, 0.29], [2.60, 0.29], [2.60, 0.46], [2.72, 0.46], [2.72, boreRadius]];
-  const inputBody = new THREE.Mesh(jawClutchGeometry(inputProfile, { movingIndices: [3, 4], direction: 1,
-    phase: jawPhase, ...p, boreRadius, color: PALETTE.accent }), solidMaterial());
-  const outputBody = new THREE.Mesh(jawClutchGeometry(outputProfile, { movingIndices: [1, 2], direction: -1,
-    phase: jawPhase + motion.pitch / 2, ...p, boreRadius, keyHalfWidth, keywayTop,
-    smoothProfileIndices: shoulder.map((_, i) => i + 4), color: PALETTE.driven }), solidMaterial());
+  // Brown draws the jaws as rounded waves: each crest rolls over in a cosine
+  // from the top of its axial driving flank (no flat land), and the white
+  // phase stripe the shared jaw generator paints on the rim is not drawn.
+  const inputBody = new THREE.Mesh(unpainted(jawClutchGeometry(inputProfile, { movingIndices: [3, 4], direction: 1,
+    phase: jawPhase, ...p, topFraction: 0, boreRadius, color: PALETTE.accent }), PALETTE.accent), solidMaterial());
+  const outputBody = new THREE.Mesh(unpainted(jawClutchGeometry(outputProfile, { movingIndices: [1, 2], direction: -1,
+    phase: jawPhase + motion.pitch / 2, ...p, topFraction: 0, boreRadius, keyHalfWidth, keywayTop,
+    smoothProfileIndices: shoulder.map((_, i) => i + 4), color: PALETTE.driven }), PALETTE.driven), solidMaterial());
   const gearBody = new THREE.Mesh(boredSpurGeometry({ teeth: gearTeeth, module, depth: gearDepth, boreRadius }),
     matte(PALETTE.accent, { metalness: 0.16, roughness: 0.61 }));
   const pinionBody = new THREE.Mesh(boredSpurGeometry({ teeth: pinionTeeth, module, depth: gearDepth, boreRadius: 0.083 }),

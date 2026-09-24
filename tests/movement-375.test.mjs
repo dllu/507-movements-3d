@@ -79,8 +79,6 @@ test('movement 375 is a vertical-shaft carrier with one cross-axle, two opposed 
     blocks.inputPinion,
     blocks.inputShaftRotor,
     blocks.largeBevelGear,
-    blocks.lowerBase,
-    blocks.lowerBearing,
     blocks.outerLip,
     blocks.pan,
     blocks.upperFrame,
@@ -89,7 +87,6 @@ test('movement 375 is a vertical-shaft carrier with one cross-axle, two opposed 
     blocks.centralHub,
     blocks.crossAxle,
     ...blocks.edgeRunners,
-    blocks.shaftIndex,
     blocks.verticalShaft,
   ]) assert.equal(component.parent, blocks.carrier);
   for (const component of [
@@ -98,7 +95,13 @@ test('movement 375 is a vertical-shaft carrier with one cross-axle, two opposed 
     blocks.inputBearing,
   ]) assert.equal(component.parent, blocks.upperFrame);
   assert.equal(blocks.inputShaft.parent, blocks.inputShaftRotor);
-  assert.equal(blocks.inputShaftIndex.parent, blocks.inputShaftRotor);
+  // Brown draws no foundation slab, lower bearing or white indices.
+  for (const component of [
+    blocks.lowerBase,
+    blocks.lowerBearing,
+    blocks.shaftIndex,
+    blocks.inputShaftIndex,
+  ]) assert.equal(component.parent, null);
   assert.equal(blocks.edgeRunners.length, 2);
   assert.equal(blocks.framePosts.length, 2);
   assert.equal(blocks.pan.userData.fixed, true);
@@ -174,7 +177,7 @@ test('movement 375 places both identical runner treads exactly on the flat cente
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime } = data;
 
-  near(geometry.runnerRadiusRatio, 2, 0,
+  near(geometry.runnerRadiusRatio, 1, 0,
     'track-to-runner radius ratio');
   near(geometry.runnerCenterY - geometry.runnerRadius,
     geometry.panFloorY, 0, 'runner bottom at pan floor');
@@ -224,7 +227,7 @@ test('movement 375 both outward-axis runner spins cancel carrier translation exa
   const data = model.root.userData;
   const { geometry, stateAtTime, transmission } = data;
 
-  assert.equal(transmission.runnerSpinRatio, -2);
+  assert.equal(transmission.runnerSpinRatio, -1);
   assert.match(transmission.runnerSpinLaw, /outward radial axis/);
   for (let sample = -1600; sample <= 3200; sample += 1) {
     const time = geometry.carrierPeriod * sample / 800;
@@ -376,7 +379,7 @@ test('movement 375 renderer binds the bevel input, vertical carrier, opposed rad
   disposeModel(model.root);
 });
 
-test('movement 375 closes three pinion turns, one carrier revolution, and two runner counter-turns before movement 507 remains authored', () => {
+test('movement 375 closes three pinion turns, one carrier revolution, and one runner counter-turn before movement 507 remains authored', () => {
   const movement = catalog.movements[374];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -389,7 +392,7 @@ test('movement 375 closes three pinion turns, one carrier revolution, and two ru
   near(closure.carrierAngle - start.carrierAngle,
     FULL_TURN, 0, 'one unwrapped carrier turn');
   near(closure.runnerSpinAngle - start.runnerSpinAngle,
-    -2 * FULL_TURN, 0, 'two unwrapped runner counter-turns');
+    -FULL_TURN, 0, 'one unwrapped runner counter-turn');
   angleNear(closure.inputAngle, start.inputAngle, 0,
     'input pinion closes');
   angleNear(closure.carrierAngle, start.carrierAngle, 0,

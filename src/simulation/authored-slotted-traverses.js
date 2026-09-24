@@ -142,6 +142,10 @@ function slottedTraverse(movement) {
   const sourceOutputRailYFromC = -2.5;
   const sourceOutputRailHalfLength = 7.75;
   const sourceGuideXs = [-6, 6];
+  // Brown's plate draws a much shorter bar with guides a, a close to the
+  // lever; these keep the bar in both guides over the full traverse.
+  const plateOutputRailHalfLength = 5.2;
+  const plateGuideXs = [-4, 4];
   const sourceCyclesPerMinute = 15;
   const cyclePeriod = 60 / sourceCyclesPerMinute;
   const sourceKeyframePhases = [0, 0.4, 0.5, 0.9];
@@ -462,19 +466,20 @@ function slottedTraverse(movement) {
 
   const sourceOutputRailWorldY = worldOffsetY
     + (sourceOutputGuideY + sourceOutputRailYFromC) * sourceScale;
-  const outputGuideAssemblies = sourceGuideXs.map((sourceX, index) => {
+  const outputGuideAssemblies = plateGuideXs.map((sourceX, index) => {
     const guide = new THREE.Group();
     guide.position.x = sourceX * sourceScale;
     guide.userData.role = `fixed-output-guide-a-${index + 1}`;
+    // A short flange, as Brown draws guide a, behind the bar.
     const upright = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 1.38, 0.54),
+      new THREE.BoxGeometry(0.18, 0.62, 0.54),
       frameMaterial,
     );
     upright.position.set(0, sourceOutputRailWorldY, fixedFramePlaneZ + 0.04);
     const lips = [-1, 1].map((side) => {
       const lip = new THREE.Mesh(
         new THREE.BoxGeometry(0.48, 0.12, 0.30),
-        inkMaterial,
+        frameMaterial,
       );
       lip.position.set(
         side * 0.14,
@@ -565,7 +570,7 @@ function slottedTraverse(movement) {
     'guided-output-bar-with-offset-riser-clearing-fixed-pin';
   const outputRail = new THREE.Mesh(
     new THREE.BoxGeometry(
-      sourceOutputRailHalfLength * 2 * sourceScale,
+      plateOutputRailHalfLength * 2 * sourceScale,
       0.24,
       barDepth,
     ),
@@ -851,7 +856,7 @@ function slottedTraverse(movement) {
       -state.movingPin.coordinate;
     contacts.outputBarInGuidesAA.points.forEach((point, index) => {
       point.set(
-        sourceGuideXs[index] * sourceScale,
+        plateGuideXs[index] * sourceScale,
         sourceOutputRailWorldY,
         outputBarPlaneZ,
       );
@@ -1046,6 +1051,11 @@ function slottedTraverse(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Frame the bar, guides and lever as Brown does, without the input drive.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.2, 0.1, -0.7),
+    new THREE.Vector3(3.2, 3.85, 0.7),
+  );
   markShadows(root);
   upperSlotOutline.castShadow = false;
   upperSlotOutline.receiveShadow = false;

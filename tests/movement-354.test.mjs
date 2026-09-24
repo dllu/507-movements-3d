@@ -345,8 +345,10 @@ test('movement 354 renderer binds disk, wrist, crosshead, and fixed guides', () 
       `rendered crosshead position ${phase}`);
     near(blocks.yoke.rotation.z, 0, 0,
       `rendered crosshead does not rotate ${phase}`);
+    // Compare in model coordinates: the presentation mirrors depth.
     vector3Near(
-      blocks.crankWrist.getWorldPosition(new THREE.Vector3()),
+      model.root.worldToLocal(
+        blocks.crankWrist.getWorldPosition(new THREE.Vector3())),
       state.pinPosition,
       4e-15,
       `rendered crank wrist ${phase}`,
@@ -374,12 +376,13 @@ test('movement 354 renderer binds disk, wrist, crosshead, and fixed guides', () 
   assert.ok(geometry.wristFrontZ > geometry.yokeFrontZ,
     'wrist cap projects visibly in front of the moving crosshead');
   assert.ok(geometry.diskFrontZ < geometry.yokePlaneZ,
-    'disk remains in the rear plane shown by the engraving');
+    'disk lies beyond the crosshead; the presentation mirror turns it to the front as Brown draws');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 28);
+  // Presentation removes supports, bearing and white indices; guide bridges and the disk rim are added.
+  assert.ok(meshCount >= 22);
   disposeModel(model.root);
 });
 

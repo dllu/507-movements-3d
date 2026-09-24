@@ -19,7 +19,7 @@ test('375 actual runner/track solids and independent journals clear over the com
 test('375 finite trough supports the rolling contact and bearings connect to the frame',()=>{
  const m=models[0],b=m.root.userData.blocks;m.update(0);m.root.updateMatrixWorld(true);
  const floor=new T.Vector3(1.44,-1.42,0);assert.ok(inside(b.pan,floor));assert.ok(!inside(b.pan,new T.Vector3(1.44,-1.38,0)));assert.ok(!inside(b.pan,new T.Vector3(0,-1.5,0)));
- joined(b.lowerBearing,b.lowerBase,new T.Vector3(.15,-1.755,0));joined(b.pan,b.lowerBase,new T.Vector3(1.44,-1.755,0));joined(b.inputBearing,b.inputBearingSupport,new T.Vector3(2.76,2.03,0));joined(b.inputBearingSupport,b.frameTop,new T.Vector3(2.76,1.5,-.2));
+ joined(b.lowerBearing,b.lowerBase,new T.Vector3(.15,-1.755,0));joined(b.pan,b.lowerBase,new T.Vector3(1.44,-1.755,0));joined(b.inputBearing,b.inputBearingSupport,new T.Vector3(2.45,2.03,0));joined(b.inputBearingSupport,b.frameTop,new T.Vector3(2.45,1.5,-.2));
 });
 test('376 bored journal arms and horse body clear the axle at every wheel pose',()=>{
  const m=models[1],b=m.root.userData.blocks;for(let i=0;i<=64;i++){m.update(i/16);m.root.updateMatrixWorld(true);for(const part of[...b.fixedBearings,...b.bearingArms,b.torso,b.neck,b.head].filter(Boolean))assert.ok(clearance(part,b.axle)>-2e-6,part.userData.role);}
@@ -30,7 +30,7 @@ test('376 treads, their radial brackets, spokes and side rings have finite conne
   joined(tread,mount,b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.72,Math.sin(angle)*1.72,side*.52)));
   joined(ring,mount,b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.98,Math.sin(angle)*1.98,side*.58)));
  }
- for(const spoke of b.radialSpokes){const p=spoke.localToWorld(new T.Vector3(1.98,0,0)),ring=b.sideRings[spoke.userData.side>0?1:0];joined(spoke,ring,p);}
+ for(const spoke of b.radialSpokes){const p=spoke.localToWorld(new T.Vector3(spoke.userData.halfLength+.01,0,0)),ring=b.sideRings[spoke.userData.side>0?1:0];joined(spoke,ring,p);}
 });
 test('377 axle has a real bearing passage and rail posts meet the foundation',()=>{
  const m=models[2],b=m.root.userData.blocks;for(let i=0;i<=64;i++){m.update(i/16);m.root.updateMatrixWorld(true);assert.ok(clearance(b.axle,b.bearing)>-2e-6);}

@@ -126,7 +126,7 @@ function makePitchConeGear({
     geometry.rotateZ(index/teeth*FULL_TURN);
     const tooth = new THREE.Mesh(
       geometry,
-      index === indexTooth ? whiteMaterial : toothMaterial,
+      toothMaterial,
     );
     tooth.userData.bevelTooth = true;
     tooth.userData.index = index;
@@ -162,6 +162,9 @@ function makePitchConeGear({
   );
   faceIndex.userData.role = 'white-index-showing-bevel-gear-angle';
   rotor.add(faceIndex);
+  // Brown hatches plain bevel wheels: no face ring or white index is drawn.
+  faceRing.visible = false;
+  faceIndex.visible = false;
 
   root.userData.body = body;
   root.userData.boreRadius = boreRadius;
@@ -213,7 +216,10 @@ function treadleBevelDrillingMachine(movement) {
   );
 
   const linkagePlaneZ = 0.72;
-  const lowerLeverPivot = new THREE.Vector3(-0.82, 0.30, linkagePlaneZ);
+  // Brown's treadle fulcrum lies well below the frame (plate pivots 404 px
+  // apart against 78 px from the drill axis), so the treadle passes under
+  // the frame and across the drill below its chuck.
+  const lowerLeverPivot = new THREE.Vector3(-0.82, -0.35, linkagePlaneZ);
   const upperLeverPivot = new THREE.Vector3(-0.82, 3.47, linkagePlaneZ);
   const leftLeverArmLength = 0.86;
   const upperRightArmLength = 0.82;
@@ -579,24 +585,35 @@ function treadleBevelDrillingMachine(movement) {
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-c-frame-and-bearings-of-drilling-machine';
   const frameRearZ = -0.68;
-  const frameBaseY = -0.81;
+  const frameBaseY = -1.05;
   const frameColumnX = 1.52;
+  // Brown draws a closed rectangular frame around the bevel wheels, from
+  // the lower spindle guide up to the head, with no bed beneath it.
+  const frameLeftX = -0.74;
+  const frameBottomY = 0.48;
   const frameBase = makeBeam(
-    new THREE.Vector3(-1.35, frameBaseY, frameRearZ),
-    new THREE.Vector3(1.72, frameBaseY, frameRearZ),
+    new THREE.Vector3(frameLeftX - 0.09, frameBottomY, frameRearZ),
+    new THREE.Vector3(frameColumnX + 0.11, frameBottomY, frameRearZ),
     { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
   );
-  frameBase.userData.role = 'lower-bed-of-drill-c-frame';
+  frameBase.userData.role = 'lower-bar-of-closed-drill-frame';
   frame.add(frameBase);
   const frameColumn = makeBeam(
-    new THREE.Vector3(frameColumnX, frameBaseY, frameRearZ),
+    new THREE.Vector3(frameColumnX, frameBottomY, frameRearZ),
     new THREE.Vector3(frameColumnX, 3.25, frameRearZ),
     { color: PALETTE.frame, depth: 0.28, thickness: 0.22 },
   );
   frameColumn.userData.role = 'right-upright-of-drill-c-frame';
   frame.add(frameColumn);
+  const frameLeftUpright = makeBeam(
+    new THREE.Vector3(frameLeftX, frameBottomY, frameRearZ),
+    new THREE.Vector3(frameLeftX, 3.25, frameRearZ),
+    { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
+  );
+  frameLeftUpright.userData.role = 'left-upright-of-closed-drill-frame';
+  frame.add(frameLeftUpright);
   const frameTop = makeBeam(
-    new THREE.Vector3(-0.36, 3.25, frameRearZ),
+    new THREE.Vector3(frameLeftX - 0.09, 3.25, frameRearZ),
     new THREE.Vector3(frameColumnX, 3.25, frameRearZ),
     { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
   );
@@ -642,9 +659,11 @@ function treadleBevelDrillingMachine(movement) {
   upperShaftGuide.userData.role =
     'fixed-upper-bearing-around-keyed-pinion-hub';
   frame.add(upperShaftGuide);
+  // The treadle fulcrum stands on its own post, as the plate's cropped
+  // stand below the lever shows.
   const lowerLeverSupport = makeBeam(
-    new THREE.Vector3(lowerLeverPivot.x, frameBaseY, frameRearZ),
-    lowerLeverPivot.clone().setZ(.36),
+    new THREE.Vector3(lowerLeverPivot.x, frameBaseY, .30),
+    lowerLeverPivot.clone().setZ(.30),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   lowerLeverSupport.userData.role = 'fixed-support-for-treadle-pivot';
@@ -657,10 +676,12 @@ function treadleBevelDrillingMachine(movement) {
   upperLeverSupport.userData.role = 'fixed-support-for-upper-lever-pivot';
   frame.add(upperLeverSupport);
   const shaftGuideBridges=[];
-  for(const [guide,start] of [[lowerShaftGuide,new THREE.Vector3(frameColumnX,.48,frameRearZ)],
+  for(const [guide,start] of [[lowerShaftGuide,null],
       [upperShaftGuide,new THREE.Vector3(0,3.25,frameRearZ)]]){
     const rear=new THREE.Vector3(0,guide.position.y,frameRearZ);
-    for(const [a,b] of [[start,rear],[rear,new THREE.Vector3(0,guide.position.y,guide===upperShaftGuide?-.285:-.185)]]){
+    // The closed frame's lower bar already carries the lower guide's stem.
+    const spans=start?[[start,rear]]:[];
+    for(const [a,b] of [...spans,[rear,new THREE.Vector3(0,guide.position.y,guide===upperShaftGuide?-.285:-.185)]]){
       const support=makeBeam(a,b,{color:PALETTE.frame,depth:.12,thickness:.12});
       frame.add(support);shaftGuideBridges.push(support);
     }
@@ -857,6 +878,7 @@ function treadleBevelDrillingMachine(movement) {
       frame,
       frameBase,
       frameColumn,
+      frameLeftUpright,
       frameTop,
       inputBearing,
       inputBearingBridge,
@@ -1020,7 +1042,12 @@ function treadleBevelDrillingMachine(movement) {
     new THREE.Vector3(3.08, 4.04, 1.18),
   );
   root.userData.groundFloorY = -0.89;
-  root.userData.cameraDirection=new THREE.Vector3(3.8,1.4,12);
+  // Undrawn markers stay allocated for kinematic checks but are not shown;
+  // the treadle is Brown's plain bar without a foot pad.
+  for (const part of [crankIndex, shaftSpinIndex, treadlePedal]) part.visible = false;
+  // Brown's plate is a flat front elevation.
+  root.userData.cameraDirection=new THREE.Vector3(0,0.03,1);
+  root.userData.cameraFov=18;
   fitPistonGuide(root,update,demonstrationPeriod);
   markShadows(root);
   return {

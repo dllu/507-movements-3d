@@ -44,35 +44,42 @@ export function correctCordTraverseParts(root,id,update){
   for(const [p,R,bore,w]of[[b.leftGuide.pulley,g.fixedGuidePitchRadius,.068,.18],[b.rightGuide.pulley,g.fixedGuidePitchRadius,.068,.18],[b.movingPulley,g.movingPulleyPitchRadius,.055,.16]])groovedSheave(p,R,bore,w);
   // Both barrels retain a full finite rope pack, including the eased takeoff.
   replace(b.smallBarrel,new T.CylinderGeometry(g.smallBarrelPitchRadius-g.ropeRadius*1.12,g.smallBarrelPitchRadius-g.ropeRadius*1.12,1.45,64));b.smallBarrel.position.x=g.smallRopeExit.x+.20;
-  b.barrelFlanges[2].position.x=g.smallRopeExit.x-.525;b.barrelFlanges[3].position.x=g.smallRopeExit.x+.925;
+  // Brown's barrels are plain drums: no flanges, spin index or rope markers.
+  for(const flange of b.barrelFlanges.splice(0))flange.removeFromParent();
+  b.shaftIndicator.visible=false;for(const marker of[...b.ropeMarkers,...b.contactMarkers])marker.visible=false;
   for(const bearing of b.shaftBearings){replace(bearing,ring(.20,.104,.20));bearing.rotation.set(0,0,Math.PI/2);bearing.position.z=0;}
   // The hanger lies behind the rope plane and joins the existing axle.
   replace(b.hanger,new T.BoxGeometry(.12,.66,.16));b.hanger.position.y=-.33;b.hanger.position.addScaledVector(g.pulleyAxis,-.16);
   retainTraverseCord(b.rope,g.ropeRadius,1024);
  }else if(id===358){
-  b.fuseeGroove.visible=false;
+  // Brown draws neither a separate groove tube nor a white spin index.
+  b.fuseeGroove.visible=false;b.spinIndicator.visible=false;
   const profile=d.profile.radiusAtTurns,N=400,height=g.fuseeHeight,pitch=height/g.revolutionCount;
   const body=sectionSolid(angle=>{
    const points=[];
    for(let i=0;i<=N;i++){
     const progress=i/N,y=g.fuseeTopY-height*progress,phase=Math.PI/2+2*Math.PI*g.revolutionCount*progress;
+    // The floor follows the lower groove edge so the cord clears Brown's steep cone.
     const angular=Math.atan2(Math.sin(angle-phase),Math.cos(angle-phase)),offset=Math.abs(angular*pitch/(2*Math.PI));
-    const floor=profile(progress*g.revolutionCount)-.032,outer=profile(progress*g.revolutionCount)+.004;
+    const floor=profile(Math.min(1,progress+.05/height)*g.revolutionCount)-.032,outer=profile(progress*g.revolutionCount)+.004;
     const fraction=T.MathUtils.clamp((offset-.037)/.013,0,1);points.push([y,floor+(outer-floor)*fraction]);
    }
    points.push([g.fuseeBottomY,.046],[g.fuseeTopY,.046]);return points;
   },128,'y');replace(b.fuseeBody,body);
   b.fuseeRotor.children.filter(o=>o.userData.role==='fusee-end-face').forEach(o=>o.visible=false);
-  for(const o of b.carriage.children){if(o.userData.role==='vertical-fusee-and-crank-shaft')replace(o,new T.CylinderGeometry(.043,.043,2.28,40));}
-  replace(b.carriageBed,new T.BoxGeometry(1.56,.16,.76));
-  for(const wheel of b.carriageWheels){wheel.position.y=-.39;replace(wheel.userData.hub,ring(.064,.042,.20));}
-  for(const x of[-.57,.57]){const axle=add(b.carriage,new T.CylinderGeometry(.040,.040,1.10,32),b.carriageBed.material,'fixed-carriage-wheel-axle');axle.rotation.x=Math.PI/2;axle.position.set(x,-.39,0);}
+  for(const o of b.carriage.children){if(o.userData.role==='vertical-fusee-and-crank-shaft')replace(o,new T.CylinderGeometry(.043,.043,2.44,40));}
+  // Brown's plan: two frame bars along the traverse carry the wheel axles;
+  // the nearer bar also carries the shaft's small-end bearing.
+  const wheelZ=b.carriageWheels[0].position.z,wheelY=b.carriageWheels[0].position.y,barLength=b.carriageBed.geometry.parameters.width;
+  for(const wheel of b.carriageWheels)replace(wheel.userData.hub,ring(.064,.042,.20));
+  for(const wheel of b.carriageWheels){const axle=add(b.carriage,new T.CylinderGeometry(.040,.040,1.12,32),b.carriageBed.material,'fixed-carriage-wheel-axle');axle.position.set(wheel.position.x,wheelY,wheelZ);}
   for(const bearing of b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-shaft-bearing')){replace(bearing,ring(.14,.047,.14));bearing.rotation.set(0,0,0);const support=add(b.carriage,new T.BoxGeometry(.20,.10,.34),bearing.material,'fusee-journal-to-bearing-frame');support.position.set(0,bearing.position.y,-.26);}
-  const lowerCross=add(b.carriage,new T.BoxGeometry(1.10,.10,.13),b.carriageBed.material,'lower-fusee-bearing-crossmember');lowerCross.position.set(0,.08,-.43);
+  const lowerCross=add(b.carriage,new T.BoxGeometry(barLength,.13,.13),b.carriageBed.material,'lower-fusee-bearing-crossmember');lowerCross.position.set(0,-.25,wheelZ);
   for(const cord of[b.firstCord,b.secondCord])for(const marker of cord.userData.markers)marker.visible=false;
   for(const [i,cord]of[b.firstCord,b.secondCord].entries()){retainTraverseCord(cord,.014,480);cord.userData.mesh.userData.role=`finite-fusee-cord-${i+1}`;}
-  for(let x=-6;x<=6;x+=.5){const mark=add(b.track,new T.BoxGeometry(.035,Number.isInteger(x)?.085:.045,.012),b.carriageWheels[0].userData.hub.material,'rail-travel-reference-mark');mark.position.set(x,-.67,.537);}
-  root.rotation.z=Math.PI/2;d.followCarriage=true;d.cameraMaxDistance=48;
+  const rail=b.track.children.find(o=>o.userData.role==='fixed-carriage-guide-rail'),railTop=rail.position.z+.05;
+  for(let x=-Math.floor(g.trackHalfLength);x<=Math.floor(g.trackHalfLength);x+=.5){const mark=add(b.track,new T.BoxGeometry(.05,Number.isInteger(x)?.36:.24,.012),rail.material,'rail-travel-reference-mark');mark.position.set(x,rail.position.y,railTop-.106);}
+  root.rotation.z=Math.PI/2;d.followCarriage=true;d.cameraMaxDistance=4.8*g.carriageStroke;
  }else{
   const section=angle=>{const x=d.grooveXAtLocalAngle(angle),r=g.barrelRadius,L=g.barrelAxialLength/2;return[[-L,r],[x-.086,r],[x-.074,.676],[x+.074,.676],[x+.086,r],[L,r],[L,.094],[-L,.094]];};
   replace(b.groovedCylinder,sectionSolid(section));b.groovedCylinder.rotation.set(0,0,0);b.grooveTrack.visible=false;b.grooveReversalPockets.forEach(o=>o.visible=false);

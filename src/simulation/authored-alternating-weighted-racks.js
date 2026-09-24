@@ -967,7 +967,7 @@ function alternatingWeightedRackDrive(movement) {
     new THREE.Vector3(3.30, 5.55, 1.05),
   );
   root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraDirection = new THREE.Vector3(1.4, 1.1, 12);
+  root.userData.cameraDirection = new THREE.Vector3(0.15, 0.12, 12);
   root.userData.groundFloorY = -3.72;
   correctWeightedRackInterfaces(root);
   correctWeightedRackTeeth(root);

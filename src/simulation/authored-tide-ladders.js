@@ -843,7 +843,7 @@ function selfAdjustingWharfLadder(movement) {
   water.castShadow = false;
   water.receiveShadow = true;
   return {
-    cameraDirection: new THREE.Vector3(3.8, 2.8, 12),
+    cameraDirection: new THREE.Vector3(0.3, 0.25, 12),
     root,
     update,
   };

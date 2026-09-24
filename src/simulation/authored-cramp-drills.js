@@ -248,11 +248,13 @@ function opposingFeedScrewCrampDrill(movement) {
   drillCrankHub.position.y = 0.52;
   drillCrankHub.userData.role = 'upper-crank-axis-hub';
   drillRotor.add(drillCrankHub);
-  const drillCrankKnob = cylinderAlongY(
-    0.17,
-    0.54,
+  // Brown draws a turned handle: a slim neck swelling to a rounded bulb.
+  const drillCrankKnob = new THREE.Mesh(
+    new THREE.LatheGeometry([
+      [0, -0.27], [0.10, -0.27], [0.075, -0.17], [0.085, -0.07],
+      [0.15, 0.04], [0.175, 0.13], [0.16, 0.21], [0.11, 0.26], [0, 0.27],
+    ].map(([radius, y]) => new THREE.Vector2(radius, y)), 32),
     drillMaterial,
-    24,
   );
   drillCrankKnob.position.set(-1.60, 0.79, 0);
   drillCrankKnob.userData.role = 'free-turning-upper-crank-hand-knob';
@@ -316,8 +318,9 @@ function opposingFeedScrewCrampDrill(movement) {
   feedScrewRotor.add(handwheelHub);
   const handwheelArms = [];
   const handwheelKnobs = [];
-  for (let index = 0; index < 3; index += 1) {
-    const angle = index * FULL_TURN / 3;
+  // Brown's feed handle is a straight tommy bar with a ball at each end.
+  for (let index = 0; index < 2; index += 1) {
+    const angle = index * FULL_TURN / 2;
     const radial = new THREE.Vector3(
       Math.cos(angle) * handwheelRadius,
       -0.04,
@@ -330,7 +333,7 @@ function opposingFeedScrewCrampDrill(movement) {
       feedMaterial,
     );
     arm.userData.index = index;
-    arm.userData.role = 'one-of-three-feed-handwheel-arms';
+    arm.userData.role = 'one-of-two-feed-handle-arms';
     handwheelArms.push(arm);
     feedScrewRotor.add(arm);
     const knob = new THREE.Mesh(
@@ -339,7 +342,7 @@ function opposingFeedScrewCrampDrill(movement) {
     );
     knob.position.copy(radial);
     knob.userData.index = index;
-    knob.userData.role = 'one-of-three-feed-handwheel-knobs';
+    knob.userData.role = 'one-of-two-feed-handle-end-balls';
     handwheelKnobs.push(knob);
     feedScrewRotor.add(knob);
   }

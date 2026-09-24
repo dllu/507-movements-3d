@@ -61,7 +61,6 @@ test('movement 389 is an eccentric-strap lifting pawl, linear rack, and separate
   assert.match(degreesOfFreedom.note, /one-pitch ratchet advance/);
 
   for (const component of [
-    blocks.driveContactMarker,
     blocks.drivingNose,
     blocks.drivingPawl,
     blocks.eccentricRotor,
@@ -70,14 +69,19 @@ test('movement 389 is an eccentric-strap lifting pawl, linear rack, and separate
     blocks.frame,
     blocks.holdingPawl,
     blocks.rack,
-    blocks.stopContactMarker,
   ]) assert.equal(component.parent, model.root);
+  // Brown draws no white indices; the source presentation detaches them.
+  for (const index of [
+    blocks.driveContactMarker,
+    blocks.stopContactMarker,
+    blocks.eccentricIndex,
+    blocks.rackLiftIndex,
+    ...blocks.frameScaleTicks,
+  ]) assert.equal(index.parent, null);
   assert.equal(blocks.eccentricDisk.parent, blocks.eccentricRotor);
-  assert.equal(blocks.eccentricIndex.parent, blocks.eccentricRotor);
   assert.equal(blocks.holdingPawlBody.parent, blocks.holdingPawl);
   assert.equal(blocks.holdingPivotPin.parent, blocks.holdingPawl);
   assert.equal(blocks.rackBody.parent, blocks.rack);
-  assert.equal(blocks.rackLiftIndex.parent, blocks.rack);
   assert.equal(blocks.rackSaddle.parent, blocks.rack);
   assert.equal(blocks.rackTeeth.length, 18);
   assert.equal(blocks.frameScaleTicks.length, 4);

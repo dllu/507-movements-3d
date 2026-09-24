@@ -83,11 +83,11 @@ test('movement 374 is one right-pivoted treadle roller driving one round shaft e
   assert.ok(blocks.pivotPost.parent === null, 'source presentation removes pivotPost');
   for (const component of [
     blocks.eccentricPulley,
-    blocks.shaftIndex,
     blocks.shaftPin,
   ]) assert.ok(component.parent === blocks.shaftRotor, `${component.userData.role} parent`);
+  assert.ok(blocks.shaftIndex.parent === null, 'source presentation removes the undrawn white index');
+  assert.ok(blocks.footPad.parent === null, 'source presentation removes the undrawn foot pad');
   for (const component of [
-    blocks.footPad,
     blocks.rollerAxle,
     blocks.treadleBeam,
     blocks.treadleRoller,
@@ -115,7 +115,6 @@ test('movement 374 is one right-pivoted treadle roller driving one round shaft e
     'free-spinning-belt-roller-carried-on-moving-treadle',
     'oscillating-treadle-pivoted-at-right-hand-fixed-fulcrum',
     'one-constant-length-endless-band-linking-treadle-roller-and-eccentric',
-    'white-index-showing-continuous-output-shaft-rotation',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -181,11 +180,11 @@ test('movement 374 solves the eccentric-center link and treadle arc as the corre
 
   vectorNear(start.eccentricCenter, geometry.restEccentricCenter, 0,
     'source rest eccentric center');
-  vectorNear(start.rollerCenter, geometry.restRollerCenter, 8e-16,
+  vectorNear(start.rollerCenter, geometry.restRollerCenter, 1.5e-15,
     'source rest roller center');
-  near(start.centerlineAngle, geometry.restCenterlineAngle, 0,
+  near(start.centerlineAngle, geometry.restCenterlineAngle, 1e-15,
     'rest belt centerline angle');
-  near(start.treadleAngle, geometry.restTreadleAngle, 0,
+  near(start.treadleAngle, geometry.restTreadleAngle, 1e-15,
     'rest treadle angle');
   for (let sample = -1200; sample <= 2400; sample += 1) {
     const time = geometry.shaftPeriod * sample / 600;

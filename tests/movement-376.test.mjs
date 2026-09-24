@@ -74,19 +74,22 @@ test('movement 376 is one internal animal treadwheel with a rigid cage, sixteen 
 
   for (const component of [
     blocks.animal,
-    ...blocks.baseRails,
-    ...blocks.bearingArms,
     ...blocks.fixedBearings,
-    ...blocks.supportPosts,
     blocks.wheelRotor,
   ]) assert.equal(component.parent, model.root);
+  // Brown draws no trestle, base rails or white index.
+  for (const component of [
+    ...blocks.baseRails,
+    ...blocks.bearingArms,
+    ...blocks.supportPosts,
+    blocks.wheelIndex,
+  ]) assert.equal(component.parent, null);
   for (const component of [
     blocks.axle,
     ...blocks.axialRails,
     ...blocks.radialSpokes,
     ...blocks.sideRings,
     ...blocks.treadBoards,
-    blocks.wheelIndex,
   ]) assert.equal(component.parent, blocks.wheelRotor);
   for (const component of [
     ...blocks.ears,
@@ -118,7 +121,6 @@ test('movement 376 is one internal animal treadwheel with a rigid cage, sixteen 
     'cross-width-internal-tread-board-rigid-with-wheel',
     'animal-held-at-one-side-while-walking-up-moving-interior',
     'horizontal-output-axle-rigid-with-treadwheel',
-    'white-index-showing-treadwheel-and-output-shaft-rotation',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

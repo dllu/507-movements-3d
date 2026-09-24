@@ -87,9 +87,9 @@ test('movement 392 is one crank-driven ungated saw, two fixed guide pairs, and o
     'one-cutting-tooth-on-ungated-gig-saw-blade',
     'single-flexing-upper-leaf-spring-maintaining-blade-tension',
     'fixed-right-hand-anchor-of-leaf-spring',
-    'white-crank-throw-spin-index',
-    'white-index-making-straight-saw-reciprocation-legible',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no white indices; the source presentation detaches them.
+  assert.ok(!roles.some((role) => /^white-/.test(role)), 'no white indices remain');
   disposeModel(model.root);
 });
 
@@ -210,36 +210,34 @@ test('movement 392 translates one straight blade through the table while its gui
   disposeModel(model.root);
 });
 
-test('movement 392 flexing spring joins both tangent spans smoothly and stays attached at both ends', () => {
+test('movement 392 straight leaf spring leaves its right clamp level and stays attached at both ends', () => {
   const model = createMovementModel(catalog.movements[391]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
-  assert.match(transmission.springPathLaw, /point-tangent span/);
-  assert.match(transmission.springPathLaw, /clockwise 13-unit circular bend/);
+  assert.match(transmission.springPathLaw, /end-loaded cantilever/);
+  assert.match(transmission.springPathLaw, /level right-hand clamp/);
 
   for (let sample = -6000; sample <= 12000; sample += 1) {
     const state = stateAtTime(timeline.cycleDuration * sample / 6000);
     const curve = state.spring.curve;
-    const springData = curve.userData;
     vectorNear(curve.getPoint(0), state.spring.movingEnd, 0,
       'spring moving-end attachment');
-    vectorNear(curve.getPoint(1), geometry.springFixedEnd, 9e-16,
+    vectorNear(curve.getPoint(1), geometry.springFixedEnd, 0,
       'spring fixed-end attachment');
-    vectorNear(springData.bendCenter, geometry.springBendCenter, 0,
-      'spring bend center');
-    near(springData.bendRadius, geometry.springBendRadius, 0,
-      'spring bend radius');
-    assert.ok(springData.sweep < 0, 'spring bend remains clockwise');
-    for (const dot of springData.joinTangentDots) {
-      near(dot, 1, 5e-16, 'leaf-spring tangent continuity');
-    }
+    near(state.spring.movingEnd.x, 0, 0, 'spring tip on the blade axis');
+    near(state.spring.movingEnd.y, state.sliderY + geometry.springAttachmentY,
+      0, 'spring tip rides with the blade');
+    const nearClamp = curve.getPoint(1 - 1e-6);
+    near((geometry.springFixedEnd.y - nearClamp.y)
+      / (geometry.springFixedEnd.x - nearClamp.x), 0, 2e-5,
+      'leaf leaves the clamp level');
     near(state.spring.length, curve.getLength(), 0,
       'reported spring path length');
   }
   disposeModel(model.root);
 });
 
-test('movement 392 spring remains positively preloaded and is most strained at lower dead center', () => {
+test('movement 392 spring is straight in the source pose, preloaded throughout, and most strained at lower dead center', () => {
   const model = createMovementModel(catalog.movements[391]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
@@ -259,9 +257,9 @@ test('movement 392 spring remains positively preloaded and is most strained at l
     'minimum spring preload');
   near(
     maximumExtension,
-    geometry.maximumSpringLength - geometry.springNaturalLength,
+    geometry.springPreloadExtension + geometry.sliderStroke,
     2e-14,
-    'maximum spring extension',
+    'maximum spring deflection',
   );
   const lowerDeadCenter = stateAtTime(
     timeline.cycleDuration * timeline.lowerDeadCenterPhase,
@@ -273,10 +271,16 @@ test('movement 392 spring remains positively preloaded and is most strained at l
     'lower dead-center slider height');
   near(upperDeadCenter.sliderY, geometry.sliderHighY, 3e-16,
     'upper dead-center slider height');
-  near(lowerDeadCenter.spring.length, geometry.maximumSpringLength, 0,
-    'longest spring at lower dead center');
-  near(upperDeadCenter.spring.length, geometry.minimumSpringLength, 0,
-    'shortest spring at upper dead center');
+  near(lowerDeadCenter.spring.extension,
+    geometry.springPreloadExtension + geometry.sliderStroke, 2e-14,
+    'most strained at lower dead center');
+  near(upperDeadCenter.spring.extension, geometry.springPreloadExtension,
+    2e-14, 'least strained at upper dead center');
+  const sourcePose = stateAtTime(0);
+  for (let index = 0; index <= 20; index += 1) {
+    near(sourcePose.spring.curve.getPoint(index / 20).y,
+      geometry.springFixedEnd.y, 3e-15, 'straight leaf in the source pose');
+  }
   disposeModel(model.root);
 });
 

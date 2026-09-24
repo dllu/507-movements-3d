@@ -23,18 +23,18 @@ export function makeHeldSideDifferential() {
   };
   const drum = (radius, bore, [low, high], color, paintIndex = false) => turned([[low, bore], [low, radius], [high, radius], [high, bore]], color, paintIndex);
   add('driverShaft', drum(p.driverShaftRadius, 0, p.driverShaftSpan, PALETTE.muted), driver, 'driver');
-  add('driverDrum', drum(p.pulleyRadius, p.driverShaftRadius, p.driverSpan, PALETTE.driver, true), driver, 'driver');
+  add('driverDrum', drum(p.pulleyRadius, p.driverShaftRadius, p.driverSpan, PALETTE.driver), driver, 'driver');
   add('outputShaft', drum(p.outputShaftRadius, 0, p.outputShaftSpan, PALETTE.muted), output, 'output');
   add('loosePulley', drum(p.pulleyRadius, p.looseBore,
-    [p.laneZs[0] - p.pulleyWidths[0] / 2, p.laneZs[0] + p.pulleyWidths[0] / 2], PALETTE.muted, true), loose, 'loose');
+    [p.laneZs[0] - p.pulleyWidths[0] / 2, p.laneZs[0] + p.pulleyWidths[0] / 2], PALETTE.muted), loose, 'loose');
   const directLow = -p.pulleyWidths[1] / 2, directHigh = p.pulleyWidths[1] / 2;
   sectioned.push(add('directPulley', turned([[directLow, p.outputShaftRadius], [directLow, p.pulleyRadius],
     [directHigh, p.pulleyRadius], [directHigh, p.rimInnerRadius], [p.directWebEnd, p.rimInnerRadius],
-    [p.directWebEnd, p.outputShaftRadius]], PALETTE.driven, true), output, 'output'));
+    [p.directWebEnd, p.outputShaftRadius]], PALETTE.driven), output, 'output'));
   const carrierLow = p.laneZs[2] - p.pulleyWidths[2] / 2, carrierHigh = p.laneZs[2] + p.pulleyWidths[2] / 2;
   sectioned.push(add('carrierPulley', turned([[carrierLow, p.rimInnerRadius], [carrierLow, p.pulleyRadius],
     [carrierHigh, p.pulleyRadius], [carrierHigh, p.carrierBore], [p.carrierWebStart, p.carrierBore],
-    [p.carrierWebStart, p.rimInnerRadius]], PALETTE.brass, true), carrier, 'carrier'));
+    [p.carrierWebStart, p.rimInnerRadius]], PALETTE.brass), carrier, 'carrier'));
   const makeGear = (name, parent, family, axis, teeth, innerDistance, outerDistance, pitchConeAngle, bore, hubEnd, color) => {
     const group = new THREE.Group(); group.position.z = p.bevelCenterZ;
     group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), axis); parent.add(group);
@@ -110,11 +110,13 @@ export function makeHeldSideDifferential() {
   };
   root.userData = { geometry: p, parts, families, blocks: { driver, output, loose, carrier, brake, planet, planetAxis },
     gears: { outputGear, brakeGear, planetGear }, motion, sectioned, sectionCaps, setSectionView,
-    sectionView: true, localClippingEnabled: true, hideGround: true, cameraFov: 7,
+    sectionView: false, localClippingEnabled: true, hideGround: true, cameraFov: 7,
     fullCameraDirection: new THREE.Vector3(-8, 3, 6), shadowCameraHalfExtent: 5, shadowBias: -0.00003,
     fidelity: 'authored', mechanism: 'enclosed-held-side-bevel-differential', reconstructionStatus: 'contact-verified-reconstruction', animationTiming: { authoredCyclePeriod: p.cycleDuration },
     idealConstraints: 'Shaft bearings and axial retention are ideal constraints. The carrier runs on the held-side sleeve. The friction curb is held stationary with an ideal anchored tail and weight; transient brake slip, friction, elasticity and inertia are not solved. An operator stops the driver before traversing the band.' };
-  update(0); markShadows(root); setSectionView(true);
+  // Brown draws the pulleys as a closed drum (bevels only dotted inside);
+  // the cutaway is offered through the section-view control.
+  update(0); markShadows(root); setSectionView(false);
   sectionCaps.traverse(mesh => { mesh.castShadow = false; });
   return { root, update, cameraDirection: new THREE.Vector3(-10, 0, 0) };
 }

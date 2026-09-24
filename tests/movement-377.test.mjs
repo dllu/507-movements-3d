@@ -80,8 +80,15 @@ test('movement 377 is one broad external treadmill with fourteen rigid steps, on
     ...blocks.endSpokes,
     ...blocks.outerLugs,
     ...blocks.treadBoards,
-    blocks.wheelIndex,
+    blocks.endGear,
   ]) assert.equal(component.parent, blocks.wheelRotor);
+  // Brown draws no foundation slab, rail posts or white index.
+  for (const component of [
+    blocks.base,
+    ...blocks.railPosts,
+    blocks.wheelIndex,
+  ]) assert.equal(component.parent, null);
+  assert.equal(blocks.pedestalPlank.parent, blocks.fixedFrame);
   for (const component of [
     ...blocks.arms,
     blocks.cap,

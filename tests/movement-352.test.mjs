@@ -82,10 +82,8 @@ test('movement 352 is one redirected single-rope Chinese windlass', () => {
   assert.equal(blocks.largeBarrel.parent, blocks.windlassRotor);
   assert.equal(blocks.smallBarrel.parent, blocks.windlassRotor);
   assert.equal(blocks.inputShaft.parent, blocks.windlassRotor);
-  assert.equal(blocks.barrelFlanges.length, 4);
-  blocks.barrelFlanges.forEach((flange) => {
-    assert.equal(flange.parent, blocks.windlassRotor);
-  });
+  // Brown draws plain barrels without flanges.
+  assert.equal(blocks.barrelFlanges.length, 0);
   assert.equal(blocks.leftGuide.pulley.parent, model.root);
   assert.equal(blocks.rightGuide.pulley.parent, model.root);
   assert.equal(blocks.leftGuide.axle.parent, model.root);

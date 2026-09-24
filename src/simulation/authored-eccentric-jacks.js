@@ -177,11 +177,18 @@ function makeJackFrame({
   const group = new THREE.Group();
   group.userData.role = 'fixed-cast-jack-frame-and-rack-guide';
 
+  // Brown draws the cast stand in section: a hollow column whose two
+  // hatched walls flare concavely into stepped feet either side of the rack,
+  // the right wall stopping below the eccentric.  A thin sole plate ties the
+  // two walls on the ground line.
+  const standDepth = 1.0;
+  const standBackZ = -0.55;
+  const groundY = -1.17;
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(3.35, 0.28, 1.75),
+    new THREE.BoxGeometry(3.02, 0.12, standDepth),
     material,
   );
-  base.position.set(0.45, -1.03, 0);
+  base.position.set(0.16, groundY + 0.06, standBackZ + standDepth / 2);
   base.userData.role = 'wide-jack-foot';
   group.add(base);
 
@@ -193,14 +200,37 @@ function makeJackFrame({
   guideBack.userData.role = 'fixed-rear-rack-guide-cheek';
   group.add(guideBack);
 
+  const wallProfile = (side) => {
+    // side -1: left wall (inner edge beside the rack body); side 1: right
+    // wall (inner edge clear of the tooth tips).
+    const inner = side < 0 ? -0.33 : 0.54;
+    const top = side < 0 ? 2.3 : 1.12;
+    const neck = side < 0 ? 0.19 : 0.26;
+    const bottom = groundY + 0.12;
+    const x = (offset) => inner + side * offset;
+    const shape = new THREE.Shape();
+    shape.moveTo(x(0), bottom);
+    shape.lineTo(x(0), top);
+    shape.lineTo(x(neck), top);
+    shape.lineTo(x(neck + 0.03), 0.42);
+    shape.quadraticCurveTo(x(neck + 0.05), -0.52, x(0.67), -0.60);
+    shape.lineTo(x(0.80), -0.60);
+    shape.lineTo(x(0.80), -0.84);
+    shape.lineTo(x(1.02), -0.84);
+    shape.lineTo(x(1.02), bottom);
+    shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      bevelEnabled: false,
+      curveSegments: 18,
+      depth: standDepth,
+    });
+    geometry.translate(0, 0, standBackZ);
+    return geometry;
+  };
+
   const feet = [];
   for (const side of [-1, 1]) {
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.46, 1.05, 1.28),
-      material,
-    );
-    foot.position.set(side < 0 ? -0.72 : 0.82, -0.51, -0.12);
-    foot.rotation.z = side * 0.12;
+    const foot = new THREE.Mesh(wallProfile(side), material);
     foot.userData.role = 'cast-jack-frame-flared-foot';
     group.add(foot);
     feet.push(foot);
@@ -427,7 +457,7 @@ function eccentricPawlJack(movement) {
   const supportSpine=new THREE.Mesh(new THREE.BoxGeometry(.25,holdingPivot.y+1,.24),frameMaterial);
   supportSpine.position.set(-.12,(holdingPivot.y-1)/2,-.51);root.add(supportSpine);fixedSupports.push(supportSpine);
   for(const y of [.35,1.15]){
-    const cheek=new THREE.Mesh(new THREE.BoxGeometry(.44,.18,.12),frameMaterial);cheek.position.set(-.04,y,.35);root.add(cheek);fixedSupports.push(cheek);
+    const cheek=new THREE.Mesh(new THREE.BoxGeometry(.44,.18,.12),frameMaterial);cheek.position.set(-.04,y,.35);cheek.userData.role='fixed-front-rack-guide-strap';root.add(cheek);fixedSupports.push(cheek);
     const web=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.88),frameMaterial);web.position.set(-.39,y,-.03);root.add(web);fixedSupports.push(web);
   }
 
@@ -857,7 +887,7 @@ function eccentricPawlJack(movement) {
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(1.8, 1.2, 11),
+    cameraDirection: new THREE.Vector3(0.12, 0.18, 11),
     root,
     update,
   };
