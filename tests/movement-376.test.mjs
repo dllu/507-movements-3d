@@ -358,8 +358,11 @@ test('movement 376 renderer keeps the animal body fixed while binding wheel, tre
     }
     near(blocks.tailPivot.rotation.z, expected.tailAngle, 0,
       'rendered smooth tail angle');
-    vectorNear(blocks.animal.position, animalPosition, 0,
-      'animal torso group remains fixed in world');
+    // The body only bobs vertically so the lowest hoof rests on the treads.
+    near(blocks.animal.position.x, animalPosition.x, 0, 'animal x fixed');
+    near(blocks.animal.position.z, animalPosition.z, 0, 'animal z fixed');
+    assert.ok(Math.abs(blocks.animal.position.y - animalPosition.y) < 0.08,
+      'animal bob stays small');
     for (let index = 0; index < blocks.fixedBearings.length; index += 1) {
       vectorNear(blocks.fixedBearings[index].position,
         bearingPositions[index], 0,

@@ -589,6 +589,59 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
     legScale: 0.76,
     maximumHoofRadius: 'kept below the 1.657 tread-board face radius',
   };
+  // Joints: the hips hang just below the torso shell, the upper-leg bars
+  // stop short of the knee so the bent lower bar's corners clear them, and
+  // the tail is rooted on the rump surface rather than inside it.
+  const hipHeights = [-0.31, -0.31, -0.29, -0.29];
+  blocks.legRoots.forEach((legRoot, index) => {
+    legRoot.position.y = hipHeights[index];
+  });
+  const kneeGap = 0.025;
+  for (const upperLeg of blocks.upperLegs) {
+    const { height, width, depth } = upperLeg.geometry.parameters;
+    upperLeg.geometry.dispose();
+    upperLeg.geometry = new THREE.BoxGeometry(width, height - kneeGap, depth);
+    upperLeg.position.y = -(height - kneeGap) / 2;
+  }
+  blocks.tailPivot.position.set(0.722, 0.216, 0);
+  // Hooves on the treads: the tread face is a circle about the fixed axle,
+  // so the lowest hoof's height above it depends only on the gait pose.
+  // After posing the legs the body is let down along the local radius
+  // until that hoof rests on the face, so one stance hoof always carries
+  // the horse instead of the whole animal hovering by up to 0.08.
+  const treadFaceRadius = model.root.userData.geometry.innerTreadRadius
+    - 0.085 / 2;
+  const hoofClearance = 0.003;
+  const baseAnimalPosition = blocks.animal.position.clone();
+  const corner = new THREE.Vector3();
+  const lowestHoofGap = () => {
+    blocks.animal.updateMatrixWorld(true);
+    let gap = Infinity;
+    for (const hoof of blocks.hooves) {
+      if (!hoof.geometry.boundingBox) hoof.geometry.computeBoundingBox();
+      const { min, max } = hoof.geometry.boundingBox;
+      for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) {
+        corner.set(x, y, 0).applyMatrix4(hoof.matrixWorld);
+        gap = Math.min(gap, treadFaceRadius - Math.hypot(corner.x, corner.y));
+      }
+    }
+    return gap;
+  };
+  const baseUpdate = model.update;
+  model.update = (time, ...rest) => {
+    baseUpdate(time, ...rest);
+    blocks.animal.position.copy(baseAnimalPosition);
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+      const gap = lowestHoofGap() - hoofClearance;
+      if (Math.abs(gap) < 1e-6) break;
+      blocks.animal.position.y -= gap;
+    }
+    model.root.userData.animalDrop = baseAnimalPosition.y
+      - blocks.animal.position.y;
+  };
+  model.root.userData.animalPlacement.hoofContact =
+    'body lowered each frame until the lowest hoof rests on the tread face';
+  model.root.userData.workingPartsReview.qualification = 'The leg animation and balanced mean weight torque remain prescribed. The body bobs so the lowest hoof rests on the tread-face circle; hoof loads and slip remain unqualified.';
   model.update(0);
   finishRunnerTread(model, 376);
   // Brown draws no separate treads, only a narrow inner ring just inside the

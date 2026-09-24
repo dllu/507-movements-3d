@@ -554,9 +554,10 @@ function directActionEngineParallelMotion(movement) {
     'fixed-stuffing-box-gland-on-cylinder-cover');
   const stuffingNeck = verticalBored(1.55, pistonBore, -26.5, -25.1,
     'fixed-stuffing-box-neck');
-  const cylinderCover = verticalBored(6.2, pistonBore, -27.8, -26.5,
+  // Brown's cover is a thin flange barely wider than the barrel.
+  const cylinderCover = verticalBored(5.9, pistonBore, -27.5, -26.5,
     'fixed-cylinder-cover-flange');
-  const cylinderBody = verticalBored(5.3, 4.9 * sourceScale, -33.2, -27.8,
+  const cylinderBody = verticalBored(5.3, 4.9 * sourceScale, -33.2, -27.5,
     'fixed-broken-off-cylinder-body');
   const cylinderCrown = cylinderCover;
 
@@ -974,12 +975,15 @@ function directActionEngineParallelMotion(movement) {
   // cylinder broken off just below its cover.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-19.5 * sourceScale, -31.0 * sourceScale, -0.9),
-    new THREE.Vector3(9.5 * sourceScale, 1.6 * sourceScale, 0.6),
+    new THREE.Vector3(9.5 * sourceScale, 4.6 * sourceScale, 0.6),
   );
   root.userData.cameraDistanceScale = 0.96;
+  // Brown's flat elevation: a narrow field keeps the cover's top face from
+  // opening into a heavy ellipse under perspective.
+  root.userData.cameraFov = 12;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
+    cameraDirection: new THREE.Vector3(0.45, 0.12, 14),
     root,
     update,
   };

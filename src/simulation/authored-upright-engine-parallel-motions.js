@@ -712,13 +712,41 @@ function opposedRadiusRodUprightEngine(movement) {
   flywheelHub.geometry.dispose();
   flywheelHub.geometry = boredCylinderGeometry(1.50 * sourceScale, .42 * sourceScale + .012, .48);
   flywheelHub.userData.role = 'moving-flywheel-hub';
+  // Brown's arms bow sideways between hub and rim instead of running
+  // straight; each is a tapered band swept along a bowed centreline.
   const flywheelSpokes = [-30, 60, 150, -120].map((degrees, index) => {
     const angle = THREE.MathUtils.degToRad(degrees);
-    const direction = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0);
-    const spoke = beamBetween3D(
-      direction.clone().multiplyScalar(1.4 * sourceScale).setZ(flywheelPlaneZ),
-      direction.clone().multiplyScalar(13.2 * sourceScale).setZ(flywheelPlaneZ),
-      1.0 * sourceScale, 0.16, crankMaterial);
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    const innerRadius = 1.3 * sourceScale;
+    const outerRadius = 13.3 * sourceScale;
+    const bow = 1.1 * sourceScale;
+    const samples = 24;
+    const centre = [];
+    for (let i = 0; i <= samples; i += 1) {
+      const t = i / samples;
+      const radial = innerRadius + (outerRadius - innerRadius) * t;
+      const lateral = bow * Math.sin(Math.PI * t);
+      centre.push([radial, lateral]);
+    }
+    const left = [];
+    const right = [];
+    centre.forEach(([u, v], i) => {
+      const previous = centre[Math.max(0, i - 1)];
+      const next = centre[Math.min(samples, i + 1)];
+      const du = next[0] - previous[0];
+      const dv = next[1] - previous[1];
+      const length = Math.hypot(du, dv);
+      const halfWidth = (0.62 - 0.14 * i / samples) * sourceScale;
+      const nu = -dv / length * halfWidth;
+      const nv = du / length * halfWidth;
+      left.push([u + nu, v + nv]);
+      right.push([u - nu, v - nv]);
+    });
+    const outline = [...left, ...right.reverse()].map(([u, v]) => [
+      u * cosine - v * sine, u * sine + v * cosine]);
+    const spoke = new THREE.Mesh(plate(poly(outline),
+      flywheelPlaneZ - 0.08, flywheelPlaneZ + 0.08), crankMaterial);
     spoke.userData.role = `flywheel-arm-${index + 1}`;
     inputCrank.add(spoke);
     return spoke;

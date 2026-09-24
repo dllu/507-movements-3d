@@ -112,7 +112,8 @@ function cycloidalIsochronousPendulum(movement) {
   const cuspY = lowestBobY + totalCordLength;
   const mechanismPlaneZ = 0.20;
   const cheekDepth = 0.30;
-  const cheekThickness = 0.18;
+  // Brown draws each cheek as a thin double-lined band.
+  const cheekThickness = 0.11;
   const cordRadius = 0.028;
   const contactClearance = 0.0006;
   const wrappedCableSegments = 48;

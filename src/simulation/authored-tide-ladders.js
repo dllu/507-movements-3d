@@ -861,5 +861,36 @@ function selfAdjustingWharfLadder(movement) {
 
 export function createAuthoredTideLadderMovement(movement) {
   if (movement.id !== 387) return null;
-  return selfAdjustingWharfLadder(movement);
+  const model = selfAdjustingWharfLadder(movement);
+  // Brown draws two figures of the same ladder: level at high water above,
+  // inclined down to the boat at low water below. The lower figure is a
+  // display copy run half a tide cycle out of phase, so the default pose
+  // shows both of Brown's states and each copy still passes through the
+  // whole cycle. The copy sits clear of the upper figure's lowest water.
+  const secondFigure = selfAdjustingWharfLadder(movement);
+  const secondFigureOffsetY = -5.6;
+  const secondFigureTimeOffset = 4.5;
+  secondFigure.root.position.y = secondFigureOffsetY;
+  secondFigure.root.userData = {
+    role: 'second-plate-figure-low-tide-display-copy',
+  };
+  model.root.add(secondFigure.root);
+  const primaryUpdate = model.update;
+  model.update = (time, ...rest) => {
+    primaryUpdate(time, ...rest);
+    secondFigure.update(time + secondFigureTimeOffset, ...rest);
+  };
+  model.root.userData.secondFigure = {
+    offsetY: secondFigureOffsetY,
+    root: secondFigure.root,
+    timeOffset: secondFigureTimeOffset,
+  };
+  // Brown draws no white rail or tread indices on either figure.
+  const whiteIndices = [];
+  model.root.traverse((object) => {
+    if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
+  });
+  for (const object of whiteIndices) object.parent.remove(object);
+  fitPistonGuide(model.root, model.update, 10);
+  return model;
 }

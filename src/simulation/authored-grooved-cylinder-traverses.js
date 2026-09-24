@@ -45,9 +45,9 @@ function rotatingObliqueGrooveTraverse(movement) {
   const inputCyclePeriod = 8;
   const inputAngularSpeed = FULL_TURN / inputCyclePeriod;
   const upperAxisY = 1.05;
-  const lowerAxisY = -0.48;
+  const lowerAxisY = -0.42;
   const barrelCenterX = 1.15;
-  const barrelRadius = 0.76;
+  const barrelRadius = 1.14;
   const barrelAxialLength = 0.82;
   const grooveCenterRadius = barrelRadius + 0.014;
   const grooveTubeRadius = 0.047;
@@ -60,12 +60,15 @@ function rotatingObliqueGrooveTraverse(movement) {
   const contactY = lowerAxisY
     + grooveCenterRadius * Math.cos(contactWorldAngle);
   const contactZ = -grooveCenterRadius * Math.sin(contactWorldAngle);
-  const upperDrumRadius = 0.84;
+  const upperDrumRadius = 1.29;
   const upperDrumWidth = 1.05;
   const upperDrumOffsetX = -1.58;
   const upperShaftLocalCenterX = -1.14;
   const upperShaftLength = 4.04;
-  const lowerShaftLength = 2.78;
+  // Brown's lower shaft starts at the middle post and runs out past the
+  // right post; it stays clear of the tall upper drum.
+  const lowerShaftLength = 1.72;
+  const lowerShaftLocalCenterX = 0.11;
 
   const grooveXAtLocalAngle = angle => -followerAmplitude*Math.cos(angle);
   const groovePitchAtLocalAngle = angle => followerAmplitude*Math.sin(angle);
@@ -207,7 +210,7 @@ function rotatingObliqueGrooveTraverse(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
-  const baseY = -1.57;
+  const baseY = -1.98;
   const frame = new THREE.Group();
   frame.userData.fixed = true;
   frame.userData.role = 'source-three-post-two-level-bearing-frame';
@@ -263,6 +266,7 @@ function rotatingObliqueGrooveTraverse(movement) {
     darkMaterial,
     32,
   );
+  lowerShaft.position.x = lowerShaftLocalCenterX;
   lowerShaft.userData.role = 'continuously-rotating-lower-input-shaft';
   lowerInputRotor.add(lowerShaft);
   const groovedCylinder = cylinderAlongX(
@@ -577,10 +581,10 @@ function rotatingObliqueGrooveTraverse(movement) {
 
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.28, -1.68, -1.06),
-    new THREE.Vector3(2.25, 1.67, 0.82),
+    new THREE.Vector3(-2.28, -2.07, -1.30),
+    new THREE.Vector3(2.25, 2.36, 1.30),
   );
-  root.userData.groundFloorY = -1.67;
+  root.userData.groundFloorY = -2.07;
   correctCordTraverseParts(root,362,update);
   // The revolved groove section shares vertices across its sharp flank
   // edges, so smooth normals smear the straight groove into a wavy band.

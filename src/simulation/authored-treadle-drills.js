@@ -1068,6 +1068,82 @@ function treadleBevelDrillingMachine(movement) {
   // Undrawn markers stay allocated for kinematic checks but are not shown;
   // the treadle is Brown's plain bar without a foot pad.
   for (const part of [crankIndex, shaftSpinIndex, treadlePedal]) part.visible = false;
+  // Brown draws both bevel wheels cut in section on the plane of their
+  // axes: an L of hatched tooth rings with the spindle and shaft passing
+  // through. The near halves of the wheel bodies and teeth are clipped at
+  // that plane, and a flat hatched section (a drawn overlay, not a solid)
+  // closes each cut face.
+  const bevelSectionPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), apex.z);
+  root.userData.localClippingEnabled = true;
+  const bevelSectionParts = [];
+  for (const gear of [driverGear, pinionGear]) {
+    const clipped = new Set();
+    gear.userData.rotor.traverse((object) => {
+      if (!object.isMesh) return;
+      const role = object.userData.role ?? '';
+      if (role !== 'pitch-cone-bevel-gear-body'
+        && role !== 'closed-conical-bevel-gear-tooth') return;
+      if (!clipped.has(object.material)) {
+        object.material = object.material.clone();
+        object.material.clippingPlanes = [bevelSectionPlane];
+        object.material.clipShadows = true;
+        clipped.add(object.material);
+      }
+    });
+    // Share the per-gear clipped material among the teeth again.
+    const toothMaterial = gear.userData.toothMeshes[0].material;
+    for (const tooth of gear.userData.toothMeshes) tooth.material = toothMaterial;
+    const {innerDistance, outerDistance, pitchConeAngle, toothHeight, boreRadius}
+      = gear.userData;
+    const pitchAt = (distance) => distance * Math.tan(pitchConeAngle);
+    const heightAt = (distance) => toothHeight * distance / outerDistance;
+    const cosine = Math.cos(pitchConeAngle);
+    const sine = Math.sin(pitchConeAngle);
+    const profile = [
+      [boreRadius, innerDistance + heightAt(innerDistance) * .55 * sine],
+      [pitchAt(innerDistance) - heightAt(innerDistance) * .55 * cosine,
+        innerDistance + heightAt(innerDistance) * .55 * sine],
+      [pitchAt(innerDistance) + heightAt(innerDistance) * .45 * cosine,
+        innerDistance - heightAt(innerDistance) * .45 * sine],
+      [pitchAt(outerDistance) + toothHeight * .45 * cosine,
+        outerDistance - toothHeight * .45 * sine],
+      [pitchAt(outerDistance) - toothHeight * .55 * cosine,
+        outerDistance + toothHeight * .55 * sine],
+      [boreRadius, outerDistance + toothHeight * .55 * sine],
+    ];
+    const axisWorld = gear.userData.axis.clone();
+    const radialWorld = new THREE.Vector3().crossVectors(axisWorld, Z_AXIS)
+      .normalize();
+    const toPlane = (radial, axial) => [
+      apex.x + axisWorld.x * axial + radialWorld.x * radial,
+      apex.y + axisWorld.y * axial + radialWorld.y * radial,
+    ];
+    const section = clip.union(...[-1, 1].map((side) => poly(
+      profile.map(([radial, axial]) => toPlane(side * radial, axial)))));
+    const face = new THREE.Mesh(plate(section, apex.z - 0.004, apex.z - 0.001),
+      matte(gear === driverGear ? PALETTE.driver : PALETTE.driven,
+        { metalness: 0.10, roughness: 0.62 }));
+    face.userData.role = 'bevel-section-face-ink-trace';
+    // Hatching runs along each wheel's axis, as Brown strokes it.
+    const strokes = [];
+    const span = 2.4;
+    for (let offset = -span; offset <= span; offset += 0.05) {
+      const a = [apex.x + radialWorld.x * offset - axisWorld.x * 0.2,
+        apex.y + radialWorld.y * offset - axisWorld.y * 0.2];
+      const b = [a[0] + axisWorld.x * span, a[1] + axisWorld.y * span];
+      const w = [radialWorld.x * 0.007, radialWorld.y * 0.007];
+      strokes.push(poly([[a[0] - w[0], a[1] - w[1]], [b[0] - w[0], b[1] - w[1]],
+        [b[0] + w[0], b[1] + w[1]], [a[0] + w[0], a[1] + w[1]]]));
+    }
+    const hatch = new THREE.Mesh(
+      plate(clip.intersection(section, clip.union(...strokes)),
+        apex.z - 0.001, apex.z + 0.001),
+      matte(PALETTE.ink, { metalness: 0.08, roughness: 0.6 }));
+    hatch.userData.role = 'bevel-section-hatching-ink-trace';
+    root.add(face, hatch);
+    bevelSectionParts.push(face, hatch);
+  }
+  root.userData.bevelSectionParts = bevelSectionParts;
   // Brown's plate is a flat front elevation.
   root.userData.cameraDirection=new THREE.Vector3(0,0.03,1);
   root.userData.cameraFov=18;

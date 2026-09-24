@@ -972,9 +972,13 @@ function atmosphericChainBeamPumpingEngine(movement) {
     new THREE.BoxGeometry(1.14 * sourceScale, 0.9 * sourceScale, 0.26),
     pistonMaterial,
   );
-  pistonCrosshead.position.set(0, -0.85 * sourceScale, cylinderZ);
+  // Brown hangs the chain straight into the top of the crosshead block, so
+  // the block's top sits at the chain eye; at the plate pose it then clears
+  // the cylinder rim by about 0.4 source units as drawn instead of dipping
+  // into it.
+  pistonCrosshead.position.set(0, -0.45 * sourceScale, cylinderZ);
   pistonCrosshead.userData.role = 'chain-crosshead-block-on-piston-rod';
-  const pistonRodTop = -1.25 * sourceScale;
+  const pistonRodTop = -0.85 * sourceScale;
   const pistonRodBottom = pistonHeadCenterOffset + 0.4 * sourceScale;
   const pistonRod = new THREE.Mesh(
     new THREE.CylinderGeometry(0.19 * sourceScale, 0.19 * sourceScale,

@@ -1008,12 +1008,14 @@ function spiralCylinderScriber(movement) {
   };
 
   update(0);
-  // Brown crops the rack's upper travel at the top edge of the plate; the
-  // view frames the table, gearing and cylinder instead.
+  // Brown crops the rack at the top edge of the plate just above the bevel
+  // wheels and runs the cylinder off the foot, so the cylinder fills the
+  // lower half. The frame keeps the marking point's lowest start in view.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.33, -1.57, -1.15),
-    new THREE.Vector3(2.58, 4.10, 1.15),
+    new THREE.Vector3(-2.33, -1.42, -1.15),
+    new THREE.Vector3(2.58, 3.62, 1.15),
   );
+  root.userData.cameraFitCropsSource = true;
   correctScriberDynamometer(root, 368);
   // Brown draws plain wheels, a plain cylinder and no phase indices; those
   // cues stay allocated for the kinematic checks but are not presented.

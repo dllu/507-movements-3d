@@ -7,6 +7,9 @@ import {
   matte,
   setSpin,
 } from './primitives.js';
+import { plate as plateGeometry, polygonClipping } from './finite-plate-geometry.js';
+import { makeBoredPlanarLink } from './bored-planar-link.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 
 import { correctAndersonGovernor } from './governor-274-357-parts.js';
 
@@ -71,6 +74,22 @@ function curveTube(curve, radius, material, role) {
   );
   tube.userData.role = role;
   return tube;
+}
+
+// A straight bar with round eyes and real pin bores, in its own x-y frame.
+function boredBarOutline(eyes, halfWidth) {
+  const ring = (cx, r) => [[...Array.from({ length: 48 }, (_, i) => [
+    cx + r * Math.cos(i * Math.PI / 24), r * Math.sin(i * Math.PI / 24)]),
+  [cx + r, 0]]];
+  const xs = eyes.map(({ x }) => x);
+  const low = Math.min(...xs);
+  const high = Math.max(...xs);
+  const bar = [[[low, -halfWidth], [high, -halfWidth], [high, halfWidth],
+    [low, halfWidth], [low, -halfWidth]]];
+  return polygonClipping.difference(
+    polygonClipping.union(bar, ...eyes.map(({ x, eye }) => ring(x, eye))),
+    ...eyes.map(({ x, bore }) => ring(x, bore)),
+  );
 }
 
 function makeCoilSpring(material) {
@@ -221,9 +240,10 @@ function andersonGyroscopeGovernor(movement) {
   const rotorWidth = 0.38;
   const rotorCenterOffset = 0.65;
   const outputLeverLength = 1.58;
-  const outputLinkLength = 1.72;
-  const forkLayerOffset = 0.19;
-  const hingeTrunnionRadius = 0.53;
+  const outputLinkLength = 2.5;
+  const forkLayerOffset = 0.26;
+  // Hinge bearings sit outboard of the open hinge ring around the Cardan.
+  const hingeTrunnionRadius = 0.66;
   const cardanTrunnionRadius = 0.32;
   const shaftRadius = 0.075;
 
@@ -233,9 +253,12 @@ function andersonGyroscopeGovernor(movement) {
   const carrierSpeedAmplitude = 0.42;
   const sourceCarrierYaw = 0;
   const sourceInputShaftPhase = 0.46;
-  const restTiltAngle = 0.10;
-  const nominalTiltAngle = 0.38;
-  const maximumTiltAngle = 0.78;
+  // Brown draws axle B dipping about 10 degrees toward its outer end, so
+  // wheel A leans up-right; the plate pose is the nominal-speed balance.
+  // Speed still raises the outer end, lifting valve rod D through rods C.
+  const restTiltAngle = -0.42;
+  const nominalTiltAngle = -0.17;
+  const maximumTiltAngle = 0.30;
 
   const rotorMass = 7.8;
   const rotorSpinInertia = 0.5 * rotorMass * rotorRadius ** 2;
@@ -433,7 +456,7 @@ function andersonGyroscopeGovernor(movement) {
         new THREE.Vector3(0, -1.72, side * 0.28),
         new THREE.Vector3(side * 0.16, -1.15, side * 1.62),
         new THREE.Vector3(-1.45, -0.38, side * 1.92),
-        new THREE.Vector3(jointLocal.x, jointLocal.y,
+        new THREE.Vector3(jointLocal.x, jointLocal.y - 0.19,
           side * hingeTrunnionRadius),
       ),
       0.1,
@@ -505,7 +528,7 @@ function andersonGyroscopeGovernor(movement) {
   for (const side of [-1, 1]) {
     const arm = makeBeam(
       new THREE.Vector3(-0.31, 0, side * 0.09),
-      new THREE.Vector3(0, 0, side * cardanTrunnionRadius),
+      new THREE.Vector3(-0.14, 0, side * (cardanTrunnionRadius - 0.02)),
       { color: PALETTE.driver, depth: 0.12, thickness: 0.12 },
     );
     arm.userData.role = 'input-yoke-arm-of-universal-joint';
@@ -571,7 +594,7 @@ function andersonGyroscopeGovernor(movement) {
   outputShaft.position.x = (outputLeverLength + 0.1) / 2;
   outputShaft.userData.role = 'tilting-axle-piece-B';
   outputRotor.add(outputShaft);
-  const rotorHub = cylinderAlongX(0.24, rotorWidth + 0.26,
+  const rotorHub = cylinderAlongX(0.24, rotorWidth + 0.02,
     carrierMaterial, 48);
   rotorHub.position.x = rotorCenterOffset;
   rotorHub.userData.role = 'hub-of-heavy-wheel-A-on-piece-B';
@@ -613,7 +636,7 @@ function andersonGyroscopeGovernor(movement) {
   for (const side of [-1, 1]) {
     const arm = makeBeam(
       new THREE.Vector3(0.31, -side * 0.09, 0),
-      new THREE.Vector3(0, -side * cardanTrunnionRadius, 0),
+      new THREE.Vector3(0.14, -side * (cardanTrunnionRadius - 0.02), 0),
       { color: PALETTE.driven, depth: 0.12, thickness: 0.12 },
     );
     arm.userData.role = 'output-yoke-arm-of-universal-joint';
@@ -633,7 +656,7 @@ function andersonGyroscopeGovernor(movement) {
   outputBearingCollar.userData.role =
     'nonrotating-bearing-at-outer-end-of-piece-B-for-rods-C';
   tiltGroup.add(outputBearingCollar);
-  const outputBearingRim = torusNormalToX(0.19, 0.037,
+  const outputBearingRim = torusNormalToX(0.14, 0.037,
     darkMaterial, 36);
   outputBearingRim.position.x = outputLeverLength + 0.14;
   outputBearingRim.userData.role = 'outer-end-bearing-rim-on-piece-B';
@@ -668,27 +691,95 @@ function andersonGyroscopeGovernor(movement) {
   cardanSpider.add(spiderInputTrunnion, spiderOutputTrunnion, spiderHub);
   carrierGroup.add(cardanSpider);
 
-  const connectingForkC = [-1, 1].map((side) => {
-    const link = makeBeam(
-      new THREE.Vector3(),
-      new THREE.Vector3(0, outputLinkLength, 0),
-      { color: PALETTE.accent, depth: 0.11, thickness: 0.105,
-        jointRadius: 0.11 },
+  // Brown draws each rod C as a bowed arm from the outer end of B to the
+  // swivel under D. The rigid bowed plate carries real eye bores; tangential
+  // stub pins on the outer B bearing and on the swivel pass through them.
+  const rodCDepth = 0.10;
+  const rodCBow = 0.42;
+  const rodCPinRadius = 0.06;
+  const rodCEyeBore = rodCPinRadius + 0.012;
+  const rodCOutline = (() => {
+    const eyeRadius = 0.135;
+    const halfWidth = 0.05;
+    const samples = 40;
+    const centre = Array.from({ length: samples + 1 }, (_, i) => {
+      const t = i / samples;
+      return [outputLinkLength * t, -rodCBow * Math.sin(Math.PI * t)];
+    });
+    const band = [];
+    const back = [];
+    centre.forEach(([x, y], i) => {
+      const a = centre[Math.max(0, i - 1)];
+      const b = centre[Math.min(samples, i + 1)];
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const length = Math.hypot(dx, dy);
+      band.push([x - dy / length * halfWidth, y + dx / length * halfWidth]);
+      back.push([x + dy / length * halfWidth, y - dx / length * halfWidth]);
+    });
+    const eye = (cx) => [Array.from({ length: 48 }, (_, i) => [
+      cx + eyeRadius * Math.cos(i * Math.PI / 24),
+      eyeRadius * Math.sin(i * Math.PI / 24)])];
+    const bore = (cx) => [Array.from({ length: 48 }, (_, i) => [
+      cx + rodCEyeBore * Math.cos(i * Math.PI / 24),
+      rodCEyeBore * Math.sin(i * Math.PI / 24)])];
+    const close = (ring) => [[...ring[0], ring[0][0]]];
+    return polygonClipping.difference(
+      polygonClipping.union(close([[...band, ...back.reverse()]]),
+        close(eye(0)), close(eye(outputLinkLength))),
+      close(bore(0)), close(bore(outputLinkLength)),
     );
+  })();
+  const connectingForkC = [-1, 1].map((side) => {
+    const link = new THREE.Group();
+    const plate = new THREE.Mesh(
+      plateGeometry(rodCOutline, -rodCDepth / 2, rodCDepth / 2),
+      linkageMaterial,
+    );
+    plate.userData.role = 'rotating-connecting-rod-C';
+    const startAnchor = new THREE.Object3D();
+    startAnchor.userData.role = 'analytic-rod-C-end-at-B';
+    const endAnchor = new THREE.Object3D();
+    endAnchor.userData.role = 'analytic-rod-C-end-at-swivel';
+    link.add(plate, startAnchor, endAnchor);
+    link.userData.setEndpoints = (start, end) => {
+      plate.position.copy(start);
+      plate.rotation.set(0, 0, Math.atan2(end.y - start.y, end.x - start.x));
+      startAnchor.position.copy(start);
+      endAnchor.position.copy(end);
+    };
     link.userData.role = 'rotating-connecting-rod-C';
     link.userData.side = side;
     carrierGroup.add(link);
     return link;
   });
-  const rotatingSwivel = cylinderAlongY(0.19, 0.3,
-    linkageMaterial, 40);
+  // The rotating swivel is bored for the foot of D; the non-rotating race
+  // bears on its top face, and tangential stub pins carry the rods C.
+  const rotatingSwivel = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.15, radial: 0.19 }, { axial: 0.15, radial: 0.19 },
+  ], 0.075 + 0.012, 48), linkageMaterial);
   rotatingSwivel.userData.role =
     'rotating-lower-member-of-swivel-between-C-and-valve-rod-D';
+  const rodCPinOuter = forkLayerOffset + rodCDepth / 2 + 0.05;
+  for (const side of [-1, 1]) {
+    const stub = cylinderAlongZ(rodCPinRadius, rodCPinOuter - 0.12,
+      linkageMaterial, 24);
+    stub.position.z = side * (rodCPinOuter + 0.12) / 2;
+    stub.userData.role = 'swivel-stub-pin-for-rod-C';
+    rotatingSwivel.add(stub);
+    const outerStub = cylinderAlongZ(rodCPinRadius, rodCPinOuter - 0.12,
+      linkageMaterial, 24);
+    outerStub.position.set(outputLeverLength, 0,
+      side * (rodCPinOuter + 0.12) / 2);
+    outerStub.userData.role = 'outer-B-bearing-stub-pin-for-rod-C';
+    tiltGroup.add(outerStub);
+  }
   carrierGroup.add(rotatingSwivel);
 
-  const verticalCarrierShaft = cylinderAlongY(0.12, 2.8,
+  // The shaft stops in hub H; wheel A swings low through the space above.
+  const verticalCarrierShaft = cylinderAlongY(0.12, 1.4,
     darkMaterial, 36);
-  verticalCarrierShaft.position.y = -1.45;
+  verticalCarrierShaft.position.y = -2.25;
   verticalCarrierShaft.userData.role =
     'vertical-shaft-driving-revolving-frame-H';
   carrierGroup.add(verticalCarrierShaft);
@@ -729,7 +820,9 @@ function andersonGyroscopeGovernor(movement) {
   engineInputRotor.userData.role = 'engine-input-shaft-M-rotor';
   engineInputRotor.add(engineInputShaft, engineInputIndex);
 
-  const valveRodLength = 1.0;
+  // D runs up through a guide in the casing peak; rod P's pin sits below it.
+  const valveRodLength = 1.45;
+  const valveRodPinHeight = 0.86;
   const valveRodD = cylinderAlongY(0.075, valveRodLength,
     linkageMaterial, 32);
   valveRodD.userData.role = 'nonrotating-vertically-moving-valve-rod-D';
@@ -738,13 +831,14 @@ function andersonGyroscopeGovernor(movement) {
     indexMaterial,
   );
   valveRodIndex.userData.role = 'white-travel-index-on-valve-rod-D';
-  const fixedSwivelRace = torusNormalToY(0.22, 0.045,
-    darkMaterial, 40);
+  const fixedSwivelRace = new THREE.Mesh(boredLatheGeometry([
+    { axial: 0.155, radial: 0.23 }, { axial: 0.215, radial: 0.23 },
+  ], 0.074, 48), darkMaterial);
   fixedSwivelRace.userData.role =
     'stationary-upper-race-of-C-to-D-rotation-isolating-swivel';
   const valveRodGuide = cylinderAlongY(0.14, 0.34,
     frameMaterial, 36);
-  valveRodGuide.position.set(0, 4.51, 0);
+  valveRodGuide.position.set(0, 4.76, 0);
   valveRodGuide.userData.role = 'fixed-guide-for-vertical-valve-rod-D';
 
   const leverPivot2 = new THREE.Vector2(-1.75, 4.45);
@@ -752,37 +846,50 @@ function andersonGyroscopeGovernor(movement) {
   const rodPLength = 1.25;
   const springArmLength = 1.45;
   const leverPlaneZ = 0.37;
-  const springLowerAnchor = new THREE.Vector3(-3.02, 0.68, leverPlaneZ);
+  // Brown hooks L to the casing lip outside the bell.
+  const springLowerAnchor = new THREE.Vector3(-3.5, 1.2, leverPlaneZ);
   const leverPivot = new THREE.Vector3(
     leverPivot2.x,
     leverPivot2.y,
     leverPlaneZ,
   );
-  const leverPivotBearing = cylinderAlongZ(0.16, 0.36,
+  // Lever N is one rigid bored bar turning on a slim fixed pin; rod P rides
+  // a pin on its short arm in a separate front layer and a pin on valve rod D.
+  const leverDepth = 0.12;
+  const rodPPlaneZ = leverPlaneZ + 0.13;
+  const leverPivotBearing = cylinderAlongZ(0.07, 0.27,
     darkMaterial, 36);
-  leverPivotBearing.position.copy(leverPivot);
+  leverPivotBearing.position.set(leverPivot.x, leverPivot.y, 0.325);
   leverPivotBearing.userData.role = 'fixed-pivot-of-lever-N';
-  const leverPArm = makeBeam(
-    leverPivot,
-    leverPivot.clone().add(new THREE.Vector3(0.5, -0.3, 0)),
-    { color: PALETTE.accent, depth: 0.14, thickness: 0.14,
-      jointRadius: 0.14 },
+  const leverPArm = new THREE.Mesh(
+    plateGeometry(boredBarOutline([
+      { x: -springArmLength, eye: 0.1, bore: 0.05 },
+      { x: 0, eye: 0.15, bore: 0.082 },
+      { x: leverShortRadius, eye: 0.12, bore: 0.062 },
+    ], 0.06), leverPlaneZ - leverDepth / 2, leverPlaneZ + leverDepth / 2),
+    linkageMaterial,
   );
-  leverPArm.userData.role = 'short-arm-of-lever-N-connected-to-rod-P';
-  const leverSpringArm = makeBeam(
-    leverPivot,
-    leverPivot.clone().add(new THREE.Vector3(-1.2, 0.2, 0)),
-    { color: PALETTE.accent, depth: 0.14, thickness: 0.14,
-      jointRadius: 0.14 },
-  );
-  leverSpringArm.userData.role = 'long-arm-of-lever-N-connected-to-spring-L';
-  const rodP = makeBeam(
-    new THREE.Vector3(),
-    new THREE.Vector3(0, 1, 0),
-    { color: PALETTE.accent, depth: 0.1, thickness: 0.1,
-      jointRadius: 0.115 },
-  );
+  leverPArm.position.set(leverPivot.x, leverPivot.y, 0);
+  leverPArm.userData.role = 'rigid-bored-lever-N-for-rod-P-and-spring-L';
+  const leverPPin = cylinderAlongZ(0.05, rodPPlaneZ + 0.07 - 0.31,
+    darkMaterial, 28);
+  leverPPin.position.set(leverShortRadius, 0, (rodPPlaneZ + 0.07 + 0.31) / 2);
+  leverPPin.userData.role = 'pin-on-short-arm-of-lever-N-for-rod-P';
+  leverPArm.add(leverPPin);
+  const leverSpringArm = leverPArm;
+  const rodP = makeBoredPlanarLink({
+    boreRadius: 0.062,
+    depth: 0.1,
+    eyeRadius: 0.115,
+    length: rodPLength,
+    width: 0.1,
+  }, linkageMaterial);
   rodP.userData.role = 'rod-P-between-lever-N-and-valve-rod-D';
+  const valveRodPPin = cylinderAlongZ(0.05, rodPPlaneZ + 0.07, darkMaterial, 28);
+  valveRodPPin.position.set(0, valveRodPinHeight - valveRodLength / 2,
+    (rodPPlaneZ + 0.07) / 2);
+  valveRodPPin.userData.role = 'pin-on-valve-rod-D-for-rod-P';
+  valveRodD.add(valveRodPPin);
   const springL = makeCoilSpring(darkMaterial);
   springL.userData.role = 'spring-L-opposing-gyroscope-rise';
   const springLowerEye = torusNormalToZ(0.15, 0.045,
@@ -809,7 +916,6 @@ function andersonGyroscopeGovernor(movement) {
     valveRodGuide,
     leverPivotBearing,
     leverPArm,
-    leverSpringArm,
     rodP,
     springL,
     springLowerEye,
@@ -962,7 +1068,7 @@ function andersonGyroscopeGovernor(movement) {
     const valveRodTopY = valveRodBottomY + valveRodLength;
     const valveRodPin = new THREE.Vector3(
       0,
-      valveRodTopY - 0.14,
+      valveRodBottomY + valveRodPinHeight,
       leverPlaneZ,
     );
     const leverConnection2 = circleIntersection({
@@ -1124,12 +1230,14 @@ function andersonGyroscopeGovernor(movement) {
     );
     valveRodIndex.position.set(0.1, state.valveRodTopY - 0.2, 0);
     fixedSwivelRace.position.copy(state.valveSwivelCenter);
-    leverPArm.userData.setEndpoints(leverPivot, state.leverConnection);
-    leverSpringArm.userData.setEndpoints(
-      leverPivot,
-      state.springUpperAnchor,
+    leverPArm.rotation.set(0, 0, Math.atan2(
+      state.leverConnection.y - leverPivot.y,
+      state.leverConnection.x - leverPivot.x,
+    ));
+    rodP.userData.setEndpoints(
+      state.leverConnection.clone().setZ(rodPPlaneZ),
+      state.valveRodPin.clone().setZ(rodPPlaneZ),
     );
-    rodP.userData.setEndpoints(state.leverConnection, state.valveRodPin);
     springL.userData.setEndpoints(springLowerAnchor,
       state.springUpperAnchor);
 

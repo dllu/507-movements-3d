@@ -2158,10 +2158,12 @@ function doubleParallelMotion(movement) {
     group.position.set(point.x, point.y, 0);
     group.userData.fixed = true;
     group.userData.role = `fixed-${name}-pedestal`;
+    // Brown draws each fixed pivot as a small half-round lug standing on a
+    // ground line with diagonal hatching below, not a pedestal block.
     const bearing = new THREE.Mesh(plate(clip.difference(clip.union(
-      poly(circle([0, 0], 0.72 * s, 48)),
-      poly([[-0.72 * s, 0], [0.72 * s, 0], [1.10 * s, -1.0 * s],
-        [-1.10 * s, -1.0 * s]]),
+      poly(circle([0, 0], 0.52 * s, 48)),
+      poly([[-0.52 * s, 0], [0.52 * s, 0], [0.78 * s, -0.62 * s],
+        [-0.78 * s, -0.62 * s]]),
     ), poly(circle([0, 0], pinRadius.fixed + pinClearance, 40))), low, high),
     frameMaterial);
     bearing.userData.fixed = true;
@@ -2171,10 +2173,16 @@ function doubleParallelMotion(movement) {
     bore.position.z = (pinLow + pinHigh) / 2;
     bore.userData.fixed = true;
     bore.userData.role = `${name}-fixed-bearing-pin`;
-    const foot = new THREE.Mesh(plate(poly([
-      [-1.65 * s, -1.0 * s], [1.65 * s, -1.0 * s],
-      [1.65 * s, -1.32 * s], [-1.65 * s, -1.32 * s],
-    ]), low - 0.08, high), darkMaterial);
+    const groundLine = [[-1.65 * s, -0.62 * s], [1.65 * s, -0.62 * s],
+      [1.65 * s, -0.70 * s], [-1.65 * s, -0.70 * s]];
+    const hatchStrokes = [];
+    for (let i = 0; i < 11; i += 1) {
+      const x0 = -1.35 * s + i * 0.30 * s;
+      hatchStrokes.push(poly([[x0, -0.70 * s], [x0 + 0.06 * s, -0.70 * s],
+        [x0 - 0.22 * s, -1.02 * s], [x0 - 0.28 * s, -1.02 * s]]));
+    }
+    const foot = new THREE.Mesh(plate(clip.union(poly(groundLine),
+      ...hatchStrokes), low - 0.08, low), darkMaterial);
     foot.userData.fixed = true;
     foot.userData.role = `${name}-hatched-ground`;
     group.add(bearing, bore, foot);

@@ -66,7 +66,7 @@ function externalPersonTreadmill(movement) {
   const personCenterOfMass = wheelCenter.clone().add(
     // Brown's man climbs on the descending side toward the far end of the
     // drum, right of the diagonal side bar in the level side view.
-    new THREE.Vector3(1.95, 1.90, -0.45),
+    new THREE.Vector3(2.15, 1.55, -0.45),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
@@ -287,7 +287,7 @@ function externalPersonTreadmill(movement) {
     personMaterial,
   );
   torso.position.y = 0.10;
-  torso.scale.z = 0.70;
+  torso.scale.z = 0.62;
   torso.userData.role = 'stylized-person-torso';
   person.add(torso);
   const head = new THREE.Mesh(
@@ -333,17 +333,22 @@ function externalPersonTreadmill(movement) {
   const feet = [];
   for (let index = 0; index < 2; index += 1) {
     const legRoot = new THREE.Group();
+    // Stylized joints are layered side by side so the folding swing leg
+    // never passes through itself or the torso: the thighs hang beside the
+    // torso's 0.149 half-depth, and each shin and foot ride just outboard
+    // of their thigh like the plates of a jointed lay figure.
+    const legSide = index === 0 ? 1 : -1;
     legRoot.position.set(
       0,
       -0.27,
-      index === 0 ? 0.12 : -0.12,
+      legSide * 0.205,
     );
     legRoot.userData.index = index;
     legRoot.userData.role = 'person-hip-pivot';
     person.add(legRoot);
     legRoots.push(legRoot);
     const upperLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, upperLegLength, 0.12),
+      new THREE.BoxGeometry(0.12, upperLegLength, 0.10),
       personMaterial,
     );
     upperLeg.position.y = -upperLegLength / 2;
@@ -357,15 +362,15 @@ function externalPersonTreadmill(movement) {
     legRoot.add(knee);
     kneePivots.push(knee);
     const lowerLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.10, lowerLegLength, 0.10),
+      new THREE.BoxGeometry(0.10, lowerLegLength, 0.08),
       personMaterial,
     );
-    lowerLeg.position.y = -lowerLegLength / 2;
+    lowerLeg.position.set(0, -lowerLegLength / 2, legSide * 0.092);
     lowerLeg.userData.role = 'person-lower-leg';
     knee.add(lowerLeg);
     lowerLegs.push(lowerLeg);
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, 0.10, 0.16),
+      new THREE.BoxGeometry(0.30, 0.10, 0.08),
       darkMaterial,
     );
     foot.position.set(-0.04, -lowerLegLength - 0.05, 0);

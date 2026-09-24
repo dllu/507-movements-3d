@@ -35,8 +35,13 @@ export function correctFourWayCock(root){
  replace(b.plug,mergePassageParts([plate(disk,-g.plugDepth/2,-.17),plate(clip.difference(disk,...cuts),-.17,g.plugDepth/2)]));
  b.plug.rotation.set(0,0,0);
  const ports=[rectangle(-width,-3,width,3),rectangle(-3,-width,3,width)];
- const housing=clip.difference(poly(circle([0,0],g.bodyOuterRadius,256)),poly(circle([0,0],g.bodyInnerRadius,256)),...ports);
+ // Brown draws each section as outlines: the bore is a single thin circle
+ // and the plug is plain paper inside it, so the body is a thin dark ring
+ // (open at the four port mouths) and the plug face is left light.
+ const housing=clip.difference(poly(circle([0,0],g.bodyInnerRadius+.07,256)),poly(circle([0,0],g.bodyInnerRadius,256)),...ports);
  replace(b.housing,plate(housing,-g.bodyDepth/2,g.bodyDepth/2));
+ b.housing.material=b.housing.material.clone();b.housing.material.color.set(0x2b2a28);
+ b.plug.material=b.plug.material.clone();b.plug.material.color.set(0xf1ece2);
  for(const channel of Object.values(b.channels)){
   channel.userData.recess.visible=false;
   const core=channel.userData.flowCore;replace(core,new T.TubeGeometry(channel.userData.curve,96,.155,20));core.position.z=0;

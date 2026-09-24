@@ -547,8 +547,7 @@ export default {
     note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex; the door, its frame, the pin sockets and white indices are not drawn.',
   },
   387: {
-    remove: ['white-.*'],
-    note: 'Side elevation of the wharf ladder, its floating end frame, parallel rails and level treads; the white rail and tread indices are not drawn.',
+    note: 'Side elevation of both of Brown\'s figures: the wharf ladder level at high water above and inclined to the boat at low water below (a display copy half a tide cycle out of phase); the factory omits the undrawn white rail and tread indices.',
   },
   388: {
     remove: ['fixed-planer-feed-roller-bearing-frame', 'white-.*'],

@@ -53,16 +53,16 @@ function halfLatheSolid(section,segments=192){
  for(let i=0;i<q.count;i+=3)for(let k=0;k<3;k++){const t=q.getComponent(i+1,k);q.setComponent(i+1,k,q.getComponent(i+2,k));q.setComponent(i+2,k,t);}
  const g=mergeGeometries([lathe,right,left]);[lathe,right,left].forEach(o=>o.dispose());return g;
 }
-// Brown draws the fixed frame as a cast casing in section: an onion-shaped
-// shell whose waist carries circle G, a bowl down to the neck bearing of H's
+// Brown draws the fixed frame as a cast casing in section: a broad bell with
+// a pointed, concave-flanked peak and a flared lip that carries circle G, a bowl down to the neck bearing of H's
 // shaft, and a flared foot housing the bevel pair with the pulley shaft
 // leaving to the right. Only its rear half is modelled, as the section shows.
 function castCasing(root,b,p){
  const material=b.lowerStandard.material;
  for(const o of[...root.children])if(/fixed-arch-above|top-bridge-supporting|upper-bearing-cap-on-drive-standard|fixed-cast-base|dark-rim-on-governor-base|fixed-lower-drive-standard|fixed-standard-supporting-stationary-circle-G/.test(o.userData.role??''))o.removeFromParent();
  const shell=new THREE.Mesh(halfLatheSolid([
-  [.14,4.62],[.14,4.46],[.45,4.34],[1.05,3.97],[1.8,3.4],[2.4,2.75],[2.78,2.05],[2.9,1.5],[2.85,1.15],[2.75,.95],[2.3,.95],[2.3,.83],[2.8,.83],[2.8,.75],[2.75,.4],[2.65,.05],[2.25,-.28],[1.75,-.62],[1.25,-1.0],[.55,-1.15],[.125,-1.15],[.125,-1.5],
-  [.62,-1.5],[1.0,-1.32],[1.4,-1.12],[1.95,-.78],[2.55,-.35],[2.9,.1],[2.92,.6],[2.88,.97],[2.95,1.15],[3.0,1.5],[2.88,2.1],[2.5,2.82],[1.9,3.5],[1.15,4.07],[.55,4.44],[.3,4.62],
+  [.14,4.92],[.14,4.46],[.40,4.27],[.88,4.04],[1.46,3.77],[2.02,3.41],[2.48,2.92],[2.82,2.34],[3.06,1.72],[3.16,1.20],[2.75,.97],[2.3,.95],[2.3,.83],[2.8,.83],[2.8,.75],[2.75,.4],[2.65,.05],[2.25,-.28],[1.75,-.62],[1.25,-1.0],[.55,-1.15],[.125,-1.15],[.125,-1.5],
+  [.62,-1.5],[1.0,-1.32],[1.4,-1.12],[1.95,-.78],[2.55,-.35],[2.9,.1],[2.95,.55],[3.0,.76],[3.3,.80],[3.56,.76],[3.58,.86],[3.30,1.09],[3.2,1.75],[2.95,2.4],[2.6,3.0],[2.1,3.52],[1.5,3.90],[.9,4.17],[.45,4.40],[.26,4.70],[.26,4.92],
  ]),material);
  shell.userData.role='fixed-cast-casing-carrying-circle-G-in-section';root.add(shell);
  // The foot is set back so the pulley shaft M passes the section plane.
@@ -79,7 +79,7 @@ function castCasing(root,b,p){
  shaftBearing.rotation.z=Math.PI/2;shaftBearing.position.set(1.15,-2.39,0);shaftBearing.userData.role='fixed-foot-bearing-of-shaft-M';root.add(shaftBearing);
  // Lugs join the lever pivot and the spring anchor to the casing.
  const lug=(x,y0,y1,z0,z1,role)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(.16,y1-y0,z1-z0),material);o.position.set(x,(y0+y1)/2,(z0+z1)/2);o.userData.role=role;root.add(o);return o;};
- lug(b.leverPivotBearing.position.x,3.85,b.leverPivotBearing.position.y,-.2,.2,'casing-lug-carrying-lever-N-pivot');
+ lug(b.leverPivotBearing.position.x,3.40,b.leverPivotBearing.position.y,-.2,.2,'casing-lug-carrying-lever-N-pivot');
  const eye=b.springLowerEye.position;const spur=new THREE.Mesh(new THREE.BoxGeometry(.3,.12,.5),material);spur.position.set(eye.x+.12,eye.y-.18,.08);spur.userData.role='casing-lug-anchoring-spring-L';root.add(spur);
  // No white indices or index teeth are drawn.
  for(const o of[b.inputShaftIndex,...b.rotorFaceIndexes,b.rotorIndexBead,b.engineInputIndex,b.valveRodIndex])o.removeFromParent();
@@ -97,23 +97,24 @@ export function correctAndersonGovernor(root,update){
  gear(b.engineInputGear,{teeth:18,radius:.62,outer:.62,height:.12,bore:.136,sign:-1,phase:Math.PI/9,axis:Z,color:PALETTE.driven});
  b.crownGear.userData.body.userData.role='stationary-toothed-circle-G-body';
  p.gearPairs=[[b.pinion,b.crownGear],[b.engineInputGear,b.carrierDriveGear]];
- b.radialCarrierBeam.position.y=-.80;
- b.hingePins.forEach(pin=>{replace(pin,new THREE.CylinderGeometry(.073,.073,.15,48));pin.position.z=pin.userData.side*.575;});
+ replace(b.radialCarrierBeam,new THREE.BoxGeometry(3.1,.18,.26));b.radialCarrierBeam.position.set(-.15,-1.47,0);
+ b.hingePins.forEach(pin=>{replace(pin,new THREE.CylinderGeometry(.073,.073,.26,48));pin.position.z=pin.userData.side*.63;});
  const hingeRing=new THREE.Mesh(boredLatheGeometry([{radial:.56,axial:-.04},{radial:.56,axial:.04}],.49,96),b.hingeBearings[0].material);hingeRing.rotation.z=Math.PI/2;hingeRing.userData.role='open-hinge-frame-around-Cardan-joint';b.tiltGroup.add(hingeRing);
  const neck=b.outputRotor.children.find(o=>o.userData.role==='output-yoke-neck-rigid-with-piece-B');
  const inputNeck=b.inputRotor.children.find(o=>o.userData.role==='input-yoke-neck-of-universal-joint');
  replace(neck,new THREE.CylinderGeometry(.17,.17,.28,48));neck.position.x=.31;
- replace(inputNeck,new THREE.CylinderGeometry(.18,.18,.28,48));inputNeck.position.x=-.31;
+ replace(inputNeck,new THREE.CylinderGeometry(.18,.18,.24,48));inputNeck.position.x=-.33;
  replace(b.outputShaft,new THREE.CylinderGeometry(.075,.075,1.62,48));b.outputShaft.position.x=.99;
  const inputLength=g.jointLocal.x-g.pinionCenterLocal.x;replace(b.inputShaft,new THREE.CylinderGeometry(.075,.075,inputLength-.18,48));b.inputShaft.position.x=-(inputLength+.18)/2;
  const neckBearing=new THREE.Mesh(boredLatheGeometry([{radial:.235,axial:-.04},{radial:.235,axial:.04}],.176,64),b.hingeBearings[0].material);neckBearing.rotation.z=Math.PI/2;neckBearing.position.x=.40;neckBearing.userData.role='tilting-journal-for-output-yoke-neck';b.tiltGroup.add(neckBearing);
- const hingeSpokes=[-1,1].map(side=>{const spoke=makeBeam(new THREE.Vector3(0,0,side*.53),new THREE.Vector3(.4,0,side*.20),{color:PALETTE.driver,thickness:.07,depth:.07});b.tiltGroup.add(spoke);return spoke;});
+ // Each spoke doglegs outside the output yoke's swept circle before turning in to the journal.
+ const hingeSpokes=[-1,1].flatMap(side=>[[new THREE.Vector3(0,0,side*.53),new THREE.Vector3(.36,0,side*.45)],[new THREE.Vector3(.36,0,side*.45),new THREE.Vector3(.40,0,side*.21)]].map(([a,c])=>{const spoke=makeBeam(a,c,{color:PALETTE.driver,thickness:.07,depth:.07});b.tiltGroup.add(spoke);return spoke;}));
  p.pairs.push([neck,neckBearing],[b.spiderHub,inputNeck],[b.spiderHub,neck],[b.inputShaft,b.spiderHub],[b.outputShaft,b.spiderHub]);
  for(const moving of[b.spiderInputTrunnion,b.spiderOutputTrunnion,...b.inputYokeEyes,...b.outputYokeEyes,b.outputShaft,b.rotorDisk])p.pairs.push([moving,hingeRing]);
  const coil=b.springL.children[0],path=new class extends THREE.Curve{constructor(){super();this.length=4;this.arcLengthDivisions=512;}getPoint(t,p=new THREE.Vector3()){const r=(t===0||t===1)?0:.105*Math.sin(Math.PI*t)**.35,a=t*12*2*Math.PI;return p.set(r*Math.cos(a),t*this.length,r*Math.sin(a));}}();
  replace(coil,new THREE.TubeGeometry(path,192,.027,8,false));const refill=tubePathUpdater(coil.geometry);
  b.springL.userData.setEndpoints=(start,end)=>{const delta=end.clone().sub(start);b.springL.position.copy(start);b.springL.quaternion.setFromUnitVectors(Y,delta.clone().normalize());b.springL.scale.setScalar(1);path.length=delta.length();path.updateArcLengths();refill(path);};
- b.hingeBearings.forEach((h,i)=>{bore(h,.17,.24,.079);p.pairs.push([b.hingePins[i],h]);});
+ b.hingeBearings.forEach((h,i)=>{bore(h,.17,.18,.079);p.pairs.push([b.hingePins[i],h]);});
  bore(b.outputBearingCollar,.19,.26,.081);p.pairs.push([b.outputShaft,b.outputBearingCollar]);
  bore(b.valveRodGuide,.14,.34,.081);p.pairs.push([b.valveRodD,b.valveRodGuide]);
  // The old lower standard is an unported block through both rotating shafts.

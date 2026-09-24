@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctRollerParts} from './roller-working-parts.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makePulley,
@@ -959,6 +960,29 @@ function rollingCarriageFrictionExperiment(movement) {
   };
 }
 
+// An angular stone: an icosahedron with deterministic radial jitter,
+// scaled to width, height and depth, as Brown heaps rough stones.
+function stoneGeometry(width, height, depth, seed, tilt = 0) {
+  const geometry = new THREE.IcosahedronGeometry(1, 0);
+  const position = geometry.attributes.position;
+  const vertex = new THREE.Vector3();
+  const jitter = new Map();
+  for (let i = 0; i < position.count; i += 1) {
+    vertex.fromBufferAttribute(position, i);
+    const key = vertex.toArray().map((v) => v.toFixed(4)).join(',');
+    if (!jitter.has(key)) {
+      const n = jitter.size + 1;
+      jitter.set(key, 0.80 + 0.30 * Math.abs(Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453 % 1));
+    }
+    vertex.multiplyScalar(jitter.get(key));
+    position.setXYZ(i, vertex.x * width / 2, vertex.y * height / 2, vertex.z * depth / 2);
+  }
+  geometry.rotateZ(tilt);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  return geometry;
+}
+
 export function createAuthoredRollingFrictionExperimentMovement(movement) {
   if (movement.id !== 373) return null;
   const model = rollingCarriageFrictionExperiment(movement);
@@ -1027,6 +1051,72 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   const bedTop = b.wagonBed.position.y + 0.09;
   root.userData.testLoadHeap = {bedTop, law: 'heap top = bed top + load fraction * full heap height; hidden when unloaded'};
   const heapHeight = b.testWeight.geometry.parameters.height;
+  // Brown heaps rough stones in the wagon, not boards: the four fixed loads
+  // become angular stones standing on the bed on either side of the centre,
+  // with smaller stones packed between them, and the added test load is a
+  // heap of stones in the centre.
+  const stoneSpecs = [
+    // x, width, height, depth, tilt
+    [-1.38, 0.26, 0.78, 0.36, -0.28],
+    [-1.16, 0.25, 0.92, 0.38, 0.16],
+    [-0.46, 0.25, 0.88, 0.36, -0.20],
+    [-0.24, 0.26, 0.74, 0.38, 0.30],
+  ];
+  const settle = (mesh, x) => {
+    const box = mesh.geometry.boundingBox;
+    mesh.position.set(x - (box.min.x + box.max.x) / 2,
+      bedTop - box.min.y + 0.003, 0.10);
+    mesh.rotation.set(0, 0, 0);
+  };
+  b.fixedLoads.forEach((load, index) => {
+    const [x, width, height, depth, tilt] = stoneSpecs[index];
+    load.geometry.dispose();
+    load.geometry = stoneGeometry(width, height, depth, index + 1, tilt);
+    settle(load, x);
+    load.userData.role = 'fixed-base-load-in-source-loaded-wagon';
+  });
+  b.packedStones = [
+    [-1.27, 0.22, 0.46, 0.30, 0.6],
+    [-0.35, 0.22, 0.50, 0.30, -0.5],
+  ].map(([x, width, height, depth, tilt], index) => {
+    const stone = new THREE.Mesh(
+      stoneGeometry(width, height, depth, index + 11, tilt),
+      b.fixedLoads[index * 2].material,
+    );
+    settle(stone, x);
+    stone.position.z = 0.02;
+    stone.userData.role = 'fixed-stone-packed-in-loaded-wagon';
+    b.wagon.add(stone);
+    return stone;
+  });
+  {
+    const weightWidth = b.testWeight.geometry.parameters.width;
+    const weightDepth = b.testWeight.geometry.parameters.depth;
+    const parts = [
+      [-0.11, 0.20, 1.00, 0.9, 0.25],
+      [0.10, 0.19, 0.86, 0.9, -0.20],
+      [0.00, 0.16, 0.62, 0.8, 0.05],
+    ].map(([cx, width, height, depth, tilt], index) => {
+      const geometry = stoneGeometry(width, height * heapHeight,
+        depth * weightDepth, index + 21, tilt);
+      const box = geometry.boundingBox;
+      geometry.translate(cx - (box.min.x + box.max.x) / 2,
+        -heapHeight / 2 - box.min.y, 0);
+      return geometry;
+    });
+    const heap = mergeGeometries(parts);
+    heap.computeBoundingBox();
+    const box = heap.boundingBox;
+    const sx = weightWidth / (box.max.x - box.min.x);
+    const sy = heapHeight / (box.max.y - box.min.y);
+    heap.translate(-(box.min.x + box.max.x) / 2, 0, 0);
+    heap.scale(Math.min(1, sx), Math.min(1, sy), 1);
+    heap.computeBoundingBox();
+    heap.translate(0, -heapHeight / 2 - heap.boundingBox.min.y, 0);
+    heap.parameters = { depth: weightDepth, height: heapHeight, width: weightWidth };
+    b.testWeight.geometry.dispose();
+    b.testWeight.geometry = heap;
+  }
   const baseUpdate = model.update;
   model.update = (time) => {
     baseUpdate(time);

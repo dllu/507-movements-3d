@@ -280,6 +280,14 @@ function oscillatingCylinderEngine(movement) {
   const sourceCylinderWallInnerX = 1.3125;
   const sourceCylinderBoreEnd = 2.5;
   const sourceCylinderShellEnd = 2.875;
+  // Brown's plate draws a much smaller crank and a short barrel: measured
+  // against O-T (6.75 units, 315 px) the crank is ≈1.7 units and the covers
+  // sit ≈2.25-2.35 units either side of T. The model follows the plate and
+  // keeps the official rod length, pivot and timing; the bore end keeps the
+  // official 0.0625-unit end clearance for the shorter 3.4-unit stroke.
+  const plateCrankRadius = 1.7;
+  const plateCylinderBoreEnd = 1.95;
+  const plateCylinderShellEnd = 2.325;
   const sourceCylinderDirectionRay = new THREE.Vector2(0, 2.5);
   const sourcePistonDirectionRay = new THREE.Vector2(0, -6.9375);
   const sourceCyclesPerMinute = 15;
@@ -289,14 +297,14 @@ function oscillatingCylinderEngine(movement) {
     * sourceCrankPhaseOffsetTurns;
 
   const crankCenter = sourceCrankCenter.clone().multiplyScalar(sourceScale);
-  const crankRadius = sourceCrankRadius * sourceScale;
+  const crankRadius = plateCrankRadius * sourceScale;
   const cylinderPivot = sourceCylinderPivot.clone()
     .multiplyScalar(sourceScale);
   const pistonRodLength = sourcePistonRodLength * sourceScale;
   const pistonHeadHalfWidth = sourcePistonHeadHalfWidth * sourceScale;
   const pistonHeadThickness = sourcePistonHeadThickness * sourceScale;
-  const cylinderBoreEnd = sourceCylinderBoreEnd * sourceScale;
-  const cylinderShellEnd = sourceCylinderShellEnd * sourceScale;
+  const cylinderBoreEnd = plateCylinderBoreEnd * sourceScale;
+  const cylinderShellEnd = plateCylinderShellEnd * sourceScale;
 
   const sourceStateAtCyclePosition = (cyclePosition) => {
     const unwrappedInputAngle = sourceCrankPhaseOffset
@@ -584,25 +592,25 @@ function oscillatingCylinderEngine(movement) {
   const crankRailLow = -0.62;
   const trunnionRailLow = -1.20;
   const parts = buildSourceOscillatingEngine({
-    axisRayLocalY: sourceCylinderDirectionRay.y * sourceScale,
+    axisRayLocalY: plateCylinderBoreEnd * sourceScale,
     barrelInnerRadius: sourceCylinderWallInnerX,
     barrelOuterRadius: sourceCylinderWallOuterX,
-    boreFrom: -sourceCylinderBoreEnd,
-    boreTo: sourceCylinderBoreEnd,
+    boreFrom: -plateCylinderBoreEnd,
+    boreTo: plateCylinderBoreEnd,
     collars: [
-      { height: 0.125, radius: 0.50, u: 3.1875 },
-      { height: 0.125, radius: 0.25, u: 3.3125 },
-      { height: 0.125, radius: 0.50, u: 3.4375 },
+      { height: 0.125, radius: 0.50, u: 2.6375 },
+      { height: 0.125, radius: 0.25, u: 2.7625 },
+      { height: 0.125, radius: 0.50, u: 2.8875 },
     ],
     coverRadius: sourceCylinderOuterHalfWidth,
     covers: [
-      { from: -sourceCylinderShellEnd, passage: false, role: 'oscillating-cylinder-bottom-cover', to: -sourceCylinderBoreEnd },
-      { from: sourceCylinderBoreEnd, passage: true, role: 'oscillating-cylinder-top-cover', to: sourceCylinderShellEnd },
+      { from: -plateCylinderShellEnd, passage: false, role: 'oscillating-cylinder-bottom-cover', to: -plateCylinderBoreEnd },
+      { from: plateCylinderBoreEnd, passage: true, role: 'oscillating-cylinder-top-cover', to: plateCylinderShellEnd },
     ],
     crankCenter,
     crankRadius,
     crankRailLow,
-    crankRole: 'two-point-two-five-unit-direct-acting-crank-O-P',
+    crankRole: 'one-point-seven-unit-direct-acting-crank-O-P',
     cylinderPivot,
     cylinderRole: 'mid-trunnion-closed-oscillating-cylinder',
     frameRole: 'fixed-upper-crank-bearing-and-mid-cylinder-trunnion-frame',
@@ -781,7 +789,7 @@ function oscillatingCylinderEngine(movement) {
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.contacts = contacts;
   root.userData.degreesOfFreedom = {
-    input: 'one continuously rotating 2.25-unit crank O-P',
+    input: 'one continuously rotating 1.7-unit crank O-P (plate proportion)',
     mechanism: 1,
     output:
       'the piston slides along the cylinder while the whole cylinder oscillates about its midpoint trunnions',
@@ -831,7 +839,7 @@ function oscillatingCylinderEngine(movement) {
         'both official add_rot_to transforms share the exact T-P axis, and the fixed 6.75-unit piston rod remains physically compatible with the mid-trunnion cylinder through the full crank cycle',
     },
     referenceScope:
-      'official 2.25-unit crank, mid-length trunnion T, cylinder shell and gland (closed as in Brown\'s plate), fixed-length direct piston rod and head, source phase, and 15 rpm timing; rails, crank outline, and view follow the plate',
+      'official mid-length trunnion T, fixed-length direct piston rod and head, source phase, and 15 rpm timing; the crank radius (1.7 against the official 2.25), barrel length, gland, rails, crank outline, and view follow the plate',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -863,27 +871,30 @@ function oscillatingCylinderEngine(movement) {
   root.userData.stateAtTime = stateAtTime;
   root.userData.transmission = {
     exactConstraint:
-      '|O-P|=2.25 and H=P-6.75u, where u=(P-T)/|P-T| is the common piston-and-cylinder axis',
+      '|O-P|=1.7 and H=P-6.75u, where u=(P-T)/|P-T| is the common piston-and-cylinder axis',
     input: 'the upper crank pin P rotates uniformly about fixed bearing O',
     output:
       'distance |T-P| simultaneously sets cylinder angle and the piston coordinate |T-P|-6.75 along its bore',
     stroke:
-      '|T-P| ranges from 4.5 to 9.0, giving exactly 4.5 source units of piston travel',
+      '|T-P| ranges from 5.05 to 8.45, giving exactly 3.4 source units of piston travel',
   };
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
-  // Brown's crop: just above the crank, just below the lower cover, with
+  // Brown's crop: just above the crank's top reach, just below the lower cover, with
   // both rails running off the plate's sides.
   root.userData.sweptBounds = root.userData.cameraFitBounds;
   root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.4 * sourceScale, -10.2 * sourceScale, -1.2),
-    new THREE.Vector3(5.4 * sourceScale, 0.9 * sourceScale, 1.5),
+    new THREE.Vector3(-5.4 * sourceScale, -9.7 * sourceScale, -1.2),
+    new THREE.Vector3(5.4 * sourceScale, 2.3 * sourceScale, 1.5),
   );
+  // Brown's flat elevation: a narrow field keeps the covers from opening
+  // into ellipses.
+  root.userData.cameraFov = 12;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
+    cameraDirection: new THREE.Vector3(0.3, 0.1, 14),
     root,
     update,
   };

@@ -173,22 +173,29 @@ function adjustableMirrorStand(movement) {
   base.userData.role = 'fixed-stepped-pedestal-and-socket-pillar';
   root.add(base);
   const baseTiers = [];
-  const tierDefinitions = [
-    { height: 0.15, radius: 1.32, y: -1.32 },
-    { height: 0.18, radius: 0.98, y: -1.18 },
-    { height: 0.20, radius: 0.68, y: -1.00 },
+  // Brown's foot is a broad thin rim sweeping up in a concave flared cone
+  // to the baluster's foot, not stepped discs: a rim disc, the flare and a
+  // small fillet ring under the pillar.
+  const flareBottomY = -1.335;
+  const flareTopY = -1.075;
+  const flareProfile = [new THREE.Vector2(0, flareBottomY)];
+  for (let index = 0; index <= 32; index += 1) {
+    const t = index / 32;
+    flareProfile.push(new THREE.Vector2(
+      0.44 + 0.80 * (1 - t) ** 1.7,
+      flareBottomY + (flareTopY - flareBottomY) * t,
+    ));
+  }
+  flareProfile.push(new THREE.Vector2(0, flareTopY));
+  const tierGeometries = [
+    new THREE.CylinderGeometry(1.27, 1.31, 0.06, 64)
+      .translate(0, flareBottomY - 0.03, 0),
+    new THREE.LatheGeometry(flareProfile, 64),
+    new THREE.CylinderGeometry(0.45, 0.46, 0.06, 48)
+      .translate(0, flareTopY + 0.03, 0),
   ];
-  for (const definition of tierDefinitions) {
-    const tier = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        definition.radius * 1.12,
-        definition.radius,
-        definition.height,
-        48,
-      ),
-      frameMaterial,
-    );
-    tier.position.y = definition.y;
+  for (const geometry of tierGeometries) {
+    const tier = new THREE.Mesh(geometry, frameMaterial);
     tier.userData.role = 'one-of-source-stepped-stand-base-tiers';
     baseTiers.push(tier);
     base.add(tier);
@@ -571,6 +578,9 @@ function adjustableMirrorStand(movement) {
     new THREE.Vector3(1.88, 4.22, 1.82),
   );
   root.userData.groundFloorY = -1.42;
+  // Brown's elevation is nearly level: the foot's rim reads as a line and
+  // its flared cone in profile, so keep perspective from tipping it open.
+  root.userData.cameraFov = 14;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {

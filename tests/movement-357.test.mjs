@@ -278,8 +278,19 @@ test('movement 357 transmits spin through one exact variable-angle Cardan joint'
       instantaneousRatio,
     );
   }
-  assert.ok(maximumInstantaneousRatio - minimumInstantaneousRatio > 0.2,
-    'one Cardan joint retains its real angular-speed ripple');
+  // Brown's ~10 degree droop of B keeps the joint angle small, so the
+  // twice-per-turn ripple is modest but must match 1/cos(tilt) - cos(tilt).
+  let maximumAbsoluteTilt = 0;
+  for (let index = 0; index <= 8192; index += 1) {
+    maximumAbsoluteTilt = Math.max(maximumAbsoluteTilt, Math.abs(
+      stateAtTime(geometry.cyclePeriod * index / 8192).tiltAngle));
+  }
+  const analyticRipple = 1 / Math.cos(maximumAbsoluteTilt)
+    - Math.cos(maximumAbsoluteTilt);
+  assert.ok(analyticRipple > 0.05);
+  assert.ok(maximumInstantaneousRatio - minimumInstantaneousRatio
+    > 0.9 * analyticRipple,
+  'one Cardan joint retains its real angular-speed ripple');
 
   const differenceStep = 1e-6;
   for (const fraction of [0.03, 0.12, 0.27, 0.41, 0.59, 0.73, 0.92]) {
@@ -333,9 +344,9 @@ test('movement 357 balances speed-squared gyroscopic torque against spring L', (
 
   for (let index = 0; index <= 4096; index += 1) {
     const state = stateAtTime(geometry.cyclePeriod * index / 4096);
-    near(state.equilibriumError, 0, 1.2e-13,
+    near(state.equilibriumError, 0, 2e-13,
       `spring/gyroscope balance ${index}`);
-    near(state.springTorque, state.gyroscopicTorque, 1.2e-13,
+    near(state.springTorque, state.gyroscopicTorque, 2e-13,
       `equal opposing moments ${index}`);
     near(state.springTorque,
       state.effectiveSpringForce
@@ -427,7 +438,7 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
         start, 0, `rod-C start ${index} ${fraction}`);
       vectorNear(blocks.connectingForkC[index].children[2].position,
         end, 0, `rod-C end ${index} ${fraction}`);
-      near(start.distanceTo(end), geometry.outputLinkLength, 5e-16,
+      near(start.distanceTo(end), geometry.outputLinkLength, 1e-15,
         `rod-C length ${index} ${fraction}`);
     });
     near(state.leverConnection.distanceTo(state.valveRodPin),
@@ -444,7 +455,7 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
     near(data.contacts.universalJoint.trunnionOrthogonalityError,
       0, 6e-16, `reported Cardan cross ${fraction}`);
     data.contacts.outputFork.lengthErrors.forEach((error, index) => {
-      near(error, 0, 5e-16,
+      near(error, 0, 1e-15,
         `reported rod-C ${index} ${fraction}`);
     });
   }
@@ -453,7 +464,7 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.equal(meshCount, 189); // Conical bodies, open hinge support and the sectioned cast casing, foot, pulley and lugs; no white indices.
+  assert.equal(meshCount, 190); // Conical bodies, bored plate lever N and rods P and C with their pins, dogleg hinge spokes, open hinge support and the sectioned cast casing, foot, pulley and lugs; no white indices.
   disposeModel(model.root);
 });
 

@@ -81,9 +81,9 @@ export function correctCordTraverseParts(root,id,update){
   for(let x=-Math.floor(g.trackHalfLength);x<=Math.floor(g.trackHalfLength);x+=.5){const mark=add(b.track,new T.BoxGeometry(.05,Number.isInteger(x)?.36:.24,.012),rail.material,'rail-travel-reference-mark');mark.position.set(x,rail.position.y,railTop-.106);}
   root.rotation.z=Math.PI/2;d.followCarriage=true;d.cameraMaxDistance=4.8*g.carriageStroke;
  }else{
-  const section=angle=>{const x=d.grooveXAtLocalAngle(angle),r=g.barrelRadius,L=g.barrelAxialLength/2;return[[-L,r],[x-.086,r],[x-.074,.676],[x+.074,.676],[x+.086,r],[L,r],[L,.094],[-L,.094]];};
+  const section=angle=>{const x=d.grooveXAtLocalAngle(angle),r=g.barrelRadius,L=g.barrelAxialLength/2;return[[-L,r],[x-.086,r],[x-.074,r-.084],[x+.074,r-.084],[x+.086,r],[L,r],[L,.094],[-L,.094]];};
   replace(b.groovedCylinder,sectionSolid(section));b.groovedCylinder.rotation.set(0,0,0);b.grooveTrack.visible=false;b.grooveReversalPockets.forEach(o=>o.visible=false);
-  for(const [i,rim]of b.cylinderEndRims.entries()){replace(rim,ring(.79,.094,.022));rim.rotation.set(0,0,Math.PI/2);rim.position.x=(i?1:-1)*(g.barrelAxialLength/2+.011);}
+  for(const [i,rim]of b.cylinderEndRims.entries()){replace(rim,ring(g.barrelRadius+.03,.094,.022));rim.rotation.set(0,0,Math.PI/2);rim.position.x=(i?1:-1)*(g.barrelAxialLength/2+.011);}
   for(const [list,shaftRadius]of[[b.upperBearings,.082],[b.lowerBearings,.090]])for(const bearing of list){replace(bearing,ring(.20,shaftRadius+.004,.23));bearing.rotation.set(0,0,Math.PI/2);bearing.position.z=0;const bridge=add(b.frame,new T.BoxGeometry(.23,.15,.28),bearing.material,'journal-bridge-to-rear-post');bridge.position.copy(bearing.position);bridge.position.z=-.28;}
  }
  d.minimumDisplayCycleSeconds=g.cyclePeriod??g.inputCyclePeriod;d.workingPartsReview={status:'selected-finite-interfaces',residual:id===362?'The oblique planar groove prescribes a smooth sinusoidal traverse; pin clearance is finite, but load, friction and backlash response are not simulated.':'Analytical pitch-radius travel and ideal no-slip spin are preserved. Helical lay, cord elasticity, tension and the exact changing finite-radius material length remain reconstruction approximations.'};

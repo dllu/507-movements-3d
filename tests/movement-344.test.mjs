@@ -84,7 +84,7 @@ test('movement 344 is the mid-trunnion direct-crank oscillating engine', () => {
   assert.equal(archetype, movement.archetype);
   assert.match(mechanism, /crank-O-P-direct-piston-rod-P-H/);
   assert.match(mechanism, /midpoint-trunnion-T/);
-  assert.match(transmission.exactConstraint, /\|O-P\|=2\.25/);
+  assert.match(transmission.exactConstraint, /\|O-P\|=1\.7/);
   assert.match(transmission.exactConstraint, /H=P-6\.75u/);
   assert.match(transmission.output, /\|T-P\|-6\.75/);
   assert.equal(degreesOfFreedom.mechanism, 1);
@@ -130,7 +130,7 @@ test('movement 344 is the mid-trunnion direct-crank oscillating engine', () => {
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) => role ===
-    'two-point-two-five-unit-direct-acting-crank-O-P').length, 1);
+    'one-point-seven-unit-direct-acting-crank-O-P').length, 1);
   assert.equal(roles.filter((role) => role ===
     'mid-trunnion-closed-oscillating-cylinder').length, 1);
   assert.equal(roles.filter((role) => role ===
@@ -194,15 +194,17 @@ test('movement 344 preserves every official animation constant, phase, and view'
   assert.deepEqual(official.pistonDirectionRay,
     new THREE.Vector2(0, -6.9375));
 
-  near(geometry.crankRadius, 2.25 * geometry.sourceScale, 0,
-    'scaled crank radius');
+  // Model proportions follow Brown's plate: crank 1.7 and a short barrel
+  // (official 2.25 and 2.5 remain recorded above as source data).
+  near(geometry.crankRadius, 1.7 * geometry.sourceScale, 0,
+    'plate crank radius');
   near(geometry.pistonRodLength, 6.75 * geometry.sourceScale, 0,
     'scaled piston rod');
   vector2Near(geometry.cylinderPivot,
     official.cylinderPivot.clone().multiplyScalar(geometry.sourceScale),
     0, 'scaled cylinder pivot');
-  near(geometry.cylinderBoreEnd, 2.5 * geometry.sourceScale, 0,
-    'scaled bore end');
+  near(geometry.cylinderBoreEnd, 1.95 * geometry.sourceScale, 0,
+    'plate bore end');
   near(geometry.cyclePeriod, 4, 0, 'official cycle period');
   near(geometry.inputAngularSpeed, Math.PI / 2, 0,
     'official crank angular speed');
@@ -338,13 +340,13 @@ test('movement 344 maintains one fixed piston rod on the instantaneous cylinder 
     `fixed piston rod closes; worst error ${maximumRodError}`);
   assert.ok(maximumLateralError <= 9e-16,
     `piston stays coaxial; worst error ${maximumLateralError}`);
-  near(minimumDistance / geometry.sourceScale, 4.5, 2e-15,
+  near(minimumDistance / geometry.sourceScale, 5.05, 2e-15,
     'minimum trunnion-to-crank distance');
-  near(maximumDistance / geometry.sourceScale, 9, 3e-15,
+  near(maximumDistance / geometry.sourceScale, 8.45, 3e-15,
     'maximum trunnion-to-crank distance');
-  near(minimumTravel / geometry.sourceScale, -2.25, 2e-15,
+  near(minimumTravel / geometry.sourceScale, -1.7, 2e-15,
     'minimum piston travel');
-  near(maximumTravel / geometry.sourceScale, 2.25, 3e-15,
+  near(maximumTravel / geometry.sourceScale, 1.7, 3e-15,
     'maximum piston travel');
   near(minimumClearance / geometry.sourceScale, 0.0625, 8e-16,
     'minimum piston-to-bore-end clearance');
@@ -353,7 +355,7 @@ test('movement 344 maintains one fixed piston rod on the instantaneous cylinder 
   disposeModel(model.root);
 });
 
-test('movement 344 has the exact 4.5-unit stroke and tangent-limited cylinder swing', () => {
+test('movement 344 has the exact 3.4-unit plate stroke and tangent-limited cylinder swing', () => {
   const model = createMovementModel(catalog.movements[343]);
   const {
     canonicalTimes,
@@ -364,29 +366,29 @@ test('movement 344 has the exact 4.5-unit stroke and tangent-limited cylinder sw
   const nearest = stateAtTime(canonicalTimes.nearestDeadCenter);
   const farthest = stateAtTime(canonicalTimes.farthestDeadCenter);
 
-  near(nearest.crankToTrunnionDistance / scale, 4.5, 2e-15,
+  near(nearest.crankToTrunnionDistance / scale, 5.05, 2e-15,
     'nearest dead-center distance');
-  near(farthest.crankToTrunnionDistance / scale, 9, 3e-15,
+  near(farthest.crankToTrunnionDistance / scale, 8.45, 3e-15,
     'farthest dead-center distance');
-  near(nearest.piston.travel / scale, -2.25, 2e-15,
+  near(nearest.piston.travel / scale, -1.7, 2e-15,
     'nearest piston coordinate');
-  near(farthest.piston.travel / scale, 2.25, 3e-15,
+  near(farthest.piston.travel / scale, 1.7, 3e-15,
     'farthest piston coordinate');
   near(nearest.cylinder.angle, 0, 3e-16,
     'nearest cylinder verticality');
   near(farthest.cylinder.angle, 0, 0,
     'farthest cylinder verticality');
   vector2Near(nearest.piston.head.clone().multiplyScalar(1 / scale),
-    new THREE.Vector2(0, -9), 5e-16,
+    new THREE.Vector2(0, -8.45), 2e-15,
     'nearest piston-head center');
   vector2Near(farthest.piston.head.clone().multiplyScalar(1 / scale),
-    new THREE.Vector2(0, -4.5), 2e-15,
+    new THREE.Vector2(0, -5.05), 2e-15,
     'farthest piston-head center');
-  near(geometry.pistonStroke / scale, 4.5, 3e-15,
+  near(geometry.pistonStroke / scale, 3.4, 3e-15,
     'full piston stroke');
-  near(geometry.maximumCylinderAngle, Math.asin(1 / 3), 7e-10,
+  near(geometry.maximumCylinderAngle, Math.asin(1.7 / 6.75), 7e-10,
     'maximum clockwise cylinder angle');
-  near(geometry.minimumCylinderAngle, -Math.asin(1 / 3), 7e-10,
+  near(geometry.minimumCylinderAngle, -Math.asin(1.7 / 6.75), 7e-10,
     'maximum counterclockwise cylinder angle');
   near(geometry.minimumEndClearance / scale, 0.0625, 8e-16,
     'dead-center end clearance');
@@ -548,7 +550,7 @@ test('movement 344 renderer binds the crank, shared axis, trunnion, and sliding 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 3.8, 'broken-off rails as short as Brown draws them');
-  assert.ok(size.y > 6.7);
+  assert.ok(size.y > 6.3, 'crank-to-cover height of the plate\'s short barrel');
   assert.ok(size.z >= 2.6,
     'fixed bearings, cylinder, piston, crank, and pins occupy real layers');
   assert.ok(model.cameraDirection.x > 0);

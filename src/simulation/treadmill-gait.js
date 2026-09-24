@@ -6,7 +6,7 @@ export function treadmillLegState(time, index, geometry) {
     hipX, hipY, upperLength, lowerLength } = geometry;
   const speed = 2 * Math.PI / wheelPeriod;
   const cycle = 2 * treadPitch;
-  const touchdownAngle = 40 * Math.PI / 180;
+  const touchdownAngle = 30 * Math.PI / 180;
   const stanceFraction = 0.60;
   const phase = (speed * time + touchdownAngle - wheelStartAngle - treadPitch)
     / cycle + index / 2;
