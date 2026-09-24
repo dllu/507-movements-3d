@@ -493,3 +493,29 @@ test('movement 299 publishes its reviewed cycle and leaves movement 507 authored
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 299 crown teeth are Brown’s raked saw teeth with no flat gaps', () => {
+  const model = createMovementModel(catalog.movements[298]);
+  const wheel = model.root.userData.blocks.crownWheel.userData;
+  const { toothPitch } = model.root.userData.geometry;
+  near(wheel.toothRakeAngle, 0.35 * toothPitch, 1e-15, 'raked leading face');
+  near(wheel.toothBackAngle, toothPitch + wheel.toothRakeAngle, 1e-15,
+    'each back starts at the foot of the tooth behind');
+  for (const tooth of wheel.toothMeshes) {
+    const p = tooth.geometry.attributes.position;
+    const angle = tooth.userData.mountAngle;
+    let tipZ = -Infinity;
+    for (let i = 0; i < p.count; i += 1) tipZ = Math.max(tipZ, p.getZ(i));
+    for (let i = 0; i < p.count; i += 1) {
+      const offset = Math.atan2(Math.sin(Math.atan2(p.getY(i), p.getX(i)) - angle),
+        Math.cos(Math.atan2(p.getY(i), p.getX(i)) - angle));
+      assert.ok(offset < 1e-6, 'no material ahead of the tip');
+      // Below half height the raked face lies at least half the rake behind.
+      if (p.getZ(i) < tipZ / 2) {
+        assert.ok(offset < -wheel.toothRakeAngle / 2 + 1e-6,
+          'lower leading face is raked back from the tip');
+      }
+    }
+  }
+  disposeModel(model.root);
+});

@@ -9939,13 +9939,13 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/u7-flawed-review.md",
-        "note": "Default capture inspected beside the plate: a wider strip of crown teeth with the verge above; the teeth have vertical leading faces and the pallets are blocks."
+        "evidence": "docs/u8-299-review.md",
+        "note": "Default and phase captures inspected beside the plate: an edge-on strip of raked, hooked crown teeth with slender pallets on the end-on verge journal; the verge swings and the crown steps."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "513-phase verge audit and pass-51 relative-motion screen (0.01 spacing): tangent working contact only."
+        "evidence": "docs/u8-299-review.md",
+        "note": "Only tangent working contact between tooth tips and the pallet faces (0.0000) at 0.01 spacing, 129 samples."
       },
       "references": [
         "docs/verge-crown-family-review.md",
@@ -9956,7 +9956,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/w2f-274-333-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/u8-299-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9964,9 +9965,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The crown teeth have vertical leading faces with wide gaps where Brown draws raked saw teeth, and the pallets are thick blocks rather than his slender pallets.",
-      "limits": "The verge motion depends on the current tooth and pallet shapes.",
-      "assessment": "flawed"
+      "visibleFlaws": "The far-side teeth show crossing behind the near ones, making the strip busier than Brown's two-tooth section; the pallets are ≈20% shorter than his strips and the band is plain rather than hatched.",
+      "limits": "A longer pallet would cut into the next tooth.",
+      "assessment": "minor"
     },
     {
       "id": 300,

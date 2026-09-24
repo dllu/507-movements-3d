@@ -141,6 +141,80 @@ function curvedSawToothGeometry({
   return geometry;
 }
 
+// Brown's 299 saw tooth: the leading face is raked, running straight from a
+// foot a little behind the tip up to the tip, so the tip overhangs forward
+// and the next tooth's concave back starts under that overhang at the foot.
+// The solid lies between the leading-face line (below) and the back (above)
+// over the raked stretch, and between the band and the back elsewhere.
+function rakedSawToothGeometry({
+  backAngle,
+  backExponent = 1,
+  baseZ,
+  innerRadius,
+  outerRadius,
+  rakeAngle,
+  rootZ,
+  tipAngle,
+  tipZ,
+}) {
+  const start = tipAngle - backAngle;
+  const foot = tipAngle - rakeAngle;
+  const flatSegments = Math.max(6, Math.ceil((backAngle - rakeAngle) / 0.02));
+  const rakeSegments = Math.max(6, Math.ceil(rakeAngle / 0.012));
+  const angles = [];
+  for (let i = 0; i <= flatSegments; i += 1) angles.push(start + (foot - start) * i / flatSegments);
+  for (let i = 1; i <= rakeSegments; i += 1) angles.push(foot + rakeAngle * i / rakeSegments);
+  const topZ = (angle) => rootZ + (tipZ - rootZ)
+    * Math.max(0, (angle - start) / backAngle) ** backExponent;
+  const bottomZ = (angle) => (angle <= foot
+    ? baseZ
+    : baseZ + (tipZ - baseZ) * Math.min(1, (angle - foot) / rakeAngle));
+  const positions = [];
+  const normals = [];
+  const polar = (radius, angle, z) => new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
+  const triangle = (points, desired, vertexNormals = null) => {
+    const [a, b, c] = points;
+    const geometric = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+    if (geometric.lengthSq() < 1e-18) return;
+    const flip = geometric.dot(desired) < 0;
+    const ordered = flip ? [a, c, b] : [a, b, c];
+    const orderedNormals = vertexNormals ? (flip ? [vertexNormals[0], vertexNormals[2], vertexNormals[1]] : vertexNormals) : null;
+    const faceNormal = geometric.normalize().multiplyScalar(flip ? -1 : 1);
+    ordered.forEach((p, k) => {
+      positions.push(p.x, p.y, p.z);
+      const n = orderedNormals ? orderedNormals[k] : faceNormal;
+      normals.push(n.x, n.y, n.z);
+    });
+  };
+  const quad = (a, b, c, d, desired, vertexNormals) => {
+    triangle([a, b, c], desired, vertexNormals && [vertexNormals[0], vertexNormals[1], vertexNormals[2]]);
+    triangle([a, c, d], desired, vertexNormals && [vertexNormals[0], vertexNormals[2], vertexNormals[3]]);
+  };
+  const up = new THREE.Vector3(0, 0, 1);
+  const down = up.clone().negate();
+  for (let i = 0; i + 1 < angles.length; i += 1) {
+    const a0 = angles[i], a1 = angles[i + 1];
+    const mid = (a0 + a1) / 2;
+    const b0 = bottomZ(a0), b1 = bottomZ(a1), t0 = topZ(a0), t1 = topZ(a1);
+    const out0 = new THREE.Vector3(Math.cos(a0), Math.sin(a0), 0), out1 = new THREE.Vector3(Math.cos(a1), Math.sin(a1), 0);
+    const outward = new THREE.Vector3(Math.cos(mid), Math.sin(mid), 0);
+    quad(polar(outerRadius, a0, b0), polar(outerRadius, a1, b1), polar(outerRadius, a1, t1), polar(outerRadius, a0, t0),
+      outward, [out0, out1, out1, out0]);
+    const in0 = out0.clone().negate(), in1 = out1.clone().negate();
+    quad(polar(innerRadius, a0, b0), polar(innerRadius, a1, b1), polar(innerRadius, a1, t1), polar(innerRadius, a0, t0),
+      outward.clone().negate(), [in0, in1, in1, in0]);
+    quad(polar(outerRadius, a0, t0), polar(outerRadius, a1, t1), polar(innerRadius, a1, t1), polar(innerRadius, a0, t0), up);
+    quad(polar(outerRadius, a0, b0), polar(outerRadius, a1, b1), polar(innerRadius, a1, b1), polar(innerRadius, a0, b0), down);
+  }
+  const tangent = (angle) => new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0);
+  quad(polar(innerRadius, start, baseZ), polar(outerRadius, start, baseZ), polar(outerRadius, start, rootZ), polar(innerRadius, start, rootZ),
+    tangent(start).negate());
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  return geometry;
+}
+
 function makeCrownEscapeWheel({
   bodyDepth,
   bodyRadius,
@@ -151,6 +225,7 @@ function makeCrownEscapeWheel({
   toothBackExponent = 1,
   toothCount,
   toothRadialDepth,
+  toothRakeFraction = 0,
   toothTipZ,
 }) {
   const root = new THREE.Group();
@@ -234,13 +309,28 @@ function makeCrownEscapeWheel({
   // wheels. A radial tip edge is oblique to both pallet planes, and its outer
   // corner is always the first point to reach them, so that corner lies on
   // the contact orbit.
-  const toothBackAngle = toothPitch * 0.8;
+  // A raked tooth (299) has no flat gap: its back starts at the foot of the
+  // leading face of the tooth behind it.
+  const toothRakeAngle = toothRakeFraction * toothPitch;
+  const toothBackAngle = toothRakeAngle > 0
+    ? toothPitch + toothRakeAngle
+    : toothPitch * 0.8;
   const toothMeshes = [];
   const toothTips = [];
 
   for (let index = 0; index < toothCount; index += 1) {
     const angle = mountPhase + index * toothPitch;
-    const geometry = curvedSawToothGeometry({
+    const geometry = toothRakeAngle > 0 ? rakedSawToothGeometry({
+      backAngle: toothBackAngle,
+      backExponent: toothBackExponent,
+      baseZ: toothBaseZ - 0.01,
+      innerRadius,
+      outerRadius,
+      rakeAngle: toothRakeAngle,
+      rootZ: toothBaseZ,
+      tipAngle: angle,
+      tipZ: toothTipZ,
+    }) : curvedSawToothGeometry({
       backAngle: toothBackAngle,
       backExponent: toothBackExponent,
       baseZ: toothBaseZ - 0.01,
@@ -283,6 +373,8 @@ function makeCrownEscapeWheel({
   root.userData.teeth = toothCount;
   root.userData.toothMeshes = toothMeshes;
   root.userData.toothPitch = toothPitch;
+  root.userData.toothBackAngle = toothBackAngle;
+  root.userData.toothRakeAngle = toothRakeAngle;
   root.userData.toothTips = toothTips;
   return root;
 }
@@ -300,6 +392,7 @@ function vergeAndCrownWheelEscapement(
     spindleLength = 7.25,
     toothBackExponent = 1,
     toothRadialDepth = 0.34,
+    toothRakeFraction = 0,
     toothTipZ = 1,
   } = {},
 ) {
@@ -395,6 +488,7 @@ function vergeAndCrownWheelEscapement(
     toothBaseZ,
     toothCount,
     toothRadialDepth,
+    toothRakeFraction,
     toothTipZ,
   });
   root.add(crownWheel);
@@ -3341,16 +3435,21 @@ function oldFashionedClockVergeEscapement(movement) {
   // hidden depth relationship is explicit: the vertical verge and its
   // weighted foliot stand at right angles to the horizontal crown-wheel
   // arbor, and only one pallet can meet an axial crown tooth at a time.
-  // Brown's teeth are about 0.55 of a pitch tall (0.6 here) with long
-  // concave backs sweeping up to the tip. The concave back (exponent 1.8)
-  // is also what keeps the 45-degree foliot swing's dipping pallet clear of
-  // the tooth backs at that height: straight backs needed a 0.8 tip. The
-  // pallets are plain blades.
+  // Brown's teeth are about 0.55 of a pitch tall (0.6 here) with raked
+  // leading faces: each tip overhangs its foot by about 0.37 pitch in the
+  // plate (0.35 here) and the next tooth's concave back starts at that foot,
+  // so the strip has no flat gaps. That longer back (1.35 pitch) must sag
+  // more (exponent 2.3; 2.0 already lets the 45-degree foliot swing's idle
+  // pallet graze a back) to keep the dipping pallet clear. The pallets are
+  // plain slender blades, 0.12 thick against Brown's roughly 1:6 strips; they
+  // end at the release edge because any extension past it sweeps into the
+  // next tooth's back as the pallet dips.
   const base = vergeAndCrownWheelEscapement(movement, {
     flagPallets: true,
     includeFrame: false,
-    palletThickness: 0.2,
-    toothBackExponent: 1.8,
+    palletThickness: 0.12,
+    toothBackExponent: 2.3,
+    toothRakeFraction: 0.35,
     toothTipZ: 0.6,
   });
   const root = base.root;
