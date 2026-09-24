@@ -1323,11 +1323,30 @@ function stationaryBeamEngineParallelMotion(movement) {
   const sourceHiddenDriveRodLength = 12.179578;
   const sourceBeamDriverRadius = 12.375;
   const sourceBeamLeftStationRadius = 12;
-  const sourceBeamMiddleStationRadius = 6;
-  const sourceDropLinkLength = 3.5;
-  const sourceFixedRadiusPivotF = new THREE.Vector2(-12, -3.5);
-  const sourceFixedRadiusLength = 6;
-  const sourceCrossbarLength = 6;
+  // Official animation: B at 6, 3.5-unit drops, and a 6-unit radius bar
+  // pivoted at F=(-12,-3.5) under A. Brown instead draws the classic Watt
+  // motion: B at about 0.66 of O-A, 4-unit drops, and a long radius rod
+  // (about 10.9 units) running left to F near the plate edge. The model uses
+  // the plate's rod and drop lengths and places B where O, the Watt point on
+  // B-Q and E stay collinear (|O-B|^2 = |F-Q| (|O-A| - |O-B|)), which keeps
+  // E as straight as the official proportions.
+  const officialBeamMiddleStationRadius = 6;
+  const officialDropLinkLength = 3.5;
+  const officialFixedRadiusPivotF = new THREE.Vector2(-12, -3.5);
+  const officialFixedRadiusLength = 6;
+  const officialCrossbarLength = 6;
+  const sourceFixedRadiusLength = 10.9;
+  const sourceBeamMiddleStationRadius = (
+    -sourceFixedRadiusLength + Math.sqrt(sourceFixedRadiusLength ** 2
+      + 4 * sourceFixedRadiusLength * sourceBeamLeftStationRadius)
+  ) / 2;
+  const sourceDropLinkLength = 4;
+  const sourceFixedRadiusPivotF = new THREE.Vector2(
+    -sourceBeamMiddleStationRadius - sourceFixedRadiusLength,
+    -sourceDropLinkLength,
+  );
+  const sourceCrossbarLength = sourceBeamLeftStationRadius
+    - sourceBeamMiddleStationRadius;
   const sourceStrokeLineX = -12;
   const sourceInputPhaseOffset = FULL_TURN * 0.125;
   const sourceCyclesPerMinute = 15;
@@ -1447,7 +1466,8 @@ function stationaryBeamEngineParallelMotion(movement) {
         fixedRadiusPivotF,
         fixedRadiusLength,
       ),
-      new THREE.Vector2(-6, -3.5).multiplyScalar(sourceScale),
+      new THREE.Vector2(-sourceBeamMiddleStationRadius, -sourceDropLinkLength)
+        .multiplyScalar(sourceScale),
     );
     const pointQRates = constrainedPointRates({
       accelerationA: pointBAcceleration,
@@ -1559,22 +1579,38 @@ function stationaryBeamEngineParallelMotion(movement) {
     };
   };
 
+  // Brown draws the beam level, with pins A and B on the dashed centre line
+  // through O. Model time 0 is that pose: the hidden crank pin is where the
+  // drive rod reaches the level beam driver (12.375, 0). The official
+  // animation's start falls at canonicalTimes.sourceStart.
+  const plateCrankAngle = Math.asin((
+    sourceHiddenCrankRadius ** 2 + sourceHiddenCrankPivot.y ** 2
+      - sourceHiddenDriveRodLength ** 2
+  ) / (2 * -sourceHiddenCrankPivot.y * sourceHiddenCrankRadius));
+  const plateInputTravel = plateCrankAngle - sourceInputPhaseOffset;
+  const plateTimeOffset = plateInputTravel / inputAngularSpeed;
   const stateAtTime = (time) => {
     const state = stateAtInputTravel(
-      inputAngularSpeed * time,
+      inputAngularSpeed * time + plateInputTravel,
       inputAngularSpeed,
       0,
     );
-    state.phase = positiveModulo(time, cyclePeriod) / cyclePeriod;
+    state.phase = positiveModulo(time + plateTimeOffset, cyclePeriod)
+      / cyclePeriod;
     state.time = time;
     return state;
   };
 
+  const sourceTime = (fraction) => positiveModulo(
+    cyclePeriod * fraction - plateTimeOffset,
+    cyclePeriod,
+  );
   const canonicalTimes = {
-    sourceStart: 0,
-    sourceQuarter: cyclePeriod / 4,
-    sourceHalf: cyclePeriod / 2,
-    sourceThreeQuarter: cyclePeriod * 3 / 4,
+    platePose: 0,
+    sourceStart: sourceTime(0),
+    sourceQuarter: sourceTime(1 / 4),
+    sourceHalf: sourceTime(1 / 2),
+    sourceThreeQuarter: sourceTime(3 / 4),
     cycleClosure: cyclePeriod,
   };
   const canonicalStates = Object.fromEntries(
@@ -1643,6 +1679,8 @@ function stationaryBeamEngineParallelMotion(movement) {
     minimumPistonY,
     officialOutputStroke: maximumOfficialPistonY - minimumOfficialPistonY,
     outputStroke: maximumPistonY - minimumPistonY,
+    plateInputTravel,
+    plateTimeOffset,
     sourceInputPhaseOffset,
     sourceScale,
     strokeLineX,
@@ -1713,7 +1751,7 @@ function stationaryBeamEngineParallelMotion(movement) {
 
   const beam = new THREE.Group();
   beam.userData.axis = Z_AXIS.clone();
-  beam.userData.role = 'twelve-six-unit-ternary-stationary-engine-beam';
+  beam.userData.role = 'ternary-stationary-engine-beam-A-B-O';
   const beamBores = [
     { x: -beamLeftStationRadius, y: 0, radius: pinRadius.A + pinClearance },
     { x: -beamMiddleStationRadius, y: 0, radius: pinRadius.B + pinClearance },
@@ -1756,7 +1794,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     depth: 2 * barHalfDepth,
     length: dropLinkLength,
     planeZ: dropPlaneZ,
-    role: 'left-three-and-one-half-unit-link-A-E',
+    role: 'left-four-unit-link-A-E',
     startBoreRadius: pinRadius.A + pinClearance,
     width: barWidth,
   });
@@ -1766,7 +1804,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     depth: 2 * barHalfDepth,
     length: dropLinkLength,
     planeZ: dropPlaneZ,
-    role: 'middle-three-and-one-half-unit-link-B-Q',
+    role: 'middle-four-unit-link-B-Q',
     startBoreRadius: pinRadius.B + pinClearance,
     width: barWidth,
   });
@@ -1776,7 +1814,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     depth: 2 * barHalfDepth,
     length: fixedRadiusLength,
     planeZ: radiusPlaneZ,
-    role: 'six-unit-fixed-radius-bar-F-Q',
+    role: 'long-fixed-radius-rod-F-Q',
     startBoreRadius: fixedPinRadius + pinClearance,
     width: barWidth,
   });
@@ -1786,7 +1824,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     depth: 2 * barHalfDepth,
     length: crossbarLength,
     planeZ: crossbarPlaneZ,
-    role: 'six-unit-crossbar-E-Q',
+    role: 'parallel-bar-E-Q',
     startBoreRadius: pinRadius.E + pinClearance,
     width: barWidth,
   });
@@ -1992,12 +2030,12 @@ function stationaryBeamEngineParallelMotion(movement) {
     officialGeometry: {
       beamDriverRadius: sourceBeamDriverRadius,
       beamLeftStationRadius: sourceBeamLeftStationRadius,
-      beamMiddleStationRadius: sourceBeamMiddleStationRadius,
+      beamMiddleStationRadius: officialBeamMiddleStationRadius,
       beamPivotO: sourceBeamPivotO,
-      crossbarLength: sourceCrossbarLength,
-      dropLinkLength: sourceDropLinkLength,
-      fixedRadiusLength: sourceFixedRadiusLength,
-      fixedRadiusPivotF: sourceFixedRadiusPivotF,
+      crossbarLength: officialCrossbarLength,
+      dropLinkLength: officialDropLinkLength,
+      fixedRadiusLength: officialFixedRadiusLength,
+      fixedRadiusPivotF: officialFixedRadiusPivotF,
       hiddenCrankPivot: sourceHiddenCrankPivot,
       hiddenCrankRadius: sourceHiddenCrankRadius,
       hiddenDriveRodLength: sourceHiddenDriveRodLength,
@@ -2013,7 +2051,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     reconstructionDifference:
       'the official canvas forces E onto x=-12 and incurs a small E-Q residual; this model closes all four lower bars exactly and exposes the resulting sub-0.0011-unit lateral deviation of E',
     referenceScope:
-      'official hidden crank and rod, beam stations A and B, both 3.5-unit drops, fixed pivot F, both 6-unit lower links, source branches, view, and 15 rpm timing',
+      'official hidden crank and rod, beam station A, source branches, view, and 15 rpm timing; B, drops, F and the lower bars follow the plate',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -2024,6 +2062,8 @@ function stationaryBeamEngineParallelMotion(movement) {
         'a fulcrumed beam carries two hanging links joined by a lower crossbar whose second endpoint is controlled by a fixed radius bar',
       interpretationCertain: false,
       measurementUncertaintyPixels: 5,
+      plateProportions:
+        'with |O-A|=12: B at 7.97, drops 4.03, radius rod 10.9 from F at (-18.8, -3.9); the model keeps the rod (10.9) and drops (4) and sets B at 7.22 so E stays on its straight line',
     },
     officialAnimationView: {
       canvasHeight: officialCanvasHeight,
@@ -2043,7 +2083,7 @@ function stationaryBeamEngineParallelMotion(movement) {
   root.userData.stateAtTime = stateAtTime;
   root.userData.transmission = {
     exactRigidConstraints:
-      '|O-A|=12, |O-B|=6, |A-E|=3.5, |B-Q|=3.5, |F-Q|=6, and |E-Q|=6 source units',
+      '|O-A|=12, |O-B|=7.22, |A-E|=|B-Q|=4, |F-Q|=10.9, and |E-Q|=|O-A|-|O-B| source units (plate proportions; official 6, 3.5, 6, 6)',
     input:
       'a hidden 2.083778-unit crank and 12.179578-unit rod rock the 12.375-unit beam driver station',
     output:

@@ -499,17 +499,29 @@ function atmosphericChainBeamPumpingEngine(movement) {
     };
   };
 
+  // Brown draws the beam rising about 12 degrees toward the pivot, with the
+  // segment head down: the beam edges read 10-14 degrees, and at 12 degrees
+  // the chain-top block (+2.7 source units) and piston crosshead (about -8.5)
+  // sit where the plate draws them. Model time 0 is that plate pose on the
+  // atmospheric downstroke; the official animation's t=0 upper reversal falls
+  // at canonicalTimes.upperPistonReversal.
+  const plateBeamAngle = THREE.MathUtils.degToRad(12);
+  const plateInputAngle = Math.acos(-plateBeamAngle / sourceBeamHalfSwing);
+  const plateTimeOffset = plateInputAngle / inputAngularSpeed;
+
   const stateAtTime = (time) => {
     const state = stateAtInputTravel(
-      inputAngularSpeed * time,
+      inputAngularSpeed * time + plateInputAngle,
       inputAngularSpeed,
       0,
     );
-    state.phase = positiveModulo(time, cyclePeriod) / cyclePeriod;
+    state.phase = positiveModulo(time + plateTimeOffset, cyclePeriod)
+      / cyclePeriod;
     state.time = time;
     return state;
   };
 
+  // The official canvas keeps its own clock (t=0 at the upper reversal).
   const sourceStateAtTime = (time) => canvasStateAtInputTravel(
     inputAngularSpeed * time,
   );
@@ -586,11 +598,16 @@ function atmosphericChainBeamPumpingEngine(movement) {
     };
   };
 
+  const sourceTime = (fraction) => positiveModulo(
+    cyclePeriod * fraction - plateTimeOffset,
+    cyclePeriod,
+  );
   const canonicalTimes = {
-    upperPistonReversal: 0,
-    powerMidStroke: cyclePeriod / 4,
-    lowerPistonReversal: cyclePeriod / 2,
-    returnMidStroke: cyclePeriod * 3 / 4,
+    platePose: 0,
+    upperPistonReversal: sourceTime(0),
+    powerMidStroke: sourceTime(1 / 4),
+    lowerPistonReversal: sourceTime(1 / 2),
+    returnMidStroke: sourceTime(3 / 4),
     cycleClosure: cyclePeriod,
   };
   const canonicalStates = Object.fromEntries(
@@ -633,6 +650,9 @@ function atmosphericChainBeamPumpingEngine(movement) {
     constantChainPathLength,
     cyclePeriod,
     inputAngularSpeed,
+    plateBeamAngle,
+    plateInputAngle,
+    plateTimeOffset,
     maximumCanvasChainLength,
     maximumCanvasChainLengthDrift:
       maximumCanvasChainLength - minimumCanvasChainLength,
@@ -702,7 +722,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
 
   // Brown's plate 342 is a close-up of the cylinder end only. Its segment arc
   // is concentric with the strap bolt at plate pixel (442, 162), 28.1 pixels
-  // per source unit, with the beam drawn at about +15 degrees.
+  // per source unit, with the beam drawn at about +12 degrees.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
@@ -1270,7 +1290,9 @@ function atmosphericChainBeamPumpingEngine(movement) {
         'a chain suspends the piston rod from a circular segment concentric with the rocking-beam pivot; the weighted pump rod acts at the opposite end',
       measurementUncertaintyPixels: 4,
       plateCalibration: {
-        beamAngleDegrees: 15,
+        beamAngleDegrees: 12,
+        defaultPose:
+          'model time 0 shows this 12-degree plate pose on the downstroke; the official animation starts at the upper reversal',
         pivotPixel: new THREE.Vector2(442, 162),
         pixelsPerSourceUnit: 28.1,
         scope:

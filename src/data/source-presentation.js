@@ -139,6 +139,10 @@ export default {
     remove: ['common-drawing-plane-for-tracer-and-pencil', 'drawing-sheet-outline'],
     note: 'The pantograph arms, fixed point C, tracer B and pencil A over a blank ground; no drawing board is drawn.',
   },
+  247: {
+    remove: ['seabed-impact-reference-ring'],
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the sea bottom is not drawn, so only a plain contact slab (seen edge-on) is kept for the probe to strike and the released weight to rest on.',
+  },
   272: {
     remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide'],
     note: 'The bevelled cam on its shaft and the inclined rod in its guides; no base, post or backing rail is drawn.',
@@ -176,9 +180,10 @@ export default {
     note: 'The duplex wheel and roller; no watch plate, bridge or base is drawn.',
   },
   294: {
-    rotate: [0, 0, Math.PI / 2],
-    camera: [-1, 0.28, 0.1],
+    rotate: [0, 0, 2.77],
+    camera: [-1, 0.3, 0.38],
     remove: [
+      '(lower|upper)-rim-of-perspective-cylinder-window',
       'invisible-envelope-for-complete-cylinder-escapement', 'fixed-parallel-arbor-watch-frame',
       'stepping-cylinder-escape-wheel-rotor', 'fixed-cylinder-escape-wheel-arbor',
       'cylinder-balance-spoke-\\d', 'balance-wheel-attached-to-top-of-cylinder',
@@ -239,8 +244,8 @@ export default {
     note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q; no clock frame, crossbars or bearing brackets are drawn.',
   },
   312: {
-    remove: ['fixed-bloxam-support-frame'],
-    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn.',
+    remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring'],
+    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn. The pendulum is only a dashed line and no bob is drawn.',
   },
   316: {
     remove: ['fixed-upper-suspension-plate'],

@@ -198,7 +198,7 @@ test('movement 411 wheel circumference exactly equals the isosceles base and bot
   disposeModel(model.root);
 });
 
-test('movement 411 enforces no-slip wheels, opposite one-to-one drum drive, and world-vertical pendulum throughout travel', () => {
+test('movement 411 enforces no-slip wheels, one-to-one bevel-and-spur drum drive, and world-vertical pendulum throughout travel', () => {
   const model = createMovementModel(catalog.movements[410]);
   const { geometry, stateAtTime } = model.root.userData;
   let maximumNoSlipResidual = 0;
@@ -213,12 +213,13 @@ test('movement 411 enforces no-slip wheels, opposite one-to-one drum drive, and 
     near(state.wheelAngle,
       -state.travelDistance / geometry.wheelRadius, 0,
     'wheel no-slip angle');
+    // Bevel then spur: two reversals, so the drum turns with the wheel.
     near(state.drumAngle,
-      -geometry.wheelToDrumRatio * state.wheelAngle, 0,
-    'opposite bevel-driven drum angle');
+      geometry.wheelToDrumRatio * state.wheelAngle, 0,
+    'bevel-and-spur-driven drum angle');
     near(state.drumAngularSpeed,
-      -geometry.wheelToDrumRatio * state.wheelAngularSpeed, 0,
-    'opposite bevel-driven drum speed');
+      geometry.wheelToDrumRatio * state.wheelAngularSpeed, 0,
+    'bevel-and-spur-driven drum speed');
     near(state.pendulumRelativeAngle,
       -state.groundInclination, 0,
     'gravity angle relative to carriage');

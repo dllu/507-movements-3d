@@ -184,9 +184,12 @@ test('movement 340 preserves the official source construction and view', () => {
   near(geometry.hiddenRockerRadius,
     official.hiddenRockerRadius * geometry.sourceScale, 0,
   'scaled hidden rocker');
+  // Brown's pillar is about 12 units (official 10): F is lowered 2 units.
   near(geometry.pillarLength,
-    official.pillarLength * geometry.sourceScale, 0,
-  'scaled pillar F-B');
+    Math.hypot(0.200329, 12) * geometry.sourceScale, 1e-15,
+  'scaled plate pillar F-B');
+  near(geometry.pillarPivotF.y, -2 * geometry.sourceScale, 0,
+    'plate pillar pivot F');
   near(geometry.beamDCLength, 16 * geometry.sourceScale, 0,
     'scaled beam D-C');
   near(geometry.canvasRadiusBarLength,
@@ -295,10 +298,10 @@ test('movement 340 closes every visible member and beam station exactly', () => 
     near(state.pointA.distanceTo(geometry.radiusPivotE),
       geometry.physicalRadiusBarLength, 3e-15,
     `corrected rigid radius E-A at ${sample}`);
-    near(state.radiusClosureResidual, 0, 1.2e-15,
+    near(state.radiusClosureResidual, 0, 1.4e-15,
       `radius closure residual at ${sample}`);
   }
-  assert.ok(geometry.maximumRadiusClosureResidual < 1.2e-15);
+  assert.ok(geometry.maximumRadiusClosureResidual < 1.4e-15);
   disposeModel(model.root);
 });
 
@@ -336,8 +339,8 @@ test('movement 340 repairs the canvas radius defect and improves C straightness'
     'scaled corrected E-A radius');
   assert.ok(minimumCanvasGap / scale > 0.0471);
   assert.ok(minimumCanvasGap / scale < 0.0473);
-  assert.ok(maximumCanvasGap / scale > 0.0638);
-  assert.ok(maximumCanvasGap / scale < 0.0640);
+  assert.ok(maximumCanvasGap / scale > 0.0636);
+  assert.ok(maximumCanvasGap / scale < 0.0638);
   near(maximumCanvasGap, geometry.maximumCanvasRadiusEndpointGap, 0,
     'stored maximum source radius-end gap');
   near(maximumPhysicalADifference,
@@ -347,9 +350,9 @@ test('movement 340 repairs the canvas radius defect and improves C straightness'
     geometry.maximumPhysicalPointCDifferenceFromCanvas, 0,
   'stored maximum physical C correction');
   assert.ok(maximumPhysicalCDifference / scale < 0.082);
-  assert.ok(geometry.maximumCanvasLateralDeviation / scale > 0.0163);
-  assert.ok(geometry.maximumCanvasLateralDeviation / scale < 0.0165);
-  assert.ok(geometry.maximumLateralDeviation / scale < 0.00069);
+  assert.ok(geometry.maximumCanvasLateralDeviation / scale > 0.0161);
+  assert.ok(geometry.maximumCanvasLateralDeviation / scale < 0.0164);
+  assert.ok(geometry.maximumLateralDeviation / scale < 0.00063);
   assert.ok(geometry.maximumCanvasLateralDeviation
     > geometry.maximumLateralDeviation * 20);
   near(minimumC, geometry.minimumPistonY, 0,

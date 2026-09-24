@@ -1005,10 +1005,17 @@ function jogglingPillarParallelMotion(movement) {
   const sourceHiddenRockerReferenceD = new THREE.Vector2(-8.200329, 10);
   const sourceHiddenRockerRadius = sourceHiddenRockerCenter
     .distanceTo(sourceHiddenRockerReferenceD);
-  const sourcePillarPivotF = new THREE.Vector2(0, 0);
+  // The official pillar F-B is 10 units, 0.62 of beam D-C. Brown draws it
+  // about 12 (0.73 of D-C, 1.5 x D-B), so F is lowered 2 units. B only
+  // oscillates +/-0.2 unit sideways, so the longer pillar changes its dip by
+  // under 0.0004 unit and leaves C's straight line intact.
+  const sourceOfficialPillarPivotF = new THREE.Vector2(0, 0);
+  const sourcePillarPivotF = new THREE.Vector2(0, -2);
   const sourcePillarReferenceB = new THREE.Vector2(0.200329, 10);
   const sourcePillarNegativeTangentB = new THREE.Vector2(-0.200329, 10);
   const sourcePillarLength = sourcePillarPivotF
+    .distanceTo(sourcePillarReferenceB);
+  const sourceOfficialPillarLength = sourceOfficialPillarPivotF
     .distanceTo(sourcePillarReferenceB);
   const sourceBeamDBLength = 8;
   const sourceBeamDALength = 12.25;
@@ -1844,9 +1851,9 @@ function jogglingPillarParallelMotion(movement) {
       hiddenRockerRadius: sourceHiddenRockerRadius,
       hiddenRockerReferenceD: sourceHiddenRockerReferenceD,
       nominalPistonLineX: sourceNominalPistonLineX,
-      pillarLength: sourcePillarLength,
+      pillarLength: sourceOfficialPillarLength,
       pillarNegativeTangentB: sourcePillarNegativeTangentB,
-      pillarPivotF: sourcePillarPivotF,
+      pillarPivotF: sourceOfficialPillarPivotF,
       pillarReferenceB: sourcePillarReferenceB,
       pistonRodLength: sourcePistonRodLength,
       radiusPivotE: sourceRadiusPivotE,
@@ -1872,6 +1879,10 @@ function jogglingPillarParallelMotion(movement) {
       inferredTopology:
         'beam D-B-A-C is carried by joggling pillar F-B and constrained at A by fixed radius E-A; piston rod is pinned at C',
       measurementUncertaintyPixels: 4,
+      pillarLength: sourcePillarLength,
+      pillarPivotF: sourcePillarPivotF,
+      pillarToBeamRatio:
+        'plate F-B / D-C = 307 / 421 px = 0.73 (official 10 / 16 = 0.62); the model pillar is 12 units; Brown also leans the pillar about 6 degrees, which is not reproduced',
     },
     officialAnimationView: {
       canvasHeight: officialCanvasHeight,
@@ -1894,7 +1905,7 @@ function jogglingPillarParallelMotion(movement) {
     canvasDefect:
       'the source solves D-B from its hidden input and only points the 4.742772-unit E-A drawing, leaving a visible endpoint gap',
     exactRigidConstraints:
-      '|F-B|=10.002006384, |D-B|=|B-C|=8, |B-A|=4.25, and corrected |E-A|=4.789956 in source units',
+      '|F-B|=12.001672 (plate; official 10.002006384), |D-B|=|B-C|=8, |B-A|=4.25, and corrected |E-A|=4.789956 in source units',
     input:
       'the official hidden crank-rocker law supplies the oscillation of B about F; no hidden member is presented as part of the visible four-bar',
     output:
@@ -1906,7 +1917,7 @@ function jogglingPillarParallelMotion(movement) {
   // Brown's view: beam end D at the left, the wall at E on the right, the
   // pillar shaft F at the foot, and both vertical rods cut by the margin.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, -0.90, -0.30),
+    new THREE.Vector3(-3.55, -1.66, -0.30),
     new THREE.Vector3(4.00, 5.40, 1.00),
   );
   root.userData.cameraDistanceScale = 0.96;

@@ -7205,21 +7205,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: the arms run on past A and C as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/pantograph-working-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. All 12 checks pass: eight existing source/constraint/locus/render tests and four finite-part tests. A 33-pose bidirectional surface audit checks bars against pins, slides and retainers, bar pairs, both slide pins, and the hollow B pin against the tracer and knob. Minimum sampled clearances are 0.003942 for bar/pin, 0.010000 for bar/slide and bar/retainer, 0.075000 between bar…"
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn drawing board removed by source presentation; the arms stop at A and C where the plate runs them on. Manual tracing prescribed; joint clearance, drawing force, friction and finite pencil behavior unvalidated.",
+      "flaws": "Undrawn drawing board removed by source presentation. Manual tracing prescribed; joint clearance, drawing force, friction and finite pencil behavior unvalidated.",
       "references": [
         "docs/pantograph-working-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7233,22 +7234,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: frontal section of the rod and weight; the kept seabed reads as a slab below."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/release-mechanism-247-278-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 21 checks pass. Selected bidirectional actual rendered-solid sweeps cover 67 poses for 247 and 65 for 278, with 7,912,834 and 2,067,512 surface queries respectively. Minimum sampled signed gaps are positive (3.73e−9 and 3.58e−9). Pairs cover the guide, catch pivot/arms, probe follower, nose/weight, crossing levers/eye/rope pin, lever pivots, pawl joints and neighboring rack… Pass-49 relative-motion screen reports 0.1664 solid overlap (probe-lower-guide-block x seabed-contact-foot); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): 0.1664 reduced to a ≤0.012 roller graze in the weight bore at manual reseat and 0.009 spring-on-arm contact; the earlier scoped 'none' did not cover these pairs."
       },
-      "flaws": "The seabed plate is not drawn by Brown; it is kept because the probe strikes it and the released weight rests on it. Unilateral gravity release corrected; guided motion, detent actuation, drag, impact and recovery remain idealized.",
+      "flaws": "The seabed plate is not drawn by Brown; it is kept because the probe strikes it and the released weight rests on it. A ≤0.012 roller graze in the weight bore at reseat remains. Guided motion, detent actuation, drag, impact and recovery remain idealized.",
       "references": [
         "docs/release-mechanism-247-278-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8583,22 +8585,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: stepped cut facing the viewer with a rounded left end, plug, bell and ring; the cut reads shallower than Brown's curl."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/cylinder-escapement-finite-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems against the working shell, including the reverse shell-to-tooth test, pass 83,806 proximity-filtered… Pass-49 relative-motion screen reports 0.1035 solid overlap (raised-pallet-stem-foot-connected-to-wheel-rim x two-end-pivots-with-clear-hollow-working-band); unclassified, may be intended contact."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Presentation reduces the model to the cylinder the plate draws; the left end of the cut is square where the plate rounds it; added supports inferred for the unpresented assembly. Running gap about 0.001; balance pauses/drops and regulation prescribed.",
+      "flaws": "Presentation reduces the model to the cylinder the plate draws; the cut reads shallower than Brown's curl; added supports inferred for the unpresented assembly. Running gap about 0.001; balance pauses/drops and regulation prescribed.",
       "references": [
         "docs/cylinder-escapement-finite-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8612,21 +8615,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: thin-rimmed wheel with curved swept-back arms, face-on, where Brown draws superposed cylinder positions over an arc of the wheel."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/cylinder-escapement-finite-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. - **1,025 interpolated poses, all 15 teeth:** zero planar overlap; minimum separation **0.00063562** model units. Actual opposing impulse reactions are retained; the profile was not cleared by deleting the drive faces. - **129 poses of the rendered solids:** all teeth and stems against the working shell, including the reverse shell-to-tooth test, pass 83,806 proximity-filtered…"
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.1194 coaxial pair is fixed; no solid pairs."
       },
-      "flaws": "One complete moving wheel replaces superposed source detail. Running gap about 0.001; spring energy, balance pauses/drops, impacts and passive regulation unsolved.",
+      "flaws": "One complete moving wheel face-on replaces Brown's superposed section detail; the baked contact fixes 15 teeth where Brown's pitch implies about 20 on a larger wheel. Running gap about 0.001; spring energy, balance pauses/drops, impacts and passive regulation unsolved.",
       "references": [
         "docs/cylinder-escapement-finite-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8640,22 +8644,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: broad thorn teeth and a web with three lens windows between curved spokes."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lever-296-contact-review.md",
-        "note": "17,709,140 bidirectional queries on selected teeth/pallets, fork/pin, banks, stepped connections and arbor; minimum +0.000001882. Not an exhaustive continuous assembly proof."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Narrow teeth/straight spokes differ from engraving. Balance, preload, wheel timing and impacts prescribed; 0.0005 running gap, spring energy and passive operation unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. 15 teeth, less hooked than Brown's. Balance, preload, wheel timing and impacts prescribed; 0.0005 running gap, spring energy and passive operation unvalidated.",
       "references": [
         "docs/duplex-lever-interface-review.md",
         "docs/lever-296-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9034,23 +9039,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Default view inspected beside the plate after the swept-cut plates and removal of the undrawn frame."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: near-frontal crop, X spokes and widened pallet arms; the pendulum rod runs past the crop."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; plates rebaked after display re-measure."
       },
-      "flaws": "Swept cut removes nearly all of each locking nib, so locking comes from the motion law; front suspension cock added. Motion prescribed.",
+      "flaws": "Swept cut removes nearly all of each locking nib, so locking comes from the motion law; the pendulum rod is drawn in front where Brown omits it. Motion prescribed.",
       "references": [
         "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9064,23 +9070,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Default view inspected beside the plate after the swept-cut plates."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: near-frontal crop of the bowed frame, legs and stops."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Stops D/E reduced to about 9% of their area by the cut, leaving small slivers; locking comes from the motion law. Motion prescribed.",
+      "flaws": "Stops D/E reduced to about 9% of their area by the cut; locking comes from the motion law; legs are straight bars; pendulum rod shown in front where Brown dashes it. Motion prescribed.",
       "references": [
         "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9094,23 +9101,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Default and oblique views inspected: now Brown’s planar diamond of straight arms."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: near-frontal crop of the diamond frame and star."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration except a lifting-pin graze of at most 0.0001."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only the 0.0001 pin graze."
       },
-      "flaws": "Pin leaves the lift face after about 70% of each lift (gap up to 0.059), motion law finishes it; 0.0001 pin graze. Motion prescribed.",
+      "flaws": "Pin leaves the lift face after about 70% of each lift (gap up to 0.059), motion law finishes it; legs are straight bars; 0.0001 pin graze. Motion prescribed.",
       "references": [
         "docs/gravity-escapement-309-312-review.md",
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9124,15 +9132,15 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Default view inspected beside the plate after the swept-cut plates and removal of the undrawn support frame."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: nine-chord rim, frame and pallets; bob, wires and pitch ring removed."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/gravity-escapement-309-312-review.md",
-        "note": "Relative-motion screen at 0.01 spacing over 257 phases after rebaking without the undrawn frames: no penetration."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
       "flaws": "Straight spokes with T-heads approximate Brown’s stops; straight-box pallet-wheel teeth lift at their tip corners. Motion prescribed.",
       "references": [
@@ -9140,7 +9148,8 @@
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
-        "docs/minimal-interface-review.md"
+        "docs/minimal-interface-review.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9705,23 +9714,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: links at plate proportions and the drawn vessel."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Desktop default/front captures and 17-pose projected-mesh checks had no page errors. Maximum absolute screen coordinates were 0.890, 0.838, 0.860, 0.873 and 0.818 for 332 through 336 respectively, inside the viewport. Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps remain."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. The vessel is taller than drawn to enclose the stroke; the crosshead sits behind the links. Inferred explanatory piston application; legacy beam/crosshead interfaces not exhaustively qualified.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. Stroke reduced to fit the drawn cylinder; D–E 4 against the plate's ≈4.6. Inferred explanatory piston application.",
       "references": [
         "docs/marine-parallel-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9795,23 +9805,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: Brown's long radius rod to F and the level-beam pose."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Desktop default/front captures and 17-pose projected-mesh checks had no page errors. Maximum absolute screen coordinates were 0.890, 0.838, 0.860, 0.873 and 0.818 for 332 through 336 respectively, inside the viewport. Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps remain."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. F follows the official animation, so the long radius rod Brown draws to the left is short. Official source interpretation uncertain; legacy beam/crosshead interfaces remain partly approximate.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. B sits at 7.22 against the plate's 7.97 so E stays straight. Legacy beam/crosshead interfaces remain partly approximate.",
       "references": [
         "docs/marine-parallel-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9945,23 +9956,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: lengthened pillar at the plate's ratio; the crop cuts the rods as Brown does."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Default/front browser captures and 17-pose projected-mesh checks reported no page errors. Maximum absolute screen coordinates for 337–341 were 0.885, 0.861, 0.879, 0.852 and 0.832, all inside the viewport. A final 339 default/advanced recapture after the static slot-support addition also passes, with a 17-pose maximum coordinate of 0.880 and no page errors. Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps remain."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. The pillar-to-beam ratio follows the official animation (about 0.54) rather than the plate (about 0.85). Analytical linkage closures retained; approximate straightness and inferred dimensions are not exact historical reproduction. Steam loads, joint play and friction unsolved.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. Brown's ≈31° beam tilt is beyond the ±18° swing and his ≈6° pillar lean is not reproduced. Steam loads, joint play and friction unsolved.",
       "references": [
         "docs/vibrating-direct-action-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10005,23 +10017,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: beam rising at the plate's pose with crossed stays, chain and cylinder top."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-328-343-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. Only the last chain eye seats on its terminal connector at 0.0000."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only the seated chain-eye contact (0.0000)."
       },
-      "flaws": "Undrawn frames, bases and indices are removed. Only the beam's cylinder end is modelled, as drawn; the far end and pump rod are omitted. The beam falls to the right at the default pose where Brown's rises, and a king post with one stay replaces the plate's crossed stays. The chain follows a scripted path. Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
+      "flaws": "Undrawn frames, bases and indices are removed. Only the beam's cylinder end is modelled, as drawn; the crosshead sits ≈0.3 lower than drawn; the chain follows a scripted path. Pressure, chain tension, friction and passive load response unvalidated.",
       "references": [
         "docs/beam-upright-engine-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-328-343-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10035,23 +10048,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: Brown's deep cross-beam with capitals, flywheel, radius rods and cylinder."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-328-343-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The four added finite-assembly tests sample 65 poses. They check piston/head connection and cylinder containment, guide clearance, actual open pin passages, shaft engagement, alternating chain-plate clearance, roller/shoe proximity and 343's moving/fixed depth layers. Existing tests check analytic constraints, source differences, velocity and cycle closure. Desktop source… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps and no open meshes remain."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, bases and indices are removed. The official radius-rod pivots, vibrating-piece length and crank radius (about 3.5 against the plate's 4.3) are kept; the columns and cylinder end below the crop; spoke angles are estimated. Rigid linkage/chain motion retained; pressure, chain tension, friction and passive load response unvalidated. Cropped supports and pump-side geometry inferred.",
+      "flaws": "Undrawn frames, bases and indices are removed. Crank radius kept at 3.5 against the plate's ≈4.4 because Brown's linkage cannot follow his own crank; columns and cylinder end below the crop; spoke angles estimated. Pressure and loads unvalidated.",
       "references": [
         "docs/beam-upright-engine-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-328-343-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11992,22 +12006,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Default capture inspected beside the plate: arched frame at plate proportions, raised drum on a live shaft, handle and grip."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/pendulum-instrument-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 21 tests pass. The two new checks sample 65 poses against actual triangle surfaces: 369 cord/cheeks/rails/suspension boss; 411 gear members, tire/ground, shaft/journals, pencil/paper, pendulum/paper and brace/drum. Sampled bevel proximity remains below 0.003. The 369 rail lies within 0.001 of the finite cord at tangency. These are bounded regression checks, not exhaustive… Pass-49 relative-motion screen reports 0.0473 solid overlap (right-no-slip-survey-wheel-white-no-slip-rotation-index x curved-carriage-frame-governed-by-isosceles-triangle); unclassified, may be intended contact."
+        "evidence": "docs/lane8-escapements-engines-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0513 coaxial / 0.046 solid pairs are fixed."
       },
-      "flaws": "Quasi-static terrain and pendulum angle imposed; no transient, traction or pencil drag. Axle-level drum and shorter frame differ from engraving.",
+      "flaws": "Countershaft and spur pair driving the drum are engineered, not drawn; drum-guide posts kept. Quasi-static terrain and pendulum angle imposed; no transient, traction or pencil drag.",
       "references": [
         "docs/pendulum-instrument-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane8-escapements-engines-review.md"
       ],
       "mujoco": {
         "mode": "none",

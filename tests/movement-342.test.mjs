@@ -384,7 +384,7 @@ test('movement 342 repairs source rounding and moves every chain node smoothly t
     near(angleDifference(straightTangent.pathAngle, Math.PI / 2),
       0, 2e-16, `straight/arc tangent continuity at ${time}`);
     vector2Near(terminalTangent.point,
-      state.chain.terminalTangentPoint, 9e-16,
+      state.chain.terminalTangentPoint, 2e-15,
     `arc/terminal position continuity at ${time}`);
     vector2Near(terminalTangent.velocity,
       state.chain.terminalTangentVelocity, 9e-16,
@@ -392,7 +392,7 @@ test('movement 342 repairs source rounding and moves every chain node smoothly t
     near(angleDifference(terminalTangent.pathAngle,
       Math.atan2(state.chain.terminalDirection.y,
         state.chain.terminalDirection.x)),
-    0, 8e-15, `arc/terminal tangent continuity at ${time}`);
+    0, 1.2e-14, `arc/terminal tangent continuity at ${time}`);
 
     let previous = beginning;
     for (let index = 1; index <= geometry.chainLinkCount; index += 1) {
@@ -412,7 +412,8 @@ test('movement 342 repairs source rounding and moves every chain node smoothly t
   for (let index = 2; index <= 10; index += 1) {
     const distance = index * geometry.chainLinkPitch;
     const cosine = (-geometry.pistonMidY - distance) / halfStroke;
-    const crossingTime = Math.acos(cosine) / geometry.inputAngularSpeed;
+    const crossingTime = Math.acos(cosine) / geometry.inputAngularSpeed
+      - geometry.plateTimeOffset + geometry.cyclePeriod;
     const previous = chainPointAtDistance(
       stateAtTime(crossingTime - transitionStep),
       distance,
@@ -470,16 +471,25 @@ test('movement 342 analytic beam, piston, pump-rod, and chain rates match finite
       `beam angular acceleration at ${time}`);
   }
 
-  assert.equal(stateAtTime(0).cycleStage,
+  const { stateAtInputTravel } = model.root.userData;
+  assert.equal(stateAtInputTravel(0).cycleStage,
     'upper-reversal-condensation-begins');
-  assert.equal(stateAtTime(0.5).cycleStage,
+  assert.equal(stateAtInputTravel(Math.PI / 4).cycleStage,
     'atmospheric-power-stroke-drawing-pump-rod-up');
-  assert.equal(stateAtTime(2).cycleStage,
+  assert.equal(stateAtInputTravel(Math.PI).cycleStage,
     'lower-reversal-low-pressure-steam-admission-begins');
-  assert.equal(stateAtTime(2.5).cycleStage,
+  assert.equal(stateAtInputTravel(Math.PI * 5 / 4).cycleStage,
     'weighted-pump-rod-return-lifting-piston');
-  assert.ok(stateAtTime(2).pumpRodTop.y > stateAtTime(0).pumpRodTop.y);
-  assert.ok(stateAtTime(2).pistonTop.y < stateAtTime(0).pistonTop.y);
+  // Model time 0 is Brown's plate pose, part-way down the atmospheric stroke.
+  assert.equal(stateAtTime(0).cycleStage,
+    'atmospheric-power-stroke-drawing-pump-rod-up');
+  near(stateAtTime(0).beam.angle, THREE.MathUtils.degToRad(12), 1e-15,
+    'plate beam angle at model time 0');
+  const { canonicalTimes } = model.root.userData;
+  assert.ok(stateAtTime(canonicalTimes.lowerPistonReversal).pumpRodTop.y
+    > stateAtTime(canonicalTimes.upperPistonReversal).pumpRodTop.y);
+  assert.ok(stateAtTime(canonicalTimes.lowerPistonReversal).pistonTop.y
+    < stateAtTime(canonicalTimes.upperPistonReversal).pistonTop.y);
   disposeModel(model.root);
 });
 
@@ -591,17 +601,17 @@ test('movement 342 closes exactly and leaves movement 507 as the next draft', ()
 
   near(closure.phase, start.phase, 0, 'source phase closure');
   near(closure.unwrappedInputAngle - start.unwrappedInputAngle,
-    Math.PI * 2, 0, 'one unwrapped source cycle');
-  near(angleDifference(closure.beam.angle, start.beam.angle), 0, 0,
+    Math.PI * 2, 1e-15, 'one unwrapped source cycle');
+  near(angleDifference(closure.beam.angle, start.beam.angle), 0, 1e-15,
     'beam closure');
-  vector2Near(closure.pistonTop, start.pistonTop, 0, 'piston closure');
-  vector2Near(closure.pistonHead, start.pistonHead, 0,
+  vector2Near(closure.pistonTop, start.pistonTop, 1e-14, 'piston closure');
+  vector2Near(closure.pistonHead, start.pistonHead, 1e-14,
     'piston-head closure');
   vector2Near(closure.chain.attachmentPoint,
-    start.chain.attachmentPoint, 0, 'chain attachment closure');
+    start.chain.attachmentPoint, 1e-14, 'chain attachment closure');
   vector2Near(closure.chain.terminalTangentPoint,
-    start.chain.terminalTangentPoint, 0, 'chain tangent closure');
-  vector2Near(closure.pumpRodTop, start.pumpRodTop, 0,
+    start.chain.terminalTangentPoint, 1e-14, 'chain tangent closure');
+  vector2Near(closure.pumpRodTop, start.pumpRodTop, 1e-14,
     'weighted pump-rod closure');
   vector2Near(sourceClosure.pistonTop, sourceStart.pistonTop, 0,
     'official canvas piston closure');
@@ -610,7 +620,7 @@ test('movement 342 closes exactly and leaves movement 507 as the next draft', ()
   model.update(canonicalTimes.cycleClosure);
   model.root.updateMatrixWorld(true);
   vector3Near(worldPosition(blocks.pistonTopAnchor),
-    new THREE.Vector3(start.pistonTop.x, start.pistonTop.y, 0.42), 0,
+    new THREE.Vector3(start.pistonTop.x, start.pistonTop.y, 0.42), 1e-14,
   'rendered piston closure');
 
   const movement507 = catalog.movements[506];

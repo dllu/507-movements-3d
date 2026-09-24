@@ -921,8 +921,10 @@ function mudgeGravityEscapement(movement) {
   wheelTeeth.userData.role = 'thirty-pointed-escape-wheel-teeth';
   wheelRotor.add(wheelTeeth);
   const spokeMeshes = [];
+  // The rotor stands at 144 degrees at t=0; this offset shows Brown's X of
+  // spokes (at 45 degrees) in the opening pose.
   for (let spokeIndex = 0; spokeIndex < 4; spokeIndex += 1) {
-    const angle = Math.PI / 4 + spokeIndex * Math.PI / 2;
+    const angle = THREE.MathUtils.degToRad(-9) + spokeIndex * Math.PI / 2;
     const spoke = beamBetween(
       new THREE.Vector3(
         Math.cos(angle) * 0.22,
@@ -934,7 +936,7 @@ function mudgeGravityEscapement(movement) {
         Math.sin(angle) * wheelInnerRadius * 0.96,
         0,
       ),
-      0.15,
+      0.2,
       wheelDepth * 0.78,
       wheelMaterial,
     );
@@ -1045,15 +1047,23 @@ function mudgeGravityEscapement(movement) {
       side * Math.abs(faceJoin.x) * 0.55,
       faceJoin.y * 0.55,
     );
+    // Brown's pallet arms are broad flat bars: widen the pivot-to-pallet arm
+    // outward (away from the wheel) to about 0.42.
+    const armDirection = padEndBack.clone().normalize();
+    let armOutward = new THREE.Vector2(-armDirection.y, armDirection.x);
+    if (armOutward.dot(padEndBack.clone().multiplyScalar(0.5)
+      .sub(localWheelCenter)) < 0) armOutward.multiplyScalar(-1);
+    armOutward = armOutward.multiplyScalar(0.14);
     const arm = plateRegistry.add({
       key: `${side > 0 ? 'right' : 'left'}-arms`,
       material: palletMaterial,
       owner: group,
       primitives: [
         plateBand(new THREE.Vector2(0, 0), padEndBack, 0.14),
+        plateBand(armOutward.clone(), padEndBack.clone().add(armOutward), 0.28),
         plateBand(padStartBack, nibBack, 0.13),
         plateDisc(padEndBack, 0.09),
-        plateBand(new THREE.Vector2(0, 0), forkPoint, 0.115),
+        plateBand(new THREE.Vector2(0, 0), forkPoint, 0.17),
         plateDisc(forkPoint, 0.13),
         plateBand(armPoint, weightPoint, 0.105),
         plateDisc(new THREE.Vector2(0, 0), 0.15),
@@ -1257,10 +1267,13 @@ function mudgeGravityEscapement(movement) {
       } : null,
     },
   });
+  // Brown's front elevation ends just below fork pins Q and P; the pendulum
+  // bob hangs below that crop. A narrow lens keeps the view near-orthographic.
   root.userData.cameraDistanceScale = 1.03;
+  root.userData.cameraFov = 12;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.25, -4.18, -0.82),
-    new THREE.Vector3(3.25, 4.75, 1.18),
+    new THREE.Vector3(-2.75, -2.55, -0.82),
+    new THREE.Vector3(2.75, 4.55, 1.18),
   );
   root.userData.fidelity = 'authored';
   root.userData.fixedLockPointForSide = fixedLockPointForSide;
@@ -1451,7 +1464,7 @@ function mudgeGravityEscapement(movement) {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(3.0, 1.7, 14.8),
+    cameraDirection: new THREE.Vector3(0.6, 0.35, 14.8),
     root,
     update,
   };
@@ -2551,9 +2564,12 @@ function singleThreeLeggedGravityEscapement(movement) {
       },
     };
   };
+  // Brown's elevation ends just below the beat pins; the pendulum bob hangs
+  // below that crop. A narrow lens keeps the view near-orthographic.
   root.userData.cameraDistanceScale = 1.17;
+  root.userData.cameraFov = 12;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.55, -5.25, -0.98),
+    new THREE.Vector3(-2.55, -4.0, -0.98),
     new THREE.Vector3(2.55, pendulumPivot.y + 0.75, 1.18),
   );
   root.userData.effectiveCenterOfMassAt = effectiveCenterOfMassAt;
@@ -2746,7 +2762,7 @@ function singleThreeLeggedGravityEscapement(movement) {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(3.1, 1.8, 15.6),
+    cameraDirection: new THREE.Vector3(0.6, 0.35, 15.6),
     root,
     update,
   };
@@ -3885,10 +3901,13 @@ function doubleThreeLeggedGravityEscapement(movement) {
       },
     };
   };
+  // Brown's elevation ends just below the impulse pins; the pendulum bob
+  // hangs below that crop. A narrow lens keeps the view near-orthographic.
   root.userData.cameraDistanceScale = 1.18;
+  root.userData.cameraFov = 12;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.45, -5.10, -1.18),
-    new THREE.Vector3(3.45, pendulumPivot.y + 0.62, 1.30),
+    new THREE.Vector3(-2.8, -4.15, -1.18),
+    new THREE.Vector3(2.8, pendulumPivot.y + 0.62, 1.30),
   );
   root.userData.effectiveCenterOfMassAt = effectiveCenterOfMassAt;
   root.userData.fidelity = 'authored';
@@ -4105,7 +4124,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(6.8, 2.6, 13.2),
+    cameraDirection: new THREE.Vector3(0.6, 0.35, 13.2),
     root,
     update,
   };
@@ -4823,8 +4842,28 @@ function bloxamGravityEscapement(movement) {
   outerEscapeWheel.position.z = outerWheelPlaneZ;
   outerEscapeWheel.userData.role = 'larger-nine-tooth-outer-locking-wheel';
   wheelRotor.add(outerEscapeWheel);
+  // Brown draws this rim as straight chords from spoke to spoke: a flat
+  // nine-sided frame rather than a round hoop.
+  const polygonRimShape = new THREE.Shape();
+  const polygonRimHole = new THREE.Path();
+  for (let corner = 0; corner <= toothCount; corner += 1) {
+    const angle = corner * FULL_TURN / toothCount;
+    const outerPoint = [Math.cos(angle) * 1.67, Math.sin(angle) * 1.67];
+    const innerPoint = [Math.cos(-angle) * 1.55, Math.sin(-angle) * 1.55];
+    if (corner === 0) {
+      polygonRimShape.moveTo(...outerPoint);
+      polygonRimHole.moveTo(...innerPoint);
+    } else {
+      polygonRimShape.lineTo(...outerPoint);
+      polygonRimHole.lineTo(...innerPoint);
+    }
+  }
+  polygonRimShape.holes.push(polygonRimHole);
   const outerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(1.61, 0.070, 10, 72),
+    new THREE.ExtrudeGeometry(polygonRimShape, {
+      bevelEnabled: false,
+      depth: 0.14,
+    }).translate(0, 0, -0.07),
     escapeWheelMaterial,
   );
   outerRim.userData.role = 'large-escape-wheel-open-rim';
@@ -5371,10 +5410,14 @@ function bloxamGravityEscapement(movement) {
       },
     };
   };
+  // Brown's elevation ends at the lowest wheel teeth; he dashes the pendulum
+  // and draws no bob (source presentation removes it). A narrow lens keeps the
+  // view near-orthographic.
   root.userData.cameraDistanceScale = 1.12;
+  root.userData.cameraFov = 12;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.02, wheelCenter.y - 3.00, -1.10),
-    new THREE.Vector3(3.02, armPivot.y + 0.68, 1.18),
+    new THREE.Vector3(-2.7, wheelCenter.y - 2.1, -1.10),
+    new THREE.Vector3(2.7, armPivot.y + 0.55, 1.18),
   );
   root.userData.fidelity = 'authored';
   root.userData.fixedLockPointForSide = fixedLockPointForSide;
@@ -5581,7 +5624,7 @@ function bloxamGravityEscapement(movement) {
     object.receiveShadow = false;
   }
   return {
-    cameraDirection: new THREE.Vector3(5.8, 2.0, 14.2),
+    cameraDirection: new THREE.Vector3(0.6, 0.35, 14.2),
     root,
     update,
   };

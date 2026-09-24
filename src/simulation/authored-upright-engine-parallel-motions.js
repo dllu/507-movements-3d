@@ -565,8 +565,10 @@ function opposedRadiusRodUprightEngine(movement) {
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-upright-engine-frame-crank-bearing-and-opposed-radius-pivots';
-  // Brown's plate is the official 30 x 30 view: a double cross-beam over two
-  // columns with capitals, the crank box on the beam, and the cylinder top.
+  // Brown's plate is the official 30 x 30 view: a planked floor over one deep
+  // solid cross-beam (plate y -1.71 to -4.86 source units, the flywheel
+  // passing behind it), thin capital plates under the beam on two columns,
+  // the crank box on the planks, and the cylinder top.
   const framePlaneZ = -0.66;
   const frameDepth = 0.78;
   const frameBox = (minX, maxX, minY, maxY, depth, role) => {
@@ -583,18 +585,18 @@ function opposedRadiusRodUprightEngine(movement) {
     return part;
   };
   const frameTopRails = [
-    [-2.40, -1.71, 'fixed-upper-cross-beam-carrying-crank-box'],
-    [-5.03, -4.57, 'fixed-lower-cross-beam-on-column-capitals'],
+    [-2.69, -1.71, 'fixed-upper-cross-beam-carrying-crank-box'],
+    [-4.86, -2.69, 'fixed-lower-cross-beam-on-column-capitals'],
   ].map(([minY, maxY, role]) => frameBox(-16.5, 16.5, minY, maxY, frameDepth, role));
   const columnCenterX = 7.45;
-  const columnHalfWidth = 1.3;
+  const columnHalfWidth = 1.2;
   const columnBottomY = -27.0;
   const framePillars = [-1, 1].map((side, index) => frameBox(
     side * columnCenterX - columnHalfWidth, side * columnCenterX + columnHalfWidth,
-    columnBottomY, -5.03, 0.84, `fixed-upright-engine-column-${index + 1}`));
+    columnBottomY, -5.43, 0.84, `fixed-upright-engine-column-${index + 1}`));
   const columnCapitals = [-1, 1].map((side, index) => frameBox(
-    side * columnCenterX - 1.8, side * columnCenterX + 1.8, -4.57, -2.40,
-    frameDepth, `fixed-column-capital-between-cross-beams-${index + 1}`));
+    side * columnCenterX - 2.0, side * columnCenterX + 2.0, -5.43, -4.86,
+    frameDepth, `fixed-column-capital-under-cross-beam-${index + 1}`));
   const crankBoxShape = new THREE.Shape([
     new THREE.Vector2(-3.0 * sourceScale, -1.71 * sourceScale),
     new THREE.Vector2(2.9 * sourceScale, -1.71 * sourceScale),

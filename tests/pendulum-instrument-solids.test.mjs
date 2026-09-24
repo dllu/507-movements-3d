@@ -39,6 +39,8 @@ test('411 finite tires, pencil, journals, drum and bevel teeth clear their matin
   const model=createAuthoredSelfRecordingLevelMovement({id:411}),b=model.root.userData.blocks;
   const gearMeshes=[b.bevelDriveCone,b.bevelDrumCone].map(group=>group.children);
   const gaps=audit(model,[...gearMeshes[0].flatMap(a=>gearMeshes[1].map(b=>[a,b])),
+    [b.countershaftSpur,b.drumSpur],[b.countershaft,b.countershaftBearing],[b.pencilCarrier,b.pencilStylus.children[0]],
+    [b.pendulumRod,b.pencilStylus.children[0]],[b.archFrame,b.leftWheel.tire],[b.archFrame,b.rightWheel.tire],
     [b.paperDrum,b.pencilTip],[b.paperDrum,b.pendulumRod],[b.paperDrum,b.pencilCarrier],[b.paperDrum,b.baseBrace],
     [b.paperDrum,b.drumShaft],[b.drumShaft,b.verticalDrumGuide],[b.drumShaft,b.drumBearing],
     [b.pendulumPivotAxle,b.pendulumEye],

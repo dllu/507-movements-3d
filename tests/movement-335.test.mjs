@@ -67,7 +67,8 @@ test('movement 335 is the stationary-beam-engine six-bar parallel motion', () =>
   assert.match(mechanism, /radius-F-Q/);
   assert.match(mechanism, /crossbar-E-Q/);
   assert.match(transmission.exactRigidConstraints, /\|O-A\|=12/);
-  assert.match(transmission.exactRigidConstraints, /\|E-Q\|=6/);
+  assert.match(transmission.exactRigidConstraints, /\|F-Q\|=10\.9/);
+  assert.match(transmission.exactRigidConstraints, /\|E-Q\|=\|O-A\|-\|O-B\|/);
   assert.match(transmission.topology, /exact moving parallelogram/);
   assert.match(transmission.straightness, /lateral deviation is measured/);
   assert.equal(degreesOfFreedom.mechanism, 1);
@@ -94,15 +95,15 @@ test('movement 335 is the stationary-beam-engine six-bar parallel motion', () =>
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) => role ===
-    'twelve-six-unit-ternary-stationary-engine-beam').length, 1);
+    'ternary-stationary-engine-beam-A-B-O').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'left-three-and-one-half-unit-link-A-E').length, 1);
+    'left-four-unit-link-A-E').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'middle-three-and-one-half-unit-link-B-Q').length, 1);
+    'middle-four-unit-link-B-Q').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'six-unit-fixed-radius-bar-F-Q').length, 1);
+    'long-fixed-radius-rod-F-Q').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'six-unit-crossbar-E-Q').length, 1);
+    'parallel-bar-E-Q').length, 1);
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
   disposeModel(model.root);
 });
@@ -140,7 +141,7 @@ test('movement 335 preserves the official dimensions and uncertainty note', () =
   assert.match(sourceAnimation.officialNotes, /lacks enough detail for certainty/);
   assert.match(sourceAnimation.reconstructionDifference,
     /forces E onto x=-12/);
-  assert.match(sourceAnimation.referenceScope, /both 3\.5-unit drops/);
+  assert.match(sourceAnimation.referenceScope, /follow the plate/);
 
   assert.deepEqual(official, {
     beamDriverRadius: 12.375,
@@ -164,17 +165,22 @@ test('movement 335 preserves the official dimensions and uncertainty note', () =
     'scaled hidden beam-driver station');
   near(geometry.beamLeftStationRadius, 12 * geometry.sourceScale, 0,
     'scaled O-A station');
-  near(geometry.beamMiddleStationRadius, 6 * geometry.sourceScale, 0,
+  // Brown's plate proportions: a 10.9-unit radius rod running left to F and
+  // 4-unit drops; B sits where O, the Watt point on B-Q and E stay collinear.
+  const plateB = (-10.9 + Math.sqrt(10.9 ** 2 + 4 * 10.9 * 12)) / 2;
+  near(plateB ** 2, 10.9 * (12 - plateB), 1e-12, 'collinear Watt station');
+  near(geometry.beamMiddleStationRadius, plateB * geometry.sourceScale, 1e-15,
     'scaled O-B station');
-  near(geometry.dropLinkLength, 3.5 * geometry.sourceScale, 0,
+  near(geometry.dropLinkLength, 4 * geometry.sourceScale, 0,
     'scaled hanging links');
-  near(geometry.fixedRadiusLength, 6 * geometry.sourceScale, 0,
+  near(geometry.fixedRadiusLength, 10.9 * geometry.sourceScale, 0,
     'scaled F-Q radius');
-  near(geometry.crossbarLength, 6 * geometry.sourceScale, 0,
+  near(geometry.crossbarLength, (12 - plateB) * geometry.sourceScale, 1e-15,
     'scaled E-Q crossbar');
   vector2Near(geometry.fixedRadiusPivotF,
-    new THREE.Vector2(-12, -3.5).multiplyScalar(geometry.sourceScale),
-  0, 'scaled fixed pivot F');
+    new THREE.Vector2(-plateB - 10.9, -4).multiplyScalar(geometry.sourceScale),
+  1e-15, 'scaled fixed pivot F');
+  assert.match(sourceReference.brownPlate335.plateProportions, /radius rod 10\.9/);
 
   assert.equal(sourceReference.brownPlate335.imageWidth, 525);
   assert.equal(sourceReference.brownPlate335.imageHeight, 525);
@@ -226,13 +232,14 @@ test('movement 335 hidden crank drives one exact finite-rod rocking beam', () =>
       Math.atan2(state.beamDriverPoint.y, state.beamDriverPoint.x), 0,
     `beam angle at ${sample}`);
     near(state.pointA.distanceTo(geometry.beamPivotO),
-      geometry.beamLeftStationRadius, 2e-15,
+      geometry.beamLeftStationRadius, 4e-15,
     `beam O-A station at ${sample}`);
     near(state.pointB.distanceTo(geometry.beamPivotO),
-      geometry.beamMiddleStationRadius, 1e-15,
+      geometry.beamMiddleStationRadius, 2e-15,
     `beam O-B station at ${sample}`);
-    vector2Near(state.pointB, state.pointA.clone().multiplyScalar(0.5), 0,
-      `B is halfway from O to A at ${sample}`);
+    vector2Near(state.pointB, state.pointA.clone().multiplyScalar(
+      geometry.beamMiddleStationRadius / geometry.beamLeftStationRadius), 1e-15,
+    `B is on O-A at ${sample}`);
     const beamUnit = state.beamDriverPoint.clone()
       .multiplyScalar(1 / geometry.beamDriverRadius);
     vector2Near(state.pointA,
@@ -266,7 +273,7 @@ test('movement 335 closes the lower parallelogram and fixed radius exactly', () 
     vector2Near(state.pointE.clone().sub(state.pointA),
       state.pointQ.clone().sub(state.pointB), 2e-15,
     `A-E remains parallel and equal to B-Q at ${sample}`);
-    near(state.crossbar.angle, state.beam.angle, 5e-16,
+    near(state.crossbar.angle, state.beam.angle, 1e-15,
       `crossbar follows beam angle at ${sample}`);
     near(state.leftDrop.angle, state.middleDrop.angle, 1.7e-15,
       `both hanging links remain parallel at ${sample}`);
@@ -329,13 +336,13 @@ test('movement 335 exposes its genuine near-straight piston locus', () => {
     'exact piston stroke');
   near(maximumOfficialY - minimumOfficialY,
     geometry.officialOutputStroke, 5e-9, 'official forced-line stroke');
-  assert.ok(maximumOfficialResidual / geometry.sourceScale < 0.001043);
-  assert.ok(maximumLateralDeviation / geometry.sourceScale < 0.001072);
-  assert.ok(maximumVerticalDifference / geometry.sourceScale < 0.000062);
+  assert.ok(maximumOfficialResidual / geometry.sourceScale < 0.000980);
+  assert.ok(maximumLateralDeviation / geometry.sourceScale < 0.001005);
+  assert.ok(maximumVerticalDifference / geometry.sourceScale < 0.000052);
   assert.ok(maximumLateralDeviation > 0,
     'the historical path is approximate rather than fictitiously vertical');
-  assert.ok(geometry.outputStroke / geometry.sourceScale > 4.0379);
-  assert.ok(geometry.outputStroke / geometry.sourceScale < 4.0381);
+  assert.ok(geometry.outputStroke / geometry.sourceScale > 4.0382);
+  assert.ok(geometry.outputStroke / geometry.sourceScale < 4.0385);
   disposeModel(model.root);
 });
 
@@ -440,7 +447,7 @@ test('movement 335 renderer binds every beam station and lower-link pin', () => 
     vector3Near(blocks.fixedRadiusEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
         state.pointQ.x, state.pointQ.y, -0.12,
-      ), 8e-16, `fixed radius at Q at ${time}`);
+      ), 1e-15, `fixed radius at Q at ${time}`);
     vector3Near(blocks.crossbarStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
         state.pointE.x, state.pointE.y, 0.04,
@@ -470,8 +477,8 @@ test('movement 335 renderer binds every beam station and lower-link pin', () => 
 
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 5.7, 'beam from A past fulcrum O; Brown draws no left guide rails');
-  assert.ok(size.y > 5.1);
+  assert.ok(size.x > 7.5, 'long radius rod from F past fulcrum O; Brown draws no guide rails');
+  assert.ok(size.y > 4.6, 'level plate-pose beam over the piston rod');
   assert.ok(size.z > 1.0,
     'radius bar, crossbar, piston rod, drop links, beam and stubs occupy separate layers');
   const drawnRoles = [];
@@ -514,8 +521,10 @@ test('movement 335 closes exactly and leaves movement 507 as the next draft', ()
   vector2Near(closure.pointB, start.pointB, 0, 'B closure');
   vector2Near(closure.pointE, start.pointE, 0, 'E closure');
   vector2Near(closure.pointQ, start.pointQ, 0, 'Q closure');
-  near(closure.unwrappedInputAngle, Math.PI * 2, 0,
-    'one unwrapped source timing turn');
+  near(closure.unwrappedInputAngle - start.unwrappedInputAngle, Math.PI * 2,
+    1e-15, 'one unwrapped source timing turn');
+  // Model time 0 is Brown's level-beam pose.
+  near(start.beam.angle, 0, 1e-15, 'plate pose has a level beam');
   model.update(canonicalTimes.cycleClosure);
   near(blocks.beam.rotation.z, start.beam.angle, 0,
     'rendered beam closure');

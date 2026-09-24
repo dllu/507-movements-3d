@@ -1465,8 +1465,11 @@ function shapePlate294Cylinder(model) {
   replace(b.rightTube, centeredExtrusion(annularShape(outer, inner), g.cylinderBodyEndZ - passageEndZ, 0.004));
   b.rightTube.position.z = (passageEndZ + g.cylinderBodyEndZ) / 2;
   const workingBandEndZ = g.workingBandEndZ;
+  // The passage continues the working-band opening on the same side (the
+  // baked 196-degree band shell spans -10 to 186 degrees) and is cut deeper,
+  // leaving 152 degrees of wall (34 to 186): Brown's step at raster 280.
   const passageShell = new THREE.Mesh(
-    centeredExtrusion(annularSectorShape(outer, inner, Math.PI, Math.PI), passageEndZ - workingBandEndZ, 0.003),
+    centeredExtrusion(annularSectorShape(outer, inner, THREE.MathUtils.degToRad(34), THREE.MathUtils.degToRad(152)), passageEndZ - workingBandEndZ, 0.003),
     b.rightTube.material,
   );
   passageShell.position.z = (workingBandEndZ + passageEndZ) / 2;
@@ -1481,6 +1484,31 @@ function shapePlate294Cylinder(model) {
   replace(b.upperCone, collet);
   b.upperCone.rotation.set(0, 0, 0);
   b.upperCone.userData.role = 'upper-stepped-balance-collet';
+  // The pivot end is a slim plug, a rounded bell and a thin ring barely
+  // proud of the tube (raster 52-107, 107-137 and 137-150), not a cone and a
+  // broad flange.
+  const zAt = (raster) => (raster - 271) * g.sourceAxialScale;
+  const rAt = (pixels) => pixels * outer / 39;
+  const bell = [{ axial: zAt(52), radial: rAt(16) }, { axial: zAt(107), radial: rAt(16) }];
+  for (let step = 1; step <= 10; step += 1) {
+    const t = step / 10;
+    bell.push({ axial: zAt(107) + t * (zAt(137) - zAt(107)),
+      radial: rAt(16) + (rAt(37) - rAt(16)) * Math.sin(Math.PI * t / 2) });
+  }
+  const bellGeometry = boredLatheGeometry(bell, 0.108, 64);
+  bellGeometry.rotateX(Math.PI / 2);
+  replace(b.lowerCone, bellGeometry);
+  b.lowerCone.position.set(0, 0, 0);
+  b.lowerCone.rotation.set(0, 0, 0);
+  b.lowerCone.userData.role = 'lower-plug-and-rounded-bell';
+  const ringGeometry = boredLatheGeometry([
+    { axial: zAt(137), radial: rAt(41) }, { axial: zAt(150), radial: rAt(41) },
+  ], 0.108, 64);
+  ringGeometry.rotateX(Math.PI / 2);
+  replace(b.lowerCollar, ringGeometry);
+  b.lowerCollar.position.set(0, 0, 0);
+  b.lowerCollar.rotation.set(0, 0, 0);
+  b.lowerCollar.userData.role = 'lower-thin-cylinder-ring';
   const pivots = [[-2.60, g.workingBandStartZ - 0.025], [passageEndZ + 0.025, 2.23]].map(([lo, hi]) => {
     const pivot = new THREE.CylinderGeometry(0.105, 0.105, hi - lo, 32);
     pivot.rotateX(Math.PI / 2);
@@ -1494,8 +1522,70 @@ function shapePlate294Cylinder(model) {
   return model;
 }
 
+// Brown's 295 is a flat close-up of the wheel's top: a thin rim line with the
+// wedge pallets carried well outside it on swept-back curved arms, and the
+// cylinder over them. The rim is narrowed to that line and each stem foot
+// becomes a curved arm from under the pallet back down to the rim.
+function shapePlate295Wheel(model) {
+  const { root } = model;
+  const { blocks: b, geometry: g } = root.userData;
+  const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  const rimOuter = 2.15;
+  const rimInner = 2.03;
+  replace(b.wheelRim, centeredExtrusion(annularShape(rimOuter, rimInner), 0.24, 0.007, 96));
+  b.wheelRim.userData.role = 'thin-cylinder-escape-wheel-rim';
+  const stem = cylinderContactData.headCentroid;
+  const stemRadius = Math.hypot(...stem);
+  const stemAngle = Math.atan2(stem[1], stem[0]);
+  const polar = (radius, angle) => new THREE.Vector2(radius * Math.cos(angle), radius * Math.sin(angle));
+  const start = new THREE.Vector2(...stem);
+  const control = polar(2.42, stemAngle + 0.03);
+  const end = polar((rimOuter + rimInner) / 2, stemAngle + 0.27);
+  const curve = new THREE.QuadraticBezierCurve(start, control, end);
+  const left = [];
+  const right = [];
+  const samples = 20;
+  for (let index = 0; index <= samples; index += 1) {
+    const t = index / samples;
+    const point = curve.getPoint(t);
+    const tangent = curve.getTangent(t);
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    const halfWidth = THREE.MathUtils.lerp(0.045, 0.065, t);
+    left.push(point.clone().addScaledVector(normal, halfWidth));
+    right.push(point.clone().addScaledVector(normal, -halfWidth));
+  }
+  const armGeometry = centeredExtrusion(polygonShape([...left, ...right.reverse()]), 0.20, 0.004)
+    .translate(0, 0, g.wheelPlaneZ);
+  const oldFeet = new Set();
+  for (const assembly of b.palletAssemblies) {
+    for (const child of assembly.children) {
+      if (child.userData.role !== 'raised-pallet-stem-foot-connected-to-wheel-rim') continue;
+      oldFeet.add(child.geometry);
+      child.geometry = armGeometry;
+      child.userData.role = 'curved-swept-back-arm-from-rim-to-raised-pallet';
+    }
+  }
+  for (const geometry of oldFeet) geometry.dispose();
+  // The spokes run from the hub to the rim, clear of the fixed arbor.
+  const spokeInner = 0.33;
+  const spokeOuter = (rimOuter + rimInner) / 2;
+  for (const spoke of b.wheelSpokes ?? []) {
+    const depth = spoke.geometry.parameters.depth;
+    replace(spoke, new THREE.BoxGeometry(spokeOuter - spokeInner, 0.18, depth));
+    const radius = (spokeInner + spokeOuter) / 2;
+    spoke.position.x = Math.cos(spoke.rotation.z) * radius;
+    spoke.position.y = Math.sin(spoke.rotation.z) * radius;
+  }
+  // A narrow lens keeps the raised pallets from looming over the rim, as in
+  // Brown's flat plan.
+  root.userData.cameraFov = 12;
+  model.cameraDirection = new THREE.Vector3(0.12, 0.08, 12);
+  root.userData.cameraDirection = model.cameraDirection;
+  return model;
+}
+
 export function createAuthoredCylinderEscapementMovement(movement) {
   if (movement.id === 294) return finishCylinderReview(installCylinderContact(shapePlate294Cylinder(cylinderEscapementPerspective(movement)),294),294);
-  if (movement.id === 295) return finishCylinderReview(installCylinderContact(cylinderEscapementActionDiagram(movement),295),295);
+  if (movement.id === 295) return shapePlate295Wheel(finishCylinderReview(installCylinderContact(cylinderEscapementActionDiagram(movement),295),295));
   return null;
 }

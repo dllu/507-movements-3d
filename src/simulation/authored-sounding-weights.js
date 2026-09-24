@@ -78,6 +78,41 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
+// Closes an open TubeGeometry with a flat fan at each end that reuses the
+// end-ring vertices, so the tube is a watertight solid.
+function capTubeEnds(geometry, tubularSegments, radialSegments) {
+  const position = geometry.attributes.position;
+  const normal = geometry.attributes.normal;
+  const uv = geometry.attributes.uv;
+  const ring = radialSegments + 1;
+  const positions = Array.from(position.array);
+  const normals = Array.from(normal.array);
+  const uvs = Array.from(uv.array);
+  const indices = Array.from(geometry.index.array);
+  for (const [ringIndex, sign] of [[0, -1], [tubularSegments, 1]]) {
+    const start = ringIndex * ring;
+    const center = new THREE.Vector3();
+    for (let j = 0; j < radialSegments; j += 1) {
+      center.add(new THREE.Vector3().fromBufferAttribute(position, start + j));
+    }
+    center.multiplyScalar(1 / radialSegments);
+    const centerIndex = positions.length / 3;
+    positions.push(center.x, center.y, center.z);
+    normals.push(0, 0, 0);
+    uvs.push(0.5, 0.5);
+    for (let j = 0; j < radialSegments; j += 1) {
+      const a = start + j;
+      const b = start + j + 1;
+      if (sign > 0) indices.push(centerIndex, a, b);
+      else indices.push(centerIndex, b, a);
+    }
+  }
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+}
+
 function openCylinderAlongY({
   centerY,
   cutawayHalfAngle,
@@ -722,9 +757,13 @@ function seabedTriggeredSoundingWeight(movement) {
   );
   housingTop.position.y = 2.85;
   housingTop.userData.role = 'solid-upper-sounding-rod';
+  // Brown draws a longitudinal section, so the rod is shown as its back half
+  // (the front 206 degrees open). The bell crank, probe pad and catch nose
+  // swing outside the rod radius and must pass through that opening.
+  const housingCutawayHalfAngle = 1.8;
   const windowShell = openCylinderAlongY({
     centerY: 0.55,
-    cutawayHalfAngle: 0.72,
+    cutawayHalfAngle: housingCutawayHalfAngle,
     height: 2.7,
     material: housingMaterial,
     radius: housingRadius,
@@ -733,14 +772,15 @@ function seabedTriggeredSoundingWeight(movement) {
   windowShell.userData.frontWindowIsPhysicalOpening = true;
   const lowerHousing = openCylinderAlongY({
     centerY: -1.05,
-    cutawayHalfAngle: 0.72,
+    cutawayHalfAngle: housingCutawayHalfAngle,
     height: 0.5,
     material: housingMaterial,
     radius: housingRadius,
   });
   lowerHousing.userData.role = 'lower-open-guide-sleeve';
+  // Narrow enough that its back corners stay inside the weight's bore.
   const windowBack = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 2.55, 0.09),
+    new THREE.BoxGeometry(0.60, 2.55, 0.09),
     housingSectionMaterial,
   );
   windowBack.position.set(0, 0.55, -0.36);
@@ -749,7 +789,8 @@ function seabedTriggeredSoundingWeight(movement) {
     new THREE.BoxGeometry(0.68, 0.42, 0.68),
     housingSectionMaterial,
   );
-  lowerGuideBlock.position.set(0, -1.28, -0.02);
+  // Raised clear of the probe foot at the probe's greatest rise.
+  lowerGuideBlock.position.set(0, -1.10, -0.02);
   lowerGuideBlock.userData.role = 'probe-lower-guide-block';
   bodyAssembly.add(
     housingTop,
@@ -775,10 +816,11 @@ function seabedTriggeredSoundingWeight(movement) {
     ),
     probeMaterial,
   );
+  // The stem runs in front of the bell-crank plane, under the pusher pad.
   probeShaft.position.set(
     probeX,
     (probeShaftTopY + probeShaftBottomY) / 2,
-    0.25,
+    0.41,
   );
   probeShaft.userData.role = 'vertical-sliding-probe-stem';
   const probePusher = new THREE.Mesh(
@@ -792,12 +834,14 @@ function seabedTriggeredSoundingWeight(movement) {
   );
   probePusher.userData.contactSurfaceY = pivot.y + upperContactLocal.y;
   probePusher.userData.role = 'probe-upper-pusher-pad';
+  // The foot is set toward the rod axis so it passes up through the
+  // released weight's bore when the rod is recovered.
   const probeFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(0.54, 0.18, 0.42),
+    new THREE.BoxGeometry(0.50, 0.18, 0.42),
     probeMaterial,
   );
   probeFoot.position.set(
-    probeX,
+    probeX + 0.20,
     probeFootContactLocalY + 0.09,
     0.25,
   );
@@ -878,11 +922,33 @@ function seabedTriggeredSoundingWeight(movement) {
   pivotPin.userData.role = 'fixed-bell-crank-pivot-pin';
   bodyAssembly.add(pivotPin);
 
-  const detentSpring = makeDynamicCable({
-    color: PALETTE.ink,
-    maxSegments: 12,
-    radius: 0.035,
-  });
+  // One smoothly bent flat-ended spring rebuilt each frame (a deforming
+  // part), rather than straight segments overlapping at every bend.
+  // Its buffers are allocated once and rewritten in place.
+  const springTube = (points) => {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const tube = new THREE.TubeGeometry(curve, 24, 0.035, 10, false);
+    capTubeEnds(tube, 24, 10);
+    return tube;
+  };
+  const detentSpring = new THREE.Group();
+  const detentSpringMesh = new THREE.Mesh(
+    springTube([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)]),
+    matte(PALETTE.ink, { roughness: 0.78 }),
+  );
+  detentSpringMesh.userData.role =
+    'curved-spring-detent-holding-catch-after-release';
+  detentSpring.add(detentSpringMesh);
+  detentSpring.userData.setPoints = (points) => {
+    const tube = springTube(points);
+    for (const name of ['position', 'normal']) {
+      detentSpringMesh.geometry.attributes[name].array.set(tube.attributes[name].array);
+      detentSpringMesh.geometry.attributes[name].needsUpdate = true;
+    }
+    detentSpringMesh.geometry.computeBoundingSphere();
+    detentSpringMesh.geometry.computeBoundingBox();
+    tube.dispose();
+  };
   detentSpring.userData.role =
     'curved-spring-detent-holding-catch-after-release';
   bodyAssembly.add(detentSpring);
@@ -1165,6 +1231,9 @@ function seabedTriggeredSoundingWeight(movement) {
 
   root.userData.fidelity = 'authored';
   root.userData.cameraDistanceScale = 1.08;
+  // Brown's plate is a front section; a narrow lens keeps the view nearly
+  // orthographic so the contact slab reads edge-on, as a ground line.
+  root.userData.cameraFov = 10;
   markShadows(root);
   for (const ring of seabedRings) {
     ring.castShadow = false;
@@ -1172,13 +1241,21 @@ function seabedTriggeredSoundingWeight(movement) {
   }
 
   return {
-    cameraDirection: new THREE.Vector3(2.8, 4.8, 11.6),
+    cameraDirection: new THREE.Vector3(0.9, 0.75, 12),
     root,
     update,
   };
 }
 
 export function createAuthoredSoundingWeightMovement(movement) {
-  if (movement.id === 247) return finishSounding247Parts(seabedTriggeredSoundingWeight(movement));
+  if (movement.id === 247) {
+    const model = finishSounding247Parts(seabedTriggeredSoundingWeight(movement));
+    // Keep the stem-to-pad bridge in front of the bell-crank plane with the
+    // stem it joins.
+    const bridge = model.root.userData.releaseWorkingParts?.bridge;
+    if (bridge) bridge.position.z = 0.42;
+    model.update(0);
+    return model;
+  }
   return null;
 }

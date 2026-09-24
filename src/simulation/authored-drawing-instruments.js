@@ -947,8 +947,10 @@ function adjustablePantograph(movement) {
   const paperTopY = -0.02;
   const fixedPointC = new THREE.Vector2(-2.35, 1.45);
   const tracerBaseFromC = new THREE.Vector2(0.18, -2);
-  const lowerRailOverhang = 0.28;
-  const upperRailOverhang = 0.3;
+  // Brown runs both long arms on past pencil A and fixed point C (about a
+  // quarter of a 2.4-unit side), where their slides are adjusted.
+  const lowerRailOverhang = 0.55;
+  const upperRailOverhang = 0.65;
   const rightRailOverhang = 0.14;
 
   const traceOffsetAtAngle = (angle) => new THREE.Vector2(

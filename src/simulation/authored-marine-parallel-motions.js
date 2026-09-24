@@ -1011,14 +1011,32 @@ function sideLeverMarineParallelMotion(movement) {
   const sourceScale = 0.32;
   const sourceSideLeverRadius = 8;
   const sourceSideLeverMidRadius = 4;
-  const sourceLeftLinkLength = 8;
-  const sourceLeftLinkPointCDistance = 6;
-  const sourceRightLinkLength = 8;
+  // Official canvas: 8-unit links with C at 6, radius bar 7.695702 from
+  // F=(11.695702, 6), and a 2.75-unit timing crank (5.5-unit stroke).
+  const officialLeftLinkLength = 8;
+  const officialLeftLinkPointCDistance = 6;
+  const officialRightLinkLength = 8;
+  const officialRadiusBarLength = 7.695702;
+  const officialRadiusPivotF = new THREE.Vector2(11.695702, 6);
+  const officialHiddenCrankRadius = 2.75;
+  // Brown's plate, measured with the 8-unit lever as the scale, draws the
+  // links taller (E about 10 units over the lever, C at 7.6, F at about
+  // (10.9, 7.6)) and a cylinder only about 3.6 units deep between its lid
+  // (5.1-5.6) and bottom (about 1.5). The model keeps C at 7.6, a 7.35-unit
+  // radius bar, and sets both links to 9.84 so E stays the straight-line
+  // point (E = 2 C r / (r + 4)); a 1.7-unit timing crank gives a 3.4-unit
+  // stroke that fits the drawn cylinder.
+  const sourceLeftLinkLength = 9.84;
+  const sourceLeftLinkPointCDistance = 7.6;
+  const sourceRightLinkLength = 9.84;
   const sourceParallelBarLength = 4;
-  const sourceRadiusBarLength = 7.695702;
-  const sourceRadiusPivotF = new THREE.Vector2(11.695702, 6);
+  const sourceRadiusBarLength = 7.35;
+  const sourceRadiusPivotF = new THREE.Vector2(
+    sourceSideLeverMidRadius + sourceRadiusBarLength,
+    sourceLeftLinkPointCDistance,
+  );
   const sourceHiddenCrankCenter = new THREE.Vector2(-8, -12);
-  const sourceHiddenCrankRadius = 2.75;
+  const sourceHiddenCrankRadius = 1.7;
   const sourceHiddenDriveRodLength = 12;
   const sourceHiddenDrivenBeamRadius = 8;
   const sourceCyclesPerMinute = 15;
@@ -1109,7 +1127,8 @@ function sideLeverMarineParallelMotion(movement) {
         radiusPivotF,
         radiusBarLength,
       ),
-      new THREE.Vector2(4 * sourceScale, 6 * sourceScale),
+      new THREE.Vector2(sourceSideLeverMidRadius,
+        sourceLeftLinkPointCDistance).multiplyScalar(sourceScale),
     );
     const pointCRates = constrainedPointRates({
       accelerationA: beamMidAcceleration,
@@ -1141,7 +1160,8 @@ function sideLeverMarineParallelMotion(movement) {
         beamRightPoint,
         rightLinkLength,
       ),
-      new THREE.Vector2(8 * sourceScale, 8 * sourceScale),
+      new THREE.Vector2(sourceSideLeverRadius,
+        sourceRightLinkLength).multiplyScalar(sourceScale),
     );
     const pointERates = constrainedPointRates({
       accelerationA: pointDAcceleration,
@@ -1320,13 +1340,13 @@ function sideLeverMarineParallelMotion(movement) {
   const pinClearance = 0.012;
   const leverPlaneZ = 0.02;
   const leverHalfDepth = 0.12;
-  const vesselRadius = 2.4 * s;
+  const vesselRadius = 2.3 * s;
   const vesselAxisZ = leverPlaneZ - leverHalfDepth - 0.035 - vesselRadius;
   const pistonLineX = 8 * s;
   const pistonRodRadius = 0.16 * s;
   const pistonBore = pistonRodRadius + pinClearance;
-  const lidLow = 4.0 * s;
-  const lidHigh = 4.4 * s;
+  const lidLow = 5.08 * s;
+  const lidHigh = 5.63 * s;
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
@@ -1338,10 +1358,10 @@ function sideLeverMarineParallelMotion(movement) {
     return mesh;
   };
 
-  // The vessel is taller than drawn so the 5.5-unit official stroke keeps the
-  // piston rod inside it; its lid, lid height and gooseneck follow the plate.
-  const vesselBottom = -1.55 * s;
-  const vesselBoreBottom = -1.45 * s;
+  // The cylinder, lid and gooseneck follow the plate; the 3.4-unit stroke
+  // keeps the piston-rod end between the bore bottom and the lid.
+  const vesselBottom = 1.55 * s;
+  const vesselBoreBottom = 1.62 * s;
   const vessel = fixedPart(new THREE.Mesh(new THREE.LatheGeometry([
     [0, vesselBottom - 0.45 * s],
     [0.62 * vesselRadius, vesselBottom - 0.38 * s],
@@ -1355,8 +1375,8 @@ function sideLeverMarineParallelMotion(movement) {
   'fixed-round-bottomed-cylinder-vessel-under-E');
   vessel.position.set(pistonLineX, 0, vesselAxisZ);
   const lidHalfDepth = vesselRadius + 0.07;
-  const lidOutline = poly([[5.0 * s, -lidHalfDepth], [11.95 * s, -lidHalfDepth],
-    [11.95 * s, lidHalfDepth], [5.0 * s, lidHalfDepth]]);
+  const lidOutline = poly([[5.4 * s, -lidHalfDepth], [11.4 * s, -lidHalfDepth],
+    [11.4 * s, lidHalfDepth], [5.4 * s, lidHalfDepth]]);
   const lidGeometry = plate(clip.difference(lidOutline,
     poly(circle([pistonLineX, 0], pistonBore, 48))), lidLow, lidHigh);
   lidGeometry.rotateX(-Math.PI / 2);
@@ -1449,7 +1469,7 @@ function sideLeverMarineParallelMotion(movement) {
     eyeMaterial: darkMaterial,
     length: leftLinkLength,
     planeZ: 0.36,
-    role: 'left-eight-unit-parallel-motion-link-through-C',
+    role: 'left-parallel-motion-link-through-C',
     width: 0.34 * sourceScale,
   });
   const pointCAnchor = new THREE.Object3D();
@@ -1465,7 +1485,7 @@ function sideLeverMarineParallelMotion(movement) {
     eyeMaterial: darkMaterial,
     length: rightLinkLength,
     planeZ: 0.39,
-    role: 'right-eight-unit-link-to-crosshead-E',
+    role: 'right-link-to-crosshead-E',
     width: 0.34 * sourceScale,
   });
   root.add(rightLinkParts.rod);
@@ -1513,7 +1533,7 @@ function sideLeverMarineParallelMotion(movement) {
   const crossheadHousing = new THREE.Mesh(housingGeometry, outputMaterial);
   crossheadHousing.userData.role = 'source-crosshead-E-with-rounded-cap';
   const pistonRodTop = -0.55 * s;
-  const pistonRodBottom = -6.5 * s;
+  const pistonRodBottom = -6.45 * s;
   const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(pistonRodRadius,
     pistonRodRadius, pistonRodTop - pistonRodBottom, 24), outputMaterial);
   pistonRod.position.set(0, (pistonRodTop + pistonRodBottom) / 2, vesselAxisZ);
@@ -1731,23 +1751,23 @@ function sideLeverMarineParallelMotion(movement) {
     ],
     officialGeometry: {
       hiddenCrankCenter: sourceHiddenCrankCenter,
-      hiddenCrankRadius: sourceHiddenCrankRadius,
+      hiddenCrankRadius: officialHiddenCrankRadius,
       hiddenDriveRodLength: sourceHiddenDriveRodLength,
-      leftLinkLength: sourceLeftLinkLength,
-      leftLinkPointCDistance: sourceLeftLinkPointCDistance,
+      leftLinkLength: officialLeftLinkLength,
+      leftLinkPointCDistance: officialLeftLinkPointCDistance,
       parallelBarLength: sourceParallelBarLength,
-      radiusBarLength: sourceRadiusBarLength,
-      radiusPivotF: sourceRadiusPivotF,
-      rightLinkLength: sourceRightLinkLength,
+      radiusBarLength: officialRadiusBarLength,
+      radiusPivotF: officialRadiusPivotF,
+      rightLinkLength: officialRightLinkLength,
       sideLeverMidRadius: sourceSideLeverMidRadius,
       sideLeverRadius: sourceSideLeverRadius,
       verticalStrokeLineX: 8,
     },
     officialPageAnimatedTabDisabled: false,
     reconstructionDifference:
-      'the official drawing forces E onto x=8 and incurs a small rounded-dimension F-C residual; this model closes every rigid bar exactly and exposes the resulting sub-0.006-unit lateral deviation of E',
+      'the official drawing forces E onto x=8 and incurs a small rounded-dimension F-C residual; this model closes every rigid bar exactly and exposes the resulting sub-0.0008-unit lateral deviation of E',
     referenceScope:
-      'official pivot coordinates, all bar lengths and intermediate point C, source branch choices, frame landmarks, and 15 rpm timing',
+      'official lever stations, parallel bar, timing-rod layout, source branch choices and 15 rpm timing; link heights, C, F and the stroke follow the plate',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -1755,8 +1775,10 @@ function sideLeverMarineParallelMotion(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'side lever A, paired eight-unit links, radius bar F-C, parallel bar E-D, and piston crosshead E',
+        'side lever A, paired links, radius bar F-C, parallel bar E-D, and piston crosshead E',
       measurementUncertaintyPixels: 4,
+      plateProportions:
+        'with the lever A-end as 8 units: E about 10.1 over the lever, C 7.6, F (10.9, 7.6), D-E 4.6, cylinder lid 5.1-5.6 and bottom about 1.5; model links 9.84, C 7.6, F (11.35, 7.6), stroke 3.4',
     },
     officialAnimationView: {
       canvasHeight: officialCanvasHeight,
@@ -1776,11 +1798,11 @@ function sideLeverMarineParallelMotion(movement) {
   root.userData.stateAtTime = stateAtTime;
   root.userData.transmission = {
     exactRigidConstraints:
-      '|A-B4|=4, |A-B8|=8, |B4-D|=8, |B4-C|=6, |F-C|=7.695702, |D-E|=4, |B8-E|=8 source units',
+      '|A-B4|=4, |A-B8|=8, |B4-D|=9.84, |B4-C|=7.6, |F-C|=7.35, |D-E|=4, |B8-E|=9.84 source units',
     input:
-      'the side lever rocks on A with the official hidden 2.75-unit crank and 12-unit timing-rod law',
+      'the side lever rocks on A with a hidden 1.7-unit crank (official 2.75) and the official 12-unit timing-rod law',
     output:
-      'crosshead E carries the piston on a near-vertical 5.5-unit stroke',
+      'crosshead E carries the piston on a near-vertical 3.4-unit stroke that fits the drawn cylinder',
     straightness:
       'radius bar F-C makes E an approximate straight-line point; lateral deviation is measured, not suppressed',
   };
@@ -1791,7 +1813,7 @@ function sideLeverMarineParallelMotion(movement) {
   // Brown's plate crops the lever left of A and frames F at the right edge.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.2 * sourceScale, -2.6 * sourceScale, -1.0),
-    new THREE.Vector3(12.4 * sourceScale, 11.0 * sourceScale, 1.0),
+    new THREE.Vector3(12.4 * sourceScale, 12.0 * sourceScale, 1.0),
   );
   root.userData.cameraDistanceScale = 0.96;
   update(0);

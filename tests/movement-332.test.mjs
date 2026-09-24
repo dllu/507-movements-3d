@@ -66,7 +66,7 @@ test('movement 332 is the side-lever marine-engine parallel motion', () => {
   assert.match(mechanism, /radius-bar-F-C/);
   assert.match(mechanism, /crosshead-E/);
   assert.match(mechanism, /parallel-bar-E-D/);
-  assert.match(transmission.exactRigidConstraints, /\|F-C\|=7\.695702/);
+  assert.match(transmission.exactRigidConstraints, /\|F-C\|=7\.35/);
   assert.match(transmission.straightness, /approximate straight-line/);
   assert.equal(degreesOfFreedom.mechanism, 1);
 
@@ -96,9 +96,9 @@ test('movement 332 is the side-lever marine-engine parallel motion', () => {
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) => role ===
-    'left-eight-unit-parallel-motion-link-through-C').length, 1);
+    'left-parallel-motion-link-through-C').length, 1);
   assert.equal(roles.filter((role) => role ===
-    'right-eight-unit-link-to-crosshead-E').length, 1);
+    'right-link-to-crosshead-E').length, 1);
   assert.equal(roles.filter((role) => role ===
     'four-unit-parallel-bar-E-D').length, 1);
   assert.equal(roles.filter((role) => role ===
@@ -136,7 +136,7 @@ test('movement 332 preserves every official pivot and bar dimension', () => {
   ]);
   assert.equal(sourceAnimation.sourceUrl,
     'https://507movements.com/mm_332.html');
-  assert.match(sourceAnimation.referenceScope, /all bar lengths/);
+  assert.match(sourceAnimation.referenceScope, /follow the plate/);
   assert.match(sourceAnimation.reconstructionDifference,
     /forces E onto x=8/);
 
@@ -158,19 +158,26 @@ test('movement 332 preserves every official pivot and bar dimension', () => {
     'scaled side-lever radius');
   near(geometry.sideLeverMidRadius, 4 * geometry.sourceScale, 0,
     'scaled side-lever middle pin');
-  near(geometry.leftLinkLength, 8 * geometry.sourceScale, 0,
+  // Brown's taller plate proportions: links 9.84 with C at 7.6 and a
+  // 7.35-unit radius bar, so E = 2 C r / (r + 4) stays the straight point.
+  near(geometry.leftLinkLength, 9.84 * geometry.sourceScale, 0,
     'scaled left link');
-  near(geometry.leftLinkPointCDistance, 6 * geometry.sourceScale, 0,
+  near(geometry.leftLinkPointCDistance, 7.6 * geometry.sourceScale, 0,
     'scaled point C station');
-  near(geometry.rightLinkLength, 8 * geometry.sourceScale, 0,
+  near(geometry.rightLinkLength, 9.84 * geometry.sourceScale, 0,
     'scaled right link');
+  near(2 * 7.6 * 7.35 / (7.35 + 4), 9.84, 0.005,
+    'E is the pantograph image of the Watt point on B4-C');
   near(geometry.parallelBarLength, 4 * geometry.sourceScale, 0,
     'scaled E-D bar');
-  near(geometry.radiusBarLength, 7.695702 * geometry.sourceScale, 0,
+  near(geometry.radiusBarLength, 7.35 * geometry.sourceScale, 0,
     'scaled F-C radius bar');
   vector2Near(geometry.radiusPivotF,
-    new THREE.Vector2(11.695702, 6).multiplyScalar(geometry.sourceScale),
+    new THREE.Vector2(11.35, 7.6).multiplyScalar(geometry.sourceScale),
   0, 'scaled fixed pivot F');
+  near(geometry.hiddenCrankRadius, 1.7 * geometry.sourceScale, 0,
+    'timing crank reduced so the stroke fits the drawn cylinder');
+  assert.match(sourceReference.brownPlate332.plateProportions, /stroke 3\.4/);
 
   assert.equal(sourceReference.brownPlate332.imageWidth, 525);
   assert.equal(sourceReference.brownPlate332.imageHeight, 525);
@@ -241,28 +248,28 @@ test('movement 332 closes every visible rigid link without stretching', () => {
   for (let sample = 0; sample <= 8192; sample += 1) {
     const state = stateAtTime(geometry.cyclePeriod * sample / 8192);
     near(state.pointC.distanceTo(state.beamMidPoint),
-      geometry.leftLinkPointCDistance, 1.2e-15,
+      geometry.leftLinkPointCDistance, 2e-15,
     `B4-C distance at ${sample}`);
     near(state.pointD.distanceTo(state.beamMidPoint),
-      geometry.leftLinkLength, 1.8e-15,
-    `left eight-unit link at ${sample}`);
+      geometry.leftLinkLength, 2.5e-15,
+    `left link at ${sample}`);
     near(state.pointC.distanceTo(geometry.radiusPivotF),
-      geometry.radiusBarLength, 1.4e-15,
+      geometry.radiusBarLength, 2e-15,
     `fixed radius bar F-C at ${sample}`);
     near(state.pointD.distanceTo(state.pointE),
-      geometry.parallelBarLength, 1.2e-15,
+      geometry.parallelBarLength, 2e-15,
     `parallel bar E-D at ${sample}`);
     near(state.pointE.distanceTo(state.beamRightPoint),
-      geometry.rightLinkLength, 1.8e-15,
-    `right eight-unit link at ${sample}`);
+      geometry.rightLinkLength, 2.5e-15,
+    `right link at ${sample}`);
     const leftDirection = state.pointD.clone().sub(state.beamMidPoint);
     const cDirection = state.pointC.clone().sub(state.beamMidPoint);
     near(Math.abs(leftDirection.x * cDirection.y
       - leftDirection.y * cDirection.x), 0, 1e-15,
     `point C lies on left link at ${sample}`);
     near(cDirection.dot(leftDirection)
-      / leftDirection.lengthSq(), 0.75, 5e-16,
-    `point C is three-quarters along left link at ${sample}`);
+      / leftDirection.lengthSq(), 7.6 / 9.84, 5e-16,
+    `point C is at its plate station on the left link at ${sample}`);
   }
   disposeModel(model.root);
 });
@@ -296,8 +303,8 @@ test('movement 332 exposes its genuine near-straight crosshead-E locus', () => {
     'measured rigid-link lateral deviation');
   near(maximumCanvasResidual, geometry.maximumOfficialRadiusResidual, 3e-9,
     'measured canvas radius-bar residual');
-  assert.ok(maximumDeviation / geometry.sourceScale < 0.00535);
-  assert.ok(maximumCanvasResidual / geometry.sourceScale < 0.00390);
+  assert.ok(maximumDeviation / geometry.sourceScale < 0.00080);
+  assert.ok(maximumCanvasResidual / geometry.sourceScale < 0.00062);
   assert.ok(maximumDeviation > 0,
     'the historical parallel motion is approximate rather than fictitiously exact');
   near(minimumY, geometry.minimumCrossheadY, 3e-9,
@@ -306,8 +313,8 @@ test('movement 332 exposes its genuine near-straight crosshead-E locus', () => {
     'maximum crosshead ordinate');
   near(maximumY - minimumY, geometry.outputStroke, 5e-9,
     'crosshead stroke');
-  assert.ok(geometry.outputStroke / geometry.sourceScale > 5.50);
-  assert.ok(geometry.outputStroke / geometry.sourceScale < 5.51);
+  assert.ok(geometry.outputStroke / geometry.sourceScale > 3.39);
+  assert.ok(geometry.outputStroke / geometry.sourceScale < 3.41);
   assert.ok(canonicalStates.lowerStroke.pointE.y
     < canonicalStates.upperStroke.pointE.y);
   disposeModel(model.root);
@@ -420,7 +427,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
         state.pointE.x,
         state.pointE.y,
         0.39,
-      ), 1.1e-15, `right link at E at ${time}`);
+      ), 1.5e-15, `right link at E at ${time}`);
     vector3Near(blocks.parallelBarStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
         state.pointE.x,

@@ -1,4 +1,6 @@
 import {correctLever296Contact} from './lever-296-working-contact.js';
+import {lever296Parts} from './baked/lever-296-pallets.js';
+import {plate, poly, circle, polygonClipping} from './finite-plate-geometry.js';
 import {correctDuplexLeverInterfaces} from './duplex-lever-working-parts.js';
 import * as THREE from 'three';
 import {
@@ -1270,11 +1272,70 @@ function leverEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   correctDuplexLeverInterfaces(root, 296, update);
-  return correctLever296Contact({
+  return shapePlate296Wheel(correctLever296Contact({
     cameraDirection: root.userData.cameraDirection,
     root,
     update,
+  }));
+}
+
+// Brown's wheel A is a web with three lens-shaped windows between curved
+// spokes, and its teeth are broad-based curved thorns. The generated working
+// tooth (the baked leading face, corner and back edge) is kept exactly; only
+// the root below it is filled out to a wider base.
+function shapePlate296Wheel(model) {
+  const { blocks: b } = model.root.userData;
+  const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  const tooth = lever296Parts.tooth;
+  const tip = tooth[2];
+  const back = tooth[3];
+  // Keep the whole generated back edge (tip to its root at radius 2.53),
+  // then flare the root out along a curve to a broad base.
+  const curve = new THREE.QuadraticBezierCurve(
+    new THREE.Vector2(...back),
+    new THREE.Vector2(2.36, 0.24),
+    new THREE.Vector2(2.18, 0.40),
+  );
+  const backCurve = curve.getPoints(12).slice(1).map((point) => point.toArray());
+  // The rim is set down to 2.26, so each tooth's leading root runs on below
+  // the generated face.
+  const toothOutline = [[2.18, -0.17], tooth[0], tooth[1], tip, back, ...backCurve];
+  const toothGeometry = plate(poly(toothOutline), -0.16, 0.16);
+  const oldTeeth = new Set(b.wheelTeeth.map((mesh) => mesh.geometry));
+  for (const mesh of b.wheelTeeth) {
+    mesh.geometry = toothGeometry;
+    mesh.userData.role = 'pointed-lever-escape-wheel-tooth';
+  }
+  for (const geometry of oldTeeth) geometry.dispose();
+  // Brown's rim is a broad band (windows inside about 0.6 of the tip
+  // radius); curved spokes leave about 0.27 between neighbouring windows.
+  replace(b.wheelRim, plate(polygonClipping.difference(poly(circle([0, 0], 2.26, 256)),
+    poly(circle([0, 0], 1.66, 256))), -0.15, 0.15));
+  b.wheelRim.userData.role = 'continuous-lever-escape-wheel-rim-A';
+  const windowOffset = 1.6;
+  const windowRadius = 1.25;
+  const windows = [0, 1, 2].map((index) => {
+    const angle = index * FULL_TURN / 3;
+    return polygonClipping.intersection(
+      poly(circle([0, 0], 1.72, 192)),
+      poly(circle([windowOffset * Math.cos(angle), windowOffset * Math.sin(angle)], windowRadius, 192)),
+    );
   });
+  const web = polygonClipping.difference(
+    polygonClipping.difference(poly(circle([0, 0], 1.78, 192)), poly(circle([0, 0], 0.13, 96))),
+    ...windows,
+  );
+  const [first, ...rest] = b.wheelSpokes;
+  replace(first, plate(web, -0.123, 0.123));
+  first.position.set(0, 0, 0);
+  first.rotation.set(0, 0, 0);
+  first.userData.role = 'lever-escape-wheel-web-with-three-lens-windows';
+  for (const spoke of rest) {
+    spoke.removeFromParent();
+    spoke.geometry.dispose();
+  }
+  b.wheelSpokes = [first];
+  return model;
 }
 
 export function createAuthoredLeverEscapementMovement(movement) {
