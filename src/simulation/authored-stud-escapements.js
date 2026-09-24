@@ -2516,6 +2516,9 @@ function lePautePinWheelEscapement(movement) {
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
+  // The thirty pins standing off the rim cast long streaks across its face
+  // that the plate does not have; the pins themselves stay lit and shaded.
+  for (const pin of pinMeshes) pin.traverse((object) => { object.castShadow = false; });
   root.userData.fidelity = 'authored';
   return {
     cameraDirection: new THREE.Vector3(0.05, 0.05, 1),

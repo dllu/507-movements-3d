@@ -481,9 +481,118 @@ function alternatingPawlRatchetBar(movement) {
         : 'short-lower-pawl-pulls-left-long-upper-pawl-resets',
     };
   };
-  const stateAtTime = (time) => stateAtCycleCoordinate(
-    sourceCyclePhase + time * cyclesPerSecond,
-  );
+  // The demonstration runs two whole lever vibrations (four pitches of
+  // leftward travel, from the bar's rightmost position clear of the post)
+  // and then returns the bar in view instead of wrapping it: the long pawl,
+  // which still has its pickup clearance, lifts; the lever eases forward a
+  // few degrees so the short hook leaves its face; the short pawl lifts; and
+  // with both hooks clear of the crests the bar slides back four pitches.
+  // The pawls then drop back in reverse order onto exactly the start pose.
+  // Brown's pose (cycle phase 0.5) opens the loop. The return is a
+  // prescribed demonstration reset.
+  const driveVibrations = 2;
+  const driveDuration = driveVibrations / cyclesPerSecond;
+  const returnDuration = 2.5;
+  const loopPeriod = driveDuration + returnDuration;
+  const returnStartTime = (driveVibrations - sourceCyclePhase) / cyclesPerSecond;
+  const returnLeverForward = 0.15;
+  const returnLift = resetLift;
+  const quinticRamp = (value, start, end) => {
+    const u = THREE.MathUtils.clamp((value - start) / (end - start), 0, 1);
+    return u ** 3 * (10 - 15 * u + 6 * u ** 2);
+  };
+  const liftBump = (u, riseStart, riseEnd) => quinticRamp(u, riseStart, riseEnd)
+    - quinticRamp(u, 1 - riseEnd, 1 - riseStart);
+  const returnPositions = (u) => {
+    const leverAngle = -leverAmplitude + returnLeverForward * liftBump(u, 0.05, 0.2);
+    const zero = { acceleration: new THREE.Vector2(), velocity: new THREE.Vector2() };
+    const longAnchor = { ...zero, position: rotateVector(longAnchorLocal, leverAngle) };
+    const shortAnchor = { ...zero, position: rotateVector(shortAnchorLocal, leverAngle) };
+    const pawl = (anchor, length, lift) => constrainedPawlState({
+      anchor, length, targetY: contactY + returnLift * lift,
+      targetYAcceleration: 0, targetYSpeed: 0,
+    });
+    const barStart = -2 * driveVibrations * rackPitch;
+    return {
+      barDisplacement: barStart * (1 - quinticRamp(u, 0.3, 0.7)),
+      leverAngle,
+      longAnchor: longAnchor.position,
+      longPawl: pawl(longAnchor, longPawlLength, liftBump(u, 0, 0.15)),
+      shortAnchor: shortAnchor.position,
+      shortPawl: pawl(shortAnchor, shortPawlLength, liftBump(u, 0.12, 0.27)),
+    };
+  };
+  const returnState = (u) => {
+    const now = returnPositions(u);
+    const du = 1e-5;
+    const before = returnPositions(Math.max(0, u - du));
+    const after = returnPositions(Math.min(1, u + du));
+    const rate = 1 / ((Math.min(1, u + du) - Math.max(0, u - du)) * returnDuration);
+    const tipVelocity = (key) => after[key].tip.clone().sub(before[key].tip).multiplyScalar(rate);
+    const barSpeed = (after.barDisplacement - before.barDisplacement) * rate;
+    const zero = new THREE.Vector2();
+    return {
+      activeContactPoint: null,
+      activeFaceIndex: null,
+      activePawl: null,
+      activePawlContactError: 0,
+      atHandoff: false,
+      barAcceleration: 0,
+      barDirection: 'right-return',
+      barDisplacement: now.barDisplacement,
+      barPitchesAdvanced: -now.barDisplacement / rackPitch,
+      barSpeed,
+      demonstrationReturn: true,
+      drivingContactCount: 0,
+      engaged: false,
+      leverAngle: now.leverAngle,
+      leverAngularAcceleration: 0,
+      leverAngularSpeed: (after.leverAngle - before.leverAngle) * rate,
+      longAnchor: now.longAnchor,
+      longAnchorAcceleration: zero.clone(),
+      longAnchorVelocity: after.longAnchor.clone().sub(before.longAnchor).multiplyScalar(rate),
+      longDriving: false,
+      longPawlAngle: now.longPawl.angle,
+      longPawlAngularSpeed: (after.longPawl.angle - before.longPawl.angle) * rate,
+      longPawlLengthError: now.longPawl.lengthError,
+      longResetClearance: now.longPawl.tip.y - toothTipY,
+      longTip: now.longPawl.tip,
+      longTipAcceleration: zero.clone(),
+      longTipVelocity: tipVelocity('longPawl'),
+      renderedBarDisplacement: now.barDisplacement,
+      returnFraction: u,
+      shortAnchor: now.shortAnchor,
+      shortAnchorAcceleration: zero.clone(),
+      shortAnchorVelocity: after.shortAnchor.clone().sub(before.shortAnchor).multiplyScalar(rate),
+      shortDriving: false,
+      shortPawlAngle: now.shortPawl.angle,
+      shortPawlAngularSpeed: (after.shortPawl.angle - before.shortPawl.angle) * rate,
+      shortPawlLengthError: now.shortPawl.lengthError,
+      shortResetClearance: now.shortPawl.tip.y - toothTipY,
+      shortTip: now.shortPawl.tip,
+      shortTipAcceleration: zero.clone(),
+      shortTipVelocity: tipVelocity('shortPawl'),
+      stage: 'both-pawls-lifted-bar-returned-for-demonstration',
+    };
+  };
+  const stateAtTime = (time) => {
+    const loopTime = ((time % loopPeriod) + loopPeriod) % loopPeriod;
+    const returnEndTime = returnStartTime + returnDuration;
+    if (loopTime >= returnStartTime - 1e-12 && loopTime < returnEndTime - 1e-12) {
+      return returnState((loopTime - returnStartTime) / returnDuration);
+    }
+    const state = stateAtCycleCoordinate(loopTime < returnStartTime
+      ? sourceCyclePhase + loopTime * cyclesPerSecond
+      : (loopTime - returnEndTime) * cyclesPerSecond);
+    // Within the demonstration the bar is drawn where it physically is.
+    state.renderedBarDisplacement = state.barDisplacement;
+    state.renderedFaceIndex = state.activeFaceIndex;
+    state.activeContactPoint = new THREE.Vector2(
+      baseFace + state.activeFaceIndex * rackPitch + state.barDisplacement,
+      contactY,
+    );
+    return state;
+  };
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.12,
@@ -756,8 +865,14 @@ function alternatingPawlRatchetBar(movement) {
   root.userData.stateAtTime = stateAtTime;
   root.userData.timeline = {
     cyclesPerSecond,
-    demonstrationPeriod,
+    demonstrationPeriod: loopPeriod,
+    driveDuration,
+    driveVibrations,
+    returnDuration,
+    returnLeverForward,
+    returnStartTime,
     sourceCyclePhase,
+    vibrationPeriod: demonstrationPeriod,
   };
   root.userData.transmission = {
     advancePerHalfStroke: rackPitch,
@@ -774,7 +889,7 @@ function alternatingPawlRatchetBar(movement) {
     liftEnvelopeDerivative,
     liftEnvelopeSecondDerivative,
     outputDirection: 'leftward-unidirectional',
-    periodicRenderWrap: 2 * rackPitch,
+    demonstrationReturnPitches: 2 * driveVibrations,
     toothPitchesPerLeverVibration: 2,
   };
 
@@ -854,7 +969,7 @@ function alternatingPawlRatchetBar(movement) {
     const state = stateAtTime(time);
     rack.position.x = state.renderedBarDisplacement;
     cordSpan.scale.x = barLeftX + state.renderedBarDisplacement - pulleyCenter.x;
-    leftPulley.rotation.z = -state.barDisplacement / cordCenterRadius;
+    leftPulley.rotation.z = -state.renderedBarDisplacement / cordCenterRadius;
     leverRotor.rotation.z = state.leverAngle;
     longPawl.position.x = state.longAnchor.x;
     longPawl.position.y = state.longAnchor.y;
@@ -878,7 +993,7 @@ function alternatingPawlRatchetBar(movement) {
         drivingContactCount: state.drivingContactCount,
         faceIndex: state.activeFaceIndex,
         pawl: state.activePawl,
-        point: state.activeContactPoint.clone(),
+        point: state.activeContactPoint?.clone() ?? null,
         simultaneousDriving: false,
         normalOnRack: new THREE.Vector3(-1, 0, 0),
         finiteAxialOverlap: 0.2,
@@ -886,24 +1001,29 @@ function alternatingPawlRatchetBar(movement) {
       longPawlToRatchetBar: {
         toeCenterHeightAboveCrest: state.longTip.y - toothTipY,
         engaged: state.longDriving && state.engaged,
-        mode: state.longDriving ? (state.engaged ? 'pulling-left' : 'taking-up-pickup-clearance') : 'prescribed-return-over-crests',
+        mode: state.demonstrationReturn ? 'lifted-for-demonstration-return' : state.longDriving ? (state.engaged ? 'pulling-left' : 'taking-up-pickup-clearance') : 'prescribed-return-over-crests',
       },
       shortPawlToRatchetBar: {
         toeCenterHeightAboveCrest: state.shortTip.y - toothTipY,
         engaged: state.shortDriving && state.engaged,
-        mode: state.shortDriving ? (state.engaged ? 'pulling-left' : 'taking-up-pickup-clearance') : 'prescribed-return-over-crests',
+        mode: state.demonstrationReturn ? 'lifted-for-demonstration-return' : state.shortDriving ? (state.engaged ? 'pulling-left' : 'taking-up-pickup-clearance') : 'prescribed-return-over-crests',
       },
     };
     root.userData.kinematics = state;
   };
-  root.userData.minimumDisplayCycleSeconds = demonstrationPeriod;
+  root.userData.minimumDisplayCycleSeconds = loopPeriod;
   root.userData.hideGround = true;
   root.traverse(object => {
     for (const material of [].concat(object.material ?? [])) material.fog = false;
   });
-  root.userData.reconstructionNote = 'Finite stepped hooks engage the rack faces below the crests. Each lever half-stroke includes 0.05 of pickup travel before one tooth-pitch advance; the returning hook follows a prescribed smooth lift and drop. The unloaded bar is held during pickup; gravity, pawl bias, friction and inertial coast are not solved. No official animation is registered.';
+  root.userData.reconstructionNote = 'Finite stepped hooks engage the rack faces below the crests. Each lever half-stroke includes 0.05 of pickup travel before one tooth-pitch advance; the returning hook follows a prescribed smooth lift and drop. After two vibrations both hooks lift and the bar slides back four pitches in view (a prescribed demonstration reset, not a wrap). The unloaded bar is held during pickup; gravity, pawl bias, friction and inertial coast are not solved. No official animation is registered.';
   update(0);
   markShadows(root);
+  // The pawls and lever stand in front of the table; their cast shadows
+  // drew a dark wedge across its face that the plate does not have.
+  for (const part of [longPawl, shortPawl, lever]) {
+    part.traverse((object) => { object.castShadow = false; });
+  }
   return {
     root,
     update,

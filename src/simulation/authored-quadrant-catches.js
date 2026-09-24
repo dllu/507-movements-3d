@@ -151,7 +151,7 @@ function sourceHandGear(movementId) {
 
   const phaseAt183 = Math.acos((strokeSource.source183 - (strokeSource.top + strokeSource.bottom) / 2)
     / ((strokeSource.bottom - strokeSource.top) / 2)) / (2 * Math.PI);
-  const initialPhase = is184 ? 0.5 : phaseAt183;
+  const initialPhase = phaseAt183;
   const eyeAt = (w, angle) => {
     const r = [w.eye[0] - w.pivot[0], w.eye[1] - w.pivot[1]], a = angle * deg;
     return [w.pivot[0] + r[0] * Math.cos(a) - r[1] * Math.sin(a), w.pivot[1] + r[0] * Math.sin(a) + r[1] * Math.cos(a)];
@@ -190,8 +190,8 @@ function sourceHandGear(movementId) {
     ? 'top-position-descending-piston-tappet-trips-upper-quadrant-handle-releases-lower-backweighted-quadrant-handle-and-restores-four-valves'
     : 'ascending-piston-tappet-trips-lower-quadrant-handle-releases-upper-backweighted-quadrant-handle-and-reverses-four-valves';
   root.userData.fidelity = 'authored';
-  root.userData.variant = is184 ? 'source-184-top-of-cylinder-initial-pose' : 'source-183-ascending-stroke-initial-pose';
-  root.userData.reconstructionNote = 'Handle motion is a quasistatic solve: the tappet pushes, the back weights are represented by each handle moving toward its weighted side until a contact or its undrawn valve stop, and concentric quadrant rims hold studs on the opposite handle. Forces, friction and impact are not simulated. 184 is the 183 geometry at the top of the stroke; Brown draws larger handle swings there.';
+  root.userData.variant = is184 ? 'source-184-reflected-top-of-cylinder-initial-pose' : 'source-183-ascending-stroke-initial-pose';
+  root.userData.reconstructionNote = 'Handle motion is a quasistatic solve: the tappet pushes, the back weights are represented by each handle moving toward its weighted side until a contact or its undrawn valve stop, and concentric quadrant rims hold studs on the opposite handle. Forces, friction and impact are not simulated. 184 is the 183 gear reflected top to bottom, as plate 184 is plate 183 flipped; in that view the tappet stands at the top and descends onto the upper handle.';
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraDirection = new THREE.Vector3(0, 0, 18);
@@ -203,6 +203,24 @@ function sourceHandGear(movementId) {
   // The hidden catch features sit within drawn outlines; they cast no shadow
   // onto the plates they hide behind or in front of.
   for (const key of ['upperCatchBoss', 'upperStud', 'lowerStud', 'lowerLip']) blocks[key].castShadow = false;
+  // Plate 184 is plate 183 drawn upside down: the ball lever and hook on
+  // the upper shaft, the pointed-window wing hanging from the lower one,
+  // and the tappet up by the upper shaft. Flipping plate 183 top to bottom
+  // lays its parts over 184's, while no pose of the upright gear does
+  // (184 would need both handles about 80 degrees further and the ball lever
+  // and hook exchanged). So 184 shows the same gear reflected top to bottom
+  // at 183's pose: the tappet is then at the top of its stroke in the view
+  // and descends onto the upper (ball) handle, as Brown's caption for 182
+  // and 184 describes. The reflection is a presentation transform; every
+  // relative motion and contact is the 183 solve.
+  if (is184) {
+    const mirror = new THREE.Group();
+    mirror.userData.role = 'plate-184-top-to-bottom-reflection';
+    for (const child of [...root.children]) mirror.add(child);
+    mirror.scale.y = -1;
+    root.add(mirror);
+    root.userData.blocks.plate184Reflection = mirror;
+  }
   const box = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 72; i++) {
     update(period * i / 72); root.updateMatrixWorld(true);

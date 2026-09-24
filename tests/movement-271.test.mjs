@@ -240,7 +240,9 @@ test('movement 271 reconstructs one regular asymmetric rack and exact tooth regi
   assert.equal(transmission.advancePerHalfStroke, geometry.rackPitch);
   assert.equal(transmission.advancePerLeverVibration, 2 * geometry.rackPitch);
   assert.equal(transmission.toothPitchesPerLeverVibration, 2);
-  assert.equal(transmission.periodicRenderWrap, 2 * geometry.rackPitch);
+  // The demonstration returns the bar in view after two vibrations.
+  assert.equal(transmission.periodicRenderWrap, undefined);
+  assert.equal(transmission.demonstrationReturnPitches, 4);
   for (let index = 1; index < blocks.rackIndexes.length; index += 1) {
     near(
       blocks.rackIndexes[index].position.x
@@ -483,25 +485,32 @@ test('movement 271 renderer binds the rack, lever, alternating contacts, and per
   disposeModel(model.root);
 });
 
-test('movement 271 closes visibly after two pitches and leaves movement 507 authored', () => {
+test('movement 271 closes visibly after two vibrations and a smooth in-view return, and leaves movement 507 authored', () => {
   const movement = catalog.movements[270];
   const model = createMovementModel(movement);
   const {
     animationTiming,
     blocks,
     geometry,
+    stateAtCycleCoordinate,
     stateAtTime,
     timeline,
   } = model.root.userData;
   const source = stateAtTime(0);
   const closure = stateAtTime(timeline.demonstrationPeriod);
 
-  near(closure.barDisplacement - source.barDisplacement,
+  near(
+    stateAtCycleCoordinate(timeline.sourceCyclePhase + 1).barDisplacement
+      - stateAtCycleCoordinate(timeline.sourceCyclePhase).barDisplacement,
     -2 * geometry.rackPitch, 5e-16,
     'physical bar advance over one vibration');
+  near(stateAtTime(timeline.returnStartTime - 1e-9).renderedBarDisplacement,
+    -4 * geometry.rackPitch, 1e-9, 'bar drawn four pitches left before the return');
+  near(stateAtTime(timeline.returnStartTime + timeline.returnDuration).renderedBarDisplacement,
+    0, 1e-12, 'bar returned to its rightmost start');
   near(closure.renderedBarDisplacement,
     source.renderedBarDisplacement, 5e-16,
-    'periodic rendered bar closure');
+    'rendered bar closure');
   near(closure.leverAngle, source.leverAngle, 3e-16,
     'lever closure');
   vectorNear(closure.longAnchor, source.longAnchor, 3e-16,
@@ -512,11 +521,39 @@ test('movement 271 closes visibly after two pitches and leaves movement 507 auth
     'long-tip closure');
   vectorNear(closure.shortTip, source.shortTip, 3e-15,
     'short-tip closure');
-  assert.equal(closure.activeFaceIndex, source.activeFaceIndex + 2);
-  assert.equal(timeline.demonstrationPeriod, 5);
-  assert.equal(animationTiming.authoredCyclePeriod, 5);
+  assert.equal(closure.activeFaceIndex, source.activeFaceIndex);
+  assert.equal(timeline.vibrationPeriod, 5);
+  assert.equal(timeline.demonstrationPeriod, 12.5);
+  assert.equal(animationTiming.authoredCyclePeriod, 12.5);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
+
+  // No jumps anywhere in the loop, and during the return both hooks stay
+  // above the crests while the bar moves and never cross a face below them.
+  let previous = stateAtTime(0);
+  for (let sample = 1; sample <= 5000; sample += 1) {
+    const state = stateAtTime(sample * timeline.demonstrationPeriod / 5000);
+    assert.ok(Math.abs(state.renderedBarDisplacement - previous.renderedBarDisplacement) < 0.01);
+    assert.ok(state.longTip.distanceTo(previous.longTip) < 0.01);
+    assert.ok(state.shortTip.distanceTo(previous.shortTip) < 0.01);
+    if (state.demonstrationReturn && Math.abs(state.barSpeed) > 1e-9) {
+      assert.ok(state.longTip.y - geometry.noseRadius > geometry.toothTipY + 0.1);
+      assert.ok(state.shortTip.y - geometry.noseRadius > geometry.toothTipY + 0.1);
+    }
+    for (const key of ['longTip', 'shortTip']) {
+      const faceCoordinate = (tip, bar) => (tip.x - geometry.noseRadius - bar - geometry.baseFace) / geometry.rackPitch;
+      const below = state[key].y - geometry.noseRadius < geometry.toothTipY
+        && previous[key].y - geometry.noseRadius < geometry.toothTipY;
+      if (below && state.demonstrationReturn) {
+        assert.equal(
+          Math.floor(faceCoordinate(state[key], state.renderedBarDisplacement) + 1e-9),
+          Math.floor(faceCoordinate(previous[key], previous.renderedBarDisplacement) + 1e-9),
+          `${key} stays behind its face at return sample ${sample}`,
+        );
+      }
+    }
+    previous = state;
+  }
 
   model.update(0, 0.016);
   const sourceTransforms = {

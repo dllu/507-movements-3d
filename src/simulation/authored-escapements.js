@@ -2,6 +2,7 @@ import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
 import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeBeam,
@@ -3605,10 +3606,14 @@ function oldFashionedClockVergeEscapement(movement) {
 
   // The staff ends just outside the lower pallet in the journal Brown draws
   // end-on, and runs up past the upper pallet to the foliot.
-  const vergeStaffLength = 7.35;
-  const vergeStaffCenter = 1.125;
+  // Brown's end-on journal is a small ring (about 0.11 of the crown pitch
+  // radius here) around a pivot circle about a third of its size, so the
+  // pallet strips show nearly their full length beside it. The staff is a
+  // slender rod ending in the collar, with only its pivot standing proud.
+  const vergeStaffLength = 7.22;
+  const vergeStaffCenter = 1.19;
   const vergeStaff = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11, 0.11, vergeStaffLength, 30),
+    new THREE.CylinderGeometry(0.07, 0.07, vergeStaffLength, 30),
     matte(PALETTE.ink, { metalness: 0.27, roughness: 0.45 }),
   );
   vergeStaff.rotation.z = Math.PI / 2;
@@ -3617,13 +3622,21 @@ function oldFashionedClockVergeEscapement(movement) {
   vergeStaff.userData.role = 'vertical-clock-verge-staff';
   blocks.verge.add(vergeStaff);
   const journalCollar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.18, 0.12, 36),
+    new THREE.CylinderGeometry(0.115, 0.115, 0.12, 36),
     matte(PALETTE.driver, { metalness: 0.14, roughness: 0.57 }),
   );
   journalCollar.rotation.z = Math.PI / 2;
-  journalCollar.position.x = vergeStaffCenter - vergeStaffLength / 2 + 0.1;
+  journalCollar.position.x = vergeStaffCenter - vergeStaffLength / 2 + 0.03;
   journalCollar.userData.role = 'verge-journal-collar';
   blocks.verge.add(journalCollar);
+  const journalPivot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.042, 0.042, 0.1, 20),
+    matte(PALETTE.ink, { metalness: 0.27, roughness: 0.45 }),
+  );
+  journalPivot.rotation.z = Math.PI / 2;
+  journalPivot.position.x = vergeStaffCenter - vergeStaffLength / 2 - 0.06;
+  journalPivot.userData.role = 'verge-journal-pivot';
+  blocks.verge.add(journalPivot);
 
   const foliotPositionOnStaff = 4.65;
   const foliotBarLength = 9.2;
@@ -3727,6 +3740,38 @@ function oldFashionedClockVergeEscapement(movement) {
     spoke.userData.role = 'open-clock-crown-wheel-spoke';
     crownSpokes.push(spoke);
     blocks.crownWheel.userData.rotor.add(spoke);
+  }
+
+  // Brown hatches the band edge-on with vertical lines that crowd toward
+  // both ends. Evenly spaced rules round the band's outer face do exactly
+  // that when seen edge-on. They are presentation-only strips on the rotor.
+  {
+    const hatchCount = 132;
+    const hatchWidth = 0.009;
+    const hatchHeight = baseGeometry.bodyDepth - 0.02;
+    const hatchRadius = baseGeometry.contactRadius + 0.0015;
+    const strips = [];
+    const matrix = new THREE.Matrix4();
+    for (let index = 0; index < hatchCount; index += 1) {
+      const angle = index * FULL_TURN / hatchCount;
+      const strip = new THREE.BoxGeometry(0.003, hatchWidth, hatchHeight);
+      matrix.makeRotationZ(angle).setPosition(
+        hatchRadius * Math.cos(angle),
+        hatchRadius * Math.sin(angle),
+        baseGeometry.toothBaseZ - baseGeometry.bodyDepth / 2,
+      );
+      strip.applyMatrix4(matrix);
+      strips.push(strip);
+    }
+    const bandHatch = new THREE.Mesh(
+      mergeGeometries(strips),
+      matte(0xc9d0d0, { metalness: 0.02, roughness: 0.8 }),
+    );
+    for (const strip of strips) strip.dispose();
+    bandHatch.userData.presentationOnly = true;
+    bandHatch.userData.role = 'crown-band-vertical-hatching';
+    bandHatch.castShadow = false;
+    blocks.crownWheel.userData.rotor.add(bandHatch);
   }
 
   // Seen along the verge, the far half of the crown shows its teeth through

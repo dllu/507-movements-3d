@@ -3510,20 +3510,20 @@
       }
     },
     "184": {
-      "peakAngularSpeed": 0.6872408462686067,
-      "peakVisibleAngularSpeed": 0.6872408462686067,
-      "sustainedVisibleAngularSpeed": 0.27373743988279087,
-      "floorY": -3.3062500000000004,
+      "peakAngularSpeed": 0.9012182125287188,
+      "peakVisibleAngularSpeed": 0.9012182125287188,
+      "sustainedVisibleAngularSpeed": 0.2534916205608342,
+      "floorY": -2.581249952316284,
       "fastestPart": "upper-back-weighted-quadrant-valve-handle",
       "motionBounds": {
         "min": [
           -2.693750095367432,
-          -3.3062500000000004,
+          -2.581249952316284,
           -0.6599999991059303
         ],
         "max": [
-          1.964333516157765,
-          2.581249952316284,
+          1.9641936487314184,
+          3.3062500000000004,
           0.5600000023841858
         ]
       }
@@ -5163,11 +5163,11 @@
       }
     },
     "271": {
-      "peakAngularSpeed": 0.35021716092766436,
-      "peakVisibleAngularSpeed": 0.35021716092766425,
-      "sustainedVisibleAngularSpeed": 0.3235332043092617,
+      "peakAngularSpeed": 2.859735121135908,
+      "peakVisibleAngularSpeed": 2.859735121135908,
+      "sustainedVisibleAngularSpeed": 0.3351433205071892,
       "floorY": -2.85000000667572,
-      "fastestPart": "long-upper-pawl-pin-on-lever",
+      "fastestPart": "free-left-cord-pulley",
       "motionBounds": {
         "min": [
           -7.61000000667572,
@@ -5175,7 +5175,7 @@
           -0.6899999976158142
         ],
         "max": [
-          2.002039209972344,
+          2.002039211674672,
           1.269958955202147,
           1.0399999928474426
         ]
@@ -5702,14 +5702,14 @@
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
-          -1.3420000289586442,
+          -1.3438328318078705,
           -0.20740000045448637,
           -2.238699999636412
         ],
         "max": [
-          1.3420000289586442,
+          1.3438328318078705,
           0.6148093281892236,
-          2.927999970912933
+          2.927999936008453
         ]
       }
     },

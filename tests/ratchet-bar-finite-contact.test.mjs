@@ -6,7 +6,10 @@ import { poly, polygonClipping } from '../src/simulation/finite-plate-geometry.j
 import { solidSurface, surfacePoints } from './helpers/solid-surface.mjs';
 
 const create = () => createAuthoredRatchetBarMovement({ id: 271 });
-const at = (model, phase) => { model.update((phase - 0.5) * 5); model.root.updateMatrixWorld(true); return model.root.userData.kinematics; };
+// The display loop opens at Brown's pose (phase 0.5) and drives on through
+// phase 2 before the in-view return; phases 0..0.5 are taken from the second
+// vibration, which has the same pose up to a whole two-pitch bar offset.
+const at = (model, phase) => { model.update((phase < 0.5 ? phase + 0.5 : phase - 0.5) * 5); model.root.updateMatrixWorld(true); return model.root.userData.kinematics; };
 const area = polygons => polygons.reduce((sum, polygon) => sum + polygon.reduce((s, ring) => s + Math.abs(ring.reduce((a, q, i) => {
   const v = ring[(i + 1) % ring.length]; return a + q[0] * v[1] - q[1] * v[0];
 }, 0)) / 2, 0), 0);
@@ -112,6 +115,16 @@ test('271 bar lies on the source table, clears the post, and carries no drawn ma
     const cord = new THREE.Box3().setFromObject(b.cordSpan);
     assert.ok(Math.abs(cord.max.x - body.min.x) < 1e-6);
   }
+  // Over the whole display loop (two vibrations, then the in-view return)
+  // the bar's left end stops well short of the pulley and its right end
+  // never reaches the post.
+  const { timeline, geometry: g } = model.root.userData;
+  for (let i = 0; i <= 200; i++) {
+    model.update(i * timeline.demonstrationPeriod / 200); model.root.updateMatrixWorld(true);
+    const body = new THREE.Box3().setFromObject(b.rackBody);
+    assert.ok(body.min.x > g.pulleyCenter.x + g.pulleyRadius + 0.15, `bar end clears the pulley at ${i}`);
+    assert.ok(new THREE.Box3().setFromObject(b.pivotStand).min.x - body.max.x > 0.0599);
+  }
 });
 
 test('271 has continuous rigid return paths and honest finite-pickup timing', () => {
@@ -126,7 +139,7 @@ test('271 has continuous rigid return paths and honest finite-pickup timing', ()
   assert.ok(Math.abs(state(1).barDisplacement + 2 * g.rackPitch) < 1e-14);
   assert.equal(state(0).engaged, false);
   assert.equal(state(0.5).engaged, false);
-  assert.equal(model.root.userData.minimumDisplayCycleSeconds, 5);
+  assert.equal(model.root.userData.minimumDisplayCycleSeconds, 12.5);
   assert.match(model.root.userData.reconstructionNote, /prescribed.*not solved/);
 });
 

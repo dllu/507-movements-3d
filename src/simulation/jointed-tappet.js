@@ -29,8 +29,11 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   const end=rotate(sub(source([1282,589]),p.C),-strikeKink),barRadius=41/p.scale,restQ=.30,
     restEnd=add(p.C,rotate(end,restQ)),studRadius=24/p.scale,studDirection=source([1187,358]),
     studOrbit=Math.hypot(...restEnd)+barRadius+studRadius-studOverlap;
+  // Brown's broad spoke runs radially about 4.6° below D, so D stands on the
+  // rim just above the spoke's upper edge (measured on the plate).
+  const spokeBelowStud=THREE.MathUtils.degToRad(4.6);
   const bore=.106,axleRadius=.103,driverInner=744.8633730551632/p.scale,driverOuter=921.1339022024459/p.scale,
-    studVector=studDirection.map(v=>v*studOrbit/Math.hypot(...studDirection)),spokeAngle=Math.atan2(studVector[1],studVector[0]),
+    studVector=studDirection.map(v=>v*studOrbit/Math.hypot(...studDirection)),spokeAngle=Math.atan2(studVector[1],studVector[0])-spokeBelowStud,
     driverRing=clip.difference(poly(circle([0,0],driverOuter,1024)),poly(circle([0,0],driverInner,1024))),
     driverSpokes=Array.from({length:4},(_,i)=>poly([[.12,-.081],[driverInner+.03,-.081],[driverInner+.03,.081],[.12,.081]]
       .map(point=>rotate(point,spokeAngle+i*Math.PI/2)))),

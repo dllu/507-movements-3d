@@ -6171,7 +6171,8 @@
         "docs/w3a-catches-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u4-catches-review.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m12-forced-mixed-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6182,8 +6183,8 @@
         "note": "Shared 183–184 unqualified MuJoCo diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's 184 swings both handles about 80° further than 183 and swaps the ball lever and the hook between them; the model shows 183's parts at the top of the stroke, so the upper lever hangs about 25° low and hooked.",
-      "limits": "Plates 183 and 184 cannot be the same rigid parts.",
+      "visibleFlaws": "The lower wing sits about 60° clockwise of Brown's; the weight rods rise from eyes at top-left and bottom-right where Brown hangs them down from pins at mid height.",
+      "limits": "Plate 184 is plate 183 reflected top to bottom; the view is a presentation reflection of the 183 solve at 183's pose.",
       "assessment": "minor"
     },
     {
@@ -9100,7 +9101,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/m8-framing-ropes-review.md"
+        "docs/m8-framing-ropes-review.md",
+        "docs/m12-forced-mixed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9108,8 +9110,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth are cut deeper than engraved so the pawl hooks clear; the bar and cord jump back two teeth each cycle.",
-      "limits": "The pulley bearing is not drawn (Brown omits it too); holding and load transfer imposed.",
+      "visibleFlaws": "Teeth are cut deeper than engraved so the pawl hooks clear.",
+      "limits": "The in-view bar return after two vibrations (both pawls lifted, bar slides back over 2.5 s) is a prescribed demonstration reset; Brown draws no pulley bearing.",
       "assessment": "minor"
     },
     {
@@ -10032,7 +10034,8 @@
         "docs/w5b-248-314-review.md",
         "docs/u7-flawed-review.md",
         "docs/u8-299-review.md",
-        "docs/m7-gears-teeth-review.md"
+        "docs/m7-gears-teeth-review.md",
+        "docs/m12-forced-mixed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10040,9 +10043,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Pallets are about 20% shorter than Brown's strips and the band is shaded rather than hatched; the far teeth still show faintly behind the near strip.",
-      "limits": "A longer pallet would cut into the next tooth.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Pallets stop at the release edge, about 10% shorter than Brown's strips; any extension keeps the escaping tooth in contact.",
+      "assessment": "reasonable"
     },
     {
       "id": 300,
