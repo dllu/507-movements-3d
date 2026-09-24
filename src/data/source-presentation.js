@@ -198,9 +198,9 @@ export default {
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
-    camera: [0, 0.035, -1],
+    camera: [0.1, 0.14, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
-    note: 'Close, nearly edge-on detail: the crown band upright under its teeth and the verge journal end-on with its two pallets radiating about 100° apart. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge: the crown band with its raked teeth, the verge journal end-on above it and the two pallets about 100° apart, the steep one on the left and the shallow one on the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],

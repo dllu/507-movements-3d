@@ -209,12 +209,15 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
     1e-15,
     'pitch circles are tangent',
   );
-  near(geometry.driverRootRadius, 1.8, 5e-16, 'input root radius');
-  near(geometry.drivenRootRadius, 2.28, 5e-16,
+  // Brown's short square teeth: 0.8 module addendum and 0.9 dedendum on the
+  // site construction's pitch circles (its deeper 3.75/6 radii are retained
+  // as sourceDriverRootRadius and sourceDriverOuterRadius).
+  near(geometry.driverRootRadius, 2.4 - 0.9 * 0.48, 1e-9, 'input root radius');
+  near(geometry.drivenRootRadius, 2.88 - 0.9 * 0.48, 1e-9,
     'counterwheel root radius');
-  near(geometry.driverOuterRadius, 2.88, 5e-16,
+  near(geometry.driverOuterRadius, 2.4 + 0.8 * 0.48, 1e-9,
     'input addendum radius');
-  near(geometry.drivenOuterRadius, 3.36, 5e-16,
+  near(geometry.drivenOuterRadius, 2.88 + 0.8 * 0.48, 1e-9,
     'counterwheel addendum radius');
   near(
     geometry.sourceDriverToothCenterPhase,

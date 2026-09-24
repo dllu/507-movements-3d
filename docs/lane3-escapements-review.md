@@ -154,3 +154,23 @@ above the arbor.
 - Residual: the pendulum is prescribed and the drops are ideal. 306's escape
   angle is 0.68°, not Beckett's 1°. In 307 the slot sits lower than drawn,
   the spears are broad near the hub, and A/B are mostly hidden behind the hub.
+
+## Follow-up: 299 and 302 framing
+
+- **299:** the close crop overflowed the frame (maxNdc 2.53). It now frames
+  the whole crown band (field 12°, camera `[0.1, 0.14, -1]`, a slight lift and
+  yaw off the staff) at maxNdc 0.78. With that framing, the far steep pallet
+  hangs clear to the left of the journal and the near shallow pallet points
+  right, as in Brown. The blades are 0.2 thick (they were 0.105). The arbor is
+  cut to a stub inside the cup. The verge audit (513 phases) and
+  show-body-intersections still find only tangent working contact. Residual:
+  the full band shows about six near teeth where Brown shows an arc with two,
+  and the staff is seen receding briefly between the pallets.
+- **302:** the camera is now the flat front elevation (`[0, 0, 1]`, field 12°).
+  The crown reads edge-on as a band with saw teeth along its top, the arbor is
+  vertical, and the balls sit above and below. The crown hub is kept inside
+  the cup. The ring at C is slimmer (0.15), so both blades read beside it at
+  t = 0. The witness marks are hidden. The audit still finds only tangent
+  contact. Residual: the blades are short (0.5, set by the verge law) and
+  point up-right and down-left at t = 0, not in Brown's hanging V; Brown's
+  teeth are finer (13 modeled).

@@ -20,6 +20,9 @@ export function correctGearFingerStop(model){
     replace(assembly.gearBody,extrusion(outline,bore,-g.gearDepth/2,g.gearDepth/2));
     assembly.gearBody.geometry.userData.generatedTeeth={...profiles[teeth],outline:undefined};
     g[`${key}GearOutline`]=outline;
+    // Brown's stubbed teeth replace the site construction's deeper radii.
+    const radii=outline.map(p=>p.length()),clearance=profiles[teeth].radialClearance;
+    g[`${key}RootRadius`]=Math.min(...radii)+clearance;g[`${key}OuterRadius`]=Math.max(...radii)+clearance;
     // Keep the source's stop faces in the same common plane, without bevel
     // growth. The square passage continues through gear, finger and clamp hub.
     replace(assembly.fingerBody,plate(clip.difference(poly(g[`${key}FingerLocal`].map(p=>p.toArray())),poly(bore.map(p=>p.toArray()))),-g.fingerDepth/2,g.fingerDepth/2));
@@ -31,6 +34,8 @@ export function correctGearFingerStop(model){
     replace(arbor,plate(clip.difference(poly(keyed.map(p=>p.toArray())),poly(circle([0,0],.124,96))),-.18,.72));
     arbor.position.z=0;
     assembly.boreRing.visible=false;
+    // Brown draws no rate index on the fingers.
+    assembly.motionIndex.visible=false;
     const old=b.uprights[index];old.visible=false;
     const shape=clip.difference(clip.union(poly([[-.075,-4.25],[.075,-4.25],[.075,0],[-.075,0]]),poly(circle([0,0],.30,96))),poly(circle([0,0],.124,96)));
     const support=new THREE.Mesh(plate(shape,-.09,.09),old.children[0].material);
@@ -43,7 +48,7 @@ export function correctGearFingerStop(model){
   b.forwardContactMarker.position.z+=.01;
   b.reverseContactMarker.position.z+=.01;
   d.workingSupports=workingSupports;
-  d.reconstructionNote='The 10:12 spur pair uses offline rounded-rack involutes with generated root transitions. A reconstructed 30-degree pressure angle preserves working engagement for these low tooth counts. The source stop fingers and exact opposite rotation are retained. Motion and reversal are prescribed; loading, backlash take-up, friction and impact are not simulated. Keyed joints and hidden support depth are reconstructed.';
+  d.reconstructionNote='The 10:12 spur pair uses offline rounded-rack involutes with generated root transitions, stubbed toward the short square teeth Brown draws. A reconstructed 28-degree pressure angle preserves working engagement for these low tooth counts. The source stop fingers and exact opposite rotation are retained. Motion and reversal are prescribed; loading, backlash take-up, friction and impact are not simulated. Keyed joints and hidden support depth are reconstructed.';
   d.hideGround=true;d.minimumDisplayCycleSeconds=d.timeline.demonstrationPeriod;
   root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});
   const bounds=new THREE.Box3(),point=new THREE.Vector3();

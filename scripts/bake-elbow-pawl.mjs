@@ -16,6 +16,10 @@ for(const side of ['right','left']){
  const v=makeElbowPawlGeometry({side}),p=makeElbowPawlPhysics(mujoco,v,{timestep:.00025});
  try{
   const u=v.root.userData,b=u.blocks,names=['carrier','rod','pawl','output','slider'],turns=[0,0,0,(side==='right'?-1:1)*u.profile.pitch,0],motion=[];
+  // Brown draws no base, bearing post or crosshead guide. The fixed family has
+  // no physics role (only cog/click cells collide), so it is left out of the
+  // shipped visual bundle and its bounds; the native model is unchanged.
+  b.fixed.clear();
   for(let tick=0;tick<=35200;tick++){if(tick%8===0)motion.push([tick*p.timestep,...p.data.qpos]);if(tick<35200)p.step();}
   const first=motion[2200].slice(1),last=motion.at(-1).slice(1),closure=last.map((x,i)=>x-first[i]-turns[i]);closure.forEach(x=>assert.ok(Math.abs(x)<1e-6));motion[motion.length-1]= [8.8,...first.map((x,i)=>x+turns[i])];
   const bounds=new THREE.Box3();for(const row of motion){syncElbowPawl(v,{qpos:row.slice(1)});bounds.union(new THREE.Box3().setFromObject(v.root,true));}bounds.expandByScalar(.02);

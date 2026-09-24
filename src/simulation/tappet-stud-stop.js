@@ -88,6 +88,9 @@ export function makeTappetStudStop(options={}) {
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:5,
     idealConstraints:'The shafts have ideal grounded bearings. Rigid contact prescribes the index and locking; initial strike impulses, compliance and loaded inertia are not simulated.'};
   markShadows(root);
+  // Brown draws D's studs end-on as small round holes. Their long depth
+  // otherwise throws oblique shadow streaks across D in the face-on view.
+  for(let i=0;i<10;i++)parts['stud'+i].castShadow=false;
   const update=time=>{const state=stateAtTime(time);input.rotation.z=state.driverAngle;output.rotation.z=state.outputAngle;stop.rotation.z=state.stopAngle;root.userData.kinematics=state;};
   update(0);return {root,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
 }

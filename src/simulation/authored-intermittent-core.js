@@ -220,26 +220,55 @@ function snapCounterPawlOutline({ bossRadius, length }) {
 }
 
 function snapCounterDropOutline() {
+  // Traced from Brown's plate about the drop's pivot (0.0105 unit per source
+  // pixel): the left tail over the spring, the screwed boss, a slim arm whose
+  // lower edge arches over the star, and the hooked lobe the pins lift.
   const shape = new THREE.Shape();
-  shape.moveTo(-1.18, -0.34);
-  shape.quadraticCurveTo(-0.96, -0.52, -0.72, -0.5);
-  shape.lineTo(-0.44, -0.82);
-  shape.lineTo(-0.17, -0.68);
-  shape.lineTo(0.06, -0.23);
-  shape.quadraticCurveTo(0.48, -0.29, 0.9, -0.42);
-  shape.lineTo(0.92, -1.46);
-  shape.lineTo(1.17, -1.35);
-  shape.quadraticCurveTo(1.78, -1.2, 2.05, -0.9);
-  shape.quadraticCurveTo(2.2, -0.58, 2.02, -0.26);
-  shape.quadraticCurveTo(1.86, 0.04, 1.5, 0.09);
-  shape.lineTo(0.72, 0.15);
-  shape.quadraticCurveTo(0.47, 0.17, 0.32, 0.4);
-  shape.quadraticCurveTo(0.12, 0.62, -0.2, 0.58);
-  shape.quadraticCurveTo(-0.55, 0.52, -0.66, 0.17);
-  shape.lineTo(-0.76, -0.08);
-  shape.lineTo(-1.05, -0.18);
-  shape.quadraticCurveTo(-1.26, -0.23, -1.18, -0.34);
-  const points = shape.getPoints(12).map((point) => [point.x, point.y]);
+  shape.moveTo(-1.224, -0.591);
+  shape.splineThru([
+    new THREE.Vector2(-1.161, -0.686),
+    new THREE.Vector2(-0.739, -0.739),
+    new THREE.Vector2(-0.422, -0.791),
+    new THREE.Vector2(-0.264, -1.029),
+  ]);
+  shape.splineThru([
+    new THREE.Vector2(-0.211, -0.95),
+    new THREE.Vector2(0, -0.712),
+    new THREE.Vector2(0.317, -0.591),
+    new THREE.Vector2(0.686, -0.591),
+    new THREE.Vector2(0.95, -0.686),
+    new THREE.Vector2(1.161, -0.791),
+  ]);
+  shape.splineThru([
+    new THREE.Vector2(1.108, -1.424),
+    new THREE.Vector2(1.134, -1.767),
+  ]);
+  shape.splineThru([
+    // The hook's outer curve is eased in slightly from the plate so the
+    // falling drop clears the pin that has just escaped it.
+    new THREE.Vector2(1.319, -1.64),
+    new THREE.Vector2(1.56, -1.42),
+    new THREE.Vector2(1.78, -1.14),
+    new THREE.Vector2(1.96, -0.86),
+    new THREE.Vector2(2.02, -0.607),
+    new THREE.Vector2(1.899, -0.396),
+    new THREE.Vector2(1.635, -0.28),
+    // Raised a little over the pawl's boss so the relieved back stays one
+    // piece above the swept shank.
+    new THREE.Vector2(1.372, -0.2),
+    new THREE.Vector2(1.055, 0.0),
+    new THREE.Vector2(0.75, 0.04),
+    new THREE.Vector2(0.56, 0.26),
+    new THREE.Vector2(0.369, 0.464),
+    new THREE.Vector2(0.053, 0.57),
+    new THREE.Vector2(-0.211, 0.501),
+    new THREE.Vector2(-0.448, 0.264),
+    new THREE.Vector2(-0.554, -0.053),
+    new THREE.Vector2(-0.739, -0.343),
+    new THREE.Vector2(-1.108, -0.475),
+    new THREE.Vector2(-1.224, -0.591),
+  ]);
+  const points = shape.getPoints(8).map((point) => [point.x, point.y]);
   const [first] = points;
   const last = points.at(-1);
   if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 1e-9) points.pop();
@@ -1995,7 +2024,8 @@ function snapActionStarCounter() {
   // clear of the star points.
   const driverCenter = new THREE.Vector3(1.23, 0.06, -0.5);
   const dropPivot = new THREE.Vector3(-1.35, 1.72, 0.39);
-  const springAnchor = new THREE.Vector3(-3.05, 1.17, 0.39);
+  // Brown's flat spring runs in from the left edge under the drop's tail.
+  const springAnchor = new THREE.Vector3(-3.0, 0.98, 0.39);
   const pawlPlaneZ = 0.22;
   const starOuterRadius = 1.2;
   const starGapRadius = 0.82;
@@ -2005,7 +2035,7 @@ function snapActionStarCounter() {
   const pinOrbitRadius = 0.79;
   const pinRadius = 0.105;
   const pawlPivotLocal = new THREE.Vector3(0.95, -0.27, 0);
-  const springAttachmentLocal = new THREE.Vector3(-1.15, -0.27, 0);
+  const springAttachmentLocal = new THREE.Vector3(-1.21, -0.72, 0);
   const approachEnd = 0.28;
   const liftEnd = 0.58;
   const pawlReleaseEnd = 0.68;
@@ -2153,8 +2183,55 @@ function snapActionStarCounter() {
   );
   springClamp.position.copy(springAnchor).add(new THREE.Vector3(-0.12, 0, -0.03));
   springClamp.userData.springClamp = true;
+  // Brown breaks the spring off at the plate's left edge; its clamp is not
+  // drawn.
+  springClamp.visible = false;
+
+  // Brown's fixed stop pin below the tail. It limits the lift: at the top of
+  // the scheduled lift the tail's underside comes to rest just above it.
+  const stopPinRadius = 0.08;
+  const stopPinClearance = 0.004;
+  const liftedDropOutline = drop.userData.outline.map(([x, y]) => [
+    x * Math.cos(dropLiftAngle) - y * Math.sin(dropLiftAngle) + dropPivot.x,
+    x * Math.sin(dropLiftAngle) + y * Math.cos(dropLiftAngle) + dropPivot.y,
+  ]);
+  const outlineDistance = (px, py) => {
+    let minimum = Infinity;
+    liftedDropOutline.forEach(([ax, ay], index) => {
+      const [bx, by] = liftedDropOutline[(index + 1) % liftedDropOutline.length];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const t = THREE.MathUtils.clamp(
+        ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy),
+        0,
+        1,
+      );
+      minimum = Math.min(minimum, Math.hypot(px - ax - t * dx, py - ay - t * dy));
+    });
+    return minimum;
+  };
+  const stopPinX = -1.84;
+  let stopPinLow = 0;
+  let stopPinHigh = 0.6;
+  for (let iteration = 0; iteration < 60; iteration += 1) {
+    const middle = (stopPinLow + stopPinHigh) / 2;
+    if (outlineDistance(stopPinX, middle) > stopPinRadius + stopPinClearance) {
+      stopPinLow = middle;
+    } else {
+      stopPinHigh = middle;
+    }
+  }
+  const stopPin = new THREE.Mesh(
+    new THREE.CylinderGeometry(stopPinRadius, stopPinRadius, 0.42, 24),
+    matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 }),
+  );
+  stopPin.rotation.x = Math.PI / 2;
+  stopPin.position.set(stopPinX, stopPinLow, 0.37);
+  stopPin.userData.fixed = true;
+  stopPin.userData.role = 'fixed-drop-lift-stop-pin';
 
   root.add(
+    stopPin,
     starShaft,
     driverShaft,
     dropPivotShaft,
@@ -2394,6 +2471,7 @@ function snapActionStarCounter() {
     springLeafB,
     star,
     starShaft,
+    stopPin,
   };
   root.userData.geometry = {
     approachEnd,
@@ -2817,6 +2895,15 @@ function internalGuardTappetStudIndex() {
     flatExtrusion(plateOutline, plateDepth, [circlePath(driverShaftRadius + 0.01)]),
     driverMaterial,
   );
+  // Brown draws B as an outline with its rim, tappet and the interior studs
+  // dashed behind it; a translucent plate lets them read through.
+  driverBody.material = matte(PALETTE.driver, {
+    metalness: 0.1,
+    opacity: 0.38,
+    roughness: 0.64,
+    transparent: true,
+  });
+  driverBody.material.depthWrite = false;
   driverBody.position.z = plateBackZ;
   driverBody.userData.driverWheelBBody = true;
   driverBody.userData.role = 'B-front-plate-carrying-guard-rim';
@@ -3075,7 +3162,7 @@ function internalGuardTappetStudIndex() {
     tappetHalfWidth,
     tappetLength,
   };
-  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Brown draws the interior studs through B; here B\'s plate is solid so they are hidden from the front.';
+  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Brown draws the interior studs through B; B\'s plate is translucent so they read through it.';
   root.userData.stateAtTime = stateAtTime;
   root.userData.sectionView = false;
   root.userData.fullCameraDirection = new THREE.Vector3(1.2, 0.9, 12.4);
@@ -3100,20 +3187,27 @@ function internalGuardTappetStudIndex() {
     root.userData.kinematics = state;
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(1.2, 0.9, 12.4));
+  const finished = finish(root, update, new THREE.Vector3(1.2, 0.9, 12.4));
+  // Brown draws C's studs end-on as small circles; the translucent plate and
+  // the long studs would otherwise cast shadow sweeps the plate does not show.
+  driverBody.castShadow = false;
+  for (const stud of studs) stud.castShadow = false;
+  return finished;
 }
 
 function springPressedRatchetIndex() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
-  const toothCount = 8;
+  const toothCount = 11;
   const toothPitch = fullTurn / toothCount;
   const ratchetRootRadius = 0.7;
   const ratchetOuterRadius = 1;
   const toothOuterStartPhase = 0.28;
   const toothOuterEndPhase = 1.035;
   const stopFaceFraction = 0.3;
-  const driveFaceFraction = 0.78;
+  // With Brown's eleven teeth the pitch is short, so B bears high on the
+  // face to keep its leaf clear of C's stop on the following tooth.
+  const driveFaceFraction = 0.88;
   const stopFaceWorldAngle = 2.65;
   const baseFaceOuter = new THREE.Vector2(
     Math.cos(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
@@ -3391,9 +3485,11 @@ function springPressedRatchetIndex() {
   catchClamp.userData.catchSpringClamp = true;
   driverRotor.add(catchClamp);
 
+  // C rises from the top right corner of Brown's hatched block, which
+  // stands just clear of D's rim at the lower left.
   const strongSpringAnchor = new THREE.Vector3(
-    -1.72,
-    -1.66,
+    -1.62,
+    -1.2,
     strongSpringPlaneZ,
   );
   const strongReferenceCurveAt = (tipCenter) => {
@@ -3404,7 +3500,7 @@ function springPressedRatchetIndex() {
     );
     return new THREE.CubicBezierCurve3(
       strongSpringAnchor.clone(),
-      new THREE.Vector3(-1.6, -0.76, strongSpringPlaneZ),
+      new THREE.Vector3(-1.52, -0.55, strongSpringPlaneZ),
       new THREE.Vector3(-1.18, 0.12, strongSpringPlaneZ)
         .addScaledVector(tipOffset, 0.42),
       new THREE.Vector3(
@@ -3466,11 +3562,11 @@ function springPressedRatchetIndex() {
   stopPad.userData.strongSpringStopTipC = true;
   // Brown's hatched block at lower left, with C rising from its corner.
   const strongSpringClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 0.62, 0.5),
+    new THREE.BoxGeometry(1.17, 1.14, 0.5),
     matte(PALETTE.frame, { metalness: 0.14, roughness: 0.64 }),
   );
   strongSpringClamp.position.copy(strongSpringAnchor)
-    .add(new THREE.Vector3(-0.42, -0.28, 0));
+    .add(new THREE.Vector3(-0.545, -0.53, 0));
   strongSpringClamp.userData.fixedStrongSpringClamp = true;
 
   root.add(
@@ -3695,7 +3791,7 @@ function springPressedRatchetIndex() {
       : null;
 
     const stopContact = stopContactAtDrivenAngle(drivenAngle);
-    const derivativeEpsilon = 1e-5;
+    const derivativeEpsilon = 1e-7;
     const stopBefore = stopContactAtDrivenAngle(
       drivenAngle - derivativeEpsilon,
     ).center;
@@ -3826,7 +3922,7 @@ function springPressedRatchetIndex() {
     };
   };
 
-  root.userData.mechanism = 'spring-pressed-eight-tooth-ratchet-index';
+  root.userData.mechanism = 'spring-pressed-eleven-tooth-ratchet-index';
   root.userData.hideGround = true;
   root.userData.blocks = {
     catchClamp,
@@ -8764,6 +8860,8 @@ function sharedPivotDoubleStrokeRatchet() {
     };
     root.userData.kinematics = state;
   };
+  // Brown draws no ground line or shadow.
+  root.userData.hideGround = true;
   update(0);
   return finish(root, update, new THREE.Vector3(1.5, 1.1, 12.4));
 }
@@ -9724,6 +9822,8 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     };
     root.userData.kinematics = state;
   };
+  // Brown draws no ground line or shadow.
+  root.userData.hideGround = true;
   update(0);
   return finish(root, update, new THREE.Vector3(1.4, 1.0, 12.4));
 }

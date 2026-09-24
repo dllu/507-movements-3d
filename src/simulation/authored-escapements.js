@@ -286,6 +286,7 @@ function vergeAndCrownWheelEscapement(
     flagPallets = false,
     floorAtToothBase = false,
     includeFrame = true,
+    palletThickness = 0.105,
     palletWidth = 0.5,
     roundSpindle = false,
     spindleLength = 7.25,
@@ -374,7 +375,6 @@ function vergeAndCrownWheelEscapement(
   const palletCenterX = contactRadius * (
     Math.cos(dropContactAngle) + Math.cos(releaseContactAngle)
   ) / 2;
-  const palletThickness = 0.105;
 
   const crownWheel = makeCrownEscapeWheel({
     bodyDepth,
@@ -2842,6 +2842,13 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   crownWheel.userData.body.userData.role =
     'horizontal-solid-crown-wheel-D-body';
   crownWheel.userData.indicator.visible = false;
+  // Brown's elevation shows no hub above the band: keep it inside the cup.
+  crownWheel.userData.rotor.traverse((object) => {
+    if (object.userData.role !== 'crown-wheel-hub') return;
+    const height = 0.38;
+    object.scale.y = height / object.geometry.parameters.height;
+    object.position.z = crownWheel.userData.toothBaseZ - 0.02 - height / 2;
+  });
   crownShaft.userData.role = 'vertical-crown-wheel-D-arbor';
   drivePinion.position.z = -2.72;
   drivePinion.userData.role = 'coaxial-lower-drive-pinion';
@@ -2895,6 +2902,8 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     crownWheel.userData.toothBaseZ + 0.04,
   );
   toothWitness.userData.role = 'crown-wheel-rotation-witness';
+  // Brown draws no witness marks; they stay attached for tests but hidden.
+  toothWitness.visible = false;
   crownWheel.userData.rotor.add(toothWitness);
 
   const staffLength = 5.4;
@@ -2977,12 +2986,14 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     balanceMassRadius * 0.82,
   );
   balanceWitness.userData.role = 'balance-oscillation-witness';
+  balanceWitness.visible = false;
   balanceAssembly.add(balanceWitness);
   verge.add(balanceAssembly);
 
+  // A slim ring at C, so the pallet blades read beside it end-on.
   const staffCollars = [2.35].map((x, index) => {
     const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.2, 0.055, 10, 32),
+      new THREE.TorusGeometry(0.15, 0.04, 10, 32),
       matte(PALETTE.frame, { metalness: 0.14, roughness: 0.68 }),
     );
     collar.rotation.y = Math.PI / 2;
@@ -3252,6 +3263,10 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     topology: 'sideways-two-weight-balance-verge-perpendicular-to-one-horizontal-crown-wheel',
   };
   root.userData.cameraDistanceScale = 0.92;
+  // Brown's 302 is a flat front elevation: a narrow field keeps the crown
+  // edge-on as a band with saw teeth along its top instead of looking down
+  // on its rim from the fitted target above it.
+  root.userData.cameraFov = 12;
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -3286,7 +3301,7 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   };
   update(0);
   markShadows(root);
-  return finish(root, update, new THREE.Vector3(0.55, 0.08, 12.5));
+  return finish(root, update, new THREE.Vector3(0, 0, 1));
 }
 
 function oldFashionedClockVergeEscapement(movement) {
@@ -3303,6 +3318,7 @@ function oldFashionedClockVergeEscapement(movement) {
   const base = vergeAndCrownWheelEscapement(movement, {
     flagPallets: true,
     includeFrame: false,
+    palletThickness: 0.2,
     toothTipZ: 0.8,
   });
   const root = base.root;
@@ -3498,8 +3514,11 @@ function oldFashionedClockVergeEscapement(movement) {
     const height = object.geometry.parameters.height;
     object.position.z = baseGeometry.toothBaseZ - 0.02 - height / 2;
   });
+  // Brown draws no arbor: only a stub inside the cup is kept.
+  const crownShaftStub = 0.3;
+  blocks.crownShaft.scale.z = crownShaftStub / blocks.crownShaft.userData.length;
   blocks.crownShaft.position.z = baseGeometry.toothBaseZ - 0.05
-    - blocks.crownShaft.userData.length / 2;
+    - crownShaftStub / 2;
   const crownRim = new THREE.Mesh(
     new THREE.TorusGeometry(blocks.crownWheel.userData.toothBandRadius, 0.14, 12, 96),
     matte(PALETTE.driven, { metalness: 0.13, roughness: 0.6 }),
@@ -3862,15 +3881,15 @@ function oldFashionedClockVergeEscapement(movement) {
     verge: blocks.verge,
     vergeStaff,
   };
-  // Brown's 299 is a close, nearly orthographic detail: the verge journal
-  // end-on over two crown teeth and the top of the band. Crop to that region
-  // (local crown height -0.35..1.4 and about two pitches across the verge),
-  // expressed in this unpresented world frame, with a narrow field.
+  // Brown's 299 is a nearly orthographic detail: the verge journal end-on
+  // over the crown band and its teeth. Frame the whole band edge-on (local
+  // crown height -0.4..1.3, the full diameter across the verge) in this
+  // unpresented world frame, with a narrow field.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.35 * displayScale, -2.3 * displayScale, -1.25 * displayScale),
-    new THREE.Vector3(1.4 * displayScale, 2.3 * displayScale, 1.25 * displayScale),
+    new THREE.Vector3(-0.4 * displayScale, -2.3 * displayScale, -2.3 * displayScale),
+    new THREE.Vector3(1.3 * displayScale, 2.3 * displayScale, 2.3 * displayScale),
   );
-  root.userData.cameraFov = 8;
+  root.userData.cameraFov = 12;
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,
     firstFreeDropMidpoint: cyclePeriod * (

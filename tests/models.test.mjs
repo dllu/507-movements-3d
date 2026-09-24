@@ -4133,7 +4133,7 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   const model = createMovementModel(catalog.movements[72]);
   assert.equal(
     model.root.userData.mechanism,
-    'spring-pressed-eight-tooth-ratchet-index',
+    'spring-pressed-eleven-tooth-ratchet-index',
   );
   assert.equal(model.root.userData.fidelity, 'authored');
   const {
@@ -4190,12 +4190,12 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
     'clockwise-intermittent-ratchet-wheel-A');
   assert.equal(ratchetShaft.userData.role,
     'intermittent-output-shaft-A');
-  assert.equal(ratchet.userData.teeth, 8);
-  assert.equal(ratchet.userData.toothFaces.length, 8);
-  assert.equal(ratchet.userData.profilePoints.length, 200,
-    'A has eight pointed teeth with curved backs and short working faces');
-  assert.equal(geometry.toothCount, 8);
-  assert.equal(geometry.toothPitch, geometry.fullTurn / 8);
+  assert.equal(ratchet.userData.teeth, 11);
+  assert.equal(ratchet.userData.toothFaces.length, 11);
+  assert.equal(ratchet.userData.profilePoints.length, 275,
+    'A has Brown’s eleven pointed teeth with curved backs and short working faces');
+  assert.equal(geometry.toothCount, 11);
+  assert.equal(geometry.toothPitch, geometry.fullTurn / 11);
   assert.ok(geometry.toothOuterStartPhase > 0);
   assert.ok(geometry.toothOuterStartPhase
     < geometry.toothOuterEndPhase);
@@ -4249,7 +4249,7 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
     < ratchet.position.z - geometry.ratchetDepth / 2,
   'large driving wheel D is coaxial with and behind ratchet A');
   assert.ok(geometry.pressStartPhase < geometry.indexStartPhase);
-  assert.ok(Math.abs(geometry.indexPhaseSpan - 1 / 8) < 1e-12);
+  assert.ok(Math.abs(geometry.indexPhaseSpan - 1 / 11) < 1e-12);
   assert.ok(geometry.indexEndPhase < geometry.releaseEndPhase);
   assert.ok(geometry.releaseEndPhase < 1);
 
@@ -4363,12 +4363,12 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
     - dwell.drivenAngle + geometry.toothPitch) < 1e-12,
   'one revolution of D advances A by exactly one tooth');
   assert.ok(Math.abs((nextCycle.drivenAngle - dwell.drivenAngle)
-    / (nextCycle.driverAngle - dwell.driverAngle) - 1 / 8) < 1e-12);
+    / (nextCycle.driverAngle - dwell.driverAngle) - 1 / 11) < 1e-12);
   assert.equal(nextCycle.activeToothIndex, 1);
   assert.equal(nextCycle.ratchetTeethAdvanced
     - dwell.ratchetTeethAdvanced, 1);
-  const afterEightDriverTurns = atPhase(0.4, 8);
-  assert.ok(Math.abs(afterEightDriverTurns.drivenAngle
+  const afterElevenDriverTurns = atPhase(0.4, 11);
+  assert.ok(Math.abs(afterElevenDriverTurns.drivenAngle
     - dwell.drivenAngle + geometry.fullTurn) < 1e-12);
   assert.ok(dwell.driverActualAngularSpeed < 0,
     'the source arrow makes D rotate clockwise');

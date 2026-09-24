@@ -148,7 +148,7 @@ test('076 independent solids clear each other through strike, overtravel, foldin
 test('076 section view clips only driver display and leaves physical buffers and state intact',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const buffers=Object.fromEntries(Object.entries(u.parts).map(([name,mesh])=>[name,mesh.geometry.attributes.position.array.slice()]));
-  assert.equal(u.configuration,'complete');assert.equal(u.sections.length,3);
+  assert.equal(u.configuration,'section');assert.equal(u.sections.length,3);
   for(const time of [0,.53,3.26525,6,9,12.53]){
     const state=pose(model,time);
     for(const view of ['complete','section']){

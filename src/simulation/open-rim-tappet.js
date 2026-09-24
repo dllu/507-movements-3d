@@ -25,7 +25,11 @@ export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
   const phases = Array.from({length:arcSegments+1},(_,i) => p.openingHalfAngle + (2 * Math.PI - 2 * p.openingHalfAngle) * i / arcSegments);
   const rim = [...phases.map(a => [p.rimOuter * Math.cos(a),p.rimOuter * Math.sin(a)]),
     ...[...phases].reverse().map(a => [p.rimInner * Math.cos(a),p.rimInner * Math.sin(a)])];
-  add('driverCover',drum(p.driverRadius,.25,.4,1024),input,PALETTE.driver);
+  // Brown draws C as an outline over A, with its rim and tappet B dashed
+  // behind it; the cover is translucent so those hidden parts read through.
+  const cover = add('driverCover',drum(p.driverRadius,.25,.4,1024),input,PALETTE.driver);
+  cover.material = matte(PALETTE.driver,{ metalness:.15,roughness:.64,opacity:.38,transparent:true });
+  cover.material.depthWrite = false;
   add('rim',plate(rim,-.02,.25),input,PALETTE.driver);
   add('tappet',plate(profile.tappet,-.02,.25),input,PALETTE.brass);
   add('driverFrontHub',drum(.25,.4,.46),input,PALETTE.brass);
@@ -54,5 +58,9 @@ export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:5,
     idealConstraints:'The input tappet drives one stud, then the closing rim seats it after a short pause. This quasistatic model assumes a resisting output load, passive bearing resistance during the pause and ideal engagement impacts.'};
   update(0); markShadows(root);
+  // The translucent cover and the end-on studs would otherwise throw opaque
+  // shadow sweeps across A that the engraving does not show.
+  parts.driverCover.castShadow = false;
+  for (let i = 0; i < p.studCount; i++) parts[`stud${i}`].castShadow = false;
   return {root,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
 }

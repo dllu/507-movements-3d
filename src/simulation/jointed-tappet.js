@@ -88,7 +88,7 @@ export function makeJointedTappetCounter(){
   root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,
     geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
       dogStopRadius,dogStopOrbit,dogStopFace,dogStop,H0Angle:H0.angle,holdingNose},
-    configurations:[{id:'complete',label:'Complete wheel'},{id:'section',label:'Engraving section'}],configurationLabel:'View',configuration:'complete',
+    configurations:[{id:'section',label:'Engraving section'},{id:'complete',label:'Complete wheel'}],configurationLabel:'View',configuration:'section',
     localClippingEnabled:true,hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
     shadowBias:-.00005,shadowNormalBias:.005,mechanism:'stud-struck-jointed-tappet-ratchet-counter',fidelity:'authored',reconstructionStatus:'rebuilt',
     profile,playbackPeriod:profile.period,animationTiming:{authoredCyclePeriod:profile.period},minimumDisplayCycleSeconds:profile.period,
@@ -96,6 +96,8 @@ export function makeJointedTappetCounter(){
   const stateAtTime=time=>sampleJointedTappetMotion(time);
   const update=time=>{const state=stateAtTime(time);setState(state);Object.assign(root.userData.kinematics,state);};
   root.userData.stateAtTime=stateAtTime;
-  setConfiguration('complete');update(0);markShadows(root);
+  // Brown draws only rim segment D of the large wheel, so the engraving
+  // section is the initial view; the complete wheel remains selectable.
+  setConfiguration('section');update(0);markShadows(root);
   return{root,update,setState,contact,cameraDirection:new THREE.Vector3(0,0,10)};
 }
