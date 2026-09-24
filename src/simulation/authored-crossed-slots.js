@@ -176,24 +176,32 @@ function equalOppositeCrossedSlotTraverse(movement) {
   root.scale.setScalar(0.68);
 
   // The official animation publishes these endpoint coordinates. Recenter x
-  // about 8.5 but retain its distances exactly: D travels 6 coordinate units
-  // while each roller travels 2.797846 units in the opposite horizontal
-  // direction from its mate.
+  // about 8.5 and keep its slot slope exactly: each roller moves 2.797846
+  // units per 6 units of D, in the opposite horizontal direction from its
+  // mate. The slots keep the animation's full 6-unit length.
   const sourceSymmetryX = 8.5;
   const sourcePinY = 11.250462;
   const innerHalfSpacing = sourceSymmetryX - 6.647792;
-  const outerHalfSpacing = sourceSymmetryX - 3.849946;
-  const yokeTravel = 6;
-  const rollerTravel = outerHalfSpacing - innerHalfSpacing;
-  const rollerToYokeRatio = rollerTravel / yokeTravel;
+  const officialYokeTravel = 6;
+  const officialRollerTravel = (sourceSymmetryX - 3.849946) - innerHalfSpacing;
+  const rollerToYokeRatio = officialRollerTravel / officialYokeTravel;
+  const slotLength = officialYokeTravel;
+  // The animation lifts D the whole slot length, carrying its crossbar up
+  // between the rollers into slot C. Brown keeps D well below the slot, so D
+  // rises only until its crossbar stops a clear gap below the roller flanges.
+  const yokeTravel = 3.6;
+  const rollerTravel = rollerToYokeRatio * yokeTravel;
+  const outerHalfSpacing = innerHalfSpacing + rollerTravel;
   const pinY = 2.2;
   const yokeStartY = -4;
   const slotTopY = pinY - yokeStartY;
-  const slotBottomY = slotTopY - yokeTravel;
+  const slotBottomY = slotTopY - slotLength;
+  const slotBottomHalfSpacing = innerHalfSpacing
+    + rollerToYokeRatio * slotLength;
   const leftSlotTop = new THREE.Vector2(-innerHalfSpacing, slotTopY);
-  const leftSlotBottom = new THREE.Vector2(-outerHalfSpacing, slotBottomY);
+  const leftSlotBottom = new THREE.Vector2(-slotBottomHalfSpacing, slotBottomY);
   const rightSlotTop = new THREE.Vector2(innerHalfSpacing, slotTopY);
-  const rightSlotBottom = new THREE.Vector2(outerHalfSpacing, slotBottomY);
+  const rightSlotBottom = new THREE.Vector2(slotBottomHalfSpacing, slotBottomY);
   const pinRadius = 0.5;
   const movingSlotRadius = 0.58;
   const fixedSlotHalfHeight = 0.58;
@@ -431,8 +439,8 @@ function equalOppositeCrossedSlotTraverse(movement) {
       leftRollerVelocity: new THREE.Vector2(leftVelocity, 0),
       midpoint: new THREE.Vector2((leftX + rightX) / 2, pinY),
       movingSlotParameters: {
-        left: 1 - input.value / yokeTravel,
-        right: 1 - input.value / yokeTravel,
+        left: 1 - input.value / slotLength,
+        right: 1 - input.value / slotLength,
       },
       movingSlotResiduals: {
         left: leftMovingSlotResidual,
@@ -511,6 +519,7 @@ function equalOppositeCrossedSlotTraverse(movement) {
     rollerRadius,
     rollerToYokeRatio,
     rollerTravel,
+    slotLength,
     sourcePinY,
     sourceSymmetryX,
     yokeDepth,
@@ -611,7 +620,7 @@ function equalOppositeCrossedSlotTraverse(movement) {
     input: 'vertical-translation-of-piece-d',
     output: 'equal-and-opposite-horizontal-translation-of-rollers-a-and-b',
     rollerToYokeDisplacementRatio: rollerToYokeRatio,
-    speedLaw: 'xA=-1.852208-(2.797846/6)q; xB=-xA',
+    speedLaw: 'xA=-1.852208-(2.797846/6)q; xB=-xA; 0<=q<=3.6',
   };
 
   const update = (time) => {

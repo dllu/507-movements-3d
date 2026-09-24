@@ -4713,7 +4713,8 @@
         "docs/lane9-residuals-review.md",
         "docs/w2a-gears-core-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/m18-audit-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4722,7 +4723,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The guide's position is inferred.",
+      "limits": "Brown breaks the rod off below the disk, so the view crops the rod, slider and guide at his plate edge; rod length and guide are inferred.",
       "assessment": "reasonable"
     },
     {
@@ -4918,7 +4919,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/u2-cams-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m18-audit-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4927,7 +4929,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Groove depth, bent-lever tail and supports inferred.",
+      "limits": "The groove's outer lobe is slightly smaller than Brown's so it clears the rim, reducing the lever's swing to 0.278 rad; groove depth, lever tail and supports are inferred.",
       "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
@@ -5301,7 +5303,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m18-audit-b-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5310,7 +5313,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Massless slack cord is an illustration, not finite-rope vibration; finite-rope prototype remains unqualified.",
+      "limits": "The slack cord bows sideways as an illustration, not finite-rope physics.",
       "assessment": "reasonable"
     },
     {
@@ -6671,7 +6674,8 @@
         "docs/w4b-164-253-review.md",
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u3-gears-review.md"
+        "docs/u3-gears-review.md",
+        "docs/m18-audit-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6679,9 +6683,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
-      "limits": "The lower-right fixed rod pin sits at the frame edge rather than inset; rigid links and ideal joints assumed.",
-      "assessment": "reasonable",
+      "visibleFlaws": "The whole stroke is framed, so the mechanism sits small in the view (the rack must pass its full length across the fixed pinion).",
+      "limits": "The lower-right rod pin sits at the frame edge; rigid links assumed.",
+      "assessment": "minor",
       "userReported": "2026-09-24"
     },
     {
@@ -8499,16 +8503,17 @@
         "docs/slot-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/m18-audit-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-crossed-slots.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Analytical slot/linkage motion retained; running clearances, friction, impact, load response and broader assembly contacts unvalidated.",
+      "limits": "D's stroke (3.6) is shorter than the official animation's so its crossbar stays below slot C; running clearances and friction are unvalidated.",
       "assessment": "reasonable"
     },
     {

@@ -11,11 +11,24 @@ export const gearedCrankSource={scale:.028,center:[263,288],pin:[247,228],eye:[2
  groove:[86.64226,9.06101,-10.46124,25.19027,-6.15517,4.35106,-6.8773,0.32228,-1.77662]};
 const g=gearedCrankSource;
 export const sourcePoint=p=>new Vector2((p[0]-g.center[0])*g.scale,(g.center[1]-p[1])*g.scale);
-/** Groove centre-line radius (world units) at gear-frame polar angle a. */
-export function grooveRadius(a){
+const tracedRadius=a=>{
  const c=g.groove;let r=c[0];
  for(let k=1;2*k<c.length;k++)r+=c[2*k-1]*Math.cos(k*a)+c[2*k]*Math.sin(k*a);
- return r*g.scale;
+ return r;
+};
+// Brown keeps the grooved band inside the gear's rim. The traced mid-line's
+// lower-right lobe reaches 133 px, which would carry the band's outer wall
+// over the toothed rim (inner edge 130 px) as the gear turns. Beyond a 90 px
+// knee the radius is eased down (C1, monotone) so the lobe tops out at 115 px
+// and the 9.5 px band half-width stays well inside the rim; the pin's drawn position
+// (62 px) and the inner run of the groove are untouched.
+const grooveKnee=90,grooveCrest=115;
+const tracedCrest=Math.max(...Array.from({length:4096},(_,i)=>tracedRadius(2*Math.PI*i/4096)));
+const grooveEase=(tracedCrest-grooveCrest)/((tracedCrest-grooveKnee)**2);
+/** Groove centre-line radius (world units) at gear-frame polar angle a. */
+export function grooveRadius(a){
+ const r=tracedRadius(a),over=Math.max(0,r-grooveKnee);
+ return (r-grooveEase*over*over)*g.scale;
 }
 export function groovePoint(a){const r=grooveRadius(a);return new Vector2(r*Math.cos(a),r*Math.sin(a));}
 const pin0=sourcePoint(g.pin),pivot=sourcePoint(g.pivot),eye0=sourcePoint(g.eye);

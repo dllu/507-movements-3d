@@ -7,7 +7,7 @@ import {disposeObject3D} from './dispose-model.js';
 // Brown's oblong is a grooved band on the large gear's face: two walls with
 // the working channel between them, seated on the front of the spokes clear
 // of the pinion. The long lever's pin runs in the channel.
-export const gearedCrankGroove={pinRadius:4.5*g.scale,channelHalfWidth:4.7*g.scale,bandHalfWidth:11*g.scale,low:-.07,high:.09};
+export const gearedCrankGroove={pinRadius:4.5*g.scale,channelHalfWidth:4.7*g.scale,bandHalfWidth:9.5*g.scale,low:-.07,high:.09};
 const offsetCurve=(distance,count=512)=>Array.from({length:count},(_,i)=>{
  const a=2*Math.PI*i/count,h=1e-5,p=groovePoint(a),t=groovePoint(a+h).sub(groovePoint(a-h)).normalize();
  // The centre line runs counter-clockwise; its outward normal is (t.y,-t.x).

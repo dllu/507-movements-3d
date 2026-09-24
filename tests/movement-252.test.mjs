@@ -381,3 +381,22 @@ test('movement 252 closes exactly and movement 339 remains the next draft', () =
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 252 keeps piece D below slot C and the roller flanges', () => {
+  const model = createMovementModel(catalog.movements[251]);
+  const { blocks, geometry } = model.root.userData;
+  const rollerBottom = geometry.pinY - geometry.rollerRadius;
+  const railBottom = blocks.bottomRail.position.y - 0.26;
+  for (let sample = 0; sample <= 64; sample += 1) {
+    model.update(8 * sample / 64);
+    model.root.updateMatrixWorld(true);
+    for (const part of [blocks.crossbar, blocks.lowerWeb, blocks.inputBlock]) {
+      part.geometry.computeBoundingBox();
+      const top = part.geometry.boundingBox.max.y + part.position.y
+        + blocks.movingYoke.position.y;
+      assert.ok(rollerBottom - top > 0.6, `${part.userData.role} reaches ${top}`);
+      assert.ok(railBottom - top > 0.3);
+    }
+  }
+  disposeModel(model.root);
+});

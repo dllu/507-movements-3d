@@ -28673,11 +28673,13 @@ function fixedPinionLiftedMangleRack() {
       addVisible(bounds);
     }
     root.userData.sweptBounds = bounds.expandByScalar(0.05);
-    const pose = new THREE.Box3();
+    // The rack must pass its whole straight length across the fixed pinion,
+    // so the frame and carrier travel about a frame width each cycle. Fit the
+    // default view to that swept silhouette (not just the source pose) so the
+    // moving frame, rack and rods never leave the view.
     model.update(0);
     root.updateMatrixWorld(true);
-    addVisible(pose);
-    root.userData.cameraFitBounds = pose.expandByScalar(0.12);
+    root.userData.cameraFitBounds = bounds.clone().expandByScalar(0.07);
     markShadows(root);
   }
   return model;

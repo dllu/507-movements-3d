@@ -41,7 +41,8 @@ for (const id of [197, 198]) {
         for (let j = 0; j < o.geometry.attributes.position.count; j++) {
           point.fromBufferAttribute(o.geometry.attributes.position, j).applyMatrix4(o.matrixWorld);
           assert.ok(d.sweptBounds.containsPoint(point), `${o.userData.role} ${point.toArray()}`);
-          if (i === 0) assert.ok(d.cameraFitBounds.containsPoint(point), `source pose ${o.userData.role} ${point.toArray()}`);
+          // 198 frames its whole stroke; 197 frames the source pose.
+          if (i === 0 || id === 198) assert.ok(d.cameraFitBounds.containsPoint(point), `framed ${o.userData.role} ${point.toArray()}`);
         }
       });
     }

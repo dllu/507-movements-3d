@@ -16,7 +16,8 @@ test('148 lever pin starts at the drawn pin and runs once round the gear groove 
   low=Math.min(low,s.leverAngle);high=Math.max(high,s.leverAngle);previous=s;
  }
  assert.ok(Math.abs(Math.abs(travel)-2*Math.PI)<1e-6,'pin does not go round the groove once per turn');
- assert.ok(high-low>.3,'lever does not rock');
+ // The groove's outer lobe is eased inside the rim, so the lever rocks about 0.28 rad.
+ assert.ok(high-low>.26,'lever does not rock');
  assert.ok(Math.abs(previous.leverAngle-first.leverAngle)<1e-9);
 });
 test('148 groove walls, lever bore and pin clear each other throughout the turn',()=>{
@@ -39,4 +40,9 @@ test('148 groove walls, lever bore and pin clear each other throughout the turn'
   assert.ok(pinClearance>.004,`pin-to-groove clearance ${pinClearance}`);
   assert.ok(pivotClearance>.002,`pivot clearance ${pivotClearance}`);
  }finally{v.dispose();}
+});
+test('148 groove band stays inside the large gear rim',()=>{
+ let crest=0;for(let i=0;i<4096;i++)crest=Math.max(crest,grooveRadius(2*Math.PI*i/4096));
+ // The rim's bore (inner edge of the toothed band) is 3.64 in geared-crank.js.
+ assert.ok(crest+G.bandHalfWidth<3.64-.12,`outer groove wall reaches ${crest+G.bandHalfWidth}`);
 });

@@ -13,7 +13,12 @@ test('ideal slack illustration preserves endpoints, cord length and pulley tange
   assert.ok(Math.abs(tangent[0]*radial[0]+tangent[1]*radial[1])<1e-12);
   assert.ok(s.points.flat().every(Number.isFinite));
  }
- const slack=idealCordShape(Math.PI/2,.34520362);assert.ok(slack.slack>1);assert.ok(Math.min(...slack.points.map(p=>p[1]))<slack.points.at(-1)[1]);
+ const slack=idealCordShape(Math.PI/2,.34520362);assert.ok(slack.slack>1);
+ // Slack bows the outgoing run sideways: it never drops below the resting bar
+ // (and so never hooks back up to the eye through it).
+ const eye=slack.points.at(-1),bar=[Math.cos(.34520362),Math.sin(.34520362)];
+ for(const p of slack.points){const d=[p[0]-eye[0],p[1]-eye[1]];if(Math.hypot(...d)<.1)continue;assert.ok(-d[0]*bar[1]+d[1]*bar[0]>.09,`cord at ${p} dips to the bar`);}
+ assert.ok(Math.min(...slack.points.map(p=>p[1]))>=eye[1]-1e-12,'slack cord hangs below its eye');
 });
 test('ideal profile repeats with mechanism phase and reports native tendon extension',()=>{
  const a=idealCordShape(Math.PI/2,.34520362),b=idealCordShape(Math.PI/2+2*Math.PI,.34520362);
