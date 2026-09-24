@@ -85,7 +85,10 @@ test('movement 493 is one central hoist wedge, two packing wedges, and one stone
   assert.equal(blocks.stoneBody.parent, blocks.stone);
   assert.ok(blocks.boreWalls.every((wall) => wall.parent === blocks.stone));
   assert.equal(blocks.hoistRope.parent, model.root);
-  assert.equal(blocks.hoistGuide.parent, model.root);
+  // Brown draws the rope running off the plate; the overhead eye is removed
+  // by source presentation.
+  assert.equal(blocks.hoistGuide.parent, null);
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes('fixed-overhead-hoist-eye'));
   assert.equal(degreesOfFreedom.independentHoistInputs, 1);
   assert.equal(degreesOfFreedom.independentPackingCoordinates, 0);
   assert.equal(degreesOfFreedom.independentStoneCoordinates, 0);

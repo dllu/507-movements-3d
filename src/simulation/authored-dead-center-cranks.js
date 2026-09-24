@@ -381,23 +381,14 @@ function brownellDeadCenterCrank(movement) {
   rim.position.z = 0.03;
   rim.userData.role = 'flywheel-rim';
   faceplate.add(rim);
-  for (let index = 0; index < 4; index += 1) {
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(wheelRadius * 1.45, 0.075, 0.055),
-      inkMaterial,
-    );
-    spoke.rotation.z = index * Math.PI / 4;
-    spoke.position.z = 0.145;
-    spoke.userData.role = 'faceplate-spin-reference-spoke';
-    faceplate.add(spoke);
-  }
-  const faceIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 0.075, 0.035),
-    whiteMaterial,
+  // Brown draws a plain faceplate with one inner turned ring, no spokes or index.
+  const faceRing = new THREE.Mesh(
+    new THREE.TorusGeometry(wheelRadius * 0.74, 0.03, 8, 84),
+    inkMaterial,
   );
-  faceIndex.position.set(0, wheelRadius * 0.84, 0.19);
-  faceIndex.userData.role = 'white-faceplate-angular-index';
-  faceplate.add(faceIndex);
+  faceRing.position.z = 0.135;
+  faceRing.userData.role = 'faceplate-inner-turned-ring';
+  faceplate.add(faceRing);
   const hub = boredJournal(.28,.124,.18,inkMaterial);
   hub.position.z = .02;
   hub.userData.role = 'flywheel-hub';
@@ -480,20 +471,13 @@ function brownellDeadCenterCrank(movement) {
   const beamCenterX=treadleBeam.position.x;
   treadleBeam.geometry.dispose();
   treadleBeam.geometry=plate(clip.difference(poly([
-    [-treadleForwardArm-beamCenterX,-.065],
+    [-treadleForwardArm-beamCenterX,-.03],
     [treadleRearArm-beamCenterX,-.065],
     [treadleRearArm-beamCenterX,.065],
-    [-treadleForwardArm-beamCenterX,.065],
+    [-treadleForwardArm-beamCenterX,.03],
   ]),poly(circle([-beamCenterX,0],.094,64))),-.075,.075);
   treadleBeam.userData.role = 'rigid-treadle-rocker';
   treadle.add(treadleBeam);
-  const footPad = new THREE.Mesh(
-    new THREE.BoxGeometry(0.78, 0.25, 0.42),
-    drivenMaterial,
-  );
-  footPad.position.set(-treadleForwardArm + 0.30, 0.015, 0.02);
-  footPad.userData.role = 'operator-foot-pressure-pad';
-  treadle.add(footPad);
   const treadlePivotBoss = boredJournal(.18,.094,.38,inkMaterial);
   treadlePivotBoss.userData.role = 'treadle-fulcrum-boss';
   treadle.add(treadlePivotBoss);

@@ -86,7 +86,7 @@ export function correctMercuryInstrument(root, id, update) {
     }
     for (const y of [1.05, 2.40]) {
       const tab = new THREE.Mesh(new THREE.BoxGeometry(.28, .06, .28), b.tubeClamps[0].material);
-      tab.position.set(1.12, y, -.40); root.add(tab);
+      tab.position.set(1.12, y, -.40); tab.userData.role = 'clip-tab-to-scale-board'; root.add(tab);
     }
   } else {
     replace(b.glassLongLeg, wall(bore, g.glassOuterRadius, -.5, .5));
@@ -129,9 +129,9 @@ export function correctMercuryInstrument(root, id, update) {
       root.remove(old); old.geometry.dispose(); root.add(clip); b.retainingClips[i] = clip;
     }
     const scaleBracket = new THREE.Mesh(new THREE.BoxGeometry(1.2, .06, .14), b.retainingClips[0].material);
-    scaleBracket.position.set(.63, 4.55, -.45); root.add(scaleBracket);
+    scaleBracket.position.set(.63, 4.55, -.45); scaleBracket.userData.role = 'scale-board-bracket'; root.add(scaleBracket);
     const scaleTab = new THREE.Mesh(new THREE.BoxGeometry(.1, .06, .25), b.retainingClips[0].material);
-    scaleTab.position.set(1.20, 4.55, -.365); root.add(scaleTab);
+    scaleTab.position.set(1.20, 4.55, -.365); scaleTab.userData.role = 'scale-board-bracket-tab'; root.add(scaleTab);
   }
   d.minimumDisplayCycleSeconds = g.cycleDuration;
   d.reconstructionNote = 'Finite glass walls and open pressure passages; constant-area working reservoir agrees with the existing volume-conserving hydrostatic law. Pressure is prescribed slowly, with no fluid inertia, capillary correction, heat transfer or valve-flow dynamics.';

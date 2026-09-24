@@ -589,6 +589,8 @@ function commonCapstan(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.8, 4.5, 9.4);
   root.userData.groundFloorY = -2.02;
   root.userData.hideGround = true;
+  // Brown's side elevation: a narrow view keeps the bars and ratchet flat.
+  root.userData.cameraFov = 10;
   root.traverse(object => {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });

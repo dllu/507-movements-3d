@@ -43,14 +43,12 @@ test('417 ball centers match analytic sockets and the captured slide clears ever
   update(i*6/128);root.updateMatrixWorld(true);const state=d.stateAtTime(i*6/128);
   assert.ok(b.lowerBall.getWorldPosition(new THREE.Vector3()).distanceTo(state.lowerSocket)<1e-12);
   assert.ok(b.upperBall.getWorldPosition(new THREE.Vector3()).distanceTo(state.upperSocket)<1e-12);
-  const slide=bounds(b.slideBody),rail=bounds(b.slideRail);
-  assert.ok(slide.min.z>bounds(b.bearingPost).max.z);
-  assert.ok(slide.min.y>rail.max.y&&slide.min.y-rail.max.y<.02);
-  assert.ok(slide.min.x>rail.min.x&&slide.max.x<rail.max.x);
-  assert.ok(slide.max.z<bounds(b.guideLipFront).min.z);
-  assert.ok(slide.min.z>bounds(b.guideLipRear).max.z);
-  for(const keeper of b.guideKeepers)assert.ok(bounds(keeper).min.y>slide.max.y);
-  assert.ok(bounds(b.lowerBall).min.y>slide.max.y);
+  // Slide C's sectioned bar lies on the plank bed, clear of standard D.
+  const slide=bounds(b.slideBody).union(bounds(b.slideFront)).union(bounds(b.slideBridge)),plank=bounds(b.base);
+  assert.ok(slide.min.y>=plank.max.y-1e-6&&slide.min.y-plank.max.y<.02);
+  assert.ok(slide.min.x>plank.min.x&&slide.max.x<bounds(b.bearingD).getCenter(new THREE.Vector3()).x-.42,'slide clears the foot of standard D');
+  assert.ok(bounds(b.lowerSocketCup).min.y>=bounds(b.slideBridge).max.y-1e-6);
+  assert.ok(bounds(b.lowerSocketCup).min.x>bounds(b.slideBody).max.x&&bounds(b.lowerSocketCup).max.x<bounds(b.slideFront).min.x);
  }
  // Real annular journal bore and spherical seat gaps, measured from meshes.
  for(const mesh of [b.bearingD,b.bearingBore]){
@@ -106,10 +104,10 @@ test('419 visible rocker shoe meets its floor and finite bands occupy the drum t
 });
 
 
-test('417 spatial rod clears the rotating shaft, wheel and fixed guide supports over its full orbit',async()=>{
+test('417 spatial rod clears the rotating shaft, crank, standard D and slide blocks over its full orbit',async()=>{
  const {solidSurface,surfacePoints}=await import('./helpers/solid-surface.mjs');
  const {root,update}=createMovementModel(catalog[416]),b=root.userData.blocks;
- const targets=[b.bearingPost,b.bearingSaddle,b.slideBody,...b.guideKeepers];
+ const targets=[b.bearingPost,b.bearingD,b.slideBody,b.slideFront];
  b.shaftRotor.traverse(o=>{if(o.geometry&&o!==b.bentJournal)targets.push(o);});
  const surfaces=targets.map(o=>[o,solidSurface(o.geometry)]),points=surfacePoints(b.rodB.geometry);
  for(let i=0;i<=128;i++){

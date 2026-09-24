@@ -269,6 +269,9 @@ function makeLeg({
   );
   longTipIndex.userData.role = `${name}-long-point-contact-index`;
   group.add(longTipIndex);
+  // Brown draws bare points; the tip locators stay bound but unpainted.
+  shortTipIndex.visible = false;
+  longTipIndex.visible = false;
 
   return {
     group,
@@ -484,6 +487,9 @@ function proportionalCompasses(movement) {
   lowerSpanWitness.position.z = -0.19;
   lowerSpanWitness.userData.role =
     'nonphysical-long-pair-transferred-dimension-witness';
+  // Brown draws no span witnesses; they stay bound to the state for checks.
+  upperSpanWitness.visible = false;
+  lowerSpanWitness.visible = false;
   root.add(upperSpanWitness, lowerSpanWitness);
 
   const rotateLocal = (point, angle) => point.clone().rotateAround(

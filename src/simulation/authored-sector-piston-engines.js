@@ -7,7 +7,7 @@ import {
 
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { annularSector } from './steam-engine-parts.js';
-import { plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -254,7 +254,7 @@ function sectorPistonEngine(movement) {
     cylinderA.add(wall);
   }
   const bearingFoot = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.36, 0.30), frameMaterial);
-  bearingFoot.position.set(0, -0.35, -0.55);
+  bearingFoot.position.set(0, -0.48, -0.55);
   cylinderA.add(bearingFoot);
   root.add(cylinderA);
 
@@ -366,6 +366,31 @@ function sectorPistonEngine(movement) {
     new THREE.Vector3(-0.40, valveCenter.y - 0.30, 0.04),
   ], 0.075, frameMaterial, 'counterclockwise-steam-passage-from-D-to-A');
   root.add(rightPassage, leftPassage);
+
+  // Brown's cast casing A: a vase-shaped wall standing off the sector's end
+  // walls (the side passages lie between), shouldered into the valve chest
+  // and flanged into a foot round the boss of C.
+  const casingSide = (points) => [...points, ...points.slice().reverse().map(([x, y]) => [-x, y])];
+  const wallPoint = (r, offset) => {
+    const a = sectorHalfAngle;
+    return [offset * Math.cos(a) + r * Math.sin(a),
+      rockshaftCenter.y - offset * Math.sin(a) + r * Math.cos(a)];
+  };
+  const casingOuter = casingSide([
+    [1.30, -1.84], [1.30, -1.52], [0.74, -1.52], [0.66, -1.22],
+    wallPoint(0.75, 0.47), wallPoint(1.6, 0.47), wallPoint(2.4, 0.47),
+    [1.52, 1.10], [1.40, 1.40], [1.08, 1.56], [0.90, 1.56],
+  ].reverse());
+  const casingInner = casingSide([
+    [0.50, -0.86], wallPoint(0.95, 0.34), wallPoint(1.6, 0.34), wallPoint(2.4, 0.34),
+    [1.39, 1.09], [1.29, 1.33], [1.00, 1.46], [0.30, 1.46],
+  ].reverse());
+  const casingA = new THREE.Mesh(plate(polygonClipping.difference(
+    poly(casingOuter), poly(casingInner),
+    poly(circle([rockshaftCenter.x, rockshaftCenter.y], 0.40, 96)),
+  ), -0.04, 0.64), frameMaterial);
+  casingA.userData.role = 'cast-vase-casing-of-sector-cylinder-A-with-foot';
+  root.add(casingA);
 
   const clockwiseAdmissionIndicator = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 22, 16),

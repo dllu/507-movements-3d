@@ -739,6 +739,9 @@ function thermalDiaphragmSteamTrap(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.4, 2.7, 10.4);
   root.userData.groundFloorY = -3.34;
   correctEjectorTrapParts(root,477,update);
+  // Brown draws a flat section; a narrow view keeps the cut case flat.
+  root.userData.cameraDirection.set(0.05, 0.08, 15);
+  root.userData.cameraFov = 10;
   markShadows(root);
   rearWall.castShadow = false;
   update(0);

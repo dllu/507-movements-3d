@@ -265,90 +265,77 @@ function bentShaftSlide(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.39 });
 
+  // Brown's side elevation: a plank bed, the T standard D carrying the long
+  // bearing sleeve at the crank end, and slide C as a sectioned bar lying on
+  // the plank with B's socket between its two blocks. No rails are drawn.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-bearing-D-and-slide-C-guide-frame';
+  const plankTopY = slideAxisY - .25;
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(6.55, 0.20, 1.42),
+    new THREE.BoxGeometry(6.10, 0.30, 1.10),
     frameMaterial,
   );
-  base.position.set(0.10, -2.12, -0.35);
-  base.userData.role = 'fixed-machine-foundation';
+  base.position.set(0.95, plankTopY - .15, 0);
+  base.userData.role = 'fixed-plank-bed-and-guide-for-slide-C';
   fixedFrame.add(base);
-  const bearingPost = new THREE.Mesh(
-    new THREE.BoxGeometry(.30,2.97,.62),
-    frameMaterial,
-  );
-  bearingPost.position.set(1.35,-.535,-.75);
-  bearingPost.userData.role = 'fixed-upright-of-bearing-D';
+  const bearingX = 3.20;
+  const bearingHalfLength = .75;
+  const bearingOuterRadius = .30;
+  const standardShape = new THREE.Shape();
+  const standardTop = shaftAxisY - bearingOuterRadius + .02;
+  standardShape.moveTo(bearingX - .42, plankTopY);
+  standardShape.lineTo(bearingX + .42, plankTopY);
+  standardShape.lineTo(bearingX + .42, plankTopY + .14);
+  standardShape.lineTo(bearingX + .22, plankTopY + .20);
+  standardShape.lineTo(bearingX + .22, standardTop - .75);
+  standardShape.quadraticCurveTo(bearingX + .22, standardTop - .10, bearingX + .70, standardTop);
+  standardShape.lineTo(bearingX - .70, standardTop);
+  standardShape.quadraticCurveTo(bearingX - .22, standardTop - .10, bearingX - .22, standardTop - .75);
+  standardShape.lineTo(bearingX - .22, plankTopY + .20);
+  standardShape.lineTo(bearingX - .42, plankTopY + .14);
+  standardShape.closePath();
+  const standardGeometry = new THREE.ExtrudeGeometry(standardShape, {depth: .50, bevelEnabled: false, curveSegments: 16});
+  standardGeometry.translate(0, 0, -.25);
+  const bearingPost = new THREE.Mesh(standardGeometry, frameMaterial);
+  bearingPost.userData.role = 'fixed-T-standard-D-under-bearing';
   fixedFrame.add(bearingPost);
-  const bearingSaddle=new THREE.Mesh(new THREE.BoxGeometry(.42,.20,.82),frameMaterial);
-  bearingSaddle.position.set(1.35,.90,-.40);
-  bearingSaddle.userData.role='rear-bearing-saddle-clear-of-spatial-rod-and-slide';
-  fixedFrame.add(bearingSaddle);
-  const bearingD = new THREE.Mesh(boredCylinderGeometry(.34,.153,.66),frameMaterial);
+  const bearingD = new THREE.Mesh(boredCylinderGeometry(bearingOuterRadius,.153,2*bearingHalfLength),frameMaterial);
   bearingD.rotation.z=Math.PI/2;
-  bearingD.position.set(1.35, shaftAxisY, shaftAxisZ);
+  bearingD.position.set(bearingX, shaftAxisY, shaftAxisZ);
   bearingD.userData.role = 'fixed-bearing-D-around-shaft-A';
   fixedFrame.add(bearingD);
-  const bearingBore = new THREE.Mesh(boredCylinderGeometry(.15,.134,.76),darkMaterial);
+  const bearingBore = new THREE.Mesh(boredCylinderGeometry(.15,.134,2*bearingHalfLength+.04),darkMaterial);
   bearingBore.rotation.z=Math.PI/2;
   bearingBore.position.copy(bearingD.position);
   bearingBore.userData.role = 'dark-bearing-D-bore-and-bushing';
   fixedFrame.add(bearingBore);
-  const slideRail = new THREE.Mesh(
-    new THREE.BoxGeometry(5.15, 0.16, 0.90),
-    frameMaterial,
-  );
-  slideRail.position.set(0.18, slideAxisY - .67, slideAxisZ);
-  slideRail.userData.role = 'fixed-single-axis-horizontal-guide-for-C';
-  fixedFrame.add(slideRail);
-  const guideLipFront = new THREE.Mesh(
-    new THREE.BoxGeometry(5.15, .39, .12),
-    darkMaterial,
-  );
-  guideLipFront.position.set(0.18, slideAxisY - .405, .46);
-  guideLipFront.userData.role = 'fixed-front-guide-lip-for-slide-C';
-  const guideLipRear = guideLipFront.clone();
-  guideLipRear.position.z = -.46;
-  guideLipRear.userData.role = 'fixed-rear-guide-lip-for-slide-C';
-  fixedFrame.add(guideLipFront, guideLipRear);
-  const guideKeepers = [-1,1].map(side=>{
-    const keeper=new THREE.Mesh(new THREE.BoxGeometry(5.15,.08,.12),darkMaterial);
-    keeper.position.set(.18,slideAxisY-.17,side*.38);fixedFrame.add(keeper);return keeper;
-  });
   root.add(fixedFrame);
 
   const shaftRotor = new THREE.Group();
   shaftRotor.position.set(0, shaftAxisY, shaftAxisZ);
   shaftRotor.userData.role = 'continuous-horizontal-shaft-A-rotor';
-  const mainShaft = cylinderAlongX(0.13, 3.10, driverMaterial, 38);
-  mainShaft.position.x = 1.02;
+  const shaftLeft = -0.20;
+  const shaftRight = bearingX + bearingHalfLength + .38;
+  const mainShaft = cylinderAlongX(0.13, shaftRight - shaftLeft, driverMaterial, 38);
+  mainShaft.position.x = (shaftLeft + shaftRight) / 2;
   mainShaft.userData.role = 'straight-bearing-portion-of-shaft-A';
   shaftRotor.add(mainShaft);
-  const inputWheel = torusNormalToX(1.05, 0.10, driverMaterial, 88);
-  inputWheel.position.x = 0.42;
-  inputWheel.userData.role = 'input-wheel-fast-on-shaft-A';
+  // Brown's crank handle on the outer end of A (in place of an input wheel).
+  const crankArmLength = .78;
+  const crankX = shaftRight - .06;
+  const inputWheel = new THREE.Mesh(new THREE.BoxGeometry(.12, crankArmLength + .22, .20), driverMaterial);
+  inputWheel.position.set(crankX + .12, crankArmLength / 2, 0);
+  inputWheel.userData.role = 'input-crank-arm-fast-on-shaft-A';
   shaftRotor.add(inputWheel);
-  for (let index = 0; index < 4; index += 1) {
-    const phase = index * Math.PI / 4;
-    const end = new THREE.Vector3(
-      0.42,
-      0.91 * Math.cos(phase),
-      0.91 * Math.sin(phase),
-    );
-    const start = new THREE.Vector3(0.42, 0, 0);
-    const spoke = cylinderBetween(start, end, 0.045, driverMaterial, 14);
-    const opposite = cylinderBetween(
-      start,
-      end.clone().multiplyScalar(-1).setX(0.42),
-      0.045,
-      driverMaterial,
-      14,
-    );
-    spoke.userData.role = 'input-wheel-spoke-fast-on-A';
-    opposite.userData.role = 'input-wheel-spoke-fast-on-A';
-    shaftRotor.add(spoke, opposite);
-  }
+  const crankHandle = cylinderAlongX(.055, .42, darkMaterial, 20);
+  crankHandle.position.set(crankX + .39, crankArmLength, 0);
+  crankHandle.userData.role = 'input-crank-handle-on-arm';
+  shaftRotor.add(crankHandle);
+  const crankKnob = new THREE.Mesh(new THREE.SphereGeometry(.10, 20, 14), darkMaterial);
+  crankKnob.scale.set(1.5, 1, 1);
+  crankKnob.position.set(crankX + .62, crankArmLength, 0);
+  crankKnob.userData.role = 'input-crank-handle-knob';
+  shaftRotor.add(crankKnob);
   const bentWeb = cylinderBetween(
     new THREE.Vector3(-0.20, 0, 0),
     new THREE.Vector3(-0.20, -crankRadius, 0),
@@ -362,25 +349,34 @@ function bentShaftSlide(movement) {
   bentJournal.position.set(bentJournalX, -crankRadius, 0);
   bentJournal.userData.role = 'offset-parallel-bent-journal-of-shaft-A';
   shaftRotor.add(bentJournal);
-  const shaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.11, 0.48),
-    whiteMaterial,
-  );
-  shaftIndex.position.set(0.43, -0.82, 0);
-  shaftIndex.userData.role = 'white-shaft-A-rotation-index';
-  shaftRotor.add(shaftIndex);
   root.add(shaftRotor);
 
+  // Slide C: Brown's sectioned bar, two blocks either side of B's socket,
+  // joined under the seat; it lies on the plank bed.
   const slideC = new THREE.Group();
   slideC.position.set(slideMaximumX, slideAxisY, slideAxisZ);
   slideC.userData.role = 'rectilinearly-reciprocating-slide-C';
+  const slideTop = .20;
+  const slideBottom = -.25;
   const slideBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.05, 0.36, 0.78),
+    new THREE.BoxGeometry(1.55, slideTop - slideBottom, 0.70),
     drivenMaterial,
   );
-  slideBody.position.y = -.40;
+  slideBody.position.set(-.45 - 1.55 / 2, (slideTop + slideBottom) / 2, 0);
   slideBody.userData.role = 'rigid-body-of-slide-C';
-  slideC.add(slideBody);
+  const slideFront = new THREE.Mesh(
+    new THREE.BoxGeometry(.62, slideTop - slideBottom, 0.70),
+    drivenMaterial,
+  );
+  slideFront.position.set(.23 + .31, (slideTop + slideBottom) / 2, 0);
+  slideFront.userData.role = 'rigid-body-of-slide-C';
+  const slideBridge = new THREE.Mesh(
+    new THREE.BoxGeometry(.68, .045, 0.70),
+    drivenMaterial,
+  );
+  slideBridge.position.set((-.45 + .23) / 2, slideBottom + .0225, 0);
+  slideBridge.userData.role = 'rigid-body-of-slide-C';
+  slideC.add(slideBody, slideFront, slideBridge);
   const lowerBall = new THREE.Mesh(
     new THREE.SphereGeometry(0.16, 24, 18),
     whiteMaterial,
@@ -391,15 +387,6 @@ function bentShaftSlide(movement) {
   const lowerSocketCup = new THREE.Mesh(lowerSeatGeometry(),socketMaterial);
   lowerSocketCup.userData.role = 'lower-universal-socket-in-slide-C';
   slideC.add(lowerSocketCup);
-  const socketFoot=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.10,32),socketMaterial);
-  socketFoot.position.y=-.225;slideC.add(socketFoot);
-  const slideIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(.20,.012,.44),
-    whiteMaterial,
-  );
-  slideIndex.position.set(.38,-.214,0);
-  slideIndex.userData.role = 'white-slide-C-linear-position-index';
-  slideC.add(slideIndex);
   root.add(slideC);
 
   const rodB = makeDynamicRod(
@@ -447,7 +434,7 @@ function bentShaftSlide(movement) {
     archetype:
       'horizontal-bent-shaft-transverse-crank-journal-double-ball-socket-oblique-rod-to-single-axis-slide',
     blocks: {
-      bearingD, bearingBore, bearingPost, bearingSaddle, slideRail, guideLipFront, guideLipRear, guideKeepers, slideBody, socketFoot,
+      bearingD, bearingBore, bearingPost, base, slideBody, slideFront, slideBridge, crankHandle, crankKnob,
       bentJournal,
       bentWeb,
       fixedFrame,
@@ -527,7 +514,7 @@ function bentShaftSlide(movement) {
         engravingEvidence:
           'Brown’s bold view shows a horizontal shaft in the upright bearing D, an offset parallel journal at its left bent end, an oblique rod B descending to slide C, and one horizontal guide. The dotted overlay moves the journal through the opposite transverse half-turn and places B and C in the other extreme pose.',
         reconstructionDisclosure:
-          'Brown fixes the spatial topology and half-turn pose relation but gives no dimensions, socket clearances, speed, stroke, or proportions. The shaft height, 0.52 crank radius, 3.20 rod length, guide placement, input wheel, frame, and six-second uniform source cycle are independently engineered; exact three-dimensional rod closure determines C.',
+          'Brown fixes the spatial topology and half-turn pose relation but gives no dimensions, socket clearances, speed, stroke, or proportions. The shaft height, 0.52 crank radius, 3.20 rod length, plank and T-standard proportions, crank handle, and six-second uniform source cycle are independently engineered; exact three-dimensional rod closure determines C.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 417',
@@ -551,8 +538,9 @@ function bentShaftSlide(movement) {
     new THREE.Vector3(2.75, 2.55, 1.48),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(6, 2.8, 12);
-  root.userData.groundFloorY = -2.28;
+  // Brown draws a flat side elevation.
+  root.userData.cameraDirection = new THREE.Vector3(0, 0.06, 1);
+  root.userData.groundFloorY = slideAxisY - .55;
   markShadows(root);
   base.receiveShadow = true;
   fitPistonGuide(root, update, cycleDuration);

@@ -8,6 +8,7 @@ import {
 } from './primitives.js';
 
 import { correctGasometerWorkingParts } from './gasometer-working-parts.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -87,6 +88,52 @@ function ropeArc(center, radius, material, role) {
   );
   arc.userData.role = role;
   return arc;
+}
+
+// Brown draws both gasometers as flat sections; a narrow field of view keeps
+// the elevation flat instead of looking down into the tank.
+function presentFlatSection(root) {
+  root.userData.cameraDirection.set(0.15, 0.3, 15);
+  root.userData.cameraFov = 10;
+}
+
+// Plate 479 hangs plain ball weights C from plain disc pulleys; the stacked
+// adjustment disks, pulley spokes and white face indices are not drawn.
+function presentCounterweightedSection(root) {
+  const blocks = root.userData.blocks;
+  for (const weight of blocks.counterweights) {
+    const [core, ...rest] = weight.children.filter((child) =>
+      child.userData.role?.startsWith('main-mass')
+      || child.userData.role?.startsWith('removable-pressure-adjustment-disk'));
+    core.geometry.dispose();
+    core.geometry = new THREE.SphereGeometry(0.40, 48, 32);
+    for (const disk of rest) {
+      disk.removeFromParent();
+      disk.geometry.dispose();
+    }
+    weight.userData.adjustmentDisks = [];
+  }
+  for (const pulley of blocks.pulleys) {
+    const rotor = pulley.userData.rotor;
+    for (const child of [...rotor.children]) {
+      const white = child.material?.color?.getHex() === PALETTE.white;
+      if (child.userData.role === 'radial-pulley-spoke' || white) {
+        child.removeFromParent();
+        child.geometry.dispose();
+      }
+    }
+    const web = new THREE.Mesh(
+      boredLatheGeometry([
+        { axial: -0.06, radial: 0.345 },
+        { axial: 0.06, radial: 0.345 },
+      ], 0.1196, 96),
+      pulley.userData.tread.material,
+    );
+    web.rotation.x = Math.PI / 2;
+    web.userData.role = 'plain-pulley-web';
+    rotor.add(web);
+  }
+  presentFlatSection(root);
 }
 
 function singleLiftCounterweightedGasometer(movement) {
@@ -759,6 +806,7 @@ function singleLiftCounterweightedGasometer(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.5, 4.7, 10.5);
   root.userData.groundFloorY = -2.55;
   correctGasometerWorkingParts(root, 479);
+  presentCounterweightedSection(root);
   markShadows(root);
   tankWall.castShadow = false;
   outerAnnularWater.castShadow = false;
@@ -1441,6 +1489,7 @@ function centerGuidedGasometer(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.3, 4.4, 10.4);
   root.userData.groundFloorY = -2.72;
   correctGasometerWorkingParts(root, 480);
+  presentFlatSection(root);
   markShadows(root);
   tankWall.castShadow = false;
   outerAnnularWater.castShadow = false;

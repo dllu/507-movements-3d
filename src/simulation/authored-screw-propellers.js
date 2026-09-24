@@ -615,6 +615,12 @@ function screwPropeller(movement) {
   root.userData.cameraDirection = new THREE.Vector3(9.6, 5.2, 10.8);
   root.userData.groundFloorY = -2.92;
   correctMarineRotor(root,488);
+  // Frame the shaft and the swept blades only; the arrows, wake beads and
+  // bearings are not drawn in Brown's plate (source presentation removes them).
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.86, -2.36, -2.46),
+    new THREE.Vector3(3.14, 2.50, 2.46),
+  );
   markShadows(root);
   waterVolume.castShadow = false;
   bladeAssemblies.forEach(({ blade }) => {

@@ -277,11 +277,12 @@ function springReturnBellHammer(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
+  // Brown's plank runs under the hammer bracket and ends below the bell.
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(6.55, 0.22, 1.72),
+    new THREE.BoxGeometry(5.1, 0.22, 1.72),
     frameMaterial,
   );
-  foundation.position.set(0, -1.78, -0.25);
+  foundation.position.set(-0.15, -1.78, -0.25);
   foundation.userData.role = 'fixed-foundation-for-bell-hammer';
   root.add(foundation);
 
@@ -400,8 +401,17 @@ function springReturnBellHammer(movement) {
     new THREE.CylinderGeometry(0.25, 0.34, 0.22, 40),
     bellMaterial,
   );
-  bellCrown.position.set(0, -0.06, 0);
+  // Set just below the hanger pin, which passes through the canon loop.
+  bellCrown.position.set(0, -0.15, 0);
   bellCrown.userData.role = 'bell-crown-below-hanger';
+  // The cast canon loop Brown draws on the crown; the hanger pin runs through it.
+  const bellCanon = new THREE.Mesh(
+    new THREE.TorusGeometry(0.26, 0.055, 14, 48),
+    bellMaterial,
+  );
+  bellCanon.position.y = 0.08;
+  bellCanon.userData.role = 'bell-canon-loop-on-hanger';
+  bellPivot.add(bellCanon);
   bellPivot.add(bellCrown);
   root.add(bellPivot);
 
@@ -421,7 +431,7 @@ function springReturnBellHammer(movement) {
   supportArm.position.set(2.62, bellTopY + 0.25, -0.38);
   supportArm.userData.role = 'fixed-overhead-arm-carrying-bell';
   fixedBellSupport.add(supportArm);
-  const hanger = cylinderAlongZ(0.11, 1.04, darkMaterial, 26);
+  const hanger = cylinderAlongZ(0.07, 1.04, darkMaterial, 26);
   hanger.position.set(bellCenterX, bellTopY + 0.08, 0.06);
   hanger.userData.role = 'fixed-bell-hanger-pin';
   fixedBellSupport.add(hanger);

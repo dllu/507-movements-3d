@@ -267,6 +267,7 @@ function undershotWaterWheel(movement) {
   rotationMarker.userData.role =
     'visible-counterclockwise-wheel-rotation-marker';
   rotor.add(rotationMarker);
+  rotationMarker.visible = false; // Brown draws no index on the wheel.
 
   const shaft = cylinderAlongZ(shaftRadius, 1.68, darkMaterial, 36);
   shaft.userData.role = 'undershot-wheel-main-shaft-in-fixed-bearings';

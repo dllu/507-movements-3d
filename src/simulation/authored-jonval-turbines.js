@@ -394,6 +394,7 @@ function jonvalTurbine(movement) {
   rotationMarker.userData.role =
     'visible-clockwise-marker-on-runner-c';
   runner.add(rotationMarker);
+  rotationMarker.visible = false; // Brown draws no index stripe on the runner.
 
   const casing = new THREE.Mesh(
     new THREE.CylinderGeometry(
@@ -682,6 +683,8 @@ function jonvalTurbine(movement) {
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.0, 4.8, 11.0);
+  // Brown's sectional elevation is flat: a narrow field keeps the rings edge-on.
+  root.userData.cameraFov = 8;
   root.userData.groundFloorY = -1.96;
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite working passages and shaft supports; water paths, nozzle flow and torque remain prescribed illustrations, without pressure, leakage, efficiency or load-response validation.'};

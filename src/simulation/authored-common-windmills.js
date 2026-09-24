@@ -724,6 +724,36 @@ function commonWindmill(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.6, 4.4, 11.8);
   root.userData.groundFloorY = -2.10;
   correctWindRotorWorkingParts(root, 485);
+  // Brown views the mill from its left front, the sails edge-on enough to
+  // stand beside the tower, and draws a large oval tail vane trailing to the
+  // right.
+  {
+    const vane = root.userData.blocks.tailVane;
+    const oval = new THREE.Shape();
+    oval.absellipse(0, 0, 1.20, 0.62, 0, Math.PI * 2, false, 0);
+    vane.geometry.dispose();
+    vane.geometry = new THREE.ExtrudeGeometry(oval, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: 0.06,
+    }).translate(0, 0, -0.03).rotateY(Math.PI / 2);
+    vane.position.set(0, 1.52, -2.95);
+    // Fit the tower, swept sails and tail only (no wind arrows or beads).
+    root.userData.cameraFitBounds.set(
+      new THREE.Vector3(-2.15, -2.05, -4.25),
+      new THREE.Vector3(2.15, 3.25, 1.55),
+    );
+    // The tower door and windows face the viewer while the cap has turned the
+    // windshaft toward the left front, as in the plate.
+    const facing = THREE.MathUtils.degToRad(45);
+    const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), facing);
+    const { door, windows } = root.userData.blocks;
+    for (const opening of [door, ...windows]) {
+      opening.position.applyQuaternion(yaw);
+      opening.quaternion.premultiply(yaw);
+    }
+    root.userData.cameraDirection.set(Math.sin(facing) * 10, 3.4, Math.cos(facing) * 10);
+  }
   markShadows(root);
   for (const sail of sails) sail.panel.castShadow = false;
   for (const arrow of windArrows) {

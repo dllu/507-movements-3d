@@ -95,8 +95,10 @@ test('movement 483 is Brown’s two-bellows A/A-prime meter with one slide valve
     'moving-diaphragm-plate-of-A-prime',
     'single-D-slide-valve-B-routing-both-bellows',
     'fixed-three-port-seat-under-slide-valve-B',
-    'fill-count-input-wheel-driving-dial-work',
   ]) assert.ok(roles.includes(role), role);
+  // Brown's plate does not draw the register; source presentation removes it.
+  assert.ok(!roles.includes('fill-count-input-wheel-driving-dial-work'));
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes('fill-count-input-wheel-driving-dial-work'));
   assert.equal(geometry.dialFillRatios.length, 3);
   disposeModel(model.root);
 });

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { createAuthoredScrewPropellerMovement } from '../src/simulation/authored-screw-propellers.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -16,6 +17,12 @@ const sourceText = await readFile(
 const ARCHETYPE =
   'two-blade-constant-lead-helicoid-screw-propeller-producing-axial-thrust';
 const FULL_TURN = Math.PI * 2;
+
+// Rigidity of the white indices is checked on the unpresented factory model;
+// Brown's plate does not draw them, so source presentation removes them.
+function unpresentedModel() {
+  return { model: createAuthoredScrewPropellerMovement(catalog.movements[487]) };
+}
 
 function movementModel() {
   const movement = catalog.movements[487];
@@ -270,7 +277,7 @@ test('movement 488 state closes torque, power, ideal advance, and one-turn timin
 });
 
 test('movement 488 renderer rotates shaft, hub, and both helicoid blades as one body', () => {
-  const { model } = movementModel();
+  const { model } = unpresentedModel();
   const {
     bladeSurfacePointScene,
     blocks,

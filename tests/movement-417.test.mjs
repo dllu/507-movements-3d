@@ -90,10 +90,13 @@ test('movement 417 is one bent shaft A in bearing D, one double-socket rod B, an
     'upper-universal-socket-of-rod-B',
     'lower-universal-socket-in-slide-C',
     'rectilinearly-reciprocating-slide-C',
-    'fixed-single-axis-horizontal-guide-for-C',
-    'white-shaft-A-rotation-index',
-    'white-slide-C-linear-position-index',
+    'fixed-plank-bed-and-guide-for-slide-C',
+    'fixed-T-standard-D-under-bearing',
+    'input-crank-arm-fast-on-shaft-A',
+    'input-crank-handle-on-arm',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws no rails, wheel or white indices.
+  for (const role of roles) assert.doesNotMatch(role, /^white-(?:shaft|slide)-|input-wheel|single-axis-horizontal-guide/);
   disposeModel(model.root);
 });
 

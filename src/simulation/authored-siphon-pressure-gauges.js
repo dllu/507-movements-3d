@@ -418,9 +418,11 @@ function siphonPressureGauge(movement) {
     valveStem,
     zeroDatumIndex,
   };
+  // Brown's view: the cocked pipe, bent tube and scale marks (the stand,
+  // clips and board are removed by source presentation).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.18, -3.58, -0.86),
-    new THREE.Vector3(2.48, 3.78, 0.86),
+    new THREE.Vector3(-3.95, -3.5, -0.5),
+    new THREE.Vector3(2.35, 4.35, 0.5),
   );
   root.userData.canonicalTimes = {
     maximumPressure: cycleDuration / 2,

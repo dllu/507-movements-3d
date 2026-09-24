@@ -198,6 +198,7 @@ function oldRotaryPump(movement) {
       frameMaterial,
     );
     foot.position.set(x, -3.10, -0.18);
+    foot.userData.role = 'fixed-casing-foot-not-drawn-by-brown';
     root.add(foot);
   }
 
@@ -257,6 +258,7 @@ function oldRotaryPump(movement) {
     matte(PALETTE.white, { roughness: 0.46 }),
   );
   shaftIndex.position.set(0.36, 0, casingDepth * 0.56);
+  shaftIndex.userData.role = 'white-rotor-rotation-index';
   rotor.add(shaftIndex);
 
   const valves = Array.from({ length: valveCount }, (_, index) => {

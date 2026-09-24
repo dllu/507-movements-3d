@@ -569,12 +569,11 @@ function dicksonReversibleDrive(movement) {
     metalness: 0.20,
     roughness: 0.48,
   });
+  // Brown draws wheel D as a plain disc: an opaque web, no spokes.
   const wheelBackMaterial = matte(PALETTE.driven, {
     metalness: 0.12,
-    opacity: 0.34,
     roughness: 0.56,
     side: THREE.DoubleSide,
-    transparent: true,
   });
   const pawlMaterial = matte(PALETTE.accent, {
     metalness: 0.25,

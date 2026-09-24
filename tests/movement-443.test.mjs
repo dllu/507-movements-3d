@@ -67,7 +67,8 @@ test('movement 443 is one rigid oblique rotor containing the lower wheel, shaft,
   assert.equal(blocks.centralShaft.parent, blocks.rotor);
   assert.equal(blocks.helicalFlight.parent, blocks.rotor);
   assert.equal(blocks.casing.parent, blocks.rotor);
-  assert.equal(blocks.casingIndex.parent, blocks.rotor);
+  // Source presentation removes the white rotation stripe Brown does not draw.
+  assert.equal(blocks.casingIndex.parent, null);
   assert.equal(blocks.waterWheel.parent, blocks.rotor);
   assert.equal(blocks.paddles.length, geometry.waterWheelPaddleCount);
   assert.equal(blocks.waterPockets.length, geometry.waterPocketCount);

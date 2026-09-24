@@ -87,8 +87,8 @@ test('movement 422 is one fixed sector cylinder A, radial vane B keyed to rock-s
     'outer-sealing-head-of-piston-B',
     'fixed-axis-rock-shaft-C',
     'horizontally-reciprocating-slide-valve-D',
-    'clockwise-steam-passage-from-D-to-A',
-    'counterclockwise-steam-passage-from-D-to-A',
+    // The side passages are the channels inside Brown's cast casing.
+    'cast-vase-casing-of-sector-cylinder-A-with-foot',
     'output-crank-on-C-for-connection-to-rotary-train',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);

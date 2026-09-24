@@ -9,6 +9,38 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 
+// In Brown's plan the wheel is edge-on: its rim reads as a bar and the
+// turned handles project beyond it at each spoke. The very narrow view keeps
+// the wheel edge-on at the left of the frame instead of opening it into an
+// ellipse.
+function addHandwheelHandles(root) {
+  const blocks = root.userData.blocks;
+  const rim = blocks.handwheelRim;
+  const rimRadius = rim.geometry.parameters.radius;
+  const tube = rim.geometry.parameters.tube;
+  const profile = [
+    [0.050, 0], [0.050, 0.08], [0.085, 0.20], [0.070, 0.34],
+    [0.055, 0.42], [0.075, 0.50], [0.060, 0.56], [0.001, 0.58],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  const geometry = new THREE.LatheGeometry(profile, 24)
+    .translate(0, rimRadius + tube * 0.5, 0);
+  blocks.handwheelHandles = blocks.handwheelSpokes.map((spoke, index) => {
+    const handle = new THREE.Mesh(index ? geometry.clone() : geometry, rim.material);
+    handle.userData.role = `turned-handwheel-handle-${index + 1}`;
+    handle.rotation.x = index * Math.PI / 4;
+    handle.position.x = rim.position.x;
+    rim.parent.add(handle);
+    return handle;
+  });
+  const bounds = root.userData.cameraFitBounds;
+  bounds.min.y = Math.min(bounds.min.y, -3.45);
+  bounds.max.y = Math.max(bounds.max.y, 3.45);
+  bounds.min.z = Math.min(bounds.min.z, -3.1);
+  bounds.max.z = Math.max(bounds.max.z, 3.1);
+  root.userData.cameraDirection.set(-0.6, 0.35, 16);
+  root.userData.cameraFov = 8;
+}
+
 function addRole(object, role) {
   object.userData.role = role;
   return object;
@@ -737,6 +769,7 @@ function ropeSteering(movement) {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
   correctSteeringSolids(root);
+  addHandwheelHandles(root);
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   ropeMarkers.forEach((marker) => {

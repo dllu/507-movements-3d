@@ -483,11 +483,12 @@ function selfRockingCradle(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
+  // Brown's floor is a hatched ground line, not a slab.
   const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(6.8, 0.18, 1.65),
+    new THREE.BoxGeometry(6.8, 0.05, 0.50),
     groundMaterial,
   );
-  ground.position.set(0, groundY - .09, -0.24);
+  ground.position.set(0, groundY - .025, -0.02);
   ground.userData.role = 'fixed-floor-beneath-rocking-cradle-E';
   root.add(ground);
 
@@ -516,7 +517,9 @@ function selfRockingCradle(movement) {
     color: PALETTE.driver,
     grooves: 0,
     radius: 0.66,
-    spokes: 4,
+    // Brown draws A and B as plain discs turning on the fixed axles.
+    spokes: 0,
+    bore: .114,
     width: 0.34,
   });
   inputWheelA.position.copy(inputCenter);
@@ -543,7 +546,8 @@ function selfRockingCradle(movement) {
     color: PALETTE.driven,
     grooves: 1,
     radius: outputWheelRadius,
-    spokes: 6,
+    spokes: 0,
+    bore: .114,
     width: 0.42,
   });
   outputWheelB.position.copy(outputCenter);
@@ -575,11 +579,7 @@ function selfRockingCradle(movement) {
     connectingRod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);
   };
   root.add(connectingRod);
-  // Pulley hubs rotate around the fixed axles rather than filling them.
-  for(const wheel of [inputWheelA,outputWheelB]){
-    const hub=wheel.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');
-    if(hub){const p=hub.geometry.parameters;hub.geometry.dispose();hub.geometry=boredJournal(p.radiusTop,.114,p.height,hub.material).geometry;}
-  }
+  // The plain discs and their hubs are lathed with a bore round the fixed axles.
 
   const cradleE = new THREE.Group();
   cradleE.userData.role = 'rolling-self-rocking-cradle-E';

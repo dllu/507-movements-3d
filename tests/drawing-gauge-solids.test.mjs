@@ -76,7 +76,7 @@ test('410 outward setup never cuts the wood and rendered links, guides and marke
   const wood=inModel(b.workpiece);
   for(const part of [b.fixedCheek.plate,b.fixedCheek.innerContact,b.fixedCheek.lowerFoot])assert.ok(inModel(part).max.x<=wood.min.x+1e-7);
   for(const part of [b.adjustableCheek.plate,b.adjustableCheek.innerContact,b.adjustableCheek.lowerFoot])assert.ok(inModel(part).min.x>=wood.max.x-1e-7);
-  const tip=b.markerNeedle.localToWorld(new THREE.Vector3(0,b.markerNeedle.geometry.parameters.height/2,0));
+  const tip=m.root.worldToLocal(b.markerNeedle.localToWorld(new THREE.Vector3(0,b.markerNeedle.geometry.parameters.height/2,0)));
   assert.ok(Math.abs(tip.z-wood.max.z)<1e-7);
  }
  assert.ok(d.geometry.setupAdjustableCheekX>d.geometry.fittedAdjustableCheekX);

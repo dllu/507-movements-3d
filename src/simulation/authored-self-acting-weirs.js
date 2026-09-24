@@ -565,7 +565,9 @@ function selfActingWeir(movement) {
     new THREE.Vector3(3.65, 3.58, 1.86),
   );
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(.8, 1.0, 15.0);
+  // Brown's flat section: near-orthographic so the head volumes read as panels.
+  root.userData.cameraDirection = new THREE.Vector3(0, 0.02, 1);
+  root.userData.cameraFov = 9;
   root.userData.groundFloorY = groundY;
   markShadows(root);
   foundation.receiveShadow = true;

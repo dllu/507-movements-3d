@@ -517,6 +517,21 @@ function stoneLewis(movement) {
     return end;
   });
 
+  // Brown shows the shackle face-on, its bow ring open to the viewer and the
+  // pin crossing the picture; turn the head block, bow, arms and pin a
+  // quarter turn about the wedge axis together so their bores still align.
+  {
+    const quarter = new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
+    for (const part of [centerHead, shackleRing, ...shackleArms, shacklePin,
+      ...shacklePinEnds]) {
+      part.position.applyQuaternion(quarter);
+      part.quaternion.premultiply(quarter);
+    }
+  }
+
   const contactMarkerLocalY = -2.30;
   const contactMarkerHalfWidth =
     centralHalfWidthAtLocalY(contactMarkerLocalY);
@@ -763,6 +778,10 @@ function stoneLewis(movement) {
     upwardIndexShaft,
   ]) marker.castShadow = false;
   fitPistonGuide(root, update, cycleDuration);
+  // Brown draws the stone in flat section; view it square to the cut.
+  root.userData.cameraDirection.set(0.03, 0.05, 11);
+  root.userData.cameraFov = 10;
+  root.userData.hideGround = true;
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

@@ -69,7 +69,8 @@ test('movement 439 has one rope over one pulley joining a valved bucket to one c
   assert.equal(blocks.upperRopeArc.parent, blocks.ropeAssembly);
   assert.equal(blocks.rightRopeStrand.parent, blocks.ropeAssembly);
   assert.equal(blocks.pulleyDisk.parent, blocks.pulley);
-  assert.equal(blocks.pulleyMarker.parent, blocks.pulley);
+  // Source presentation removes the white pulley stripe Brown does not draw.
+  assert.equal(blocks.pulleyMarker.parent, null);
   assert.equal(blocks.bucket.parent, model.root);
   assert.equal(blocks.counterweight.parent, model.root);
   assert.equal(blocks.valve.parent, blocks.bucket);

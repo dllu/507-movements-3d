@@ -87,8 +87,10 @@ test('movement 481 is one stationary water case A around one four-compartment re
     'one-revolving-four-compartment-measuring-drum',
     'hollow-rotating-journal-surrounding-central-inlet-pipe-a',
     'stationary-central-pipe-a-through-journal-turned-above-water',
-    'dial-work-registering-known-volume-per-drum-revolution',
   ]) assert.ok(roles.includes(role), role);
+  // Brown's plate does not draw the register; source presentation removes it.
+  assert.ok(!roles.includes('dial-work-registering-known-volume-per-drum-revolution'));
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes('dial-work-registering-known-volume-per-drum-revolution'));
   disposeModel(model.root);
 });
 

@@ -1,4 +1,5 @@
 import {correctGasMeterParts} from './gas-meter-working-parts.js';
+import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -7,6 +8,39 @@ import {
 } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
+
+// Brown covers the regulator with a domed lid whose flange overhangs the
+// walls, the rod of cup H rising into a knob at its crown. The lid is one
+// section plate in the elevation plane, slotted where the rod passes.
+function addDomedCover(root, material, rodX) {
+  const baseY = 1.84;
+  const arc = (rx, ry, count = 96) => Array.from({ length: count + 1 }, (_, i) => {
+    const angle = Math.PI * i / count;
+    return [rx * Math.cos(angle), baseY + ry * Math.sin(angle)];
+  });
+  const shell = polygonClipping.difference(
+    poly([[3.02, baseY - 0.06], ...arc(2.98, 0.78), [-3.02, baseY - 0.06]]),
+    poly([...arc(2.80, 0.60)].reverse()),
+  );
+  const knobTop = baseY + 0.78 + 0.30;
+  const knob = poly([
+    [rodX - 0.20, baseY + 0.60], [rodX + 0.20, baseY + 0.60],
+    [rodX + 0.20, knobTop - 0.10], [rodX + 0.10, knobTop],
+    [rodX - 0.10, knobTop], [rodX - 0.20, knobTop - 0.10],
+  ]);
+  const slot = poly([
+    [rodX - 0.095, baseY - 0.1], [rodX + 0.095, baseY - 0.1],
+    [rodX + 0.095, knobTop + 0.1], [rodX - 0.095, knobTop + 0.1],
+  ]);
+  const outline = polygonClipping.difference(polygonClipping.union(shell, knob), slot);
+  const cover = new THREE.Mesh(plate(outline, -1.20, 1.20), material);
+  cover.userData.role = 'fixed-domed-cover-with-rod-knob';
+  root.add(cover);
+  root.userData.blocks.domedCover = cover;
+  const bounds = root.userData.cameraFitBounds;
+  cover.updateMatrixWorld(true);
+  bounds.union(new THREE.Box3().setFromObject(cover));
+}
 
 function cylinderBetween(start, end, radius, material, role, sides = 24) {
   const direction = end.clone().sub(start);
@@ -923,6 +957,10 @@ function powersMercuryRegulator(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.6, 4.5, 12.2);
   root.userData.groundFloorY = -2.70;
   correctGasMeterParts(root,482,update);
+  // Brown's regulator is a flat section; view it square to the cut.
+  root.userData.cameraDirection.set(0.05, 0.08, 15);
+  root.userData.cameraFov = 10;
+  addDomedCover(root, frameMaterial, cupConnectorX);
   markShadows(root);
   housingShell.castShadow = false;
   cupHPressureVolume.castShadow = false;

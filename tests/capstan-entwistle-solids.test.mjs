@@ -45,12 +45,15 @@ test('495 corrects the output tooth phase and clears every independent shaft jou
  const collarHalfLength=b.carrierCollar.geometry.boundingBox.max.y;
  for(const gear of[b.fixedGearA,b.outputGearC]){const hub=gear.userData.rotor.children.at(-3);hub.geometry.computeBoundingBox();assert.ok(hub.position.z+hub.geometry.boundingBox.min.z>collarHalfLength+.02);}
  const planetHub=b.planetGearB.userData.rotor.children.at(-3);planetHub.geometry.computeBoundingBox();assert.ok(planetHub.position.z+planetHub.geometry.boundingBox.min.z>.30);
- for(const bearing of b.bearings)shaftFits(bearing,.085);
- shaftFits(b.outputSleeve,.085);shaftFits(b.outputDrum,.085);
- b.outputIndex.geometry.computeBoundingBox();assert.ok(b.outputIndex.position.y+b.outputIndex.geometry.boundingBox.min.y>.115);
+ // Brown's cast standards carry shaft D in true bores; the invented posts, brace and indices are gone.
+ assert.equal(b.castStandards.length,2);
+ for(const standard of b.castStandards){assert.equal(standard.parent,m.root);shaftFits(standard,.085,'x',[g.apex.y,0]);}
+ assert.equal(b.standardBearings.length,2);for(const bearing of b.standardBearings)shaftFits(bearing,.085,'y');
+ assert.deepEqual(b.bearings,[]);assert.deepEqual(b.bearingPosts,[]);assert.equal(b.outputIndex,undefined);assert.equal(b.carrierIndex,undefined);assert.equal(b.fixedGearBrace,undefined);
+ shaftFits(b.outputSleeve,.085);shaftFits(b.outputDrum,.085);shaftFits(b.drivingPulley,.085,'y');
  const floorTop=b.base.position.y+b.base.geometry.parameters.height/2;
- const foot=b.rightStandard.userData.foot;
- assert.ok(Math.abs(foot.y-floorTop)<1e-12);assert.ok(Math.abs(foot.z)<b.base.geometry.parameters.depth/2);
+ for(const standard of b.castStandards){const box=new THREE.Box3().setFromObject(standard);assert.ok(Math.abs(box.min.y-floorTop)<1e-6);assert.ok(box.max.z<=b.base.geometry.parameters.depth/2);}
+ assert.ok(Math.abs(b.rightStandard.userData.foot.y-floorTop)<1e-12);
  disposeObject3D(m.root);
 });
 for(const id of[412,495])test(`${id} disables ground and actual material fog`,()=>{const m=make(id);assert.equal(m.root.userData.hideGround,true);m.root.traverse(o=>{for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material)assert.equal(material.fog,false);});disposeObject3D(m.root);});

@@ -806,6 +806,43 @@ function robertsonJack(movement) {
   root.userData.cameraDirection = new THREE.Vector3(4.8, 2.8, 11.8);
   root.userData.groundFloorY = groundY;
   correctHydraulicForceParts(root,467);
+  // Brown's cast head is one flared saddle with a hollow cup (no cube ears),
+  // and the claw is a single J-hook cast on the cylinder's right side.
+  for (const group of [topSaddle, sideClaw]) {
+    for (const child of [...group.children]) {
+      group.remove(child);
+      child.geometry.dispose();
+    }
+  }
+  const headShape = new THREE.Shape();
+  headShape.moveTo(-0.34, movingCylinderTopY);
+  headShape.lineTo(0.34, movingCylinderTopY);
+  headShape.quadraticCurveTo(0.40, 2.05, 0.74, 2.14);
+  headShape.lineTo(0.74, 2.40);
+  headShape.lineTo(0.40, 2.40);
+  headShape.absarc(0, 2.62, 0.46, -0.5164, -Math.PI + 0.5164, true);
+  headShape.lineTo(-0.74, 2.40);
+  headShape.lineTo(-0.74, 2.14);
+  headShape.quadraticCurveTo(-0.40, 2.05, -0.34, movingCylinderTopY);
+  const headGeometry = new THREE.ExtrudeGeometry(headShape, { depth: 0.92, bevelEnabled: false, curveSegments: 24 });
+  headGeometry.translate(0, 0, -0.46);
+  const saddleHead = addRole(new THREE.Mesh(headGeometry, movingMaterial), 'cast-cupped-head-on-moving-cylinder');
+  topSaddle.add(saddleHead);
+  const hookShape = new THREE.Shape();
+  hookShape.moveTo(0.46, 1.25);
+  hookShape.lineTo(0.80, 1.25);
+  hookShape.lineTo(0.80, 0.45);
+  hookShape.absarc(1.12, 0.45, 0.32, Math.PI, Math.PI * 2 + 0.3, false);
+  hookShape.lineTo(1.12 + 0.58 * Math.cos(0.3), 0.45 + 0.58 * Math.sin(0.3));
+  hookShape.absarc(1.12, 0.45, 0.58, 0.3, -Math.PI, true);
+  hookShape.lineTo(0.46, 0.45);
+  hookShape.closePath();
+  const hookGeometry = new THREE.ExtrudeGeometry(hookShape, { depth: 0.68, bevelEnabled: false, curveSegments: 24 });
+  hookGeometry.translate(0, 0, -0.34);
+  const clawHook = addRole(new THREE.Mesh(hookGeometry, movingMaterial), 'cast-J-claw-hook-on-moving-cylinder');
+  sideClaw.add(clawHook);
+  // Brown's section is a flat elevation.
+  root.userData.cameraFov = 10;
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [baseWater, internalPressurePipe, pressureChamber,

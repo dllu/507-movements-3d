@@ -7,6 +7,7 @@ import {
 
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { engineRod, annularSector } from './steam-engine-parts.js';
+import { capsule, plate, polygonClipping, spline } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -543,6 +544,23 @@ function doubleQuadrantEngine(movement) {
   rightPedestal.userData.role = 'right-fixed-cylinder-frame';
   root.add(rightPedestal);
 
+  // Brown's closed cast casing: one wall from the foot up round the left
+  // pivot boss, over the top quadrant, round valve a and the right pivot
+  // boss, down to the foot. It stands outside every piston sweep.
+  const casingPath = spline([
+    [-4.62, -4.88], [-4.20, -3.00], [-3.86, -1.50], [-4.55, -0.80],
+    [-4.76, 0.00], [-4.50, 0.80], [-3.86, 1.40], [-3.72, 3.00],
+    [-3.66, 5.45], [-2.52, 5.70], [-0.77, 5.30], [0.77, 4.45],
+    [1.64, 3.68], [2.20, 3.12], [2.90, 3.36], [3.90, 3.12],
+    [4.46, 2.30], [4.40, 1.50], [4.62, 0.80], [4.78, 0.00],
+    [4.56, -1.00], [4.70, -3.00], [4.86, -4.88],
+  ]);
+  const casingWall = new THREE.Mesh(plate(polygonClipping.union(
+    ...casingPath.slice(1).map((point, index) => capsule(casingPath[index], point, 0.09, 8)),
+  ), -0.20, 0.16), frameMaterial);
+  casingWall.userData.role = 'fixed-closed-cast-casing-wall-round-both-quadrants';
+  root.add(casingWall);
+
   const topSectorStart = topInnerAngle - 0.08;
   const topSectorEnd = topOuterAngle + 0.10;
   const bottomSectorStart = bottomInnerAngle - 0.10;
@@ -735,6 +753,8 @@ function doubleQuadrantEngine(movement) {
     new THREE.Vector3(4.25, 0.85, -0.04),
     new THREE.Vector3(4.48, -2.02, -0.04),
     bottomFixedPivot.clone().add(new THREE.Vector3(-0.20, -4.55, -0.04)),
+    // Carried on into the cast foot rather than ending in mid-air.
+    bottomFixedPivot.clone().add(new THREE.Vector3(-0.26, -4.92, -0.04)),
   ], 0.13, frameMaterial,
   'bottom-passage-from-single-induction-valve-a-to-outer-steam-space');
   root.add(topAdmissionPassage, bottomAdmissionPassage);
@@ -760,6 +780,7 @@ function doubleQuadrantEngine(movement) {
     new THREE.Vector3(-1.02, -1.22, -0.18),
     new THREE.Vector3(-2.02, -2.78, -0.18),
     new THREE.Vector3(-2.18, -4.42, -0.18),
+    new THREE.Vector3(-2.20, -4.92, -0.18),
   ], 0.17, frameMaterial,
   'exhaust-passage-from-common-space-between-pistons');
   root.add(exhaustPipe);

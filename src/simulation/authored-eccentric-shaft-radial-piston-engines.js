@@ -350,6 +350,9 @@ function eccentricShaftRadialPistonEngine(movement) {
   guideRingOuter.position.z = 1.12;
   guideRingOuter.userData.role =
     'outer-fixed-head-ring-keeping-pistons-radial';
+  // Brown marks the guide only by one dotted circle round B: keep the inner
+  // ring as that circle and leave the outer ring unpainted.
+  guideRingOuter.visible = false;
   root.add(guideRingInner, guideRingOuter);
 
   const hubRotor = new THREE.Group();
@@ -376,6 +379,8 @@ function eccentricShaftRadialPistonEngine(movement) {
   );
   hubRotationMarker.position.set(0.80, 0.70, 0.425);
   hubRotationMarker.userData.role = 'visible-clockwise-rotation-marker-on-C';
+  // Brown draws a plain drum; the marker stays bound but unpainted.
+  hubRotationMarker.visible = false;
   hubRotor.add(hubRotationMarker);
   root.add(hubRotor);
 
@@ -626,6 +631,7 @@ function eccentricShaftRadialPistonEngine(movement) {
     qualification:'Finite rolling-packing apertures, bounded blade relief and curved piston tips. Added head-ring guide pins and inferred axial depths; orientation remains prescribed, with forces, seals and fluid dynamics unmodeled.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
+  guideRingInner.castShadow = false;
   foundation.receiveShadow = true;
   update(0);
   return {

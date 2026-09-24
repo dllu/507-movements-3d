@@ -869,6 +869,9 @@ function rayExpansionSteamTrap(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.7, 4.4, 11.8);
   root.userData.groundFloorY = -2.60;
   correctEjectorTrapParts(root,478,update);
+  // Brown draws a flat section; a narrow view keeps it flat.
+  root.userData.cameraDirection.set(0.1, 0.12, 15);
+  root.userData.cameraFov = 10;
   markShadows(root);
   hollowSphereC.castShadow = false;
   update(0);

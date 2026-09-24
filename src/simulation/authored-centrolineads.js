@@ -244,6 +244,8 @@ function centrolinead(movement) {
     );
     backEdge.userData.role =
       `${role}-working-back-edge-through-joint-center`;
+    // Brown draws plain legs; the working edge stays for checks, unpainted.
+    backEdge.visible = false;
     const clamp = new THREE.Group();
     clamp.position.set(direction.x * 0.43, direction.y * 0.43, 0.13);
     clamp.userData.role = `${role}-leg-angle-clamp`;

@@ -1,6 +1,12 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
 import {
+  plate,
+  poly,
+  polygonClipping,
+  spline,
+} from './finite-plate-geometry.js';
+import {
   PALETTE,
   markShadows,
   matte,
@@ -39,6 +45,110 @@ function setRodBetween(mesh, start, end) {
   mesh.position.copy(start).add(end).multiplyScalar(0.5);
   mesh.scale.y = length;
   mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
+}
+
+// Brown draws a single cast column: a narrow round-topped loop that embraces
+// cylinder B and hammer C, its sides running down into a bell-shaped foot
+// that carries the anvil. The column is one plate in the elevation plane,
+// centred on the cylinder axis; the crank-A bearing is bracketed to its right
+// side. Hole e is shortened to a port through the cylinder wall so the
+// cylinder clears the loop.
+function buildLoopColumn(root, frame, material, groundY, {
+  anvilBottomY,
+  axisX,
+  cylinderOuterRadius,
+}) {
+  for (const child of [...frame.children]) {
+    child.removeFromParent();
+    child.geometry?.dispose();
+  }
+  const back = -0.46;
+  const front = 0.46;
+  const inner = 0.56;
+  const outer = 0.92;
+  const archCenterY = 4.08;
+  const arc = (radius, start, end, count = 96) => Array.from(
+    {length: count + 1},
+    (_, i) => {
+      const angle = start + (end - start) * i / count;
+      return [radius * Math.cos(angle), archCenterY + radius * Math.sin(angle)];
+    },
+  );
+  const bellOuter = spline([
+    [outer, 1.0], [1.0, -0.15], [1.22, -1.15], [1.62, groundY + 0.08],
+  ]);
+  const outline = [
+    ...arc(outer, 0, Math.PI),
+    ...bellOuter.map(([x, y]) => [-x, y]),
+    [-1.76, groundY + 0.05],
+    [-1.76, groundY],
+    [1.76, groundY],
+    [1.76, groundY + 0.05],
+    ...[...bellOuter].reverse(),
+  ];
+  const opening = [
+    ...arc(inner, 0, Math.PI),
+    [-inner, -0.95],
+    [-0.62, anvilBottomY],
+    [0.62, anvilBottomY],
+    [inner, -0.95],
+  ];
+  const column = new THREE.Mesh(
+    plate(
+      polygonClipping.difference(poly(outline), poly(opening))
+        .map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [x + axisX, y]))),
+      back,
+      front,
+    ),
+    material,
+  );
+  column.userData.role = 'single-loop-column-with-bell-foot';
+  frame.add(column);
+  // The hidden undrawn foundation slab is dropped from the scene entirely.
+  root.userData.blocks.foundation.removeFromParent();
+  // The crank-A bearing and shaft stub sit clear in front of the descending
+  // cylinder's end ring; an L bracket seats the bearing on the column's
+  // right side.
+  const blocks = root.userData.blocks;
+  const bearing = blocks.crankBearing;
+  const bearingLength = 0.14;
+  bearing.position.z = 0.615;
+  bearing.scale.y = bearingLength / 0.18;
+  blocks.fixedDriveShaft.position.z = 0.75;
+  const brackets = root.children.filter((object) =>
+    object.isMesh && !object.userData.role
+    && object.geometry?.type === 'BoxGeometry');
+  const armStart = bearing.position.x + 0.15;
+  const armEnd = axisX + inner + 0.14;
+  const footX = axisX + inner + 0.04;
+  const shapes = [
+    [[armEnd - armStart, 0.10, bearingLength], [(armStart + armEnd) / 2, bearing.position.z]],
+    [[armEnd - footX, 0.10, 0.62 - (front - 0.02)], [(footX + armEnd) / 2, (0.62 + front - 0.02) / 2]],
+  ];
+  brackets.forEach((bracket, index) => {
+    const [size, [x, z]] = shapes[index];
+    bracket.geometry.dispose();
+    bracket.geometry = new THREE.BoxGeometry(...size);
+    bracket.position.set(x, bearing.position.y, z);
+    bracket.userData.role = `crank-A-bearing-bracket-${index + 1}`;
+  });
+  // The crank arm starts outside the fixed shaft stub instead of crossing it.
+  const arm = blocks.crankAssembly.children.find((object) =>
+    object.geometry?.type === 'BoxGeometry');
+  const armInner = 0.12;
+  const armParameters = arm.geometry.parameters;
+  arm.geometry.dispose();
+  arm.geometry = new THREE.BoxGeometry(
+    armParameters.width - armInner,
+    armParameters.height,
+    armParameters.depth,
+  );
+  arm.position.x = (armParameters.width + armInner) / 2;
+  const port = blocks.atmosphericPort;
+  const portLength = 0.14;
+  port.geometry.computeBoundingBox();
+  port.scale.y = portLength / port.geometry.boundingBox.getSize(new THREE.Vector3()).y;
+  port.position.x = -(cylinderOuterRadius - 0.10 + portLength / 2);
 }
 
 function atmosphericHammer(movement) {
@@ -441,12 +551,6 @@ function atmosphericHammer(movement) {
   crankPinVisual.rotation.x = Math.PI / 2;
   crankPinVisual.position.x = crankRadius;
   crankAssembly.add(crankPinVisual);
-  const crankIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius * 0.52, 0.052, 0.026),
-    matte(PALETTE.white, { roughness: 0.50 }),
-  );
-  crankIndex.position.set(crankRadius * 0.34, 0, 0.135);
-  crankAssembly.add(crankIndex);
   const fixedDriveShaft = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 1.34, 28),
     darkMaterial,
@@ -795,9 +899,14 @@ function atmosphericHammer(movement) {
     update,
   };
   correctHammerWorkingParts(root, 471);
+  buildLoopColumn(root, fixedFrame, frameMaterial, groundY, {
+    anvilBottomY: anvilTopY - 0.47,
+    axisX: cylinderAxisX,
+    cylinderOuterRadius,
+  });
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.78, groundY - 0.14, -1.12),
-    new THREE.Vector3(1.80, 5.05, 1.22),
+    new THREE.Vector3(cylinderAxisX - 1.85, groundY - 0.05, -1.12),
+    new THREE.Vector3(cylinderAxisX + 1.85, 5.08, 1.22),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);

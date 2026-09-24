@@ -86,7 +86,9 @@ export function correctProportionalCompasses(root){
 }
 
 export function correctBisectingGauge(root){
- root.rotation.z=-Math.PI/4;
+ // Brown draws the gauge in isometric on a board lying flat: turn the
+ // board face up so the camera can look down across it.
+ root.rotation.set(-Math.PI/2,0,0);
  const b=root.userData.blocks,g=root.userData.geometry;
  b.crossbar.position.z=.43;b.crossbarTopIndex.position.z=.565;
  for(const tick of b.crossbarTicks)tick.position.z=.572;
@@ -101,7 +103,7 @@ export function correctBisectingGauge(root){
   const capProfile=i?clip.difference(rect(-.17,-.47,.17,.47),poly(circle([0,0],.078,64))):rect(-.17,-.47,.17,.47);
   const cap=plate(capProfile,.558,.75);
   replace(cheek.plate,mergeGeometries([lower,cap]));lower.dispose();cap.dispose();cheek.plate.position.z=0;
-  replace(cheek.innerContact,new THREE.BoxGeometry(.006,.80,.30));
+  replace(cheek.innerContact,new THREE.BoxGeometry(.006,.80,.30));cheek.innerContact.visible=false;
   cheek.innerContact.position.x=(i?-1:1)*(.17-.003);
   cheek.lowerFoot.position.x=i?.09:-.09;
  }

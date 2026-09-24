@@ -302,6 +302,7 @@ function horizontalOvershotWaterWheel(movement) {
   rotationMarker.userData.role =
     'visible-positive-rotation-marker-on-horizontal-runner';
   rotor.add(rotationMarker);
+  rotationMarker.visible = false;
 
   const lowerBearing = new THREE.Mesh(
     new THREE.TorusGeometry(0.34, 0.10, 10, 48),
@@ -418,6 +419,9 @@ function horizontalOvershotWaterWheel(movement) {
   foundation.position.y = -0.70;
   foundation.userData.role = 'fixed-horizontal-water-wheel-foundation';
   root.add(foundation);
+  // Brown draws the runner free above falling spray: no basin, floor disc,
+  // painted contact point or runner index.
+  for (const unpainted of [contactMarker, splashBasin, foundation]) unpainted.visible = false;
   const lowerPedestal=new THREE.Mesh(horizontalRing(.194,.34,-.59,-.40),frameMaterial);lowerPedestal.userData.role='fixed-lower-bearing-pedestal';root.add(lowerPedestal);
 
   const update = (time) => {

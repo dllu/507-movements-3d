@@ -574,6 +574,8 @@ function swingingGutterPump(movement) {
   );
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.3, 12.0);
+  // Brown draws a flat elevation (camera in source-presentation); keep it near-orthographic.
+  root.userData.cameraFov = 10;
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,461);
   markShadows(root);

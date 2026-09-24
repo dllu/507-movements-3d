@@ -236,6 +236,7 @@ function caryRotaryPump(movement) {
       frameMaterial,
     );
     foot.position.set(x, -3.14, -0.18);
+    foot.userData.role = 'fixed-casing-foot-not-drawn-by-brown';
     root.add(foot);
   }
 
@@ -326,6 +327,7 @@ function caryRotaryPump(movement) {
     matte(PALETTE.white, { roughness: 0.46 }),
   );
   axleIndex.position.set(0.38, 0, casingDepth * 0.57);
+  axleIndex.userData.role = 'white-rotor-rotation-index';
   drum.add(axleIndex);
 
   const pistons = Array.from({ length: pistonCount }, (_, index) => {

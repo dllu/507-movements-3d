@@ -507,7 +507,14 @@ function radialPistonRotaryEngine(movement) {
     body.userData.role = side < 0 ? 'left-fixed-port-body' : 'right-fixed-port-body';
     const nose = new THREE.Mesh(plate(section,0.83,0.87),frameMaterial);
     nose.userData.role = side < 0 ? 'left-inward-contact-nose-of-D' : 'right-inward-contact-nose-of-D';
-    group.add(body,nose);
+    // Brown's port D: a flanged passage carried out through the casing wall.
+    const portSection = polygonClipping.difference(
+      rectangle(cylinderOuterRadius-0.25,-0.46,cylinderOuterRadius+0.80,0.46),
+      rectangle(cylinderOuterRadius-0.30,-0.15,cylinderOuterRadius+0.85,0.15),
+    ).map(polygon => polygon.map(ringPoints => ringPoints.map(([x, y]) => [side * x, y])));
+    const port = new THREE.Mesh(plate(portSection,-0.24,0.83),frameMaterial);
+    port.userData.role = side < 0 ? 'left-steam-port-D-passage' : 'right-steam-port-D-passage';
+    group.add(body,nose,port);
     return { body, group, nose };
   };
   const leftAbutment = makeStationaryAbutment(-1);

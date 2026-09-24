@@ -1,4 +1,11 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+  spline,
+} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -66,6 +73,71 @@ function rodBetween(start, end, radius, material, segments = 18) {
   );
   setRodBetween(rod, start, end);
   return rod;
+}
+
+// Brown draws one cast standard: two legs splayed into feet at the ground
+// line, rising as straight columns either side of the cylinder and joined by
+// a crown that the cylinder passes through, with a crossbar under the
+// cylinder. The legs are one plate in the elevation plane; the crown and the
+// crossbar are plan plates bored for the cylinder and the piston rod.
+function buildArchedCastStandard(frame, material, groundY, {
+  cylinderOuterRadius,
+  crossbarTopY,
+}) {
+  for (const child of [...frame.children]) {
+    child.removeFromParent();
+    child.geometry?.dispose();
+  }
+  const back = -0.30;
+  const front = 0.22;
+  const innerX = 0.64;
+  const outerX = 1.02;
+  const crownBottomY = 2.75;
+  const crownTopY = 2.95;
+  const footY = groundY + 0.14;
+  const halfLeg = [
+    [innerX, crownBottomY],
+    [outerX, crownBottomY],
+    ...spline([[outerX, 0.75], [1.07, 0.20], [1.24, -0.45], [1.55, footY]]),
+    [1.74, groundY + 0.10],
+    [1.74, groundY],
+    [1.04, groundY],
+    [1.04, groundY + 0.10],
+    ...spline([[1.18, footY], [0.88, -0.35], [0.69, 0.35], [innerX, 0.95]]),
+  ];
+  for (const side of [-1, 1]) {
+    const points = halfLeg.map(([x, y]) => [side * x, y]);
+    if (side < 0) points.reverse();
+    const leg = addRole(new THREE.Mesh(
+      plate(poly(points), back, front),
+      material,
+    ), `arched-cast-standard-leg-${side < 0 ? 'left' : 'right'}`);
+    frame.add(leg);
+  }
+  const planPlate = (halfWidth, holeRadius, low, high) => {
+    // The plan polygon's y is -z after the rotation.
+    const outline = poly([
+      [-halfWidth, -front],
+      [halfWidth, -front],
+      [halfWidth, -back],
+      [-halfWidth, -back],
+    ]);
+    return plate(
+      polygonClipping.difference(outline, poly(circle([0, 0], holeRadius, 128))),
+      low,
+      high,
+    ).rotateX(-Math.PI / 2);
+  };
+  const crown = addRole(new THREE.Mesh(
+    planPlate(outerX, cylinderOuterRadius, crownBottomY, crownTopY),
+    material,
+  ), 'standard-crown-bored-for-cylinder');
+  frame.add(crown);
+  const crossbar = addRole(new THREE.Mesh(
+    planPlate(innerX, 0.09, crossbarTopY - 0.10, crossbarTopY),
+    material,
+  ), 'standard-crossbar-bored-for-piston-rod');
+  frame.add(crossbar);
 }
 
 function steamHammer(movement) {
@@ -684,9 +756,13 @@ function steamHammer(movement) {
     valveKinematics,
   };
   correctHammerWorkingParts(root, 470);
+  buildArchedCastStandard(pressFrame, frameMaterial, groundY, {
+    cylinderOuterRadius,
+    crossbarTopY: cylinderInnerBottomY - 0.08,
+  });
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.15, groundY - 0.02, -1.06),
-    new THREE.Vector3(2.25, 3.56, 1.06),
+    new THREE.Vector3(2.25, 3.34, 1.06),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(.7, 1.0, 15);

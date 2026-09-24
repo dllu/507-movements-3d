@@ -94,9 +94,14 @@ test('movement 416 is one full-turn crank B, one pitman, one rocking treadle, an
     'constant-length-pitman-from-crank-B-to-treadle',
     'preloaded-planar-curled-spring-A',
     'fixed-inner-end-of-curled-spring-A',
+  ]) assert.ok(roles.includes(role), role);
+  // Brown draws a plain flywheel disc and a slim treadle bar.
+  for (const role of [
     'white-full-rotation-flywheel-index',
     'white-treadle-rocking-index',
-  ]) assert.ok(roles.includes(role), role);
+    'flywheel-spoke-fast-on-crankshaft',
+    'broad-treadle-foot-pad',
+  ]) assert.ok(!roles.includes(role), role);
   disposeModel(model.root);
 });
 

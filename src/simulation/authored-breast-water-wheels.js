@@ -388,6 +388,7 @@ function breastWaterWheel(movement) {
   rotationMarker.userData.role =
     'visible-clockwise-breast-wheel-rotation-marker';
   rotor.add(rotationMarker);
+  rotationMarker.visible = false; // Brown draws no index on the wheel.
 
   const shaft = cylinderAlongZ(shaftRadius, 1.72, darkMaterial, 36);
   shaft.userData.role = 'breast-wheel-main-shaft-in-fixed-bearings';

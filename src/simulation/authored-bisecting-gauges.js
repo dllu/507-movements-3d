@@ -802,12 +802,33 @@ function bisectingGauge(movement) {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(6.0, 4.5, 12.5);
   root.userData.groundFloorY = -2.84;
+  // Plate cleanup: Brown's board runs on past the gauge in both directions
+  // and carries only a dark bisecting line; no end-grain bars, white
+  // indices, slotted white thumb head or witness strip are drawn.
+  workpiece.geometry.dispose();
+  workpiece.geometry = new THREE.BoxGeometry(workpieceHalfWidth * 2, workpieceHalfLength + 3.80, 0.22);
+  workpiece.position.y = (3.80 - workpieceHalfLength) / 2;
+  exactCenterline.material = darkMaterial;
+  exactCenterline.geometry.dispose();
+  exactCenterline.geometry = new THREE.BoxGeometry(0.030, workpieceHalfLength + 3.80, 0.004);
+  exactCenterline.position.set(0, workpiece.position.y, -0.178);
+  for (const bar of endGrainBars) bar.visible = false;
+  fittedCenterWitness.visible = false;
+  markerIndex.visible = false;
+  thumbSlot.visible = false;
+  lockIndex.visible = false;
+  thumbHead.material = darkMaterial;
+  thumbHead.geometry.dispose();
+  thumbHead.geometry = new THREE.CylinderGeometry(0.19, 0.16, 0.12, 24);
+  // Seat the knob on the cheek cap instead of sinking it into the cap.
+  thumbHead.position.z = 0.32;
   markShadows(root);
   workpiece.receiveShadow = true;
   exactCenterline.castShadow = false;
   fittedCenterWitness.castShadow = false;
   correctBisectingGauge(root);
-  return finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(3,-5,10));
+  // Isometric view from the adjustable cheek's side and the near board end.
+  return finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(1,1.05,1));
 }
 
 export function createAuthoredBisectingGaugeMovement(movement) {

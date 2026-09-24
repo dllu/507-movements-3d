@@ -30,7 +30,7 @@ export function correctDicksonParts(model){
  for(const[name,outer,length]of[['fixed-rear-bearing',.26,.44],['wheel-D-hub-fast-with-smooth-rim',.31,.34],['lever-A-loose-hub-on-wheel-D-shaft',.28,.30]])replace(role(root,name),bore(outer,.109,length));
  const lever=role(root,'T-shaped-rigid-body-of-lever-A'),shape=lever.geometry.parameters.shapes.extractPoints(16).shape.map(p=>p.toArray());replace(lever,plate(clip.difference(poly(shape),poly(circle([0,0],.109,96))),-.095,.095));
  for(const o of b.wheelRotor.children)if(o.userData.role==='wheel-D-spoke-fast-with-rim-and-hub'){const half=g.wheelInnerRadius*1.025;replace(o,plate(clip.difference(poly([[-half,-.0425],[half,-.0425],[half,.0425],[-half,.0425]]),poly(circle([0,0],.109,96))),-.05,.05));}
- replace(role(root,'translucent-wheel-D-web'),bore(g.wheelInnerRadius-.07,.109,.03).rotateX(Math.PI/2));
+ replace(role(root,'translucent-wheel-D-web'),bore(g.wheelInnerRadius-.004,.109,.03).rotateX(Math.PI/2));
  d.workingPartsReview={qualification:'Both opposed pawls now have finite faces in the rim working band and bored hinges. Selection and overrun are prescribed; cord tension, self-wedging friction and load capacity remain unqualified.'};return model;
 }
 export function correctOscillatingDrum(model){

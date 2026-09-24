@@ -397,7 +397,8 @@ function hydrostaticPress(movement) {
     wall.position.set(x, -0.01, 0);
     pumpReservoir.add(wall);
   }
-  for (const z of [-0.96, 0.96]) {
+  // Brown draws the reservoir in section: only its back wall stands behind the pump.
+  for (const z of [-0.96]) {
     const wall = new THREE.Mesh(
       new THREE.BoxGeometry(2.32, 1.10, 0.16),
       frameMaterial,
@@ -717,6 +718,8 @@ function hydrostaticPress(movement) {
   );
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 2.9, 12.2);
+  // Brown's sectional elevation, near-orthographic (camera in source-presentation).
+  root.userData.cameraFov = 10;
   root.userData.groundFloorY = groundY;
   correctHydraulicForceParts(root,466);
   markShadows(root);

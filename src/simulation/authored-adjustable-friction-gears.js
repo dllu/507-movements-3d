@@ -270,8 +270,10 @@ function adjustableFrictionGear(movement) {
   upperRotor.userData.role =
     'upper-adjustable-wheel-and-shaft-A-driver';
   root.add(upperRotor);
-  const upperShaft = cylinderAlongX(0.13, 4.15, darkMaterial, 36);
-  upperShaft.position.x = 0.45;
+  // Brown's shafts leave the wheels only to the right; the upper one ends in
+  // the threaded bolt beyond nut B, the lower one at the nut on its hub.
+  const upperShaft = cylinderAlongX(0.13, 3.685, darkMaterial, 36);
+  upperShaft.position.x = 0.6825;
   upperShaft.userData.role = 'upper-wheel-A-shaft';
   upperRotor.add(upperShaft);
   const threadedEnd = helixAlongX({
@@ -322,6 +324,7 @@ function adjustableFrictionGear(movement) {
   rubberRotationIndex.position.set(0, looseRubberTipRadius, 0);
   rubberRotationIndex.userData.role =
     'white-upper-rubber-wheel-rotation-index';
+  rubberRotationIndex.visible = false;
   rubberRotor.add(rubberRotationIndex);
 
   const leftClampPlate = cylinderAlongX(0.72, plateThickness,
@@ -348,6 +351,7 @@ function adjustableFrictionGear(movement) {
     0.32, 0);
   upperFaceIndex.userData.role =
     'white-upper-clamp-plate-rotation-index';
+  upperFaceIndex.visible = false;
   upperRotor.add(upperFaceIndex);
 
   const adjustmentNut = new THREE.Group();
@@ -383,8 +387,8 @@ function adjustableFrictionGear(movement) {
   lowerRotor.userData.role =
     'lower-rigid-v-grooved-friction-wheel-driven-output';
   root.add(lowerRotor);
-  const lowerShaft = cylinderAlongX(0.15, 4.35, darkMaterial, 40);
-  lowerShaft.position.x = 0.46;
+  const lowerShaft = cylinderAlongX(0.15, 3.255, darkMaterial, 40);
+  lowerShaft.position.x = 1.0075;
   lowerShaft.userData.role = 'lower-driven-wheel-shaft';
   lowerRotor.add(lowerShaft);
   const lowerLeftHalf = frustumAlongX({
@@ -441,7 +445,31 @@ function adjustableFrictionGear(movement) {
   lowerFaceIndex.position.set(-0.42, 0.48, 0);
   lowerFaceIndex.userData.role =
     'white-lower-driven-wheel-rotation-index';
+  lowerFaceIndex.visible = false;
   lowerRotor.add(lowerFaceIndex);
+  // The hub nut and the turned crank handle Brown draws on the left face of
+  // the grooved wheel, near its lower rim.
+  const lowerHubNut = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.25, 0.14, 6),
+    darkMaterial,
+  );
+  lowerHubNut.rotation.z = Math.PI / 2;
+  lowerHubNut.position.x = -0.53;
+  lowerHubNut.userData.role = 'lower-wheel-hub-nut';
+  lowerRotor.add(lowerHubNut);
+  const handleRadius = lowerGrooveLipRadius - 0.26;
+  const handleStem = cylinderAlongX(0.055, 0.42, darkMaterial, 20);
+  handleStem.position.set(-0.46, -handleRadius, 0);
+  handleStem.userData.role = 'lower-wheel-crank-handle-stem';
+  lowerRotor.add(handleStem);
+  const handleGrip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 24, 16),
+    accentMaterial,
+  );
+  handleGrip.scale.set(1.9, 1, 1);
+  handleGrip.position.set(-0.84, -handleRadius, 0);
+  handleGrip.userData.role = 'lower-wheel-crank-handle-grip';
+  lowerRotor.add(handleGrip);
 
   const contactIndicators = pitchContacts.map((contact, index) => {
     const indicator = new THREE.Mesh(

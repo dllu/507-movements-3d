@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { createAuthoredCommonWindmillMovement } from '../src/simulation/authored-common-windmills.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -17,6 +18,12 @@ const sourceText = await readFile(
 const ARCHETYPE =
   'four-twisted-oblique-lattice-sails-on-one-horizontal-windshaft-direct-axial-wind-to-rigid-rotation';
 const FULL_TURN = Math.PI * 2;
+
+// Rigidity of the white indices is checked on the unpresented factory model;
+// Brown's plate does not draw them, so source presentation removes them.
+function unpresentedModel() {
+  return { model: createAuthoredCommonWindmillMovement(catalog.movements[484]) };
+}
 
 function movementModel() {
   const movement = catalog.movements[484];
@@ -273,7 +280,7 @@ test('movement 485 ties its representative wind speed, rotor speed, torque, and 
 });
 
 test('movement 485 renderer keeps all sails, hub, and windshaft on one rigid angle', () => {
-  const { model } = movementModel();
+  const { model } = unpresentedModel();
   const { bladePointScene, blocks, geometry, stateAtTime } =
     model.root.userData;
   const sailRotations = blocks.sails.map(({ sail }) => sail.rotation.z);

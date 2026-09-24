@@ -100,9 +100,13 @@ test('movement 415 is one smooth wheel D with coaxial lever A, opposed pawls B/C
     'small-reversing-crank-E-on-lever-A',
     'constant-material-length-cord-from-E-to-pawl-B',
     'constant-material-length-cord-from-E-to-pawl-C',
+  ]) assert.ok(roles.includes(role), role);
+  // Brown draws a plain disc and lever: no painted indices or spokes.
+  for (const role of [
     'white-wheel-D-intermittent-rotation-index',
     'white-lever-A-oscillation-index',
-  ]) assert.ok(roles.includes(role), role);
+    'wheel-D-spoke-fast-with-rim-and-hub',
+  ]) assert.ok(!roles.includes(role), role);
   disposeModel(model.root);
 });
 

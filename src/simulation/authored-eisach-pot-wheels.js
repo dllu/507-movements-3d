@@ -373,7 +373,9 @@ function eisachPotWheel(movement) {
     dischargeStreams.push(discharge);
   }
 
-  const axle = cylinderAlongZ(0.18, 2.42, darkMaterial, 32);
+  // Brown's long axle runs out to a trestle on each bank.
+  const trestleZ = 2.65;
+  const axle = cylinderAlongZ(0.18, 2 * trestleZ + 0.50, darkMaterial, 32);
   axle.position.copy(wheelCenter);
   axle.userData.role = 'fixed-horizontal-pot-wheel-axis';
   root.add(axle);
@@ -387,7 +389,7 @@ function eisachPotWheel(movement) {
     bearing.position.set(
       wheelCenter.x,
       wheelCenter.y,
-      sign * (rimDepth / 2 + 0.18),
+      sign * trestleZ,
     );
     bearing.userData.role =
       `fixed-${sign < 0 ? 'rear' : 'front'}-wheel-bearing`;
@@ -403,7 +405,7 @@ function eisachPotWheel(movement) {
   base.userData.role = 'fixed-eisach-wheel-base';
   root.add(base);
   const supports = [];
-  for (const z of [-1.10, 1.10]) {
+  for (const z of [-trestleZ, trestleZ]) {
     const left = beamBetween(
       new THREE.Vector3(-1.25, groundY + 0.27, z),
       new THREE.Vector3(wheelCenter.x, wheelCenter.y - 0.18, z),
@@ -431,11 +433,12 @@ function eisachPotWheel(movement) {
   streamBed.position.set(0, groundY + 0.34, 0);
   streamBed.userData.role = 'fixed-river-bed-under-pot-wheel';
   root.add(streamBed);
+  // A shallow band of stream between the banks, as Brown hatches it.
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(7.72, streamSurfaceY-groundY-.44, 3.18),
+    new THREE.BoxGeometry(7.72, 0.55, 2.60),
     waterMaterial,
   );
-  streamWater.position.set(0, (streamSurfaceY+groundY+.44)/2, 0);
+  streamWater.position.set(0, streamSurfaceY - 0.275, 0);
   streamWater.userData.role =
     'rightward-current-partly-immersing-peripheral-pots';
   root.add(streamWater);
@@ -699,7 +702,7 @@ function eisachPotWheel(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.14, groundY, -1.98),
+    new THREE.Vector3(-4.14, groundY, -3.05),
     new THREE.Vector3(4.10, 3.20, 3.78),
   );
   root.userData.cameraDistanceScale = 1.08;

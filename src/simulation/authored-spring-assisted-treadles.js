@@ -368,17 +368,12 @@ function springAssistedTreadle(movement) {
   flywheelRim.position.z = -0.08;
   flywheelRim.userData.role = 'heavy-flywheel-rim-fast-on-crankshaft';
   flywheelRotor.add(flywheelRim);
-  for (let index = 0; index < 4; index += 1) {
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(wheelRadius * 1.78, 0.11, 0.15),
-      drivenMaterial,
-    );
-    boreBoxAtLocalPoint(spoke,[0,0],.114);
-    spoke.rotation.z = index * Math.PI / 4;
-    spoke.position.z = -0.08;
-    spoke.userData.role = 'flywheel-spoke-fast-on-crankshaft';
-    flywheelRotor.add(spoke);
-  }
+  // Brown draws the flywheel as a plain disc: a bored web, no spokes.
+  const flywheelWeb = cylinderAlongZ(wheelRadius - 0.06, 0.10, drivenMaterial, 96);
+  boreZCylinder(flywheelWeb, wheelRadius - 0.06, .114, .10);
+  flywheelWeb.position.z = -0.08;
+  flywheelWeb.userData.role = 'plain-flywheel-disc-web-fast-on-crankshaft';
+  flywheelRotor.add(flywheelWeb);
   const flywheelHub = cylinderAlongZ(0.28, 0.50, drivenMaterial, 38);
   flywheelHub.position.z = -0.02;
   boreZCylinder(flywheelHub,.28,.114,.50);
@@ -399,20 +394,13 @@ function springAssistedTreadle(movement) {
   crankPin.position.set(crankRadius, 0, 0.53);
   crankPin.userData.role = 'white-crank-B-pin-and-spring-attachment';
   flywheelRotor.add(crankPin);
-  const flywheelIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.075, 0.045),
-    whiteMaterial,
-  );
-  flywheelIndex.position.set(wheelRadius - 0.27, 0, 0.02);
-  flywheelIndex.userData.role = 'white-full-rotation-flywheel-index';
-  flywheelRotor.add(flywheelIndex);
   root.add(flywheelRotor);
 
   const treadleRotor = new THREE.Group();
   treadleRotor.position.copy(treadlePivot);
   treadleRotor.userData.role = 'rocking-foot-treadle-input';
   const treadleBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(treadleJointRadius + 0.48, 0.13, 0.30),
+    new THREE.BoxGeometry(treadleJointRadius + 0.48, 0.09, 0.16),
     driverMaterial,
   );
   treadleBeam.position.set((treadleJointRadius - 0.48) / 2, 0, 0.06);
@@ -421,20 +409,6 @@ function springAssistedTreadle(movement) {
   const treadleShaft=cylinderAlongZ(.11,.92,darkMaterial);treadleShaft.position.copy(treadlePivot).setZ(-.12);root.add(treadleShaft);
   treadleBeam.userData.role = 'rigid-treadle-lever';
   treadleRotor.add(treadleBeam);
-  const footPad = new THREE.Mesh(
-    new THREE.BoxGeometry(1.32, 0.25, 0.82),
-    driverMaterial,
-  );
-  footPad.position.set(0.76, 0.08, 0.10);
-  footPad.userData.role = 'broad-treadle-foot-pad';
-  treadleRotor.add(footPad);
-  const treadleIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.31, 0.46),
-    whiteMaterial,
-  );
-  treadleIndex.position.set(1.18, 0.15, 0.12);
-  treadleIndex.userData.role = 'white-treadle-rocking-index';
-  treadleRotor.add(treadleIndex);
   const treadleJointPin = cylinderAlongZ(0.13, 0.68, whiteMaterial, 24);
   treadleJointPin.position.set(treadleJointRadius, 0, 0.25);
   treadleJointPin.userData.role = 'white-treadle-to-pitman-joint';
@@ -452,8 +426,10 @@ function springAssistedTreadle(movement) {
   springAnchorPin.position.copy(springAnchor).setZ(.65);
   springAnchorPin.userData.role = 'fixed-inner-end-of-curled-spring-A';
   root.add(springAnchorPin);
-  const crankShaft = cylinderAlongZ(0.11, 1.16, darkMaterial, 30);
+  // Ends inside the crank hub so the pitman sweeps clear in front of it.
+  const crankShaft = cylinderAlongZ(0.11, 1.02, darkMaterial, 30);
   crankShaft.position.copy(wheelCenter);
+  crankShaft.position.z = -0.11;
   crankShaft.userData.role = 'crankshaft-through-fixed-bearing';
   root.add(crankShaft);
 
@@ -483,7 +459,6 @@ function springAssistedTreadle(movement) {
       crankHub,
       crankPin,
       fixedFrame,
-      flywheelIndex,
       flywheelRotor,
       pitman,
       wheelBearing,

@@ -723,6 +723,9 @@ function wetGasMeter(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 3.2, 11.8);
   root.userData.groundFloorY = -2.72;
   correctGasMeterParts(root,481,update);
+  // Brown's plate is a flat end section of case and drum.
+  root.userData.cameraDirection.set(0.05, 0.08, 15);
+  root.userData.cameraFov = 10;
   markShadows(root);
   caseShell.castShadow = false;
   rearCaseHead.castShadow = false;

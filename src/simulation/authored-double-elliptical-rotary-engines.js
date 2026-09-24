@@ -387,10 +387,15 @@ function doubleEllipticalRotaryEngine(movement) {
   rearHousingGeometry.translate(0, 0, -0.66);
   const rearHousing = new THREE.Mesh(rearHousingGeometry, frameMaterial);
   const rectangle=(left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
+  // Brown's casing is one oval (stadium) round both bores, with short
+  // induction and eduction necks at the top and bottom centre.
+  const neckTop = outerHousingRadius + 0.85;
   const outerSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],outerHousingRadius,1024)),
-    poly(circle([halfCenterDistance,0],outerHousingRadius,1024)),rectangle(-0.525,-3.91,0.525,3.91));
+    poly(circle([halfCenterDistance,0],outerHousingRadius,1024)),
+    rectangle(-halfCenterDistance,-outerHousingRadius,halfCenterDistance,outerHousingRadius),
+    rectangle(-0.525,-neckTop,0.525,neckTop));
   const cavitySection=polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius+0.00006,1024)),
-    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)),rectangle(-0.26,-3.92,0.26,3.92));
+    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)),rectangle(-0.26,-neckTop-0.01,0.26,neckTop+0.01));
   const housingSection=polygonClipping.difference(outerSection,cavitySection);
   rearHousing.geometry.dispose();rearHousing.geometry=plate(housingSection,-0.66,0.68);
   rearHousing.userData.role =
@@ -427,9 +432,10 @@ function doubleEllipticalRotaryEngine(movement) {
       new THREE.BoxGeometry(1.05, 1.62, 0.96),
       frameMaterial,
     );
-    neck.geometry.dispose();neck.geometry=plate(polygonClipping.difference(rectangle(-0.525,-0.81,0.525,0.81),
-      rectangle(-0.26,-0.82,0.26,0.82)),-0.48,0.48);
-    neck.position.set(0, side * 3.10, -0.10);
+    // Only the stub standing proud of the oval, clear of the piston sweep.
+    neck.geometry.dispose();neck.geometry=plate(polygonClipping.difference(rectangle(-0.525,-0.475,0.525,0.475),
+      rectangle(-0.26,-0.485,0.26,0.485)),-0.48,0.48);
+    neck.position.set(0, side * (neckTop - 0.475), -0.10);
     neck.userData.role = side > 0
       ? 'top-center-steam-induction-neck'
       : 'bottom-center-steam-eduction-neck';
@@ -438,7 +444,7 @@ function doubleEllipticalRotaryEngine(movement) {
       new THREE.BoxGeometry(0.52, 1.74, 0.58),
       side > 0 ? inletMaterial : exhaustMaterial,
     );
-    passage.position.set(0, side * 3.12, 0.36);
+    passage.position.set(0, side * (neckTop - 0.79), 0.36);
     passage.userData.role = side > 0
       ? 'downward-induction-steam-arrow-region'
       : 'downward-eduction-steam-arrow-region';

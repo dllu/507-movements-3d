@@ -345,6 +345,7 @@ function fourneyronTurbine(movement) {
   rotationMarker.userData.role =
     'visible-clockwise-marker-on-outer-runner-B';
   runner.add(rotationMarker);
+  rotationMarker.visible = false; // Brown draws no index stripe on the runner.
 
   const flowCurves = [];
   const flowPathTubes = [];

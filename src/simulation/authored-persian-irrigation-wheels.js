@@ -867,7 +867,9 @@ function persianIrrigationWheel(movement) {
     new THREE.Vector3(4.08, 3.62, 1.85),
   );
   root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraDirection = new THREE.Vector3(2.8, 2.1, 13.5);
+  // Brown's flat front elevation: near-orthographic so the stream reads as a band.
+  root.userData.cameraDirection = new THREE.Vector3(0, 0.01, 1);
+  root.userData.cameraFov = 10;
   root.userData.groundFloorY = groundY;
   root.userData.solidReview = { status: 'qualified-geometry', residual: 'Finite shoe/pin tangency and clear receiver path are reconstructed; impact, passive swing and fluid volume/discharge remain prescribed, not dynamically solved.' };
   root.userData.hideGround = true;

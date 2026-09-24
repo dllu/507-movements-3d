@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { createAuthoredHelicalCurrentRotorMovement } from '../src/simulation/authored-helical-current-rotors.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -20,6 +21,12 @@ const sourceText = await readFile(
 const ARCHETYPE =
   'single-one-turn-radial-helical-ribbon-around-horizontal-cylinder-axial-flow-to-rigid-shaft-rotation';
 const FULL_TURN = Math.PI * 2;
+
+// Rigidity of the white indices is checked on the unpresented factory model;
+// Brown's plate does not draw them, so source presentation removes them.
+function unpresentedModel() {
+  return { model: createAuthoredHelicalCurrentRotorMovement(catalog.movements[483]) };
+}
 
 function movementModel() {
   const movement = catalog.movements[483];
@@ -70,7 +77,9 @@ test('movement 484 is one radial spiral wound once around one rigid horizontal c
   assert.equal(blocks.helicalBlade.parent, blocks.rotor);
   assert.equal(blocks.coreCylinder.parent, blocks.rotor);
   assert.equal(blocks.shaft.parent, blocks.rotor);
-  assert.equal(blocks.loadWheel.parent, blocks.rotor);
+  // Brown draws no load wheel; source presentation removes it.
+  assert.equal(blocks.loadWheel.parent, null);
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes('rigid-load-wheel-on-output-shaft'));
   assert.equal(blocks.bearings.length, 2);
   assert.equal(blocks.supports.length, 2);
 
@@ -270,7 +279,7 @@ test('movement 484 torque, opposing load, and extracted shaft power share one di
 });
 
 test('movement 484 renderer keeps cylinder, spiral, shaft, and load wheel exactly rigid', () => {
-  const { model } = movementModel();
+  const { model } = unpresentedModel();
   const { blocks, geometry, helixPointScene, stateAtTime } =
     model.root.userData;
   const rigidChildren = [

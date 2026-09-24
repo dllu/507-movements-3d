@@ -39,11 +39,13 @@ export function correctWeir(root){
  b.upperContactEdge.geometry.dispose();b.upperContactEdge.geometry=new THREE.BoxGeometry(.025,.05,g.gateWidth);b.upperContactEdge.position.set(-g.upperThickness/2+.0125,-g.upperPivotFromBottom+.025,0);
  b.upperReinforcements.forEach(o=>o.position.x=g.upperThickness/2+.025);
  b.lowerReinforcements.forEach(o=>o.position.x=-g.lowerThickness/2-.025);
+ // Keep the first batten clear of the pivot axle.
+ b.lowerReinforcements[0].position.y=.20;
  for(const assembly of[b.upperPivotAssembly,b.lowerPivotAssembly])assembly.bearings.find(o=>o.position.z>0).visible=false;
- const post=new THREE.Mesh(new THREE.BoxGeometry(.12,1.65,.18),b.foundation.material);post.position.set(.50,.725,-1.46);root.add(post);
- for(const p of[g.upperPivot,g.lowerPivot]){const bridge=new THREE.Mesh(new THREE.BoxGeometry(.65,.10,.18),b.foundation.material);bridge.position.set(.24,p.y,-1.46);root.add(bridge);}
+ // Brown's section draws no pivot post: the rear bearings stand for the
+ // channel wall that carries both axles, which the section cuts away.
  // Separate schematic head volumes from the finite moving leaves.
- replace(b.upstreamWater,new THREE.BoxGeometry(2.10,1,3.08));b.upstreamWater.position.x=-2.18;
+ replace(b.upstreamWater,new THREE.BoxGeometry(2.61,1,3.08));b.upstreamWater.position.x=-1.925;
  replace(b.downstreamWater,new THREE.BoxGeometry(1.70,1,3.08));b.downstreamWater.position.x=2.25;
  const y=g.notchBottomY,curve=new THREE.CatmullRomCurve3([new THREE.Vector3(-.4,y+.24,0),new THREE.Vector3(.16,y+.23,0),new THREE.Vector3(.48,y-.10,0),new THREE.Vector3(1.6,g.downstreamWaterLevel+.15,0)]);
  replace(b.notchFlow,new THREE.TubeGeometry(curve,64,.10,12,false));

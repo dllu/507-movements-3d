@@ -1,6 +1,14 @@
 import { correctEntwistleGearing } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
 import { makeMiterGear } from './miter-gear.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+  spline,
+} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -36,6 +44,167 @@ function annulusGeometry(outerRadius, boreRadius, depth) {
 function addRole(object, role) {
   object.userData.role = role;
   return object;
+}
+
+// Brown's plate is a sectional elevation: shaft D runs from the broken-off
+// left standard, through drum C' cast on C, the carrier block and stud E, and
+// through the cast right standard that carries A, to the driving pulley on
+// its right; both standards stand on one flat cast foot. No bearing posts,
+// rails, brace or indices are drawn.
+function presentHousedSection(root, material) {
+  const blocks = root.userData.blocks;
+  const geometry = root.userData.geometry;
+  const axisY = geometry.apex.y;
+  const shaftRadius = geometry.shaftRadius;
+  const footTop = -1.74;
+  const footBottom = -2.06;
+  const depth = 0.30;
+  const replace = (mesh, next) => {
+    mesh.geometry.dispose();
+    mesh.geometry = next;
+  };
+  const hide = (object) => {
+    object.visible = false;
+  };
+  const detach = (object) => {
+    object.removeFromParent();
+    object.traverse((part) => part.geometry?.dispose());
+  };
+  [
+    blocks.fixedGearBrace,
+    blocks.carrierIndex,
+    blocks.outputIndex,
+    blocks.rightStandard,
+    ...blocks.bearings,
+    ...blocks.bearingPosts,
+    ...blocks.outputFlanges,
+  ].forEach(detach);
+  for (const key of ['fixedGearBrace', 'carrierIndex', 'outputIndex']) {
+    delete blocks[key];
+  }
+  blocks.bearings = [];
+  blocks.bearingPosts = [];
+  blocks.outputFlanges = [];
+  // Gear back-face rings, white indicators and the white index tooth.
+  for (const gear of blocks.gears) {
+    hide(gear.userData.inset);
+    hide(gear.userData.indicator);
+    const [tooth] = gear.userData.toothMeshes;
+    const plain = gear.userData.toothMeshes[1];
+    if (tooth && plain) tooth.material = plain.material;
+  }
+
+  // Shaft D ends flush with the left boss and the pulley's outer face.
+  const shaftLeft = -3.56;
+  const shaftRight = 2.92;
+  const shaftMesh = blocks.shaftD.userData.rotor.children[0];
+  replace(shaftMesh, new THREE.CylinderGeometry(
+    shaftRadius, shaftRadius, shaftRight - shaftLeft, 32,
+  ));
+  blocks.shaftD.position.x = (shaftLeft + shaftRight) / 2;
+
+  // Drum C' cast on C, running back to the left standard.
+  const drumLeft = -3.24;
+  const drumRight = -1.40;
+  const drumRadius = 0.70;
+  replace(blocks.outputDrum, boredLatheGeometry([
+    { axial: -(drumRight - drumLeft) / 2, radial: drumRadius },
+    { axial: (drumRight - drumLeft) / 2, radial: drumRadius },
+  ], blocks.outputDrum.userData.boreRadius ?? 0.115, 96).rotateX(Math.PI / 2));
+  blocks.outputDrum.rotation.set(0, -Math.PI / 2, 0);
+  blocks.outputDrum.position.x = (drumLeft + drumRight) / 2;
+
+  // Driving pulley fast on D beyond the right standard.
+  const pulleyLeft = 2.12;
+  const pulley = addRole(new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -(shaftRight - pulleyLeft) / 2, radial: 1.22 },
+      { axial: 0, radial: 1.28 },
+      { axial: (shaftRight - pulleyLeft) / 2, radial: 1.22 },
+    ], shaftRadius + 0.001, 96),
+    matte(PALETTE.driver, { metalness: 0.18, roughness: 0.5 }),
+  ), 'driving-pulley-fast-on-shaft-D');
+  pulley.rotation.z = Math.PI / 2;
+  pulley.position.x = (pulleyLeft + shaftRight) / 2;
+  blocks.carrierAssembly.add(pulley);
+  blocks.drivingPulley = pulley;
+
+  // Shaft D runs along x through each standard's boss: the elevation plate is
+  // slotted there and a turned bearing bored for D fills the slot.
+  const bearingRadius = 0.30;
+  const standardBearings = [];
+  const elevation = (outline, [x0, x1], role) => {
+    const slot = poly([
+      [x0 - 0.05, axisY - bearingRadius + 0.02], [x1 + 0.05, axisY - bearingRadius + 0.02],
+      [x1 + 0.05, axisY + bearingRadius - 0.02], [x0 - 0.05, axisY + bearingRadius - 0.02],
+    ]);
+    const mesh = addRole(new THREE.Mesh(
+      plate(polygonClipping.difference(poly(outline), slot), -depth, depth),
+      material,
+    ), role);
+    mesh.userData.fixed = true;
+    root.add(mesh);
+    const bearing = addRole(new THREE.Mesh(
+      boredLatheGeometry([
+        { axial: -(x1 - x0) / 2, radial: bearingRadius },
+        { axial: (x1 - x0) / 2, radial: bearingRadius },
+      ], shaftRadius + 0.002, 96),
+      material,
+    ), `${role}-bearing-for-shaft-D`);
+    bearing.rotation.z = Math.PI / 2;
+    bearing.position.set((x0 + x1) / 2, axisY, 0);
+    bearing.userData.fixed = true;
+    root.add(bearing);
+    standardBearings.push(bearing);
+    return mesh;
+  };
+  const boss = (x, radius, start, end, radiusY = radius, count = 48) => Array.from(
+    { length: count + 1 },
+    (_, i) => {
+      const angle = start + (end - start) * i / count;
+      return [x + radius * Math.cos(angle), axisY + radiusY * Math.sin(angle)];
+    },
+  );
+  // Right standard: a boss around D behind A, dropping to the foot.
+  const rightX = 1.72;
+  const standardRight = elevation([
+    ...boss(rightX, 0.34, Math.PI, 0, 0.82),
+    [2.06, -0.2],
+    ...spline([[2.06, -1.1], [2.14, -1.58], [2.36, footTop]]),
+    ...spline([[1.12, footTop], [1.34, -1.58], [1.40, -1.1]]),
+    [1.40, -0.2],
+  ], [1.40, 2.06], 'cast-right-standard-carrying-gear-A');
+  standardRight.userData.foot = new THREE.Vector3(rightX, footTop, 0);
+  // Left standard, broken off in the plate, carrying D beside drum C'.
+  const leftX = -3.40;
+  const standardLeft = elevation([
+    ...boss(leftX, 0.155, 0, Math.PI),
+    ...spline([[-3.555, axisY], [-3.56, -0.40], [-3.30, -1.30], [-2.88, footTop]]),
+    ...spline([[-2.28, footTop], [-2.70, -1.10], [-3.08, -0.45], [-3.25, -0.14]]),
+    [-3.25, axisY],
+  ], [-3.555, -3.25], 'cast-left-standard-carrying-shaft-D');
+  blocks.rightStandard = standardRight;
+  blocks.leftStandard = standardLeft;
+  blocks.castStandards = [standardLeft, standardRight];
+  blocks.standardBearings = standardBearings;
+
+  // One flat cast foot under both standards.
+  const footLength = 3.34 + 3.84;
+  replace(blocks.base, new THREE.BoxGeometry(footLength, footTop - footBottom, 1.1));
+  blocks.base.position.set((3.34 - 3.84) / 2, (footTop + footBottom) / 2, 0);
+  blocks.base.userData.role = 'cast-foot-plate';
+  blocks.base.userData.fixed = true;
+
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.9, footBottom - 0.02, -2.18),
+    new THREE.Vector3(3.4, 2.80, 2.18),
+  );
+  root.userData.groundFloorY = footBottom;
+  // A narrow field of view keeps the flat sectional elevation flat.
+  root.userData.cameraFov = 12;
+  root.traverse((object) => {
+    for (const mat of [object.material].flat()) if (mat) mat.fog = false;
+  });
 }
 
 function entwistlePatentGearing(movement) {
@@ -488,13 +657,14 @@ function entwistlePatentGearing(movement) {
     root.userData.kinematics = state;
   };
   correctEntwistleGearing(root);
+  presentHousedSection(root, fixedMaterial);
   update(0);
   root.userData.fidelity = 'authored';
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(2.8, 2.5, 12),
+    cameraDirection: new THREE.Vector3(0.02, 0.03, 1),
   };
 }
 

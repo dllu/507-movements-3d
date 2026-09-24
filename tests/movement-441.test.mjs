@@ -76,7 +76,8 @@ test('movement 441 has six rigid curved floats, one hollow shaft, and six separa
     assert.equal(arm.parent, blocks.wheel);
     assert.equal(blocks.buckets[index].parent, arm);
     assert.equal(blocks.floatWaters[index].parent, arm);
-    assert.equal(blocks.channelMarkers[index].parent, arm);
+    // Source presentation removes the white channel tracer markers Brown does not draw.
+    assert.equal(blocks.channelMarkers[index].parent, null);
     assert.equal(blocks.bucketWaters[index].parent, blocks.buckets[index]);
     assert.equal(blocks.tripLugs[index].parent, blocks.buckets[index]);
   });

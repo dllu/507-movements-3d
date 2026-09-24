@@ -117,6 +117,16 @@ export function correctGuernseyWorkingParts(root) {
     }
     replace(beam, plate(shape, -depth/2, depth/2));
   }
+  // Brown draws both balances as plain discs: a bored web replaces the three
+  // crossed spokes (kept hidden in the blocks for the bore checks).
+  for (const balance of [b.upperBalance, b.leftBalance]) {
+    balance.spokes.forEach(spoke => { spoke.visible = false; });
+    const rimRadius = balance.rim.geometry.parameters.radius;
+    const web = new THREE.Mesh(ring(.074, rimRadius - .05, -.035, .035, 128), balance.rim.material);
+    web.userData.role = `${balance.balance.userData.role.replace('-counter-oscillating-balance-wheel', '')}-plain-balance-disc-web`;
+    balance.balance.add(web); balance.web = web; balance.spokes.push(web);
+    balance.angularIndex.visible = false;
+  }
   root.traverse(o => { for (const m of [o.material].flat().filter(Boolean)) m.fog = false; });
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = 6;

@@ -354,6 +354,7 @@ function overshotWaterWheel(movement) {
   );
   rotationMarker.position.set(0.27, 0, 0.68);
   rotationMarker.userData.role = 'visible-clockwise-wheel-rotation-marker';
+  rotationMarker.visible = false; // Brown draws no index on the wheel.
   rotor.add(rotationMarker);
 
   const shaft = cylinderAlongZ(shaftRadius, 1.70, darkMaterial, 36);
@@ -430,6 +431,8 @@ function overshotWaterWheel(movement) {
     waterMaterial,
     'bottom-tailrace-carrying-discharged-water-away',
   );
+  // The plate shows the spent water falling on the pit floor, not a pipe.
+  tailrace.visible = false;
   root.add(tailrace);
   const masonryRace = makeTube(
     arcPoints(3.18, THREE.MathUtils.degToRad(188),
@@ -438,6 +441,18 @@ function overshotWaterWheel(movement) {
     frameMaterial,
     'fixed-curved-masonry-wheel-race',
   );
+  // Brown's wheel pit: a hatched masonry breast falling straight from the
+  // headrace, curving close round the lower left of the wheel and running
+  // out as the tail floor to the right.
+  {
+    const inner = 3.07, outer = 3.67, top = 3.32, floorEnd = 3.9;
+    const arc = (radius, from, to, count = 96) => Array.from({length: count + 1},
+      (_, i) => { const a = from + (to - from) * i / count; return [radius * Math.cos(a), radius * Math.sin(a)]; });
+    const outline = [[-inner, top], ...arc(inner, Math.PI, 1.5 * Math.PI), [floorEnd, -inner],
+      [floorEnd, -outer], ...arc(outer, 1.5 * Math.PI, Math.PI), [-outer, top]];
+    masonryRace.geometry.dispose();
+    masonryRace.geometry = plate(poly(outline), -0.75, 0.75);
+  }
   root.add(masonryRace);
 
   const update = (time) => {

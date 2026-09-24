@@ -431,11 +431,12 @@ function streamDrivenArchimedesScrew(movement) {
   streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.34, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
+  // Only a shallow sheet of stream is drawn, as Brown hatches its surface.
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(3.90, streamSurfaceY-groundY-.45, 4.70),
+    new THREE.BoxGeometry(3.90, 0.45, 4.70),
     waterMaterial,
   );
-  streamWater.position.set(lowerEnd.x + 0.20, (streamSurfaceY+groundY+.45)/2, 0);
+  streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY - 0.225, 0);
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';
   root.add(streamWater);

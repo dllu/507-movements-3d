@@ -3850,6 +3850,8 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctCompoundEpicyclic(root, movement.id);
+  // Brown's flat front elevation: a narrow view avoids looking down on E-H.
+  root.userData.cameraFov = 10;
   markShadows(root);
   return {
     root,
