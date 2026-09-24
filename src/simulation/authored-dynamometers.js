@@ -1,5 +1,6 @@
 import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -200,9 +201,13 @@ function hoopReactionDynamometer(movement) {
   const inputStartAngle = THREE.MathUtils.degToRad(14);
   const outputStartLocalAngle = THREE.MathUtils.degToRad(14);
   const planetStartLocalAngle = THREE.MathUtils.degToRad(6);
-  const hoopRadius = 1.72;
-  const hoopTubeRadius = 0.105;
-  const hoopOuterRadius = hoopRadius + hoopTubeRadius;
+  // Brown draws the hoop edgewise as a broad flat band standing in front of
+  // the gears; its bore clears the carried gears' back cones.
+  const hoopInnerRadius = 1.55;
+  const hoopOuterRadius = 1.78;
+  const hoopAxialWidth = 0.70;
+  const hoopRadius = (hoopInnerRadius + hoopOuterRadius) / 2;
+  const hoopTubeRadius = (hoopOuterRadius - hoopInnerRadius) / 2;
   const bandAttachmentPoint = new THREE.Vector3(0, 0, hoopOuterRadius);
   const bandLeverArm = bandAttachmentPoint.z;
   const transmittedTorque = 0.72;
@@ -400,7 +405,7 @@ function hoopReactionDynamometer(movement) {
   outputShaftRotor.userData.role =
     'continuous-horizontal-shaft-keyed-to-left-output-miter-gear';
   root.add(outputShaftRotor);
-  const outputShaft = cylinderAlongX(0.09, 5.05, darkMaterial, 28);
+  const outputShaft = cylinderAlongX(0.09, 4.5, darkMaterial, 28);
   outputShaft.userData.role =
     'horizontal-output-shaft-turning-inside-loose-input-gear';
   outputShaftRotor.add(outputShaft);
@@ -468,10 +473,13 @@ function hoopReactionDynamometer(movement) {
     'freely-journaled-hoop-carrier-held-stationary-by-measuring-band';
   root.add(hoopCarrier);
   const hoop = new THREE.Mesh(
-    new THREE.TorusGeometry(hoopRadius, hoopTubeRadius, 12, 96),
+    boredLatheGeometry([
+      { axial: -hoopAxialWidth / 2, radial: hoopOuterRadius },
+      { axial: hoopAxialWidth / 2, radial: hoopOuterRadius },
+    ], hoopInnerRadius, 128),
     hoopMaterial,
   );
-  hoop.rotation.y = Math.PI / 2;
+  hoop.rotation.z = Math.PI / 2;
   hoop.userData.role =
     'hoop-shaped-frame-free-to-revolve-on-middle-of-horizontal-shaft';
   hoopCarrier.add(hoop);
@@ -842,7 +850,69 @@ function hoopReactionDynamometer(movement) {
     new THREE.Vector3(2.85, 1.98, 2.05),
   );
   correctScriberDynamometer(root, 372);
-  root.userData.groundFloorY = -2.10;
+  // Brown's plate: two tall standards carry the shaft through their upper
+  // ends, the shaft stubs standing just outside them, and a turned stretcher
+  // with a central ball ties them below the hoop; both run off the plate foot.
+  const postX = 1.9, postHalfWidth = 0.18, postTop = 0.58, postBottom = -3.9;
+  // Brown's teeth are uniform; the white index tooth is not drawn.
+  for (const gear of [inputGear, outputGear, topPlanetGear, bottomPlanetGear]) {
+    const teeth = gear.userData.toothMeshes;
+    const plain = teeth.find((tooth, index) => index !== 0 && index !== 2 && index !== 11).material;
+    for (const tooth of teeth) tooth.material = plain;
+  }
+  const postGeometry = () => {
+    const shape = new THREE.Shape([
+      new THREE.Vector2(-0.17, postBottom), new THREE.Vector2(0.17, postBottom),
+      new THREE.Vector2(0.17, postTop), new THREE.Vector2(-0.17, postTop),
+    ]);
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, 0.096, 0, FULL_TURN, true);
+    shape.holes.push(bore);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: 2 * postHalfWidth, bevelEnabled: false, curveSegments: 48 });
+    geometry.translate(0, 0, -postHalfWidth);
+    geometry.rotateY(Math.PI / 2);
+    return geometry;
+  };
+  supportPosts.forEach((post, index) => {
+    const side = index === 0 ? -1 : 1;
+    post.geometry.dispose();
+    post.geometry = postGeometry();
+    post.position.set(side * postX, 0, 0);
+    shaftBearings[index].position.set(side * postX, 0, 0);
+  });
+  outputShaftIndex.geometry.dispose();
+  outputShaftIndex.geometry = new THREE.BoxGeometry(0.14, 0.012, 0.026);
+  outputShaftIndex.position.set(-2.16, 0.088, 0);
+  const stretcherY = -2.35;
+  const stretcherHalfLength = postX - postHalfWidth;
+  const stretcherProfile = [
+    [0, 0.085], [0.07, 0.085], [0.07, 0.06], [0.12, 0.06], [0.30, 0.095],
+    [0.52, 0.10], [0.74, 0.07], [0.94, 0.04], [1.02, 0.035],
+  ];
+  const stretcherPoints = [new THREE.Vector2(0, -stretcherHalfLength)];
+  for (const [fromEnd, radius] of stretcherProfile) stretcherPoints.push(new THREE.Vector2(radius, -stretcherHalfLength + fromEnd * (stretcherHalfLength - 0.11) / 1.02));
+  for (const [fromEnd, radius] of stretcherProfile.slice().reverse()) stretcherPoints.push(new THREE.Vector2(radius, stretcherHalfLength - fromEnd * (stretcherHalfLength - 0.11) / 1.02));
+  stretcherPoints.push(new THREE.Vector2(0, stretcherHalfLength));
+  const stretcher = new THREE.Mesh(
+    new THREE.LatheGeometry(stretcherPoints, 48).rotateZ(-Math.PI / 2),
+    frameMaterial,
+  );
+  stretcher.position.y = stretcherY;
+  stretcher.userData.fixed = true;
+  stretcher.userData.role = 'fixed-turned-stretcher-between-the-standards';
+  const stretcherBall = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 20), frameMaterial);
+  stretcherBall.position.y = stretcherY;
+  stretcherBall.userData.fixed = true;
+  stretcherBall.userData.role = 'fixed-ball-at-middle-of-turned-stretcher';
+  root.add(stretcher, stretcherBall);
+  root.userData.blocks.stretcher = stretcher;
+  root.userData.blocks.stretcherBall = stretcherBall;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.7, -3.3, -0.4),
+    new THREE.Vector3(2.7, 1.85, 0.4),
+  );
+  root.userData.groundFloorY = postBottom;
+  root.userData.cameraFov = 16;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(6.8, 3.9, 8.7),

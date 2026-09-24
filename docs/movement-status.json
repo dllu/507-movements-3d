@@ -8222,22 +8222,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: lever in front of the grooved disk (Brown's dashed bar is its other extreme), A-frame without a standard under the lever."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/intersection-screen-pass50.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. - 281: 513 poses bound lateral wall clearance within 0.0001 of the retained 0.035; pin-to-floor/walls/disk/rim checks confirm no sampled intersection. The floor and shared wall depth are checked, with an uncut-disk negative control. - 286: 513 poses compare the visible shoe underside with the… Pass-50 relative-motion screen (0.01 spacing, 129 poses) after boring the lever eye and removing the undrawn white disk index: no overlaps."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; the fulcrum pin is bored, its brace and bearing behind the disk."
       },
-      "flaws": "The lever lies in front of the disk where Brown dashes it behind; the lever now has a real bore at its fulcrum. Lever passes in front of the disk where Brown dashes it behind. Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking.",
+      "flaws": "The fulcrum brace and rear bearing are inferred (Brown draws no support); the dashed alternate lever and rear arm are not modelled; perspective lengthens the front lever slightly. Analytical screw motion omits load, friction and dynamic self-locking.",
       "references": [
         "docs/movement-281-286.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9553,23 +9554,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: the rod runs inside the hollow standard between cap and slot, as dotted; the flywheel is cropped as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The existing 326/327 suites and `engine-guide-solids.test.mjs` pass 21 tests. New checks raycast complete finite shaft/pin cross-sections through rendered rod eyes, bearings, rollers and cylinder passages. Thirty-three poses check roller/guide gaps, roller/crosshead separation, shaft/rod depth clearance and complete camera bounds. Existing tests cover analytical derivatives,… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. Only 0.0000 guide-shoe sliding contact remains."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen at 0.01 and 0.004 spacing: only sliding shoe contact (0.0000)."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. The connecting rod stays in front of the standard where Brown hides it inside; the rendered piston rod is shorter than the official stroke geometry. Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry. Pressure, sealing, friction and inertia unvalidated.",
       "references": [
         "docs/steam-engine-guide-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10095,23 +10097,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: double-webbed crank with the front web over the rod eye, as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The open rectangular cylinder sections are explanatory cutaways, not pressure-tight castings. Rectangular rod passages suit the existing rectangular rod meshes; circular rods, seals, steam ports and valve timing are outside this pass. Bearing support details and crank hubs retain some simplified solid interfaces, and these tests are not a complete pairwise collision audit. The… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps remain."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. The rod eye stays in front of the crank plate where Brown draws the plate over it; the cylinder is longer than drawn. The cylinder is closed, so the piston is hidden; pressure sealing, steam forces, friction and bearing loads unvalidated.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. The cylinder is longer than drawn: the plate's short barrel implies a crank radius ≈1.7 against the official 2.25, which is kept. The cylinder is closed, so the piston is hidden; steam forces and bearing loads unvalidated.",
       "references": [
         "docs/oscillating-table-engine-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10125,23 +10128,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect after the engines source-match pass."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: double-webbed crank with the front web over the rod eye, as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/engines-326-345-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The open rectangular cylinder sections are explanatory cutaways, not pressure-tight castings. Rectangular rod passages suit the existing rectangular rod meshes; circular rods, seals, steam ports and valve timing are outside this pass. Bearing support details and crank hubs retain some simplified solid interfaces, and these tests are not a complete pairwise collision audit. The… Engines-pass re-screen (0.01 spacing, 129 poses) supersedes the pass-49 overlap. No overlaps remain."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn frames, indices and cutaway parts are removed. The rod eye stays in front of the crank plate where Brown draws the plate over it. The cylinder is closed, so the piston is hidden; pressure sealing, steam forces, friction and bearing loads unvalidated.",
+      "flaws": "Undrawn frames, indices and cutaway parts are removed. The cylinder is closed, so the piston is hidden; pressure sealing, steam forces, friction and bearing loads unvalidated.",
       "references": [
         "docs/oscillating-table-engine-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10155,22 +10159,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: solid plinth, closed cylinder, side rod and crank in the plate's handedness."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/oscillating-table-engine-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The open rectangular cylinder sections are explanatory cutaways, not pressure-tight castings. Rectangular rod passages suit the existing rectangular rod meshes; circular rods, seals, steam ports and valve timing are outside this pass. Bearing support details and crank hubs retain some simplified solid interfaces, and these tests are not a complete pairwise collision audit. The… Pass-49 relative-motion screen reports 0.07 solid overlap (fixed-table-bed-top-edge x parallel-crank-pin-boss-1-P); unclassified, may be intended contact."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the crank/bed overlap (≤0.070, present before this pass) is removed; no solid pairs."
       },
-      "flaws": "The bed is a legged table where the plate draws a solid plinth. Open cylinder sections are explanatory cutaways; pressure sealing, steam forces, friction and bearing loads unvalidated.",
+      "flaws": "The guide arches are open tube meshes. Pressure sealing, steam forces, friction and bearing loads unvalidated.",
       "references": [
         "docs/oscillating-table-engine-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10184,23 +10189,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 49,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/verge-crown-family-review.md",
-        "note": "Default and oblique production-route views inspected beside the engraving; observed source differences are listed as flaws, not corrected in this pass."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: rear-half casing section with conical heads and disk; the flywheel and pedestals remain where Brown draws a bow and hatched standards."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the central ball overlaps the conical heads by 0.487 (screened as fluid, uncertain); the crank socket and piston rod overlap coaxially by 0.230; the crank arm overlaps the pin-socket ball by 0.228; several fixed casing parts are open meshes and cannot be targets."
+        "status": "sampled-clear",
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen at 0.01/129 and 0.005/33: the ball/head (0.487) and socket/rod (0.23) overlaps are fixed; the disk-rim seal is an open tube."
       },
-      "flaws": "The screen shows ball, socket and crank-arm overlaps up to 0.23, and open casing meshes. Translucent drum instead of Brown’s conical-head section; crank/flywheel correct. Finite disk/seat intersections not audited.",
+      "flaws": "Brown's bow linking the rod ends and the right hatched standard are not modelled; the flywheel is a plain disk where Brown draws a crank plate; cut faces are flat-shaded, not hatched.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10905,21 +10911,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: edgewise hoop band, tall bored standards and the turned stretcher with ball."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/scriber-dynamometer-bevel-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The focused tests check finite rack/table/guide clearance, shaft/body and shaft/bearing bores, the shaft index against the loose parts, and carrier arms against all four gear bodies. Existing ratio, contact-velocity, helix, torque and timeline tests remain. Combined suite: **21 tests**."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; contact report hash regenerated with identical gaps."
       },
-      "flaws": "A hanging plumb stands where the plate draws a turned spindle below the wheels. Bevels use approximate back-cone flanks; friction, elasticity and loaded torque unvalidated. Static scale weight and support details simplified.",
+      "flaws": "The drawn gears are larger relative to the hoop than 3D clearance allows. Bevels use approximate back-cone flanks; friction, elasticity and loaded torque unvalidated.",
       "references": [
         "docs/scriber-dynamometer-bevel-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11161,21 +11168,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: end elevation reproducing the upper transverse section with the board on edge; the plan is the top view."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/adjustment-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Chrome source/default/front/advanced review reported no browser errors or full-cycle clipping (17 poses, maximum absolute projected coordinate 0.866, 0.829 and 0.859 respectively). Final board length, screw-tip shortening, radial-opening clearance and hinge thread engagement edits remain inside those bounds and are covered by the finite checks. Review captures and fetched…"
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only cheek/wedge sliding contact (0.0000)."
       },
-      "flaws": "The plate’s transverse section is not reproduced; the default camera shows the plan. Wedge motion prescribed; frictional self-locking, clamp force, wood compression and elastic deformation unvalidated.",
+      "flaws": "The plan (Brown's lower figure) is not the default view; the bed reads deeper and blockier than the section. Wedge motion prescribed; frictional self-locking and clamp force unvalidated.",
       "references": [
         "docs/adjustment-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11303,22 +11311,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: open ladder with broad slat rungs as in Brown's main figure."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/folding-pipe-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. These are kinematic reconstructions, not structural or load-bearing qualifications. No ladder latch, hand force, buoyancy, pin friction or joint wear is solved. The 468 installation path and prepared bed are prescribed; hauling forces and seabed contact are not simulated. Its spherical seats include geometric clearance without a modeled gasket, pressure seal or fluid solver.… Pass-49 relative-motion screen reports 0.0342 solid overlap (left-half-of-closed-round-pole-shell x right-upper-complement-forming-full-pole-end); unclassified, may be intended contact."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.034 half-shell/complement overlap is fixed."
       },
-      "flaws": "One ladder where the plate draws three views. Kinematic folding/joint reconstruction; latch action, hand force, buoyancy, friction, wear and structural strength not solved.",
+      "flaws": "Brown's partly-open and closed figures are later phases of the cycle rather than simultaneous views; the closed pole shows a 0.07 notch under each end. Latch action, hand force and strength not solved.",
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11567,21 +11576,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: both drawn plug positions shown at once as two cocks a quarter turn apart."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/cock-ferry-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The 17 existing tests retain routing, rigid transforms, cycle closure, exact tether length and analytical motion derivatives. Six scoped tests in `cock-ferry-working-solids.test.mjs` independently probe channel cavities and floors, check flow-marker containment, sample finite rotating interfaces in both directions, verify hull immersion/dry compartment floors/rudder depth and…"
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; fluid cores are open tubes."
       },
-      "flaws": "One cock with four pipes where the plate draws two sectional positions of the plug. Valve rotation and flow markers prescribed; pressure, leakage, sealing contact and hydraulic transients not solved.",
+      "flaws": "The second figure is a display copy of the same cock; plugs read as solid discs with grey body segments where Brown draws outlines. Valve rotation prescribed; pressure, leakage and sealing not solved.",
       "references": [
         "docs/cock-ferry-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11711,21 +11721,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Default capture inspected beside the plate: cam C at the plate's size relative to bar A; work plates and guides removed."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/movement-400.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The tests cover the finite sphere/triangle support at both faces and edges, independent mesh tangency, useful reaction directions, full-stroke follower/cam, fork/B, pivot, shaft/bearing and feeder/work-plate clearance, cyclic motion, and feed direction. A negative control restores the nominal axial point-follower law and detects more than 0.03 penetration. Both floor and fog…"
+        "status": "known",
+        "evidence": "docs/lane6-engines-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the spring/anchor overlap (0.1191) predates this pass; all else clear."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Cam C is much larger than the plate’s. Four-motion feed geometry qualified; follower preload, friction, contact forces, fabric traction and loaded sewing behavior unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Spring overlaps its anchor by 0.119; the cam is wider along its axis than drawn to carry the 0.68 feed stroke; minimum lifting moment 2.044. Follower preload, friction and fabric traction unvalidated.",
       "references": [
         "docs/movement-400.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane6-engines-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",

@@ -245,7 +245,8 @@ function makeCompoundCam({
   const frontVertices = [];
   const frontIndices = [];
   const innerRadius = 0.23;
-  const axialOuterRadius = 0.68;
+  // The face annulus stays inside the radial body so B's follower pad clears it.
+  const axialOuterRadius = Math.min(0.68, baseRadius - 0.02);
   const followerRadius = 0.08;
   const radialMeshAllowance = 0.00006;
   const axialContactTriangles = [];
@@ -267,10 +268,12 @@ function makeCompoundCam({
     const outerZ = -axialOuterRadius * Math.cos(theta);
     const innerY = innerRadius * Math.sin(theta);
     const innerZ = -innerRadius * Math.cos(theta);
+    // The dark working-edge line runs just outside the bore, inside the
+    // annulus the carrier's face button sweeps (radius 0.42-0.58).
     faceRimPoints.push(new THREE.Vector3(
       surface.axialFront - 0.04,
-      outerY * 0.9,
-      outerZ * 0.9,
+      (innerRadius + 0.07) * Math.sin(theta),
+      -(innerRadius + 0.07) * Math.cos(theta),
     ));
     frontVertices.push(
       surface.axialFront, innerY, innerZ,
@@ -405,6 +408,7 @@ function makeCompoundCam({
 
 function makeCarrierA({
   axialBaseFront,
+  camCenterY,
   carrierMaterial,
   darkMaterial,
   pivotX,
@@ -414,9 +418,10 @@ function makeCarrierA({
   carrier.userData.role =
     'forked-horizontal-carrier-bar-A-sliding-only-in-feed-direction';
 
+  // Brown draws A as a deep bar; its rails are 0.24 deep.
   const rails = [-0.25, 0.25].map((z) => {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(5.025, 0.17, 0.13),
+      new THREE.BoxGeometry(5.025, 0.24, 0.13),
       carrierMaterial,
     );
     rail.position.set(-0.3125, pivotY + 0.49, z);
@@ -448,10 +453,12 @@ function makeCarrierA({
   // Two fork legs clear B; a narrow neck carries the rounded face button.
   const projection = new THREE.Group();
   projection.userData.role = 'downward-carrier-projection-following-axial-cam-face';
-  const rearX = axialBaseFront + 0.93, contactY = 0.33;
+  // The face button runs 0.50 above the cam axis; the legs rise to the rails.
+  const rearX = axialBaseFront + 0.93, contactY = camCenterY + 0.50;
+  const legTop = pivotY + 0.37;
   for (const z of [-0.25, 0.25]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.04, 0.13), carrierMaterial);
-    leg.position.set(rearX, contactY + 0.52, z);projection.add(leg);
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, legTop - contactY, 0.13), carrierMaterial);
+    leg.position.set(rearX, (legTop + contactY) / 2, z);projection.add(leg);
   }
   const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.63), carrierMaterial);
   bridge.position.set(rearX, contactY, 0);projection.add(bridge);
@@ -551,8 +558,10 @@ function fourMotionFeed(movement) {
   const cycleDuration = 6;
   const feedStroke = 0.68;
   const radialLift = 0.29;
-  const camBaseRadius = 0.82;
-  const camCenterY = -0.17;
+  // Brown's cam C is small beside the bars: its radius is reduced and its
+  // axis raised by the same amount, so every working contact keeps its height.
+  const camBaseRadius = 0.60;
+  const camCenterY = 0.05;
   const camBackFace = 0.15;
   const camAxialBaseFront = 1.12;
   const camProfileSampleCount = 720;
@@ -618,6 +627,7 @@ function fourMotionFeed(movement) {
 
   const carrierA = makeCarrierA({
     axialBaseFront: camAxialBaseFront,
+    camCenterY,
     carrierMaterial,
     darkMaterial,
     pivotX,

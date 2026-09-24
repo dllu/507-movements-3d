@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {capsule, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -146,6 +147,39 @@ function sourceFrameShape(scale) {
     s(1),
   ));
   return shape;
+}
+
+// Brown dots 326's connecting rod inside the standard between the cap and
+// the slot, so the standard is hollow: a front skin with a window over the
+// planed slot, joined to the slotted back plate by thin side walls. The walls
+// stop at the shoulders, leaving the cap open for the rod and crank sweep.
+function hollowStandardOutlines(scale, wall, windowRadius) {
+  const s = (value) => value * scale;
+  const shoulder = (t) => {
+    const u = 1 - t;
+    return [
+      u * u * 3.004629 + 2 * u * t * 3.28 + t * t * 4.5,
+      u * u * -6.353234 + 2 * u * t * -3.75 + t * t * -3.25,
+    ];
+  };
+  const taperX = (y) => 6 + (y + 24.625) * (3.004629 - 6) / (24.625 - 6.353234);
+  const rightOuter = [[7, -27.625], [7, -24.625], [6, -24.625],
+    ...Array.from({length: 17}, (_, i) => shoulder(i / 16)), [4.5, -2.25]];
+  const outer = [...rightOuter, ...rightOuter.slice().reverse()
+    .map(([x, y]) => [-x, y])].map(([x, y]) => [s(x), s(y)]);
+  const innerBottom = -24.625 + wall;
+  const rightInner = [[taperX(innerBottom) - wall, innerBottom],
+    ...Array.from({length: 17}, (_, i) => shoulder(i / 16))
+      .map(([x, y]) => [x - wall, y]), [4.5 - wall, -1.5]];
+  const inner = [...rightInner, ...rightInner.slice().reverse()
+    .map(([x, y]) => [-x, y])].map(([x, y]) => [s(x), s(y)]);
+  const lowerBody = poly([[s(-8), s(-24.625)], [s(8), s(-24.625)],
+    [s(8), s(-1)], [s(-8), s(-1)]]);
+  const walls = polygonClipping.difference(
+    polygonClipping.intersection(poly(outer), lowerBody), poly(inner));
+  const slotWindow = capsule([0, s(-9.875)], [0, s(-21.125)], s(windowRadius), 48);
+  const skin = polygonClipping.difference(poly(outer), slotWindow);
+  return {skin, walls};
 }
 
 function annulusGeometry(outerRadius, innerRadius, depth) {
@@ -549,18 +583,36 @@ function verticalPlanedSlotPistonGuide(movement) {
   framePlate.userData.role =
     'source-proportioned-frame-solid-minus-real-guide-opening';
 
+  const standardSkinBackZ = 0.91;
+  const standardSkinFrontZ = 0.97;
+  const hollowStandard = hollowStandardOutlines(sourceScale, 0.10, 1.6);
+  const standardFrontSkin = new THREE.Mesh(
+    plate(hollowStandard.skin, standardSkinBackZ, standardSkinFrontZ),
+    frameMaterial,
+  );
+  standardFrontSkin.userData.fixed = true;
+  standardFrontSkin.userData.role =
+    'hollow-standard-front-skin-with-window-over-the-slot';
+  const standardSideWalls = new THREE.Mesh(
+    plate(hollowStandard.walls, frameFrontZ, standardSkinBackZ),
+    frameMaterial,
+  );
+  standardSideWalls.userData.fixed = true;
+  standardSideWalls.userData.role =
+    'hollow-standard-side-walls-open-at-the-cap';
+
   const foundationFoot = new THREE.Mesh(
     new THREE.BoxGeometry(
       14 * sourceScale,
       3 * sourceScale,
-      0.60,
+      standardSkinFrontZ + 0.03 - frameBackZ,
     ),
     frameMaterial,
   );
   foundationFoot.position.set(
     0,
     (frameBaseTopY + frameBaseBottomY) / 2,
-    0.12,
+    (standardSkinFrontZ + 0.03 + frameBackZ) / 2,
   );
   foundationFoot.userData.fixed = true;
   foundationFoot.userData.role = 'deep-engine-standard-foundation-foot';
@@ -642,6 +694,8 @@ function verticalPlanedSlotPistonGuide(movement) {
 
   fixedFrame.add(
     framePlate,
+    standardFrontSkin,
+    standardSideWalls,
     foundationFoot,
     guideOutline,
     leftPlanedFace,
@@ -1080,6 +1134,8 @@ function verticalPlanedSlotPistonGuide(movement) {
     slideA,
     slideBridge: crossheadBridge,
     lowerSlideBridge,
+    standardFrontSkin,
+    standardSideWalls,
     wristBoss,
     wristPinAnchor,
     wristPinShaft,

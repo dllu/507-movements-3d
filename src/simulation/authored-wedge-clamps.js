@@ -33,27 +33,29 @@ function boweryJoinersClamp(movement) {
   const bedMinimumX = -2.76;
   const bedMaximumX = 2.82;
   const bedHalfWidth = 1.28;
-  const bedThickness = 0.24;
+  // Proportions follow Brown's transverse section: a deep bed, cheeks and
+  // wedges flush at one height, and a narrow board standing on edge.
+  const bedThickness = 0.45;
   const bedTopY = 0.05;
   const cheekMinimumX = -2.56;
   const cheekMaximumX = -0.36;
   const cheekThroatX = bedMinimumX;
   const cheekThroatHalfGap = 0.35;
   const cheekFaceSlope = 0.38;
-  const cheekHeight = 0.47;
+  const cheekHeight = 0.40;
   const dovetailLipProjection = 0.13;
   const dovetailLipHeight = 0.11;
-  const workpieceHalfWidth = 0.43;
+  const workpieceHalfWidth = 0.26;
   const workpieceMinimumX = -1.55;
   const workpieceMaximumX = 2.72;
-  const workpieceHeight = 0.88;
+  const workpieceHeight = 1.35;
   const wedgeMinimumX = -1.61;
-  const wedgeMaximumX = -0.55;
+  const wedgeMaximumX = -0.45;
   const wedgeTravel = 0.55;
   const maximumLateralTravel = cheekFaceSlope * wedgeTravel;
   const wedgeInnerHalfGapAtRest = workpieceHalfWidth
     + maximumLateralTravel;
-  const wedgeHeight = 0.34;
+  const wedgeHeight = 0.40;
   const demonstrationPeriod = 4.0;
   const insertionAngularFrequency = FULL_TURN / demonstrationPeriod;
   const cheekHalfGapAt = (x) => cheekThroatHalfGap
@@ -239,7 +241,7 @@ function boweryJoinersClamp(movement) {
     'one-removable-board-held-for-planing-between-wedges';
   root.add(workpiece);
   const grainLines = [];
-  for (const z of [-0.25, 0, 0.25]) {
+  for (const z of [-0.13, 0, 0.13]) {
     const grain = new THREE.Mesh(
       new THREE.BoxGeometry(
         workpieceMaximumX - workpieceMinimumX - 0.16,
@@ -474,9 +476,11 @@ function boweryJoinersClamp(movement) {
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.12, -0.42, -1.58),
-    new THREE.Vector3(3.13, 1.22, 1.58),
+    new THREE.Vector3(3.13, 1.42, 1.58),
   );
-  root.userData.groundFloorY = -0.36;
+  root.userData.groundFloorY = -0.40;
+  // A narrow field keeps the end elevation close to Brown's flat section.
+  root.userData.cameraFov = 10;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {

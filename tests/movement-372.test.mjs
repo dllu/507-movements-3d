@@ -78,30 +78,36 @@ test('movement 372 is White\'s four-miter differential with one loose input, one
     blocks.outputGear,
     blocks.inputSleeveRotor,
     blocks.hoopCarrier,
+    blocks.stretcher,
+    blocks.stretcherBall,
+    ...blocks.supportPosts,
+    ...blocks.shaftBearings,
+    ...blocks.contactMarkers,
+  ]) assert.equal(component.parent, model.root);
+  // Brown draws neither the weighing band and weights, a base, nor the
+  // white indices; the source presentation detaches them.
+  for (const undrawn of [
     blocks.measuringBand,
     blocks.bandAttachment,
     blocks.suspensionRod,
     blocks.scalePan,
     blocks.base,
     ...blocks.scaleWeights,
-    ...blocks.supportPosts,
-    ...blocks.shaftBearings,
-    ...blocks.contactMarkers,
-  ]) assert.equal(component.parent, model.root);
+    blocks.hoopIndex,
+    blocks.outputShaftIndex,
+    blocks.inputSleeveIndex,
+  ]) assert.equal(undrawn.parent, null);
   for (const component of [
     blocks.hoop,
     blocks.carrierBoss,
     blocks.topPlanetGear,
     blocks.bottomPlanetGear,
-    blocks.hoopIndex,
     ...blocks.carrierArms,
     ...blocks.carrierCrossArms,
     ...blocks.planetAxles,
   ]) assert.equal(component.parent, blocks.hoopCarrier);
   assert.equal(blocks.outputShaft.parent, blocks.outputShaftRotor);
-  assert.equal(blocks.outputShaftIndex.parent, blocks.outputShaftRotor);
   assert.equal(blocks.inputSleeve.parent, blocks.inputSleeveRotor);
-  assert.equal(blocks.inputSleeveIndex.parent, blocks.inputSleeveRotor);
   assert.equal(blocks.contactMarkers.length, 4);
   assert.equal(blocks.scaleWeights.length, 2);
 
@@ -139,12 +145,11 @@ test('movement 372 is White\'s four-miter differential with one loose input, one
     'upper-balanced-intermediate-miter-gear-carried-by-hoop',
     'lower-balanced-intermediate-miter-gear-carried-by-hoop',
     'hoop-shaped-frame-free-to-revolve-on-middle-of-horizontal-shaft',
-    'single-tangent-band-applying-known-restraint-to-hoop-periphery',
-    'weighted-scale-pan-indicating-hoop-restraint',
-    'white-index-showing-measuring-hoop-remains-stationary',
+    'fixed-turned-stretcher-between-the-standards',
   ]) assert.ok(roles.includes(role), role);
   assert.equal(belts.length, 0);
-  assert.deepEqual(measuringBands, [blocks.measuringBand]);
+  assert.deepEqual(measuringBands, []);
+  assert.equal(blocks.measuringBand.userData.isMeasuringBand, true);
   disposeModel(model.root);
 });
 

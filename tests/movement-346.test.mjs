@@ -29,8 +29,19 @@ function angleDifference(a, b) {
   return Math.atan2(Math.sin(a - b), Math.cos(a - b));
 }
 
+// Model-frame position: the source presentation mirrors 346's root to the
+// plate's handedness, so positions are read back in the unpresented frame.
 function worldPosition(object) {
-  return object.getWorldPosition(new THREE.Vector3());
+  const root = rootOf(object);
+  root.updateMatrixWorld(true);
+  return object.getWorldPosition(new THREE.Vector3())
+    .applyMatrix4(root.matrixWorld.clone().invert());
+}
+
+function rootOf(object) {
+  let node = object;
+  while (node.parent) node = node.parent;
+  return node;
 }
 
 function disposeModel(root) {
@@ -94,7 +105,9 @@ test('movement 346 is the fixed-cylinder table engine with two side rods', () =>
   assert.equal(blocks.cylinderEndPlates.length, 2);
   assert.equal(blocks.guideRails.length, 2);
   assert.equal(blocks.guideStandards.length, 2);
-  assert.equal(blocks.tableLegs.length, 2);
+  // Brown's table-like base is one solid plinth, not two legs.
+  assert.equal(blocks.tableLegs.length, 1);
+  assert.equal(blocks.tableLegs[0], blocks.tablePlinth);
   blocks.sideRodAssemblies.forEach(({ group }) => {
     assert.equal(group.parent, model.root);
   });
@@ -400,7 +413,8 @@ test('movement 346 renderer binds both parallel cranks and side rods to one cros
   // The two guide surfaces are genuinely vertical; only the surrounding
   // standards taper as they rise toward the rounded top.
   const guideCenters = blocks.guideRails.map((rail) => {
-    const bounds = new THREE.Box3().setFromObject(rail);
+    const bounds = new THREE.Box3().setFromObject(rail)
+      .applyMatrix4(model.root.matrixWorld.clone().invert());
     return bounds.getCenter(new THREE.Vector3());
   });
   near(guideCenters[0].x, -0.66 * geometry.sourceScale, 2e-16,

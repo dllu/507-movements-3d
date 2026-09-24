@@ -122,14 +122,25 @@ function buildSourceOscillatingEngine(o) {
   const crankShaft = cylinderAlongZ(shaftRadius, shaftFront - shaftBack, darkMaterial, 34);
   crankShaft.position.z = (shaftFront + shaftBack) / 2;
   crankShaft.userData.role = `${o.rolePrefix}live-crankshaft-O`;
-  const pinFront = axisZ + 0.10 + 0.06;
+  // Brown draws the crank plate over the rod eye. The crank is therefore
+  // double-webbed: the shaft ends in the rear web, the rod eye rides the pin
+  // between the webs, and the front web is carried by the pin alone, so the
+  // rod can pass over the shaft axis at dead centre with nothing to cut.
+  const frontWebLow = axisZ + 0.10 + 0.02;
+  const frontWebHigh = frontWebLow + (crankHigh - crankLow);
+  const crankFrontWeb = new THREE.Mesh(plate(crankOutline, frontWebLow, frontWebHigh), crankMaterial);
+  crankFrontWeb.userData.role = `${o.rolePrefix}front-crank-web-over-rod-eye-O-P`;
+  const shaftEndCap = cylinderAlongZ(shaftRadius, 0.04, darkMaterial, 34);
+  shaftEndCap.position.z = frontWebHigh + 0.01;
+  shaftEndCap.userData.role = `${o.rolePrefix}front-web-shaft-centre-boss`;
+  const pinFront = frontWebHigh + 0.03;
   const crankPin = cylinderAlongZ(pinRadius, pinFront - crankLow, darkMaterial, 30);
   crankPin.position.set(r, 0, (pinFront + crankLow) / 2);
   crankPin.userData.role = `${o.rolePrefix}crank-pin-P-carried-by-crank`;
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.set(r, 0, axisZ);
   crankPinAnchor.userData.role = `analytic-${o.rolePrefix}direct-crank-pin-P`;
-  inputCrank.add(crankArm, crankShaft, crankPin, crankPinAnchor);
+  inputCrank.add(crankArm, crankFrontWeb, shaftEndCap, crankShaft, crankPin, crankPinAnchor);
 
   const cylinderAssembly = new THREE.Group();
   cylinderAssembly.position.set(o.cylinderPivot.x, o.cylinderPivot.y, 0);
@@ -224,6 +235,7 @@ function buildSourceOscillatingEngine(o) {
     axisZ,
     barrel,
     crankArm,
+    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -625,6 +637,7 @@ function oscillatingCylinderEngine(movement) {
   const {
     barrel,
     crankArm,
+    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -740,6 +753,7 @@ function oscillatingCylinderEngine(movement) {
   root.userData.blocks = {
     barrel,
     crankArm,
+    crankFrontWeb,
     crankBearing: upperRail,
     crankPin,
     crankPinAnchor,
@@ -1251,6 +1265,7 @@ function invertedPendulumEngine(movement) {
   const {
     barrel,
     crankArm,
+    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -1365,6 +1380,7 @@ function invertedPendulumEngine(movement) {
   root.userData.blocks = {
     barrel,
     crankArm,
+    crankFrontWeb,
     crankBearing: lowerFoundation,
     crankPin,
     crankPinAnchor,

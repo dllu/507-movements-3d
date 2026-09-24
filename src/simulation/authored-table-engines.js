@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { makeBoredLinkRod } from './bored-link-rod.js';
 import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
 import { rectangularRodPassageGeometry } from './authored-oscillating-engines.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -336,12 +337,6 @@ function tableEngine(movement) {
     metalness: 0.22,
     roughness: 0.52,
   });
-  const boreMaterial = matte(PALETTE.driven, {
-    opacity: 0.22,
-    roughness: 0.72,
-    transparent: true,
-  });
-  boreMaterial.depthWrite = false;
   const crankMaterial = matte(PALETTE.driver, {
     metalness: 0.18,
     roughness: 0.58,
@@ -364,7 +359,7 @@ function tableEngine(movement) {
     new THREE.BoxGeometry(
       sourceTableHalfWidth * 2 * sourceScale,
       (sourceTableTopY - sourceTableBottomY) * sourceScale,
-      1.72,
+      1.58,
     ),
     frameMaterial,
   );
@@ -378,29 +373,31 @@ function tableEngine(movement) {
     new THREE.BoxGeometry(
       sourceTableHalfWidth * 2.06 * sourceScale,
       0.07,
-      1.82,
+      1.62,
     ),
     frameEdgeMaterial,
   );
   tableTopEdge.position.set(0, sourceTableTopY * sourceScale, 0);
   tableTopEdge.userData.role = 'fixed-table-bed-top-edge';
 
-  const tableLegs = [-1, 1].map((side, index) => {
-    const legHeight = (sourceTableBottomY - visualLegBottomY)
-      * sourceScale;
-    const leg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.23 * sourceScale, legHeight, 1.48),
-      frameMaterial,
-    );
-    leg.position.set(
-      side * sourceLegX * sourceScale,
-      (visualLegBottomY + sourceTableBottomY) * sourceScale / 2,
-      0,
-    );
-    leg.userData.role = `fixed-table-standard-${index + 1}`;
-    fixedFrame.add(leg);
-    return leg;
-  });
+  // Brown draws the table-like base as a solid plinth under the bed, its
+  // two sides running off the plate foot; the crankshaft passes through
+  // bored bearings in its front and back faces with a crank outside each.
+  const plinthHalfWidth = 4.3 * sourceScale;
+  const plinthHalfDepth = 0.78;
+  const tablePlinth = new THREE.Mesh(
+    plate(polygonClipping.difference(
+      poly([[-plinthHalfWidth, visualLegBottomY * sourceScale],
+        [plinthHalfWidth, visualLegBottomY * sourceScale],
+        [plinthHalfWidth, sourceTableBottomY * sourceScale],
+        [-plinthHalfWidth, sourceTableBottomY * sourceScale]]),
+      poly(circle([crankCenter.x, crankCenter.y], 0.22 * sourceScale + 0.006, 64)),
+    ), -plinthHalfDepth, plinthHalfDepth),
+    frameMaterial,
+  );
+  tablePlinth.userData.role = 'fixed-solid-table-plinth-with-bored-shaft-passage';
+  fixedFrame.add(tablePlinth);
+  const tableLegs = [tablePlinth];
 
   const cylinderWallThickness = (
     sourceCylinderOuterHalfWidth - sourceCylinderInnerHalfWidth
@@ -458,20 +455,25 @@ function tableEngine(movement) {
   );
   upperCylinderCover.userData.role = 'fixed-table-engine-upper-cylinder-cover';
   const cylinderEndPlates = [lowerCylinderCover, upperCylinderCover];
+  // Brown draws the cylinder as a closed casting, so its bore is closed by
+  // opaque front and back faces between the side walls; the piston is hidden.
   const boreBack = new THREE.Mesh(
     new THREE.BoxGeometry(
-      sourceCylinderInnerHalfWidth * 2 * sourceScale,
+      sourceCylinderOuterHalfWidth * 2 * sourceScale,
       cylinderBoreHeight,
       0.05,
     ),
-    boreMaterial,
+    frameMaterial,
   );
   boreBack.position.set(
     0,
     (cylinderBoreMinimumY + cylinderBoreMaximumY) / 2,
-    -0.43,
+    -0.545,
   );
-  boreBack.userData.role = 'fixed-transparent-table-engine-cylinder-bore';
+  boreBack.userData.role = 'fixed-closed-table-engine-cylinder-back-face';
+  const boreFront = boreBack.clone();
+  boreFront.position.z = 0.445;
+  boreFront.userData.role = 'fixed-closed-table-engine-cylinder-front-face';
   const gland = new THREE.Group();
   gland.userData.role = 'fixed-piston-rod-gland-atop-cylinder';
   [
@@ -592,6 +594,7 @@ function tableEngine(movement) {
     lowerCylinderCover,
     upperCylinderCover,
     boreBack,
+    boreFront,
     gland,
     guideArch,
     guideSlotArch,
@@ -844,6 +847,7 @@ function tableEngine(movement) {
   root.userData.archetype = 'table-engine-two-side-rods-parallel-cranks';
   root.userData.blocks = {
     boreBack,
+    boreFront,
     crankArms,
     crankBearingBlocks,
     crankIndexMarks,
@@ -870,6 +874,7 @@ function tableEngine(movement) {
     pistonRod,
     sideRodAssemblies,
     tableLegs,
+    tablePlinth,
     tableTopEdge,
     tabletop,
   };
@@ -994,6 +999,7 @@ function tableEngine(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  root.userData.cameraFov = 14;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(1.8, 0.7, 14),

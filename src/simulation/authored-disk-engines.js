@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { circle, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -82,22 +83,16 @@ function normalizedVectorWithRates(raw, rawVelocity, rawAcceleration) {
   };
 }
 
-function slottedDiscGeometry(radius, thickness, slotHalfAngle) {
+// The radial slit is parallel-sided: the fixed diaphragm keeps one thickness
+// from the ball to the rim, so a wedge-shaped slot would pinch it near B.
+function slottedDiscGeometry(radius, thickness, slotHalfWidth) {
   const shape = new THREE.Shape();
-  shape.moveTo(0, 0);
-  shape.lineTo(
-    radius * Math.cos(slotHalfAngle),
-    radius * Math.sin(slotHalfAngle),
-  );
-  shape.absarc(
-    0,
-    0,
-    radius,
-    slotHalfAngle,
-    FULL_TURN - slotHalfAngle,
-    false,
-  );
-  shape.lineTo(0, 0);
+  const edgeAngle = Math.asin(slotHalfWidth / radius);
+  shape.moveTo(0, slotHalfWidth);
+  shape.lineTo(radius * Math.cos(edgeAngle), slotHalfWidth);
+  shape.absarc(0, 0, radius, edgeAngle, FULL_TURN - edgeAngle, false);
+  shape.lineTo(0, -slotHalfWidth);
+  shape.lineTo(0, slotHalfWidth);
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: false,
     curveSegments: 80,
@@ -166,6 +161,79 @@ function sphericalZoneGeometry(radius, halfAngle, segments = 28) {
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   return geometry;
+}
+
+// Closed solid made by revolving a 2D region (axial a, radius b >= 0) about
+// X through the rear half-turn (z <= 0). The two cut faces lie in z = 0 and
+// face the viewer, so the part reads as Brown's section.
+function halfRevolvedRegionGeometry(polygons, segments = 96) {
+  const sidePositions = [], capPositions = [];
+  let positions = sidePositions;
+  const point = (a, b, phi) => [a, b * Math.cos(phi), b * Math.sin(phi)];
+  const pushTriangle = (p, q, r, outward) => {
+    const u = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+    const v = new THREE.Vector3(r[0] - p[0], r[1] - p[1], r[2] - p[2]);
+    const normal = u.cross(v);
+    if (normal.lengthSq() < 1e-20) return;
+    if (normal.dot(outward) < 0) positions.push(...p, ...r, ...q);
+    else positions.push(...p, ...q, ...r);
+  };
+  const phis = Array.from({length: segments + 1}, (_, i) => Math.PI + Math.PI * i / segments);
+  for (const [outer, ...holes] of polygons) {
+    const rings = [outer, ...holes].map((ring) => ring.slice(0, -1));
+    for (const ring of rings) {
+      for (let i = 0; i < ring.length; i++) {
+        const [a0, b0] = ring[i], [a1, b1] = ring[(i + 1) % ring.length];
+        // Outward normal of this boundary edge in the (a, b) plane; the
+        // centroid test below resolves ring orientation.
+        let na = b1 - b0, nb = -(a1 - a0);
+        const length = Math.hypot(na, nb);
+        if (length < 1e-12) continue;
+        na /= length; nb /= length;
+        const ma = (a0 + a1) / 2 + na * 1e-4, mb = (b0 + b1) / 2 + nb * 1e-4;
+        if (insideRegion(polygons, ma, mb)) { na = -na; nb = -nb; }
+        for (let j = 0; j < segments; j++) {
+          const phi = (phis[j] + phis[j + 1]) / 2;
+          const outward = new THREE.Vector3(na, nb * Math.cos(phi), nb * Math.sin(phi));
+          const p00 = point(a0, b0, phis[j]), p10 = point(a1, b1, phis[j]);
+          const p01 = point(a0, b0, phis[j + 1]), p11 = point(a1, b1, phis[j + 1]);
+          pushTriangle(p00, p10, p11, outward);
+          pushTriangle(p00, p11, p01, outward);
+        }
+      }
+    }
+    const contour = rings[0].map(([a, b]) => new THREE.Vector2(a, b));
+    const holeRings = rings.slice(1).map((ring) => ring.map(([a, b]) => new THREE.Vector2(a, b)));
+    const all = [...contour, ...holeRings.flat()];
+    positions = capPositions;
+    for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(contour, holeRings)) {
+      for (const phi of [Math.PI, FULL_TURN]) {
+        pushTriangle(point(all[i].x, all[i].y, phi), point(all[j].x, all[j].y, phi),
+          point(all[k].x, all[k].y, phi), new THREE.Vector3(0, 0, 1));
+      }
+    }
+    positions = sidePositions;
+  }
+  // Group 0: revolved surfaces; group 1: the flat cut faces of the section.
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([...sidePositions, ...capPositions], 3));
+  geometry.addGroup(0, sidePositions.length / 3, 0);
+  geometry.addGroup(sidePositions.length / 3, capPositions.length / 3, 1);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function insideRegion(polygons, a, b) {
+  let inside = false;
+  for (const polygon of polygons) {
+    for (const ring of polygon) {
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [ai, bi] = ring[i], [aj, bj] = ring[j];
+        if ((bi > b) !== (bj > b) && a < (aj - ai) * (b - bi) / (bj - bi) + ai) inside = !inside;
+      }
+    }
+  }
+  return inside;
 }
 
 function radialPartitionGeometry({
@@ -259,7 +327,10 @@ function diskEngine(movement) {
   const centralBallRadius = 0.49;
   const pistonDiscBodyRadius = chamberRadius - 0.06;
   const pistonDiscThickness = 0.15;
-  const radialSlotHalfAngle = THREE.MathUtils.degToRad(3.6);
+  // A parallel slit 0.24 wide passes the 0.10 diaphragm at every tilt of the
+  // disk (the dihedral angle never falls below 90 degrees minus beta).
+  const radialSlotHalfWidth = 0.12;
+  const radialSlotHalfAngle = Math.asin(radialSlotHalfWidth / pistonDiscBodyRadius);
   const radialPartitionThickness = 0.10;
   const counterRodLength = 2.75;
   const ballCenter = new THREE.Vector3(0, 2.85, 0);
@@ -647,7 +718,7 @@ function diskEngine(movement) {
   }
   const fixedPartition = new THREE.Mesh(
     radialPartitionGeometry({
-      ballRadius: centralBallRadius,
+      ballRadius: centralBallRadius + 0.004,
       chamberRadius,
       halfAngle: nutationHalfAngle,
       thickness: radialPartitionThickness,
@@ -803,7 +874,7 @@ function diskEngine(movement) {
     slottedDiscGeometry(
       pistonDiscBodyRadius,
       pistonDiscThickness,
-      radialSlotHalfAngle,
+      radialSlotHalfWidth,
     ),
     diskMaterial,
   );
@@ -811,9 +882,10 @@ function diskEngine(movement) {
     'nutating-circular-piston-disc-with-one-radial-slot';
   const diskRimPoints = [];
   for (let index = 0; index <= 72; index += 1) {
+    const sealEndAngle = Math.asin((radialSlotHalfWidth + 0.07) / pistonDiscBodyRadius);
     const angle = THREE.MathUtils.lerp(
-      radialSlotHalfAngle,
-      FULL_TURN - radialSlotHalfAngle,
+      sealEndAngle,
+      FULL_TURN - sealEndAngle,
       index / 72,
     );
     diskRimPoints.push(new THREE.Vector3(
@@ -831,18 +903,10 @@ function diskEngine(movement) {
   diskRimSeal.userData.role =
     'moving-disc-peripheral-seal-in-spherical-zone';
   const slotLips = [-1, 1].map((side, index) => {
-    const angle = side * radialSlotHalfAngle;
+    const lipZ = side * (radialSlotHalfWidth + 0.0225);
     const lip = beamBetween3D(
-      new THREE.Vector3(
-        0,
-        centralBallRadius * Math.cos(angle),
-        centralBallRadius * Math.sin(angle),
-      ),
-      new THREE.Vector3(
-        0,
-        pistonDiscBodyRadius * Math.cos(angle),
-        pistonDiscBodyRadius * Math.sin(angle),
-      ),
+      new THREE.Vector3(0, Math.sqrt(centralBallRadius ** 2 - lipZ ** 2), lipZ),
+      new THREE.Vector3(0, Math.sqrt((pistonDiscBodyRadius - 0.13) ** 2 - lipZ ** 2), lipZ),
       0.045,
       0.045,
       diskEdgeMaterial,
@@ -1012,6 +1076,7 @@ function diskEngine(movement) {
     pistonRodCrankLength,
     radialPartitionThickness,
     radialSlotHalfAngle,
+    radialSlotHalfWidth,
     sourceDiscRadiusPixels,
     sourcePixelsPerModelUnit,
   };
@@ -1154,10 +1219,148 @@ function diskEngine(movement) {
       'steam alternately expands on opposite disk faces and can drive the crankshaft; the visualization parameterizes that reversible one-DOF relation by shaft angle',
   };
 
+  // Brown's plate is a section on the vertical plane through the shaft. The
+  // fixed casing is therefore built as one closed solid revolved through its
+  // rear half only: conical heads meeting the ball in concentric seats, the
+  // spherical zone, the outer skin and the two flat end plates, each head
+  // opened where the rod sweeps its cone. The moving disk, ball and rod stay
+  // whole in front of the cut, as Brown draws them.
+  const sectionClearance = 0.003;
+  const headWall = 0.10;
+  const casingWall = 0.12;
+  const seatWall = 0.12;
+  const casingOuterRadius = chamberRadius + casingWall;
+  const casingEndX = 1.36 * chamberAxialHalfLength;
+  const tanBeta = Math.tan(nutationHalfAngle);
+  const cosBeta = Math.cos(nutationHalfAngle);
+  const coneOffset = (pistonDiscThickness / 2 + 0.004) / cosBeta;
+  const headOffset = coneOffset + headWall / cosBeta;
+  const far = 20;
+  const rect = (a0, b0, a1, b1) => poly([[a0, b0], [a1, b0], [a1, b1], [a0, b1]]);
+  const halfDisk = (radius) => clip.intersection(poly(circle([0, 0], radius, 256)), rect(-far, 0, far, far));
+  const cavity = clip.intersection(
+    poly([[-coneOffset, 0], [coneOffset, 0], [coneOffset + far * tanBeta, far], [-coneOffset - far * tanBeta, far]]),
+    halfDisk(chamberRadius + sectionClearance),
+  );
+  const headInterior = (side) => clip.difference(
+    clip.intersection(
+      poly([[side * headOffset, 0], [side * far, 0], [side * far, far], [side * (headOffset + far * tanBeta), far]]),
+      rect(-(casingEndX - casingWall), 0, casingEndX - casingWall, casingOuterRadius - casingWall),
+    ),
+    halfDisk(centralBallRadius + seatWall),
+  );
+  const rodOpening = (side, rodRadius) => {
+    const lift = (rodRadius + 0.025) / cosBeta;
+    return poly([[0, 0], [side * far, 0], [side * far, far * tanBeta + lift], [0, lift]]);
+  };
+  const casingRegion = clip.difference(
+    rect(-casingEndX, 0, casingEndX, casingOuterRadius),
+    cavity, headInterior(-1), headInterior(1),
+    halfDisk(centralBallRadius + 0.006),
+    rodOpening(-1, 0.105), rodOpening(1, 0.10),
+  );
+  const zoneRegion = clip.difference(
+    rect(-(chamberAxialHalfLength + 0.25), 0, chamberAxialHalfLength + 0.25, casingOuterRadius + 1),
+    halfDisk(chamberRadius + sectionClearance - 0.0005),
+  );
+  const casingMaterial = matte(PALETTE.frame, { metalness: 0.16, roughness: 0.62 });
+  // Brown hatches the cut; the flat section faces take the dark ink tone.
+  const sectionFaceMaterial = matte(PALETTE.ink, { metalness: 0.10, roughness: 0.70 });
+  const setGeometry = (mesh, geometry) => {
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+    mesh.position.set(0, 0, 0);
+    mesh.rotation.set(0, 0, 0);
+    mesh.material = [casingMaterial, sectionFaceMaterial];
+  };
+  setGeometry(sphericalZone, halfRevolvedRegionGeometry(clip.intersection(casingRegion, zoneRegion)));
+  sphericalZone.userData.role = 'fixed-rear-half-spherical-zone-and-outer-skin-section';
+  conicalHeads.forEach((head, index) => {
+    const side = index === 0 ? -1 : 1;
+    setGeometry(head, halfRevolvedRegionGeometry(clip.intersection(
+      clip.difference(casingRegion, zoneRegion),
+      side < 0 ? rect(-far, 0, 0, far) : rect(0, 0, far, far),
+    )));
+  });
+  // The section solid replaces the former translucent shells, rib lines and
+  // rings, the cradle and the white contact and roll indices.
+  for (const hidden of [...chamberJunctionRings, ...centralSeatRings, ...chamberShellRibs,
+    ...coneGeneratorRibs, partitionFace, chamberCradle, ...chamberFeet, discIndex,
+    ...coneContactMarkers, crankIndex, crankArm, ...flywheelSpokes]) hidden.visible = false;
+  fixedPartition.material = casingMaterial;
+
+  // Brown's "crank-arm or fly-wheel" is a solid wheel seen edgewise, the rod
+  // end socketed in it; the shaft runs left to a pedestal bearing.
+  const flywheelRadius = ballCenter.y - 0.40;
+  const flywheelBack = -0.78, flywheelFront = -0.26;
+  flywheelRim.geometry.dispose();
+  flywheelRim.geometry = new THREE.CylinderGeometry(flywheelRadius, flywheelRadius,
+    flywheelFront - flywheelBack, 96).rotateZ(Math.PI / 2);
+  flywheelRim.rotation.set(0, 0, 0);
+  flywheelRim.position.set((flywheelBack + flywheelFront) / 2, 0, 0);
+  flywheelRim.userData.role = 'rotating-solid-flywheel-carrying-the-rod-socket';
+  const socketDirection = new THREE.Vector3(crankPlaneDistance, -crankRadius, 0).normalize();
+  const cavityTop = Math.sqrt(0.241 ** 2 - 0.125 ** 2);
+  const socketProfile = [new THREE.Vector2(0, -0.36), new THREE.Vector2(0.32, -0.36),
+    new THREE.Vector2(0.32, 0.30), new THREE.Vector2(0.125, 0.30), new THREE.Vector2(0.125, cavityTop)];
+  const topAngle = Math.atan2(cavityTop, 0.125);
+  for (let i = 1; i <= 24; i++) {
+    const angle = THREE.MathUtils.lerp(topAngle, -Math.PI / 2, i / 24);
+    socketProfile.push(new THREE.Vector2(Math.max(0, 0.241 * Math.cos(angle)), 0.241 * Math.sin(angle)));
+  }
+  crankSocket.geometry.dispose();
+  crankSocket.geometry = new THREE.LatheGeometry(socketProfile, 48);
+  crankSocket.rotation.set(0, 0, 0);
+  crankSocket.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), socketDirection);
+  crankSocket.position.set(0, crankRadius, 0);
+  crankSocket.userData.role = 'rotating-cup-socket-at-crank-pin-P-around-the-rod-end-ball';
+  crankShaft.geometry.dispose();
+  crankShaft.geometry = new THREE.CylinderGeometry(0.21, 0.21, 2.5, 40);
+  crankShaft.position.set(-1.55, 0, 0);
+  const bearingOffsets = [-1.2, -2.5];
+  crankBearings.forEach(({ bearing, standard }, index) => {
+    const x = crankCenter.x + bearingOffsets[index];
+    bearing.geometry.dispose();
+    bearing.geometry = new THREE.LatheGeometry([new THREE.Vector2(0.216, 0.15),
+      new THREE.Vector2(0.216, -0.15), new THREE.Vector2(0.40, -0.15),
+      new THREE.Vector2(0.40, 0.15), new THREE.Vector2(0.216, 0.15)], 48);
+    bearing.position.set(x, crankCenter.y, crankCenter.z);
+    bearing.userData.boreRadius = 0.21;
+    standard.position.x = x;
+    standard.geometry.dispose();
+    const standardHeight = crankCenter.y - 0.40 - 0.30;
+    standard.geometry = new THREE.BoxGeometry(0.34, standardHeight, 0.70);
+    standard.position.y = 0.30 + standardHeight / 2;
+    standard.position.z = 0;
+  });
+  const baseLeft = crankCenter.x - 3.0;
+  const baseRight = casingEndX + 0.7;
+  base.geometry.dispose();
+  base.geometry = new THREE.BoxGeometry(baseRight - baseLeft, 0.24, 2.0);
+  base.position.set((baseLeft + baseRight) / 2, 0.16, 0);
+  baseEdge.geometry.dispose();
+  baseEdge.geometry = new THREE.BoxGeometry(baseRight - baseLeft + 0.2, 0.07, 2.1);
+  baseEdge.position.set((baseLeft + baseRight) / 2, 0.30, 0);
+  // A pedestal under the casing on the base, behind the section plane.
+  const casingPedestal = new THREE.Mesh(
+    new THREE.BoxGeometry(2 * casingEndX, ballCenter.y - casingOuterRadius + 0.10 - 0.30, 1.4),
+    casingMaterial,
+  );
+  casingPedestal.position.set(0, (0.30 + ballCenter.y - casingOuterRadius + 0.10) / 2, -0.85);
+  casingPedestal.userData.role = 'fixed-casing-pedestal-behind-section';
+  fixedFrame.add(casingPedestal);
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(crankCenter.x - 2.0, 0.1, -0.4),
+    new THREE.Vector3(casingEndX + 1.9, ballCenter.y + casingOuterRadius + 0.35, 0.4),
+  );
+  root.userData.cameraDistanceScale = 1.0;
+  root.userData.cameraFov = 12;
+  Object.assign(geometry, { casingEndX, casingOuterRadius, coneOffset, flywheelRadius });
+
   update(0);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(-8.3, 5.2, 10.8),
+    cameraDirection: new THREE.Vector3(0, 0.03, 1),
     root,
     update,
   };

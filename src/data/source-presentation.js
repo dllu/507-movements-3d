@@ -284,9 +284,20 @@ export default {
     remove: ['fixed-base-beneath-mangle-wheel', 'rear-output-bearing-post'],
     note: 'The mangle wheel and its shifting pinion; no base or bearing post is drawn.',
   },
+  346: {
+    camera: [0, 0.03, 1],
+    scale: [-1, 1, 1],
+    remove: ['parallel-crank-angular-index-[12]'],
+    note: 'Front elevation of the closed cylinder on the bed and solid plinth, the slotted guide arch, crosshead, the front side rod and crank, the crank pin to the left of the shaft (the official t=0 pose mirrored); the rear rod and crank lie directly behind them, and the crank indices are not drawn.',
+  },
+  347: {
+    camera: [0, 0.03, 1],
+    note: 'Brown\'s section on the vertical plane through the shaft: the rear half of the casing with its conical heads, ball seats and spherical zone cut open, the disk edgewise on its ball, the rod to the socket in the edgewise flywheel, and the shaft running left to its pedestal.',
+  },
   372: {
-    camera: [0.05, 0.08, 1],
-    note: 'Front elevation of the bevel wheels between the frame standards, as Brown draws it.',
+    camera: [0.03, 0.04, 1],
+    remove: ['white-index-.*', 'single-tangent-band-applying-known-restraint-to-hoop-periphery', 'band-attachment-at-known-hoop-lever-arm', 'scale-pan-suspension-from-measuring-band', 'weighted-scale-pan-indicating-hoop-restraint', 'calibrated-weight-on-dynamometer-scale-pan', 'fixed-dynamometer-base'],
+    note: 'Front elevation of the four bevel wheels with the broad hoop standing edgewise in front, the shaft through two tall standards tied by a turned stretcher; the weighing band, weights, base and white indices are not drawn.',
   },
   374: {
     remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard'],
@@ -301,8 +312,9 @@ export default {
     note: 'Front elevation of the saw frame, its guides and the log, as Brown draws it.',
   },
   381: {
-    camera: [0, 1, 0.12],
-    note: "Plan of the bed, cheeks and wedges, as Brown's lower figure draws it.",
+    camera: [1, 0.06, 0.03],
+    remove: ['white-.*', 'workpiece-longitudinal-grain-line'],
+    note: "End elevation matching Brown's upper transverse section: the bed, the flush dovetailed cheeks and wedges, and the board standing on edge between them; Brown's lower figure, the plan of the diverging cheeks and wedges, is the top view. The white datums and grain lines are not drawn.",
   },
   384: {
     camera: [0, 0.1, 1],
@@ -341,10 +353,20 @@ export default {
     remove: ['fixed-mechanism-bearing-support', 'fixed-base-for-cam-guides-and-output-shaft'],
     note: 'The cam C, crosshead in its guide and output wheel; no base or supports are drawn.',
   },
+  386: {
+    camera: [0.08, 0.05, 1],
+    remove: ['white-.*', 'closed-round-pole-cross-section-reference-ring'],
+    note: 'Front elevation of the open ladder, Brown\'s principal (left) figure; his partly open and closed figures are later phases of the same fold cycle. The white indices and brass section ring are not drawn.',
+  },
+  395: {
+    camera: [0, 0.02, 1],
+    remove: ['white-.*', '.*-fixed-external-port-pipe', 'explanatory-fixed-pipe-flow-indices', 'passage-[AB]-flow-direction-index', 'plug-operating-stem', 'quarter-turn-operating-handle', 'fixed-ninety-degree-handle-travel-reference'],
+    note: 'Brown\'s two sections of the plug in its bored body, the upper figure and, below left, the same cock a quarter turn clockwise; steam enters at the top, the cylinder ports are right and left and the exhaust is below. No pipes, handle or flow markers are drawn.',
+  },
   400: {
     camera: [0, 0.08, 1],
-    remove: ['fixed-four-motion-feed-base', 'fixed-camshaft-bearing-support'],
-    note: 'Side elevation of the bars A, B, cam C and work plate; no base or bearing supports are drawn.',
+    remove: ['fixed-four-motion-feed-base', 'fixed-camshaft-bearing-support', 'fixed-work-plate-(?:left|right)-of-feed-dog-slot', 'fixed-horizontal-guide-for-carrier-A', 'white-.*'],
+    note: 'Side elevation of the forked bar A running out to the feeder, B\'s toothed end beyond it, cam C on its shaft and the return spring; no base, bearing supports, work plate, guides or white indices are drawn.',
   },
   401: {
     remove: ['fixed-floor-base', 'fixed-wheel-shaft-standard', 'fixed-treadle-pivot-standard'],
@@ -540,9 +562,9 @@ export default {
     note: 'The frame, racks and spur gear; no post or bearing is drawn.',
   },
   281: {
-    camera: [0.05, 0.06, 1],
+    camera: [0.03, 0.01, 1],
     remove: ['white-disk-rotation-index', 'white-lever-vibration-index'],
-    note: 'Front elevation of the grooved disk, follower pin and lever; the white indices are not drawn.',
+    note: 'Front elevation of the grooved disk, follower pin and lever on its upper fulcrum; Brown dashes the lever again at its other extreme, and draws no standard under the lever, only the A-frame and plank base; the white indices are not drawn.',
   },
   277: {
     camera: [-0.12, 0.05, 1],

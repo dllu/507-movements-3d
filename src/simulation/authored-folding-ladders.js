@@ -226,9 +226,14 @@ function foldingLibraryLadder(movement) {
   const sidePieceLength = 2 * (pivotOffsets.at(-1) + closedVerticalOffset + .15);
   const sidePieceCenterY = 3.52;
   const closedHalfGap = closedHorizontalGap / 2;
+  // Each full-pole end complement is one fold-offset long less a 0.07
+  // relief: the opposite half-shell rises past it only after their arcs have
+  // separated horizontally, so the closing halves never cut the complements.
+  const endFillLength = closedVerticalOffset - 0.07;
   const shellOuterRadius = 0.36;
   const shellInnerRadius = 0.26;
-  const roundThickness = 0.095;
+  // Brown draws the rounds as broad slats; 0.19 still folds inside the pole bore.
+  const roundThickness = 0.19;
   const roundDepth = 0.105;
   const roundJointRadius = 0.099;
   const cycleDuration = 10;
@@ -259,7 +264,7 @@ function foldingLibraryLadder(movement) {
 
   const leftSidePiece = makeHalfTubeSidePiece({
     closedHalfGap,
-    endFillLength: closedVerticalOffset,
+    endFillLength: endFillLength,
     innerRadius: shellInnerRadius,
     length: sidePieceLength,
     material: sideMaterial,
@@ -273,7 +278,7 @@ function foldingLibraryLadder(movement) {
 
   const rightSidePiece = makeHalfTubeSidePiece({
     closedHalfGap,
-    endFillLength: closedVerticalOffset,
+    endFillLength: endFillLength,
     innerRadius: shellInnerRadius,
     length: sidePieceLength,
     material: sideMaterial,
@@ -307,7 +312,7 @@ function foldingLibraryLadder(movement) {
   }
 
   const poleSectionGuide = new THREE.Mesh(
-    new THREE.TorusGeometry(shellOuterRadius, 0.012, 6, 48),
+    new THREE.TorusGeometry(shellOuterRadius + 0.035, 0.012, 6, 48),
     brassMaterial,
   );
   poleSectionGuide.rotation.x = Math.PI / 2;

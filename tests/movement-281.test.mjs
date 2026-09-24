@@ -397,3 +397,20 @@ test('movement 281 closes after one disk turn while movement 339 remains authore
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 281 carries its fulcrum on a brace behind the disk, not an undrawn right standard', () => {
+  const model = createMovementModel(catalog.movements[280]);
+  const { blocks } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  assert.equal(blocks.leverSupport, undefined);
+  const pin = new THREE.Box3().setFromObject(blocks.leverPivotPin);
+  const brace = new THREE.Box3().setFromObject(blocks.upperCrossBrace);
+  const bearing = new THREE.Box3().setFromObject(blocks.rearBearing);
+  const disk = new THREE.Box3().setFromObject(blocks.diskBody);
+  assert.ok(pin.min.z < brace.max.z, 'fulcrum pin reaches the rear brace');
+  assert.ok(brace.max.z < disk.min.z && bearing.max.z < disk.min.z,
+    'brace and bearing stay behind the disk');
+  const hub = new THREE.Box3().setFromObject(blocks.diskHub);
+  assert.ok(hub.min.z < bearing.max.z, 'disk shaft runs in the rear bearing');
+  disposeModel(model.root);
+});

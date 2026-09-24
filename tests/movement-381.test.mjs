@@ -76,12 +76,15 @@ test('movement 381 is one oblong bed with two divergent cheeks, two retained wed
     blocks.bed,
     ...blocks.cheeks,
     ...blocks.dovetailLips,
-    ...blocks.grainLines,
-    blocks.throatDatum,
-    ...blocks.wedgeContactStrips,
     ...blocks.wedges,
     blocks.workpiece,
   ]) assert.equal(component.parent, model.root);
+  // Brown draws no grain lines or white datums; the presentation detaches them.
+  for (const undrawn of [
+    ...blocks.grainLines,
+    blocks.throatDatum,
+    ...blocks.wedgeContactStrips,
+  ]) assert.equal(undrawn.parent, null);
   assert.equal(blocks.cheeks.length, 2);
   assert.equal(blocks.dovetailLips.length, 2);
   assert.equal(blocks.wedges.length, 2);
@@ -106,7 +109,6 @@ test('movement 381 is one oblong bed with two divergent cheeks, two retained wed
     'inward-overhanging-upper-dovetail-retainer-lip',
     'one-of-two-sliding-dovetail-retained-clamping-wedges',
     'one-removable-board-held-for-planing-between-wedges',
-    'white-wedge-to-workpiece-contact-face-index',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

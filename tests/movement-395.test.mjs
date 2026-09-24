@@ -74,9 +74,14 @@ test('movement 395 is one four-port body and one quarter-turn plug carrying exac
   assert.equal(blocks.channels.channelA.parent, blocks.plugRotor);
   assert.equal(blocks.channels.channelB.parent, blocks.plugRotor);
   assert.equal(Object.keys(blocks.pipes).length, 4);
-  for (const pipe of Object.values(blocks.pipes)) {
-    assert.equal(pipe.parent, blocks.fixedBody);
+  // Brown draws the plug sections only: no pipes, handle, stem, travel arc or
+  // flow markers. The presentation detaches them and adds his second figure.
+  for (const undrawn of [...Object.values(blocks.pipes), blocks.handle,
+    blocks.handleIndex, blocks.stem, blocks.fixedQuadrant, blocks.externalFlow]) {
+    assert.equal(undrawn.parent, null);
   }
+  assert.equal(blocks.secondFigure.plugRotor.parent, model.root);
+  assert.equal(blocks.secondFigure.body.parent, model.root);
 
   const roles = [];
   const belts = [];
@@ -92,8 +97,8 @@ test('movement 395 is one four-port body and one quarter-turn plug carrying exac
     'close-fitting-rotary-cock-plug',
     'passage-A-rigid-quarter-circular-plug-passage',
     'passage-B-rigid-quarter-circular-plug-passage',
-    'quarter-turn-operating-handle',
-    'white-index-showing-the-plug-quarter-turn',
+    'second-plate-figure-quarter-turned-plug',
+    'second-plate-figure-annular-cock-body',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -355,4 +360,18 @@ test('movement 395 factory is isolated before movement 507', () => {
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model395.root);
   disposeModel(model507.root);
+});
+
+test('movement 395 shows Brown\'s second figure a quarter turn behind the first', () => {
+  const model = createMovementModel(catalog.movements[394]);
+  const { blocks } = model.root.userData;
+  for (const time of [0, 1.3, 2.9, 4.1, 6.6]) {
+    model.update(time);
+    near(blocks.secondFigure.plugRotor.rotation.z,
+      blocks.plugRotor.rotation.z - HALF_PI, 1e-15, `second figure at ${time}`);
+  }
+  const offset = blocks.secondFigure.plugRotor.position;
+  assert.ok(offset.x < 0 && offset.y < 0, 'second figure below and left');
+  assert.equal(blocks.secondFigure.body.position.equals(offset), true);
+  disposeModel(model.root);
 });

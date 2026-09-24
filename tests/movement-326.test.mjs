@@ -514,3 +514,20 @@ test('movement 326 closes exactly and leaves movement 339 as the next authored d
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 326 hides the connecting rod inside the hollow standard below the cap', () => {
+  const model = createMovementModel(catalog.movements[325]);
+  const { blocks, geometry } = model.root.userData;
+  const skin = new THREE.Box3().setFromObject(blocks.standardFrontSkin);
+  const walls = new THREE.Box3().setFromObject(blocks.standardSideWalls);
+  // Brown dots the rod inside the standard: the front skin lies in front of
+  // the rod, the crank pin and the slide, and the walls join it to the plate.
+  assert.ok(skin.min.z > geometry.connectingRodPlaneZ + geometry.connectingRodDepth / 2);
+  const pin = new THREE.Box3().setFromObject(blocks.crankPinShaft);
+  assert.ok(skin.min.z > pin.max.z);
+  near(walls.min.z, geometry.frameFrontZ, 1e-6, 'walls meet the slotted back plate');
+  near(walls.max.z, skin.min.z, 1e-6, 'walls meet the front skin');
+  // The skin's top edge is the cap, below the crank shaft.
+  assert.ok(skin.max.y < 0);
+  disposeModel(model.root);
+});

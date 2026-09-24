@@ -601,3 +601,20 @@ test('movement 344 closes one exact revolution and leaves movement 507 as the ne
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 344 draws the crank plate over the rod eye with a double-webbed crank', () => {
+  const model = createMovementModel(catalog.movements[343]);
+  const { blocks } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const box = (object) => new THREE.Box3().setFromObject(object);
+  const front = box(blocks.crankFrontWeb), rear = box(blocks.crankArm);
+  const eye = box(blocks.pistonCrankEye), shaft = box(blocks.crankShaft);
+  // Brown's crank plate lies over the rod end; the shaft ends in the rear
+  // web, so the rod can cross the shaft axis at dead centre.
+  assert.ok(front.min.z > eye.max.z, 'front web in front of the rod eye');
+  assert.ok(rear.max.z < eye.min.z, 'rear web behind the rod eye');
+  assert.ok(shaft.max.z < eye.min.z, 'live shaft stops behind the rod plane');
+  assert.equal(blocks.crankFrontWeb.parent, blocks.crankArm.parent);
+  disposeModel(model.root);
+});

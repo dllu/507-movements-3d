@@ -758,7 +758,55 @@ function fourWaySteamCock(movement) {
   root.userData.groundFloorY = -4.32;
   update(0);
   correctFourWayCock(root);
-  return { root, update, cameraDirection: root.userData.cameraDirection };
+
+  // Brown draws the plug twice: the upper figure (this plug) and, below and
+  // to its left, the same cock a quarter turn clockwise. The second figure is
+  // one more housing and plug with its passage cores, turning a fixed quarter
+  // turn behind the first, so the pair always shows both engraved positions
+  // (the two-passage plug is symmetric under a half turn).
+  const secondFigureOffset = new THREE.Vector3(-3.05, -2.9, 0);
+  const secondFigureBody = new THREE.Group();
+  secondFigureBody.position.copy(secondFigureOffset);
+  secondFigureBody.userData.role = 'second-plate-figure-fixed-cock-body';
+  const secondHousing = housing.clone();
+  secondHousing.userData = { role: 'second-plate-figure-annular-cock-body' };
+  secondFigureBody.add(secondHousing);
+  const secondPlugRotor = new THREE.Group();
+  secondPlugRotor.position.copy(secondFigureOffset);
+  secondPlugRotor.userData.role = 'second-plate-figure-quarter-turned-plug';
+  const secondPlug = plug.clone();
+  secondPlug.userData = { role: 'second-plate-figure-close-fitting-plug' };
+  secondPlugRotor.add(secondPlug);
+  for (const [name, channel] of [['A', channelA], ['B', channelB]]) {
+    const core = channel.userData.flowCore.clone();
+    core.userData = { role: `second-plate-figure-passage-${name}-fluid-core` };
+    secondPlugRotor.add(core);
+  }
+  root.add(markShadows(secondFigureBody), markShadows(secondPlugRotor));
+  const updateBothFigures = (time) => {
+    update(time);
+    secondPlugRotor.rotation.z = root.userData.kinematics.plugAngle - HALF_PI;
+  };
+  updateBothFigures(0);
+  root.userData.update = updateBothFigures;
+  root.userData.blocks.secondFigure = {
+    body: secondFigureBody,
+    housing: secondHousing,
+    plug: secondPlug,
+    plugRotor: secondPlugRotor,
+  };
+  root.userData.secondFigureOffset = secondFigureOffset.clone();
+  root.userData.cameraFov = 14;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(secondFigureOffset.x - bodyOuterRadius - 0.15,
+      secondFigureOffset.y - bodyOuterRadius - 0.15, -0.35),
+    new THREE.Vector3(bodyOuterRadius + 0.15, bodyOuterRadius + 0.15, 0.35),
+  );
+  return {
+    root,
+    update: updateBothFigures,
+    cameraDirection: root.userData.cameraDirection,
+  };
 }
 
 export function createAuthoredFourWayCockMovement(movement) {

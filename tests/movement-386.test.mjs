@@ -63,25 +63,28 @@ test('movement 386 is two complementary side pieces with four double-pivoted rou
 
   for (const component of [
     blocks.leftSidePiece,
-    blocks.poleSectionGuide,
     blocks.rightSidePiece,
-    ...blocks.roundIndexes,
     ...blocks.rounds,
   ]) assert.equal(component.parent, model.root);
   for (const component of [
     blocks.leftEndFillShell,
-    blocks.leftEndIndex,
     blocks.leftShell,
-    ...blocks.leftPivotIndexes,
     ...blocks.leftPivotPins,
   ]) assert.equal(component.parent, blocks.leftSidePiece);
   for (const component of [
     blocks.rightEndFillShell,
-    blocks.rightEndIndex,
     blocks.rightShell,
-    ...blocks.rightPivotIndexes,
     ...blocks.rightPivotPins,
   ]) assert.equal(component.parent, blocks.rightSidePiece);
+  // Brown draws no white indices or section ring; the presentation detaches them.
+  for (const undrawn of [
+    blocks.poleSectionGuide,
+    ...blocks.roundIndexes,
+    blocks.leftEndIndex,
+    ...blocks.leftPivotIndexes,
+    blocks.rightEndIndex,
+    ...blocks.rightPivotIndexes,
+  ]) assert.equal(undrawn.parent, null);
   assert.equal(blocks.rounds.length, 4);
   assert.equal(blocks.roundIndexes.length, 4);
   assert.equal(blocks.leftPivotPins.length, 4);
@@ -105,7 +108,6 @@ test('movement 386 is two complementary side pieces with four double-pivoted rou
     'right-upper-complement-forming-full-pole-end',
     'pivoted-ladder-round-folding-into-pole',
     'round-pivot-pin-through-side-piece',
-    'closed-round-pole-cross-section-reference-ring',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

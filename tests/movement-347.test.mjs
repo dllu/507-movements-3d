@@ -525,3 +525,26 @@ test('movement 347 leaves movement 507 as the next authored draft', () => {
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model507.root);
 });
+
+test('movement 347 presents Brown\'s section: a closed rear-half casing and a real rod-end socket', () => {
+  const model = createMovementModel(catalog.movements[346]);
+  const { blocks, geometry } = model.root.userData;
+  for (const part of [...blocks.conicalHeads, blocks.sphericalZone]) {
+    const positions = part.geometry.attributes.position;
+    let maximumZ = -Infinity;
+    for (let i = 0; i < positions.count; i++) maximumZ = Math.max(maximumZ, positions.getZ(i));
+    assert.ok(maximumZ < 1e-6, `${part.userData.role} lies behind the section plane`);
+    assert.equal(part.geometry.groups.length, 2, 'revolved surface and cut face');
+  }
+  assert.ok(geometry.casingOuterRadius > geometry.chamberRadius);
+  assert.ok(geometry.coneOffset * Math.cos(geometry.nutationHalfAngle)
+    >= geometry.pistonDiscThickness / 2, 'disk faces clear the conical heads');
+  model.update(1.3);
+  model.root.updateMatrixWorld(true);
+  const socket = blocks.inputCrank.children.find((object) =>
+    /cup-socket/.test(object.userData.role));
+  const ballCenter = blocks.crankEndBall.getWorldPosition(new THREE.Vector3());
+  const local = socket.worldToLocal(ballCenter.clone());
+  near(local.length(), 0, 1e-12, 'rod-end ball centred in its socket cavity');
+  disposeModel(model.root);
+});
