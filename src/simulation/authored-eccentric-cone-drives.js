@@ -1,4 +1,5 @@
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {helicalThread, threadAngles} from './mujoco-screw/thread-geometry.js';
 import * as THREE from 'three';
 import {
@@ -130,6 +131,42 @@ function flaredPedestalGeometry({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position',
     new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Brown's end-view standard E: a foot plate, a slim central neck and two
+// splayed cove legs, outlined in the view plane (z across, y up) and given
+// a shallow depth along the screw axis (x).
+function splayedLegStandGeometry({
+  bottomY, footTopY, footHalfZ, neckHalfZ, legTopZ, legTopY, legWidth,
+  topY, halfDepth,
+}) {
+  const coveA = footHalfZ - legTopZ;
+  const coveB = legTopY - footTopY;
+  const shapes = [
+    poly([[-footHalfZ, bottomY], [footHalfZ, bottomY], [footHalfZ, footTopY], [-footHalfZ, footTopY]]),
+    poly([[-neckHalfZ, footTopY - 0.01], [neckHalfZ, footTopY - 0.01], [neckHalfZ, topY], [-neckHalfZ, topY]]),
+  ];
+  for (const side of [-1, 1]) {
+    const outer = [];
+    const inner = [];
+    for (let i = 0; i <= 24; i += 1) {
+      const phi = Math.PI / 2 * i / 24;
+      outer.push([side * (footHalfZ - coveA * Math.sin(phi)),
+        legTopY - coveB * Math.cos(phi)]);
+      inner.push([side * (footHalfZ - (coveA + legWidth) * Math.sin(phi)),
+        legTopY - (coveB + legWidth) * Math.cos(phi)]);
+    }
+    // The leg tops end behind B at every pose (within B's radius of every
+    // position of its centre), so no loop closes round an open window.
+    shapes.push(poly([...outer, [side * (legTopZ - legWidth), legTopY],
+      ...inner.reverse()]));
+  }
+  const outline = polygonClipping.union(...shapes);
+  const geometry = plate(outline, -halfDepth, halfDepth);
+  // Outline x -> world z, extrusion -> world x.
+  geometry.rotateY(-Math.PI / 2);
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -999,22 +1036,24 @@ function eccentricConeFrictionReverser(movement) {
   nutPost.geometry.dispose();
   // Plate 262 draws E as a low footed cradle whose foot plate lies just
   // below B's rim; plate 263 keeps its own standard.
-  nutPost.geometry = flaredPedestalGeometry(presentationView === 'end-view'
-    ? {
-      // Seen along the screw from the large end, z is the visible width. The
-      // neck stands behind B and only the concave flares and the foot plate
-      // show under B's rim, at Brown's depth below B's centre (73 px of B's
-      // 55 px radius to the foot's underside, 64 px to its top).
+  nutPost.geometry = presentationView === 'end-view'
+    // Seen along the screw from the large end, z is the visible width. The
+    // neck and the leg tops stand behind B; below B's rim the foot plate and two
+    // splayed cove legs show at Brown's depths (foot underside 73 px and top
+    // 64 px of B's 55 px radius below B's centre; the legs meet B's outline
+    // 20 px either side of the neck).
+    ? splayedLegStandGeometry({
       bottomY: coneEccentricity - coneLargeRadius * 73 / 55,
-      footHalfX: 0.5,
       footHalfZ: 0.8,
       footTopY: coneEccentricity - coneLargeRadius * 64 / 55,
-      neckBottomY: coneEccentricity - coneLargeRadius * 56 / 55,
-      neckHalfX: 0.13,
+      halfDepth: 0.12,
+      legTopY: -0.66,
+      legTopZ: 0.46,
+      legWidth: 0.09,
       neckHalfZ: 0.08,
       topY: -0.309,
-    }
-    : {
+    })
+    : flaredPedestalGeometry({
       bottomY: -1.34,
       footHalfX: 0.5,
       footHalfZ: 0.95,
@@ -1047,6 +1086,12 @@ function eccentricConeFrictionReverser(movement) {
     largeEndCarrier.userData.setEndpoints = () => {};
     largeEndCarrier.position.set(-coneLength / 2 - 0.035, 0, 0);
     largeEndCarrier.rotation.set(0, 0, 0);
+  }
+  if (presentationView === 'end-view') {
+    // Seen from the large end, the stand faces away from the key light and
+    // read as a black slab; lift it to the frame grey of the other plates.
+    nutPost.material = frameMaterial.clone();
+    nutPost.material.emissive = new THREE.Color(PALETTE.frame).multiplyScalar(0.45);
   }
   nutPost.position.set(nutAxialPosition, 0, 0);
   nutPost.userData.role = 'source-footed-standard-E-carrying-nut';

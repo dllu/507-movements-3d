@@ -8805,9 +8805,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Stand E shows only as a dark foot slab below B; Brown draws its legs beside the disc.",
-      "limits": "D sits 13/55 of B's radius off centre as drawn, so roller C turns one way at a speed varying about twofold and rises and falls twice a turn (the caption's unequal strokes); the pressing spring is not drawn; C's rolling is ideal; the screw returns after three turns.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "B's offset carries it in front of stand E's legs for part of each turn (Brown's legs lie inside the swept disc); pressing spring not drawn; ideal rolling; the screw returns after three turns.",
+      "assessment": "reasonable"
     },
     {
       "id": 263,
@@ -11589,9 +11589,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The crank block shows as a tall grey box where Brown crops a low base at the bottom of the plate.",
-      "limits": "The crank's full turn dips 1.5 units below Brown's crop, so cropping at his line would cut off the crank pin for a quarter turn.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Bearing pedestal shape inferred (Brown's block top is at the crank centre; the base is lowered below the crank's sweep so the whole turn stays in view); closed cylinder hides the piston.",
+      "assessment": "reasonable"
     },
     {
       "id": 346,

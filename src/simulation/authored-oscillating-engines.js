@@ -1214,12 +1214,23 @@ function invertedPendulumEngine(movement) {
     poly(circle([cylinderPivot.x, cylinderPivot.y], 0.55 * sourceScale, 96)),
   );
   // The block runs on below the frame, as Brown's runs off the plate.
+  // A low base plate, as wide as Brown's block, whose top lies just below
+  // the crank's swept circle (pin radius 2.25 plus the eye), and a small
+  // tapered bearing pedestal rising behind the crank to the round boss at O.
+  // The frame crops the base plate's bottom as Brown does.
+  const baseTopSourceY = -3.0;
   const lowerBlockOutline = clip.union(
     poly([
-      [-2.9 * sourceScale, -0.49 * sourceScale], [3.0 * sourceScale, -0.49 * sourceScale],
+      [-2.9 * sourceScale, baseTopSourceY * sourceScale], [3.0 * sourceScale, baseTopSourceY * sourceScale],
       [3.0 * sourceScale, -6.0 * sourceScale], [-2.9 * sourceScale, -6.0 * sourceScale],
     ]),
-    poly(circle([crankCenter.x, crankCenter.y - 0.35 * sourceScale], 0.95 * sourceScale, 96)),
+    poly([
+      [-1.05 * sourceScale, (baseTopSourceY + 0.01) * sourceScale],
+      [1.05 * sourceScale, (baseTopSourceY + 0.01) * sourceScale],
+      [0.55 * sourceScale, -0.35 * sourceScale],
+      [-0.55 * sourceScale, -0.35 * sourceScale],
+    ]),
+    poly(circle([crankCenter.x, crankCenter.y - 0.2 * sourceScale], 0.8 * sourceScale, 96)),
   );
   const crankRailLow = -0.62;
   const trunnionRailLow = -1.22;
@@ -1512,13 +1523,13 @@ function invertedPendulumEngine(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
-  // Brown's crop: just above the trunnion boss, cutting through the crank
-  // block. The lower edge sits just under the crank's swept silhouette so the
-  // crank stays whole through the turn while the block is still cut as drawn.
+  // Brown's crop: just above the trunnion boss at the top; at the bottom it
+  // cuts through the low base plate just under the crank's swept circle, so
+  // the crank stays whole through the turn.
   root.userData.sweptBounds = root.userData.cameraFitBounds;
   root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.5 * sourceScale, -3.0 * sourceScale, -1.2),
+    new THREE.Vector3(-5.5 * sourceScale, -2.2 * sourceScale, -1.2),
     new THREE.Vector3(5.7 * sourceScale, 11.0 * sourceScale, 1.5),
   );
   markShadows(root);

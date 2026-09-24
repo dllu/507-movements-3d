@@ -83,3 +83,29 @@ Intersections were screened with `scripts/show-body-intersections.mjs ID --spaci
 
 - Re-measure display profiles for 247, 262, 263 and 277. The world-space motion bounds changed for 247 (rod frame), 262/263 (eccentric and station) and 277 (the cylinder extends to the left).
 - Update the ledger rows for 262 and 263 together.
+
+## Follow-up (after 536adc3): 262 stand E and 345 base
+
+- **262:** The end-view standard E is now Brown's stand. It has a thin foot plate at his depth (underside 73 px, top 64 px of B's 55 px radius below B's centre), a slim central neck, and two splayed cove legs.
+  - The legs meet B's outline 20 px either side of the neck. Their tops and the neck end behind B at every pose, so the outline has no holes and no loop closes round a window.
+  - The stand gets a lifted frame-grey finish, because from the large end it faced away from the key light and read as a black slab.
+  - At Brown's proportions the legs sit inside B's swept disc. That disc has radius R + e = 1.48 about D, while Brown's foot top and underside lie 1.11 and 1.31 below D. So B passes in front of the stand for part of each turn; the legs show whole in the plate pose and over the upper half of the swing.
+  - Putting E in front (a view from the small end) would keep the legs visible, but its neck would then cross B's face, which Brown does not draw.
+  - Screen: clear (cone/roller working contact 0.0000 only; stand watertight).
+- **345:** The tall block is now a low base plate, as wide as Brown's block. Its top lies just below the crank's swept circle, and a small tapered bearing pedestal with a round boss rises behind the crank to O.
+  - The frame crops the base plate's bottom as Brown does (fit bottom -2.2 source units; the crank stays within 0.94 NDC through the turn).
+  - The crank pin and eye clear the base in the view at the lowest phase, and in depth the crank runs in front of the pedestal.
+  - Screen: clear.
+
+Proposed ledger text:
+
+- **262:**
+  - (a) Default and phase captures inspected: large-end view, D's boss, C riding on B's rim, and stand E with a foot plate and two splayed legs under B as drawn.
+  - (b) sampled-clear (cone/roller working contact only).
+  - (c) visibleFlaws: none. Limits: "B's offset carries it in front of stand E's legs for part of each turn (Brown's legs lie inside the swept disc); pressing spring not drawn; ideal rolling; the screw returns after three turns."
+- **345:**
+  - (a) Default and phase captures inspected: a low base plate cropped at the bottom edge, with a small bearing pedestal behind the crank.
+  - (b) sampled-clear.
+  - (c) visibleFlaws: none. Limits: "The bearing pedestal's shape is inferred (Brown's block top is at the crank centre; here the base is lowered below the crank's sweep so the whole turn stays in view); the cylinder is closed, so the piston is hidden."
+
+Display profiles to re-measure: 262, 263 and 345, in addition to 247 and 277. The 263 geometry is unchanged in this follow-up; its stand keeps the side-view pedestal.
