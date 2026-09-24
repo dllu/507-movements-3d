@@ -10,7 +10,26 @@ assignment is not a claim that its existing simulation is correct. Previously
 reviewed movements remain reusable references, with their documented residuals.
 The executable inventory is [movement-batches.mjs](../scripts/lib/movement-batches.mjs).
 
-## Latest outcome: forty-ninth family pass
+## Latest outcome: fifty-first pass
+
+Nine parallel lanes matched about 110 movements more closely to their plates
+(lane reviews `docs/lane1-…` to `docs/lane9-…-review.md`): rebuilt views such as
+308, 445/446, 347 and 211; square or plate-counted teeth (24, 39, 73, 214, 239);
+undrawn frames, weights and markers removed; and many working intersections
+cleared (for example 247, 269, 277, 292, 304, 306, 307, 351, 411, 418). Every
+changed row was re-captured and inspected by the primary agent before its ledger
+update. A read-only [visual audit](visual-audit-pass51.md) of all 507 captures
+then listed the remaining concrete mismatches (white index stripes, ground
+shadows, undrawn slabs and gallows, oblique cameras, spoked wheels drawn as
+discs); the wave-2 lanes work through that list by factory file. Known open
+work includes 183/184's quadrant transfer overlaps, 217's heart groove, 269's
+cut-back rack teeth and 295's rim-arc close-up.
+
+Captures should use a dev server with file watching disabled
+(`server: {hmr: false, watch: null}`), restarted before each batch, because
+concurrent edits reload a watching server mid-capture.
+
+## Forty-ninth family pass
 
 234/298/299/302 share one corrected crown wheel and pallet set: saw teeth,
 side-correct pallets and a clean 513-phase rendered-solid audit, with a focused
