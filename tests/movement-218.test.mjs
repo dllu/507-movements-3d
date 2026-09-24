@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { createWoolComberTransmission } from '../src/simulation/authored-wool-comber.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -207,7 +208,9 @@ test('movement 218 reproduces the A-H-G source proportions and curved catch orde
 });
 
 test('movement 218 exactly shares the minus-third, plus-two-thirds, dwell law', () => {
-  const camPlate = createMovementModel(catalog.movements[216]);
+  // Plate 217 presents the heart cam alone; the shared transmission is
+  // built in its orientation to compare the law.
+  const camPlate = createWoolComberTransmission(217);
   const outputPlate = createMovementModel(catalog.movements[217]);
   const state217 = camPlate.root.userData.stateAtInputTravel;
   const state218 = outputPlate.root.userData.stateAtInputTravel;
@@ -434,10 +437,12 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
   assert.equal(catalog.movements[506].id, 507);
   assert.equal(catalog.movements[506].fidelity, 'authored');
   assert.equal(movement507.root.userData.fidelity, 'authored');
+  const transmission217 = createWoolComberTransmission(217);
   assert.equal(
-    movement217.root.userData.sharedMechanismKey,
+    transmission217.root.userData.sharedMechanismKey,
     model.root.userData.sharedMechanismKey,
   );
+  disposeModel(transmission217.root);
   assert.notEqual(
     movement217.root.userData.archetype,
     model.root.userData.archetype,

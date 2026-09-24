@@ -76,8 +76,8 @@ export default {
     note: 'Front elevation of the carriage, internal rack, pinion and top linkage on its two wheels; no post, floor plank or roller posts are drawn. The fixed pinion and roller bearings stay hidden behind the carriage and wheels.',
   },
   142: {
-    remove: ['rear-post', 'output-guide-rail', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base', 'bored-slider-shoe', 'traversing-guide-bar', 'slider-joint-pin'],
-    note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the connecting rod broken off below its eye; no base, pedestal, slider or guide bar is drawn.',
+    remove: ['rear-post', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base'],
+    note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the connecting rod running down past the disk to the cropped plate edge, where its slider rides the traverse guide rail; no base, pedestal or guide supports are drawn.',
   },
   145: {
     remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-bearing-post-behind-flywheel', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
@@ -190,9 +190,8 @@ export default {
     note: 'Face view of the internal and external mutilated wheels on one shaft and the reversing pinion below, opening at the plate\'s pose: the external sector mid-mesh below and the internal teeth round the upper half; both shafts are drawn cut in section, so their bearings lie outside the drawing and no frame is drawn. The white rate indices and contact markers are hidden.',
   },
   217: {
-    camera: [0.15, 0.12, 1],
-    remove: ['rear-frame-post', 'rear-frame-top', 'base', 'F-.*', 'H-.*', 'A-.*', 'hinged-catch-G', '.*contact.*marker', 'cam-rotation-index-at-e', 'rear-projection-lifting-catch-at-e', 'cam-frame-bearing'],
-    note: 'Face view of the grooved cam C, D, B, e alone, as Brown draws it; the notch wheel F, lever, stud A and catch G belong to plate 218, and no frame is drawn.',
+    camera: [0.1, 0.08, 1],
+    note: 'Face view of the grooved heart cam C, D, B, e with its symmetric double-walled groove and hub; stud A rides the groove on a lever about the fixed shaft H to the right (the lever is reconstructed; Brown draws the cam alone and the catch and notch wheel on plate 218). No frame is drawn.',
   },
   225: {
     remove: ['active-pawl-tooth-contact-marker'],
@@ -326,7 +325,7 @@ export default {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
     camera: [0.02, 0.02, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
-    note: 'Nearly edge-on view along the verge, cropped like Brown’s detail to about two pitches of the near band: the concave-backed raked teeth, the far teeth showing between them, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth, the far teeth showing between them, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],

@@ -37,7 +37,7 @@ export function makeJointedTappetDynamics(candidate,{period=12,load=3,damping=[.
   const u=candidate.root.userData,p=u.geometry,density=1/u.masses.dog.volume,
     mass=Object.fromEntries(Object.entries(u.masses).map(([k,m])=>[k,{mass:density*m.volume,c:m.centroid.slice(0,2),I:density*m.polar}])),
     wheelEdges=profileFrom(u.parts.wheelBody),dogStopEdges=profileFrom(u.parts.dogStopSector),restEdges=profileFrom(u.parts.tappetRestSector),
-    dogPin=sub(p.dogStop,p.B),restPin=sub(p.Cstop,p.C),barAxis=sub(p.end,p.B),barSquare=dot(barAxis,barAxis),omega=2*Math.PI/period;
+    dogPin=sub(p.dogStop,p.B),restPin=sub(p.Cstop,p.C),strikeStart=p.strikeArmStart??p.B,barAxis=sub(p.end,strikeStart),barSquare=dot(barAxis,barAxis),omega=2*Math.PI/period;
   const matrices=(x,v,dt=0)=>{
     const[q,alpha,theta,beta]=x,b=rotate(mass.dog.c,alpha),coupling=dot(p.B,b),
       Mqq=mass.tappet.I+dot(p.B,p.B)+mass.dog.I+2*coupling,Mqa=mass.dog.I+coupling,Maa=mass.dog.I,
@@ -66,8 +66,8 @@ export function makeJointedTappetDynamics(candidate,{period=12,load=3,damping=[.
       const result=circleFeatures(edges,rotate(pin,-angle),radius,padding);gaps[kind]=result.gap;
       for(const f of result.rows){const normal=rotate(f.normal,angle),J=[0,0,0,0];J[index]=-cross(pin,normal);rows.push({id:kind+':'+f.index,kind,gap:f.gap,J});}
     }
-    const stud=rotate(p.studVector,-omega*time),local=rotate(sub(stud,p.C),-q),fraction=clamp(dot(sub(local,p.B),barAxis)/barSquare,0,1),
-      center=add(p.B,barAxis.map(v=>v*fraction)),delta=sub(local,center),distance=Math.hypot(...delta),normal=rotate(delta.map(v=>v/distance),q),
+    const stud=rotate(p.studVector,-omega*time),local=rotate(sub(stud,p.C),-q),fraction=clamp(dot(sub(local,strikeStart),barAxis)/barSquare,0,1),
+      center=add(strikeStart,barAxis.map(v=>v*fraction)),delta=sub(local,center),distance=Math.hypot(...delta),normal=rotate(delta.map(v=>v/distance),q),
       gap=distance-p.barRadius-p.studRadius;gaps.stud=gap;
     if(gap<padding)rows.push({id:'stud',kind:'stud',gap,J:[-cross(sub(stud,p.C),normal),0,0,0],
       inputNormalVelocity:dot(normal,[omega*stud[1],-omega*stud[0]]),point:stud,normal});

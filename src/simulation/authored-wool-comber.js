@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {capsule, circle, poly, polygonClipping} from './finite-plate-geometry.js';
 import {woolComberNotch} from '../data/wool-comber-notch.js';
+import {createHeartCam217} from './heart-cam-217.js';
 import {
   PALETTE,
   markShadows,
@@ -1300,9 +1301,19 @@ function groovedCamWoolComberRollerMotion(movementId) {
   };
 }
 
+// The complete shared 217/218 transmission (cam, lever about H, catch G and
+// notch wheel F). Plate 218 presents it; plate 217 presents Brown's
+// symmetric heart cam with its stud and lever (heart-cam-217.js). The
+// shared transmission is still built with plate 217's orientation for
+// offline validation of the plate-218 law.
+export function createWoolComberTransmission(movementId = 217) {
+  return groovedCamWoolComberRollerMotion(movementId);
+}
+
 export function createAuthoredWoolComberMovement(movement) {
   switch (movement.id) {
     case 217:
+      return createHeartCam217();
     case 218:
       return groovedCamWoolComberRollerMotion(movement.id);
     default: return null;

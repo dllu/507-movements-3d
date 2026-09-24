@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
-import { createAuthoredWoolComberMovement } from '../src/simulation/authored-wool-comber.js';
+import { createWoolComberTransmission } from '../src/simulation/authored-wool-comber.js';
+import { heartCam217Geometry } from '../src/simulation/heart-cam-217.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -105,28 +106,90 @@ function nearestPolylineDistance(point, points) {
   return minimum;
 }
 
-test('movement 217 presents only the cam that Brown draws on plate 217', () => {
+test('movement 217 presents Brown\'s symmetric heart cam with stud A on its lever', () => {
   const model = createMovementModel(catalog.movements[216]);
-  const { blocks, sourcePresentation } = model.root.userData;
-  assert.equal(blocks.camRotor.parent, model.root);
-  for (const part of [blocks.notchWheel, blocks.rockerBody, blocks.followerRoller, blocks.catchHook]) {
-    let attached = false;
-    for (let node = part; node; node = node.parent) if (node === model.root) attached = true;
-    assert.equal(attached, false, `${part.userData.role} belongs to plate 218`);
+  const { blocks, geometry: g, parts, leverSweep } = model.root.userData;
+  try {
+    assert.equal(blocks.cam.parent, model.root);
+    assert.equal(blocks.lever.parent, model.root);
+    for (const name of ['outer-cam-land', 'heart-island', 'hub-boss', 'stud-A-roller', 'lever-A-H', 'fixed-shaft-H']) {
+      assert.ok(parts[name]?.isMesh, name);
+    }
+    // No notch wheel, catch or frame: those belong to plate 218.
+    const roles = [];
+    model.root.traverse((o) => roles.push(o.userData.role ?? ''));
+    assert.equal(roles.some((r) => /notch|catch|frame|base/.test(r)), false);
+    // The groove centre line is symmetric about e-D, outermost at e and
+    // innermost at D, and follows the measured engraving radii.
+    for (let i = 0; i <= 36; i += 1) {
+      const phi = i / 36 * Math.PI;
+      near(g.radiusAt(phi), g.radiusAt(-phi), 1e-12, `symmetric at ${i}`);
+      if (i) assert.ok(g.radiusAt(phi) < g.radiusAt(phi - Math.PI / 36) + 1e-12, `falls from e to D at ${i}`);
+    }
+    g.measuredProfilePx.forEach((px, i) => near(g.radiusAt(i * Math.PI / 18) * 237 / 5.58, px, 2.7, `measured radius ${i * 10} degrees`));
+    assert.ok(g.rMax < g.camRadius - g.grooveHalfWidth && g.rMin - g.grooveHalfWidth > g.boreRadius);
+    assert.ok(leverSweep > THREE.MathUtils.degToRad(20) && leverSweep < THREE.MathUtils.degToRad(35));
+    // e is at twelve o'clock with the stud at e in the plate pose.
+    model.update(0);
+    const { stud } = model.root.userData.state;
+    near(stud[0], 0, 0.02, 'stud at e');
+    near(Math.hypot(...stud), g.rMax, 1e-6, 'stud at e radius');
+  } finally {
+    disposeModel(model.root);
   }
-  assert.ok(sourcePresentation.removedRoles.includes('F-nine-notch-detaching-roller-wheel'));
-  // The cam starts with e at twelve o'clock, as engraved.
-  model.update(0);
-  const e = model.root.userData.groovePointAtPhase(model.root.userData.motion.forwardEndPhase)
-    .clone().rotateAround(new THREE.Vector2(), blocks.camRotor.rotation.z);
-  assert.ok(Math.abs(Math.atan2(e.x, e.y)) < 1e-9);
-  disposeModel(model.root);
+});
+
+test('movement 217 stud A stays on the groove centre line with clearance to both walls', () => {
+  const model = createMovementModel(catalog.movements[216]);
+  const { blocks, geometry: g, parts } = model.root.userData;
+  try {
+    let maximumError = 0;
+    let previous = null;
+    let maximumStep = 0;
+    let minimumRadius = Infinity;
+    let maximumRadius = 0;
+    for (let i = 0; i <= 1024; i += 1) {
+      model.update(8 * i / 1024);
+      const { stud, camAngle, leverAngle } = model.root.userData.state;
+      const local = new THREE.Vector2(...stud).rotateAround(new THREE.Vector2(), -camAngle);
+      const phi = Math.atan2(local.x, local.y);
+      maximumError = Math.max(maximumError, Math.abs(local.length() - g.radiusAt(phi)));
+      minimumRadius = Math.min(minimumRadius, local.length());
+      maximumRadius = Math.max(maximumRadius, local.length());
+      // The lever carries the stud: its end lies at the lever radius from H.
+      near(Math.hypot(stud[0] - g.H[0], stud[1] - g.H[1]), g.leverLength, 1e-9, `lever length at ${i}`);
+      if (previous !== null) maximumStep = Math.max(maximumStep, Math.abs(leverAngle - previous));
+      previous = leverAngle;
+    }
+    assert.ok(maximumError < 1e-6, `stud off the groove centre line by ${maximumError}`);
+    near(minimumRadius, g.rMin, 2e-3, 'stud reaches D');
+    near(maximumRadius, g.rMax, 2e-3, 'stud reaches e');
+    assert.ok(maximumStep < 0.004, 'lever moves continuously');
+    // The walls are offsets of the centre line by the groove half-width, so
+    // the stud roller keeps the designed radial clearance to both walls.
+    assert.ok(g.grooveHalfWidth - g.rollerRadius > 0.03);
+    // Rendered wall polygons are no closer than the half-width to the centre line.
+    const segDistance = (p, a, b) => {
+      const ab = [b[0] - a[0], b[1] - a[1]], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / (ab[0] ** 2 + ab[1] ** 2)));
+      return Math.hypot(p[0] - a[0] - t * ab[0], p[1] - a[1] - t * ab[1]);
+    };
+    for (const name of ['outer-cam-land', 'heart-island']) {
+      for (const polygon of parts[name].geometry.userData.plate.polygons) for (const ring of polygon) for (const p of ring) {
+        let d = Infinity;
+        for (let k = 0; k < g.centreLine.length; k += 1) d = Math.min(d, segDistance(p, g.centreLine[k], g.centreLine[(k + 1) % g.centreLine.length]));
+        assert.ok(d > g.rollerRadius + 0.02, `${name} wall within ${d} of the stud path`);
+      }
+    }
+    assert.equal(blocks.lever.children.includes(parts['stud-A-roller']), true);
+  } finally {
+    disposeModel(model.root);
+  }
 });
 
 test('movement 217 reconstructs Brown plates 217 and 218 as one mechanism', () => {
   const movement = catalog.movements[216];
-  // The complete factory model; plate 217's presentation shows the cam only.
-  const model = createAuthoredWoolComberMovement(movement);
+  // The complete shared transmission; plate 217 presents the heart cam.
+  const model = createWoolComberTransmission(217);
   const {
     archetype,
     blocks,
@@ -197,7 +260,7 @@ test('movement 217 reconstructs Brown plates 217 and 218 as one mechanism', () =
 });
 
 test('movement 217 uses a source-shaped conjugate groove with a physical cutter envelope', () => {
-  const model = createMovementModel(catalog.movements[216]);
+  const model = createWoolComberTransmission(217);
   const {
     geometry,
     sourceReference,
@@ -292,7 +355,7 @@ test('movement 217 uses a source-shaped conjugate groove with a physical cutter 
 });
 
 test('movement 217 gives minus one-third, plus two-thirds, then a true dwell', () => {
-  const model = createMovementModel(catalog.movements[216]);
+  const model = createWoolComberTransmission(217);
   const {
     backwardAngle,
     backwardEndPhase,
@@ -402,7 +465,7 @@ test('movement 217 gives minus one-third, plus two-thirds, then a true dwell', (
 });
 
 test('movement 217 catch clears the rim and its rear projection contacts only at e', () => {
-  const model = createMovementModel(catalog.movements[216]);
+  const model = createWoolComberTransmission(217);
   const {
     geometry,
     motion,
@@ -472,7 +535,7 @@ test('movement 217 catch clears the rim and its rear projection contacts only at
 });
 
 test('movement 217 runtime matches D, shares 218, and leaves 269 authored', () => {
-  const model = createMovementModel(catalog.movements[216]);
+  const model = createWoolComberTransmission(217);
   const {
     blocks,
     canonicalTimes,

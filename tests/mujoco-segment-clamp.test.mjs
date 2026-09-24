@@ -35,7 +35,7 @@ test('120 compiles one input hinge and bounded approximations of the actual work
 
 test('120 both tooth pairs independently drive their passive jaw',()=>{
  for(const disabled of ['smallPinion','largePinion','both']){
-  const v=makeMujocoSegmentClamp(mujoco,{gravity:0}),p=v.physics;
+  const v=makeMujocoSegmentClamp(mujoco,{gravity:0,amplitude:1.9}),p=v.physics;
   try{
    for(const[id,group]of Object.entries(p.geomGroups))if(group===disabled||(disabled==='both'&&group.endsWith('Pinion')))p.model.geom_contype[id]=p.model.geom_conaffinity[id]=0;
    v.update(1.25);assert(p.data.qpos[0]>.9);
@@ -45,8 +45,8 @@ test('120 both tooth pairs independently drive their passive jaw',()=>{
  }
 });
 
-test('120 closes against native jaw contact and reopens over two cycles',t=>{
- const v=makeMujocoSegmentClamp(mujoco),p=v.physics,f=v.root.userData.profile;
+test('120 a long stroke closes against native jaw contact and reopens over two cycles',t=>{
+ const v=makeMujocoSegmentClamp(mujoco,{amplitude:1.9}),p=v.physics,f=v.root.userData.profile;
  try{
   let error=0,penetration=0;const jawCycles=new Set(),gearPairs=new Set();
   for(let i=0;i<10/p.timestep;i++){
@@ -61,8 +61,28 @@ test('120 closes against native jaw contact and reopens over two cycles',t=>{
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
 });
 
+test('120 default stroke keeps both segments centred on their meshing pinions',t=>{
+ const v=makeMujocoSegmentClamp(mujoco),p=v.physics,f=v.root.userData.profile,pinion=Math.atan2(f.input[1],f.input[0]);
+ try{
+  let external=0,internal=0,error=0,jaw=0;const pairs=new Set();
+  for(let i=0;i<10/p.timestep;i++){
+   p.step();const q=p.data.qpos;assert([...q,...p.data.qvel].every(Number.isFinite));
+   external=Math.max(external,Math.abs(q[1]));internal=Math.max(internal,Math.abs(q[2]));
+   error=Math.max(error,100*Math.abs(q[1]+f.externalRatio*q[0])*f.externalTeeth*f.externalModule/2,100*Math.abs(q[2]-f.internalRatio*q[0])*f.internalTeeth*f.internalModule/2);
+   const cs=p.data.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{const pair=Array.from(c.geom).map(id=>p.geomGroups[id]).sort().join('/');if(pair==='leftJaw/rightJaw')jaw++;else pairs.add(pair);}finally{c.delete();}}}finally{cs.delete();}
+  }
+  // Each jaw swings no more than about 13 degrees, the pinion stays at least
+  // 20 degrees inside both working tooth arcs, and the jaws never cross.
+  assert(external>.18&&external<.23);assert(internal>.2&&internal<.24);
+  const deg=Math.PI/180,marginExternal=Math.min(pinion-(-123*deg-external),-39*deg-external-pinion),marginInternal=Math.min(pinion-(-119*deg+internal),-61*deg+internal-pinion);
+  assert(marginExternal>30*deg);assert(marginInternal>20*deg);
+  assert.equal(jaw,0);assert.equal(pairs.size,2);assert(error<.15);assert(Math.abs(p.data.qpos[0])<.01);
+  t.diagnostic(JSON.stringify({externalDegrees:external/deg,internalDegrees:internal/deg,marginExternal:marginExternal/deg,marginInternal:marginInternal/deg,maximumRollingErrorPixels:error}));
+ }finally{v.dispose();}
+});
+
 test('120 removing jaw contact removes the closing stop',()=>{
- const v=makeMujocoSegmentClamp(mujoco,{jawContact:false}),p=v.physics;
+ const v=makeMujocoSegmentClamp(mujoco,{jawContact:false,amplitude:1.9}),p=v.physics;
  try{v.update(2.5);assert(p.data.qpos[0]>1.87);assert(p.data.qpos[1]<-.47);assert(p.data.qpos[2]>.54);}finally{v.dispose();}
 });
 

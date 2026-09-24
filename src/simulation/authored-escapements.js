@@ -3930,9 +3930,13 @@ function oldFashionedClockVergeEscapement(movement) {
   // unpresented world frame, with a narrow field, so the outer teeth run off
   // the frame as Brown's band does.
   root.userData.hideGround = true;
+  // A wider stretch along the crown edge (local z, which the source
+  // presentation turns horizontal: about three pitches, the wheel ends
+  // running out of view) shows
+  // Brown's strip of raked teeth rather than two oversized ones.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.4 * displayScale, -1.5 * displayScale, -1.05 * displayScale),
-    new THREE.Vector3(1.3 * displayScale, 1.5 * displayScale, 1.05 * displayScale),
+    new THREE.Vector3(-0.6 * displayScale, -1.5 * displayScale, -1.55 * displayScale),
+    new THREE.Vector3(1.5 * displayScale, 1.5 * displayScale, 1.55 * displayScale),
   );
   root.userData.cameraFov = 12;
   root.userData.canonicalTimes = {

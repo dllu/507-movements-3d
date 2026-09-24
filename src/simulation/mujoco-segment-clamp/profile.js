@@ -1,5 +1,9 @@
 import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import source from './source.js';
+// Default reversing input stroke, radians. Brown's segments stay centred on
+// the compound pinion: about 11-13 degrees of jaw swing keeps both tooth
+// arcs well engaged and the lower loop clear of the pinion.
+export const segmentClampStroke=.8;
 const inv=r=>{const t=Math.sqrt(Math.max(0,r*r-1));return t-Math.atan(t);};
 export function segmentClampProfile({smallTeeth=13,externalTeeth=51,largeTeeth=23,internalTeeth=79,smallPhase=.22655716251849467,largePhase=.2318328724332012,samples=96,cutterSteps=2048}={}){
  const input=[(source.input[0]-source.axis[0])/100,(source.axis[1]-source.input[1])/100],distance=Math.hypot(...input),lineAngle=Math.atan2(input[1],input[0]);

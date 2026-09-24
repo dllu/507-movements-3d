@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import {createAuthoredWoolComberMovement} from '../src/simulation/authored-wool-comber.js';
+import {createAuthoredWoolComberMovement, createWoolComberTransmission} from '../src/simulation/authored-wool-comber.js';
+
+// Plate 217 now presents the heart cam alone; the complete shared
+// transmission is still built in 217's orientation for these checks.
+const transmission = id => (id === 217 ? createWoolComberTransmission(217) : createAuthoredWoolComberMovement({id}));
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {solidSurface, surfacePoints} from './helpers/solid-surface.mjs';
 
@@ -20,7 +24,7 @@ function nearestBoundary(points, center, radius) {
 
 for (const id of [217, 218]) {
   test(`${id}: relieved notch retains opposing load-bearing flanks and limited take-up`, () => {
-    const model = createAuthoredWoolComberMovement({id}), {blocks: b, geometry: g} = model.root.userData;
+    const model = transmission(id), {blocks: b, geometry: g} = model.root.userData;
     try {
       const points = b.notchWheel.geometry.parameters.shapes.getPoints();
       const contact = angle => nearestBoundary(points,
@@ -47,7 +51,7 @@ for (const id of [217, 218]) {
   });
 
   test(`${id}: finite hook and wheel clear through entry, drive, release, and return`, () => {
-    const model = createAuthoredWoolComberMovement({id}), {blocks: b, motion} = model.root.userData;
+    const model = transmission(id), {blocks: b, motion} = model.root.userData;
     try {
       const pairs = [[b.catchHook, b.notchWheel], [b.notchWheel, b.catchHook]].map(([from, to]) =>
         ({from, to, points: surfacePoints(from.geometry), surface: solidSurface(to.geometry)}));
@@ -68,7 +72,7 @@ for (const id of [217, 218]) {
 }
 
 test('the former radial notch binds the same finite hook during release', () => {
-  const model = createAuthoredWoolComberMovement({id: 217}), u = model.root.userData, g = u.geometry;
+  const model = transmission(217), u = model.root.userData, g = u.geometry;
   try {
     const points = [];
     for (let i = 0; i < g.notchCount; i++) {

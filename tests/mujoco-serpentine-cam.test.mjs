@@ -41,15 +41,20 @@ test('107 closed solids and compiled convex prisms preserve the actual groove wa
     const shoe=p.id('mjOBJ_GEOM','shoe');assert.equal(p.model.geom_type[shoe],mujoco.mjtGeom.mjGEOM_CAPSULE.value);
     assert.ok(Math.abs(p.model.geom_size[3*shoe]-f.pinRadius)<1e-12);
     assert.ok(f.pinLow-f.pinRadius-f.floor>.01,'rounded end does not clear the floor');
-    for(let a=.06;a<Math.PI/f.repetitions-.06;a+=.01) {
-      assert.ok(Math.abs(f.law(a-f.phase).derivative-f.slope)<1e-12);
-      assert.ok(Math.abs(f.law(2*Math.PI/f.repetitions-a-f.phase).derivative+f.slope)<1e-12);
+    // Brown's snaking groove: a saturated sine with broad round U ends.
+    assert.equal(f.repetitions,8);
+    for(let a=0;a<2*Math.PI/f.repetitions;a+=.005) {
+      const n=f.repetitions,c=f.sharpness,u=n*a-Math.PI/2,law=f.law(a-f.phase),t=Math.tanh(c*Math.sin(u));
+      assert.ok(Math.abs(law.x-(f.minimum+f.amplitude*(1+t/Math.tanh(c))))<1e-12);
+      assert.ok(Math.abs(law.derivative-f.amplitude*n*c*Math.cos(u)*(1-t*t)/Math.tanh(c))<1e-12);
+      assert.ok(Math.abs(law.derivative)<=f.peakSlope+1e-12);
     }
+    assert.ok(100/curvature>9,'the U-shaped reversals must stay broad');
     t.diagnostic(JSON.stringify({minimumPitchRadiusPixels:100/curvature,compiledVertices:vertices,solids:11,contactGeometries:p.model.ngeom}));
   }finally{v.dispose();}
 });
 
-test('107 ten turns drive uniform strokes through both walls without losing the guides',t=>{
+test('107 ten turns drive snaking strokes through both walls without losing the guides',t=>{
   const v=makeMujocoSerpentineCam(mujoco),p=v.physics,u=v.root.userData,f=u.profile;
   const names=new Map();for(const [name,cells] of Object.entries(u.collision))for(let i=0;i<cells.length;i++)names.set(p.id('mjOBJ_GEOM',name+i),name);
   const contacts={leftLand:0,rightLand:0};let deviation=0,penetration=0,visiblePenetration=0,retention=Infinity,checks=0,poses=0,speedError=0,previous;
@@ -63,12 +68,11 @@ test('107 ten turns drive uniform strokes through both walls without losing the 
       if(lastSign&&sign!==lastSign)strokes++;lastSign=sign;
       for(const side of ['left','right'])retention=Math.min(retention,Math.min(f.x(u.source.rodEnds[1])+q,f.x(u.source.edges[side+'GuideRight']))-Math.max(f.x(u.source.rodEnds[0])+q,f.x(u.source.edges[side+'GuideLeft'])));
       if(i%window===0) {
-        const onFlank=a>.06&&a<halfAngle-.06||a>halfAngle+.06&&a<turn-.06;
-        if(onFlank&&previous?.sign===sign) {
-          const expected=-p.description.omega*sign*f.slope;
-          speedError=Math.max(speedError,Math.abs((q-previous.x)/.1-expected)/Math.abs(expected));
-        }
-        previous=onFlank?{x:q,sign}:undefined;
+        // Mean follower speed over each window against the groove law's
+        // displacement, normalized by the harmonic peak speed.
+        const law=f.law(-p.data.qpos[0]).x;
+        if(previous)speedError=Math.max(speedError,Math.abs((q-previous.x)/.1-(law-previous.law)/.1)/Math.abs(p.description.omega*f.peakSlope));
+        previous={x:q,law};
       }
       const cs=p.data.contact;
       for(let j=0;j<cs.size();j++){const c=cs.get(j),name=names.get(c.geom1)??names.get(c.geom2);assert.ok(name);contacts[name]++;penetration=Math.max(penetration,-c.dist);c.delete();}cs.delete();
@@ -107,7 +111,8 @@ test('107 two output cycles retain the stroke under timestep and groove refineme
   try {
     // Exact mesh repetition makes two output cycles cover the complete local
     // contact sequence; the ten-revolution test separately checks long playback.
-    for(let i=0;i<8000;i++) {
+    const steps=Math.round(2*variants[0].physics.description.options.period/variants[0].root.userData.profile.repetitions/variants[0].physics.timestep);
+    for(let i=0;i<steps;i++) {
       variants[0].physics.step();for(let j=0;j<2;j++)variants[1].physics.step();for(let j=0;j<4;j++)variants[2].physics.step();variants[3].physics.step();
       const [a,b,c,d]=variants.map(v=>v.physics.data.qpos[1]);first=Math.max(first,Math.abs(a-b));second=Math.max(second,Math.abs(b-c));mesh=Math.max(mesh,Math.abs(a-d));
     }

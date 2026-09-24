@@ -150,43 +150,6 @@ function makePawl({ color, contact, pivot, role, z }) {
   return markShadows(root);
 }
 
-function cubicBezierPoint(controlPoints, parameter,
-  target = new THREE.Vector3()) {
-  const complement = 1 - parameter;
-  return target.set(0, 0, 0)
-    .addScaledVector(controlPoints[0], complement ** 3)
-    .addScaledVector(controlPoints[1], 3 * complement ** 2 * parameter)
-    .addScaledVector(controlPoints[2], 3 * complement * parameter ** 2)
-    .addScaledVector(controlPoints[3], parameter ** 3);
-}
-
-function cubicBezierDerivative(controlPoints, parameter,
-  target = new THREE.Vector3()) {
-  const complement = 1 - parameter;
-  return target
-    .copy(controlPoints[1]).sub(controlPoints[0])
-    .multiplyScalar(3 * complement ** 2)
-    .addScaledVector(
-      controlPoints[2].clone().sub(controlPoints[1]),
-      6 * complement * parameter,
-    )
-    .addScaledVector(
-      controlPoints[3].clone().sub(controlPoints[2]),
-      3 * parameter ** 2,
-    );
-}
-
-function cubicBezierLength(controlPoints) {
-  const panels = 64;
-  let sum = cubicBezierDerivative(controlPoints, 0).length()
-    + cubicBezierDerivative(controlPoints, 1).length();
-  for (let index = 1; index < panels; index += 1) {
-    sum += (index % 2 === 0 ? 2 : 4)
-      * cubicBezierDerivative(controlPoints, index / panels).length();
-  }
-  return sum / (3 * panels);
-}
-
 function setBoxBetween(box, start, end) {
   const displacement = end.clone().sub(start);
   box.position.copy(start).add(end).multiplyScalar(0.5);
@@ -244,13 +207,14 @@ function harrisonGoingBarrel(movement) {
   const springInnerAnchorRadius = 1.98;
   const springOuterBaseAngle = Math.atan2(0.50, -2.55);
   const springInnerBaseAngle = Math.atan2(1.65, -1.10);
-  const springOuterTangentOffset = -springOuterBaseAngle;
-  // The inner tangent and handle keep the fixed-length spring at least 0.35
-  // from the axis through the whole cycle, looping clear of arbor B as Brown
-  // draws it rather than passing through the arbor.
-  const springInnerTangentOffset = 2.60 - springInnerBaseAngle;
-  const referenceSpringHandle = 2.70;
-  const springSegmentCount = 80;
+  // Brown's spring S-S' is drawn here as a smooth flat spiral coiled about
+  // the arbor between its two anchors: about 1.9 turns at the going preload.
+  // When the larger ratchet is held during winding the spiral unwinds
+  // smoothly (fewer turns, coils easing outward) and it winds up again as R
+  // re-engages. Its innermost coil stays well clear of the arbor.
+  const springReferenceTurns = 2;
+  const springSegmentCount = 240;
+  const springWireRadius = 0.035;
   const springPreload = 2.20;
   const springStiffness = 0.60;
   const goingLoadTorque = 0.30;
@@ -259,95 +223,73 @@ function harrisonGoingBarrel(movement) {
   const largeRatchetToothPitch = FULL_TURN / largeRatchetToothCount;
   const barrelRatchetToothPitch = FULL_TURN / barrelRatchetToothCount;
 
-  const springControlPoints = (greatWheelAngle, largeRatchetAngle,
-    handleLength) => {
-    const outerAngle = springOuterBaseAngle + greatWheelAngle;
-    const innerAngle = springInnerBaseAngle + largeRatchetAngle;
-    const outer = new THREE.Vector3(
-      Math.cos(outerAngle) * springOuterAnchorRadius,
-      Math.sin(outerAngle) * springOuterAnchorRadius,
+  const springSweep = (greatWheelAngle, largeRatchetAngle) =>
+    springInnerBaseAngle + largeRatchetAngle
+    - springOuterBaseAngle - greatWheelAngle
+    + FULL_TURN * springReferenceTurns;
+  // u runs from S' (0) to S (1). The radius falls monotonically from S' to S,
+  // so successive coils never cross; the exponent sets how quickly the coils
+  // draw in (small: tightly wound inward, large: eased outward).
+  const springRadiusAt = (u, shape) => springOuterAnchorRadius
+    + (springInnerAnchorRadius - springOuterAnchorRadius) * u ** shape;
+  const springPointAt = (u, greatWheelAngle, sweep, shape) => {
+    const angle = springOuterBaseAngle + greatWheelAngle + sweep * u;
+    const radius = springRadiusAt(u, shape);
+    return new THREE.Vector3(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
       1.16,
     );
-    const inner = new THREE.Vector3(
-      Math.cos(innerAngle) * springInnerAnchorRadius,
-      Math.sin(innerAngle) * springInnerAnchorRadius,
-      1.16,
-    );
-    const outerTangentAngle = greatWheelAngle
-      + springOuterBaseAngle + springOuterTangentOffset;
-    const innerTangentAngle = largeRatchetAngle
-      + springInnerBaseAngle + springInnerTangentOffset;
-    const outerTangent = new THREE.Vector3(
-      Math.cos(outerTangentAngle),
-      Math.sin(outerTangentAngle),
-      0,
-    );
-    const innerTangent = new THREE.Vector3(
-      Math.cos(innerTangentAngle),
-      Math.sin(innerTangentAngle),
-      0,
-    );
-    return [
-      outer,
-      outer.clone().addScaledVector(outerTangent, handleLength),
-      inner.clone().addScaledVector(innerTangent, -handleLength),
-      inner,
-    ];
   };
-  const referenceSpringControlPoints = springControlPoints(0, 0,
-    referenceSpringHandle);
-  const springMaterialLength = cubicBezierLength(
-    referenceSpringControlPoints,
+  const springLengthSamples = 2048;
+  const springLength = (sweep, shape) => {
+    let length = 0;
+    let previousRadius = springOuterAnchorRadius;
+    for (let index = 1; index <= springLengthSamples; index += 1) {
+      const u = index / springLengthSamples;
+      const radius = springRadiusAt(u, shape);
+      const middle = (radius + previousRadius) / 2;
+      length += Math.hypot(radius - previousRadius,
+        middle * sweep / springLengthSamples);
+      previousRadius = radius;
+    }
+    return length;
+  };
+  const springReferenceShape = 0.3;
+  const springMaterialLength = springLength(
+    springSweep(0, 0),
+    springReferenceShape,
   );
 
   const springGeometryAtAngles = (greatWheelAngle, largeRatchetAngle) => {
-    const lengthAt = (handleLength) => cubicBezierLength(
-      springControlPoints(
-        greatWheelAngle,
-        largeRatchetAngle,
-        handleLength,
-      ),
-    );
-    let low = 0;
-    let high = referenceSpringHandle;
-    while (lengthAt(high) < springMaterialLength && high < 20) high *= 1.5;
-    if (lengthAt(low) > springMaterialLength + 1e-10
-      || lengthAt(high) < springMaterialLength) {
+    const sweep = springSweep(greatWheelAngle, largeRatchetAngle);
+    // Fewer turns need the coils eased outward to keep the material length.
+    let low = 0.05;
+    let high = 12;
+    if (springLength(sweep, high) < springMaterialLength
+      || springLength(sweep, low) > springMaterialLength) {
       throw new RangeError('The fixed-length maintaining spring cannot reach both anchors.');
     }
-    for (let iteration = 0; iteration < 46; iteration += 1) {
+    for (let iteration = 0; iteration < 64; iteration += 1) {
       const middle = (low + high) / 2;
-      if (lengthAt(middle) < springMaterialLength) low = middle;
+      if (springLength(sweep, middle) < springMaterialLength) low = middle;
       else high = middle;
     }
-    const handleLength = (low + high) / 2;
-    const controlPoints = springControlPoints(
-      greatWheelAngle,
-      largeRatchetAngle,
-      handleLength,
-    );
-    const divisions = 192;
-    const parameters = new Float64Array(divisions + 1);
-    const cumulative = new Float64Array(divisions + 1);
-    let previous = cubicBezierPoint(controlPoints, 0);
-    let chordLength = 0;
-    for (let index = 1; index <= divisions; index += 1) {
-      const parameter = index / divisions;
-      const point = cubicBezierPoint(controlPoints, parameter);
-      chordLength += point.distanceTo(previous);
-      parameters[index] = parameter;
-      cumulative[index] = chordLength;
+    const shape = (low + high) / 2;
+    const cumulative = new Float64Array(springLengthSamples + 1);
+    let previous = springPointAt(0, greatWheelAngle, sweep, shape);
+    for (let index = 1; index <= springLengthSamples; index += 1) {
+      const point = springPointAt(index / springLengthSamples,
+        greatWheelAngle, sweep, shape);
+      cumulative[index] = cumulative[index - 1] + point.distanceTo(previous);
       previous = point;
     }
-    const correction = springMaterialLength / chordLength;
-    for (let index = 1; index <= divisions; index += 1) {
-      cumulative[index] *= correction;
-    }
+    const measuredLength = springLength(sweep, shape);
     const parameterAtMaterialFraction = (fraction) => {
       const target = THREE.MathUtils.clamp(fraction, 0, 1)
-        * springMaterialLength;
+        * cumulative[springLengthSamples];
       let lower = 0;
-      let upper = divisions;
+      let upper = springLengthSamples;
       while (upper - lower > 1) {
         const middle = Math.floor((lower + upper) / 2);
         if (cumulative[middle] < target) lower = middle;
@@ -357,21 +299,30 @@ function harrisonGoingBarrel(movement) {
       const local = interval > 1e-15
         ? (target - cumulative[lower]) / interval
         : 0;
-      return THREE.MathUtils.lerp(
-        parameters[lower],
-        parameters[upper],
-        local,
-      );
+      return (lower + local) / springLengthSamples;
     };
+    // Closest approach of successive coils at the same angle.
+    let minimumCoilSpacing = Infinity;
+    const turnFraction = FULL_TURN / sweep;
+    for (let index = 0; index <= 512; index += 1) {
+      const u = index / 512 * (1 - turnFraction);
+      minimumCoilSpacing = Math.min(minimumCoilSpacing,
+        springRadiusAt(u, shape) - springRadiusAt(u + turnFraction, shape));
+    }
     return {
-      controlPoints,
-      handleLength,
+      shape,
+      minimumCoilSpacing,
+      minimumRadius: springInnerAnchorRadius,
+      sweep,
+      turns: sweep / FULL_TURN,
       materialLength: springMaterialLength,
-      measuredLength: cubicBezierLength(controlPoints),
-      pointAtMaterialFraction: (fraction) => cubicBezierPoint(
-        controlPoints,
-        parameterAtMaterialFraction(fraction),
-      ),
+      measuredLength,
+      pointAtMaterialFraction: (fraction) => {
+        if (fraction <= 0) return springPointAt(0, greatWheelAngle, sweep, shape);
+        if (fraction >= 1) return springPointAt(1, greatWheelAngle, sweep, shape);
+        return springPointAt(parameterAtMaterialFraction(fraction),
+          greatWheelAngle, sweep, shape);
+      },
     };
   };
 
@@ -654,19 +605,62 @@ function harrisonGoingBarrel(movement) {
     metalness: 0.16,
     roughness: 0.56,
   });
-  const springSegments = Array.from(
-    { length: springSegmentCount },
-    (_, index) => {
-      const segment = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 0.075, 0.13),
-        springMaterial,
-      );
-      segment.userData.materialCoordinate = index / springSegmentCount;
-      segment.userData.role = 'fixed-length-maintaining-spring-S-S-prime-segment';
-      root.add(segment);
-      return segment;
-    },
-  );
+  // One continuous round wire, rebuilt in place each frame along the spiral.
+  const springSides = 10;
+  const springRingCount = springSegmentCount + 1;
+  const springPositions = new Float32Array(springRingCount * springSides * 3);
+  const springNormals = new Float32Array(springRingCount * springSides * 3);
+  const springIndices = [];
+  for (let ring = 0; ring < springSegmentCount; ring += 1) {
+    for (let side = 0; side < springSides; side += 1) {
+      const a = ring * springSides + side;
+      const b = ring * springSides + (side + 1) % springSides;
+      const c = a + springSides;
+      const d = b + springSides;
+      springIndices.push(a, c, b, b, c, d);
+    }
+  }
+  const springWireGeometry = new THREE.BufferGeometry();
+  springWireGeometry.setAttribute('position',
+    new THREE.BufferAttribute(springPositions, 3));
+  springWireGeometry.setAttribute('normal',
+    new THREE.BufferAttribute(springNormals, 3));
+  springWireGeometry.setIndex(springIndices);
+  const springWire = new THREE.Mesh(springWireGeometry, springMaterial);
+  springWire.userData.role = 'maintaining-spring-S-S-prime-spiral';
+  springWire.frustumCulled = false;
+  root.add(springWire);
+  const springSegments = [springWire];
+  const shapeSpringWire = (springGeometry) => {
+    const points = Array.from({ length: springRingCount }, (_, index) =>
+      springGeometry.pointAtMaterialFraction(index / springSegmentCount));
+    for (let ring = 0; ring < springRingCount; ring += 1) {
+      const before = points[Math.max(0, ring - 1)];
+      const after = points[Math.min(springSegmentCount, ring + 1)];
+      const tangentX = after.x - before.x;
+      const tangentY = after.y - before.y;
+      const tangentLength = Math.hypot(tangentX, tangentY) || 1;
+      const normalX = -tangentY / tangentLength;
+      const normalY = tangentX / tangentLength;
+      for (let side = 0; side < springSides; side += 1) {
+        const phi = side / springSides * FULL_TURN;
+        const nx = Math.cos(phi) * normalX;
+        const ny = Math.cos(phi) * normalY;
+        const nz = Math.sin(phi);
+        const offset = (ring * springSides + side) * 3;
+        springPositions[offset] = points[ring].x + springWireRadius * nx;
+        springPositions[offset + 1] = points[ring].y + springWireRadius * ny;
+        springPositions[offset + 2] = points[ring].z + springWireRadius * nz;
+        springNormals[offset] = nx;
+        springNormals[offset + 1] = ny;
+        springNormals[offset + 2] = nz;
+      }
+    }
+    springWireGeometry.attributes.position.needsUpdate = true;
+    springWireGeometry.attributes.normal.needsUpdate = true;
+    springWireGeometry.computeBoundingSphere();
+    springWireGeometry.computeBoundingBox();
+  };
   const springMarkers = Array.from({ length: 5 }, (_, index) => {
     const marker = new THREE.Mesh(
       new THREE.SphereGeometry(0.07, 12, 9),
@@ -704,8 +698,10 @@ function harrisonGoingBarrel(movement) {
   springInnerAnchor.userData.role = 'spring-inner-anchor-S-on-larger-ratchet';
   largeRatchet.userData.rotor.add(springInnerAnchor);
 
+  // The weight's back face stays just in front of the spring's plane when
+  // winding lifts it past the lowest coil.
   const weight = new THREE.Mesh(
-    new THREE.BoxGeometry(1.18, 0.90, 0.66),
+    new THREE.BoxGeometry(1.18, 0.90, 0.56),
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
   );
   weight.userData.role = 'driving-weight-on-barrel-B';
@@ -815,19 +811,7 @@ function harrisonGoingBarrel(movement) {
     weight.position.copy(state.weightPosition);
     setCylinderBetween(rope, state.rope.topContact,
       state.rope.weightAttachment);
-    const springPoints = Array.from(
-      { length: springSegmentCount + 1 },
-      (_, index) => state.springGeometry.pointAtMaterialFraction(
-        index / springSegmentCount,
-      ),
-    );
-    for (let index = 0; index < springSegmentCount; index += 1) {
-      setBoxBetween(
-        springSegments[index],
-        springPoints[index],
-        springPoints[index + 1],
-      );
-    }
+    shapeSpringWire(state.springGeometry);
     for (const marker of springMarkers) {
       marker.position.copy(state.springGeometry.pointAtMaterialFraction(
         marker.userData.materialCoordinate,
@@ -896,7 +880,9 @@ function harrisonGoingBarrel(movement) {
     largeRatchetPitchRadius,
     largeRatchetToothCount,
     largeRatchetToothPitch,
-    referenceSpringHandle,
+    springReferenceShape,
+    springReferenceTurns,
+    springWireRadius,
     referenceWeightY,
     ropeDrumPitchRadius,
     sourceImageHeight,

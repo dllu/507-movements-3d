@@ -25,11 +25,15 @@ test('142 baked geometry follows closed rigid joints through the three-turn patt
    const wrist=b.planet.localToWorld(new Vector3(...g.crank,0)),start=b.rod.localToWorld(new Vector3()),end=b.rod.localToWorld(new Vector3(g.rodLength,0,0));
    assert(wrist.distanceTo(start)<1e-12);assert(end.distanceTo(b.slider.getWorldPosition(new Vector3()))<1e-12);
    assert(Math.abs(Math.hypot(s.wrist[0]-s.slider[0],s.wrist[1]-s.slider[1])-g.rodLength)<1e-12);
-   // The fit follows the presented disk, gears and rod stub; the plate draws
-   // no slider or guide, which source presentation removes.
-   for(const body of [b.carrier,b.rod])assert(v.root.userData.cameraFitBounds.containsBox(new Box3().setFromObject(body,true)));
+   // The fit follows the disk and gears down to the plate's cropped lower
+   // edge; the complete rod always runs downward to its slider on the guide.
+   assert(v.root.userData.cameraFitBounds.containsBox(new Box3().setFromObject(b.carrier,true)));
+   assert(s.slider[1]<s.wrist[1]-1.5,'the rod never points up freely');
+   assert(s.rodAngle<-Math.PI/4&&s.rodAngle>-3*Math.PI/4,'the rod runs downward to the traverse');
+   assert(s.slider[1]<v.root.userData.cameraFitBounds.max.y);
   }
-  const stub=b.rod.getObjectByName('connecting-rod');stub.geometry.computeBoundingBox();assert(stub.userData.presentedStub.brokenOff);assert(stub.geometry.boundingBox.max.x<1.1&&stub.geometry.boundingBox.max.x<g.rodLength/2,'the presented rod is broken off below its eye as Brown draws it');
+  assert.equal(v.root.userData.cameraFitBounds.min.y,v.root.userData.presentedCrop.plateEdge);
+  const rod=b.rod.getObjectByName('connecting-rod');rod.geometry.computeBoundingBox();assert(rod.geometry.boundingBox.max.x>g.rodLength,'the complete rod is presented');
   const a=silkTraverseAtTime(0),z=silkTraverseAtTime(15);assert(Math.hypot(...a.wrist.map((x,i)=>x-z.wrist[i]))<1e-12);
   assert(Math.abs(a.slider[1]-z.slider[1])<1e-12);v.reset();assert.equal(v.root.userData.state.angle,0);
  }finally{v.dispose();}

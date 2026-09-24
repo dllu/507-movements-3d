@@ -1045,23 +1045,18 @@ function ellipticalDriverCompoundIdler(movement) {
   correctVariableIdler(root, movement.id, update);
   markShadows(root);
   // Brown draws no phase stripes, and draws the guide groove g-h only as a
-  // dashed path behind C. Keep the attached grooved plate as a faint
-  // translucent body and trace both groove walls as dashed ink lines.
+  // dashed path behind C. The attached grooved plate is not drawn as a body:
+  // it stays in the model for offline checks but is hidden, and both groove
+  // walls are traced as thin opaque dashed ink lines, as Brown draws them.
   driverIndex.visible = false;
   for (const gear of [outputGear, compoundOuterGear, compoundPinion]) {
     gear.userData.rotor.children[3].visible = false;
   }
-  const ghostGuideMaterial = matte(PALETTE.brass, {
-    opacity: 0.05,
-    roughness: 0.8,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  ghostGuideMaterial.depthWrite = false;
   for (const mesh of [guideFloor, guideOuterRail, guideInnerIsland]) {
-    mesh.material = ghostGuideMaterial;
+    mesh.visible = false;
     mesh.castShadow = false;
     mesh.receiveShadow = false;
+    mesh.userData.hiddenGuidePlate = true;
   }
   guideRoller.material = inkMaterial;
   const dashedGrooveMaterial = new THREE.LineDashedMaterial({
@@ -1116,6 +1111,18 @@ function ellipticalDriverCompoundIdler(movement) {
     circularGearZ - circularGearDepth / 2 - 0.08,
     carrierZ + 0.065,
   );
+  // Fit the whole cycle: B orbits well above its source pose mid-cycle.
+  const sweptBounds = new THREE.Box3();
+  for (let index = 0; index <= 96; index += 1) {
+    update(driverCyclePeriod * index / 96);
+    root.updateMatrixWorld(true);
+    root.traverseVisible((object) => {
+      if (object.isMesh || object.isLine) sweptBounds.union(new THREE.Box3().setFromObject(object, true));
+    });
+  }
+  update(0);
+  root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.12);
+  root.userData.cameraDistanceScale = 1;
   return {
     root,
     update,

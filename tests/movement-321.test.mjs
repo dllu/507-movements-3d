@@ -92,7 +92,8 @@ test('movement 321 is Harrison’s complete spring maintaining-power barrel', ()
     blocks.barrel.userData.rotor);
   assert.equal(blocks.rope.parent, model.root);
   assert.equal(blocks.weight.parent, model.root);
-  assert.equal(blocks.springSegments.length, 80);
+  // One continuous round wire drawn along the spiral.
+  assert.equal(blocks.springSegments.length, 1);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -105,8 +106,7 @@ test('movement 321 is Harrison’s complete spring maintaining-power barrel', ()
     role === 'click-R-carried-by-larger-ratchet').length, 1);
   assert.equal(roles.filter((role) => role === 'fixed-frame-click-T').length, 1);
   assert.equal(roles.filter((role) =>
-    role === 'fixed-length-maintaining-spring-S-S-prime-segment').length,
-  80);
+    role === 'maintaining-spring-S-S-prime-spiral').length, 1);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -394,6 +394,40 @@ test('movement 321 flexes one constant-material-length spring between live G and
   disposeModel(model.root);
 });
 
+test('movement 321 draws S-S-prime as a smooth spiral that winds and unwinds without crossing or reaching the arbor', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let minimumTurns = Infinity;
+  let maximumTurns = 0;
+  let minimumSpacing = Infinity;
+  let minimumRadius = Infinity;
+  let maximumTurnStep = 0;
+  let previousTurns = null;
+  for (let sample = 0; sample <= 512; sample += 1) {
+    const spring = stateAtTime(geometry.demonstrationPeriod * sample / 512).springGeometry;
+    minimumTurns = Math.min(minimumTurns, spring.turns);
+    maximumTurns = Math.max(maximumTurns, spring.turns);
+    minimumSpacing = Math.min(minimumSpacing, spring.minimumCoilSpacing);
+    if (previousTurns !== null) maximumTurnStep = Math.max(maximumTurnStep, Math.abs(spring.turns - previousTurns));
+    previousTurns = spring.turns;
+    for (let index = 0; index <= 64; index += 1) {
+      const point = spring.pointAtMaterialFraction(index / 64);
+      minimumRadius = Math.min(minimumRadius, Math.hypot(point.x, point.y));
+    }
+  }
+  // Nearly two coils at the going preload; about a quarter turn unwinds
+  // while T holds the larger ratchet, then winds back as R re-engages.
+  assert.ok(maximumTurns > 1.8 && maximumTurns < 1.9);
+  assert.ok(maximumTurns - minimumTurns > 0.24 && maximumTurns - minimumTurns < 0.26);
+  assert.ok(maximumTurnStep < 0.01, 'the spiral changes smoothly');
+  // Successive coils stay separated by more than the wire diameter.
+  assert.ok(minimumSpacing > 2 * geometry.springWireRadius + 0.04,
+    `coil spacing ${minimumSpacing}`);
+  assert.ok(minimumRadius > geometry.springInnerAnchorRadius - 1e-9,
+    'no coil passes inside the inner anchor toward the arbor');
+  disposeModel(model.root);
+});
+
 test('movement 321 closes all asymmetric members and leaves movement 507 as the next draft', () => {
   const model = createMovementModel(catalog.movements[320]);
   const {
@@ -414,10 +448,10 @@ test('movement 321 closes all asymmetric members and leaves movement 507 as the 
     'barrel B and weight close after winding');
   vectorNear(closure.weightPosition, start.weightPosition, 0,
     'weight position closure');
-  for (let index = 0; index < 4; index += 1) {
-    vectorNear(closure.springGeometry.controlPoints[index],
-      start.springGeometry.controlPoints[index], 2e-14,
-    `spring control ${index} closure`);
+  for (let index = 0; index <= 8; index += 1) {
+    vectorNear(closure.springGeometry.pointAtMaterialFraction(index / 8),
+      start.springGeometry.pointAtMaterialFraction(index / 8), 2e-12,
+    `spring point ${index} closure`);
   }
   assert.equal(animationTiming.authoredCyclePeriod, geometry.demonstrationPeriod);
   assert.equal(animationTiming.targetCycleDuration, 2);

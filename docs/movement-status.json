@@ -2446,14 +2446,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: the initial view shows only rim segment D, as drawn; the complete wheel stays selectable."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u6-107-76-review.md",
+        "note": "Default and phase captures inspected beside the plate: stud D on its rim segment turns with the wheel and tips tappet B ≈58° so B lifts the ratchet one tooth."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only display caps on the section cut faces (≤0.050), not solid overlap."
+        "evidence": "docs/u6-107-76-review.md",
+        "note": "Pass-52 screen: only display caps on the driver's cut faces."
       },
       "references": [
         "artifacts/review/076-reconstruction-notes.md",
@@ -2462,7 +2462,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane2-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u6-107-76-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2470,9 +2471,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The stud flings tappet B round to vertical, well clear of the ratchet, instead of tipping its end up one tooth; the rim of the large wheel stays still while the arm carrying stud D sweeps round behind the ratchet and pokes out as a sliver above and below it.",
-      "limits": "Hidden construction and dynamic load assumptions remain reconstructed.",
-      "assessment": "flawed"
+      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge, departures from the plate needed for the mechanism to work.",
+      "limits": "About half the swing is dead travel from the rest stop.",
+      "assessment": "minor"
     },
     {
       "id": 77,
@@ -3484,32 +3485,32 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4a-1-160-review.md",
-        "note": "Default production capture inspected beside the plate: hatched ceiling beam; the groove is a sharp zigzag where Brown draws a sinuous wave."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u6-107-76-review.md",
+        "note": "Production captures inspected beside the plate: the groove snakes with broad round U-shaped ends and steep runs, as Brown draws it."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/mujoco-107-serpentine-cam.md",
-        "note": "Intended visible pin/land overlap up to 0.002334 source pixel; other sampled pairs clear.",
-        "kind": "contact-overlap"
+        "evidence": "docs/u6-107-76-review.md",
+        "note": "Native: only seated pin/groove-wall contact (0.003 px visible)."
       },
       "references": [
         "docs/mujoco-107-serpentine-cam.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4a-1-160-review.md"
+        "docs/w4a-1-160-review.md",
+        "docs/u6-107-76-review.md"
       ],
       "mujoco": {
         "mode": "live",
         "evidence": "src/simulation/mujoco-serpentine-cam/visual.js",
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The groove is sawtooth where the engraving draws a rounded, sinusoidal groove. The groove keeps constant-slope flanks for the captioned uniform motion, where Brown draws a sinuous wave; narrowed working pin and guides inferred.",
-      "limits": "",
-      "assessment": "flawed",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "The follower is not uniform-speed (fast across the runs); the working pin is a little narrower than the ink; guides inferred.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -3924,15 +3925,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4a-1-160-review.md",
-        "note": "Default production capture inspected beside the plate: face-on camera."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Production capture inspected beside the plate: segments stay centred on the pinion; the jaws close part-way."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/mujoco-120-segment-clamp.md",
-        "note": "Intended working-contact overlap up to 0.04262602 source pixel; other sampled pairs clear.",
-        "kind": "contact-overlap"
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Native working-tooth overlap 0.037 px."
       },
       "references": [
         "docs/mujoco-120-segment-clamp.md",
@@ -3940,7 +3940,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3948,9 +3949,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The blue jaw swings about 40 degrees, so its lower loop sweeps across the compound pinion and its rack arc curls away from the pinion, and the jaw tips cross over each other at the closed end of the cycle; Brown's segments stay concentric with the pinion.",
-      "limits": "Native jaw motion uses bounded collision approximation and ideal bearings; frame/depth/drive inferred.",
-      "assessment": "flawed"
+      "visibleFlaws": "The jaws no longer meet: closing them fully needs ≈47° of relative rotation, which Brown's geometry cannot give with the segments centred.",
+      "limits": "",
+      "assessment": "minor"
     },
     {
       "id": 121,
@@ -4661,9 +4662,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default production capture inspected beside the plate: the rod is shown as Brown's broken-off stub and the disk fills the view."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Production capture inspected beside the plate: the rod runs down past the disk to its slider on the guide."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4678,7 +4679,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane9-residuals-review.md",
         "docs/w2a-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4686,9 +4688,9 @@
         "note": "Baked visible geometry with analytical motion; not a MuJoCo simulation bake."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "With the slider guide removed, the output rod is a short stub that swings freely with the orbiting gear, pointing straight up at times; it is not attached to anything, where Brown's rod runs down to the traverse.",
-      "limits": "Output guide and support depths inferred.",
-      "assessment": "flawed"
+      "visibleFlaws": "",
+      "limits": "The guide's position is inferred.",
+      "assessment": "reasonable"
     },
     {
       "id": 143,
@@ -6571,9 +6573,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: framed large and face-on at the plate's pose."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Default capture inspected beside the plate: the frame's full travel stays in view."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6586,7 +6588,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6594,9 +6597,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The default view cannot contain the travelling rack frame: for much of the cycle a third of the frame and slot slides out past the edge of the view.",
+      "visibleFlaws": "The subject reads smaller in a square view.",
       "limits": "Guide clearance may change the loaded path; a 0.070 overlap remains in the unpresented model.",
-      "assessment": "flawed"
+      "assessment": "minor"
     },
     {
       "id": 198,
@@ -7246,14 +7249,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Default capture inspected beside the plate: cam alone with e at twelve o'clock; the groove is not Brown's symmetric heart."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Default capture inspected beside the plate: Brown's symmetric double-walled heart groove with stud A working in it."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane4-escapements-misc-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs in the presented cam."
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Pass-52 screen: clear; the lever boss is bored for shaft H."
       },
       "references": [
         "docs/movement-217-218.md",
@@ -7261,7 +7264,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/lane4-escapements-misc-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7269,9 +7273,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The groove is a lopsided single-walled loop, not Brown's symmetric double-walled heart, and no follower is shown, so the spinning disc visibly drives nothing.",
-      "limits": "The groove is the exact path of stud A: a lever about H cannot sweep the captioned 240° through a heart-shaped groove; a 0.03 hub/bearing overlap remains in the unpresented 218 model.",
-      "assessment": "flawed"
+      "visibleFlaws": "A lever about H is added (Brown draws the cam alone), and plate 217 no longer shows the backward/forward/dwell sequence, which 218 keeps.",
+      "limits": "",
+      "assessment": "minor"
     },
     {
       "id": 218,
@@ -7380,14 +7384,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: the elliptical path shown dashed on a faint plate in front, so shaft D no longer crosses wheel B."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Default capture inspected beside the plate: the groove as two thin dashed lines and the full orbit framed."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Pass-51 screen: 0.140 → clear."
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Pass-52 screen: clear; contact report regenerated with identical results."
       },
       "references": [
         "docs/variable-idler-gear-review.md",
@@ -7395,7 +7399,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7403,9 +7408,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A translucent beige carrier plate lies over the gears and washes out the blue wheels, and the orbiting wheel B runs off the top of the default view mid-cycle while the bottom of the view stays empty.",
-      "limits": "Gear motion prescribed; loaded mesh and backlash unvalidated.",
-      "assessment": "flawed"
+      "visibleFlaws": "",
+      "limits": "Gear motion prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 222,
@@ -9934,8 +9939,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: a heavy close crop with oversized teeth and pallet arm; it no longer reads like Brown's strip of crown teeth with the pallet frame."
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Default capture inspected beside the plate: a wider strip of crown teeth with the verge above; the teeth have vertical leading faces and the pallets are blocks."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9950,7 +9955,8 @@
         "docs/lane3-escapements-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/w2f-274-333-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9958,8 +9964,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The crop is too tight: two huge teeth and a blocky pallet arm fill the view, where Brown shows a strip of raked crown teeth with the verge and pallets above.",
-      "limits": "Pallet length is set by the verge law.",
+      "visibleFlaws": "The crown teeth have vertical leading faces with wide gaps where Brown draws raked saw teeth, and the pallets are thick blocks rather than his slender pallets.",
+      "limits": "The verge motion depends on the current tooth and pallet shapes.",
       "assessment": "flawed"
     },
     {
@@ -10677,14 +10683,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Default capture inspected beside the plate: spring loops left of B clear of the arbor; decorative ring and index removed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Default capture inspected beside the plate: spring S a smooth coiled spiral winding and unwinding without crossing."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Pass-51 screen: spring/arbor 0.139 fixed; only segment joins at bends (0.034) and seated spring ends remain."
+        "evidence": "docs/u7-flawed-review.md",
+        "note": "Pass-52 screen: only seated spring ends (0.091) and the rope wrap."
       },
       "references": [
         "docs/maintaining-clock-family-review.md",
@@ -10693,7 +10699,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
         "docs/w3b-escapements-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u7-flawed-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10701,9 +10708,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The spring S is drawn as a thin black wire that writhes into a different kinked tangle every moment, sweeping across the wheel; it looks nothing like Brown's smooth coiled spring and its segments overlap at the bends.",
-      "limits": "Prescribed output/load, click bias and winding energy.",
-      "assessment": "flawed"
+      "visibleFlaws": "The spiral follows the caption's coiled spring rather than Brown's single curved wire.",
+      "limits": "",
+      "assessment": "minor"
     },
     {
       "id": 322,

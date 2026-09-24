@@ -134,6 +134,10 @@ export function finishMangleRackWorkingParts(root, update, id) {
     for (let j = 0; j < p.count; j++) pose.expandByPoint(point.fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld));
   });
   d.cameraFitBounds = pose.expandByScalar(0.12); d.cameraDistanceScale = 1.02;
+  // 197's square frame travels most of its own length; fitting only the
+  // source pose let a third of the frame slide out of view. Frame the whole
+  // travel of the presented frame instead.
+  if (id === 197) { d.cameraFitBounds = d.sweptBounds.clone(); d.cameraDistanceScale = 1; }
   root.traverse(o => { for (const material of [].concat(o.material ?? [])) material.fog = false; });
   wrappedUpdate(0); markShadows(root);
   // Brown draws the rack pins as plain circles on the rack face; their long

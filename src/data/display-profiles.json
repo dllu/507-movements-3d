@@ -1441,19 +1441,19 @@
       }
     },
     "76": {
-      "peakAngularSpeed": 13.071564606327541,
-      "peakVisibleAngularSpeed": 13.071564606327541,
-      "sustainedVisibleAngularSpeed": 0.5235987755990139,
+      "peakAngularSpeed": 9.436874120325967,
+      "peakVisibleAngularSpeed": 9.436874120325967,
+      "sustainedVisibleAngularSpeed": 0.5235987755990138,
       "configurationMeasurements": [
         {
           "configuration": "section",
-          "peakVisibleAngularSpeed": 13.071564606327541,
-          "sustainedVisibleAngularSpeed": 0.5235987755990139
+          "peakVisibleAngularSpeed": 9.436874120325967,
+          "sustainedVisibleAngularSpeed": 0.5235987755990138
         },
         {
           "configuration": "complete",
-          "peakVisibleAngularSpeed": 13.071564606327541,
-          "sustainedVisibleAngularSpeed": 0.5235987755990139
+          "peakVisibleAngularSpeed": 9.436874120325967,
+          "sustainedVisibleAngularSpeed": 0.5235987755990138
         }
       ],
       "floorY": -2.383601957977937,
@@ -4137,21 +4137,21 @@
       }
     },
     "217": {
-      "peakAngularSpeed": 0.7853981634007553,
-      "peakVisibleAngularSpeed": 0.7853981634007553,
-      "sustainedVisibleAngularSpeed": 0.7853981633950653,
-      "floorY": -5.580000058633956,
+      "peakAngularSpeed": 0.7853981634029756,
+      "peakVisibleAngularSpeed": 0.7853981634029756,
+      "sustainedVisibleAngularSpeed": 0.7853981633971471,
+      "floorY": -5.579999908154457,
       "fastestPart": "clockwise-grooved-heart-cam-C-D-B-e",
       "motionBounds": {
         "min": [
-          -5.580000058633956,
-          -5.580000058633956,
-          -0.7899999737739563
+          -5.579999908154457,
+          -5.579999908154457,
+          -0.4000000059604645
         ],
         "max": [
-          5.580000058633956,
-          5.580000058633956,
-          0.3899999737739563
+          7.0199999123985775,
+          5.579999908154457,
+          0.4599999785423279
         ]
       }
     },
@@ -6127,7 +6127,7 @@
         "max": [
           3.6195293981102776,
           3.0393736211709297,
-          1.8100000131130218
+          1.7600000011920929
         ]
       }
     },

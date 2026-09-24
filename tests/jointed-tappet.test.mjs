@@ -15,7 +15,13 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   for(const [block,pixel] of [['tappet',[1125,637]],['dog',[994,671]],['holding',[271,168]]]){
     const expected=source(pixel);near(u.blocks[block].position.x,expected[0]);near(u.blocks[block].position.y,expected[1]);
   }
-  const D=source([1187,358]);near(u.parts.driverStud.position.x,D[0]);near(u.parts.driverStud.position.y,D[1]);
+  // D keeps its drawn direction; its orbit sits just inside the resting
+  // struck arm's reach so the stud releases after one tooth, on the rim.
+  const D=source([1187,358]),stud=u.parts.driverStud.position;
+  near(Math.atan2(stud.y,stud.x),Math.atan2(D[1],D[0]));near(Math.hypot(stud.x,stud.y),p.studOrbit);
+  const restEnd=[p.C[0]+Math.cos(p.restQ)*p.end[0]-Math.sin(p.restQ)*p.end[1],p.C[1]+Math.sin(p.restQ)*p.end[0]+Math.cos(p.restQ)*p.end[1]];
+  near(Math.hypot(...restEnd)+p.barRadius+p.studRadius-p.studOrbit,.05,1e-12);
+  assert.ok(p.studOrbit+p.studRadius<=p.driverOuter&&p.studOrbit-p.studRadius>=p.driverInner,'D must stay on the rim');
   assert.deepEqual(u.blocks.driver.position.toArray(),[0,0,0]);assert.deepEqual(u.blocks.wheel.position.toArray(),[0,0,0]);
   assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,24);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
   assert.match(u.idealConstraints,/reconstruction assumptions/);near(u.profile.physics.load,3);assert.deepEqual(u.profile.physics.damping,[3,.008,100,.003]);
@@ -67,8 +73,14 @@ test('076 all four bearings have real bores with supporting material around them
 test('076 settles one counterclockwise tooth per clockwise driver turn and resets its joint',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
   near(pose(model,0).q,0);near(pose(model,.2).q,.3);
-  assert.ok(pose(model,1).theta>p.wheelStart+1.5*p.pitch,'The unconstrained wheel must overtravel before settling');
-  assert.ok(pose(model,3.26525).alpha<-.9,'The joint must fold to pass the return tooth');
+  assert.ok(pose(model,1).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
+  assert.ok(pose(model,1.556).alpha<-.9,'The joint must fold to pass the return tooth');
+  // The stud tips the tappet only far enough to index one tooth: it
+  // releases B within 60° of rest and the wheel overtravels under 1.25 teeth.
+  let qMin=Infinity,thetaMax=-Infinity;
+  for(let t=0;t<12;t+=.001){const s=sampleJointedTappetMotion(t);qMin=Math.min(qMin,s.q);thetaMax=Math.max(thetaMax,s.theta);}
+  assert.ok(p.restQ-qMin<Math.PI/3&&qMin<-.6,`tappet swing ${p.restQ-qMin}`);
+  assert.ok(thetaMax<p.wheelStart+1.25*p.pitch,`wheel overtravel ${(thetaMax-p.wheelStart)/p.pitch}`);
   for(const cycle of [0,1,2,9,19,20,63]){
     const held=pose(model,cycle*12+4);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
     const next=pose(model,(cycle+1)*12);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1));near(next.q,.3);
@@ -95,11 +107,11 @@ test('076 the cached clock is continuous at wraps, clamps negative time and reje
 test('076 actual working noses and mechanical stops resist motion into their contacting surfaces',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const cases=[
-    {time:.53,a:'dogNose',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:.8,a:'dogNose',b:'wheelBody',block:'wheel',delta:-1e-4},
     {time:4,a:'holdingNose',b:'wheelBody',block:'wheel',delta:-1e-4},
     {time:0,a:'dogStopPin',b:'dogStopSector',block:'dog',delta:1e-3},
     {time:4,a:'tappetRestPin',b:'tappetRestSector',block:'tappet',delta:1e-3},
-    {time:.45,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
+    {time:.7,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
   ];
   for(const c of cases){
     const pairs=[[c.a,c.b],[c.b,c.a]].map(([a,b])=>({a,b,
@@ -129,7 +141,7 @@ test('076 actual working noses and mechanical stops resist motion into their con
 test('076 independent solids clear each other through strike, overtravel, folding and the next turn',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const parts=Object.entries(u.parts).map(([name,mesh])=>({name,mesh,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
-  for(const time of [0,.16,.45,.52,.54,.6,1,1.4,2,2.9,3.1,3.26525,3.38,4,6,9,11.9,12.53]){
+  for(const time of [0,.16,.45,.48,.52,.6,.66,.7,.8,.93,1,1.2,1.4,1.556,1.8,2,2.9,3.1,4,6,9,11.9,12.53,12.8]){
     pose(model,time);
     for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
       if(u.families[parts[i].name]===u.families[parts[j].name])continue;
@@ -162,5 +174,12 @@ test('076 section view clips only driver display and leaves physical buffers and
       });}
     }
   }
+  // The section window is cut in the driver's frame: rim segment D and its
+  // stud keep the same place in it as the large wheel turns.
+  u.setConfiguration('section');
+  const inWindow=time=>{pose(model,time);const stud=new THREE.Vector3().setFromMatrixPosition(u.parts.driverStud.matrixWorld);
+    return u.parts.driverBody.material.clippingPlanes.map(plane=>plane.distanceToPoint(stud));};
+  const start=inWindow(0);for(const time of [.7,3,6,9.5])inWindow(time).forEach((d,i)=>near(d,start[i],1e-9));
+  assert.ok(start.every(d=>d>0),'stud D lies inside the section window');
   assert.throws(()=>u.setConfiguration('unknown'),/view/);dispose(model);
 });

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {segmentClampProfile} from './profile.js';
+import {segmentClampProfile,segmentClampStroke} from './profile.js';
 import source from './source.js';
 import {plate,poly,circle,sector,spline,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {segmentClampContactCells} from './contact.js';
@@ -43,7 +43,7 @@ export function makeSegmentClampGeometry(options={}){
   internalTeeth:parts.internalToothBand.geometry,
   leftJaw:plate(clip.difference(leftJaw,padRelief),-.08,.28),rightJaw:plate(clip.difference(rightJaw,padRelief),-.20,.22)};
  const contactApproximation={};for(const[name,g]of Object.entries(contactGeometry)){const {cells:pieces,...description}=segmentClampContactCells(g,options.collisionTolerance??.0005);cells[name]=pieces;contactApproximation[name]=description;if(!Object.values(parts).some(m=>m.geometry===g))g.dispose();}
- const bounds=new THREE.Box3();for(let i=0;i<=32;i++){const a=1.95*i/32;blocks.external.rotation.z=-f.externalRatio*a;blocks.internal.rotation.z=f.internalRatio*a;blocks.input.rotation.z=a;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}
+ const bounds=new THREE.Box3();const stroke=(options.amplitude??segmentClampStroke)+.05;for(let i=0;i<=32;i++){const a=stroke*i/32;blocks.external.rotation.z=-f.externalRatio*a;blocks.internal.rotation.z=f.internalRatio*a;blocks.input.rotation.z=a;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}
  for(const block of Object.values(blocks))block.rotation.z=0;root.updateMatrixWorld(true);bounds.expandByScalar(.08);
  Object.assign(root.userData,{source,profile:f,parts,blocks,families,cells,contactApproximation,hideGround:true,cameraFitBounds:bounds,shadowCameraHalfExtent:5,shadowNormalBias:.01,shadowBias:-.00002,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()}});
  // Brown draws the clamp flat, face-on.
