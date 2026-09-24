@@ -58,3 +58,38 @@ The following pass (101 tests):
 - well-scoop-gutter-solids
 
 movement-488 and marine-rotor-working-solids also pass (15 tests).
+
+## Follow-up (after ed59104): 464 section frame and 394 flange outline
+
+### 464 hollow cast frame in section
+
+`sectionFountain` in `fountain-balance-working-parts.js`, called from `correctFountain`, now draws Brown's single hollow cast frame, cut at the mid-plane and 0.35 deep:
+
+- a closed top trough;
+- two hollow legs: the right one is the water down-pipe and the left one is the air passage, with a port into the chamber under the trough;
+- the air chamber, with the bowl hung from its ceiling on two straps;
+- a hollow foot with flared shoulders on two feet;
+- the jet pipe rising through the trough to Brown's pointed spire. The spray now leaves the spire tip.
+
+The cut walls are opaque frame colour. A far inner face closes every hollow so it reads as a cavity. Water shows as horizontal ruled lines at the cut plane in the trough, right leg, jet pipe, foot and bowl. The foot and bowl lines are clipped to the live water levels (`lowerWaterSurfaceY`, `intermediateWaterSurfaceY`) by per-material clipping planes, so no geometry buffer changes during playback. The section casts and receives no shadows.
+
+The 3D vessels, pipes and water volumes stay in the model and are still exercised by the clearance, level and visibility tests, but they are no longer drawn:
+
+- The solid parts are hidden.
+- The flow volumes keep their playback visibility flags, but their materials no longer draw.
+- The plume has its own material.
+
+Residuals:
+
+- The trough is drawn closed as Brown shows it, although the model's basin is open.
+- The bowl hangs on straps rather than rimming the ceiling.
+- The feet are plain round pads rather than claws.
+- The level changes are small, as in the model.
+- The section wall mesh reports as open (not closed) in the body screen, but it is a single fixed body, so there are no pairs.
+
+### 394 guide-flange outline
+
+A thin ink outline (`outline-of-stepped-guide-flange-behind-pinion`, z −0.355..−0.345) is drawn like Brown's: a ring of radius 1.05, stepped out to 1.19 over the lower 130°. It turns with the output rotor, behind the rack's rear plane. The teeth and rim cover it where it passes behind them, as Brown dashes it, and it stays inside the rack outline at all phases. Body screen: clear (no pairs).
+
+Re-measure display profiles: 394, 464, in addition to the earlier list.
+Tests: fountain-balance-interfaces, movement-394, movement-464, movement-465, reversing-mangle-finite-guides, reversing-transmission-tooth-contact, reversing-transmission-working-solids and source-presentation: 56 pass.

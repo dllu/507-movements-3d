@@ -94,6 +94,16 @@ export function finishParsons394(root,update){
    b.rackCarrier.add(web);b.rearToothWebs.push(web);
   }
  }
+ // Brown outlines the guide flange behind the pinion as a thin ring larger
+ // than the pinion, stepped out to a wider arc below. It turns with the
+ // shaft behind the rack's rear plane (clear of the large flange at -0.365),
+ // so the teeth and rim cover it where it passes behind them, as he dashes.
+ const deg=Math.PI/180,inner=1.05,outer=1.19,stroke=.024,earStart=-155*deg,earEnd=-25*deg;
+ const outline=clip.union(sector(inner-stroke,inner,earEnd,earStart+2*Math.PI,192),sector(outer-stroke,outer,earStart,earEnd,128),
+  ...[earStart,earEnd].map(a=>capsule([(inner-stroke)*Math.cos(a),(inner-stroke)*Math.sin(a)],[(outer-stroke/2)*Math.cos(a),(outer-stroke/2)*Math.sin(a)],stroke/2,16)));
+ const flangeOutline=new THREE.Mesh(plate(outline,-.355,-.345),o.hub.material);
+ flangeOutline.userData.role='outline-of-stepped-guide-flange-behind-pinion';flangeOutline.userData.presentationOnly=true;
+ o.largeFlange.parent.add(flangeOutline);b.flangeOutline=flangeOutline;
  return finishView(root,update,8,new THREE.Vector3(.25,.12,15),d.timeline.cycleDuration);
 }
 function finishView(root,update,minimum,cameraDirection,cycle){

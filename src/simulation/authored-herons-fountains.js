@@ -643,6 +643,11 @@ function heronsFountain(movement) {
     jetColumn, ...fountainSprays, externalPour]) {
     object.castShadow = false;
   }
+  // Brown's section is a flat engraving: its cut walls cast no shadows.
+  root.userData.sectionFrame?.group.traverse((object) => {
+    object.castShadow = false;
+    object.receiveShadow = false;
+  });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

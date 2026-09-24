@@ -13301,9 +13301,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's scalloped guide-flange outline round the pinion is not drawn.",
-      "limits": "Rack teeth crossed by the pinion keep an uncut back behind its path, so a slightly darker recess shows where a tooth front is cut; shortened terminal rack teeth and inferred guides; flange friction handoff prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "A slightly darker recess shows where the front of a cut tooth is removed; shortened terminal rack teeth and inferred guides; flange friction handoff prescribed; the flange outline is drawn only and has no working surface.",
+      "assessment": "reasonable"
     },
     {
       "id": 395,
@@ -15627,9 +15627,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The frame is built from grey slabs, brass pipes and a translucent tank where Brown draws one hatched hollow frame round the basin.",
-      "limits": "The jet is an illustrative plume (16 streaks a side), not solved spray, and plays only while the jet runs; prescribed transfer and ideal isothermal pressure; hidden loop reset nonphysical; the pour into the basin is removed in the source view.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The drawn section stands in for a hidden 3D model; the bowl hangs on straps and the feet are plain pads rather than claws; the spray is an illustrative plume; prescribed transfer and ideal isothermal pressure; hidden loop reset nonphysical.",
+      "assessment": "reasonable"
     },
     {
       "id": 465,
