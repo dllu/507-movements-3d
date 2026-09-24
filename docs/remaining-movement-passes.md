@@ -10,7 +10,21 @@ assignment is not a claim that its existing simulation is correct. Previously
 reviewed movements remain reusable references, with their documented residuals.
 The executable inventory is [movement-batches.mjs](../scripts/lib/movement-batches.mjs).
 
-## Latest outcome: fifty-first pass
+## Latest outcome: fifty-second pass (visible-flaw reassessment)
+
+The ledger now separates **visible flaws** from **invisible limits** and rates
+every row ✅ reasonable or 🟡 minor. The user's own defect list (63, 73, 84, 88,
+91, 98, 99, 107, 117, 135, 137, 148, 149, 183, 186–189, 191, 192, 196, 198) was
+fixed first. Then lanes m1–m14 worked through the minor rows (reviews
+`docs/m1-…` to `docs/m14-…-review.md`). The count went from 78 minor to 14,
+with 493 reasonable and none flawed. Each remaining minor row states its
+visible difference and the reason it is forced. Examples: 137's opposite
+dimples need more span than a two-roller fork allows, 211's one-turn index
+needs a 99° toothed arc, 84's drawn slots cap the rack's walk, and 195's worm
+across the face cuts curved spaces. The framing-only rows (269, 384, 504) are
+small in frame because their full sweep must stay in view.
+
+## Fifty-first pass
 
 Nine parallel lanes matched about 110 movements more closely to their plates
 (lane reviews `docs/lane1-…` to `docs/lane9-…-review.md`): rebuilt views such as
