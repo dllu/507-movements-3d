@@ -232,15 +232,22 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const camCenter = new THREE.Vector2(0, 0);
   const outputCenter = new THREE.Vector2(0, 3.25);
   const followerArmRadius = 1.95;
-  const followerBaseAngle = THREE.MathUtils.degToRad(30);
+  // Plate 218 draws eight notches. Its roller turns 3/8 back and 3/4 forward
+  // (the caption's 1:2 ratio), so the net 3/8 advance is three of Brown's
+  // eight notches; 217, which draws no notch wheel, keeps the caption's 1/3.
+  // The rocker parts are turned by the 15-degree difference so the D pose
+  // (plate 218) is unchanged.
+  const indexFraction = outputPlateFocus ? 3 / 8 : 1 / 3;
+  const rockerBaseOffset = (indexFraction - 1 / 3) * FULL_TURN;
+  const followerBaseAngle = THREE.MathUtils.degToRad(30) + rockerBaseOffset;
   const catchPivotRadius = 1.86;
-  const catchPivotBaseAngle = THREE.MathUtils.degToRad(187);
+  const catchPivotBaseAngle = THREE.MathUtils.degToRad(187) + rockerBaseOffset;
   // Brown seats G's lug in a shallow notch at F's rim (plate 218 hook contact at
   // 1.03 rim radii); the hook runs just inside the rim so the notches stay shallow.
   const engagedHookRadius = 1.46;
-  const engagedHookBaseAngle = THREE.MathUtils.degToRad(245);
+  const engagedHookBaseAngle = THREE.MathUtils.degToRad(245) + rockerBaseOffset;
   const catchTripBossRadiusFromOutput = 1.78;
-  const catchTripBossBaseAngle = THREE.MathUtils.degToRad(210);
+  const catchTripBossBaseAngle = THREE.MathUtils.degToRad(210) + rockerBaseOffset;
   const followerLocal = new THREE.Vector2(
     followerArmRadius * Math.cos(followerBaseAngle),
     followerArmRadius * Math.sin(followerBaseAngle),
@@ -268,15 +275,15 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const forwardEndPhase = 0.55;
   const liftRiseEndPhase = forwardEndPhase + 0.025;
   const liftFallStartPhase = 0.93;
-  const backwardAngle = -FULL_TURN / 3;
-  const forwardAngleFromD = FULL_TURN * 2 / 3;
-  const netOutputAdvance = FULL_TURN / 3;
+  const backwardAngle = -FULL_TURN * indexFraction;
+  const forwardAngleFromD = FULL_TURN * 2 * indexFraction;
+  const netOutputAdvance = FULL_TURN * indexFraction;
   const catchLiftAngle = 0.35;
   const inputCycleDuration = 8;
   const inputTravelAngularSpeed = FULL_TURN / inputCycleDuration;
   const sourcePoseInputTravel = backwardEndPhase * FULL_TURN;
 
-  const notchCount = 9;
+  const notchCount = outputPlateFocus ? 8 : 9;
   const notchPitchAngle = FULL_TURN / notchCount;
   const notchPhaseAngle = engagedHookBaseAngle;
   const notchWheelOuterRadius = 1.55;
@@ -711,7 +718,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
 
   const outputRotor = new THREE.Group();
   outputRotor.position.set(outputCenter.x, outputCenter.y, 0);
-  outputRotor.userData.role = 'F-nine-notch-detaching-roller-wheel';
+  outputRotor.userData.role = `F-${outputPlateFocus ? 'eight' : 'nine'}-notch-detaching-roller-wheel`;
   root.add(outputRotor);
 
   const wheelShape = shapeFromPoints(wheelPoints);
@@ -727,7 +734,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
     wheelCenterZ,
     drivenMaterial,
   );
-  notchWheel.userData.role = 'F-solid-nine-notch-wheel';
+  notchWheel.userData.role = `F-solid-${outputPlateFocus ? 'eight' : 'nine'}-notch-wheel`;
   outputRotor.add(notchWheel);
 
   // Plate 218 draws H as an open ring round a bored shaft, not a black boss.
@@ -1159,7 +1166,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   };
   root.userData.mechanism =
     'clockwise grooved heart cam C-D-e; A-rocker; hinged catch G; '
-    + 'nine-notch wheel F on detaching-roller shaft H';
+    + `${outputPlateFocus ? 'eight' : 'nine'}-notch wheel F on detaching-roller shaft H`;
   root.userData.motion = {
     backwardAngle,
     backwardEndPhase,
@@ -1173,10 +1180,14 @@ function groovedCamWoolComberRollerMotion(movementId) {
     netOutputAdvance,
     sourcePoseInputTravel,
   };
-  root.userData.notchCountRationale =
-    'Brown draws the notch wheel schematically. Nine equally spaced notches '
-    + 'are the smallest visually similar count for which the stated net '
-    + 'one-third-turn advance closes on an integer three-notch pitch.';
+  root.userData.notchCountRationale = outputPlateFocus
+    ? 'Brown draws the notch wheel schematically with eight notches. Keeping '
+      + 'eight, the roller turns 3/8 back and 3/4 forward (the caption\'s 1:2 '
+      + 'ratio) so the net 3/8 advance closes on an integer three-notch pitch; '
+      + 'the caption\'s 1/3 and 2/3 would need a multiple of three notches.'
+    : 'Brown draws the notch wheel schematically. Nine equally spaced notches '
+      + 'are the smallest visually similar count for which the stated net '
+      + 'one-third-turn advance closes on an integer three-notch pitch.';
   root.userData.sourceAnimation = {
     available: false,
     durationSeconds: inputCycleDuration,

@@ -113,7 +113,7 @@ test('movement 218 is the independently authored output plate of 217', () => {
   assert.equal(blocks.wheelIndex.visible, false);
   assert.equal(blocks.catchIndex.visible, false);
   assert.equal(blocks.followerContactMarker.visible, false);
-  assert.equal(geometry.notchCount, 9);
+  assert.equal(geometry.notchCount, 8);
   assert.equal(
     blocks.notchWheel.geometry.parameters.shapes.holes.length,
     1,
@@ -124,7 +124,7 @@ test('movement 218 is the independently authored output plate of 217', () => {
   model.root.traverseVisible((object) => {
     if (object.userData.role) visibleRoles.push(object.userData.role);
   });
-  assert.ok(visibleRoles.includes('F-solid-nine-notch-wheel'));
+  assert.ok(visibleRoles.includes('F-solid-eight-notch-wheel'));
   assert.ok(visibleRoles.includes('curved-rocker-link-A-to-G'));
   assert.ok(visibleRoles.includes('G-catch-trip-boss-struck-at-e'));
   // G's lug is the flat end of the catch bar; the wire tongue is hidden.
@@ -208,7 +208,7 @@ test('movement 218 reproduces the A-H-G source proportions and curved catch orde
   disposeModel(model.root);
 });
 
-test('movement 218 exactly shares the minus-third, plus-two-thirds, dwell law', () => {
+test('movement 218 turns 3/8 back, 3/4 forward, then dwells, meeting 217 at D', () => {
   // Plate 217 presents the heart cam alone; the shared transmission is
   // built in its orientation to compare the law.
   const camPlate = createWoolComberTransmission(217);
@@ -226,43 +226,35 @@ test('movement 218 exactly shares the minus-third, plus-two-thirds, dwell law', 
     camPlate.root.userData.sharedMechanismKey,
     outputPlate.root.userData.sharedMechanismKey,
   );
-  near(netOutputAdvance, FULL_TURN / 3, 0, 'net output advance');
+  // Brown's eight notches: the caption's 1:2 back/forward ratio with a net
+  // 3/8 advance, three notch pitches.
+  near(netOutputAdvance, 3 * FULL_TURN / 8, 0, 'net output advance');
+  near(netOutputAdvance / outputPlate.root.userData.geometry.notchPitchAngle, 3, 1e-15,
+    'one cycle advances exactly three of eight notches');
   const atC = state218(0);
   const atD = state218(backwardEndPhase * FULL_TURN);
   const atE = state218(forwardEndPhase * FULL_TURN);
   const inDwell = state218(0.78 * FULL_TURN);
   const nextC = state218(FULL_TURN);
   near(atC.outputAngle, 0, 0, 'C output');
-  near(atD.outputAngle, -FULL_TURN / 3, 5e-16, 'D output');
-  near(atE.outputAngle, FULL_TURN / 3, 5e-16, 'e output');
-  near(inDwell.outputAngle, FULL_TURN / 3, 5e-16, 'dwell output');
-  near(nextC.outputAngle, FULL_TURN / 3, 5e-16, 'next C output');
+  near(atD.outputAngle, -3 * FULL_TURN / 8, 5e-16, 'D output');
+  near(atE.outputAngle, 3 * FULL_TURN / 8, 5e-16, 'e output');
+  near(inDwell.outputAngle, 3 * FULL_TURN / 8, 5e-16, 'dwell output');
+  near(nextC.outputAngle, 3 * FULL_TURN / 8, 5e-16, 'next C output');
+  // At D (the plate-218 pose) the rocker, catch and hook stand exactly where
+  // the caption-law 217 transmission puts them.
+  const d217 = state217(backwardEndPhase * FULL_TURN);
+  for (const key of ['followerWorld', 'catchPivotWorld', 'catchTripBossWorld', 'catchHookWorld']) {
+    assert.ok(d217[key].distanceTo(atD[key]) < 1e-12, `${key} at D`);
+  }
   near(inDwell.outputAngularSpeed, 0, 0, 'dwell speed');
   near(inDwell.outputAngularAcceleration, 0, 0, 'dwell acceleration');
 
-  let maximumSharedScalarError = 0;
-  let maximumSharedPointError = 0;
   let maximumNotchError = 0;
   let maximumGrooveError = 0;
   for (let index = 0; index <= 32768; index += 1) {
     const inputTravel = index / 32768 * FULL_TURN;
-    const left = state217(inputTravel);
     const right = state218(inputTravel);
-    maximumSharedScalarError = Math.max(
-      maximumSharedScalarError,
-      Math.abs(left.driverAngle - right.driverAngle),
-      Math.abs(left.rockerAngle - right.rockerAngle),
-      Math.abs(left.catchAngle - right.catchAngle),
-      Math.abs(left.outputAngle - right.outputAngle),
-      Math.abs(left.outputAngularSpeed - right.outputAngularSpeed),
-    );
-    maximumSharedPointError = Math.max(
-      maximumSharedPointError,
-      left.followerWorld.distanceTo(right.followerWorld),
-      left.catchPivotWorld.distanceTo(right.catchPivotWorld),
-      left.catchTripBossWorld.distanceTo(right.catchTripBossWorld),
-      left.catchHookWorld.distanceTo(right.catchHookWorld),
-    );
     maximumGrooveError = Math.max(
       maximumGrooveError,
       right.grooveConstraintError,
@@ -279,8 +271,6 @@ test('movement 218 exactly shares the minus-third, plus-two-thirds, dwell law', 
       near(right.outputAngularSpeed, 0, 0, `dwell speed ${index}`);
     }
   }
-  near(maximumSharedScalarError, 0, 0, 'shared scalar state');
-  near(maximumSharedPointError, 0, 0, 'shared point state');
   assert.ok(maximumNotchError < 3e-15);
   assert.ok(maximumGrooveError < 6e-15);
 

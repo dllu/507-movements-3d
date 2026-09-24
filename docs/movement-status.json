@@ -2300,7 +2300,8 @@
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m11-forced-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2308,8 +2309,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rim notches are about 40° wide and sit 20–35° from Brown's narrow slots; they are the swept path of the studs across the rim during the 55° push, which Brown's slot widths could not pass.",
-      "limits": "",
+      "visibleFlaws": "The two rim slits sit about 20–35° clockwise of Brown's, and the upper one runs more steeply.",
+      "limits": "The slits are the studs' swept channel through the rim; where they sit relative to the tappet is fixed by when each stud crosses the rim during the push.",
       "assessment": "minor"
     },
     {
@@ -6936,7 +6937,8 @@
         "docs/w3g-intermittent-review.md",
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m11-forced-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6944,9 +6946,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth are square-stepped where Brown's are hooked points; his hooks face a counter-clockwise drive (right pawl pulling as the pin rises), while the model drives clockwise on the long tooth backs.",
-      "limits": "A mirrored rebuild with Brown's undercut teeth needs dead-travel pull-in of the pulling pawl, which the continuous two-stroke construction cannot model; contact exact by construction; the catalog archetype still says forty-four teeth.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pawls push clockwise on the long backs; teeth are 0.33 deep, about twice Brown's depth, to keep drive forces within 62° of the face normal; the archetype still says forty-four teeth.",
+      "assessment": "reasonable"
     },
     {
       "id": 207,
@@ -7160,8 +7162,8 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Pass-51 screen: pin/marker 0.0436 → clear."
+        "evidence": "docs/m11-forced-intermittent-review.md",
+        "note": "m11 screen (0.01, 129): no pairs."
       },
       "references": [
         "docs/split-rim-213-contact-review.md",
@@ -7172,7 +7174,8 @@
         "docs/w3g-intermittent-review.md",
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m11-forced-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7180,9 +7183,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The five stop teeth are rounded pin-swept notches where Brown draws square teeth.",
-      "limits": "Brown's pin (≈14 px) is wider than his tooth gaps (≈9 px), so his square teeth cannot admit it; only 0.08-deep square teeth solve. Frictional retention and load capacity are prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Tips sit at 1.84, recessed about 14 px inside the uncut rim; the pin drives on filleted top corners through a Geneva-style index; friction retention, pickup impact and load are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 214,
@@ -7241,7 +7244,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m11-forced-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7249,9 +7253,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The concave locks meet the slot mouths in pointed horns where Brown draws rounded ears.",
-      "limits": "Rounding breaks the handoff contact checks; reverse motion needs assisting bias.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Ears are slimmer than Brown's knobs because the source construction's lock arcs are deeper; reverse motion needs assisting bias.",
+      "assessment": "reasonable"
     },
     {
       "id": 216,
@@ -7347,7 +7351,8 @@
         "docs/w4b-164-253-review.md",
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m11-forced-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7355,9 +7360,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Nine small notches where Brown draws eight; their exit flank is rounded.",
-      "limits": "The wheel advances a third of a turn per cycle, so the notch count must be a multiple of three; the oblique exit flank is the milled envelope of the hook's release arc. Cam projection touches the release boss at one instant.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Plate 218's roller turns 3/8 back and 3/4 forward instead of the caption's 1/3 and 2/3 so Brown's eight notches work (217 keeps the caption law); the exit flank is the milled envelope of the hook's release arc; the cam touches the release boss at one instant; the catalog archetype still says nine-notch.",
+      "assessment": "reasonable"
     },
     {
       "id": 219,

@@ -53,7 +53,7 @@ export function finishSplitRim213(root,legacyUpdate){
  d.transmission.outputTravelAngle=g.initialStopWheelAngle-g.finalStopWheelAngle;d.transmission.reversalTakeup=g.reversalTakeup;
  d.canonicalStates=Object.fromEntries(Object.entries(d.canonicalTimes).map(([key,time])=>[key,d.stateAtTime(time)]));
  d.minimumDisplayCycleSeconds=18;d.hideGround=true;d.cameraFov=8;
- d.reconstructionNote='The full pin follows separately baked clockwise and reverse retaining branches of a finite five-tooth profile. The reconstructed teeth are shorter than the first tracing (tip radius 1.870 versus 2.124). Reversal takes up 0.00109 radians before indexing; later turns advance one pitch. The split rim and both terminal stops remain. Contact geometry and continuity are checked; spring friction, impacts and load capacity are not dynamically solved.';
+ d.reconstructionNote='The full pin follows separately baked clockwise and reverse retaining branches of a finite five-tooth profile. The teeth are square, as Brown draws them: flat tops at radius 1.840, shorter than the uncut rim (2.124), parallel-sided gaps to a flat root at 1.550, and 0.008 fillets on the top corners the pin drives on. Reversal takes up 0.00109 radians before indexing; later turns advance one pitch. The split rim and both terminal stops remain. Contact geometry and continuity are checked; spring friction, impacts and load capacity are not dynamically solved.';
  root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});
  // The display loop opens at Brown's pose (third index in progress, slot at the
  // top, the pin between the middle teeth); state queries keep phase time.

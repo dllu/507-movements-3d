@@ -168,7 +168,7 @@ test('movement 213 reproduces the engraving proportions, five teeth, source pose
     'source-scaled center distance');
   near(geometry.facePinOrbitRadius, 1.4005801944058167, 0,
     'source-scaled face-pin orbit');
-  near(geometry.facePinRadius, 0.1915737438, 0,
+  near(geometry.facePinRadius, 0.156, 0,
     'source-scaled face-pin radius');
   near(geometry.stopOuterRadius, 2.1241262292, 0,
     'source-fitted uncut rim radius');
@@ -215,10 +215,10 @@ test('movement 213 reproduces the engraving proportions, five teeth, source pose
   );
   assert.ok(geometry.sourceFacePinPhase > geometry.entryContactPhase);
   assert.ok(geometry.sourceFacePinPhase < geometry.exitContactPhase);
-  assert.ok(geometry.sourceActiveProgress > 0.65);
-  assert.ok(geometry.sourceActiveProgress < 0.651);
-  assert.ok(geometry.sourceIndexProgress > 0.765);
-  assert.ok(geometry.sourceIndexProgress < 0.766);
+  assert.ok(geometry.sourceActiveProgress > 0.658);
+  assert.ok(geometry.sourceActiveProgress < 0.659);
+  assert.ok(geometry.sourceIndexProgress > 0.777);
+  assert.ok(geometry.sourceIndexProgress < 0.778);
   assert.ok(Math.abs(canonicalStates.sourcePose.stopWheelAngle) < 0.05, 'finite contact changes source tooth orientation by less than three degrees');
   assert.equal(canonicalStates.sourcePose.activeIndex, 3);
   assert.equal(canonicalStates.sourcePose.engagement.active, true);
@@ -254,10 +254,10 @@ test('movement 213 reproduces the engraving proportions, five teeth, source pose
       `${side} contact lies on the face-pin circumference`);
     near(normal.length(), 1, 2e-16, `${side} stop normal is normalized`);
   }
-  assert.ok(geometry.initialUncutRimMarginAngle > 0.29);
-  assert.ok(geometry.finalUncutRimMarginAngle > 0.14);
-  assert.ok(geometry.initialBlockedReverseClosingRate > 1.17);
-  assert.ok(geometry.finalBlockedForwardClosingRate > 1.17);
+  assert.ok(geometry.initialUncutRimMarginAngle > 0.28);
+  assert.ok(geometry.finalUncutRimMarginAngle > 0.13);
+  assert.ok(geometry.initialBlockedReverseClosingRate > 1.13);
+  assert.ok(geometry.finalBlockedForwardClosingRate > 1.13);
   near(
     geometry.initialStopWheelAngle - geometry.finalStopWheelAngle,
     5 * geometry.stopPitchAngle - geometry.reversalTakeup,
@@ -266,7 +266,7 @@ test('movement 213 reproduces the engraving proportions, five teeth, source pose
   );
   near(transmission.outputTravelAngle, 5 * FULL_TURN / 22 - geometry.reversalTakeup, 5e-16,
     'finite split-ring output travel');
-  near(transmission.inputTurnsBetweenStops, 5.799901908233082, 0,
+  near(transmission.inputTurnsBetweenStops, 5.809692771901795, 0,
     'five indexes plus the final free approach between end stops');
 
   assert.equal(sourceAnimation.available, false);

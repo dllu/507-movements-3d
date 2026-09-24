@@ -10,6 +10,7 @@ import { starTappetState, finishStarTappet } from './star-tappet-working-parts.j
 import { carrierPawlFlank225, carrierPawlClearance225, installCarrierPawl225 } from './carrier-pawl-225-working-parts.js';
 import {finishLiftDrawPawl232} from './lift-draw-pawl-232-working-parts.js';
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
+import { capsule as clipCapsule, circle as clipCircle, poly as clipPoly, polygonClipping } from './finite-plate-geometry.js';
 import { correctGearFingerStop } from './gear-finger-stop-working-parts.js';
 import snapCounterMotion from './baked/intermittent-63-211-snap-counter-cuts.js';
 import {
@@ -2359,6 +2360,7 @@ function internalGuardTappetStudIndex() {
     entering: { end: -Infinity, start: Infinity },
     leaving: { end: -Infinity, start: Infinity },
   };
+  const notchPaths = { entering: [], leaving: [] };
   for (let sample = 0; sample <= notchProfileSamples; sample += 1) {
     const driverAngle = contactStartDriverAngle
       + contactDriverAngleSpan * sample / notchProfileSamples;
@@ -2367,6 +2369,10 @@ function internalGuardTappetStudIndex() {
       const local = studFromDriver(restStudAngle + offset * studPitch + advance)
         .rotateAround(new THREE.Vector2(), -driverAngle);
       const distance = local.length();
+      if (
+        distance + studRadius >= guardInnerRadius - 0.1
+        && distance - studRadius <= guardOuterRadius + 0.1
+      ) notchPaths[kind].push(local.clone());
       if (
         distance + studRadius >= guardInnerRadius
         && distance - studRadius <= guardOuterRadius
@@ -2382,6 +2388,51 @@ function internalGuardTappetStudIndex() {
   const enteringNotchEnd = notchRanges.entering.end + notchAngularClearance;
   const leavingNotchStart = notchRanges.leaving.start - notchAngularClearance;
   const leavingNotchEnd = notchRanges.leaving.end + notchAngularClearance;
+  // Brown cuts each notch as a narrow slanted slit, not a sector: the stud
+  // crosses the rim obliquely in B's frame, so the rim only needs the channel
+  // the stud actually sweeps (its radius plus a running clearance).
+  const notchChannelClearance = 0.02;
+  // Where a stud only grazes the rim's inner lock face (entering a lock or
+  // leaving one), the clearance tapers to its actual overlap, so the lock
+  // face is never gouged.
+  const channelRegion = (path) => {
+    const widthAt = (point) => studRadius + THREE.MathUtils.clamp(
+      point.length() + studRadius - guardInnerRadius, 0, notchChannelClearance,
+    );
+    const offsetSide = (sign) => path.map((point, index) => {
+      const before = path[Math.max(0, index - 1)];
+      const after = path[Math.min(path.length - 1, index + 1)];
+      const tangent = after.clone().sub(before).normalize();
+      const width = widthAt(point);
+      return [point.x - sign * tangent.y * width, point.y + sign * tangent.x * width];
+    });
+    const cap = (center, from, sweep, width = widthAt(center)) => Array.from({ length: 17 }, (_, index) => {
+      const angle = from + sweep * index / 16;
+      return [center.x + Math.cos(angle) * width, center.y + Math.sin(angle) * width];
+    });
+    const startTangent = path[1].clone().sub(path[0]);
+    const endTangent = path.at(-1).clone().sub(path.at(-2));
+    const endNormal = Math.atan2(endTangent.x, -endTangent.y);
+    const startNormal = Math.atan2(-startTangent.x, startTangent.y);
+    return clipPoly([
+      ...offsetSide(1),
+      ...cap(path.at(-1), endNormal, -Math.PI).slice(1, -1),
+      ...offsetSide(-1).reverse(),
+      ...cap(path[0], startNormal, -Math.PI).slice(1, -1),
+    ]);
+  };
+  const notchChannels = polygonClipping.union(
+    channelRegion(notchPaths.entering),
+    channelRegion(notchPaths.leaving),
+  );
+  // The inner lock face is circumscribed, so its chords never reach inside
+  // the true lock circle the resting studs bear on.
+  const guardInnerPolygonRadius = guardInnerRadius / Math.cos(Math.PI / 720);
+  const guardRimRegions = polygonClipping.difference(
+    clipPoly(clipCircle([0, 0], guardOuterRadius, 720)),
+    clipPoly(clipCircle([0, 0], guardInnerPolygonRadius, 720)),
+    notchChannels,
+  );
 
   const drivenDepth = 0.24;
   const studBaseZ = drivenDepth / 2 - 0.02;
@@ -2443,11 +2494,29 @@ function internalGuardTappetStudIndex() {
     [shortSpanStart, shortSpanEnd],
     [longSpanStart, longSpanEnd],
   ];
+  const regionPoints = (ring) => ring.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y));
+  if (guardRimRegions.length !== guardSpans.length) {
+    throw new Error('movement 71 notch channels must split the rim in two');
+  }
+  // Pair each rim piece with its span: the piece holding the span's middle.
+  const regionHolds = (region, [x, y]) => {
+    let inside = false;
+    const ring = region[0];
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+      if ((ring[i][1] > y) !== (ring[j][1] > y)
+        && x < (ring[j][0] - ring[i][0]) * (y - ring[i][1]) / (ring[j][1] - ring[i][1]) + ring[i][0]) inside = !inside;
+    }
+    return inside;
+  };
+  const orderedRimRegions = guardSpans.map(([start, end]) => {
+    const angle = (start + end) / 2;
+    const radius = (guardInnerRadius + guardOuterRadius) / 2;
+    return guardRimRegions.find((region) => regionHolds(region, [radius * Math.cos(angle), radius * Math.sin(angle)]));
+  });
   const guardSegments = guardSpans.map(([startAngle, endAngle], index) => {
-    const outerArc = arcPoints(guardOuterRadius, startAngle, endAngle, false);
-    const innerArc = arcPoints(guardInnerRadius, endAngle, startAngle, true);
+    const outline = regionPoints(orderedRimRegions[index][0]);
     const segment = new THREE.Mesh(
-      flatExtrusion([...outerArc, ...innerArc], plateBackZ - rimBackZ),
+      flatExtrusion(outline, plateBackZ - rimBackZ),
       driverMaterial,
     );
     segment.position.z = rimBackZ;
@@ -2455,20 +2524,18 @@ function internalGuardTappetStudIndex() {
       endAngle,
       guardRimSegment: true,
       index,
-      innerArc,
-      outerArc,
+      outline,
       role: `B-internal-guard-rim-arc-${index}`,
       startAngle,
     });
     driverRotor.add(segment);
     return segment;
   });
-  const plateOutline = [
-    ...arcPoints(guardOuterRadius, shortSpanStart, shortSpanEnd, false),
-    ...arcPoints(guardInnerRadius, shortSpanEnd, longSpanStart, false),
-    ...arcPoints(guardOuterRadius, longSpanStart, longSpanEnd, false),
-    ...arcPoints(guardInnerRadius, longSpanEnd, shortSpanStart + fullTurn, false),
-  ];
+  const plateRegion = polygonClipping.difference(
+    clipPoly(clipCircle([0, 0], guardOuterRadius, 720)),
+    polygonClipping.difference(notchChannels, clipPoly(clipCircle([0, 0], guardInnerPolygonRadius, 720))),
+  );
+  const plateOutline = regionPoints(plateRegion[0][0]);
   const driverBody = new THREE.Mesh(
     flatExtrusion(plateOutline, plateDepth, [circlePath(driverShaftRadius + 0.01)]),
     driverMaterial,
@@ -2716,12 +2783,14 @@ function internalGuardTappetStudIndex() {
     fullTurn,
     guardInnerRadius,
     guardOuterRadius,
+    guardRimRegions: orderedRimRegions,
     initialDriverAngle,
     layoutTilt,
     leavingNotchEnd,
     leavingNotchStart,
     lockPlay,
     notchAngularClearance,
+    notchChannelClearance,
     plateBackZ,
     releaseStudAngle,
     restStudAngle,
@@ -2740,7 +2809,7 @@ function internalGuardTappetStudIndex() {
     tappetHalfWidth,
     tappetLength,
   };
-  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Brown draws the interior studs through B; B\'s plate is translucent so they read through it.';
+  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Each notch is the narrow slanted channel the stud sweeps through the rim, as Brown draws his slits. Brown draws the interior studs through B; B\'s plate is translucent so they read through it.';
   root.userData.stateAtTime = stateAtTime;
   root.userData.sectionView = false;
   root.userData.fullCameraDirection = new THREE.Vector3(1.2, 0.9, 12.4);
@@ -7585,16 +7654,19 @@ function sharedPivotDoubleStrokeRatchet() {
   const root = new THREE.Group();
   const origin = new THREE.Vector2();
   const fullTurn = Math.PI * 2;
-  // Brown draws about 52 fine, shallow teeth. 53 (0.27 deep) lets the
-  // right pawl bear on its face at the engraved contact angle (within 0.07
-  // degrees), keeps both drive forces within 60 degrees of the face normal,
-  // and lets both fingers clear the finer teeth as they reset.
+  // Brown draws about 52 fine teeth with hooked points. 53 lets the right
+  // pawl bear on its face at the engraved contact angle (within 0.07
+  // degrees) and lets both fingers clear the teeth as they reset. Each tooth
+  // is Brown's hook: a short face undercut 0.04 pitch under a sharp tip and
+  // a straight back from the tip to the next root, which the fingers push
+  // clockwise. Without the old flat land the back is longer, so the teeth
+  // are 0.33 deep to keep both drive forces within 62 degrees of its normal.
   const toothCount = 53;
   const toothPitch = fullTurn / toothCount;
   const ratchetOuterRadius = 2.38;
-  const ratchetRootRadius = 2.11;
-  const toothOuterStartPhase = 0.04;
-  const toothOuterEndPhase = 0.28;
+  const ratchetRootRadius = 2.05;
+  const toothOuterStartPhase = -0.04;
+  const toothOuterEndPhase = 0;
   const sourceWheelCenter = new THREE.Vector2(261, 303);
   const sourceWheelTipRadius = 211;
   const sourceScale = ratchetOuterRadius / sourceWheelTipRadius;
@@ -7634,7 +7706,7 @@ function sharedPivotDoubleStrokeRatchet() {
     leftSourceContact.x,
   );
   const leftFaceFraction = 0.43;
-  const rightFaceFraction = 0.2;
+  const rightFaceFraction = 0.28;
   const rightToothOffset = -16;
   const cyclesPerSecond = 0.3;
   const inputCyclePeriod = 1 / cyclesPerSecond;
@@ -10908,7 +10980,9 @@ function splitRimFacePinWindingStop() {
   );
   const sourceStopOuterRadius = 106.20631146;
   const sourceStopInnerRadius = 51.18879083;
-  const sourceFacePinRadius = 9.57868719;
+  // Outer edge of the pin's inked ring (15.7 px across). The earlier 9.58 px
+  // fit took in ink blur and made the pin wider than Brown's tooth gaps.
+  const sourceFacePinRadius = 7.8;
   const sourceCenterVector = new THREE.Vector2(
     sourceStopWheelCenter.x - sourceDriverCenter.x,
     sourceDriverCenter.y - sourceStopWheelCenter.y,

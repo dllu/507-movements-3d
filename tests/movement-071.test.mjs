@@ -20,20 +20,30 @@ const tappetClearance = (geometry, driverAngle, stud, length = geometry.tappetLe
   return stud.distanceTo(direction.multiplyScalar(projection))
     - geometry.tappetContactOffset;
 };
-const insideNotch = (angle, extent, start, end) => {
-  const offset = (value) => THREE.MathUtils.euclideanModulo(value - start, FULL_TURN);
-  const width = offset(end);
-  return offset(angle - extent) <= width && offset(angle + extent) <= width;
+// Signed distance from a point to a polygon ring (negative inside).
+const ringDistance = (ring, point) => {
+  let distance = Infinity;
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [ax, ay] = ring[j];
+    const [bx, by] = ring[i];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const length = dx * dx + dy * dy;
+    const t = length > 0 ? THREE.MathUtils.clamp(((point.x - ax) * dx + (point.y - ay) * dy) / length, 0, 1) : 0;
+    distance = Math.min(distance, Math.hypot(point.x - ax - t * dx, point.y - ay - t * dy));
+    if ((ay > point.y) !== (by > point.y) && point.x < ax + dx * (point.y - ay) / dy) inside = !inside;
+  }
+  return inside ? -distance : distance;
 };
-const rimPenetration = (geometry, driverAngle, stud, notches) => {
+// How far a stud circle reaches into B's actual rim pieces.
+const rimPenetration = (geometry, driverAngle, stud, regions = geometry.guardRimRegions) => {
   const local = stud.clone().rotateAround(new THREE.Vector2(), -driverAngle);
-  const distance = local.length();
-  if (distance + geometry.studRadius <= geometry.guardInnerRadius + 1e-9) return 0;
-  if (distance - geometry.studRadius >= geometry.guardOuterRadius) return 0;
-  const angle = Math.atan2(local.y, local.x);
-  const extent = Math.asin(geometry.studRadius / distance);
-  if (notches.some(([start, end]) => insideNotch(angle, extent, start, end))) return 0;
-  return distance + geometry.studRadius - geometry.guardInnerRadius;
+  let penetration = 0;
+  for (const region of regions) {
+    penetration = Math.max(penetration, geometry.studRadius - ringDistance(region[0], local));
+  }
+  return penetration;
 };
 const sampleCycle = (model, count, visit) => {
   const { geometry, stateAtTime } = model.root.userData;
@@ -102,10 +112,6 @@ test('movement 71 sizes the tappet and rim from the three-stud lock', () => {
 test('movement 71 pushes one stud one pitch per turn with a driving compressive contact', () => {
   const model = build();
   const { geometry } = model.root.userData;
-  const notches = [
-    [geometry.enteringNotchStart, geometry.enteringNotchEnd],
-    [geometry.leavingNotchStart, geometry.leavingNotchEnd],
-  ];
   const stages = new Set();
   let minimumOtherClearance = Infinity;
   let maximumPenetration = 0;
@@ -134,7 +140,7 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
     for (let index = 0; index < geometry.studCount; index += 1) {
       const stud = state.planarStud(index);
       maximumPenetration = Math.max(maximumPenetration,
-        rimPenetration(geometry, state.driverAngle, stud, notches));
+        rimPenetration(geometry, state.driverAngle, stud));
       if (index !== state.activeStudIndex) {
         minimumOtherClearance = Math.min(minimumOtherClearance,
           tappetClearance(geometry, state.driverAngle, stud));
@@ -143,14 +149,14 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
   });
   assert.deepEqual([...stages].sort(),
     ['guard-locked', 'tappet-flank-push', 'tappet-tip-push']);
-  assert.equal(maximumPenetration, 0, 'studs only cross the rim through notches');
+  assert.ok(maximumPenetration < 1e-9, `studs only cross the rim through the slit channels: ${maximumPenetration}`);
   assert.ok(Math.abs(minimumOtherClearance - geometry.lockPlay) < 1e-6,
     'the tappet passes the lock studs with the lock play as clearance');
   assert.ok(Math.abs(last.driverAngle - first.driverAngle - FULL_TURN) < 1e-9);
   assert.ok(Math.abs(last.drivenAngle - first.drivenAngle + geometry.studPitch) < 1e-9);
 });
 
-test('movement 71 checks reject a trailing push, a long tappet and a narrow notch', () => {
+test('movement 71 checks reject a trailing push, a long tappet and an uncut rim', () => {
   const model = build();
   const { geometry } = model.root.userData;
   const state = model.root.userData.stateAtTime(
@@ -166,11 +172,16 @@ test('movement 71 checks reject a trailing push, a long tappet and a narrow notc
     'a stud behind the trailing face would drive B instead of being driven');
 
   let longTappetClearance = Infinity;
-  let narrowNotchPenetration = 0;
-  const narrow = [
-    [geometry.enteringNotchStart, geometry.enteringNotchEnd],
-    [geometry.leavingNotchStart + 0.03, geometry.leavingNotchEnd - 0.03],
-  ];
+  let uncutPenetration = 0;
+  // Control: a rim without the slits (the full annulus between the guard
+  // radii) is struck by the crossing studs.
+  const uncutRimPenetration = (driverAngle, stud) => {
+    const distance = stud.length();
+    return Math.max(0, Math.min(
+      distance + geometry.studRadius - geometry.guardInnerRadius,
+      geometry.guardOuterRadius - distance + geometry.studRadius,
+    ));
+  };
   sampleCycle(model, 1500, (sample) => {
     for (let index = 0; index < geometry.studCount; index += 1) {
       const stud = sample.planarStud(index);
@@ -180,10 +191,10 @@ test('movement 71 checks reject a trailing push, a long tappet and a narrow notc
           geometry.tappetLength + geometry.lockPlay + 0.02,
         ));
       }
-      narrowNotchPenetration = Math.max(narrowNotchPenetration,
-        rimPenetration(geometry, sample.driverAngle, stud, narrow));
+      uncutPenetration = Math.max(uncutPenetration,
+        uncutRimPenetration(sample.driverAngle, stud));
     }
   });
   assert.ok(longTappetClearance < -0.01);
-  assert.ok(narrowNotchPenetration > 0.01);
+  assert.ok(uncutPenetration > 0.01);
 });

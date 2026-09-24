@@ -229,14 +229,16 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   assert.equal(toothCount, 53);
   near(toothPitch, FULL_TURN / 53, 0, 'ratchet tooth pitch');
   near(ratchetOuterRadius, 2.38, 0, 'ratchet tooth-tip radius');
-  near(ratchetRootRadius, 2.11, 0, 'ratchet root radius');
-  near(toothOuterStartPhase, 0.04, 0, 'short rising-face phase');
-  near(toothOuterEndPhase, 0.28, 0, 'outer corner phase');
+  near(ratchetRootRadius, 2.05, 0, 'ratchet root radius');
+  // Brown's hooked points: the short face is undercut a little under a
+  // sharp tip, and the long back runs straight from the tip to the next root.
+  near(toothOuterStartPhase, -0.04, 0, 'undercut hook face phase');
+  near(toothOuterEndPhase, 0, 0, 'sharp tip phase');
   near(leftFaceFraction, 0.43, 0, 'left working point on face');
-  near(rightFaceFraction, 0.2, 0, 'right working point just below the outer corner');
+  near(rightFaceFraction, 0.28, 0, 'right working point just below the tip');
   assert.equal(rightToothOffset, -16);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(6.8));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(6.95));
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(6.65));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(6.8));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
@@ -668,7 +670,7 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const handleHigh = worldPositionAt(leverRotor, handlePoint, canonicalTimes.highReversal);
   const handleLow = worldPositionAt(leverRotor, handlePoint, canonicalTimes.lowReversal);
   // One vibration advances one of Brown's 53 fine teeth, so the lever's
-  // swing is small (about 6.9 degrees each way).
+  // swing is small (about 6.7 degrees each way).
   assert.ok(handleSource.distanceTo(handleHigh) > 0.08);
   assert.ok(handleSource.distanceTo(handleLow) > 0.08);
   assert.ok(handleHigh.distanceTo(handleLow) > 0.16);
