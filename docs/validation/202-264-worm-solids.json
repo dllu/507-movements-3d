@@ -11,11 +11,11 @@
     {
       "id": 202,
       "side": 0,
-      "queries": 2051829,
+      "queries": 2585566,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.0007003171966712976,
-      "maximumClosestGap": 0.0023634189847107764,
+      "minimumGap": 0.0019489764194698298,
+      "maximumClosestGap": 0.002491905348876431,
       "worst": null
     },
     {
@@ -42,15 +42,15 @@
   "sources": [
     {
       "file": "src/simulation/special-worm-solids.js",
-      "sha256": "92e810b9d5a47947bc11825df50c90635e526426b61997157e424aee25a7b905"
+      "sha256": "86777462d1e6e0a97e9c035d5865e1d9715ac0fd52f1ab0263d2bde506f4bac5"
     },
     {
       "file": "src/simulation/special-worm-parameters.js",
-      "sha256": "f7286236f6dc1d3498b89da579b70f4fbb77d0d8ddb686b8db141c65f8082669"
+      "sha256": "0eda699ff9fc2d3ddf29a6a7afd9f2c6c888e75defc326b37a881931d0c95dc2"
     },
     {
       "file": "src/data/special-worm-wheel-profiles.js",
-      "sha256": "9269324e4b59730cb2184dbfbc60f79d7b59ca4f5ef01e86a27889ca901a8b74"
+      "sha256": "1a9728dc56876c213d48cda11de9ca7a72c221acff7786c628ae90b9ea36bfd8"
     },
     {
       "file": "src/simulation/solid-worm.js",
@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "6efae55acabc3a7cbd2e199b2671d1294b602cbddd5badd2741d16b9764bc6c2"
+      "sha256": "3864e5551b6143b23ed0bbe7cd19181aaf9d877bbd90d8b83a467ed63dc37e73"
     },
     {
       "file": "src/simulation/miter-gear.js",

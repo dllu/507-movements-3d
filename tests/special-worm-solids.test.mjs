@@ -25,7 +25,7 @@ for(const id of[202,264])test(`${id}: visible solids ignore fog and omit invente
  assert.equal(model.root.userData.hideGround,true);assert.equal(b.baseRail.parent,null);
  model.root.traverse(o=>{if(o.visible)for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)assert.equal(m.fog,false);});
  assert.ok(model.root.userData.cameraFitBounds.isBox3);
- if(id===202){assert.equal(b.wormThread.geometry.type,'BufferGeometry');assert.equal(b.wormThread.userData.integralThread,true);assert.equal(b.generatedWheel.count,48);assert.equal(b.wormBody.visible,false);actualBore(b.wormThread,'z',.085);}
+ if(id===202){assert.equal(b.wormThread.geometry.type,'BufferGeometry');assert.equal(b.wormThread.userData.integralThread,true);assert.equal(b.generatedWheel.count,60);assert.equal(b.wormBody.visible,false);actualBore(b.wormThread,'z',.085);}
  else{assert.equal(b.worm.userData.toothProfile,'axial-straight-flanked-worm');actualBore(b.worm.userData.thread,'z',.075);assert.equal(model.root.userData.timeline.oneWormTurn,2.4);}
  disposeObject3D(model.root);
 });

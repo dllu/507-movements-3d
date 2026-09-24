@@ -8192,18 +8192,20 @@ function ladderRungChainPulley() {
   const pitchRadius = 2.05;
   const linkPitch = 2 * pitchRadius * Math.sin(chainNodeStep / 2);
   const wheelCenter = new THREE.Vector3(0, 0.68, 0);
-  // Brown's disc reaches almost to the rungs, with a rim broad enough to
-  // carry the small wedges standing proud of it between them; the wedges'
-  // roots are buried in the rim.
+  // Brown's disc reaches almost to the rungs and is a broad drum: its front
+  // face meets the front side links, so the rungs lie across its rim, which
+  // carries the slender wedges standing proud of it between them; the
+  // wedges' roots are buried in it. The drum faces stop just inside the
+  // side-link wires.
   const diskRadius = 1.95;
-  const diskDepth = 0.32;
+  const diskDepth = 0.76;
   const toothRootRadius = 1.68;
   const toothTipRadius = 2.17;
-  // Small wedges, a third of the rung length, not broad cogs.
-  const toothDepth = 0.3;
+  // Tent-shaped wedges about half the rung length, not broad cogs.
+  const toothDepth = 0.45;
   const toothCenterPhase = chainNodeStep / 2;
   const hubRadius = 0.39;
-  const hubDepth = 0.58;
+  const hubDepth = 0.9;
   const shaftRadius = 0.14;
   const shaftLength = 1.75;
   const sidePlaneOffset = 0.48;

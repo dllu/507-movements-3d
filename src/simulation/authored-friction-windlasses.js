@@ -24,6 +24,10 @@ function centeredExtrusion(shape, depth, bevel = 0.01) {
   return geometry;
 }
 
+// The backstop (ratchet, pawls and pins) is presented as a similar figure
+// shrunk about the wheel axis so it stays hidden behind the rim.
+const BACKSTOP_PRESENTATION_SCALE = 0.93;
+
 function cylinderAlongZ(radius, length, material, segments = 40) {
   const cylinder = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, length, segments),
@@ -97,8 +101,8 @@ function frictionWindlass(movement) {
   const sourceRasterHandleElbow = new THREE.Vector2(465, 208);
   const sourceRasterGripTop = new THREE.Vector2(486, 383);
   const sourceRasterGripBottom = new THREE.Vector2(486, 472);
-  const sourceRasterUpperPawlPivot = new THREE.Vector2(247, 232);
-  const sourceRasterLowerPawlPivot = new THREE.Vector2(247, 276);
+  const sourceRasterUpperPawlPivot = new THREE.Vector2(250, 235);
+  const sourceRasterLowerPawlPivot = new THREE.Vector2(248, 273);
 
   const sourcePointToModel = ({ x, y }) => new THREE.Vector2(
     (x - sourceRasterWheelCenter.x) * sourceScale,
@@ -717,18 +721,34 @@ function frictionWindlass(movement) {
   jawPivotBridge.userData.role = 'cross-pin-joining-both-cast-iron-jaws';
   root.add(jawPivotBridge);
 
-  const upperPawlPivot = point3(sourceRasterUpperPawlPivot, 0.66);
-  const lowerPawlPivot = point3(sourceRasterLowerPawlPivot, 0.66);
-  const upperPawlSeat = new THREE.Vector3(
-    ratchetTipRadius * Math.cos(THREE.MathUtils.degToRad(55)),
-    ratchetTipRadius * Math.sin(THREE.MathUtils.degToRad(55)),
-    0.66,
-  );
-  const lowerPawlSeat = new THREE.Vector3(
-    ratchetTipRadius * Math.cos(THREE.MathUtils.degToRad(35)),
-    ratchetTipRadius * Math.sin(THREE.MathUtils.degToRad(35)),
-    0.66,
-  );
+  // The presented backstop is shrunk about the wheel axis (see
+  // hideBackstopBehindWheel), so the pivots are placed where that shrink
+  // lands them on Brown's pawl eyes. Brown's two links run parallel, about
+  // 24 degrees below level, down-left into the wheel edge: the seats are
+  // where those lines meet the ratchet tips.
+  const presentedPawlPivot = (raster) => {
+    const pivot = point3(raster, 0.66);
+    pivot.x /= BACKSTOP_PRESENTATION_SCALE;
+    pivot.y /= BACKSTOP_PRESENTATION_SCALE;
+    return pivot;
+  };
+  const upperPawlPivot = presentedPawlPivot(sourceRasterUpperPawlPivot);
+  const lowerPawlPivot = presentedPawlPivot(sourceRasterLowerPawlPivot);
+  const pawlSeatOnLine = (pivot) => {
+    const direction = new THREE.Vector2(
+      -Math.cos(THREE.MathUtils.degToRad(24)),
+      -Math.sin(THREE.MathUtils.degToRad(24)),
+    );
+    const start = new THREE.Vector2(pivot.x, pivot.y);
+    const along = start.dot(direction);
+    const distance = -along - Math.sqrt(
+      along ** 2 - start.lengthSq() + ratchetTipRadius ** 2,
+    );
+    const seat = start.addScaledVector(direction, distance);
+    return new THREE.Vector3(seat.x, seat.y, 0.66);
+  };
+  const upperPawlSeat = pawlSeatOnLine(upperPawlPivot);
+  const lowerPawlSeat = pawlSeatOnLine(lowerPawlPivot);
   const sourcePawls = pawlStateAtWheelAngle(sourceState.wheelAngle);
   const makeHoldingPawl = (pivot, seat, sourceLift, role) => {
     const group = new THREE.Group();
@@ -1117,7 +1137,7 @@ function hideBackstopBehindWheel(model) {
   // pawls and pawl pins - as a similar figure about the wheel axis so the tips
   // sit well inside the rim while every pawl/tooth relation is preserved.
   const rearPlane = -0.65;
-  const backstopScale = 0.93;
+  const backstopScale = BACKSTOP_PRESENTATION_SCALE;
   blocks.ratchetWheel.position.z = rearPlane;
   blocks.ratchetWheel.scale.set(backstopScale, backstopScale, 1);
   blocks.ratchetCarrier.position.z = rearPlane + 0.07;

@@ -169,7 +169,8 @@ test('movement 302 builds one odd-tooth crown wheel under one rigid weighted bal
     'twenty-one-tooth pitch');
   near(geometry.halfToothPitch, geometry.toothPitch / 2, 0,
     'one beat advance');
-  assert.ok(geometry.toothTipZ / geometry.bodyDepth > 1);
+  // Brown's saw teeth stand about 0.85-1 of the plain band depth.
+  assert.ok(geometry.toothTipZ / geometry.bodyDepth > 0.85);
   assert.ok(geometry.toothTipZ / geometry.bodyDepth < 1.25,
     'axial teeth retain Brown’s compact edge-view proportions');
   // Brown's A and B hang from C in a 57-degree V (Denison's text says

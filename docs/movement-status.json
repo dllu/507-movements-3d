@@ -6781,8 +6781,8 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-202-264.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The final **33-pose** audit found zero sampled penetrations in 2,550,790 queries for 202 and 998,352 / 1,006,386 queries for the two 264 wheels. Maximum nearest working-surface gaps were respectively 0.002338, 0.000546 and 0.000426 model units. Final browser rendering used 352,516 / 685,168 triangles including shadow passes (14 / 44 draw calls); the generated profile module is…"
+        "evidence": "docs/m7-gears-teeth-review.md",
+        "note": "33-pose finite worm/wheel audit: 0 penetrations in 2,656,332 queries; the 264 cuts are unchanged."
       },
       "references": [
         "docs/movement-202-264.md",
@@ -6790,7 +6790,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6798,9 +6799,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Wheel teeth are narrow nubs rather than Brown's deep sawtooth; the worm is slightly more flared.",
-      "limits": "Worm-end relief uses a coarse generated field.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Worm ends stand a little taller than Brown's: enveloping the wheel over his worm length dips 0.175 R where he draws about 0.12 R.",
+      "assessment": "reasonable"
     },
     {
       "id": 203,
@@ -7674,7 +7675,8 @@
         "docs/w3f-gears-core-review.md",
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7682,9 +7684,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The wedges still read as small blocks on the rim rather than Brown's slender triangular wedges.",
+      "visibleFlaws": "",
       "limits": "Chain follows a prescribed path.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 229,
@@ -9058,7 +9060,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9066,9 +9069,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The ropes are flat bands rather than Brown's twisted rope.",
-      "limits": "Ideal rolling rates imposed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Ideal rolling rates imposed; the rope is tangent to the tread.",
+      "assessment": "reasonable"
     },
     {
       "id": 271,
@@ -9392,7 +9395,8 @@
         "docs/w3d-255-287-review.md",
         "docs/w4c-254-400-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9400,9 +9404,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Pawl pivots sit ≈8 px off (tied to the baked backstop).",
-      "limits": "Loaded frictional drive unvalidated.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Loaded frictional drive and passive pawl seating unvalidated.",
+      "assessment": "reasonable"
     },
     {
       "id": 281,
@@ -10022,7 +10026,8 @@
         "docs/w2f-274-333-review.md",
         "docs/w5b-248-314-review.md",
         "docs/u7-flawed-review.md",
-        "docs/u8-299-review.md"
+        "docs/u8-299-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10030,7 +10035,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The far-side teeth show crossing behind the near ones, making the strip busier than Brown's two-tooth section; the pallets are ≈20% shorter than his strips and the band is plain rather than hatched.",
+      "visibleFlaws": "Pallets are about 20% shorter than Brown's strips and the band is shaded rather than hatched; the far teeth still show faintly behind the near strip.",
       "limits": "A longer pallet would cut into the next tooth.",
       "assessment": "minor"
     },
@@ -10130,7 +10135,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/w3b-escapements-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10138,9 +10144,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The crown still reads as blocky crenellations rather than Brown's fine saw teeth.",
+      "visibleFlaws": "",
       "limits": "Brown's 57° pallet V is used although Denison describes a right angle.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 303,
@@ -10197,7 +10203,8 @@
         "docs/minimal-interface-review.md",
         "docs/intersection-screen-pass50.md",
         "docs/lane4-escapements-misc-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m7-gears-teeth-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10206,7 +10213,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "Pallets are 6° apart where Brown draws ≈13°; locks are thin slivers.",
-      "limits": "Goodrich's pin size makes the 4°/2° impulse/drop split impossible; motion prescribed.",
+      "limits": "Forced by Goodrich's 30-pin construction (12° pitch needs a half-pitch pallet gap; the next valid gap, 18°, needs 42 pins); Goodrich's pin size makes the 4°/2° impulse/drop split impossible; motion prescribed.",
       "assessment": "minor"
     },
     {

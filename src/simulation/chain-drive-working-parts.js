@@ -11,12 +11,12 @@ export function correctChainDrive(model,id){
  if(profiles[id]){
   if(wheel)replace(wheel,plate(profiles[id],-(g.sprocketDepth??g.wheelDepth)/2,(g.sprocketDepth??g.wheelDepth)/2));
   else {
-   // 228: Brown draws small triangular wedges standing on the rim. Keep the
-   // generated driving notch against the rung (up to its centre radius) and
-   // cut the rest to a pointed tent about 0.4 wide at the rim and 0.36 proud
-   // (the apex rises above the generated blank, clear of the rungs).
-   const s=TAPER_SIDE_228,taper=[[[[1.55,-.75*s],[2.03,-.75*s],[2.03,-.6*s],[2.31,-.33*s],[1.95,-.12*s],[1.55,-.12*s],[1.55,-.75*s]]]];
-   const cap=[[[[2.1,-.40*s],[2.31,-.33*s],[2.1,-.14*s],[2.1,-.40*s]]]];
+   // 228: Brown draws slender triangular wedges standing on the rim. Keep
+   // the generated driving notch against the rung (up to its centre radius)
+   // and cut the rest to a pointed tent about 0.4 wide at the rim and 0.47
+   // proud (the apex rises above the generated blank, clear of the rungs).
+   const s=TAPER_SIDE_228,taper=[[[[1.55,-.75*s],[2.03,-.75*s],[2.03,-.6*s],[2.42,-.31*s],[1.95,-.08*s],[1.55,-.08*s],[1.55,-.75*s]]]];
+   const cap=[[[[2.03,-.47*s],[2.42,-.31*s],[1.99,-.1*s],[2.03,-.47*s]]]];
    const outline=id===228?clip.union(clip.intersection(profiles[id],taper),cap):profiles[id];
    const geometry=plate(outline,-g.toothDepth/2,g.toothDepth/2);for(const tooth of b.teeth)replace(tooth,geometry);
   }

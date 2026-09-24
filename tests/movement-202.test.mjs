@@ -63,7 +63,7 @@ function radialDistanceToLine(point, center, axis) {
   return offset.addScaledVector(axis, -offset.dot(axis)).length();
 }
 
-test('movement 202 is Brown\'s single-start hourglass worm enveloping a forty-eight-tooth wheel', () => {
+test('movement 202 is Brown\'s single-start hourglass worm enveloping a sixty-tooth wheel', () => {
   const movement = catalog.movements[201];
   const model = createMovementModel(movement);
   const {
@@ -90,7 +90,7 @@ test('movement 202 is Brown\'s single-start hourglass worm enveloping a forty-ei
   assert.equal(model.root.userData.archetype, movement.archetype);
   assert.equal(
     model.root.userData.mechanism,
-    'single-start-hourglass-Hindley-worm-envelops-forty-eight-tooth-wheel-at-nine-or-ten-simultaneous-contacts',
+    'single-start-hourglass-Hindley-worm-envelops-sixty-tooth-wheel-at-eleven-or-twelve-simultaneous-contacts',
   );
   assert.equal(
     model.root.userData.variant,
@@ -104,7 +104,7 @@ test('movement 202 is Brown\'s single-start hourglass worm enveloping a forty-ei
   assert.equal(blocks.wormBody.parent, blocks.worm.userData.rotor);
   assert.equal(blocks.wormThread.parent, blocks.worm.userData.rotor);
   assert.equal(blocks.wormRotationIndex.parent, blocks.worm.userData.rotor);
-  assert.equal(blocks.contactMarkers.length, 11);
+  assert.equal(blocks.contactMarkers.length, 13);
   assert.equal(blocks.wormBearings.length, 2);
   assert.equal(blocks.wormBearingSupports.length, 2);
   assert.equal(blocks.worm.userData.globoidal, true);
@@ -112,11 +112,11 @@ test('movement 202 is Brown\'s single-start hourglass worm enveloping a forty-ei
   assert.equal(blocks.wormBody.userData.hourglassProfile, true);
   assert.equal(blocks.wormThread.userData.continuousSingleStart, true);
   assert.equal(blocks.wheel.userData.envelopedByHourglassWorm, true);
-  assert.equal(blocks.wheel.userData.teeth, 48);
+  assert.equal(blocks.wheel.userData.teeth, 60);
   assert.equal(blocks.wormShaft.userData.keyedToWorm, true);
   assert.equal(blocks.wheelShaft.userData.keyedToWheel, true);
-  assert.equal(transmission.minimumSimultaneousContacts, 9);
-  assert.equal(transmission.maximumSimultaneousContacts, 10);
+  assert.equal(transmission.minimumSimultaneousContacts, 11);
+  assert.equal(transmission.maximumSimultaneousContacts, 12);
   assert.equal(transmission.slidingContact, true);
 
   let continuousThreadCount = 0;
@@ -161,7 +161,7 @@ test('movement 202 uses the wheel-circle envelope for every body section and thr
   const model = createMovementModel(catalog.movements[201]);
   const { blocks, geometry, sourceRaster, transmission } = model.root.userData;
 
-  assert.equal(geometry.wheelTeeth, 48);
+  assert.equal(geometry.wheelTeeth, 60);
   assert.equal(geometry.wormStarts, 1);
   vector3Near(geometry.wormAxis, X_AXIS, 1e-15, 'worm axis');
   vector3Near(geometry.wheelAxis, Z_AXIS, 1e-15, 'wheel axis');
@@ -247,7 +247,7 @@ test('movement 202 uses the wheel-circle envelope for every body section and thr
   const points = blocks.worm.userData.threadPoints;
   const parameterMinimum = -geometry.wheelTeeth * geometry.envelopmentHalfAngle;
   const parameterMaximum = -parameterMinimum;
-  // 72 samples per worm turn over 48 × 0.6 / π ≈ 9.2 turns.
+  // 72 samples per worm turn over 60 × 0.6 / π ≈ 11.5 turns.
   assert.ok(points.length > 600);
   points.forEach((point, index) => {
     const parameter = THREE.MathUtils.lerp(
@@ -278,7 +278,7 @@ test('movement 202 uses the wheel-circle envelope for every body section and thr
   disposeModel(model.root);
 });
 
-test('movement 202 maintains 9–10 simultaneous phase-locked contacts through 32,769 worm poses', () => {
+test('movement 202 maintains 11–12 simultaneous phase-locked contacts through 32,769 worm poses', () => {
   const model = createMovementModel(catalog.movements[201]);
   const { geometry, stateAtWormAngle, transmission } = model.root.userData;
   const sourceState = stateAtWormAngle(geometry.wormPhase);
@@ -296,11 +296,11 @@ test('movement 202 maintains 9–10 simultaneous phase-locked contacts through 3
       state.gearRatio,
       geometry.wormHandedness * geometry.wormStarts / geometry.wheelTeeth,
       1e-15,
-      'constant 48:1 ratio',
+      'constant 60:1 ratio',
     );
     near(state.meshPhaseInvariant, 0, 8e-15, 'single-start mesh phase');
-    assert.ok(state.simultaneousContactCount === 9
-      || state.simultaneousContactCount === 10);
+    assert.ok(state.simultaneousContactCount === 11
+      || state.simultaneousContactCount === 12);
     assert.equal(state.contacts.length, state.simultaneousContactCount);
     assert.ok(state.primaryContact != null);
     assert.ok(Math.abs(state.primaryContact.beta) <= geometry.wheelToothPitch / 2);

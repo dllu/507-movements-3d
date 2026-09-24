@@ -105,6 +105,7 @@ function correctRollerBearing(root) {
   }
   outline.push([-inside, -g.beltLegLength]);
   replace(b.belt, plate(poly(outline), -g.beltDepth / 2, g.beltDepth / 2));
+  if (root.userData.sourceReference?.plate270) twistedRope(root);
   replace(b.innerRace, new THREE.CylinderGeometry(g.innerRaceRadius, g.innerRaceRadius, g.innerRaceDepth, 256));
   replace(b.cagePlate, ring(g.innerRaceRadius + .08, g.outerRaceInnerRadius - .08,
     -g.cageDepth / 2, g.cageDepth / 2, 256));
@@ -128,6 +129,120 @@ function correctRollerBearing(root) {
   root.userData.workingBearingReview = {
     interfaces: 'Finite cylindrical races, bored rollers and captured retainer pins; exposed cutaway without an invented stand.',
     residual: 'Pure rolling and cage spacing are imposed analytically. Loads, slip, lubrication and cage force response are not solved; historical retainer details remain ambiguous.',
+  };
+}
+
+// Brown hatches both hanging legs of 270 as a laid rope. Replace the flat
+// band by three helical strands laid round the same centreline (straight
+// legs and the semicircular wrap), touching the tread at the rope's inner
+// side. The lay travels with the rope: the strand phase at arc length s is
+// 2π(s - v t)/lay, and the lay divides one pulley circumference so the
+// pattern closes with every turn. The buffer keeps the rope at zero travel
+// (a fixed solid for clearance checks); the vertex shader shifts the lay.
+function twistedRope(root) {
+  const {blocks: b, geometry: g} = root.userData;
+  const rc = g.beltCenterlineRadius, legs = g.beltLegLength;
+  const ropeRadius = g.beltThickness / 2;
+  const strandRadius = ropeRadius / (1 + 1 / Math.sin(Math.PI / 3));
+  const layRadius = ropeRadius - strandRadius;
+  const loop = 2 * Math.PI * g.pulleyOuterRadius;
+  const strandLay = loop / Math.round(loop / 0.13);
+  const lay = 3 * strandLay;
+  const arc = Math.PI * rc, length = 2 * legs + arc;
+  const along = Math.ceil(length / 0.018), around = 10, strands = 3;
+  const frame = (s) => {
+    if (s <= legs) return {x: -rc, y: -legs + s, nx: -1, ny: 0};
+    if (s <= legs + arc) {
+      const angle = Math.PI - (s - legs) / rc;
+      return {x: rc * Math.cos(angle), y: rc * Math.sin(angle), nx: Math.cos(angle), ny: Math.sin(angle)};
+    }
+    return {x: rc, y: legs + arc - s, nx: 1, ny: 0};
+  };
+  // Each strand is a closed tube: a ring per station plus an end-cap centre.
+  const count = strands * ((along + 1) * around + 2);
+  const positions = new Float32Array(count * 3), normals = new Float32Array(count * 3);
+  const ropeS = new Float32Array(count), ropeStrand = new Float32Array(count), ropeAround = new Float32Array(count);
+  const ropeRing = new Float32Array(count).fill(1);
+  const index = [];
+  let n = 0;
+  for (let k = 0; k < strands; k++) {
+    for (let i = 0; i <= along; i++) {
+      const s = length * i / along, f = frame(s);
+      const phase = 2 * Math.PI * (s / lay + k / strands);
+      const cn = layRadius * Math.cos(phase), cz = layRadius * Math.sin(phase);
+      for (let j = 0; j < around; j++) {
+        const t = 2 * Math.PI * j / around, on = Math.cos(t), oz = Math.sin(t), r = cn + strandRadius * on;
+        positions.set([f.x + f.nx * r, f.y + f.ny * r, cz + strandRadius * oz], 3 * n);
+        normals.set([f.nx * on, f.ny * on, oz], 3 * n);
+        ropeS[n] = s; ropeStrand[n] = k; ropeAround[n] = t;
+        if (i < along) {
+          const a = n, c = n + around, a1 = n - j + (j + 1) % around, c1 = a1 + around;
+          index.push(a, a1, c, a1, c1, c);
+        }
+        n++;
+      }
+    }
+    // End caps: fan from each end's strand centre.
+    const first = n - (along + 1) * around, last = n - around;
+    for (const [end, ring, s] of [[n, first, 0], [n + 1, last, length]]) {
+      const f = frame(s), phase = 2 * Math.PI * (s / lay + k / strands);
+      const cn = layRadius * Math.cos(phase);
+      positions.set([f.x + f.nx * cn, f.y + f.ny * cn, layRadius * Math.sin(phase)], 3 * end);
+      normals.set([0, -1, 0], 3 * end);
+      ropeS[end] = s; ropeStrand[end] = k; ropeRing[end] = 0;
+      for (let j = 0; j < around; j++) {
+        const a = ring + j, c = ring + (j + 1) % around;
+        if (s === 0) index.push(end, c, a); else index.push(end, a, c);
+      }
+    }
+    n += 2;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geometry.setAttribute('ropeS', new THREE.BufferAttribute(ropeS, 1));
+  geometry.setAttribute('ropeStrand', new THREE.BufferAttribute(ropeStrand, 1));
+  geometry.setAttribute('ropeAround', new THREE.BufferAttribute(ropeAround, 1));
+  geometry.setAttribute('ropeRing', new THREE.BufferAttribute(ropeRing, 1));
+  geometry.setIndex(index);
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  replace(b.belt, geometry);
+  const travel = {value: 0};
+  const material = b.belt.material;
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.ropeTravel = travel;
+    shader.vertexShader = shader.vertexShader
+      .replace('void main() {', `attribute float ropeS;
+attribute float ropeStrand;
+attribute float ropeAround;
+attribute float ropeRing;
+uniform float ropeTravel;
+void ropeFrame(float s, out vec2 c, out vec2 nrm) {
+  float legs = ${legs.toFixed(8)}, rc = ${rc.toFixed(8)}, arc = ${arc.toFixed(8)};
+  if (s <= legs) { c = vec2(-rc, -legs + s); nrm = vec2(-1.0, 0.0); }
+  else if (s <= legs + arc) { float a = 3.14159265358979 - (s - legs) / rc; nrm = vec2(cos(a), sin(a)); c = rc * nrm; }
+  else { c = vec2(rc, legs + arc - s); nrm = vec2(1.0, 0.0); }
+}
+void main() {`)
+      .replace('#include <beginnormal_vertex>', `vec2 ropeC; vec2 ropeN; ropeFrame(ropeS, ropeC, ropeN);
+vec3 objectNormal = vec3(ropeN * cos(ropeAround), sin(ropeAround));
+#ifdef USE_TANGENT
+vec3 objectTangent = vec3( tangent.xyz );
+#endif`)
+      .replace('#include <begin_vertex>', `float ropePhase = 6.28318530717959 * ((ropeS - ropeTravel) / ${lay.toFixed(10)} + ropeStrand / 3.0);
+float ropeR = ${layRadius.toFixed(8)} * cos(ropePhase) + ropeRing * ${strandRadius.toFixed(8)} * cos(ropeAround);
+vec3 transformed = vec3(ropeC + ropeN * ropeR, ${layRadius.toFixed(8)} * sin(ropePhase) + ropeRing * ${strandRadius.toFixed(8)} * sin(ropeAround));
+#ifdef USE_ALPHAHASH
+vPosition = vec3( position );
+#endif`);
+  };
+  material.customProgramCacheKey = () => 'laid-rope-270';
+  b.belt.userData.role = 'single-laid-three-strand-rope-with-exact-straight-to-semicircular-tangent-path';
+  b.belt.userData.ropeLay = {lay, layRadius, ropeRadius, strandRadius, strands};
+  const speed = root.userData.transmission?.beltLinearSpeed ?? 0;
+  root.userData.layRopeAtTime = (time) => {
+    travel.value = ((speed * time) % lay + lay) % lay;
   };
 }
 
@@ -218,7 +333,14 @@ export function correctBearingParts(model, id) {
       object.visible = false;
     }
   });
-  if (id === 270) addAssembledView(model);
+  if (id === 270) {
+    const baseUpdate = model.update;
+    model.update = (time) => {
+      baseUpdate(time);
+      model.root.userData.layRopeAtTime?.(time);
+    };
+    addAssembledView(model);
+  }
   fitPistonGuide(model.root, model.update, model.root.userData.minimumDisplayCycleSeconds);
   model.cameraDirection = new THREE.Vector3(.45, .55, 15);
 }

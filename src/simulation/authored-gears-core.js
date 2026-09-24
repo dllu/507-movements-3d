@@ -30421,9 +30421,9 @@ function eccentricGearCarriedPinionRocker() {
 function globoidalWormAndWheel() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
-  // Brown's wheel carries about 48 coarse sawtooth teeth (a ring count of
-  // the engraving gives 44-50), much deeper than 60 would allow.
-  const wheelTeeth = 48;
+  // A ring count of Brown's wheel gives about 31 teeth per half turn: 60
+  // deep sawteeth (a 60-degree V, cut by a matching sharp-V worm thread).
+  const wheelTeeth = 60;
   const wormStarts = 1;
   const wormHandedness = 1;
   const wheelPitchRadius = 2.1;
@@ -30568,7 +30568,7 @@ function globoidalWormAndWheel() {
   });
   wheel.position.copy(wheelCenter);
   wheel.userData.envelopedByHourglassWorm = true;
-  wheel.userData.role = 'forty-eight-tooth-wheel-enveloped-by-hourglass-worm';
+  wheel.userData.role = 'sixty-tooth-wheel-enveloped-by-hourglass-worm';
   const wormShaft = makeShaft({
     axis: X_AXIS,
     color: PALETTE.ink,
@@ -30723,7 +30723,7 @@ function globoidalWormAndWheel() {
   );
   const sourceState = stateAtWormAngle(wormPhase);
 
-  const maximumContactMarkers = 11;
+  const maximumContactMarkers = 13;
   const contactMarkerMaterial = matte(PALETTE.white, {
     metalness: 0.02,
     roughness: 0.5,
@@ -30814,7 +30814,7 @@ function globoidalWormAndWheel() {
   root.userData.archetype =
     'single-start-globoidal-worm-multi-contact-enveloping-wheel';
   root.userData.mechanism =
-    'single-start-hourglass-Hindley-worm-envelops-forty-eight-tooth-wheel-at-nine-or-ten-simultaneous-contacts';
+    'single-start-hourglass-Hindley-worm-envelops-sixty-tooth-wheel-at-eleven-or-twelve-simultaneous-contacts';
   root.userData.variant =
     'concave-pitch-meridian-generated-from-wheel-circle-for-steady-high-power-line-contact';
   root.userData.blocks = {
@@ -30888,8 +30888,8 @@ function globoidalWormAndWheel() {
   root.userData.stateAtWormAngle = stateAtWormAngle;
   root.userData.threadPointAt = threadPointAt;
   root.userData.transmission = {
-    maximumSimultaneousContacts: 10,
-    minimumSimultaneousContacts: 9,
+    maximumSimultaneousContacts: 12,
+    minimumSimultaneousContacts: 11,
     nominalRatio: wormHandedness * wormStarts / wheelTeeth,
     oneStartAdvancesWheelTeethPerInputTurn: 1,
     slidingContact: true,

@@ -2013,7 +2013,9 @@ function classicWatchVergeEscapement(
     balanceAmplitudeDegrees = 35,
     catchAngleDegrees = 25,
     crownBodyDepth = 0.34,
+    crownToothBackExponent = 1,
     crownToothHeight = 1,
+    crownToothRakeFraction = 0,
     heightToRadiusRatio = null,
     palletIncludedAngleDegrees = 100,
     releaseAngleDegrees = 10,
@@ -2031,7 +2033,9 @@ function classicWatchVergeEscapement(
     heightToRadiusRatioOverride: heightToRadiusRatio,
     includeFrame: false,
     palletIncludedAngleDegrees,
+    toothBackExponent: crownToothBackExponent,
     toothCount: crownToothCount,
+    toothRakeFraction: crownToothRakeFraction,
     toothTipZ: crownToothHeight,
   });
   const root = base.root;
@@ -2939,12 +2943,17 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   // angle, a 9-degree release and 12-degree catch make each contact advance
   // about 0.84 of a half pitch (a 10-degree release lets the idle blade's
   // tip nick the escaped tooth's back), and a 22-degree balance swing keeps
-  // the recoil to about a third of a half pitch.
+  // the recoil to about a third of a half pitch. Brown's saw teeth are low
+  // (about 0.6 of a pitch, a little under the band depth) with raked fronts
+  // and slightly hollow backs, so the edge-on band reads as fine teeth rather
+  // than square crenellations.
   const inherited = classicWatchVergeEscapement(movement, {
     balanceAmplitudeDegrees: 22,
     catchAngleDegrees: 12,
     crownBodyDepth: 0.42,
-    crownToothHeight: 0.5,
+    crownToothBackExponent: 1.3,
+    crownToothHeight: 0.4,
+    crownToothRakeFraction: 0.18,
     heightToRadiusRatio: 0.264,
     palletIncludedAngleDegrees: 57,
     releaseAngleDegrees: 9,
@@ -3718,6 +3727,39 @@ function oldFashionedClockVergeEscapement(movement) {
     spoke.userData.role = 'open-clock-crown-wheel-spoke';
     crownSpokes.push(spoke);
     blocks.crownWheel.userData.rotor.add(spoke);
+  }
+
+  // Seen along the verge, the far half of the crown shows its teeth through
+  // the gaps of the near ones, leaning the other way. Brown draws those far
+  // teeth only as light outlines behind his near strip, so every tooth
+  // fragment behind the plane through the crown axis facing the camera is
+  // faded toward the paper, for whatever camera views it.
+  const farToothFade = {
+    centerDepth: { value: 0 },
+    paper: { value: new THREE.Color(PALETTE.paper) },
+  };
+  const toothMaterial = blocks.crownWheel.userData.toothMeshes[0].material;
+  toothMaterial.onBeforeCompile = (shader) => {
+    shader.uniforms.farToothCenterDepth = farToothFade.centerDepth;
+    shader.uniforms.farToothPaper = farToothFade.paper;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        'void main() {',
+        'uniform float farToothCenterDepth;\nuniform vec3 farToothPaper;\nvoid main() {',
+      )
+      .replace(
+        '#include <dithering_fragment>',
+        'gl_FragColor.rgb = mix(gl_FragColor.rgb, farToothPaper, 0.62 * smoothstep(-0.02, 0.02, vViewPosition.z - farToothCenterDepth));\n#include <dithering_fragment>',
+      );
+  };
+  toothMaterial.customProgramCacheKey = () => 'far-crown-tooth-fade-299';
+  const crownCenterWorld = new THREE.Vector3();
+  for (const tooth of blocks.crownWheel.userData.toothMeshes) {
+    tooth.onBeforeRender = (renderer, scene, camera) => {
+      blocks.crownWheel.getWorldPosition(crownCenterWorld);
+      crownCenterWorld.applyMatrix4(camera.matrixWorldInverse);
+      farToothFade.centerDepth.value = -crownCenterWorld.z;
+    };
   }
 
   const foliotAtPhase = (cyclePhase) => {

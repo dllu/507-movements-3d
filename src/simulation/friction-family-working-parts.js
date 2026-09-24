@@ -37,9 +37,12 @@ export function correctFriction280(model){
  const oldLine=b.wheelRotor.children.find(o=>o.userData.role==='visible-inner-surface-of-wheel-rim');if(oldLine)oldLine.visible=false;
  b.ratchetWheel.position.z=.67;
  for(const tooth of b.ratchetTeeth)replace(tooth,plate(poly(frictionBackstopData.profile),-.08,.08));
- for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){pawl.children[0].visible=false;const row=frictionBackstopData.rows[i];mesh(pawl,plate(clip.difference(clip.union(capsule([0,0],[row.length,0],.05,32),poly(circle([0,0],.18,64))),poly(circle([0,0],.134,96))),-.06,.06),b.upperPawlTip.material,'bored-holding-pawl-arm');}
+ for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){pawl.children[0].visible=false;const row=frictionBackstopData.rows[i];mesh(pawl,plate(clip.difference(clip.union(capsule([0,0],[row.length,0],.065,32),poly(circle([0,0],.18,64))),poly(circle([0,0],.094,96))),-.06,.06),b.wheelDisk.material,'bored-holding-pawl-arm');}
+ // Brown draws both pawls as plain links, as broad as the coupler, with
+ // eyes round small pins; the pins stay inside those eyes.
  for(const pawl of[b.upperPawl,b.lowerPawl])pawl.position.z=.67;
- for(const pin of b.holdingPawlPivotPins)pin.position.z=.67;
+ for(const pin of b.holdingPawlPivotPins){pin.position.z=.67;replace(pin,new T.CylinderGeometry(.09,.09,.48,40));}
+ b.upperPawlTip.material=b.lowerPawlTip.material=b.wheelDisk.material;
  const jaw=new T.Group();jaw.userData.role='cast-jaw-travelling-circumferentially-with-the-rim';root.add(jaw);b.movingJaw=jaw;
  for(const o of b.jawSides){o.visible=false;}
  for(const flange of b.jawFlanges){jaw.add(flange);flange.position.set(0,0,0);replace(flange,plate(sector(Ri-.14,Ri,-.18,.18,96),flange===b.jawFlanges[0]?-.46:.10,flange===b.jawFlanges[0]?-.10:.46));}

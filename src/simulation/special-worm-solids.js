@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {makeSolidWorm} from './solid-worm.js';
+import {cylindricalWormGeometry} from './worm-gear-geometry.js';
 import {makeInstancedWormWheel} from './instanced-worm-wheel.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {specialWormParameters} from './special-worm-parameters.js';
@@ -9,22 +9,57 @@ export function makeSpecialWormWheel(id,boreRadius,material){
  mesh.userData.profile='offline-synchronized-finite-worm-envelope';
  mesh.userData.clearance=specialWormCuts[id].clearance;return mesh;
 }
-export function correctGloboidalWorm(root){
- const b=root.userData.blocks,p=specialWormParameters[202],virtualLength=2*p.pitchRadius*.6;
- const source=makeSolidWorm({length:virtualLength,radius:p.wormRadius,pitch:p.wormPitch,shaftRadius:.085,handedness:-1,angularSteps:128});
- const geometry=source.userData.thread.geometry;
- geometry.rotateZ(Math.PI*virtualLength/p.wormPitch+Math.PI/2);
- const position=geometry.attributes.position;
- for(let i=0;i<position.count;i++){
-  const x=position.getX(i),y=position.getY(i),s=position.getZ(i),r=Math.hypot(x,y),beta=s/p.pitchRadius;
-  const addition=r>.087?p.pitchRadius*(1-Math.cos(beta)):0;
-  position.setXYZ(i,x*(r+addition)/r,y*(r+addition)/r,p.pitchRadius*Math.sin(beta));
+// 202's Hindley worm: the straight V section of a long cylindrical worm is
+// turned with the wheel radius at every point of the throat, then the solid is
+// cut square at +-halfLength and closed by flat end faces round a straight bore.
+function hindleyWormGeometry(p,halfLength,boreRadius){
+ const virtualLength=2*p.pitchRadius*p.generatedEnvelopment;
+ // Deep V thread (Brown's 202): explicit addendum/dedendum and flank angle.
+ // Left-handed like the former integral worm: mirror, then the same net
+ // quarter-turn phase that worm used.
+ const module=p.wormPitch/Math.PI,tangent=Math.tan(p.pressureAngle),rootRadius=p.wormRadius-p.dedendum,tipRadius=p.wormRadius+p.addendum;
+ const g=cylindricalWormGeometry({pitchRadius:p.wormRadius,module,length:virtualLength,pressureAngle:p.pressureAngle,angularSteps:128,rootRadius,tipRadius,
+  rootHalfWidth:p.wormPitch/4+p.dedendum*tangent,tipHalfWidth:p.wormPitch/4-p.addendum*tangent});
+ g.scale(1,-1,1);g.rotateZ(Math.PI/2);
+ const pos=g.attributes.position,half=virtualLength/2,out=[],cut=[[],[]];
+ const map=v=>{const r=Math.hypot(v.x,v.y),beta=v.z/p.pitchRadius,wheelRadius=p.pitchRadius+p.wormRadius-r,rho=p.distance-wheelRadius*Math.cos(beta);return new THREE.Vector3(v.x*rho/r,v.y*rho/r,wheelRadius*Math.sin(beta));};
+ const clip=(poly,side)=>{const res=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],da=halfLength-side*a.z,db=halfLength-side*b.z;if(da>=0)res.push(a);if((da<0)!==(db<0)){const q=a.clone().lerp(b,da/(da-db));q.z=side*halfLength;res.push(q);}}return res;};
+ for(let i=0;i<pos.count;i+=3){
+  const v=[0,2,1].map(j=>new THREE.Vector3().fromBufferAttribute(pos,i+j));
+  if(v.every(q=>Math.abs(Math.abs(q.z)-half)<1e-7)||v.every(q=>Math.hypot(q.x,q.y)<boreRadius+.002))continue;
+  const poly=clip(clip(v.map(map),-1),1);
+  for(let k=1;k<poly.length-1;k++)out.push(poly[0],poly[k],poly[k+1]);
+  for(let k=0;k<poly.length;k++){const a=poly[k],c=poly[(k+1)%poly.length];
+   if(Math.abs(Math.abs(a.z)-halfLength)<1e-9&&Math.abs(c.z-a.z)<1e-12)cut[a.z>0?1:0].push([a,c]);}
  }
- geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ const hole=Array.from({length:48},(_,i)=>new THREE.Vector2(boreRadius*Math.cos(-i*Math.PI/24),boreRadius*Math.sin(-i*Math.PI/24)));
+ if(THREE.ShapeUtils.isClockWise(hole))hole.reverse();
+ for(const side of[0,1]){
+  // Chain the clipped boundary edges on the cut plane into the section loop.
+  const z=side?halfLength:-halfLength,key=q=>`${Math.round(q.x*1e7)},${Math.round(q.y*1e7)}`,next=new Map();
+  for(const[a,c]of cut[side]){if(key(a)!==key(c))next.set(key(c),a);}
+  const start=cut[side][0][1],outer=[];let at=start;
+  for(let guard=0;guard<=next.size;guard++){outer.push(new THREE.Vector2(at.x,at.y));at=next.get(key(at));if(!at||key(at)===key(start))break;}
+  const points=[...outer,...hole];
+  for(const face of THREE.ShapeUtils.triangulateShape(outer,[hole])){
+   const tri=face.map(k=>new THREE.Vector3(points[k].x,points[k].y,z));
+   const normal=new THREE.Triangle(...tri).getNormal(new THREE.Vector3());if((normal.z>0)!==Boolean(side))tri.reverse();out.push(...tri);
+  }
+ }
+ for(let i=0;i<hole.length;i++){const a=hole[i],b=hole[(i+1)%hole.length];
+  const v=[new THREE.Vector3(a.x,a.y,-halfLength),new THREE.Vector3(a.x,a.y,halfLength),new THREE.Vector3(b.x,b.y,halfLength),new THREE.Vector3(b.x,b.y,-halfLength)];
+  // Bore faces point toward the axis.
+  const tri1=[v[0],v[1],v[2]],tri2=[v[0],v[2],v[3]];const n=new THREE.Triangle(...tri1).getNormal(new THREE.Vector3());const mid=a.clone().add(b).multiplyScalar(.5);
+  if(n.x*mid.x+n.y*mid.y>0){tri1.reverse();tri2.reverse();}out.push(...tri1,...tri2);}
+ const geometry=new THREE.BufferGeometry();geometry.setFromPoints(out);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ g.dispose();return geometry;
+}
+export function correctGloboidalWorm(root){
+ const b=root.userData.blocks,p=specialWormParameters[202];
+ const geometry=hindleyWormGeometry(p,p.wormLength/2,.086);
  b.wormThread.geometry.dispose();b.wormThread.geometry=geometry;b.wormThread.material.color.copy(b.wormBody.material.color);
  b.wormThread.userData.integralThread=true;b.wormThread.userData.boreRadius=.086;
  b.wormBody.visible=false;b.wormBody.userData.replacedByIntegralThread=true;
- source.userData.thread.material.dispose();
  const rotor=b.wheel.userData.rotor,old=rotor.children[0];
  const wheel=makeSpecialWormWheel(202,.107,old.material);old.removeFromParent();old.geometry.dispose();rotor.add(wheel);b.generatedWheel=wheel;
  rotor.children.find(m=>m.geometry?.type==='TorusGeometry')?.removeFromParent();

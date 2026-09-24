@@ -687,8 +687,10 @@ function sixRollerPulleyBearing(movement) {
   const innerRaceDepth = 0.86;
   const cageDepth = 0.08;
 
-  const beltThickness = 0.13;
-  const beltDepth = 0.24;
+  // Brown's 270 hangs a round twisted rope, not a flat belt, about 0.16
+  // across at this scale.
+  const beltThickness = 0.16;
+  const beltDepth = 0.16;
   const beltCenterlineRadius = pulleyOuterRadius + beltThickness / 2;
   const beltLegLength = 3;
   const beltVisibleLength = 2 * beltLegLength

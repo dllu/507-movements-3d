@@ -7,8 +7,8 @@ const angularSteps=64,phaseSteps=1200,radialSteps=36;
 const results={};
 for(const [id,p] of Object.entries(specialWormParameters)){
  const axialSteps=p.globoidal?16:8,clearance=p.clearance??.0025;
- const started=Date.now(),N=p.teeth,lead=p.wormPitch/(2*Math.PI),module=p.wormPitch/Math.PI,tangent=Math.tan(Math.PI/9);
- const root=p.wormRadius-1.25*module,tip=p.wormRadius+module;
+ const started=Date.now(),N=p.teeth,lead=p.wormPitch/(2*Math.PI),module=p.wormPitch/Math.PI,tangent=Math.tan(p.pressureAngle??Math.PI/9);
+ const root=p.wormRadius-(p.dedendum??1.25*module),tip=p.wormRadius+(p.addendum??module);
  const sweep=p.globoidal?.72:.45,step=2*sweep/phaseSteps;
  const wrap=x=>x-p.wormPitch*Math.floor(x/p.wormPitch+.5);
  const boundary=(theta,z,phase)=>{
@@ -20,9 +20,19 @@ for(const [id,p] of Object.entries(specialWormParameters)){
    if(p.globoidal){
     axial=r*cosine;if(Math.abs(axial)>p.wormLength/2)return false;
     const y=r*sine+p.distance;
-    radial=Math.hypot(y,z)-(p.pitchRadius-Math.sqrt(p.pitchRadius**2-axial**2));
     azimuth=Math.atan2(y,-z)-wormAngle;
-    coordinate=p.pitchRadius*Math.asin(axial/p.pitchRadius)+lead*(azimuth-Math.PI/2);
+    if(p.hindley){
+     // Hindley section: flanks keep their angle to the wheel radius all along
+     // the throat. Depth and arc are measured about the wheel centre in each
+     // worm meridian (the globoid of revolution of the wheel pitch circle).
+     // The worm ends are square planes at |axial| = wormLength/2.
+     const rho=Math.hypot(y,z),wheelRadius=Math.hypot(axial,p.distance-rho);
+     radial=p.wormRadius+p.pitchRadius-wheelRadius;
+     coordinate=p.pitchRadius*Math.atan2(axial,p.distance-rho)+lead*(azimuth-Math.PI/2);
+    }else{
+     radial=Math.hypot(y,z)-(p.pitchRadius-Math.sqrt(p.pitchRadius**2-axial**2));
+     coordinate=p.pitchRadius*Math.asin(axial/p.pitchRadius)+lead*(azimuth-Math.PI/2);
+    }
    }else{
     axial=-r*cosine;if(Math.abs(axial)>p.wormLength/2)return false;
     radial=Math.hypot(z+p.offset,r*sine-p.distance);

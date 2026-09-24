@@ -323,7 +323,7 @@ export default {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
     camera: [0.02, 0.02, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
-    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth, the far teeth showing between them, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth, the far teeth faded pale between them as Brown draws them only lightly, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],
