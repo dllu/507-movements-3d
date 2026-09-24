@@ -1,14 +1,19 @@
 import * as THREE from 'three';
-import { makeGear, makeBeam, matte, PALETTE } from './primitives.js';
+import { makeBeam, matte, PALETTE } from './primitives.js';
+import { squareToothOutline } from './square-tooth-outline.js';
 import { plate, poly, circle, ring, polygonClipping } from './finite-plate-geometry.js';
 import { stopOutlines239 } from './baked/opposed-spur-239-outlines.js';
 
-// Use the same involute tessellation as the visible standard spur gears.
+// Plate 239 draws square teeth. Their parallel flanks are 0.447 wide, the
+// width the former involute had where the two stop noses bear (radii 2.17
+// and 2.32), so the stops trap the same free play.
+export const SQUARE_TOOTH_WIDTH_239 = 0.447;
 export function spurStopProfile239({ teeth, pitchRadius, rootRadius, outerRadius }) {
-  const gear = makeGear({ teeth, radius: pitchRadius, addendum: outerRadius - pitchRadius, dedendum: pitchRadius - rootRadius, depth: 0.42, chamfer: 0 });
-  const outline = gear.userData.rotor.children[0].geometry.parameters.shapes.getPoints().slice(0, -1);
-  const pitch = 2 * Math.PI / teeth, base = gear.userData.baseRadius;
-  const halfRoot = Math.PI / (2 * teeth) + Math.tan(gear.userData.pressureAngle) - gear.userData.pressureAngle;
+  const square = squareToothOutline({ teeth, radius: pitchRadius, addendum: outerRadius - pitchRadius,
+    dedendum: pitchRadius - rootRadius, width: SQUARE_TOOTH_WIDTH_239, taper: 0 });
+  const outline = square.points;
+  const pitch = 2 * Math.PI / teeth, base = null;
+  const halfRoot = square.rootAngle;
   const flanks = {};
   for (const side of [-1, 1]) {
     flanks[side] = outline.filter(p => {
@@ -26,10 +31,9 @@ export function spurStopProfile239({ teeth, pitchRadius, rootRadius, outerRadius
       const point = root.clone().addScaledVector(delta, u);
       return { point, angle: Math.atan2(point.y, point.x), segmentCoordinate: (radius - rootRadius) / (outerRadius - rootRadius), localSegmentCoordinate: u, segment: {root, outer} };
     }
-    throw new RangeError('239 nose misses the involute flank');
+    throw new RangeError('239 nose misses the square-tooth flank');
   };
   const halfTip = Math.abs(Math.atan2(flanks[1].at(-1).y, flanks[1].at(-1).x));
-  gear.traverse(o => { o.geometry?.dispose(); for(const m of [].concat(o.material ?? [])) m.dispose(); });
   return { outline, flanks, pointAtRadius, halfRoot, halfTip, pitch, base };
 }
 
@@ -45,7 +49,9 @@ export function finishOpposedSpur239(model) {
     replace(stop.userData.hub, ring(0.08, 0.18, -0.213, 0.213, 96));
     stop.userData.hub.rotation.set(0, 0, 0);
   }
-  replace(b.gearHub, ring(0.108, 0.46, -g.gearDepth * 0.71, g.gearDepth * 0.71, 96));
+  // The hub's rear face stops just in front of the fixed output journal
+  // (z -0.43 to -0.23) instead of turning 0.068 into it.
+  replace(b.gearHub, ring(0.108, 0.46, -0.225, g.gearDepth * 0.71, 96));
   b.gearHub.rotation.set(0, 0, 0);
   replace(b.gearIndicator, new THREE.BoxGeometry(0.7, 0.045, 0.012));
   b.gearIndicator.position.set(1.2, 0, g.gearDepth / 2 + 0.006);

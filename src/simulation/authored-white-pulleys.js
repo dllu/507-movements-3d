@@ -126,7 +126,10 @@ export function whitePulleys() {
   };
   const initialPath = makeRopePath(0);
   const nominalRopeLength = initialPath.curve.getLength();
-  const rope = makeDynamicMovingBelt(initialPath.curve, { closed: false, radius: ropeRadius, markerCount: 0 });
+  // About 25 units of rope wrap grooves as small as 0.145: the default 128
+  // tube segments cut chords 0.03 deep into the treads, so sample finely.
+  const rope = makeDynamicMovingBelt(initialPath.curve, { closed: false, radius: ropeRadius, markerCount: 0,
+    tubularSegments: 1536 });
   rope.userData.mechanismRope = true;
   root.add(top, bottom, topHanger, bottomHanger, rope);
   root.userData.mechanism = 'whites-six-part-pulley';

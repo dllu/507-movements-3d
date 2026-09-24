@@ -36,7 +36,7 @@ function polygonQuery(points) {
   };
 }
 
-test('039 actual involute flanks remain engaged and clear while the planet rocks with the rod', () => {
+test('039 actual square-tooth flanks clear with bounded backlash while the planet rocks with the rod', () => {
   const model = createMovementModel(catalog.movements[38]);
   const { sun, planet } = model.root.userData.blocks;
   const meshes = [sun.userData.body, planet.userData.body];
@@ -47,7 +47,7 @@ test('039 actual involute flanks remain engaged and clear while the planet rocks
     return [a, a.clone().lerp(b, 1 / 3), a.clone().lerp(b, 2 / 3)];
   }));
   const point = new THREE.Vector3();
-  let largestGap = 0;
+  let largestGap = 0, smallestGap = Infinity;
   for (let sample = 0; sample < 192; sample += 1) {
     model.update(model.root.userData.geometry.orbitPeriod * (sample + 0.173) / 192, 0);
     model.root.updateMatrixWorld(true);
@@ -63,9 +63,13 @@ test('039 actual involute flanks remain engaged and clear while the planet rocks
         gap = Math.min(gap, query.distance);
       }
     }
-    assert.ok(gap < 0.0015, `pose ${sample}: working gap ${gap}`);
+    assert.ok(gap < 0.02, `pose ${sample}: working gap ${gap}`);
     largestGap = Math.max(largestGap, gap);
+    smallestGap = Math.min(smallestGap, gap);
   }
+  // Plate 39's square teeth are not conjugate: they keep a running clearance
+  // that closes to a few thousandths once per tooth pitch.
+  assert.ok(smallestGap > 0.002 && smallestGap < 0.008, `closest square-tooth approach ${smallestGap}`);
   for (const [side, mesh] of meshes.entries()) {
     const positions = mesh.geometry.attributes.position;
     for (let index = 0; index < positions.count; index += 1) {
@@ -79,7 +83,7 @@ test('039 actual involute flanks remain engaged and clear while the planet rocks
 
 test('039 has clear carrier bores and separate planes for the flywheel, gears, rod and arm', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft, sunShaft } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft, sunShaft, armStud } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   const initialRodTransform = new THREE.Matrix4();
   for (let sample = 0; sample < 65; sample += 1) {
@@ -94,12 +98,15 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
     const armBounds = new THREE.Box3().setFromObject(arm);
     const rodBounds = new THREE.Box3().setFromObject(connectingRod);
     const bossBounds = new THREE.Box3().setFromObject(rodBoss);
-    // The rod crosses the sun axis once per orbit, so it must run outboard
-    // of the arm and of the sun-shaft end on which the arm pivots.
-    assert.ok(rodBounds.min.z - armBounds.max.z > 0.0149, 'the rod sweeps in front of the arm');
-    assert.ok(bossBounds.min.z - armBounds.max.z > 0.0099, 'the arm clears the planet/rod attachment boss');
-    assert.ok(rodBounds.min.z - new THREE.Box3().setFromObject(sunShaft).max.z > 0.0199,
-      'the sun shaft ends inside the arm, behind the rod');
+    // Plate 39 draws the arm over the rod. The rod crosses the sun axis once
+    // per orbit, so it runs between the gears and the arm, in front of the
+    // sun-shaft end and behind the arm's sun-end stud.
+    assert.ok(armBounds.min.z - rodBounds.max.z > 0.0049, 'the arm lies in front of the rod');
+    assert.ok(armBounds.min.z - bossBounds.max.z > 0.0049, 'the arm clears the planet/rod attachment boss');
+    assert.ok(rodBounds.min.z - new THREE.Box3().setFromObject(sunShaft).max.z > 0.0099,
+      'the sun shaft ends behind the rod');
+    assert.ok(new THREE.Box3().setFromObject(armStud).min.z - rodBounds.max.z > 0.0049,
+      'the arm stud stays in front of the rod');
     assert.ok(rodBounds.min.z - new THREE.Box3().setFromObject(sun.userData.flange).max.z > 0.0149,
       'the inclined rod passes in front of the rotating sun flange');
     for (const x of [0, g.centerDistance]) {
@@ -107,7 +114,7 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
         // Probe face interiors; an exact polygon vertex can fall between
         // two floating-point ray/triangle edge tests.
         const angle = 2 * Math.PI * (ray + 0.317) / 16;
-        const origin = new THREE.Vector3(x, 0, 0.205).applyMatrix4(carrier.matrixWorld);
+        const origin = new THREE.Vector3(x, 0, 0.295).applyMatrix4(carrier.matrixWorld);
         const direction = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0).transformDirection(carrier.matrixWorld);
         const hits = new THREE.Raycaster(origin, direction, 0, 0.3).intersectObject(arm, false);
         assert.ok(hits.length > 0 && hits[0].distance - g.axleRadius > 0.0059,

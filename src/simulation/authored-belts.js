@@ -799,8 +799,13 @@ function oscillatingSector() {
     spoke.rotation.z = angle;
     sector.add(spoke);
   }
-  const leftAttachmentLocal = new THREE.Vector3(-sectorRadius, 0, beltZ);
-  const rightAttachmentLocal = new THREE.Vector3(sectorRadius, 0, beltZ);
+  // The belt ends are fastened to the rim just under the lever bar (half
+  // height 0.07) rather than inside it.
+  const attachmentDrop = Math.asin(0.074 / sectorRadius);
+  const leftAttachmentLocal = new THREE.Vector3(
+    -sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
+  const rightAttachmentLocal = new THREE.Vector3(
+    sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
   const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 1.4, 22),
     matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 }));
   sectorShaft.rotation.x = Math.PI / 2;

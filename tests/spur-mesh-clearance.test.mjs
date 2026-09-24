@@ -17,12 +17,13 @@ function inside(point, polygon) {
   return result;
 }
 
-test('024 extruded involute outlines engage without tooth penetration through a complete tooth pitch', () => {
+test('024 extruded square-tooth outlines pass through the mesh without penetration and with bounded backlash', () => {
   const model = createMovementModel(catalog.movements[23]);
   const { driver, driven } = model.root.userData.blocks;
   const gears = [driver, driven];
   const meshes = gears.map((gear) => gear.userData.rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry'));
   const contours = meshes.map((mesh) => mesh.geometry.parameters.shapes.getPoints());
+  let overallMinimum = Infinity;
   for (let sample = 0; sample <= 40; sample += 1) {
     const time = 2 * Math.PI / driver.userData.teeth / model.root.userData.kinematics.driverAngularSpeed * sample / 40;
     model.update(time, 0);
@@ -42,8 +43,12 @@ test('024 extruded involute outlines engage without tooth penetration through a 
         }
       }
     }
-    assert.ok(minimumGap < 0.0015, `sample ${sample}: the discretized involute flanks remain in mesh (${minimumGap})`);
+    overallMinimum = Math.min(overallMinimum, minimumGap);
+    assert.ok(minimumGap < 0.02, `sample ${sample}: the square teeth stay engaged within their backlash (${minimumGap})`);
   }
+  // Straight flanks are not conjugate: the prescribed ratio keeps a small
+  // running clearance, closing to a few thousandths once per tooth pitch.
+  assert.ok(overallMinimum > 0.002 && overallMinimum < 0.008, `square-tooth closest approach ${overallMinimum}`);
 });
 
 test('034 internal involutes mesh without entering either tooth solid over a complete tooth pitch', () => {

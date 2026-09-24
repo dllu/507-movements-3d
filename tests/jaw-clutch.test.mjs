@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { makeJawClutch } from '../src/simulation/jaw-clutch.js';
 import { makeJawClutchMotion } from '../src/simulation/jaw-clutch-motion.js';
+import { densePoints } from './helpers/dense-points.mjs';
 
 const tau = 2 * Math.PI;
 function triangles(geometry, first = 0, count = Infinity) {
@@ -200,7 +201,9 @@ test('048 all six working flanks make real contact while engaged', () => {
 test('048 the rigid lever follower clears the actual rotating sleeve', () => {
   const model = makeJawClutch(), g = model.root.userData.geometry, b = model.root.userData.blocks;
   const parts = [b.leverBody, b.follower, b.followerPin, b.rodBody];
-  const points = parts.map((part) => cloud(triangles(part.geometry)));
+  // Vertices and edge midpoints miss the lever plate's broad faces, where it
+  // passes in front of the collar and shoulder; sample those faces densely.
+  const points = parts.map((part) => (part === b.leverBody ? densePoints(part.geometry, 0.01) : cloud(triangles(part.geometry))));
   const profile = g.outputProfile.slice(3, -1).filter(([, r]) => r > g.boreRadius);
   const envelope = (x) => {
     let radius = -Infinity;

@@ -1,6 +1,7 @@
 import {correctFeedWormAssembly} from './feed-worm-assembly-parts.js';
 import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
+import { squareToothOutline } from './square-tooth-outline.js';
 import { spurStopProfile239, finishOpposedSpur239 } from './opposed-spur-239-working-parts.js';
 import { finishPartialLanternRack } from './partial-lantern-rack-parts.js';
 import { finishMangleRackWorkingParts } from './mangle-rack-working-parts.js';
@@ -67,6 +68,25 @@ function finish(root, update, cameraDirection = new THREE.Vector3(6.5, 4.2, 8.2)
   root.userData.fidelity = 'authored';
   markShadows(root);
   return { root, update, cameraDirection };
+}
+
+// Replaces makeGear's involute body with the square-tooth outline, keeping
+// the chamfer inside the outline as makeGear does.
+function applySquareTeeth(gear, { addendum, dedendum, width, taper, depth, chamfer = 0.008 }) {
+  const body = gear.userData.rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
+  const { shape, rootRadius, tipRadius } = squareToothOutline({
+    teeth: gear.userData.teeth, radius: gear.userData.pitchRadius, addendum, dedendum, width, taper,
+  });
+  body.geometry.dispose();
+  body.geometry = new THREE.ExtrudeGeometry(shape, {
+    depth, bevelEnabled: true, bevelSegments: 1, bevelSize: chamfer, bevelOffset: -chamfer,
+    bevelThickness: chamfer, curveSegments: 1,
+  }).translate(0, 0, -depth / 2);
+  Object.assign(gear.userData, {
+    addendum, dedendum, outerRadius: tipRadius, rootRadius, toothHeight: addendum + dedendum,
+    toothProfile: 'source-square-straight-flank', toothWidth: width, toothTaper: taper,
+  });
+  return gear;
 }
 
 // Brown's gear plates carry no painted rotation indices or white index teeth;
@@ -216,7 +236,7 @@ function spurGears() {
   const moduleScale = 1 / 30;
   const driverRadius = driverTeeth * moduleScale;
   const drivenRadius = drivenTeeth * moduleScale;
-  const toothHeight = 2.25 * 2 * moduleScale;
+  const toothHeight = 3.1 * moduleScale;
   const centerDistance = driverRadius + drivenRadius;
   const driver = makeGear({
     teeth: driverTeeth,
@@ -238,7 +258,16 @@ function spurGears() {
     dedendum: 2.5 * moduleScale,
     chamfer: 0.008,
   });
+  // Plate 24 draws square teeth about half a pitch high with flat tips.
+  const squareTeeth = {
+    addendum: 1.4 * moduleScale,
+    dedendum: 1.7 * moduleScale,
+    width: 0.45 * 2 * Math.PI * moduleScale,
+    taper: 0.3 * moduleScale,
+    depth: 0.38,
+  };
   for (const gear of [driver, driven]) {
+    applySquareTeeth(gear, squareTeeth);
     const rotor = gear.userData.rotor;
     const oldRing = rotor.children.find((part) => part.geometry?.type === 'TorusGeometry');
     rotor.remove(oldRing);
@@ -316,7 +345,9 @@ function bevelGears() {
   const apex = new THREE.Vector3(0, 0, 0);
   const driverAxis = X_AXIS.clone().negate();
   const drivenAxis = Y_AXIS.clone();
-  const teeth = 24;
+  // Plate 25 shows about 17 teeth across the visible half of each wheel.
+  const teeth = 36;
+  const toothHeight = 0.1;
   // The engraving shows short face widths, with the toe about 70% of the
   // heel radius. Extending teeth nearly to the apex made two deep cones.
   const innerDistance = 0.76;
@@ -327,6 +358,7 @@ function bevelGears() {
     innerDistance,
     outerDistance,
     teeth,
+    toothHeight,
   });
   const driven = makeMiterGear({
     axis: drivenAxis,
@@ -334,6 +366,7 @@ function bevelGears() {
     innerDistance,
     outerDistance,
     teeth,
+    toothHeight,
   });
   driver.position.copy(apex);
   driven.position.copy(apex);
@@ -351,11 +384,13 @@ function bevelGears() {
     return shaft;
   };
   const shaftA = makeBevelShaft(driverAxis, 1.63);
-  const shaftB = makeBevelShaft(drivenAxis, 1.97);
+  const shaftB = makeBevelShaft(drivenAxis, 2.12);
   root.add(driver, driven);
   const collars = [];
   for (const [axis, distance, radius, shaft] of [
-    [drivenAxis, 1.22, 0.2, shaftB], [drivenAxis, 1.62, 0.2, shaftB],
+    // The upright wheel's boss sits on its back face; the loose collar
+    // above it is where the plate draws it, about 1.6 wheel radii up.
+    [drivenAxis, 1.22, 0.2, shaftB], [drivenAxis, 1.73, 0.2, shaftB],
     [driverAxis, 1.22, 0.2, shaftA],
   ]) {
     const collar = makeShaft({ length: 0.08, radius, axis, color: PALETTE.frame });
@@ -422,7 +457,10 @@ function bevelGears() {
     };
   };
   update(0);
-  return finish(root, update, new THREE.Vector3(0.7, 0.45, 10));
+  // Brown draws both wheels edge-on, nearly without perspective, from a
+  // little above the upright wheel's back face.
+  root.userData.cameraFov = 14;
+  return finish(root, update, new THREE.Vector3(0.05, 0.3, 10));
 }
 
 
@@ -987,7 +1025,9 @@ function brushWheels() {
   root.add(diskShaft, rollerShaft);
   addRail(root, -2.48, 5.2, -0.72);
 
-  const contactRadii = [0.55, 0.9, 1.24];
+  // The cycle opens at the plate's setting, the roller about 0.97 from the
+  // lower wheel's centre, then works outward and back inward.
+  const contactRadii = [0.97, 1.24, 0.55];
   const dwellDuration = 3.2;
   const shiftDuration = 1.2;
   const stageDuration = dwellDuration + shiftDuration;
@@ -3294,6 +3334,9 @@ function sunAndPlanet() {
     const gear = makeGear({ teeth, radius: pitchRadius, depth: gearDepth,
       toothHeight: 2.2 * module, chamfer: 0.004, color });
     const rotor = gear.userData.rotor;
+    // Plate 39 draws both wheels with tall square teeth.
+    applySquareTeeth(gear, { addendum: 1.8 * module / 2, dedendum: 2.1 * module / 2,
+      width: 0.42 * Math.PI * module, taper: 0.4 * module / 2, depth: gearDepth, chamfer: 0.004 });
     const body = rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
     for (const part of [...rotor.children]) {
       if (part === body) continue;
@@ -3325,7 +3368,7 @@ function sunAndPlanet() {
   const flywheelShape = new THREE.Shape();
   // The web runs under the rim, which closes the outer ends of the slits.
   flywheelShape.absarc(0, 0, flywheelInnerRadius + 0.05, 0, 2 * Math.PI, false);
-  const slitHalfWidth = 0.075;
+  const slitHalfWidth = 0.065;
   const slitInnerRadius = 0.6;
   const slitOuterHalfAngle = Math.asin(slitHalfWidth / flywheelInnerRadius);
   for (let quadrant = 0; quadrant < 4; quadrant += 1) {
@@ -3389,10 +3432,11 @@ function sunAndPlanet() {
   const armGeometry = new THREE.ExtrudeGeometry(armShape, {
     depth: 0.10, bevelEnabled: false, curveSegments: 64,
   });
-  // The plate draws the arm over the rod, but the rod sweeps across the
-  // sun axis once per orbit; the arm must pivot on the sun-shaft end behind
-  // the rod, so the rod is carried outboard of the arm.
-  armGeometry.translate(0, 0, 0.155);
+  // The plate draws the arm over the rod. The rod sweeps across the sun axis
+  // once per orbit, so the sun shaft stops at the gear face behind the rod
+  // and the arm's sun end turns on a short stud in front of the rod (the pin
+  // end the plate draws); the stud's front bracket is not drawn or modelled.
+  armGeometry.translate(0, 0, 0.25);
   const arm = new THREE.Mesh(armGeometry, matte(PALETTE.brass, { metalness: 0.16, roughness: 0.63 }));
   arm.userData.centerDistanceArm = true;
   carrier.add(arm);
@@ -3408,26 +3452,29 @@ function sunAndPlanet() {
   const rodGeometry = new THREE.ExtrudeGeometry(rodShape, {
     depth: 0.08, bevelEnabled: false, curveSegments: 32,
   });
-  rodGeometry.translate(0, 0, 0.27);
+  rodGeometry.translate(0, 0, 0.16);
   const connectingRod = new THREE.Mesh(rodGeometry, matte(PALETTE.frame, { roughness: 0.64 }));
   connectingRod.userData.rigidToPlanet = true;
   connectingRod.userData.croppedContinuation = true;
-  const rodBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.10, 64),
+  const rodBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 64),
     matte(PALETTE.frame, { roughness: 0.6 }));
   rodBoss.rotation.x = Math.PI / 2;
-  rodBoss.position.z = 0.32;
+  rodBoss.position.z = 0.2;
   planet.userData.rotor.add(rodBoss);
-  const sunShaftFront = 0.25;
+  const sunShaftFront = 0.14;
   const sunShaft = makeShaft({ length: sunShaftFront + 0.27, radius: axleRadius, axis: Z_AXIS });
   sunShaft.position.z = (sunShaftFront - 0.27) / 2;
+  const armStud = makeShaft({ length: 0.12, radius: axleRadius, axis: Z_AXIS });
+  armStud.position.z = 0.31;
+  armStud.userData.role = 'arm-sun-end-stud';
   const planetShaft = makeShaft({ length: 0.465, radius: axleRadius, axis: Z_AXIS });
   planetShaft.position.z = 0.1275;
-  root.add(sun, planet, carrier, connectingRod, sunShaft, planetShaft);
+  root.add(sun, planet, carrier, connectingRod, sunShaft, planetShaft, armStud);
   const carrierAngularSpeed = 0.62;
   const orbitPeriod = 2 * Math.PI / carrierAngularSpeed;
   root.userData.mechanism = 'watts-equal-gear-sun-and-planet';
   root.userData.blocks = { sun, planet, carrier, arm, connectingRod, rodBoss,
-    flywheel, flywheelRim, sunShaft, planetShaft };
+    flywheel, flywheelRim, sunShaft, planetShaft, armStud };
   root.userData.geometry = {
     teeth, module, pitchRadius, angularPitch, circularPitch: Math.PI * module,
     centerDistance, sunCenter, sunPhase, planetPhase, gearDepth, flangeRadius,
@@ -3596,10 +3643,12 @@ function angularBevelGears() {
     .addScaledVector(Y_AXIS, Math.sin(pitchConeAngle));
   const drivenAxis = coneBisector.clone().multiplyScalar(Math.cos(pitchConeAngle))
     .addScaledVector(Y_AXIS, -Math.sin(pitchConeAngle));
-  const teeth = 24;
+  // Plate 43 shows about 25 fine teeth round the visible half of the upper
+  // wheel.
+  const teeth = 44;
   const innerDistance = 0.93;
   const outerDistance = 1.52;
-  const toothHeight = 0.145;
+  const toothHeight = 0.085;
   const driver = makeMiterGear({
     axis: driverAxis,
     color: PALETTE.driver,
@@ -3621,17 +3670,22 @@ function angularBevelGears() {
   driver.position.copy(apex);
   driven.position.copy(apex);
   root.add(driver, driven);
-  // The plate carries the upper shaft well past the rim at upper left.
+  // The plate carries the upper shaft well past the rim at upper left and,
+  // in front, on past the intersection with the lower shaft. Intersecting
+  // shafts cannot both run through the apex: the lower one ends just clear
+  // of the upper where the plate shows it passing behind.
+  const driverShaftStart = -0.6, driverShaftEnd = 2.7;
+  const drivenShaftStart = 0.17, drivenShaftEnd = 2.05;
   const driverShaft = addAxle(
     root,
-    apex.clone().addScaledVector(driverAxis, 1.525),
-    2.35,
+    apex.clone().addScaledVector(driverAxis, (driverShaftStart + driverShaftEnd) / 2),
+    driverShaftEnd - driverShaftStart,
     driverAxis,
   );
   const drivenShaft = addAxle(
     root,
-    apex.clone().addScaledVector(drivenAxis, 1.2),
-    1.7,
+    apex.clone().addScaledVector(drivenAxis, (drivenShaftStart + drivenShaftEnd) / 2),
+    drivenShaftEnd - drivenShaftStart,
     drivenAxis,
   );
   addRail(root, -2.02, 5.0, -0.82);
@@ -3665,7 +3719,7 @@ function angularBevelGears() {
 
   root.userData.mechanism = 'equal-angular-bevel-gears-on-acute-intersecting-shafts';
   // The source shows truncated cones, with the toe around three-fifths of
-  // the heel diameter. Both shafts stop before their virtual intersection.
+  // the heel diameter.
   root.rotation.z = Math.PI / 12;
   root.userData.cameraFov = 18;
   root.userData.blocks = { driven, drivenShaft, driver, driverShaft };
@@ -31927,6 +31981,9 @@ function compoundMutilatedExternalInternalGearReverser() {
       bevelEnabled: bevel > 0,
       bevelSegments: bevel > 0 ? 1 : 0,
       bevelSize: bevel,
+      // Keep the chamfered solid inside its checked outline; without the
+      // offset the bevel widened every tooth by its size into the mesh.
+      bevelOffset: -bevel,
       bevelThickness: bevel,
       curveSegments: 64,
       depth,
@@ -33734,7 +33791,7 @@ function pairedStopsForSpurGear(movement) {
   gear.userData.pitchRadius = gearPitchRadius;
   gear.userData.rootRadius = gearRootRadius;
   gear.userData.teeth = toothCount;
-  gear.userData.toothProfile = 'true-involute';
+  gear.userData.toothProfile = 'source-square-straight-flank';
   root.add(gear);
 
   const gearShaft = makeShaft({

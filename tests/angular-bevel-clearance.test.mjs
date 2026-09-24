@@ -21,7 +21,7 @@ test('043 has short source-proportioned tooth faces instead of teeth extending a
   }
 });
 
-test('043 rendered shaft solids stop short of the common intersection and clear each other', () => {
+test('043 the front shaft runs on past the intersection while the rear one stops clear of it', () => {
   const model = createMovementModel(catalog.movements[42]);
   model.root.updateMatrixWorld(true);
   const { driverShaft, drivenShaft } = model.root.userData.blocks;
@@ -37,9 +37,12 @@ test('043 rendered shaft solids stop short of the common intersection and clear 
     return points;
   };
   const apex = model.root.localToWorld(model.root.userData.gearContact.apex.clone());
-  for (const shaft of [driverShaft, drivenShaft]) {
-    for (const point of shaftSurface(shaft)) assert.ok(point.distanceTo(apex) > 0.34);
-  }
+  // Plate 43 draws the upper shaft continuing past the crossing.
+  const driverAxis = model.root.localToWorld(model.root.userData.gearContact.driverAxis.clone())
+    .sub(model.root.localToWorld(new THREE.Vector3())).normalize();
+  const reach = Math.min(...shaftSurface(driverShaft).map((point) => point.clone().sub(apex).dot(driverAxis)));
+  assert.ok(reach < -0.5, `the upper shaft runs on past the apex (${reach})`);
+  for (const point of shaftSurface(drivenShaft)) assert.ok(point.distanceTo(apex) > 0.15);
   const endpoints = [driverShaft, drivenShaft].map((shaft) => [-1, 1].map((sign) => (
     new THREE.Vector3(0, 0, sign * shaft.userData.length / 2).applyMatrix4(shaft.matrixWorld)
   )));
@@ -49,7 +52,7 @@ test('043 rendered shaft solids stop short of the common intersection and clear 
     for (const point of shaftSurface(shaft)) {
       const fraction = THREE.MathUtils.clamp(point.clone().sub(start).dot(axis) / axis.lengthSq(), 0, 1);
       const closest = start.clone().addScaledVector(axis, fraction);
-      assert.ok(point.distanceTo(closest) > 0.15, 'shaft skin clears the other shaft by more than its radius');
+      assert.ok(point.distanceTo(closest) > 0.085, 'shaft skin clears the other shaft (radius 0.075) by 0.01');
     }
   }
 });

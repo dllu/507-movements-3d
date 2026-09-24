@@ -26,7 +26,7 @@ export function makeCoaxialDifferentSpeeds({ gearALoadPhase = 0.000928, gearCLoa
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.16 }));
   const backplate = turned([[-0.23 - p.ringZ, 0.263], [-0.23 - p.ringZ, p.outerRadius],
     [p.backplateFront - p.ringZ, p.outerRadius], [p.backplateFront - p.ringZ, 0.263]], 0.263, PALETTE.accent);
-  const facePaint = new THREE.Color(PALETTE.paper).lerp(new THREE.Color(PALETTE.accent), 0.12);
+  const facePaint = new THREE.Color(PALETTE.paper);
   const webNormals = backplate.geometry.attributes.normal, webColors = backplate.geometry.attributes.color;
   for (let i = 0; i < webColors.count; i += 1) if (webNormals.getZ(i) > 0.99) webColors.setXYZ(i, facePaint.r, facePaint.g, facePaint.b);
   const sleeve = turned([[-0.56 - p.ringZ, 0.267], [-0.56 - p.ringZ, 0.35], [-0.18 - p.ringZ, 0.35], [-0.18 - p.ringZ, 0.267]], 0.267, PALETTE.brass);
@@ -59,5 +59,10 @@ export function makeCoaxialDifferentSpeeds({ gearALoadPhase = 0.000928, gearCLoa
     shadowCameraHalfExtent: 2.3, shadowBias: -0.00003,
     idealConstraints: 'Three fixed parallel bearing axes, with independent concentric shaft A and sleeve C. Bearings beyond the displayed shaft ends are idealized.',
     animationTiming: { authoredCyclePeriod: 2 }, fullCameraDirection: new THREE.Vector3(4, 3, 8) };
-  update(0); markShadows(root); return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
+  update(0); markShadows(root);
+  // Brown leaves the inside of ring C blank. The web that carries the ring
+  // is kept (the ring needs it) but shows as that plain paper-coloured face,
+  // without the tooth shadows that made it read as a separate grey disk.
+  backplate.receiveShadow = false;
+  return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

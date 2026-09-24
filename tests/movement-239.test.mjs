@@ -130,9 +130,9 @@ test('movement 239 preserves the measured pivots, noses, and abbreviated source 
   vectorNear(geometry.rightNose, new THREE.Vector2(1.552, 1.52), 2e-15,
     'right source nose');
   near(THREE.MathUtils.radToDeg(geometry.gearMountPhase),
-    38.54923225692958, 2e-14, 'source tooth mounting phase');
+    38.49792335410049, 2e-14, 'source tooth mounting phase');
   near(THREE.MathUtils.radToDeg(geometry.clockwiseLimit),
-    -4.916675463899594, 2e-14, 'source-derived clockwise limit');
+    -4.915013303569225, 2e-14, 'source-derived clockwise limit');
   const source = stateAtCycleCoordinate(0);
   assert.equal(source.stage, 'right-stop-holds-counterclockwise-limit');
   assert.equal(source.activeStop, 'right');
@@ -155,7 +155,8 @@ test('movement 239 reconstructs the complete eighteen-tooth source spur profile'
 
   vectorNear(gear.userData.axis, new THREE.Vector3(0, 0, 1), 0,
     'spur-gear axis');
-  assert.equal(gear.userData.toothProfile, 'true-involute');
+  // Plate 239 draws square teeth.
+  assert.equal(gear.userData.toothProfile, 'source-square-straight-flank');
   near(gear.userData.angularPitch, FULL_TURN / 18, 0,
     'eighteen-tooth pitch');
   near(gear.userData.rootRadius, geometry.gearRootRadius, 0,

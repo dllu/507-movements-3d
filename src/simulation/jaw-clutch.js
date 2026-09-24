@@ -4,13 +4,20 @@ import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { boredSpurGeometry, jawClutchGeometry } from './jaw-clutch-geometry.js';
 import { makeJawClutchMotion } from './jaw-clutch-motion.js';
 
+const LEVER_STANDOFF = 0.035;
+
 export function makeJawClutch() {
   const root = new THREE.Group(), motion = makeJawClutchMotion(), p = motion.parameters;
   const shaftRadius = 0.15, boreRadius = 0.161, keyHalfWidth = 0.028, keywayTop = 0.193;
-  const gearTeeth = 32, pinionTeeth = 18, module = 0.05875, gearDepth = 0.27;
+  // Brown's pinion is about half the loose gear's pitch diameter.
+  const gearTeeth = 32, pinionTeeth = 16, module = 0.05875, gearDepth = 0.23;
+  // Faces of the loose gear; its hub, the pinion hubs and the input jaw body
+  // butt against them.
+  const gearFace = gearDepth / 2;
   const gearPitchRadius = gearTeeth * module / 2, pinionPitchRadius = pinionTeeth * module / 2;
   const sourcePhase = 0.93, jawPhase = 0.24 * motion.pitch;
   const pinionY = gearPitchRadius + pinionPitchRadius;
+  const pinionMeshPhase = (gearTeeth / 4 + pinionTeeth / 4 + 0.5) % 1 * 2 * Math.PI / pinionTeeth;
   const rotor = () => {
     const group = new THREE.Group(), member = new THREE.Group(); group.add(member);
     group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
@@ -19,7 +26,7 @@ export function makeJawClutch() {
   const input = rotor(), output = rotor(), shaft = rotor(), pinion = rotor(); pinion.position.y = pinionY;
   const solidMaterial = () => new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.17, roughness: 0.61 });
   const turned = (profile, color, options = {}) => new THREE.Mesh(turnedClutchGeometry(profile, { color, ...options }), solidMaterial());
-  const inputProfile = [[0.135, boreRadius], [0.135, 0.54], [0.69, 0.54], [0.69, 0.54],
+  const inputProfile = [[gearFace, boreRadius], [gearFace, 0.54], [0.69, 0.54], [0.69, 0.54],
     [0.69, boreRadius], [0.69, boreRadius]];
   const shoulder = Array.from({ length: 17 }, (_, i) => [1.95 + 0.23 * i / 16, 0.54 - 0.09 * (0.5 - 0.5 * Math.cos(Math.PI * i / 16))]);
   const outputProfile = [[1.47, boreRadius], [1.47, boreRadius], [1.47, 0.54], [1.47, 0.54],
@@ -34,9 +41,9 @@ export function makeJawClutch() {
     matte(PALETTE.accent, { metalness: 0.16, roughness: 0.61 }));
   const pinionBody = new THREE.Mesh(boredSpurGeometry({ teeth: pinionTeeth, module, depth: gearDepth, boreRadius: 0.083 }),
     matte(PALETTE.driver, { metalness: 0.16, roughness: 0.61 }));
-  const gearHub = turned([[-0.235, boreRadius], [-0.235, 0.34], [-0.135, 0.34], [-0.135, boreRadius]], PALETTE.accent);
+  const gearHub = turned([[-gearFace - 0.1, boreRadius], [-gearFace - 0.1, 0.34], [-gearFace, 0.34], [-gearFace, boreRadius]], PALETTE.accent);
   const pinionHubs = [-1, 1].map((side) => {
-    const a = side < 0 ? -0.235 : 0.135, b = side < 0 ? -0.135 : 0.235;
+    const a = side < 0 ? -gearFace - 0.1 : gearFace, b = side < 0 ? -gearFace : gearFace + 0.1;
     return turned([[a, 0.083], [a, 0.245], [b, 0.245], [b, 0.083]], PALETTE.driver);
   });
   const pinionShaft = turned([[-0.25, 0], [-0.25, 0.078], [0.25, 0.078], [0.25, 0]], PALETTE.ink);
@@ -49,7 +56,9 @@ export function makeJawClutch() {
     matte(PALETTE.brass)); feather.position.set(0, (keyBottom + keyTop) / 2, (keyLeft + keyRight) / 2);
   shaft.userData.rotor.add(shaftBody, feather);
   const lever = new THREE.Group(); lever.position.set(p.pivotX, p.pivotY, 0);
-  const handleLength = 1.09, leverBackZ = 0.385, leverDepth = 0.055;
+  // The lever plate stands clear in front of the sliding collar and its
+  // shoulder (the plate draws it over them); pins and rod follow it forward.
+  const handleLength = 1.09, leverBackZ = 0.385 + LEVER_STANDOFF, leverDepth = 0.055;
   const shape = new THREE.Shape();
   shape.moveTo(0.055, p.leverLength); shape.lineTo(0.053, 0.046);
   shape.lineTo(handleLength, 0.032); shape.absarc(handleLength, 0, 0.068, Math.PI / 2, -Math.PI / 2, true);
@@ -64,7 +73,8 @@ export function makeJawClutch() {
   const pin = (r, low, high) => turned([[low, 0], [low, r], [high, r], [high, 0]], PALETTE.ink);
   const follower = turned([[0.310, 0.022], [0.310, p.followerRadius], [0.365, p.followerRadius], [0.365, 0.022]],
     PALETTE.brass, { boreRadius: 0.022 });
-  const followerPin = pin(0.020, 0.305, 0.45), pivotPin = pin(0.032, 0.31, 0.46), handlePin = pin(0.020, 0.38, 0.51);
+  const followerPin = pin(0.020, 0.305, 0.45 + LEVER_STANDOFF), pivotPin = pin(0.032, 0.31, 0.46 + LEVER_STANDOFF);
+  const handlePin = pin(0.020, 0.38 + LEVER_STANDOFF, 0.51 + LEVER_STANDOFF);
   pivotPin.position.set(p.pivotX, p.pivotY, 0); handlePin.position.set(handleLength, 0, 0); lever.add(handlePin);
   // The engraving ends at a short vertical operating rod. Its top eye is
   // pinned to the bell crank and follows that endpoint without stretching.
@@ -73,11 +83,13 @@ export function makeJawClutch() {
   rodShape.absarc(0, 0, 0.044, 0, Math.PI, false); rodShape.closePath();
   const rodBore = new THREE.Path(); rodBore.absarc(0, 0, 0.022, 0, 2 * Math.PI, true); rodShape.holes.push(rodBore);
   const rodBody = new THREE.Mesh(new THREE.ExtrudeGeometry(rodShape,
-    { depth: 0.042, bevelEnabled: false, curveSegments: 24 }).translate(0, 0, 0.455), matte(PALETTE.frame)); rod.add(rodBody);
+    { depth: 0.042, bevelEnabled: false, curveSegments: 24 }).translate(0, 0, 0.455 + LEVER_STANDOFF), matte(PALETTE.frame)); rod.add(rodBody);
   root.add(input, output, shaft, pinion, lever, follower, followerPin, pivotPin, rod);
   const update = (time) => {
     const state = motion.stateAt(time + sourcePhase * p.cycleDuration);
-    state.pinionAngle = -state.inputAngle * gearTeeth / pinionTeeth;
+    // With an even pinion count a half-pitch offset puts a pinion space
+    // opposite the gear tooth on the line of centres.
+    state.pinionAngle = -state.inputAngle * gearTeeth / pinionTeeth + pinionMeshPhase;
     state.pinionAngularSpeed = -state.inputAngularSpeed * gearTeeth / pinionTeeth;
     input.userData.rotor.rotation.z = state.inputAngle;
     pinion.userData.rotor.rotation.z = state.pinionAngle;
@@ -90,12 +102,12 @@ export function makeJawClutch() {
     root.userData.clutchState = state; root.userData.kinematics = state;
   };
   root.userData = { fidelity: 'authored', mechanism: 'tapered-jaw-clutch-with-positive-flank-contact', hideGround: true,
-    cameraFov: 17, fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8), motion,
+    cameraFov: 11, fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8), motion,
     blocks: { input, output, shaft, pinion, inputBody, outputBody, gearBody, pinionBody, shaftBody, feather,
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       keyLeft, keyRight, keyBottom, keyTop, featherHalfWidth, pinionTeeth, gearTeeth, module, gearDepth,
-      gearPitchRadius, pinionPitchRadius, pinionY, handleLength, leverBackZ, leverDepth,
+      gearPitchRadius, pinionPitchRadius, pinionY, pinionMeshPhase, handleLength, leverBackZ, leverDepth,
       cycleMeaning: 'align-insert-positive-drive-withdraw-and-coast' } };
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0.03, 0.06, 10) };

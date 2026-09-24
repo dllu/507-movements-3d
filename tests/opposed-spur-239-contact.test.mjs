@@ -40,7 +40,7 @@ test('239 both finite load lands oppose the intended wheel rotation over a nonze
   console.log({ opposedActualFaceMoments: moments });
 });
 
-test('239 actual stop pockets clear the involute wheel throughout the trapped sweep', () => {
+test('239 actual stop pockets clear the square-toothed wheel throughout the trapped sweep', () => {
   const m = make(), d = m.root.userData, b = d.blocks, wheel = b.gearBody, field = solidSurface(wheel.geometry);
   const parts = [b.leftStop.userData.body, b.rightStop.userData.body];
   const samples = parts.map(p => surfacePoints(p.geometry));
@@ -88,7 +88,7 @@ test('239 shaft bores and rear journals are real passages and connect to their s
 
 test('239 full gear and source pivots remain, and the prescribed free play is smooth and periodic', () => {
   const m = make(), d = m.root.userData, g = d.geometry;
-  assert.equal(d.blocks.gear.userData.toothProfile,'true-involute');
+  assert.equal(d.blocks.gear.userData.toothProfile,'source-square-straight-flank');
   assert.equal(d.blocks.gear.userData.teeth,18);
   assert.deepEqual(g.leftPivot.toArray(),[-3.152,1.264]); assert.deepEqual(g.rightPivot.toArray(),[4.384,1.76]);
   assert.ok(-g.clockwiseLimit/g.toothPitch > 0.24 && -g.clockwiseLimit/g.toothPitch < 0.25);

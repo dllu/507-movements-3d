@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { createAuthoredGearMovement } from '../src/simulation/authored-gears.js';
 import { poly, circle, capsule, polygonClipping } from '../src/simulation/finite-plate-geometry.js';
 const model = createAuthoredGearMovement({id:239}), d = model.root.userData, g = d.geometry;
-const sampleCount = 128, stopOutlines = {};
+const sampleCount = 256, stopOutlines = {};
 const clearance = 0.00012;
 const raw = g.workingProfile.outline.filter((p, i, a) => !i || p.distanceTo(a[i - 1]) > 1e-10);
 if (raw[0].distanceTo(raw.at(-1)) < 1e-10) raw.pop();

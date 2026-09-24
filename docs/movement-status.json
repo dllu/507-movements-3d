@@ -152,21 +152,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: sector, lever, crossed belt and two lower pulleys; belt ends seat under the lever bar."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Sector crossover and band/flange clearances checked at sampled poses. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.070 belt-end burial is fixed; the belt lies 0.003 on the tread index patch (seated contact)."
       },
-      "flaws": "Belt ends are buried 0.07 in the lever bar where they attach. Prescribed sector/band transfer; belt force and compliance are idealized.",
+      "flaws": "Prescribed sector/band transfer; belt force and compliance are idealized.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/belts-1-23-review.md"
+        "docs/belts-1-23-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -180,22 +181,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: upright C, bevels and the three-pulley selector; the plate draws C without a support."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Band/pulley clearance documented, but the complete shifted bevel/contact phases remain explicitly unreviewed. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
+        "status": "sampled-clear",
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses) plus a dense rope/belt-to-fixed-part probe: only belt-on-tread seated contact (0.0029)."
       },
-      "flaws": "Vertical shaft C has no visible support. Selector transition slip and torque use engagement weights; loaded shifting remains unqualified.",
+      "flaws": "C has no drawn or modelled support. Selector transition slip and torque use engagement weights; loaded shifting remains unqualified.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/belts-1-23-review.md"
+        "docs/belts-1-23-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -323,22 +325,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: pulley, hook, ceiling and bag weight."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Source/hardware and frame changes documented; no sufficiently specific whole-interface finite audit found. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
+        "status": "sampled-clear",
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses) plus a dense rope probe: only the rope end tied into the bag neck (0.004, intended)."
       },
       "flaws": "Brown’s hand is not modelled; the free rope end hangs loose. Loaded rope dynamics are unverified.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/belts-1-23-review.md"
+        "docs/belts-1-23-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -408,21 +411,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: stepped blocks and rope parts; the rope sits in its grooves."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Documented finite rope/groove or sheave/flange/stirrup and distinct-strand sampled checks pass; ideal rope forces remain separate. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Rope resampled at 1536 segments: the 0.031 groove-edge cut was corner-cutting and is now 0.0004; the fixed end tied into the pin end (0.016) is intended."
       },
-      "flaws": "The rope cuts 0.031 into a groove edge where it leaves at an angle. Source says seven supporting parts, reconstructed topology has six; retained contact-speed error is below 3% in tested poses.",
+      "flaws": "Six supporting parts where the text says seven; retained contact-speed error is below 3% in tested poses; ideal rope with no stretch or friction.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/belts-1-23-review.md"
+        "docs/belts-1-23-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -660,21 +664,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: square-toothed 30:36 spur pair with bosses, as drawn."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Corrected phase clears actual involute outlines, with flank gap below 0.0015 over sampled tooth cycle. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Involute teeth where the plate draws square ones. Finite involute mesh is prescribed; loaded tooth compliance/backlash are not simulated.",
+      "flaws": "Square teeth are not a conjugate profile: the ratio is prescribed with about 0.005 running backlash. Tooth load and compliance are not simulated.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -688,22 +693,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: equal 36-tooth miters seen edge-on with collars, as drawn."
       },
       "intersections": {
-        "status": "unknown",
-        "evidence": "docs/review-progress.md",
-        "note": "Initial proportions/shared primitive tests are not a movement-specific finite engagement audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
+        "status": "sampled-clear",
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs. Not a loaded bevel-mesh qualification."
       },
-      "flaws": "Final source projection and finite bevel engagement are not established by the initial proportion correction.",
+      "flaws": "The sampled screen does not qualify a loaded bevel mesh; tooth compliance/backlash are not simulated.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -773,21 +779,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: the roller opens at the plate's radius, about 0.97."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Actual crowned roller vertices clear disk in 80 sampled poses. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "At rest the roller sits at radius 0.55 against the plate’s ≈0.97. Crowned friction roller has geometric contact; traction/slip and adjustment loads are not solved.",
+      "flaws": "Crowned friction roller has geometric contact; traction/slip and adjustment loads are not solved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1082,22 +1089,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: square-toothed sun and planet, the arm drawn over the rod, slit flywheel web."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "The rod lies in front of the arm where the plate draws the arm over it; the slits are slightly wide. Sun-and-planet linkage/support depths are reconstructed; gear compliance and bearing loads are not solved.",
+      "flaws": "The arm's sun-end stud needs a front bracket that is neither drawn nor modelled. Square teeth are not a conjugate profile (about 0.005 running backlash). Bearing loads are not solved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1195,21 +1203,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: fine-toothed angular bevels; the upper shaft continues past the crossing."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Actual shortened shafts clear each other; this is not qualification of all bevel tooth contacts. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs. Not a bevel-mesh load qualification."
       },
-      "flaws": "The plate’s shafts cross past the apex; the model stops them short. Exact shaft-angle interpretation and final source projection remain open; shaft clearance is not bevel-mesh qualification.",
+      "flaws": "Two intersecting shafts cannot both pass the apex, so the plate's crossing is only partly reproduced (lower shaft stops 0.17 short). Exact shaft-angle interpretation remains inferred.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1335,21 +1344,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: clutch, half-size pinion, narrower loose gear and lever."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/review-progress.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0086 lever/sleeve-shoulder overlap is fixed; pins in real bores at 0.002 running clearance."
       },
-      "flaws": "End gear wider and its mating pinion larger than drawn. Jaw clutch engagement is an ideal rigid impact; inferred gear counts, fits and load.",
+      "flaws": "Perspective still makes the gear read slightly wide. Jaw clutch engagement is an ideal rigid impact; inferred gear counts, fits and load.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1532,22 +1542,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: the web inside ring C is paper-coloured but still reads as a large pale disk."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "artifacts/review/055-reconstruction-notes.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn grey backing disk fills the internal ring. 17/10/37 compatible involutes differ from schematic source teeth; hidden cup support is inferred.",
+      "flaws": "The undrawn web carrying ring C remains visible as a pale disk. 17/10/37 involutes differ from the plate's square teeth; hidden cup support is inferred.",
       "references": [
         "artifacts/review/055-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6325,23 +6336,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: internal and external partial-tooth wheels with the pinion below; internal teeth cover only the working arc where Brown draws most of the ring."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses) after ending the pinion shaft in front of the rotating rear web: only a 0.0014 transition-tooth graze remains, below the screen spacing."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0014 hand-off tooth overlap is fixed; no solid pairs."
       },
-      "flaws": "The pinion's front support is not modelled; its shaft ends in front of the rotating web. Undrawn fixed supports are removed by source presentation. Internal teeth only on the working arc. Specific remaining defects unverified; source, working contacts and finite intersections still need an attributable review.",
+      "flaws": "The pinion bearing lies in front of the drawing's cut and is not modelled. Internal teeth only on the working arc; t=0 follows the site animation's hand-off pose, a quarter turn from the plate's; tooth form comes from the animation, not the plate's square teeth.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6985,21 +6997,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Default capture inspected beside the plate: square-toothed spur wheel between its two stops."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/opposed-spur-239-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Final source/default/oblique Chrome views load without errors or clipping. The 17-pose visible-vertex sweep has maximum normalized extent .850; default rendering uses 56 draws and 40320 triangles including shadows. The production build passes in 23.46 seconds, and both 233/239 packaged desktop/playback/mobile checks pass in 7.6 seconds. Their construction/update screens have…"
+        "evidence": "docs/lane1-belts-gears-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.068 hub/journal overlap is fixed; stop pockets re-cut from 257 positions."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The spur wheel has rounded lobes where the plate draws square teeth. Stops seated by prescription; load can lift a freely hinged stop. Gravity seating, hinge reactions, impact and holding strength unsolved.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Stops seated by prescription; gravity seating, hinge reactions, impact and holding strength unsolved.",
       "references": [
         "docs/opposed-spur-239-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane1-belts-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",

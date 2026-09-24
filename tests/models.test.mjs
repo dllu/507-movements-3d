@@ -1496,7 +1496,7 @@ test('movement 23 uses one smooth belt over both same-side compensator sheaves',
   disposeModel(model.root);
 });
 
-test('movement 24 meshes the plate-counted 30:36 spur gears at an exact -5/6 ratio', () => {
+test('movement 24 meshes the plate-counted 30:36 square-toothed spur gears at an exact -5/6 ratio', () => {
   const model = createMovementModel(catalog.movements[23]);
   assert.equal(model.root.userData.mechanism, 'external-spur-gear-pair');
   const { driven, driver } = model.root.userData.blocks;
@@ -1511,11 +1511,11 @@ test('movement 24 meshes the plate-counted 30:36 spur gears at an exact -5/6 rat
   assert.ok(Math.abs(driver.userData.toothHeight - driven.userData.toothHeight) < 1e-12,
     'meshing teeth use the same absolute tooth height');
   for (const gear of [driver, driven]) {
-    assert.equal(gear.userData.toothProfile, 'true-involute');
-    assert.ok(Math.abs(gear.userData.pressureAngle - THREE.MathUtils.degToRad(20)) < 1e-12);
-    assert.ok(gear.userData.baseRadius < gear.userData.pitchRadius);
-    assert.ok(gear.userData.involuteStartRadius >= gear.userData.rootRadius);
+    // Plate 24 draws square teeth; the ratio is prescribed, not conjugate.
+    assert.equal(gear.userData.toothProfile, 'source-square-straight-flank');
+    assert.ok(gear.userData.rootRadius < gear.userData.pitchRadius);
     assert.ok(gear.userData.outerRadius > gear.userData.pitchRadius);
+    assert.ok(gear.userData.toothWidth < Math.PI * contact.moduleScale, 'tooth thinner than half a pitch leaves backlash');
   }
   assert.ok(Math.abs(driver.position.distanceTo(driven.position)
     - contact.driverRadius - contact.drivenRadius) < 1e-12,
@@ -1556,7 +1556,7 @@ test('movement 25 uses equal 45-degree miter gears on intersecting perpendicular
   assert.equal(model.root.userData.mechanism, 'equal-miter-bevel-gear-pair');
   const { driven, driver, shaftA, shaftB } = model.root.userData.blocks;
   const contact = model.root.userData.gearContact;
-  assert.deepEqual(contact.teeth, [24, 24]);
+  assert.deepEqual(contact.teeth, [36, 36]);
   assert.equal(driver.userData.teeth, driven.userData.teeth);
   assert.ok(Math.abs(contact.driverAxis.dot(contact.drivenAxis)) < 1e-12,
     'miter gear shafts are perpendicular');
@@ -1793,7 +1793,7 @@ test('movement 28 varies a perpendicular brush-wheel ratio at exact face contact
     schedule.cycleDuration,
     'the displayed loop uses the model\'s exact floating-point cycle period',
   );
-  assert.deepEqual(geometry.contactRadii, [0.55, 0.9, 1.24]);
+  assert.deepEqual(geometry.contactRadii, [0.97, 1.24, 0.55]);
   assert.ok(Math.abs(geometry.diskAxis.dot(geometry.rollerAxis)) < 1e-12);
   assert.ok(Z_AXIS.clone().applyQuaternion(disk.quaternion).normalize().distanceTo(Y_AXIS) < 1e-12);
   assert.ok(Z_AXIS.clone().applyQuaternion(roller.quaternion).normalize().distanceTo(X_AXIS) < 1e-12);
@@ -1840,7 +1840,8 @@ test('movement 28 varies a perpendicular brush-wheel ratio at exact face contact
       'the input shaft remains centered through the movable upper wheel');
     ratios.push(state.gearRatio);
   }
-  assert.ok(ratios[0] > ratios[1] && ratios[1] > ratios[2],
+  // Settings run plate radius 0.97, outward to 1.24, then inward to 0.55.
+  assert.ok(ratios[2] > ratios[0] && ratios[0] > ratios[1],
     'moving outward continuously reduces the lower disk speed');
 
   for (const time of [
@@ -3159,11 +3160,11 @@ test('movement 43 rolls equal angular bevel gears on acute intersecting shafts',
   );
   const { driven, drivenShaft, driver, driverShaft } = model.root.userData.blocks;
   const contact = model.root.userData.gearContact;
-  assert.deepEqual(contact.teeth, [24, 24]);
-  assert.equal(driver.userData.teeth, 24);
-  assert.equal(driven.userData.teeth, 24);
-  assert.equal(driver.userData.toothMeshes.length, 24);
-  assert.equal(driven.userData.toothMeshes.length, 24);
+  assert.deepEqual(contact.teeth, [44, 44]);
+  assert.equal(driver.userData.teeth, 44);
+  assert.equal(driven.userData.teeth, 44);
+  assert.equal(driver.userData.toothMeshes.length, 44);
+  assert.equal(driven.userData.toothMeshes.length, 44);
   assert.equal(driver.userData.toothMeshes.filter(({ userData }) => userData.index === 0).length, 1);
   assert.equal(driven.userData.toothMeshes.filter(({ userData }) => userData.index === 0).length, 1,
     'each gear has one trackable index tooth');
@@ -3534,7 +3535,8 @@ test('movement 48 uses the rebuilt long jaw clutch and rack-generated loose gear
     assert.ok(Math.abs(input.userData.rotor.rotation.z - state.inputAngle) < 1e-12);
     assert.ok(Math.abs(output.userData.rotor.rotation.z - state.outputAngle) < 1e-12);
     assert.ok(Math.abs(shaft.userData.rotor.rotation.z - state.outputAngle) < 1e-12);
-    assert.ok(Math.abs(pinion.userData.rotor.rotation.z * g.pinionTeeth + state.inputAngle * g.gearTeeth) < 1e-10);
+    assert.ok(Math.abs((pinion.userData.rotor.rotation.z - g.pinionMeshPhase) * g.pinionTeeth
+      + state.inputAngle * g.gearTeeth) < 1e-10);
     assert.ok(Math.abs(output.position.x - state.shift + g.stroke) < 1e-12);
     assert.ok(Math.abs(lever.rotation.z + state.leverAngle) < 1e-12);
     assert.ok(Math.abs(follower.position.x - state.followerPoint.x) < 1e-12);
