@@ -817,7 +817,8 @@ function coltCylinderRatchet(movement) {
       outerRadius: ratchetOuterRadius,
       samplesPerTooth: 48,
     }),
-    drivenMaterial,
+    // Brown hatches ratchet b dark against the plain cylinder.
+    darkMaterial,
   );
   ratchet.position.x = cylinderLength / 2;
   ratchet.userData.role = 'six-tooth-face-ratchet-b';

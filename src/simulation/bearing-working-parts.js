@@ -142,7 +142,11 @@ function addAssembledView(model) {
   const pixel = g.pulleyOuterRadius / view.assembledView.pulleyOuterRadius;
   const offsetX = (view.assembledView.centerX - view.cutawayView.centerX) * pixel;
   const coverRadius = view.assembledView.coverRadius * pixel;
-  const pinHoleCircle = 40 * pixel;
+  // Brown's cover holes sit on a 44 px circle, a little inside the 49 px
+  // roller circle of his right figure. This figure holds no rollers, so the
+  // holes follow the left figure and show the open space behind the cover.
+  const pinHoleCircle = view.assembledView.holeCircleRadius * pixel;
+  const pinHoleRadius = view.assembledView.holeRadius * pixel;
   const front = g.pulleyDepth / 2;
   const figure = new THREE.Group();
   figure.position.x = offsetX;
@@ -167,22 +171,11 @@ function addAssembledView(model) {
   for (let index = 0; index < 6; index += 1) {
     const angle = Math.PI / 2 + index * Math.PI / 3;
     section = polygonClipping.difference(section,
-      poly(circle([pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle)], 0.075, 48)));
+      poly(circle([pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle)], pinHoleRadius, 48)));
   }
   const coverPlate = new THREE.Mesh(plate(section, front + 0.001, front + 0.05), b.cagePlate.material);
   coverPlate.userData.role = 'assembled-view-cover-with-six-pin-holes';
   cover.add(coverPlate);
-  // Roller pin ends seen through the holes, flush-seated behind the cover.
-  for (let index = 0; index < 6; index += 1) {
-    const angle = Math.PI / 2 + index * Math.PI / 3;
-    const pinEnd = new THREE.Mesh(
-      ring(0, 0.07, front - 0.03, front + 0.001, 48),
-      b.innerRace.material,
-    );
-    pinEnd.position.set(pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle), 0);
-    pinEnd.userData.role = `assembled-view-roller-pin-end-${index + 1}`;
-    cover.add(pinEnd);
-  }
   const journal = new THREE.Mesh(b.innerRace.geometry, b.innerRace.material);
   journal.position.copy(b.innerRace.position);
   journal.rotation.copy(b.innerRace.rotation);

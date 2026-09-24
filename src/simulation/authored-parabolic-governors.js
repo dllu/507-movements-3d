@@ -234,8 +234,10 @@ function parabolicGovernor(movement) {
   const sourceScale = 0.015;
   const sourceRasterAxisX = 272;
   const sourceRasterTopGuidePin = new THREE.Vector2(368, 84);
-  const sourceRasterRoller = new THREE.Vector2(306, 229);
-  const sourceRasterBall = new THREE.Vector2(354, 329);
+  // Centre of wheel L's outer circle (pin at 303, 249); pass 51 took the
+  // circle's top (306, 229) and so hung the balls 19 px too far below L.
+  const sourceRasterRoller = new THREE.Vector2(303, 248);
+  const sourceRasterBall = new THREE.Vector2(349, 329);
   const sourceRasterSleevePin = new THREE.Vector2(303, 429);
   const topGuidePinY = 3.8;
 
@@ -243,11 +245,11 @@ function parabolicGovernor(movement) {
   // Its centerline is offset inward by the rail and roller radii to obtain
   // the exact anti-friction-wheel center path.
   const guideStart = new THREE.Vector2(1.44, topGuidePinY);
-  // Pass 51 refit the control and end to Brown's bulging inner band edge
-  // (least squares over eight measured edge points) while keeping the wheel
-  // centre on the plate's L at the source phase.
-  const guideControl = new THREE.Vector2(2.158, 2.975);
-  const guideEnd = new THREE.Vector2(0.311, 0.903);
+  // Control and end fitted (least squares) to nine points on Brown's thin
+  // inner band edge from y=116 to y=240 px, with the wheel centre on the
+  // plate's L at the source phase; the band runs on into the spindle block.
+  const guideControl = new THREE.Vector2(2.3048, 3.0906);
+  const guideEnd = new THREE.Vector2(0.2261, 0.5028);
   const guideRadius = 0.085;
   const rollerRadius = 0.235;
   const rollerWidth = 0.36;
@@ -262,10 +264,10 @@ function parabolicGovernor(movement) {
   ) / 2;
 
   const sleevePinRadius = 0.48;
-  const connectingRodLength = 3.0021;
+  const connectingRodLength = 2.7157;
   const flyballRadius = 0.62;
-  const flyballRadialOffset = 0.73;
-  const flyballVerticalOffset = -1.5;
+  const flyballRadialOffset = 0.691;
+  const flyballVerticalOffset = -1.2156;
   const spindleRadius = 0.105;
   const spindleBottomY = -2.28;
   const spindleTopY = 4.38;
@@ -904,7 +906,7 @@ function parabolicGovernor(movement) {
         right: { x: sourceRasterBall.x, y: sourceRasterBall.y },
       },
       rasterRollerCenters: {
-        left: { x: 236, y: 228 },
+        left: { x: 237, y: 248 },
         right: { x: sourceRasterRoller.x, y: sourceRasterRoller.y },
       },
       rasterSleevePinCenters: {
@@ -1072,8 +1074,8 @@ function shapeLyreGuidesToPlate(root) {
     new THREE.Vector2(1.95, 2.81),
     new THREE.Vector2(1.815, 2.36),
     new THREE.Vector2(1.66, 2.02),
-    new THREE.Vector2(1.46, 1.72),
-    new THREE.Vector2(1.25, 1.45),
+    new THREE.Vector2(1.43, 1.745),
+    new THREE.Vector2(1.215, 1.48),
     new THREE.Vector2(1.0, 1.2),
     new THREE.Vector2(0.72, 0.98),
     new THREE.Vector2(0.44, 0.83),

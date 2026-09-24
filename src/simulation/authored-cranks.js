@@ -15348,17 +15348,22 @@ function dragLinkDoubleCrankMotion() {
   const fullTurn = Math.PI * 2;
   const cyclePeriod = 4;
   const inputAngularSpeed = -fullTurn / cyclePeriod;
-  const sourcePoseAngle = THREE.MathUtils.degToRad(70);
+  // Brown's pose, fitted by back-projecting the plate's hubs and pins
+  // through the default camera: the input crank stands nearly upright.
+  const sourcePoseAngle = THREE.MathUtils.degToRad(103.44);
 
   // A drag-link is the double-crank inversion of a Grashof four-bar. The
   // fixed bearing link must be the shortest member; both links adjacent to it
   // can then make complete turns. These proportions reproduce Brown's long
   // input crank, hanging coupler, and shorter output crank while retaining a
   // strict (non-change-point) Grashof margin through the entire revolution.
+  // Lengths come from the same plate fit, with the coupler shortened only
+  // as far as the 0.45 Grashof margin requires (Brown's drawn coupler is a
+  // little too long for both cranks to turn fully).
   const groundLength = 1.4;
-  const inputCrankLength = 2.6;
-  const couplerLength = 2.7;
-  const outputCrankLength = 2.0;
+  const inputCrankLength = 3.15;
+  const couplerLength = 5.05;
+  const outputCrankLength = 3.75;
   const strictGrashofMargin = inputCrankLength + outputCrankLength
     - groundLength - couplerLength;
   const minimumMovingCenterDistance = inputCrankLength - groundLength;
@@ -15368,54 +15373,65 @@ function dragLinkDoubleCrankMotion() {
   const outerTriangleClearance = couplerLength + outputCrankLength
     - maximumMovingCenterDistance;
 
-  const inputPivot = new THREE.Vector3(-groundLength / 2, -0.58, 0);
-  const outputPivot = new THREE.Vector3(groundLength / 2, -0.58, 0);
+  // The plate stacks the input crank at the back, the coupler in the middle
+  // and the output crank in front; its bearing link is not drawn. The output
+  // shaft hangs almost straight below the input shaft.
+  const groundAngle = THREE.MathUtils.degToRad(-93.13);
+  const groundDirection = new THREE.Vector3(Math.cos(groundAngle), Math.sin(groundAngle), 0);
+  const inputPivot = groundDirection.clone().multiplyScalar(-groundLength / 2);
+  const outputPivot = groundDirection.clone().multiplyScalar(groundLength / 2);
   const groundPlaneZ = -0.03;
   const inputCrankPlaneZ = -0.30;
-  const outputCrankPlaneZ = 0.20;
-  const couplerPlaneZ = 0.55;
+  const outputCrankPlaneZ = 0.30;
+  const couplerPlaneZ = 0;
   const crankDepth = 0.18;
   const groundDepth = 0.12;
   const couplerDepth = 0.20;
   // Brown draws slender bars; the shafts and pins are slimmed with them.
   const groundEyeOuterRadius = 0.205;
-  const crankEyeOuterRadius = 0.19;
-  const couplerEyeOuterRadius = 0.17;
-  const shaftRadius = 0.105;
+  const crankEyeOuterRadius = 0.24;
+  const couplerEyeOuterRadius = 0.2;
+  // The plate's shafts are nearly as thick as the bars.
+  const shaftRadius = 0.15;
   const pivotEyeInnerRadius = shaftRadius + 0.045;
   const crankPinRadius = 0.075;
   const pinBearingClearance = 0.014;
   const movingEyeInnerRadius = crankPinRadius + pinBearingClearance + 0.034;
-  const inputCrankPinCenterZ = 0.125;
-  const inputCrankPinLength = 1.12;
-  const outputCrankPinCenterZ = 0.375;
-  const outputCrankPinLength = 0.62;
-  // Both shafts traverse the fixed bearing plate, but stop before the other
-  // crank's layer. Hubs must also clear that plate, not merely hide its bore.
-  const inputShaftCenterZ = -0.77;
-  const outputShaftCenterZ = 0.70;
+  // Each pin spans only its own crank and the coupler layer.
+  const inputCrankPinCenterZ = -0.13;
+  const inputCrankPinLength = 0.52;
+  const outputCrankPinCenterZ = 0.13;
+  const outputCrankPinLength = 0.52;
+  // The input shaft runs back from its crank (the plate's stub at the lower
+  // left); the output shaft runs forward (the long rod at the right). Neither
+  // enters the coupler's layer.
   const shaftLength = 1.65;
-  const pivotHubRadius = 0.18;
+  const inputShaftCenterZ = inputCrankPlaneZ + 0.09 - shaftLength / 2;
+  const outputShaftCenterZ = outputCrankPlaneZ - 0.09 + shaftLength / 2;
+  const pivotHubRadius = 0.215;
   const pivotHubDepth = 0.20;
   const bearingRadius = 0.24;
   // The engraving's long exposed rod: the output shaft runs on forward
   // beyond its crank and the coupler layer.
   const outputShaftExtensionLength = 2.6;
+  const inputShaftExtensionLength = 2.9;
   const inputBearingZ = groundPlaneZ;
   const outputBearingZ = groundPlaneZ;
   const axialClearances = {
-    groundToInputCrank: groundPlaneZ - groundDepth / 2
+    inputCrankToCoupler: couplerPlaneZ - couplerDepth / 2
       - (inputCrankPlaneZ + crankDepth / 2),
-    groundToOutputCrank: outputCrankPlaneZ - crankDepth / 2
-      - (groundPlaneZ + groundDepth / 2),
+    couplerToOutputCrank: outputCrankPlaneZ - crankDepth / 2
+      - (couplerPlaneZ + couplerDepth / 2),
     inputCrankToOutputCrank: outputCrankPlaneZ - crankDepth / 2
       - (inputCrankPlaneZ + crankDepth / 2),
-    inputCrankToOutputShaft: outputShaftCenterZ - shaftLength / 2
-      - (inputCrankPlaneZ + crankDepth / 2),
-    inputShaftToOutputCrank: outputCrankPlaneZ - crankDepth / 2
+    inputShaftToCoupler: couplerPlaneZ - couplerDepth / 2
       - (inputShaftCenterZ + shaftLength / 2),
-    outputCrankToCoupler: couplerPlaneZ - couplerDepth / 2
-      - (outputCrankPlaneZ + crankDepth / 2),
+    couplerToOutputShaft: outputShaftCenterZ - shaftLength / 2
+      - (couplerPlaneZ + couplerDepth / 2),
+    inputPinToOutputCrank: outputCrankPlaneZ - crankDepth / 2
+      - (inputCrankPinCenterZ + inputCrankPinLength / 2),
+    inputCrankToOutputPin: outputCrankPinCenterZ - outputCrankPinLength / 2
+      - (inputCrankPlaneZ + crankDepth / 2),
   };
 
   const driverMaterial = matte(PALETTE.driver, {
@@ -15628,6 +15644,16 @@ function dragLinkDoubleCrankMotion() {
     + outputShaftExtensionLength / 2;
   outputShaftExtension.userData.role = 'output-drag-link-crankshaft-forward-rod';
   outputRotor.add(outputShaftExtension);
+  const inputShaftExtension = cylinderAlongZ(
+    shaftRadius,
+    inputShaftExtensionLength,
+    darkMaterial,
+    36,
+  );
+  inputShaftExtension.position.z = inputShaftCenterZ - shaftLength / 2
+    - inputShaftExtensionLength / 2;
+  inputShaftExtension.userData.role = 'input-drag-link-crankshaft-rear-rod';
+  inputRotor.add(inputShaftExtension);
 
   const coupler = new THREE.Group();
   coupler.userData.role = 'hanging-rigid-drag-link-coupler';
@@ -15686,10 +15712,9 @@ function dragLinkDoubleCrankMotion() {
   cameraEnvelope.userData.cameraFramingEnvelope = true;
   cameraEnvelope.userData.role = 'invisible-complete-movement-231-envelope';
 
+  // Brown draws neither the bearing link nor the bearings: the shafts' supports
+  // lie outside the figure, so those parts are built for reference only.
   root.add(
-    groundPlate,
-    ...groundEyeLiners,
-    ...fixedBearings,
     inputShaft,
     outputShaft,
     coupler,
@@ -15724,12 +15749,12 @@ function dragLinkDoubleCrankMotion() {
       centerDirection.x,
       0,
     );
-    // The minus branch is the open assembly drawn by Brown: at the source
-    // pose both crank pins lie above the fixed bearing link and the coupler
-    // descends from the input pin toward the output pin.
+    // The plus branch is the assembly drawn by Brown: at the source pose the
+    // coupler runs down and to the left from the upright input crank to the
+    // output crank's pin.
     const outputPin = outputPivot.clone()
       .addScaledVector(centerDirection, intersectionAlongCenter)
-      .addScaledVector(centerPerpendicular, -intersectionHeight)
+      .addScaledVector(centerPerpendicular, intersectionHeight)
       .setZ(couplerPlaneZ);
     const outputRadial = outputPin.clone().setZ(0).sub(outputPivot);
     const drivenPrincipalAngle = Math.atan2(outputRadial.y, outputRadial.x);
@@ -15966,7 +15991,7 @@ function dragLinkDoubleCrankMotion() {
   };
   root.userData.transmission = {
     averageOutputTurnsPerInputTurn: 1,
-    assemblyBranch: 'open-minus-circle-intersection',
+    assemblyBranch: 'open-plus-circle-intersection',
     inputOutputDirection: 'same',
     instantaneousSpeedRatioVariable: true,
     strictGrashof: true,
@@ -16055,12 +16080,13 @@ function dragLinkDoubleCrankMotion() {
   // view's silhouette and left the linkage small; tighten the box about its
   // centre so the swept parts fill the frame without leaving it.
   const fitCenter = bounds.getCenter(new THREE.Vector3());
-  bounds.min.sub(fitCenter).multiplyScalar(0.8).add(fitCenter);
-  bounds.max.sub(fitCenter).multiplyScalar(0.8).add(fitCenter);
+  bounds.min.sub(fitCenter).multiplyScalar(0.68).add(fitCenter);
+  bounds.max.sub(fitCenter).multiplyScalar(0.68).add(fitCenter);
   root.userData.cameraFitBounds = bounds;
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraFov = 12;
-  root.userData.reconstructionNote = 'Exact ideal double-crank linkage with reconstructed Grashof lengths and layered joints. The view follows the engraved shaft direction; link proportions remain approximate. Backlash, loads and elastic deflection are not simulated.';
+  root.userData.reconstructionNote = 'Exact ideal double-crank linkage with lengths and pose back-projected from the plate through the default camera; the coupler is about 8% shorter than drawn to keep a strict Grashof margin. Layers follow the plate (input crank behind, coupler, output crank in front); the undrawn bearing link and bearings are omitted. Backlash, loads and elastic deflection are not simulated.';
+  for (const index of root.userData.blocks.rotationIndexes) index.parent.remove(index);
   const model = finish(root, update, new THREE.Vector3(-10, -5.3, 12));
   for (const object of [cameraEnvelope, ...root.userData.blocks.rotationIndexes]) {
     object.castShadow = false;

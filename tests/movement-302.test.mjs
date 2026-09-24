@@ -75,7 +75,7 @@ test('movement 302 is the sideways two-weight crown-wheel escapement', () => {
   assert.equal(blocks.balanceArm.parent, blocks.balanceAssembly);
   assert.equal(blocks.balanceMasses.length, 2);
   assert.equal(blocks.palletCarriers.length, 2);
-  assert.equal(blocks.crownWheel.userData.toothMeshes.length, 13);
+  assert.equal(blocks.crownWheel.userData.toothMeshes.length, 21);
   vectorNear(blocks.crownWheel.userData.worldAxis,
     new THREE.Vector3(0, 1, 0), 1e-15, 'vertical crown arbor');
   vectorNear(blocks.balanceStaff.userData.worldAxis,
@@ -162,19 +162,22 @@ test('movement 302 builds one odd-tooth crown wheel under one rigid weighted bal
   const model = createMovementModel(catalog.movements[301]);
   const { blocks, geometry, transmission } = model.root.userData;
 
-  assert.equal(geometry.toothCount, 13);
+  // Brown draws about ten fine teeth across the edge-on band.
+  assert.equal(geometry.toothCount, 21);
   assert.equal(geometry.toothCount % 2, 1);
-  near(geometry.toothPitch, 2 * Math.PI / 13, 1e-15,
-    'thirteen-tooth pitch');
+  near(geometry.toothPitch, 2 * Math.PI / 21, 1e-15,
+    'twenty-one-tooth pitch');
   near(geometry.halfToothPitch, geometry.toothPitch / 2, 0,
     'one beat advance');
   assert.ok(geometry.toothTipZ / geometry.bodyDepth > 1);
   assert.ok(geometry.toothTipZ / geometry.bodyDepth < 1.25,
     'axial teeth retain Brown’s compact edge-view proportions');
+  // Brown's A and B hang from C in a 57-degree V (Denison's text says
+  // about a right angle; the plate wins).
   near(THREE.MathUtils.radToDeg(geometry.palletIncludedAngle),
-    100, 1e-12, 'approximately right-angle pallet setting');
+    57, 1e-12, 'Brown\'s narrow V of pallets');
   assert.equal(transmission.oddCrownToothCountRequired, true);
-  assert.equal(transmission.crownWheelTeeth, 13);
+  assert.equal(transmission.crownWheelTeeth, 21);
   assert.equal(transmission.pinionRigidlyCoaxialWithCrownWheel, true);
   near(blocks.crownWheel.userData.worldAxis.dot(
     blocks.balanceStaff.userData.worldAxis,
@@ -242,7 +245,9 @@ test('movement 302 alternates one exact pallet contact across two finite drops',
   assert.equal(dropEntries, 2);
   assert.deepEqual([...contactedPallets].sort(), ['left', 'right']);
   const dropStates = states.filter(({ freeDrop }) => freeDrop);
-  assert.ok(dropStates.length > 400,
+  // Each drop lasts about 0.025 cycle with Brown's narrow V and short
+  // release.
+  assert.ok(dropStates.length > 150,
     'both drops occupy visible finite intervals');
   assert.ok(dropStates.every(({ wheelAngularSpeed }) =>
     wheelAngularSpeed >= -1e-10), 'both free drops advance the wheel');

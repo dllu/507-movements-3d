@@ -16,8 +16,9 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const FULL_TURN = Math.PI * 2;
 
-// Box-fit camera distance for 301's cropped side bounds (fov 8, square view).
-const EXPECTED_301_FIT_DISTANCE = 41.1;
+// Box-fit camera distance for 301's cropped side bounds (fov 2.5, square
+// view).
+const EXPECTED_301_FIT_DISTANCE = 121.16;
 
 function finish(
   root,
@@ -394,10 +395,14 @@ function vergeAndCrownWheelEscapement(
     toothRadialDepth = 0.34,
     toothRakeFraction = 0,
     toothTipZ = 1,
+    vergeAmplitudeDegrees = 25,
+    displayCycleOffset = 0,
+    heightToRadiusRatioOverride = null,
+    palletIncludedAngleDegrees = 100,
+    toothCount = 13,
   } = {},
 ) {
   const root = new THREE.Group();
-  const toothCount = 13;
   const toothPitch = FULL_TURN / toothCount;
   const halfToothPitch = toothPitch / 2;
   const dropFractionOfPitch = 0.1;
@@ -406,9 +411,11 @@ function vergeAndCrownWheelEscapement(
   const contactRadius = 2.2;
   const bodyRadius = 2.52;
   const toothBaseZ = 0;
-  const palletIncludedAngle = THREE.MathUtils.degToRad(100);
+  const palletIncludedAngle = THREE.MathUtils.degToRad(
+    palletIncludedAngleDegrees,
+  );
   const palletHalfAngle = palletIncludedAngle / 2;
-  const vergeAmplitude = THREE.MathUtils.degToRad(25);
+  const vergeAmplitude = THREE.MathUtils.degToRad(vergeAmplitudeDegrees);
   const cyclePeriod = 4;
   const cyclesPerSecond = 1 / cyclePeriod;
   const phases = {
@@ -431,7 +438,10 @@ function vergeAndCrownWheelEscapement(
     if (travel > targetContactTravel) upperRatio = ratio;
     else lowerRatio = ratio;
   }
-  const heightToRadiusRatio = (lowerRatio + upperRatio) / 2;
+  // Derived escapements with their own motion law (302) may fix the verge
+  // height directly; this base law then only supplies the surfaces.
+  const heightToRadiusRatio = heightToRadiusRatioOverride
+    ?? (lowerRatio + upperRatio) / 2;
   const heightDrop = heightToRadiusRatio * contactRadius;
   const vergeAxisZ = toothTipZ + heightDrop;
 
@@ -956,7 +966,9 @@ function vergeAndCrownWheelEscapement(
       dwell,
       freeDrop,
       freeDropState,
-      sourcePose: cyclePhase < phases.rightDrive.start,
+      sourcePose: displayCycleOffset === 0
+        ? cyclePhase < phases.rightDrive.start
+        : Math.abs(cyclePhase - displayCycleOffset) < 1e-12,
       stage,
       teethAdvanced: wheelAngle / toothPitch,
       vergeAngle,
@@ -968,7 +980,7 @@ function vergeAndCrownWheelEscapement(
     };
   };
   const stateAtTime = (time) => stateAtCycleCoordinate(
-    time * cyclesPerSecond,
+    time * cyclesPerSecond + displayCycleOffset,
   );
 
   const rightReleaseWheelAngle = contactAdvance;
@@ -1015,6 +1027,15 @@ function vergeAndCrownWheelEscapement(
     ) / 2,
     sourcePose: 0,
   };
+  // A display offset starts the clock at the source pose; the per-cycle
+  // mechanism state is unchanged, so the canonical times move with it.
+  for (const [key, time] of Object.entries(root.userData.canonicalTimes)) {
+    if (key === 'sourcePose') continue;
+    root.userData.canonicalTimes[key] = positiveModulo(
+      time / cyclePeriod - displayCycleOffset,
+      1,
+    ) * cyclePeriod;
+  }
   root.userData.contactAt = contactAt;
   root.userData.contactAngleAtPalletAngle = contactAngleAtPalletAngle;
   root.userData.contactAngleDerivative = contactAngleDerivative;
@@ -1033,6 +1054,7 @@ function vergeAndCrownWheelEscapement(
     cyclePeriod,
     cyclesPerSecond,
     dropAngle,
+    displayCycleOffset,
     dropContactAngle,
     dropFractionOfPitch,
     firstDropClearanceAngle,
@@ -1988,10 +2010,14 @@ function sevenToothAnchorEscapement(movement) {
 function classicWatchVergeEscapement(
   movement,
   {
+    balanceAmplitudeDegrees = 35,
     catchAngleDegrees = 25,
     crownBodyDepth = 0.34,
     crownToothHeight = 1,
+    heightToRadiusRatio = null,
+    palletIncludedAngleDegrees = 100,
     releaseAngleDegrees = 10,
+    toothCount: crownToothCount = 13,
   } = {},
 ) {
   // Brown's plate is the traditional "vertical" watch escapement: a
@@ -2002,7 +2028,10 @@ function classicWatchVergeEscapement(
   // balance, real recoil, and the complete right-angle going-train pair.
   const base = vergeAndCrownWheelEscapement(movement, {
     bodyDepth: crownBodyDepth,
+    heightToRadiusRatioOverride: heightToRadiusRatio,
     includeFrame: false,
+    palletIncludedAngleDegrees,
+    toothCount: crownToothCount,
     toothTipZ: crownToothHeight,
   });
   const root = base.root;
@@ -2058,7 +2087,7 @@ function classicWatchVergeEscapement(
   const contactAngleDerivative = root.userData.contactAngleDerivative;
   const contactAngleSecondDerivative =
     root.userData.contactAngleSecondDerivative;
-  const balanceAmplitude = THREE.MathUtils.degToRad(35);
+  const balanceAmplitude = THREE.MathUtils.degToRad(balanceAmplitudeDegrees);
   const releaseAngle = THREE.MathUtils.degToRad(releaseAngleDegrees);
   const catchAngle = THREE.MathUtils.degToRad(catchAngleDegrees);
   const cyclePeriod = 4;
@@ -2904,11 +2933,22 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   // and the two weighted arms vibrate in the plane of the engraving. Reuse
   // the continuous, contact-solved verge law from Movement 298, then replace
   // its watch train and circular balance with the exact arrangement in 302.
+  // Brown's A and B hang from C in a V of about 57 degrees, each blade about
+  // 0.74 long with C about 0.58 above the tooth tips, over fine teeth (about
+  // ten across the band, so 21 round the crown). Fixing that height and
+  // angle, a 9-degree release and 12-degree catch make each contact advance
+  // about 0.84 of a half pitch (a 10-degree release lets the idle blade's
+  // tip nick the escaped tooth's back), and a 22-degree balance swing keeps
+  // the recoil to about a third of a half pitch.
   const inherited = classicWatchVergeEscapement(movement, {
-    catchAngleDegrees: 30,
+    balanceAmplitudeDegrees: 22,
+    catchAngleDegrees: 12,
     crownBodyDepth: 0.42,
     crownToothHeight: 0.5,
-    releaseAngleDegrees: 18,
+    heightToRadiusRatio: 0.264,
+    palletIncludedAngleDegrees: 57,
+    releaseAngleDegrees: 9,
+    toothCount: 21,
   });
   const root = inherited.root;
   const inheritedBlocks = root.userData.blocks;
@@ -3309,7 +3349,7 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     vergeAxisZ: inheritedGeometry.vergeAxisZ,
   };
   root.userData.mechanism =
-    'one rigid two-weight balance C and its out-of-page arbor carry two approximately right-angle pallets A and B over opposite sides of one vertical-arbor thirteen-tooth crown escape wheel D; each contact recoils before reversal, gives direct impulse after reversal, releases, and admits one finite half-pitch drop';
+    'one rigid two-weight balance C and its out-of-page arbor carry two pallets A and B, 57 degrees apart as Brown draws them, over opposite sides of one vertical-arbor twenty-one-tooth crown escape wheel D; each contact recoils before reversal, gives direct impulse after reversal, releases, and admits one finite half-pitch drop';
   root.userData.presentation =
     'front elevation of the crown wheel held sideways';
   root.userData.presentationView = 'front';
@@ -3349,7 +3389,7 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
       rasterDrivePinionBounds: sourceRasterDrivePinionBounds,
       rasterLowerWeightBounds: sourceRasterLowerWeightBounds,
       rasterUpperWeightBounds: sourceRasterUpperWeightBounds,
-      toothCountBasis: 'a symmetric verge-and-crown escapement requires an odd tooth count; thirteen preserves the alternating half-pitch geometry while agreeing with the overlapping projected tooth stations in Brown\'s edge view',
+      toothCountBasis: 'a symmetric verge-and-crown escapement requires an odd tooth count; Brown draws about ten fine teeth across the edge-on band, so twenty-one round the crown',
     },
     primaryScan: {
       descriptionPage: 75,
@@ -4678,13 +4718,36 @@ function debaufreFrictionalRestEscapement(
     palletShape.lineTo(far, baked.bandFloor);
     palletShape.lineTo(far, 0);
   }
+  // Brown's 300 draws the D edge-on as a broad block round the staff over a
+  // blade about half as thick below it. Only the upper part near the flat
+  // meets the teeth (resting tips reach 0.415 below the flat at the swing
+  // extremes), so the full thickness stops webStepY below the flat and a
+  // centred web of Brown's blade thickness carries the rest of the D (301's
+  // side elevation still sees the whole half-disc).
+  const webStepY = -0.47;
+  const webThickness = 0.22;
+  const webStepAngle = Math.asin(-webStepY / palletRadius);
   palletShape.lineTo(palletRadius, 0);
   for (let index = 1; index < 64; index += 1) {
     const angle = -index * Math.PI / 64;
-    palletShape.lineTo(
-      Math.cos(angle) * palletRadius,
-      Math.sin(angle) * palletRadius,
-    );
+    if (angle > -webStepAngle) {
+      palletShape.lineTo(
+        Math.cos(angle) * palletRadius,
+        Math.sin(angle) * palletRadius,
+      );
+    }
+  }
+  const webStepHalfWidth = Math.cos(webStepAngle) * palletRadius;
+  palletShape.lineTo(webStepHalfWidth, webStepY);
+  palletShape.lineTo(-webStepHalfWidth, webStepY);
+  for (let index = 63; index >= 1; index -= 1) {
+    const angle = -Math.PI + index * Math.PI / 64;
+    if (angle < -Math.PI + webStepAngle) {
+      palletShape.lineTo(
+        Math.cos(angle) * palletRadius,
+        Math.sin(angle) * palletRadius,
+      );
+    }
   }
   palletShape.closePath();
   const palletGeometry = new THREE.ExtrudeGeometry(palletShape, {
@@ -4698,6 +4761,26 @@ function debaufreFrictionalRestEscapement(
   palletBody.userData.restFaceX = palletX0;
   palletBody.userData.role = 'single-d-section-frictional-rest-pallet';
   palletAssembly.add(palletBody);
+  const webShape = new THREE.Shape();
+  webShape.moveTo(webStepHalfWidth, webStepY);
+  for (let index = 0; index <= 48; index += 1) {
+    const angle = -webStepAngle
+      - (Math.PI - 2 * webStepAngle) * index / 48;
+    webShape.lineTo(
+      Math.cos(angle) * palletRadius,
+      Math.sin(angle) * palletRadius,
+    );
+  }
+  webShape.closePath();
+  const webGeometry = new THREE.ExtrudeGeometry(webShape, {
+    bevelEnabled: false,
+    depth: webThickness,
+  });
+  webGeometry.rotateY(Math.PI / 2);
+  webGeometry.translate(-webThickness / 2, 0, 0);
+  const palletWeb = new THREE.Mesh(webGeometry, palletMaterial);
+  palletWeb.userData.role = 'd-pallet-lower-blade-web';
+  palletAssembly.add(palletWeb);
 
   const lipHalfWidth = baked.lipHalfWidth;
   const inLip = (z) => Math.abs(Math.abs(z) - wheelPlaneOffset)
@@ -5038,6 +5121,7 @@ function debaufreFrictionalRestEscapement(
     impulseLips,
     palletAssembly,
     palletBody,
+    palletWeb,
     palletHub,
     palletTopEdge,
     palletSweptBands,
@@ -5052,11 +5136,21 @@ function debaufreFrictionalRestEscapement(
   const palletBottom = palletCenterY - palletRadius - 0.15;
   let cameraDirection;
   if (presentation === 'side') {
-    // Brown's 301 is an orthographic view along the balance staff.  A narrow
-    // field approximates it, and the slight pitch puts the camera on the
-    // staff axis so the staff reads end-on instead of as a receding rod.
-    root.userData.cameraFov = 8;
+    // Brown's 301 is an orthographic view along the balance staff.  A very
+    // narrow field approximates it (at 8 degrees the near and far teeth
+    // project at visibly different offsets, so the edge-on wheel strips read
+    // lumpy), and the slight pitch puts the camera on the staff axis so the
+    // staff reads end-on instead of as a receding rod.
+    root.userData.cameraFov = 2.5;
     root.userData.cameraDistanceScale = 1;
+    // Edge-on, every tooth shows a differently inclined side wall, so plain
+    // lighting paints the strips in a patchwork of dark and light blocks
+    // where Brown draws two even strips. A strong self-glow evens them out.
+    for (const wheel of [frontWheel, rearWheel]) {
+      const material = wheel.userData.rim.material;
+      material.emissive.copy(material.color).multiplyScalar(0.8);
+      material.color.multiplyScalar(0.3);
+    }
     // Brown breaks both wheels off a little above the arbor (about 0.18 of
     // the arbor-to-pallet distance), so the view is cropped there.
     const cropTop = wheelCenterY + 0.18 * (wheelCenterY - palletCenterY);
@@ -5270,7 +5364,11 @@ function debaufreFrictionalRestEscapement(
   };
   update(0);
   markShadows(root);
-  return finish(root, update, cameraDirection);
+  const finished = finish(root, update, cameraDirection);
+  // The recessed web would carry a band of the upper block's shadow across
+  // the D that Brown draws plain in the side elevation.
+  if (presentation === 'side') palletWeb.receiveShadow = false;
+  return finished;
 }
 
 // Brown draws 234 floating on the page with no ground, so no ground shadow.
@@ -5287,15 +5385,24 @@ export function createAuthoredEscapementMovement(movement) {
       // Brown's 234: a flush plate on a shallow band (about 0.2 of the
       // radius), a thin rim cut into teeth about a third of the radius high,
       // plain flags A on a round spindle S longer than the wheel.
+      // Brown's flags hang about 0.3 of the wheel radius below S and are
+      // nearly as wide. The flag reaches exactly to its release edge, so its
+      // length is set by the verge law: a 13-degree half swing (not 25)
+      // raises S to 0.35 above the tips and gives flags 0.77 long.
       bodyDepth: 0.44,
       flagPallets: true,
       floorAtToothBase: true,
       includeFrame: false,
-      palletWidth: 0.56,
+      palletWidth: 0.7,
       roundSpindle: true,
       spindleLength: 8.4,
       toothRadialDepth: 0.14,
       toothTipZ: 0.72,
+      vergeAmplitudeDegrees: 13,
+      // Brown's flags both hang in view, which in this camera happens with
+      // the verge near mid-swing: the display clock starts at the middle of
+      // the right flag's impulse.
+      displayCycleOffset: 0.22,
     }));
     case 238: return sevenToothAnchorEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);

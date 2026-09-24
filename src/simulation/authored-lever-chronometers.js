@@ -51,6 +51,32 @@ function centeredExtrusion(shape, depth, bevelSize = 0.008) {
   return geometry;
 }
 
+// First-quadrant window bounded by the crossings x = h, y = h and an outer
+// arc of radius outerRadius, with fillets at all three corners (Brown's
+// rounded-square windows), returned counter-clockwise as [x, y] pairs.
+function filletedQuadrantWindow(h, outerRadius, innerFillet, outerFillet, samples = 10) {
+  const points = [];
+  const arc = (cx, cy, radius, from, to) => {
+    for (let step = 0; step <= samples; step += 1) {
+      const angle = from + (to - from) * step / samples;
+      points.push([cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius]);
+    }
+  };
+  const inner = h + innerFillet;
+  arc(inner, inner, innerFillet, Math.PI, Math.PI * 1.5);
+  const cy = h + outerFillet;
+  const cx = Math.sqrt((outerRadius - outerFillet) ** 2 - cy ** 2);
+  const lowAngle = Math.atan2(cy, cx);
+  arc(cx, cy, outerFillet, -Math.PI / 2, lowAngle);
+  const highAngle = Math.PI / 2 - lowAngle;
+  for (let step = 1; step < samples * 2; step += 1) {
+    const angle = lowAngle + (highAngle - lowAngle) * step / (samples * 2);
+    points.push([Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius]);
+  }
+  arc(cy, cx, outerFillet, highAngle, Math.PI);
+  return points;
+}
+
 function polygonShape(points) {
   const shape = new THREE.Shape();
   points.forEach((point, index) => {
@@ -68,6 +94,41 @@ function annularShape(outerRadius, innerRadius) {
   opening.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
   shape.holes.push(opening);
   return shape;
+}
+
+// Crescent through the pallet end, across the lever below the pivot, to a
+// short horn beyond the lever's far edge (Brown's plate B), in lever-local
+// coordinates.
+function crescentCarrierShape(palletCentroid, tailAxis) {
+  const tailNormal = new THREE.Vector2(-tailAxis.y, tailAxis.x);
+  const along = palletCentroid.dot(tailAxis);
+  const across = palletCentroid.dot(tailNormal);
+  const start = palletCentroid.clone();
+  const middle = tailAxis.clone().multiplyScalar(along * 0.80);
+  const end = tailAxis.clone().multiplyScalar(along * 0.60)
+    .addScaledVector(tailNormal, -across * 0.32);
+  const samples = 24;
+  const spine = [];
+  for (let step = 0; step <= samples; step += 1) {
+    const t = step / samples;
+    const a = start.clone().multiplyScalar((1 - t) ** 2);
+    const b = middle.clone().multiplyScalar(2 * (1 - t) * t);
+    const c = end.clone().multiplyScalar(t ** 2);
+    spine.push(a.add(b).add(c));
+  }
+  const left = [];
+  const right = [];
+  spine.forEach((point, index) => {
+    const previous = spine[Math.max(index - 1, 0)];
+    const next = spine[Math.min(index + 1, samples)];
+    const tangent = next.clone().sub(previous).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    const t = index / samples;
+    const halfWidth = 0.14 + 0.20 * Math.sin(Math.PI * Math.min(t * 1.15, 1));
+    left.push(point.clone().addScaledVector(normal, halfWidth));
+    right.push(point.clone().addScaledVector(normal, -halfWidth));
+  });
+  return polygonShape([...left, ...right.reverse()]);
 }
 
 function beamBetween(start, end, width, depth, material) {
@@ -516,40 +577,23 @@ function leverChronometerEscapement(movement) {
   escapeWheel.add(wheelRotor);
   // Brown draws a solid web pierced by four rounded windows, leaving a
   // broad cross, rather than a thin rim on four wire spokes.
-  const chaikin = (points, passes) => {
-    let ring = points;
-    for (let pass = 0; pass < passes; pass += 1) {
-      ring = ring.flatMap((point, index) => {
-        const next = ring[(index + 1) % ring.length];
-        return [
-          [point[0] * 0.75 + next[0] * 0.25, point[1] * 0.75 + next[1] * 0.25],
-          [point[0] * 0.25 + next[0] * 0.75, point[1] * 0.25 + next[1] * 0.75],
-        ];
-      });
-    }
-    return ring;
-  };
+  // Brown's windows are pillow-shaped: each corner is well rounded, so the
+  // web reads as four windows rather than a thin rim on a crossbar.
   const wheelArmHalfWidth = 0.24;
-  const wheelWindows = [0, 1, 2, 3].flatMap((quadrant) => {
+  const wheelWindowOuterRadius = wheelInnerRadius - 0.02;
+  const wheelWindowPoints = filletedQuadrantWindow(
+    wheelArmHalfWidth,
+    wheelWindowOuterRadius,
+    wheelWindowOuterRadius * 0.16,
+    wheelWindowOuterRadius * 0.28,
+  );
+  const wheelWindows = [0, 1, 2, 3].map((quadrant) => {
     const angle = quadrant * FULL_TURN / 4;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    const rawWindow = polygonClipping.difference(
-      polygonClipping.intersection(
-        poly(circle([0, 0], wheelInnerRadius - 0.02, 96)),
-        poly([
-          [wheelArmHalfWidth, wheelArmHalfWidth],
-          [4, wheelArmHalfWidth],
-          [4, 4],
-          [wheelArmHalfWidth, 4],
-        ]),
-      ),
-      poly(circle([0, 0], 0.62, 64)),
-    );
-    return rawWindow.map(([outer]) => poly(chaikin(
-      outer.slice(0, -1),
-      4,
-    ).map(([x, y]) => [x * cos - y * sin, x * sin + y * cos])));
+    return poly(wheelWindowPoints.map(
+      ([x, y]) => [x * cos - y * sin, x * sin + y * cos],
+    ));
   });
   const wheelWeb = polygonClipping.difference(
     poly(circle([0, 0], wheelToothRootRadius, 180)),
@@ -691,13 +735,26 @@ function leverChronometerEscapement(movement) {
       Math.max(centroid.length() - stripWidth * 0.45, 0.2)
         / centroid.length(),
     );
-    const carrier = beamBetween(
-      new THREE.Vector3(0, 0, leverPlaneZ),
-      new THREE.Vector3(carrierEnd.x, carrierEnd.y, leverPlaneZ),
-      name === 'A' ? 0.29 : 0.32,
-      leverDepth * 0.86,
-      drivenMaterial,
-    );
+    // Brown hangs B on a crescent plate screwed across the lever below A,
+    // not on a straight arm from the pivot; the crescent keeps the lever
+    // plane in front of the teeth.
+    const carrier = name === 'A'
+      ? beamBetween(
+        new THREE.Vector3(0, 0, leverPlaneZ),
+        new THREE.Vector3(carrierEnd.x, carrierEnd.y, leverPlaneZ),
+        0.29,
+        leverDepth * 0.86,
+        drivenMaterial,
+      )
+      : new THREE.Mesh(
+        centeredExtrusion(
+          crescentCarrierShape(centroid, forkAxisLocal.clone().negate()),
+          leverDepth * 0.86,
+          0.008,
+        ),
+        drivenMaterial,
+      );
+    if (name === 'B') carrier.position.z = leverPlaneZ;
     carrier.userData.role = `rigid-arm-from-lever-pivot-to-pallet-${name}`;
     palletProfiles[name] = points.map((point) => point.clone());
     palletBlocks.push(block);

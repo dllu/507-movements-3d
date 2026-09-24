@@ -1250,13 +1250,24 @@ export function createAuthoredSoundingWeightMovement(movement) {
     if (bridge) bridge.position.z = 0.42;
     // Fit the camera to the instrument's own travel and the minimal bottom
     // line rather than the stale measured envelope of the former wide slab.
+    // Only visible parts count: hidden reference solids used to widen the box.
+    // Brown breaks the rod off above the weight, so the rod's upper end and
+    // the reload sling may pass out of the top of the frame; everything else,
+    // down to the bottom line, stays in view.
     const { root } = model;
     const fitBounds = new THREE.Box3();
+    const partBounds = new THREE.Box3();
     for (let sample = 0; sample <= 96; sample += 1) {
       model.update(root.userData.timeline.cycleClosure * sample / 96);
       root.updateMatrixWorld(true);
-      fitBounds.union(new THREE.Box3().setFromObject(root, true));
+      root.traverseVisible((object) => {
+        if (!object.geometry) return;
+        fitBounds.union(partBounds.setFromObject(object, true));
+      });
     }
+    const { loadedWeightCenterY, weightOuterRadius } = root.userData.geometry;
+    fitBounds.max.y = Math.min(fitBounds.max.y,
+      loadedWeightCenterY + weightOuterRadius + 0.85);
     root.userData.cameraFitBounds = fitBounds.expandByScalar(0.05);
     model.update(0);
     return model;

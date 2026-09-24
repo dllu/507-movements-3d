@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
-import { capsule, circle, plate, poly, ring } from './finite-plate-geometry.js';
+import { capsule, circle, plate, poly, polygonClipping, ring } from './finite-plate-geometry.js';
 import { markShadows } from './primitives.js';
 
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
@@ -17,20 +17,74 @@ export function correctAnnularStudEscapement(root, id, update) {
     replace(b.sevenToothDisk, plate([[outline, circle([0, 0], .126, 64)]], -g.wheelDepth / 2, g.wheelDepth / 2));
     replace(b.annulus, ring(g.annulusInnerRadius, g.annulusInnerRadius + 2 * g.annulusTubeRadius,
       -g.pendulumDepth / 2, g.pendulumDepth / 2, 192));
-    for (const pallet of [b.leftPallet, b.rightPallet]) {
-      // Backing belongs outside the wheel, not radially away from the remote
-      // suspension pivot. The latter put the left block through a tooth.
+    // Brown draws A and B as square lugs stepping inward from the annulus.
+    // Each lug keeps the exact tangent working face backed toward the ring,
+    // unioned with a block reaching out into the ring whose inner edge, row
+    // by row, stays just outside every sampled tooth pose of the beat.
+    const wheelOutline = outline.slice(0, -1);
+    const beatSamples = 1440;
+    const localOutlines = Array.from({ length: beatSamples }, (_, i) => {
+      const state = d.stateAtTime(g.pendulumPeriod * i / beatSamples);
+      const cw = Math.cos(state.wheelAngle), sw = Math.sin(state.wheelAngle);
+      const cp = Math.cos(state.pendulumAngle), sp = Math.sin(state.pendulumAngle);
+      const ox = g.wheelCenter.x - g.suspensionPivot.x, oy = g.wheelCenter.y - g.suspensionPivot.y;
+      const xs = new Float64Array(wheelOutline.length), ys = new Float64Array(wheelOutline.length);
+      wheelOutline.forEach(([x, y], j) => {
+        const wx = cw * x - sw * y + ox, wy = sw * x + cw * y + oy;
+        xs[j] = cp * wx + sp * wy; ys[j] = -sp * wx + cp * wy;
+      });
+      return { xs, ys };
+    });
+    const center = g.pendulumCenterLocal;
+    const lugHeight = .34, rowCount = 137, lugClearance = .004;
+    for (const [side, pallet] of [[-1, b.leftPallet], [1, b.rightPallet]]) {
       const points = pallet.userData.facePoints;
-      const outward = points.map(v => v.clone().sub(g.pendulumCenterLocal).normalize());
+      const outward = points.map(v => v.clone().sub(center).normalize());
       const face = points.map((v, i) => v.clone().addScaledVector(outward[i], .0001));
       const back = points.map((v, i) => v.clone().addScaledVector(outward[i], .22));
-      replace(pallet.userData.body, plate(poly([...face, ...back.reverse()].map(v => v.toArray())), -.24, .24));
+      const faceY = points.reduce((sum, v) => sum + v.y, 0) / points.length;
+      const outerX = center.x + side * (g.annulusInnerRadius + .09);
+      const innerLimit = center.x + side * (g.annulusInnerRadius - .24);
+      // Teeth descend past A and rise past B, so each square lug stands on the
+      // far side of its face, as Brown's steps do.
+      const rows = Array.from({ length: rowCount }, (_, i) => faceY + side * (-lugHeight + lugHeight * i / (rowCount - 1)))
+        .sort((u, v) => u - v);
+      const reach = rows.map(() => -Infinity);
+      const rowStep = rows[1] - rows[0];
+      for (const { xs, ys } of localOutlines) {
+        for (let j = 0, n = xs.length; j < n; j++) {
+          const k = (j + 1) % n, ax = xs[j], ay = ys[j], cx = xs[k], cy = ys[k];
+          if (side * ax < side * innerLimit && side * cx < side * innerLimit) continue;
+          const low = Math.min(ay, cy), high = Math.max(ay, cy);
+          if (high === low || high < rows[0] || low > rows.at(-1)) continue;
+          const first = Math.max(0, Math.ceil((low - rows[0]) / rowStep));
+          const last = Math.min(rowCount - 1, Math.floor((high - rows[0]) / rowStep));
+          for (let r = first; r <= last; r++) {
+            const x = ax + (cx - ax) * (rows[r] - ay) / (cy - ay);
+            reach[r] = Math.max(reach[r], side * x);
+          }
+        }
+      }
+      const edge = rows.map((y, r) => {
+        const worst = Math.max(reach[Math.max(r - 1, 0)], reach[r], reach[Math.min(r + 1, rowCount - 1)]);
+        return [side * Math.max(worst + lugClearance, side * innerLimit), y];
+      });
+      const block = poly([...edge, [outerX, rows.at(-1)], [outerX, rows[0]]]);
+      const lug = polygonClipping.union(block, poly([...face, ...back.reverse()].map(v => v.toArray())));
+      replace(pallet.userData.body, plate(lug, -g.pendulumDepth / 2, g.pendulumDepth / 2));
+      pallet.userData.body.material = b.annulus.material;
       pallet.userData.workingEdge.visible = false;
       p.pairs.push([b.sevenToothDisk, pallet.userData.body]);
     }
-    // The short bridges overlap both backing and annulus, in front of the
-    // wheel's swept face. No unsupported hairline contact extensions.
-    for (const connector of [b.leftConnector, b.rightConnector]) connector.position.z = .18;
+    // The short bridges now sit wholly inside the lug/annulus overlap.
+    for (const [side, connector] of [[-1, b.leftConnector], [1, b.rightConnector]]) {
+      replace(connector, new THREE.BoxGeometry(.1, .12, g.pendulumDepth * .8));
+      connector.rotation.set(0, 0, 0);
+      const faceY = connector === b.leftConnector
+        ? b.leftPallet.userData.facePoints.reduce((s, v) => s + v.y, 0) / b.leftPallet.userData.facePoints.length
+        : b.rightPallet.userData.facePoints.reduce((s, v) => s + v.y, 0) / b.rightPallet.userData.facePoints.length;
+      connector.position.set(center.x + side * (g.annulusInnerRadius + .03), faceY, 0);
+    }
     p.pairs.push(...[b.annulus, b.leftConnector, b.rightConnector, b.upperRod, b.lowerRod]
       .map(part => [b.sevenToothDisk, part]));
     replace(b.wheelHub, journal(.27, .126, .76));

@@ -781,13 +781,14 @@ function frictionWindlass(movement) {
     },
   );
 
-  // The post stops just under the barrel it carries rather than passing
-  // through it.
-  const wheelPost = makeBeam(
-    new THREE.Vector3(0, -2.12, -0.90),
-    new THREE.Vector3(0, -0.70, -0.90),
-    { color: PALETTE.frame, depth: 0.32, thickness: 0.28 },
+  // Brown draws no post under the wheel: the barrel's rear end bears on a
+  // flat bracket from the broad standard behind the wheel's right half,
+  // wholly hidden behind the wheel web.
+  const wheelPost = new THREE.Mesh(
+    new THREE.BoxGeometry(0.78, 0.68, 0.05),
+    matte(PALETTE.frame, { metalness: 0.12, roughness: 0.68 }),
   );
+  wheelPost.position.set(0.05, 0, -1.435);
   wheelPost.userData.role = 'fixed-windlass-wheel-bearing-post';
   // Brown's lever post is a broad timber (raster x 370-419) whose right
   // edge carries the fulcrum, rising a little above the lever boss.

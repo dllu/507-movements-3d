@@ -222,9 +222,13 @@ function equalDiameterCam(movement) {
   const sourceRasterBarRightEnd = 510;
   const barRightEnd = (sourceRasterBarRightEnd - sourceRasterCamCenter.x)
     * sourceScale - pitchAmplitude;
-  const barZ = -0.57;
-  const bearingReliefRadius = 0.375;
-  const yokeEyeOuterRadius = 0.475;
+  // The round rod runs just behind the rollers (whose axles seat in it).
+  const barZ = -0.665;
+  // A slim eye just clear of the shaft, barely wider than the round rod, so
+  // the glimpses between the cam lobes read as the rod itself.
+  const bearingReliefRadius = 0.24;
+  const yokeEyeOuterRadius = 0.34;
+  const camBearingZ = -1.02;
   const guideClearance = 0.035;
   // Only the long broken-off left run can carry a (hidden) straight guide.
   const guideXs = [-3.52];
@@ -530,7 +534,8 @@ function equalDiameterCam(movement) {
   );
   hubRing.position.z = camDepth * 0.63;
   hubRing.userData.role = 'cam-hub-front-ring';
-  const camShaft = cylinderAlongZ(0.21, 1.42, darkMaterial, 36);
+  const camShaft = cylinderAlongZ(0.21, 0.71 - camBearingZ + 0.04, darkMaterial, 36);
+  camShaft.position.z = (0.71 + camBearingZ - 0.04) / 2;
   camShaft.userData.role = 'rotating-cam-input-shaft';
   const camRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.72, 0.075, 0.03),
@@ -545,20 +550,18 @@ function equalDiameterCam(movement) {
   yoke.userData.role =
     'single-rigid-horizontal-bar-with-two-opposed-rollers';
   root.add(yoke);
-  // The translating yoke needs a real oblong eye around the fixed input
-  // bearing. Its two webs stay hidden behind the cam in the source view.
-  const barEndBulge = 0.07;
-  const barOutline = [[-barHalfLength, -barHalfHeight]];
-  for (let index = 0; index <= 12; index += 1) {
-    const v = -1 + index / 6;
-    barOutline.push([
-      barRightEnd - barEndBulge + barEndBulge * (1 - v * v),
-      v * barHalfHeight,
-    ]);
-  }
-  barOutline.push([-barHalfLength, barHalfHeight]);
+  // Brown draws a round rod. Its two runs are cylinders; the middle is a
+  // flat yoke plate with a real oblong eye around the fixed input bearing,
+  // hidden behind the cam in the source view and seated inside both runs.
+  const yokePlateHalfLength = pitchAmplitude + yokeEyeOuterRadius + 0.1;
+  const yokePlateHalfHeight = barHalfHeight * 0.86;
   const yokeOuter = polygonClipping.union(
-    poly(barOutline),
+    poly([
+      [-yokePlateHalfLength, -yokePlateHalfHeight],
+      [yokePlateHalfLength, -yokePlateHalfHeight],
+      [yokePlateHalfLength, yokePlateHalfHeight],
+      [-yokePlateHalfLength, yokePlateHalfHeight],
+    ]),
     capsule([-pitchAmplitude, 0], [pitchAmplitude, 0], yokeEyeOuterRadius, 48),
   );
   const yokeSection = polygonClipping.difference(yokeOuter,
@@ -567,6 +570,22 @@ function equalDiameterCam(movement) {
   bar.position.z = barZ;
   bar.userData.role = 'reciprocating-rectilinear-bar';
   yoke.add(bar);
+  const rodInnerX = pitchAmplitude + bearingReliefRadius + 0.02;
+  const makeRodRun = (fromX, toX, role) => {
+    const run = new THREE.Mesh(
+      new THREE.CylinderGeometry(barHalfHeight, barHalfHeight, toX - fromX, 40),
+      drivenMaterial,
+    );
+    run.rotation.z = Math.PI / 2;
+    run.position.set((fromX + toX) / 2, 0, barZ);
+    run.userData.role = role;
+    yoke.add(run);
+    return run;
+  };
+  const rodRuns = [
+    makeRodRun(-barHalfLength, -rodInnerX, 'reciprocating-round-rod-left-run'),
+    makeRodRun(rodInnerX, barRightEnd, 'reciprocating-round-rod-right-run'),
+  ];
 
   const translationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.56, 0.055, 0.035),
@@ -602,7 +621,7 @@ function equalDiameterCam(movement) {
 
   const straightGuides = guideXs.map((x, index) => {
     const guide = makeStraightGuide({
-      barDepth,
+      barDepth: barHalfHeight * 2,
       barHalfHeight,
       clearance: guideClearance,
       frameMaterial,
@@ -617,7 +636,7 @@ function equalDiameterCam(movement) {
   });
 
   const baseY = -3.18;
-  const frameZ = -0.88;
+  const frameZ = -1.2;
   const base = makeBeam(
     new THREE.Vector3(-4.30, baseY, frameZ),
     new THREE.Vector3(4.30, baseY, frameZ),
@@ -631,14 +650,14 @@ function equalDiameterCam(movement) {
   );
   camBearingPost.userData.role = 'fixed-rear-cam-bearing-post';
   const camBearingArm = new THREE.Mesh(
-    ring(0.235, 0.345, frameZ, -0.61, 64), frameMaterial,
+    ring(0.235, 0.345, frameZ, camBearingZ, 64), frameMaterial,
   );
   camBearingArm.userData.role = 'fixed-cam-bearing-arm';
   const camBearing = new THREE.Mesh(
     new THREE.TorusGeometry(0.29, 0.055, 10, 40),
     frameMaterial,
   );
-  camBearing.position.z = -0.61;
+  camBearing.position.z = camBearingZ;
   camBearing.userData.role = 'fixed-rear-cam-shaft-bearing';
   const guidePosts = guideXs.map((x, index) => {
     const post = makeBeam(
@@ -705,6 +724,7 @@ function equalDiameterCam(movement) {
     leftRoller,
     profileOutline,
     rightRoller,
+    rodRuns,
     straightGuides,
     translationIndex,
     yoke,

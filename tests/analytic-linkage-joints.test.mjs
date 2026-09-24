@@ -6,30 +6,29 @@ import { createAuthoredRhombusLinkageMovement } from '../src/simulation/authored
 
 const worldBox = object => new THREE.Box3().setFromObject(object);
 
-test('231 shafts pass through the fixed bearings and rotating hubs clear the ground plate', () => {
+test('231 shafts run away from the coupler layer and no undrawn bearing link is shown', () => {
   const model = createAuthoredCrankMovement({ id: 231 });
   const { blocks, geometry: g } = model.root.userData;
   model.root.updateMatrixWorld(true);
-  const ground = worldBox(blocks.groundPlate);
-  for (const assembly of [blocks.inputShaft, blocks.outputShaft]) {
-    const shaft = worldBox(assembly.userData.parts.shaft);
-    assert.ok(shaft.min.z < ground.min.z && shaft.max.z > ground.max.z);
-    const hub = worldBox(assembly.userData.parts.hub);
-    assert.ok(hub.max.z < ground.min.z || hub.min.z > ground.max.z);
+  // Brown draws neither the bearing link nor the bearings.
+  for (const part of [blocks.groundPlate, ...blocks.fixedBearings, ...blocks.groundEyeLiners]) {
+    assert.equal(part.parent, null);
   }
-  for (const bearing of blocks.fixedBearings) {
-    const box = worldBox(bearing);
-    assert.ok(box.min.z > g.inputCrankPlaneZ + g.crankDepth / 2 + 0.008);
-    assert.ok(box.max.z < g.outputCrankPlaneZ - g.crankDepth / 2 - 0.008);
-  }
-  // The forward output shaft extends through the coupler's Z plane. Verify
-  // geometric clearance over a full revolution, not just joint closure.
+  const couplerMinZ = g.couplerPlaneZ - g.couplerDepth / 2;
+  const couplerMaxZ = g.couplerPlaneZ + g.couplerDepth / 2;
+  const inputShaft = worldBox(blocks.inputShaft.userData.parts.shaft);
+  const outputShaft = worldBox(blocks.outputShaft.userData.parts.shaft);
+  assert.ok(inputShaft.max.z < couplerMinZ - 0.1, 'input shaft runs back from the coupler');
+  assert.ok(outputShaft.min.z > couplerMaxZ + 0.1, 'output shaft runs forward from the coupler');
+  // Even so, the coupler's outline stays clear of both shaft projections.
   const segment = new THREE.Line3(), nearest = new THREE.Vector3();
   for (let i = 0; i <= 720; i++) {
     const s = model.root.userData.stateAtDriverAngle(i * Math.PI / 360);
     segment.set(s.inputPin.clone().setZ(0), s.outputPin.clone().setZ(0));
-    segment.closestPointToPoint(g.outputPivot, true, nearest);
-    assert.ok(nearest.distanceTo(g.outputPivot) > g.shaftRadius + g.couplerEyeOuterRadius);
+    for (const pivot of [g.inputPivot, g.outputPivot]) {
+      segment.closestPointToPoint(pivot, true, nearest);
+      assert.ok(nearest.distanceTo(pivot) > g.shaftRadius + g.couplerEyeOuterRadius);
+    }
   }
   assert.equal(model.root.userData.hideGround, true);
 });

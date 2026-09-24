@@ -1340,7 +1340,9 @@ function sixRollerPulleyBearing(movement) {
       assembledView: {
         centerX: 145,
         centerY: 266,
-        coverRadius: 59,
+        coverRadius: 63,
+        holeCircleRadius: 44,
+        holeRadius: 6,
         pulleyOuterRadius: 113,
       },
       cutawayView: {

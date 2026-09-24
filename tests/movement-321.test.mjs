@@ -106,7 +106,7 @@ test('movement 321 is Harrison’s complete spring maintaining-power barrel', ()
     role === 'click-R-carried-by-larger-ratchet').length, 1);
   assert.equal(roles.filter((role) => role === 'fixed-frame-click-T').length, 1);
   assert.equal(roles.filter((role) =>
-    role === 'maintaining-spring-S-S-prime-spiral').length, 1);
+    role === 'maintaining-spring-S-S-prime-curved-wire').length, 1);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -394,37 +394,54 @@ test('movement 321 flexes one constant-material-length spring between live G and
   disposeModel(model.root);
 });
 
-test('movement 321 draws S-S-prime as a smooth spiral that winds and unwinds without crossing or reaching the arbor', () => {
+test('movement 321 draws S-S-prime as Brown’s single hairpin wire that opens and closes without crossing or reaching the arbor', () => {
   const model = createMovementModel(catalog.movements[320]);
   const { geometry, stateAtTime } = model.root.userData;
-  let minimumTurns = Infinity;
-  let maximumTurns = 0;
-  let minimumSpacing = Infinity;
+  let minimumOpening = Infinity;
+  let maximumOpening = -Infinity;
+  let minimumSweep = Infinity;
+  let maximumSweep = -Infinity;
   let minimumRadius = Infinity;
-  let maximumTurnStep = 0;
-  let previousTurns = null;
+  let maximumOpeningStep = 0;
+  let previousOpening = null;
+  const segmentsCross = (a, b, c, d) => {
+    const orient = (p, q, r) => (q.x - p.x) * (r.y - p.y)
+      - (q.y - p.y) * (r.x - p.x);
+    return orient(a, b, c) * orient(a, b, d) < 0
+      && orient(c, d, a) * orient(c, d, b) < 0;
+  };
+  let crossings = 0;
   for (let sample = 0; sample <= 512; sample += 1) {
     const spring = stateAtTime(geometry.demonstrationPeriod * sample / 512).springGeometry;
-    minimumTurns = Math.min(minimumTurns, spring.turns);
-    maximumTurns = Math.max(maximumTurns, spring.turns);
-    minimumSpacing = Math.min(minimumSpacing, spring.minimumCoilSpacing);
-    if (previousTurns !== null) maximumTurnStep = Math.max(maximumTurnStep, Math.abs(spring.turns - previousTurns));
-    previousTurns = spring.turns;
-    for (let index = 0; index <= 64; index += 1) {
-      const point = spring.pointAtMaterialFraction(index / 64);
-      minimumRadius = Math.min(minimumRadius, Math.hypot(point.x, point.y));
+    minimumOpening = Math.min(minimumOpening, spring.opening);
+    maximumOpening = Math.max(maximumOpening, spring.opening);
+    minimumSweep = Math.min(minimumSweep, spring.sweep);
+    maximumSweep = Math.max(maximumSweep, spring.sweep);
+    minimumRadius = Math.min(minimumRadius, spring.minimumRadius);
+    if (previousOpening !== null) {
+      maximumOpeningStep = Math.max(maximumOpeningStep,
+        Math.abs(spring.opening - previousOpening));
+    }
+    previousOpening = spring.opening;
+    if (sample % 32 === 0) {
+      const points = Array.from({ length: 97 }, (_, index) =>
+        spring.pointAtMaterialFraction(index / 96));
+      for (let i = 0; i < 96; i += 1) {
+        for (let j = i + 2; j < 96; j += 1) {
+          if (segmentsCross(points[i], points[i + 1], points[j], points[j + 1])) crossings += 1;
+        }
+      }
     }
   }
-  // Nearly two coils at the going preload; about a quarter turn unwinds
-  // while T holds the larger ratchet, then winds back as R re-engages.
-  assert.ok(maximumTurns > 1.8 && maximumTurns < 1.9);
-  assert.ok(maximumTurns - minimumTurns > 0.24 && maximumTurns - minimumTurns < 0.26);
-  assert.ok(maximumTurnStep < 0.01, 'the spiral changes smoothly');
-  // Successive coils stay separated by more than the wire diameter.
-  assert.ok(minimumSpacing > 2 * geometry.springWireRadius + 0.04,
-    `coil spacing ${minimumSpacing}`);
-  assert.ok(minimumRadius > geometry.springInnerAnchorRadius - 1e-9,
-    'no coil passes inside the inner anchor toward the arbor');
+  // Brown's hairpin while going; it opens toward the chord while T holds
+  // the larger ratchet and G runs 45 degrees ahead, then closes again.
+  assert.ok(minimumOpening < 1e-9, `hairpin at the going preload ${minimumOpening}`);
+  assert.ok(maximumOpening > 0.3 && maximumOpening < 0.6, `opening ${maximumOpening}`);
+  near(maximumSweep - minimumSweep, geometry.largeRatchetLagMaximum, 1e-9,
+    'the wire takes up the whole ratchet lag');
+  assert.ok(maximumOpeningStep < 0.02, 'the wire flexes smoothly');
+  assert.equal(crossings, 0, 'the wire never crosses itself');
+  assert.ok(minimumRadius > 0.6, `the hairpin stays clear of the arbor ${minimumRadius}`);
   disposeModel(model.root);
 });
 

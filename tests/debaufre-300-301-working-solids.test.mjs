@@ -197,7 +197,7 @@ test('301 frames the side elevation and hides diagnostic witnesses', () => {
   const bounds = side.root.userData.cameraFitBounds;
   const centre = bounds.getCenter(new THREE.Vector3());
   // The camera sits on the staff axis at the expected fit distance.
-  assert.ok(Math.abs(centre.y + direction.y / direction.x * 41.1 - g.palletCenterY) < 1e-9);
+  assert.ok(Math.abs(centre.y + direction.y / direction.x * 121.16 - g.palletCenterY) < 1e-9);
   for (const model of [front, side]) {
     const { blocks } = model.root.userData;
     for (const time of [0, 1, 2, 3]) {

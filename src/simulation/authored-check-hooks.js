@@ -278,7 +278,9 @@ function centrifugalMineDrumCheckHooks(movement) {
   const flangePlaneZ = -0.42;
   const flangeDepth = 0.38;
   const hookPlaneZ = 0.12;
-  const ropeDrumPlaneZ = 0.44;
+  // The drum stands forward of the hook pivots so the rope, which Brown
+  // draws in front of them, clears their pins.
+  const ropeDrumPlaneZ = 0.72;
   const loadSideInertia = 0.85;
   const loadArrestDuration = loadArrestEnd - catchTime;
   const shockNaturalFrequency = Math.PI / (2 * loadArrestDuration);
@@ -481,40 +483,41 @@ function centrifugalMineDrumCheckHooks(movement) {
   ropeDrum.add(ropeDrumIndex);
 
   const centerShaft = makeAxialCylinder({
-    depth: 1.65,
+    depth: 1.93,
     material: inkMaterial,
     radius: 0.3,
     role: 'coaxial-drum-shaft',
     segments: 40,
   });
-  centerShaft.position.z = -0.02;
+  centerShaft.position.z = 0.12;
   root.add(centerShaft);
 
+  // Brown draws a round rope passing over the top of the drum and hanging
+  // in two opaque strands from its sides, not a translucent flat band.
+  const ropeRadius = 0.135;
+  const ropeWrapRadius = ropeDrumRadius + ropeRadius;
+  const ropeStrandLength = 5.9;
+  const ropeMaterial = matte(0x3b3632, { roughness: 0.9 });
   const ropeWeb = new THREE.Mesh(
-    new THREE.BoxGeometry(0.76, 4.75, 0.045),
-    matte(PALETTE.ink, {
-      opacity: 0.2,
-      roughness: 0.76,
-      side: THREE.DoubleSide,
-      transparent: true,
-    }),
+    new THREE.TorusGeometry(ropeWrapRadius, ropeRadius, 12, 64, Math.PI),
+    ropeMaterial,
   );
-  ropeWeb.position.set(0, -3.15, ropeDrumPlaneZ + 0.5);
-  ropeWeb.userData.role = 'translucent-flat-hoisting-rope-web';
+  ropeWeb.position.z = ropeDrumPlaneZ;
+  ropeWeb.userData.role = 'hoisting-rope-wrapped-over-drum';
   root.add(ropeWeb);
 
   const ropeEdges = [-1, 1].map((side) => {
     const edge = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.065, 0.065, 4.75, 16),
-      inkMaterial,
+      new THREE.CylinderGeometry(ropeRadius, ropeRadius, ropeStrandLength, 16),
+      ropeMaterial,
     );
     edge.position.set(
-      side * 0.38,
-      -3.15,
-      ropeDrumPlaneZ + 0.55,
+      side * ropeWrapRadius,
+      -ropeStrandLength / 2,
+      ropeDrumPlaneZ,
     );
     edge.userData.role =
-      `flat-hoisting-rope-${side < 0 ? 'left' : 'right'}-edge-cord`;
+      `hoisting-rope-${side < 0 ? 'left' : 'right'}-hanging-strand`;
     root.add(edge);
     return edge;
   });

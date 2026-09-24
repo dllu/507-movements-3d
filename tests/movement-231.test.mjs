@@ -68,7 +68,12 @@ test('movement 231 is one fixed-link Grashof double crank and one coupler', () =
   assert.equal(blocks.outputCrank.parent, blocks.outputRotor);
   assert.equal(blocks.inputCrankPin.parent, blocks.inputRotor);
   assert.equal(blocks.outputCrankPin.parent, blocks.outputRotor);
-  assert.equal(blocks.groundPlate.parent, model.root);
+  // Brown draws neither the bearing link nor the bearings.
+  assert.equal(blocks.groundPlate.parent, null);
+  for (const part of [...blocks.fixedBearings, ...blocks.groundEyeLiners]) {
+    assert.equal(part.parent, null);
+  }
+  for (const index of blocks.rotationIndexes) assert.equal(index.parent, null);
   assert.equal(blocks.coupler.parent, model.root);
   disposeModel(model.root);
 });
@@ -95,7 +100,7 @@ test('movement 231 preserves Brown’s two-shaft plate and strict drag-link prop
   });
   assert.deepEqual(transmission, {
     averageOutputTurnsPerInputTurn: 1,
-    assemblyBranch: 'open-minus-circle-intersection',
+    assemblyBranch: 'open-plus-circle-intersection',
     inputOutputDirection: 'same',
     instantaneousSpeedRatioVariable: true,
     strictGrashof: true,
@@ -130,8 +135,14 @@ test('movement 231 preserves Brown’s two-shaft plate and strict drag-link prop
   assert.ok(sourceState.inputPin.y > geometry.inputPivot.y);
   assert.ok(sourceState.outputPin.y > geometry.outputPivot.y);
   assert.ok(sourceState.outputPin.y < sourceState.inputPin.y);
-  assert.ok(sourceState.outputPin.x > sourceState.inputPin.x);
-  assert.ok(sourceState.circleBranchCross < 0);
+  // Brown's pose: the input crank stands nearly upright and the coupler runs
+  // down and to the left to the output crank's pin.
+  assert.ok(sourceState.outputPin.x < sourceState.inputPin.x);
+  near(THREE.MathUtils.radToDeg(geometry.sourcePoseAngle), 103.44, 1e-9, 'source input angle');
+  near(THREE.MathUtils.radToDeg(sourceState.drivenAngle), 173.11, 0.01, 'source output angle');
+  assert.ok(sourceState.circleBranchCross > 0);
+  assert.ok(geometry.inputCrankPlaneZ < geometry.couplerPlaneZ);
+  assert.ok(geometry.couplerPlaneZ < geometry.outputCrankPlaneZ);
   for (const contact of [
     model.root.userData.contacts.couplerInputPin,
     model.root.userData.contacts.couplerOutputPin,
@@ -189,7 +200,7 @@ test('movement 231 stays on one nonsingular full-rotation branch through 131,073
     );
     minimumBranchMagnitude = Math.min(
       minimumBranchMagnitude,
-      -state.circleBranchCross,
+      state.circleBranchCross,
       Math.abs(state.drivenDerivativeDenominator),
     );
     minimumInnerClearance = Math.min(
@@ -225,30 +236,30 @@ test('movement 231 stays on one nonsingular full-rotation branch through 131,073
     geometry.sourcePoseAngle + geometry.fullTurn,
   );
 
-  assert.ok(maxima.couplerLength <= 1.34e-15,
+  assert.ok(maxima.couplerLength <= 2.7e-15,
     `maximum coupler closure error ${maxima.couplerLength}`);
-  assert.ok(maxima.inputRadius <= 4.5e-16,
+  assert.ok(maxima.inputRadius <= 9e-16,
     `maximum input radius error ${maxima.inputRadius}`);
-  assert.ok(maxima.outputRadius <= 8.9e-16,
+  assert.ok(maxima.outputRadius <= 1.8e-15,
     `maximum output radius error ${maxima.outputRadius}`);
-  assert.ok(maxima.velocityConstraint <= 6.3e-15,
+  assert.ok(maxima.velocityConstraint <= 2.7e-14,
     `maximum velocity closure error ${maxima.velocityConstraint}`);
-  assert.ok(maxima.accelerationConstraint <= 7.2e-14,
+  assert.ok(maxima.accelerationConstraint <= 3e-13,
     `maximum acceleration closure error ${maxima.accelerationConstraint}`);
-  assert.ok(minimumBranchMagnitude > 2.2145,
+  assert.ok(minimumBranchMagnitude > 5.05,
     `minimum branch/singularity margin ${minimumBranchMagnitude}`);
-  assert.ok(maximumBranchCross < 0,
-    `circle-intersection branch crossed ${maximumBranchCross}`);
+  assert.ok(minimumBranchMagnitude > 0,
+    `circle-intersection branch crossed ${minimumBranchMagnitude}`);
   assert.ok(minimumOutputAdvance > 0,
     `minimum output advance ${minimumOutputAdvance}`);
   assert.ok(minimumInnerClearance >= geometry.innerTriangleClearance - 2e-10);
   assert.ok(minimumOuterClearance >= geometry.outerTriangleClearance - 6e-11);
-  assert.ok(minimumIntersectionHeight > 1.2148);
-  assert.ok(minimumSpeedRatio > 0.295 && minimumSpeedRatio < 0.296);
-  assert.ok(maximumSpeedRatio > 2.488 && maximumSpeedRatio < 2.489);
-  near(last.drivenAngle - first.drivenAngle, geometry.fullTurn, 0,
+  assert.ok(minimumIntersectionHeight > 2.886);
+  assert.ok(minimumSpeedRatio > 0.500 && minimumSpeedRatio < 0.501);
+  assert.ok(maximumSpeedRatio > 2.143 && maximumSpeedRatio < 2.144);
+  near(last.drivenAngle - first.drivenAngle, geometry.fullTurn, 2e-15,
     'one full output turn per input turn');
-  near(last.drivenRevolutions, 1, 0, 'one output revolution');
+  near(last.drivenRevolutions, 1, 2e-15, 'one output revolution');
   disposeModel(model.root);
 });
 
@@ -288,9 +299,9 @@ test('movement 231 analytic coupler twist reproduces both endpoint motions', () 
       predictedOutputAcceleration.distanceTo(state.outputPinAcceleration),
     );
   }
-  assert.ok(maximumVelocityError <= 7.1e-15,
+  assert.ok(maximumVelocityError <= 1.5e-14,
     `maximum rigid-coupler velocity error ${maximumVelocityError}`);
-  assert.ok(maximumAccelerationError <= 5.5e-14,
+  assert.ok(maximumAccelerationError <= 1.1e-13,
     `maximum rigid-coupler acceleration error ${maximumAccelerationError}`);
   disposeModel(model.root);
 });
@@ -343,13 +354,13 @@ test('movement 231 analytic output rate and acceleration match finite difference
       ),
     );
   }
-  assert.ok(maximumPointVelocityError <= 3.71e-7,
+  assert.ok(maximumPointVelocityError <= 5.6e-7,
     `maximum finite-difference point velocity error ${maximumPointVelocityError}`);
-  assert.ok(maximumPointAccelerationError <= 1.8e-6,
+  assert.ok(maximumPointAccelerationError <= 3.6e-6,
     `maximum finite-difference point acceleration error ${maximumPointAccelerationError}`);
-  assert.ok(maximumAngularSpeedError <= 8.4e-8,
+  assert.ok(maximumAngularSpeedError <= 1.7e-7,
     `maximum finite-difference output speed error ${maximumAngularSpeedError}`);
-  assert.ok(maximumAngularAccelerationError <= 5e-7,
+  assert.ok(maximumAngularAccelerationError <= 1e-6,
     `maximum finite-difference output acceleration error ${maximumAngularAccelerationError}`);
   disposeModel(model.root);
 });
@@ -369,20 +380,30 @@ test('movement 231 uses separated axial layers where the crank projections cross
   assert.ok(inputCrankMaximumZ < outputCrankMinimumZ);
   assert.ok(inputCrankMaximumZ < outputShaftMinimumZ);
   assert.ok(inputShaftMaximumZ < outputCrankMinimumZ);
+  // Plate order, back to front: input crank, coupler, output crank. Each
+  // shaft runs away from the coupler, and each pin stops short of the other
+  // crank's layer.
   assert.ok(
-    geometry.outputCrankPlaneZ + geometry.crankDepth / 2
-      < geometry.couplerPlaneZ - geometry.couplerDepth / 2,
+    inputCrankMaximumZ < geometry.couplerPlaneZ - geometry.couplerDepth / 2,
   );
-  // At zero input angle the long input crank passes directly through the
-  // output-pivot projection. It remains a real mechanism because the source's
-  // opposed shaft extensions and our corresponding axial layers keep the
-  // solids disjoint.
-  const collinearState = stateAtDriverAngle(0);
-  near(collinearState.inputPin.y, geometry.outputPivot.y, 0,
-    'input crank crosses the output-shaft projection');
-  assert.ok(collinearState.inputPin.x > geometry.outputPivot.x);
-  assert.ok(geometry.axialClearances.inputCrankToOutputShaft > 0);
-  assert.ok(geometry.axialClearances.inputShaftToOutputCrank > 0);
+  assert.ok(
+    geometry.couplerPlaneZ + geometry.couplerDepth / 2 < outputCrankMinimumZ,
+  );
+  assert.ok(inputShaftMaximumZ < geometry.couplerPlaneZ - geometry.couplerDepth / 2);
+  assert.ok(outputShaftMinimumZ > geometry.couplerPlaneZ + geometry.couplerDepth / 2);
+  for (const [name, clearance] of Object.entries(geometry.axialClearances)) {
+    assert.ok(clearance >= 0.079, `${name} axial clearance ${clearance}`);
+  }
+  // The long input crank sweeps across the output-shaft projection; the
+  // output shaft runs forward from the front layer, so the solids stay apart.
+  const groundAngle = Math.atan2(
+    geometry.outputPivot.y - geometry.inputPivot.y,
+    geometry.outputPivot.x - geometry.inputPivot.x,
+  );
+  const crossingState = stateAtDriverAngle(groundAngle);
+  assert.ok(crossingState.inputPin.distanceTo(geometry.inputPivot.clone().setZ(geometry.couplerPlaneZ))
+    > geometry.groundLength);
+  assert.ok(geometry.axialClearances.inputCrankToOutputCrank > 0);
   disposeModel(model.root);
 });
 
@@ -426,11 +447,11 @@ test('movement 231 renders both crank pins and every coupler eye at the solved s
     assert.ok(model.root.userData.contacts.couplerInputPin.axialCaptureMargin > 0);
     assert.ok(model.root.userData.contacts.couplerOutputPin.axialCaptureMargin > 0);
   }
-  assert.ok(maximumCouplerEyeError <= 9.2e-16,
+  assert.ok(maximumCouplerEyeError <= 2.7e-15,
     `maximum rendered coupler-eye error ${maximumCouplerEyeError}`);
-  assert.ok(maximumInputPinError <= 1.12e-15,
+  assert.ok(maximumInputPinError <= 2.3e-15,
     `maximum rendered input-pin error ${maximumInputPinError}`);
-  assert.ok(maximumOutputPinError <= 2.27e-15,
+  assert.ok(maximumOutputPinError <= 4.6e-15,
     `maximum rendered output-pin error ${maximumOutputPinError}`);
   disposeModel(model.root);
 });

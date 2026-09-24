@@ -2154,27 +2154,26 @@ function curvedSlottedArmVariableVibration() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
 
-  // These are the normalized construction coordinates published with the
-  // reference animation.  The red member pivots at the origin and carries a
-  // circular slot.  The blue member has one fixed pivot and one pin whose
-  // center is the upper intersection of the slot circle and the arm circle.
+  // Construction measured from Brown's plate (525 px raster, 19.26 px per
+  // source unit, origin at the hooked arm's pivot, y up). The red member
+  // pivots at the origin and carries a slot whose working part is a circle
+  // fitted to the drawn curved slot (±2 px); the blue member has one fixed
+  // pivot and one pin whose center is the upper intersection of the slot
+  // circle and the arm circle. The published animation used a semicircular
+  // slot on a broad C plate; the plate's narrow J hook is followed instead.
   const sourceScale = 0.31;
+  const sourcePixelsPerUnit = 19.26;
   const sourceInputPivot = new THREE.Vector2(0, 0);
-  const sourceSlotCenter = new THREE.Vector2(-0.052357, 2.999543);
-  const sourceSlotRadius = 6;
-  const sourceOutputPivot = new THREE.Vector2(11.842928, 8.998629);
-  const sourceOutputArmLength = 12;
+  const sourceSlotCenter = new THREE.Vector2(1.461, 3.479);
+  const sourceSlotRadius = 5.431;
+  const sourceOutputPivot = new THREE.Vector2(17.21, 9.086);
+  const sourceOutputArmLength = 15.07;
   const sourceFollowerPinRadius = 0.5;
-  const sourceInputCam0 = new THREE.Vector2(3, 0);
-  const sourceInputCam1 = new THREE.Vector2(-2.336648, 1.881509);
-  const sourceInputEndpointAngle = Math.atan2(
-    sourceInputCam1.y,
-    sourceInputCam1.x,
-  );
-  // The reference explicitly selects the clockwise interpolation branch.
-  // Therefore the stroke is 218.84 degrees, not the equivalent 141.16-degree
-  // counter-clockwise orientation change.
-  const inputStrokeAngle = sourceInputEndpointAngle - fullTurn;
+  // Brown's drawn pose is the start of the stroke (pin just past the top of
+  // the slot circle). A clockwise 115-degree regular stroke carries the pin
+  // round the curved slot to just short of the point where its motion in the
+  // slot would reverse; the slot's last few degrees stay unused as drawn.
+  const inputStrokeAngle = -THREE.MathUtils.degToRad(115);
   const inputStrokeMagnitude = Math.abs(inputStrokeAngle);
   const inputPivot = sourceInputPivot.clone().multiplyScalar(sourceScale);
   const slotCenterLocal = sourceSlotCenter.clone().multiplyScalar(sourceScale);
@@ -2183,11 +2182,9 @@ function curvedSlottedArmVariableVibration() {
   const outputArmLength = sourceOutputArmLength * sourceScale;
   const followerPinRadius = sourceFollowerPinRadius * sourceScale;
 
-  // The drawn slot endpoints and plate outline are retained separately from
-  // the exact six-unit pitch curve used by the kinematic construction.
-  const sourceSlotStartAngle = 1.554839;
-  const sourceSlotEndAngle = 4.762851;
-  const slotStartAngle = sourceSlotStartAngle;
+  // The circular slot runs from the pin's drawn start pose (where it merges
+  // into the drawn straight run) round to Brown's slot end beside the pivot.
+  const sourceSlotEndAngle = THREE.MathUtils.degToRad(213.6);
   const slotEndAngle = sourceSlotEndAngle;
   const cyclePeriod = 8;
   const motionPhaseSpan = 0.4;
@@ -2335,6 +2332,11 @@ function curvedSlottedArmVariableVibration() {
     };
   };
 
+  // The pin's drawn start pose joins the circular slot to the straight run.
+  const restGeometry = geometryAtInputAngle(0);
+  const sourceSlotStartAngle = restGeometry.localSlotAngle;
+  const slotStartAngle = sourceSlotStartAngle;
+
   const stateAtInputAngle = (
     inputAngle,
     inputAngularSpeed = 0,
@@ -2382,10 +2384,9 @@ function curvedSlottedArmVariableVibration() {
         - outputArmLength,
       slotCenterAcceleration,
       slotCenterVelocity,
-      slotEndpointMargin: Math.min(
-        geometry.localSlotAngle - slotStartAngle,
-        slotEndAngle - geometry.localSlotAngle,
-      ),
+      // The start of the circular slot opens into the straight run, so only
+      // the closed far end limits the pin.
+      slotEndpointMargin: slotEndAngle - geometry.localSlotAngle,
       slotRadiusError: geometry.slotRadiusVector.length() - slotRadius,
       slotSlidingSpeed: Math.abs(localSlotAngularSpeed) * slotRadius,
     };
@@ -2479,12 +2480,6 @@ function curvedSlottedArmVariableVibration() {
     roughness: 0.69,
   });
   const indexMaterial = matte(PALETTE.white, { roughness: 0.48 });
-  const scaleArc = ({ center, radius, start, end }) => ({
-    center: center.clone().multiplyScalar(sourceScale),
-    end,
-    radius: radius * sourceScale,
-    start,
-  });
   const pointOnArc = (arc, angle) => new THREE.Vector2(
     arc.center.x + arc.radius * Math.cos(angle),
     arc.center.y + arc.radius * Math.sin(angle),
@@ -2500,38 +2495,37 @@ function curvedSlottedArmVariableVibration() {
     );
   };
 
-  const plateArcs = {
-    innerBody: scaleArc({
-      center: new THREE.Vector2(-0.052357, 2.999543),
-      radius: 4.501235,
-      start: 1.551215,
-      end: 2.394364,
-    }),
-    outerBody: scaleArc({
-      center: new THREE.Vector2(-0.052357, 2.999543),
-      radius: 7.501037,
-      start: 1.557138,
-      end: 4.729842,
-    }),
-    pivotBody: scaleArc({
-      center: new THREE.Vector2(0, 0),
-      radius: 4.5,
-      start: 4.729842,
-      end: 2.008361,
-    }),
-    reentrantBody: scaleArc({
-      center: new THREE.Vector2(-2.436476, 5.208271),
-      radius: 1.25,
-      start: 2.394364,
-      end: 5.149954,
-    }),
-    topBodyCap: scaleArc({
-      center: new THREE.Vector2(0.042934, 8.999898),
-      radius: 1.5,
-      start: 4.707618,
-      end: 1.566026,
-    }),
-  };
+  // Outer outline of Brown's hooked arm, traced from the plate's ink with a
+  // classical contour pass (source units, pivot at the origin): the curved
+  // limb carrying the slot, the straight top run with its rounded end, the
+  // deep bay between the top run and the pivot boss, and the boss itself.
+  const sourcePlateOutline = [
+    [2.82, 10.83], [2.37, 10.83], [1.91, 10.83], [1.46, 10.77], [1.01, 10.72],
+    [0.56, 10.68], [0.12, 10.61], [-0.32, 10.47], [-0.74, 10.30], [-1.16, 10.13],
+    [-1.55, 9.91], [-1.95, 9.70], [-2.32, 9.43], [-2.67, 9.14], [-3.01, 8.85],
+    [-3.36, 8.55], [-3.65, 8.21], [-3.95, 7.86], [-4.24, 7.52], [-4.49, 7.14],
+    [-4.73, 6.75], [-4.94, 6.35], [-5.14, 5.94], [-5.31, 5.53], [-5.43, 5.09],
+    [-5.55, 4.65], [-5.60, 4.20], [-5.69, 3.76], [-5.69, 3.30], [-5.69, 2.85],
+    [-5.65, 2.40], [-5.63, 1.94], [-5.58, 1.49], [-5.43, 1.06], [-5.32, 0.63],
+    [-5.17, 0.20], [-4.99, -0.22], [-4.79, -0.63], [-4.53, -1.00], [-4.26, -1.37],
+    [-3.97, -1.72], [-3.71, -2.08], [-3.38, -2.40], [-3.05, -2.72], [-2.69, -2.99],
+    [-2.33, -3.26], [-1.94, -3.49], [-1.52, -3.67], [-1.11, -3.86], [-0.67, -3.94],
+    [-0.22, -3.97], [0.24, -3.97], [0.69, -3.97], [1.13, -3.86], [1.56, -3.72],
+    [1.98, -3.54], [2.36, -3.28], [2.72, -3.02], [3.06, -2.72], [3.33, -2.36],
+    [3.59, -1.98], [3.81, -1.58], [3.97, -1.16], [4.08, -0.72], [4.13, -0.27],
+    [4.13, 0.19], [4.08, 0.63], [3.96, 1.07], [3.80, 1.50], [3.60, 1.91],
+    [3.38, 2.30], [3.09, 2.65], [2.73, 2.92], [2.39, 3.20], [2.01, 3.45],
+    [1.59, 3.61], [1.17, 3.79], [0.75, 3.96], [0.38, 4.22], [0.06, 4.54],
+    [-0.08, 4.97], [-0.07, 5.43], [0.07, 5.86], [0.32, 6.24], [0.69, 6.47],
+    [1.11, 6.64], [1.56, 6.72], [2.01, 6.78], [2.45, 6.83], [2.91, 6.83],
+    [3.37, 6.83], [3.82, 6.88], [4.26, 6.93], [4.71, 6.98], [5.15, 7.09],
+    [5.57, 7.27], [5.93, 7.53], [6.16, 7.84], [6.30, 8.21], [6.34, 8.66],
+    [6.30, 9.12], [6.20, 9.56], [6.00, 9.96], [5.72, 10.28], [5.40, 10.52],
+    [5.02, 10.71], [4.63, 10.81], [4.18, 10.88], [3.73, 10.88], [3.27, 10.86],
+  ];
+  const plateOutline = sourcePlateOutline.map(([x, y]) => (
+    [x * sourceScale, y * sourceScale]
+  ));
   // Ideal circular working walls replace hand-rounded source offsets. A small
   // radial clearance covers tessellation; no bevel projects into the slot.
   const slotClearance = 0.008;
@@ -2546,33 +2540,6 @@ function curvedSlottedArmVariableVibration() {
     upperCap: { center: pointOnArc({ center: slotCenterLocal, radius: slotRadius }, slotStartAngle),
       radius: slotHalfWidth, start: slotStartAngle + Math.PI, end: slotStartAngle + fullTurn },
   };
-  const plateShape = new THREE.Shape();
-  const plateStart = pointOnArc(
-    plateArcs.topBodyCap,
-    plateArcs.topBodyCap.start,
-  );
-  plateShape.moveTo(plateStart.x, plateStart.y);
-  appendArc(plateShape, plateArcs.topBodyCap, false);
-  appendArc(plateShape, plateArcs.outerBody, false);
-  appendArc(plateShape, plateArcs.pivotBody, false);
-  plateShape.absarc(
-    plateArcs.reentrantBody.center.x,
-    plateArcs.reentrantBody.center.y,
-    plateArcs.reentrantBody.radius,
-    plateArcs.reentrantBody.end,
-    plateArcs.reentrantBody.start,
-    true,
-  );
-  plateShape.absarc(
-    plateArcs.innerBody.center.x,
-    plateArcs.innerBody.center.y,
-    plateArcs.innerBody.radius,
-    plateArcs.innerBody.end,
-    plateArcs.innerBody.start,
-    true,
-  );
-  plateShape.closePath();
-
   const slotHole = new THREE.Path();
   const slotStart = pointOnArc(slotArcs.outer, slotArcs.outer.start);
   slotHole.moveTo(slotStart.x, slotStart.y);
@@ -2588,17 +2555,12 @@ function curvedSlottedArmVariableVibration() {
   );
   appendArc(slotHole, slotArcs.upperCap, false);
   slotHole.closePath();
-  plateShape.holes.push(slotHole);
-  const inputBore = new THREE.Path();
-  inputBore.absarc(0, 0, sourceScale, 0, fullTurn, true);
-  inputBore.closePath();
-  plateShape.holes.push(inputBore);
 
   const plateDepth = 0.28;
   // Brown's arm is a J-shaped hook: its top limb runs on to the right as a
   // straight band with a rounded end, and the slot continues along it
-  // tangent to the working circle. The pin never leaves the circular part;
-  // the straight run only reproduces the drawn slot.
+  // from the pin's drawn start pose. The pin starts at the junction and then
+  // stays on the circular part; the straight run reproduces the drawn slot.
   const shapeRing = (path) => {
     const points = path.getPoints(96).map((point) => [point.x, point.y]);
     const first = points[0];
@@ -2606,25 +2568,11 @@ function curvedSlottedArmVariableVibration() {
     if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 1e-9) points.pop();
     return poly(points);
   };
-  const topLimbY = slotCenterLocal.y + slotRadius;
-  const topLimbStartX = plateArcs.topBodyCap.center.x;
-  const topLimbHalfWidth = plateArcs.topBodyCap.radius;
-  const topLimbCapX = 3.2 * sourceScale;
-  const topSlotStartX = slotCenterLocal.x
-    + slotRadius * Math.cos(slotStartAngle);
-  const topSlotEndX = 3.1 * sourceScale;
-  const topSlotY = slotCenterLocal.y + slotRadius;
+  const topSlotStartX = restGeometry.followerPoint.x;
+  const topSlotEndX = 4.71 * sourceScale;
+  const topSlotY = restGeometry.followerPoint.y;
   const curvedPlatePolygons = clip.difference(
-    clip.union(
-      shapeRing(new THREE.Shape(plateShape.getPoints(96))),
-      poly([
-        [topLimbStartX, topLimbY - topLimbHalfWidth],
-        [topLimbCapX, topLimbY - topLimbHalfWidth],
-        [topLimbCapX, topLimbY + topLimbHalfWidth],
-        [topLimbStartX, topLimbY + topLimbHalfWidth],
-      ]),
-      poly(circle([topLimbCapX, topLimbY], topLimbHalfWidth, 96)),
-    ),
+    poly(plateOutline),
     shapeRing(slotHole),
     poly([
       [topSlotStartX, topSlotY - slotHalfWidth],
@@ -2651,7 +2599,7 @@ function curvedSlottedArmVariableVibration() {
 
   const inputBoss = new THREE.Mesh(
     centeredExtrusion(
-      annularShape(sourceScale, 2 * sourceScale),
+      annularShape(sourceScale, 1.8 * sourceScale),
       0.12,
       0.008,
     ),
@@ -2674,7 +2622,15 @@ function curvedSlottedArmVariableVibration() {
 
   const makeArcEdge = (arc, role) => {
     const sampleCount = 112;
-    const points = Array.from({ length: sampleCount + 1 }, (_, index) => {
+    const straightPoints = arc.straightToX === undefined ? [] : Array.from(
+      { length: 16 },
+      (_, index) => new THREE.Vector3(
+        THREE.MathUtils.lerp(arc.straightToX, topSlotStartX, index / 16),
+        arc.straightY,
+        plateDepth / 2 + 0.025,
+      ),
+    );
+    const points = straightPoints.concat(Array.from({ length: sampleCount + 1 }, (_, index) => {
       const angle = THREE.MathUtils.lerp(
         arc.start,
         arc.end,
@@ -2685,11 +2641,11 @@ function curvedSlottedArmVariableVibration() {
         arc.center.y + arc.radius * Math.sin(angle),
         plateDepth / 2 + 0.025,
       );
-    });
+    }));
     const edge = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(points, false, 'centripetal', 0.3),
-        sampleCount,
+        points.length - 1,
         0.018,
         7,
         false,
@@ -2699,12 +2655,16 @@ function curvedSlottedArmVariableVibration() {
     edge.userData.role = role;
     return edge;
   };
+  // Each inked wall runs along the straight top run and continues round the
+  // circular slot from the pin's start pose.
   const slotInnerEdge = makeArcEdge(
-    { ...slotArcs.inner, radius: slotArcs.inner.radius - 0.022 },
+    { ...slotArcs.inner, radius: slotArcs.inner.radius - 0.022,
+      straightToX: topSlotEndX, straightY: topSlotY - slotHalfWidth - 0.022 },
     'inner-working-edge-of-circular-slot',
   );
   const slotOuterEdge = makeArcEdge(
-    { ...slotArcs.outer, radius: slotArcs.outer.radius + 0.022 },
+    { ...slotArcs.outer, radius: slotArcs.outer.radius + 0.022,
+      straightToX: topSlotEndX, straightY: topSlotY + slotHalfWidth + 0.022 },
     'outer-working-edge-of-circular-slot',
   );
   inputArm.add(slotInnerEdge, slotOuterEdge);
@@ -2714,10 +2674,10 @@ function curvedSlottedArmVariableVibration() {
   outputArm.userData.fixedPivot = true;
   outputArm.userData.role = 'single-straight-variable-vibration-output-arm';
   const sourceArmOutline = [
-    new THREE.Vector2(-1.323243, 1.067252),
-    new THREE.Vector2(-12.02, 0.79975),
-    new THREE.Vector2(-12.02, -0.79975),
-    new THREE.Vector2(-1.323243, -1.067252),
+    new THREE.Vector2(-1.8, 1.55),
+    new THREE.Vector2(-sourceOutputArmLength, 1.05),
+    new THREE.Vector2(-sourceOutputArmLength, -1.05),
+    new THREE.Vector2(-1.8, -1.55),
   ].map((point) => point.multiplyScalar(sourceScale));
   // The plate dashes the arm's end: it passes behind the hooked arm.
   const outputArmPlaneZ = -0.39;
@@ -2733,7 +2693,7 @@ function curvedSlottedArmVariableVibration() {
   outputArmBody.userData.role = 'tapered-body-of-straight-output-arm';
   const outputPivotBoss = new THREE.Mesh(
     centeredExtrusion(
-      annularShape(1.1 * sourceScale, 1.7 * sourceScale),
+      annularShape(1.3 * sourceScale, 2.2 * sourceScale),
       outputArmDepth + 0.08,
       0.009,
     ),
@@ -2743,7 +2703,7 @@ function curvedSlottedArmVariableVibration() {
   outputPivotBoss.userData.role = 'boss-around-fixed-output-arm-pivot';
   const followerBoss = new THREE.Mesh(
     centeredExtrusion(
-      annularShape(followerPinRadius + 0.005, 0.8 * sourceScale),
+      annularShape(followerPinRadius + 0.005, 1.05 * sourceScale),
       outputArmDepth + 0.08,
       0,
     ),
@@ -2804,7 +2764,7 @@ function curvedSlottedArmVariableVibration() {
     axis: Z_AXIS,
     color: PALETTE.ink,
     length: 1.42,
-    radius: 1.1 * sourceScale - 0.01,
+    radius: 1.3 * sourceScale - 0.01,
   });
   outputShaft.position.set(outputPivot.x, outputPivot.y, 0.08);
   outputShaft.userData.fixedCenter = true;
@@ -2919,7 +2879,7 @@ function curvedSlottedArmVariableVibration() {
   root.userData.mechanism =
     'one-curved-arm-carries-one-circular-slot-constraining-one-pin-on-one-fixed-pivot-straight-arm';
   root.userData.variant =
-    'clockwise-218-degree-regular-input-stroke-with-upper-circle-intersection-and-variable-output-gain';
+    'clockwise-115-degree-regular-input-stroke-with-upper-circle-intersection-and-variable-output-gain';
   root.userData.blocks = {
     baseRail,
     bearingRings,
@@ -2965,16 +2925,15 @@ function curvedSlottedArmVariableVibration() {
     outputArmLength,
     outputPivot,
     outputSwingAngle,
-    plateArcs,
+    plateOutline,
     slotArcs,
     slotCenterLocal,
     slotEndAngle,
     slotRadius,
     slotStartAngle,
     sourceFollowerPinRadius,
-    sourceInputCam0,
-    sourceInputCam1,
-    sourceInputEndpointAngle,
+    sourcePixelsPerUnit,
+    sourcePlateOutline,
     sourceInputPivot,
     sourceOutputArmLength,
     sourceOutputPivot,
@@ -2985,8 +2944,11 @@ function curvedSlottedArmVariableVibration() {
     sourceSlotStartAngle,
   };
   root.userData.modelPointToSource = modelPointToSource;
+  // Construction taken from the plate; the 40-10-40-10 stroke-and-dwell
+  // timing still follows the published animation.
   root.userData.sourceAnimation = {
     boundingBox: [...sourceBoundingBox],
+    constructionSource: 'plate',
     inputCamKeyframes: [
       { clockwise: true, cyclePosition: 0, pose: 'cam0' },
       { clockwise: true, cyclePosition: 0.4, pose: 'cam1' },
@@ -3027,10 +2989,13 @@ function curvedSlottedArmVariableVibration() {
   // Brown depicts the mechanism in isolation; the old stand was invented.
   root.remove(baseRail, inputPost, outputPost, inputBridge, outputBridge, ...bearingRings,
     cameraEnvelope);
+  // Brown draws no index marks on either arm.
+  inputArm.remove(inputRotationIndex);
+  outputArm.remove(outputRotationIndex);
   root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 1.02;
   root.userData.reconstruction = { slotClearance,
-    assumptions: 'Ideal circular slot with finite pin clearance; fixed pivots are external supports. Input dwells follow the official animation.' };
+    assumptions: 'Ideal circular slot (fitted to the plate) with finite pin clearance; the straight top run of the slot is drawn but only the pin\'s start pose sits in it; fixed pivots are external supports. Input dwells follow the official animation.' };
   root.traverse(object => {
     for (const material of [].concat(object.material ?? [])) material.fog = false;
   });

@@ -970,16 +970,22 @@ function eccentricConeFrictionReverser(movement) {
   rollerAxle.userData.role = 'short-axle-of-friction-roller-C';
   nutPost.geometry.dispose();
   // Plate 262 draws E as a low footed cradle whose feet stand only about a
-  // sixth of B's diameter below B's rim; plate 263 keeps its taller standard.
+  // sixth of B's diameter below B's rim; plate 263 keeps its own standard.
   nutPost.geometry = flaredPedestalGeometry(presentationView === 'end-view'
     ? {
+      // Seen along the screw, z is the visible width: a thin neck hidden
+      // behind nut E, concave flares and a foot plate as wide and thick as
+      // Brown's. The caption's reversals need the cone ≈0.57 of its radius
+      // off the screw (Brown draws ≈0.25), so B's rim sweeps up to 2e below
+      // this drawn pose and passes behind the foot; a standard tall enough
+      // to clear that sweep would no longer read as Brown's low cradle.
       bottomY: -0.97,
       footHalfX: 0.5,
       footHalfZ: 0.8,
-      footTopY: -0.91,
-      neckBottomY: -0.6,
+      footTopY: -0.83,
+      neckBottomY: -0.36,
       neckHalfX: 0.13,
-      neckHalfZ: 0.2,
+      neckHalfZ: 0.08,
       topY: -0.309,
     }
     : {

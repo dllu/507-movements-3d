@@ -161,8 +161,7 @@ export default {
     note: 'The eccentric gears, belt, pulley and rod A; no base, post, bearing bridges or guide bracket are drawn, and the letter A is left to the caption rather than modelled.',
   },
   203: {
-    remove: ['white-index-showing-(?:curved-arm-input|variable-output-arm)-angle'],
-    note: 'Face view of the hooked arm with its J-shaped slot and the straight arm whose pinned end passes behind it (dashed on the plate); no index marks are drawn.',
+    note: 'Face view of the hooked arm with its J-shaped slot and the straight arm whose pinned end passes behind it (dashed on the plate); the factory draws no index marks.',
   },
   204: {
     remove: ['fixed-(?:longitudinal|transverse)-base-rail', '(?:driver|driven)-shaft-bearing-post'],
@@ -198,8 +197,7 @@ export default {
     note: 'Elevation of the saw-tooth wheel with the curved pawl on the upright vibrating carrier, pivoted on a lug on hatched ground; no base block, white indices or contact marker are drawn.',
   },
   231: {
-    remove: ['(?:input|output)-drag-link-crankshaft-visible-rotation-index'],
-    note: 'Oblique view of the two slender cranks, the hanging link and the bearing link, with the long output rod running off to the right; no index marks are drawn.',
+    note: 'Oblique view of the two slender cranks and the long coupler, the input shaft running back to the lower left and the long output rod running off to the right; the factory draws no bearing link, bearings or index marks.',
   },
   232: {
     remove: ['sliding-pawl-C-tooth-corner-contact-marker'],
@@ -211,9 +209,9 @@ export default {
   },
   234: {
     rotate: [-Math.PI / 2, 0, Math.PI],
-    camera: [6.2, 4.9, 6.9],
+    camera: [6.2, 3.6, 6.9],
     remove: ['verge-end-journal', 'verge-rotation-witness', 'crown-wheel-rotation-witness'],
-    note: 'Oblique view from above, verge S falling to the right at about 22° across the wheel: a flush toothed plate on a shallow band with its arbor hanging down, and two plain flags A on the round spindle; no frame, bearings, journal caps or witness marks are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
+    note: 'Oblique view from about 20° above, verge S falling to the right across the wheel: a flush toothed plate on a shallow band with its arbor hanging down, and two plain flags A, about a third of the wheel radius long, hanging from the round spindle at mid-swing; no frame, bearings, journal caps or witness marks are drawn. The rim is cut into saw teeth whose slant matches the unmirrored model.',
   },
   235: {
     remove: ['active-(?:drive-face|click-over|holding-click)-contact-marker'],

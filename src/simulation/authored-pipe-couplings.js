@@ -58,8 +58,52 @@ function helixCurve({ maximumY, minimumY, phase = 0, pitch, radius }) {
   }();
 }
 
+// Brown hatches cut faces with evenly spaced 45-degree lines. Build them as
+// thin ink strips clipped to the (possibly concave) section polygon, laid in
+// the face's own plane just in front of it.
+function sectionHatchGeometry(polygon, { spacing, width, rising, mirrored, lift }) {
+  const direction = new THREE.Vector2(mirrored ? -1 : 1, rising ? 1 : -1).normalize();
+  const normal = new THREE.Vector2(-direction.y, direction.x);
+  const offsets = polygon.map(point => normal.dot(point));
+  const minimum = Math.min(...offsets);
+  const maximum = Math.max(...offsets);
+  const positions = [];
+  const zLift = mirrored ? -lift : lift;
+  // A common phase keeps the lines of adjoining faces of one part in step.
+  for (let c = (Math.floor(minimum / spacing) + 0.5) * spacing; c < maximum; c += spacing) {
+    if (c <= minimum) continue;
+    const hits = [];
+    polygon.forEach((start, index) => {
+      const end = polygon[(index + 1) % polygon.length];
+      const a = normal.dot(start) - c;
+      const b = normal.dot(end) - c;
+      if ((a < 0) === (b < 0)) return;
+      const t = a / (a - b);
+      hits.push(direction.dot(start.clone().lerp(end, t)));
+    });
+    hits.sort((left, right) => left - right);
+    for (let index = 0; index + 1 < hits.length; index += 2) {
+      const inset = width;
+      if (hits[index + 1] - hits[index] <= 2 * inset) continue;
+      const along = [hits[index] + inset, hits[index + 1] - inset];
+      const corners = [
+        [along[0], c - width / 2], [along[1], c - width / 2],
+        [along[1], c + width / 2], [along[0], c + width / 2],
+      ].map(([u, v]) => direction.clone().multiplyScalar(u).addScaledVector(normal, v));
+      const quad = [corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]];
+      const ordered = mirrored ? [...quad].reverse() : quad;
+      for (const point of ordered) positions.push(point.x, point.y, zLift);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function makeCutawayLathe({
   cutawayHalfAngle,
+  hatch = null,
   material,
   profile,
   role,
@@ -102,6 +146,15 @@ function makeCutawayLathe({
     face.rotation.y = angle - Math.PI / 2;
     face.userData.role = `${role}-section-face-${index + 1}`;
     group.add(face);
+    if (hatch) {
+      const lines = new THREE.Mesh(
+        sectionHatchGeometry(profile, { ...hatch, mirrored: index === 1 }),
+        hatch.material,
+      );
+      lines.userData.role = `${role}-section-hatching-${index + 1}`;
+      lines.userData.sectionHatching = true;
+      face.add(lines);
+    }
     return face;
   });
   return { group, sectionFaces, shell };
@@ -109,6 +162,7 @@ function makeCutawayLathe({
 
 function makeCutawayAnnularCylinder({
   cutawayHalfAngle,
+  hatch = null,
   innerRadius,
   material,
   maximumY,
@@ -119,6 +173,7 @@ function makeCutawayAnnularCylinder({
 }) {
   return makeCutawayLathe({
     cutawayHalfAngle,
+    hatch,
     material,
     profile: [
       new THREE.Vector2(innerRadius, minimumY),
@@ -310,8 +365,10 @@ function unionPipeCoupling(movement) {
     roughness: 0.54,
     side: THREE.DoubleSide,
   });
-  const nutSectionMaterial = matte(0x234b62, {
-    roughness: 0.72,
+  // Pale section faces carry Brown's ink hatching: wide rising lines on
+  // nut B, finer falling lines on pipe C.
+  const nutSectionMaterial = matte(0xa9bfcc, {
+    roughness: 0.8,
     side: THREE.DoubleSide,
   });
   const pipeCMaterial = matte(PALETTE.frame, {
@@ -319,14 +376,20 @@ function unionPipeCoupling(movement) {
     roughness: 0.61,
     side: THREE.DoubleSide,
   });
-  const pipeCSectionMaterial = matte(0x434a49, {
-    roughness: 0.75,
+  const pipeCSectionMaterial = matte(0xc4c8c6, {
+    roughness: 0.8,
     side: THREE.DoubleSide,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.24,
     roughness: 0.48,
   });
+  const hatchMaterial = matte(PALETTE.ink, {
+    roughness: 0.9,
+    side: THREE.DoubleSide,
+  });
+  const nutHatch = { lift: 0.004, material: hatchMaterial, rising: true, spacing: 0.085, width: 0.017 };
+  const pipeCHatch = { lift: 0.004, material: hatchMaterial, rising: false, spacing: 0.055, width: 0.014 };
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.45 });
 
   const pipeC = new THREE.Group();
@@ -339,6 +402,7 @@ function unionPipeCoupling(movement) {
     material: pipeCMaterial,
     maximumY: pipeCBodyMaximumY,
     minimumY: pipeCBodyMinimumY,
+    hatch: pipeCHatch,
     outerRadius: pipeCBodyOuterRadius,
     role: 'hollow-lower-body-of-pipe-C',
     sectionMaterial: pipeCSectionMaterial,
@@ -349,6 +413,7 @@ function unionPipeCoupling(movement) {
     material: pipeCMaterial,
     maximumY: threadedBossMaximumY,
     minimumY: threadedBossMinimumY,
+    hatch: pipeCHatch,
     outerRadius: threadedBossCoreRadius,
     role: 'counterbored-thread-core-at-end-of-pipe-C',
     sectionMaterial: pipeCSectionMaterial,
@@ -435,6 +500,7 @@ function unionPipeCoupling(movement) {
   const nutBodyParts = makeCutawayLathe({
     cutawayHalfAngle,
     material: nutMaterial,
+    hatch: nutHatch,
     profile: nutProfile,
     role: 'stepped-hollow-body-and-inward-shoulder-of-nut-B',
     sectionMaterial: nutSectionMaterial,

@@ -97,7 +97,7 @@ test('movement 203 is one curved circular-slot input arm driving one straight ou
   );
   assert.equal(
     model.root.userData.variant,
-    'clockwise-218-degree-regular-input-stroke-with-upper-circle-intersection-and-variable-output-gain',
+    'clockwise-115-degree-regular-input-stroke-with-upper-circle-intersection-and-variable-output-gain',
   );
 
   assert.equal(blocks.inputArm.parent, model.root);
@@ -124,8 +124,9 @@ test('movement 203 is one curved circular-slot input arm driving one straight ou
   assert.equal(transmission.outputArmCount, 1);
   assert.equal(transmission.variableOutputGain, true);
   assert.equal(sourceAnimation.selectedIntersectionBranch, 'greatest-y');
-  assert.equal(sourceAnimation.slotRadius, 6);
-  assert.equal(sourceAnimation.outputArmLength, 12);
+  assert.equal(sourceAnimation.constructionSource, 'plate');
+  assert.equal(sourceAnimation.slotRadius, 5.431);
+  assert.equal(sourceAnimation.outputArmLength, 15.07);
   assert.deepEqual(sourceRaster.imageSize.toArray(), [525, 525]);
   assert.equal(sourceRaster.sourceUrl, movement.sourceUrl);
 
@@ -168,7 +169,7 @@ test('movement 203 is one curved circular-slot input arm driving one straight ou
   disposeModel(model.root);
 });
 
-test('movement 203 preserves the reference construction, clockwise branch, and 40-10-40-10 regular drive', () => {
+test('movement 203 uses the plate construction, clockwise branch, and 40-10-40-10 regular drive', () => {
   const model = createMovementModel(catalog.movements[202]);
   const {
     driveAtCyclePhase,
@@ -178,44 +179,26 @@ test('movement 203 preserves the reference construction, clockwise branch, and 4
     transmission,
   } = model.root.userData;
 
+  // Construction measured from Brown's plate at 19.26 px per source unit.
   vector2Near(geometry.sourceInputPivot, new THREE.Vector2(0, 0), 0, 'source input pivot');
   vector2Near(
     geometry.sourceSlotCenter,
-    new THREE.Vector2(-0.052357, 2.999543),
+    new THREE.Vector2(1.461, 3.479),
     0,
     'source slot center',
   );
   vector2Near(
     geometry.sourceOutputPivot,
-    new THREE.Vector2(11.842928, 8.998629),
+    new THREE.Vector2(17.21, 9.086),
     0,
     'source output pivot',
   );
-  vector2Near(
-    geometry.sourceInputCam0,
-    new THREE.Vector2(3, 0),
-    0,
-    'source input cam zero vector',
-  );
-  vector2Near(
-    geometry.sourceInputCam1,
-    new THREE.Vector2(-2.336648, 1.881509),
-    0,
-    'source input cam far vector',
-  );
-  near(geometry.sourceInputCam0.length(), 3, 0, 'source cam-0 radius');
-  near(geometry.sourceInputCam1.length(), 3, 2e-9, 'source cam-1 radius');
-  near(
-    geometry.inputStrokeAngle,
-    geometry.sourceInputEndpointAngle - FULL_TURN,
-    1e-15,
-    'clockwise interpolation branch',
-  );
-  assert.ok(geometry.inputStrokeAngle < -Math.PI);
+  assert.equal(geometry.sourcePixelsPerUnit, 19.26);
+  assert.ok(geometry.inputStrokeAngle < 0, 'clockwise stroke');
   near(
     THREE.MathUtils.radToDeg(geometry.inputStrokeMagnitude),
-    218.841613,
-    1e-6,
+    115,
+    1e-9,
     'clockwise stroke magnitude in degrees',
   );
   near(
@@ -259,21 +242,21 @@ test('movement 203 preserves the reference construction, clockwise branch, and 4
   const farPose = stateAtInputAngle(geometry.inputStrokeAngle);
   vector2Near(
     sourcePose.followerPoint.clone().divideScalar(geometry.sourceScale),
-    new THREE.Vector2(-0.157072, 8.998629161139462),
+    new THREE.Vector2(2.1415886401435325, 8.867187088706885),
     2e-6,
-    'source-pose follower anchor',
+    'source-pose follower anchor (Brown\'s drawn pin)',
   );
   vector2Near(
     farPose.followerPoint.clone().divideScalar(geometry.sourceScale),
-    new THREE.Vector2(1.8404411818614324, 2.3691299651585123),
+    new THREE.Vector2(3.6445650886313885, 2.5221691318695876),
     2e-6,
     'far-pose follower anchor',
   );
   near(
-    farPose.localSlotAngle - sourcePose.localSlotAngle,
-    Math.PI,
-    2e-6,
-    'follower traverses the semicircular slot',
+    THREE.MathUtils.radToDeg(farPose.localSlotAngle - sourcePose.localSlotAngle),
+    110.416787,
+    2e-5,
+    'follower travels round the curved slot',
   );
   near(
     farPose.outputAngle - sourcePose.outputAngle,
@@ -283,11 +266,11 @@ test('movement 203 preserves the reference construction, clockwise branch, and 4
   );
   near(
     THREE.MathUtils.radToDeg(geometry.outputSwingAngle),
-    33.535824,
-    2e-6,
+    24.988736,
+    2e-5,
     'straight-arm output swing in degrees',
   );
-  assert.ok(geometry.outputSwingAngle < geometry.inputStrokeMagnitude / 6);
+  assert.ok(geometry.outputSwingAngle < geometry.inputStrokeMagnitude / 4);
 
   const scheduled = new Map([
     [0, [0, 0, 'source-end-dwell']],
@@ -387,10 +370,10 @@ test('movement 203 closes both circle constraints and the selected slot branch t
       state.localSlotAngle <= geometry.slotEndAngle + 2e-12,
       `pin remains before slot end at ${index}`,
     );
-    assert.ok(state.slotEndpointMargin > 0.032, `slot endpoint margin ${index}`);
-    assert.ok(state.intersectionAcross > 0.4, `circle branch separation ${index}`);
+    assert.ok(state.slotEndpointMargin > 0.35, `slot endpoint margin ${index}`);
+    assert.ok(state.intersectionAcross > 1, `circle branch separation ${index}`);
     assert.ok(
-      Math.abs(state.constraintDeterminant) > 2.2,
+      Math.abs(state.constraintDeterminant) > 6,
       `constraint Jacobian remains nonsingular at ${index}`,
     );
     assert.ok(state.outputAngularGain <= 3e-7, `signed output gain ${index}`);
@@ -428,22 +411,22 @@ test('movement 203 closes both circle constraints and the selected slot branch t
 
   near(minimumGain, transmission.gainExtrema.minimum, 2e-8, 'sampled minimum geometric gain');
   near(maximumGain, transmission.gainExtrema.maximum, 2e-8, 'sampled maximum geometric gain');
-  assert.ok(minimumGain < -0.258, 'output reaches a substantially different speed ratio');
-  assert.ok(Math.abs(maximumGain) < 3e-7, 'output reaches dead center');
-  assert.ok(minimumDeterminant > 2.2);
-  assert.ok(minimumEndpointMargin > 0.032);
-  assert.ok(minimumIntersectionAcross > 0.4);
+  assert.ok(minimumGain < -0.25, 'output reaches a substantially different speed ratio');
+  assert.ok(maximumGain > -0.07 && maximumGain < -0.06, 'output starts slowly');
+  assert.ok(minimumGain / maximumGain > 3.5, 'output speed ratio varies more than threefold');
+  assert.ok(minimumDeterminant > 6);
+  assert.ok(minimumEndpointMargin > 0.35);
+  assert.ok(minimumIntersectionAcross > 1);
   assert.ok(maximumFollowerStep < 0.0003, 'no spatial jump along the slot');
 
   const sourceState = geometryAtInputAngle(0);
   const farState = geometryAtInputAngle(geometry.inputStrokeAngle);
-  assert.ok(Math.abs(sourceState.outputAngularGain) < 3e-7);
-  assert.ok(Math.abs(farState.outputAngularGain) < 3e-7);
+  near(sourceState.outputAngularGain, maximumGain, 1e-6, 'slowest output at the drawn start');
   near(
     farState.localSlotAngle - sourceState.localSlotAngle,
-    Math.PI,
+    THREE.MathUtils.degToRad(110.416787),
     2e-6,
-    'one half-circle of pin travel',
+    'pin travel round the curved slot',
   );
   near(
     farState.outputAngle - sourceState.outputAngle,

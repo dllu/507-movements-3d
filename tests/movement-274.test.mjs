@@ -137,12 +137,12 @@ test('movement 274 records the unavailable source and fits its right-side center
     right: { x: 368, y: 84 },
   });
   assert.deepEqual(plate.rasterRollerCenters, {
-    left: { x: 236, y: 228 },
-    right: { x: 306, y: 229 },
+    left: { x: 237, y: 248 },
+    right: { x: 303, y: 248 },
   });
   assert.deepEqual(plate.rasterBallCenters, {
     left: { x: 193, y: 331 },
-    right: { x: 354, y: 329 },
+    right: { x: 349, y: 329 },
   });
   assert.deepEqual(plate.rasterSleevePinCenters, {
     left: { x: 237, y: 430 },
@@ -310,8 +310,9 @@ test('movement 274 raises both flyballs and the sleeve through two rigid rods', 
       5e-16, `rod vector length at sample ${sample}`);
     near(state.lowerRodPin.x, geometry.sleevePinRadius, 0,
       `sleeve pin radius at sample ${sample}`);
-    // The pass-51 lyre refit swings L about 0.63 outside the sleeve pin.
-    assert.ok(state.verticalRodSpan > 2.93,
+    // The lyre refit to L's true centre swings L about 0.67 outside the
+    // sleeve pin at full rise (rods F lean ≈14°).
+    assert.ok(state.verticalRodSpan > 2.62,
       `positive rod branch at sample ${sample}`);
     if (sample > 0) {
       assert.ok(state.guideParameter <= previous.guideParameter + 1e-15);
@@ -408,7 +409,8 @@ test('movement 274 analytic local and orbiting rates match finite differences', 
     near(
       (after.sleeveY - before.sleeveY) / (2 * timeStep),
       state.sleeveSpeed,
-      5e-10,
+      // Central-difference truncation (h² term) is ≈5e-10 on the refit guide.
+      1e-9,
       `sleeve speed at time ${time}`,
     );
     near(

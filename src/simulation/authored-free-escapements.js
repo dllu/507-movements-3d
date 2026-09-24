@@ -116,6 +116,32 @@ function cyclicCosineBump(phase, center, halfWidth) {
   return 0.5 * (1 + Math.cos(Math.PI * distance / halfWidth));
 }
 
+// First-quadrant window bounded by the crossings x = h, y = h and an outer
+// arc of radius outerRadius, with fillets at all three corners (Brown's
+// rounded-square windows), returned counter-clockwise as [x, y] pairs.
+function filletedQuadrantWindow(h, outerRadius, innerFillet, outerFillet, samples = 10) {
+  const points = [];
+  const arc = (cx, cy, radius, from, to) => {
+    for (let step = 0; step <= samples; step += 1) {
+      const angle = from + (to - from) * step / samples;
+      points.push([cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius]);
+    }
+  };
+  const inner = h + innerFillet;
+  arc(inner, inner, innerFillet, Math.PI, Math.PI * 1.5);
+  const cy = h + outerFillet;
+  const cx = Math.sqrt((outerRadius - outerFillet) ** 2 - cy ** 2);
+  const lowAngle = Math.atan2(cy, cx);
+  arc(cx, cy, outerFillet, -Math.PI / 2, lowAngle);
+  const highAngle = Math.PI / 2 - lowAngle;
+  for (let step = 1; step < samples * 2; step += 1) {
+    const angle = lowAngle + (highAngle - lowAngle) * step / (samples * 2);
+    points.push([Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius]);
+  }
+  arc(cy, cx, outerFillet, highAngle, Math.PI);
+  return points;
+}
+
 function polygonShape(points) {
   const shape = new THREE.Shape();
   points.forEach((point, index) => {
@@ -1929,37 +1955,43 @@ function earnshawSpringDetentEscapement(movement) {
     else wheelWebShape.lineTo(x, y);
   }
   wheelWebShape.closePath();
-  const crossingHalfWidth = 0.17;
-  const windowOuterRadius = wheelRootRadius * 0.80;
-  const windowCorner = 0.12;
+  const crossingHalfWidth = 0.12;
+  const windowOuterRadius = wheelRootRadius * 0.84;
+  // Brown's four windows are rounded squares: every corner is filleted, so
+  // the crossings read as a cross between windows, not a plain crossbar.
+  const windowPoints = filletedQuadrantWindow(
+    crossingHalfWidth,
+    windowOuterRadius,
+    windowOuterRadius * 0.04,
+    windowOuterRadius * 0.14,
+  );
+  // Brown draws the crossings square to the page, so they are set to stand
+  // square at the opening pose.
+  const windowTurnAtOpening = -stateAtTime(0).wheelAngle;
   for (let quadrant = 0; quadrant < 4; quadrant += 1) {
-    const turn = quadrant * Math.PI / 2;
-    const local = [
-      ...Array.from({ length: 17 }, (_, sample) => {
-        const angle = THREE.MathUtils.lerp(
-          Math.asin(crossingHalfWidth / windowOuterRadius),
-          Math.PI / 2 - Math.asin(crossingHalfWidth / windowOuterRadius),
-          sample / 16,
-        );
-        return new THREE.Vector2(
-          Math.cos(angle) * windowOuterRadius,
-          Math.sin(angle) * windowOuterRadius,
-        );
-      }),
-      new THREE.Vector2(crossingHalfWidth, crossingHalfWidth + windowCorner),
-      new THREE.Vector2(crossingHalfWidth + windowCorner, crossingHalfWidth),
-    ].map((point) => rotate2(point, turn));
+    const turn = quadrant * Math.PI / 2 + windowTurnAtOpening;
+    const local = windowPoints.map(
+      ([x, y]) => rotate2(new THREE.Vector2(x, y), turn),
+    );
     const window = new THREE.Path();
     window.moveTo(local[0].x, local[0].y);
     for (const point of local.slice(1)) window.lineTo(point.x, point.y);
     window.closePath();
     wheelWebShape.holes.push(window);
   }
+  // The bore only clears the 0.105 arbor, so the narrow crossings keep a
+  // solid centre between the window corners.
+  const wheelBoreRadius = 0.16;
   const wheelHubOpening = new THREE.Path();
   for (let step = 0; step < 48; step += 1) {
     const angle = -FULL_TURN * step / 48;
-    if (step === 0) wheelHubOpening.moveTo(0.24, 0);
-    else wheelHubOpening.lineTo(Math.cos(angle) * 0.24, Math.sin(angle) * 0.24);
+    if (step === 0) wheelHubOpening.moveTo(wheelBoreRadius, 0);
+    else {
+      wheelHubOpening.lineTo(
+        Math.cos(angle) * wheelBoreRadius,
+        Math.sin(angle) * wheelBoreRadius,
+      );
+    }
   }
   wheelHubOpening.closePath();
   wheelWebShape.holes.push(wheelHubOpening);

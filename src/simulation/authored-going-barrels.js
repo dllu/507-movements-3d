@@ -183,8 +183,12 @@ function harrisonGoingBarrel(movement) {
   const sourceScale = 0.0145;
 
   const demonstrationPeriod = 8;
+  // Winding takes an eighth of the demonstration period: G runs 45 degrees
+  // ahead of the held larger ratchet, which Brown's short curved wire S-S'
+  // can take up by opening its hairpin (a quarter turn would need a wire
+  // longer than the chord between its anchors).
   const windingStartPhase = 0.50;
-  const windingEndPhase = 0.75;
+  const windingEndPhase = 0.625;
   const greatWheelToothCount = 48;
   const greatWheelPitchRadius = 2.95;
   const largeRatchetToothCount = 24;
@@ -207,84 +211,121 @@ function harrisonGoingBarrel(movement) {
   const springInnerAnchorRadius = 1.98;
   const springOuterBaseAngle = Math.atan2(0.50, -2.55);
   const springInnerBaseAngle = Math.atan2(1.65, -1.10);
-  // Brown's spring S-S' is drawn here as a smooth flat spiral coiled about
-  // the arbor between its two anchors: about 1.9 turns at the going preload.
-  // When the larger ratchet is held during winding the spiral unwinds
-  // smoothly (fewer turns, coils easing outward) and it winds up again as R
-  // re-engages. Its innermost coil stays well clear of the arbor.
-  const springReferenceTurns = 2;
+  // Brown draws S-S' as one curved wire, not a coil: from S' on G it runs
+  // in toward the arbor with a gentle S-bend, turns in a hairpin over the
+  // lower left of B and comes back out to S on the larger ratchet. The
+  // angular position along the wire is monotone (so it can never cross
+  // itself) and eases in at both anchors; the hairpin's depth is solved each
+  // frame so the wire keeps one material length. When T holds the larger
+  // ratchet and G runs ahead, the hairpin opens and shallows; it closes
+  // again as R re-engages.
   const springSegmentCount = 240;
   const springWireRadius = 0.035;
   const springPreload = 2.20;
   const springStiffness = 0.60;
+  const springHairpinExponent = 3;
+  const springReferenceDepth = 1.62;
+  const springBendAmplitude = 0.08;
   const goingLoadTorque = 0.30;
-  const largeRatchetLagMaximum = Math.PI / 2;
+  const largeRatchetLagMaximum = FULL_TURN
+    * (windingEndPhase - windingStartPhase);
   const greatWheelAngularVelocity = FULL_TURN / demonstrationPeriod;
   const largeRatchetToothPitch = FULL_TURN / largeRatchetToothCount;
   const barrelRatchetToothPitch = FULL_TURN / barrelRatchetToothCount;
 
   const springSweep = (greatWheelAngle, largeRatchetAngle) =>
     springInnerBaseAngle + largeRatchetAngle
-    - springOuterBaseAngle - greatWheelAngle
-    + FULL_TURN * springReferenceTurns;
-  // u runs from S' (0) to S (1). The radius falls monotonically from S' to S,
-  // so successive coils never cross; the exponent sets how quickly the coils
-  // draw in (small: tightly wound inward, large: eased outward).
-  const springRadiusAt = (u, shape) => springOuterAnchorRadius
-    + (springInnerAnchorRadius - springOuterAnchorRadius) * u ** shape;
-  const springPointAt = (u, greatWheelAngle, sweep, shape) => {
-    const angle = springOuterBaseAngle + greatWheelAngle + sweep * u;
-    const radius = springRadiusAt(u, shape);
+    - springOuterBaseAngle - greatWheelAngle;
+  // u runs from S' (0) to S (1). The angular fraction is nearly flat along
+  // each leg, so the legs leave their anchors almost radially as Brown
+  // draws, and turns quickly at the bottom; with the flat-bottomed dip this
+  // gives the rounded U of the plate rather than a sharp V. A small angular
+  // wave puts Brown's S-bend in the leg from S'.
+  const springAngleSteepness = 6;
+  const springAngleFraction = (u) => 0.5
+    + 0.5 * Math.tanh(springAngleSteepness * (u - 0.5))
+      / Math.tanh(springAngleSteepness / 2);
+  const springBendAt = (u) => (u < 0.5
+    ? springBendAmplitude * Math.sin(FULL_TURN * u / 0.5)
+    : 0);
+  const springRadiusAt = (u) => springOuterAnchorRadius
+    + (springInnerAnchorRadius - springOuterAnchorRadius) * u
+    - springReferenceDepth
+      * (1 - Math.abs(2 * u - 1) ** springHairpinExponent);
+  const springAnchorsAt = (greatWheelAngle, sweep) => {
+    const outerAngle = springOuterBaseAngle + greatWheelAngle;
+    const innerAngle = outerAngle + sweep;
+    return [
+      new THREE.Vector2(Math.cos(outerAngle), Math.sin(outerAngle))
+        .multiplyScalar(springOuterAnchorRadius),
+      new THREE.Vector2(Math.cos(innerAngle), Math.sin(innerAngle))
+        .multiplyScalar(springInnerAnchorRadius),
+    ];
+  };
+  // opening 0 is Brown's hairpin; opening 1 is the straight chord between
+  // the anchors. Both pass through the anchors, so every blend does too.
+  const springPointAt = (u, greatWheelAngle, sweep, opening) => {
+    if (u <= 0 || u >= 1) {
+      const anchor = springAnchorsAt(greatWheelAngle, sweep)[u <= 0 ? 0 : 1];
+      return new THREE.Vector3(anchor.x, anchor.y, 1.16);
+    }
+    const angle = springOuterBaseAngle + greatWheelAngle
+      + sweep * springAngleFraction(u) + springBendAt(u);
+    const radius = springRadiusAt(u);
+    const [outer, inner] = springAnchorsAt(greatWheelAngle, sweep);
+    const chord = outer.lerp(inner, u);
     return new THREE.Vector3(
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
+      THREE.MathUtils.lerp(Math.cos(angle) * radius, chord.x, opening),
+      THREE.MathUtils.lerp(Math.sin(angle) * radius, chord.y, opening),
       1.16,
     );
   };
   const springLengthSamples = 2048;
-  const springLength = (sweep, shape) => {
+  const springLength = (sweep, opening) => {
     let length = 0;
-    let previousRadius = springOuterAnchorRadius;
+    let previous = springPointAt(0, 0, sweep, opening);
     for (let index = 1; index <= springLengthSamples; index += 1) {
-      const u = index / springLengthSamples;
-      const radius = springRadiusAt(u, shape);
-      const middle = (radius + previousRadius) / 2;
-      length += Math.hypot(radius - previousRadius,
-        middle * sweep / springLengthSamples);
-      previousRadius = radius;
+      const point = springPointAt(index / springLengthSamples, 0, sweep,
+        opening);
+      length += point.distanceTo(previous);
+      previous = point;
     }
     return length;
   };
-  const springReferenceShape = 0.3;
-  const springMaterialLength = springLength(
-    springSweep(0, 0),
-    springReferenceShape,
-  );
+  const springReferenceSweep = springSweep(0, 0);
+  const springMaterialLength = springLength(springReferenceSweep, 0);
 
   const springGeometryAtAngles = (greatWheelAngle, largeRatchetAngle) => {
     const sweep = springSweep(greatWheelAngle, largeRatchetAngle);
-    // Fewer turns need the coils eased outward to keep the material length.
-    let low = 0.05;
-    let high = 12;
-    if (springLength(sweep, high) < springMaterialLength
-      || springLength(sweep, low) > springMaterialLength) {
-      throw new RangeError('The fixed-length maintaining spring cannot reach both anchors.');
+    // When G runs ahead of the held ratchet the hairpin would lengthen, so
+    // it opens toward the chord just enough to keep the material length.
+    let opening = 0;
+    if (springLength(sweep, 0) > springMaterialLength) {
+      let low = 0;
+      let high = 1;
+      if (springLength(sweep, high) > springMaterialLength) {
+        throw new RangeError('The fixed-length maintaining spring cannot reach both anchors.');
+      }
+      for (let iteration = 0; iteration < 64; iteration += 1) {
+        const middle = (low + high) / 2;
+        if (springLength(sweep, middle) > springMaterialLength) low = middle;
+        else high = middle;
+      }
+      opening = (low + high) / 2;
+    } else if (springLength(sweep, 0) < springMaterialLength - 1e-9) {
+      throw new RangeError('The maintaining spring is never shorter than Brown\'s hairpin.');
     }
-    for (let iteration = 0; iteration < 64; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (springLength(sweep, middle) < springMaterialLength) low = middle;
-      else high = middle;
-    }
-    const shape = (low + high) / 2;
     const cumulative = new Float64Array(springLengthSamples + 1);
-    let previous = springPointAt(0, greatWheelAngle, sweep, shape);
+    let previous = springPointAt(0, greatWheelAngle, sweep, opening);
+    let minimumRadius = Math.hypot(previous.x, previous.y);
     for (let index = 1; index <= springLengthSamples; index += 1) {
       const point = springPointAt(index / springLengthSamples,
-        greatWheelAngle, sweep, shape);
+        greatWheelAngle, sweep, opening);
       cumulative[index] = cumulative[index - 1] + point.distanceTo(previous);
+      minimumRadius = Math.min(minimumRadius, Math.hypot(point.x, point.y));
       previous = point;
     }
-    const measuredLength = springLength(sweep, shape);
+    const measuredLength = cumulative[springLengthSamples];
     const parameterAtMaterialFraction = (fraction) => {
       const target = THREE.MathUtils.clamp(fraction, 0, 1)
         * cumulative[springLengthSamples];
@@ -301,27 +342,17 @@ function harrisonGoingBarrel(movement) {
         : 0;
       return (lower + local) / springLengthSamples;
     };
-    // Closest approach of successive coils at the same angle.
-    let minimumCoilSpacing = Infinity;
-    const turnFraction = FULL_TURN / sweep;
-    for (let index = 0; index <= 512; index += 1) {
-      const u = index / 512 * (1 - turnFraction);
-      minimumCoilSpacing = Math.min(minimumCoilSpacing,
-        springRadiusAt(u, shape) - springRadiusAt(u + turnFraction, shape));
-    }
     return {
-      shape,
-      minimumCoilSpacing,
-      minimumRadius: springInnerAnchorRadius,
+      opening,
+      minimumRadius,
       sweep,
-      turns: sweep / FULL_TURN,
       materialLength: springMaterialLength,
       measuredLength,
       pointAtMaterialFraction: (fraction) => {
-        if (fraction <= 0) return springPointAt(0, greatWheelAngle, sweep, shape);
-        if (fraction >= 1) return springPointAt(1, greatWheelAngle, sweep, shape);
+        if (fraction <= 0) return springPointAt(0, greatWheelAngle, sweep, opening);
+        if (fraction >= 1) return springPointAt(1, greatWheelAngle, sweep, opening);
         return springPointAt(parameterAtMaterialFraction(fraction),
-          greatWheelAngle, sweep, shape);
+          greatWheelAngle, sweep, opening);
       },
     };
   };
@@ -605,7 +636,7 @@ function harrisonGoingBarrel(movement) {
     metalness: 0.16,
     roughness: 0.56,
   });
-  // One continuous round wire, rebuilt in place each frame along the spiral.
+  // One continuous round wire, rebuilt in place each frame along the hairpin.
   const springSides = 10;
   const springRingCount = springSegmentCount + 1;
   const springPositions = new Float32Array(springRingCount * springSides * 3);
@@ -627,7 +658,7 @@ function harrisonGoingBarrel(movement) {
     new THREE.BufferAttribute(springNormals, 3));
   springWireGeometry.setIndex(springIndices);
   const springWire = new THREE.Mesh(springWireGeometry, springMaterial);
-  springWire.userData.role = 'maintaining-spring-S-S-prime-spiral';
+  springWire.userData.role = 'maintaining-spring-S-S-prime-curved-wire';
   springWire.frustumCulled = false;
   root.add(springWire);
   const springSegments = [springWire];
@@ -699,7 +730,7 @@ function harrisonGoingBarrel(movement) {
   largeRatchet.userData.rotor.add(springInnerAnchor);
 
   // The weight's back face stays just in front of the spring's plane when
-  // winding lifts it past the lowest coil.
+  // winding lifts it past the hairpin.
   const weight = new THREE.Mesh(
     new THREE.BoxGeometry(1.18, 0.90, 0.56),
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
@@ -880,8 +911,9 @@ function harrisonGoingBarrel(movement) {
     largeRatchetPitchRadius,
     largeRatchetToothCount,
     largeRatchetToothPitch,
-    springReferenceShape,
-    springReferenceTurns,
+    springBendAmplitude,
+    springHairpinExponent,
+    springReferenceDepth,
     springWireRadius,
     referenceWeightY,
     ropeDrumPitchRadius,

@@ -126,7 +126,9 @@ test('movement 234 preserves the source layout and exact verge design equation',
     0,
     'historical pallet included angle',
   );
-  near(geometry.vergeAmplitude, THREE.MathUtils.degToRad(25), 0,
+  // A 13-degree half swing gives Brown's longer flags (0.76 long, S 0.34
+  // above the tips).
+  near(geometry.vergeAmplitude, THREE.MathUtils.degToRad(13), 0,
     'verge half swing');
   near(geometry.dropFractionOfPitch, 0.1, 0,
     'positive drop is one tenth pitch');
@@ -180,16 +182,26 @@ test('movement 234 preserves the source layout and exact verge design equation',
   );
   assert.ok(geometry.palletTipDistance > geometry.palletRootDistance);
 
-  const source = stateAtCycleCoordinate(0);
+  const cycleStart = stateAtCycleCoordinate(0);
+  assert.equal(cycleStart.activePallet, 'right');
+  assert.equal(cycleStart.activeToothIndex, 0);
+  assert.equal(cycleStart.dwell, true);
+  near(cycleStart.vergeAngle, -geometry.vergeAmplitude, 0,
+    'cycle-start verge angle');
+  near(cycleStart.wheelAngle, 0, 0, 'cycle-start crown-wheel angle');
+  near(cycleStart.contact.contactCoordinate, 0, 4e-16,
+    'cycle-start tooth rests at the pallet root');
+  // Brown's pose, with both flags hanging in view, is mid-impulse of the
+  // right flag; the display clock starts there.
+  near(geometry.displayCycleOffset, 0.22, 0, 'display cycle offset');
+  const source = stateAtCycleCoordinate(geometry.displayCycleOffset);
   assert.equal(source.sourcePose, true);
+  assert.equal(cycleStart.sourcePose, false);
   assert.equal(source.activePallet, 'right');
-  assert.equal(source.activeToothIndex, 0);
-  assert.equal(source.dwell, true);
-  near(source.vergeAngle, -geometry.vergeAmplitude, 0,
-    'source verge angle');
-  near(source.wheelAngle, 0, 0, 'source crown-wheel angle');
-  near(source.contact.contactCoordinate, 0, 4e-16,
-    'source tooth rests at the pallet root');
+  assert.equal(source.drivingContact, true);
+  near(source.vergeAngle, 0, 1e-15, 'source verge angle at mid-swing');
+  near(model.root.userData.stateAtTime(0).wheelAngle, source.wheelAngle, 0,
+    'display clock starts at the source pose');
   disposeModel(model.root);
 });
 
@@ -376,7 +388,7 @@ test('movement 234 free drops clear the releasing tip before the opposite root',
   assert.equal(firstRelease.activePallet, null);
   assert.equal(firstRelease.freeDropState.escaping.side, 'right');
   assert.equal(firstRelease.freeDropState.approaching.side, 'left');
-  assert.ok(firstRelease.freeDropState.approachingPlaneClearance > 0.09);
+  assert.ok(firstRelease.freeDropState.approachingPlaneClearance > 0.08);
   assert.ok(firstRelease.freeDropState.approachingLongitudinalShortfall > 0.04);
   near(firstRelease.freeDropState.escapingLongitudinalOverrun, 0, 6e-17,
     'release tooth begins at the pallet tip');
@@ -387,7 +399,7 @@ test('movement 234 free drops clear the releasing tip before the opposite root',
   assert.ok(
     firstArrival.freeDropState.approachingLongitudinalShortfall < 1e-14,
   );
-  assert.ok(firstArrival.freeDropState.escapingLongitudinalOverrun > 0.09);
+  assert.ok(firstArrival.freeDropState.escapingLongitudinalOverrun > 0.085);
 
   const secondMiddle = stateAtCycleCoordinate(
     (geometry.phases.secondDrop.start + geometry.phases.secondDrop.end) / 2,

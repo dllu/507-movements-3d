@@ -6776,9 +6776,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2d-cranks-screws-review.md",
-        "note": "Default capture inspected beside the plate: J-hooked slotted arm with the straight arm behind."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6791,7 +6791,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6799,9 +6800,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The slotted arm is a broad C where Brown draws a narrow J hook.",
-      "limits": "The slot needs a 180° sweep to cover the pin's stroke; a narrow J arm needs a different slot law.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pin works only the first ~110° of the slot; stroke timing follows the official animation.",
+      "assessment": "reasonable"
     },
     {
       "id": 204,
@@ -7713,9 +7714,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: tighter framing."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7728,7 +7729,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7736,9 +7738,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Link lengths are approximate and the rod lies over the output crank at the default pose; the linkage folds nearly flat mid-cycle.",
-      "limits": "Exact linkage law retained.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Coupler ≈8% shorter than drawn so both cranks turn fully; it folds to ≈16° once per turn.",
+      "assessment": "reasonable"
     },
     {
       "id": 232,
@@ -7815,9 +7817,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: ground shadow off."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7831,7 +7833,8 @@
         "docs/minimal-interface-review.md",
         "docs/lane3-escapements-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7839,9 +7842,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Flags A are about half Brown's length; the view looks down more steeply than the plate.",
-      "limits": "The verge law fixes the flag length; prescribed verge motion with ideal drops.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Flags lean ≈50° from vertical; flush toothed plate where Brown draws an open cup.",
+      "assessment": "reasonable"
     },
     {
       "id": 235,
@@ -8243,9 +8246,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3a-catches-review.md",
-        "note": "Default capture inspected beside the plate: front section matches, but the subject is tiny and high because the frame includes the drop to the seabed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8260,7 +8263,8 @@
         "docs/lane8-escapements-engines-review.md",
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8268,7 +8272,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The subject is framed small and high because the view includes the weight's drop to the seabed line.",
+      "visibleFlaws": "Still framed small because the view includes the drop to the seabed.",
       "limits": "Detent actuation, drag and impact idealized.",
       "assessment": "minor"
     },
@@ -8279,8 +8283,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: true half-section of B and C with A whole."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8294,7 +8298,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8302,9 +8307,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Section faces are flat colour rather than hatched.",
-      "limits": "Thread friction and sealing unsolved.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Thread sections unhatched.",
+      "assessment": "reasonable"
     },
     {
       "id": 249,
@@ -8441,8 +8446,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: long barbed bars, opaque disk A, plate opening pose."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8456,7 +8461,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8464,9 +8470,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rope web reads translucent.",
+      "visibleFlaws": "",
       "limits": "Hook motion prescribed.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 254,
@@ -8727,8 +8733,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: low footed cradle with a flush web."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8742,7 +8748,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8750,7 +8757,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The cradle is slightly tall and B dips below the feet as it swings.",
+      "visibleFlaws": "B dips behind the feet as it swings: the caption's reversals need an eccentric of 0.57R where Brown draws ≈0.25R.",
       "limits": "The pressing spring is not drawn, so not rendered.",
       "assessment": "minor"
     },
@@ -8987,9 +8994,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2e-181-271-review.md",
-        "note": "Default capture inspected beside the plate: both figures side by side, the assembled pulley and the roller cutaway."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9001,15 +9008,16 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-bearings.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Brown's two figures disagree (cover hole circle vs roller circle); the left figure is a display copy.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The ropes are flat bands rather than Brown's twisted rope.",
       "limits": "Ideal rolling rates imposed.",
       "assessment": "minor"
     },
@@ -9116,9 +9124,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2f-274-333-review.md",
-        "note": "Default capture inspected beside the plate: lyre-shaped guide bands B ending in the spindle block; indices and rear post removed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9129,17 +9137,18 @@
         "docs/governor-274-357-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-parabolic-governors.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Balls sit slightly low and outboard; rods F lean at full rise.",
-      "limits": "Spindle speed and guide position prescribed together; passive equilibrium and friction not solved.",
-      "assessment": "minor"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "Rods lean up to ≈14° at full rise, which is forced.",
+      "assessment": "reasonable"
     },
     {
       "id": 275,
@@ -9179,8 +9188,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: rod ends at the roller; the cam matches the plate."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9193,7 +9202,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9201,9 +9211,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rod is a flat bar where Brown draws a round rod.",
+      "visibleFlaws": "",
       "limits": "Necks ≈7 px shallower than drawn.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 277,
@@ -9212,8 +9222,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: spring c bends as a clamped leaf."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9229,7 +9239,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane4-escapements-misc-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9237,7 +9248,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The hook works ≈0.86 lower than drawn and the ratchet teeth are shallow.",
+      "visibleFlaws": "The hook works ≈0.86 lower than drawn, making dog a a broad wedge, and the teeth are shallow (at Brown's hook height the ratchet turns only 11–18°).",
       "limits": "An undrawn detent is assumed.",
       "assessment": "minor"
     },
@@ -9314,8 +9325,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: turned handle, wider posts, ratchet hidden."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9329,7 +9340,8 @@
         "docs/w2f-274-333-review.md",
         "docs/w3d-255-287-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9337,7 +9349,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Pawl pivots sit ≈8 px off; a thin undrawn post stands under the wheel.",
+      "visibleFlaws": "Pawl pivots sit ≈8 px off (tied to the baked backstop).",
       "limits": "Loaded frictional drive unvalidated.",
       "assessment": "minor"
     },
@@ -9638,9 +9650,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3b-escapements-review.md",
-        "note": "Default capture inspected beside the plate: seven hooked teeth inside the annulus."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9653,17 +9665,18 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-annular-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Pallets read as small lugs on carriers, not Brown's square notches.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
       "limits": "Motion prescribed.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 291,
@@ -9977,8 +9990,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: thinner pallet, pale spacer drum."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9993,7 +10006,8 @@
         "docs/minimal-interface-review.md",
         "docs/lane3-escapements-review.md",
         "docs/w2f-274-333-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10001,9 +10015,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The pallet is still thicker than Brown's.",
-      "limits": "Tip lifts off the carved flange by up to 0.035 at the end of each impulse.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pallet block is slightly wide.",
+      "assessment": "reasonable"
     },
     {
       "id": 301,
@@ -10012,8 +10026,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: narrow field of view."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10028,7 +10042,8 @@
         "docs/minimal-interface-review.md",
         "docs/lane3-escapements-review.md",
         "docs/w3b-escapements-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10036,9 +10051,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The strip edges read lumpy.",
+      "visibleFlaws": "",
       "limits": "Same pallet limits as 300.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 302,
@@ -10047,8 +10062,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: blades hang as Brown's V."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10063,7 +10078,8 @@
         "docs/lane3-escapements-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/w3b-escapements-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10071,8 +10087,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Blades are short and the V is wider than drawn; the crown teeth are coarser.",
-      "limits": "Blade length is set by the verge law.",
+      "visibleFlaws": "The crown still reads as blocky crenellations rather than Brown's fine saw teeth.",
+      "limits": "Brown's 57° pallet V is used although Denison describes a right angle.",
       "assessment": "minor"
     },
     {
@@ -10415,8 +10431,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: undercut teeth; spring clear of jewel V."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10431,7 +10447,8 @@
         "docs/w2f-274-333-review.md",
         "docs/w3b-escapements-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -10442,9 +10459,9 @@
         "note": "Offline passing-spring study remains unqualified; production motion is prescribed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The wheel has a plain crossbar where Brown draws four curved windows.",
+      "visibleFlaws": "",
       "limits": "V meets the spring ≈11° before dead point.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 314,
@@ -10453,8 +10470,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/w5b-248-314-review.md",
-        "note": "Default capture inspected beside the plate: pallet C and nib cut by the swept teeth."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10469,7 +10486,8 @@
         "docs/w2f-274-333-review.md",
         "docs/w3b-escapements-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10477,9 +10495,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The wheel has a plain crossbar where Brown draws four curved windows; pallet A reads as a long bar.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Pallet B sits higher than Brown's (fixed by the lock law); the lever is narrower.",
+      "assessment": "reasonable"
     },
     {
       "id": 315,
@@ -10686,8 +10704,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-24",
-        "evidence": "docs/u7-flawed-review.md",
-        "note": "Default capture inspected beside the plate: spring S a smooth coiled spiral winding and unwinding without crossing."
+        "evidence": "docs/m4-203-321-review.md",
+        "note": "Default capture inspected beside the plate after the minor-residuals pass."
       },
       "intersections": {
         "status": "known",
@@ -10702,7 +10720,8 @@
         "docs/w2f-274-333-review.md",
         "docs/w3b-escapements-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/m4-203-321-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10710,9 +10729,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The spiral follows the caption's coiled spring rather than Brown's single curved wire.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Winding takes 1/8 of the cycle because Brown's single wire is too short for a 90° lag.",
+      "assessment": "reasonable"
     },
     {
       "id": 322,
