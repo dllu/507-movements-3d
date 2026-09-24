@@ -82,7 +82,9 @@ test('movement 276 is one equal-diameter cam inside one two-roller translating y
   assert.equal(blocks.bar.parent, blocks.yoke);
   assert.equal(blocks.leftRoller.parent, blocks.yoke);
   assert.equal(blocks.rightRoller.parent, blocks.yoke);
-  assert.equal(blocks.straightGuides.length, 2);
+  // The rod ends just past the right roller as drawn, so only the long
+  // broken-off left run can carry a guide.
+  assert.equal(blocks.straightGuides.length, 1);
   // Brown draws no bar guides; source presentation detaches them.
   assert.ok(blocks.straightGuides.every((guide) => guide.parent === null));
   vectorNear(blocks.cam.userData.axis, Z_AXIS, 0, 'cam axis');

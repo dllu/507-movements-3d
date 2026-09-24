@@ -173,6 +173,19 @@ function distancePointToSegment(point, start, end) {
   return point.distanceTo(start.clone().addScaledVector(direction, parameter));
 }
 
+function signedDistanceToPolygon(point, polygon) {
+  let distance = Infinity;
+  let inside = false;
+  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index, index += 1) {
+    const a = polygon[previous];
+    const b = polygon[index];
+    distance = Math.min(distance, distancePointToSegment(point, a, b));
+    if ((b.y > point.y) !== (a.y > point.y)
+      && point.x < (a.x - b.x) * (point.y - b.y) / (a.y - b.y) + b.x) inside = !inside;
+  }
+  return inside ? -distance : distance;
+}
+
 function centrifugalMineDrumCheckHooks(movement) {
   const root = new THREE.Group();
   root.scale.setScalar(0.72);
@@ -186,16 +199,21 @@ function centrifugalMineDrumCheckHooks(movement) {
   const loadArrestEnd = 5.05;
   const caughtDwellEnd = 6.2;
   const springUnloadEnd = 7;
-  const hookRetractionEnd = 7.8;
-  const hookReleaseClearanceTime = 7.2;
-  const reliefAngle = -.18;
+  const hookRetractionEnd = 8.1;
+  const hookReleaseClearanceTime = 7.5;
+  // The flange backs off far enough that each stud D lies clear of the arc
+  // its hook sweeps while folding forward (counter-clockwise) again.
+  const reliefAngle = -.9;
   const externalReturnEnd = 10.8;
   const normalAccelerationDuration = normalAccelerationEnd - readyDwellEnd;
   const runawayDuration = catchTime - normalAccelerationEnd;
   const normalAngularSpeed = 0.6;
   const tripAngularSpeed = 2;
   const centrifugalReleaseSpeed = 1.75;
-  const retractedHookAngle = -0.95;
+  // Brown's hooks lean and barb forward (counter-clockwise, the runaway
+  // direction); at rest they fold forward along the hub, and centrifugal
+  // force swings them back out to the stop that the stud reaction seats.
+  const retractedHookAngle = 1.4;
   const deployedHookAngle = 0;
   const normalAccelerationTravel =
     normalAngularSpeed * normalAccelerationDuration / 2;
@@ -204,28 +222,54 @@ function centrifugalMineDrumCheckHooks(movement) {
   const readyFlangeAngle = -(normalAccelerationTravel + runawayTravel);
   const runawayStartAngle = readyFlangeAngle + normalAccelerationTravel;
   const hookPivotRadius = 2;
-  const hookBarRadius = 0.2;
-  const studRadius = 0.42;
+  // Brown's long straight hook bars (about 0.57 of A's radius) lean 14
+  // degrees forward of radial and end in a forward barb. Stud D is caught in
+  // the crook between the bar's forward face and the barb.
+  const hookBarRadius = 0.14;
+  const studRadius = 0.48;
+  const hookLean = THREE.MathUtils.degToRad(14);
+  const hookBarDirection = new THREE.Vector2(Math.cos(hookLean), Math.sin(hookLean));
+  const hookForwardNormal = new THREE.Vector2(-Math.sin(hookLean), Math.cos(hookLean));
+  const hookBarLength = 2.86;
+  const hookContactAlong = 2.25;
+  // The outer bar carries a 2 degree backward set at the stud contact, so the
+  // contact is a real outline vertex whose normal bisects the two faces.
+  const hookSet = THREE.MathUtils.degToRad(2);
+  const contactVertex = hookBarDirection.clone().multiplyScalar(hookContactAlong);
+  const outerBarDirection = rotateVector2(hookBarDirection, -hookSet);
+  const outerForwardNormal = rotateVector2(hookForwardNormal, -hookSet);
+  const barPoint = (along, offset) => contactVertex.clone()
+    .addScaledVector(outerBarDirection, along - hookContactAlong)
+    .addScaledVector(outerForwardNormal, offset);
   const hookCenterline = [
     new THREE.Vector2(0, 0),
-    new THREE.Vector2(1.2, 0),
-    new THREE.Vector2(1.65, 0),
-    new THREE.Vector2(1.9, .6),
-    new THREE.Vector2(1.8, .92),
-    new THREE.Vector2(1.48, 1.05),
+    contactVertex.clone(),
+    barPoint(hookBarLength, 0),
   ];
-  const hookContactIndex = 3;
+  // Pointed barb: square outer end, then a forward point whose inner edge
+  // raked back toward the pivot forms the crook that holds stud D.
+  const hookBarbOutline = [
+    barPoint(2.6, -hookBarRadius),
+    barPoint(3.0, -hookBarRadius),
+    barPoint(2.8, 1.0),
+    barPoint(2.75, hookBarRadius),
+    barPoint(2.6, hookBarRadius),
+  ];
+  const hookContactIndex = 1;
   const hookContactLocal = hookCenterline[hookContactIndex];
   const contactCenterAtCatch = new THREE.Vector2(
     hookPivotRadius + hookContactLocal.x,
     hookContactLocal.y,
   );
-  const contactNormalAtCatch = new THREE.Vector2(Math.cos(Math.PI / 15), Math.sin(Math.PI / 15));
+  const contactNormalAtCatch = rotateVector2(hookForwardNormal, -hookSet / 2);
   const baseStudCenter = contactCenterAtCatch.clone().addScaledVector(
     contactNormalAtCatch,
     hookBarRadius + studRadius,
   );
   const studOrbitRadius = baseStudCenter.length();
+  // Brown's studs D stand at 0, 120 and 240 degrees (right, upper left,
+  // lower left), so the whole hook/stud pattern is phased to put them there.
+  const patternPhase = -Math.atan2(baseStudCenter.y, baseStudCenter.x);
   const fixedFrameRadius = 5.3;
   const arrestFlangeRadius = 2.35;
   const ropeDrumRadius = 1.02;
@@ -249,11 +293,10 @@ function centrifugalMineDrumCheckHooks(movement) {
     metalness: 0.14,
     roughness: 0.68,
   });
-  const backingMaterial = matte(PALETTE.frame, {
-    opacity: 0.2,
-    roughness: 0.76,
+  // Brown draws framework A as a plain opaque plate.
+  const backingMaterial = matte(0xd8d2c4, {
+    roughness: 0.8,
     side: THREE.DoubleSide,
-    transparent: true,
   });
   const flangeMaterial = matte(PALETTE.driven, {
     metalness: 0.16,
@@ -282,7 +325,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     depth: fixedBackingDepth,
     material: backingMaterial,
     radius: fixedFrameRadius,
-    role: 'translucent-fixed-framework-a-backing-plate',
+    role: 'opaque-fixed-framework-a-backing-plate',
     segments: 96,
   });
   fixedBacking.position.z = fixedBackingZ;
@@ -299,7 +342,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   const studCenters = [];
   const studs = [];
   for (let index = 0; index < hookCount; index += 1) {
-    const sectorAngle = sectorPitch * index;
+    const sectorAngle = patternPhase + sectorPitch * index;
     const studCenter = rotateVector2(baseStudCenter, sectorAngle);
     studCenters.push(studCenter);
     const support = makeRadialBeam({
@@ -355,7 +398,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   const hookPivots = [];
   const hooks = [];
   for (let index = 0; index < hookCount; index += 1) {
-    const sectorAngle = sectorPitch * index;
+    const sectorAngle = patternPhase + sectorPitch * index;
     const pivotCarrier = new THREE.Group();
     pivotCarrier.position.set(
       Math.cos(sectorAngle) * hookPivotRadius,
@@ -554,7 +597,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   const hookCentersAtPose = (flangeAngle, hookAngle) => Array.from(
     { length: hookCount },
     (_, index) => {
-      const pivotAngle = flangeAngle + sectorPitch * index;
+      const pivotAngle = flangeAngle + patternPhase + sectorPitch * index;
       const pivotCenter = new THREE.Vector2(
         Math.cos(pivotAngle) * hookPivotRadius,
         Math.sin(pivotAngle) * hookPivotRadius,
@@ -569,12 +612,15 @@ function centrifugalMineDrumCheckHooks(movement) {
   const minimumHookStudGapAtPose = (flangeAngle, hookAngle) => {
     let minimumGap = Infinity;
     for (let hookIndex = 0; hookIndex < hookCount; hookIndex += 1) {
-      const pivotAngle = flangeAngle + sectorPitch * hookIndex;
+      const pivotAngle = flangeAngle + patternPhase + sectorPitch * hookIndex;
       const pivotCenter = new THREE.Vector2(
         Math.cos(pivotAngle) * hookPivotRadius,
         Math.sin(pivotAngle) * hookPivotRadius,
       );
       const worldPoints = hookCenterline.map((point) => pivotCenter.clone().add(
+        rotateVector2(point, pivotAngle + hookAngle),
+      ));
+      const worldBarb = hookBarbOutline.map((point) => pivotCenter.clone().add(
         rotateVector2(point, pivotAngle + hookAngle),
       ));
       for (const studCenter of studCenters) {
@@ -586,6 +632,10 @@ function centrifugalMineDrumCheckHooks(movement) {
           ) - hookBarRadius - studRadius;
           minimumGap = Math.min(minimumGap, gap);
         }
+        minimumGap = Math.min(
+          minimumGap,
+          signedDistanceToPolygon(studCenter, worldBarb) - studRadius,
+        );
       }
     }
     return minimumGap;
@@ -840,8 +890,12 @@ function centrifugalMineDrumCheckHooks(movement) {
     fixedFrameRadius,
     flangeDepth,
     flangePlaneZ,
+    hookBarbOutline,
+    hookBarLength,
     hookBarRadius,
     hookCenterline,
+    hookLean,
+    patternPhase,
     hookContactIndex,
     hookContactLocal,
     hookCount,
@@ -953,8 +1007,13 @@ function centrifugalMineDrumCheckHooks(movement) {
     tripAngularSpeed,
   };
 
+  // Brown draws the hooks deployed just before the studs reach them, so the
+  // displayed clock opens at that instant (4.45 s of the canonical cycle);
+  // stateAtTime and the timeline stay in canonical cycle time.
+  const displayTimeOffset = 4.45;
+  root.userData.displayTimeOffset = displayTimeOffset;
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayTimeOffset);
     arrestFlange.rotation.z = state.flangeAngle;
     ropeDrum.rotation.z = state.ropeDrumAngle;
     hooks.forEach((hook) => {

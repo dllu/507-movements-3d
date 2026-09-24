@@ -319,10 +319,11 @@ test('movement 248 renderer has real bores, matching helices, a cutaway nut, and
   const { blocks, geometry, stateAtTime } = model.root.userData;
 
   assert.equal(blocks.nutSectionFaces.length, 2);
-  assert.equal(blocks.pipeASectionFaces.length, 2);
+  // Brown draws A whole (unhatched, bore dashed); only B and C are halved.
+  assert.equal(blocks.pipeASectionFaces.length, 0);
   assert.equal(blocks.pipeCSectionFaces.length, 4);
-  assert.equal(blocks.flangeSectionFaces.length, 2);
-  assert.equal(blocks.spigotSectionFaces.length, 2);
+  assert.equal(blocks.flangeSectionFaces.length, 0);
+  assert.equal(blocks.spigotSectionFaces.length, 0);
   assert.equal(blocks.externalThread.userData.rightHand, true);
   assert.equal(blocks.internalThread.userData.rightHand, true);
   assert.equal(blocks.externalThread.userData.turns, 3);

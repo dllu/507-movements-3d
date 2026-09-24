@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 function thread(profile,axis='z',quarter=false){let g=helicalThread(profile,threadAngles(profile,128));if(quarter)g.rotateZ(Math.PI/2);if(axis==='x')g.rotateY(Math.PI/2);if(axis==='y')g.rotateX(-Math.PI/2);return g;}
 function annulus(inner,outer,depth){return boredLatheGeometry([{radial:outer,axial:-depth/2},{radial:outer,axial:depth/2}],inner,64);}
@@ -15,9 +16,13 @@ export function correctDifferentialThreads(root,id){
  const b=root.userData.blocks,g=root.userData.geometry;
  root.userData.hideGround=true;
  if(id===260){
-  const pitch=g.screwLead,external={inner:g.screwCoreRadius,outer:.367,low:g.externalThreadStartX,high:g.externalThreadEndX,width:pitch/2,lead:pitch/(2*Math.PI),phase:g.externalThreadStartX};
-  const internal={inner:g.screwCoreRadius+.002,outer:.369,low:g.fixedGearStationX-g.nutWidth/2,high:g.fixedGearStationX+g.nutWidth/2,width:pitch/2-.004,lead:external.lead,phase:external.phase+pitch/2};
-  replace(b.externalThread,thread(external,'x',true));replace(b.internalThread,thread(internal,'x',true));
+  // Brown hatches C at about a quarter of its diameter per stripe. A
+  // three-start thread gives that fine visible pitch while keeping the
+  // 0.48 lead (and so the differential feed) unchanged.
+  const starts=3,pitch=g.screwLead/starts,external={inner:g.screwCoreRadius,outer:.367,low:g.externalThreadStartX,high:g.externalThreadEndX,width:pitch/2,lead:g.screwLead/(2*Math.PI),phase:g.externalThreadStartX,starts,pitch};
+  const internal={inner:g.screwCoreRadius+.002,outer:.369,low:g.fixedGearStationX-g.nutWidth/2,high:g.fixedGearStationX+g.nutWidth/2,width:pitch/2-.004,lead:external.lead,phase:external.phase+pitch/2,starts,pitch};
+  const multiStart=p=>mergeGeometries(Array.from({length:p.starts},(_,k)=>thread({...p,phase:p.phase+k*p.pitch},'x',true)));
+  replace(b.externalThread,multiStart(external));replace(b.internalThread,multiStart(internal));
   replace(b.nutSleeve,annulus(.369,g.nutOuterRadius,g.nutWidth));b.nutSleeve.material.transparent=false;b.nutSleeve.material.opacity=1;b.nutSleeve.userData.role='bored-rotating-nut-secured-in-wheel-E-hub';
   // makeAxialCylinder already orients its Y-axis to X.
   for(const [gear,r,d]of[[b.longPinionF,.142,g.longPinionFaceWidth+.04],[b.pinionB,.142],[b.wheelD,.237],[b.wheelE,.371]])spurBore(gear,r,d);

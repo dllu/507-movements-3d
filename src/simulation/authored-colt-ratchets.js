@@ -348,10 +348,10 @@ function coltCylinderRatchet(movement) {
     return minimum;
   };
 
-  // Spring c: a stiff leaf hanging from the hatched block. It is carried as
-  // a rigid leaf turning a little about its root (the root is a round end,
-  // so the turn never moves it into the block) and always bears on the dog's
-  // right edge.
+  // Spring c: a leaf clamped in the hatched block that always bears on the
+  // dog's right edge. The solver works with its root-to-tip chord angle; the
+  // rendered leaf and its clearance bend as a cantilever to that chord (see
+  // bentAxis below), so the root never turns in the block.
   const springRoot = rasterToModel([
     sourceRasterSpringRoot.x,
     sourceRasterSpringRoot.y,
@@ -401,6 +401,66 @@ function coltCylinderRatchet(movement) {
       radius: springRadius + (springTipRadius - springRadius) * u,
     };
   });
+  // The leaf is clamped in its block and bends as an end-loaded cantilever:
+  // its slope grows as theta(u) = thetaTip * (2u - u^2) along the unit
+  // length u, with zero slope at the root. `springAngle` stays the chord
+  // angle from the root to the tip, so the solver still works with one
+  // coordinate; the bent axis is found in the rest frame and expressed in
+  // the frame turned to that chord.
+  const springBendStations = 48;
+  const bentAxis = (chordTurn) => {
+    const integrate = (thetaTip) => {
+      const stations = [{ angle: 0, x: 0, y: 0 }];
+      let x = 0;
+      let y = 0;
+      for (let index = 1; index <= springBendStations; index += 1) {
+        const u = (index - 0.5) / springBendStations;
+        const angle = thetaTip * (2 * u - u * u);
+        x += Math.cos(angle) * springLength / springBendStations;
+        y += Math.sin(angle) * springLength / springBendStations;
+        const end = index / springBendStations;
+        stations.push({ angle: thetaTip * (2 * end - end * end), x, y });
+      }
+      return stations;
+    };
+    let thetaTip = 1.5 * chordTurn;
+    let stations = integrate(thetaTip);
+    for (let iteration = 0; iteration < 4 && Math.abs(chordTurn) > 1e-12; iteration += 1) {
+      const tip = stations.at(-1);
+      const chord = Math.atan2(tip.y, tip.x);
+      thetaTip *= chordTurn / chord;
+      stations = integrate(thetaTip);
+    }
+    // Express in the chord frame (the springPivot frame).
+    const c = Math.cos(-chordTurn);
+    const s = Math.sin(-chordTurn);
+    return stations.map(({ angle, x, y }) => ({
+      angle: angle - chordTurn,
+      x: c * x - s * y,
+      y: s * x + c * y,
+    }));
+  };
+  // Bent position (chord frame) of a leaf point given in the straight rest
+  // leaf's own frame: `x` along the leaf, `y` its lateral offset.
+  const bentLeafPoint = (axis, x, y) => {
+    const position = THREE.MathUtils.clamp(
+      x / springLength * springBendStations,
+      0,
+      springBendStations,
+    );
+    const index = Math.min(Math.floor(position), springBendStations - 1);
+    const fraction = position - index;
+    const a = axis[index];
+    const b = axis[index + 1];
+    const angle = a.angle + (b.angle - a.angle) * fraction;
+    const baseX = a.x + (b.x - a.x) * fraction;
+    const baseY = a.y + (b.y - a.y) * fraction;
+    // Beyond either end the rounded caps continue along the end tangent.
+    const along = x - position / springBendStations * springLength;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return [baseX + c * along - s * y, baseY + s * along + c * y];
+  };
   const springDogClearance = (hammerAngle, dogAngle, springAngle) => {
     const edge = dogEdgeLocal.map((local) => (
       dogWorldPoint(local, hammerAngle, dogAngle)
@@ -412,8 +472,10 @@ function coltCylinderRatchet(movement) {
     ];
     const c = Math.cos(springAngle);
     const s = Math.sin(springAngle);
+    const axis = bentAxis(springAngle - springRestAngle);
     let minimum = Infinity;
-    for (const { point: [lx, ly], radius } of springSamples) {
+    for (const { point, radius } of springSamples) {
+      const [lx, ly] = bentLeafPoint(axis, point[0], point[1]);
       const px = springRoot[0] + c * lx - s * ly;
       const py = springRoot[1] + s * lx + c * ly;
       // Distance to the dog's upper and right edges; the sign comes from a
@@ -860,10 +922,32 @@ function coltCylinderRatchet(movement) {
   springPivot.position.set(springRoot[0], springRoot[1], 0);
   springPivot.userData.axis = Z_AXIS.clone();
   springPivot.userData.role = 'spring-c-root-in-block';
-  const spring = new THREE.Mesh(
-    plate(springLocalPolygons, dogLow + 0.012, dogHigh - 0.012),
-    springMaterial,
+  const springGeometry = plate(springLocalPolygons, dogLow + 0.012, dogHigh - 0.012);
+  const springRestPositions = Float32Array.from(
+    springGeometry.getAttribute('position').array,
   );
+  const spring = new THREE.Mesh(springGeometry, springMaterial);
+  // Bend the clamped leaf to the solved chord angle (the pivot group turns
+  // to that chord; the vertices bend within it).
+  let bentSpringAngle = null;
+  const bendSpring = (springAngle) => {
+    if (springAngle === bentSpringAngle) return;
+    bentSpringAngle = springAngle;
+    const axis = bentAxis(springAngle - springRestAngle);
+    const attribute = springGeometry.getAttribute('position');
+    for (let index = 0; index < attribute.count; index += 1) {
+      const [x, y] = bentLeafPoint(
+        axis,
+        springRestPositions[index * 3],
+        springRestPositions[index * 3 + 1],
+      );
+      attribute.setXY(index, x, y);
+    }
+    attribute.needsUpdate = true;
+    springGeometry.computeVertexNormals();
+    springGeometry.computeBoundingBox();
+    springGeometry.computeBoundingSphere();
+  };
   spring.userData.role = 'leaf-spring-c-holding-dog-to-ratchet';
   springPivot.add(spring);
   root.add(springPivot);
@@ -1079,6 +1163,7 @@ function coltCylinderRatchet(movement) {
     dog.position.copy(state.dogBase).setZ(0);
     dog.rotation.z = state.hammerAngle + state.dogAngle;
     springPivot.rotation.z = state.springAngle;
+    bendSpring(state.springAngle);
     root.userData.contacts = {
       dogRatchet: {
         active: state.driving,

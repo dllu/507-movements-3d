@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/differential-thread-solids.js",
-      "sha256": "6d6717ccaf3565f57c5a2364e7a892bc6c56254f8e323aea8554afcee79d010c"
+      "sha256": "cc831611db422a2999bf92b56ba843f027a66e14776fab01c993061538684434"
     },
     {
       "file": "src/simulation/mujoco-screw/thread-geometry.js",
@@ -34,15 +34,15 @@
     {
       "id": 260,
       "poses": 33,
-      "queries": 645272,
+      "queries": 1368470,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "screw-nut",
-          "maximumSampledGap": 0.0017580119271843316,
-          "minimumSampledGap": 0.0015413879179635482,
+          "maximumSampledGap": 0.001619879408243029,
+          "minimumSampledGap": 0.0015413879179635747,
           "activePoses": 33
         },
         {

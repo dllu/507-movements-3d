@@ -1280,26 +1280,21 @@ function leverEscapement(movement) {
 }
 
 // Brown's wheel A is a web with three lens-shaped windows between curved
-// spokes, and its teeth are broad-based curved thorns. The generated working
-// tooth (the baked leading face, corner and back edge) is kept exactly; only
-// the root below it is filled out to a wider base.
+// spokes, and its teeth are hooked claws: a straight undercut leading face and
+// a long convex back. The generated working tooth is kept exactly; only its
+// root is carried down into the rim so no seam shows.
 function shapePlate296Wheel(model) {
   const { blocks: b } = model.root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   const tooth = lever296Parts.tooth;
-  const tip = tooth[2];
-  const back = tooth[3];
-  // Keep the whole generated back edge (tip to its root at radius 2.53),
-  // then flare the root out along a curve to a broad base.
-  const curve = new THREE.QuadraticBezierCurve(
-    new THREE.Vector2(...back),
-    new THREE.Vector2(2.36, 0.24),
-    new THREE.Vector2(2.18, 0.40),
-  );
-  const backCurve = curve.getPoints(12).slice(1).map((point) => point.toArray());
-  // The rim is set down to 2.26, so each tooth's leading root runs on below
-  // the generated face.
-  const toothOutline = [[2.18, -0.17], tooth[0], tooth[1], tip, back, ...backCurve];
+  const leadingRoot = tooth[0];
+  const backRoot = tooth[tooth.length - 1];
+  // The rim is set down to 2.26, so each tooth's roots run on into it.
+  const toothOutline = [
+    ...tooth,
+    [2.14, backRoot[1] * 2.14 / backRoot[0]],
+    [2.14, leadingRoot[1] * 2.14 / leadingRoot[0]],
+  ];
   const toothGeometry = plate(poly(toothOutline), -0.16, 0.16);
   const oldTeeth = new Set(b.wheelTeeth.map((mesh) => mesh.geometry));
   for (const mesh of b.wheelTeeth) {

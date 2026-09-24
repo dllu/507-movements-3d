@@ -138,7 +138,8 @@ test('movement 253 deploys monotonically with centrifugal demand and clears ever
   const model = createMovementModel(catalog.movements[252]);
   const { geometry, stateAtTime, timeline, transmission } = model.root.userData;
   let previousAngularSpeed = -Infinity;
-  let previousHookAngle = -Infinity;
+  // Hooks fold forward (positive angle) and deploy back toward zero.
+  let previousHookAngle = Infinity;
   let minimumPrecatchGap = Infinity;
   let maximumDeploymentLawError = 0;
 
@@ -146,7 +147,7 @@ test('movement 253 deploys monotonically with centrifugal demand and clears ever
     const time = timeline.catchTime * sample / 32768;
     const state = stateAtTime(time);
     assert.ok(state.flangeAngularSpeed >= previousAngularSpeed - 2e-14);
-    assert.ok(state.hookAngle >= previousHookAngle - 2e-14);
+    assert.ok(state.hookAngle <= previousHookAngle + 2e-14);
     previousAngularSpeed = state.flangeAngularSpeed;
     previousHookAngle = state.hookAngle;
     const squaredSpeedProgress = THREE.MathUtils.clamp(
@@ -213,7 +214,7 @@ test('movement 253 gives all three ideal hooks exact surface contact with fixed 
     near(
       state.pairedContactClearances[index],
       0,
-      4e-16,
+      1e-15, // round-off of the phased stud pattern
       `paired hook-to-stud clearance ${index + 1}`,
     );
     vectorNear(
@@ -237,7 +238,8 @@ test('movement 253 gives all three ideal hooks exact surface contact with fixed 
         1,
       ),
     );
-    near(includedAngle, geometry.sectorPitch, 8e-16,
+    // The phased pattern adds acos round-off at the 1e-15 level.
+    near(includedAngle, geometry.sectorPitch, 2e-15,
       `threefold pivot pitch ${index + 1}`);
   });
   disposeModel(model.root);
@@ -313,7 +315,7 @@ test('movement 253 resets only by explicit unload, hook retraction, and rewind',
   const { geometry, safetyFunction, stateAtTime, timeline } = model.root.userData;
   const caught = stateAtTime(5.5);
   const unloaded = stateAtTime(timeline.springUnloadEnd);
-  const retracting = stateAtTime(7.4);
+  const retracting = stateAtTime(7.8);
   const retracted = stateAtTime(timeline.hookRetractionEnd);
   const returning = stateAtTime(9.3);
   const ready = stateAtTime(timeline.externalReturnEnd);
@@ -330,7 +332,7 @@ test('movement 253 resets only by explicit unload, hook retraction, and rewind',
   assert.ok(caught.springDeflection > 0);
   near(unloaded.springDeflection, 0, 0, 'spring unloaded before release');
   near(unloaded.hookAngle, 0, 0, 'hooks remain latched while unloading');
-  assert.ok(retracting.hookAngle < 0);
+  assert.ok(retracting.hookAngle > 0);
   near(retracted.hookAngle, geometry.retractedHookAngle, 0,
     'hooks fully retracted before rewind');
   assert.ok(returning.flangeAngularSpeed < 0);
@@ -365,7 +367,8 @@ test('movement 253 renderer binds both rotors, all hooks, spring, and contacts',
   assert.equal(removed.filter((role) => /torsion-return-spring/.test(role)).length, 3);
 
   for (const time of [0, 2.8, 4.4, timeline.catchTime, 4.82, 5.5, 6.6, 7.4, 9.3, 11.2]) {
-    model.update(time);
+    // update() takes display time, which opens at Brown's pose.
+    model.update(time - model.root.userData.displayTimeOffset);
     const state = stateAtTime(time);
     near(blocks.arrestFlange.rotation.z, state.flangeAngle, 0,
       `rendered flange angle at ${time}`);

@@ -634,12 +634,24 @@ function frictionWindlass(movement) {
     { color: PALETTE.driver, depth: 0.24, thickness: 0.23 },
   );
   lowerHandleSegment.userData.role = 'lower-bent-hand-lever-segment';
-  const handGrip = makeBeam(
-    localGripTop,
-    localGripBottom,
-    { color: PALETTE.ink, depth: 0.34, thickness: 0.34 },
+  // Brown draws a turned wooden handle: a collar at the lever end, a slim
+  // neck, then a pear-shaped swell closing in a rounded end.
+  const gripLength = localGripTop.distanceTo(localGripBottom);
+  const gripProfile = [
+    [0, 0], [0.085, 0], [0.105, 0.02], [0.105, 0.09], [0.075, 0.12],
+    [0.072, 0.30], [0.10, 0.46], [0.15, 0.62], [0.182, 0.76],
+    [0.176, 0.86], [0.14, 0.94], [0.08, 0.985], [0, 1],
+  ].map(([radius, along]) => new THREE.Vector2(radius, -along * gripLength));
+  const handGrip = new THREE.Mesh(
+    new THREE.LatheGeometry(gripProfile, 40),
+    matte(PALETTE.ink, { metalness: 0.12, roughness: 0.62 }),
   );
-  handGrip.userData.role = 'free-end-hand-grip';
+  handGrip.position.copy(localGripTop);
+  handGrip.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, -1, 0),
+    localGripBottom.clone().sub(localGripTop).normalize(),
+  );
+  handGrip.userData.role = 'free-end-turned-hand-grip';
   handLever.add(upperHandleSegment, lowerHandleSegment, handGrip);
   const handlePivotPin = cylinderAlongZ(0.22, 0.90, darkMaterial, 36);
   handlePivotPin.position.copy(handlePivot);
@@ -777,10 +789,16 @@ function frictionWindlass(movement) {
     { color: PALETTE.frame, depth: 0.32, thickness: 0.28 },
   );
   wheelPost.userData.role = 'fixed-windlass-wheel-bearing-post';
+  // Brown's lever post is a broad timber (raster x 370-419) whose right
+  // edge carries the fulcrum, rising a little above the lever boss.
+  const rightPostMinX = (370 - sourceRasterWheelCenter.x) * sourceScale;
+  const rightPostMaxX = (419 - sourceRasterWheelCenter.x) * sourceScale;
+  const rightPostX = (rightPostMinX + rightPostMaxX) / 2;
   const rightPost = makeBeam(
-    new THREE.Vector3(handlePivot.x, -2.12, -0.82),
-    new THREE.Vector3(handlePivot.x, handlePivot.y + 0.42, -0.82),
-    { color: PALETTE.frame, depth: 0.34, thickness: 0.30 },
+    new THREE.Vector3(rightPostX, -2.12, -0.82),
+    new THREE.Vector3(rightPostX, handlePivot.y + 0.66, -0.82),
+    { color: PALETTE.frame, depth: 0.34,
+      thickness: rightPostMaxX - rightPostMinX },
   );
   rightPost.userData.role = 'fixed-hand-lever-support-post';
   const slopingBrace = makeBeam(
@@ -817,9 +835,9 @@ function frictionWindlass(movement) {
   const rearStandards = [
     standardBox(0.24, 1.24, -2.12, 1.76, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-broad-standard-behind-wheel'),
-    standardBox(1.70, 2.62, -2.12, 1.76, standardZ - standardDepth / 2,
+    standardBox(1.65, 2.77, -2.12, 1.76, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-post-behind-travelling-jaw'),
-    standardBox(0.24, 2.62, 1.76, 2.04, standardZ - standardDepth / 2,
+    standardBox(0.24, 2.77, 1.76, 2.04, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-head-joining-rear-standards'),
     standardBox(0.24, 0.62, 1.76, 2.04, standardZ + standardDepth / 2,
       -0.98, 'fixed-block-carrying-sloping-brace-foot'),
@@ -1092,14 +1110,31 @@ export function createAuthoredFrictionWindlassMovement(movement) {
 // do). The white phase index is not drawn.
 function hideBackstopBehindWheel(model) {
   const blocks = model.root.userData.blocks;
+  // The travelling jaw's rear cheek wraps the rim down to z = -0.54, so the
+  // backstop must stay behind it; there, perspective showed the tooth tips
+  // (0.985 R) past the rim's upper right. Shrink the whole backstop - ratchet,
+  // pawls and pawl pins - as a similar figure about the wheel axis so the tips
+  // sit well inside the rim while every pawl/tooth relation is preserved.
   const rearPlane = -0.65;
+  const backstopScale = 0.93;
   blocks.ratchetWheel.position.z = rearPlane;
+  blocks.ratchetWheel.scale.set(backstopScale, backstopScale, 1);
   blocks.ratchetCarrier.position.z = rearPlane + 0.07;
+  // The carrier web is a Z-turned bored disk: its radius is local x and z.
+  blocks.ratchetCarrier.scale.set(backstopScale, 1, backstopScale);
   for (const object of [
     blocks.upperPawl,
     blocks.lowerPawl,
     ...blocks.holdingPawlPivotPins,
-  ]) object.position.z = rearPlane;
+  ]) {
+    object.position.set(object.position.x * backstopScale,
+      object.position.y * backstopScale, rearPlane);
+    object.scale.x *= backstopScale;
+    // Pins are Y-axis cylinders turned onto Z: their radius is x and z.
+    if (object.isMesh) object.scale.z *= backstopScale;
+    else object.scale.y *= backstopScale;
+  }
+  model.root.userData.geometry.backstopScale = backstopScale;
   const whiteIndices = [];
   model.root.traverse((object) => {
     if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);

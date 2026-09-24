@@ -4733,14 +4733,14 @@
       "fastestPart": "rotating-captive-union-nut-B-with-internal-right-hand-thread",
       "motionBounds": {
         "min": [
-          -1.819997863277993,
+          -1.8200000524520883,
           -2,
-          -1.8200000524520874
+          -1.8200000524520883
         ],
         "max": [
-          1.8199978632779927,
+          1.8200000524520883,
           4.979999904632568,
-          1.819997656171848
+          1.2999999523162842
         ]
       }
     },
@@ -4821,11 +4821,11 @@
       }
     },
     "253": {
-      "peakAngularSpeed": 4.7511884035953384,
-      "peakVisibleAngularSpeed": 4.7511884035953384,
-      "sustainedVisibleAngularSpeed": 1.677592685683677,
+      "peakAngularSpeed": 4.313720772917723,
+      "peakVisibleAngularSpeed": 4.3137207729166125,
+      "sustainedVisibleAngularSpeed": 1.7326725546675985,
       "floorY": -3.9779999999999998,
-      "fastestPart": "centrifugal-check-hook-1",
+      "fastestPart": "centrifugal-check-hook-1-bar-segment-2",
       "motionBounds": {
         "min": [
           -3.9168000411987305,
@@ -5270,7 +5270,7 @@
           -0.7099999785423279
         ],
         "max": [
-          5.396999540468389,
+          3.33199972166651,
           2.435769914589607,
           0.7099999785423279
         ]
@@ -5346,8 +5346,8 @@
           -1.7500000059604646
         ],
         "max": [
-          6.964915517739273,
-          4.488895931027882,
+          6.911099285586808,
+          4.623000000047497,
           1.249999988079071
         ]
       }
@@ -5602,18 +5602,18 @@
     "294": {
       "peakAngularSpeed": 1.7929532978557194,
       "peakVisibleAngularSpeed": 1.7929532978557194,
-      "sustainedVisibleAngularSpeed": 1.6302569567973022,
-      "floorY": -1.7691924799017578,
-      "fastestPart": "beveled-entry-lip-of-cylinder",
+      "sustainedVisibleAngularSpeed": 1.6302569568017429,
+      "floorY": -1.587690960789846,
+      "fastestPart": "balance-carried-hollow-cutaway-cylinder-A-B",
       "motionBounds": {
         "min": [
-          -0.9789496041978988,
-          -1.7691924799017578,
+          -1.3060421836637877,
+          -1.587690960789846,
           -2.5999999046325684
         ],
         "max": [
-          -0.030236614381324967,
-          -0.8204794900851838,
+          -0.3573290479238271,
+          -0.6389778250498852,
           2.2300000190734863
         ]
       }
@@ -5698,74 +5698,74 @@
       "peakAngularSpeed": 1.2337005146236877,
       "peakVisibleAngularSpeed": 1.2337005146236875,
       "sustainedVisibleAngularSpeed": 1.1396794148180782,
-      "floorY": -0.40626000843524945,
+      "floorY": -0.20740000045448637,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
           -1.3420000289586442,
-          -0.40626000843524945,
-          -2.2386999996364123
+          -0.20740000045448637,
+          -2.238699999636412
         ],
         "max": [
           1.3420000597333204,
-          0.7368093281892236,
+          0.6148093281892236,
           2.927999970912933
         ]
       }
     },
     "300": {
-      "peakAngularSpeed": 1.3924480101787342,
-      "peakVisibleAngularSpeed": 1.3924480101787342,
+      "peakAngularSpeed": 1.5771661251233184,
+      "peakVisibleAngularSpeed": 1.5771661251233184,
       "sustainedVisibleAngularSpeed": 1.0637007871613218,
-      "floorY": -2.642814058521091,
+      "floorY": -2.6514513121206553,
       "fastestPart": "debaufre-ratchet-wheel-spoke",
       "motionBounds": {
         "min": [
-          -3.299999897861974,
-          -2.642814058521091,
+          -3.2999998382826283,
+          -2.6514513121206553,
           -1.3450000286102295
         ],
         "max": [
-          3.299999897861974,
-          4.739999897861974,
+          3.2999998382826283,
+          4.739999838282628,
           1.3450000286102295
         ]
       }
     },
     "301": {
-      "peakAngularSpeed": 1.3924480101970527,
-      "peakVisibleAngularSpeed": 1.3924480101970527,
+      "peakAngularSpeed": 1.5771661251233184,
+      "peakVisibleAngularSpeed": 1.5771661251233184,
       "sustainedVisibleAngularSpeed": 1.0638392452728826,
-      "floorY": -2.642814058521091,
+      "floorY": -2.6514513121206553,
       "fastestPart": "debaufre-ratchet-wheel-spoke",
       "motionBounds": {
         "min": [
-          -3.299999897861974,
-          -2.642814058521091,
+          -3.2999998701809434,
+          -2.6514513121206553,
           -1.3450000286102295
         ],
         "max": [
-          3.299999897861974,
-          4.739999897861974,
+          3.2999998701809434,
+          4.739999870180943,
           1.3450000286102295
         ]
       }
     },
     "302": {
-      "peakAngularSpeed": 0.9595362256695293,
-      "peakVisibleAngularSpeed": 0.9595362256695293,
-      "sustainedVisibleAngularSpeed": 0.8849370961192926,
+      "peakAngularSpeed": 0.9595448447156721,
+      "peakVisibleAngularSpeed": 0.9595448447156721,
+      "sustainedVisibleAngularSpeed": 0.8865327043949763,
       "floorY": -2.9494999957084658,
       "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -2.361348780594678,
+          -2.9609792382902334,
           -2.9494999957084658,
           -3.6699999994039536
         ],
         "max": [
-          2.361348780594678,
-          4.159033259500926,
+          2.9609792382902334,
+          4.158299601459824,
           3.6699999994039536
         ]
       }
@@ -5848,19 +5848,19 @@
     },
     "307": {
       "peakAngularSpeed": 4.139037485855278,
-      "peakVisibleAngularSpeed": 4.13903748585486,
+      "peakVisibleAngularSpeed": 4.139037485855278,
       "sustainedVisibleAngularSpeed": 0.802939320877249,
       "floorY": -2.02971149956361,
       "fastestPart": "common-two-plane-three-leg-hub",
       "motionBounds": {
         "min": [
-          -2.6965365814666495,
+          -2.711599342045271,
           -2.02971149956361,
           -0.6499999761581421
         ],
         "max": [
-          2.6965365814666495,
-          4.031464048032689,
+          2.711599342045271,
+          3.48336314881605,
           0.49199999690055846
         ]
       }

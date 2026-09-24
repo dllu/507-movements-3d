@@ -104,28 +104,29 @@ function rectangularPalletPlateShape(width, height, openingPoints) {
   return shape;
 }
 
-// Brown's bottle-shaped pendulum plate, pivot at the origin (the opening is
-// cut separately). The bulb is widened to Brown's proportion so the stops sit
-// on it.
-function longToothPalletPlateShape() {
-  const k = 1.1;
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.50, -0.08);
-  shape.lineTo(-0.52, -0.92);
-  shape.bezierCurveTo(-0.56, -1.72, -0.84 * k, -2.20, -1.48 * k, -2.55);
-  shape.bezierCurveTo(-2.04 * k, -2.86, -2.30 * k, -3.41, -2.28 * k, -4.01);
-  shape.bezierCurveTo(-2.24 * k, -4.72, -1.70 * k, -5.25, -0.98 * k, -5.49);
-  shape.bezierCurveTo(-0.42 * k, -5.68, 0.42 * k, -5.68, 0.98 * k, -5.49);
-  shape.bezierCurveTo(1.70 * k, -5.25, 2.24 * k, -4.72, 2.28 * k, -4.01);
-  shape.bezierCurveTo(2.30 * k, -3.41, 2.04 * k, -2.86, 1.48 * k, -2.55);
-  shape.bezierCurveTo(0.84 * k, -2.20, 0.56, -1.72, 0.52, -0.92);
-  shape.lineTo(0.50, -0.08);
+// Brown's bottle-shaped pendulum plate, traced from the 307 raster about the
+// wheel centre (raster 258, 350.5): each entry is [raster row, half width in
+// raster pixels]. The bulb is widest level with the wheel centre and ends
+// about 118 pixels below it; the neck rises about 318 pixels above it.
+// Returned in the wheel-centred model frame (the opening is cut separately).
+const plate307Profile = [
+  [33, 49], [76, 50], [100, 54], [124, 59.5], [148, 67.5], [172, 77],
+  [196, 90.5], [220, 111], [244, 145.5], [268, 183.5], [292, 206],
+  [316, 218], [340, 223.5], [352, 224], [364, 222.5], [388, 212.5],
+  [412, 193.5], [424, 178.5], [436, 153], [448, 124], [456, 95], [462, 68],
+  [466, 42], [468.5, 14], [469.5, 0],
+];
+function longToothPalletPlateOutline(scale) {
+  const toModel = ([row, half]) => new THREE.Vector2(half * scale, (350.5 - row) * scale);
+  const right = new THREE.SplineCurve(plate307Profile.map(toModel)).getPoints(96)
+    .map((point) => [point.x, point.y]);
+  right[right.length - 1][0] = 0;
+  const left = right.slice(1, -1).reverse().map(([x, y]) => [-x, y]);
+  const top = right[0][1];
   // Brown breaks the neck off with a ragged edge.
-  for (const [x, y] of [[0.36, -0.03], [0.22, -0.07], [0.08, -0.02], [-0.07, -0.08], [-0.2, -0.04], [-0.36, -0.1]]) {
-    shape.lineTo(x, y);
-  }
-  shape.closePath();
-  return shape;
+  const ragged = [[0.36, 0.05], [0.22, 0.01], [0.08, 0.06], [-0.07, 0], [-0.2, 0.04], [-0.36, -0.02]]
+    .map(([x, y]) => [x, top + y]);
+  return [...right, ...left, [-right[0][0], top], ...ragged.reverse()];
 }
 
 function beamBetween(start, end, width, depth, material) {
@@ -1315,9 +1316,10 @@ function longStoppingToothEscapement(movement) {
   ];
   const openingPlate = [...openingHalf, ...openingHalf.map(([x, y]) => [-x, -y])];
   const toPivotFrame = ([x, y]) => [x + plateCenterLocal.x, y + plateCenterLocal.y];
-  const neckOffset = sourceNeckTop.y - palletPivot.y;
-  const bottle = longToothPalletPlateShape().extractPoints(24).shape
-    .map((p) => [p.x, p.y + neckOffset]);
+  // Same width as before (the stops D, E sit on the bulb), with Brown's
+  // proportions about the wheel centre.
+  const bottle = longToothPalletPlateOutline(2.52 / 224)
+    .map(([x, y]) => [x + wheelCenter.x - palletPivot.x, y + wheelCenter.y - palletPivot.y]);
   const plateOutline = clip.difference(
     poly(bottle),
     poly(openingPlate.map(toPivotFrame)),
@@ -1338,8 +1340,12 @@ function longStoppingToothEscapement(movement) {
     plateCarrier.add(mesh);
     return mesh;
   };
+  // A's hardened insert also lines the opening's upper edge to the right of
+  // the step (solid plate there, never entered by the pins), so, as Brown
+  // draws it, a short black block shows beside the upper leg's leading edge
+  // instead of hiding behind the leg's root.
   const palletA = palletBlock(
-    [[0, h], [0.09, h], [0.09, H + 0.09], [0, H + 0.09]],
+    [[0, h], [0.36, h], [0.36, h + 0.11], [0.09, h + 0.11], [0.09, H + 0.09], [0, H + 0.09]],
     'hardened-impulse-pallet-A',
   );
   const palletB = palletBlock(

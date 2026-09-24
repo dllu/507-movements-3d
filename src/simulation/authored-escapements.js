@@ -16,8 +16,8 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const FULL_TURN = Math.PI * 2;
 
-// Box-fit camera distance for 301's cropped side bounds (fov 20, square view).
-const EXPECTED_301_FIT_DISTANCE = 19.5;
+// Box-fit camera distance for 301's cropped side bounds (fov 8, square view).
+const EXPECTED_301_FIT_DISTANCE = 41.1;
 
 function finish(
   root,
@@ -83,6 +83,7 @@ function segmentProgress(cyclePhase, start, end) {
 // radial normals so the tooth shades continuously with the band below it.
 function curvedSawToothGeometry({
   backAngle,
+  backExponent = 1,
   baseZ,
   innerRadius,
   outerRadius,
@@ -95,7 +96,9 @@ function curvedSawToothGeometry({
   const positions = [];
   const normals = [];
   const polar = (radius, angle, z) => new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
-  const topZ = (angle) => rootZ + (tipZ - rootZ) * (angle - start) / backAngle;
+  // An exponent above one sags the back into a concave sweep (Brown's 299).
+  const topZ = (angle) => rootZ + (tipZ - rootZ)
+    * Math.max(0, (angle - start) / backAngle) ** backExponent;
   const triangle = (points, desired, vertexNormals = null) => {
     const [a, b, c] = points;
     const geometric = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
@@ -145,6 +148,7 @@ function makeCrownEscapeWheel({
   floorAtToothBase = false,
   mountPhase,
   toothBaseZ,
+  toothBackExponent = 1,
   toothCount,
   toothRadialDepth,
   toothTipZ,
@@ -238,6 +242,7 @@ function makeCrownEscapeWheel({
     const angle = mountPhase + index * toothPitch;
     const geometry = curvedSawToothGeometry({
       backAngle: toothBackAngle,
+      backExponent: toothBackExponent,
       baseZ: toothBaseZ - 0.01,
       innerRadius,
       outerRadius,
@@ -293,6 +298,7 @@ function vergeAndCrownWheelEscapement(
     palletWidth = 0.5,
     roundSpindle = false,
     spindleLength = 7.25,
+    toothBackExponent = 1,
     toothRadialDepth = 0.34,
     toothTipZ = 1,
   } = {},
@@ -385,6 +391,7 @@ function vergeAndCrownWheelEscapement(
     contactRadius,
     floorAtToothBase,
     mountPhase,
+    toothBackExponent,
     toothBaseZ,
     toothCount,
     toothRadialDepth,
@@ -2856,6 +2863,15 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     object.position.z = crownWheel.userData.toothBaseZ - 0.02 - height / 2;
   });
   crownShaft.userData.role = 'vertical-crown-wheel-D-arbor';
+  // Brown's arbor runs down from the underside of D only: it stops inside
+  // the cup instead of rising between the teeth toward C.
+  {
+    const length = crownShaft.userData.length;
+    const bottom = crownShaft.position.z - length / 2;
+    const top = crownWheel.userData.toothBaseZ - 0.05;
+    crownShaft.scale.z = (top - bottom) / length;
+    crownShaft.position.z = (top + bottom) / 2;
+  }
   drivePinion.position.z = -2.72;
   drivePinion.userData.role = 'coaxial-lower-drive-pinion';
 
@@ -2924,7 +2940,10 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   const balanceAxialCoordinate = -2.7;
   const balanceMassDistance = 2.75;
   const balanceMassRadius = 0.78;
-  const sourceCycleOffset = inheritedGeometry.firstReleasePhase - 0.002;
+  // Brown draws A and B as a V hanging symmetrically from C, which is the
+  // balance passing its centre with A driving: a quarter of the inherited
+  // cycle. The arm is mounted so the weights still lie on Brown's diagonal.
+  const sourceCycleOffset = 0.25;
   const sourceInheritedState = inheritedStateAtCycleCoordinate(
     sourceCycleOffset,
   );
@@ -2975,8 +2994,10 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
     },
   );
 
+  // Brown's C is a small ring, so the hub behind it stays slim enough for
+  // the V of A and B to read against the page.
   const balanceHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.32, 0.32, 0.32, 36),
+    new THREE.CylinderGeometry(0.2, 0.2, 0.32, 36),
     matte(PALETTE.ink, { metalness: 0.24, roughness: 0.46 }),
   );
   balanceHub.rotation.z = Math.PI / 2;
@@ -3320,14 +3341,17 @@ function oldFashionedClockVergeEscapement(movement) {
   // hidden depth relationship is explicit: the vertical verge and its
   // weighted foliot stand at right angles to the horizontal crown-wheel
   // arbor, and only one pallet can meet an axial crown tooth at a time.
-  // Brown's teeth are about 1.4 times as wide at the root as they are tall
-  // (0.6 here); 0.8 is the lowest tip that keeps the 45-degree foliot swing's
-  // dipping pallet clear of the tooth backs. The pallets are plain blades.
+  // Brown's teeth are about 0.55 of a pitch tall (0.6 here) with long
+  // concave backs sweeping up to the tip. The concave back (exponent 1.8)
+  // is also what keeps the 45-degree foliot swing's dipping pallet clear of
+  // the tooth backs at that height: straight backs needed a 0.8 tip. The
+  // pallets are plain blades.
   const base = vergeAndCrownWheelEscapement(movement, {
     flagPallets: true,
     includeFrame: false,
     palletThickness: 0.2,
-    toothTipZ: 0.8,
+    toothBackExponent: 1.8,
+    toothTipZ: 0.6,
   });
   const root = base.root;
   const blocks = root.userData.blocks;
@@ -3519,11 +3543,15 @@ function oldFashionedClockVergeEscapement(movement) {
   // under the verge journal in the edge-on view.
   blocks.crownWheel.userData.rotor.traverse((object) => {
     if (object.userData.role !== 'crown-wheel-hub') return;
+    // A short hub stays within the band's depth, so nothing hangs below
+    // the band Brown draws.
     const height = object.geometry.parameters.height;
-    object.position.z = baseGeometry.toothBaseZ - 0.02 - height / 2;
+    const keptHeight = baseGeometry.bodyDepth - 0.06;
+    object.scale.y = keptHeight / height;
+    object.position.z = baseGeometry.toothBaseZ - 0.02 - keptHeight / 2;
   });
   // Brown draws no arbor: only a stub inside the cup is kept.
-  const crownShaftStub = 0.3;
+  const crownShaftStub = 0.2;
   blocks.crownShaft.scale.z = crownShaftStub / blocks.crownShaft.userData.length;
   blocks.crownShaft.position.z = baseGeometry.toothBaseZ - 0.05
     - crownShaftStub / 2;
@@ -3838,7 +3866,7 @@ function oldFashionedClockVergeEscapement(movement) {
       freeDropState,
       recoil: activePallet !== null
         && crownWheelAngularSpeed < -1e-12,
-      sourcePose: cyclePhase === 0,
+      sourcePose: Math.abs(cyclePhase - displayCycleOffset) < 1e-12,
       stage,
       teethAdvanced: (wheel.angle - sourceWheelAngle) / toothPitch,
       vergeAngle: foliotState.angle,
@@ -3849,8 +3877,14 @@ function oldFashionedClockVergeEscapement(movement) {
       wheelAngularSpeed: crownWheelAngularSpeed,
     };
   };
+  // Brown's 299 pose has the near pallet lying out to the right over a tooth
+  // tip and the far one hanging steeply down-left: the right pallet's
+  // impulse, an eighth of a cycle after the left foliot extreme. The display
+  // clock starts there; the mechanism state per cycle coordinate is
+  // unchanged.
+  const displayCycleOffset = 0.125;
   const stateAtTime = (time) => stateAtCycleCoordinate(
-    time * cyclesPerSecond,
+    time * cyclesPerSecond + displayCycleOffset,
   );
 
   // Local crown Z becomes the horizontal world X arbor; local verge X
@@ -3897,8 +3931,8 @@ function oldFashionedClockVergeEscapement(movement) {
   // the frame as Brown's band does.
   root.userData.hideGround = true;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.4 * displayScale, -1.5 * displayScale, -1.5 * displayScale),
-    new THREE.Vector3(1.3 * displayScale, 1.5 * displayScale, 1.5 * displayScale),
+    new THREE.Vector3(-0.4 * displayScale, -1.5 * displayScale, -1.05 * displayScale),
+    new THREE.Vector3(1.3 * displayScale, 1.5 * displayScale, 1.05 * displayScale),
   );
   root.userData.cameraFov = 12;
   root.userData.canonicalTimes = {
@@ -3919,6 +3953,13 @@ function oldFashionedClockVergeEscapement(movement) {
     ) / 2,
     sourcePose: 0,
   };
+  for (const [key, time] of Object.entries(root.userData.canonicalTimes)) {
+    if (key === 'sourcePose' || key === 'cycleClosure') continue;
+    root.userData.canonicalTimes[key] = positiveModulo(
+      time / cyclePeriod - displayCycleOffset,
+      1,
+    ) * cyclePeriod;
+  }
   root.userData.contactAt = contactAt;
   root.userData.geometry = {
     ...baseGeometry,
@@ -3926,6 +3967,7 @@ function oldFashionedClockVergeEscapement(movement) {
     contactAdvance,
     cyclePeriod,
     cyclesPerSecond,
+    displayCycleOffset,
     displayScale,
     dropAngle,
     firstCatchPhase,
@@ -4179,10 +4221,6 @@ function makeDebaufreRatchetWheel({
     metalness: 0.18,
     roughness: 0.57,
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.26,
-    roughness: 0.46,
-  });
   root.add(rotor);
   root.userData.axis = Z_AXIS.clone();
   root.userData.rotor = rotor;
@@ -4202,9 +4240,11 @@ function makeDebaufreRatchetWheel({
   const bore = new THREE.Path();
   bore.absarc(0, 0, arborRadius, 0, FULL_TURN, true);
   hubShape.holes.push(bore);
+  // Brown draws the collet as a light ring round the arbor end, not a dark
+  // disk, so the hub is brass.
   const hub = new THREE.Mesh(
     debaufrePrism(hubShape, depth * 1.45, 36),
-    darkMaterial,
+    matte(PALETTE.brass, { metalness: 0.2, roughness: 0.5 }),
   );
   hub.userData.role = 'debaufre-ratchet-wheel-hub';
   rotor.add(hub);
@@ -4335,7 +4375,11 @@ function debaufreFrictionalRestEscapement(
   const toothCount = 12;
   const toothPitch = FULL_TURN / toothCount;
   const halfToothPitch = toothPitch / 2;
-  const dropAngle = halfToothPitch * 0.22;
+  // The pallet is as thick as the impulse chord. Brown's 300 pallet is about
+  // 0.28 thick; a drop of 0.45 of the half pitch (it was 0.22) thins it from
+  // 0.67 to 0.475. Larger drops let the rotating D's flat corners reach the
+  // passing teeth outside the carved bands.
+  const dropAngle = halfToothPitch * 0.45;
   const impulseAdvance = halfToothPitch - dropAngle;
   const wheelContactRadius = 3.3;
   // Brown's 300 rim circle is about 1.78 inside, so the barbed stems run
@@ -4348,8 +4392,8 @@ function debaufreFrictionalRestEscapement(
   const palletRadius = 0.8;
   const escapeArborRadius = 0.15;
   // 301's side elevation draws the drum edge; 300's front elevation shows
-  // none, so there it shrinks to hide behind the lobed boss.
-  const spacerDrumRadius = presentation === 'side' ? 0.72 : 0.42;
+  // none, so there it shrinks to the collet radius, behind the lobed boss.
+  const spacerDrumRadius = presentation === 'side' ? 0.72 : 0.3;
   const balanceStaffRadius = 0.12;
   const balanceStaffLength = 5.9;
   const palletColletRadius = 0.3;
@@ -4459,7 +4503,9 @@ function debaufreFrictionalRestEscapement(
   commonEscapeArbor.userData.role = 'common-two-wheel-escape-arbor';
   commonEscapeArbor.userData.worldAxis = Z_AXIS.clone();
   // Brown's side elevation closes the space between the wheel planes with a
-  // drum edge 0.76 below the arbor and hides the arbor there.
+  // drum edge 0.76 below the arbor and hides the arbor there. He leaves the
+  // drum white between the wheel strips, so it is a pale turned drum rather
+  // than a dark one.
   const spacerDrum = new THREE.Mesh(
     new THREE.CylinderGeometry(
       spacerDrumRadius,
@@ -4467,7 +4513,7 @@ function debaufreFrictionalRestEscapement(
       2 * wheelPlaneOffset - wheelDepth + 0.02,
       48,
     ),
-    matte(PALETTE.ink, { metalness: 0.24, roughness: 0.5 }),
+    matte(0xe4ddcc, { metalness: 0.05, roughness: 0.7 }),
   );
   spacerDrum.rotation.x = Math.PI / 2;
   spacerDrum.userData.role = 'common-arbor-wheel-spacer-drum';
@@ -4620,7 +4666,8 @@ function debaufreFrictionalRestEscapement(
       palletThickness * 1.42,
       36,
     ),
-    matte(PALETTE.ink, { metalness: 0.28, roughness: 0.43 }),
+    // Brown's 301 draws the collet as a light ring round the staff end.
+    matte(PALETTE.brass, { metalness: 0.2, roughness: 0.5 }),
   );
   palletHub.rotation.z = Math.PI / 2;
   palletHub.userData.role = 'debaufre-pallet-staff-collet';
@@ -4905,7 +4952,7 @@ function debaufreFrictionalRestEscapement(
     // Brown's 301 is an orthographic view along the balance staff.  A narrow
     // field approximates it, and the slight pitch puts the camera on the
     // staff axis so the staff reads end-on instead of as a receding rod.
-    root.userData.cameraFov = 20;
+    root.userData.cameraFov = 8;
     root.userData.cameraDistanceScale = 1;
     // Brown breaks both wheels off a little above the arbor (about 0.18 of
     // the arbor-to-pallet distance), so the view is cropped there.

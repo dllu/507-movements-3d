@@ -87,7 +87,9 @@ test('251 actual pins clear bored cheeks and span their thickness; hook tips rem
 test('253 active face supplies resisting drum torque and seats the hook against its deployment stop',()=>{
   const d=create(253).root.userData,g=d.geometry,n=g.contactNormalAtCatch,c=g.contactCenterAtCatch,p=g.hookContactLocal;
   const cross=(a,b)=>a.x*b.y-a.y*b.x;
-  assert.ok(cross(c,n)>.2);assert.ok(cross(p,n)<-.15);
+  // Brown's forward-leaning hooks fold forward; the stud's reaction (-n) turns
+  // each hook clockwise, back onto its clockwise deployment stop.
+  assert.ok(cross(c,n)>.2);assert.ok(cross(p,n)>.15);
   for(let i=0;i<=2400;i++) assert.ok(d.stateAtTime(12*i/2400).minimumHookStudGap>=-1e-12);
   assert.equal(d.dynamics.validatedPassiveCatch,false);
   assert.ok(d.stateAtTime(7.2).flangeAngle<-.17);
@@ -98,7 +100,8 @@ test('253 finite hook faces, stops and studs clear over approach, arrest and bac
   const m=create(253),d=m.root.userData,a=audit();let maximumContactGap=0;
   const times=new Set(Array.from({length:33},(_,i)=>12*i/32));
   for(let i=0;i<=16;i++){times.add(4.4+.2*i/16);times.add(7+.8*i/16);}
-  for(const t of times){m.update(t);m.root.updateMatrixWorld(true);
+  // update() takes display time; the audit samples canonical cycle time.
+  for(const t of times){m.update(t-d.displayTimeOffset);m.root.updateMatrixWorld(true);
     for(const journal of [d.blocks.flangeDisk,d.blocks.fixedBacking,d.blocks.ropeDrumBody]) a.check(d.blocks.centerShaft,journal,'common shaft/journals',true);
     for(let i=0;i<3;i++){
       const body=d.workingHooks.plates[i];
@@ -111,7 +114,7 @@ test('253 finite hook faces, stops and studs clear over approach, arrest and bac
       if(t>=4.6&&t<=7){const gap=a.check(body,d.blocks.studs[i],'arresting face');maximumContactGap=Math.max(maximumContactGap,gap);assert.ok(gap<.002,gap);}
     }
   }
-  m.update(4.6);m.root.updateMatrixWorld(true);
+  m.update(4.6-d.displayTimeOffset);m.root.updateMatrixWorld(true);
   const body=d.workingHooks.plates[0],g=d.geometry;
   const expected=g.hookContactLocal.clone().addScaledVector(g.contactNormalAtCatch,g.hookBarRadius);
   const point=new THREE.Vector3(expected.x,expected.y,0),nearest=new THREE.Vector3();
@@ -119,7 +122,7 @@ test('253 finite hook faces, stops and studs clear over approach, arrest and bac
   for(const triangle of surfaceTriangles(body.geometry)) {const value=triangle.closestPointToPoint(point,nearest).distanceTo(point);if(value<distance){distance=value;normal=triangle.getNormal(new THREE.Vector3());}}
   assert.ok(distance<.002);assert.ok(normal.x*g.contactNormalAtCatch.x+normal.y*g.contactNormalAtCatch.y>.99);
   assert.ok(g.contactCenterAtCatch.x*normal.y-g.contactCenterAtCatch.y*normal.x>.15);
-  assert.ok(g.hookContactLocal.x*normal.y-g.hookContactLocal.y*normal.x<-.1);
+  assert.ok(g.hookContactLocal.x*normal.y-g.hookContactLocal.y*normal.x>.1);
   console.log({id:253,maximumContactGap,actualReactionNormal:normal.toArray(),...a.report()});
 });
 

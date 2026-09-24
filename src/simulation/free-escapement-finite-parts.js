@@ -38,7 +38,22 @@ export function correctFreeEscapement(root,id){
     for(const bar of [...b.balanceSpokes,b.studArm])boreRotatingBar(bar,.103);
     const face=b.impulsePallet.userData.facePoints;
     const offset=(p,amount)=>{const r=p.length();return[p.x*(1-amount/r),p.y*(1-amount/r)];};
-    replace(b.impulsePallet.userData.body,plate(poly([...face.map(p=>offset(p,.00075)),...face.map(p=>offset(p,.22075)).reverse()]),-(g.balanceDepth+.05)/2,(g.balanceDepth+.05)/2));
+    // The face turns almost radial at the end of impulse, so the closed
+    // face-plus-offset ring crossed itself there (broken caps and false
+    // inside tests). Resolve the ring into simple polygons first.
+    // Offsets are taken along the face normal on the body side. Near the end
+    // of impulse the face runs past radial, where a radial (toward-axis)
+    // offset lies on the tooth side and folded the ring through the tooth.
+    const mid=face.length>>1,midTangent=face[mid+1].clone().sub(face[mid-1]);
+    const side=Math.sign(face[mid].x*midTangent.y-face[mid].y*midTangent.x);
+    const along=(amount)=>face.map((p,i)=>{const t=face[Math.min(i+1,face.length-1)].clone().sub(face[Math.max(i-1,0)]).normalize();return[p.x-side*t.y*amount,p.y+side*t.x*amount];});
+    // Nothing stands outside the face's own outer radius (the normal offset
+    // leans outward there and would meet the next locked tooth).
+    const reach=Math.max(...face.map(p=>p.length()))+.0015;
+    const bands=clip.intersection(clip.union(poly([...along(.00075),...along(.22075).reverse()])),poly(circle([0,0],reach,256)));
+    // Notch g occupies world z -0.25..0.198: it laps the wheel (+-0.19) and
+    // its arm behind it, but passes behind hook k (0.20..0.47) and detent A.
+    replace(b.impulsePallet.userData.body,plate(bands,-.49,-.042));
   }else{
     for(const tooth of b.escapeTeeth)flatOutline(tooth,g.wheelDepth);
     for(const spoke of b.wheelSpokes){

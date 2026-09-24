@@ -1534,6 +1534,104 @@ function leverChronometerEscapement(movement) {
       palletLever.add(nib);
       palletNibs.push(nib);
     }
+    // Pallet C's strip followed only the tooth-tip path, so the leading flank
+    // of the impulsing tooth swept up to 0.08 into it, and the returning
+    // tooth grazed A's nib before landing.  Cut both by the swept outline of
+    // every tooth plus 0.0015 running clearance, sampled over a full
+    // oscillation (the wheel repeats after one pitch) and densely over the
+    // impulse.  The tips still slide along and lock on the retained faces,
+    // just clear of them.
+    {
+      // Convex hull of the actual bevelled tooth mesh (its mitred tip
+      // reaches beyond the nominal outline plus the bevel size).
+      const toothPoints = [];
+      const positions = wheelTeeth[0].geometry.attributes.position;
+      for (let i = 0; i < positions.count; i += 1) {
+        toothPoints.push(new THREE.Vector2(positions.getX(i), positions.getY(i)));
+      }
+      toothPoints.sort((a, b) => a.x - b.x || a.y - b.y);
+      const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y)
+        - (a.y - o.y) * (b.x - o.x);
+      const half = (points) => points.reduce((hull, point) => {
+        while (hull.length >= 2
+          && cross(hull.at(-2), hull.at(-1), point) <= 0) hull.pop();
+        hull.push(point);
+        return hull;
+      }, []);
+      const lower = half(toothPoints);
+      const upper = half([...toothPoints].reverse());
+      const outline = [...lower.slice(0, -1), ...upper.slice(0, -1)];
+      const grow = 0.0015;
+      // Mitred outward offset of the counterclockwise hull (a superset of
+      // the grown tooth).
+      const grown = outline.map((point, index) => {
+        const previous = outline[(index + outline.length - 1) % outline.length];
+        const next = outline[(index + 1) % outline.length];
+        const n1 = new THREE.Vector2(point.y - previous.y, previous.x - point.x)
+          .normalize();
+        const n2 = new THREE.Vector2(next.y - point.y, point.x - next.x)
+          .normalize();
+        const bisector = n1.clone().add(n2).normalize();
+        return point.clone().addScaledVector(
+          bisector,
+          grow / Math.max(bisector.dot(n1), 0.2),
+        );
+      });
+      const times = [
+        ...Array.from({ length: 361 }, (_, i) => balancePeriod * i / 360),
+        ...[0, 1].flatMap((halfBeat) => Array.from({ length: 401 },
+          (_, i) => halfBeatDuration * (halfBeat + palletReleaseHalfPhase
+            + (nextPalletLandingHalfPhase - palletReleaseHalfPhase) * i / 400))),
+      ];
+      const toLocal = new THREE.Matrix4();
+      const matrix = new THREE.Matrix4();
+      const point = new THREE.Vector3();
+      const toothBox = new THREE.Box2();
+      const cutBySweptTeeth = (mesh, shapePolygons) => {
+        const box = new THREE.Box2();
+        for (const polygon of shapePolygons) {
+          for (const [x, y] of polygon[0]) box.expandByPoint(new THREE.Vector2(x, y));
+        }
+        let cut = shapePolygons;
+        for (const time of times) {
+          update(time);
+          root.updateMatrixWorld(true);
+          toLocal.copy(mesh.matrixWorld).invert();
+          for (const tooth of wheelTeeth) {
+            matrix.multiplyMatrices(toLocal, tooth.matrixWorld);
+            toothBox.makeEmpty();
+            const ring = grown.map(({ x, y }) => {
+              point.set(x, y, 0).applyMatrix4(matrix);
+              const q = [
+                Math.round(point.x * 1e6) / 1e6,
+                Math.round(point.y * 1e6) / 1e6,
+              ];
+              toothBox.expandByPoint(new THREE.Vector2(q[0], q[1]));
+              return q;
+            });
+            if (!toothBox.intersectsBox(box)) continue;
+            cut = polygonClipping.difference(cut, poly(ring));
+          }
+        }
+        return cut;
+      };
+      const cShape = profileStripShape(directProfilePoints, 0.25);
+      const cCut = cutBySweptTeeth(
+        directPalletC,
+        poly(cShape.getPoints().map((v) => v.toArray())),
+      );
+      directPalletC.geometry.dispose();
+      directPalletC.geometry = plate(
+        cCut,
+        -directPalletDepth / 2,
+        directPalletDepth / 2,
+      );
+      for (const nib of palletNibs) {
+        const nibCut = cutBySweptTeeth(nib, nib.geometry.userData.plate.polygons);
+        nib.geometry.dispose();
+        nib.geometry = plate(nibCut, -0.02, 0.20);
+      }
+    }
     update(0);
     arbor.userData.role = 'locking-lever-arbor-through-front-journal';
     root.updateMatrixWorld(true);

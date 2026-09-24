@@ -21,8 +21,17 @@ def pose(t):
  else:
   z=(progress-.9)/.1;adv=math.radians(8)+math.radians(4)*(z*z*(3-2*z))
  return beta,angle,2*math.pi/3-h*pitch/2-adv,progress,side
-# tip and actual finite tooth polygon preserve source-like sharp/raked outline
-T=np.array([[2.37,-.15],[R-.20,.02],[R,0],[2.53,.13]])
+# Brown's hooked claw tooth: the straight leading face is undercut so the tip
+# runs about 0.32 ahead of its root, and the long convex back (a quadratic
+# curve) falls from the tip to a root about 0.8 behind it. The back leaves the
+# tip 30 degrees off tangential: any flatter and it notches the exit end of
+# the impulse faces. Order: leading root, leading face, tip, back points; the
+# outline is convex, so a fan from the tip covers it.
+TIP=np.array([R,0.]);BACK_ROOT=np.array([2.20,.80])
+d0=np.array([math.cos(math.radians(120)),math.sin(math.radians(120))]);d1=np.array([math.cos(math.radians(172)),math.sin(math.radians(172))])
+k,_=np.linalg.solve(np.array([d0,-d1]).T,BACK_ROOT-TIP);CTRL=TIP+k*d0
+T=np.array([[2.26,.33],[2.62,.158],TIP]+[(1-t)**2*TIP+2*(1-t)*t*CTRL+t*t*BACK_ROOT for t in np.linspace(0,1,7)[1:]])
+FAN=[[2,k%len(T),(k+1)%len(T)] for k in range(3,len(T)+2)]
 profiles=[]
 for side in [1,-1]:
  # nominal active tooth index 0 on left, -2 on right
@@ -45,7 +54,7 @@ for side in [1,-1]:
   for j in range(-4,3):
    tri=rot(W+rot(T,a+j*pitch)-P,-f)
    if np.linalg.norm(tri.mean(0)-pts.mean(0))<1.5:
-    for indices in [[0,1,3],[1,2,3]]:
+    for indices in FAN:
      cutters.append(MultiPoint(np.vstack([previous.get(j,tri)[indices],tri[indices]])).convex_hull.buffer(.0005,resolution=8))
    previous[j]=tri
  out=blank.difference(unary_union(cutters)).buffer(0)

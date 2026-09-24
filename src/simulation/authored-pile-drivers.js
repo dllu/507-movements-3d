@@ -503,13 +503,18 @@ function pileDriverReleasingHooks(movement) {
   leftHook.position.x = -hookPivotHalfSpacing;
   leftHook.userData.axis = Z_AXIS.clone();
   leftHook.userData.role = 'left-pivoted-releasing-hook-a';
+  // Brown's horns A bulge well outward toward the rails above the toe and
+  // curl back inward to the tips that enter slot B.
   const leftHookPoints = [
     new THREE.Vector2(0, 0.04),
     new THREE.Vector2(-0.48, 0.28),
     new THREE.Vector2(-1.15, 1),
-    new THREE.Vector2(-1.52, 1.7),
+    new THREE.Vector2(-1.45, 1.6),
     new THREE.Vector2(-1.53, 2),
-    new THREE.Vector2(-1.5, 3.25),
+    new THREE.Vector2(-1.68, 2.6),
+    new THREE.Vector2(-1.68, 3.14),
+    new THREE.Vector2(-1.58, 3.7),
+    new THREE.Vector2(-1.4, 4.08),
     leftHookTipLocal.clone(),
   ];
   const leftHookBody = tubeAlongPoints(

@@ -26,8 +26,8 @@ function openBore(object,center,axis,radius){
  }
 }
 
-test('262/263: finite cone, thread/nut, footed standard E and roller C clear through a full traverse',()=>{
- const m=make(263);try{
+for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E and roller C clear through a full traverse`,()=>{
+ const m=make(id);try{
   const b=m.root.userData.blocks,cache=new Map();
   // The plates draw no guide, spring or base; only standard E is fixed.
   for(const key of['base','guideRails','guideTop','carriageBlocks','carriageBridge','contactSpring'])assert.equal(b[key],undefined,key);
@@ -45,6 +45,8 @@ test('262/263: finite cone, thread/nut, footed standard E and roller C clear thr
   }
   assert.ok(box(b.nutPost).intersectsBox(box(b.nut)),'nut unsupported');
   assert.ok(b.screwThread.geometry.userData.thread,'solid helical thread missing');
+  // Plate 262: low footed cradle, and no carrier bar or joint balls on B's face.
+  if(id===262){assert.ok(box(b.nutPost).min.y>-.98*m.root.scale.y,'cradle E too tall');const web=b.eccentricConnectors[1];assert.equal(web.children.length,1);assert.equal(web.children[0].material,b.coneBody.material);}
  }finally{disposeMovementModel(m);}
 });
 

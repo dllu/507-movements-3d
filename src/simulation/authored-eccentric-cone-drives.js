@@ -969,16 +969,48 @@ function eccentricConeFrictionReverser(movement) {
   rollerAxle.position.x = 0;
   rollerAxle.userData.role = 'short-axle-of-friction-roller-C';
   nutPost.geometry.dispose();
-  nutPost.geometry = flaredPedestalGeometry({
-    bottomY: -1.34,
-    footHalfX: 0.5,
-    footHalfZ: 0.95,
-    footTopY: -1.27,
-    neckBottomY: -0.72,
-    neckHalfX: 0.13,
-    neckHalfZ: 0.2,
-    topY: -0.309,
-  });
+  // Plate 262 draws E as a low footed cradle whose feet stand only about a
+  // sixth of B's diameter below B's rim; plate 263 keeps its taller standard.
+  nutPost.geometry = flaredPedestalGeometry(presentationView === 'end-view'
+    ? {
+      bottomY: -0.97,
+      footHalfX: 0.5,
+      footHalfZ: 0.8,
+      footTopY: -0.91,
+      neckBottomY: -0.6,
+      neckHalfX: 0.13,
+      neckHalfZ: 0.2,
+      topY: -0.309,
+    }
+    : {
+      bottomY: -1.34,
+      footHalfX: 0.5,
+      footHalfZ: 0.95,
+      footTopY: -1.27,
+      neckBottomY: -0.72,
+      neckHalfX: 0.13,
+      neckHalfZ: 0.2,
+      topY: -0.309,
+    });
+  if (presentationView === 'end-view') {
+    // Seen along the screw, the small-end carrier bar and its joint balls
+    // lay over B's face, which Brown leaves plain. A flat web in B's own
+    // finish keeps the same rigid screw-to-cone connection: its face lies
+    // flush on B and its stub off the rim hides behind nut E.
+    const smallEndCarrier = eccentricConnectors[1];
+    smallEndCarrier.traverse((object) => object.geometry?.dispose());
+    smallEndCarrier.clear();
+    const web = new THREE.Mesh(
+      new THREE.BoxGeometry(0.07, coneEccentricity + 0.1, 0.2),
+      inputMaterial,
+    );
+    web.position.y = coneEccentricity / 2;
+    web.userData.role = 'flush-small-end-eccentric-web-in-cone-B-finish';
+    smallEndCarrier.add(web);
+    smallEndCarrier.userData.setEndpoints = () => {};
+    smallEndCarrier.position.set(coneLength / 2 + 0.035, 0, 0);
+    smallEndCarrier.rotation.set(0, 0, 0);
+  }
   nutPost.position.set(nutAxialPosition, 0, 0);
   nutPost.userData.role = 'source-footed-standard-E-carrying-nut';
   root.userData.minimumDisplayCycleSeconds = 12;
@@ -986,6 +1018,10 @@ function eccentricConeFrictionReverser(movement) {
   root.userData.reconstructionNote = 'The eccentric cone changes and reverses the roller speed. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
+  // The flush web must not print a stripe of shadow across B's plain face.
+  if (presentationView === 'end-view') {
+    eccentricConnectors[1].children[0].castShadow = false;
+  }
   return {
     root,
     update,

@@ -82,6 +82,9 @@ function makeCutawayLathe({
   shell.userData.role = `${role}-shell`;
   group.add(shell);
 
+  // A zero half-angle is Brown's unsectioned part (pipe A): a whole solid
+  // of revolution with no cut faces.
+  if (cutawayHalfAngle === 0) return { group, sectionFaces: [], shell };
   const sectionShape = new THREE.Shape();
   profile.forEach((point, index) => {
     if (index === 0) sectionShape.moveTo(point.x, point.y);
@@ -208,7 +211,11 @@ function unionPipeCoupling(movement) {
     top: 238,
   };
 
-  const cutawayHalfAngle = 0.72;
+  // Brown's plate is a half-section: the front half of nut B and pipe C is
+  // removed on the axial plane z=0, so the camera looks square onto the
+  // hatched section while pipe A stays whole (its bore dashed = hidden).
+  const cutawayHalfAngle = Math.PI / 2;
+  const sectionClipPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)];
   const pipeBoreRadius = 0.54;
   const pipeAOuterRadius = 0.84;
   const pipeAMinimumY = 1.3;
@@ -372,7 +379,7 @@ function unionPipeCoupling(movement) {
   pipeA.userData.role =
     'nonrotating-upper-pipe-A-with-small-flange-and-locating-spigot';
   const pipeABodyParts = makeCutawayAnnularCylinder({
-    cutawayHalfAngle,
+    cutawayHalfAngle: 0,
     innerRadius: pipeBoreRadius,
     material: driverMaterial,
     maximumY: pipeAMaximumY,
@@ -382,7 +389,7 @@ function unionPipeCoupling(movement) {
     sectionMaterial: driverSectionMaterial,
   });
   const flangeParts = makeCutawayAnnularCylinder({
-    cutawayHalfAngle,
+    cutawayHalfAngle: 0,
     innerRadius: pipeBoreRadius,
     material: driverMaterial,
     maximumY: flangeTopY,
@@ -392,7 +399,7 @@ function unionPipeCoupling(movement) {
     sectionMaterial: driverSectionMaterial,
   });
   const spigotParts = makeCutawayAnnularCylinder({
-    cutawayHalfAngle,
+    cutawayHalfAngle: 0,
     innerRadius: pipeBoreRadius,
     material: driverMaterial,
     maximumY: spigotMaximumY,
@@ -433,7 +440,12 @@ function unionPipeCoupling(movement) {
     sectionMaterial: nutSectionMaterial,
     segments: 112,
   });
-  nutB.add(nutBodyParts.group);
+  // The nut body is a solid of revolution, so its half-section is held on
+  // the world plane z=0 by counter-rotating it inside the turning nut.
+  const nutSectionHolder = new THREE.Group();
+  nutSectionHolder.userData.role = 'world-fixed-half-section-holder-of-nut-B';
+  nutSectionHolder.add(nutBodyParts.group);
+  nutB.add(nutSectionHolder);
 
   const internalThreadPhase = threadWaveNumber * (
     tightNutY + internalThreadMinimumY - externalThreadMinimumY
@@ -456,6 +468,7 @@ function unionPipeCoupling(movement) {
   for(const [mesh,profile]of [[externalThreadParts.mesh,externalProfile],[internalThreadParts.mesh,internalProfile]]){
     mesh.geometry.dispose();mesh.geometry=helicalThread(profile,threadAngles(profile,96)).rotateX(-Math.PI/2);
     mesh.userData.threadProfile=profile;
+    mesh.material.side=THREE.DoubleSide;mesh.material.clippingPlanes=sectionClipPlanes;
   }
   nutB.add(internalThreadParts.mesh);
 
@@ -894,6 +907,7 @@ function unionPipeCoupling(movement) {
     pipeA.rotation.set(0, 0, 0);
     nutB.position.set(0, state.nutY, 0);
     nutB.rotation.set(0, state.nutAngle, 0);
+    nutSectionHolder.rotation.set(0, -state.nutAngle, 0);
     pipeA.userData.velocity = new THREE.Vector3(
       0,
       state.pipeAVelocity,
@@ -956,6 +970,7 @@ function unionPipeCoupling(movement) {
   update(0);
 
   root.userData.fidelity = 'authored';
+  root.userData.localClippingEnabled = true;
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.15, -3.05, -2.15),
@@ -965,7 +980,7 @@ function unionPipeCoupling(movement) {
   markShadows(root);
 
   return {
-    // Nearly straight elevation into the front section cutaway.
+    // Nearly straight elevation onto the half-section plane.
     cameraDirection: new THREE.Vector3(0,.55,11.4),
     root,
     update,

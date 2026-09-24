@@ -216,11 +216,18 @@ function equalDiameterCam(movement) {
   ) * sourceScale / 2;
   const barDepth = 0.25;
   const barHalfLength = 4.62;
+  // Brown ends the rod just past the right roller (x=510 at the drawn
+  // rightward reversal) with a slightly convex end; the left end is broken
+  // off beyond the plate, so only the left side keeps the long run.
+  const sourceRasterBarRightEnd = 510;
+  const barRightEnd = (sourceRasterBarRightEnd - sourceRasterCamCenter.x)
+    * sourceScale - pitchAmplitude;
   const barZ = -0.57;
   const bearingReliefRadius = 0.375;
   const yokeEyeOuterRadius = 0.475;
   const guideClearance = 0.035;
-  const guideXs = [-3.52, 3.52];
+  // Only the long broken-off left run can carry a (hidden) straight guide.
+  const guideXs = [-3.52];
   const cyclePeriod = 4;
   const camAngularFrequency = FULL_TURN / cyclePeriod;
 
@@ -390,7 +397,9 @@ function equalDiameterCam(movement) {
       leftRollerCenter,
     );
     const minimumGuideCoverage = Math.min(...guideXs.map((guideX) => (
-      barHalfLength - Math.abs(guideX - yokeDisplacement)
+      guideX < 0
+        ? barHalfLength - Math.abs(guideX - yokeDisplacement)
+        : barRightEnd - Math.abs(guideX - yokeDisplacement)
     )));
 
     let stage;
@@ -538,9 +547,18 @@ function equalDiameterCam(movement) {
   root.add(yoke);
   // The translating yoke needs a real oblong eye around the fixed input
   // bearing. Its two webs stay hidden behind the cam in the source view.
+  const barEndBulge = 0.07;
+  const barOutline = [[-barHalfLength, -barHalfHeight]];
+  for (let index = 0; index <= 12; index += 1) {
+    const v = -1 + index / 6;
+    barOutline.push([
+      barRightEnd - barEndBulge + barEndBulge * (1 - v * v),
+      v * barHalfHeight,
+    ]);
+  }
+  barOutline.push([-barHalfLength, barHalfHeight]);
   const yokeOuter = polygonClipping.union(
-    poly([[-barHalfLength, -barHalfHeight], [barHalfLength, -barHalfHeight],
-      [barHalfLength, barHalfHeight], [-barHalfLength, barHalfHeight]]),
+    poly(barOutline),
     capsule([-pitchAmplitude, 0], [pitchAmplitude, 0], yokeEyeOuterRadius, 48),
   );
   const yokeSection = polygonClipping.difference(yokeOuter,
@@ -700,6 +718,7 @@ function equalDiameterCam(movement) {
     barDepth,
     barHalfHeight,
     barHalfLength,
+    barRightEnd,
     barZ,
     bearingReliefRadius,
     yokeEyeOuterRadius,

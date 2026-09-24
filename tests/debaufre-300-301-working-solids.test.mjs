@@ -124,7 +124,8 @@ test('negative control: an uncarved plain D is struck by the passing teeth', () 
   const { escape } = bodies(model);
   const teeth = prepared(escape.filter((mesh) => mesh.userData.role === 'debaufre-undercut-ratchet-tooth'), 0.02);
   const worst = worstPenetration(model, teeth, prepared([plainMesh], 0.02), 160);
-  assert.ok(worst.depth > 0.05, `control detects the old tooth-through-flat failure (${worst.depth})`);
+  // The 0.475-thick D (was 0.673) is struck about 0.045 deep.
+  assert.ok(worst.depth > 0.03, `control detects the old tooth-through-flat failure (${worst.depth})`);
 });
 
 test('the active tooth point rests on the face and rides the carved flange', () => {
@@ -196,7 +197,7 @@ test('301 frames the side elevation and hides diagnostic witnesses', () => {
   const bounds = side.root.userData.cameraFitBounds;
   const centre = bounds.getCenter(new THREE.Vector3());
   // The camera sits on the staff axis at the expected fit distance.
-  assert.ok(Math.abs(centre.y + direction.y / direction.x * 19.5 - g.palletCenterY) < 1e-9);
+  assert.ok(Math.abs(centre.y + direction.y / direction.x * 41.1 - g.palletCenterY) < 1e-9);
   for (const model of [front, side]) {
     const { blocks } = model.root.userData;
     for (const time of [0, 1, 2, 3]) {

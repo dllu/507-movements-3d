@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { capsule, circle, disk, plate, poly, polygonClipping, ring } from './finite-plate-geometry.js';
 
-export function boredHookPlate(points, radius, depth, bore, eyeRadius = bore + .13) {
+export function boredHookPlate(points, radius, depth, bore, eyeRadius = bore + .13, extraOutlines = []) {
   const outlines = points.slice(1).map((point, i) => capsule(points[i], point, radius, 24));
-  const outer = polygonClipping.union(...outlines, poly(circle([0, 0], eyeRadius, 96)));
+  const outer = polygonClipping.union(...outlines, poly(circle([0, 0], eyeRadius, 96)), ...extraOutlines.map(poly));
   return plate(polygonClipping.difference(outer, poly(circle([0, 0], bore, 96))), -depth / 2, depth / 2);
 }
 
@@ -20,16 +20,19 @@ export function finishHookFamily(root, duration) {
 
 export function correctCheckHookJournals(root) {
   const { hooks, hookPivots, flangeDisk, centerShaft, fixedBacking, ropeDrumBody } = root.userData.blocks;
-  const { hookCenterline, hookBarRadius } = root.userData.geometry;
+  const { hookCenterline, hookBarRadius, hookBarbOutline, hookLean } = root.userData.geometry;
   const plates = [], stops = [];
   hooks.forEach((hook, index) => {
     const material = hook.children[0].material;
     for (const child of hook.children) child.visible = false;
-    const body = new THREE.Mesh(boredHookPlate(hookCenterline.map(p => p.toArray()), hookBarRadius, .36, .304, .44), material);
+    const body = new THREE.Mesh(boredHookPlate(hookCenterline.map(p => p.toArray()), hookBarRadius, .36, .304, .44, [hookBarbOutline.map(p => p.toArray())]), material);
     body.userData.role = 'bored-working-check-hook'; hook.add(body); plates.push(body);
+    // The stop sits behind (clockwise of) the deployed bar: the stud
+    // reaction and centrifugal swing both seat the hook against it.
     const stop = new THREE.Mesh(disk(.1, -.42, .18, 48), material);
-    stop.position.set(.65, .3, 0);
-    stop.userData.role = 'deployed-hook-positive-angle-stop';
+    const stopOffset = hookBarRadius + .1;
+    stop.position.set(.65 * Math.cos(hookLean) + stopOffset * Math.sin(hookLean), .65 * Math.sin(hookLean) - stopOffset * Math.cos(hookLean), 0);
+    stop.userData.role = 'deployed-hook-angle-stop';
     hookPivots[index].add(stop); stops.push(stop);
     const pin=hookPivots[index].children.find(o=>o.userData.role?.endsWith('pivot-pin'));
     pin.geometry=new THREE.CylinderGeometry(.3,.3,.76,64);
@@ -91,12 +94,14 @@ export function correctPileHookSurfaces(root) {
     const side=index===0 ? -1:1;
     const old=hook.children.find(o=>o.userData.role?.includes('source-curved-hook-body'));
     const control=old.userData.centerlinePoints.map(p=>p.clone());
-    control[control.length-2].x=side*1.28;
     const curve=new THREE.CatmullRomCurve3(control.map(p=>new THREE.Vector3(p.x,p.y,0)),false,'centripetal');
     const points=curve.getPoints(32).map(p=>[p.x,p.y]);
     // The load toe is carried on the rear face of a bored flat hook cheek.
-    // The stock widens over the last quarter to the 0.24 round horn end.
-    let outer=polygonClipping.union(...points.slice(1).map((p,i)=>capsule(points[i],p,.18+.06*Math.max(0,(i-23)/8),12)),
+    // Brown's horn swells to a broad crescent over its outward bulge and
+    // narrows again to the 0.24 round horn end.
+    const smooth=u=>{u=Math.min(1,Math.max(0,u));return u*u*(3-2*u);};
+    const hornRadius=i=>{const u=i/31;return u<.6?.18+.14*smooth((u-.25)/.35):.32-.08*smooth((u-.6)/.4);};
+    let outer=polygonClipping.union(...points.slice(1).map((p,i)=>capsule(points[i],p,hornRadius(i),12)),
       poly(circle([0,0],.45,96)), capsule([side*1.53,2],[side*1.29,2],.18,24));
     outer=polygonClipping.difference(outer,poly(circle([0,0],.314,96)));
     const body=new THREE.Mesh(plate(outer,.85,1.01),old.material); body.userData.role='bored-flat-pile-hook';
@@ -105,10 +110,13 @@ export function correctPileHookSurfaces(root) {
     const toe=new THREE.Mesh(disk(.15,.34,1.01,96),old.material);
     toe.position.set(side*1.29,2,0);toe.userData.role='finite-load-bearing-hook-toe';
     const tip=hook.children.find(o=>o.userData.role?.includes('guide-contact-tip'));tip.position.z=.93;
-    // A flat rounded horn end in the hook plate, not a ball knob.
-    tip.geometry.dispose();tip.geometry=disk(.24,-.08,.08,96);
+    // A rounded horn end whose short rear stud rides the guide of slot B,
+    // so the broad horn itself passes in front of the guide faces.
+    tip.geometry.dispose();tip.geometry=disk(.24,-.7,.08,96);
     hook.add(body,toe);bodies.push(body);toes.push(toe);
-    const at=curve.getPoint(1/6),tangent=curve.getTangent(1/6);
+    // Seat the stop on an outline vertex (sample 6 of 32), where the stock
+    // is exactly a round 0.18 end, so the at-rest stop gap stays 0.002.
+    const at=curve.getPoint(6/32),tangent=curve.getTangent(6/32);
     const outward=new THREE.Vector3(side<0?-tangent.y:tangent.y,side<0?tangent.x:-tangent.x,0);
     const stopPoint=at.clone().addScaledVector(outward,.272);
     const stop=new THREE.Mesh(disk(.09,.6,1.03,48),bar.material);
@@ -119,7 +127,9 @@ export function correctPileHookSurfaces(root) {
   });
   for(const pin of b.pivotPins) {pin.geometry=new THREE.CylinderGeometry(.31,.31,1.8,64);pin.position.z=.38;}
   for(const name of ['left-straight-inward-squeezing-face-of-slot-b','right-straight-inward-squeezing-face-of-slot-b']) {
-    const guide=find(name); guide.scale.z=1.6;
+    // Guide faces span z -1.10..0.80: the tip studs reach them while the
+    // horn plates (z 0.85..1.01) pass just in front.
+    const guide=find(name); guide.scale.z=1.3; guide.position.z=.8-1.46*1.3/2;
   }
   root.userData.workingHooks={shelves,bodies,toes,closingStops,stopBrackets};
   root.userData.dynamics={prescribedLiftAndSqueeze:true,prescribedReset:true,validatedPassiveRelease:false,

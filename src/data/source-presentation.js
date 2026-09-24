@@ -255,7 +255,7 @@ export default {
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
-    note: 'Section through pipe A with its flange, nut B and the screwed end of pipe C; the nut is drawn plain, without grip ribs or an index.',
+    note: 'Half-section through nut B and the screwed end of pipe C, with pipe A and its flange drawn whole; the nut is drawn plain, without grip ribs or an index.',
   },
   253: {
     remove: ['check-hook-\\d-torsion-return-spring', 'visible-torsional-shock-spring-between-flange-and-load-side-drum', 'white-flange-b-speed-index', 'white-load-side-drum-speed-index', 'framework-a-stud-d-\\d-radial-support'],
@@ -302,8 +302,8 @@ export default {
     note: 'Close-up of the top of the duplex wheel: roller A and pallet B over a short rim arc with the long teeth and crown pins a; no watch plate, bridge, base or index marks are drawn.',
   },
   294: {
-    rotate: [0, 0, 2.77],
-    camera: [-1, 0.3, 0.38],
+    rotate: [0, 0, 2.5],
+    camera: [-1, 0.04, 0.3],
     remove: [
       '(lower|upper)-rim-of-perspective-cylinder-window',
       'invisible-envelope-for-complete-cylinder-escapement', 'fixed-parallel-arbor-watch-frame',
@@ -329,9 +329,9 @@ export default {
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
-    camera: [0.02, 0.06, -1],
+    camera: [0.02, 0.02, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
-    note: 'Nearly edge-on view along the verge: the crown band with its raked teeth, the verge journal end-on above it and the two pallets about 100° apart, the steep one on the left and the shallow one on the right. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge, cropped like Brown’s detail to about two pitches of the near band: the concave-backed raked teeth, the far teeth showing between them, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],

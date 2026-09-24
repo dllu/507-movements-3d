@@ -322,6 +322,45 @@ function claytonSlidingJournalBox(movement) {
   );
   wristRotationIndex.userData.role = 'white-crank-wrist-rotation-index';
   crankRotor.add(wristRotationIndex);
+  // Brown dashes the crank's hidden edges: the throw's sides behind the gibs
+  // and box, and the shaft circle behind the lobe. Draw the throw profile and
+  // the shaft rim as dashed ink lines that pass the depth test only where a
+  // nearer surface covers them, so the visible lobe keeps its solid edge.
+  const hiddenEdgeMaterial = new THREE.LineDashedMaterial({
+    color: PALETTE.ink,
+    dashSize: 0.10,
+    depthFunc: THREE.GreaterDepth,
+    depthWrite: false,
+    fog: false,
+    gapSize: 0.06,
+  });
+  const hiddenOutline = (points, z, role) => {
+    const line = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(
+        points.map((point) => new THREE.Vector3(point.x, point.y, z)),
+      ),
+      hiddenEdgeMaterial,
+    );
+    line.computeLineDistances();
+    line.renderOrder = 10;
+    line.userData.role = role;
+    line.userData.nonPhysical = true;
+    crankRotor.add(line);
+    return line;
+  };
+  const crankHiddenOutline = hiddenOutline(
+    crankShape.getPoints(24),
+    0.155,
+    'dashed-hidden-edge-of-crank-throw',
+  );
+  const shaftHiddenOutline = hiddenOutline(
+    Array.from({ length: 64 }, (_, index) => new THREE.Vector2(
+      0.362 * Math.cos(FULL_TURN * index / 64),
+      0.362 * Math.sin(FULL_TURN * index / 64),
+    )),
+    -0.16,
+    'dashed-hidden-edge-of-crank-shaft',
+  );
   const fixedCrankBearing = boredJournal(0.44, 0.366, 0.15, frameMaterial);
   fixedCrankBearing.position.z = -0.75;
   fixedCrankBearing.userData.role = 'fixed-crank-shaft-bearing';
@@ -590,6 +629,7 @@ function claytonSlidingJournalBox(movement) {
     clampCaps,
     crank,
     crankArm,
+    crankHiddenOutline,
     crankRotor,
     crankWrist,
     crosshead,
@@ -604,6 +644,7 @@ function claytonSlidingJournalBox(movement) {
     liningPieces,
     mainHub,
     rightSlotFace,
+    shaftHiddenOutline,
     taperGibs,
     wristFace,
     wristRotationIndex,

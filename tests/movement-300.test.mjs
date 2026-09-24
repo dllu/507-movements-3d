@@ -377,7 +377,9 @@ test('movement 300 analytic pallet and common-wheel rates match finite differenc
       `pallet speed at ${time}`);
     near(palletAcceleration, state.palletAngularAcceleration, 1.1e-5,
       `pallet acceleration at ${time}`);
-    near(wheelSpeed, state.wheelAngularSpeed, 2e-8,
+    // The drop is 0.45 of a half pitch in 0.035 cycle, so the central
+    // difference's h^2 error on the drop speed is about 2e-8.
+    near(wheelSpeed, state.wheelAngularSpeed, 4e-8,
       `common wheel speed at ${time}`);
     near(wheelAcceleration, state.wheelAngularAcceleration, 2e-5,
       `common wheel acceleration at ${time}`);

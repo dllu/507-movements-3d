@@ -381,6 +381,64 @@ function groovedDiskFollower(movement) {
   diskIndex.userData.role = 'white-disk-rotation-index';
   diskRotor.add(diskIndex);
 
+  // Brown's dashed lines: hidden edges and the lever's other extreme. The
+  // hidden-edge material passes the depth test only behind a nearer surface.
+  const dashedInk = (hiddenOnly) => new THREE.LineDashedMaterial({
+    color: PALETTE.ink,
+    dashSize: 0.085,
+    depthFunc: hiddenOnly ? THREE.GreaterDepth : THREE.LessEqualDepth,
+    depthWrite: false,
+    fog: false,
+    gapSize: 0.06,
+  });
+  const dashedLoop = (points, z, material, role) => {
+    const line = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(
+        points.map(([x, y]) => new THREE.Vector3(x, y, z)),
+      ),
+      material,
+    );
+    line.computeLineDistances();
+    line.renderOrder = 10;
+    line.userData.role = role;
+    line.userData.nonPhysical = true;
+    return line;
+  };
+  // A driving arm keyed on the shaft behind the disk; Brown dashes it up and
+  // to the left of the hub (raster 165,177 at the source phase).
+  const sourceDiskAngle = stateAtTime(0).diskAngle;
+  const rearArmTip = rotate2(
+    sourcePointToModel(new THREE.Vector2(165, 177)),
+    -sourceDiskAngle,
+  );
+  const rearArmHalfWidth = 0.095;
+  const rearArmNormal = new THREE.Vector2(-rearArmTip.y, rearArmTip.x)
+    .setLength(rearArmHalfWidth);
+  const rearArmOutline = polygonClipping.difference(
+    polygonClipping.union(
+      poly(circle([0, 0], diskHubRadius + 0.07, 48)),
+      poly([
+        [rearArmNormal.x, rearArmNormal.y],
+        [rearArmTip.x + rearArmNormal.x, rearArmTip.y + rearArmNormal.y],
+        [rearArmTip.x - rearArmNormal.x, rearArmTip.y - rearArmNormal.y],
+        [-rearArmNormal.x, -rearArmNormal.y],
+      ]),
+      poly(circle([rearArmTip.x, rearArmTip.y], rearArmHalfWidth, 24)),
+    ),
+    poly(circle([0, 0], diskHubRadius, 48)),
+  );
+  const rearArm = new THREE.Mesh(plate(rearArmOutline, -0.42, -0.24),
+    driverMaterial);
+  rearArm.userData.role = 'rear-driving-arm-keyed-on-disk-shaft';
+  diskRotor.add(rearArm);
+  const rearArmHiddenEdge = dashedLoop(
+    rearArmOutline[0][0].slice(0, -1),
+    -0.235,
+    dashedInk(true),
+    'dashed-hidden-edge-of-rear-driving-arm',
+  );
+  diskRotor.add(rearArmHiddenEdge);
+
   const lever = new THREE.Group();
   lever.position.set(leverPivot.x, leverPivot.y, 0.67);
   lever.userData.axis = Z_AXIS.clone();
@@ -436,6 +494,28 @@ function groovedDiskFollower(movement) {
   leverIndex.rotation.z = Math.atan2(localLeverGrip.y, localLeverGrip.x);
   leverIndex.userData.role = 'white-lever-vibration-index';
   lever.add(leverIndex);
+  // Brown dashes the same lever at its other extreme, pin bulge and all.
+  const leverAlternate = new THREE.Group();
+  leverAlternate.position.copy(lever.position);
+  leverAlternate.rotation.z = minimumLeverAngle;
+  leverAlternate.userData.role = 'dashed-lever-at-other-extreme';
+  leverAlternate.userData.nonPhysical = true;
+  const alternateMaterial = dashedInk(false);
+  const alternateBody = dashedLoop(
+    leverOutline[0][0].slice(0, -1),
+    0,
+    alternateMaterial,
+    'dashed-alternate-lever-outline',
+  );
+  alternateBody.rotation.z = leverGripAngle;
+  const alternateHead = dashedLoop(
+    circle([followerArmLength, 0], 0.14, 32),
+    0,
+    alternateMaterial,
+    'dashed-alternate-follower-head',
+  );
+  leverAlternate.add(alternateBody, alternateHead);
+  root.add(leverAlternate);
   // The fulcrum pin runs back through the lever bore to the hidden rear
   // brace; Brown draws no other support for the upper fulcrum.
   const leverPivotPin = cylinderAlongZ(leverPivotPinRadius, 1.62,
@@ -523,9 +603,11 @@ function groovedDiskFollower(movement) {
     grooveOuter,
     leftDiskBrace,
     lever,
+    leverAlternate,
     leverBody,
     leverIndex,
     leverPivotPin,
+    rearArm,
     rearBearing,
     rightDiskBrace,
     upperCrossBrace,

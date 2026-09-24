@@ -437,11 +437,15 @@ function arnoldFreeEscapement(movement) {
   const passingStudPoseAtState = (state) => {
     const passingTop = passingSpringPointsAtState(state)[0];
     // The stud stands on A's upper edge (half of A's 0.10 width above its
-    // centre line) rather than sinking to the centre line.
+    // centre line) rather than sinking to the centre line; update() tilts it
+    // to A's local slope so its foot sits flat on the bending leaf.
     const mainBottom = mainSpringPointAtProgress(
       state.detentLift,
       passingStudMainProgress,
-    ).add(new THREE.Vector3(0, 0.045, 0));
+    ).add(new THREE.Vector3(0, 0.0505, 0));
+    // Span the stud in the drawing plane only: the 0.18 depth step between
+    // A (z 0.31) and f (z 0.49) had stretched it 0.02 down into A.
+    mainBottom.z = passingTop.z;
     return {
       bottom: mainBottom,
       center: passingTop.clone().add(mainBottom).multiplyScalar(0.5),
@@ -485,6 +489,12 @@ function arnoldFreeEscapement(movement) {
   const wheelRotor = new THREE.Group();
   wheelRotor.userData.role = 'detent-released-twelve-tooth-wheel-rotor';
   escapeWheel.add(wheelRotor);
+  // Brown draws plain ratchet teeth: a short face and a straight back running
+  // down to the next root, with no raised crown between the points.  The old
+  // 1.96 crown arc filled the gaps and stood in the path of notch g as the
+  // free balance swung past the line of centres.  The narrow point is kept
+  // (it drops to 1.96 just behind the tip) so the impulse face still clears
+  // the back of the working tooth.
   const wheelShape = new THREE.Shape();
   for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
     const centerAngle = toothIndex * toothPitch;
@@ -497,17 +507,10 @@ function arnoldFreeEscapement(movement) {
         Math.cos(centerAngle - toothPitch * 0.38) * toothTipRadius,
         Math.sin(centerAngle - toothPitch * 0.38) * toothTipRadius,
       ),
-      ...Array.from({ length: 4 }, (_, sample) => {
-        const angle = THREE.MathUtils.lerp(
-          centerAngle - toothPitch * 0.25,
-          centerAngle + toothPitch * 0.40,
-          sample / 3,
-        );
-        return new THREE.Vector2(
-          Math.cos(angle) * wheelCrownRadius,
-          Math.sin(angle) * wheelCrownRadius,
-        );
-      }),
+      new THREE.Vector2(
+        Math.cos(centerAngle - toothPitch * 0.25) * wheelCrownRadius,
+        Math.sin(centerAngle - toothPitch * 0.25) * wheelCrownRadius,
+      ),
       new THREE.Vector2(
         Math.cos(centerAngle + toothPitch * 0.49) * wheelRootRadius,
         Math.sin(centerAngle + toothPitch * 0.49) * wheelRootRadius,
@@ -579,17 +582,18 @@ function arnoldFreeEscapement(movement) {
     balanceSpokes.push(spoke);
     balance.add(spoke);
   }
+  // Stud a works spring f only: it and its arm run in front of hook k and
+  // detent A (world z 0.48..0.60 and 0.48..0.58; k's front face is 0.47),
+  // overlapping only f's plane (0.43..0.55).  The old ball at z 0.33..0.56
+  // drove straight through hook k on both passes.
   const studArm = new THREE.Mesh(
-    new THREE.BoxGeometry(balanceRadius * 0.88, 0.08, 0.23),
+    new THREE.BoxGeometry(balanceRadius * 0.88, 0.08, 0.10),
     drivenMaterial,
   );
-  studArm.position.x = balanceRadius * 0.44;
+  studArm.position.set(balanceRadius * 0.44, 0, 0.29);
   studArm.userData.role = 'balance-arm-carrying-operating-stud-a';
-  const operatingStud = new THREE.Mesh(
-    new THREE.SphereGeometry(0.115, 18, 14),
-    darkMaterial,
-  );
-  operatingStud.position.set(balanceRadius * 0.92, 0, 0.20);
+  const operatingStud = cylinderAlongZ(0.115, 0.12, darkMaterial, 24);
+  operatingStud.position.set(balanceRadius * 0.92, 0, 0.30);
   operatingStud.userData.role =
     'one-way-operating-stud-a-on-balance-axis-assembly';
   const impulsePoints = impulseFacePoints();
@@ -607,13 +611,16 @@ function arnoldFreeEscapement(movement) {
         .multiplyScalar(balanceRadius * 0.68).x,
       impulseCenter.clone().normalize()
         .multiplyScalar(balanceRadius * 0.68).y,
-      -0.01,
+      -0.565,
     ),
-    new THREE.Vector3(impulseCenter.x, impulseCenter.y, -0.01),
+    new THREE.Vector3(impulseCenter.x, impulseCenter.y, -0.565),
     0.16,
-    balanceDepth * 0.86,
+    0.25,
     drivenMaterial,
   );
+  // The arm runs behind the wheel (world z -0.45..-0.20; the wheel's back
+  // face is -0.19), in front of the plain disc, and meets notch g from
+  // behind; only the notch reaches into the teeth.
   impulseArm.userData.role = 'balance-arm-to-impulse-notch-g';
   // Brown draws balance a as a plain disc with the notch h, g where the
   // tooth enters; the open rim and spokes are not drawn. The disc lies behind
@@ -707,16 +714,19 @@ function arnoldFreeEscapement(movement) {
   const hookK = new THREE.Group();
   hookK.userData.role =
     'hook-k-transmits-upward-only-motion-to-main-detent';
+  // k spans z 0.20..0.47: it laps A (0.20..0.42) and f (0.43..0.55) but
+  // stands in front of notch g (whose front face is 0.198).
   const hookVertical = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.38, 0.32),
+    new THREE.BoxGeometry(0.11, 0.38, 0.27),
     drivenMaterial,
   );
   hookVertical.position.y = 0.11;
   const hookLip = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 0.10, 0.32),
+    new THREE.BoxGeometry(0.30, 0.10, 0.27),
     drivenMaterial,
   );
-  hookLip.position.set(0.10, -0.04, 0);
+  // The foot of k lies under A (A spans +-0.05 about the free point).
+  hookLip.position.set(0.10, -0.1005, 0);
   hookK.add(hookVertical, hookLip);
   // 0.29 tall: its top meets the underside of A (0.28 above the locking
   // face) with a 0.01 seat instead of standing 0.06 up through the leaf.
@@ -1004,10 +1014,23 @@ function arnoldFreeEscapement(movement) {
 
     const mainPoints = mainSpringPointsAtLift(state.detentLift);
     const passingPoints = passingSpringPointsAtState(state);
-    updateSegmentedLeaf(mainDetentSpring, mainPoints);
+    // A is riveted to the side of hook k: its rendered end stops at k's
+    // right face (0.055 short of k's axis) instead of running into k.
+    const renderedMainPoints = mainPoints.map((point) => point.clone());
+    renderedMainPoints.at(-1).lerp(
+      renderedMainPoints.at(-2),
+      0.0545 / renderedMainPoints.at(-1).distanceTo(renderedMainPoints.at(-2)),
+    );
+    updateSegmentedLeaf(mainDetentSpring, renderedMainPoints);
     updateSegmentedLeaf(passingSpring, passingPoints);
     const freePoint = mainPoints.at(-1);
-    hookK.position.set(freePoint.x, freePoint.y, 0.31);
+    hookK.position.set(freePoint.x, freePoint.y, 0.335);
+    // k is fixed to A's end, so it tilts with A's end as the leaf bends.
+    const beforeFree = mainPoints.at(-2);
+    hookK.rotation.z = Math.atan2(
+      beforeFree.y - freePoint.y,
+      beforeFree.x - freePoint.x,
+    );
     const passingStudPose = passingStudPoseAtState(state);
     passingStudI.position.set(
       passingStudPose.center.x,
@@ -1015,6 +1038,10 @@ function arnoldFreeEscapement(movement) {
       0.38,
     );
     passingStudI.scale.y = passingStudPose.length;
+    passingStudI.rotation.z = Math.atan2(
+      2 * state.detentLift * passingStudMainProgress,
+      mainSpringFreeBase.x - fixedSpringAnchor.x,
+    ) - Math.PI;
     // d is fixed under the leaf, so it rises with the leaf at its own station
     // (lift x progress^2), not with the free end; the old full-lift offset
     // drove d 0.13 up through A when the detent was raised.
@@ -1022,6 +1049,12 @@ function arnoldFreeEscapement(movement) {
       lockingPoint.x,
       lockingPoint.y + 0.145 + state.detentLift * stopDLeafProgress ** 2,
       0.38,
+    );
+    // ... and tilts with the leaf there, so its seat stays flat under A
+    // (level while locked, when the lift is zero).
+    detentStopD.rotation.z = Math.atan(
+      -2 * state.detentLift * stopDLeafProgress
+        / (fixedSpringAnchor.x - mainSpringFreeBase.x),
     );
     lockMarker.visible = state.wheelLocked;
     if (state.wheelLocked) {
@@ -1364,6 +1397,10 @@ function earnshawSpringDetentEscapement(movement) {
   );
   const maximumDetentLift = 0.08;
   const maximumReturnPassingDeflection = 0.16;
+  // V's radius (0.08) + half the 0.052 leaf width + 0.004 running clearance.
+  const returnPassingLeafClearance = 0.110;
+  // Acting contact: V's radius plus half the leaf width, plus 0.001.
+  const actingLeafClearance = 0.107;
 
   const impulsePalletLocalAngle = Math.atan2(
     sourceRasterBalanceCenter.y - sourceRasterImpulsePalletP.y,
@@ -1585,6 +1622,7 @@ function earnshawSpringDetentEscapement(movement) {
   };
   const passingSpringPointsAtState = ({
     balanceAngle,
+    cyclePhase = 0,
     detentLift,
     returnPassingDeflection,
   }, pointCount = 17) => {
@@ -1610,7 +1648,7 @@ function earnshawSpringDetentEscapement(movement) {
       freeAtReturnContact,
       returnFlexFraction,
     );
-    return Array.from({ length: pointCount }, (_, index) => {
+    const leafPoints = () => Array.from({ length: pointCount }, (_, index) => {
       const progress = index / (pointCount - 1);
       const point = anchor.clone().lerp(free, progress);
       const flexWeight = Math.sin(progress * Math.PI / 2) ** 2;
@@ -1620,11 +1658,96 @@ function earnshawSpringDetentEscapement(movement) {
         * (1 - returnFlexFraction * 0.35);
       return new THREE.Vector3(point.x, point.y, dischargingPlaneZ);
     });
+    let points = leafPoints();
+    if (returnFlexFraction > 0 || cyclePhase > 0.5) {
+      // V is still passing the yielded leaf as the scheduled flex relaxes (it
+      // clears only about 12 degrees past the line): on the return half hold
+      // the tip out so no leaf segment comes within V's radius plus half the
+      // leaf width.  The leaf rests on V, never inside it.
+      const jewel = freeAtReturnContact.clone().add(
+        new THREE.Vector2(0.12, 0),
+      );
+      const segmentDistance = (a, b) => {
+        const ab = new THREE.Vector2(b.x - a.x, b.y - a.y);
+        const t = THREE.MathUtils.clamp(
+          ((jewel.x - a.x) * ab.x + (jewel.y - a.y) * ab.y)
+            / Math.max(ab.lengthSq(), 1e-12),
+          0,
+          1,
+        );
+        return Math.hypot(a.x + ab.x * t - jewel.x, a.y + ab.y * t - jewel.y);
+      };
+      for (let pass = 0; pass < 16; pass += 1) {
+        let nearest = Infinity;
+        for (let index = 1; index < points.length; index += 1) {
+          nearest = Math.min(
+            nearest,
+            segmentDistance(points[index - 1], points[index]),
+          );
+        }
+        if (nearest >= returnPassingLeafClearance) break;
+        const away = free.clone().sub(jewel).normalize();
+        free.addScaledVector(
+          away,
+          returnPassingLeafClearance - nearest + 0.001,
+        );
+        points = leafPoints();
+      }
+    }
+    return points;
   };
 
   const unlockingJewelLocal = sourcePointToModel(
     sourceRasterUnlockingJewelV,
   ).sub(balanceCenter);
+  // V's circle reaches about 0.025 inside the resting leaf tip, so on the acting
+  // vibration it meets TV about 11 degrees before the dead point, earlier
+  // than the nominal 5-degree schedule.  From that first touch the detent is
+  // lifted at least as far as keeps the leaf resting on V (V's radius plus
+  // half the leaf width); V slips off the tip just before the dead point,
+  // where the prescribed lift has already caught up.
+  const actingContactLiftAtPhase = (phase) => {
+    if (phase <= 0.2 || phase >= releasePhase) return 0;
+    const balanceAngle = balanceAngleAtPhase(phase);
+    const jewel = balanceCenter.clone().add(
+      rotate2(unlockingJewelLocal, balanceAngle),
+    );
+    const clearanceAtLift = (lift) => {
+      const points = passingSpringPointsAtState({
+        balanceAngle,
+        detentLift: lift,
+        returnPassingDeflection: 0,
+      });
+      let nearest = Infinity;
+      for (let index = 1; index < points.length; index += 1) {
+        const a = points[index - 1];
+        const b = points[index];
+        const abx = b.x - a.x;
+        const aby = b.y - a.y;
+        const t = THREE.MathUtils.clamp(
+          ((jewel.x - a.x) * abx + (jewel.y - a.y) * aby)
+            / Math.max(abx * abx + aby * aby, 1e-12),
+          0,
+          1,
+        );
+        nearest = Math.min(
+          nearest,
+          Math.hypot(a.x + abx * t - jewel.x, a.y + aby * t - jewel.y),
+        );
+      }
+      return nearest;
+    };
+    if (clearanceAtLift(0) >= actingLeafClearance) return 0;
+    let low = 0;
+    let high = maximumDetentLift * 1.5;
+    if (clearanceAtLift(high) < actingLeafClearance) return 0;
+    for (let step = 0; step < 32; step += 1) {
+      const middle = (low + high) / 2;
+      if (clearanceAtLift(middle) >= actingLeafClearance) high = middle;
+      else low = middle;
+    }
+    return high;
+  };
   const stateAtTime = (time) => {
     const cycleCoordinate = time / balancePeriod;
     const cycleIndex = Math.floor(cycleCoordinate);
@@ -1636,7 +1759,10 @@ function earnshawSpringDetentEscapement(movement) {
       cyclePhase,
     ) / balancePeriod ** 2;
     const wheel = wheelMotionAtCyclePhase(cycleIndex, cyclePhase);
-    const detentLift = detentLiftAtPhase(cyclePhase);
+    const detentLift = Math.max(
+      detentLiftAtPhase(cyclePhase),
+      actingContactLiftAtPhase(cyclePhase),
+    );
     const returnPassingDeflection = returnPassingDeflectionAtPhase(
       cyclePhase,
     );
@@ -1843,13 +1969,18 @@ function earnshawSpringDetentEscapement(movement) {
   );
   wheelRim.userData.role = 'flat-escape-wheel-web-with-four-crossings';
   wheelRotor.add(wheelRim);
+  // Brown draws each long tooth with a short, slightly undercut locking and
+  // impulse face: its root trails the tip.  A forward-raked face would lead
+  // the tip into P, so the tooth flank rather than the tip met the jewel as
+  // A caught P.  The long back runs on to the next tooth's face root.
+  const toothFaceRootAngle = toothTipOffset + toothPitch * 0.07;
   const escapeTeeth = [];
   for (let index = 0; index < toothCount; index += 1) {
     const centerAngle = index * toothPitch;
     const toothShape = polygonShape([
       new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.48) * wheelRootRadius,
+        Math.cos(centerAngle + toothFaceRootAngle) * wheelRootRadius,
+        Math.sin(centerAngle + toothFaceRootAngle) * wheelRootRadius,
       ),
       new THREE.Vector2(
         Math.cos(centerAngle + toothTipOffset) * toothTipRadius,
@@ -1860,8 +1991,10 @@ function earnshawSpringDetentEscapement(movement) {
         Math.sin(centerAngle + toothPitch * 0.16) * wheelCrownRadius,
       ),
       new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.48) * wheelRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.48) * wheelRootRadius,
+        Math.cos(centerAngle + toothFaceRootAngle + toothPitch)
+          * wheelRootRadius,
+        Math.sin(centerAngle + toothFaceRootAngle + toothPitch)
+          * wheelRootRadius,
       ),
     ]);
     const tooth = new THREE.Mesh(
@@ -2065,10 +2198,11 @@ function earnshawSpringDetentEscapement(movement) {
   );
   unlockingJewelArm.userData.role =
     'discharging-roller-arm-to-jewel-V';
-  // Radius 0.085 so the yielded gold spring tip, held 0.12 from V's axis on
-  // the return passage, clears the jewel instead of cutting into it.
+  // Radius 0.08 so the yielded gold spring tip, held 0.12 from V's axis on
+  // the return passage, clears the jewel instead of cutting into it, and the
+  // backed leaf still clears V at the dead point where the wheel releases.
   const unlockingJewelV = cylinderAlongZ(
-    0.085,
+    0.08,
     0.24,
     jewelMaterial,
     24,
