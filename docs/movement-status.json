@@ -9611,16 +9611,17 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-poppet-valves.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking.",
+      "limits": "Toe/lifter contact and valve spring load are prescribed.",
       "assessment": "reasonable"
     },
     {
