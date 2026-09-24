@@ -52,7 +52,9 @@ function makeEndFrame({
       new THREE.BoxGeometry(0.18, handrailHeight, 0.18),
       material,
     );
-    post.position.set(0, handrailHeight / 2, z - Math.sign(z) * 0.22);
+    // The posts stand outboard of the rails so the tread rods, which hang
+    // inboard of the rails, pass clear of them.
+    post.position.set(0, handrailHeight / 2, z + Math.sign(z) * 0.21);
     post.userData.role = `${role}-vertical-post`;
     group.add(post);
     posts.push(post);
@@ -70,10 +72,10 @@ function makeEndFrame({
     upperPins.push(upperPin);
 
     const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.16, 20, 14),
+      new THREE.SphereGeometry(0.12, 20, 14),
       whiteMaterial,
     );
-    cap.position.set(0, handrailHeight + 0.16, z - Math.sign(z) * .22);
+    cap.position.set(0, handrailHeight + 0.12, z + Math.sign(z) * .21);
     cap.userData.role = `${role}-white-post-cap`;
     group.add(cap);
     caps.push(cap);
@@ -81,7 +83,7 @@ function makeEndFrame({
 
   const topCrossbar = cylinderAlongZ(
     0.075,
-    railHalfWidth * 2 + 0.18,
+    railHalfWidth * 2 + 0.42,
     material,
   );
   topCrossbar.position.y = handrailHeight;
@@ -127,9 +129,11 @@ function makeTread({
   rearAxle.userData.role = 'tread-rear-edge-stringer-pivot-axle';
   group.add(rearAxle);
 
+  // The front axle ends inboard of the stringers, which it would otherwise
+  // cross at high tide when the tread lies level with them.
   const frontEdge = cylinderAlongZ(
     0.055,
-    railHalfWidth * 2 + 0.64,
+    railHalfWidth * 2 - 0.24,
     pinMaterial,
     20,
   );
@@ -193,10 +197,11 @@ function makeWharf({
     group.add(farPost);
 
     const guard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.35, 0.13, 0.13),
+      // Starts clear of the swinging handrail's pivot eye.
+      new THREE.BoxGeometry(2.1, 0.13, 0.13),
       farPostMaterial,
     );
-    guard.position.set(1.175, handrailHeight, side * railHalfWidth);
+    guard.position.set(1.30, handrailHeight, side * railHalfWidth);
     guard.userData.role = 'fixed-wharf-horizontal-guard-rail';
     group.add(guard);
 
@@ -274,10 +279,13 @@ function selfAdjustingWharfLadder(movement) {
   const maximumTideDrop = sourceMaximumTideDrop * sourceScale;
   const treadCount = 7;
   const treadSpacing = sourceStepSpacing * sourceScale;
-  const treadDepth = 1.95 * sourceScale;
+  // Shallow enough that the last tread's front axle and rods clear the
+  // floating frame's lower pivot.
+  const treadDepth = 1.6 * sourceScale;
   const treadThickness = 0.105;
   const railHalfWidth = 0.69;
-  const treadWidth = railHalfWidth * 2 - 0.20;
+  // Narrower than the rails so the inboard rods hang clear of the board.
+  const treadWidth = railHalfWidth * 2 - 0.62;
   const supportRodLength = Math.hypot(handrailHeight, treadDepth);
   const dockLower = new THREE.Vector3(2.72, 1.58, 0);
   const cycleDuration = 10;
@@ -376,9 +384,11 @@ function selfAdjustingWharfLadder(movement) {
     root.add(upperHandrail);
     upperHandrails.push(upperHandrail);
     for (let i = 1; i < treadCount; i++) upperHandrail.userData.addPinEye(i * treadSpacing, .059);
-    for (let i = 0; i < treadCount; i++) {
-      const pin = cylinderAlongZ(i === 0 ? .13 : .055, .66, pinMaterial);
-      pin.position.set(i * treadSpacing, 0, side * .05);
+    // Tread 0 hangs from the fixed frame's own upper pivot pin, so the
+    // handrail carries pins only at the intermediate treads.
+    for (let i = 1; i < treadCount; i++) {
+      const pin = cylinderAlongZ(.055, .66, pinMaterial);
+      pin.position.set(i * treadSpacing, 0, -side * .05);
       pin.userData.role = 'upper-suspension-pivot-pin';
       upperHandrail.add(pin);
     }
@@ -413,7 +423,7 @@ function selfAdjustingWharfLadder(movement) {
     for (const side of [-1, 1]) {
       const rod = foldingRod({length: supportRodLength, width: .07,
         depth: .07, bore: .059, material: pinMaterial,
-        role: 'constant-length-tread-suspension-rod', planeZ: side * .24});
+        role: 'constant-length-tread-suspension-rod', planeZ: -side * .24});
       rod.userData.role = 'constant-length-tread-suspension-rod';
       rod.userData.side = side;
       rod.userData.treadIndex = index;

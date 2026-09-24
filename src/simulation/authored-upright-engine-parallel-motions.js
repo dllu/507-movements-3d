@@ -1141,7 +1141,7 @@ function opposedRadiusRodUprightEngine(movement) {
   root.userData.cameraFov = 8;
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
+    cameraDirection: new THREE.Vector3(0.45, -0.7, 14),
     root,
     update,
   };

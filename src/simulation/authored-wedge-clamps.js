@@ -479,8 +479,9 @@ function boweryJoinersClamp(movement) {
     new THREE.Vector3(3.13, 1.42, 1.58),
   );
   root.userData.groundFloorY = -0.40;
-  // A narrow field keeps the end elevation close to Brown's flat section.
-  root.userData.cameraFov = 10;
+  // A very narrow field keeps the end elevation close to Brown's flat
+  // section: the long bed top and the far cheeks barely open in perspective.
+  root.userData.cameraFov = 5;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {

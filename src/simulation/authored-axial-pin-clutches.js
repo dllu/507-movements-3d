@@ -674,43 +674,165 @@ function axialPinPulleyClutch(movement) {
   shiftCarrier.position.copy(lowerCenter);
   shiftCarrier.userData.role =
     'nonrotating-shift-collar-translating-with-lower-pulley';
-  const shiftCollarOffsetX = pulleyWidth / 2 + 0.14;
-  const shiftCollar = torusNormalToX(0.22, 0.046, brassMaterial, 56);
+  const shiftCollarOffsetX = pulleyWidth / 2 + 0.55;
+  // Grooved shifting spool: flanges 0.34, groove 0.19 wide 0.10.
+  const spoolProfile = [
+    [0.092, -0.10], [0.34, -0.10], [0.34, -0.05], [0.19, -0.05],
+    [0.19, 0.05], [0.34, 0.05], [0.34, 0.10], [0.092, 0.10], [0.092, -0.10],
+  ].map(([radius, axial]) => new THREE.Vector2(radius, axial));
+  const shiftCollar = new THREE.Mesh(
+    new THREE.LatheGeometry(spoolProfile, 72),
+    brassMaterial,
+  );
+  shiftCollar.rotation.z = -Math.PI / 2;
   shiftCollar.position.x = shiftCollarOffsetX;
   shiftCollar.userData.role = 'fork-groove-collar-moving-pulley-axially';
   shiftCarrier.add(shiftCollar);
+  // Thrust sleeve carrying the collar ring against the pulley hub face.
+  const sleeveStart = pulleyWidth / 2 + 0.095;
+  const sleeveEnd = shiftCollarOffsetX - 0.10;
+  const shiftSleeve = new THREE.Mesh(
+    new THREE.LatheGeometry([
+      new THREE.Vector2(0.092, 0),
+      new THREE.Vector2(0.15, 0),
+      new THREE.Vector2(0.15, sleeveEnd - sleeveStart),
+      new THREE.Vector2(0.092, sleeveEnd - sleeveStart),
+      new THREE.Vector2(0.092, 0),
+    ], 48),
+    brassMaterial,
+  );
+  shiftSleeve.rotation.z = -Math.PI / 2;
+  shiftSleeve.position.x = sleeveStart;
+  shiftSleeve.userData.role = 'shift-sleeve-carrying-collar-against-pulley-hub';
+  shiftCarrier.add(shiftSleeve);
   root.add(shiftCarrier);
 
-  const leverPivot = new THREE.Vector3(1.28, -0.20, 0.58);
-  const leverPivotPin = cylinderAlongZ(0.105, 0.42, darkMaterial, 28);
-  leverPivotPin.position.copy(leverPivot);
+  // Brown's operating lever hangs from a stud on the right upright: its eye
+  // sits about 0.58 above the lower shaft, the strap hooks over to the left
+  // and drops vertically past the shaft between two collars.  The lever is a
+  // flat hooked strap turning about that stud; two fork pins behind the strap
+  // straddle the shift collar ring, so the strap pushes the pulley axially.
+  const leverPivot = new THREE.Vector3(
+    (disengagedPulleyX + engagedPulleyX) / 2 + shiftCollarOffsetX + 0.415,
+    lowerCenter.y + 0.58,
+    0.42,
+  );
+  const leverStrapOffsetX = -0.415;
+  const leverHookRadius = 0.30;
+  const leverStrapBottom = -1.26;
+  const leverStrapWidth = 0.13;
+  const leverThickness = 0.07;
+  const leverPivotPin = cylinderAlongZ(0.05, 0.42 + 0.28 + 0.06, darkMaterial, 28);
+  leverPivotPin.position.set(leverPivot.x, leverPivot.y, (-0.28 + 0.48) / 2);
   leverPivotPin.userData.role = 'fixed-operating-lever-pivot';
   root.add(leverPivotPin);
-  const forkArms = [-1, 1].map((side) => {
-    const arm = makeBeam(
-      leverPivot.clone().add(new THREE.Vector3(0, 0, side * 0.13)),
-      new THREE.Vector3(),
-      { color: PALETTE.accent, depth: 0.075, thickness: 0.085 },
+  // Small bracket seating the stud on the right upright's front face.
+  const leverStudBracket = new THREE.Mesh(
+    new THREE.BoxGeometry(1.30 - (leverPivot.x - 0.05), 0.16, 0.10),
+    frameMaterial,
+  );
+  leverStudBracket.position.set((1.30 + leverPivot.x - 0.05) / 2, leverPivot.y, -0.23);
+  leverStudBracket.userData.role = 'fixed-lever-stud-bracket-on-right-upright';
+  root.add(leverStudBracket);
+  const leverRotor = new THREE.Group();
+  leverRotor.position.copy(leverPivot);
+  leverRotor.userData.role = 'hooked-operating-lever-turning-on-upright-stud';
+  root.add(leverRotor);
+  const leverCenterline = new THREE.Path();
+  leverCenterline.moveTo(leverStrapOffsetX, leverStrapBottom);
+  leverCenterline.lineTo(leverStrapOffsetX, -leverHookRadius);
+  leverCenterline.absarc(
+    leverStrapOffsetX + leverHookRadius,
+    -leverHookRadius,
+    leverHookRadius,
+    Math.PI,
+    Math.PI / 2,
+    true,
+  );
+  leverCenterline.lineTo(-0.10, 0);
+  const leverPoints = leverCenterline.getSpacedPoints(96);
+  const halfWidth = leverStrapWidth / 2;
+  const leftEdge = [];
+  const rightEdge = [];
+  leverPoints.forEach((point, index) => {
+    const next = leverPoints[Math.min(index + 1, leverPoints.length - 1)];
+    const previous = leverPoints[Math.max(index - 1, 0)];
+    const tangent = next.clone().sub(previous).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    leftEdge.push(point.clone().addScaledVector(normal, halfWidth));
+    rightEdge.push(point.clone().addScaledVector(normal, -halfWidth));
+  });
+  const leverShape = new THREE.Shape([...leftEdge, ...rightEdge.reverse()]);
+  const operatingLever = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(leverShape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: leverThickness,
+    }),
+    brassMaterial,
+  );
+  operatingLever.geometry.translate(0, 0, -leverThickness / 2);
+  operatingLever.userData.role =
+    'source-shown-operating-lever-with-sliding-fork-contact';
+  leverRotor.add(operatingLever);
+  const leverEyeShape = new THREE.Shape();
+  leverEyeShape.absarc(0, 0, 0.125, 0, Math.PI * 2, false);
+  const leverEyeHole = new THREE.Path();
+  leverEyeHole.absarc(0, 0, 0.053, 0, Math.PI * 2, true);
+  leverEyeShape.holes.push(leverEyeHole);
+  const leverEye = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(leverEyeShape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: leverThickness,
+    }),
+    brassMaterial,
+  );
+  leverEye.geometry.translate(0, 0, -leverThickness / 2);
+  leverEye.userData.role = 'operating-lever-eye-on-upright-stud';
+  leverRotor.add(leverEye);
+  // One fork prong reaches back from the strap into the collar groove,
+  // below the shaft, at the strap line.
+  const leverForkLocalY = lowerCenter.y - leverPivot.y - 0.245;
+  const forkProngFront = -leverThickness / 2;
+  const forkProngBack = 0.13 - leverPivot.z;
+  const forkArms = [0].map((side) => {
+    const arm = cylinderAlongZ(0.034, forkProngFront - forkProngBack, darkMaterial, 20);
+    arm.position.set(
+      leverStrapOffsetX,
+      leverForkLocalY,
+      (forkProngFront + forkProngBack) / 2,
     );
     arm.userData.role = 'fork-arm-running-in-shift-collar-groove';
     arm.userData.side = side;
-    root.add(arm);
+    leverRotor.add(arm);
     return arm;
   });
-  const operatingLever = makeBeam(
-    leverPivot,
-    new THREE.Vector3(0.52, -1.48, 0.58),
-    { color: PALETTE.accent, depth: 0.12, thickness: 0.11 },
-  );
-  operatingLever.userData.role =
-    'source-shown-operating-lever-with-sliding-fork-contact';
-  root.add(operatingLever);
   const leverHandle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 24, 16),
+    new THREE.SphereGeometry(0.11, 24, 16),
     darkMaterial,
   );
+  leverHandle.position.set(leverStrapOffsetX, leverStrapBottom, 0);
   leverHandle.userData.role = 'manual-shift-lever-handle';
-  root.add(leverHandle);
+  leverRotor.add(leverHandle);
+  const leverAngleForCollarX = (collarX) => {
+    // Rotate the strap so its fork line (local x = offset, local y = fork
+    // height) lands on the collar plane.
+    const targetX = collarX - leverPivot.x;
+    let low = -0.9;
+    let high = 0.9;
+    const forkX = (angle) => leverStrapOffsetX * Math.cos(angle)
+      - leverForkLocalY * Math.sin(angle);
+    for (let iteration = 0; iteration < 60; iteration += 1) {
+      const middle = (low + high) / 2;
+      if ((forkX(middle) - targetX) * (forkX(low) - targetX) <= 0) {
+        high = middle;
+      } else {
+        low = middle;
+      }
+    }
+    return (low + high) / 2;
+  };
 
   const initialState = stateAtTime(0);
   const belt = makeDynamicMovingBelt(initialState.beltPath.curve, {
@@ -734,27 +856,7 @@ function axialPinPulleyClutch(movement) {
   root.add(belt);
 
   const updateLever = (pulleyX) => {
-    const collarPoint = new THREE.Vector3(
-      pulleyX + shiftCollarOffsetX,
-      lowerCenter.y + 0.20,
-      leverPivot.z,
-    );
-    forkArms.forEach((arm) => {
-      const side = arm.userData.side;
-      arm.userData.setEndpoints(
-        leverPivot.clone().add(new THREE.Vector3(0, 0, side * 0.13)),
-        collarPoint.clone().add(new THREE.Vector3(0, 0, side * 0.18)),
-      );
-    });
-    const leverDirection = collarPoint.clone()
-      .sub(leverPivot)
-      .normalize();
-    const handleEnd = leverPivot.clone().addScaledVector(
-      leverDirection,
-      1.58,
-    );
-    operatingLever.userData.setEndpoints(leverPivot, handleEnd);
-    leverHandle.position.copy(handleEnd);
+    leverRotor.rotation.z = leverAngleForCollarX(pulleyX + shiftCollarOffsetX);
   };
 
   const update = (time) => {
@@ -796,6 +898,7 @@ function axialPinPulleyClutch(movement) {
       handwheelSpokes,
       leverHandle,
       leverPivotPin,
+      leverRotor,
       lowerPulley,
       operatingLever,
       outputIndex,

@@ -421,7 +421,9 @@ function bentShaftSlide(movement) {
     rodB.userData.setEndpoints(rodStart, rodEnd);
     upperBall.position.copy(state.upperSocket);
     upperSocketCup.position.copy(state.upperSocket);
-
+    // The lower ball is forged on rod B's end: it turns with the rod in its
+    // socket in C (slide C does not rotate, so the local turn is the rod's).
+    lowerBall.quaternion.copy(rodB.quaternion);
   };
 
   const sourceState = stateAtTime(0);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { openCrescentShuttleLaw } from './open-crescent-shuttle-motion.js';
 import crescent from './baked/open-crescent-shuttle.js';
-import { plate } from './finite-plate-geometry.js';
+import { capsule, circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import { boredCylinderGeometry } from './piston-guide-parts.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
 import {
@@ -44,20 +44,22 @@ function makeCrank({
   const crank = new THREE.Group();
   crank.userData.role =
     'constant-speed-input-crank-with-slot-roller-pin';
-  const disk = cylinderAlongZ(0.43, 0.34, driverMaterial, 44);
-  disk.userData.role = 'continuous-input-crank-disk';
+  // Brown draws an eyed crank arm, not a disk: a round boss on the shaft
+  // tapering to a small eye carrying the slot pin.
+  const disk = new THREE.Mesh(plate(polygonClipping.union(
+    poly(circle([0, 0], 0.30, 96)),
+    capsule([0, 0], [crankRadius, 0], 0.085, 32),
+    poly(circle([crankRadius, 0], 0.12, 64)),
+  ), 0.20, 0.38), driverMaterial);
+  disk.userData.role = 'eyed-input-crank-arm';
   crank.add(disk);
-  const shaft = cylinderAlongZ(0.14, 0.76, darkMaterial, 28);
-  shaft.position.z = -0.03;
+  // Its end shows in the crank eye as Brown's shaft hole.
+  const shaft = cylinderAlongZ(0.14, 0.80, darkMaterial, 28);
+  shaft.position.z = -0.01;
   shaft.userData.role = 'fixed-axis-input-crankshaft';
   crank.add(shaft);
-  const arm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.16, 0.18),
-    driverMaterial,
-  );
-  arm.position.set(crankRadius / 2, 0, 0.29);
-  arm.userData.role = 'crank-arm-from-shaft-to-slot-roller';
-  crank.add(arm);
+  // The arm is part of the eyed crank plate above.
+  const arm = disk;
   const pin = cylinderAlongZ(pinRadius, 0.38, darkMaterial, 28);
   pin.position.set(crankRadius, 0, 0.42);
   pin.userData.role = 'crank-pin-running-in-synthesized-curved-slot';

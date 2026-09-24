@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
 import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, finiteSawSheave } from './spring-pivot-family-parts.js';
 import {
@@ -296,7 +297,9 @@ function pendulumTreeSaw(movement) {
   pendulumRod.userData.role = 'rigid-pendulum-rod';
   pendulum.add(pendulumRod);
   const pendulumBob = new THREE.Mesh(
-    new THREE.BoxGeometry(0.76, 0.46, 0.34),
+    // Brown's bob is narrow (about 0.3 of the A-frame spread); 0.64 wide
+    // it swings clear of both legs.
+    new THREE.BoxGeometry(0.64, 0.46, 0.34),
     pendulumMaterial,
   );
   pendulumBob.position.y = -pendulumLength;
@@ -322,16 +325,18 @@ function pendulumTreeSaw(movement) {
     new THREE.BoxGeometry(3.54, 0.13, 0.24),
     carriageMaterial,
   );
-  carriageTop.position.set(1.35, 1.29, 0.08);
+  // Lowered 0.175 so the fully raised carriage stays clear under the fixed
+  // top beam.
+  carriageTop.position.set(1.35, 1.115, 0.08);
   carriageTop.userData.role = 'moving-carriage-top-crossbar';
   carriage.add(carriageTop);
   const carriageSides = [];
   for (const x of [-0.42, 3.12]) {
     const side = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, 1.52, 0.24),
+      new THREE.BoxGeometry(0.13, 1.345, 0.24),
       carriageMaterial,
     );
-    side.position.set(x, 0.53, 0.08);
+    side.position.set(x, 0.4425, 0.08);
     side.userData.role = 'moving-carriage-vertical-guide-side';
     carriageSides.push(side);
     carriage.add(side);
@@ -458,7 +463,8 @@ function pendulumTreeSaw(movement) {
     root.add(outerRope);
 
     const counterweight = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.50, 0.34),
+      // 0.30 deep so the connecting rod's plane (z 0.50..0.60) passes clear.
+      new THREE.BoxGeometry(0.34, 0.50, 0.30),
       carriageMaterial,
     );
     counterweight.position.x = index === 0
@@ -478,6 +484,38 @@ function pendulumTreeSaw(movement) {
   log.userData.role = 'fixed-lying-tree-log-beneath-saw';
   root.add(log);
   const bark = cylinderAlongZ(logRadius, logLength, woodMaterial, 48);
+  // The saw has cut a kerf across the log down to the lowest reach of its
+  // teeth (0.28 above the log axis), so the blade runs in its own cut.
+  {
+    // The bow saw runs in the plane z = 0.34 (blade and set teeth span
+    // 0.293..0.394).
+    const kerfCenterZ = 0.34;
+    const kerfHalfWidth = 0.07;
+    const kerfFloorY = 0.28;
+    const ends = [
+      [-logLength / 2, kerfCenterZ - kerfHalfWidth],
+      [kerfCenterZ + kerfHalfWidth, logLength / 2],
+    ].map(([from, to]) => new THREE.CylinderGeometry(logRadius, logRadius, to - from, 48)
+      .applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
+      .translate(0, 0, (from + to) / 2));
+    const floorShape = new THREE.Shape();
+    const floorAngle = Math.asin(kerfFloorY / logRadius);
+    floorShape.absarc(0, 0, logRadius, floorAngle, Math.PI - floorAngle, true);
+    floorShape.closePath();
+    const floor = new THREE.ExtrudeGeometry(floorShape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: 2 * kerfHalfWidth,
+    }).translate(0, 0, kerfCenterZ - kerfHalfWidth);
+    const merged = mergeGeometries(
+      [...ends, floor].map((geometry) => (geometry.index ? geometry.toNonIndexed() : geometry)),
+    );
+    merged.computeVertexNormals();
+    bark.geometry.dispose();
+    bark.geometry = merged;
+    bark.rotation.set(0, 0, 0);
+    bark.userData.kerf = { centerZ: kerfCenterZ, halfWidth: kerfHalfWidth, floorY: kerfFloorY };
+  }
   bark.userData.role = 'lying-tree-bark-cylinder';
   log.add(bark);
   const cutFace = new THREE.Mesh(
@@ -529,7 +567,8 @@ function pendulumTreeSaw(movement) {
       setVerticalRope(
         ropeSegments[index * 2],
         innerX,
-        state.anchorY,
+        // The rope is tied on top of the anchor stud, not run to its axis.
+        state.anchorY + 0.083,
         pulleyY,
         0.34,
       );

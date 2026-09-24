@@ -582,6 +582,17 @@ function rotatingObliqueGrooveTraverse(movement) {
   );
   root.userData.groundFloorY = -1.67;
   correctCordTraverseParts(root,362,update);
+  // The revolved groove section shares vertices across its sharp flank
+  // edges, so smooth normals smear the straight groove into a wavy band.
+  // Split the faces so the barrel shades as a plain cylinder crossed by
+  // Brown's single straight diagonal groove.
+  {
+    const grooved = root.userData.blocks.groovedCylinder;
+    const flat = grooved.geometry.toNonIndexed();
+    flat.computeVertexNormals();
+    grooved.geometry.dispose();
+    grooved.geometry = flat;
+  }
   // Brown draws both drums as plain cylinders seen in flat front elevation:
   // no end flanges or rims and no white phase indices.  They stay allocated
   // (hidden) so kinematic checks keep their references.

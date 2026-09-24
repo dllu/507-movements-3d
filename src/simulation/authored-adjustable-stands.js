@@ -56,7 +56,9 @@ function adjustableMirrorStand(movement) {
   const tiltAmplitude = THREE.MathUtils.degToRad(22);
   const yawPhaseOffset = Math.PI / 2;
   const tiltFrequencyRatio = 2;
-  const tiltPhaseOffset = -Math.PI / 4;
+  // The cycle starts at full back tilt with the stem fully yawed, the pose
+  // Brown engraves: the frame leans with its top edge rising to the right.
+  const tiltPhaseOffset = -Math.PI / 2;
   // The frame stands far enough behind the hinge that its lower edge clears
   // the socket collar and set screw at full inclination.
   const mirrorCenterLocal = new THREE.Vector3(0, 0.62, -1.18);
@@ -569,7 +571,7 @@ function adjustableMirrorStand(movement) {
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
   return {
-    cameraDirection: new THREE.Vector3(3.2, 1.7, 10.2),
+    cameraDirection: new THREE.Vector3(-1.6, 0.4, 10.2),
     root,
     update,
   };

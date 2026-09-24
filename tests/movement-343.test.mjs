@@ -553,7 +553,9 @@ test('movement 343 renderer keeps every visible rod and common pin on the analyt
   assert.ok(size.z > 1.7,
     'frame, crank, rods, crosspiece, piston, and pins have distinct depth');
   assert.ok(model.cameraDirection.x > 0);
-  assert.ok(model.cameraDirection.y > 0);
+  // Slightly below the cylinder cover so it reads edge-on, as Brown's thin table.
+  assert.ok(model.cameraDirection.y < 0);
+  assert.ok(model.cameraDirection.z > Math.abs(model.cameraDirection.y) * 10);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 2);
   assert.ok(blocks.jointPins.P.parent === blocks.inputCrank, 'pin P fast in crank');
   assert.ok(blocks.jointPins.C.parent === blocks.pistonOutput, 'pin C fast in piston');

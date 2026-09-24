@@ -293,9 +293,10 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   );
   supportCup.userData.role = 'fixed-bearing-cup-on-top-of-pillar-G';
 
+  // The rim stays inside the sweep of the curved neck's lower end.
   const supportCupRim = torusNormalToY(
-    0.205,
-    0.05,
+    0.155,
+    0.04,
     darkMaterial,
     10,
     56,

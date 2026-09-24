@@ -143,9 +143,12 @@ function slottedTraverse(movement) {
   const sourceOutputRailHalfLength = 7.75;
   const sourceGuideXs = [-6, 6];
   // Brown's plate draws a much shorter bar with guides a, a close to the
-  // lever; these keep the bar in both guides over the full traverse.
+  // lever; these keep the bar in both guides over the full traverse. His bar
+  // is nearly as broad as the lever (about 0.7 source unit on the lever's
+  // scale).
   const plateOutputRailHalfLength = 5.2;
   const plateGuideXs = [-4, 4];
+  const plateOutputRailHeight = 0.40;
   const sourceCyclesPerMinute = 15;
   const cyclePeriod = 60 / sourceCyclesPerMinute;
   const sourceKeyframePhases = [0, 0.4, 0.5, 0.9];
@@ -470,20 +473,22 @@ function slottedTraverse(movement) {
     const guide = new THREE.Group();
     guide.position.x = sourceX * sourceScale;
     guide.userData.role = `fixed-output-guide-a-${index + 1}`;
-    // A short flange, as Brown draws guide a, behind the bar.
+    // Brown draws guide a as a narrow upright flange standing taller than
+    // the bar, the bar passing through it: a back plate, two lips and a
+    // front cheek (behind the lever's plane) close the rectangular eye.
     const upright = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.62, 0.54),
+      new THREE.BoxGeometry(0.20, plateOutputRailHeight + 0.50, 0.54),
       frameMaterial,
     );
     upright.position.set(0, sourceOutputRailWorldY, fixedFramePlaneZ + 0.04);
     const lips = [-1, 1].map((side) => {
       const lip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.48, 0.12, 0.30),
+        new THREE.BoxGeometry(0.20, 0.12, 0.30),
         frameMaterial,
       );
       lip.position.set(
-        side * 0.14,
-        sourceOutputRailWorldY + side * 0.19,
+        0,
+        sourceOutputRailWorldY + side * (plateOutputRailHeight / 2 + 0.07),
         outputBarPlaneZ,
       );
       guide.add(lip);
@@ -494,9 +499,15 @@ function slottedTraverse(movement) {
       lip.userData.role =
         `guide-a-${index + 1}-${lipIndex === 0 ? 'lower' : 'upper'}-lip`;
     });
-    guide.add(upright);
+    const frontCheek = new THREE.Mesh(
+      new THREE.BoxGeometry(0.20, plateOutputRailHeight + 0.50, 0.025),
+      frameMaterial,
+    );
+    frontCheek.position.set(0, sourceOutputRailWorldY, outputBarPlaneZ + 0.1075);
+    frontCheek.userData.role = `guide-a-${index + 1}-front-cheek`;
+    guide.add(upright, frontCheek);
     fixedFrame.add(guide);
-    return { guide, lips, upright };
+    return { frontCheek, guide, lips, upright };
   });
 
   const fixedPinWorld = sourcePointToWorld(
@@ -571,7 +582,7 @@ function slottedTraverse(movement) {
   const outputRail = new THREE.Mesh(
     new THREE.BoxGeometry(
       plateOutputRailHalfLength * 2 * sourceScale,
-      0.24,
+      plateOutputRailHeight,
       barDepth,
     ),
     barMaterial,

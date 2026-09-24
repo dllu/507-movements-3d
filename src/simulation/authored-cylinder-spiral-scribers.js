@@ -534,10 +534,12 @@ function spiralCylinderScriber(movement) {
     return rim;
   });
   const cylinderShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.082, 0.082, 5.02, 30),
+    // Brown's upright shaft stops inside the horizontal bevel wheel, below
+    // the horizontal shaft, instead of crossing it.
+    new THREE.CylinderGeometry(0.082, 0.082, apex.y - 0.10 + 1.74, 30),
     darkMaterial,
   );
-  cylinderShaft.position.y = 0.77;
+  cylinderShaft.position.y = (apex.y - 0.10 - 1.74) / 2;
   cylinderShaft.userData.role =
     'vertical-shaft-keyed-to-bevel-wheel-and-cylinder';
   cylinderRotor.add(cylinderShaft);
@@ -565,7 +567,15 @@ function spiralCylinderScriber(movement) {
     stroke: rackStroke,
   });
   const spiralTrace = new THREE.Mesh(
-    new THREE.TubeGeometry(helixCurve, 180, 0.026, 9, false),
+    // The drawn line is sunk into the surface so only a hairline stands
+    // proud; the marking point rides on it instead of piercing a bead.
+    new THREE.TubeGeometry(new (class extends THREE.Curve {
+      getPoint(t, target = new THREE.Vector3()) {
+        const point = helixCurve.getPoint(t, target);
+        const scale = (cylinderRadius - 0.018) / cylinderRadius;
+        return point.set(point.x * scale, point.y, point.z * scale);
+      }
+    })(), 180, 0.022, 9, false),
     matte(PALETTE.ink, { metalness: 0.06, roughness: 0.50 }),
   );
   spiralTrace.userData.role =
@@ -617,8 +627,12 @@ function spiralCylinderScriber(movement) {
     'same-input-shaft-spur-pinion-driving-vertical-rack';
   root.add(spurGear);
 
-  const inputShaft = cylinderAlongX(0.072, 3.82, darkMaterial, 30);
-  inputShaft.position.set(0.10, apex.y, apex.z);
+  // The horizontal shaft runs from just inside the bevel pinion (clear of
+  // the upright shaft) to the crank arm's face.
+  const inputShaftLeft = apex.x + 0.10;
+  const inputShaftRight = 1.995;
+  const inputShaft = cylinderAlongX(0.072, inputShaftRight - inputShaftLeft, darkMaterial, 30);
+  inputShaft.position.set((inputShaftLeft + inputShaftRight) / 2, apex.y, apex.z);
   inputShaft.userData.role =
     'single-keyed-horizontal-shaft-for-crank-spur-and-bevel-pinion';
   root.add(inputShaft);
@@ -700,7 +714,8 @@ function spiralCylinderScriber(movement) {
   carriageBridge.userData.role =
     'bridge-from-rack-plane-to-cylinder-center-plane';
   rackAssembly.add(carriageBridge);
-  const stylusArmLength = spurCenter.x - stylusContactX;
+  // The arm ends in the base of the conical marking point.
+  const stylusArmLength = spurCenter.x - stylusContactX - 0.20;
   const stylusArm = cylinderAlongX(
     0.052,
     stylusArmLength,
@@ -708,7 +723,7 @@ function spiralCylinderScriber(movement) {
     24,
   );
   stylusArm.position.set(
-    (spurCenter.x + stylusContactX) / 2,
+    (spurCenter.x + stylusContactX + 0.20) / 2,
     0,
     cylinderCenter.z,
   );

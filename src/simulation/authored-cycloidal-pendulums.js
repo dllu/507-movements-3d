@@ -117,6 +117,7 @@ function cycloidalIsochronousPendulum(movement) {
   const contactClearance = 0.0006;
   const wrappedCableSegments = 48;
   const freeCableSegments = 18;
+  const bobRadius = 0.205;
 
   const normalizedCyclePhase = (time) => {
     const rawPhase = positiveModulo(time, isochronousPeriod)
@@ -398,19 +399,39 @@ function cycloidalIsochronousPendulum(movement) {
   });
 
   const topBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(3.16, 0.23, 0.48),
+    // Brown's crossbar spans 240 of the cheeks' 515 px, its underside at
+    // the cusp.
+    new THREE.BoxGeometry(1.98, 0.21, 0.48),
     frameMaterial,
   );
-  topBeam.position.set(0, cuspY + 0.18, -0.03);
+  topBeam.position.set(0, cuspY + 0.125, -0.03);
   topBeam.userData.fixed = true;
   topBeam.userData.role = 'fixed-upper-crossbar-over-cycloidal-cheeks';
   root.add(topBeam);
+  // Upper surface of a cheek plate at |x| (cheek contact curve plus its
+  // thickness), found by bisection on the cycloid parameter.
+  const cheekTopYAt = (x) => {
+    let low = 0;
+    let high = maximumCheekParameter;
+    for (let iteration = 0; iteration < 60; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (cycloidRadius * (middle - Math.sin(middle)) < x) low = middle;
+      else high = middle;
+    }
+    return cheekPointAtParameter(low, 0).y + cheekThickness * 0.9;
+  };
+  // Brown's brackets hang close in under the crossbar (about 0.76 out),
+  // each an upright post down to its cheek with a triangular brace inside.
+  const postHalfSpan = 0.76;
+  const postWidth = 0.14;
   const sidePosts = [-1, 1].map((side) => {
+    const bottomY = cheekTopYAt(postHalfSpan - postWidth / 2) + 0.01;
+    const topY = cuspY + 0.03;
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.94, 0.38),
+      new THREE.BoxGeometry(postWidth, topY - bottomY, 0.38),
       frameMaterial,
     );
-    post.position.set(side * 1.15, cuspY - 0.39, -0.04);
+    post.position.set(side * postHalfSpan, (topY + bottomY) / 2, -0.04);
     post.userData.fixed = true;
     post.userData.role = 'fixed-side-bracket-supporting-cycloidal-cheek';
     root.add(post);
@@ -428,31 +449,29 @@ function cycloidalIsochronousPendulum(movement) {
   root.add(suspensionBoss);
   const anchorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 24), darkMaterial);
   anchorPin.rotation.x = Math.PI / 2;
-  anchorPin.position.set(0, cuspY, 0.17);
+  anchorPin.position.set(0, cuspY, mechanismPlaneZ - cordRadius - 0.036);
   anchorPin.userData.role = 'cord-anchor-stud-to-rear-suspension-boss';
   root.add(anchorPin);
 
   const braceMembers = [];
   for (const side of [-1, 1]) {
-    const triangle = [
-      [
-        new THREE.Vector3(side * 0.58, cuspY + 0.02, -0.22),
-        new THREE.Vector3(side * 0.92, cuspY - 0.55, -0.22),
-      ],
-      [
-        new THREE.Vector3(side * 0.92, cuspY - 0.55, -0.22),
-        new THREE.Vector3(side * 1.10, cuspY - 0.02, -0.22),
-      ],
-      [
-        new THREE.Vector3(side * 1.10, cuspY - 0.02, -0.22),
-        new THREE.Vector3(side * 0.58, cuspY + 0.02, -0.22),
-      ],
-    ];
+    const inner = new THREE.Vector3(side * 0.34, cuspY - 0.01, -0.22);
+    const outerTop = new THREE.Vector3(
+      side * (postHalfSpan - postWidth / 2 - 0.03),
+      cuspY - 0.01,
+      -0.22,
+    );
+    const outerLow = new THREE.Vector3(
+      side * (postHalfSpan - postWidth / 2 - 0.03),
+      cheekTopYAt(postHalfSpan) + 0.20,
+      -0.22,
+    );
+    const triangle = [[inner, outerLow], [outerLow, outerTop], [outerTop, inner]];
     for (const [start, end] of triangle) {
       const brace = beamBetween(
         start,
         end,
-        0.065,
+        0.055,
         0.10,
         frameMaterial,
       );
@@ -467,7 +486,8 @@ function cycloidalIsochronousPendulum(movement) {
     amplitude: oscillationAmplitude,
     cycloidRadius,
     lowestBobY,
-    z: 0.035,
+    // Behind the bob sphere so the dotted path is not threaded through it.
+    z: mechanismPlaneZ - bobRadius - 0.03,
   });
   const pathDashes = [];
   const pathIntervals = 48;
@@ -501,7 +521,7 @@ function cycloidalIsochronousPendulum(movement) {
   const bob = new THREE.Group();
   bob.userData.role = 'cycloidal-path-pendulum-bob';
   const bobSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.205, 36, 24),
+    new THREE.SphereGeometry(bobRadius, 36, 24),
     bobMaterial,
   );
   bobSphere.userData.role = 'pendulum-bob-mass';
@@ -525,10 +545,13 @@ function cycloidalIsochronousPendulum(movement) {
       points.push(cheekPointAtParameter(
         state.theta * index / wrappedCableSegments,
       ));
-    }
-    for (let index = 1; index <= freeCableSegments; index += 1) {
+    }    for (let index = 1; index <= freeCableSegments; index += 1) {
+      // The cord is tied at the bob's surface, not run into its centre.
       points.push(state.contactPoint.clone().lerp(
-        state.bobPoint,
+        state.bobPoint.clone().addScaledVector(
+          state.freeCordDirection,
+          -bobRadius,
+        ),
         index / freeCableSegments,
       ));
     }

@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-cylinder-spiral-scribers.js",
-      "sha256": "1c9dd3674732e31c2d048f16584315c0f9a533823de516c3235ce18b2a3d1df3"
+      "sha256": "c3e2bf8f3420bd0cc8fd2cfd9ef1a39e6b891298864277ba86e17397db6223b3"
     },
     {
       "file": "src/simulation/authored-dynamometers.js",

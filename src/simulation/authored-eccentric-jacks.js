@@ -452,13 +452,13 @@ function eccentricPawlJack(movement) {
     journal.rotation.x=Math.PI/2;journal.position.set(pivot.x,pivot.y,-.43);
     journal.userData.role='fixed-bored-jack-pawl-support';root.add(journal);fixedSupports.push(journal);
     const bridge=new THREE.Mesh(new THREE.BoxGeometry(pivot.x-radius-.07,.16,.24),frameMaterial);
-    bridge.position.set((pivot.x-radius-.07)/2,pivot.y,-.51);root.add(bridge);fixedSupports.push(bridge);
+    bridge.position.set((pivot.x-radius-.07)/2,pivot.y,-.51);bridge.userData.role='fixed-rear-pawl-support-bridge';root.add(bridge);fixedSupports.push(bridge);
   }
   const supportSpine=new THREE.Mesh(new THREE.BoxGeometry(.25,holdingPivot.y+1,.24),frameMaterial);
-  supportSpine.position.set(-.12,(holdingPivot.y-1)/2,-.51);root.add(supportSpine);fixedSupports.push(supportSpine);
+  supportSpine.position.set(-.12,(holdingPivot.y-1)/2,-.51);supportSpine.userData.role='fixed-rear-pawl-support-spine';root.add(supportSpine);fixedSupports.push(supportSpine);
   for(const y of [.35,1.15]){
     const cheek=new THREE.Mesh(new THREE.BoxGeometry(.44,.18,.12),frameMaterial);cheek.position.set(-.04,y,.35);cheek.userData.role='fixed-front-rack-guide-strap';root.add(cheek);fixedSupports.push(cheek);
-    const web=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.88),frameMaterial);web.position.set(-.39,y,-.03);root.add(web);fixedSupports.push(web);
+    const web=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.88),frameMaterial);web.position.set(-.39,y,-.03);web.userData.role='fixed-rack-guide-strap-web';root.add(web);fixedSupports.push(web);
   }
 
   const driveContactMarker = new THREE.Mesh(
@@ -663,6 +663,9 @@ function eccentricPawlJack(movement) {
     eccentricStrap.position.x = state.camCenter.x;
     eccentricStrap.position.y = state.camCenter.y;
     drivingPawl.userData.setEndpoints(state.camCenter, state.driveNose);
+    // The strap and its pawl are one rigid forging turning together about
+    // the eccentric.
+    eccentricStrap.rotation.z = drivingPawl.rotation.z;
     drivingPawl.userData.endpoints = {
       end: state.driveNose.clone(),
       start: state.camCenter.clone(),

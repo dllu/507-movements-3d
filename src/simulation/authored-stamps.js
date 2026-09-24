@@ -1194,11 +1194,62 @@ function carryRackOnFiniteTeeth(model) {
   };
 }
 
+// Brown draws a broad rod (about two-thirds of the pinion's pitch radius)
+// between two broad collars, the rack teeth running only from just below the
+// pinion up to the top collar. The rod is widened away from its teeth, the
+// collars broadened, the head recentred, the unused rack teeth hidden and the
+// rod shortened above the highest working tooth. The two C guides move below
+// the pinion so the shortened rod stays in both at rest and at full lift; the
+// plate does not draw them and source presentation removes them.
+function matchBrownStampProportions(model) {
+  const d = model.root.userData, b = d.blocks, g = d.geometry;
+  const rodWidth = 0.62;
+  const right = b.rackBar.geometry.parameters.width / 2 + b.rackBar.position.x;
+  const left = right - rodWidth;
+  const centerX = (left + right) / 2;
+  const workingTeeth = b.rackTeeth.filter(tooth => tooth.userData.index >= -6 && tooth.userData.index <= 1);
+  for (const tooth of b.rackTeeth) tooth.visible = workingTeeth.includes(tooth);
+  const highestToothTop = Math.max(...workingTeeth.map(tooth => tooth.position.y)) + g.rackToothPitch / 2;
+  const rodTop = highestToothTop + 0.16;
+  const rodBottom = g.rackBarBottomY;
+  b.rackBar.geometry.dispose();
+  b.rackBar.geometry = new THREE.BoxGeometry(rodWidth, rodTop - rodBottom, g.rackDepth * 0.72);
+  b.rackBar.position.set(centerX, (rodTop + rodBottom) / 2, b.rackBar.position.z);
+  const collarWidth = 1.40;
+  b.topRodCap.geometry.dispose();
+  b.topRodCap.geometry = new THREE.BoxGeometry(collarWidth, 0.40, 0.51);
+  b.topRodCap.position.set(centerX, rodTop + 0.20, b.topRodCap.position.z);
+  b.lowerCollar.geometry.dispose();
+  b.lowerCollar.geometry = new THREE.BoxGeometry(collarWidth, 0.46, 0.68);
+  b.lowerCollar.position.x = centerX;
+  b.lowerCollar.position.y -= 0.11;
+  b.stampDie.position.x = centerX;
+  b.dieFace.position.x = centerX;
+  const guideYs = [-0.95, -2.36];
+  b.guideAssemblies.forEach(({ guide, frontLip, rearLip, leftJaw }, index) => {
+    guide.position.y = guideYs[index];
+    leftJaw.position.x = left - 0.02 - 0.09;
+    for (const lip of [frontLip, rearLip]) {
+      lip.geometry.dispose();
+      lip.geometry = new THREE.BoxGeometry(right - left + 0.18, 0.34, 0.12);
+      lip.position.x = (left - 0.20 + right - 0.02) / 2;
+    }
+  });
+  g.brownRodWidth = rodWidth;
+  g.brownRodTopLocalY = rodTop;
+  d.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-0.95, -8.0, -0.65),
+    new THREE.Vector3(2.4, rodTop + g.rackStroke + 1.0, 1),
+  );
+  model.update(0);
+}
+
 export function createAuthoredStampMovement(movement) {
   if (movement.id !== 351) return null;
   const model = gravityDropStamp(movement);
   correctStampParts(model);
   carryRackOnFiniteTeeth(model);
+  matchBrownStampProportions(model);
   markShadows(model.root);
   return model;
 }

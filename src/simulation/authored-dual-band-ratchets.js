@@ -1,5 +1,5 @@
 import { dualBandPawlDimensions, pawl390Angle, install390Pawls } from './dual-band-pawl-contact.js';
-import { correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
+import { boredAxialCylinder, correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
@@ -575,7 +575,8 @@ function dualBandOscillationRectifier(movement) {
     role: 'open-band-ratchet-wheel-fast-on-flywheel-shaft',
     rootRadius: ratchetRootRadius,
     toothCount: ratchetToothCount,
-    z: openPlaneZ + 0.15,
+    // Clear of the loose pulley's face (0.11) and its shortened hub.
+    z: openPlaneZ + 0.165,
   });
   const crossedRatchet = makeRatchetWheel({
     depth: 0.10,
@@ -584,7 +585,7 @@ function dualBandOscillationRectifier(movement) {
     role: 'crossed-band-ratchet-wheel-fast-on-flywheel-shaft',
     rootRadius: ratchetRootRadius,
     toothCount: ratchetToothCount,
-    z: crossedPlaneZ + 0.15,
+    z: crossedPlaneZ + 0.165,
   });
   flywheelRotor.add(openRatchet, crossedRatchet);
   const shaft = cylinderAlongZ(0.105, 1.78, darkMaterial, 28);
@@ -624,6 +625,10 @@ function dualBandOscillationRectifier(movement) {
     markerCount: 6,
     radius: 0.034,
     tubularSegments: 220,
+    // Brown draws flat leather bands, not round cord.
+    thickness: 0.04,
+    width: 0.05,
+    widthDirection: new THREE.Vector3(0, 0, 1),
   });
   openBand.userData.isBelt = true;
   openBand.userData.markers = openBand.children.slice(0, 6);
@@ -639,6 +644,10 @@ function dualBandOscillationRectifier(movement) {
     markerCount: 6,
     radius: 0.034,
     tubularSegments: 220,
+    // Brown draws flat leather bands, not round cord.
+    thickness: 0.04,
+    width: 0.05,
+    widthDirection: new THREE.Vector3(0, 0, 1),
   });
   crossedBand.userData.isBelt = true;
   crossedBand.userData.markers = crossedBand.children.slice(0, 6);
@@ -948,6 +957,12 @@ function dualBandOscillationRectifier(movement) {
   root.userData.cameraDistanceScale = 1.17;
   root.userData.groundFloorY = -1.74;
   correctDualBandInterfaces(root);
+  // The loose hubs end short of the fast ratchet wheels beside them.
+  for (const carrier of [openCarrier, crossedCarrier]) {
+    const {hub} = carrier.userData;
+    hub.geometry.dispose();
+    hub.geometry = boredAxialCylinder(0.13, 0.108, 0.21);
+  }
   install390Pawls(root);
   finishAlternatingDrive(root, update, cycleDuration);
   markShadows(root);

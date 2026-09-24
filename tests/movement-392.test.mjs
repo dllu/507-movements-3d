@@ -70,7 +70,10 @@ test('movement 392 is one crank-driven ungated saw, two fixed guide pairs, and o
   assert.equal(blocks.guideRails.length, 4);
   assert.equal(blocks.tableParts.length, 2);
   assert.equal(blocks.sawAssembly.userData.sawTeeth.length, 30);
-  assert.equal(blocks.flexingSpring.userData.segments.length, 36);
+  // One continuous flat leaf, trimmed to butt on its two end seats.
+  assert.equal(blocks.flexingSpring.userData.crossSection, 'flat');
+  assert.equal(blocks.flexingSpring.userData.mesh.userData.role,
+    'continuous-flexing-leaf-spring-body');
 
   const roles = [];
   const belts = [];

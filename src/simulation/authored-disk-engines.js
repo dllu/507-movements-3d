@@ -1333,26 +1333,90 @@ function diskEngine(movement) {
     standard.position.y = 0.30 + standardHeight / 2;
     standard.position.z = 0;
   });
-  const baseLeft = crankCenter.x - 3.0;
-  const baseRight = casingEndX + 0.7;
-  base.geometry.dispose();
-  base.geometry = new THREE.BoxGeometry(baseRight - baseLeft, 0.24, 2.0);
-  base.position.set((baseLeft + baseRight) / 2, 0.16, 0);
-  baseEdge.geometry.dispose();
-  baseEdge.geometry = new THREE.BoxGeometry(baseRight - baseLeft + 0.2, 0.07, 2.1);
-  baseEdge.position.set((baseLeft + baseRight) / 2, 0.30, 0);
-  // A pedestal under the casing on the base, behind the section plane.
+  // Brown draws no base: the left pedestal and the right standard both run
+  // off the bottom of the plate. One pedestal bearing (the far one) carries
+  // the shaft; the base, its edge and the near standard are hidden.
+  const standardFootY = -3.0;
+  base.visible = false;
+  baseEdge.visible = false;
+  crankBearings[0].bearing.visible = false;
+  crankBearings[0].standard.visible = false;
+  {
+    const { standard } = crankBearings[1];
+    const standardHeight = crankCenter.y - 0.40 - standardFootY;
+    standard.geometry.dispose();
+    standard.geometry = new THREE.BoxGeometry(0.34, standardHeight, 0.70);
+    standard.position.y = standardFootY + standardHeight / 2;
+  }
+  // A pedestal under the casing, behind the section plane.
   const casingPedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * casingEndX, ballCenter.y - casingOuterRadius + 0.10 - 0.30, 1.4),
+    new THREE.BoxGeometry(2 * casingEndX, ballCenter.y - casingOuterRadius + 0.10 - standardFootY, 1.4),
     casingMaterial,
   );
-  casingPedestal.position.set(0, (0.30 + ballCenter.y - casingOuterRadius + 0.10) / 2, -0.85);
+  casingPedestal.position.set(0, (standardFootY + ballCenter.y - casingOuterRadius + 0.10) / 2, -0.85);
   casingPedestal.userData.role = 'fixed-casing-pedestal-behind-section';
+  // Brown leaves the space under the casing open; the casing is carried by
+  // the right-hand standard, so the pedestal is kept only for offline checks.
+  casingPedestal.visible = false;
   fixedFrame.add(casingPedestal);
+  // Brown's hatched right-hand standard beyond the casing end, cut by the
+  // section plane. Its top stops below the cone swept by the rod's
+  // right-hand end (radius x tan(beta) plus the rod and collar).
+  const rightStandardLeft = casingEndX;
+  const rightStandardRight = casingEndX + 0.72;
+  const rightStandardTop = ballCenter.y
+    - (rightStandardRight * Math.tan(nutationHalfAngle) + 0.26);
+  const rightStandard = new THREE.Mesh(
+    new THREE.BoxGeometry(rightStandardRight - rightStandardLeft,
+      rightStandardTop - standardFootY, 0.70),
+    [casingMaterial, casingMaterial, casingMaterial, casingMaterial,
+      sectionFaceMaterial, casingMaterial],
+  );
+  rightStandard.position.set((rightStandardLeft + rightStandardRight) / 2,
+    (rightStandardTop + standardFootY) / 2, -0.35);
+  rightStandard.userData.fixed = true;
+  rightStandard.userData.role = 'fixed-right-hand-standard-in-section';
+  fixedFrame.add(rightStandard);
+
+  // Brown's rod carries a square collar near each end, the two joined by a
+  // bow arching over the casing. The bow and collars are fast to the rod and
+  // disk, so they only wobble through the nutation half-angle and stay above
+  // the casing (whose farthest corner is well inside the bow radius).
+  const bowRadius = 3.15;
+  counterSideRod.geometry.dispose();
+  const counterLength = bowRadius + 0.36;
+  counterSideRod.geometry = new THREE.CylinderGeometry(0.10, 0.10,
+    counterLength - centralBallRadius * 0.45, 30).rotateZ(Math.PI / 2);
+  counterSideRod.rotation.set(0, 0, 0);
+  counterSideRod.position.set(-(counterLength + centralBallRadius * 0.45) / 2, 0, 0);
+  const collarMaterial = pistonBall.material;
+  const rodCollars = [1, -1].map((side, index) => {
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.50, 0.44), collarMaterial);
+    collar.position.set(side * bowRadius, 0, 0);
+    collar.userData.role = `moving-square-collar-on-rod-end-${index + 1}`;
+    diskAssembly.add(collar);
+    return collar;
+  });
+  const bowPoints = [];
+  const bowStart = Math.asin(0.20 / bowRadius);
+  for (let index = 0; index <= 96; index += 1) {
+    const angle = THREE.MathUtils.lerp(bowStart, Math.PI - bowStart, index / 96);
+    bowPoints.push(new THREE.Vector3(bowRadius * Math.cos(angle), bowRadius * Math.sin(angle), 0));
+  }
+  const bowSection = new THREE.Shape();
+  bowSection.absarc(0, 0, 0.11, 0, Math.PI * 2, false);
+  const rodBow = new THREE.Mesh(new THREE.ExtrudeGeometry(bowSection, {
+    bevelEnabled: false, curveSegments: 16, steps: 128,
+    extrudePath: new THREE.CatmullRomCurve3(bowPoints),
+  }), collarMaterial);
+  rodBow.userData.role = 'moving-bow-linking-the-rod-end-collars';
+  diskAssembly.add(rodBow);
+  Object.assign(root.userData.blocks, { casingPedestal, rightStandard, rodBow, rodCollars });
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(crankCenter.x - 2.0, 0.1, -0.4),
-    new THREE.Vector3(casingEndX + 1.9, ballCenter.y + casingOuterRadius + 0.35, 0.4),
+    new THREE.Vector3(bowRadius + 0.5, ballCenter.y + bowRadius + 0.2, 0.4),
   );
+  root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 1.0;
   root.userData.cameraFov = 12;
   Object.assign(geometry, { casingEndX, casingOuterRadius, coneOffset, flywheelRadius });

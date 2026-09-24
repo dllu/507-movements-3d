@@ -666,7 +666,10 @@ function fourMotionFeed(movement) {
     darkMaterial,
     26,
   );
-  rearSpringAnchor.position.set(springFixedX, springY, -0.50);
+  // The spring's straight end bears on the anchor pin's face rather than
+  // running into its centre.
+  rearSpringAnchor.position.set(springFixedX - 0.12 - 0.035 - 0.005,
+    springY, -0.50);
   rearSpringAnchor.userData.role = 'fixed-return-spring-anchor';
   root.add(markShadows(rearSpringAnchor));
 

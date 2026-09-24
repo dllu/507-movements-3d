@@ -231,7 +231,7 @@ function andersonGyroscopeGovernor(movement) {
   const speedCycleRate = fullTurn / cyclePeriod;
   const meanCarrierAngularSpeed = fullTurn * 2 / cyclePeriod;
   const carrierSpeedAmplitude = 0.42;
-  const sourceCarrierYaw = -0.38;
+  const sourceCarrierYaw = 0;
   const sourceInputShaftPhase = 0.46;
   const restTiltAngle = 0.10;
   const nominalTiltAngle = 0.38;

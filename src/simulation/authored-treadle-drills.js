@@ -371,13 +371,38 @@ function treadleBevelDrillingMachine(movement) {
   const pinionRootZ1=pinionOuterDistance+.105*.55*Math.sin(pinionPitchConeAngle);
   const rootR1=pinionOuterPitchRadius-.105*.55*Math.cos(pinionPitchConeAngle);
   const keyHole=clip.union(poly(circle([0,0],.099,80)),poly([[.075,-.031],[.135,-.031],[.135,.031],[.075,.031]]));
-  const keyedBody=plate(clip.difference(poly(circle([0,0],rootR1,96)),keyHole),pinionRootZ0,pinionRootZ1);
-  const bp=keyedBody.attributes.position;
-  for(let i=0;i<bp.count;i++){
-    const r=Math.hypot(bp.getX(i),bp.getY(i));
-    if(r>rootR1-1e-6){const scale=bp.getZ(i)/pinionRootZ1;bp.setXY(i,bp.getX(i)*scale,bp.getY(i)*scale);}
+  // Revolve the cone about the star-shaped keyed bore (round bore plus one
+  // rectangular keyway) so every section is a proper quad: shrinking a flat
+  // triangulated cap onto the cone folded cap triangles across the keyway.
+  const keyCornerAngle=Math.atan2(.031,.135),keyRootAngle=Math.asin(.031/.099);
+  const keyedBoreRadius=(angle)=>{
+    const a=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)));
+    if(a<=keyCornerAngle)return .135/Math.cos(a);
+    if(a<=keyRootAngle)return .031/Math.sin(a);
+    return .099;
+  };
+  const keyAngles=new Set();
+  for(let i=0;i<192;i++)keyAngles.add(i/192*FULL_TURN-Math.PI);
+  for(const edge of[keyCornerAngle,keyRootAngle])for(const sign of[-1,1])for(const eps of[-1e-5,0,1e-5])keyAngles.add(sign*edge+eps);
+  for(let i=0;i<=24;i++)for(const [lo,hi] of[[-keyRootAngle,-keyCornerAngle],[-keyCornerAngle,keyCornerAngle],[keyCornerAngle,keyRootAngle]])keyAngles.add(lo+(hi-lo)*i/24);
+  const sortedKeyAngles=[...keyAngles].sort((x,y)=>x-y);
+  const rootR0=rootR1*pinionRootZ0/pinionRootZ1;
+  const keyedPositions=[],keyedIndices=[];
+  for(const angle of sortedKeyAngles){
+    const c=Math.cos(angle),sn=Math.sin(angle),rho=keyedBoreRadius(angle);
+    for(const [r,z]of[[rho,pinionRootZ0],[rootR0,pinionRootZ0],[rootR1,pinionRootZ1],[rho,pinionRootZ1]])keyedPositions.push(r*c,r*sn,z);
   }
-  bp.needsUpdate=true;keyedBody.computeVertexNormals();
+  const keyedCount=sortedKeyAngles.length;
+  for(let i=0;i<keyedCount;i++){const j=(i+1)%keyedCount;for(let k=0;k<4;k++){const k2=(k+1)%4,a0=i*4+k,a1=i*4+k2,b0=j*4+k,b1=j*4+k2;keyedIndices.push(a0,b0,b1,a0,b1,a1);}}
+  const keyedBody=new THREE.BufferGeometry();
+  keyedBody.setAttribute('position',new THREE.Float32BufferAttribute(keyedPositions,3));
+  keyedBody.setIndex(keyedIndices);
+  {
+    let volume=0;const va=new THREE.Vector3(),vb=new THREE.Vector3(),vc=new THREE.Vector3();
+    for(let i=0;i<keyedIndices.length;i+=3){va.fromArray(keyedPositions,keyedIndices[i]*3);vb.fromArray(keyedPositions,keyedIndices[i+1]*3);vc.fromArray(keyedPositions,keyedIndices[i+2]*3);volume+=va.dot(vb.cross(vc));}
+    if(volume<0){for(let i=0;i<keyedIndices.length;i+=3)[keyedIndices[i+1],keyedIndices[i+2]]=[keyedIndices[i+2],keyedIndices[i+1]];keyedBody.setIndex(keyedIndices);}
+  }
+  keyedBody.computeVertexNormals();
   pinionGear.userData.body.geometry.dispose();pinionGear.userData.body.geometry=keyedBody;
   // The fixed upper bearing supports a rotating keyed hub. The feather can
   // therefore traverse it without sweeping through a stationary round bore.
@@ -439,10 +464,13 @@ function treadleBevelDrillingMachine(movement) {
     'vertical-drillshaft-sliding-through-small-bevel-pinion';
   shaftSpinRotor.add(drillShaft);
   const shaftFeather = new THREE.Mesh(
-    new THREE.BoxGeometry(.050,1.08,.054),
+    new THREE.BoxGeometry(.050,.51,.054),
     accentMaterial,
   );
-  shaftFeather.position.set(.102,2.33,0);
+  // The feather stays inside the keyed pinion bore and hub over the whole
+  // 0.27 feed, clear of the large bevel's inner tooth ends below the pinion
+  // and hidden inside the hub at the top (Brown shows a plain shaft).
+  shaftFeather.position.set(.102,2.485,0);
   shaftFeather.userData.role =
     'longitudinal-feather-key-sliding-in-pinion-groove';
   shaftSpinRotor.add(shaftFeather);
@@ -482,6 +510,8 @@ function treadleBevelDrillingMachine(movement) {
     flute.rotation.y = angle;
     flute.rotation.z = 0.18;
     flute.userData.role = 'visible-cutting-flute-on-drill-bit';
+    // Brown draws a plain pointed bit; the flute strips stood proud of it.
+    flute.visible = false;
     shaftSpinRotor.add(flute);
     return flute;
   });

@@ -576,5 +576,27 @@ function animalInteriorTreadwheel(movement) {
 
 export function createAuthoredAnimalTreadwheelMovement(movement) {
   if (movement.id !== 376) return null;
-  return finishRunnerTread(animalInteriorTreadwheel(movement), 376);
+  const model = animalInteriorTreadwheel(movement);
+  const { blocks } = model.root.userData;
+  // The swinging legs used to plunge up to 0.36 through the tread circle.
+  // Brown's horse stands a little left of and below the axle; placing it
+  // there with legs at 0.76 scale keeps every hoof inside the tread-board
+  // faces (radius 1.657) through the whole gait while the torso clears the
+  // axle.
+  blocks.animal.position.set(-0.15, -0.52, 0.03);
+  for (const legRoot of blocks.legRoots) legRoot.scale.setScalar(0.76);
+  model.root.userData.animalPlacement = {
+    legScale: 0.76,
+    maximumHoofRadius: 'kept below the 1.657 tread-board face radius',
+  };
+  model.update(0);
+  finishRunnerTread(model, 376);
+  // Brown draws no separate treads, only a narrow inner ring just inside the
+  // riveted band: the boards and their brackets take the rim's colour so
+  // they read as that ring rather than as bright slats.
+  const rimMaterial = blocks.faceRims[0].material;
+  for (const part of [...blocks.treadBoards, ...blocks.treadMounts]) {
+    part.material = rimMaterial;
+  }
+  return model;
 }

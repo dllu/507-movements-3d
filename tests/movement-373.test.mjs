@@ -491,8 +491,14 @@ test('movement 373 retained spring state keeps its outer anchor fixed, turns its
         expected.carriageWheelAngle, 0,
         'rendered wagon-wheel angle');
     }
-    near(blocks.testWeight.position.y, expected.testWeightY, 0,
-      'rendered removable weight height');
+    // The added load is heaped on the bed in proportion to the load
+    // fraction (hidden, seated, when unloaded) instead of hanging above it.
+    const heapFraction = expected.loadFraction > 1e-4 ? expected.loadFraction : 1;
+    near(blocks.testWeight.position.y,
+      data.testLoadHeap.bedTop
+        + heapFraction * blocks.testWeight.geometry.parameters.height / 2,
+      1e-12, 'rendered heaped test load');
+    assert.equal(blocks.testWeight.visible, expected.loadFraction > 1e-4);
     near(blocks.pointerPivot.rotation.z, expected.pointerAngle, 0,
       'rendered indicator angle');
     const positions = blocks.spiralSpring.geometry.attributes.position;

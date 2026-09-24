@@ -4,6 +4,7 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   makeDynamicLink,
+  makeDynamicMovingBelt,
   markShadows,
   matte,
 } from './primitives.js';
@@ -207,40 +208,71 @@ function makeSawAssembly({
   return markShadows(saw);
 }
 
-function makeFlexibleSpringSegments({
+// One continuous leaf, regenerated along the elastic line each frame.  It is
+// trimmed to butt against the blade's attachment pin and the clamp boss
+// rather than running through their centres.
+class TrimmedCurve extends THREE.Curve {
+  constructor(curve, start, end) {
+    super();
+    this.curve = curve;
+    this.start = start;
+    this.end = end;
+  }
+
+  getPoint(parameter, target = new THREE.Vector3()) {
+    return this.curve.getPoint(
+      this.start + (this.end - this.start) * parameter,
+      target,
+    );
+  }
+}
+
+function trimParameter(curve, fromEnd, radius) {
+  // Bisect for the curve parameter at `radius` from the chosen end point.
+  const anchor = curve.getPoint(fromEnd ? 1 : 0);
+  let inside = fromEnd ? 1 : 0;
+  let outside = 0.5;
+  for (let index = 0; index < 50; index += 1) {
+    const middle = (inside + outside) / 2;
+    if (curve.getPoint(middle).distanceTo(anchor) < radius) inside = middle;
+    else outside = middle;
+  }
+  return outside;
+}
+
+function makeFlexibleSpringLeaf({
   color,
   depth,
-  segmentCount,
+  fixedEndRadius,
+  movingEndRadius,
+  thickness,
 }) {
-  const spring = new THREE.Group();
-  spring.userData.role =
+  const leaf = makeDynamicMovingBelt(new THREE.LineCurve3(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(1, 0, 0),
+  ), {
+    closed: false,
+    color,
+    markerCount: 0,
+    thickness,
+    tubularSegments: 256,
+    width: depth,
+    widthDirection: new THREE.Vector3(0, 0, 1),
+  });
+  leaf.userData.role =
     'single-flexing-upper-leaf-spring-maintaining-blade-tension';
-  const segments = [];
-  for (let index = 0; index < segmentCount; index += 1) {
-    const segment = makeDynamicLink({
-      color,
-      depth,
-      jointRadius: index === 0 || index === segmentCount - 1
-        ? 0.040
-        : 0.001,
-      thickness: 0.075,
-    });
-    segment.userData.index = index;
-    segment.userData.role = 'short-rigid-render-segment-of-flexing-leaf-spring';
-    spring.add(segment);
-    segments.push(segment);
-  }
-  spring.userData.segments = segments;
-  spring.userData.setCurve = (curve) => {
-    for (let index = 0; index < segments.length; index += 1) {
-      const start = curve.getPointAt(index / segments.length);
-      const end = curve.getPointAt((index + 1) / segments.length);
-      segments[index].userData.setEndpoints(start, end);
-    }
-    spring.userData.currentCurve = curve;
-    spring.userData.currentLength = curve.getLength();
+  leaf.userData.mesh.userData.role = 'continuous-flexing-leaf-spring-body';
+  const setLeafCurve = leaf.userData.setCurve;
+  leaf.userData.setCurve = (curve) => {
+    setLeafCurve(new TrimmedCurve(
+      curve,
+      trimParameter(curve, false, movingEndRadius),
+      trimParameter(curve, true, fixedEndRadius),
+    ));
+    leaf.userData.currentCurve = curve;
+    leaf.userData.currentLength = curve.getLength();
   };
-  return markShadows(spring);
+  return markShadows(leaf);
 }
 
 // Brown draws the upper spring as one straight leaf clamped level at its
@@ -447,10 +479,12 @@ function gigSawWithTensionSpring(movement) {
   sawAssembly.position.z = 0.28;
   root.add(sawAssembly);
 
-  const flexingSpring = makeFlexibleSpringSegments({
+  const flexingSpring = makeFlexibleSpringLeaf({
     color: PALETTE.brass,
     depth: 0.15,
-    segmentCount: 36,
+    fixedEndRadius: 0.13,
+    movingEndRadius: 0.10,
+    thickness: 0.075,
   });
   root.add(flexingSpring);
   const springFixedBoss = cylinderAlongZ(

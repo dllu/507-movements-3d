@@ -36,7 +36,7 @@ export function correctStampParts(model){
  d.reconstructionNote='Six compatible involute teeth lift a straight rack. The imposed gravity fall still intersects the withdrawing final tooth, and the next tooth has an unresolved entry interference. Release and pickup need a contact-driven reconstruction. A longer lower rod retains the source guide topology and clears the finite head at full lift; rebound and tooth elasticity are not solved.';
  finish(model,4,new THREE.Vector3(.7,.5,15));
 }
-function finish(model,seconds,direction){const d=model.root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=seconds;d.cameraFov=8;d.cameraDistanceScale=1;const bounds=d.geometry.cyclePeriod?[[-.9,-7.6,-.65],[2.4,7.5,1]]:[[-4.6,-.85,-.92],[4.4,4.7,.9]];d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(...bounds[0]),new THREE.Vector3(...bounds[1]));model.cameraDirection=direction;model.root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});}
+function finish(model,seconds,direction){const d=model.root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=seconds;d.cameraFov=8;d.cameraDistanceScale=1;const bounds=d.geometry.cyclePeriod?[[-.9,-7.6,-.65],[2.4,7.5,1]]:[[-4.6,-.96,-.92],[4.4,4.7,.9]];d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(...bounds[0]),new THREE.Vector3(...bounds[1]));model.cameraDirection=direction;model.root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});}
 export function correctTripHammerParts(model){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
  for(const name of['camDisk','camHub','movingPivotHub']){const o=b[name],p=o.geometry.parameters;replace(o,ring(.123,p.radiusTop,-p.height/2,p.height/2,64));o.rotation.set(0,0,0);}
@@ -59,6 +59,20 @@ export function correctTripHammerParts(model){
  // Brown draws no fulcrum post: a minimal bearing block stays hidden behind the journal block.
  replace(b.pivotBridge,plate(clip.difference(rect(.62,.24),poly(circle([0,0],.123,64))),-.30,.30));
  const oldUpdate=model.update;model.update=time=>{oldUpdate(time);b.contactMarker.visible=false;b.impactMarker.visible=false;};model.update(0);
+ // Brown draws the round-topped cam post in front of the wiper wheel on a
+ // base block, its two braces beside it. The post, cap and braces move to a
+ // plane in front of the wheel and wipers (whose faces end at z=0.22), and
+ // the helve is thinned to a plane in front of the wipers so only the proud
+ // wear nose meets them.
+ const postFront=.28,postDepth=.18,postZ=postFront+postDepth/2;
+ {const o=b.camPost,box=new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position),w=box.max.x-box.min.x,h=box.max.y-box.min.y;
+  replace(o,plate(clip.difference(rect(w,h),poly(circle([g.camCenter.x-o.position.x,g.camCenter.y-o.position.y],.123,64))),-postDepth/2,postDepth/2));o.position.z=postZ;}
+ replace(b.camPostCap,plate(clip.difference(capsule([0,-.23],[0,.23],.32,32),poly(circle([0,.21],.123,64))),-postDepth/2,postDepth/2));b.camPostCap.position.z=postZ;
+ for(const brace of[b.camBraceLeft,b.camBraceRight])brace.position.z+=postZ+.48;
+ const helveFront=.365,helveBack=.23,helveOutline=poly(hull([[-3.26,.39],[-3.26,.82],...circle(g.followerCenterLocal.toArray(),g.followerRadius,96)]));
+ replace(b.helve,plate(clip.difference(helveOutline,poly(circle([0,0],.123,64))),-(helveFront-helveBack)/2,(helveFront-helveBack)/2));root.updateMatrixWorld(true);{const box=new THREE.Box3().setFromObject(b.helve);b.helve.position.z+=(helveFront+helveBack)/2-(box.min.z+box.max.z)/2;}
+ const postBox=new THREE.Box3().setFromBufferAttribute(b.camPost.geometry.attributes.position),groundY=b.camPost.position.y+postBox.min.y;
+ const postBase=new THREE.Mesh(new THREE.BoxGeometry(2.1,.20,1.3),b.camPost.material);postBase.position.set(g.camCenter.x,groundY-.10,-.10);postBase.userData.fixed=true;postBase.userData.role='fixed-base-block-under-cam-post';b.camPost.parent.add(postBase);b.postBase=postBase;
  d.stampTripParts={};
  d.reconstructionNote='The radial wiper face lifts the rounded tail of a first-order lever. The released hammer follows an assumed compound-pendulum mass model and an ideal inelastic stop. Pickup impulses, contact compliance and rebound are not solved.';
  finish(model,g.driverFullTurnPeriod,new THREE.Vector3(.8,.5,15));

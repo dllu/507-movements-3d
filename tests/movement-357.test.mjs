@@ -243,8 +243,9 @@ test('movement 357 transmits spin through one exact variable-angle Cardan joint'
       `unit B axis ${index}`);
     near(state.hingeAxis.length(), 1, 3e-16,
       `unit B hinge axis ${index}`);
+    // A few ulps of rounding, now that H starts at Brown's section plane.
     near(state.inputAxis.dot(state.outputAxis),
-      Math.cos(state.tiltAngle), 5e-16,
+      Math.cos(state.tiltAngle), 1e-15,
       `shaft included angle ${index}`);
     near(state.hingeAxis.dot(state.inputAxis), 0, 4e-16,
       `hinge normal to input shaft ${index}`);

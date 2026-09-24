@@ -397,12 +397,16 @@ export default {
     note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so no input guide, shoe, dashes, base, pin post or indices are drawn.',
   },
   351: {
-    remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop'],
-    note: 'The rack stamp, its guides and the mutilated pinion; no base, anvil or workpiece is drawn.',
+    remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-guide-.*'],
+    note: 'The broad rack rod between its two broad collars, the stamp head below and the mutilated pinion; no base, anvil, workpiece or rod guides are drawn.',
   },
   355: {
     camera: [7, 10, 12],
     note: 'Raised three-quarter view of pillar G on its flared foot, pintle F in the top bearing, ring A seen as a broad ellipse and disk C nearly edge-on; the factory hides the white indices Brown does not draw.',
+  },
+  358: {
+    remove: ['fixed-carriage-guide-rail', 'rail-end-cross-tie', 'rail-travel-reference-mark'],
+    note: 'Plan of the carriage: the fusee on its shaft in the carriage frame with the crank at the large end, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
   },
   354: {
     scale: [1, 1, -1],
@@ -458,7 +462,7 @@ export default {
     note: 'Face view of the treadwheel: the riveted rim, the square lattice of crossing bars round the sectioned axle and the horse walking inside; no trestle, base rails or white index are drawn.',
   },
   377: {
-    camera: [0.42, 0.06, 0.9],
+    camera: [0.84, 0.02, 0.9],
     remove: ['fixed-treadmill-foundation', 'fixed-hand-rail-support', 'white-index-.*'],
     note: 'Brown\'s view along the treadmill: the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the broad drum receding to the right with the man stepping up its boards holding the rail; no foundation slab, rail posts or white index are drawn.',
   },
@@ -472,7 +476,7 @@ export default {
     note: 'Side elevation of the C-frame with the drill spindle and its crank handle above and the opposed feed screw, rest and two-ball tommy bar below; no white indices are drawn.',
   },
   381: {
-    camera: [1, 0.06, 0.03],
+    camera: [1, 0.012, 0],
     remove: ['white-.*', 'workpiece-longitudinal-grain-line'],
     note: "End elevation matching Brown's upper transverse section: the bed, the flush dovetailed cheeks and wedges, and the board standing on edge between them; Brown's lower figure, the plan of the diverging cheeks and wedges, is the top view. The white datums and grain lines are not drawn.",
   },
@@ -502,8 +506,8 @@ export default {
     note: 'The smooth and toothed rollers and the board between them; no bearing frame or white indices are drawn.',
   },
   389: {
-    remove: ['white-.*', 'fixed-front-rack-guide-strap'],
-    note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with the eccentric strap pawl and upper stop; the white indices and the front rack straps cut away by the section are not drawn.',
+    remove: ['white-.*', 'fixed-front-rack-guide-strap', 'fixed-rear-pawl-support-(?:bridge|spine)', 'wide-jack-foot'],
+    note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with the eccentric strap pawl and upper stop; the white indices, the front rack straps cut away by the section, the rear bridges carrying the pawl and eccentric bearings and the sole plate are not drawn (the small bearing bosses stay behind the eccentric and the stop pawl eye).',
   },
   390: {
     remove: ['fixed-two-shaft-rectifier-bearing-frame', 'white-.*', 'piece-A-rigid-radial-web', '.*-fixed-material-marker'],

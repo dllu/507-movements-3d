@@ -963,5 +963,92 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   if (movement.id !== 373) return null;
   const model = rollingCarriageFrictionExperiment(movement);
   correctRollerParts(model, 373);
+  const {root} = model;
+  const {blocks: b, geometry: g} = root.userData;
+  const center = g.indicatorCenter;
+  const dark = b.dialRim.material;
+  // Brown's hand is an eyed pointer with a tapering blade; the eye rings the
+  // pivot pin instead of the pin passing through a solid bar.
+  const handShape = new THREE.Shape();
+  handShape.absarc(0, 0, 0.13, 0.5, Math.PI * 2 - 0.5, false);
+  handShape.lineTo(0.40, -0.012);
+  handShape.lineTo(0.43, 0);
+  handShape.lineTo(0.40, 0.012);
+  handShape.closePath();
+  const eye = new THREE.Path();
+  eye.absarc(0, 0, 0.082, 0, Math.PI * 2, true);
+  handShape.holes.push(eye);
+  b.pointer.geometry.dispose();
+  b.pointer.geometry = new THREE.ExtrudeGeometry(handShape, {
+    bevelEnabled: false,
+    curveSegments: 40,
+    depth: 0.03,
+  }).translate(0, 0, -0.015);
+  b.pointer.position.x = 0;
+  // The spring case is held to the standard by a threaded rod from a boss on
+  // its right side through a lug behind the post, as Brown draws it.
+  const screwZ = 0.34;
+  const addFixed = (geometry, role, x, y, z) => {
+    const mesh = new THREE.Mesh(geometry, dark);
+    mesh.position.set(x, y, z);
+    mesh.userData.fixed = true;
+    mesh.userData.role = role;
+    root.add(mesh);
+    return mesh;
+  };
+  const housingRight = center.x + 0.55;
+  addFixed(new THREE.BoxGeometry(0.10, 0.18, 0.16),
+    'indicator-case-boss-for-anchor-screw', housingRight + 0.03, center.y, screwZ);
+  const screwEnd = 3.38;
+  const screw = addFixed(
+    new THREE.CylinderGeometry(0.045, 0.045, screwEnd - housingRight, 24)
+      .rotateZ(Math.PI / 2),
+    'threaded-anchor-screw-from-case-to-standard',
+    (housingRight + screwEnd) / 2, center.y, screwZ);
+  for (let x = housingRight + 0.12; x < screwEnd - 0.02; x += 0.045) {
+    const thread = new THREE.Mesh(
+      new THREE.TorusGeometry(0.047, 0.011, 6, 20).rotateY(Math.PI / 2),
+      dark,
+    );
+    thread.position.set(x - screw.position.x, 0, 0);
+    thread.userData.role = 'anchor-screw-thread-ridge';
+    screw.add(thread);
+  }
+  const post = b.indicatorPost;
+  const postBack = post.position.z - post.geometry.parameters.depth / 2;
+  addFixed(new THREE.BoxGeometry(post.geometry.parameters.width, 0.24, postBack - (screwZ - 0.10)),
+    'anchor-screw-lug-behind-standard', post.position.x, center.y,
+    (postBack + screwZ - 0.10) / 2);
+  addFixed(new THREE.BoxGeometry(0.07, 0.16, 0.16),
+    'anchor-screw-nut', post.position.x + post.geometry.parameters.width / 2 + 0.035,
+    center.y, screwZ);
+  // The test load is shown heaped in the wagon in proportion to the added
+  // load, never hanging in the air above it (Brown draws a loaded wagon).
+  const bedTop = b.wagonBed.position.y + 0.09;
+  root.userData.testLoadHeap = {bedTop, law: 'heap top = bed top + load fraction * full heap height; hidden when unloaded'};
+  const heapHeight = b.testWeight.geometry.parameters.height;
+  const baseUpdate = model.update;
+  model.update = (time) => {
+    baseUpdate(time);
+    const fraction = root.userData.currentState?.loadFraction
+      ?? root.userData.stateAtTime(time).loadFraction;
+    // With no added load the heap is hidden, parked at its seated pose.
+    const shown = fraction > 1e-4 ? fraction : 1;
+    b.testWeight.visible = fraction > 1e-4;
+    b.testWeight.scale.y = shown;
+    b.testWeight.position.y = bedTop + shown * heapHeight / 2;
+  };
+  const bounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i += 1) {
+    model.update(root.userData.minimumDisplayCycleSeconds * i / 64);
+    root.updateMatrixWorld(true);
+    root.traverseVisible((o) => {
+      if (!o.geometry) return;
+      o.geometry.computeBoundingBox();
+      bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));
+    });
+  }
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.04);
+  model.update(0);
   return model;
 }

@@ -302,17 +302,21 @@ function makeLever({
     'chronometer-detent-only-pallet-f',
   );
 
-  const forkLength = 0.48;
+  // The fork works on the part of pin i standing proud of roller h, so it
+  // lies above the roller rather than cutting through it.
+  const forkBack = 0.077;
+  const forkFront = 0.317;
+  const forkLength = forkBack + forkFront;
   const forkGap = 0.22;
   const forkProngs = [-1, 1].map((side) => {
     const prong = new THREE.Mesh(
-      new THREE.BoxGeometry(forkLength, 0.075, 0.16),
+      new THREE.BoxGeometry(forkLength, 0.075, 0.10),
       material,
     );
     prong.position.set(
-      forkCenterLocal.x + forkLength * 0.16,
+      forkCenterLocal.x + (forkFront - forkBack) / 2,
       forkCenterLocal.y + side * forkGap,
-      0.58,
+      0.64,
     );
     prong.userData.side = side;
     prong.userData.role = 'lever-fork-e-prong-around-roller-pin-i';
@@ -320,21 +324,23 @@ function makeLever({
     return prong;
   });
   const forkBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, forkGap * 2 + 0.075, 0.16),
+    new THREE.BoxGeometry(0.10, forkGap * 2 + 0.075, 0.10),
     material,
   );
   forkBridge.position.set(
-    forkCenterLocal.x + forkLength * 0.39,
+    forkCenterLocal.x + forkFront + 0.05,
     forkCenterLocal.y,
-    0.58,
+    0.64,
   );
   forkBridge.userData.role = 'lever-fork-e-bridge';
   lever.add(forkBridge);
-  const guardPin = cylinderAlongZ(0.052, 0.20, darkMaterial, 20);
+  // The guard pin stands on the lever's centre line just clear of the
+  // roller's edge, level with the roller and below the proud part of pin i.
+  const guardPin = cylinderAlongZ(0.052, 0.12, darkMaterial, 20);
   guardPin.position.set(
-    forkCenterLocal.x - 0.14,
-    forkCenterLocal.y - 0.34,
-    0.58,
+    forkCenterLocal.x - rollerRadius * 0.78 + rollerRadius + 0.072,
+    forkCenterLocal.y,
+    0.46,
   );
   guardPin.userData.role = 'lever-guard-pin-k-against-balance-roller-h';
   lever.add(guardPin);
