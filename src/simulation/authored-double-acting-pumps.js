@@ -38,7 +38,7 @@ function doubleActingPump(movement) {
   const chamberArea = 2 * boreHalfWidth * 2 * pistonHalfDepth;
   const lowerChamberEndY = sy(442);
   const upperChamberEndY = sy(114);
-  const rodLength = 3.75;
+  const rodLength = 3.70;
   const rodRadius = 0.085;
   const stuffingBoxY = sy(104);
   const maximumValveLift = 0.16;
@@ -502,11 +502,16 @@ function doubleActingPump(movement) {
     },
     update,
   };
-  // Frame Brown's section: pipe mouths B and A at top and bottom; the rod
-  // runs out of the top of the picture as he draws it.
+  // Frame Brown's section: pipe mouths B and A at top and bottom. Brown
+  // shows the rod's plain top end standing just above the gland, so the
+  // frame reaches a little above the rod end at the top of the stroke and
+  // the end stays in view throughout (the engineered stroke is longer than
+  // his rod stub, so the frame is taller than the plate's crop).
+  const topOfStrokeRodEndY = pistonCenterY + pistonAmplitude
+    + pistonThickness / 2 + rodLength;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(sx(100), sy(506), -1.0),
-    new THREE.Vector3(sx(430), sy(28), 1.0),
+    new THREE.Vector3(sx(430), topOfStrokeRodEndY + 0.10, 1.0),
   );
   root.userData.cameraDistanceScale = 1.0;
   root.userData.cameraFov = 14;

@@ -770,10 +770,12 @@ function streamDrivenArchimedesScrew(movement) {
     worldFromAssemblyLocal,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    // Brown's close view: the trough and bracket run off the left edge and
-    // the stream fills the foot of the plate.
-    new THREE.Vector3(-3.20, -2.40, -1.70),
-    new THREE.Vector3(3.70, 3.30, 1.70),
+    // Brown's close view: the bracket's eye, its bend and the head of the
+    // shaft sit well inside the upper left of the plate, with only the far
+    // run of the arm and the trough's outer end leaving the left edge; the
+    // stream fills the foot of the plate.
+    new THREE.Vector3(-4.10, -2.40, -1.70),
+    new THREE.Vector3(3.70, 3.75, 1.70),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(6.3, 4.8, 10.8);

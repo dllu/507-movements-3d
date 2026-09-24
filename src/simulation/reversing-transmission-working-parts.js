@@ -72,6 +72,28 @@ export function finishParsons394(root,update){
  }
  d.reconstructionNote='Both side guides have finite open mouths around the full flange envelopes; the former inverted inner arcs intersected the flanges. The rod guide permits the small transverse shift, and the teeth join a solid rack body. The unequal circular flanges are coaxial with the pinion; their handoff angle assumes no-slip friction, since a circular normal alone supplies no shaft torque. The pinion is mounted half a tooth pitch from the former colliding phase, and the rack flanks are cut offline through the complete cycle. Shortened terminal-region teeth and finite backlash retain an unqualified loaded-handoff residual; the prescribed motion is not a solved passive transmission.';
  installParsons394Profiles(root);
+ // The pinion slab (z -0.11..0.29) sweeps the middle of both straight rows
+ // at its crossovers, so those teeth are cut back to spikes there; face-on
+ // the cuts read as a pale hole in the rack. Brown draws every tooth whole,
+ // so each cut straight tooth keeps an uncut rear web behind the pinion
+ // slab, clear of the large flange (front face -0.365) and seated on a rim
+ // deepened to the same rear plane.
+ const rearLow=-.33,rearHigh=-.13,area=p=>Math.abs(p.reduce((s,[x,y],i)=>{const[u,v]=p[(i+1)%p.length];return s+x*v-u*y;},0))/2;
+ const teethData=d.finiteToothProfiles.data.teeth;
+ replace(r.outerRim,plate(clip.difference(capsule([-g.rackHalfStraight,0],[g.rackHalfStraight,0],g.rackPitchHalfHeight+.48,96),capsule([-g.rackHalfStraight,0],[g.rackHalfStraight,0],g.rackPitchHalfHeight+.135,96)),rearLow,.18));
+ b.rearToothWebs=[];
+ for(const[refIndex,sign]of[[1,1],[24,-1]]){
+  const ref=teethData[refIndex],refX=r.teeth[refIndex].position.x,refArea=area(ref);
+  for(let i=0;i<r.teeth.length;i++){
+   const tooth=r.teeth[i];
+   if(Math.sign(tooth.position.y)!==sign||Math.abs(Math.abs(tooth.position.y)-Math.abs(r.teeth[refIndex].position.y))>1e-6)continue;
+   if(area(teethData[i])>refArea-1e-5)continue;
+   const dx=tooth.position.x-refX;
+   const web=new THREE.Mesh(plate(poly(ref.map(([x,y])=>[x+dx,y])),rearLow,rearHigh),tooth.material);
+   web.userData.role='uncut-rear-web-of-rack-tooth-behind-pinion-slab';web.userData.index=i;
+   b.rackCarrier.add(web);b.rearToothWebs.push(web);
+  }
+ }
  return finishView(root,update,8,new THREE.Vector3(.25,.12,15),d.timeline.cycleDuration);
 }
 function finishView(root,update,minimum,cameraDirection,cycle){

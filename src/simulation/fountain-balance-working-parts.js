@@ -4,7 +4,7 @@ import {horizontalPlate,horizontalRing,horizontalTurned} from './horizontal-turb
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {portedBarrel} from './lift-pump-working-parts.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {tubePathUpdater} from './update-tube-path.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
 const add=(parent,geometry,material,role)=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;parent.add(mesh);return mesh;};
@@ -63,15 +63,41 @@ export function correctFountain(root){
  replace(b.centralRiser,horizontalTurned([[2.055,.067],[2.055,.105],[g.nozzleY-.18,.105],[g.nozzleY-.18,.067]]));b.centralRiser.position.set(0,0,0);
  replace(b.centralRiserWater,new THREE.CylinderGeometry(.055,.055,g.nozzleY-2.075,28));b.centralRiserWater.position.set(0,(g.nozzleY+2.035)/2,0);
  replace(b.nozzle,horizontalTurned([[-.10,.060],[-.10,.095],[.10,.075],[.10,.060]]));
- replace(b.jetColumn,new THREE.CylinderGeometry(.035,.052,1,24));
- const refill=b.fountainSprays.map(s=>tubePathUpdater(s.geometry));
+ replace(b.jetColumn,new THREE.CylinderGeometry(.016,.028,1,16));
+ // Brown draws the jet as a willow plume: fine streaks leave the nozzle
+ // tip, lean out on both sides to lower crowns and break into dashes as
+ // they fall back, steeper than they rose. Each side's streaks are fixed
+ // in shape (unit head) and scaled with the pressure head H.
+ const nominalHead=d.stateAtTime(0).idealJetHeight,streakRadius=.012/nominalHead;
+ b.fountainSprays.forEach((spray,i)=>{
+   const sign=i===0?-1:1,parts=[];
+   for(const[reach,crown]of[[.05,1],[.14,.96],[.24,.89],[.34,.79],[.44,.67],[.53,.54]])for(const azimuth of[-.5,0,.5]){
+     if(azimuth!==0&&reach<.1)continue;
+     const direction=new THREE.Vector3(sign*Math.cos(azimuth),0,Math.sin(azimuth));
+     const drop=.20+.05*Math.sin(7*reach+3*azimuth),fall=.68*reach;
+     const endX=reach+fall*Math.sqrt(1+drop/crown),points=[];
+     for(let k=0;k<=160;k++){
+       const x=endX*k/160,w=x<reach?(x-reach)/reach:(x-reach)/fall;
+       points.push(direction.clone().multiplyScalar(x).setY(crown*(1-w*w)));
+     }
+     const lengths=[0];for(let k=1;k<points.length;k++)lengths.push(lengths[k-1]+points[k].distanceTo(points[k-1]));
+     const at=l=>{let k=1;while(k<lengths.length-1&&lengths[k]<l)k++;const t=(l-lengths[k-1])/Math.max(1e-9,lengths[k]-lengths[k-1]);return points[k-1].clone().lerp(points[k],Math.min(1,t));};
+     const total=lengths.at(-1),apexLength=lengths[Math.round(160*reach/endX)]+.06,pieces=[[0,apexLength]];
+     for(let l=apexLength+.05;l<total-.02;l+=.12)pieces.push([l,Math.min(total,l+.07)]);
+     for(const[l0,l1]of pieces){
+       const curve=new THREE.CatmullRomCurve3(Array.from({length:9},(_,k)=>at(l0+(l1-l0)*k/8)));
+       parts.push(new THREE.TubeGeometry(curve,l1-l0>.3?24:3,streakRadius,6,false));
+     }
+   }
+   replace(spray,mergeGeometries(parts));parts.forEach(part=>part.dispose());
+   spray.position.set(0,g.nozzleY,0);
+ });
  const pour=new THREE.CatmullRomCurve3([new THREE.Vector3(-1.52,g.topBasinBottomY+1.10,.20),new THREE.Vector3(-1.46,g.topBasinBottomY+.80,.12),new THREE.Vector3(-1.31,g.topBasinBottomY+.50,.04),new THREE.Vector3(-1.18,g.topBasinBottomY+g.topWaterVolume/g.topArea,0)]);
  replace(b.externalPour,new THREE.TubeGeometry(pour,36,.055,10,false));
  d.updateWorkingParts=state=>{
    updateWater(state.intermediateWaterSurfaceY);b.intermediateAirCavity.visible=false;
-   b.fountainSprays.forEach((s,i)=>{const sign=i===0?-1:1,apex=g.nozzleY+state.idealJetHeight;
-     refill[i](new THREE.QuadraticBezierCurve3(new THREE.Vector3(0,apex,0),new THREE.Vector3(sign*.38,apex,0),new THREE.Vector3(sign*.82,state.topWaterSurfaceY,0)));
-   });
+   const head=Math.max(.02,state.idealJetHeight);
+   b.fountainSprays.forEach(spray=>spray.scale.setScalar(head));
  };
  d.reconstructionNote='Three connected vessel paths and a finite circular bowl follow the engraving. Water transfer, isothermal pressure and jet head remain ideal prescribed laws; the hidden-flow loop reset is nonphysical. The gas enclosure capacity ignores wall/pipe displacement, and jets are illustrative paths, not solved fluid trajectories.';
  finish(root,8);

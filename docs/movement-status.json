@@ -13287,7 +13287,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13295,9 +13296,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
-      "limits": "Shortened terminal rack teeth and inferred guides; flange friction handoff remains prescribed.",
-      "assessment": "reasonable"
+      "visibleFlaws": "Brown's scalloped guide-flange outline round the pinion is not drawn.",
+      "limits": "Rack teeth crossed by the pinion keep an uncut back behind its path, so a slightly darker recess shows where a tooth front is cut; shortened terminal rack teeth and inferred guides; flange friction handoff prescribed.",
+      "assessment": "minor"
     },
     {
       "id": 395,
@@ -14917,7 +14918,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/w5d-mixed-review.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14926,7 +14928,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The shaft bracket is reconstructed. Water raising and stream torque illustrative.",
+      "limits": "Bracket reconstructed; only the far end of the arm and the trough leave the left edge, as on the plate; water raising and stream torque illustrative.",
       "assessment": "reasonable"
     },
     {
@@ -15213,7 +15215,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15222,7 +15225,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Flap timing is prescribed.",
+      "limits": "The frame is taller than Brown's crop so the rod end stays in view through the designed stroke; flap timing prescribed.",
       "assessment": "reasonable"
     },
     {
@@ -15447,7 +15450,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15609,7 +15613,8 @@
         "docs/fountain-balance-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15617,9 +15622,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
-      "limits": "The fountain jet is a thin arching tube rather than a spray. Prescribed transfer and ideal isothermal pressure; hidden loop reset nonphysical.",
-      "assessment": "reasonable"
+      "visibleFlaws": "The frame is built from grey slabs, brass pipes and a translucent tank where Brown draws one hatched hollow frame round the basin.",
+      "limits": "The jet is an illustrative plume (16 streaks a side), not solved spray, and plays only while the jet runs; prescribed transfer and ideal isothermal pressure; hidden loop reset nonphysical; the pour into the basin is removed in the source view.",
+      "assessment": "minor"
     },
     {
       "id": 465,
@@ -16414,7 +16419,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m17-audit-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16423,7 +16429,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "Prescribed marine rotor motion; thrust, slip, hydrodynamic loading, efficiency and structural response unvalidated.",
+      "limits": "Prescribed rotor motion displayed at one turn per 4 s against a 90 rpm authored operating point; thrust, slip and loading not validated.",
       "assessment": "reasonable"
     },
     {

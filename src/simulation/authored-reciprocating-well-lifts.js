@@ -1205,14 +1205,16 @@ function reciprocatingWellLift(movement) {
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,459);
-  // Brown's plate stops just below the ground line by the well curbs, and
-  // his lowered rope runs out of the picture into the well; the long-lens
-  // elevation shows the wind wheel edge-on. The frame likewise ends a little
-  // below the dumping bucket, so the lowered bucket sinks out of view at the
-  // bottom of each stroke as Brown crops it. Set after the shared fit, which
-  // would otherwise frame the whole well.
+  // Brown's plate stops at the foot of the well curbs with the lowered
+  // rope running down past them, but a bucket cut in half by the frame edge
+  // reads as a framing error rather than his crop. The frame is therefore
+  // taken down to just below the lowered bucket and the well water it dips
+  // into, so both buckets stay whole through the full stroke. The wind
+  // wheel sets the top; the troughs set the sides. Set after the shared
+  // fit, which would otherwise frame the whole well to the foundation.
+  const lowestBucketBottom = lowBailY - bucketCenterOffset - bucketHeight / 2;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.10, highBailY - bucketCenterOffset - bucketHeight / 2 - 0.72, -1.65),
+    new THREE.Vector3(-3.10, lowestBucketBottom - 0.34, -1.65),
     new THREE.Vector3(3.10, 4.45, 1.65),
   );
   root.userData.cameraFov = 12;

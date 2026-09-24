@@ -818,6 +818,10 @@ export default {
     remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
     note: 'The chain wheels, disks, pipe and spout; no frame is drawn.',
   },
+  464: {
+    remove: ['external-water-pour-into-open-upper-basin'],
+    note: 'Sectional elevation of the open basin on its two legs, the bowl in its air chamber, the pipes and the central nozzle throwing a plume of spray; Brown draws no stream being poured into the basin.',
+  },
   465: {
     remove: ['left-operator-pressure-pad', 'right-operator-pressure-pad'],
     note: 'Diagonal balance beam on its platform over the two pumps in the well between two masonry banks, its water ruled; Brown draws a man working the beam, not pressure pads, and no foundation slab or water box.',
