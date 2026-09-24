@@ -681,11 +681,12 @@ test('movement 205 runtime binds every marker and rotor to exact state while mov
     assert.equal(blocks.wheel.userData.angularSpeed, state.outputAngularSpeed);
     assert.equal(blocks.outputShaft.userData.angularSpeed, state.outputAngularSpeed);
     assert.equal(model.root.userData.contacts.length, state.contactCount);
-    assert.equal(blocks.contactMarkers.filter(({ visible }) => visible).length, state.contactCount);
+    // Brown draws no contact markers; they stay hidden while still bound.
+    assert.equal(blocks.contactMarkers.filter(({ visible }) => visible).length, 0);
     state.candidates.forEach((candidate) => {
       const marker = markerByKey.get(candidate.key);
       assert.ok(marker);
-      assert.equal(marker.visible, candidate.active);
+      assert.equal(marker.visible, false);
       if (candidate.active) {
         vector3Near(marker.position, candidate.point, 1e-15, `runtime marker ${candidate.key}`);
       }

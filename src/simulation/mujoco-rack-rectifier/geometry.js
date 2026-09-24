@@ -46,5 +46,8 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  for(const [name,mesh]of Object.entries(parts))if(!name.includes('Pin')&&name!=='shaft'&&!name.includes('Stub')){const c=convexPlateCells(mesh.geometry);cells[name]={family:families[name],vertices:c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])))};}
  Object.assign(root.userData,{parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});markShadows(root);root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude+.06,.08,.02));root.userData.cameraFitBounds=bounds;
- return{root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(2,1.4,10)};
+ // The frame slides a full amplitude each way; keep both ends in view.
+ root.userData.cameraDistanceScale=1.22;
+ // Brown draws the frame and pinions in a flat face view.
+ return{root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(.02,.015,1)};
 }

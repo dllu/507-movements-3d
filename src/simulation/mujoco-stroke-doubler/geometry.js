@@ -45,5 +45,6 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
  root.rotation.z=s.tilt;Object.assign(root.userData,{source:s,parts,families,blocks,cells,profile:{amplitude,pitchRadius:R,pitch,clearance,rootY,tipY,under,baseTop,baseBottom,upperTop,samples,cutterSteps},hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002});
  markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-amplitude,amplitude]){blocks.carrier.position.x=blocks.pinion.position.x=x;blocks.rack.position.x=2*x;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}for(const b of Object.values(blocks))b.position.set(0,0,0);root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.cameraFitBounds=bounds;
  root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
- return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(2,1,10)};
+ // Brown draws the racks and pinion as a flat elevation.
+ return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.02,.01,1)};
 }

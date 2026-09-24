@@ -32,6 +32,9 @@ export function makeEndlessRackGeometry(options={}){
  guideOutline.name='section-outline-of-front-guide';blocks.fixed.add(guideOutline);
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.guide.visible=!enabled;guideOutline.visible=Boolean(enabled);};
  Object.assign(root.userData,{source,parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});setSectionView(true);
- markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.cameraFitBounds=bounds;root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
- return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(2,1,10)};
+ markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(n!=='rod')bounds.union(new THREE.Box3().setFromObject(mesh,true));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.cameraFitBounds=bounds;root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ // Brown draws the endless rack and its guides as a flat elevation and
+ // breaks the rack's rod off at both edges, so the fit follows the rack and
+ // beams while the long rod ends may leave the frame.
+ return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.02,.01,1)};
 }

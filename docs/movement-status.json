@@ -888,22 +888,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate with indices removed; the worm thread is heavier than Brown's thin ribs."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "artifacts/review/031-reconstruction-notes.md",
         "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-50 relative-motion screen: see docs/gears-24-46-review.md."
       },
-      "flaws": "29-tooth worm geometry, pressure angle and hidden dimensions are reconstructed; source outline residuals remain.",
+      "flaws": "The thread keeps a trapezoid section rather than Brown's thin ribs (thinning breaks the loaded-flank contact test). 29-tooth worm geometry and pressure angle reconstructed.",
       "references": [
         "artifacts/review/031-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -917,10 +918,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: indices and ground shadow removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -931,7 +932,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1057,21 +1059,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: flatter cone slope and a flat-topped frustum stud body."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/review-progress.md",
         "note": "128-pose stud/tooth minimum clearance 0.000382 and tooth/body 0.016003; large engagement gap remains, so not mechanically qualified."
       },
-      "flaws": "Working gap reaches 0.177659 near spiral seam; matching faces and end-to-end handoff remain unresolved.",
+      "flaws": "Speed ratio now ≈6.7:1; the working gap near the spiral seam and end-to-end handoff remain unresolved.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1284,10 +1287,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/gears-24-46-review.md",
-        "note": "Production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate with the painted groove index removed."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1298,7 +1301,8 @@
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/gears-24-46-review.md"
+        "docs/gears-24-46-review.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3390,10 +3394,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: face-on, the sliding frame stays in view."
       },
       "intersections": {
         "status": "known",
@@ -3401,12 +3405,13 @@
         "note": "Intended working-contact overlap up to 0.00130678 source pixel; no unintended overlap in 25-pose audit.",
         "kind": "contact-overlap"
       },
-      "flaws": "Pawl springs and resisting/friction conditions inferred; bearing and guide constraints idealized.",
+      "flaws": "The pinion teeth are rounded where the plate draws square teeth. Pawl springs and resisting conditions inferred.",
       "references": [
         "docs/mujoco-116-rack-rectifier.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3450,10 +3455,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: face-on; the subject stays small because the upper rack travels twice the stroke."
       },
       "intersections": {
         "status": "known",
@@ -3461,12 +3466,13 @@
         "note": "Intended tooth overlap up to 0.00105252 source pixel; nonworking hardware separately clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "Native doubled stroke uses regular involutes and ideal bearings/guides; input/support geometry inferred.",
+      "flaws": "The subject is small in frame because the fit covers the doubled stroke. Native doubled stroke uses regular involutes and ideal bearings/guides.",
       "references": [
         "docs/mujoco-118-stroke-doubler.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3480,10 +3486,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: face-on; the fit ignores Brown's broken-off rod so the rack and beams read larger."
       },
       "intersections": {
         "status": "known",
@@ -3491,12 +3497,13 @@
         "note": "Intended tooth overlap up to 0.01083340 source pixel; no unintended intersections in 33-pose audit.",
         "kind": "contact-overlap"
       },
-      "flaws": "Ideal normal engagement support added; tooth count, guide and depth reconstruction remain.",
+      "flaws": "The rod ends leave the frame at the stroke extremes. Tooth count, guide and depth reconstruction remain.",
       "references": [
         "docs/mujoco-119-endless-rack.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3600,10 +3607,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: face-on; rack travel keeps the subject small."
       },
       "intersections": {
         "status": "known",
@@ -3611,12 +3618,13 @@
         "note": "Intended tooth/stop-cam overlap up to 0.040147 source pixel; 51-pose full hardware audit otherwise clear.",
         "kind": "contact-overlap"
       },
-      "flaws": "Relieved sector ends, raised flanges and 180-degree cam rephase are source corrections; ideal support/load assumptions remain.",
+      "flaws": "The subject is small because the rack travel sets the scale. Relieved sector ends and cam rephase are source corrections.",
       "references": [
         "docs/mujoco-123-sector-handoff.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4080,10 +4088,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: undrawn pinion post, plank and roller posts removed."
       },
       "intersections": {
         "status": "known",
@@ -4096,7 +4104,8 @@
         "docs/movement-139.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4172,22 +4181,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane9-residuals-review.md",
-        "note": "Default capture of the rebaked bundle inspected beside the plate: traversing bar cut to a short eyed lug; the full rod and slider are still framed below the plate's stub."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default production capture inspected beside the plate: the rod is shown as Brown's broken-off stub and the disk fills the view."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane9-residuals-review.md",
         "note": "Production clearance report regenerated (721 samples): no penetrations. show-body-intersections screens only the older synchronous model."
       },
-      "flaws": "Undrawn base, rear post and slider guide are removed by source presentation. The full rod and slider are framed below the plate's truncated stub, so the disk reads smaller than drawn; output guide and support depths inferred.",
+      "flaws": "Undrawn base, rear post and slider guide are removed by source presentation; the bake still holds the full rod and slider. Output guide and support depths inferred.",
       "references": [
         "docs/movement-142.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane9-residuals-review.md"
+        "docs/lane9-residuals-review.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5694,21 +5704,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on, larger bosses, shafts cut at the bosses."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/irregular-gear-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. | Movement | Projected triangles | Overlapping poses | Minimum gap | Maximum gap | | --- | ---: | ---: | ---: | ---: | | 191 | 8,006 | 0 | 0.001203 | 0.001343 | | 196 | 9,664 | 0 | 0.000644 | 0.000813 | | 201 | 5,152 | 0 | 0.001386 | 0.001450 |"
+        "status": "known",
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: hub/bearing 0.0246 (unchanged)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Transmission-ratio seam requires disengagement, a speed reset or compliance; loaded transfer remains unsolved.",
+      "flaws": "A 0.0246 hub/bearing overlap remains; the drive jumps at the scroll seam, needing disengagement or compliance.",
       "references": [
         "docs/irregular-gear-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5722,22 +5733,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on, larger boss, shorter shaft; the input pinion the plate omits stays."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/reversing-mangle-guides-review.md",
-        "note": "Selected finite interfaces sampled in cited review; no global or continuous collision certificate. Finite generated rack/guide geometry corrected; prescribed reversal, passive contact-force selection, friction and impacts remain unvalidated. Pass-49 relative-motion screen reports 0.083 solid overlap (vibrating-telescopic-shaft-through-universal-joint/BoxGeometry x moving-pinion-side-universal-yoke); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: shaft/universal-joint yoke 0.083 (unchanged)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Finite generated rack/guide geometry corrected; prescribed reversal, passive contact-force selection, friction and impacts remain unvalidated.",
+      "flaws": "A 0.083 shaft/yoke overlap remains; the input pinion is kept though the plate omits it. Prescribed reversal and contact-force selection unvalidated.",
       "references": [
         "docs/reversing-mangle-guides-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5809,10 +5821,10 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate with indices hidden; the worm-cut scalloped valleys differ from Brown's rectangular slots."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5824,7 +5836,8 @@
         "docs/movement-195-207.md",
         "docs/feed-worm-195-207-finite-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5838,21 +5851,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on with the plate's tapered pedestal; gear A is less elongated than Brown's."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/irregular-gear-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. | Movement | Projected triangles | Overlapping poses | Minimum gap | Maximum gap | | --- | ---: | ---: | ---: | ---: | | 191 | 8,006 | 0 | 0.001203 | 0.001343 | | 196 | 9,664 | 0 | 0.000644 | 0.000813 | | 201 | 5,152 | 0 | 0.001386 | 0.001450 |"
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: 0.067 → clear."
       },
-      "flaws": "Prescribed kinematics and small running gaps do not establish loaded transfer, realistic backlash, strength or efficiency.",
+      "flaws": "Gear A is less elongated than Brown's two-lobed gear. Guide clearance may change the loaded path; passive branch selection unsolved.",
       "references": [
         "docs/irregular-gear-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5923,22 +5937,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: solid pinion plates with pin ends and plain rollers."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/partial-lantern-rack-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The final model has 22,852 visible triangles. An isolated Node sample measured 98 ms first construction, 16–26 ms warm construction and 0.20 ms/update across 1,000 updates. The tests retain GPU position-buffer identity and scene geometry across a cycle. These CPU measurements are illustrative, not a browser performance guarantee. Root's final source/default/oblique views show…"
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: only a zero-depth roller/frame touch."
       },
       "flaws": "Near reversal the nearest finite contact retards instead of drives; useful assisting face is about 0.0918 away. Native study did not qualify a bake.",
       "references": [
         "docs/partial-lantern-rack-review.md",
         "docs/partial-lantern-native-study.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5983,22 +5998,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on with indices hidden."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/irregular-gear-family-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. | Movement | Projected triangles | Overlapping poses | Minimum gap | Maximum gap | | --- | ---: | ---: | ---: | ---: | | 191 | 8,006 | 0 | 0.001203 | 0.001343 | | 196 | 9,664 | 0 | 0.000644 | 0.000813 | | 201 | 5,152 | 0 | 0.001386 | 0.001450 | Pass-49 relative-motion screen reports 0.1399 solid overlap (fixed-input-shaft-bearing-bridge/BoxGeometry x solid-pulley-drum); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: pivot shaft/pulley 0.2246 and slot/roller 0.1247 (unchanged)."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Prescribed kinematics and small running gaps do not establish loaded transfer, realistic backlash, strength or efficiency.",
+      "flaws": "Pivot-shaft/pulley (0.225) and slot/roller (0.125) overlaps remain. Prescribed kinematics do not establish loaded transfer.",
       "references": [
         "docs/irregular-gear-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6012,21 +6028,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on with the flared worm framed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-202-264.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The final **33-pose** audit found zero sampled penetrations in 2,550,790 queries for 202 and 998,352 / 1,006,386 queries for the two 264 wheels. Maximum nearest working-surface gaps were respectively 0.002338, 0.000546 and 0.000426 model units. Final browser rendering used 352,516 / 685,168 triangles including shadow passes (14 / 44 draw calls); the generated profile module is…"
       },
-      "flaws": "Worm-end relief uses a coarse generated field with guard cells; small working gaps and load/backlash behavior remain unvalidated.",
+      "flaws": "The worm is more flared than the plate's and the wheel teeth are small. Worm-end relief uses a coarse generated field.",
       "references": [
         "docs/movement-202-264.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6097,22 +6114,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: alternating long and short teeth with brass face bars."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/variable-drive-205-209-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 205 and 209 use 4,097 generation poses per input revolution and independent interleaved qualification poses. Their additional sweep clearances are 0.0005 and 0.0007 respectively. 208 uses 513 generation poses per pin pitch for each of three rings, clips cylinder triangles to the ±0.055 axial slab, buffers their silhouettes by 0.001, repeats the cut at sixteen slot angles and… Pass-49 relative-motion screen reports 0.0543 solid overlap (painted-index-at-single-cam-tip x common-wheel-body-between-two-tooth-rows); unclassified, may be intended contact."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: 0.054 → only zero-depth touches."
       },
-      "flaws": "Generated working profiles follow prescribed timing; clearance take-up, tooth loads, impacts and source dimensions remain unvalidated.",
+      "flaws": "The teeth are wider than Brown's. Generated working profiles follow prescribed timing.",
       "references": [
         "docs/variable-drive-205-209-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6187,22 +6205,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on so pins read as circles; the pins cast streak shadows and the pinion is a thin web."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/variable-drive-205-209-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. 205 and 209 use 4,097 generation poses per input revolution and independent interleaved qualification poses. Their additional sweep clearances are 0.0005 and 0.0007 respectively. 208 uses 513 generation poses per pin pitch for each of three rings, clips cylinder triangles to the ±0.055 axial slab, buffers their silhouettes by 0.001, repeats the cut at sixteen slot angles and… Pass-49 relative-motion screen reports 0.0807 solid overlap (inner-slow-axial-drive-pin-0 x selected-ring-nominal-pitch-contact-marker); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: pin/pinion-web 0.0535."
       },
-      "flaws": "Selector changes occur stopped by prescription; arbitrary-speed engagement, load transfer and impact behavior unvalidated.",
+      "flaws": "A 0.0535 pin/pinion-web overlap remains; the pinion is a thin slotted web rather than Brown's lantern strip; pins cast streak shadows.",
       "references": [
         "docs/variable-drive-205-209-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6718,21 +6737,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Default capture inspected beside the plate: face-on sectional elevation with knob B, crank plate and wheel on F."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-200-226.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The finite audit samples surfaces and poses; it is not a continuous collision proof or an exhaustive all-parts collision study. Back-cone flanks approximate conjugate bevel contact and include small display clearances. Bearing designs, carrier mounting depth, tooth counts for 200, and tooth sections are inferred. The models do not simulate friction, elastic deformation,…"
+        "evidence": "docs/w2a-gears-core-review.md",
+        "note": "Pass-51 screen: 0.0145 → clear."
       },
       "flaws": "Back-cone tooth flanks approximate exact bevel conjugacy; mounting depths and some tooth counts inferred. Load, friction and dynamic backlash unsolved.",
       "references": [
         "docs/movement-200-226.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w2a-gears-core-review.md"
       ],
       "mujoco": {
         "mode": "none",

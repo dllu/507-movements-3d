@@ -539,7 +539,7 @@ test('movement 208 renders rigid indices while 209–213 are distinct and author
       state.selectorX, 0, 'rendered axial pinion selection');
     near(blocks.selectorCollar.position.x,
       state.selectorX, 0, 'rendered selector collar follows pinion');
-    assert.equal(blocks.contactMarker.visible, true);
+    assert.equal(blocks.contactMarker.visible, false, 'Brown draws no contact marker; it stays bound but hidden');
     near(blocks.contactMarker.position.x,
       state.selectorX, 0, 'rendered contact marker follows selection');
 

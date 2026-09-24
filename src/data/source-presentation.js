@@ -57,9 +57,13 @@ export default {
     remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub'],
     note: 'Front elevation of the spoked rope drum with its rim separators, the rope running off along the ground line; no pedestal or bearing is drawn.',
   },
+  139: {
+    remove: ['bearing-post', 'base', 'roller-post-\\d'],
+    note: 'Front elevation of the carriage, internal rack, pinion and top linkage on its two wheels; no post, floor plank or roller posts are drawn. The fixed pinion and roller bearings stay hidden behind the carriage and wheels.',
+  },
   142: {
-    remove: ['rear-post', 'output-guide-rail', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base'],
-    note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the guided slider stem below; no base, pedestal or slider rails are drawn.',
+    remove: ['rear-post', 'output-guide-rail', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base', 'bored-slider-shoe', 'traversing-guide-bar', 'slider-joint-pin'],
+    note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the connecting rod broken off below its eye; no base, pedestal, slider or guide bar is drawn.',
   },
   145: {
     remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-bearing-post-behind-flywheel', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
 // One closed solid, with hard V creases and smooth circumferential normals.
-// The small pale index is paint in the vertex colors, with no raised geometry.
+// An optional small pale index is paint in the vertex colors, with no raised
+// geometry; a null indexAngle leaves the solid unpainted as Brown draws it.
 export function groovedFrictionGeometry({ pitchRadius, faceWidth, grooveAmplitude,
   grooveCount, profileSign, color, indexAngle, angularSegments = 256 }) {
   const profile = Array.from({ length: 2 * grooveCount + 1 }, (_, index) => ({
@@ -24,7 +25,7 @@ export function groovedFrictionGeometry({ pitchRadius, faceWidth, grooveAmplitud
       const angles = [segment, segment + 1].map((i) => 2 * Math.PI * i / angularSegments);
       const middle = (angles[0] + angles[1]) / 2;
       const distance = Math.abs(Math.atan2(Math.sin(middle - indexAngle), Math.cos(middle - indexAngle)));
-      const shade = distance < 2 * Math.PI / angularSegments * 2 ? paintColor : baseColor;
+      const shade = indexAngle != null && distance < 2 * Math.PI / angularSegments * 2 ? paintColor : baseColor;
       const start = positions.length / 3;
       for (const [point, angle] of [[a, angles[0]], [a, angles[1]], [b, angles[1]], [b, angles[0]]]) {
         const cosine = Math.cos(angle), sine = Math.sin(angle);
@@ -54,6 +55,6 @@ export function groovedFrictionGeometry({ pitchRadius, faceWidth, grooveAmplitud
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   geometry.userData = { profile, angularSegments, grooveCount, profileSign, pitchRadius,
-    faceWidth, grooveAmplitude, indexAngle, paintedIndex: true, closedGroovedSolid: true };
+    faceWidth, grooveAmplitude, indexAngle, paintedIndex: indexAngle != null, closedGroovedSolid: true };
   return geometry;
 }

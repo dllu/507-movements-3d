@@ -635,9 +635,12 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
       blocks.pinionShaft,
       blocks.carrierArm,
       blocks.carrierStandard,
-      blocks.pinionStandard,
       blocks.frameFoot,
     ]) physicalBounds.expandByObject(object);
+  // Brown draws no standard behind pinion B; the arm pivot stands on a
+  // short pedestal over a block.
+  assert.equal(blocks.pinionStandard, null);
+  assert.equal(blocks.carrierStandard.userData.role, 'fixed-tapered-pedestal-under-arm-pivot');
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.1);
@@ -653,7 +656,7 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
       irregularWheelToothCount += 1;
     }
   });
-  assert.ok(meshCount >= 56);
+  assert.ok(meshCount >= 50);
   assert.equal(irregularWheelToothCount, 28);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

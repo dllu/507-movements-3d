@@ -6,7 +6,7 @@ const turn = 2 * Math.PI;
 const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
-  centerDistance: 1.8, radiusSlope: 0.5, axialAmplitude: 0.96,
+  centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
   halfHeight: 1.1, teeth: 12, studCount: 10, studRadius: 0.055,
   studFront: 0.18, studBack: 0.30,
 });

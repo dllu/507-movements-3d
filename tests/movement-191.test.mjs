@@ -652,9 +652,10 @@ test('movement 191 remains distinct as the sequential review queue advances thro
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.05);
   assert.ok(size.y > 7.1);
-  assert.ok(size.z > 1.35);
+  // The shafts stop just proud of the bosses, as Brown's hatched sections.
+  assert.ok(size.z > 1.0);
   assert.ok(physicalBounds.min.z < -0.69);
-  assert.ok(physicalBounds.max.z > 0.69);
+  assert.ok(physicalBounds.max.z > 0.25);
   let meshCount = 0;
   let scrollToothCount = 0;
   model.root.traverse((object) => {

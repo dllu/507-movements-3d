@@ -617,7 +617,8 @@ test('movement 199 fills a real 3D envelope as the reviewed queue advances throu
       oversizedEntryToothCount += 1;
     }
   });
-  assert.ok(visibleMeshCount >= 64);
+  // The rollers are plain discs and the white indices are hidden, as drawn.
+  assert.ok(visibleMeshCount >= 39);
   assert.equal(installedPinCount, 4);
   assert.equal(fixedGuideRollerCount, 4);
   assert.equal(oversizedEntryToothCount, 2);

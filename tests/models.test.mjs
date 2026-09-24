@@ -185,7 +185,7 @@ test('movements 1 and 2 use one no-slip belt with the correct direction', () => 
   }
 });
 
-test('working pulleys expose face indices as well as tread indices', () => {
+test('movement 2 pulleys carry no face or tread index marks, as Brown draws none', () => {
   const model = createMovementModel(catalog.movements[1]);
   const pulleys = model.root.children.filter(
     (object) => Array.isArray(object.userData.faceIndicators),
@@ -193,11 +193,11 @@ test('working pulleys expose face indices as well as tread indices', () => {
   assert.equal(pulleys.length, 2);
   for (const pulley of pulleys) {
     assert.equal(pulley.userData.faceIndicators.length, 2);
-    const [front, rear] = pulley.userData.faceIndicators;
-    assert.ok(front.position.z * rear.position.z < 0,
-      'the rotation index is visible from either pulley face');
-    assert.equal(front.parent, pulley.userData.rotor);
-    assert.equal(rear.parent, pulley.userData.rotor);
+    for (const mark of pulley.userData.faceIndicators) {
+      assert.equal(mark.parent, null, 'the generic face index is detached from the rotor');
+    }
+    assert.ok(pulley.userData.rotor.children.every((part) => !part.material?.color?.equals?.(new THREE.Color(0xfaf9f5))),
+      'no white tread patch remains on the rotor');
   }
   disposeModel(model.root);
 });
@@ -2870,7 +2870,9 @@ test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly p
       + state.studConeAngularSpeed) < 0.0002,
     'the displayed speed agrees with the derivative of the prescribed animation');
   }
-  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 7);
+  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 6.5,
+    'the shallower cone slope that leaves the plate\'s flat-topped stud frustum still varies speed strongly');
+  assert.ok(g.studBodyTopRadius > 0.14, 'the stud body is a frustum, not a pointed cone');
   model.update(g.cycleDuration, 0);
   assert.ok(Math.abs(model.root.userData.kinematics.outputProgress - g.sourceOutputPhase - 2 * Math.PI) < 1e-12);
   assert.ok(Math.abs(model.root.userData.kinematics.inputAngle - g.sourceInputPhase - g.studCount * g.toothAngularPitch) < 1e-12);
@@ -3368,7 +3370,7 @@ test('movement 45 reconstructs five complementary grooves, unequal wheels and an
     assert.equal(d.profileSign, side === 0 ? 1 : -1);
     assert.equal(d.rotor.children.length, 1, 'one closed wheel solid replaces the core, caps and protruding rings');
     assert.equal(d.grooveAccents.length, 0);
-    assert.equal(d.paintedIndex, true);
+    assert.equal(d.paintedIndex, false, 'Brown draws no index on the grooved wheels');
     assert.equal(d.body.material.vertexColors, true);
     assertOutwardClosedGeometry(d.body.geometry, '045 grooved friction wheel');
     const normals = d.body.geometry.attributes.normal;
@@ -3712,7 +3714,8 @@ test('movement 61 registers its enclosed held-side differential and section view
   const model = createMovementModel(catalog.movements[60]);
   assert.equal(model.root.userData.mechanism, 'enclosed-held-side-bevel-differential');
   assert.equal(model.root.userData.parts.belt.userData.crossSection, 'rectangular');
-  assert.equal(model.root.userData.sectionView, true);
+  assert.equal(model.root.userData.sectionView, false, 'the default view is the closed drum Brown draws');
+  assert.equal(model.root.userData.sectionCaps.visible, false);
   assert.equal(model.root.userData.hideGround, true);
   disposeModel(model.root);
 });
@@ -3722,7 +3725,8 @@ test('movement 62 registers its enclosed differential and installed auxiliary be
   assert.equal(model.root.userData.mechanism, 'enclosed-dual-input-bevel-differential');
   assert.deepEqual(model.root.userData.configurations.map(option => option.id), ['open', 'crossed']);
   for (const name of ['belt', 'sideBelt']) assert.equal(model.root.userData.parts[name].userData.crossSection, 'rectangular');
-  assert.equal(model.root.userData.sectionView, true);
+  assert.equal(model.root.userData.sectionView, false, 'the default view is the closed drum Brown draws');
+  assert.equal(model.root.userData.sectionCaps.visible, false);
   assert.equal(model.root.userData.hideGround, true);
   disposeModel(model.root);
 });
@@ -10040,6 +10044,11 @@ test('movement 98 drives one pivoted arm with one fixed pin in one endless groov
   } = model.root.userData.blocks;
   const geometry = model.root.userData.geometry;
   const profiles = model.root.userData.profiles;
+  // Source presentation mirrors the rear view of 98 to keep Brown's layout;
+  // check the mechanism in its own unmirrored frame.
+  assert.deepEqual(model.root.userData.sourcePresentation.scale, [-1, 1, 1]);
+  model.root.scale.set(1, 1, 1);
+  model.root.updateMatrixWorld(true);
 
   assert.equal(model.root.userData.fidelity, 'authored');
   assert.equal(
@@ -31285,7 +31294,8 @@ test('movement 134 carries one rope smoothly through one full drum wrap at presc
   ));
   assert.equal(rope.parent, model.root);
   assert.equal(ropeMesh.parent, rope);
-  assert.ok(ropeMarkers.every((marker) => marker.parent === rope));
+  assert.ok(ropeMarkers.every((marker) => marker.parent === null),
+    'the rope beads are tracked but not drawn: Brown draws a plain rope');
 
   assert.equal(geometry.sourceScale, 0.01);
   assert.equal(geometry.sourceRasterDrumCenter.x, 253);

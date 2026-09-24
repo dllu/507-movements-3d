@@ -11,14 +11,16 @@ import {correctVariableDrive} from './variable-drive-205-209-parts.js';
 import {correctIrregularGearFamily} from './irregular-gear-family.js';
 import {singleInclinedTwoSpeedBevel, correctSixBevelTrain} from './bevel-200-226-corrections.js';
 import { correctGloboidalWorm } from './special-worm-solids.js';
-import { plate as finiteSlotPlate, poly as slotPolygon, circle as slotCircle, polygonClipping as slotClipping } from './finite-plate-geometry.js';
+import { plate as finiteSlotPlate, poly as slotPolygon, circle as slotCircle, polygonClipping as slotClipping, ring as slotRing, capsule as slotCapsule } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { makeFeedWormWheel } from './feed-worm-wheel.js';
 import { makeSolidWorm } from './solid-worm.js';
 import { sectorPressWebShape } from './sector-press-web.js';
 import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
 import * as THREE from 'three';
+import sourcePresentation from '../data/source-presentation.js';
 import { makeFuseeMotion, fuseeParameters } from './fusee-motion.js';
 import { groovedFuseeGeometry } from './fusee-geometry.js';
 import { makeArticulatedFuseeChain } from './fusee-chain.js';
@@ -92,11 +94,27 @@ function applySquareTeeth(gear, { addendum, dedendum, width, taper, depth, chamf
 // Brown's gear plates carry no painted rotation indices or white index teeth;
 // their teeth, arms and spirals already show the turning. Opt-in per plate,
 // so movements outside 24-46 keep the shared primitives' index marks.
-function removeSourceAbsentIndices(root) {
+// Keeps an undrawn marker attached as a rigid reference while pinning its
+// visibility off, so update code that toggles it can not show it again.
+function pinHidden(object) {
+  Object.defineProperty(object, 'visible', { configurable: true, get: () => false, set: () => {} });
+  return object;
+}
+
+// `hide` keeps a mark attached as an invisible rigid reference point (its
+// visibility is pinned off, so update code that toggles contact markers can
+// not show it again) instead of detaching it.
+function removeSourceAbsentIndices(root, { keep = () => false, hide = false } = {}) {
   const white = new THREE.Color(PALETTE.white);
   const marks = [];
   root.traverse((part) => {
-    if (part.isMesh && part.material?.color?.equals(white)) marks.push(part);
+    if (!part.isMesh || !part.material?.color?.equals(white)) return;
+    // Invisible camera-framing envelopes and parts Brown draws stay.
+    const material = part.material;
+    if (material.visible === false || material.colorWrite === false
+      || (material.transparent && material.opacity === 0)) return;
+    if (part.userData.sourceDrawn || keep(part)) return;
+    marks.push(part);
   });
   for (const mark of marks) {
     if (mark.userData.bevelTooth) {
@@ -106,12 +124,40 @@ function removeSourceAbsentIndices(root) {
       mark.material = plainTooth.material;
       continue;
     }
+    if (hide) {
+      pinHidden(mark);
+      mark.userData.sourceAbsentIndexHidden = true;
+      continue;
+    }
     mark.removeFromParent();
     mark.geometry.dispose();
     mark.material.dispose();
   }
-  root.userData.sourceAbsentIndicesRemoved = marks.length;
+  root.userData.sourceAbsentIndicesRemoved = (root.userData.sourceAbsentIndicesRemoved ?? 0) + marks.length;
   return marks.length;
+}
+
+// Refit the camera box over one cycle after a factory adds or removes parts
+// following its family correction pass.
+function refitCycleBounds(root, update, period, samples = 64, margin = 0.06) {
+  const visible = [];
+  root.traverseVisible((object) => {
+    if (object.isMesh) {
+      object.geometry.computeBoundingBox();
+      visible.push(object);
+    }
+  });
+  const bounds = new THREE.Box3();
+  for (let index = 0; index <= samples; index += 1) {
+    update(period * index / samples);
+    root.updateMatrixWorld(true);
+    for (const mesh of visible) {
+      bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));
+    }
+  }
+  update(0);
+  root.userData.cameraFitBounds = bounds.expandByScalar(margin);
+  return bounds;
 }
 
 function removeRotorParts(gear, predicate) {
@@ -1950,6 +1996,8 @@ function frictionWheels() {
   };
   update(0);
   root.userData.cameraFov = 18;
+  // Brown draws the two wheels face-on without a ground line.
+  root.userData.hideGround = true;
   return finish(root, update, new THREE.Vector3(0.15, 0.1, 10));
 }
 
@@ -3177,6 +3225,7 @@ function conicalStudGear() {
   };
   update(0);
   root.userData.cameraFov = 18;
+  root.userData.hideGround = true;
   return finish(root, update, new THREE.Vector3(0.08, 0.45, 10));
 }
 
@@ -4001,9 +4050,9 @@ function groovedFrictionGears() {
   const driverCenter = new THREE.Vector3(0, driverPitchRadius, 0);
   const drivenCenter = new THREE.Vector3(0, -drivenPitchRadius, 0);
   const driver = makeVGroovedFrictionWheel({ color: PALETTE.driver, faceWidth, grooveAmplitude,
-    grooveCount, pitchRadius: driverPitchRadius, profileSign: 1, indexAngle: -Math.PI / 2 });
+    grooveCount, pitchRadius: driverPitchRadius, profileSign: 1, indexAngle: null });
   const driven = makeVGroovedFrictionWheel({ color: PALETTE.driven, faceWidth, grooveAmplitude,
-    grooveCount, pitchRadius: drivenPitchRadius, profileSign: -1, indexAngle: Math.PI / 2 });
+    grooveCount, pitchRadius: drivenPitchRadius, profileSign: -1, indexAngle: null });
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
   const driverShaft = makeShaft({ length: 2.50, radius: 0.13, axis: X_AXIS });
@@ -17622,8 +17671,9 @@ function progressiveSpeedScrollGears() {
       rotor.add(tooth);
     }
 
+    // Brown draws a broad boss ring around each hatched shaft.
     const hub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.245, 0.245, gearDepth * 1.32, 36),
+      new THREE.CylinderGeometry(0.36, 0.36, gearDepth * 1.32, 36),
       inkMaterial,
     );
     hub.rotation.x = Math.PI / 2;
@@ -17735,8 +17785,11 @@ function progressiveSpeedScrollGears() {
   driven.position.copy(upperCenter);
   root.add(driver, driven);
 
-  const driverShaft = addAxle(root, lowerCenter, 1.42, Z_AXIS);
-  const drivenShaft = addAxle(root, upperCenter, 1.42, Z_AXIS);
+  // The plate shows each shaft cut off at the boss face, so the axles stop
+  // just proud of the hubs instead of standing out toward the viewer.
+  const driverShaft = addAxle(root, lowerCenter, 1.0, Z_AXIS);
+  const drivenShaft = addAxle(root, upperCenter, 1.0, Z_AXIS);
+  driverShaft.position.z = drivenShaft.position.z = -0.24;
   driverShaft.userData.role = 'constant-speed-input-shaft';
   drivenShaft.userData.role = 'progressively-accelerating-output-shaft';
 
@@ -18099,7 +18152,8 @@ function progressiveSpeedScrollGears() {
   };
   update(0);
   correctIrregularGearFamily(root, 191, update);
-  return finish(root, update, new THREE.Vector3(7.2, 4.8, 14.4));
+  // Brown draws the two scroll wheels in a flat face view.
+  return finish(root, update, new THREE.Vector3(0.03, 0.02, 1));
 }
 
 function eccentricVariableSpeedMangleWheel() {
@@ -18679,8 +18733,9 @@ function eccentricVariableSpeedMangleWheel() {
   );
   wheelRim.position.z = wheelFaceZ + 0.015;
   wheelRim.userData.role = 'outer-rim-of-mangle-wheel';
+  // Brown draws a broad boss ring around the hatched wheel shaft.
   const wheelHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.19, 0.19, 0.38, 36),
+    new THREE.CylinderGeometry(0.34, 0.34, 0.38, 48),
     inkMaterial,
   );
   wheelHub.rotation.x = Math.PI / 2;
@@ -18704,7 +18759,8 @@ function eccentricVariableSpeedMangleWheel() {
   pinion.userData.role = 'uniformly-rotating-input-pinion';
   pinion.userData.circularPitch = circularPitch;
   pinion.userData.module = module;
-  const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.55, Z_AXIS);
+  // Cut off just proud of the boss, as the plate's hatched shaft section.
+  const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, -0.03), 1.0, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-oscillating-wheel-shaft';
   const pinionShaft = makeShaft({
     length: .8,
@@ -19001,7 +19057,10 @@ function eccentricVariableSpeedMangleWheel() {
   };
   update(0);
   finish(root, update);
-  return finishReversingMangleGuides(root, update, 192);
+  const model = finishReversingMangleGuides(root, update, 192);
+  // Brown draws the wheel in a flat face view.
+  model.cameraDirection = new THREE.Vector3(0.02, 0.015, 1);
+  return model;
 }
 
 function concentricUnequalSpeedMangleWheel() {
@@ -23162,7 +23221,20 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   };
   update(0);
   correctVariableDrive(root, 208);
-  return finish(root, update, new THREE.Vector3(3.4, -2.2, 10));
+  // Brown draws neither pitch-circle guides nor a dark index pin: every pin
+  // is the same open circle. A narrow field of view keeps the pins end-on.
+  for (const ring of pinRings) {
+    for (const guide of ring.children.filter((part) => part.userData.pitchCircleGuide)) guide.visible = false;
+    const [plainPin] = ring.userData.pins.filter((pin) => !pin.userData.indexPin);
+    for (const pin of ring.userData.pins.filter((candidate) => candidate.userData.indexPin)) {
+      pin.material = plainPin.material;
+    }
+  }
+  root.userData.cameraFov = 10;
+  pinHidden(contactMarker);
+  // Brown looks straight at the pin face, so the pins read as circles and
+  // the slotted pinion is seen edge-on across the shaft.
+  return finish(root, update, new THREE.Vector3(0.02, 0.015, 1));
 }
 
 function rollingContactEllipsesWithToothedContinuation() {
@@ -26056,7 +26128,53 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   };
   update(0);
   correctIrregularGearFamily(root, 196, update);
-  return finish(root, update, new THREE.Vector3(2, 1.4, 12));
+  // Brown stands the arm pivot on a short tapered pedestal over a hatched
+  // block and draws no base rail, tall post or standard behind pinion B.
+  // The pedestal and block stay behind the arm plane; the pedestal top
+  // seats under the pivot bearing sleeve.
+  for (const undrawn of [carrierStandard, pinionStandard, frameFoot]) {
+    undrawn.removeFromParent();
+    undrawn.traverse((part) => part.geometry?.dispose());
+  }
+  const supportMaterial = matte(PALETTE.frame, { metalness: 0.08, roughness: 0.72 });
+  supportMaterial.fog = false;
+  const pedestalBack = -0.69;
+  const pedestalDepth = 0.22;
+  const pedestalTop = carrierPivot.y - 0.22;
+  const plinthTop = carrierPivot.y - 0.72;
+  const blockTop = plinthTop - 0.08;
+  const pedestalShape = new THREE.Shape([
+    new THREE.Vector2(carrierPivot.x - 0.18, pedestalTop),
+    new THREE.Vector2(carrierPivot.x + 0.18, pedestalTop),
+    new THREE.Vector2(carrierPivot.x + 0.4, plinthTop),
+    new THREE.Vector2(carrierPivot.x + 0.5, plinthTop),
+    new THREE.Vector2(carrierPivot.x + 0.5, blockTop),
+    new THREE.Vector2(carrierPivot.x - 0.5, blockTop),
+    new THREE.Vector2(carrierPivot.x - 0.5, plinthTop),
+    new THREE.Vector2(carrierPivot.x - 0.4, plinthTop),
+  ]);
+  const pivotPedestal = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(pedestalShape, { depth: pedestalDepth, bevelEnabled: false })
+      .translate(0, 0, pedestalBack),
+    supportMaterial,
+  );
+  pivotPedestal.userData.fixed = true;
+  pivotPedestal.userData.role = 'fixed-tapered-pedestal-under-arm-pivot';
+  const wallBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(1.9, 0.8, 0.34),
+    supportMaterial,
+  );
+  wallBlock.position.set(carrierPivot.x + 0.19, blockTop - 0.4, pedestalBack + pedestalDepth / 2);
+  wallBlock.userData.fixed = true;
+  wallBlock.userData.role = 'fixed-block-under-pivot-pedestal';
+  root.add(pivotPedestal, wallBlock);
+  Object.assign(root.userData.blocks, {
+    carrierStandard: pivotPedestal, frameFoot: wallBlock, pinionStandard: null,
+  });
+  refitCycleBounds(root, update, root.userData.transmission.cyclePeriod
+    ?? root.userData.transmission.inputCyclePeriod);
+  // Brown draws the arm and gears as a flat elevation.
+  return finish(root, update, new THREE.Vector3(0.03, 0.02, 1));
 }
 
 function capsuleGuidedMangleRack() {
@@ -28767,9 +28885,11 @@ function partialLanternPinionMangleRack() {
       const roller = makePulley({
         axis: Z_AXIS,
         color: PALETTE.frame,
+        // Brown draws each guide roller as a plain disc with a center dot.
+        bore: 0.059,
         grooves: 0,
         radius: guideRollerRadius,
-        spokes: 4,
+        spokes: 0,
         width: 0.25,
       });
       roller.position.set(
@@ -29007,6 +29127,19 @@ function partialLanternPinionMangleRack() {
     root.userData.kinematics = state;
   };
   const workingUpdate = finishPartialLanternRack(root, update);
+  // Brown draws the pinion as a solid disc carrying its pins, not a spoked
+  // lantern: each side ring becomes a bored side plate in the same plane,
+  // still clear of the rack teeth between the plates.
+  for (const sideRing of pinionSideRings) {
+    sideRing.geometry.dispose();
+    sideRing.geometry = slotRing(0.079, pinionBodyRadius, -ringTubeRadius, ringTubeRadius, 128);
+    sideRing.userData.role = 'solid-side-plate-of-partial-lantern-pinion';
+  }
+  // The pin ends stand just proud of the front plate; a brass finish keeps
+  // them legible as the plate's small circles.
+  const lanternPinMaterial = matte(PALETTE.brass, { metalness: 0.2, roughness: 0.55 });
+  lanternPinMaterial.fog = false;
+  for (const pin of lanternPins) pin.material = lanternPinMaterial;
   workingUpdate(0);
   return finish(root, workingUpdate, new THREE.Vector3(1.2, 0.7, 18));
 }
@@ -29765,7 +29898,8 @@ function eccentricGearCarriedPinionRocker() {
   };
   update(0);
   correctIrregularGearFamily(root, 201, update);
-  return finish(root, update, new THREE.Vector3(5.4, 3.8, 9.5));
+  // Brown draws the train as a flat front elevation.
+  return finish(root, update, new THREE.Vector3(0.03, 0.02, 1));
 }
 
 function globoidalWormAndWheel() {
@@ -29930,10 +30064,11 @@ function globoidalWormAndWheel() {
   const wheelShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.55,
+    length: 1.1,
     radius: 0.105,
   });
-  wheelShaft.position.copy(wheelCenter);
+  // Cut off just proud of the hub, as the plate's hatched shaft section.
+  wheelShaft.position.copy(wheelCenter).setZ(wheelCenter.z - 0.19);
   wheelShaft.userData.fixedCenter = true;
   wheelShaft.userData.keyedToWheel = true;
   wheelShaft.userData.role = 'fixed-center-output-shaft-keyed-to-worm-wheel';
@@ -30264,8 +30399,12 @@ function globoidalWormAndWheel() {
     root.userData.kinematics = state;
   };
   correctGloboidalWorm(root);
+  // Frame the whole flared worm below the wheel; the plate is a flat face
+  // view with the worm seen from its side.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.6, -2.78, -0.8), new THREE.Vector3(2.6, 2.95, 0.8));
   update(0);
-  return finish(root, update, new THREE.Vector3(2.5, 1.6, 12));
+  return finish(root, update, new THREE.Vector3(0.02, 0.01, 1));
 }
 
 function skewHyperboloidFrictionDrive() {
@@ -31822,6 +31961,34 @@ function splitTwoCamInvolutePinionDrive() {
   };
   update(0);
   correctVariableDrive(root, 205);
+  // Brown draws the front series as long bars that run in across the wheel
+  // face and the rear series as short stubs whose inner ends the wheel
+  // hides. Each front tooth carries a thin face bar in front of the cam
+  // plane: its outer part is fused to the tooth, its inner part clears the
+  // front cam, which reaches in to radius 2.53 between the teeth.
+  const faceBarWidth = 2 * wheelOuterRadius * Math.sin(wheelTipHalfToothAngle);
+  const faceBarOuter = wheelOuterRadius - 0.04;
+  const faceBarInner = wheelRootRadius - 0.38;
+  const faceBarFront = toothDepth / 2 + 0.045;
+  const faceBarParts = [
+    { inner: wheelRootRadius, outer: faceBarOuter, back: toothDepth / 2 - 0.005 },
+    { inner: faceBarInner, outer: wheelRootRadius, back: toothDepth / 2 + 0.007 },
+  ].map(({ inner, outer, back }) => new THREE.BoxGeometry(outer - inner, faceBarWidth, faceBarFront - back)
+    .translate((inner + outer) / 2, 0, (faceBarFront + back) / 2));
+  // A lighter shade keeps the long front series legible against the face.
+  const frontSeriesMaterial = matte(PALETTE.brass, { metalness: 0.16, roughness: 0.6 });
+  frontSeriesMaterial.fog = false;
+  for (const tooth of wheelRows[1].userData.teeth) {
+    tooth.material = frontSeriesMaterial;
+    for (const geometry of faceBarParts) {
+      const bar = new THREE.Mesh(geometry, frontSeriesMaterial);
+      bar.userData.role = 'long-front-series-tooth-face-bar';
+      tooth.add(bar);
+    }
+  }
+  root.userData.geometry.frontSeriesFaceBar = {
+    inner: faceBarInner, outer: faceBarOuter, width: faceBarWidth, front: faceBarFront,
+  };
   return finish(root, update, new THREE.Vector3(1.3, -1.6, 12));
 }
 
@@ -33589,8 +33756,48 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
     root.userData.kinematics = state;
   };
   correctSixBevelTrain(root);
+  // Brown tops shaft B with a hand knob and draws no bearing above it; the
+  // left end of E's sleeve carries a crank plate and the right end of F a
+  // plain wheel. Each added part is fast on its own rotating assembly.
+  inputBearing.removeFromParent();
+  const inputShaftMesh = inputShaft.userData.rotor.children[0];
+  inputShaftMesh.geometry.dispose();
+  // The shaft starts inside B's hub, so nothing but F shows inside the
+  // bevel cluster, and stands just above the knob as Brown's square B.
+  inputShaftMesh.geometry = new THREE.CylinderGeometry(0.09, 0.09, 1.2, 22);
+  inputShaft.position.y = 0.75 + 1.2 / 2;
+  inputShaft.userData.length = 1.2;
+  const knobB = new THREE.Mesh(boredLatheGeometry([
+    { radial: 0.28, axial: 1.16 }, { radial: 0.28, axial: 1.34 },
+    { radial: 0.52, axial: 1.35 }, { radial: 0.61, axial: 1.4 },
+    { radial: 0.64, axial: 1.5 }, { radial: 0.61, axial: 1.6 },
+    { radial: 0.52, axial: 1.65 }, { radial: 0.2, axial: 1.66 },
+  ], 0.09, 96), matte(PALETTE.driver, { metalness: 0.12, roughness: 0.6 }));
+  knobB.userData.role = 'hand-knob-B-fast-on-input-shaft';
+  inputAssembly.add(knobB);
+  const crankE = new THREE.Mesh(
+    finiteSlotPlate(slotClipping.difference(
+      slotCapsule([0, -0.55], [0, 0.55], 0.16, 32),
+      ...[[0, 0.17], [0.5, 0.055], [-0.5, 0.055]]
+        .map(([y, radius]) => slotPolygon(slotCircle([0, y], radius, 48))),
+    ), -0.04, 0.04).rotateY(Math.PI / 2),
+    matte(PALETTE.driven, { metalness: 0.18, roughness: 0.56 }),
+  );
+  crankE.position.x = -3.38;
+  crankE.userData.role = 'crank-plate-fast-on-output-E-sleeve';
+  outputAssembly.add(crankE);
+  const wheelF = new THREE.Mesh(boredLatheGeometry([
+    { radial: 0.56, axial: -0.08 }, { radial: 0.56, axial: 0.08 },
+  ], centralShaftRadius, 96).rotateZ(-Math.PI / 2), matte(PALETTE.brass, { metalness: 0.16, roughness: 0.6 }));
+  wheelF.position.x = 3.36;
+  wheelF.userData.role = 'plain-wheel-fast-on-right-end-of-F';
+  carrierAssembly.add(wheelF);
+  for (const part of [knobB, crankE, wheelF]) part.material.fog = false;
+  Object.assign(root.userData.blocks, { knobB, crankE, wheelF });
+  root.userData.cameraFov = 12;
   update(0);
-  return finish(root, update, new THREE.Vector3(2.8, 2.2, 14));
+  // Brown's figure is a flat sectional elevation looking along D's axle.
+  return finish(root, update, new THREE.Vector3(0.02, 0.015, 1));
 }
 
 function pairedStopsForSpurGear(movement) {
@@ -34180,14 +34387,40 @@ function pairedStopsForSpurGear(movement) {
   return finishOpposedSpur239(finish(root, update, new THREE.Vector3(0.4, 0.3, 15)));
 }
 
-// Plain friction surfaces (28, 32, 45) keep their indices: without them the
-// turning of an axisymmetric wheel is invisible.
 function sourceIndexFree(model) {
   removeSourceAbsentIndices(model.root);
   return model;
 }
 
+// White parts Brown does draw: 208's axial pins and 201's slot roller. Every
+// other white index stripe, dot, belt marker and contact marker in these
+// factories is a turning aid the plates never show, so the production and
+// registry routes both remove them after construction.
+const SOURCE_DRAWN_WHITE_ROLE = /axial-drive-pin|roller-sliding-in-horizontal-arm-slot/;
+const REVIEW_STUDY_IDS = new Set([113, 114, 115, 116, 117, 118, 119, 120, 122, 123, 125, 139, 142]);
+
 export function createAuthoredGearCoreMovement(movement) {
+  const model = createGearCoreModel(movement);
+  // 113-125, 139 and 142 run from MuJoCo or baked modules in production;
+  // their synchronous authored studies here keep their review markers.
+  if (model?.root && !REVIEW_STUDY_IDS.has(movement.id)) {
+    // A source-presentation entry that already removes a mark by role keeps
+    // ownership of it, so its removal patterns still match a part.
+    const presented = (sourcePresentation[movement.id]?.remove ?? [])
+      .map((pattern) => new RegExp(`^(?:${pattern})$`));
+    removeSourceAbsentIndices(model.root, {
+      hide: true,
+      keep: (part) => {
+        const role = part.userData.role || part.name || '';
+        return SOURCE_DRAWN_WHITE_ROLE.test(role)
+          || presented.some((pattern) => pattern.test(role));
+      },
+    });
+  }
+  return model;
+}
+
+function createGearCoreModel(movement) {
   switch (movement.id) {
     case 24: return spurGears();
     case 25: return bevelGears();
