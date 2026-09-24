@@ -127,7 +127,8 @@ test('movement 218 is the independently authored output plate of 217', () => {
   assert.ok(visibleRoles.includes('F-solid-nine-notch-wheel'));
   assert.ok(visibleRoles.includes('curved-rocker-link-A-to-G'));
   assert.ok(visibleRoles.includes('G-catch-trip-boss-struck-at-e'));
-  assert.ok(visibleRoles.includes('G-visible-hook-tongue'));
+  // G's lug is the flat end of the catch bar; the wire tongue is hidden.
+  assert.equal(visibleRoles.includes('G-visible-hook-tongue'), false);
   assert.equal(visibleRoles.some((role) => /heart-cam-land/.test(role)), false);
   assert.equal(visibleRoles.some((role) => /belt/i.test(role)), false);
   disposeModel(model.root);
@@ -354,7 +355,9 @@ test('movement 218 catch, hook, wheel, and visible axial layers stay disjoint', 
     }
   }
   assert.ok(minimumCatchClearance > geometry.notchReliefClearance - 0.00011);
-  assert.ok(minimumPlainRimClearance > 0.028);
+  // The hook sits just inside F's rim in Brown's shallow notch, so it passes
+  // the notch corner closer than the former deep slot (0.021 vs 0.028).
+  assert.ok(minimumPlainRimClearance > 0.02);
   assert.ok(minimumTripClearance > -1e-12);
 
   const clearances = model.root.userData.solidClearanceAtInputTravel(

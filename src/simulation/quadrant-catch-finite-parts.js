@@ -116,7 +116,10 @@ export function quadrantCatchParts() {
     const t = Math.min(1, Math.max(0, (lipLeadIn - a) / (lipLeadIn - lipSpan[0])));
     return polar(PL, noseR + 8 * t * t * (3 - 2 * t), a);
   });
-  lower.parts.lip = { planes: 'N', poly: P([...arc(PL, 124, lipSpan[0], lipSpan[1], 48), ...lipInner]) };
+  // Trim the lip's outer end corner to the band's drawn outline so no sliver
+  // of it shows past the band end; the concentric inner face is unchanged.
+  lower.parts.lip = { planes: 'N', poly: polygonClipping.intersection(
+    P([...arc(PL, 124, lipSpan[0], lipSpan[1], 48), ...lipInner]), [[lowerQuadrantTrace[0][0]]]) };
   lower.parts.weightArm = { planes: 'W', poly: union(P([[256, 364], [150, 412], [155, 430], [292, 388]]), P(circlePoints([142, 421], 11, 48))) };
   lower.eye = [142, 421];
   // Upper wing: traced plate, its outer rim trimmed to the concentric arc,

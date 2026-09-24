@@ -235,7 +235,9 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const followerBaseAngle = THREE.MathUtils.degToRad(30);
   const catchPivotRadius = 1.86;
   const catchPivotBaseAngle = THREE.MathUtils.degToRad(187);
-  const engagedHookRadius = 1.27;
+  // Brown seats G's lug in a shallow notch at F's rim (plate 218 hook contact at
+  // 1.03 rim radii); the hook runs just inside the rim so the notches stay shallow.
+  const engagedHookRadius = 1.46;
   const engagedHookBaseAngle = THREE.MathUtils.degToRad(245);
   const catchTripBossRadiusFromOutput = 1.78;
   const catchTripBossBaseAngle = THREE.MathUtils.degToRad(210);
@@ -278,7 +280,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const notchPitchAngle = FULL_TURN / notchCount;
   const notchPhaseAngle = engagedHookBaseAngle;
   const notchWheelOuterRadius = 1.55;
-  const catchHookRadius = 0.085;
+  const catchHookRadius = 0.065;
   const notchRootRadius = engagedHookRadius - catchHookRadius - woolComberNotch.clearance;
 
   const grooveHalfWidth = 0.155;
@@ -840,11 +842,14 @@ function groovedCamWoolComberRollerMotion(movementId) {
   rockerPivot.userData.role = 'rocker-bearing-about-H';
   rockerPivot.visible = !outputPlateFocus;
   rocker.add(rockerPivot);
-  const catchPivotBearing = cylinderAlongZ(0.15, 0.25, darkMaterial, 32);
+  // Plate 218 stacks G directly on the lever (G layer 0.62-0.74) so the lug
+  // dropping into F is short; the hinge pin sits on the lever, through G.
+  const catchLayerZ = outputPlateFocus ? 0.68 : 1.05;
+  const catchPivotBearing = cylinderAlongZ(0.15, outputPlateFocus ? 0.225 : 0.25, darkMaterial, 32);
   catchPivotBearing.position.set(
     catchPivotLocal.x,
     catchPivotLocal.y,
-    1.02,
+    outputPlateFocus ? 0.6875 : 1.02,
   );
   catchPivotBearing.userData.role = 'hinged-catch-G-pivot';
   rocker.add(catchPivotBearing);
@@ -855,7 +860,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   catchPivotRing.position.set(
     catchPivotLocal.x,
     catchPivotLocal.y,
-    1.17,
+    outputPlateFocus ? 0.835 : 1.17,
   );
   catchPivotRing.userData.role = 'G-hinge-source-face-ring';
   rocker.add(catchPivotRing);
@@ -882,7 +887,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
       catchTripBossRelativeLocal,
       catchLinkLocal,
     ],
-    1.05,
+    catchLayerZ,
     0.095,
     catchMaterial,
   );
@@ -907,7 +912,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
       [{center: new THREE.Vector2(0, 0), radius: 0.155}],
     );
     catchBar.geometry = extrudedShape(barShape, 0.12, 0, catchMaterial).geometry;
-    catchBar.position.z = 1.05;
+    catchBar.position.z = catchLayerZ;
   }
   catchBar.userData.role = 'catch-G-curved-arm';
   catchLink.add(catchBar);
@@ -918,14 +923,16 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const catchHookTongue = tubeBetween2D(
     catchLinkLocal,
     hookTongueEndLocal,
-    1.05,
+    catchLayerZ,
     catchHookRadius,
     outputPlateFocus ? catchMaterial : darkMaterial,
   );
   catchHookTongue.userData.role = 'G-visible-hook-tongue';
+  // Plate 218 draws the lug as the flat end of G itself, with no rod.
+  catchHookTongue.visible = !outputPlateFocus;
   catchLink.add(catchHookTongue);
-  const catchHookLength = outputPlateFocus ? 0.94 : 0.38;
-  const catchHookCenterZ = outputPlateFocus ? 0.65 : 0.90;
+  const catchHookLength = outputPlateFocus ? 0.56 : 0.38;
+  const catchHookCenterZ = outputPlateFocus ? 0.46 : 0.90;
   const catchHook = cylinderAlongZ(
     catchHookRadius,
     catchHookLength,
@@ -940,7 +947,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   catchHook.userData.role = 'catch-G-hook-entering-F-notch';
   catchLink.add(catchHook);
   const tripRollerLength = outputPlateFocus ? 0.24 : 0.82;
-  const tripRollerCenterZ = outputPlateFocus ? 1.05 : 0.68;
+  const tripRollerCenterZ = outputPlateFocus ? catchLayerZ : 0.68;
   const tripRoller = cylinderAlongZ(
     tripRollerRadius,
     tripRollerLength,

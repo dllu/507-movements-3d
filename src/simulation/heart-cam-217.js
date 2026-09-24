@@ -1,6 +1,7 @@
 // Plate 217: Brown's grooved heart cam C, D, B, e with the stud A that works
-// in its groove. Brown draws the cam alone; the stud and the lever carrying it
-// about H are reconstructed so the turning cam visibly drives something.
+// in its groove. Brown draws the cam alone, so only the stud named in the
+// caption is shown; its carrier (a lever about the roller shaft H, drawn on
+// plate 218) is kept as an undrawn kinematic path and is not rendered.
 //
 // The groove centre line is measured from the engraving (ray samples from the
 // cam centre, symmetric about the e-D axis): its radius falls from the
@@ -86,14 +87,14 @@ export function createHeartCam217() {
     const line = new THREE.LineLoop(ringLoop(ring, .222), lineMaterial); line.userData.role = 'engraved-wall-line'; cam.add(line);
   }
 
-  const lever = new THREE.Group(); lever.name = 'body:lever'; lever.userData.role = 'lever-A-H'; lever.position.set(g.H[0], g.H[1], 0); root.add(lever); blocks.lever = lever;
+  // Stud A's carrier frame turns about H (the undrawn lever of plate 218), so
+  // the stud follows the arc it would on the real machine; only the stud,
+  // roller and its washer head are drawn, as Brown names it on plate 217.
+  const lever = new THREE.Group(); lever.name = 'body:lever'; lever.userData.role = 'stud-A-carrier-path-about-H'; lever.position.set(g.H[0], g.H[1], 0); root.add(lever); blocks.lever = lever;
   const L = g.leverLength;
-  // The lever boss is bored for the fixed shaft H; the stud roller is seated
-  // on the lever's underside and runs free of the groove floor.
-  add(lever, 'lever-A-H', plate(clip.difference(clip.union(capsule([0, 0], [-L, 0], .2, 24), poly(circle([0, 0], .42, 64)), poly(circle([-L, 0], .3, 48))), poly(circle([0, 0], .21, 48))), .30, .40), leverMaterial);
   add(lever, 'stud-A-roller', plate(poly(circle([-L, 0], g.rollerRadius, 96)), .03, .30), leverMaterial);
-  add(lever, 'stud-A-pin-head', plate(poly(circle([-L, 0], .12, 32)), .40, .44), inkMaterial);
-  add(root, 'fixed-shaft-H', plate(poly(circle(g.H, .2, 48)), -.3, .46), inkMaterial);
+  add(lever, 'stud-A-head', plate(poly(circle([-L, 0], g.rollerRadius + .05, 96)), .30, .38), leverMaterial);
+  add(lever, 'stud-A-pin-head', plate(poly(circle([-L, 0], .12, 32)), .38, .42), inkMaterial);
 
   // Solve the lever angle for every cam angle from the actual groove.
   const samples = 4096, beta = new Float64Array(samples + 1);
@@ -143,9 +144,7 @@ export function createHeartCam217() {
   update(0);
   let minBeta = Infinity, maxBeta = -Infinity;
   for (const b of beta) { minBeta = Math.min(minBeta, b); maxBeta = Math.max(maxBeta, b); }
-  const bounds = new THREE.Box3(new THREE.Vector3(-g.camRadius, -g.camRadius, -.4), new THREE.Vector3(g.camRadius, g.camRadius, .46));
-  for (const b of [minBeta, maxBeta, Math.PI]) { const [x, y] = studAt(b); bounds.expandByPoint(new THREE.Vector3(x, y, 0)); }
-  bounds.expandByPoint(new THREE.Vector3(g.H[0] + .5, g.H[1] + .5, 0));
+  const bounds = new THREE.Box3(new THREE.Vector3(-g.camRadius, -g.camRadius, -.4), new THREE.Vector3(g.camRadius, g.camRadius, .42));
   bounds.expandByScalar(.15);
   root.traverse(o => { for (const m of [].concat(o.material ?? [])) m.fog = false; });
   markShadows(root);
@@ -153,9 +152,9 @@ export function createHeartCam217() {
     parts, blocks, geometry: g, hideGround: true, materialsIgnoreSceneFog: true, cameraFitBounds: bounds,
     leverAngleAt, leverSweep: maxBeta - minBeta,
     animationTiming: {authoredCyclePeriod: period, displayCycleDuration: period, playbackTimeScale: 1},
-    mechanism: 'clockwise grooved heart cam C-D-B-e driving stud A on a lever about H',
+    mechanism: 'clockwise grooved heart cam C-D-B-e driving stud A (carried about H by the lever drawn on plate 218)',
     fidelity: 'authored', reconstructionStatus: 'verified',
-    reconstructionNote: 'Brown draws the heart cam alone. Its groove is the measured symmetric heart, with both walls exact offsets of one centre line. Stud A rides the groove on a lever about a fixed shaft H to the right; the lever is reconstructed (Brown shows it on plate 218, where the full wool-comber catch and notch wheel are presented). Every lever angle is solved from the groove; loads and friction are not simulated.',
+    reconstructionNote: 'Brown draws the heart cam alone. Its groove is the measured symmetric heart, with both walls exact offsets of one centre line. Only stud A, named in the caption, is drawn in the groove; its carrier is the lever about H that Brown draws on plate 218 (with catch G and notch wheel F), so it is kept as an undrawn kinematic path: the stud moves on its arc about H and every position is solved from the groove. Loads and friction are not simulated.',
   });
   return {root, update, cameraDirection: new THREE.Vector3(0, 0, 15)};
 }

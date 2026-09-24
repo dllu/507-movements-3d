@@ -190,7 +190,7 @@ export default {
   },
   217: {
     camera: [0.1, 0.08, 1],
-    note: 'Face view of the grooved heart cam C, D, B, e with its symmetric double-walled groove and hub; stud A rides the groove on a lever about the fixed shaft H to the right (the lever is reconstructed; Brown draws the cam alone and the catch and notch wheel on plate 218). No frame is drawn.',
+    note: 'Face view of the grooved heart cam C, D, B, e with its symmetric double-walled groove and hub, drawn alone as Brown draws it; only stud A, named in the caption, rides the groove. Its lever about H, catch G and notch wheel F are presented on plate 218. No frame is drawn.',
   },
   225: {
     remove: ['active-pawl-tooth-contact-marker'],
@@ -215,7 +215,7 @@ export default {
   },
   235: {
     remove: ['active-(?:drive-face|click-over|holding-click)-contact-marker'],
-    note: 'Face view of the six-point star with the holding click above and the long arm with its hooked tappet and return spring below; no white indices or contact markers are drawn.',
+    note: 'Face view of the six-point star with the holding click above and the broad arm below: its hooked tappet is hinged near the left end, and the small return spring runs under the arm to bear up on the tappet\'s tail lobe; no white indices or contact markers are drawn.',
   },
   237: {
     camera: [-4, 4.4, 9],

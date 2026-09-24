@@ -74,15 +74,17 @@ for (const id of [217, 218]) {
 test('the former radial notch binds the same finite hook during release', () => {
   const model = transmission(217), u = model.root.userData, g = u.geometry;
   try {
-    const points = [];
+    // Control: a radial-flanked notch that seats the same hook with the same
+    // milling clearance and root depth as the relieved notch.
+    const points = [], half = (g.catchHookRadius + g.notchReliefClearance) / g.engagedHookRadius;
     for (let i = 0; i < g.notchCount; i++) {
       const center = g.notchPhaseAngle + i * g.notchPitchAngle;
       for (const [offset, radius] of [
-        [-g.notchPitchAngle / 2, 1.55], [-.095, 1.55], [-.095, 1.16],
-        [.095, 1.16], [.095, 1.55], [g.notchPitchAngle / 2, 1.55],
+        [-g.notchPitchAngle / 2, g.notchWheelOuterRadius], [-half, g.notchWheelOuterRadius], [-half, g.notchRootRadius],
+        [half, g.notchRootRadius], [half, g.notchWheelOuterRadius], [g.notchPitchAngle / 2, g.notchWheelOuterRadius],
       ]) points.push(new THREE.Vector2(Math.cos(center + offset), Math.sin(center + offset)).multiplyScalar(radius));
     }
-    const state = u.stateAtInputTravel(.5632 * Math.PI * 2);
+    const state = u.stateAtInputTravel(.558 * Math.PI * 2);
     const center = state.catchHookWorld.clone().sub(g.outputCenter)
       .rotateAround(new THREE.Vector2(), -state.outputAngle);
     assert.ok(nearestBoundary(points, center, g.catchHookRadius).gap < -.017,

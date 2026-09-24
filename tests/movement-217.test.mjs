@@ -106,15 +106,18 @@ function nearestPolylineDistance(point, points) {
   return minimum;
 }
 
-test('movement 217 presents Brown\'s symmetric heart cam with stud A on its lever', () => {
+test('movement 217 presents Brown\'s symmetric heart cam with stud A alone in its groove', () => {
   const model = createMovementModel(catalog.movements[216]);
   const { blocks, geometry: g, parts, leverSweep } = model.root.userData;
   try {
     assert.equal(blocks.cam.parent, model.root);
     assert.equal(blocks.lever.parent, model.root);
-    for (const name of ['outer-cam-land', 'heart-island', 'hub-boss', 'stud-A-roller', 'lever-A-H', 'fixed-shaft-H']) {
+    for (const name of ['outer-cam-land', 'heart-island', 'hub-boss', 'stud-A-roller', 'stud-A-head']) {
       assert.ok(parts[name]?.isMesh, name);
     }
+    // Brown draws the cam alone: the stud's lever and shaft H (plate 218)
+    // are an undrawn kinematic path, not rendered parts.
+    for (const name of ['lever-A-H', 'fixed-shaft-H']) assert.equal(parts[name], undefined, name);
     // No notch wheel, catch or frame: those belong to plate 218.
     const roles = [];
     model.root.traverse((o) => roles.push(o.userData.role ?? ''));
@@ -502,7 +505,9 @@ test('movement 217 catch clears the rim and its rear projection contacts only at
     if (state.tripContact) tripContactSamples += 1;
   }
   assert.ok(minimumCatchClearance > geometry.notchReliefClearance - 0.00011);
-  assert.ok(minimumPlainRimClearance > 0.028);
+  // The hook sits just inside F's rim in Brown's shallow notch, so it passes
+  // the notch corner closer than the former deep slot (0.021 vs 0.028).
+  assert.ok(minimumPlainRimClearance > 0.02);
   assert.ok(minimumTripClearance > -1e-12);
   assert.ok(tripContactSamples <= 1);
 

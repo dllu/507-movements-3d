@@ -2031,7 +2031,8 @@
         "docs/w3g-intermittent-review.md",
         "docs/w4a-1-160-review.md",
         "docs/u1-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2039,7 +2040,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "While lifted, a thin sliver of the drop's leg pokes out beside the disk; the broad opaque drop hides most of the pin-to-drop contact.",
+      "visibleFlaws": "While the drop is held up with the pawl fallen, a thin strip of the leg shows in the gap between the pawl's lobe and the disk; the leg has to cross that gap to reach its working tip.",
       "limits": "Start pose is 7° of pin rotation from Brown's to show the drop at rest; the star is regular and held only by the pawl.",
       "assessment": "minor",
       "userReported": "2026-09-24"
@@ -2161,7 +2162,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2169,9 +2171,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "As tumbler E swings round it covers the worm and most of the worm-gear for much of the cycle, so the drive is hidden.",
-      "limits": "Scalloped plate and generated 24-tooth worm use inferred gravity/drag and hidden geometry.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Tumbler E is translucent so the gear and worm read through it as Brown's dotted B; scalloped plate and generated 24-tooth worm; gravity and drag are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 68,
@@ -2259,7 +2261,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane2-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2267,9 +2270,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rim sits nearer C's edge than Brown's dotted circle.",
-      "limits": "Short resisted pause and engagement impacts are idealized; source stud spacing/tip were adjusted.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Wheel C is drawn translucent over A as Brown's dotted circle; the short resisted pause and engagement impacts are idealized.",
+      "assessment": "reasonable"
     },
     {
       "id": 71,
@@ -2292,7 +2295,8 @@
         "docs/minimal-interface-review.md",
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2300,7 +2304,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Notches are wider than the plate's and sit about 15-20° off.",
+      "visibleFlaws": "The rim notches are about 40° wide and sit 20–35° from Brown's narrow slots; they are the swept path of the studs across the rim during the 55° push, which Brown's slot widths could not pass.",
       "limits": "",
       "assessment": "minor"
     },
@@ -2728,7 +2732,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/u1-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2736,8 +2741,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rack frame walks only about two teeth each way, so most of its 13 teeth never meet the cam; fork A is wider than drawn.",
-      "limits": "Governor schedule, drag and loads are assumptions.",
+      "visibleFlaws": "Fork A is 1.5× wider than drawn; the rack walks two steps each way, so most teeth never meet the cam.",
+      "limits": "Brown's drawn slots cap travel at ≈4.6 of the 13 tooth pitches, and his pin spacing beside the slot bridge at ≈2.4; fork A is widened 1.5× to reach the slot cap.",
       "assessment": "minor",
       "userReported": "2026-09-24"
     },
@@ -6033,7 +6038,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6041,9 +6047,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The lower finger and upper arm sit about 20 px off the plate's outline (Brown's 181 and 182 disagree); eyes read as solid discs.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Lower finger and upper arm sit about 20 px from each plate's outline because Brown's 181 and 182 draw the same catch inconsistently; one rigid part is a compromise between them.",
+      "assessment": "reasonable"
     },
     {
       "id": 182,
@@ -6069,7 +6075,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6077,9 +6084,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Same catch as 181, phase-shifted: lower finger and upper arm about 20 px off the plate; eyes read as solid discs.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Same rigid catch as 181, phase-shifted; lower finger and upper arm sit about 20 px from the plate because Brown's 181 and 182 disagree.",
+      "assessment": "reasonable"
     },
     {
       "id": 183,
@@ -6104,7 +6111,8 @@
         "docs/lane5-cams-catches-review.md",
         "docs/w3a-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u4-catches-review.md"
+        "docs/u4-catches-review.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6115,9 +6123,9 @@
         "note": "Unqualified MuJoCo transfer diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A few pixels of the hidden catch lip show at the band's left end.",
-      "limits": "Catches are hidden studs, lip and boss inside drawn outlines; weights and friction not solved.",
-      "assessment": "minor",
+      "visibleFlaws": "",
+      "limits": "Catches are hidden studs, lip and boss inside drawn outlines; a few px of the lip's working end can be seen through the band's window, where it physically lies; weights and friction not solved.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -6143,7 +6151,8 @@
         "docs/lane5-cams-catches-review.md",
         "docs/w3a-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u4-catches-review.md"
+        "docs/u4-catches-review.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6154,8 +6163,8 @@
         "note": "Shared 183–184 unqualified MuJoCo diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Plate 184 draws the handles' roles mirrored; the model shows the same gear at the top of its stroke.",
-      "limits": "",
+      "visibleFlaws": "Brown's 184 swings both handles about 80° further than 183 and swaps the ball lever and the hook between them; the model shows 183's parts at the top of the stroke, so the upper lever hangs about 25° low and hooked.",
+      "limits": "Plates 183 and 184 cannot be the same rigid parts.",
       "assessment": "minor"
     },
     {
@@ -6247,7 +6256,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane5-cams-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u4-catches-review.md"
+        "docs/u4-catches-review.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6255,9 +6265,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The grip is raised rather than squeezed, because Brown's grip gap cannot produce the lift.",
-      "limits": "The hidden cam is larger than Brown's dashed outline.",
-      "assessment": "minor",
+      "visibleFlaws": "",
+      "limits": "Operation is inferred (Brown's caption only says 'modification of 186'): the upper grip is raised like 186's handle, because squeezing Brown's 32 px grip gap turns it only ~10° and a cam on the pin can lift the gab at most ~7 px of its 37 px depth. The hidden cam is larger than Brown's dashed outline.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -6903,7 +6913,8 @@
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6911,8 +6922,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth are less hooked than Brown's.",
-      "limits": "Contact exact by construction; the catalog archetype still says forty-four teeth.",
+      "visibleFlaws": "Teeth are square-stepped where Brown's are hooked points; his hooks face a counter-clockwise drive (right pawl pulling as the pin rises), while the model drives clockwise on the long tooth backs.",
+      "limits": "A mirrored rebuild with Brown's undercut teeth needs dead-travel pull-in of the pulling pawl, which the continuous two-stroke construction cannot model; contact exact by construction; the catalog archetype still says forty-four teeth.",
       "assessment": "minor"
     },
     {
@@ -7070,7 +7081,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7078,8 +7090,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The toothed arc spans about 99° where Brown's spans about 80°; the pinion has 16 positions; the guide tongue curves upward where Brown's is straighter.",
-      "limits": "Brown's arc does not close kinematically; about 22° of relocking is prescribed.",
+      "visibleFlaws": "The toothed arc spans about 99° where Brown's spans about 80°.",
+      "limits": "The 99° arc and the 16-position pinion are needed for a one-turn index; the tongue's working edge follows the pin's epicycloid, so it curves upward; Brown's arc does not close kinematically, so about 22° of relocking is prescribed.",
       "assessment": "minor"
     },
     {
@@ -7137,7 +7149,8 @@
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7145,8 +7158,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The five stop teeth are rounded pin-cut notches where Brown draws square teeth.",
-      "limits": "Square teeth of Brown's height cannot pass the pin; frictional retention and load capacity prescribed.",
+      "visibleFlaws": "The five stop teeth are rounded pin-swept notches where Brown draws square teeth.",
+      "limits": "Brown's pin (≈14 px) is wider than his tooth gaps (≈9 px), so his square teeth cannot admit it; only 0.08-deep square teeth solve. Frictional retention and load capacity are prescribed.",
       "assessment": "minor"
     },
     {
@@ -7171,7 +7184,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7179,9 +7193,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth are narrower than drawn and the counterwheel angle differs slightly from the plate.",
-      "limits": "Square teeth are not conjugate, so the ratio is prescribed with up to 0.042 rad play; finger lengths tuned for one stopping encounter; stop travel differs from the site's three turns.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Tooth flanks taper slightly where Brown's are parallel; square teeth are not conjugate, so the 10:12 ratio is prescribed with up to 0.04 rad play; finger lengths and the counterwheel finger angle are tuned for one blocking encounter per period.",
+      "assessment": "reasonable"
     },
     {
       "id": 215,
@@ -7276,7 +7290,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane4-escapements-misc-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7284,9 +7299,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A lever about H is added (Brown draws the cam alone), and plate 217 no longer shows the backward/forward/dwell sequence, which 218 keeps.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Stud A's carrier (the lever about H, drawn on plate 218) is an undrawn kinematic path; the backward/forward/dwell roller law is shown on 218, since 217 draws no catch or notch wheel.",
+      "assessment": "reasonable"
     },
     {
       "id": 218,
@@ -7309,7 +7324,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7317,8 +7333,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Nine V-notches where Brown draws eight square ones.",
-      "limits": "The wheel advances a third of a turn per cycle, so the notch count must be a multiple of three; square notches would leave about 0.13 backlash. Cam projection touches the release boss at one instant.",
+      "visibleFlaws": "Nine small notches where Brown draws eight; their exit flank is rounded.",
+      "limits": "The wheel advances a third of a turn per cycle, so the notch count must be a multiple of three; the oblique exit flank is the milled envelope of the hook's release arc. Cam projection touches the release boss at one instant.",
       "assessment": "minor"
     },
     {
@@ -7880,7 +7896,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m2-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7888,9 +7905,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The return spring runs into its anchors.",
-      "limits": "Spring embedded about 0.089 in the anchors; tappet return and holding preload prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The holding click is a slimmer curved bar than Brown's hook and the star's pivot pin shows as a small black stud; tappet return and holding-click drop follow prescribed clearance paths; spring force and impact are not simulated.",
+      "assessment": "reasonable"
     },
     {
       "id": 236,

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  FULL_TURN, cylinderAlongZ, smootherstepLaw, circle, poly, plate, polygonClipping, PALETTE, markShadows, matte,
+  FULL_TURN, capsule, cylinderAlongZ, smootherstepLaw, circle, poly, plate, polygonClipping, PALETTE, markShadows, matte,
 } from './gab-disengager-shared.js';
 
 // Brown 187 ("Modifications of 186"): a two-handle gab disengager.
@@ -238,19 +238,38 @@ export function twoHandleGabDisengager() {
   valveRocker.userData.role = 'valve-arm-on-rockshaft-carrying-gab-pin';
   const valveArm = new THREE.Mesh(plate(armShape, Z.arm[0], Z.arm[1]), armMaterial);
   valveArm.userData.role = 'valve-arm-with-rockshaft-boss-neck-and-round-pin-eye';
-  const valveShaft = cylinderAlongZ(shaftRadius, 0.5, darkMaterial, 48);
+  const shaftMaterial = matte(PALETTE.muted, {metalness: 0.2, roughness: 0.6});
+  const valveShaft = cylinderAlongZ(shaftRadius, 0.5, shaftMaterial, 48);
   valveShaft.position.z = Z.arm[1] - 0.25 - 0.001; // front face flush: Brown's hatched section
   valveShaft.userData.role = 'sectioned-valve-rockshaft';
+  // Brown hatches the cut rockshaft: 45-degree ink strips just proud of its face.
+  const stripes = [];
+  for (let k = -4; k <= 4; k++) {
+    const o = k * 4.2 * s, w = 0.75 * s, e = 30 * s, d = Math.SQRT1_2;
+    stripes.push(poly([[-d * (o - w) - d * e, d * (o - w) - d * e], [-d * (o - w) + d * e, d * (o - w) + d * e],
+      [-d * (o + w) + d * e, d * (o + w) + d * e], [-d * (o + w) - d * e, d * (o + w) - d * e]]));
+  }
+  const shaftHatch = new THREE.Mesh(plate(polygonClipping.intersection(polygonClipping.union(...stripes),
+    poly(circle([0, 0], shaftRadius - 1.2 * s, 96))), Z.arm[1] - 0.001, Z.arm[1] + 0.003), darkMaterial);
+  shaftHatch.userData.role = 'valve-rockshaft-section-hatching';
   const valvePinLength = Z.rod[1] - Z.arm[0] - 0.002;
   const valvePin = cylinderAlongZ(pinRadius, valvePinLength, pinMaterial, 64);
   valvePin.position.set(pinLocal[0], pinLocal[1], Z.arm[0] + valvePinLength / 2);
   valvePin.userData.role = 'gab-pin-on-valve-arm';
-  valveRocker.add(valveArm, valveShaft, valvePin);
+  valveRocker.add(valveArm, valveShaft, shaftHatch, valvePin);
 
   const eccentricRod = new THREE.Group();
   eccentricRod.userData.role = 'eccentric-rod-with-crown-gab-and-integral-lower-handle';
   const rodBody = new THREE.Mesh(plate(rodShape, Z.rod[0], Z.rod[1]), rodMaterial);
   rodBody.userData.role = 'eccentric-rod-crown-gab-slot-and-lower-handle';
+  // Brown's forked strap end: two engraved lines along the broken-off rod end.
+  const forkLines = polygonClipping.union(...[
+    [[29.5, 226], [29.5, 256]],
+    [[31, 233.5], [100, 233.5], [106, 230], [111, 225.5]],
+    [[33, 246], [97, 246], [104, 250], [110, 256.5]],
+  ].flatMap((line) => line.slice(1).map((b, i) => capsule(P(...line[i]), P(...b), 0.8 * s, 8))));
+  const rodForkLines = new THREE.Mesh(plate(forkLines, Z.rod[1] - 0.001, Z.rod[1] + 0.003), darkMaterial);
+  rodForkLines.userData.role = 'eccentric-rod-forked-end-engraved-lines';
   const pivotLength = Z.rod[1] - Z.handle[0] - 0.002;
   const pivotPin = cylinderAlongZ(pivotRadius, pivotLength, darkMaterial, 32);
   pivotPin.position.set(pivotRest[0], pivotRest[1], Z.handle[0] + 0.001 + pivotLength / 2);
@@ -261,7 +280,7 @@ export function twoHandleGabDisengager() {
   const upperHandleBody = new THREE.Mesh(plate(handleShape, Z.handle[0], Z.handle[1]), handleMaterial);
   upperHandleBody.userData.role = 'upper-handle-grip-and-spiral-cam-behind-crown';
   upperHandle.add(upperHandleBody);
-  eccentricRod.add(rodBody, pivotPin, upperHandle);
+  eccentricRod.add(rodBody, rodForkLines, pivotPin, upperHandle);
   root.add(valveRocker, eccentricRod);
 
   // Plate-square camera envelope (x 0-525, y 40-300 raster).
@@ -326,7 +345,7 @@ export function twoHandleGabDisengager() {
   };
   root.userData.blocks = {
     valveRocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin,
-    eccentricRod, rodBody, pivotPin, upperHandle, upperHandleBody, cameraEnvelope,
+    eccentricRod, rodBody, rodForkLines, pivotPin, upperHandle, upperHandleBody, cameraEnvelope, shaftHatch,
   };
   root.userData.jointChecks = [
     [valveArm, valveShaft], [valveArm, valvePin], [rodBody, pivotPin], [upperHandleBody, pivotPin],

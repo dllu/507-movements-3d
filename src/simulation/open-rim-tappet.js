@@ -28,7 +28,7 @@ export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
   // Brown draws C as an outline over A, with its rim and tappet B dashed
   // behind it; the cover is translucent so those hidden parts read through.
   const cover = add('driverCover',drum(p.driverRadius,.25,.4,1024),input,PALETTE.driver);
-  cover.material = matte(PALETTE.driver,{ metalness:.15,roughness:.64,opacity:.38,transparent:true });
+  cover.material = matte(PALETTE.driver,{ metalness:.15,roughness:.64,opacity:.72,transparent:true });
   cover.material.depthWrite = false;
   add('rim',plate(rim,-.02,.25),input,PALETTE.driver);
   add('tappet',plate(profile.tappet,-.02,.25),input,PALETTE.brass);

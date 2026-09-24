@@ -8742,7 +8742,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // point. The working flank is that path offset by the pin radius and a
   // small running clearance on the clockwise (pushed) side.
   const guideRunningClearance = 0.012;
-  const guideThickness = 0.72;
+  const guideThickness = 1.15;
   const guideEntryEndPhase = degreesToRadians(21);
   const rawPinPathInPinion = (phase) => rotateVector2(
     rotateVector2(rawDriverPinLocal, phase).sub(rawPinionCenter),
@@ -17269,8 +17269,11 @@ function springTappetArmStarRatchet(movement) {
   const springPlaneZ = 0.5;
   const springCurveAt = (tappetDelta) => {
     const relativeAngle = tappetRestRelativeAngle + tappetDelta;
-    const springContactDistance = 0.28;
-    const springUndersideOffset = 0.16;
+    // As on Brown's plate the tip bears up on the tappet's tail lobe behind
+    // the hinge (finishStarTappet: circle (-0.5, 0.28), radius 0.2), below
+    // the arm: lobe bottom + tube radius + 0.008 clearance.
+    const springContactDistance = -0.5;
+    const springUndersideOffset = 0.528;
     const springTip = new THREE.Vector3(
       carrierLength + springContactDistance * Math.cos(relativeAngle)
         - springUndersideOffset * Math.sin(relativeAngle),
@@ -17280,8 +17283,16 @@ function springTappetArmStarRatchet(movement) {
     );
     return new THREE.CubicBezierCurve3(
       new THREE.Vector3(0.38, 0.18, springPlaneZ),
-      new THREE.Vector3(0.82, 0.62, springPlaneZ),
-      new THREE.Vector3(carrierLength - 0.52, 0.48, springPlaneZ),
+      new THREE.Vector3(0.82, 0.5, springPlaneZ),
+      // The last span follows the lobe as it presses the spring down.
+      // (tangent to the lobe bottom, in the tappet's frame).
+      new THREE.Vector3(
+        springTip.x - 0.42 * Math.cos(relativeAngle)
+          - 0.06 * Math.sin(relativeAngle),
+        springTip.y - 0.42 * Math.sin(relativeAngle)
+          + 0.06 * Math.cos(relativeAngle),
+        springPlaneZ,
+      ),
       springTip,
     );
   };

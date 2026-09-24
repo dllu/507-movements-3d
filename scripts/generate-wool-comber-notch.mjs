@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {createAuthoredWoolComberMovement} from '../src/simulation/authored-wool-comber.js';
+import {createWoolComberTransmission} from '../src/simulation/authored-wool-comber.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 
 // Mill a convex relief envelope for the finite hook's actual entry/exit arcs.
 // Generation stays offline; the browser consumes only this small closed profile.
-const model = createAuthoredWoolComberMovement({id: 217});
+const model = createWoolComberTransmission(217);
 try {
   const u = model.root.userData, g = u.geometry, m = u.motion;
   const clearance = .002, radius = g.catchHookRadius + clearance, cloud = [];
@@ -21,6 +21,11 @@ try {
       cloud.push([center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle)]);
     }
   }
+  // Brown cuts square notches: square the root corner under the radial
+  // (upper) flank. It lies below the hook's flank contact, so the driving fit
+  // is unchanged; the oblique exit flank must stay rounded to keep contact.
+  const seat = g.engagedHookRadius - radius;
+  cloud.push([seat, radius]);
   cloud.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
   const half = points => {

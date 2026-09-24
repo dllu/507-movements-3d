@@ -61,6 +61,33 @@ export function createDiagonalCatchAssembly(){
    stem.userData.role=side+'-finger-axial-web-'+index;body.add(stem);
   }
  }
+ // Brown draws every rod eye as an open ring round a small pin and every
+ // fixed shaft as a hatched section inside its boss. Drop the extra dark
+ // tori at the arm ends, slim the hinge pins and show the shaft heads light
+ // with section hatching so none of them reads as a solid black disc.
+ const steel=new THREE.MeshStandardMaterial({color:'#c3c7c1',roughness:.55,metalness:.15});
+ const sectionLines=new THREE.LineBasicMaterial({color:'#3a3f3c'});
+ const eyes=[];root.traverse(o=>{if(o.isMesh&&/back-weight-eye$/.test(o.userData.role??''))eyes.push(o);});
+ for(const eye of eyes)remove(eye);
+ root.traverse(o=>{
+  if(!o.isMesh)return;
+  if(o.userData.role==='back-weight-rod-hinge-pin'){
+   const p=o.geometry.parameters;o.geometry.dispose();
+   o.geometry=new THREE.CylinderGeometry(.06,.06,p.height,40);o.material=steel;
+  }else if(/fixed-round-head$/.test(o.userData.role??'')){
+   o.material=steel;
+   const r=o.geometry.parameters.radiusTop*.92,z=o.geometry.parameters.height/2+.002,pts=[];
+   for(let c=-r*.75;c<=r*.75+1e-9;c+=r*.3){
+    // 45° chords across the section face, in the head's local frame
+    // (cylinderAlongZ rotates +Y to +Z, so local y is the axial direction).
+    const h=Math.sqrt(Math.max(0,r*r-c*c)),s=Math.SQRT1_2;
+    const u=[(c+h)*s,(c-h)*s],v=[(c-h)*s,(c+h)*s];
+    pts.push(new THREE.Vector3(u[0],z,-u[1]),new THREE.Vector3(v[0],z,-v[1]));
+   }
+   const hatch=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),sectionLines);
+   hatch.name=o.userData.role+'-section-hatching';o.add(hatch);
+  }
+ });
  const groups={upper:b.upperHandle,lower:b.lowerHandle,catch:b.catchGroup,piston:b.pistonGroup,
   upperWeight:b.upperWeightAssembly,lowerWeight:b.lowerWeightAssembly,catchWeight:b.catchWeightAssembly};
  for(const [name,object]of Object.entries(groups))object.name='body:'+name;

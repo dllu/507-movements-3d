@@ -49,6 +49,10 @@ export function makeGravityTumbler(options = {}) {
   collar.position.z = p.collarLowZ;
   const tumbler = add('tumblerPlate', plate.geometry, PALETTE.brass, weight, 'weight');
   tumbler.position.z = p.plateLowZ;
+  // Brown draws wheel B dotted behind E. E's face is translucent so B and the
+  // worm read through it as those hidden lines while E swings round in front.
+  tumbler.material = matte(PALETTE.brass, { metalness: 0.15, roughness: 0.64, opacity: 0.72, transparent: true });
+  tumbler.material.depthWrite = false;
   wormMount.rotation.z = Math.PI; wormAxis.position.y = p.wormCenterDistance; wormAxis.rotation.y = Math.PI / 2;
   worm.position.z = -p.wormOffset;
   add('wormThread', cylindricalWormGeometry({ pitchRadius: p.wormPitchRadius, module: p.module,
@@ -67,5 +71,6 @@ export function makeGravityTumbler(options = {}) {
     animationTiming: { authoredCyclePeriod: p.cycleDuration }, minimumDisplayCycleSeconds: 24,
     idealConstraints: 'Grounded shaft bearings and constant-speed motor are ideal. Gravity acts on uniform component masses. Explicit viscous bearing resistance dissipates energy. Pin catch is perfectly inelastic. Tooth count and worm proportions are regularized from the engraving.' };
   update(0); markShadows(root);
+  tumbler.castShadow = false;
   return { root, update, motion, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }
