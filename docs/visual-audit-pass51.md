@@ -48,3 +48,25 @@ base), 217 (notch wheel F no longer shown), 297 (plain disc now), 304 (broad
 plate now), 346 (claim reversed), 347, 372, 381, 395; and rows claiming undrawn
 supports are removed while legs, tanks or guides remain (391, 394, 441, 455,
 456, 467, 501).
+
+## Second audit after three fix waves
+
+A second read-only pass captured all 507 movements again beside their plates
+and compared them with the updated ledger rows. About 155 of 1–253 and 193 of
+254–507 read as faithful apart from disclosed limits. The remaining concrete
+items, queued for wave 4, were:
+
+- 1–253: 37 pointed cone and protruding studs (claimed frustum); 31 coarse worm;
+  136 and 154 undrawn pedestals and gallows; 218 oblique with markers and a thin
+  detent G; 203 still a broad C plate; 227 round-wire links; 237 thick drum crown;
+  251 missing beam B; 185 missing wall; 73 oversized block; 86 cropped; 106/107
+  slab ceilings, 107 zigzag groove; 116 ghost pinion; 63 detached spring stub;
+  77/233 protruding pins; 214 translucent fingers; 219 spoked rim; 239 unbroken
+  wheel; remaining white index marks on 171–245; small framing on 172, 177, 196–198.
+- 254–507: 267 undrawn arrow; 377 oblique where the plate is a side elevation;
+  468 whole-mains close-up where Brown draws one joint; 440 raised camera;
+  441/461 heavy water blocks; 354 disc where the plate draws a ring; 394 extra
+  wire loop; 417 thin head A; 423 translucent fans; 426 short vanes; 436 extra
+  plate and disc; 447/455/456/487/489 flow arrows; 477 open frame for a cast
+  casing; 500 missing section; 502/504 small framing; 280 missing standard;
+  378 log placement; 408 missing construction; and low-level markers and slabs.
