@@ -46,12 +46,15 @@ export function makeJawClutch() {
   // read alike; only the axial bands carry the drive. The spaces stay flat:
   // the mating crests reach within 0.01 of them. The white phase stripe the
   // shared jaw generator paints on the rim is not drawn.
-  const toothStations = [{ u: 0, height: 0 }], crestBase = p.jawHeight - p.crestDepth;
+  const toothStations = [{ u: 0, height: p.troughDepth }], crestBase = p.jawHeight - p.crestDepth;
   for (let i = 0; i <= 32; i += 1) {
     const t = Math.PI * i / 32;
     toothStations.push({ u: p.jawFraction * (1 - Math.cos(t)) / 2, height: crestBase + p.crestDepth * Math.sin(t) });
   }
-  for (let i = 0; i < 48; i += 1) toothStations.push({ u: p.jawFraction + (1 - p.jawFraction) * i / 48, height: 0 });
+  for (let i = 0; i < 48; i += 1) {
+    const t = Math.PI * i / 48;
+    toothStations.push({ u: p.jawFraction + (1 - p.jawFraction) * (1 - Math.cos(t)) / 2, height: i === 24 ? 0 : p.troughDepth * (1 - Math.sin(t)) });
+  }
   const inputBody = new THREE.Mesh(unpainted(jawClutchGeometry(inputProfile, { movingIndices: [3, 4], direction: 1,
     phase: jawPhase, ...p, topFraction: 0, toothStations, boreRadius, color: PALETTE.accent }), PALETTE.accent), solidMaterial());
   const outputBody = new THREE.Mesh(unpainted(jawClutchGeometry(outputProfile, { movingIndices: [1, 2], direction: -1,

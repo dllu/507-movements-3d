@@ -5,7 +5,7 @@ import {plate,poly,circle,disk,ring,capsule,polygonClipping as clip} from '../fi
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
-export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude=.9}={}){
+export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude=.5}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isFinite(amplitude)||amplitude<=0||amplitude>1.2)throw new RangeError('Invalid 118 geometry options');
  const s=source,m=s.module,R=s.teeth*m/2,pitch=Math.PI*m,alpha=Math.PI/9,corner=.08*m,clearance=.001;
  const root=new THREE.Group(),parts={},families={},blocks={},cells={};

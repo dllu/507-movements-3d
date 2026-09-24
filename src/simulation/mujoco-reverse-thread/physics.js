@@ -1,7 +1,7 @@
 import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 const vec=a=>a.map(v=>Math.abs(v)<1e-12?0:Number(v.toPrecision(12))).join(' ');
-export function makeReverseThreadPhysics(mujoco,visual,{timestep=.0005,period=20,kp=10000,kv=200,load=0,friction=.03,contactTime=.002,swivelDamping=.001,contactImpedance=[.9,.95,.001],exactInertia=true,integrator='discrete'}={}) {
+export function makeReverseThreadPhysics(mujoco,visual,{timestep=.0005,period=30,kp=10000,kv=200,load=0,friction=.03,contactTime=.002,swivelDamping=.001,contactImpedance=[.9,.95,.001],exactInertia=true,integrator='discrete'}={}) {
  const u=visual.root.userData,f=u.profile,mass=Object.fromEntries(['input','follower','shoe'].map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.input.volume;
  const inertia=n=>{const m=mass[n];return `<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(v=>v*density))}"/>`;};
  // Body inertias come from the complete rendered solids above. Mesh inertias

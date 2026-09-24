@@ -164,8 +164,21 @@ export function jawClutchGeometry(profile, { movingIndices, direction, phase = 0
         profileNormal(j, first.angle), profileNormal(j, last.angle), profileNormal(next, last.angle), profileNormal(next, first.angle)];
       const shade = isOuter && THREE.MathUtils.euclideanModulo((first.angle + last.angle) / 2 + 0.035, 2 * Math.PI) < 0.07
         ? paint : baseColor;
-      emit(a, b, c, radialNormals?.slice(0, 3), shade);
-      emit(a, c, d, radialNormals ? [radialNormals[0], radialNormals[2], radialNormals[3]] : null, shade);
+      // A side wall meets a vertical flank whose lower end is raised (a
+      // rounded trough) in a T-junction: split the taller edge at the
+      // flank's lower height so both walls and the flank share vertices.
+      const movingEnd = movingIndices.includes(j) !== movingIndices.includes(next)
+        ? (movingIndices.includes(j) ? j : next) : null;
+      const splitAt = (station, neighbour) => {
+        if (movingEnd === null || !neighbour || Math.abs(neighbour.angle - station.angle) > 1e-12) return null;
+        const low = Math.min(station.height, neighbour.height);
+        return low > 1e-9 && station.height > low + 1e-9 ? point(movingEnd, { angle: station.angle, height: low }) : null;
+      };
+      const wrap = (k) => stations[k] ?? (k >= stations.length ? stations[k - stations.length + 1] : stations[k + stations.length - 1]);
+      const p = splitAt(last, wrap(i + 2)), q = splitAt(first, wrap(i - 1));
+      if (p) { emit(a, b, p, null, shade); emit(a, p, c, null, shade); } else emit(a, b, c, radialNormals?.slice(0, 3), shade);
+      if (q) { emit(a, c, q, null, shade); emit(q, c, d, null, shade); }
+      else emit(a, c, d, radialNormals ? [radialNormals[0], radialNormals[2], radialNormals[3]] : null, shade);
     }
     if (isFront) frontTriangleCount = positions.length / 9 - frontTriangleStart;
   }

@@ -1,8 +1,15 @@
 import source from './source.js';
-export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=.36,shoeRadius=.05,reversalAngle=3,workingInset=.065,workingThickness=.025,curvedShoe=true,shoeSegments=24,optimizeTilt=true,optimizeReversalTilt=true,coreRadius=.4338,convexStrips=true,roundReversals=true,conformalShoe=true}={}) {
+export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=.25,shoeRadius=.05,reversalAngle=3.5,workingInset=.065,workingThickness=.025,curvedShoe=true,shoeSegments=24,optimizeTilt=true,optimizeReversalTilt=true,coreRadius=.42,convexStrips=true,roundReversals=true,conformalShoe=true,starts=2}={}) {
  const e=source.edges,axis=[(e.barrelLeft+e.barrelRight)/2,(e.barrelTop+e.barrelBottom)/2],radius=(e.barrelRight-e.barrelLeft)/200;
- const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=pitch/(2*Math.PI),half=source.turns*2*Math.PI,period=half*2,d=reversalAngle;
- const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),top=y(source.fit.firstCrossing)+lead*(Math.PI-endOffset),phase=Math.PI;
+ // Brown's crossings sit at the front centre and at both silhouette edges, a
+ // double-start pattern: each hand has two starts, so the source crossing pitch
+ // is half the lead and his steep straight slopes need no other projection.
+ if(!Number.isInteger(starts)||starts<1||(source.turns*2)%starts)throw new RangeError('Invalid 108 thread starts');
+ const x=p=>(p-axis[0])/100,y=p=>(axis[1]-p)/100,pitch=source.fit.pitch/100,lead=starts*pitch/(2*Math.PI),half=source.turns/starts*2*Math.PI,period=half*2,d=reversalAngle;
+ // One start puts its reversals and self-crossings at the front and back.
+ // Two starts put them at the silhouette edges; each front crossing is then
+ // between the two starts, and the reversals turn out of sight at the sides.
+ const endOffset=d*(roundReversals?1-2/Math.PI:.5),stroke=lead*(half-2*endOffset),firstFront=starts===2?Math.PI/2:Math.PI,top=y(source.fit.firstCrossing)+lead*(firstFront-endOffset),phase=firstFront;
  const end=t=>{const u=t/d;return roundReversals?{s:2*lead*d/Math.PI*(1-Math.cos(Math.PI*u/2)),derivative:lead*Math.sin(Math.PI*u/2)}:{s:lead*d*(u**3-u**4/2),derivative:lead*(3*u*u-2*u**3)};};
  const law=a=>{const b=((a%period)+period)%period,t=Math.min(b,period-b);let s,derivative;
   if(t<d){({s,derivative}=end(t));}
@@ -14,7 +21,8 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
  const shoeZ=(u,side)=>curvedShoe?Math.sqrt((radius-.01)**2-u*u)-(side?0:workingThickness):side?workingHigh:workingLow;
  // A radial spindle lets the elongated shoe swivel between the two helices.
  const contactAngle=-Math.PI/2;
- const initialParameter=Array.from({length:source.turns*2},(_,k)=>contactAngle-phase+2*Math.PI*k).sort((a,b)=>Math.abs(law(a).y-y(source.tip[1]))-Math.abs(law(b).y-y(source.tip[1])))[0];
+ const pathLanes=source.turns*2/starts;
+ const initialParameter=Array.from({length:pathLanes},(_,k)=>contactAngle-phase+2*Math.PI*k).sort((a,b)=>Math.abs(law(a).y-y(source.tip[1]))-Math.abs(law(b).y-y(source.tip[1])))[0];
  const initialY=law(initialParameter).y;
  let contour=(length=shoeLength,r=shoeRadius)=>Array.from({length:34},(_,i)=>{
   const right=i<17,a=right?-Math.PI/2+Math.PI*i/16:Math.PI/2+Math.PI*(i-17)/16;
@@ -26,7 +34,7 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
   const q=outline[(i+1)%outline.length],n=Math.max(1,Math.ceil(Math.abs(q[0]-p[0])/(2*(shoeLength+shoeRadius)/shoeSegments/4)));
   return Array.from({length:n},(_,j)=>p.map((v,k)=>v+(q[k]-v)*j/n));
  });};
- let cutter=makeCutter();const lanes=source.turns*2,cache=new Map();
+ let cutter=makeCutter();const lanes=pathLanes*starts,cache=new Map();
  // A long shoe follows a finite arc. Its best flank orientation differs from
  // the tangent at its midpoint. Minimize the swept groove width at constant lead
  // so the two ends constrain yaw instead of removing excess material.
@@ -88,11 +96,11 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
   // A full barrel turn permutes the path lanes. Reuse the identical endpoint
   // values so floating-point phase reduction cannot leave a radial seam cap.
   const turns=Math.floor(angle/(2*Math.PI));
-  if(turns){const base=boundaries(angle-turns*2*Math.PI);return Array.from({length:lanes},(_,k)=>{const lane=((k+turns)%lanes+lanes)%lanes;return base.slice(2*lane,2*lane+2);}).flat();}
+  if(turns){const base=boundaries(angle-turns*2*Math.PI);return Array.from({length:lanes},(_,k)=>{const start=Math.floor(k/pathLanes),lane=start*pathLanes+((k%pathLanes+turns)%pathLanes+pathLanes)%pathLanes;return base.slice(2*lane,2*lane+2);}).flat();}
   if(cache.has(angle))return cache.get(angle);
   const result=[];
   for(let lane=0;lane<lanes;lane++) {
-   const a=angle-phase+lane*2*Math.PI;let low=Infinity,high=-Infinity;
+   const a=angle-phase-Math.floor(lane/pathLanes)*2*Math.PI/starts+(lane%pathLanes)*2*Math.PI;let low=Infinity,high=-Infinity;
    const s=law(a),flank=flankBounds.get(s.derivative);
    // On an affine stroke, eliminate the sweep parameter analytically. The
    // same shoe support applies everywhere along that helix, including at seams.
@@ -110,7 +118,7 @@ export function makeReverseThreadProfile({segments=64,clearance=.001,shoeLength=
   cache.set(angle,result);return result;
  }
  return{source,axis,x,y,radius,pitch,lead,half,period,stroke,top,phase,law,segments,clearance,shoeLength,shoeRadius,contour,
-  workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,conformalShoe,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
+  starts,pathLanes,workingLow,workingHigh,optimizeTilt,optimizeReversalTilt,convexStrips,roundReversals,conformalShoe,curvedShoe,shoeSegments,shoeZ,tiltRadius,tilt,floor,lanes,boundaries,contactAngle,initialParameter,initialY,initialTilt,
   bottom:y(e.barrelBottom),ceiling:y(e.barrelTop),shaftRadius:(e.shaftRight-e.shaftLeft)/200,
   guideX:x((e.guideLeft+e.guideRight)/2),guideRadius:(e.guideRight-e.guideLeft)/200};
 }

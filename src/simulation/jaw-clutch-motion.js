@@ -6,7 +6,7 @@ export function makeJawClutchMotion() {
   // carry drive. The tips meet at shift
   // `overlap`; the axial bands engage once the dogs are 2 * crestDepth deep.
   const p = { cycleDuration: 12, jawCount: 6, jawFraction: 0.36, jawHeight: 0.23,
-    crestDepth: 0.08,
+    crestDepth: 0.08, troughDepth: 0.06,
     stroke: 0.54, overlap: 0.22, grooveLeft: 2.35, grooveRight: 2.60,
     followerRadius: 0.075, followerZ: 0.3375, leverLength: 1.15,
     pivotX: 2.525, pivotY: -1.25, lockPhase: 0.34, withdrawStart: 0.65, withdrawEnd: 0.86 };

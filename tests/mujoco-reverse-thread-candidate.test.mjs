@@ -57,7 +57,7 @@ test('108 candidate preserves closed crossing lands and a finite curved shoe in 
    const cs=p.data.contact;
    for(let j=0;j<cs.size();j++){const c=cs.get(j);assert.ok(c.dist>-.0001,'nominal shoe pose intersects the machined material');c.delete();}cs.delete();
   }
-  p.data.qpos.set([0,0,.3]);mujoco.mj_forward(p.model,p.data);let coreContacts=0;const cs=p.data.contact;
+  p.data.qpos.set([0,0,f.initialTilt+.3]);mujoco.mj_forward(p.model,p.data);let coreContacts=0;const cs=p.data.contact;
   for(let j=0;j<cs.size();j++){const c=cs.get(j);if((c.geom1===core||c.geom2===core)&&c.dist<0)coreContacts++;c.delete();}cs.delete();
   assert.ok(coreContacts>0,'a deflected shoe must contact the actual barrel core');
   t.diagnostic(JSON.stringify({compiledVertices:vertices,geoms:p.model.ngeom,solids:Object.keys(u.parts).length}));
@@ -68,7 +68,7 @@ test('108 candidate output is passive and releases its native allocations',()=>{
  try {
   p.model.opt.gravity.fill(0);p.data.qvel[1]=0;p.data.qvel[2]=0;
   for(let i=0;i<v.root.userData.collision.shoe.length;i++){const id=p.id('mjOBJ_GEOM','shoe'+i);p.model.geom_contype[id]=0;p.model.geom_conaffinity[id]=0;}
-  v.update(1);assert.ok(p.data.qpos[0]>3);assert.ok(Math.abs(p.data.qpos[1])<1e-10);
+  v.update(3);assert.ok(p.data.qpos[0]>3);assert.ok(Math.abs(p.data.qpos[1])<1e-10);
  }finally{v.dispose();v.dispose();}
  assert.ok(p.model.isDeleted()&&p.data.isDeleted());
 });

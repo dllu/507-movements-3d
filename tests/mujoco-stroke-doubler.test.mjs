@@ -40,13 +40,13 @@ test('118 passive tooth contact doubles both directions of the pitman stroke ove
    assert.equal(p.data.qfrc_actuator[1],0);assert.equal(p.data.qfrc_actuator[2],0);
    const cs=p.data.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{penetration=Math.max(penetration,-c.dist);}finally{c.delete();}}}finally{cs.delete();}
   }
-  assert(error<.002);assert(rolling<.001);assert(penetration<.0003);assert(lo<-1.79&&hi>1.79);t.diagnostic(JSON.stringify({motionErrorPixels:error*100,rollingErrorPixels:rolling*100,penetrationPixels:penetration*100,range:[lo,hi]}));
+  assert(error<.002);assert(rolling<.001);assert(penetration<.0003);assert(lo<-2*u.profile.amplitude+.01&&hi>2*u.profile.amplitude-.01);t.diagnostic(JSON.stringify({motionErrorPixels:error*100,rollingErrorPixels:rolling*100,penetrationPixels:penetration*100,range:[lo,hi]}));
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
 });
 
 test('118 disconnected contacts leave the passive parts stationary while the carrier moves',()=>{
- const v=makeMujocoStrokeDoubler(mujoco),p=v.physics;
- try{p.model.geom_contype.fill(0);p.model.geom_conaffinity.fill(0);v.update(1.25);assert(p.data.qpos[0]>.89);assert(Math.abs(p.data.qpos[1])<1e-10);assert(Math.abs(p.data.qpos[2])<1e-10);}
+ const v=makeMujocoStrokeDoubler(mujoco),p=v.physics,a=v.root.userData.profile.amplitude;
+ try{p.model.geom_contype.fill(0);p.model.geom_conaffinity.fill(0);v.update(1.25);assert(p.data.qpos[0]>a-.01);assert(Math.abs(p.data.qpos[1])<1e-10);assert(Math.abs(p.data.qpos[2])<1e-10);}
  finally{v.dispose();}
 });
 
@@ -55,7 +55,7 @@ test('118 each rack contact is necessary for the doubled output stroke',t=>{
   const v=makeMujocoStrokeDoubler(mujoco),p=v.physics,u=v.root.userData;
   try{
    for(let i=0;i<u.cells[disabled].length;i++){const id=p.id('mjOBJ_GEOM',disabled+i);p.model.geom_contype[id]=p.model.geom_conaffinity[id]=0;}
-   v.update(1.25);const q=Array.from(p.data.qpos);assert(q[0]>.89);assert(Math.abs(q[2]-2*q[0])>.5);
+   v.update(1.25);const q=Array.from(p.data.qpos);assert(q[0]>u.profile.amplitude-.01);assert(Math.abs(q[2]-2*q[0])>.5*u.profile.amplitude/.9);
    if(disabled==='upperRack'){assert(Math.abs(q[2])<1e-10);assert(Math.abs(q[0]+u.profile.pitchRadius*q[1])<.001);}
    t.diagnostic(JSON.stringify({disabled,q}));
   }finally{v.dispose();}
