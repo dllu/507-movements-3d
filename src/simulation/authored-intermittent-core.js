@@ -19,6 +19,7 @@ import {
   snapCounterMotionFingerprint,
   starOutline,
 } from './snap-counter-63-mechanism.js';
+import { makeHiddenInkLine } from './hidden-ink-lines.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -2032,8 +2033,112 @@ function snapActionStarCounter() {
   const drop = makePlanarRotor();
   drop.position.set(...toWorld(hinge).toArray(), 0);
   const dropMaterial = matte(PALETTE.brass, { metalness: 0.1, roughness: 0.65 });
-  const dropBody = slab(ringShape(localRing(mechanism.dropOutline, hinge)), z.dropBack, z.dropFront, dropMaterial);
+  // Brown dashes the drop's leg where it runs behind the pawl's lobe and
+  // the pin disk. The drop keeps its whole solid body (the leg is its working
+  // edge for the pins), but the part of it right of the lobe's inner edge and
+  // under the pawl's upper edge is not drawn: that zone is fixed to the pawl,
+  // so the drop shows solid exactly where it rises above the pawl, and the
+  // leg below never shows as a solid strip between the lobe and the disk.
+  // Its real edges inside the zone are drawn as Brown's dashed outline over
+  // the pawl and the disk.
+  const pawlRing = mechanism.pawlPlateOutline.map(([x, y]) => [x, -y]);
+  const pawlTopAt = (x) => {
+    let top = Infinity;
+    for (let i = 0; i < pawlRing.length; i += 1) {
+      const a = pawlRing[i];
+      const b = pawlRing[(i + 1) % pawlRing.length];
+      if ((a[0] - x) * (b[0] - x) > 0 || a[0] === b[0]) continue;
+      top = Math.min(top, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]));
+    }
+    return top;
+  };
+  const zoneLeft = 717;
+  const zoneTop = [];
+  for (let x = zoneLeft; x <= 960; x += 3) {
+    const top = pawlTopAt(x);
+    if (Number.isFinite(top)) zoneTop.push([x, top + 3]);
+  }
+  const legZone = [[zoneLeft, 1000], ...zoneTop, [1150, zoneTop.at(-1)[1]], [1150, 1000]]
+    .map(([x, y]) => [x, -y]);
+  const legZoneInPawl = localRing(legZone, L.pawlPivot);
+  const zoneUniforms = {
+    legZone: { value: legZoneInPawl.map(([x, y]) => new THREE.Vector2(x, y)) },
+    legZoneFromWorld: { value: new THREE.Matrix4() },
+  };
+  const zoneCount = legZoneInPawl.length;
+  const clipOutsideLegZone = (material, keepInside) => {
+    const clipped = material.clone();
+    clipped.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, zoneUniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vLegZoneWorld;')
+        .replace(
+          '#include <project_vertex>',
+          '#include <project_vertex>\nvLegZoneWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>
+          varying vec3 vLegZoneWorld;
+          uniform vec2 legZone[${zoneCount}];
+          uniform mat4 legZoneFromWorld;`)
+        .replace(
+          '#include <clipping_planes_fragment>',
+          `#include <clipping_planes_fragment>
+          {
+            vec2 p = (legZoneFromWorld * vec4(vLegZoneWorld, 1.0)).xy;
+            bool inside = false;
+            for (int i = 0, j = ${zoneCount - 1}; i < ${zoneCount}; j = i++) {
+              vec2 a = legZone[i];
+              vec2 b = legZone[j];
+              if ((a.y > p.y) != (b.y > p.y)
+                && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+            }
+            if (inside != ${keepInside ? 'true' : 'false'}) discard;
+          }`,
+        );
+    };
+    clipped.customProgramCacheKey = () => `snap-counter-63-leg-zone-${keepInside}`;
+    return clipped;
+  };
+  const followPawl = () => {
+    zoneUniforms.legZoneFromWorld.value.copy(pawl.userData.rotor.matrixWorld).invert();
+  };
+  const dropBody = slab(
+    ringShape(localRing(mechanism.dropOutline, hinge)),
+    z.dropBack,
+    z.dropFront,
+    clipOutsideLegZone(dropMaterial, false),
+  );
   dropBody.userData.springDropBody = true;
+  dropBody.userData.legZone = legZone;
+  dropBody.onBeforeRender = followPawl;
+  // The drop's real edges from the top of the lobe round the leg to the
+  // arch, as one dashed run; only its part inside the zone is drawn.
+  const denseOutline = mechanism.dropOutline.flatMap((point, index, ring) => {
+    const next = ring[(index + 1) % ring.length];
+    const pieces = Math.max(1, Math.ceil(Math.hypot(next[0] - point[0], next[1] - point[1]) / 4));
+    return Array.from({ length: pieces }, (_, step) => [
+      point[0] + (next[0] - point[0]) * step / pieces,
+      point[1] + (next[1] - point[1]) * step / pieces,
+    ]);
+  });
+  const nearLeg = ([x]) => x > 690;
+  const firstAway = denseOutline.findIndex((point) => !nearLeg(point));
+  const legEdge = [];
+  for (let step = 1; step <= denseOutline.length; step += 1) {
+    const point = denseOutline[(firstAway + step) % denseOutline.length];
+    if (nearLeg(point)) legEdge.push(point);
+    else if (legEdge.length) break;
+  }
+  const legHiddenLine = makeHiddenInkLine(localRing(legEdge, hinge), {
+    dashSize: 0.06,
+    gapSize: 0.04,
+    role: 'dashed-hidden-outline-of-drop-leg',
+    width: 0.013,
+    z: z.pawlFront + 0.004,
+  });
+  legHiddenLine.material = clipOutsideLegZone(legHiddenLine.material, true);
+  legHiddenLine.onBeforeRender = followPawl;
   const [strikerX, strikerY] = localRing([mechanism.striker], hinge)[0];
   // Brown draws the striker, like the stop pin, as an open circle.
   const openPinMaterial = matte(PALETTE.white, { metalness: 0.12, roughness: 0.5 });
@@ -2063,7 +2168,7 @@ function snapActionStarCounter() {
   slot.rotation.z = -1.05;
   slot.position.set(pivotX, pivotY, z.screwHeadFront + 0.004);
   slot.userData.surfaceMarking = true;
-  drop.userData.rotor.add(dropBody, striker, strikerRim, screwShank, screwHead, slot);
+  drop.userData.rotor.add(dropBody, legHiddenLine, striker, strikerRim, screwShank, screwHead, slot);
   drop.userData.role = 'spring-carried-drop';
 
   // The broad hooked pawl hangs on the screw; its nose steps forward into
@@ -2188,6 +2293,7 @@ function snapActionStarCounter() {
     driver,
     driverShaft,
     drop,
+    legHiddenLine,
     pawl,
     springLeaf,
     star,

@@ -193,21 +193,30 @@ test('movement 269 matches the measured source proportions and source pose', () 
     0.42,
     'source frame left reach',
   );
-  // Brown's closed end is one tooth past the last rack, too close for a full gear to reach it.
+  // Brown's closed end is a quarter pitch past the last rack tooth and 48 px
+  // (2.36 pitches) wide. The model's groups are contiguous (17 pitches, where
+  // Brown's overlap), so at the source pose the end still sits farther right.
   assert.ok(
     modelSourceRight / geometry.pinionOuterRadius
       > (plate.rasterFrameOuterBounds.right - plate.rasterPinionCenter.x)
         / plate.rasterPinionOuterRadius,
     'source frame right reach',
   );
-  assert.ok(
+  near(
     geometry.frameRight - geometry.frameRightBridgeWidth
-      - geometry.contactCoordinateMaximum
-      >= geometry.pinionOuterRadius + 0.05,
-    'closed right end clears the gear tips at the stroke limit',
+      - geometry.contactCoordinateMaximum,
+    geometry.circularPitch * 0.25,
+    1e-12,
+    'closed end a quarter pitch past the last tooth',
   );
-  // The closed end sits farther right than drawn (asserted above), so the
-  // rod is compared from the frame's closed end rather than from the gear.
+  near(
+    geometry.frameRightBridgeWidth / geometry.circularPitch,
+    (plate.rasterFrameOuterBounds.right - plate.rasterFrameInnerRightX)
+      / plate.rasterRackPitch,
+    1e-12,
+    'closed end width in pitches',
+  );
+  // The rod is compared from the frame's closed end rather than from the gear.
   near(
     (modelDriveRodEnd - modelSourceRight) / geometry.pinionOuterRadius,
     (plate.rasterDriveRodEnd.x - plate.rasterFrameOuterBounds.right)
@@ -719,5 +728,59 @@ test('movement 269 relieved teeth keep Brown\'s full outline as a web behind the
     const tip = side > 0 ? box.min.y : -box.max.y;
     assert.ok(Math.abs(tip - (geometry.rackToothRootY - geometry.pinionToothHeight)) < 1e-6);
   }
+  disposeModel(model.root);
+});
+
+test('movement 269 gear tips pass in front of the joggled closed end', () => {
+  const model = createMovementModel(catalog.movements[268]);
+  const { blocks, geometry, timeline, transmission } = model.root.userData;
+  const closedEnd = [
+    blocks.rightBridge,
+    ...blocks.rightJoggles,
+    blocks.driveRodNeck,
+    blocks.driveRod,
+  ];
+  const pinionMeshes = [];
+  blocks.pinionRotor.traverse((object) => {
+    if (object.isMesh) pinionMeshes.push(object);
+  });
+  // Brown's quarter pitch: the bridge's inner face is that close to the last tooth.
+  near(
+    blocks.rightBridge.position.x - geometry.frameRightBridgeWidth / 2
+      - geometry.contactCoordinateMaximum,
+    geometry.circularPitch * 0.25,
+    1e-12,
+    'bridge inner face',
+  );
+  // The whole closed end lies behind the pinion's rear face.
+  assert.ok(geometry.frameRightBridgeFront < -geometry.pinionDepth / 2 - 0.05);
+  const boxes = (parts) => parts.map((part) => new THREE.Box3().setFromObject(part, true));
+  const samples = 193;
+  for (let index = 0; index < samples; index += 1) {
+    model.update(timeline.demonstrationPeriod * index / (samples - 1));
+    model.root.updateMatrixWorld(true);
+    const ends = boxes(closedEnd);
+    for (const [pinionIndex, pinionBox] of boxes(pinionMeshes).entries()) {
+      for (const [endIndex, endBox] of ends.entries()) {
+        assert.ok(
+          !pinionBox.intersectsBox(endBox),
+          `sample ${index}: ${pinionMeshes[pinionIndex].userData.role} meets ${closedEnd[endIndex].userData.role}`,
+        );
+      }
+    }
+  }
+  // At the stroke limit the tips overlap the bridge in the front view, in front of it.
+  model.update(transmission.timeForContactCoordinate(
+    geometry.contactCoordinateMaximum,
+    'increasing',
+  ));
+  model.root.updateMatrixWorld(true);
+  const [bridgeBox] = boxes([blocks.rightBridge]);
+  const teethBox = new THREE.Box3();
+  for (const tooth of blocks.pinionToothMeshes) {
+    teethBox.union(new THREE.Box3().setFromObject(tooth, true));
+  }
+  assert.ok(teethBox.max.x > bridgeBox.max.x, 'tips sweep past the whole closed end');
+  assert.ok(teethBox.min.z > bridgeBox.max.z + 0.05, 'tips pass in front of the bridge');
   disposeModel(model.root);
 });

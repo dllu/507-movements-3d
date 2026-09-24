@@ -9,6 +9,7 @@ import {
 } from './primitives.js';
 
 import {foldingRod} from './folding-joint-parts.js';
+import {makeHiddenInkLine} from './hidden-ink-lines.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -127,7 +128,9 @@ function combinationWeightDrive(movement) {
   const couplerLength = 4;
   const pulleyArmRadius = 3.1;
   const diskRadius = 0.83;
-  const diskHubRadius = 0.24;
+  // Brown's hub circle on B is about a fifth of B's radius; at that size the
+  // drum circle, dashed behind B, shows clear of it as his inner circle.
+  const diskHubRadius = 0.16;
   const drumRadius = 0.22;
   const drumAxialAdvancePerRadian = 0.014;
   const effectiveDrumTakeupRadius = Math.hypot(
@@ -495,6 +498,42 @@ function combinationWeightDrive(movement) {
   diskIndex.position.set(diskRadius * 0.44, 0, 0.19);
   diskIndex.userData.role = 'white-disk-B-and-drum-speed-index';
   diskAssembly.add(diskBody, diskRim, diskHub, drum, diskIndex);
+  // Brown carries the drum-side strand of D over B's face to its inner
+  // circle. Here the drum and cord lie behind B, so draw them in his hidden-
+  // line notation: the drum's cord circle and the strand from B's rim to its
+  // tangent, as thin dashed ink lines on B's face.
+  const hiddenLineZ = 0.155 + 0.005;
+  const drumHiddenCircle = makeHiddenInkLine(
+    Array.from({ length: 120 }, (_, index) => {
+      const angle = FULL_TURN * index / 120;
+      return [drumRadius * Math.cos(angle), drumRadius * Math.sin(angle)];
+    }),
+    {
+      closed: true,
+      dashSize: 0.085,
+      gapSize: 0.055,
+      role: 'dashed-hidden-drum-circle-behind-disk-B',
+      width: 0.024,
+      z: hiddenLineZ,
+    },
+  );
+  diskAssembly.add(drumHiddenCircle);
+  const strandHiddenPoints = (configuration) => {
+    const from = configuration.pulleyTangent;
+    const to = configuration.drumTangent;
+    const direction = to.clone().sub(from);
+    const length = direction.length();
+    direction.divideScalar(length);
+    // Enter at the dark rim's outer edge, where the drawn cord disappears.
+    const entryRadius = diskRadius + 0.065;
+    const offset = from.clone().sub(diskCenter);
+    const along = offset.dot(direction);
+    const across = offset.lengthSq() - along ** 2;
+    const enter = Math.min(length, Math.max(0,
+      -along - Math.sqrt(Math.max(0, entryRadius ** 2 - across))));
+    const start = from.clone().addScaledVector(direction, enter);
+    return [[start.x, start.y], [to.x, to.y]];
+  };
 
   const armA = foldingRod({length: pulleyArmRadius, width: .16, depth: .18,
     bore: .184, material: armMaterial, role: 'rocking-arm-A-pivoted-at-G-and-carrying-pulley-E'});
@@ -600,6 +639,19 @@ function combinationWeightDrive(movement) {
     marker.userData.role = `fixed-material-cord-D-marker-${index + 1}`;
   });
   root.add(cord);
+  const strandHiddenLine = makeHiddenInkLine(
+    strandHiddenPoints(initialConfiguration),
+    {
+      anchor: 'end',
+      dashSize: 0.085,
+      fitDashes: false,
+      gapSize: 0.055,
+      role: 'dashed-hidden-drum-side-strand-of-cord-D-behind-disk-B',
+      width: 0.024,
+      z: hiddenLineZ,
+    },
+  );
+  root.add(strandHiddenLine);
 
   const fixedPivot = cylinderAlongZ(0.18, 0.64, darkMaterial, 40);
   fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.02);
@@ -703,6 +755,7 @@ function combinationWeightDrive(movement) {
     diskIndex,
     diskRim,
     drum,
+    drumHiddenCircle,
     fixedPivot,
     frame,
     linkC,
@@ -713,6 +766,7 @@ function combinationWeightDrive(movement) {
     pulleyHub,
     pulleyIndex,
     rockerJointPin,
+    strandHiddenLine,
     weight,
     weightBody,
     weightEye,
@@ -889,6 +943,7 @@ function combinationWeightDrive(movement) {
     );
     const cordCurve = makeCordCurve(configuration);
     cord.userData.setCurve(cordCurve);
+    strandHiddenLine.userData.setPoints(strandHiddenPoints(configuration));
     cord.userData.centerlineLength = configuration.totalLength;
     cord.userData.centerlineLengthError = configuration.cordLengthError;
     root.userData.kinematics = state;

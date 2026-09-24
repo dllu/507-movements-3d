@@ -2029,8 +2029,8 @@
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/u1-intermittent-review.md",
-        "note": "Pass-52 screen at 257 samples: no overlaps; pins, nose and star clear by more than 1 source px."
+        "evidence": "docs/m22-dashed-hidden-review.md",
+        "note": "m22 screen (0.01, 129): no pairs."
       },
       "references": [
         "artifacts/review/063-reconstruction-notes.md",
@@ -2043,7 +2043,8 @@
         "docs/w4a-1-160-review.md",
         "docs/u1-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m2-intermittent-review.md"
+        "docs/m2-intermittent-review.md",
+        "docs/m22-dashed-hidden-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2051,9 +2052,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "While the drop is held up with the pawl fallen, a thin strip of the leg shows in the gap between the pawl's lobe and the disk; the leg has to cross that gap to reach its working tip.",
-      "limits": "Start pose is 7° of pin rotation from Brown's to show the drop at rest; the star is regular and held only by the pawl.",
-      "assessment": "minor",
+      "visibleFlaws": "",
+      "limits": "The leg is a solid working body for the pins but is drawn as Brown's dashed hidden outline inside a zone that rides with the pawl; start pose is 7° of pin rotation from Brown's; the star is regular and held only by the pawl.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -2483,7 +2484,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u6-107-76-review.md",
-        "docs/m16-markers-review.md"
+        "docs/m16-markers-review.md",
+        "docs/m21-269-76-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2491,8 +2493,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge (needed for the mechanism to work); the subject sits smaller than on the plate to leave room for segment D's orbit round the ratchet axle.",
-      "limits": "About half the swing is dead travel from the rest stop.",
+      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge (needed for the mechanism to work).",
+      "limits": "The view crops where Brown crops, so segment D, a broken-off piece of the large wheel, leaves the view for most of each turn; about half the swing is dead travel from the rest stop.",
       "assessment": "minor"
     },
     {
@@ -8791,7 +8793,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/m22-dashed-hidden-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8799,8 +8802,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The drum-side strand of D ends at B's rim where Brown carries it to the inner circle (a strand in front of B would be cut by the crank pin every turn).",
-      "limits": "Disk timing and demonstration reset prescribed.",
+      "visibleFlaws": "The dashed drum circle on B's face is about half the size of Brown's inner circle.",
+      "limits": "The drum and cord lie behind B, so Brown's strand to the inner circle is drawn as a dashed hidden line (a strand in front of B would be cut by the crank pin every turn); a larger drum would change the take-up law; disk timing and demonstration reset are prescribed.",
       "assessment": "minor"
     },
     {
@@ -9059,7 +9062,8 @@
         "docs/lane4-escapements-misc-review.md",
         "docs/w3d-255-287-review.md",
         "docs/m14-last-residuals-review.md",
-        "docs/m15-final-review.md"
+        "docs/m15-final-review.md",
+        "docs/m21-269-76-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9067,8 +9071,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The closed end sits about 3 pitches farther right than drawn, and the subject fills less of the stage than the plate does.",
-      "limits": "The frame's 17-pitch stroke against its 22-pitch length sets the swept size; handoff teeth are relieved at working depth but keep Brown's outline as a web behind the pinion; the rod, which Brown breaks off, leaves the view at the stroke limit. The gear tip must pass about 3.1 pitches beyond the last tooth to roll the last lower pair, which sets the closed end; a tooth pitch renders at 19.3 px against Brown's 20.3 px.",
+      "visibleFlaws": "At the plate pose the closed end sits about 1.6 pitches farther right than drawn, because the model's tooth groups run on one continuous 17-pitch line where Brown's overlap.",
+      "limits": "The closed end and the rod's flat end are set back behind the gear so its tips pass in front of them at the stroke limit; handoff teeth are relieved at working depth and keep Brown's outline as a web behind the gear; the rod, which Brown breaks off, leaves the view at the stroke limit.",
       "assessment": "minor"
     },
     {

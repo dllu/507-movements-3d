@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 import bakedMotion from '../src/simulation/baked/intermittent-63-211-snap-counter-cuts.js';
 import {
+  defaultLeg,
   layout,
   makeSnapCounterMechanism,
   ringGap,
@@ -134,4 +135,43 @@ test('movement 63 bends the spring with the drop and poses every part from the s
   }
   const oneEvent = stateAtTime(geometry.eventPeriod * 1.05).starAngle - stateAtTime(geometry.eventPeriod * 0.05).starAngle;
   assert.ok(Math.abs(oneEvent + geometry.starPitch) < 1e-9);
+});
+
+test('movement 63 dashes the drop leg over the pawl and disk and never draws it as a solid strip', () => {
+  const model = build();
+  const { blocks, geometry } = model.root.userData;
+  const { z } = geometry;
+  const line = blocks.legHiddenLine;
+  assert.ok(line.isLineSegments && line.material.isLineDashedMaterial, 'the leg is a dashed outline');
+  assert.equal(line.material.toneMapped, false);
+  assert.equal(line.parent, blocks.drop.userData.rotor, 'the dashes move rigidly with the drop');
+  const position = line.geometry.attributes.position;
+  for (let index = 0; index < position.count; index += 1) {
+    const depth = position.getZ(index);
+    assert.ok(depth > z.pawlFront && depth < z.starBack && depth < z.pinFront,
+      'drawn over the pawl and disk, under the pins\' ends and the star');
+  }
+  const dropBody = blocks.drop.userData.rotor.children.find((child) => child.userData.springDropBody);
+  // The drop keeps its whole working body, leg included, for the pins.
+  dropBody.geometry.computeBoundingBox();
+  const k = geometry.sourceScale;
+  const [hx, hy] = layout.dropHinge;
+  const tip = defaultLeg.reduce((low, point) => (point[1] > low[1] ? point : low));
+  assert.ok(dropBody.geometry.boundingBox.min.y < (-tip[1] - hy) * k + 1e-6, 'the leg tip is still solid for the pins');
+  assert.ok(dropBody.geometry.boundingBox.max.x > (878 - hx) * k - 1e-6);
+  // The zone the drop is not drawn in rides with the pawl. Every leg point
+  // below the drop's top corner stays inside it in every baked pose, so no
+  // solid strip of the leg shows between the lobe and the disk.
+  const zone = dropBody.userData.legZone;
+  const [px, py] = layout.pawlPivot;
+  let margin = Infinity;
+  for (const rho of bakedMotion.rho) {
+    for (const [x, y] of defaultLeg.slice(1, -1)) {
+      const c = Math.cos(-rho);
+      const s = Math.sin(-rho);
+      const point = [px + (x - px) * c - (-y - py) * s, py + (x - px) * s + (-y - py) * c];
+      margin = Math.min(margin, -ringPointGap(zone, point));
+    }
+  }
+  assert.ok(margin > 3, `the leg stays inside the undrawn zone by ${margin} px`);
 });

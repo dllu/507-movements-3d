@@ -5126,18 +5126,18 @@
     },
     "269": {
       "peakAngularSpeed": 2.329354556388887,
-      "peakVisibleAngularSpeed": 2.329354556383058,
-      "sustainedVisibleAngularSpeed": 2.1187736694247055,
+      "peakVisibleAngularSpeed": 2.3293545563831275,
+      "sustainedVisibleAngularSpeed": 2.118773669426371,
       "floorY": -1.4536000394821167,
       "fastestPart": "source-four-spoke-output-gear-web",
       "motionBounds": {
         "min": [
-          -4.84565245073014,
+          -4.845652442595071,
           -1.4536000394821167,
           -0.8279999780654907
         ],
         "max": [
-          7.793261813992935,
+          7.161338272297097,
           1.4536000394821167,
           0.8279999780654907
         ]

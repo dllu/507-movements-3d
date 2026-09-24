@@ -101,13 +101,28 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
         mesh.material.clippingPlanes=id==='section'?sectionPlanes:[];mesh.material.clipShadows=true;mesh.material.needsUpdate=true;
       }
       for(const section of sections)section.root.visible=id==='section';
-      // Segment D is cut in the driver's own frame, so it orbits the common
-      // axle with the wheel; both views fit that swept disc (every other part
-      // lies inside it) rather than Brown's static crop, which the segment
-      // would leave for most of the turn.
-      root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
+      // The complete wheel fits its swept disc (every other part lies inside
+      // it). The engraving section crops where Brown crops: ratchet A, the
+      // pawls and the tappet over their whole motion, plus the broken-off
+      // segment D at the plate pose. As the large wheel turns, the segment's
+      // broken arc leaves the view and comes back round; nothing else does.
+      root.userData.cameraFitBounds=id==='section'?sectionFitBounds.clone()
+        :new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
     };
-  root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,
+  // Segment D at the plate pose (driver angle 0): the ring and stud inside
+  // the section window.
+  const segmentAtPlatePose=new THREE.Box3(),insideWindow=point=>baseSectionPlanes.every(plane=>plane.distanceToPoint(point)>=0);
+  for(let i=0;i<2880;i++){const angle=i*Math.PI*2/2880;for(const radius of [driverInner,driverOuter]){
+    const point=new THREE.Vector3(radius*Math.cos(angle),radius*Math.sin(angle),0);if(insideWindow(point))segmentAtPlatePose.expandByPoint(point);}}
+  segmentAtPlatePose.expandByPoint(new THREE.Vector3(studVector[0]-studRadius,studVector[1]-studRadius,0))
+    .expandByPoint(new THREE.Vector3(studVector[0]+studRadius,studVector[1]+studRadius,0));
+  // Every non-driver part (A, the pawls, the tappet and its dog) over one
+  // displayed period, measured offline from their vertices at 769 poses (A
+  // sweeps its tip circle); the 076 tests recompute it.
+  const sweptWorkingParts=new THREE.Box3(new THREE.Vector3(-1.001,-1.001,-.46),new THREE.Vector3(2.328,1.202,.266));
+  const sectionFitBounds=sweptWorkingParts.clone().union(segmentAtPlatePose);
+  sectionFitBounds.min.z=-.46;sectionFitBounds.max.z=.266;
+  root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,segmentAtPlatePose,sweptWorkingParts,
     geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
       dogStopRadius,dogStopOrbit,dogStopFace,dogStop,H0Angle:H0.angle,holdingNose},
     configurations:[{id:'section',label:'Engraving section'},{id:'complete',label:'Complete wheel'}],configurationLabel:'View',configuration:'section',
